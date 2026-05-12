@@ -1,0 +1,34 @@
+{
+  "common": {
+    "appName": "NIDO",
+    "loading": "Carregant...",
+    "error": "S'ha produït un error",
+    "retry": "Tornar a intentar",
+    "save": "Guardar",
+    "cancel": "Cancel·lar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "back": "Tornar",
+    "next": "Següent",
+    "previous": "Anterior",
+    "close": "Tancar",
+    "search": "Cercar",
+    "noResults": "Sense resultats"
+  },
+  "auth": {
+    "signIn": "Iniciar sessió",
+    "signOut": "Tancar sessió",
+    "email": "Correu electrònic",
+    "password": "Contrasenya",
+    "forgotPassword": "Has oblidat la contrasenya?",
+    "welcomeBack": "Benvingut de nou"
+  },
+  "nav": {
+    "home": "Inici",
+    "agenda": "Agenda",
+    "messages": "Missatges",
+    "children": "Xiquets",
+    "settings": "Ajustos"
+  }
+}

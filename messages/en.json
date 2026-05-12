@@ -1,0 +1,34 @@
+{
+  "common": {
+    "appName": "NIDO",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "search": "Search",
+    "noResults": "No results"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot your password?",
+    "welcomeBack": "Welcome back"
+  },
+  "nav": {
+    "home": "Home",
+    "agenda": "Agenda",
+    "messages": "Messages",
+    "children": "Children",
+    "settings": "Settings"
+  }
+}

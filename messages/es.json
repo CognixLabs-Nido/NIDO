@@ -1,0 +1,34 @@
+{
+  "common": {
+    "appName": "NIDO",
+    "loading": "Cargando...",
+    "error": "Ha ocurrido un error",
+    "retry": "Reintentar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "close": "Cerrar",
+    "search": "Buscar",
+    "noResults": "Sin resultados"
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "welcomeBack": "Bienvenido de nuevo"
+  },
+  "nav": {
+    "home": "Inicio",
+    "agenda": "Agenda",
+    "messages": "Mensajes",
+    "children": "Niños",
+    "settings": "Ajustes"
+  }
+}
