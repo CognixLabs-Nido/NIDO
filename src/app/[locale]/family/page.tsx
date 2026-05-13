@@ -15,14 +15,22 @@ export default async function FamilyDashboard({ params }: PageProps) {
   const { data: userData } = await supabase.auth.getUser()
   const userId = userData.user?.id
 
-  let ninos: Array<{ id: string; nombre: string; apellidos: string }> = []
+  type NinoRow = { id: string; nombre: string; apellidos: string }
+  let ninos: NinoRow[] = []
   if (userId) {
     const { data } = await supabase
       .from('vinculos_familiares')
       .select('ninos(id, nombre, apellidos)')
       .eq('usuario_id', userId)
       .is('deleted_at', null)
-    ninos = (data ?? []).map((r) => r.ninos).filter(Boolean) as typeof ninos
+    ninos = (data ?? [])
+      .map((r): NinoRow | null => {
+        const raw = r.ninos as NinoRow | NinoRow[] | null
+        if (!raw) return null
+        if (Array.isArray(raw)) return raw[0] ?? null
+        return raw
+      })
+      .filter((n): n is NinoRow => n !== null)
   }
 
   return (

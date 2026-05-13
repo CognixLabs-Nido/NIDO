@@ -251,6 +251,7 @@
       "nuevo": "Nou xiquet",
       "ver": "Veure",
       "empty": "Encara no hi ha xiquets. Registra el primer.",
+      "sin_matricula_activa": "Sense matrícula activa",
       "nuevo_sin_aulas": "Necessites almenys una aula creada abans de registrar un xiquet.",
       "created": "Xiquet registrat correctament",
       "wizard": {
@@ -299,6 +300,7 @@
         "aula_placeholder": "Selecciona una aula",
         "fecha_alta": "Alta",
         "fecha_baja": "Baixa",
+        "aula_actual": "Aula actual",
         "confirmar_fuera_cohorte": "Confirme matricular encara que l'edat no coincidisca amb la cohort",
         "acciones": "Accions"
       }

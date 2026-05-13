@@ -31,12 +31,17 @@ export default async function TeacherAulaPage({ params }: PageProps) {
     .is('fecha_baja', null)
     .is('deleted_at', null)
 
-  const ninos = (matriculas ?? []).map((m) => m.ninos).filter(Boolean) as Array<{
-    id: string
-    nombre: string
-    apellidos: string
-    fecha_nacimiento: string
-  }>
+  // El embebido `ninos(...)` puede venir como objeto o como array según
+  // cómo infiera Supabase la cardinalidad; normalizamos a objeto.
+  type NinoRow = { id: string; nombre: string; apellidos: string; fecha_nacimiento: string }
+  const ninos = (matriculas ?? [])
+    .map((m): NinoRow | null => {
+      const raw = m.ninos as NinoRow | NinoRow[] | null
+      if (!raw) return null
+      if (Array.isArray(raw)) return raw[0] ?? null
+      return raw
+    })
+    .filter((n): n is NinoRow => n !== null)
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-6">

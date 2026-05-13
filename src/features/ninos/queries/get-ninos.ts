@@ -7,17 +7,61 @@ export interface NinoListItem {
   nombre: string
   apellidos: string
   fecha_nacimiento: string
+  aula_actual: string | null
+}
+
+/**
+ * Helper defensivo: Supabase puede devolver un embebido como objeto o como
+ * array (depende de cómo infiera la cardinalidad). Aceptamos ambos formatos.
+ */
+function extraerNombreAula(raw: unknown): string | null {
+  if (!raw) return null
+  if (Array.isArray(raw)) {
+    const first = raw[0]
+    if (first && typeof first === 'object' && 'nombre' in first) {
+      return (first as { nombre: string }).nombre
+    }
+    return null
+  }
+  if (typeof raw === 'object' && 'nombre' in raw) {
+    return (raw as { nombre: string }).nombre
+  }
+  return null
 }
 
 export async function getNinosPorCentro(centroId: string): Promise<NinoListItem[]> {
   const supabase = await createClient()
-  const { data } = await supabase
+  // Doble query: niños del centro + matrícula activa para cada uno con aula.nombre.
+  // Hacerlo separado evita complejidad de embebido y permite RLS independiente.
+  const { data: ninos } = await supabase
     .from('ninos')
     .select('id, nombre, apellidos, fecha_nacimiento')
     .eq('centro_id', centroId)
     .is('deleted_at', null)
     .order('apellidos', { ascending: true })
-  return (data ?? []) as NinoListItem[]
+
+  if (!ninos?.length) return []
+
+  const { data: matriculas } = await supabase
+    .from('matriculas')
+    .select('nino_id, aulas(nombre)')
+    .in(
+      'nino_id',
+      ninos.map((n) => n.id)
+    )
+    .is('fecha_baja', null)
+    .is('deleted_at', null)
+
+  const aulaPorNino = new Map<string, string>()
+  for (const m of matriculas ?? []) {
+    const nombre = extraerNombreAula(m.aulas)
+    if (nombre) aulaPorNino.set(m.nino_id, nombre)
+  }
+
+  return ninos.map((n) => ({
+    ...n,
+    aula_actual: aulaPorNino.get(n.id) ?? null,
+  }))
 }
 
 export interface NinoDetalle {
@@ -90,7 +134,7 @@ export async function getMatriculasPorNino(ninoId: string): Promise<MatriculaIte
   return (data ?? []).map((m) => ({
     id: m.id,
     aula_id: m.aula_id,
-    aula_nombre: (m.aulas as { nombre?: string } | null)?.nombre ?? '—',
+    aula_nombre: extraerNombreAula(m.aulas) ?? '—',
     fecha_alta: m.fecha_alta,
     fecha_baja: m.fecha_baja,
     motivo_baja: m.motivo_baja,
