@@ -273,6 +273,12 @@
       "medica_vacia": "Sin datos médicos registrados.",
       "vinculos_vacios": "Sin vínculos familiares registrados.",
       "matriculas_vacias": "Sin matrículas en este curso.",
+      "sexo_opciones": {
+        "F": "Femenino",
+        "M": "Masculino",
+        "X": "No binario / otro",
+        "no_contesta": "Prefiero no decirlo"
+      },
       "fields": {
         "nombre": "Nombre",
         "apellidos": "Apellidos",

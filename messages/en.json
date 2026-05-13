@@ -273,6 +273,12 @@
       "medica_vacia": "No medical data recorded.",
       "vinculos_vacios": "No family ties recorded.",
       "matriculas_vacias": "No enrolments in this year.",
+      "sexo_opciones": {
+        "F": "Female",
+        "M": "Male",
+        "X": "Non-binary / other",
+        "no_contesta": "Prefer not to say"
+      },
       "fields": {
         "nombre": "First name",
         "apellidos": "Surname",

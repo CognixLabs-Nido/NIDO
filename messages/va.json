@@ -273,6 +273,12 @@
       "medica_vacia": "Sense dades mèdiques registrades.",
       "vinculos_vacios": "Sense vincles familiars registrats.",
       "matriculas_vacias": "Sense matrícules en este curs.",
+      "sexo_opciones": {
+        "F": "Femení",
+        "M": "Masculí",
+        "X": "No binari / altre",
+        "no_contesta": "Preferisc no dir-ho"
+      },
       "fields": {
         "nombre": "Nom",
         "apellidos": "Cognoms",

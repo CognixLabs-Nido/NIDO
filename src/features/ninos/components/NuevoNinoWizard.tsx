@@ -171,6 +171,32 @@ function Paso1({ form, onNext }: { form: WizardForm; onNext: () => void }) {
       />
       <FormField
         control={form.control}
+        name="datos.sexo"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('fields.sexo')}</FormLabel>
+            <Select
+              onValueChange={(v) => field.onChange(v === '__null__' ? null : v)}
+              value={field.value ?? '__null__'}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="F">{t('sexo_opciones.F')}</SelectItem>
+                <SelectItem value="M">{t('sexo_opciones.M')}</SelectItem>
+                <SelectItem value="X">{t('sexo_opciones.X')}</SelectItem>
+                <SelectItem value="__null__">{t('sexo_opciones.no_contesta')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
         name="datos.idioma_principal"
         render={({ field }) => (
           <FormItem>
@@ -244,6 +270,18 @@ function Paso2({
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t('fields.medicacion_habitual')}</FormLabel>
+            <FormControl>
+              <Textarea rows={2} {...field} value={field.value ?? ''} />
+            </FormControl>
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="medica.alergias_leves"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('fields.alergias_leves')}</FormLabel>
             <FormControl>
               <Textarea rows={2} {...field} value={field.value ?? ''} />
             </FormControl>
