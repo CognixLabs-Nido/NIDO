@@ -85,9 +85,9 @@ Detalle completo en `@./docs/architecture/data-model.md`.
 
 5 roles: `admin`, `profe`, `tutor_legal`, `autorizado`, `service`.
 
-Funciones helper Postgres (crear en migración temprana):
+Funciones helper Postgres (en schema `public.*`, no `auth.*` — Supabase Cloud lo exige, ver ADR-0002):
 
-- `auth.es_admin(centro_id)`, `auth.es_profe_de_aula(aula_id)`, `auth.es_tutor_de(nino_id)`, `auth.tiene_permiso_sobre(nino_id, permiso)`, `auth.pertenece_a_centro(centro_id)`.
+- `public.es_admin(centro_id)`, `public.es_profe_de_aula(aula_id)`, `public.es_tutor_de(nino_id)`, `public.tiene_permiso_sobre(nino_id, permiso)`, `public.pertenece_a_centro(centro_id)`.
 
 Default DENY ALL. Service role bypass para Edge Functions, nunca expuesto al cliente.
 
