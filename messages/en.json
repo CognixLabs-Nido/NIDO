@@ -309,6 +309,7 @@
       "title": "Audit log",
       "description": "Latest 100 changes recorded for this centre.",
       "empty": "No entries yet.",
+      "sistema": "System",
       "fields": {
         "ts": "Timestamp",
         "tabla": "Table",

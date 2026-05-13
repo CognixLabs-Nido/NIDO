@@ -309,6 +309,7 @@
       "title": "Audit log",
       "description": "Últims 100 canvis registrats en este centre.",
       "empty": "Sense entrades encara.",
+      "sistema": "Sistema",
       "fields": {
         "ts": "Data i hora",
         "tabla": "Taula",
