@@ -29,12 +29,8 @@ export const acceptInvitationSchema = z.object({
   nombreCompleto: z.string().min(2).max(120),
   password: passwordSchema,
   idiomaPreferido: z.enum(['es', 'en', 'va']),
-  aceptaTerminos: z.literal(true, {
-    errorMap: () => ({ message: 'auth.validation.terms_required' }),
-  }),
-  aceptaPrivacidad: z.literal(true, {
-    errorMap: () => ({ message: 'auth.validation.privacy_required' }),
-  }),
+  aceptaTerminos: z.literal(true, { message: 'auth.validation.terms_required' }),
+  aceptaPrivacidad: z.literal(true, { message: 'auth.validation.privacy_required' }),
 })
 
 export type UserRole = z.infer<typeof userRoleSchema>
