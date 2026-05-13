@@ -161,6 +161,286 @@
     "title": "NIDO",
     "subtitle": "Agenda digital para escuelas infantiles 0-3 años",
     "cta_login": "Iniciar sesión",
-    "phase": "Fase 1 — Identidad y acceso"
+    "phase": "Fase 2 — Entidades core"
+  },
+  "admin": {
+    "nav": {
+      "aria_label": "Navegación admin",
+      "dashboard": "Panel",
+      "centro": "Centro",
+      "cursos": "Cursos",
+      "aulas": "Aulas",
+      "ninos": "Niños",
+      "audit": "Audit log",
+      "perfil": "Perfil"
+    },
+    "dashboard": {
+      "title": "Panel de administración",
+      "stats": {
+        "curso_activo": "Curso activo",
+        "sin_curso": "Sin curso activo",
+        "aulas": "Aulas",
+        "ninos_activos": "Niños activos",
+        "usuarios_activos": "Usuarios activos"
+      }
+    },
+    "centro": {
+      "title": "Datos del centro",
+      "edit": "Editar",
+      "edit_title": "Editar datos del centro",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "cancel": "Cancelar",
+      "updated": "Centro actualizado",
+      "not_found": "Centro no encontrado",
+      "fields": {
+        "nombre": "Nombre",
+        "direccion": "Dirección",
+        "telefono": "Teléfono",
+        "email_contacto": "Email de contacto",
+        "web": "Web",
+        "idioma_default": "Idioma por defecto"
+      }
+    },
+    "cursos": {
+      "title": "Cursos académicos",
+      "nuevo": "Nuevo curso",
+      "nuevo_title": "Nuevo curso académico",
+      "save": "Crear",
+      "saving": "Creando...",
+      "cancel": "Cancelar",
+      "created": "Curso creado",
+      "activar": "Marcar como activo",
+      "activating": "Activando...",
+      "activated": "Curso marcado como activo",
+      "empty": "No hay cursos todavía. Crea el primero.",
+      "fields": {
+        "nombre": "Nombre",
+        "fechas": "Fechas",
+        "estado": "Estado",
+        "acciones": "Acciones",
+        "fecha_inicio": "Fecha de inicio",
+        "fecha_fin": "Fecha de fin"
+      },
+      "estados": {
+        "planificado": "Planificado",
+        "activo": "Activo",
+        "cerrado": "Cerrado"
+      }
+    },
+    "aulas": {
+      "title": "Aulas",
+      "nueva": "Nueva aula",
+      "nueva_title": "Nueva aula",
+      "save": "Crear",
+      "saving": "Creando...",
+      "cancel": "Cancelar",
+      "created": "Aula creada",
+      "empty": "No hay aulas todavía. Crea la primera.",
+      "sin_curso_activo": "No hay un curso activo. Activa uno antes de crear aulas.",
+      "curso_label": "Curso",
+      "fields": {
+        "nombre": "Nombre",
+        "cohorte": "Cohortes de nacimiento",
+        "capacidad": "Capacidad máxima",
+        "descripcion": "Descripción"
+      }
+    },
+    "ninos": {
+      "title": "Niños",
+      "nuevo": "Nuevo niño",
+      "ver": "Ver",
+      "empty": "Sin niños todavía. Crea el primero.",
+      "nuevo_sin_aulas": "Necesitas al menos un aula creada antes de registrar un niño.",
+      "created": "Niño registrado correctamente",
+      "wizard": {
+        "title": "Registrar nuevo niño",
+        "step": "Paso",
+        "paso1": "Datos personales",
+        "paso2": "Datos médicos",
+        "paso3": "Asignar aula",
+        "next": "Siguiente",
+        "back": "Anterior",
+        "submit": "Guardar",
+        "saving": "Guardando..."
+      },
+      "tabs": {
+        "personales": "Datos personales",
+        "medica": "Datos médicos",
+        "vinculos": "Familia y autorizados",
+        "matriculas": "Matrículas"
+      },
+      "medica_vacia": "Sin datos médicos registrados.",
+      "vinculos_vacios": "Sin vínculos familiares registrados.",
+      "matriculas_vacias": "Sin matrículas en este curso.",
+      "fields": {
+        "nombre": "Nombre",
+        "apellidos": "Apellidos",
+        "fecha_nacimiento": "Fecha de nacimiento",
+        "sexo": "Sexo",
+        "idioma_principal": "Idioma principal",
+        "nacionalidad": "Nacionalidad",
+        "notas_admin": "Notas internas",
+        "alergias_graves": "Alergias graves",
+        "notas_emergencia": "Notas de emergencia",
+        "medicacion_habitual": "Medicación habitual",
+        "alergias_leves": "Alergias leves",
+        "medico_familia": "Médico de familia",
+        "telefono_emergencia": "Teléfono de emergencia",
+        "tipo_vinculo": "Tipo",
+        "parentesco": "Parentesco",
+        "aula": "Aula",
+        "aula_placeholder": "Selecciona un aula",
+        "fecha_alta": "Alta",
+        "fecha_baja": "Baja",
+        "confirmar_fuera_cohorte": "Confirmo matricular aunque la edad no coincida con la cohorte del aula",
+        "acciones": "Acciones"
+      }
+    },
+    "audit": {
+      "title": "Audit log",
+      "description": "Últimos 100 cambios registrados en este centro.",
+      "empty": "Sin entradas todavía.",
+      "fields": {
+        "ts": "Fecha y hora",
+        "tabla": "Tabla",
+        "accion": "Acción",
+        "usuario": "Usuario"
+      }
+    }
+  },
+  "teacher": {
+    "dashboard": {
+      "title": "Mis aulas",
+      "ningun_aula": "No tienes aulas asignadas todavía.",
+      "cohorte_label": "Cohorte"
+    },
+    "aula": {
+      "cohorte_label": "Cohorte",
+      "ningun_nino": "No hay niños matriculados todavía en esta aula.",
+      "fields": {
+        "nombre": "Nombre",
+        "apellidos": "Apellidos",
+        "fecha_nacimiento": "Fecha de nacimiento"
+      }
+    }
+  },
+  "family": {
+    "dashboard": {
+      "title": "Mis niños",
+      "ningun_nino": "No tienes niños vinculados todavía.",
+      "ver_ficha": "Ver ficha"
+    },
+    "nino": {
+      "basicos": "Datos básicos",
+      "fecha_nacimiento": "Fecha de nacimiento",
+      "idioma_principal": "Idioma principal",
+      "nacionalidad": "Nacionalidad",
+      "info_medica": "Datos médicos",
+      "alergias_graves": "Alergias graves",
+      "notas_emergencia": "Notas de emergencia",
+      "medicacion_habitual": "Medicación",
+      "telefono_emergencia": "Teléfono de emergencia"
+    }
+  },
+  "centro": {
+    "validation": {
+      "nombre_corto": "Nombre demasiado corto",
+      "direccion_corta": "Dirección demasiado corta",
+      "telefono_corto": "Teléfono demasiado corto",
+      "email_invalido": "Email no válido",
+      "web_invalida": "URL no válida"
+    },
+    "errors": {
+      "update_failed": "No se pudo actualizar el centro."
+    }
+  },
+  "curso": {
+    "validation": {
+      "nombre_corto": "Nombre demasiado corto",
+      "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)",
+      "fechas_invertidas": "La fecha de inicio debe ser anterior a la fecha de fin"
+    },
+    "errors": {
+      "nombre_duplicado": "Ya existe un curso con ese nombre.",
+      "create_failed": "No se pudo crear el curso.",
+      "activate_failed": "No se pudo marcar como activo.",
+      "no_encontrado": "Curso no encontrado.",
+      "no_reabrir_cerrado": "Un curso cerrado no puede reabrirse."
+    },
+    "error": {
+      "no_reabrir_cerrado": "Un curso cerrado no puede reabrirse."
+    }
+  },
+  "aula": {
+    "validation": {
+      "nombre_corto": "Nombre demasiado corto",
+      "cohorte_vacia": "Selecciona al menos un año de cohorte",
+      "cohorte_demasiados": "Máximo 5 años por aula",
+      "capacidad_min": "Capacidad mínima 1",
+      "capacidad_max": "Capacidad máxima 40"
+    },
+    "errors": {
+      "nombre_duplicado": "Ya existe un aula con ese nombre en este curso.",
+      "create_failed": "No se pudo crear el aula.",
+      "no_encontrada": "Aula no encontrada."
+    }
+  },
+  "nino": {
+    "validation": {
+      "nombre_requerido": "Nombre requerido",
+      "apellidos_requeridos": "Apellidos requeridos",
+      "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)",
+      "fecha_futura": "La fecha de nacimiento no puede ser futura",
+      "aula_invalida": "Selecciona un aula",
+      "fuera_de_cohorte": "El año de nacimiento no coincide con la cohorte. Marca la confirmación para matricular igualmente."
+    },
+    "errors": {
+      "create_failed": "No se pudo registrar al niño.",
+      "aula_no_encontrada": "Aula no encontrada.",
+      "aula_de_otro_centro": "El aula seleccionada no pertenece al centro.",
+      "no_encontrado": "Niño no encontrado."
+    }
+  },
+  "matricula": {
+    "validation": {
+      "aula_invalida": "Selecciona un aula",
+      "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)"
+    },
+    "errors": {
+      "create_failed": "No se pudo crear la matrícula.",
+      "update_failed": "No se pudo actualizar la matrícula.",
+      "no_encontrada": "Matrícula no encontrada.",
+      "ya_dada_de_baja": "Esta matrícula ya está dada de baja.",
+      "misma_aula": "El niño ya está matriculado en esta aula."
+    }
+  },
+  "vinculo": {
+    "validation": {
+      "usuario_invalido": "Selecciona un usuario válido",
+      "descripcion_requerida": "Indica la descripción del parentesco",
+      "usuario_sin_rol": "Este usuario no tiene rol familiar en el centro"
+    },
+    "errors": {
+      "create_failed": "No se pudo crear el vínculo.",
+      "duplicado": "Este usuario ya está vinculado a este niño."
+    }
+  },
+  "profeAula": {
+    "validation": {
+      "profe_invalido": "Selecciona un profe válido",
+      "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)"
+    },
+    "errors": {
+      "create_failed": "No se pudo asignar el profe al aula.",
+      "ya_principal": "Ya hay un profe principal en esta aula.",
+      "usuario_sin_rol_profe": "Este usuario no tiene rol profe en el centro."
+    }
+  },
+  "medico": {
+    "aviso_cifrado": "Estos datos se almacenan cifrados.",
+    "error": {
+      "cifrado_no_configurado": "La configuración de cifrado de datos médicos no está disponible. Contacta con soporte."
+    }
   }
 }

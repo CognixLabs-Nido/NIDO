@@ -11,7 +11,7 @@ export const ninoSchema = z.object({
     .refine((d) => new Date(d) <= new Date(), { message: 'nino.validation.fecha_futura' }),
   sexo: z.enum(['F', 'M', 'X']).optional().nullable(),
   nacionalidad: z.string().max(60).optional().nullable(),
-  idioma_principal: z.enum(['es', 'en', 'va']).default('es'),
+  idioma_principal: z.enum(['es', 'en', 'va']),
   notas_admin: z.string().max(1000).optional().nullable(),
 })
 
