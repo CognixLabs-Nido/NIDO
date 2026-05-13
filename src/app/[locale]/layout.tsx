@@ -23,6 +23,10 @@ export const metadata: Metadata = {
   description: 'Agenda digital para escuelas infantiles 0-3 años',
 }
 
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }))
+}
+
 export default async function LocaleLayout({
   children,
   params,
