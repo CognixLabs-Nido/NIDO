@@ -50,7 +50,7 @@ Además, esta fase materializa el contexto operativo real de ANAIA, la primera (
 - FKs diferidos de Fase 1: `roles_usuario.centro_id → centros.id`, `invitaciones.centro_id → centros.id`, `invitaciones.nino_id → ninos.id`, `invitaciones.aula_id → aulas.id`.
 - 4 helpers RLS adicionales en `public.*`: `es_profe_de_aula`, `es_tutor_de`, `tiene_permiso_sobre`, `pertenece_a_centro`.
 - Políticas RLS para las 10 tablas nuevas.
-- Audit log automático con `audit_trigger_function()` aplicada a 5 tablas (`ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`).
+- Audit log automático con `audit_trigger_function()` aplicada a 6 tablas (`centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`).
 - Cifrado pgcrypto a nivel columna en `info_medica_emergencia.alergias_graves` y `notas_emergencia`. Funciones `set_info_medica_emergencia_cifrada(...)` y `get_info_medica_emergencia(...)` para escribir y leer.
 - Seed de ANAIA: 1 fila `centros` con UUID preservado, 1 fila `cursos_academicos` (2026-27 planificado), 5 filas `aulas` con cohortes.
 - Server Actions y schemas Zod para cada feature (centros, cursos, aulas, ninos, matriculas, vinculos, profes-aulas).
@@ -84,7 +84,7 @@ Además, esta fase materializa el contexto operativo real de ANAIA, la primera (
 3. Submit → Server Action `updateCentro` valida y hace `UPDATE centros SET ... WHERE id = $1`.
 4. RLS bloquea el UPDATE si el usuario no es admin del centro.
 
-**Post-condiciones:** centro actualizado, audit log NO captura (centros no está auditado en Fase 2 — los cambios de datos del centro son muy infrecuentes; se añade en Fase 11 si hace falta).
+**Post-condiciones:** centro actualizado, audit log captura el UPDATE (la tabla `centros` está auditada — ver B16). El soft delete (`UPDATE centros SET deleted_at = now()`) también queda registrado.
 
 **Edge cases:** Nadie crea centros desde la UI en Ola 1 — el centro de ANAIA se siembra en migración con UUID conocido. La creación de nuevos centros queda para Ola 2 (alta de centros con verificación legal).
 
@@ -243,6 +243,7 @@ DECLARE
   v_registro_id uuid;
 BEGIN
   v_centro_id := CASE TG_TABLE_NAME
+    WHEN 'centros' THEN COALESCE((NEW).id, (OLD).id)
     WHEN 'ninos' THEN COALESCE((NEW).centro_id, (OLD).centro_id)
     WHEN 'info_medica_emergencia' THEN (SELECT centro_id FROM ninos WHERE id = COALESCE((NEW).nino_id, (OLD).nino_id))
     WHEN 'vinculos_familiares' THEN (SELECT centro_id FROM ninos WHERE id = COALESCE((NEW).nino_id, (OLD).nino_id))
@@ -264,6 +265,7 @@ $$;
 
 Triggers aplicados como `AFTER INSERT OR UPDATE OR DELETE FOR EACH ROW EXECUTE FUNCTION public.audit_trigger_function()` en:
 
+- `centros`
 - `ninos`
 - `info_medica_emergencia`
 - `vinculos_familiares`
@@ -510,7 +512,7 @@ CREATE INDEX idx_ninos_centro ON public.ninos(centro_id) WHERE deleted_at IS NUL
 -- info_medica_emergencia
 CREATE TABLE public.info_medica_emergencia (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  nino_id uuid NOT NULL UNIQUE REFERENCES public.ninos(id) ON DELETE CASCADE,
+  nino_id uuid NOT NULL UNIQUE REFERENCES public.ninos(id) ON DELETE RESTRICT,
   alergias_graves bytea,
   notas_emergencia bytea,
   medicacion_habitual text,
