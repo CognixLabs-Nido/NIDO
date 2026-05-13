@@ -161,6 +161,286 @@
     "title": "NIDO",
     "subtitle": "Digital agenda for 0–3 nurseries",
     "cta_login": "Sign in",
-    "phase": "Phase 1 — Identity and access"
+    "phase": "Phase 2 — Core entities"
+  },
+  "admin": {
+    "nav": {
+      "aria_label": "Admin navigation",
+      "dashboard": "Dashboard",
+      "centro": "Centre",
+      "cursos": "Years",
+      "aulas": "Classrooms",
+      "ninos": "Children",
+      "audit": "Audit log",
+      "perfil": "Profile"
+    },
+    "dashboard": {
+      "title": "Admin dashboard",
+      "stats": {
+        "curso_activo": "Active year",
+        "sin_curso": "No active year",
+        "aulas": "Classrooms",
+        "ninos_activos": "Active children",
+        "usuarios_activos": "Active users"
+      }
+    },
+    "centro": {
+      "title": "Centre details",
+      "edit": "Edit",
+      "edit_title": "Edit centre",
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "updated": "Centre updated",
+      "not_found": "Centre not found",
+      "fields": {
+        "nombre": "Name",
+        "direccion": "Address",
+        "telefono": "Phone",
+        "email_contacto": "Contact email",
+        "web": "Website",
+        "idioma_default": "Default language"
+      }
+    },
+    "cursos": {
+      "title": "Academic years",
+      "nuevo": "New year",
+      "nuevo_title": "New academic year",
+      "save": "Create",
+      "saving": "Creating...",
+      "cancel": "Cancel",
+      "created": "Year created",
+      "activar": "Mark as active",
+      "activating": "Activating...",
+      "activated": "Year marked active",
+      "empty": "No years yet. Create the first one.",
+      "fields": {
+        "nombre": "Name",
+        "fechas": "Dates",
+        "estado": "Status",
+        "acciones": "Actions",
+        "fecha_inicio": "Start date",
+        "fecha_fin": "End date"
+      },
+      "estados": {
+        "planificado": "Planned",
+        "activo": "Active",
+        "cerrado": "Closed"
+      }
+    },
+    "aulas": {
+      "title": "Classrooms",
+      "nueva": "New classroom",
+      "nueva_title": "New classroom",
+      "save": "Create",
+      "saving": "Creating...",
+      "cancel": "Cancel",
+      "created": "Classroom created",
+      "empty": "No classrooms yet. Create the first one.",
+      "sin_curso_activo": "No active year. Activate one before creating classrooms.",
+      "curso_label": "Year",
+      "fields": {
+        "nombre": "Name",
+        "cohorte": "Birth year cohorts",
+        "capacidad": "Maximum capacity",
+        "descripcion": "Description"
+      }
+    },
+    "ninos": {
+      "title": "Children",
+      "nuevo": "New child",
+      "ver": "View",
+      "empty": "No children yet. Register the first one.",
+      "nuevo_sin_aulas": "You need at least one classroom before registering a child.",
+      "created": "Child registered successfully",
+      "wizard": {
+        "title": "Register new child",
+        "step": "Step",
+        "paso1": "Personal data",
+        "paso2": "Medical data",
+        "paso3": "Assign classroom",
+        "next": "Next",
+        "back": "Back",
+        "submit": "Save",
+        "saving": "Saving..."
+      },
+      "tabs": {
+        "personales": "Personal",
+        "medica": "Medical",
+        "vinculos": "Family & authorised",
+        "matriculas": "Enrolments"
+      },
+      "medica_vacia": "No medical data recorded.",
+      "vinculos_vacios": "No family ties recorded.",
+      "matriculas_vacias": "No enrolments in this year.",
+      "fields": {
+        "nombre": "First name",
+        "apellidos": "Surname",
+        "fecha_nacimiento": "Date of birth",
+        "sexo": "Sex",
+        "idioma_principal": "Main language",
+        "nacionalidad": "Nationality",
+        "notas_admin": "Admin notes",
+        "alergias_graves": "Serious allergies",
+        "notas_emergencia": "Emergency notes",
+        "medicacion_habitual": "Regular medication",
+        "alergias_leves": "Mild allergies",
+        "medico_familia": "Family doctor",
+        "telefono_emergencia": "Emergency phone",
+        "tipo_vinculo": "Type",
+        "parentesco": "Relationship",
+        "aula": "Classroom",
+        "aula_placeholder": "Select a classroom",
+        "fecha_alta": "Start",
+        "fecha_baja": "End",
+        "confirmar_fuera_cohorte": "I confirm enrolling even if the age doesn't match the classroom cohort",
+        "acciones": "Actions"
+      }
+    },
+    "audit": {
+      "title": "Audit log",
+      "description": "Latest 100 changes recorded for this centre.",
+      "empty": "No entries yet.",
+      "fields": {
+        "ts": "Timestamp",
+        "tabla": "Table",
+        "accion": "Action",
+        "usuario": "User"
+      }
+    }
+  },
+  "teacher": {
+    "dashboard": {
+      "title": "My classrooms",
+      "ningun_aula": "You have no classrooms assigned yet.",
+      "cohorte_label": "Cohort"
+    },
+    "aula": {
+      "cohorte_label": "Cohort",
+      "ningun_nino": "No children enrolled yet in this classroom.",
+      "fields": {
+        "nombre": "First name",
+        "apellidos": "Surname",
+        "fecha_nacimiento": "Date of birth"
+      }
+    }
+  },
+  "family": {
+    "dashboard": {
+      "title": "My children",
+      "ningun_nino": "You have no linked children yet.",
+      "ver_ficha": "View profile"
+    },
+    "nino": {
+      "basicos": "Basic data",
+      "fecha_nacimiento": "Date of birth",
+      "idioma_principal": "Main language",
+      "nacionalidad": "Nationality",
+      "info_medica": "Medical data",
+      "alergias_graves": "Serious allergies",
+      "notas_emergencia": "Emergency notes",
+      "medicacion_habitual": "Medication",
+      "telefono_emergencia": "Emergency phone"
+    }
+  },
+  "centro": {
+    "validation": {
+      "nombre_corto": "Name too short",
+      "direccion_corta": "Address too short",
+      "telefono_corto": "Phone too short",
+      "email_invalido": "Invalid email",
+      "web_invalida": "Invalid URL"
+    },
+    "errors": {
+      "update_failed": "Could not update the centre."
+    }
+  },
+  "curso": {
+    "validation": {
+      "nombre_corto": "Name too short",
+      "fecha_formato": "Invalid date format (YYYY-MM-DD)",
+      "fechas_invertidas": "Start date must be before end date"
+    },
+    "errors": {
+      "nombre_duplicado": "An academic year with this name already exists.",
+      "create_failed": "Could not create the year.",
+      "activate_failed": "Could not mark as active.",
+      "no_encontrado": "Year not found.",
+      "no_reabrir_cerrado": "A closed year cannot be reopened."
+    },
+    "error": {
+      "no_reabrir_cerrado": "A closed year cannot be reopened."
+    }
+  },
+  "aula": {
+    "validation": {
+      "nombre_corto": "Name too short",
+      "cohorte_vacia": "Select at least one cohort year",
+      "cohorte_demasiados": "Maximum 5 years per classroom",
+      "capacidad_min": "Minimum capacity 1",
+      "capacidad_max": "Maximum capacity 40"
+    },
+    "errors": {
+      "nombre_duplicado": "A classroom with this name already exists in this year.",
+      "create_failed": "Could not create the classroom.",
+      "no_encontrada": "Classroom not found."
+    }
+  },
+  "nino": {
+    "validation": {
+      "nombre_requerido": "First name required",
+      "apellidos_requeridos": "Surname required",
+      "fecha_formato": "Invalid date format (YYYY-MM-DD)",
+      "fecha_futura": "Date of birth cannot be in the future",
+      "aula_invalida": "Select a classroom",
+      "fuera_de_cohorte": "Birth year doesn't match cohort. Tick the confirmation to enrol anyway."
+    },
+    "errors": {
+      "create_failed": "Could not register the child.",
+      "aula_no_encontrada": "Classroom not found.",
+      "aula_de_otro_centro": "The selected classroom doesn't belong to this centre.",
+      "no_encontrado": "Child not found."
+    }
+  },
+  "matricula": {
+    "validation": {
+      "aula_invalida": "Select a classroom",
+      "fecha_formato": "Invalid date format (YYYY-MM-DD)"
+    },
+    "errors": {
+      "create_failed": "Could not create the enrolment.",
+      "update_failed": "Could not update the enrolment.",
+      "no_encontrada": "Enrolment not found.",
+      "ya_dada_de_baja": "This enrolment is already ended.",
+      "misma_aula": "Child already enrolled in this classroom."
+    }
+  },
+  "vinculo": {
+    "validation": {
+      "usuario_invalido": "Select a valid user",
+      "descripcion_requerida": "Provide the relationship description",
+      "usuario_sin_rol": "This user has no family role in the centre"
+    },
+    "errors": {
+      "create_failed": "Could not create the link.",
+      "duplicado": "This user is already linked to this child."
+    }
+  },
+  "profeAula": {
+    "validation": {
+      "profe_invalido": "Select a valid teacher",
+      "fecha_formato": "Invalid date format (YYYY-MM-DD)"
+    },
+    "errors": {
+      "create_failed": "Could not assign the teacher to the classroom.",
+      "ya_principal": "There is already a lead teacher in this classroom.",
+      "usuario_sin_rol_profe": "This user has no teacher role in the centre."
+    }
+  },
+  "medico": {
+    "aviso_cifrado": "These details are stored encrypted.",
+    "error": {
+      "cifrado_no_configurado": "Medical data encryption is not configured. Contact support."
+    }
   }
 }

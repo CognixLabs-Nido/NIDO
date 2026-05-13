@@ -8,6 +8,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          accion: Database['public']['Enums']['audit_accion']
+          centro_id: string | null
+          id: string
+          registro_id: string | null
+          tabla: string
+          ts: string
+          usuario_id: string | null
+          valores_antes: Json | null
+          valores_despues: Json | null
+        }
+        Insert: {
+          accion: Database['public']['Enums']['audit_accion']
+          centro_id?: string | null
+          id?: string
+          registro_id?: string | null
+          tabla: string
+          ts?: string
+          usuario_id?: string | null
+          valores_antes?: Json | null
+          valores_despues?: Json | null
+        }
+        Update: {
+          accion?: Database['public']['Enums']['audit_accion']
+          centro_id?: string | null
+          id?: string
+          registro_id?: string | null
+          tabla?: string
+          ts?: string
+          usuario_id?: string | null
+          valores_antes?: Json | null
+          valores_despues?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'audit_log_usuario_id_fkey'
+            columns: ['usuario_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      aulas: {
+        Row: {
+          capacidad_maxima: number
+          centro_id: string
+          cohorte_anos_nacimiento: number[]
+          created_at: string
+          curso_academico_id: string
+          deleted_at: string | null
+          descripcion: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          capacidad_maxima?: number
+          centro_id: string
+          cohorte_anos_nacimiento: number[]
+          created_at?: string
+          curso_academico_id: string
+          deleted_at?: string | null
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          capacidad_maxima?: number
+          centro_id?: string
+          cohorte_anos_nacimiento?: number[]
+          created_at?: string
+          curso_academico_id?: string
+          deleted_at?: string | null
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'aulas_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'aulas_curso_academico_id_fkey'
+            columns: ['curso_academico_id']
+            isOneToOne: false
+            referencedRelation: 'cursos_academicos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       auth_attempts: {
         Row: {
           created_at: string
@@ -31,6 +129,177 @@ export type Database = {
           success?: boolean
         }
         Relationships: []
+      }
+      centros: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          direccion: string
+          email_contacto: string
+          id: string
+          idioma_default: string
+          nombre: string
+          telefono: string
+          updated_at: string
+          web: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          direccion: string
+          email_contacto: string
+          id?: string
+          idioma_default?: string
+          nombre: string
+          telefono: string
+          updated_at?: string
+          web?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          direccion?: string
+          email_contacto?: string
+          id?: string
+          idioma_default?: string
+          nombre?: string
+          telefono?: string
+          updated_at?: string
+          web?: string | null
+        }
+        Relationships: []
+      }
+      consentimientos: {
+        Row: {
+          aceptado_en: string
+          created_at: string
+          id: string
+          ip_address: unknown
+          tipo: Database['public']['Enums']['consentimiento_tipo']
+          user_agent: string | null
+          usuario_id: string
+          version: string
+        }
+        Insert: {
+          aceptado_en?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          tipo: Database['public']['Enums']['consentimiento_tipo']
+          user_agent?: string | null
+          usuario_id: string
+          version: string
+        }
+        Update: {
+          aceptado_en?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          tipo?: Database['public']['Enums']['consentimiento_tipo']
+          user_agent?: string | null
+          usuario_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'consentimientos_usuario_id_fkey'
+            columns: ['usuario_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      cursos_academicos: {
+        Row: {
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          estado: Database['public']['Enums']['curso_estado']
+          fecha_fin: string
+          fecha_inicio: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          estado?: Database['public']['Enums']['curso_estado']
+          fecha_fin: string
+          fecha_inicio: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          estado?: Database['public']['Enums']['curso_estado']
+          fecha_fin?: string
+          fecha_inicio?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'cursos_academicos_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      info_medica_emergencia: {
+        Row: {
+          alergias_graves: string | null
+          alergias_leves: string | null
+          created_at: string
+          id: string
+          medicacion_habitual: string | null
+          medico_familia: string | null
+          nino_id: string
+          notas_emergencia: string | null
+          telefono_emergencia: string | null
+          updated_at: string
+        }
+        Insert: {
+          alergias_graves?: string | null
+          alergias_leves?: string | null
+          created_at?: string
+          id?: string
+          medicacion_habitual?: string | null
+          medico_familia?: string | null
+          nino_id: string
+          notas_emergencia?: string | null
+          telefono_emergencia?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alergias_graves?: string | null
+          alergias_leves?: string | null
+          created_at?: string
+          id?: string
+          medicacion_habitual?: string | null
+          medico_familia?: string | null
+          nino_id?: string
+          notas_emergencia?: string | null
+          telefono_emergencia?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'info_medica_emergencia_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: true
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
       }
       invitaciones: {
         Row: {
@@ -77,8 +346,191 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: 'invitaciones_aula_id_fkey'
+            columns: ['aula_id']
+            isOneToOne: false
+            referencedRelation: 'aulas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'invitaciones_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
             foreignKeyName: 'invitaciones_invitado_por_fkey'
             columns: ['invitado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'invitaciones_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      matriculas: {
+        Row: {
+          aula_id: string
+          created_at: string
+          curso_academico_id: string
+          deleted_at: string | null
+          fecha_alta: string
+          fecha_baja: string | null
+          id: string
+          motivo_baja: string | null
+          nino_id: string
+        }
+        Insert: {
+          aula_id: string
+          created_at?: string
+          curso_academico_id: string
+          deleted_at?: string | null
+          fecha_alta?: string
+          fecha_baja?: string | null
+          id?: string
+          motivo_baja?: string | null
+          nino_id: string
+        }
+        Update: {
+          aula_id?: string
+          created_at?: string
+          curso_academico_id?: string
+          deleted_at?: string | null
+          fecha_alta?: string
+          fecha_baja?: string | null
+          id?: string
+          motivo_baja?: string | null
+          nino_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'matriculas_aula_id_fkey'
+            columns: ['aula_id']
+            isOneToOne: false
+            referencedRelation: 'aulas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'matriculas_curso_academico_id_fkey'
+            columns: ['curso_academico_id']
+            isOneToOne: false
+            referencedRelation: 'cursos_academicos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'matriculas_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      ninos: {
+        Row: {
+          apellidos: string
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          fecha_nacimiento: string
+          foto_url: string | null
+          id: string
+          idioma_principal: string
+          nacionalidad: string | null
+          nombre: string
+          notas_admin: string | null
+          sexo: Database['public']['Enums']['nino_sexo'] | null
+          updated_at: string
+        }
+        Insert: {
+          apellidos: string
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          fecha_nacimiento: string
+          foto_url?: string | null
+          id?: string
+          idioma_principal?: string
+          nacionalidad?: string | null
+          nombre: string
+          notas_admin?: string | null
+          sexo?: Database['public']['Enums']['nino_sexo'] | null
+          updated_at?: string
+        }
+        Update: {
+          apellidos?: string
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          fecha_nacimiento?: string
+          foto_url?: string | null
+          id?: string
+          idioma_principal?: string
+          nacionalidad?: string | null
+          nombre?: string
+          notas_admin?: string | null
+          sexo?: Database['public']['Enums']['nino_sexo'] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'ninos_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      profes_aulas: {
+        Row: {
+          aula_id: string
+          created_at: string
+          deleted_at: string | null
+          es_profe_principal: boolean
+          fecha_fin: string | null
+          fecha_inicio: string
+          id: string
+          profe_id: string
+        }
+        Insert: {
+          aula_id: string
+          created_at?: string
+          deleted_at?: string | null
+          es_profe_principal?: boolean
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          id?: string
+          profe_id: string
+        }
+        Update: {
+          aula_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          es_profe_principal?: boolean
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          id?: string
+          profe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'profes_aulas_aula_id_fkey'
+            columns: ['aula_id']
+            isOneToOne: false
+            referencedRelation: 'aulas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'profes_aulas_profe_id_fkey'
+            columns: ['profe_id']
             isOneToOne: false
             referencedRelation: 'usuarios'
             referencedColumns: ['id']
@@ -111,6 +563,13 @@ export type Database = {
           usuario_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: 'roles_usuario_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'roles_usuario_usuario_id_fkey'
             columns: ['usuario_id']
@@ -153,15 +612,116 @@ export type Database = {
         }
         Relationships: []
       }
+      vinculos_familiares: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          descripcion_parentesco: string | null
+          id: string
+          nino_id: string
+          parentesco: Database['public']['Enums']['parentesco']
+          permisos: Json
+          tipo_vinculo: Database['public']['Enums']['tipo_vinculo']
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          descripcion_parentesco?: string | null
+          id?: string
+          nino_id: string
+          parentesco: Database['public']['Enums']['parentesco']
+          permisos?: Json
+          tipo_vinculo: Database['public']['Enums']['tipo_vinculo']
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          descripcion_parentesco?: string | null
+          id?: string
+          nino_id?: string
+          parentesco?: Database['public']['Enums']['parentesco']
+          permisos?: Json
+          tipo_vinculo?: Database['public']['Enums']['tipo_vinculo']
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'vinculos_familiares_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'vinculos_familiares_usuario_id_fkey'
+            columns: ['usuario_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      _get_medical_key: { Args: never; Returns: string }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
+      es_profe_de_aula: { Args: { p_aula_id: string }; Returns: boolean }
+      es_tutor_de: { Args: { p_nino_id: string }; Returns: boolean }
+      get_info_medica_emergencia: {
+        Args: { p_nino_id: string }
+        Returns: {
+          alergias_graves: string
+          alergias_leves: string
+          medicacion_habitual: string
+          medico_familia: string
+          notas_emergencia: string
+          telefono_emergencia: string
+        }[]
+      }
+      pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
+      set_info_medica_emergencia_cifrada: {
+        Args: {
+          p_alergias_graves: string
+          p_alergias_leves: string
+          p_medicacion_habitual: string
+          p_medico_familia: string
+          p_nino_id: string
+          p_notas_emergencia: string
+          p_telefono_emergencia: string
+        }
+        Returns: string
+      }
+      tiene_permiso_sobre: {
+        Args: { p_nino_id: string; p_permiso: string }
+        Returns: boolean
+      }
       usuario_actual: { Args: never; Returns: string }
     }
     Enums: {
+      audit_accion: 'INSERT' | 'UPDATE' | 'DELETE'
+      consentimiento_tipo: 'terminos' | 'privacidad' | 'imagen' | 'datos_medicos'
+      curso_estado: 'planificado' | 'activo' | 'cerrado'
+      nino_sexo: 'F' | 'M' | 'X'
+      parentesco:
+        | 'madre'
+        | 'padre'
+        | 'abuela'
+        | 'abuelo'
+        | 'tia'
+        | 'tio'
+        | 'hermana'
+        | 'hermano'
+        | 'cuidadora'
+        | 'otro'
+      tipo_vinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado'
       user_role: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
     }
     CompositeTypes: {
@@ -288,6 +848,23 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      audit_accion: ['INSERT', 'UPDATE', 'DELETE'],
+      consentimiento_tipo: ['terminos', 'privacidad', 'imagen', 'datos_medicos'],
+      curso_estado: ['planificado', 'activo', 'cerrado'],
+      nino_sexo: ['F', 'M', 'X'],
+      parentesco: [
+        'madre',
+        'padre',
+        'abuela',
+        'abuelo',
+        'tia',
+        'tio',
+        'hermana',
+        'hermano',
+        'cuidadora',
+        'otro',
+      ],
+      tipo_vinculo: ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'],
       user_role: ['admin', 'profe', 'tutor_legal', 'autorizado'],
     },
   },

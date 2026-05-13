@@ -161,6 +161,286 @@
     "title": "NIDO",
     "subtitle": "Agenda digital per a escoles infantils 0-3 anys",
     "cta_login": "Iniciar sessió",
-    "phase": "Fase 1 — Identitat i accés"
+    "phase": "Fase 2 — Entitats core"
+  },
+  "admin": {
+    "nav": {
+      "aria_label": "Navegació admin",
+      "dashboard": "Panell",
+      "centro": "Centre",
+      "cursos": "Cursos",
+      "aulas": "Aules",
+      "ninos": "Xiquets",
+      "audit": "Audit log",
+      "perfil": "Perfil"
+    },
+    "dashboard": {
+      "title": "Panell d'administració",
+      "stats": {
+        "curso_activo": "Curs actiu",
+        "sin_curso": "Sense curs actiu",
+        "aulas": "Aules",
+        "ninos_activos": "Xiquets actius",
+        "usuarios_activos": "Usuaris actius"
+      }
+    },
+    "centro": {
+      "title": "Dades del centre",
+      "edit": "Editar",
+      "edit_title": "Editar dades del centre",
+      "save": "Guardar",
+      "saving": "Guardant...",
+      "cancel": "Cancel·lar",
+      "updated": "Centre actualitzat",
+      "not_found": "Centre no trobat",
+      "fields": {
+        "nombre": "Nom",
+        "direccion": "Adreça",
+        "telefono": "Telèfon",
+        "email_contacto": "Email de contacte",
+        "web": "Web",
+        "idioma_default": "Idioma per defecte"
+      }
+    },
+    "cursos": {
+      "title": "Cursos acadèmics",
+      "nuevo": "Nou curs",
+      "nuevo_title": "Nou curs acadèmic",
+      "save": "Crear",
+      "saving": "Creant...",
+      "cancel": "Cancel·lar",
+      "created": "Curs creat",
+      "activar": "Marcar com a actiu",
+      "activating": "Activant...",
+      "activated": "Curs marcat com a actiu",
+      "empty": "Encara no hi ha cursos. Crea el primer.",
+      "fields": {
+        "nombre": "Nom",
+        "fechas": "Dates",
+        "estado": "Estat",
+        "acciones": "Accions",
+        "fecha_inicio": "Data d'inici",
+        "fecha_fin": "Data de fi"
+      },
+      "estados": {
+        "planificado": "Planificat",
+        "activo": "Actiu",
+        "cerrado": "Tancat"
+      }
+    },
+    "aulas": {
+      "title": "Aules",
+      "nueva": "Nova aula",
+      "nueva_title": "Nova aula",
+      "save": "Crear",
+      "saving": "Creant...",
+      "cancel": "Cancel·lar",
+      "created": "Aula creada",
+      "empty": "Encara no hi ha aules. Crea la primera.",
+      "sin_curso_activo": "No hi ha curs actiu. Activa'n un abans de crear aules.",
+      "curso_label": "Curs",
+      "fields": {
+        "nombre": "Nom",
+        "cohorte": "Cohorts de naixement",
+        "capacidad": "Capacitat màxima",
+        "descripcion": "Descripció"
+      }
+    },
+    "ninos": {
+      "title": "Xiquets",
+      "nuevo": "Nou xiquet",
+      "ver": "Veure",
+      "empty": "Encara no hi ha xiquets. Registra el primer.",
+      "nuevo_sin_aulas": "Necessites almenys una aula creada abans de registrar un xiquet.",
+      "created": "Xiquet registrat correctament",
+      "wizard": {
+        "title": "Registrar nou xiquet",
+        "step": "Pas",
+        "paso1": "Dades personals",
+        "paso2": "Dades mèdiques",
+        "paso3": "Assignar aula",
+        "next": "Següent",
+        "back": "Anterior",
+        "submit": "Guardar",
+        "saving": "Guardant..."
+      },
+      "tabs": {
+        "personales": "Personals",
+        "medica": "Mèdiques",
+        "vinculos": "Família i autoritzats",
+        "matriculas": "Matrícules"
+      },
+      "medica_vacia": "Sense dades mèdiques registrades.",
+      "vinculos_vacios": "Sense vincles familiars registrats.",
+      "matriculas_vacias": "Sense matrícules en este curs.",
+      "fields": {
+        "nombre": "Nom",
+        "apellidos": "Cognoms",
+        "fecha_nacimiento": "Data de naixement",
+        "sexo": "Sexe",
+        "idioma_principal": "Idioma principal",
+        "nacionalidad": "Nacionalitat",
+        "notas_admin": "Notes internes",
+        "alergias_graves": "Al·lèrgies greus",
+        "notas_emergencia": "Notes d'emergència",
+        "medicacion_habitual": "Medicació habitual",
+        "alergias_leves": "Al·lèrgies lleus",
+        "medico_familia": "Metge de família",
+        "telefono_emergencia": "Telèfon d'emergència",
+        "tipo_vinculo": "Tipus",
+        "parentesco": "Parentiu",
+        "aula": "Aula",
+        "aula_placeholder": "Selecciona una aula",
+        "fecha_alta": "Alta",
+        "fecha_baja": "Baixa",
+        "confirmar_fuera_cohorte": "Confirme matricular encara que l'edat no coincidisca amb la cohort",
+        "acciones": "Accions"
+      }
+    },
+    "audit": {
+      "title": "Audit log",
+      "description": "Últims 100 canvis registrats en este centre.",
+      "empty": "Sense entrades encara.",
+      "fields": {
+        "ts": "Data i hora",
+        "tabla": "Taula",
+        "accion": "Acció",
+        "usuario": "Usuari"
+      }
+    }
+  },
+  "teacher": {
+    "dashboard": {
+      "title": "Les meues aules",
+      "ningun_aula": "Encara no tens aules assignades.",
+      "cohorte_label": "Cohort"
+    },
+    "aula": {
+      "cohorte_label": "Cohort",
+      "ningun_nino": "Encara no hi ha xiquets matriculats en esta aula.",
+      "fields": {
+        "nombre": "Nom",
+        "apellidos": "Cognoms",
+        "fecha_nacimiento": "Data de naixement"
+      }
+    }
+  },
+  "family": {
+    "dashboard": {
+      "title": "Els meus xiquets",
+      "ningun_nino": "Encara no tens xiquets vinculats.",
+      "ver_ficha": "Veure fitxa"
+    },
+    "nino": {
+      "basicos": "Dades bàsiques",
+      "fecha_nacimiento": "Data de naixement",
+      "idioma_principal": "Idioma principal",
+      "nacionalidad": "Nacionalitat",
+      "info_medica": "Dades mèdiques",
+      "alergias_graves": "Al·lèrgies greus",
+      "notas_emergencia": "Notes d'emergència",
+      "medicacion_habitual": "Medicació",
+      "telefono_emergencia": "Telèfon d'emergència"
+    }
+  },
+  "centro": {
+    "validation": {
+      "nombre_corto": "Nom massa curt",
+      "direccion_corta": "Adreça massa curta",
+      "telefono_corto": "Telèfon massa curt",
+      "email_invalido": "Email no vàlid",
+      "web_invalida": "URL no vàlida"
+    },
+    "errors": {
+      "update_failed": "No s'ha pogut actualitzar el centre."
+    }
+  },
+  "curso": {
+    "validation": {
+      "nombre_corto": "Nom massa curt",
+      "fecha_formato": "Format de data invàlid (YYYY-MM-DD)",
+      "fechas_invertidas": "La data d'inici ha de ser anterior a la data de fi"
+    },
+    "errors": {
+      "nombre_duplicado": "Ja existeix un curs amb este nom.",
+      "create_failed": "No s'ha pogut crear el curs.",
+      "activate_failed": "No s'ha pogut marcar com a actiu.",
+      "no_encontrado": "Curs no trobat.",
+      "no_reabrir_cerrado": "Un curs tancat no pot reobrir-se."
+    },
+    "error": {
+      "no_reabrir_cerrado": "Un curs tancat no pot reobrir-se."
+    }
+  },
+  "aula": {
+    "validation": {
+      "nombre_corto": "Nom massa curt",
+      "cohorte_vacia": "Selecciona almenys un any de cohort",
+      "cohorte_demasiados": "Màxim 5 anys per aula",
+      "capacidad_min": "Capacitat mínima 1",
+      "capacidad_max": "Capacitat màxima 40"
+    },
+    "errors": {
+      "nombre_duplicado": "Ja existeix una aula amb este nom en este curs.",
+      "create_failed": "No s'ha pogut crear l'aula.",
+      "no_encontrada": "Aula no trobada."
+    }
+  },
+  "nino": {
+    "validation": {
+      "nombre_requerido": "Nom obligatori",
+      "apellidos_requeridos": "Cognoms obligatoris",
+      "fecha_formato": "Format de data invàlid (YYYY-MM-DD)",
+      "fecha_futura": "La data de naixement no pot ser futura",
+      "aula_invalida": "Selecciona una aula",
+      "fuera_de_cohorte": "L'any de naixement no coincideix amb la cohort. Marca la confirmació per a matricular igualment."
+    },
+    "errors": {
+      "create_failed": "No s'ha pogut registrar el xiquet.",
+      "aula_no_encontrada": "Aula no trobada.",
+      "aula_de_otro_centro": "L'aula seleccionada no pertany al centre.",
+      "no_encontrado": "Xiquet no trobat."
+    }
+  },
+  "matricula": {
+    "validation": {
+      "aula_invalida": "Selecciona una aula",
+      "fecha_formato": "Format de data invàlid (YYYY-MM-DD)"
+    },
+    "errors": {
+      "create_failed": "No s'ha pogut crear la matrícula.",
+      "update_failed": "No s'ha pogut actualitzar la matrícula.",
+      "no_encontrada": "Matrícula no trobada.",
+      "ya_dada_de_baja": "Esta matrícula ja està donada de baixa.",
+      "misma_aula": "El xiquet ja està matriculat en esta aula."
+    }
+  },
+  "vinculo": {
+    "validation": {
+      "usuario_invalido": "Selecciona un usuari vàlid",
+      "descripcion_requerida": "Indica la descripció del parentiu",
+      "usuario_sin_rol": "Este usuari no té rol familiar al centre"
+    },
+    "errors": {
+      "create_failed": "No s'ha pogut crear el vincle.",
+      "duplicado": "Este usuari ja està vinculat a este xiquet."
+    }
+  },
+  "profeAula": {
+    "validation": {
+      "profe_invalido": "Selecciona un profe vàlid",
+      "fecha_formato": "Format de data invàlid (YYYY-MM-DD)"
+    },
+    "errors": {
+      "create_failed": "No s'ha pogut assignar el profe a l'aula.",
+      "ya_principal": "Ja hi ha un profe principal en esta aula.",
+      "usuario_sin_rol_profe": "Este usuari no té rol profe al centre."
+    }
+  },
+  "medico": {
+    "aviso_cifrado": "Estes dades s'emmagatzemen xifrades.",
+    "error": {
+      "cifrado_no_configurado": "La configuració del xifratge de dades mèdiques no està disponible. Contacta amb suport."
+    }
   }
 }

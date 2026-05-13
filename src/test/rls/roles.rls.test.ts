@@ -1,21 +1,29 @@
-import { randomUUID } from 'crypto'
-
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { clientFor, createTestUser, deleteTestUser, serviceClient, type TestUser } from './setup'
+import {
+  clientFor,
+  createTestCentro,
+  createTestUser,
+  deleteTestCentro,
+  deleteTestUser,
+  serviceClient,
+  type TestCentro,
+  type TestUser,
+} from './setup'
 
 describe('RLS — public.roles_usuario', () => {
   let userA: TestUser
   let userB: TestUser
-  const centroId = randomUUID()
+  let centro: TestCentro
 
   beforeAll(async () => {
+    centro = await createTestCentro('Centro Roles RLS')
     userA = await createTestUser({ nombre: 'Roles A' })
     userB = await createTestUser({ nombre: 'Roles B' })
     // Insertamos roles via service para evitar la barrera RLS al setup.
     await serviceClient.from('roles_usuario').insert([
-      { usuario_id: userA.id, centro_id: centroId, rol: 'tutor_legal' },
-      { usuario_id: userB.id, centro_id: centroId, rol: 'profe' },
+      { usuario_id: userA.id, centro_id: centro.id, rol: 'tutor_legal' },
+      { usuario_id: userB.id, centro_id: centro.id, rol: 'profe' },
     ])
   }, 60_000)
 
@@ -26,6 +34,7 @@ describe('RLS — public.roles_usuario', () => {
       .or(`usuario_id.eq.${userA.id},usuario_id.eq.${userB.id}`)
     await deleteTestUser(userA.id)
     await deleteTestUser(userB.id)
+    await deleteTestCentro(centro.id)
   }, 30_000)
 
   it('un usuario puede leer sus propios roles', async () => {

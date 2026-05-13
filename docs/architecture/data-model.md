@@ -1,36 +1,58 @@
 # Modelo de datos — NIDO
 
-35 tablas organizadas en 3 módulos. Detalle completo pendiente de implementación en Fase 2.
+35 tablas organizadas en 3 módulos. Las de Fase 1 (`usuarios`, `roles_usuario`, `invitaciones`, `auth_attempts`) y Fase 2 (las 10 de Core + 2 transversales) están implementadas. El resto llega en Fases 3-10.
 
-## Módulo Core (10 tablas)
+## Módulo Core (10 tablas) — Fase 2
 
-| Tabla                    | Descripción                                        |
-| ------------------------ | -------------------------------------------------- |
-| `centros`                | Escuelas infantiles                                |
-| `cursos_academicos`      | Años escolares                                     |
-| `aulas`                  | Aulas por centro y curso                           |
-| `usuarios`               | Extiende `auth.users` (Supabase Auth)              |
-| `roles_usuario`          | Rol por usuario y centro                           |
-| `ninos`                  | Ficha de cada niño                                 |
-| `info_medica_emergencia` | Alergias, medicación, contactos urgencia (cifrado) |
-| `matriculas`             | Histórico niño ↔ aula                              |
-| `vinculos_familiares`    | Tutores y autorizados con permisos granulares      |
-| `profes_aulas`           | Asignación profe ↔ aula                            |
+| Tabla                    | Descripción                                                                               | Estado    |
+| ------------------------ | ----------------------------------------------------------------------------------------- | --------- |
+| `centros`                | Escuelas infantiles                                                                       | ✅ Fase 2 |
+| `cursos_academicos`      | Años escolares (UNIQUE por centro+nombre, un único `activo` por centro)                   | ✅ Fase 2 |
+| `aulas`                  | Aulas por centro y curso, con `cohorte_anos_nacimiento int[]`                             | ✅ Fase 2 |
+| `usuarios`               | Extiende `auth.users` (Supabase Auth)                                                     | ✅ Fase 1 |
+| `roles_usuario`          | Rol por usuario y centro (UNIQUE por usuario+centro+rol)                                  | ✅ Fase 1 |
+| `ninos`                  | Ficha de cada niño                                                                        | ✅ Fase 2 |
+| `info_medica_emergencia` | Alergias, medicación, contactos urgencia. `alergias_graves` y `notas_emergencia` cifrados | ✅ Fase 2 |
+| `matriculas`             | Histórico niño ↔ aula (un activo por curso, ver ADR-0005)                                 | ✅ Fase 2 |
+| `vinculos_familiares`    | Tutores y autorizados con permisos JSONB granulares                                       | ✅ Fase 2 |
+| `profes_aulas`           | Asignación profe ↔ aula (un único principal activo por aula)                              | ✅ Fase 2 |
 
-## Módulo Operativo (20 tablas)
+## Módulo Operativo (20 tablas) — Fases 3-10
 
 Agendas diarias, comidas, biberones, sueños, deposiciones, asistencias, ausencias, mensajería, recordatorios, eventos, autorizaciones, informes, publicaciones y media.
 
 ## Módulo Transversal (5 tablas)
 
-`audit_log`, `notificaciones_push`, `push_subscriptions`, `invitaciones`, `consentimientos`.
+| Tabla                                                       | Estado    |
+| ----------------------------------------------------------- | --------- |
+| `audit_log` (append-only, triggers automáticos en 6 tablas) | ✅ Fase 2 |
+| `consentimientos` (versionados, append-only)                | ✅ Fase 2 |
+| `invitaciones` (token + expiración + binding niño/aula)     | ✅ Fase 1 |
+| `auth_attempts` (rate limiting login)                       | ✅ Fase 1 |
+| `notificaciones_push` y `push_subscriptions`                | ⏳ Fase 5 |
 
 ## Reglas obligatorias
 
 - UUIDs en todas las PKs
 - Soft delete (`deleted_at`) en entidades sensibles
 - `centro_id` redundante en tablas operativas (simplifica RLS)
-- Triggers Postgres para audit log automático
-- `audit_log` append-only (RLS bloquea UPDATE/DELETE)
+- Triggers Postgres para audit log automático en: `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`
+- `audit_log` append-only (RLS bloquea UPDATE/DELETE a todos los roles)
 - Timestamps siempre `timestamptz`
-- Cifrado pgcrypto en `info_medica_emergencia`
+- Cifrado pgcrypto en `info_medica_emergencia.alergias_graves` y `notas_emergencia` (ver ADR-0004)
+- ENUMs en columnas con valores fijos: `user_role` (Fase 1), `curso_estado`, `nino_sexo`, `tipo_vinculo`, `parentesco`, `audit_accion`, `consentimiento_tipo` (Fase 2)
+
+## Foreign keys diferidos cerrados en Fase 2
+
+- `roles_usuario.centro_id` → `centros.id` ON DELETE RESTRICT
+- `invitaciones.centro_id` → `centros.id` ON DELETE CASCADE
+- `invitaciones.nino_id` → `ninos.id` ON DELETE CASCADE
+- `invitaciones.aula_id` → `aulas.id` ON DELETE CASCADE
+
+## Constraints estructurales relevantes
+
+- `aulas.cohorte_anos_nacimiento`: longitud 1-5, valores entre 2020 y 2030.
+- `cursos_academicos`: índice parcial único `(centro_id) WHERE estado='activo'` garantiza un único curso activo por centro.
+- `matriculas`: índice parcial único `(nino_id, curso_academico_id) WHERE fecha_baja IS NULL` garantiza una matrícula activa por curso.
+- `profes_aulas`: índice parcial único `(aula_id) WHERE es_profe_principal AND fecha_fin IS NULL` garantiza un único profe principal activo por aula.
+- `info_medica_emergencia.nino_id`: UNIQUE + ON DELETE RESTRICT (un solo registro médico por niño, borrado físico bloqueado — se usa soft delete del niño).
