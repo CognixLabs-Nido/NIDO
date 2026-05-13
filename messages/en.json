@@ -14,21 +14,153 @@
     "previous": "Previous",
     "close": "Close",
     "search": "Search",
-    "noResults": "No results"
-  },
-  "auth": {
-    "signIn": "Sign in",
-    "signOut": "Sign out",
-    "email": "Email",
-    "password": "Password",
-    "forgotPassword": "Forgot your password?",
-    "welcomeBack": "Welcome back"
+    "noResults": "No results",
+    "submitting": "Submitting..."
   },
   "nav": {
     "home": "Home",
     "agenda": "Agenda",
     "messages": "Messages",
     "children": "Children",
-    "settings": "Settings"
+    "settings": "Settings",
+    "profile": "Profile"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Use your email and password.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "forgot": "Forgot your password?",
+      "errors": {
+        "invalid_credentials": "Incorrect credentials.",
+        "too_many_attempts": "Too many attempts. Please wait a few minutes."
+      }
+    },
+    "forgot": {
+      "title": "Recover password",
+      "description": "We will email you a reset link if the address exists in NIDO.",
+      "submit": "Send link",
+      "success": "If the email exists, you will receive a link shortly.",
+      "back_to_login": "Back to sign in"
+    },
+    "reset": {
+      "title": "New password",
+      "new_password": "New password",
+      "confirm_password": "Confirm password",
+      "submit": "Update password",
+      "success": "Password updated. Please sign in.",
+      "errors": {
+        "update_failed": "We could not update your password."
+      }
+    },
+    "invitation": {
+      "title": "Accept your NIDO invitation",
+      "subtitle_new": "Complete your details to create your account.",
+      "subtitle_existing": "This invitation belongs to an existing account.",
+      "existing_email_notice": "We sent an email to {email}. Sign in to NIDO and confirm the link from your profile.",
+      "go_to_login": "Go to sign in",
+      "forgot_password_hint": "Forgot your password? Recover it here.",
+      "fields": {
+        "name": "Full name",
+        "language": "Preferred language",
+        "terms": "I have read and accept the Terms of Service.",
+        "privacy": "I have read and accept the Privacy Policy."
+      },
+      "submit": "Accept and enter",
+      "invalid": {
+        "title": "This link is no longer valid",
+        "description": "Invitation links expire after 7 days or can only be used once. If you still need access, ask the centre administrator to send a new invitation.",
+        "contact": "Email the administrator",
+        "go_to_login": "I already have an account — sign in"
+      },
+      "pending": {
+        "banner": "You have {count, plural, =1 {1 pending link} other {# pending links}}.",
+        "review": "Review",
+        "title": "Pending invitations",
+        "empty": "You have no pending invitations.",
+        "accept": "Accept",
+        "reject": "Reject",
+        "accepted_toast": "Link confirmed.",
+        "rejected_toast": "Invitation rejected."
+      },
+      "errors": {
+        "invalid": "The invitation is not valid.",
+        "expired": "The invitation has expired.",
+        "unauthenticated": "You must sign in first.",
+        "forbidden": "You do not have permission for this operation.",
+        "email_mismatch": "The email does not match the invitation.",
+        "email_already_registered": "This email already has an account in NIDO.",
+        "create_failed": "We could not create the account.",
+        "role_failed": "We could not assign the role.",
+        "update_failed": "We could not update the invitation.",
+        "insert_failed": "We could not record the invitation.",
+        "lookup_failed": "We could not look up the invitation."
+      }
+    },
+    "select_role": {
+      "title": "Select your role",
+      "subtitle": "You have access from several profiles. Pick one.",
+      "roles": {
+        "admin": "Administrator",
+        "profe": "Teacher",
+        "tutor_legal": "Legal guardian",
+        "autorizado": "Authorised person"
+      }
+    },
+    "forbidden": {
+      "title": "Access denied",
+      "description": "Your role does not allow access to this section.",
+      "back_to_home": "Back to home"
+    },
+    "profile": {
+      "title": "My profile",
+      "name": "Name",
+      "email": "Email",
+      "language": "Language"
+    },
+    "dashboard": {
+      "admin_placeholder": "Administrator dashboard (Phase 2)",
+      "teacher_placeholder": "Teacher dashboard (Phase 2)",
+      "family_placeholder": "Family dashboard (Phase 2)"
+    },
+    "validation": {
+      "invalid": "Invalid data.",
+      "email_invalid": "Invalid email.",
+      "password_required": "Enter your password.",
+      "passwords_do_not_match": "Passwords do not match.",
+      "terms_required": "You must accept the Terms.",
+      "privacy_required": "You must accept the Privacy Policy.",
+      "nino_id_required": "Pick a child for this role.",
+      "aula_id_required": "Pick a classroom for this role.",
+      "password": {
+        "too_short": "At least 12 characters.",
+        "uppercase_required": "Must contain at least one uppercase letter.",
+        "digit_required": "Must contain at least one digit.",
+        "symbol_required": "Must contain at least one symbol."
+      }
+    },
+    "common": {
+      "sign_out": "Sign out",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy"
+    }
+  },
+  "legal": {
+    "privacy": {
+      "title": "Privacy Policy",
+      "placeholder": "Legal content pending. Will be published before launch (Phase 11)."
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "placeholder": "Legal content pending. Will be published before launch (Phase 11)."
+    }
+  },
+  "home": {
+    "title": "NIDO",
+    "subtitle": "Digital agenda for 0–3 nurseries",
+    "cta_login": "Sign in",
+    "phase": "Phase 1 — Identity and access"
   }
 }

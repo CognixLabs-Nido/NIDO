@@ -14,21 +14,153 @@
     "previous": "Anterior",
     "close": "Cerrar",
     "search": "Buscar",
-    "noResults": "Sin resultados"
-  },
-  "auth": {
-    "signIn": "Iniciar sesión",
-    "signOut": "Cerrar sesión",
-    "email": "Correo electrónico",
-    "password": "Contraseña",
-    "forgotPassword": "¿Olvidaste tu contraseña?",
-    "welcomeBack": "Bienvenido de nuevo"
+    "noResults": "Sin resultados",
+    "submitting": "Enviando..."
   },
   "nav": {
     "home": "Inicio",
     "agenda": "Agenda",
     "messages": "Mensajes",
     "children": "Niños",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "profile": "Perfil"
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sesión",
+      "subtitle": "Accede con tu correo y contraseña.",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "submit": "Entrar",
+      "forgot": "¿Has olvidado tu contraseña?",
+      "errors": {
+        "invalid_credentials": "Credenciales incorrectas.",
+        "too_many_attempts": "Demasiados intentos. Espera unos minutos antes de volver a intentarlo."
+      }
+    },
+    "forgot": {
+      "title": "Recuperar contraseña",
+      "description": "Te enviaremos un enlace para crear una nueva si el correo existe en NIDO.",
+      "submit": "Enviar enlace",
+      "success": "Si el correo existe, recibirás un enlace en breve.",
+      "back_to_login": "Volver al inicio de sesión"
+    },
+    "reset": {
+      "title": "Nueva contraseña",
+      "new_password": "Nueva contraseña",
+      "confirm_password": "Confirmar contraseña",
+      "submit": "Actualizar contraseña",
+      "success": "Contraseña actualizada. Inicia sesión.",
+      "errors": {
+        "update_failed": "No se ha podido actualizar la contraseña."
+      }
+    },
+    "invitation": {
+      "title": "Acepta tu invitación a NIDO",
+      "subtitle_new": "Completa tus datos para crear tu cuenta.",
+      "subtitle_existing": "Esta invitación corresponde a una cuenta existente.",
+      "existing_email_notice": "Te hemos enviado un email a {email}. Inicia sesión en NIDO y confirma el vínculo desde tu perfil.",
+      "go_to_login": "Ir a iniciar sesión",
+      "forgot_password_hint": "¿Has olvidado tu contraseña? Recupérala aquí.",
+      "fields": {
+        "name": "Nombre completo",
+        "language": "Idioma preferido",
+        "terms": "He leído y acepto los Términos y condiciones.",
+        "privacy": "He leído y acepto la Política de privacidad."
+      },
+      "submit": "Aceptar y entrar",
+      "invalid": {
+        "title": "Este enlace ya no es válido",
+        "description": "Los enlaces de invitación caducan a los 7 días o solo se pueden usar una vez. Si necesitas acceso, pide al administrador de tu centro que te envíe una nueva invitación.",
+        "contact": "Escribir al administrador",
+        "go_to_login": "Ya tengo cuenta — iniciar sesión"
+      },
+      "pending": {
+        "banner": "Tienes {count, plural, =1 {1 vínculo pendiente} other {# vínculos pendientes}}.",
+        "review": "Revisar",
+        "title": "Invitaciones pendientes",
+        "empty": "No tienes invitaciones pendientes.",
+        "accept": "Aceptar",
+        "reject": "Rechazar",
+        "accepted_toast": "Vínculo confirmado.",
+        "rejected_toast": "Invitación rechazada."
+      },
+      "errors": {
+        "invalid": "La invitación no es válida.",
+        "expired": "La invitación ha caducado.",
+        "unauthenticated": "Debes iniciar sesión.",
+        "forbidden": "No tienes permiso para esta operación.",
+        "email_mismatch": "El correo no coincide con la invitación.",
+        "email_already_registered": "Este correo ya tiene cuenta en NIDO.",
+        "create_failed": "No se pudo crear la cuenta.",
+        "role_failed": "No se pudo asignar el rol.",
+        "update_failed": "No se pudo actualizar la invitación.",
+        "insert_failed": "No se pudo registrar la invitación.",
+        "lookup_failed": "No se pudo localizar la invitación."
+      }
+    },
+    "select_role": {
+      "title": "Selecciona tu rol",
+      "subtitle": "Tienes acceso desde varios perfiles. Elige con cuál entrar.",
+      "roles": {
+        "admin": "Administrador",
+        "profe": "Profe",
+        "tutor_legal": "Tutor legal",
+        "autorizado": "Persona autorizada"
+      }
+    },
+    "forbidden": {
+      "title": "No tienes acceso",
+      "description": "Tu rol no permite acceder a esta sección.",
+      "back_to_home": "Volver al inicio"
+    },
+    "profile": {
+      "title": "Mi perfil",
+      "name": "Nombre",
+      "email": "Correo",
+      "language": "Idioma"
+    },
+    "dashboard": {
+      "admin_placeholder": "Dashboard administrador (Fase 2)",
+      "teacher_placeholder": "Dashboard profe (Fase 2)",
+      "family_placeholder": "Dashboard familia (Fase 2)"
+    },
+    "validation": {
+      "invalid": "Datos no válidos.",
+      "email_invalid": "Correo no válido.",
+      "password_required": "Introduce tu contraseña.",
+      "passwords_do_not_match": "Las contraseñas no coinciden.",
+      "terms_required": "Debes aceptar los Términos.",
+      "privacy_required": "Debes aceptar la Política de privacidad.",
+      "nino_id_required": "Selecciona un niño para este rol.",
+      "aula_id_required": "Selecciona un aula para este rol.",
+      "password": {
+        "too_short": "Mínimo 12 caracteres.",
+        "uppercase_required": "Debe contener al menos una mayúscula.",
+        "digit_required": "Debe contener al menos un número.",
+        "symbol_required": "Debe contener al menos un símbolo."
+      }
+    },
+    "common": {
+      "sign_out": "Cerrar sesión",
+      "terms": "Términos y condiciones",
+      "privacy": "Política de privacidad"
+    }
+  },
+  "legal": {
+    "privacy": {
+      "title": "Política de privacidad",
+      "placeholder": "Contenido legal pendiente. Se publicará antes del lanzamiento (Fase 11)."
+    },
+    "terms": {
+      "title": "Términos y condiciones",
+      "placeholder": "Contenido legal pendiente. Se publicará antes del lanzamiento (Fase 11)."
+    }
+  },
+  "home": {
+    "title": "NIDO",
+    "subtitle": "Agenda digital para escuelas infantiles 0-3 años",
+    "cta_login": "Iniciar sesión",
+    "phase": "Fase 1 — Identidad y acceso"
   }
 }
