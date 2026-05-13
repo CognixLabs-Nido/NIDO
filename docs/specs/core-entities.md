@@ -225,9 +225,23 @@ Además, esta fase materializa el contexto operativo real de ANAIA, la primera (
 - Descifra `alergias_graves` y `notas_emergencia` con `pgp_sym_decrypt(bytea, key)`.
 - Devuelve TABLE con las columnas en texto plano.
 
-**Clave:** `current_setting('app.medical_encryption_key', false)` — variable de sesión Postgres persistida vía `ALTER DATABASE postgres SET app.medical_encryption_key = '<32-bytes-base64>'`. La clave se configura ANTES de aplicar la migración. Si no existe, las funciones fallan con un error técnico (Postgres devuelve `unrecognized configuration parameter`) — el server action captura y devuelve error i18n `medico.error.cifrado_no_configurado`.
+**Clave:** se almacena en **Supabase Vault** como secreto con `name = 'medical_encryption_key'`. Las funciones de cifrado la leen vía:
 
-**Plan de rotación** (no se ejecuta en Fase 2, documentado en ADR-0004): función `public.rotate_medical_key(p_old_key text, p_new_key text)` que itera filas, descifra con vieja, cifra con nueva en una transacción; tras éxito, el admin ejecuta `ALTER DATABASE postgres SET app.medical_encryption_key = '<nueva>'`.
+```sql
+SELECT decrypted_secret INTO clave
+FROM vault.decrypted_secrets
+WHERE name = 'medical_encryption_key';
+
+IF clave IS NULL THEN
+  RAISE EXCEPTION 'Clave de cifrado médico no configurada en Vault';
+END IF;
+```
+
+Razón (documentada en ADR-0004): Supabase managed **no permite `ALTER DATABASE postgres SET ...`** desde la migración (rol sin privilegios), así que la opción `current_setting('app.medical_encryption_key')` queda descartada. Vault es la solución nativa de Supabase para secretos a nivel BD, con cifrado en reposo y rotación primitiva.
+
+La clave se configura **manualmente por el responsable** en Supabase Dashboard → Vault antes de aplicar esta migración. Si no existe cuando se invocan las funciones, fallan con la excepción explícita arriba, que el server action captura y devuelve como error i18n `medico.error.cifrado_no_configurado`.
+
+**Plan de rotación** (no se ejecuta en Fase 2, documentado en ADR-0004): función `public.rotate_medical_key(p_new_key text)` que (1) lee la clave actual de Vault, (2) re-cifra todas las filas con la nueva, (3) tras éxito, el admin actualiza el secreto `medical_encryption_key` en Vault desde el Dashboard.
 
 ### B16 — Audit log automático
 
@@ -943,7 +957,7 @@ Traducciones equivalentes para `en` y `va`.
 - [ ] `docs/journey/progress.md` con entrada de Fase 2.
 - [ ] Deploy a Vercel verde tras merge.
 - [ ] La fila de ANAIA en `centros` tiene el UUID preservado de Fase 1 (FK de `roles_usuario.centro_id → centros.id` no se viola).
-- [ ] `app.medical_encryption_key` configurada en Supabase y verificada con un test de roundtrip cifrado/descifrado.
+- [ ] Secreto `medical_encryption_key` configurado en Supabase Vault y verificado con un test de roundtrip cifrado/descifrado.
 
 ## Decisiones técnicas relevantes
 
@@ -951,7 +965,7 @@ Traducciones equivalentes para `en` y `va`.
 - **Cifrado pgcrypto a nivel columna en `info_medica_emergencia`** → ADR-0004 (incluye plan de rotación).
 - **`matriculas` como tabla histórica vs FK directa niño→aula** → ADR-0005.
 - **Permisos granulares JSONB en `vinculos_familiares` desde Ola 1** → ADR-0006.
-- **Clave de cifrado vía variable de sesión Postgres (`current_setting`)** vs Supabase Vault: elegimos `current_setting` por simplicidad y compatibilidad con Supabase Cloud sin add-ons; Vault podría introducirse en Ola 2 si la rotación se vuelve operacionalmente relevante.
+- **Clave de cifrado en Supabase Vault** (`vault.decrypted_secrets`) vs variable de sesión Postgres (`current_setting`) vs hardcode: elegimos Vault porque Supabase managed no permite `ALTER DATABASE postgres SET ...` desde la migración, lo que descarta `current_setting`. Vault es la solución nativa: cifrado en reposo, rotación primitiva y acceso vía SQL desde funciones `SECURITY DEFINER`. Decisión completa en ADR-0004.
 - **Audit log derivando `centro_id` por CASE en función trigger** vs almacenar denormalizado en todas las tablas: hacemos el lookup en el trigger porque la columna `centro_id` ya está disponible en las tablas auditadas o es derivable con un JOIN simple a `ninos`/`roles_usuario`.
 
 ## Referencias
