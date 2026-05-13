@@ -82,8 +82,10 @@ describe('Cifrado pgcrypto en info_medica_emergencia — roundtrip via funciones
 
     // Estado inicial poblado en el primer test. Llamamos al setter con todos
     // los parámetros como NULL salvo medicacion_habitual: debería actualizar
-    // SOLO medicacion_habitual y preservar el resto.
-    const { error: setError } = await client.rpc('set_info_medica_emergencia_cifrada', {
+    // SOLO medicacion_habitual y preservar el resto. El tipo generado por
+    // Supabase declara los args como string no nullable, pero la función SQL
+    // acepta NULL como sentinela "no tocar este campo" — cast a unknown.
+    const rpcArgs = {
       p_nino_id: nino.id,
       p_alergias_graves: null,
       p_notas_emergencia: null,
@@ -91,7 +93,16 @@ describe('Cifrado pgcrypto en info_medica_emergencia — roundtrip via funciones
       p_alergias_leves: null,
       p_medico_familia: null,
       p_telefono_emergencia: null,
-    })
+    } as unknown as {
+      p_nino_id: string
+      p_alergias_graves: string
+      p_notas_emergencia: string
+      p_medicacion_habitual: string
+      p_alergias_leves: string
+      p_medico_familia: string
+      p_telefono_emergencia: string
+    }
+    const { error: setError } = await client.rpc('set_info_medica_emergencia_cifrada', rpcArgs)
     expect(setError).toBeNull()
 
     const { data, error } = await client.rpc('get_info_medica_emergencia', {
