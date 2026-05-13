@@ -14,21 +14,153 @@
     "previous": "Anterior",
     "close": "Tancar",
     "search": "Cercar",
-    "noResults": "Sense resultats"
-  },
-  "auth": {
-    "signIn": "Iniciar sessió",
-    "signOut": "Tancar sessió",
-    "email": "Correu electrònic",
-    "password": "Contrasenya",
-    "forgotPassword": "Has oblidat la contrasenya?",
-    "welcomeBack": "Benvingut de nou"
+    "noResults": "Sense resultats",
+    "submitting": "Enviant..."
   },
   "nav": {
     "home": "Inici",
     "agenda": "Agenda",
     "messages": "Missatges",
     "children": "Xiquets",
-    "settings": "Ajustos"
+    "settings": "Ajustos",
+    "profile": "Perfil"
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sessió",
+      "subtitle": "Accedeix amb el teu correu i contrasenya.",
+      "email": "Correu electrònic",
+      "password": "Contrasenya",
+      "submit": "Entrar",
+      "forgot": "Has oblidat la contrasenya?",
+      "errors": {
+        "invalid_credentials": "Credencials incorrectes.",
+        "too_many_attempts": "Massa intents. Espera uns minuts abans de tornar a provar."
+      }
+    },
+    "forgot": {
+      "title": "Recuperar contrasenya",
+      "description": "T'enviarem un enllaç per crear-ne una de nova si el correu existeix a NIDO.",
+      "submit": "Enviar enllaç",
+      "success": "Si el correu existeix, rebràs un enllaç en breu.",
+      "back_to_login": "Tornar a l'inici de sessió"
+    },
+    "reset": {
+      "title": "Nova contrasenya",
+      "new_password": "Nova contrasenya",
+      "confirm_password": "Confirmar contrasenya",
+      "submit": "Actualitzar contrasenya",
+      "success": "Contrasenya actualitzada. Inicia sessió.",
+      "errors": {
+        "update_failed": "No s'ha pogut actualitzar la contrasenya."
+      }
+    },
+    "invitation": {
+      "title": "Accepta la teua invitació a NIDO",
+      "subtitle_new": "Completa les teues dades per a crear el teu compte.",
+      "subtitle_existing": "Aquesta invitació correspon a un compte existent.",
+      "existing_email_notice": "T'hem enviat un correu a {email}. Inicia sessió a NIDO i confirma el vincle des del teu perfil.",
+      "go_to_login": "Anar a iniciar sessió",
+      "forgot_password_hint": "Has oblidat la contrasenya? Recupera-la ací.",
+      "fields": {
+        "name": "Nom complet",
+        "language": "Idioma preferit",
+        "terms": "He llegit i accepte els Termes i condicions.",
+        "privacy": "He llegit i accepte la Política de privacitat."
+      },
+      "submit": "Acceptar i entrar",
+      "invalid": {
+        "title": "Aquest enllaç ja no és vàlid",
+        "description": "Els enllaços d'invitació caduquen als 7 dies o només es poden usar una vegada. Si necessites accés, demana al teu administrador que en done una de nova.",
+        "contact": "Escriure a l'administrador",
+        "go_to_login": "Ja tinc compte — iniciar sessió"
+      },
+      "pending": {
+        "banner": "Tens {count, plural, =1 {1 vincle pendent} other {# vincles pendents}}.",
+        "review": "Revisar",
+        "title": "Invitacions pendents",
+        "empty": "No tens invitacions pendents.",
+        "accept": "Acceptar",
+        "reject": "Rebutjar",
+        "accepted_toast": "Vincle confirmat.",
+        "rejected_toast": "Invitació rebutjada."
+      },
+      "errors": {
+        "invalid": "La invitació no és vàlida.",
+        "expired": "La invitació ha caducat.",
+        "unauthenticated": "Has d'iniciar sessió.",
+        "forbidden": "No tens permís per a aquesta operació.",
+        "email_mismatch": "El correu no coincideix amb la invitació.",
+        "email_already_registered": "Aquest correu ja té compte a NIDO.",
+        "create_failed": "No s'ha pogut crear el compte.",
+        "role_failed": "No s'ha pogut assignar el rol.",
+        "update_failed": "No s'ha pogut actualitzar la invitació.",
+        "insert_failed": "No s'ha pogut registrar la invitació.",
+        "lookup_failed": "No s'ha pogut localitzar la invitació."
+      }
+    },
+    "select_role": {
+      "title": "Selecciona el teu rol",
+      "subtitle": "Tens accés des de diversos perfils. Tria amb quin entrar.",
+      "roles": {
+        "admin": "Administrador",
+        "profe": "Profe",
+        "tutor_legal": "Tutor legal",
+        "autorizado": "Persona autoritzada"
+      }
+    },
+    "forbidden": {
+      "title": "No tens accés",
+      "description": "El teu rol no permet accedir a aquesta secció.",
+      "back_to_home": "Tornar a l'inici"
+    },
+    "profile": {
+      "title": "El meu perfil",
+      "name": "Nom",
+      "email": "Correu",
+      "language": "Idioma"
+    },
+    "dashboard": {
+      "admin_placeholder": "Tauler administrador (Fase 2)",
+      "teacher_placeholder": "Tauler profe (Fase 2)",
+      "family_placeholder": "Tauler família (Fase 2)"
+    },
+    "validation": {
+      "invalid": "Dades no vàlides.",
+      "email_invalid": "Correu no vàlid.",
+      "password_required": "Introdueix la teua contrasenya.",
+      "passwords_do_not_match": "Les contrasenyes no coincideixen.",
+      "terms_required": "Has d'acceptar els Termes.",
+      "privacy_required": "Has d'acceptar la Política de privacitat.",
+      "nino_id_required": "Tria un xiquet per a aquest rol.",
+      "aula_id_required": "Tria una aula per a aquest rol.",
+      "password": {
+        "too_short": "Mínim 12 caràcters.",
+        "uppercase_required": "Ha de contindre almenys una majúscula.",
+        "digit_required": "Ha de contindre almenys un número.",
+        "symbol_required": "Ha de contindre almenys un símbol."
+      }
+    },
+    "common": {
+      "sign_out": "Tancar sessió",
+      "terms": "Termes i condicions",
+      "privacy": "Política de privacitat"
+    }
+  },
+  "legal": {
+    "privacy": {
+      "title": "Política de privacitat",
+      "placeholder": "Contingut legal pendent. Es publicarà abans del llançament (Fase 11)."
+    },
+    "terms": {
+      "title": "Termes i condicions",
+      "placeholder": "Contingut legal pendent. Es publicarà abans del llançament (Fase 11)."
+    }
+  },
+  "home": {
+    "title": "NIDO",
+    "subtitle": "Agenda digital per a escoles infantils 0-3 anys",
+    "cta_login": "Iniciar sessió",
+    "phase": "Fase 1 — Identitat i accés"
   }
 }
