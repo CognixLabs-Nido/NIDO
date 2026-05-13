@@ -4,9 +4,9 @@
 
 | #   | Fase                                                | Estado       |
 | --- | --------------------------------------------------- | ------------ |
-| 0   | Fundaciones (Next.js, Supabase, tooling, CI/CD)     | ✅ En curso  |
-| 1   | Identidad y acceso (auth, invitaciones, roles)      | ⏳ Pendiente |
-| 2   | Entidades core + RLS + audit log                    | ⏳ Pendiente |
+| 0   | Fundaciones (Next.js, Supabase, tooling, CI/CD)     | ✅ Cerrada   |
+| 1   | Identidad y acceso (auth, invitaciones, roles)      | ✅ Cerrada   |
+| 2   | Entidades core + RLS + audit log                    | ✅ Cerrada   |
 | 3   | Agenda diaria + bienestar (lactancia D, check-in B) | ⏳ Pendiente |
 | 4   | Asistencia y ausencias                              | ⏳ Pendiente |
 | 5   | Mensajería profe ↔ familia                          | ⏳ Pendiente |
