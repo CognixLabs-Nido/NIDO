@@ -211,7 +211,11 @@
   --popover: hsl(0 0% 100%);
   --popover-foreground: var(--neutral-900);
 
-  --primary: var(--primary-500);
+  /* Semántico = primary-600 para garantizar contraste WCAG AA (≥4.5:1)
+     sobre fondos claros en botones y links. primary-500 sigue disponible
+     vía --primary-500 / bg-primary-500 cuando se busque el azul vibrante
+     puro (badges, decoraciones). */
+  --primary: var(--primary-600);
   --primary-foreground: hsl(0 0% 100%);
   --secondary: var(--neutral-100);
   --secondary-foreground: var(--neutral-800);
@@ -235,7 +239,7 @@
 
   --sidebar: hsl(0 0% 100%);
   --sidebar-foreground: var(--neutral-800);
-  --sidebar-primary: var(--primary-500);
+  --sidebar-primary: var(--primary-600);
   --sidebar-primary-foreground: hsl(0 0% 100%);
   --sidebar-accent: var(--accent-warm-100);
   --sidebar-accent-foreground: var(--accent-warm-800);

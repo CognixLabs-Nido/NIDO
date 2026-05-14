@@ -83,7 +83,12 @@ export function LoginForm({ locale }: LoginFormProps) {
             {t(serverErrorKey)}
           </p>
         )}
-        <Button type="submit" disabled={pending} aria-busy={pending} className="w-full">
+        <Button
+          type="submit"
+          disabled={pending}
+          aria-busy={pending}
+          className="h-11 w-full text-base"
+        >
           {pending ? t('common.submitting') : t('auth.login.submit')}
         </Button>
       </form>
