@@ -320,9 +320,16 @@
     }
   },
   "teacher": {
+    "nav": {
+      "aria_label": "Navegació profe",
+      "dashboard": "Inici",
+      "perfil": "Perfil"
+    },
     "dashboard": {
       "title": "Les meues aules",
+      "subtitle": "Estes són les aules al teu càrrec.",
       "ningun_aula": "Encara no tens aules assignades.",
+      "ningun_aula_descripcion": "Quan un administrador t'assigne una aula, apareixerà ací.",
       "cohorte_label": "Cohort"
     },
     "aula": {
@@ -336,9 +343,16 @@
     }
   },
   "family": {
+    "nav": {
+      "aria_label": "Navegació família",
+      "dashboard": "Inici",
+      "perfil": "Perfil"
+    },
     "dashboard": {
       "title": "Els meus xiquets",
+      "subtitle": "Els teus xiquets i les seues aules en NIDO.",
       "ningun_nino": "Encara no tens xiquets vinculats.",
+      "ningun_nino_descripcion": "Quan un administrador et vincule a un xiquet, apareixerà ací.",
       "ver_ficha": "Veure fitxa"
     },
     "nino": {
