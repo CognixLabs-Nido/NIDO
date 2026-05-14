@@ -344,26 +344,37 @@ function Paso3({
       <FormField
         control={form.control}
         name="aula_id"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{tNino('fields.aula')}</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={tNino('fields.aula_placeholder')} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {aulas.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.nombre} ({a.cohorte_anos_nacimiento.join(', ')})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field }) => {
+          // Mismo patrón que el select de sexo: el prop `items` permite a
+          // base-ui resolver el label del aula seleccionada en el trigger.
+          // Sin esto, el SelectValue mostraba el UUID literal tras la
+          // selección (el dropdown sí mostraba "Farm big" porque renderizaba
+          // los SelectItem; el trigger renderiza el value crudo por defecto).
+          const aulaItems = aulas.map((a) => ({
+            value: a.id,
+            label: `${a.nombre} (${a.cohorte_anos_nacimiento.join(', ')})`,
+          }))
+          return (
+            <FormItem>
+              <FormLabel>{tNino('fields.aula')}</FormLabel>
+              <Select items={aulaItems} value={field.value} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={tNino('fields.aula_placeholder')} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {aulaItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )
+        }}
       />
       <FormField
         control={form.control}
