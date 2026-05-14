@@ -29,9 +29,11 @@ jobs:
 
       - name: Debug — which Supabase secrets reached the runner
         run: |
-          for v in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY; do
-            if [ -z "${!v}" ]; then echo "$v=MISSING"; else echo "$v=present (len=${#!v})"; fi
-          done
+          set +e
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then echo "NEXT_PUBLIC_SUPABASE_URL=MISSING"; else echo "NEXT_PUBLIC_SUPABASE_URL=present (len=${#NEXT_PUBLIC_SUPABASE_URL})"; fi
+          if [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=MISSING"; else echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=present (len=${#NEXT_PUBLIC_SUPABASE_ANON_KEY})"; fi
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then echo "SUPABASE_SERVICE_ROLE_KEY=MISSING"; else echo "SUPABASE_SERVICE_ROLE_KEY=present (len=${#SUPABASE_SERVICE_ROLE_KEY})"; fi
+          exit 0
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
