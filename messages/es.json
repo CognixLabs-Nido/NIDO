@@ -285,6 +285,7 @@
         "apellidos": "Apellidos",
         "fecha_nacimiento": "Fecha de nacimiento",
         "sexo": "Sexo",
+        "sexo_placeholder": "Seleccionar...",
         "idioma_principal": "Idioma principal",
         "nacionalidad": "Nacionalidad",
         "notas_admin": "Notas internas",

@@ -285,6 +285,7 @@
         "apellidos": "Surname",
         "fecha_nacimiento": "Date of birth",
         "sexo": "Sex",
+        "sexo_placeholder": "Select...",
         "idioma_principal": "Main language",
         "nacionalidad": "Nationality",
         "notas_admin": "Admin notes",
