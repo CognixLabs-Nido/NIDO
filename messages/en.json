@@ -176,6 +176,8 @@
     },
     "dashboard": {
       "title": "Admin dashboard",
+      "greeting": "Hello, {nombre}",
+      "subtitle": "A quick look at your centre today.",
       "stats": {
         "curso_activo": "Active year",
         "sin_curso": "No active year",

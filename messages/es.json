@@ -176,6 +176,8 @@
     },
     "dashboard": {
       "title": "Panel de administración",
+      "greeting": "Hola, {nombre}",
+      "subtitle": "Una vista rápida de tu centro hoy.",
       "stats": {
         "curso_activo": "Curso activo",
         "sin_curso": "Sin curso activo",

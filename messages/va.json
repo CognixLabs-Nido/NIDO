@@ -176,6 +176,8 @@
     },
     "dashboard": {
       "title": "Panell d'administració",
+      "greeting": "Hola, {nombre}",
+      "subtitle": "Una mirada ràpida al teu centre hui.",
       "stats": {
         "curso_activo": "Curs actiu",
         "sin_curso": "Sense curs actiu",
