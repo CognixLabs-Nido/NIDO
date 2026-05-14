@@ -105,3 +105,43 @@
 - Ventana de edición agenda diaria: profe edita hasta 06:00 del día siguiente; admin con audit log forzado para excepciones.
 - Helper RLS `public.dentro_de_ventana_edicion(fecha date)`.
 - UI por aula con vista por niño + form rápido de check-in / check-out / comidas / siesta.
+
+---
+
+## Fase 2.5 — Sistema de diseño visual
+
+**Fecha:** 2026-05-14
+**Estado:** En curso (Checkpoint B aprobado, pendiente Checkpoint C y PR final).
+
+### Completado
+
+- Spec `docs/specs/design-system.md` con paleta (primary/accent-warm/accent-yellow/success/coral/info/neutral), tipografía, radios, sombras y plan de pantalla por pantalla. Criterio explícito para `destructive` soft vs `destructive-strong`.
+- Tokens NIDO en HSL en `src/app/globals.css`, mapeados a los semánticos de shadcn via `@theme inline`. `--primary` semántico = `primary-600` para WCAG AA en botones/links.
+- Plus Jakarta Sans (400-800, `display: swap`) cargada via `next/font/google` reemplazando Geist.
+- Logo procesado con `scripts/process-logos.mjs` (sharp, idempotente). Outputs commiteados: `nido-logo-full|wordmark|mark.png`, `icon-{192,512}.png`, `src/app/icon.png`, `src/app/apple-icon.png`. Favicon default eliminado.
+- Componentes shadcn adaptados: Button (con `destructive-strong`), Card (rounded-2xl + shadow-md), Badge (variantes success/warning/info/warm), Dialog (rounded-2xl + shadow-xl), Tabs, Table (header `neutral-100`, hover `neutral-50`), Sonner.
+- Componentes nuevos en `src/shared/components/`: `Logo`, `LogoWordmark`, `LogoMark`, `EmptyState`, `LoadingSkeleton`, `BrandedLoading`, `SidebarNav`, `AuthShell`, `LegalShell`.
+- Layouts admin/teacher/family con sidebar fija (md+) + header sticky mobile, item activo con barra warm a la izquierda, footer con avatar + rol localizado.
+- Pantallas rediseñadas:
+  - Auth: login (Logo hero + gradiente diagonal + a11y contrast), forgot-password, reset-password, invitation/[token] (new + existing-account flows), invitation/expired (clock badge warm), forbidden (lock badge coral).
+  - Legal: privacy, terms con LegalShell.
+  - Admin dashboard: saludo con `nombre_completo` + 4 cards de stats con icon tile codificado por color.
+  - Teacher dashboard: cards de aulas con cohortes en Badge warm + EmptyState para sin aulas.
+  - Family dashboard: cards de niños con avatar primary + EmptyState para sin niños.
+  - Admin listas (centro, cursos, aulas, ninos, audit): tablas envueltas en Card overflow-hidden, EmptyState con iconos por rol, variantes semánticas de Badge para curso estado y audit accion.
+  - Wizard `/admin/ninos/nuevo`: barra de progreso de 3 segmentos en el CardHeader y back link.
+  - Detalle `/admin/ninos/[id]`: header con avatar + nombre + Badge aula actual + Tabs (Datos / Médica / Vínculos / Matrículas) con icono Lucide en cada trigger; Row pattern unificado.
+  - Teacher `/aula/[id]` y Family `/nino/[id]` con back link, header card y EmptyState para estados vacíos.
+- i18n trilingüe (es/en/va) extendido con `teacher.nav`, `family.nav`, `admin.dashboard.greeting/subtitle`, `wizard.progress`, descripciones de empty states.
+
+### Decisiones (ADRs)
+
+- **ADR-0008-design-system**: sistema completo (paleta, tipografía, radios, sombras, componentes) aplicado a todas las pantallas existentes antes de seguir con features funcionales, para que Fase 3+ se construyan ya con la cara final. `destructive` en dos variantes (soft / strong). Logo procesado con sharp, idempotente, plan de sustitución por SVG vectorial cuando llegue.
+
+### Pendiente
+
+- Validaciones finales (typecheck + lint + tests Vitest + Playwright + build) y merge del PR.
+
+### Para Fase 3
+
+- Sin cambios respecto a lo planeado en Fase 2: tablas operativas (agendas_diarias, comidas, biberones, suenos, deposiciones), helper `dentro_de_ventana_edicion`, UI por aula. Ahora con el sistema de diseño ya aterrizado.

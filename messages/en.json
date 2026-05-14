@@ -259,6 +259,7 @@
       "wizard": {
         "title": "Register new child",
         "step": "Step",
+        "progress": "Registration progress",
         "paso1": "Personal data",
         "paso2": "Medical data",
         "paso3": "Assign classroom",

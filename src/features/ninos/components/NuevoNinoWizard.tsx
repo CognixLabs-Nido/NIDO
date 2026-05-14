@@ -91,9 +91,28 @@ export function NuevoNinoWizard({ centroId, locale, aulas }: Props) {
     <Card className="mx-auto max-w-2xl">
       <CardHeader>
         <CardTitle>{t('wizard.title')}</CardTitle>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
           {t('wizard.step')} {step}/3 — {t(`wizard.paso${step}`)}
         </p>
+        <div
+          className="mt-2 flex gap-1.5"
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={3}
+          aria-valuenow={step}
+          aria-label={t('wizard.progress')}
+        >
+          {[1, 2, 3].map((s) => (
+            <span
+              key={s}
+              className={
+                s <= step
+                  ? 'bg-primary h-1.5 flex-1 rounded-full transition-colors'
+                  : 'bg-primary-100 h-1.5 flex-1 rounded-full transition-colors'
+              }
+            />
+          ))}
+        </div>
       </CardHeader>
       <CardContent>
         <Form {...form}>

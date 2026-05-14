@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console -- script CLI manual: usamos console.log para feedback al operador */
 /**
  * Procesa el logo source de NIDO y genera las variantes para la app.
  *

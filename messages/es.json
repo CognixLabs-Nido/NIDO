@@ -259,6 +259,7 @@
       "wizard": {
         "title": "Registrar nuevo niño",
         "step": "Paso",
+        "progress": "Progreso del registro",
         "paso1": "Datos personales",
         "paso2": "Datos médicos",
         "paso3": "Asignar aula",

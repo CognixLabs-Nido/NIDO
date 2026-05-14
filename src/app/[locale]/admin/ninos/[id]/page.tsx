@@ -1,7 +1,10 @@
+import { ChevronLeftIcon, HeartIcon, InfoIcon, UsersIcon, GraduationCapIcon } from 'lucide-react'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -17,13 +20,14 @@ import {
   getMatriculasPorNino,
   getNinoById,
 } from '@/features/ninos/queries/get-ninos'
+import { EmptyState } from '@/shared/components/EmptyState'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
 }
 
 export default async function NinoDetallePage({ params }: PageProps) {
-  const { id } = await params
+  const { id, locale } = await params
   const t = await getTranslations('admin.ninos')
   const tMed = await getTranslations('medico')
   const nino = await getNinoById(id)
@@ -40,28 +44,57 @@ export default async function NinoDetallePage({ params }: PageProps) {
     getMatriculasPorNino(id),
   ])
 
+  const matriculaActiva = matriculas.find((m) => m.fecha_baja === null)
+  const initials = (nino.nombre.charAt(0) + (nino.apellidos.charAt(0) || '')).toUpperCase() || '?'
+
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-semibold">
-          {nino.nombre} {nino.apellidos}
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          {t('fields.fecha_nacimiento')}: {nino.fecha_nacimiento}
-        </p>
+      <Link
+        href={`/${locale}/admin/ninos`}
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium"
+      >
+        <ChevronLeftIcon className="size-4" />
+        {t('title')}
+      </Link>
+
+      <header className="bg-card border-border/60 flex flex-wrap items-center gap-4 rounded-2xl border p-5 shadow-md">
+        <div className="bg-primary-100 text-primary-700 flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-xl font-bold">
+          {initials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-h2 text-foreground truncate">
+            {nino.nombre} {nino.apellidos}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {t('fields.fecha_nacimiento')}: {nino.fecha_nacimiento}
+          </p>
+        </div>
+        {matriculaActiva && <Badge variant="warm">{matriculaActiva.aula_nombre}</Badge>}
       </header>
 
       <Tabs defaultValue="personales">
         <TabsList>
-          <TabsTrigger value="personales">{t('tabs.personales')}</TabsTrigger>
-          <TabsTrigger value="medica">{t('tabs.medica')}</TabsTrigger>
-          <TabsTrigger value="vinculos">{t('tabs.vinculos')}</TabsTrigger>
-          <TabsTrigger value="matriculas">{t('tabs.matriculas')}</TabsTrigger>
+          <TabsTrigger value="personales">
+            <InfoIcon className="size-4" />
+            {t('tabs.personales')}
+          </TabsTrigger>
+          <TabsTrigger value="medica">
+            <HeartIcon className="size-4" />
+            {t('tabs.medica')}
+          </TabsTrigger>
+          <TabsTrigger value="vinculos">
+            <UsersIcon className="size-4" />
+            {t('tabs.vinculos')}
+          </TabsTrigger>
+          <TabsTrigger value="matriculas">
+            <GraduationCapIcon className="size-4" />
+            {t('tabs.matriculas')}
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="personales" className="space-y-3">
+        <TabsContent value="personales" className="space-y-3 pt-3">
           <Card>
-            <CardContent className="space-y-2 pt-4 text-sm">
+            <CardContent className="space-y-2 text-sm">
               <Row k={t('fields.nombre')} v={nino.nombre} />
               <Row k={t('fields.apellidos')} v={nino.apellidos} />
               <Row k={t('fields.fecha_nacimiento')} v={nino.fecha_nacimiento} />
@@ -73,12 +106,12 @@ export default async function NinoDetallePage({ params }: PageProps) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="medica" className="space-y-3">
+        <TabsContent value="medica" className="space-y-3 pt-3">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">{tMed('aviso_cifrado')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
+            <CardContent className="space-y-3 text-sm">
+              <p className="text-muted-foreground border-info-300 bg-info-100 text-info-700 border-l-4 px-3 py-2 text-xs">
+                {tMed('aviso_cifrado')}
+              </p>
               {info ? (
                 <>
                   <Row k={t('fields.alergias_graves')} v={info.alergias_graves ?? '—'} />
@@ -89,60 +122,81 @@ export default async function NinoDetallePage({ params }: PageProps) {
                   <Row k={t('fields.telefono_emergencia')} v={info.telefono_emergencia ?? '—'} />
                 </>
               ) : (
-                <p className="text-muted-foreground">{t('medica_vacia')}</p>
+                <EmptyState icon={<HeartIcon strokeWidth={1.75} />} title={t('medica_vacia')} />
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="vinculos">
+        <TabsContent value="vinculos" className="pt-3">
           {!vinculos || vinculos.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t('vinculos_vacios')}</p>
+            <Card>
+              <EmptyState icon={<UsersIcon strokeWidth={1.75} />} title={t('vinculos_vacios')} />
+            </Card>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('fields.tipo_vinculo')}</TableHead>
-                  <TableHead>{t('fields.parentesco')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {vinculos.map((v) => (
-                  <TableRow key={v.id}>
-                    <TableCell>{v.tipo_vinculo}</TableCell>
-                    <TableCell>
-                      {v.parentesco}
-                      {v.descripcion_parentesco ? ` (${v.descripcion_parentesco})` : ''}
-                    </TableCell>
+            <Card className="overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('fields.tipo_vinculo')}</TableHead>
+                    <TableHead>{t('fields.parentesco')}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {vinculos.map((v) => (
+                    <TableRow key={v.id}>
+                      <TableCell>
+                        <Badge variant="warm">{v.tipo_vinculo}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {v.parentesco}
+                        {v.descripcion_parentesco ? ` (${v.descripcion_parentesco})` : ''}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
           )}
         </TabsContent>
 
-        <TabsContent value="matriculas">
+        <TabsContent value="matriculas" className="pt-3">
           {matriculas.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t('matriculas_vacias')}</p>
+            <Card>
+              <EmptyState
+                icon={<GraduationCapIcon strokeWidth={1.75} />}
+                title={t('matriculas_vacias')}
+              />
+            </Card>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('fields.aula')}</TableHead>
-                  <TableHead>{t('fields.fecha_alta')}</TableHead>
-                  <TableHead>{t('fields.fecha_baja')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {matriculas.map((m) => (
-                  <TableRow key={m.id}>
-                    <TableCell>{m.aula_nombre}</TableCell>
-                    <TableCell>{m.fecha_alta}</TableCell>
-                    <TableCell>{m.fecha_baja ?? '—'}</TableCell>
+            <Card className="overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('fields.aula')}</TableHead>
+                    <TableHead>{t('fields.fecha_alta')}</TableHead>
+                    <TableHead>{t('fields.fecha_baja')}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {matriculas.map((m) => (
+                    <TableRow key={m.id}>
+                      <TableCell className="font-medium">{m.aula_nombre}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {m.fecha_alta}
+                      </TableCell>
+                      <TableCell>
+                        {m.fecha_baja ? (
+                          <span className="text-muted-foreground text-sm">{m.fecha_baja}</span>
+                        ) : (
+                          <Badge variant="success">·</Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
           )}
         </TabsContent>
       </Tabs>
@@ -152,9 +206,11 @@ export default async function NinoDetallePage({ params }: PageProps) {
 
 function Row({ k, v }: { k: string; v: string }) {
   return (
-    <div className="flex gap-4">
-      <span className="text-muted-foreground w-44 shrink-0 text-xs">{k}</span>
-      <span className="break-words">{v}</span>
+    <div className="flex flex-col gap-1 border-b border-dashed border-neutral-200 pb-2 last:border-b-0 last:pb-0 sm:flex-row sm:items-baseline sm:gap-4">
+      <span className="text-muted-foreground w-48 shrink-0 text-xs font-medium tracking-wide uppercase">
+        {k}
+      </span>
+      <span className="text-foreground break-words">{v}</span>
     </div>
   )
 }

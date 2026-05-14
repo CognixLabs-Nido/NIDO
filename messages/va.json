@@ -259,6 +259,7 @@
       "wizard": {
         "title": "Registrar nou xiquet",
         "step": "Pas",
+        "progress": "Progrés del registre",
         "paso1": "Dades personals",
         "paso2": "Dades mèdiques",
         "paso3": "Assignar aula",
