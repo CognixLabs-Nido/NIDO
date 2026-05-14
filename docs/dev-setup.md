@@ -177,6 +177,25 @@ Estos dos bugs se arreglaron en `chore/post-phase-2-fixes-v2`:
 
 Ambos resueltos pasando `items` con `{ value, label }`.
 
+## Regeneración de logos NIDO
+
+El logo definitivo de NIDO vive como PNG en `public/brand/source/nido-logo-source.png`. A partir de ese source, el script `scripts/process-logos.mjs` genera las variantes consumidas por la app (full, wordmark, mark, favicon, iconos PWA).
+
+```bash
+# Regenerar todas las variantes desde el source actual
+node scripts/process-logos.mjs
+```
+
+Reglas operativas:
+
+- **Idempotente**: ejecutarlo sin cambiar el source produce un diff vacío en git. Si ves cambios, el source se ha modificado o `sharp` ha cambiado de versión.
+- **Manual**: el script **no** se ejecuta en `next build` ni en CI. Los PNG procesados están commiteados en `public/brand/`.
+- **`sharp` como devDependency**: se instala con `npm install` automáticamente. No queda en el bundle de producción.
+- **Cuándo correrlo**: cuando el responsable actualice el source PNG (nuevo logo, ajuste de threshold, llegada del SVG vectorial). Tras correrlo, `git status` debe mostrar cambios en `public/brand/*` que se commitean en el mismo PR que el source.
+- **Threshold**: el script aplica un threshold de luminancia para volver el fondo negro transparente. Si el source cambia mucho (por ejemplo, pasa a tener fondo blanco), revisar `THRESHOLD_LUMINANCE` en el script.
+
+Ver `docs/decisions/ADR-0008-design-system.md` para el plan de sustitución por la versión vectorial definitiva.
+
 ## Onboarding del primer admin (Ola 1)
 
 Hasta que aparezca el flow de "alta de centro" en Ola 2, el primer admin de cada centro se crea manualmente:
