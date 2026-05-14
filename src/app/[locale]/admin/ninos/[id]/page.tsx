@@ -1,4 +1,11 @@
-import { ChevronLeftIcon, HeartIcon, InfoIcon, UsersIcon, GraduationCapIcon } from 'lucide-react'
+import {
+  BookOpenIcon,
+  ChevronLeftIcon,
+  HeartIcon,
+  InfoIcon,
+  UsersIcon,
+  GraduationCapIcon,
+} from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -20,6 +27,8 @@ import {
   getMatriculasPorNino,
   getNinoById,
 } from '@/features/ninos/queries/get-ninos'
+import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
+import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { EmptyState } from '@/shared/components/EmptyState'
 
 interface PageProps {
@@ -34,7 +43,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
   if (!nino) notFound()
 
   const supabase = await createClient()
-  const [{ data: vinculos }, info, matriculas] = await Promise.all([
+  const [{ data: vinculos }, info, matriculas, datosPed] = await Promise.all([
     supabase
       .from('vinculos_familiares')
       .select('id, tipo_vinculo, parentesco, descripcion_parentesco, usuario_id')
@@ -42,6 +51,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
       .is('deleted_at', null),
     getInfoMedica(id),
     getMatriculasPorNino(id),
+    getDatosPedagogicos(id),
   ])
 
   const matriculaActiva = matriculas.find((m) => m.fecha_baja === null)
@@ -81,6 +91,10 @@ export default async function NinoDetallePage({ params }: PageProps) {
           <TabsTrigger value="medica">
             <HeartIcon className="size-4" />
             {t('tabs.medica')}
+          </TabsTrigger>
+          <TabsTrigger value="pedagogico">
+            <BookOpenIcon className="size-4" />
+            {t('tabs.pedagogico')}
           </TabsTrigger>
           <TabsTrigger value="vinculos">
             <UsersIcon className="size-4" />
@@ -126,6 +140,31 @@ export default async function NinoDetallePage({ params }: PageProps) {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="pedagogico" className="space-y-3 pt-3">
+          <DatosPedagogicosTab
+            ninoId={id}
+            locale={locale}
+            initial={
+              datosPed
+                ? {
+                    nino_id: datosPed.nino_id,
+                    lactancia_estado: datosPed.lactancia_estado,
+                    lactancia_observaciones: datosPed.lactancia_observaciones,
+                    control_esfinteres: datosPed.control_esfinteres,
+                    control_esfinteres_observaciones: datosPed.control_esfinteres_observaciones,
+                    siesta_horario_habitual: datosPed.siesta_horario_habitual,
+                    siesta_numero_diario: datosPed.siesta_numero_diario,
+                    siesta_observaciones: datosPed.siesta_observaciones,
+                    tipo_alimentacion: datosPed.tipo_alimentacion,
+                    alimentacion_observaciones: datosPed.alimentacion_observaciones,
+                    idiomas_casa: datosPed.idiomas_casa,
+                    tiene_hermanos_en_centro: datosPed.tiene_hermanos_en_centro,
+                  }
+                : null
+            }
+          />
         </TabsContent>
 
         <TabsContent value="vinculos" className="pt-3">

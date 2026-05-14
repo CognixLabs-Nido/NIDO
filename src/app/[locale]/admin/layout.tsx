@@ -11,6 +11,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { SidebarNav, type SidebarItem } from '@/shared/components/SidebarNav'
 
 interface LayoutProps {
@@ -29,6 +30,7 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   const user = await getCurrentUser()
+  const centroLogo = await getCentroLogo(centroId)
 
   const items: SidebarItem[] = [
     {
@@ -52,6 +54,7 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
           name: user?.nombreCompleto ?? user?.email ?? t('perfil'),
           roleLabel: tRoles('admin'),
         }}
+        centroLogo={centroLogo ? { url: centroLogo.logoUrl, name: centroLogo.nombre } : null}
         profileHref={`/${locale}/profile`}
         profileLabel={t('perfil')}
         ariaLabel={t('aria_label')}

@@ -271,6 +271,7 @@
       "tabs": {
         "personales": "Personals",
         "medica": "Mèdiques",
+        "pedagogico": "Pedagògic",
         "vinculos": "Família i autoritzats",
         "matriculas": "Matrícules"
       },
@@ -364,10 +365,75 @@
       "idioma_principal": "Idioma principal",
       "nacionalidad": "Nacionalitat",
       "info_medica": "Dades mèdiques",
+      "pedagogico": "Pedagògic",
       "alergias_graves": "Al·lèrgies greus",
       "notas_emergencia": "Notes d'emergència",
       "medicacion_habitual": "Medicació",
       "telefono_emergencia": "Telèfon d'emergència"
+    }
+  },
+  "pedagogico": {
+    "vacio_title": "Encara no hi ha dades pedagògiques",
+    "vacio_descripcion": "Ompli les dades que coneixes. Podràs editar-les més tard.",
+    "vacio_cta": "Afegir dades pedagògiques",
+    "guardar": "Guardar",
+    "guardando": "Guardant…",
+    "guardado": "Dades pedagògiques guardades",
+    "si": "Sí",
+    "no": "No",
+    "idiomas_casa_placeholder": "Usa codis ISO 639-1 de 2 lletres (es, en, va, ca, ar, zh, etc.)",
+    "seccion": {
+      "lactancia": "Lactància",
+      "control_esfinteres": "Control d'esfínters",
+      "siesta": "Migdiada",
+      "alimentacion": "Alimentació",
+      "otros": "Idiomes i família"
+    },
+    "fields": {
+      "lactancia_estado": "Estat de lactància",
+      "lactancia_observaciones": "Observacions de lactància",
+      "control_esfinteres": "Estat actual",
+      "control_esfinteres_observaciones": "Observacions",
+      "siesta_horario_habitual": "Horari habitual",
+      "siesta_numero_diario": "Migdiades al dia",
+      "siesta_observaciones": "Observacions de migdiada",
+      "tipo_alimentacion": "Tipus d'alimentació",
+      "alimentacion_observaciones": "Observacions d'alimentació",
+      "idiomas_casa": "Idiomes parlats a casa",
+      "tiene_hermanos_en_centro": "Té germans/anes al centre"
+    },
+    "lactancia_opciones": {
+      "materna": "Lactància materna",
+      "biberon": "Biberó",
+      "mixta": "Mixta",
+      "finalizada": "Finalitzada",
+      "no_aplica": "No s'aplica"
+    },
+    "control_esfinteres_opciones": {
+      "panal_completo": "Amb bolquer",
+      "transicion": "En transició",
+      "sin_panal_diurno": "Sense bolquer de dia",
+      "sin_panal_total": "Sense bolquer"
+    },
+    "alimentacion_opciones": {
+      "omnivora": "Omnívora",
+      "vegetariana": "Vegetariana",
+      "vegana": "Vegana",
+      "sin_lactosa": "Sense lactosa",
+      "sin_gluten": "Sense gluten",
+      "religiosa_halal": "Halal",
+      "religiosa_kosher": "Kosher",
+      "otra": "Altra"
+    },
+    "validation": {
+      "invalid": "Dades pedagògiques no vàlides.",
+      "idioma_iso_invalido": "Cada idioma ha de ser un codi ISO 639-1 de 2 lletres (ex. es, en, va).",
+      "idioma_min_uno": "Indica almenys un idioma parlat a casa.",
+      "idioma_max_ocho": "Màxim 8 idiomes.",
+      "alimentacion_observaciones_requeridas": "Detalla la dieta quan seleccionis \"Altra\"."
+    },
+    "errors": {
+      "guardar_fallo": "No s'han pogut guardar les dades pedagògiques. Torna a intentar-ho."
     }
   },
   "centro": {

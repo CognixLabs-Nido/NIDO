@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { SidebarNav, type SidebarItem } from '@/shared/components/SidebarNav'
 
 interface LayoutProps {
@@ -24,6 +25,7 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
   }
 
   const user = await getCurrentUser()
+  const centroLogo = await getCentroLogo(centroId)
 
   const items: SidebarItem[] = [
     {
@@ -42,6 +44,7 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
           name: user?.nombreCompleto ?? user?.email ?? t('perfil'),
           roleLabel: rol === 'autorizado' ? tRoles('autorizado') : tRoles('tutor_legal'),
         }}
+        centroLogo={centroLogo ? { url: centroLogo.logoUrl, name: centroLogo.nombre } : null}
         profileHref={`/${locale}/profile`}
         profileLabel={t('perfil')}
         ariaLabel={t('aria_label')}
