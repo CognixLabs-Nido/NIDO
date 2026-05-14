@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AcceptInvitationForm } from '@/features/auth/components/AcceptInvitationForm'
 import { notifyExistingAccountInvitation } from '@/features/auth/actions/accept-invitation'
 import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
+import { AuthShell } from '@/shared/components/AuthShell'
 
 interface PageProps {
   params: Promise<{ locale: string; token: string }>
@@ -62,8 +63,8 @@ function NewAccountFlow({
 }) {
   const t = useTranslations('auth.invitation')
   return (
-    <div className="flex min-h-[80vh] items-center justify-center p-6">
-      <Card className="w-full max-w-md">
+    <AuthShell locale={locale}>
+      <Card className="w-full max-w-md shadow-lg">
         <CardHeader>
           <CardTitle>{t('title')}</CardTitle>
           <CardDescription>{t('subtitle_new')}</CardDescription>
@@ -72,7 +73,7 @@ function NewAccountFlow({
           <AcceptInvitationForm locale={locale} token={token} email={email} />
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   )
 }
 
@@ -80,8 +81,8 @@ function ExistingAccountNotice({ locale, email }: { locale: string; email: strin
   const t = useTranslations('auth.invitation')
   const obfuscated = obfuscateEmail(email)
   return (
-    <div className="flex min-h-[80vh] items-center justify-center p-6">
-      <Card className="w-full max-w-md">
+    <AuthShell locale={locale}>
+      <Card className="w-full max-w-md shadow-lg">
         <CardHeader>
           <CardTitle>{t('title')}</CardTitle>
           <CardDescription>{t('subtitle_existing')}</CardDescription>
@@ -92,18 +93,21 @@ function ExistingAccountNotice({ locale, email }: { locale: string; email: strin
           </p>
           <Link
             href={`/${locale}/login?returnTo=/${locale}/profile/invitations`}
-            className={buttonVariants({ className: 'w-full' })}
+            className={buttonVariants({ className: 'h-11 w-full text-base' })}
           >
             {t('go_to_login')}
           </Link>
-          <p className="text-muted-foreground text-center text-sm">
-            <Link href={`/${locale}/forgot-password`} className="underline">
+          <p className="text-center text-sm">
+            <Link
+              href={`/${locale}/forgot-password`}
+              className="text-primary hover:text-primary-800 font-medium hover:underline"
+            >
               {t('forgot_password_hint')}
             </Link>
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   )
 }
 

@@ -1,15 +1,21 @@
 import { useTranslations } from 'next-intl'
 
-export default function TermsPage() {
-  return <Content />
+import { LegalShell } from '@/shared/components/LegalShell'
+
+interface PageProps {
+  params: Promise<{ locale: string }>
 }
 
-function Content() {
+export default async function TermsPage({ params }: PageProps) {
+  const { locale } = await params
+  return <Content locale={locale} />
+}
+
+function Content({ locale }: { locale: string }) {
   const t = useTranslations('legal.terms')
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
-      <h1 className="mb-4 text-3xl font-semibold">{t('title')}</h1>
+    <LegalShell locale={locale} title={t('title')}>
       <p className="text-muted-foreground">{t('placeholder')}</p>
-    </main>
+    </LegalShell>
   )
 }
