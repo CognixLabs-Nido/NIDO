@@ -1,6 +1,8 @@
+import { CalendarDaysIcon } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -13,6 +15,15 @@ import { ActivarCursoButton } from '@/features/cursos/components/ActivarCursoBut
 import { NuevoCursoDialog } from '@/features/cursos/components/NuevoCursoDialog'
 import { getCursosPorCentro } from '@/features/cursos/queries/get-cursos'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { EmptyState } from '@/shared/components/EmptyState'
+
+type CursoEstado = 'planificado' | 'activo' | 'cerrado'
+
+const estadoVariant: Record<CursoEstado, 'success' | 'info' | 'secondary'> = {
+  activo: 'success',
+  planificado: 'info',
+  cerrado: 'secondary',
+}
 
 export default async function AdminCursosPage() {
   const t = await getTranslations('admin.cursos')
@@ -21,51 +32,47 @@ export default async function AdminCursosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-semibold">{t('title')}</h1>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="text-h1 text-foreground">{t('title')}</h1>
         <NuevoCursoDialog centroId={centroId} />
-      </div>
+      </header>
       {cursos.length === 0 ? (
-        <p className="text-muted-foreground">{t('empty')}</p>
+        <Card>
+          <EmptyState icon={<CalendarDaysIcon strokeWidth={1.75} />} title={t('empty')} />
+        </Card>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t('fields.nombre')}</TableHead>
-              <TableHead>{t('fields.fechas')}</TableHead>
-              <TableHead>{t('fields.estado')}</TableHead>
-              <TableHead className="text-right">{t('fields.acciones')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {cursos.map((c) => (
-              <TableRow key={c.id}>
-                <TableCell className="font-medium">{c.nombre}</TableCell>
-                <TableCell className="text-sm">
-                  {c.fecha_inicio} → {c.fecha_fin}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      c.estado === 'activo'
-                        ? 'default'
-                        : c.estado === 'cerrado'
-                          ? 'secondary'
-                          : 'outline'
-                    }
-                  >
-                    {t(`estados.${c.estado}`)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  {c.estado !== 'activo' && c.estado !== 'cerrado' ? (
-                    <ActivarCursoButton cursoId={c.id} />
-                  ) : null}
-                </TableCell>
+        <Card className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('fields.nombre')}</TableHead>
+                <TableHead>{t('fields.fechas')}</TableHead>
+                <TableHead>{t('fields.estado')}</TableHead>
+                <TableHead className="text-right">{t('fields.acciones')}</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {cursos.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium">{c.nombre}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {c.fecha_inicio} → {c.fecha_fin}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={estadoVariant[c.estado as CursoEstado] ?? 'outline'}>
+                      {t(`estados.${c.estado}`)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {c.estado !== 'activo' && c.estado !== 'cerrado' ? (
+                      <ActivarCursoButton cursoId={c.id} />
+                    ) : null}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </div>
   )

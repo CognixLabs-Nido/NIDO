@@ -1,9 +1,11 @@
+import { Building2Icon } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EditarCentroDialog } from '@/features/centros/components/EditarCentroDialog'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { createClient } from '@/lib/supabase/server'
+import { EmptyState } from '@/shared/components/EmptyState'
 
 export default async function AdminCentroPage() {
   const t = await getTranslations('admin.centro')
@@ -17,13 +19,15 @@ export default async function AdminCentroPage() {
     .single()
 
   if (!centro) {
-    return <p className="text-muted-foreground">{t('not_found')}</p>
+    return <EmptyState icon={<Building2Icon strokeWidth={1.75} />} title={t('not_found')} />
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-semibold">{t('title')}</h1>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-h1 text-foreground">{t('title')}</h1>
+        </div>
         <EditarCentroDialog
           centroId={centro.id}
           initial={{
@@ -35,7 +39,7 @@ export default async function AdminCentroPage() {
             idioma_default: centro.idioma_default as 'es' | 'en' | 'va',
           }}
         />
-      </div>
+      </header>
       <Card>
         <CardHeader>
           <CardTitle>{centro.nombre}</CardTitle>
@@ -54,9 +58,11 @@ export default async function AdminCentroPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-      <span className="text-muted-foreground w-40 shrink-0 text-xs">{label}</span>
-      <span>{value}</span>
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4">
+      <span className="text-muted-foreground w-40 shrink-0 text-xs font-medium tracking-wide uppercase">
+        {label}
+      </span>
+      <span className="text-foreground">{value}</span>
     </div>
   )
 }
