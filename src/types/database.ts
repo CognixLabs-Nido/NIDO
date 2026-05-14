@@ -138,6 +138,7 @@ export type Database = {
           email_contacto: string
           id: string
           idioma_default: string
+          logo_url: string | null
           nombre: string
           telefono: string
           updated_at: string
@@ -150,6 +151,7 @@ export type Database = {
           email_contacto: string
           id?: string
           idioma_default?: string
+          logo_url?: string | null
           nombre: string
           telefono: string
           updated_at?: string
@@ -162,6 +164,7 @@ export type Database = {
           email_contacto?: string
           id?: string
           idioma_default?: string
+          logo_url?: string | null
           nombre?: string
           telefono?: string
           updated_at?: string
@@ -250,6 +253,71 @@ export type Database = {
             columns: ['centro_id']
             isOneToOne: false
             referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      datos_pedagogicos_nino: {
+        Row: {
+          alimentacion_observaciones: string | null
+          control_esfinteres: Database['public']['Enums']['control_esfinteres']
+          control_esfinteres_observaciones: string | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          idiomas_casa: string[]
+          lactancia_estado: Database['public']['Enums']['lactancia_estado']
+          lactancia_observaciones: string | null
+          nino_id: string
+          siesta_horario_habitual: string | null
+          siesta_numero_diario: number | null
+          siesta_observaciones: string | null
+          tiene_hermanos_en_centro: boolean
+          tipo_alimentacion: Database['public']['Enums']['tipo_alimentacion']
+          updated_at: string
+        }
+        Insert: {
+          alimentacion_observaciones?: string | null
+          control_esfinteres: Database['public']['Enums']['control_esfinteres']
+          control_esfinteres_observaciones?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          idiomas_casa: string[]
+          lactancia_estado: Database['public']['Enums']['lactancia_estado']
+          lactancia_observaciones?: string | null
+          nino_id: string
+          siesta_horario_habitual?: string | null
+          siesta_numero_diario?: number | null
+          siesta_observaciones?: string | null
+          tiene_hermanos_en_centro?: boolean
+          tipo_alimentacion: Database['public']['Enums']['tipo_alimentacion']
+          updated_at?: string
+        }
+        Update: {
+          alimentacion_observaciones?: string | null
+          control_esfinteres?: Database['public']['Enums']['control_esfinteres']
+          control_esfinteres_observaciones?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          idiomas_casa?: string[]
+          lactancia_estado?: Database['public']['Enums']['lactancia_estado']
+          lactancia_observaciones?: string | null
+          nino_id?: string
+          siesta_horario_habitual?: string | null
+          siesta_numero_diario?: number | null
+          siesta_observaciones?: string | null
+          tiene_hermanos_en_centro?: boolean
+          tipo_alimentacion?: Database['public']['Enums']['tipo_alimentacion']
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'datos_pedagogicos_nino_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: true
+            referencedRelation: 'ninos'
             referencedColumns: ['id']
           },
         ]
@@ -672,8 +740,11 @@ export type Database = {
     }
     Functions: {
       _get_medical_key: { Args: never; Returns: string }
+      centro_de_aula: { Args: { p_aula_id: string }; Returns: string }
+      centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
       es_profe_de_aula: { Args: { p_aula_id: string }; Returns: boolean }
+      es_profe_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
       es_tutor_de: { Args: { p_nino_id: string }; Returns: boolean }
       get_info_medica_emergencia: {
         Args: { p_nino_id: string }
@@ -686,6 +757,7 @@ export type Database = {
           telefono_emergencia: string
         }[]
       }
+      idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
       set_info_medica_emergencia_cifrada: {
         Args: {
@@ -708,7 +780,9 @@ export type Database = {
     Enums: {
       audit_accion: 'INSERT' | 'UPDATE' | 'DELETE'
       consentimiento_tipo: 'terminos' | 'privacidad' | 'imagen' | 'datos_medicos'
+      control_esfinteres: 'panal_completo' | 'transicion' | 'sin_panal_diurno' | 'sin_panal_total'
       curso_estado: 'planificado' | 'activo' | 'cerrado'
+      lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
       nino_sexo: 'F' | 'M' | 'X'
       parentesco:
         | 'madre'
@@ -721,6 +795,15 @@ export type Database = {
         | 'hermano'
         | 'cuidadora'
         | 'otro'
+      tipo_alimentacion:
+        | 'omnivora'
+        | 'vegetariana'
+        | 'vegana'
+        | 'sin_lactosa'
+        | 'sin_gluten'
+        | 'religiosa_halal'
+        | 'religiosa_kosher'
+        | 'otra'
       tipo_vinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado'
       user_role: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
     }
@@ -850,7 +933,9 @@ export const Constants = {
     Enums: {
       audit_accion: ['INSERT', 'UPDATE', 'DELETE'],
       consentimiento_tipo: ['terminos', 'privacidad', 'imagen', 'datos_medicos'],
+      control_esfinteres: ['panal_completo', 'transicion', 'sin_panal_diurno', 'sin_panal_total'],
       curso_estado: ['planificado', 'activo', 'cerrado'],
+      lactancia_estado: ['materna', 'biberon', 'mixta', 'finalizada', 'no_aplica'],
       nino_sexo: ['F', 'M', 'X'],
       parentesco: [
         'madre',
@@ -863,6 +948,16 @@ export const Constants = {
         'hermano',
         'cuidadora',
         'otro',
+      ],
+      tipo_alimentacion: [
+        'omnivora',
+        'vegetariana',
+        'vegana',
+        'sin_lactosa',
+        'sin_gluten',
+        'religiosa_halal',
+        'religiosa_kosher',
+        'otra',
       ],
       tipo_vinculo: ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'],
       user_role: ['admin', 'profe', 'tutor_legal', 'autorizado'],

@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, HeartIcon, InfoIcon } from 'lucide-react'
+import { BookOpenIcon, ChevronLeftIcon, HeartIcon, InfoIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -6,6 +6,8 @@ import { getTranslations } from 'next-intl/server'
 import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
+import { DatosPedagogicosReadOnly } from '@/features/datos-pedagogicos/components/DatosPedagogicosReadOnly'
+import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -24,6 +26,8 @@ export default async function FamilyNinoPage({ params }: PageProps) {
   } catch {
     infoMedica = null
   }
+
+  const datosPed = await getDatosPedagogicos(id)
 
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
@@ -80,6 +84,16 @@ export default async function FamilyNinoPage({ params }: PageProps) {
           </CardContent>
         </Card>
       </section>
+
+      {permisos.puede_ver_datos_pedagogicos && datosPed && (
+        <section className="space-y-4">
+          <h2 className="text-h3 text-foreground flex items-center gap-2">
+            <BookOpenIcon className="text-accent-warm-600 size-5" />
+            {t('pedagogico')}
+          </h2>
+          <DatosPedagogicosReadOnly data={datosPed} />
+        </section>
+      )}
 
       {permisos.puede_ver_info_medica && infoMedica && (
         <section className="space-y-4">

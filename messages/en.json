@@ -271,6 +271,7 @@
       "tabs": {
         "personales": "Personal",
         "medica": "Medical",
+        "pedagogico": "Pedagogical",
         "vinculos": "Family & authorised",
         "matriculas": "Enrolments"
       },
@@ -364,10 +365,75 @@
       "idioma_principal": "Main language",
       "nacionalidad": "Nationality",
       "info_medica": "Medical data",
+      "pedagogico": "Pedagogical",
       "alergias_graves": "Serious allergies",
       "notas_emergencia": "Emergency notes",
       "medicacion_habitual": "Medication",
       "telefono_emergencia": "Emergency phone"
+    }
+  },
+  "pedagogico": {
+    "vacio_title": "No pedagogical data yet",
+    "vacio_descripcion": "Fill in what you know. You can edit later.",
+    "vacio_cta": "Add pedagogical data",
+    "guardar": "Save",
+    "guardando": "Saving…",
+    "guardado": "Pedagogical data saved",
+    "si": "Yes",
+    "no": "No",
+    "idiomas_casa_placeholder": "Use 2-letter ISO 639-1 codes (es, en, va, ca, ar, zh, etc.)",
+    "seccion": {
+      "lactancia": "Feeding (milk)",
+      "control_esfinteres": "Toilet training",
+      "siesta": "Nap",
+      "alimentacion": "Diet",
+      "otros": "Languages & family"
+    },
+    "fields": {
+      "lactancia_estado": "Milk feeding state",
+      "lactancia_observaciones": "Milk feeding notes",
+      "control_esfinteres": "Current state",
+      "control_esfinteres_observaciones": "Notes",
+      "siesta_horario_habitual": "Usual nap time",
+      "siesta_numero_diario": "Naps per day",
+      "siesta_observaciones": "Nap notes",
+      "tipo_alimentacion": "Diet type",
+      "alimentacion_observaciones": "Diet notes",
+      "idiomas_casa": "Languages spoken at home",
+      "tiene_hermanos_en_centro": "Has siblings at the centre"
+    },
+    "lactancia_opciones": {
+      "materna": "Breastfeeding",
+      "biberon": "Bottle",
+      "mixta": "Mixed",
+      "finalizada": "Finished",
+      "no_aplica": "Not applicable"
+    },
+    "control_esfinteres_opciones": {
+      "panal_completo": "Diapers",
+      "transicion": "In transition",
+      "sin_panal_diurno": "Daytime only",
+      "sin_panal_total": "No diapers"
+    },
+    "alimentacion_opciones": {
+      "omnivora": "Omnivorous",
+      "vegetariana": "Vegetarian",
+      "vegana": "Vegan",
+      "sin_lactosa": "Lactose-free",
+      "sin_gluten": "Gluten-free",
+      "religiosa_halal": "Halal",
+      "religiosa_kosher": "Kosher",
+      "otra": "Other"
+    },
+    "validation": {
+      "invalid": "Invalid pedagogical data.",
+      "idioma_iso_invalido": "Each language must be a 2-letter ISO 639-1 code (e.g. es, en, va).",
+      "idioma_min_uno": "Add at least one language spoken at home.",
+      "idioma_max_ocho": "Up to 8 languages.",
+      "alimentacion_observaciones_requeridas": "Describe the diet when you pick \"Other\"."
+    },
+    "errors": {
+      "guardar_fallo": "We could not save pedagogical data. Please try again."
     }
   },
   "centro": {

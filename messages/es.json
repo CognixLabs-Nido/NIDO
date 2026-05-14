@@ -271,6 +271,7 @@
       "tabs": {
         "personales": "Datos personales",
         "medica": "Datos médicos",
+        "pedagogico": "Pedagógico",
         "vinculos": "Familia y autorizados",
         "matriculas": "Matrículas"
       },
@@ -364,10 +365,75 @@
       "idioma_principal": "Idioma principal",
       "nacionalidad": "Nacionalidad",
       "info_medica": "Datos médicos",
+      "pedagogico": "Pedagógico",
       "alergias_graves": "Alergias graves",
       "notas_emergencia": "Notas de emergencia",
       "medicacion_habitual": "Medicación",
       "telefono_emergencia": "Teléfono de emergencia"
+    }
+  },
+  "pedagogico": {
+    "vacio_title": "Aún no hay datos pedagógicos",
+    "vacio_descripcion": "Rellena los datos que conoces. Puedes editarlos más adelante.",
+    "vacio_cta": "Añadir datos pedagógicos",
+    "guardar": "Guardar",
+    "guardando": "Guardando…",
+    "guardado": "Datos pedagógicos guardados",
+    "si": "Sí",
+    "no": "No",
+    "idiomas_casa_placeholder": "Usa códigos ISO 639-1 de 2 letras (es, en, va, ca, ar, zh, etc.)",
+    "seccion": {
+      "lactancia": "Lactancia",
+      "control_esfinteres": "Control de esfínteres",
+      "siesta": "Siesta",
+      "alimentacion": "Alimentación",
+      "otros": "Idiomas y familia"
+    },
+    "fields": {
+      "lactancia_estado": "Estado de lactancia",
+      "lactancia_observaciones": "Observaciones de lactancia",
+      "control_esfinteres": "Estado actual",
+      "control_esfinteres_observaciones": "Observaciones",
+      "siesta_horario_habitual": "Horario habitual",
+      "siesta_numero_diario": "Siestas al día",
+      "siesta_observaciones": "Observaciones de siesta",
+      "tipo_alimentacion": "Tipo de alimentación",
+      "alimentacion_observaciones": "Observaciones de alimentación",
+      "idiomas_casa": "Idiomas hablados en casa",
+      "tiene_hermanos_en_centro": "Tiene hermanos/as en el centro"
+    },
+    "lactancia_opciones": {
+      "materna": "Lactancia materna",
+      "biberon": "Biberón",
+      "mixta": "Mixta",
+      "finalizada": "Finalizada",
+      "no_aplica": "No aplica"
+    },
+    "control_esfinteres_opciones": {
+      "panal_completo": "Con pañal",
+      "transicion": "En transición",
+      "sin_panal_diurno": "Sin pañal de día",
+      "sin_panal_total": "Sin pañal"
+    },
+    "alimentacion_opciones": {
+      "omnivora": "Omnívora",
+      "vegetariana": "Vegetariana",
+      "vegana": "Vegana",
+      "sin_lactosa": "Sin lactosa",
+      "sin_gluten": "Sin gluten",
+      "religiosa_halal": "Halal",
+      "religiosa_kosher": "Kosher",
+      "otra": "Otra"
+    },
+    "validation": {
+      "invalid": "Datos pedagógicos no válidos.",
+      "idioma_iso_invalido": "Cada idioma debe ser un código ISO 639-1 de 2 letras (ej. es, en, va).",
+      "idioma_min_uno": "Indica al menos un idioma hablado en casa.",
+      "idioma_max_ocho": "Máximo 8 idiomas.",
+      "alimentacion_observaciones_requeridas": "Detalla la dieta cuando selecciones \"Otra\"."
+    },
+    "errors": {
+      "guardar_fallo": "No hemos podido guardar los datos pedagógicos. Inténtalo otra vez."
     }
   },
   "centro": {
