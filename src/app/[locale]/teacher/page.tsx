@@ -15,7 +15,8 @@ export default async function TeacherDashboard({ params }: PageProps) {
   const { data: userData } = await supabase.auth.getUser()
   const userId = userData.user?.id
 
-  let aulas: Array<{ id: string; nombre: string; cohorte_anos_nacimiento: number[] }> = []
+  type AulaRow = { id: string; nombre: string; cohorte_anos_nacimiento: number[] }
+  let aulas: AulaRow[] = []
   if (userId) {
     const { data } = await supabase
       .from('profes_aulas')
@@ -23,7 +24,14 @@ export default async function TeacherDashboard({ params }: PageProps) {
       .eq('profe_id', userId)
       .is('fecha_fin', null)
       .is('deleted_at', null)
-    aulas = (data ?? []).map((r) => r.aulas).filter(Boolean) as typeof aulas
+    aulas = (data ?? [])
+      .map((r): AulaRow | null => {
+        const raw = r.aulas as AulaRow | AulaRow[] | null
+        if (!raw) return null
+        if (Array.isArray(raw)) return raw[0] ?? null
+        return raw
+      })
+      .filter((a): a is AulaRow => a !== null)
   }
 
   return (

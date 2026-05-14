@@ -251,6 +251,7 @@
       "nuevo": "Nuevo niño",
       "ver": "Ver",
       "empty": "Sin niños todavía. Crea el primero.",
+      "sin_matricula_activa": "Sin matrícula activa",
       "nuevo_sin_aulas": "Necesitas al menos un aula creada antes de registrar un niño.",
       "created": "Niño registrado correctamente",
       "wizard": {
@@ -273,6 +274,12 @@
       "medica_vacia": "Sin datos médicos registrados.",
       "vinculos_vacios": "Sin vínculos familiares registrados.",
       "matriculas_vacias": "Sin matrículas en este curso.",
+      "sexo_opciones": {
+        "F": "Femenino",
+        "M": "Masculino",
+        "X": "No binario / otro",
+        "no_contesta": "Prefiero no decirlo"
+      },
       "fields": {
         "nombre": "Nombre",
         "apellidos": "Apellidos",
@@ -293,6 +300,7 @@
         "aula_placeholder": "Selecciona un aula",
         "fecha_alta": "Alta",
         "fecha_baja": "Baja",
+        "aula_actual": "Aula actual",
         "confirmar_fuera_cohorte": "Confirmo matricular aunque la edad no coincida con la cohorte del aula",
         "acciones": "Acciones"
       }
@@ -301,6 +309,7 @@
       "title": "Audit log",
       "description": "Últimos 100 cambios registrados en este centro.",
       "empty": "Sin entradas todavía.",
+      "sistema": "Sistema",
       "fields": {
         "ts": "Fecha y hora",
         "tabla": "Tabla",

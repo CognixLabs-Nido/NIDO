@@ -251,6 +251,7 @@
       "nuevo": "New child",
       "ver": "View",
       "empty": "No children yet. Register the first one.",
+      "sin_matricula_activa": "No active enrolment",
       "nuevo_sin_aulas": "You need at least one classroom before registering a child.",
       "created": "Child registered successfully",
       "wizard": {
@@ -273,6 +274,12 @@
       "medica_vacia": "No medical data recorded.",
       "vinculos_vacios": "No family ties recorded.",
       "matriculas_vacias": "No enrolments in this year.",
+      "sexo_opciones": {
+        "F": "Female",
+        "M": "Male",
+        "X": "Non-binary / other",
+        "no_contesta": "Prefer not to say"
+      },
       "fields": {
         "nombre": "First name",
         "apellidos": "Surname",
@@ -293,6 +300,7 @@
         "aula_placeholder": "Select a classroom",
         "fecha_alta": "Start",
         "fecha_baja": "End",
+        "aula_actual": "Current classroom",
         "confirmar_fuera_cohorte": "I confirm enrolling even if the age doesn't match the classroom cohort",
         "acciones": "Actions"
       }
@@ -301,6 +309,7 @@
       "title": "Audit log",
       "description": "Latest 100 changes recorded for this centre.",
       "empty": "No entries yet.",
+      "sistema": "System",
       "fields": {
         "ts": "Timestamp",
         "tabla": "Table",

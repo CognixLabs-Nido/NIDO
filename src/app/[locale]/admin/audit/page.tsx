@@ -24,6 +24,24 @@ export default async function AdminAuditPage() {
     .order('ts', { ascending: false })
     .limit(100)
 
+  // Lookup de nombres: una sola query para los usuarios distintos del lote.
+  // RLS permite al admin del centro leer la tabla usuarios para miembros del
+  // mismo centro vía policy `usuarios_admin_select`.
+  const usuarioIds = Array.from(
+    new Set((entries ?? []).map((e) => e.usuario_id).filter((id): id is string => id !== null))
+  )
+
+  let nombrePorUsuario = new Map<string, string>()
+  if (usuarioIds.length > 0) {
+    const { data: usuarios } = await supabase
+      .from('usuarios')
+      .select('id, nombre_completo')
+      .in('id', usuarioIds)
+    nombrePorUsuario = new Map(
+      (usuarios ?? []).map((u) => [u.id, u.nombre_completo?.trim() || u.id.slice(0, 8)])
+    )
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-semibold">{t('title')}</h1>
@@ -41,30 +59,36 @@ export default async function AdminAuditPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {entries.map((e) => (
-              <TableRow key={e.id}>
-                <TableCell className="font-mono text-xs">
-                  {new Date(e.ts).toLocaleString()}
-                </TableCell>
-                <TableCell className="text-sm">{e.tabla}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      e.accion === 'INSERT'
-                        ? 'default'
-                        : e.accion === 'UPDATE'
-                          ? 'secondary'
-                          : 'outline'
-                    }
-                  >
-                    {e.accion}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-xs">
-                  {e.usuario_id ? e.usuario_id.slice(0, 8) : '—'}
-                </TableCell>
-              </TableRow>
-            ))}
+            {entries.map((e) => {
+              let usuarioLabel: string
+              if (!e.usuario_id) {
+                usuarioLabel = t('sistema')
+              } else {
+                usuarioLabel = nombrePorUsuario.get(e.usuario_id) ?? e.usuario_id.slice(0, 8)
+              }
+              return (
+                <TableRow key={e.id}>
+                  <TableCell className="font-mono text-xs">
+                    {new Date(e.ts).toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-sm">{e.tabla}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        e.accion === 'INSERT'
+                          ? 'default'
+                          : e.accion === 'UPDATE'
+                            ? 'secondary'
+                            : 'outline'
+                      }
+                    >
+                      {e.accion}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-sm">{usuarioLabel}</TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       )}

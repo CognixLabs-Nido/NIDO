@@ -251,6 +251,7 @@
       "nuevo": "Nou xiquet",
       "ver": "Veure",
       "empty": "Encara no hi ha xiquets. Registra el primer.",
+      "sin_matricula_activa": "Sense matrícula activa",
       "nuevo_sin_aulas": "Necessites almenys una aula creada abans de registrar un xiquet.",
       "created": "Xiquet registrat correctament",
       "wizard": {
@@ -273,6 +274,12 @@
       "medica_vacia": "Sense dades mèdiques registrades.",
       "vinculos_vacios": "Sense vincles familiars registrats.",
       "matriculas_vacias": "Sense matrícules en este curs.",
+      "sexo_opciones": {
+        "F": "Femení",
+        "M": "Masculí",
+        "X": "No binari / altre",
+        "no_contesta": "Preferisc no dir-ho"
+      },
       "fields": {
         "nombre": "Nom",
         "apellidos": "Cognoms",
@@ -293,6 +300,7 @@
         "aula_placeholder": "Selecciona una aula",
         "fecha_alta": "Alta",
         "fecha_baja": "Baixa",
+        "aula_actual": "Aula actual",
         "confirmar_fuera_cohorte": "Confirme matricular encara que l'edat no coincidisca amb la cohort",
         "acciones": "Accions"
       }
@@ -301,6 +309,7 @@
       "title": "Audit log",
       "description": "Últims 100 canvis registrats en este centre.",
       "empty": "Sense entrades encara.",
+      "sistema": "Sistema",
       "fields": {
         "ts": "Data i hora",
         "tabla": "Taula",

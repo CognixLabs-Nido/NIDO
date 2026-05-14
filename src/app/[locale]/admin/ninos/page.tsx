@@ -40,6 +40,7 @@ export default async function AdminNinosPage({ params }: PageProps) {
               <TableHead>{t('fields.nombre')}</TableHead>
               <TableHead>{t('fields.apellidos')}</TableHead>
               <TableHead>{t('fields.fecha_nacimiento')}</TableHead>
+              <TableHead>{t('fields.aula_actual')}</TableHead>
               <TableHead className="text-right">{t('fields.acciones')}</TableHead>
             </TableRow>
           </TableHeader>
@@ -49,6 +50,9 @@ export default async function AdminNinosPage({ params }: PageProps) {
                 <TableCell className="font-medium">{n.nombre}</TableCell>
                 <TableCell>{n.apellidos}</TableCell>
                 <TableCell>{n.fecha_nacimiento}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {n.aula_actual ?? t('sin_matricula_activa')}
+                </TableCell>
                 <TableCell className="text-right">
                   <Link href={`/${locale}/admin/ninos/${n.id}`} className="text-sm hover:underline">
                     {t('ver')}
