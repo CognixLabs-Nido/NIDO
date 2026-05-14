@@ -176,6 +176,8 @@
     },
     "dashboard": {
       "title": "Admin dashboard",
+      "greeting": "Hello, {nombre}",
+      "subtitle": "A quick look at your centre today.",
       "stats": {
         "curso_activo": "Active year",
         "sin_curso": "No active year",
@@ -257,6 +259,7 @@
       "wizard": {
         "title": "Register new child",
         "step": "Step",
+        "progress": "Registration progress",
         "paso1": "Personal data",
         "paso2": "Medical data",
         "paso3": "Assign classroom",
@@ -320,9 +323,16 @@
     }
   },
   "teacher": {
+    "nav": {
+      "aria_label": "Teacher navigation",
+      "dashboard": "Home",
+      "perfil": "Profile"
+    },
     "dashboard": {
       "title": "My classrooms",
+      "subtitle": "The classrooms in your care.",
       "ningun_aula": "You have no classrooms assigned yet.",
+      "ningun_aula_descripcion": "Once an admin assigns you a classroom, it will appear here.",
       "cohorte_label": "Cohort"
     },
     "aula": {
@@ -336,9 +346,16 @@
     }
   },
   "family": {
+    "nav": {
+      "aria_label": "Family navigation",
+      "dashboard": "Home",
+      "perfil": "Profile"
+    },
     "dashboard": {
       "title": "My children",
+      "subtitle": "Your little ones and their classrooms in NIDO.",
       "ningun_nino": "You have no linked children yet.",
+      "ningun_nino_descripcion": "Once an admin links you to a child, they will appear here.",
       "ver_ficha": "View profile"
     },
     "nino": {

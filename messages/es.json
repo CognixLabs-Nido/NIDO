@@ -176,6 +176,8 @@
     },
     "dashboard": {
       "title": "Panel de administración",
+      "greeting": "Hola, {nombre}",
+      "subtitle": "Una vista rápida de tu centro hoy.",
       "stats": {
         "curso_activo": "Curso activo",
         "sin_curso": "Sin curso activo",
@@ -257,6 +259,7 @@
       "wizard": {
         "title": "Registrar nuevo niño",
         "step": "Paso",
+        "progress": "Progreso del registro",
         "paso1": "Datos personales",
         "paso2": "Datos médicos",
         "paso3": "Asignar aula",
@@ -320,9 +323,16 @@
     }
   },
   "teacher": {
+    "nav": {
+      "aria_label": "Navegación profe",
+      "dashboard": "Inicio",
+      "perfil": "Perfil"
+    },
     "dashboard": {
       "title": "Mis aulas",
+      "subtitle": "Estas son las aulas a tu cargo.",
       "ningun_aula": "No tienes aulas asignadas todavía.",
+      "ningun_aula_descripcion": "Cuando un administrador te asigne un aula, aparecerá aquí.",
       "cohorte_label": "Cohorte"
     },
     "aula": {
@@ -336,9 +346,16 @@
     }
   },
   "family": {
+    "nav": {
+      "aria_label": "Navegación familia",
+      "dashboard": "Inicio",
+      "perfil": "Perfil"
+    },
     "dashboard": {
       "title": "Mis niños",
+      "subtitle": "Tus pequeños y sus aulas en NIDO.",
       "ningun_nino": "No tienes niños vinculados todavía.",
+      "ningun_nino_descripcion": "Cuando un administrador te vincule a un niño, aparecerá aquí.",
       "ver_ficha": "Ver ficha"
     },
     "nino": {

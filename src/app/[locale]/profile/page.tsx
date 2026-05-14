@@ -1,7 +1,9 @@
+import { UserIcon } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
+import { AuthShell } from '@/shared/components/AuthShell'
 import { createClient } from '@/lib/supabase/server'
 
 interface PageProps {
@@ -28,28 +30,37 @@ export default async function ProfilePage({ params }: PageProps) {
     idioma = usuario?.idioma_preferido ?? locale
   }
 
+  const initials = (nombre.charAt(0) || user?.email?.charAt(0) || '?').toUpperCase()
+
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-6">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>{t('title')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <p className="text-muted-foreground text-xs">{t('name')}</p>
-            <p>{nombre}</p>
+    <AuthShell locale={locale}>
+      <Card className="w-full max-w-md shadow-lg">
+        <CardContent className="space-y-6">
+          <div className="flex flex-col items-center gap-3">
+            <div className="bg-primary-100 text-primary-700 flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold">
+              {initials}
+            </div>
+            <div className="text-center">
+              <h1 className="text-h2 text-foreground">{nombre || t('title')}</h1>
+              <p className="text-muted-foreground text-sm">{user?.email ?? ''}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-muted-foreground text-xs">{t('email')}</p>
-            <p>{user?.email ?? ''}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground text-xs">{t('language')}</p>
-            <p>{idioma}</p>
+          <div className="space-y-3 border-t border-dashed border-neutral-200 pt-4 text-sm">
+            <Row icon={<UserIcon className="size-4" />} k={t('language')} v={idioma} />
           </div>
           <SignOutButton locale={locale} />
         </CardContent>
       </Card>
+    </AuthShell>
+  )
+}
+
+function Row({ icon, k, v }: { icon: React.ReactNode; k: string; v: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-muted-foreground">{icon}</span>
+      <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{k}</span>
+      <span className="text-foreground ml-auto">{v}</span>
     </div>
   )
 }

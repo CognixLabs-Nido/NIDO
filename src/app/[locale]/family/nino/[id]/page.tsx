@@ -1,22 +1,23 @@
+import { ChevronLeftIcon, HeartIcon, InfoIcon } from 'lucide-react'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
 
 interface PageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string; locale: string }>
 }
 
 export default async function FamilyNinoPage({ params }: PageProps) {
-  const { id } = await params
+  const { id, locale } = await params
   const t = await getTranslations('family.nino')
+  const tNav = await getTranslations('family.nav')
   const nino = await getNinoById(id)
   if (!nino) notFound()
 
-  // Si el vínculo tiene puede_ver_info_medica, get_info_medica_emergencia
-  // devuelve la fila; si no, lanza excepción y getInfoMedica devuelve null.
   let infoMedica = null
   try {
     infoMedica = await getInfoMedica(id)
@@ -40,37 +41,61 @@ export default async function FamilyNinoPage({ params }: PageProps) {
     permisos = (vinculo?.permisos as Record<string, boolean> | null) ?? {}
   }
 
+  const initials = (nino.nombre.charAt(0) + (nino.apellidos.charAt(0) || '')).toUpperCase() || '?'
+
   return (
-    <div className="container mx-auto max-w-3xl space-y-6 px-4 py-6">
-      <header>
-        <h1 className="text-3xl font-semibold">
-          {nino.nombre} {nino.apellidos}
-        </h1>
+    <div className="space-y-6">
+      <Link
+        href={`/${locale}/family`}
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium"
+      >
+        <ChevronLeftIcon className="size-4" />
+        {tNav('dashboard')}
+      </Link>
+
+      <header className="bg-card border-border/60 flex flex-wrap items-center gap-4 rounded-2xl border p-5 shadow-md">
+        <div className="bg-primary-100 text-primary-700 flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-xl font-bold">
+          {initials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-h2 text-foreground truncate">
+            {nino.nombre} {nino.apellidos}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {t('fecha_nacimiento')}: {nino.fecha_nacimiento}
+          </p>
+        </div>
       </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('basicos')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <Row k={t('fecha_nacimiento')} v={nino.fecha_nacimiento} />
-          <Row k={t('idioma_principal')} v={nino.idioma_principal} />
-          <Row k={t('nacionalidad')} v={nino.nacionalidad ?? '—'} />
-        </CardContent>
-      </Card>
-
-      {permisos.puede_ver_info_medica && infoMedica && (
+      <section className="space-y-4">
+        <h2 className="text-h3 text-foreground flex items-center gap-2">
+          <InfoIcon className="size-5" />
+          {t('basicos')}
+        </h2>
         <Card>
-          <CardHeader>
-            <CardTitle>{t('info_medica')}</CardTitle>
-          </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <Row k={t('alergias_graves')} v={infoMedica.alergias_graves ?? '—'} />
-            <Row k={t('notas_emergencia')} v={infoMedica.notas_emergencia ?? '—'} />
-            <Row k={t('medicacion_habitual')} v={infoMedica.medicacion_habitual ?? '—'} />
-            <Row k={t('telefono_emergencia')} v={infoMedica.telefono_emergencia ?? '—'} />
+            <Row k={t('fecha_nacimiento')} v={nino.fecha_nacimiento} />
+            <Row k={t('idioma_principal')} v={nino.idioma_principal} />
+            <Row k={t('nacionalidad')} v={nino.nacionalidad ?? '—'} />
           </CardContent>
         </Card>
+      </section>
+
+      {permisos.puede_ver_info_medica && infoMedica && (
+        <section className="space-y-4">
+          <h2 className="text-h3 text-foreground flex items-center gap-2">
+            <HeartIcon className="text-coral-500 size-5" />
+            {t('info_medica')}
+          </h2>
+          <Card>
+            <CardContent className="space-y-2 text-sm">
+              <Row k={t('alergias_graves')} v={infoMedica.alergias_graves ?? '—'} />
+              <Row k={t('notas_emergencia')} v={infoMedica.notas_emergencia ?? '—'} />
+              <Row k={t('medicacion_habitual')} v={infoMedica.medicacion_habitual ?? '—'} />
+              <Row k={t('telefono_emergencia')} v={infoMedica.telefono_emergencia ?? '—'} />
+            </CardContent>
+          </Card>
+        </section>
       )}
     </div>
   )
@@ -78,9 +103,11 @@ export default async function FamilyNinoPage({ params }: PageProps) {
 
 function Row({ k, v }: { k: string; v: string }) {
   return (
-    <div className="flex gap-4">
-      <span className="text-muted-foreground w-40 shrink-0 text-xs">{k}</span>
-      <span className="break-words">{v}</span>
+    <div className="flex flex-col gap-1 border-b border-dashed border-neutral-200 pb-2 last:border-b-0 last:pb-0 sm:flex-row sm:items-baseline sm:gap-4">
+      <span className="text-muted-foreground w-40 shrink-0 text-xs font-medium tracking-wide uppercase">
+        {k}
+      </span>
+      <span className="text-foreground break-words">{v}</span>
     </div>
   )
 }

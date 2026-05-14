@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ResetPasswordForm } from '@/features/auth/components/ResetPasswordForm'
+import { AuthShell } from '@/shared/components/AuthShell'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -15,8 +16,8 @@ export default async function ResetPasswordPage({ params }: PageProps) {
 function Content({ locale }: { locale: string }) {
   const t = useTranslations('auth.reset')
   return (
-    <div className="flex min-h-[80vh] items-center justify-center p-6">
-      <Card className="w-full max-w-md">
+    <AuthShell locale={locale}>
+      <Card className="w-full max-w-md shadow-lg">
         <CardHeader>
           <CardTitle>{t('title')}</CardTitle>
         </CardHeader>
@@ -24,6 +25,6 @@ function Content({ locale }: { locale: string }) {
           <ResetPasswordForm locale={locale} />
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   )
 }

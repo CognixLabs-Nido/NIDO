@@ -1,7 +1,9 @@
+import { BabyIcon } from 'lucide-react'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
+import { EmptyState } from '@/shared/components/EmptyState'
 import { createClient } from '@/lib/supabase/server'
 
 interface PageProps {
@@ -34,26 +36,48 @@ export default async function FamilyDashboard({ params }: PageProps) {
   }
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-6">
-      <h1 className="text-3xl font-semibold">{t('title')}</h1>
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-h1 text-foreground">{t('title')}</h1>
+        <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
+      </header>
       {ninos.length === 0 ? (
-        <p className="text-muted-foreground mt-6">{t('ningun_nino')}</p>
+        <Card>
+          <CardContent>
+            <EmptyState
+              icon={<BabyIcon strokeWidth={1.75} />}
+              title={t('ningun_nino')}
+              description={t('ningun_nino_descripcion')}
+            />
+          </CardContent>
+        </Card>
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-          {ninos.map((n) => (
-            <Link key={n.id} href={`/${locale}/family/nino/${n.id}`}>
-              <Card className="cursor-pointer transition hover:shadow-md">
-                <CardHeader>
-                  <CardTitle>
-                    {n.nombre} {n.apellidos}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground text-xs">{t('ver_ficha')}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {ninos.map((n) => {
+            const initials =
+              (n.nombre.charAt(0) + (n.apellidos.charAt(0) || '')).toUpperCase() || '?'
+            return (
+              <Link
+                key={n.id}
+                href={`/${locale}/family/nino/${n.id}`}
+                className="focus-visible:ring-ring rounded-2xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              >
+                <Card className="hover:border-primary-200 h-full transition hover:shadow-lg">
+                  <CardContent className="flex items-center gap-4">
+                    <div className="bg-primary-100 text-primary-700 flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-bold">
+                      {initials}
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="text-foreground truncate text-lg font-semibold">
+                        {n.nombre} {n.apellidos}
+                      </h2>
+                      <p className="text-muted-foreground mt-0.5 text-sm">{t('ver_ficha')}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            )
+          })}
         </div>
       )}
     </div>

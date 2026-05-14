@@ -1,8 +1,10 @@
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { ClockIcon } from 'lucide-react'
 
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { AuthShell } from '@/shared/components/AuthShell'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -17,26 +19,35 @@ export default async function InvitationExpiredPage({ params }: PageProps) {
 function Content({ locale, contactEmail }: { locale: string; contactEmail: string }) {
   const t = useTranslations('auth.invitation.invalid')
   return (
-    <div className="flex min-h-[80vh] items-center justify-center p-6">
-      <Card className="w-full max-w-md">
+    <AuthShell locale={locale}>
+      <Card className="w-full max-w-md shadow-lg">
         <CardHeader>
-          <CardTitle>{t('title')}</CardTitle>
-          <CardDescription>{t('description')}</CardDescription>
+          <div className="bg-accent-warm-100 text-accent-warm-700 mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full">
+            <ClockIcon className="size-6" />
+          </div>
+          <CardTitle className="text-center">{t('title')}</CardTitle>
+          <CardDescription className="text-center">{t('description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <Link
+            href={`/${locale}/login`}
+            className={buttonVariants({ className: 'h-11 w-full text-base' })}
+          >
+            {t('go_to_login')}
+          </Link>
           {contactEmail && (
             <a
               href={`mailto:${contactEmail}`}
-              className={buttonVariants({ variant: 'outline', className: 'w-full' })}
+              className={buttonVariants({
+                variant: 'outline',
+                className: 'h-11 w-full text-base',
+              })}
             >
               {t('contact')}
             </a>
           )}
-          <Link href={`/${locale}/login`} className={buttonVariants({ className: 'w-full' })}>
-            {t('go_to_login')}
-          </Link>
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   )
 }

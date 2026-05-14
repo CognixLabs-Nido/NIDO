@@ -1,8 +1,17 @@
-import Link from 'next/link'
+import {
+  LayoutDashboardIcon,
+  Building2Icon,
+  CalendarDaysIcon,
+  BookOpenIcon,
+  BabyIcon,
+  HistoryIcon,
+} from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
+import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { SidebarNav, type SidebarItem } from '@/shared/components/SidebarNav'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -12,48 +21,44 @@ interface LayoutProps {
 export default async function AdminLayout({ children, params }: LayoutProps) {
   const { locale } = await params
   const t = await getTranslations('admin.nav')
+  const tRoles = await getTranslations('auth.select_role.roles')
   const centroId = await getCentroActualId()
   if (!centroId) redirect(`/${locale}/login`)
 
   const rol = await getRolEnCentro(centroId)
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
 
+  const user = await getCurrentUser()
+
+  const items: SidebarItem[] = [
+    {
+      href: `/${locale}/admin`,
+      label: t('dashboard'),
+      icon: <LayoutDashboardIcon />,
+    },
+    { href: `/${locale}/admin/centro`, label: t('centro'), icon: <Building2Icon /> },
+    { href: `/${locale}/admin/cursos`, label: t('cursos'), icon: <CalendarDaysIcon /> },
+    { href: `/${locale}/admin/aulas`, label: t('aulas'), icon: <BookOpenIcon /> },
+    { href: `/${locale}/admin/ninos`, label: t('ninos'), icon: <BabyIcon /> },
+    { href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> },
+  ]
+
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-6">
-      <nav
-        className="border-border mb-6 flex flex-wrap items-center gap-3 border-b pb-3 text-sm"
-        aria-label={t('aria_label')}
-      >
-        <Link href={`/${locale}/admin`} className="hover:underline">
-          {t('dashboard')}
-        </Link>
-        <span className="text-muted-foreground">·</span>
-        <Link href={`/${locale}/admin/centro`} className="hover:underline">
-          {t('centro')}
-        </Link>
-        <span className="text-muted-foreground">·</span>
-        <Link href={`/${locale}/admin/cursos`} className="hover:underline">
-          {t('cursos')}
-        </Link>
-        <span className="text-muted-foreground">·</span>
-        <Link href={`/${locale}/admin/aulas`} className="hover:underline">
-          {t('aulas')}
-        </Link>
-        <span className="text-muted-foreground">·</span>
-        <Link href={`/${locale}/admin/ninos`} className="hover:underline">
-          {t('ninos')}
-        </Link>
-        <span className="text-muted-foreground">·</span>
-        <Link href={`/${locale}/admin/audit`} className="hover:underline">
-          {t('audit')}
-        </Link>
-        <span className="text-muted-foreground ml-auto text-xs">
-          <Link href={`/${locale}/profile`} className="hover:underline">
-            {t('perfil')}
-          </Link>
-        </span>
-      </nav>
-      {children}
+    <div className="bg-background flex min-h-[100dvh] flex-col md:flex-row">
+      <SidebarNav
+        locale={locale}
+        items={items}
+        user={{
+          name: user?.nombreCompleto ?? user?.email ?? t('perfil'),
+          roleLabel: tRoles('admin'),
+        }}
+        profileHref={`/${locale}/profile`}
+        profileLabel={t('perfil')}
+        ariaLabel={t('aria_label')}
+      />
+      <main className="min-w-0 flex-1">
+        <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">{children}</div>
+      </main>
     </div>
   )
 }
