@@ -145,3 +145,46 @@
 ### Para Fase 3
 
 - Sin cambios respecto a lo planeado en Fase 2: tablas operativas (agendas_diarias, comidas, biberones, suenos, deposiciones), helper `dentro_de_ventana_edicion`, UI por aula. Ahora con el sistema de diseño ya aterrizado.
+
+---
+
+## Fase 2.6 — Datos pedagógicos del niño + logo del centro
+
+**Fecha:** 2026-05-14
+**Estado:** En curso (implementación cerrada, pendiente Checkpoint B y PR final).
+
+### Completado
+
+- Spec `docs/specs/pedagogical-data.md` con 5 ajustes pre-aprobación incorporados (permiso JSONB dedicado, BOOLEAN de hermanos con apunte en roadmap, idiomas ISO 639-1 length-2 con placeholder, carpeta `datos-pedagogicos/`, logo del centro tanto en sidebar desktop como en header mobile).
+- `docs/roadmap.md` (nuevo) con notas vivas de items diferidos: tabla `hermanos_nino`, Storage upload de logo, UI de permisos por toggle, paso pedagógico en wizard, datos administrativos del tutor, flujo verificado-por-tutor.
+- 2 logos de ANAIA commiteados en `public/brand/` (`anaia-logo-wordmark.png` 356×94 y `anaia-logo-full.png` 1024×1024).
+- Migración `20260514142245_phase2_6_pedagogical_data.sql` aplicada al proyecto Supabase remoto. Contenido:
+  - `centros.logo_url TEXT NULL` + seed para ANAIA.
+  - Tabla `datos_pedagogicos_nino` (1:1 con `ninos`, ON DELETE RESTRICT). 3 ENUMs (`lactancia_estado`, `control_esfinteres`, `tipo_alimentacion`). CHECKs sobre `siesta_numero_diario`, `idiomas_casa` (via función IMMUTABLE `idiomas_iso_2letras` porque Postgres rechaza subqueries en CHECK) y la regla cruzada `otra ⇒ observaciones`.
+  - 3 policies RLS reusando helpers existentes (`es_admin(centro_de_nino(nino_id))`, `es_profe_de_nino(nino_id)`, `tiene_permiso_sobre(nino_id, 'puede_ver_datos_pedagogicos')`).
+  - `audit_trigger_function()` extendida con la nueva tabla; trigger AFTER aplicado.
+  - Backfill JSONB: cada vínculo existente recibe `puede_ver_datos_pedagogicos` heredando el valor de `puede_ver_info_medica` para preservar visibilidades.
+- Tipos TS regenerados con `npm run db:types`.
+- Feature `src/features/datos-pedagogicos/` con: schema Zod (9 tests pasando), query `getDatosPedagogicos`, server action `upsertDatosPedagogicos` con patrón Result + revalidatePath, 3 componentes (Form RHF+Zod, Tab con EmptyState + CTA, ReadOnly server).
+- Query `src/features/centros/queries/get-centro-logo.ts` cacheada con `React.cache()`.
+- Componente `src/shared/components/brand/CentroLogo.tsx` + integración en `SidebarNav` (debajo del wordmark NIDO en desktop, al lado del LogoMark en mobile).
+- Layouts admin/teacher/family pasan `centroLogo` al SidebarNav.
+- Tab "Pedagógico" entre "Médica" y "Vínculos" en `/admin/ninos/[id]` con icono BookOpen.
+- Sección read-only en `/family/nino/[id]` debajo de "Datos básicos", gated por `puede_ver_datos_pedagogicos`.
+- i18n trilingüe (es/en/va) para todo el namespace `pedagogico` + `admin.ninos.tabs.pedagogico` + `family.nino.pedagogico`.
+- Tests: 9 unit (schema Zod) + 5 RLS (admin cross-centro, profe aula vs profe otra aula, tutor con/sin permiso). Total acumulado de la suite: 60 tests.
+- 1 spec Playwright E2E (`pedagogical-data.spec.ts`) que verifica asset del logo + protección de ruta detalle + ausencia de claves i18n sin resolver en los 3 idiomas.
+
+### Decisiones (ADRs)
+
+- **ADR-0009-datos-pedagogicos-tabla-separada**: tabla separada `datos_pedagogicos_nino` 1:1 con `ninos` (mismo patrón que `info_medica_emergencia`) + permiso JSONB dedicado `puede_ver_datos_pedagogicos` (no se reusa `puede_ver_info_medica`). Backfill preserva visibilidades existentes.
+- **ADR-0010-logo-centro-url-relativa**: `centros.logo_url TEXT NULL` con URL relativa a `public/brand/...` hasta que Fase 10 configure Storage. Plan de migración a Storage documentado en el propio ADR.
+
+### Pendiente
+
+- Validaciones finales (`npm run typecheck && lint && test && test:e2e && build`) y merge del PR.
+- Smoke en producción tras merge: logo de ANAIA visible en sidebar, tab "Pedagógico" presente en detalle de niño.
+
+### Para Fase 3
+
+- Sin cambios respecto a lo planeado: tablas operativas (`agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`), helper `dentro_de_ventana_edicion`, UI por aula. Los datos pedagógicos ya cargados permiten a la agenda mostrar contexto (lactancia, dieta, idiomas) sin tener que preguntar a la familia.
