@@ -55,7 +55,9 @@ export function NuevoNinoWizard({ centroId, locale, aulas }: Props) {
         nombre: '',
         apellidos: '',
         fecha_nacimiento: '',
-        sexo: null,
+        // sexo se omite intencionadamente: queremos que el campo nazca como
+        // undefined para que el placeholder del Select aparezca hasta que el
+        // usuario seleccione una opción explícita (F/M/X o "Prefiero no decirlo").
         nacionalidad: null,
         idioma_principal: 'es',
         notas_admin: null,
@@ -172,28 +174,40 @@ function Paso1({ form, onNext }: { form: WizardForm; onNext: () => void }) {
       <FormField
         control={form.control}
         name="datos.sexo"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t('fields.sexo')}</FormLabel>
-            <Select
-              onValueChange={(v) => field.onChange(v === '__null__' ? null : v)}
-              value={field.value ?? '__null__'}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="F">{t('sexo_opciones.F')}</SelectItem>
-                <SelectItem value="M">{t('sexo_opciones.M')}</SelectItem>
-                <SelectItem value="X">{t('sexo_opciones.X')}</SelectItem>
-                <SelectItem value="__null__">{t('sexo_opciones.no_contesta')}</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field }) => {
+          // base-ui Select extrae el label del item seleccionado solo si se le
+          // pasa el prop `items` al Root con la forma { value, label }. Sin
+          // eso, SelectValue renderiza el value crudo. Por eso construimos
+          // sexoItems aquí y los pasamos a <Select items={...}>.
+          // Nota: usamos value=null real para "Prefiero no decirlo" (no un
+          // sentinela string). base-ui soporta null cuando aparece en items.
+          const sexoItems = [
+            { value: 'F', label: t('sexo_opciones.F') },
+            { value: 'M', label: t('sexo_opciones.M') },
+            { value: 'X', label: t('sexo_opciones.X') },
+            { value: null, label: t('sexo_opciones.no_contesta') },
+          ]
+          return (
+            <FormItem>
+              <FormLabel>{t('fields.sexo')}</FormLabel>
+              <Select items={sexoItems} value={field.value} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('fields.sexo_placeholder')} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {sexoItems.map((item) => (
+                    <SelectItem key={String(item.value)} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )
+        }}
       />
       <FormField
         control={form.control}
@@ -330,26 +344,37 @@ function Paso3({
       <FormField
         control={form.control}
         name="aula_id"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{tNino('fields.aula')}</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={tNino('fields.aula_placeholder')} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {aulas.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.nombre} ({a.cohorte_anos_nacimiento.join(', ')})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field }) => {
+          // Mismo patrón que el select de sexo: el prop `items` permite a
+          // base-ui resolver el label del aula seleccionada en el trigger.
+          // Sin esto, el SelectValue mostraba el UUID literal tras la
+          // selección (el dropdown sí mostraba "Farm big" porque renderizaba
+          // los SelectItem; el trigger renderiza el value crudo por defecto).
+          const aulaItems = aulas.map((a) => ({
+            value: a.id,
+            label: `${a.nombre} (${a.cohorte_anos_nacimiento.join(', ')})`,
+          }))
+          return (
+            <FormItem>
+              <FormLabel>{tNino('fields.aula')}</FormLabel>
+              <Select items={aulaItems} value={field.value} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={tNino('fields.aula_placeholder')} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {aulaItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )
+        }}
       />
       <FormField
         control={form.control}

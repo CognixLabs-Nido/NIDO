@@ -101,6 +101,82 @@ END;
 
 Justificación completa en [ADR-0004](./decisions/ADR-0004-cifrado-datos-medicos-pgcrypto.md) (a crear en Fase 2). El bloque `DO $$ ... $$` al final de la migración principal verifica que Vault tiene el secreto antes de aplicar — si falta, la migración hace rollback completo.
 
+## Componente Select: prop `items` obligatoria
+
+NIDO usa el componente `Select` de shadcn/ui sobre `@base-ui/react/select`. **Patrón obligatorio**: cuando el `Select` represente entidades cuyo `value` no es human-readable (UUIDs, sentinelas, IDs internos), se pasa el prop `items` al `<Select>` con la forma `{ value, label }`. Sin esto, `<SelectValue>` renderiza el value crudo en el trigger tras la selección — el dropdown sí muestra el children del `<SelectItem>`, pero el trigger no.
+
+### Por qué pasa
+
+`@base-ui/react/select` (`Select.Value`) sólo busca el label asociado al value seleccionado cuando se le entrega la lista de items en el Root. Sin `items`, la implementación cae en un `fallback()` que devuelve `String(value)`. Eso significa:
+
+- Select sobre aulas con `value={aula.id}` → trigger muestra UUID.
+- Select sobre estado con `value="__null__"` → trigger muestra `__null__`.
+- Select sobre roles con `value={rol_id}` → trigger muestra el id de la fila.
+
+Ver `node_modules/@base-ui/react/esm/internals/resolveValueLabel.js` (función `resolveSelectedLabel`) para el detalle.
+
+### Antipatrón
+
+```tsx
+// ❌ Trigger renderiza el UUID literal tras seleccionar
+<Select value={field.value} onValueChange={field.onChange}>
+  <SelectTrigger>
+    <SelectValue placeholder="Selecciona un aula" />
+  </SelectTrigger>
+  <SelectContent>
+    {aulas.map((a) => (
+      <SelectItem key={a.id} value={a.id}>
+        {a.nombre}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+```
+
+### Patrón correcto
+
+```tsx
+// ✅ Trigger renderiza el label legible tras seleccionar
+const aulaItems = aulas.map((a) => ({
+  value: a.id,
+  label: a.nombre,
+}))
+
+<Select items={aulaItems} value={field.value} onValueChange={field.onChange}>
+  <SelectTrigger>
+    <SelectValue placeholder="Selecciona un aula" />
+  </SelectTrigger>
+  <SelectContent>
+    {aulaItems.map((item) => (
+      <SelectItem key={item.value} value={item.value}>
+        {item.label}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+```
+
+### Cuándo aplica
+
+Siempre que el `value` no sea ya el texto que quieres mostrar:
+
+- **Selects sobre filas de BD** (aulas, niños, usuarios, cursos): `value=id`, `label=nombre`.
+- **Enums con sentinela para `null`**: en lugar de un sentinela string (`'__null__'`), pasa `value: null` directamente en `items` — `@base-ui/react` acepta null como valor cuando aparece en la lista.
+- **Enums con etiqueta i18n**: `value='F'`, `label=t('sexo_opciones.F')`. El label debería venir de las funciones de traducción, no de strings hardcoded.
+
+### Cuándo NO aplica
+
+Cuando el `value` ya **es** el texto que quieres mostrar (selects de idioma `value="es"` que muestra "es" literal, selects de día de la semana con value 'Lunes', etc.). En esos casos `items` es redundante; el componente puede seguir funcionando con el patrón inline. Aun así, mantener `items` por consistencia no estorba.
+
+### Casos descubiertos por las malas
+
+Estos dos bugs se arreglaron en `chore/post-phase-2-fixes-v2`:
+
+- Wizard `/admin/ninos/nuevo` paso 1: dropdown de "Sexo" mostraba `__null__` antes de seleccionar.
+- Wizard `/admin/ninos/nuevo` paso 3: select de aula mostraba UUID en el trigger tras elegir.
+
+Ambos resueltos pasando `items` con `{ value, label }`.
+
 ## Onboarding del primer admin (Ola 1)
 
 Hasta que aparezca el flow de "alta de centro" en Ola 2, el primer admin de cada centro se crea manualmente:

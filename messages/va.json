@@ -285,6 +285,7 @@
         "apellidos": "Cognoms",
         "fecha_nacimiento": "Data de naixement",
         "sexo": "Sexe",
+        "sexo_placeholder": "Seleccionar...",
         "idioma_principal": "Idioma principal",
         "nacionalidad": "Nacionalitat",
         "notas_admin": "Notes internes",
