@@ -196,6 +196,21 @@ Reglas operativas:
 
 Ver `docs/decisions/ADR-0008-design-system.md` para el plan de sustitución por la versión vectorial definitiva.
 
+### Logo de ANAIA (centro)
+
+Los assets actuales viven en `public/brand/`:
+
+- `anaia-logo-wordmark.png` (356×94, apaisado) — usado por defecto cuando `centros.logo_url` apunta a él. Es la forma que mejor encaja en el sidebar de NIDO.
+- `anaia-logo-full.png` (1024×1024, cuadrado) — versión hero/print, sin uso fijo todavía.
+
+**TODO**: el `process-logos.mjs` actual solo procesa el source de NIDO. Si en el futuro:
+
+- Llega un source de ANAIA en mayor resolución que merece threshold/trimmed.
+- Se necesita un mark-only (solo los niños sin wordmark) para favicons del centro / sidebar colapsado.
+- Aparecen logos de otros centros (multi-centro real).
+
+…ampliar el script para que itere sobre sources en `public/brand/source/` y produzca variantes con el mismo patrón idempotente. De momento los PNGs de ANAIA se commitearon manualmente porque ya estaban en formato usable.
+
 ## Onboarding del primer admin (Ola 1)
 
 Hasta que aparezca el flow de "alta de centro" en Ola 2, el primer admin de cada centro se crea manualmente:
