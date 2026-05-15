@@ -676,11 +676,12 @@
     }
   },
   "asistencia": {
-    "title": "Pase de lista",
+    "title": "Asistencia",
+    "title_plural": "Asistencias",
     "subtitle": "Marca presencia y ausencias del día.",
-    "ver": "Ver pase de lista",
+    "ver": "Ver asistencia",
     "ningun_nino": "No hay niños matriculados todavía en esta aula.",
-    "guardar": "Guardar pase de lista",
+    "guardar": "Confirmar asistencia",
     "guardando": "Guardando…",
     "guardado": "Guardado",
     "columna": {
@@ -704,6 +705,15 @@
       "dirty": "Sin guardar",
       "saved": "Guardado",
       "error": "Error"
+    },
+    "vista": {
+      "dia_cerrado": "Día cerrado",
+      "dia_futuro": "Día futuro",
+      "sin_registrar": "Sin registrar",
+      "registrado_a_las": "a las {hora}",
+      "sin_pase_de_lista": "Aún no se ha pasado lista este día.",
+      "preview_futuro_titulo": "Vista previa del día",
+      "preview_futuro_desc": "Solo ausencias ya reportadas por las familias."
     },
     "badge": {
       "ausencia_reportada": "Ausencia reportada",

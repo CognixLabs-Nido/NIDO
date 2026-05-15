@@ -191,6 +191,7 @@ export function PaseDeListaCliente({ aulaId, locale, fecha, filas }: Props) {
         <p className="text-muted-foreground text-sm">{t('ningun_nino')}</p>
       ) : (
         <PaseDeListaTable
+          ariaLabel={t('title')}
           items={items}
           renderItem={(nino) => (
             <span className="text-foreground text-sm font-medium">

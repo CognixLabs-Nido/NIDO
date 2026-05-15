@@ -676,11 +676,12 @@
     }
   },
   "asistencia": {
-    "title": "Attendance roll-call",
+    "title": "Attendance",
+    "title_plural": "Attendance",
     "subtitle": "Mark today's presence and absences.",
-    "ver": "Open roll-call",
+    "ver": "Open attendance",
     "ningun_nino": "No children enrolled yet in this classroom.",
-    "guardar": "Save roll-call",
+    "guardar": "Confirm attendance",
     "guardando": "Saving…",
     "guardado": "Saved",
     "columna": {
@@ -704,6 +705,15 @@
       "dirty": "Unsaved",
       "saved": "Saved",
       "error": "Error"
+    },
+    "vista": {
+      "dia_cerrado": "Day closed",
+      "dia_futuro": "Future day",
+      "sin_registrar": "Not recorded",
+      "registrado_a_las": "at {hora}",
+      "sin_pase_de_lista": "Attendance was not taken this day.",
+      "preview_futuro_titulo": "Day preview",
+      "preview_futuro_desc": "Only absences already reported by families."
     },
     "badge": {
       "ausencia_reportada": "Absence reported",

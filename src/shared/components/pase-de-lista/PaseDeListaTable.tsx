@@ -44,6 +44,7 @@ export function PaseDeListaTable<TItem, TValue extends Record<string, unknown>>(
     submitLabel,
     i18n,
     renderRowExtra,
+    ariaLabel,
   } = props
 
   const form = usePaseDeListaForm<TItem, TValue>({ items, columns })
@@ -103,7 +104,7 @@ export function PaseDeListaTable<TItem, TValue extends Record<string, unknown>>(
       <div
         className="border-border bg-card overflow-hidden rounded-2xl border shadow-md"
         role="table"
-        aria-label="Pase de lista"
+        aria-label={ariaLabel}
       >
         <div
           className="bg-muted/50 hidden border-b text-xs font-semibold tracking-wide uppercase sm:grid sm:gap-2 sm:px-4 sm:py-2"

@@ -84,6 +84,9 @@ export interface PaseDeListaTableProps<TItem, TValue> {
   i18n: PaseDeListaI18n
   /** Sufijo opcional renderizado tras la última columna por fila (acciones extra). */
   renderRowExtra?: (item: TItem, value: Partial<TValue>) => ReactNode
+  /** aria-label para la tabla. El consumidor inyecta el label localizado
+   * (ej. "Asistencia" en F4, "Comidas" en F4.5). */
+  ariaLabel?: string
 }
 
 export type RowStatus = 'pending' | 'dirty' | 'saving' | 'saved' | 'error'

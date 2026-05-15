@@ -676,11 +676,12 @@
     }
   },
   "asistencia": {
-    "title": "Passada de llista",
+    "title": "Assistència",
+    "title_plural": "Assistències",
     "subtitle": "Marca la presència i les absències del dia.",
-    "ver": "Obrir passada de llista",
+    "ver": "Obrir assistència",
     "ningun_nino": "Encara no hi ha xiquets matriculats en aquesta aula.",
-    "guardar": "Guardar passada de llista",
+    "guardar": "Confirmar assistència",
     "guardando": "Guardant…",
     "guardado": "Guardat",
     "columna": {
@@ -704,6 +705,15 @@
       "dirty": "Sense guardar",
       "saved": "Guardat",
       "error": "Error"
+    },
+    "vista": {
+      "dia_cerrado": "Dia tancat",
+      "dia_futuro": "Dia futur",
+      "sin_registrar": "Sense registrar",
+      "registrado_a_las": "a les {hora}",
+      "sin_pase_de_lista": "Encara no s'ha pres l'assistència aquest dia.",
+      "preview_futuro_titulo": "Vista prèvia del dia",
+      "preview_futuro_desc": "Només absències ja reportades per les famílies."
     },
     "badge": {
       "ausencia_reportada": "Absència reportada",
