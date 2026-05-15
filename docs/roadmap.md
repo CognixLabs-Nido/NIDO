@@ -2,6 +2,45 @@
 
 Notas vivas de cosas que conocemos hoy pero se difieren a una fase futura. No es una lista exhaustiva ni un compromiso de fechas; cada entrada explica el "qué" y el "cuándo despierta" para que cuando llegue el momento sepamos por qué se dejó pendiente.
 
+## Plan Ola 1 — reorganización post-Fase 3 (2026-05-15)
+
+Tras cerrar Fase 3 (agenda diaria), reorganizamos el resto de Ola 1 para reflejar dos aprendizajes:
+
+1. El patrón UI **"pase de lista"** (tabla con todos los niños de un aula, click rápido por niño) es valioso y reutilizable. Conviene materializarlo desde el inicio de Fase 4 para que F4.5 (menús) y futuras fases lo reusen sin diseñarlo de cero.
+2. Los **menús del centro** son un caso de uso fuerte que merece su propia fase: la cocina planifica mensualmente, la profe rellena un día concreto en segundos vía pase de lista, la familia ve qué comió cada día. Encaja entre F4 (asistencia) y F5 (mensajería).
+
+### Fase 4 — Asistencia y ausencias (ampliada)
+
+- **Antes:** 6-8 h / 2-3 sesiones.
+- **Ahora:** 8-10 h / 3-4 sesiones.
+- **Razón:** incluye desde el inicio el **patrón UI "pase de lista"** (tabla con todos los niños del aula, click rápido por niño para marcar entrada/salida/ausencia). El patrón es reusable para F4.5 (pase de lista de comida), F8 (autorizaciones de salida puntual), F10 (etiquetar niños en una publicación), y similares. Construirlo bien una vez ahorra rework en las cuatro fases siguientes.
+
+### Fase 4.5 — Menús y pase de lista comida (NUEVA)
+
+- **Posición:** entre F4 (asistencia) y F5 (mensajería).
+- **Duración:** 6-8 h / 2-3 sesiones.
+- **Scope:**
+  - **Tablas nuevas:**
+    - `plantillas_menu` (mensual por centro: nombre, mes, año, vigente).
+    - `plantilla_menu_dia` (qué se come cada día de la semana: desayuno, media mañana, comida, merienda).
+  - **UI admin** para crear/editar la plantilla mensual con el menú de cada día (estructura tabla `Lunes/Martes/.../Viernes` × `Desayuno/Comida/Merienda/Media mañana`).
+  - **Auto-populate** al abrir la agenda del día: si hay plantilla vigente, las filas de `comidas` del día se pre-crean con `descripcion` del menú y `cantidad=NULL` (pendiente de marcar). El profe solo añade la cantidad.
+  - **UI profe "pase de lista comida":** tabla con los niños del aula como filas y los 4 momentos como columnas. Click rápido en cada celda para marcar cantidad (`todo` / `mayoría` / `mitad` / `poco` / `nada`).
+  - **Exclusión automática:** niños con `lactancia_estado='materna'` o `tipo_alimentacion='biberon'` quedan fuera del pase de lista de su columna correspondiente (datos ya cargados en Fase 2.6). Se muestran como "no aplica" con tooltip.
+  - **Excepción puntual:** la profe puede sobrescribir el menú de un niño concreto en el día (caso "trajo tupper de casa") — editar la descripción en línea, queda en `audit_log`.
+  - **Inserción batch en una transacción:** al guardar, las N filas de `comidas` se insertan/actualizan en un solo `INSERT ... ON CONFLICT`. Realtime dispara N notificaciones a los clientes suscritos; cada familia ve solo las de su hijo (RLS).
+- **Reusa de F3 y F4:** modelo `comidas` ya existe (no se toca), patrón "pase de lista" viene de F4, ventana de edición (ADR-0013) sigue aplicando, audit log automático ya cubre `comidas`.
+
+### Impacto en duración total
+
+- **+6 h aprox** sobre el plan Ola 1 original.
+- Sigue factible para **septiembre 2026** sin recortar otras fases.
+- Las fases F5–F11 mantienen su scope y duración estimada.
+
+> Cuando esta reorganización se acepte y empiece la implementación, hay que actualizar `docs/specs/scope-ola-1.md` (tabla numérica de fases) para incluir F4.5. No se toca aún para evitar fricción con specs ya escritas que referencian la numeración antigua.
+
+---
+
 ## Datos pedagógicos / familia
 
 - **Tabla `hermanos_nino` con auto-relación** — _disparador: cuando se necesite reporting de relaciones familiares (informes, exportes de aula, asistencia conjunta)_.
