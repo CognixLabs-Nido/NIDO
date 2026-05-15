@@ -114,7 +114,8 @@ describe('<PaseDeListaTable /> — componente genérico de pase de lista', () =>
   })
 
   it('onBatchSubmit recibe solo las filas dirty con sus valores', async () => {
-    const onBatchSubmit = vi.fn(async () => ({ success: true }))
+    const onBatchSubmit: PaseDeListaTableProps<NinoSimulado, ValorAsistencia>['onBatchSubmit'] =
+      vi.fn(async () => ({ success: true }))
     renderTable({ onBatchSubmit })
 
     fireEvent.click(screen.getByTestId('pase-cell-n1-estado-presente'))
@@ -124,12 +125,16 @@ describe('<PaseDeListaTable /> — componente genérico de pase de lista', () =>
 
     fireEvent.click(screen.getByTestId('pase-submit'))
 
-    await waitFor(() => expect(onBatchSubmit).toHaveBeenCalledOnce())
-    const rows = onBatchSubmit.mock.calls[0][0]
+    const mock = onBatchSubmit as ReturnType<typeof vi.fn>
+    await waitFor(() => expect(mock).toHaveBeenCalledOnce())
+    const rows = mock.mock.calls[0]?.[0] as Array<{
+      id: string
+      value: ValorAsistencia
+    }>
     expect(rows).toHaveLength(1)
-    expect(rows[0].id).toBe('n1')
-    expect(rows[0].value.estado).toBe('presente')
-    expect(rows[0].value.hora_llegada).toBe('09:15')
+    expect(rows[0]!.id).toBe('n1')
+    expect(rows[0]!.value.estado).toBe('presente')
+    expect(rows[0]!.value.hora_llegada).toBe('09:15')
   })
 
   it('marca como saved tras submit exitoso', async () => {

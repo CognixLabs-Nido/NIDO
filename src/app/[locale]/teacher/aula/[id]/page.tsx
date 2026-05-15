@@ -1,4 +1,4 @@
-import { ChevronLeftIcon } from 'lucide-react'
+import { ChevronLeftIcon, ClipboardCheckIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -19,6 +19,7 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
   const { fecha: fechaQuery } = await searchParams
   const t = await getTranslations('teacher.aula')
   const tNav = await getTranslations('teacher.nav')
+  const tAsistencia = await getTranslations('asistencia')
 
   const aula = await getAulaById(id)
   if (!aula) notFound()
@@ -47,6 +48,16 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
               {y}
             </Badge>
           ))}
+        </div>
+        <div className="pt-2">
+          <Link
+            href={`/${locale}/teacher/aula/${id}/asistencia`}
+            data-testid="link-asistencia"
+            className="border-border bg-background hover:bg-muted text-foreground inline-flex h-7 items-center gap-1 rounded-xl border px-2.5 text-[0.8rem] font-medium transition-colors"
+          >
+            <ClipboardCheckIcon className="size-3.5" />
+            {tAsistencia('ver')}
+          </Link>
         </div>
       </header>
 

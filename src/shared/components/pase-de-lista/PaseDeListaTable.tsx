@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
-import type { PaseDeListaColumn, PaseDeListaTableProps, RowState, RowStatus } from './types'
+import type { PaseDeListaColumn, PaseDeListaTableProps, RowStatus } from './types'
 import { usePaseDeListaForm } from './usePaseDeListaForm'
 
 /**
