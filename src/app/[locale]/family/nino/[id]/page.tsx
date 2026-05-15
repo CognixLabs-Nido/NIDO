@@ -1,4 +1,4 @@
-import { BookOpenIcon, ChevronLeftIcon, HeartIcon, InfoIcon } from 'lucide-react'
+import { BookOpenIcon, CalendarDaysIcon, ChevronLeftIcon, HeartIcon, InfoIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -8,17 +8,27 @@ import { createClient } from '@/lib/supabase/server'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
 import { DatosPedagogicosReadOnly } from '@/features/datos-pedagogicos/components/DatosPedagogicosReadOnly'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
+import { AgendaFamiliaSinPermiso } from '@/features/agenda-diaria/components/AgendaFamiliaSinPermiso'
+import { AgendaFamiliaView } from '@/features/agenda-diaria/components/AgendaFamiliaView'
+import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
+import { getAgendaDelDia } from '@/features/agenda-diaria/queries/get-agenda-del-dia'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
+  searchParams: Promise<{ fecha?: string }>
 }
 
-export default async function FamilyNinoPage({ params }: PageProps) {
+export default async function FamilyNinoPage({ params, searchParams }: PageProps) {
   const { id, locale } = await params
+  const { fecha: fechaQuery } = await searchParams
   const t = await getTranslations('family.nino')
   const tNav = await getTranslations('family.nav')
+  const tTabs = await getTranslations('family.nino.tabs')
   const nino = await getNinoById(id)
   if (!nino) notFound()
+
+  // Default: hoy hora Madrid. Si llega ?fecha=YYYY-MM-DD válida, la usamos.
+  const fecha = fechaQuery && /^\d{4}-\d{2}-\d{2}$/.test(fechaQuery) ? fechaQuery : hoyMadrid()
 
   let infoMedica = null
   try {
@@ -44,6 +54,10 @@ export default async function FamilyNinoPage({ params }: PageProps) {
       .maybeSingle()
     permisos = (vinculo?.permisos as Record<string, boolean> | null) ?? {}
   }
+
+  // Agenda del día: cargamos siempre la estructura (RLS filtra si no hay
+  // permiso); el render decide qué mostrar.
+  const agendaDelDia = permisos.puede_ver_agenda ? await getAgendaDelDia(id, fecha) : null
 
   const initials = (nino.nombre.charAt(0) + (nino.apellidos.charAt(0) || '')).toUpperCase() || '?'
 
@@ -94,6 +108,18 @@ export default async function FamilyNinoPage({ params }: PageProps) {
           <DatosPedagogicosReadOnly data={datosPed} />
         </section>
       )}
+
+      <section className="space-y-4">
+        <h2 className="text-h3 text-foreground flex items-center gap-2">
+          <CalendarDaysIcon className="text-primary-600 size-5" />
+          {tTabs('agenda')}
+        </h2>
+        {permisos.puede_ver_agenda && agendaDelDia ? (
+          <AgendaFamiliaView ninoId={id} locale={locale} fecha={fecha} agenda={agendaDelDia} />
+        ) : (
+          <AgendaFamiliaSinPermiso />
+        )}
+      </section>
 
       {permisos.puede_ver_info_medica && infoMedica && (
         <section className="space-y-4">
