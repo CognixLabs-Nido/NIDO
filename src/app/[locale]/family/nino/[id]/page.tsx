@@ -1,4 +1,11 @@
-import { BookOpenIcon, CalendarDaysIcon, ChevronLeftIcon, HeartIcon, InfoIcon } from 'lucide-react'
+import {
+  BookOpenIcon,
+  CalendarDaysIcon,
+  CalendarOffIcon,
+  ChevronLeftIcon,
+  HeartIcon,
+  InfoIcon,
+} from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -12,6 +19,8 @@ import { AgendaFamiliaSinPermiso } from '@/features/agenda-diaria/components/Age
 import { AgendaFamiliaView } from '@/features/agenda-diaria/components/AgendaFamiliaView'
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getAgendaDelDia } from '@/features/agenda-diaria/queries/get-agenda-del-dia'
+import { AusenciasFamiliaSection } from '@/features/ausencias/components/AusenciasFamiliaSection'
+import { getAusenciasNino } from '@/features/ausencias/queries/get-ausencias-nino'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -24,6 +33,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const t = await getTranslations('family.nino')
   const tNav = await getTranslations('family.nav')
   const tTabs = await getTranslations('family.nino.tabs')
+  const tAusencia = await getTranslations('ausencia')
   const nino = await getNinoById(id)
   if (!nino) notFound()
 
@@ -58,6 +68,11 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   // Agenda del día: cargamos siempre la estructura (RLS filtra si no hay
   // permiso); el render decide qué mostrar.
   const agendaDelDia = permisos.puede_ver_agenda ? await getAgendaDelDia(id, fecha) : null
+
+  // Ausencias: dependen de `puede_ver_agenda` (compartido con la agenda)
+  // para leer; `puede_reportar_ausencias` para reportar/cancelar.
+  const ausencias = permisos.puede_ver_agenda ? await getAusenciasNino(id) : []
+  const puedeReportarAusencias = Boolean(permisos.puede_reportar_ausencias)
 
   const initials = (nino.nombre.charAt(0) + (nino.apellidos.charAt(0) || '')).toUpperCase() || '?'
 
@@ -119,6 +134,18 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
         ) : (
           <AgendaFamiliaSinPermiso />
         )}
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-h3 text-foreground flex items-center gap-2">
+          <CalendarOffIcon className="text-accent-warm-600 size-5" />
+          {tAusencia('title')}
+        </h2>
+        <AusenciasFamiliaSection
+          ninoId={id}
+          ausencias={ausencias}
+          puedeReportar={puedeReportarAusencias}
+        />
       </section>
 
       {permisos.puede_ver_info_medica && infoMedica && (
