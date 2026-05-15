@@ -675,6 +675,13 @@
       "cancelar": "Cancel"
     }
   },
+  "day_picker": {
+    "anterior": "Previous day",
+    "siguiente": "Next day",
+    "volver_a_hoy": "Back to today",
+    "dia_cerrado": "Day closed",
+    "dia_futuro": "Future day"
+  },
   "asistencia": {
     "title": "Attendance",
     "title_plural": "Attendance",
@@ -707,8 +714,6 @@
       "error": "Error"
     },
     "vista": {
-      "dia_cerrado": "Day closed",
-      "dia_futuro": "Future day",
       "sin_registrar": "Not recorded",
       "registrado_a_las": "at {hora}",
       "sin_pase_de_lista": "Attendance was not taken this day.",

@@ -675,6 +675,13 @@
       "cancelar": "Cancelar"
     }
   },
+  "day_picker": {
+    "anterior": "Día anterior",
+    "siguiente": "Día siguiente",
+    "volver_a_hoy": "Volver a hoy",
+    "dia_cerrado": "Día cerrado",
+    "dia_futuro": "Día futuro"
+  },
   "asistencia": {
     "title": "Asistencia",
     "title_plural": "Asistencias",
@@ -707,8 +714,6 @@
       "error": "Error"
     },
     "vista": {
-      "dia_cerrado": "Día cerrado",
-      "dia_futuro": "Día futuro",
       "sin_registrar": "Sin registrar",
       "registrado_a_las": "a las {hora}",
       "sin_pase_de_lista": "Aún no se ha pasado lista este día.",

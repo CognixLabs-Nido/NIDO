@@ -7,14 +7,17 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatearFechaHumano, offsetDias } from '@/features/agenda-diaria/lib/fecha'
 
-import type { ModoFecha } from '../lib/modo-fecha'
+import type { ModoFecha } from './modo-fecha'
 
 /**
- * DayPicker propio de la asistencia: a diferencia del de la agenda, **sí**
- * permite avanzar al futuro. Hoy edita, ayer y atrás muestra histórico,
- * mañana y adelante muestra preview de ausencias ya reportadas.
+ * DayPicker compartido para superficies operativas que necesitan tres modos
+ * (hoy / histórico / futuro). Permite avanzar a fechas futuras (a diferencia
+ * del `AgendaDayPicker` de F3, que solo permite ir hasta hoy).
+ *
+ * Lee strings del namespace i18n `day_picker.*` para que el componente sea
+ * neutro: F4 (asistencia) y F4.5 (comida) lo usan sin pasarle textos.
  */
-interface AsistenciaDayPickerProps {
+interface ModalidadDayPickerProps {
   fecha: string
   locale: string
   hoy: string
@@ -22,15 +25,14 @@ interface AsistenciaDayPickerProps {
   onChange: (fecha: string) => void
 }
 
-export function AsistenciaDayPicker({
+export function ModalidadDayPicker({
   fecha,
   locale,
   hoy,
   modo,
   onChange,
-}: AsistenciaDayPickerProps) {
-  const tAgenda = useTranslations('agenda')
-  const tAsistencia = useTranslations('asistencia.vista')
+}: ModalidadDayPickerProps) {
+  const t = useTranslations('day_picker')
   const etiqueta = formatearFechaHumano(fecha, locale)
 
   return (
@@ -39,7 +41,7 @@ export function AsistenciaDayPicker({
         type="button"
         variant="outline"
         size="icon"
-        aria-label={tAgenda('selector.anterior')}
+        aria-label={t('anterior')}
         onClick={() => onChange(offsetDias(fecha, -1))}
       >
         <ChevronLeftIcon className="size-4" />
@@ -54,24 +56,24 @@ export function AsistenciaDayPicker({
         type="button"
         variant="outline"
         size="icon"
-        aria-label={tAgenda('selector.siguiente')}
+        aria-label={t('siguiente')}
         onClick={() => onChange(offsetDias(fecha, 1))}
       >
         <ChevronRightIcon className="size-4" />
       </Button>
       {modo === 'historico' && (
         <Badge variant="secondary" data-testid="badge-dia-cerrado">
-          {tAsistencia('dia_cerrado')}
+          {t('dia_cerrado')}
         </Badge>
       )}
       {modo === 'futuro' && (
         <Badge variant="info" data-testid="badge-dia-futuro">
-          {tAsistencia('dia_futuro')}
+          {t('dia_futuro')}
         </Badge>
       )}
       {fecha !== hoy && (
         <Button type="button" variant="ghost" size="sm" onClick={() => onChange(hoy)}>
-          {tAgenda('volver_a_hoy')}
+          {t('volver_a_hoy')}
         </Button>
       )}
     </div>

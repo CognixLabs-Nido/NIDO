@@ -13,12 +13,13 @@ import type {
   PaseDeListaQuickAction,
 } from '@/shared/components/pase-de-lista/types'
 
+import { ModalidadDayPicker } from '@/shared/components/day-picker/ModalidadDayPicker'
+import { modoDeFecha } from '@/shared/components/day-picker/modo-fecha'
+
 import { batchUpsertAsistencias } from '../actions/batch-upsert-asistencias'
-import { modoDeFecha } from '../lib/modo-fecha'
 import type { EstadoAsistencia } from '../schemas/asistencia'
 import type { NinoAsistenciaResumen } from '../types'
 
-import { AsistenciaDayPicker } from './AsistenciaDayPicker'
 import { AsistenciaReadOnlyList } from './AsistenciaReadOnlyList'
 import { useAsistenciaRealtime } from './use-asistencia-realtime'
 
@@ -182,13 +183,7 @@ export function PaseDeListaCliente({ aulaId, locale, fecha, filas }: Props) {
 
   return (
     <div className="space-y-4">
-      <AsistenciaDayPicker
-        fecha={fecha}
-        locale={locale}
-        onChange={setFecha}
-        hoy={hoy}
-        modo={modo}
-      />
+      <ModalidadDayPicker fecha={fecha} locale={locale} onChange={setFecha} hoy={hoy} modo={modo} />
 
       {filas.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t('ningun_nino')}</p>

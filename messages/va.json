@@ -675,6 +675,13 @@
       "cancelar": "Cancel·lar"
     }
   },
+  "day_picker": {
+    "anterior": "Dia anterior",
+    "siguiente": "Dia següent",
+    "volver_a_hoy": "Tornar a hui",
+    "dia_cerrado": "Dia tancat",
+    "dia_futuro": "Dia futur"
+  },
   "asistencia": {
     "title": "Assistència",
     "title_plural": "Assistències",
@@ -707,8 +714,6 @@
       "error": "Error"
     },
     "vista": {
-      "dia_cerrado": "Dia tancat",
-      "dia_futuro": "Dia futur",
       "sin_registrar": "Sense registrar",
       "registrado_a_las": "a les {hora}",
       "sin_pase_de_lista": "Encara no s'ha pres l'assistència aquest dia.",

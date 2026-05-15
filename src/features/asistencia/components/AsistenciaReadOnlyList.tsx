@@ -8,8 +8,9 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/shared/components/EmptyState'
 
+import type { ModoFecha } from '@/shared/components/day-picker/modo-fecha'
+
 import type { MotivoAusencia } from '../../ausencias/schemas/ausencia'
-import type { ModoFecha } from '../lib/modo-fecha'
 import type { EstadoAsistencia } from '../schemas/asistencia'
 import type { NinoAsistenciaResumen } from '../types'
 
