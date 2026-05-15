@@ -2,7 +2,7 @@
 feature: menus
 wave: 1
 phase: 4.5
-status: draft
+status: approved
 priority: high
 last_updated: 2026-05-16
 related_adrs: [ADR-0014, ADR-0017, ADR-0018]
@@ -169,7 +169,7 @@ Misma flow que B39, pero la profe edita la columna "Descripción" antes de submi
 
 **Pre-condiciones:**
 
-- Niño con `datos_pedagogicos_nino.lactancia_estado IN ('materna', 'biberon', 'mixta')`.
+- Niño con `datos_pedagogicos_nino.lactancia_estado IN ('materna', 'biberon')`.
 
 **Flujo:**
 
@@ -177,7 +177,9 @@ Misma flow que B39, pero la profe edita la columna "Descripción" antes de submi
 2. El niño no aparece en el pase de lista de comida sólida.
 3. Sigue siendo registrable en `biberones` (F3) por la vía existente — esta feature no toca esa flow.
 
-> **Nota de ajuste vs prompt original**: el prompt mencionaba `tipo_alimentacion='biberon'` como exclusión, pero ese enum (de F2.6) no tiene tal valor (sus opciones son omnivora/vegetariana/vegana/sin_lactosa/sin_gluten/religiosa_halal/religiosa_kosher/otra). La exclusión real funcional es por `lactancia_estado IN ('materna', 'biberon', 'mixta')`. `tipo_alimentacion` se queda como información dietética, no excluye del pase de lista. **Ajuste documentado en este spec, requiere aprobación.**
+> **Nota de ajuste vs prompt original (resuelta en Checkpoint A)**: el prompt mencionaba `tipo_alimentacion='biberon'` como exclusión, pero ese enum (de F2.6) no tiene tal valor (sus opciones son omnivora/vegetariana/vegana/sin_lactosa/sin_gluten/religiosa_halal/religiosa_kosher/otra). La exclusión funcional aprobada es por `lactancia_estado IN ('materna', 'biberon')`.
+>
+> **Matiz importante**: `lactancia_estado='mixta'` **NO** excluye. Los niños en transición mixta comen purés y sólidos parciales que la profe debe registrar; no son exclusivamente leche. Solo se excluyen los exclusivos de pecho (`materna`) y los exclusivos de biberón (`biberon`).
 
 ### B43 — Día cerrado
 
@@ -348,8 +350,7 @@ CREATE OR REPLACE FUNCTION public.nino_toma_comida_solida(p_nino_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT COALESCE(
     (SELECT lactancia_estado NOT IN ('materna'::public.lactancia_estado,
-                                     'biberon'::public.lactancia_estado,
-                                     'mixta'::public.lactancia_estado)
+                                     'biberon'::public.lactancia_estado)
      FROM public.datos_pedagogicos_nino
      WHERE nino_id = p_nino_id),
     TRUE
@@ -357,7 +358,11 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS
 $$;
 ```
 
-> **Ajuste vs prompt original** (ver B42): el prompt usaba `tipo_alimentacion != 'biberon'` que es vacuo porque ese enum no tiene tal valor. Se reemplaza por `lactancia_estado IN ('materna','biberon','mixta')` que sí es semánticamente correcto. Documentado y a revisar en Checkpoint A.
+> **Ajuste vs prompt original aprobado en Checkpoint A** (ver B42):
+>
+> - El prompt usaba `tipo_alimentacion != 'biberon'`, valor inexistente en ese enum. Se reemplaza por exclusión vía `lactancia_estado`.
+> - `lactancia_estado='mixta'` **NO** excluye del pase de lista de comida sólida. Los niños en transición mixta comen purés y sólidos parciales que la profe registra. Solo se excluyen los lactantes exclusivos (`materna`, `biberon`).
+> - Si no hay fila `datos_pedagogicos_nino`, se asume TRUE (incluido en el pase de lista) — el COALESCE garantiza que la ausencia de datos pedagógicos no excluye al niño por defecto.
 
 ## Políticas RLS
 
@@ -560,6 +565,8 @@ Sin telemetría custom en esta fase. Se reutilizan los eventos existentes de age
 - [ ] `menu_del_dia(centro, lunes)` devuelve cero filas si la publicada está fuera del rango de vigencia.
 - [ ] `nino_toma_comida_solida` devuelve FALSE si `lactancia_estado='materna'`.
 - [ ] `nino_toma_comida_solida` devuelve FALSE si `lactancia_estado='biberon'`.
+- [ ] `nino_toma_comida_solida` devuelve **TRUE** si `lactancia_estado='mixta'` (matiz Checkpoint A: la lactancia mixta come sólidos parciales).
+- [ ] `nino_toma_comida_solida` devuelve TRUE si `lactancia_estado='finalizada'` o `'no_aplica'`.
 - [ ] `nino_toma_comida_solida` devuelve TRUE si no hay `datos_pedagogicos_nino`.
 
 **Vitest (audit):**
@@ -586,13 +593,13 @@ Sin telemetría custom en esta fase. Se reutilizan los eventos existentes de age
 - **ADR-0017 — Plantilla por día de semana vs fecha específica**: día de semana cubre 95% de centros. Excepciones se modelan en Ola 2.
 - **ADR-0018 — Lazy materialization desde plantilla a `comidas`**: la plantilla NO duplica filas. La descripción se copia al rellenar el pase de lista. Mantiene `comidas` como tabla de hechos y `plantillas_menu` como intención.
 
-## Pendiente de aprobación en Checkpoint A
+## Checkpoint A — resoluciones
 
-1. **Helper `nino_toma_comida_solida`**: ajuste documental respecto al prompt. Filtra por `lactancia_estado IN ('materna','biberon','mixta')`, no por `tipo_alimentacion='biberon'` (valor inexistente). ¿OK?
-2. **DayPicker compartido**: ¿renombrar `AsistenciaDayPicker` → `ModalidadDayPicker` y mover a `src/shared/components/`? ¿O duplicar para evitar coupling entre F4/F4.5?
-3. **Override de descripción visible a familia**: confirmado que la familia ve el menú estándar de la plantilla, no el override por niño. ¿OK?
-4. **`ISODOW` vs `DOW`**: usar `ISODOW` en el helper (lunes=1) para consistencia interna del enum. ¿OK?
-5. **`comidas.hora` opcional al batch**: el pase de lista batch deja `hora=NULL` (al menú no se le asigna una hora concreta). Coherente con el CHECK actual de `comidas` (la columna ya es nullable). ¿OK?
+1. **Helper `nino_toma_comida_solida`**: aprobado con matiz. Excluye `lactancia_estado IN ('materna','biberon')`. **`'mixta'` NO excluye** — los niños en transición mixta comen sólidos parciales que la profe debe registrar.
+2. **DayPicker compartido**: aprobado renombrar `AsistenciaDayPicker` → componente compartido y reusarlo desde F4.5.
+3. **Override de descripción visible a familia**: aprobado. La familia ve el menú estándar de la plantilla. Los overrides quedan en `comidas.descripcion` como hecho privado del aula.
+4. **`ISODOW` vs `DOW`**: aprobado `ISODOW`.
+5. **`comidas.hora` opcional al batch**: aprobado. La columna ya es nullable.
 
 ## Referencias
 
