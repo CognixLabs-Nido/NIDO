@@ -88,11 +88,28 @@ Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 | `autorizado`  | Como tutor_legal pero con permisos por defecto a `false`           |
 | `service`     | Edge Functions (bypass RLS)                                        |
 
-## Ventana de edición agenda diaria (Fase 3+)
+## Ventana de edición agenda diaria (Fase 3, ADR-0013)
 
-- Profe edita hasta las 06:00 del día siguiente.
-- Días anteriores: read-only para profe, editable para admin con audit log forzado.
-- Helper futuro: `public.dentro_de_ventana_edicion(fecha date)`.
+> **Cambio respecto a doc previo:** la regla anterior ("hasta 06:00 del día siguiente, admin edita histórico") **queda derogada** por [ADR-0013](../decisions/ADR-0013-ventana-edicion-mismo-dia.md). La nueva regla, vigente desde Fase 3:
+
+- Profe edita solo si `fecha = (now() AT TIME ZONE 'Europe/Madrid')::date` (helper `public.dentro_de_ventana_edicion(fecha)`, ver [ADR-0011](../decisions/ADR-0011-ventana-edicion-timezone-madrid.md)).
+- A las 00:00 hora Madrid del día siguiente, **read-only para todos los roles** (incluido admin) por RLS.
+- Correcciones de histórico solo vía SQL con `service_role` (queda en `audit_log` igualmente).
+- `DELETE` bloqueado a todos por default DENY: eventos erróneos se marcan con `UPDATE observaciones = '[anulado] ' || COALESCE(observaciones, '')`.
+
+Helper (vive en `public.*`, mismo patrón que el resto):
+
+```sql
+CREATE OR REPLACE FUNCTION public.dentro_de_ventana_edicion(p_fecha date)
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT p_fecha = (now() AT TIME ZONE 'Europe/Madrid')::date;
+$$;
+```
+
+## Realtime y RLS
+
+Las 5 tablas de la agenda (`agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`) están publicadas en `supabase_realtime`. **Las políticas RLS de `SELECT` se aplican también a las notificaciones Realtime**: Supabase descarta los eventos sobre filas que el rol del cliente no podría leer vía `SELECT`. El filtrado client-side por `aula_id` (vista profe) o `nino_id` (vista familia) es **cosmético**, no de seguridad. Manipular ese filtro desde devtools no expone notificaciones de aulas/niños no autorizados.
 
 ## Tests RLS obligatorios
 
@@ -103,8 +120,10 @@ Por cada tabla nueva verificar que:
 3. Un autorizado no puede ver la agenda (solo recogida).
 4. Audit log no es modificable por nadie (ni admin).
 
-Tests Fase 1 + Fase 2 en `src/test/rls/` (13 archivos, 36 tests):
+Tests Fases 1–3 en `src/test/rls/` (≈14 archivos, ≈49 tests):
 
 - `usuarios.rls.test.ts`, `roles.rls.test.ts`, `invitaciones.rls.test.ts` (Fase 1).
 - `centros.rls.test.ts`, `aulas.rls.test.ts`, `vinculos.rls.test.ts`, `info-medica.rls.test.ts`, `audit-log.rls.test.ts`, `cifrado.test.ts` (Fase 2).
-- `src/test/audit/audit.test.ts` verifica triggers (INSERT, UPDATE, soft delete).
+- `datos-pedagogicos.rls.test.ts` (Fase 2.6).
+- `agenda-diaria.rls.test.ts` + `dentro-de-ventana-edicion.test.ts` (Fase 3).
+- `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda).

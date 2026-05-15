@@ -188,3 +188,56 @@
 ### Para Fase 3
 
 - Sin cambios respecto a lo planeado: tablas operativas (`agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`), helper `dentro_de_ventana_edicion`, UI por aula. Los datos pedagógicos ya cargados permiten a la agenda mostrar contexto (lactancia, dieta, idiomas) sin tener que preguntar a la familia.
+
+---
+
+## Fase 3 — Agenda diaria + bienestar
+
+**Fecha:** 2026-05-15
+**Estado:** En curso (implementación cerrada, pendiente Checkpoint C y PR final).
+
+### Completado
+
+- Spec `docs/specs/daily-agenda.md` con 3 ajustes pre-aprobación incorporados: nota explícita en ADR-0013 sobre derogación de la regla previa de ventana, flujo "Marcar como erróneo" (UPDATE con prefijo `[anulado] `) en lugar de DELETE, y aclaración de seguridad sobre el filtrado client-side de Realtime (cosmético — la seguridad la enforza RLS).
+- Migración `20260515153711_phase3_daily_agenda.sql` aplicada al proyecto Supabase remoto:
+  - 9 ENUMs nuevos (`estado_general_agenda`, `humor_agenda`, `momento_comida`, `cantidad_comida`, `tipo_biberon`, `calidad_sueno`, `tipo_deposicion`, `consistencia_deposicion`, `cantidad_deposicion`).
+  - 5 tablas (`agendas_diarias` padre con UNIQUE(nino_id, fecha) y ON DELETE RESTRICT; `comidas`, `biberones`, `suenos`, `deposiciones` con ON DELETE CASCADE). CHECKs por campo (length ≤ 500, cantidad_ml ∈ [0,500], `hora_fin > hora_inicio`, `tipo='pipi' ⇒ consistencia IS NULL`).
+  - Helper `public.dentro_de_ventana_edicion(fecha)` con `Europe/Madrid` hardcoded (ADR-0011).
+  - Helpers de lookup `centro_de_agenda`, `nino_de_agenda`, `fecha_de_agenda` SECURITY DEFINER STABLE (patrón ADR-0007 para evitar recursión RLS).
+  - 15 políticas RLS (SELECT/INSERT/UPDATE por tabla; DELETE bloqueado a todos por default DENY). INSERT/UPDATE exigen `dentro_de_ventana_edicion(fecha)`.
+  - `audit_trigger_function()` extendida (CREATE OR REPLACE preserva ramas previas y añade `agendas_diarias` + 4 hijas).
+  - `ALTER PUBLICATION supabase_realtime ADD TABLE` para las 5 tablas.
+  - Backfill JSONB: `vinculos_familiares.permisos` recibe `puede_ver_agenda` con default `true` para tutor*legal*\*, `false` para autorizado. Idempotente.
+- Tipos TS regenerados sin regresión.
+- Feature `src/features/agenda-diaria/` completa:
+  - 5 schemas Zod (cabecera + 4 eventos) con cross-field rules (`hora_fin > hora_inicio`, `consistencia` solo si caca) y `coerce.number()` en `cantidad_ml`. Helper `esAnulado()`.
+  - 3 queries server-side (`get-agenda-del-dia`, `get-agendas-aula-del-dia` con counts y badges de alerta médica, `get-permiso-agenda` cacheada con React.cache).
+  - 6 server actions (`upsert-agenda-cabecera` + `asegurarAgenda` helper interno; 4 upserts de evento; `marcar-evento-erroneo` con prefijo idempotente; `fetch-agenda-del-dia` wrapper para cargar lazy desde cliente).
+  - Hook `useAgendaRealtime` que suscribe a las 5 tablas con `router.refresh()` + callback `onChange`; comentario explícito sobre que el filtrado client-side es cosmético.
+  - Helpers de fecha `lib/fecha.ts` (`hoyMadrid`, `offsetDias`, `esHoy`, `formatearFechaHumano` con `Intl.DateTimeFormat` por locale).
+  - UI profe (`/teacher/aula/[id]`) reescrita: server carga aula + resúmenes del día; cliente `AgendaAulaCliente` con DayPicker, lista de niños como tarjetas colapsables, panel expandible con 5 sub-secciones (General/Comidas/Biberones/Sueños/Deposiciones), Realtime + bump de refreshKey, día cerrado deshabilita inputs.
+  - UI familia (`/family/nino/[id]`) con sección Agenda añadida después de pedagógico: `AgendaFamiliaView` (read-only, Realtime activo solo si fecha == hoy) o `AgendaFamiliaSinPermiso` empty state.
+  - Componente compartido `BotonMarcarErroneo` con Dialog de confirmación; visual de evento anulado con `opacity-50` + `line-through` + badge "Anulado" (mismo render en profe y familia).
+- i18n trilingüe completa (es/en/va) para namespace `agenda` (~80 claves por idioma) + `family.nino.tabs.agenda` + `family.nino.agenda.{sin_permiso,historico_vacio}`.
+- Tests Vitest acumulados: ≈ 86 tests / 22 ficheros:
+  - 13 nuevos antes del Checkpoint B (8 RLS agenda, 3 ventana helper, 2 audit agenda).
+  - 13 schema tests Zod (5 schemas + helper esAnulado).
+  - 60 previos (Fases 1, 2, 2.6, incluido audit_trigger_function regresión-verde).
+- 1 spec Playwright `e2e/daily-agenda.spec.ts` con 5 smoke tests (rutas protegidas, i18n sin claves sin resolver en es/en/va) + 1 test condicional skip de Realtime con dos contextos en paralelo (profe + familia) activable con `E2E_REAL_SESSIONS=1` cuando haya credenciales E2E*PROFE*_ / E2E*TUTOR*_ / E2E_AULA_ID / E2E_NINO_ID.
+
+### Decisiones (ADRs)
+
+- **ADR-0011-ventana-edicion-timezone-madrid**: helper `dentro_de_ventana_edicion(fecha)` con `Europe/Madrid` hardcoded. NIDO arranca single-tenant en Valencia; cuando se incorpore un centro fuera de CET, añadir `centros.timezone TEXT NOT NULL DEFAULT 'Europe/Madrid'` y reescribir helper.
+- **ADR-0012-agenda-cinco-tablas-vs-jsonb**: 5 tablas separadas (1 padre + 4 hijo) en lugar de JSONB en una sola tabla. Razones: ENUMs Postgres, audit log per-evento, Realtime granular, tipos TS ricos, queries analíticas Fase 9, concurrencia robusta. Coste: 9 ENUMs + 15 políticas RLS + 4 server actions + 4 secciones UI.
+- **ADR-0013-ventana-edicion-mismo-dia**: ventana = mismo día calendario hora Madrid, sin excepciones desde UI ni para admin. **Deroga la regla previa** ("hasta 06:00 día siguiente, admin edita histórico") de `CLAUDE.md` y `docs/architecture/rls-policies.md`. Razones: simplificar modelo mental, una sola ventana, menos errores. Trade-off: profe que olvida algo a las 23:55 pierde la ventana. Correcciones de histórico solo vía SQL con `service_role` (queda en `audit_log`).
+
+### Pendiente
+
+- Validaciones finales (`npm run typecheck && lint && test && test:e2e && build`) y push de la branch como PR draft.
+- Checkpoint C: verificación visual del Realtime en preview de Vercel con tutor de prueba creado manualmente (`jovimib+tutor@gmail.com`, vínculo `tutor_legal_principal` al niño "Test Prueba" en aula Farm little).
+- Smoke en producción tras merge: agenda visible en `/teacher/aula/{id}` con Realtime; tab "Agenda" en `/family/nino/{id}` con gating.
+
+### Para Fase 4
+
+- Modelo de asistencia y ausencias (check-in entrada/salida, ausencias justificadas). El patrón de RLS, audit log y Realtime queda probado y reusable.
+- Si Iker confirma que la decisión de "mismo día" funciona en el día a día, no hay revisión pendiente. Si la profe pide la ventana hasta 06:00 del día siguiente más adelante, se reabre con un nuevo ADR que supersedaría 0013.

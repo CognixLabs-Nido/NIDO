@@ -91,7 +91,7 @@ Funciones helper Postgres (en schema `public.*`, no `auth.*` — Supabase Cloud 
 
 Default DENY ALL. Service role bypass para Edge Functions, nunca expuesto al cliente.
 
-Ventana de tiempo en agendas diarias: profe edita hasta 06:00 del día siguiente. Día anterior read-only. Excepciones solo admin con audit log forzado.
+Ventana de tiempo en agendas diarias (Fase 3, ADR-0013): profe edita solo durante el **mismo día calendario hora `Europe/Madrid`** (helper `public.dentro_de_ventana_edicion(fecha)`). A las 00:00 hora Madrid del día siguiente, el día anterior queda **read-only para todos** los roles (incluido admin) por RLS. Correcciones de histórico solo vía SQL con `service_role` (queda en `audit_log`). DELETE bloqueado a todos por default DENY — eventos erróneos se marcan con UPDATE `observaciones = '[anulado] '...`. Esta regla **deroga** la anterior ("hasta 06:00 día siguiente, admin edita histórico"). Ver ADR-0011 (huso Madrid) y ADR-0013 (mismo día).
 
 Tests RLS obligatorios por categoría de tabla.
 
