@@ -5,7 +5,6 @@ import { useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
-import { AgendaDayPicker } from '@/features/agenda-diaria/components/AgendaDayPicker'
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { PaseDeListaTable } from '@/shared/components/pase-de-lista/PaseDeListaTable'
 import type {
@@ -15,9 +14,12 @@ import type {
 } from '@/shared/components/pase-de-lista/types'
 
 import { batchUpsertAsistencias } from '../actions/batch-upsert-asistencias'
+import { modoDeFecha } from '../lib/modo-fecha'
 import type { EstadoAsistencia } from '../schemas/asistencia'
 import type { NinoAsistenciaResumen } from '../types'
 
+import { AsistenciaDayPicker } from './AsistenciaDayPicker'
+import { AsistenciaReadOnlyList } from './AsistenciaReadOnlyList'
 import { useAsistenciaRealtime } from './use-asistencia-realtime'
 
 // Tipo compatible con `Record<string, unknown>` (constraint del componente
@@ -40,7 +42,8 @@ export function PaseDeListaCliente({ aulaId, locale, fecha, filas }: Props) {
   const t = useTranslations('asistencia')
   const router = useRouter()
   const hoy = hoyMadrid()
-  const diaCerrado = fecha !== hoy
+  const modo = modoDeFecha(fecha)
+  const editable = modo === 'hoy'
 
   function setFecha(nueva: string) {
     const url = new URL(window.location.href)
@@ -179,17 +182,17 @@ export function PaseDeListaCliente({ aulaId, locale, fecha, filas }: Props) {
 
   return (
     <div className="space-y-4">
-      <AgendaDayPicker
+      <AsistenciaDayPicker
         fecha={fecha}
         locale={locale}
         onChange={setFecha}
-        diaCerrado={diaCerrado}
         hoy={hoy}
+        modo={modo}
       />
 
       {filas.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t('ningun_nino')}</p>
-      ) : (
+      ) : editable ? (
         <PaseDeListaTable
           ariaLabel={t('title')}
           items={items}
@@ -201,7 +204,7 @@ export function PaseDeListaCliente({ aulaId, locale, fecha, filas }: Props) {
           columns={columns}
           quickActions={quickActions}
           onBatchSubmit={onBatchSubmit}
-          readOnly={diaCerrado}
+          readOnly={false}
           submitLabel={t('guardar')}
           i18n={{
             pending: t('status.pending'),
@@ -217,6 +220,8 @@ export function PaseDeListaCliente({ aulaId, locale, fecha, filas }: Props) {
             ) : null
           }
         />
+      ) : (
+        <AsistenciaReadOnlyList filas={filas} modo={modo} />
       )}
     </div>
   )

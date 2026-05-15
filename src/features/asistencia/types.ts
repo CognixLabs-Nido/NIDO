@@ -1,3 +1,5 @@
+import type { MotivoAusencia } from '../ausencias/schemas/ausencia'
+
 import type { EstadoAsistencia } from './schemas/asistencia'
 
 // Patrón Result compartido (duplicado intencionalmente per feature).
@@ -39,7 +41,7 @@ export interface NinoAsistenciaResumen {
   asistencia: AsistenciaRow | null
   ausencia: {
     id: string
-    motivo: string
+    motivo: MotivoAusencia
     descripcion: string | null
   } | null
   alertas: {

@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 
+import type { MotivoAusencia } from '../../ausencias/schemas/ausencia'
 import type { AsistenciaRow, NinoAsistenciaResumen } from '../types'
 
 interface MatriculaJoinNino {
@@ -70,12 +71,12 @@ export async function getPaseDeListaAula(
 
   const ausenciaByNino = new Map<
     string,
-    { id: string; motivo: string; descripcion: string | null }
+    { id: string; motivo: MotivoAusencia; descripcion: string | null }
   >()
   for (const row of (ausencias ?? []) as Array<{
     id: string
     nino_id: string
-    motivo: string
+    motivo: MotivoAusencia
     descripcion: string | null
   }>) {
     if (row.descripcion?.startsWith('[cancelada] ')) continue
