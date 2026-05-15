@@ -241,3 +241,69 @@
 
 - Modelo de asistencia y ausencias (check-in entrada/salida, ausencias justificadas). El patrón de RLS, audit log y Realtime queda probado y reusable.
 - Si Iker confirma que la decisión de "mismo día" funciona en el día a día, no hay revisión pendiente. Si la profe pide la ventana hasta 06:00 del día siguiente más adelante, se reabre con un nuevo ADR que supersedaría 0013.
+
+---
+
+## Fase 4 — Asistencia + ausencias
+
+**Fecha:** 2026-05-15
+**Estado:** Implementación cerrada, pendiente Checkpoint C y PR final.
+
+### Completado
+
+- Spec `docs/specs/attendance.md` aprobada con 3 ajustes pre-implementación: día cerrado documentado como regla transversal (ADR-0016), permiso `puede_reportar_ausencias` separado de `puede_ver_agenda` en JSONB (ADR-0006), profe puede UPDATE solo sobre ausencias propias y solo para cancelación.
+- Migración `20260515203407_phase4_attendance.sql` aplicada al proyecto Supabase remoto:
+  - 2 ENUMs (`estado_asistencia`, `motivo_ausencia`).
+  - Tabla `asistencias` con UNIQUE(nino_id, fecha), ON DELETE RESTRICT, CHECKs (length observaciones ≤ 500, `hora_salida > hora_llegada` cuando ambas). Asistencia lazy (ADR-0015): nadie crea filas por adelantado.
+  - Tabla `ausencias` con FK ON DELETE RESTRICT, CHECK `fecha_fin >= fecha_inicio`, CHECK length descripción ≤ 500. Cancelación con prefijo `[cancelada] ` (no DELETE).
+  - Helper `public.hoy_madrid()` SECURITY DEFINER STABLE (gemelo de `dentro_de_ventana_edicion`) usado en RLS de ausencias para "solo futuras" en tutor.
+  - 12 políticas RLS: `asistencias` (SELECT admin/profe; INSERT/UPDATE con `dentro_de_ventana_edicion`); `ausencias` (SELECT admin/profe/tutor con `puede_ver_agenda`; INSERT con `puede_reportar_ausencias` AND `fecha_inicio >= hoy_madrid()` para tutor; UPDATE admin sin restricción, tutor con permiso si fecha futura, profe solo si `reportada_por = auth.uid()`). DELETE bloqueado a todos.
+  - `audit_trigger_function()` ampliada con ramas para `asistencias` y `ausencias` (derivan `centro_id` vía `centro_de_nino`).
+  - `ALTER PUBLICATION supabase_realtime ADD TABLE` para `asistencias` y `ausencias`.
+  - Backfill JSONB: `vinculos_familiares.permisos` recibe `puede_reportar_ausencias` con default `true` para tutor*legal*\*, `false` para autorizado. Idempotente.
+- Tipos TS regenerados sin regresión.
+- Componente compartido `src/shared/components/pase-de-lista/` (ADR-0014):
+  - `types.ts` con `PaseDeListaColumn<TValue>`, `PaseDeListaQuickAction<TValue>`, `PaseDeListaItem<TItem, TValue>`, `PaseDeListaTableProps<TItem, TValue>`, `RowState<TValue>`, `RowStatus`.
+  - `usePaseDeListaForm.ts` (hook interno): Map<rowId, RowState> con O(1) mutaciones; `setValue`, `applyQuickAction`, `validate` (solo filas dirty), `collectDirty`, `markStatus`, `setRowError`, `reset`.
+  - `PaseDeListaTable.tsx`: grid CSS dinámico, 5 tipos de input (radio/time/text-short/select/enum-badges), badges de status, readOnly, submit batch.
+  - 10 tests unitarios verdes.
+- Feature `src/features/asistencia/`:
+  - Schema Zod con cross-field validation (`requiere_hora_llegada`, `salida_anterior_llegada`); schema batch.
+  - Server actions `upsertAsistencia` y `batchUpsertAsistencias` con patrón Result.
+  - Queries `getPaseDeListaAula` (auto-link con ausencias activas) y `getResumenAsistenciaCentro` (counts por aula).
+  - Cliente `PaseDeListaCliente` que monta `<PaseDeListaTable />` con auto-link visual: si hay ausencia activa, fila pre-marcada `estado='ausente'` + badge "Ausencia reportada por familia".
+  - Hook `useAsistenciaRealtime` (suscripción a `asistencias` y `ausencias`, mismo patrón que F3).
+- Feature `src/features/ausencias/`:
+  - Schema con superRefine (fecha_fin >= fecha_inicio); helper `esCancelada` + constante `PREFIX_CANCELADA`.
+  - Server actions `crearAusencia`, `actualizarAusencia`, `cancelarAusencia` (cancelación = UPDATE con prefijo).
+  - Query `getAusenciasNino` (ordenadas por fecha_inicio desc).
+  - Componente `AusenciasFamiliaSection` (Card + Dialog) con permission gating (`puede_reportar_ausencias` controla el botón Reportar y la acción Cancelar).
+- UI:
+  - Nueva ruta `/teacher/aula/[id]/asistencia` con DayPicker reusado de F3 y `<PaseDeListaTable />` en modo `readOnly` si día cerrado.
+  - Link "Ver pase de lista" añadido en `/teacher/aula/[id]` debajo de la cabecera del aula.
+  - Sección "Ausencias" añadida en `/family/nino/[id]` con auto-link de `puede_ver_agenda` (lectura) y `puede_reportar_ausencias` (escritura).
+  - Card "Asistencia hoy" añadida al dashboard admin `/admin` con counts presentes/ausentes/total por aula.
+- i18n trilingüe completa (es/en/va) para namespaces `asistencia.*` y `ausencia.*` (~60 claves por idioma).
+- Tests Vitest acumulados: 129 tests / 26 ficheros (43 nuevos):
+  - 10 unitarios del componente `<PaseDeListaTable />`.
+  - 7 schema asistencia (cross-field) + 5 schema ausencia + 3 esCancelada.
+  - 8 RLS asistencia + 8 RLS ausencia.
+  - 2 audit asistencia.
+- 1 spec Playwright `e2e/attendance.spec.ts`: 4 smoke (rutas protegidas, i18n sin claves sin resolver en es/en/va) + test diferencial condicional "auto-link familia → profe" (skip por defecto) + test día cerrado read-only (skip por defecto).
+
+### Decisiones (ADRs)
+
+- **ADR-0014-pase-de-lista-reutilizable**: componente genérico `<PaseDeListaTable />` para F4 (asistencia), F4.5 (menús) y F7 (confirmaciones de evento). Tipos paramétricos `TItem` / `TValue`, 5 tipos de input, validación Zod por columna, quick actions con `onlyClean`, submit batch. Trade-off: ~250 líneas de abstracción upfront a cambio de 1 implementación para 3 features previstas.
+- **ADR-0015-asistencia-lazy**: las filas en `asistencias` nacen al primer upsert humano, no se pre-crean. ENUM cerrado y exhaustivo (4 valores reales), audit log limpio, ningún job nocturno. La query `getPaseDeListaAula` hace LEFT JOIN con matrículas + ausencias para componer el pase de lista. Auto-link familia→profe sintetizado en cliente desde la ausencia activa.
+- **ADR-0016-dia-cerrado-transversal**: ADR-0013 (ventana de edición = mismo día Madrid) se promueve a regla transversal del producto. Aplica a `asistencias` con `dentro_de_ventana_edicion(fecha)`. Ausencias siguen regla análoga con `hoy_madrid()`: tutor solo reporta/edita ausencias futuras. Helpers gemelos coexisten con propósitos distintos.
+- **ADR-0006 (actualizado)**: matriz de permisos JSONB ampliada con `puede_reportar_ausencias`. Distinción intencional entre lectura (`puede_ver_agenda`) y reporte (`puede_reportar_ausencias`) para custodias compartidas. Backfill en migración.
+
+### Pendiente
+
+- Validaciones finales (`npm run typecheck && lint && test && test:e2e && build`) y push de la branch como PR draft.
+- Checkpoint C: verificación visual del auto-link en preview de Vercel (familia reporta ausencia → profe abre pase de lista → ve niño con badge y estado `ausente`).
+- Smoke en producción tras merge: `/teacher/aula/{id}/asistencia` con DayPicker; sección "Ausencias" en `/family/nino/{id}`; card "Asistencia hoy" en `/admin`.
+
+### Para Fase 4.5
+
+- El patrón "pase de lista" queda listo para reusar con menús: items = niños matriculados, columnas = `cantidad` (radio enum), `observaciones` (text-short), quick action "Comieron todos bien". Sin nuevo componente, solo nuevas migraciones (`plantillas_menu`) y schemas.

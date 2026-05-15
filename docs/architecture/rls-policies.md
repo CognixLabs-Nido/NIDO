@@ -26,6 +26,12 @@ public.tiene_permiso_sobre(p_nino_id uuid, p_permiso text) → boolean
 public.centro_de_nino(p_nino_id uuid)                    → uuid
 public.centro_de_aula(p_aula_id uuid)                    → uuid
 public.es_profe_de_nino(p_nino_id uuid)                  → boolean
+
+-- Fase 3
+public.dentro_de_ventana_edicion(p_fecha date)           → boolean
+
+-- Fase 4
+public.hoy_madrid()                                      → date
 ```
 
 Todas con `LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public`.
@@ -88,18 +94,24 @@ Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 | `autorizado`  | Como tutor_legal pero con permisos por defecto a `false`           |
 | `service`     | Edge Functions (bypass RLS)                                        |
 
-## Ventana de edición agenda diaria (Fase 3, ADR-0013)
+## Ventana de edición y "día cerrado" (transversal — Fase 3 + Fase 4)
 
-> **Cambio respecto a doc previo:** la regla anterior ("hasta 06:00 del día siguiente, admin edita histórico") **queda derogada** por [ADR-0013](../decisions/ADR-0013-ventana-edicion-mismo-dia.md). La nueva regla, vigente desde Fase 3:
+> **Cambio respecto a doc previo:** la regla anterior ("hasta 06:00 del día siguiente, admin edita histórico") **queda derogada** por [ADR-0013](../decisions/ADR-0013-ventana-edicion-mismo-dia.md). En Fase 4, [ADR-0016](../decisions/ADR-0016-dia-cerrado-transversal.md) eleva esta regla a **principio transversal del producto**: toda tabla operativa que registra hechos diarios sigue la misma ventana. Aplica a la agenda (5 tablas de F3) y a `asistencias` (F4). Las ausencias futuras se rigen por una regla análoga pero distinta (ver `hoy_madrid()` abajo).
 
-- Profe edita solo si `fecha = (now() AT TIME ZONE 'Europe/Madrid')::date` (helper `public.dentro_de_ventana_edicion(fecha)`, ver [ADR-0011](../decisions/ADR-0011-ventana-edicion-timezone-madrid.md)).
+- Profe / admin editan **agenda y asistencia** solo si `fecha = (now() AT TIME ZONE 'Europe/Madrid')::date` (helper `public.dentro_de_ventana_edicion(fecha)`, ver [ADR-0011](../decisions/ADR-0011-ventana-edicion-timezone-madrid.md)).
 - A las 00:00 hora Madrid del día siguiente, **read-only para todos los roles** (incluido admin) por RLS.
 - Correcciones de histórico solo vía SQL con `service_role` (queda en `audit_log` igualmente).
-- `DELETE` bloqueado a todos por default DENY: eventos erróneos se marcan con `UPDATE observaciones = '[anulado] ' || COALESCE(observaciones, '')`.
+- `DELETE` bloqueado a todos por default DENY: eventos erróneos se marcan con `UPDATE observaciones = '[anulado] ' || COALESCE(observaciones, '')` (agenda) o con prefijo `[cancelada] ` en `ausencias.descripcion` (F4).
 
-Helper (vive en `public.*`, mismo patrón que el resto):
+Helpers gemelos (viven en `public.*`):
 
 ```sql
+CREATE OR REPLACE FUNCTION public.hoy_madrid()
+RETURNS date
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT (now() AT TIME ZONE 'Europe/Madrid')::date;
+$$;
+
 CREATE OR REPLACE FUNCTION public.dentro_de_ventana_edicion(p_fecha date)
 RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
@@ -107,9 +119,25 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
 $$;
 ```
 
+**Diferencia entre `hoy_madrid()` y `dentro_de_ventana_edicion(fecha)`**:
+
+- `hoy_madrid()` devuelve la fecha "hoy" en huso Madrid. Se usa en las RLS de `ausencias` para "solo desde hoy en adelante" (`fecha_inicio >= public.hoy_madrid()`).
+- `dentro_de_ventana_edicion(fecha)` compara una fecha dada con hoy Madrid (`fecha = hoy_madrid()`). Se usa en RLS de agenda y asistencia para "solo el día corriente, ni ayer ni mañana".
+
+## Asistencia y ausencias (Fase 4)
+
+- **`asistencias`**: lazy ([ADR-0015](../decisions/ADR-0015-asistencia-lazy.md)). Solo se crean por la profe vía `upsertAsistencia` / `batchUpsertAsistencias`. RLS de INSERT/UPDATE exige `dentro_de_ventana_edicion(fecha) AND (es_admin(centro_de_nino) OR es_profe_de_nino)`. DELETE bloqueado.
+- **`ausencias`**:
+  - SELECT: admin del centro, profe del aula actual, o tutor con `puede_ver_agenda=true`.
+  - INSERT: admin/profe sin restricción temporal; tutor con `puede_reportar_ausencias=true` solo si `fecha_inicio >= hoy_madrid()`.
+  - UPDATE: admin sin restricción; tutor con permiso solo si `fecha_inicio >= hoy_madrid()`; profe solo si `reportada_por = auth.uid()` (su propia ausencia) — el server action enforza que el único cambio aceptable en ese caso es la cancelación con prefijo `[cancelada] `.
+  - DELETE: bloqueado a todos.
+
+Auto-link familia → profe (sin pre-creación de filas): la query `getPaseDeListaAula(aulaId, fecha)` hace LEFT JOIN con `ausencias` activas para la fecha. Si existe una y no hay asistencia previa, el cliente pinta la fila con `initial='ausente'` + badge "Ausencia reportada por familia". La profe puede sobrescribir; queda como ausencia avisada-pero-no-cumplida sin flag específico.
+
 ## Realtime y RLS
 
-Las 5 tablas de la agenda (`agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`) están publicadas en `supabase_realtime`. **Las políticas RLS de `SELECT` se aplican también a las notificaciones Realtime**: Supabase descarta los eventos sobre filas que el rol del cliente no podría leer vía `SELECT`. El filtrado client-side por `aula_id` (vista profe) o `nino_id` (vista familia) es **cosmético**, no de seguridad. Manipular ese filtro desde devtools no expone notificaciones de aulas/niños no autorizados.
+Las 5 tablas de la agenda (`agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`) y las 2 de F4 (`asistencias`, `ausencias`) están publicadas en `supabase_realtime`. **Las políticas RLS de `SELECT` se aplican también a las notificaciones Realtime**: Supabase descarta los eventos sobre filas que el rol del cliente no podría leer vía `SELECT`. El filtrado client-side por `aula_id` (vista profe) o `nino_id` (vista familia) es **cosmético**, no de seguridad. Manipular ese filtro desde devtools no expone notificaciones de aulas/niños no autorizados.
 
 ## Tests RLS obligatorios
 
@@ -120,10 +148,11 @@ Por cada tabla nueva verificar que:
 3. Un autorizado no puede ver la agenda (solo recogida).
 4. Audit log no es modificable por nadie (ni admin).
 
-Tests Fases 1–3 en `src/test/rls/` (≈14 archivos, ≈49 tests):
+Tests Fases 1–4 en `src/test/rls/`:
 
 - `usuarios.rls.test.ts`, `roles.rls.test.ts`, `invitaciones.rls.test.ts` (Fase 1).
 - `centros.rls.test.ts`, `aulas.rls.test.ts`, `vinculos.rls.test.ts`, `info-medica.rls.test.ts`, `audit-log.rls.test.ts`, `cifrado.test.ts` (Fase 2).
 - `datos-pedagogicos.rls.test.ts` (Fase 2.6).
 - `agenda-diaria.rls.test.ts` + `dentro-de-ventana-edicion.test.ts` (Fase 3).
-- `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda).
+- `asistencia.rls.test.ts`, `ausencia.rls.test.ts` (Fase 4).
+- `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` + `asistencia-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda, asistencia).

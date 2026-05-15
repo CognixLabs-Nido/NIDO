@@ -91,7 +91,7 @@ Funciones helper Postgres (en schema `public.*`, no `auth.*` — Supabase Cloud 
 
 Default DENY ALL. Service role bypass para Edge Functions, nunca expuesto al cliente.
 
-Ventana de tiempo en agendas diarias (Fase 3, ADR-0013): profe edita solo durante el **mismo día calendario hora `Europe/Madrid`** (helper `public.dentro_de_ventana_edicion(fecha)`). A las 00:00 hora Madrid del día siguiente, el día anterior queda **read-only para todos** los roles (incluido admin) por RLS. Correcciones de histórico solo vía SQL con `service_role` (queda en `audit_log`). DELETE bloqueado a todos por default DENY — eventos erróneos se marcan con UPDATE `observaciones = '[anulado] '...`. Esta regla **deroga** la anterior ("hasta 06:00 día siguiente, admin edita histórico"). Ver ADR-0011 (huso Madrid) y ADR-0013 (mismo día).
+Ventana de tiempo (Fase 3 y Fase 4, ADR-0013 + ADR-0016 transversal): profe / admin editan **agenda y asistencia** solo durante el **mismo día calendario hora `Europe/Madrid`** (helper `public.dentro_de_ventana_edicion(fecha)`). A las 00:00 hora Madrid del día siguiente, el día anterior queda **read-only para todos** los roles (incluido admin) por RLS. Correcciones de histórico solo vía SQL con `service_role` (queda en `audit_log`). DELETE bloqueado a todos por default DENY — eventos erróneos se marcan con UPDATE `observaciones = '[anulado] '...` (agenda) o `descripcion = '[cancelada] '...` (ausencias). Las ausencias futuras siguen una regla análoga con `public.hoy_madrid()`: tutor solo puede reportar/editar `fecha_inicio >= hoy`. Esta regla **deroga** la anterior ("hasta 06:00 día siguiente, admin edita histórico"). Ver ADR-0011 (huso Madrid), ADR-0013 (mismo día agenda), ADR-0015 (asistencia lazy) y ADR-0016 (día cerrado transversal).
 
 Tests RLS obligatorios por categoría de tabla.
 
@@ -107,7 +107,7 @@ Detalle completo en `@./docs/architecture/rls-policies.md`.
 | 1   | Identidad y acceso                |
 | 2   | Entidades core + RLS + audit log  |
 | 3   | Agenda diaria + bienestar (B, D)  |
-| 4   | Asistencia                        |
+| 4   | Asistencia + ausencias            |
 | 5   | Mensajería                        |
 | 6   | Recordatorios bidireccionales (E) |
 | 7   | Calendario y eventos              |

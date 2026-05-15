@@ -33,6 +33,7 @@ PERMISOS_KEYS = [
   'puede_recibir_mensajes',
   'puede_firmar_autorizaciones',
   'puede_confirmar_eventos',
+  'puede_reportar_ausencias', // añadida en Fase 4 (2026-05-15)
 ]
 ```
 
@@ -157,9 +158,38 @@ El server action `crearVinculo` aplica los defaults al INSERT. Las helpers RLS l
 - Los defaults son una decisión de producto: el tutor legal "merece todo" salvo decisión judicial; el autorizado "solo lo explícito". Si Ola 2 introduce roles más matizados (por ejemplo "tutor con custodia limitada"), añadimos defaults nuevos al helper sin tocar la estructura.
 - La política RLS de `vinculos_familiares` permite al propio usuario ver sus vínculos (`vinculos_self_select`), así que un tutor puede comprobar sus propios permisos sin pasar por admin.
 
+## Matriz de permisos (vigente desde Fase 4)
+
+| Key                           | Default tutor | Default autorizado | RLS / efecto                                                                                                                                                              |
+| ----------------------------- | ------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `puede_recoger`               | true          | false              | Sin efecto en RLS todavía (Ola 1). Lo enforza la operativa del centro.                                                                                                    |
+| `puede_ver_agenda`            | true          | false              | RLS SELECT sobre `agendas_diarias`/hijo en F3 y sobre `ausencias` (lectura) en F4.                                                                                        |
+| `puede_ver_fotos`             | true          | false              | RLS Fase 10 (publicaciones / media).                                                                                                                                      |
+| `puede_ver_info_medica`       | true          | false              | RLS SELECT sobre `info_medica_emergencia`.                                                                                                                                |
+| `puede_recibir_mensajes`      | true          | false              | RLS Fase 5 (mensajería).                                                                                                                                                  |
+| `puede_firmar_autorizaciones` | true          | false              | RLS Fase 8 (autorizaciones).                                                                                                                                              |
+| `puede_confirmar_eventos`     | true          | false              | RLS Fase 7 (confirmaciones evento).                                                                                                                                       |
+| `puede_reportar_ausencias`    | true          | false              | RLS INSERT/UPDATE sobre `ausencias` para tutor. Independiente de `puede_ver_agenda`: ver agenda y reportar ausencias son acciones separadas. Añadido en Fase 4 (F4 spec). |
+
+## Notas — Fase 4 (puede_reportar_ausencias)
+
+`puede_reportar_ausencias` se añadió en Fase 4. La distinción `puede_ver_agenda` (lectura) vs `puede_reportar_ausencias` (escritura) es deliberada: en familias divididas (custodia compartida, separaciones) puede convenir que un tutor secundario _vea_ la agenda sin que tenga capacidad de reportar ausencias por su cuenta (porque eso interfiere con la logística del centro y del tutor principal). El default de ambos sigue siendo `true` para `tutor_legal_*` y `false` para `autorizado`.
+
+La migración `phase4_attendance.sql` aplica un backfill JSONB sobre filas existentes:
+
+```sql
+UPDATE public.vinculos_familiares
+SET permisos = permisos || jsonb_build_object(
+  'puede_reportar_ausencias',
+  tipo_vinculo IN ('tutor_legal_principal', 'tutor_legal_secundario')
+)
+WHERE NOT (permisos ? 'puede_reportar_ausencias');
+```
+
 ## Referencias
 
-- Spec: `docs/specs/core-entities.md` (B14)
-- Migración: `supabase/migrations/20260513202012_phase2_core_entities.sql`
+- Spec: `docs/specs/core-entities.md` (B14), `docs/specs/attendance.md` (B30, F4)
+- Migración: `supabase/migrations/20260513202012_phase2_core_entities.sql`, `supabase/migrations/20260515203407_phase4_attendance.sql`
 - Schema: `src/features/vinculos/schemas/vinculo.ts`
 - Server action: `src/features/vinculos/actions/crear-vinculo.ts`
+- ADR-0016: día cerrado transversal (regula la ventana de UPDATE/INSERT)
