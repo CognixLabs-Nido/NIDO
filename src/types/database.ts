@@ -8,6 +8,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      agendas_diarias: {
+        Row: {
+          created_at: string
+          estado_general: Database['public']['Enums']['estado_general_agenda'] | null
+          fecha: string
+          humor: Database['public']['Enums']['humor_agenda'] | null
+          id: string
+          nino_id: string
+          observaciones_generales: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          estado_general?: Database['public']['Enums']['estado_general_agenda'] | null
+          fecha: string
+          humor?: Database['public']['Enums']['humor_agenda'] | null
+          id?: string
+          nino_id: string
+          observaciones_generales?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          estado_general?: Database['public']['Enums']['estado_general_agenda'] | null
+          fecha?: string
+          humor?: Database['public']['Enums']['humor_agenda'] | null
+          id?: string
+          nino_id?: string
+          observaciones_generales?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'agendas_diarias_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       audit_log: {
         Row: {
           accion: Database['public']['Enums']['audit_accion']
@@ -130,6 +171,50 @@ export type Database = {
         }
         Relationships: []
       }
+      biberones: {
+        Row: {
+          agenda_id: string
+          cantidad_ml: number
+          created_at: string
+          hora: string
+          id: string
+          observaciones: string | null
+          tipo: Database['public']['Enums']['tipo_biberon']
+          tomado_completo: boolean
+          updated_at: string
+        }
+        Insert: {
+          agenda_id: string
+          cantidad_ml: number
+          created_at?: string
+          hora: string
+          id?: string
+          observaciones?: string | null
+          tipo: Database['public']['Enums']['tipo_biberon']
+          tomado_completo?: boolean
+          updated_at?: string
+        }
+        Update: {
+          agenda_id?: string
+          cantidad_ml?: number
+          created_at?: string
+          hora?: string
+          id?: string
+          observaciones?: string | null
+          tipo?: Database['public']['Enums']['tipo_biberon']
+          tomado_completo?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'biberones_agenda_id_fkey'
+            columns: ['agenda_id']
+            isOneToOne: false
+            referencedRelation: 'agendas_diarias'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       centros: {
         Row: {
           created_at: string
@@ -171,6 +256,50 @@ export type Database = {
           web?: string | null
         }
         Relationships: []
+      }
+      comidas: {
+        Row: {
+          agenda_id: string
+          cantidad: Database['public']['Enums']['cantidad_comida']
+          created_at: string
+          descripcion: string | null
+          hora: string | null
+          id: string
+          momento: Database['public']['Enums']['momento_comida']
+          observaciones: string | null
+          updated_at: string
+        }
+        Insert: {
+          agenda_id: string
+          cantidad: Database['public']['Enums']['cantidad_comida']
+          created_at?: string
+          descripcion?: string | null
+          hora?: string | null
+          id?: string
+          momento: Database['public']['Enums']['momento_comida']
+          observaciones?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agenda_id?: string
+          cantidad?: Database['public']['Enums']['cantidad_comida']
+          created_at?: string
+          descripcion?: string | null
+          hora?: string | null
+          id?: string
+          momento?: Database['public']['Enums']['momento_comida']
+          observaciones?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'comidas_agenda_id_fkey'
+            columns: ['agenda_id']
+            isOneToOne: false
+            referencedRelation: 'agendas_diarias'
+            referencedColumns: ['id']
+          },
+        ]
       }
       consentimientos: {
         Row: {
@@ -318,6 +447,50 @@ export type Database = {
             columns: ['nino_id']
             isOneToOne: true
             referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      deposiciones: {
+        Row: {
+          agenda_id: string
+          cantidad: Database['public']['Enums']['cantidad_deposicion']
+          consistencia: Database['public']['Enums']['consistencia_deposicion'] | null
+          created_at: string
+          hora: string | null
+          id: string
+          observaciones: string | null
+          tipo: Database['public']['Enums']['tipo_deposicion']
+          updated_at: string
+        }
+        Insert: {
+          agenda_id: string
+          cantidad: Database['public']['Enums']['cantidad_deposicion']
+          consistencia?: Database['public']['Enums']['consistencia_deposicion'] | null
+          created_at?: string
+          hora?: string | null
+          id?: string
+          observaciones?: string | null
+          tipo: Database['public']['Enums']['tipo_deposicion']
+          updated_at?: string
+        }
+        Update: {
+          agenda_id?: string
+          cantidad?: Database['public']['Enums']['cantidad_deposicion']
+          consistencia?: Database['public']['Enums']['consistencia_deposicion'] | null
+          created_at?: string
+          hora?: string | null
+          id?: string
+          observaciones?: string | null
+          tipo?: Database['public']['Enums']['tipo_deposicion']
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'deposiciones_agenda_id_fkey'
+            columns: ['agenda_id']
+            isOneToOne: false
+            referencedRelation: 'agendas_diarias'
             referencedColumns: ['id']
           },
         ]
@@ -647,6 +820,47 @@ export type Database = {
           },
         ]
       }
+      suenos: {
+        Row: {
+          agenda_id: string
+          calidad: Database['public']['Enums']['calidad_sueno'] | null
+          created_at: string
+          hora_fin: string | null
+          hora_inicio: string
+          id: string
+          observaciones: string | null
+          updated_at: string
+        }
+        Insert: {
+          agenda_id: string
+          calidad?: Database['public']['Enums']['calidad_sueno'] | null
+          created_at?: string
+          hora_fin?: string | null
+          hora_inicio: string
+          id?: string
+          observaciones?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agenda_id?: string
+          calidad?: Database['public']['Enums']['calidad_sueno'] | null
+          created_at?: string
+          hora_fin?: string | null
+          hora_inicio?: string
+          id?: string
+          observaciones?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'suenos_agenda_id_fkey'
+            columns: ['agenda_id']
+            isOneToOne: false
+            referencedRelation: 'agendas_diarias'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       usuarios: {
         Row: {
           consentimiento_privacidad_version: string | null
@@ -740,12 +954,15 @@ export type Database = {
     }
     Functions: {
       _get_medical_key: { Args: never; Returns: string }
+      centro_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       centro_de_aula: { Args: { p_aula_id: string }; Returns: string }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
+      dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
       es_profe_de_aula: { Args: { p_aula_id: string }; Returns: boolean }
       es_profe_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
       es_tutor_de: { Args: { p_nino_id: string }; Returns: boolean }
+      fecha_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       get_info_medica_emergencia: {
         Args: { p_nino_id: string }
         Returns: {
@@ -758,6 +975,7 @@ export type Database = {
         }[]
       }
       idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
+      nino_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
       set_info_medica_emergencia_cifrada: {
         Args: {
@@ -779,10 +997,17 @@ export type Database = {
     }
     Enums: {
       audit_accion: 'INSERT' | 'UPDATE' | 'DELETE'
+      calidad_sueno: 'profundo' | 'tranquilo' | 'intermitente' | 'nada'
+      cantidad_comida: 'todo' | 'mayoria' | 'mitad' | 'poco' | 'nada'
+      cantidad_deposicion: 'mucha' | 'normal' | 'poca'
       consentimiento_tipo: 'terminos' | 'privacidad' | 'imagen' | 'datos_medicos'
+      consistencia_deposicion: 'normal' | 'dura' | 'blanda' | 'diarrea'
       control_esfinteres: 'panal_completo' | 'transicion' | 'sin_panal_diurno' | 'sin_panal_total'
       curso_estado: 'planificado' | 'activo' | 'cerrado'
+      estado_general_agenda: 'bien' | 'regular' | 'mal' | 'mixto'
+      humor_agenda: 'feliz' | 'tranquilo' | 'inquieto' | 'triste' | 'cansado'
       lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
+      momento_comida: 'desayuno' | 'media_manana' | 'comida' | 'merienda'
       nino_sexo: 'F' | 'M' | 'X'
       parentesco:
         | 'madre'
@@ -804,6 +1029,8 @@ export type Database = {
         | 'religiosa_halal'
         | 'religiosa_kosher'
         | 'otra'
+      tipo_biberon: 'materna' | 'formula' | 'agua' | 'infusion' | 'zumo'
+      tipo_deposicion: 'pipi' | 'caca' | 'mixto'
       tipo_vinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado'
       user_role: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
     }
@@ -932,10 +1159,17 @@ export const Constants = {
   public: {
     Enums: {
       audit_accion: ['INSERT', 'UPDATE', 'DELETE'],
+      calidad_sueno: ['profundo', 'tranquilo', 'intermitente', 'nada'],
+      cantidad_comida: ['todo', 'mayoria', 'mitad', 'poco', 'nada'],
+      cantidad_deposicion: ['mucha', 'normal', 'poca'],
       consentimiento_tipo: ['terminos', 'privacidad', 'imagen', 'datos_medicos'],
+      consistencia_deposicion: ['normal', 'dura', 'blanda', 'diarrea'],
       control_esfinteres: ['panal_completo', 'transicion', 'sin_panal_diurno', 'sin_panal_total'],
       curso_estado: ['planificado', 'activo', 'cerrado'],
+      estado_general_agenda: ['bien', 'regular', 'mal', 'mixto'],
+      humor_agenda: ['feliz', 'tranquilo', 'inquieto', 'triste', 'cansado'],
       lactancia_estado: ['materna', 'biberon', 'mixta', 'finalizada', 'no_aplica'],
+      momento_comida: ['desayuno', 'media_manana', 'comida', 'merienda'],
       nino_sexo: ['F', 'M', 'X'],
       parentesco: [
         'madre',
@@ -959,6 +1193,8 @@ export const Constants = {
         'religiosa_kosher',
         'otra',
       ],
+      tipo_biberon: ['materna', 'formula', 'agua', 'infusion', 'zumo'],
+      tipo_deposicion: ['pipi', 'caca', 'mixto'],
       tipo_vinculo: ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'],
       user_role: ['admin', 'profe', 'tutor_legal', 'autorizado'],
     },

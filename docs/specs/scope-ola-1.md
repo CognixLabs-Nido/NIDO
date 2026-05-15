@@ -7,7 +7,7 @@
 | 0   | Fundaciones (Next.js, Supabase, tooling, CI/CD)     | ✅ Cerrada   |
 | 1   | Identidad y acceso (auth, invitaciones, roles)      | ✅ Cerrada   |
 | 2   | Entidades core + RLS + audit log                    | ✅ Cerrada   |
-| 3   | Agenda diaria + bienestar (lactancia D, check-in B) | ⏳ Pendiente |
+| 3   | Agenda diaria + bienestar (lactancia D, check-in B) | ✅ Cerrada   |
 | 4   | Asistencia y ausencias                              | ⏳ Pendiente |
 | 5   | Mensajería profe ↔ familia                          | ⏳ Pendiente |
 | 6   | Recordatorios bidireccionales (E)                   | ⏳ Pendiente |

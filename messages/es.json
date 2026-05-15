@@ -369,7 +369,18 @@
       "alergias_graves": "Alergias graves",
       "notas_emergencia": "Notas de emergencia",
       "medicacion_habitual": "Medicación",
-      "telefono_emergencia": "Teléfono de emergencia"
+      "telefono_emergencia": "Teléfono de emergencia",
+      "tabs": {
+        "agenda": "Agenda"
+      },
+      "agenda": {
+        "sin_permiso": {
+          "title": "No tienes permiso para ver la agenda",
+          "description": "Pide al administrador del centro que te lo active.",
+          "cta_admin": "Contactar con el administrador"
+        },
+        "historico_vacio": "Sin registros este día."
+      }
     }
   },
   "pedagogico": {
@@ -534,6 +545,134 @@
     "aviso_cifrado": "Estos datos se almacenan cifrados.",
     "error": {
       "cifrado_no_configurado": "La configuración de cifrado de datos médicos no está disponible. Contacta con soporte."
+    }
+  },
+  "agenda": {
+    "title": "Agenda diaria",
+    "dia_cerrado": "Día cerrado",
+    "volver_a_hoy": "Volver a hoy",
+    "selector": {
+      "anterior": "Día anterior",
+      "siguiente": "Día siguiente"
+    },
+    "sin_registros": "Sin registros aún",
+    "guardar": "Guardar",
+    "guardando": "Guardando…",
+    "guardado": "Guardado",
+    "anadir": {
+      "comida": "Añadir comida",
+      "biberon": "Añadir biberón",
+      "sueno": "Añadir siesta",
+      "deposicion": "Añadir deposición"
+    },
+    "secciones": {
+      "general": "General",
+      "comidas": "Comidas",
+      "biberones": "Biberones",
+      "suenos": "Sueños",
+      "deposiciones": "Deposiciones"
+    },
+    "campos": {
+      "estado_general": "Estado general",
+      "humor": "Humor",
+      "observaciones_generales": "Observaciones del día",
+      "momento": "Momento",
+      "hora": "Hora",
+      "cantidad": "Cantidad",
+      "descripcion": "Descripción",
+      "observaciones": "Observaciones",
+      "cantidad_ml": "Cantidad (ml)",
+      "tipo": "Tipo",
+      "tomado_completo": "Tomó todo",
+      "hora_inicio": "Inicio",
+      "hora_fin": "Fin",
+      "calidad": "Calidad",
+      "consistencia": "Consistencia"
+    },
+    "estado_general_opciones": {
+      "bien": "Bien",
+      "regular": "Regular",
+      "mal": "Mal",
+      "mixto": "Mixto"
+    },
+    "humor_opciones": {
+      "feliz": "Feliz",
+      "tranquilo": "Tranquilo",
+      "inquieto": "Inquieto",
+      "triste": "Triste",
+      "cansado": "Cansado"
+    },
+    "momento_opciones": {
+      "desayuno": "Desayuno",
+      "media_manana": "Media mañana",
+      "comida": "Comida",
+      "merienda": "Merienda"
+    },
+    "cantidad_comida_opciones": {
+      "todo": "Todo",
+      "mayoria": "Mayoría",
+      "mitad": "Mitad",
+      "poco": "Poco",
+      "nada": "Nada"
+    },
+    "tipo_biberon_opciones": {
+      "materna": "Leche materna",
+      "formula": "Fórmula",
+      "agua": "Agua",
+      "infusion": "Infusión",
+      "zumo": "Zumo"
+    },
+    "calidad_sueno_opciones": {
+      "profundo": "Profundo",
+      "tranquilo": "Tranquilo",
+      "intermitente": "Intermitente",
+      "nada": "No durmió"
+    },
+    "tipo_deposicion_opciones": {
+      "pipi": "Pipí",
+      "caca": "Caca",
+      "mixto": "Mixto"
+    },
+    "consistencia_opciones": {
+      "normal": "Normal",
+      "dura": "Dura",
+      "blanda": "Blanda",
+      "diarrea": "Diarrea"
+    },
+    "cantidad_deposicion_opciones": {
+      "mucha": "Mucha",
+      "normal": "Normal",
+      "poca": "Poca"
+    },
+    "validation": {
+      "hora_invalida": "Hora inválida. Formato HH:MM.",
+      "fecha_invalida": "Fecha inválida.",
+      "observaciones_largas": "Máximo 500 caracteres.",
+      "ml_min": "La cantidad no puede ser negativa.",
+      "ml_max": "Máximo 500 ml.",
+      "sueno_fin_anterior": "La hora de fin debe ser posterior al inicio.",
+      "consistencia_solo_caca": "La consistencia solo aplica si hay caca."
+    },
+    "errors": {
+      "fuera_de_ventana": "Ya no puedes editar este día.",
+      "dia_futuro_invalido": "No se puede editar el futuro.",
+      "guardar_fallo": "No se pudo guardar. Inténtalo de nuevo.",
+      "conexion": "Sin conexión. Reintentando…"
+    },
+    "alertas": {
+      "alergia_grave": "Alergia grave",
+      "medicacion": "Medicación"
+    },
+    "estado": {
+      "anulado": "Anulado"
+    },
+    "anular": {
+      "boton": "Marcar como erróneo",
+      "ya_anulado": "Anulado",
+      "confirm_title": "Marcar evento como erróneo",
+      "confirm_descripcion": "El evento quedará tachado y visible para todos como anulado. No se podrá deshacer desde la app. ¿Continuar?",
+      "confirm_si": "Sí, marcar como erróneo",
+      "cancelar": "Cancelar"
     }
   }
 }
