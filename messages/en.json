@@ -369,7 +369,18 @@
       "alergias_graves": "Serious allergies",
       "notas_emergencia": "Emergency notes",
       "medicacion_habitual": "Medication",
-      "telefono_emergencia": "Emergency phone"
+      "telefono_emergencia": "Emergency phone",
+      "tabs": {
+        "agenda": "Agenda"
+      },
+      "agenda": {
+        "sin_permiso": {
+          "title": "You do not have permission to view the agenda",
+          "description": "Ask the center admin to enable it for you.",
+          "cta_admin": "Contact the admin"
+        },
+        "historico_vacio": "No records for this day."
+      }
     }
   },
   "pedagogico": {
@@ -534,6 +545,134 @@
     "aviso_cifrado": "These details are stored encrypted.",
     "error": {
       "cifrado_no_configurado": "Medical data encryption is not configured. Contact support."
+    }
+  },
+  "agenda": {
+    "title": "Daily agenda",
+    "dia_cerrado": "Day closed",
+    "volver_a_hoy": "Back to today",
+    "selector": {
+      "anterior": "Previous day",
+      "siguiente": "Next day"
+    },
+    "sin_registros": "No records yet",
+    "guardar": "Save",
+    "guardando": "Saving…",
+    "guardado": "Saved",
+    "anadir": {
+      "comida": "Add meal",
+      "biberon": "Add bottle",
+      "sueno": "Add nap",
+      "deposicion": "Add stool"
+    },
+    "secciones": {
+      "general": "General",
+      "comidas": "Meals",
+      "biberones": "Bottles",
+      "suenos": "Sleep",
+      "deposiciones": "Stools"
+    },
+    "campos": {
+      "estado_general": "Overall state",
+      "humor": "Mood",
+      "observaciones_generales": "Day notes",
+      "momento": "Moment",
+      "hora": "Time",
+      "cantidad": "Amount",
+      "descripcion": "Description",
+      "observaciones": "Notes",
+      "cantidad_ml": "Amount (ml)",
+      "tipo": "Type",
+      "tomado_completo": "Finished it all",
+      "hora_inicio": "Start",
+      "hora_fin": "End",
+      "calidad": "Quality",
+      "consistencia": "Consistency"
+    },
+    "estado_general_opciones": {
+      "bien": "Good",
+      "regular": "Average",
+      "mal": "Bad",
+      "mixto": "Mixed"
+    },
+    "humor_opciones": {
+      "feliz": "Happy",
+      "tranquilo": "Calm",
+      "inquieto": "Restless",
+      "triste": "Sad",
+      "cansado": "Tired"
+    },
+    "momento_opciones": {
+      "desayuno": "Breakfast",
+      "media_manana": "Mid-morning",
+      "comida": "Lunch",
+      "merienda": "Snack"
+    },
+    "cantidad_comida_opciones": {
+      "todo": "All",
+      "mayoria": "Most",
+      "mitad": "Half",
+      "poco": "Little",
+      "nada": "None"
+    },
+    "tipo_biberon_opciones": {
+      "materna": "Breast milk",
+      "formula": "Formula",
+      "agua": "Water",
+      "infusion": "Infusion",
+      "zumo": "Juice"
+    },
+    "calidad_sueno_opciones": {
+      "profundo": "Deep",
+      "tranquilo": "Calm",
+      "intermitente": "Intermittent",
+      "nada": "Did not sleep"
+    },
+    "tipo_deposicion_opciones": {
+      "pipi": "Pee",
+      "caca": "Poo",
+      "mixto": "Both"
+    },
+    "consistencia_opciones": {
+      "normal": "Normal",
+      "dura": "Hard",
+      "blanda": "Soft",
+      "diarrea": "Diarrhea"
+    },
+    "cantidad_deposicion_opciones": {
+      "mucha": "A lot",
+      "normal": "Normal",
+      "poca": "Little"
+    },
+    "validation": {
+      "hora_invalida": "Invalid time. Format HH:MM.",
+      "fecha_invalida": "Invalid date.",
+      "observaciones_largas": "Maximum 500 characters.",
+      "ml_min": "Amount cannot be negative.",
+      "ml_max": "Maximum 500 ml.",
+      "sueno_fin_anterior": "End time must be later than start.",
+      "consistencia_solo_caca": "Consistency only applies if there is poo."
+    },
+    "errors": {
+      "fuera_de_ventana": "You can no longer edit this day.",
+      "dia_futuro_invalido": "Cannot edit the future.",
+      "guardar_fallo": "Could not save. Try again.",
+      "conexion": "Offline. Retrying…"
+    },
+    "alertas": {
+      "alergia_grave": "Severe allergy",
+      "medicacion": "Medication"
+    },
+    "estado": {
+      "anulado": "Voided"
+    },
+    "anular": {
+      "boton": "Mark as wrong",
+      "ya_anulado": "Voided",
+      "confirm_title": "Mark event as wrong",
+      "confirm_descripcion": "The event will be shown crossed out and marked as voided for everyone. Cannot be undone from the app. Continue?",
+      "confirm_si": "Yes, mark as wrong",
+      "cancelar": "Cancel"
     }
   }
 }

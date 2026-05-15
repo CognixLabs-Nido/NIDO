@@ -369,7 +369,18 @@
       "alergias_graves": "Al·lèrgies greus",
       "notas_emergencia": "Notes d'emergència",
       "medicacion_habitual": "Medicació",
-      "telefono_emergencia": "Telèfon d'emergència"
+      "telefono_emergencia": "Telèfon d'emergència",
+      "tabs": {
+        "agenda": "Agenda"
+      },
+      "agenda": {
+        "sin_permiso": {
+          "title": "No tens permís per veure l'agenda",
+          "description": "Demana a l'administrador del centre que te l'active.",
+          "cta_admin": "Contactar amb l'administrador"
+        },
+        "historico_vacio": "Sense registres aquest dia."
+      }
     }
   },
   "pedagogico": {
@@ -534,6 +545,134 @@
     "aviso_cifrado": "Estes dades s'emmagatzemen xifrades.",
     "error": {
       "cifrado_no_configurado": "La configuració del xifratge de dades mèdiques no està disponible. Contacta amb suport."
+    }
+  },
+  "agenda": {
+    "title": "Agenda diària",
+    "dia_cerrado": "Dia tancat",
+    "volver_a_hoy": "Tornar a hui",
+    "selector": {
+      "anterior": "Dia anterior",
+      "siguiente": "Dia següent"
+    },
+    "sin_registros": "Encara sense registres",
+    "guardar": "Guardar",
+    "guardando": "Guardant…",
+    "guardado": "Guardat",
+    "anadir": {
+      "comida": "Afegir menjar",
+      "biberon": "Afegir biberó",
+      "sueno": "Afegir migdiada",
+      "deposicion": "Afegir deposició"
+    },
+    "secciones": {
+      "general": "General",
+      "comidas": "Menjars",
+      "biberones": "Biberons",
+      "suenos": "Somnis",
+      "deposiciones": "Deposicions"
+    },
+    "campos": {
+      "estado_general": "Estat general",
+      "humor": "Humor",
+      "observaciones_generales": "Observacions del dia",
+      "momento": "Moment",
+      "hora": "Hora",
+      "cantidad": "Quantitat",
+      "descripcion": "Descripció",
+      "observaciones": "Observacions",
+      "cantidad_ml": "Quantitat (ml)",
+      "tipo": "Tipus",
+      "tomado_completo": "S'ho ha pres tot",
+      "hora_inicio": "Inici",
+      "hora_fin": "Final",
+      "calidad": "Qualitat",
+      "consistencia": "Consistència"
+    },
+    "estado_general_opciones": {
+      "bien": "Bé",
+      "regular": "Regular",
+      "mal": "Malament",
+      "mixto": "Mixt"
+    },
+    "humor_opciones": {
+      "feliz": "Feliç",
+      "tranquilo": "Tranquil",
+      "inquieto": "Inquiet",
+      "triste": "Trist",
+      "cansado": "Cansat"
+    },
+    "momento_opciones": {
+      "desayuno": "Esmorzar",
+      "media_manana": "Mig matí",
+      "comida": "Dinar",
+      "merienda": "Berenar"
+    },
+    "cantidad_comida_opciones": {
+      "todo": "Tot",
+      "mayoria": "Majoria",
+      "mitad": "Meitat",
+      "poco": "Poc",
+      "nada": "Res"
+    },
+    "tipo_biberon_opciones": {
+      "materna": "Llet materna",
+      "formula": "Fórmula",
+      "agua": "Aigua",
+      "infusion": "Infusió",
+      "zumo": "Suc"
+    },
+    "calidad_sueno_opciones": {
+      "profundo": "Profund",
+      "tranquilo": "Tranquil",
+      "intermitente": "Intermitent",
+      "nada": "No ha dormit"
+    },
+    "tipo_deposicion_opciones": {
+      "pipi": "Pipí",
+      "caca": "Caca",
+      "mixto": "Mixt"
+    },
+    "consistencia_opciones": {
+      "normal": "Normal",
+      "dura": "Dura",
+      "blanda": "Blana",
+      "diarrea": "Diarrea"
+    },
+    "cantidad_deposicion_opciones": {
+      "mucha": "Molta",
+      "normal": "Normal",
+      "poca": "Poca"
+    },
+    "validation": {
+      "hora_invalida": "Hora invàlida. Format HH:MM.",
+      "fecha_invalida": "Data invàlida.",
+      "observaciones_largas": "Màxim 500 caràcters.",
+      "ml_min": "La quantitat no pot ser negativa.",
+      "ml_max": "Màxim 500 ml.",
+      "sueno_fin_anterior": "L'hora de fi ha de ser posterior a l'inici.",
+      "consistencia_solo_caca": "La consistència només aplica si hi ha caca."
+    },
+    "errors": {
+      "fuera_de_ventana": "Ja no pots editar aquest dia.",
+      "dia_futuro_invalido": "No es pot editar el futur.",
+      "guardar_fallo": "No s'ha pogut guardar. Torna a provar.",
+      "conexion": "Sense connexió. Reintentant…"
+    },
+    "alertas": {
+      "alergia_grave": "Al·lèrgia greu",
+      "medicacion": "Medicació"
+    },
+    "estado": {
+      "anulado": "Anul·lat"
+    },
+    "anular": {
+      "boton": "Marcar com a erroni",
+      "ya_anulado": "Anul·lat",
+      "confirm_title": "Marcar esdeveniment com a erroni",
+      "confirm_descripcion": "L'esdeveniment es mostrarà ratllat i visible per a tothom com a anul·lat. No es pot desfer des de l'app. Continuar?",
+      "confirm_si": "Sí, marcar com a erroni",
+      "cancelar": "Cancel·lar"
     }
   }
 }
