@@ -674,5 +674,109 @@
       "confirm_si": "Sí, marcar como erróneo",
       "cancelar": "Cancelar"
     }
+  },
+  "asistencia": {
+    "title": "Pase de lista",
+    "subtitle": "Marca presencia y ausencias del día.",
+    "ver": "Ver pase de lista",
+    "ningun_nino": "No hay niños matriculados todavía en esta aula.",
+    "guardar": "Guardar pase de lista",
+    "guardando": "Guardando…",
+    "guardado": "Guardado",
+    "columna": {
+      "estado": "Estado",
+      "hora_llegada": "Llegada",
+      "hora_salida": "Salida",
+      "observaciones": "Observaciones"
+    },
+    "estado_opciones": {
+      "presente": "Presente",
+      "ausente": "Ausente",
+      "llegada_tarde": "Tarde",
+      "salida_temprana": "Salida temprana"
+    },
+    "quick_actions": {
+      "todos_presentes": "Todos presentes",
+      "limpiar": "Limpiar pendientes"
+    },
+    "status": {
+      "pending": "Sin marcar",
+      "dirty": "Sin guardar",
+      "saved": "Guardado",
+      "error": "Error"
+    },
+    "badge": {
+      "ausencia_reportada": "Ausencia reportada",
+      "tooltip_motivo": "Motivo: {motivo}"
+    },
+    "alertas": {
+      "alergia_grave": "Alergia grave",
+      "medicacion": "Medicación"
+    },
+    "placeholder_observaciones": "Notas opcionales",
+    "validation": {
+      "hora_invalida": "Formato HH:MM.",
+      "fecha_invalida": "Fecha inválida.",
+      "observaciones_largas": "Máximo 500 caracteres.",
+      "requiere_hora_llegada": "Indica la hora de llegada.",
+      "requiere_hora_salida": "Indica la hora de salida.",
+      "salida_anterior_llegada": "La salida debe ser posterior a la llegada."
+    },
+    "errors": {
+      "fuera_de_ventana": "Ya no puedes editar este día.",
+      "guardar_fallo": "No se pudo guardar. Inténtalo de nuevo."
+    },
+    "admin": {
+      "card_title": "Asistencia hoy",
+      "card_subtitle": "Resumen por aula.",
+      "presentes": "Presentes",
+      "ausentes": "Ausentes",
+      "total": "Total",
+      "ver_aula": "Ver aula"
+    }
+  },
+  "ausencia": {
+    "title": "Ausencias",
+    "ninguna": "Aún no se ha reportado ninguna ausencia.",
+    "reportar": "Reportar ausencia",
+    "cancelar": "Cancelar ausencia",
+    "cancelada": "Cancelada",
+    "reportar_dialog_title": "Reportar ausencia",
+    "reportar_dialog_desc": "Comunica al centro las fechas y motivo. Solo se admiten ausencias desde hoy en adelante.",
+    "fields": {
+      "fecha_inicio": "Desde",
+      "fecha_fin": "Hasta",
+      "motivo": "Motivo",
+      "descripcion": "Detalle (opcional)"
+    },
+    "motivo_opciones": {
+      "enfermedad": "Enfermedad",
+      "cita_medica": "Cita médica",
+      "vacaciones": "Vacaciones",
+      "familiar": "Familiar",
+      "otro": "Otro"
+    },
+    "guardar": "Guardar",
+    "guardando": "Guardando…",
+    "guardado": "Ausencia reportada",
+    "confirmar_cancelar_title": "Cancelar la ausencia",
+    "confirmar_cancelar_desc": "La ausencia quedará marcada como cancelada y visible. No se podrá deshacer desde la app.",
+    "confirmar_cancelar_si": "Sí, cancelar",
+    "validation": {
+      "fecha_invalida": "Fecha inválida.",
+      "descripcion_larga": "Máximo 500 caracteres.",
+      "fecha_fin_anterior": "La fecha final debe ser igual o posterior a la inicial."
+    },
+    "errors": {
+      "guardar_fallo": "No se pudo guardar. Inténtalo de nuevo.",
+      "sin_permiso": "No tienes permiso para reportar ausencias. Pídeselo al administrador.",
+      "no_encontrada": "Ausencia no encontrada.",
+      "id_requerido": "Falta el identificador.",
+      "ya_cancelada": "Esta ausencia ya está cancelada."
+    },
+    "sin_permiso": {
+      "title": "No puedes reportar ausencias",
+      "description": "Pide al administrador del centro que te active el permiso."
+    }
   }
 }

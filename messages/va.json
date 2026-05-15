@@ -674,5 +674,109 @@
       "confirm_si": "Sí, marcar com a erroni",
       "cancelar": "Cancel·lar"
     }
+  },
+  "asistencia": {
+    "title": "Passada de llista",
+    "subtitle": "Marca la presència i les absències del dia.",
+    "ver": "Obrir passada de llista",
+    "ningun_nino": "Encara no hi ha xiquets matriculats en aquesta aula.",
+    "guardar": "Guardar passada de llista",
+    "guardando": "Guardant…",
+    "guardado": "Guardat",
+    "columna": {
+      "estado": "Estat",
+      "hora_llegada": "Arribada",
+      "hora_salida": "Eixida",
+      "observaciones": "Observacions"
+    },
+    "estado_opciones": {
+      "presente": "Present",
+      "ausente": "Absent",
+      "llegada_tarde": "Tard",
+      "salida_temprana": "Eixida primerenca"
+    },
+    "quick_actions": {
+      "todos_presentes": "Tots presents",
+      "limpiar": "Netejar pendents"
+    },
+    "status": {
+      "pending": "Sense marcar",
+      "dirty": "Sense guardar",
+      "saved": "Guardat",
+      "error": "Error"
+    },
+    "badge": {
+      "ausencia_reportada": "Absència reportada",
+      "tooltip_motivo": "Motiu: {motivo}"
+    },
+    "alertas": {
+      "alergia_grave": "Al·lèrgia greu",
+      "medicacion": "Medicació"
+    },
+    "placeholder_observaciones": "Notes opcionals",
+    "validation": {
+      "hora_invalida": "Format HH:MM.",
+      "fecha_invalida": "Data invàlida.",
+      "observaciones_largas": "Màxim 500 caràcters.",
+      "requiere_hora_llegada": "Indica l'hora d'arribada.",
+      "requiere_hora_salida": "Indica l'hora d'eixida.",
+      "salida_anterior_llegada": "L'eixida ha de ser posterior a l'arribada."
+    },
+    "errors": {
+      "fuera_de_ventana": "Ja no pots editar aquest dia.",
+      "guardar_fallo": "No s'ha pogut guardar. Torna-ho a intentar."
+    },
+    "admin": {
+      "card_title": "Assistència hui",
+      "card_subtitle": "Resum per aula.",
+      "presentes": "Presents",
+      "ausentes": "Absents",
+      "total": "Total",
+      "ver_aula": "Obrir aula"
+    }
+  },
+  "ausencia": {
+    "title": "Absències",
+    "ninguna": "Encara no s'ha reportat cap absència.",
+    "reportar": "Reportar absència",
+    "cancelar": "Cancel·lar absència",
+    "cancelada": "Cancel·lada",
+    "reportar_dialog_title": "Reportar absència",
+    "reportar_dialog_desc": "Comunica al centre les dates i el motiu. Només s'admeten absències des d'avui en endavant.",
+    "fields": {
+      "fecha_inicio": "Des de",
+      "fecha_fin": "Fins a",
+      "motivo": "Motiu",
+      "descripcion": "Detall (opcional)"
+    },
+    "motivo_opciones": {
+      "enfermedad": "Malaltia",
+      "cita_medica": "Cita mèdica",
+      "vacaciones": "Vacances",
+      "familiar": "Familiar",
+      "otro": "Altre"
+    },
+    "guardar": "Guardar",
+    "guardando": "Guardant…",
+    "guardado": "Absència reportada",
+    "confirmar_cancelar_title": "Cancel·lar l'absència",
+    "confirmar_cancelar_desc": "L'absència quedarà marcada com a cancel·lada i visible. No es pot desfer des de l'app.",
+    "confirmar_cancelar_si": "Sí, cancel·lar",
+    "validation": {
+      "fecha_invalida": "Data invàlida.",
+      "descripcion_larga": "Màxim 500 caràcters.",
+      "fecha_fin_anterior": "La data final ha de ser igual o posterior a la inicial."
+    },
+    "errors": {
+      "guardar_fallo": "No s'ha pogut guardar. Torna-ho a intentar.",
+      "sin_permiso": "No tens permís per a reportar absències. Demana-ho a l'administrador.",
+      "no_encontrada": "Absència no trobada.",
+      "id_requerido": "Falta l'identificador.",
+      "ya_cancelada": "Aquesta absència ja està cancel·lada."
+    },
+    "sin_permiso": {
+      "title": "No pots reportar absències",
+      "description": "Demana a l'administrador del centre que t'active el permís."
+    }
   }
 }
