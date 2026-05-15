@@ -86,8 +86,8 @@ export interface RetryOptions {
  * implementa de nuevo en el módulo concreto.
  */
 export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions = {}): Promise<T> {
-  const attempts = opts.attempts ?? 3
-  const baseDelayMs = opts.baseDelayMs ?? 1000
+  const attempts = opts.attempts ?? 5
+  const baseDelayMs = opts.baseDelayMs ?? 2000
   const shouldRetry = opts.shouldRetry ?? isRateLimitError
   const sleep = opts.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)))
 

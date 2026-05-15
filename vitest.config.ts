@@ -13,6 +13,12 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     exclude: ['e2e/**', 'node_modules/**', '.next/**'],
+    // Suite RLS hace muchos signInWithPassword contra Supabase Cloud Auth;
+    // corriendo archivos en paralelo se dispara el rate-limit (429
+    // "over_request_rate_limit") y los reintentos no llegan. Serializar
+    // archivos elimina el burst — el CI deja de flakear a coste de ~30s
+    // extra en el total de la suite.
+    fileParallelism: false,
     env: {
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',

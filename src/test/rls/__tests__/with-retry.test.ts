@@ -51,9 +51,9 @@ describe('withRetry', () => {
     expect(result).toBe('ok')
     expect(fn).toHaveBeenCalledTimes(3)
     expect(sleep).toHaveBeenCalledTimes(2)
-    // Backoff exponencial: 1000ms, luego 2000ms.
-    expect(sleep).toHaveBeenNthCalledWith(1, 1000)
-    expect(sleep).toHaveBeenNthCalledWith(2, 2000)
+    // Backoff exponencial sobre baseDelayMs por defecto (2000ms): 2000ms, 4000ms.
+    expect(sleep).toHaveBeenNthCalledWith(1, 2000)
+    expect(sleep).toHaveBeenNthCalledWith(2, 4000)
   })
 
   it('agota los reintentos y propaga el último error de rate-limit', async () => {
@@ -65,7 +65,8 @@ describe('withRetry', () => {
         sleep: async () => {},
       })
     ).rejects.toThrow('rate limit')
-    expect(fn).toHaveBeenCalledTimes(3)
+    // Default attempts = 5.
+    expect(fn).toHaveBeenCalledTimes(5)
   })
 
   it('NO reintenta si el error no es rate-limit (falla inmediatamente)', async () => {
