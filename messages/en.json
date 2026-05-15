@@ -674,5 +674,119 @@
       "confirm_si": "Yes, mark as wrong",
       "cancelar": "Cancel"
     }
+  },
+  "asistencia": {
+    "title": "Attendance",
+    "title_plural": "Attendance",
+    "subtitle": "Mark today's presence and absences.",
+    "ver": "Open attendance",
+    "ningun_nino": "No children enrolled yet in this classroom.",
+    "guardar": "Confirm attendance",
+    "guardando": "Saving…",
+    "guardado": "Saved",
+    "columna": {
+      "estado": "Status",
+      "hora_llegada": "Arrival",
+      "hora_salida": "Departure",
+      "observaciones": "Notes"
+    },
+    "estado_opciones": {
+      "presente": "Present",
+      "ausente": "Absent",
+      "llegada_tarde": "Late",
+      "salida_temprana": "Early leave"
+    },
+    "quick_actions": {
+      "todos_presentes": "All present",
+      "limpiar": "Clear pending"
+    },
+    "status": {
+      "pending": "Unmarked",
+      "dirty": "Unsaved",
+      "saved": "Saved",
+      "error": "Error"
+    },
+    "vista": {
+      "dia_cerrado": "Day closed",
+      "dia_futuro": "Future day",
+      "sin_registrar": "Not recorded",
+      "registrado_a_las": "at {hora}",
+      "sin_pase_de_lista": "Attendance was not taken this day.",
+      "preview_futuro_titulo": "Day preview",
+      "preview_futuro_desc": "Only absences already reported by families."
+    },
+    "badge": {
+      "ausencia_reportada": "Absence reported",
+      "tooltip_motivo": "Reason: {motivo}"
+    },
+    "alertas": {
+      "alergia_grave": "Severe allergy",
+      "medicacion": "Medication"
+    },
+    "placeholder_observaciones": "Optional notes",
+    "validation": {
+      "hora_invalida": "Format HH:MM.",
+      "fecha_invalida": "Invalid date.",
+      "observaciones_largas": "Maximum 500 characters.",
+      "requiere_hora_llegada": "Provide arrival time.",
+      "requiere_hora_salida": "Provide departure time.",
+      "salida_anterior_llegada": "Departure must be after arrival."
+    },
+    "errors": {
+      "fuera_de_ventana": "You can no longer edit this day.",
+      "guardar_fallo": "Couldn't save. Try again."
+    },
+    "admin": {
+      "card_title": "Attendance today",
+      "card_subtitle": "Summary per classroom.",
+      "presentes": "Present",
+      "ausentes": "Absent",
+      "total": "Total",
+      "ver_aula": "Open classroom"
+    }
+  },
+  "ausencia": {
+    "title": "Absences",
+    "ninguna": "No absences reported yet.",
+    "reportar": "Report absence",
+    "cancelar": "Cancel absence",
+    "cancelada": "Cancelled",
+    "reportar_dialog_title": "Report absence",
+    "reportar_dialog_desc": "Let the centre know the dates and reason. Only absences from today onwards are accepted.",
+    "fields": {
+      "fecha_inicio": "From",
+      "fecha_fin": "Until",
+      "motivo": "Reason",
+      "descripcion": "Details (optional)"
+    },
+    "motivo_opciones": {
+      "enfermedad": "Illness",
+      "cita_medica": "Medical appointment",
+      "vacaciones": "Holiday",
+      "familiar": "Family",
+      "otro": "Other"
+    },
+    "guardar": "Save",
+    "guardando": "Saving…",
+    "guardado": "Absence reported",
+    "confirmar_cancelar_title": "Cancel absence",
+    "confirmar_cancelar_desc": "The absence will be marked as cancelled and remain visible. Cannot be undone from the app.",
+    "confirmar_cancelar_si": "Yes, cancel",
+    "validation": {
+      "fecha_invalida": "Invalid date.",
+      "descripcion_larga": "Maximum 500 characters.",
+      "fecha_fin_anterior": "End date must be equal to or after start date."
+    },
+    "errors": {
+      "guardar_fallo": "Couldn't save. Try again.",
+      "sin_permiso": "You don't have permission to report absences. Ask the centre admin.",
+      "no_encontrada": "Absence not found.",
+      "id_requerido": "Identifier missing.",
+      "ya_cancelada": "This absence is already cancelled."
+    },
+    "sin_permiso": {
+      "title": "You can't report absences",
+      "description": "Ask the centre admin to enable the permission for you."
+    }
   }
 }

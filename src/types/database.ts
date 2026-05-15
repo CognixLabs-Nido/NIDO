@@ -49,6 +49,60 @@ export type Database = {
           },
         ]
       }
+      asistencias: {
+        Row: {
+          created_at: string
+          estado: Database['public']['Enums']['estado_asistencia']
+          fecha: string
+          hora_llegada: string | null
+          hora_salida: string | null
+          id: string
+          nino_id: string
+          observaciones: string | null
+          registrada_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          estado: Database['public']['Enums']['estado_asistencia']
+          fecha: string
+          hora_llegada?: string | null
+          hora_salida?: string | null
+          id?: string
+          nino_id: string
+          observaciones?: string | null
+          registrada_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          estado?: Database['public']['Enums']['estado_asistencia']
+          fecha?: string
+          hora_llegada?: string | null
+          hora_salida?: string | null
+          id?: string
+          nino_id?: string
+          observaciones?: string | null
+          registrada_por?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'asistencias_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'asistencias_registrada_por_fkey'
+            columns: ['registrada_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       audit_log: {
         Row: {
           accion: Database['public']['Enums']['audit_accion']
@@ -143,6 +197,57 @@ export type Database = {
             columns: ['curso_academico_id']
             isOneToOne: false
             referencedRelation: 'cursos_academicos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      ausencias: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          fecha_fin: string
+          fecha_inicio: string
+          id: string
+          motivo: Database['public']['Enums']['motivo_ausencia']
+          nino_id: string
+          reportada_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          fecha_fin: string
+          fecha_inicio: string
+          id?: string
+          motivo: Database['public']['Enums']['motivo_ausencia']
+          nino_id: string
+          reportada_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          fecha_fin?: string
+          fecha_inicio?: string
+          id?: string
+          motivo?: Database['public']['Enums']['motivo_ausencia']
+          nino_id?: string
+          reportada_por?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'ausencias_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'ausencias_reportada_por_fkey'
+            columns: ['reportada_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
             referencedColumns: ['id']
           },
         ]
@@ -974,6 +1079,7 @@ export type Database = {
           telefono_emergencia: string
         }[]
       }
+      hoy_madrid: { Args: never; Returns: string }
       idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
       nino_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
@@ -1004,10 +1110,12 @@ export type Database = {
       consistencia_deposicion: 'normal' | 'dura' | 'blanda' | 'diarrea'
       control_esfinteres: 'panal_completo' | 'transicion' | 'sin_panal_diurno' | 'sin_panal_total'
       curso_estado: 'planificado' | 'activo' | 'cerrado'
+      estado_asistencia: 'presente' | 'ausente' | 'llegada_tarde' | 'salida_temprana'
       estado_general_agenda: 'bien' | 'regular' | 'mal' | 'mixto'
       humor_agenda: 'feliz' | 'tranquilo' | 'inquieto' | 'triste' | 'cansado'
       lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
       momento_comida: 'desayuno' | 'media_manana' | 'comida' | 'merienda'
+      motivo_ausencia: 'enfermedad' | 'cita_medica' | 'vacaciones' | 'familiar' | 'otro'
       nino_sexo: 'F' | 'M' | 'X'
       parentesco:
         | 'madre'
@@ -1166,10 +1274,12 @@ export const Constants = {
       consistencia_deposicion: ['normal', 'dura', 'blanda', 'diarrea'],
       control_esfinteres: ['panal_completo', 'transicion', 'sin_panal_diurno', 'sin_panal_total'],
       curso_estado: ['planificado', 'activo', 'cerrado'],
+      estado_asistencia: ['presente', 'ausente', 'llegada_tarde', 'salida_temprana'],
       estado_general_agenda: ['bien', 'regular', 'mal', 'mixto'],
       humor_agenda: ['feliz', 'tranquilo', 'inquieto', 'triste', 'cansado'],
       lactancia_estado: ['materna', 'biberon', 'mixta', 'finalizada', 'no_aplica'],
       momento_comida: ['desayuno', 'media_manana', 'comida', 'merienda'],
+      motivo_ausencia: ['enfermedad', 'cita_medica', 'vacaciones', 'familiar', 'otro'],
       nino_sexo: ['F', 'M', 'X'],
       parentesco: [
         'madre',
