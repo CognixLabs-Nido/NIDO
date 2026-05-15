@@ -835,6 +835,104 @@ export type Database = {
           },
         ]
       }
+      plantilla_menu_dia: {
+        Row: {
+          comida: string | null
+          created_at: string
+          desayuno: string | null
+          dia_semana: Database['public']['Enums']['dia_semana']
+          id: string
+          media_manana: string | null
+          merienda: string | null
+          plantilla_id: string
+          updated_at: string
+        }
+        Insert: {
+          comida?: string | null
+          created_at?: string
+          desayuno?: string | null
+          dia_semana: Database['public']['Enums']['dia_semana']
+          id?: string
+          media_manana?: string | null
+          merienda?: string | null
+          plantilla_id: string
+          updated_at?: string
+        }
+        Update: {
+          comida?: string | null
+          created_at?: string
+          desayuno?: string | null
+          dia_semana?: Database['public']['Enums']['dia_semana']
+          id?: string
+          media_manana?: string | null
+          merienda?: string | null
+          plantilla_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'plantilla_menu_dia_plantilla_id_fkey'
+            columns: ['plantilla_id']
+            isOneToOne: false
+            referencedRelation: 'plantillas_menu'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      plantillas_menu: {
+        Row: {
+          centro_id: string
+          creada_por: string | null
+          created_at: string
+          deleted_at: string | null
+          estado: Database['public']['Enums']['estado_plantilla_menu']
+          id: string
+          nombre: string
+          updated_at: string
+          vigente_desde: string | null
+          vigente_hasta: string | null
+        }
+        Insert: {
+          centro_id: string
+          creada_por?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          estado?: Database['public']['Enums']['estado_plantilla_menu']
+          id?: string
+          nombre: string
+          updated_at?: string
+          vigente_desde?: string | null
+          vigente_hasta?: string | null
+        }
+        Update: {
+          centro_id?: string
+          creada_por?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          estado?: Database['public']['Enums']['estado_plantilla_menu']
+          id?: string
+          nombre?: string
+          updated_at?: string
+          vigente_desde?: string | null
+          vigente_hasta?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'plantillas_menu_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'plantillas_menu_creada_por_fkey'
+            columns: ['creada_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       profes_aulas: {
         Row: {
           aula_id: string
@@ -1062,6 +1160,7 @@ export type Database = {
       centro_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       centro_de_aula: { Args: { p_aula_id: string }; Returns: string }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
+      centro_de_plantilla: { Args: { p_plantilla_id: string }; Returns: string }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
       es_profe_de_aula: { Args: { p_aula_id: string }; Returns: boolean }
@@ -1081,7 +1180,17 @@ export type Database = {
       }
       hoy_madrid: { Args: never; Returns: string }
       idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
+      menu_del_dia: {
+        Args: { p_centro_id: string; p_fecha: string }
+        Returns: {
+          comida: string
+          desayuno: string
+          media_manana: string
+          merienda: string
+        }[]
+      }
       nino_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
+      nino_toma_comida_solida: { Args: { p_nino_id: string }; Returns: boolean }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
       set_info_medica_emergencia_cifrada: {
         Args: {
@@ -1110,8 +1219,10 @@ export type Database = {
       consistencia_deposicion: 'normal' | 'dura' | 'blanda' | 'diarrea'
       control_esfinteres: 'panal_completo' | 'transicion' | 'sin_panal_diurno' | 'sin_panal_total'
       curso_estado: 'planificado' | 'activo' | 'cerrado'
+      dia_semana: 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes'
       estado_asistencia: 'presente' | 'ausente' | 'llegada_tarde' | 'salida_temprana'
       estado_general_agenda: 'bien' | 'regular' | 'mal' | 'mixto'
+      estado_plantilla_menu: 'borrador' | 'publicada' | 'archivada'
       humor_agenda: 'feliz' | 'tranquilo' | 'inquieto' | 'triste' | 'cansado'
       lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
       momento_comida: 'desayuno' | 'media_manana' | 'comida' | 'merienda'
@@ -1274,8 +1385,10 @@ export const Constants = {
       consistencia_deposicion: ['normal', 'dura', 'blanda', 'diarrea'],
       control_esfinteres: ['panal_completo', 'transicion', 'sin_panal_diurno', 'sin_panal_total'],
       curso_estado: ['planificado', 'activo', 'cerrado'],
+      dia_semana: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
       estado_asistencia: ['presente', 'ausente', 'llegada_tarde', 'salida_temprana'],
       estado_general_agenda: ['bien', 'regular', 'mal', 'mixto'],
+      estado_plantilla_menu: ['borrador', 'publicada', 'archivada'],
       humor_agenda: ['feliz', 'tranquilo', 'inquieto', 'triste', 'cansado'],
       lactancia_estado: ['materna', 'biberon', 'mixta', 'finalizada', 'no_aplica'],
       momento_comida: ['desayuno', 'media_manana', 'comida', 'merienda'],
