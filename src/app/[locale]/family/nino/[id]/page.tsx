@@ -21,6 +21,8 @@ import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getAgendaDelDia } from '@/features/agenda-diaria/queries/get-agenda-del-dia'
 import { AusenciasFamiliaSection } from '@/features/ausencias/components/AusenciasFamiliaSection'
 import { getAusenciasNino } from '@/features/ausencias/queries/get-ausencias-nino'
+import { MenuDelDiaWidget } from '@/features/menus/components/MenuDelDiaWidget'
+import { getMenuDelDia } from '@/features/menus/queries/get-menu-del-dia'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -73,6 +75,12 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   // para leer; `puede_reportar_ausencias` para reportar/cancelar.
   const ausencias = permisos.puede_ver_agenda ? await getAusenciasNino(id) : []
   const puedeReportarAusencias = Boolean(permisos.puede_reportar_ausencias)
+
+  // Menú del día del centro del niño (F4.5). Si la familia tiene
+  // `puede_ver_agenda` y hay plantilla publicada que cubra la fecha, se
+  // muestra arriba de la agenda como widget. La familia ve siempre el
+  // menú estándar, no los overrides por niño (decisión Checkpoint A).
+  const menuHoy = permisos.puede_ver_agenda ? await getMenuDelDia(nino.centro_id, fecha) : null
 
   const initials = (nino.nombre.charAt(0) + (nino.apellidos.charAt(0) || '')).toUpperCase() || '?'
 
@@ -129,6 +137,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           <CalendarDaysIcon className="text-primary-600 size-5" />
           {tTabs('agenda')}
         </h2>
+        {permisos.puede_ver_agenda && <MenuDelDiaWidget menu={menuHoy} />}
         {permisos.puede_ver_agenda && agendaDelDia ? (
           <AgendaFamiliaView ninoId={id} locale={locale} fecha={fecha} agenda={agendaDelDia} />
         ) : (
