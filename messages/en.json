@@ -172,7 +172,8 @@
       "aulas": "Classrooms",
       "ninos": "Children",
       "audit": "Audit log",
-      "perfil": "Profile"
+      "perfil": "Profile",
+      "calendario": "Calendar"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -327,7 +328,8 @@
     "nav": {
       "aria_label": "Teacher navigation",
       "dashboard": "Home",
-      "perfil": "Profile"
+      "perfil": "Profile",
+      "calendario": "Calendar"
     },
     "dashboard": {
       "title": "My classrooms",
@@ -350,7 +352,8 @@
     "nav": {
       "aria_label": "Family navigation",
       "dashboard": "Home",
-      "perfil": "Profile"
+      "perfil": "Profile",
+      "calendario": "Calendar"
     },
     "dashboard": {
       "title": "My children",
@@ -787,6 +790,60 @@
     "sin_permiso": {
       "title": "You can't report absences",
       "description": "Ask the centre admin to enable the permission for you."
+    }
+  },
+  "calendario": {
+    "title": "Centre's calendar",
+    "admin_intro": "Mark holidays, school breaks, summer school and other day types. Mondays to Fridays are teaching days and weekends are closed by default.",
+    "vista_solo_lectura": "Centre calendar (read only).",
+    "selector": {
+      "anterior": "Previous month",
+      "siguiente": "Next month"
+    },
+    "tipos": {
+      "lectivo": "Teaching",
+      "festivo": "Holiday",
+      "vacaciones": "Break",
+      "escuela_verano": "Summer school",
+      "escuela_navidad": "Christmas school",
+      "jornada_reducida": "Short day",
+      "cerrado": "Closed"
+    },
+    "leyenda": {
+      "title": "Legend",
+      "intro": "Colour by day type. Mon-Fri default to teaching, Sat-Sun closed."
+    },
+    "popover_dia": {
+      "title": "Day {fecha}",
+      "tipo_label": "Day type",
+      "observaciones_label": "Notes (optional)",
+      "guardar": "Save",
+      "eliminar": "Delete",
+      "cancelar": "Cancel"
+    },
+    "dialog_rango": {
+      "title": "Apply a type to a range",
+      "resumen": "From {desde} to {hasta} ({dias} days).",
+      "confirmacion": "You will mark {dias} days as {tipo}.",
+      "aplicar": "Apply",
+      "cancelar": "Cancel"
+    },
+    "validation": {
+      "fecha_invalida": "Invalid date.",
+      "rango_invertido": "End date must be on or after the start date.",
+      "rango_demasiado_grande": "Maximum 366 days per application.",
+      "observaciones_largas": "Maximum 500 characters."
+    },
+    "toasts": {
+      "guardado": "Day updated",
+      "guardado_rango": "{dias} days updated",
+      "eliminado": "Day restored to default",
+      "error_guardar": "Couldn't save. Try again.",
+      "error_eliminar": "Couldn't delete. Try again."
+    },
+    "widget_proximos_cerrados": {
+      "title": "Upcoming closed days",
+      "vacio_amable": "No closures planned for the next month."
     }
   }
 }

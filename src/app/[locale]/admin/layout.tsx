@@ -2,6 +2,7 @@ import {
   LayoutDashboardIcon,
   Building2Icon,
   CalendarDaysIcon,
+  CalendarRangeIcon,
   BookOpenIcon,
   BabyIcon,
   HistoryIcon,
@@ -41,6 +42,7 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
     { href: `/${locale}/admin/centro`, label: t('centro'), icon: <Building2Icon /> },
     { href: `/${locale}/admin/cursos`, label: t('cursos'), icon: <CalendarDaysIcon /> },
     { href: `/${locale}/admin/aulas`, label: t('aulas'), icon: <BookOpenIcon /> },
+    { href: `/${locale}/admin/calendario`, label: t('calendario'), icon: <CalendarRangeIcon /> },
     { href: `/${locale}/admin/ninos`, label: t('ninos'), icon: <BabyIcon /> },
     { href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> },
   ]

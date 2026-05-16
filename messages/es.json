@@ -172,7 +172,8 @@
       "aulas": "Aulas",
       "ninos": "Niños",
       "audit": "Audit log",
-      "perfil": "Perfil"
+      "perfil": "Perfil",
+      "calendario": "Calendario"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -327,7 +328,8 @@
     "nav": {
       "aria_label": "Navegación profe",
       "dashboard": "Inicio",
-      "perfil": "Perfil"
+      "perfil": "Perfil",
+      "calendario": "Calendario"
     },
     "dashboard": {
       "title": "Mis aulas",
@@ -350,7 +352,8 @@
     "nav": {
       "aria_label": "Navegación familia",
       "dashboard": "Inicio",
-      "perfil": "Perfil"
+      "perfil": "Perfil",
+      "calendario": "Calendario"
     },
     "dashboard": {
       "title": "Mis niños",
@@ -787,6 +790,60 @@
     "sin_permiso": {
       "title": "No puedes reportar ausencias",
       "description": "Pide al administrador del centro que te active el permiso."
+    }
+  },
+  "calendario": {
+    "title": "Calendario del centro",
+    "admin_intro": "Marca festivos, vacaciones, escuela de verano y otros tipos de día. Los lunes-viernes son lectivos y los fines de semana cerrados por defecto.",
+    "vista_solo_lectura": "Calendario del centro (solo lectura).",
+    "selector": {
+      "anterior": "Mes anterior",
+      "siguiente": "Mes siguiente"
+    },
+    "tipos": {
+      "lectivo": "Lectivo",
+      "festivo": "Festivo",
+      "vacaciones": "Vacaciones",
+      "escuela_verano": "Escuela de verano",
+      "escuela_navidad": "Escuela de navidad",
+      "jornada_reducida": "Jornada reducida",
+      "cerrado": "Cerrado"
+    },
+    "leyenda": {
+      "title": "Leyenda",
+      "intro": "Color por tipo de día. Los lun-vie son lectivos y los sáb-dom cerrados por defecto."
+    },
+    "popover_dia": {
+      "title": "Día {fecha}",
+      "tipo_label": "Tipo de día",
+      "observaciones_label": "Observaciones (opcional)",
+      "guardar": "Guardar",
+      "eliminar": "Eliminar",
+      "cancelar": "Cancelar"
+    },
+    "dialog_rango": {
+      "title": "Aplicar tipo a un rango",
+      "resumen": "Del {desde} al {hasta} ({dias} días).",
+      "confirmacion": "Vas a marcar {dias} días como {tipo}.",
+      "aplicar": "Aplicar",
+      "cancelar": "Cancelar"
+    },
+    "validation": {
+      "fecha_invalida": "Fecha inválida.",
+      "rango_invertido": "La fecha fin debe ser posterior o igual a la inicial.",
+      "rango_demasiado_grande": "Máximo 366 días por aplicación.",
+      "observaciones_largas": "Máximo 500 caracteres."
+    },
+    "toasts": {
+      "guardado": "Día actualizado",
+      "guardado_rango": "{dias} días actualizados",
+      "eliminado": "Día restaurado al default",
+      "error_guardar": "No se pudo guardar. Inténtalo de nuevo.",
+      "error_eliminar": "No se pudo eliminar. Inténtalo de nuevo."
+    },
+    "widget_proximos_cerrados": {
+      "title": "Próximos días cerrados",
+      "vacio_amable": "Sin cierres previstos el próximo mes."
     }
   }
 }

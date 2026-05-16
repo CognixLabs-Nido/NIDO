@@ -600,6 +600,54 @@ export type Database = {
           },
         ]
       }
+      dias_centro: {
+        Row: {
+          centro_id: string
+          creado_por: string | null
+          created_at: string
+          fecha: string
+          id: string
+          observaciones: string | null
+          tipo: Database['public']['Enums']['tipo_dia_centro']
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          creado_por?: string | null
+          created_at?: string
+          fecha: string
+          id?: string
+          observaciones?: string | null
+          tipo: Database['public']['Enums']['tipo_dia_centro']
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          creado_por?: string | null
+          created_at?: string
+          fecha?: string
+          id?: string
+          observaciones?: string | null
+          tipo?: Database['public']['Enums']['tipo_dia_centro']
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'dias_centro_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'dias_centro_creado_por_fkey'
+            columns: ['creado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       info_medica_emergencia: {
         Row: {
           alergias_graves: string | null
@@ -1059,6 +1107,10 @@ export type Database = {
     }
     Functions: {
       _get_medical_key: { Args: never; Returns: string }
+      centro_abierto: {
+        Args: { p_centro_id: string; p_fecha: string }
+        Returns: boolean
+      }
       centro_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       centro_de_aula: { Args: { p_aula_id: string }; Returns: string }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
@@ -1098,6 +1150,10 @@ export type Database = {
       tiene_permiso_sobre: {
         Args: { p_nino_id: string; p_permiso: string }
         Returns: boolean
+      }
+      tipo_de_dia: {
+        Args: { p_centro_id: string; p_fecha: string }
+        Returns: Database['public']['Enums']['tipo_dia_centro']
       }
       usuario_actual: { Args: never; Returns: string }
     }
@@ -1139,6 +1195,14 @@ export type Database = {
         | 'otra'
       tipo_biberon: 'materna' | 'formula' | 'agua' | 'infusion' | 'zumo'
       tipo_deposicion: 'pipi' | 'caca' | 'mixto'
+      tipo_dia_centro:
+        | 'lectivo'
+        | 'festivo'
+        | 'vacaciones'
+        | 'escuela_verano'
+        | 'escuela_navidad'
+        | 'jornada_reducida'
+        | 'cerrado'
       tipo_vinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado'
       user_role: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
     }
@@ -1305,6 +1369,15 @@ export const Constants = {
       ],
       tipo_biberon: ['materna', 'formula', 'agua', 'infusion', 'zumo'],
       tipo_deposicion: ['pipi', 'caca', 'mixto'],
+      tipo_dia_centro: [
+        'lectivo',
+        'festivo',
+        'vacaciones',
+        'escuela_verano',
+        'escuela_navidad',
+        'jornada_reducida',
+        'cerrado',
+      ],
       tipo_vinculo: ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'],
       user_role: ['admin', 'profe', 'tutor_legal', 'autorizado'],
     },

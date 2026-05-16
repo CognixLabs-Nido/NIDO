@@ -307,3 +307,68 @@
 ### Para Fase 4.5
 
 - El patrón "pase de lista" queda listo para reusar con menús: items = niños matriculados, columnas = `cantidad` (radio enum), `observaciones` (text-short), quick action "Comieron todos bien". Sin nuevo componente, solo nuevas migraciones (`plantillas_menu`) y schemas.
+
+---
+
+## Fase 4.5 — Cambio de planes y revert (PR #12 cerrado, PR #13 mergeado)
+
+**Fecha:** 2026-05-16
+**Estado:** ✅ Cerrada (PR #12 descartado sin merge; PR #13 — chore de revert — mergeado a main).
+
+### Resumen
+
+El modelo inicial de F4.5 (plantilla semanal recurrente para menús) se descartó al chocar con la realidad operativa (festivos locales, vacaciones escolares, escuela de verano de pago aparte). PR #12 se cerró sin mergear tras Checkpoint B. La migración `20260516000000_phase4_5_menus.sql` ya había sido aplicada al remoto durante Checkpoint B, dejando drift entre local y remoto. PR #13 limpió el drift (DROP idempotente de las 2 tablas + 3 helpers + 2 ENUMs, restauración de `audit_trigger_function` al estado post-F4, DELETE del registro huérfano en `schema_migrations`). Tras el merge: BD limpia, 138 tests verdes, deploy verde.
+
+### Para reemplazar
+
+F4.5a + F4.5b (rediseño): calendario laboral del centro primero, luego menú mensual + pase de lista comida sobre el calendario.
+
+---
+
+## Fase 4.5a — Calendario laboral del centro
+
+**Fecha:** 2026-05-16
+**Estado:** 🚧 En curso (PR draft pendiente de Checkpoint C y merge).
+
+### Completado
+
+- Migración `20260516125631_phase4_5a_school_calendar.sql` aplicada al remoto:
+  - 1 ENUM nuevo: `tipo_dia_centro` (7 valores: `lectivo`, `festivo`, `vacaciones`, `escuela_verano`, `escuela_navidad`, `jornada_reducida`, `cerrado`).
+  - 1 tabla nueva: `dias_centro` (override por fecha, UNIQUE `(centro_id, fecha)`).
+  - 2 helpers SQL: `tipo_de_dia(centro, fecha)` (override-gana-default, fallback ISODOW lun-vie=lectivo, sáb-dom=cerrado), `centro_abierto(centro, fecha)` (boolean conveniencia).
+  - RLS por tabla: SELECT a todos los miembros del centro vía `pertenece_a_centro`; INSERT/UPDATE/**DELETE** a admin del centro. **DELETE permitido como excepción al patrón habitual** (ADR-0019).
+  - `audit_trigger_function()` ampliada con rama nueva para `dias_centro`.
+- Componente compartido `<CalendarioMensual />` agnóstico de dominio en `src/shared/components/calendario/`:
+  - Grid 7×6 (42 celdas siempre), navegación ← →, ARIA grid + columnheader + gridcell, `aria-current="date"` en hoy.
+  - Click simple → `onClickDia(fecha)`. Shift+click → `onSeleccionRango(desde, hasta)`.
+  - Navegación con flechas mueve `diaActivo`, salta de mes en bordes.
+  - `rangoSeleccionado` prop opcional para feedback visual de la selección antes de confirmar el tipo.
+  - No conoce `dias_centro` — F7 (eventos) lo reusará tal cual.
+- Feature `src/features/calendario-centro/`:
+  - Server actions `upsertDiaCentro`, `aplicarTipoARango` (span máx 366 días), `eliminarDiaCentro`.
+  - Queries `getCalendarioMes(centroId, año, mes)` (overrides del mes con holgura para overflow del grid), `getProximosDiasCerrados(centroId, 30, 5)` (widget, solo festivos/vacaciones/cerrado, horizonte 30 días).
+  - Helpers TS `tipoDefaultDeFecha`, `tipoResuelto`, `tipoAbreElCentro` (cliente calcula sin round-trips).
+  - Schemas Zod con cross-field rules (rango invertido, span máximo).
+- UI:
+  - `/admin/calendario` con `CalendarioCentroEditor`: dialog de día (select tipo + textarea + guardar/eliminar/cancelar) y dialog de rango (resumen "Vas a marcar N días como Tipo" + select + textarea + aplicar).
+  - `/teacher/calendario` y `/family/calendario` con `CalendarioCentroReadOnly` (navegación entre meses, sin handlers).
+  - `<LeyendaTiposDia />` visible siempre debajo del calendario en las 3 rutas (NO un tooltip oculto — accesibilidad).
+  - `<ProximosDiasCerradosWidget />` montado en `/family` y `/teacher` con empty state amable.
+  - Sidebars admin/teacher/family ganan item "Calendario".
+- i18n trilingüe es/en/va (~30 claves por idioma): `calendario.*` + entradas `nav.calendario` por rol.
+- Tests Vitest: 175 totales — 37 nuevos: 11 unit `<CalendarioMensual />`, 6 unit helpers TS, 9 unit schemas Zod, 6 RLS `dias_centro`, 4 functions SQL `tipo_de_dia`/`centro_abierto`, 1 audit (DELETE preserva `valores_antes`).
+- Playwright `e2e/school-calendar.spec.ts`: 6 smoke (3 rutas protegidas + 3 i18n sin claves sin resolver) + 2 diferenciales condicionales (skip por defecto): admin marca festivo, admin aplica rango.
+
+### Decisiones (ADRs)
+
+- **ADR-0019-calendario-laboral-default-excepciones**: modelo "default + excepciones" (≤80 filas/año/centro vs 365). Helper SQL resuelve override-gana-default. **DELETE permitido en `dias_centro` como excepción documentada** al patrón habitual del proyecto — la ausencia de fila tiene significado (vuelta al default), no procede "anular con prefijo". Trazabilidad preservada vía audit trigger. **Sin ventana de edición**: admin edita cualquier fecha pasada/presente/futura. Festivos manuales (importación automática queda para Ola 2).
+
+### Pendiente
+
+- Validaciones finales Checkpoint C (`npm run typecheck && lint && test && test:e2e && build`) y push como PR draft.
+- Smoke en preview Vercel: editar un día, aplicar un rango, ver leyenda visible en las 3 rutas, widget de próximos cerrados.
+
+### Para Fase 4.5b
+
+- `tipo_de_dia(centro, fecha)` y `centro_abierto(centro, fecha)` están listos para que el módulo de menús sepa qué días tienen menú.
+- `<CalendarioMensual />` reusable para vistas mensuales de menú o de eventos (F7).

@@ -1,4 +1,4 @@
-import { HomeIcon } from 'lucide-react'
+import { CalendarRangeIcon, HomeIcon } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
@@ -32,6 +32,11 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
       href: `/${locale}/family`,
       label: t('dashboard'),
       icon: <HomeIcon />,
+    },
+    {
+      href: `/${locale}/family/calendario`,
+      label: t('calendario'),
+      icon: <CalendarRangeIcon />,
     },
   ]
 
