@@ -32,6 +32,10 @@ public.dentro_de_ventana_edicion(p_fecha date)           → boolean
 
 -- Fase 4
 public.hoy_madrid()                                      → date
+
+-- Fase 4.5a
+public.tipo_de_dia(p_centro_id uuid, p_fecha date)       → tipo_dia_centro
+public.centro_abierto(p_centro_id uuid, p_fecha date)    → boolean
 ```
 
 Todas con `LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public`.
@@ -76,7 +80,7 @@ Las funciones `public.set_info_medica_emergencia_cifrada(...)` y `public.get_inf
 
 `audit_trigger_function()` SECURITY DEFINER aplicada `AFTER INSERT OR UPDATE OR DELETE` en:
 
-- `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`.
+- `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `datos_pedagogicos_nino`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`.
 
 Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 
@@ -155,4 +159,13 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `datos-pedagogicos.rls.test.ts` (Fase 2.6).
 - `agenda-diaria.rls.test.ts` + `dentro-de-ventana-edicion.test.ts` (Fase 3).
 - `asistencia.rls.test.ts`, `ausencia.rls.test.ts` (Fase 4).
-- `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` + `asistencia-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda, asistencia).
+- `dias-centro.rls.test.ts` + `tipo-de-dia.test.ts` (Fase 4.5a).
+- `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` + `asistencia-audit.test.ts` + `dias-centro-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda, asistencia, calendario).
+
+## Calendario laboral (Fase 4.5a)
+
+- **`dias_centro`**: persiste solo overrides; el helper `public.tipo_de_dia(centro, fecha)` resuelve con fallback ISODOW (lun-vie=`lectivo`, sáb-dom=`cerrado`). Ver [ADR-0019](../decisions/ADR-0019-calendario-laboral-default-excepciones.md).
+  - SELECT: cualquier miembro del centro (`pertenece_a_centro`).
+  - INSERT, UPDATE: solo admin del centro.
+  - **DELETE: solo admin del centro** — excepción explícita al patrón habitual del proyecto. La "ausencia de fila" tiene significado semántico (vuelta al default); no procede "anular con prefijo". Trazabilidad preservada en `audit_log` (trigger captura `valores_antes`).
+- **Sin ventana de edición**: a diferencia de F3/F4, `dias_centro` no usa `dentro_de_ventana_edicion`. El admin edita cualquier fecha pasada/presente/futura — es planificación administrativa, no un hecho operativo.
