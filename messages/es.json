@@ -173,7 +173,8 @@
       "ninos": "Niños",
       "audit": "Audit log",
       "perfil": "Perfil",
-      "calendario": "Calendario"
+      "calendario": "Calendario",
+      "menus": "Menús"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -613,7 +614,7 @@
     },
     "cantidad_comida_opciones": {
       "todo": "Todo",
-      "mayoria": "Mayoría",
+      "mayoria": "Casi todo",
       "mitad": "Mitad",
       "poco": "Poco",
       "nada": "Nada"
@@ -844,6 +845,124 @@
     "widget_proximos_cerrados": {
       "title": "Próximos días cerrados",
       "vacio_amable": "Sin cierres previstos el próximo mes."
+    }
+  },
+  "menus": {
+    "title": "Menús del centro",
+    "lista": {
+      "title": "Plantillas mensuales",
+      "nueva": "Crear menú del mes",
+      "nueva_title": "Crear nuevo menú mensual",
+      "mes_label": "Mes",
+      "anio_label": "Año",
+      "crear": "Crear",
+      "cancelar": "Cancelar",
+      "vacio": "Aún no hay menús creados."
+    },
+    "estado": {
+      "borrador": "Borrador",
+      "publicada": "Publicada",
+      "archivada": "Archivada"
+    },
+    "editor": {
+      "title": "Menú de {mes} {anio}",
+      "volver_listado": "Volver al listado",
+      "guardar_mes": "Guardar mes",
+      "publicar": "Publicar",
+      "cambios_sin_guardar": "{count, plural, one {# día con cambios sin guardar} other {# días con cambios sin guardar}}",
+      "selector_prev": "Mes anterior",
+      "selector_next": "Mes siguiente",
+      "celda_sin_definir": "Sin definir",
+      "celda_sin_guardar": "Sin guardar",
+      "celda_cerrado_tooltip": "Centro cerrado este día ({tipo})",
+      "confirmar_publicar": {
+        "title": "Publicar menú del mes",
+        "descripcion": "Vas a publicar el menú con {dias, plural, one {# día definido} other {# días definidos}}. La versión publicada anterior (si existía) quedará archivada.",
+        "si": "Publicar",
+        "no": "Cancelar"
+      },
+      "panel_dia": {
+        "title": "Menú del {fecha}",
+        "desayuno": "Desayuno",
+        "media_manana": "Media mañana",
+        "comida": "Comida",
+        "comida_primero": "1er plato",
+        "comida_segundo": "2do plato",
+        "comida_postre": "Postre",
+        "merienda": "Merienda",
+        "hecho": "Hecho",
+        "cancelar": "Cancelar"
+      },
+      "toasts_inline": {
+        "guardado_mes": "{count, plural, one {# día actualizado} other {# días actualizados}}",
+        "publicado": "Plantilla publicada"
+      }
+    },
+    "pase_de_lista": {
+      "title": "Pase de lista comida",
+      "ver": "Pase de lista comida",
+      "selector_momento_label": "Momento",
+      "momentos": {
+        "desayuno": "Desayuno",
+        "media_manana": "Media mañana",
+        "comida": "Comida",
+        "merienda": "Merienda"
+      },
+      "platos": {
+        "primer_plato": "1er plato",
+        "segundo_plato": "2do plato",
+        "postre": "Postre",
+        "unico": "Plato"
+      },
+      "badge_alergia_grave": "Alergia grave",
+      "quick": {
+        "aplicar_a_todos_a_columna": "Aplicar {valor} a todos · {columna}"
+      },
+      "guardar": "Guardar pase de lista",
+      "estado": {
+        "pendiente": "Pendiente",
+        "sin_guardar": "Sin guardar",
+        "guardado": "Guardado",
+        "error": "Error"
+      }
+    },
+    "widget_familia": {
+      "title": "Menú del día",
+      "campos": {
+        "desayuno": "Desayuno",
+        "media_manana": "Media mañana",
+        "comida_primero": "1er plato",
+        "comida_segundo": "2do plato",
+        "comida_postre": "Postre",
+        "merienda": "Merienda"
+      }
+    },
+    "empty": {
+      "centro_cerrado": {
+        "title": "Centro cerrado",
+        "descripcion": "Este día el centro está cerrado ({tipo}). No hay menú ni pase de lista."
+      },
+      "sin_plantilla_publicada": {
+        "title": "Aún no hay menú publicado",
+        "descripcion": "El admin del centro aún no ha publicado el menú de este mes."
+      },
+      "dia_sin_menu": {
+        "title": "Día sin menú definido",
+        "descripcion": "La plantilla del mes está publicada pero este día no tiene menú asignado."
+      },
+      "sin_ninos_solidos": "Ningún niño del aula come comida sólida en este momento."
+    },
+    "validation": {
+      "campo_largo": "Máximo 300 caracteres.",
+      "fecha_invalida": "Fecha inválida.",
+      "fecha_fuera_del_mes": "La fecha está fuera del mes de la plantilla."
+    },
+    "toasts": {
+      "plantilla_creada": "Plantilla creada",
+      "error_guardar": "No se pudo guardar. Inténtalo de nuevo.",
+      "error_publicar": "No se pudo publicar. Inténtalo de nuevo.",
+      "error_fuera_de_ventana": "Ya no puedes editar este día.",
+      "nada_que_guardar": "No hay cantidades marcadas que guardar."
     }
   }
 }

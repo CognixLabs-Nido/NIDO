@@ -36,7 +36,9 @@ export async function getAgendaDelDia(ninoId: string, fecha: string): Promise<Ag
     await Promise.all([
       supabase
         .from('comidas')
-        .select('id, agenda_id, momento, hora, cantidad, descripcion, observaciones, updated_at')
+        .select(
+          'id, agenda_id, momento, hora, cantidad, descripcion, observaciones, tipo_plato, menu_dia_id, updated_at'
+        )
         .eq('agenda_id', agendaId)
         .order('hora', { ascending: true, nullsFirst: true }),
       supabase

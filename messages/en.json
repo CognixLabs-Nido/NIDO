@@ -173,7 +173,8 @@
       "ninos": "Children",
       "audit": "Audit log",
       "perfil": "Profile",
-      "calendario": "Calendar"
+      "calendario": "Calendar",
+      "menus": "Menus"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -613,7 +614,7 @@
     },
     "cantidad_comida_opciones": {
       "todo": "All",
-      "mayoria": "Most",
+      "mayoria": "Almost all",
       "mitad": "Half",
       "poco": "Little",
       "nada": "None"
@@ -844,6 +845,124 @@
     "widget_proximos_cerrados": {
       "title": "Upcoming closed days",
       "vacio_amable": "No closures planned for the next month."
+    }
+  },
+  "menus": {
+    "title": "Centre's menus",
+    "lista": {
+      "title": "Monthly templates",
+      "nueva": "Create this month's menu",
+      "nueva_title": "Create new monthly menu",
+      "mes_label": "Month",
+      "anio_label": "Year",
+      "crear": "Create",
+      "cancelar": "Cancel",
+      "vacio": "No menus created yet."
+    },
+    "estado": {
+      "borrador": "Draft",
+      "publicada": "Published",
+      "archivada": "Archived"
+    },
+    "editor": {
+      "title": "Menu of {mes} {anio}",
+      "volver_listado": "Back to list",
+      "guardar_mes": "Save month",
+      "publicar": "Publish",
+      "cambios_sin_guardar": "{count, plural, one {# day with unsaved changes} other {# days with unsaved changes}}",
+      "selector_prev": "Previous month",
+      "selector_next": "Next month",
+      "celda_sin_definir": "Not set",
+      "celda_sin_guardar": "Unsaved",
+      "celda_cerrado_tooltip": "Centre closed this day ({tipo})",
+      "confirmar_publicar": {
+        "title": "Publish monthly menu",
+        "descripcion": "You will publish the menu with {dias, plural, one {# day defined} other {# days defined}}. The previously published version (if any) will be archived.",
+        "si": "Publish",
+        "no": "Cancel"
+      },
+      "panel_dia": {
+        "title": "Menu for {fecha}",
+        "desayuno": "Breakfast",
+        "media_manana": "Mid-morning",
+        "comida": "Lunch",
+        "comida_primero": "1st course",
+        "comida_segundo": "2nd course",
+        "comida_postre": "Dessert",
+        "merienda": "Snack",
+        "hecho": "Done",
+        "cancelar": "Cancel"
+      },
+      "toasts_inline": {
+        "guardado_mes": "{count, plural, one {# day updated} other {# days updated}}",
+        "publicado": "Template published"
+      }
+    },
+    "pase_de_lista": {
+      "title": "Meal roll call",
+      "ver": "Meal roll call",
+      "selector_momento_label": "Moment",
+      "momentos": {
+        "desayuno": "Breakfast",
+        "media_manana": "Mid-morning",
+        "comida": "Lunch",
+        "merienda": "Snack"
+      },
+      "platos": {
+        "primer_plato": "1st course",
+        "segundo_plato": "2nd course",
+        "postre": "Dessert",
+        "unico": "Course"
+      },
+      "badge_alergia_grave": "Severe allergy",
+      "quick": {
+        "aplicar_a_todos_a_columna": "Apply {valor} to all · {columna}"
+      },
+      "guardar": "Save roll call",
+      "estado": {
+        "pendiente": "Pending",
+        "sin_guardar": "Unsaved",
+        "guardado": "Saved",
+        "error": "Error"
+      }
+    },
+    "widget_familia": {
+      "title": "Today's menu",
+      "campos": {
+        "desayuno": "Breakfast",
+        "media_manana": "Mid-morning",
+        "comida_primero": "1st course",
+        "comida_segundo": "2nd course",
+        "comida_postre": "Dessert",
+        "merienda": "Snack"
+      }
+    },
+    "empty": {
+      "centro_cerrado": {
+        "title": "Centre closed",
+        "descripcion": "The centre is closed this day ({tipo}). No menu or roll call."
+      },
+      "sin_plantilla_publicada": {
+        "title": "No menu published yet",
+        "descripcion": "The admin has not published this month's menu yet."
+      },
+      "dia_sin_menu": {
+        "title": "Day without a defined menu",
+        "descripcion": "The month's template is published but this day has no menu set."
+      },
+      "sin_ninos_solidos": "No child in the room eats solids at this moment."
+    },
+    "validation": {
+      "campo_largo": "Maximum 300 characters.",
+      "fecha_invalida": "Invalid date.",
+      "fecha_fuera_del_mes": "Date is outside the template month."
+    },
+    "toasts": {
+      "plantilla_creada": "Template created",
+      "error_guardar": "Couldn't save. Try again.",
+      "error_publicar": "Couldn't publish. Try again.",
+      "error_fuera_de_ventana": "You can't edit this day anymore.",
+      "nada_que_guardar": "No quantities to save."
     }
   }
 }

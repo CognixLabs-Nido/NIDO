@@ -173,7 +173,8 @@
       "ninos": "Xiquets",
       "audit": "Audit log",
       "perfil": "Perfil",
-      "calendario": "Calendari"
+      "calendario": "Calendari",
+      "menus": "Menús"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -613,7 +614,7 @@
     },
     "cantidad_comida_opciones": {
       "todo": "Tot",
-      "mayoria": "Majoria",
+      "mayoria": "Quasi tot",
       "mitad": "Meitat",
       "poco": "Poc",
       "nada": "Res"
@@ -844,6 +845,124 @@
     "widget_proximos_cerrados": {
       "title": "Pròxims dies tancats",
       "vacio_amable": "Sense tancaments previstos el pròxim mes."
+    }
+  },
+  "menus": {
+    "title": "Menús del centre",
+    "lista": {
+      "title": "Plantilles mensuals",
+      "nueva": "Crear menú del mes",
+      "nueva_title": "Crear nou menú mensual",
+      "mes_label": "Mes",
+      "anio_label": "Any",
+      "crear": "Crear",
+      "cancelar": "Cancel·lar",
+      "vacio": "Encara no hi ha menús creats."
+    },
+    "estado": {
+      "borrador": "Esborrany",
+      "publicada": "Publicada",
+      "archivada": "Arxivada"
+    },
+    "editor": {
+      "title": "Menú de {mes} {anio}",
+      "volver_listado": "Tornar al llistat",
+      "guardar_mes": "Guardar mes",
+      "publicar": "Publicar",
+      "cambios_sin_guardar": "{count, plural, one {# dia amb canvis sense guardar} other {# dies amb canvis sense guardar}}",
+      "selector_prev": "Mes anterior",
+      "selector_next": "Mes següent",
+      "celda_sin_definir": "Sense definir",
+      "celda_sin_guardar": "Sense guardar",
+      "celda_cerrado_tooltip": "Centre tancat aquest dia ({tipo})",
+      "confirmar_publicar": {
+        "title": "Publicar menú del mes",
+        "descripcion": "Publicaràs el menú amb {dias, plural, one {# dia definit} other {# dies definits}}. La versió publicada anterior (si existia) quedarà arxivada.",
+        "si": "Publicar",
+        "no": "Cancel·lar"
+      },
+      "panel_dia": {
+        "title": "Menú del {fecha}",
+        "desayuno": "Desdejuni",
+        "media_manana": "Mig matí",
+        "comida": "Dinar",
+        "comida_primero": "1r plat",
+        "comida_segundo": "2n plat",
+        "comida_postre": "Postre",
+        "merienda": "Berenar",
+        "hecho": "Fet",
+        "cancelar": "Cancel·lar"
+      },
+      "toasts_inline": {
+        "guardado_mes": "{count, plural, one {# dia actualitzat} other {# dies actualitzats}}",
+        "publicado": "Plantilla publicada"
+      }
+    },
+    "pase_de_lista": {
+      "title": "Llista de menjar",
+      "ver": "Llista de menjar",
+      "selector_momento_label": "Moment",
+      "momentos": {
+        "desayuno": "Desdejuni",
+        "media_manana": "Mig matí",
+        "comida": "Dinar",
+        "merienda": "Berenar"
+      },
+      "platos": {
+        "primer_plato": "1r plat",
+        "segundo_plato": "2n plat",
+        "postre": "Postre",
+        "unico": "Plat"
+      },
+      "badge_alergia_grave": "Al·lèrgia greu",
+      "quick": {
+        "aplicar_a_todos_a_columna": "Aplicar {valor} a tots · {columna}"
+      },
+      "guardar": "Guardar llista",
+      "estado": {
+        "pendiente": "Pendent",
+        "sin_guardar": "Sense guardar",
+        "guardado": "Guardat",
+        "error": "Error"
+      }
+    },
+    "widget_familia": {
+      "title": "Menú del dia",
+      "campos": {
+        "desayuno": "Desdejuni",
+        "media_manana": "Mig matí",
+        "comida_primero": "1r plat",
+        "comida_segundo": "2n plat",
+        "comida_postre": "Postre",
+        "merienda": "Berenar"
+      }
+    },
+    "empty": {
+      "centro_cerrado": {
+        "title": "Centre tancat",
+        "descripcion": "Aquest dia el centre està tancat ({tipo}). No hi ha menú ni llista."
+      },
+      "sin_plantilla_publicada": {
+        "title": "Encara no hi ha menú publicat",
+        "descripcion": "L'admin encara no ha publicat el menú d'aquest mes."
+      },
+      "dia_sin_menu": {
+        "title": "Dia sense menú definit",
+        "descripcion": "La plantilla del mes està publicada però aquest dia no té menú assignat."
+      },
+      "sin_ninos_solidos": "Cap xiquet de l'aula menja menjar sòlid en aquest moment."
+    },
+    "validation": {
+      "campo_largo": "Màxim 300 caràcters.",
+      "fecha_invalida": "Data no vàlida.",
+      "fecha_fuera_del_mes": "La data està fora del mes de la plantilla."
+    },
+    "toasts": {
+      "plantilla_creada": "Plantilla creada",
+      "error_guardar": "No s'ha pogut guardar. Torna-ho a provar.",
+      "error_publicar": "No s'ha pogut publicar. Torna-ho a provar.",
+      "error_fuera_de_ventana": "Ja no pots editar aquest dia.",
+      "nada_que_guardar": "No hi ha quantitats marcades per a guardar."
     }
   }
 }

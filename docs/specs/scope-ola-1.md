@@ -9,8 +9,8 @@
 | 2    | Entidades core + RLS + audit log                    | ✅ Cerrada   |
 | 3    | Agenda diaria + bienestar (lactancia D, check-in B) | ✅ Cerrada   |
 | 4    | Asistencia y ausencias                              | ✅ Cerrada   |
-| 4.5a | Calendario laboral del centro                       | 🚧 En curso  |
-| 4.5b | Menú mensual + pase de lista comida                 | ⏳ Pendiente |
+| 4.5a | Calendario laboral del centro                       | ✅ Cerrada   |
+| 4.5b | Menú mensual + pase de lista comida                 | 🚧 En curso  |
 | 5    | Mensajería profe ↔ familia                          | ⏳ Pendiente |
 | 6    | Recordatorios bidireccionales (E)                   | ⏳ Pendiente |
 | 7    | Calendario y eventos                                | ⏳ Pendiente |

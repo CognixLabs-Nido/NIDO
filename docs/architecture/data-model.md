@@ -1,6 +1,6 @@
 # Modelo de datos — NIDO
 
-35 tablas organizadas en 3 módulos. Implementadas hasta Fase 4.5a incluida: Fase 1 (4 de auth), Fase 2 (10 Core + 2 transversales), Fase 2.6 (1 Core más), Fase 3 (5 operativas), Fase 4 (2 operativas), Fase 4.5a (1 operativa). El resto llega en Fases 4.5b-10.
+35 tablas organizadas en 3 módulos. Implementadas hasta Fase 4.5b incluida: Fase 1 (4 de auth), Fase 2 (10 Core + 2 transversales), Fase 2.6 (1 Core más), Fase 3 (5 operativas), Fase 4 (2 operativas), Fase 4.5a (1 operativa), Fase 4.5b (2 operativas + extensión de `comidas`). El resto llega en Fases 5-10.
 
 ## Módulo Core (11 tablas) — Fases 2 y 2.6
 
@@ -30,6 +30,8 @@
 | `asistencias`                                    | Pase de lista por niño/día. UNIQUE (nino_id, fecha). ON DELETE RESTRICT. CHECK hora_salida > hora_llegada cuando ambas. Lazy (ADR-0015)                                          | ✅ Fase 4    |
 | `ausencias`                                      | Rango de ausencia reportada (familia/profe/admin). CHECK fecha_fin ≥ fecha_inicio. Cancelación = UPDATE con prefijo `[cancelada] `                                               | ✅ Fase 4    |
 | `dias_centro`                                    | Overrides del calendario laboral (festivos, vacaciones, escuela_verano, etc.). UNIQUE (centro_id, fecha). Default por ISODOW si no hay fila. DELETE permitido a admin (ADR-0019) | ✅ Fase 4.5a |
+| `plantillas_menu_mensual`                        | Plantilla mensual de menú por centro. Estados borrador/publicada/archivada. Índice único parcial: 1 publicada por (centro, mes, anio). DELETE bloqueado — se archiva (ADR-0020)  | ✅ Fase 4.5b |
+| `menu_dia`                                       | Menú de un día concreto dentro de una plantilla. UNIQUE (plantilla_id, fecha). Trigger BEFORE valida fecha dentro del mes/año de la plantilla padre                              | ✅ Fase 4.5b |
 | `conversaciones`, `mensajes`, `mensaje_lecturas` | ⏳ Fase 5                                                                                                                                                                        |
 | `recordatorios`                                  | ⏳ Fase 6                                                                                                                                                                        |
 | `eventos`, `confirmaciones_evento`               | ⏳ Fase 7                                                                                                                                                                        |
@@ -52,11 +54,11 @@
 - UUIDs en todas las PKs
 - Soft delete (`deleted_at`) en entidades sensibles
 - `centro_id` redundante en tablas operativas o derivado por helper `centro_de_*` (simplifica RLS)
-- Triggers Postgres para audit log automático en: `centros`, `ninos`, `info_medica_emergencia`, `datos_pedagogicos_nino`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`
+- Triggers Postgres para audit log automático en: `centros`, `ninos`, `info_medica_emergencia`, `datos_pedagogicos_nino`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`, `plantillas_menu_mensual`, `menu_dia`
 - `audit_log` append-only (RLS bloquea UPDATE/DELETE a todos los roles)
 - Timestamps siempre `timestamptz`
 - Cifrado pgcrypto en `info_medica_emergencia.alergias_graves` y `notas_emergencia` (ver ADR-0004)
-- ENUMs en columnas con valores fijos: `user_role` (Fase 1), `curso_estado`, `nino_sexo`, `tipo_vinculo`, `parentesco`, `audit_accion`, `consentimiento_tipo` (Fase 2), `lactancia_estado`, `control_esfinteres`, `tipo_alimentacion` (Fase 2.6), `estado_general_agenda`, `humor_agenda`, `momento_comida`, `cantidad_comida`, `tipo_biberon`, `calidad_sueno`, `tipo_deposicion`, `consistencia_deposicion`, `cantidad_deposicion` (Fase 3), `estado_asistencia`, `motivo_ausencia` (Fase 4), `tipo_dia_centro` (Fase 4.5a)
+- ENUMs en columnas con valores fijos: `user_role` (Fase 1), `curso_estado`, `nino_sexo`, `tipo_vinculo`, `parentesco`, `audit_accion`, `consentimiento_tipo` (Fase 2), `lactancia_estado`, `control_esfinteres`, `tipo_alimentacion` (Fase 2.6), `estado_general_agenda`, `humor_agenda`, `momento_comida`, `cantidad_comida`, `tipo_biberon`, `calidad_sueno`, `tipo_deposicion`, `consistencia_deposicion`, `cantidad_deposicion` (Fase 3), `estado_asistencia`, `motivo_ausencia` (Fase 4), `tipo_dia_centro` (Fase 4.5a), `estado_plantilla_menu`, `tipo_plato_comida` (Fase 4.5b)
 - Ventana de edición (Fase 3 y Fase 4, ADR-0013 + ADR-0016 transversal): RLS de INSERT/UPDATE en las 5 tablas operativas de la agenda **y en `asistencias`** exige `dentro_de_ventana_edicion(fecha) = TRUE` (helper hardcoded a `Europe/Madrid`, ADR-0011). Para `ausencias` se usa el helper hermano `hoy_madrid()` en tutor: las RLS exigen `fecha_inicio >= hoy_madrid()` al reportar/editar como tutor. DELETE bloqueado a todos por default DENY en todas estas tablas.
 - Publicación Realtime: las 5 tablas de Fase 3 + `asistencias` + `ausencias` en `supabase_realtime`. RLS de SELECT también se aplica a las notificaciones.
 
@@ -80,4 +82,7 @@
 - `asistencias` (Fase 4): UNIQUE (nino_id, fecha); FK `nino_id` ON DELETE RESTRICT; CHECK `length(observaciones) ≤ 500`; CHECK `hora_salida IS NULL OR hora_llegada IS NULL OR hora_salida > hora_llegada`.
 - `ausencias` (Fase 4): FK `nino_id` ON DELETE RESTRICT; CHECK `fecha_fin >= fecha_inicio`; CHECK `length(descripcion) ≤ 500`. Cancelación = UPDATE con prefijo `[cancelada] ` en `descripcion` (mismo patrón que `[anulado] ` en agenda).
 - `dias_centro` (Fase 4.5a): UNIQUE (centro_id, fecha); FK `centro_id` ON DELETE CASCADE; FK `creado_por` ON DELETE SET NULL; CHECK `length(observaciones) ≤ 500`. **DELETE permitido a admin** como excepción explícita al patrón habitual (ADR-0019): la ausencia de fila significa "día por defecto" (lun-vie=lectivo, sáb-dom=cerrado vía helper `tipo_de_dia`). Trazabilidad del DELETE preservada en `audit_log` con `valores_antes` poblado. **Sin ventana de edición**: admin edita cualquier fecha pasada o futura, a diferencia de tablas operativas.
+- `plantillas_menu_mensual` (Fase 4.5b): FK `centro_id` ON DELETE CASCADE; FK `creada_por` ON DELETE SET NULL. CHECK `mes BETWEEN 1 AND 12` y `anio BETWEEN 2024 AND 2100`. **Índice único parcial** `(centro_id, mes, anio) WHERE estado='publicada' AND deleted_at IS NULL` garantiza una sola publicada. DELETE bloqueado por default DENY — se archiva con UPDATE.
+- `menu_dia` (Fase 4.5b): FK `plantilla_id` ON DELETE CASCADE; UNIQUE `(plantilla_id, fecha)`; CHECK length ≤ 300 en 6 campos. **Trigger BEFORE INSERT/UPDATE** `menu_dia_validar_fecha_en_plantilla` que hace JOIN con la plantilla padre y rechaza si la fecha cae fuera del mes/año (red de seguridad a nivel BD; el server action valida también con Zod para UX).
+- `comidas` (Fase 4.5b extiende F3): añadidas `tipo_plato tipo_plato_comida NULL` y `menu_dia_id uuid NULL REFERENCES menu_dia(id) ON DELETE SET NULL`. **Índice único parcial** `(agenda_id, momento, tipo_plato) WHERE tipo_plato IS NOT NULL` permite UPSERT atómico del batch del pase de lista sin afectar a filas legacy F3 (donde `tipo_plato=NULL`). Compatibilidad total con datos pre-F4.5b (ADR-0021).
 - Realtime publication: las 5 tablas de Fase 3 + `asistencias` + `ausencias` en `supabase_realtime`. RLS de SELECT también se aplica a las notificaciones. `dias_centro` NO está en Realtime — es planificación, baja cardinalidad de cambios.
