@@ -7,7 +7,7 @@ import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getAulaById } from '@/features/aulas/queries/get-aulas'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { PaseDeListaComidaCliente } from '@/features/menus/components/PaseDeListaComidaCliente'
-import { getPaseDeListaComida } from '@/features/menus/queries/get-pase-de-lista-comida'
+import { getPaseDeListaComidaTodosMomentos } from '@/features/menus/queries/get-pase-de-lista-comida-todos-momentos'
 import type { MomentoComida } from '@/features/menus/types'
 
 interface PageProps {
@@ -31,12 +31,14 @@ export default async function TeacherComidaPage({ params, searchParams }: PagePr
   if (!aula) notFound()
 
   const fecha = fechaQ && /^\d{4}-\d{2}-\d{2}$/.test(fechaQ) ? fechaQ : hoyMadrid()
-  const momento: MomentoComida =
+  const momentoInicial: MomentoComida =
     momentoQ && (MOMENTOS_VALIDOS as string[]).includes(momentoQ)
       ? (momentoQ as MomentoComida)
       : 'comida'
 
-  const state = await getPaseDeListaComida(id, fecha, momento)
+  // Carga los 4 momentos de una vez (1 pasada server-side eficiente).
+  // El cliente cambia de momento como state local — sin re-fetch.
+  const states = await getPaseDeListaComidaTodosMomentos(id, fecha)
 
   return (
     <div className="space-y-6">
@@ -50,8 +52,8 @@ export default async function TeacherComidaPage({ params, searchParams }: PagePr
       <PaseDeListaComidaCliente
         aulaId={id}
         fecha={fecha}
-        momento={momento}
-        state={state}
+        momentoInicial={momentoInicial}
+        states={states}
         locale={locale}
       />
     </div>

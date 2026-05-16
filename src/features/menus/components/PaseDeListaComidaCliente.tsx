@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -42,8 +42,13 @@ interface NinoCellData {
 interface Props {
   aulaId: string
   fecha: string
-  momento: MomentoComida
-  state: PaseDeListaComidaState
+  /** Momento con el que se entra a la página (lee `?momento=`). */
+  momentoInicial: MomentoComida
+  /**
+   * Estados pre-cargados para los 4 momentos (1 sola pasada server-side).
+   * El cliente cambia de momento como state local, sin re-fetch.
+   */
+  states: Record<MomentoComida, PaseDeListaComidaState>
   locale: string
 }
 
@@ -52,7 +57,7 @@ const ESCALA_OPTIONS = ESCALA_1_5_OPTIONS as ReadonlyArray<{
   label: string
 }>
 
-export function PaseDeListaComidaCliente({ aulaId, fecha, momento, state, locale }: Props) {
+export function PaseDeListaComidaCliente({ aulaId, fecha, momentoInicial, states, locale }: Props) {
   const t = useTranslations('menus.pase_de_lista')
   const tEmpty = useTranslations('menus.empty')
   const tTipos = useTranslations('calendario.tipos')
@@ -61,12 +66,31 @@ export function PaseDeListaComidaCliente({ aulaId, fecha, momento, state, locale
   const hoy = hoyMadrid()
   const modo = modoDeFecha(fecha)
 
+  // Momento como state local — cambio instantáneo, sin round-trip al servidor.
+  const [momento, setMomento] = useState<MomentoComida>(momentoInicial)
+  const state = states[momento]
+
+  // Sincroniza el query param `?momento=` con replaceState (sin recargar
+  // ni disparar nueva petición server) para que al refrescar/compartir
+  // URL se conserve el momento elegido.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    if (url.searchParams.get('momento') !== momento) {
+      url.searchParams.set('momento', momento)
+      window.history.replaceState(window.history.state, '', url.toString())
+    }
+  }, [momento])
+
   const handleChangeFecha = (nueva: string) => {
+    // Cambio de fecha SÍ requiere ir al servidor (otros datos: tipo_dia,
+    // plantilla del nuevo mes, agendas y comidas de ese día).
     router.push(`/${locale}/teacher/aula/${aulaId}/comida?fecha=${nueva}&momento=${momento}`)
   }
 
   const handleChangeMomento = (m: MomentoComida) => {
-    router.push(`/${locale}/teacher/aula/${aulaId}/comida?fecha=${fecha}&momento=${m}`)
+    // Cambio de momento: solo state local. Datos ya pre-cargados.
+    setMomento(m)
   }
 
   return (
