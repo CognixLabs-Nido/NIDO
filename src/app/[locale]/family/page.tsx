@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
+import { ProximosDiasCerradosWidget } from '@/features/calendario-centro/components/ProximosDiasCerradosWidget'
+import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { createClient } from '@/lib/supabase/server'
 
@@ -16,6 +18,7 @@ export default async function FamilyDashboard({ params }: PageProps) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   const userId = userData.user?.id
+  const centroId = await getCentroActualId()
 
   type NinoRow = { id: string; nombre: string; apellidos: string }
   let ninos: NinoRow[] = []
@@ -41,6 +44,7 @@ export default async function FamilyDashboard({ params }: PageProps) {
         <h1 className="text-h1 text-foreground">{t('title')}</h1>
         <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
       </header>
+      {centroId && <ProximosDiasCerradosWidget centroId={centroId} />}
       {ninos.length === 0 ? (
         <Card>
           <CardContent>

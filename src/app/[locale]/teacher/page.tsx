@@ -4,6 +4,8 @@ import { getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { ProximosDiasCerradosWidget } from '@/features/calendario-centro/components/ProximosDiasCerradosWidget'
+import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { createClient } from '@/lib/supabase/server'
 
@@ -17,6 +19,7 @@ export default async function TeacherDashboard({ params }: PageProps) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   const userId = userData.user?.id
+  const centroId = await getCentroActualId()
 
   type AulaRow = { id: string; nombre: string; cohorte_anos_nacimiento: number[] }
   let aulas: AulaRow[] = []
@@ -43,6 +46,7 @@ export default async function TeacherDashboard({ params }: PageProps) {
         <h1 className="text-h1 text-foreground">{t('title')}</h1>
         <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
       </header>
+      {centroId && <ProximosDiasCerradosWidget centroId={centroId} />}
       {aulas.length === 0 ? (
         <Card>
           <CardContent>

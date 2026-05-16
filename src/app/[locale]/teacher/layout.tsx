@@ -1,4 +1,4 @@
-import { LayoutDashboardIcon } from 'lucide-react'
+import { CalendarRangeIcon, LayoutDashboardIcon } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
@@ -30,6 +30,11 @@ export default async function TeacherLayout({ children, params }: LayoutProps) {
       href: `/${locale}/teacher`,
       label: t('dashboard'),
       icon: <LayoutDashboardIcon />,
+    },
+    {
+      href: `/${locale}/teacher/calendario`,
+      label: t('calendario'),
+      icon: <CalendarRangeIcon />,
     },
   ]
 
