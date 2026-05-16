@@ -41,6 +41,10 @@ export interface ComidaRow {
   cantidad: CantidadComida
   descripcion: string | null
   observaciones: string | null
+  /** F4.5b: distingue plato dentro de un mismo `momento`. NULL = legacy F3. */
+  tipo_plato: 'primer_plato' | 'segundo_plato' | 'postre' | 'unico' | null
+  /** F4.5b: link al menu_dia origen del batch pase de lista. NULL = registro individual. */
+  menu_dia_id: string | null
   updated_at: string
 }
 

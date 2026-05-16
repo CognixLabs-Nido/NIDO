@@ -21,6 +21,7 @@ import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getAgendaDelDia } from '@/features/agenda-diaria/queries/get-agenda-del-dia'
 import { AusenciasFamiliaSection } from '@/features/ausencias/components/AusenciasFamiliaSection'
 import { getAusenciasNino } from '@/features/ausencias/queries/get-ausencias-nino'
+import { MenuDelDiaWidget } from '@/features/menus/components/MenuDelDiaWidget'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -129,8 +130,13 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           <CalendarDaysIcon className="text-primary-600 size-5" />
           {tTabs('agenda')}
         </h2>
-        {permisos.puede_ver_agenda && agendaDelDia ? (
-          <AgendaFamiliaView ninoId={id} locale={locale} fecha={fecha} agenda={agendaDelDia} />
+        {permisos.puede_ver_agenda ? (
+          <>
+            <MenuDelDiaWidget centroId={nino.centro_id} fecha={fecha} />
+            {agendaDelDia && (
+              <AgendaFamiliaView ninoId={id} locale={locale} fecha={fecha} agenda={agendaDelDia} />
+            )}
+          </>
         ) : (
           <AgendaFamiliaSinPermiso />
         )}

@@ -370,8 +370,10 @@ export type Database = {
           descripcion: string | null
           hora: string | null
           id: string
+          menu_dia_id: string | null
           momento: Database['public']['Enums']['momento_comida']
           observaciones: string | null
+          tipo_plato: Database['public']['Enums']['tipo_plato_comida'] | null
           updated_at: string
         }
         Insert: {
@@ -381,8 +383,10 @@ export type Database = {
           descripcion?: string | null
           hora?: string | null
           id?: string
+          menu_dia_id?: string | null
           momento: Database['public']['Enums']['momento_comida']
           observaciones?: string | null
+          tipo_plato?: Database['public']['Enums']['tipo_plato_comida'] | null
           updated_at?: string
         }
         Update: {
@@ -392,8 +396,10 @@ export type Database = {
           descripcion?: string | null
           hora?: string | null
           id?: string
+          menu_dia_id?: string | null
           momento?: Database['public']['Enums']['momento_comida']
           observaciones?: string | null
+          tipo_plato?: Database['public']['Enums']['tipo_plato_comida'] | null
           updated_at?: string
         }
         Relationships: [
@@ -402,6 +408,13 @@ export type Database = {
             columns: ['agenda_id']
             isOneToOne: false
             referencedRelation: 'agendas_diarias'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'comidas_menu_dia_id_fkey'
+            columns: ['menu_dia_id']
+            isOneToOne: false
+            referencedRelation: 'menu_dia'
             referencedColumns: ['id']
           },
         ]
@@ -827,6 +840,56 @@ export type Database = {
           },
         ]
       }
+      menu_dia: {
+        Row: {
+          comida_postre: string | null
+          comida_primero: string | null
+          comida_segundo: string | null
+          created_at: string
+          desayuno: string | null
+          fecha: string
+          id: string
+          media_manana: string | null
+          merienda: string | null
+          plantilla_id: string
+          updated_at: string
+        }
+        Insert: {
+          comida_postre?: string | null
+          comida_primero?: string | null
+          comida_segundo?: string | null
+          created_at?: string
+          desayuno?: string | null
+          fecha: string
+          id?: string
+          media_manana?: string | null
+          merienda?: string | null
+          plantilla_id: string
+          updated_at?: string
+        }
+        Update: {
+          comida_postre?: string | null
+          comida_primero?: string | null
+          comida_segundo?: string | null
+          created_at?: string
+          desayuno?: string | null
+          fecha?: string
+          id?: string
+          media_manana?: string | null
+          merienda?: string | null
+          plantilla_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'menu_dia_plantilla_id_fkey'
+            columns: ['plantilla_id']
+            isOneToOne: false
+            referencedRelation: 'plantillas_menu_mensual'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       ninos: {
         Row: {
           apellidos: string
@@ -879,6 +942,57 @@ export type Database = {
             columns: ['centro_id']
             isOneToOne: false
             referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      plantillas_menu_mensual: {
+        Row: {
+          anio: number
+          centro_id: string
+          creada_por: string | null
+          created_at: string
+          deleted_at: string | null
+          estado: Database['public']['Enums']['estado_plantilla_menu']
+          id: string
+          mes: number
+          updated_at: string
+        }
+        Insert: {
+          anio: number
+          centro_id: string
+          creada_por?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          estado?: Database['public']['Enums']['estado_plantilla_menu']
+          id?: string
+          mes: number
+          updated_at?: string
+        }
+        Update: {
+          anio?: number
+          centro_id?: string
+          creada_por?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          estado?: Database['public']['Enums']['estado_plantilla_menu']
+          id?: string
+          mes?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'plantillas_menu_mensual_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'plantillas_menu_mensual_creada_por_fkey'
+            columns: ['creada_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
             referencedColumns: ['id']
           },
         ]
@@ -1114,6 +1228,7 @@ export type Database = {
       centro_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       centro_de_aula: { Args: { p_aula_id: string }; Returns: string }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
+      centro_de_plantilla: { Args: { p_plantilla_id: string }; Returns: string }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
       es_profe_de_aula: { Args: { p_aula_id: string }; Returns: boolean }
@@ -1133,7 +1248,30 @@ export type Database = {
       }
       hoy_madrid: { Args: never; Returns: string }
       idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
+      menu_del_dia: {
+        Args: { p_centro_id: string; p_fecha: string }
+        Returns: {
+          comida_postre: string | null
+          comida_primero: string | null
+          comida_segundo: string | null
+          created_at: string
+          desayuno: string | null
+          fecha: string
+          id: string
+          media_manana: string | null
+          merienda: string | null
+          plantilla_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'menu_dia'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       nino_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
+      nino_toma_comida_solida: { Args: { p_nino_id: string }; Returns: boolean }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
       set_info_medica_emergencia_cifrada: {
         Args: {
@@ -1168,6 +1306,7 @@ export type Database = {
       curso_estado: 'planificado' | 'activo' | 'cerrado'
       estado_asistencia: 'presente' | 'ausente' | 'llegada_tarde' | 'salida_temprana'
       estado_general_agenda: 'bien' | 'regular' | 'mal' | 'mixto'
+      estado_plantilla_menu: 'borrador' | 'publicada' | 'archivada'
       humor_agenda: 'feliz' | 'tranquilo' | 'inquieto' | 'triste' | 'cansado'
       lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
       momento_comida: 'desayuno' | 'media_manana' | 'comida' | 'merienda'
@@ -1203,6 +1342,7 @@ export type Database = {
         | 'escuela_navidad'
         | 'jornada_reducida'
         | 'cerrado'
+      tipo_plato_comida: 'primer_plato' | 'segundo_plato' | 'postre' | 'unico'
       tipo_vinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado'
       user_role: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
     }
@@ -1340,6 +1480,7 @@ export const Constants = {
       curso_estado: ['planificado', 'activo', 'cerrado'],
       estado_asistencia: ['presente', 'ausente', 'llegada_tarde', 'salida_temprana'],
       estado_general_agenda: ['bien', 'regular', 'mal', 'mixto'],
+      estado_plantilla_menu: ['borrador', 'publicada', 'archivada'],
       humor_agenda: ['feliz', 'tranquilo', 'inquieto', 'triste', 'cansado'],
       lactancia_estado: ['materna', 'biberon', 'mixta', 'finalizada', 'no_aplica'],
       momento_comida: ['desayuno', 'media_manana', 'comida', 'merienda'],
@@ -1378,6 +1519,7 @@ export const Constants = {
         'jornada_reducida',
         'cerrado',
       ],
+      tipo_plato_comida: ['primer_plato', 'segundo_plato', 'postre', 'unico'],
       tipo_vinculo: ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'],
       user_role: ['admin', 'profe', 'tutor_legal', 'autorizado'],
     },

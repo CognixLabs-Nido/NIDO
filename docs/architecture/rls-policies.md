@@ -36,6 +36,11 @@ public.hoy_madrid()                                      → date
 -- Fase 4.5a
 public.tipo_de_dia(p_centro_id uuid, p_fecha date)       → tipo_dia_centro
 public.centro_abierto(p_centro_id uuid, p_fecha date)    → boolean
+
+-- Fase 4.5b
+public.nino_toma_comida_solida(p_nino_id uuid)           → boolean
+public.centro_de_plantilla(p_plantilla_id uuid)          → uuid
+public.menu_del_dia(p_centro_id uuid, p_fecha date)      → menu_dia
 ```
 
 Todas con `LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public`.
@@ -80,7 +85,7 @@ Las funciones `public.set_info_medica_emergencia_cifrada(...)` y `public.get_inf
 
 `audit_trigger_function()` SECURITY DEFINER aplicada `AFTER INSERT OR UPDATE OR DELETE` en:
 
-- `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `datos_pedagogicos_nino`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`.
+- `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `datos_pedagogicos_nino`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`, `plantillas_menu_mensual`, `menu_dia`.
 
 Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 
@@ -160,7 +165,8 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `agenda-diaria.rls.test.ts` + `dentro-de-ventana-edicion.test.ts` (Fase 3).
 - `asistencia.rls.test.ts`, `ausencia.rls.test.ts` (Fase 4).
 - `dias-centro.rls.test.ts` + `tipo-de-dia.test.ts` (Fase 4.5a).
-- `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` + `asistencia-audit.test.ts` + `dias-centro-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda, asistencia, calendario).
+- `menus.rls.test.ts` + `menu-helpers.test.ts` (Fase 4.5b).
+- `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` + `asistencia-audit.test.ts` + `dias-centro-audit.test.ts` + `menus-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda, asistencia, calendario, plantillas y menu_dia + trigger BEFORE validar_fecha).
 
 ## Calendario laboral (Fase 4.5a)
 
@@ -169,3 +175,12 @@ Tests Fases 1–4 en `src/test/rls/`:
   - INSERT, UPDATE: solo admin del centro.
   - **DELETE: solo admin del centro** — excepción explícita al patrón habitual del proyecto. La "ausencia de fila" tiene significado semántico (vuelta al default); no procede "anular con prefijo". Trazabilidad preservada en `audit_log` (trigger captura `valores_antes`).
 - **Sin ventana de edición**: a diferencia de F3/F4, `dias_centro` no usa `dentro_de_ventana_edicion`. El admin edita cualquier fecha pasada/presente/futura — es planificación administrativa, no un hecho operativo.
+
+## Menús mensuales (Fase 4.5b)
+
+- **`plantillas_menu_mensual`** y **`menu_dia`**: planificación de menús del centro. Ver [ADR-0020](../decisions/ADR-0020-plantilla-menu-mensual.md).
+  - SELECT: cualquier miembro del centro (`pertenece_a_centro`).
+  - INSERT, UPDATE: solo admin del centro.
+  - DELETE: bloqueado a todos (default DENY). Las plantillas se archivan con UPDATE `estado='archivada'`.
+- **Trigger BD `menu_dia_validar_fecha_en_plantilla`**: BEFORE INSERT/UPDATE comprueba que `EXTRACT(MONTH/YEAR FROM fecha)` coincide con el `mes`/`anio` de la plantilla padre. RAISE EXCEPTION con SQLSTATE `23514` (check_violation) si no. Es la red de seguridad a nivel BD; el server action valida también con Zod para mensaje UX claro.
+- **`comidas` (extensión F4.5b)**: las políticas RLS existentes de F3 NO se tocan. Las 2 columnas nuevas (`tipo_plato`, `menu_dia_id`) forman parte del row; RLS sigue filtrando por row con el mismo criterio (ventana, profe del aula, admin). El batch del pase de lista heredá la ventana de edición de F3 — se aplica como cualquier otro UPSERT en `comidas`.
