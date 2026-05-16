@@ -63,10 +63,10 @@ Next.js 15 App Router · TypeScript strict · React 19 · Tailwind 4 · shadcn/u
 
 Detalle completo en `@./docs/conventions.md`.
 
-## Modelo de datos (35 tablas)
+## Modelo de datos (37 tablas)
 
-- **Core (10)**: centros, cursos_academicos, aulas, usuarios, roles_usuario, ninos, info_medica_emergencia, matriculas, vinculos_familiares, profes_aulas.
-- **Operativas (20)**: agendas_diarias, comidas, biberones, suenos, deposiciones, asistencias, ausencias, conversaciones, mensajes, mensaje_lecturas, recordatorios, eventos, confirmaciones_evento, autorizaciones, firmas_autorizacion, plantillas_informe, informes_evolucion, publicaciones, media, media_etiquetas.
+- **Core (11)**: centros, cursos_academicos, aulas, usuarios, roles_usuario, ninos, info_medica_emergencia, datos_pedagogicos_nino, matriculas, vinculos_familiares, profes_aulas.
+- **Operativas (22)**: agendas_diarias, comidas, biberones, suenos, deposiciones, asistencias, ausencias, plantillas_menu, plantilla_menu_dia, conversaciones, mensajes, mensaje_lecturas, recordatorios, eventos, confirmaciones_evento, autorizaciones, firmas_autorizacion, plantillas_informe, informes_evolucion, publicaciones, media, media_etiquetas.
 - **Transversales (5)**: audit_log, notificaciones_push, push_subscriptions, invitaciones, consentimientos.
 
 Reglas obligatorias del modelo:
@@ -108,6 +108,7 @@ Detalle completo en `@./docs/architecture/rls-policies.md`.
 | 2   | Entidades core + RLS + audit log  |
 | 3   | Agenda diaria + bienestar (B, D)  |
 | 4   | Asistencia + ausencias            |
+| 4.5 | Menús + pase de lista comida      |
 | 5   | Mensajería                        |
 | 6   | Recordatorios bidireccionales (E) |
 | 7   | Calendario y eventos              |

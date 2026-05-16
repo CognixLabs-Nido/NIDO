@@ -32,6 +32,11 @@ public.dentro_de_ventana_edicion(p_fecha date)           → boolean
 
 -- Fase 4
 public.hoy_madrid()                                      → date
+
+-- Fase 4.5
+public.centro_de_plantilla(p_plantilla_id uuid)          → uuid
+public.menu_del_dia(p_centro_id uuid, p_fecha date)      → TABLE(desayuno, media_manana, comida, merienda)
+public.nino_toma_comida_solida(p_nino_id uuid)           → boolean
 ```
 
 Todas con `LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public`.
@@ -135,6 +140,23 @@ $$;
 
 Auto-link familia → profe (sin pre-creación de filas): la query `getPaseDeListaAula(aulaId, fecha)` hace LEFT JOIN con `ausencias` activas para la fecha. Si existe una y no hay asistencia previa, el cliente pinta la fila con `initial='ausente'` + badge "Ausencia reportada por familia". La profe puede sobrescribir; queda como ausencia avisada-pero-no-cumplida sin flag específico.
 
+## Menús del centro y pase de comida (Fase 4.5)
+
+- **`plantillas_menu`**:
+  - SELECT: cualquier rol del centro (admin/profe/tutor) vía `pertenece_a_centro(centro_id)`.
+  - INSERT/UPDATE: admin del centro.
+  - DELETE: bloqueado a todos (default DENY). Para "borrar" se archiva (`estado='archivada'`).
+- **`plantilla_menu_dia`**:
+  - SELECT: hereda permisos del centro de la plantilla padre vía `centro_de_plantilla(plantilla_id)`.
+  - INSERT/UPDATE: admin del centro de la plantilla.
+  - DELETE: bloqueado a todos.
+- Solo una plantilla `estado='publicada'` por centro a la vez (índice parcial único `(centro_id) WHERE estado='publicada' AND deleted_at IS NULL`).
+- Helper de negocio `menu_del_dia(centro, fecha)`: resuelve la plantilla publicada vigente y devuelve los 4 momentos para el día de la semana (lunes-viernes con datos; sábado/domingo vacío). Usado por la card admin, el widget familia y el pase de lista comida.
+- Helper de filtro `nino_toma_comida_solida(p_nino_id)`: excluye del pase de lista de comida sólida a niños con `lactancia_estado IN ('materna','biberon')`. **`mixta` NO excluye** (los niños en transición comen sólidos parciales — Checkpoint A F4.5). Sin `datos_pedagogicos_nino`: COALESCE TRUE.
+- `comidas` **no** se materializa desde la plantilla (ADR-0018 lazy). Cada fila se crea cuando la profe pasa lista batch desde `/teacher/aula/[id]/comida`. La descripción del menú se copia al guardar.
+- Audit log automático en ambas tablas via `audit_trigger_function()` ampliada.
+- No publicado en Realtime: las plantillas cambian con poca frecuencia. Las `comidas` siguen en Realtime desde F3.
+
 ## Realtime y RLS
 
 Las 5 tablas de la agenda (`agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`) y las 2 de F4 (`asistencias`, `ausencias`) están publicadas en `supabase_realtime`. **Las políticas RLS de `SELECT` se aplican también a las notificaciones Realtime**: Supabase descarta los eventos sobre filas que el rol del cliente no podría leer vía `SELECT`. El filtrado client-side por `aula_id` (vista profe) o `nino_id` (vista familia) es **cosmético**, no de seguridad. Manipular ese filtro desde devtools no expone notificaciones de aulas/niños no autorizados.
@@ -155,4 +177,5 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `datos-pedagogicos.rls.test.ts` (Fase 2.6).
 - `agenda-diaria.rls.test.ts` + `dentro-de-ventana-edicion.test.ts` (Fase 3).
 - `asistencia.rls.test.ts`, `ausencia.rls.test.ts` (Fase 4).
-- `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` + `asistencia-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda, asistencia).
+- `menus.rls.test.ts`, `menus-functions.test.ts` (Fase 4.5).
+- `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` + `asistencia-audit.test.ts` + `menus-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda, asistencia, menús).

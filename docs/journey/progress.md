@@ -307,3 +307,72 @@
 ### Para Fase 4.5
 
 - El patrón "pase de lista" queda listo para reusar con menús: items = niños matriculados, columnas = `cantidad` (radio enum), `observaciones` (text-short), quick action "Comieron todos bien". Sin nuevo componente, solo nuevas migraciones (`plantillas_menu`) y schemas.
+
+---
+
+## Fase 4.5 — Menús + pase de lista comida batch
+
+**Fecha:** 2026-05-16
+**Estado:** Implementación cerrada, pendiente Checkpoint C y PR final.
+
+### Completado
+
+- Spec `docs/specs/menus.md` aprobada con un matiz en Checkpoint A: `nino_toma_comida_solida` excluye **solo** `lactancia_estado IN ('materna','biberon')`; `'mixta'` SÍ entra en el pase de lista (los niños en transición comen sólidos parciales). El prompt original mencionaba `tipo_alimentacion='biberon'` que es vacuo porque ese enum no tiene tal valor.
+- Migración `20260516000000_phase4_5_menus.sql` aplicada al proyecto Supabase remoto:
+  - 2 ENUMs (`estado_plantilla_menu`, `dia_semana` lunes-viernes).
+  - Tabla `plantillas_menu` con índice parcial único `(centro_id) WHERE estado='publicada' AND deleted_at IS NULL` y CHECK rango fechas.
+  - Tabla `plantilla_menu_dia` con UNIQUE (plantilla_id, dia_semana) y CHECK length ≤ 500 por momento.
+  - Helper `centro_de_plantilla(plantilla_id)` (lookup anti-recursión, patrón ADR-0007).
+  - Helper `menu_del_dia(centro, fecha)` con ISODOW (lunes=1..viernes=5). Sábado/domingo y fuera-de-vigencia devuelven cero filas; archivada idem.
+  - Helper `nino_toma_comida_solida(nino_id)` con COALESCE TRUE si no hay fila pedagógica.
+  - RLS estándar: SELECT a cualquier rol del centro vía `pertenece_a_centro`, INSERT/UPDATE solo admin, DELETE bloqueado.
+  - `audit_trigger_function()` ampliada con 2 ramas más; CREATE OR REPLACE preserva fases previas. Triggers añadidos a las 2 tablas.
+  - No se publica Realtime (decisión consciente, las plantillas cambian raramente).
+- Tipos TS regenerados sin regresión.
+- Componente compartido movido a `src/shared/components/day-picker/` (refactor previo a la implementación de F4.5):
+  - `ModalidadDayPicker` (antes `AsistenciaDayPicker`) ahora genérico, lee strings del namespace nuevo `day_picker.*`.
+  - `modo-fecha.ts` con `modoDeFecha(fecha)` también en shared.
+  - F4 actualizado al nuevo path; sin cambios funcionales.
+- Feature `src/features/menus/`:
+  - 6 server actions: `crearPlantilla`, `actualizarPlantilla`, `publicarPlantilla` (con archivado de la previa), `archivarPlantilla`, `upsertPlantillaDia` (UPSERT por plantilla_id+dia_semana), `batchRegistrarComidas` (SELECT existente + UPDATE/INSERT por fila, sin upsert directo porque `comidas` no tiene UNIQUE (agenda_id, momento) — F3 permite múltiples filas por momento intencionadamente).
+  - 4 queries: `getPlantillasCentro`, `getPlantillaPublicada`, `getPlantillaById` (con map por dia_semana), `getMenuDelDia`, `getPaseDeListaComida` (5 queries en paralelo: matrículas, RPC nino_toma_comida_solida, agendas, comidas, info_medica).
+  - Schemas Zod con cross-field validation (rango fechas) reusando `cantidadComidaEnum` y `momentoComidaEnum` de F3.
+- UI admin:
+  - `/admin/menus` (lista) con NuevaPlantillaDialog, AccionesPlantilla (Publicar / Archivar con Dialog de confirmación).
+  - `/admin/menus/[id]` (editor) con 5 cards (lunes-viernes) × 4 textareas, guardado manual por sección, indicador "Guardado" temporal.
+  - Card "Menú vigente" en `/admin` con detalle de hoy (4 momentos).
+  - Sidebar admin: nuevo item "Menús" con icono `UtensilsCrossedIcon`.
+- UI profe:
+  - `/teacher/aula/[id]/comida` con ModalidadDayPicker (hoy/histórico/futuro), selector de momento, card "Menú del día" como referencia, empty state si no hay plantilla, `<PaseDeListaTable />` reusado **sin tocar su API** con columnas descripción/cantidad/observaciones. Quick action "Aplicar a todos" con dropdown de cantidad gestionado por el contenedor padre.
+  - Link "Pase de comida" añadido en `/teacher/aula/[id]` junto al de asistencia.
+- UI familia:
+  - `MenuDelDiaWidget` (Server Component) en la sección Agenda de `/family/nino/[id]`. Solo se muestra si `puede_ver_agenda` y hay plantilla publicada vigente. La familia ve el menú estándar de la plantilla (no los overrides por niño, decisión Checkpoint A).
+- i18n trilingüe completa (es/en/va):
+  - `day_picker.*` (5 claves) — namespace nuevo compartido entre F4 y F4.5.
+  - `menus.*` (~50 claves) — admin.
+  - `comida_batch.*` (~30 claves) — profe.
+  - `menu_del_dia_widget.*` (2 claves) — familia.
+  - `admin.nav.menus` añadido al sidebar.
+  - Quitadas las duplicadas `asistencia.vista.dia_cerrado` y `asistencia.vista.dia_futuro` (sustituidas por `day_picker.*`).
+- Tests Vitest acumulados: 164 → 190 (26 nuevos):
+  - 12 RLS `menus.rls.test.ts` (aislamiento entre centros, permisos admin/profe/tutor, herencia `plantilla_menu_dia`, DELETE bloqueado, publicación OK).
+  - 11 functions `menus-functions.test.ts` (`menu_del_dia` con lunes/sábado/domingo/fuera-de-rango/archivada; `nino_toma_comida_solida` con materna, biberon, mixta TRUE, finalizada, no_aplica, sin datos).
+  - 3 audit `menus-audit.test.ts` (INSERT plantilla, UPDATE captura antes/después, INSERT plantilla_menu_dia con centro derivado).
+- 1 spec Playwright `e2e/menus.spec.ts`: 5 smoke (rutas protegidas + i18n sin claves sin resolver en es/en/va) + 2 condicionales con `E2E_REAL_SESSIONS=1` (admin crea+publica plantilla; profe pasa lista batch con quick action).
+
+### Decisiones (ADRs)
+
+- **ADR-0017-plantilla-menu-dia-semana**: plantilla por día de la semana (lunes-viernes), no por fecha concreta. Cubre el 95% de centros 0-3 con menús semanales estables. Excepciones por fecha quedan para Ola 2 como extensión aditiva (`plantilla_menu_excepcion`).
+- **ADR-0018-lazy-materialization-comidas**: la plantilla NO materializa filas en `comidas`. La descripción del menú se copia al rellenar el pase de lista batch. Mantiene `comidas` como tabla de hechos humanos (consistencia con ADR-0012 y ADR-0015). Cambios futuros de la plantilla no afectan las filas ya escritas.
+
+### Pendiente
+
+- Validaciones finales (`npm run typecheck && lint && test && test:e2e && build`) y push de la branch como PR draft.
+- Checkpoint C: verificación visual en preview de Vercel (admin crea plantilla → publica → profe abre pase de comida → ve descripción pre-rellena → marca cantidades → familia ve widget en su agenda).
+- Smoke en producción tras merge: `/admin/menus` listado, `/admin/menus/[id]` editor, `/teacher/aula/{id}/comida` con menú, widget familia.
+
+### Para Fase 5 (Mensajería)
+
+- ADR-0014 sigue siendo el patrón pase-de-lista. F7 (confirmaciones de evento) heredará lo mismo.
+- ADR-0018 (lazy materialization) ya cubre 3 tablas operativas (agenda, asistencia, comidas via plantilla). La principle de "BD = hechos humanos" se aplica transversal.
+- F5 introduce mensajes propios, no toca menús — independencia limpia.
