@@ -899,8 +899,8 @@
       }
     },
     "pase_de_lista": {
-      "title": "Pase de lista comida",
-      "ver": "Pase de lista comida",
+      "title": "Comida",
+      "ver": "Comida",
       "selector_momento_label": "Momento",
       "momentos": {
         "desayuno": "Desayuno",
@@ -918,7 +918,7 @@
       "quick": {
         "aplicar_a_todos_a_columna": "Aplicar {valor} a todos · {columna}"
       },
-      "guardar": "Guardar pase de lista",
+      "guardar": "Guardar comida",
       "estado": {
         "pendiente": "Pendiente",
         "sin_guardar": "Sin guardar",

@@ -899,8 +899,8 @@
       }
     },
     "pase_de_lista": {
-      "title": "Meal roll call",
-      "ver": "Meal roll call",
+      "title": "Meal",
+      "ver": "Meal",
       "selector_momento_label": "Moment",
       "momentos": {
         "desayuno": "Breakfast",
@@ -918,7 +918,7 @@
       "quick": {
         "aplicar_a_todos_a_columna": "Apply {valor} to all · {columna}"
       },
-      "guardar": "Save roll call",
+      "guardar": "Save meal",
       "estado": {
         "pendiente": "Pending",
         "sin_guardar": "Unsaved",

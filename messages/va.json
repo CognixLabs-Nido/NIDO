@@ -899,8 +899,8 @@
       }
     },
     "pase_de_lista": {
-      "title": "Llista de menjar",
-      "ver": "Llista de menjar",
+      "title": "Dinar",
+      "ver": "Dinar",
       "selector_momento_label": "Moment",
       "momentos": {
         "desayuno": "Desdejuni",
@@ -918,7 +918,7 @@
       "quick": {
         "aplicar_a_todos_a_columna": "Aplicar {valor} a tots · {columna}"
       },
-      "guardar": "Guardar llista",
+      "guardar": "Guardar dinar",
       "estado": {
         "pendiente": "Pendent",
         "sin_guardar": "Sense guardar",
