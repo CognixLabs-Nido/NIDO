@@ -6,11 +6,12 @@ import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { agruparComidasPorMomento } from '@/features/menus/lib/agrupar-comidas'
 
 import { hoyMadrid } from '../lib/fecha'
 import { useAgendaRealtime } from '../lib/use-agenda-realtime'
 import { esAnulado } from '../schemas/agenda-diaria'
-import type { AgendaCompleta } from '../types'
+import type { AgendaCompleta, ComidaRow } from '../types'
 
 import { AgendaDayPicker } from './AgendaDayPicker'
 
@@ -99,37 +100,23 @@ export function AgendaFamiliaView({ ninoId, locale, fecha, agenda }: Props) {
             </Card>
           )}
 
-          {/* Comidas */}
+          {/* Comidas — agrupadas por momento con desglose por plato (B57 F4.5b) */}
           {agenda.comidas.length > 0 && (
             <Card>
-              <CardContent className="space-y-2 text-sm">
+              <CardContent className="space-y-3 text-sm">
                 <h3 className="text-foreground font-medium">
                   {t('secciones.comidas')} · {agenda.comidas.length}
                 </h3>
-                <ul className="space-y-1.5">
-                  {agenda.comidas.map((c) => {
-                    const anulado = esAnulado(c.observaciones)
-                    return (
-                      <li
-                        key={c.id}
-                        className={cn('flex flex-wrap items-center gap-2', anulado && 'opacity-50')}
-                        data-testid={`fam-comida-${c.id}`}
-                      >
-                        {anulado && <Badge variant="secondary">{t('estado.anulado')}</Badge>}
-                        <Badge variant="warm">{t(`momento_opciones.${c.momento}`)}</Badge>
-                        {c.hora && <span className="font-mono text-xs">{c.hora.slice(0, 5)}</span>}
-                        <span className={cn(anulado && 'line-through')}>
-                          {t(`cantidad_comida_opciones.${c.cantidad}`)}
-                        </span>
-                        {c.descripcion && (
-                          <span className={cn('text-muted-foreground', anulado && 'line-through')}>
-                            · {c.descripcion}
-                          </span>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
+                <div className="space-y-3">
+                  {agruparComidasPorMomento(agenda.comidas as ComidaRow[]).map((grupo) => (
+                    <GrupoComidaFamilia
+                      key={grupo.momento}
+                      momento={grupo.momento}
+                      filasGenericas={grupo.filasGenericas as ComidaRow[]}
+                      platos={grupo.platos as ComidaRow[]}
+                    />
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -228,6 +215,95 @@ export function AgendaFamiliaView({ ninoId, locale, fecha, agenda }: Props) {
             </Card>
           )}
         </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Render de un momento (desayuno/comida/etc.) con sus filas. Compatible
+ * con F3 legacy (`tipo_plato=null` → fila simple) y con F4.5b (varias
+ * filas con `tipo_plato` no nulo → desglose). Si llegan ambos tipos
+ * en el mismo momento (caso mezcla pre/post-F4.5b), se muestran todos.
+ */
+function GrupoComidaFamilia({
+  momento,
+  filasGenericas,
+  platos,
+}: {
+  momento: ComidaRow['momento']
+  filasGenericas: ComidaRow[]
+  platos: ComidaRow[]
+}) {
+  const t = useTranslations('agenda')
+  const tPlatos = useTranslations('menus.pase_de_lista.platos')
+
+  const observacionesPorPlato = platos
+    .map((p) => p.observaciones)
+    .filter((o): o is string => Boolean(o) && !esAnulado(o))
+
+  return (
+    <div className="space-y-1.5" data-testid={`fam-grupo-${momento}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="warm">{t(`momento_opciones.${momento}`)}</Badge>
+        {filasGenericas[0]?.hora && (
+          <span className="font-mono text-xs">{filasGenericas[0].hora.slice(0, 5)}</span>
+        )}
+      </div>
+
+      {filasGenericas.length > 0 && (
+        <ul className="space-y-1">
+          {filasGenericas.map((c) => {
+            const anulado = esAnulado(c.observaciones)
+            return (
+              <li
+                key={c.id}
+                className={cn('flex flex-wrap items-center gap-2', anulado && 'opacity-50')}
+                data-testid={`fam-comida-${c.id}`}
+              >
+                {anulado && <Badge variant="secondary">{t('estado.anulado')}</Badge>}
+                <span className={cn(anulado && 'line-through')}>
+                  {t(`cantidad_comida_opciones.${c.cantidad}`)}
+                </span>
+                {c.descripcion && (
+                  <span className={cn('text-muted-foreground', anulado && 'line-through')}>
+                    · {c.descripcion}
+                  </span>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      {platos.length > 0 && (
+        <ul className="ml-2 space-y-1 border-l-2 border-neutral-200 pl-3">
+          {platos.map((p) => {
+            const anulado = esAnulado(p.observaciones)
+            return (
+              <li
+                key={p.id}
+                className={cn('flex flex-wrap items-center gap-2', anulado && 'opacity-50')}
+                data-testid={`fam-plato-${p.id}`}
+              >
+                {anulado && <Badge variant="secondary">{t('estado.anulado')}</Badge>}
+                <Badge variant="secondary">{p.tipo_plato ? tPlatos(p.tipo_plato) : ''}</Badge>
+                <span className={cn(anulado && 'line-through')}>
+                  {t(`cantidad_comida_opciones.${p.cantidad}`)}
+                </span>
+                {p.descripcion && (
+                  <span className={cn('text-muted-foreground', anulado && 'line-through')}>
+                    · {p.descripcion}
+                  </span>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      {observacionesPorPlato.length > 0 && (
+        <p className="text-muted-foreground text-xs">{observacionesPorPlato.join(' · ')}</p>
       )}
     </div>
   )

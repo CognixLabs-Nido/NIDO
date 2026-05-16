@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { agruparComidasPorMomento } from '@/features/menus/lib/agrupar-comidas'
 
 import { upsertComida } from '../actions/upsert-comida'
 import { esAnulado } from '../schemas/agenda-diaria'
@@ -86,37 +87,17 @@ export function SeccionComidas({ ninoId, fecha, comidas, diaCerrado }: Props) {
       {comidas.length === 0 && !añadiendo && (
         <p className="text-muted-foreground text-sm">{t('sin_registros')}</p>
       )}
-      <ul className="space-y-1.5">
-        {comidas.map((c) => {
-          const anulado = esAnulado(c.observaciones)
-          return (
-            <li
-              key={c.id}
-              className={cn(
-                'border-border/60 flex flex-wrap items-center gap-2 rounded-lg border p-2 text-sm',
-                anulado && 'opacity-50'
-              )}
-            >
-              {anulado && <Badge variant="secondary">{t('estado.anulado')}</Badge>}
-              <Badge variant="warm">{t(`momento_opciones.${c.momento}`)}</Badge>
-              {c.hora && <span className="font-mono text-xs">{c.hora.slice(0, 5)}</span>}
-              <span className={cn(anulado && 'line-through')}>
-                {t(`cantidad_comida_opciones.${c.cantidad}`)}
-              </span>
-              {c.descripcion && (
-                <span className={cn('text-muted-foreground', anulado && 'line-through')}>
-                  · {c.descripcion}
-                </span>
-              )}
-              {!diaCerrado && !anulado && (
-                <div className="ml-auto">
-                  <BotonMarcarErroneo tabla="comidas" id={c.id} />
-                </div>
-              )}
-            </li>
-          )
-        })}
-      </ul>
+      <div className="space-y-3">
+        {agruparComidasPorMomento(comidas).map((grupo) => (
+          <GrupoComidaProfe
+            key={grupo.momento}
+            momento={grupo.momento}
+            filasGenericas={grupo.filasGenericas as ComidaRow[]}
+            platos={grupo.platos as ComidaRow[]}
+            diaCerrado={diaCerrado}
+          />
+        ))}
+      </div>
 
       {!diaCerrado && añadiendo && (
         <div
@@ -211,6 +192,102 @@ export function SeccionComidas({ ninoId, fecha, comidas, diaCerrado }: Props) {
           <PlusIcon />
           {t('anadir.comida')}
         </Button>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Grupo por momento para la vista profe (cards expandidas del aula).
+ * Refleja el mismo patrón que `<GrupoComidaFamilia />` pero con el botón
+ * "Marcar erróneo" por fila cuando no es día cerrado.
+ */
+function GrupoComidaProfe({
+  momento,
+  filasGenericas,
+  platos,
+  diaCerrado,
+}: {
+  momento: ComidaRow['momento']
+  filasGenericas: ComidaRow[]
+  platos: ComidaRow[]
+  diaCerrado: boolean
+}) {
+  const t = useTranslations('agenda')
+  const tPlatos = useTranslations('menus.pase_de_lista.platos')
+
+  return (
+    <div className="space-y-1.5" data-testid={`grupo-momento-${momento}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="warm">{t(`momento_opciones.${momento}`)}</Badge>
+        {filasGenericas[0]?.hora && (
+          <span className="font-mono text-xs">{filasGenericas[0].hora.slice(0, 5)}</span>
+        )}
+      </div>
+
+      {filasGenericas.length > 0 && (
+        <ul className="space-y-1">
+          {filasGenericas.map((c) => {
+            const anulado = esAnulado(c.observaciones)
+            return (
+              <li
+                key={c.id}
+                className={cn(
+                  'border-border/60 flex flex-wrap items-center gap-2 rounded-lg border p-2 text-sm',
+                  anulado && 'opacity-50'
+                )}
+              >
+                {anulado && <Badge variant="secondary">{t('estado.anulado')}</Badge>}
+                <span className={cn(anulado && 'line-through')}>
+                  {t(`cantidad_comida_opciones.${c.cantidad}`)}
+                </span>
+                {c.descripcion && (
+                  <span className={cn('text-muted-foreground', anulado && 'line-through')}>
+                    · {c.descripcion}
+                  </span>
+                )}
+                {!diaCerrado && !anulado && (
+                  <div className="ml-auto">
+                    <BotonMarcarErroneo tabla="comidas" id={c.id} />
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      {platos.length > 0 && (
+        <ul className="ml-2 space-y-1 border-l-2 border-neutral-200 pl-3">
+          {platos.map((p) => {
+            const anulado = esAnulado(p.observaciones)
+            return (
+              <li
+                key={p.id}
+                className={cn(
+                  'border-border/60 flex flex-wrap items-center gap-2 rounded-lg border p-2 text-sm',
+                  anulado && 'opacity-50'
+                )}
+              >
+                {anulado && <Badge variant="secondary">{t('estado.anulado')}</Badge>}
+                <Badge variant="secondary">{p.tipo_plato ? tPlatos(p.tipo_plato) : ''}</Badge>
+                <span className={cn(anulado && 'line-through')}>
+                  {t(`cantidad_comida_opciones.${p.cantidad}`)}
+                </span>
+                {p.descripcion && (
+                  <span className={cn('text-muted-foreground', anulado && 'line-through')}>
+                    · {p.descripcion}
+                  </span>
+                )}
+                {!diaCerrado && !anulado && (
+                  <div className="ml-auto">
+                    <BotonMarcarErroneo tabla="comidas" id={p.id} />
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
       )}
     </div>
   )
