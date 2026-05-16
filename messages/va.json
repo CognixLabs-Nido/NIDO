@@ -172,7 +172,8 @@
       "aulas": "Aules",
       "ninos": "Xiquets",
       "audit": "Audit log",
-      "perfil": "Perfil"
+      "perfil": "Perfil",
+      "calendario": "Calendari"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -327,7 +328,8 @@
     "nav": {
       "aria_label": "Navegació profe",
       "dashboard": "Inici",
-      "perfil": "Perfil"
+      "perfil": "Perfil",
+      "calendario": "Calendari"
     },
     "dashboard": {
       "title": "Les meues aules",
@@ -350,7 +352,8 @@
     "nav": {
       "aria_label": "Navegació família",
       "dashboard": "Inici",
-      "perfil": "Perfil"
+      "perfil": "Perfil",
+      "calendario": "Calendari"
     },
     "dashboard": {
       "title": "Els meus xiquets",
@@ -787,6 +790,60 @@
     "sin_permiso": {
       "title": "No pots reportar absències",
       "description": "Demana a l'administrador del centre que t'active el permís."
+    }
+  },
+  "calendario": {
+    "title": "Calendari del centre",
+    "admin_intro": "Marca festius, vacances, escola d'estiu i altres tipus de dia. Els dilluns-divendres són lectius i els caps de setmana tancats per defecte.",
+    "vista_solo_lectura": "Calendari del centre (només lectura).",
+    "selector": {
+      "anterior": "Mes anterior",
+      "siguiente": "Mes següent"
+    },
+    "tipos": {
+      "lectivo": "Lectiu",
+      "festivo": "Festiu",
+      "vacaciones": "Vacances",
+      "escuela_verano": "Escola d'estiu",
+      "escuela_navidad": "Escola de Nadal",
+      "jornada_reducida": "Jornada reduïda",
+      "cerrado": "Tancat"
+    },
+    "leyenda": {
+      "title": "Llegenda",
+      "intro": "Color per tipus de dia. Els dl-dv són lectius i els ds-dg tancats per defecte."
+    },
+    "popover_dia": {
+      "title": "Dia {fecha}",
+      "tipo_label": "Tipus de dia",
+      "observaciones_label": "Observacions (opcional)",
+      "guardar": "Guardar",
+      "eliminar": "Eliminar",
+      "cancelar": "Cancel·lar"
+    },
+    "dialog_rango": {
+      "title": "Aplicar tipus a un rang",
+      "resumen": "Del {desde} al {hasta} ({dias} dies).",
+      "confirmacion": "Marcaràs {dias} dies com a {tipo}.",
+      "aplicar": "Aplicar",
+      "cancelar": "Cancel·lar"
+    },
+    "validation": {
+      "fecha_invalida": "Data no vàlida.",
+      "rango_invertido": "La data final ha de ser posterior o igual a la inicial.",
+      "rango_demasiado_grande": "Màxim 366 dies per aplicació.",
+      "observaciones_largas": "Màxim 500 caràcters."
+    },
+    "toasts": {
+      "guardado": "Dia actualitzat",
+      "guardado_rango": "{dias} dies actualitzats",
+      "eliminado": "Dia restaurat al per defecte",
+      "error_guardar": "No s'ha pogut guardar. Torna-ho a provar.",
+      "error_eliminar": "No s'ha pogut eliminar. Torna-ho a provar."
+    },
+    "widget_proximos_cerrados": {
+      "title": "Pròxims dies tancats",
+      "vacio_amable": "Sense tancaments previstos el pròxim mes."
     }
   }
 }
