@@ -372,3 +372,52 @@ F4.5a + F4.5b (rediseño): calendario laboral del centro primero, luego menú me
 
 - `tipo_de_dia(centro, fecha)` y `centro_abierto(centro, fecha)` están listos para que el módulo de menús sepa qué días tienen menú.
 - `<CalendarioMensual />` reusable para vistas mensuales de menú o de eventos (F7).
+
+---
+
+## Fase 4.5b — Menús mensuales + pase de lista comida por platos
+
+**Fecha:** 2026-05-16
+**Estado:** 🚧 En curso (PR draft pendiente de Checkpoint C y merge).
+
+### Completado
+
+- Migración `20260516183353_phase4_5b_menus.sql` aplicada al remoto:
+  - 2 ENUMs nuevos: `estado_plantilla_menu` (borrador/publicada/archivada), `tipo_plato_comida` (primer_plato/segundo_plato/postre/unico).
+  - 2 tablas nuevas: `plantillas_menu_mensual` (índice único parcial que garantiza una sola publicada por (centro, mes, anio)) y `menu_dia` (UNIQUE plantilla+fecha).
+  - **Trigger BEFORE INSERT/UPDATE** en `menu_dia` que valida fecha dentro del mes/año de la plantilla padre (red de seguridad a nivel BD; el server action también valida con Zod para UX).
+  - Extensión de `comidas` (F3): 2 columnas nuevas (`tipo_plato`, `menu_dia_id`) + índice único parcial `WHERE tipo_plato IS NOT NULL` para UPSERT atómico del batch sin chocar con filas legacy F3.
+  - 3 helpers SQL: `nino_toma_comida_solida` (excluye lactancia materna/biberon, incluye mixta), `centro_de_plantilla` (auxiliar RLS), `menu_del_dia` (solo plantilla publicada).
+  - `audit_trigger_function()` ampliada con 2 ramas; cero regresión en audit de fases anteriores (176/176 tests verdes tras el CREATE OR REPLACE).
+- Feature `src/features/menus/`:
+  - Types + schemas Zod (12 tests verdes incluyendo cross-field).
+  - Server actions: `crearPlantillaMensual` (idempotente con borradores), `guardarMenuMes` (batch UPSERT validando fecha en mes), `publicarPlantilla` (archiva la previa automáticamente), `archivarPlantilla`, `batchRegistrarComidasPlatos` (patrón lookup+split por el predicado `WHERE tipo_plato IS NOT NULL` del índice parcial).
+  - Queries: `getPlantillasCentro`, `getPlantillaMes`, `getMenuDelDia`, `getPaseDeListaComida` (discriminated union con 4 estados — centro cerrado / sin plantilla / día sin menú / listo).
+  - Helpers TS: `escala 1-5 ↔ enum` con tests; `agruparComidasPorMomento` (7 tests cubriendo legacy puro, nuevo puro, mezcla, vacío, orden, tipo `unico`).
+- UI:
+  - `/admin/menus` listado de plantillas con badges de estado y `<NuevaPlantillaDialog />` (selector mes+año).
+  - `/admin/menus/[id]` editor con `<CalendarioMensual />`: días cerrados atenuados con tooltip "Centro cerrado este día", días abiertos clickables. Panel modal con 6 campos por día. **Estado dirty** marcado visualmente con `ring-warning-400` por celda y contador "N días con cambios sin guardar". Botón "Guardar mes" único con batch atómico. Botón "Publicar" con confirmación que muestra cuántos días tienen menú definido.
+  - `/teacher/aula/[id]/comida` con `<PaseDeListaTable />` (reusado, sin tocar API) y selector momento (4 chips). Escala visible 1-5 mapeada al enum `cantidad_comida`. Quick actions "Aplicar X a todos · {columna}" por plato. Empty states discriminados (centro cerrado / sin plantilla / día sin menú / sin niños con sólidos).
+  - Widget **"Menú del día"** en `/family/nino/[id]` sección Agenda (server component): pinta menú estándar del centro con 4 secciones (desayuno, media mañana, comida con 3 sub-líneas, merienda) o empty amable si no hay plantilla publicada.
+  - **Actualización vista F3 comidas (B57)**: `AgendaFamiliaView` y `SeccionComidas` ahora agrupan por momento y desglosan por `tipo_plato` cuando hay platos. **Compatibilidad total con filas legacy F3 (tipo_plato=NULL): se renderizan como antes** vía el helper `agruparComidasPorMomento`.
+  - Link "Pase de lista comida" añadido en `/teacher/aula/[id]` junto al de asistencia.
+  - Sidebar admin gana item "Menús".
+- **Cambio i18n crítico**: `agenda.cantidad_comida_opciones.mayoria` cambia de "Mayoría"/"Most"/"Majoria" → **"Casi todo"/"Almost all"/"Quasi tot"** (es/en/va). La BD sigue siendo el enum `mayoria`; solo cambia la etiqueta visible. Verificación: no hay strings hardcoded.
+- i18n trilingüe completa (es/en/va) namespace `menus.*` (~70 claves por idioma) + `admin.nav.menus`.
+- Tests Vitest: 195 totales (+19 nuevos respecto a F4.5a — 12 RLS+functions+audit ya verdes desde Checkpoint B; +22 unit nuevos en este paso 4: 3 escala, 7 agrupar-comidas, 12 schemas).
+- Playwright `e2e/menus.spec.ts`: 6 smoke (3 rutas protegidas + 3 i18n sin claves sin resolver) + 2 diferenciales condicionales (admin crea+publica menú; profe pasa lista comida).
+
+### Decisiones (ADRs)
+
+- **ADR-0020 — Plantilla de menú mensual**: descartado el modelo semanal recurrente. Una `plantillas_menu_mensual` por (centro, mes, anio, estado) + N `menu_dia` (1 por día abierto). Una sola publicada garantizada por índice único parcial.
+- **ADR-0021 — Extensión de `comidas` con `tipo_plato`**: alternativa rechazada era tabla `comida_platos` 1:N. Decisión: extender `comidas` con `tipo_plato NULL` + índice único parcial. Razones: F3 sigue funcionando sin cambios, agenda muestra todo lo que comió el niño en un solo lugar, audit log unificado. Patrón lookup+split en server action por el predicate del índice parcial (PostgREST no lo expone en `onConflict`).
+- **ADR-0022 — Escala 1-5 → enum `cantidad_comida` existente**: no se crea enum nuevo. UI muestra 1-5 (rápido), BD guarda el enum. Cambio asociado: etiqueta `mayoria` → "Casi todo" en es/en/va (afecta a F3 sin romper nada — verificado).
+
+### Pendiente
+
+- Validaciones finales Checkpoint C (`npm run typecheck && lint && test && test:e2e && build`) y push como PR draft.
+- Smoke en preview Vercel: admin crea plantilla, rellena 3 días, publica; profe abre pase de lista, marca 5 a todos, guarda; familia ve el widget "Menú del día" en la ficha del niño.
+
+### Para Fase 5 (mensajería)
+
+- F4.5b cierra el módulo de menús de Ola 1. Fase 5 (mensajería profe↔familia) puede arrancar.
