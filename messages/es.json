@@ -171,6 +171,7 @@
       "cursos": "Cursos",
       "aulas": "Aulas",
       "ninos": "Niños",
+      "menus": "Menús",
       "audit": "Audit log",
       "perfil": "Perfil"
     },
@@ -793,5 +794,111 @@
       "title": "No puedes reportar ausencias",
       "description": "Pide al administrador del centro que te active el permiso."
     }
+  },
+  "menus": {
+    "title": "Menús del centro",
+    "subtitle": "Plantilla semanal que verán profes y familias.",
+    "nueva": "Crear plantilla",
+    "ver": "Ver menús",
+    "estado": {
+      "borrador": "Borrador",
+      "publicada": "Publicada",
+      "archivada": "Archivada"
+    },
+    "dia": {
+      "lunes": "Lunes",
+      "martes": "Martes",
+      "miercoles": "Miércoles",
+      "jueves": "Jueves",
+      "viernes": "Viernes"
+    },
+    "momento": {
+      "desayuno": "Desayuno",
+      "media_manana": "Media mañana",
+      "comida": "Comida",
+      "merienda": "Merienda"
+    },
+    "campos": {
+      "nombre": "Nombre",
+      "vigente_desde": "Vigente desde",
+      "vigente_hasta": "Vigente hasta",
+      "vigencia_sin": "Sin fecha"
+    },
+    "publicar": "Publicar",
+    "publicar_confirm_title": "Publicar plantilla",
+    "publicar_confirm_desc": "Si hay otra plantilla publicada se archivará automáticamente. ¿Continuar?",
+    "publicar_confirm_si": "Sí, publicar",
+    "archivar": "Archivar",
+    "archivar_confirm_title": "Archivar plantilla",
+    "archivar_confirm_desc": "Una vez archivada no se puede reabrir desde la app.",
+    "archivar_confirm_si": "Sí, archivar",
+    "vigente": "Menú vigente",
+    "sin_publicada": "Aún no se ha publicado ningún menú.",
+    "ningun_plantilla": "Aún no hay plantillas. Crea la primera.",
+    "guardar": "Guardar",
+    "guardando": "Guardando…",
+    "guardado": "Guardado",
+    "editor_intro": "Define el menú de cada día de la semana. Cada momento es opcional. Auto-guardado al salir de cada sección.",
+    "validation": {
+      "nombre_corto": "Nombre demasiado corto",
+      "nombre_largo": "Nombre demasiado largo",
+      "fecha_invalida": "Fecha inválida",
+      "rango_invalido": "La fecha final debe ser igual o posterior a la inicial",
+      "descripcion_larga": "Máximo 500 caracteres"
+    },
+    "errors": {
+      "guardar_fallo": "No se pudo guardar. Inténtalo de nuevo.",
+      "publicar_fallo": "No se pudo publicar.",
+      "publicar_archivada": "Una plantilla archivada no puede publicarse.",
+      "archivar_fallo": "No se pudo archivar.",
+      "no_encontrada": "Plantilla no encontrada.",
+      "id_requerido": "Falta el identificador.",
+      "sin_centro": "No se encuentra el centro del usuario.",
+      "sin_permiso": "No tienes permiso para esta acción."
+    }
+  },
+  "comida_batch": {
+    "title": "Pase de comida",
+    "subtitle": "Marca qué comió cada niño en este momento.",
+    "ver": "Pase de comida",
+    "momento_label": "Momento",
+    "menu_del_dia": "Menú del día",
+    "ningun_nino": "Aún no hay niños matriculados o todos toman solo leche.",
+    "sin_plantilla": {
+      "title": "Aún no hay menú publicado",
+      "description": "Pídele al administrador del centro que publique el menú del mes."
+    },
+    "columna": {
+      "descripcion": "Descripción",
+      "cantidad": "Cantidad",
+      "observaciones": "Observaciones"
+    },
+    "placeholder_descripcion": "Menú o variante (tupper, etc.)",
+    "placeholder_observaciones": "Notas opcionales",
+    "quick_actions": {
+      "todos_aplicar": "Aplicar a todos",
+      "aplicar_cantidad": "Cantidad: {cantidad}"
+    },
+    "guardar": "Confirmar pase de comida",
+    "guardando": "Guardando…",
+    "guardado": "Guardado",
+    "status": {
+      "pending": "Sin marcar",
+      "dirty": "Sin guardar",
+      "saved": "Guardado",
+      "error": "Error"
+    },
+    "alertas": {
+      "alergia_grave": "Alergia grave",
+      "medicacion": "Medicación"
+    },
+    "errors": {
+      "fuera_de_ventana": "Ya no puedes editar este día.",
+      "guardar_fallo": "No se pudo guardar. Inténtalo de nuevo."
+    }
+  },
+  "menu_del_dia_widget": {
+    "title": "Menú del día",
+    "sin_menu": "Sin menú definido para este día."
   }
 }

@@ -5,6 +5,7 @@ import {
   BookOpenIcon,
   BabyIcon,
   HistoryIcon,
+  UtensilsCrossedIcon,
 } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -42,6 +43,7 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
     { href: `/${locale}/admin/cursos`, label: t('cursos'), icon: <CalendarDaysIcon /> },
     { href: `/${locale}/admin/aulas`, label: t('aulas'), icon: <BookOpenIcon /> },
     { href: `/${locale}/admin/ninos`, label: t('ninos'), icon: <BabyIcon /> },
+    { href: `/${locale}/admin/menus`, label: t('menus'), icon: <UtensilsCrossedIcon /> },
     { href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> },
   ]
 

@@ -4,6 +4,7 @@ import {
   UsersIcon,
   CalendarDaysIcon,
   ClipboardCheckIcon,
+  UtensilsCrossedIcon,
 } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import type { LucideIcon } from 'lucide-react'
@@ -17,6 +18,8 @@ import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getResumenAsistenciaCentro } from '@/features/asistencia/queries/get-resumen-asistencia-centro'
+import { getMenuDelDia } from '@/features/menus/queries/get-menu-del-dia'
+import { getPlantillaPublicada } from '@/features/menus/queries/get-plantillas-centro'
 import { cn } from '@/lib/utils'
 
 type StatTone = 'primary' | 'accent-warm' | 'success' | 'info'
@@ -36,12 +39,21 @@ export default async function AdminDashboard({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('admin.dashboard')
   const tAsistencia = await getTranslations('asistencia.admin')
+  const tMenus = await getTranslations('menus')
   const supabase = await createClient()
   const centroId = (await getCentroActualId())!
   const user = await getCurrentUser()
   const fecha = hoyMadrid()
 
-  const [aulasResp, ninosResp, usuariosResp, cursoActivo, resumenAsistencia] = await Promise.all([
+  const [
+    aulasResp,
+    ninosResp,
+    usuariosResp,
+    cursoActivo,
+    resumenAsistencia,
+    plantillaPublicada,
+    menuHoy,
+  ] = await Promise.all([
     supabase
       .from('aulas')
       .select('id', { count: 'exact', head: true })
@@ -59,6 +71,8 @@ export default async function AdminDashboard({ params }: PageProps) {
       .is('deleted_at', null),
     getCursoActivo(centroId),
     getResumenAsistenciaCentro(fecha),
+    getPlantillaPublicada(),
+    getMenuDelDia(centroId, fecha),
   ])
 
   const aulasCount = aulasResp.count ?? 0
@@ -92,6 +106,84 @@ export default async function AdminDashboard({ params }: PageProps) {
           label={t('stats.usuarios_activos')}
           value={usuariosCount}
         />
+      </section>
+
+      <section className="space-y-3" aria-label={tMenus('vigente')}>
+        <header className="space-y-1">
+          <h2 className="text-h3 text-foreground flex items-center gap-2">
+            <UtensilsCrossedIcon className="text-accent-warm-600 size-5" />
+            {tMenus('vigente')}
+          </h2>
+          <p className="text-muted-foreground text-sm">{tMenus('subtitle')}</p>
+        </header>
+        <Card>
+          <CardContent className="space-y-3 text-sm">
+            {plantillaPublicada ? (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-foreground font-semibold">{plantillaPublicada.nombre}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {plantillaPublicada.vigente_desde ?? tMenus('campos.vigencia_sin')} →{' '}
+                    {plantillaPublicada.vigente_hasta ?? tMenus('campos.vigencia_sin')}
+                  </p>
+                </div>
+                <Link
+                  href={`/${locale}/admin/menus/${plantillaPublicada.id}`}
+                  className="text-info-700 hover:text-info-800 text-xs font-medium"
+                >
+                  {tMenus('ver')}
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-muted-foreground">{tMenus('sin_publicada')}</p>
+                <Link
+                  href={`/${locale}/admin/menus`}
+                  className="text-info-700 hover:text-info-800 text-xs font-medium"
+                >
+                  {tMenus('nueva')}
+                </Link>
+              </div>
+            )}
+
+            {menuHoy && (
+              <div className="border-border/40 grid grid-cols-1 gap-1 border-t pt-2 sm:grid-cols-2">
+                {menuHoy.desayuno && (
+                  <p>
+                    <span className="text-muted-foreground text-xs">
+                      {tMenus('momento.desayuno')}:
+                    </span>{' '}
+                    {menuHoy.desayuno}
+                  </p>
+                )}
+                {menuHoy.media_manana && (
+                  <p>
+                    <span className="text-muted-foreground text-xs">
+                      {tMenus('momento.media_manana')}:
+                    </span>{' '}
+                    {menuHoy.media_manana}
+                  </p>
+                )}
+                {menuHoy.comida && (
+                  <p>
+                    <span className="text-muted-foreground text-xs">
+                      {tMenus('momento.comida')}:
+                    </span>{' '}
+                    {menuHoy.comida}
+                  </p>
+                )}
+                {menuHoy.merienda && (
+                  <p>
+                    <span className="text-muted-foreground text-xs">
+                      {tMenus('momento.merienda')}:
+                    </span>{' '}
+                    {menuHoy.merienda}
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       <section className="space-y-3" aria-label={tAsistencia('card_title')}>

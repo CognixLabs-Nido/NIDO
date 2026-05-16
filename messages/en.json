@@ -171,6 +171,7 @@
       "cursos": "Years",
       "aulas": "Classrooms",
       "ninos": "Children",
+      "menus": "Menus",
       "audit": "Audit log",
       "perfil": "Profile"
     },
@@ -793,5 +794,111 @@
       "title": "You can't report absences",
       "description": "Ask the centre admin to enable the permission for you."
     }
+  },
+  "menus": {
+    "title": "Centre menus",
+    "subtitle": "Weekly template visible to teachers and families.",
+    "nueva": "Create template",
+    "ver": "Open menus",
+    "estado": {
+      "borrador": "Draft",
+      "publicada": "Published",
+      "archivada": "Archived"
+    },
+    "dia": {
+      "lunes": "Monday",
+      "martes": "Tuesday",
+      "miercoles": "Wednesday",
+      "jueves": "Thursday",
+      "viernes": "Friday"
+    },
+    "momento": {
+      "desayuno": "Breakfast",
+      "media_manana": "Mid-morning",
+      "comida": "Lunch",
+      "merienda": "Snack"
+    },
+    "campos": {
+      "nombre": "Name",
+      "vigente_desde": "Valid from",
+      "vigente_hasta": "Valid until",
+      "vigencia_sin": "No date"
+    },
+    "publicar": "Publish",
+    "publicar_confirm_title": "Publish template",
+    "publicar_confirm_desc": "If another template is published it will be archived automatically. Continue?",
+    "publicar_confirm_si": "Yes, publish",
+    "archivar": "Archive",
+    "archivar_confirm_title": "Archive template",
+    "archivar_confirm_desc": "Once archived it can't be reopened from the app.",
+    "archivar_confirm_si": "Yes, archive",
+    "vigente": "Active menu",
+    "sin_publicada": "No menu published yet.",
+    "ningun_plantilla": "No templates yet. Create the first one.",
+    "guardar": "Save",
+    "guardando": "Saving…",
+    "guardado": "Saved",
+    "editor_intro": "Define the menu for each weekday. Each meal is optional. Auto-saves on blur.",
+    "validation": {
+      "nombre_corto": "Name too short",
+      "nombre_largo": "Name too long",
+      "fecha_invalida": "Invalid date",
+      "rango_invalido": "End date must be equal to or after start date",
+      "descripcion_larga": "Maximum 500 characters"
+    },
+    "errors": {
+      "guardar_fallo": "Couldn't save. Try again.",
+      "publicar_fallo": "Couldn't publish.",
+      "publicar_archivada": "An archived template can't be published.",
+      "archivar_fallo": "Couldn't archive.",
+      "no_encontrada": "Template not found.",
+      "id_requerido": "Identifier missing.",
+      "sin_centro": "Centre not found for current user.",
+      "sin_permiso": "You don't have permission for this action."
+    }
+  },
+  "comida_batch": {
+    "title": "Meal roll-call",
+    "subtitle": "Mark what each child ate at this meal.",
+    "ver": "Meal roll-call",
+    "momento_label": "Meal",
+    "menu_del_dia": "Today's menu",
+    "ningun_nino": "No children enrolled yet, or all are milk-only.",
+    "sin_plantilla": {
+      "title": "No menu published yet",
+      "description": "Ask the centre admin to publish this month's menu."
+    },
+    "columna": {
+      "descripcion": "Description",
+      "cantidad": "Amount",
+      "observaciones": "Notes"
+    },
+    "placeholder_descripcion": "Menu or override (lunchbox, etc.)",
+    "placeholder_observaciones": "Optional notes",
+    "quick_actions": {
+      "todos_aplicar": "Apply to all",
+      "aplicar_cantidad": "Amount: {cantidad}"
+    },
+    "guardar": "Confirm meal roll-call",
+    "guardando": "Saving…",
+    "guardado": "Saved",
+    "status": {
+      "pending": "Unmarked",
+      "dirty": "Unsaved",
+      "saved": "Saved",
+      "error": "Error"
+    },
+    "alertas": {
+      "alergia_grave": "Severe allergy",
+      "medicacion": "Medication"
+    },
+    "errors": {
+      "fuera_de_ventana": "You can no longer edit this day.",
+      "guardar_fallo": "Couldn't save. Try again."
+    }
+  },
+  "menu_del_dia_widget": {
+    "title": "Today's menu",
+    "sin_menu": "No menu defined for this day."
   }
 }

@@ -171,6 +171,7 @@
       "cursos": "Cursos",
       "aulas": "Aules",
       "ninos": "Xiquets",
+      "menus": "Menús",
       "audit": "Audit log",
       "perfil": "Perfil"
     },
@@ -793,5 +794,111 @@
       "title": "No pots reportar absències",
       "description": "Demana a l'administrador del centre que t'active el permís."
     }
+  },
+  "menus": {
+    "title": "Menús del centre",
+    "subtitle": "Plantilla setmanal visible per a profes i famílies.",
+    "nueva": "Crear plantilla",
+    "ver": "Obrir menús",
+    "estado": {
+      "borrador": "Esborrany",
+      "publicada": "Publicada",
+      "archivada": "Arxivada"
+    },
+    "dia": {
+      "lunes": "Dilluns",
+      "martes": "Dimarts",
+      "miercoles": "Dimecres",
+      "jueves": "Dijous",
+      "viernes": "Divendres"
+    },
+    "momento": {
+      "desayuno": "Esmorzar",
+      "media_manana": "Mig matí",
+      "comida": "Dinar",
+      "merienda": "Berenar"
+    },
+    "campos": {
+      "nombre": "Nom",
+      "vigente_desde": "Vigent des de",
+      "vigente_hasta": "Vigent fins a",
+      "vigencia_sin": "Sense data"
+    },
+    "publicar": "Publicar",
+    "publicar_confirm_title": "Publicar plantilla",
+    "publicar_confirm_desc": "Si hi ha una altra plantilla publicada s'arxivarà automàticament. Continuar?",
+    "publicar_confirm_si": "Sí, publicar",
+    "archivar": "Arxivar",
+    "archivar_confirm_title": "Arxivar plantilla",
+    "archivar_confirm_desc": "Una vegada arxivada no es pot reobrir des de l'app.",
+    "archivar_confirm_si": "Sí, arxivar",
+    "vigente": "Menú vigent",
+    "sin_publicada": "Encara no s'ha publicat cap menú.",
+    "ningun_plantilla": "Encara no hi ha plantilles. Crea la primera.",
+    "guardar": "Guardar",
+    "guardando": "Guardant…",
+    "guardado": "Guardat",
+    "editor_intro": "Defineix el menú de cada dia. Cada moment és opcional. Guardat automàtic al sortir de cada secció.",
+    "validation": {
+      "nombre_corto": "Nom massa curt",
+      "nombre_largo": "Nom massa llarg",
+      "fecha_invalida": "Data invàlida",
+      "rango_invalido": "La data final ha de ser igual o posterior a la inicial",
+      "descripcion_larga": "Màxim 500 caràcters"
+    },
+    "errors": {
+      "guardar_fallo": "No s'ha pogut guardar. Torna-ho a intentar.",
+      "publicar_fallo": "No s'ha pogut publicar.",
+      "publicar_archivada": "Una plantilla arxivada no es pot publicar.",
+      "archivar_fallo": "No s'ha pogut arxivar.",
+      "no_encontrada": "Plantilla no trobada.",
+      "id_requerido": "Falta l'identificador.",
+      "sin_centro": "No s'ha trobat el centre de l'usuari.",
+      "sin_permiso": "No tens permís per a aquesta acció."
+    }
+  },
+  "comida_batch": {
+    "title": "Passada de menjar",
+    "subtitle": "Marca què va menjar cada xiquet en aquest moment.",
+    "ver": "Passada de menjar",
+    "momento_label": "Moment",
+    "menu_del_dia": "Menú del dia",
+    "ningun_nino": "Encara no hi ha xiquets matriculats o tots prenen només llet.",
+    "sin_plantilla": {
+      "title": "Encara no hi ha menú publicat",
+      "description": "Demana a l'administrador del centre que publique el menú del mes."
+    },
+    "columna": {
+      "descripcion": "Descripció",
+      "cantidad": "Quantitat",
+      "observaciones": "Observacions"
+    },
+    "placeholder_descripcion": "Menú o variant (carmanyola, etc.)",
+    "placeholder_observaciones": "Notes opcionals",
+    "quick_actions": {
+      "todos_aplicar": "Aplicar a tots",
+      "aplicar_cantidad": "Quantitat: {cantidad}"
+    },
+    "guardar": "Confirmar passada de menjar",
+    "guardando": "Guardant…",
+    "guardado": "Guardat",
+    "status": {
+      "pending": "Sense marcar",
+      "dirty": "Sense guardar",
+      "saved": "Guardat",
+      "error": "Error"
+    },
+    "alertas": {
+      "alergia_grave": "Al·lèrgia greu",
+      "medicacion": "Medicació"
+    },
+    "errors": {
+      "fuera_de_ventana": "Ja no pots editar aquest dia.",
+      "guardar_fallo": "No s'ha pogut guardar. Torna-ho a intentar."
+    }
+  },
+  "menu_del_dia_widget": {
+    "title": "Menú del dia",
+    "sin_menu": "Sense menú definit per a aquest dia."
   }
 }
