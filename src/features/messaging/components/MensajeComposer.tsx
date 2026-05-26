@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 
 import { enviarMensaje } from '../actions/enviar-mensaje'
 
@@ -26,13 +27,18 @@ interface Props {
 const MAX = 2000
 
 /**
- * Composer de mensaje. Usa <form onSubmit> en lugar de Button.onClick:
- * el primer release de F5 (#16) tenía el handler en onClick y la
- * regresión típica del entorno —botón sin `type` interpretado como
- * submit dentro de un form ancestro— hacía que el clic refrescara la
- * página sin disparar la petición. El patrón <form onSubmit> +
- * <button type="submit"> es más robusto y compatible con Enter en el
- * textarea.
+ * Composer de mensaje. Usa un <button> HTML nativo (no el <Button> de
+ * shadcn) porque el primitive `@base-ui/react/button` fuerza
+ * `type="button"` con prioridad sobre cualquier `type` que le pase el
+ * caller: `useRenderElement` mergea `[elementProps, getButtonProps]`
+ * con `getButtonProps()` como rightmost, y `mergePropsN` resuelve
+ * conflictos a favor del último. Resultado: pasar `type="submit"` al
+ * <Button> NO funciona — el DOM final es `<button type="button">` y
+ * el submit del form nunca se dispara (Console/Network vacíos en
+ * DevTools, regresión real reportada tras el PR #18).
+ *
+ * Aplicamos las clases de `buttonVariants()` directamente al <button>
+ * nativo para mantener el aspecto visual.
  */
 export function MensajeComposer({ ninoId, locale, redirectOnFirstSend }: Props) {
   const t = useTranslations('messages.conversacion')
@@ -104,15 +110,15 @@ export function MensajeComposer({ ninoId, locale, redirectOnFirstSend }: Props) 
             {t('contador', { n: length, max: MAX })}
           </div>
         </div>
-        <Button
+        <button
           type="submit"
           disabled={disabled}
-          className="shrink-0"
+          className={cn(buttonVariants({ variant: 'default' }), 'shrink-0')}
           data-testid="mensaje-composer-submit"
         >
           <SendHorizonalIcon className="size-4" />
           <span className="ml-1">{pending ? t('enviando') : t('enviar')}</span>
-        </Button>
+        </button>
       </div>
     </form>
   )
