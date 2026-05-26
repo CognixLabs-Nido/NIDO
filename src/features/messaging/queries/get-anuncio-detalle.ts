@@ -5,6 +5,8 @@ import { logger } from '@/shared/lib/logger'
 
 import type { AnuncioDetalle } from '../types'
 
+import { audienciaAnuncio } from './audiencia-anuncio'
+
 /**
  * Detalle de un anuncio. RLS filtra: el usuario solo lo lee si es
  * audiencia (`usuario_es_audiencia_anuncio_row`).
@@ -69,82 +71,24 @@ export async function getAnuncioDetalle(anuncioId: string): Promise<AnuncioDetal
   }
 
   if (esPropio) {
-    // Lectores actuales
+    // Con la policy `lectura_anuncio_select_autor` (migración
+    // `phase5_lectura_anuncio_autor_select_realtime`), el autor ahora ve
+    // todas las filas de `lectura_anuncio` correspondientes a SUS anuncios.
+    // Antes solo veía las suyas (0 si no se autoleyó), de ahí el bug
+    // "0 de N" reportado en producción.
     const { count: leidos } = await supabase
       .from('lectura_anuncio')
       .select('*', { count: 'exact', head: true })
       .eq('anuncio_id', anuncioId)
 
-    // Audiencia teórica:
-    //   - ámbito='aula': tutores con permiso de niños matriculados activos + profes activos del aula.
-    //   - ámbito='centro': tutores con permiso del centro + profes activos del centro.
-    let total = 0
-    if (anuncio.ambito === 'aula' && anuncio.aula_id) {
-      const { data: tutores } = await supabase
-        .from('vinculos_familiares')
-        .select(
-          'usuario_id, nino_id, matriculas:ninos!inner(matriculas!inner(aula_id, fecha_baja))'
-        )
-        .filter('permisos->puede_recibir_mensajes', 'eq', true)
-        .is('deleted_at', null)
-      // El filter anterior es approximate; lo confirmamos en JS por aula_id y fecha_baja.
-      const tutoresAula = new Set<string>()
-      for (const v of tutores ?? []) {
-        const ms = v.matriculas?.matriculas ?? []
-        for (const m of ms) {
-          if (m.aula_id === anuncio.aula_id && m.fecha_baja === null) {
-            tutoresAula.add(v.usuario_id)
-            break
-          }
-        }
-      }
-      const { count: profesAula } = await supabase
-        .from('profes_aulas')
-        .select('*', { count: 'exact', head: true })
-        .eq('aula_id', anuncio.aula_id)
-        .is('fecha_fin', null)
-        .is('deleted_at', null)
-      total = tutoresAula.size + (profesAula ?? 0)
-    } else if (anuncio.ambito === 'centro') {
-      // Profes activos del centro
-      const { data: aulasCentro } = await supabase
-        .from('aulas')
-        .select('id')
-        .eq('centro_id', anuncio.centro_id)
-        .is('deleted_at', null)
-      const aulaIds = aulasCentro?.map((a) => a.id) ?? []
-      let profes = 0
-      if (aulaIds.length > 0) {
-        const { count } = await supabase
-          .from('profes_aulas')
-          .select('*', { count: 'exact', head: true })
-          .in('aula_id', aulaIds)
-          .is('fecha_fin', null)
-          .is('deleted_at', null)
-        profes = count ?? 0
-      }
-      // Tutores con permiso de niños matriculados en aulas activas del centro
-      const { data: tutores } = await supabase
-        .from('vinculos_familiares')
-        .select('usuario_id, ninos!inner(matriculas!inner(aula_id, fecha_baja))')
-        .filter('permisos->puede_recibir_mensajes', 'eq', true)
-        .is('deleted_at', null)
-      const aulaSet = new Set(aulaIds)
-      const tutoresCentro = new Set<string>()
-      for (const v of tutores ?? []) {
-        const ms = v.ninos?.matriculas ?? []
-        for (const m of ms) {
-          if (m.fecha_baja === null && aulaSet.has(m.aula_id)) {
-            tutoresCentro.add(v.usuario_id)
-            break
-          }
-        }
-      }
-      total = profes + tutoresCentro.size
-    }
+    const audiencia = await audienciaAnuncio(supabase, {
+      centro_id: anuncio.centro_id,
+      ambito: anuncio.ambito,
+      aula_id: anuncio.aula_id,
+    })
 
     detalle.lectores = {
-      total,
+      total: audiencia.size,
       leidos: leidos ?? 0,
     }
   }

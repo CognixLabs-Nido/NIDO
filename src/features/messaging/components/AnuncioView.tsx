@@ -2,7 +2,7 @@
 
 import { ArrowLeftIcon, MegaphoneIcon } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
@@ -11,30 +11,43 @@ import { cn } from '@/lib/utils'
 
 import { marcarAnuncioLeido } from '../actions/marcar-anuncio-leido'
 import { useMessagingRealtime } from '../lib/use-messaging-realtime'
+import type { LectorAnuncioItem } from '../queries/get-lectores-anuncio'
 import { PREFIX_ANULADO, type AnuncioDetalle } from '../types'
 
+import { LectoresAnuncioModal } from './LectoresAnuncioModal'
 import { MarcarErroneoButton } from './MarcarErroneoButton'
 
 interface Props {
   locale: string
   anuncio: AnuncioDetalle
+  /** Lista detallada de destinatarios + lectura. Solo poblada cuando el
+   *  usuario actual es el autor; en caso contrario llega vacía. */
+  lectoresDetalle: LectorAnuncioItem[]
 }
 
 /**
  * Detalle de un anuncio. Marca leído al montar (idempotente). Si el
  * usuario actual es el autor, muestra contador de lectura "N de M".
  */
-export function AnuncioView({ locale, anuncio }: Props) {
+export function AnuncioView({ locale, anuncio, lectoresDetalle }: Props) {
   const t = useTranslations('messages.anuncio')
   const tAnular = useTranslations('messages.anular')
   const tEstado = useTranslations('messages.estado')
+  const [lectoresOpen, setLectoresOpen] = useState(false)
 
   useEffect(() => {
     if (anuncio.es_propio) return
     void marcarAnuncioLeido({ anuncio_id: anuncio.id })
   }, [anuncio.id, anuncio.es_propio])
 
-  useMessagingRealtime({ channel: `messages-anuncio-${anuncio.id}` })
+  // Si el usuario es autor, abrimos un listener adicional sobre
+  // `lectura_anuncio` filtrado por este anuncio para refrescar el contador
+  // "X de Y" en vivo cuando los destinatarios marquen leído. La policy
+  // `lectura_anuncio_select_autor` autoriza al autor a recibir esos eventos.
+  useMessagingRealtime({
+    channel: `messages-anuncio-${anuncio.id}`,
+    anuncioIdParaLecturas: anuncio.es_propio ? anuncio.id : undefined,
+  })
 
   const tituloVisible = anuncio.erroneo
     ? anuncio.titulo.replace(PREFIX_ANULADO, '')
@@ -104,12 +117,18 @@ export function AnuncioView({ locale, anuncio }: Props) {
 
           {anuncio.es_propio && anuncio.lectores && (
             <div className="border-t pt-3">
-              <p className="text-muted-foreground text-sm">
+              <button
+                type="button"
+                onClick={() => setLectoresOpen(true)}
+                className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm underline-offset-2 hover:underline focus-visible:underline"
+                data-testid="ver-lectores-anuncio"
+                aria-label={t('ver_lectores')}
+              >
                 {t('lectores', {
                   n: anuncio.lectores.leidos,
                   total: anuncio.lectores.total,
                 })}
-              </p>
+              </button>
             </div>
           )}
 
@@ -120,6 +139,17 @@ export function AnuncioView({ locale, anuncio }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {anuncio.es_propio && anuncio.lectores && (
+        <LectoresAnuncioModal
+          open={lectoresOpen}
+          onOpenChange={setLectoresOpen}
+          locale={locale}
+          lectores={lectoresDetalle}
+          total={anuncio.lectores.total}
+          leidos={anuncio.lectores.leidos}
+        />
+      )}
     </div>
   )
 }

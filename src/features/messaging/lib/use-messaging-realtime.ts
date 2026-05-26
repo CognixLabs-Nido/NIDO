@@ -48,6 +48,17 @@ import { createClient } from '@/lib/supabase/client'
 interface UseMessagingRealtimeOptions {
   channel: string
   conversacionId?: string
+  /**
+   * Si se pasa, el hook abre un listener adicional sobre `lectura_anuncio`
+   * filtrado por este `anuncio_id`. Pensado para la vista del autor del
+   * anuncio (`AnuncioView`): cuando un destinatario marca el anuncio como
+   * leído, la fila INSERT en `lectura_anuncio` dispara `router.refresh()` y
+   * el contador "X de Y" se actualiza en vivo. La policy de SELECT
+   * `lectura_anuncio_select_autor` (migración `phase5_lectura_anuncio_autor_select_realtime`)
+   * garantiza que el autor reciba el evento; el resto de usuarios no porque
+   * RLS también filtra las notificaciones Realtime.
+   */
+  anuncioIdParaLecturas?: string
   enabled?: boolean
   onChange?: (table: 'mensajes' | 'anuncios' | 'lectura_conversacion' | 'lectura_anuncio') => void
 }
@@ -55,6 +66,7 @@ interface UseMessagingRealtimeOptions {
 export function useMessagingRealtime({
   channel,
   conversacionId,
+  anuncioIdParaLecturas,
   enabled = true,
   onChange,
 }: UseMessagingRealtimeOptions): void {
@@ -86,7 +98,7 @@ export function useMessagingRealtime({
         }
       : { event: '*' as const, schema: 'public', table: 'mensajes' }
 
-    const ch = supabase
+    let chain = supabase
       .channel(channelName)
       .on('postgres_changes', mensajesFilter, handle('mensajes'))
       .on(
@@ -94,10 +106,24 @@ export function useMessagingRealtime({
         { event: '*', schema: 'public', table: 'anuncios' },
         handle('anuncios')
       )
-      .subscribe()
+
+    if (anuncioIdParaLecturas) {
+      chain = chain.on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lectura_anuncio',
+          filter: `anuncio_id=eq.${anuncioIdParaLecturas}`,
+        },
+        handle('lectura_anuncio')
+      )
+    }
+
+    const ch = chain.subscribe()
 
     return () => {
       supabase.removeChannel(ch)
     }
-  }, [channelName, conversacionId, enabled, onChange, router])
+  }, [channelName, conversacionId, anuncioIdParaLecturas, enabled, onChange, router])
 }
