@@ -996,7 +996,12 @@
     },
     "conversacion": {
       "title": "Conversation with {nombre}'s family",
+      "title_tutor_profe": "Conversation with {nombre}",
+      "title_tutor_aula": "Teachers in classroom {aula}",
+      "title_tutor_aula_sin_profe": "Classroom {aula}",
       "header_aula": "Classroom {nombre}",
+      "header_profe_subtitulo": "Teacher in classroom {aula}",
+      "header_profes_count": "{n} teachers",
       "sin_mensajes": "Start the conversation by writing below.",
       "composer_placeholder": "Type your message…",
       "enviar": "Send",

@@ -153,6 +153,7 @@ export function MessagesView({
         <TabsContent value="conversaciones" className="pt-3">
           <ConversacionesSplitView
             locale={locale}
+            rol={rol}
             ninos={ninos}
             ninoSeleccionadoId={ninoSeleccionadoId}
             mostrarLista={mostrarListaConversaciones}

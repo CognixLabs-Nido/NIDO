@@ -2,6 +2,7 @@
 
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 
@@ -17,6 +18,9 @@ import { MensajeComposer } from './MensajeComposer'
 
 interface Props {
   locale: string
+  /** Rol del usuario actual en el centro. Determina cómo se renderiza
+   *  el header: tutor → nombre del/los profe(s); profe/admin → nombre del niño. */
+  rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
   header: ConversacionHeader
   mensajes: MensajeView[]
   participo: boolean
@@ -26,24 +30,38 @@ interface Props {
  * Vista del hilo de una conversación. Auto-marca como leída al montar
  * y cuando llega un mensaje vía Realtime estando la pestaña abierta.
  */
-export function ConversacionView({ locale, header, mensajes, participo }: Props) {
+export function ConversacionView({ locale, rol, header, mensajes, participo }: Props) {
   const t = useTranslations('messages.conversacion')
   const tRoles = useTranslations('messages.conversacion')
   const tEstado = useTranslations('messages.estado')
+  const router = useRouter()
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Marcar leída al montar (UPSERT idempotente).
+  // Marcar leída al montar (UPSERT idempotente). Tras el éxito forzamos
+  // `router.refresh()` para que el SSR del layout recalcule el badge
+  // global — el realtime no escucha `lectura_conversacion`.
   useEffect(() => {
-    void marcarConversacionLeida({ conversacion_id: header.id })
-  }, [header.id])
+    let cancelled = false
+    void marcarConversacionLeida({ conversacion_id: header.id }).then((res) => {
+      if (cancelled) return
+      if (res.success) router.refresh()
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [header.id, router])
 
   // Realtime: cualquier mensaje nuevo en este hilo refresca + marca leído.
+  // Mismo refresh tras la lectura para que el badge baje en vivo si el
+  // usuario está mirando este hilo cuando llega el mensaje.
   useMessagingRealtime({
     channel: `messages-conv-${header.id}`,
     conversacionId: header.id,
     onChange: (table) => {
       if (table === 'mensajes') {
-        void marcarConversacionLeida({ conversacion_id: header.id })
+        void marcarConversacionLeida({ conversacion_id: header.id }).then((res) => {
+          if (res.success) router.refresh()
+        })
       }
     },
   })
@@ -72,14 +90,7 @@ export function ConversacionView({ locale, header, mensajes, participo }: Props)
             <ArrowLeftIcon className="size-4" />
           </Link>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-base font-semibold">
-              {t('title', { nombre: header.nino_nombre })}
-            </h1>
-            {header.aula_nombre && (
-              <p className="text-muted-foreground text-xs">
-                {t('header_aula', { nombre: header.aula_nombre })}
-              </p>
-            )}
+            <HeaderTitulo rol={rol} header={header} t={t} />
           </div>
         </div>
       </header>
@@ -150,5 +161,87 @@ export function ConversacionView({ locale, header, mensajes, participo }: Props)
 
       {participo && <MensajeComposer ninoId={header.nino_id} locale={locale} />}
     </div>
+  )
+}
+
+/**
+ * Render del título del header en función del rol del usuario.
+ *
+ * - Profe / admin: nombre del niño + aula (la conversación es "el hilo del
+ *   niño X" desde el lado del personal del centro).
+ * - Tutor / autorizado: nombre del/los profe(s) del aula del niño, NO el
+ *   nombre del propio hijo (decisión UX post-F5: el tutor sabe a quién
+ *   está escribiendo, no necesita el nombre del niño en cada hilo).
+ *
+ * Casos del lado tutor:
+ *  - 1 profe activo: nombre del profe + subtítulo "Profe del aula X".
+ *  - N>1 profes activos: "Profes del aula X" + subtítulo "N profes".
+ *  - 0 profes activos: "Aula X" como fallback. Si tampoco hay aula
+ *    (matrícula histórica eliminada, edge case), cae al nombre del niño.
+ */
+function HeaderTitulo({
+  rol,
+  header,
+  t,
+}: {
+  rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
+  header: ConversacionHeader
+  t: ReturnType<typeof useTranslations>
+}) {
+  const esTutor = rol === 'tutor_legal' || rol === 'autorizado'
+
+  if (esTutor) {
+    const aulaNombre = header.aula_nombre
+    const profes = header.profes_aula
+    if (profes.length === 1 && profes[0]) {
+      return (
+        <>
+          <h1 className="truncate text-base font-semibold">
+            {t('title_tutor_profe', { nombre: profes[0].nombre_completo })}
+          </h1>
+          {aulaNombre && (
+            <p className="text-muted-foreground text-xs">
+              {t('header_profe_subtitulo', { aula: aulaNombre })}
+            </p>
+          )}
+        </>
+      )
+    }
+    if (profes.length > 1 && aulaNombre) {
+      return (
+        <>
+          <h1 className="truncate text-base font-semibold">
+            {t('title_tutor_aula', { aula: aulaNombre })}
+          </h1>
+          <p className="text-muted-foreground text-xs">
+            {t('header_profes_count', { n: profes.length })}
+          </p>
+        </>
+      )
+    }
+    if (aulaNombre) {
+      return (
+        <h1 className="truncate text-base font-semibold">
+          {t('title_tutor_aula_sin_profe', { aula: aulaNombre })}
+        </h1>
+      )
+    }
+    // Edge: ni profes ni aula — fallback al nombre del niño para no
+    // mostrar un header vacío.
+    return <h1 className="truncate text-base font-semibold">{header.nino_nombre}</h1>
+  }
+
+  // Vista profe / admin: nombre del niño + aula (comportamiento original).
+  return (
+    <>
+      <h1 className="truncate text-base font-semibold">
+        {t('title', { nombre: header.nino_nombre })}
+      </h1>
+      {header.aula_nombre && (
+        <p className="text-muted-foreground text-xs">
+          {t('header_aula', { nombre: header.aula_nombre })}
+        </p>
+      )}
+    </>
   )
 }

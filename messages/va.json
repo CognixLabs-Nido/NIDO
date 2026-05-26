@@ -996,7 +996,12 @@
     },
     "conversacion": {
       "title": "Conversa amb la família de {nombre}",
+      "title_tutor_profe": "Conversa amb {nombre}",
+      "title_tutor_aula": "Profes de l'aula {aula}",
+      "title_tutor_aula_sin_profe": "Aula {aula}",
       "header_aula": "Aula {nombre}",
+      "header_profe_subtitulo": "Profe de l'aula {aula}",
+      "header_profes_count": "{n} profes",
       "sin_mensajes": "Comença la conversa escrivint davall.",
       "composer_placeholder": "Escriu el teu missatge…",
       "enviar": "Enviar",

@@ -3,7 +3,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import type { ConversacionHeader, MensajeView } from '../types'
+import type { ConversacionHeader, MensajeView, ProfeAula } from '../types'
 
 interface ConversacionDetalle {
   header: ConversacionHeader
@@ -128,6 +128,38 @@ export async function getConversacionDetalle(
   const matricula =
     conv.nino?.matriculas?.find((m) => m.fecha_baja === null) ?? conv.nino?.matriculas?.[0] ?? null
 
+  // Profes activos del aula actual del niño. Para la vista del tutor: la
+  // cabecera muestra al/los profe(s) en lugar del nombre del niño. La RLS
+  // de `profes_aulas` permite a participantes de la conversación (admin
+  // del centro, profe del aula y tutor con permiso sobre el niño) leer
+  // esta tabla. Si la query falla o devuelve vacío, el header se renderiza
+  // con fallback a "Aula X" sin profe.
+  let profes_aula: ProfeAula[] = []
+  if (matricula?.aula_id) {
+    const { data: asignaciones, error: profesErr } = await supabase
+      .from('profes_aulas')
+      .select('profe_id, es_profe_principal, profe:usuarios!inner(nombre_completo)')
+      .eq('aula_id', matricula.aula_id)
+      .is('fecha_fin', null)
+      .is('deleted_at', null)
+
+    if (profesErr) {
+      logger.warn('getConversacionDetalle: profes_aulas', profesErr.message)
+    } else {
+      profes_aula = (asignaciones ?? [])
+        .filter((a): a is typeof a & { profe: { nombre_completo: string } } => a.profe !== null)
+        .map((a) => ({
+          usuario_id: a.profe_id,
+          nombre_completo: a.profe.nombre_completo,
+          es_principal: a.es_profe_principal,
+        }))
+        .sort((a, b) => {
+          if (a.es_principal !== b.es_principal) return a.es_principal ? -1 : 1
+          return a.nombre_completo.localeCompare(b.nombre_completo)
+        })
+    }
+  }
+
   return {
     header: {
       id: conv.id,
@@ -135,6 +167,7 @@ export async function getConversacionDetalle(
       nino_nombre: conv.nino?.nombre ?? '',
       nino_apellidos: conv.nino?.apellidos ?? '',
       aula_nombre: matricula?.aula?.nombre ?? null,
+      profes_aula,
     },
     mensajes: mensajesView,
     participo,
