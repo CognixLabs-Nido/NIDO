@@ -5,11 +5,13 @@ import {
   ChevronLeftIcon,
   HeartIcon,
   InfoIcon,
+  MessageCircleIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
@@ -35,6 +37,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const tNav = await getTranslations('family.nav')
   const tTabs = await getTranslations('family.nino.tabs')
   const tAusencia = await getTranslations('ausencia')
+  const tFicha = await getTranslations('messages.ficha_nino')
   const nino = await getNinoById(id)
   if (!nino) notFound()
 
@@ -99,6 +102,16 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
             {t('fecha_nacimiento')}: {nino.fecha_nacimiento}
           </p>
         </div>
+        {permisos.puede_recibir_mensajes && (
+          <Button
+            variant="default"
+            render={<Link href={`/${locale}/messages/nino/${id}`} />}
+            data-testid="escribir-profe-button"
+          >
+            <MessageCircleIcon className="size-4" />
+            <span className="ml-1">{tFicha('escribir_profe')}</span>
+          </Button>
+        )}
       </header>
 
       <section className="space-y-4">
