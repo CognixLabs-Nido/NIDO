@@ -694,4 +694,83 @@ describe('RLS mensajería — aislamiento, ámbitos y flag global', () => {
     expect(cenErr).not.toBeNull()
     expect(cenIns).toBeNull()
   })
+
+  // -------------------------------------------------------------------
+  // Regresión `fix/enviar-mensaje-centro-id`:
+  //   El server action enviar-mensaje pasaba `centro_id` con el UUID
+  //   placeholder '00000000-0000-0000-0000-000000000000' confiando en
+  //   que el trigger BEFORE INSERT `conversaciones_set_centro_id` lo
+  //   sobrescribiera. Pero el trigger solo actúa si NEW.centro_id IS
+  //   NULL — un UUID válido distinto de NULL pasaba sin tocarse y la
+  //   inserción reventaba con FK violation (`conversaciones_centro_id_fkey`)
+  //   porque ese UUID no existe en `centros`.
+  // -------------------------------------------------------------------
+
+  it('t25 — INSERT en conversaciones con centro_id placeholder UUID falla con FK violation', async () => {
+    // Reproducimos el bug original. Importante: usamos un tutor que SÍ es
+    // participante del niño (`tutorOtroNinoA2` vinculado a `ninoA2`). Con un
+    // tutor sin permiso, la RLS de INSERT rechazaría primero con `42501`
+    // antes de evaluar la FK, y enmascararía el bug real.
+    const client = await clientFor(tutorOtroNinoA2)
+    const { data, error } = await client
+      .from('conversaciones')
+      .insert({
+        nino_id: ninoA2.id, // niño SIN conversación previa para forzar INSERT
+        centro_id: '00000000-0000-0000-0000-000000000000',
+      })
+      .select('id')
+      .maybeSingle()
+    expect(error).not.toBeNull()
+    // FK violation: PostgreSQL devuelve SQLSTATE 23503 (foreign_key_violation).
+    // El mensaje incluye el nombre del constraint o la referencia a `centros`.
+    expect(error?.code === '23503' || /foreign key|centros/i.test(error?.message ?? '')).toBe(true)
+    expect(data).toBeNull()
+
+    // Limpieza por si acaso quedara fila huérfana (no debería).
+    await serviceClient
+      .from('conversaciones')
+      .delete()
+      .eq('centro_id', '00000000-0000-0000-0000-000000000000')
+  })
+
+  it('t26 — INSERT en conversaciones con centro_id real del niño funciona', async () => {
+    // Patrón nuevo del server action: leer centro del niño y pasarlo
+    // explícito. Reutilizamos ninoA2 (sin conversación previa por t03 que
+    // crea y limpia su propia fila).
+    const { data: nino } = await serviceClient
+      .from('ninos')
+      .select('centro_id')
+      .eq('id', ninoA2.id)
+      .single()
+    expect(nino?.centro_id).toBe(centroA.id)
+
+    const client = await clientFor(tutorOtroNinoA2)
+    const { data, error } = await client
+      .from('conversaciones')
+      .insert({
+        nino_id: ninoA2.id,
+        centro_id: nino!.centro_id,
+      })
+      .select('id, centro_id')
+      .single()
+    expect(error).toBeNull()
+    expect(data?.id).toBeTruthy()
+    expect(data?.centro_id).toBe(centroA.id)
+
+    // Y el INSERT de un mensaje sobre esta conversación también pasa.
+    const { data: msg, error: msgErr } = await client
+      .from('mensajes')
+      .insert({
+        conversacion_id: data!.id,
+        autor_id: tutorOtroNinoA2.id,
+        contenido: 't26-mensaje-tras-crear-conversacion',
+      })
+      .select('id')
+      .single()
+    expect(msgErr).toBeNull()
+    expect(msg?.id).toBeTruthy()
+
+    // Limpieza.
+    if (data?.id) await serviceClient.from('conversaciones').delete().eq('id', data.id)
+  })
 })

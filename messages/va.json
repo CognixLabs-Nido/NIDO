@@ -1057,6 +1057,8 @@
     },
     "errors": {
       "envio_fallo": "No s'ha pogut enviar. Torna-ho a provar.",
+      "nino_no_encontrado": "No trobem al xiquet. Refresca la pàgina o demana ajuda a l'administrador.",
+      "sin_permisos": "No tens permís per a enviar aquest missatge.",
       "ya_anulado": "Aquest missatge ja estava anul·lat.",
       "no_autorizado": "No tens accés a aquesta conversa.",
       "conexion": "Sense connexió. Reintentant…"

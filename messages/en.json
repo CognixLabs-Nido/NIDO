@@ -1057,6 +1057,8 @@
     },
     "errors": {
       "envio_fallo": "Couldn't send. Try again.",
+      "nino_no_encontrado": "We couldn't find this child. Refresh the page or contact the administrator.",
+      "sin_permisos": "You don't have permission to send this message.",
       "ya_anulado": "This message was already cancelled.",
       "no_autorizado": "You don't have access to this conversation.",
       "conexion": "Offline. Retrying…"
