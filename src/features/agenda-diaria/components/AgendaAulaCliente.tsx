@@ -74,6 +74,7 @@ export function AgendaAulaCliente({ aulaId, locale, fecha, resumenes }: Props) {
               <NinoAgendaCard
                 resumen={r}
                 fecha={fecha}
+                locale={locale}
                 diaCerrado={diaCerrado}
                 expanded={expanded === r.nino.id}
                 onToggle={() => setExpanded(expanded === r.nino.id ? null : r.nino.id)}
