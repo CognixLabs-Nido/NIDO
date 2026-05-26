@@ -10,10 +10,27 @@ import { fail, ok, type ActionResult } from '../types'
 
 /**
  * Envía un mensaje en la conversación del niño. Auto-crea la conversación
- * si no existe (idempotente: el INSERT en conversaciones usa ON CONFLICT
- * (nino_id) DO NOTHING).
+ * si no existe (lazy creation, ver ADR-0023 § "Conversaciones por niño").
  *
- * Validación cliente con Zod; RLS de BD enforza autoría y participación.
+ * Origen del `centro_id` de la conversación: se deriva del niño mediante
+ * `SELECT centro_id FROM ninos WHERE id = nino_id`. Antes del hotfix
+ * `fix/enviar-mensaje-centro-id` se pasaba el UUID placeholder
+ * '00000000-0000-0000-0000-000000000000' confiando en que el trigger
+ * BEFORE INSERT `conversaciones_set_centro_id` lo sobrescribiera. **Pero
+ * el trigger solo actúa si `NEW.centro_id IS NULL`**, y un UUID válido
+ * pasaba por su check sin tocarse, provocando un FK violation contra
+ * `centros` en BD. La columna `centro_id` es NOT NULL en TS y BD, así que
+ * derivar el valor explícitamente desde `ninos.centro_id` es la opción
+ * limpia: documenta el flujo y elimina la dependencia del trigger.
+ *
+ * Errores tipados (i18n keys de `messages.errors.*`):
+ *  - `no_autorizado`: sin sesión.
+ *  - `nino_no_encontrado`: el niño no existe o RLS no lo deja leer.
+ *  - `sin_permisos`: la RLS de mensajes/conversaciones rechazó la
+ *    operación (código Postgres 42501 / 23503 sobre tablas de mensajería).
+ *  - `envio_fallo`: error inesperado (último recurso). Va con
+ *    console.error server-side para que aparezca en logs y se pueda
+ *    diagnosticar.
  */
 export async function enviarMensaje(
   input: MensajeInput
@@ -28,39 +45,61 @@ export async function enviarMensaje(
   const userId = userData.user?.id
   if (!userId) return fail('messages.errors.no_autorizado')
 
-  // 1. Localizar o crear conversación. La RLS de conversaciones.INSERT exige
-  //    que el usuario sea participante (profe/admin/tutor con permiso).
-  const { data: convExistente } = await supabase
+  // 1. Resolver el centro del niño. Si no existe (o RLS oculta la fila)
+  //    devolvemos `nino_no_encontrado` para distinguirlo del fallo genérico.
+  const { data: nino, error: ninoErr } = await supabase
+    .from('ninos')
+    .select('centro_id')
+    .eq('id', parsed.data.nino_id)
+    .maybeSingle()
+
+  if (ninoErr) {
+    console.error('[enviarMensaje] ninos.select falló:', ninoErr)
+    return fail('messages.errors.envio_fallo')
+  }
+  if (!nino) {
+    return fail('messages.errors.nino_no_encontrado')
+  }
+
+  // 2. Localizar o crear conversación. RLS de conversaciones.INSERT exige
+  //    que el usuario sea participante. Pasamos centro_id explícito (el
+  //    trigger BD también lo cubriría si fuese NULL, pero el tipo TS lo
+  //    quiere NOT NULL).
+  const { data: convExistente, error: convSelErr } = await supabase
     .from('conversaciones')
     .select('id')
     .eq('nino_id', parsed.data.nino_id)
     .maybeSingle()
 
+  if (convSelErr) {
+    console.error('[enviarMensaje] conversaciones.select falló:', convSelErr)
+    return fail('messages.errors.envio_fallo')
+  }
+
   let conversacionId = convExistente?.id ?? null
 
   if (!conversacionId) {
-    // centro_id se rellena automáticamente por el trigger BEFORE INSERT
-    // (`conversaciones_set_centro_id`). Aquí pasamos un placeholder que la
-    // función sobrescribe.
     const { data: convNueva, error: convErr } = await supabase
       .from('conversaciones')
       .insert({
         nino_id: parsed.data.nino_id,
-        // Para satisfacer el tipo TS NOT NULL; el trigger BD lo rellena con
-        // el centro real derivado del niño. Si la RLS rechaza, no llega a la BD.
-        centro_id: '00000000-0000-0000-0000-000000000000',
+        centro_id: nino.centro_id,
       })
       .select('id')
       .single()
 
     if (convErr || !convNueva) {
       logger.warn('enviarMensaje: crear conversación falló', convErr?.message)
+      console.error('[enviarMensaje] conversaciones.insert falló:', convErr)
+      if (convErr?.code === '42501') {
+        return fail('messages.errors.sin_permisos')
+      }
       return fail('messages.errors.envio_fallo')
     }
     conversacionId = convNueva.id
   }
 
-  // 2. Insertar el mensaje (autor_id = auth.uid() validado por RLS WITH CHECK).
+  // 3. Insertar el mensaje (autor_id = auth.uid() validado por RLS WITH CHECK).
   const { data: mensaje, error: msgErr } = await supabase
     .from('mensajes')
     .insert({
@@ -73,6 +112,10 @@ export async function enviarMensaje(
 
   if (msgErr || !mensaje) {
     logger.warn('enviarMensaje: insertar mensaje falló', msgErr?.message)
+    console.error('[enviarMensaje] mensajes.insert falló:', msgErr)
+    if (msgErr?.code === '42501') {
+      return fail('messages.errors.sin_permisos')
+    }
     return fail('messages.errors.envio_fallo')
   }
 

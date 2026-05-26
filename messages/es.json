@@ -1057,6 +1057,8 @@
     },
     "errors": {
       "envio_fallo": "No se pudo enviar. Inténtalo de nuevo.",
+      "nino_no_encontrado": "No encontramos al niño. Refresca la página o pide ayuda al administrador.",
+      "sin_permisos": "No tienes permiso para enviar este mensaje.",
       "ya_anulado": "Este mensaje ya estaba anulado.",
       "no_autorizado": "No tienes acceso a esta conversación.",
       "conexion": "Sin conexión. Reintentando…"
