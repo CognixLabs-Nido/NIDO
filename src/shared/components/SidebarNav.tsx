@@ -13,6 +13,8 @@ export interface SidebarItem {
   href: string
   label: string
   icon: ReactNode
+  /** Slot opcional a la derecha del label (p.ej. badge de no leídos). */
+  trailing?: ReactNode
 }
 
 interface SidebarNavProps {
@@ -83,7 +85,8 @@ export function SidebarNav({
                       />
                     )}
                     <span className="text-current [&>svg]:size-5">{item.icon}</span>
-                    <span>{item.label}</span>
+                    <span className="flex-1">{item.label}</span>
+                    {item.trailing}
                   </Link>
                 </li>
               )
@@ -147,6 +150,7 @@ export function SidebarNav({
               >
                 <span className="[&>svg]:size-4">{item.icon}</span>
                 <span>{item.label}</span>
+                {item.trailing}
               </Link>
             )
           })}
