@@ -1,20 +1,13 @@
-import {
-  LayoutDashboardIcon,
-  Building2Icon,
-  CalendarDaysIcon,
-  CalendarRangeIcon,
-  BookOpenIcon,
-  BabyIcon,
-  HistoryIcon,
-  UtensilsIcon,
-} from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
-import { SidebarNav, type SidebarItem } from '@/shared/components/SidebarNav'
+import { MessagingBadge } from '@/features/messaging/components/MessagingBadge'
+import { countNoLeidos } from '@/features/messaging/queries/count-no-leidos'
+import { SidebarNav } from '@/shared/components/SidebarNav'
+import { buildSidebarItems } from '@/shared/lib/sidebar-items'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -33,21 +26,9 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
 
   const user = await getCurrentUser()
   const centroLogo = await getCentroLogo(centroId)
+  const { total: unread } = await countNoLeidos()
 
-  const items: SidebarItem[] = [
-    {
-      href: `/${locale}/admin`,
-      label: t('dashboard'),
-      icon: <LayoutDashboardIcon />,
-    },
-    { href: `/${locale}/admin/centro`, label: t('centro'), icon: <Building2Icon /> },
-    { href: `/${locale}/admin/cursos`, label: t('cursos'), icon: <CalendarDaysIcon /> },
-    { href: `/${locale}/admin/aulas`, label: t('aulas'), icon: <BookOpenIcon /> },
-    { href: `/${locale}/admin/calendario`, label: t('calendario'), icon: <CalendarRangeIcon /> },
-    { href: `/${locale}/admin/menus`, label: t('menus'), icon: <UtensilsIcon /> },
-    { href: `/${locale}/admin/ninos`, label: t('ninos'), icon: <BabyIcon /> },
-    { href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> },
-  ]
+  const items = await buildSidebarItems('admin', locale, <MessagingBadge initialTotal={unread} />)
 
   return (
     <div className="bg-background flex min-h-[100dvh] flex-col md:flex-row">

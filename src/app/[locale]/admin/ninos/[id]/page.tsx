@@ -3,6 +3,7 @@ import {
   ChevronLeftIcon,
   HeartIcon,
   InfoIcon,
+  MessageCircleIcon,
   UsersIcon,
   GraduationCapIcon,
 } from 'lucide-react'
@@ -11,6 +12,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Table,
@@ -39,6 +41,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const { id, locale } = await params
   const t = await getTranslations('admin.ninos')
   const tMed = await getTranslations('medico')
+  const tFicha = await getTranslations('messages.ficha_nino')
   const nino = await getNinoById(id)
   if (!nino) notFound()
 
@@ -80,6 +83,14 @@ export default async function NinoDetallePage({ params }: PageProps) {
           </p>
         </div>
         {matriculaActiva && <Badge variant="warm">{matriculaActiva.aula_nombre}</Badge>}
+        <Button
+          variant="default"
+          render={<Link href={`/${locale}/messages/nino/${id}`} />}
+          data-testid="escribir-familia-button"
+        >
+          <MessageCircleIcon className="size-4" />
+          <span className="ml-1">{tFicha('escribir_familia')}</span>
+        </Button>
       </header>
 
       <Tabs defaultValue="personales">

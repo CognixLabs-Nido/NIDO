@@ -66,7 +66,7 @@ Detalle completo en `@./docs/conventions.md`.
 ## Modelo de datos (35 tablas)
 
 - **Core (10)**: centros, cursos_academicos, aulas, usuarios, roles_usuario, ninos, info_medica_emergencia, matriculas, vinculos_familiares, profes_aulas.
-- **Operativas (20)**: agendas_diarias, comidas, biberones, suenos, deposiciones, asistencias, ausencias, conversaciones, mensajes, mensaje_lecturas, recordatorios, eventos, confirmaciones_evento, autorizaciones, firmas_autorizacion, plantillas_informe, informes_evolucion, publicaciones, media, media_etiquetas.
+- **Operativas (20)**: agendas_diarias, comidas, biberones, suenos, deposiciones, asistencias, ausencias, dias_centro, plantillas_menu_mensual, menu_dia, conversaciones, mensajes, lectura_conversacion, anuncios, lectura_anuncio, recordatorios, eventos, confirmaciones_evento, autorizaciones, firmas_autorizacion, plantillas_informe, informes_evolucion, publicaciones, media, media_etiquetas.
 - **Transversales (5)**: audit_log, notificaciones_push, push_subscriptions, invitaciones, consentimientos.
 
 Reglas obligatorias del modelo:

@@ -1,11 +1,13 @@
-import { CalendarRangeIcon, LayoutDashboardIcon } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
-import { SidebarNav, type SidebarItem } from '@/shared/components/SidebarNav'
+import { MessagingBadge } from '@/features/messaging/components/MessagingBadge'
+import { countNoLeidos } from '@/features/messaging/queries/count-no-leidos'
+import { SidebarNav } from '@/shared/components/SidebarNav'
+import { buildSidebarItems } from '@/shared/lib/sidebar-items'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -24,19 +26,13 @@ export default async function TeacherLayout({ children, params }: LayoutProps) {
 
   const user = await getCurrentUser()
   const centroLogo = await getCentroLogo(centroId)
+  const { total: unread } = await countNoLeidos()
 
-  const items: SidebarItem[] = [
-    {
-      href: `/${locale}/teacher`,
-      label: t('dashboard'),
-      icon: <LayoutDashboardIcon />,
-    },
-    {
-      href: `/${locale}/teacher/calendario`,
-      label: t('calendario'),
-      icon: <CalendarRangeIcon />,
-    },
-  ]
+  const items = await buildSidebarItems(
+    rol === 'admin' ? 'admin' : 'profe',
+    locale,
+    <MessagingBadge initialTotal={unread} />
+  )
 
   return (
     <div className="bg-background flex min-h-[100dvh] flex-col md:flex-row">

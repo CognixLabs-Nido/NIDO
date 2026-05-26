@@ -10,8 +10,9 @@
 | 3    | Agenda diaria + bienestar (lactancia D, check-in B) | ✅ Cerrada   |
 | 4    | Asistencia y ausencias                              | ✅ Cerrada   |
 | 4.5a | Calendario laboral del centro                       | ✅ Cerrada   |
-| 4.5b | Menú mensual + pase de lista comida                 | 🚧 En curso  |
-| 5    | Mensajería profe ↔ familia                          | ⏳ Pendiente |
+| 4.5b | Menú mensual + pase de lista comida                 | ✅ Cerrada   |
+| 5    | Mensajería profe ↔ familia + anuncios               | ✅ Cerrada   |
+| 5.5  | Push notifications (transversal — ADR-0025)         | ⏳ Pendiente |
 | 6    | Recordatorios bidireccionales (E)                   | ⏳ Pendiente |
 | 7    | Calendario y eventos                                | ⏳ Pendiente |
 | 8    | Autorizaciones + firma digital                      | ⏳ Pendiente |

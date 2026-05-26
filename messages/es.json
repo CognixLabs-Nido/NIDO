@@ -174,7 +174,8 @@
       "audit": "Audit log",
       "perfil": "Perfil",
       "calendario": "Calendario",
-      "menus": "Menús"
+      "menus": "Menús",
+      "mensajeria": "Mensajería"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -330,7 +331,8 @@
       "aria_label": "Navegación profe",
       "dashboard": "Inicio",
       "perfil": "Perfil",
-      "calendario": "Calendario"
+      "calendario": "Calendario",
+      "mensajeria": "Mensajería"
     },
     "dashboard": {
       "title": "Mis aulas",
@@ -354,7 +356,8 @@
       "aria_label": "Navegación familia",
       "dashboard": "Inicio",
       "perfil": "Perfil",
-      "calendario": "Calendario"
+      "calendario": "Calendario",
+      "mensajeria": "Mensajería"
     },
     "dashboard": {
       "title": "Mis niños",
@@ -963,6 +966,94 @@
       "error_publicar": "No se pudo publicar. Inténtalo de nuevo.",
       "error_fuera_de_ventana": "Ya no puedes editar este día.",
       "nada_que_guardar": "No hay cantidades marcadas que guardar."
+    }
+  },
+  "messages": {
+    "title": "Mensajería",
+    "subtitle": "Conversaciones con las familias y anuncios del centro.",
+    "badge_aria": "{n} mensajes sin leer",
+    "tabs": {
+      "conversaciones": "Conversaciones",
+      "anuncios": "Anuncios"
+    },
+    "lista": {
+      "vacia_conversaciones": "Aún no tienes conversaciones.",
+      "vacia_anuncios": "Sin anuncios por ahora.",
+      "sin_preview": "(sin mensajes)",
+      "preview_anulado": "(mensaje anulado)",
+      "aula_label": "Aula {nombre}",
+      "no_leidos": "{n} sin leer"
+    },
+    "conversacion": {
+      "title": "Conversación con la familia de {nombre}",
+      "header_aula": "Aula {nombre}",
+      "sin_mensajes": "Empieza la conversación escribiendo abajo.",
+      "composer_placeholder": "Escribe tu mensaje…",
+      "enviar": "Enviar",
+      "enviando": "Enviando…",
+      "contador": "{n} de {max}",
+      "rol_profe": "Profe",
+      "rol_tutor": "Familia",
+      "rol_admin": "Dirección",
+      "yo": "Tú",
+      "volver": "Volver a la lista"
+    },
+    "anuncio": {
+      "nuevo": "Nuevo anuncio",
+      "ambito_label": "Ámbito",
+      "ambito_aula": "Solo a un aula",
+      "ambito_centro": "A todo el centro",
+      "aula_label": "Aula",
+      "aula_placeholder": "Selecciona un aula",
+      "titulo_label": "Título",
+      "titulo_placeholder": "Ej. Cierre por nieve mañana",
+      "contenido_label": "Contenido",
+      "contenido_placeholder": "Cuenta lo que necesites a las familias…",
+      "publicar": "Publicar",
+      "publicando": "Publicando…",
+      "publicado_toast": "Anuncio publicado",
+      "lectores": "Leído por {n} de {total}",
+      "ver_lectores": "Ver lectura",
+      "volver": "Volver a la lista",
+      "destinatario_aula": "Aula {nombre}",
+      "destinatario_centro": "Todo el centro",
+      "autor_label": "Publicado por {nombre}"
+    },
+    "anular": {
+      "boton": "Marcar como erróneo",
+      "confirm_title": "Marcar como erróneo",
+      "confirm_descripcion": "Quedará tachado y visible para todos como anulado. No se puede deshacer desde la app. ¿Continuar?",
+      "confirm_si": "Sí, marcar como erróneo",
+      "cancelar": "Cancelar",
+      "anulando": "Marcando…",
+      "anuncio_banner": "Este anuncio ha sido anulado por su autor."
+    },
+    "estado": {
+      "anulado": "Anulado"
+    },
+    "sin_permiso": {
+      "title": "No tienes permiso para usar la mensajería",
+      "description": "Pide al administrador del centro que te lo active.",
+      "cta_admin": "Contactar con el administrador"
+    },
+    "validation": {
+      "contenido_vacio": "Escribe algo antes de enviar.",
+      "contenido_largo": "Máximo 2000 caracteres.",
+      "contenido_largo_anuncio": "Máximo 4000 caracteres.",
+      "titulo_vacio": "El título es obligatorio.",
+      "titulo_largo": "Máximo 200 caracteres.",
+      "aula_requerida": "Selecciona un aula.",
+      "aula_no_aplica_centro": "El ámbito centro no lleva aula."
+    },
+    "errors": {
+      "envio_fallo": "No se pudo enviar. Inténtalo de nuevo.",
+      "ya_anulado": "Este mensaje ya estaba anulado.",
+      "no_autorizado": "No tienes acceso a esta conversación.",
+      "conexion": "Sin conexión. Reintentando…"
+    },
+    "ficha_nino": {
+      "escribir_familia": "Escribir a la familia",
+      "escribir_profe": "Escribir a la profe"
     }
   }
 }

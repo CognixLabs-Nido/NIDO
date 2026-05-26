@@ -421,3 +421,48 @@ F4.5a + F4.5b (rediseño): calendario laboral del centro primero, luego menú me
 ### Para Fase 5 (mensajería)
 
 - F4.5b cierra el módulo de menús de Ola 1. Fase 5 (mensajería profe↔familia) puede arrancar.
+
+---
+
+## Fase 5 — Mensajería profe ↔ familia + anuncios
+
+**Fecha:** 2026-05-25
+**Estado:** ✅ Cerrada (pendiente merge a `main` y deploy verde en Vercel).
+
+### Completado
+
+- **Migración inicial** `20260525154228_phase5_messaging.sql` (523 líneas): 5 tablas (`conversaciones`, `mensajes`, `lectura_conversacion`, `anuncios`, `lectura_anuncio`), ENUM `ambito_anuncio`, 4 helpers SECURITY DEFINER, 2 triggers funcionales (centro_id auto, last_message_at), RLS por tabla con default DENY, `audit_trigger_function()` ampliada con 3 ramas, Realtime publication sobre `mensajes` y `anuncios`.
+- **Migración correctiva** `20260525201151_phase5_fix_audience_returning.sql`: nuevo helper row-aware `usuario_es_audiencia_anuncio_row(centro_id, autor_id, ambito, aula_id)` y reescritura de `anuncios_select`. Necesario para que `INSERT…RETURNING` sobre `anuncios` no fuera rechazado por la regla MVCC de Postgres (helper STABLE no ve la fila recién insertada de la misma sentencia). Documentado como gotcha transversal en `rls-policies.md`.
+- **Server actions**: `enviar-mensaje` (con auto-creación lazy de conversación), `marcar-mensaje-erroneo`, `marcar-conversacion-leida`, `publicar-anuncio`, `marcar-anuncio-erroneo`, `marcar-anuncio-leido`, `get-unread-counts` (wrapper para Client Components).
+- **Queries server-side**: `getConversacionesDelUsuario` (con preview + count no leídos), `getAnunciosDelUsuario`, `getConversacionDetalle`, `getAnuncioDetalle` (incluye lectores teóricos si soy autor), `countNoLeidos`, `getAulasParaAnuncio`, `getConversacionByNino`.
+- **5 rutas** bajo `/messages` (transversal a roles): `page` (lista con tabs), `conversacion/[id]`, `anuncios/[id]`, `nuevo-anuncio`, `nino/[ninoId]` (entrada lazy desde ficha del niño).
+- **MessagingBadge global**: visible en sidebar de TODAS las pantallas logueadas. Suscripción Realtime sobre `mensajes` y `anuncios` durante toda la sesión. RLS de SELECT filtra notificaciones → `puede_recibir_mensajes=false` ⇒ badge siempre 0.
+- **Refactor de sidebar**: helper compartido `buildSidebarItems(rol, locale, badge)` consumido por los 4 layouts (admin/teacher/family/messages). `SidebarItem` ahora soporta `trailing?: ReactNode` para el slot del badge.
+- **Botón "Escribir a la familia/profe"** en `/admin/ninos/[id]` y `/family/nino/[id]` (este último gated por `permisos.puede_recibir_mensajes`).
+- **i18n trilingüe** namespace `messages.*` (~70 claves por idioma) + 3 nuevas claves `*.nav.mensajeria`. JSON validados es/en/va.
+- **Patrón "marcar como erróneo"** unificado: componente `<MarcarErroneoButton target="mensaje" | "anuncio">` reutilizable, flag `erroneo boolean` + prefijo `[anulado] ` (10 chars), tachado visual con badge "Anulado".
+- **Tests**: 271 totales (+54 sobre baseline 217 — 27 schemas Zod + 20 RLS + 4 helpers + 3 audit). Sin regresión en F2-F4.5b.
+- **Playwright** `e2e/messaging.spec.ts`: 8 smoke (5 rutas protegidas + 3 i18n) + 3 E2E reales en `test.skip` (mensaje-realtime, anuncio-aula, leer-baja-badge). Mismo patrón que F3/F4.
+
+### Decisiones (ADRs)
+
+- **ADR-0023 — Modelo de mensajería con 5 tablas separadas**: rechazada la tabla única discriminada. Razón: RLS y Realtime con disjunciones por tipo aumentan superficie de bugs y entregan eventos cruzados. Las dos formas (chat bidireccional vs broadcast) tienen políticas, índices y UI claramente distintas.
+- **ADR-0024 — Participantes y audiencia calculados dinámicamente**: rechazadas las tablas de membresía sincronizadas por triggers. La membresía es "estado actual" y cualquier persistencia crea vector de inconsistencia. Cálculo en runtime vía helpers SECURITY DEFINER es coherente y siempre correcto.
+- **ADR-0025 — Push notifications fuera de F5 (F5.5 transversal)**: push es transversal a F6+. F5.5 lo construye una vez para todos. F5 cierra con badge in-app vivo vía Realtime.
+
+### Aprendizaje transversal
+
+- **Gotcha MVCC en helpers de policies SELECT con `INSERT…RETURNING`**: descubierto al testear t12/t13 (admin INSERT anuncio). El INSERT pasaba WITH CHECK pero el `RETURNING` lo rechazaba. Causa: helper STABLE invocado en USING de SELECT hacía lookup interno a la tabla; por MVCC, no veía la fila recién insertada de la misma sentencia. Fix: helper row-aware que recibe los campos por parámetro sin lookup. Documentado en `docs/architecture/rls-policies.md` para evitar el mismo bug en F8, F10, etc.
+
+### Pendiente
+
+- Validaciones finales Checkpoint C (`npm run typecheck && lint && test && test:e2e && build`).
+- Push branch como PR draft y smoke manual en preview Vercel:
+  1. Profe envía mensaje desde ficha admin del niño → tutor lo ve en `/messages` sin recargar; badge sube.
+  2. Admin publica anuncio centro → todos los tutores con permiso lo ven aparecer.
+  3. Tutor abre conversación con badge=1 → badge baja a 0 sin recargar.
+  4. Tutor con `puede_recibir_mensajes=false` ve `/messages` vacío en ambos tabs y badge siempre a 0.
+
+### Para Fase 5.5 (push notifications)
+
+- Tabla `push_subscriptions` + `notificaciones_push`, edge function `notify-on-event` con payload normalizado, registro Service Worker en cliente, UI opt-in con consentimiento. Triggers en `mensajes` y `anuncios` invocan la edge function sin tocar la lógica F5.

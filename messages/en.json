@@ -174,7 +174,8 @@
       "audit": "Audit log",
       "perfil": "Profile",
       "calendario": "Calendar",
-      "menus": "Menus"
+      "menus": "Menus",
+      "mensajeria": "Messages"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -330,7 +331,8 @@
       "aria_label": "Teacher navigation",
       "dashboard": "Home",
       "perfil": "Profile",
-      "calendario": "Calendar"
+      "calendario": "Calendar",
+      "mensajeria": "Messages"
     },
     "dashboard": {
       "title": "My classrooms",
@@ -354,7 +356,8 @@
       "aria_label": "Family navigation",
       "dashboard": "Home",
       "perfil": "Profile",
-      "calendario": "Calendar"
+      "calendario": "Calendar",
+      "mensajeria": "Messages"
     },
     "dashboard": {
       "title": "My children",
@@ -963,6 +966,94 @@
       "error_publicar": "Couldn't publish. Try again.",
       "error_fuera_de_ventana": "You can't edit this day anymore.",
       "nada_que_guardar": "No quantities to save."
+    }
+  },
+  "messages": {
+    "title": "Messages",
+    "subtitle": "Conversations with families and centre announcements.",
+    "badge_aria": "{n} unread messages",
+    "tabs": {
+      "conversaciones": "Conversations",
+      "anuncios": "Announcements"
+    },
+    "lista": {
+      "vacia_conversaciones": "You don't have any conversations yet.",
+      "vacia_anuncios": "No announcements yet.",
+      "sin_preview": "(no messages)",
+      "preview_anulado": "(message cancelled)",
+      "aula_label": "Classroom {nombre}",
+      "no_leidos": "{n} unread"
+    },
+    "conversacion": {
+      "title": "Conversation with {nombre}'s family",
+      "header_aula": "Classroom {nombre}",
+      "sin_mensajes": "Start the conversation by writing below.",
+      "composer_placeholder": "Type your message…",
+      "enviar": "Send",
+      "enviando": "Sending…",
+      "contador": "{n} of {max}",
+      "rol_profe": "Teacher",
+      "rol_tutor": "Family",
+      "rol_admin": "Management",
+      "yo": "You",
+      "volver": "Back to list"
+    },
+    "anuncio": {
+      "nuevo": "New announcement",
+      "ambito_label": "Scope",
+      "ambito_aula": "A single classroom",
+      "ambito_centro": "The whole centre",
+      "aula_label": "Classroom",
+      "aula_placeholder": "Choose a classroom",
+      "titulo_label": "Title",
+      "titulo_placeholder": "E.g. Closed tomorrow due to snow",
+      "contenido_label": "Content",
+      "contenido_placeholder": "Tell families what you need to share…",
+      "publicar": "Publish",
+      "publicando": "Publishing…",
+      "publicado_toast": "Announcement published",
+      "lectores": "Read by {n} of {total}",
+      "ver_lectores": "See readers",
+      "volver": "Back to list",
+      "destinatario_aula": "Classroom {nombre}",
+      "destinatario_centro": "Whole centre",
+      "autor_label": "Published by {nombre}"
+    },
+    "anular": {
+      "boton": "Mark as erroneous",
+      "confirm_title": "Mark as erroneous",
+      "confirm_descripcion": "It will be crossed out and visible to everyone as cancelled. This cannot be undone from the app. Continue?",
+      "confirm_si": "Yes, mark as erroneous",
+      "cancelar": "Cancel",
+      "anulando": "Marking…",
+      "anuncio_banner": "This announcement was cancelled by its author."
+    },
+    "estado": {
+      "anulado": "Cancelled"
+    },
+    "sin_permiso": {
+      "title": "You don't have access to messages",
+      "description": "Ask the centre administrator to enable it.",
+      "cta_admin": "Contact the administrator"
+    },
+    "validation": {
+      "contenido_vacio": "Type something before sending.",
+      "contenido_largo": "Maximum 2000 characters.",
+      "contenido_largo_anuncio": "Maximum 4000 characters.",
+      "titulo_vacio": "Title is required.",
+      "titulo_largo": "Maximum 200 characters.",
+      "aula_requerida": "Choose a classroom.",
+      "aula_no_aplica_centro": "Whole-centre scope doesn't take a classroom."
+    },
+    "errors": {
+      "envio_fallo": "Couldn't send. Try again.",
+      "ya_anulado": "This message was already cancelled.",
+      "no_autorizado": "You don't have access to this conversation.",
+      "conexion": "Offline. Retrying…"
+    },
+    "ficha_nino": {
+      "escribir_familia": "Write to the family",
+      "escribir_profe": "Write to the teacher"
     }
   }
 }

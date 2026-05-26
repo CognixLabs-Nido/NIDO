@@ -14,31 +14,48 @@ interface LayoutProps {
   params: Promise<{ locale: string }>
 }
 
-export default async function FamilyLayout({ children, params }: LayoutProps) {
+/**
+ * Layout transversal de mensajería. Es accesible para los 4 roles
+ * (admin/profe/tutor_legal/autorizado). La sidebar muestra los items
+ * del rol del usuario para que la navegación sea coherente cuando
+ * vuelve a /admin, /teacher o /family desde /messages.
+ *
+ * El servicio role no entra aquí (es solo backend).
+ */
+export default async function MessagesLayout({ children, params }: LayoutProps) {
   const { locale } = await params
-  const t = await getTranslations('family.nav')
+  const tNav = await getTranslations('admin.nav') // 'perfil' es común a los tres roles
   const tRoles = await getTranslations('auth.select_role.roles')
+
   const centroId = await getCentroActualId()
   if (!centroId) redirect(`/${locale}/login`)
 
-  const rol = await getRolEnCentro(centroId)
-  if (rol !== 'tutor_legal' && rol !== 'autorizado' && rol !== 'admin') {
+  const rolRaw = await getRolEnCentro(centroId)
+  if (
+    !rolRaw ||
+    (rolRaw !== 'admin' &&
+      rolRaw !== 'profe' &&
+      rolRaw !== 'tutor_legal' &&
+      rolRaw !== 'autorizado')
+  ) {
     redirect(`/${locale}/forbidden`)
   }
+  const rol = rolRaw as 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
 
   const user = await getCurrentUser()
   const centroLogo = await getCentroLogo(centroId)
   const { total: unread } = await countNoLeidos()
 
-  // Si el usuario es admin que entra por error en family, le mostramos
-  // sus items propios; si es autorizado, los de family (todos los items
-  // se filtran por su acceso al pulsar).
-  const sidebarRol: 'admin' | 'tutor_legal' | 'autorizado' = rol === 'admin' ? 'admin' : rol
-  const items = await buildSidebarItems(
-    sidebarRol,
-    locale,
-    <MessagingBadge initialTotal={unread} />
-  )
+  const items = await buildSidebarItems(rol, locale, <MessagingBadge initialTotal={unread} />)
+
+  const roleLabel =
+    rol === 'admin'
+      ? tRoles('admin')
+      : rol === 'profe'
+        ? tRoles('profe')
+        : rol === 'autorizado'
+          ? tRoles('autorizado')
+          : tRoles('tutor_legal')
 
   return (
     <div className="bg-background flex min-h-[100dvh] flex-col md:flex-row">
@@ -46,16 +63,16 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
         locale={locale}
         items={items}
         user={{
-          name: user?.nombreCompleto ?? user?.email ?? t('perfil'),
-          roleLabel: rol === 'autorizado' ? tRoles('autorizado') : tRoles('tutor_legal'),
+          name: user?.nombreCompleto ?? user?.email ?? tNav('perfil'),
+          roleLabel,
         }}
         centroLogo={centroLogo ? { url: centroLogo.logoUrl, name: centroLogo.nombre } : null}
         profileHref={`/${locale}/profile`}
-        profileLabel={t('perfil')}
-        ariaLabel={t('aria_label')}
+        profileLabel={tNav('perfil')}
+        ariaLabel={tNav('aria_label')}
       />
       <main className="min-w-0 flex-1">
-        <div className="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-8">{children}</div>
+        <div className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-8">{children}</div>
       </main>
     </div>
   )

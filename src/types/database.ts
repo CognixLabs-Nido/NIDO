@@ -49,6 +49,67 @@ export type Database = {
           },
         ]
       }
+      anuncios: {
+        Row: {
+          ambito: Database['public']['Enums']['ambito_anuncio']
+          aula_id: string | null
+          autor_id: string
+          centro_id: string
+          contenido: string
+          created_at: string
+          erroneo: boolean
+          id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ambito: Database['public']['Enums']['ambito_anuncio']
+          aula_id?: string | null
+          autor_id: string
+          centro_id: string
+          contenido: string
+          created_at?: string
+          erroneo?: boolean
+          id?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ambito?: Database['public']['Enums']['ambito_anuncio']
+          aula_id?: string | null
+          autor_id?: string
+          centro_id?: string
+          contenido?: string
+          created_at?: string
+          erroneo?: boolean
+          id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'anuncios_aula_id_fkey'
+            columns: ['aula_id']
+            isOneToOne: false
+            referencedRelation: 'aulas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'anuncios_autor_id_fkey'
+            columns: ['autor_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'anuncios_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       asistencias: {
         Row: {
           created_at: string
@@ -460,6 +521,48 @@ export type Database = {
           },
         ]
       }
+      conversaciones: {
+        Row: {
+          centro_id: string
+          created_at: string
+          id: string
+          last_message_at: string | null
+          nino_id: string
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          nino_id: string
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          nino_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'conversaciones_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'conversaciones_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: true
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       cursos_academicos: {
         Row: {
           centro_id: string
@@ -782,6 +885,78 @@ export type Database = {
           },
         ]
       }
+      lectura_anuncio: {
+        Row: {
+          anuncio_id: string
+          id: string
+          leido_at: string
+          usuario_id: string
+        }
+        Insert: {
+          anuncio_id: string
+          id?: string
+          leido_at: string
+          usuario_id: string
+        }
+        Update: {
+          anuncio_id?: string
+          id?: string
+          leido_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'lectura_anuncio_anuncio_id_fkey'
+            columns: ['anuncio_id']
+            isOneToOne: false
+            referencedRelation: 'anuncios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'lectura_anuncio_usuario_id_fkey'
+            columns: ['usuario_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      lectura_conversacion: {
+        Row: {
+          conversacion_id: string
+          id: string
+          last_read_at: string
+          usuario_id: string
+        }
+        Insert: {
+          conversacion_id: string
+          id?: string
+          last_read_at: string
+          usuario_id: string
+        }
+        Update: {
+          conversacion_id?: string
+          id?: string
+          last_read_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'lectura_conversacion_conversacion_id_fkey'
+            columns: ['conversacion_id']
+            isOneToOne: false
+            referencedRelation: 'conversaciones'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'lectura_conversacion_usuario_id_fkey'
+            columns: ['usuario_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       matriculas: {
         Row: {
           aula_id: string
@@ -836,6 +1011,51 @@ export type Database = {
             columns: ['nino_id']
             isOneToOne: false
             referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      mensajes: {
+        Row: {
+          autor_id: string
+          contenido: string
+          conversacion_id: string
+          created_at: string
+          erroneo: boolean
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          autor_id: string
+          contenido: string
+          conversacion_id: string
+          created_at?: string
+          erroneo?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          autor_id?: string
+          contenido?: string
+          conversacion_id?: string
+          created_at?: string
+          erroneo?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'mensajes_autor_id_fkey'
+            columns: ['autor_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'mensajes_conversacion_id_fkey'
+            columns: ['conversacion_id']
+            isOneToOne: false
+            referencedRelation: 'conversaciones'
             referencedColumns: ['id']
           },
         ]
@@ -1227,6 +1447,10 @@ export type Database = {
       }
       centro_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       centro_de_aula: { Args: { p_aula_id: string }; Returns: string }
+      centro_de_conversacion: {
+        Args: { p_conversacion_id: string }
+        Returns: string
+      }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
       centro_de_plantilla: { Args: { p_plantilla_id: string }; Returns: string }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
@@ -1271,8 +1495,16 @@ export type Database = {
         }
       }
       nino_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
+      nino_de_conversacion: {
+        Args: { p_conversacion_id: string }
+        Returns: string
+      }
       nino_toma_comida_solida: { Args: { p_nino_id: string }; Returns: boolean }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
+      puede_participar_conversacion: {
+        Args: { p_conversacion_id: string }
+        Returns: boolean
+      }
       set_info_medica_emergencia_cifrada: {
         Args: {
           p_alergias_graves: string
@@ -1294,8 +1526,22 @@ export type Database = {
         Returns: Database['public']['Enums']['tipo_dia_centro']
       }
       usuario_actual: { Args: never; Returns: string }
+      usuario_es_audiencia_anuncio: {
+        Args: { p_anuncio_id: string }
+        Returns: boolean
+      }
+      usuario_es_audiencia_anuncio_row: {
+        Args: {
+          p_ambito: Database['public']['Enums']['ambito_anuncio']
+          p_aula_id: string
+          p_autor_id: string
+          p_centro_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      ambito_anuncio: 'aula' | 'centro'
       audit_accion: 'INSERT' | 'UPDATE' | 'DELETE'
       calidad_sueno: 'profundo' | 'tranquilo' | 'intermitente' | 'nada'
       cantidad_comida: 'todo' | 'mayoria' | 'mitad' | 'poco' | 'nada'
@@ -1470,6 +1716,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ambito_anuncio: ['aula', 'centro'],
       audit_accion: ['INSERT', 'UPDATE', 'DELETE'],
       calidad_sueno: ['profundo', 'tranquilo', 'intermitente', 'nada'],
       cantidad_comida: ['todo', 'mayoria', 'mitad', 'poco', 'nada'],
