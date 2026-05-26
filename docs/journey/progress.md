@@ -466,3 +466,63 @@ F4.5a + F4.5b (rediseño): calendario laboral del centro primero, luego menú me
 ### Para Fase 5.5 (push notifications)
 
 - Tabla `push_subscriptions` + `notificaciones_push`, edge function `notify-on-event` con payload normalizado, registro Service Worker en cliente, UI opt-in con consentimiento. Triggers en `mensajes` y `anuncios` invocan la edge function sin tocar la lógica F5.
+
+---
+
+## Hotfix post-Fase 5 — UI mensajería + permisos admin
+
+**Fecha:** 2026-05-26
+**Estado:** ✅ Cerrado (branch `fix/phase-5-ui-and-admin-perms`).
+**Hotfix previo:** `fix/messaging-badge-realtime-order` (#17 — orden Realtime `.on()` antes de `.subscribe()`).
+
+### Bugs reportados en producción tras merge de #16
+
+| #   | Bug                                                                                         | Severidad |
+| --- | ------------------------------------------------------------------------------------------- | --------- |
+| 1   | Tutor escribe mensaje → "Enviar" no dispara petición (Console/Network vacíos).              | Crítico   |
+| 2   | Vista profe sin botón "Escribir a la familia" en la ficha del niño (lista del aula).        | Crítico   |
+| 3   | `/messages` para profe muestra solo "Nuevo anuncio"; sin UI para iniciar conversación.      | Crítico   |
+| 4   | Dropdown de aula en form de anuncio muestra UUID al cerrarse (regresión Select.Root items). | Regresión |
+| 5   | Admin selecciona aula → "No tienes acceso" pese a ser admin del centro.                     | Funcional |
+
+### Decisiones de diseño (ADR-0026)
+
+- **`/messages` rediseñado WhatsApp-style por rol:**
+  - Admin: solo tab Anuncios (decisión F5 mantenida).
+  - Profe / Tutor: tabs Conversaciones (split-view: lista de niños izquierda + panel derecho) + Anuncios.
+  - Deep-link via `?nino=<id>` con SSR del detalle.
+  - Mobile: una vista a la vez con botón "← volver".
+- **Conversación on-demand:** el composer del panel derecho crea la conversación al enviar el primer mensaje (mismo patrón lazy ya en BD).
+- **Composer obligatorio en `<form onSubmit>` + `type="submit"`:** regla nueva en `docs/dev-setup.md` para prevenir submit silencioso.
+- **`Select.Root` con `items` se eleva a regla NO negociable:** tercera regresión del mismo patrón en tres fases distintas.
+- **`getRolEnCentro` prioriza admin > profe > tutor_legal > autorizado:** el `limit(1)` anterior daba resultados arbitrarios para usuarios con doble rol y explica la falsa señal del Bug 5.
+
+### Completado
+
+- `MensajeComposer.tsx` reescrito con `<form onSubmit>` + botón `type="submit"` + manejo robusto de error i18n (fallback a `envio_fallo` si la key específica no existe).
+- Nueva query `getNinosMensajeriaParaUsuario(centroId, rol)` con resolución por rol (profe: niños de sus aulas activas; tutor: vínculos con `puede_recibir_mensajes=true`; admin: todos los del centro). Incluye preview del último mensaje, badge de no leídos y conversación on-demand.
+- 2 componentes cliente nuevos: `MessagesView` (orquesta tabs por rol) y `ConversacionesSplitView` (sidebar + panel + Realtime + auto-marca-leído).
+- `/messages/page.tsx` reescrita: SSR del niño seleccionado, redirect a `/forbidden` si rol inválido.
+- `/messages/nino/[ninoId]` se simplifica a redirect → `/messages?nino=<id>`.
+- `MessagesListView.tsx` eliminado (reemplazado por la pareja `MessagesView` + `ConversacionesSplitView`).
+- `AnuncioComposer.tsx`: prop `items` añadida a los 2 selects (ámbito y aula).
+- `NinoAgendaCard.tsx` (vista profe): botón "Escribir a la familia" por fila con icono `MessageCircleIcon`. El `<button>` de toggle ya no envuelve toda la fila para evitar `<button>` anidado.
+- `getRolEnCentro()` con priorización por rol más alto cuando hay varios activos.
+- i18n: nuevas claves `messages.subtitle_admin`, `messages.split.*` y `messages.ficha_nino.empezar_conversacion` en `es`/`en`/`va`.
+- Tests RLS añadidos en `messaging.rls.test.ts`: t21 (admin sin asignación), t22 (admin cross-centro), t23 (admin con doble rol), t24 (tutor sin permiso).
+- Test unitario `MensajeComposer.test.tsx` (5 tests) de regresión Bug 1.
+- `docs/dev-setup.md`: bloque "Componentes cliente con formularios" + refuerzo `Select.Root regla no negociable`.
+- ADR-0026 documenta el modelo de UI definitivo.
+
+### Verificación
+
+- `npm run typecheck` ✓
+- `npm run lint` ✓ (0 errores; 2 warnings preexistentes de React Compiler con RHF `form.watch()`).
+- `npm test` (155 tests unit) ✓ incluyendo los 5 nuevos del composer.
+- Smoke manual pendiente en preview Vercel (Checkpoint A + B).
+
+### Aprendizaje transversal
+
+- **Botón sin `type="button"` dentro de un form ancestro = submit silencioso.** Composers SIEMPRE en `<form>` con `type="submit"` explícito y test unitario por composer.
+- **`Select.Root` items para entidades UUID:** mismo patrón regresado en F2, F2.6 y F5. La regla pasa de "documentada" a "checkbox de PR review".
+- **`getRolEnCentro` priorizando admin** evita falsos positivos en futuras features que conmuten UI por rol (informes F9, autorizaciones F8, etc.).

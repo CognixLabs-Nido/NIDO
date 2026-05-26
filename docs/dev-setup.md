@@ -101,6 +101,36 @@ END;
 
 Justificación completa en [ADR-0004](./decisions/ADR-0004-cifrado-datos-medicos-pgcrypto.md) (a crear en Fase 2). El bloque `DO $$ ... $$` al final de la migración principal verifica que Vault tiene el secreto antes de aplicar — si falta, la migración hace rollback completo.
 
+## Componentes cliente con formularios
+
+Tras la regresión vista en F5 (Bug 1 del hotfix `fix/phase-5-ui-and-admin-perms`), regla obligatoria para cualquier `.tsx` con interactividad de envío:
+
+1. **`'use client'` explícito** en cualquier archivo que contenga `<input>`, `<textarea>`, `<select>` o `<button>` con handler asociado. Si el componente es hijo directo de uno con `'use client'`, hereda la directiva, pero declararla en cada archivo evita ambigüedad cuando se mueven imports.
+2. **El handler de submit va en `<form onSubmit={...}>`, NO en `onClick` del botón final.** Para botones fuera del form, usa el atributo HTML `form="<id>"` que vincula el botón con el form por id.
+3. **Botón final con `type="submit"` explícito.** El default HTML de `<button>` sin `type` es `submit`, y un botón sin type dentro de cualquier `<form>` ancestro dispara submit silencioso del form (que en SPA refresca la página sin enviar nada). Pasarlo siempre evita el bug por contagio.
+4. **Feedback al usuario tras submit:**
+   - Éxito: toast con `sonner` + limpiar caja.
+   - Error: toast con mensaje claro. Si el server action devuelve un `error` con i18n key, hacer fallback a la key genérica si la específica no existe en `messages/{locale}.json` (no usar cast `as` sin guarda).
+5. **Test unitario por composer:** simular `fireEvent.submit(form)` + `fireEvent.keyDown(textarea, { key: 'Enter' })` y verificar la invocación correcta del server action (ver `src/features/messaging/components/__tests__/MensajeComposer.test.tsx` como plantilla).
+
+### Anti-patrón corregido en F5
+
+```tsx
+// ❌ Anti-patrón pre-hotfix: handler en onClick, sin <form>.
+// Un <button> sin `type` dentro de un wrapper que envuelva un <form>
+// (p.ej. shadcn/ui Card legacy) hacía submit silencioso al primer clic.
+<div className="composer">
+  <Textarea value={c} onChange={...} />
+  <Button onClick={send}>Enviar</Button>
+</div>
+
+// ✅ Patrón correcto:
+<form onSubmit={onSubmit}>
+  <Textarea value={c} onChange={...} />
+  <Button type="submit">Enviar</Button>
+</form>
+```
+
 ## Componente Select: prop `items` obligatoria
 
 NIDO usa el componente `Select` de shadcn/ui sobre `@base-ui/react/select`. **Patrón obligatorio**: cuando el `Select` represente entidades cuyo `value` no es human-readable (UUIDs, sentinelas, IDs internos), se pasa el prop `items` al `<Select>` con la forma `{ value, label }`. Sin esto, `<SelectValue>` renderiza el value crudo en el trigger tras la selección — el dropdown sí muestra el children del `<SelectItem>`, pero el trigger no.
@@ -175,7 +205,13 @@ Estos dos bugs se arreglaron en `chore/post-phase-2-fixes-v2`:
 - Wizard `/admin/ninos/nuevo` paso 1: dropdown de "Sexo" mostraba `__null__` antes de seleccionar.
 - Wizard `/admin/ninos/nuevo` paso 3: select de aula mostraba UUID en el trigger tras elegir.
 
-Ambos resueltos pasando `items` con `{ value, label }`.
+Tercera regresión (F5, Bug 4 del hotfix `fix/phase-5-ui-and-admin-perms`):
+
+- `AnuncioComposer.tsx`: select de aula mostraba el UUID en el trigger tras seleccionar. Mismo patrón sin `items`.
+
+> **Regla NO negociable a partir de aquí:** TODO `Select.Root` que muestre entidades con UUID/IDs/sentinelas debe pasar `items={[{ value, label }]}` al Root. En PR review, comprobar manualmente: dropdown abierto vs dropdown cerrado tras selección. Si el cerrado muestra value crudo, ARREGLAR antes del merge.
+
+Todos los casos resueltos pasando `items` con `{ value, label }`.
 
 ## Regeneración de logos NIDO
 
