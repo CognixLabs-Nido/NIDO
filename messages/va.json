@@ -174,7 +174,8 @@
       "audit": "Audit log",
       "perfil": "Perfil",
       "calendario": "Calendari",
-      "menus": "Menús"
+      "menus": "Menús",
+      "mensajeria": "Missatgeria"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -330,7 +331,8 @@
       "aria_label": "Navegació profe",
       "dashboard": "Inici",
       "perfil": "Perfil",
-      "calendario": "Calendari"
+      "calendario": "Calendari",
+      "mensajeria": "Missatgeria"
     },
     "dashboard": {
       "title": "Les meues aules",
@@ -354,7 +356,8 @@
       "aria_label": "Navegació família",
       "dashboard": "Inici",
       "perfil": "Perfil",
-      "calendario": "Calendari"
+      "calendario": "Calendari",
+      "mensajeria": "Missatgeria"
     },
     "dashboard": {
       "title": "Els meus xiquets",
@@ -963,6 +966,94 @@
       "error_publicar": "No s'ha pogut publicar. Torna-ho a provar.",
       "error_fuera_de_ventana": "Ja no pots editar aquest dia.",
       "nada_que_guardar": "No hi ha quantitats marcades per a guardar."
+    }
+  },
+  "messages": {
+    "title": "Missatgeria",
+    "subtitle": "Converses amb les famílies i anuncis del centre.",
+    "badge_aria": "{n} missatges sense llegir",
+    "tabs": {
+      "conversaciones": "Converses",
+      "anuncios": "Anuncis"
+    },
+    "lista": {
+      "vacia_conversaciones": "Encara no tens converses.",
+      "vacia_anuncios": "Sense anuncis de moment.",
+      "sin_preview": "(sense missatges)",
+      "preview_anulado": "(missatge anul·lat)",
+      "aula_label": "Aula {nombre}",
+      "no_leidos": "{n} sense llegir"
+    },
+    "conversacion": {
+      "title": "Conversa amb la família de {nombre}",
+      "header_aula": "Aula {nombre}",
+      "sin_mensajes": "Comença la conversa escrivint davall.",
+      "composer_placeholder": "Escriu el teu missatge…",
+      "enviar": "Enviar",
+      "enviando": "Enviant…",
+      "contador": "{n} de {max}",
+      "rol_profe": "Profe",
+      "rol_tutor": "Família",
+      "rol_admin": "Direcció",
+      "yo": "Tu",
+      "volver": "Tornar a la llista"
+    },
+    "anuncio": {
+      "nuevo": "Nou anunci",
+      "ambito_label": "Àmbit",
+      "ambito_aula": "Només a una aula",
+      "ambito_centro": "A tot el centre",
+      "aula_label": "Aula",
+      "aula_placeholder": "Tria una aula",
+      "titulo_label": "Títol",
+      "titulo_placeholder": "Ex. Tancament demà per neu",
+      "contenido_label": "Contingut",
+      "contenido_placeholder": "Conta el que necessites a les famílies…",
+      "publicar": "Publicar",
+      "publicando": "Publicant…",
+      "publicado_toast": "Anunci publicat",
+      "lectores": "Llegit per {n} de {total}",
+      "ver_lectores": "Veure lectura",
+      "volver": "Tornar a la llista",
+      "destinatario_aula": "Aula {nombre}",
+      "destinatario_centro": "Tot el centre",
+      "autor_label": "Publicat per {nombre}"
+    },
+    "anular": {
+      "boton": "Marcar com a erroni",
+      "confirm_title": "Marcar com a erroni",
+      "confirm_descripcion": "Quedarà ratllat i visible per a tots com anul·lat. No es pot desfer des de l'app. Continuar?",
+      "confirm_si": "Sí, marcar com a erroni",
+      "cancelar": "Cancel·lar",
+      "anulando": "Marcant…",
+      "anuncio_banner": "Aquest anunci ha sigut anul·lat pel seu autor."
+    },
+    "estado": {
+      "anulado": "Anul·lat"
+    },
+    "sin_permiso": {
+      "title": "No tens permís per a usar la missatgeria",
+      "description": "Demana a l'administrador del centre que t'ho active.",
+      "cta_admin": "Contactar amb l'administrador"
+    },
+    "validation": {
+      "contenido_vacio": "Escriu alguna cosa abans d'enviar.",
+      "contenido_largo": "Màxim 2000 caràcters.",
+      "contenido_largo_anuncio": "Màxim 4000 caràcters.",
+      "titulo_vacio": "El títol és obligatori.",
+      "titulo_largo": "Màxim 200 caràcters.",
+      "aula_requerida": "Tria una aula.",
+      "aula_no_aplica_centro": "L'àmbit centre no porta aula."
+    },
+    "errors": {
+      "envio_fallo": "No s'ha pogut enviar. Torna-ho a provar.",
+      "ya_anulado": "Aquest missatge ja estava anul·lat.",
+      "no_autorizado": "No tens accés a aquesta conversa.",
+      "conexion": "Sense connexió. Reintentant…"
+    },
+    "ficha_nino": {
+      "escribir_familia": "Escriure a la família",
+      "escribir_profe": "Escriure a la profe"
     }
   }
 }
