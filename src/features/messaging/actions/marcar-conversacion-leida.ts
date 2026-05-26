@@ -10,9 +10,17 @@ import { fail, ok, type ActionResult } from '../types'
  * UPSERT en `lectura_conversacion` para registrar que el usuario ha leído
  * hasta `now()` esta conversación. Idempotente: si ya hay fila, UPDATE.
  *
- * RLS solo permite escribir filas con `usuario_id = auth.uid()`. Esta
- * action no revalida ninguna ruta — la UI cliente recalcula el badge
- * desde su subscription Realtime.
+ * RLS solo permite escribir filas con `usuario_id = auth.uid()`.
+ *
+ * **Importante para el badge global** (bug post-F5): esta action no toca
+ * `revalidatePath` porque revalidar el layout entero en cada UPSERT es
+ * caro. En su lugar, el cliente que llama (ej. `ConversacionView` o
+ * `ConversacionesSplitView`) debe hacer `router.refresh()` tras la
+ * respuesta exitosa para forzar la recomputación SSR de
+ * `countNoLeidos()` y bajar el `MessagingBadge`. El realtime hook NO
+ * escucha `lectura_conversacion` (no está en `supabase_realtime`), así
+ * que la única fuente de actualización del badge tras leer es el
+ * `router.refresh()` explícito desde el caller.
  */
 export async function marcarConversacionLeida(input: {
   conversacion_id: string

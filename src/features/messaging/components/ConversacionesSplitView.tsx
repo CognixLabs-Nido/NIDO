@@ -20,6 +20,8 @@ import { MensajeComposer } from './MensajeComposer'
 
 interface Props {
   locale: string
+  /** Rol del usuario actual; controla cómo se renderiza el header del panel. */
+  rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
   ninos: NinoMensajeriaItem[]
   ninoSeleccionadoId: string | null
   /**
@@ -57,6 +59,7 @@ interface Props {
  */
 export function ConversacionesSplitView({
   locale,
+  rol,
   ninos,
   ninoSeleccionadoId,
   mostrarLista,
@@ -85,12 +88,21 @@ export function ConversacionesSplitView({
     },
   })
 
-  // Marcar como leída la conversación seleccionada al mostrarla.
+  // Marcar como leída la conversación seleccionada al mostrarla y cuando
+  // llegan mensajes nuevos. Tras el UPSERT exitoso forzamos `router.refresh()`
+  // para que el SSR del layout recalcule `countNoLeidos()` y el
+  // `MessagingBadge` se actualice — el realtime no escucha `lectura_*`.
   useEffect(() => {
-    if (detalleHeader?.id) {
-      void marcarConversacionLeida({ conversacion_id: detalleHeader.id })
+    if (!detalleHeader?.id) return
+    let cancelled = false
+    void marcarConversacionLeida({ conversacion_id: detalleHeader.id }).then((res) => {
+      if (cancelled) return
+      if (res.success) router.refresh()
+    })
+    return () => {
+      cancelled = true
     }
-  }, [detalleHeader?.id, detalleMensajes.length])
+  }, [detalleHeader?.id, detalleMensajes.length, router])
 
   function selectNino(ninoId: string) {
     router.push(`/${locale}/messages?nino=${ninoId}`)
@@ -215,6 +227,7 @@ export function ConversacionesSplitView({
         {ninoSeleccionado ? (
           <ConversacionPanel
             locale={locale}
+            rol={rol}
             nino={ninoSeleccionado}
             header={detalleHeader}
             mensajes={detalleMensajes}
@@ -233,13 +246,14 @@ export function ConversacionesSplitView({
 
 interface PanelProps {
   locale: string
+  rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
   nino: NinoMensajeriaItem
   header: ConversacionHeader | null
   mensajes: MensajeView[]
   participo: boolean
 }
 
-function ConversacionPanel({ locale, nino, header, mensajes, participo }: PanelProps) {
+function ConversacionPanel({ locale, rol, nino, header, mensajes, participo }: PanelProps) {
   const t = useTranslations('messages.conversacion')
   const tEstado = useTranslations('messages.estado')
   const tFicha = useTranslations('messages.ficha_nino')
@@ -262,14 +276,7 @@ function ConversacionPanel({ locale, nino, header, mensajes, participo }: PanelP
           <ArrowLeftIcon className="size-4" />
         </Link>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-sm font-semibold">
-            {nino.nombre} {nino.apellidos}
-          </h2>
-          {nino.aula_nombre && (
-            <p className="text-muted-foreground text-xs">
-              {t('header_aula', { nombre: nino.aula_nombre })}
-            </p>
-          )}
+          <PanelTitulo rol={rol} nino={nino} header={header} t={t} />
         </div>
       </header>
 
@@ -342,6 +349,92 @@ function ConversacionPanel({ locale, nino, header, mensajes, participo }: PanelP
         <MensajeComposer ninoId={nino.nino_id} locale={locale} redirectOnFirstSend={!header} />
       )}
     </div>
+  )
+}
+
+/**
+ * Render del título del panel en función del rol del usuario.
+ *
+ * Replica la lógica de `HeaderTitulo` en `ConversacionView.tsx` (la vista
+ * de pantalla completa de la conversación) — se mantienen separadas porque
+ * el split-view siempre tiene un `nino` disponible incluso sin `header`
+ * (caso "niño sin conversación todavía"), mientras que la vista de
+ * pantalla completa exige `header` populated.
+ *
+ * Casos del lado tutor:
+ *  - 1 profe activo: nombre del profe + subtítulo "Profe del aula X".
+ *  - N>1 profes activos: "Profes del aula X" + subtítulo "N profes".
+ *  - 0 profes (o sin conversación aún): "Aula X" si hay matrícula, en
+ *    último caso el nombre del niño como fallback para no dejar el
+ *    panel sin título.
+ */
+function PanelTitulo({
+  rol,
+  nino,
+  header,
+  t,
+}: {
+  rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
+  nino: NinoMensajeriaItem
+  header: ConversacionHeader | null
+  t: ReturnType<typeof useTranslations>
+}) {
+  const esTutor = rol === 'tutor_legal' || rol === 'autorizado'
+
+  if (esTutor) {
+    const aulaNombre = header?.aula_nombre ?? nino.aula_nombre
+    const profes = header?.profes_aula ?? []
+    if (profes.length === 1 && profes[0]) {
+      return (
+        <>
+          <h2 className="truncate text-sm font-semibold">
+            {t('title_tutor_profe', { nombre: profes[0].nombre_completo })}
+          </h2>
+          {aulaNombre && (
+            <p className="text-muted-foreground text-xs">
+              {t('header_profe_subtitulo', { aula: aulaNombre })}
+            </p>
+          )}
+        </>
+      )
+    }
+    if (profes.length > 1 && aulaNombre) {
+      return (
+        <>
+          <h2 className="truncate text-sm font-semibold">
+            {t('title_tutor_aula', { aula: aulaNombre })}
+          </h2>
+          <p className="text-muted-foreground text-xs">
+            {t('header_profes_count', { n: profes.length })}
+          </p>
+        </>
+      )
+    }
+    if (aulaNombre) {
+      return (
+        <h2 className="truncate text-sm font-semibold">
+          {t('title_tutor_aula_sin_profe', { aula: aulaNombre })}
+        </h2>
+      )
+    }
+    return (
+      <h2 className="truncate text-sm font-semibold">
+        {nino.nombre} {nino.apellidos}
+      </h2>
+    )
+  }
+
+  return (
+    <>
+      <h2 className="truncate text-sm font-semibold">
+        {nino.nombre} {nino.apellidos}
+      </h2>
+      {nino.aula_nombre && (
+        <p className="text-muted-foreground text-xs">
+          {t('header_aula', { nombre: nino.aula_nombre })}
+        </p>
+      )}
+    </>
   )
 }
 

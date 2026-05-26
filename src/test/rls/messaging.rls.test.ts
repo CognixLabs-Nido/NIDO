@@ -773,4 +773,142 @@ describe('RLS mensajería — aislamiento, ámbitos y flag global', () => {
     // Limpieza.
     if (data?.id) await serviceClient.from('conversaciones').delete().eq('id', data.id)
   })
+
+  // -------------------------------------------------------------------
+  // Bug 4A post-F5 — autor del anuncio lee todas sus lecturas
+  //   Policy nueva `lectura_anuncio_select_autor`. Antes, el autor solo
+  //   veía las lecturas que él mismo había hecho (= su propio anuncio
+  //   marcado leído por él), nunca las de los destinatarios → contador
+  //   "0 de N" engañoso.
+  // -------------------------------------------------------------------
+
+  it('t27 — autor de un anuncio aula PUEDE leer las filas de lectura_anuncio de los destinatarios', async () => {
+    // Sembramos lectura del tutor sobre el anuncio del aulaA1 (autor: profeAulaA1).
+    // `leido_at` es required en TS aunque la BD tenga DEFAULT now() — el
+    // generador no infiere defaults de timestamptz.
+    await serviceClient.from('lectura_anuncio').insert({
+      usuario_id: tutorConPermisoNinoA1.id,
+      anuncio_id: anuncioAulaA1.id,
+      leido_at: new Date().toISOString(),
+    })
+
+    // Autor (profeAulaA1) consulta su tabla de lecturas para SU anuncio.
+    const client = await clientFor(profeAulaA1)
+    const { data, error } = await client
+      .from('lectura_anuncio')
+      .select('usuario_id')
+      .eq('anuncio_id', anuncioAulaA1.id)
+    expect(error).toBeNull()
+    expect(data ?? []).toEqual(
+      expect.arrayContaining([expect.objectContaining({ usuario_id: tutorConPermisoNinoA1.id })])
+    )
+
+    // Limpieza explícita (afterAll ya borraría, pero dejamos limpio cada test).
+    await serviceClient
+      .from('lectura_anuncio')
+      .delete()
+      .eq('anuncio_id', anuncioAulaA1.id)
+      .eq('usuario_id', tutorConPermisoNinoA1.id)
+  })
+
+  it('t28 — autor de un anuncio centro PUEDE leer lecturas del tutor y del profe del aula', async () => {
+    const now = new Date().toISOString()
+    await serviceClient.from('lectura_anuncio').insert([
+      { usuario_id: tutorConPermisoNinoA1.id, anuncio_id: anuncioCentroA.id, leido_at: now },
+      { usuario_id: profeAulaA2.id, anuncio_id: anuncioCentroA.id, leido_at: now },
+    ])
+
+    const client = await clientFor(adminA) // autor de anuncioCentroA
+    const { data, error } = await client
+      .from('lectura_anuncio')
+      .select('usuario_id')
+      .eq('anuncio_id', anuncioCentroA.id)
+    expect(error).toBeNull()
+    const ids = (data ?? []).map((r) => r.usuario_id)
+    expect(ids).toEqual(expect.arrayContaining([tutorConPermisoNinoA1.id, profeAulaA2.id]))
+
+    await serviceClient
+      .from('lectura_anuncio')
+      .delete()
+      .eq('anuncio_id', anuncioCentroA.id)
+      .in('usuario_id', [tutorConPermisoNinoA1.id, profeAulaA2.id])
+  })
+
+  it('t29 — usuario que NO es autor del anuncio sigue viendo solo sus propias lecturas', async () => {
+    const now = new Date().toISOString()
+    // tutorConPermisoNinoA1 lee dos anuncios; tutorOtroNinoA2 lee uno.
+    await serviceClient.from('lectura_anuncio').insert([
+      { usuario_id: tutorConPermisoNinoA1.id, anuncio_id: anuncioAulaA1.id, leido_at: now },
+      { usuario_id: tutorConPermisoNinoA1.id, anuncio_id: anuncioCentroA.id, leido_at: now },
+      { usuario_id: tutorOtroNinoA2.id, anuncio_id: anuncioCentroA.id, leido_at: now },
+    ])
+
+    // tutorConPermisoNinoA1 consulta lectura_anuncio para anuncioCentroA. NO es
+    // autor — la policy `select_self` debe limitar la respuesta a su propia fila.
+    const client = await clientFor(tutorConPermisoNinoA1)
+    const { data, error } = await client
+      .from('lectura_anuncio')
+      .select('usuario_id')
+      .eq('anuncio_id', anuncioCentroA.id)
+    expect(error).toBeNull()
+    const ids = (data ?? []).map((r) => r.usuario_id)
+    expect(ids).toEqual([tutorConPermisoNinoA1.id]) // exactamente una fila, la suya
+
+    await serviceClient
+      .from('lectura_anuncio')
+      .delete()
+      .in('anuncio_id', [anuncioAulaA1.id, anuncioCentroA.id])
+      .in('usuario_id', [tutorConPermisoNinoA1.id, tutorOtroNinoA2.id])
+  })
+
+  it('t30 — autor NO ve lecturas de anuncios de otros centros', async () => {
+    // Creamos un anuncio en centro B y una lectura del profe de B.
+    const { data: anuncioB, error: anErr } = await serviceClient
+      .from('anuncios')
+      .insert({
+        autor_id: profeCentroB.id,
+        centro_id: centroB.id,
+        ambito: 'aula',
+        aula_id: aulaB1.id,
+        titulo: 't30-anuncio-centro-B',
+        contenido: 't30-aislamiento',
+      })
+      .select('id')
+      .single()
+    if (anErr || !anuncioB) throw new Error(`seed t30 anuncio: ${anErr?.message}`)
+    await serviceClient.from('lectura_anuncio').insert({
+      usuario_id: profeCentroB.id,
+      anuncio_id: anuncioB.id,
+      leido_at: new Date().toISOString(),
+    })
+
+    // adminA (autor de anuncios de centroA) intenta leer lecturas del anuncio de B.
+    const client = await clientFor(adminA)
+    const { data, error } = await client
+      .from('lectura_anuncio')
+      .select('usuario_id')
+      .eq('anuncio_id', anuncioB.id)
+    expect(error).toBeNull()
+    expect(data ?? []).toEqual([]) // aislamiento estricto
+
+    await serviceClient.from('lectura_anuncio').delete().eq('anuncio_id', anuncioB.id)
+    await serviceClient.from('anuncios').delete().eq('id', anuncioB.id)
+  })
+
+  it('t31 — INSERT en lectura_anuncio sigue restringido a uno mismo (anti-suplantación)', async () => {
+    // La policy nueva amplía SELECT, no INSERT. El destinatario solo puede
+    // marcar como leído su propia fila, no la de otro.
+    const client = await clientFor(tutorConPermisoNinoA1)
+    const { data, error } = await client
+      .from('lectura_anuncio')
+      .insert({
+        usuario_id: adminA.id,
+        anuncio_id: anuncioCentroA.id,
+        leido_at: new Date().toISOString(),
+      })
+      .select('id')
+      .maybeSingle()
+    expect(error).not.toBeNull()
+    expect(data).toBeNull()
+  })
 })

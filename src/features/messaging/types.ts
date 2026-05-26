@@ -61,13 +61,25 @@ export interface MensajeView {
   es_propio: boolean
 }
 
-/** Datos de cabecera del hilo (datos del niño asociados a la conversación). */
+/** Profe activo del aula a efectos del header de la conversación. */
+export interface ProfeAula {
+  usuario_id: string
+  nombre_completo: string
+  es_principal: boolean
+}
+
+/** Datos de cabecera del hilo. Incluye profes activos del aula del niño
+ *  para que la UI del tutor pueda mostrarlos en lugar del nombre del niño. */
 export interface ConversacionHeader {
   id: string
   nino_id: string
   nino_nombre: string
   nino_apellidos: string
   aula_nombre: string | null
+  /** Profes activos del aula actual del niño. Vacío si el niño no tiene
+   *  matrícula activa o no hay profes asignados. Ordenados con el principal
+   *  primero, después por nombre. */
+  profes_aula: ProfeAula[]
 }
 
 /** Detalle de un anuncio. */

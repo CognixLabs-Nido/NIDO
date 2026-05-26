@@ -1,4 +1,5 @@
 import { BookOpenIcon } from 'lucide-react'
+import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
@@ -17,7 +18,12 @@ import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { EmptyState } from '@/shared/components/EmptyState'
 
-export default async function AdminAulasPage() {
+interface PageProps {
+  params: Promise<{ locale: string }>
+}
+
+export default async function AdminAulasPage({ params }: PageProps) {
+  const { locale } = await params
   const t = await getTranslations('admin.aulas')
   const centroId = (await getCentroActualId())!
   const cursoActivo = await getCursoActivo(centroId)
@@ -64,8 +70,16 @@ export default async function AdminAulasPage() {
             </TableHeader>
             <TableBody>
               {aulas.map((a) => (
-                <TableRow key={a.id}>
-                  <TableCell className="font-medium">{a.nombre}</TableCell>
+                <TableRow key={a.id} className="hover:bg-muted/30 transition-colors">
+                  <TableCell className="font-medium">
+                    <Link
+                      href={`/${locale}/teacher/aula/${a.id}`}
+                      className="hover:text-primary inline-block w-full"
+                      data-testid={`admin-aula-link-${a.id}`}
+                    >
+                      {a.nombre}
+                    </Link>
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {a.cohorte_anos_nacimiento.map((anio) => (
