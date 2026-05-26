@@ -3,6 +3,7 @@ import createIntlMiddleware from 'next-intl/middleware'
 import { type NextRequest, NextResponse } from 'next/server'
 
 import { routing } from './i18n/routing'
+import { requiredRolesFor } from './proxy-roles'
 
 import type { Database } from '@/types/database'
 
@@ -20,14 +21,6 @@ const PUBLIC_PATTERNS: RegExp[] = [
   /^\/forbidden\/?$/,
 ]
 
-// Mapa de prefijos protegidos → rol requerido.
-// Notar: el usuario debe tener AL MENOS UN rol coincidente (ver ADR/spec B6.bis).
-const PROTECTED_PREFIXES: Array<{ prefix: RegExp; roles: ReadonlyArray<string> }> = [
-  { prefix: /^\/admin(\/.*)?$/, roles: ['admin'] },
-  { prefix: /^\/teacher(\/.*)?$/, roles: ['profe'] },
-  { prefix: /^\/family(\/.*)?$/, roles: ['tutor_legal', 'autorizado'] },
-]
-
 function stripLocale(pathname: string): { locale: string; rest: string } {
   const parts = pathname.split('/')
   const locale = parts[1] ?? routing.defaultLocale
@@ -37,13 +30,6 @@ function stripLocale(pathname: string): { locale: string; rest: string } {
 
 function isPublic(rest: string): boolean {
   return PUBLIC_PATTERNS.some((re) => re.test(rest))
-}
-
-function requiredRolesFor(rest: string): ReadonlyArray<string> | null {
-  for (const { prefix, roles } of PROTECTED_PREFIXES) {
-    if (prefix.test(rest)) return roles
-  }
-  return null
 }
 
 export default async function proxy(request: NextRequest): Promise<NextResponse> {
