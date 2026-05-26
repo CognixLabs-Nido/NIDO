@@ -24,8 +24,14 @@ interface Props {
   ninos: NinoMensajeriaItem[]
   anuncios: AnuncioListItem[]
   puedePublicarAnuncio: boolean
-  /** Niño seleccionado en la URL (?nino=X). */
+  /** Niño seleccionado en la URL (?nino=X) o auto-seleccionado por SSR. */
   ninoSeleccionadoId: string | null
+  /**
+   * Si es false, el split-view oculta la sidebar de niños y muestra solo
+   * el panel de conversación. Caso típico: tutor con un solo hijo — no
+   * tiene sentido una lista de uno, ni el buscador.
+   */
+  mostrarListaConversaciones: boolean
   detalleHeader: ConversacionHeader | null
   detalleMensajes: MensajeView[]
   participo: boolean
@@ -45,6 +51,7 @@ export function MessagesView({
   anuncios,
   puedePublicarAnuncio,
   ninoSeleccionadoId,
+  mostrarListaConversaciones,
   detalleHeader,
   detalleMensajes,
   participo,
@@ -148,6 +155,7 @@ export function MessagesView({
             locale={locale}
             ninos={ninos}
             ninoSeleccionadoId={ninoSeleccionadoId}
+            mostrarLista={mostrarListaConversaciones}
             detalleHeader={detalleHeader}
             detalleMensajes={detalleMensajes}
             participo={participo}

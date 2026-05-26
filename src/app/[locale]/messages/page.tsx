@@ -52,8 +52,19 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
 
   // Resolvemos el niño seleccionado en URL. Si no está en la lista del
   // usuario (manipulación o link viejo), lo ignoramos.
+  //
+  // Caso especial tutor con un solo hijo: auto-seleccionamos al niño para
+  // que el panel derecho muestre la conversación directamente sin que el
+  // tutor tenga que pulsar la fila (no tendría sentido la lista de uno).
+  // La sidebar también se oculta vía `mostrarListaConversaciones` (ver UI).
+  const esTutor = rol === 'tutor_legal' || rol === 'autorizado'
   const ninoSeleccionado =
-    ninoQuery && ninos.find((n) => n.nino_id === ninoQuery) ? ninoQuery : null
+    ninoQuery && ninos.find((n) => n.nino_id === ninoQuery)
+      ? ninoQuery
+      : esTutor && ninos.length === 1
+        ? ninos[0]!.nino_id
+        : null
+  const mostrarListaConversaciones = !(esTutor && ninos.length === 1)
 
   let detalleHeader: ConversacionHeader | null = null
   let detalleMensajes: MensajeView[] = []
@@ -88,6 +99,7 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
       anuncios={anuncios}
       puedePublicarAnuncio={puedePublicarAnuncio}
       ninoSeleccionadoId={ninoSeleccionado}
+      mostrarListaConversaciones={mostrarListaConversaciones}
       detalleHeader={detalleHeader}
       detalleMensajes={detalleMensajes}
       participo={participo}

@@ -22,6 +22,12 @@ interface Props {
   locale: string
   ninos: NinoMensajeriaItem[]
   ninoSeleccionadoId: string | null
+  /**
+   * Si es false, no se renderiza la sidebar de niños (ni el buscador):
+   * el panel ocupa el ancho completo. Caso de uso: tutor con un solo
+   * hijo, donde el split-view es ruido visual sin valor.
+   */
+  mostrarLista: boolean
   detalleHeader: ConversacionHeader | null
   detalleMensajes: MensajeView[]
   participo: boolean
@@ -53,6 +59,7 @@ export function ConversacionesSplitView({
   locale,
   ninos,
   ninoSeleccionadoId,
+  mostrarLista,
   detalleHeader,
   detalleMensajes,
   participo,
@@ -90,106 +97,118 @@ export function ConversacionesSplitView({
   }
 
   return (
-    <div className="bg-card border-border/60 grid min-h-[calc(100dvh-12rem)] grid-cols-1 overflow-hidden rounded-2xl border md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-      {/* Sidebar lista (full-width mobile cuando ninguno seleccionado, oculta cuando hay selección). */}
-      <aside
-        className={cn(
-          'border-border/60 flex flex-col border-r',
-          ninoSeleccionadoId ? 'hidden md:flex' : 'flex'
-        )}
-        aria-label={t('split.aside_label')}
-      >
-        <div className="border-border/60 border-b p-3">
-          <div className="relative">
-            <SearchIcon className="text-muted-foreground pointer-events-none absolute top-2.5 left-2 size-4" />
-            <Input
-              value={filtro}
-              onChange={(e) => setFiltro(e.target.value)}
-              placeholder={t('split.buscar_placeholder')}
-              className="pl-8"
-              aria-label={t('split.buscar_placeholder')}
-            />
+    <div
+      className={cn(
+        'bg-card border-border/60 grid min-h-[calc(100dvh-12rem)] grid-cols-1 overflow-hidden rounded-2xl border',
+        mostrarLista && 'md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]'
+      )}
+    >
+      {/* Sidebar lista (full-width mobile cuando ninguno seleccionado, oculta cuando hay selección).
+          Si !mostrarLista (tutor con 1 hijo), no se renderiza nada — el panel ocupa todo el ancho. */}
+      {mostrarLista && (
+        <aside
+          className={cn(
+            'border-border/60 flex flex-col border-r',
+            ninoSeleccionadoId ? 'hidden md:flex' : 'flex'
+          )}
+          aria-label={t('split.aside_label')}
+        >
+          <div className="border-border/60 border-b p-3">
+            <div className="relative">
+              <SearchIcon className="text-muted-foreground pointer-events-none absolute top-2.5 left-2 size-4" />
+              <Input
+                value={filtro}
+                onChange={(e) => setFiltro(e.target.value)}
+                placeholder={t('split.buscar_placeholder')}
+                className="pl-8"
+                aria-label={t('split.buscar_placeholder')}
+              />
+            </div>
           </div>
-        </div>
-        {filtrados.length === 0 ? (
-          <p className="text-muted-foreground p-6 text-center text-sm">
-            {ninos.length === 0 ? t('split.empty_lista') : t('split.empty_busqueda')}
-          </p>
-        ) : (
-          <ul className="flex-1 divide-y overflow-y-auto">
-            {filtrados.map((n) => {
-              const seleccionado = n.nino_id === ninoSeleccionadoId
-              const initials = (n.nombre.charAt(0) + (n.apellidos.charAt(0) || '')).toUpperCase()
-              return (
-                <li key={n.nino_id}>
-                  <button
-                    type="button"
-                    onClick={() => selectNino(n.nino_id)}
-                    aria-current={seleccionado ? 'true' : undefined}
-                    className={cn(
-                      'hover:bg-muted/40 flex w-full items-start gap-3 px-3 py-3 text-left transition-colors',
-                      seleccionado && 'bg-muted/60'
-                    )}
-                    data-testid={`conv-list-item-${n.nino_id}`}
-                  >
-                    <div className="bg-primary-100 text-primary-700 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
-                      {initials || '?'}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-foreground truncate text-sm font-medium">
-                          {n.nombre} {n.apellidos}
-                        </span>
-                        {n.last_message_at && (
-                          <time
-                            className="text-muted-foreground shrink-0 text-[10px]"
-                            dateTime={n.last_message_at}
-                          >
-                            {formatRelative(n.last_message_at, locale)}
-                          </time>
-                        )}
+          {filtrados.length === 0 ? (
+            <p className="text-muted-foreground p-6 text-center text-sm">
+              {ninos.length === 0 ? t('split.empty_lista') : t('split.empty_busqueda')}
+            </p>
+          ) : (
+            <ul className="flex-1 divide-y overflow-y-auto">
+              {filtrados.map((n) => {
+                const seleccionado = n.nino_id === ninoSeleccionadoId
+                const initials = (n.nombre.charAt(0) + (n.apellidos.charAt(0) || '')).toUpperCase()
+                return (
+                  <li key={n.nino_id}>
+                    <button
+                      type="button"
+                      onClick={() => selectNino(n.nino_id)}
+                      aria-current={seleccionado ? 'true' : undefined}
+                      className={cn(
+                        'hover:bg-muted/40 flex w-full items-start gap-3 px-3 py-3 text-left transition-colors',
+                        seleccionado && 'bg-muted/60'
+                      )}
+                      data-testid={`conv-list-item-${n.nino_id}`}
+                    >
+                      <div className="bg-primary-100 text-primary-700 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
+                        {initials || '?'}
                       </div>
-                      <div className="text-muted-foreground mt-0.5 flex items-center gap-2">
-                        {n.aula_nombre && (
-                          <Badge variant="secondary" className="shrink-0 text-[10px]">
-                            {n.aula_nombre}
-                          </Badge>
-                        )}
-                        <p
-                          className={cn(
-                            'min-w-0 flex-1 truncate text-xs',
-                            !n.last_message_preview && 'italic'
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-foreground truncate text-sm font-medium">
+                            {n.nombre} {n.apellidos}
+                          </span>
+                          {n.last_message_at && (
+                            <time
+                              className="text-muted-foreground shrink-0 text-[10px]"
+                              dateTime={n.last_message_at}
+                            >
+                              {formatRelative(n.last_message_at, locale)}
+                            </time>
                           )}
-                        >
-                          {n.last_message_preview ??
-                            (n.last_message_at
-                              ? t('lista.preview_anulado')
-                              : t('split.sin_mensajes_preview'))}
-                        </p>
-                        {n.unread_count > 0 && (
-                          <Badge
-                            variant="default"
-                            className="shrink-0 px-1.5 text-[10px]"
-                            aria-label={t('lista.no_leidos', { n: n.unread_count })}
+                        </div>
+                        <div className="text-muted-foreground mt-0.5 flex items-center gap-2">
+                          {n.aula_nombre && (
+                            <Badge variant="secondary" className="shrink-0 text-[10px]">
+                              {n.aula_nombre}
+                            </Badge>
+                          )}
+                          <p
+                            className={cn(
+                              'min-w-0 flex-1 truncate text-xs',
+                              !n.last_message_preview && 'italic'
+                            )}
                           >
-                            {n.unread_count > 9 ? '9+' : n.unread_count}
-                          </Badge>
-                        )}
+                            {n.last_message_preview ??
+                              (n.last_message_at
+                                ? t('lista.preview_anulado')
+                                : t('split.sin_mensajes_preview'))}
+                          </p>
+                          {n.unread_count > 0 && (
+                            <Badge
+                              variant="default"
+                              className="shrink-0 px-1.5 text-[10px]"
+                              aria-label={t('lista.no_leidos', { n: n.unread_count })}
+                            >
+                              {n.unread_count > 9 ? '9+' : n.unread_count}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </aside>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </aside>
+      )}
 
-      {/* Panel derecho. */}
+      {/* Panel derecho. Cuando mostrarLista=false (tutor con 1 hijo) este
+          panel ocupa el ancho completo del grid. */}
       <section
         className={cn(
           'flex min-w-0 flex-1 flex-col',
-          ninoSeleccionadoId ? 'flex' : 'hidden md:flex'
+          // En modo lista: mobile oculta el panel si no hay selección.
+          // En modo single (sin lista): siempre visible.
+          mostrarLista && !ninoSeleccionadoId && 'hidden md:flex',
+          !mostrarLista && 'flex'
         )}
         aria-label={t('split.panel_label')}
       >

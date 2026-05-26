@@ -131,6 +131,43 @@ Tras la regresión vista en F5 (Bug 1 del hotfix `fix/phase-5-ui-and-admin-perms
 </form>
 ```
 
+## Botones submit en formularios
+
+El patrón habitual `<Button type="submit">` funciona correctamente en el
+proyecto. Los 10 formularios actuales (login, registro, dialogs, wizards,
+anuncios) lo usan sin problemas y los probes empíricos confirman que el
+atributo `type="submit"` se propaga al DOM real (ver
+`src/components/ui/__tests__/button-submit-probe.test.tsx`).
+
+En componentes con árboles de renderizado complejos (paneles split-view,
+composers que dependen de selección de entidades, etc.) se puede usar
+`<button type="submit" className={buttonVariants(...)}>` HTML nativo como
+defensa en profundidad. Es el patrón actual del `MensajeComposer`.
+
+No hay regla obligatoria entre los dos enfoques. Criterio:
+
+- Form simple (login, dialog, wizard): `<Button type="submit">` está bien.
+- Form en árbol con condicionales de render o múltiples niveles de
+  hidratación: considera `<button>` nativo para evitar sorpresas.
+
+### Trasfondo (hotfix post-F5, PR #19)
+
+Tras el merge de PR #18 producción mostró que el composer del tutor no
+enviaba el mensaje al pulsar Enviar (Console/Network vacíos). El commit
+inicial atribuía la causa al `<Button>` de base-ui sobrescribiendo
+`type='submit'` a `type='button'`. La auditoría posterior con probe
+empírico (jsdom + browser real) demostró que esa hipótesis era
+**incorrecta**: el `type` sí se propaga.
+
+La causa raíz real quedó **sin confirmar**. Lo más probable es que el
+bug coincidiera con el Bug B (UI no ramificada por rol): el tutor con un
+solo hijo no veía el composer porque el componente no estaba montado.
+Al arreglar el Bug B el composer aparece, y el submit funciona
+independientemente del `type` del botón.
+
+El cambio del composer a `<button>` nativo se mantiene como simplificación
+defensiva, no como solución obligatoria del patrón.
+
 ## Componente Select: prop `items` obligatoria
 
 NIDO usa el componente `Select` de shadcn/ui sobre `@base-ui/react/select`. **Patrón obligatorio**: cuando el `Select` represente entidades cuyo `value` no es human-readable (UUIDs, sentinelas, IDs internos), se pasa el prop `items` al `<Select>` con la forma `{ value, label }`. Sin esto, `<SelectValue>` renderiza el value crudo en el trigger tras la selección — el dropdown sí muestra el children del `<SelectItem>`, pero el trigger no.
