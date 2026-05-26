@@ -971,7 +971,17 @@
   "messages": {
     "title": "Mensajería",
     "subtitle": "Conversaciones con las familias y anuncios del centro.",
+    "subtitle_admin": "Anuncios del centro y de las aulas.",
     "badge_aria": "{n} mensajes sin leer",
+    "split": {
+      "aside_label": "Niños con los que puedes conversar",
+      "panel_label": "Conversación seleccionada",
+      "buscar_placeholder": "Buscar niño…",
+      "empty_lista": "Aún no hay niños en tu lista.",
+      "empty_busqueda": "Ningún niño coincide con tu búsqueda.",
+      "empty_panel": "Selecciona un niño de la lista para abrir su conversación.",
+      "sin_mensajes_preview": "(aún sin mensajes)"
+    },
     "tabs": {
       "conversaciones": "Conversaciones",
       "anuncios": "Anuncios"
@@ -1053,7 +1063,8 @@
     },
     "ficha_nino": {
       "escribir_familia": "Escribir a la familia",
-      "escribir_profe": "Escribir a la profe"
+      "escribir_profe": "Escribir a la profe",
+      "empezar_conversacion": "Aún sin mensajes. Escribe el primero abajo."
     }
   }
 }

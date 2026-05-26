@@ -573,4 +573,125 @@ describe('RLS mensajería — aislamiento, ámbitos y flag global', () => {
     expect(error).not.toBeNull()
     expect(data).toBeNull()
   })
+
+  // -------------------------------------------------------------------
+  // Bug 5 post-F5 — admin publica en aulas (cualquier aula del centro)
+  // y casos cross-centro. La policy ya contempla `es_admin(centro_id)`,
+  // estos tests son red de seguridad para que futuras refactorizaciones
+  // no rompan el privilegio del admin.
+  // -------------------------------------------------------------------
+
+  it('t21 — admin SIN asignación en profes_aulas puede INSERT anuncio en cualquier aula del centro', async () => {
+    // adminA no tiene fila en profes_aulas. Aún así puede publicar en
+    // aulaA1 (donde profeAulaA1 es el profe asignado) y aulaA2.
+    const client = await clientFor(adminA)
+    const inserts = [aulaA1.id, aulaA2.id]
+    for (const aulaId of inserts) {
+      const { data, error } = await client
+        .from('anuncios')
+        .insert({
+          autor_id: adminA.id,
+          centro_id: centroA.id,
+          ambito: 'aula',
+          aula_id: aulaId,
+          titulo: `t21-admin-en-${aulaId.slice(0, 8)}`,
+          contenido: 't21-admin-anuncio-aula',
+        })
+        .select('id')
+        .single()
+      expect(error).toBeNull()
+      expect(data?.id).toBeTruthy()
+      if (data?.id) await serviceClient.from('anuncios').delete().eq('id', data.id)
+    }
+  })
+
+  it('t22 — admin del centro A NO puede INSERT anuncio en aula del centro B', async () => {
+    const client = await clientFor(adminA)
+    const { data, error } = await client
+      .from('anuncios')
+      .insert({
+        autor_id: adminA.id,
+        centro_id: centroB.id, // centro del que no es admin
+        ambito: 'aula',
+        aula_id: aulaB1.id,
+        titulo: 't22-cross-centro',
+        contenido: 't22-cross-centro',
+      })
+      .select('id')
+      .maybeSingle()
+    expect(error).not.toBeNull()
+    expect(data).toBeNull()
+  })
+
+  it('t23 — admin del centro A con DOBLE rol (admin + profe del aulaA1) puede INSERT en aulaA2', async () => {
+    // Caso reportado en producción: admin del centro que además tiene una
+    // asignación como profe de un aula concreta. Históricamente esto
+    // confundía a la UI (getRolEnCentro devolvía 'profe' arbitrariamente
+    // y ocultaba el dropdown de ámbito). La policy SIEMPRE debe permitir
+    // el anuncio en cualquier aula del centro porque es_admin(centro_id)
+    // sigue siendo TRUE.
+    const adminConDobleRol = await createTestUser({ nombre: 'Admin doble rol Msg' })
+    try {
+      await asignarRol(adminConDobleRol.id, centroA.id, 'admin')
+      await asignarRol(adminConDobleRol.id, centroA.id, 'profe')
+      await asignarProfeAula(adminConDobleRol.id, aulaA1.id)
+
+      const client = await clientFor(adminConDobleRol)
+      // aulaA2 es del centroA pero el usuario NO es profe del aula
+      const { data, error } = await client
+        .from('anuncios')
+        .insert({
+          autor_id: adminConDobleRol.id,
+          centro_id: centroA.id,
+          ambito: 'aula',
+          aula_id: aulaA2.id,
+          titulo: 't23-admin-doble-rol',
+          contenido: 't23-admin-doble-rol',
+        })
+        .select('id')
+        .single()
+      expect(error).toBeNull()
+      expect(data?.id).toBeTruthy()
+      if (data?.id) await serviceClient.from('anuncios').delete().eq('id', data.id)
+    } finally {
+      await serviceClient.from('profes_aulas').delete().eq('profe_id', adminConDobleRol.id)
+      await serviceClient.from('roles_usuario').delete().eq('usuario_id', adminConDobleRol.id)
+      await deleteTestUser(adminConDobleRol.id)
+    }
+  })
+
+  it('t24 — tutor NO puede INSERT anuncio (ni aula ni centro)', async () => {
+    const client = await clientFor(tutorConPermisoNinoA1)
+    // aula
+    const { data: aulaIns, error: aulaErr } = await client
+      .from('anuncios')
+      .insert({
+        autor_id: tutorConPermisoNinoA1.id,
+        centro_id: centroA.id,
+        ambito: 'aula',
+        aula_id: aulaA1.id,
+        titulo: 't24-tutor-aula',
+        contenido: 't24-tutor-aula',
+      })
+      .select('id')
+      .maybeSingle()
+    expect(aulaErr).not.toBeNull()
+    expect(aulaIns).toBeNull()
+
+    // centro
+    const { data: cenIns, error: cenErr } = await client
+      .from('anuncios')
+      .insert({
+        autor_id: tutorConPermisoNinoA1.id,
+        centro_id: centroA.id,
+        ambito: 'centro',
+        aula_id: null,
+        titulo: 't24-tutor-centro',
+        contenido: 't24-tutor-centro',
+      })
+      .select('id')
+      .maybeSingle()
+    expect(cenErr).not.toBeNull()
+    expect(cenIns).toBeNull()
+  })
 })

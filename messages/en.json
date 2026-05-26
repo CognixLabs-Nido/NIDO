@@ -971,7 +971,17 @@
   "messages": {
     "title": "Messages",
     "subtitle": "Conversations with families and centre announcements.",
+    "subtitle_admin": "Centre and classroom announcements.",
     "badge_aria": "{n} unread messages",
+    "split": {
+      "aside_label": "Children you can chat with",
+      "panel_label": "Selected conversation",
+      "buscar_placeholder": "Search child…",
+      "empty_lista": "No children in your list yet.",
+      "empty_busqueda": "No child matches your search.",
+      "empty_panel": "Pick a child from the list to open their conversation.",
+      "sin_mensajes_preview": "(no messages yet)"
+    },
     "tabs": {
       "conversaciones": "Conversations",
       "anuncios": "Announcements"
@@ -1053,7 +1063,8 @@
     },
     "ficha_nino": {
       "escribir_familia": "Write to the family",
-      "escribir_profe": "Write to the teacher"
+      "escribir_profe": "Write to the teacher",
+      "empezar_conversacion": "No messages yet. Type the first one below."
     }
   }
 }

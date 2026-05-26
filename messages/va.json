@@ -971,7 +971,17 @@
   "messages": {
     "title": "Missatgeria",
     "subtitle": "Converses amb les famílies i anuncis del centre.",
+    "subtitle_admin": "Anuncis del centre i de les aules.",
     "badge_aria": "{n} missatges sense llegir",
+    "split": {
+      "aside_label": "Xiquets amb qui pots conversar",
+      "panel_label": "Conversa seleccionada",
+      "buscar_placeholder": "Buscar xiquet…",
+      "empty_lista": "Encara no hi ha xiquets en la teua llista.",
+      "empty_busqueda": "Cap xiquet coincideix amb la teua cerca.",
+      "empty_panel": "Tria un xiquet de la llista per obrir la seua conversa.",
+      "sin_mensajes_preview": "(encara sense missatges)"
+    },
     "tabs": {
       "conversaciones": "Converses",
       "anuncios": "Anuncis"
@@ -1053,7 +1063,8 @@
     },
     "ficha_nino": {
       "escribir_familia": "Escriure a la família",
-      "escribir_profe": "Escriure a la profe"
+      "escribir_profe": "Escriure a la profe",
+      "empezar_conversacion": "Encara sense missatges. Escriu el primer davall."
     }
   }
 }

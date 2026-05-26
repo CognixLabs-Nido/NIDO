@@ -64,6 +64,16 @@ export function AnuncioComposer({ locale, rolEsAdmin, aulas }: Props) {
 
   const ambito = form.watch('ambito')
 
+  // `items` para Select.Root: la prop es obligatoria cuando el value no es ya
+  // human-readable (UUIDs, enums opacos). Sin esto, Select.Value renderiza el
+  // value crudo en el trigger cerrado. Ver docs/dev-setup.md "Select: prop
+  // items obligatoria" y ADR-0007.
+  const ambitoItems = [
+    { value: 'centro', label: t('ambito_centro') },
+    { value: 'aula', label: t('ambito_aula') },
+  ]
+  const aulaItems = aulas.map((a) => ({ value: a.id, label: a.nombre }))
+
   function onSubmit(values: AnuncioInput) {
     startTransition(async () => {
       const res = await publicarAnuncio(values)
@@ -104,6 +114,7 @@ export function AnuncioComposer({ locale, rolEsAdmin, aulas }: Props) {
                 <FormItem>
                   <FormLabel>{t('ambito_label')}</FormLabel>
                   <Select
+                    items={ambitoItems}
                     value={field.value}
                     onValueChange={(v) => {
                       field.onChange(v as AmbitoAnuncio)
@@ -116,8 +127,11 @@ export function AnuncioComposer({ locale, rolEsAdmin, aulas }: Props) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="centro">{t('ambito_centro')}</SelectItem>
-                      <SelectItem value="aula">{t('ambito_aula')}</SelectItem>
+                      {ambitoItems.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -134,6 +148,7 @@ export function AnuncioComposer({ locale, rolEsAdmin, aulas }: Props) {
                 <FormItem>
                   <FormLabel>{t('aula_label')}</FormLabel>
                   <Select
+                    items={aulaItems}
                     value={field.value ?? ''}
                     onValueChange={(v) => field.onChange(v)}
                     disabled={!rolEsAdmin && aulas.length === 1}
@@ -144,9 +159,9 @@ export function AnuncioComposer({ locale, rolEsAdmin, aulas }: Props) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {aulas.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.nombre}
+                      {aulaItems.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
