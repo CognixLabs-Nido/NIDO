@@ -109,7 +109,7 @@ export default async function AdminDashboard({ params }: PageProps) {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-foreground text-base font-semibold">{r.aula_nombre}</h3>
                   <Link
-                    href={`/${locale}/teacher/aula/${r.aula_id}/asistencia`}
+                    href={`/${locale}/teacher/aula/${r.aula_id}`}
                     className="text-info-700 hover:text-info-800 text-xs font-medium"
                   >
                     {tAsistencia('ver_aula')}
