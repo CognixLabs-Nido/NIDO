@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+
 import { config as loadEnv } from 'dotenv'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
@@ -8,6 +10,17 @@ loadEnv({ path: '.env.local' })
 
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
+  resolve: {
+    alias: {
+      // `import 'server-only'` lanza en cualquier entorno que no sea
+      // Server Components (Next.js). En tests no nos importa la guardia
+      // — el aislamiento real lo hace cada test con vi.mock() de las
+      // acciones. Resolvemos a un módulo vacío para que la cadena de
+      // imports (ej. MensajeComposer → enviar-mensaje → audiencia.ts)
+      // no rompa en jsdom.
+      'server-only': fileURLToPath(new URL('./src/test/mocks/server-only.ts', import.meta.url)),
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,
