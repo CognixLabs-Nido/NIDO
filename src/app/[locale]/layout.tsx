@@ -18,6 +18,19 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: 'NIDO',
   description: 'Agenda digital para escuelas infantiles 0-3 años',
+  manifest: '/manifest.json',
+  // iOS Safari 16.4+: estos meta tags + el manifest permiten que la web
+  // pueda añadirse a pantalla de inicio y, una vez instalada, recibir push
+  // notifications. Ver docs/specs/push-notifications.md y ADR-0028.
+  appleWebApp: {
+    capable: true,
+    title: 'NIDO',
+    statusBarStyle: 'default',
+  },
+  icons: {
+    icon: '/brand/icon-192.png',
+    apple: '/brand/icon-192.png',
+  },
 }
 
 export function generateStaticParams() {
