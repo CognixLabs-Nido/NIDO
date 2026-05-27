@@ -1,7 +1,10 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { getTranslations } from 'next-intl/server'
 
+import { destinatariosPushDeAnuncio, getAutorPushInfo } from '@/features/push/lib/audiencia'
+import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
 import { createClient } from '@/lib/supabase/server'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { logger } from '@/shared/lib/logger'
@@ -64,6 +67,45 @@ export async function publicarAnuncio(
   if (error || !data) {
     logger.warn('publicarAnuncio falló', error?.message)
     return fail('messages.errors.envio_fallo')
+  }
+
+  // Push notifications (F5.5). Solo a tutores con `puede_recibir_mensajes`
+  // del aula (ámbito=aula) o centro (ámbito=centro). Profes y admin ven el
+  // anuncio in-app y actúan como puente humano para tutores excluidos.
+  try {
+    const destinatarios = await destinatariosPushDeAnuncio(
+      {
+        centro_id: centroId,
+        ambito: parsed.data.ambito,
+        aula_id: parsed.data.aula_id,
+      },
+      userId
+    )
+    if (destinatarios.length > 0) {
+      const autor = await getAutorPushInfo(userId)
+      const tPush = await getTranslations({
+        locale: autor.idioma,
+        namespace: 'push.notificaciones',
+      })
+      const cuerpo =
+        parsed.data.contenido.length > 100
+          ? parsed.data.contenido.slice(0, 99) + '…'
+          : parsed.data.contenido
+      await enviarPushANotificarUsuarios(destinatarios, {
+        titulo:
+          parsed.data.ambito === 'centro'
+            ? tPush('anuncio_centro_titulo')
+            : tPush('anuncio_aula_titulo'),
+        cuerpo,
+        url: `/${autor.idioma}/messages/anuncios/${data.id}`,
+        datos: {
+          tipo: 'anuncio',
+          anuncio_id: data.id,
+        },
+      })
+    }
+  } catch (err) {
+    console.error('[publicarAnuncio] push notifications falló:', err)
   }
 
   revalidatePath('/[locale]/messages', 'layout')

@@ -1079,5 +1079,36 @@
       "escribir_profe": "Escriure a la profe",
       "empezar_conversacion": "Encara sense missatges. Escriu el primer davall."
     }
+  },
+  "push": {
+    "settings": {
+      "titulo": "Notificacions",
+      "descripcion": "Rep avisos quan arribe un missatge o anunci nou encara que tingues NIDO tancat.",
+      "activar": "Activar notificacions",
+      "desactivar": "Desactivar notificacions",
+      "activando": "Activant…",
+      "desactivando": "Desactivant…",
+      "estado_activado": "Notificacions activades",
+      "estado_denegado": "Has bloquejat les notificacions. Canvia el permís en els ajustos del navegador.",
+      "estado_unsupported": "El teu navegador no suporta notificacions push.",
+      "ios_titulo": "Instal·lació necessària en iOS",
+      "ios_anadir_a_pantalla": "Per rebre notificacions en iPhone o iPad: obri NIDO en Safari, polsa Compartir → Afig a la pantalla d'inici. Després obri NIDO des de la icona i torna ací."
+    },
+    "banner": {
+      "titulo": "Vols rebre notificacions?",
+      "descripcion": "T'avisarem quan arribe un missatge o anunci nou.",
+      "cta_activar": "Activar",
+      "cta_descartar": "Ara no",
+      "descartar_aria": "Descartar"
+    },
+    "notificaciones": {
+      "anuncio_centro_titulo": "Nou anunci del centre",
+      "anuncio_aula_titulo": "Nou anunci de l'aula"
+    },
+    "errors": {
+      "permiso_denegado": "Has rebutjat les notificacions. Per activar-les, ajusta-ho en el teu navegador.",
+      "suscripcion_fallo": "No hem pogut activar les notificacions. Torna-ho a provar.",
+      "no_autorizado": "Sessió caducada. Torna a iniciar sessió."
+    }
   }
 }

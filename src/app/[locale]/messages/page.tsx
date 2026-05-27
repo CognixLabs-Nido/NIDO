@@ -6,6 +6,7 @@ import { getAnunciosDelUsuario } from '@/features/messaging/queries/get-anuncios
 import { getConversacionDetalle } from '@/features/messaging/queries/get-conversacion-detalle'
 import { getNinosMensajeriaParaUsuario } from '@/features/messaging/queries/get-ninos-mensajeria'
 import type { ConversacionHeader, MensajeView } from '@/features/messaging/types'
+import { PushBanner } from '@/features/push/components/PushBanner'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -91,18 +92,25 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
   // niño seleccionado, la UI mantiene la pestaña Conversaciones.
   void tab
 
+  // Banner contextual de push (F5.5): solo para tutor/profe y cuando el
+  // navegador aún está en `default`. Admin lo ve solo en /profile.
+  const mostrarPushBanner = rol !== 'admin'
+
   return (
-    <MessagesView
-      locale={locale}
-      rol={rol}
-      ninos={ninos}
-      anuncios={anuncios}
-      puedePublicarAnuncio={puedePublicarAnuncio}
-      ninoSeleccionadoId={ninoSeleccionado}
-      mostrarListaConversaciones={mostrarListaConversaciones}
-      detalleHeader={detalleHeader}
-      detalleMensajes={detalleMensajes}
-      participo={participo}
-    />
+    <div className="space-y-4">
+      {mostrarPushBanner ? <PushBanner /> : null}
+      <MessagesView
+        locale={locale}
+        rol={rol}
+        ninos={ninos}
+        anuncios={anuncios}
+        puedePublicarAnuncio={puedePublicarAnuncio}
+        ninoSeleccionadoId={ninoSeleccionado}
+        mostrarListaConversaciones={mostrarListaConversaciones}
+        detalleHeader={detalleHeader}
+        detalleMensajes={detalleMensajes}
+        participo={participo}
+      />
+    </div>
   )
 }

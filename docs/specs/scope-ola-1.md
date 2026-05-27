@@ -12,7 +12,7 @@
 | 4.5a | Calendario laboral del centro                       | ✅ Cerrada   |
 | 4.5b | Menú mensual + pase de lista comida                 | ✅ Cerrada   |
 | 5    | Mensajería profe ↔ familia + anuncios               | ✅ Cerrada   |
-| 5.5  | Push notifications (transversal — ADR-0025)         | ⏳ Pendiente |
+| 5.5  | Push notifications (transversal — ADR-0025)         | ✅ Cerrada   |
 | 6    | Recordatorios bidireccionales (E)                   | ⏳ Pendiente |
 | 7    | Calendario y eventos                                | ⏳ Pendiente |
 | 8    | Autorizaciones + firma digital                      | ⏳ Pendiente |

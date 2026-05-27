@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
+import { PushSettings } from '@/features/push/components/PushSettings'
 import { AuthShell } from '@/shared/components/AuthShell'
 import { createClient } from '@/lib/supabase/server'
 
@@ -47,6 +48,9 @@ export default async function ProfilePage({ params }: PageProps) {
           </div>
           <div className="space-y-3 border-t border-dashed border-neutral-200 pt-4 text-sm">
             <Row icon={<UserIcon className="size-4" />} k={t('language')} v={idioma} />
+          </div>
+          <div className="border-t border-dashed border-neutral-200 pt-4">
+            <PushSettings />
           </div>
           <SignOutButton locale={locale} />
         </CardContent>
