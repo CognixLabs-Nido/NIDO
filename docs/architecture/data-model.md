@@ -1,6 +1,6 @@
 # Modelo de datos — NIDO
 
-35 tablas organizadas en 3 módulos. Implementadas hasta Fase 5 incluida: Fase 1 (4 de auth), Fase 2 (10 Core + 2 transversales), Fase 2.6 (1 Core más), Fase 3 (5 operativas), Fase 4 (2 operativas), Fase 4.5a (1 operativa), Fase 4.5b (2 operativas + extensión de `comidas`), Fase 5 (5 operativas + 1 ENUM nuevo + 5 helpers SQL). El resto llega en Fases 6-10.
+35 tablas organizadas en 3 módulos. Implementadas hasta Fase 5.5 incluida: Fase 1 (4 de auth), Fase 2 (10 Core + 2 transversales), Fase 2.6 (1 Core más), Fase 3 (5 operativas), Fase 4 (2 operativas), Fase 4.5a (1 operativa), Fase 4.5b (2 operativas + extensión de `comidas`), Fase 5 (5 operativas + 1 ENUM nuevo + 5 helpers SQL), Fase 5.5 (1 transversal — `push_subscriptions`). El resto llega en Fases 6-10.
 
 ## Módulo Core (11 tablas) — Fases 2 y 2.6
 
@@ -45,13 +45,14 @@
 
 ## Módulo Transversal (5 tablas)
 
-| Tabla                                                       | Estado                                   |
-| ----------------------------------------------------------- | ---------------------------------------- |
-| `audit_log` (append-only, triggers automáticos en 6 tablas) | ✅ Fase 2                                |
-| `consentimientos` (versionados, append-only)                | ✅ Fase 2                                |
-| `invitaciones` (token + expiración + binding niño/aula)     | ✅ Fase 1                                |
-| `auth_attempts` (rate limiting login)                       | ✅ Fase 1                                |
-| `notificaciones_push` y `push_subscriptions`                | ⏳ Fase 5.5 (transversal — ver ADR-0025) |
+| Tabla                                                       | Estado                                                |
+| ----------------------------------------------------------- | ----------------------------------------------------- |
+| `audit_log` (append-only, triggers automáticos en 6 tablas) | ✅ Fase 2                                             |
+| `consentimientos` (versionados, append-only)                | ✅ Fase 2                                             |
+| `invitaciones` (token + expiración + binding niño/aula)     | ✅ Fase 1                                             |
+| `auth_attempts` (rate limiting login)                       | ✅ Fase 1                                             |
+| `push_subscriptions`                                        | ✅ Fase 5.5 (transversal — ver ADR-0025, ADR-0027)    |
+| `notificaciones_push`                                       | ⏳ Diferida (no es necesaria para F5.5; ver ADR-0027) |
 
 ## Reglas obligatorias
 
@@ -91,3 +92,4 @@
 - `comidas` (Fase 4.5b extiende F3): añadidas `tipo_plato tipo_plato_comida NULL` y `menu_dia_id uuid NULL REFERENCES menu_dia(id) ON DELETE SET NULL`. **Índice único parcial** `(agenda_id, momento, tipo_plato) WHERE tipo_plato IS NOT NULL` permite UPSERT atómico del batch del pase de lista sin afectar a filas legacy F3 (donde `tipo_plato=NULL`). Compatibilidad total con datos pre-F4.5b (ADR-0021).
 - Realtime publication: las 5 tablas de Fase 3 + `asistencias` + `ausencias` + `mensajes` + `anuncios` en `supabase_realtime`. RLS de SELECT también se aplica a las notificaciones. `dias_centro` NO está en Realtime — es planificación, baja cardinalidad de cambios. `conversaciones` y `lectura_*` tampoco están en Realtime: el cliente infiere los cambios desde `mensajes`/`anuncios`.
 - Mensajería (Fase 5): patrón "marcar como erróneo" (`erroneo boolean` + prefijo `[anulado] ` en `mensajes.contenido` y `anuncios.titulo`) reemplaza el DELETE bloqueado. `puede_recibir_mensajes` actúa como flag global de recepción del canal digital: tutor con `false` no recibe ni conversaciones ni anuncios. Helper `usuario_es_audiencia_anuncio_row(centro_id, autor_id, ambito, aula_id)` es **row-aware** para evitar el gotcha MVCC en `INSERT…RETURNING` (ver sección correspondiente en `rls-policies.md`).
+- `push_subscriptions` (Fase 5.5): una fila por (usuario, endpoint del navegador). UNIQUE `(usuario_id, endpoint)`. ON DELETE CASCADE desde `usuarios` (al eliminar una cuenta se borran sus suscripciones). CHECK length 1-2048 en `endpoint`, 1-256 en `p256dh`, 1-64 en `auth`. **NO se audita** (telemetría operativa, no contenido). **NO se publica en Realtime**. RLS de aislamiento estricto por `usuario_id = auth.uid()` (sin helpers ni recursión). El motor de envío `enviarPushANotificarUsuarios` usa service role para leer cross-user. Ver ADR-0027 (arquitectura) y ADR-0028 (manifest mínimo split F5.5 vs PWA F11).

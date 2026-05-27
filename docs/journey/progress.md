@@ -526,3 +526,56 @@ F4.5a + F4.5b (rediseño): calendario laboral del centro primero, luego menú me
 - **Botón sin `type="button"` dentro de un form ancestro = submit silencioso.** Composers SIEMPRE en `<form>` con `type="submit"` explícito y test unitario por composer.
 - **`Select.Root` items para entidades UUID:** mismo patrón regresado en F2, F2.6 y F5. La regla pasa de "documentada" a "checkbox de PR review".
 - **`getRolEnCentro` priorizando admin** evita falsos positivos en futuras features que conmuten UI por rol (informes F9, autorizaciones F8, etc.).
+
+---
+
+## Fase 5.5 — Push notifications (transversal)
+
+**Fecha:** 2026-05-27
+**Estado:** ✅ Cerrada (PR draft, pendiente review y merge).
+
+### Completado
+
+- **Migración** `20260527090605_phase5_5_push_subscriptions.sql`: tabla `push_subscriptions(id, usuario_id, endpoint, p256dh, auth, user_agent, created_at, updated_at, last_active_at)` con UNIQUE `(usuario_id, endpoint)`, índice `(usuario_id)`, trigger `set_updated_at`, ON DELETE CASCADE desde `usuarios` y 4 políticas RLS de aislamiento (`usuario_id = auth.uid()`).
+- **Schema Zod** `schemas/push.ts`: `suscribirPushInputSchema`, `desuscribirPushInputSchema` con claves de error en namespace `push.errors.*`.
+- **Server actions**: `suscribir-a-push` (UPSERT idempotente por `(usuario_id, endpoint)`), `desuscribir-push` (DELETE idempotente con count). Errores tipados según `docs/architecture/error-handling.md`.
+- **Helper server-side** `enviarPushANotificarUsuarios(usuarioIds, payload)` en `lib/enviar-push.ts`: carga suscripciones cross-user con service role, paraleliza envíos con `Promise.allSettled`, limpia automáticamente las suscripciones que devuelven `410 Gone` o `404 Not Found`. Configuración VAPID lazy con early return + `console.error` si faltan keys (no rompe al caller).
+- **Helpers de audiencia** en `lib/audiencia.ts`:
+  - `destinatariosDeConversacion(convId, excluyendoUserId)` — profes activos del aula del niño + tutores con `puede_recibir_mensajes`.
+  - `destinatariosPushDeAnuncio(anuncio, excluyendoUserId)` — solo tutores con flag (ámbito aula o centro). Profes y admin no reciben push de anuncios (sí los ven in-app).
+  - `getAutorPushInfo(userId)` — `nombre_completo` + `idioma_preferido` para construir el payload.
+- **Service Worker** `public/sw.js`: handlers `push` (parsea payload JSON y llama `showNotification`) y `notificationclick` (focus + navigate o openWindow). Sin lógica de caching offline — pertenece a F11 (ADR-0028).
+- **Manifest mínimo** `public/manifest.json` + meta tags iOS en `src/app/[locale]/layout.tsx` (`apple-touch-icon`, `apple-mobile-web-app-capable`, `apple-mobile-web-app-title`) + 2 iconos PNG (192/512 con `purpose: 'any maskable'`).
+- **Hooks de mensajería**: `enviar-mensaje.ts` y `publicar-anuncio.ts` invocan al helper tras INSERT exitoso. Try/catch silencioso con `console.error` — un fallo de push no rompe el mensaje persistido.
+- **UI cliente**:
+  - `PushSettings.tsx` en `/profile` con 5 estados (`granted`, `denied`, `default`, `unsupported`, `ios_sin_pwa`). Banner explícito para iOS Safari sin PWA-install.
+  - `PushBanner.tsx` contextual en `/messages` para tutor y profe (admin no): visible solo en `default`, dismiss con `sessionStorage` vía `useSyncExternalStore` (sin flicker de hidratación). Reaparece al cerrar y reabrir el navegador.
+- **i18n trilingüe** namespace `push.*` en `messages/{es,en,va}.json`.
+- **Tests** (+31 sobre baseline F5):
+  - `push.schema.test.ts` (13 tests) — Zod input validation.
+  - `enviar-push.test.ts` (9 tests) — mocks de `web-push` y service client; cobertura de `410/404 → DELETE`, `500 → log sin DELETE`, audiencia vacía, VAPID ausente, mezcla de estados.
+  - `push.rls.test.ts` (9 tests) — aislamiento SELECT/INSERT/UPDATE/DELETE entre usuarios, UNIQUE constraint, CASCADE on delete usuario.
+- **Documentación**:
+  - Spec `/docs/specs/push-notifications.md` cubriendo B35-B40 (activación, recepción mensaje, recepción anuncio, click, desactivación, limpieza expiradas) + casos edge.
+  - `docs/operations/vapid-rotation.md` con procedimiento paso a paso.
+  - `scripts/test-push.mjs` para smoke local del helper.
+- **Workflow nuevo**: smoke directo en producción tras merge (vs. local con `npm run dev`). Tests automatizados como red de seguridad principal.
+
+### Decisiones (ADRs)
+
+- **ADR-0027 — Push notifications con server actions + `web-push`**: rechazada Edge Function de Supabase, SaaS (OneSignal) y diferir a Ola 2. Elegido `web-push` directo desde server actions porque mantiene el plano arquitectónico actual, sin coste recurrente, con privacidad-by-default (suscripciones nunca salen de nuestra infra). El refactor a cola se hará si las audiencias crecen (>1000 destinatarios) — esa parte queda aislada en el helper.
+- **ADR-0028 — Manifest mínimo F5.5 vs PWA completa F11**: manifest minimalista para desbloquear iOS PWA-install (requisito Apple para push) sin absorber el scope de F11. El SW de F5.5 solo expone `push` + `notificationclick`; F11 añadirá caching offline + estrategias por ruta + lighthouse PWA 90+. Versionado del SW al llegar F11 incluido como TODO de verificación.
+
+### Aprendizaje transversal
+
+- **`useSyncExternalStore` para state derivado de `sessionStorage`**: evita el lint `react-hooks/set-state-in-effect` (cascading renders) y elimina el flicker de hidratación. El patrón `subscribeFn + getSnapshot + getServerSnapshot` con un `Set<callback>` in-tab cubre el caso "el `storage` event no se emite en la misma pestaña".
+- **Service role en helpers server-side claramente etiquetados**: el motor de push lee suscripciones cross-user; la auth del autor ya quedó verificada por la server action que lo invoca. Patrón replicable para F6+ cuando haya lookups que crucen la RLS por flujo legítimo.
+- **Catch-all silencioso para efectos best-effort**: el push se `await`ea (la lambda no termina antes) pero los errores quedan en `console.error`. El usuario del action no se entera. Documentado como patrón general para hooks transversales post-INSERT (recordatorios F6 lo aplicará igual).
+
+### Pendiente
+
+- Smoke completo en producción tras merge (responsable):
+  1. Profe envía mensaje → tutor con push activado recibe notificación nativa del SO.
+  2. Admin publica anuncio centro → todos los tutores con flag reciben push.
+  3. Click en notificación abre la URL correcta (`/{idioma}/messages?nino=<id>` o `/.../messages/anuncios/<id>`).
+  4. iOS Safari sin PWA → modal explícito; tras "Añadir a pantalla de inicio" + abrir desde icono → push funciona.

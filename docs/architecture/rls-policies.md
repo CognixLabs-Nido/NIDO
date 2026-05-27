@@ -258,6 +258,8 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `asistencia.rls.test.ts`, `ausencia.rls.test.ts` (Fase 4).
 - `dias-centro.rls.test.ts` + `tipo-de-dia.test.ts` (Fase 4.5a).
 - `menus.rls.test.ts` + `menu-helpers.test.ts` (Fase 4.5b).
+- `messaging.rls.test.ts` + `messaging-helpers.test.ts` (Fase 5).
+- `push.rls.test.ts` (Fase 5.5).
 - `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` + `asistencia-audit.test.ts` + `dias-centro-audit.test.ts` + `menus-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda, asistencia, calendario, plantillas y menu_dia + trigger BEFORE validar_fecha).
 
 ## Calendario laboral (Fase 4.5a)
@@ -308,3 +310,17 @@ Tests Fases 1–4 en `src/test/rls/`:
 - **Audit log**: triggers en `conversaciones`, `mensajes`, `anuncios`. `centro_id` se deriva: directo en `conversaciones`/`anuncios`, vía `centro_de_conversacion` en `mensajes`. `lectura_*` NO se auditan.
 
 - **Sin ventana de edición**: a diferencia de F3/F4/F4.5b, mensajería es continua. Un mensaje enviado ayer sigue siendo anulable hoy. La inmutabilidad se da por el flag `erroneo` + prefijo, no por barrera temporal.
+
+## Push notifications (Fase 5.5)
+
+1 tabla nueva — `push_subscriptions` — y 4 políticas con aislamiento estricto por usuario. Ver [ADR-0027](../decisions/ADR-0027-push-notifications-arquitectura.md) y [ADR-0028](../decisions/ADR-0028-manifest-minimo-f5-5-vs-pwa-f11.md).
+
+- **`push_subscriptions`**: una fila por (`usuario_id`, `endpoint del navegador`). UNIQUE evita duplicados al reintentar la suscripción. ON DELETE CASCADE desde `usuarios`.
+  - SELECT: `usuario_id = auth.uid()`.
+  - INSERT: WITH CHECK `usuario_id = auth.uid()` (anti-suplantación).
+  - UPDATE: USING + WITH CHECK `usuario_id = auth.uid()` (refresh de `last_active_at`, `p256dh`/`auth` rotados).
+  - DELETE: `usuario_id = auth.uid()` (desuscripción manual desde cliente).
+- **Sin helpers**: la condición es trivial y sin lookups cross-tabla. No hay riesgo de recursión (ADR-0007) ni del gotcha MVCC (la SELECT policy no mira otras tablas).
+- **No se audita**: telemetría operativa, no contenido (igual que `lectura_*` en F5). Si en F6+ aparece compliance por entrega de notificaciones, se añadiría una tabla aparte (`notificaciones_push`) con su propio trigger.
+- **No se publica en Realtime**: los clientes no observan suscripciones; cada navegador conoce la suya por `pushManager.getSubscription()`.
+- **Service role bypass en el motor de envío**: `enviarPushANotificarUsuarios` lee suscripciones cross-user vía `createServiceClient()`. La auth del autor ya se verificó en la server action que lo invoca; el helper solo computa destinatarios y envía. Esto es coherente con el resto del proyecto: service role nunca se expone al cliente y se usa solo en helpers server-side claramente etiquetados.
