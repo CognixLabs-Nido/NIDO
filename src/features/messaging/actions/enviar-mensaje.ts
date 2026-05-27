@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { destinatariosDeConversacion, getAutorPushInfo } from '@/features/push/lib/audiencia'
+import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -117,6 +119,33 @@ export async function enviarMensaje(
       return fail('messages.errors.sin_permisos')
     }
     return fail('messages.errors.envio_fallo')
+  }
+
+  // 4. Push notifications (F5.5). Non-blocking respecto al resultado: si el
+  //    envío falla, el mensaje ya está persistido y el toast del cliente
+  //    sale verde igual. Sí esperamos a la promesa para que la lambda de
+  //    Vercel no termine antes de que `web-push` complete los envíos.
+  try {
+    const destinatarios = await destinatariosDeConversacion(conversacionId, userId)
+    if (destinatarios.length > 0) {
+      const autor = await getAutorPushInfo(userId)
+      const cuerpo =
+        parsed.data.contenido.length > 100
+          ? parsed.data.contenido.slice(0, 99) + '…'
+          : parsed.data.contenido
+      await enviarPushANotificarUsuarios(destinatarios, {
+        titulo: autor.nombre,
+        cuerpo,
+        url: `/${autor.idioma}/messages?nino=${parsed.data.nino_id}`,
+        datos: {
+          tipo: 'mensaje',
+          conversacion_id: conversacionId,
+          nino_id: parsed.data.nino_id,
+        },
+      })
+    }
+  } catch (err) {
+    console.error('[enviarMensaje] push notifications falló:', err)
   }
 
   revalidatePath('/[locale]/messages', 'layout')
