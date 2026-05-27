@@ -1265,6 +1265,50 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_active_at: string
+          p256dh: string
+          updated_at: string
+          user_agent: string | null
+          usuario_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_active_at?: string
+          p256dh: string
+          updated_at?: string
+          user_agent?: string | null
+          usuario_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_active_at?: string
+          p256dh?: string
+          updated_at?: string
+          user_agent?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'push_subscriptions_usuario_id_fkey'
+            columns: ['usuario_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       roles_usuario: {
         Row: {
           centro_id: string
