@@ -1079,5 +1079,36 @@
       "escribir_profe": "Write to the teacher",
       "empezar_conversacion": "No messages yet. Type the first one below."
     }
+  },
+  "push": {
+    "settings": {
+      "titulo": "Notifications",
+      "descripcion": "Get alerts when a new message or announcement arrives, even with NIDO closed.",
+      "activar": "Enable notifications",
+      "desactivar": "Disable notifications",
+      "activando": "Enabling…",
+      "desactivando": "Disabling…",
+      "estado_activado": "Notifications enabled",
+      "estado_denegado": "You've blocked notifications. Change the permission in your browser settings.",
+      "estado_unsupported": "Your browser does not support push notifications.",
+      "ios_titulo": "Install required on iOS",
+      "ios_anadir_a_pantalla": "To receive notifications on iPhone or iPad: open NIDO in Safari, tap Share → Add to Home Screen. Then open NIDO from the icon and come back here."
+    },
+    "banner": {
+      "titulo": "Do you want to receive notifications?",
+      "descripcion": "We'll let you know when a new message or announcement arrives.",
+      "cta_activar": "Enable",
+      "cta_descartar": "Not now",
+      "descartar_aria": "Dismiss"
+    },
+    "notificaciones": {
+      "anuncio_centro_titulo": "New school announcement",
+      "anuncio_aula_titulo": "New classroom announcement"
+    },
+    "errors": {
+      "permiso_denegado": "You've refused notifications. To enable them, change it in your browser.",
+      "suscripcion_fallo": "We couldn't enable notifications. Please try again.",
+      "no_autorizado": "Session expired. Please sign in again."
+    }
   }
 }

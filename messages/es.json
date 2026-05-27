@@ -1079,5 +1079,36 @@
       "escribir_profe": "Escribir a la profe",
       "empezar_conversacion": "Aún sin mensajes. Escribe el primero abajo."
     }
+  },
+  "push": {
+    "settings": {
+      "titulo": "Notificaciones",
+      "descripcion": "Recibe avisos cuando llegue un mensaje o anuncio nuevo aunque tengas NIDO cerrado.",
+      "activar": "Activar notificaciones",
+      "desactivar": "Desactivar notificaciones",
+      "activando": "Activando…",
+      "desactivando": "Desactivando…",
+      "estado_activado": "Notificaciones activadas",
+      "estado_denegado": "Has bloqueado las notificaciones. Cambia el permiso en los ajustes del navegador.",
+      "estado_unsupported": "Tu navegador no soporta notificaciones push.",
+      "ios_titulo": "Instalación necesaria en iOS",
+      "ios_anadir_a_pantalla": "Para recibir notificaciones en iPhone o iPad: abre NIDO en Safari, pulsa Compartir → Añadir a pantalla de inicio. Después abre NIDO desde el icono y vuelve aquí."
+    },
+    "banner": {
+      "titulo": "¿Quieres recibir notificaciones?",
+      "descripcion": "Te avisaremos cuando llegue un mensaje o anuncio nuevo.",
+      "cta_activar": "Activar",
+      "cta_descartar": "Ahora no",
+      "descartar_aria": "Descartar"
+    },
+    "notificaciones": {
+      "anuncio_centro_titulo": "Nuevo anuncio del centro",
+      "anuncio_aula_titulo": "Nuevo anuncio del aula"
+    },
+    "errors": {
+      "permiso_denegado": "Has rechazado las notificaciones. Para activarlas, ajústalo en tu navegador.",
+      "suscripcion_fallo": "No hemos podido activar las notificaciones. Inténtalo de nuevo.",
+      "no_autorizado": "Sesión expirada. Vuelve a iniciar sesión."
+    }
   }
 }
