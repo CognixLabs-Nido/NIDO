@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { MessagesView } from '@/features/messaging/components/MessagesView'
+import { getAdminFamiliaList } from '@/features/messaging/queries/get-admin-familia-list'
 import { getAnunciosDelUsuario } from '@/features/messaging/queries/get-anuncios'
 import { getConversacionDetalle } from '@/features/messaging/queries/get-conversacion-detalle'
 import { getNinosMensajeriaParaUsuario } from '@/features/messaging/queries/get-ninos-mensajeria'
@@ -50,6 +51,7 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
   // saltamos la carga.
   const ninos = rol === 'admin' ? [] : await getNinosMensajeriaParaUsuario(centroId, rol)
   const anuncios = await getAnunciosDelUsuario()
+  const adminFamiliaItems = await getAdminFamiliaList(rol)
 
   // Resolvemos el niño seleccionado en URL. Si no está en la lista del
   // usuario (manipulación o link viejo), lo ignoramos.
@@ -110,6 +112,7 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
         detalleHeader={detalleHeader}
         detalleMensajes={detalleMensajes}
         participo={participo}
+        adminFamiliaItems={adminFamiliaItems}
       />
     </div>
   )

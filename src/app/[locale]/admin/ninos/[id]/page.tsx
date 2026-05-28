@@ -31,6 +31,7 @@ import {
 } from '@/features/ninos/queries/get-ninos'
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
+import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
 import { EmptyState } from '@/shared/components/EmptyState'
 
 interface PageProps {
@@ -49,7 +50,9 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const [{ data: vinculos }, info, matriculas, datosPed] = await Promise.all([
     supabase
       .from('vinculos_familiares')
-      .select('id, tipo_vinculo, parentesco, descripcion_parentesco, usuario_id')
+      .select(
+        'id, tipo_vinculo, parentesco, descripcion_parentesco, usuario_id, usuario:usuarios!inner(nombre_completo)'
+      )
       .eq('nino_id', id)
       .is('deleted_at', null),
     getInfoMedica(id),
@@ -190,20 +193,45 @@ export default async function NinoDetallePage({ params }: PageProps) {
                   <TableRow>
                     <TableHead>{t('fields.tipo_vinculo')}</TableHead>
                     <TableHead>{t('fields.parentesco')}</TableHead>
+                    <TableHead className="text-right">
+                      <span className="sr-only">{tFicha('escribir_familia')}</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {vinculos.map((v) => (
-                    <TableRow key={v.id}>
-                      <TableCell>
-                        <Badge variant="warm">{v.tipo_vinculo}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {v.parentesco}
-                        {v.descripcion_parentesco ? ` (${v.descripcion_parentesco})` : ''}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {vinculos.map((v) => {
+                    const esTutor =
+                      v.tipo_vinculo === 'tutor_legal_principal' ||
+                      v.tipo_vinculo === 'tutor_legal_secundario' ||
+                      v.tipo_vinculo === 'autorizado'
+                    const nombre = v.usuario?.nombre_completo ?? ''
+                    return (
+                      <TableRow key={v.id}>
+                        <TableCell>
+                          <div className="flex flex-col gap-0.5">
+                            <Badge variant="warm" className="w-fit">
+                              {v.tipo_vinculo}
+                            </Badge>
+                            {nombre && (
+                              <span className="text-muted-foreground text-xs">{nombre}</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {v.parentesco}
+                          {v.descripcion_parentesco ? ` (${v.descripcion_parentesco})` : ''}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {esTutor && v.usuario_id && (
+                            <AbrirConversacionDireccionButton
+                              tutorId={v.usuario_id}
+                              locale={locale}
+                            />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </Card>
