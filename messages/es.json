@@ -1018,6 +1018,7 @@
       "header_profe_subtitulo": "Profe del aula {aula}",
       "header_profes_count": "{n} profes",
       "sin_mensajes": "Empieza la conversación escribiendo abajo.",
+      "ir_al_ultimo": "Ir al último mensaje",
       "composer_placeholder": "Escribe tu mensaje…",
       "enviar": "Enviar",
       "enviando": "Enviando…",

@@ -1018,6 +1018,7 @@
       "header_profe_subtitulo": "Teacher in classroom {aula}",
       "header_profes_count": "{n} teachers",
       "sin_mensajes": "Start the conversation by writing below.",
+      "ir_al_ultimo": "Jump to latest message",
       "composer_placeholder": "Type your message…",
       "enviar": "Send",
       "enviando": "Sending…",
