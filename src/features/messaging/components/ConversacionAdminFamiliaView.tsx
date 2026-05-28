@@ -13,6 +13,7 @@ import { marcarConversacionLeida } from '../actions/marcar-conversacion-leida'
 import { useMessagingRealtime } from '../lib/use-messaging-realtime'
 import { PREFIX_ANULADO, type ConversacionAdminFamiliaHeader, type MensajeView } from '../types'
 
+import { MarcarErroneoButton } from './MarcarErroneoButton'
 import { MensajeComposer } from './MensajeComposer'
 import { ReabrirConversacionButton } from './ReabrirConversacionButton'
 
@@ -181,6 +182,16 @@ export function ConversacionAdminFamiliaView({ locale, rolEnHilo, header, mensaj
                     )}
                     <span className="break-words whitespace-pre-wrap">{contenidoVisible}</span>
                   </div>
+                  {m.es_propio && !m.erroneo && (
+                    <div className="flex justify-end pt-0.5">
+                      <MarcarErroneoButton
+                        target="mensaje"
+                        id={m.id}
+                        createdAt={m.created_at}
+                        inline
+                      />
+                    </div>
+                  )}
                 </div>
               </li>
             )

@@ -148,7 +148,12 @@ export function ConversacionView({ locale, rol, header, mensajes, participo }: P
                   </div>
                   {m.es_propio && !m.erroneo && (
                     <div className="flex justify-end pt-0.5">
-                      <MarcarErroneoButton target="mensaje" id={m.id} inline />
+                      <MarcarErroneoButton
+                        target="mensaje"
+                        id={m.id}
+                        createdAt={m.created_at}
+                        inline
+                      />
                     </div>
                   )}
                 </div>
