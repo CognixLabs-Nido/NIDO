@@ -1,6 +1,6 @@
 'use client'
 
-import { MegaphoneIcon, MessageCircleIcon, PlusIcon } from 'lucide-react'
+import { MegaphoneIcon, MessageCircleIcon, PlusIcon, ShieldCheckIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
@@ -14,8 +14,15 @@ import { cn } from '@/lib/utils'
 
 import { useMessagingRealtime } from '../lib/use-messaging-realtime'
 import type { NinoMensajeriaItem } from '../queries/get-ninos-mensajeria'
-import type { AnuncioListItem, ConversacionHeader, MensajeView } from '../types'
+import type {
+  AdminFamiliaListItem as AdminFamiliaListItemType,
+  AnuncioListItem,
+  ConversacionHeader,
+  MensajeView,
+} from '../types'
 
+import { AdminFamiliaListItem } from './AdminFamiliaListItem'
+import { AdminFamiliaSection } from './AdminFamiliaSection'
 import { ConversacionesSplitView } from './ConversacionesSplitView'
 
 interface Props {
@@ -35,14 +42,25 @@ interface Props {
   detalleHeader: ConversacionHeader | null
   detalleMensajes: MensajeView[]
   participo: boolean
+  /**
+   * F5.6-A — hilos admin↔familia del usuario actual.
+   *  - Admin: lista completa para el tab "Dirección".
+   *  - Tutor/autorizado: lista (0 ó 1) que se renderiza encima del split-view
+   *    como sección "Dirección".
+   *  - Profe: siempre vacía (la query corta sin pegar a BD).
+   */
+  adminFamiliaItems: AdminFamiliaListItemType[]
 }
 
 /**
- * Vista principal `/messages` post-Bug 3:
- *  - Admin: solo tab Anuncios (no participa en conversaciones).
+ * Vista principal `/messages`:
+ *  - Admin: tab Anuncios + tab "Dirección" (hilos admin↔familia).
+ *    Hasta F5.6 el admin solo tenía Anuncios.
  *  - Profe/Tutor: tabs Conversaciones (split-view WhatsApp-style) + Anuncios.
+ *    F5.6 añade arriba del split-view una sección "Dirección" para tutor.
  *
- * Tabs controladas por URL (`?tab=anuncios|conversaciones`) para deep-link.
+ * Tabs controladas por URL (`?tab=anuncios|conversaciones|direccion`) para
+ * deep-link.
  */
 export function MessagesView({
   locale,
@@ -55,18 +73,31 @@ export function MessagesView({
   detalleHeader,
   detalleMensajes,
   participo,
+  adminFamiliaItems,
 }: Props) {
   const t = useTranslations('messages')
+  const tAdmin = useTranslations('messages.admin_familia')
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const tabActual = searchParams.get('tab') === 'anuncios' ? 'anuncios' : 'conversaciones'
+  const tabRaw = searchParams.get('tab')
+  const tabActual: 'conversaciones' | 'anuncios' | 'direccion' =
+    rol === 'admin'
+      ? tabRaw === 'direccion'
+        ? 'direccion'
+        : 'anuncios'
+      : tabRaw === 'anuncios'
+        ? 'anuncios'
+        : 'conversaciones'
 
   const onTabChange = useCallback(
     (v: string) => {
       const params = new URLSearchParams(searchParams.toString())
       if (v === 'anuncios') {
         params.set('tab', 'anuncios')
+        params.delete('nino')
+      } else if (v === 'direccion') {
+        params.set('tab', 'direccion')
         params.delete('nino')
       } else {
         params.delete('tab')
@@ -79,6 +110,10 @@ export function MessagesView({
 
   const unreadConversaciones = ninos.reduce((acc, n) => acc + (n.unread_count > 0 ? 1 : 0), 0)
   const unreadAnuncios = anuncios.filter((a) => !a.leido && !a.erroneo && !a.es_propio).length
+  const unreadAdminFamilia = adminFamiliaItems.reduce(
+    (acc, i) => acc + (i.unread_count > 0 ? 1 : 0),
+    0
+  )
 
   // Realtime: si llegan mensajes/anuncios nuevos vía RLS, refrescamos el SSR
   // para que los conteos y la lista se actualicen sin recargar manualmente.
@@ -87,27 +122,55 @@ export function MessagesView({
     onChange: () => router.refresh(),
   })
 
-  // Vista admin: sin tabs, solo anuncios (decisión F5 — admin no
-  // participa en conversaciones; los tutores escriben a la profe del
-  // aula). El bloque mantiene la cabecera + botón "Nuevo anuncio".
+  // Vista admin: ahora con dos tabs (Anuncios + Dirección). El tab Anuncios
+  // sigue siendo el default por compatibilidad con F5.
   if (rol === 'admin') {
     return (
       <div className="space-y-4">
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold">{t('title')}</h1>
-            <p className="text-muted-foreground mt-1 text-sm">{t('subtitle_admin')}</p>
-          </div>
-          {puedePublicarAnuncio && (
-            <Button render={<Link href={`/${locale}/messages/nuevo-anuncio`} />}>
-              <MegaphoneIcon className="size-4" />
-              <PlusIcon className="size-3" />
-              <span className="ml-1">{t('anuncio.nuevo')}</span>
-            </Button>
-          )}
+        <header>
+          <h1 className="text-2xl font-semibold">{t('title')}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t('subtitle_admin')}</p>
         </header>
 
-        <AnunciosList anuncios={anuncios} locale={locale} />
+        <Tabs value={tabActual} onValueChange={onTabChange}>
+          <div className="flex items-center justify-between gap-4">
+            <TabsList>
+              <TabsTrigger value="anuncios">
+                <MegaphoneIcon className="size-4" />
+                <span>{t('tabs.anuncios')}</span>
+                {unreadAnuncios > 0 && (
+                  <Badge variant="default" className="ml-2 px-1.5 text-[10px]">
+                    {unreadAnuncios}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="direccion">
+                <ShieldCheckIcon className="size-4" />
+                <span>{tAdmin('tab')}</span>
+                {unreadAdminFamilia > 0 && (
+                  <Badge variant="default" className="ml-2 px-1.5 text-[10px]">
+                    {unreadAdminFamilia}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            {tabActual === 'anuncios' && puedePublicarAnuncio && (
+              <Button render={<Link href={`/${locale}/messages/nuevo-anuncio`} />}>
+                <MegaphoneIcon className="size-4" />
+                <PlusIcon className="size-3" />
+                <span className="ml-1">{t('anuncio.nuevo')}</span>
+              </Button>
+            )}
+          </div>
+
+          <TabsContent value="anuncios" className="pt-3">
+            <AnunciosList anuncios={anuncios} locale={locale} />
+          </TabsContent>
+
+          <TabsContent value="direccion" className="pt-3">
+            <AdminFamiliaList items={adminFamiliaItems} locale={locale} />
+          </TabsContent>
+        </Tabs>
       </div>
     )
   }
@@ -125,9 +188,9 @@ export function MessagesView({
             <TabsTrigger value="conversaciones">
               <MessageCircleIcon className="size-4" />
               <span>{t('tabs.conversaciones')}</span>
-              {unreadConversaciones > 0 && (
+              {(unreadConversaciones > 0 || unreadAdminFamilia > 0) && (
                 <Badge variant="default" className="ml-2 px-1.5 text-[10px]">
-                  {unreadConversaciones}
+                  {unreadConversaciones + unreadAdminFamilia}
                 </Badge>
               )}
             </TabsTrigger>
@@ -150,7 +213,8 @@ export function MessagesView({
           )}
         </div>
 
-        <TabsContent value="conversaciones" className="pt-3">
+        <TabsContent value="conversaciones" className="space-y-4 pt-3">
+          <AdminFamiliaSection locale={locale} items={adminFamiliaItems} />
           <ConversacionesSplitView
             locale={locale}
             rol={rol}
@@ -168,6 +232,34 @@ export function MessagesView({
         </TabsContent>
       </Tabs>
     </div>
+  )
+}
+
+function AdminFamiliaList({
+  items,
+  locale,
+}: {
+  items: AdminFamiliaListItemType[]
+  locale: string
+}) {
+  const t = useTranslations('messages.admin_familia')
+  if (items.length === 0) {
+    return (
+      <Card>
+        <CardContent className="text-muted-foreground py-8 text-center text-sm">
+          {t('lista_vacia')}
+        </CardContent>
+      </Card>
+    )
+  }
+  return (
+    <ul className="space-y-2">
+      {items.map((item) => (
+        <li key={item.id}>
+          <AdminFamiliaListItem locale={locale} item={item} />
+        </li>
+      ))}
+    </ul>
   )
 }
 
