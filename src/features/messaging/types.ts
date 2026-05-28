@@ -82,6 +82,38 @@ export interface ConversacionHeader {
   profes_aula: ProfeAula[]
 }
 
+// --- F5.6-A — admin ↔ familia --------------------------------------------
+
+/** Header del hilo admin_familia. Carece de niño/aula; el "otro miembro"
+ *  del par se identifica por nombre + id. `expires_at` siempre poblado
+ *  (lo enforza el CHECK estructural). */
+export interface ConversacionAdminFamiliaHeader {
+  id: string
+  admin_id: string
+  admin_nombre: string
+  tutor_id: string
+  tutor_nombre: string
+  expires_at: string
+}
+
+/** Item de lista de hilos admin_familia. Se usa tanto para el tab admin
+ *  como para la sección "Dirección" del tutor (0 ó 1 item). */
+export interface AdminFamiliaListItem {
+  id: string
+  /** El nombre del *otro* miembro del par, calculado server-side según
+   *  quién consulta. Para el admin → nombre del tutor; para el tutor →
+   *  nombre del admin. La query no expone ambos para mantener simple
+   *  el render. */
+  contraparte_nombre: string
+  /** Indica qué papel juega el caller en este hilo. Determina si la UI
+   *  puede mostrar "Reabrir conversación" (solo admin). */
+  rol_en_hilo: 'admin' | 'tutor'
+  expires_at: string
+  last_message_at: string | null
+  last_message_preview: string | null
+  unread_count: number
+}
+
 /** Detalle de un anuncio. */
 export interface AnuncioDetalle {
   id: string

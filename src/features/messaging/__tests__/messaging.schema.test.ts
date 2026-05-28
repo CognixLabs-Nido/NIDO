@@ -80,6 +80,60 @@ describe('messaging — mensajeInputSchema', () => {
     })
     expect(r.success).toBe(false)
   })
+
+  // --- F5.6-A: rama admin_familia (union discriminada) -----------------------
+  it('legacy F5 sin kind → tipo parsed por defecto es profe_familia', () => {
+    const r = mensajeInputSchema.safeParse({
+      nino_id: NINO_UUID,
+      contenido: 'hola',
+    })
+    expect(r.success).toBe(true)
+    if (r.success && 'kind' in r.data) {
+      expect(r.data.kind).toBe('profe_familia')
+    }
+  })
+
+  it('acepta forma admin_familia con conversacion_id', () => {
+    const r = mensajeInputSchema.safeParse({
+      kind: 'admin_familia',
+      conversacion_id: CONV_UUID,
+      contenido: 'mensaje para dirección',
+    })
+    expect(r.success).toBe(true)
+    if (r.success) {
+      expect(r.data.kind).toBe('admin_familia')
+      if (r.data.kind === 'admin_familia') {
+        expect(r.data.conversacion_id).toBe(CONV_UUID)
+      }
+    }
+  })
+
+  it('admin_familia sin conversacion_id rechaza', () => {
+    const r = mensajeInputSchema.safeParse({
+      kind: 'admin_familia',
+      contenido: 'falta el id',
+    })
+    expect(r.success).toBe(false)
+  })
+
+  it('admin_familia con conversacion_id no-uuid rechaza', () => {
+    const r = mensajeInputSchema.safeParse({
+      kind: 'admin_familia',
+      conversacion_id: 'no-soy-un-uuid',
+      contenido: 'ok',
+    })
+    expect(r.success).toBe(false)
+  })
+
+  it('admin_familia hace trim del contenido', () => {
+    const r = mensajeInputSchema.safeParse({
+      kind: 'admin_familia',
+      conversacion_id: CONV_UUID,
+      contenido: '   gracias   ',
+    })
+    expect(r.success).toBe(true)
+    if (r.success) expect(r.data.contenido).toBe('gracias')
+  })
 })
 
 describe('messaging — anuncioInputSchema (cross-field ámbito ↔ aula)', () => {

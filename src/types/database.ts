@@ -523,30 +523,49 @@ export type Database = {
       }
       conversaciones: {
         Row: {
+          admin_id: string | null
           centro_id: string
           created_at: string
+          expires_at: string | null
           id: string
           last_message_at: string | null
-          nino_id: string
+          nino_id: string | null
+          tipo_conversacion: Database['public']['Enums']['tipo_conversacion']
+          tutor_id: string | null
           updated_at: string
         }
         Insert: {
+          admin_id?: string | null
           centro_id: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           last_message_at?: string | null
-          nino_id: string
+          nino_id?: string | null
+          tipo_conversacion?: Database['public']['Enums']['tipo_conversacion']
+          tutor_id?: string | null
           updated_at?: string
         }
         Update: {
+          admin_id?: string | null
           centro_id?: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           last_message_at?: string | null
-          nino_id?: string
+          nino_id?: string | null
+          tipo_conversacion?: Database['public']['Enums']['tipo_conversacion']
+          tutor_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: 'conversaciones_admin_id_fkey'
+            columns: ['admin_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'conversaciones_centro_id_fkey'
             columns: ['centro_id']
@@ -559,6 +578,13 @@ export type Database = {
             columns: ['nino_id']
             isOneToOne: true
             referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'conversaciones_tutor_id_fkey'
+            columns: ['tutor_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
             referencedColumns: ['id']
           },
         ]
@@ -1497,11 +1523,16 @@ export type Database = {
       }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
       centro_de_plantilla: { Args: { p_plantilla_id: string }; Returns: string }
+      conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
       es_profe_de_aula: { Args: { p_aula_id: string }; Returns: boolean }
       es_profe_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
       es_tutor_de: { Args: { p_nino_id: string }; Returns: boolean }
+      es_tutor_en_centro: {
+        Args: { p_centro_id: string; p_tutor_id: string }
+        Returns: boolean
+      }
       fecha_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       get_info_medica_emergencia: {
         Args: { p_nino_id: string }
@@ -1623,6 +1654,7 @@ export type Database = {
         | 'religiosa_kosher'
         | 'otra'
       tipo_biberon: 'materna' | 'formula' | 'agua' | 'infusion' | 'zumo'
+      tipo_conversacion: 'profe_familia' | 'admin_familia'
       tipo_deposicion: 'pipi' | 'caca' | 'mixto'
       tipo_dia_centro:
         | 'lectivo'
@@ -1800,6 +1832,7 @@ export const Constants = {
         'otra',
       ],
       tipo_biberon: ['materna', 'formula', 'agua', 'infusion', 'zumo'],
+      tipo_conversacion: ['profe_familia', 'admin_familia'],
       tipo_deposicion: ['pipi', 'caca', 'mixto'],
       tipo_dia_centro: [
         'lectivo',

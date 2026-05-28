@@ -31,6 +31,11 @@ export async function getConversacionDetalle(
   const userId = userData.user?.id
   if (!userId) return null
 
+  // Limitar explícitamente a `profe_familia`. Las admin↔familia se sirven
+  // por `getConversacionAdminFamiliaDetalle` (router despacha por
+  // `tipo_conversacion`). El INNER JOIN con `ninos` ya las filtraría en
+  // runtime, pero el filtro explícito documenta la intención y previene
+  // que un caller futuro las cuele aquí.
   const { data: conv, error: convErr } = await supabase
     .from('conversaciones')
     .select(
@@ -49,6 +54,7 @@ export async function getConversacionDetalle(
       `
     )
     .eq('id', conversacionId)
+    .eq('tipo_conversacion', 'profe_familia')
     .maybeSingle()
 
   if (convErr) {
@@ -56,6 +62,10 @@ export async function getConversacionDetalle(
     return null
   }
   if (!conv) return null
+  // Narrow defensivo: las profe_familia siempre tienen `nino_id` poblado
+  // (CHECK estructural de la migración 20260528100000). El tipo es
+  // `string | null` por la columna nullable; lo cerramos aquí.
+  if (!conv.nino_id) return null
 
   // RLS ya lo filtra: si llega aquí, el usuario puede leer la conversación.
   // Para saber si "participa" (puede escribir) re-evaluamos el helper SQL.

@@ -986,6 +986,21 @@
       "conversaciones": "Conversaciones",
       "anuncios": "Anuncios"
     },
+    "badge": {
+      "direccion": "Dirección"
+    },
+    "admin_familia": {
+      "tab": "Dirección",
+      "seccion_titulo": "Dirección",
+      "seccion_subtitulo": "Conversación con la dirección del centro",
+      "lista_vacia": "Aún no has iniciado ninguna conversación con familias.",
+      "escribir_direccion": "Conversación con dirección",
+      "reabrir": "Reabrir conversación",
+      "reabriendo": "Reabriendo…",
+      "indicador_activo": "Se cierra el {fecha}",
+      "indicador_cerrada": "Cerrada el {fecha}",
+      "composer_cerrado": "Esta conversación con dirección se ha cerrado."
+    },
     "lista": {
       "vacia_conversaciones": "Aún no tienes conversaciones.",
       "vacia_anuncios": "Sin anuncios por ahora.",
@@ -1003,6 +1018,7 @@
       "header_profe_subtitulo": "Profe del aula {aula}",
       "header_profes_count": "{n} profes",
       "sin_mensajes": "Empieza la conversación escribiendo abajo.",
+      "ir_al_ultimo": "Ir al último mensaje",
       "composer_placeholder": "Escribe tu mensaje…",
       "enviar": "Enviar",
       "enviando": "Enviando…",
@@ -1072,7 +1088,12 @@
       "sin_permisos": "No tienes permiso para enviar este mensaje.",
       "ya_anulado": "Este mensaje ya estaba anulado.",
       "no_autorizado": "No tienes acceso a esta conversación.",
-      "conexion": "Sin conexión. Reintentando…"
+      "conexion": "Sin conexión. Reintentando…",
+      "solo_admin": "Solo la dirección del centro puede iniciar esta conversación.",
+      "tutor_no_pertenece_centro": "Esta familia no pertenece a tu centro.",
+      "apertura_fallo": "No se pudo abrir la conversación. Inténtalo de nuevo.",
+      "conversacion_caducada": "Esta conversación con dirección se ha cerrado. Pide a la dirección que la reabra.",
+      "ventana_anulacion_expirada": "Ya no puedes marcar este mensaje como erróneo: han pasado más de 5 minutos desde el envío."
     },
     "ficha_nino": {
       "escribir_familia": "Escribir a la familia",

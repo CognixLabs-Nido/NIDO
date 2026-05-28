@@ -986,6 +986,21 @@
       "conversaciones": "Converses",
       "anuncios": "Anuncis"
     },
+    "badge": {
+      "direccion": "Direcció"
+    },
+    "admin_familia": {
+      "tab": "Direcció",
+      "seccion_titulo": "Direcció",
+      "seccion_subtitulo": "Conversa amb la direcció del centre",
+      "lista_vacia": "Encara no has iniciat cap conversa amb famílies.",
+      "escribir_direccion": "Conversa amb direcció",
+      "reabrir": "Reobrir conversa",
+      "reabriendo": "Reobrint…",
+      "indicador_activo": "Es tanca el {fecha}",
+      "indicador_cerrada": "Tancada el {fecha}",
+      "composer_cerrado": "Aquesta conversa amb la direcció s'ha tancat."
+    },
     "lista": {
       "vacia_conversaciones": "Encara no tens converses.",
       "vacia_anuncios": "Sense anuncis de moment.",
@@ -1003,6 +1018,7 @@
       "header_profe_subtitulo": "Profe de l'aula {aula}",
       "header_profes_count": "{n} profes",
       "sin_mensajes": "Comença la conversa escrivint davall.",
+      "ir_al_ultimo": "Anar a l'últim missatge",
       "composer_placeholder": "Escriu el teu missatge…",
       "enviar": "Enviar",
       "enviando": "Enviant…",
@@ -1072,7 +1088,12 @@
       "sin_permisos": "No tens permís per a enviar aquest missatge.",
       "ya_anulado": "Aquest missatge ja estava anul·lat.",
       "no_autorizado": "No tens accés a aquesta conversa.",
-      "conexion": "Sense connexió. Reintentant…"
+      "conexion": "Sense connexió. Reintentant…",
+      "solo_admin": "Només la direcció del centre pot iniciar aquesta conversa.",
+      "tutor_no_pertenece_centro": "Aquesta família no pertany al teu centre.",
+      "apertura_fallo": "No s'ha pogut obrir la conversa. Torna-ho a provar.",
+      "conversacion_caducada": "Aquesta conversa amb la direcció s'ha tancat. Demana a la direcció que la reobri.",
+      "ventana_anulacion_expirada": "Ja no pots marcar aquest missatge com a erroni: han passat més de 5 minuts des de l'enviament."
     },
     "ficha_nino": {
       "escribir_familia": "Escriure a la família",

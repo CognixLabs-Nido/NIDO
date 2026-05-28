@@ -30,6 +30,11 @@ export async function destinatariosDeConversacion(
     if (convErr) console.error('[destinatariosDeConversacion] conversaciones.select:', convErr)
     return []
   }
+  // admin↔familia (`nino_id` NULL): el cálculo de destinatarios por
+  // matrículas/vínculos del niño no aplica. F5.6-A no envía push para
+  // este tipo de hilo aún — devolvemos lista vacía. Cuando se cablee,
+  // los destinatarios serán {admin_id, tutor_id} \ excluyendoUserId.
+  if (!conv.nino_id) return []
 
   const destinatarios = new Set<string>()
 

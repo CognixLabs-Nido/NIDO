@@ -986,6 +986,21 @@
       "conversaciones": "Conversations",
       "anuncios": "Announcements"
     },
+    "badge": {
+      "direccion": "Management"
+    },
+    "admin_familia": {
+      "tab": "Management",
+      "seccion_titulo": "Management",
+      "seccion_subtitulo": "Conversation with the school management",
+      "lista_vacia": "You haven't started any conversations with families yet.",
+      "escribir_direccion": "Talk to management",
+      "reabrir": "Reopen conversation",
+      "reabriendo": "Reopening…",
+      "indicador_activo": "Closes on {fecha}",
+      "indicador_cerrada": "Closed on {fecha}",
+      "composer_cerrado": "This conversation with management has closed."
+    },
     "lista": {
       "vacia_conversaciones": "You don't have any conversations yet.",
       "vacia_anuncios": "No announcements yet.",
@@ -1003,6 +1018,7 @@
       "header_profe_subtitulo": "Teacher in classroom {aula}",
       "header_profes_count": "{n} teachers",
       "sin_mensajes": "Start the conversation by writing below.",
+      "ir_al_ultimo": "Jump to latest message",
       "composer_placeholder": "Type your message…",
       "enviar": "Send",
       "enviando": "Sending…",
@@ -1072,7 +1088,12 @@
       "sin_permisos": "You don't have permission to send this message.",
       "ya_anulado": "This message was already cancelled.",
       "no_autorizado": "You don't have access to this conversation.",
-      "conexion": "Offline. Retrying…"
+      "conexion": "Offline. Retrying…",
+      "solo_admin": "Only the school administration can start this conversation.",
+      "tutor_no_pertenece_centro": "This family doesn't belong to your school.",
+      "apertura_fallo": "Couldn't open the conversation. Try again.",
+      "conversacion_caducada": "This conversation with management has closed. Ask management to reopen it.",
+      "ventana_anulacion_expirada": "You can no longer mark this message as erroneous: more than 5 minutes have passed since it was sent."
     },
     "ficha_nino": {
       "escribir_familia": "Write to the family",

@@ -28,13 +28,44 @@ const contenidoAnuncioSchema = z
   .max(4000, 'messages.validation.contenido_largo_anuncio')
 
 // --- Mensaje ------------------------------------------------------------------
-// Input del server action enviar-mensaje(ninoId, contenido). El server action
-// localiza/crea la conversación a partir de nino_id (auto-creación lazy).
-export const mensajeInputSchema = z.object({
+// Input del server action `enviarMensaje`. Union discriminada por `kind`:
+//
+//   - `profe_familia` (legacy F5): direcciona por `nino_id`. La conversación
+//     se localiza/crea lazy a partir del niño. `kind` es OPCIONAL y por defecto
+//     `'profe_familia'`, así que los callers F5 que pasan `{ nino_id, contenido }`
+//     siguen funcionando sin tocar nada.
+//   - `admin_familia` (F5.6-A): direcciona por `conversacion_id`. La
+//     conversación SIEMPRE existe previamente (la abrió el admin con
+//     `abrirConversacionAdminFamilia`). `kind` es REQUERIDO.
+//
+// Usamos `z.union` (no `discriminatedUnion`) porque la rama profe_familia
+// admite ausencia del discriminante por compatibilidad. Internamente Zod
+// prueba la primera shape y luego la segunda; ambas son disjuntas en sus
+// campos identificativos (`nino_id` vs `conversacion_id`), así que no hay
+// ambigüedad.
+const mensajeInputProfeFamiliaSchema = z.object({
+  kind: z.literal('profe_familia').optional().default('profe_familia'),
   nino_id: z.string().uuid(),
   contenido: contenidoMensajeSchema,
 })
-export type MensajeInput = z.infer<typeof mensajeInputSchema>
+
+const mensajeInputAdminFamiliaSchema = z.object({
+  kind: z.literal('admin_familia'),
+  conversacion_id: z.string().uuid(),
+  contenido: contenidoMensajeSchema,
+})
+
+export const mensajeInputSchema = z.union([
+  mensajeInputProfeFamiliaSchema,
+  mensajeInputAdminFamiliaSchema,
+])
+
+// `MensajeInput` es el tipo de ENTRADA (pre-defaults). Permite que callers
+// pasen `{ nino_id, contenido }` sin `kind` (legacy F5). El tipo PARSED
+// (`z.output`) lleva siempre `kind` definido y se usa internamente en el
+// action core para la rama if/else.
+export type MensajeInput = z.input<typeof mensajeInputSchema>
+export type MensajeInputParsed = z.output<typeof mensajeInputSchema>
 
 // --- Anuncio ------------------------------------------------------------------
 // Input del server action publicar-anuncio. Cross-field:
@@ -83,6 +114,15 @@ export const marcarMensajeErroneoSchema = z.object({
 export const marcarAnuncioErroneoSchema = z.object({
   anuncio_id: z.string().uuid(),
 })
+
+// --- F5.6-A — Abrir/reabrir conversación admin ↔ familia ---------------------
+// Input mínimo: el `tutor_id` con el que se quiere hablar. El `admin_id`,
+// `centro_id` y `expires_at` los resuelve el server action a partir de la
+// sesión y de la migración (3 días desde now()).
+export const abrirConversacionAdminFamiliaSchema = z.object({
+  tutor_id: z.string().uuid(),
+})
+export type AbrirConversacionAdminFamiliaInput = z.infer<typeof abrirConversacionAdminFamiliaSchema>
 
 // --- Constantes y helpers de "marcar como erróneo" ---------------------------
 // Mismo patrón que F3/F4 (PREFIX_ANULADO en agenda; '[cancelada] ' en

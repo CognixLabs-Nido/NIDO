@@ -309,7 +309,71 @@ Tests Fases 1–4 en `src/test/rls/`:
 
 - **Audit log**: triggers en `conversaciones`, `mensajes`, `anuncios`. `centro_id` se deriva: directo en `conversaciones`/`anuncios`, vía `centro_de_conversacion` en `mensajes`. `lectura_*` NO se auditan.
 
-- **Sin ventana de edición**: a diferencia de F3/F4/F4.5b, mensajería es continua. Un mensaje enviado ayer sigue siendo anulable hoy. La inmutabilidad se da por el flag `erroneo` + prefijo, no por barrera temporal.
+- ~~**Sin ventana de edición**: a diferencia de F3/F4/F4.5b, mensajería es continua. Un mensaje enviado ayer sigue siendo anulable hoy.~~ **Derogado por F5.6-B ([ADR-0031](../decisions/ADR-0031-ventana-anulacion-5min.md))**: el autor solo puede marcar erróneo dentro de los **primeros 5 minutos** desde `created_at`. Aplica a `mensajes` (ambos tipos de conversación) y a `anuncios`. Implementado inline en las policies UPDATE (`created_at > now() - interval '5 minutes'` en `USING` + `WITH CHECK`). Sin moderación admin: cada autor anula lo suyo, nadie más (la app es comunicación adulto↔adulto, no canal hacia menores).
+
+## Mensajería admin↔familia (Fase 5.6-A)
+
+Extensión de F5: la dirección del centro (admin) puede iniciar una conversación 1-a-1 con un tutor sobre temas que no son por niño (cuotas, citaciones, etc.). Ver [ADR-0029](../decisions/ADR-0029-admin-familia-per-par.md), [ADR-0030](../decisions/ADR-0030-admin-familia-timer-trigger.md).
+
+- **ENUM `tipo_conversacion`**: `'profe_familia' | 'admin_familia'`. Las filas F5 quedan en `profe_familia` (DEFAULT).
+- **Columnas nuevas en `conversaciones`**: `admin_id`, `tutor_id`, `tipo_conversacion`, `expires_at`. `nino_id` pasa a NULLABLE.
+- **CHECK estructural** `conversaciones_tipo_coherencia`:
+  - `profe_familia`: `nino_id NOT NULL`, `admin_id/tutor_id/expires_at NULL`.
+  - `admin_familia`: `admin_id NOT NULL`, `tutor_id NOT NULL`, `expires_at NOT NULL`, `nino_id NULL`.
+- **Índice único parcial** `idx_conv_admin_familia_unique (admin_id, tutor_id) WHERE tipo='admin_familia'` — un solo hilo por par (no por niño).
+- **Helpers SQL nuevos**:
+  - `es_tutor_en_centro(tutor_id, centro_id)` → boolean
+  - `conversacion_activa(conv_id)` → boolean (TRUE si `tipo='profe_familia'` o `expires_at > now()`)
+  - `puede_participar_conversacion(conv_id)` extendido: ahora también devuelve TRUE para `admin_id`/`tutor_id` en hilos `admin_familia`.
+- **Policies reescritas**:
+  - `conversaciones_select`: amplía para incluir `admin_id = auth.uid()` o `tutor_id = auth.uid()` en hilos `admin_familia`.
+  - `conversaciones_insert`: F5 + permite que un admin del centro inserte filas `admin_familia` con `admin_id = auth.uid()`.
+  - **`conversaciones_update_admin_familia` (nueva)**: solo el `admin_id` puede cambiar `expires_at` (reapertura). El resto sigue DENY UPDATE (default).
+  - `mensajes_insert` extendida con `conversacion_activa(conversacion_id)`: ningún rol puede mandar a hilos caducados; el RLS rechaza antes de que el cliente llegue siquiera al action.
+- **Trigger `mensajes_reset_admin_familia_timer_trg`** (AFTER INSERT en `mensajes`, `SECURITY DEFINER`): renueva `expires_at = now() + 3 days` si el hilo es `admin_familia`. Atómico con el INSERT (ver ADR-0030). El tutor puede renovar sin necesitar `UPDATE` propio en `conversaciones`.
+
+## "USING falso → 0 filas, sin error" (gotcha de UPDATE bajo RLS)
+
+> **Aprendizaje crítico de F5.6-B.** Complementa el gotcha MVCC de F5 documentado arriba (que cubre `INSERT…RETURNING`); este cubre `UPDATE` bajo RLS condicional.
+
+### Síntoma
+
+Una server action hace `client.from('tabla').update(...).eq('id', X)` sobre una fila cuya policy `USING` la rechaza (p.ej. `created_at` fuera de ventana). El cliente recibe **`data: null, error: null`** — operación OK, 0 filas afectadas. La action puede creer erróneamente que el UPDATE pasó si no inspecciona el número de filas afectadas.
+
+### Causa
+
+PostgreSQL evalúa `USING` antes del UPDATE. Si ninguna fila pasa, simplemente no se actualiza nada y el statement termina con éxito. No es un error de permisos (`42501`) — es "no había nada que tocar". Para que devuelva `42501` la fila debe pasar `USING` pero fallar `WITH CHECK` después de aplicar el cambio (caso raro).
+
+### Patrón anti-bug
+
+Hacer el UPDATE con `.select('id').maybeSingle()` y comprobar `data === null` como señal de RLS USING rechazó:
+
+```ts
+const { data: updated, error } = await supabase
+  .from('mensajes')
+  .update({ erroneo: true, contenido: nuevoContenido })
+  .eq('id', id)
+  .select('id')
+  .maybeSingle()
+
+if (error) {
+  if (error.code === '42501') return fail('messages.errors.ventana_anulacion_expirada')
+  return fail('messages.errors.envio_fallo')
+}
+if (!updated) {
+  // RLS USING rechazó. Típicamente: la ventana caducó entre el SELECT
+  // de pre-chequeo y el commit del UPDATE.
+  return fail('messages.errors.ventana_anulacion_expirada')
+}
+```
+
+### Cuándo aplica
+
+Cualquier UPDATE bajo una policy con condición temporal o de estado (ventana de tiempo, flag `closed`, etc.). En F5.6-B aplicamos esto en `marcarMensajeErroneo` y `marcarAnuncioErroneo`. En F6 (recordatorios) volverá a aplicar para "marcar como completado solo si no estaba ya completo".
+
+### USING + WITH CHECK simétricos
+
+La policy de F5.6-B mantiene la condición en `USING` (filtra qué filas son visibles) y en `WITH CHECK` (valida el resultado tras aplicar el patch). Sin `WITH CHECK`, una mutación que NO cambia las columnas referenciadas en `USING` aún podría pasar aunque la condición temporal falle en commit. Pareja simétrica = defensa simétrica.
 
 ## Push notifications (Fase 5.5)
 

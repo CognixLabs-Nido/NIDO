@@ -134,7 +134,11 @@ export function AnuncioView({ locale, anuncio, lectoresDetalle }: Props) {
 
           {anuncio.es_propio && !anuncio.erroneo && (
             <div className="border-t pt-3">
-              <MarcarErroneoButton target="anuncio" id={anuncio.id} />
+              <MarcarErroneoButton
+                target="anuncio"
+                id={anuncio.id}
+                createdAt={anuncio.created_at}
+              />
             </div>
           )}
         </CardContent>

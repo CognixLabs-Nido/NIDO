@@ -2,16 +2,22 @@
 feature: messaging
 wave: 1
 phase: 5
-status: draft
+status: extended-by-phase-5-6
 priority: critical
-last_updated: 2026-05-25
-related_adrs: [ADR-0023, ADR-0024, ADR-0025]
-related_specs: [core-entities, daily-agenda, attendance]
+last_updated: 2026-05-28
+related_adrs: [ADR-0023, ADR-0024, ADR-0025, ADR-0029, ADR-0030, ADR-0031]
+related_specs: [core-entities, daily-agenda, attendance, phase-5-6-admin-family-messaging]
 ---
 
 # Spec — Mensajería profe ↔ familia + anuncios (Fase 5)
 
 > Canal de comunicación cotidiano del centro: conversaciones bidireccionales niño-a-niño entre profe y tutores, más anuncios unidireccionales (profe → aula, admin → aula, admin → centro). Sin push en esta fase (llega en F5.5).
+
+> **Extensiones en Fase 5.6 (2026-05-28)** — ver [phase-5-6-admin-family-messaging.md](phase-5-6-admin-family-messaging.md):
+>
+> - **F5.6-A**: añade un segundo tipo de conversación `admin_familia` (1 hilo por (admin, tutor), `expires_at` 3 días, reapertura por admin). Ver ADR-0029 y ADR-0030.
+> - **F5.6-B**: "marcar como erróneo" pasa a tener **ventana de 5 minutos** desde `created_at`. Aplica a mensajes (ambos tipos) y anuncios. Sin moderación admin. Ver ADR-0031. **Deroga** la sección B29/B34 de F5 que decía "sin ventana temporal".
+> - **F5.6-C**: scroll WhatsApp en las 3 vistas de conversación. Cambio de UI sin impacto en el modelo.
 
 ## Resumen ejecutivo
 
