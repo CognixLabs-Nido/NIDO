@@ -1075,7 +1075,8 @@
       "conexion": "Sense connexió. Reintentant…",
       "solo_admin": "Només la direcció del centre pot iniciar aquesta conversa.",
       "tutor_no_pertenece_centro": "Aquesta família no pertany al teu centre.",
-      "apertura_fallo": "No s'ha pogut obrir la conversa. Torna-ho a provar."
+      "apertura_fallo": "No s'ha pogut obrir la conversa. Torna-ho a provar.",
+      "conversacion_caducada": "Aquesta conversa amb la direcció s'ha tancat. Demana a la direcció que la reobri."
     },
     "ficha_nino": {
       "escribir_familia": "Escriure a la família",
