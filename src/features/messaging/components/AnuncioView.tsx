@@ -2,7 +2,8 @@
 
 import { ArrowLeftIcon, MegaphoneIcon } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
@@ -33,6 +34,7 @@ export function AnuncioView({ locale, anuncio, lectoresDetalle }: Props) {
   const t = useTranslations('messages.anuncio')
   const tAnular = useTranslations('messages.anular')
   const tEstado = useTranslations('messages.estado')
+  const router = useRouter()
   const [lectoresOpen, setLectoresOpen] = useState(false)
 
   useEffect(() => {
@@ -44,9 +46,17 @@ export function AnuncioView({ locale, anuncio, lectoresDetalle }: Props) {
   // `lectura_anuncio` filtrado por este anuncio para refrescar el contador
   // "X de Y" en vivo cuando los destinatarios marquen leído. La policy
   // `lectura_anuncio_select_autor` autoriza al autor a recibir esos eventos.
+  // Tras quitar el `router.refresh()` automático del hook, este caller
+  // necesita disparar el refresh explícitamente para que el SSR recargue
+  // los contadores y el estado de anulación. Memoizamos para no rotar la
+  // subscripción al re-renderizar.
+  const onRealtimeChange = useCallback(() => {
+    router.refresh()
+  }, [router])
   useMessagingRealtime({
     channel: `messages-anuncio-${anuncio.id}`,
     anuncioIdParaLecturas: anuncio.es_propio ? anuncio.id : undefined,
+    onChange: onRealtimeChange,
   })
 
   const tituloVisible = anuncio.erroneo

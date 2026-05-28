@@ -3,7 +3,7 @@
 import { ArrowLeftIcon, ShieldCheckIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
@@ -69,17 +69,22 @@ export function ConversacionAdminFamiliaView({ locale, rolEnHilo, header, mensaj
     }
   }, [header.id, router])
 
-  // Realtime: mensaje nuevo en este hilo → refresh + marcar leído.
-  useMessagingRealtime({
-    channel: `messages-conv-${header.id}`,
-    conversacionId: header.id,
-    onChange: (table) => {
+  // Realtime: mensaje nuevo en este hilo → marcar leído + refresh. `onChange`
+  // memoizado para no rotar la subscripción en cada render del padre.
+  const onRealtimeChange = useCallback(
+    (table: 'mensajes' | 'anuncios' | 'lectura_conversacion' | 'lectura_anuncio') => {
       if (table === 'mensajes') {
         void marcarConversacionLeida({ conversacion_id: header.id }).then((res) => {
           if (res.success) router.refresh()
         })
       }
     },
+    [header.id, router]
+  )
+  useMessagingRealtime({
+    channel: `messages-conv-${header.id}`,
+    conversacionId: header.id,
+    onChange: onRealtimeChange,
   })
 
   function labelForRol(r: MensajeView['autor_rol_label']): string {

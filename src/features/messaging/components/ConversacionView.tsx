@@ -3,7 +3,7 @@
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
@@ -53,19 +53,24 @@ export function ConversacionView({ locale, rol, header, mensajes, participo }: P
     }
   }, [header.id, router])
 
-  // Realtime: cualquier mensaje nuevo en este hilo refresca + marca leído.
-  // Mismo refresh tras la lectura para que el badge baje en vivo si el
-  // usuario está mirando este hilo cuando llega el mensaje.
-  useMessagingRealtime({
-    channel: `messages-conv-${header.id}`,
-    conversacionId: header.id,
-    onChange: (table) => {
+  // Realtime: cualquier mensaje nuevo en este hilo marca leído + refresca el
+  // SSR para que el badge baje en vivo si el usuario está mirando este hilo
+  // cuando llega el mensaje. `onChange` memoizado: la identidad del callback
+  // está en las deps del useEffect del hook y un cambio rotaría la subscripción.
+  const onRealtimeChange = useCallback(
+    (table: 'mensajes' | 'anuncios' | 'lectura_conversacion' | 'lectura_anuncio') => {
       if (table === 'mensajes') {
         void marcarConversacionLeida({ conversacion_id: header.id }).then((res) => {
           if (res.success) router.refresh()
         })
       }
     },
+    [header.id, router]
+  )
+  useMessagingRealtime({
+    channel: `messages-conv-${header.id}`,
+    conversacionId: header.id,
+    onChange: onRealtimeChange,
   })
 
   function labelForRol(r: MensajeView['autor_rol_label']): string {

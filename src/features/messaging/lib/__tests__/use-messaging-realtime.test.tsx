@@ -30,10 +30,6 @@ import { useMessagingRealtime } from '../use-messaging-realtime'
 type CallLog = { method: string; args: unknown[] }
 const calls: CallLog[] = []
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ refresh: () => undefined }),
-}))
-
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => {
     const channelApi: Record<string, (...args: unknown[]) => unknown> = {
@@ -129,5 +125,28 @@ describe('useMessagingRealtime — orden de llamadas Realtime', () => {
     expect(calls.find((c) => c.method === 'subscribe')).toBeDefined()
     unmount()
     expect(calls.find((c) => c.method === 'removeChannel')).toBeDefined()
+  })
+
+  it('al recibir un evento Realtime invoca onChange con el nombre de la tabla', () => {
+    // Cuando el hook deja de refrescar el router por sí mismo (decisión PR
+    // fix/messaging-refresh-storm), el único side-effect observable es la
+    // invocación del callback del caller. Simulamos el evento llamando al
+    // handler que `channel.on(...)` recibió como tercer argumento.
+    const onChange = vi.fn()
+    render(<Harness channel="conv-1234" onChange={onChange} />)
+
+    const onMensajes = calls.find(
+      (c) =>
+        c.method === 'on' &&
+        typeof c.args[1] === 'object' &&
+        c.args[1] !== null &&
+        (c.args[1] as Record<string, unknown>).table === 'mensajes'
+    )
+    expect(onMensajes).toBeDefined()
+    const handler = onMensajes!.args[2] as (payload: unknown) => void
+    handler({})
+
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange).toHaveBeenCalledWith('mensajes')
   })
 })

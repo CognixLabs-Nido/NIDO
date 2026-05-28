@@ -3,7 +3,7 @@
 import { ArrowLeftIcon, MessageCircleIcon, SearchIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
@@ -83,11 +83,12 @@ export function ConversacionesSplitView({
 
   const ninoSeleccionado = ninos.find((n) => n.nino_id === ninoSeleccionadoId) ?? null
 
+  const onRealtimeChange = useCallback(() => {
+    router.refresh()
+  }, [router])
   useMessagingRealtime({
     channel: `messages-split-${locale}`,
-    onChange: () => {
-      router.refresh()
-    },
+    onChange: onRealtimeChange,
   })
 
   // Marcar como leída la conversación seleccionada al mostrarla y cuando
