@@ -3,7 +3,7 @@
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
@@ -11,8 +11,10 @@ import { cn } from '@/lib/utils'
 
 import { marcarConversacionLeida } from '../actions/marcar-conversacion-leida'
 import { useMessagingRealtime } from '../lib/use-messaging-realtime'
+import { useScrollAlFondo } from '../lib/use-scroll-al-fondo'
 import { PREFIX_ANULADO, type ConversacionHeader, type MensajeView } from '../types'
 
+import { IrAlFondoButton } from './IrAlFondoButton'
 import { MarcarErroneoButton } from './MarcarErroneoButton'
 import { MensajeComposer } from './MensajeComposer'
 
@@ -35,7 +37,7 @@ export function ConversacionView({ locale, rol, header, mensajes, participo }: P
   const tRoles = useTranslations('messages.conversacion')
   const tEstado = useTranslations('messages.estado')
   const router = useRouter()
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const { containerRef, mostrarBotonIrAlFondo, irAlFondo } = useScrollAlFondo(mensajes.length)
 
   // Marcar leída al montar (UPSERT idempotente). Tras el éxito forzamos
   // `router.refresh()` para que el SSR del layout recalcule el badge
@@ -66,11 +68,6 @@ export function ConversacionView({ locale, rol, header, mensajes, participo }: P
     },
   })
 
-  // Auto-scroll al fondo cuando cambian los mensajes.
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [mensajes.length])
-
   function labelForRol(r: MensajeView['autor_rol_label']): string {
     if (r === 'autor') return tRoles('yo')
     if (r === 'admin') return tRoles('rol_admin')
@@ -79,8 +76,8 @@ export function ConversacionView({ locale, rol, header, mensajes, participo }: P
   }
 
   return (
-    <div className="flex min-h-[calc(100dvh-3rem)] flex-col">
-      <header className="bg-background sticky top-0 z-[1] -mx-4 border-b px-4 py-3 md:-mx-8 md:px-8">
+    <div className="flex h-[calc(100dvh-3rem)] flex-col">
+      <header className="bg-background z-[1] -mx-4 shrink-0 border-b px-4 py-3 md:-mx-8 md:px-8">
         <div className="flex items-center gap-3">
           <Link
             href={`/${locale}/messages`}
@@ -95,74 +92,80 @@ export function ConversacionView({ locale, rol, header, mensajes, participo }: P
         </div>
       </header>
 
-      <ol role="log" aria-live="polite" className="flex-1 space-y-3 py-4">
-        {mensajes.length === 0 ? (
-          <li className="text-muted-foreground py-12 text-center text-sm">{t('sin_mensajes')}</li>
-        ) : (
-          mensajes.map((m) => {
-            const contenidoVisible = m.erroneo
-              ? m.contenido.replace(PREFIX_ANULADO, '')
-              : m.contenido
-            const alignRight = m.es_propio
-            return (
-              <li key={m.id} className={cn('flex', alignRight ? 'justify-end' : 'justify-start')}>
-                <div className={cn('max-w-[80%] space-y-1', alignRight && 'text-right')}>
-                  <div
-                    className={cn(
-                      'flex items-center gap-2 text-xs',
-                      alignRight ? 'justify-end' : 'justify-start'
-                    )}
-                  >
-                    <span className="text-muted-foreground font-medium">
-                      {labelForRol(m.autor_rol_label)}
-                      {m.autor_rol_label !== 'autor' && (
-                        <span className="ml-1 font-normal opacity-70">· {m.autor_nombre}</span>
+      <div
+        ref={containerRef}
+        className="relative -mx-4 flex-1 overflow-y-auto px-4 md:-mx-8 md:px-8"
+        data-testid="conv-scroll-container"
+      >
+        <ol role="log" aria-live="polite" className="space-y-3 py-4">
+          {mensajes.length === 0 ? (
+            <li className="text-muted-foreground py-12 text-center text-sm">{t('sin_mensajes')}</li>
+          ) : (
+            mensajes.map((m) => {
+              const contenidoVisible = m.erroneo
+                ? m.contenido.replace(PREFIX_ANULADO, '')
+                : m.contenido
+              const alignRight = m.es_propio
+              return (
+                <li key={m.id} className={cn('flex', alignRight ? 'justify-end' : 'justify-start')}>
+                  <div className={cn('max-w-[80%] space-y-1', alignRight && 'text-right')}>
+                    <div
+                      className={cn(
+                        'flex items-center gap-2 text-xs',
+                        alignRight ? 'justify-end' : 'justify-start'
                       )}
-                    </span>
-                    <time className="text-muted-foreground" dateTime={m.created_at}>
-                      {new Intl.DateTimeFormat(locale, {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      }).format(new Date(m.created_at))}
-                    </time>
-                  </div>
-                  <div
-                    className={cn(
-                      'rounded-2xl px-4 py-2 text-sm',
-                      alignRight
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-foreground',
-                      m.erroneo && 'line-through opacity-60'
-                    )}
-                  >
-                    {m.erroneo && (
-                      <Badge
-                        variant="outline"
-                        className="mr-2 text-[10px]"
-                        aria-label={tEstado('anulado')}
-                      >
-                        {tEstado('anulado')}
-                      </Badge>
-                    )}
-                    <span className="break-words whitespace-pre-wrap">{contenidoVisible}</span>
-                  </div>
-                  {m.es_propio && !m.erroneo && (
-                    <div className="flex justify-end pt-0.5">
-                      <MarcarErroneoButton
-                        target="mensaje"
-                        id={m.id}
-                        createdAt={m.created_at}
-                        inline
-                      />
+                    >
+                      <span className="text-muted-foreground font-medium">
+                        {labelForRol(m.autor_rol_label)}
+                        {m.autor_rol_label !== 'autor' && (
+                          <span className="ml-1 font-normal opacity-70">· {m.autor_nombre}</span>
+                        )}
+                      </span>
+                      <time className="text-muted-foreground" dateTime={m.created_at}>
+                        {new Intl.DateTimeFormat(locale, {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }).format(new Date(m.created_at))}
+                      </time>
                     </div>
-                  )}
-                </div>
-              </li>
-            )
-          })
-        )}
-        <div ref={scrollRef} />
-      </ol>
+                    <div
+                      className={cn(
+                        'rounded-2xl px-4 py-2 text-sm',
+                        alignRight
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-foreground',
+                        m.erroneo && 'line-through opacity-60'
+                      )}
+                    >
+                      {m.erroneo && (
+                        <Badge
+                          variant="outline"
+                          className="mr-2 text-[10px]"
+                          aria-label={tEstado('anulado')}
+                        >
+                          {tEstado('anulado')}
+                        </Badge>
+                      )}
+                      <span className="break-words whitespace-pre-wrap">{contenidoVisible}</span>
+                    </div>
+                    {m.es_propio && !m.erroneo && (
+                      <div className="flex justify-end pt-0.5">
+                        <MarcarErroneoButton
+                          target="mensaje"
+                          id={m.id}
+                          createdAt={m.created_at}
+                          inline
+                        />
+                      </div>
+                    )}
+                  </div>
+                </li>
+              )
+            })
+          )}
+        </ol>
+        {mostrarBotonIrAlFondo && <IrAlFondoButton onClick={irAlFondo} />}
+      </div>
 
       {participo && <MensajeComposer ninoId={header.nino_id} locale={locale} />}
     </div>
