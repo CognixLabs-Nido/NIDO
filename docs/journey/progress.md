@@ -579,3 +579,97 @@ F4.5a + F4.5b (rediseño): calendario laboral del centro primero, luego menú me
   2. Admin publica anuncio centro → todos los tutores con flag reciben push.
   3. Click en notificación abre la URL correcta (`/{idioma}/messages?nino=<id>` o `/.../messages/anuncios/<id>`).
   4. iOS Safari sin PWA → modal explícito; tras "Añadir a pantalla de inicio" + abrir desde icono → push funciona.
+
+---
+
+## Fase 5.6 — Mensajería admin↔familia + ventana anulación 5 min + scroll WhatsApp
+
+**Fecha:** 2026-05-28
+**Estado:** ✅ Cerrada (PR draft pendiente de review y merge por el responsable).
+
+Estructurada en sub-bloques A/B/C con checkpoints internos (A → B → C1 → C1.5 → C2 → C3 → C3.5 → C4 → C5).
+
+### F5.6-A — Conversación admin ↔ familia
+
+- **Migración** `20260528100000_phase5_6_admin_family_messaging.sql` (BEGIN/COMMIT, aplicada al remoto vía SQL Editor por el bug `SIGILL` del CLI en este Chromebook):
+  - ENUM `tipo_conversacion` (`profe_familia` | `admin_familia`).
+  - Columnas en `conversaciones`: `admin_id`, `tutor_id`, `tipo_conversacion`, `expires_at`. `nino_id` pasa a NULLABLE.
+  - CHECK estructural `conversaciones_tipo_coherencia` por tipo.
+  - Índice único parcial `idx_conv_admin_familia_unique (admin_id, tutor_id) WHERE tipo='admin_familia'`.
+  - Helpers SQL: `es_tutor_en_centro`, `conversacion_activa`. Extensión de `puede_participar_conversacion`.
+  - Policies reescritas: `conversaciones_select`, `conversaciones_insert`, nueva `conversaciones_update_admin_familia`. `mensajes_insert` extendida con `conversacion_activa`.
+  - Trigger `mensajes_reset_admin_familia_timer_trg` AFTER INSERT, `SECURITY DEFINER`: cualquier INSERT en `mensajes` cuyo hilo sea `admin_familia` renueva `expires_at = now() + 3 days`. Atómico con la inserción (ver ADR-0030).
+
+- **Server action** `abrirConversacionAdminFamilia(tutorId)` con su `*Core(supabase, userId, tutorId)` testeable. SELECT-then-INSERT-or-UPDATE con captura `23505` para race de doble-click (el índice parcial impide usar `.upsert()` de supabase-js). Errores tipados: `solo_admin`, `tutor_no_pertenece_centro`, `apertura_fallo`, `no_autorizado`.
+
+- **Schemas/actions extendidos** con discriminador `kind`:
+  - `mensajeInputSchema` Zod-union: rama `profe_familia` (kind opcional+default — preserva regresión bit-a-bit de `MensajeComposer.test.tsx` F5) y rama `admin_familia` (kind requerido + `conversacion_id`).
+  - `enviarMensaje(input)` dispatcha al sub-flow; la rama `admin_familia` pre-chequea `expires_at` y mapea `42501` a `conversacion_caducada`.
+
+- **UI nueva**: queries `get-admin-familia-detalle.ts` y `get-admin-familia-list.ts`; componentes `ConversacionAdminFamiliaView`, `AdminFamiliaListItem`, `AdminFamiliaSection`, `AbrirConversacionDireccionButton` (en `/admin/ninos/[id]` Vínculos), `ReabrirConversacionButton`. `MensajeComposer` con discriminated-union props. `MessagesView` da al admin 2 tabs (Anuncios + Dirección); al tutor una sección "Dirección" encima del split-view, oculta si 0 hilos. Router `/messages/conversacion/[id]` dispatcha por `tipo_conversacion`.
+
+- **i18n**: `messages.badge.direccion` + `messages.admin_familia.*` (9 claves: tab, sección, lista vacía, reabrir/reabriendo, indicadores activo/cerrada, composer cerrado).
+
+### F5.6-B — Marcar erróneo con ventana de 5 minutos
+
+- **Migración** `20260528200000_phase5_6b_ventana_anulacion.sql` (BEGIN/COMMIT, aplicada por el responsable): DROP+CREATE de `mensajes_update_autor` y `anuncios_update_autor` con `created_at > now() - interval '5 minutes'` en `USING` y `WITH CHECK`.
+
+- **Server actions** `marcarMensajeErroneo` y `marcarAnuncioErroneo` refactorizadas con `*Core(supabase, userId, id)` testeable. Pre-chequeo de edad. `.update().select('id').maybeSingle()` y mapeo de `data === null` a `ventana_anulacion_expirada` para el caso "USING falso → 0 filas, sin error" (hallazgo en ADR-0030). Defensa en profundidad: 42501 también mapeado.
+
+- **UI**: `MarcarErroneoButton` con prop `createdAt` obligatoria, snapshot `Date.now()` con lazy initializer (React 19 `react-hooks/purity`), early-return `null` si fuera de ventana. 4 puntos de montaje (`ConversacionView`, `ConversacionesSplitView`, `AnuncioView` ya existentes; `ConversacionAdminFamiliaView` nuevo). i18n `messages.errors.ventana_anulacion_expirada` trilingüe.
+
+### F5.6-C — Scroll tipo WhatsApp
+
+- **Hook compartido** `useScrollAlFondo(mensajesLength)` → `{ containerRef, mostrarBotonIrAlFondo, irAlFondo }`. Reglas:
+  1. Scroll inicial al fondo al montar (instantáneo).
+  2. Auto-scroll al recibir mensajes nuevos SOLO si el usuario estaba a `<100px` del fondo. El ref `estabaCercaDelFondoRef` se actualiza por el handler de `scroll`; un mensaje entrante NO perturba la lectura de histórico.
+  3. `mostrarBotonIrAlFondo` se sincroniza con el handler de scroll.
+  4. `irAlFondo` usa `scrollTo({ behavior: 'smooth' })` — la suavidad es solo del click explícito; el auto-scroll del punto 2 es instantáneo.
+
+- **Componente** `IrAlFondoButton` (circular `absolute right-4 bottom-4`, icono chevron, `aria-label` i18n).
+
+- **Refactor layout** en las 3 vistas: wrapper a `flex h-[calc(100dvh-3rem)] flex-col`, `<ol>` envuelto en `<div ref={containerRef} className="relative flex-1 overflow-y-auto">`, header/composer como flex shrink-0 (sin `sticky`). Funcional intacto.
+
+- **i18n**: `messages.conversacion.ir_al_ultimo` trilingüe.
+
+### C3.5 — Limpieza de deuda heredada de C2
+
+`npm run typecheck` pasaba con 4 errores `TS2322`/`TS2345` tras la migración F5.6-A (que hizo `conversaciones.nino_id` nullable). Resuelto sin tocar lógica de envío de push:
+
+- `get-conversacion-detalle.ts` y `get-conversaciones.ts`: filtro explícito `.eq('tipo_conversacion', 'profe_familia')` (defensa en profundidad y semántica) + guard/type-predicate para cerrar el narrow a `string`.
+- `audiencia.ts`: guard `if (!conv.nino_id) return []` tras el SELECT — admin↔familia no tiene cálculo de destinatarios por nino; no-op por ahora (cuando se cablee push para admin_familia será `{admin_id, tutor_id} \ excluyendoUserId`).
+
+### Tests
+
+- **Suite completa 411/411 verde** — 60 → 61 archivos vs F5.5. +50 tests aprox.:
+  - F5.6-A: Core de `abrirConversacionAdminFamilia` unit; `enviarMensaje` admin_familia (schema + integración); `messaging.rls.test.ts` t14-t17 (admin_familia: per-par único, RLS UPDATE solo admin, conversación caducada, helper `puede_participar`); componentes (`ConversacionAdminFamiliaView`, `AdminFamiliaListItem`, `MensajeComposer.admin-familia`, `MessagesView` admin 2 tabs).
+  - F5.6-B: `MarcarErroneoButton` ventana (4 tests, bordes 4:59 y 5:00); Core de las dos actions (cubren <5min OK, >5min sin tocar UPDATE, 42501 → ventana, 0-row-no-error → ventana, no_autor, ya_anulado); `messaging.rls.test.ts` t32-t35 (mensajes/anuncios <5min OK + >5min silently rejected).
+  - F5.6-C: `useScrollAlFondo` (4 tests con instrumentación DOM por `Object.defineProperty`).
+
+- **`npm run typecheck`** pasa con 0 errores tras C3.5.
+
+### Decisiones (ADRs)
+
+- **ADR-0029 — Modelo admin↔familia per-(admin,tutor)**: 1 hilo por par; `expires_at` por hilo; reapertura por SELECT-then-INSERT-or-UPDATE. Justificado frente a "1 por niño" y "1 por centro".
+- **ADR-0030 — Timer reseteable vía trigger AFTER INSERT con `SECURITY DEFINER`**: el reset del `expires_at` ocurre como efecto de la inserción del mensaje. Atómico, sin necesidad de `UPDATE` por parte del tutor. Incluye hallazgos transversales sobre **USING+WITH CHECK** y "**USING falso → 0 filas, sin error**" (no 42501).
+- **ADR-0031 — Marcar erróneo ventana 5 min en RLS inline**: aplica a mensajes y anuncios. **Sin moderación admin** — la app es comunicación adulto↔adulto, no canal hacia menores. Cada autor anula lo suyo, nadie más.
+
+### Aprendizaje transversal
+
+- **Discriminated union schemas con `z.input` vs `z.output`**: la firma pública usa `z.input`; las llamadas legacy F5 sin `kind` siguen tipando porque el default del schema rellena. Patrón replicable cuando una action gane modos discriminados.
+- **Lazy initializer `useState(() => Date.now())` para snapshot temporal**: la regla React 19 `react-hooks/purity` bloquea `Date.now()` en render. Snapshot al montar + "sin countdown, refresh basta" = respuesta limpia.
+- **"USING falso → 0 filas, error null" en UPDATE con RLS**: no es 42501. Las server actions con UPDATE bajo RLS condicional deben `.select('id').maybeSingle()` e inspeccionar `data === null`. Pareja simétrica del gotcha MVCC de F5 (INSERT…RETURNING).
+- **Filtrar por `tipo_conversacion` en las queries F5 aunque el INNER JOIN ya las excluya**: el filtro explícito documenta la intención y previene que un caller futuro cuele admin_familia. Coste: una línea por query.
+- **Hook compartido para scroll WhatsApp**: tres vistas con la misma necesidad y layouts distintos → un hook con `containerRef` que la vista decide dónde montar.
+
+### Pendiente
+
+- Smoke en producción tras merge (responsable):
+  1. Admin abre conversación con tutor desde `/admin/ninos/[id]` Vínculos → envía → tutor lo ve en su sección "Dirección".
+  2. Forzar `expires_at` por SQL → composer deshabilita en ambos lados; admin pulsa "Reabrir" → vuelve a estar activo, mensaje siguiente reseta el timer 3 días.
+  3. Marcar erróneo: dentro de 5 min OK; >5 min, el botón no aparece; si por race se envía la petición, server responde `ventana_anulacion_expirada` (no falso positivo).
+  4. Scroll: scroll inicial al fondo; subir → aparece botón "ir al último"; nuevo mensaje vía realtime con el usuario arriba → NO salta.
+
+### Para F6
+
+- Recordatorios bidireccionales E. La arquitectura de mensajería queda estable. El patrón "trigger AFTER INSERT con SECURITY DEFINER" (ADR-0030) es replicable para reseteo de campos derivados sin abrir RLS UPDATE.
