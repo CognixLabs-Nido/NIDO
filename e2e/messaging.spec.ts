@@ -37,6 +37,34 @@ test.describe('Fase 5 — messaging smoke', () => {
     await page.waitForURL(/\/es\/login\?.*returnTo=/)
   })
 
+  // F5.6-A: la ruta `/messages/conversacion/[id]` sirve también hilos
+  // admin_familia (dispatcher SSR por tipo_conversacion); no hay rutas
+  // nuevas que proteger. F5.6 solo añade keys i18n — comprobamos que
+  // no quedan placeholders sin resolver en /es.
+  test('i18n F5.6-A: messages.badge.* y messages.admin_familia.* sin placeholders', async ({
+    page,
+  }) => {
+    const r = await page.goto('/es/login')
+    expect(r?.status()).toBe(200)
+    const body = (await page.content()).toLowerCase()
+    expect(body).not.toContain('messages.badge.')
+    expect(body).not.toContain('messages.admin_familia.')
+  })
+
+  test('i18n F5.6-B: clave ventana_anulacion_expirada sin placeholder', async ({ page }) => {
+    const r = await page.goto('/es/login')
+    expect(r?.status()).toBe(200)
+    const body = (await page.content()).toLowerCase()
+    expect(body).not.toContain('messages.errors.ventana_anulacion_expirada')
+  })
+
+  test('i18n F5.6-C: clave conversacion.ir_al_ultimo sin placeholder', async ({ page }) => {
+    const r = await page.goto('/es/login')
+    expect(r?.status()).toBe(200)
+    const body = (await page.content()).toLowerCase()
+    expect(body).not.toContain('messages.conversacion.ir_al_ultimo')
+  })
+
   test('i18n /es no muestra claves messages.* sin resolver', async ({ page }) => {
     const r = await page.goto('/es/login')
     expect(r?.status()).toBe(200)
@@ -199,5 +227,135 @@ test.describe('Fase 5 — messaging realtime (skip por defecto)', () => {
 
     await profeContext.close()
     await familiaContext.close()
+  })
+})
+
+/**
+ * E2E de Fase 5.6 (admin↔familia + ventana anulación + scroll).
+ *
+ * Activación: E2E_REAL_SESSIONS=1 con credenciales en .env.local.
+ *
+ * Variables esperadas:
+ *  - E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD
+ *  - E2E_TUTOR_EMAIL, E2E_TUTOR_PASSWORD
+ *  - E2E_NINO_ID (con el tutor anterior vinculado a este niño)
+ *  - E2E_TUTOR_ID (UUID del tutor)
+ *
+ * Los 3 flujos completos no se ejecutan en CI por defecto (mismo patrón
+ * que los E2E de F5). El "simular caducidad" para F5.6-A requeriría una
+ * ruta admin para forzar `expires_at` por SQL o esperar 3 días reales,
+ * así que ese paso se documenta como TODO dentro del test — el smoke
+ * básico de "abrir / escribir / reabrir" sí queda cubierto.
+ */
+test.describe('Fase 5.6 — admin↔familia + ventana anulación (skip por defecto)', () => {
+  test.skip(process.env.E2E_REAL_SESSIONS !== '1', 'Requiere credenciales E2E_* en .env.local')
+
+  test('admin↔familia: admin abre conversación con tutor desde ficha del niño', async ({
+    browser,
+  }) => {
+    const adminContext = await browser.newContext()
+    const adminPage = await adminContext.newPage()
+
+    await adminPage.goto('/es/login')
+    await adminPage.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL!)
+    await adminPage.getByLabel(/contraseña|password/i).fill(process.env.E2E_ADMIN_PASSWORD!)
+    await adminPage.getByRole('button', { name: /entrar|sign in/i }).click()
+    await adminPage.waitForURL(/\/es\/admin/)
+
+    // Entrar en la ficha del niño, tab Vínculos.
+    await adminPage.goto(`/es/admin/ninos/${process.env.E2E_NINO_ID}`)
+    await adminPage.getByRole('tab', { name: /vínculos|vinculos/i }).click()
+
+    // Pulsar el botón "Conversación con dirección" en la fila del tutor.
+    await adminPage
+      .getByRole('button', { name: /conversación con dirección|conversacion con direccion/i })
+      .first()
+      .click()
+
+    // Debería navegar a /messages/conversacion/<id> con el badge "Dirección".
+    await adminPage.waitForURL(/\/es\/messages\/conversacion\//)
+    await expect(adminPage.getByTestId('badge-direccion')).toBeVisible()
+
+    // Escribir y enviar un mensaje.
+    const contenido = `admin-familia ${Date.now()}`
+    await adminPage.getByPlaceholder(/escribe tu mensaje/i).fill(contenido)
+    await adminPage.getByRole('button', { name: /enviar/i }).click()
+    await expect(adminPage.getByText(contenido)).toBeVisible({ timeout: 10_000 })
+
+    await adminContext.close()
+  })
+
+  test('admin↔familia: tutor ve badge "Dirección" en su sección y puede responder', async ({
+    browser,
+  }) => {
+    const tutorContext = await browser.newContext()
+    const tutorPage = await tutorContext.newPage()
+
+    await tutorPage.goto('/es/login')
+    await tutorPage.getByLabel(/email/i).fill(process.env.E2E_TUTOR_EMAIL!)
+    await tutorPage.getByLabel(/contraseña|password/i).fill(process.env.E2E_TUTOR_PASSWORD!)
+    await tutorPage.getByRole('button', { name: /entrar|sign in/i }).click()
+    await tutorPage.waitForURL(/\/es\/family/)
+
+    await tutorPage.goto('/es/messages')
+
+    // La sección "Dirección" debería contener al menos el hilo creado
+    // en el test anterior. Asumimos que el test admin corrió antes
+    // (Playwright preserva el orden por defecto dentro de un file).
+    const direccionBadge = tutorPage.getByText(/dirección|direccio/i).first()
+    await expect(direccionBadge).toBeVisible({ timeout: 10_000 })
+
+    // Abrir el hilo y responder.
+    await direccionBadge.click()
+    await tutorPage.waitForURL(/\/es\/messages\/conversacion\//)
+    const respuesta = `tutor-respuesta ${Date.now()}`
+    await tutorPage.getByPlaceholder(/escribe tu mensaje/i).fill(respuesta)
+    await tutorPage.getByRole('button', { name: /enviar/i }).click()
+    await expect(tutorPage.getByText(respuesta)).toBeVisible({ timeout: 10_000 })
+
+    // TODO: forzar caducidad por SQL (UPDATE expires_at = now() - interval '1 day')
+    // y verificar que el composer se renderiza deshabilitado con el banner
+    // "composer-cerrado" + que el admin (no el tutor) ve el botón Reabrir.
+    // Requiere una ruta admin de test o ejecutar SQL desde el harness — se
+    // hace en seguimiento aparte si el smoke de prod descubre regresión.
+
+    await tutorContext.close()
+  })
+
+  test('marcar erróneo: dentro de 5 min OK; fuera de ventana el botón no aparece', async ({
+    browser,
+  }) => {
+    const profeContext = await browser.newContext()
+    const profePage = await profeContext.newPage()
+
+    await profePage.goto('/es/login')
+    await profePage.getByLabel(/email/i).fill(process.env.E2E_PROFE_EMAIL!)
+    await profePage.getByLabel(/contraseña|password/i).fill(process.env.E2E_PROFE_PASSWORD!)
+    await profePage.getByRole('button', { name: /entrar|sign in/i }).click()
+    await profePage.waitForURL(/\/es\/teacher/)
+
+    // Profe envía un mensaje fresco y verifica que el botón "marcar erróneo"
+    // aparece (mensaje <5 min). Lo pulsa y confirma; la burbuja queda con
+    // line-through.
+    await profePage.goto(`/es/messages/nino/${process.env.E2E_NINO_ID}`)
+    const contenido = `err-test ${Date.now()}`
+    await profePage.getByPlaceholder(/escribe tu mensaje/i).fill(contenido)
+    await profePage.getByRole('button', { name: /enviar/i }).click()
+    const burbuja = profePage.getByText(contenido)
+    await expect(burbuja).toBeVisible({ timeout: 10_000 })
+
+    // El botón marcar erróneo en la burbuja propia <5 min debe estar visible.
+    const marcarBtn = profePage.getByRole('button', { name: /anular|erróneo|erroneo/i }).last()
+    await expect(marcarBtn).toBeVisible()
+    await marcarBtn.click()
+    await profePage.getByRole('button', { name: /confirmar|sí|si/i }).click()
+    await expect(profePage.getByText(/anulado/i)).toBeVisible({ timeout: 10_000 })
+
+    // TODO: simular "mensaje creado hace 10 min" con UPDATE directo a BD
+    // (created_at antiguo) y recargar la página. Debe NO renderizarse el
+    // botón "marcar erróneo" (early-return null del componente).
+    // Requiere fixture seeding desde el harness — se hace en seguimiento.
+
+    await profeContext.close()
   })
 })

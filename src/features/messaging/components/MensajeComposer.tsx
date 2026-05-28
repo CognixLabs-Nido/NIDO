@@ -131,7 +131,7 @@ export function MensajeComposer(props: Props) {
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-background sticky bottom-0 -mx-4 border-t px-4 py-3 md:-mx-8 md:px-8"
+      className="bg-background -mx-4 shrink-0 border-t px-4 py-3 md:-mx-8 md:px-8"
       data-testid="mensaje-composer-form"
     >
       {caducada && (
