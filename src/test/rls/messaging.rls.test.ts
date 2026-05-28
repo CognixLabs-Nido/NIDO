@@ -632,11 +632,16 @@ describe('RLS mensajería — aislamiento, ámbitos y flag global', () => {
     // sigue siendo TRUE.
     const adminConDobleRol = await createTestUser({ nombre: 'Admin doble rol Msg' })
     try {
-      await asignarRol(adminConDobleRol.id, centroA.id, 'admin')
-      await asignarRol(adminConDobleRol.id, centroA.id, 'profe')
-      await asignarProfeAula(adminConDobleRol.id, aulaA1.id)
-
-      const client = await clientFor(adminConDobleRol)
+      // Las 4 operaciones solo dependen de adminConDobleRol.id (y fixtures ya
+      // existentes); paralelizarlas reduce ~3 round-trips a Supabase Cloud y
+      // absorbe el jitter de latencia en CI que ocasionalmente disparaba el
+      // timeout default de 5s.
+      const [, , , client] = await Promise.all([
+        asignarRol(adminConDobleRol.id, centroA.id, 'admin'),
+        asignarRol(adminConDobleRol.id, centroA.id, 'profe'),
+        asignarProfeAula(adminConDobleRol.id, aulaA1.id),
+        clientFor(adminConDobleRol),
+      ])
       // aulaA2 es del centroA pero el usuario NO es profe del aula
       const { data, error } = await client
         .from('anuncios')
