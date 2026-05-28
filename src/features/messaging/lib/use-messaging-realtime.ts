@@ -1,23 +1,25 @@
 'use client'
 
 import { useEffect, useId } from 'react'
-import { useRouter } from 'next/navigation'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 import { createClient } from '@/lib/supabase/client'
 
 /**
  * Hook compartido por la lista (/messages), las vistas de detalle y el
- * badge global: se suscribe a `mensajes` y `anuncios` y refresca la
- * página vía `router.refresh()` al recibir cualquier cambio.
+ * badge global: se suscribe a `mensajes` y `anuncios` y notifica al
+ * caller vía `onChange` cuando llega un cambio.
+ *
+ * El hook NO refresca el server component por sí mismo: cada caller decide
+ * qué hacer ante un evento (p.ej. `MessagesView` llama `router.refresh()`,
+ * `MessagingBadge` re-ejecuta una RPC ligera sin re-SSR). Esto evita el
+ * "refresh storm" que se producía cuando 4+ instancias del hook coexistían
+ * en `/messages` y cada evento Realtime provocaba 5× `router.refresh()`.
+ * El caller debe memoizar `onChange` con `useCallback` — ver deps abajo.
  *
  * Las RLS de SELECT se aplican también a las notificaciones Realtime —
  * el cliente solo recibe eventos sobre filas que su rol puede leer
  * (ADR-0007, sección "Realtime y RLS" de docs/architecture/rls-policies.md).
- *
- * Si el caller pasa un callback `onChange`, se invoca después de
- * `router.refresh()` para que pueda recalcular estado local (p.ej.
- * el contador del badge).
  *
  * ## Orden de llamadas a Supabase Realtime
  *
@@ -52,11 +54,11 @@ interface UseMessagingRealtimeOptions {
    * Si se pasa, el hook abre un listener adicional sobre `lectura_anuncio`
    * filtrado por este `anuncio_id`. Pensado para la vista del autor del
    * anuncio (`AnuncioView`): cuando un destinatario marca el anuncio como
-   * leído, la fila INSERT en `lectura_anuncio` dispara `router.refresh()` y
-   * el contador "X de Y" se actualiza en vivo. La policy de SELECT
-   * `lectura_anuncio_select_autor` (migración `phase5_lectura_anuncio_autor_select_realtime`)
-   * garantiza que el autor reciba el evento; el resto de usuarios no porque
-   * RLS también filtra las notificaciones Realtime.
+   * leído, el caller refresca el SSR vía `onChange` y el contador "X de Y"
+   * se actualiza en vivo. La policy de SELECT `lectura_anuncio_select_autor`
+   * (migración `phase5_lectura_anuncio_autor_select_realtime`) garantiza que
+   * el autor reciba el evento; el resto de usuarios no porque RLS también
+   * filtra las notificaciones Realtime.
    */
   anuncioIdParaLecturas?: string
   enabled?: boolean
@@ -70,7 +72,6 @@ export function useMessagingRealtime({
   enabled = true,
   onChange,
 }: UseMessagingRealtimeOptions): void {
-  const router = useRouter()
   const instanceId = useId()
   const channelName = `${channel}:${instanceId}`
 
@@ -82,7 +83,6 @@ export function useMessagingRealtime({
       table: 'mensajes' | 'anuncios' | 'lectura_conversacion' | 'lectura_anuncio'
     ) => {
       return (_payload: RealtimePostgresChangesPayload<Record<string, unknown>>): void => {
-        router.refresh()
         onChange?.(table)
       }
     }
@@ -125,5 +125,5 @@ export function useMessagingRealtime({
     return () => {
       supabase.removeChannel(ch)
     }
-  }, [channelName, conversacionId, anuncioIdParaLecturas, enabled, onChange, router])
+  }, [channelName, conversacionId, anuncioIdParaLecturas, enabled, onChange])
 }

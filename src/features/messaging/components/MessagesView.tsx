@@ -117,9 +117,14 @@ export function MessagesView({
 
   // Realtime: si llegan mensajes/anuncios nuevos vía RLS, refrescamos el SSR
   // para que los conteos y la lista se actualicen sin recargar manualmente.
+  // `onChange` memoizado para evitar re-suscripción en cada render (la
+  // identidad del callback está en las deps del useEffect del hook).
+  const onRealtimeChange = useCallback(() => {
+    router.refresh()
+  }, [router])
   useMessagingRealtime({
     channel: `messages-view-${locale}`,
-    onChange: () => router.refresh(),
+    onChange: onRealtimeChange,
   })
 
   // Vista admin: ahora con dos tabs (Anuncios + Dirección). El tab Anuncios
@@ -215,16 +220,23 @@ export function MessagesView({
 
         <TabsContent value="conversaciones" className="space-y-4 pt-3">
           <AdminFamiliaSection locale={locale} items={adminFamiliaItems} />
-          <ConversacionesSplitView
-            locale={locale}
-            rol={rol}
-            ninos={ninos}
-            ninoSeleccionadoId={ninoSeleccionadoId}
-            mostrarLista={mostrarListaConversaciones}
-            detalleHeader={detalleHeader}
-            detalleMensajes={detalleMensajes}
-            participo={participo}
-          />
+          {/* Lazy-mount: shadcn Tabs no es lazy por defecto y monta el
+              contenido de todas las tabs aunque estén ocultas, manteniendo
+              la suscripción Realtime de ConversacionesSplitView abierta
+              cuando el usuario está en tab Anuncios. Condicionar el render
+              a la tab activa cierra el canal automáticamente al cambiar. */}
+          {tabActual === 'conversaciones' && (
+            <ConversacionesSplitView
+              locale={locale}
+              rol={rol}
+              ninos={ninos}
+              ninoSeleccionadoId={ninoSeleccionadoId}
+              mostrarLista={mostrarListaConversaciones}
+              detalleHeader={detalleHeader}
+              detalleMensajes={detalleMensajes}
+              participo={participo}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="anuncios" className="pt-3">

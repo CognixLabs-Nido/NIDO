@@ -43,11 +43,12 @@ export function MessagingBadge({ initialTotal }: Props) {
   // del mismo layout, Next.js puede reutilizar el badge montado y la
   // suscripción Realtime sigue activa, así que el contador se mantiene
   // sincronizado sin necesidad de un fetch on-mount adicional.
+  const onRealtimeChange = useCallback(() => {
+    void refresh()
+  }, [refresh])
   useMessagingRealtime({
     channel: 'messaging-badge-global',
-    onChange: () => {
-      void refresh()
-    },
+    onChange: onRealtimeChange,
   })
 
   if (total <= 0) return null
