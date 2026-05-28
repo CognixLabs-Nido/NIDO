@@ -1091,7 +1091,8 @@
       "solo_admin": "Only the school administration can start this conversation.",
       "tutor_no_pertenece_centro": "This family doesn't belong to your school.",
       "apertura_fallo": "Couldn't open the conversation. Try again.",
-      "conversacion_caducada": "This conversation with management has closed. Ask management to reopen it."
+      "conversacion_caducada": "This conversation with management has closed. Ask management to reopen it.",
+      "ventana_anulacion_expirada": "You can no longer mark this message as erroneous: more than 5 minutes have passed since it was sent."
     },
     "ficha_nino": {
       "escribir_familia": "Write to the family",

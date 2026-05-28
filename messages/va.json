@@ -1091,7 +1091,8 @@
       "solo_admin": "Només la direcció del centre pot iniciar aquesta conversa.",
       "tutor_no_pertenece_centro": "Aquesta família no pertany al teu centre.",
       "apertura_fallo": "No s'ha pogut obrir la conversa. Torna-ho a provar.",
-      "conversacion_caducada": "Aquesta conversa amb la direcció s'ha tancat. Demana a la direcció que la reobri."
+      "conversacion_caducada": "Aquesta conversa amb la direcció s'ha tancat. Demana a la direcció que la reobri.",
+      "ventana_anulacion_expirada": "Ja no pots marcar aquest missatge com a erroni: han passat més de 5 minuts des de l'enviament."
     },
     "ficha_nino": {
       "escribir_familia": "Escriure a la família",

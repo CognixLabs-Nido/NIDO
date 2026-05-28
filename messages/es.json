@@ -1091,7 +1091,8 @@
       "solo_admin": "Solo la dirección del centro puede iniciar esta conversación.",
       "tutor_no_pertenece_centro": "Esta familia no pertenece a tu centro.",
       "apertura_fallo": "No se pudo abrir la conversación. Inténtalo de nuevo.",
-      "conversacion_caducada": "Esta conversación con dirección se ha cerrado. Pide a la dirección que la reabra."
+      "conversacion_caducada": "Esta conversación con dirección se ha cerrado. Pide a la dirección que la reabra.",
+      "ventana_anulacion_expirada": "Ya no puedes marcar este mensaje como erróneo: han pasado más de 5 minutos desde el envío."
     },
     "ficha_nino": {
       "escribir_familia": "Escribir a la familia",
