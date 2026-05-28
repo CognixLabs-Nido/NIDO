@@ -37,6 +37,8 @@
 --        centrado en F5.6-A.
 -- =============================================================================
 
+BEGIN;
+
 -- ─── 1. ENUM `tipo_conversacion` ──────────────────────────────────────────
 CREATE TYPE public.tipo_conversacion AS ENUM ('profe_familia', 'admin_familia');
 
@@ -281,3 +283,5 @@ CREATE POLICY mensajes_insert ON public.mensajes
 -- Realtime (decisión F5 mantenida).
 
 -- Fin de migración Fase 5.6 (Checkpoint B).
+
+COMMIT;
