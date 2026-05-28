@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import { destinatariosDeConversacion, getAutorPushInfo } from '@/features/push/lib/audiencia'
+import { destinatariosDeNino, getAutorPushInfo } from '@/features/push/lib/audiencia'
 import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -180,10 +180,14 @@ async function enviarMensajeProfeFamilia(
   //    envío falla, el mensaje ya está persistido y el toast del cliente
   //    sale verde igual. Sí esperamos a la promesa para que la lambda de
   //    Vercel no termine antes de que `web-push` complete los envíos.
+  //    Destinatarios y datos del autor son independientes — los lanzamos en
+  //    paralelo para ahorrar un round-trip a Supabase.
   try {
-    const destinatarios = await destinatariosDeConversacion(conversacionId, userId)
+    const [destinatarios, autor] = await Promise.all([
+      destinatariosDeNino(ninoId, userId),
+      getAutorPushInfo(userId),
+    ])
     if (destinatarios.length > 0) {
-      const autor = await getAutorPushInfo(userId)
       const cuerpo = contenido.length > 100 ? contenido.slice(0, 99) + '…' : contenido
       await enviarPushANotificarUsuarios(destinatarios, {
         titulo: autor.nombre,
@@ -271,28 +275,14 @@ async function enviarMensajeAdminFamilia(
     return fail('messages.errors.envio_fallo')
   }
 
-  // 4. Push best-effort. `destinatariosDeConversacion` lee `nino_id` y
-  //    devolverá [] para admin_familia (admin_id/tutor_id no participan en
-  //    su cálculo). Esto es un no-op seguro hasta que F5.6-D (UI) extienda
-  //    el helper para identificar al otro miembro del par. Sin crash.
-  try {
-    const destinatarios = await destinatariosDeConversacion(conversacionId, userId)
-    if (destinatarios.length > 0) {
-      const autor = await getAutorPushInfo(userId)
-      const cuerpo = contenido.length > 100 ? contenido.slice(0, 99) + '…' : contenido
-      await enviarPushANotificarUsuarios(destinatarios, {
-        titulo: autor.nombre,
-        cuerpo,
-        url: `/${autor.idioma}/messages`,
-        datos: {
-          tipo: 'mensaje',
-          conversacion_id: conversacionId,
-        },
-      })
-    }
-  } catch (err) {
-    console.error('[enviarMensaje admin_familia] push notifications falló:', err)
-  }
+  // 4. Push notifications: diferido a F5.6-D. El cálculo de destinatarios
+  //    del par (admin, tutor) requiere un helper específico
+  //    (`destinatariosDeAdminFamilia(adminId, tutorId, excluyendoUserId)`)
+  //    que aún no existe. Anteriormente esta rama llamaba a
+  //    `destinatariosDeConversacion`, que para admin_familia devolvía
+  //    siempre lista vacía vía un guard interno (`nino_id IS NULL`) — un
+  //    no-op caro: 1 SELECT a `conversaciones` + 1 a `usuarios` para nada.
+  //    Eliminado hasta que F5.6-D lo cablee de verdad.
 
   return ok({ mensaje_id: mensaje.id, conversacion_id: conversacionId })
 }

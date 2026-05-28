@@ -4,49 +4,46 @@ import { createServiceClient } from '@/lib/supabase/server'
 
 /**
  * Devuelve los `usuario_id` que deben recibir un push tras un mensaje nuevo
- * en `conversacionId`. Equivale al cálculo de "puede participar en la
- * conversación" (profes activos del aula del niño + tutores con
- * `permisos.puede_recibir_mensajes = true`), excluyendo al propio autor.
+ * en la conversación profe↔familia del niño `ninoId`. Equivale al cálculo
+ * de "puede participar en la conversación" (profes activos del aula del
+ * niño + tutores con `permisos.puede_recibir_mensajes = true`), excluyendo
+ * al propio autor.
  *
  * Usa **service role client** porque el autor (especialmente si es tutor)
  * normalmente no tiene RLS para leer todos los vínculos del niño ni los
  * `profes_aulas`. La auth del autor ya fue verificada por el server action
  * que invoca esta función; aquí solo computamos la lista de destinatarios.
+ *
+ * Solo aplica a conversaciones `profe_familia`. Para `admin_familia` el
+ * caller no debe invocar este helper — el cálculo de destinatarios del par
+ * (admin, tutor) entrará con F5.6-D cuando se cablee el push de admin↔familia.
  */
-export async function destinatariosDeConversacion(
-  conversacionId: string,
+export async function destinatariosDeNino(
+  ninoId: string,
   excluyendoUserId: string
 ): Promise<string[]> {
   const supabase = await createServiceClient()
 
-  // 1. Datos de la conversación.
-  const { data: conv, error: convErr } = await supabase
-    .from('conversaciones')
-    .select('nino_id')
-    .eq('id', conversacionId)
-    .maybeSingle()
-
-  if (convErr || !conv) {
-    if (convErr) console.error('[destinatariosDeConversacion] conversaciones.select:', convErr)
-    return []
-  }
-  // admin↔familia (`nino_id` NULL): el cálculo de destinatarios por
-  // matrículas/vínculos del niño no aplica. F5.6-A no envía push para
-  // este tipo de hilo aún — devolvemos lista vacía. Cuando se cablee,
-  // los destinatarios serán {admin_id, tutor_id} \ excluyendoUserId.
-  if (!conv.nino_id) return []
+  // Profes (vía matriculas → profes_aulas) y vínculos familiares son
+  // independientes entre sí: lanzamos ambas queries en paralelo. `profes_aulas`
+  // sí depende de los `aula_id` que devuelve `matriculas`, así que va después.
+  const [matriculasRes, vinculosRes] = await Promise.all([
+    supabase
+      .from('matriculas')
+      .select('aula_id')
+      .eq('nino_id', ninoId)
+      .is('fecha_baja', null)
+      .is('deleted_at', null),
+    supabase
+      .from('vinculos_familiares')
+      .select('usuario_id, permisos')
+      .eq('nino_id', ninoId)
+      .is('deleted_at', null),
+  ])
 
   const destinatarios = new Set<string>()
 
-  // 2. Profes activos del aula actual del niño (vía matrículas activas).
-  const { data: matriculas } = await supabase
-    .from('matriculas')
-    .select('aula_id')
-    .eq('nino_id', conv.nino_id)
-    .is('fecha_baja', null)
-    .is('deleted_at', null)
-
-  const aulaIds = (matriculas ?? []).map((m) => m.aula_id)
+  const aulaIds = (matriculasRes.data ?? []).map((m) => m.aula_id)
   if (aulaIds.length > 0) {
     const { data: profes } = await supabase
       .from('profes_aulas')
@@ -57,16 +54,10 @@ export async function destinatariosDeConversacion(
     for (const p of profes ?? []) destinatarios.add(p.profe_id)
   }
 
-  // 3. Tutores del niño con flag `puede_recibir_mensajes`. Filtramos en JS
-  //    porque `permisos` es JSONB y el filtro `->` de PostgREST con `eq`
-  //    no siempre acierta — más robusto cargar y comprobar.
-  const { data: vinculos } = await supabase
-    .from('vinculos_familiares')
-    .select('usuario_id, permisos')
-    .eq('nino_id', conv.nino_id)
-    .is('deleted_at', null)
-
-  for (const v of vinculos ?? []) {
+  // Tutores con flag `puede_recibir_mensajes`. Filtramos en JS porque
+  // `permisos` es JSONB y el filtro `->` de PostgREST con `eq` no siempre
+  // acierta — más robusto cargar y comprobar.
+  for (const v of vinculosRes.data ?? []) {
     const permisos = (v.permisos as Record<string, boolean> | null) ?? {}
     if (permisos.puede_recibir_mensajes === true) {
       destinatarios.add(v.usuario_id)
