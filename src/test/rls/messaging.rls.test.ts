@@ -911,4 +911,149 @@ describe('RLS mensajería — aislamiento, ámbitos y flag global', () => {
     expect(error).not.toBeNull()
     expect(data).toBeNull()
   })
+
+  // -------------------------------------------------------------------
+  // F5.6-B — ventana de 5 minutos para marcar erróneo (mensajes + anuncios).
+  // -------------------------------------------------------------------
+  //
+  // El autor solo puede UPDATE su mensaje/anuncio dentro de los primeros
+  // 5 minutos desde `created_at`. La policy `mensajes_update_autor` y
+  // `anuncios_update_autor` añaden `created_at > now() - interval '5 min'`
+  // a USING + WITH CHECK (migración 20260528200000).
+  //
+  // Patrón: USING false → 0 filas afectadas, error null (no 42501).
+  // Verificamos sembrando con `created_at` explícito por serviceClient
+  // (bypassa RLS).
+
+  it('t32 — autor con mensaje <5 min: UPDATE permitido', async () => {
+    const { data: msg, error: insErr } = await serviceClient
+      .from('mensajes')
+      .insert({
+        conversacion_id: convA1.id,
+        autor_id: profeAulaA1.id,
+        contenido: 't32-reciente',
+        // created_at por defecto = now(); reciente.
+      })
+      .select('id, contenido')
+      .single()
+    if (insErr || !msg) throw new Error(`seed t32: ${insErr?.message}`)
+
+    const client = await clientFor(profeAulaA1)
+    const { error: updErr } = await client
+      .from('mensajes')
+      .update({ erroneo: true, contenido: `[anulado] ${msg.contenido}` })
+      .eq('id', msg.id)
+    expect(updErr).toBeNull()
+
+    const { data: verify } = await serviceClient
+      .from('mensajes')
+      .select('erroneo, contenido')
+      .eq('id', msg.id)
+      .single()
+    expect(verify?.erroneo).toBe(true)
+    expect(verify?.contenido.startsWith('[anulado] ')).toBe(true)
+
+    await serviceClient.from('mensajes').delete().eq('id', msg.id)
+  })
+
+  it('t33 — autor con mensaje >5 min: UPDATE rechazado (0 filas, sin cambios)', async () => {
+    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    const { data: msg, error: insErr } = await serviceClient
+      .from('mensajes')
+      .insert({
+        conversacion_id: convA1.id,
+        autor_id: profeAulaA1.id,
+        contenido: 't33-antiguo',
+        created_at: tenMinAgo,
+      })
+      .select('id')
+      .single()
+    if (insErr || !msg) throw new Error(`seed t33: ${insErr?.message}`)
+
+    const client = await clientFor(profeAulaA1)
+    const { error: updErr } = await client
+      .from('mensajes')
+      .update({ erroneo: true, contenido: '[anulado] t33-antiguo' })
+      .eq('id', msg.id)
+    // USING falsa → no filas; PostgREST devuelve error null.
+    expect(updErr).toBeNull()
+
+    const { data: verify } = await serviceClient
+      .from('mensajes')
+      .select('erroneo, contenido')
+      .eq('id', msg.id)
+      .single()
+    expect(verify?.erroneo).toBe(false)
+    expect(verify?.contenido).toBe('t33-antiguo')
+
+    await serviceClient.from('mensajes').delete().eq('id', msg.id)
+  })
+
+  it('t34 — autor con anuncio <5 min: UPDATE permitido', async () => {
+    const { data: an, error: insErr } = await serviceClient
+      .from('anuncios')
+      .insert({
+        autor_id: profeAulaA1.id,
+        centro_id: centroA.id,
+        ambito: 'aula',
+        aula_id: aulaA1.id,
+        titulo: 't34-reciente',
+        contenido: 't34-anuncio-reciente',
+      })
+      .select('id, titulo')
+      .single()
+    if (insErr || !an) throw new Error(`seed t34: ${insErr?.message}`)
+
+    const client = await clientFor(profeAulaA1)
+    const { error: updErr } = await client
+      .from('anuncios')
+      .update({ erroneo: true, titulo: `[anulado] ${an.titulo}` })
+      .eq('id', an.id)
+    expect(updErr).toBeNull()
+
+    const { data: verify } = await serviceClient
+      .from('anuncios')
+      .select('erroneo, titulo')
+      .eq('id', an.id)
+      .single()
+    expect(verify?.erroneo).toBe(true)
+    expect(verify?.titulo.startsWith('[anulado] ')).toBe(true)
+
+    await serviceClient.from('anuncios').delete().eq('id', an.id)
+  })
+
+  it('t35 — autor con anuncio >5 min: UPDATE rechazado (sin cambios)', async () => {
+    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    const { data: an, error: insErr } = await serviceClient
+      .from('anuncios')
+      .insert({
+        autor_id: profeAulaA1.id,
+        centro_id: centroA.id,
+        ambito: 'aula',
+        aula_id: aulaA1.id,
+        titulo: 't35-antiguo',
+        contenido: 't35-anuncio-antiguo',
+        created_at: tenMinAgo,
+      })
+      .select('id')
+      .single()
+    if (insErr || !an) throw new Error(`seed t35: ${insErr?.message}`)
+
+    const client = await clientFor(profeAulaA1)
+    const { error: updErr } = await client
+      .from('anuncios')
+      .update({ erroneo: true, titulo: '[anulado] t35-antiguo' })
+      .eq('id', an.id)
+    expect(updErr).toBeNull()
+
+    const { data: verify } = await serviceClient
+      .from('anuncios')
+      .select('erroneo, titulo')
+      .eq('id', an.id)
+      .single()
+    expect(verify?.erroneo).toBe(false)
+    expect(verify?.titulo).toBe('t35-antiguo')
+
+    await serviceClient.from('anuncios').delete().eq('id', an.id)
+  })
 })
