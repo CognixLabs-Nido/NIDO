@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { NinoMensajeriaItem } from '../../queries/get-ninos-mensajeria'
+import type { AdminFamiliaListItem as AdminFamiliaListItemType } from '../../types'
 import { MessagesView } from '../MessagesView'
 
 /**
@@ -63,10 +64,14 @@ describe('MessagesView — render por rol', () => {
         detalleHeader={null}
         detalleMensajes={[]}
         participo={false}
+        adminFamiliaItems={[]}
       />
     )
-    // Sin pestañas: el único bloque es el de anuncios.
-    expect(screen.queryByRole('tablist')).toBeNull()
+    // F5.6: admin pasa de 0 tabs a 2 tabs (Anuncios + Dirección). Lo que
+    // NO debe existir es el tab Conversaciones — sigue sin participar en
+    // los hilos profe↔familia.
+    expect(screen.getByRole('tablist')).not.toBeNull()
+    expect(screen.queryByText('tabs.conversaciones')).toBeNull()
     // Tampoco hay sidebar de mensajería.
     expect(screen.queryByLabelText('split.aside_label')).toBeNull()
   })
@@ -84,6 +89,7 @@ describe('MessagesView — render por rol', () => {
         detalleHeader={null}
         detalleMensajes={[]}
         participo={false}
+        adminFamiliaItems={[]}
       />
     )
     // Tabs visibles
@@ -108,6 +114,7 @@ describe('MessagesView — render por rol', () => {
         detalleHeader={null}
         detalleMensajes={[]}
         participo={true}
+        adminFamiliaItems={[]}
       />
     )
     // Pestañas siguen visibles (Conversaciones + Anuncios).
@@ -131,10 +138,96 @@ describe('MessagesView — render por rol', () => {
         detalleHeader={null}
         detalleMensajes={[]}
         participo={false}
+        adminFamiliaItems={[]}
       />
     )
     expect(screen.getByLabelText('split.aside_label')).not.toBeNull()
     expect(screen.getByTestId('conv-list-item-h1')).not.toBeNull()
     expect(screen.getByTestId('conv-list-item-h2')).not.toBeNull()
+  })
+
+  // --- F5.6-A — sección "Dirección" del tutor + tab admin ---
+
+  function adminFamiliaItem(
+    id: string,
+    expiresAt: string,
+    extras?: Partial<AdminFamiliaListItemType>
+  ): AdminFamiliaListItemType {
+    return {
+      id,
+      contraparte_nombre: 'Tutor Demo',
+      rol_en_hilo: 'tutor',
+      expires_at: expiresAt,
+      last_message_at: null,
+      last_message_preview: null,
+      unread_count: 0,
+      ...extras,
+    }
+  }
+
+  it('tutor con hilo admin_familia activo: renderiza la sección "Dirección" arriba del split', () => {
+    const future = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    render(
+      <MessagesView
+        locale="es"
+        rol="tutor_legal"
+        ninos={[nino('h1', 'Hijo 1')]}
+        anuncios={[]}
+        puedePublicarAnuncio={false}
+        ninoSeleccionadoId={null}
+        mostrarListaConversaciones={true}
+        detalleHeader={null}
+        detalleMensajes={[]}
+        participo={false}
+        adminFamiliaItems={[adminFamiliaItem('af1', future)]}
+      />
+    )
+    expect(screen.getByTestId('admin-familia-section')).not.toBeNull()
+    expect(screen.getByTestId('admin-familia-list-item-af1')).not.toBeNull()
+  })
+
+  it('tutor SIN hilo admin_familia: NO renderiza la sección "Dirección"', () => {
+    render(
+      <MessagesView
+        locale="es"
+        rol="tutor_legal"
+        ninos={[nino('h1', 'Hijo 1')]}
+        anuncios={[]}
+        puedePublicarAnuncio={false}
+        ninoSeleccionadoId={null}
+        mostrarListaConversaciones={true}
+        detalleHeader={null}
+        detalleMensajes={[]}
+        participo={false}
+        adminFamiliaItems={[]}
+      />
+    )
+    expect(screen.queryByTestId('admin-familia-section')).toBeNull()
+  })
+
+  it('admin con hilos: el tablist tiene 2 triggers (Anuncios + Dirección)', () => {
+    const future = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    render(
+      <MessagesView
+        locale="es"
+        rol="admin"
+        ninos={[]}
+        anuncios={[]}
+        puedePublicarAnuncio={true}
+        ninoSeleccionadoId={null}
+        mostrarListaConversaciones={false}
+        detalleHeader={null}
+        detalleMensajes={[]}
+        participo={false}
+        adminFamiliaItems={[adminFamiliaItem('af2', future, { unread_count: 2 })]}
+      />
+    )
+    // shadcn Tabs lazy-renderiza el contenido del tab inactivo, así que el
+    // item de la lista no es addressable. Verificamos en su lugar que el
+    // tablist del admin contiene los 2 triggers que esperamos en F5.6
+    // (F5 dejaba 0 tabs al admin).
+    const tablist = screen.getByRole('tablist')
+    const triggers = tablist.querySelectorAll('[role="tab"]')
+    expect(triggers.length).toBe(2)
   })
 })
