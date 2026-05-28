@@ -1072,7 +1072,10 @@
       "sin_permisos": "No tens permís per a enviar aquest missatge.",
       "ya_anulado": "Aquest missatge ja estava anul·lat.",
       "no_autorizado": "No tens accés a aquesta conversa.",
-      "conexion": "Sense connexió. Reintentant…"
+      "conexion": "Sense connexió. Reintentant…",
+      "solo_admin": "Només la direcció del centre pot iniciar aquesta conversa.",
+      "tutor_no_pertenece_centro": "Aquesta família no pertany al teu centre.",
+      "apertura_fallo": "No s'ha pogut obrir la conversa. Torna-ho a provar."
     },
     "ficha_nino": {
       "escribir_familia": "Escriure a la família",

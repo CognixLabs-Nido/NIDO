@@ -84,6 +84,15 @@ export const marcarAnuncioErroneoSchema = z.object({
   anuncio_id: z.string().uuid(),
 })
 
+// --- F5.6-A — Abrir/reabrir conversación admin ↔ familia ---------------------
+// Input mínimo: el `tutor_id` con el que se quiere hablar. El `admin_id`,
+// `centro_id` y `expires_at` los resuelve el server action a partir de la
+// sesión y de la migración (3 días desde now()).
+export const abrirConversacionAdminFamiliaSchema = z.object({
+  tutor_id: z.string().uuid(),
+})
+export type AbrirConversacionAdminFamiliaInput = z.infer<typeof abrirConversacionAdminFamiliaSchema>
+
 // --- Constantes y helpers de "marcar como erróneo" ---------------------------
 // Mismo patrón que F3/F4 (PREFIX_ANULADO en agenda; '[cancelada] ' en
 // ausencias). En F5 además hay flag boolean `erroneo` en la fila; el prefijo

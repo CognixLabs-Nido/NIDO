@@ -1072,7 +1072,10 @@
       "sin_permisos": "No tienes permiso para enviar este mensaje.",
       "ya_anulado": "Este mensaje ya estaba anulado.",
       "no_autorizado": "No tienes acceso a esta conversación.",
-      "conexion": "Sin conexión. Reintentando…"
+      "conexion": "Sin conexión. Reintentando…",
+      "solo_admin": "Solo la dirección del centro puede iniciar esta conversación.",
+      "tutor_no_pertenece_centro": "Esta familia no pertenece a tu centro.",
+      "apertura_fallo": "No se pudo abrir la conversación. Inténtalo de nuevo."
     },
     "ficha_nino": {
       "escribir_familia": "Escribir a la familia",

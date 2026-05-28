@@ -1072,7 +1072,10 @@
       "sin_permisos": "You don't have permission to send this message.",
       "ya_anulado": "This message was already cancelled.",
       "no_autorizado": "You don't have access to this conversation.",
-      "conexion": "Offline. Retrying…"
+      "conexion": "Offline. Retrying…",
+      "solo_admin": "Only the school administration can start this conversation.",
+      "tutor_no_pertenece_centro": "This family doesn't belong to your school.",
+      "apertura_fallo": "Couldn't open the conversation. Try again."
     },
     "ficha_nino": {
       "escribir_familia": "Write to the family",
