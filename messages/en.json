@@ -986,6 +986,21 @@
       "conversaciones": "Conversations",
       "anuncios": "Announcements"
     },
+    "badge": {
+      "direccion": "Management"
+    },
+    "admin_familia": {
+      "tab": "Management",
+      "seccion_titulo": "Management",
+      "seccion_subtitulo": "Conversation with the school management",
+      "lista_vacia": "You haven't started any conversations with families yet.",
+      "escribir_direccion": "Talk to management",
+      "reabrir": "Reopen conversation",
+      "reabriendo": "Reopening…",
+      "indicador_activo": "Closes on {fecha}",
+      "indicador_cerrada": "Closed on {fecha}",
+      "composer_cerrado": "This conversation with management has closed."
+    },
     "lista": {
       "vacia_conversaciones": "You don't have any conversations yet.",
       "vacia_anuncios": "No announcements yet.",

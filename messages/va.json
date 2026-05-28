@@ -986,6 +986,21 @@
       "conversaciones": "Converses",
       "anuncios": "Anuncis"
     },
+    "badge": {
+      "direccion": "Direcció"
+    },
+    "admin_familia": {
+      "tab": "Direcció",
+      "seccion_titulo": "Direcció",
+      "seccion_subtitulo": "Conversa amb la direcció del centre",
+      "lista_vacia": "Encara no has iniciat cap conversa amb famílies.",
+      "escribir_direccion": "Conversa amb direcció",
+      "reabrir": "Reobrir conversa",
+      "reabriendo": "Reobrint…",
+      "indicador_activo": "Es tanca el {fecha}",
+      "indicador_cerrada": "Tancada el {fecha}",
+      "composer_cerrado": "Aquesta conversa amb la direcció s'ha tancat."
+    },
     "lista": {
       "vacia_conversaciones": "Encara no tens converses.",
       "vacia_anuncios": "Sense anuncis de moment.",

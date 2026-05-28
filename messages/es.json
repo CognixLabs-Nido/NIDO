@@ -986,6 +986,21 @@
       "conversaciones": "Conversaciones",
       "anuncios": "Anuncios"
     },
+    "badge": {
+      "direccion": "Dirección"
+    },
+    "admin_familia": {
+      "tab": "Dirección",
+      "seccion_titulo": "Dirección",
+      "seccion_subtitulo": "Conversación con la dirección del centro",
+      "lista_vacia": "Aún no has iniciado ninguna conversación con familias.",
+      "escribir_direccion": "Conversación con dirección",
+      "reabrir": "Reabrir conversación",
+      "reabriendo": "Reabriendo…",
+      "indicador_activo": "Se cierra el {fecha}",
+      "indicador_cerrada": "Cerrada el {fecha}",
+      "composer_cerrado": "Esta conversación con dirección se ha cerrado."
+    },
     "lista": {
       "vacia_conversaciones": "Aún no tienes conversaciones.",
       "vacia_anuncios": "Sin anuncios por ahora.",
