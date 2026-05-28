@@ -27,6 +27,10 @@ export async function getConversacionesDelUsuario(): Promise<ConversacionListIte
   if (!userId) return []
 
   // 1. Conversaciones con join al niño (nombre + aula actual del niño).
+  // Limitar a `profe_familia` — la lista admin↔familia se sirve por
+  // `getAdminFamiliaList(rol)` y se renderiza en una sección aparte de
+  // `MessagesView`. El INNER JOIN con `ninos` también las filtraría en
+  // runtime, pero el filtro explícito documenta la intención.
   const { data: convs, error: convErr } = await supabase
     .from('conversaciones')
     .select(
@@ -47,6 +51,7 @@ export async function getConversacionesDelUsuario(): Promise<ConversacionListIte
       )
       `
     )
+    .eq('tipo_conversacion', 'profe_familia')
     .order('last_message_at', { ascending: false, nullsFirst: false })
     .limit(100)
 
@@ -102,21 +107,27 @@ export async function getConversacionesDelUsuario(): Promise<ConversacionListIte
     }
   }
 
-  const items: ConversacionListItem[] = conversaciones.map((c) => {
-    const matricula =
-      c.nino?.matriculas?.find((m) => m.fecha_baja === null) ?? c.nino?.matriculas?.[0] ?? null
-    const last = lastByConv.get(c.id) ?? null
-    return {
-      id: c.id,
-      nino_id: c.nino_id,
-      nino_nombre: c.nino?.nombre ?? '',
-      nino_apellidos: c.nino?.apellidos ?? '',
-      aula_nombre: matricula?.aula?.nombre ?? null,
-      last_message_at: c.last_message_at,
-      last_message_preview: last ? (last.erroneo ? null : last.contenido.slice(0, 140)) : null,
-      unread_count: unreadByConv.get(c.id) ?? 0,
-    }
-  })
+  // Filtro defensivo del nullable: tras `.eq('tipo_conversacion', 'profe_familia')`
+  // + INNER JOIN con `ninos`, `c.nino_id` siempre está poblado, pero TS lo ve
+  // como `string | null` por la columna nullable. Filtrar aquí cierra el narrow
+  // sin cast ciego.
+  const items: ConversacionListItem[] = conversaciones
+    .filter((c): c is typeof c & { nino_id: string } => c.nino_id !== null)
+    .map((c) => {
+      const matricula =
+        c.nino?.matriculas?.find((m) => m.fecha_baja === null) ?? c.nino?.matriculas?.[0] ?? null
+      const last = lastByConv.get(c.id) ?? null
+      return {
+        id: c.id,
+        nino_id: c.nino_id,
+        nino_nombre: c.nino?.nombre ?? '',
+        nino_apellidos: c.nino?.apellidos ?? '',
+        aula_nombre: matricula?.aula?.nombre ?? null,
+        last_message_at: c.last_message_at,
+        last_message_preview: last ? (last.erroneo ? null : last.contenido.slice(0, 140)) : null,
+        unread_count: unreadByConv.get(c.id) ?? 0,
+      }
+    })
 
   return items
 }
