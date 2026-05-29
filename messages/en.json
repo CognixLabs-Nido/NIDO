@@ -1001,6 +1001,21 @@
       "indicador_cerrada": "Closed on {fecha}",
       "composer_cerrado": "This conversation with management has closed."
     },
+    "admin_direccion": {
+      "tab": "Management",
+      "lista_titulo": "Families",
+      "buscar_placeholder": "Search family or child…",
+      "aside_label": "List of families in the school",
+      "panel_label": "Conversation with the selected family",
+      "empty_lista": "There are no families in the school yet.",
+      "empty_busqueda": "No results. Try another name.",
+      "empty_panel": "Select a family to get started.",
+      "hijos_label_uno": "Child:",
+      "hijos_label_varios": "Children:",
+      "iniciar_titulo": "No messages yet",
+      "iniciar_subtitulo": "Write the first message to start the thread with this family.",
+      "iniciando": "Starting…"
+    },
     "lista": {
       "vacia_conversaciones": "You don't have any conversations yet.",
       "vacia_anuncios": "No announcements yet.",

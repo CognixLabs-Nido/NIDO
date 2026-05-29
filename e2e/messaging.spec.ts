@@ -403,4 +403,96 @@ test.describe('Fase 5.6 — admin↔familia + ventana anulación (skip por defec
 
     await profeContext.close()
   })
+
+  // ─── F5B Items 1+2 — Admin direccion split-view ────────────────────────
+  // El admin entra a `/messages?tab=direccion`, ve la lista de tutores del
+  // centro, busca uno, lo selecciona y escribe el primer mensaje. El tutor
+  // recibe el hilo en la sección "Dirección" de su tab Conversaciones.
+
+  test('F5B Items 1+2: admin lista tutores, busca, selecciona, inicia hilo', async ({
+    browser,
+  }) => {
+    // TODO(F5B): el test asume que existe al menos un tutor con vínculo
+    // sobre `E2E_NINO_ID` que matchea con el patrón de búsqueda
+    // `E2E_TUTOR_SEARCH_HINT` (típicamente las 3-4 primeras letras del
+    // nombre del tutor). Si no se aporta, el filtrado client-side
+    // probablemente devolverá la lista completa y el test seguirá
+    // siendo válido (la selección es por id de tutor, no por nombre).
+    const adminContext = await browser.newContext()
+    const adminPage = await adminContext.newPage()
+
+    await adminPage.goto('/es/login')
+    await adminPage.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL!)
+    await adminPage.getByLabel(/contraseña|password/i).fill(process.env.E2E_ADMIN_PASSWORD!)
+    await adminPage.getByRole('button', { name: /entrar|sign in/i }).click()
+    await adminPage.waitForURL(/\/es\/admin/)
+
+    await adminPage.goto('/es/messages?tab=direccion')
+
+    // El sidebar muestra al menos al tutor conocido. Su `data-testid` es
+    // `tutor-list-item-<usuario_id>` — necesitamos el id, que vive en
+    // E2E_TUTOR_ID (definido para los flujos admin↔familia).
+    const tutorItem = adminPage.getByTestId(`tutor-list-item-${process.env.E2E_TUTOR_ID}`)
+    await expect(tutorItem).toBeVisible({ timeout: 10_000 })
+
+    // Ejercitar el buscador: tecleamos un fragmento del nombre y
+    // verificamos que el item sigue visible (filtrado client-side).
+    if (process.env.E2E_TUTOR_SEARCH_HINT) {
+      await adminPage
+        .getByPlaceholder(/buscar familia o niño/i)
+        .fill(process.env.E2E_TUTOR_SEARCH_HINT)
+      await expect(tutorItem).toBeVisible()
+    }
+
+    // Seleccionar el tutor.
+    await tutorItem.click()
+    await adminPage.waitForURL(
+      new RegExp(`/es/messages\\?tab=direccion&tutor=${process.env.E2E_TUTOR_ID}`)
+    )
+
+    // Si el hilo NO existía aún, el panel muestra `panel-iniciar-empty`;
+    // si ya existía, muestra `conv-admin-familia`. En cualquier caso,
+    // el composer está disponible.
+    const composer = adminPage.getByTestId('mensaje-composer-form')
+    await expect(composer).toBeVisible({ timeout: 10_000 })
+
+    const contenido = `admin-direccion ${Date.now()}`
+    await adminPage.getByPlaceholder(/escribe tu mensaje/i).fill(contenido)
+    await adminPage.getByRole('button', { name: /enviar/i }).click()
+
+    // Tras enviar, el SSR refresca y el panel debe mostrar la burbuja.
+    await expect(adminPage.getByText(contenido)).toBeVisible({ timeout: 10_000 })
+
+    await adminContext.close()
+  })
+
+  test('F5B Items 1+2: tutor recibe el hilo en su sección Dirección', async ({ browser }) => {
+    // Asume que el test anterior corrió antes y dejó al menos un hilo
+    // admin↔familia activo entre adminA y tutorConocido.
+    const tutorContext = await browser.newContext()
+    const tutorPage = await tutorContext.newPage()
+
+    await tutorPage.goto('/es/login')
+    await tutorPage.getByLabel(/email/i).fill(process.env.E2E_TUTOR_EMAIL!)
+    await tutorPage.getByLabel(/contraseña|password/i).fill(process.env.E2E_TUTOR_PASSWORD!)
+    await tutorPage.getByRole('button', { name: /entrar|sign in/i }).click()
+    await tutorPage.waitForURL(/\/es\/family/)
+
+    await tutorPage.goto('/es/messages')
+
+    // La sección "Dirección" debe estar visible (la pinta `AdminFamiliaSection`
+    // cuando hay al menos un hilo del par admin↔tutor).
+    await expect(tutorPage.getByTestId('admin-familia-section')).toBeVisible({ timeout: 10_000 })
+
+    // Click en el primer item → carga la vista del hilo y puede responder.
+    const primerItem = tutorPage.locator('[data-testid^="admin-familia-list-item-"]').first()
+    await primerItem.click()
+    await tutorPage.waitForURL(/\/es\/messages\/conversacion\//)
+    const respuesta = `respuesta tutor ${Date.now()}`
+    await tutorPage.getByPlaceholder(/escribe tu mensaje/i).fill(respuesta)
+    await tutorPage.getByRole('button', { name: /enviar/i }).click()
+    await expect(tutorPage.getByText(respuesta)).toBeVisible({ timeout: 10_000 })
+
+    await tutorContext.close()
+  })
 })

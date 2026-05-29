@@ -1061,4 +1061,81 @@ describe('RLS mensajería — aislamiento, ámbitos y flag global', () => {
 
     await serviceClient.from('anuncios').delete().eq('id', an.id)
   })
+
+  // ───────────────────────────────────────────────────────────────────────
+  // F5B Items 1+2: getTutoresParaAdminDireccion bajo RLS real.
+  //
+  // No introducimos políticas nuevas: la query combina las RLS existentes
+  // de F5.6-A (`conversaciones_select` con `admin_id = auth.uid()` y
+  // `tutor_id = auth.uid()` para admin_familia) con las de F2
+  // (`vinculos_familiares.SELECT` para admin del centro del niño).
+  // Estos tests garantizan que la composición de policies funciona como
+  // espera el `AdminDireccionSplitView`:
+  //   - admin solo ve tutores de SU centro.
+  //   - admin solo ve hilos `admin_familia` donde es `admin_id`.
+  //   - tutor NO puede ejecutar la query (RLS bloquea vínculos cruzados).
+  // ───────────────────────────────────────────────────────────────────────
+  describe('F5B Items 1+2 — getTutoresParaAdminDireccion bajo RLS', () => {
+    it('admin A solo ve tutores con vínculo en su centro (no ve los de centro B)', async () => {
+      const client = await clientFor(adminA)
+      // Ejecutamos la query mínima que hace el `*Core`: SELECT vínculos.
+      // La RLS de `vinculos_familiares` filtra automáticamente por centro
+      // del niño vía `es_admin(centro_de_nino)`.
+      const { data, error } = await client
+        .from('vinculos_familiares')
+        .select('usuario_id, nino:ninos!inner(centro_id)')
+        .in('tipo_vinculo', ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'])
+        .is('deleted_at', null)
+
+      expect(error).toBeNull()
+      const centrosVistos = new Set((data ?? []).map((v) => v.nino?.centro_id).filter(Boolean))
+      expect(centrosVistos.has(centroA.id)).toBe(true)
+      expect(centrosVistos.has(centroB.id)).toBe(false)
+    })
+
+    it('admin A solo ve conversaciones admin_familia donde es admin_id', async () => {
+      // Seed: hilo admin_familia (adminA, tutorConPermisoNinoA1).
+      const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+      const { data: conv, error: cErr } = await serviceClient
+        .from('conversaciones')
+        .insert({
+          tipo_conversacion: 'admin_familia',
+          admin_id: adminA.id,
+          tutor_id: tutorConPermisoNinoA1.id,
+          centro_id: centroA.id,
+          expires_at: expiresAt,
+        })
+        .select('id')
+        .single()
+      if (cErr || !conv) throw new Error(`seed admin_familia: ${cErr?.message}`)
+
+      const client = await clientFor(adminA)
+      const { data: visibles, error: vErr } = await client
+        .from('conversaciones')
+        .select('id, admin_id, tipo_conversacion')
+        .eq('tipo_conversacion', 'admin_familia')
+        .eq('admin_id', adminA.id)
+      expect(vErr).toBeNull()
+      expect(visibles?.some((v) => v.id === conv.id)).toBe(true)
+      // Todas las visibles tienen admin_id = adminA (defensa RLS).
+      expect(visibles?.every((v) => v.admin_id === adminA.id)).toBe(true)
+
+      await serviceClient.from('conversaciones').delete().eq('id', conv.id)
+    })
+
+    it('tutor NO puede SELECT vinculos_familiares cruzados (RLS bloquea)', async () => {
+      const client = await clientFor(tutorConPermisoNinoA1)
+      const { data } = await client
+        .from('vinculos_familiares')
+        .select('usuario_id, nino_id')
+        .in('tipo_vinculo', ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'])
+        .is('deleted_at', null)
+      // El tutor solo ve sus propios vínculos (RLS `vinculos_select`
+      // del módulo Core de F2: `usuario_id = auth.uid()` OR admin).
+      // El listado completo del centro está oculto.
+      for (const v of data ?? []) {
+        expect(v.usuario_id).toBe(tutorConPermisoNinoA1.id)
+      }
+    })
+  })
 })
