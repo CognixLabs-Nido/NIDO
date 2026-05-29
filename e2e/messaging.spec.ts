@@ -228,6 +228,51 @@ test.describe('Fase 5 — messaging realtime (skip por defecto)', () => {
     await profeContext.close()
     await familiaContext.close()
   })
+
+  // TODO(F5B): activar cuando exista e2e/helpers/seed-mensajes.ts con un
+  // niño de ≥50 mensajes en el centro de pruebas. Hoy el test se queda
+  // bajo el skip global del describe (E2E_REAL_SESSIONS !== '1') pero
+  // incluso con la flag activa requiere ese seed; sin él el assert de
+  // `scrollHeight > clientHeight` puede pasar por casualidad con pocos
+  // mensajes y no validar realmente la regresión.
+  test('F5B-Item4: el contenedor del split-view tiene scroll interno acotado con ≥50 mensajes', async ({
+    browser,
+  }) => {
+    const profeContext = await browser.newContext()
+    const profePage = await profeContext.newPage()
+
+    await profePage.goto('/es/login')
+    await profePage.getByLabel(/email/i).fill(process.env.E2E_PROFE_EMAIL!)
+    await profePage.getByLabel(/contraseña|password/i).fill(process.env.E2E_PROFE_PASSWORD!)
+    await profePage.getByRole('button', { name: /entrar|sign in/i }).click()
+    await profePage.waitForURL(/\/es\/teacher/)
+
+    // Mobile 375x812 (iPhone 13 mini).
+    await profePage.setViewportSize({ width: 375, height: 812 })
+    await profePage.goto(`/es/messages?nino=${process.env.E2E_NINO_ID}`)
+    await profePage.waitForSelector('[data-testid="conv-split-scroll"]')
+
+    const dimsMobile = await profePage
+      .locator('[data-testid="conv-split-scroll"]')
+      .evaluate((el) => ({ scrollHeight: el.scrollHeight, clientHeight: el.clientHeight }))
+    expect(dimsMobile.clientHeight).toBeGreaterThan(0)
+    expect(dimsMobile.scrollHeight).toBeGreaterThan(dimsMobile.clientHeight)
+    // Sanity: clientHeight cabe en el viewport (no infinito).
+    expect(dimsMobile.clientHeight).toBeLessThan(812)
+
+    // Desktop 1280x800.
+    await profePage.setViewportSize({ width: 1280, height: 800 })
+    await profePage.reload()
+    await profePage.waitForSelector('[data-testid="conv-split-scroll"]')
+
+    const dimsDesktop = await profePage
+      .locator('[data-testid="conv-split-scroll"]')
+      .evaluate((el) => ({ scrollHeight: el.scrollHeight, clientHeight: el.clientHeight }))
+    expect(dimsDesktop.scrollHeight).toBeGreaterThan(dimsDesktop.clientHeight)
+    expect(dimsDesktop.clientHeight).toBeLessThan(800)
+
+    await profeContext.close()
+  })
 })
 
 /**
