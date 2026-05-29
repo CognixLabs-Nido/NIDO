@@ -8,14 +8,9 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
+import { VENTANA_ANULACION_MS } from '../lib/constants'
 import { marcarAnuncioErroneoSchema } from '../schemas/messaging'
 import { fail, ok, PREFIX_ANULADO, type ActionResult } from '../types'
-
-/** Ventana de tiempo durante la que el autor puede marcar un anuncio como
- *  erróneo (F5.6-B). La capa autoritativa es RLS — esta constante es para
- *  el pre-check rápido. Mantener sincronizado con la migración
- *  20260528200000. */
-export const VENTANA_ANULACION_MS = 5 * 60 * 1000
 
 /**
  * Marca un anuncio como erróneo. Mismo patrón que mensajes: UPDATE

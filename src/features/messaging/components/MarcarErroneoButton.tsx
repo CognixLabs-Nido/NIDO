@@ -6,11 +6,6 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
-/** F5.6-B: el autor solo puede marcar erróneo dentro de los primeros 5 min.
- *  Capa autoritativa: RLS (migración 20260528200000). Esta constante es
- *  el espejo cliente para el early-return del botón. */
-const VENTANA_ANULACION_MS = 5 * 60 * 1000
-
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -24,6 +19,7 @@ import {
 
 import { marcarAnuncioErroneo } from '../actions/marcar-anuncio-erroneo'
 import { marcarMensajeErroneo } from '../actions/marcar-mensaje-erroneo'
+import { VENTANA_ANULACION_MS } from '../lib/constants'
 
 interface Props {
   target: 'mensaje' | 'anuncio'
