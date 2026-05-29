@@ -17,11 +17,13 @@ import type { NinoMensajeriaItem } from '../queries/get-ninos-mensajeria'
 import type {
   AdminFamiliaListItem as AdminFamiliaListItemType,
   AnuncioListItem,
+  ConversacionAdminFamiliaHeader,
   ConversacionHeader,
   MensajeView,
+  TutorDireccionItem,
 } from '../types'
 
-import { AdminFamiliaListItem } from './AdminFamiliaListItem'
+import { AdminDireccionSplitView } from './AdminDireccionSplitView'
 import { AdminFamiliaSection } from './AdminFamiliaSection'
 import { ConversacionesSplitView } from './ConversacionesSplitView'
 
@@ -44,12 +46,25 @@ interface Props {
   participo: boolean
   /**
    * F5.6-A — hilos admin↔familia del usuario actual.
-   *  - Admin: lista completa para el tab "Dirección".
-   *  - Tutor/autorizado: lista (0 ó 1) que se renderiza encima del split-view
-   *    como sección "Dirección".
+   *  - Admin: ya NO se usa para el tab "Dirección" (lo absorbe el
+   *    `AdminDireccionSplitView` con `tutoresAdminDireccion`). El page
+   *    ya no llama a `getAdminFamiliaList` para admin.
+   *  - Tutor/autorizado: lista (0 ó 1) que se renderiza encima del
+   *    split-view como sección "Dirección".
    *  - Profe: siempre vacía (la query corta sin pegar a BD).
    */
   adminFamiliaItems: AdminFamiliaListItemType[]
+  /** F5B-Items1+2 — solo poblado cuando `rol === 'admin'`. Lista de
+   *  tutores del centro para el split-view del tab "Dirección". */
+  tutoresAdminDireccion: TutorDireccionItem[]
+  /** F5B-Items1+2 — `?tutor=<id>` resuelto en SSR. Si el id no está en
+   *  `tutoresAdminDireccion`, ya viene como `null` desde el page. */
+  tutorAdminDireccionSeleccionadoId: string | null
+  /** F5B-Items1+2 — detalle del hilo `(admin=auth.uid(), tutor=X)` si
+   *  existe. `null` cuando no hay tutor seleccionado o cuando el tutor
+   *  seleccionado aún no tiene hilo (modo "iniciar"). */
+  adminDireccionDetalleHeader: ConversacionAdminFamiliaHeader | null
+  adminDireccionDetalleMensajes: MensajeView[]
 }
 
 /**
@@ -74,6 +89,10 @@ export function MessagesView({
   detalleMensajes,
   participo,
   adminFamiliaItems,
+  tutoresAdminDireccion,
+  tutorAdminDireccionSeleccionadoId,
+  adminDireccionDetalleHeader,
+  adminDireccionDetalleMensajes,
 }: Props) {
   const t = useTranslations('messages')
   const tAdmin = useTranslations('messages.admin_familia')
@@ -114,6 +133,13 @@ export function MessagesView({
     (acc, i) => acc + (i.unread_count > 0 ? 1 : 0),
     0
   )
+  // F5B-Items1+2: para admin, el badge del tab Dirección refleja los
+  // tutores con `unread_count > 0`. (Los hilos sin abrir nunca tienen
+  // unread; aparecen por su orden.)
+  const unreadAdminDireccion = tutoresAdminDireccion.reduce(
+    (acc, tt) => acc + (tt.unread_count > 0 ? 1 : 0),
+    0
+  )
 
   // Realtime: si llegan mensajes/anuncios nuevos vía RLS, refrescamos el SSR
   // para que los conteos y la lista se actualicen sin recargar manualmente.
@@ -152,9 +178,9 @@ export function MessagesView({
               <TabsTrigger value="direccion">
                 <ShieldCheckIcon className="size-4" />
                 <span>{tAdmin('tab')}</span>
-                {unreadAdminFamilia > 0 && (
+                {unreadAdminDireccion > 0 && (
                   <Badge variant="default" className="ml-2 px-1.5 text-[10px]">
-                    {unreadAdminFamilia}
+                    {unreadAdminDireccion}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -173,7 +199,21 @@ export function MessagesView({
           </TabsContent>
 
           <TabsContent value="direccion" className="pt-3">
-            <AdminFamiliaList items={adminFamiliaItems} locale={locale} />
+            {/* F5B-Items1+2: el split-view sustituye a la antigua lista
+                de hilos (`AdminFamiliaList` interno, ya eliminado).
+                Lazy-mount como hace el split-view profe: el componente
+                solo se monta cuando el tab está activo para evitar
+                suscripciones Realtime abiertas cuando el usuario está
+                en tab Anuncios. */}
+            {tabActual === 'direccion' && (
+              <AdminDireccionSplitView
+                locale={locale}
+                tutores={tutoresAdminDireccion}
+                tutorSeleccionadoId={tutorAdminDireccionSeleccionadoId}
+                detalleHeader={adminDireccionDetalleHeader}
+                detalleMensajes={adminDireccionDetalleMensajes}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </div>
@@ -244,34 +284,6 @@ export function MessagesView({
         </TabsContent>
       </Tabs>
     </div>
-  )
-}
-
-function AdminFamiliaList({
-  items,
-  locale,
-}: {
-  items: AdminFamiliaListItemType[]
-  locale: string
-}) {
-  const t = useTranslations('messages.admin_familia')
-  if (items.length === 0) {
-    return (
-      <Card>
-        <CardContent className="text-muted-foreground py-8 text-center text-sm">
-          {t('lista_vacia')}
-        </CardContent>
-      </Card>
-    )
-  }
-  return (
-    <ul className="space-y-2">
-      {items.map((item) => (
-        <li key={item.id}>
-          <AdminFamiliaListItem locale={locale} item={item} />
-        </li>
-      ))}
-    </ul>
   )
 }
 

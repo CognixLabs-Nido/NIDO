@@ -1001,6 +1001,21 @@
       "indicador_cerrada": "Cerrada el {fecha}",
       "composer_cerrado": "Esta conversación con dirección se ha cerrado."
     },
+    "admin_direccion": {
+      "tab": "Dirección",
+      "lista_titulo": "Familias",
+      "buscar_placeholder": "Buscar familia o niño…",
+      "aside_label": "Lista de familias del centro",
+      "panel_label": "Conversación con la familia seleccionada",
+      "empty_lista": "No hay familias en el centro todavía.",
+      "empty_busqueda": "Sin resultados. Prueba con otro nombre.",
+      "empty_panel": "Selecciona una familia para empezar.",
+      "hijos_label_uno": "Hijo/a:",
+      "hijos_label_varios": "Hijos/as:",
+      "iniciar_titulo": "Aún no hay mensajes",
+      "iniciar_subtitulo": "Escribe el primer mensaje para iniciar el hilo con esta familia.",
+      "iniciando": "Iniciando…"
+    },
     "lista": {
       "vacia_conversaciones": "Aún no tienes conversaciones.",
       "vacia_anuncios": "Sin anuncios por ahora.",

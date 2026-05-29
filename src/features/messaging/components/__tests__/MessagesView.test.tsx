@@ -65,6 +65,10 @@ describe('MessagesView — render por rol', () => {
         detalleMensajes={[]}
         participo={false}
         adminFamiliaItems={[]}
+        tutoresAdminDireccion={[]}
+        tutorAdminDireccionSeleccionadoId={null}
+        adminDireccionDetalleHeader={null}
+        adminDireccionDetalleMensajes={[]}
       />
     )
     // F5.6: admin pasa de 0 tabs a 2 tabs (Anuncios + Dirección). Lo que
@@ -90,6 +94,10 @@ describe('MessagesView — render por rol', () => {
         detalleMensajes={[]}
         participo={false}
         adminFamiliaItems={[]}
+        tutoresAdminDireccion={[]}
+        tutorAdminDireccionSeleccionadoId={null}
+        adminDireccionDetalleHeader={null}
+        adminDireccionDetalleMensajes={[]}
       />
     )
     // Tabs visibles
@@ -115,6 +123,10 @@ describe('MessagesView — render por rol', () => {
         detalleMensajes={[]}
         participo={true}
         adminFamiliaItems={[]}
+        tutoresAdminDireccion={[]}
+        tutorAdminDireccionSeleccionadoId={null}
+        adminDireccionDetalleHeader={null}
+        adminDireccionDetalleMensajes={[]}
       />
     )
     // Pestañas siguen visibles (Conversaciones + Anuncios).
@@ -139,6 +151,10 @@ describe('MessagesView — render por rol', () => {
         detalleMensajes={[]}
         participo={false}
         adminFamiliaItems={[]}
+        tutoresAdminDireccion={[]}
+        tutorAdminDireccionSeleccionadoId={null}
+        adminDireccionDetalleHeader={null}
+        adminDireccionDetalleMensajes={[]}
       />
     )
     expect(screen.getByLabelText('split.aside_label')).not.toBeNull()
@@ -180,6 +196,10 @@ describe('MessagesView — render por rol', () => {
         detalleMensajes={[]}
         participo={false}
         adminFamiliaItems={[adminFamiliaItem('af1', future)]}
+        tutoresAdminDireccion={[]}
+        tutorAdminDireccionSeleccionadoId={null}
+        adminDireccionDetalleHeader={null}
+        adminDireccionDetalleMensajes={[]}
       />
     )
     expect(screen.getByTestId('admin-familia-section')).not.toBeNull()
@@ -200,6 +220,10 @@ describe('MessagesView — render por rol', () => {
         detalleMensajes={[]}
         participo={false}
         adminFamiliaItems={[]}
+        tutoresAdminDireccion={[]}
+        tutorAdminDireccionSeleccionadoId={null}
+        adminDireccionDetalleHeader={null}
+        adminDireccionDetalleMensajes={[]}
       />
     )
     expect(screen.queryByTestId('admin-familia-section')).toBeNull()
@@ -220,6 +244,10 @@ describe('MessagesView — render por rol', () => {
         detalleMensajes={[]}
         participo={false}
         adminFamiliaItems={[adminFamiliaItem('af2', future, { unread_count: 2 })]}
+        tutoresAdminDireccion={[]}
+        tutorAdminDireccionSeleccionadoId={null}
+        adminDireccionDetalleHeader={null}
+        adminDireccionDetalleMensajes={[]}
       />
     )
     // shadcn Tabs lazy-renderiza el contenido del tab inactivo, así que el

@@ -96,6 +96,27 @@ export interface ConversacionAdminFamiliaHeader {
   expires_at: string
 }
 
+/** F5B-Items1+2 — Item de la lista de tutores para el split-view del admin
+ *  en `/messages` tab Dirección. Un row por tutor con vínculo activo en
+ *  el centro (dedup por `usuario_id`), con sus hijos del centro y el hilo
+ *  `(admin=auth.uid(), tutor=usuario_id)` si existe. */
+export interface TutorDireccionItem {
+  usuario_id: string
+  nombre_completo: string
+  hijos: Array<{
+    nino_id: string
+    nombre: string
+    apellidos: string
+  }>
+  /** Hilo `(admin=auth.uid(), tutor=usuario_id)` si existe. */
+  conversacion_id: string | null
+  /** Solo si `conversacion_id !== null`. */
+  expires_at: string | null
+  last_message_at: string | null
+  last_message_preview: string | null
+  unread_count: number
+}
+
 /** Item de lista de hilos admin_familia. Se usa tanto para el tab admin
  *  como para la sección "Dirección" del tutor (0 ó 1 item). */
 export interface AdminFamiliaListItem {

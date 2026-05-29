@@ -1001,6 +1001,21 @@
       "indicador_cerrada": "Tancada el {fecha}",
       "composer_cerrado": "Aquesta conversa amb la direcció s'ha tancat."
     },
+    "admin_direccion": {
+      "tab": "Direcció",
+      "lista_titulo": "Famílies",
+      "buscar_placeholder": "Cerca família o xiquet…",
+      "aside_label": "Llista de famílies del centre",
+      "panel_label": "Conversa amb la família seleccionada",
+      "empty_lista": "Encara no hi ha famílies al centre.",
+      "empty_busqueda": "Sense resultats. Prova amb un altre nom.",
+      "empty_panel": "Selecciona una família per a començar.",
+      "hijos_label_uno": "Fill/a:",
+      "hijos_label_varios": "Fills/es:",
+      "iniciar_titulo": "Encara no hi ha missatges",
+      "iniciar_subtitulo": "Escriu el primer missatge per a iniciar el fil amb aquesta família.",
+      "iniciando": "Iniciant…"
+    },
     "lista": {
       "vacia_conversaciones": "Encara no tens converses.",
       "vacia_anuncios": "Sense anuncis de moment.",

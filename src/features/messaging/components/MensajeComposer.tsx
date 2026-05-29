@@ -10,6 +10,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
+import { abrirConversacionAdminFamilia } from '../actions/abrir-conversacion-admin-familia'
 import { enviarMensaje } from '../actions/enviar-mensaje'
 
 interface ProfeFamiliaProps {
@@ -34,7 +35,19 @@ interface AdminFamiliaProps {
   locale: string
 }
 
-type Props = ProfeFamiliaProps | AdminFamiliaProps
+interface AdminFamiliaIniciarProps {
+  /** F5B-Items1+2 — modo "iniciar" del SplitView del admin. La conversación
+   *  con este tutor no existe aún; al enviar el primer mensaje se llama
+   *  secuencialmente `abrirConversacionAdminFamilia` + `enviarMensaje`.
+   *  Tras éxito hace `router.refresh()`; el SSR recarga la lista y el panel
+   *  pasa a renderizar `ConversacionAdminFamiliaView` con el hilo ya
+   *  creado. */
+  mode: 'admin_familia_iniciar'
+  tutorId: string
+  locale: string
+}
+
+type Props = ProfeFamiliaProps | AdminFamiliaProps | AdminFamiliaIniciarProps
 
 const MAX = 2000
 
@@ -65,6 +78,7 @@ export function MensajeComposer(props: Props) {
   const router = useRouter()
 
   const isAdminFamilia = props.mode === 'admin_familia'
+  const isAdminFamiliaIniciar = props.mode === 'admin_familia_iniciar'
   // `Date.now()` es impuro en el body del componente (regla
   // `react-hooks/purity` de React 19). Lo snapshoteamos al montar con un
   // lazy initializer; si la caducidad cambia mientras la página está
@@ -80,6 +94,41 @@ export function MensajeComposer(props: Props) {
     if (disabled) return
     startTransition(async () => {
       try {
+        if (isAdminFamiliaIniciar) {
+          // Flujo secuencial cliente (F5B-Items1+2):
+          //   1. UPSERT del hilo (idempotente).
+          //   2. INSERT del primer mensaje (RLS bloquea si paso 1 falló).
+          // Si paso 2 falla tras éxito de paso 1, el hilo queda creado
+          // con expires_at y sin mensajes; el usuario reintenta y el
+          // siguiente envío usa el mismo hilo (mismo patrón "conv lazy
+          // sin mensajes" que profe_familia).
+          const abrir = await abrirConversacionAdminFamilia(
+            (props as AdminFamiliaIniciarProps).tutorId
+          )
+          if (!abrir.success) {
+            const key = abrir.error.startsWith('messages.errors.')
+              ? (abrir.error.slice('messages.errors.'.length) as 'apertura_fallo')
+              : ('apertura_fallo' as const)
+            toast.error(tErr(key))
+            return
+          }
+          const enviar = await enviarMensaje({
+            kind: 'admin_familia',
+            conversacion_id: abrir.data.conversacion_id,
+            contenido: trimmed,
+          })
+          if (!enviar.success) {
+            const key = enviar.error.startsWith('messages.errors.')
+              ? (enviar.error.slice('messages.errors.'.length) as 'envio_fallo')
+              : ('envio_fallo' as const)
+            toast.error(tErr(key))
+            return
+          }
+          setContenido('')
+          router.refresh()
+          return
+        }
+
         const res = isAdminFamilia
           ? await enviarMensaje({
               kind: 'admin_familia',

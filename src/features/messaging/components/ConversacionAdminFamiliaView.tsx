@@ -25,6 +25,11 @@ interface Props {
   rolEnHilo: 'admin' | 'tutor'
   header: ConversacionAdminFamiliaHeader
   mensajes: MensajeView[]
+  /** Si `true`, el wrapper raíz usa `h-full` en lugar de `h-[calc(100dvh-3rem)]`
+   *  para integrarse dentro de un padre acotado (caso: panel derecho del
+   *  `AdminDireccionSplitView`). Default `false` mantiene el comportamiento
+   *  legacy de la ruta `/messages/conversacion/[id]`. */
+  fillParent?: boolean
 }
 
 /**
@@ -42,7 +47,13 @@ interface Props {
  * Marca como leída al montar y tras cada mensaje entrante por Realtime,
  * idéntico al patrón de `ConversacionView`.
  */
-export function ConversacionAdminFamiliaView({ locale, rolEnHilo, header, mensajes }: Props) {
+export function ConversacionAdminFamiliaView({
+  locale,
+  rolEnHilo,
+  header,
+  mensajes,
+  fillParent = false,
+}: Props) {
   const t = useTranslations('messages.conversacion')
   const tAdmin = useTranslations('messages.admin_familia')
   const tBadge = useTranslations('messages.badge')
@@ -100,7 +111,10 @@ export function ConversacionAdminFamiliaView({ locale, rolEnHilo, header, mensaj
   }).format(new Date(header.expires_at))
 
   return (
-    <div className="flex h-[calc(100dvh-3rem)] flex-col" data-testid="conv-admin-familia">
+    <div
+      className={cn('flex flex-col', fillParent ? 'h-full' : 'h-[calc(100dvh-3rem)]')}
+      data-testid="conv-admin-familia"
+    >
       <header className="bg-background z-[1] -mx-4 shrink-0 border-b px-4 py-3 md:-mx-8 md:px-8">
         <div className="flex items-center gap-3">
           <Link
