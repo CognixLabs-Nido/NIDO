@@ -45,6 +45,33 @@ Next.js 15 App Router · TypeScript strict · React 19 · Tailwind 4 · shadcn/u
 
 **10. Credenciales solo desde `.env.local` o equivalente.** Las credenciales de la app (claves API, tokens) viven exclusivamente en `.env.local` (gitignored) o en variables de entorno de Vercel para producción. Si te falta una variable, pídela al responsable. **Cero hardcoded credentials** en código bajo cualquier circunstancia.
 
+## Verificaciones antes de abrir un PR
+
+Tras implementar y antes de abrir el PR, deben pasar en local:
+
+```bash
+npm run typecheck   # tsc --noEmit
+npm test            # vitest run
+npm run build       # next build — obligatorio (ver regla abajo)
+```
+
+No basta con "ya lo correrá la CI / Vercel": `npm run build` debe ejecutarse y salir con **exit 0** localmente antes de abrir el PR.
+
+### Regla: `npm run build` obligatorio en PRs que toquen archivos `'use server'`
+
+Para cualquier PR que **añada, modifique o renombre** archivos con la directiva `'use server'` en la primera línea (en este repo: todos los `src/features/**/actions/*.ts`, y cualquier otro archivo que lleve la directiva), **DEBE** ejecutarse `npm run build` en local antes de abrir el PR. Este check es **obligatorio**, no opcional.
+
+**Razón**: Vitest carga los módulos como JS normal y **no** enforza la regla de Next.js 16 _"a 'use server' file can only export async functions"_. El `typecheck` tampoco la captura: el tipo del export puede ser válido pero el bundler lo rechaza en runtime (p. ej. `export const VENTANA_ANULACION_MS = 5 * 60 * 1000` junto a server actions). Solo el bundler de Next.js o el runtime real la detectan.
+
+**Síntoma típico cuando falla**: en los logs de Vercel tras deploy aparece
+`Error: A "use server" file can only export async functions, found <tipo>.`
+
+**Cómo verificar**: tras los pre-PR habituales (`npm run typecheck`, `npm test`), correr `npm run build` y confirmar **exit 0**.
+
+> ⚠️ **Matiz de rutas dynamic**: en rutas `ƒ (dynamic)` el chunk no se evalúa durante `Generating static pages`, así que `npm run build` puede pasar en local y el error solo aparecer en `npm run start` o en el primer request de Vercel. Si el PR toca `'use server'` en una ruta dynamic (p. ej. `/messages/*`), además del build haz un smoke con `npm run start` y carga la ruta afectada.
+
+> **Lección [PR #30](https://github.com/CognixLabs-Nido/NIDO/pull/30)** (mergeado 2026-05-29): el bug entró en el PR #25 (F5.6-B) — `export const VENTANA_ANULACION_MS` top-level en `marcar-mensaje-erroneo.ts` y `marcar-anuncio-erroneo.ts` (ambos `'use server'`). Vitest no lo detectó y, al ser `/messages/*` rutas dynamic, el build local tampoco saltó; llegó a producción y rompió la mensajería hasta el hotfix. Ver el body del PR #30 (y `docs/specs/phase-5b-*.md`) para el caso real.
+
 ## Convenciones rápidas
 
 - **Archivos**: PascalCase para componentes React (`AgendaForm.tsx`), kebab-case para el resto (`format-date.ts`).
