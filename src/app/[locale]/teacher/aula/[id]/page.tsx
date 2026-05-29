@@ -8,6 +8,11 @@ import { getAulaById } from '@/features/aulas/queries/get-aulas'
 import { AgendaAulaCliente } from '@/features/agenda-diaria/components/AgendaAulaCliente'
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getAgendasAulaDelDia } from '@/features/agenda-diaria/queries/get-agendas-aula-del-dia'
+import { getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import {
+  getVinculosTutoresAula,
+  type VinculoTutorMin,
+} from '@/features/messaging/queries/get-vinculos-tutores-aula'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -29,7 +34,30 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
   // un valor inválido cae a hoy.
   const fecha = fechaQuery && /^\d{4}-\d{2}-\d{2}$/.test(fechaQuery) ? fechaQuery : hoyMadrid()
 
-  const resumenes = await getAgendasAulaDelDia(id, fecha)
+  // F5B-#33: la página /teacher/aula/[id] la usan tanto profe como admin
+  // (admin reusa la ruta — no hay /admin/aula/[id] paralelo). El rol
+  // determina qué renderiza NinoAgendaCard en su slot "Escribir a la
+  // familia":
+  //   - profe → Link legacy al redirector /messages/nino/<id>.
+  //   - admin → EscribirAFamiliaAdminPicker (Dialog si ≥2 tutores) que
+  //     redirige al SplitView del PR #32 con tutor preseleccionado.
+  // La query de vínculos SOLO se ejecuta para admin (gating cliente, no
+  // de seguridad; RLS es la verdadera barrera). Profe ahorra IO.
+  const rolRaw = await getRolEnCentro(aula.centro_id)
+  const rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado' =
+    rolRaw === 'admin' || rolRaw === 'profe' || rolRaw === 'tutor_legal' || rolRaw === 'autorizado'
+      ? rolRaw
+      : 'profe'
+
+  // Promise.all: paralelizamos la agenda con los vínculos (admin) o con
+  // una resolved promise vacía (profe). Lección PR #32.
+  const [resumenes, vinculosPorNino]: [
+    Awaited<ReturnType<typeof getAgendasAulaDelDia>>,
+    Map<string, VinculoTutorMin[]> | undefined,
+  ] = await Promise.all([
+    getAgendasAulaDelDia(id, fecha),
+    rol === 'admin' ? getVinculosTutoresAula(id) : Promise.resolve(undefined),
+  ])
 
   return (
     <div className="space-y-6">
@@ -70,7 +98,14 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
         </div>
       </header>
 
-      <AgendaAulaCliente aulaId={id} locale={locale} fecha={fecha} resumenes={resumenes} />
+      <AgendaAulaCliente
+        aulaId={id}
+        locale={locale}
+        fecha={fecha}
+        resumenes={resumenes}
+        rol={rol}
+        vinculosPorNino={vinculosPorNino}
+      />
     </div>
   )
 }

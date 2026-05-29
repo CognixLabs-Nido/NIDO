@@ -1014,7 +1014,14 @@
       "hijos_label_varios": "Hijos/as:",
       "iniciar_titulo": "Aún no hay mensajes",
       "iniciar_subtitulo": "Escribe el primer mensaje para iniciar el hilo con esta familia.",
-      "iniciando": "Iniciando…"
+      "iniciando": "Iniciando…",
+      "picker_titulo": "Elegir tutor",
+      "picker_descripcion": "Selecciona a quién escribir.",
+      "picker_sin_tutores": "Sin tutores con vínculo activo en este niño.",
+      "picker_tipo_principal": "Principal",
+      "picker_tipo_secundario": "Secundario",
+      "picker_tipo_autorizado": "Autorizado",
+      "picker_cancelar": "Cancelar"
     },
     "lista": {
       "vacia_conversaciones": "Aún no tienes conversaciones.",

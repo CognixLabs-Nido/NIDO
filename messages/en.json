@@ -1014,7 +1014,14 @@
       "hijos_label_varios": "Children:",
       "iniciar_titulo": "No messages yet",
       "iniciar_subtitulo": "Write the first message to start the thread with this family.",
-      "iniciando": "Starting…"
+      "iniciando": "Starting…",
+      "picker_titulo": "Choose tutor",
+      "picker_descripcion": "Select who you want to write to.",
+      "picker_sin_tutores": "No tutors with an active link for this child.",
+      "picker_tipo_principal": "Primary",
+      "picker_tipo_secundario": "Secondary",
+      "picker_tipo_autorizado": "Authorised",
+      "picker_cancelar": "Cancel"
     },
     "lista": {
       "vacia_conversaciones": "You don't have any conversations yet.",
