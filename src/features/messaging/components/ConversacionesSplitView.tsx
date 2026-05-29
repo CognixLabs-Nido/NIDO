@@ -114,7 +114,7 @@ export function ConversacionesSplitView({
   return (
     <div
       className={cn(
-        'bg-card border-border/60 grid min-h-[calc(100dvh-12rem)] grid-cols-1 overflow-hidden rounded-2xl border',
+        'bg-card border-border/60 grid h-[calc(100dvh-18rem)] grid-cols-1 grid-rows-1 overflow-hidden rounded-2xl border md:h-[calc(100dvh-12rem)]',
         mostrarLista && 'md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]'
       )}
     >
@@ -270,8 +270,8 @@ function ConversacionPanel({ locale, rol, nino, header, mensajes, participo }: P
   }
 
   return (
-    <div className="flex h-full min-h-[60vh] flex-col">
-      <header className="bg-background flex items-center gap-3 border-b px-4 py-3">
+    <div className="flex h-full flex-col">
+      <header className="bg-background flex shrink-0 items-center gap-3 border-b px-4 py-3">
         <Link
           href={`/${locale}/messages`}
           aria-label={t('volver')}
