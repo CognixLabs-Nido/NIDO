@@ -1,0 +1,194 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+
+import {
+  asignarRol,
+  clientFor,
+  createTestAula,
+  createTestCentro,
+  createTestCurso,
+  createTestUser,
+  crearVinculo,
+  deleteTestCentro,
+  deleteTestUser,
+  serviceClient,
+  type TestUser,
+} from './setup'
+
+/**
+ * RLS de `profes_aulas` (F5B-#34).
+ *
+ * Hasta este PR no existía un test RLS específico de la tabla — su
+ * policía se ejercía indirectamente vía `messaging.rls.test.ts` (los
+ * helpers `puede_participar_conversacion` la leen para validar "profe
+ * del aula"). Este archivo cubre directamente:
+ *
+ *  1. Admin del centro: SELECT/INSERT/UPDATE/DELETE permitidos sobre
+ *     `profes_aulas` de su centro.
+ *  2. Admin de otro centro: SELECT cross-centro rechazado.
+ *  3. Profe: ve solo sus propias asignaciones vía `profes_aulas_self_select`.
+ *  4. Profe: no ve las asignaciones de otra profe.
+ *  5. *Crítico — caso F5B-#34*: dos `tipo_personal_aula='coordinadora'`
+ *     activas en la misma aula falla con SQLSTATE 23505 (índice único
+ *     parcial `idx_un_coordinadora_activa_por_aula`).
+ *  6. Tutor del centro: SELECT rechazado.
+ *
+ * Los inserts de coordinadora usan `serviceClient` (bypass RLS) porque
+ * el goal del test es la integridad del índice, no la policy de INSERT.
+ *
+ * Gate: estos tests dependen de la migración `20260529193000` aplicada
+ * en el proyecto remoto (Supabase Cloud). Mientras la migración no esté
+ * aplicada, el INSERT con `tipo_personal_aula` rompe la suite con
+ * "column does not exist". Activar el archivo entero con
+ * `F5B34_MIGRATION_APPLIED=1` cuando el usuario aplique el SQL vía
+ * SQL Editor (Nota F del Checkpoint B1+B2).
+ */
+const MIGRATION_APPLIED = process.env.F5B34_MIGRATION_APPLIED === '1'
+
+describe.skipIf(!MIGRATION_APPLIED)(
+  'RLS profes_aulas + índice coordinadora único (F5B-#34)',
+  () => {
+    let centroA: { id: string }
+    let centroB: { id: string }
+    let cursoA: { id: string }
+    let aulaA1: { id: string }
+    let aulaA2: { id: string }
+    let adminA: TestUser
+    let adminB: TestUser
+    let profe1: TestUser
+    let profe2: TestUser
+    let tutor: TestUser
+    let ninoA: { id: string }
+
+    beforeAll(async () => {
+      centroA = await createTestCentro('Centro Profes A')
+      centroB = await createTestCentro('Centro Profes B')
+
+      cursoA = await createTestCurso(centroA.id)
+      aulaA1 = await createTestAula(centroA.id, cursoA.id, 'Aula PA1')
+      aulaA2 = await createTestAula(centroA.id, cursoA.id, 'Aula PA2')
+
+      adminA = await createTestUser({ nombre: 'Admin A' })
+      adminB = await createTestUser({ nombre: 'Admin B' })
+      profe1 = await createTestUser({ nombre: 'Profe 1' })
+      profe2 = await createTestUser({ nombre: 'Profe 2' })
+      tutor = await createTestUser({ nombre: 'Tutor' })
+
+      await asignarRol(adminA.id, centroA.id, 'admin')
+      await asignarRol(adminB.id, centroB.id, 'admin')
+      await asignarRol(profe1.id, centroA.id, 'profe')
+      await asignarRol(profe2.id, centroA.id, 'profe')
+      await asignarRol(tutor.id, centroA.id, 'tutor_legal')
+
+      // Niño + vínculo del tutor para que tenga presencia en el centro.
+      const { data: nino, error: ninoErr } = await serviceClient
+        .from('ninos')
+        .insert({
+          centro_id: centroA.id,
+          nombre: 'Niño RLS',
+          apellidos: 'profe-aulas',
+          fecha_nacimiento: '2024-03-15',
+        })
+        .select('id')
+        .single()
+      if (ninoErr || !nino) throw new Error(`createNino RLS: ${ninoErr?.message}`)
+      ninoA = { id: nino.id }
+      await crearVinculo(ninoA.id, tutor.id, 'tutor_legal_principal', {
+        puede_ver_agenda: true,
+      })
+
+      // Asignamos profes vía serviceClient para tener semillas predecibles.
+      // - profe1 coordinadora de aulaA1.
+      // - profe2 profesora regular de aulaA2.
+      const { error: e1 } = await serviceClient.from('profes_aulas').insert({
+        profe_id: profe1.id,
+        aula_id: aulaA1.id,
+        fecha_inicio: '2026-09-01',
+        tipo_personal_aula: 'coordinadora',
+      })
+      if (e1) throw new Error(`seed profe1: ${e1.message}`)
+      const { error: e2 } = await serviceClient.from('profes_aulas').insert({
+        profe_id: profe2.id,
+        aula_id: aulaA2.id,
+        fecha_inicio: '2026-09-01',
+        tipo_personal_aula: 'profesora',
+      })
+      if (e2) throw new Error(`seed profe2: ${e2.message}`)
+    }, 60_000)
+
+    afterAll(async () => {
+      await serviceClient.from('profes_aulas').delete().eq('profe_id', profe1.id)
+      await serviceClient.from('profes_aulas').delete().eq('profe_id', profe2.id)
+      await serviceClient.from('ninos').delete().eq('id', ninoA.id)
+      await deleteTestCentro(centroA.id)
+      await deleteTestCentro(centroB.id)
+      await deleteTestUser(adminA.id)
+      await deleteTestUser(adminB.id)
+      await deleteTestUser(profe1.id)
+      await deleteTestUser(profe2.id)
+      await deleteTestUser(tutor.id)
+    }, 60_000)
+
+    it('admin del centro ve todas las asignaciones de profes_aulas', async () => {
+      const c = await clientFor(adminA)
+      const { data, error } = await c
+        .from('profes_aulas')
+        .select('id, profe_id, aula_id, tipo_personal_aula')
+        .in('aula_id', [aulaA1.id, aulaA2.id])
+      expect(error).toBeNull()
+      expect(data ?? []).toHaveLength(2)
+    })
+
+    it('admin de OTRO centro NO ve profes_aulas cross-centro', async () => {
+      const c = await clientFor(adminB)
+      const { data, error } = await c
+        .from('profes_aulas')
+        .select('id')
+        .in('aula_id', [aulaA1.id, aulaA2.id])
+      expect(error).toBeNull()
+      expect(data ?? []).toHaveLength(0)
+    })
+
+    it('profe ve sus propias asignaciones (self_select)', async () => {
+      const c = await clientFor(profe1)
+      const { data, error } = await c
+        .from('profes_aulas')
+        .select('id, aula_id, tipo_personal_aula')
+        .eq('profe_id', profe1.id)
+      expect(error).toBeNull()
+      expect(data ?? []).toHaveLength(1)
+      expect(data![0]!.tipo_personal_aula).toBe('coordinadora')
+    })
+
+    it('profe NO ve las asignaciones de otra profe (incluso del mismo centro)', async () => {
+      const c = await clientFor(profe1)
+      const { data, error } = await c.from('profes_aulas').select('id').eq('profe_id', profe2.id)
+      expect(error).toBeNull()
+      expect(data ?? []).toHaveLength(0)
+    })
+
+    it('dos coordinadoras activas en el mismo aula → 23505 por índice único parcial', async () => {
+      // Intentamos colar una segunda coordinadora en aulaA1 (ya tiene a profe1).
+      const otroProfe = await createTestUser({ nombre: 'Profe rival coordinadora' })
+      await asignarRol(otroProfe.id, centroA.id, 'profe')
+      const { error } = await serviceClient.from('profes_aulas').insert({
+        profe_id: otroProfe.id,
+        aula_id: aulaA1.id,
+        fecha_inicio: '2026-09-01',
+        tipo_personal_aula: 'coordinadora',
+      })
+      expect(error).not.toBeNull()
+      expect(error?.code).toBe('23505')
+      await deleteTestUser(otroProfe.id)
+    })
+
+    it('tutor del centro NO ve profes_aulas', async () => {
+      const c = await clientFor(tutor)
+      const { data, error } = await c
+        .from('profes_aulas')
+        .select('id')
+        .in('aula_id', [aulaA1.id, aulaA2.id])
+      expect(error).toBeNull()
+      expect(data ?? []).toHaveLength(0)
+    })
+  }
+)

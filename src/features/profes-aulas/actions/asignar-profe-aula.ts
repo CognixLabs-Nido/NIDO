@@ -40,13 +40,18 @@ export async function asignarProfeAula(
 
   if (!rol) return fail('profeAula.errors.usuario_sin_rol_profe')
 
+  // F5B-#34: insertamos tipo_personal_aula en lugar de es_profe_principal.
+  // El default del schema es 'profesora'; la action no decide coordinadora
+  // por su cuenta (la UI lo elige explícitamente). El índice único parcial
+  // en BD garantiza 1 coordinadora activa por aula y devuelve 23505 si se
+  // duplica — preservamos el mismo error i18n que en la era del booleano.
   const { data, error } = await supabase
     .from('profes_aulas')
     .insert({
       profe_id: parsed.data.profe_id,
       aula_id: aulaId,
       fecha_inicio: parsed.data.fecha_inicio,
-      es_profe_principal: parsed.data.es_profe_principal,
+      tipo_personal_aula: parsed.data.tipo_personal_aula,
     })
     .select('id')
     .single()

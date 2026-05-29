@@ -1253,6 +1253,7 @@ export type Database = {
           fecha_inicio: string
           id: string
           profe_id: string
+          tipo_personal_aula: Database['public']['Enums']['tipo_personal_aula']
         }
         Insert: {
           aula_id: string
@@ -1263,6 +1264,7 @@ export type Database = {
           fecha_inicio?: string
           id?: string
           profe_id: string
+          tipo_personal_aula?: Database['public']['Enums']['tipo_personal_aula']
         }
         Update: {
           aula_id?: string
@@ -1273,6 +1275,7 @@ export type Database = {
           fecha_inicio?: string
           id?: string
           profe_id?: string
+          tipo_personal_aula?: Database['public']['Enums']['tipo_personal_aula']
         }
         Relationships: [
           {
@@ -1656,6 +1659,7 @@ export type Database = {
       tipo_biberon: 'materna' | 'formula' | 'agua' | 'infusion' | 'zumo'
       tipo_conversacion: 'profe_familia' | 'admin_familia'
       tipo_deposicion: 'pipi' | 'caca' | 'mixto'
+      tipo_personal_aula: 'coordinadora' | 'profesora' | 'tecnico' | 'apoyo'
       tipo_dia_centro:
         | 'lectivo'
         | 'festivo'
@@ -1834,6 +1838,7 @@ export const Constants = {
       tipo_biberon: ['materna', 'formula', 'agua', 'infusion', 'zumo'],
       tipo_conversacion: ['profe_familia', 'admin_familia'],
       tipo_deposicion: ['pipi', 'caca', 'mixto'],
+      tipo_personal_aula: ['coordinadora', 'profesora', 'tecnico', 'apoyo'],
       tipo_dia_centro: [
         'lectivo',
         'festivo',

@@ -131,10 +131,10 @@ Además, esta fase materializa el contexto operativo real de ANAIA, la primera (
 **Flujo asignar profe:**
 
 1. `/{locale}/admin/aulas/[id]` muestra detalle: profes asignados (vía `profes_aulas` activos), niños matriculados.
-2. Botón "Asignar profe" → diálogo con select de usuarios con rol `profe` en el centro, fecha_inicio (default hoy), checkbox `es_profe_principal`.
+2. Botón "Asignar profe" → diálogo con select de usuarios con rol `profe` en el centro, fecha_inicio (default hoy), select de `tipo_personal_aula` (`coordinadora` / `profesora` / `tecnico` / `apoyo`, default `profesora`). **F5B-#34**: el checkbox `es_profe_principal` se sustituye por este select.
 3. Submit → Server Action `asignarProfeAula`:
    - Valida que el usuario tiene rol `profe` activo en el centro.
-   - Si `es_profe_principal=true` y ya hay otro principal activo: error i18n. Constraint BD: índice parcial único `(aula_id) WHERE es_profe_principal AND fecha_fin IS NULL`.
+   - Si `tipo_personal_aula='coordinadora'` y ya hay otra coordinadora activa: error i18n. Constraint BD: índice parcial único `(aula_id) WHERE tipo_personal_aula='coordinadora' AND fecha_fin IS NULL` (F5B-#34).
    - INSERT en `profes_aulas`.
 
 **Edge cases:**
@@ -414,10 +414,13 @@ export const vinculoSchema = z
   })
 
 // src/features/profes-aulas/schemas/profe-aula.ts
+// F5B-#34: tipo_personal_aula reemplaza a es_profe_principal.
 export const profeAulaSchema = z.object({
   profe_id: z.string().uuid(),
   fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  es_profe_principal: z.boolean().default(false),
+  tipo_personal_aula: z
+    .enum(['coordinadora', 'profesora', 'tecnico', 'apoyo'])
+    .default('profesora'),
 })
 ```
 
@@ -572,21 +575,26 @@ CREATE TABLE public.vinculos_familiares (
 );
 CREATE INDEX idx_vinculos_usuario ON public.vinculos_familiares(usuario_id) WHERE deleted_at IS NULL;
 
--- profes_aulas
+-- profes_aulas (DDL original — F2)
+-- F5B-#34 añade `tipo_personal_aula` (ENUM coordinadora/profesora/tecnico/apoyo,
+-- NOT NULL DEFAULT 'profesora'), marca `es_profe_principal` como deprecated y
+-- reemplaza el índice único parcial por `idx_un_coordinadora_activa_por_aula`.
+-- Ver `supabase/migrations/20260529193000_phase5b_tipo_personal_aula.sql`.
 CREATE TABLE public.profes_aulas (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   profe_id uuid NOT NULL REFERENCES public.usuarios(id) ON DELETE CASCADE,
   aula_id uuid NOT NULL REFERENCES public.aulas(id) ON DELETE CASCADE,
   fecha_inicio date NOT NULL DEFAULT CURRENT_DATE,
   fecha_fin date,
-  es_profe_principal boolean NOT NULL DEFAULT false,
+  es_profe_principal boolean NOT NULL DEFAULT false, -- DEPRECATED F5B-#34
   created_at timestamptz NOT NULL DEFAULT now(),
   deleted_at timestamptz,
   CHECK (fecha_fin IS NULL OR fecha_fin >= fecha_inicio)
 );
-CREATE UNIQUE INDEX idx_un_principal_activo_por_aula
-  ON public.profes_aulas(aula_id)
-  WHERE es_profe_principal AND fecha_fin IS NULL AND deleted_at IS NULL;
+-- Histórico (índice eliminado por F5B-#34, sustituido por el de coordinadora):
+-- CREATE UNIQUE INDEX idx_un_principal_activo_por_aula
+--   ON public.profes_aulas(aula_id)
+--   WHERE es_profe_principal AND fecha_fin IS NULL AND deleted_at IS NULL;
 CREATE INDEX idx_profes_aulas_profe ON public.profes_aulas(profe_id) WHERE deleted_at IS NULL;
 
 -- audit_log
