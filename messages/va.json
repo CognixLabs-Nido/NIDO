@@ -1014,7 +1014,14 @@
       "hijos_label_varios": "Fills/es:",
       "iniciar_titulo": "Encara no hi ha missatges",
       "iniciar_subtitulo": "Escriu el primer missatge per a iniciar el fil amb aquesta família.",
-      "iniciando": "Iniciant…"
+      "iniciando": "Iniciant…",
+      "picker_titulo": "Triar tutor",
+      "picker_descripcion": "Selecciona a qui escriure.",
+      "picker_sin_tutores": "Sense tutors amb vincle actiu en aquest xiquet.",
+      "picker_tipo_principal": "Principal",
+      "picker_tipo_secundario": "Secundari",
+      "picker_tipo_autorizado": "Autoritzat",
+      "picker_cancelar": "Cancel·lar"
     },
     "lista": {
       "vacia_conversaciones": "Encara no tens converses.",

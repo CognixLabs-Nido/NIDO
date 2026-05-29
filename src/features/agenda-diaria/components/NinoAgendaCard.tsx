@@ -13,6 +13,8 @@ import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { EscribirAFamiliaAdminPicker } from '@/features/messaging/components/EscribirAFamiliaAdminPicker'
+import type { VinculoTutorMin } from '@/features/messaging/queries/get-vinculos-tutores-aula'
 
 import { fetchAgendaDelDia } from '../actions/fetch-agenda-del-dia'
 import type { AgendaCompleta, NinoAgendaResumen } from '../types'
@@ -29,6 +31,18 @@ interface Props {
   /** Cuando el padre detecta cambios de Realtime, bumpea este valor para
    * forzar a la card a recargar su agenda. */
   refreshKey: number
+  /** F5B-#33 — Rol del usuario actual en el centro. Distingue el flujo
+   *  del botón "Escribir a la familia": para `admin` se renderiza el
+   *  `EscribirAFamiliaAdminPicker` (Dialog si hay ≥2 tutores) que
+   *  redirige al SplitView del PR #32 con tutor preseleccionado. Para
+   *  `profe` se mantiene el `<Link>` legacy bit-a-bit al redirector
+   *  `/messages/nino/<id>`. */
+  rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
+  /** F5B-#33 — Solo poblado cuando `rol === 'admin'`. Vínculos
+   *  activos (tutor/autorizado) del niño en el centro, para alimentar
+   *  el picker. La página SSR los carga vía
+   *  `getVinculosTutoresAula(aulaId)` paralelo a la agenda. */
+  vinculos?: VinculoTutorMin[]
 }
 
 export function NinoAgendaCard({
@@ -39,6 +53,8 @@ export function NinoAgendaCard({
   expanded,
   onToggle,
   refreshKey,
+  rol,
+  vinculos,
 }: Props) {
   const t = useTranslations('agenda')
   const tFicha = useTranslations('messages.ficha_nino')
@@ -105,15 +121,27 @@ export function NinoAgendaCard({
             <ChevronRightIcon className="text-muted-foreground size-5" />
           )}
         </button>
-        <Link
-          href={`/${locale}/messages/nino/${resumen.nino.id}`}
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex shrink-0 items-center gap-1 border-l px-3 text-xs font-medium transition-colors"
-          aria-label={tFicha('escribir_familia')}
-          data-testid="escribir-familia-button"
-        >
-          <MessageCircleIcon className="size-4" />
-          <span className="hidden sm:inline">{tFicha('escribir_familia')}</span>
-        </Link>
+        {rol === 'admin' ? (
+          // F5B-#33: para admin, picker → SplitView con tutor preseleccionado.
+          <EscribirAFamiliaAdminPicker
+            ninoId={resumen.nino.id}
+            vinculos={vinculos ?? []}
+            locale={locale}
+          />
+        ) : (
+          // Profe (y resto de roles que puedan llegar a esta vista): Link
+          // legacy bit-a-bit al redirector /messages/nino/<id>. Cero
+          // cambio funcional respecto al estado pre-#33.
+          <Link
+            href={`/${locale}/messages/nino/${resumen.nino.id}`}
+            className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex shrink-0 items-center gap-1 border-l px-3 text-xs font-medium transition-colors"
+            aria-label={tFicha('escribir_familia')}
+            data-testid="escribir-familia-button"
+          >
+            <MessageCircleIcon className="size-4" />
+            <span className="hidden sm:inline">{tFicha('escribir_familia')}</span>
+          </Link>
+        )}
       </div>
       {expanded && (
         <CardContent id={`panel-${resumen.nino.id}`} className="pt-0">

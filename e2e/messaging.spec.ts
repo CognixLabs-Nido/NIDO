@@ -495,4 +495,47 @@ test.describe('Fase 5.6 — admin↔familia + ventana anulación (skip por defec
 
     await tutorContext.close()
   })
+
+  // TODO(F5B): activar cuando exista e2e/helpers/seed-aulas-multitutor.ts
+  // con un aula que contenga al menos un niño con ≥2 tutores activos. Si
+  // no, este test valida el caso 1-tutor: el picker es transparente (sin
+  // Dialog) y navega directo. Sin seed, no podemos validar el modo Dialog.
+  test('F5B #33: admin desde vista de aula → picker → SplitView con tutor preseleccionado', async ({
+    browser,
+  }) => {
+    const adminContext = await browser.newContext()
+    const adminPage = await adminContext.newPage()
+
+    await adminPage.goto('/es/login')
+    await adminPage.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL!)
+    await adminPage.getByLabel(/contraseña|password/i).fill(process.env.E2E_ADMIN_PASSWORD!)
+    await adminPage.getByRole('button', { name: /entrar|sign in/i }).click()
+    await adminPage.waitForURL(/\/es\/admin/)
+
+    // Admin abre la vista de aula (la ruta /teacher/aula/[id] sirve a
+    // ambos roles; admin la usa para supervisar).
+    await adminPage.goto(`/es/teacher/aula/${process.env.E2E_AULA_ID}`)
+
+    // Localizamos la primera card y su botón "Escribir a la familia".
+    const escribirBtn = adminPage.locator('[data-testid="escribir-familia-button"]').first()
+    await expect(escribirBtn).toBeVisible({ timeout: 10_000 })
+
+    // Caso esperado en el seed actual (1 tutor por niño): click navega
+    // directo al SplitView con ?tab=direccion&tutor=<id>. Si en el seed
+    // hay ≥2 tutores, el botón abre Dialog; añadiremos rama cuando
+    // exista el helper de seed multi-tutor.
+    await escribirBtn.click()
+    await adminPage.waitForURL(/\/es\/messages\?tab=direccion&tutor=/, { timeout: 10_000 })
+
+    // Verifica que el SplitView del PR #32 está montado y el tutor
+    // queda preseleccionado (el item de la lista activa coincide con el
+    // ?tutor=<id> de la URL).
+    const url = new URL(adminPage.url())
+    const tutorId = url.searchParams.get('tutor')
+    expect(tutorId).toBeTruthy()
+    const itemActivo = adminPage.locator(`[data-testid="tutor-list-item-${tutorId}"]`)
+    await expect(itemActivo).toBeVisible({ timeout: 10_000 })
+
+    await adminContext.close()
+  })
 })
