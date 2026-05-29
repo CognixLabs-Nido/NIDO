@@ -146,9 +146,12 @@ export async function getConversacionDetalle(
   // con fallback a "Aula X" sin profe.
   let profes_aula: ProfeAula[] = []
   if (matricula?.aula_id) {
+    // F5B-#34: leemos tipo_personal_aula en vez de es_profe_principal.
+    // El DTO sigue exponiendo es_principal: boolean a la UI — derivado
+    // de tipo === 'coordinadora' para no romper el contrato del header.
     const { data: asignaciones, error: profesErr } = await supabase
       .from('profes_aulas')
-      .select('profe_id, es_profe_principal, profe:usuarios!inner(nombre_completo)')
+      .select('profe_id, tipo_personal_aula, profe:usuarios!inner(nombre_completo)')
       .eq('aula_id', matricula.aula_id)
       .is('fecha_fin', null)
       .is('deleted_at', null)
@@ -161,7 +164,7 @@ export async function getConversacionDetalle(
         .map((a) => ({
           usuario_id: a.profe_id,
           nombre_completo: a.profe.nombre_completo,
-          es_principal: a.es_profe_principal,
+          es_principal: a.tipo_personal_aula === 'coordinadora',
         }))
         .sort((a, b) => {
           if (a.es_principal !== b.es_principal) return a.es_principal ? -1 : 1

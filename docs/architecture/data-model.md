@@ -79,7 +79,7 @@
 - `aulas.cohorte_anos_nacimiento`: longitud 1-5, valores entre 2020 y 2030.
 - `cursos_academicos`: índice parcial único `(centro_id) WHERE estado='activo'` garantiza un único curso activo por centro.
 - `matriculas`: índice parcial único `(nino_id, curso_academico_id) WHERE fecha_baja IS NULL` garantiza una matrícula activa por curso.
-- `profes_aulas`: índice parcial único `(aula_id) WHERE es_profe_principal AND fecha_fin IS NULL` garantiza un único profe principal activo por aula.
+- `profes_aulas`: índice parcial único `(aula_id) WHERE tipo_personal_aula='coordinadora' AND fecha_fin IS NULL` garantiza una única coordinadora activa por aula (F5B-#34). La columna `tipo_personal_aula` (ENUM `coordinadora | profesora | tecnico | apoyo`) reemplaza la semántica del booleano `es_profe_principal`; este último queda en BD como deprecated y se elimina en un PR posterior tras un sprint en producción.
 - `info_medica_emergencia.nino_id`: UNIQUE + ON DELETE RESTRICT (un solo registro médico por niño, borrado físico bloqueado — se usa soft delete del niño).
 - `datos_pedagogicos_nino.nino_id`: UNIQUE + ON DELETE RESTRICT (mismo patrón). CHECKs: `siesta_numero_diario` ∈ [0,5], `idiomas_casa` longitud [1,8] con cada código de 2 letras (función IMMUTABLE `idiomas_iso_2letras`), y `tipo_alimentacion='otra' ⇒ alimentacion_observaciones NOT NULL`.
 - `agendas_diarias`: UNIQUE (nino_id, fecha); FK `nino_id` ON DELETE RESTRICT; CHECK `observaciones_generales` ≤ 500.
