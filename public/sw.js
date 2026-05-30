@@ -22,33 +22,45 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
-self.addEventListener('push', (event) => {
-  let payload = {
-    titulo: 'NIDO',
-    cuerpo: 'Tienes una notificación nueva',
-    url: '/',
-    datos: {},
-  }
+// Devuelve un string no vacío o el fallback. Defiende contra payloads
+// parseables-pero-malformados (campo null, '', número, ausente) que antes
+// sobrescribían los defaults vía spread y producían notificaciones vacías.
+function textoSeguro(valor, fallback) {
+  return typeof valor === 'string' && valor.trim() ? valor : fallback
+}
 
-  // El payload llega como JSON. Si por cualquier motivo no se puede parsear,
-  // mostramos el mensaje por defecto en vez de tragárnoslo en silencio.
+// Normaliza CUALQUIER entrada (objeto parcial, null, no-objeto) a un payload
+// con título/cuerpo/url siempre presentes y `datos` siempre objeto.
+function normalizarPayload(parsed) {
+  const p = parsed && typeof parsed === 'object' ? parsed : {}
+  return {
+    titulo: textoSeguro(p.titulo, 'NIDO'),
+    cuerpo: textoSeguro(p.cuerpo, 'Tienes una notificación nueva'),
+    url: textoSeguro(p.url, '/'),
+    datos: p.datos && typeof p.datos === 'object' ? p.datos : {},
+  }
+}
+
+self.addEventListener('push', (event) => {
+  // El payload llega como JSON. Si no se puede parsear, intentamos texto plano
+  // y, en último término, caemos a defaults — nunca rompemos ni desuscribimos.
+  let parsed = null
   if (event.data) {
     try {
-      const parsed = event.data.json()
-      if (parsed && typeof parsed === 'object') {
-        payload = { ...payload, ...parsed }
-      }
+      parsed = event.data.json()
     } catch (err) {
       console.error('[sw] no se pudo parsear payload push:', err)
       try {
-        payload.cuerpo = event.data.text() || payload.cuerpo
+        parsed = { cuerpo: event.data.text() }
       } catch (_e) {
-        // ignorar
+        parsed = null
       }
     }
   }
 
-  const tag = (payload.datos && (payload.datos.conversacion_id || payload.datos.anuncio_id)) || undefined
+  const payload = normalizarPayload(parsed)
+
+  const tag = (payload.datos.conversacion_id || payload.datos.anuncio_id) || undefined
 
   const options = {
     body: payload.cuerpo,
