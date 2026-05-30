@@ -673,3 +673,27 @@ Estructurada en sub-bloques A/B/C con checkpoints internos (A → B → C1 → C
 ### Para F6
 
 - Recordatorios bidireccionales E. La arquitectura de mensajería queda estable. El patrón "trigger AFTER INSERT con SECURITY DEFINER" (ADR-0030) es replicable para reseteo de campos derivados sin abrir RLS UPDATE.
+
+## F5B — Cierre de Fase 5: personal de aula, tabla `/admin/aulas` enriquecida + docs
+
+**Fecha:** 2026-05-30
+**Estado:** ✅ Cerrada.
+
+Bloque de cierre tras F5.6: completa el **Item 3** (clasificación de personal de aula y vista enriquecida) y formaliza la documentación operativa de Claude Code en el repo.
+
+### PRs cerrados
+
+- **PR #33** — `feat(messaging): admin tutor picker en NinoAgendaCard`. Resuelve el caso "admin desde aula con varios tutores: ¿a quién mensajeo?": un selector de tutor en la tarjeta del niño en lugar de asumir un único destinatario.
+- **PR #34** — `feat(aulas): ENUM tipo_personal_aula + backend` (Item 3 B1+B2). Migración SQL `20260529193000_phase5b_tipo_personal_aula.sql` aplicada manualmente vía Supabase SQL Editor (bug `SIGILL` del CLI en este Chromebook). Ver **ADR-0032**.
+- **PR #35** — `chore(docs): CLAUDE.md raíz` nuevo con la regla `npm run build` pre-merge para archivos `'use server'` (lección del PR #30: `export const` top-level en módulos `'use server'` rompía el bundler de Next.js 16 y llegó a producción). `Bootstrap/CLAUDE.md` queda **congelado** por su propia regla #44.
+- **PR #36** — `feat(admin): tabla /admin/aulas enriquecida con personal y nº alumnos` (Item 3 B3). Nuevo Server Component `TablaAulas.tsx` + query `getAulasConPersonal`. **Cierra F5B Item 3.** Ver **ADR-0033**.
+- **PR #37** — `chore(claude-code): permissions allow/deny` en `.claude/settings.json` + regla **11 "Cuándo pedir intervención del usuario"** en `CLAUDE.md`. Reduce la fatiga de aprobaciones (cada `cd`/`cat`/`gh pr view` interrumpía el flujo en #34-#36) y formaliza cuándo el agente debe parar a preguntar.
+
+### Decisiones (ADRs)
+
+- **ADR-0032 — ENUM `tipo_personal_aula`**: 4 valores (`coordinadora`, `profesora`, `tecnico`, `apoyo`) reemplazan al booleano `es_profe_principal` (deprecated 1 sprint + drop posterior). Backfill `true → coordinadora`, `false → profesora`. Índice único parcial "1 coordinadora activa por aula". Elegido frente a texto libre (sin validación) y tabla separada (overkill para 4 valores). Origen PR #34.
+- **ADR-0033 — Tabla `/admin/aulas` enriquecida**: +3 columnas (Nº alumnos, Profesoras, Técnicos); coordinadora destacada con `Badge variant="warm"` + tooltip, resto `secondary`; columna Apoyos omitida hasta el primer dato (YAGNI); móvil con `overflow-x-auto`. Elegido frente a panel-por-click (+1 click para info que debe verse de un vistazo en 5 aulas) y columna unificada (diluye la jerarquía). VA con TODOs pendientes. Origen PR #36.
+
+### Cierre
+
+**F5B oficialmente cerrado.** Próximo bloque: **sprint pre-F6 (6 items)**.
