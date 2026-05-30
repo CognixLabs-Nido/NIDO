@@ -45,6 +45,18 @@ Next.js 15 App Router · TypeScript strict · React 19 · Tailwind 4 · shadcn/u
 
 **10. Credenciales solo desde `.env.local` o equivalente.** Las credenciales de la app (claves API, tokens) viven exclusivamente en `.env.local` (gitignored) o en variables de entorno de Vercel para producción. Si te falta una variable, pídela al responsable. **Cero hardcoded credentials** en código bajo cualquier circunstancia.
 
+**11. Cuándo pedir intervención del usuario.** Claude Code procede de forma autónoma en operaciones rutinarias del flujo (navegación, lectura, edición de archivos según plan acordado, comandos pre-aprobados en `.claude/settings.json`). Se detiene a pedir confirmación al usuario únicamente en estos momentos:
+
+- **Finalización de un Checkpoint** (A/B/etc.) o de una fase completa, reportando estado.
+- **Decisión de producto no cerrada en la spec** (alternativas con trade-offs que el usuario debe evaluar).
+- **Error o ambigüedad que requiera contexto** que el agente no tiene (instrucciones contradictorias, dato faltante).
+- **Cambio de scope respecto a lo aprobado** en el Checkpoint vigente.
+- **Operación destructiva sobre datos productivos** (migraciones SQL, drops, reset de tablas).
+
+Para todo lo demás (`cd`, `git status`, `npm test`, ediciones según plan, etc.), procede sin pedir confirmación. La lista exhaustiva de comandos pre-aprobados está en `.claude/settings.json`.
+
+**Lección de origen**: F5B fatiga de aprobación durante #34-#36, donde cada `cd`, `cat` o `gh pr view` interrumpía el flujo. Formalizada tras conversación con el usuario el 2026-05-30.
+
 ## Verificaciones antes de abrir un PR
 
 Tras implementar y antes de abrir el PR, deben pasar en local:
