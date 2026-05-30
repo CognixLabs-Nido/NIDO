@@ -246,9 +246,21 @@
       "curso_label": "Curso",
       "fields": {
         "nombre": "Nombre",
-        "cohorte": "Cohortes de nacimiento",
+        "anio_nacimiento": "Año nacimiento",
         "capacidad": "Capacidad máxima",
+        "num_alumnos": "Nº alumnos",
+        "profesoras": "Profesoras",
+        "tecnicos": "Técnicos",
         "descripcion": "Descripción"
+      },
+      "personal": {
+        "tipo": {
+          "coordinadora": "Coordinadora",
+          "profesora": "Profesora",
+          "tecnico": "Técnico",
+          "apoyo": "Apoyo"
+        },
+        "label_coordinadora": "Coordinadora"
       }
     },
     "ninos": {

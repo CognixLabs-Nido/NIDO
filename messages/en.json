@@ -246,9 +246,21 @@
       "curso_label": "Year",
       "fields": {
         "nombre": "Name",
-        "cohorte": "Birth year cohorts",
+        "anio_nacimiento": "Birth year",
         "capacidad": "Maximum capacity",
+        "num_alumnos": "# students",
+        "profesoras": "Teachers",
+        "tecnicos": "Assistants",
         "descripcion": "Description"
+      },
+      "personal": {
+        "tipo": {
+          "coordinadora": "Lead teacher",
+          "profesora": "Teacher",
+          "tecnico": "Assistant",
+          "apoyo": "Support"
+        },
+        "label_coordinadora": "Lead teacher"
       }
     },
     "ninos": {
