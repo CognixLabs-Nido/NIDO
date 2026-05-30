@@ -8,6 +8,17 @@ import { defineConfig } from 'vitest/config'
 // Carga .env.local explícitamente para tests RLS y de integración
 loadEnv({ path: '.env.local' })
 
+// Globs del grupo de integración remota: pegan a Supabase Cloud (signIn con
+// rate-limit de Auth, service role, triggers de audit). Comparten latencia de
+// red y backoff de reintento — necesitan más holgura de timeout que el resto.
+const REMOTE_GLOBS = ['src/test/rls/**/*.test.ts', 'src/test/audit/**/*.test.ts']
+
+const sharedEnv = {
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+}
+
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   resolve: {
@@ -22,25 +33,64 @@ export default defineConfig({
     },
   },
   test: {
+    // --- Opciones globales compartidas por todos los proyectos ---
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
-    exclude: ['e2e/**', 'node_modules/**', '.next/**'],
+    env: sharedEnv,
     // Suite RLS hace muchos signInWithPassword contra Supabase Cloud Auth;
     // corriendo archivos en paralelo se dispara el rate-limit (429
     // "over_request_rate_limit") y los reintentos no llegan. Serializar
-    // archivos elimina el burst — el CI deja de flakear a coste de ~30s
-    // extra en el total de la suite.
+    // archivos elimina el burst. NO paralelizar: el runner CI (ubuntu-latest)
+    // y el Chromebook de dev son de 2 cores; paralelizar reintroduce
+    // contención de CPU que hace flakear incluso tests de render síncronos.
     fileParallelism: false,
-    env: {
-      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
-      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
-    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
       exclude: ['node_modules/', 'src/test/', '.next/'],
     },
+    // -----------------------------------------------------------------------
+    // Flake bajo contención — sprint pre-F6 item 3 (a raíz del PR #38).
+    //
+    // Síntoma: tests verdes en aislamiento, rojos en la suite completa bajo
+    // carga (asistencia.rls, marcar-mensaje-erroneo, CalendarioMensual). La
+    // concurrencia YA estaba en el suelo (fileParallelism:false) → NO era
+    // paralelización agresiva. El elemento frágil era el `testTimeout` default
+    // de 5000 ms, insuficiente para dos modos de fallo:
+    //   - RLS: `signInWithPassword` con backoff de reintento (2s → 4s → …,
+    //     ver withRetry en src/test/rls/setup.ts) ante rate-limit supera 5s
+    //     antes de recuperarse → timeout. En aislamiento no hay rate-limit,
+    //     no hay reintento, pasa.
+    //   - UI síncrona: un render React+jsdom bajo CPU saturada (la corrida que
+    //     falló tardó 814s vs 523s habituales en 2 cores) puede rebasar 5s.
+    //
+    // Fix: separar en proyectos con timeouts holgados por grupo, sin tocar la
+    // serialización. El grupo remoto necesita más (red + retry); el unit menos
+    // pero por encima de 5s. Correr un grupo aislado: `npm run test:rls`.
+    // -----------------------------------------------------------------------
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'rls',
+          include: REMOTE_GLOBS,
+          // Red contra Supabase Cloud + backoff de retry de Auth.
+          testTimeout: 20_000,
+          hookTimeout: 30_000,
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'unit',
+          include: ['src/**/*.test.{ts,tsx}'],
+          exclude: ['e2e/**', 'node_modules/**', '.next/**', ...REMOTE_GLOBS],
+          // Sin red, pero margen sobre los 5s default para absorber el render
+          // bajo CPU saturada en runners de 2 cores.
+          testTimeout: 15_000,
+        },
+      },
+    ],
   },
 })

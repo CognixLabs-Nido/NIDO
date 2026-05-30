@@ -12,6 +12,8 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:rls": "vitest run --project rls",
+    "test:unit": "vitest run --project unit",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "db:types": "npx supabase gen types typescript --project-id ttroedkdgomfmohgojvg > src/types/database.ts",
