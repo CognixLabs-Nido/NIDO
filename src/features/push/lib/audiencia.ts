@@ -69,6 +69,32 @@ export async function destinatariosDeNino(
 }
 
 /**
+ * Destinatarios push de un mensaje nuevo en una conversación admin↔familia
+ * (F5.6). Una conversación `admin_familia` es un par 1-a-1 (`admin_id`,
+ * `tutor_id`) **sin niño asociado** (`nino_id` NULL). El destinatario de un
+ * mensaje es el OTRO miembro del par — el que no lo escribió. Como mucho 1.
+ *
+ * Push **INCONDICIONAL** (no se gatea por `puede_recibir_mensajes`):
+ *  - la RLS (`puede_participar_conversacion`) ya deja participar al tutor en
+ *    `admin_familia` sin mirar el flag, así que el mensaje le llega in-app
+ *    igual; el push debe ser coherente con eso;
+ *  - el flag vive en `vinculos_familiares.permisos` por (niño, tutor) y aquí
+ *    NO hay niño → estaría mal definido;
+ *  - el admin contacta asuntos administrativos generales, no per-niño.
+ *
+ * Es **puro** (sin I/O): el caller ya tiene `admin_id`/`tutor_id` desde la
+ * fila de la conversación. A diferencia de `destinatariosDeNino`, no necesita
+ * service role ni queries.
+ */
+export function destinatariosDeAdminFamilia(
+  adminId: string,
+  tutorId: string,
+  excluyendoUserId: string
+): string[] {
+  return [adminId, tutorId].filter((id) => id !== excluyendoUserId)
+}
+
+/**
  * Devuelve los `usuario_id` (TUTORES) que deben recibir un push tras la
  * publicación de un anuncio. **No incluye profes ni admin** — ellos verán
  * el anuncio in-app y actúan como puente humano para los tutores excluidos
