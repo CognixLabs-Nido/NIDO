@@ -6,6 +6,11 @@ import { NuevaAulaDialog } from '@/features/aulas/components/NuevaAulaDialog'
 import { TablaAulas } from '@/features/aulas/components/TablaAulas'
 import { getAulasConPersonal } from '@/features/aulas/queries/get-aulas-con-personal'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import {
+  getPersonalAula,
+  type PersonalAulaItem,
+} from '@/features/profes-aulas/queries/get-personal-aula'
+import { getProfesCandidatos } from '@/features/profes-aulas/queries/get-profes-candidatos'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { EmptyState } from '@/shared/components/EmptyState'
 
@@ -35,6 +40,14 @@ export default async function AdminAulasPage({ params }: PageProps) {
   // query enriquecida solo se necesita aquí.
   const aulas = await getAulasConPersonal(cursoActivo.id)
 
+  // Item 4: datos para el diálogo de gestión de personal. Candidatos (pool
+  // del centro) una vez; personal con id de asignación por aula en paralelo.
+  const candidatos = await getProfesCandidatos(centroId)
+  const personalEntries = await Promise.all(
+    aulas.map(async (a) => [a.id, await getPersonalAula(a.id)] as const)
+  )
+  const personalPorAula: Record<string, PersonalAulaItem[]> = Object.fromEntries(personalEntries)
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
@@ -55,6 +68,8 @@ export default async function AdminAulasPage({ params }: PageProps) {
         <TablaAulas
           aulas={aulas}
           locale={locale}
+          personalPorAula={personalPorAula}
+          candidatos={candidatos}
           labels={{
             fields: {
               nombre: t('fields.nombre'),
@@ -66,6 +81,8 @@ export default async function AdminAulasPage({ params }: PageProps) {
               // TODO(F5B#36): confirmar VA con usuario (`tecnicos`).
               tecnicos: t('fields.tecnicos'),
               descripcion: t('fields.descripcion'),
+              // TODO(item4): confirmar VA con usuario (`acciones`).
+              acciones: t('fields.acciones'),
             },
             // TODO(F5B#36): confirmar VA con usuario (`label_coordinadora`).
             label_coordinadora: t('personal.label_coordinadora'),

@@ -251,7 +251,8 @@
         "num_alumnos": "Nº alumnos",
         "profesoras": "Profesoras",
         "tecnicos": "Técnicos",
-        "descripcion": "Descripción"
+        "descripcion": "Descripción",
+        "acciones": "Acciones"
       },
       "personal": {
         "tipo": {
@@ -260,7 +261,33 @@
           "tecnico": "Técnico",
           "apoyo": "Apoyo"
         },
-        "label_coordinadora": "Coordinadora"
+        "label_coordinadora": "Coordinadora",
+        "gestionar": "Gestionar personal",
+        "dialog_title": "Personal · {aula}",
+        "personal_actual": "Personal actual",
+        "anadir_persona": "Añadir persona",
+        "anadir": "Añadir",
+        "saving": "Guardando...",
+        "placeholder_persona": "Selecciona profe…",
+        "campo_persona": "Persona",
+        "campo_tipo": "Tipo",
+        "sin_candidatos": "No hay profes disponibles en el centro para añadir.",
+        "mover_a": "Mover a…",
+        "retirar": "Retirar",
+        "confirmar_retirar": "¿Retirar?",
+        "si": "Sí",
+        "no": "No",
+        "cancelar": "Cancelar",
+        "sustituir": "Sustituir",
+        "sustituir_desc": "Esta aula ya tiene coordinadora ({coordinadora}). ¿Pasarla a profesora y nombrar a la nueva coordinadora?",
+        "empty": "Aún no hay personal en esta aula.",
+        "aria_cambiar_tipo": "Cambiar tipo de personal",
+        "aria_mover": "Mover a otra aula",
+        "added": "Persona añadida",
+        "retirado": "Persona retirada",
+        "tipo_cambiado": "Tipo actualizado",
+        "sustituida": "Coordinadora actualizada",
+        "movido": "Persona movida"
       }
     },
     "ninos": {
@@ -552,12 +579,23 @@
   "profeAula": {
     "validation": {
       "profe_invalido": "Selecciona un profe válido",
-      "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)"
+      "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)",
+      "asignacion_invalida": "Asignación inválida",
+      "aula_invalida": "Aula inválida",
+      "invalid": "Datos inválidos"
     },
     "errors": {
       "create_failed": "No se pudo asignar el profe al aula.",
       "ya_principal": "Ya hay un profe principal en esta aula.",
-      "usuario_sin_rol_profe": "Este usuario no tiene rol profe en el centro."
+      "usuario_sin_rol_profe": "Este usuario no tiene rol profe en el centro.",
+      "terminar_fallo": "No se pudo retirar a la persona del aula.",
+      "asignacion_no_encontrada": "No se encontró la asignación (puede que ya no esté activa).",
+      "cambiar_tipo_fallo": "No se pudo cambiar el tipo de personal.",
+      "sustituir_fallo": "No se pudo sustituir la coordinadora.",
+      "mover_fallo": "No se pudo mover a la persona.",
+      "mover_mismo_aula": "La persona ya está en esa aula.",
+      "mover_ya_en_destino": "La persona ya está activa en el aula destino.",
+      "mover_origen_no_cerrado": "La persona se añadió al aula destino, pero no se pudo cerrar la asignación anterior. Retírala manualmente."
     }
   },
   "medico": {

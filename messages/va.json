@@ -251,7 +251,8 @@
         "num_alumnos": "Nre alumnes",
         "profesoras": "Mestres",
         "tecnicos": "Tècnics",
-        "descripcion": "Descripció"
+        "descripcion": "Descripció",
+        "acciones": "Accions"
       },
       "personal": {
         "tipo": {
@@ -260,7 +261,33 @@
           "tecnico": "Tècnic",
           "apoyo": "Suport"
         },
-        "label_coordinadora": "Coordinadora"
+        "label_coordinadora": "Coordinadora",
+        "gestionar": "Gestionar personal",
+        "dialog_title": "Personal · {aula}",
+        "personal_actual": "Personal actual",
+        "anadir_persona": "Afegir persona",
+        "anadir": "Afegir",
+        "saving": "Guardant...",
+        "placeholder_persona": "Selecciona un profe…",
+        "campo_persona": "Persona",
+        "campo_tipo": "Tipus",
+        "sin_candidatos": "No hi ha profes disponibles al centre per a afegir.",
+        "mover_a": "Moure a…",
+        "retirar": "Llevar",
+        "confirmar_retirar": "Llevar?",
+        "si": "Sí",
+        "no": "No",
+        "cancelar": "Cancel·lar",
+        "sustituir": "Substituir",
+        "sustituir_desc": "Esta aula ja té coordinadora ({coordinadora}). Passar-la a mestra i nomenar la nova coordinadora?",
+        "empty": "Encara no hi ha personal en esta aula.",
+        "aria_cambiar_tipo": "Canviar tipus de personal",
+        "aria_mover": "Moure a una altra aula",
+        "added": "Persona afegida",
+        "retirado": "Persona llevada",
+        "tipo_cambiado": "Tipus actualitzat",
+        "sustituida": "Coordinadora actualitzada",
+        "movido": "Persona moguda"
       }
     },
     "ninos": {
@@ -552,12 +579,23 @@
   "profeAula": {
     "validation": {
       "profe_invalido": "Selecciona un profe vàlid",
-      "fecha_formato": "Format de data invàlid (YYYY-MM-DD)"
+      "fecha_formato": "Format de data invàlid (YYYY-MM-DD)",
+      "asignacion_invalida": "Assignació invàlida",
+      "aula_invalida": "Aula invàlida",
+      "invalid": "Dades invàlides"
     },
     "errors": {
       "create_failed": "No s'ha pogut assignar el profe a l'aula.",
       "ya_principal": "Ja hi ha un profe principal en esta aula.",
-      "usuario_sin_rol_profe": "Este usuari no té rol profe al centre."
+      "usuario_sin_rol_profe": "Este usuari no té rol profe al centre.",
+      "terminar_fallo": "No s'ha pogut llevar la persona de l'aula.",
+      "asignacion_no_encontrada": "No s'ha trobat l'assignació (potser ja no està activa).",
+      "cambiar_tipo_fallo": "No s'ha pogut canviar el tipus de personal.",
+      "sustituir_fallo": "No s'ha pogut substituir la coordinadora.",
+      "mover_fallo": "No s'ha pogut moure la persona.",
+      "mover_mismo_aula": "La persona ja està en eixa aula.",
+      "mover_ya_en_destino": "La persona ja està activa a l'aula destí.",
+      "mover_origen_no_cerrado": "La persona s'ha afegit a l'aula destí, però no s'ha pogut tancar l'assignació anterior. Lleva-la manualment."
     }
   },
   "medico": {

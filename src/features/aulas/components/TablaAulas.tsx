@@ -10,6 +10,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { GestionarPersonalDialog } from '@/features/profes-aulas/components/GestionarPersonalDialog'
+import type { PersonalAulaItem } from '@/features/profes-aulas/queries/get-personal-aula'
+import type { ProfeCandidato } from '@/features/profes-aulas/queries/get-profes-candidatos'
 
 import type { AulaConPersonal } from '../queries/get-aulas-con-personal'
 
@@ -38,6 +41,7 @@ export interface TablaAulasLabels {
     profesoras: string
     tecnicos: string
     descripcion: string
+    acciones: string
   }
   label_coordinadora: string
 }
@@ -46,9 +50,15 @@ interface Props {
   aulas: AulaConPersonal[]
   labels: TablaAulasLabels
   locale: string
+  /** Personal activo por aula (id de asignación incluido) para el diálogo de gestión. */
+  personalPorAula: Record<string, PersonalAulaItem[]>
+  /** Pool de profes del centro (candidatos a asignar). */
+  candidatos: ProfeCandidato[]
 }
 
-export function TablaAulas({ aulas, labels, locale }: Props) {
+export function TablaAulas({ aulas, labels, locale, personalPorAula, candidatos }: Props) {
+  // Destinos para "Mover": todas las aulas del listado (el diálogo excluye la propia).
+  const aulasDestino = aulas.map((a) => ({ id: a.id, nombre: a.nombre }))
   return (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
@@ -62,6 +72,7 @@ export function TablaAulas({ aulas, labels, locale }: Props) {
               <TableHead>{labels.fields.profesoras}</TableHead>
               <TableHead>{labels.fields.tecnicos}</TableHead>
               <TableHead>{labels.fields.descripcion}</TableHead>
+              <TableHead>{labels.fields.acciones}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -123,6 +134,14 @@ export function TablaAulas({ aulas, labels, locale }: Props) {
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {a.descripcion ?? '—'}
+                </TableCell>
+                <TableCell>
+                  <GestionarPersonalDialog
+                    aula={{ id: a.id, nombre: a.nombre }}
+                    personal={personalPorAula[a.id] ?? []}
+                    candidatos={candidatos}
+                    aulasDestino={aulasDestino}
+                  />
                 </TableCell>
               </TableRow>
             ))}

@@ -190,5 +190,119 @@ describe.skipIf(!MIGRATION_APPLIED)(
       expect(error).toBeNull()
       expect(data ?? []).toHaveLength(0)
     })
+
+    // --- item 4: mutaciones de las nuevas actions bajo RLS ---
+
+    it('admin del centro puede cambiar el tipo (UPDATE) de una asignación de su centro', async () => {
+      const { data: row } = await serviceClient
+        .from('profes_aulas')
+        .select('id')
+        .eq('profe_id', profe2.id)
+        .eq('aula_id', aulaA2.id)
+        .is('fecha_fin', null)
+        .single()
+      const c = await clientFor(adminA)
+      const { data, error } = await c
+        .from('profes_aulas')
+        .update({ tipo_personal_aula: 'tecnico' })
+        .eq('id', row!.id)
+        .select('id')
+        .maybeSingle()
+      expect(error).toBeNull()
+      expect(data?.id).toBe(row!.id)
+      // revert
+      await serviceClient
+        .from('profes_aulas')
+        .update({ tipo_personal_aula: 'profesora' })
+        .eq('id', row!.id)
+    })
+
+    it('admin de OTRO centro NO puede actualizar profes_aulas cross-centro (0 filas)', async () => {
+      const { data: row } = await serviceClient
+        .from('profes_aulas')
+        .select('id')
+        .eq('profe_id', profe2.id)
+        .eq('aula_id', aulaA2.id)
+        .is('fecha_fin', null)
+        .single()
+      const c = await clientFor(adminB)
+      const { data, error } = await c
+        .from('profes_aulas')
+        .update({ tipo_personal_aula: 'apoyo' })
+        .eq('id', row!.id)
+        .select('id')
+      expect(error).toBeNull()
+      expect(data ?? []).toHaveLength(0)
+    })
+
+    it('profe NO puede actualizar su asignación (sin policy UPDATE para profe)', async () => {
+      const { data: row } = await serviceClient
+        .from('profes_aulas')
+        .select('id')
+        .eq('profe_id', profe1.id)
+        .eq('aula_id', aulaA1.id)
+        .is('fecha_fin', null)
+        .single()
+      const c = await clientFor(profe1)
+      const { data, error } = await c
+        .from('profes_aulas')
+        .update({ tipo_personal_aula: 'profesora' })
+        .eq('id', row!.id)
+        .select('id')
+      expect(error).toBeNull()
+      expect(data ?? []).toHaveLength(0)
+      const { data: after } = await serviceClient
+        .from('profes_aulas')
+        .select('tipo_personal_aula')
+        .eq('id', row!.id)
+        .single()
+      expect(after?.tipo_personal_aula).toBe('coordinadora')
+    })
+
+    it('admin: sustitución orden-seguro (degradar→promover) respeta el índice único', async () => {
+      // Añadimos a profe2 a aulaA1 como profesora y lo promovemos a
+      // coordinadora degradando antes a profe1 (coordinadora actual).
+      const { data: nueva } = await serviceClient
+        .from('profes_aulas')
+        .insert({
+          profe_id: profe2.id,
+          aula_id: aulaA1.id,
+          fecha_inicio: '2026-09-01',
+          tipo_personal_aula: 'profesora',
+        })
+        .select('id')
+        .single()
+      const { data: coordActual } = await serviceClient
+        .from('profes_aulas')
+        .select('id')
+        .eq('profe_id', profe1.id)
+        .eq('aula_id', aulaA1.id)
+        .is('fecha_fin', null)
+        .single()
+
+      const c = await clientFor(adminA)
+      // 1. degradar primero
+      const { error: e1 } = await c
+        .from('profes_aulas')
+        .update({ tipo_personal_aula: 'profesora' })
+        .eq('id', coordActual!.id)
+      expect(e1).toBeNull()
+      // 2. promover después — sin 23505 porque ya no hay coordinadora
+      const { data: promo, error: e2 } = await c
+        .from('profes_aulas')
+        .update({ tipo_personal_aula: 'coordinadora' })
+        .eq('id', nueva!.id)
+        .select('id')
+        .maybeSingle()
+      expect(e2).toBeNull()
+      expect(promo?.id).toBe(nueva!.id)
+
+      // cleanup: quitar la nueva y restaurar profe1 como coordinadora
+      await serviceClient.from('profes_aulas').delete().eq('id', nueva!.id)
+      await serviceClient
+        .from('profes_aulas')
+        .update({ tipo_personal_aula: 'coordinadora' })
+        .eq('id', coordActual!.id)
+    })
   }
 )

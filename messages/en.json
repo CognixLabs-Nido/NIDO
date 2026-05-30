@@ -251,7 +251,8 @@
         "num_alumnos": "# students",
         "profesoras": "Teachers",
         "tecnicos": "Assistants",
-        "descripcion": "Description"
+        "descripcion": "Description",
+        "acciones": "Actions"
       },
       "personal": {
         "tipo": {
@@ -260,7 +261,33 @@
           "tecnico": "Assistant",
           "apoyo": "Support"
         },
-        "label_coordinadora": "Lead teacher"
+        "label_coordinadora": "Lead teacher",
+        "gestionar": "Manage staff",
+        "dialog_title": "Staff · {aula}",
+        "personal_actual": "Current staff",
+        "anadir_persona": "Add person",
+        "anadir": "Add",
+        "saving": "Saving...",
+        "placeholder_persona": "Select a teacher…",
+        "campo_persona": "Person",
+        "campo_tipo": "Type",
+        "sin_candidatos": "No teachers available in the centre to add.",
+        "mover_a": "Move to…",
+        "retirar": "Remove",
+        "confirmar_retirar": "Remove?",
+        "si": "Yes",
+        "no": "No",
+        "cancelar": "Cancel",
+        "sustituir": "Replace",
+        "sustituir_desc": "This classroom already has a lead teacher ({coordinadora}). Make them a teacher and appoint the new one as lead?",
+        "empty": "No staff in this classroom yet.",
+        "aria_cambiar_tipo": "Change staff type",
+        "aria_mover": "Move to another classroom",
+        "added": "Person added",
+        "retirado": "Person removed",
+        "tipo_cambiado": "Type updated",
+        "sustituida": "Lead teacher updated",
+        "movido": "Person moved"
       }
     },
     "ninos": {
@@ -552,12 +579,23 @@
   "profeAula": {
     "validation": {
       "profe_invalido": "Select a valid teacher",
-      "fecha_formato": "Invalid date format (YYYY-MM-DD)"
+      "fecha_formato": "Invalid date format (YYYY-MM-DD)",
+      "asignacion_invalida": "Invalid assignment",
+      "aula_invalida": "Invalid classroom",
+      "invalid": "Invalid data"
     },
     "errors": {
       "create_failed": "Could not assign the teacher to the classroom.",
       "ya_principal": "There is already a lead teacher in this classroom.",
-      "usuario_sin_rol_profe": "This user has no teacher role in the centre."
+      "usuario_sin_rol_profe": "This user has no teacher role in the centre.",
+      "terminar_fallo": "Could not remove the person from the classroom.",
+      "asignacion_no_encontrada": "Assignment not found (it may no longer be active).",
+      "cambiar_tipo_fallo": "Could not change the staff type.",
+      "sustituir_fallo": "Could not replace the lead teacher.",
+      "mover_fallo": "Could not move the person.",
+      "mover_mismo_aula": "The person is already in that classroom.",
+      "mover_ya_en_destino": "The person is already active in the destination classroom.",
+      "mover_origen_no_cerrado": "The person was added to the destination classroom, but the previous assignment could not be closed. Remove it manually."
     }
   },
   "medico": {
