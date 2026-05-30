@@ -246,9 +246,21 @@
       "curso_label": "Curs",
       "fields": {
         "nombre": "Nom",
-        "cohorte": "Cohorts de naixement",
+        "anio_nacimiento": "Any naixement",
         "capacidad": "Capacitat màxima",
+        "num_alumnos": "Nre alumnes",
+        "profesoras": "Mestres",
+        "tecnicos": "Tècnics",
         "descripcion": "Descripció"
+      },
+      "personal": {
+        "tipo": {
+          "coordinadora": "Coordinadora",
+          "profesora": "Mestra",
+          "tecnico": "Tècnic",
+          "apoyo": "Suport"
+        },
+        "label_coordinadora": "Coordinadora"
       }
     },
     "ninos": {

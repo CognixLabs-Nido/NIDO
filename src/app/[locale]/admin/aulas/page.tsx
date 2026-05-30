@@ -1,19 +1,10 @@
 import { BookOpenIcon } from 'lucide-react'
-import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 
-import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { NuevaAulaDialog } from '@/features/aulas/components/NuevaAulaDialog'
-import { getAulasPorCurso } from '@/features/aulas/queries/get-aulas'
+import { TablaAulas } from '@/features/aulas/components/TablaAulas'
+import { getAulasConPersonal } from '@/features/aulas/queries/get-aulas-con-personal'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -39,7 +30,10 @@ export default async function AdminAulasPage({ params }: PageProps) {
     )
   }
 
-  const aulas = await getAulasPorCurso(cursoActivo.id)
+  // F5B-#36: query enriquecida con num_alumnos + profesoras + tecnicos.
+  // El wizard de nuevo niño sigue usando getAulasPorCurso (D1) — esta
+  // query enriquecida solo se necesita aquí.
+  const aulas = await getAulasConPersonal(cursoActivo.id)
 
   return (
     <div className="space-y-6">
@@ -58,46 +52,25 @@ export default async function AdminAulasPage({ params }: PageProps) {
           <EmptyState icon={<BookOpenIcon strokeWidth={1.75} />} title={t('empty')} />
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('fields.nombre')}</TableHead>
-                <TableHead>{t('fields.cohorte')}</TableHead>
-                <TableHead>{t('fields.capacidad')}</TableHead>
-                <TableHead>{t('fields.descripcion')}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {aulas.map((a) => (
-                <TableRow key={a.id} className="hover:bg-muted/30 transition-colors">
-                  <TableCell className="font-medium">
-                    <Link
-                      href={`/${locale}/teacher/aula/${a.id}`}
-                      className="hover:text-primary inline-block w-full"
-                      data-testid={`admin-aula-link-${a.id}`}
-                    >
-                      {a.nombre}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {a.cohorte_anos_nacimiento.map((anio) => (
-                        <Badge key={anio} variant="warm">
-                          {anio}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>{a.capacidad_maxima}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {a.descripcion ?? '—'}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+        <TablaAulas
+          aulas={aulas}
+          locale={locale}
+          labels={{
+            fields: {
+              nombre: t('fields.nombre'),
+              anio_nacimiento: t('fields.anio_nacimiento'),
+              capacidad: t('fields.capacidad'),
+              num_alumnos: t('fields.num_alumnos'),
+              // TODO(F5B#36): confirmar VA con usuario (`profesoras`).
+              profesoras: t('fields.profesoras'),
+              // TODO(F5B#36): confirmar VA con usuario (`tecnicos`).
+              tecnicos: t('fields.tecnicos'),
+              descripcion: t('fields.descripcion'),
+            },
+            // TODO(F5B#36): confirmar VA con usuario (`label_coordinadora`).
+            label_coordinadora: t('personal.label_coordinadora'),
+          }}
+        />
       )}
     </div>
   )
