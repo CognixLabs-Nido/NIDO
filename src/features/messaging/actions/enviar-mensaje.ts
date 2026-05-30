@@ -4,7 +4,11 @@ import { revalidatePath } from 'next/cache'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import { destinatariosDeNino, getAutorPushInfo } from '@/features/push/lib/audiencia'
+import {
+  destinatariosDeAdminFamilia,
+  destinatariosDeNino,
+  getAutorPushInfo,
+} from '@/features/push/lib/audiencia'
 import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -223,7 +227,7 @@ async function enviarMensajeAdminFamilia(
   //    fila (el caller no es admin/tutor del par), devolvemos `no_autorizado`.
   const { data: conv, error: convErr } = await supabase
     .from('conversaciones')
-    .select('id, tipo_conversacion, expires_at')
+    .select('id, tipo_conversacion, expires_at, admin_id, tutor_id')
     .eq('id', conversacionId)
     .maybeSingle()
 
@@ -275,14 +279,33 @@ async function enviarMensajeAdminFamilia(
     return fail('messages.errors.envio_fallo')
   }
 
-  // 4. Push notifications: diferido a F5.6-D. El cálculo de destinatarios
-  //    del par (admin, tutor) requiere un helper específico
-  //    (`destinatariosDeAdminFamilia(adminId, tutorId, excluyendoUserId)`)
-  //    que aún no existe. Anteriormente esta rama llamaba a
-  //    `destinatariosDeConversacion`, que para admin_familia devolvía
-  //    siempre lista vacía vía un guard interno (`nino_id IS NULL`) — un
-  //    no-op caro: 1 SELECT a `conversaciones` + 1 a `usuarios` para nada.
-  //    Eliminado hasta que F5.6-D lo cablee de verdad.
+  // 4. Push notifications (F5.6 — item 5). El par (admin, tutor) es 1-a-1;
+  //    el destinatario es el otro miembro. Push INCONDICIONAL: la RLS ya deja
+  //    participar al tutor sin mirar `puede_recibir_mensajes`, y ese flag es
+  //    per-(niño, tutor) — indefinido en una conv sin niño. Best-effort: si
+  //    el envío falla, el mensaje ya está persistido. `admin_id`/`tutor_id`
+  //    son NOT NULL en admin_familia (CHECK de coherencia); el guard cierra
+  //    el narrow de TS.
+  if (conv.admin_id && conv.tutor_id) {
+    try {
+      const destinatarios = destinatariosDeAdminFamilia(conv.admin_id, conv.tutor_id, userId)
+      if (destinatarios.length > 0) {
+        const autor = await getAutorPushInfo(userId)
+        const cuerpo = contenido.length > 100 ? contenido.slice(0, 99) + '…' : contenido
+        await enviarPushANotificarUsuarios(destinatarios, {
+          titulo: autor.nombre,
+          cuerpo,
+          url: `/${autor.idioma}/messages/conversacion/${conversacionId}`,
+          datos: {
+            tipo: 'mensaje',
+            conversacion_id: conversacionId,
+          },
+        })
+      }
+    } catch (err) {
+      console.error('[enviarMensaje admin_familia] push notifications falló:', err)
+    }
+  }
 
   return ok({ mensaje_id: mensaje.id, conversacion_id: conversacionId })
 }
