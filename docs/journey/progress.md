@@ -697,3 +697,36 @@ Bloque de cierre tras F5.6: completa el **Item 3** (clasificación de personal d
 ### Cierre
 
 **F5B oficialmente cerrado.** Próximo bloque: **sprint pre-F6 (6 items)**.
+
+## Sprint pre-F6 (entre F5B y F6)
+
+**Fecha:** 2026-05-31
+**Estado:** ✅ Cerrado.
+
+Bloque de mantenimiento entre F5B y F6 (Recordatorios): cierre formal de F5B, reducción de flake en CI, una feature de admin (asignar personal a aulas), un cableado de push pendiente de F5.6 con dos hotfixes, y una verificación de UI. 6 items, **4 PRs mergeados (#38–#41)** + 1 item verificado sin PR.
+
+### Items y PRs
+
+| Item    | Descripción                                                                                        | Resultado                                                                               |
+| ------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **1+2** | Audit de ADRs (0017/0018 huecos, 0032/0033) + cierre F5B en `progress.md` + ADR-0032/0033          | **PR #38**                                                                              |
+| **3**   | Flake recurrente en CI de tests RLS bajo contención — split de proyectos `rls`/`unit` con timeouts | **PR #39**                                                                              |
+| **4**   | UI para asignar personal a aulas (4 actions + `GestionarPersonalDialog` + ADR-0034)                | **PR #40**                                                                              |
+| **5**   | Cableado push admin↔familia (pendiente desde F5.6) + blindaje por-campo del parser de `sw.js`      | **PR #41**                                                                              |
+| **6**   | Menú lateral filtrado por rol (profe no debe ver items admin)                                      | **Sin PR.** Auditoría reveló que el patrón ya es correcto: no era bug real. Verificado. |
+
+### Item 6 — por qué no hubo PR
+
+El brief asumía que la sidebar mostraba todos los items a todos los roles. La auditoría ([`SidebarNav.tsx`](../../src/shared/components/SidebarNav.tsx), [`sidebar-items.tsx`](../../src/shared/lib/sidebar-items.tsx)) mostró que `buildSidebarItems(rol, locale, badge)` ya devuelve **listas disjuntas por rol**: los items admin-only (Centro, Cursos, Aulas, Menús, Niños, Audit) existen **únicamente** en la rama `rol === 'admin'`. Además cada layout de rol-espacio (`/admin`, `/teacher`, `/family`, `/messages`) **guarda la ruta** con redirect a `/forbidden`, y el rol activo se resuelve por prioridad `admin > profe > tutor_legal > autorizado` ([`get-centro-actual.ts`](../../src/features/centros/queries/get-centro-actual.ts), hotfix post-F5). Un profe nunca renderiza items admin. Sin cambio de código. Matiz residual (refinar `autorizado` vs `tutor_legal`) movido a follow-ups.
+
+### Decisiones (ADRs)
+
+- **ADR-0034 — Sustitución atómica de coordinadora** (PR #40): el cambio de coordinadora de un aula se hace en una sola transacción para no violar transitoriamente el índice único parcial "1 coordinadora activa por aula".
+
+### Datos de prueba persistentes
+
+Durante la validación del PR #40 se crearon **3 profes de prueba en ANAIA** que **no deben borrarse** (los reutilizan validaciones futuras). Documentados en [`docs/operations/datos-de-prueba.md`](../operations/datos-de-prueba.md).
+
+### Cierre
+
+**Sprint pre-F6 cerrado.** Follow-ups acumulados consolidados en [`docs/follow-ups.md`](../follow-ups.md). Próxima fase: **F6 — Recordatorios bidireccionales (E)**.
