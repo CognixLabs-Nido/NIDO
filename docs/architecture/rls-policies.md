@@ -177,7 +177,7 @@ Las funciones `public.set_info_medica_emergencia_cifrada(...)` y `public.get_inf
 
 `audit_trigger_function()` SECURITY DEFINER aplicada `AFTER INSERT OR UPDATE OR DELETE` en:
 
-- `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `datos_pedagogicos_nino`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`, `plantillas_menu_mensual`, `menu_dia`.
+- `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `datos_pedagogicos_nino`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`, `plantillas_menu_mensual`, `menu_dia`, `conversaciones`, `mensajes`, `anuncios`, `recordatorios`.
 
 Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 
@@ -388,3 +388,21 @@ La policy de F5.6-B mantiene la condición en `USING` (filtra qué filas son vis
 - **No se audita**: telemetría operativa, no contenido (igual que `lectura_*` en F5). Si en F6+ aparece compliance por entrega de notificaciones, se añadiría una tabla aparte (`notificaciones_push`) con su propio trigger.
 - **No se publica en Realtime**: los clientes no observan suscripciones; cada navegador conoce la suya por `pushManager.getSubscription()`.
 - **Service role bypass en el motor de envío**: `enviarPushANotificarUsuarios` lee suscripciones cross-user vía `createServiceClient()`. La auth del autor ya se verificó en la server action que lo invoca; el helper solo computa destinatarios y envía. Esto es coherente con el resto del proyecto: service role nunca se expone al cliente y se usa solo en helpers server-side claramente etiquetados.
+
+## Recordatorios (Fase 6-A)
+
+1 tabla nueva — `recordatorios` — y el ENUM `recordatorio_destinatario` (`familia`/`equipo`/`direccion`/`personal`). Ver [ADR-0035](../decisions/ADR-0035-modelo-recordatorios-bidireccionales.md) (modelo) y [ADR-0036](../decisions/ADR-0036-completar-recordatorio-idempotente.md) (idempotencia al completar). Spec: `docs/specs/reminders.md`.
+
+- **Sin helper SQL nuevo**: las policies reutilizan `es_admin`, `es_profe_de_nino`, `es_tutor_de`, `tiene_permiso_sobre`, `pertenece_a_centro`, `centro_de_nino`. Un trigger BEFORE INSERT (`recordatorios_set_centro_id`) deriva `centro_id` del niño si falta.
+- **El gotcha MVCC NO aplica**: la policy `recordatorios_select` lee solo columnas del propio row (`centro_id`, `nino_id`, `creado_por`, `destinatario`, `usuario_destinatario_id`) y delega los lookups a helpers que consultan **otras** tablas (`roles_usuario`, `matriculas`/`profes_aulas`, `vinculos_familiares`). Nunca re-lee `recordatorios`. Se verifica con un test explícito de `.insert().select()` por destino que confirma que el `RETURNING` no devuelve `42501`. No se necesita ningún helper row-aware.
+- **`recordatorios_select`** — visibilidad por destino:
+  - `familia`: `es_admin(centro_id) OR es_profe_de_nino(nino_id) OR tiene_permiso_sobre(nino_id, 'puede_recibir_mensajes')`.
+  - `equipo`: `es_admin(centro_id) OR es_profe_de_nino(nino_id) OR es_tutor_de(nino_id)`.
+  - `direccion`: `es_admin(centro_id) OR creado_por = auth.uid()`.
+  - `personal`: `usuario_destinatario_id = auth.uid()`.
+- **`recordatorios_insert`** — `creado_por = auth.uid()` (anti-suplantación) + por destino: `familia` admin/profe del niño; `equipo` tutor del niño con `puede_recibir_mensajes`; `direccion`/`personal` cualquier miembro del centro (`personal` con `usuario_destinatario_id = auth.uid()`).
+- **`recordatorios_update`** — mismo predicado de visibilidad que SELECT en `USING` y `WITH CHECK` (defensa simétrica). Cubre dos operaciones que la RLS no distingue por columnas: **completar** (cualquiera que lo vea, sin límite temporal) y **anular** (solo emisor). La **restricción de columnas** (solo `completado_*` o `erroneo`+prefijo) y la **ventana de 5 min de anulación** las enforza el server action — NO la RLS — porque el UPDATE multiplexa ambas y no se pueden separar por tiempo en una sola policy (ADR-0035, riesgo aceptado). La idempotencia de completar sí va en la sentencia: `UPDATE … WHERE completado_en IS NULL` + `.select().maybeSingle()` (si vuelve 0 filas → ya completado / RLS rechazó → `ya_completado`). Es la reaplicación del gotcha "USING falso → 0 filas" anticipada para F6.
+- **DELETE**: SIN policy → default DENY. Sin `deleted_at`; el error se corrige con `erroneo=true` + prefijo `[anulado] ` en `titulo` (patrón F5).
+- **Audit log**: trigger `audit_recordatorios` con `centro_id` directo (rama nueva en `audit_trigger_function`).
+- **Realtime publication**: `recordatorios` publicada para el badge de pendientes; la RLS de SELECT filtra los eventos.
+- **`puede_recibir_mensajes`** sigue siendo el switch del canal: un tutor con `false` no ve ni crea recordatorios `familia`/`equipo` (igual que en mensajería). El rol `autorizado` por defecto queda fuera.
