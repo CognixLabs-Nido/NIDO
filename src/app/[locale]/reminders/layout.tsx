@@ -1,0 +1,68 @@
+import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
+
+import { getCurrentUser } from '@/features/auth/queries/get-current-user'
+import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
+import { MessagingBadge } from '@/features/messaging/components/MessagingBadge'
+import { countNoLeidos } from '@/features/messaging/queries/count-no-leidos'
+import { SidebarNav } from '@/shared/components/SidebarNav'
+import { buildSidebarItems } from '@/shared/lib/sidebar-items'
+
+interface LayoutProps {
+  children: React.ReactNode
+  params: Promise<{ locale: string }>
+}
+
+/**
+ * Layout transversal de recordatorios. En el MVP (hotfix #44) el módulo es
+ * solo para admin/profe; tutor_legal y autorizado se redirigen a su área
+ * familia (la entrada de sidebar tampoco se les muestra). La sidebar refleja
+ * el rol para que la navegación sea coherente al volver a su área.
+ */
+export default async function RemindersLayout({ children, params }: LayoutProps) {
+  const { locale } = await params
+  const tNav = await getTranslations('admin.nav')
+  const tRoles = await getTranslations('auth.select_role.roles')
+
+  const centroId = await getCentroActualId()
+  if (!centroId) redirect(`/${locale}/login`)
+
+  const rolRaw = await getRolEnCentro(centroId)
+  // tutor_legal/autorizado no acceden a recordatorios en el MVP → su home.
+  if (rolRaw === 'tutor_legal' || rolRaw === 'autorizado') {
+    redirect(`/${locale}/family`)
+  }
+  if (!rolRaw || (rolRaw !== 'admin' && rolRaw !== 'profe')) {
+    redirect(`/${locale}/forbidden`)
+  }
+  const rol = rolRaw as 'admin' | 'profe'
+
+  const user = await getCurrentUser()
+  const centroLogo = await getCentroLogo(centroId)
+  const { total: unread } = await countNoLeidos()
+
+  const items = await buildSidebarItems(rol, locale, <MessagingBadge initialTotal={unread} />)
+
+  const roleLabel = rol === 'admin' ? tRoles('admin') : tRoles('profe')
+
+  return (
+    <div className="bg-background flex min-h-[100dvh] flex-col md:flex-row">
+      <SidebarNav
+        locale={locale}
+        items={items}
+        user={{
+          name: user?.nombreCompleto ?? user?.email ?? tNav('perfil'),
+          roleLabel,
+        }}
+        centroLogo={centroLogo ? { url: centroLogo.logoUrl, name: centroLogo.nombre } : null}
+        profileHref={`/${locale}/profile`}
+        profileLabel={tNav('perfil')}
+        ariaLabel={tNav('aria_label')}
+      />
+      <main className="min-w-0 flex-1">
+        <div className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-8">{children}</div>
+      </main>
+    </div>
+  )
+}

@@ -175,7 +175,8 @@
       "perfil": "Perfil",
       "calendario": "Calendari",
       "menus": "Menús",
-      "mensajeria": "Missatgeria"
+      "mensajeria": "Missatgeria",
+      "recordatorios": "Recordatoris"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -371,7 +372,8 @@
       "dashboard": "Inici",
       "perfil": "Perfil",
       "calendario": "Calendari",
-      "mensajeria": "Missatgeria"
+      "mensajeria": "Missatgeria",
+      "recordatorios": "Recordatoris"
     },
     "dashboard": {
       "title": "Les meues aules",
@@ -396,7 +398,8 @@
       "dashboard": "Inici",
       "perfil": "Perfil",
       "calendario": "Calendari",
-      "mensajeria": "Missatgeria"
+      "mensajeria": "Missatgeria",
+      "recordatorios": "Recordatoris"
     },
     "dashboard": {
       "title": "Els meus xiquets",
@@ -1202,6 +1205,66 @@
       "permiso_denegado": "Has rebutjat les notificacions. Per activar-les, ajusta-ho en el teu navegador.",
       "suscripcion_fallo": "No hem pogut activar les notificacions. Torna-ho a provar.",
       "no_autorizado": "Sessió caducada. Torna a iniciar sessió."
+    }
+  },
+  "recordatorios": {
+    "titulo_pagina": "Recordatoris",
+    "empty": "No tens recordatoris. Crea'n un amb el botó de dalt.",
+    "empty_pendientes": "No hi ha recordatoris pendents.",
+    "empty_completados": "Encara no hi ha recordatoris completats.",
+    "nuevo": "Nou recordatori",
+    "pendientes": "Pendents",
+    "completados": "Completats",
+    "filtros_aria": "Filtrar per destinatari",
+    "filtros": {
+      "todos": "Tots"
+    },
+    "form": {
+      "destino": "Destinatari",
+      "nino": "Xiquet",
+      "nino_placeholder": "Selecciona un xiquet",
+      "titulo": "Títol",
+      "titulo_placeholder": "Ex. portar la cartilla de vacunes",
+      "descripcion": "Descripció (opcional)",
+      "vencimiento": "Data límit (opcional)"
+    },
+    "acciones": {
+      "crear": "Crear recordatori",
+      "creando": "Creant…",
+      "completar": "Fet",
+      "anular": "Anul·lar",
+      "confirmar_anular": "Vols anul·lar este recordatori? Es marcarà com a anul·lat.",
+      "creado_toast": "Recordatori creat",
+      "completado_toast": "Recordatori completat",
+      "anulado_toast": "Recordatori anul·lat"
+    },
+    "destinos": {
+      "familia": "Per a la família",
+      "equipo": "Per a l'equip del xiquet",
+      "direccion": "Per a direcció",
+      "personal": "Per a mi"
+    },
+    "estados": {
+      "vence": "Venç {fecha}",
+      "completado_por": "Fet · {nombre}",
+      "creado_por": "De {nombre}",
+      "anulado": "Anul·lat"
+    },
+    "validation": {
+      "titulo_vacio": "El títol no pot estar buit.",
+      "titulo_largo": "El títol no pot superar els 200 caràcters.",
+      "descripcion_larga": "La descripció no pot superar els 1000 caràcters.",
+      "nino_requerido": "Selecciona el xiquet.",
+      "nino_no_permitido": "Este destinatari no porta xiquet associat."
+    },
+    "errors": {
+      "no_autorizado": "No tens permís per a esta acció.",
+      "creacion_fallo": "No s'ha pogut guardar. Torna-ho a provar.",
+      "ya_completado": "Este recordatori ja estava completat.",
+      "ventana_anulacion_expirada": "Només pots anul·lar durant els primers 5 minuts.",
+      "ya_anulado": "Este recordatori ja s'ha anul·lat.",
+      "nino_no_encontrado": "No s'ha trobat el xiquet.",
+      "sin_centro": "No s'ha pogut determinar el teu centre."
     }
   }
 }

@@ -1,5 +1,6 @@
 import {
   BabyIcon,
+  BellIcon,
   BookOpenIcon,
   Building2Icon,
   CalendarDaysIcon,
@@ -45,6 +46,7 @@ export async function buildSidebarItems(
         icon: <MessageCircleIcon />,
         trailing: badge,
       },
+      { href: `/${locale}/reminders`, label: t('recordatorios'), icon: <BellIcon /> },
       { href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> },
     ]
   }
@@ -64,10 +66,12 @@ export async function buildSidebarItems(
         icon: <MessageCircleIcon />,
         trailing: badge,
       },
+      { href: `/${locale}/reminders`, label: t('recordatorios'), icon: <BellIcon /> },
     ]
   }
 
-  // tutor_legal y autorizado comparten layout familia.
+  // tutor_legal y autorizado comparten layout familia. NO incluyen
+  // "Recordatorios": el módulo es solo admin/profe en el MVP (hotfix #44).
   const t = await getTranslations('family.nav')
   return [
     { href: `/${locale}/family`, label: t('dashboard'), icon: <HomeIcon /> },
