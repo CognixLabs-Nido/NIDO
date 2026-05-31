@@ -4,20 +4,22 @@ import { VENTANA_ANULACION_MS } from './constants'
 type RolUsuario = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
 
 /**
- * Destinos que un rol puede CREAR (coherente con la RLS de INSERT de F6-A):
- *  - admin/profe → `familia` (centro→familia), `direccion`, `personal`.
- *    No `equipo`: la RLS de equipo exige `es_tutor_de(nino)`.
- *  - tutor_legal/autorizado → `equipo` (familia→centro), `direccion`, `personal`.
- *    No `familia`: la RLS de familia exige admin/profe.
+ * Destinos que un rol puede CREAR. Hotfix #44: el MVP de recordatorios es solo
+ * para admin/profe; tutor_legal/autorizado no usan el módulo (sidebar oculto +
+ * guard en la ruta), así que devuelven lista vacía.
  *
- * El autorizado sin `puede_recibir_mensajes` verá la opción pero la action /
- * RLS la rechazará (igual que en mensajería). El gating fino vive en BD.
+ *  - admin/profe → `familia` (centro→familia) y `personal` (nota propia).
+ *    Se omite `direccion` por decisión de producto (admin ES la dirección;
+ *    profe no escala a admin por este canal). NO se ofrece `equipo`: su RLS de
+ *    INSERT exige `es_tutor_de(nino)` — habilitarlo para admin/profe es un
+ *    cambio de modelo diferido a F6-C (granularidad fina de destinatarios).
+ *  - tutor_legal/autorizado → `[]`: fuera del MVP de recordatorios.
  */
 export function destinosParaRol(rol: RolUsuario): RecordatorioDestinatarioInput[] {
   if (rol === 'admin' || rol === 'profe') {
-    return ['familia', 'direccion', 'personal']
+    return ['familia', 'personal']
   }
-  return ['equipo', 'direccion', 'personal']
+  return []
 }
 
 /** Solo familia/equipo van asociados a un niño (CHECK estructural de F6-A). */

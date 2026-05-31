@@ -6,14 +6,14 @@ import { datetimeLocalAIso, destinosParaRol, puedeAnular, requiereNino } from '.
 const USER = 'user-1'
 
 describe('destinosParaRol', () => {
-  it('admin/profe pueden crear familia/direccion/personal (no equipo)', () => {
-    expect(destinosParaRol('admin')).toEqual(['familia', 'direccion', 'personal'])
-    expect(destinosParaRol('profe')).toEqual(['familia', 'direccion', 'personal'])
+  it('admin/profe pueden crear familia/personal (no equipo ni direccion en MVP)', () => {
+    expect(destinosParaRol('admin')).toEqual(['familia', 'personal'])
+    expect(destinosParaRol('profe')).toEqual(['familia', 'personal'])
   })
 
-  it('tutor/autorizado pueden crear equipo/direccion/personal (no familia)', () => {
-    expect(destinosParaRol('tutor_legal')).toEqual(['equipo', 'direccion', 'personal'])
-    expect(destinosParaRol('autorizado')).toEqual(['equipo', 'direccion', 'personal'])
+  it('tutor/autorizado no usan recordatorios en el MVP → lista vacía', () => {
+    expect(destinosParaRol('tutor_legal')).toEqual([])
+    expect(destinosParaRol('autorizado')).toEqual([])
   })
 })
 

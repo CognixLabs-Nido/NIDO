@@ -21,16 +21,16 @@ export default async function RemindersPage({ params }: PageProps) {
   if (!centroId) redirect(`/${locale}/login`)
 
   const rolRaw = await getRolEnCentro(centroId)
-  if (
-    !rolRaw ||
-    (rolRaw !== 'admin' &&
-      rolRaw !== 'profe' &&
-      rolRaw !== 'tutor_legal' &&
-      rolRaw !== 'autorizado')
-  ) {
+  // Recordatorios es solo admin/profe en el MVP (hotfix #44). El guard del
+  // layout ya redirige tutor/autorizado; se repite aquí por defensa en
+  // profundidad ante acceso directo a la ruta de la page.
+  if (rolRaw === 'tutor_legal' || rolRaw === 'autorizado') {
+    redirect(`/${locale}/family`)
+  }
+  if (!rolRaw || (rolRaw !== 'admin' && rolRaw !== 'profe')) {
     redirect(`/${locale}/forbidden`)
   }
-  const rol = rolRaw as 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
+  const rol = rolRaw as 'admin' | 'profe'
 
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()

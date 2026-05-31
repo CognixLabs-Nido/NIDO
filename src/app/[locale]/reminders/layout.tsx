@@ -15,9 +15,10 @@ interface LayoutProps {
 }
 
 /**
- * Layout transversal de recordatorios. Accesible para los 4 roles
- * (admin/profe/tutor_legal/autorizado), como `/messages`. La sidebar refleja
- * el rol del usuario para que la navegación sea coherente al volver a su área.
+ * Layout transversal de recordatorios. En el MVP (hotfix #44) el módulo es
+ * solo para admin/profe; tutor_legal y autorizado se redirigen a su área
+ * familia (la entrada de sidebar tampoco se les muestra). La sidebar refleja
+ * el rol para que la navegación sea coherente al volver a su área.
  */
 export default async function RemindersLayout({ children, params }: LayoutProps) {
   const { locale } = await params
@@ -28,16 +29,14 @@ export default async function RemindersLayout({ children, params }: LayoutProps)
   if (!centroId) redirect(`/${locale}/login`)
 
   const rolRaw = await getRolEnCentro(centroId)
-  if (
-    !rolRaw ||
-    (rolRaw !== 'admin' &&
-      rolRaw !== 'profe' &&
-      rolRaw !== 'tutor_legal' &&
-      rolRaw !== 'autorizado')
-  ) {
+  // tutor_legal/autorizado no acceden a recordatorios en el MVP → su home.
+  if (rolRaw === 'tutor_legal' || rolRaw === 'autorizado') {
+    redirect(`/${locale}/family`)
+  }
+  if (!rolRaw || (rolRaw !== 'admin' && rolRaw !== 'profe')) {
     redirect(`/${locale}/forbidden`)
   }
-  const rol = rolRaw as 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
+  const rol = rolRaw as 'admin' | 'profe'
 
   const user = await getCurrentUser()
   const centroLogo = await getCentroLogo(centroId)
@@ -45,14 +44,7 @@ export default async function RemindersLayout({ children, params }: LayoutProps)
 
   const items = await buildSidebarItems(rol, locale, <MessagingBadge initialTotal={unread} />)
 
-  const roleLabel =
-    rol === 'admin'
-      ? tRoles('admin')
-      : rol === 'profe'
-        ? tRoles('profe')
-        : rol === 'autorizado'
-          ? tRoles('autorizado')
-          : tRoles('tutor_legal')
+  const roleLabel = rol === 'admin' ? tRoles('admin') : tRoles('profe')
 
   return (
     <div className="bg-background flex min-h-[100dvh] flex-col md:flex-row">

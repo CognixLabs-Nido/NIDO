@@ -57,4 +57,19 @@ test.describe('F6 — admin crea recordatorio (skip por defecto)', () => {
 
     await expect(page.getByText(titulo)).toBeVisible()
   })
+
+  /**
+   * Guard del MVP (hotfix #44): un tutor/autorizado que entra por URL directa a
+   * `/reminders` es redirigido a su área familia. Requiere E2E_TUTOR_*.
+   */
+  test('tutor en /reminders es redirigido a /family', async ({ page }) => {
+    await page.goto('/es/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_TUTOR_EMAIL!)
+    await page.getByLabel(/contraseña|password/i).fill(process.env.E2E_TUTOR_PASSWORD!)
+    await page.getByRole('button', { name: /entrar|sign in/i }).click()
+    await page.waitForURL(/\/es\/family/)
+
+    await page.goto('/es/reminders')
+    await page.waitForURL(/\/es\/family/)
+  })
 })
