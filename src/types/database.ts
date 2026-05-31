@@ -1338,6 +1338,93 @@ export type Database = {
           },
         ]
       }
+      recordatorios: {
+        Row: {
+          centro_id: string
+          completado_en: string | null
+          completado_por: string | null
+          created_at: string
+          creado_por: string
+          descripcion: string | null
+          destinatario: Database['public']['Enums']['recordatorio_destinatario']
+          erroneo: boolean
+          id: string
+          nino_id: string | null
+          titulo: string
+          updated_at: string
+          usuario_destinatario_id: string | null
+          vencimiento: string | null
+        }
+        Insert: {
+          centro_id: string
+          completado_en?: string | null
+          completado_por?: string | null
+          created_at?: string
+          creado_por: string
+          descripcion?: string | null
+          destinatario: Database['public']['Enums']['recordatorio_destinatario']
+          erroneo?: boolean
+          id?: string
+          nino_id?: string | null
+          titulo: string
+          updated_at?: string
+          usuario_destinatario_id?: string | null
+          vencimiento?: string | null
+        }
+        Update: {
+          centro_id?: string
+          completado_en?: string | null
+          completado_por?: string | null
+          created_at?: string
+          creado_por?: string
+          descripcion?: string | null
+          destinatario?: Database['public']['Enums']['recordatorio_destinatario']
+          erroneo?: boolean
+          id?: string
+          nino_id?: string | null
+          titulo?: string
+          updated_at?: string
+          usuario_destinatario_id?: string | null
+          vencimiento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'recordatorios_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recordatorios_completado_por_fkey'
+            columns: ['completado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recordatorios_creado_por_fkey'
+            columns: ['creado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recordatorios_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recordatorios_usuario_destinatario_id_fkey'
+            columns: ['usuario_destinatario_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       roles_usuario: {
         Row: {
           centro_id: string
@@ -1647,6 +1734,7 @@ export type Database = {
         | 'hermano'
         | 'cuidadora'
         | 'otro'
+      recordatorio_destinatario: 'familia' | 'equipo' | 'direccion' | 'personal'
       tipo_alimentacion:
         | 'omnivora'
         | 'vegetariana'
@@ -1825,6 +1913,7 @@ export const Constants = {
         'cuidadora',
         'otro',
       ],
+      recordatorio_destinatario: ['familia', 'equipo', 'direccion', 'personal'],
       tipo_alimentacion: [
         'omnivora',
         'vegetariana',
