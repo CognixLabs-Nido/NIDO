@@ -1,5 +1,6 @@
 import {
   BabyIcon,
+  BellIcon,
   BookOpenIcon,
   Building2Icon,
   CalendarDaysIcon,
@@ -45,6 +46,7 @@ export async function buildSidebarItems(
         icon: <MessageCircleIcon />,
         trailing: badge,
       },
+      { href: `/${locale}/reminders`, label: t('recordatorios'), icon: <BellIcon /> },
       { href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> },
     ]
   }
@@ -64,6 +66,7 @@ export async function buildSidebarItems(
         icon: <MessageCircleIcon />,
         trailing: badge,
       },
+      { href: `/${locale}/reminders`, label: t('recordatorios'), icon: <BellIcon /> },
     ]
   }
 
@@ -78,5 +81,6 @@ export async function buildSidebarItems(
       icon: <MessageCircleIcon />,
       trailing: badge,
     },
+    { href: `/${locale}/reminders`, label: t('recordatorios'), icon: <BellIcon /> },
   ]
 }
