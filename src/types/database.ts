@@ -1338,6 +1338,93 @@ export type Database = {
           },
         ]
       }
+      recordatorios: {
+        Row: {
+          centro_id: string
+          completado_en: string | null
+          completado_por: string | null
+          creado_por: string
+          created_at: string
+          descripcion: string | null
+          destinatario: Database['public']['Enums']['recordatorio_destinatario']
+          erroneo: boolean
+          id: string
+          nino_id: string | null
+          titulo: string
+          updated_at: string
+          usuario_destinatario_id: string | null
+          vencimiento: string | null
+        }
+        Insert: {
+          centro_id: string
+          completado_en?: string | null
+          completado_por?: string | null
+          creado_por: string
+          created_at?: string
+          descripcion?: string | null
+          destinatario: Database['public']['Enums']['recordatorio_destinatario']
+          erroneo?: boolean
+          id?: string
+          nino_id?: string | null
+          titulo: string
+          updated_at?: string
+          usuario_destinatario_id?: string | null
+          vencimiento?: string | null
+        }
+        Update: {
+          centro_id?: string
+          completado_en?: string | null
+          completado_por?: string | null
+          creado_por?: string
+          created_at?: string
+          descripcion?: string | null
+          destinatario?: Database['public']['Enums']['recordatorio_destinatario']
+          erroneo?: boolean
+          id?: string
+          nino_id?: string | null
+          titulo?: string
+          updated_at?: string
+          usuario_destinatario_id?: string | null
+          vencimiento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'recordatorios_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recordatorios_completado_por_fkey'
+            columns: ['completado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recordatorios_creado_por_fkey'
+            columns: ['creado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recordatorios_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recordatorios_usuario_destinatario_id_fkey'
+            columns: ['usuario_destinatario_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       roles_usuario: {
         Row: {
           centro_id: string
@@ -1647,6 +1734,7 @@ export type Database = {
         | 'hermano'
         | 'cuidadora'
         | 'otro'
+      recordatorio_destinatario: 'familia' | 'equipo' | 'direccion' | 'personal'
       tipo_alimentacion:
         | 'omnivora'
         | 'vegetariana'
@@ -1659,7 +1747,6 @@ export type Database = {
       tipo_biberon: 'materna' | 'formula' | 'agua' | 'infusion' | 'zumo'
       tipo_conversacion: 'profe_familia' | 'admin_familia'
       tipo_deposicion: 'pipi' | 'caca' | 'mixto'
-      tipo_personal_aula: 'coordinadora' | 'profesora' | 'tecnico' | 'apoyo'
       tipo_dia_centro:
         | 'lectivo'
         | 'festivo'
@@ -1668,6 +1755,7 @@ export type Database = {
         | 'escuela_navidad'
         | 'jornada_reducida'
         | 'cerrado'
+      tipo_personal_aula: 'coordinadora' | 'profesora' | 'tecnico' | 'apoyo'
       tipo_plato_comida: 'primer_plato' | 'segundo_plato' | 'postre' | 'unico'
       tipo_vinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado'
       user_role: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
@@ -1825,6 +1913,7 @@ export const Constants = {
         'cuidadora',
         'otro',
       ],
+      recordatorio_destinatario: ['familia', 'equipo', 'direccion', 'personal'],
       tipo_alimentacion: [
         'omnivora',
         'vegetariana',
@@ -1838,7 +1927,6 @@ export const Constants = {
       tipo_biberon: ['materna', 'formula', 'agua', 'infusion', 'zumo'],
       tipo_conversacion: ['profe_familia', 'admin_familia'],
       tipo_deposicion: ['pipi', 'caca', 'mixto'],
-      tipo_personal_aula: ['coordinadora', 'profesora', 'tecnico', 'apoyo'],
       tipo_dia_centro: [
         'lectivo',
         'festivo',
@@ -1848,6 +1936,7 @@ export const Constants = {
         'jornada_reducida',
         'cerrado',
       ],
+      tipo_personal_aula: ['coordinadora', 'profesora', 'tecnico', 'apoyo'],
       tipo_plato_comida: ['primer_plato', 'segundo_plato', 'postre', 'unico'],
       tipo_vinculo: ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'],
       user_role: ['admin', 'profe', 'tutor_legal', 'autorizado'],
