@@ -175,7 +175,8 @@
       "perfil": "Perfil",
       "calendario": "Calendario",
       "menus": "Menús",
-      "mensajeria": "Mensajería"
+      "mensajeria": "Mensajería",
+      "recordatorios": "Recordatorios"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -371,7 +372,8 @@
       "dashboard": "Inicio",
       "perfil": "Perfil",
       "calendario": "Calendario",
-      "mensajeria": "Mensajería"
+      "mensajeria": "Mensajería",
+      "recordatorios": "Recordatorios"
     },
     "dashboard": {
       "title": "Mis aulas",
@@ -396,7 +398,8 @@
       "dashboard": "Inicio",
       "perfil": "Perfil",
       "calendario": "Calendario",
-      "mensajeria": "Mensajería"
+      "mensajeria": "Mensajería",
+      "recordatorios": "Recordatorios"
     },
     "dashboard": {
       "title": "Mis niños",
@@ -1202,6 +1205,66 @@
       "permiso_denegado": "Has rechazado las notificaciones. Para activarlas, ajústalo en tu navegador.",
       "suscripcion_fallo": "No hemos podido activar las notificaciones. Inténtalo de nuevo.",
       "no_autorizado": "Sesión expirada. Vuelve a iniciar sesión."
+    }
+  },
+  "recordatorios": {
+    "titulo_pagina": "Recordatorios",
+    "empty": "No tienes recordatorios. Crea uno con el botón de arriba.",
+    "empty_pendientes": "No hay recordatorios pendientes.",
+    "empty_completados": "Aún no hay recordatorios completados.",
+    "nuevo": "Nuevo recordatorio",
+    "pendientes": "Pendientes",
+    "completados": "Completados",
+    "filtros_aria": "Filtrar por destino",
+    "filtros": {
+      "todos": "Todos"
+    },
+    "form": {
+      "destino": "Destino",
+      "nino": "Niño",
+      "nino_placeholder": "Selecciona un niño",
+      "titulo": "Título",
+      "titulo_placeholder": "Ej. traer cartilla de vacunas",
+      "descripcion": "Descripción (opcional)",
+      "vencimiento": "Fecha límite (opcional)"
+    },
+    "acciones": {
+      "crear": "Crear recordatorio",
+      "creando": "Creando…",
+      "completar": "Hecho",
+      "anular": "Anular",
+      "confirmar_anular": "¿Anular este recordatorio? Se marcará como anulado.",
+      "creado_toast": "Recordatorio creado",
+      "completado_toast": "Recordatorio completado",
+      "anulado_toast": "Recordatorio anulado"
+    },
+    "destinos": {
+      "familia": "Para la familia",
+      "equipo": "Para el equipo del niño",
+      "direccion": "Para dirección",
+      "personal": "Para mí"
+    },
+    "estados": {
+      "vence": "Vence {fecha}",
+      "completado_por": "Hecho · {nombre}",
+      "creado_por": "De {nombre}",
+      "anulado": "Anulado"
+    },
+    "validation": {
+      "titulo_vacio": "El título no puede estar vacío.",
+      "titulo_largo": "El título no puede exceder 200 caracteres.",
+      "descripcion_larga": "La descripción no puede exceder 1000 caracteres.",
+      "nino_requerido": "Selecciona el niño.",
+      "nino_no_permitido": "Este destino no lleva niño asociado."
+    },
+    "errors": {
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "creacion_fallo": "No se pudo guardar. Inténtalo de nuevo.",
+      "ya_completado": "Este recordatorio ya estaba completado.",
+      "ventana_anulacion_expirada": "Solo puedes anular en los primeros 5 minutos.",
+      "ya_anulado": "Este recordatorio ya fue anulado.",
+      "nino_no_encontrado": "No se encontró el niño.",
+      "sin_centro": "No se pudo determinar tu centro."
     }
   }
 }

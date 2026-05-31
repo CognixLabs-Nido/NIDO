@@ -175,7 +175,8 @@
       "perfil": "Profile",
       "calendario": "Calendar",
       "menus": "Menus",
-      "mensajeria": "Messages"
+      "mensajeria": "Messages",
+      "recordatorios": "Reminders"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -371,7 +372,8 @@
       "dashboard": "Home",
       "perfil": "Profile",
       "calendario": "Calendar",
-      "mensajeria": "Messages"
+      "mensajeria": "Messages",
+      "recordatorios": "Reminders"
     },
     "dashboard": {
       "title": "My classrooms",
@@ -396,7 +398,8 @@
       "dashboard": "Home",
       "perfil": "Profile",
       "calendario": "Calendar",
-      "mensajeria": "Messages"
+      "mensajeria": "Messages",
+      "recordatorios": "Reminders"
     },
     "dashboard": {
       "title": "My children",
@@ -1202,6 +1205,66 @@
       "permiso_denegado": "You've refused notifications. To enable them, change it in your browser.",
       "suscripcion_fallo": "We couldn't enable notifications. Please try again.",
       "no_autorizado": "Session expired. Please sign in again."
+    }
+  },
+  "recordatorios": {
+    "titulo_pagina": "Reminders",
+    "empty": "You have no reminders. Create one with the button above.",
+    "empty_pendientes": "No pending reminders.",
+    "empty_completados": "No completed reminders yet.",
+    "nuevo": "New reminder",
+    "pendientes": "Pending",
+    "completados": "Completed",
+    "filtros_aria": "Filter by target",
+    "filtros": {
+      "todos": "All"
+    },
+    "form": {
+      "destino": "Target",
+      "nino": "Child",
+      "nino_placeholder": "Select a child",
+      "titulo": "Title",
+      "titulo_placeholder": "e.g. bring vaccination card",
+      "descripcion": "Description (optional)",
+      "vencimiento": "Due date (optional)"
+    },
+    "acciones": {
+      "crear": "Create reminder",
+      "creando": "Creating…",
+      "completar": "Done",
+      "anular": "Void",
+      "confirmar_anular": "Void this reminder? It will be marked as voided.",
+      "creado_toast": "Reminder created",
+      "completado_toast": "Reminder completed",
+      "anulado_toast": "Reminder voided"
+    },
+    "destinos": {
+      "familia": "For the family",
+      "equipo": "For the child's team",
+      "direccion": "For the office",
+      "personal": "For me"
+    },
+    "estados": {
+      "vence": "Due {fecha}",
+      "completado_por": "Done · {nombre}",
+      "creado_por": "From {nombre}",
+      "anulado": "Voided"
+    },
+    "validation": {
+      "titulo_vacio": "Title cannot be empty.",
+      "titulo_largo": "Title cannot exceed 200 characters.",
+      "descripcion_larga": "Description cannot exceed 1000 characters.",
+      "nino_requerido": "Select the child.",
+      "nino_no_permitido": "This target has no associated child."
+    },
+    "errors": {
+      "no_autorizado": "You don't have permission for this action.",
+      "creacion_fallo": "Could not save. Please try again.",
+      "ya_completado": "This reminder was already completed.",
+      "ventana_anulacion_expirada": "You can only void within the first 5 minutes.",
+      "ya_anulado": "This reminder was already voided.",
+      "nino_no_encontrado": "Child not found.",
+      "sin_centro": "Could not determine your centre."
     }
   }
 }
