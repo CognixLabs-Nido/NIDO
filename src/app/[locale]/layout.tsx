@@ -2,6 +2,7 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import { notFound } from 'next/navigation'
 
+import { ServiceWorkerRegister } from '@/features/push/components/ServiceWorkerRegister'
 import { routing } from '@/i18n/routing'
 
 import type { Metadata } from 'next'
@@ -53,6 +54,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={`${jakarta.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
+        <ServiceWorkerRegister />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>
