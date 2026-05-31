@@ -1343,8 +1343,8 @@ export type Database = {
           centro_id: string
           completado_en: string | null
           completado_por: string | null
-          created_at: string
           creado_por: string
+          created_at: string
           descripcion: string | null
           destinatario: Database['public']['Enums']['recordatorio_destinatario']
           erroneo: boolean
@@ -1359,8 +1359,8 @@ export type Database = {
           centro_id: string
           completado_en?: string | null
           completado_por?: string | null
-          created_at?: string
           creado_por: string
+          created_at?: string
           descripcion?: string | null
           destinatario: Database['public']['Enums']['recordatorio_destinatario']
           erroneo?: boolean
@@ -1375,8 +1375,8 @@ export type Database = {
           centro_id?: string
           completado_en?: string | null
           completado_por?: string | null
-          created_at?: string
           creado_por?: string
+          created_at?: string
           descripcion?: string | null
           destinatario?: Database['public']['Enums']['recordatorio_destinatario']
           erroneo?: boolean
@@ -1747,7 +1747,6 @@ export type Database = {
       tipo_biberon: 'materna' | 'formula' | 'agua' | 'infusion' | 'zumo'
       tipo_conversacion: 'profe_familia' | 'admin_familia'
       tipo_deposicion: 'pipi' | 'caca' | 'mixto'
-      tipo_personal_aula: 'coordinadora' | 'profesora' | 'tecnico' | 'apoyo'
       tipo_dia_centro:
         | 'lectivo'
         | 'festivo'
@@ -1756,6 +1755,7 @@ export type Database = {
         | 'escuela_navidad'
         | 'jornada_reducida'
         | 'cerrado'
+      tipo_personal_aula: 'coordinadora' | 'profesora' | 'tecnico' | 'apoyo'
       tipo_plato_comida: 'primer_plato' | 'segundo_plato' | 'postre' | 'unico'
       tipo_vinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado'
       user_role: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
@@ -1927,7 +1927,6 @@ export const Constants = {
       tipo_biberon: ['materna', 'formula', 'agua', 'infusion', 'zumo'],
       tipo_conversacion: ['profe_familia', 'admin_familia'],
       tipo_deposicion: ['pipi', 'caca', 'mixto'],
-      tipo_personal_aula: ['coordinadora', 'profesora', 'tecnico', 'apoyo'],
       tipo_dia_centro: [
         'lectivo',
         'festivo',
@@ -1937,6 +1936,7 @@ export const Constants = {
         'jornada_reducida',
         'cerrado',
       ],
+      tipo_personal_aula: ['coordinadora', 'profesora', 'tecnico', 'apoyo'],
       tipo_plato_comida: ['primer_plato', 'segundo_plato', 'postre', 'unico'],
       tipo_vinculo: ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'],
       user_role: ['admin', 'profe', 'tutor_legal', 'autorizado'],
