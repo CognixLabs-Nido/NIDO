@@ -218,7 +218,7 @@ Para tu caso (un solo cole), la opción sensata es delegar Veri\*factu/fichaje a
 
 Dado tu perfil (programas, un solo cole, web + móvil) sigue siendo válido lo que comentamos:
 
-- **Frontend**: Next.js 15 (App Router) con PWA habilitada. Una sola base de código para web y móvil instalable.
+- **Frontend**: Next.js 16 (App Router) con PWA habilitada. Una sola base de código para web y móvil instalable.
 - **Backend / DB**: Supabase (auth, Postgres con RLS, storage para fotos, realtime para mensajería, Edge Functions para webhooks).
 - **Notificaciones push**: web push API (gratis) + opcional OneSignal/Firebase si quieres más control.
 - **UI**: Tailwind + shadcn/ui.

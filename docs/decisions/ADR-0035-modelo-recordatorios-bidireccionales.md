@@ -2,7 +2,7 @@
 
 ## Estado
 
-`proposed`
+`superseded` — superado por [ADR-0037](ADR-0037-modelo-granular-destinatarios-recordatorios.md) (modelo granular de 6 destinatarios, F6-C).
 
 **Fecha:** 2026-05-31
 **Autores:** Jovi Mibimbi + claude-code (Opus 4.8)

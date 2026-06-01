@@ -2,6 +2,8 @@
 
 Notas vivas de cosas que conocemos hoy pero se difieren a una fase futura. No es una lista exhaustiva ni un compromiso de fechas; cada entrada explica el "qué" y el "cuándo despierta" para que cuando llegue el momento sepamos por qué se dejó pendiente.
 
+> **Modelo de olas (scope-driven, sin deadline externo):** 1️⃣ producto web completo · 2️⃣ app nativa (iOS+Android) · 3️⃣ mejoras/diferenciación. Las fechas las controla el responsable; el alcance de Ola 1 es fijo. Ver `docs/specs/scope-ola-1.md`.
+
 ## Plan Ola 1 — reorganización post-Fase 3 (2026-05-15)
 
 Tras cerrar Fase 3 (agenda diaria), reorganizamos el resto de Ola 1 para reflejar dos aprendizajes:
@@ -34,8 +36,8 @@ Tras cerrar Fase 3 (agenda diaria), reorganizamos el resto de Ola 1 para refleja
 ### Impacto en duración total
 
 - **+6 h aprox** sobre el plan Ola 1 original.
-- Sigue factible para **septiembre 2026** sin recortar otras fases.
-- Las fases F5–F11 mantienen su scope y duración estimada.
+- Plan **scope-driven**: el alcance de Ola 1 es fijo y las fechas las decide el responsable (sin deadline externo).
+- Las fases F5–F11 mantienen su scope.
 
 > Cuando esta reorganización se acepte y empiece la implementación, hay que actualizar `docs/specs/scope-ola-1.md` (tabla numérica de fases) para incluir F4.5. No se toca aún para evitar fricción con specs ya escritas que referencian la numeración antigua.
 
@@ -71,8 +73,8 @@ Tras cerrar Fase 3 (agenda diaria), reorganizamos el resto de Ola 1 para refleja
 - **Datos pedagógicos en el wizard de alta** — _disparador: cuando la directora confirme que prefiere rellenarlos en el momento del alta y no más adelante_.
   Hoy el wizard `/admin/ninos/nuevo` crea solo datos personales + médicos + matrícula. La tab Pedagógico del detalle se rellena después. Si en la práctica el admin siempre tiene los datos pedagógicos al dar de alta, añadir paso 4 al wizard. Ver spec `pedagogical-data.md` §Alcance.
 
-- **Onboarding del primer admin desde la app** — _disparador: Ola 2 (multi-centro real)_.
-  Hoy el primer admin de un centro se siembra manualmente vía Supabase Dashboard (procedimiento en `docs/dev-setup.md`). Para que se puedan crear centros nuevos desde la propia app sin intervención manual, hace falta un flow de auto-onboarding con confirmación por email + assignment automático del primer admin.
+- **Onboarding del primer admin desde la app** — _disparador: Ola 3 (multi-centro real)_.
+  Hoy el primer admin de un centro se siembra manualmente vía Supabase Dashboard (procedimiento en `docs/dev-setup.md`). Para que se puedan crear centros nuevos desde la propia app sin intervención manual, hace falta un flow de auto-onboarding con confirmación por email + assignment automático del primer admin. (Nota: el **onboarding guiado** de usuarios dentro de un centro ya existente sube a **Ola 1**; esto es el auto-alta de centros nuevos, que es diferenciación posterior.)
 
 ## Datos administrativos
 

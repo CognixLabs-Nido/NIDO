@@ -21,7 +21,7 @@ Una sola escuela inicialmente (ANAIA, Valencia), arquitectura preparada para mul
 
 ## Stack
 
-Next.js 15 App Router · TypeScript strict · React 19 · Tailwind 4 · shadcn/ui · Supabase (Postgres + Auth + Storage + Realtime) · TanStack Query · React Hook Form + Zod · next-intl · Vitest + Playwright · Sentry.
+Next.js 16 App Router · TypeScript strict · React 19 · Tailwind 4 · shadcn/ui · Supabase (Postgres + Auth + Storage + Realtime) · TanStack Query · React Hook Form + Zod · next-intl · Vitest + Playwright · Sentry.
 
 ## Reglas operativas (no negociables)
 
