@@ -2,7 +2,7 @@
 
 ## Estado
 
-`proposed`
+`accepted` — vigente también bajo el modelo granular de [ADR-0037](ADR-0037-modelo-granular-destinatarios-recordatorios.md).
 
 **Fecha:** 2026-05-31
 **Autores:** Jovi Mibimbi + claude-code (Opus 4.8)

@@ -13,7 +13,7 @@ related_specs: [phase-5b-tabla-aulas-enriquecida.md, core-entities.md]
 
 ## Resumen ejecutivo
 
-Dar a la dirección del centro (Susana, directora de ANAIA, **no técnica**) una UI para asignar, reclasificar, mover y retirar personal de las aulas, sin depender del SQL Editor de Supabase. El backend (`tipo_personal_aula` ENUM + índice único de coordinadora) está listo desde el PR #34; falta la capa de interacción. **Bloqueante para el piloto de septiembre 2026.**
+Dar a la dirección del centro (Susana, directora de ANAIA, **no técnica**) una UI para asignar, reclasificar, mover y retirar personal de las aulas, sin depender del SQL Editor de Supabase. El backend (`tipo_personal_aula` ENUM + índice único de coordinadora) está listo desde el PR #34; falta la capa de interacción. **Bloqueante para el piloto (Ola 1).**
 
 ## Contexto y hallazgos de auditoría
 

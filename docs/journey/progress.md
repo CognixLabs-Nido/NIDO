@@ -730,3 +730,35 @@ Durante la validación del PR #40 se crearon **3 profes de prueba en ANAIA** que
 ### Cierre
 
 **Sprint pre-F6 cerrado.** Follow-ups acumulados consolidados en [`docs/follow-ups.md`](../follow-ups.md). Próxima fase: **F6 — Recordatorios bidireccionales (E)**.
+
+## Fase 6 — Recordatorios bidireccionales (E)
+
+**Fecha:** 2026-05-31 → 2026-06-01
+**Estado:** ✅ Cerrada (PRs #43–#47 mergeados).
+
+Sexta fase: recordatorios entre centro y familias (y personales del staff). Arrancó con un modelo simple (F6-A/B) y se **re-modeló a destinatarios granulares** en F6-C tras detectar que el modelo de 4 destinos no cubría los casos reales (recordatorio a un aula entera, a todo el centro, a un profe concreto). Incluye además un fix de push arrastrado de F5.5/F6 (registro eager del Service Worker).
+
+### PRs cerrados
+
+| PR      | Bloque | Descripción                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **#43** | F6-A   | `feat(recordatorios): backend recordatorios bidireccionales`. Tabla `recordatorios`, ENUM `recordatorio_destinatario` (4 valores iniciales), RLS, audit, Realtime. Migración aplicada vía SQL Editor (bug `SIGILL` del CLI). Ver **ADR-0035**, **ADR-0036**.                                                                                                                                                                                                                                               |
+| **#44** | F6-B   | `feat(recordatorios): UI + push + i18n`. Formulario, listado `/reminders`, badge de pendientes, cableado de push (`expandirDestinatariosRecordatorio`), i18n es/en/va.                                                                                                                                                                                                                                                                                                                                     |
+| **#45** | F6-C-2 | `fix(push): registrar Service Worker eager en layout raíz`. El SW solo se registraba dentro del flujo "Activar" de `/profile`; un usuario que nunca lo completaba no tenía SW vivo y `push_subscriptions` quedaba vacía. Ahora se registra proactivamente en cada carga. Surgió de la **auditoría comparativa MisterFC vs NIDO** del push.                                                                                                                                                                 |
+| **#46** | F6-C-1 | `feat(recordatorios): re-modelado granular de destinatarios`. ENUM a **6 valores** (`familia_individual`, `familias_aula`, `familias_centro`, `profe_individual`, `profes_centro`, `personal`), columna `aula_id`, RLS por destino, RPC `contar_recordatorios_pendientes()`. **admin/profe emisores; tutor/autorizado solo reciben** (revierte el botón de crear que #44 dio a tutor). Migración destructiva (D1, sin piloto arrancado) + fix `personal` solo staff. Ver **ADR-0037** (supera a ADR-0035). |
+| **#47** | F6-C-3 | `feat(recordatorios): entry points contextuales niño/aula`. Crear recordatorio desde el contexto de un niño o un aula, prerelleno del destino.                                                                                                                                                                                                                                                                                                                                                             |
+
+### Decisiones (ADRs)
+
+- **ADR-0035 — Modelo de recordatorios bidireccionales** (`superseded` por ADR-0037): tabla propia con ENUM de destino de 4 valores. Superado por el modelo granular de F6-C.
+- **ADR-0036 — Completar recordatorio idempotente** (vigente): idempotencia y race-safety vía `UPDATE … WHERE completado_en IS NULL` + `.select().maybeSingle()` (gotcha "USING falso → 0 filas"). Sigue aplicando en el modelo granular.
+- **ADR-0037 — Modelo granular de destinatarios** (`accepted`, supera a ADR-0035): 6 destinos, RLS por destino, badge por destinatario directo, `puede_recibir_mensajes` respetado en la entrega push pero no en la visibilidad in-app de broadcasts (trade-off documentado).
+
+### Aprendizaje transversal
+
+- **Re-modelar antes del piloto sale barato.** La migración de F6-C fue destructiva (drop+recreate) sin coste real porque no hay datos de producción. La regla de inmutabilidad de migraciones aplica **una vez** que el piloto arranca.
+- **El bug del push no era de recordatorios.** La auditoría comparativa con MisterFC reveló que el SW solo se registraba en el flujo de opt-in; el fix (#45) es transversal a todo el push, no solo a F6. La causa raíz operativa (VAPID en Vercel) la diagnostica el responsable aparte.
+
+### Cierre
+
+**F6 oficialmente cerrada.** Push-a-device queda marcado como **bloqueante temprano de Ola 1** (antes/junto a F7). Próxima fase: **F7 — Calendario + eventos + confirmaciones (lean)**; la reserva de tutorías se difiere a Ola 3 (ver `docs/specs/scope-ola-1.md`).
