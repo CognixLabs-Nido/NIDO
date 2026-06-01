@@ -1340,6 +1340,7 @@ export type Database = {
       }
       recordatorios: {
         Row: {
+          aula_id: string | null
           centro_id: string
           completado_en: string | null
           completado_por: string | null
@@ -1356,6 +1357,7 @@ export type Database = {
           vencimiento: string | null
         }
         Insert: {
+          aula_id?: string | null
           centro_id: string
           completado_en?: string | null
           completado_por?: string | null
@@ -1372,6 +1374,7 @@ export type Database = {
           vencimiento?: string | null
         }
         Update: {
+          aula_id?: string | null
           centro_id?: string
           completado_en?: string | null
           completado_por?: string | null
@@ -1388,6 +1391,13 @@ export type Database = {
           vencimiento?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: 'recordatorios_aula_id_fkey'
+            columns: ['aula_id']
+            isOneToOne: false
+            referencedRelation: 'aulas'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'recordatorios_centro_id_fkey'
             columns: ['centro_id']
@@ -1613,12 +1623,15 @@ export type Database = {
       }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
       centro_de_plantilla: { Args: { p_plantilla_id: string }; Returns: string }
+      contar_recordatorios_pendientes: { Args: never; Returns: number }
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
       es_profe_de_aula: { Args: { p_aula_id: string }; Returns: boolean }
       es_profe_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
+      es_profe_en_centro: { Args: { p_centro_id: string }; Returns: boolean }
       es_tutor_de: { Args: { p_nino_id: string }; Returns: boolean }
+      es_tutor_en_aula: { Args: { p_aula_id: string }; Returns: boolean }
       es_tutor_en_centro: {
         Args: { p_centro_id: string; p_tutor_id: string }
         Returns: boolean
@@ -1734,7 +1747,13 @@ export type Database = {
         | 'hermano'
         | 'cuidadora'
         | 'otro'
-      recordatorio_destinatario: 'familia' | 'equipo' | 'direccion' | 'personal'
+      recordatorio_destinatario:
+        | 'familia_individual'
+        | 'familias_aula'
+        | 'familias_centro'
+        | 'profe_individual'
+        | 'profes_centro'
+        | 'personal'
       tipo_alimentacion:
         | 'omnivora'
         | 'vegetariana'
@@ -1913,7 +1932,14 @@ export const Constants = {
         'cuidadora',
         'otro',
       ],
-      recordatorio_destinatario: ['familia', 'equipo', 'direccion', 'personal'],
+      recordatorio_destinatario: [
+        'familia_individual',
+        'familias_aula',
+        'familias_centro',
+        'profe_individual',
+        'profes_centro',
+        'personal',
+      ],
       tipo_alimentacion: [
         'omnivora',
         'vegetariana',
