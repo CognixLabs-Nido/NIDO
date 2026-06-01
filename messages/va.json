@@ -1226,7 +1226,11 @@
       "titulo": "Títol",
       "titulo_placeholder": "Ex. portar la cartilla de vacunes",
       "descripcion": "Descripció (opcional)",
-      "vencimiento": "Data límit (opcional)"
+      "vencimiento": "Data límit (opcional)",
+      "aula": "Aula",
+      "aula_placeholder": "Selecciona una aula",
+      "profe": "Profesora",
+      "profe_placeholder": "Selecciona una profesora"
     },
     "acciones": {
       "crear": "Crear recordatori",
@@ -1239,9 +1243,11 @@
       "anulado_toast": "Recordatori anul·lat"
     },
     "destinos": {
-      "familia": "Per a la família",
-      "equipo": "Per a l'equip del xiquet",
-      "direccion": "Per a direcció",
+      "familia_individual": "Una família (per xiquet)",
+      "familias_aula": "Totes les famílies d’una aula",
+      "familias_centro": "Totes les famílies del centre",
+      "profe_individual": "Una profesora",
+      "profes_centro": "Totes les profesores",
       "personal": "Per a mi"
     },
     "estados": {
@@ -1255,7 +1261,11 @@
       "titulo_largo": "El títol no pot superar els 200 caràcters.",
       "descripcion_larga": "La descripció no pot superar els 1000 caràcters.",
       "nino_requerido": "Selecciona el xiquet.",
-      "nino_no_permitido": "Este destinatari no porta xiquet associat."
+      "nino_no_permitido": "Este destinatari no porta xiquet associat.",
+      "aula_requerida": "Selecciona l’aula.",
+      "aula_no_permitida": "Este destinatari no porta aula associada.",
+      "profe_requerida": "Selecciona la profesora.",
+      "usuario_no_permitido": "Este destinatari no porta usuari associat."
     },
     "errors": {
       "no_autorizado": "No tens permís per a esta acció.",
@@ -1264,7 +1274,10 @@
       "ventana_anulacion_expirada": "Només pots anul·lar durant els primers 5 minuts.",
       "ya_anulado": "Este recordatori ja s'ha anul·lat.",
       "nino_no_encontrado": "No s'ha trobat el xiquet.",
-      "sin_centro": "No s'ha pogut determinar el teu centre."
-    }
+      "sin_centro": "No s'ha pogut determinar el teu centre.",
+      "aula_no_encontrada": "No s’ha trobat l’aula."
+    },
+    "badge_aria": "{n} recordatoris pendents",
+    "empty_solo_lectura": "No tens recordatoris. Ací veuràs els que t’envien."
   }
 }

@@ -1226,7 +1226,11 @@
       "titulo": "Título",
       "titulo_placeholder": "Ej. traer cartilla de vacunas",
       "descripcion": "Descripción (opcional)",
-      "vencimiento": "Fecha límite (opcional)"
+      "vencimiento": "Fecha límite (opcional)",
+      "aula": "Aula",
+      "aula_placeholder": "Selecciona un aula",
+      "profe": "Profesora",
+      "profe_placeholder": "Selecciona una profesora"
     },
     "acciones": {
       "crear": "Crear recordatorio",
@@ -1239,9 +1243,11 @@
       "anulado_toast": "Recordatorio anulado"
     },
     "destinos": {
-      "familia": "Para la familia",
-      "equipo": "Para el equipo del niño",
-      "direccion": "Para dirección",
+      "familia_individual": "Una familia (por niño)",
+      "familias_aula": "Todas las familias de un aula",
+      "familias_centro": "Todas las familias del centro",
+      "profe_individual": "Una profesora",
+      "profes_centro": "Todas las profesoras",
       "personal": "Para mí"
     },
     "estados": {
@@ -1255,7 +1261,11 @@
       "titulo_largo": "El título no puede exceder 200 caracteres.",
       "descripcion_larga": "La descripción no puede exceder 1000 caracteres.",
       "nino_requerido": "Selecciona el niño.",
-      "nino_no_permitido": "Este destino no lleva niño asociado."
+      "nino_no_permitido": "Este destino no lleva niño asociado.",
+      "aula_requerida": "Selecciona el aula.",
+      "aula_no_permitida": "Este destino no lleva aula asociada.",
+      "profe_requerida": "Selecciona la profesora.",
+      "usuario_no_permitido": "Este destino no lleva usuario asociado."
     },
     "errors": {
       "no_autorizado": "No tienes permiso para esta acción.",
@@ -1264,7 +1274,10 @@
       "ventana_anulacion_expirada": "Solo puedes anular en los primeros 5 minutos.",
       "ya_anulado": "Este recordatorio ya fue anulado.",
       "nino_no_encontrado": "No se encontró el niño.",
-      "sin_centro": "No se pudo determinar tu centro."
-    }
+      "sin_centro": "No se pudo determinar tu centro.",
+      "aula_no_encontrada": "No se encontró el aula."
+    },
+    "badge_aria": "{n} recordatorios pendientes",
+    "empty_solo_lectura": "No tienes recordatorios. Aquí verás los que te envíen."
   }
 }
