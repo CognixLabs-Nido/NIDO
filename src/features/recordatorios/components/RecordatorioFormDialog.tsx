@@ -36,24 +36,38 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 
 import { crearRecordatorio } from '../actions/crear-recordatorio'
-import { datetimeLocalAIso, requiereNino } from '../lib/form-helpers'
+import { datetimeLocalAIso, requiereAula, requiereNino, requiereUsuario } from '../lib/form-helpers'
 import type { RecordatorioDestinatarioInput } from '../schemas/recordatorios'
+import type { AulaParaRecordatorio } from '../queries/get-aulas-para-recordatorios'
 import type { NinoParaRecordatorio } from '../queries/get-ninos-para-recordatorios'
+import type { ProfeParaRecordatorio } from '../queries/get-profes-para-recordatorios'
 
 interface Props {
   locale: string
   /** Destinos que el rol del usuario puede crear (destinosParaRol). */
   destinos: RecordatorioDestinatarioInput[]
   ninos: NinoParaRecordatorio[]
+  aulas: AulaParaRecordatorio[]
+  profes: ProfeParaRecordatorio[]
 }
 
 // Schema de FORM (UI): `vencimiento` es el string local del input datetime-local
-// (se convierte a ISO al enviar). El cross-field niño se valida igual que en BD.
-// La validación de longitudes y la autorización las re-aplica el server action.
+// (se convierte a ISO al enviar). El cross-field de referencias se valida igual
+// que en BD. La validación de longitudes y la autorización las re-aplica el
+// server action.
 const formSchema = z
   .object({
-    destinatario: z.enum(['familia', 'equipo', 'direccion', 'personal']),
+    destinatario: z.enum([
+      'familia_individual',
+      'familias_aula',
+      'familias_centro',
+      'profe_individual',
+      'profes_centro',
+      'personal',
+    ]),
     nino_id: z.string().uuid().nullable(),
+    aula_id: z.string().uuid().nullable(),
+    usuario_destinatario_id: z.string().uuid().nullable(),
     titulo: z
       .string()
       .trim()
@@ -70,11 +84,25 @@ const formSchema = z
         message: 'recordatorios.validation.nino_requerido',
       })
     }
+    if (requiereAula(v.destinatario) && !v.aula_id) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['aula_id'],
+        message: 'recordatorios.validation.aula_requerida',
+      })
+    }
+    if (requiereUsuario(v.destinatario) && !v.usuario_destinatario_id) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['usuario_destinatario_id'],
+        message: 'recordatorios.validation.profe_requerida',
+      })
+    }
   })
 
 type FormValues = z.infer<typeof formSchema>
 
-export function RecordatorioFormDialog({ locale, destinos, ninos }: Props) {
+export function RecordatorioFormDialog({ locale, destinos, ninos, aulas, profes }: Props) {
   const t = useTranslations('recordatorios')
   const tDestinos = useTranslations('recordatorios.destinos')
   const tForm = useTranslations('recordatorios.form')
@@ -89,6 +117,8 @@ export function RecordatorioFormDialog({ locale, destinos, ninos }: Props) {
     defaultValues: {
       destinatario: destinos[0] ?? 'personal',
       nino_id: null,
+      aula_id: null,
+      usuario_destinatario_id: null,
       titulo: '',
       descripcion: '',
       vencimiento: '',
@@ -98,6 +128,8 @@ export function RecordatorioFormDialog({ locale, destinos, ninos }: Props) {
   const destino = form.watch('destinatario')
   const destinoItems = destinos.map((d) => ({ value: d, label: tDestinos(d) }))
   const ninoItems = ninos.map((n) => ({ value: n.id, label: `${n.nombre} ${n.apellidos}` }))
+  const aulaItems = aulas.map((a) => ({ value: a.id, label: a.nombre }))
+  const profeItems = profes.map((p) => ({ value: p.id, label: p.nombre }))
 
   function traducirError(error: string): string {
     if (error.startsWith('recordatorios.validation.')) {
@@ -109,11 +141,23 @@ export function RecordatorioFormDialog({ locale, destinos, ninos }: Props) {
     return tErr('creacion_fallo')
   }
 
+  // Al cambiar el destino, limpiamos las referencias que ya no apliquen.
+  function onDestinoChange(v: RecordatorioDestinatarioInput) {
+    form.setValue('destinatario', v)
+    if (!requiereNino(v)) form.setValue('nino_id', null)
+    if (!requiereAula(v)) form.setValue('aula_id', null)
+    if (!requiereUsuario(v)) form.setValue('usuario_destinatario_id', null)
+  }
+
   function onSubmit(values: FormValues) {
     startTransition(async () => {
       const res = await crearRecordatorio({
         destinatario: values.destinatario,
         nino_id: requiereNino(values.destinatario) ? values.nino_id : null,
+        aula_id: requiereAula(values.destinatario) ? values.aula_id : null,
+        usuario_destinatario_id: requiereUsuario(values.destinatario)
+          ? values.usuario_destinatario_id
+          : null,
         titulo: values.titulo,
         descripcion: values.descripcion.trim() ? values.descripcion : null,
         vencimiento: datetimeLocalAIso(values.vencimiento),
@@ -155,12 +199,7 @@ export function RecordatorioFormDialog({ locale, destinos, ninos }: Props) {
                   <Select
                     items={destinoItems}
                     value={field.value}
-                    onValueChange={(v) => {
-                      field.onChange(v as RecordatorioDestinatarioInput)
-                      if (!requiereNino(v as RecordatorioDestinatarioInput)) {
-                        form.setValue('nino_id', null)
-                      }
-                    }}
+                    onValueChange={(v) => onDestinoChange(v as RecordatorioDestinatarioInput)}
                   >
                     <FormControl>
                       <SelectTrigger className="w-full">
@@ -199,6 +238,68 @@ export function RecordatorioFormDialog({ locale, destinos, ninos }: Props) {
                       </FormControl>
                       <SelectContent>
                         {ninoItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {requiereAula(destino) && (
+              <FormField
+                control={form.control}
+                name="aula_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{tForm('aula')}</FormLabel>
+                    <Select
+                      items={aulaItems}
+                      value={field.value ?? ''}
+                      onValueChange={(v) => field.onChange(v)}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full" data-testid="recordatorio-aula-select">
+                          <SelectValue placeholder={tForm('aula_placeholder')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {aulaItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {requiereUsuario(destino) && (
+              <FormField
+                control={form.control}
+                name="usuario_destinatario_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{tForm('profe')}</FormLabel>
+                    <Select
+                      items={profeItems}
+                      value={field.value ?? ''}
+                      onValueChange={(v) => field.onChange(v)}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full" data-testid="recordatorio-profe-select">
+                          <SelectValue placeholder={tForm('profe_placeholder')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {profeItems.map((item) => (
                           <SelectItem key={item.value} value={item.value}>
                             {item.label}
                           </SelectItem>
