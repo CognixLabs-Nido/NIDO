@@ -15,9 +15,12 @@ import { ListaRecordatorios } from '../ListaRecordatorios'
 function item(id: string): RecordatorioListItem {
   return {
     id,
-    destinatario: 'familia',
+    destinatario: 'familia_individual',
     nino_id: null,
     nino_nombre: null,
+    aula_id: null,
+    aula_nombre: null,
+    usuario_destinatario_nombre: null,
     titulo: `recordatorio ${id}`,
     descripcion: null,
     vencimiento: null,

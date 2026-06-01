@@ -43,7 +43,7 @@ describe.skipIf(!MIGRATION_APPLIED)('Audit log — recordatorios (F6)', () => {
       .from('recordatorios')
       .insert({
         centro_id: centro.id,
-        destinatario: 'familia',
+        destinatario: 'familia_individual',
         nino_id: nino.id,
         creado_por: autor.id,
         titulo: 'audit insert',
