@@ -5,7 +5,7 @@ import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
-import { isoYmd, tipoResuelto } from '@/features/calendario-centro/lib/calendario-grid'
+import { tipoResuelto } from '@/features/calendario-centro/lib/calendario-grid'
 import { COLORES_TIPO } from '@/features/calendario-centro/lib/colores-tipo'
 import type { OverrideMes } from '@/features/calendario-centro/types'
 import { CalendarioMensual } from '@/shared/components/calendario/CalendarioMensual'
