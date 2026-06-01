@@ -1338,6 +1338,156 @@ export type Database = {
           },
         ]
       }
+      confirmaciones_evento: {
+        Row: {
+          comentario: string | null
+          confirmado_at: string
+          confirmado_por: string
+          created_at: string
+          estado: Database['public']['Enums']['confirmacion_estado']
+          evento_id: string
+          id: string
+          nino_id: string
+          updated_at: string
+        }
+        Insert: {
+          comentario?: string | null
+          confirmado_at?: string
+          confirmado_por: string
+          created_at?: string
+          estado: Database['public']['Enums']['confirmacion_estado']
+          evento_id: string
+          id?: string
+          nino_id: string
+          updated_at?: string
+        }
+        Update: {
+          comentario?: string | null
+          confirmado_at?: string
+          confirmado_por?: string
+          created_at?: string
+          estado?: Database['public']['Enums']['confirmacion_estado']
+          evento_id?: string
+          id?: string
+          nino_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'confirmaciones_evento_confirmado_por_fkey'
+            columns: ['confirmado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'confirmaciones_evento_evento_id_fkey'
+            columns: ['evento_id']
+            isOneToOne: false
+            referencedRelation: 'eventos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'confirmaciones_evento_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      eventos: {
+        Row: {
+          ambito: Database['public']['Enums']['ambito_evento']
+          aula_id: string | null
+          centro_id: string
+          creado_por: string
+          created_at: string
+          descripcion: string | null
+          estado: Database['public']['Enums']['evento_estado']
+          fecha: string
+          fecha_fin: string | null
+          hora_fin: string | null
+          hora_inicio: string | null
+          id: string
+          lugar: string | null
+          nino_id: string | null
+          requiere_confirmacion: boolean
+          tipo: Database['public']['Enums']['tipo_evento']
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ambito: Database['public']['Enums']['ambito_evento']
+          aula_id?: string | null
+          centro_id: string
+          creado_por: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: Database['public']['Enums']['evento_estado']
+          fecha: string
+          fecha_fin?: string | null
+          hora_fin?: string | null
+          hora_inicio?: string | null
+          id?: string
+          lugar?: string | null
+          nino_id?: string | null
+          requiere_confirmacion?: boolean
+          tipo: Database['public']['Enums']['tipo_evento']
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ambito?: Database['public']['Enums']['ambito_evento']
+          aula_id?: string | null
+          centro_id?: string
+          creado_por?: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: Database['public']['Enums']['evento_estado']
+          fecha?: string
+          fecha_fin?: string | null
+          hora_fin?: string | null
+          hora_inicio?: string | null
+          id?: string
+          lugar?: string | null
+          nino_id?: string | null
+          requiere_confirmacion?: boolean
+          tipo?: Database['public']['Enums']['tipo_evento']
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'eventos_aula_id_fkey'
+            columns: ['aula_id']
+            isOneToOne: false
+            referencedRelation: 'aulas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'eventos_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'eventos_creado_por_fkey'
+            columns: ['creado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'eventos_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       recordatorios: {
         Row: {
           aula_id: string | null
@@ -1720,6 +1870,10 @@ export type Database = {
     }
     Enums: {
       ambito_anuncio: 'aula' | 'centro'
+      ambito_evento: 'centro' | 'aula' | 'nino'
+      confirmacion_estado: 'pendiente' | 'confirmado' | 'rechazado'
+      evento_estado: 'programado' | 'cancelado'
+      tipo_evento: 'excursion' | 'reunion' | 'fiesta' | 'vacaciones' | 'otro'
       audit_accion: 'INSERT' | 'UPDATE' | 'DELETE'
       calidad_sueno: 'profundo' | 'tranquilo' | 'intermitente' | 'nada'
       cantidad_comida: 'todo' | 'mayoria' | 'mitad' | 'poco' | 'nada'
@@ -1904,6 +2058,10 @@ export const Constants = {
   public: {
     Enums: {
       ambito_anuncio: ['aula', 'centro'],
+      ambito_evento: ['centro', 'aula', 'nino'],
+      confirmacion_estado: ['pendiente', 'confirmado', 'rechazado'],
+      evento_estado: ['programado', 'cancelado'],
+      tipo_evento: ['excursion', 'reunion', 'fiesta', 'vacaciones', 'otro'],
       audit_accion: ['INSERT', 'UPDATE', 'DELETE'],
       calidad_sueno: ['profundo', 'tranquilo', 'intermitente', 'nada'],
       cantidad_comida: ['todo', 'mayoria', 'mitad', 'poco', 'nada'],
