@@ -1207,6 +1207,97 @@
       "no_autorizado": "Sesión expirada. Vuelve a iniciar sesión."
     }
   },
+  "eventos": {
+    "nuevo": "Nuevo evento",
+    "editar": "Editar evento",
+    "push": { "actualizado": "Evento actualizado: {titulo}" },
+    "ambitos": { "centro": "Todo el centro", "aula": "Un aula", "nino": "Un niño" },
+    "tipos": {
+      "excursion": "Excursión",
+      "reunion": "Reunión",
+      "fiesta": "Fiesta",
+      "vacaciones": "Vacaciones",
+      "otro": "Otro"
+    },
+    "estados": { "cancelado": "Cancelado" },
+    "estados_confirmacion": {
+      "pendiente": "Pendiente",
+      "confirmado": "Asiste",
+      "rechazado": "No asiste"
+    },
+    "form": {
+      "ambito": "¿A quién afecta?",
+      "aula": "Aula",
+      "aula_placeholder": "Selecciona un aula",
+      "nino": "Niño",
+      "nino_placeholder": "Selecciona un niño",
+      "tipo": "Tipo de evento",
+      "titulo": "Título",
+      "titulo_placeholder": "Ej. Excursión a la granja",
+      "fecha": "Fecha",
+      "fecha_fin": "Fecha de fin (opcional)",
+      "hora_inicio": "Hora de inicio",
+      "hora_fin": "Hora de fin",
+      "lugar": "Lugar (opcional)",
+      "descripcion": "Descripción",
+      "requiere_confirmacion": "Pedir confirmación de asistencia a las familias"
+    },
+    "detalle": {
+      "lugar": "Lugar",
+      "confirmaciones": "Confirmaciones de asistencia",
+      "sin_ninos": "No hay niños en la audiencia.",
+      "ventana_cerrada": "El plazo para confirmar ha terminado."
+    },
+    "calendario": {
+      "aria": "Calendario de eventos",
+      "sin_eventos_dia": "No hay eventos este día.",
+      "titulo_seccion": "Eventos"
+    },
+    "acciones": {
+      "crear": "Crear evento",
+      "creando": "Creando…",
+      "creado_toast": "Evento creado",
+      "editar": "Editar",
+      "guardar": "Guardar cambios",
+      "guardando": "Guardando…",
+      "editado_toast": "Evento actualizado",
+      "confirmar": "Asiste",
+      "rechazar": "No asiste",
+      "confirmacion_guardada": "Respuesta guardada",
+      "cancelar_evento": "Cancelar evento",
+      "evento_cancelado": "Evento cancelado"
+    },
+    "validation": {
+      "titulo_vacio": "El título es obligatorio.",
+      "titulo_largo": "El título es demasiado largo (máx. 200).",
+      "descripcion_larga": "La descripción es demasiado larga (máx. 2000).",
+      "lugar_largo": "El lugar es demasiado largo (máx. 200).",
+      "fecha_invalida": "Fecha inválida.",
+      "hora_invalida": "Hora inválida. Formato HH:MM.",
+      "rango_invalido": "La fecha de fin no puede ser anterior a la de inicio.",
+      "hora_fin_invalida": "La hora de fin debe ser posterior a la de inicio.",
+      "nino_requerido": "Selecciona un niño.",
+      "nino_no_permitido": "No corresponde un niño para este ámbito.",
+      "aula_requerida": "Selecciona un aula.",
+      "aula_no_permitida": "No corresponde un aula para este ámbito.",
+      "comentario_largo": "El comentario es demasiado largo (máx. 500)."
+    },
+    "errors": {
+      "creacion_fallo": "No se pudo crear el evento.",
+      "edicion_fallo": "No se pudo editar el evento.",
+      "cancelacion_fallo": "No se pudo cancelar el evento.",
+      "confirmacion_fallo": "No se pudo guardar la confirmación.",
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "no_encontrado": "Evento no encontrado.",
+      "evento_cancelado": "El evento está cancelado.",
+      "no_requiere_confirmacion": "Este evento no requiere confirmación.",
+      "ventana_cerrada": "El plazo para confirmar ha terminado.",
+      "nino_no_encontrado": "Niño no encontrado.",
+      "aula_no_encontrada": "Aula no encontrada.",
+      "sin_centro": "No se encontró el centro.",
+      "generico": "Algo salió mal."
+    }
+  },
   "recordatorios": {
     "titulo_pagina": "Recordatorios",
     "empty": "No tienes recordatorios. Crea uno con el botón de arriba.",
