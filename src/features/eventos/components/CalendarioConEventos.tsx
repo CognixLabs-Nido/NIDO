@@ -22,8 +22,7 @@ interface Props {
   overrides: OverrideMes[]
   eventos: EventoCalendario[]
   locale: 'es' | 'en' | 'va'
-  esStaff: boolean
-  /** admin del centro → puede editar cualquier evento (D8). */
+  /** admin del centro → puede editar/cancelar cualquier evento (D8). */
   esAdmin: boolean
   esFamilia: boolean
 }
@@ -40,7 +39,6 @@ export function CalendarioConEventos({
   overrides,
   eventos,
   locale,
-  esStaff,
   esAdmin,
   esFamilia,
 }: Props) {
@@ -168,7 +166,6 @@ export function CalendarioConEventos({
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         detalle={detalle}
-        esStaff={esStaff}
         esAdmin={esAdmin}
         esFamilia={esFamilia}
         hoyYmd={hoyYmd}

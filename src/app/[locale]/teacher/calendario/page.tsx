@@ -75,7 +75,6 @@ export default async function TeacherCalendarioPage({ params, searchParams }: Pa
         overrides={overrides}
         eventos={eventos}
         locale={locale as 'es' | 'en' | 'va'}
-        esStaff
         esAdmin={esAdmin}
         esFamilia={false}
       />

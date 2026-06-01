@@ -91,7 +91,6 @@ export default async function AdminCalendarioPage({ params, searchParams }: Page
           overrides={overrides}
           eventos={eventos}
           locale={locale as 'es' | 'en' | 'va'}
-          esStaff
           esAdmin
           esFamilia={false}
         />

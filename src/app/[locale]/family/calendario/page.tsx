@@ -66,7 +66,6 @@ export default async function FamilyCalendarioPage({ params, searchParams }: Pag
         overrides={overrides}
         eventos={eventos}
         locale={locale as 'es' | 'en' | 'va'}
-        esStaff={rol === 'admin'}
         esAdmin={rol === 'admin'}
         esFamilia={rol === 'tutor_legal' || rol === 'autorizado'}
       />

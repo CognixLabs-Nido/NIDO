@@ -17,9 +17,7 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   detalle: EventoDetalle | null
-  /** admin/profe → ve el roster completo y puede cancelar. */
-  esStaff: boolean
-  /** admin del centro → puede editar cualquier evento (D8, junto a `es_autor`). */
+  /** admin del centro → puede editar/cancelar cualquier evento (D8, junto a `es_autor`). */
   esAdmin: boolean
   /** tutor/autorizado → confirma/rechaza la asistencia de sus hijos. */
   esFamilia: boolean
@@ -41,7 +39,6 @@ export function EventoDetalleDialog({
   open,
   onOpenChange,
   detalle,
-  esStaff,
   esAdmin,
   esFamilia,
   hoyYmd,
@@ -55,8 +52,9 @@ export function EventoDetalleDialog({
   if (!detalle) return null
   const { evento, roster } = detalle
   const cancelado = evento.estado === 'cancelado'
-  // D8: edita el autor o un admin del centro. No se edita un evento cancelado.
-  const puedeEditar = (esAdmin || detalle.es_autor) && !cancelado
+  // D8: gestiona (editar/cancelar) el autor o un admin del centro; nunca sobre cancelado.
+  // (un tutor nunca es autor, así que esto implica staff por construcción.)
+  const puedeGestionar = (esAdmin || detalle.es_autor) && !cancelado
   // Ventana D12: se puede confirmar hasta la fecha (inicio) del evento, inclusive.
   const ventanaAbierta = hoyYmd <= evento.fecha
 
@@ -170,20 +168,18 @@ export function EventoDetalleDialog({
             </div>
           )}
 
-          {esStaff && !cancelado && (
+          {puedeGestionar && (
             <div className="flex justify-end gap-2 pt-2">
-              {puedeEditar && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={pending}
-                  onClick={onEditar}
-                  data-testid="evento-editar"
-                >
-                  {t('acciones.editar')}
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={pending}
+                onClick={onEditar}
+                data-testid="evento-editar"
+              >
+                {t('acciones.editar')}
+              </Button>
               <Button
                 type="button"
                 variant="outline"
