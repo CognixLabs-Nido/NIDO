@@ -10,21 +10,25 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
-import { destinatariosRecordatorio } from '../lib/audiencia'
-import { crearRecordatorioSchema, type CrearRecordatorioInput } from '../schemas/recordatorios'
+import { expandirDestinatariosRecordatorio } from '../lib/audiencia'
+import {
+  crearRecordatorioSchema,
+  type CrearRecordatorioInput,
+  type CrearRecordatorioParsed,
+} from '../schemas/recordatorios'
 import { fail, ok, type ActionResult } from '../types'
 
 /**
- * Crea un recordatorio (F6). El `centro_id` se resuelve server-side:
- *  - familia/equipo: se deriva del niño (`ninos.centro_id`). El trigger BD
- *    también lo cubriría, pero lo pasamos explícito porque la columna es
- *    NOT NULL en TS y así no dependemos del trigger (cf. enviar-mensaje).
- *  - direccion/personal: se deriva del centro del usuario autenticado
- *    (`roles_usuario`). En el piloto single-centro hay exactamente uno.
+ * Crea un recordatorio granular (F6-C). El `centro_id` se resuelve server-side
+ * según el destino:
+ *  - familia_individual → del niño (`ninos.centro_id`).
+ *  - familias_aula      → del aula (`aulas.centro_id`).
+ *  - familias_centro / profe_individual / profes_centro / personal → del centro
+ *    del usuario autenticado (`roles_usuario`). En el piloto single-centro hay uno.
  *
  * Tras el INSERT, push **inmediato** best-effort a la audiencia del destino
  * (reusa el pipeline F5.5). `personal` no notifica. Si el push falla, el
- * recordatorio ya está persistido (patrón "catch-all silencioso", #41).
+ * recordatorio ya está persistido.
  */
 export async function crearRecordatorio(
   input: CrearRecordatorioInput
@@ -63,27 +67,11 @@ export async function crearRecordatorioCore(
     return fail(reparsed.error.issues[0]?.message ?? 'recordatorios.errors.creacion_fallo')
   }
   const d = reparsed.data
-  const esNinoCentrico = d.destinatario === 'familia' || d.destinatario === 'equipo'
 
-  // 1. Resolver centro_id.
-  let centroId: string
-  if (esNinoCentrico) {
-    const { data: nino, error: ninoErr } = await supabase
-      .from('ninos')
-      .select('centro_id')
-      .eq('id', d.nino_id!)
-      .maybeSingle()
-    if (ninoErr) {
-      logger.warn('crearRecordatorio: ninos.select', ninoErr.message)
-      return fail('recordatorios.errors.creacion_fallo')
-    }
-    if (!nino) return fail('recordatorios.errors.nino_no_encontrado')
-    centroId = nino.centro_id
-  } else {
-    const centro = await resolverCentroDelUsuario(supabase, userId)
-    if (!centro) return fail('recordatorios.errors.sin_centro')
-    centroId = centro
-  }
+  // 1. Resolver centro_id según destino.
+  const centroResult = await resolverCentroId(supabase, userId, d)
+  if (!centroResult.success) return centroResult
+  const centroId = centroResult.data
 
   // 2. INSERT. RLS WITH CHECK autoriza según destino. `creado_por` y, en
   //    personal, `usuario_destinatario_id` se fijan al propio usuario.
@@ -92,8 +80,14 @@ export async function crearRecordatorioCore(
     .insert({
       centro_id: centroId,
       destinatario: d.destinatario,
-      nino_id: esNinoCentrico ? d.nino_id! : null,
-      usuario_destinatario_id: d.destinatario === 'personal' ? userId : null,
+      nino_id: d.destinatario === 'familia_individual' ? d.nino_id! : null,
+      aula_id: d.destinatario === 'familias_aula' ? d.aula_id! : null,
+      usuario_destinatario_id:
+        d.destinatario === 'personal'
+          ? userId
+          : d.destinatario === 'profe_individual'
+            ? d.usuario_destinatario_id!
+            : null,
       creado_por: userId,
       titulo: d.titulo,
       descripcion: d.descripcion ?? null,
@@ -111,11 +105,14 @@ export async function crearRecordatorioCore(
   // 3. Push inmediato best-effort (no `personal`). Esperamos la promesa para
   //    que la lambda de Vercel no termine antes de que `web-push` complete.
   try {
-    const destinatarios = await destinatariosRecordatorio(
+    const destinatarios = await expandirDestinatariosRecordatorio(
       {
         destinatario: d.destinatario,
         centro_id: centroId,
-        nino_id: esNinoCentrico ? d.nino_id! : null,
+        nino_id: d.destinatario === 'familia_individual' ? d.nino_id! : null,
+        aula_id: d.destinatario === 'familias_aula' ? d.aula_id! : null,
+        usuario_destinatario_id:
+          d.destinatario === 'profe_individual' ? d.usuario_destinatario_id! : null,
       },
       userId
     )
@@ -137,9 +134,52 @@ export async function crearRecordatorioCore(
 }
 
 /**
- * Centro del usuario para recordatorios direccion/personal. Toma el primer
- * rol activo. En multi-centro (futuro) habría que pasar el centro como input;
- * en el piloto single-centro es determinista.
+ * Resuelve el `centro_id` server-side según el destino. Para familia_individual
+ * lo deriva del niño; para familias_aula, del aula; para el resto, del centro
+ * del usuario autenticado.
+ */
+async function resolverCentroId(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  d: CrearRecordatorioParsed
+): Promise<ActionResult<string>> {
+  if (d.destinatario === 'familia_individual') {
+    const { data: nino, error } = await supabase
+      .from('ninos')
+      .select('centro_id')
+      .eq('id', d.nino_id!)
+      .maybeSingle()
+    if (error) {
+      logger.warn('crearRecordatorio: ninos.select', error.message)
+      return fail('recordatorios.errors.creacion_fallo')
+    }
+    if (!nino) return fail('recordatorios.errors.nino_no_encontrado')
+    return ok(nino.centro_id)
+  }
+
+  if (d.destinatario === 'familias_aula') {
+    const { data: aula, error } = await supabase
+      .from('aulas')
+      .select('centro_id')
+      .eq('id', d.aula_id!)
+      .maybeSingle()
+    if (error) {
+      logger.warn('crearRecordatorio: aulas.select', error.message)
+      return fail('recordatorios.errors.creacion_fallo')
+    }
+    if (!aula) return fail('recordatorios.errors.aula_no_encontrada')
+    return ok(aula.centro_id)
+  }
+
+  // familias_centro / profe_individual / profes_centro / personal → centro del usuario.
+  const centro = await resolverCentroDelUsuario(supabase, userId)
+  if (!centro) return fail('recordatorios.errors.sin_centro')
+  return ok(centro)
+}
+
+/**
+ * Centro del usuario. Toma el primer rol activo. En multi-centro (futuro) habría
+ * que pasar el centro como input; en el piloto single-centro es determinista.
  */
 async function resolverCentroDelUsuario(
   supabase: SupabaseClient<Database>,

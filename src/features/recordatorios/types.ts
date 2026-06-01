@@ -24,6 +24,9 @@ export interface RecordatorioListItem {
   destinatario: RecordatorioDestinatario
   nino_id: string | null
   nino_nombre: string | null
+  aula_id: string | null
+  aula_nombre: string | null
+  usuario_destinatario_nombre: string | null
   titulo: string
   descripcion: string | null
   vencimiento: string | null

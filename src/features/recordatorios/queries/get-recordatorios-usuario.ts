@@ -13,9 +13,11 @@ import type { RecordatorioListItem } from '../types'
 // null y la UI cae a un fallback. La RLS de `recordatorios` ya filtra qué filas
 // entran (por destino y rol).
 const SELECT_LIST = `
-  id, destinatario, nino_id, titulo, descripcion, vencimiento,
+  id, destinatario, nino_id, aula_id, titulo, descripcion, vencimiento,
   completado_en, completado_por, erroneo, creado_por, created_at,
   nino:ninos!recordatorios_nino_id_fkey ( nombre ),
+  aula:aulas!recordatorios_aula_id_fkey ( nombre ),
+  destinatario_usuario:usuarios!recordatorios_usuario_destinatario_id_fkey ( nombre_completo ),
   autor:usuarios!recordatorios_creado_por_fkey ( nombre_completo )
 ` as const
 
@@ -23,6 +25,7 @@ type ListRow = {
   id: string
   destinatario: Database['public']['Enums']['recordatorio_destinatario']
   nino_id: string | null
+  aula_id: string | null
   titulo: string
   descripcion: string | null
   vencimiento: string | null
@@ -32,6 +35,8 @@ type ListRow = {
   creado_por: string
   created_at: string
   nino: { nombre: string } | null
+  aula: { nombre: string } | null
+  destinatario_usuario: { nombre_completo: string } | null
   autor: { nombre_completo: string } | null
 }
 
@@ -41,6 +46,9 @@ function mapRow(r: ListRow, userId: string): RecordatorioListItem {
     destinatario: r.destinatario,
     nino_id: r.nino_id,
     nino_nombre: r.nino?.nombre ?? null,
+    aula_id: r.aula_id,
+    aula_nombre: r.aula?.nombre ?? null,
+    usuario_destinatario_nombre: r.destinatario_usuario?.nombre_completo ?? null,
     titulo: r.titulo,
     descripcion: r.descripcion,
     vencimiento: r.vencimiento,
