@@ -33,6 +33,15 @@ La spec `docs/specs/f7-calendario.md` (Checkpoint A) dejó 13 decisiones abierta
 (D1–D13); el Checkpoint B las cerró e implementó. Este ADR las registra junto al
 modelo de datos resultante y dos refinamientos surgidos en revisión post-B.
 
+**Re-encuadre (al cerrar):** la revisión de F7 detectó que el alcance original
+mezclaba **dos productos** en la tabla `eventos`: la **difusión** (un centro/aula
+anuncia algo a su audiencia, con confirmación opcional) y la **invitación** (un
+organizador convoca a personas concretas y espera un RSVP individual: reuniones
+con padres/claustro, visitas comerciales, citas de nueva matrícula). F7 cierra
+como **solo la capa de difusión** (eventos/calendario); la agenda de invitaciones
+se saca a una **fase propia** con modelo nuevo. Esto cierra el Eje 4 (abajo) y
+queda especificado en `docs/specs/f7a-calendario-agenda.md` (Checkpoint A, PR #50).
+
 ## Opciones consideradas
 
 Las decisiones D1–D13 cubren muchos ejes; aquí se documentan los tres con
@@ -75,6 +84,20 @@ indiferenciado del alta).
 - B silencia el typo, solo molesta a las familias cuando cambia el **cuándo/dónde**
   acudir, y diferencia el mensaje ("Evento actualizado: …", `tipo:
 'evento_actualizado'`).
+
+### Eje 4 — ¿`eventos` debe cubrir también la agenda de invitaciones?
+
+**Opción A: una sola tabla `eventos`** que sirva difusión **e** invitaciones
+(reuniones/visitas), con la "audiencia" haciendo doble función.
+**Opción B: separar** — `eventos` cubre solo difusión; la agenda de invitaciones
+va a una **fase y modelo propios** (invitados nominales + RSVP por persona).
+
+- A fuerza un modelo de audiencia por ámbito (centro/aula/niño) sobre un caso que
+  es nominal (invito a personas concretas), sin "lo que organizo vs lo que me
+  invitan", sin RSVP por invitado, sin vistas día/semana. Acopla dos productos.
+- B mantiene `eventos` simple y correcto para difusión, y deja la invitación para
+  un modelo diseñado para ella. Coste: una fase más; un valor de ENUM (`reunion`)
+  queda sin uso en `tipo_evento`.
 
 ## Decisión
 
@@ -157,6 +180,30 @@ auth.uid()`.
    al idioma del autor). El envío a la audiencia se extrajo a un único helper,
    compartido con el alta.
 
+## Re-encuadre: la Agenda sale a fase propia (Eje 4)
+
+**Se elige la Opción B del Eje 4.** F7 queda definida como **la capa de
+difusión** (calendario escolar: `eventos` + `confirmaciones_evento`). La **agenda
+de invitaciones** — reuniones (individuales con padres, de clase, de claustro) y
+visitas (comerciales, nuevas matrículas, dirección) — **NO vive en `eventos`**: se
+saca a una **fase propia** con **modelo nuevo** (organizador + invitados nominales
+
+- RSVP por persona + vistas día/semana/mes). Especificado en
+  `docs/specs/f7a-calendario-agenda.md` (Checkpoint A, PR #50), con todas las
+  decisiones de ese modelo aún **abiertas**.
+
+**`reunion` queda como valor de ENUM en desuso.** El ENUM `tipo_evento` shippeó
+con `reunion` en F7. Tras el re-encuadre, las reuniones pertenecen a la Agenda, no
+a `eventos`. **Decisión: NO se migra el ENUM** — `reunion` permanece como **valor
+muerto**, simplemente **oculto en la UI** del calendario escolar (no se ofrece al
+crear). Motivos: (a) recrear un ENUM en Postgres es una migración destructiva
+desproporcionada para un cleanup cosmético; (b) un valor de ENUM sin uso es
+**inocuo** (no rompe nada, no ocupa, no confunde si la UI no lo expone); (c) evita
+tocar `eventos` recién creada justo al cerrarla. Si en el futuro molesta, se retira
+en una migración de limpieza agrupada (igual criterio que `es_profe_principal`
+deprecado en F5B). _(Esto cierra, en sentido contrario, la D-A1 de la spec f7a, que
+contemplaba recrear el ENUM: se prefiere el valor muerto a la migración.)_
+
 ## Consecuencias
 
 ### Positivas
@@ -181,6 +228,8 @@ auth.uid()`.
 - El **canal push sigue aparcado** (push-a-device es bloqueante temprano de Ola 1,
   diagnóstico aparte): F7 deja el cableado correcto pero la notificación no salta
   al dispositivo hasta que se reviva el canal.
+- `tipo_evento` lleva un **valor muerto** (`reunion`) tras el re-encuadre — deuda
+  cosmética asumida (oculto en UI; limpieza diferida).
 
 ### Neutras
 
@@ -203,9 +252,8 @@ auth.uid()`.
 - [x] Tests unit (schemas, audiencia, crear, confirmar, `huboCambioMaterial`) +
       RLS gateados por `EVENTOS_MIGRATION_APPLIED=1`.
 - [x] Refinamientos post-B (cancelar gateado; notificación material-only).
-- [ ] Aplicar la migración en SQL Editor + registrar en `schema_migrations`
-      (responsable, pre-merge).
-- [ ] `EVENTOS_MIGRATION_APPLIED=1 npm run test:rls -- eventos.rls` en verde.
+- [x] Aplicar la migración en SQL Editor + registrar en `schema_migrations`.
+- [x] `EVENTOS_MIGRATION_APPLIED=1 npm run test:rls -- eventos.rls` en verde (**6/6**).
 - [ ] Smoke en preview de Vercel; squash-merge de #49 (responsable).
 - [ ] Actualizar `data-model.md`, `rls-policies.md`, `scope-ola-1.md` (F7 cerrada)
       y `progress.md` tras el merge.
@@ -215,9 +263,9 @@ auth.uid()`.
 - `typecheck` + `lint` + `build` (Regla `'use server'`) en verde local y CI.
 - `test:unit` **413/413** en verde (incl. 8 de `huboCambioMaterial`: igualdad,
   normalización de horas, cambio de fecha/hora/lugar/fecha_fin, null↔"" ).
-- `test:rls` gateado por `EVENTOS_MIGRATION_APPLIED=1` (audiencia por ámbito,
-  aislamiento aula/familia, autor-o-admin en update, confirmación por tutor del
-  niño) — pendiente de aplicar la migración.
+- `test:rls` gateado por `EVENTOS_MIGRATION_APPLIED=1` — **6/6 en verde** tras
+  aplicar la migración (audiencia por ámbito, aislamiento aula/familia,
+  autor-o-admin en update, confirmación por tutor del niño).
 - Deploy de preview de Vercel OK en PR #49.
 
 ## Notas
@@ -229,10 +277,13 @@ prevista como `ALTER TABLE ADD COLUMN` futuro (data-model.md 🔒), **fuera** de
 
 ## Referencias
 
-- Specs relacionadas: `/docs/specs/f7-calendario.md` (fuente de verdad),
-  `/docs/specs/scope-ola-1.md` (F7 lean; tutorías → Ola 3).
+- Specs relacionadas: `/docs/specs/f7-calendario.md` (fuente de verdad de la capa
+  de difusión), `/docs/specs/f7a-calendario-agenda.md` (re-encuadre: calendario
+  escolar vs agenda; **modelo de la agenda abierto**), `/docs/specs/scope-ola-1.md`
+  (F7 lean; tutorías → Ola 3).
 - ADRs relacionados: ADR-0037 (audiencia/roles de recordatorios, reutilizada),
   ADR-0007 (recursión RLS), ADR-0019/0020 (calendario F4.5a/menús), ADR-0031
   (ventana de anulación 5 min, patrón análogo), ADR-0036 (restricción de columnas
   en server action).
-- PR: [#49](https://github.com/CognixLabs-Nido/NIDO/pull/49).
+- PRs: [#49](https://github.com/CognixLabs-Nido/NIDO/pull/49) (esta capa),
+  [#50](https://github.com/CognixLabs-Nido/NIDO/pull/50) (spec del re-encuadre).
