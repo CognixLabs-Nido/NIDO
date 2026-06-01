@@ -110,6 +110,8 @@ NIDO ya tiene piezas reutilizables que F7 debe aprovechar sin duplicar:
 3. `enviarPushANotificarUsuarios(destinatarios, { titulo, cuerpo, url: '/{idioma}/calendario...', datos: { tipo: 'evento', evento_id } })`.
 4. Best-effort: se `await`ea (la lambda no termina antes) pero un fallo no rompe la operación (try/catch + `console.error`).
 
+> **Editar (refinamiento):** la edición solo re-notifica si cambió algún campo **material** (`fecha`, `fecha_fin`, `hora_inicio`, `hora_fin`, `lugar`) — una corrección de título/descripción/tipo NO molesta a las familias (`huboCambioMaterial`). Copy y categoría diferenciados: `tipo: 'evento_actualizado'`, cuerpo `eventos.push.actualizado` ("Evento actualizado: …"), traducido al idioma del autor.
+
 ### Comportamiento 6: editar / cancelar evento
 
 **Flujo:** solo el autor (_¿y admin? D8_) edita. La **cancelación** sigue el patrón del proyecto: marcar con prefijo / flag en vez de DELETE (_mecanismo exacto D7_). Editar una fecha o cancelar **re-notifica** a la audiencia.

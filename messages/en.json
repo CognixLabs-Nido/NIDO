@@ -1210,6 +1210,7 @@
   "eventos": {
     "nuevo": "New event",
     "editar": "Edit event",
+    "push": { "actualizado": "Event updated: {titulo}" },
     "ambitos": { "centro": "Whole centre", "aula": "A classroom", "nino": "A child" },
     "tipos": {
       "excursion": "Field trip",

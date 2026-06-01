@@ -1210,6 +1210,7 @@
   "eventos": {
     "nuevo": "Nuevo evento",
     "editar": "Editar evento",
+    "push": { "actualizado": "Evento actualizado: {titulo}" },
     "ambitos": { "centro": "Todo el centro", "aula": "Un aula", "nino": "Un niño" },
     "tipos": {
       "excursion": "Excursión",

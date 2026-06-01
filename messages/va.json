@@ -1210,6 +1210,7 @@
   "eventos": {
     "nuevo": "Nou esdeveniment",
     "editar": "Editar esdeveniment",
+    "push": { "actualizado": "Esdeveniment actualitzat: {titulo}" },
     "ambitos": { "centro": "Tot el centre", "aula": "Una aula", "nino": "Un xiquet" },
     "tipos": {
       "excursion": "Excursió",
