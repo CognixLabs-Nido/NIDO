@@ -67,4 +67,20 @@ describe('RecordatorioFormDialog (smoke)', () => {
     )
     expect(screen.getByTestId('recordatorios-nuevo')).toBeInTheDocument()
   })
+
+  it('monta con preset contextual (F6-C-3: familia_individual + niño)', () => {
+    // El dropdown base-ui no abre en jsdom; la preselección (preset → defaults)
+    // se valida de forma determinista en form-helpers.test (recordatorioFormDefaults).
+    render(
+      <RecordatorioFormDialog
+        locale="es"
+        destinos={destinosParaRol('admin')}
+        ninos={ninos}
+        aulas={aulas}
+        profes={profes}
+        preset={{ destinatario: 'familia_individual', nino_id: 'n1' }}
+      />
+    )
+    expect(screen.getByTestId('recordatorios-nuevo')).toBeInTheDocument()
+  })
 })

@@ -5,6 +5,7 @@ import {
   datetimeLocalAIso,
   destinosParaRol,
   puedeAnular,
+  recordatorioFormDefaults,
   requiereAula,
   requiereNino,
   requiereUsuario,
@@ -87,6 +88,55 @@ describe('puedeAnular — ventana 5 min + emisor', () => {
     expect(puedeAnular({ ...base, completado_en: recent, created_at: recent }, USER, now)).toBe(
       false
     )
+  })
+})
+
+describe('recordatorioFormDefaults — preselección contextual (F6-C-3)', () => {
+  const ADMIN = destinosParaRol('admin')
+  const PROFE = destinosParaRol('profe')
+
+  it('sin preset → primer destino del rol, referencias a null', () => {
+    expect(recordatorioFormDefaults(ADMIN)).toMatchObject({
+      destinatario: 'familia_individual',
+      nino_id: null,
+      aula_id: null,
+      usuario_destinatario_id: null,
+    })
+  })
+
+  it('sin destinos (caso defensivo) → personal', () => {
+    expect(recordatorioFormDefaults([]).destinatario).toBe('personal')
+  })
+
+  it('preset ficha de niño → familia_individual + nino_id preseleccionados', () => {
+    const d = recordatorioFormDefaults(ADMIN, {
+      destinatario: 'familia_individual',
+      nino_id: 'nino-123',
+    })
+    expect(d).toMatchObject({
+      destinatario: 'familia_individual',
+      nino_id: 'nino-123',
+      aula_id: null,
+    })
+  })
+
+  it('preset aula → familias_aula + aula_id preseleccionados (rol profe)', () => {
+    const d = recordatorioFormDefaults(PROFE, {
+      destinatario: 'familias_aula',
+      aula_id: 'aula-9',
+    })
+    expect(d).toMatchObject({
+      destinatario: 'familias_aula',
+      aula_id: 'aula-9',
+      nino_id: null,
+    })
+  })
+
+  it('titulo/descripcion/vencimiento siempre vacíos', () => {
+    const d = recordatorioFormDefaults(ADMIN, { destinatario: 'familias_centro' })
+    expect(d.titulo).toBe('')
+    expect(d.descripcion).toBe('')
+    expect(d.vencimiento).toBe('')
   })
 })
 

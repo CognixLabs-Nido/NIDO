@@ -13,6 +13,7 @@ import {
   getVinculosTutoresAula,
   type VinculoTutorMin,
 } from '@/features/messaging/queries/get-vinculos-tutores-aula'
+import { NuevoRecordatorioContextual } from '@/features/recordatorios/components/NuevoRecordatorioContextual'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -95,6 +96,16 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
             <UtensilsIcon className="size-3.5" />
             {tMenus('ver')}
           </Link>
+          {/* F6-C-3: recordatorio "a las familias de esta aula", con destino +
+              aula preseleccionados. Solo staff (admin/profe) crea. */}
+          {(rol === 'admin' || rol === 'profe') && (
+            <NuevoRecordatorioContextual
+              locale={locale}
+              rol={rol}
+              centroId={aula.centro_id}
+              preset={{ destinatario: 'familias_aula', aula_id: id }}
+            />
+          )}
         </div>
       </header>
 

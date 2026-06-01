@@ -36,7 +36,14 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 
 import { crearRecordatorio } from '../actions/crear-recordatorio'
-import { datetimeLocalAIso, requiereAula, requiereNino, requiereUsuario } from '../lib/form-helpers'
+import {
+  datetimeLocalAIso,
+  recordatorioFormDefaults,
+  requiereAula,
+  requiereNino,
+  requiereUsuario,
+  type RecordatorioPreset,
+} from '../lib/form-helpers'
 import type { RecordatorioDestinatarioInput } from '../schemas/recordatorios'
 import type { AulaParaRecordatorio } from '../queries/get-aulas-para-recordatorios'
 import type { NinoParaRecordatorio } from '../queries/get-ninos-para-recordatorios'
@@ -49,6 +56,9 @@ interface Props {
   ninos: NinoParaRecordatorio[]
   aulas: AulaParaRecordatorio[]
   profes: ProfeParaRecordatorio[]
+  /** Preselección contextual (F6-C-3): destino + referencia ya fijados al abrir.
+   *  Conveniencia, no candado — el usuario puede cambiar el destino. */
+  preset?: RecordatorioPreset
 }
 
 // Schema de FORM (UI): `vencimiento` es el string local del input datetime-local
@@ -102,7 +112,7 @@ const formSchema = z
 
 type FormValues = z.infer<typeof formSchema>
 
-export function RecordatorioFormDialog({ locale, destinos, ninos, aulas, profes }: Props) {
+export function RecordatorioFormDialog({ locale, destinos, ninos, aulas, profes, preset }: Props) {
   const t = useTranslations('recordatorios')
   const tDestinos = useTranslations('recordatorios.destinos')
   const tForm = useTranslations('recordatorios.form')
@@ -114,15 +124,7 @@ export function RecordatorioFormDialog({ locale, destinos, ninos, aulas, profes 
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      destinatario: destinos[0] ?? 'personal',
-      nino_id: null,
-      aula_id: null,
-      usuario_destinatario_id: null,
-      titulo: '',
-      descripcion: '',
-      vencimiento: '',
-    },
+    defaultValues: recordatorioFormDefaults(destinos, preset),
   })
 
   const destino = form.watch('destinatario')
