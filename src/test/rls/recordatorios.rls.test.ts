@@ -386,10 +386,20 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS recordatorios — F6-C (modelo granular
     expect(e1).toBeNull()
     expect(tutorCount ?? 0).toBeGreaterThan(0)
 
-    // El autorizado sin flag NO es destinatario de familia_individual.
+    // El autorizado tiene puede_recibir_mensajes=false. NO es destinatario de
+    // `familia_individual` (gateado por el flag en el RPC), PERO sí de los
+    // broadcasts `familias_aula`/`familias_centro`: su visibilidad sigue la
+    // PERTENENCIA (es_tutor_en_aula/es_tutor_en_centro), no el flag — trade-off
+    // documentado en ADR-0037 (el flag solo gatea el push). Por eso su contador
+    // refleja los broadcasts del aula/centro (>0), no 0.
     const cAut = await clientFor(autorizado)
     const { data: autCount } = await cAut.rpc('contar_recordatorios_pendientes')
-    expect(autCount ?? 0).toBe(0)
+    expect(autCount ?? 0).toBeGreaterThan(0)
+
+    // Flag-gating sobre familia_individual (determinista): tutor y autorizado
+    // ven los MISMOS broadcasts (mismo niño/aula/centro), pero solo el tutor
+    // (flag true) cuenta los `familia_individual` → cuenta estrictamente más.
+    expect(tutorCount ?? 0).toBeGreaterThan(autCount ?? 0)
 
     // Recordatorio personal del admin → SÍ cuenta para el admin; pero los
     // familia_* que creó NO. Creamos uno personal y comprobamos que el conteo
