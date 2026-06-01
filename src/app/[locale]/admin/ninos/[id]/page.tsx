@@ -30,6 +30,7 @@ import {
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
+import { NuevoRecordatorioContextual } from '@/features/recordatorios/components/NuevoRecordatorioContextual'
 import { EmptyState } from '@/shared/components/EmptyState'
 
 interface PageProps {
@@ -84,6 +85,14 @@ export default async function NinoDetallePage({ params }: PageProps) {
           </p>
         </div>
         {matriculaActiva && <Badge variant="warm">{matriculaActiva.aula_nombre}</Badge>}
+        {/* F6-C-3: crear un recordatorio "familia concreta" sobre este niño,
+            con destino + niño preseleccionados. Rol admin (área /admin). */}
+        <NuevoRecordatorioContextual
+          locale={locale}
+          rol="admin"
+          centroId={nino.centro_id}
+          preset={{ destinatario: 'familia_individual', nino_id: id }}
+        />
         {/* F5B-Item1: el botón "Escribir a la familia" del header se
             eliminó para admin. Para admin, el acceso a la conversación
             con la dirección está ahora en `/messages` tab Dirección

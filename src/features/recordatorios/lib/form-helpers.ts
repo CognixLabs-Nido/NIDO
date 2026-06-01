@@ -47,6 +47,49 @@ export function requiereUsuario(destino: RecordatorioDestinatarioInput): boolean
 }
 
 /**
+ * Preselección contextual del form (F6-C-3): entry points que abren el Dialog
+ * con un destino y su referencia ya fijados. Es CONVENIENCIA, no candado — el
+ * usuario puede cambiar el destino tras abrir.
+ *  - ficha de niño  → { destinatario: 'familia_individual', nino_id }
+ *  - aula           → { destinatario: 'familias_aula', aula_id }
+ */
+export interface RecordatorioPreset {
+  destinatario: RecordatorioDestinatarioInput
+  nino_id?: string | null
+  aula_id?: string | null
+}
+
+export interface RecordatorioFormDefaults {
+  destinatario: RecordatorioDestinatarioInput
+  nino_id: string | null
+  aula_id: string | null
+  usuario_destinatario_id: string | null
+  titulo: string
+  descripcion: string
+  vencimiento: string
+}
+
+/**
+ * Valores iniciales del form de creación. Si hay `preset`, preselecciona su
+ * destino + referencia; si no, cae al primer destino del rol (o `personal`).
+ * Pura y testeable — el Dialog la usa como `defaultValues`.
+ */
+export function recordatorioFormDefaults(
+  destinos: RecordatorioDestinatarioInput[],
+  preset?: RecordatorioPreset
+): RecordatorioFormDefaults {
+  return {
+    destinatario: preset?.destinatario ?? destinos[0] ?? 'personal',
+    nino_id: preset?.nino_id ?? null,
+    aula_id: preset?.aula_id ?? null,
+    usuario_destinatario_id: null,
+    titulo: '',
+    descripcion: '',
+    vencimiento: '',
+  }
+}
+
+/**
  * ¿Puede el usuario `userId` anular este recordatorio AHORA? Solo el emisor,
  * dentro de la ventana de 5 min, y si no está ya anulado/completado. Misma
  * regla que enforza `anularRecordatorioCore`; aquí decide si el botón se
