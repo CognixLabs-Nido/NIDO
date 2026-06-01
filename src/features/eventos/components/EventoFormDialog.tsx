@@ -38,15 +38,36 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 
 import { crearEvento } from '../actions/crear-evento'
-import type { AmbitoEvento, TipoEvento } from '../types'
+import { editarEvento } from '../actions/editar-evento'
+import type { AmbitoEvento, EventoCalendario, TipoEvento } from '../types'
 
-interface Props {
-  locale: string
-  /** Ámbitos que el rol puede crear (admin: los 3; profe: solo 'aula'). */
-  ambitos: AmbitoEvento[]
-  aulas: { id: string; nombre: string }[]
-  ninos: { id: string; nombre: string; apellidos: string }[]
-}
+/**
+ * Diálogo único de creación/edición de eventos. **Cero duplicación**: un solo
+ * formulario sirve ambos modos.
+ *
+ * - `crear`: con `DialogTrigger` ("Nuevo evento"), open interno. Permite elegir
+ *   ámbito/aula/niño (la audiencia se fija al crear).
+ * - `editar`: controlado por el padre (se abre desde el detalle). **No** muestra
+ *   ámbito/aula/niño — la audiencia no se edita (espejo de `editarEventoSchema`).
+ */
+type Props =
+  | {
+      modo?: 'crear'
+      locale: string
+      /** Ámbitos que el rol puede crear (admin: los 3; profe: solo 'aula'). */
+      ambitos: AmbitoEvento[]
+      aulas: { id: string; nombre: string }[]
+      ninos: { id: string; nombre: string; apellidos: string }[]
+    }
+  | {
+      modo: 'editar'
+      locale: string
+      evento: EventoCalendario
+      open: boolean
+      onOpenChange: (open: boolean) => void
+      /** Llamado tras guardar con éxito (para recargar el detalle/calendario). */
+      onGuardado: () => void
+    }
 
 const TIPOS: TipoEvento[] = ['excursion', 'reunion', 'fiesta', 'vacaciones', 'otro']
 
@@ -95,28 +116,65 @@ const formSchema = z
 
 type FormValues = z.infer<typeof formSchema>
 
-export function EventoFormDialog({ locale: _locale, ambitos, aulas, ninos }: Props) {
+/** `time` de Postgres vuelve 'HH:MM:SS'; el input type=time espera 'HH:MM'. */
+function aHoraInput(hora: string | null): string {
+  return hora ? hora.slice(0, 5) : ''
+}
+
+function valoresIniciales(
+  evento: EventoCalendario | undefined,
+  ambitoDefault: AmbitoEvento
+): FormValues {
+  if (evento) {
+    return {
+      ambito: evento.ambito,
+      aula_id: evento.aula_id,
+      nino_id: evento.nino_id,
+      tipo: evento.tipo,
+      titulo: evento.titulo,
+      descripcion: evento.descripcion ?? '',
+      lugar: evento.lugar ?? '',
+      fecha: evento.fecha,
+      fecha_fin: evento.fecha_fin ?? '',
+      hora_inicio: aHoraInput(evento.hora_inicio),
+      hora_fin: aHoraInput(evento.hora_fin),
+      requiere_confirmacion: evento.requiere_confirmacion,
+    }
+  }
+  return {
+    ambito: ambitoDefault,
+    aula_id: null,
+    nino_id: null,
+    tipo: 'excursion',
+    titulo: '',
+    descripcion: '',
+    lugar: '',
+    fecha: '',
+    fecha_fin: '',
+    hora_inicio: '',
+    hora_fin: '',
+    requiere_confirmacion: false,
+  }
+}
+
+export function EventoFormDialog(props: Props) {
   const t = useTranslations('eventos')
   const router = useRouter()
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
   const [pending, startTransition] = useTransition()
+
+  const esEdicion = props.modo === 'editar'
+  const evento = esEdicion ? props.evento : undefined
+  const ambitos = esEdicion ? [props.evento.ambito] : props.ambitos
+  const aulas = esEdicion ? [] : props.aulas
+  const ninos = esEdicion ? [] : props.ninos
+
+  const open = esEdicion ? props.open : internalOpen
+  const setOpen = esEdicion ? props.onOpenChange : setInternalOpen
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      ambito: ambitos[0] ?? 'aula',
-      aula_id: null,
-      nino_id: null,
-      tipo: 'excursion',
-      titulo: '',
-      descripcion: '',
-      lugar: '',
-      fecha: '',
-      fecha_fin: '',
-      hora_inicio: '',
-      hora_fin: '',
-      requiere_confirmacion: false,
-    },
+    defaultValues: valoresIniciales(evento, ambitos[0] ?? 'aula'),
   })
 
   const ambito = form.watch('ambito')
@@ -133,6 +191,30 @@ export function EventoFormDialog({ locale: _locale, ambitos, aulas, ninos }: Pro
 
   function onSubmit(values: FormValues) {
     startTransition(async () => {
+      if (esEdicion) {
+        const res = await editarEvento({
+          evento_id: props.evento.id,
+          tipo: values.tipo,
+          titulo: values.titulo,
+          descripcion: values.descripcion.trim() ? values.descripcion : null,
+          lugar: values.lugar.trim() ? values.lugar : null,
+          fecha: values.fecha,
+          fecha_fin: values.fecha_fin || null,
+          hora_inicio: values.hora_inicio || null,
+          hora_fin: values.hora_fin || null,
+          requiere_confirmacion: values.requiere_confirmacion,
+        })
+        if (!res.success) {
+          toast.error(t('errors.edicion_fallo'))
+          return
+        }
+        toast.success(t('acciones.editado_toast'))
+        setOpen(false)
+        props.onGuardado()
+        router.refresh()
+        return
+      }
+
       const res = await crearEvento({
         ambito: values.ambito,
         aula_id: values.ambito === 'aula' ? values.aula_id : null,
@@ -160,13 +242,15 @@ export function EventoFormDialog({ locale: _locale, ambitos, aulas, ninos }: Pro
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button data-testid="eventos-nuevo" />}>
-        <PlusIcon className="size-4" aria-hidden />
-        {t('nuevo')}
-      </DialogTrigger>
+      {!esEdicion && (
+        <DialogTrigger render={<Button data-testid="eventos-nuevo" />}>
+          <PlusIcon className="size-4" aria-hidden />
+          {t('nuevo')}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('nuevo')}</DialogTitle>
+          <DialogTitle>{esEdicion ? t('editar') : t('nuevo')}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -175,7 +259,7 @@ export function EventoFormDialog({ locale: _locale, ambitos, aulas, ninos }: Pro
             className="space-y-4"
             data-testid="evento-form"
           >
-            {ambitos.length > 1 && (
+            {!esEdicion && ambitos.length > 1 && (
               <FormField
                 control={form.control}
                 name="ambito"
@@ -206,7 +290,7 @@ export function EventoFormDialog({ locale: _locale, ambitos, aulas, ninos }: Pro
               />
             )}
 
-            {ambito === 'aula' && (
+            {!esEdicion && ambito === 'aula' && (
               <FormField
                 control={form.control}
                 name="aula_id"
@@ -237,7 +321,7 @@ export function EventoFormDialog({ locale: _locale, ambitos, aulas, ninos }: Pro
               />
             )}
 
-            {ambito === 'nino' && (
+            {!esEdicion && ambito === 'nino' && (
               <FormField
                 control={form.control}
                 name="nino_id"
@@ -417,7 +501,13 @@ export function EventoFormDialog({ locale: _locale, ambitos, aulas, ninos }: Pro
             />
 
             <Button type="submit" disabled={pending} className="w-full">
-              {pending ? t('acciones.creando') : t('acciones.crear')}
+              {esEdicion
+                ? pending
+                  ? t('acciones.guardando')
+                  : t('acciones.guardar')
+                : pending
+                  ? t('acciones.creando')
+                  : t('acciones.crear')}
             </Button>
           </form>
         </Form>

@@ -19,12 +19,16 @@ interface Props {
   detalle: EventoDetalle | null
   /** admin/profe → ve el roster completo y puede cancelar. */
   esStaff: boolean
+  /** admin del centro → puede editar cualquier evento (D8, junto a `es_autor`). */
+  esAdmin: boolean
   /** tutor/autorizado → confirma/rechaza la asistencia de sus hijos. */
   esFamilia: boolean
   /** Hoy en huso Madrid ('YYYY-MM-DD'), para la ventana de confirmación (D12). */
   hoyYmd: string
   /** Recargar el detalle tras confirmar/cancelar. */
   onChanged: () => void
+  /** Abrir el formulario de edición (lo orquesta el calendario). */
+  onEditar: () => void
 }
 
 const ESTADO_VARIANT: Record<ConfirmacionEstado, 'success' | 'destructive' | 'outline'> = {
@@ -38,9 +42,11 @@ export function EventoDetalleDialog({
   onOpenChange,
   detalle,
   esStaff,
+  esAdmin,
   esFamilia,
   hoyYmd,
   onChanged,
+  onEditar,
 }: Props) {
   const t = useTranslations('eventos')
   const [pending, startTransition] = useTransition()
@@ -49,6 +55,8 @@ export function EventoDetalleDialog({
   if (!detalle) return null
   const { evento, roster } = detalle
   const cancelado = evento.estado === 'cancelado'
+  // D8: edita el autor o un admin del centro. No se edita un evento cancelado.
+  const puedeEditar = (esAdmin || detalle.es_autor) && !cancelado
   // Ventana D12: se puede confirmar hasta la fecha (inicio) del evento, inclusive.
   const ventanaAbierta = hoyYmd <= evento.fecha
 
@@ -163,7 +171,19 @@ export function EventoDetalleDialog({
           )}
 
           {esStaff && !cancelado && (
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end gap-2 pt-2">
+              {puedeEditar && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={pending}
+                  onClick={onEditar}
+                  data-testid="evento-editar"
+                >
+                  {t('acciones.editar')}
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"

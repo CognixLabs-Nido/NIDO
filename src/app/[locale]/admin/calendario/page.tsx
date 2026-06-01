@@ -92,6 +92,7 @@ export default async function AdminCalendarioPage({ params, searchParams }: Page
           eventos={eventos}
           locale={locale as 'es' | 'en' | 'va'}
           esStaff
+          esAdmin
           esFamilia={false}
         />
       </section>

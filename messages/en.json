@@ -1209,6 +1209,7 @@
   },
   "eventos": {
     "nuevo": "New event",
+    "editar": "Edit event",
     "ambitos": { "centro": "Whole centre", "aula": "A classroom", "nino": "A child" },
     "tipos": {
       "excursion": "Field trip",
@@ -1255,6 +1256,10 @@
       "crear": "Create event",
       "creando": "Creating…",
       "creado_toast": "Event created",
+      "editar": "Edit",
+      "guardar": "Save changes",
+      "guardando": "Saving…",
+      "editado_toast": "Event updated",
       "confirmar": "Attending",
       "rechazar": "Not attending",
       "confirmacion_guardada": "Response saved",

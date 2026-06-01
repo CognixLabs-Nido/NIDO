@@ -53,4 +53,6 @@ export interface RosterConfirmacion {
 export interface EventoDetalle {
   evento: EventoCalendario
   roster: RosterConfirmacion[]
+  /** El usuario actual creó el evento. Junto a `esAdmin` gatea editar/cancelar (D8). */
+  es_autor: boolean
 }

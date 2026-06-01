@@ -6,7 +6,7 @@ import { logger } from '@/shared/lib/logger'
 import type { EventoCalendario, EventoDetalle, RosterConfirmacion } from '../types'
 
 const COLS =
-  'id, ambito, tipo, titulo, descripcion, lugar, fecha, fecha_fin, hora_inicio, hora_fin, requiere_confirmacion, estado, aula_id, nino_id, centro_id'
+  'id, ambito, tipo, titulo, descripcion, lugar, fecha, fecha_fin, hora_inicio, hora_fin, requiere_confirmacion, estado, aula_id, nino_id, centro_id, creado_por'
 
 /**
  * Detalle de un evento + su roster de confirmaciones. **Filtrado por RLS según
@@ -18,6 +18,9 @@ const COLS =
  */
 export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle | null> {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const { data: ev, error } = await supabase
     .from('eventos')
@@ -97,5 +100,5 @@ export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle 
     aula_id: ev.aula_id,
     nino_id: ev.nino_id,
   }
-  return { evento, roster }
+  return { evento, roster, es_autor: !!user && ev.creado_por === user.id }
 }

@@ -1209,6 +1209,7 @@
   },
   "eventos": {
     "nuevo": "Nou esdeveniment",
+    "editar": "Editar esdeveniment",
     "ambitos": { "centro": "Tot el centre", "aula": "Una aula", "nino": "Un xiquet" },
     "tipos": {
       "excursion": "Excursió",
@@ -1255,6 +1256,10 @@
       "crear": "Crear esdeveniment",
       "creando": "Creant…",
       "creado_toast": "Esdeveniment creat",
+      "editar": "Editar",
+      "guardar": "Guardar canvis",
+      "guardando": "Guardant…",
+      "editado_toast": "Esdeveniment actualitzat",
       "confirmar": "Assistix",
       "rechazar": "No assistix",
       "confirmacion_guardada": "Resposta guardada",

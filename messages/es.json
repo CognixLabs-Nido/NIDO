@@ -1209,6 +1209,7 @@
   },
   "eventos": {
     "nuevo": "Nuevo evento",
+    "editar": "Editar evento",
     "ambitos": { "centro": "Todo el centro", "aula": "Un aula", "nino": "Un niño" },
     "tipos": {
       "excursion": "Excursión",
@@ -1255,6 +1256,10 @@
       "crear": "Crear evento",
       "creando": "Creando…",
       "creado_toast": "Evento creado",
+      "editar": "Editar",
+      "guardar": "Guardar cambios",
+      "guardando": "Guardando…",
+      "editado_toast": "Evento actualizado",
       "confirmar": "Asiste",
       "rechazar": "No asiste",
       "confirmacion_guardada": "Respuesta guardada",

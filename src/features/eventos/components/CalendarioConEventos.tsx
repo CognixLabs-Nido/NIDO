@@ -14,6 +14,7 @@ import { getEventoDetalleAction } from '../actions/get-evento-detalle'
 import { indexarEventosPorDia, ymd } from '../lib/fecha-grid'
 import type { EventoCalendario, EventoDetalle } from '../types'
 import { EventoDetalleDialog } from './EventoDetalleDialog'
+import { EventoFormDialog } from './EventoFormDialog'
 
 interface Props {
   mesInicial: number
@@ -22,6 +23,8 @@ interface Props {
   eventos: EventoCalendario[]
   locale: 'es' | 'en' | 'va'
   esStaff: boolean
+  /** admin del centro → puede editar cualquier evento (D8). */
+  esAdmin: boolean
   esFamilia: boolean
 }
 
@@ -38,6 +41,7 @@ export function CalendarioConEventos({
   eventos,
   locale,
   esStaff,
+  esAdmin,
   esFamilia,
 }: Props) {
   const t = useTranslations('eventos')
@@ -48,6 +52,7 @@ export function CalendarioConEventos({
   const [diaSel, setDiaSel] = useState<string | null>(null)
   const [detalle, setDetalle] = useState<EventoDetalle | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [eventoEnEdicion, setEventoEnEdicion] = useState<EventoCalendario | null>(null)
   const [, startTransition] = useTransition()
 
   const overrideMap = useMemo(
@@ -164,10 +169,30 @@ export function CalendarioConEventos({
         onOpenChange={setDialogOpen}
         detalle={detalle}
         esStaff={esStaff}
+        esAdmin={esAdmin}
         esFamilia={esFamilia}
         hoyYmd={hoyYmd}
         onChanged={recargarDetalle}
+        onEditar={() => {
+          if (!detalle) return
+          setDialogOpen(false)
+          setEventoEnEdicion(detalle.evento)
+        }}
       />
+
+      {eventoEnEdicion && (
+        <EventoFormDialog
+          key={eventoEnEdicion.id}
+          modo="editar"
+          locale={locale}
+          evento={eventoEnEdicion}
+          open
+          onOpenChange={(o) => {
+            if (!o) setEventoEnEdicion(null)
+          }}
+          onGuardado={() => setEventoEnEdicion(null)}
+        />
+      )}
     </div>
   )
 }
