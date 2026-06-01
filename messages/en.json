@@ -1207,6 +1207,91 @@
       "no_autorizado": "Session expired. Please sign in again."
     }
   },
+  "eventos": {
+    "nuevo": "New event",
+    "ambitos": { "centro": "Whole centre", "aula": "A classroom", "nino": "A child" },
+    "tipos": {
+      "excursion": "Field trip",
+      "reunion": "Meeting",
+      "fiesta": "Party",
+      "vacaciones": "Holidays",
+      "otro": "Other"
+    },
+    "estados": { "cancelado": "Cancelled" },
+    "estados_confirmacion": {
+      "pendiente": "Pending",
+      "confirmado": "Attending",
+      "rechazado": "Not attending"
+    },
+    "form": {
+      "ambito": "Who is it for?",
+      "aula": "Classroom",
+      "aula_placeholder": "Select a classroom",
+      "nino": "Child",
+      "nino_placeholder": "Select a child",
+      "tipo": "Event type",
+      "titulo": "Title",
+      "titulo_placeholder": "E.g. Trip to the farm",
+      "fecha": "Date",
+      "fecha_fin": "End date (optional)",
+      "hora_inicio": "Start time",
+      "hora_fin": "End time",
+      "lugar": "Place (optional)",
+      "descripcion": "Description",
+      "requiere_confirmacion": "Ask families to confirm attendance"
+    },
+    "detalle": {
+      "lugar": "Place",
+      "confirmaciones": "Attendance confirmations",
+      "sin_ninos": "No children in the audience.",
+      "ventana_cerrada": "The deadline to confirm has passed."
+    },
+    "calendario": {
+      "aria": "Events calendar",
+      "sin_eventos_dia": "No events on this day.",
+      "titulo_seccion": "Events"
+    },
+    "acciones": {
+      "crear": "Create event",
+      "creando": "Creating…",
+      "creado_toast": "Event created",
+      "confirmar": "Attending",
+      "rechazar": "Not attending",
+      "confirmacion_guardada": "Response saved",
+      "cancelar_evento": "Cancel event",
+      "evento_cancelado": "Event cancelled"
+    },
+    "validation": {
+      "titulo_vacio": "The title is required.",
+      "titulo_largo": "The title is too long (max. 200).",
+      "descripcion_larga": "The description is too long (max. 2000).",
+      "lugar_largo": "The place is too long (max. 200).",
+      "fecha_invalida": "Invalid date.",
+      "hora_invalida": "Invalid time. Format HH:MM.",
+      "rango_invalido": "The end date cannot be before the start date.",
+      "hora_fin_invalida": "The end time must be after the start time.",
+      "nino_requerido": "Select a child.",
+      "nino_no_permitido": "A child does not apply to this scope.",
+      "aula_requerida": "Select a classroom.",
+      "aula_no_permitida": "A classroom does not apply to this scope.",
+      "comentario_largo": "The comment is too long (max. 500)."
+    },
+    "errors": {
+      "creacion_fallo": "The event could not be created.",
+      "edicion_fallo": "The event could not be edited.",
+      "cancelacion_fallo": "The event could not be cancelled.",
+      "confirmacion_fallo": "The confirmation could not be saved.",
+      "no_autorizado": "You do not have permission for this action.",
+      "no_encontrado": "Event not found.",
+      "evento_cancelado": "The event is cancelled.",
+      "no_requiere_confirmacion": "This event does not require confirmation.",
+      "ventana_cerrada": "The deadline to confirm has passed.",
+      "nino_no_encontrado": "Child not found.",
+      "aula_no_encontrada": "Classroom not found.",
+      "sin_centro": "Centre not found.",
+      "generico": "Something went wrong."
+    }
+  },
   "recordatorios": {
     "titulo_pagina": "Reminders",
     "empty": "You have no reminders. Create one with the button above.",

@@ -1207,6 +1207,91 @@
       "no_autorizado": "Sessió caducada. Torna a iniciar sessió."
     }
   },
+  "eventos": {
+    "nuevo": "Nou esdeveniment",
+    "ambitos": { "centro": "Tot el centre", "aula": "Una aula", "nino": "Un xiquet" },
+    "tipos": {
+      "excursion": "Excursió",
+      "reunion": "Reunió",
+      "fiesta": "Festa",
+      "vacaciones": "Vacances",
+      "otro": "Altre"
+    },
+    "estados": { "cancelado": "Cancel·lat" },
+    "estados_confirmacion": {
+      "pendiente": "Pendent",
+      "confirmado": "Assistix",
+      "rechazado": "No assistix"
+    },
+    "form": {
+      "ambito": "A qui afecta?",
+      "aula": "Aula",
+      "aula_placeholder": "Selecciona una aula",
+      "nino": "Xiquet",
+      "nino_placeholder": "Selecciona un xiquet",
+      "tipo": "Tipus d'esdeveniment",
+      "titulo": "Títol",
+      "titulo_placeholder": "Ex. Excursió a la granja",
+      "fecha": "Data",
+      "fecha_fin": "Data de fi (opcional)",
+      "hora_inicio": "Hora d'inici",
+      "hora_fin": "Hora de fi",
+      "lugar": "Lloc (opcional)",
+      "descripcion": "Descripció",
+      "requiere_confirmacion": "Demanar confirmació d'assistència a les famílies"
+    },
+    "detalle": {
+      "lugar": "Lloc",
+      "confirmaciones": "Confirmacions d'assistència",
+      "sin_ninos": "No hi ha xiquets en l'audiència.",
+      "ventana_cerrada": "El termini per a confirmar ha acabat."
+    },
+    "calendario": {
+      "aria": "Calendari d'esdeveniments",
+      "sin_eventos_dia": "No hi ha esdeveniments este dia.",
+      "titulo_seccion": "Esdeveniments"
+    },
+    "acciones": {
+      "crear": "Crear esdeveniment",
+      "creando": "Creant…",
+      "creado_toast": "Esdeveniment creat",
+      "confirmar": "Assistix",
+      "rechazar": "No assistix",
+      "confirmacion_guardada": "Resposta guardada",
+      "cancelar_evento": "Cancel·lar esdeveniment",
+      "evento_cancelado": "Esdeveniment cancel·lat"
+    },
+    "validation": {
+      "titulo_vacio": "El títol és obligatori.",
+      "titulo_largo": "El títol és massa llarg (màx. 200).",
+      "descripcion_larga": "La descripció és massa llarga (màx. 2000).",
+      "lugar_largo": "El lloc és massa llarg (màx. 200).",
+      "fecha_invalida": "Data no vàlida.",
+      "hora_invalida": "Hora no vàlida. Format HH:MM.",
+      "rango_invalido": "La data de fi no pot ser anterior a la d'inici.",
+      "hora_fin_invalida": "L'hora de fi ha de ser posterior a la d'inici.",
+      "nino_requerido": "Selecciona un xiquet.",
+      "nino_no_permitido": "No correspon un xiquet per a este àmbit.",
+      "aula_requerida": "Selecciona una aula.",
+      "aula_no_permitida": "No correspon una aula per a este àmbit.",
+      "comentario_largo": "El comentari és massa llarg (màx. 500)."
+    },
+    "errors": {
+      "creacion_fallo": "No s'ha pogut crear l'esdeveniment.",
+      "edicion_fallo": "No s'ha pogut editar l'esdeveniment.",
+      "cancelacion_fallo": "No s'ha pogut cancel·lar l'esdeveniment.",
+      "confirmacion_fallo": "No s'ha pogut guardar la confirmació.",
+      "no_autorizado": "No tens permís per a esta acció.",
+      "no_encontrado": "Esdeveniment no trobat.",
+      "evento_cancelado": "L'esdeveniment està cancel·lat.",
+      "no_requiere_confirmacion": "Este esdeveniment no requerix confirmació.",
+      "ventana_cerrada": "El termini per a confirmar ha acabat.",
+      "nino_no_encontrado": "Xiquet no trobat.",
+      "aula_no_encontrada": "Aula no trobada.",
+      "sin_centro": "No s'ha trobat el centre.",
+      "generico": "Alguna cosa ha eixit malament."
+    }
+  },
   "recordatorios": {
     "titulo_pagina": "Recordatoris",
     "empty": "No tens recordatoris. Crea'n un amb el botó de dalt.",

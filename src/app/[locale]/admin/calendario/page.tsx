@@ -6,6 +6,11 @@ import { CalendarioCentroEditor } from '@/features/calendario-centro/components/
 import { LeyendaTiposDia } from '@/features/calendario-centro/components/LeyendaTiposDia'
 import { getCalendarioMes } from '@/features/calendario-centro/queries/get-calendario-mes'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { CalendarioConEventos } from '@/features/eventos/components/CalendarioConEventos'
+import { EventoFormDialog } from '@/features/eventos/components/EventoFormDialog'
+import { getEventosMes } from '@/features/eventos/queries/get-eventos-mes'
+import { getAulasParaRecordatorios } from '@/features/recordatorios/queries/get-aulas-para-recordatorios'
+import { getNinosParaRecordatorios } from '@/features/recordatorios/queries/get-ninos-para-recordatorios'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -42,7 +47,13 @@ export default async function AdminCalendarioPage({ params, searchParams }: Page
       ? Number(mesQ)
       : hoy.mes
 
-  const overrides = await getCalendarioMes(centroId, anioNum, mesNum)
+  const tEv = await getTranslations('eventos')
+  const [overrides, eventos, aulas, ninos] = await Promise.all([
+    getCalendarioMes(centroId, anioNum, mesNum),
+    getEventosMes(centroId, anioNum, mesNum),
+    getAulasParaRecordatorios('admin', centroId),
+    getNinosParaRecordatorios(),
+  ])
 
   return (
     <div className="space-y-6">
@@ -63,6 +74,27 @@ export default async function AdminCalendarioPage({ params, searchParams }: Page
       />
 
       <LeyendaTiposDia />
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-h2 text-foreground">{tEv('calendario.titulo_seccion')}</h2>
+          <EventoFormDialog
+            locale={locale}
+            ambitos={['centro', 'aula', 'nino']}
+            aulas={aulas}
+            ninos={ninos}
+          />
+        </div>
+        <CalendarioConEventos
+          mesInicial={mesNum}
+          anioInicial={anioNum}
+          overrides={overrides}
+          eventos={eventos}
+          locale={locale as 'es' | 'en' | 'va'}
+          esStaff
+          esFamilia={false}
+        />
+      </section>
     </div>
   )
 }

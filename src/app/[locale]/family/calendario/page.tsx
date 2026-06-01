@@ -2,10 +2,11 @@ import { CalendarDaysIcon } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
-import { CalendarioCentroReadOnly } from '@/features/calendario-centro/components/CalendarioCentroReadOnly'
 import { LeyendaTiposDia } from '@/features/calendario-centro/components/LeyendaTiposDia'
 import { getCalendarioMes } from '@/features/calendario-centro/queries/get-calendario-mes'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { CalendarioConEventos } from '@/features/eventos/components/CalendarioConEventos'
+import { getEventosMes } from '@/features/eventos/queries/get-eventos-mes'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -44,7 +45,10 @@ export default async function FamilyCalendarioPage({ params, searchParams }: Pag
       ? Number(mesQ)
       : hoy.mes
 
-  const overrides = await getCalendarioMes(centroId, anioNum, mesNum)
+  const [overrides, eventos] = await Promise.all([
+    getCalendarioMes(centroId, anioNum, mesNum),
+    getEventosMes(centroId, anioNum, mesNum),
+  ])
 
   return (
     <div className="space-y-6">
@@ -56,11 +60,14 @@ export default async function FamilyCalendarioPage({ params, searchParams }: Pag
         <p className="text-muted-foreground text-sm">{t('vista_solo_lectura')}</p>
       </header>
 
-      <CalendarioCentroReadOnly
+      <CalendarioConEventos
         mesInicial={mesNum}
         anioInicial={anioNum}
         overrides={overrides}
+        eventos={eventos}
         locale={locale as 'es' | 'en' | 'va'}
+        esStaff={rol === 'admin'}
+        esFamilia={rol === 'tutor_legal' || rol === 'autorizado'}
       />
 
       <LeyendaTiposDia />
