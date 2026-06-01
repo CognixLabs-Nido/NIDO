@@ -4,27 +4,46 @@ import { VENTANA_ANULACION_MS } from './constants'
 type RolUsuario = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
 
 /**
- * Destinos que un rol puede CREAR. Hotfix #44: el MVP de recordatorios es solo
- * para admin/profe; tutor_legal/autorizado no usan el módulo (sidebar oculto +
- * guard en la ruta), así que devuelven lista vacía.
+ * Destinos que un rol puede CREAR (matriz D9 de la spec F6-C). El módulo de
+ * creación es solo admin/profe; tutor_legal/autorizado solo RECIBEN (lista vacía
+ * → el form no se les muestra).
  *
- *  - admin/profe → `familia` (centro→familia) y `personal` (nota propia).
- *    Se omite `direccion` por decisión de producto (admin ES la dirección;
- *    profe no escala a admin por este canal). NO se ofrece `equipo`: su RLS de
- *    INSERT exige `es_tutor_de(nino)` — habilitarlo para admin/profe es un
- *    cambio de modelo diferido a F6-C (granularidad fina de destinatarios).
- *  - tutor_legal/autorizado → `[]`: fuera del MVP de recordatorios.
+ *  - admin → los 6 destinos.
+ *  - profe → familia_individual (su niño), familias_aula (su aula), personal.
+ *    NO familias_centro / profe_individual / profes_centro (D3: sin profe→profe,
+ *    sin broadcast a todo el centro desde profe).
+ *  - tutor_legal/autorizado → `[]`.
  */
 export function destinosParaRol(rol: RolUsuario): RecordatorioDestinatarioInput[] {
-  if (rol === 'admin' || rol === 'profe') {
-    return ['familia', 'personal']
+  if (rol === 'admin') {
+    return [
+      'familia_individual',
+      'familias_aula',
+      'familias_centro',
+      'profe_individual',
+      'profes_centro',
+      'personal',
+    ]
+  }
+  if (rol === 'profe') {
+    return ['familia_individual', 'familias_aula', 'personal']
   }
   return []
 }
 
-/** Solo familia/equipo van asociados a un niño (CHECK estructural de F6-A). */
+/** familia_individual lleva un niño concreto (nino_id). */
 export function requiereNino(destino: RecordatorioDestinatarioInput): boolean {
-  return destino === 'familia' || destino === 'equipo'
+  return destino === 'familia_individual'
+}
+
+/** familias_aula lleva un aula concreta (aula_id). */
+export function requiereAula(destino: RecordatorioDestinatarioInput): boolean {
+  return destino === 'familias_aula'
+}
+
+/** profe_individual lleva una profesora concreta (usuario_destinatario_id). */
+export function requiereUsuario(destino: RecordatorioDestinatarioInput): boolean {
+  return destino === 'profe_individual'
 }
 
 /**

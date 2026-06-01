@@ -6,6 +6,8 @@ import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/ge
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { MessagingBadge } from '@/features/messaging/components/MessagingBadge'
 import { countNoLeidos } from '@/features/messaging/queries/count-no-leidos'
+import { RecordatoriosBadge } from '@/features/recordatorios/components/RecordatoriosBadge'
+import { contarRecordatoriosPendientes } from '@/features/recordatorios/queries/contar-pendientes'
 import { SidebarNav } from '@/shared/components/SidebarNav'
 import { buildSidebarItems } from '@/shared/lib/sidebar-items'
 
@@ -45,8 +47,14 @@ export default async function MessagesLayout({ children, params }: LayoutProps) 
   const user = await getCurrentUser()
   const centroLogo = await getCentroLogo(centroId)
   const { total: unread } = await countNoLeidos()
+  const recordatoriosPendientes = await contarRecordatoriosPendientes()
 
-  const items = await buildSidebarItems(rol, locale, <MessagingBadge initialTotal={unread} />)
+  const items = await buildSidebarItems(
+    rol,
+    locale,
+    <MessagingBadge initialTotal={unread} />,
+    <RecordatoriosBadge initialTotal={recordatoriosPendientes} />
+  )
 
   const roleLabel =
     rol === 'admin'

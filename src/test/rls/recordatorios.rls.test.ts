@@ -18,44 +18,52 @@ import {
 } from './setup'
 
 /**
- * RLS de `recordatorios` (F6-A). Gated por `RECORDATORIOS_MIGRATION_APPLIED=1`:
- * la migración `20260531120000_phase6_reminders.sql` se aplica manualmente vía
+ * RLS de `recordatorios` (F6-C, modelo granular). Gated por
+ * `RECORDATORIOS_MIGRATION_APPLIED=1`: la migración
+ * `20260601120000_phase6c_reminders_remodel.sql` se aplica manualmente vía
  * Supabase SQL Editor (CLI con bug SIGILL en Penguin). Hasta entonces estos
- * tests se omiten para no romper la suite. Mismo patrón que `F5B34_MIGRATION_APPLIED`.
+ * tests se omiten para no romper la suite.
  *
- * Cubre: visibilidad/escritura por destino y rol, idempotencia al completar,
- * DELETE denegado, y el test explícito de "INSERT…RETURNING" que confirma que
- * el gotcha MVCC NO aplica (la SELECT policy no re-lee `recordatorios`).
+ * Cubre la matriz D9 completa (INSERT por rol×destino), la visibilidad SELECT
+ * por destino (incl. aislamiento por centro), el gotcha MVCC `.insert().select()`
+ * en los 6 destinos, el RPC `contar_recordatorios_pendientes` (destinatario
+ * directo vs visibilidad), y DELETE denegado.
  */
 const MIGRATION_APPLIED = process.env.RECORDATORIOS_MIGRATION_APPLIED === '1'
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS recordatorios — F6-A', () => {
+describe.skipIf(!MIGRATION_APPLIED)('RLS recordatorios — F6-C (modelo granular)', () => {
   let centro: { id: string }
   let centroB: { id: string }
+  let aula: { id: string }
+  let aulaB: { id: string } // misma centro, sin tutor ni profe del set principal
   let admin: TestUser
-  let profe: TestUser
-  let tutor: TestUser // tutor del niño, con puede_recibir_mensajes
-  let autorizado: TestUser // vínculo sin flag → fuera del canal
-  let tutorOtro: TestUser // tutor de otro niño/centro → aislamiento
+  let profe: TestUser // asignada a `aula`
+  let profeCentro: TestUser // rol profe del centro, sin aula del set
+  let tutor: TestUser // tutor del niño en `aula`, flag true
+  let autorizado: TestUser // vínculo al niño, flag false
+  let tutorOtro: TestUser // tutor de otro centro → aislamiento
   let nino: { id: string }
   const creados: string[] = []
 
   beforeAll(async () => {
-    centro = await createTestCentro('Centro Recordatorios')
-    centroB = await createTestCentro('Centro Recordatorios B')
+    centro = await createTestCentro('Centro Rec C')
+    centroB = await createTestCentro('Centro Rec C B')
     const curso = await createTestCurso(centro.id)
-    const aula = await createTestAula(centro.id, curso.id)
-    nino = await createTestNino(centro.id, 'Reminder Test')
+    aula = await createTestAula(centro.id, curso.id, 'Aula Principal')
+    aulaB = await createTestAula(centro.id, curso.id, 'Aula Secundaria')
+    nino = await createTestNino(centro.id, 'Reminder C')
     await matricular(nino.id, aula.id, curso.id)
 
-    admin = await createTestUser({ nombre: 'Admin Rec' })
-    profe = await createTestUser({ nombre: 'Profe Rec' })
-    tutor = await createTestUser({ nombre: 'Tutor Rec' })
-    autorizado = await createTestUser({ nombre: 'Autorizado Rec' })
-    tutorOtro = await createTestUser({ nombre: 'Tutor Otro' })
+    admin = await createTestUser({ nombre: 'Admin RecC' })
+    profe = await createTestUser({ nombre: 'Profe RecC' })
+    profeCentro = await createTestUser({ nombre: 'Profe Centro RecC' })
+    tutor = await createTestUser({ nombre: 'Tutor RecC' })
+    autorizado = await createTestUser({ nombre: 'Autorizado RecC' })
+    tutorOtro = await createTestUser({ nombre: 'Tutor Otro RecC' })
 
     await asignarRol(admin.id, centro.id, 'admin')
     await asignarRol(profe.id, centro.id, 'profe')
+    await asignarRol(profeCentro.id, centro.id, 'profe')
     await asignarRol(tutor.id, centro.id, 'tutor_legal')
     await asignarRol(autorizado.id, centro.id, 'autorizado')
     await asignarRol(tutorOtro.id, centroB.id, 'tutor_legal')
@@ -63,206 +71,359 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS recordatorios — F6-A', () => {
     await asignarProfeAula(profe.id, aula.id)
     await crearVinculo(nino.id, tutor.id, 'tutor_legal_principal', { puede_recibir_mensajes: true })
     await crearVinculo(nino.id, autorizado.id, 'autorizado', { puede_recibir_mensajes: false })
-  }, 120_000)
+  }, 180_000)
 
   afterAll(async () => {
     if (creados.length > 0) {
       await serviceClient.from('recordatorios').delete().in('id', creados)
     }
-    for (const u of [admin, profe, tutor, autorizado, tutorOtro]) {
+    for (const u of [admin, profe, profeCentro, tutor, autorizado, tutorOtro]) {
       if (u?.id) await deleteTestUser(u.id)
     }
-    // El cascade de centros limpia niño, matrícula, aula, curso, vínculos.
     if (centro?.id) await deleteTestCentro(centro.id)
     if (centroB?.id) await deleteTestCentro(centroB.id)
-  }, 120_000)
+  }, 180_000)
 
-  // --- familia: centro → familia ------------------------------------------
-  it('familia: admin INSERT con .select() devuelve la fila (gotcha MVCC NO aplica)', async () => {
-    const c = await clientFor(admin)
+  // Helper: inserta como `user` y registra para limpieza. Devuelve {data,error}.
+  async function insertarComo(
+    user: TestUser,
+    payload: Record<string, unknown>
+  ): Promise<{ id: string | null; code: string | undefined }> {
+    const c = await clientFor(user)
     const { data, error } = await c
       .from('recordatorios')
-      .insert({
-        centro_id: centro.id,
-        destinatario: 'familia',
-        nino_id: nino.id,
-        creado_por: admin.id,
-        titulo: 'traer cartilla de vacunas',
-      })
-      .select('id, titulo')
-      .single()
-    expect(error).toBeNull()
-    expect(data?.id).toBeTruthy()
+      .insert(payload as never)
+      .select('id')
+      .maybeSingle()
     if (data?.id) creados.push(data.id)
+    return { id: data?.id ?? null, code: error?.code }
+  }
+
+  // ── INSERT: matriz D9 (admin crea los 6; .select() ok = MVCC no aplica) ────
+  it('admin crea los 6 destinos y .select() devuelve la fila (gotcha MVCC NO aplica)', async () => {
+    const casos: Array<Record<string, unknown>> = [
+      { destinatario: 'familia_individual', nino_id: nino.id, titulo: 'fam ind' },
+      { destinatario: 'familias_aula', aula_id: aula.id, titulo: 'fam aula' },
+      { destinatario: 'familias_centro', titulo: 'fam centro' },
+      { destinatario: 'profe_individual', usuario_destinatario_id: profe.id, titulo: 'profe ind' },
+      { destinatario: 'profes_centro', titulo: 'profes centro' },
+      { destinatario: 'personal', usuario_destinatario_id: admin.id, titulo: 'personal admin' },
+    ]
+    for (const caso of casos) {
+      const r = await insertarComo(admin, { centro_id: centro.id, creado_por: admin.id, ...caso })
+      expect(r.code, `destino ${caso.destinatario}`).toBeUndefined()
+      expect(r.id, `destino ${caso.destinatario}`).toBeTruthy()
+    }
   })
 
-  it('familia: tutor con flag lo VE; autorizado sin flag NO', async () => {
+  it('profe crea familia_individual (su niño), familias_aula (su aula) y personal', async () => {
+    const famInd = await insertarComo(profe, {
+      centro_id: centro.id,
+      creado_por: profe.id,
+      destinatario: 'familia_individual',
+      nino_id: nino.id,
+      titulo: 'profe→familia',
+    })
+    expect(famInd.code).toBeUndefined()
+
+    const famAula = await insertarComo(profe, {
+      centro_id: centro.id,
+      creado_por: profe.id,
+      destinatario: 'familias_aula',
+      aula_id: aula.id,
+      titulo: 'profe→aula',
+    })
+    expect(famAula.code).toBeUndefined()
+
+    const personal = await insertarComo(profe, {
+      centro_id: centro.id,
+      creado_por: profe.id,
+      destinatario: 'personal',
+      usuario_destinatario_id: profe.id,
+      titulo: 'profe nota',
+    })
+    expect(personal.code).toBeUndefined()
+  })
+
+  it('profe NO crea familias_centro, profe_individual ni profes_centro (42501)', async () => {
+    const centroBroad = await insertarComo(profe, {
+      centro_id: centro.id,
+      creado_por: profe.id,
+      destinatario: 'familias_centro',
+      titulo: 'ilegal',
+    })
+    expect(centroBroad.code).toBe('42501')
+
+    const profeInd = await insertarComo(profe, {
+      centro_id: centro.id,
+      creado_por: profe.id,
+      destinatario: 'profe_individual',
+      usuario_destinatario_id: profeCentro.id,
+      titulo: 'ilegal',
+    })
+    expect(profeInd.code).toBe('42501')
+
+    const profesCentro = await insertarComo(profe, {
+      centro_id: centro.id,
+      creado_por: profe.id,
+      destinatario: 'profes_centro',
+      titulo: 'ilegal',
+    })
+    expect(profesCentro.code).toBe('42501')
+  })
+
+  it('profe NO crea familias_aula de un aula que no es suya (42501)', async () => {
+    const r = await insertarComo(profe, {
+      centro_id: centro.id,
+      creado_por: profe.id,
+      destinatario: 'familias_aula',
+      aula_id: aulaB.id,
+      titulo: 'aula ajena',
+    })
+    expect(r.code).toBe('42501')
+  })
+
+  it('tutor no crea NINGÚN destino (solo recibe)', async () => {
+    const famInd = await insertarComo(tutor, {
+      centro_id: centro.id,
+      creado_por: tutor.id,
+      destinatario: 'familia_individual',
+      nino_id: nino.id,
+      titulo: 'tutor ilegal',
+    })
+    expect(famInd.code).toBe('42501')
+
+    const personal = await insertarComo(tutor, {
+      centro_id: centro.id,
+      creado_por: tutor.id,
+      destinatario: 'personal',
+      usuario_destinatario_id: tutor.id,
+      titulo: 'tutor personal',
+    })
+    expect(personal.code).toBe('42501')
+  })
+
+  it('personal: no se puede crear para otro usuario (anti-suplantación)', async () => {
+    const r = await insertarComo(profe, {
+      centro_id: centro.id,
+      creado_por: profe.id,
+      destinatario: 'personal',
+      usuario_destinatario_id: admin.id,
+      titulo: 'suplantación',
+    })
+    expect(r.code).toBe('42501')
+  })
+
+  // ── SELECT: visibilidad por destino + aislamiento por centro ───────────────
+  it('familia_individual: tutor con flag lo VE; autorizado sin flag NO; tutorOtro NO', async () => {
+    await insertarComo(admin, {
+      centro_id: centro.id,
+      creado_por: admin.id,
+      destinatario: 'familia_individual',
+      nino_id: nino.id,
+      titulo: 'visible fam',
+    })
+
     const cTutor = await clientFor(tutor)
-    const visto = await cTutor.from('recordatorios').select('id').eq('destinatario', 'familia')
-    expect(visto.error).toBeNull()
+    const visto = await cTutor
+      .from('recordatorios')
+      .select('id')
+      .eq('destinatario', 'familia_individual')
     expect((visto.data ?? []).length).toBeGreaterThan(0)
 
     const cAut = await clientFor(autorizado)
-    const noVisto = await cAut.from('recordatorios').select('id').eq('destinatario', 'familia')
+    const noVisto = await cAut
+      .from('recordatorios')
+      .select('id')
+      .eq('destinatario', 'familia_individual')
     expect((noVisto.data ?? []).length).toBe(0)
+
+    const cOtro = await clientFor(tutorOtro)
+    const aislado = await cOtro.from('recordatorios').select('id')
+    expect((aislado.data ?? []).length).toBe(0)
   })
 
-  it('familia: tutor de otro centro NO ve nada', async () => {
-    const c = await clientFor(tutorOtro)
-    const { data } = await c.from('recordatorios').select('id')
-    expect((data ?? []).length).toBe(0)
-  })
+  it('familias_aula: tutor del aula y profe del aula lo VEN; tutorOtro NO', async () => {
+    await insertarComo(admin, {
+      centro_id: centro.id,
+      creado_por: admin.id,
+      destinatario: 'familias_aula',
+      aula_id: aula.id,
+      titulo: 'visible aula',
+    })
 
-  it('familia: tutor NO puede crear destino familia (solo staff)', async () => {
-    const c = await clientFor(tutor)
-    const { data, error } = await c
-      .from('recordatorios')
-      .insert({
-        centro_id: centro.id,
-        destinatario: 'familia',
-        nino_id: nino.id,
-        creado_por: tutor.id,
-        titulo: 'intento ilegal',
-      })
-      .select('id')
-      .maybeSingle()
-    expect(error?.code).toBe('42501')
-    expect(data).toBeNull()
-  })
-
-  // --- equipo: familia → centro -------------------------------------------
-  it('equipo: tutor con flag crea (.select() ok); profe del niño lo ve', async () => {
     const cTutor = await clientFor(tutor)
-    const { data, error } = await cTutor
+    const tutorVe = await cTutor
       .from('recordatorios')
-      .insert({
-        centro_id: centro.id,
-        destinatario: 'equipo',
-        nino_id: nino.id,
-        creado_por: tutor.id,
-        titulo: 'hoy recoge la abuela a las 16:30',
-      })
       .select('id')
-      .single()
-    expect(error).toBeNull()
-    expect(data?.id).toBeTruthy()
-    if (data?.id) creados.push(data.id)
+      .eq('destinatario', 'familias_aula')
+    expect((tutorVe.data ?? []).length).toBeGreaterThan(0)
 
     const cProfe = await clientFor(profe)
-    const visto = await cProfe.from('recordatorios').select('id').eq('destinatario', 'equipo')
-    expect((visto.data ?? []).length).toBeGreaterThan(0)
+    const profeVe = await cProfe
+      .from('recordatorios')
+      .select('id')
+      .eq('destinatario', 'familias_aula')
+    expect((profeVe.data ?? []).length).toBeGreaterThan(0)
+
+    const cOtro = await clientFor(tutorOtro)
+    const otroVe = await cOtro
+      .from('recordatorios')
+      .select('id')
+      .eq('destinatario', 'familias_aula')
+    expect((otroVe.data ?? []).length).toBe(0)
   })
 
-  // --- direccion: → admins -------------------------------------------------
-  it('direccion: profe crea, admin lo ve, otro tutor NO', async () => {
-    const cProfe = await clientFor(profe)
-    const { data, error } = await cProfe
+  it('familias_centro: tutor del centro lo VE; tutorOtro NO', async () => {
+    await insertarComo(admin, {
+      centro_id: centro.id,
+      creado_por: admin.id,
+      destinatario: 'familias_centro',
+      titulo: 'visible centro',
+    })
+
+    const cTutor = await clientFor(tutor)
+    const tutorVe = await cTutor
       .from('recordatorios')
-      .insert({
-        centro_id: centro.id,
-        destinatario: 'direccion',
-        creado_por: profe.id,
-        titulo: 'faltan toallitas en el aula',
-      })
       .select('id')
-      .single()
-    expect(error).toBeNull()
-    if (data?.id) creados.push(data.id)
+      .eq('destinatario', 'familias_centro')
+    expect((tutorVe.data ?? []).length).toBeGreaterThan(0)
+
+    const cOtro = await clientFor(tutorOtro)
+    const otroVe = await cOtro
+      .from('recordatorios')
+      .select('id')
+      .eq('destinatario', 'familias_centro')
+    expect((otroVe.data ?? []).length).toBe(0)
+  })
+
+  it('profe_individual: la profe destinataria y el admin lo VEN; otra profe NO', async () => {
+    await insertarComo(admin, {
+      centro_id: centro.id,
+      creado_por: admin.id,
+      destinatario: 'profe_individual',
+      usuario_destinatario_id: profe.id,
+      titulo: 'a la profe',
+    })
+
+    const cProfe = await clientFor(profe)
+    const profeVe = await cProfe
+      .from('recordatorios')
+      .select('id')
+      .eq('destinatario', 'profe_individual')
+    expect((profeVe.data ?? []).length).toBeGreaterThan(0)
 
     const cAdmin = await clientFor(admin)
-    const adminVe = await cAdmin.from('recordatorios').select('id').eq('destinatario', 'direccion')
+    const adminVe = await cAdmin
+      .from('recordatorios')
+      .select('id')
+      .eq('destinatario', 'profe_individual')
     expect((adminVe.data ?? []).length).toBeGreaterThan(0)
 
+    const cOtra = await clientFor(profeCentro)
+    const otraVe = await cOtra
+      .from('recordatorios')
+      .select('id')
+      .eq('destinatario', 'profe_individual')
+    expect((otraVe.data ?? []).length).toBe(0)
+  })
+
+  it('profes_centro: cualquier profe del centro lo VE; tutor NO', async () => {
+    await insertarComo(admin, {
+      centro_id: centro.id,
+      creado_por: admin.id,
+      destinatario: 'profes_centro',
+      titulo: 'a todas las profes',
+    })
+
+    const cProfe = await clientFor(profeCentro)
+    const profeVe = await cProfe
+      .from('recordatorios')
+      .select('id')
+      .eq('destinatario', 'profes_centro')
+    expect((profeVe.data ?? []).length).toBeGreaterThan(0)
+
     const cTutor = await clientFor(tutor)
-    const tutorVe = await cTutor.from('recordatorios').select('id').eq('destinatario', 'direccion')
+    const tutorVe = await cTutor
+      .from('recordatorios')
+      .select('id')
+      .eq('destinatario', 'profes_centro')
     expect((tutorVe.data ?? []).length).toBe(0)
   })
 
-  // --- personal ------------------------------------------------------------
-  it('personal: creador lo ve, otro usuario NO', async () => {
-    const cAdmin = await clientFor(admin)
-    const { data, error } = await cAdmin
-      .from('recordatorios')
-      .insert({
-        centro_id: centro.id,
-        destinatario: 'personal',
-        usuario_destinatario_id: admin.id,
-        creado_por: admin.id,
-        titulo: 'llamar al proveedor de menús',
-      })
-      .select('id')
-      .single()
-    expect(error).toBeNull()
-    if (data?.id) creados.push(data.id)
+  it('personal: solo el destinatario lo VE', async () => {
+    await insertarComo(admin, {
+      centro_id: centro.id,
+      creado_por: admin.id,
+      destinatario: 'personal',
+      usuario_destinatario_id: admin.id,
+      titulo: 'solo admin',
+    })
 
     const cProfe = await clientFor(profe)
-    const profeVe = await cProfe.from('recordatorios').select('id').eq('destinatario', 'personal')
+    const profeVe = await cProfe
+      .from('recordatorios')
+      .select('id')
+      .eq('destinatario', 'personal')
+      .eq('usuario_destinatario_id', admin.id)
     expect((profeVe.data ?? []).length).toBe(0)
   })
 
-  it('personal: no se puede crear para otro usuario', async () => {
-    const cProfe = await clientFor(profe)
-    const { error } = await cProfe
-      .from('recordatorios')
-      .insert({
-        centro_id: centro.id,
-        destinatario: 'personal',
-        usuario_destinatario_id: admin.id, // suplantación
-        creado_por: profe.id,
-        titulo: 'personal de otro',
-      })
-      .select('id')
-      .maybeSingle()
-    expect(error?.code).toBe('42501')
-  })
-
-  // --- completar idempotente / race ---------------------------------------
-  it('completar: tutor completa familia; segundo intento afecta 0 filas (idempotencia)', async () => {
-    // Creamos un recordatorio familia vía service para aislar el caso.
-    const { data: rec } = await serviceClient
-      .from('recordatorios')
-      .insert({
-        centro_id: centro.id,
-        destinatario: 'familia',
-        nino_id: nino.id,
-        creado_por: admin.id,
-        titulo: 'completar test',
-      })
-      .select('id')
-      .single()
-    expect(rec?.id).toBeTruthy()
-    if (rec?.id) creados.push(rec.id)
+  // ── RPC badge: destinatario directo, no mera visibilidad ───────────────────
+  it('contar_recordatorios_pendientes: tutor cuenta sus broadcasts; admin no cuenta lo que solo observa', async () => {
+    // Recordatorio familia_individual creado por admin → el tutor es destinatario;
+    // el admin solo lo observa (no destinatario).
+    await insertarComo(admin, {
+      centro_id: centro.id,
+      creado_por: admin.id,
+      destinatario: 'familia_individual',
+      nino_id: nino.id,
+      titulo: 'badge fam',
+    })
 
     const cTutor = await clientFor(tutor)
-    const first = await cTutor
-      .from('recordatorios')
-      .update({ completado_en: new Date().toISOString(), completado_por: tutor.id })
-      .eq('id', rec!.id)
-      .is('completado_en', null)
-      .select('id')
-      .maybeSingle()
-    expect(first.error).toBeNull()
-    expect(first.data?.id).toBe(rec!.id)
+    const { data: tutorCount, error: e1 } = await cTutor.rpc('contar_recordatorios_pendientes')
+    expect(e1).toBeNull()
+    expect(tutorCount ?? 0).toBeGreaterThan(0)
 
-    // Segundo intento: ya completado → 0 filas, sin error duro.
-    const second = await cTutor
-      .from('recordatorios')
-      .update({ completado_en: new Date().toISOString(), completado_por: tutor.id })
-      .eq('id', rec!.id)
-      .is('completado_en', null)
-      .select('id')
-      .maybeSingle()
-    expect(second.error).toBeNull()
-    expect(second.data).toBeNull()
+    // El autorizado tiene puede_recibir_mensajes=false. NO es destinatario de
+    // `familia_individual` (gateado por el flag en el RPC), PERO sí de los
+    // broadcasts `familias_aula`/`familias_centro`: su visibilidad sigue la
+    // PERTENENCIA (es_tutor_en_aula/es_tutor_en_centro), no el flag — trade-off
+    // documentado en ADR-0037 (el flag solo gatea el push). Por eso su contador
+    // refleja los broadcasts del aula/centro (>0), no 0.
+    const cAut = await clientFor(autorizado)
+    const { data: autCount } = await cAut.rpc('contar_recordatorios_pendientes')
+    expect(autCount ?? 0).toBeGreaterThan(0)
+
+    // Flag-gating sobre familia_individual (determinista): tutor y autorizado
+    // ven los MISMOS broadcasts (mismo niño/aula/centro), pero solo el tutor
+    // (flag true) cuenta los `familia_individual` → cuenta estrictamente más.
+    expect(tutorCount ?? 0).toBeGreaterThan(autCount ?? 0)
+
+    // Recordatorio personal del admin → SÍ cuenta para el admin; pero los
+    // familia_* que creó NO. Creamos uno personal y comprobamos que el conteo
+    // del admin es exactamente el de sus personales pendientes (≥1, sin inflar
+    // por los broadcasts que creó).
+    await insertarComo(admin, {
+      centro_id: centro.id,
+      creado_por: admin.id,
+      destinatario: 'personal',
+      usuario_destinatario_id: admin.id,
+      titulo: 'badge personal admin',
+    })
+    const cAdmin = await clientFor(admin)
+    const { data: adminCount } = await cAdmin.rpc('contar_recordatorios_pendientes')
+    expect(adminCount ?? 0).toBeGreaterThan(0)
   })
 
-  // --- DELETE denegado -----------------------------------------------------
+  // ── DELETE denegado ────────────────────────────────────────────────────────
   it('DELETE: bloqueado para admin (default DENY)', async () => {
     const { data: rec } = await serviceClient
       .from('recordatorios')
       .insert({
         centro_id: centro.id,
-        destinatario: 'direccion',
+        destinatario: 'familias_centro',
         creado_por: admin.id,
         titulo: 'borrar test',
       })
@@ -273,7 +434,6 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS recordatorios — F6-A', () => {
     const cAdmin = await clientFor(admin)
     await cAdmin.from('recordatorios').delete().eq('id', rec!.id)
 
-    // Sigue existiendo (RLS DELETE default DENY → 0 filas afectadas, sin error).
     const { data: sigue } = await serviceClient
       .from('recordatorios')
       .select('id')

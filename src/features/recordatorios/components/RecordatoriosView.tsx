@@ -10,15 +10,19 @@ import { ListaRecordatorios } from './ListaRecordatorios'
 import { RecordatorioFormDialog } from './RecordatorioFormDialog'
 import { useRecordatoriosRealtime } from '../lib/use-recordatorios-realtime'
 import type { RecordatorioDestinatarioInput } from '../schemas/recordatorios'
+import type { AulaParaRecordatorio } from '../queries/get-aulas-para-recordatorios'
 import type { NinoParaRecordatorio } from '../queries/get-ninos-para-recordatorios'
+import type { ProfeParaRecordatorio } from '../queries/get-profes-para-recordatorios'
 import type { RecordatorioListItem } from '../types'
 
 interface Props {
   locale: string
   userId: string
-  /** Destinos que el rol puede crear (para el form). */
+  /** Destinos que el rol puede crear (para el form). Vacío = tutor (solo lee). */
   destinos: RecordatorioDestinatarioInput[]
   ninos: NinoParaRecordatorio[]
+  aulas: AulaParaRecordatorio[]
+  profes: ProfeParaRecordatorio[]
   pendientes: RecordatorioListItem[]
   completados: RecordatorioListItem[]
 }
@@ -30,6 +34,8 @@ export function RecordatoriosView({
   userId,
   destinos,
   ninos,
+  aulas,
+  profes,
   pendientes,
   completados,
 }: Props) {
@@ -59,7 +65,16 @@ export function RecordatoriosView({
     <div className="space-y-5">
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{t('titulo_pagina')}</h1>
-        <RecordatorioFormDialog locale={locale} destinos={destinos} ninos={ninos} />
+        {/* Tutor/autorizado solo reciben: sin destinos → sin botón crear. */}
+        {destinos.length > 0 && (
+          <RecordatorioFormDialog
+            locale={locale}
+            destinos={destinos}
+            ninos={ninos}
+            aulas={aulas}
+            profes={profes}
+          />
+        )}
       </header>
 
       {destinosVisibles.length > 1 && (
@@ -86,7 +101,7 @@ export function RecordatoriosView({
 
       {pendientes.length === 0 && completados.length === 0 ? (
         <p className="text-muted-foreground rounded-lg border border-dashed p-8 text-center text-sm">
-          {t('empty')}
+          {t(destinos.length > 0 ? 'empty' : 'empty_solo_lectura')}
         </p>
       ) : (
         <div className="space-y-6">

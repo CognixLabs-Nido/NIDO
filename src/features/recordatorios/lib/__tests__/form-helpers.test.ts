@@ -1,28 +1,64 @@
 import { describe, expect, it } from 'vitest'
 
 import { VENTANA_ANULACION_MS } from '../constants'
-import { datetimeLocalAIso, destinosParaRol, puedeAnular, requiereNino } from '../form-helpers'
+import {
+  datetimeLocalAIso,
+  destinosParaRol,
+  puedeAnular,
+  requiereAula,
+  requiereNino,
+  requiereUsuario,
+} from '../form-helpers'
 
 const USER = 'user-1'
 
-describe('destinosParaRol', () => {
-  it('admin/profe pueden crear familia/personal (no equipo ni direccion en MVP)', () => {
-    expect(destinosParaRol('admin')).toEqual(['familia', 'personal'])
-    expect(destinosParaRol('profe')).toEqual(['familia', 'personal'])
+describe('destinosParaRol (matriz F6-C)', () => {
+  it('admin → los 6 destinos en orden', () => {
+    expect(destinosParaRol('admin')).toEqual([
+      'familia_individual',
+      'familias_aula',
+      'familias_centro',
+      'profe_individual',
+      'profes_centro',
+      'personal',
+    ])
   })
 
-  it('tutor/autorizado no usan recordatorios en el MVP → lista vacía', () => {
+  it('profe → familia_individual, familias_aula, personal (sin profe_individual/profes_centro/familias_centro)', () => {
+    expect(destinosParaRol('profe')).toEqual(['familia_individual', 'familias_aula', 'personal'])
+  })
+
+  it('tutor/autorizado solo reciben → lista vacía', () => {
     expect(destinosParaRol('tutor_legal')).toEqual([])
     expect(destinosParaRol('autorizado')).toEqual([])
   })
 })
 
-describe('requiereNino', () => {
-  it('solo familia y equipo llevan niño', () => {
-    expect(requiereNino('familia')).toBe(true)
-    expect(requiereNino('equipo')).toBe(true)
-    expect(requiereNino('direccion')).toBe(false)
-    expect(requiereNino('personal')).toBe(false)
+describe('requiereNino / requiereAula / requiereUsuario', () => {
+  it('familia_individual lleva niño (solo)', () => {
+    expect(requiereNino('familia_individual')).toBe(true)
+    expect(requiereAula('familia_individual')).toBe(false)
+    expect(requiereUsuario('familia_individual')).toBe(false)
+  })
+
+  it('familias_aula lleva aula (solo)', () => {
+    expect(requiereAula('familias_aula')).toBe(true)
+    expect(requiereNino('familias_aula')).toBe(false)
+    expect(requiereUsuario('familias_aula')).toBe(false)
+  })
+
+  it('profe_individual lleva usuario (solo)', () => {
+    expect(requiereUsuario('profe_individual')).toBe(true)
+    expect(requiereNino('profe_individual')).toBe(false)
+    expect(requiereAula('profe_individual')).toBe(false)
+  })
+
+  it('familias_centro / profes_centro / personal no llevan referencia', () => {
+    for (const d of ['familias_centro', 'profes_centro', 'personal'] as const) {
+      expect(requiereNino(d)).toBe(false)
+      expect(requiereAula(d)).toBe(false)
+      expect(requiereUsuario(d)).toBe(false)
+    }
   })
 })
 

@@ -1226,7 +1226,11 @@
       "titulo": "Title",
       "titulo_placeholder": "e.g. bring vaccination card",
       "descripcion": "Description (optional)",
-      "vencimiento": "Due date (optional)"
+      "vencimiento": "Due date (optional)",
+      "aula": "Classroom",
+      "aula_placeholder": "Select a classroom",
+      "profe": "Teacher",
+      "profe_placeholder": "Select a teacher"
     },
     "acciones": {
       "crear": "Create reminder",
@@ -1239,9 +1243,11 @@
       "anulado_toast": "Reminder voided"
     },
     "destinos": {
-      "familia": "For the family",
-      "equipo": "For the child's team",
-      "direccion": "For the office",
+      "familia_individual": "A single family (by child)",
+      "familias_aula": "All families in a classroom",
+      "familias_centro": "All families in the centre",
+      "profe_individual": "A single teacher",
+      "profes_centro": "All teachers",
       "personal": "For me"
     },
     "estados": {
@@ -1255,7 +1261,11 @@
       "titulo_largo": "Title cannot exceed 200 characters.",
       "descripcion_larga": "Description cannot exceed 1000 characters.",
       "nino_requerido": "Select the child.",
-      "nino_no_permitido": "This target has no associated child."
+      "nino_no_permitido": "This target has no associated child.",
+      "aula_requerida": "Select the classroom.",
+      "aula_no_permitida": "This target has no associated classroom.",
+      "profe_requerida": "Select the teacher.",
+      "usuario_no_permitido": "This target has no associated user."
     },
     "errors": {
       "no_autorizado": "You don't have permission for this action.",
@@ -1264,7 +1274,10 @@
       "ventana_anulacion_expirada": "You can only void within the first 5 minutes.",
       "ya_anulado": "This reminder was already voided.",
       "nino_no_encontrado": "Child not found.",
-      "sin_centro": "Could not determine your centre."
-    }
+      "sin_centro": "Could not determine your centre.",
+      "aula_no_encontrada": "Classroom not found."
+    },
+    "badge_aria": "{n} pending reminders",
+    "empty_solo_lectura": "You have no reminders. Those sent to you will appear here."
   }
 }

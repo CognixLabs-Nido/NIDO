@@ -82,8 +82,12 @@ export function RecordatorioItem({ item, userId, locale }: Props) {
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <Badge variant="outline">{t(`destinos.${item.destinatario}`)}</Badge>
-          {item.nino_nombre && (
-            <span className="text-muted-foreground text-xs">{item.nino_nombre}</span>
+          {/* Contexto del destino: niño (familia_individual), aula (familias_aula)
+              o profesora (profe_individual). Solo uno aplica por la coherencia BD. */}
+          {(item.nino_nombre || item.aula_nombre || item.usuario_destinatario_nombre) && (
+            <span className="text-muted-foreground text-xs">
+              {item.nino_nombre ?? item.aula_nombre ?? item.usuario_destinatario_nombre}
+            </span>
           )}
           {item.erroneo && (
             <Badge variant="outline" className="text-destructive">

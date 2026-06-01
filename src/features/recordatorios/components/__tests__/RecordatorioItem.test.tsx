@@ -28,9 +28,12 @@ const USER = 'user-1'
 function makeItem(overrides: Partial<RecordatorioListItem> = {}): RecordatorioListItem {
   return {
     id: 'rec-1',
-    destinatario: 'familia',
+    destinatario: 'familia_individual',
     nino_id: 'nino-1',
     nino_nombre: 'Demo',
+    aula_id: null,
+    aula_nombre: null,
+    usuario_destinatario_nombre: null,
     titulo: 'traer pañales',
     descripcion: null,
     vencimiento: null,

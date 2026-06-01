@@ -6,6 +6,8 @@ import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/ge
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { MessagingBadge } from '@/features/messaging/components/MessagingBadge'
 import { countNoLeidos } from '@/features/messaging/queries/count-no-leidos'
+import { RecordatoriosBadge } from '@/features/recordatorios/components/RecordatoriosBadge'
+import { contarRecordatoriosPendientes } from '@/features/recordatorios/queries/contar-pendientes'
 import { SidebarNav } from '@/shared/components/SidebarNav'
 import { buildSidebarItems } from '@/shared/lib/sidebar-items'
 
@@ -15,36 +17,51 @@ interface LayoutProps {
 }
 
 /**
- * Layout transversal de recordatorios. En el MVP (hotfix #44) el módulo es
- * solo para admin/profe; tutor_legal y autorizado se redirigen a su área
- * familia (la entrada de sidebar tampoco se les muestra). La sidebar refleja
- * el rol para que la navegación sea coherente al volver a su área.
+ * Layout transversal de recordatorios. F6-C: accesible para los 4 roles
+ * (admin/profe crean y reciben; tutor_legal/autorizado solo reciben). Revierte
+ * el hotfix #44, que redirigía a tutor/autorizado fuera de /reminders. La
+ * sidebar refleja el rol del usuario para que la navegación sea coherente.
  */
 export default async function RemindersLayout({ children, params }: LayoutProps) {
   const { locale } = await params
-  const tNav = await getTranslations('admin.nav')
+  const tNav = await getTranslations('admin.nav') // 'perfil' es común a los roles
   const tRoles = await getTranslations('auth.select_role.roles')
 
   const centroId = await getCentroActualId()
   if (!centroId) redirect(`/${locale}/login`)
 
   const rolRaw = await getRolEnCentro(centroId)
-  // tutor_legal/autorizado no acceden a recordatorios en el MVP → su home.
-  if (rolRaw === 'tutor_legal' || rolRaw === 'autorizado') {
-    redirect(`/${locale}/family`)
-  }
-  if (!rolRaw || (rolRaw !== 'admin' && rolRaw !== 'profe')) {
+  if (
+    !rolRaw ||
+    (rolRaw !== 'admin' &&
+      rolRaw !== 'profe' &&
+      rolRaw !== 'tutor_legal' &&
+      rolRaw !== 'autorizado')
+  ) {
     redirect(`/${locale}/forbidden`)
   }
-  const rol = rolRaw as 'admin' | 'profe'
+  const rol = rolRaw as 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
 
   const user = await getCurrentUser()
   const centroLogo = await getCentroLogo(centroId)
   const { total: unread } = await countNoLeidos()
+  const recordatoriosPendientes = await contarRecordatoriosPendientes()
 
-  const items = await buildSidebarItems(rol, locale, <MessagingBadge initialTotal={unread} />)
+  const items = await buildSidebarItems(
+    rol,
+    locale,
+    <MessagingBadge initialTotal={unread} />,
+    <RecordatoriosBadge initialTotal={recordatoriosPendientes} />
+  )
 
-  const roleLabel = rol === 'admin' ? tRoles('admin') : tRoles('profe')
+  const roleLabel =
+    rol === 'admin'
+      ? tRoles('admin')
+      : rol === 'profe'
+        ? tRoles('profe')
+        : rol === 'autorizado'
+          ? tRoles('autorizado')
+          : tRoles('tutor_legal')
 
   return (
     <div className="bg-background flex min-h-[100dvh] flex-col md:flex-row">

@@ -19,16 +19,22 @@ import type { SidebarItem } from '@/shared/components/SidebarNav'
 type RoleKey = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
 
 /**
- * Devuelve los items de sidebar para un rol dado. Incluye el item
- * "Mensajería" en los 3 roles principales con un `trailing` opcional
- * para el badge global de no leídos. Los layouts de admin/teacher/family
- * y la ruta `/messages` consumen este helper para que la sidebar quede
- * idéntica cuando el usuario navega entre módulos.
+ * Devuelve los items de sidebar para un rol dado. Incluye los items
+ * "Mensajería" y "Recordatorios" en los 4 roles con `trailing` opcionales
+ * para sus badges globales (no leídos / pendientes). Los layouts de
+ * admin/teacher/family y las rutas `/messages` y `/reminders` consumen este
+ * helper para que la sidebar quede idéntica cuando el usuario navega entre
+ * módulos.
+ *
+ * F6-C: tutor_legal/autorizado vuelven a tener la entrada "Recordatorios"
+ * (revierte el hotfix #44, que la ocultó). Solo LEEN — el botón de creación se
+ * gobierna en la propia página, no aquí.
  */
 export async function buildSidebarItems(
   rol: RoleKey,
   locale: string,
-  badge?: ReactNode
+  badge?: ReactNode,
+  recordatoriosBadge?: ReactNode
 ): Promise<SidebarItem[]> {
   if (rol === 'admin') {
     const t = await getTranslations('admin.nav')
@@ -46,7 +52,12 @@ export async function buildSidebarItems(
         icon: <MessageCircleIcon />,
         trailing: badge,
       },
-      { href: `/${locale}/reminders`, label: t('recordatorios'), icon: <BellIcon /> },
+      {
+        href: `/${locale}/reminders`,
+        label: t('recordatorios'),
+        icon: <BellIcon />,
+        trailing: recordatoriosBadge,
+      },
       { href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> },
     ]
   }
@@ -66,12 +77,17 @@ export async function buildSidebarItems(
         icon: <MessageCircleIcon />,
         trailing: badge,
       },
-      { href: `/${locale}/reminders`, label: t('recordatorios'), icon: <BellIcon /> },
+      {
+        href: `/${locale}/reminders`,
+        label: t('recordatorios'),
+        icon: <BellIcon />,
+        trailing: recordatoriosBadge,
+      },
     ]
   }
 
-  // tutor_legal y autorizado comparten layout familia. NO incluyen
-  // "Recordatorios": el módulo es solo admin/profe en el MVP (hotfix #44).
+  // tutor_legal y autorizado comparten layout familia. F6-C: vuelven a ver
+  // "Recordatorios" (solo lectura — reciben broadcasts del centro/aula/familia).
   const t = await getTranslations('family.nav')
   return [
     { href: `/${locale}/family`, label: t('dashboard'), icon: <HomeIcon /> },
@@ -81,6 +97,12 @@ export async function buildSidebarItems(
       label: t('mensajeria'),
       icon: <MessageCircleIcon />,
       trailing: badge,
+    },
+    {
+      href: `/${locale}/reminders`,
+      label: t('recordatorios'),
+      icon: <BellIcon />,
+      trailing: recordatoriosBadge,
     },
   ]
 }
