@@ -2,9 +2,10 @@
 
 ## Estado
 
-`proposed` — pendiente de revisión del responsable
+`accepted`
 
 **Fecha:** 2026-06-01
+**Aceptado:** 2026-06-02 (decisiones tomadas; fase cerrada)
 **Autores:** responsable + claude-code
 **Fase del proyecto:** Fase 7 — Calendario y eventos (**lean**)
 
