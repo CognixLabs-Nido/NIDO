@@ -17,6 +17,7 @@ import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getResumenAsistenciaCentro } from '@/features/asistencia/queries/get-resumen-asistencia-centro'
+import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
 import { cn } from '@/lib/utils'
 
 type StatTone = 'primary' | 'accent-warm' | 'success' | 'info'
@@ -74,6 +75,11 @@ export default async function AdminDashboard({ params }: PageProps) {
         </h1>
         <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
       </header>
+      <ResumenSemanaWidget
+        centroId={centroId}
+        agendaHref={`/${locale}/agenda`}
+        calendarioHref={`/${locale}/admin/calendario`}
+      />
       <section
         aria-label={t('title')}
         className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"

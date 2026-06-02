@@ -1491,5 +1491,16 @@
       "invitados_anadidos": "Guests added"
     },
     "badge_aria": "{n} pending invitations"
+  },
+  "inicio_resumen": {
+    "title": "This week",
+    "hoy": "Today",
+    "resto_semana": "Rest of the week",
+    "vacio_hoy": "Nothing for today.",
+    "vacio_semana": "Nothing else this week.",
+    "vacio_total": "No events or appointments this week.",
+    "ver_agenda": "View agenda",
+    "ver_calendario": "View calendar",
+    "todo_el_dia": "All day"
   }
 }

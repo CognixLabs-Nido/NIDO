@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
-import { ProximosDiasCerradosWidget } from '@/features/calendario-centro/components/ProximosDiasCerradosWidget'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { createClient } from '@/lib/supabase/server'
 
@@ -44,7 +44,13 @@ export default async function FamilyDashboard({ params }: PageProps) {
         <h1 className="text-h1 text-foreground">{t('title')}</h1>
         <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
       </header>
-      {centroId && <ProximosDiasCerradosWidget centroId={centroId} />}
+      {centroId && (
+        <ResumenSemanaWidget
+          centroId={centroId}
+          agendaHref={`/${locale}/agenda`}
+          calendarioHref={`/${locale}/family/calendario`}
+        />
+      )}
       {ninos.length === 0 ? (
         <Card>
           <CardContent>

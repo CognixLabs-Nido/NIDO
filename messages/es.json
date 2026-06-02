@@ -1491,5 +1491,16 @@
       "invitados_anadidos": "Invitados añadidos"
     },
     "badge_aria": "{n} invitaciones pendientes"
+  },
+  "inicio_resumen": {
+    "title": "Esta semana",
+    "hoy": "Hoy",
+    "resto_semana": "Resto de la semana",
+    "vacio_hoy": "Nada para hoy.",
+    "vacio_semana": "Nada más esta semana.",
+    "vacio_total": "Sin eventos ni citas esta semana.",
+    "ver_agenda": "Ver agenda",
+    "ver_calendario": "Ver calendario",
+    "todo_el_dia": "Todo el día"
   }
 }

@@ -1491,5 +1491,16 @@
       "invitados_anadidos": "Convidats afegits"
     },
     "badge_aria": "{n} convidacions pendents"
+  },
+  "inicio_resumen": {
+    "title": "Esta setmana",
+    "hoy": "Hui",
+    "resto_semana": "Resta de la setmana",
+    "vacio_hoy": "Res per a hui.",
+    "vacio_semana": "Res més esta setmana.",
+    "vacio_total": "Sense esdeveniments ni cites esta setmana.",
+    "ver_agenda": "Veure agenda",
+    "ver_calendario": "Veure calendari",
+    "todo_el_dia": "Tot el dia"
   }
 }
