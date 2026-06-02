@@ -1489,6 +1489,7 @@
       "cita_cancelada": "Appointment cancelled",
       "invitado_quitado": "Guest removed",
       "invitados_anadidos": "Guests added"
-    }
+    },
+    "badge_aria": "{n} pending invitations"
   }
 }

@@ -1957,6 +1957,7 @@ export type Database = {
       }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
       centro_de_plantilla: { Args: { p_plantilla_id: string }; Returns: string }
+      contar_invitaciones_pendientes: { Args: never; Returns: number }
       contar_recordatorios_pendientes: { Args: never; Returns: number }
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }

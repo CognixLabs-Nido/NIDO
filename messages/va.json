@@ -1489,6 +1489,7 @@
       "cita_cancelada": "Cita cancel·lada",
       "invitado_quitado": "Convidat llevat",
       "invitados_anadidos": "Convidats afegits"
-    }
+    },
+    "badge_aria": "{n} convidacions pendents"
   }
 }

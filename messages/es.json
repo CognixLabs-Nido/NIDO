@@ -1489,6 +1489,7 @@
       "cita_cancelada": "Cita cancelada",
       "invitado_quitado": "Invitado quitado",
       "invitados_anadidos": "Invitados añadidos"
-    }
+    },
+    "badge_aria": "{n} invitaciones pendientes"
   }
 }
