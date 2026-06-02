@@ -900,10 +900,6 @@
       "eliminado": "Día restaurado al default",
       "error_guardar": "No se pudo guardar. Inténtalo de nuevo.",
       "error_eliminar": "No se pudo eliminar. Inténtalo de nuevo."
-    },
-    "widget_proximos_cerrados": {
-      "title": "Próximos días cerrados",
-      "vacio_amable": "Sin cierres previstos el próximo mes."
     }
   },
   "menus": {
