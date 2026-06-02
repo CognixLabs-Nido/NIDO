@@ -163,6 +163,7 @@ export type EditarCitaInput = z.input<typeof editarCitaSchema>
 
 // --- Cancelar ---------------------------------------------------------------
 export const cancelarCitaSchema = z.object({ cita_id: z.string().uuid() })
+export type CancelarCitaInput = z.input<typeof cancelarCitaSchema>
 
 // --- Responder a una invitación (RSVP del invitado interno) -----------------
 export const responderInvitacionSchema = z.object({
@@ -180,12 +181,15 @@ export const agregarInvitadosSchema = z.object({
 export type AgregarInvitadosInput = z.input<typeof agregarInvitadosSchema>
 
 export const quitarInvitadoSchema = z.object({ invitado_id: z.string().uuid() })
+export type QuitarInvitadoInput = z.input<typeof quitarInvitadoSchema>
 
 /** El organizador marca la asistencia de un invitado externo (sin RSVP digital). */
 export const marcarAsistenciaExternoSchema = z.object({
   invitado_id: z.string().uuid(),
   estado: rsvpRespuestaEnum,
 })
+export type MarcarAsistenciaExternoInput = z.input<typeof marcarAsistenciaExternoSchema>
 
 // --- Preferencia de vista (AG-07) -------------------------------------------
 export const setPreferenciaVistaAgendaSchema = z.object({ vista: vistaAgendaEnum })
+export type SetPreferenciaVistaAgendaInput = z.input<typeof setPreferenciaVistaAgendaSchema>
