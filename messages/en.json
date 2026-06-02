@@ -900,7 +900,8 @@
       "eliminado": "Day restored to default",
       "error_guardar": "Couldn't save. Try again.",
       "error_eliminar": "Couldn't delete. Try again."
-    }
+    },
+    "editar_dia": "Edit day"
   },
   "menus": {
     "title": "Centre's menus",

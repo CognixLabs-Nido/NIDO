@@ -900,7 +900,8 @@
       "eliminado": "Dia restaurat al per defecte",
       "error_guardar": "No s'ha pogut guardar. Torna-ho a provar.",
       "error_eliminar": "No s'ha pogut eliminar. Torna-ho a provar."
-    }
+    },
+    "editar_dia": "Editar dia"
   },
   "menus": {
     "title": "Menús del centre",

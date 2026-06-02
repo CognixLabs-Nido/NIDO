@@ -900,7 +900,8 @@
       "eliminado": "Día restaurado al default",
       "error_guardar": "No se pudo guardar. Inténtalo de nuevo.",
       "error_eliminar": "No se pudo eliminar. Inténtalo de nuevo."
-    }
+    },
+    "editar_dia": "Editar día"
   },
   "menus": {
     "title": "Menús del centro",
