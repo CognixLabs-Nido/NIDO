@@ -14,6 +14,13 @@ supersedes: f7a-calendario-agenda.md (PR #50 — su Dominio B; ver Contexto y Re
 > **Checkpoint A cerrado** (responsable, 2026-06-02). Todas las decisiones de
 > diseño están **fijadas** (tabla de decisiones al final). El siguiente paso es el
 > **Checkpoint B** por sub-pasos reviewables (ver "Plan de Checkpoint B").
+>
+> **Adenda (2026-06-02): dos items nuevos de Ola 1** — **Checkpoint A (spec)**,
+> pendientes de OK del plan antes de implementar: (1) **badge de invitaciones
+> pendientes** en el nav de Agenda (AG-14) → dentro de **este PR (#51)**; (2)
+> **pestaña de Inicio con resumen de la semana** (eventos + citas, AG-15) → **pieza
+> propia después del core** de la Agenda (cruza Calendario Escolar F7 + Agenda). Ver
+> "Items nuevos de Ola 1" y la cola del "Plan de Checkpoint B".
 
 ## Resumen ejecutivo
 
@@ -101,6 +108,10 @@ NIDO ya tiene piezas reutilizables que la Agenda debe aprovechar sin duplicar:
 - Ruta propia **`/agenda`** (top-level, cross-rol, patrón `/reminders`–`/messages`).
 - RLS row-aware (default DENY, `centro_id` explícito, anti-MVCC patrón F7).
 - Audit log de `citas` y `cita_invitados` (AG-12).
+- **Badge de invitaciones pendientes** en el nav de Agenda (AG-14): contador de
+  RSVP pendientes del usuario al entrar, vía **RPC** (patrón
+  `contar_recordatorios_pendientes` de F6-C). **Sin push ni Realtime** (recuento
+  en server-render). En **este PR (#51)**.
 - i18n trilingüe es/en/va, namespace nuevo `citas` (evita colisión con la _agenda
   diaria_ de F3; AG-08).
 
@@ -598,26 +609,123 @@ Trilingüe obligatorio (Regla #7).
 - [ ] Migración ADITIVA aplicada al remoto vía **SQL Editor** (bug SIGILL del CLI) y
       registrada en `schema_migrations`.
 
+## Items nuevos de Ola 1 (Checkpoint A — 2026-06-02)
+
+Dos piezas que **suben a Ola 1** y se documentan aquí (spec). Una vive en **este PR
+(#51)**; la otra es **pieza propia posterior** al core de la Agenda. **No se
+implementan** hasta OK del plan (ver cola del "Plan de Checkpoint B").
+
+### AG-14 — Badge de invitaciones pendientes (en #51)
+
+**Qué:** un contador junto al item **"Agenda"** del nav (igual que el de
+Recordatorios y el de Mensajería) con el número de **invitaciones pendientes** del
+usuario: filas `cita_invitados` con `usuario_id = auth.uid()`, `estado='pendiente'`,
+cuya `citas` está **`programada`** y **aún no ha comenzado** (futuro, ventana AG-11).
+Solo el recuento **al entrar** (server-render). **Sin push, sin Realtime.**
+
+**Dónde encaja:** extensión directa de la Agenda. Reusa la cadena
+`Badge initialTotal` del layout cross-rol (`RecordatoriosBadge`/`MessagingBadge` ya
+se inyectan en `agenda/layout.tsx` y en `buildSidebarItems`).
+
+**Modelo / cómo:**
+
+- **RPC nueva** `public.contar_invitaciones_pendientes()` →
+  `SECURITY DEFINER STABLE`, usa `auth.uid()`. Cuenta `cita_invitados`
+  (`estado='pendiente'`) JOIN `citas` (`estado='programada'` y
+  `(fecha > hoy_madrid()) OR (fecha = hoy_madrid() AND hora_inicio > <hora Madrid>)`)
+  donde `usuario_id = auth.uid()`. Patrón exacto de
+  `contar_recordatorios_pendientes()` (F6-C): el destinatario es **directo**
+  (el propio invitado), no mera visibilidad RLS — el organizador **no** cuenta sus
+  propias citas como "pendientes de responder".
+- **Migración aditiva nueva** (la B0 ya está aplicada): un único
+  `CREATE FUNCTION` en `2026XXXXXXXXXX_phase7b_agenda_badge.sql`. Sin tablas ni
+  cambios de RLS.
+- **UI:** componente `AgendaBadge` (clon de `RecordatoriosBadge`, **sin** la
+  suscripción Realtime — el `initialTotal` basta). El `agenda/layout.tsx` lee el
+  contador con una query server (`contarInvitacionesPendientes()`) y lo pasa a
+  `buildSidebarItems` como el badge del item Agenda.
+
+**Fuera (igual que el resto de la Agenda):** push al recibir invitación; refresco
+en vivo (Realtime). El número se actualiza al navegar/recargar.
+
+**Tests:** unit de la query (cuenta solo pendientes futuras del invitado, excluye
+las del organizador, excluye canceladas/pasadas); RLS/RPC: dos usuarios distintos
+obtienen su propio recuento.
+
+### AG-15 — Pestaña de Inicio: resumen de la semana (pieza propia, post-core)
+
+**Qué:** sustituir en la **pestaña de Inicio** (home de tutor/profe/admin) el bloque
+actual **"Próximos días cerrados / Sin cierres previstos"**
+(`ProximosDiasCerradosWidget`, namespace `widget_proximos_cerrados`) por un
+**resumen de la semana en curso**: **eventos del Calendario Escolar** (F7) **+ citas
+de la Agenda** (este PR), del **día** y la **semana actual**. Solo un resumen para
+ojear al entrar; el **detalle** vive en `/calendario` y `/agenda` (con **enlaces**
+"ver todo").
+
+**Por rol (cada uno según su ámbito):**
+
+- **admin:** eventos y citas del **centro**.
+- **profe:** eventos de su ámbito + citas donde es **organizador o invitado** (sus
+  aulas).
+- **tutor/autorizado:** eventos que le aplican (centro/aula/niño) + **sus
+  invitaciones** (las citas a las que se le convoca).
+
+> El ámbito **no se reimplementa**: lo da la **RLS** de `eventos` y de `citas` (cada
+> rol solo lee lo suyo). El widget solo **lee y pinta**.
+
+**Dónde encaja:** es **transversal** (Inicio), **cruza** dos features —
+`eventos` (F7, en `main`) y `citas` (Agenda, este PR). Por eso es **pieza propia
+después** de que el core de la Agenda esté mergeado: necesita `getCitasRango` (B2)
+disponible en `main`. Recupera el **Dominio C ("Inicio Hoy")** de la spec f7a, que
+quedó como follow-up.
+
+**Modelo / cómo (sin tablas nuevas):**
+
+- **Solo lectura.** Reusa `getEventosMes`/equivalente de rango (`eventos/queries`)
+  y `getCitasRango` (Agenda). Un agregador `getResumenSemana(centroId, rol)`
+  combina ambas fuentes en una lista ordenada por fecha/hora, acotada al día +
+  semana en curso (`Europe/Madrid`).
+- **Componente** `ResumenSemanaWidget` (Server) que reemplaza
+  `ProximosDiasCerradosWidget` en las tres home pages
+  (`family/page.tsx`, `teacher/page.tsx`, `admin/page.tsx`). i18n namespace nuevo
+  (p. ej. `inicio_resumen`), trilingüe.
+- Estado vacío amable por rol ("Sin eventos ni citas esta semana").
+
+**Decisión abierta para el responsable (no bloquea el core):** ¿el resumen
+**sustituye** del todo el widget de días cerrados, o lo **integra** (los cierres del
+centro como una línea más del resumen)? Recomendación: **integrarlo** —un cierre es
+información de la semana tan relevante como un evento— pero se confirma al planificar
+esta pieza, no ahora.
+
+**Fuera:** edición/RSVP desde el Inicio (solo resumen + enlace al detalle);
+paginación; rango configurable (fijo a día + semana en curso en Ola 1).
+
+**Tests:** unit del agregador (mezcla y orden eventos+citas, recorte a la semana,
+vacío por rol); E2E: un tutor con una invitación esta semana la ve en Inicio y el
+enlace lleva a `/agenda`.
+
 ## Decisiones CERRADAS (responsable, 2026-06-02)
 
 > Heredan los defaults del Dominio B de f7a (PR #50) + los ajustes de cierre del
 > responsable. **Todas cerradas.**
 
-| #        | Decisión (cerrada)                                                                                                                                                                                                   | Origen f7a    |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| AG-tipos | 4 tipos: `reunion_familia` · `reunion_clase` · `reunion_claustro` · `visita`. Matriz organizador→invitado §C1.                                                                                                       | encargo       |
-| AG-01    | Modelo de **2 tablas**: `citas` + `cita_invitados` (espejo de `eventos`/`confirmaciones_evento` pero nominal).                                                                                                       | D-B1          |
-| AG-02    | Grupos se **expanden a personas al crear** (snapshot). **Editar lista (añadir Y quitar) en Ola 1**; re-sync auto = follow-up.                                                                                        | D-B2 + cierre |
-| AG-03    | Invitado externo = **solo texto** (`usuario_id NULL` + `nombre_externo`); sin RSVP digital. Email/magic-link = follow-up.                                                                                            | D-B3          |
-| AG-04    | RSVP **3 estados**: `pendiente`/`aceptado`/`rechazado`. Sin "quizá".                                                                                                                                                 | D-B4          |
-| AG-05    | Organizan **admin y profe** (matriz); tutor/autorizado **solo reciben + RSVP**.                                                                                                                                      | D-B5          |
-| AG-06    | Vista **mes reusa `<CalendarioMensual/>`**; **día/semana = componente horario nuevo** (lista por hora, lean).                                                                                                        | D-B6          |
-| AG-07    | **Cerrado:** preferencia de vista en tabla genérica **`preferencias_usuario (usuario_id, clave, valor)`**.                                                                                                           | D-B7          |
-| AG-08    | **Cerrado:** ruta **`/agenda`** label "Agenda"; renombrar Calendario (F7) → **"Calendario Escolar"** (ruta `/calendario` igual); i18n `citas`; **F3 agenda diaria intacta**.                                         | D-B8 + cierre |
-| AG-09    | **Cerrado:** alta con **patrón Calendario** ("+ Nueva cita" **y** `onClickDia` → fecha prefijada). Se comparte **patrón** de alta/vista, **no el modelo** (`citas`≠`eventos`).                                       | cierre        |
-| AG-11    | RSVP/edición hasta **hora de inicio**; editar/cancelar **solo organizador o admin**; cancelar = `estado`.                                                                                                            | D-B11         |
-| AG-12    | **Cerrado:** auditar `citas` y `cita_invitados` como **registro administrativo** (quién/cuándo del RSVP), **no** legal (≠ F8). Estado actual + quién/cuándo; **sin change-log** dedicado. `preferencias_usuario` no. | D-T2 + cierre |
-| AG-13    | **Sin Realtime** en el core (roster refresca al navegar).                                                                                                                                                            | D11 (F7)      |
+| #        | Decisión (cerrada)                                                                                                                                                                                                                      | Origen f7a          |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| AG-tipos | 4 tipos: `reunion_familia` · `reunion_clase` · `reunion_claustro` · `visita`. Matriz organizador→invitado §C1.                                                                                                                          | encargo             |
+| AG-01    | Modelo de **2 tablas**: `citas` + `cita_invitados` (espejo de `eventos`/`confirmaciones_evento` pero nominal).                                                                                                                          | D-B1                |
+| AG-02    | Grupos se **expanden a personas al crear** (snapshot). **Editar lista (añadir Y quitar) en Ola 1**; re-sync auto = follow-up.                                                                                                           | D-B2 + cierre       |
+| AG-03    | Invitado externo = **solo texto** (`usuario_id NULL` + `nombre_externo`); sin RSVP digital. Email/magic-link = follow-up.                                                                                                               | D-B3                |
+| AG-04    | RSVP **3 estados**: `pendiente`/`aceptado`/`rechazado`. Sin "quizá".                                                                                                                                                                    | D-B4                |
+| AG-05    | Organizan **admin y profe** (matriz); tutor/autorizado **solo reciben + RSVP**.                                                                                                                                                         | D-B5                |
+| AG-06    | Vista **mes reusa `<CalendarioMensual/>`**; **día/semana = componente horario nuevo** (lista por hora, lean).                                                                                                                           | D-B6                |
+| AG-07    | **Cerrado:** preferencia de vista en tabla genérica **`preferencias_usuario (usuario_id, clave, valor)`**.                                                                                                                              | D-B7                |
+| AG-08    | **Cerrado:** ruta **`/agenda`** label "Agenda"; renombrar Calendario (F7) → **"Calendario Escolar"** (ruta `/calendario` igual); i18n `citas`; **F3 agenda diaria intacta**.                                                            | D-B8 + cierre       |
+| AG-09    | **Cerrado:** alta con **patrón Calendario** ("+ Nueva cita" **y** `onClickDia` → fecha prefijada). Se comparte **patrón** de alta/vista, **no el modelo** (`citas`≠`eventos`).                                                          | cierre              |
+| AG-11    | RSVP/edición hasta **hora de inicio**; editar/cancelar **solo organizador o admin**; cancelar = `estado`.                                                                                                                               | D-B11               |
+| AG-12    | **Cerrado:** auditar `citas` y `cita_invitados` como **registro administrativo** (quién/cuándo del RSVP), **no** legal (≠ F8). Estado actual + quién/cuándo; **sin change-log** dedicado. `preferencias_usuario` no.                    | D-T2 + cierre       |
+| AG-13    | **Sin Realtime** en el core (roster refresca al navegar).                                                                                                                                                                               | D11 (F7)            |
+| AG-14    | **Badge de invitaciones pendientes** en el nav de Agenda (RPC `contar_invitaciones_pendientes`, patrón F6-C). Recuento al entrar, **sin push ni Realtime**. **En #51.** _(Checkpoint A 2026-06-02; pendiente OK plan.)_                 | adenda              |
+| AG-15    | **Inicio: resumen de la semana** (eventos F7 + citas Agenda, día + semana, por rol según RLS) sustituye el widget "Próximos días cerrados". **Pieza propia tras el core** de la Agenda. _(Checkpoint A 2026-06-02; pendiente OK plan.)_ | adenda (Dom. C f7a) |
 
 ## Plan de Checkpoint B (sub-pasos reviewables)
 
@@ -626,21 +734,37 @@ Trilingüe obligatorio (Regla #7).
 > row-aware, i18n es/en/va, tests. El responsable da OK a este plan antes de
 > implementar; aplicar la migración al remoto (SQL Editor) es paso aparte con su OK.
 
-| Sub-paso                              | Contenido                                                                                                                                                                                                                                                                                                                  | Entregable / verificación                                                                                                                  |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **B0 — Migración (SQL, sin aplicar)** | 3 ENUMs; `citas`; `cita_invitados` (con `respondido_por`); `preferencias_usuario`; CHECKs, índices, UNIQUE parcial; helpers row-aware; RLS (incl. DELETE de invitado, excepción tipo `dias_centro`); ramas de audit + triggers `set_updated_at`/`set_centro_id`. Archivo `2026XXXXXXXXXX_phase7b_agenda.sql`.              | SQL escrito + **resumen estructural + RLS clave pegados al responsable** para revisión antes de aplicar. `database.ts` a mano provisional. |
-| **B1 — Tipos + schemas Zod**          | `tipoCitaEnum`, `rsvpEstadoEnum`, `crearCitaSchema`, `responderInvitacionSchema`, `agregarInvitadosSchema`. `db:types` cuando se aplique B0.                                                                                                                                                                               | `typecheck` verde; tests unit de schemas (válidos/ inválidos).                                                                             |
-| **B2 — Server actions + queries**     | `crearCita` (resuelve `centro_id`, expande grupos snapshot), `editarCita`, `cancelarCita`, `responderInvitacion`, `agregarInvitados`, `quitarInvitado`, `marcarAsistenciaExterno`, `setPreferenciaVistaAgenda`; queries `getCitasRango`/`getCitaDetalle`/`getPreferenciaVistaAgenda`. Reuso de resolutores de grupos F6-C. | tests unit (expansión, idempotencia RSVP, ventana, dedup); `npm run build` (regla `'use server'`).                                         |
-| **B3 — Tests RLS (gateados)**         | aislamiento; profe no crea claustro/visita; tutor no crea; no falsear `usuario_id`/responder por otro; solo organizador/admin añaden/quitan; `INSERT…RETURNING` en `citas` (4 tipos) y `cita_invitados`; `preferencias_usuario` self. Gateados por `AGENDA_MIGRATION_APPLIED=1`.                                           | `test:rls` verde **tras** aplicar B0 al remoto.                                                                                            |
-| **B4 — UI vistas + alta**             | `/agenda` (layout cross-rol), `VistaToggle` (pref persistida), `AgendaDia`/`AgendaSemana` (rejilla horaria nueva), `AgendaMes` (reusa `<CalendarioMensual/>`, `onClickDia`), `CitaFormDialog` ("+ Nueva cita" / clic-día).                                                                                                 | render + i18n es/en/va sin claves crudas (smoke Playwright).                                                                               |
-| **B5 — UI detalle + RSVP + roster**   | `CitaDetalle`, `RsvpControl`, `InvitadosRoster` (recuento, marcar externo, añadir/quitar).                                                                                                                                                                                                                                 | E2E: admin crea `reunion_clase` → tutor ve y acepta → roster actualizado.                                                                  |
-| **B6 — Renombrado + nav + i18n**      | label Calendario → "Calendario Escolar" (es/en/va), item de nav "Agenda" → `/agenda`; **F3 intacta**.                                                                                                                                                                                                                      | `npm test` regresión; revisión de claves.                                                                                                  |
-| **B7 — Docs + ADR**                   | actualizar `data-model.md`, `rls-policies.md` (helpers/policies Agenda); ADR nuevo (modelo invitación nominal + RSVP; reuso expansión F6-C; separación de `eventos`; excepción DELETE de invitado).                                                                                                                        | docs + ADR escritos.                                                                                                                       |
+| Sub-paso                               | Contenido                                                                                                                                                                                                                                                                                                                                                         | Entregable / verificación                                                                                                                                                           |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **B0 — Migración (SQL, sin aplicar)**  | 3 ENUMs; `citas`; `cita_invitados` (con `respondido_por`); `preferencias_usuario`; CHECKs, índices, UNIQUE parcial; helpers row-aware; RLS (incl. DELETE de invitado, excepción tipo `dias_centro`); ramas de audit + triggers `set_updated_at`/`set_centro_id`. Archivo `2026XXXXXXXXXX_phase7b_agenda.sql`.                                                     | SQL escrito + **resumen estructural + RLS clave pegados al responsable** para revisión antes de aplicar. `database.ts` a mano provisional.                                          |
+| **B1 — Tipos + schemas Zod**           | `tipoCitaEnum`, `rsvpEstadoEnum`, `crearCitaSchema`, `responderInvitacionSchema`, `agregarInvitadosSchema`. `db:types` cuando se aplique B0.                                                                                                                                                                                                                      | `typecheck` verde; tests unit de schemas (válidos/ inválidos).                                                                                                                      |
+| **B2 — Server actions + queries**      | `crearCita` (resuelve `centro_id`, expande grupos snapshot), `editarCita`, `cancelarCita`, `responderInvitacion`, `agregarInvitados`, `quitarInvitado`, `marcarAsistenciaExterno`, `setPreferenciaVistaAgenda`; queries `getCitasRango`/`getCitaDetalle`/`getPreferenciaVistaAgenda`. Reuso de resolutores de grupos F6-C.                                        | tests unit (expansión, idempotencia RSVP, ventana, dedup); `npm run build` (regla `'use server'`).                                                                                  |
+| **B3 — Tests RLS (gateados)**          | aislamiento; profe no crea claustro/visita; tutor no crea; no falsear `usuario_id`/responder por otro; solo organizador/admin añaden/quitan; `INSERT…RETURNING` en `citas` (4 tipos) y `cita_invitados`; `preferencias_usuario` self. Gateados por `AGENDA_MIGRATION_APPLIED=1`.                                                                                  | `test:rls` verde **tras** aplicar B0 al remoto.                                                                                                                                     |
+| **B4 — UI vistas + alta**              | `/agenda` (layout cross-rol), `VistaToggle` (pref persistida), `AgendaDia`/`AgendaSemana` (rejilla horaria nueva), `AgendaMes` (reusa `<CalendarioMensual/>`, `onClickDia`), `CitaFormDialog` ("+ Nueva cita" / clic-día).                                                                                                                                        | render + i18n es/en/va sin claves crudas (smoke Playwright).                                                                                                                        |
+| **B5 — UI detalle + RSVP + roster**    | `CitaDetalle`, `RsvpControl`, `InvitadosRoster` (recuento, marcar externo, añadir/quitar).                                                                                                                                                                                                                                                                        | E2E: admin crea `reunion_clase` → tutor ve y acepta → roster actualizado.                                                                                                           |
+| **B6 — Renombrado + nav + i18n**       | label Calendario → "Calendario Escolar" (es/en/va), item de nav "Agenda" → `/agenda`; **F3 intacta**.                                                                                                                                                                                                                                                             | `npm test` regresión; revisión de claves.                                                                                                                                           |
+| **B7 — Docs + ADR**                    | actualizar `data-model.md`, `rls-policies.md` (helpers/policies Agenda); ADR nuevo (modelo invitación nominal + RSVP; reuso expansión F6-C; separación de `eventos`; excepción DELETE de invitado).                                                                                                                                                               | docs + ADR escritos.                                                                                                                                                                |
+| **B8 — Badge de invitaciones (AG-14)** | **Migración aditiva nueva** (la B0 ya está aplicada): RPC `contar_invitaciones_pendientes()` (`SECURITY DEFINER STABLE`, patrón F6-C). Query server `contarInvitacionesPendientes()`; componente `AgendaBadge` (clon de `RecordatoriosBadge` **sin** Realtime); cablear en `agenda/layout.tsx` + `buildSidebarItems`. i18n del aria-label. **Sin push/Realtime.** | unit de la query (solo pendientes futuras del invitado; excluye organizador/canceladas/pasadas); RLS por usuario; `npm run build`. Migración la aplica el responsable (SQL Editor). |
 
 > **Orden de aplicación de la migración:** B0 se **revisa** primero; el responsable
 > la aplica vía SQL Editor (bug SIGILL del CLI) y avisa; entonces `db:types` y se
-> desbloquean B3 (RLS) y el build final. Checkpoint C = pre-merge (typecheck/lint/
-> test/build/e2e) + preview Vercel verificado por el responsable.
+> desbloquean B3 (RLS) y el build final. **B8 trae una migración aditiva propia**
+> (solo el RPC del badge), también aplicada por el responsable vía SQL Editor.
+> Checkpoint C = pre-merge (typecheck/lint/test/build/e2e) + preview Vercel
+> verificado por el responsable.
+
+### Pieza aparte (post-core): Inicio — resumen de la semana (AG-15)
+
+> **No entra en #51.** Cruza `eventos` (F7, ya en `main`) y `citas` (Agenda); se
+> arranca **cuando el core de la Agenda esté mergeado** en `main` (necesita
+> `getCitasRango`). Spec propia o sección dedicada; rama y PR nuevos. Sub-pasos
+> propuestos:
+
+| Sub-paso | Contenido                                                                                                                                                                                      | Entregable / verificación                                   |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **I0**   | Decisión "sustituir vs integrar" el widget de días cerrados (recomendado: integrar). Agregador `getResumenSemana(centroId, rol)` que combina eventos + citas (solo lectura, RLS da el ámbito). | query + unit (mezcla/orden, recorte semana, vacío por rol). |
+| **I1**   | `ResumenSemanaWidget` (Server) reemplaza `ProximosDiasCerradosWidget` en `family`/`teacher`/`admin` home; enlaces "ver todo" a `/calendario` y `/agenda`. i18n nuevo trilingüe.                | render + i18n es/en/va; sin claves crudas.                  |
+| **I2**   | E2E: tutor con invitación esta semana la ve en Inicio; el enlace lleva a `/agenda`. Docs (nota en `data-model.md`/journey si aplica).                                                          | `npm test` + Playwright verdes.                             |
 
 ## Referencias
 
