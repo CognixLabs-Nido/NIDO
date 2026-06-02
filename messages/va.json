@@ -1413,7 +1413,8 @@
       "crear": "Crear",
       "cancelar": "Cancel·lar",
       "creada": "Cita creada",
-      "claustro_hint": "S'invitarà a totes les mestres del centre."
+      "claustro_hint": "S'invitarà a totes les mestres del centre.",
+      "nueva_en": "Nova cita a les {hora}"
     },
     "campos": {
       "tipo": "Tipus",

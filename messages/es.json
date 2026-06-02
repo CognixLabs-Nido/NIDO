@@ -1413,7 +1413,8 @@
       "crear": "Crear",
       "cancelar": "Cancelar",
       "creada": "Cita creada",
-      "claustro_hint": "Se invitará a todas las profesoras del centro."
+      "claustro_hint": "Se invitará a todas las profesoras del centro.",
+      "nueva_en": "Nueva cita a las {hora}"
     },
     "campos": {
       "tipo": "Tipo",

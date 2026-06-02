@@ -35,6 +35,7 @@ export function AgendaView({ locale, rol, vista, fecha, citas, ninos, aulas, pro
 
   const [formOpen, setFormOpen] = useState(false)
   const [fechaForm, setFechaForm] = useState(fecha)
+  const [horaForm, setHoraForm] = useState<string | undefined>(undefined)
 
   function irA(v: VistaAgenda, f: string) {
     router.push(`${pathname}?vista=${v}&fecha=${f}`)
@@ -45,8 +46,9 @@ export function AgendaView({ locale, rol, vista, fecha, citas, ninos, aulas, pro
     irA(v, fecha)
   }
 
-  function abrirAlta(f: string) {
+  function abrirAlta(f: string, hora?: number) {
     setFechaForm(f)
+    setHoraForm(hora === undefined ? undefined : `${String(hora).padStart(2, '0')}:00`)
     setFormOpen(true)
   }
 
@@ -108,7 +110,13 @@ export function AgendaView({ locale, rol, vista, fecha, citas, ninos, aulas, pro
           onClickDia={esStaff ? (f) => abrirAlta(f) : undefined}
         />
       ) : (
-        <AgendaDia vista={vista} fecha={fecha} citas={citas} locale={locale} />
+        <AgendaDia
+          vista={vista}
+          fecha={fecha}
+          citas={citas}
+          locale={locale}
+          onClickFranja={esStaff ? (f, hora) => abrirAlta(f, hora) : undefined}
+        />
       )}
 
       {esStaff && (
@@ -120,6 +128,7 @@ export function AgendaView({ locale, rol, vista, fecha, citas, ninos, aulas, pro
           open={formOpen}
           onOpenChange={setFormOpen}
           fechaInicial={fechaForm}
+          horaInicial={horaForm}
         />
       )}
     </div>

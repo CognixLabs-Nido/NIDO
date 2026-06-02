@@ -1,7 +1,9 @@
 'use client'
 
-import { Fragment } from 'react'
+import { Fragment, type KeyboardEvent } from 'react'
 import { useTranslations } from 'next-intl'
+
+import { cn } from '@/lib/utils'
 
 import { horaDeCita, horasJornada } from '../lib/fechas'
 import type { CitaAgenda } from '../types'
@@ -19,6 +21,8 @@ export interface ColumnaDia {
 interface Props {
   columnas: ColumnaDia[]
   onClickCita?: (cita: CitaAgenda) => void
+  /** Clic en una franja vacía: abre el alta con la fecha y la hora de la franja. */
+  onClickFranja?: (fecha: string, hora: number) => void
 }
 
 /**
@@ -27,7 +31,7 @@ interface Props {
  * su `hora_inicio` (clampada al rango). Lista por celda, sin solapamiento
  * pixel-perfect (eso es Ola 3).
  */
-export function RejillaHoraria({ columnas, onClickCita }: Props) {
+export function RejillaHoraria({ columnas, onClickCita, onClickFranja }: Props) {
   const t = useTranslations('citas')
   const horas = horasJornada()
 
@@ -59,14 +63,42 @@ export function RejillaHoraria({ columnas, onClickCita }: Props) {
             </div>
             {columnas.map((c) => {
               const delHora = c.citas.filter((ci) => horaDeCita(ci.hora_inicio) === h)
+              const hh = `${String(h).padStart(2, '0')}:00`
+              const clicable = !!onClickFranja
               return (
                 <div
                   key={`${c.fecha}-${h}`}
-                  className="border-border min-h-[3rem] space-y-1 border-t border-l p-1"
+                  className={cn(
+                    'border-border min-h-[3rem] space-y-1 border-t border-l p-1',
+                    clicable && 'hover:bg-accent/40 cursor-pointer'
+                  )}
+                  {...(clicable
+                    ? {
+                        role: 'button' as const,
+                        tabIndex: 0,
+                        'aria-label': t('alta.nueva_en', { hora: hh }),
+                        onClick: () => onClickFranja(c.fecha, h),
+                        onKeyDown: (e: KeyboardEvent) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            onClickFranja(c.fecha, h)
+                          }
+                        },
+                      }
+                    : {})}
                 >
-                  {delHora.map((ci) => (
-                    <CitaChip key={ci.id} cita={ci} onClick={onClickCita} />
-                  ))}
+                  {delHora.length > 0 && (
+                    // Frena la propagación: pulsar una cita no debe abrir el alta de la franja.
+                    <div
+                      className="space-y-1"
+                      role="presentation"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {delHora.map((ci) => (
+                        <CitaChip key={ci.id} cita={ci} onClick={onClickCita} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
             })}

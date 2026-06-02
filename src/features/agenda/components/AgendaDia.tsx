@@ -11,6 +11,8 @@ interface Props {
   citas: CitaAgenda[]
   locale: string
   onClickCita?: (cita: CitaAgenda) => void
+  /** Clic en franja vacía: prefija fecha + hora del alta (paridad con vista mes). */
+  onClickFranja?: (fecha: string, hora: number) => void
 }
 
 const HOY = ymd(new Date())
@@ -36,7 +38,7 @@ function fmtDia(
 }
 
 /** Vista día (1 columna) o semana (7) sobre la rejilla horaria. */
-export function AgendaDia({ vista, fecha, citas, locale, onClickCita }: Props) {
+export function AgendaDia({ vista, fecha, citas, locale, onClickCita, onClickFranja }: Props) {
   const fechas = vista === 'dia' ? [fecha] : diasDeSemana(fecha)
   const columnas: ColumnaDia[] = fechas.map((f) => {
     const { label, sub } = fmtDia(f, locale, vista === 'semana')
@@ -51,5 +53,7 @@ export function AgendaDia({ vista, fecha, citas, locale, onClickCita }: Props) {
     }
   })
 
-  return <RejillaHoraria columnas={columnas} onClickCita={onClickCita} />
+  return (
+    <RejillaHoraria columnas={columnas} onClickCita={onClickCita} onClickFranja={onClickFranja} />
+  )
 }

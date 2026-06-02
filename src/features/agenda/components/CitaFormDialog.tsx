@@ -55,7 +55,11 @@ interface Props {
   onOpenChange: (open: boolean) => void
   /** Fecha prefijada (botón "+ Nueva cita" = ancla; onClickDia = día pulsado). */
   fechaInicial: string
+  /** Hora prefijada (clic en una franja de la rejilla día/semana). Default 09:00. */
+  horaInicial?: string
 }
+
+const HORA_DEFAULT = '09:00'
 
 const formSchema = z
   .object({
@@ -116,6 +120,7 @@ export function CitaFormDialog({
   open,
   onOpenChange,
   fechaInicial,
+  horaInicial = HORA_DEFAULT,
 }: Props) {
   const t = useTranslations('citas')
   const tErr = useTranslations()
@@ -125,19 +130,24 @@ export function CitaFormDialog({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      tipo: rol === 'profe' ? 'reunion_familia' : 'reunion_familia',
+      tipo: 'reunion_familia',
       titulo: '',
       fecha: fechaInicial,
-      hora_inicio: '09:00',
+      hora_inicio: horaInicial,
     },
   })
 
-  // Reabre con la fecha prefijada cuando cambia el día pulsado / se abre.
+  // Reabre con la fecha/hora prefijadas cuando cambia el día/franja pulsado o se abre.
   useEffect(() => {
     if (open)
-      form.reset({ tipo: 'reunion_familia', titulo: '', fecha: fechaInicial, hora_inicio: '09:00' })
+      form.reset({
+        tipo: 'reunion_familia',
+        titulo: '',
+        fecha: fechaInicial,
+        hora_inicio: horaInicial,
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, fechaInicial])
+  }, [open, fechaInicial, horaInicial])
 
   const tipo = form.watch('tipo')
 
