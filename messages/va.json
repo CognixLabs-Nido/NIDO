@@ -1458,6 +1458,37 @@
       "sin_centro": "No s'ha pogut determinar el centre.",
       "nino_no_encontrado": "Xiquet/a no trobat.",
       "aula_no_encontrada": "Aula no trobada."
+    },
+    "detalle": {
+      "cuando": "Quan",
+      "lugar": "Lloc",
+      "invitados": "Convidats",
+      "tu_respuesta": "La teua resposta",
+      "comentario_placeholder": "Comentari (opcional)",
+      "ventana_cerrada": "El termini per a respondre ja ha passat.",
+      "cancelada": "Cita cancel·lada",
+      "sin_invitados": "Encara no hi ha convidats."
+    },
+    "acciones": {
+      "aceptar": "Acceptar",
+      "rechazar": "Rebutjar",
+      "cancelar_cita": "Cancel·lar cita",
+      "quitar": "Llevar",
+      "anadir": "Afegir",
+      "anadir_externo": "Afegir convidat extern",
+      "anadir_staff": "Afegir personal",
+      "marcar_asistio": "Assistix",
+      "marcar_no_asistio": "No assistix"
+    },
+    "roster": {
+      "recuento": "{aceptado} accepten · {rechazado} rebutgen · {pendiente} pendents",
+      "externo": "Extern"
+    },
+    "toasts": {
+      "rsvp_guardada": "Resposta guardada",
+      "cita_cancelada": "Cita cancel·lada",
+      "invitado_quitado": "Convidat llevat",
+      "invitados_anadidos": "Convidats afegits"
     }
   }
 }

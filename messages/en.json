@@ -1458,6 +1458,37 @@
       "sin_centro": "Could not determine the centre.",
       "nino_no_encontrado": "Child not found.",
       "aula_no_encontrada": "Classroom not found."
+    },
+    "detalle": {
+      "cuando": "When",
+      "lugar": "Location",
+      "invitados": "Guests",
+      "tu_respuesta": "Your response",
+      "comentario_placeholder": "Comment (optional)",
+      "ventana_cerrada": "The deadline to respond has passed.",
+      "cancelada": "Appointment cancelled",
+      "sin_invitados": "No guests yet."
+    },
+    "acciones": {
+      "aceptar": "Accept",
+      "rechazar": "Decline",
+      "cancelar_cita": "Cancel appointment",
+      "quitar": "Remove",
+      "anadir": "Add",
+      "anadir_externo": "Add external guest",
+      "anadir_staff": "Add staff",
+      "marcar_asistio": "Attending",
+      "marcar_no_asistio": "Not attending"
+    },
+    "roster": {
+      "recuento": "{aceptado} accept · {rechazado} decline · {pendiente} pending",
+      "externo": "External"
+    },
+    "toasts": {
+      "rsvp_guardada": "Response saved",
+      "cita_cancelada": "Appointment cancelled",
+      "invitado_quitado": "Guest removed",
+      "invitados_anadidos": "Guests added"
     }
   }
 }

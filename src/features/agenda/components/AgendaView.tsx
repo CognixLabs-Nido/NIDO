@@ -1,18 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 
+import { getCitaDetalleAction } from '../actions/get-cita-detalle'
 import { setPreferenciaVistaAgenda } from '../actions/set-preferencia-vista'
 import { navegar, parseYmd, rangoDeVista, ymd } from '../lib/fechas'
-import type { CitaAgenda, VistaAgenda } from '../types'
+import type { CitaAgenda, CitaDetalle, VistaAgenda } from '../types'
 
 import { AgendaDia } from './AgendaDia'
 import { AgendaMes } from './AgendaMes'
+import { CitaChip } from './CitaChip'
+import { CitaDetalleDialog } from './CitaDetalleDialog'
 import { CitaFormDialog, type AulaOpt, type NinoOpt, type ProfeOpt } from './CitaFormDialog'
 import { VistaToggle } from './VistaToggle'
 
@@ -32,10 +35,15 @@ export function AgendaView({ locale, rol, vista, fecha, citas, ninos, aulas, pro
   const router = useRouter()
   const pathname = usePathname()
   const esStaff = rol === 'admin' || rol === 'profe'
+  const esAdmin = rol === 'admin'
 
   const [formOpen, setFormOpen] = useState(false)
   const [fechaForm, setFechaForm] = useState(fecha)
   const [horaForm, setHoraForm] = useState<string | undefined>(undefined)
+  const [diaSel, setDiaSel] = useState<string | null>(null)
+  const [detalle, setDetalle] = useState<CitaDetalle | null>(null)
+  const [detalleOpen, setDetalleOpen] = useState(false)
+  const [, startTransition] = useTransition()
 
   function irA(v: VistaAgenda, f: string) {
     router.push(`${pathname}?vista=${v}&fecha=${f}`)
@@ -51,6 +59,32 @@ export function AgendaView({ locale, rol, vista, fecha, citas, ninos, aulas, pro
     setHoraForm(hora === undefined ? undefined : `${String(hora).padStart(2, '0')}:00`)
     setFormOpen(true)
   }
+
+  function abrirDetalle(citaId: string) {
+    startTransition(async () => {
+      const d = await getCitaDetalleAction(citaId)
+      if (!d) return
+      setDetalle(d)
+      setDetalleOpen(true)
+    })
+  }
+
+  /** Recarga el detalle abierto + la vista tras responder/gestionar. */
+  function recargarDetalle() {
+    if (!detalle) return
+    const id = detalle.cita.id
+    startTransition(async () => {
+      const d = await getCitaDetalleAction(id)
+      setDetalle(d)
+      router.refresh()
+    })
+  }
+
+  const citasDelDia = diaSel
+    ? citas
+        .filter((c) => c.fecha === diaSel)
+        .sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio))
+    : []
 
   const { desde, hasta } = rangoDeVista(vista, fecha)
   const tag = locale === 'en' ? 'en-GB' : locale === 'va' ? 'ca-ES' : 'es-ES'
@@ -102,19 +136,56 @@ export function AgendaView({ locale, rol, vista, fecha, citas, ninos, aulas, pro
       </div>
 
       {vista === 'mes' ? (
-        <AgendaMes
-          fecha={fecha}
-          citas={citas}
-          locale={locale}
-          onCambioMes={(f) => irA('mes', f)}
-          onClickDia={esStaff ? (f) => abrirAlta(f) : undefined}
-        />
+        <>
+          <AgendaMes
+            fecha={fecha}
+            citas={citas}
+            locale={locale}
+            onCambioMes={(f) => {
+              setDiaSel(null)
+              irA('mes', f)
+            }}
+            onClickDia={(f) => setDiaSel(f)}
+          />
+
+          {diaSel && (
+            <div className="space-y-2" data-testid="citas-del-dia">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-muted-foreground text-sm font-medium capitalize">
+                  {new Intl.DateTimeFormat(tag, {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  }).format(parseYmd(diaSel))}
+                </p>
+                {esStaff && (
+                  <Button size="sm" variant="outline" onClick={() => abrirAlta(diaSel)}>
+                    <PlusIcon className="mr-1 h-4 w-4" />
+                    {t('alta.nueva')}
+                  </Button>
+                )}
+              </div>
+              {citasDelDia.length === 0 ? (
+                <p className="text-muted-foreground text-sm">{t('vacio')}</p>
+              ) : (
+                <ul className="space-y-1">
+                  {citasDelDia.map((c) => (
+                    <li key={c.id}>
+                      <CitaChip cita={c} onClick={() => abrirDetalle(c.id)} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </>
       ) : (
         <AgendaDia
           vista={vista}
           fecha={fecha}
           citas={citas}
           locale={locale}
+          onClickCita={(c) => abrirDetalle(c.id)}
           onClickFranja={esStaff ? (f, hora) => abrirAlta(f, hora) : undefined}
         />
       )}
@@ -131,6 +202,15 @@ export function AgendaView({ locale, rol, vista, fecha, citas, ninos, aulas, pro
           horaInicial={horaForm}
         />
       )}
+
+      <CitaDetalleDialog
+        open={detalleOpen}
+        onOpenChange={setDetalleOpen}
+        detalle={detalle}
+        esAdmin={esAdmin}
+        profes={profes}
+        onChanged={recargarDetalle}
+      />
     </div>
   )
 }

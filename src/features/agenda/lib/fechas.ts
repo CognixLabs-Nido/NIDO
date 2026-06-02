@@ -75,6 +75,27 @@ export function rangoDeVista(vista: VistaAgenda, fecha: string): { desde: string
   return { desde, hasta }
 }
 
+/**
+ * ¿La cita ya comenzó (huso Madrid)? Cierra la ventana de RSVP/edición (AG-11).
+ * Versión **cliente** del helper homónimo de `server-helpers.ts` (que es
+ * `server-only`): la usa el detalle para deshabilitar el RSVP cuando ya pasó.
+ * Compara 'YYYY-MM-DD HH:MM' lexicográficamente (ambos zero-padded).
+ */
+export function citaYaComenzo(fecha: string, horaInicio: string): boolean {
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date())
+  const ahora = partes.replace(', ', ' ') // 'YYYY-MM-DD HH:MM'
+  const inicio = `${fecha} ${horaInicio.slice(0, 5)}`
+  return ahora >= inicio
+}
+
 /** Avanza/retrocede el ancla según la vista (día/semana/mes). */
 export function navegar(vista: VistaAgenda, fecha: string, dir: -1 | 1): string {
   if (vista === 'dia') return addDias(fecha, dir)

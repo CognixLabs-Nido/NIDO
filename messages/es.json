@@ -1458,6 +1458,37 @@
       "sin_centro": "No se pudo determinar el centro.",
       "nino_no_encontrado": "Niño/a no encontrado.",
       "aula_no_encontrada": "Aula no encontrada."
+    },
+    "detalle": {
+      "cuando": "Cuándo",
+      "lugar": "Lugar",
+      "invitados": "Invitados",
+      "tu_respuesta": "Tu respuesta",
+      "comentario_placeholder": "Comentario (opcional)",
+      "ventana_cerrada": "El plazo para responder ya ha pasado.",
+      "cancelada": "Cita cancelada",
+      "sin_invitados": "Aún no hay invitados."
+    },
+    "acciones": {
+      "aceptar": "Aceptar",
+      "rechazar": "Rechazar",
+      "cancelar_cita": "Cancelar cita",
+      "quitar": "Quitar",
+      "anadir": "Añadir",
+      "anadir_externo": "Añadir invitado externo",
+      "anadir_staff": "Añadir personal",
+      "marcar_asistio": "Asiste",
+      "marcar_no_asistio": "No asiste"
+    },
+    "roster": {
+      "recuento": "{aceptado} aceptan · {rechazado} rechazan · {pendiente} pendientes",
+      "externo": "Externo"
+    },
+    "toasts": {
+      "rsvp_guardada": "Respuesta guardada",
+      "cita_cancelada": "Cita cancelada",
+      "invitado_quitado": "Invitado quitado",
+      "invitados_anadidos": "Invitados añadidos"
     }
   }
 }
