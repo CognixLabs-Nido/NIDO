@@ -691,11 +691,12 @@ quedó como follow-up.
   (p. ej. `inicio_resumen`), trilingüe.
 - Estado vacío amable por rol ("Sin eventos ni citas esta semana").
 
-**Decisión abierta para el responsable (no bloquea el core):** ¿el resumen
-**sustituye** del todo el widget de días cerrados, o lo **integra** (los cierres del
-centro como una línea más del resumen)? Recomendación: **integrarlo** —un cierre es
-información de la semana tan relevante como un evento— pero se confirma al planificar
-esta pieza, no ahora.
+**Cerrado (responsable, 2026-06-02): integrar, no sustituir.** El resumen **integra**
+los cierres del centro de la semana en curso como una línea más (un día cerrado esta
+semana es información tan relevante como un evento o una cita). Lo que se elimina es
+el bloque redundante **"Sin cierres previstos el próximo mes"** (la mirada a un mes
+vista): el resumen se ciñe al **día + semana en curso**. El detalle del calendario de
+cierres sigue en `/calendario`. Se concreta el _cómo_ al planificar I0–I2.
 
 **Fuera:** edición/RSVP desde el Inicio (solo resumen + enlace al detalle);
 paginación; rango configurable (fijo a día + semana en curso en Ola 1).
@@ -709,23 +710,23 @@ enlace lleva a `/agenda`.
 > Heredan los defaults del Dominio B de f7a (PR #50) + los ajustes de cierre del
 > responsable. **Todas cerradas.**
 
-| #        | Decisión (cerrada)                                                                                                                                                                                                                      | Origen f7a          |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| AG-tipos | 4 tipos: `reunion_familia` · `reunion_clase` · `reunion_claustro` · `visita`. Matriz organizador→invitado §C1.                                                                                                                          | encargo             |
-| AG-01    | Modelo de **2 tablas**: `citas` + `cita_invitados` (espejo de `eventos`/`confirmaciones_evento` pero nominal).                                                                                                                          | D-B1                |
-| AG-02    | Grupos se **expanden a personas al crear** (snapshot). **Editar lista (añadir Y quitar) en Ola 1**; re-sync auto = follow-up.                                                                                                           | D-B2 + cierre       |
-| AG-03    | Invitado externo = **solo texto** (`usuario_id NULL` + `nombre_externo`); sin RSVP digital. Email/magic-link = follow-up.                                                                                                               | D-B3                |
-| AG-04    | RSVP **3 estados**: `pendiente`/`aceptado`/`rechazado`. Sin "quizá".                                                                                                                                                                    | D-B4                |
-| AG-05    | Organizan **admin y profe** (matriz); tutor/autorizado **solo reciben + RSVP**.                                                                                                                                                         | D-B5                |
-| AG-06    | Vista **mes reusa `<CalendarioMensual/>`**; **día/semana = componente horario nuevo** (lista por hora, lean).                                                                                                                           | D-B6                |
-| AG-07    | **Cerrado:** preferencia de vista en tabla genérica **`preferencias_usuario (usuario_id, clave, valor)`**.                                                                                                                              | D-B7                |
-| AG-08    | **Cerrado:** ruta **`/agenda`** label "Agenda"; renombrar Calendario (F7) → **"Calendario Escolar"** (ruta `/calendario` igual); i18n `citas`; **F3 agenda diaria intacta**.                                                            | D-B8 + cierre       |
-| AG-09    | **Cerrado:** alta con **patrón Calendario** ("+ Nueva cita" **y** `onClickDia` → fecha prefijada). Se comparte **patrón** de alta/vista, **no el modelo** (`citas`≠`eventos`).                                                          | cierre              |
-| AG-11    | RSVP/edición hasta **hora de inicio**; editar/cancelar **solo organizador o admin**; cancelar = `estado`.                                                                                                                               | D-B11               |
-| AG-12    | **Cerrado:** auditar `citas` y `cita_invitados` como **registro administrativo** (quién/cuándo del RSVP), **no** legal (≠ F8). Estado actual + quién/cuándo; **sin change-log** dedicado. `preferencias_usuario` no.                    | D-T2 + cierre       |
-| AG-13    | **Sin Realtime** en el core (roster refresca al navegar).                                                                                                                                                                               | D11 (F7)            |
-| AG-14    | **Badge de invitaciones pendientes** en el nav de Agenda (RPC `contar_invitaciones_pendientes`, patrón F6-C). Recuento al entrar, **sin push ni Realtime**. **En #51.** _(Checkpoint A 2026-06-02; pendiente OK plan.)_                 | adenda              |
-| AG-15    | **Inicio: resumen de la semana** (eventos F7 + citas Agenda, día + semana, por rol según RLS) sustituye el widget "Próximos días cerrados". **Pieza propia tras el core** de la Agenda. _(Checkpoint A 2026-06-02; pendiente OK plan.)_ | adenda (Dom. C f7a) |
+| #        | Decisión (cerrada)                                                                                                                                                                                                                                                                | Origen f7a          |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| AG-tipos | 4 tipos: `reunion_familia` · `reunion_clase` · `reunion_claustro` · `visita`. Matriz organizador→invitado §C1.                                                                                                                                                                    | encargo             |
+| AG-01    | Modelo de **2 tablas**: `citas` + `cita_invitados` (espejo de `eventos`/`confirmaciones_evento` pero nominal).                                                                                                                                                                    | D-B1                |
+| AG-02    | Grupos se **expanden a personas al crear** (snapshot). **Editar lista (añadir Y quitar) en Ola 1**; re-sync auto = follow-up.                                                                                                                                                     | D-B2 + cierre       |
+| AG-03    | Invitado externo = **solo texto** (`usuario_id NULL` + `nombre_externo`); sin RSVP digital. Email/magic-link = follow-up.                                                                                                                                                         | D-B3                |
+| AG-04    | RSVP **3 estados**: `pendiente`/`aceptado`/`rechazado`. Sin "quizá".                                                                                                                                                                                                              | D-B4                |
+| AG-05    | Organizan **admin y profe** (matriz); tutor/autorizado **solo reciben + RSVP**.                                                                                                                                                                                                   | D-B5                |
+| AG-06    | Vista **mes reusa `<CalendarioMensual/>`**; **día/semana = componente horario nuevo** (lista por hora, lean).                                                                                                                                                                     | D-B6                |
+| AG-07    | **Cerrado:** preferencia de vista en tabla genérica **`preferencias_usuario (usuario_id, clave, valor)`**.                                                                                                                                                                        | D-B7                |
+| AG-08    | **Cerrado:** ruta **`/agenda`** label "Agenda"; renombrar Calendario (F7) → **"Calendario Escolar"** (ruta `/calendario` igual); i18n `citas`; **F3 agenda diaria intacta**.                                                                                                      | D-B8 + cierre       |
+| AG-09    | **Cerrado:** alta con **patrón Calendario** ("+ Nueva cita" **y** `onClickDia` → fecha prefijada). Se comparte **patrón** de alta/vista, **no el modelo** (`citas`≠`eventos`).                                                                                                    | cierre              |
+| AG-11    | RSVP/edición hasta **hora de inicio**; editar/cancelar **solo organizador o admin**; cancelar = `estado`.                                                                                                                                                                         | D-B11               |
+| AG-12    | **Cerrado:** auditar `citas` y `cita_invitados` como **registro administrativo** (quién/cuándo del RSVP), **no** legal (≠ F8). Estado actual + quién/cuándo; **sin change-log** dedicado. `preferencias_usuario` no.                                                              | D-T2 + cierre       |
+| AG-13    | **Sin Realtime** en el core (roster refresca al navegar).                                                                                                                                                                                                                         | D11 (F7)            |
+| AG-14    | **Badge de invitaciones pendientes** en el nav de Agenda (RPC `contar_invitaciones_pendientes`, patrón F6-C). Recuento al entrar, **sin push ni Realtime**. **En #51.** _(Checkpoint A 2026-06-02; pendiente OK plan.)_                                                           | adenda              |
+| AG-15    | **Inicio: resumen de la semana** (eventos F7 + citas Agenda, día + semana, por rol según RLS). **Integra** los cierres de la semana (no sustituye); elimina el bloque "Sin cierres previstos el próximo mes". **Pieza propia tras el core** de la Agenda. _(Plan OK 2026-06-02.)_ | adenda (Dom. C f7a) |
 
 ## Plan de Checkpoint B (sub-pasos reviewables)
 
@@ -760,11 +761,11 @@ enlace lleva a `/agenda`.
 > `getCitasRango`). Spec propia o sección dedicada; rama y PR nuevos. Sub-pasos
 > propuestos:
 
-| Sub-paso | Contenido                                                                                                                                                                                      | Entregable / verificación                                   |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| **I0**   | Decisión "sustituir vs integrar" el widget de días cerrados (recomendado: integrar). Agregador `getResumenSemana(centroId, rol)` que combina eventos + citas (solo lectura, RLS da el ámbito). | query + unit (mezcla/orden, recorte semana, vacío por rol). |
-| **I1**   | `ResumenSemanaWidget` (Server) reemplaza `ProximosDiasCerradosWidget` en `family`/`teacher`/`admin` home; enlaces "ver todo" a `/calendario` y `/agenda`. i18n nuevo trilingüe.                | render + i18n es/en/va; sin claves crudas.                  |
-| **I2**   | E2E: tutor con invitación esta semana la ve en Inicio; el enlace lleva a `/agenda`. Docs (nota en `data-model.md`/journey si aplica).                                                          | `npm test` + Playwright verdes.                             |
+| Sub-paso | Contenido                                                                                                                                                                                                                    | Entregable / verificación                                                       |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| **I0**   | Agregador `getResumenSemana(centroId, rol)` que combina eventos + citas + **cierres de la semana** (decisión AG-15: integrar; solo lectura, RLS da el ámbito). Acotado a día + semana en curso; sin el bloque "próximo mes". | query + unit (mezcla/orden, recorte semana, cierres integrados, vacío por rol). |
+| **I1**   | `ResumenSemanaWidget` (Server) reemplaza `ProximosDiasCerradosWidget` en `family`/`teacher`/`admin` home; enlaces "ver todo" a `/calendario` y `/agenda`. i18n nuevo trilingüe.                                              | render + i18n es/en/va; sin claves crudas.                                      |
+| **I2**   | E2E: tutor con invitación esta semana la ve en Inicio; el enlace lleva a `/agenda`. Docs (nota en `data-model.md`/journey si aplica).                                                                                        | `npm test` + Playwright verdes.                                                 |
 
 ## Referencias
 
