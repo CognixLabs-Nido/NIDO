@@ -141,6 +141,14 @@ export function CitaFormDialog({
 
   const tipo = form.watch('tipo')
 
+  // base-ui `Select.Value` pinta el `value` crudo (id) salvo que `Select.Root`
+  // reciba `items` (value→label). Sin esto, el control mostraría el UUID / la
+  // clave del tipo tras seleccionar. El valor enviado sigue siendo el id.
+  const tipoItems = TIPOS_POR_ROL[rol].map((tp) => ({ value: tp, label: t(`tipos.${tp}`) }))
+  const ninoItems = ninos.map((n) => ({ value: n.id, label: `${n.nombre} ${n.apellidos}` }))
+  const aulaItems = aulas.map((a) => ({ value: a.id, label: a.nombre }))
+  const profeItems = profes.map((p) => ({ value: p.id, label: p.nombre }))
+
   function onSubmit(v: FormValues) {
     const invitados: InvitadoInput[] = []
     if (v.tipo === 'visita') {
@@ -184,16 +192,16 @@ export function CitaFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('campos.tipo')}</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select items={tipoItems} value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {TIPOS_POR_ROL[rol].map((tp) => (
-                        <SelectItem key={tp} value={tp}>
-                          {t(`tipos.${tp}`)}
+                      {tipoItems.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -210,16 +218,16 @@ export function CitaFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('campos.nino')}</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select items={ninoItems} value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t('campos.nino_placeholder')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {ninos.map((n) => (
-                          <SelectItem key={n.id} value={n.id}>
-                            {n.nombre} {n.apellidos}
+                        {ninoItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -237,16 +245,16 @@ export function CitaFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('campos.aula')}</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select items={aulaItems} value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t('campos.aula_placeholder')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {aulas.map((a) => (
-                          <SelectItem key={a.id} value={a.id}>
-                            {a.nombre}
+                        {aulaItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -279,16 +287,20 @@ export function CitaFormDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t('campos.staff_opcional')}</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
+                        <Select
+                          items={profeItems}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder={t('campos.staff_placeholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {profes.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.nombre}
+                            {profeItems.map((item) => (
+                              <SelectItem key={item.value} value={item.value}>
+                                {item.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
