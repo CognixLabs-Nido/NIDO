@@ -173,10 +173,11 @@
       "ninos": "Xiquets",
       "audit": "Audit log",
       "perfil": "Perfil",
-      "calendario": "Calendari",
+      "calendario": "Calendari Escolar",
       "menus": "Menús",
       "mensajeria": "Missatgeria",
-      "recordatorios": "Recordatoris"
+      "recordatorios": "Recordatoris",
+      "agenda": "Agenda"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -371,9 +372,10 @@
       "aria_label": "Navegació profe",
       "dashboard": "Inici",
       "perfil": "Perfil",
-      "calendario": "Calendari",
+      "calendario": "Calendari Escolar",
       "mensajeria": "Missatgeria",
-      "recordatorios": "Recordatoris"
+      "recordatorios": "Recordatoris",
+      "agenda": "Agenda"
     },
     "dashboard": {
       "title": "Les meues aules",
@@ -397,9 +399,10 @@
       "aria_label": "Navegació família",
       "dashboard": "Inici",
       "perfil": "Perfil",
-      "calendario": "Calendari",
+      "calendario": "Calendari Escolar",
       "mensajeria": "Missatgeria",
-      "recordatorios": "Recordatoris"
+      "recordatorios": "Recordatoris",
+      "agenda": "Agenda"
     },
     "dashboard": {
       "title": "Els meus xiquets",
@@ -1210,8 +1213,14 @@
   "eventos": {
     "nuevo": "Nou esdeveniment",
     "editar": "Editar esdeveniment",
-    "push": { "actualizado": "Esdeveniment actualitzat: {titulo}" },
-    "ambitos": { "centro": "Tot el centre", "aula": "Una aula", "nino": "Un xiquet" },
+    "push": {
+      "actualizado": "Esdeveniment actualitzat: {titulo}"
+    },
+    "ambitos": {
+      "centro": "Tot el centre",
+      "aula": "Una aula",
+      "nino": "Un xiquet"
+    },
     "tipos": {
       "excursion": "Excursió",
       "reunion": "Reunió",
@@ -1219,7 +1228,9 @@
       "vacaciones": "Vacances",
       "otro": "Altre"
     },
-    "estados": { "cancelado": "Cancel·lat" },
+    "estados": {
+      "cancelado": "Cancel·lat"
+    },
     "estados_confirmacion": {
       "pendiente": "Pendent",
       "confirmado": "Assistix",
@@ -1370,5 +1381,115 @@
     },
     "badge_aria": "{n} recordatoris pendents",
     "empty_solo_lectura": "No tens recordatoris. Ací veuràs els que t’envien."
+  },
+  "citas": {
+    "titulo": "Agenda",
+    "vacio": "No hi ha cites en este període.",
+    "soy_organizador": "Organitzes",
+    "tipos": {
+      "reunion_familia": "Reunió amb família",
+      "reunion_clase": "Reunió de classe",
+      "reunion_claustro": "Claustre",
+      "visita": "Visita"
+    },
+    "rsvp": {
+      "pendiente": "Pendent",
+      "aceptado": "Accepta",
+      "rechazado": "Rebutja"
+    },
+    "vista": {
+      "dia": "Dia",
+      "semana": "Setmana",
+      "mes": "Mes"
+    },
+    "nav": {
+      "anterior": "Anterior",
+      "siguiente": "Següent",
+      "hoy": "Hui"
+    },
+    "alta": {
+      "nueva": "Nova cita",
+      "titulo": "Nova cita",
+      "crear": "Crear",
+      "cancelar": "Cancel·lar",
+      "creada": "Cita creada",
+      "claustro_hint": "S'invitarà a totes les mestres del centre.",
+      "nueva_en": "Nova cita a les {hora}"
+    },
+    "campos": {
+      "tipo": "Tipus",
+      "nino": "Xiquet/a",
+      "nino_placeholder": "Tria un xiquet/a",
+      "aula": "Aula",
+      "aula_placeholder": "Tria una aula",
+      "externo": "Convidat extern",
+      "externo_placeholder": "Nom del visitant",
+      "staff_opcional": "Personal (opcional)",
+      "staff_placeholder": "Tria personal",
+      "titulo": "Títol",
+      "fecha": "Data",
+      "hora_inicio": "Inici",
+      "hora_fin": "Fi",
+      "lugar": "Lloc",
+      "descripcion": "Descripció"
+    },
+    "validation": {
+      "titulo_vacio": "El títol és obligatori.",
+      "titulo_largo": "Títol massa llarg.",
+      "hora_invalida": "Hora no vàlida.",
+      "nino_requerido": "Tria un xiquet/a.",
+      "aula_requerida": "Tria una aula.",
+      "externo_requerido": "Indica el nom del visitant.",
+      "hora_fin_invalida": "L'hora de fi ha de ser posterior a l'inici."
+    },
+    "errors": {
+      "no_autorizado": "No tens permís per a esta acció.",
+      "creacion_fallo": "No s'ha pogut crear la cita.",
+      "sin_invitados": "La cita no té convidats.",
+      "invitados_fallo": "No s'han pogut afegir els convidats.",
+      "edicion_fallo": "No s'ha pogut editar la cita.",
+      "cancelacion_fallo": "No s'ha pogut cancel·lar la cita.",
+      "rsvp_fallo": "No s'ha pogut registrar la teua resposta.",
+      "no_encontrada": "Cita no trobada.",
+      "cita_cancelada": "La cita està cancel·lada.",
+      "ventana_cerrada": "El termini per a respondre ja ha passat.",
+      "no_invitado": "No estàs convidat a esta cita.",
+      "preferencia_fallo": "No s'ha pogut guardar la preferència.",
+      "sin_centro": "No s'ha pogut determinar el centre.",
+      "nino_no_encontrado": "Xiquet/a no trobat.",
+      "aula_no_encontrada": "Aula no trobada."
+    },
+    "detalle": {
+      "cuando": "Quan",
+      "lugar": "Lloc",
+      "invitados": "Convidats",
+      "tu_respuesta": "La teua resposta",
+      "comentario_placeholder": "Comentari (opcional)",
+      "ventana_cerrada": "El termini per a respondre ja ha passat.",
+      "cancelada": "Cita cancel·lada",
+      "sin_invitados": "Encara no hi ha convidats."
+    },
+    "acciones": {
+      "aceptar": "Acceptar",
+      "rechazar": "Rebutjar",
+      "cancelar_cita": "Cancel·lar cita",
+      "quitar": "Llevar",
+      "anadir": "Afegir",
+      "anadir_externo": "Afegir convidat extern",
+      "anadir_staff": "Afegir personal",
+      "marcar_asistio": "Assistix",
+      "marcar_no_asistio": "No assistix"
+    },
+    "roster": {
+      "recuento": "{aceptado} accepten · {rechazado} rebutgen · {pendiente} pendents",
+      "externo": "Extern"
+    },
+    "toasts": {
+      "rsvp_guardada": "Resposta guardada",
+      "cita_cancelada": "Cita cancel·lada",
+      "invitado_quitado": "Convidat llevat",
+      "invitados_anadidos": "Convidats afegits"
+    },
+    "badge_aria": "{n} convidacions pendents"
   }
 }

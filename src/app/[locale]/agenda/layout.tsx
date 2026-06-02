@@ -19,16 +19,13 @@ interface LayoutProps {
 }
 
 /**
- * Layout transversal de mensajería. Es accesible para los 4 roles
- * (admin/profe/tutor_legal/autorizado). La sidebar muestra los items
- * del rol del usuario para que la navegación sea coherente cuando
- * vuelve a /admin, /teacher o /family desde /messages.
- *
- * El servicio role no entra aquí (es solo backend).
+ * Layout transversal de la Agenda (F7b). Accesible para los 4 roles:
+ * admin/profe organizan; tutor_legal/autorizado solo ven sus invitaciones y
+ * responden. Sidebar idéntica al resto de módulos (patrón /reminders).
  */
-export default async function MessagesLayout({ children, params }: LayoutProps) {
+export default async function AgendaLayout({ children, params }: LayoutProps) {
   const { locale } = await params
-  const tNav = await getTranslations('admin.nav') // 'perfil' es común a los tres roles
+  const tNav = await getTranslations('admin.nav')
   const tRoles = await getTranslations('auth.select_role.roles')
 
   const centroId = await getCentroActualId()
@@ -84,7 +81,7 @@ export default async function MessagesLayout({ children, params }: LayoutProps) 
         ariaLabel={tNav('aria_label')}
       />
       <main className="min-w-0 flex-1">
-        <div className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-8">{children}</div>
+        <div className="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-8">{children}</div>
       </main>
     </div>
   )

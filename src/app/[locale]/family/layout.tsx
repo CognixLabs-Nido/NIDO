@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
+import { AgendaBadge } from '@/features/agenda/components/AgendaBadge'
+import { contarInvitacionesPendientes } from '@/features/agenda/queries/contar-invitaciones-pendientes'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
@@ -32,6 +34,7 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
   const centroLogo = await getCentroLogo(centroId)
   const { total: unread } = await countNoLeidos()
   const recordatoriosPendientes = await contarRecordatoriosPendientes()
+  const invitacionesPendientes = await contarInvitacionesPendientes()
 
   // Si el usuario es admin que entra por error en family, le mostramos
   // sus items propios; si es autorizado, los de family (todos los items
@@ -41,7 +44,8 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
     sidebarRol,
     locale,
     <MessagingBadge initialTotal={unread} />,
-    <RecordatoriosBadge initialTotal={recordatoriosPendientes} />
+    <RecordatoriosBadge initialTotal={recordatoriosPendientes} />,
+    <AgendaBadge initialTotal={invitacionesPendientes} />
   )
 
   return (

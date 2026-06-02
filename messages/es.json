@@ -173,10 +173,11 @@
       "ninos": "Niños",
       "audit": "Audit log",
       "perfil": "Perfil",
-      "calendario": "Calendario",
+      "calendario": "Calendario Escolar",
       "menus": "Menús",
       "mensajeria": "Mensajería",
-      "recordatorios": "Recordatorios"
+      "recordatorios": "Recordatorios",
+      "agenda": "Agenda"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -371,9 +372,10 @@
       "aria_label": "Navegación profe",
       "dashboard": "Inicio",
       "perfil": "Perfil",
-      "calendario": "Calendario",
+      "calendario": "Calendario Escolar",
       "mensajeria": "Mensajería",
-      "recordatorios": "Recordatorios"
+      "recordatorios": "Recordatorios",
+      "agenda": "Agenda"
     },
     "dashboard": {
       "title": "Mis aulas",
@@ -397,9 +399,10 @@
       "aria_label": "Navegación familia",
       "dashboard": "Inicio",
       "perfil": "Perfil",
-      "calendario": "Calendario",
+      "calendario": "Calendario Escolar",
       "mensajeria": "Mensajería",
-      "recordatorios": "Recordatorios"
+      "recordatorios": "Recordatorios",
+      "agenda": "Agenda"
     },
     "dashboard": {
       "title": "Mis niños",
@@ -1210,8 +1213,14 @@
   "eventos": {
     "nuevo": "Nuevo evento",
     "editar": "Editar evento",
-    "push": { "actualizado": "Evento actualizado: {titulo}" },
-    "ambitos": { "centro": "Todo el centro", "aula": "Un aula", "nino": "Un niño" },
+    "push": {
+      "actualizado": "Evento actualizado: {titulo}"
+    },
+    "ambitos": {
+      "centro": "Todo el centro",
+      "aula": "Un aula",
+      "nino": "Un niño"
+    },
     "tipos": {
       "excursion": "Excursión",
       "reunion": "Reunión",
@@ -1219,7 +1228,9 @@
       "vacaciones": "Vacaciones",
       "otro": "Otro"
     },
-    "estados": { "cancelado": "Cancelado" },
+    "estados": {
+      "cancelado": "Cancelado"
+    },
     "estados_confirmacion": {
       "pendiente": "Pendiente",
       "confirmado": "Asiste",
@@ -1370,5 +1381,115 @@
     },
     "badge_aria": "{n} recordatorios pendientes",
     "empty_solo_lectura": "No tienes recordatorios. Aquí verás los que te envíen."
+  },
+  "citas": {
+    "titulo": "Agenda",
+    "vacio": "No hay citas en este periodo.",
+    "soy_organizador": "Organizas",
+    "tipos": {
+      "reunion_familia": "Reunión con familia",
+      "reunion_clase": "Reunión de clase",
+      "reunion_claustro": "Claustro",
+      "visita": "Visita"
+    },
+    "rsvp": {
+      "pendiente": "Pendiente",
+      "aceptado": "Acepta",
+      "rechazado": "Rechaza"
+    },
+    "vista": {
+      "dia": "Día",
+      "semana": "Semana",
+      "mes": "Mes"
+    },
+    "nav": {
+      "anterior": "Anterior",
+      "siguiente": "Siguiente",
+      "hoy": "Hoy"
+    },
+    "alta": {
+      "nueva": "Nueva cita",
+      "titulo": "Nueva cita",
+      "crear": "Crear",
+      "cancelar": "Cancelar",
+      "creada": "Cita creada",
+      "claustro_hint": "Se invitará a todas las profesoras del centro.",
+      "nueva_en": "Nueva cita a las {hora}"
+    },
+    "campos": {
+      "tipo": "Tipo",
+      "nino": "Niño/a",
+      "nino_placeholder": "Selecciona un niño/a",
+      "aula": "Aula",
+      "aula_placeholder": "Selecciona un aula",
+      "externo": "Invitado externo",
+      "externo_placeholder": "Nombre del visitante",
+      "staff_opcional": "Personal (opcional)",
+      "staff_placeholder": "Selecciona personal",
+      "titulo": "Título",
+      "fecha": "Fecha",
+      "hora_inicio": "Inicio",
+      "hora_fin": "Fin",
+      "lugar": "Lugar",
+      "descripcion": "Descripción"
+    },
+    "validation": {
+      "titulo_vacio": "El título es obligatorio.",
+      "titulo_largo": "Título demasiado largo.",
+      "hora_invalida": "Hora inválida.",
+      "nino_requerido": "Selecciona un niño/a.",
+      "aula_requerida": "Selecciona un aula.",
+      "externo_requerido": "Indica el nombre del visitante.",
+      "hora_fin_invalida": "La hora de fin debe ser posterior al inicio."
+    },
+    "errors": {
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "creacion_fallo": "No se pudo crear la cita.",
+      "sin_invitados": "La cita no tiene invitados.",
+      "invitados_fallo": "No se pudieron añadir los invitados.",
+      "edicion_fallo": "No se pudo editar la cita.",
+      "cancelacion_fallo": "No se pudo cancelar la cita.",
+      "rsvp_fallo": "No se pudo registrar tu respuesta.",
+      "no_encontrada": "Cita no encontrada.",
+      "cita_cancelada": "La cita está cancelada.",
+      "ventana_cerrada": "El plazo para responder ya ha pasado.",
+      "no_invitado": "No estás invitado a esta cita.",
+      "preferencia_fallo": "No se pudo guardar la preferencia.",
+      "sin_centro": "No se pudo determinar el centro.",
+      "nino_no_encontrado": "Niño/a no encontrado.",
+      "aula_no_encontrada": "Aula no encontrada."
+    },
+    "detalle": {
+      "cuando": "Cuándo",
+      "lugar": "Lugar",
+      "invitados": "Invitados",
+      "tu_respuesta": "Tu respuesta",
+      "comentario_placeholder": "Comentario (opcional)",
+      "ventana_cerrada": "El plazo para responder ya ha pasado.",
+      "cancelada": "Cita cancelada",
+      "sin_invitados": "Aún no hay invitados."
+    },
+    "acciones": {
+      "aceptar": "Aceptar",
+      "rechazar": "Rechazar",
+      "cancelar_cita": "Cancelar cita",
+      "quitar": "Quitar",
+      "anadir": "Añadir",
+      "anadir_externo": "Añadir invitado externo",
+      "anadir_staff": "Añadir personal",
+      "marcar_asistio": "Asiste",
+      "marcar_no_asistio": "No asiste"
+    },
+    "roster": {
+      "recuento": "{aceptado} aceptan · {rechazado} rechazan · {pendiente} pendientes",
+      "externo": "Externo"
+    },
+    "toasts": {
+      "rsvp_guardada": "Respuesta guardada",
+      "cita_cancelada": "Cita cancelada",
+      "invitado_quitado": "Invitado quitado",
+      "invitados_anadidos": "Invitados añadidos"
+    },
+    "badge_aria": "{n} invitaciones pendientes"
   }
 }

@@ -3,6 +3,7 @@ import {
   BellIcon,
   BookOpenIcon,
   Building2Icon,
+  CalendarCheckIcon,
   CalendarDaysIcon,
   CalendarRangeIcon,
   HistoryIcon,
@@ -34,7 +35,8 @@ export async function buildSidebarItems(
   rol: RoleKey,
   locale: string,
   badge?: ReactNode,
-  recordatoriosBadge?: ReactNode
+  recordatoriosBadge?: ReactNode,
+  agendaBadge?: ReactNode
 ): Promise<SidebarItem[]> {
   if (rol === 'admin') {
     const t = await getTranslations('admin.nav')
@@ -44,6 +46,12 @@ export async function buildSidebarItems(
       { href: `/${locale}/admin/cursos`, label: t('cursos'), icon: <CalendarDaysIcon /> },
       { href: `/${locale}/admin/aulas`, label: t('aulas'), icon: <BookOpenIcon /> },
       { href: `/${locale}/admin/calendario`, label: t('calendario'), icon: <CalendarRangeIcon /> },
+      {
+        href: `/${locale}/agenda`,
+        label: t('agenda'),
+        icon: <CalendarCheckIcon />,
+        trailing: agendaBadge,
+      },
       { href: `/${locale}/admin/menus`, label: t('menus'), icon: <UtensilsIcon /> },
       { href: `/${locale}/admin/ninos`, label: t('ninos'), icon: <BabyIcon /> },
       {
@@ -72,6 +80,12 @@ export async function buildSidebarItems(
         icon: <CalendarRangeIcon />,
       },
       {
+        href: `/${locale}/agenda`,
+        label: t('agenda'),
+        icon: <CalendarCheckIcon />,
+        trailing: agendaBadge,
+      },
+      {
         href: `/${locale}/messages`,
         label: t('mensajeria'),
         icon: <MessageCircleIcon />,
@@ -92,6 +106,12 @@ export async function buildSidebarItems(
   return [
     { href: `/${locale}/family`, label: t('dashboard'), icon: <HomeIcon /> },
     { href: `/${locale}/family/calendario`, label: t('calendario'), icon: <CalendarRangeIcon /> },
+    {
+      href: `/${locale}/agenda`,
+      label: t('agenda'),
+      icon: <CalendarCheckIcon />,
+      trailing: agendaBadge,
+    },
     {
       href: `/${locale}/messages`,
       label: t('mensajeria'),

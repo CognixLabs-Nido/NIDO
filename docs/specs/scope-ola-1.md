@@ -50,6 +50,13 @@ Subieron a Ola 1 desde la doc previa. Se ubicarán en su fase cuando toque — *
 - **Medicación con doble confirmación** (antes Ola 2).
 - **Onboarding guiado** para usuarios no-tech (antes Ola 2).
 - **PIN de acceso para tablets compartidas** (tablet del aula compartida; antes Ola 2).
+- **Badge de invitaciones pendientes de la Agenda** (AG-14). Contador en el nav de
+  `/agenda` (RPC, patrón Recordatorios; sin push/Realtime). Va **dentro del PR de la
+  Agenda** (#51). Ver `agenda-citas.md`.
+- **Inicio: resumen de la semana** (AG-15) — eventos del Calendario Escolar + citas
+  de la Agenda (día + semana, por rol). Sustituye el widget "Próximos días cerrados".
+  **Pieza propia tras el core de la Agenda** (cruza F7 + Agenda; recupera el Dominio
+  C "Inicio Hoy" de f7a). Ver `agenda-citas.md`.
 
 ## Regla de avance
 

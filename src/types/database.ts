@@ -423,6 +423,160 @@ export type Database = {
         }
         Relationships: []
       }
+      cita_invitados: {
+        Row: {
+          centro_id: string
+          cita_id: string
+          comentario: string | null
+          created_at: string
+          estado: Database['public']['Enums']['rsvp_estado']
+          id: string
+          nombre_externo: string | null
+          respondido_at: string | null
+          respondido_por: string | null
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          centro_id: string
+          cita_id: string
+          comentario?: string | null
+          created_at?: string
+          estado?: Database['public']['Enums']['rsvp_estado']
+          id?: string
+          nombre_externo?: string | null
+          respondido_at?: string | null
+          respondido_por?: string | null
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          centro_id?: string
+          cita_id?: string
+          comentario?: string | null
+          created_at?: string
+          estado?: Database['public']['Enums']['rsvp_estado']
+          id?: string
+          nombre_externo?: string | null
+          respondido_at?: string | null
+          respondido_por?: string | null
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'cita_invitados_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'cita_invitados_cita_id_fkey'
+            columns: ['cita_id']
+            isOneToOne: false
+            referencedRelation: 'citas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'cita_invitados_respondido_por_fkey'
+            columns: ['respondido_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'cita_invitados_usuario_id_fkey'
+            columns: ['usuario_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      citas: {
+        Row: {
+          aula_id: string | null
+          centro_id: string
+          created_at: string
+          descripcion: string | null
+          estado: Database['public']['Enums']['cita_estado']
+          fecha: string
+          hora_fin: string | null
+          hora_inicio: string
+          id: string
+          lugar: string | null
+          nino_id: string | null
+          organizador_id: string
+          tipo: Database['public']['Enums']['tipo_cita']
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          aula_id?: string | null
+          centro_id: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: Database['public']['Enums']['cita_estado']
+          fecha: string
+          hora_fin?: string | null
+          hora_inicio: string
+          id?: string
+          lugar?: string | null
+          nino_id?: string | null
+          organizador_id: string
+          tipo: Database['public']['Enums']['tipo_cita']
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          aula_id?: string | null
+          centro_id?: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: Database['public']['Enums']['cita_estado']
+          fecha?: string
+          hora_fin?: string | null
+          hora_inicio?: string
+          id?: string
+          lugar?: string | null
+          nino_id?: string | null
+          organizador_id?: string
+          tipo?: Database['public']['Enums']['tipo_cita']
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'citas_aula_id_fkey'
+            columns: ['aula_id']
+            isOneToOne: false
+            referencedRelation: 'aulas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'citas_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'citas_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'citas_organizador_id_fkey'
+            columns: ['organizador_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       comidas: {
         Row: {
           agenda_id: string
@@ -476,6 +630,64 @@ export type Database = {
             columns: ['menu_dia_id']
             isOneToOne: false
             referencedRelation: 'menu_dia'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      confirmaciones_evento: {
+        Row: {
+          comentario: string | null
+          confirmado_at: string
+          confirmado_por: string
+          created_at: string
+          estado: Database['public']['Enums']['confirmacion_estado']
+          evento_id: string
+          id: string
+          nino_id: string
+          updated_at: string
+        }
+        Insert: {
+          comentario?: string | null
+          confirmado_at?: string
+          confirmado_por: string
+          created_at?: string
+          estado: Database['public']['Enums']['confirmacion_estado']
+          evento_id: string
+          id?: string
+          nino_id: string
+          updated_at?: string
+        }
+        Update: {
+          comentario?: string | null
+          confirmado_at?: string
+          confirmado_por?: string
+          created_at?: string
+          estado?: Database['public']['Enums']['confirmacion_estado']
+          evento_id?: string
+          id?: string
+          nino_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'confirmaciones_evento_confirmado_por_fkey'
+            columns: ['confirmado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'confirmaciones_evento_evento_id_fkey'
+            columns: ['evento_id']
+            isOneToOne: false
+            referencedRelation: 'eventos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'confirmaciones_evento_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
             referencedColumns: ['id']
           },
         ]
@@ -786,6 +998,98 @@ export type Database = {
             columns: ['creado_por']
             isOneToOne: false
             referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      eventos: {
+        Row: {
+          ambito: Database['public']['Enums']['ambito_evento']
+          aula_id: string | null
+          centro_id: string
+          creado_por: string
+          created_at: string
+          descripcion: string | null
+          estado: Database['public']['Enums']['evento_estado']
+          fecha: string
+          fecha_fin: string | null
+          hora_fin: string | null
+          hora_inicio: string | null
+          id: string
+          lugar: string | null
+          nino_id: string | null
+          requiere_confirmacion: boolean
+          tipo: Database['public']['Enums']['tipo_evento']
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ambito: Database['public']['Enums']['ambito_evento']
+          aula_id?: string | null
+          centro_id: string
+          creado_por: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: Database['public']['Enums']['evento_estado']
+          fecha: string
+          fecha_fin?: string | null
+          hora_fin?: string | null
+          hora_inicio?: string | null
+          id?: string
+          lugar?: string | null
+          nino_id?: string | null
+          requiere_confirmacion?: boolean
+          tipo: Database['public']['Enums']['tipo_evento']
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ambito?: Database['public']['Enums']['ambito_evento']
+          aula_id?: string | null
+          centro_id?: string
+          creado_por?: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: Database['public']['Enums']['evento_estado']
+          fecha?: string
+          fecha_fin?: string | null
+          hora_fin?: string | null
+          hora_inicio?: string | null
+          id?: string
+          lugar?: string | null
+          nino_id?: string | null
+          requiere_confirmacion?: boolean
+          tipo?: Database['public']['Enums']['tipo_evento']
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'eventos_aula_id_fkey'
+            columns: ['aula_id']
+            isOneToOne: false
+            referencedRelation: 'aulas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'eventos_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'eventos_creado_por_fkey'
+            columns: ['creado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'eventos_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
             referencedColumns: ['id']
           },
         ]
@@ -1243,6 +1547,35 @@ export type Database = {
           },
         ]
       }
+      preferencias_usuario: {
+        Row: {
+          clave: string
+          updated_at: string
+          usuario_id: string
+          valor: string
+        }
+        Insert: {
+          clave: string
+          updated_at?: string
+          usuario_id: string
+          valor: string
+        }
+        Update: {
+          clave?: string
+          updated_at?: string
+          usuario_id?: string
+          valor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'preferencias_usuario_usuario_id_fkey'
+            columns: ['usuario_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       profes_aulas: {
         Row: {
           aula_id: string
@@ -1334,156 +1667,6 @@ export type Database = {
             columns: ['usuario_id']
             isOneToOne: false
             referencedRelation: 'usuarios'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      confirmaciones_evento: {
-        Row: {
-          comentario: string | null
-          confirmado_at: string
-          confirmado_por: string
-          created_at: string
-          estado: Database['public']['Enums']['confirmacion_estado']
-          evento_id: string
-          id: string
-          nino_id: string
-          updated_at: string
-        }
-        Insert: {
-          comentario?: string | null
-          confirmado_at?: string
-          confirmado_por: string
-          created_at?: string
-          estado: Database['public']['Enums']['confirmacion_estado']
-          evento_id: string
-          id?: string
-          nino_id: string
-          updated_at?: string
-        }
-        Update: {
-          comentario?: string | null
-          confirmado_at?: string
-          confirmado_por?: string
-          created_at?: string
-          estado?: Database['public']['Enums']['confirmacion_estado']
-          evento_id?: string
-          id?: string
-          nino_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'confirmaciones_evento_confirmado_por_fkey'
-            columns: ['confirmado_por']
-            isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'confirmaciones_evento_evento_id_fkey'
-            columns: ['evento_id']
-            isOneToOne: false
-            referencedRelation: 'eventos'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'confirmaciones_evento_nino_id_fkey'
-            columns: ['nino_id']
-            isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      eventos: {
-        Row: {
-          ambito: Database['public']['Enums']['ambito_evento']
-          aula_id: string | null
-          centro_id: string
-          creado_por: string
-          created_at: string
-          descripcion: string | null
-          estado: Database['public']['Enums']['evento_estado']
-          fecha: string
-          fecha_fin: string | null
-          hora_fin: string | null
-          hora_inicio: string | null
-          id: string
-          lugar: string | null
-          nino_id: string | null
-          requiere_confirmacion: boolean
-          tipo: Database['public']['Enums']['tipo_evento']
-          titulo: string
-          updated_at: string
-        }
-        Insert: {
-          ambito: Database['public']['Enums']['ambito_evento']
-          aula_id?: string | null
-          centro_id: string
-          creado_por: string
-          created_at?: string
-          descripcion?: string | null
-          estado?: Database['public']['Enums']['evento_estado']
-          fecha: string
-          fecha_fin?: string | null
-          hora_fin?: string | null
-          hora_inicio?: string | null
-          id?: string
-          lugar?: string | null
-          nino_id?: string | null
-          requiere_confirmacion?: boolean
-          tipo: Database['public']['Enums']['tipo_evento']
-          titulo: string
-          updated_at?: string
-        }
-        Update: {
-          ambito?: Database['public']['Enums']['ambito_evento']
-          aula_id?: string | null
-          centro_id?: string
-          creado_por?: string
-          created_at?: string
-          descripcion?: string | null
-          estado?: Database['public']['Enums']['evento_estado']
-          fecha?: string
-          fecha_fin?: string | null
-          hora_fin?: string | null
-          hora_inicio?: string | null
-          id?: string
-          lugar?: string | null
-          nino_id?: string | null
-          requiere_confirmacion?: boolean
-          tipo?: Database['public']['Enums']['tipo_evento']
-          titulo?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'eventos_aula_id_fkey'
-            columns: ['aula_id']
-            isOneToOne: false
-            referencedRelation: 'aulas'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'eventos_centro_id_fkey'
-            columns: ['centro_id']
-            isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'eventos_creado_por_fkey'
-            columns: ['creado_por']
-            isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'eventos_nino_id_fkey'
-            columns: ['nino_id']
-            isOneToOne: false
-            referencedRelation: 'ninos'
             referencedColumns: ['id']
           },
         ]
@@ -1767,12 +1950,14 @@ export type Database = {
       }
       centro_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       centro_de_aula: { Args: { p_aula_id: string }; Returns: string }
+      centro_de_cita: { Args: { p_cita_id: string }; Returns: string }
       centro_de_conversacion: {
         Args: { p_conversacion_id: string }
         Returns: string
       }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
       centro_de_plantilla: { Args: { p_plantilla_id: string }; Returns: string }
+      contar_invitaciones_pendientes: { Args: never; Returns: number }
       contar_recordatorios_pendientes: { Args: never; Returns: number }
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
@@ -1784,6 +1969,10 @@ export type Database = {
       es_tutor_en_aula: { Args: { p_aula_id: string }; Returns: boolean }
       es_tutor_en_centro: {
         Args: { p_centro_id: string; p_tutor_id: string }
+        Returns: boolean
+      }
+      evento_aplica_a_nino: {
+        Args: { p_evento_id: string; p_nino_id: string }
         Returns: boolean
       }
       fecha_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
@@ -1828,6 +2017,7 @@ export type Database = {
         Returns: string
       }
       nino_toma_comida_solida: { Args: { p_nino_id: string }; Returns: boolean }
+      organizador_de_cita: { Args: { p_cita_id: string }; Returns: string }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
       puede_participar_conversacion: {
         Args: { p_conversacion_id: string }
@@ -1867,17 +2057,37 @@ export type Database = {
         }
         Returns: boolean
       }
+      usuario_es_audiencia_cita_row: {
+        Args: {
+          p_centro_id: string
+          p_cita_id: string
+          p_organizador_id: string
+        }
+        Returns: boolean
+      }
+      usuario_es_audiencia_evento_row: {
+        Args: {
+          p_ambito: Database['public']['Enums']['ambito_evento']
+          p_aula_id: string
+          p_centro_id: string
+          p_nino_id: string
+        }
+        Returns: boolean
+      }
+      usuario_es_invitado_cita: {
+        Args: { p_cita_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       ambito_anuncio: 'aula' | 'centro'
       ambito_evento: 'centro' | 'aula' | 'nino'
-      confirmacion_estado: 'pendiente' | 'confirmado' | 'rechazado'
-      evento_estado: 'programado' | 'cancelado'
-      tipo_evento: 'excursion' | 'reunion' | 'fiesta' | 'vacaciones' | 'otro'
       audit_accion: 'INSERT' | 'UPDATE' | 'DELETE'
       calidad_sueno: 'profundo' | 'tranquilo' | 'intermitente' | 'nada'
       cantidad_comida: 'todo' | 'mayoria' | 'mitad' | 'poco' | 'nada'
       cantidad_deposicion: 'mucha' | 'normal' | 'poca'
+      cita_estado: 'programada' | 'cancelada'
+      confirmacion_estado: 'pendiente' | 'confirmado' | 'rechazado'
       consentimiento_tipo: 'terminos' | 'privacidad' | 'imagen' | 'datos_medicos'
       consistencia_deposicion: 'normal' | 'dura' | 'blanda' | 'diarrea'
       control_esfinteres: 'panal_completo' | 'transicion' | 'sin_panal_diurno' | 'sin_panal_total'
@@ -1885,6 +2095,7 @@ export type Database = {
       estado_asistencia: 'presente' | 'ausente' | 'llegada_tarde' | 'salida_temprana'
       estado_general_agenda: 'bien' | 'regular' | 'mal' | 'mixto'
       estado_plantilla_menu: 'borrador' | 'publicada' | 'archivada'
+      evento_estado: 'programado' | 'cancelado'
       humor_agenda: 'feliz' | 'tranquilo' | 'inquieto' | 'triste' | 'cansado'
       lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
       momento_comida: 'desayuno' | 'media_manana' | 'comida' | 'merienda'
@@ -1908,6 +2119,7 @@ export type Database = {
         | 'profe_individual'
         | 'profes_centro'
         | 'personal'
+      rsvp_estado: 'pendiente' | 'aceptado' | 'rechazado'
       tipo_alimentacion:
         | 'omnivora'
         | 'vegetariana'
@@ -1918,6 +2130,7 @@ export type Database = {
         | 'religiosa_kosher'
         | 'otra'
       tipo_biberon: 'materna' | 'formula' | 'agua' | 'infusion' | 'zumo'
+      tipo_cita: 'reunion_familia' | 'reunion_clase' | 'reunion_claustro' | 'visita'
       tipo_conversacion: 'profe_familia' | 'admin_familia'
       tipo_deposicion: 'pipi' | 'caca' | 'mixto'
       tipo_dia_centro:
@@ -1928,6 +2141,7 @@ export type Database = {
         | 'escuela_navidad'
         | 'jornada_reducida'
         | 'cerrado'
+      tipo_evento: 'excursion' | 'reunion' | 'fiesta' | 'vacaciones' | 'otro'
       tipo_personal_aula: 'coordinadora' | 'profesora' | 'tecnico' | 'apoyo'
       tipo_plato_comida: 'primer_plato' | 'segundo_plato' | 'postre' | 'unico'
       tipo_vinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado'
@@ -2059,13 +2273,12 @@ export const Constants = {
     Enums: {
       ambito_anuncio: ['aula', 'centro'],
       ambito_evento: ['centro', 'aula', 'nino'],
-      confirmacion_estado: ['pendiente', 'confirmado', 'rechazado'],
-      evento_estado: ['programado', 'cancelado'],
-      tipo_evento: ['excursion', 'reunion', 'fiesta', 'vacaciones', 'otro'],
       audit_accion: ['INSERT', 'UPDATE', 'DELETE'],
       calidad_sueno: ['profundo', 'tranquilo', 'intermitente', 'nada'],
       cantidad_comida: ['todo', 'mayoria', 'mitad', 'poco', 'nada'],
       cantidad_deposicion: ['mucha', 'normal', 'poca'],
+      cita_estado: ['programada', 'cancelada'],
+      confirmacion_estado: ['pendiente', 'confirmado', 'rechazado'],
       consentimiento_tipo: ['terminos', 'privacidad', 'imagen', 'datos_medicos'],
       consistencia_deposicion: ['normal', 'dura', 'blanda', 'diarrea'],
       control_esfinteres: ['panal_completo', 'transicion', 'sin_panal_diurno', 'sin_panal_total'],
@@ -2073,6 +2286,7 @@ export const Constants = {
       estado_asistencia: ['presente', 'ausente', 'llegada_tarde', 'salida_temprana'],
       estado_general_agenda: ['bien', 'regular', 'mal', 'mixto'],
       estado_plantilla_menu: ['borrador', 'publicada', 'archivada'],
+      evento_estado: ['programado', 'cancelado'],
       humor_agenda: ['feliz', 'tranquilo', 'inquieto', 'triste', 'cansado'],
       lactancia_estado: ['materna', 'biberon', 'mixta', 'finalizada', 'no_aplica'],
       momento_comida: ['desayuno', 'media_manana', 'comida', 'merienda'],
@@ -2098,6 +2312,7 @@ export const Constants = {
         'profes_centro',
         'personal',
       ],
+      rsvp_estado: ['pendiente', 'aceptado', 'rechazado'],
       tipo_alimentacion: [
         'omnivora',
         'vegetariana',
@@ -2109,6 +2324,7 @@ export const Constants = {
         'otra',
       ],
       tipo_biberon: ['materna', 'formula', 'agua', 'infusion', 'zumo'],
+      tipo_cita: ['reunion_familia', 'reunion_clase', 'reunion_claustro', 'visita'],
       tipo_conversacion: ['profe_familia', 'admin_familia'],
       tipo_deposicion: ['pipi', 'caca', 'mixto'],
       tipo_dia_centro: [
@@ -2120,6 +2336,7 @@ export const Constants = {
         'jornada_reducida',
         'cerrado',
       ],
+      tipo_evento: ['excursion', 'reunion', 'fiesta', 'vacaciones', 'otro'],
       tipo_personal_aula: ['coordinadora', 'profesora', 'tecnico', 'apoyo'],
       tipo_plato_comida: ['primer_plato', 'segundo_plato', 'postre', 'unico'],
       tipo_vinculo: ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'],
