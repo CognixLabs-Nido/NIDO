@@ -133,12 +133,17 @@ NIDO ya tiene piezas reutilizables que la Agenda debe aprovechar sin duplicar:
 
 **Pre-condiciones:** el usuario es **organizador válido** según la matriz AG-tipos:
 
-| Tipo (`tipo_cita`) | Quién organiza         | A quién invita (nominal)                                 |
-| ------------------ | ---------------------- | -------------------------------------------------------- |
-| `reunion_familia`  | admin · profe del niño | tutores/autorizados del **niño** (`nino_id`)             |
-| `reunion_clase`    | admin · profe del aula | **todas las familias del aula** (expandidas) (`aula_id`) |
-| `reunion_claustro` | **solo admin**         | un profe · todos los profes del centro                   |
-| `visita`           | **solo admin**         | staff interno seleccionado · 1 invitado externo (texto)  |
+| Tipo (`tipo_cita`) | Quién organiza         | A quién invita (nominal)                                          |
+| ------------------ | ---------------------- | ----------------------------------------------------------------- |
+| `reunion_familia`  | admin · profe del niño | tutores/autorizados del **niño** (`nino_id`)                      |
+| `reunion_clase`    | admin · profe del aula | **familias del aula + profe(s) del aula** (expandido) (`aula_id`) |
+| `reunion_claustro` | **solo admin**         | **todas las profes del centro** (expandido)                       |
+| `visita`           | **solo admin**         | staff interno seleccionado · 1 invitado externo (texto)           |
+
+> **Expansión por tipo (B2):** `reunion_clase` se expande a **dos** grupos —
+> `familias_aula` (tutores con `puede_recibir_mensajes`) **y** `profes_aula` (las
+> profes asignadas al aula). `reunion_claustro` se expande a `profes_centro` (todas
+> las profes del centro). En ambos casos, snapshot al crear (AG-02).
 
 **Flujo:**
 
@@ -204,6 +209,12 @@ recuento por estado. Para invitados **externos** (texto), el organizador puede
 **marcar manualmente** su asistencia (no hay RSVP digital). Componente ligero
 `InvitadosRoster` (no se fuerza `<PaseDeListaTable/>`, que es por niño; aquí las
 filas son personas).
+
+> **Roster privado** (decisión cerrada): la lista de invitados y sus RSVP son
+> visibles **solo para el organizador y el admin** del centro. Un invitado ve
+> **únicamente su propia fila** (su RSVP), no quién más está invitado ni cómo han
+> respondido. Lo enforza la RLS de `cita_invitados` (SELECT: `usuario_id =
+auth.uid()` para el invitado; lista completa solo organizador/admin).
 
 ### Comportamiento 5: editar / cancelar una cita y su lista de invitados
 
@@ -271,7 +282,10 @@ export const rsvpEstadoEnum = z.enum(['pendiente', 'aceptado', 'rechazado'])
 // Un invitado puede ser persona interna (usuario_id), un grupo a expandir, o externo.
 const invitadoSchema = z.union([
   z.object({ tipo: z.literal('usuario'), usuario_id: z.string().uuid() }),
-  z.object({ tipo: z.literal('grupo'), grupo: z.enum(['familias_aula', 'profes_centro']) }),
+  z.object({
+    tipo: z.literal('grupo'),
+    grupo: z.enum(['familias_aula', 'profes_aula', 'profes_centro']),
+  }),
   z.object({ tipo: z.literal('externo'), nombre_externo: z.string().min(1).max(200) }),
 ])
 
@@ -543,8 +557,9 @@ Trilingüe obligatorio (Regla #7).
 - [ ] `crearCitaSchema` / `responderInvitacionSchema` validan correctos e
       incorrectos (coherencia tipo↔referencia, `hora_fin>hora_inicio`, ≥1 invitado).
 - [ ] `crearCita` resuelve `centro_id` explícito y retorna Result tipado.
-- [ ] **Expansión de grupos** a personas (snapshot): `familias_aula` → tutores con
-      `puede_recibir_mensajes`; `profes_centro` → profes; dedup; externo→fila texto.
+- [ ] **Expansión por tipo** (snapshot): `reunion_clase` → `familias_aula` (tutores
+      con `puede_recibir_mensajes`) **+** `profes_aula`; `reunion_claustro` →
+      `profes_centro`; dedup; externo→fila texto.
 - [ ] `responderInvitacion` idempotente (doble RSVP, carrera), respeta ventana y
       escribe `respondido_por`/`respondido_at`.
 - [ ] `agregarInvitados` (dedup contra existentes) y `quitarInvitado` (DELETE) sobre
@@ -559,6 +574,8 @@ Trilingüe obligatorio (Regla #7).
 - [ ] Un invitado no puede responder por otro ni falsear `usuario_id`.
 - [ ] Solo organizador/admin pueden **añadir/quitar** invitados; un invitado no
       puede borrar su fila ni la de otro.
+- [ ] **Roster privado**: un invitado solo lee **su** fila de `cita_invitados`
+      (no ve los demás invitados ni sus RSVP); organizador/admin ven la lista completa.
 - [ ] `INSERT…RETURNING` en `citas` (4 tipos) y en `cita_invitados` no falla por MVCC.
 - [ ] `preferencias_usuario`: un usuario solo lee/escribe las suyas.
 
