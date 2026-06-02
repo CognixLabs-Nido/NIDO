@@ -411,3 +411,35 @@ ENUM `recordatorio_destinatario` con **6 valores**: `familia_individual` · `fam
 - **Audit log**: trigger `audit_recordatorios` con `centro_id` directo (rama de `audit_trigger_function` sin cambios respecto a F6-A).
 - **Realtime**: `recordatorios` publicada para el badge en vivo; la RLS de SELECT filtra los eventos.
 - **`puede_recibir_mensajes`**: switch del canal para los broadcasts. La **visibilidad** in-app de `familias_aula`/`familias_centro` sigue la **pertenencia** (sin chequear el flag por niño, intratable en RLS multi-hijo); la **entrega push** (`expandirDestinatariosRecordatorio`) **sí** respeta el flag por niño. Trade-off documentado en ADR-0037.
+
+## Agenda — citas con invitados nominales y RSVP (Fase 7b)
+
+3 tablas — `citas`, `cita_invitados`, `preferencias_usuario` — y 3 ENUMs (`tipo_cita`, `cita_estado`, `rsvp_estado`). Ver [ADR-0039](../decisions/ADR-0039-modelo-agenda-citas-invitados-rsvp.md) y `docs/specs/agenda-citas.md`. Modelo de **invitación nominal** (separado de `eventos`, que es difusión).
+
+- **Helpers nuevos** (`STABLE SECURITY DEFINER SET search_path = public`):
+  - `centro_de_cita(p_cita_id)` → uuid; `organizador_de_cita(p_cita_id)` → uuid (leen `citas`).
+  - `usuario_es_invitado_cita(p_cita_id)` → boolean (lee `cita_invitados` con `auth.uid()`).
+  - **`usuario_es_audiencia_cita_row(p_centro_id, p_organizador_id, p_cita_id)`** → boolean. **Row-aware**: recibe los campos de `citas`, **NO re-lee `citas`** (evita el gotcha MVCC en `INSERT…RETURNING`). Devuelve `es_admin(p_centro_id) OR p_organizador_id = auth.uid() OR usuario_es_invitado_cita(p_cita_id)`. El helper interno consulta `cita_invitados` (tabla **distinta**) → MVCC no aplica.
+  - Reutilizados: `es_admin`, `es_profe_de_nino`, `es_profe_de_aula`, `centro_de_nino`, `centro_de_aula`.
+
+- **`citas`**:
+  - SELECT: `usuario_es_audiencia_cita_row(centro_id, organizador_id, id)` (admin del centro, organizador, o invitado).
+  - INSERT: `organizador_id = auth.uid() AND (es_admin(centro_id) OR (tipo='reunion_familia' AND es_profe_de_nino(nino_id) AND centro_de_nino(nino_id)=centro_id) OR (tipo='reunion_clase' AND es_profe_de_aula(aula_id) AND centro_de_aula(aula_id)=centro_id))`. Claustro/visita → solo admin. **tutor/autorizado no organizan** (sin rama). Espejo de la matriz AG-tipos.
+  - UPDATE: `USING + WITH CHECK` simétricos `organizador_id = auth.uid() OR es_admin(centro_id)`. El server action limita columnas (editar/cancelar). Cancelar = UPDATE `estado='cancelada'` con `.select().maybeSingle()` (gotcha "USING falso → 0 filas").
+  - DELETE: SIN policy → default DENY.
+
+- **`cita_invitados`** (roster privado, AG-12):
+  - SELECT: `usuario_id = auth.uid() OR organizador_de_cita(cita_id) = auth.uid() OR es_admin(centro_id)`. Un invitado solo ve **su** fila; la lista completa es solo para organizador/admin.
+  - INSERT: `(organizador_de_cita(cita_id) = auth.uid() OR es_admin(centro_id)) AND centro_id = centro_de_cita(cita_id)`. Solo organizador/admin pueblan invitados (alta y "añadir"); el action expande grupos a personas (snapshot).
+  - UPDATE: `USING + WITH CHECK` `usuario_id = auth.uid()` (el invitado responde su fila) `OR organizador_de_cita(cita_id) = auth.uid() OR es_admin(centro_id)` (el organizador marca al externo). El action separa los dos casos, limita columnas y enforza la ventana (hasta `hora_inicio`, AG-11). Idempotencia: `.select().maybeSingle()`.
+  - DELETE: `organizador_de_cita(cita_id) = auth.uid() OR es_admin(centro_id)`. **Excepción explícita** al patrón "DELETE bloqueado" (análoga a `dias_centro`): quitar un invitado es gestión de lista; traza en `audit_log`. El invitado **no** puede auto-eliminarse (responde `rechazado`).
+
+- **`preferencias_usuario`**: todas las operaciones con `usuario_id = auth.uid()` (aislamiento estricto, sin helpers; patrón `push_subscriptions`). NO se audita.
+
+- **Audit log**: triggers en `citas` y `cita_invitados` (`centro_id` directo). Registro **administrativo** del RSVP (quién/cuándo), NO autorización legal (≠ F8). `preferencias_usuario` NO se audita.
+
+- **Sin Realtime** en el core (el roster refresca al navegar).
+
+- **Badge (RPC `contar_invitaciones_pendientes()`, AG-14)**: `SECURITY DEFINER STABLE`, usa `auth.uid()`. Cuenta `cita_invitados` `pendiente` del usuario JOIN `citas` `programada` y **aún no comenzada** (`(fecha + hora_inicio) AT TIME ZONE 'Europe/Madrid' > now()`), con `organizador_id <> auth.uid()` (el organizador no cuenta sus citas). Bypassa RLS pero solo cuenta filas del propio usuario → sin fuga (igual que la RPC de F6-C). **Sin push ni Realtime**. Test gateado: dos usuarios → cada uno su recuento; el organizador no cuenta las suyas; al aceptar deja de contar.
+
+- **Gotcha MVCC**: `usuario_es_audiencia_cita_row` es row-aware (recibe `centro_id`/`organizador_id` por parámetro) y su lookup interno consulta `cita_invitados` (otra tabla). Igual `cita_invitados`, cuyo helper lee `citas`. Tests `.insert().select()` en ambas tablas como bloqueo de regresión.
