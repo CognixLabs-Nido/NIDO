@@ -1,19 +1,19 @@
 ---
 feature: agenda-citas
 wave: 1
-status: draft
+status: approved
 priority: high
 last_updated: 2026-06-02
 related_adrs: [ADR-0038, ADR-0037, ADR-0029, ADR-0031, ADR-0007]
 related_specs: [scope-ola-1, f7-calendario, messaging, reminders-c, push-notifications]
-supersedes: f7a-calendario-agenda.md (PR #50 — su Dominio B; ver §0)
+supersedes: f7a-calendario-agenda.md (PR #50 — su Dominio B; ver Contexto y Referencias)
 ---
 
 # Spec — Agenda (citas con invitados nominales y RSVP) — LEAN
 
-> **Checkpoint A.** Documento de diseño. **NO se implementa nada** hasta que el
-> responsable revise. Las decisiones de modelo van **fijadas** (no abiertas): el
-> responsable solo revisa y, si quiere, corrige; ver §13. **PARA en el spec.**
+> **Checkpoint A cerrado** (responsable, 2026-06-02). Todas las decisiones de
+> diseño están **fijadas** (tabla de decisiones al final). El siguiente paso es el
+> **Checkpoint B** por sub-pasos reviewables (ver "Plan de Checkpoint B").
 
 ## Resumen ejecutivo
 
@@ -86,6 +86,12 @@ NIDO ya tiene piezas reutilizables que la Agenda debe aprovechar sin duplicar:
   claustro, visita (AG-tipos).
 - **Invitados nominales**: personas concretas. Los **grupos** ("toda la clase",
   "todos los profes") se **expanden a personas** al crear (snapshot, AG-02).
+- **Editar la lista de invitados** de una cita ya creada: **añadir Y quitar**
+  personas (AG-02). En Ola 1.
+- **Alta de cita con patrón del Calendario**: botón **"+ Nueva cita"** y **clic
+  directo en un día** (`onClickDia` prefija la fecha). Se reutiliza el **patrón de
+  interacción** (alta + vista) del Calendario escolar (eventos), **no el modelo**:
+  `citas` y `eventos` son tablas separadas (AG-09).
 - **RSVP por invitado**, 3 estados: `pendiente` / `aceptado` / `rechazado` (AG-04).
 - **Invitado externo = solo texto** (nombre), sin cuenta ni RSVP digital; su
   asistencia la marca el organizador (AG-03).
@@ -106,9 +112,13 @@ NIDO ya tiene piezas reutilizables que la Agenda debe aprovechar sin duplicar:
 - **Invitados externos con RSVP digital** (magic-link / email / token) → follow-up.
   En Ola 1 el externo es **solo texto**.
 - **Recurrencia** de citas (claustro semanal, series, excepciones) → Ola 3.
-- **Edición de la lista de invitados** tras crear (añadir/quitar individuos,
-  re-sync por cambio de matrícula) → follow-up. En el core la lista es snapshot
-  al crear; corregir = cancelar y recrear (AG-02, AG-11).
+- **Re-sync automático** de la lista de invitados por cambio de matrícula
+  (auto-añadir un niño que entra al aula tras crear la cita) → follow-up. La
+  edición de la lista en Ola 1 es **manual** (el organizador añade/quita; AG-02).
+- **Change-log completo del RSVP** (historial de cada cambio de respuesta) →
+  follow-up. En Ola 1 la fila guarda el **estado actual + quién/cuándo**; el
+  `audit_log` registra los cambios por el trigger estándar, sin vista dedicada
+  (AG-12).
 - **Rejilla horaria pixel-perfect** con drag tipo Outlook → Ola 3. En Ola 1, lista
   agrupada por hora (AG-06).
 - **Realtime** del roster en vivo → fuera del LEAN (AG-13).
@@ -132,7 +142,9 @@ NIDO ya tiene piezas reutilizables que la Agenda debe aprovechar sin duplicar:
 
 **Flujo:**
 
-1. El organizador abre el formulario desde `/agenda` ("Nueva cita").
+1. El organizador abre el formulario en `/agenda` por dos vías equivalentes
+   (patrón Calendario, AG-09): botón **"+ Nueva cita"**, o **clic en un día** de la
+   vista (`onClickDia` prefija `fecha`). El mismo formulario en modo alta.
 2. Elige **tipo**, **título**, **fecha**, **hora_inicio** (obligatoria),
    **hora_fin** (opcional), **lugar** (opcional), **descripción** (opcional), y los
    **invitados** (personas individuales y/o un grupo según el tipo; y/o un invitado
@@ -176,9 +188,9 @@ pasado la fecha/hora de inicio (ventana, AG-11).
 1. El invitado abre el detalle de la cita y ve el control **aceptar / rechazar**
    (+ comentario opcional).
 2. `responderInvitacion` hace `UPDATE` de **su propia fila** `cita_invitados`
-   (`estado`, `respondido_at`, `comentario`) — idempotente, last-write-wins del
-   propio invitado. Patrón "USING falso → 0 filas" + `.select().maybeSingle()` para
-   detectar ventana cerrada (igual que F5.6-B/F6).
+   (`estado`, `respondido_at`, `respondido_por = auth.uid()`, `comentario`) —
+   idempotente, last-write-wins del propio invitado. Patrón "USING falso → 0 filas"
+   - `.select().maybeSingle()` para detectar ventana cerrada (igual que F5.6-B/F6).
 3. El estado es **editable** hasta la fecha/hora de inicio (AG-11).
 
 **Post-condiciones:** la fila `cita_invitados` refleja el RSVP; el roster del
@@ -193,16 +205,22 @@ recuento por estado. Para invitados **externos** (texto), el organizador puede
 `InvitadosRoster` (no se fuerza `<PaseDeListaTable/>`, que es por niño; aquí las
 filas son personas).
 
-### Comportamiento 5: editar / cancelar una cita
+### Comportamiento 5: editar / cancelar una cita y su lista de invitados
 
 **Flujo:** solo el **organizador o un admin** del centro edita/cancela (AG-11).
 
 - **Editar** campos (título, fecha, hora, lugar, descripción): server action
-  `editarCita`, RLS `USING + WITH CHECK` simétricos; el action limita columnas. La
-  **lista de invitados NO se edita** en el core (snapshot; AG-02 — añadir/quitar
-  individuos es follow-up).
-- **Cancelar:** `estado='cancelada'` (no DELETE; patrón del proyecto). La cita
-  cancelada se muestra **atenuada/tachada**, no desaparece (trazabilidad). Las
+  `editarCita`, RLS `USING + WITH CHECK` simétricos; el action limita columnas.
+- **Editar la lista de invitados** (AG-02, **en Ola 1**):
+  - **Añadir** personas/grupos/externo → `agregarInvitados(cita_id, …)`: nuevas
+    filas `cita_invitados` (`estado='pendiente'`), dedup contra los ya invitados
+    (UNIQUE parcial). Reusa la expansión de grupos del alta.
+  - **Quitar** una persona → `quitarInvitado(invitado_id)`: **DELETE** de la fila
+    (excepción explícita al patrón "DELETE bloqueado", como `dias_centro` en
+    F4.5a). La traza queda en `audit_log` (`valores_antes` poblado por el trigger).
+    Solo organizador/admin.
+- **Cancelar la cita:** `estado='cancelada'` (no DELETE; patrón del proyecto). La
+  cita cancelada se muestra **atenuada/tachada**, no desaparece (trazabilidad). Las
   filas `cita_invitados` se conservan.
 
 > **Notificaciones (push):** al crear/editar-material/cancelar se notificaría a los
@@ -221,7 +239,8 @@ filas son personas).
 - **Invitar dos veces a la misma persona** en la misma cita → UNIQUE parcial
   `(cita_id, usuario_id)` lo evita (el resolutor dedup antes de insertar).
 - **Niño cambia de aula tras crear `reunion_clase`** → el snapshot ya fijó la lista
-  (AG-02); la audiencia no cambia retroactivamente. Re-sync = follow-up.
+  (AG-02); no hay re-sync automático (follow-up). El organizador puede **añadir o
+  quitar** invitados a mano (Comportamiento 5).
 - **Responder fuera de plazo** (pasó hora_inicio) → la RLS/action lo rechaza con
   mensaje de plazo cerrado (gotcha "USING falso → 0 filas").
 - **Doble RSVP del mismo invitado** (dos pestañas) → idempotente, last-write-wins.
@@ -333,17 +352,18 @@ NULL AND nino_id NULL`; `reunion_claustro` y `visita ⇒ ambos NULL`.
 
 ### Tabla `cita_invitados`
 
-| Columna                   | Tipo                                       | Notas                                    |
-| ------------------------- | ------------------------------------------ | ---------------------------------------- |
-| `id`                      | uuid PK                                    |                                          |
-| `cita_id`                 | uuid NOT NULL FK→`citas` ON DELETE CASCADE |                                          |
-| `centro_id`               | uuid NOT NULL FK→`centros`                 | redundante para RLS; derivado de la cita |
-| `usuario_id`              | uuid NULL FK→`usuarios` ON DELETE CASCADE  | invitado interno; NULL ⇒ externo         |
-| `nombre_externo`          | text NULL                                  | invitado externo (texto); CHECK ≤ 200    |
-| `estado`                  | `rsvp_estado` NOT NULL default `pendiente` |                                          |
-| `respondido_at`           | timestamptz NULL                           | se rellena al responder                  |
-| `comentario`              | text NULL                                  | opcional, CHECK ≤ 500                    |
-| `created_at`/`updated_at` | timestamptz                                |                                          |
+| Columna                   | Tipo                                       | Notas                                                                  |
+| ------------------------- | ------------------------------------------ | ---------------------------------------------------------------------- |
+| `id`                      | uuid PK                                    |                                                                        |
+| `cita_id`                 | uuid NOT NULL FK→`citas` ON DELETE CASCADE |                                                                        |
+| `centro_id`               | uuid NOT NULL FK→`centros`                 | redundante para RLS; derivado de la cita                               |
+| `usuario_id`              | uuid NULL FK→`usuarios` ON DELETE CASCADE  | invitado interno; NULL ⇒ externo                                       |
+| `nombre_externo`          | text NULL                                  | invitado externo (texto); CHECK ≤ 200                                  |
+| `estado`                  | `rsvp_estado` NOT NULL default `pendiente` |                                                                        |
+| `respondido_at`           | timestamptz NULL                           | quién/cuándo del RSVP (AG-12)                                          |
+| `respondido_por`          | uuid NULL FK→`usuarios` ON DELETE SET NULL | quién fijó el estado: el invitado (interno) o el organizador (externo) |
+| `comentario`              | text NULL                                  | opcional, CHECK ≤ 500                                                  |
+| `created_at`/`updated_at` | timestamptz                                |                                                                        |
 
 **CHECK** `cita_invitados_persona_coherencia`: **exactamente uno** de (`usuario_id`,
 `nombre_externo`) NOT NULL.
@@ -418,13 +438,17 @@ OR es_admin(centro_id)`. El server action limita columnas (editar / cancelar).
 organizador_de_cita(cita_id) = auth.uid() OR es_admin(centro_id)`.
 - **`cita_invitados` INSERT** — `(organizador_de_cita(cita_id) = auth.uid() OR
 es_admin(centro_id)) AND centro_id = centro_de_cita(cita_id)`. Solo el organizador
-  (o admin) puebla invitados; el action expande grupos.
+  (o admin) puebla invitados, tanto en el **alta** como al **añadir** después
+  (Comportamiento 5); el action expande grupos.
 - **`cita_invitados` UPDATE** — `USING + WITH CHECK`: `usuario_id = auth.uid()` (el
   invitado responde su fila) `OR organizador_de_cita(cita_id) = auth.uid() OR
 es_admin(centro_id)` (el organizador marca al externo). El server action separa
   los dos casos y limita columnas + ventana (AG-11). Idempotencia: `.select().maybeSingle()`.
-- **`cita_invitados` DELETE** — SIN policy → default DENY (edición de lista =
-  follow-up; ver AG-02/AG-11).
+- **`cita_invitados` DELETE** — `organizador_de_cita(cita_id) = auth.uid() OR
+es_admin(centro_id)`. **Excepción explícita** al patrón "DELETE bloqueado"
+  (análoga a `dias_centro`, F4.5a): quitar un invitado es gestión de lista, sin
+  valor de contenido que preservar; la traza queda en `audit_log` (`valores_antes`).
+  El invitado **no** puede auto-eliminarse (responde con `rechazado`, no se borra).
 - **`preferencias_usuario`** — todas las operaciones con `usuario_id = auth.uid()`
   (aislamiento estricto, sin helpers; patrón `push_subscriptions`).
 
@@ -440,23 +464,28 @@ es_admin(centro_id)` (el organizador marca al externo). El server action separa
   botón "Nueva cita" (tipos según matriz); tutor/autorizado solo ven sus
   invitaciones + RSVP.
 - Vista **día** (default) / **semana** / **mes** dentro de `/agenda` (toggle;
-  preferencia persistida).
+  preferencia persistida). Botón **"+ Nueva cita"** y **clic en un día**
+  (`onClickDia`) abren el alta con la fecha prefijada (patrón Calendario, AG-09).
 - Detalle de cita — modal/sub-vista (no necesariamente ruta propia): info + (invitado)
-  control RSVP + (organizador) roster.
+  control RSVP + (organizador) roster con edición de la lista de invitados.
 
 ## Componentes UI
 
 - `CitaFormDialog.tsx` (Client) — crear/editar, RHF + Zod, selector de invitados
-  (persona / grupo / externo según tipo). Patrón `EventoFormDialog`/`RecordatorioFormDialog`.
+  (persona / grupo / externo según tipo). Acepta `fechaInicial` (de `onClickDia`).
+  Patrón `EventoFormDialog`/`RecordatorioFormDialog`.
 - `AgendaDia.tsx` / `AgendaSemana.tsx` (Client) — **rejilla/lista horaria nueva**
   (citas por franja). Lean: lista agrupada por hora; pixel-perfect → Ola 3.
 - `AgendaMes.tsx` (Client) — envuelve `<CalendarioMensual/>` y pinta chips de citas
-  por día (color por tipo).
+  por día (color por tipo); `onClickDia` abre el alta con esa fecha (AG-09).
 - `CitaDetalle.tsx` — info + (invitado) `RsvpControl` + (organizador) `InvitadosRoster`.
 - `RsvpControl.tsx` (Client) — aceptar/rechazar + comentario.
-- `InvitadosRoster.tsx` — lista de invitados con estado y recuento; permite al
-  organizador marcar asistencia del externo.
+- `InvitadosRoster.tsx` — lista de invitados con estado y recuento; el organizador
+  marca asistencia del externo y **añade/quita** invitados (AG-02).
 - `VistaToggle.tsx` (Client) — día/semana/mes; persiste preferencia.
+- Server actions: `crearCita`, `editarCita`, `cancelarCita`, `responderInvitacion`,
+  `agregarInvitados`, `quitarInvitado`, `marcarAsistenciaExterno`,
+  `setPreferenciaVistaAgenda`.
 - Queries (Server): `getCitasRango(centroId, desde, hasta)`,
   `getCitaDetalle(citaId)`, `getPreferenciaVistaAgenda()`.
 
@@ -467,18 +496,28 @@ es_admin(centro_id)` (el organizador marca al externo). El server action separa
   re-notificación material igual que F7 (ADR-0038). No se cablea aquí (canal push
   aparcado).
 - **Audit**: trigger automático en `citas` y `cita_invitados` (ramas nuevas en
-  `audit_trigger_function`, `centro_id` directo). Justificación: el **convocar** y el
-  RSVP tienen valor administrativo (quién fue citado a una reunión / al claustro), a
-  diferencia de la confirmación-difusión de F7 que era telemetría (AG-12, revisable).
-  `preferencias_usuario` **no** se audita.
+  `audit_trigger_function`, `centro_id` directo). `cita_invitados` se audita como
+  **registro administrativo** (quién fue convocado; quién/cuándo del RSVP) — **no**
+  como autorización legal (eso es F8, no se mezcla). En Ola 1: **estado actual +
+  quién/cuándo** en la fila, y los cambios en `audit_log` por el trigger estándar;
+  **sin** vista de change-log dedicada (AG-12). `preferencias_usuario` **no** se
+  audita.
 
 ## i18n
 
 Namespace **nuevo `citas`** en `messages/{es,en,va}.json` (NO `agenda`, ya ocupado
 por la _agenda diaria_ de F3, AG-08): tipos de cita, estados RSVP, etiquetas del
 formulario, errores de validación, textos de vistas día/semana/mes, roster.
-Trilingüe obligatorio (Regla #7). Etiqueta de nav para `/agenda` distinta de la
-pestaña "Agenda diaria" de la ficha del niño (AG-08).
+Trilingüe obligatorio (Regla #7).
+
+**Renombrados de etiquetas (AG-08, es/en/va):**
+
+- El **Calendario escolar** (ruta `/calendario`, eventos F7) cambia su etiqueta
+  visible/nav de "Calendario" → **"Calendario Escolar"** (`Calendari Escolar` /
+  `School Calendar`). La **ruta `/calendario` no cambia**, solo el label.
+- El **nuevo módulo** (ruta `/agenda`) usa label visible **"Agenda"** (nav + título).
+- La **agenda diaria del niño (F3)** **no se toca**: sus textos y la pestaña de la
+  ficha del niño quedan exactamente como están.
 
 ## Accesibilidad
 
@@ -506,8 +545,11 @@ pestaña "Agenda diaria" de la ficha del niño (AG-08).
 - [ ] `crearCita` resuelve `centro_id` explícito y retorna Result tipado.
 - [ ] **Expansión de grupos** a personas (snapshot): `familias_aula` → tutores con
       `puede_recibir_mensajes`; `profes_centro` → profes; dedup; externo→fila texto.
-- [ ] `responderInvitacion` idempotente (doble RSVP, carrera) y respeta ventana.
-- [ ] Trigger audit registra INSERT/UPDATE de `citas` y `cita_invitados`.
+- [ ] `responderInvitacion` idempotente (doble RSVP, carrera), respeta ventana y
+      escribe `respondido_por`/`respondido_at`.
+- [ ] `agregarInvitados` (dedup contra existentes) y `quitarInvitado` (DELETE) sobre
+      una cita ya creada.
+- [ ] Trigger audit registra INSERT/UPDATE/**DELETE** de `citas` y `cita_invitados`.
 
 **Vitest (RLS):**
 
@@ -515,6 +557,8 @@ pestaña "Agenda diaria" de la ficha del niño (AG-08).
 - [ ] Profe no puede crear `reunion_claustro` ni `visita`; tutor/autorizado no crea
       citas.
 - [ ] Un invitado no puede responder por otro ni falsear `usuario_id`.
+- [ ] Solo organizador/admin pueden **añadir/quitar** invitados; un invitado no
+      puede borrar su fila ni la de otro.
 - [ ] `INSERT…RETURNING` en `citas` (4 tipos) y en `cita_invitados` no falla por MVCC.
 - [ ] `preferencias_usuario`: un usuario solo lee/escribe las suyas.
 
@@ -527,6 +571,8 @@ pestaña "Agenda diaria" de la ficha del niño (AG-08).
 
 - [ ] Tests arriba en verde en CI.
 - [ ] 3 lenguas completas (es/en/va), namespace `citas`.
+- [ ] Renombrado del Calendario escolar a **"Calendario Escolar"** en es/en/va (ruta
+      `/calendario` sin cambios); F3 agenda diaria intacta.
 - [ ] Funciona en iOS Safari 16.4+ y Chrome Android.
 - [ ] `data-model.md` actualizado (`citas`, `cita_invitados`, `preferencias_usuario` + 3 ENUMs → ✅).
 - [ ] `rls-policies.md` actualizado (helpers + policies de la Agenda).
@@ -535,39 +581,49 @@ pestaña "Agenda diaria" de la ficha del niño (AG-08).
 - [ ] Migración ADITIVA aplicada al remoto vía **SQL Editor** (bug SIGILL del CLI) y
       registrada en `schema_migrations`.
 
-## Decisiones FIJADAS (revisables por el responsable)
+## Decisiones CERRADAS (responsable, 2026-06-02)
 
-> Heredan los defaults recomendados del Dominio B de la spec f7a (PR #50). Quedan
-> **fijadas** para que solo se revisen; cambiar cualquiera es un comentario, no
-> reabrir el diseño.
+> Heredan los defaults del Dominio B de f7a (PR #50) + los ajustes de cierre del
+> responsable. **Todas cerradas.**
 
-| #        | Decisión (fijada)                                                                                                         | Origen f7a |
-| -------- | ------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| AG-tipos | 4 tipos: `reunion_familia` · `reunion_clase` · `reunion_claustro` · `visita`. Matriz organizador→invitado §C1.            | encargo    |
-| AG-01    | Modelo de **2 tablas**: `citas` + `cita_invitados` (espejo de `eventos`/`confirmaciones_evento` pero nominal).            | D-B1       |
-| AG-02    | Grupos se **expanden a personas al crear** (snapshot). Edición de lista posterior = follow-up.                            | D-B2       |
-| AG-03    | Invitado externo = **solo texto** (`usuario_id NULL` + `nombre_externo`); sin RSVP digital. Email/magic-link = follow-up. | D-B3       |
-| AG-04    | RSVP **3 estados**: `pendiente`/`aceptado`/`rechazado`. Sin "quizá".                                                      | D-B4       |
-| AG-05    | Organizan **admin y profe** (matriz); tutor/autorizado **solo reciben + RSVP**.                                           | D-B5       |
-| AG-06    | Vista **mes reusa `<CalendarioMensual/>`**; **día/semana = componente horario nuevo** (lista por hora, lean).             | D-B6       |
-| AG-07    | Preferencia de vista **persistida** en tabla genérica `preferencias_usuario (usuario_id, clave, valor)`.                  | D-B7       |
-| AG-08    | Ruta **`/agenda`** (top-level). i18n namespace **`citas`** (no `agenda`, ocupado por F3 agenda diaria).                   | D-B8       |
-| AG-11    | RSVP/edición hasta **hora de inicio**; editar/cancelar **solo organizador o admin**; cancelar = `estado`.                 | D-B11      |
-| AG-12    | Se auditan **`citas` y `cita_invitados`** (valor administrativo del convocar); `preferencias_usuario` no.                 | D-T2       |
-| AG-13    | **Sin Realtime** en el core (roster refresca al navegar).                                                                 | D11 (F7)   |
+| #        | Decisión (cerrada)                                                                                                                                                                                                   | Origen f7a    |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| AG-tipos | 4 tipos: `reunion_familia` · `reunion_clase` · `reunion_claustro` · `visita`. Matriz organizador→invitado §C1.                                                                                                       | encargo       |
+| AG-01    | Modelo de **2 tablas**: `citas` + `cita_invitados` (espejo de `eventos`/`confirmaciones_evento` pero nominal).                                                                                                       | D-B1          |
+| AG-02    | Grupos se **expanden a personas al crear** (snapshot). **Editar lista (añadir Y quitar) en Ola 1**; re-sync auto = follow-up.                                                                                        | D-B2 + cierre |
+| AG-03    | Invitado externo = **solo texto** (`usuario_id NULL` + `nombre_externo`); sin RSVP digital. Email/magic-link = follow-up.                                                                                            | D-B3          |
+| AG-04    | RSVP **3 estados**: `pendiente`/`aceptado`/`rechazado`. Sin "quizá".                                                                                                                                                 | D-B4          |
+| AG-05    | Organizan **admin y profe** (matriz); tutor/autorizado **solo reciben + RSVP**.                                                                                                                                      | D-B5          |
+| AG-06    | Vista **mes reusa `<CalendarioMensual/>`**; **día/semana = componente horario nuevo** (lista por hora, lean).                                                                                                        | D-B6          |
+| AG-07    | **Cerrado:** preferencia de vista en tabla genérica **`preferencias_usuario (usuario_id, clave, valor)`**.                                                                                                           | D-B7          |
+| AG-08    | **Cerrado:** ruta **`/agenda`** label "Agenda"; renombrar Calendario (F7) → **"Calendario Escolar"** (ruta `/calendario` igual); i18n `citas`; **F3 agenda diaria intacta**.                                         | D-B8 + cierre |
+| AG-09    | **Cerrado:** alta con **patrón Calendario** ("+ Nueva cita" **y** `onClickDia` → fecha prefijada). Se comparte **patrón** de alta/vista, **no el modelo** (`citas`≠`eventos`).                                       | cierre        |
+| AG-11    | RSVP/edición hasta **hora de inicio**; editar/cancelar **solo organizador o admin**; cancelar = `estado`.                                                                                                            | D-B11         |
+| AG-12    | **Cerrado:** auditar `citas` y `cita_invitados` como **registro administrativo** (quién/cuándo del RSVP), **no** legal (≠ F8). Estado actual + quién/cuándo; **sin change-log** dedicado. `preferencias_usuario` no. | D-T2 + cierre |
+| AG-13    | **Sin Realtime** en el core (roster refresca al navegar).                                                                                                                                                            | D11 (F7)      |
 
-> **Puntos que conviene que el responsable confirme explícitamente** (van fijados,
-> pero tienen alternativa razonable):
->
-> - **AG-07** — tabla genérica `preferencias_usuario` (extensible) vs. una columna
->   `pref_vista_agenda` en `usuarios` (mínimo). Fijado: tabla genérica.
-> - **AG-12** — auditar `cita_invitados`. F7 dejó `confirmaciones_evento` **sin**
->   auditar (telemetría); aquí se audita por el valor administrativo del convocar.
->   Si se prefiere el criterio F7, basta no auditar `cita_invitados`.
-> - **AG-08** — etiqueta de nav: el término "Agenda" ya nombra la _agenda diaria_
->   (F3) como pestaña. Para `/agenda` (citas) se usa el namespace `citas`; confirmar
->   la etiqueta visible (p.ej. "Agenda" para citas y renombrar la pestaña F3 a
->   "Agenda diaria").
+## Plan de Checkpoint B (sub-pasos reviewables)
+
+> La fase es grande; se parte en **sub-pasos secuenciales**, cada uno un commit (o
+> PR pequeño) reviewable, **NO un PR gigante**. Patrón F7: migración aditiva, RLS
+> row-aware, i18n es/en/va, tests. El responsable da OK a este plan antes de
+> implementar; aplicar la migración al remoto (SQL Editor) es paso aparte con su OK.
+
+| Sub-paso                              | Contenido                                                                                                                                                                                                                                                                                                                  | Entregable / verificación                                                                                                                  |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **B0 — Migración (SQL, sin aplicar)** | 3 ENUMs; `citas`; `cita_invitados` (con `respondido_por`); `preferencias_usuario`; CHECKs, índices, UNIQUE parcial; helpers row-aware; RLS (incl. DELETE de invitado, excepción tipo `dias_centro`); ramas de audit + triggers `set_updated_at`/`set_centro_id`. Archivo `2026XXXXXXXXXX_phase7b_agenda.sql`.              | SQL escrito + **resumen estructural + RLS clave pegados al responsable** para revisión antes de aplicar. `database.ts` a mano provisional. |
+| **B1 — Tipos + schemas Zod**          | `tipoCitaEnum`, `rsvpEstadoEnum`, `crearCitaSchema`, `responderInvitacionSchema`, `agregarInvitadosSchema`. `db:types` cuando se aplique B0.                                                                                                                                                                               | `typecheck` verde; tests unit de schemas (válidos/ inválidos).                                                                             |
+| **B2 — Server actions + queries**     | `crearCita` (resuelve `centro_id`, expande grupos snapshot), `editarCita`, `cancelarCita`, `responderInvitacion`, `agregarInvitados`, `quitarInvitado`, `marcarAsistenciaExterno`, `setPreferenciaVistaAgenda`; queries `getCitasRango`/`getCitaDetalle`/`getPreferenciaVistaAgenda`. Reuso de resolutores de grupos F6-C. | tests unit (expansión, idempotencia RSVP, ventana, dedup); `npm run build` (regla `'use server'`).                                         |
+| **B3 — Tests RLS (gateados)**         | aislamiento; profe no crea claustro/visita; tutor no crea; no falsear `usuario_id`/responder por otro; solo organizador/admin añaden/quitan; `INSERT…RETURNING` en `citas` (4 tipos) y `cita_invitados`; `preferencias_usuario` self. Gateados por `AGENDA_MIGRATION_APPLIED=1`.                                           | `test:rls` verde **tras** aplicar B0 al remoto.                                                                                            |
+| **B4 — UI vistas + alta**             | `/agenda` (layout cross-rol), `VistaToggle` (pref persistida), `AgendaDia`/`AgendaSemana` (rejilla horaria nueva), `AgendaMes` (reusa `<CalendarioMensual/>`, `onClickDia`), `CitaFormDialog` ("+ Nueva cita" / clic-día).                                                                                                 | render + i18n es/en/va sin claves crudas (smoke Playwright).                                                                               |
+| **B5 — UI detalle + RSVP + roster**   | `CitaDetalle`, `RsvpControl`, `InvitadosRoster` (recuento, marcar externo, añadir/quitar).                                                                                                                                                                                                                                 | E2E: admin crea `reunion_clase` → tutor ve y acepta → roster actualizado.                                                                  |
+| **B6 — Renombrado + nav + i18n**      | label Calendario → "Calendario Escolar" (es/en/va), item de nav "Agenda" → `/agenda`; **F3 intacta**.                                                                                                                                                                                                                      | `npm test` regresión; revisión de claves.                                                                                                  |
+| **B7 — Docs + ADR**                   | actualizar `data-model.md`, `rls-policies.md` (helpers/policies Agenda); ADR nuevo (modelo invitación nominal + RSVP; reuso expansión F6-C; separación de `eventos`; excepción DELETE de invitado).                                                                                                                        | docs + ADR escritos.                                                                                                                       |
+
+> **Orden de aplicación de la migración:** B0 se **revisa** primero; el responsable
+> la aplica vía SQL Editor (bug SIGILL del CLI) y avisa; entonces `db:types` y se
+> desbloquean B3 (RLS) y el build final. Checkpoint C = pre-merge (typecheck/lint/
+> test/build/e2e) + preview Vercel verificado por el responsable.
 
 ## Referencias
 
@@ -584,6 +640,6 @@ pestaña "Agenda diaria" de la ficha del niño (AG-08).
 
 ---
 
-**Workflow:** Checkpoint A (esta spec) → revisión del responsable → cierre/ajuste de
-las decisiones fijadas → Checkpoint B (migración + RLS + tests) → Checkpoint C
-(pre-merge + preview). **PARA aquí.**
+**Workflow:** Checkpoint A **cerrado** (decisiones fijadas) → **Checkpoint B por
+sub-pasos** (B0–B7, ver plan) tras OK del responsable al plan → Checkpoint C
+(pre-merge + preview verificado por el responsable).
