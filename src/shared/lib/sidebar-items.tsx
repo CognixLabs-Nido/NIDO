@@ -3,6 +3,7 @@ import {
   BellIcon,
   BookOpenIcon,
   Building2Icon,
+  CalendarCheckIcon,
   CalendarDaysIcon,
   CalendarRangeIcon,
   HistoryIcon,
@@ -44,6 +45,7 @@ export async function buildSidebarItems(
       { href: `/${locale}/admin/cursos`, label: t('cursos'), icon: <CalendarDaysIcon /> },
       { href: `/${locale}/admin/aulas`, label: t('aulas'), icon: <BookOpenIcon /> },
       { href: `/${locale}/admin/calendario`, label: t('calendario'), icon: <CalendarRangeIcon /> },
+      { href: `/${locale}/agenda`, label: t('agenda'), icon: <CalendarCheckIcon /> },
       { href: `/${locale}/admin/menus`, label: t('menus'), icon: <UtensilsIcon /> },
       { href: `/${locale}/admin/ninos`, label: t('ninos'), icon: <BabyIcon /> },
       {
@@ -71,6 +73,7 @@ export async function buildSidebarItems(
         label: t('calendario'),
         icon: <CalendarRangeIcon />,
       },
+      { href: `/${locale}/agenda`, label: t('agenda'), icon: <CalendarCheckIcon /> },
       {
         href: `/${locale}/messages`,
         label: t('mensajeria'),
@@ -92,6 +95,7 @@ export async function buildSidebarItems(
   return [
     { href: `/${locale}/family`, label: t('dashboard'), icon: <HomeIcon /> },
     { href: `/${locale}/family/calendario`, label: t('calendario'), icon: <CalendarRangeIcon /> },
+    { href: `/${locale}/agenda`, label: t('agenda'), icon: <CalendarCheckIcon /> },
     {
       href: `/${locale}/messages`,
       label: t('mensajeria'),

@@ -173,10 +173,11 @@
       "ninos": "Children",
       "audit": "Audit log",
       "perfil": "Profile",
-      "calendario": "Calendar",
+      "calendario": "School Calendar",
       "menus": "Menus",
       "mensajeria": "Messages",
-      "recordatorios": "Reminders"
+      "recordatorios": "Reminders",
+      "agenda": "Agenda"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -371,9 +372,10 @@
       "aria_label": "Teacher navigation",
       "dashboard": "Home",
       "perfil": "Profile",
-      "calendario": "Calendar",
+      "calendario": "School Calendar",
       "mensajeria": "Messages",
-      "recordatorios": "Reminders"
+      "recordatorios": "Reminders",
+      "agenda": "Agenda"
     },
     "dashboard": {
       "title": "My classrooms",
@@ -397,9 +399,10 @@
       "aria_label": "Family navigation",
       "dashboard": "Home",
       "perfil": "Profile",
-      "calendario": "Calendar",
+      "calendario": "School Calendar",
       "mensajeria": "Messages",
-      "recordatorios": "Reminders"
+      "recordatorios": "Reminders",
+      "agenda": "Agenda"
     },
     "dashboard": {
       "title": "My children",
@@ -1210,8 +1213,14 @@
   "eventos": {
     "nuevo": "New event",
     "editar": "Edit event",
-    "push": { "actualizado": "Event updated: {titulo}" },
-    "ambitos": { "centro": "Whole centre", "aula": "A classroom", "nino": "A child" },
+    "push": {
+      "actualizado": "Event updated: {titulo}"
+    },
+    "ambitos": {
+      "centro": "Whole centre",
+      "aula": "A classroom",
+      "nino": "A child"
+    },
     "tipos": {
       "excursion": "Field trip",
       "reunion": "Meeting",
@@ -1219,7 +1228,9 @@
       "vacaciones": "Holidays",
       "otro": "Other"
     },
-    "estados": { "cancelado": "Cancelled" },
+    "estados": {
+      "cancelado": "Cancelled"
+    },
     "estados_confirmacion": {
       "pendiente": "Pending",
       "confirmado": "Attending",
@@ -1370,5 +1381,82 @@
     },
     "badge_aria": "{n} pending reminders",
     "empty_solo_lectura": "You have no reminders. Those sent to you will appear here."
+  },
+  "citas": {
+    "titulo": "Agenda",
+    "vacio": "No appointments in this period.",
+    "soy_organizador": "Organiser",
+    "tipos": {
+      "reunion_familia": "Family meeting",
+      "reunion_clase": "Class meeting",
+      "reunion_claustro": "Staff meeting",
+      "visita": "Visit"
+    },
+    "rsvp": {
+      "pendiente": "Pending",
+      "aceptado": "Accepts",
+      "rechazado": "Declines"
+    },
+    "vista": {
+      "dia": "Day",
+      "semana": "Week",
+      "mes": "Month"
+    },
+    "nav": {
+      "anterior": "Previous",
+      "siguiente": "Next",
+      "hoy": "Today"
+    },
+    "alta": {
+      "nueva": "New appointment",
+      "titulo": "New appointment",
+      "crear": "Create",
+      "cancelar": "Cancel",
+      "creada": "Appointment created",
+      "claustro_hint": "All teachers at the centre will be invited."
+    },
+    "campos": {
+      "tipo": "Type",
+      "nino": "Child",
+      "nino_placeholder": "Select a child",
+      "aula": "Classroom",
+      "aula_placeholder": "Select a classroom",
+      "externo": "External guest",
+      "externo_placeholder": "Visitor name",
+      "staff_opcional": "Staff (optional)",
+      "staff_placeholder": "Select staff",
+      "titulo": "Title",
+      "fecha": "Date",
+      "hora_inicio": "Start",
+      "hora_fin": "End",
+      "lugar": "Location",
+      "descripcion": "Description"
+    },
+    "validation": {
+      "titulo_vacio": "Title is required.",
+      "titulo_largo": "Title too long.",
+      "hora_invalida": "Invalid time.",
+      "nino_requerido": "Select a child.",
+      "aula_requerida": "Select a classroom.",
+      "externo_requerido": "Enter the visitor name.",
+      "hora_fin_invalida": "End time must be after start."
+    },
+    "errors": {
+      "no_autorizado": "You do not have permission for this action.",
+      "creacion_fallo": "Could not create the appointment.",
+      "sin_invitados": "The appointment has no guests.",
+      "invitados_fallo": "Could not add the guests.",
+      "edicion_fallo": "Could not edit the appointment.",
+      "cancelacion_fallo": "Could not cancel the appointment.",
+      "rsvp_fallo": "Could not record your response.",
+      "no_encontrada": "Appointment not found.",
+      "cita_cancelada": "The appointment is cancelled.",
+      "ventana_cerrada": "The response window has closed.",
+      "no_invitado": "You are not invited to this appointment.",
+      "preferencia_fallo": "Could not save the preference.",
+      "sin_centro": "Could not determine the centre.",
+      "nino_no_encontrado": "Child not found.",
+      "aula_no_encontrada": "Classroom not found."
+    }
   }
 }
