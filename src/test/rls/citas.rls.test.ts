@@ -316,3 +316,121 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS citas — F7b (agenda)', () => {
     expect(falsa.data?.clave).toBeFalsy()
   })
 })
+
+/**
+ * RPC `contar_invitaciones_pendientes()` (AG-14, badge). `SECURITY DEFINER STABLE`
+ * que cuenta sobre `auth.uid()`: invitaciones RSVP **pendientes** del usuario en
+ * citas **programadas y aún no comenzadas** (ventana AG-11), excluyendo las que el
+ * propio usuario organiza. Usa usuarios **dedicados y aislados** para que los
+ * recuentos sean deterministas (otros tests de este fichero invitan a tutor/profe
+ * a citas futuras, que el RPC también contaría).
+ *
+ * Comando: `AGENDA_MIGRATION_APPLIED=1 npm run test:rls -- citas.rls`
+ */
+describe.skipIf(!MIGRATION_APPLIED)(
+  'RPC contar_invitaciones_pendientes — F7b badge (AG-14)',
+  () => {
+    let centro: { id: string }
+    let aula: { id: string }
+    let organizador: TestUser
+    let invitado: TestUser
+    let otro: TestUser
+    const citasCreadas: string[] = []
+
+    type CitaInsert = Database['public']['Tables']['citas']['Insert']
+
+    /** Crea una cita vía service role (controla organizador/fecha/estado) y registra su id. */
+    async function nuevaCita(
+      row: Partial<CitaInsert> & { organizador_id: string }
+    ): Promise<string> {
+      const { data } = await serviceClient
+        .from('citas')
+        .insert({
+          tipo: 'reunion_clase',
+          centro_id: centro.id,
+          aula_id: aula.id,
+          titulo: 'Badge',
+          fecha: '2099-06-01',
+          hora_inicio: '17:00',
+          ...row,
+        } as CitaInsert)
+        .select('id')
+        .single()
+      citasCreadas.push(data!.id)
+      return data!.id
+    }
+
+    async function invitar(citaId: string, usuarioId: string): Promise<string> {
+      const { data } = await serviceClient
+        .from('cita_invitados')
+        .insert({ cita_id: citaId, centro_id: centro.id, usuario_id: usuarioId })
+        .select('id')
+        .single()
+      return data!.id
+    }
+
+    async function recuento(user: TestUser): Promise<number> {
+      const c = await clientFor(user)
+      const { data, error } = await c.rpc('contar_invitaciones_pendientes')
+      expect(error).toBeNull()
+      return data ?? -1
+    }
+
+    beforeAll(async () => {
+      centro = await createTestCentro('Centro Badge')
+      const curso = await createTestCurso(centro.id)
+      aula = await createTestAula(centro.id, curso.id, 'Aula Badge')
+      organizador = await createTestUser({ nombre: 'Org Badge' })
+      invitado = await createTestUser({ nombre: 'Inv Badge' })
+      otro = await createTestUser({ nombre: 'Otro Badge' })
+      await asignarRol(organizador.id, centro.id, 'admin')
+      await asignarRol(invitado.id, centro.id, 'profe')
+      await asignarRol(otro.id, centro.id, 'profe')
+    })
+
+    afterAll(async () => {
+      for (const id of citasCreadas) await serviceClient.from('citas').delete().eq('id', id)
+      await deleteTestCentro(centro.id)
+      for (const u of [organizador, invitado, otro]) await deleteTestUser(u.id)
+    })
+
+    it('cuenta solo pendientes futuras del invitado; el organizador no cuenta las suyas', async () => {
+      // cuenta: futura, programada, invitado convocado.
+      const cFutura = await nuevaCita({ organizador_id: organizador.id, fecha: '2099-06-01' })
+      await invitar(cFutura, invitado.id)
+      // NO cuenta: ya comenzó (ventana AG-11).
+      const cPasada = await nuevaCita({ organizador_id: organizador.id, fecha: '2020-01-01' })
+      await invitar(cPasada, invitado.id)
+      // NO cuenta: cancelada.
+      const cCancel = await nuevaCita({
+        organizador_id: organizador.id,
+        fecha: '2099-06-02',
+        estado: 'cancelada',
+      })
+      await invitar(cCancel, invitado.id)
+
+      // El organizador es invitado a SU propia cita → no cuenta (organizador_id = auth.uid()).
+      const cPropia = await nuevaCita({ organizador_id: organizador.id, fecha: '2099-06-03' })
+      await invitar(cPropia, organizador.id)
+      // Pero sí cuenta una cita futura que organiza OTRO y a la que se le convoca.
+      const cAjena = await nuevaCita({ organizador_id: otro.id, fecha: '2099-06-04' })
+      await invitar(cAjena, organizador.id)
+
+      // invitado: solo cFutura.
+      expect(await recuento(invitado)).toBe(1)
+      // organizador: solo cAjena (cPropia excluida por el guard del organizador).
+      expect(await recuento(organizador)).toBe(1)
+      // otro: organiza cAjena pero no está invitado a nada → 0 (scoping por auth.uid()).
+      expect(await recuento(otro)).toBe(0)
+    })
+
+    it('al aceptar la invitación deja de contar como pendiente', async () => {
+      const cita = await nuevaCita({ organizador_id: organizador.id, fecha: '2099-07-01' })
+      const fila = await invitar(cita, otro.id)
+
+      expect(await recuento(otro)).toBe(1)
+      await serviceClient.from('cita_invitados').update({ estado: 'aceptado' }).eq('id', fila)
+      expect(await recuento(otro)).toBe(0)
+    })
+  }
+)
