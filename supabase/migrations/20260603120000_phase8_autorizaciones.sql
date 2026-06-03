@@ -10,12 +10,22 @@
 -- puntos ⚖️ del spec requieren validación de abogado.
 --
 -- 4 ENUMs:
---   tipo_autorizacion   = salida | medicacion | recogida
---                         (reservado futuro: 'atencion_medica_urgencia' vía
---                          ALTER TYPE ... ADD VALUE — aditivo, cuando se decida)
+--   tipo_autorizacion   = salida | medicacion | recogida | reglas_regimen_interno
+--                         | autorizacion_imagenes
+--                         (imagenes: la FEATURE es F11/RGPD; aqui solo se reserva el
+--                          valor para reusar el mecanismo. reservado futuro:
+--                          'atencion_medica_urgencia' via ALTER TYPE ... ADD VALUE)
 --   autorizacion_estado = borrador | publicada | anulada
 --   firma_decision      = firmado | rechazado | revocado
 --   politica_firmantes  = uno_principal | todos_los_principales | cualquiera (D5)
+--
+-- Firma: nombre_tecleado (acto afirmativo) + firma_imagen (trazo dibujado con el
+--   dedo, SVG/base64, EN BD por ser pequena) + texto_hash (SHA-256 del texto).
+-- Doble firma por nino: ninos.requiere_ambos_firmantes (el REQUISITO, no el motivo
+--   — minimizacion). El action pone firmantes_requeridos='todos_los_principales'.
+-- Retencion de firmas: 12 meses (limpieza fina en F11/RGPD).
+-- Adjuntos (informe medicacion, DNI recogida): via Storage TRAS F10 (ver spec);
+--   referencias en `datos` jsonb. No requiere columnas nuevas.
 --
 -- GUARD del texto (D-texto / placeholder PENDIENTE):
 --   `autorizaciones.texto_definitivo boolean` + CHECK (publicada ⇒ definitivo) +
@@ -45,7 +55,7 @@
 BEGIN;
 
 -- ─── 1. ENUMs ────────────────────────────────────────────────────────────────
-CREATE TYPE public.tipo_autorizacion   AS ENUM ('salida', 'medicacion', 'recogida');
+CREATE TYPE public.tipo_autorizacion   AS ENUM ('salida', 'medicacion', 'recogida', 'reglas_regimen_interno', 'autorizacion_imagenes');
 CREATE TYPE public.autorizacion_estado AS ENUM ('borrador', 'publicada', 'anulada');
 CREATE TYPE public.firma_decision      AS ENUM ('firmado', 'rechazado', 'revocado');
 CREATE TYPE public.politica_firmantes  AS ENUM ('uno_principal', 'todos_los_principales', 'cualquiera');
@@ -71,11 +81,12 @@ CREATE TABLE public.autorizaciones (
   created_at           timestamptz NOT NULL DEFAULT now(),
   updated_at           timestamptz NOT NULL DEFAULT now(),
 
-  -- Coherencia tipo ↔ referencia (D3). aula_id reservado: NULL en los 3 tipos de Ola 1.
+  -- Coherencia tipo ↔ referencia (D3). aula_id reservado: NULL en todos los tipos de Ola 1.
+  -- salida ⇒ evento; el resto (por niño) ⇒ nino_id.
   CONSTRAINT autorizaciones_tipo_coherencia CHECK (
-    (tipo = 'salida'     AND evento_id IS NOT NULL AND nino_id IS NULL     AND aula_id IS NULL)
-    OR (tipo = 'medicacion' AND evento_id IS NULL  AND nino_id IS NOT NULL AND aula_id IS NULL)
-    OR (tipo = 'recogida'   AND evento_id IS NULL  AND nino_id IS NOT NULL AND aula_id IS NULL)
+    (tipo = 'salida' AND evento_id IS NOT NULL AND nino_id IS NULL AND aula_id IS NULL)
+    OR (tipo IN ('medicacion', 'recogida', 'reglas_regimen_interno', 'autorizacion_imagenes')
+        AND evento_id IS NULL AND nino_id IS NOT NULL AND aula_id IS NULL)
   ),
   -- GUARD placeholder: no se puede PUBLICAR con texto no definitivo (D-texto).
   CONSTRAINT autorizaciones_publicar_requiere_texto CHECK (
@@ -96,6 +107,18 @@ CREATE INDEX idx_autorizaciones_centro  ON public.autorizaciones (centro_id);
 CREATE INDEX idx_autorizaciones_evento  ON public.autorizaciones (evento_id) WHERE evento_id IS NOT NULL;
 CREATE INDEX idx_autorizaciones_nino    ON public.autorizaciones (nino_id)   WHERE nino_id IS NOT NULL;
 
+-- ─── 2b. ninos: requisito de doble firma por niño ───────────────────────────
+-- Guarda el REQUISITO ("se exigen ambos tutores principales"), NO el motivo
+-- (separación, etc.) → minimización de datos. Cuando es true, el server action
+-- crea las autorizaciones de ese niño con firmantes_requeridos='todos_los_principales'.
+-- ninos ya está auditada → cambios de este flag quedan en audit_log. La gestiona
+-- el admin vía la policy de UPDATE de ninos (sin policy nueva).
+ALTER TABLE public.ninos
+  ADD COLUMN requiere_ambos_firmantes boolean NOT NULL DEFAULT false;
+
+COMMENT ON COLUMN public.ninos.requiere_ambos_firmantes IS
+  'Si true, las autorizaciones de este niño exigen firma de todos los tutores principales (F8). Es el requisito, no el motivo (minimización RGPD).';
+
 -- ─── 3. Tabla firmas_autorizacion (la respuesta — append-only, inmutable) ────
 -- Una firma NO se edita ni borra (default DENY UPDATE/DELETE). Revocar/re-firmar
 -- = fila NUEVA (D4). Estado vigente = última fila por (autorizacion, nino, firmante)
@@ -110,20 +133,22 @@ CREATE TABLE public.firmas_autorizacion (
   texto_hash      text NOT NULL,                                      -- SHA-256 hex del texto exacto firmado
   texto_version   text NOT NULL,                                      -- snapshot de la versión firmada
   nombre_tecleado text NOT NULL,                                      -- acto afirmativo explícito (D2)
+  firma_imagen    text,                                               -- trazo dibujado con el dedo (SVG/base64), pequeño, en BD
   comentario      text,
   ip_address      inet,                                               -- contexto probatorio (patrón consentimientos)
   user_agent      text,
   firmado_at      timestamptz NOT NULL DEFAULT now(),
   created_at      timestamptz NOT NULL DEFAULT now(),
 
-  CONSTRAINT firmas_hash_sha256      CHECK (texto_hash ~ '^[0-9a-f]{64}$'),
-  CONSTRAINT firmas_nombre_len       CHECK (char_length(nombre_tecleado) BETWEEN 1 AND 200),
-  CONSTRAINT firmas_comentario_len   CHECK (comentario IS NULL OR char_length(comentario) <= 500),
-  CONSTRAINT firmas_version_len      CHECK (char_length(texto_version) BETWEEN 1 AND 40)
+  CONSTRAINT firmas_hash_sha256       CHECK (texto_hash ~ '^[0-9a-f]{64}$'),
+  CONSTRAINT firmas_nombre_len        CHECK (char_length(nombre_tecleado) BETWEEN 1 AND 200),
+  CONSTRAINT firmas_firma_imagen_len  CHECK (firma_imagen IS NULL OR char_length(firma_imagen) <= 500000),
+  CONSTRAINT firmas_comentario_len    CHECK (comentario IS NULL OR char_length(comentario) <= 500),
+  CONSTRAINT firmas_version_len       CHECK (char_length(texto_version) BETWEEN 1 AND 40)
 );
 
 COMMENT ON TABLE public.firmas_autorizacion IS
-  'Firma electrónica simple por niño (F8, D2). Append-only e inmutable: revocar = fila nueva (D4). Guarda hash SHA-256 del texto exacto + IP/UA. Se audita. ⚖️ validez legal pendiente de abogado.';
+  'Firma electrónica simple por niño (F8, D2): nombre_tecleado + firma_imagen (trazo) + hash SHA-256 del texto + IP/UA. Append-only e inmutable: revocar = fila nueva (D4). Se audita. Retención 12 meses (limpieza fina en F11). ⚖️ validez legal pendiente de abogado.';
 
 CREATE INDEX idx_firmas_autorizacion ON public.firmas_autorizacion (autorizacion_id, nino_id);
 CREATE INDEX idx_firmas_firmante     ON public.firmas_autorizacion (firmante_id);
