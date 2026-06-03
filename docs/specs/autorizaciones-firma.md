@@ -107,16 +107,17 @@ de las firmas de F8 (que son por niño y necesitan el hash del texto firmado).
 
 ## Delimitación de solapes (cerrar ambigüedad)
 
-| Tema                                                                        | Fase                          | Qué cubre                                      |
-| --------------------------------------------------------------------------- | ----------------------------- | ---------------------------------------------- |
-| Autorizaciones administrativas firmadas (excursión, medicación, recogida)   | **F8**                        | Documento + firma/rechazo + audit              |
-| Doble confirmación de **administración** de medicación (registro operativo) | **F8 (sub-fase) o follow-up** | Log de administración por dos personas — 🔒 D6 |
-| **Consentimiento de imagen** de menores                                     | **F11 (RGPD)**                | Doc legal + retención. F8 NO lo hace           |
-| Derecho al olvido / registro de tratamiento                                 | **F11 (RGPD)**                | Anonimización audit_log, RAT, DPA              |
-| Confirmación de asistencia a evento (ligera)                                | **F7** (ya hecho)             | `confirmaciones_evento`, no legal              |
+| Tema                                                                        | Fase                          | Qué cubre                                                                                                |
+| --------------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Autorizaciones administrativas firmadas (excursión, medicación, recogida)   | **F8**                        | Documento + firma/rechazo + audit                                                                        |
+| Doble confirmación de **administración** de medicación (registro operativo) | **F8 (sub-fase) o follow-up** | Log de administración por dos personas — 🔒 D6                                                           |
+| **Consentimiento de imagen** de menores (`autorizacion_imagenes`)           | **F11 (RGPD)**                | Se **CONSTRUYE (firmable) en F11** reusando el mecanismo de F8 (el valor del ENUM se reserva ya en F8-0) |
+| Derecho al olvido / registro de tratamiento                                 | **F11 (RGPD)**                | Anonimización audit_log, RAT, DPA                                                                        |
+| Confirmación de asistencia a evento (ligera)                                | **F7** (ya hecho)             | `confirmaciones_evento`, no legal                                                                        |
 
-> El **mecanismo de firma** que se construye en F8 podrá **reutilizarse** en F11 para el
-> consentimiento de imagen, pero el documento legal y las reglas de retención de imagen son F11.
+> El **mecanismo de firma** de F8 se **reutiliza** en F11 para construir el consentimiento de imagen
+> (`autorizacion_imagenes` es firmable allí); el **documento legal** y las **reglas de retención** de
+> imagen son responsabilidad de F11.
 
 ## Propuesta de alcance LEAN (🔒 D1 — abierto, con recomendación)
 
@@ -305,17 +306,38 @@ para salida y medicación.**
 
 ## Decisiones cerradas (responsable, 2026-06-03)
 
-| #      | Decisión                      | Cierre                                                                                                                                                                                    |
-| ------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **D1** | Alcance LEAN                  | salida + medicación + recogida. **`atencion_medica_urgencia` queda pendiente de decidir**; el modelo (ENUM `tipo_autorizacion`) lo admitirá luego con `ALTER TYPE … ADD VALUE` (aditivo). |
-| **D2** | Mecanismo de firma            | firma electrónica **simple** (checkbox + nombre tecleado + **hash SHA-256 del texto** + IP/UA). **SIN canvas** en Ola 1.                                                                  |
-| **D3** | Vinculación                   | `tipo_autorizacion` + `evento_id` opcional.                                                                                                                                               |
-| **D4** | Caducidad/revocación          | `vigencia_*` + revocar = **fila nueva** (append-only).                                                                                                                                    |
-| **D5** | Multi-tutor                   | `firmantes_requeridos` configurable, **default `uno_principal`** (valor legal por tipo ⚖️ a abogado).                                                                                     |
-| **D6** | Medicación doble confirmación | el **log de administración (2 personas) DENTRO**, en sub-fase **F8-3b**.                                                                                                                  |
-| **D7** | Datos admin tutor             | DNI **solo si el abogado lo exige** → **F8-4 condicional**.                                                                                                                               |
-| **D8** | Texto legal                   | **monolingüe** (idioma de firma) + UI trilingüe.                                                                                                                                          |
-| **D9** | Retención/anulación           | conservar firmas, marcar autorización `anulada`; retención fina → F11.                                                                                                                    |
+| #      | Decisión                      | Cierre                                                                                                                                                                                                               |
+| ------ | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D1** | Alcance LEAN                  | salida + medicación + recogida. **`atencion_medica_urgencia` queda pendiente de decidir**; el modelo (ENUM `tipo_autorizacion`) lo admitirá luego con `ALTER TYPE … ADD VALUE` (aditivo).                            |
+| **D2** | Mecanismo de firma            | firma electrónica **simple**: nombre tecleado + **firma dibujada** (`firma_imagen`, SVG/base64 en BD, **obligatoria si `decision='firmado'`**, opcional en rechazo/revocación) + **hash SHA-256 del texto** + IP/UA. |
+| **D3** | Vinculación                   | `tipo_autorizacion` + `evento_id` opcional.                                                                                                                                                                          |
+| **D4** | Caducidad/revocación          | `vigencia_*` + revocar = **fila nueva** (append-only).                                                                                                                                                               |
+| **D5** | Multi-tutor                   | `firmantes_requeridos` configurable, **default `uno_principal`** (valor legal por tipo ⚖️ a abogado).                                                                                                                |
+| **D6** | Medicación doble confirmación | el **log de administración (2 personas) DENTRO**, en sub-fase **F8-3b**.                                                                                                                                             |
+| **D7** | Datos admin tutor             | DNI **solo si el abogado lo exige** → **F8-4 condicional**.                                                                                                                                                          |
+| **D8** | Texto legal                   | **monolingüe** (idioma de firma) + UI trilingüe.                                                                                                                                                                     |
+| **D9** | Retención/anulación           | conservar firmas, marcar autorización `anulada`; retención fina → F11.                                                                                                                                               |
+
+### Folds de alcance (responsable, 2026-06-03, tras revisar F8-0)
+
+Integrados en la migración F8-0 **antes de aplicar** (más barato que `ALTER` luego):
+
+- **Firma dibujada en BD:** `firmas_autorizacion.firma_imagen` (trazo SVG/base64, ≤500 KB),
+  **obligatoria al firmar** (`CHECK decision <> 'firmado' OR firma_imagen IS NOT NULL`), opcional en
+  rechazo/revocación. `nombre_tecleado` se mantiene. _(Revisa D2.)_
+- **5 tipos:** `tipo_autorizacion` = `salida · medicacion · recogida · reglas_regimen_interno ·
+autorizacion_imagenes`. CHECK de coherencia: `salida ⇒ evento`; el resto ⇒ `nino_id`.
+  - **`autorizacion_imagenes` se CONSTRUYE (firmable) en F11**, reusando el mecanismo de F8 (no es
+    solo un valor reservado); el resto del paquete RGPD (olvido, RAT) sigue en F11.
+  - `atencion_medica_urgencia` sigue **solo reservado** (futuro `ADD VALUE`).
+- **Doble firma por niño:** `ninos.requiere_ambos_firmantes boolean` — el **requisito**, no el motivo
+  (minimización). El action lo traduce a `firmantes_requeridos='todos_los_principales'`. _(Encaje de
+  D5.)_
+- **Retención de firmas: 12 meses** (anotado; limpieza fina en F11).
+- **Storage / adjuntos (D-storage):** se **aplazan a tras F10** vía `datos.adjuntos: [{ bucket, path,
+tipo }]` (forma reservada, sin migración futura). **DNI de recogida = número (texto) en F8**; la
+  **foto** del DNI → F10. **Excepción condicionada ⚖️:** si el abogado exige **prescripción médica
+  adjunta**, se hace un **mini-Storage dentro de F8-3a** (solo ese bucket), no todo F10.
 
 ### GUARD crítico — texto `PENDIENTE` no firmable (a nivel de BD)
 
@@ -347,10 +369,11 @@ verdes contra el remoto. Reviewable: la migración + la suite RLS.
 
 **ENUMs nuevos:**
 
-- `tipo_autorizacion`: `salida | medicacion | recogida` _(reservado futuro: `atencion_medica_urgencia`)_.
+- `tipo_autorizacion`: `salida | medicacion | recogida | reglas_regimen_interno | autorizacion_imagenes`
+  _(`autorizacion_imagenes` se construye en F11; reservado futuro: `atencion_medica_urgencia`)_.
 - `autorizacion_estado`: `borrador | publicada | anulada`.
 - `firma_decision`: `firmado | rechazado | revocado`.
-- `firmantes_requeridos`: `uno_principal | todos_los_principales | cualquiera`.
+- `politica_firmantes`: `uno_principal | todos_los_principales | cualquiera` (columna `firmantes_requeridos`).
 
 **`autorizaciones`** (auditada):
 
@@ -365,15 +388,15 @@ titulo           text NOT NULL                              -- 1..200
 texto            text NOT NULL                              -- arranca 'PENDIENTE'
 texto_version    text NOT NULL                              -- p.ej. 'v0-pendiente' / 'v1'
 texto_definitivo boolean NOT NULL DEFAULT false             -- GUARD D-texto
-datos            jsonb NOT NULL DEFAULT '{}'::jsonb         -- campos estructurados (medicación/recogida)
-firmantes_requeridos firmantes_requeridos NOT NULL DEFAULT 'uno_principal'
+datos            jsonb NOT NULL DEFAULT '{}'::jsonb         -- estructurados (medicación/recogida) + datos.adjuntos (tras F10)
+firmantes_requeridos politica_firmantes NOT NULL DEFAULT 'uno_principal'
 vigencia_desde   date
 vigencia_hasta   date
 estado           autorizacion_estado NOT NULL DEFAULT 'borrador'
 creado_por       uuid NOT NULL → usuarios(id) ON DELETE RESTRICT
 created_at/updated_at timestamptz
 -- CHECK tipo↔referencias: salida ⇒ evento_id NOT NULL, nino_id NULL;
---                          medicacion/recogida ⇒ evento_id NULL, nino_id NOT NULL
+--   medicacion/recogida/reglas_regimen_interno/autorizacion_imagenes ⇒ evento_id NULL, nino_id NOT NULL
 -- CHECK publicar_requiere_texto: estado='publicada' ⇒ texto_definitivo
 -- CHECK vigencia: vigencia_hasta IS NULL OR vigencia_desde IS NULL OR vigencia_hasta >= vigencia_desde
 -- CHECK longitudes titulo/texto
@@ -391,6 +414,7 @@ decision         firma_decision NOT NULL
 texto_hash       text NOT NULL                              -- SHA-256 hex del texto exacto firmado
 texto_version    text NOT NULL                              -- snapshot de la versión
 nombre_tecleado  text NOT NULL
+firma_imagen     text   -- trazo dibujado SVG/base64 (≤500 KB); OBLIGATORIO si decision='firmado'
 comentario       text                                       -- <=500
 ip_address       inet
 user_agent       text
@@ -398,8 +422,13 @@ firmado_at       timestamptz NOT NULL DEFAULT now()
 created_at       timestamptz
 -- SIN UNIQUE: el historial es append-only; estado vigente = última fila por
 --   (autorizacion_id, nino_id, firmante_id) por firmado_at.
--- UPDATE/DELETE: SIN policy → default DENY.
+-- CHECK firma_imagen_req: decision <> 'firmado' OR firma_imagen IS NOT NULL.
+-- UPDATE/DELETE: SIN policy → default DENY. Retención 12 meses (limpieza fina en F11).
 ```
+
+**`ninos`** (columna nueva, aditiva): `requiere_ambos_firmantes boolean NOT NULL DEFAULT false` — el
+**requisito** de doble firma por niño (no el motivo; minimización). El server action lo traduce a
+`firmantes_requeridos='todos_los_principales'` al crear autorizaciones de ese niño.
 
 **Helpers (`STABLE SECURITY DEFINER SET search_path = public`, row-aware donde aplica):**
 
@@ -468,8 +497,21 @@ el tutor autoriza a recoger; firmada.
   renderiza dentro del `texto` que se hashea (la lista forma parte de lo firmado). _No requiere tabla
   nueva._ (Alternativa tabla hija `personas_autorizadas_recogida` si se prefiere — 🔒 menor a decidir
   en B si quieres normalizarlo; recomiendo jsonb para Ola 1.)
+- **DNI = número (texto) en F8** (`datos.personas[].dni`); la **foto del DNI → F10** (Storage), vía
+  `datos.adjuntos` cuando exista.
 - **UI:** alta admin de la lista de personas; vista tutor firma la autorización con esa lista.
-- **i18n** + tests (validación DNI básica formato; el resto reusa F8-1).
+- **i18n** + tests (validación de formato de DNI; el resto reusa F8-1).
+
+### F8-2b — Reglas de régimen interno (tipo simple)
+
+**Objetivo:** `tipo='reglas_regimen_interno'` por niño — el centro publica el texto de las normas y el
+tutor lo firma/acepta. Es el **tipo más simple**: sin campos estructurados (`datos` vacío), sin
+adjuntos; solo texto + firma.
+
+- **Modelo:** reusa `autorizaciones`/`firmas_autorizacion` tal cual; `nino_id` por niño; vigencia
+  típica = el curso académico.
+- **UI/i18n/tests** mínimos, reusando todo F8-1 (publicar → firmar → roster). Por su baja superficie,
+  buen candidato para ir **justo después de F8-1**.
 
 ### F8-3a — Medicación (autorización firmada)
 
