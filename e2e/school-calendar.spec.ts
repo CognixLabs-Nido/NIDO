@@ -77,8 +77,9 @@ test.describe('Fase 4.5a — admin marca festivo (skip por defecto)', () => {
 
     await page.goto('/es/admin/calendario?anio=2027&mes=12')
 
-    // Click en el día 25 de diciembre 2027 (Navidad) → abre dialog.
+    // Click en el día 25 → panel del día; "Editar día" abre el dialog de tipo.
     await page.getByTestId('celda-2027-12-25').click()
+    await page.getByTestId('btn-editar-dia').click()
 
     // Seleccionar tipo festivo y guardar.
     await page.getByTestId('select-tipo-dia').click()
@@ -107,12 +108,10 @@ test.describe('Fase 4.5a — admin aplica rango (skip por defecto)', () => {
 
     await page.goto('/es/admin/calendario?anio=2027&mes=8')
 
-    // Click en 2027-08-01 (sin shift) para fijar diaActivo.
+    // Click en 2027-08-01 (sin shift) → panel del día; fija diaActivo (ancla del rango).
     await page.getByTestId('celda-2027-08-01').click()
-    // El dialog del día abre — cerramos para activar selección de rango.
-    await page.getByRole('button', { name: /cancelar/i }).click()
 
-    // Shift+click sobre 2027-08-10 → debería abrir dialog de rango.
+    // Shift+click sobre 2027-08-10 → abre el dialog de rango.
     await page.getByTestId('celda-2027-08-10').click({ modifiers: ['Shift'] })
     await expect(page.getByTestId('dialog-rango-confirmacion')).toBeVisible()
 

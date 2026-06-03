@@ -901,10 +901,7 @@
       "error_guardar": "No s'ha pogut guardar. Torna-ho a provar.",
       "error_eliminar": "No s'ha pogut eliminar. Torna-ho a provar."
     },
-    "widget_proximos_cerrados": {
-      "title": "Pròxims dies tancats",
-      "vacio_amable": "Sense tancaments previstos el pròxim mes."
-    }
+    "editar_dia": "Editar dia"
   },
   "menus": {
     "title": "Menús del centre",
@@ -1491,5 +1488,16 @@
       "invitados_anadidos": "Convidats afegits"
     },
     "badge_aria": "{n} convidacions pendents"
+  },
+  "inicio_resumen": {
+    "title": "Esta setmana",
+    "hoy": "Hui",
+    "resto_semana": "Resta de la setmana",
+    "vacio_hoy": "Res per a hui.",
+    "vacio_semana": "Res més esta setmana.",
+    "vacio_total": "Sense esdeveniments ni cites esta setmana.",
+    "ver_agenda": "Veure agenda",
+    "ver_calendario": "Veure calendari",
+    "todo_el_dia": "Tot el dia"
   }
 }

@@ -248,7 +248,7 @@ export function EventoFormDialog(props: Props) {
           {t('nuevo')}
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="overflow-hidden sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{esEdicion ? t('editar') : t('nuevo')}</DialogTitle>
         </DialogHeader>
@@ -256,251 +256,258 @@ export function EventoFormDialog(props: Props) {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4"
+            className="flex min-h-0 flex-1 flex-col gap-4"
             data-testid="evento-form"
           >
-            {!esEdicion && ambitos.length > 1 && (
-              <FormField
-                control={form.control}
-                name="ambito"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('form.ambito')}</FormLabel>
-                    <Select
-                      items={ambitoItems}
-                      value={field.value}
-                      onValueChange={(v) => onAmbitoChange(v as AmbitoEvento)}
-                    >
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-0.5">
+              {!esEdicion && ambitos.length > 1 && (
+                <FormField
+                  control={form.control}
+                  name="ambito"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('form.ambito')}</FormLabel>
+                      <Select
+                        items={ambitoItems}
+                        value={field.value}
+                        onValueChange={(v) => onAmbitoChange(v as AmbitoEvento)}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {ambitoItems.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {!esEdicion && ambito === 'aula' && (
+                <FormField
+                  control={form.control}
+                  name="aula_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('form.aula')}</FormLabel>
+                      <Select
+                        items={aulaItems}
+                        value={field.value ?? ''}
+                        onValueChange={(v) => field.onChange(v)}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full" data-testid="evento-aula-select">
+                            <SelectValue placeholder={t('form.aula_placeholder')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {aulaItems.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {!esEdicion && ambito === 'nino' && (
+                <FormField
+                  control={form.control}
+                  name="nino_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('form.nino')}</FormLabel>
+                      <Select
+                        items={ninoItems}
+                        value={field.value ?? ''}
+                        onValueChange={(v) => field.onChange(v)}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full" data-testid="evento-nino-select">
+                            <SelectValue placeholder={t('form.nino_placeholder')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {ninoItems.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="tipo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('form.tipo')}</FormLabel>
+                      <Select
+                        items={tipoItems}
+                        value={field.value}
+                        onValueChange={(v) => field.onChange(v)}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {tipoItems.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="titulo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('form.titulo')}</FormLabel>
                       <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
+                        <Input
+                          {...field}
+                          maxLength={200}
+                          placeholder={t('form.titulo_placeholder')}
+                        />
                       </FormControl>
-                      <SelectContent>
-                        {ambitoItems.map((item) => (
-                          <SelectItem key={item.value} value={item.value}>
-                            {item.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            {!esEdicion && ambito === 'aula' && (
-              <FormField
-                control={form.control}
-                name="aula_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('form.aula')}</FormLabel>
-                    <Select
-                      items={aulaItems}
-                      value={field.value ?? ''}
-                      onValueChange={(v) => field.onChange(v)}
-                    >
+                <FormField
+                  control={form.control}
+                  name="fecha"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('form.fecha')}</FormLabel>
                       <FormControl>
-                        <SelectTrigger className="w-full" data-testid="evento-aula-select">
-                          <SelectValue placeholder={t('form.aula_placeholder')} />
-                        </SelectTrigger>
+                        <Input {...field} type="date" />
                       </FormControl>
-                      <SelectContent>
-                        {aulaItems.map((item) => (
-                          <SelectItem key={item.value} value={item.value}>
-                            {item.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            {!esEdicion && ambito === 'nino' && (
-              <FormField
-                control={form.control}
-                name="nino_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('form.nino')}</FormLabel>
-                    <Select
-                      items={ninoItems}
-                      value={field.value ?? ''}
-                      onValueChange={(v) => field.onChange(v)}
-                    >
+                <FormField
+                  control={form.control}
+                  name="fecha_fin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('form.fecha_fin')}</FormLabel>
                       <FormControl>
-                        <SelectTrigger className="w-full" data-testid="evento-nino-select">
-                          <SelectValue placeholder={t('form.nino_placeholder')} />
-                        </SelectTrigger>
+                        <Input {...field} type="date" />
                       </FormControl>
-                      <SelectContent>
-                        {ninoItems.map((item) => (
-                          <SelectItem key={item.value} value={item.value}>
-                            {item.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="tipo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('form.tipo')}</FormLabel>
-                  <Select
-                    items={tipoItems}
-                    value={field.value}
-                    onValueChange={(v) => field.onChange(v)}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tipoItems.map((item) => (
-                        <SelectItem key={item.value} value={item.value}>
-                          {item.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="hora_inicio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('form.hora_inicio')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="time" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="titulo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('form.titulo')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} maxLength={200} placeholder={t('form.titulo_placeholder')} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="hora_fin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('form.hora_fin')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="time" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="fecha"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('form.fecha')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="date" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="lugar"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-2">
+                      <FormLabel>{t('form.lugar')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} maxLength={200} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-            <FormField
-              control={form.control}
-              name="fecha_fin"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('form.fecha_fin')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="date" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-2">
               <FormField
                 control={form.control}
-                name="hora_inicio"
+                name="descripcion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('form.hora_inicio')}</FormLabel>
+                    <FormLabel>{t('form.descripcion')}</FormLabel>
                     <FormControl>
-                      <Input {...field} type="time" />
+                      <Textarea {...field} rows={3} maxLength={2000} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
-                name="hora_fin"
+                name="requiere_confirmacion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('form.hora_fin')}</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="time" />
-                    </FormControl>
+                    <label className="flex items-center gap-2">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(checked) => field.onChange(checked === true)}
+                          data-testid="evento-requiere-confirmacion"
+                        />
+                      </FormControl>
+                      <FormLabel className="!mt-0">{t('form.requiere_confirmacion')}</FormLabel>
+                    </label>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="lugar"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('form.lugar')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} maxLength={200} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="descripcion"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('form.descripcion')}</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} rows={3} maxLength={2000} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="requiere_confirmacion"
-              render={({ field }) => (
-                <FormItem>
-                  <label className="flex items-center gap-2">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={(checked) => field.onChange(checked === true)}
-                        data-testid="evento-requiere-confirmacion"
-                      />
-                    </FormControl>
-                    <FormLabel className="!mt-0">{t('form.requiere_confirmacion')}</FormLabel>
-                  </label>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button type="submit" disabled={pending} className="w-full">
+            <Button type="submit" disabled={pending} className="w-full shrink-0">
               {esEdicion
                 ? pending
                   ? t('acciones.guardando')

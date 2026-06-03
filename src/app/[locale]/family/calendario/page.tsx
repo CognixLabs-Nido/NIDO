@@ -68,6 +68,7 @@ export default async function FamilyCalendarioPage({ params, searchParams }: Pag
         locale={locale as 'es' | 'en' | 'va'}
         esAdmin={rol === 'admin'}
         esFamilia={rol === 'tutor_legal' || rol === 'autorizado'}
+        centroId={centroId}
       />
 
       <LeyendaTiposDia />

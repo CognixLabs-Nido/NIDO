@@ -901,10 +901,7 @@
       "error_guardar": "No se pudo guardar. Inténtalo de nuevo.",
       "error_eliminar": "No se pudo eliminar. Inténtalo de nuevo."
     },
-    "widget_proximos_cerrados": {
-      "title": "Próximos días cerrados",
-      "vacio_amable": "Sin cierres previstos el próximo mes."
-    }
+    "editar_dia": "Editar día"
   },
   "menus": {
     "title": "Menús del centro",
@@ -1491,5 +1488,16 @@
       "invitados_anadidos": "Invitados añadidos"
     },
     "badge_aria": "{n} invitaciones pendientes"
+  },
+  "inicio_resumen": {
+    "title": "Esta semana",
+    "hoy": "Hoy",
+    "resto_semana": "Resto de la semana",
+    "vacio_hoy": "Nada para hoy.",
+    "vacio_semana": "Nada más esta semana.",
+    "vacio_total": "Sin eventos ni citas esta semana.",
+    "ver_agenda": "Ver agenda",
+    "ver_calendario": "Ver calendario",
+    "todo_el_dia": "Todo el día"
   }
 }

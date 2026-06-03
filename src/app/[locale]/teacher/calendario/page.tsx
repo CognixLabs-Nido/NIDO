@@ -77,6 +77,7 @@ export default async function TeacherCalendarioPage({ params, searchParams }: Pa
         locale={locale as 'es' | 'en' | 'va'}
         esAdmin={esAdmin}
         esFamilia={false}
+        centroId={centroId}
       />
 
       <LeyendaTiposDia />

@@ -901,10 +901,7 @@
       "error_guardar": "Couldn't save. Try again.",
       "error_eliminar": "Couldn't delete. Try again."
     },
-    "widget_proximos_cerrados": {
-      "title": "Upcoming closed days",
-      "vacio_amable": "No closures planned for the next month."
-    }
+    "editar_dia": "Edit day"
   },
   "menus": {
     "title": "Centre's menus",
@@ -1491,5 +1488,16 @@
       "invitados_anadidos": "Guests added"
     },
     "badge_aria": "{n} pending invitations"
+  },
+  "inicio_resumen": {
+    "title": "This week",
+    "hoy": "Today",
+    "resto_semana": "Rest of the week",
+    "vacio_hoy": "Nothing for today.",
+    "vacio_semana": "Nothing else this week.",
+    "vacio_total": "No events or appointments this week.",
+    "ver_agenda": "View agenda",
+    "ver_calendario": "View calendar",
+    "todo_el_dia": "All day"
   }
 }
