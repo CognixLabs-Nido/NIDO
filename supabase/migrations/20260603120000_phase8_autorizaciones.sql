@@ -20,7 +20,8 @@
 --   politica_firmantes  = uno_principal | todos_los_principales | cualquiera (D5)
 --
 -- Firma: nombre_tecleado (acto afirmativo) + firma_imagen (trazo dibujado con el
---   dedo, SVG/base64, EN BD por ser pequena) + texto_hash (SHA-256 del texto).
+--   dedo, SVG/base64, EN BD por ser pequena; OBLIGATORIO si decision='firmado',
+--   opcional en rechazo/revocacion) + texto_hash (SHA-256 del texto).
 -- Doble firma por nino: ninos.requiere_ambos_firmantes (el REQUISITO, no el motivo
 --   — minimizacion). El action pone firmantes_requeridos='todos_los_principales'.
 -- Retencion de firmas: 12 meses (limpieza fina en F11/RGPD).
@@ -140,11 +141,13 @@ CREATE TABLE public.firmas_autorizacion (
   firmado_at      timestamptz NOT NULL DEFAULT now(),
   created_at      timestamptz NOT NULL DEFAULT now(),
 
-  CONSTRAINT firmas_hash_sha256       CHECK (texto_hash ~ '^[0-9a-f]{64}$'),
-  CONSTRAINT firmas_nombre_len        CHECK (char_length(nombre_tecleado) BETWEEN 1 AND 200),
-  CONSTRAINT firmas_firma_imagen_len  CHECK (firma_imagen IS NULL OR char_length(firma_imagen) <= 500000),
-  CONSTRAINT firmas_comentario_len    CHECK (comentario IS NULL OR char_length(comentario) <= 500),
-  CONSTRAINT firmas_version_len       CHECK (char_length(texto_version) BETWEEN 1 AND 40)
+  CONSTRAINT firmas_hash_sha256        CHECK (texto_hash ~ '^[0-9a-f]{64}$'),
+  CONSTRAINT firmas_nombre_len         CHECK (char_length(nombre_tecleado) BETWEEN 1 AND 200),
+  CONSTRAINT firmas_firma_imagen_len   CHECK (firma_imagen IS NULL OR char_length(firma_imagen) <= 500000),
+  -- Trazo OBLIGATORIO al firmar; opcional en rechazo/revocación (no hay firma que dibujar).
+  CONSTRAINT firmas_firma_imagen_req   CHECK (decision <> 'firmado' OR firma_imagen IS NOT NULL),
+  CONSTRAINT firmas_comentario_len     CHECK (comentario IS NULL OR char_length(comentario) <= 500),
+  CONSTRAINT firmas_version_len        CHECK (char_length(texto_version) BETWEEN 1 AND 40)
 );
 
 COMMENT ON TABLE public.firmas_autorizacion IS
