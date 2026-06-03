@@ -190,52 +190,30 @@ export function CitaFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="overflow-hidden sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t('alta.titulo')}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="tipo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('campos.tipo')}</FormLabel>
-                  <Select items={tipoItems} value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tipoItems.map((item) => (
-                        <SelectItem key={item.value} value={item.value}>
-                          {item.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {tipo === 'reunion_familia' && (
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex min-h-0 flex-1 flex-col gap-4"
+          >
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-0.5">
               <FormField
                 control={form.control}
-                name="nino_id"
+                name="tipo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('campos.nino')}</FormLabel>
-                    <Select items={ninoItems} value={field.value} onValueChange={field.onChange}>
+                    <FormLabel>{t('campos.tipo')}</FormLabel>
+                    <Select items={tipoItems} value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={t('campos.nino_placeholder')} />
+                          <SelectValue />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {ninoItems.map((item) => (
+                        {tipoItems.map((item) => (
                           <SelectItem key={item.value} value={item.value}>
                             {item.label}
                           </SelectItem>
@@ -246,136 +224,191 @@ export function CitaFormDialog({
                   </FormItem>
                 )}
               />
-            )}
 
-            {tipo === 'reunion_clase' && (
-              <FormField
-                control={form.control}
-                name="aula_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('campos.aula')}</FormLabel>
-                    <Select items={aulaItems} value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('campos.aula_placeholder')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {aulaItems.map((item) => (
-                          <SelectItem key={item.value} value={item.value}>
-                            {item.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {tipo === 'visita' && (
-              <>
+              {tipo === 'reunion_familia' && (
                 <FormField
                   control={form.control}
-                  name="nombre_externo"
+                  name="nino_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('campos.externo')}</FormLabel>
+                      <FormLabel>{t('campos.nino')}</FormLabel>
+                      <Select items={ninoItems} value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('campos.nino_placeholder')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {ninoItems.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {tipo === 'reunion_clase' && (
+                <FormField
+                  control={form.control}
+                  name="aula_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('campos.aula')}</FormLabel>
+                      <Select items={aulaItems} value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('campos.aula_placeholder')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {aulaItems.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {tipo === 'visita' && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="nombre_externo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('campos.externo')}</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder={t('campos.externo_placeholder')} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {profes.length > 0 && (
+                    <FormField
+                      control={form.control}
+                      name="profe_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('campos.staff_opcional')}</FormLabel>
+                          <Select
+                            items={profeItems}
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={t('campos.staff_placeholder')} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {profeItems.map((item) => (
+                                <SelectItem key={item.value} value={item.value}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </>
+              )}
+
+              {tipo === 'reunion_claustro' && (
+                <p className="text-muted-foreground text-sm">{t('alta.claustro_hint')}</p>
+              )}
+
+              <FormField
+                control={form.control}
+                name="titulo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('campos.titulo')}</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-3 gap-3">
+                <FormField
+                  control={form.control}
+                  name="fecha"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('campos.fecha')}</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder={t('campos.externo_placeholder')} />
+                        <Input type="date" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                {profes.length > 0 && (
-                  <FormField
-                    control={form.control}
-                    name="profe_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('campos.staff_opcional')}</FormLabel>
-                        <Select
-                          items={profeItems}
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t('campos.staff_placeholder')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {profeItems.map((item) => (
-                              <SelectItem key={item.value} value={item.value}>
-                                {item.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </>
-            )}
+                <FormField
+                  control={form.control}
+                  name="hora_inicio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('campos.hora_inicio')}</FormLabel>
+                      <FormControl>
+                        <Input type="time" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="hora_fin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('campos.hora_fin')}</FormLabel>
+                      <FormControl>
+                        <Input type="time" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-            {tipo === 'reunion_claustro' && (
-              <p className="text-muted-foreground text-sm">{t('alta.claustro_hint')}</p>
-            )}
-
-            <FormField
-              control={form.control}
-              name="titulo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('campos.titulo')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-3 gap-3">
               <FormField
                 control={form.control}
-                name="fecha"
+                name="lugar"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('campos.fecha')}</FormLabel>
+                    <FormLabel>{t('campos.lugar')}</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
-                name="hora_inicio"
+                name="descripcion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('campos.hora_inicio')}</FormLabel>
+                    <FormLabel>{t('campos.descripcion')}</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="hora_fin"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('campos.hora_fin')}</FormLabel>
-                    <FormControl>
-                      <Input type="time" {...field} />
+                      <Textarea rows={3} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -383,35 +416,7 @@ export function CitaFormDialog({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="lugar"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('campos.lugar')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="descripcion"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('campos.descripcion')}</FormLabel>
-                  <FormControl>
-                    <Textarea rows={3} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex shrink-0 justify-end gap-2 border-t pt-3">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 {t('alta.cancelar')}
               </Button>
