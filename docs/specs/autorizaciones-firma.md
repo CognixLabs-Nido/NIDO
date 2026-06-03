@@ -10,10 +10,12 @@ related_specs: [scope-ola-1, agenda-citas, f7-calendario, core-entities]
 
 # Spec — Fase 8: Autorizaciones + firma digital
 
-> **Checkpoint A** (este documento): auditoría de lo reutilizable + propuesta de alcance, modelo
-> de firma y decisiones abiertas con recomendación. **NO se implementa nada.** El responsable
-> cierra las decisiones 🔒 D1–D9 y valida los **flags legales ⚖️**; entonces se redacta el detalle
-> por sub-fases (Checkpoint B).
+> **Checkpoint A cerrado** (responsable, 2026-06-03): decisiones **🔒 D1–D9 cerradas** (ver §
+> _Decisiones cerradas_). Este documento incluye ya el **detalle de Checkpoint B por sub-fases**
+> (ver § _Checkpoint B — detalle_) a la espera del OK del responsable. **NO se implementa nada
+> todavía.** Los **flags legales ⚖️** siguen pendientes de abogado; los textos legales arrancan
+> como placeholder `PENDIENTE` y una autorización con texto placeholder **no es firmable** (guard a
+> nivel de BD), así que el proyecto no se bloquea esperando al abogado.
 
 > ⚖️ **AVISO LEGAL TRANSVERSAL.** Esta spec describe un **mecanismo técnico** para recoger y
 > conservar autorizaciones con un registro auditable de quién/cuándo/qué se firmó. **NO certifica
@@ -300,6 +302,218 @@ para salida y medicación.**
   "estado de firma del niño" según `firmantes_requeridos`.
 - **E2E:** admin publica autorización de salida → tutor firma → estado pasa a firmado y queda en
   audit; tutor revoca → estado refleja revocado conservando histórico.
+
+## Decisiones cerradas (responsable, 2026-06-03)
+
+| #      | Decisión                      | Cierre                                                                                                                                                                                    |
+| ------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D1** | Alcance LEAN                  | salida + medicación + recogida. **`atencion_medica_urgencia` queda pendiente de decidir**; el modelo (ENUM `tipo_autorizacion`) lo admitirá luego con `ALTER TYPE … ADD VALUE` (aditivo). |
+| **D2** | Mecanismo de firma            | firma electrónica **simple** (checkbox + nombre tecleado + **hash SHA-256 del texto** + IP/UA). **SIN canvas** en Ola 1.                                                                  |
+| **D3** | Vinculación                   | `tipo_autorizacion` + `evento_id` opcional.                                                                                                                                               |
+| **D4** | Caducidad/revocación          | `vigencia_*` + revocar = **fila nueva** (append-only).                                                                                                                                    |
+| **D5** | Multi-tutor                   | `firmantes_requeridos` configurable, **default `uno_principal`** (valor legal por tipo ⚖️ a abogado).                                                                                     |
+| **D6** | Medicación doble confirmación | el **log de administración (2 personas) DENTRO**, en sub-fase **F8-3b**.                                                                                                                  |
+| **D7** | Datos admin tutor             | DNI **solo si el abogado lo exige** → **F8-4 condicional**.                                                                                                                               |
+| **D8** | Texto legal                   | **monolingüe** (idioma de firma) + UI trilingüe.                                                                                                                                          |
+| **D9** | Retención/anulación           | conservar firmas, marcar autorización `anulada`; retención fina → F11.                                                                                                                    |
+
+### GUARD crítico — texto `PENDIENTE` no firmable (a nivel de BD)
+
+Los textos legales de los 3 tipos arrancan como **placeholder `PENDIENTE`** (es/en/va) para no parar
+el proyecto. **Una autorización cuyo texto siga en placeholder NO debe poder firmarse de verdad**,
+porque el hash debe ser del **texto real**. Se enforza así (no solo en UI):
+
+- Columna `autorizaciones.texto_definitivo boolean NOT NULL DEFAULT false`.
+- **CHECK** de BD: `estado = 'publicada' ⇒ texto_definitivo = true` — no se puede **publicar** una
+  autorización con texto placeholder.
+- Helper `autorizacion_firmable(id)` (usado en la RLS de `INSERT` de firmas) exige
+  `estado='publicada' AND texto_definitivo AND now() dentro de vigencia`. ⇒ **placeholder = no
+  firmable** por RLS, no solo por UI.
+- Flujo: el centro crea la autorización en `borrador` con texto `PENDIENTE`; cuando llegan los
+  textos reales, se **reemplazan**, se marca `texto_definitivo=true` y se **publica** → ahí pasa a
+  firmable. El hash de cada firma es siempre del texto real vigente en el momento de firmar.
+
+---
+
+## Checkpoint B — detalle por sub-fases
+
+> Pendiente del **OK del responsable**. Patrón de siempre: migración **aditiva**, RLS **row-aware**,
+> i18n **es/en/va**, tests de aislamiento bloqueantes. Cada sub-fase es un PR reviewable.
+
+### F8-0 — Migración + RLS + tests (sin UI)
+
+**Objetivo:** las tablas, ENUMs, helpers y políticas que sostienen todo F8, con tests de aislamiento
+verdes contra el remoto. Reviewable: la migración + la suite RLS.
+
+**ENUMs nuevos:**
+
+- `tipo_autorizacion`: `salida | medicacion | recogida` _(reservado futuro: `atencion_medica_urgencia`)_.
+- `autorizacion_estado`: `borrador | publicada | anulada`.
+- `firma_decision`: `firmado | rechazado | revocado`.
+- `firmantes_requeridos`: `uno_principal | todos_los_principales | cualquiera`.
+
+**`autorizaciones`** (auditada):
+
+```
+id uuid PK
+centro_id        uuid NOT NULL → centros(id) ON DELETE CASCADE
+tipo             tipo_autorizacion NOT NULL
+evento_id        uuid → eventos(id) ON DELETE CASCADE      -- solo 'salida'
+nino_id          uuid → ninos(id)  ON DELETE CASCADE       -- 'medicacion'/'recogida'
+aula_id          uuid → aulas(id)  ON DELETE CASCADE        -- reservado (ámbito aula futuro)
+titulo           text NOT NULL                              -- 1..200
+texto            text NOT NULL                              -- arranca 'PENDIENTE'
+texto_version    text NOT NULL                              -- p.ej. 'v0-pendiente' / 'v1'
+texto_definitivo boolean NOT NULL DEFAULT false             -- GUARD D-texto
+datos            jsonb NOT NULL DEFAULT '{}'::jsonb         -- campos estructurados (medicación/recogida)
+firmantes_requeridos firmantes_requeridos NOT NULL DEFAULT 'uno_principal'
+vigencia_desde   date
+vigencia_hasta   date
+estado           autorizacion_estado NOT NULL DEFAULT 'borrador'
+creado_por       uuid NOT NULL → usuarios(id) ON DELETE RESTRICT
+created_at/updated_at timestamptz
+-- CHECK tipo↔referencias: salida ⇒ evento_id NOT NULL, nino_id NULL;
+--                          medicacion/recogida ⇒ evento_id NULL, nino_id NOT NULL
+-- CHECK publicar_requiere_texto: estado='publicada' ⇒ texto_definitivo
+-- CHECK vigencia: vigencia_hasta IS NULL OR vigencia_desde IS NULL OR vigencia_hasta >= vigencia_desde
+-- CHECK longitudes titulo/texto
+```
+
+**`firmas_autorizacion`** (auditada, **append-only, inmutable**):
+
+```
+id uuid PK
+autorizacion_id  uuid NOT NULL → autorizaciones(id) ON DELETE CASCADE
+nino_id          uuid NOT NULL → ninos(id) ON DELETE CASCADE
+firmante_id      uuid NOT NULL → usuarios(id) ON DELETE RESTRICT
+rol_firmante     tipo_vinculo NOT NULL                      -- snapshot del vínculo al firmar
+decision         firma_decision NOT NULL
+texto_hash       text NOT NULL                              -- SHA-256 hex del texto exacto firmado
+texto_version    text NOT NULL                              -- snapshot de la versión
+nombre_tecleado  text NOT NULL
+comentario       text                                       -- <=500
+ip_address       inet
+user_agent       text
+firmado_at       timestamptz NOT NULL DEFAULT now()
+created_at       timestamptz
+-- SIN UNIQUE: el historial es append-only; estado vigente = última fila por
+--   (autorizacion_id, nino_id, firmante_id) por firmado_at.
+-- UPDATE/DELETE: SIN policy → default DENY.
+```
+
+**Helpers (`STABLE SECURITY DEFINER SET search_path = public`, row-aware donde aplica):**
+
+- `usuario_es_audiencia_autorizacion_row(p_centro_id, p_tipo, p_evento_id, p_nino_id, p_aula_id)` →
+  boolean. **Row-aware** (recibe campos, no re-lee `autorizaciones`) → evita MVCC en `INSERT…RETURNING`.
+- `autorizacion_aplica_a_nino(p_autorizacion_id, p_nino_id)` → boolean. Lee `autorizaciones`/`eventos`/
+  `matriculas`/`ninos` (otras tablas relativas a `firmas_autorizacion`) → sin MVCC. Para `salida`
+  delega en la audiencia del evento (`evento_aplica_a_nino`, reuso F7); para `medicacion`/`recogida`
+  compara `nino_id`.
+- `autorizacion_firmable(p_autorizacion_id)` → boolean: `estado='publicada' AND texto_definitivo AND
+(vigencia_desde IS NULL OR hoy_madrid() >= vigencia_desde) AND (vigencia_hasta IS NULL OR
+hoy_madrid() <= vigencia_hasta)`. **Enforza el guard placeholder.**
+
+**RLS:**
+
+- `autorizaciones` — SELECT: `usuario_es_audiencia_autorizacion_row(...)` (admin centro, profe del
+  niño/aula, tutor del niño). INSERT: `creado_por = auth.uid() AND (es_admin(centro_id) OR (tipo='salida'
+AND es_profe_de_aula(aula_del_evento) ...))` (espejo `eventos_insert`). UPDATE: `es_admin(centro_id)
+OR creado_por = auth.uid()` (defensa simétrica); la **inmutabilidad tras firmas** y el límite de
+  columnas los enforza el server action (+ trigger opcional que bloquea editar `texto` si hay firmas).
+  DELETE: DENY.
+- `firmas_autorizacion` — SELECT: `firmante_id = auth.uid() OR es_tutor_de(nino_id) OR
+es_profe_de_nino(nino_id) OR es_admin(centro_de_nino(nino_id))`. INSERT: `es_tutor_de(nino_id) AND
+firmante_id = auth.uid() AND autorizacion_aplica_a_nino(autorizacion_id, nino_id) AND
+autorizacion_firmable(autorizacion_id)`. UPDATE/DELETE: **DENY** (revocar = fila nueva).
+- Audit: triggers en ambas tablas (`centro_id` directo / vía `centro_de_nino`).
+
+**Tests RLS (bloqueantes):** tutor de A no firma por niño de B; firma **inmutable** (UPDATE/DELETE
+denegados); **append** de revocación permitido; **placeholder no firmable** (`texto_definitivo=false`
+⇒ INSERT de firma rechazado por RLS); no se puede **publicar** con `texto_definitivo=false` (CHECK);
+profe ve el roster pero no firma; autorizado sin vínculo de tutor no firma; firma **fuera de
+vigencia** rechazada; `.insert().select()` en ambas tablas (regresión MVCC).
+
+**Migración:** `20260603hhmmss_phase8_autorizaciones.sql`. La aplica el responsable por SQL Editor
+(bug SIGILL del CLI); tras aplicarla: `db:types` + typecheck.
+
+### F8-1 — Salida / excursión (primer tipo end-to-end)
+
+**Objetivo:** flujo completo del tipo `salida` colgando de un `evento` (`tipo='excursion'`), reusando
+la audiencia por ámbito de F7.
+
+- **Server actions** (`'use server'`): `crearAutorizacion` (admin/profe), `publicarAutorizacion`
+  (exige `texto_definitivo`), `anularAutorizacion`, `firmarAutorizacion`/`rechazarAutorizacion`/
+  `revocarFirma` (tutor). Patrón Result; `.select().maybeSingle()` (gotcha "USING falso → 0 filas").
+  El hash SHA-256 del texto se computa **server-side** al firmar y se compara con el de la
+  autorización vigente (integridad).
+- **Queries** (server-only): `getAutorizacionDetalle` (doc + roster de firmas por niño, calcula el
+  estado de firma según `firmantes_requeridos`), `getAutorizacionesRango`/por evento.
+- **Rutas/UI:** en el detalle del evento (`CalendarioConEventos` / `EventoDetalleDialog`) → sección
+  "Autorización" cuando la hay; vista tutor con el texto + checkbox + nombre tecleado + firmar/
+  rechazar; vista admin/profe con roster (firmado/pendiente/rechazado/revocado). Server Components +
+  un Client para el acto de firma.
+- **i18n** `autorizaciones.*` (es/en/va): chrome de UI. El **texto legal NO es i18n** (es el campo
+  `texto`, monolingüe, hasheado) — D8. Placeholders `PENDIENTE` para los textos de los 3 tipos.
+- **Build** obligatorio (toca `'use server'`).
+- **Tests:** unit (hash estable/verificable; nombre tecleado ↔ perfil; cálculo de estado por
+  `firmantes_requeridos`); E2E gateado (admin publica salida → tutor firma → estado firmado + audit;
+  revoca → refleja revocado conservando histórico).
+
+### F8-2 — Recogida (personas autorizadas)
+
+**Objetivo:** autorización `tipo='recogida'` por niño, con **lista de personas** (nombre + DNI) que
+el tutor autoriza a recoger; firmada.
+
+- **Modelo:** la lista vive en `autorizaciones.datos` jsonb (`{ personas: [{ nombre, dni }] }`); se
+  renderiza dentro del `texto` que se hashea (la lista forma parte de lo firmado). _No requiere tabla
+  nueva._ (Alternativa tabla hija `personas_autorizadas_recogida` si se prefiere — 🔒 menor a decidir
+  en B si quieres normalizarlo; recomiendo jsonb para Ola 1.)
+- **UI:** alta admin de la lista de personas; vista tutor firma la autorización con esa lista.
+- **i18n** + tests (validación DNI básica formato; el resto reusa F8-1).
+
+### F8-3a — Medicación (autorización firmada)
+
+**Objetivo:** `tipo='medicacion'` con campos estructurados en `datos` jsonb: `{ medicamento, dosis,
+via, pauta_horaria, fecha_inicio, fecha_fin, observaciones }`, renderizados en el `texto` firmado.
+
+- **Modelo:** reusa `autorizaciones`/`firmas_autorizacion`; `nino_id` por niño; vigencia = rango de
+  la pauta. No sustituye `info_medica_emergencia.medicacion_habitual` (que sigue siendo el dato de
+  emergencia).
+- **UI/i18n/tests** análogos a F8-1, con el formulario estructurado de medicación.
+
+### F8-3b — Log de administración con doble confirmación (D6, DENTRO)
+
+**Objetivo:** registro **operativo** de cada administración con **regla de dos personas** (quien
+administra ≠ quien confirma). Sobre una autorización de medicación **firmada y vigente**.
+
+- **Migración aditiva** `…_phase8_administraciones.sql`. **`administraciones_medicacion`** (auditada):
+  `id, autorizacion_id → autorizaciones, nino_id, centro_id, administrado_por → usuarios,
+administrado_at, dosis_administrada, observaciones, confirmado_por → usuarios (NULL=pendiente),
+confirmado_at`. **CHECK `confirmado_por <> administrado_por`** (dos personas). Estado derivado:
+  `confirmado_por IS NULL ⇒ pendiente_confirmacion`.
+- **RLS:** SELECT profe/admin del niño. INSERT: profe/admin del centro, `administrado_por=auth.uid()`,
+  **solo si existe firma de medicación vigente** para el niño (helper `medicacion_autorizada_vigente(
+nino_id)`). UPDATE (confirmar): profe/admin, `confirmado_por=auth.uid() AND confirmado_por <>
+administrado_por`, `.maybeSingle()`. DELETE: DENY.
+- **Tests:** una persona no puede confirmar su propia administración; sin autorización firmada vigente
+  no se puede registrar; aislamiento por centro.
+
+> ⚠️ F8-3b es **registro de seguridad operativo**, NO la firma legal. La validez de la pauta y si
+> requiere prescripción médica adjunta es ⚖️ (abogado/sanitario).
+
+### F8-4 — Datos administrativos del tutor (condicional, ⚖️)
+
+**Solo si el abogado exige DNI/identificación** para la validez de la firma (🔒 D7). Migración
+aditiva: `usuarios.dni`/`usuarios.direccion` o tabla `tutor_datos` (RLS self + admin). Si el abogado
+dice que la firma simple basta sin DNI, **esta sub-fase no se hace**.
+
+### Cierre
+
+ADR de la fase (registrando **la respuesta del abogado** a los puntos ⚖️ tal como llegue),
+`data-model.md` + `rls-policies.md` actualizados, Checkpoint C (barrido), entrada en
+`progress.md`. **El merge lo hace el responsable.**
+
+---
 
 ## Referencias
 
