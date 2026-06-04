@@ -337,6 +337,105 @@ export type Database = {
         }
         Relationships: []
       }
+      autorizaciones: {
+        Row: {
+          aula_id: string | null
+          centro_id: string
+          creado_por: string
+          created_at: string
+          datos: Json
+          estado: Database['public']['Enums']['autorizacion_estado']
+          evento_id: string | null
+          firmantes_requeridos: Database['public']['Enums']['politica_firmantes']
+          id: string
+          nino_id: string | null
+          texto: string
+          texto_definitivo: boolean
+          texto_version: string
+          tipo: Database['public']['Enums']['tipo_autorizacion']
+          titulo: string
+          updated_at: string
+          vigencia_desde: string | null
+          vigencia_hasta: string | null
+        }
+        Insert: {
+          aula_id?: string | null
+          centro_id: string
+          creado_por: string
+          created_at?: string
+          datos?: Json
+          estado?: Database['public']['Enums']['autorizacion_estado']
+          evento_id?: string | null
+          firmantes_requeridos?: Database['public']['Enums']['politica_firmantes']
+          id?: string
+          nino_id?: string | null
+          texto: string
+          texto_definitivo?: boolean
+          texto_version?: string
+          tipo: Database['public']['Enums']['tipo_autorizacion']
+          titulo: string
+          updated_at?: string
+          vigencia_desde?: string | null
+          vigencia_hasta?: string | null
+        }
+        Update: {
+          aula_id?: string | null
+          centro_id?: string
+          creado_por?: string
+          created_at?: string
+          datos?: Json
+          estado?: Database['public']['Enums']['autorizacion_estado']
+          evento_id?: string | null
+          firmantes_requeridos?: Database['public']['Enums']['politica_firmantes']
+          id?: string
+          nino_id?: string | null
+          texto?: string
+          texto_definitivo?: boolean
+          texto_version?: string
+          tipo?: Database['public']['Enums']['tipo_autorizacion']
+          titulo?: string
+          updated_at?: string
+          vigencia_desde?: string | null
+          vigencia_hasta?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'autorizaciones_aula_id_fkey'
+            columns: ['aula_id']
+            isOneToOne: false
+            referencedRelation: 'aulas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'autorizaciones_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'autorizaciones_creado_por_fkey'
+            columns: ['creado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'autorizaciones_evento_id_fkey'
+            columns: ['evento_id']
+            isOneToOne: false
+            referencedRelation: 'eventos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'autorizaciones_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       biberones: {
         Row: {
           agenda_id: string
@@ -1094,6 +1193,82 @@ export type Database = {
           },
         ]
       }
+      firmas_autorizacion: {
+        Row: {
+          autorizacion_id: string
+          comentario: string | null
+          created_at: string
+          decision: Database['public']['Enums']['firma_decision']
+          firma_imagen: string | null
+          firmado_at: string
+          firmante_id: string
+          id: string
+          ip_address: unknown
+          nino_id: string
+          nombre_tecleado: string
+          rol_firmante: Database['public']['Enums']['tipo_vinculo']
+          texto_hash: string
+          texto_version: string
+          user_agent: string | null
+        }
+        Insert: {
+          autorizacion_id: string
+          comentario?: string | null
+          created_at?: string
+          decision: Database['public']['Enums']['firma_decision']
+          firma_imagen?: string | null
+          firmado_at?: string
+          firmante_id: string
+          id?: string
+          ip_address?: unknown
+          nino_id: string
+          nombre_tecleado: string
+          rol_firmante: Database['public']['Enums']['tipo_vinculo']
+          texto_hash: string
+          texto_version: string
+          user_agent?: string | null
+        }
+        Update: {
+          autorizacion_id?: string
+          comentario?: string | null
+          created_at?: string
+          decision?: Database['public']['Enums']['firma_decision']
+          firma_imagen?: string | null
+          firmado_at?: string
+          firmante_id?: string
+          id?: string
+          ip_address?: unknown
+          nino_id?: string
+          nombre_tecleado?: string
+          rol_firmante?: Database['public']['Enums']['tipo_vinculo']
+          texto_hash?: string
+          texto_version?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'firmas_autorizacion_autorizacion_id_fkey'
+            columns: ['autorizacion_id']
+            isOneToOne: false
+            referencedRelation: 'autorizaciones'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'firmas_autorizacion_firmante_id_fkey'
+            columns: ['firmante_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'firmas_autorizacion_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       info_medica_emergencia: {
         Row: {
           alergias_graves: string | null
@@ -1453,6 +1628,7 @@ export type Database = {
           nacionalidad: string | null
           nombre: string
           notas_admin: string | null
+          requiere_ambos_firmantes: boolean
           sexo: Database['public']['Enums']['nino_sexo'] | null
           updated_at: string
         }
@@ -1468,6 +1644,7 @@ export type Database = {
           nacionalidad?: string | null
           nombre: string
           notas_admin?: string | null
+          requiere_ambos_firmantes?: boolean
           sexo?: Database['public']['Enums']['nino_sexo'] | null
           updated_at?: string
         }
@@ -1483,6 +1660,7 @@ export type Database = {
           nacionalidad?: string | null
           nombre?: string
           notas_admin?: string | null
+          requiere_ambos_firmantes?: boolean
           sexo?: Database['public']['Enums']['nino_sexo'] | null
           updated_at?: string
         }
@@ -1944,6 +2122,14 @@ export type Database = {
     }
     Functions: {
       _get_medical_key: { Args: never; Returns: string }
+      autorizacion_aplica_a_nino: {
+        Args: { p_autorizacion_id: string; p_nino_id: string }
+        Returns: boolean
+      }
+      autorizacion_firmable: {
+        Args: { p_autorizacion_id: string }
+        Returns: boolean
+      }
       centro_abierto: {
         Args: { p_centro_id: string; p_fecha: string }
         Returns: boolean
@@ -1955,6 +2141,7 @@ export type Database = {
         Args: { p_conversacion_id: string }
         Returns: string
       }
+      centro_de_evento: { Args: { p_evento_id: string }; Returns: string }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
       centro_de_plantilla: { Args: { p_plantilla_id: string }; Returns: string }
       contar_invitaciones_pendientes: { Args: never; Returns: number }
@@ -1963,6 +2150,7 @@ export type Database = {
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
       es_profe_de_aula: { Args: { p_aula_id: string }; Returns: boolean }
+      es_profe_de_evento: { Args: { p_evento_id: string }; Returns: boolean }
       es_profe_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
       es_profe_en_centro: { Args: { p_centro_id: string }; Returns: boolean }
       es_tutor_de: { Args: { p_nino_id: string }; Returns: boolean }
@@ -2057,6 +2245,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      usuario_es_audiencia_autorizacion_row: {
+        Args: {
+          p_aula_id: string
+          p_centro_id: string
+          p_evento_id: string
+          p_nino_id: string
+          p_tipo: Database['public']['Enums']['tipo_autorizacion']
+        }
+        Returns: boolean
+      }
       usuario_es_audiencia_cita_row: {
         Args: {
           p_centro_id: string
@@ -2083,6 +2281,7 @@ export type Database = {
       ambito_anuncio: 'aula' | 'centro'
       ambito_evento: 'centro' | 'aula' | 'nino'
       audit_accion: 'INSERT' | 'UPDATE' | 'DELETE'
+      autorizacion_estado: 'borrador' | 'publicada' | 'anulada'
       calidad_sueno: 'profundo' | 'tranquilo' | 'intermitente' | 'nada'
       cantidad_comida: 'todo' | 'mayoria' | 'mitad' | 'poco' | 'nada'
       cantidad_deposicion: 'mucha' | 'normal' | 'poca'
@@ -2096,6 +2295,7 @@ export type Database = {
       estado_general_agenda: 'bien' | 'regular' | 'mal' | 'mixto'
       estado_plantilla_menu: 'borrador' | 'publicada' | 'archivada'
       evento_estado: 'programado' | 'cancelado'
+      firma_decision: 'firmado' | 'rechazado' | 'revocado'
       humor_agenda: 'feliz' | 'tranquilo' | 'inquieto' | 'triste' | 'cansado'
       lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
       momento_comida: 'desayuno' | 'media_manana' | 'comida' | 'merienda'
@@ -2112,6 +2312,7 @@ export type Database = {
         | 'hermano'
         | 'cuidadora'
         | 'otro'
+      politica_firmantes: 'uno_principal' | 'todos_los_principales' | 'cualquiera'
       recordatorio_destinatario:
         | 'familia_individual'
         | 'familias_aula'
@@ -2129,6 +2330,12 @@ export type Database = {
         | 'religiosa_halal'
         | 'religiosa_kosher'
         | 'otra'
+      tipo_autorizacion:
+        | 'salida'
+        | 'medicacion'
+        | 'recogida'
+        | 'reglas_regimen_interno'
+        | 'autorizacion_imagenes'
       tipo_biberon: 'materna' | 'formula' | 'agua' | 'infusion' | 'zumo'
       tipo_cita: 'reunion_familia' | 'reunion_clase' | 'reunion_claustro' | 'visita'
       tipo_conversacion: 'profe_familia' | 'admin_familia'
@@ -2274,6 +2481,7 @@ export const Constants = {
       ambito_anuncio: ['aula', 'centro'],
       ambito_evento: ['centro', 'aula', 'nino'],
       audit_accion: ['INSERT', 'UPDATE', 'DELETE'],
+      autorizacion_estado: ['borrador', 'publicada', 'anulada'],
       calidad_sueno: ['profundo', 'tranquilo', 'intermitente', 'nada'],
       cantidad_comida: ['todo', 'mayoria', 'mitad', 'poco', 'nada'],
       cantidad_deposicion: ['mucha', 'normal', 'poca'],
@@ -2287,6 +2495,7 @@ export const Constants = {
       estado_general_agenda: ['bien', 'regular', 'mal', 'mixto'],
       estado_plantilla_menu: ['borrador', 'publicada', 'archivada'],
       evento_estado: ['programado', 'cancelado'],
+      firma_decision: ['firmado', 'rechazado', 'revocado'],
       humor_agenda: ['feliz', 'tranquilo', 'inquieto', 'triste', 'cansado'],
       lactancia_estado: ['materna', 'biberon', 'mixta', 'finalizada', 'no_aplica'],
       momento_comida: ['desayuno', 'media_manana', 'comida', 'merienda'],
@@ -2304,6 +2513,7 @@ export const Constants = {
         'cuidadora',
         'otro',
       ],
+      politica_firmantes: ['uno_principal', 'todos_los_principales', 'cualquiera'],
       recordatorio_destinatario: [
         'familia_individual',
         'familias_aula',
@@ -2322,6 +2532,13 @@ export const Constants = {
         'religiosa_halal',
         'religiosa_kosher',
         'otra',
+      ],
+      tipo_autorizacion: [
+        'salida',
+        'medicacion',
+        'recogida',
+        'reglas_regimen_interno',
+        'autorizacion_imagenes',
       ],
       tipo_biberon: ['materna', 'formula', 'agua', 'infusion', 'zumo'],
       tipo_cita: ['reunion_familia', 'reunion_clase', 'reunion_claustro', 'visita'],
