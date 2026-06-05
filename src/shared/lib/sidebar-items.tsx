@@ -6,6 +6,7 @@ import {
   CalendarCheckIcon,
   CalendarDaysIcon,
   CalendarRangeIcon,
+  FileSignatureIcon,
   HistoryIcon,
   HomeIcon,
   LayoutDashboardIcon,
@@ -53,6 +54,11 @@ export async function buildSidebarItems(
         trailing: agendaBadge,
       },
       { href: `/${locale}/admin/menus`, label: t('menus'), icon: <UtensilsIcon /> },
+      {
+        href: `/${locale}/admin/autorizaciones`,
+        label: t('autorizaciones'),
+        icon: <FileSignatureIcon />,
+      },
       { href: `/${locale}/admin/ninos`, label: t('ninos'), icon: <BabyIcon /> },
       {
         href: `/${locale}/messages`,
@@ -106,6 +112,11 @@ export async function buildSidebarItems(
   return [
     { href: `/${locale}/family`, label: t('dashboard'), icon: <HomeIcon /> },
     { href: `/${locale}/family/calendario`, label: t('calendario'), icon: <CalendarRangeIcon /> },
+    {
+      href: `/${locale}/family/autorizaciones`,
+      label: t('autorizaciones'),
+      icon: <FileSignatureIcon />,
+    },
     {
       href: `/${locale}/agenda`,
       label: t('agenda'),

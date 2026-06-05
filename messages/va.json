@@ -177,7 +177,8 @@
       "menus": "Menús",
       "mensajeria": "Missatgeria",
       "recordatorios": "Recordatoris",
-      "agenda": "Agenda"
+      "agenda": "Agenda",
+      "autorizaciones": "Autoritzacions"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -402,7 +403,8 @@
       "calendario": "Calendari Escolar",
       "mensajeria": "Missatgeria",
       "recordatorios": "Recordatoris",
-      "agenda": "Agenda"
+      "agenda": "Agenda",
+      "autorizaciones": "Autoritzacions"
     },
     "dashboard": {
       "title": "Els meus xiquets",
@@ -1499,5 +1501,117 @@
     "ver_agenda": "Veure agenda",
     "ver_calendario": "Veure calendari",
     "todo_el_dia": "Tot el dia"
+  },
+  "autorizaciones": {
+    "title": "Autoritzacions",
+    "admin_intro": "Crea, publica i signa autoritzacions d'eixida. El text legal el definix el centre.",
+    "family_intro": "Llig i signa les autoritzacions d'eixida dels teus fills.",
+    "aviso_legal": "Signatura electrònica simple amb registre probatori (nom, traç, hash del text, data, IP). La seua validesa jurídica està pendent de validació legal.",
+    "volver": "Tornar",
+    "lista": {
+      "vacia_admin": "Encara no hi ha autoritzacions d'eixida.",
+      "vacia_familia": "No tens autoritzacions pendents ni signades."
+    },
+    "estado_doc": {
+      "borrador": "Esborrany",
+      "publicada": "Publicada",
+      "anulada": "Anul·lada"
+    },
+    "estado_firma": {
+      "firmado": "Signada",
+      "pendiente": "Pendent",
+      "parcial": "Parcial",
+      "rechazado": "Rebutjada",
+      "revocado": "Revocada"
+    },
+    "acciones": {
+      "nueva": "Nova autorització",
+      "crear": "Crear",
+      "creando": "Creant…",
+      "creada_toast": "Autorització creada",
+      "editar_texto": "Editar text",
+      "guardar": "Guardar",
+      "guardando": "Guardant…",
+      "texto_guardado": "Text guardat",
+      "publicar": "Publicar",
+      "publicada_toast": "Autorització publicada",
+      "anular": "Anul·lar",
+      "anulada_toast": "Autorització anul·lada",
+      "firmar": "Signar",
+      "firmada_toast": "Autorització signada",
+      "rechazar": "Rebutjar",
+      "rechazada_toast": "Autorització rebutjada",
+      "revocar": "Revocar signatura",
+      "revocada_toast": "Signatura revocada"
+    },
+    "form": {
+      "evento": "Esdeveniment (eixida)",
+      "evento_placeholder": "Tria un esdeveniment",
+      "titulo": "Títol",
+      "titulo_placeholder": "Autorització d'eixida",
+      "texto": "Text de l'autorització",
+      "texto_placeholder": "Apega ací el text legal real (o un de prova).",
+      "texto_legal_aviso": "Este text és el que se signa i es xifra (hash): canvia'l només abans que hi haja signatures.",
+      "vigencia_hasta": "Vigència fins a (opcional)",
+      "texto_definitivo": "Marcar el text com a definitiu (necessari per a publicar i signar)"
+    },
+    "firma": {
+      "aria_pad": "Zona per a dibuixar la signatura",
+      "pad_ayuda": "Dibuixa la teua signatura amb el dit o el ratolí",
+      "borrar": "Esborrar",
+      "no_firmable": "Esta autorització no està disponible per a signar.",
+      "ya_firmado": "Ja has signat esta autorització.",
+      "confirmo": "He llegit el text i autoritze expressament el que s'hi indica.",
+      "nombre": "Nom complet",
+      "nombre_ayuda": "Ha de coincidir amb el nom del teu perfil.",
+      "trazo": "Signatura"
+    },
+    "roster": {
+      "sin_ninos": "No hi ha xiquets en l'abast d'esta autorització.",
+      "nino": "Xiquet",
+      "estado": "Estat",
+      "firmantes": "Signants",
+      "sin_firmantes": "Sense signants registrats",
+      "tutor_anon": "Tutor"
+    },
+    "detalle": {
+      "version": "Versió: {v}",
+      "texto": "Text",
+      "texto_pendiente": "Text pendent de redactar (PENDENT).",
+      "texto_no_definitivo": "El text encara no està marcat com a definitiu: no es pot publicar ni signar.",
+      "roster": "Estat de signatures",
+      "tu_firma": "La teua signatura"
+    },
+    "validation": {
+      "titulo_vacio": "El títol és obligatori.",
+      "titulo_largo": "El títol és massa llarg.",
+      "texto_vacio": "El text és obligatori.",
+      "texto_largo": "El text és massa llarg.",
+      "fecha_invalida": "Data no vàlida.",
+      "comentario_largo": "El comentari és massa llarg.",
+      "texto_pendiente_no_definitivo": "Un text «PENDENT» no es pot marcar com a definitiu.",
+      "evento_requerido": "Tria un esdeveniment.",
+      "firma_requerida": "Dibuixa la teua signatura per a continuar.",
+      "firma_grande": "La signatura és massa gran.",
+      "firma_formato": "Format de signatura no vàlid.",
+      "nombre_vacio": "Escriu el teu nom.",
+      "nombre_largo": "El nom és massa llarg."
+    },
+    "errors": {
+      "no_autorizado": "No tens permís per a esta acció.",
+      "creacion_fallo": "No s'ha pogut crear l'autorització.",
+      "evento_no_encontrado": "L'esdeveniment no existix o no és accessible.",
+      "edicion_fallo": "No s'ha pogut guardar el text.",
+      "texto_bloqueado_firmas": "El text no es pot canviar: ja hi ha signatures.",
+      "publicacion_fallo": "No s'ha pogut publicar.",
+      "no_encontrada": "Autorització no trobada.",
+      "texto_no_definitivo": "Marca el text com a definitiu abans de publicar.",
+      "anulacion_fallo": "No s'ha pogut anul·lar.",
+      "no_firmable": "Esta autorització no es pot signar ara.",
+      "no_es_tutor": "No consta el teu vincle com a tutor d'este xiquet.",
+      "firma_fallo": "No s'ha pogut registrar la signatura.",
+      "nombre_no_coincide": "El nom teclejat no coincidix amb el del teu perfil.",
+      "confirma_requerido": "Marca la casella per a autoritzar."
+    }
   }
 }

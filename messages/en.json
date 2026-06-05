@@ -177,7 +177,8 @@
       "menus": "Menus",
       "mensajeria": "Messages",
       "recordatorios": "Reminders",
-      "agenda": "Agenda"
+      "agenda": "Agenda",
+      "autorizaciones": "Authorisations"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -402,7 +403,8 @@
       "calendario": "School Calendar",
       "mensajeria": "Messages",
       "recordatorios": "Reminders",
-      "agenda": "Agenda"
+      "agenda": "Agenda",
+      "autorizaciones": "Authorisations"
     },
     "dashboard": {
       "title": "My children",
@@ -1499,5 +1501,117 @@
     "ver_agenda": "View agenda",
     "ver_calendario": "View calendar",
     "todo_el_dia": "All day"
+  },
+  "autorizaciones": {
+    "title": "Authorisations",
+    "admin_intro": "Create, publish and sign outing authorisations. The legal text is set by the centre.",
+    "family_intro": "Read and sign your children's outing authorisations.",
+    "aviso_legal": "Simple electronic signature with an evidentiary record (name, stroke, text hash, date, IP). Its legal validity is pending legal review.",
+    "volver": "Back",
+    "lista": {
+      "vacia_admin": "No outing authorisations yet.",
+      "vacia_familia": "You have no pending or signed authorisations."
+    },
+    "estado_doc": {
+      "borrador": "Draft",
+      "publicada": "Published",
+      "anulada": "Voided"
+    },
+    "estado_firma": {
+      "firmado": "Signed",
+      "pendiente": "Pending",
+      "parcial": "Partial",
+      "rechazado": "Rejected",
+      "revocado": "Revoked"
+    },
+    "acciones": {
+      "nueva": "New authorisation",
+      "crear": "Create",
+      "creando": "Creating…",
+      "creada_toast": "Authorisation created",
+      "editar_texto": "Edit text",
+      "guardar": "Save",
+      "guardando": "Saving…",
+      "texto_guardado": "Text saved",
+      "publicar": "Publish",
+      "publicada_toast": "Authorisation published",
+      "anular": "Void",
+      "anulada_toast": "Authorisation voided",
+      "firmar": "Sign",
+      "firmada_toast": "Authorisation signed",
+      "rechazar": "Reject",
+      "rechazada_toast": "Authorisation rejected",
+      "revocar": "Revoke signature",
+      "revocada_toast": "Signature revoked"
+    },
+    "form": {
+      "evento": "Event (outing)",
+      "evento_placeholder": "Choose an event",
+      "titulo": "Title",
+      "titulo_placeholder": "Outing authorisation",
+      "texto": "Authorisation text",
+      "texto_placeholder": "Paste the real legal text here (or a test one).",
+      "texto_legal_aviso": "This is the text that gets signed and hashed: only change it before any signatures exist.",
+      "vigencia_hasta": "Valid until (optional)",
+      "texto_definitivo": "Mark text as final (required to publish and sign)"
+    },
+    "firma": {
+      "aria_pad": "Area to draw the signature",
+      "pad_ayuda": "Draw your signature with your finger or mouse",
+      "borrar": "Clear",
+      "no_firmable": "This authorisation is not available to sign.",
+      "ya_firmado": "You have already signed this authorisation.",
+      "confirmo": "I have read the text and expressly authorise what it states.",
+      "nombre": "Full name",
+      "nombre_ayuda": "It must match the name on your profile.",
+      "trazo": "Signature"
+    },
+    "roster": {
+      "sin_ninos": "No children fall under this authorisation.",
+      "nino": "Child",
+      "estado": "Status",
+      "firmantes": "Signers",
+      "sin_firmantes": "No registered signers",
+      "tutor_anon": "Guardian"
+    },
+    "detalle": {
+      "version": "Version: {v}",
+      "texto": "Text",
+      "texto_pendiente": "Text not yet drafted (PENDING).",
+      "texto_no_definitivo": "The text is not marked as final yet: it cannot be published or signed.",
+      "roster": "Signature status",
+      "tu_firma": "Your signature"
+    },
+    "validation": {
+      "titulo_vacio": "Title is required.",
+      "titulo_largo": "Title is too long.",
+      "texto_vacio": "Text is required.",
+      "texto_largo": "Text is too long.",
+      "fecha_invalida": "Invalid date.",
+      "comentario_largo": "Comment is too long.",
+      "texto_pendiente_no_definitivo": "A “PENDING” text cannot be marked as final.",
+      "evento_requerido": "Choose an event.",
+      "firma_requerida": "Draw your signature to continue.",
+      "firma_grande": "The signature is too large.",
+      "firma_formato": "Invalid signature format.",
+      "nombre_vacio": "Enter your name.",
+      "nombre_largo": "Name is too long."
+    },
+    "errors": {
+      "no_autorizado": "You don't have permission for this action.",
+      "creacion_fallo": "Couldn't create the authorisation.",
+      "evento_no_encontrado": "The event doesn't exist or isn't accessible.",
+      "edicion_fallo": "Couldn't save the text.",
+      "texto_bloqueado_firmas": "The text can't be changed: signatures already exist.",
+      "publicacion_fallo": "Couldn't publish.",
+      "no_encontrada": "Authorisation not found.",
+      "texto_no_definitivo": "Mark the text as final before publishing.",
+      "anulacion_fallo": "Couldn't void it.",
+      "no_firmable": "This authorisation can't be signed right now.",
+      "no_es_tutor": "Your guardian link to this child isn't on record.",
+      "firma_fallo": "Couldn't record the signature.",
+      "nombre_no_coincide": "The typed name doesn't match your profile.",
+      "confirma_requerido": "Tick the box to authorise."
+    }
   }
 }
