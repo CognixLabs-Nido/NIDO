@@ -177,7 +177,8 @@
       "menus": "Menús",
       "mensajeria": "Mensajería",
       "recordatorios": "Recordatorios",
-      "agenda": "Agenda"
+      "agenda": "Agenda",
+      "autorizaciones": "Autorizaciones"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -402,7 +403,8 @@
       "calendario": "Calendario Escolar",
       "mensajeria": "Mensajería",
       "recordatorios": "Recordatorios",
-      "agenda": "Agenda"
+      "agenda": "Agenda",
+      "autorizaciones": "Autorizaciones"
     },
     "dashboard": {
       "title": "Mis niños",
@@ -1499,5 +1501,117 @@
     "ver_agenda": "Ver agenda",
     "ver_calendario": "Ver calendario",
     "todo_el_dia": "Todo el día"
+  },
+  "autorizaciones": {
+    "title": "Autorizaciones",
+    "admin_intro": "Crea, publica y firma autorizaciones de salida. El texto legal lo define el centro.",
+    "family_intro": "Lee y firma las autorizaciones de salida de tus hijos.",
+    "aviso_legal": "Firma electrónica simple con registro probatorio (nombre, trazo, hash del texto, fecha, IP). Su validez jurídica está pendiente de validación legal.",
+    "volver": "Volver",
+    "lista": {
+      "vacia_admin": "Todavía no hay autorizaciones de salida.",
+      "vacia_familia": "No tienes autorizaciones pendientes ni firmadas."
+    },
+    "estado_doc": {
+      "borrador": "Borrador",
+      "publicada": "Publicada",
+      "anulada": "Anulada"
+    },
+    "estado_firma": {
+      "firmado": "Firmado",
+      "pendiente": "Pendiente",
+      "parcial": "Parcial",
+      "rechazado": "Rechazado",
+      "revocado": "Revocado"
+    },
+    "acciones": {
+      "nueva": "Nueva autorización",
+      "crear": "Crear",
+      "creando": "Creando…",
+      "creada_toast": "Autorización creada",
+      "editar_texto": "Editar texto",
+      "guardar": "Guardar",
+      "guardando": "Guardando…",
+      "texto_guardado": "Texto guardado",
+      "publicar": "Publicar",
+      "publicada_toast": "Autorización publicada",
+      "anular": "Anular",
+      "anulada_toast": "Autorización anulada",
+      "firmar": "Firmar",
+      "firmada_toast": "Autorización firmada",
+      "rechazar": "Rechazar",
+      "rechazada_toast": "Autorización rechazada",
+      "revocar": "Revocar firma",
+      "revocada_toast": "Firma revocada"
+    },
+    "form": {
+      "evento": "Evento (excursión)",
+      "evento_placeholder": "Elige un evento",
+      "titulo": "Título",
+      "titulo_placeholder": "Autorización de salida",
+      "texto": "Texto de la autorización",
+      "texto_placeholder": "Pega aquí el texto legal real (o uno de prueba).",
+      "texto_legal_aviso": "Este texto es el que se firma y se hashea: cámbialo solo antes de que haya firmas.",
+      "vigencia_hasta": "Vigencia hasta (opcional)",
+      "texto_definitivo": "Marcar texto como definitivo (necesario para publicar y firmar)"
+    },
+    "firma": {
+      "aria_pad": "Zona para dibujar la firma",
+      "pad_ayuda": "Dibuja tu firma con el dedo o el ratón",
+      "borrar": "Borrar",
+      "no_firmable": "Esta autorización no está disponible para firmar.",
+      "ya_firmado": "Ya has firmado esta autorización.",
+      "confirmo": "He leído el texto y autorizo expresamente lo que en él se indica.",
+      "nombre": "Nombre completo",
+      "nombre_ayuda": "Debe coincidir con el nombre de tu perfil.",
+      "trazo": "Firma"
+    },
+    "roster": {
+      "sin_ninos": "No hay niños en el alcance de esta autorización.",
+      "nino": "Niño",
+      "estado": "Estado",
+      "firmantes": "Firmantes",
+      "sin_firmantes": "Sin firmantes registrados",
+      "tutor_anon": "Tutor"
+    },
+    "detalle": {
+      "version": "Versión: {v}",
+      "texto": "Texto",
+      "texto_pendiente": "Texto pendiente de redactar (PENDIENTE).",
+      "texto_no_definitivo": "El texto aún no está marcado como definitivo: no se puede publicar ni firmar.",
+      "roster": "Estado de firmas",
+      "tu_firma": "Tu firma"
+    },
+    "validation": {
+      "titulo_vacio": "El título es obligatorio.",
+      "titulo_largo": "El título es demasiado largo.",
+      "texto_vacio": "El texto es obligatorio.",
+      "texto_largo": "El texto es demasiado largo.",
+      "fecha_invalida": "Fecha no válida.",
+      "comentario_largo": "El comentario es demasiado largo.",
+      "texto_pendiente_no_definitivo": "Un texto «PENDIENTE» no puede marcarse como definitivo.",
+      "evento_requerido": "Elige un evento.",
+      "firma_requerida": "Dibuja tu firma para continuar.",
+      "firma_grande": "La firma es demasiado grande.",
+      "firma_formato": "Formato de firma no válido.",
+      "nombre_vacio": "Escribe tu nombre.",
+      "nombre_largo": "El nombre es demasiado largo."
+    },
+    "errors": {
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "creacion_fallo": "No se pudo crear la autorización.",
+      "evento_no_encontrado": "El evento no existe o no es accesible.",
+      "edicion_fallo": "No se pudo guardar el texto.",
+      "texto_bloqueado_firmas": "El texto no se puede cambiar: ya existen firmas.",
+      "publicacion_fallo": "No se pudo publicar.",
+      "no_encontrada": "Autorización no encontrada.",
+      "texto_no_definitivo": "Marca el texto como definitivo antes de publicar.",
+      "anulacion_fallo": "No se pudo anular.",
+      "no_firmable": "Esta autorización no se puede firmar ahora.",
+      "no_es_tutor": "No consta tu vínculo como tutor de este niño.",
+      "firma_fallo": "No se pudo registrar la firma.",
+      "nombre_no_coincide": "El nombre tecleado no coincide con el de tu perfil.",
+      "confirma_requerido": "Marca la casilla para autorizar."
+    }
   }
 }
