@@ -1,6 +1,6 @@
 import { createHash } from 'crypto'
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/types/database'
 
@@ -93,12 +93,18 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS autorizaciones — F8-RW-0 (catálogo +
     })
   })
 
-  afterAll(async () => {
-    for (const id of firmasCreadas)
+  // Aislamiento entre tests: el índice único `idx_autorizaciones_plantilla_unica`
+  // solo admite UNA plantilla activa por (centro,tipo) → cada test debe limpiar sus
+  // filas o la siguiente plantilla del mismo tipo choca. Se borra en orden INVERSO
+  // (instancias antes que su plantilla: plantilla_id es ON DELETE RESTRICT).
+  afterEach(async () => {
+    for (const id of firmasCreadas.splice(0).reverse())
       await serviceClient.from('firmas_autorizacion').delete().eq('id', id)
-    // borrar instancias antes que plantillas (plantilla_id ON DELETE RESTRICT).
-    for (const id of autorizacionesCreadas)
+    for (const id of autorizacionesCreadas.splice(0).reverse())
       await serviceClient.from('autorizaciones').delete().eq('id', id)
+  })
+
+  afterAll(async () => {
     await deleteTestCentro(centro.id)
     await deleteTestCentro(centroB.id)
     for (const u of [admin, profe, tutor, tutorB]) await deleteTestUser(u.id)
