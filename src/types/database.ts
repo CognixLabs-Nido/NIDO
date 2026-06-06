@@ -1198,6 +1198,7 @@ export type Database = {
           autorizacion_id: string
           comentario: string | null
           created_at: string
+          datos: Json
           decision: Database['public']['Enums']['firma_decision']
           firma_imagen: string | null
           firmado_at: string
@@ -1215,6 +1216,7 @@ export type Database = {
           autorizacion_id: string
           comentario?: string | null
           created_at?: string
+          datos?: Json
           decision: Database['public']['Enums']['firma_decision']
           firma_imagen?: string | null
           firmado_at?: string
@@ -1232,6 +1234,7 @@ export type Database = {
           autorizacion_id?: string
           comentario?: string | null
           created_at?: string
+          datos?: Json
           decision?: Database['public']['Enums']['firma_decision']
           firma_imagen?: string | null
           firmado_at?: string
