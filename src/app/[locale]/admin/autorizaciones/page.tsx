@@ -4,10 +4,15 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { CrearAutorizacionDialog } from '@/features/autorizaciones/components/CrearAutorizacionDialog'
-import { EstadoDocBadge } from '@/features/autorizaciones/components/EstadoFirmaBadge'
+import { CrearReglasDialog } from '@/features/autorizaciones/components/CrearReglasDialog'
+import {
+  EstadoDocBadge,
+  TipoAutorizacionBadge,
+} from '@/features/autorizaciones/components/EstadoFirmaBadge'
 import { getAutorizacionesAdmin } from '@/features/autorizaciones/queries/get-autorizaciones-admin'
 import { getEventosExcursion } from '@/features/autorizaciones/queries/get-eventos-excursion'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { getNinosParaRecordatorios } from '@/features/recordatorios/queries/get-ninos-para-recordatorios'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -22,9 +27,11 @@ export default async function AdminAutorizacionesPage({ params }: PageProps) {
   const rol = await getRolEnCentro(centroId)
   if (rol !== 'admin' && rol !== 'profe') redirect(`/${locale}/forbidden`)
 
-  const [autorizaciones, eventos] = await Promise.all([
+  const esAdmin = rol === 'admin'
+  const [autorizaciones, eventos, ninos] = await Promise.all([
     getAutorizacionesAdmin(),
     getEventosExcursion(centroId),
+    esAdmin ? getNinosParaRecordatorios() : Promise.resolve([]),
   ])
 
   return (
@@ -37,7 +44,10 @@ export default async function AdminAutorizacionesPage({ params }: PageProps) {
           </h1>
           <p className="text-muted-foreground text-sm">{t('admin_intro')}</p>
         </div>
-        <CrearAutorizacionDialog eventos={eventos} />
+        <div className="flex flex-wrap gap-2">
+          <CrearAutorizacionDialog eventos={eventos} />
+          {esAdmin && <CrearReglasDialog ninos={ninos} />}
+        </div>
       </header>
 
       <p className="text-muted-foreground text-xs">{t('aviso_legal')}</p>
@@ -52,7 +62,10 @@ export default async function AdminAutorizacionesPage({ params }: PageProps) {
                 href={`/${locale}/admin/autorizaciones/${a.id}`}
                 className="hover:bg-muted/50 flex items-center justify-between gap-3 px-4 py-3"
               >
-                <span className="font-medium">{a.titulo}</span>
+                <span className="flex items-center gap-2">
+                  <span className="font-medium">{a.titulo}</span>
+                  <TipoAutorizacionBadge tipo={a.tipo} />
+                </span>
                 <EstadoDocBadge estado={a.estado} />
               </Link>
             </li>
