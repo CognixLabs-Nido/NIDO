@@ -33,6 +33,24 @@ export const crearAutorizacionSalidaSchema = z.object({
 
 export type CrearAutorizacionSalidaInput = z.input<typeof crearAutorizacionSalidaSchema>
 
+// --- Crear (tipos que cuelgan del NIÑO: reglas/recogida/medicación/imágenes) -
+// `salida` queda fuera (esa cuelga de un evento). La política de firmantes la
+// deriva el server action del flag `requiere_ambos_firmantes` del niño.
+export const tipoPorNinoEnum = z.enum([
+  'medicacion',
+  'recogida',
+  'reglas_regimen_interno',
+  'autorizacion_imagenes',
+])
+
+export const crearAutorizacionPorNinoSchema = z.object({
+  tipo: tipoPorNinoEnum,
+  nino_id: z.string().uuid('autorizaciones.validation.nino_requerido'),
+  titulo: tituloSchema,
+})
+
+export type CrearAutorizacionPorNinoInput = z.input<typeof crearAutorizacionPorNinoSchema>
+
 // --- Editar texto (admin teclea el texto + lo marca definitivo) -------------
 // El guard: solo un texto `texto_definitivo` puede publicarse/firmarse. El texto
 // real (legal) lo pega el responsable; aquí permitimos un texto de prueba.

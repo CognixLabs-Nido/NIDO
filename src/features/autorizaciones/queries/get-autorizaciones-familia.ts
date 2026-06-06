@@ -6,7 +6,7 @@ import { logger } from '@/shared/lib/logger'
 import type { AutorizacionItem, EstadoFirmaNino, FirmaDecision } from '../types'
 
 /**
- * Lista de autorizaciones de salida **publicadas** que el tutor puede ver (RLS),
+ * Lista de autorizaciones **publicadas** (todos los tipos) que el tutor puede ver (RLS),
  * con su `estado_firma` = última decisión propia (firmado/rechazado/revocado) o
  * `pendiente` si aún no ha actuado. El detalle por niño es la fuente autoritativa
  * (un tutor con varios niños lo ve desglosado allí); aquí mostramos su acción.
@@ -23,7 +23,6 @@ export async function getAutorizacionesFamilia(): Promise<AutorizacionItem[]> {
     .select(
       'id, tipo, titulo, estado, texto_definitivo, evento_id, nino_id, vigencia_desde, vigencia_hasta, created_at'
     )
-    .eq('tipo', 'salida')
     .eq('estado', 'publicada')
     .order('created_at', { ascending: false })
 

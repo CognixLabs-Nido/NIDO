@@ -3,7 +3,10 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
-import { EstadoFirmaBadge } from '@/features/autorizaciones/components/EstadoFirmaBadge'
+import {
+  EstadoFirmaBadge,
+  TipoAutorizacionBadge,
+} from '@/features/autorizaciones/components/EstadoFirmaBadge'
 import { getAutorizacionesFamilia } from '@/features/autorizaciones/queries/get-autorizaciones-familia'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 
@@ -42,7 +45,10 @@ export default async function FamilyAutorizacionesPage({ params }: PageProps) {
                 href={`/${locale}/family/autorizaciones/${a.id}`}
                 className="hover:bg-muted/50 flex items-center justify-between gap-3 px-4 py-3"
               >
-                <span className="font-medium">{a.titulo}</span>
+                <span className="flex items-center gap-2">
+                  <span className="font-medium">{a.titulo}</span>
+                  <TipoAutorizacionBadge tipo={a.tipo} />
+                </span>
                 {a.estado_firma && <EstadoFirmaBadge estado={a.estado_firma} />}
               </Link>
             </li>

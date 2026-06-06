@@ -50,3 +50,20 @@ test.describe('F8-1 — admin publica salida → tutor firma (gateado)', () => {
     await expect(page.getByRole('heading', { name: /autorizaciones/i })).toBeVisible()
   })
 })
+
+test.describe('F8-2b — reglas de régimen interno (gateado)', () => {
+  test.skip(process.env.E2E_REAL_SESSIONS !== '1', 'Requiere E2E_ADMIN_* en .env.local')
+
+  test('admin puede abrir el diálogo de nuevas reglas (por niño)', async ({ page }) => {
+    await page.goto('/es/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL!)
+    await page.getByLabel(/contraseña|password/i).fill(process.env.E2E_ADMIN_PASSWORD!)
+    await page.getByRole('button', { name: /entrar|sign in/i }).click()
+    await page.goto('/es/admin/autorizaciones')
+    const nuevasReglas = page.getByRole('button', { name: /reglas/i })
+    await expect(nuevasReglas).toBeVisible()
+    await nuevasReglas.click()
+    // El diálogo pide elegir niño + título (cuelga del niño, sin evento).
+    await expect(page.getByText(/niño|xiquet|child/i).first()).toBeVisible()
+  })
+})

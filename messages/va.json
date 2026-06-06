@@ -1504,7 +1504,7 @@
   },
   "autorizaciones": {
     "title": "Autoritzacions",
-    "admin_intro": "Crea, publica i signa autoritzacions d'eixida. El text legal el definix el centre.",
+    "admin_intro": "Crea, publica i signa autoritzacions (eixida, règim intern…). El text legal el definix el centre.",
     "family_intro": "Llig i signa les autoritzacions d'eixida dels teus fills.",
     "aviso_legal": "Signatura electrònica simple amb registre probatori (nom, traç, hash del text, data, IP). La seua validesa jurídica està pendent de validació legal.",
     "volver": "Tornar",
@@ -1542,7 +1542,8 @@
       "rechazar": "Rebutjar",
       "rechazada_toast": "Autorització rebutjada",
       "revocar": "Revocar signatura",
-      "revocada_toast": "Signatura revocada"
+      "revocada_toast": "Signatura revocada",
+      "nueva_reglas": "Noves regles"
     },
     "form": {
       "evento": "Esdeveniment (eixida)",
@@ -1553,7 +1554,10 @@
       "texto_placeholder": "Apega ací el text legal real (o un de prova).",
       "texto_legal_aviso": "Este text és el que se signa i es xifra (hash): canvia'l només abans que hi haja signatures.",
       "vigencia_hasta": "Vigència fins a (opcional)",
-      "texto_definitivo": "Marcar el text com a definitiu (necessari per a publicar i signar)"
+      "texto_definitivo": "Marcar el text com a definitiu (necessari per a publicar i signar)",
+      "nino": "Xiquet",
+      "nino_placeholder": "Tria un xiquet",
+      "titulo_reglas_placeholder": "Regles de règim intern"
     },
     "firma": {
       "aria_pad": "Zona per a dibuixar la signatura",
@@ -1595,7 +1599,8 @@
       "firma_grande": "La signatura és massa gran.",
       "firma_formato": "Format de signatura no vàlid.",
       "nombre_vacio": "Escriu el teu nom.",
-      "nombre_largo": "El nom és massa llarg."
+      "nombre_largo": "El nom és massa llarg.",
+      "nino_requerido": "Tria un xiquet."
     },
     "errors": {
       "no_autorizado": "No tens permís per a esta acció.",
@@ -1611,7 +1616,15 @@
       "no_es_tutor": "No consta el teu vincle com a tutor d'este xiquet.",
       "firma_fallo": "No s'ha pogut registrar la signatura.",
       "nombre_no_coincide": "El nom teclejat no coincidix amb el del teu perfil.",
-      "confirma_requerido": "Marca la casella per a autoritzar."
+      "confirma_requerido": "Marca la casella per a autoritzar.",
+      "nino_no_encontrado": "El xiquet no existix o no és accessible."
+    },
+    "tipo": {
+      "salida": "Eixida",
+      "medicacion": "Medicació",
+      "recogida": "Arreplegada",
+      "reglas_regimen_interno": "Règim intern",
+      "autorizacion_imagenes": "Imatges"
     }
   }
 }

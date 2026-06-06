@@ -7,10 +7,12 @@ import { hashTextoAutorizacion } from '../lib/hash'
 import { hoyMadridYmd, revalidarAutorizaciones } from '../lib/server-helpers'
 import {
   anularAutorizacionSchema,
+  crearAutorizacionPorNinoSchema,
   crearAutorizacionSalidaSchema,
   editarTextoAutorizacionSchema,
   publicarAutorizacionSchema,
   type AnularAutorizacionInput,
+  type CrearAutorizacionPorNinoInput,
   type CrearAutorizacionSalidaInput,
   type EditarTextoAutorizacionInput,
   type PublicarAutorizacionInput,
@@ -71,6 +73,71 @@ export async function crearAutorizacionSalida(
 
   if (insErr || !creada) {
     logger.warn('crearAutorizacionSalida: insert', insErr?.message)
+    if (insErr?.code === '42501') return fail('autorizaciones.errors.no_autorizado')
+    return fail('autorizaciones.errors.creacion_fallo')
+  }
+
+  revalidarAutorizaciones()
+  return ok({ autorizacion_id: creada.id })
+}
+
+/**
+ * Crea una autorización que cuelga del **niño** (reglas de régimen interno y, en
+ * sub-fases siguientes, recogida/medicación/imágenes). Solo **admin** del centro
+ * (la RLS `autorizaciones_insert` reserva los tipos no-`salida` al admin). La
+ * política de firmantes se deriva del flag `requiere_ambos_firmantes` del niño
+ * (minimización: el requisito vive en el niño). Nace borrador con texto
+ * `PENDIENTE`. Reutiliza el resto del flujo de F8-1 sin cambios (editar/publicar/
+ * firmar/roster). Mismo patrón → recogida/medicación lo reusarán tal cual.
+ */
+export async function crearAutorizacionPorNino(
+  input: CrearAutorizacionPorNinoInput
+): Promise<ActionResult<{ autorizacion_id: string }>> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return fail('autorizaciones.errors.no_autorizado')
+
+  const parsed = crearAutorizacionPorNinoSchema.safeParse(input)
+  if (!parsed.success) {
+    return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.creacion_fallo')
+  }
+  const { tipo, nino_id, titulo } = parsed.data
+
+  // centro_id + política desde el niño (red de seguridad; el trigger BD deriva centro_id).
+  const { data: nino, error: ninoErr } = await supabase
+    .from('ninos')
+    .select('centro_id, requiere_ambos_firmantes')
+    .eq('id', nino_id)
+    .maybeSingle()
+  if (ninoErr) {
+    logger.warn('crearAutorizacionPorNino: ninos.select', ninoErr.message)
+    return fail('autorizaciones.errors.creacion_fallo')
+  }
+  if (!nino) return fail('autorizaciones.errors.nino_no_encontrado')
+
+  const { data: creada, error: insErr } = await supabase
+    .from('autorizaciones')
+    .insert({
+      centro_id: nino.centro_id,
+      tipo,
+      nino_id,
+      titulo,
+      texto: 'PENDIENTE',
+      texto_version: 'v0-pendiente',
+      texto_definitivo: false,
+      estado: 'borrador',
+      firmantes_requeridos: nino.requiere_ambos_firmantes
+        ? 'todos_los_principales'
+        : 'uno_principal',
+      creado_por: user.id,
+    })
+    .select('id')
+    .maybeSingle()
+
+  if (insErr || !creada) {
+    logger.warn('crearAutorizacionPorNino: insert', insErr?.message)
     if (insErr?.code === '42501') return fail('autorizaciones.errors.no_autorizado')
     return fail('autorizaciones.errors.creacion_fallo')
   }
