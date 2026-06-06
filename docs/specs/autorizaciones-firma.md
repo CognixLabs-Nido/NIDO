@@ -564,3 +564,153 @@ ADR de la fase (registrando **la respuesta del abogado** a los puntos ⚖️ tal
   ADR-0038 (eventos/confirmaciones), ADR-0039 (agenda/citas)
 - Roadmap: disparador "datos administrativos del tutor / firma" en Fase 8
 - Migración de referencia (patrón RLS row-aware + audit): `20260601140000_phase7_eventos.sql`
+
+---
+
+# Addendum (2026-06-07) — Modelo corregido: CATÁLOGO + dos patrones de iniciación
+
+> **Estado: Checkpoint A — pendiente de OK del responsable. NO implementado.**
+>
+> El modelo de F8-0 confundía **el documento/formato** con **el acto de asignar/firmar**: el CHECK
+> obligaba `nino_id NOT NULL` en reglas/recogida/medicación/imágenes, horneando "por niño" dentro de
+> lo que debería ser un formato estándar reutilizable. Recogida (#57/#58) y medicación se modelaron
+> mal por eso. Este addendum **deroga** el modelo de iniciación para los tipos por-niño y define el
+> correcto. `firmas.datos` (aplicado) y el hash compuesto (F8-2-0) **se conservan**.
+
+## 0. Dos acciones del admin (antes confundidas en 2 botones)
+
+1. **Nueva / editar autorización = mantener el CATÁLOGO** de documentos/formatos estándar (texto,
+   versión, `texto_definitivo`, campos del formulario). Aquí la directora edita p.ej. las normas del
+   centro. **No** asigna audiencia.
+2. **Enviar autorización = coger una del catálogo y asignarla a una AUDIENCIA**: un niño / una clase /
+   todo el colegio (reusa los resolutores de audiencia de F7 + roster, igual que `salida`).
+
+### Qué son HOY los dos botones (confirmación pedida)
+
+- **`+ Nueva autorización`** (`CrearAutorizacionDialog`) → crea **una `salida`** colgada de un evento
+  de excursión. Se **deshabilita** si no hay eventos `tipo='excursion'` (de ahí que se vea
+  "bloqueada").
+- **`+ Nuevas reglas`** (`CrearReglasDialog`) → crea **un `reglas_regimen_interno`** para **un niño
+  concreto** (solo admin).
+
+Es decir, **hoy ambos botones CREAN un documento-instancia directamente**, sin catálogo ni audiencia.
+De ahí la confusión (bug UI #3). Se **unifican** en las dos acciones de §0.
+
+## 1. Dos patrones de iniciación (por tipo)
+
+| Patrón                                          | Tipos                                                       | Quién inicia                           | Cómo                                                                                                                                                                                                                                                         |
+| ----------------------------------------------- | ----------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **A — la directora ENVÍA, las familias firman** | `salida`, `reglas_regimen_interno`, `autorizacion_imagenes` | admin (o profe en `salida` de su aula) | documento estándar **enviado a una audiencia** (niño/clase/colegio) → roster de firmantes; cada familia firma. `salida` ya cuelga de evento (su audiencia viene del evento).                                                                                 |
+| **B — la familia INICIA**                       | `recogida`, `medicacion`                                    | el tutor                               | el **formato estándar** está publicado/disponible; la familia lo rellena para su hijo (`datos`), adjunta (DNI/informe → F10) y **firma por iniciativa propia**. La directora **no** lo envía. Profes del aula + directora lo **ven** (lectura), no lo crean. |
+
+`recogida`/`medicacion` **no aparecen en "Enviar"**.
+
+## 2. Catálogo: plantilla durable vs instancia (🔒 DECISIÓN)
+
+**Sí se distingue.** Nueva columna `autorizaciones.es_plantilla boolean NOT NULL DEFAULT false`:
+
+- **Plantilla durable** (`es_plantilla=true`): el documento de catálogo. **Una por (centro, tipo)**
+  para `reglas/imagenes/recogida/medicacion` (índice único parcial). `nino_id/evento_id/aula_id =
+NULL`. La directora edita aquí texto/versión/`texto_definitivo`/campos. **No** se firma directamente
+  (es el formato).
+- **Instancia** (`es_plantilla=false`): lo firmable.
+  - `salida`: instancia por excursión, `evento_id NOT NULL`, **sin** `plantilla_id` (bespoke).
+  - `reglas`/`imagenes` (patrón A): instancia creada por **"Enviar"** = `plantilla_id` + `ambito`
+    (niño/aula/centro) + referencia de audiencia. Roster por audiencia (resolutores F7).
+
+> **Versionado/edición:** editar el texto de una plantilla **sin firmas** se permite; **con firmas**,
+> el trigger de F8-2-0 lo congela ⇒ editar = **nueva versión** (nueva fila plantilla; la anterior se
+> archiva con `estado`). Coherente con el principio "migración aplicada = inmutable".
+
+## 3. Patrón B: ¿firma la plantilla directa o instancia por-niño? (🔒 DECISIÓN — recomiendo B1)
+
+**Recomendación: B1 — la familia firma la PLANTILLA publicada directamente**, aportando
+`firmas.nino_id + firmas.datos` (la lista/los campos). **Sin instancia por-niño.**
+
+- **Por qué B1 es lo más simple:** reusa `firmas_autorizacion` tal cual (ya tiene `nino_id` + `datos`
+  - hash compuesto). El tutor **solo inserta una FIRMA** (acción ya permitida por `firmas_insert`),
+    **no** crea filas en `autorizaciones` ⇒ **ni siquiera hace falta tutor-insert en `autorizaciones`**
+    (más mínimo que lo previsto). Roster/estado por niño = firmas agrupadas por `nino_id`.
+- **Editar el formato** = nueva versión de plantilla (la anterior, con firmas, queda congelada). Las
+  firmas viejas conservan su snapshot (`texto_version` + hash).
+- **Alternativa B2 (instancia por-niño):** el tutor crea una instancia (snapshot del texto) y firma
+  esa. Más uniforme con `salida`, pero exige **tutor-insert en `autorizaciones`** y más filas. La
+  dejo como alternativa por si prefieres una vigencia/estado **por-niño** explícitos (útil si
+  medicación necesita episodios discretos con caducidad propia — ver §6).
+
+> **Medicación (matiz para F8-3a):** una autorización de medicación suele ser específica y acotada en
+> el tiempo (medicamento/dosis/pauta/fechas) y puede haber **varias por niño**. En B1 = varias firmas
+> sobre la plantilla, cada una con sus `datos`; en B2 = varias instancias. La multiplicidad/caducidad
+> fina de medicación se concreta en F8-3a; aquí solo se fija el **patrón de iniciación (B)**.
+
+## 4. Modelo de datos (rework, migración aditiva F8-RW-0)
+
+Sobre `autorizaciones` (sin drop; relajar CHECK + columnas nuevas):
+
+- `es_plantilla boolean NOT NULL DEFAULT false`.
+- `ambito autorizacion_ambito` (ENUM `nino|aula|centro`) **NULL salvo en instancias A**.
+- `plantilla_id uuid REFERENCES autorizaciones(id) ON DELETE RESTRICT` (instancias A → su plantilla).
+- **Relajar** `autorizaciones_tipo_coherencia` para admitir 4 formas:
+  1. **plantilla durable**: `es_plantilla=true`, tipo ∈ {reglas,imagenes,recogida,medicacion},
+     `evento_id/nino_id/aula_id NULL`.
+  2. **instancia salida**: `tipo='salida'`, `evento_id NOT NULL`, `plantilla_id NULL`.
+  3. **instancia A** (reglas/imagenes): `es_plantilla=false`, `plantilla_id NOT NULL`, `ambito` +
+     (`nino_id`|`aula_id`|nada) coherente con `ambito`.
+  4. (B usa la **plantilla** directamente; no crea instancia.)
+- **Índice único parcial** `(centro_id, tipo) WHERE es_plantilla AND deleted_at IS NULL` → una
+  plantilla activa por tipo.
+- `firmas_autorizacion.datos` + hash compuesto: **se quedan** (F8-2-0). En B, `firmas.autorizacion_id`
+  apunta a la **plantilla**; en A, a la **instancia**; en salida, a la instancia-evento.
+
+## 5. RLS (cambios mínimos)
+
+- **Helpers** `usuario_es_audiencia_autorizacion_row` y `autorizacion_aplica_a_nino`: añadir ramas
+  para (a) **plantillas B** centro-level → visibles/firmables por **tutor del centro** (de cualquier
+  hijo suyo), profe del aula del niño, admin; (b) **instancias A** por `ambito` niño/aula/centro
+  (espejo de la audiencia de eventos F7). Siguen **row-aware** (sin re-leer `autorizaciones`).
+- **`autorizaciones_insert`**: admin gestiona catálogo (plantillas) y **Enviar** (instancias A);
+  `salida` por profe del evento (como hoy). **B1 no añade tutor-insert** (el tutor solo firma).
+  _(B2 sí lo añadiría, acotado a su propio hijo.)_
+- **`autorizaciones_select`**: añadir visibilidad de **plantillas B** a tutores del centro + profes +
+  admin, y de **instancias A** por audiencia.
+- **`firmas_insert`** (ya permite tutor): sigue exigiendo `es_tutor_de(nino_id)` + `firmable` +
+  `autorizacion_aplica_a_nino` (este último se amplía para plantillas B centro-level).
+- **Lectura de las B firmadas por profes del aula + directora**: ya cubierta por `firmas_select`
+  (`es_profe_de_nino`, `es_admin`); se verifica con test.
+- Trigger de **congelado de alcance** (F8-2-0): intacto (por documento con firmas).
+
+## 6. Plan de rework
+
+| Paso                 | Contenido                                                                                                                                                      | Estado de lo actual              |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| **F8-RW-0**          | Migración aditiva (`es_plantilla`, `ambito`, `plantilla_id`, CHECK relajado, índice único, helpers + RLS) **sin UI**; paro para aplicar; db:types + tests RLS. | nueva                            |
+| **F8-RW-1**          | UI catálogo (Nueva/editar plantilla) + acción **Enviar** (audiencia niño/aula/centro) para A. Arregla bugs UI #1/#2/#3.                                        | —                                |
+| **Recogida B**       | **Rehacer #57/#58** al patrón B (familia firma la plantilla con `datos`). **No mergear** #57/#58; se cierran/reemplazan.                                       | #57/#58 abiertos, **NO mergear** |
+| **F8-3a Medicación** | Construir **directamente como B** (campos estructurados med/dosis/pauta/fechas).                                                                               | nuevo                            |
+| **Reglas (A)**       | `reglas` ya existe (#56, mergeado) como instancia-por-niño del modelo viejo → **migrar a plantilla + añadir "Enviar"** (audiencia). **Follow-up.**             | #56 mergeado                     |
+| **Salida (A)**       | Verificar que encaja en A vía evento (su audiencia ya viene del evento). Esperado: **sí**, sin cambios de modelo.                                              | #55 mergeado                     |
+
+> **Nota sobre #56 (reglas) y #55 (salida) ya en producción:** la migración F8-RW-0 es **aditiva** y
+> compatible; las filas `reglas` existentes (instancia-por-niño) **siguen válidas** hasta migrarlas a
+> plantilla+envío en el follow-up. No se rompe nada desplegado.
+
+## 7. Bugs de UI a corregir (en F8-RW-1)
+
+1. **Selector de niño muestra el UUID** en vez del nombre (base-ui Select sin label): aplicar el mapa
+   `valor→nombre` como en la Agenda (render del nombre del seleccionado, no el `value` crudo).
+2. **Falta el selector de audiencia** niño/clase/colegio → es la acción **Enviar** (A); se añade.
+3. **Botones de crear confusos** (`+Nuevas reglas` vs `+Nueva autorización` deshabilitada): unificar en
+   **Nueva/editar (catálogo)** + **Enviar (audiencia)**. (Hoy = lo descrito en §0.)
+
+## 8. Decisiones que necesito que apruebes
+
+1. **Catálogo** distingue plantilla durable (reglas/imágenes/recogida/medicación, 1/centro/tipo) vs
+   `salida` por-evento. ✅/✏️
+2. **A** = un documento, muchas firmas vía **audiencia + roster** (como salida). ✅/✏️
+3. **B = B1** (la familia firma la **plantilla** publicada aportando `nino_id+datos`; **sin** instancia
+   por-niño; **sin** tutor-insert en `autorizaciones`). ¿B1 o prefieres **B2** (instancia por-niño)? ✅/✏️
+4. **RLS**: ampliar helpers para plantillas B (tutor del centro) + audiencias A; sin tutor-insert si B1.
+   ✅/✏️
+5. **Plan de rework** (F8-RW-0 → F8-RW-1; rehacer recogida; medicación como B; reglas/salida a A como
+   follow-up/verificación). ¿Arranco por **F8-RW-0** (migración, sin UI, paro para aplicar)? ✅/✏️
+6. **#57/#58**: confirmo que **no se mergean** y se rehacen. ✅
