@@ -714,3 +714,35 @@ Sobre `autorizaciones` (sin drop; relajar CHECK + columnas nuevas):
 5. **Plan de rework** (F8-RW-0 → F8-RW-1; rehacer recogida; medicación como B; reglas/salida a A como
    follow-up/verificación). ¿Arranco por **F8-RW-0** (migración, sin UI, paro para aplicar)? ✅/✏️
 6. **#57/#58**: confirmo que **no se mergean** y se rehacen. ✅
+
+## 9. Resolución (2026-06-07) — aprobado con B2
+
+> El responsable aprobó §8 **con un cambio en la decisión 3 (B2 en vez de B1)** y un matiz en la 5.
+
+- **#1, #2, #6** y la compatibilidad aditiva: **✅** tal cual.
+- **#3 → B2** (instancia por-niño creada por **el tutor** desde la plantilla publicada; **no** es
+  recaída al modelo viejo: la inicia la familia, no la directora). Razones que descartan B1:
+  - **Medicación** necesita **vigencia por-niño** de primera clase: el log de administración (F8-3b)
+    cuelga de "la medicación firmada+vigente de ese niño". En B1 eso viviría enterrado en
+    `firmas.datos` y el log apuntaría a una firma derivada; con B2 apunta limpio a la **instancia**.
+  - **Recogida** necesita que la **lista habitual** y la **puntual (1 día)** **coexistan** con
+    vigencias distintas. En B1 ("gana la última firmado") la puntual pisaría la habitual; con B2 son
+    **dos instancias** con su vigencia → la profe ve la habitual + la persona puntual de hoy.
+  - Coste asumido: **tutor-insert en `autorizaciones`**, acotado por RLS (solo su propio hijo +
+    `plantilla_id` de una plantilla **publicada** del centro/tipo). De paso resuelve el
+    "tutor-crea-puntual" que estaba pendiente: bajo B, la familia crea sus recogidas (habitual y
+    puntual).
+- **#4** → incluye **ese tutor-insert acotado** para B2; el resto (helpers plantillas B + audiencias
+  A) **✅**.
+- **#5** → **✅**, con un matiz: **reglas→A** (Enviar a clase/colegio) es **necesario para el flujo de
+  matrícula**, no mero "verificación" — se **secuencia tras medicación**, pero **no se deja caer**.
+  **salida** sí es solo **verificación** (su audiencia ya viene del evento).
+
+### Estado de implementación
+
+- **F8-RW-0** (migración `20260607120000_phase8_rw0_catalogo.sql` + helpers/RLS + tests RLS gated,
+  **sin UI**) construido en **PR #59** (rama `feat/f8-rw-0-catalogo-rework`). Pendiente: aplicar la
+  migración (SQL Editor) → `db:types` → tests RLS. **No mergear #57/#58** (recogida se rehace al
+  patrón B).
+- El CHECK relajado admite una **5.ª forma legacy** (instancia-por-niño sin `plantilla_id`) para que
+  las filas `reglas` (#56) y `recogida`/`medicación` ya existentes **sigan válidas** hasta migrarlas.
