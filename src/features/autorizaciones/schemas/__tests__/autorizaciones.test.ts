@@ -4,6 +4,7 @@ import {
   crearAutorizacionSalidaSchema,
   editarTextoAutorizacionSchema,
   firmarAutorizacionSchema,
+  personasAutorizadasSchema,
 } from '../autorizaciones'
 
 const UUID = '11111111-1111-4111-8111-111111111111'
@@ -79,5 +80,42 @@ describe('firmarAutorizacionSchema', () => {
       firma_imagen: PNG,
     })
     expect(r.success).toBe(false)
+  })
+
+  it('acepta personas opcionales (recogida)', () => {
+    const r = firmarAutorizacionSchema.safeParse({
+      autorizacion_id: UUID,
+      nino_id: UUID2,
+      nombre_tecleado: 'Ana Pérez',
+      firma_imagen: PNG,
+      personas: [{ nombre: 'Abuela', dni: '12345678Z' }],
+    })
+    expect(r.success).toBe(true)
+  })
+})
+
+describe('personasAutorizadasSchema (recogida)', () => {
+  it('acepta lista válida con DNI laxo (DNI/NIE/pasaporte)', () => {
+    const r = personasAutorizadasSchema.safeParse([
+      { nombre: 'Ana', dni: '12345678Z', parentesco: 'abuela' },
+      { nombre: 'John Doe', dni: 'X1234567', parentesco: 'tío' },
+    ])
+    expect(r.success).toBe(true)
+  })
+
+  it('rechaza lista vacía', () => {
+    expect(personasAutorizadasSchema.safeParse([]).success).toBe(false)
+  })
+
+  it('rechaza DNI demasiado corto o con símbolos raros', () => {
+    expect(personasAutorizadasSchema.safeParse([{ nombre: 'Ana', dni: '12' }]).success).toBe(false)
+    expect(personasAutorizadasSchema.safeParse([{ nombre: 'Ana', dni: '12 34/56' }]).success).toBe(
+      false
+    )
+  })
+
+  it('rechaza más de 20 personas', () => {
+    const muchas = Array.from({ length: 21 }, (_, i) => ({ nombre: `P${i}`, dni: `${i}0000` }))
+    expect(personasAutorizadasSchema.safeParse(muchas).success).toBe(false)
   })
 })

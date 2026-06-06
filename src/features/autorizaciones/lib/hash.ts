@@ -14,8 +14,6 @@ export function normalizarTexto(texto: string): string {
   return texto.replace(/\r\n?/g, '\n').replace(/[ \t]+$/gm, '')
 }
 
-type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue }
-
 /**
  * Canonicaliza recursivamente: ordena las claves de los objetos (recursivo),
  * conserva el orden de los arrays (el orden de la lista es significativo) y deja
@@ -23,16 +21,17 @@ type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]:
  * reconstruye los objetos insertando las claves ya ordenadas. Resultado **estable
  * bit a bit** para una misma entrada → el hash es reproducible y verificable.
  */
-function canonicalizar(value: JsonValue): JsonValue {
+function canonicalizar(value: unknown): unknown {
   if (value === null || typeof value !== 'object') return value
   if (Array.isArray(value)) return value.map(canonicalizar)
-  const out: { [k: string]: JsonValue } = {}
-  for (const k of Object.keys(value).sort()) out[k] = canonicalizar(value[k])
+  const obj = value as Record<string, unknown>
+  const out: Record<string, unknown> = {}
+  for (const k of Object.keys(obj).sort()) out[k] = canonicalizar(obj[k])
   return out
 }
 
 /** Serialización canónica (claves ordenadas recursivamente) de un valor JSON. */
-export function canonicalJSON(value: JsonValue): string {
+export function canonicalJSON(value: unknown): string {
   return JSON.stringify(canonicalizar(value))
 }
 
@@ -47,13 +46,13 @@ export function canonicalJSON(value: JsonValue): string {
  * vacío— para que las firmas de F8-1/F8-2b (salida/reglas) sigan verificando.
  * Con datos: `sha256( normalizar(texto) + 0x01 + canonicalJSON(datos) )`.
  */
-export function hashFirma(texto: string, datos?: JsonValue): string {
+export function hashFirma(texto: string, datos?: unknown): string {
   const base = normalizarTexto(texto)
   const tieneDatos =
     datos != null && typeof datos === 'object' && !Array.isArray(datos)
-      ? Object.keys(datos).length > 0
+      ? Object.keys(datos as Record<string, unknown>).length > 0
       : datos != null
-  const payload = tieneDatos ? `${base}${SEP}${canonicalJSON(datos as JsonValue)}` : base
+  const payload = tieneDatos ? `${base}${SEP}${canonicalJSON(datos)}` : base
   return createHash('sha256').update(payload, 'utf8').digest('hex')
 }
 

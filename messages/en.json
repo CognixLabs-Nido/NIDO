@@ -1600,7 +1600,13 @@
       "firma_formato": "Invalid signature format.",
       "nombre_vacio": "Enter your name.",
       "nombre_largo": "Name is too long.",
-      "nino_requerido": "Choose a child."
+      "nino_requerido": "Choose a child.",
+      "persona_nombre_vacio": "Name is required.",
+      "persona_nombre_largo": "Name is too long.",
+      "persona_dni_invalido": "Invalid document (5–20 alphanumeric characters).",
+      "persona_parentesco_largo": "Relationship is too long.",
+      "personas_vacio": "Add at least one authorised person.",
+      "personas_muchas": "Too many people (max 20)."
     },
     "errors": {
       "no_autorizado": "You don't have permission for this action.",
@@ -1617,7 +1623,8 @@
       "firma_fallo": "Couldn't record the signature.",
       "nombre_no_coincide": "The typed name doesn't match your profile.",
       "confirma_requerido": "Tick the box to authorise.",
-      "nino_no_encontrado": "The child doesn't exist or isn't accessible."
+      "nino_no_encontrado": "The child doesn't exist or isn't accessible.",
+      "personas_requeridas": "List at least one authorised person to sign."
     },
     "tipo": {
       "salida": "Outing",
@@ -1625,6 +1632,20 @@
       "recogida": "Pickup",
       "reglas_regimen_interno": "House rules",
       "autorizacion_imagenes": "Images"
+    },
+    "recogida": {
+      "lista": "People authorised to pick up",
+      "lista_vacia": "Add at least one person.",
+      "nombre": "Full name",
+      "dni": "ID / document",
+      "parentesco": "Relationship (optional)",
+      "quitar": "Remove",
+      "anadir": "Add person",
+      "dni_aviso": "The document is stored as text; the photo will be added later.",
+      "lista_vigente": "Authorised people",
+      "integra": "Signature intact",
+      "no_integra": "Integrity not verified",
+      "sin_firmar": "Not signed yet."
     }
   }
 }

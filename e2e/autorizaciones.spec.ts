@@ -23,6 +23,24 @@ test.describe('F8-1 — autorizaciones smoke', () => {
     expect(body).not.toContain('autorizaciones.title')
     expect(body).not.toContain('autorizaciones.acciones.')
     expect(body).not.toContain('autorizaciones.firma.')
+    expect(body).not.toContain('autorizaciones.recogida.')
+  })
+})
+
+test.describe('F8-2 — recogida: editor de personas (gateado)', () => {
+  test.skip(process.env.E2E_REAL_SESSIONS !== '1', 'Requiere E2E_TUTOR_* + recogida publicada')
+
+  test('tutor ve el editor de personas autorizadas al firmar una recogida', async ({ page }) => {
+    await page.goto('/es/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_TUTOR_EMAIL!)
+    await page.getByLabel(/contraseña|password/i).fill(process.env.E2E_TUTOR_PASSWORD!)
+    await page.getByRole('button', { name: /entrar|sign in/i }).click()
+    await page.goto('/es/family/autorizaciones')
+    const recogida = page.getByRole('link', { name: /recogida/i }).first()
+    if ((await recogida.count()) > 0) {
+      await recogida.click()
+      await expect(page.getByText(/personas autorizadas/i).first()).toBeVisible()
+    }
   })
 })
 

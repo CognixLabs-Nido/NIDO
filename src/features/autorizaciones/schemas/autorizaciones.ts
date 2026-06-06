@@ -97,6 +97,32 @@ const firmaImagenSchema = z
   .max(500000, 'autorizaciones.validation.firma_grande')
   .regex(/^data:image\/(png|svg\+xml);/, 'autorizaciones.validation.firma_formato')
 
+// Persona autorizada a recoger (recogida). DNI **laxo**: alfanumérico 5–20
+// (acepta DNI/NIE/pasaporte de extranjeros); la foto va a F10.
+export const personaAutorizadaSchema = z.object({
+  nombre: z
+    .string()
+    .trim()
+    .min(1, 'autorizaciones.validation.persona_nombre_vacio')
+    .max(200, 'autorizaciones.validation.persona_nombre_largo'),
+  dni: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9-]{5,20}$/, 'autorizaciones.validation.persona_dni_invalido'),
+  parentesco: z
+    .string()
+    .trim()
+    .max(100, 'autorizaciones.validation.persona_parentesco_largo')
+    .optional(),
+})
+
+export const personasAutorizadasSchema = z
+  .array(personaAutorizadaSchema)
+  .min(1, 'autorizaciones.validation.personas_vacio')
+  .max(20, 'autorizaciones.validation.personas_muchas')
+
+export type PersonaAutorizadaInput = z.input<typeof personaAutorizadaSchema>
+
 export const firmarAutorizacionSchema = z.object({
   autorizacion_id: z.string().uuid(),
   nino_id: z.string().uuid(),
@@ -107,6 +133,8 @@ export const firmarAutorizacionSchema = z.object({
     .max(200, 'autorizaciones.validation.nombre_largo'),
   firma_imagen: firmaImagenSchema,
   comentario: comentarioSchema,
+  /** Solo recogida: lista de personas autorizadas (la valida el action según tipo). */
+  personas: personasAutorizadasSchema.optional(),
 })
 export type FirmarAutorizacionInput = z.input<typeof firmarAutorizacionSchema>
 
