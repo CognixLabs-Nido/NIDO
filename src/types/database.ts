@@ -339,16 +339,19 @@ export type Database = {
       }
       autorizaciones: {
         Row: {
+          ambito: Database['public']['Enums']['autorizacion_ambito'] | null
           aula_id: string | null
           centro_id: string
           creado_por: string
           created_at: string
           datos: Json
+          es_plantilla: boolean
           estado: Database['public']['Enums']['autorizacion_estado']
           evento_id: string | null
           firmantes_requeridos: Database['public']['Enums']['politica_firmantes']
           id: string
           nino_id: string | null
+          plantilla_id: string | null
           texto: string
           texto_definitivo: boolean
           texto_version: string
@@ -359,16 +362,19 @@ export type Database = {
           vigencia_hasta: string | null
         }
         Insert: {
+          ambito?: Database['public']['Enums']['autorizacion_ambito'] | null
           aula_id?: string | null
           centro_id: string
           creado_por: string
           created_at?: string
           datos?: Json
+          es_plantilla?: boolean
           estado?: Database['public']['Enums']['autorizacion_estado']
           evento_id?: string | null
           firmantes_requeridos?: Database['public']['Enums']['politica_firmantes']
           id?: string
           nino_id?: string | null
+          plantilla_id?: string | null
           texto: string
           texto_definitivo?: boolean
           texto_version?: string
@@ -379,16 +385,19 @@ export type Database = {
           vigencia_hasta?: string | null
         }
         Update: {
+          ambito?: Database['public']['Enums']['autorizacion_ambito'] | null
           aula_id?: string | null
           centro_id?: string
           creado_por?: string
           created_at?: string
           datos?: Json
+          es_plantilla?: boolean
           estado?: Database['public']['Enums']['autorizacion_estado']
           evento_id?: string | null
           firmantes_requeridos?: Database['public']['Enums']['politica_firmantes']
           id?: string
           nino_id?: string | null
+          plantilla_id?: string | null
           texto?: string
           texto_definitivo?: boolean
           texto_version?: string
@@ -432,6 +441,13 @@ export type Database = {
             columns: ['nino_id']
             isOneToOne: false
             referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'autorizaciones_plantilla_id_fkey'
+            columns: ['plantilla_id']
+            isOneToOne: false
+            referencedRelation: 'autorizaciones'
             referencedColumns: ['id']
           },
         ]
@@ -1198,6 +1214,7 @@ export type Database = {
           autorizacion_id: string
           comentario: string | null
           created_at: string
+          datos: Json
           decision: Database['public']['Enums']['firma_decision']
           firma_imagen: string | null
           firmado_at: string
@@ -1215,6 +1232,7 @@ export type Database = {
           autorizacion_id: string
           comentario?: string | null
           created_at?: string
+          datos?: Json
           decision: Database['public']['Enums']['firma_decision']
           firma_imagen?: string | null
           firmado_at?: string
@@ -1232,6 +1250,7 @@ export type Database = {
           autorizacion_id?: string
           comentario?: string | null
           created_at?: string
+          datos?: Json
           decision?: Database['public']['Enums']['firma_decision']
           firma_imagen?: string | null
           firmado_at?: string
@@ -2130,6 +2149,14 @@ export type Database = {
         Args: { p_autorizacion_id: string }
         Returns: boolean
       }
+      autorizacion_plantilla_valida: {
+        Args: {
+          p_centro_id: string
+          p_plantilla_id: string
+          p_tipo: Database['public']['Enums']['tipo_autorizacion']
+        }
+        Returns: boolean
+      }
       centro_abierto: {
         Args: { p_centro_id: string; p_fecha: string }
         Returns: boolean
@@ -2247,8 +2274,10 @@ export type Database = {
       }
       usuario_es_audiencia_autorizacion_row: {
         Args: {
+          p_ambito: Database['public']['Enums']['autorizacion_ambito']
           p_aula_id: string
           p_centro_id: string
+          p_es_plantilla: boolean
           p_evento_id: string
           p_nino_id: string
           p_tipo: Database['public']['Enums']['tipo_autorizacion']
@@ -2281,6 +2310,7 @@ export type Database = {
       ambito_anuncio: 'aula' | 'centro'
       ambito_evento: 'centro' | 'aula' | 'nino'
       audit_accion: 'INSERT' | 'UPDATE' | 'DELETE'
+      autorizacion_ambito: 'nino' | 'aula' | 'centro'
       autorizacion_estado: 'borrador' | 'publicada' | 'anulada'
       calidad_sueno: 'profundo' | 'tranquilo' | 'intermitente' | 'nada'
       cantidad_comida: 'todo' | 'mayoria' | 'mitad' | 'poco' | 'nada'
@@ -2481,6 +2511,7 @@ export const Constants = {
       ambito_anuncio: ['aula', 'centro'],
       ambito_evento: ['centro', 'aula', 'nino'],
       audit_accion: ['INSERT', 'UPDATE', 'DELETE'],
+      autorizacion_ambito: ['nino', 'aula', 'centro'],
       autorizacion_estado: ['borrador', 'publicada', 'anulada'],
       calidad_sueno: ['profundo', 'tranquilo', 'intermitente', 'nada'],
       cantidad_comida: ['todo', 'mayoria', 'mitad', 'poco', 'nada'],

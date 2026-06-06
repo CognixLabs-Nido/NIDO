@@ -397,6 +397,8 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS autorizaciones — F8-RW-0 (catálogo +
       .select('id')
       .single()
     expect(legacy.error, 'la forma legacy debe seguir siendo válida (CHECK relajado)').toBeNull()
+    if (legacy.error || !legacy.data)
+      throw new Error(`recogida legacy falló: ${legacy.error?.message}`)
     autorizacionesCreadas.push(legacy.data.id)
 
     const cTutor = await clientFor(tutor)
