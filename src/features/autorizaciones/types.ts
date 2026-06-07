@@ -17,6 +17,7 @@ export type FirmaRow = Database['public']['Tables']['firmas_autorizacion']['Row'
 export type FirmaInsert = Database['public']['Tables']['firmas_autorizacion']['Insert']
 export type TipoAutorizacion = Database['public']['Enums']['tipo_autorizacion']
 export type AutorizacionEstado = Database['public']['Enums']['autorizacion_estado']
+export type AutorizacionAmbito = Database['public']['Enums']['autorizacion_ambito']
 export type FirmaDecision = Database['public']['Enums']['firma_decision']
 export type PoliticaFirmantes = Database['public']['Enums']['politica_firmantes']
 export type TipoVinculo = Database['public']['Enums']['tipo_vinculo']
@@ -62,11 +63,31 @@ export interface AutorizacionItem {
   texto_definitivo: boolean
   evento_id: string | null
   nino_id: string | null
+  /** true = formato durable del catálogo (no firmable). false = instancia firmable. */
+  es_plantilla: boolean
+  /** Audiencia de la instancia (niño/aula/centro); null en plantillas y salida. */
+  ambito: AutorizacionAmbito | null
   vigencia_desde: string | null
   vigencia_hasta: string | null
   created_at: string
   /** Solo en la vista familia: estado de firma del niño del tutor. */
   estado_firma?: EstadoFirmaNino
+}
+
+/** Plantilla durable del catálogo (es_plantilla=true) tal y como la consume la lista. */
+export interface PlantillaCatalogoItem {
+  id: string
+  tipo: TipoAutorizacion
+  titulo: string
+  estado: AutorizacionEstado
+  texto_definitivo: boolean
+}
+
+/** Plantilla publicada (tipo A) seleccionable en la acción «Enviar». */
+export interface PlantillaEnviableItem {
+  id: string
+  tipo: TipoAutorizacion
+  titulo: string
 }
 
 /** Detalle de una autorización + su roster por niño (filtrado por RLS). */
@@ -81,9 +102,15 @@ export interface AutorizacionDetalle {
   firmantes_requeridos: PoliticaFirmantes
   evento_id: string | null
   nino_id: string | null
+  /** true = formato del catálogo (no firmable; se envía a una audiencia). */
+  es_plantilla: boolean
+  /** Audiencia de la instancia (niño/aula/centro); null en plantillas y salida. */
+  ambito: AutorizacionAmbito | null
+  /** Instancia A/B2 → la plantilla de la que deriva; null en plantillas/salida/legacy. */
+  plantilla_id: string | null
   vigencia_desde: string | null
   vigencia_hasta: string | null
-  /** ¿Es firmable AHORA? (publicada + texto_definitivo + dentro de vigencia). */
+  /** ¿Es firmable AHORA? (publicada + texto_definitivo + dentro de vigencia; las plantillas NO). */
   firmable: boolean
   /** El usuario actual creó la autorización (gatea editar/publicar/anular junto a esAdmin). */
   es_autor: boolean

@@ -1543,7 +1543,11 @@
       "rechazada_toast": "Autorització rebutjada",
       "revocar": "Revocar signatura",
       "revocada_toast": "Signatura revocada",
-      "nueva_reglas": "Noves regles"
+      "nueva_reglas": "Noves regles",
+      "plantilla_creada_toast": "Format creat",
+      "enviar": "Enviar autorització",
+      "enviando": "Enviant…",
+      "enviada_toast": "Autorització enviada"
     },
     "form": {
       "evento": "Esdeveniment (eixida)",
@@ -1557,7 +1561,16 @@
       "texto_definitivo": "Marcar el text com a definitiu (necessari per a publicar i signar)",
       "nino": "Xiquet",
       "nino_placeholder": "Tria un xiquet",
-      "titulo_reglas_placeholder": "Regles de règim intern"
+      "titulo_reglas_placeholder": "Regles de règim intern",
+      "tipo": "Tipus de document",
+      "tipo_placeholder": "Tria un tipus",
+      "titulo_plantilla_placeholder": "Normes de règim intern",
+      "plantilla": "Format a enviar",
+      "plantilla_placeholder": "Tria un format publicat",
+      "ambito": "Destinataris",
+      "ambito_placeholder": "Tria a qui",
+      "aula": "Classe",
+      "aula_placeholder": "Tria una classe"
     },
     "firma": {
       "aria_pad": "Zona per a dibuixar la signatura",
@@ -1584,7 +1597,9 @@
       "texto_pendiente": "Text pendent de redactar (PENDENT).",
       "texto_no_definitivo": "El text encara no està marcat com a definitiu: no es pot publicar ni signar.",
       "roster": "Estat de signatures",
-      "tu_firma": "La teua signatura"
+      "tu_firma": "La teua signatura",
+      "es_plantilla": "Format del catàleg: no es signa; s'envia a una audiència (o l'inicia la família).",
+      "ambito_label": "Destinataris: {ambito}"
     },
     "validation": {
       "titulo_vacio": "El títol és obligatori.",
@@ -1600,7 +1615,10 @@
       "firma_formato": "Format de signatura no vàlid.",
       "nombre_vacio": "Escriu el teu nom.",
       "nombre_largo": "El nom és massa llarg.",
-      "nino_requerido": "Tria un xiquet."
+      "nino_requerido": "Tria un xiquet.",
+      "plantilla_requerida": "Tria un format.",
+      "aula_requerida": "Tria una classe.",
+      "audiencia_incoherente": "L'audiència no és coherent."
     },
     "errors": {
       "no_autorizado": "No tens permís per a esta acció.",
@@ -1617,7 +1635,12 @@
       "firma_fallo": "No s'ha pogut registrar la signatura.",
       "nombre_no_coincide": "El nom teclejat no coincidix amb el del teu perfil.",
       "confirma_requerido": "Marca la casella per a autoritzar.",
-      "nino_no_encontrado": "El xiquet no existix o no és accessible."
+      "nino_no_encontrado": "El xiquet no existix o no és accessible.",
+      "plantilla_duplicada": "Ja existeix un format actiu d'eixe tipus. Anul·la l'anterior per a crear-ne un altre.",
+      "envio_fallo": "No s'ha pogut enviar l'autorització.",
+      "plantilla_no_encontrada": "El format no existeix o no és accessible.",
+      "plantilla_no_publicada": "El format no està publicat o no és definitiu.",
+      "tipo_no_enviable": "Aquest tipus l'inicia la família; no s'envia."
     },
     "tipo": {
       "salida": "Eixida",
@@ -1625,6 +1648,24 @@
       "recogida": "Arreplegada",
       "reglas_regimen_interno": "Règim intern",
       "autorizacion_imagenes": "Imatges"
+    },
+    "catalogo": {
+      "titulo": "Catàleg de formats",
+      "descripcion": "Els formats estàndard del centre. Edita el text, marca'l definitiu i publica'l.",
+      "intro": "Crea el format estàndard d'un tipus. Després tecleja el seu text i publica'l.",
+      "vacio": "Encara no hi ha formats al catàleg."
+    },
+    "instancias": {
+      "titulo": "Per signar",
+      "descripcion": "Autoritzacions enviades o d'eixida que les famílies poden signar."
+    },
+    "enviar": {
+      "intro": "Agafa un format publicat i envia'l a una audiència."
+    },
+    "ambito": {
+      "nino": "Un xiquet/a",
+      "aula": "Una classe",
+      "centro": "Tot el centre"
     }
   }
 }

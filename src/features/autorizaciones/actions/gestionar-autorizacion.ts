@@ -3,21 +3,29 @@
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+
 import { hashTextoAutorizacion } from '../lib/hash'
 import { hoyMadridYmd, revalidarAutorizaciones } from '../lib/server-helpers'
 import {
   anularAutorizacionSchema,
-  crearAutorizacionPorNinoSchema,
   crearAutorizacionSalidaSchema,
+  crearPlantillaSchema,
   editarTextoAutorizacionSchema,
+  enviarAutorizacionSchema,
   publicarAutorizacionSchema,
   type AnularAutorizacionInput,
-  type CrearAutorizacionPorNinoInput,
   type CrearAutorizacionSalidaInput,
+  type CrearPlantillaInput,
   type EditarTextoAutorizacionInput,
+  type EnviarAutorizacionInput,
   type PublicarAutorizacionInput,
 } from '../schemas/autorizaciones'
 import { fail, ok, type ActionResult } from '../types'
+
+// Tipos A (la directora ENVÍA a una audiencia). recogida/medicación = tipos B
+// (los inicia la familia) → no son enviables desde aquí.
+const TIPOS_ENVIABLES = ['reglas_regimen_interno', 'autorizacion_imagenes'] as const
 
 /**
  * Crea una autorización de **salida** colgando de un evento (`tipo='excursion'`).
@@ -82,16 +90,17 @@ export async function crearAutorizacionSalida(
 }
 
 /**
- * Crea una autorización que cuelga del **niño** (reglas de régimen interno y, en
- * sub-fases siguientes, recogida/medicación/imágenes). Solo **admin** del centro
- * (la RLS `autorizaciones_insert` reserva los tipos no-`salida` al admin). La
- * política de firmantes se deriva del flag `requiere_ambos_firmantes` del niño
- * (minimización: el requisito vive en el niño). Nace borrador con texto
- * `PENDIENTE`. Reutiliza el resto del flujo de F8-1 sin cambios (editar/publicar/
- * firmar/roster). Mismo patrón → recogida/medicación lo reusarán tal cual.
+ * Crea una **plantilla durable** del catálogo (`es_plantilla=true`) para un tipo
+ * por-niño (reglas/imágenes/recogida/medicación). Es el FORMATO estándar del
+ * centro: no se firma directamente (guard en BD: `autorizacion_firmable=false`
+ * para plantillas). Solo **admin** (RLS `autorizaciones_insert` → `es_admin`).
+ * Nace borrador con texto `PENDIENTE`; el admin lo teclea, lo marca definitivo y
+ * lo publica (queda disponible en el catálogo). Una activa por (centro, tipo):
+ * el índice único parcial de BD rechaza la segunda (error claro). `salida` NO usa
+ * catálogo (es bespoke por evento → `crearAutorizacionSalida`).
  */
-export async function crearAutorizacionPorNino(
-  input: CrearAutorizacionPorNinoInput
+export async function crearPlantilla(
+  input: CrearPlantillaInput
 ): Promise<ActionResult<{ autorizacion_id: string }>> {
   const supabase = await createClient()
   const {
@@ -99,47 +108,128 @@ export async function crearAutorizacionPorNino(
   } = await supabase.auth.getUser()
   if (!user) return fail('autorizaciones.errors.no_autorizado')
 
-  const parsed = crearAutorizacionPorNinoSchema.safeParse(input)
+  const parsed = crearPlantillaSchema.safeParse(input)
   if (!parsed.success) {
     return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.creacion_fallo')
   }
-  const { tipo, nino_id, titulo } = parsed.data
+  const { tipo, titulo } = parsed.data
 
-  // centro_id + política desde el niño (red de seguridad; el trigger BD deriva centro_id).
-  const { data: nino, error: ninoErr } = await supabase
-    .from('ninos')
-    .select('centro_id, requiere_ambos_firmantes')
-    .eq('id', nino_id)
-    .maybeSingle()
-  if (ninoErr) {
-    logger.warn('crearAutorizacionPorNino: ninos.select', ninoErr.message)
-    return fail('autorizaciones.errors.creacion_fallo')
-  }
-  if (!nino) return fail('autorizaciones.errors.nino_no_encontrado')
+  const centroId = await getCentroActualId()
+  if (!centroId) return fail('autorizaciones.errors.no_autorizado')
 
   const { data: creada, error: insErr } = await supabase
     .from('autorizaciones')
     .insert({
-      centro_id: nino.centro_id,
+      centro_id: centroId,
       tipo,
-      nino_id,
+      es_plantilla: true,
       titulo,
       texto: 'PENDIENTE',
       texto_version: 'v0-pendiente',
       texto_definitivo: false,
       estado: 'borrador',
-      firmantes_requeridos: nino.requiere_ambos_firmantes
-        ? 'todos_los_principales'
-        : 'uno_principal',
+      firmantes_requeridos: 'uno_principal',
       creado_por: user.id,
     })
     .select('id')
     .maybeSingle()
 
   if (insErr || !creada) {
-    logger.warn('crearAutorizacionPorNino: insert', insErr?.message)
+    logger.warn('crearPlantilla: insert', insErr?.message)
     if (insErr?.code === '42501') return fail('autorizaciones.errors.no_autorizado')
+    // 23505 = índice único parcial (ya existe una plantilla activa de ese tipo).
+    if (insErr?.code === '23505') return fail('autorizaciones.errors.plantilla_duplicada')
     return fail('autorizaciones.errors.creacion_fallo')
+  }
+
+  revalidarAutorizaciones()
+  return ok({ autorizacion_id: creada.id })
+}
+
+/**
+ * **Envía** una plantilla publicada (tipo A: reglas/imágenes) a una AUDIENCIA
+ * (niño/aula/centro) creando una **instancia firmable** (`es_plantilla=false`,
+ * `plantilla_id`, `ambito`). El texto se **congela como snapshot** de la plantilla
+ * en el momento del envío (editar la plantilla después = nueva versión; esta
+ * instancia conserva su texto/hash). Nace ya **publicada** (la plantilla lo está)
+ * para que las familias puedan firmar. Solo **admin** (RLS `es_admin`).
+ * recogida/medicación (tipos B) NO se envían: las inicia la familia.
+ */
+export async function enviarAutorizacion(
+  input: EnviarAutorizacionInput
+): Promise<ActionResult<{ autorizacion_id: string }>> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return fail('autorizaciones.errors.no_autorizado')
+
+  const parsed = enviarAutorizacionSchema.safeParse(input)
+  if (!parsed.success) {
+    return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.envio_fallo')
+  }
+  const { plantilla_id, ambito, nino_id, aula_id } = parsed.data
+
+  // Snapshot de la plantilla (debe ser plantilla A publicada y definitiva).
+  const { data: plantilla, error: plErr } = await supabase
+    .from('autorizaciones')
+    .select(
+      'id, tipo, titulo, texto, texto_version, texto_definitivo, estado, centro_id, es_plantilla'
+    )
+    .eq('id', plantilla_id)
+    .maybeSingle()
+  if (plErr) {
+    logger.warn('enviarAutorizacion: plantilla.select', plErr.message)
+    return fail('autorizaciones.errors.envio_fallo')
+  }
+  if (!plantilla || !plantilla.es_plantilla)
+    return fail('autorizaciones.errors.plantilla_no_encontrada')
+  if (!TIPOS_ENVIABLES.includes(plantilla.tipo as (typeof TIPOS_ENVIABLES)[number])) {
+    return fail('autorizaciones.errors.tipo_no_enviable')
+  }
+  if (plantilla.estado !== 'publicada' || !plantilla.texto_definitivo) {
+    return fail('autorizaciones.errors.plantilla_no_publicada')
+  }
+
+  // Política de firmantes: para audiencia de un niño concreto, respeta su flag
+  // `requiere_ambos_firmantes`; para aula/centro, 'uno_principal' (el roster
+  // aplica el override per-niño al calcular el estado de cada uno).
+  let firmantes_requeridos: 'uno_principal' | 'todos_los_principales' = 'uno_principal'
+  if (ambito === 'nino' && nino_id) {
+    const { data: nino } = await supabase
+      .from('ninos')
+      .select('requiere_ambos_firmantes')
+      .eq('id', nino_id)
+      .maybeSingle()
+    if (nino?.requiere_ambos_firmantes) firmantes_requeridos = 'todos_los_principales'
+  }
+
+  const { data: creada, error: insErr } = await supabase
+    .from('autorizaciones')
+    .insert({
+      centro_id: plantilla.centro_id,
+      tipo: plantilla.tipo,
+      es_plantilla: false,
+      plantilla_id: plantilla.id,
+      ambito,
+      nino_id: ambito === 'nino' ? (nino_id ?? null) : null,
+      aula_id: ambito === 'aula' ? (aula_id ?? null) : null,
+      titulo: plantilla.titulo,
+      texto: plantilla.texto,
+      texto_version: plantilla.texto_version,
+      texto_definitivo: true,
+      estado: 'publicada',
+      firmantes_requeridos,
+      vigencia_desde: hoyMadridYmd(),
+      creado_por: user.id,
+    })
+    .select('id')
+    .maybeSingle()
+
+  if (insErr || !creada) {
+    logger.warn('enviarAutorizacion: insert', insErr?.message)
+    if (insErr?.code === '42501') return fail('autorizaciones.errors.no_autorizado')
+    return fail('autorizaciones.errors.envio_fallo')
   }
 
   revalidarAutorizaciones()

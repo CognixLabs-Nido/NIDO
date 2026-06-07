@@ -30,7 +30,7 @@ export async function getAutorizacionDetalle(
   const { data: aut, error } = await supabase
     .from('autorizaciones')
     .select(
-      'id, tipo, titulo, texto, texto_version, texto_definitivo, estado, firmantes_requeridos, evento_id, nino_id, centro_id, vigencia_desde, vigencia_hasta, creado_por'
+      'id, tipo, titulo, texto, texto_version, texto_definitivo, estado, firmantes_requeridos, evento_id, nino_id, aula_id, es_plantilla, ambito, plantilla_id, centro_id, vigencia_desde, vigencia_hasta, creado_por'
     )
     .eq('id', autorizacionId)
     .maybeSingle()
@@ -40,8 +40,9 @@ export async function getAutorizacionDetalle(
   }
   if (!aut) return null
 
-  // Niños en alcance: por niño directo (medicacion/recogida) o por el evento (salida).
-  const ninoIds = await resolverNinosEnAlcance(supabase, aut)
+  // Las plantillas del catálogo no se firman → sin roster. Las instancias
+  // resuelven sus niños por evento (salida) o por ámbito (A) / niño (B2/legacy).
+  const ninoIds = aut.es_plantilla ? [] : await resolverNinosEnAlcance(supabase, aut)
 
   const roster = ninoIds.length
     ? await construirRoster(supabase, aut.id, aut.firmantes_requeridos, ninoIds)
@@ -49,6 +50,7 @@ export async function getAutorizacionDetalle(
 
   const hoy = hoyMadridYmd()
   const firmable =
+    !aut.es_plantilla &&
     aut.estado === 'publicada' &&
     aut.texto_definitivo &&
     (!aut.vigencia_desde || hoy >= aut.vigencia_desde) &&
@@ -65,6 +67,9 @@ export async function getAutorizacionDetalle(
     firmantes_requeridos: aut.firmantes_requeridos,
     evento_id: aut.evento_id,
     nino_id: aut.nino_id,
+    es_plantilla: aut.es_plantilla,
+    ambito: aut.ambito,
+    plantilla_id: aut.plantilla_id,
     vigencia_desde: aut.vigencia_desde,
     vigencia_hasta: aut.vigencia_hasta,
     firmable,
@@ -78,45 +83,66 @@ type AutMin = {
   tipo: string
   evento_id: string | null
   nino_id: string | null
+  aula_id: string | null
+  ambito: string | null
   centro_id: string
 }
 
-/** Resuelve el set de niños visibles según el tipo (por niño) o el evento (salida). */
+/**
+ * Resuelve el set de niños visibles de una INSTANCIA:
+ *  - salida → la audiencia del evento (niño/aula/centro).
+ *  - patrón A (ambito) → niño/aula(matrículas)/centro.
+ *  - B2 (ambito='nino') o legacy (sin ambito) → el niño directo.
+ */
 async function resolverNinosEnAlcance(
   supabase: Awaited<ReturnType<typeof createClient>>,
   aut: AutMin
 ): Promise<string[]> {
-  if (aut.tipo !== 'salida') {
-    return aut.nino_id ? [aut.nino_id] : []
+  if (aut.tipo === 'salida') {
+    if (!aut.evento_id) return []
+    const { data: ev } = await supabase
+      .from('eventos')
+      .select('ambito, aula_id, nino_id, centro_id')
+      .eq('id', aut.evento_id)
+      .maybeSingle()
+    if (!ev) return []
+    if (ev.ambito === 'nino' && ev.nino_id) return [ev.nino_id]
+    if (ev.ambito === 'aula' && ev.aula_id) return ninosDeAula(supabase, ev.aula_id)
+    if (ev.ambito === 'centro') return ninosDeCentro(supabase, ev.centro_id)
+    return []
   }
-  if (!aut.evento_id) return []
 
-  const { data: ev } = await supabase
-    .from('eventos')
-    .select('ambito, aula_id, nino_id, centro_id')
-    .eq('id', aut.evento_id)
-    .maybeSingle()
-  if (!ev) return []
+  // Instancia A enviada a aula/centro.
+  if (aut.ambito === 'aula' && aut.aula_id) return ninosDeAula(supabase, aut.aula_id)
+  if (aut.ambito === 'centro') return ninosDeCentro(supabase, aut.centro_id)
 
-  if (ev.ambito === 'nino' && ev.nino_id) return [ev.nino_id]
-  if (ev.ambito === 'aula' && ev.aula_id) {
-    const { data: mats } = await supabase
-      .from('matriculas')
-      .select('nino_id')
-      .eq('aula_id', ev.aula_id)
-      .is('fecha_baja', null)
-      .is('deleted_at', null)
-    return (mats ?? []).map((m) => m.nino_id)
-  }
-  if (ev.ambito === 'centro') {
-    const { data: ns } = await supabase
-      .from('ninos')
-      .select('id')
-      .eq('centro_id', ev.centro_id)
-      .is('deleted_at', null)
-    return (ns ?? []).map((n) => n.id)
-  }
-  return []
+  // ambito='nino' (A/B2) o legacy (sin ambito): el niño directo.
+  return aut.nino_id ? [aut.nino_id] : []
+}
+
+async function ninosDeAula(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  aulaId: string
+): Promise<string[]> {
+  const { data: mats } = await supabase
+    .from('matriculas')
+    .select('nino_id')
+    .eq('aula_id', aulaId)
+    .is('fecha_baja', null)
+    .is('deleted_at', null)
+  return (mats ?? []).map((m) => m.nino_id)
+}
+
+async function ninosDeCentro(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  centroId: string
+): Promise<string[]> {
+  const { data: ns } = await supabase
+    .from('ninos')
+    .select('id')
+    .eq('centro_id', centroId)
+    .is('deleted_at', null)
+  return (ns ?? []).map((n) => n.id)
 }
 
 /** Construye el roster por niño con la política efectiva (override per-niño). */

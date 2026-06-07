@@ -21,9 +21,12 @@ export async function getAutorizacionesFamilia(): Promise<AutorizacionItem[]> {
   const { data, error } = await supabase
     .from('autorizaciones')
     .select(
-      'id, tipo, titulo, estado, texto_definitivo, evento_id, nino_id, vigencia_desde, vigencia_hasta, created_at'
+      'id, tipo, titulo, estado, texto_definitivo, evento_id, nino_id, es_plantilla, ambito, vigencia_desde, vigencia_hasta, created_at'
     )
     .eq('estado', 'publicada')
+    // Las plantillas del catálogo NO son firmables (visibles a miembros del centro
+    // por RLS); la familia solo ve INSTANCIAS firmables.
+    .eq('es_plantilla', false)
     .order('created_at', { ascending: false })
 
   if (error) {

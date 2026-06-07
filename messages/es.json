@@ -1543,7 +1543,11 @@
       "rechazada_toast": "Autorización rechazada",
       "revocar": "Revocar firma",
       "revocada_toast": "Firma revocada",
-      "nueva_reglas": "Nuevas reglas"
+      "nueva_reglas": "Nuevas reglas",
+      "plantilla_creada_toast": "Formato creado",
+      "enviar": "Enviar autorización",
+      "enviando": "Enviando…",
+      "enviada_toast": "Autorización enviada"
     },
     "form": {
       "evento": "Evento (excursión)",
@@ -1557,7 +1561,16 @@
       "texto_definitivo": "Marcar texto como definitivo (necesario para publicar y firmar)",
       "nino": "Niño",
       "nino_placeholder": "Elige un niño",
-      "titulo_reglas_placeholder": "Reglas de régimen interno"
+      "titulo_reglas_placeholder": "Reglas de régimen interno",
+      "tipo": "Tipo de documento",
+      "tipo_placeholder": "Elige un tipo",
+      "titulo_plantilla_placeholder": "Reglas de régimen interno",
+      "plantilla": "Formato a enviar",
+      "plantilla_placeholder": "Elige un formato publicado",
+      "ambito": "Destinatarios",
+      "ambito_placeholder": "Elige a quién",
+      "aula": "Clase",
+      "aula_placeholder": "Elige una clase"
     },
     "firma": {
       "aria_pad": "Zona para dibujar la firma",
@@ -1584,7 +1597,9 @@
       "texto_pendiente": "Texto pendiente de redactar (PENDIENTE).",
       "texto_no_definitivo": "El texto aún no está marcado como definitivo: no se puede publicar ni firmar.",
       "roster": "Estado de firmas",
-      "tu_firma": "Tu firma"
+      "tu_firma": "Tu firma",
+      "es_plantilla": "Formato del catálogo: no se firma; se envía a una audiencia (o lo inicia la familia).",
+      "ambito_label": "Destinatarios: {ambito}"
     },
     "validation": {
       "titulo_vacio": "El título es obligatorio.",
@@ -1600,7 +1615,10 @@
       "firma_formato": "Formato de firma no válido.",
       "nombre_vacio": "Escribe tu nombre.",
       "nombre_largo": "El nombre es demasiado largo.",
-      "nino_requerido": "Elige un niño."
+      "nino_requerido": "Elige un niño.",
+      "plantilla_requerida": "Elige un formato.",
+      "aula_requerida": "Elige una clase.",
+      "audiencia_incoherente": "La audiencia no es coherente."
     },
     "errors": {
       "no_autorizado": "No tienes permiso para esta acción.",
@@ -1617,7 +1635,12 @@
       "firma_fallo": "No se pudo registrar la firma.",
       "nombre_no_coincide": "El nombre tecleado no coincide con el de tu perfil.",
       "confirma_requerido": "Marca la casilla para autorizar.",
-      "nino_no_encontrado": "El niño no existe o no es accesible."
+      "nino_no_encontrado": "El niño no existe o no es accesible.",
+      "plantilla_duplicada": "Ya existe un formato activo de ese tipo. Anula el anterior para crear otro.",
+      "envio_fallo": "No se pudo enviar la autorización.",
+      "plantilla_no_encontrada": "El formato no existe o no es accesible.",
+      "plantilla_no_publicada": "El formato no está publicado o no es definitivo.",
+      "tipo_no_enviable": "Este tipo lo inicia la familia; no se envía."
     },
     "tipo": {
       "salida": "Salida",
@@ -1625,6 +1648,24 @@
       "recogida": "Recogida",
       "reglas_regimen_interno": "Régimen interno",
       "autorizacion_imagenes": "Imágenes"
+    },
+    "catalogo": {
+      "titulo": "Catálogo de formatos",
+      "descripcion": "Los formatos estándar del centro. Edita el texto, márcalo definitivo y publícalo.",
+      "intro": "Crea el formato estándar de un tipo. Luego teclea su texto y publícalo.",
+      "vacio": "Aún no hay formatos en el catálogo."
+    },
+    "instancias": {
+      "titulo": "Para firmar",
+      "descripcion": "Autorizaciones enviadas o de salida que las familias pueden firmar."
+    },
+    "enviar": {
+      "intro": "Coge un formato publicado y envíalo a una audiencia."
+    },
+    "ambito": {
+      "nino": "Un niño/a",
+      "aula": "Una clase",
+      "centro": "Todo el centro"
     }
   }
 }

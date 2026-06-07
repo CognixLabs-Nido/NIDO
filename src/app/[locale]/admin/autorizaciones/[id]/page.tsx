@@ -48,6 +48,14 @@ export default async function AdminAutorizacionDetallePage({ params }: PageProps
         <p className="text-muted-foreground text-xs">
           {t('detalle.version', { v: aut.texto_version })}
         </p>
+        {aut.es_plantilla && (
+          <p className="text-muted-foreground text-sm">{t('detalle.es_plantilla')}</p>
+        )}
+        {!aut.es_plantilla && aut.ambito && (
+          <p className="text-muted-foreground text-xs">
+            {t('detalle.ambito_label', { ambito: t(`ambito.${aut.ambito}`) })}
+          </p>
+        )}
       </header>
 
       <section className="space-y-2">
@@ -81,10 +89,14 @@ export default async function AdminAutorizacionDetallePage({ params }: PageProps
         />
       </div>
 
-      <section className="space-y-3">
-        <h2 className="text-h3">{t('detalle.roster')}</h2>
-        <RosterFirmas roster={aut.roster} />
-      </section>
+      {/* El roster solo aplica a instancias firmables; una plantilla del catálogo
+          no se firma (se envía a una audiencia o la inicia la familia). */}
+      {!aut.es_plantilla && (
+        <section className="space-y-3">
+          <h2 className="text-h3">{t('detalle.roster')}</h2>
+          <RosterFirmas roster={aut.roster} />
+        </section>
+      )}
     </div>
   )
 }
