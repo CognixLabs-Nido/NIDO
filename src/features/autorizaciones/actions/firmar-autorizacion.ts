@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
-import { hashTextoAutorizacion } from '../lib/hash'
+import { hashFirma } from '../lib/hash'
 import { getRequestContext } from '../lib/request-context'
 import { hoyMadridYmd, revalidarAutorizaciones } from '../lib/server-helpers'
 import {
@@ -17,7 +17,7 @@ import {
   type RechazarAutorizacionInput,
   type RevocarFirmaInput,
 } from '../schemas/autorizaciones'
-import { fail, ok, type ActionResult, type FirmaDecision } from '../types'
+import { fail, ok, type ActionResult, type FirmaDecision, type PersonaAutorizada } from '../types'
 
 /** Compara nombres de forma laxa: minúsculas, sin acentos, espacios colapsados. */
 function normalizarNombre(s: string): string {
@@ -38,6 +38,8 @@ interface DatosDecision {
   /** Trazo del canvas; obligatorio solo en `firmado` (CHECK de BD). */
   firma_imagen: string | null
   comentario: string | null
+  /** Recogida: lista de personas autorizadas que se firma (atada al hash). */
+  personas?: PersonaAutorizada[]
 }
 
 /**
@@ -56,10 +58,21 @@ async function registrarDecision(
   // 1. Documento vigente (el tutor lo ve por RLS de audiencia).
   const { data: aut, error: autErr } = await supabase
     .from('autorizaciones')
-    .select('id, texto, texto_version, estado, texto_definitivo, vigencia_desde, vigencia_hasta')
+    .select(
+      'id, tipo, texto, texto_version, estado, texto_definitivo, vigencia_desde, vigencia_hasta'
+    )
     .eq('id', d.autorizacion_id)
     .maybeSingle()
   if (autErr || !aut) return fail('autorizaciones.errors.no_encontrada')
+
+  // Recogida: al firmar es obligatoria la lista de personas autorizadas.
+  if (
+    aut.tipo === 'recogida' &&
+    d.decision === 'firmado' &&
+    (!d.personas || d.personas.length === 0)
+  ) {
+    return fail('autorizaciones.errors.personas_requeridas')
+  }
 
   // 2. Firmable (pre-chequeo para error claro; la RLS lo vuelve a enforzar).
   const hoy = hoyMadridYmd()
@@ -80,8 +93,13 @@ async function registrarDecision(
     .maybeSingle()
   if (!vinculo) return fail('autorizaciones.errors.no_es_tutor')
 
-  // 4. Hash del texto exacto + contexto probatorio.
-  const texto_hash = hashTextoAutorizacion(aut.texto)
+  // 4. Hash **compuesto** texto + lista (recogida) + contexto probatorio. Sin
+  //    lista, hashFirma == sha256(texto) (compat F8-1/F8-2b).
+  const tienePersonas = !!d.personas && d.personas.length > 0
+  const datos = (
+    tienePersonas ? { personas: d.personas } : {}
+  ) as Database['public']['Tables']['firmas_autorizacion']['Insert']['datos']
+  const texto_hash = hashFirma(aut.texto, tienePersonas ? { personas: d.personas } : undefined)
   const { ip, userAgent } = await getRequestContext()
 
   // 5. Inserción append-only.
@@ -98,6 +116,7 @@ async function registrarDecision(
       nombre_tecleado: d.nombre_tecleado,
       firma_imagen: d.firma_imagen,
       comentario: d.comentario,
+      datos,
       ip_address: ip,
       user_agent: userAgent,
     })
@@ -151,6 +170,11 @@ export async function firmarAutorizacion(
     nombre_tecleado: d.nombre_tecleado.trim(),
     firma_imagen: d.firma_imagen,
     comentario: d.comentario ?? null,
+    personas: d.personas?.map((p) => ({
+      nombre: p.nombre.trim(),
+      dni: p.dni.trim(),
+      ...(p.parentesco?.trim() ? { parentesco: p.parentesco.trim() } : {}),
+    })),
   })
 }
 

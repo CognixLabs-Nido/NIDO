@@ -149,6 +149,31 @@ const firmaImagenSchema = z
   .max(500000, 'autorizaciones.validation.firma_grande')
   .regex(/^data:image\/(png|svg\+xml);/, 'autorizaciones.validation.firma_formato')
 
+// Persona autorizada a recoger (recogida). DNI **laxo**: alfanumérico 5–20
+// (acepta DNI/NIE/pasaporte de extranjeros); la foto va a F10.
+export const personaAutorizadaSchema = z.object({
+  nombre: z
+    .string()
+    .trim()
+    .min(1, 'autorizaciones.validation.persona_nombre_vacio')
+    .max(200, 'autorizaciones.validation.persona_nombre_largo'),
+  dni: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9-]{5,20}$/, 'autorizaciones.validation.persona_dni_invalido'),
+  parentesco: z
+    .string()
+    .trim()
+    .max(100, 'autorizaciones.validation.persona_parentesco_largo')
+    .optional(),
+})
+export type PersonaAutorizadaInput = z.input<typeof personaAutorizadaSchema>
+
+export const personasAutorizadasSchema = z
+  .array(personaAutorizadaSchema)
+  .min(1, 'autorizaciones.validation.personas_vacio')
+  .max(20, 'autorizaciones.validation.personas_muchas')
+
 export const firmarAutorizacionSchema = z.object({
   autorizacion_id: z.string().uuid(),
   nino_id: z.string().uuid(),
@@ -159,8 +184,32 @@ export const firmarAutorizacionSchema = z.object({
     .max(200, 'autorizaciones.validation.nombre_largo'),
   firma_imagen: firmaImagenSchema,
   comentario: comentarioSchema,
+  // Recogida: lista de personas autorizadas (se ata al hash compuesto). Opcional
+  // en el esquema (otros tipos no la llevan); el action la exige en recogida.
+  personas: personasAutorizadasSchema.optional(),
 })
 export type FirmarAutorizacionInput = z.input<typeof firmarAutorizacionSchema>
+
+// --- Recogida B2: la familia CREA su instancia desde la plantilla y la firma ---
+// `modalidad`: habitual (vigencia abierta) | puntual (solo hoy). El action busca
+// la plantilla de recogida publicada del centro del niño, crea/encuentra la
+// instancia (tutor-insert acotado por RLS) y registra la firma con la lista.
+export const modalidadRecogidaEnum = z.enum(['habitual', 'puntual'])
+export type ModalidadRecogida = z.infer<typeof modalidadRecogidaEnum>
+
+export const crearRecogidaSchema = z.object({
+  nino_id: z.string().uuid('autorizaciones.validation.nino_requerido'),
+  modalidad: modalidadRecogidaEnum,
+  nombre_tecleado: z
+    .string()
+    .trim()
+    .min(1, 'autorizaciones.validation.nombre_vacio')
+    .max(200, 'autorizaciones.validation.nombre_largo'),
+  firma_imagen: firmaImagenSchema,
+  personas: personasAutorizadasSchema,
+  comentario: comentarioSchema,
+})
+export type CrearRecogidaInput = z.input<typeof crearRecogidaSchema>
 
 // --- Rechazar (tutor) — sin trazo (no hay firma que dibujar) ----------------
 export const rechazarAutorizacionSchema = z.object({

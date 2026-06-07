@@ -27,6 +27,13 @@ export type TipoVinculo = Database['public']['Enums']['tipo_vinculo']
 /** Estado de firma resultante de un niño dentro de una autorización. */
 export type EstadoFirmaNino = 'firmado' | 'pendiente' | 'rechazado' | 'revocado' | 'parcial'
 
+/** Persona autorizada a recoger (recogida, F8). DNI laxo; foto → F10. */
+export interface PersonaAutorizada {
+  nombre: string
+  dni: string
+  parentesco?: string
+}
+
 /** Una firma efectiva (última fila por firmante) para mostrar en el roster. */
 export interface FirmaVigente {
   firmante_id: string
@@ -115,4 +122,8 @@ export interface AutorizacionDetalle {
   /** El usuario actual creó la autorización (gatea editar/publicar/anular junto a esAdmin). */
   es_autor: boolean
   roster: RosterFirmaNino[]
+  /** Recogida: lista de personas de la última firma `firmado` (vigente), para display. */
+  personas_vigentes?: PersonaAutorizada[]
+  /** Recogida: ¿el hash de la última firma `firmado` cuadra con texto+lista? `null` si no hay firma. */
+  integridad_ok?: boolean | null
 }

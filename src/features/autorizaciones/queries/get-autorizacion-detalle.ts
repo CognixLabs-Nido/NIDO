@@ -3,6 +3,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { hashFirma } from '../lib/hash'
 import {
   calcularEstadoNino,
   firmasVigentesPorFirmante,
@@ -10,7 +11,12 @@ import {
   type FirmanteVinculo,
 } from '../lib/estado-firma'
 import { hoyMadridYmd } from '../lib/server-helpers'
-import type { AutorizacionDetalle, PoliticaFirmantes, RosterFirmaNino } from '../types'
+import type {
+  AutorizacionDetalle,
+  PersonaAutorizada,
+  PoliticaFirmantes,
+  RosterFirmaNino,
+} from '../types'
 
 /**
  * Detalle de una autorización + su **roster por niño** (estado de firma calculado
@@ -56,6 +62,30 @@ export async function getAutorizacionDetalle(
     (!aut.vigencia_desde || hoy >= aut.vigencia_desde) &&
     (!aut.vigencia_hasta || hoy <= aut.vigencia_hasta)
 
+  // Recogida: lista vigente (última firma `firmado`) para prefill multi-tutor +
+  // display, y verificación de integridad del hash contra texto + lista.
+  let personas_vigentes: PersonaAutorizada[] | undefined
+  let integridad_ok: boolean | null | undefined
+  if (aut.tipo === 'recogida' && !aut.es_plantilla) {
+    const { data: ultima } = await supabase
+      .from('firmas_autorizacion')
+      .select('datos, texto_hash')
+      .eq('autorizacion_id', aut.id)
+      .eq('decision', 'firmado')
+      .order('firmado_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (ultima) {
+      const personas = (ultima.datos as { personas?: PersonaAutorizada[] } | null)?.personas ?? []
+      personas_vigentes = personas
+      const recomputado = hashFirma(aut.texto, personas.length > 0 ? { personas } : undefined)
+      integridad_ok = recomputado === ultima.texto_hash
+    } else {
+      personas_vigentes = []
+      integridad_ok = null
+    }
+  }
+
   return {
     id: aut.id,
     tipo: aut.tipo,
@@ -75,6 +105,8 @@ export async function getAutorizacionDetalle(
     firmable,
     es_autor: !!user && aut.creado_por === user.id,
     roster,
+    personas_vigentes,
+    integridad_ok,
   }
 }
 

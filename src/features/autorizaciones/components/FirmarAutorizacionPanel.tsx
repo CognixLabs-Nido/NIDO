@@ -16,30 +16,37 @@ import {
   rechazarAutorizacion,
   revocarFirma,
 } from '../actions/firmar-autorizacion'
-import type { RosterFirmaNino } from '../types'
+import type { PersonaAutorizada, RosterFirmaNino, TipoAutorizacion } from '../types'
 import { EstadoFirmaBadge } from './EstadoFirmaBadge'
 import { FirmaPad } from './FirmaPad'
+import { PersonasAutorizadasEditor } from './PersonasAutorizadasEditor'
 
 interface Props {
   autorizacionId: string
+  tipo: TipoAutorizacion
   firmable: boolean
   /** Roster ya filtrado por RLS a los niños del tutor. */
   roster: RosterFirmaNino[]
   currentUserId: string
   currentUserNombre: string
+  /** Recogida: lista vigente para prefill (multi-tutor parte de la del 1º). */
+  personasIniciales?: PersonaAutorizada[]
 }
 
 /**
  * Panel de firma del tutor: una fila por cada niño suyo en la autorización. Lee
  * el texto (arriba, en la página), confirma con checkbox + nombre tecleado +
- * trazo del dedo, y firma/rechaza. Si ya firmó, puede revocar (fila nueva).
+ * trazo del dedo, y firma/rechaza. Si ya firmó, puede revocar (fila nueva). En
+ * recogida añade el editor de personas autorizadas (prefill multi-tutor).
  */
 export function FirmarAutorizacionPanel({
   autorizacionId,
+  tipo,
   firmable,
   roster,
   currentUserId,
   currentUserNombre,
+  personasIniciales,
 }: Props) {
   const t = useTranslations('autorizaciones')
 
@@ -53,10 +60,12 @@ export function FirmarAutorizacionPanel({
         <NinoFirmaRow
           key={r.nino_id}
           autorizacionId={autorizacionId}
+          tipo={tipo}
           firmable={firmable}
           roster={r}
           miDecision={r.firmantes.find((f) => f.firmante_id === currentUserId)?.decision ?? null}
           nombrePerfil={currentUserNombre}
+          personasIniciales={personasIniciales}
         />
       ))}
     </div>
@@ -65,16 +74,20 @@ export function FirmarAutorizacionPanel({
 
 function NinoFirmaRow({
   autorizacionId,
+  tipo,
   firmable,
   roster,
   miDecision,
   nombrePerfil,
+  personasIniciales,
 }: {
   autorizacionId: string
+  tipo: TipoAutorizacion
   firmable: boolean
   roster: RosterFirmaNino
   miDecision: 'firmado' | 'rechazado' | 'revocado' | null
   nombrePerfil: string
+  personasIniciales?: PersonaAutorizada[]
 }) {
   const t = useTranslations('autorizaciones')
   const tRoot = useTranslations()
@@ -82,9 +95,20 @@ function NinoFirmaRow({
   const [confirmo, setConfirmo] = useState(false)
   const [nombre, setNombre] = useState(nombrePerfil)
   const [firma, setFirma] = useState<string | null>(null)
+  const [personas, setPersonas] = useState<PersonaAutorizada[]>(
+    personasIniciales && personasIniciales.length > 0
+      ? personasIniciales
+      : [{ nombre: '', dni: '', parentesco: '' }]
+  )
   const [pending, startTransition] = useTransition()
 
   const yaFirmado = miDecision === 'firmado'
+  const esRecogida = tipo === 'recogida'
+  // Personas válidas (nombre + DNI no vacíos); el server revalida con Zod.
+  const personasValidas = personas
+    .map((p) => ({ ...p, nombre: p.nombre.trim(), dni: p.dni.trim() }))
+    .filter((p) => p.nombre.length > 0 && p.dni.length > 0)
+  const listaOk = !esRecogida || personasValidas.length > 0
 
   function firmar() {
     if (!confirmo) {
@@ -95,12 +119,17 @@ function NinoFirmaRow({
       toast.error(t('validation.firma_requerida'))
       return
     }
+    if (esRecogida && personasValidas.length === 0) {
+      toast.error(t('validation.personas_vacio'))
+      return
+    }
     startTransition(async () => {
       const res = await firmarAutorizacion({
         autorizacion_id: autorizacionId,
         nino_id: roster.nino_id,
         nombre_tecleado: nombre.trim(),
         firma_imagen: firma,
+        ...(esRecogida ? { personas: personasValidas } : {}),
       })
       if (!res.success) {
         toast.error(tRoot(res.error))
@@ -161,6 +190,9 @@ function NinoFirmaRow({
 
       {firmable && !yaFirmado && (
         <div className="space-y-4">
+          {esRecogida && (
+            <PersonasAutorizadasEditor value={personas} onChange={setPersonas} disabled={pending} />
+          )}
           <label className="flex items-start gap-2 text-sm">
             <Checkbox checked={confirmo} onCheckedChange={(v) => setConfirmo(v === true)} />
             <span>{t('firma.confirmo')}</span>
@@ -180,7 +212,7 @@ function NinoFirmaRow({
             <FirmaPad onChange={setFirma} disabled={pending} />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={firmar} disabled={pending || !confirmo || !firma}>
+            <Button onClick={firmar} disabled={pending || !confirmo || !firma || !listaOk}>
               {t('acciones.firmar')}
             </Button>
             <Button variant="outline" onClick={rechazar} disabled={pending}>
