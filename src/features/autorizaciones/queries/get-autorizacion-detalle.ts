@@ -13,6 +13,7 @@ import {
 import { hoyMadridYmd } from '../lib/server-helpers'
 import type {
   AutorizacionDetalle,
+  MedicacionDatos,
   PersonaAutorizada,
   PoliticaFirmantes,
   RosterFirmaNino,
@@ -62,11 +63,12 @@ export async function getAutorizacionDetalle(
     (!aut.vigencia_desde || hoy >= aut.vigencia_desde) &&
     (!aut.vigencia_hasta || hoy <= aut.vigencia_hasta)
 
-  // Recogida: lista vigente (última firma `firmado`) para prefill multi-tutor +
-  // display, y verificación de integridad del hash contra texto + lista.
+  // Recogida/medicación: datos vigentes (última firma `firmado`) para prefill +
+  // display, y verificación de integridad del hash contra texto + datos.
   let personas_vigentes: PersonaAutorizada[] | undefined
+  let medicacion_vigente: MedicacionDatos | null | undefined
   let integridad_ok: boolean | null | undefined
-  if (aut.tipo === 'recogida' && !aut.es_plantilla) {
+  if (!aut.es_plantilla && (aut.tipo === 'recogida' || aut.tipo === 'medicacion')) {
     const { data: ultima } = await supabase
       .from('firmas_autorizacion')
       .select('datos, texto_hash')
@@ -76,12 +78,24 @@ export async function getAutorizacionDetalle(
       .limit(1)
       .maybeSingle()
     if (ultima) {
-      const personas = (ultima.datos as { personas?: PersonaAutorizada[] } | null)?.personas ?? []
-      personas_vigentes = personas
-      const recomputado = hashFirma(aut.texto, personas.length > 0 ? { personas } : undefined)
-      integridad_ok = recomputado === ultima.texto_hash
+      const datos = ultima.datos as {
+        personas?: PersonaAutorizada[]
+        medicacion?: MedicacionDatos
+      } | null
+      if (aut.tipo === 'recogida') {
+        const personas = datos?.personas ?? []
+        personas_vigentes = personas
+        const recomputado = hashFirma(aut.texto, personas.length > 0 ? { personas } : undefined)
+        integridad_ok = recomputado === ultima.texto_hash
+      } else {
+        const medicacion = datos?.medicacion ?? null
+        medicacion_vigente = medicacion
+        const recomputado = hashFirma(aut.texto, medicacion ? { medicacion } : undefined)
+        integridad_ok = recomputado === ultima.texto_hash
+      }
     } else {
-      personas_vigentes = []
+      if (aut.tipo === 'recogida') personas_vigentes = []
+      else medicacion_vigente = null
       integridad_ok = null
     }
   }
@@ -106,6 +120,7 @@ export async function getAutorizacionDetalle(
     es_autor: !!user && aut.creado_por === user.id,
     roster,
     personas_vigentes,
+    medicacion_vigente,
     integridad_ok,
   }
 }

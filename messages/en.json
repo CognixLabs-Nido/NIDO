@@ -1624,7 +1624,16 @@
       "persona_dni_invalido": "Invalid document (5–20 alphanumeric characters).",
       "persona_parentesco_largo": "Relationship is too long.",
       "personas_vacio": "Add at least one authorised person.",
-      "personas_muchas": "Too many people (max 20)."
+      "personas_muchas": "Too many people (max 20).",
+      "med_medicamento_vacio": "Medication is required.",
+      "med_medicamento_largo": "Medication is too long.",
+      "med_dosis_vacia": "Dose is required.",
+      "med_dosis_larga": "Dose is too long.",
+      "med_via_larga": "Route is too long.",
+      "med_pauta_vacia": "Schedule is required.",
+      "med_pauta_larga": "Schedule is too long.",
+      "med_fechas_incoherentes": "End date cannot be before start date.",
+      "med_campos_requeridos": "Fill in medication, dose and schedule."
     },
     "errors": {
       "no_autorizado": "You don't have permission for this action.",
@@ -1648,7 +1657,11 @@
       "plantilla_no_publicada": "The format is not published or not final.",
       "tipo_no_enviable": "This type is started by the family; it is not sent.",
       "personas_requeridas": "List at least one authorised person to sign.",
-      "recogida_sin_plantilla": "The center has not published the pick-up format yet."
+      "recogida_sin_plantilla": "The center has not published the pick-up format yet.",
+      "medicacion_sin_plantilla": "The center has not published the medication format yet.",
+      "med_fuera_de_vigencia": "Today must be within the medication dates to sign.",
+      "medicacion_requerida": "Medication data is missing.",
+      "med_caducada": "You cannot authorise a medication whose end date has already passed."
     },
     "tipo": {
       "salida": "Outing",
@@ -1696,6 +1709,27 @@
       "modalidad_habitual": "Regular (always)",
       "modalidad_puntual": "One-off (today only)",
       "rgpd_terceros": "You are providing third-party data (name and ID of whoever picks up). The center processes it to verify pick-up; inform those people that their data is shared with the center."
+    },
+    "medicacion": {
+      "crear": "Authorise medication",
+      "intro": "Enter the medication, dose and schedule for your child and sign. The dates set the validity.",
+      "medicamento": "Medication",
+      "medicamento_placeholder": "e.g. Paracetamol",
+      "dosis": "Dose",
+      "dosis_placeholder": "e.g. 5 ml",
+      "via": "Route (optional)",
+      "via_placeholder": "e.g. oral",
+      "pauta": "Schedule / frequency",
+      "pauta_placeholder": "e.g. every 8 h if fever >38º",
+      "fecha_inicio": "Start date",
+      "fecha_fin": "End date",
+      "vigencia_ayuda": "The dates set the validity of the authorisation. Today must be within the range to sign.",
+      "ficha": "Medication",
+      "creada_toast": "Medication signed",
+      "aviso": "Health data of a minor. The center processes it to administer the medication per your authorisation. The report/prescription can be attached later.",
+      "estado_vigente": "Active today",
+      "estado_futura": "Starts on {fecha}",
+      "estado_finalizada": "Ended"
     }
   }
 }

@@ -96,3 +96,25 @@ test.describe('F8-RW-2 — recogida B2 (la familia inicia) (gateado)', () => {
     ).toBeVisible()
   })
 })
+
+test.describe('F8-3a — medicación B2 (la familia inicia) (gateado)', () => {
+  test.skip(
+    process.env.E2E_REAL_SESSIONS !== '1',
+    'Requiere E2E_TUTOR_* + plantilla de medicación publicada'
+  )
+
+  test('tutor abre el diálogo de autorizar medicación (campos estructurados)', async ({ page }) => {
+    await page.goto('/es/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_TUTOR_EMAIL!)
+    await page.getByLabel(/contraseña|password/i).fill(process.env.E2E_TUTOR_PASSWORD!)
+    await page.getByRole('button', { name: /entrar|sign in/i }).click()
+    await page.goto('/es/family/autorizaciones')
+    const crear = page.getByRole('button', { name: /autorizar medicación/i })
+    await expect(crear).toBeVisible()
+    await crear.click()
+    // Campos estructurados: medicamento + dosis + pauta + fechas.
+    await expect(page.getByLabel(/medicamento|medication|medicament/i)).toBeVisible()
+    await expect(page.getByLabel(/dosis|dose/i)).toBeVisible()
+    await expect(page.getByLabel(/pauta|schedule|freqüència/i)).toBeVisible()
+  })
+})

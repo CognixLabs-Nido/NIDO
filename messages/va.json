@@ -1624,7 +1624,16 @@
       "persona_dni_invalido": "Document no vàlid (5–20 caràcters alfanumèrics).",
       "persona_parentesco_largo": "El parentiu és massa llarg.",
       "personas_vacio": "Afig almenys una persona autoritzada.",
-      "personas_muchas": "Massa persones (màxim 20)."
+      "personas_muchas": "Massa persones (màxim 20).",
+      "med_medicamento_vacio": "El medicament és obligatori.",
+      "med_medicamento_largo": "El medicament és massa llarg.",
+      "med_dosis_vacia": "La dosi és obligatòria.",
+      "med_dosis_larga": "La dosi és massa llarga.",
+      "med_via_larga": "La via és massa llarga.",
+      "med_pauta_vacia": "La pauta és obligatòria.",
+      "med_pauta_larga": "La pauta és massa llarga.",
+      "med_fechas_incoherentes": "La data de fi no pot ser anterior a la d'inici.",
+      "med_campos_requeridos": "Ompli medicament, dosi i pauta."
     },
     "errors": {
       "no_autorizado": "No tens permís per a esta acció.",
@@ -1648,7 +1657,11 @@
       "plantilla_no_publicada": "El format no està publicat o no és definitiu.",
       "tipo_no_enviable": "Aquest tipus l'inicia la família; no s'envia.",
       "personas_requeridas": "Indica almenys una persona autoritzada per a signar.",
-      "recogida_sin_plantilla": "El centre encara no ha publicat el format d'arreplegada."
+      "recogida_sin_plantilla": "El centre encara no ha publicat el format d'arreplegada.",
+      "medicacion_sin_plantilla": "El centre encara no ha publicat el format de medicació.",
+      "med_fuera_de_vigencia": "Hui ha d'estar dins de les dates de la medicació per a signar.",
+      "medicacion_requerida": "Falten les dades de la medicació.",
+      "med_caducada": "No pots autoritzar una medicació la data de fi de la qual ja ha passat."
     },
     "tipo": {
       "salida": "Eixida",
@@ -1696,6 +1709,27 @@
       "modalidad_habitual": "Habitual (sempre)",
       "modalidad_puntual": "Puntual (només hui)",
       "rgpd_terceros": "Aportes dades de tercers (nom i document de qui arreplega). El centre les tracta per a verificar l'arreplegada; informa eixes persones que les seues dades es compartixen amb el centre."
+    },
+    "medicacion": {
+      "crear": "Autoritzar medicació",
+      "intro": "Indica el medicament, la dosi i la pauta per al teu fill/a i signa. Les dates marquen la vigència.",
+      "medicamento": "Medicament",
+      "medicamento_placeholder": "Ex. Apiretal",
+      "dosis": "Dosi",
+      "dosis_placeholder": "Ex. 5 ml",
+      "via": "Via (opcional)",
+      "via_placeholder": "Ex. oral",
+      "pauta": "Pauta / freqüència",
+      "pauta_placeholder": "Ex. cada 8 h si febre >38º",
+      "fecha_inicio": "Data d'inici",
+      "fecha_fin": "Data de fi",
+      "vigencia_ayuda": "Les dates definixen la vigència de l'autorització. Hui ha d'estar dins de l'interval per a poder signar.",
+      "ficha": "Medicació",
+      "creada_toast": "Medicació signada",
+      "aviso": "Dada de salut d'un menor. El centre la tracta per a administrar la medicació segons la teua autorització. L'informe/recepta es podrà adjuntar més avant.",
+      "estado_vigente": "Vigent hui",
+      "estado_futura": "Comença el {fecha}",
+      "estado_finalizada": "Finalitzada"
     }
   }
 }

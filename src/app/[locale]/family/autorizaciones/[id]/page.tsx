@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { FirmarAutorizacionPanel } from '@/features/autorizaciones/components/FirmarAutorizacionPanel'
+import { MedicacionFicha } from '@/features/autorizaciones/components/MedicacionFicha'
 import { RecogidaLista } from '@/features/autorizaciones/components/RecogidaLista'
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
@@ -73,6 +74,15 @@ export default async function FamilyAutorizacionDetallePage({ params }: PageProp
         </section>
       )}
 
+      {aut.tipo === 'medicacion' && (
+        <section>
+          <MedicacionFicha
+            medicacion={aut.medicacion_vigente ?? null}
+            integridadOk={aut.integridad_ok}
+          />
+        </section>
+      )}
+
       <section className="space-y-3">
         <h2 className="text-h3">{t('detalle.tu_firma')}</h2>
         <FirmarAutorizacionPanel
@@ -83,6 +93,7 @@ export default async function FamilyAutorizacionDetallePage({ params }: PageProp
           currentUserId={user.id}
           currentUserNombre={perfil?.nombre_completo ?? ''}
           personasIniciales={aut.personas_vigentes}
+          medicacionInicial={aut.medicacion_vigente}
         />
       </section>
     </div>

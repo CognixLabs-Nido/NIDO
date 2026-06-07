@@ -3,12 +3,14 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
+import { CrearMedicacionDialog } from '@/features/autorizaciones/components/CrearMedicacionDialog'
 import { CrearRecogidaDialog } from '@/features/autorizaciones/components/CrearRecogidaDialog'
 import {
   EstadoFirmaBadge,
   TipoAutorizacionBadge,
 } from '@/features/autorizaciones/components/EstadoFirmaBadge'
 import { getAutorizacionesFamilia } from '@/features/autorizaciones/queries/get-autorizaciones-familia'
+import { getMedicacionContextoFamilia } from '@/features/autorizaciones/queries/get-medicacion-familia'
 import { getRecogidaContextoFamilia } from '@/features/autorizaciones/queries/get-recogida-familia'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { createClient } from '@/lib/supabase/server'
@@ -26,9 +28,10 @@ export default async function FamilyAutorizacionesPage({ params }: PageProps) {
   const rol = await getRolEnCentro(centroId)
   if (rol !== 'tutor_legal' && rol !== 'autorizado') redirect(`/${locale}/forbidden`)
 
-  const [autorizaciones, recogida] = await Promise.all([
+  const [autorizaciones, recogida, medicacion] = await Promise.all([
     getAutorizacionesFamilia(),
     getRecogidaContextoFamilia(),
+    getMedicacionContextoFamilia(),
   ])
 
   const supabase = await createClient()
@@ -49,13 +52,21 @@ export default async function FamilyAutorizacionesPage({ params }: PageProps) {
           </h1>
           <p className="text-muted-foreground text-sm">{t('family_intro')}</p>
         </div>
-        {recogida.plantillaDisponible && recogida.ninos.length > 0 && (
-          <CrearRecogidaDialog
-            ninos={recogida.ninos}
-            prefillPorNino={recogida.prefillPorNino}
-            currentUserNombre={perfil?.nombre_completo ?? ''}
-          />
-        )}
+        <div className="flex flex-wrap gap-2">
+          {recogida.plantillaDisponible && recogida.ninos.length > 0 && (
+            <CrearRecogidaDialog
+              ninos={recogida.ninos}
+              prefillPorNino={recogida.prefillPorNino}
+              currentUserNombre={perfil?.nombre_completo ?? ''}
+            />
+          )}
+          {medicacion.plantillaDisponible && medicacion.ninos.length > 0 && (
+            <CrearMedicacionDialog
+              ninos={medicacion.ninos}
+              currentUserNombre={perfil?.nombre_completo ?? ''}
+            />
+          )}
+        </div>
       </header>
 
       {autorizaciones.length === 0 ? (
