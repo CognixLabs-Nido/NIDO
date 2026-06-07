@@ -1618,7 +1618,13 @@
       "nino_requerido": "Choose a child.",
       "plantilla_requerida": "Choose a format.",
       "aula_requerida": "Choose a class.",
-      "audiencia_incoherente": "The audience is not consistent."
+      "audiencia_incoherente": "The audience is not consistent.",
+      "persona_nombre_vacio": "Name is required.",
+      "persona_nombre_largo": "Name is too long.",
+      "persona_dni_invalido": "Invalid document (5–20 alphanumeric characters).",
+      "persona_parentesco_largo": "Relationship is too long.",
+      "personas_vacio": "Add at least one authorised person.",
+      "personas_muchas": "Too many people (max 20)."
     },
     "errors": {
       "no_autorizado": "You don't have permission for this action.",
@@ -1640,7 +1646,9 @@
       "envio_fallo": "The authorization could not be sent.",
       "plantilla_no_encontrada": "The format does not exist or is not accessible.",
       "plantilla_no_publicada": "The format is not published or not final.",
-      "tipo_no_enviable": "This type is started by the family; it is not sent."
+      "tipo_no_enviable": "This type is started by the family; it is not sent.",
+      "personas_requeridas": "List at least one authorised person to sign.",
+      "recogida_sin_plantilla": "The center has not published the pick-up format yet."
     },
     "tipo": {
       "salida": "Outing",
@@ -1666,6 +1674,28 @@
       "nino": "One child",
       "aula": "One class",
       "centro": "Whole center"
+    },
+    "recogida": {
+      "lista": "People authorised to pick up",
+      "lista_vacia": "Add at least one person.",
+      "nombre": "Full name",
+      "dni": "ID / document",
+      "parentesco": "Relationship (optional)",
+      "quitar": "Remove",
+      "anadir": "Add person",
+      "dni_aviso": "The document is stored as text; the photo will be added later.",
+      "lista_vigente": "Authorised people",
+      "integra": "Signature intact",
+      "no_integra": "Integrity not verified",
+      "sin_firmar": "Not signed yet.",
+      "crear": "Authorise pick-up",
+      "firmando": "Signing…",
+      "creada_toast": "Pick-up signed",
+      "intro": "List who can pick up your child and sign. The regular list stays open; the one-off is valid only today.",
+      "modalidad": "Type",
+      "modalidad_habitual": "Regular (always)",
+      "modalidad_puntual": "One-off (today only)",
+      "rgpd_terceros": "You are providing third-party data (name and ID of whoever picks up). The center processes it to verify pick-up; inform those people that their data is shared with the center."
     }
   }
 }

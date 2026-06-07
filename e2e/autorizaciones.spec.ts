@@ -23,6 +23,7 @@ test.describe('F8-1 — autorizaciones smoke', () => {
     expect(body).not.toContain('autorizaciones.title')
     expect(body).not.toContain('autorizaciones.acciones.')
     expect(body).not.toContain('autorizaciones.firma.')
+    expect(body).not.toContain('autorizaciones.recogida.')
   })
 })
 
@@ -51,19 +52,47 @@ test.describe('F8-1 — admin publica salida → tutor firma (gateado)', () => {
   })
 })
 
-test.describe('F8-2b — reglas de régimen interno (gateado)', () => {
+test.describe('F8-RW-1 — catálogo + enviar (gateado)', () => {
   test.skip(process.env.E2E_REAL_SESSIONS !== '1', 'Requiere E2E_ADMIN_* en .env.local')
 
-  test('admin puede abrir el diálogo de nuevas reglas (por niño)', async ({ page }) => {
+  test('admin ve las dos acciones (catálogo + enviar), no el viejo botón de reglas', async ({
+    page,
+  }) => {
     await page.goto('/es/login')
     await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL!)
     await page.getByLabel(/contraseña|password/i).fill(process.env.E2E_ADMIN_PASSWORD!)
     await page.getByRole('button', { name: /entrar|sign in/i }).click()
     await page.goto('/es/admin/autorizaciones')
-    const nuevasReglas = page.getByRole('button', { name: /reglas/i })
-    await expect(nuevasReglas).toBeVisible()
-    await nuevasReglas.click()
-    // El diálogo pide elegir niño + título (cuelga del niño, sin evento).
-    await expect(page.getByText(/niño|xiquet|child/i).first()).toBeVisible()
+    // Acción de catálogo: «Nueva autorización» (crear plantilla).
+    const nueva = page.getByRole('button', { name: /nueva autorización/i })
+    await expect(nueva).toBeVisible()
+    await nueva.click()
+    // El diálogo pide el TIPO de documento (no un niño): es el catálogo.
+    await expect(page.getByText(/tipo de documento|tipus de document|document type/i)).toBeVisible()
+  })
+})
+
+test.describe('F8-RW-2 — recogida B2 (la familia inicia) (gateado)', () => {
+  test.skip(
+    process.env.E2E_REAL_SESSIONS !== '1',
+    'Requiere E2E_TUTOR_* + plantilla de recogida publicada'
+  )
+
+  test('tutor abre el diálogo de autorizar recogida (niño + modalidad + lista)', async ({
+    page,
+  }) => {
+    await page.goto('/es/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_TUTOR_EMAIL!)
+    await page.getByLabel(/contraseña|password/i).fill(process.env.E2E_TUTOR_PASSWORD!)
+    await page.getByRole('button', { name: /entrar|sign in/i }).click()
+    await page.goto('/es/family/autorizaciones')
+    const crear = page.getByRole('button', { name: /autorizar recogida/i })
+    await expect(crear).toBeVisible()
+    await crear.click()
+    // El diálogo lo inicia la familia: modalidad (habitual/puntual) + añadir persona.
+    await expect(page.getByText(/modalidad|modalitat|type/i).first()).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: /añadir persona|afegir persona|add person/i })
+    ).toBeVisible()
   })
 })

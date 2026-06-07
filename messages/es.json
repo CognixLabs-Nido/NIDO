@@ -1618,7 +1618,13 @@
       "nino_requerido": "Elige un niño.",
       "plantilla_requerida": "Elige un formato.",
       "aula_requerida": "Elige una clase.",
-      "audiencia_incoherente": "La audiencia no es coherente."
+      "audiencia_incoherente": "La audiencia no es coherente.",
+      "persona_nombre_vacio": "El nombre es obligatorio.",
+      "persona_nombre_largo": "El nombre es demasiado largo.",
+      "persona_dni_invalido": "Documento no válido (5–20 caracteres alfanuméricos).",
+      "persona_parentesco_largo": "El parentesco es demasiado largo.",
+      "personas_vacio": "Añade al menos una persona autorizada.",
+      "personas_muchas": "Demasiadas personas (máximo 20)."
     },
     "errors": {
       "no_autorizado": "No tienes permiso para esta acción.",
@@ -1640,7 +1646,9 @@
       "envio_fallo": "No se pudo enviar la autorización.",
       "plantilla_no_encontrada": "El formato no existe o no es accesible.",
       "plantilla_no_publicada": "El formato no está publicado o no es definitivo.",
-      "tipo_no_enviable": "Este tipo lo inicia la familia; no se envía."
+      "tipo_no_enviable": "Este tipo lo inicia la familia; no se envía.",
+      "personas_requeridas": "Indica al menos una persona autorizada para firmar.",
+      "recogida_sin_plantilla": "El centro aún no ha publicado el formato de recogida."
     },
     "tipo": {
       "salida": "Salida",
@@ -1666,6 +1674,28 @@
       "nino": "Un niño/a",
       "aula": "Una clase",
       "centro": "Todo el centro"
+    },
+    "recogida": {
+      "lista": "Personas autorizadas a recoger",
+      "lista_vacia": "Añade al menos una persona.",
+      "nombre": "Nombre y apellidos",
+      "dni": "DNI / documento",
+      "parentesco": "Parentesco (opcional)",
+      "quitar": "Quitar",
+      "anadir": "Añadir persona",
+      "dni_aviso": "El documento se guarda como texto; la foto se añadirá más adelante.",
+      "lista_vigente": "Personas autorizadas",
+      "integra": "Firma íntegra",
+      "no_integra": "Integridad no verificada",
+      "sin_firmar": "Aún sin firmar.",
+      "crear": "Autorizar recogida",
+      "firmando": "Firmando…",
+      "creada_toast": "Recogida firmada",
+      "intro": "Indica quién puede recoger a tu hijo/a y firma. La habitual queda abierta; la puntual vale solo hoy.",
+      "modalidad": "Modalidad",
+      "modalidad_habitual": "Habitual (siempre)",
+      "modalidad_puntual": "Puntual (solo hoy)",
+      "rgpd_terceros": "Aportas datos de terceros (nombre y documento de quien recoge). El centro los trata para verificar la recogida; informa a esas personas de que sus datos se comparten con el centro."
     }
   }
 }

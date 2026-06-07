@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { FirmarAutorizacionPanel } from '@/features/autorizaciones/components/FirmarAutorizacionPanel'
+import { RecogidaLista } from '@/features/autorizaciones/components/RecogidaLista'
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { createClient } from '@/lib/supabase/server'
@@ -66,14 +67,22 @@ export default async function FamilyAutorizacionDetallePage({ params }: PageProp
         <p className="text-muted-foreground text-xs">{t('aviso_legal')}</p>
       </section>
 
+      {aut.tipo === 'recogida' && (
+        <section>
+          <RecogidaLista personas={aut.personas_vigentes ?? []} integridadOk={aut.integridad_ok} />
+        </section>
+      )}
+
       <section className="space-y-3">
         <h2 className="text-h3">{t('detalle.tu_firma')}</h2>
         <FirmarAutorizacionPanel
           autorizacionId={aut.id}
+          tipo={aut.tipo}
           firmable={aut.firmable}
           roster={aut.roster}
           currentUserId={user.id}
           currentUserNombre={perfil?.nombre_completo ?? ''}
+          personasIniciales={aut.personas_vigentes}
         />
       </section>
     </div>

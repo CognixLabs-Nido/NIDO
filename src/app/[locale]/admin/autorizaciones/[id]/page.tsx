@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server'
 import { AccionesAdmin } from '@/features/autorizaciones/components/AccionesAdmin'
 import { EditarTextoDialog } from '@/features/autorizaciones/components/EditarTextoDialog'
 import { EstadoDocBadge } from '@/features/autorizaciones/components/EstadoFirmaBadge'
+import { RecogidaLista } from '@/features/autorizaciones/components/RecogidaLista'
 import { RosterFirmas } from '@/features/autorizaciones/components/RosterFirmas'
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
@@ -88,6 +89,14 @@ export default async function AdminAutorizacionDetallePage({ params }: PageProps
           textoDefinitivo={aut.texto_definitivo}
         />
       </div>
+
+      {/* Recogida: lista de personas autorizadas vigente (lectura para profes del
+          aula + dirección) + flag de integridad del hash. */}
+      {!aut.es_plantilla && aut.tipo === 'recogida' && (
+        <section>
+          <RecogidaLista personas={aut.personas_vigentes ?? []} integridadOk={aut.integridad_ok} />
+        </section>
+      )}
 
       {/* El roster solo aplica a instancias firmables; una plantilla del catálogo
           no se firma (se envía a una audiencia o la inicia la familia). */}
