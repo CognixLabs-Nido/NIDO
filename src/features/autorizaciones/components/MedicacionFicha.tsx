@@ -11,6 +11,11 @@ interface Props {
   integridadOk?: boolean | null
 }
 
+/** Hoy en huso Madrid como YYYY-MM-DD (para el estado de vigencia efectiva). */
+function hoyMadrid(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date())
+}
+
 /**
  * Ficha de la medicación vigente (de la última firma `firmado`) + indicador de
  * integridad del hash. Solo lectura; la usan los detalles admin (profe/dirección
@@ -19,10 +24,37 @@ interface Props {
 export function MedicacionFicha({ medicacion, integridadOk }: Props) {
   const t = useTranslations('autorizaciones')
 
+  // Vigencia EFECTIVA del tratamiento (≠ vigencia de firma): hoy ∈ [inicio, fin].
+  let estado: 'vigente' | 'futura' | 'finalizada' | null = null
+  if (medicacion) {
+    const hoy = hoyMadrid()
+    estado =
+      hoy < medicacion.fecha_inicio
+        ? 'futura'
+        : hoy > medicacion.fecha_fin
+          ? 'finalizada'
+          : 'vigente'
+  }
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-h3">{t('medicacion.ficha')}</h2>
+        {estado === 'vigente' && (
+          <span className="text-success-700 bg-success-50 rounded-full px-2 py-0.5 text-xs">
+            {t('medicacion.estado_vigente')}
+          </span>
+        )}
+        {estado === 'futura' && (
+          <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs">
+            {t('medicacion.estado_futura', { fecha: medicacion!.fecha_inicio })}
+          </span>
+        )}
+        {estado === 'finalizada' && (
+          <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs">
+            {t('medicacion.estado_finalizada')}
+          </span>
+        )}
         {integridadOk === true && (
           <span className="text-success-700 inline-flex items-center gap-1 text-xs">
             <ShieldCheckIcon className="size-3.5" />

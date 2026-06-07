@@ -1660,7 +1660,8 @@
       "recogida_sin_plantilla": "El centro aún no ha publicado el formato de recogida.",
       "medicacion_sin_plantilla": "El centro aún no ha publicado el formato de medicación.",
       "med_fuera_de_vigencia": "Hoy debe estar dentro de las fechas de la medicación para firmar.",
-      "medicacion_requerida": "Faltan los datos de la medicación."
+      "medicacion_requerida": "Faltan los datos de la medicación.",
+      "med_caducada": "No puedes autorizar una medicación cuya fecha de fin ya pasó."
     },
     "tipo": {
       "salida": "Salida",
@@ -1725,7 +1726,10 @@
       "vigencia_ayuda": "Las fechas definen la vigencia de la autorización. Hoy debe estar dentro del intervalo para poder firmar.",
       "ficha": "Medicación",
       "creada_toast": "Medicación firmada",
-      "aviso": "Dato de salud de un menor. El centro lo trata para administrar la medicación según tu autorización. El informe/receta se podrá adjuntar más adelante."
+      "aviso": "Dato de salud de un menor. El centro lo trata para administrar la medicación según tu autorización. El informe/receta se podrá adjuntar más adelante.",
+      "estado_vigente": "Vigente hoy",
+      "estado_futura": "Empieza el {fecha}",
+      "estado_finalizada": "Finalizada"
     }
   }
 }

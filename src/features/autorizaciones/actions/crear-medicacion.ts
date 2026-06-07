@@ -31,8 +31,15 @@ function normalizarNombre(s: string): string {
  *
  * La política de firmantes respeta `ninos.requiere_ambos_firmantes`: con doble
  * firma, el roster queda **parcial** hasta que el 2.º tutor firme (en el detalle,
- * sobre la misma instancia). Hoy debe caer dentro de [fecha_inicio, fecha_fin]
- * para que la firma sea válida (la RLS `autorizacion_firmable` lo exige).
+ * sobre la misma instancia).
+ *
+ * **Vigencia de firma vs del tratamiento (desacopladas):** se puede
+ * **pre-autorizar** un tratamiento de inicio futuro. La instancia nace firmable
+ * desde hoy (`vigencia_desde = hoy`) y se bloquea solo si ya caducó
+ * (`vigencia_hasta = fecha_fin < hoy`). El intervalo **real** del tratamiento
+ * (`fecha_inicio`/`fecha_fin`) viaja en `datos.medicacion`; "firmada + vigente"
+ * (lo que miran F8-3b y la profe) = hoy ∈ [fecha_inicio, fecha_fin] → una
+ * medicación futura queda **firmada pero aún no vigente** hasta su inicio.
  *
  * Los campos viajan en `firmas.datos.medicacion` y se atan al **hash compuesto**.
  * El informe/receta (adjunto) se aplaza a F10 (`datos.adjuntos` reservado).
@@ -60,11 +67,12 @@ export async function crearMedicacion(
     fecha_fin: d.medicacion.fecha_fin,
   }
 
-  // La autorización solo es firmable si hoy ∈ [fecha_inicio, fecha_fin]
-  // (la RLS lo enforza; pre-chequeo para un error claro).
+  // Se permite pre-autorizar un tratamiento de inicio futuro; solo se bloquea si
+  // ya caducó (fecha_fin < hoy). La instancia será firmable desde hoy
+  // (vigencia_desde = hoy) hasta fecha_fin (la RLS lo vuelve a enforzar).
   const hoy = hoyMadridYmd()
-  if (med.fecha_inicio > hoy || med.fecha_fin < hoy) {
-    return fail('autorizaciones.errors.med_fuera_de_vigencia')
+  if (med.fecha_fin < hoy) {
+    return fail('autorizaciones.errors.med_caducada')
   }
 
   // Acto afirmativo: el nombre tecleado debe coincidir con el del perfil.
@@ -107,8 +115,9 @@ export async function crearMedicacion(
     .maybeSingle()
   if (!plantilla) return fail('autorizaciones.errors.medicacion_sin_plantilla')
 
-  // Instancia NUEVA (multi-instancia): vigencia = [fecha_inicio, fecha_fin],
-  // título = medicamento (para la lista). Tutor-insert acotado por RLS (F8-RW-0).
+  // Instancia NUEVA (multi-instancia). Vigencia de FIRMA = [hoy, fecha_fin] para
+  // permitir pre-autorizar inicio futuro (el tratamiento real va en datos).
+  // Título = medicamento (para la lista). Tutor-insert acotado por RLS (F8-RW-0).
   const { data: instancia, error: insErr } = await supabase
     .from('autorizaciones')
     .insert({
@@ -126,7 +135,7 @@ export async function crearMedicacion(
       firmantes_requeridos: nino.requiere_ambos_firmantes
         ? 'todos_los_principales'
         : 'uno_principal',
-      vigencia_desde: med.fecha_inicio,
+      vigencia_desde: hoy,
       vigencia_hasta: med.fecha_fin,
       creado_por: user.id,
     })

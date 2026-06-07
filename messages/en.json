@@ -1660,7 +1660,8 @@
       "recogida_sin_plantilla": "The center has not published the pick-up format yet.",
       "medicacion_sin_plantilla": "The center has not published the medication format yet.",
       "med_fuera_de_vigencia": "Today must be within the medication dates to sign.",
-      "medicacion_requerida": "Medication data is missing."
+      "medicacion_requerida": "Medication data is missing.",
+      "med_caducada": "You cannot authorise a medication whose end date has already passed."
     },
     "tipo": {
       "salida": "Outing",
@@ -1725,7 +1726,10 @@
       "vigencia_ayuda": "The dates set the validity of the authorisation. Today must be within the range to sign.",
       "ficha": "Medication",
       "creada_toast": "Medication signed",
-      "aviso": "Health data of a minor. The center processes it to administer the medication per your authorisation. The report/prescription can be attached later."
+      "aviso": "Health data of a minor. The center processes it to administer the medication per your authorisation. The report/prescription can be attached later.",
+      "estado_vigente": "Active today",
+      "estado_futura": "Starts on {fecha}",
+      "estado_finalizada": "Ended"
     }
   }
 }
