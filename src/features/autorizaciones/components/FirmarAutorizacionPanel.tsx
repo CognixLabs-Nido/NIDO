@@ -16,9 +16,15 @@ import {
   rechazarAutorizacion,
   revocarFirma,
 } from '../actions/firmar-autorizacion'
-import type { PersonaAutorizada, RosterFirmaNino, TipoAutorizacion } from '../types'
+import type {
+  MedicacionDatos,
+  PersonaAutorizada,
+  RosterFirmaNino,
+  TipoAutorizacion,
+} from '../types'
 import { EstadoFirmaBadge } from './EstadoFirmaBadge'
 import { FirmaPad } from './FirmaPad'
+import { MedicacionFicha } from './MedicacionFicha'
 import { PersonasAutorizadasEditor } from './PersonasAutorizadasEditor'
 
 interface Props {
@@ -31,6 +37,8 @@ interface Props {
   currentUserNombre: string
   /** Recogida: lista vigente para prefill (multi-tutor parte de la del 1º). */
   personasIniciales?: PersonaAutorizada[]
+  /** Medicación: datos vigentes (el 2.º tutor firma los mismos, read-only). */
+  medicacionInicial?: MedicacionDatos | null
 }
 
 /**
@@ -47,6 +55,7 @@ export function FirmarAutorizacionPanel({
   currentUserId,
   currentUserNombre,
   personasIniciales,
+  medicacionInicial,
 }: Props) {
   const t = useTranslations('autorizaciones')
 
@@ -66,6 +75,7 @@ export function FirmarAutorizacionPanel({
           miDecision={r.firmantes.find((f) => f.firmante_id === currentUserId)?.decision ?? null}
           nombrePerfil={currentUserNombre}
           personasIniciales={personasIniciales}
+          medicacionInicial={medicacionInicial}
         />
       ))}
     </div>
@@ -80,6 +90,7 @@ function NinoFirmaRow({
   miDecision,
   nombrePerfil,
   personasIniciales,
+  medicacionInicial,
 }: {
   autorizacionId: string
   tipo: TipoAutorizacion
@@ -88,6 +99,7 @@ function NinoFirmaRow({
   miDecision: 'firmado' | 'rechazado' | 'revocado' | null
   nombrePerfil: string
   personasIniciales?: PersonaAutorizada[]
+  medicacionInicial?: MedicacionDatos | null
 }) {
   const t = useTranslations('autorizaciones')
   const tRoot = useTranslations()
@@ -104,11 +116,15 @@ function NinoFirmaRow({
 
   const yaFirmado = miDecision === 'firmado'
   const esRecogida = tipo === 'recogida'
+  const esMedicacion = tipo === 'medicacion'
   // Personas válidas (nombre + DNI no vacíos); el server revalida con Zod.
   const personasValidas = personas
     .map((p) => ({ ...p, nombre: p.nombre.trim(), dni: p.dni.trim() }))
     .filter((p) => p.nombre.length > 0 && p.dni.length > 0)
-  const listaOk = !esRecogida || personasValidas.length > 0
+  // Medicación: el 2.º tutor firma los datos vigentes (read-only); sin ellos no
+  // se puede firmar la misma instancia (crearla es el flujo de la familia).
+  const medOk = !esMedicacion || !!medicacionInicial
+  const listaOk = (!esRecogida || personasValidas.length > 0) && medOk
 
   function firmar() {
     if (!confirmo) {
@@ -123,6 +139,10 @@ function NinoFirmaRow({
       toast.error(t('validation.personas_vacio'))
       return
     }
+    if (esMedicacion && !medicacionInicial) {
+      toast.error(t('errors.medicacion_requerida'))
+      return
+    }
     startTransition(async () => {
       const res = await firmarAutorizacion({
         autorizacion_id: autorizacionId,
@@ -130,6 +150,7 @@ function NinoFirmaRow({
         nombre_tecleado: nombre.trim(),
         firma_imagen: firma,
         ...(esRecogida ? { personas: personasValidas } : {}),
+        ...(esMedicacion && medicacionInicial ? { medicacion: medicacionInicial } : {}),
       })
       if (!res.success) {
         toast.error(tRoot(res.error))
@@ -193,6 +214,7 @@ function NinoFirmaRow({
           {esRecogida && (
             <PersonasAutorizadasEditor value={personas} onChange={setPersonas} disabled={pending} />
           )}
+          {esMedicacion && <MedicacionFicha medicacion={medicacionInicial ?? null} />}
           <label className="flex items-start gap-2 text-sm">
             <Checkbox checked={confirmo} onCheckedChange={(v) => setConfirmo(v === true)} />
             <span>{t('firma.confirmo')}</span>

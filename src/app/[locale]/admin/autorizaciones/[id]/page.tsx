@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server'
 import { AccionesAdmin } from '@/features/autorizaciones/components/AccionesAdmin'
 import { EditarTextoDialog } from '@/features/autorizaciones/components/EditarTextoDialog'
 import { EstadoDocBadge } from '@/features/autorizaciones/components/EstadoFirmaBadge'
+import { MedicacionFicha } from '@/features/autorizaciones/components/MedicacionFicha'
 import { RecogidaLista } from '@/features/autorizaciones/components/RecogidaLista'
 import { RosterFirmas } from '@/features/autorizaciones/components/RosterFirmas'
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
@@ -95,6 +96,16 @@ export default async function AdminAutorizacionDetallePage({ params }: PageProps
       {!aut.es_plantilla && aut.tipo === 'recogida' && (
         <section>
           <RecogidaLista personas={aut.personas_vigentes ?? []} integridadOk={aut.integridad_ok} />
+        </section>
+      )}
+
+      {/* Medicación: ficha vigente (la administran profes del aula + dirección). */}
+      {!aut.es_plantilla && aut.tipo === 'medicacion' && (
+        <section>
+          <MedicacionFicha
+            medicacion={aut.medicacion_vigente ?? null}
+            integridadOk={aut.integridad_ok}
+          />
         </section>
       )}
 

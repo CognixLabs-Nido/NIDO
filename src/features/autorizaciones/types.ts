@@ -34,6 +34,16 @@ export interface PersonaAutorizada {
   parentesco?: string
 }
 
+/** Campos estructurados de una medicación (F8-3a). Adjunto/receta → F10. */
+export interface MedicacionDatos {
+  medicamento: string
+  dosis: string
+  via?: string
+  pauta: string
+  fecha_inicio: string
+  fecha_fin: string
+}
+
 /** Una firma efectiva (última fila por firmante) para mostrar en el roster. */
 export interface FirmaVigente {
   firmante_id: string
@@ -124,6 +134,8 @@ export interface AutorizacionDetalle {
   roster: RosterFirmaNino[]
   /** Recogida: lista de personas de la última firma `firmado` (vigente), para display. */
   personas_vigentes?: PersonaAutorizada[]
-  /** Recogida: ¿el hash de la última firma `firmado` cuadra con texto+lista? `null` si no hay firma. */
+  /** Medicación: campos de la última firma `firmado` (vigente), para display. */
+  medicacion_vigente?: MedicacionDatos | null
+  /** Recogida/medicación: ¿el hash de la última firma `firmado` cuadra con texto+datos? `null` si no hay firma. */
   integridad_ok?: boolean | null
 }

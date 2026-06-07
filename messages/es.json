@@ -1624,7 +1624,16 @@
       "persona_dni_invalido": "Documento no válido (5–20 caracteres alfanuméricos).",
       "persona_parentesco_largo": "El parentesco es demasiado largo.",
       "personas_vacio": "Añade al menos una persona autorizada.",
-      "personas_muchas": "Demasiadas personas (máximo 20)."
+      "personas_muchas": "Demasiadas personas (máximo 20).",
+      "med_medicamento_vacio": "El medicamento es obligatorio.",
+      "med_medicamento_largo": "El medicamento es demasiado largo.",
+      "med_dosis_vacia": "La dosis es obligatoria.",
+      "med_dosis_larga": "La dosis es demasiado larga.",
+      "med_via_larga": "La vía es demasiado larga.",
+      "med_pauta_vacia": "La pauta es obligatoria.",
+      "med_pauta_larga": "La pauta es demasiado larga.",
+      "med_fechas_incoherentes": "La fecha de fin no puede ser anterior a la de inicio.",
+      "med_campos_requeridos": "Rellena medicamento, dosis y pauta."
     },
     "errors": {
       "no_autorizado": "No tienes permiso para esta acción.",
@@ -1648,7 +1657,10 @@
       "plantilla_no_publicada": "El formato no está publicado o no es definitivo.",
       "tipo_no_enviable": "Este tipo lo inicia la familia; no se envía.",
       "personas_requeridas": "Indica al menos una persona autorizada para firmar.",
-      "recogida_sin_plantilla": "El centro aún no ha publicado el formato de recogida."
+      "recogida_sin_plantilla": "El centro aún no ha publicado el formato de recogida.",
+      "medicacion_sin_plantilla": "El centro aún no ha publicado el formato de medicación.",
+      "med_fuera_de_vigencia": "Hoy debe estar dentro de las fechas de la medicación para firmar.",
+      "medicacion_requerida": "Faltan los datos de la medicación."
     },
     "tipo": {
       "salida": "Salida",
@@ -1696,6 +1708,24 @@
       "modalidad_habitual": "Habitual (siempre)",
       "modalidad_puntual": "Puntual (solo hoy)",
       "rgpd_terceros": "Aportas datos de terceros (nombre y documento de quien recoge). El centro los trata para verificar la recogida; informa a esas personas de que sus datos se comparten con el centro."
+    },
+    "medicacion": {
+      "crear": "Autorizar medicación",
+      "intro": "Indica el medicamento, la dosis y la pauta para tu hijo/a y firma. Las fechas marcan la vigencia.",
+      "medicamento": "Medicamento",
+      "medicamento_placeholder": "Ej. Apiretal",
+      "dosis": "Dosis",
+      "dosis_placeholder": "Ej. 5 ml",
+      "via": "Vía (opcional)",
+      "via_placeholder": "Ej. oral",
+      "pauta": "Pauta / frecuencia",
+      "pauta_placeholder": "Ej. cada 8 h si fiebre >38º",
+      "fecha_inicio": "Fecha de inicio",
+      "fecha_fin": "Fecha de fin",
+      "vigencia_ayuda": "Las fechas definen la vigencia de la autorización. Hoy debe estar dentro del intervalo para poder firmar.",
+      "ficha": "Medicación",
+      "creada_toast": "Medicación firmada",
+      "aviso": "Dato de salud de un menor. El centro lo trata para administrar la medicación según tu autorización. El informe/receta se podrá adjuntar más adelante."
     }
   }
 }

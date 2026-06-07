@@ -17,7 +17,14 @@ import {
   type RechazarAutorizacionInput,
   type RevocarFirmaInput,
 } from '../schemas/autorizaciones'
-import { fail, ok, type ActionResult, type FirmaDecision, type PersonaAutorizada } from '../types'
+import {
+  fail,
+  ok,
+  type ActionResult,
+  type FirmaDecision,
+  type MedicacionDatos,
+  type PersonaAutorizada,
+} from '../types'
 
 /** Compara nombres de forma laxa: minúsculas, sin acentos, espacios colapsados. */
 function normalizarNombre(s: string): string {
@@ -40,6 +47,8 @@ interface DatosDecision {
   comentario: string | null
   /** Recogida: lista de personas autorizadas que se firma (atada al hash). */
   personas?: PersonaAutorizada[]
+  /** Medicación: campos estructurados que se firman (atados al hash). */
+  medicacion?: MedicacionDatos
 }
 
 /**
@@ -73,6 +82,11 @@ async function registrarDecision(
   ) {
     return fail('autorizaciones.errors.personas_requeridas')
   }
+  // Medicación: al firmar son obligatorios los campos estructurados (para que el
+  // hash compuesto cuadre con lo consentido — p.ej. el 2.º tutor de doble firma).
+  if (aut.tipo === 'medicacion' && d.decision === 'firmado' && !d.medicacion) {
+    return fail('autorizaciones.errors.medicacion_requerida')
+  }
 
   // 2. Firmable (pre-chequeo para error claro; la RLS lo vuelve a enforzar).
   const hoy = hoyMadridYmd()
@@ -93,13 +107,17 @@ async function registrarDecision(
     .maybeSingle()
   if (!vinculo) return fail('autorizaciones.errors.no_es_tutor')
 
-  // 4. Hash **compuesto** texto + lista (recogida) + contexto probatorio. Sin
-  //    lista, hashFirma == sha256(texto) (compat F8-1/F8-2b).
+  // 4. Hash **compuesto** texto + datos (recogida: lista; medicación: campos) +
+  //    contexto probatorio. Sin datos, hashFirma == sha256(texto) (compat F8-1/2b).
   const tienePersonas = !!d.personas && d.personas.length > 0
-  const datos = (
-    tienePersonas ? { personas: d.personas } : {}
-  ) as Database['public']['Tables']['firmas_autorizacion']['Insert']['datos']
-  const texto_hash = hashFirma(aut.texto, tienePersonas ? { personas: d.personas } : undefined)
+  const payload = tienePersonas
+    ? { personas: d.personas }
+    : d.medicacion
+      ? { medicacion: d.medicacion }
+      : undefined
+  const datos = (payload ??
+    {}) as Database['public']['Tables']['firmas_autorizacion']['Insert']['datos']
+  const texto_hash = hashFirma(aut.texto, payload)
   const { ip, userAgent } = await getRequestContext()
 
   // 5. Inserción append-only.
@@ -175,6 +193,16 @@ export async function firmarAutorizacion(
       dni: p.dni.trim(),
       ...(p.parentesco?.trim() ? { parentesco: p.parentesco.trim() } : {}),
     })),
+    medicacion: d.medicacion
+      ? {
+          medicamento: d.medicacion.medicamento.trim(),
+          dosis: d.medicacion.dosis.trim(),
+          ...(d.medicacion.via?.trim() ? { via: d.medicacion.via.trim() } : {}),
+          pauta: d.medicacion.pauta.trim(),
+          fecha_inicio: d.medicacion.fecha_inicio,
+          fecha_fin: d.medicacion.fecha_fin,
+        }
+      : undefined,
   })
 }
 

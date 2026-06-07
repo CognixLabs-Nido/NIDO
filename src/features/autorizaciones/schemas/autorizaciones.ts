@@ -174,6 +174,42 @@ export const personasAutorizadasSchema = z
   .min(1, 'autorizaciones.validation.personas_vacio')
   .max(20, 'autorizaciones.validation.personas_muchas')
 
+// Campos estructurados de una medicación (F8-3a). Van en `firmas.datos.medicacion`
+// y se atan al hash compuesto. Las fechas definen la vigencia de la instancia
+// (fecha_inicio → vigencia_desde, fecha_fin → vigencia_hasta). El informe/receta
+// (adjunto) se aplaza a F10 (datos.adjuntos reservado).
+export const medicacionDatosSchema = z
+  .object({
+    medicamento: z
+      .string()
+      .trim()
+      .min(1, 'autorizaciones.validation.med_medicamento_vacio')
+      .max(200, 'autorizaciones.validation.med_medicamento_largo'),
+    dosis: z
+      .string()
+      .trim()
+      .min(1, 'autorizaciones.validation.med_dosis_vacia')
+      .max(200, 'autorizaciones.validation.med_dosis_larga'),
+    via: z.string().trim().max(100, 'autorizaciones.validation.med_via_larga').optional(),
+    pauta: z
+      .string()
+      .trim()
+      .min(1, 'autorizaciones.validation.med_pauta_vacia')
+      .max(300, 'autorizaciones.validation.med_pauta_larga'),
+    fecha_inicio: fechaSchema,
+    fecha_fin: fechaSchema,
+  })
+  .superRefine((v, ctx) => {
+    if (v.fecha_fin < v.fecha_inicio) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['fecha_fin'],
+        message: 'autorizaciones.validation.med_fechas_incoherentes',
+      })
+    }
+  })
+export type MedicacionDatosInput = z.input<typeof medicacionDatosSchema>
+
 export const firmarAutorizacionSchema = z.object({
   autorizacion_id: z.string().uuid(),
   nino_id: z.string().uuid(),
@@ -187,6 +223,9 @@ export const firmarAutorizacionSchema = z.object({
   // Recogida: lista de personas autorizadas (se ata al hash compuesto). Opcional
   // en el esquema (otros tipos no la llevan); el action la exige en recogida.
   personas: personasAutorizadasSchema.optional(),
+  // Medicación: campos estructurados (al firmar una instancia existente, p.ej. el
+  // 2.º tutor de un niño con doble firma). Se ata al hash compuesto.
+  medicacion: medicacionDatosSchema.optional(),
 })
 export type FirmarAutorizacionInput = z.input<typeof firmarAutorizacionSchema>
 
@@ -210,6 +249,24 @@ export const crearRecogidaSchema = z.object({
   comentario: comentarioSchema,
 })
 export type CrearRecogidaInput = z.input<typeof crearRecogidaSchema>
+
+// --- Medicación B2: la familia CREA su instancia desde la plantilla y la firma -
+// A diferencia de recogida (1 habitual), medicación admite **varias instancias
+// activas** por niño (distintos tratamientos), cada una con su vigencia
+// (fecha_inicio/fecha_fin). Sin modalidad. El action crea SIEMPRE una instancia
+// nueva y registra la firma con los campos estructurados.
+export const crearMedicacionSchema = z.object({
+  nino_id: z.string().uuid('autorizaciones.validation.nino_requerido'),
+  medicacion: medicacionDatosSchema,
+  nombre_tecleado: z
+    .string()
+    .trim()
+    .min(1, 'autorizaciones.validation.nombre_vacio')
+    .max(200, 'autorizaciones.validation.nombre_largo'),
+  firma_imagen: firmaImagenSchema,
+  comentario: comentarioSchema,
+})
+export type CrearMedicacionInput = z.input<typeof crearMedicacionSchema>
 
 // --- Rechazar (tutor) — sin trazo (no hay firma que dibujar) ----------------
 export const rechazarAutorizacionSchema = z.object({
