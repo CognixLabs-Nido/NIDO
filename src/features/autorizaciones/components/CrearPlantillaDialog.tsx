@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 
 import { PlusIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -26,47 +26,45 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-import { crearAutorizacionPorNino } from '../actions/gestionar-autorizacion'
-
-interface NinoOption {
-  id: string
-  nombre: string
-  apellidos: string
-}
+import { crearPlantilla } from '../actions/gestionar-autorizacion'
+import { tipoPlantillaEnum, type TipoPlantilla } from '../schemas/autorizaciones'
 
 /**
- * Diálogo admin: crea una autorización de **reglas de régimen interno** para un
- * niño. Reusa el flujo de F8-1 (luego se teclea el texto y se publica). El
- * documento es "firmar este texto por niño" — sin campos estructurados extra.
+ * Diálogo admin: crea una **plantilla durable** del catálogo (el formato estándar
+ * del centro) para un tipo por-niño (reglas/imágenes/recogida/medicación). Tras
+ * crearla, el admin teclea el texto, lo marca definitivo y la publica desde su
+ * detalle. La plantilla NO se firma: las tipo A se envían a una audiencia; las
+ * tipo B (recogida/medicación) las inicia la familia.
  */
-export function CrearReglasDialog({ ninos }: { ninos: NinoOption[] }) {
+export function CrearPlantillaDialog() {
   const t = useTranslations('autorizaciones')
   const tRoot = useTranslations()
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [ninoId, setNinoId] = useState('')
+  const [tipo, setTipo] = useState<TipoPlantilla | ''>('')
   const [titulo, setTitulo] = useState('')
   const [pending, startTransition] = useTransition()
 
+  const tipoItems = useMemo(
+    () => tipoPlantillaEnum.options.map((v) => ({ value: v, label: t(`tipo.${v}`) })),
+    [t]
+  )
+
   function onSubmit() {
-    if (!ninoId || titulo.trim().length === 0) {
+    if (!tipo || titulo.trim().length === 0) {
       toast.error(t('errors.creacion_fallo'))
       return
     }
     startTransition(async () => {
-      const res = await crearAutorizacionPorNino({
-        tipo: 'reglas_regimen_interno',
-        nino_id: ninoId,
-        titulo: titulo.trim(),
-      })
+      const res = await crearPlantilla({ tipo, titulo: titulo.trim() })
       if (!res.success) {
         toast.error(tRoot(res.error))
         return
       }
-      toast.success(t('acciones.creada_toast'))
+      toast.success(t('acciones.plantilla_creada_toast'))
       setOpen(false)
       setTitulo('')
-      setNinoId('')
+      setTipo('')
       router.refresh()
     })
   }
@@ -75,40 +73,45 @@ export function CrearReglasDialog({ ninos }: { ninos: NinoOption[] }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="outline" disabled={ninos.length === 0}>
+          <Button>
             <PlusIcon className="mr-1 size-4" />
-            {t('acciones.nueva_reglas')}
+            {t('acciones.nueva')}
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('acciones.nueva_reglas')}</DialogTitle>
+          <DialogTitle>{t('acciones.nueva')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <p className="text-muted-foreground text-sm">{t('catalogo.intro')}</p>
           <div className="space-y-2">
-            <Label>{t('form.nino')}</Label>
-            <Select value={ninoId} onValueChange={(v) => setNinoId(v ?? '')}>
-              <SelectTrigger>
-                <SelectValue placeholder={t('form.nino_placeholder')} />
+            <Label>{t('form.tipo')}</Label>
+            <Select
+              items={tipoItems}
+              value={tipo}
+              onValueChange={(v) => setTipo((v ?? '') as TipoPlantilla | '')}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t('form.tipo_placeholder')} />
               </SelectTrigger>
               <SelectContent>
-                {ninos.map((n) => (
-                  <SelectItem key={n.id} value={n.id}>
-                    {n.nombre} {n.apellidos}
+                {tipoItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="titulo-reglas">{t('form.titulo')}</Label>
+            <Label htmlFor="titulo-plantilla">{t('form.titulo')}</Label>
             <Input
-              id="titulo-reglas"
+              id="titulo-plantilla"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               maxLength={200}
-              placeholder={t('form.titulo_reglas_placeholder')}
+              placeholder={t('form.titulo_plantilla_placeholder')}
             />
           </div>
         </div>

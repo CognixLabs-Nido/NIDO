@@ -33,23 +33,75 @@ export const crearAutorizacionSalidaSchema = z.object({
 
 export type CrearAutorizacionSalidaInput = z.input<typeof crearAutorizacionSalidaSchema>
 
-// --- Crear (tipos que cuelgan del NIÑO: reglas/recogida/medicación/imágenes) -
-// `salida` queda fuera (esa cuelga de un evento). La política de firmantes la
-// deriva el server action del flag `requiere_ambos_firmantes` del niño.
-export const tipoPorNinoEnum = z.enum([
-  'medicacion',
-  'recogida',
+// --- Catálogo: crear PLANTILLA durable (reglas/imágenes/recogida/medicación) --
+// Una plantilla es el FORMATO estándar del centro (no se firma; se envía a una
+// audiencia —tipos A— o la rellena la familia —tipos B—). `salida` queda fuera
+// (esa es bespoke por evento). Una activa por (centro, tipo) → idx único en BD.
+export const tipoPlantillaEnum = z.enum([
   'reglas_regimen_interno',
   'autorizacion_imagenes',
+  'recogida',
+  'medicacion',
 ])
+export type TipoPlantilla = z.infer<typeof tipoPlantillaEnum>
 
-export const crearAutorizacionPorNinoSchema = z.object({
-  tipo: tipoPorNinoEnum,
-  nino_id: z.string().uuid('autorizaciones.validation.nino_requerido'),
+export const crearPlantillaSchema = z.object({
+  tipo: tipoPlantillaEnum,
   titulo: tituloSchema,
 })
+export type CrearPlantillaInput = z.input<typeof crearPlantillaSchema>
 
-export type CrearAutorizacionPorNinoInput = z.input<typeof crearAutorizacionPorNinoSchema>
+// --- Enviar: asignar una plantilla A a una AUDIENCIA (niño/aula/centro) -------
+// Solo tipos A (reglas/imágenes): recogida/medicación las inicia la familia y NO
+// aparecen aquí. Crea una INSTANCIA firmable (snapshot del texto de la plantilla).
+export const ambitoEnvioEnum = z.enum(['nino', 'aula', 'centro'])
+
+export const enviarAutorizacionSchema = z
+  .object({
+    plantilla_id: z.string().uuid('autorizaciones.validation.plantilla_requerida'),
+    ambito: ambitoEnvioEnum,
+    nino_id: z.string().uuid().nullable().optional(),
+    aula_id: z.string().uuid().nullable().optional(),
+  })
+  .superRefine((v, ctx) => {
+    // Coherencia ámbito ↔ referencia (espejo del CHECK de BD, forma 3).
+    if (v.ambito === 'nino' && !v.nino_id) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['nino_id'],
+        message: 'autorizaciones.validation.nino_requerido',
+      })
+    }
+    if (v.ambito === 'aula' && !v.aula_id) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['aula_id'],
+        message: 'autorizaciones.validation.aula_requerida',
+      })
+    }
+    if (v.ambito === 'nino' && v.aula_id) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['aula_id'],
+        message: 'autorizaciones.validation.audiencia_incoherente',
+      })
+    }
+    if (v.ambito === 'aula' && v.nino_id) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['nino_id'],
+        message: 'autorizaciones.validation.audiencia_incoherente',
+      })
+    }
+    if (v.ambito === 'centro' && (v.nino_id || v.aula_id)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['ambito'],
+        message: 'autorizaciones.validation.audiencia_incoherente',
+      })
+    }
+  })
+export type EnviarAutorizacionInput = z.input<typeof enviarAutorizacionSchema>
 
 // --- Editar texto (admin teclea el texto + lo marca definitivo) -------------
 // El guard: solo un texto `texto_definitivo` puede publicarse/firmarse. El texto

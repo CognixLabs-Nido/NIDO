@@ -1543,7 +1543,11 @@
       "rechazada_toast": "Authorisation rejected",
       "revocar": "Revoke signature",
       "revocada_toast": "Signature revoked",
-      "nueva_reglas": "New house rules"
+      "nueva_reglas": "New house rules",
+      "plantilla_creada_toast": "Format created",
+      "enviar": "Send authorization",
+      "enviando": "Sending…",
+      "enviada_toast": "Authorization sent"
     },
     "form": {
       "evento": "Event (outing)",
@@ -1557,7 +1561,16 @@
       "texto_definitivo": "Mark text as final (required to publish and sign)",
       "nino": "Child",
       "nino_placeholder": "Choose a child",
-      "titulo_reglas_placeholder": "House rules"
+      "titulo_reglas_placeholder": "House rules",
+      "tipo": "Document type",
+      "tipo_placeholder": "Choose a type",
+      "titulo_plantilla_placeholder": "Internal rules",
+      "plantilla": "Format to send",
+      "plantilla_placeholder": "Choose a published format",
+      "ambito": "Recipients",
+      "ambito_placeholder": "Choose who",
+      "aula": "Class",
+      "aula_placeholder": "Choose a class"
     },
     "firma": {
       "aria_pad": "Area to draw the signature",
@@ -1584,7 +1597,9 @@
       "texto_pendiente": "Text not yet drafted (PENDING).",
       "texto_no_definitivo": "The text is not marked as final yet: it cannot be published or signed.",
       "roster": "Signature status",
-      "tu_firma": "Your signature"
+      "tu_firma": "Your signature",
+      "es_plantilla": "Catalog format: it is not signed; it is sent to an audience (or started by the family).",
+      "ambito_label": "Recipients: {ambito}"
     },
     "validation": {
       "titulo_vacio": "Title is required.",
@@ -1600,7 +1615,10 @@
       "firma_formato": "Invalid signature format.",
       "nombre_vacio": "Enter your name.",
       "nombre_largo": "Name is too long.",
-      "nino_requerido": "Choose a child."
+      "nino_requerido": "Choose a child.",
+      "plantilla_requerida": "Choose a format.",
+      "aula_requerida": "Choose a class.",
+      "audiencia_incoherente": "The audience is not consistent."
     },
     "errors": {
       "no_autorizado": "You don't have permission for this action.",
@@ -1617,7 +1635,12 @@
       "firma_fallo": "Couldn't record the signature.",
       "nombre_no_coincide": "The typed name doesn't match your profile.",
       "confirma_requerido": "Tick the box to authorise.",
-      "nino_no_encontrado": "The child doesn't exist or isn't accessible."
+      "nino_no_encontrado": "The child doesn't exist or isn't accessible.",
+      "plantilla_duplicada": "An active format of that type already exists. Void the previous one to create another.",
+      "envio_fallo": "The authorization could not be sent.",
+      "plantilla_no_encontrada": "The format does not exist or is not accessible.",
+      "plantilla_no_publicada": "The format is not published or not final.",
+      "tipo_no_enviable": "This type is started by the family; it is not sent."
     },
     "tipo": {
       "salida": "Outing",
@@ -1625,6 +1648,24 @@
       "recogida": "Pickup",
       "reglas_regimen_interno": "House rules",
       "autorizacion_imagenes": "Images"
+    },
+    "catalogo": {
+      "titulo": "Format catalog",
+      "descripcion": "The center's standard formats. Edit the text, mark it final and publish it.",
+      "intro": "Create the standard format for a type. Then write its text and publish it.",
+      "vacio": "No formats in the catalog yet."
+    },
+    "instancias": {
+      "titulo": "To sign",
+      "descripcion": "Sent or trip authorizations that families can sign."
+    },
+    "enviar": {
+      "intro": "Take a published format and send it to an audience."
+    },
+    "ambito": {
+      "nino": "One child",
+      "aula": "One class",
+      "centro": "Whole center"
     }
   }
 }
