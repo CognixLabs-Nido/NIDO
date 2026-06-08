@@ -76,8 +76,16 @@ describe.skipIf(!MIGRATION_APPLIED)(
 
     const adminsCreadas: string[] = []
 
-    /** Crea una instancia de medicación (es_plantilla=false) publicada para `nino`. */
-    async function crearInstanciaMed(plantillaId: string, fechaFin: string): Promise<string> {
+    /**
+     * Crea una instancia de medicación (es_plantilla=false) publicada para `nino`.
+     * `vigenciaDesde` = día de creación (F8-3a). Para una caducada se pasa una fecha
+     * pasada coherente (vigencia_hasta >= vigencia_desde lo exige el CHECK de la fila).
+     */
+    async function crearInstanciaMed(
+      plantillaId: string,
+      fechaFin: string,
+      vigenciaDesde = ymdMadrid(0)
+    ): Promise<string> {
       const { data, error } = await serviceClient
         .from('autorizaciones')
         .insert({
@@ -93,7 +101,7 @@ describe.skipIf(!MIGRATION_APPLIED)(
           texto_definitivo: true,
           estado: 'publicada',
           firmantes_requeridos: 'uno_principal',
-          vigencia_desde: ymdMadrid(0),
+          vigencia_desde: vigenciaDesde,
           vigencia_hasta: fechaFin,
           creado_por: tutor.id,
         })
@@ -196,7 +204,8 @@ describe.skipIf(!MIGRATION_APPLIED)(
       medInstancia = await crearInstanciaMed(plantilla.data.id, ymdMadrid(30))
       await firmarMed(medInstancia, ymdMadrid(-2), ymdMadrid(30)) // hoy ∈ [inicio, fin]
 
-      medCaducada = await crearInstanciaMed(plantilla.data.id, ymdMadrid(-1))
+      // Caducada: creada hace 10 días, tratamiento terminó ayer (fila coherente).
+      medCaducada = await crearInstanciaMed(plantilla.data.id, ymdMadrid(-1), ymdMadrid(-10))
       await firmarMed(medCaducada, ymdMadrid(-10), ymdMadrid(-1)) // fecha_fin < hoy
 
       medSinFirmar = await crearInstanciaMed(plantilla.data.id, ymdMadrid(30)) // sin firma
