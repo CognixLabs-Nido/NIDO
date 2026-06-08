@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
+import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
+import { getAvisosInicio } from '@/features/notificaciones/queries/get-avisos-inicio'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { createClient } from '@/lib/supabase/server'
 
@@ -40,12 +42,15 @@ export default async function TeacherDashboard({ params }: PageProps) {
       .filter((a): a is AulaRow => a !== null)
   }
 
+  const avisos = await getAvisosInicio('profe')
+
   return (
     <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="text-h1 text-foreground">{t('title')}</h1>
         <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
       </header>
+      <AvisosInicio avisos={avisos} rol="profe" locale={locale} />
       {centroId && (
         <ResumenSemanaWidget
           centroId={centroId}

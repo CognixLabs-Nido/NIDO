@@ -178,7 +178,8 @@
       "mensajeria": "Mensajería",
       "recordatorios": "Recordatorios",
       "agenda": "Agenda",
-      "autorizaciones": "Autorizaciones"
+      "autorizaciones": "Autorizaciones",
+      "notificaciones": "Notificaciones"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -376,7 +377,9 @@
       "calendario": "Calendario Escolar",
       "mensajeria": "Mensajería",
       "recordatorios": "Recordatorios",
-      "agenda": "Agenda"
+      "agenda": "Agenda",
+      "autorizaciones": "Autorizaciones",
+      "notificaciones": "Notificaciones"
     },
     "dashboard": {
       "title": "Mis aulas",
@@ -404,7 +407,8 @@
       "mensajeria": "Mensajería",
       "recordatorios": "Recordatorios",
       "agenda": "Agenda",
-      "autorizaciones": "Autorizaciones"
+      "autorizaciones": "Autorizaciones",
+      "notificaciones": "Notificaciones"
     },
     "dashboard": {
       "title": "Mis niños",
@@ -1756,6 +1760,30 @@
       "administrada_por": "Administrada por {nombre} · {fecha}",
       "espera_segundo": "Esperando la confirmación de un segundo miembro del personal.",
       "staff_generico": "Personal del centro"
+    }
+  },
+  "notificaciones": {
+    "title": "Notificaciones",
+    "subtitle": "Novedades recientes que te afectan.",
+    "vacio": "No hay novedades por ahora.",
+    "nuevo": "Nuevo",
+    "pendiente_confirmacion": "Pendiente de tu confirmación",
+    "badge_aria": "Notificaciones sin leer: {n}",
+    "tipo": {
+      "evento": "Evento",
+      "recogida": "Recogida",
+      "medicacion": "Medicación",
+      "autorizacion": "Autorización",
+      "administracion": "Administración"
+    },
+    "avisos": {
+      "pendientes_confirmar": "{n, plural, one {Tienes # administración de medicación pendiente de tu confirmación} other {Tienes # administraciones de medicación pendientes de tu confirmación}}",
+      "pendientes_firma": "{n, plural, one {Tienes # autorización pendiente de firmar} other {Tienes # autorizaciones pendientes de firmar}}",
+      "medicaciones_activas": "{n, plural, one {# medicación activa hoy} other {# medicaciones activas hoy}}"
+    },
+    "errors": {
+      "no_autorizado": "No autorizado.",
+      "marcar_fallo": "No se pudieron marcar como vistas."
     }
   }
 }

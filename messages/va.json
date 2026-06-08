@@ -178,7 +178,8 @@
       "mensajeria": "Missatgeria",
       "recordatorios": "Recordatoris",
       "agenda": "Agenda",
-      "autorizaciones": "Autoritzacions"
+      "autorizaciones": "Autoritzacions",
+      "notificaciones": "Notificacions"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -376,7 +377,9 @@
       "calendario": "Calendari Escolar",
       "mensajeria": "Missatgeria",
       "recordatorios": "Recordatoris",
-      "agenda": "Agenda"
+      "agenda": "Agenda",
+      "autorizaciones": "Autoritzacions",
+      "notificaciones": "Notificacions"
     },
     "dashboard": {
       "title": "Les meues aules",
@@ -404,7 +407,8 @@
       "mensajeria": "Missatgeria",
       "recordatorios": "Recordatoris",
       "agenda": "Agenda",
-      "autorizaciones": "Autoritzacions"
+      "autorizaciones": "Autoritzacions",
+      "notificaciones": "Notificacions"
     },
     "dashboard": {
       "title": "Els meus xiquets",
@@ -1756,6 +1760,30 @@
       "administrada_por": "Administrada per {nombre} · {fecha}",
       "espera_segundo": "Esperant la confirmació d'un segon membre del personal.",
       "staff_generico": "Personal del centre"
+    }
+  },
+  "notificaciones": {
+    "title": "Notificacions",
+    "subtitle": "Novetats recents que t'afecten.",
+    "vacio": "No hi ha novetats de moment.",
+    "nuevo": "Nou",
+    "pendiente_confirmacion": "Pendent de la teua confirmació",
+    "badge_aria": "Notificacions sense llegir: {n}",
+    "tipo": {
+      "evento": "Esdeveniment",
+      "recogida": "Recollida",
+      "medicacion": "Medicació",
+      "autorizacion": "Autorització",
+      "administracion": "Administració"
+    },
+    "avisos": {
+      "pendientes_confirmar": "{n, plural, one {Tens # administració de medicació pendent de la teua confirmació} other {Tens # administracions de medicació pendents de la teua confirmació}}",
+      "pendientes_firma": "{n, plural, one {Tens # autorització pendent de firmar} other {Tens # autoritzacions pendents de firmar}}",
+      "medicaciones_activas": "{n, plural, one {# medicació activa hui} other {# medicacions actives hui}}"
+    },
+    "errors": {
+      "no_autorizado": "No autoritzat.",
+      "marcar_fallo": "No s'han pogut marcar com a vistes."
     }
   }
 }

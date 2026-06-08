@@ -1,0 +1,37 @@
+import 'server-only'
+
+import { createClient } from '@/lib/supabase/server'
+
+import { PREF_NOTIF_VISTO, VENTANA_NOVEDADES_DIAS } from '../types'
+
+export type RolNotif = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
+
+/** Staff = ve/gestiona el ámbito del centro/aula (rutas admin de autorizaciones). */
+export function esStaff(rol: RolNotif): boolean {
+  return rol === 'admin' || rol === 'profe'
+}
+
+/** Segmento de ruta del dashboard/calendario según rol. */
+export function segmentoRol(rol: RolNotif): 'admin' | 'teacher' | 'family' {
+  if (rol === 'admin') return 'admin'
+  if (rol === 'profe') return 'teacher'
+  return 'family'
+}
+
+/** ISO del corte de ventana (hace N días): el feed solo mira novedades recientes. */
+export function cutoffNovedades(): string {
+  const d = new Date()
+  d.setDate(d.getDate() - VENTANA_NOVEDADES_DIAS)
+  return d.toISOString()
+}
+
+/** Marcador "todo lo anterior está visto" del usuario (ISO) o null si nunca lo abrió. */
+export async function getVistoAt(): Promise<string | null> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('preferencias_usuario')
+    .select('valor')
+    .eq('clave', PREF_NOTIF_VISTO)
+    .maybeSingle()
+  return data?.valor ?? null
+}
