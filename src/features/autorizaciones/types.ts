@@ -15,6 +15,7 @@ export type AutorizacionRow = Database['public']['Tables']['autorizaciones']['Ro
 export type AutorizacionInsert = Database['public']['Tables']['autorizaciones']['Insert']
 export type FirmaRow = Database['public']['Tables']['firmas_autorizacion']['Row']
 export type FirmaInsert = Database['public']['Tables']['firmas_autorizacion']['Insert']
+export type AdministracionRow = Database['public']['Tables']['administraciones_medicacion']['Row']
 export type TipoAutorizacion = Database['public']['Enums']['tipo_autorizacion']
 export type AutorizacionEstado = Database['public']['Enums']['autorizacion_estado']
 export type AutorizacionAmbito = Database['public']['Enums']['autorizacion_ambito']
@@ -105,6 +106,23 @@ export interface PlantillaEnviableItem {
   id: string
   tipo: TipoAutorizacion
   titulo: string
+}
+
+/**
+ * Una administración de medicación para la lista del registro (F8-3b).
+ * `confirmado_por` null = pendiente de confirmación por un 2.º staff distinto.
+ */
+export interface AdministracionItem {
+  id: string
+  administrado_por: string
+  administrado_por_nombre: string
+  administrado_en: string
+  medicamento: string
+  dosis: string
+  notas: string | null
+  confirmado_por: string | null
+  confirmado_por_nombre: string | null
+  confirmado_at: string | null
 }
 
 /** Detalle de una autorización + su roster por niño (filtrado por RLS). */

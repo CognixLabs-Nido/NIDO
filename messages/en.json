@@ -1633,7 +1633,8 @@
       "med_pauta_vacia": "Schedule is required.",
       "med_pauta_larga": "Schedule is too long.",
       "med_fechas_incoherentes": "End date cannot be before start date.",
-      "med_campos_requeridos": "Fill in medication, dose and schedule."
+      "med_campos_requeridos": "Fill in medication, dose and schedule.",
+      "adm_notas_largas": "Notes can't exceed 500 characters."
     },
     "errors": {
       "no_autorizado": "You don't have permission for this action.",
@@ -1661,7 +1662,13 @@
       "medicacion_sin_plantilla": "The center has not published the medication format yet.",
       "med_fuera_de_vigencia": "Today must be within the medication dates to sign.",
       "medicacion_requerida": "Medication data is missing.",
-      "med_caducada": "You cannot authorise a medication whose end date has already passed."
+      "med_caducada": "You cannot authorise a medication whose end date has already passed.",
+      "adm_registro_fallo": "The administration could not be logged.",
+      "adm_no_medicacion": "This authorisation is not a medication.",
+      "adm_sin_firma": "The medication is not signed.",
+      "adm_no_permitido": "You can't log this administration (the medication must be signed and valid today).",
+      "adm_confirmar_fallo": "The administration could not be confirmed.",
+      "adm_confirmar_no_permitido": "You can't confirm this administration (it must be confirmed by a staff member other than the one who administered it)."
     },
     "tipo": {
       "salida": "Outing",
@@ -1730,6 +1737,25 @@
       "estado_vigente": "Active today",
       "estado_futura": "Starts on {fecha}",
       "estado_finalizada": "Ended"
+    },
+    "administracion": {
+      "titulo": "Administration log",
+      "registrar": "Log administration",
+      "registrando": "Logging…",
+      "intro": "Record that you have administered this medication. It will stay pending until a second staff member confirms it.",
+      "notas": "Notes (optional)",
+      "notas_placeholder": "Notes about the administration",
+      "aviso_doble": "Double confirmation: a different staff member must confirm this administration.",
+      "registrada_toast": "Administration logged. Pending confirmation.",
+      "vacio": "No administrations logged.",
+      "pendiente": "Pending confirmation",
+      "confirmar": "Confirm",
+      "confirmando": "Confirming…",
+      "confirmada_toast": "Administration confirmed.",
+      "confirmada_por": "Confirmed by {nombre} · {fecha}",
+      "administrada_por": "Administered by {nombre} · {fecha}",
+      "espera_segundo": "Waiting for a second staff member to confirm.",
+      "staff_generico": "Centre staff"
     }
   }
 }

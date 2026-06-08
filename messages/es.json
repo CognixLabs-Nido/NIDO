@@ -1633,7 +1633,8 @@
       "med_pauta_vacia": "La pauta es obligatoria.",
       "med_pauta_larga": "La pauta es demasiado larga.",
       "med_fechas_incoherentes": "La fecha de fin no puede ser anterior a la de inicio.",
-      "med_campos_requeridos": "Rellena medicamento, dosis y pauta."
+      "med_campos_requeridos": "Rellena medicamento, dosis y pauta.",
+      "adm_notas_largas": "Las notas no pueden superar 500 caracteres."
     },
     "errors": {
       "no_autorizado": "No tienes permiso para esta acción.",
@@ -1661,7 +1662,13 @@
       "medicacion_sin_plantilla": "El centro aún no ha publicado el formato de medicación.",
       "med_fuera_de_vigencia": "Hoy debe estar dentro de las fechas de la medicación para firmar.",
       "medicacion_requerida": "Faltan los datos de la medicación.",
-      "med_caducada": "No puedes autorizar una medicación cuya fecha de fin ya pasó."
+      "med_caducada": "No puedes autorizar una medicación cuya fecha de fin ya pasó.",
+      "adm_registro_fallo": "No se pudo registrar la administración.",
+      "adm_no_medicacion": "Esta autorización no es una medicación.",
+      "adm_sin_firma": "La medicación no está firmada.",
+      "adm_no_permitido": "No puedes registrar esta administración (la medicación debe estar firmada y vigente hoy).",
+      "adm_confirmar_fallo": "No se pudo confirmar la administración.",
+      "adm_confirmar_no_permitido": "No puedes confirmar esta administración (debe confirmarla un miembro del personal distinto del que la administró)."
     },
     "tipo": {
       "salida": "Salida",
@@ -1730,6 +1737,25 @@
       "estado_vigente": "Vigente hoy",
       "estado_futura": "Empieza el {fecha}",
       "estado_finalizada": "Finalizada"
+    },
+    "administracion": {
+      "titulo": "Registro de administración",
+      "registrar": "Registrar administración",
+      "registrando": "Registrando…",
+      "intro": "Deja constancia de que has administrado esta medicación. Quedará pendiente hasta que un segundo miembro del personal la confirme.",
+      "notas": "Notas (opcional)",
+      "notas_placeholder": "Observaciones de la administración",
+      "aviso_doble": "Doble confirmación: otro miembro del personal distinto deberá confirmar esta administración.",
+      "registrada_toast": "Administración registrada. Pendiente de confirmación.",
+      "vacio": "Sin administraciones registradas.",
+      "pendiente": "Pendiente de confirmación",
+      "confirmar": "Confirmar",
+      "confirmando": "Confirmando…",
+      "confirmada_toast": "Administración confirmada.",
+      "confirmada_por": "Confirmada por {nombre} · {fecha}",
+      "administrada_por": "Administrada por {nombre} · {fecha}",
+      "espera_segundo": "Esperando la confirmación de un segundo miembro del personal.",
+      "staff_generico": "Personal del centro"
     }
   }
 }

@@ -6,6 +6,8 @@ import { getTranslations } from 'next-intl/server'
 import { FirmarAutorizacionPanel } from '@/features/autorizaciones/components/FirmarAutorizacionPanel'
 import { MedicacionFicha } from '@/features/autorizaciones/components/MedicacionFicha'
 import { RecogidaLista } from '@/features/autorizaciones/components/RecogidaLista'
+import { RegistroAdministracionLista } from '@/features/autorizaciones/components/RegistroAdministracionLista'
+import { getAdministracionesPorAutorizacion } from '@/features/autorizaciones/queries/get-administraciones'
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { createClient } from '@/lib/supabase/server'
@@ -36,6 +38,12 @@ export default async function FamilyAutorizacionDetallePage({ params }: PageProp
 
   const aut = await getAutorizacionDetalle(id)
   if (!aut) notFound()
+
+  // Medicación: la familia VE el registro de administraciones de su hijo (transparencia).
+  const esMedicacionInstancia = !aut.es_plantilla && aut.tipo === 'medicacion'
+  const administraciones = esMedicacionInstancia
+    ? await getAdministracionesPorAutorizacion(aut.id)
+    : []
 
   return (
     <div className="space-y-6">
@@ -75,11 +83,14 @@ export default async function FamilyAutorizacionDetallePage({ params }: PageProp
       )}
 
       {aut.tipo === 'medicacion' && (
-        <section>
+        <section className="space-y-4">
           <MedicacionFicha
             medicacion={aut.medicacion_vigente ?? null}
             integridadOk={aut.integridad_ok}
           />
+          {esMedicacionInstancia && (
+            <RegistroAdministracionLista administraciones={administraciones} />
+          )}
         </section>
       )}
 

@@ -24,6 +24,7 @@ test.describe('F8-1 — autorizaciones smoke', () => {
     expect(body).not.toContain('autorizaciones.acciones.')
     expect(body).not.toContain('autorizaciones.firma.')
     expect(body).not.toContain('autorizaciones.recogida.')
+    expect(body).not.toContain('autorizaciones.administracion.')
   })
 })
 
@@ -116,5 +117,30 @@ test.describe('F8-3a — medicación B2 (la familia inicia) (gateado)', () => {
     await expect(page.getByLabel(/medicamento|medication|medicament/i)).toBeVisible()
     await expect(page.getByLabel(/dosis|dose/i)).toBeVisible()
     await expect(page.getByLabel(/pauta|schedule|freqüència/i)).toBeVisible()
+  })
+})
+
+test.describe('F8-3b — registro de administración de medicación (doble confirmación) (gateado)', () => {
+  // El flujo profundo (registrar → confirmar por un 2.º staff distinto →
+  // autoconfirmar bloqueado → registrar sobre medicación no vigente bloqueado)
+  // está cubierto exhaustivamente por los tests RLS gateados
+  // (`administraciones-medicacion.rls.test.ts`, 15 casos), que ejercen las dos
+  // server actions a través de las mismas policies que la UI. Aquí solo se
+  // comprueba la superficie de UI: el staff ve la sección «Registro de
+  // administración» en el detalle de una instancia de medicación. Requiere
+  // `E2E_REAL_SESSIONS=1` + `E2E_MEDICACION_INSTANCIA_ID` (instancia de medicación
+  // publicada y firmada del centro de prueba).
+  test.skip(
+    process.env.E2E_REAL_SESSIONS !== '1' || !process.env.E2E_MEDICACION_INSTANCIA_ID,
+    'Requiere E2E_ADMIN_* + E2E_MEDICACION_INSTANCIA_ID'
+  )
+
+  test('staff ve la sección de registro de administración en una medicación', async ({ page }) => {
+    await page.goto('/es/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL!)
+    await page.getByLabel(/contraseña|password/i).fill(process.env.E2E_ADMIN_PASSWORD!)
+    await page.getByRole('button', { name: /entrar|sign in/i }).click()
+    await page.goto(`/es/admin/autorizaciones/${process.env.E2E_MEDICACION_INSTANCIA_ID}`)
+    await expect(page.getByRole('heading', { name: /registro de administración/i })).toBeVisible()
   })
 })

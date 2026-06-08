@@ -268,6 +268,26 @@ export const crearMedicacionSchema = z.object({
 })
 export type CrearMedicacionInput = z.input<typeof crearMedicacionSchema>
 
+// --- F8-3b: Registro de administración de medicación (doble confirmación) -----
+// El staff (profe del aula / dirección) registra que ha administrado una dosis de
+// una medicación FIRMADA + VIGENTE; un 2.º staff distinto la confirma. El snapshot
+// medicamento/dosis y centro/niño los resuelve el server desde la instancia.
+export const registrarAdministracionSchema = z.object({
+  autorizacion_id: z.string().uuid(),
+  notas: z
+    .string()
+    .trim()
+    .max(500, 'autorizaciones.validation.adm_notas_largas')
+    .nullable()
+    .optional(),
+})
+export type RegistrarAdministracionInput = z.input<typeof registrarAdministracionSchema>
+
+export const confirmarAdministracionSchema = z.object({
+  administracion_id: z.string().uuid(),
+})
+export type ConfirmarAdministracionInput = z.input<typeof confirmarAdministracionSchema>
+
 // --- Rechazar (tutor) — sin trazo (no hay firma que dibujar) ----------------
 export const rechazarAutorizacionSchema = z.object({
   autorizacion_id: z.string().uuid(),
