@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server'
 import { hoyMadridYmd } from '@/features/autorizaciones/lib/server-helpers'
 import { getAdministracionesPorAutorizacion } from '@/features/autorizaciones/queries/get-administraciones'
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
+import { MarcarFirmaVistaOnMount } from '@/features/notificaciones/components/MarcarFirmaVistaOnMount'
 import { createClient } from '@/lib/supabase/server'
 
 import { AccesoDenegado } from './AccesoDenegado'
@@ -59,8 +60,13 @@ export async function AutorizacionDetalleView({
     currentUserId = user?.id ?? null
   }
 
+  // Abrir una recogida/medicación firmada la marca como vista → su aviso de "nueva
+  // firma" desaparece del panel del usuario (baja el contador).
+  const marcarVista = !aut.es_plantilla && (aut.tipo === 'recogida' || aut.tipo === 'medicacion')
+
   return (
     <div className="space-y-6">
+      {marcarVista && <MarcarFirmaVistaOnMount autorizacionId={aut.id} />}
       <div>
         <Link
           href={volverHref}

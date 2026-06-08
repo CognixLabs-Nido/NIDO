@@ -4,7 +4,7 @@ import { getAutorizacionesFamilia } from '@/features/autorizaciones/queries/get-
 import { hoyMadridYmd } from '@/features/autorizaciones/lib/server-helpers'
 import { createClient } from '@/lib/supabase/server'
 
-import { cutoffNovedades, esStaff, type RolNotif } from '../lib/helpers'
+import { cutoffNovedades, esStaff, getFirmasVistas, type RolNotif } from '../lib/helpers'
 import type { AvisosInicio } from '../types'
 
 const VACIO: AvisosInicio = {
@@ -48,7 +48,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
   const medicacionesActivas = meds.count ?? 0
 
   if (esStaff(rol)) {
-    const [pc, conf, nf] = await Promise.all([
+    const [pc, conf, nf, vistas] = await Promise.all([
       supabase
         .from('administraciones_medicacion')
         .select('id', { count: 'exact', head: true })
@@ -59,23 +59,32 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
         .select('id', { count: 'exact', head: true })
         .not('confirmado_por', 'is', null),
       // "Ha llegado una firma nueva": recogidas/medicaciones que una familia firmó
-      // recientemente en tu ámbito (RLS), excluyendo tus propias firmas.
+      // recientemente en tu ámbito (RLS), excluyendo tus propias firmas. Se traen las
+      // filas (no count) para descontar las ya VISTAS (autorización abierta después
+      // de la firma).
       supabase
         .from('firmas_autorizacion')
-        .select('id, autorizaciones!inner(tipo, es_plantilla)', { count: 'exact', head: true })
+        .select('autorizacion_id, created_at, autorizaciones!inner(tipo, es_plantilla)')
         .eq('decision', 'firmado')
         .neq('firmante_id', user.id)
         .gte('created_at', cutoffNovedades())
         .eq('autorizaciones.es_plantilla', false)
         .in('autorizaciones.tipo', ['recogida', 'medicacion']),
+      getFirmasVistas(),
     ])
+
+    const nuevasFirmas = (nf.data ?? []).filter((r) => {
+      const visto = vistas[r.autorizacion_id]
+      return !visto || new Date(r.created_at).getTime() > new Date(visto).getTime()
+    }).length
+
     return {
       pendientesConfirmar: pc.count ?? 0,
       pendientesFirma: 0,
       confirmadas: conf.count ?? 0,
       firmadas: 0,
       medicacionesActivas,
-      nuevasFirmas: nf.count ?? 0,
+      nuevasFirmas,
     }
   }
 

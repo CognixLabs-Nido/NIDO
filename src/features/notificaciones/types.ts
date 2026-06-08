@@ -18,6 +18,14 @@ export function fail(error: string): ActionResult<never> {
 /** Clave del marcador "todo lo anterior está visto" en preferencias_usuario. */
 export const PREF_NOTIF_VISTO = 'notificaciones_visto_at'
 
+/**
+ * Clave del mapa por-autorización `{ [autorizacion_id]: iso_visto_at }` en
+ * preferencias_usuario: registra cuándo el usuario ABRIÓ cada autorización. El
+ * aviso de "nueva firma" del panel deja de contar las firmas cuya autorización se
+ * abrió después de firmarse (al abrirla, su aviso desaparece). KV, sin migración.
+ */
+export const PREF_FIRMAS_VISTAS = 'autorizaciones_firmas_vistas'
+
 /** Ventana de novedades: solo se muestran/cuentan ítems de los últimos N días. */
 export const VENTANA_NOVEDADES_DIAS = 30
 

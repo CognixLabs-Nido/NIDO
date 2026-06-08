@@ -2,7 +2,7 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 
-import { PREF_NOTIF_VISTO, VENTANA_NOVEDADES_DIAS } from '../types'
+import { PREF_FIRMAS_VISTAS, PREF_NOTIF_VISTO, VENTANA_NOVEDADES_DIAS } from '../types'
 
 export type RolNotif = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
 
@@ -34,4 +34,24 @@ export async function getVistoAt(): Promise<string | null> {
     .eq('clave', PREF_NOTIF_VISTO)
     .maybeSingle()
   return data?.valor ?? null
+}
+
+/**
+ * Mapa `{ [autorizacion_id]: iso_visto_at }` del usuario: cuándo abrió cada
+ * autorización. Vacío si nunca abrió ninguna o si el valor está corrupto.
+ */
+export async function getFirmasVistas(): Promise<Record<string, string>> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('preferencias_usuario')
+    .select('valor')
+    .eq('clave', PREF_FIRMAS_VISTAS)
+    .maybeSingle()
+  if (!data?.valor) return {}
+  try {
+    const parsed = JSON.parse(data.valor)
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {}
+  } catch {
+    return {}
+  }
 }
