@@ -421,6 +421,8 @@ export type Database = {
       autorizaciones: {
         Row: {
           ambito: Database['public']['Enums']['autorizacion_ambito'] | null
+          archivada_at: string | null
+          archivada_por: string | null
           aula_id: string | null
           centro_id: string
           creado_por: string
@@ -444,6 +446,8 @@ export type Database = {
         }
         Insert: {
           ambito?: Database['public']['Enums']['autorizacion_ambito'] | null
+          archivada_at?: string | null
+          archivada_por?: string | null
           aula_id?: string | null
           centro_id: string
           creado_por: string
@@ -467,6 +471,8 @@ export type Database = {
         }
         Update: {
           ambito?: Database['public']['Enums']['autorizacion_ambito'] | null
+          archivada_at?: string | null
+          archivada_por?: string | null
           aula_id?: string | null
           centro_id?: string
           creado_por?: string
@@ -489,6 +495,13 @@ export type Database = {
           vigencia_hasta?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: 'autorizaciones_archivada_por_fkey'
+            columns: ['archivada_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'autorizaciones_aula_id_fkey'
             columns: ['aula_id']
@@ -2222,6 +2235,10 @@ export type Database = {
     }
     Functions: {
       _get_medical_key: { Args: never; Returns: string }
+      archivar_autorizacion: {
+        Args: { p_autorizacion_id: string }
+        Returns: boolean
+      }
       autorizacion_aplica_a_nino: {
         Args: { p_autorizacion_id: string; p_nino_id: string }
         Returns: boolean

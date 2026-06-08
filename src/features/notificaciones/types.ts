@@ -77,4 +77,9 @@ export interface AvisosInicio {
    * Excluye tus propias revocaciones; desaparece al abrir la autorización.
    */
   revocaciones: number
+  /**
+   * Staff: medicaciones TERMINADAS (hoy > fecha_fin) aún sin archivar — recordatorio
+   * de archivarlas. Solo profe/admin (la familia no archiva).
+   */
+  medicacionesPorArchivar: number
 }

@@ -15,6 +15,7 @@ const VACIO: AvisosInicio = {
   medicacionesActivas: 0,
   nuevasFirmas: 0,
   revocaciones: 0,
+  medicacionesPorArchivar: 0,
 }
 
 /**
@@ -49,7 +50,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
   const medicacionesActivas = meds.count ?? 0
 
   if (esStaff(rol)) {
-    const [pc, conf, nf, rev, vistas] = await Promise.all([
+    const [pc, conf, nf, rev, archivar, vistas] = await Promise.all([
       supabase
         .from('administraciones_medicacion')
         .select('id', { count: 'exact', head: true })
@@ -80,6 +81,14 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
         .gte('created_at', cutoffNovedades())
         .eq('autorizaciones.es_plantilla', false)
         .in('autorizaciones.tipo', ['recogida', 'medicacion']),
+      // Medicaciones TERMINADAS (hoy > fecha_fin) aún sin archivar → recordatorio de archivar.
+      supabase
+        .from('autorizaciones')
+        .select('id', { count: 'exact', head: true })
+        .eq('tipo', 'medicacion')
+        .eq('es_plantilla', false)
+        .is('archivada_at', null)
+        .lt('vigencia_hasta', hoy),
       getFirmasVistas(),
     ])
 
@@ -104,6 +113,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
       medicacionesActivas,
       nuevasFirmas,
       revocaciones,
+      medicacionesPorArchivar: archivar.count ?? 0,
     }
   }
 
@@ -127,5 +137,6 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
     medicacionesActivas,
     nuevasFirmas: 0,
     revocaciones: 0,
+    medicacionesPorArchivar: 0,
   }
 }

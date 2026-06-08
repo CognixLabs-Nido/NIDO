@@ -1,5 +1,6 @@
 import {
   AlertTriangleIcon,
+  ArchiveIcon,
   CheckCircle2Icon,
   ClipboardCheckIcon,
   PenLineIcon,
@@ -36,7 +37,15 @@ export async function AvisosInicio({
   const medsN = avisos.medicacionesActivas
   const nuevasFirmasN = staff ? avisos.nuevasFirmas : 0
   const revocacionesN = staff ? avisos.revocaciones : 0
-  if (pendientesN <= 0 && hechasN <= 0 && medsN <= 0 && nuevasFirmasN <= 0 && revocacionesN <= 0)
+  const archivarN = staff ? avisos.medicacionesPorArchivar : 0
+  if (
+    pendientesN <= 0 &&
+    hechasN <= 0 &&
+    medsN <= 0 &&
+    nuevasFirmasN <= 0 &&
+    revocacionesN <= 0 &&
+    archivarN <= 0
+  )
     return null
 
   // La profe gestiona sus autorizaciones en /teacher; el admin en /admin; la familia
@@ -105,6 +114,19 @@ export async function AvisosInicio({
           <PenLineIcon className="size-5 shrink-0 text-sky-700 dark:text-sky-300" />
           <span className="text-sm font-medium text-sky-900 dark:text-sky-100">
             {t('nuevas_firmas', { n: nuevasFirmasN })}
+          </span>
+        </Link>
+      )}
+
+      {/* Medicaciones terminadas pendientes de archivar (solo staff). Acción ligera. */}
+      {archivarN > 0 && (
+        <Link
+          href={autorizacionesHref}
+          className="flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 transition hover:bg-amber-100 dark:border-amber-900/40 dark:bg-amber-950/30 dark:hover:bg-amber-950/50"
+        >
+          <ArchiveIcon className="size-5 shrink-0 text-amber-700 dark:text-amber-300" />
+          <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+            {t('por_archivar', { n: archivarN })}
           </span>
         </Link>
       )}

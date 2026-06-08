@@ -1676,7 +1676,9 @@
       "adm_no_permitido": "No puedes registrar esta administración (la medicación debe estar firmada y vigente hoy).",
       "adm_confirmar_fallo": "No se pudo confirmar la administración.",
       "adm_confirmar_no_permitido": "No puedes confirmar esta administración (debe confirmarla un miembro del personal distinto del que la administró).",
-      "revocar_no_permitido": "Solo puedes revocar recogida y medicación."
+      "revocar_no_permitido": "Solo puedes revocar recogida y medicación.",
+      "archivar_fallo": "No se pudo archivar. Inténtalo de nuevo.",
+      "archivar_no_permitido": "No tienes permiso para archivar esta medicación."
     },
     "tipo": {
       "salida": "Salida",
@@ -1813,6 +1815,25 @@
       "modo_label": "¿Qué quieres crear?",
       "modo_formato": "Enviar un formato (régimen interno, imágenes)",
       "modo_excursion": "Excursión"
+    },
+    "medicacion_lista": {
+      "titulo": "Medicación",
+      "desc": "Actividad de cada pauta: dosis dadas y pendientes de confirmar.",
+      "vacio": "No hay medicaciones activas.",
+      "historico_titulo": "Histórico de medicación",
+      "historico_desc": "Pautas terminadas y archivadas.",
+      "historico_vacio": "No hay medicaciones archivadas.",
+      "ver_historico": "Ver histórico",
+      "ver_activas": "Ver activas",
+      "archivada": "Archivada",
+      "terminada": "Terminada",
+      "dadas": "{n, plural, one {# dosis dada} other {# dosis dadas}}",
+      "pendientes_confirmar": "{n, plural, one {# pendiente de confirmar} other {# pendientes de confirmar}}"
+    },
+    "archivar": {
+      "accion": "Archivar",
+      "archivando": "Archivando…",
+      "archivada_toast": "Medicación archivada"
     }
   },
   "notificaciones": {
@@ -1838,7 +1859,8 @@
       "confirmadas": "{n, plural, one {# confirmada} other {# confirmadas}}",
       "todo_hecho": "Nada pendiente · {n} al día",
       "nuevas_firmas": "{n, plural, one {Ha llegado # firma nueva de una familia} other {Han llegado # firmas nuevas de familias}}",
-      "revocaciones": "{n, plural, one {Revocada # autorización: revisa quién recoge / la medicación} other {Revocadas # autorizaciones: revisa quién recoge / la medicación}}"
+      "revocaciones": "{n, plural, one {Revocada # autorización: revisa quién recoge / la medicación} other {Revocadas # autorizaciones: revisa quién recoge / la medicación}}",
+      "por_archivar": "{n, plural, one {# medicación terminada para archivar} other {# medicaciones terminadas para archivar}}"
     },
     "errors": {
       "no_autorizado": "No autorizado.",

@@ -1676,7 +1676,9 @@
       "adm_no_permitido": "No pots registrar esta administració (la medicació ha d'estar firmada i vigent hui).",
       "adm_confirmar_fallo": "No s'ha pogut confirmar l'administració.",
       "adm_confirmar_no_permitido": "No pots confirmar esta administració (l'ha de confirmar un membre del personal distint del que la va administrar).",
-      "revocar_no_permitido": "Només pots revocar recollida i medicació."
+      "revocar_no_permitido": "Només pots revocar recollida i medicació.",
+      "archivar_fallo": "No s’ha pogut arxivar. Torna-ho a provar.",
+      "archivar_no_permitido": "No tens permís per a arxivar esta medicació."
     },
     "tipo": {
       "salida": "Eixida",
@@ -1813,6 +1815,25 @@
       "modo_label": "Què vols crear?",
       "modo_formato": "Enviar un format (règim intern, imatges)",
       "modo_excursion": "Excursió"
+    },
+    "medicacion_lista": {
+      "titulo": "Medicació",
+      "desc": "Activitat de cada pauta: dosis donades i pendents de confirmar.",
+      "vacio": "No hi ha medicacions actives.",
+      "historico_titulo": "Històric de medicació",
+      "historico_desc": "Pautes acabades i arxivades.",
+      "historico_vacio": "No hi ha medicacions arxivades.",
+      "ver_historico": "Veure històric",
+      "ver_activas": "Veure actives",
+      "archivada": "Arxivada",
+      "terminada": "Acabada",
+      "dadas": "{n, plural, one {# dosi donada} other {# dosis donades}}",
+      "pendientes_confirmar": "{n, plural, one {# pendent de confirmar} other {# pendents de confirmar}}"
+    },
+    "archivar": {
+      "accion": "Arxivar",
+      "archivando": "Arxivant…",
+      "archivada_toast": "Medicació arxivada"
     }
   },
   "notificaciones": {
@@ -1838,7 +1859,8 @@
       "confirmadas": "{n, plural, one {# confirmada} other {# confirmades}}",
       "todo_hecho": "Res pendent · {n} al dia",
       "nuevas_firmas": "{n, plural, one {Ha arribat # firma nova d’una família} other {Han arribat # firmes noves de famílies}}",
-      "revocaciones": "{n, plural, one {Revocada # autorització: revisa qui recull / la medicació} other {Revocades # autoritzacions: revisa qui recull / la medicació}}"
+      "revocaciones": "{n, plural, one {Revocada # autorització: revisa qui recull / la medicació} other {Revocades # autoritzacions: revisa qui recull / la medicació}}",
+      "por_archivar": "{n, plural, one {# medicació acabada per a arxivar} other {# medicacions acabades per a arxivar}}"
     },
     "errors": {
       "no_autorizado": "No autoritzat.",

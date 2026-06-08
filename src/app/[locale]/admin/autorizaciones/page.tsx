@@ -1,4 +1,4 @@
-import { FileSignatureIcon } from 'lucide-react'
+import { ArrowLeftIcon, FileSignatureIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -10,6 +10,7 @@ import {
   EstadoFirmaBadge,
   TipoAutorizacionBadge,
 } from '@/features/autorizaciones/components/EstadoFirmaBadge'
+import { SeccionMedicacion } from '@/features/autorizaciones/components/SeccionMedicacion'
 import { getEventosExcursion } from '@/features/autorizaciones/queries/get-eventos-excursion'
 import { getPlantillasCatalogo } from '@/features/autorizaciones/queries/get-plantillas-catalogo'
 import { getPlantillasParaEnviar } from '@/features/autorizaciones/queries/get-plantillas-para-enviar'
@@ -20,16 +21,35 @@ import { getNinosParaRecordatorios } from '@/features/recordatorios/queries/get-
 
 interface PageProps {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ historico?: string }>
 }
 
-export default async function AdminAutorizacionesPage({ params }: PageProps) {
+const BASE = '/admin/autorizaciones'
+
+export default async function AdminAutorizacionesPage({ params, searchParams }: PageProps) {
   const { locale } = await params
+  const soloHistorico = (await searchParams).historico === '1'
   const t = await getTranslations('autorizaciones')
 
   const centroId = await getCentroActualId()
   if (!centroId) redirect(`/${locale}/login`)
   const rol = await getRolEnCentro(centroId)
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
+
+  if (soloHistorico) {
+    return (
+      <div className="space-y-6">
+        <Link
+          href={`/${locale}${BASE}`}
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+        >
+          <ArrowLeftIcon className="size-4" />
+          {t('volver')}
+        </Link>
+        <SeccionMedicacion locale={locale} baseHref={BASE} puedeArchivar soloHistorico />
+      </div>
+    )
+  }
 
   const [seguimiento, eventos, plantillas, plantillasEnviar, ninos, aulas] = await Promise.all([
     getSeguimientoEnvios(),
@@ -136,6 +156,9 @@ export default async function AdminAutorizacionesPage({ params }: PageProps) {
           </ul>
         )}
       </section>
+
+      {/* Medicación: actividad de cada pauta (dosis dadas/pendientes) + archivar. */}
+      <SeccionMedicacion locale={locale} baseHref={BASE} puedeArchivar />
 
       {/* Catálogo de formatos (plantillas durables) — solo admin. */}
       <section className="space-y-3">

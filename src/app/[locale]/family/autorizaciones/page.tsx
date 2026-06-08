@@ -1,4 +1,4 @@
-import { FileSignatureIcon } from 'lucide-react'
+import { ArrowLeftIcon, FileSignatureIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -9,6 +9,7 @@ import {
   EstadoFirmaBadge,
   TipoAutorizacionBadge,
 } from '@/features/autorizaciones/components/EstadoFirmaBadge'
+import { SeccionMedicacion } from '@/features/autorizaciones/components/SeccionMedicacion'
 import { getAutorizacionesFamilia } from '@/features/autorizaciones/queries/get-autorizaciones-familia'
 import { getMedicacionContextoFamilia } from '@/features/autorizaciones/queries/get-medicacion-familia'
 import { getRecogidaContextoFamilia } from '@/features/autorizaciones/queries/get-recogida-familia'
@@ -17,16 +18,35 @@ import { createClient } from '@/lib/supabase/server'
 
 interface PageProps {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ historico?: string }>
 }
 
-export default async function FamilyAutorizacionesPage({ params }: PageProps) {
+const BASE = '/family/autorizaciones'
+
+export default async function FamilyAutorizacionesPage({ params, searchParams }: PageProps) {
   const { locale } = await params
+  const soloHistorico = (await searchParams).historico === '1'
   const t = await getTranslations('autorizaciones')
 
   const centroId = await getCentroActualId()
   if (!centroId) redirect(`/${locale}/login`)
   const rol = await getRolEnCentro(centroId)
   if (rol !== 'tutor_legal' && rol !== 'autorizado') redirect(`/${locale}/forbidden`)
+
+  if (soloHistorico) {
+    return (
+      <div className="space-y-6">
+        <Link
+          href={`/${locale}${BASE}`}
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+        >
+          <ArrowLeftIcon className="size-4" />
+          {t('volver')}
+        </Link>
+        <SeccionMedicacion locale={locale} baseHref={BASE} puedeArchivar={false} soloHistorico />
+      </div>
+    )
+  }
 
   const [autorizaciones, recogida, medicacion] = await Promise.all([
     getAutorizacionesFamilia(),
@@ -89,6 +109,10 @@ export default async function FamilyAutorizacionesPage({ params }: PageProps) {
           ))}
         </ul>
       )}
+
+      {/* Medicación: actividad de cada pauta (dosis dadas/pendientes) en lectura. La
+          familia no archiva; consulta el histórico con el botón de la sección. */}
+      <SeccionMedicacion locale={locale} baseHref={BASE} puedeArchivar={false} />
     </div>
   )
 }
