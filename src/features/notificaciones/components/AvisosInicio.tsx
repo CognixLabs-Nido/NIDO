@@ -1,4 +1,10 @@
-import { CheckCircle2Icon, ClipboardCheckIcon, PenLineIcon, PillIcon } from 'lucide-react'
+import {
+  AlertTriangleIcon,
+  CheckCircle2Icon,
+  ClipboardCheckIcon,
+  PenLineIcon,
+  PillIcon,
+} from 'lucide-react'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 
@@ -29,16 +35,18 @@ export async function AvisosInicio({
   const hechasN = staff ? avisos.confirmadas : avisos.firmadas
   const medsN = avisos.medicacionesActivas
   const nuevasFirmasN = staff ? avisos.nuevasFirmas : 0
-  if (pendientesN <= 0 && hechasN <= 0 && medsN <= 0 && nuevasFirmasN <= 0) return null
+  const revocacionesN = staff ? avisos.revocaciones : 0
+  if (pendientesN <= 0 && hechasN <= 0 && medsN <= 0 && nuevasFirmasN <= 0 && revocacionesN <= 0)
+    return null
 
-  const pendientesHref = staff ? `/${locale}/notifications` : `/${locale}/family/autorizaciones`
   // La profe gestiona sus autorizaciones en /teacher; el admin en /admin; la familia
-  // en /family. (El bloque admin de la profe la redirigía a /forbidden.)
+  // en /family. (Ya no hay pestaña /notifications: todo va a la de autorizaciones.)
   const autorizacionesHref = !staff
     ? `/${locale}/family/autorizaciones`
     : esAdmin
       ? `/${locale}/admin/autorizaciones`
       : `/${locale}/teacher/autorizaciones`
+  const pendientesHref = autorizacionesHref
 
   const pendientesLabel = staff
     ? t('pendientes_confirmar', { n: pendientesN })
@@ -47,6 +55,19 @@ export async function AvisosInicio({
 
   return (
     <div className="space-y-2">
+      {/* Revocación = alerta de seguridad (rojo). Lo más prioritario, arriba del todo. */}
+      {revocacionesN > 0 && (
+        <Link
+          href={autorizacionesHref}
+          className="flex items-center gap-3 rounded-xl border border-red-300 bg-red-50 p-4 transition hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:hover:bg-red-950/50"
+        >
+          <AlertTriangleIcon className="size-5 shrink-0 text-red-700 dark:text-red-300" />
+          <span className="text-sm font-medium text-red-900 dark:text-red-100">
+            {t('revocaciones', { n: revocacionesN })}
+          </span>
+        </Link>
+      )}
+
       {/* Pendiente = banner ámbar (CTA). Lo principal (B). */}
       {pendientesN > 0 && (
         <Link

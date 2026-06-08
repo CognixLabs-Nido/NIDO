@@ -1837,7 +1837,8 @@
       "firmadas": "{n, plural, one {# firmada} other {# firmades}}",
       "confirmadas": "{n, plural, one {# confirmada} other {# confirmades}}",
       "todo_hecho": "Res pendent · {n} al dia",
-      "nuevas_firmas": "{n, plural, one {Ha arribat # firma nova d’una família} other {Han arribat # firmes noves de famílies}}"
+      "nuevas_firmas": "{n, plural, one {Ha arribat # firma nova d’una família} other {Han arribat # firmes noves de famílies}}",
+      "revocaciones": "{n, plural, one {Revocada # autorització: revisa qui recull / la medicació} other {Revocades # autoritzacions: revisa qui recull / la medicació}}"
     },
     "errors": {
       "no_autorizado": "No autoritzat.",

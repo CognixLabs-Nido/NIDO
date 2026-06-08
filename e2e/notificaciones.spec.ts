@@ -1,21 +1,22 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * Centro de notificaciones (accesos + avisos). Smoke sin credenciales:
- * protección de ruta + i18n sin literales del namespace.
+ * Tras la reestructuración, la pestaña/página separada "Notificaciones" se eliminó:
+ * sus avisos viven ahora en el panel de Inicio y la zona de trabajo en la pestaña
+ * Autorizaciones. Smoke sin credenciales: la ruta ya no existe y el login no filtra
+ * literales del namespace.
  */
-test.describe('Notificaciones — smoke', () => {
-  test('ruta /notifications protegida: redirige a login', async ({ page }) => {
-    await page.goto('/es/notifications')
-    await page.waitForURL(/\/es\/login\?.*returnTo=/)
+test.describe('Notificaciones — eliminada (smoke)', () => {
+  test('la ruta /notifications ya no existe (no es una página)', async ({ page }) => {
+    const res = await page.goto('/es/notifications')
+    // Sin ruta: 404 (o lo que sirva el catch-all), nunca un 200 con la página vieja.
+    expect(res?.status()).not.toBe(200)
   })
 
   test('i18n /es: sin literales notificaciones.* en login', async ({ page }) => {
     const response = await page.goto('/es/login')
     expect(response?.status()).toBe(200)
     const body = (await page.content()).toLowerCase()
-    expect(body).not.toContain('notificaciones.title')
     expect(body).not.toContain('notificaciones.avisos.')
-    expect(body).not.toContain('notificaciones.tipo.')
   })
 })

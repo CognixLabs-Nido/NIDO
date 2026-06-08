@@ -1837,7 +1837,8 @@
       "firmadas": "{n, plural, one {# signed} other {# signed}}",
       "confirmadas": "{n, plural, one {# confirmed} other {# confirmed}}",
       "todo_hecho": "Nothing pending · {n} done",
-      "nuevas_firmas": "{n, plural, one {# new signature from a family has arrived} other {# new signatures from families have arrived}}"
+      "nuevas_firmas": "{n, plural, one {# new signature from a family has arrived} other {# new signatures from families have arrived}}",
+      "revocaciones": "{n, plural, one {# authorization revoked: check pick-up / medication} other {# authorizations revoked: check pick-up / medication}}"
     },
     "errors": {
       "no_autorizado": "Not authorised.",

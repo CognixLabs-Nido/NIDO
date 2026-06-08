@@ -14,6 +14,7 @@ const VACIO: AvisosInicio = {
   firmadas: 0,
   medicacionesActivas: 0,
   nuevasFirmas: 0,
+  revocaciones: 0,
 }
 
 /**
@@ -48,7 +49,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
   const medicacionesActivas = meds.count ?? 0
 
   if (esStaff(rol)) {
-    const [pc, conf, nf, vistas] = await Promise.all([
+    const [pc, conf, nf, rev, vistas] = await Promise.all([
       supabase
         .from('administraciones_medicacion')
         .select('id', { count: 'exact', head: true })
@@ -70,13 +71,30 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
         .gte('created_at', cutoffNovedades())
         .eq('autorizaciones.es_plantilla', false)
         .in('autorizaciones.tipo', ['recogida', 'medicacion']),
+      // Revocaciones (alerta de seguridad): cambió quién recoge / se paró una medicina.
+      supabase
+        .from('firmas_autorizacion')
+        .select('autorizacion_id, created_at, autorizaciones!inner(tipo, es_plantilla)')
+        .eq('decision', 'revocado')
+        .neq('firmante_id', user.id)
+        .gte('created_at', cutoffNovedades())
+        .eq('autorizaciones.es_plantilla', false)
+        .in('autorizaciones.tipo', ['recogida', 'medicacion']),
       getFirmasVistas(),
     ])
 
-    const nuevasFirmas = (nf.data ?? []).filter((r) => {
-      const visto = vistas[r.autorizacion_id]
-      return !visto || new Date(r.created_at).getTime() > new Date(visto).getTime()
-    }).length
+    // Una firma/revocación cuenta como "nueva" si su autorización no se ha abierto
+    // después (mapa de vistas por-autorización, comparado por instante).
+    const noVista = (autorizacionId: string, createdAt: string) => {
+      const visto = vistas[autorizacionId]
+      return !visto || new Date(createdAt).getTime() > new Date(visto).getTime()
+    }
+    const nuevasFirmas = (nf.data ?? []).filter((r) =>
+      noVista(r.autorizacion_id, r.created_at)
+    ).length
+    const revocaciones = (rev.data ?? []).filter((r) =>
+      noVista(r.autorizacion_id, r.created_at)
+    ).length
 
     return {
       pendientesConfirmar: pc.count ?? 0,
@@ -85,6 +103,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
       firmadas: 0,
       medicacionesActivas,
       nuevasFirmas,
+      revocaciones,
     }
   }
 
@@ -107,5 +126,6 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
     firmadas,
     medicacionesActivas,
     nuevasFirmas: 0,
+    revocaciones: 0,
   }
 }

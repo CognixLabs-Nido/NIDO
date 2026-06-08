@@ -71,4 +71,10 @@ export interface AvisosInicio {
    * tus propias firmas. La RLS de `firmas_autorizacion` acota profe→aula, admin→centro.
    */
   nuevasFirmas: number
+  /**
+   * Staff: recogidas/medicaciones REVOCADAS recientemente por una familia (alerta de
+   * seguridad: cambió quién recoge / se paró una medicina). Antes vivía en el feed.
+   * Excluye tus propias revocaciones; desaparece al abrir la autorización.
+   */
+  revocaciones: number
 }

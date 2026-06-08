@@ -8,8 +8,6 @@ import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/ge
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { MessagingBadge } from '@/features/messaging/components/MessagingBadge'
 import { countNoLeidos } from '@/features/messaging/queries/count-no-leidos'
-import { NotificacionesBadge } from '@/features/notificaciones/components/NotificacionesBadge'
-import { contarNovedadesNoLeidas } from '@/features/notificaciones/queries/contar-novedades-no-leidas'
 import { RecordatoriosBadge } from '@/features/recordatorios/components/RecordatoriosBadge'
 import { contarRecordatoriosPendientes } from '@/features/recordatorios/queries/contar-pendientes'
 import { SidebarNav } from '@/shared/components/SidebarNav'
@@ -37,7 +35,6 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
   const { total: unread } = await countNoLeidos()
   const recordatoriosPendientes = await contarRecordatoriosPendientes()
   const invitacionesPendientes = await contarInvitacionesPendientes()
-  const novedades = await contarNovedadesNoLeidas()
 
   // Si el usuario es admin que entra por error en family, le mostramos
   // sus items propios; si es autorizado, los de family (todos los items
@@ -48,8 +45,7 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
     locale,
     <MessagingBadge initialTotal={unread} />,
     <RecordatoriosBadge initialTotal={recordatoriosPendientes} />,
-    <AgendaBadge initialTotal={invitacionesPendientes} />,
-    <NotificacionesBadge initialTotal={novedades} />
+    <AgendaBadge initialTotal={invitacionesPendientes} />
   )
 
   return (

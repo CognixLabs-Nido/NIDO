@@ -1837,7 +1837,8 @@
       "firmadas": "{n, plural, one {# firmada} other {# firmadas}}",
       "confirmadas": "{n, plural, one {# confirmada} other {# confirmadas}}",
       "todo_hecho": "Nada pendiente · {n} al día",
-      "nuevas_firmas": "{n, plural, one {Ha llegado # firma nueva de una familia} other {Han llegado # firmas nuevas de familias}}"
+      "nuevas_firmas": "{n, plural, one {Ha llegado # firma nueva de una familia} other {Han llegado # firmas nuevas de familias}}",
+      "revocaciones": "{n, plural, one {Revocada # autorización: revisa quién recoge / la medicación} other {Revocadas # autorizaciones: revisa quién recoge / la medicación}}"
     },
     "errors": {
       "no_autorizado": "No autorizado.",

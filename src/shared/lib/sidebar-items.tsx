@@ -9,7 +9,6 @@ import {
   FileSignatureIcon,
   HistoryIcon,
   HomeIcon,
-  InboxIcon,
   LayoutDashboardIcon,
   MessageCircleIcon,
   UtensilsIcon,
@@ -38,8 +37,7 @@ export async function buildSidebarItems(
   locale: string,
   badge?: ReactNode,
   recordatoriosBadge?: ReactNode,
-  agendaBadge?: ReactNode,
-  notificacionesBadge?: ReactNode
+  agendaBadge?: ReactNode
 ): Promise<SidebarItem[]> {
   if (rol === 'admin') {
     const t = await getTranslations('admin.nav')
@@ -73,12 +71,6 @@ export async function buildSidebarItems(
         label: t('recordatorios'),
         icon: <BellIcon />,
         trailing: recordatoriosBadge,
-      },
-      {
-        href: `/${locale}/notifications`,
-        label: t('notificaciones'),
-        icon: <InboxIcon />,
-        trailing: notificacionesBadge,
       },
       { href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> },
     ]
@@ -119,12 +111,6 @@ export async function buildSidebarItems(
         icon: <BellIcon />,
         trailing: recordatoriosBadge,
       },
-      {
-        href: `/${locale}/notifications`,
-        label: t('notificaciones'),
-        icon: <InboxIcon />,
-        trailing: notificacionesBadge,
-      },
     ]
   }
 
@@ -156,12 +142,6 @@ export async function buildSidebarItems(
       label: t('recordatorios'),
       icon: <BellIcon />,
       trailing: recordatoriosBadge,
-    },
-    {
-      href: `/${locale}/notifications`,
-      label: t('notificaciones'),
-      icon: <InboxIcon />,
-      trailing: notificacionesBadge,
     },
   ]
 }
