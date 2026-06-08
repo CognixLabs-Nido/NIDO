@@ -1,4 +1,4 @@
-import { CheckCircle2Icon, ClipboardCheckIcon, PillIcon } from 'lucide-react'
+import { CheckCircle2Icon, ClipboardCheckIcon, PenLineIcon, PillIcon } from 'lucide-react'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 
@@ -23,16 +23,22 @@ export async function AvisosInicio({
 }) {
   const t = await getTranslations('notificaciones.avisos')
   const staff = esStaff(rol)
+  const esAdmin = rol === 'admin'
 
   const pendientesN = staff ? avisos.pendientesConfirmar : avisos.pendientesFirma
   const hechasN = staff ? avisos.confirmadas : avisos.firmadas
   const medsN = avisos.medicacionesActivas
-  if (pendientesN <= 0 && hechasN <= 0 && medsN <= 0) return null
+  const nuevasFirmasN = staff ? avisos.nuevasFirmas : 0
+  if (pendientesN <= 0 && hechasN <= 0 && medsN <= 0 && nuevasFirmasN <= 0) return null
 
   const pendientesHref = staff ? `/${locale}/notifications` : `/${locale}/family/autorizaciones`
-  const autorizacionesHref = staff
-    ? `/${locale}/admin/autorizaciones`
-    : `/${locale}/family/autorizaciones`
+  // La profe gestiona sus autorizaciones en /teacher; el admin en /admin; la familia
+  // en /family. (El bloque admin de la profe la redirigía a /forbidden.)
+  const autorizacionesHref = !staff
+    ? `/${locale}/family/autorizaciones`
+    : esAdmin
+      ? `/${locale}/admin/autorizaciones`
+      : `/${locale}/teacher/autorizaciones`
 
   const pendientesLabel = staff
     ? t('pendientes_confirmar', { n: pendientesN })
@@ -66,6 +72,20 @@ export async function AvisosInicio({
           <CheckCircle2Icon className="size-4 shrink-0" />
           <span>{t('todo_hecho', { n: hechasN })}</span>
         </div>
+      )}
+
+      {/* "Ha llegado una firma nueva" de una familia (recogida/medicación). Aviso
+          informativo (azul), distinto del CTA ámbar de "pendiente de confirmar". */}
+      {nuevasFirmasN > 0 && (
+        <Link
+          href={autorizacionesHref}
+          className="flex items-center gap-3 rounded-xl border border-sky-300 bg-sky-50 p-4 transition hover:bg-sky-100 dark:border-sky-900/40 dark:bg-sky-950/30 dark:hover:bg-sky-950/50"
+        >
+          <PenLineIcon className="size-5 shrink-0 text-sky-700 dark:text-sky-300" />
+          <span className="text-sm font-medium text-sky-900 dark:text-sky-100">
+            {t('nuevas_firmas', { n: nuevasFirmasN })}
+          </span>
+        </Link>
       )}
 
       {medsN > 0 && (

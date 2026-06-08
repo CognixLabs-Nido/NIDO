@@ -4,7 +4,7 @@ import { getAutorizacionesFamilia } from '@/features/autorizaciones/queries/get-
 import { hoyMadridYmd } from '@/features/autorizaciones/lib/server-helpers'
 import { createClient } from '@/lib/supabase/server'
 
-import { esStaff, type RolNotif } from '../lib/helpers'
+import { cutoffNovedades, esStaff, type RolNotif } from '../lib/helpers'
 import type { AvisosInicio } from '../types'
 
 const VACIO: AvisosInicio = {
@@ -13,6 +13,7 @@ const VACIO: AvisosInicio = {
   confirmadas: 0,
   firmadas: 0,
   medicacionesActivas: 0,
+  nuevasFirmas: 0,
 }
 
 /**
@@ -47,7 +48,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
   const medicacionesActivas = meds.count ?? 0
 
   if (esStaff(rol)) {
-    const [pc, conf] = await Promise.all([
+    const [pc, conf, nf] = await Promise.all([
       supabase
         .from('administraciones_medicacion')
         .select('id', { count: 'exact', head: true })
@@ -57,6 +58,16 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
         .from('administraciones_medicacion')
         .select('id', { count: 'exact', head: true })
         .not('confirmado_por', 'is', null),
+      // "Ha llegado una firma nueva": recogidas/medicaciones que una familia firmó
+      // recientemente en tu ámbito (RLS), excluyendo tus propias firmas.
+      supabase
+        .from('firmas_autorizacion')
+        .select('id, autorizaciones!inner(tipo, es_plantilla)', { count: 'exact', head: true })
+        .eq('decision', 'firmado')
+        .neq('firmante_id', user.id)
+        .gte('created_at', cutoffNovedades())
+        .eq('autorizaciones.es_plantilla', false)
+        .in('autorizaciones.tipo', ['recogida', 'medicacion']),
     ])
     return {
       pendientesConfirmar: pc.count ?? 0,
@@ -64,6 +75,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
       confirmadas: conf.count ?? 0,
       firmadas: 0,
       medicacionesActivas,
+      nuevasFirmas: nf.count ?? 0,
     }
   }
 
@@ -79,5 +91,12 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
   ).length
   const firmadas = lista.filter((a) => a.estado_firma === 'firmado').length
 
-  return { pendientesConfirmar: 0, pendientesFirma, confirmadas: 0, firmadas, medicacionesActivas }
+  return {
+    pendientesConfirmar: 0,
+    pendientesFirma,
+    confirmadas: 0,
+    firmadas,
+    medicacionesActivas,
+    nuevasFirmas: 0,
+  }
 }

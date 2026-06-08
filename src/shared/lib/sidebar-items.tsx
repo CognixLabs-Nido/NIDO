@@ -99,11 +99,11 @@ export async function buildSidebarItems(
         icon: <CalendarCheckIcon />,
         trailing: agendaBadge,
       },
-      // La profe entra a la ruta admin de autorizaciones (la page admite rol
-      // 'profe'): cataloga salidas de sus eventos, firma roster y administra
-      // medicación de su aula. Antes no tenía ninguna entrada → era el bloqueo.
+      // Autorizaciones de la profe bajo SU layout (chrome de teacher). Recogidas y
+      // medicación de su aula + registrar/confirmar administración. No es la ruta
+      // admin (el layout admin redirige a no-admin → ese era el bloqueo histórico).
       {
-        href: `/${locale}/admin/autorizaciones`,
+        href: `/${locale}/teacher/autorizaciones`,
         label: t('autorizaciones'),
         icon: <FileSignatureIcon />,
       },

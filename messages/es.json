@@ -1640,7 +1640,8 @@
       "med_pauta_larga": "La pauta es demasiado larga.",
       "med_fechas_incoherentes": "La fecha de fin no puede ser anterior a la de inicio.",
       "med_campos_requeridos": "Rellena medicamento, dosis y pauta.",
-      "adm_notas_largas": "Las notas no pueden superar 500 caracteres."
+      "adm_notas_largas": "Las notas no pueden superar 500 caracteres.",
+      "excursion_evento_requerido": "Elige una excursión existente o crea una nueva."
     },
     "errors": {
       "no_autorizado": "No tienes permiso para esta acción.",
@@ -1695,7 +1696,8 @@
       "descripcion": "Autorizaciones enviadas o de salida que las familias pueden firmar."
     },
     "enviar": {
-      "intro": "Coge un formato publicado y envíalo a una audiencia."
+      "intro": "Coge un formato publicado y envíalo a una audiencia.",
+      "sin_plantillas": "No hay formatos publicados que enviar. Crea uno primero."
     },
     "ambito": {
       "nino": "Un niño/a",
@@ -1773,7 +1775,11 @@
       "intro": "La autorización de excursión cuelga de un evento del calendario. Elige la excursión.",
       "sin_eventos": "No hay excursiones en el calendario. Crea primero la excursión (el evento) y luego vuelve aquí para su autorización.",
       "crear_evento": "Crear excursión en el calendario",
-      "crear_otra": "¿No está? Crear excursión en el calendario"
+      "crear_otra": "¿No está? Crear excursión en el calendario",
+      "crear_nueva": "Crear excursión nueva",
+      "nuevo_titulo": "Título de la excursión",
+      "nuevo_titulo_placeholder": "p. ej. Visita a la granja",
+      "nuevo_fecha": "Fecha"
     },
     "tipos_area": {
       "titulo": "Tipos de autorización",
@@ -1783,6 +1789,30 @@
       "recogida": "La familia indica quién recoge al niño y firma.",
       "medicacion": "La familia autoriza una medicación con sus pautas y firma.",
       "salida": "Excursión: cuelga de un evento del calendario; no usa catálogo."
+    },
+    "teacher": {
+      "intro": "Recogidas y medicaciones de los niños de tu aula. Desde el detalle registras y confirmas la administración de medicación.",
+      "recogidas_titulo": "Recogidas",
+      "recogidas_desc": "Quién puede recoger a cada niño de tu aula (firmado por la familia).",
+      "recogidas_vacio": "No hay recogidas en tu aula por ahora.",
+      "medicacion_titulo": "Medicación",
+      "medicacion_desc": "Pautas firmadas. Abre una para registrar o confirmar una administración.",
+      "medicacion_vacio": "No hay medicaciones en tu aula por ahora."
+    },
+    "seguimiento": {
+      "pendientes_titulo": "Pendientes de firma",
+      "pendientes_desc": "Lo enviado que aún no han firmado todas las familias, con el niño concreto.",
+      "pendientes_vacio": "Todo lo enviado está firmado. Nada pendiente.",
+      "progreso": "{firmados} de {total} firmadas",
+      "ultimas_titulo": "Últimas enviadas",
+      "ultimas_desc": "Las 10 autorizaciones más recientes enviadas o iniciadas.",
+      "ultimas_vacio": "Aún no has enviado ninguna autorización."
+    },
+    "nueva": {
+      "accion": "Nueva autorización",
+      "modo_label": "¿Qué quieres crear?",
+      "modo_formato": "Enviar un formato (régimen interno, imágenes)",
+      "modo_excursion": "Excursión"
     }
   },
   "notificaciones": {
@@ -1806,7 +1836,8 @@
       "medicaciones_activas": "{n, plural, one {# medicación activa hoy} other {# medicaciones activas hoy}}",
       "firmadas": "{n, plural, one {# firmada} other {# firmadas}}",
       "confirmadas": "{n, plural, one {# confirmada} other {# confirmadas}}",
-      "todo_hecho": "Nada pendiente · {n} al día"
+      "todo_hecho": "Nada pendiente · {n} al día",
+      "nuevas_firmas": "{n, plural, one {Ha llegado # firma nueva de una familia} other {Han llegado # firmas nuevas de familias}}"
     },
     "errors": {
       "no_autorizado": "No autorizado.",

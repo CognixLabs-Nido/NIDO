@@ -20,10 +20,10 @@
  * en profundidad en su layout.
  */
 export const PROTECTED_PREFIXES: Array<{ prefix: RegExp; roles: ReadonlyArray<string> }> = [
-  // Autorizaciones es la ruta admin COMPARTIDA con la profe (la page admite ambos:
-  // la profe cataloga salidas de sus eventos, firma roster y administra medicación
-  // de su aula). Debe ir ANTES del catch-all `/admin` (gana el primer match).
-  { prefix: /^\/admin\/autorizaciones(\/.*)?$/, roles: ['admin', 'profe'] },
+  // `/admin` es solo admin. La profe NO entra aquí: sus autorizaciones (recogidas
+  // y medicación de su aula) viven en `/teacher/autorizaciones` bajo el layout de
+  // teacher (chrome correcto). El layout admin redirige a cualquier no-admin, así
+  // que colgar la ruta de la profe de `/admin` la bloqueaba — ese era el fallo.
   { prefix: /^\/admin(\/.*)?$/, roles: ['admin'] },
   { prefix: /^\/teacher(\/.*)?$/, roles: ['profe', 'admin'] },
   { prefix: /^\/family(\/.*)?$/, roles: ['tutor_legal', 'autorizado'] },

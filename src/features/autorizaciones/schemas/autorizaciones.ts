@@ -33,6 +33,29 @@ export const crearAutorizacionSalidaSchema = z.object({
 
 export type CrearAutorizacionSalidaInput = z.input<typeof crearAutorizacionSalidaSchema>
 
+// --- Excursión desde "Nueva autorización": vincula a un evento existente O crea
+// el evento de excursión ahí mismo (sin saltar al calendario). Exactamente una de
+// las dos vías. El server action crea el evento (si procede) y cuelga la salida.
+export const crearAutorizacionExcursionSchema = z
+  .object({
+    titulo: tituloSchema,
+    evento_id: z.string().uuid('autorizaciones.validation.evento_requerido').nullable().optional(),
+    nuevo_evento: z.object({ titulo: tituloSchema, fecha: fechaSchema }).nullable().optional(),
+  })
+  .superRefine((v, ctx) => {
+    const tieneExistente = !!v.evento_id
+    const tieneNuevo = !!v.nuevo_evento
+    if (tieneExistente === tieneNuevo) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['evento_id'],
+        message: 'autorizaciones.validation.excursion_evento_requerido',
+      })
+    }
+  })
+
+export type CrearAutorizacionExcursionInput = z.input<typeof crearAutorizacionExcursionSchema>
+
 // --- Catálogo: crear PLANTILLA durable (reglas/imágenes/recogida/medicación) --
 // Una plantilla es el FORMATO estándar del centro (no se firma; se envía a una
 // audiencia —tipos A— o la rellena la familia —tipos B—). `salida` queda fuera

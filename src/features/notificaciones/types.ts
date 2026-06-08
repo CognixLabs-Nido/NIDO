@@ -57,4 +57,10 @@ export interface AvisosInicio {
   firmadas: number
   /** Ambos: medicaciones activas hoy (recordatorio de administrar según pauta). */
   medicacionesActivas: number
+  /**
+   * Staff: recogidas/medicaciones que una familia ha FIRMADO recientemente en tu
+   * ámbito (aviso "ha llegado una nueva", no "pendiente de confirmar"). Excluye
+   * tus propias firmas. La RLS de `firmas_autorizacion` acota profe→aula, admin→centro.
+   */
+  nuevasFirmas: number
 }
