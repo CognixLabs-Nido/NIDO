@@ -12,8 +12,10 @@ import { hoyMadridYmd, revalidarAutorizaciones } from '../lib/server-helpers'
 import {
   firmarAutorizacionSchema,
   rechazarAutorizacionSchema,
+  revocarFirmaSchema,
   type FirmarAutorizacionInput,
   type RechazarAutorizacionInput,
+  type RevocarFirmaInput,
 } from '../schemas/autorizaciones'
 import {
   fail,
@@ -240,7 +242,52 @@ export async function rechazarAutorizacion(
   })
 }
 
-// La revocación de una firma ya hecha NO es self-service (decisión 2026-06-08): la
-// familia contacta con el centro y el centro usa «anular» (acción de admin). Se
-// elimina la server action `revocarFirma` y su botón en el panel de firma. El ENUM
-// `firma_decision` conserva 'revocado' por compatibilidad con filas históricas.
+/**
+ * Revoca una firma previa añadiendo una fila nueva `decision='revocado'`
+ * (append-only, conserva la traza — D4). **Self-service SOLO en recogida y
+ * medicación** (info de seguridad reversible: cambió quién recoge / se paró una
+ * medicina); reglas/salida NO se revocan (la familia contacta con el centro, que
+ * «anula»). La revocación aparece como ALERTA en el feed de notificaciones de
+ * admin + profes del aula del niño (deriva del row `revocado`; sin envío activo).
+ */
+export async function revocarFirma(
+  input: RevocarFirmaInput
+): Promise<ActionResult<{ firma_id: string }>> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return fail('autorizaciones.errors.no_autorizado')
+
+  const parsed = revocarFirmaSchema.safeParse(input)
+  if (!parsed.success) {
+    return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.firma_fallo')
+  }
+  const d = parsed.data
+
+  // Solo recogida/medicación admiten revocación self-service.
+  const { data: aut } = await supabase
+    .from('autorizaciones')
+    .select('tipo')
+    .eq('id', d.autorizacion_id)
+    .maybeSingle()
+  if (!aut || (aut.tipo !== 'recogida' && aut.tipo !== 'medicacion')) {
+    return fail('autorizaciones.errors.revocar_no_permitido')
+  }
+
+  const { data: perfil } = await supabase
+    .from('usuarios')
+    .select('nombre_completo')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (!perfil) return fail('autorizaciones.errors.no_autorizado')
+
+  return registrarDecision(supabase, user.id, {
+    autorizacion_id: d.autorizacion_id,
+    nino_id: d.nino_id,
+    decision: 'revocado',
+    nombre_tecleado: perfil.nombre_completo,
+    firma_imagen: null,
+    comentario: d.comentario ?? null,
+  })
+}

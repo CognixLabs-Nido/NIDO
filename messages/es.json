@@ -1586,7 +1586,8 @@
       "nombre": "Nombre completo",
       "nombre_ayuda": "Debe coincidir con el nombre de tu perfil.",
       "trazo": "Firma",
-      "revocar_contactar": "Para anular una firma ya hecha, contacta con el centro."
+      "revocar_contactar": "Para anular una firma ya hecha, contacta con el centro.",
+      "revocar_aviso": "Al revocar avisaremos a la dirección y a las profes del aula."
     },
     "roster": {
       "sin_ninos": "No hay niños en el alcance de esta autorización.",
@@ -1673,7 +1674,8 @@
       "adm_sin_firma": "La medicación no está firmada.",
       "adm_no_permitido": "No puedes registrar esta administración (la medicación debe estar firmada y vigente hoy).",
       "adm_confirmar_fallo": "No se pudo confirmar la administración.",
-      "adm_confirmar_no_permitido": "No puedes confirmar esta administración (debe confirmarla un miembro del personal distinto del que la administró)."
+      "adm_confirmar_no_permitido": "No puedes confirmar esta administración (debe confirmarla un miembro del personal distinto del que la administró).",
+      "revocar_no_permitido": "Solo puedes revocar recogida y medicación."
     },
     "tipo": {
       "salida": "Salida",
@@ -1765,6 +1767,22 @@
     "sin_acceso": {
       "titulo": "No tienes acceso",
       "descripcion": "No puedes ver esta autorización. Si crees que es un error, contacta con el centro."
+    },
+    "excursion": {
+      "accion": "Excursión",
+      "intro": "La autorización de excursión cuelga de un evento del calendario. Elige la excursión.",
+      "sin_eventos": "No hay excursiones en el calendario. Crea primero la excursión (el evento) y luego vuelve aquí para su autorización.",
+      "crear_evento": "Crear excursión en el calendario",
+      "crear_otra": "¿No está? Crear excursión en el calendario"
+    },
+    "tipos_area": {
+      "titulo": "Tipos de autorización",
+      "descripcion": "El centro gestiona estos 5 tipos. Cuatro son formatos de catálogo; la excursión cuelga de un evento.",
+      "reglas_regimen_interno": "Formato de catálogo. Se envía a las familias para firmar.",
+      "autorizacion_imagenes": "Formato de catálogo. Consentimiento de imagen (firma F11).",
+      "recogida": "La familia indica quién recoge al niño y firma.",
+      "medicacion": "La familia autoriza una medicación con sus pautas y firma.",
+      "salida": "Excursión: cuelga de un evento del calendario; no usa catálogo."
     }
   },
   "notificaciones": {
@@ -1779,7 +1797,8 @@
       "recogida": "Recogida",
       "medicacion": "Medicación",
       "autorizacion": "Autorización",
-      "administracion": "Administración"
+      "administracion": "Administración",
+      "revocacion": "Revocación"
     },
     "avisos": {
       "pendientes_confirmar": "{n, plural, one {Tienes # administración de medicación pendiente de tu confirmación} other {Tienes # administraciones de medicación pendientes de tu confirmación}}",

@@ -1586,7 +1586,8 @@
       "nombre": "Full name",
       "nombre_ayuda": "It must match the name on your profile.",
       "trazo": "Signature",
-      "revocar_contactar": "To cancel a signature already made, contact the centre."
+      "revocar_contactar": "To cancel a signature already made, contact the centre.",
+      "revocar_aviso": "Revoking will alert the management and the class teachers."
     },
     "roster": {
       "sin_ninos": "No children fall under this authorisation.",
@@ -1673,7 +1674,8 @@
       "adm_sin_firma": "The medication is not signed.",
       "adm_no_permitido": "You can't log this administration (the medication must be signed and valid today).",
       "adm_confirmar_fallo": "The administration could not be confirmed.",
-      "adm_confirmar_no_permitido": "You can't confirm this administration (it must be confirmed by a staff member other than the one who administered it)."
+      "adm_confirmar_no_permitido": "You can't confirm this administration (it must be confirmed by a staff member other than the one who administered it).",
+      "revocar_no_permitido": "You can only revoke pick-up and medication."
     },
     "tipo": {
       "salida": "Outing",
@@ -1765,6 +1767,22 @@
     "sin_acceso": {
       "titulo": "You don't have access",
       "descripcion": "You can't view this authorisation. If you think this is a mistake, contact the centre."
+    },
+    "excursion": {
+      "accion": "Field trip",
+      "intro": "A field-trip authorisation hangs off a calendar event. Choose the trip.",
+      "sin_eventos": "There are no field trips in the calendar. Create the trip (the event) first, then come back here for its authorisation.",
+      "crear_evento": "Create field trip in the calendar",
+      "crear_otra": "Not listed? Create a field trip in the calendar"
+    },
+    "tipos_area": {
+      "titulo": "Authorisation types",
+      "descripcion": "The centre manages these 5 types. Four are catalogue formats; the field trip hangs off an event.",
+      "reglas_regimen_interno": "Catalogue format. Sent to families to sign.",
+      "autorizacion_imagenes": "Catalogue format. Image consent (signing in F11).",
+      "recogida": "The family states who picks up the child and signs.",
+      "medicacion": "The family authorises a medication with its schedule and signs.",
+      "salida": "Field trip: hangs off a calendar event; no catalogue."
     }
   },
   "notificaciones": {
@@ -1779,7 +1797,8 @@
       "recogida": "Pick-up",
       "medicacion": "Medication",
       "autorizacion": "Authorisation",
-      "administracion": "Administration"
+      "administracion": "Administration",
+      "revocacion": "Revocation"
     },
     "avisos": {
       "pendientes_confirmar": "{n, plural, one {You have # medication administration pending your confirmation} other {You have # medication administrations pending your confirmation}}",

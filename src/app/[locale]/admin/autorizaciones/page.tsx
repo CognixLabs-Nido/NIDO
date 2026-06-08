@@ -56,12 +56,40 @@ export default async function AdminAutorizacionesPage({ params }: PageProps) {
           {esAdmin && (
             <EnviarAutorizacionDialog plantillas={plantillasEnviar} ninos={ninos} aulas={aulas} />
           )}
-          {/* salida = bespoke por evento (no usa catálogo); solo con excursiones. */}
-          {eventos.length > 0 && <CrearAutorizacionDialog eventos={eventos} />}
+          {/* Excursión = salida bespoke por EVENTO (no es formato de catálogo).
+              Siempre disponible; si no hay excursiones, lleva a crearla en el calendario. */}
+          <CrearAutorizacionDialog eventos={eventos} locale={locale} />
         </div>
       </header>
 
       <p className="text-muted-foreground text-xs">{t('aviso_legal')}</p>
+
+      {/* Los 5 tipos de autorización del área (extensible). 4 se gestionan como
+          formato de catálogo (plantilla); la excursión cuelga de un evento. */}
+      {esAdmin && (
+        <section className="space-y-3">
+          <div className="space-y-1">
+            <h2 className="text-h2 text-foreground">{t('tipos_area.titulo')}</h2>
+            <p className="text-muted-foreground text-sm">{t('tipos_area.descripcion')}</p>
+          </div>
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {(
+              [
+                'reglas_regimen_interno',
+                'autorizacion_imagenes',
+                'recogida',
+                'medicacion',
+                'salida',
+              ] as const
+            ).map((tipo) => (
+              <li key={tipo} className="flex items-start gap-2 rounded-lg border p-3">
+                <TipoAutorizacionBadge tipo={tipo} />
+                <span className="text-muted-foreground text-xs">{t(`tipos_area.${tipo}`)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Catálogo de formatos (plantillas durables) — solo admin. */}
       {esAdmin && (

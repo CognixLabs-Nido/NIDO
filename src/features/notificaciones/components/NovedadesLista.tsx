@@ -1,4 +1,5 @@
 import {
+  AlertTriangleIcon,
   CalendarRangeIcon,
   FileSignatureIcon,
   PillIcon,
@@ -18,6 +19,7 @@ const ICONO: Record<NovedadTipo, typeof CalendarRangeIcon> = {
   medicacion: PillIcon,
   autorizacion: FileSignatureIcon,
   administracion: SyringeIcon,
+  revocacion: AlertTriangleIcon,
 }
 
 /**
@@ -45,18 +47,34 @@ export async function NovedadesLista({ items }: { items: NovedadItem[] }) {
     <ul className="space-y-2">
       {items.map((n) => {
         const Icono = ICONO[n.tipo]
+        const esRevocacion = n.tipo === 'revocacion'
         return (
           <li key={n.key}>
             <Link
               href={n.href}
-              className="hover:border-accent-warm-200 flex items-start gap-3 rounded-lg border p-3 transition hover:shadow-sm"
+              className={`flex items-start gap-3 rounded-lg border p-3 transition hover:shadow-sm ${
+                esRevocacion
+                  ? 'border-amber-300 bg-amber-50 hover:bg-amber-100 dark:border-amber-900/40 dark:bg-amber-950/30'
+                  : 'hover:border-accent-warm-200'
+              }`}
             >
-              <span className="bg-muted text-muted-foreground mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg">
+              <span
+                className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${
+                  esRevocacion
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
                 <Icono className="size-4" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="truncate font-medium">{n.titulo}</span>
+                  {esRevocacion && (
+                    <Badge variant="outline" className="text-amber-700">
+                      {t('tipo.revocacion')}
+                    </Badge>
+                  )}
                   {n.nuevo && (
                     <Badge variant="default" className="px-1.5 text-[10px]">
                       {t('nuevo')}

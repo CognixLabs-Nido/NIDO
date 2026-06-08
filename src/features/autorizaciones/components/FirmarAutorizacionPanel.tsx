@@ -11,7 +11,11 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-import { firmarAutorizacion, rechazarAutorizacion } from '../actions/firmar-autorizacion'
+import {
+  firmarAutorizacion,
+  rechazarAutorizacion,
+  revocarFirma,
+} from '../actions/firmar-autorizacion'
 import type {
   MedicacionDatos,
   PersonaAutorizada,
@@ -113,6 +117,9 @@ function NinoFirmaRow({
   const yaFirmado = miDecision === 'firmado'
   const esRecogida = tipo === 'recogida'
   const esMedicacion = tipo === 'medicacion'
+  // Revocar es self-service SOLO en recogida y medicación (info de seguridad
+  // reversible). Reglas/salida: contactar al centro (que «anula»).
+  const puedeRevocar = esRecogida || esMedicacion
   // Personas válidas (nombre + DNI no vacíos); el server revalida con Zod.
   const personasValidas = personas
     .map((p) => ({ ...p, nombre: p.nombre.trim(), dni: p.dni.trim() }))
@@ -172,6 +179,21 @@ function NinoFirmaRow({
     })
   }
 
+  function revocar() {
+    startTransition(async () => {
+      const res = await revocarFirma({
+        autorizacion_id: autorizacionId,
+        nino_id: roster.nino_id,
+      })
+      if (!res.success) {
+        toast.error(tRoot(res.error))
+        return
+      }
+      toast.success(t('acciones.revocada_toast'))
+      router.refresh()
+    })
+  }
+
   return (
     <div className="rounded-lg border p-4">
       <div className="mb-3 flex items-center justify-between">
@@ -182,11 +204,20 @@ function NinoFirmaRow({
       {!firmable && <p className="text-muted-foreground text-sm">{t('firma.no_firmable')}</p>}
 
       {firmable && yaFirmado && (
-        <div className="space-y-1">
+        <div className="space-y-3">
           <p className="text-success-700 text-sm">{t('firma.ya_firmado')}</p>
-          {/* La revocación ya NO es self-service: para anular una firma hecha, la
-              familia contacta con el centro (el centro usa «anular», acción de admin). */}
-          <p className="text-muted-foreground text-xs">{t('firma.revocar_contactar')}</p>
+          {puedeRevocar ? (
+            // Recogida/medicación: revocar es self-service (avisa a admin + profes).
+            <div className="space-y-1">
+              <Button variant="outline" onClick={revocar} disabled={pending}>
+                {t('acciones.revocar')}
+              </Button>
+              <p className="text-muted-foreground text-xs">{t('firma.revocar_aviso')}</p>
+            </div>
+          ) : (
+            // Reglas/salida: no self-service → contactar al centro (que «anula»).
+            <p className="text-muted-foreground text-xs">{t('firma.revocar_contactar')}</p>
+          )}
         </div>
       )}
 

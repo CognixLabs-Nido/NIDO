@@ -21,7 +21,13 @@ export const PREF_NOTIF_VISTO = 'notificaciones_visto_at'
 /** Ventana de novedades: solo se muestran/cuentan ítems de los últimos N días. */
 export const VENTANA_NOVEDADES_DIAS = 30
 
-export type NovedadTipo = 'evento' | 'recogida' | 'medicacion' | 'autorizacion' | 'administracion'
+export type NovedadTipo =
+  | 'evento'
+  | 'recogida'
+  | 'medicacion'
+  | 'autorizacion'
+  | 'administracion'
+  | 'revocacion'
 
 /** Un ítem del feed de novedades, normalizado desde su tabla origen. */
 export interface NovedadItem {

@@ -38,7 +38,7 @@ export async function recolectarNovedades(): Promise<RawNovedad[]> {
   const visto = await getVistoAt()
   const esNuevo = (ts: string) => (visto ? ts > visto : true)
 
-  const [eventos, instancias, admins] = await Promise.all([
+  const [eventos, instancias, admins, revocaciones] = await Promise.all([
     supabase
       .from('eventos')
       .select('id, tipo, titulo, created_at')
@@ -59,6 +59,17 @@ export async function recolectarNovedades(): Promise<RawNovedad[]> {
       .from('administraciones_medicacion')
       .select('id, autorizacion_id, medicamento, confirmado_por, created_at')
       .neq('administrado_por', user.id)
+      .gte('created_at', cutoff)
+      .order('created_at', { ascending: false })
+      .limit(40),
+    // Revocaciones de firma (recogida/medicación) = ALERTA de seguridad: cambió
+    // quién recoge / se paró una medicina. La RLS de firmas la deja ver a admin +
+    // profes del aula del niño (y co-tutores). Se excluye al propio revocante.
+    supabase
+      .from('firmas_autorizacion')
+      .select('autorizacion_id, created_at, autorizaciones(titulo, tipo)')
+      .eq('decision', 'revocado')
+      .neq('firmante_id', user.id)
       .gte('created_at', cutoff)
       .order('created_at', { ascending: false })
       .limit(40),
@@ -112,6 +123,26 @@ export async function recolectarNovedades(): Promise<RawNovedad[]> {
       fecha: m.created_at,
       nuevo: esNuevo(m.created_at),
       pendienteConfirmacion: m.confirmado_por === null,
+    })
+  }
+
+  // Revocaciones: una alerta por instancia (la más reciente; las filas vienen
+  // ordenadas por created_at desc, así que el primer visto por autorizacion gana).
+  const vistaRevocacion = new Set<string>()
+  for (const r of revocaciones.data ?? []) {
+    if (vistaRevocacion.has(r.autorizacion_id)) continue
+    vistaRevocacion.add(r.autorizacion_id)
+    const aut = (Array.isArray(r.autorizaciones) ? r.autorizaciones[0] : r.autorizaciones) as {
+      titulo: string
+      tipo: string
+    } | null
+    items.push({
+      refId: r.autorizacion_id,
+      tipo: 'revocacion',
+      titulo: aut?.titulo ?? '',
+      subtitulo: aut?.tipo,
+      fecha: r.created_at,
+      nuevo: esNuevo(r.created_at),
     })
   }
 
