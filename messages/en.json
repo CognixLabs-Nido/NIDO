@@ -1585,7 +1585,8 @@
       "confirmo": "I have read the text and expressly authorise what it states.",
       "nombre": "Full name",
       "nombre_ayuda": "It must match the name on your profile.",
-      "trazo": "Signature"
+      "trazo": "Signature",
+      "revocar_contactar": "To cancel a signature already made, contact the centre."
     },
     "roster": {
       "sin_ninos": "No children fall under this authorisation.",
@@ -1760,6 +1761,10 @@
       "administrada_por": "Administered by {nombre} · {fecha}",
       "espera_segundo": "Waiting for a second staff member to confirm.",
       "staff_generico": "Centre staff"
+    },
+    "sin_acceso": {
+      "titulo": "You don't have access",
+      "descripcion": "You can't view this authorisation. If you think this is a mistake, contact the centre."
     }
   },
   "notificaciones": {
@@ -1779,7 +1784,10 @@
     "avisos": {
       "pendientes_confirmar": "{n, plural, one {You have # medication administration pending your confirmation} other {You have # medication administrations pending your confirmation}}",
       "pendientes_firma": "{n, plural, one {You have # authorisation pending your signature} other {You have # authorisations pending your signature}}",
-      "medicaciones_activas": "{n, plural, one {# medication active today} other {# medications active today}}"
+      "medicaciones_activas": "{n, plural, one {# medication active today} other {# medications active today}}",
+      "firmadas": "{n, plural, one {# signed} other {# signed}}",
+      "confirmadas": "{n, plural, one {# confirmed} other {# confirmed}}",
+      "todo_hecho": "Nothing pending · {n} done"
     },
     "errors": {
       "no_autorizado": "Not authorised.",

@@ -57,6 +57,22 @@ describe('proxy — mapa de prefijos protegidos', () => {
     expect(roles).toEqual(['admin'])
   })
 
+  it('profe puede entrar a /admin/autorizaciones (ruta compartida con admin)', () => {
+    // Regla específica ANTES del catch-all `/admin` → la profe llega a la page
+    // (que la admite) sin caer en /forbidden. Cubre el bug de logout al navegar.
+    for (const ruta of ['/admin/autorizaciones', '/admin/autorizaciones/abc-123']) {
+      const roles = requiredRolesFor(ruta)
+      expect(roles, ruta).toContain('admin')
+      expect(roles, ruta).toContain('profe')
+    }
+  })
+
+  it('/admin/autorizaciones NO da acceso a tutor/autorizado', () => {
+    const roles = requiredRolesFor('/admin/autorizaciones')
+    expect(roles).not.toContain('tutor_legal')
+    expect(roles).not.toContain('autorizado')
+  })
+
   it('/family sigue requiriendo solo tutor_legal o autorizado', () => {
     const roles = requiredRolesFor('/family/calendario')
     expect(roles).toEqual(['tutor_legal', 'autorizado'])

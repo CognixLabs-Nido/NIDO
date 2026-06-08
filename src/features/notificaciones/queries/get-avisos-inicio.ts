@@ -7,14 +7,22 @@ import { createClient } from '@/lib/supabase/server'
 import { esStaff, type RolNotif } from '../lib/helpers'
 import type { AvisosInicio } from '../types'
 
-const VACIO: AvisosInicio = { pendientesConfirmar: 0, pendientesFirma: 0, medicacionesActivas: 0 }
+const VACIO: AvisosInicio = {
+  pendientesConfirmar: 0,
+  pendientesFirma: 0,
+  confirmadas: 0,
+  firmadas: 0,
+  medicacionesActivas: 0,
+}
 
 /**
- * Contadores del aviso de inicio (punto 2), según rol. La RLS filtra el ámbito:
- *  - Staff: **administraciones pendientes de TU confirmación** (lo principal, B) =
- *    filas sin confirmar que NO administró uno mismo; + medicaciones activas hoy.
- *  - Familia: autorizaciones firmables aún **pendientes de tu firma**; + medicaciones
- *    activas de tus hijos.
+ * Contadores del aviso de inicio (punto 2), según rol — **resumen de estado**, no
+ * solo lo pendiente (punto 3: muestra también las firmadas/confirmadas). La RLS
+ * filtra el ámbito:
+ *  - Staff: administraciones **pendientes de TU confirmación** (lo principal, B) +
+ *    **confirmadas** (resumen) + medicaciones activas hoy.
+ *  - Familia: autorizaciones **pendientes de tu firma** + **firmadas** (resumen) +
+ *    medicaciones activas de tus hijos.
  *
  * "Medicación activa hoy" se aproxima por la ventana de vigencia de la instancia
  * (publicada, no caducada: hoy ≤ vigencia_hasta). Es un recordatorio de administrar
@@ -39,20 +47,28 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
   const medicacionesActivas = meds.count ?? 0
 
   if (esStaff(rol)) {
-    const pc = await supabase
-      .from('administraciones_medicacion')
-      .select('id', { count: 'exact', head: true })
-      .is('confirmado_por', null)
-      .neq('administrado_por', user.id)
+    const [pc, conf] = await Promise.all([
+      supabase
+        .from('administraciones_medicacion')
+        .select('id', { count: 'exact', head: true })
+        .is('confirmado_por', null)
+        .neq('administrado_por', user.id),
+      supabase
+        .from('administraciones_medicacion')
+        .select('id', { count: 'exact', head: true })
+        .not('confirmado_por', 'is', null),
+    ])
     return {
       pendientesConfirmar: pc.count ?? 0,
       pendientesFirma: 0,
+      confirmadas: conf.count ?? 0,
+      firmadas: 0,
       medicacionesActivas,
     }
   }
 
-  // Familia: instancias firmables con su firma aún pendiente (reusa la query de
-  // familia, que ya resuelve estado_firma propio por instancia).
+  // Familia: instancias firmables con su firma aún pendiente + las ya firmadas
+  // (reusa la query de familia, que resuelve estado_firma propio por instancia).
   const lista = await getAutorizacionesFamilia()
   const pendientesFirma = lista.filter(
     (a) =>
@@ -61,6 +77,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
       (!a.vigencia_desde || hoy >= a.vigencia_desde) &&
       (!a.vigencia_hasta || hoy <= a.vigencia_hasta)
   ).length
+  const firmadas = lista.filter((a) => a.estado_firma === 'firmado').length
 
-  return { pendientesConfirmar: 0, pendientesFirma, medicacionesActivas }
+  return { pendientesConfirmar: 0, pendientesFirma, confirmadas: 0, firmadas, medicacionesActivas }
 }

@@ -1585,7 +1585,8 @@
       "confirmo": "He leído el texto y autorizo expresamente lo que en él se indica.",
       "nombre": "Nombre completo",
       "nombre_ayuda": "Debe coincidir con el nombre de tu perfil.",
-      "trazo": "Firma"
+      "trazo": "Firma",
+      "revocar_contactar": "Para anular una firma ya hecha, contacta con el centro."
     },
     "roster": {
       "sin_ninos": "No hay niños en el alcance de esta autorización.",
@@ -1760,6 +1761,10 @@
       "administrada_por": "Administrada por {nombre} · {fecha}",
       "espera_segundo": "Esperando la confirmación de un segundo miembro del personal.",
       "staff_generico": "Personal del centro"
+    },
+    "sin_acceso": {
+      "titulo": "No tienes acceso",
+      "descripcion": "No puedes ver esta autorización. Si crees que es un error, contacta con el centro."
     }
   },
   "notificaciones": {
@@ -1779,7 +1784,10 @@
     "avisos": {
       "pendientes_confirmar": "{n, plural, one {Tienes # administración de medicación pendiente de tu confirmación} other {Tienes # administraciones de medicación pendientes de tu confirmación}}",
       "pendientes_firma": "{n, plural, one {Tienes # autorización pendiente de firmar} other {Tienes # autorizaciones pendientes de firmar}}",
-      "medicaciones_activas": "{n, plural, one {# medicación activa hoy} other {# medicaciones activas hoy}}"
+      "medicaciones_activas": "{n, plural, one {# medicación activa hoy} other {# medicaciones activas hoy}}",
+      "firmadas": "{n, plural, one {# firmada} other {# firmadas}}",
+      "confirmadas": "{n, plural, one {# confirmada} other {# confirmadas}}",
+      "todo_hecho": "Nada pendiente · {n} al día"
     },
     "errors": {
       "no_autorizado": "No autorizado.",

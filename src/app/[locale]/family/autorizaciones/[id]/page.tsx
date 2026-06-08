@@ -1,8 +1,9 @@
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
-import { notFound, redirect } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
+import { AccesoDenegado } from '@/features/autorizaciones/components/AccesoDenegado'
 import { FirmarAutorizacionPanel } from '@/features/autorizaciones/components/FirmarAutorizacionPanel'
 import { MedicacionFicha } from '@/features/autorizaciones/components/MedicacionFicha'
 import { RecogidaLista } from '@/features/autorizaciones/components/RecogidaLista'
@@ -36,8 +37,11 @@ export default async function FamilyAutorizacionDetallePage({ params }: PageProp
     .eq('id', user.id)
     .maybeSingle()
 
+  // Sin acceso (instancia fuera de su ámbito, p. ej. desde una notificación ajena):
+  // mensaje en la misma página, nunca cerrar sesión ni mandar a una página aparte.
   const aut = await getAutorizacionDetalle(id)
-  if (!aut) notFound()
+  if (!aut) return <AccesoDenegado volverHref={`/${locale}/family/autorizaciones`} />
+  if (aut.es_plantilla) return <AccesoDenegado volverHref={`/${locale}/family/autorizaciones`} />
 
   // Medicación: la familia VE el registro de administraciones de su hijo (transparencia).
   const esMedicacionInstancia = !aut.es_plantilla && aut.tipo === 'medicacion'

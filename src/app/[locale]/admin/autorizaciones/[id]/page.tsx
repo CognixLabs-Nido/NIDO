@@ -1,8 +1,9 @@
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
-import { notFound, redirect } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
+import { AccesoDenegado } from '@/features/autorizaciones/components/AccesoDenegado'
 import { AccionesAdmin } from '@/features/autorizaciones/components/AccionesAdmin'
 import { EditarTextoDialog } from '@/features/autorizaciones/components/EditarTextoDialog'
 import { EstadoDocBadge } from '@/features/autorizaciones/components/EstadoFirmaBadge'
@@ -30,8 +31,10 @@ export default async function AdminAutorizacionDetallePage({ params }: PageProps
   const rol = await getRolEnCentro(centroId)
   if (rol !== 'admin' && rol !== 'profe') redirect(`/${locale}/forbidden`)
 
+  // Sin acceso (instancia fuera de su ámbito, p. ej. profe abriendo algo de otra
+  // aula): mensaje en la misma página, nunca cerrar sesión ni página aparte.
   const aut = await getAutorizacionDetalle(id)
-  if (!aut) notFound()
+  if (!aut) return <AccesoDenegado volverHref={`/${locale}/admin/autorizaciones`} />
 
   const editable = aut.estado === 'borrador'
 

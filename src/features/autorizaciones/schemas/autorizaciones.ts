@@ -296,10 +296,6 @@ export const rechazarAutorizacionSchema = z.object({
 })
 export type RechazarAutorizacionInput = z.input<typeof rechazarAutorizacionSchema>
 
-// --- Revocar una firma previa (tutor) — fila nueva, append-only -------------
-export const revocarFirmaSchema = z.object({
-  autorizacion_id: z.string().uuid(),
-  nino_id: z.string().uuid(),
-  comentario: comentarioSchema,
-})
-export type RevocarFirmaInput = z.input<typeof revocarFirmaSchema>
+// La revocación de una firma ya hecha dejó de ser self-service (2026-06-08): se
+// quitó `revocarFirmaSchema` y la action. La familia contacta con el centro; el
+// centro «anula» (acción de admin, intacta).

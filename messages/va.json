@@ -1585,7 +1585,8 @@
       "confirmo": "He llegit el text i autoritze expressament el que s'hi indica.",
       "nombre": "Nom complet",
       "nombre_ayuda": "Ha de coincidir amb el nom del teu perfil.",
-      "trazo": "Signatura"
+      "trazo": "Signatura",
+      "revocar_contactar": "Per a anul·lar una firma ja feta, contacta amb el centre."
     },
     "roster": {
       "sin_ninos": "No hi ha xiquets en l'abast d'esta autorització.",
@@ -1760,6 +1761,10 @@
       "administrada_por": "Administrada per {nombre} · {fecha}",
       "espera_segundo": "Esperant la confirmació d'un segon membre del personal.",
       "staff_generico": "Personal del centre"
+    },
+    "sin_acceso": {
+      "titulo": "No tens accés",
+      "descripcion": "No pots veure esta autorització. Si creus que és un error, contacta amb el centre."
     }
   },
   "notificaciones": {
@@ -1779,7 +1784,10 @@
     "avisos": {
       "pendientes_confirmar": "{n, plural, one {Tens # administració de medicació pendent de la teua confirmació} other {Tens # administracions de medicació pendents de la teua confirmació}}",
       "pendientes_firma": "{n, plural, one {Tens # autorització pendent de firmar} other {Tens # autoritzacions pendents de firmar}}",
-      "medicaciones_activas": "{n, plural, one {# medicació activa hui} other {# medicacions actives hui}}"
+      "medicaciones_activas": "{n, plural, one {# medicació activa hui} other {# medicacions actives hui}}",
+      "firmadas": "{n, plural, one {# firmada} other {# firmades}}",
+      "confirmadas": "{n, plural, one {# confirmada} other {# confirmades}}",
+      "todo_hecho": "Res pendent · {n} al dia"
     },
     "errors": {
       "no_autorizado": "No autoritzat.",

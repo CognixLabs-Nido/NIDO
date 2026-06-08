@@ -39,12 +39,16 @@ export interface NovedadItem {
   pendienteConfirmacion?: boolean
 }
 
-/** Contadores del aviso de inicio (punto 2), según rol. */
+/** Contadores del aviso de inicio (punto 2) — resumen de estado, según rol. */
 export interface AvisosInicio {
   /** Staff: administraciones pendientes de TU confirmación (lo principal, B). */
   pendientesConfirmar: number
   /** Familia: autorizaciones firmables aún pendientes de tu firma. */
   pendientesFirma: number
+  /** Staff: administraciones ya confirmadas (resumen de estado, punto 3). */
+  confirmadas: number
+  /** Familia: autorizaciones ya firmadas (resumen de estado, punto 3). */
+  firmadas: number
   /** Ambos: medicaciones activas hoy (recordatorio de administrar según pauta). */
   medicacionesActivas: number
 }
