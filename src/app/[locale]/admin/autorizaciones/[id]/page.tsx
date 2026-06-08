@@ -8,9 +8,14 @@ import { EditarTextoDialog } from '@/features/autorizaciones/components/EditarTe
 import { EstadoDocBadge } from '@/features/autorizaciones/components/EstadoFirmaBadge'
 import { MedicacionFicha } from '@/features/autorizaciones/components/MedicacionFicha'
 import { RecogidaLista } from '@/features/autorizaciones/components/RecogidaLista'
+import { RegistrarAdministracionDialog } from '@/features/autorizaciones/components/RegistrarAdministracionDialog'
+import { RegistroAdministracionLista } from '@/features/autorizaciones/components/RegistroAdministracionLista'
 import { RosterFirmas } from '@/features/autorizaciones/components/RosterFirmas'
+import { hoyMadridYmd } from '@/features/autorizaciones/lib/server-helpers'
+import { getAdministracionesPorAutorizacion } from '@/features/autorizaciones/queries/get-administraciones'
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { createClient } from '@/lib/supabase/server'
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>
@@ -29,6 +34,24 @@ export default async function AdminAutorizacionDetallePage({ params }: PageProps
   if (!aut) notFound()
 
   const editable = aut.estado === 'borrador'
+
+  // Medicación (instancia): registro de administraciones (F8-3b). El staff registra
+  // sobre una medicación firmada + VIGENTE hoy y un 2.º staff distinto confirma.
+  const esMedicacionInstancia = !aut.es_plantilla && aut.tipo === 'medicacion'
+  const med = aut.medicacion_vigente ?? null
+  const hoy = hoyMadridYmd()
+  const medVigenteHoy = !!med && hoy >= med.fecha_inicio && hoy <= med.fecha_fin
+  const administraciones = esMedicacionInstancia
+    ? await getAdministracionesPorAutorizacion(aut.id)
+    : []
+  let currentUserId: string | null = null
+  if (esMedicacionInstancia) {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    currentUserId = user?.id ?? null
+  }
 
   return (
     <div className="space-y-6">
@@ -99,12 +122,21 @@ export default async function AdminAutorizacionDetallePage({ params }: PageProps
         </section>
       )}
 
-      {/* Medicación: ficha vigente (la administran profes del aula + dirección). */}
-      {!aut.es_plantilla && aut.tipo === 'medicacion' && (
-        <section>
-          <MedicacionFicha
-            medicacion={aut.medicacion_vigente ?? null}
-            integridadOk={aut.integridad_ok}
+      {/* Medicación: ficha vigente + registro de administración (doble confirmación). */}
+      {esMedicacionInstancia && (
+        <section className="space-y-4">
+          <MedicacionFicha medicacion={med} integridadOk={aut.integridad_ok} />
+          {medVigenteHoy && (
+            <RegistrarAdministracionDialog
+              autorizacionId={aut.id}
+              medicamento={med!.medicamento}
+              dosis={med!.dosis}
+            />
+          )}
+          <RegistroAdministracionLista
+            administraciones={administraciones}
+            currentUserId={currentUserId}
+            canConfirm
           />
         </section>
       )}

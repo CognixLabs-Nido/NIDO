@@ -1633,7 +1633,8 @@
       "med_pauta_vacia": "La pauta és obligatòria.",
       "med_pauta_larga": "La pauta és massa llarga.",
       "med_fechas_incoherentes": "La data de fi no pot ser anterior a la d'inici.",
-      "med_campos_requeridos": "Ompli medicament, dosi i pauta."
+      "med_campos_requeridos": "Ompli medicament, dosi i pauta.",
+      "adm_notas_largas": "Les notes no poden superar els 500 caràcters."
     },
     "errors": {
       "no_autorizado": "No tens permís per a esta acció.",
@@ -1661,7 +1662,13 @@
       "medicacion_sin_plantilla": "El centre encara no ha publicat el format de medicació.",
       "med_fuera_de_vigencia": "Hui ha d'estar dins de les dates de la medicació per a signar.",
       "medicacion_requerida": "Falten les dades de la medicació.",
-      "med_caducada": "No pots autoritzar una medicació la data de fi de la qual ja ha passat."
+      "med_caducada": "No pots autoritzar una medicació la data de fi de la qual ja ha passat.",
+      "adm_registro_fallo": "No s'ha pogut registrar l'administració.",
+      "adm_no_medicacion": "Esta autorització no és una medicació.",
+      "adm_sin_firma": "La medicació no està firmada.",
+      "adm_no_permitido": "No pots registrar esta administració (la medicació ha d'estar firmada i vigent hui).",
+      "adm_confirmar_fallo": "No s'ha pogut confirmar l'administració.",
+      "adm_confirmar_no_permitido": "No pots confirmar esta administració (l'ha de confirmar un membre del personal distint del que la va administrar)."
     },
     "tipo": {
       "salida": "Eixida",
@@ -1730,6 +1737,25 @@
       "estado_vigente": "Vigent hui",
       "estado_futura": "Comença el {fecha}",
       "estado_finalizada": "Finalitzada"
+    },
+    "administracion": {
+      "titulo": "Registre d'administració",
+      "registrar": "Registrar administració",
+      "registrando": "Registrant…",
+      "intro": "Deixa constància que has administrat esta medicació. Quedarà pendent fins que un segon membre del personal la confirme.",
+      "notas": "Notes (opcional)",
+      "notas_placeholder": "Observacions de l'administració",
+      "aviso_doble": "Doble confirmació: un altre membre del personal distint haurà de confirmar esta administració.",
+      "registrada_toast": "Administració registrada. Pendent de confirmació.",
+      "vacio": "Sense administracions registrades.",
+      "pendiente": "Pendent de confirmació",
+      "confirmar": "Confirmar",
+      "confirmando": "Confirmant…",
+      "confirmada_toast": "Administració confirmada.",
+      "confirmada_por": "Confirmada per {nombre} · {fecha}",
+      "administrada_por": "Administrada per {nombre} · {fecha}",
+      "espera_segundo": "Esperant la confirmació d'un segon membre del personal.",
+      "staff_generico": "Personal del centre"
     }
   }
 }

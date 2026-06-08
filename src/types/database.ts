@@ -8,6 +8,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      administraciones_medicacion: {
+        Row: {
+          administrado_en: string
+          administrado_por: string
+          autorizacion_id: string
+          centro_id: string
+          confirmado_at: string | null
+          confirmado_por: string | null
+          created_at: string
+          dosis: string
+          id: string
+          medicamento: string
+          nino_id: string
+          notas: string | null
+        }
+        Insert: {
+          administrado_en?: string
+          administrado_por: string
+          autorizacion_id: string
+          centro_id: string
+          confirmado_at?: string | null
+          confirmado_por?: string | null
+          created_at?: string
+          dosis: string
+          id?: string
+          medicamento: string
+          nino_id: string
+          notas?: string | null
+        }
+        Update: {
+          administrado_en?: string
+          administrado_por?: string
+          autorizacion_id?: string
+          centro_id?: string
+          confirmado_at?: string | null
+          confirmado_por?: string | null
+          created_at?: string
+          dosis?: string
+          id?: string
+          medicamento?: string
+          nino_id?: string
+          notas?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'administraciones_medicacion_administrado_por_fkey'
+            columns: ['administrado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'administraciones_medicacion_autorizacion_id_fkey'
+            columns: ['autorizacion_id']
+            isOneToOne: false
+            referencedRelation: 'autorizaciones'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'administraciones_medicacion_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'administraciones_medicacion_confirmado_por_fkey'
+            columns: ['confirmado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'administraciones_medicacion_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       agendas_diarias: {
         Row: {
           created_at: string
@@ -2204,6 +2285,10 @@ export type Database = {
       }
       hoy_madrid: { Args: never; Returns: string }
       idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
+      medicacion_administrable_hoy: {
+        Args: { p_autorizacion_id: string }
+        Returns: boolean
+      }
       menu_del_dia: {
         Args: { p_centro_id: string; p_fecha: string }
         Returns: {
