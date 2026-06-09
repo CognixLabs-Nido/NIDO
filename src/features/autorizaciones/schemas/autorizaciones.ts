@@ -39,6 +39,10 @@ export type CrearAutorizacionSalidaInput = z.input<typeof crearAutorizacionSalid
 export const crearAutorizacionExcursionSchema = z
   .object({
     titulo: tituloSchema,
+    // Texto de consentimiento a medida, escrito en el mismo diálogo (un solo paso).
+    texto: textoSchema,
+    // Por defecto publica al crear; `true` guarda como borrador para revisar antes.
+    borrador: z.boolean().optional().default(false),
     evento_id: z.string().uuid('autorizaciones.validation.evento_requerido').nullable().optional(),
     nuevo_evento: z
       .object({

@@ -1783,7 +1783,10 @@
       "nuevo_titulo": "Título de la excursión",
       "nuevo_titulo_placeholder": "p. ej. Visita a la granja",
       "nuevo_fecha": "Fecha",
-      "nuevo_aula": "Aula que va"
+      "nuevo_aula": "Aula que va",
+      "texto": "Texto de consentimiento",
+      "texto_placeholder": "Texto que firmarán las familias (autorizo la salida…)",
+      "guardar_borrador": "Guardar como borrador (revisar antes de publicar)"
     },
     "tipos_area": {
       "titulo": "Tipos de autorización",

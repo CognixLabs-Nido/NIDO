@@ -1783,7 +1783,10 @@
       "nuevo_titulo": "Field trip title",
       "nuevo_titulo_placeholder": "e.g. Visit to the farm",
       "nuevo_fecha": "Date",
-      "nuevo_aula": "Class attending"
+      "nuevo_aula": "Class attending",
+      "texto": "Consent text",
+      "texto_placeholder": "Text families will sign (I authorise the trip…)",
+      "guardar_borrador": "Save as draft (review before publishing)"
     },
     "tipos_area": {
       "titulo": "Authorisation types",

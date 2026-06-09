@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -81,6 +83,8 @@ export function EnviarAutorizacionDialog({
   const [nuevoTitulo, setNuevoTitulo] = useState('')
   const [nuevoFecha, setNuevoFecha] = useState('')
   const [nuevoAula, setNuevoAula] = useState('')
+  const [textoSalida, setTextoSalida] = useState('')
+  const [borrador, setBorrador] = useState(false)
 
   const modoItems = useMemo(
     () => [
@@ -121,6 +125,8 @@ export function EnviarAutorizacionDialog({
     setNuevoTitulo('')
     setNuevoFecha('')
     setNuevoAula('')
+    setTextoSalida('')
+    setBorrador(false)
   }
 
   function onSubmit() {
@@ -150,7 +156,7 @@ export function EnviarAutorizacionDialog({
 
     // Excursión
     const creaNuevo = eventoId === NUEVO_EVENTO
-    if (!eventoId || tituloSalida.trim().length === 0) {
+    if (!eventoId || tituloSalida.trim().length === 0 || textoSalida.trim().length === 0) {
       toast.error(t('errors.creacion_fallo'))
       return
     }
@@ -161,6 +167,8 @@ export function EnviarAutorizacionDialog({
     startTransition(async () => {
       const res = await crearAutorizacionExcursion({
         titulo: tituloSalida.trim(),
+        texto: textoSalida.trim(),
+        borrador,
         evento_id: creaNuevo ? null : eventoId,
         nuevo_evento: creaNuevo
           ? { titulo: nuevoTitulo.trim(), fecha: nuevoFecha, aula_id: nuevoAula }
@@ -385,6 +393,24 @@ export function EnviarAutorizacionDialog({
                   placeholder={t('form.titulo_placeholder')}
                 />
               </div>
+
+              {/* Texto de consentimiento a medida — se publica en un paso. */}
+              <div className="space-y-2">
+                <Label htmlFor="texto-salida">{t('excursion.texto')}</Label>
+                <Textarea
+                  id="texto-salida"
+                  value={textoSalida}
+                  onChange={(e) => setTextoSalida(e.target.value)}
+                  rows={5}
+                  maxLength={20000}
+                  placeholder={t('excursion.texto_placeholder')}
+                />
+              </div>
+
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={borrador} onCheckedChange={(c) => setBorrador(c === true)} />
+                {t('excursion.guardar_borrador')}
+              </label>
             </>
           )}
         </div>

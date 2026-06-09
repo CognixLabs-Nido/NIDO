@@ -1783,7 +1783,10 @@
       "nuevo_titulo": "Títol de l’excursió",
       "nuevo_titulo_placeholder": "p. ex. Visita a la granja",
       "nuevo_fecha": "Data",
-      "nuevo_aula": "Aula que va"
+      "nuevo_aula": "Aula que va",
+      "texto": "Text de consentiment",
+      "texto_placeholder": "Text que firmaran les famílies (autoritze l’eixida…)",
+      "guardar_borrador": "Guardar com a esborrany (revisar abans de publicar)"
     },
     "tipos_area": {
       "titulo": "Tipus d'autorització",

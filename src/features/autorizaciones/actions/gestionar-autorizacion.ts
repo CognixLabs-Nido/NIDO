@@ -93,12 +93,13 @@ export async function crearAutorizacionSalida(
 }
 
 /**
- * Excursión desde el desplegable «Nueva autorización»: si llega `nuevo_evento`,
- * crea el evento `tipo='excursion'` (ámbito centro) ahí mismo —sin saltar al
- * calendario— y cuelga la salida de él; si llega `evento_id`, la cuelga del evento
- * existente. Reusa `crearAutorizacionSalida` para el INSERT de la salida (un único
- * camino para la autorización). El esquema garantiza exactamente una de las dos
- * vías. RLS: admin (cualquier evento de su centro) o profe (evento de su aula).
+ * Excursión desde el desplegable «Nueva autorización», en UN SOLO PASO: el admin
+ * escribe el texto de consentimiento en el mismo diálogo y la salida nace
+ * **publicada** y firmable (sin el rodeo crear-vacía → abrir → teclear → publicar).
+ * Con `borrador=true` la guarda como borrador para revisar antes. Si llega
+ * `nuevo_evento`, crea el evento `tipo='excursion'` del AULA que va (ambito='aula');
+ * si llega `evento_id`, la cuelga del evento existente. El esquema garantiza
+ * exactamente una de las dos vías. RLS: admin (su centro) o profe (su aula).
  */
 export async function crearAutorizacionExcursion(
   input: CrearAutorizacionExcursionInput
@@ -113,7 +114,7 @@ export async function crearAutorizacionExcursion(
   if (!parsed.success) {
     return fail(parsed.error.issues[0]?.message ?? 'autorizaciones.errors.creacion_fallo')
   }
-  const { titulo, evento_id, nuevo_evento } = parsed.data
+  const { titulo, texto, borrador, evento_id, nuevo_evento } = parsed.data
 
   let eventoId = evento_id ?? null
   if (nuevo_evento) {
@@ -133,7 +134,47 @@ export async function crearAutorizacionExcursion(
   }
   if (!eventoId) return fail('autorizaciones.errors.creacion_fallo')
 
-  return crearAutorizacionSalida({ evento_id: eventoId, titulo })
+  // centro_id desde el evento (red de seguridad; el trigger BD lo deriva igual).
+  const { data: evento, error: evErr } = await supabase
+    .from('eventos')
+    .select('id, centro_id')
+    .eq('id', eventoId)
+    .maybeSingle()
+  if (evErr) {
+    logger.warn('crearAutorizacionExcursion: eventos.select', evErr.message)
+    return fail('autorizaciones.errors.creacion_fallo')
+  }
+  if (!evento) return fail('autorizaciones.errors.evento_no_encontrado')
+
+  // Publica en un paso con el texto a medida (o borrador si lo pide). La versión se
+  // ata al hash del texto definitivo (igual que editarTextoAutorizacion).
+  const publica = !borrador
+  const { data: creada, error: insErr } = await supabase
+    .from('autorizaciones')
+    .insert({
+      centro_id: evento.centro_id,
+      tipo: 'salida',
+      evento_id: evento.id,
+      titulo,
+      texto,
+      texto_version: publica ? `def-${hashTextoAutorizacion(texto).slice(0, 12)}` : 'v0-pendiente',
+      texto_definitivo: publica,
+      estado: publica ? 'publicada' : 'borrador',
+      firmantes_requeridos: 'uno_principal',
+      vigencia_desde: publica ? hoyMadridYmd() : null,
+      creado_por: user.id,
+    })
+    .select('id')
+    .maybeSingle()
+
+  if (insErr || !creada) {
+    logger.warn('crearAutorizacionExcursion: insert', insErr?.message)
+    if (insErr?.code === '42501') return fail('autorizaciones.errors.no_autorizado')
+    return fail('autorizaciones.errors.creacion_fallo')
+  }
+
+  revalidarAutorizaciones()
+  return ok({ autorizacion_id: creada.id })
 }
 
 /**
