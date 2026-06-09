@@ -185,12 +185,7 @@ Respetando la clasificación `tipo_personal_aula`:
 ```typescript
 export const VALORACION_ITEM = ['conseguido', 'en_proceso', 'no_iniciado'] as const
 
-export const PERIODO_INFORME = [
-  'trimestre_1',
-  'trimestre_2',
-  'trimestre_3',
-  'fin_de_curso',
-] as const
+export const PERIODO_INFORME = ['trimestre_1', 'trimestre_2', 'trimestre_3', 'fin_curso'] as const
 
 // Valoración de un ítem dentro de un informe
 export const ItemValoracionSchema = z.object({
@@ -246,7 +241,7 @@ export const PlantillaInformeSchema = z.object({
 
 **ENUMs nuevos:**
 
-- `periodo_informe` (`trimestre_1` | `trimestre_2` | `trimestre_3` | `fin_de_curso`).
+- `periodo_informe` (`trimestre_1` | `trimestre_2` | `trimestre_3` | `fin_curso`).
 - `estado_informe` (`borrador` | `publicado`).
 - `valoracion_item_informe` (`conseguido` | `en_proceso` | `no_iniciado`).
 
@@ -332,7 +327,7 @@ Namespace nuevo `informes` (es/en/va) para la **interfaz**. El **contenido** que
       "trimestre_1": "1.er trimestre",
       "trimestre_2": "2.º trimestre",
       "trimestre_3": "3.er trimestre",
-      "fin_de_curso": "Fin de curso"
+      "fin_curso": "Fin de curso"
     },
     "escala": {
       "conseguido": "Conseguido",
