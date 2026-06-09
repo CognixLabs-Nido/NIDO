@@ -69,11 +69,15 @@ describe('MessagesView — render por rol', () => {
         tutorAdminDireccionSeleccionadoId={null}
         adminDireccionDetalleHeader={null}
         adminDireccionDetalleMensajes={[]}
+        supervisionConversaciones={[]}
+        supervisionConvSeleccionadaId={null}
+        supervisionDetalleHeader={null}
+        supervisionDetalleMensajes={[]}
       />
     )
-    // F5.6: admin pasa de 0 tabs a 2 tabs (Anuncios + Dirección). Lo que
-    // NO debe existir es el tab Conversaciones — sigue sin participar en
-    // los hilos profe↔familia.
+    // Admin tiene 3 tabs (Anuncios + Mensajería + Dirección). Lo que NO
+    // debe existir es el tab Conversaciones — el admin no participa en los
+    // hilos profe↔familia (los supervisa en solo lectura desde "Dirección").
     expect(screen.getByRole('tablist')).not.toBeNull()
     expect(screen.queryByText('tabs.conversaciones')).toBeNull()
     // Tampoco hay sidebar de mensajería.
@@ -98,6 +102,10 @@ describe('MessagesView — render por rol', () => {
         tutorAdminDireccionSeleccionadoId={null}
         adminDireccionDetalleHeader={null}
         adminDireccionDetalleMensajes={[]}
+        supervisionConversaciones={[]}
+        supervisionConvSeleccionadaId={null}
+        supervisionDetalleHeader={null}
+        supervisionDetalleMensajes={[]}
       />
     )
     // Tabs visibles
@@ -127,6 +135,10 @@ describe('MessagesView — render por rol', () => {
         tutorAdminDireccionSeleccionadoId={null}
         adminDireccionDetalleHeader={null}
         adminDireccionDetalleMensajes={[]}
+        supervisionConversaciones={[]}
+        supervisionConvSeleccionadaId={null}
+        supervisionDetalleHeader={null}
+        supervisionDetalleMensajes={[]}
       />
     )
     // Pestañas siguen visibles (Conversaciones + Anuncios).
@@ -155,6 +167,10 @@ describe('MessagesView — render por rol', () => {
         tutorAdminDireccionSeleccionadoId={null}
         adminDireccionDetalleHeader={null}
         adminDireccionDetalleMensajes={[]}
+        supervisionConversaciones={[]}
+        supervisionConvSeleccionadaId={null}
+        supervisionDetalleHeader={null}
+        supervisionDetalleMensajes={[]}
       />
     )
     expect(screen.getByLabelText('split.aside_label')).not.toBeNull()
@@ -200,6 +216,10 @@ describe('MessagesView — render por rol', () => {
         tutorAdminDireccionSeleccionadoId={null}
         adminDireccionDetalleHeader={null}
         adminDireccionDetalleMensajes={[]}
+        supervisionConversaciones={[]}
+        supervisionConvSeleccionadaId={null}
+        supervisionDetalleHeader={null}
+        supervisionDetalleMensajes={[]}
       />
     )
     expect(screen.getByTestId('admin-familia-section')).not.toBeNull()
@@ -224,12 +244,16 @@ describe('MessagesView — render por rol', () => {
         tutorAdminDireccionSeleccionadoId={null}
         adminDireccionDetalleHeader={null}
         adminDireccionDetalleMensajes={[]}
+        supervisionConversaciones={[]}
+        supervisionConvSeleccionadaId={null}
+        supervisionDetalleHeader={null}
+        supervisionDetalleMensajes={[]}
       />
     )
     expect(screen.queryByTestId('admin-familia-section')).toBeNull()
   })
 
-  it('admin con hilos: el tablist tiene 2 triggers (Anuncios + Dirección)', () => {
+  it('admin con hilos: el tablist tiene 3 triggers (Anuncios + Mensajería + Dirección)', () => {
     const future = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     render(
       <MessagesView
@@ -248,14 +272,19 @@ describe('MessagesView — render por rol', () => {
         tutorAdminDireccionSeleccionadoId={null}
         adminDireccionDetalleHeader={null}
         adminDireccionDetalleMensajes={[]}
+        supervisionConversaciones={[]}
+        supervisionConvSeleccionadaId={null}
+        supervisionDetalleHeader={null}
+        supervisionDetalleMensajes={[]}
       />
     )
     // shadcn Tabs lazy-renderiza el contenido del tab inactivo, así que el
     // item de la lista no es addressable. Verificamos en su lugar que el
-    // tablist del admin contiene los 2 triggers que esperamos en F5.6
-    // (F5 dejaba 0 tabs al admin).
+    // tablist del admin contiene los 3 triggers que esperamos tras la
+    // reparación: Anuncios + Mensajería (escribe a tutor) + Dirección
+    // (supervisión read-only).
     const tablist = screen.getByRole('tablist')
     const triggers = tablist.querySelectorAll('[role="tab"]')
-    expect(triggers.length).toBe(2)
+    expect(triggers.length).toBe(3)
   })
 })

@@ -1043,7 +1043,17 @@
     },
     "tabs": {
       "conversaciones": "Converses",
-      "anuncios": "Anuncis"
+      "anuncios": "Anuncis",
+      "mensajeria": "Missatgeria"
+    },
+    "supervision": {
+      "tab": "Direcció",
+      "descripcion": "Supervisió de les converses mestre ↔ família del centre. Només lectura: veus l'historial però no hi intervens.",
+      "solo_lectura": "Només lectura",
+      "empty_lista": "Encara no hi ha converses mestre ↔ família al centre.",
+      "empty_panel": "Selecciona una conversa de la llista per veure'n l'historial.",
+      "aside_label": "Converses mestre ↔ família del centre",
+      "panel_label": "Historial de la conversa seleccionada"
     },
     "badge": {
       "direccion": "Direcció"
