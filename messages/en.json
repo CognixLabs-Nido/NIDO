@@ -179,7 +179,8 @@
       "recordatorios": "Reminders",
       "agenda": "Agenda",
       "autorizaciones": "Authorisations",
-      "notificaciones": "Notifications"
+      "notificaciones": "Notifications",
+      "informes": "Reports"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -1881,6 +1882,64 @@
     "errors": {
       "no_autorizado": "Not authorised.",
       "marcar_fallo": "Couldn't mark notifications as seen."
+    }
+  },
+  "informes": {
+    "title": "Development reports",
+    "admin_intro": "Define your centre's report templates: the areas and items teachers will assess for each child.",
+    "volver": "Back",
+    "plantillas": {
+      "titulo": "Report templates",
+      "descripcion": "Each template defines the report’s areas and items. You can have several (e.g. by age group).",
+      "activas_vacio": "You haven't created any templates yet.",
+      "archivadas_titulo": "Archived templates",
+      "archivadas_vacio": "There are no archived templates.",
+      "ver_archivadas": "View archived",
+      "areas_resumen": "{areas} areas · {items} items"
+    },
+    "acciones": {
+      "nueva": "New template",
+      "crear": "Create",
+      "creando": "Creating…",
+      "editar": "Edit",
+      "guardar": "Save",
+      "guardando": "Saving…",
+      "archivar": "Archive",
+      "archivando": "Archiving…",
+      "creada_toast": "Template created.",
+      "guardada_toast": "Template updated.",
+      "archivada_toast": "Template archived."
+    },
+    "form": {
+      "nombre": "Template name",
+      "nombre_placeholder": "e.g. \"1-2 years\"",
+      "estructura": "Areas and items",
+      "anadir_area": "Add area",
+      "area_titulo": "Area name",
+      "area_titulo_placeholder": "e.g. \"Autonomy\"",
+      "anadir_item": "Add item",
+      "item_texto_placeholder": "e.g. \"Eats on their own\"",
+      "escala_nota": "Every item is rated on the same scale: Achieved / In progress / Not started.",
+      "subir": "Move up",
+      "bajar": "Move down",
+      "quitar": "Remove",
+      "sin_areas": "Add at least one area with an item."
+    },
+    "validation": {
+      "nombre_vacio": "Name is required.",
+      "nombre_largo": "Name is too long (max. 200).",
+      "sin_areas": "Add at least one area with an item.",
+      "area_titulo_vacio": "Each area needs a name.",
+      "area_titulo_largo": "The area name is too long (max. 200).",
+      "area_sin_items": "Each area needs at least one item.",
+      "item_vacio": "The item text can't be empty.",
+      "item_largo": "The item text is too long (max. 500)."
+    },
+    "errors": {
+      "no_autorizado": "You don't have permission to manage report templates.",
+      "creacion_fallo": "The template could not be created.",
+      "edicion_fallo": "Changes could not be saved.",
+      "archivar_fallo": "The template could not be archived."
     }
   }
 }

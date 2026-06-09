@@ -6,6 +6,7 @@ import {
   CalendarCheckIcon,
   CalendarDaysIcon,
   CalendarRangeIcon,
+  ClipboardListIcon,
   FileSignatureIcon,
   HistoryIcon,
   HomeIcon,
@@ -58,6 +59,11 @@ export async function buildSidebarItems(
         href: `/${locale}/admin/autorizaciones`,
         label: t('autorizaciones'),
         icon: <FileSignatureIcon />,
+      },
+      {
+        href: `/${locale}/admin/informes`,
+        label: t('informes'),
+        icon: <ClipboardListIcon />,
       },
       { href: `/${locale}/admin/ninos`, label: t('ninos'), icon: <BabyIcon /> },
       {

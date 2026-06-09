@@ -179,7 +179,8 @@
       "recordatorios": "Recordatoris",
       "agenda": "Agenda",
       "autorizaciones": "Autoritzacions",
-      "notificaciones": "Notificacions"
+      "notificaciones": "Notificacions",
+      "informes": "Informes"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -1881,6 +1882,64 @@
     "errors": {
       "no_autorizado": "No autoritzat.",
       "marcar_fallo": "No s'han pogut marcar com a vistes."
+    }
+  },
+  "informes": {
+    "title": "Informes d'evolució",
+    "admin_intro": "Definix les plantilles d'informe del centre: les àrees i els ítems que les mestres valoraran en cada xiquet.",
+    "volver": "Tornar",
+    "plantillas": {
+      "titulo": "Plantilles d'informe",
+      "descripcion": "Cada plantilla definix les àrees i els ítems del butlletí. Pots tindre'n diverses (p. ex. per tram d'edat).",
+      "activas_vacio": "Encara no has creat cap plantilla.",
+      "archivadas_titulo": "Plantilles arxivades",
+      "archivadas_vacio": "No hi ha plantilles arxivades.",
+      "ver_archivadas": "Veure arxivades",
+      "areas_resumen": "{areas} àrees · {items} ítems"
+    },
+    "acciones": {
+      "nueva": "Nova plantilla",
+      "crear": "Crear",
+      "creando": "Creant…",
+      "editar": "Editar",
+      "guardar": "Guardar",
+      "guardando": "Guardant…",
+      "archivar": "Arxivar",
+      "archivando": "Arxivant…",
+      "creada_toast": "Plantilla creada.",
+      "guardada_toast": "Plantilla actualitzada.",
+      "archivada_toast": "Plantilla arxivada."
+    },
+    "form": {
+      "nombre": "Nom de la plantilla",
+      "nombre_placeholder": "p. ex. «1-2 anys»",
+      "estructura": "Àrees i ítems",
+      "anadir_area": "Afegir àrea",
+      "area_titulo": "Nom de l'àrea",
+      "area_titulo_placeholder": "p. ex. «Autonomia»",
+      "anadir_item": "Afegir ítem",
+      "item_texto_placeholder": "p. ex. «Menja sol»",
+      "escala_nota": "Tots els ítems es valoren amb la mateixa escala: Aconseguit / En procés / No iniciat.",
+      "subir": "Pujar",
+      "bajar": "Baixar",
+      "quitar": "Llevar",
+      "sin_areas": "Afig almenys una àrea amb un ítem."
+    },
+    "validation": {
+      "nombre_vacio": "El nom és obligatori.",
+      "nombre_largo": "El nom és massa llarg (màx. 200).",
+      "sin_areas": "Afig almenys una àrea amb un ítem.",
+      "area_titulo_vacio": "Cada àrea necessita un nom.",
+      "area_titulo_largo": "El nom de l'àrea és massa llarg (màx. 200).",
+      "area_sin_items": "Cada àrea necessita almenys un ítem.",
+      "item_vacio": "El text de l'ítem no pot estar buit.",
+      "item_largo": "El text de l'ítem és massa llarg (màx. 500)."
+    },
+    "errors": {
+      "no_autorizado": "No tens permís per a gestionar plantilles d'informe.",
+      "creacion_fallo": "No s'ha pogut crear la plantilla.",
+      "edicion_fallo": "No s'han pogut guardar els canvis.",
+      "archivar_fallo": "No s'ha pogut arxivar la plantilla."
     }
   }
 }
