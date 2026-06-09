@@ -1429,6 +1429,96 @@ export type Database = {
           },
         ]
       }
+      informes_evolucion: {
+        Row: {
+          centro_id: string
+          creado_por: string
+          created_at: string
+          curso_academico_id: string
+          estado: Database['public']['Enums']['estado_informe']
+          estructura_snapshot: Json
+          id: string
+          nino_id: string
+          notificado_at: string | null
+          observaciones_generales: string | null
+          periodo: Database['public']['Enums']['periodo_informe']
+          plantilla_id: string
+          publicado_at: string | null
+          respuestas: Json
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          creado_por: string
+          created_at?: string
+          curso_academico_id: string
+          estado?: Database['public']['Enums']['estado_informe']
+          estructura_snapshot: Json
+          id?: string
+          nino_id: string
+          notificado_at?: string | null
+          observaciones_generales?: string | null
+          periodo: Database['public']['Enums']['periodo_informe']
+          plantilla_id: string
+          publicado_at?: string | null
+          respuestas?: Json
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          creado_por?: string
+          created_at?: string
+          curso_academico_id?: string
+          estado?: Database['public']['Enums']['estado_informe']
+          estructura_snapshot?: Json
+          id?: string
+          nino_id?: string
+          notificado_at?: string | null
+          observaciones_generales?: string | null
+          periodo?: Database['public']['Enums']['periodo_informe']
+          plantilla_id?: string
+          publicado_at?: string | null
+          respuestas?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'informes_evolucion_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'informes_evolucion_creado_por_fkey'
+            columns: ['creado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'informes_evolucion_curso_academico_id_fkey'
+            columns: ['curso_academico_id']
+            isOneToOne: false
+            referencedRelation: 'cursos_academicos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'informes_evolucion_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'informes_evolucion_plantilla_id_fkey'
+            columns: ['plantilla_id']
+            isOneToOne: false
+            referencedRelation: 'plantillas_informe'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       invitaciones: {
         Row: {
           accepted_at: string | null
@@ -1783,6 +1873,67 @@ export type Database = {
             columns: ['centro_id']
             isOneToOne: false
             referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      plantillas_informe: {
+        Row: {
+          archivada_at: string | null
+          archivada_por: string | null
+          centro_id: string
+          creado_por: string
+          created_at: string
+          estado: Database['public']['Enums']['estado_plantilla_informe']
+          estructura: Json
+          id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          archivada_at?: string | null
+          archivada_por?: string | null
+          centro_id: string
+          creado_por: string
+          created_at?: string
+          estado?: Database['public']['Enums']['estado_plantilla_informe']
+          estructura?: Json
+          id?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          archivada_at?: string | null
+          archivada_por?: string | null
+          centro_id?: string
+          creado_por?: string
+          created_at?: string
+          estado?: Database['public']['Enums']['estado_plantilla_informe']
+          estructura?: Json
+          id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'plantillas_informe_archivada_por_fkey'
+            columns: ['archivada_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'plantillas_informe_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'plantillas_informe_creado_por_fkey'
+            columns: ['creado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
             referencedColumns: ['id']
           },
         ]
@@ -2425,6 +2576,8 @@ export type Database = {
       curso_estado: 'planificado' | 'activo' | 'cerrado'
       estado_asistencia: 'presente' | 'ausente' | 'llegada_tarde' | 'salida_temprana'
       estado_general_agenda: 'bien' | 'regular' | 'mal' | 'mixto'
+      estado_informe: 'borrador' | 'publicado'
+      estado_plantilla_informe: 'activa' | 'archivada'
       estado_plantilla_menu: 'borrador' | 'publicada' | 'archivada'
       evento_estado: 'programado' | 'cancelado'
       firma_decision: 'firmado' | 'rechazado' | 'revocado'
@@ -2444,6 +2597,7 @@ export type Database = {
         | 'hermano'
         | 'cuidadora'
         | 'otro'
+      periodo_informe: 'trimestre_1' | 'trimestre_2' | 'trimestre_3' | 'fin_curso'
       politica_firmantes: 'uno_principal' | 'todos_los_principales' | 'cualquiera'
       recordatorio_destinatario:
         | 'familia_individual'
@@ -2485,6 +2639,7 @@ export type Database = {
       tipo_plato_comida: 'primer_plato' | 'segundo_plato' | 'postre' | 'unico'
       tipo_vinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado'
       user_role: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
+      valoracion_item_informe: 'conseguido' | 'en_proceso' | 'no_iniciado'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2626,6 +2781,8 @@ export const Constants = {
       curso_estado: ['planificado', 'activo', 'cerrado'],
       estado_asistencia: ['presente', 'ausente', 'llegada_tarde', 'salida_temprana'],
       estado_general_agenda: ['bien', 'regular', 'mal', 'mixto'],
+      estado_informe: ['borrador', 'publicado'],
+      estado_plantilla_informe: ['activa', 'archivada'],
       estado_plantilla_menu: ['borrador', 'publicada', 'archivada'],
       evento_estado: ['programado', 'cancelado'],
       firma_decision: ['firmado', 'rechazado', 'revocado'],
@@ -2646,6 +2803,7 @@ export const Constants = {
         'cuidadora',
         'otro',
       ],
+      periodo_informe: ['trimestre_1', 'trimestre_2', 'trimestre_3', 'fin_curso'],
       politica_firmantes: ['uno_principal', 'todos_los_principales', 'cualquiera'],
       recordatorio_destinatario: [
         'familia_individual',
@@ -2691,6 +2849,7 @@ export const Constants = {
       tipo_plato_comida: ['primer_plato', 'segundo_plato', 'postre', 'unico'],
       tipo_vinculo: ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'],
       user_role: ['admin', 'profe', 'tutor_legal', 'autorizado'],
+      valoracion_item_informe: ['conseguido', 'en_proceso', 'no_iniciado'],
     },
   },
 } as const

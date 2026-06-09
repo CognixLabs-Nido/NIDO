@@ -483,3 +483,32 @@ ENUM `recordatorio_destinatario` con **6 valores**: `familia_individual` · `fam
 ### Gotcha MVCC (Fase 8)
 
 Todas las SELECT policies de F8 son seguras frente a `INSERT…RETURNING`: `autorizaciones_select` usa el helper **row-aware** de 7 args (no re-lee `autorizaciones`); las de `firmas_autorizacion` y `administraciones_medicacion` delegan en helpers que leen **otras** tablas (`autorizaciones`, `ninos`, `vinculos_familiares`, `eventos`) ya commiteadas. Resuelve el aviso de "Implicaciones para fases siguientes" de la sección MVCC de F5.
+
+## Informes de evolución (Fase 9, F9-0)
+
+2 tablas — `plantillas_informe`, `informes_evolucion` — y 4 ENUMs. Ver [ADR-0042](../decisions/ADR-0042-modelo-informes-evolucion.md) y spec `docs/specs/informes-evolucion.md`. **Ambas se auditan** (centro_id directo). Sin Realtime. Migración `20260609130000_phase9_0_informes_evolucion.sql`.
+
+### Helpers nuevos (`STABLE SECURITY DEFINER SET search_path = public`, GRANT `authenticated`)
+
+- `es_redactor_de_nino(p_nino_id)` → boolean. Profe del aula del niño con `tipo_personal_aula IN ('coordinadora','profesora')` (corte de autoría Q5/ADR-0032). Espejo de `es_profe_de_nino` + filtro de tipo: `tecnico`/`apoyo` **no** son redactores.
+- `es_tutor_legal_de(p_nino_id)` → boolean. Vínculo `tutor_legal_principal`/`tutor_legal_secundario` (excluye `autorizado`). Para "tutor legal ve siempre" (Q7).
+- **`usuario_es_audiencia_informe_row(p_centro_id, p_nino_id, p_estado)`** → boolean. **Row-aware**: recibe los campos del row por parámetro y **NO re-lee `informes_evolucion`** (evita el gotcha MVCC en `INSERT…RETURNING`, igual que F8). Sus lookups internos van a **otras** tablas (`roles_usuario`, `matriculas`, `profes_aulas`, `vinculos_familiares`). admin del centro o profe del niño (cualquier tipo) ⇒ TRUE (cualquier estado); familia ⇒ solo `publicado` y `es_tutor_legal_de OR tiene_permiso_sobre('puede_ver_datos_pedagogicos')`.
+- Reutiliza: `es_admin`, `es_profe_de_nino`, `es_profe_en_centro`, `centro_de_nino`, `tiene_permiso_sobre`, `set_updated_at`.
+
+### RLS `plantillas_informe`
+
+- **SELECT** `plantillas_informe_select`: `es_admin(centro_id) OR es_profe_en_centro(centro_id)`. STAFF del centro (la profe necesita leer la plantilla para crear el informe). **La familia NO accede**: deliberadamente NO se usa `pertenece_a_centro`, que incluiría a los tutores (tienen fila en `roles_usuario`).
+- **INSERT** `plantillas_informe_insert`: `es_admin(centro_id) AND creado_por = auth.uid()`.
+- **UPDATE** `plantillas_informe_update`: `USING + WITH CHECK` `es_admin(centro_id)`. Archivar (`estado='archivada'` + `archivada_at/por`) pasa por aquí (solo admin).
+- **DELETE**: sin policy → **default DENY**. Se archiva, no se borra.
+
+### RLS `informes_evolucion`
+
+- **SELECT** `informes_evolucion_select`: `usuario_es_audiencia_informe_row(centro_id, nino_id, estado)` (row-aware). Staff del aula (admin/profe del niño, incluido `tecnico`/`apoyo`) ve cualquier estado; familia ve **solo publicados** (tutor legal siempre; autorizado con `puede_ver_datos_pedagogicos` — Q7). Nunca borradores para la familia.
+- **INSERT** `informes_evolucion_insert`: `creado_por = auth.uid() AND (es_admin(centro_id) OR (es_redactor_de_nino(nino_id) AND centro_de_nino(nino_id)=centro_id))`. `tecnico`/`apoyo` **no** crean (el helper los excluye).
+- **UPDATE** `informes_evolucion_update`: `USING + WITH CHECK` `es_admin(centro_id) OR es_redactor_de_nino(nino_id)`. Cubre editar/publicar/despublicar. La regla de publicación (todos los ítems valorados, Q9) y el sellado de `notificado_at` (Q8, no re-aviso) los enforza el **server action** en F9-2, no la BD. **Sin ventana temporal** (Q6): se corrigen informes de períodos/cursos pasados (NO sigue ADR-0016).
+- **DELETE**: sin policy → **default DENY**. Corrección = despublicar/editar.
+
+### Gotcha MVCC (Fase 9)
+
+`informes_evolucion_select` invoca `usuario_es_audiencia_informe_row`, que es **row-aware** y nunca re-lee `informes_evolucion` (sus lookups van a otras tablas ya commiteadas) → `.insert().select()` por la coordinadora funciona. Test explícito como bloqueo de regresión. `plantillas_informe_select` no usa helper que re-lea la propia tabla.
