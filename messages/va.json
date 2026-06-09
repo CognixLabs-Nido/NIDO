@@ -380,7 +380,8 @@
       "recordatorios": "Recordatoris",
       "agenda": "Agenda",
       "autorizaciones": "Autoritzacions",
-      "notificaciones": "Notificacions"
+      "notificaciones": "Notificacions",
+      "informes": "Informes"
     },
     "dashboard": {
       "title": "Les meues aules",
@@ -1933,13 +1934,77 @@
       "area_titulo_largo": "El nom de l'àrea és massa llarg (màx. 200).",
       "area_sin_items": "Cada àrea necessita almenys un ítem.",
       "item_vacio": "El text de l'ítem no pot estar buit.",
-      "item_largo": "El text de l'ítem és massa llarg (màx. 500)."
+      "item_largo": "El text de l'ítem és massa llarg (màx. 500).",
+      "comentario_largo": "El comentari és massa llarg (màx. 1000).",
+      "observaciones_largas": "Les observacions són massa llargues (màx. 4000).",
+      "nino_requerido": "Tria un xiquet.",
+      "plantilla_requerida": "Tria una plantilla."
     },
     "errors": {
       "no_autorizado": "No tens permís per a gestionar plantilles d'informe.",
       "creacion_fallo": "No s'ha pogut crear la plantilla.",
       "edicion_fallo": "No s'han pogut guardar els canvis.",
-      "archivar_fallo": "No s'ha pogut arxivar la plantilla."
+      "archivar_fallo": "No s'ha pogut arxivar la plantilla.",
+      "sin_curso_activo": "No hi ha cap curs acadèmic actiu.",
+      "plantilla_no_disponible": "La plantilla triada no està disponible.",
+      "guardado_fallo": "No s'ha pogut guardar l'esborrany.",
+      "publicacion_fallo": "No s'ha pogut publicar l'informe.",
+      "despublicacion_fallo": "No s'ha pogut despublicar l'informe.",
+      "no_encontrado": "No s'ha trobat l'informe.",
+      "faltan_valoraciones": "Falten ítems per valorar."
+    },
+    "periodos": {
+      "trimestre_1": "1r trimestre",
+      "trimestre_2": "2n trimestre",
+      "trimestre_3": "3r trimestre",
+      "fin_curso": "Fi de curs"
+    },
+    "escala": {
+      "conseguido": "Aconseguit",
+      "en_proceso": "En procés",
+      "no_iniciado": "No iniciat"
+    },
+    "estado": {
+      "borrador": "Esborrany",
+      "publicado": "Publicat"
+    },
+    "teacher_intro": "Ompli i publica l'informe d'evolució de cada xiquet de la teua aula, per període.",
+    "teacher_sin_aulas": "No tens aules assignades.",
+    "teacher_aula_vacia": "No hi ha xiquets matriculats en esta aula.",
+    "teacher_sin_iniciar": "sense iniciar",
+    "crear": {
+      "nuevo": "Nou informe",
+      "nino": "Xiquet",
+      "nino_placeholder": "Tria un xiquet",
+      "periodo": "Període",
+      "periodo_placeholder": "Tria un període",
+      "plantilla": "Plantilla",
+      "plantilla_placeholder": "Tria una plantilla",
+      "sin_plantillas": "El centre encara no té plantilles. La direcció n’ha de crear una.",
+      "incompleto": "Tria xiquet, període i plantilla.",
+      "creando": "Creant…",
+      "continuar": "Continuar"
+    },
+    "detalle": {
+      "valoracion": "Valoració",
+      "valoracion_placeholder": "Sense valorar",
+      "comentario": "Comentari (opcional)",
+      "comentario_placeholder": "Afig un comentari…",
+      "observaciones": "Observacions generals",
+      "observaciones_placeholder": "Observacions de l'informe (opcional)…",
+      "guardar_borrador": "Guardar esborrany",
+      "guardando": "Guardant…",
+      "publicar": "Publicar",
+      "publicando": "Publicant…",
+      "despublicar": "Despublicar per a corregir",
+      "despublicando": "Despublicant…",
+      "despublicar_nota": "En despublicar deixa de vore-ho la família. Quan tornes a publicar no se l’avisa de nou.",
+      "progreso": "{valorados} de {total} ítems valorats",
+      "solo_lectura": "Només lectura",
+      "faltan_valoraciones": "Per a publicar, valora tots els ítems.",
+      "guardado_toast": "Esborrany guardat.",
+      "publicado_toast": "Informe publicat.",
+      "despublicado_toast": "Informe despublicat."
     }
   }
 }

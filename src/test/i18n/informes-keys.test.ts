@@ -48,10 +48,12 @@ describe('i18n consistency — informes (F9-1)', () => {
     })
   }
 
-  it('la entrada de nav admin existe en los 3 idiomas', () => {
+  it('las entradas de nav (admin + teacher) existen en los 3 idiomas', () => {
     for (const [, msgs] of [['es', es], ...LOCALES] as Array<[string, Record<string, unknown>]>) {
       const admin = msgs.admin as Record<string, Record<string, string>>
+      const teacher = msgs.teacher as Record<string, Record<string, string>>
       expect(admin.nav.informes?.length ?? 0).toBeGreaterThan(0)
+      expect(teacher.nav.informes?.length ?? 0).toBeGreaterThan(0)
     }
   })
 })

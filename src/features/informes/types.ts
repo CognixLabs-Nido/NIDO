@@ -41,3 +41,65 @@ export interface PlantillaInformeItem {
   created_at: string
   updated_at: string
 }
+
+// --- Informes de evolución (F9-2) -------------------------------------------
+export type PeriodoInforme = Database['public']['Enums']['periodo_informe']
+export type EstadoInforme = Database['public']['Enums']['estado_informe']
+export type ValoracionItem = Database['public']['Enums']['valoracion_item_informe']
+
+/** Los 4 períodos por curso, en orden de presentación. */
+export const PERIODOS_INFORME: readonly PeriodoInforme[] = [
+  'trimestre_1',
+  'trimestre_2',
+  'trimestre_3',
+  'fin_curso',
+]
+
+/** Respuesta por ítem dentro de un informe: valoración (escala de 3) + comentario. */
+export interface RespuestaItem {
+  valoracion: ValoracionItem
+  comentario?: string
+}
+
+/** Mapa `{ [item_id]: RespuestaItem }` — el contenido de `informes_evolucion.respuestas`. */
+export type RespuestasInforme = Record<string, RespuestaItem>
+
+/** Estado del informe de un niño para un período (en la lista del profe). */
+export interface InformePeriodoEstado {
+  /** id del informe si ya existe; null = «sin iniciar». */
+  id: string | null
+  estado: EstadoInforme | null
+}
+
+/** Un niño del aula con el estado de su informe por período. */
+export interface NinoInformes {
+  id: string
+  nombre: string
+  apellidos: string
+  /** Estado por período (clave = período). */
+  porPeriodo: Record<PeriodoInforme, InformePeriodoEstado>
+}
+
+/** Un aula del profe con sus niños y si el profe puede redactar (coordinadora/profesora). */
+export interface AulaInformes {
+  id: string
+  nombre: string
+  puedeRedactar: boolean
+  ninos: NinoInformes[]
+}
+
+/** Detalle de un informe para rellenar/leer (estructura congelada + respuestas). */
+export interface InformeEvolucionDetalle {
+  id: string
+  nino_id: string
+  nino_nombre: string
+  periodo: PeriodoInforme
+  estado: EstadoInforme
+  estructura_snapshot: EstructuraInforme
+  respuestas: RespuestasInforme
+  observaciones_generales: string | null
+  publicado_at: string | null
+  notificado_at: string | null
+  /** El usuario actual puede redactar/publicar (coordinadora/profesora o admin). */
+  puedeRedactar: boolean
+}
