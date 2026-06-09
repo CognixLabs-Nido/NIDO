@@ -33,6 +33,42 @@ export const crearAutorizacionSalidaSchema = z.object({
 
 export type CrearAutorizacionSalidaInput = z.input<typeof crearAutorizacionSalidaSchema>
 
+// --- Excursión desde "Nueva autorización": vincula a un evento existente O crea
+// el evento de excursión ahí mismo (sin saltar al calendario). Exactamente una de
+// las dos vías. El server action crea el evento (si procede) y cuelga la salida.
+export const crearAutorizacionExcursionSchema = z
+  .object({
+    titulo: tituloSchema,
+    // Texto de consentimiento a medida, escrito en el mismo diálogo (un solo paso).
+    texto: textoSchema,
+    // Por defecto publica al crear; `true` guarda como borrador para revisar antes.
+    borrador: z.boolean().optional().default(false),
+    evento_id: z.string().uuid('autorizaciones.validation.evento_requerido').nullable().optional(),
+    nuevo_evento: z
+      .object({
+        titulo: tituloSchema,
+        fecha: fechaSchema,
+        // Aula que va a la excursión = audiencia del evento (ambito='aula'). Las
+        // familias de ese aula reciben la salida y la firman.
+        aula_id: z.string().uuid('autorizaciones.validation.aula_requerida'),
+      })
+      .nullable()
+      .optional(),
+  })
+  .superRefine((v, ctx) => {
+    const tieneExistente = !!v.evento_id
+    const tieneNuevo = !!v.nuevo_evento
+    if (tieneExistente === tieneNuevo) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['evento_id'],
+        message: 'autorizaciones.validation.excursion_evento_requerido',
+      })
+    }
+  })
+
+export type CrearAutorizacionExcursionInput = z.input<typeof crearAutorizacionExcursionSchema>
+
 // --- Catálogo: crear PLANTILLA durable (reglas/imágenes/recogida/medicación) --
 // Una plantilla es el FORMATO estándar del centro (no se firma; se envía a una
 // audiencia —tipos A— o la rellena la familia —tipos B—). `salida` queda fuera
@@ -297,6 +333,9 @@ export const rechazarAutorizacionSchema = z.object({
 export type RechazarAutorizacionInput = z.input<typeof rechazarAutorizacionSchema>
 
 // --- Revocar una firma previa (tutor) — fila nueva, append-only -------------
+// Self-service SOLO en recogida y medicación (e imágenes en F11): es info de
+// seguridad reversible por la familia (cambió quién recoge / se paró una medicina).
+// El action lo acota a esos tipos. Reglas/salida NO se revocan (contactar al centro).
 export const revocarFirmaSchema = z.object({
   autorizacion_id: z.string().uuid(),
   nino_id: z.string().uuid(),

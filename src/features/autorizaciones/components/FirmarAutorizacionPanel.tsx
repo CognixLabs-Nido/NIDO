@@ -117,6 +117,9 @@ function NinoFirmaRow({
   const yaFirmado = miDecision === 'firmado'
   const esRecogida = tipo === 'recogida'
   const esMedicacion = tipo === 'medicacion'
+  // Revocar es self-service SOLO en recogida y medicación (info de seguridad
+  // reversible). Reglas/salida: contactar al centro (que «anula»).
+  const puedeRevocar = esRecogida || esMedicacion
   // Personas válidas (nombre + DNI no vacíos); el server revalida con Zod.
   const personasValidas = personas
     .map((p) => ({ ...p, nombre: p.nombre.trim(), dni: p.dni.trim() }))
@@ -203,9 +206,18 @@ function NinoFirmaRow({
       {firmable && yaFirmado && (
         <div className="space-y-3">
           <p className="text-success-700 text-sm">{t('firma.ya_firmado')}</p>
-          <Button variant="outline" onClick={revocar} disabled={pending}>
-            {t('acciones.revocar')}
-          </Button>
+          {puedeRevocar ? (
+            // Recogida/medicación: revocar es self-service (avisa a admin + profes).
+            <div className="space-y-1">
+              <Button variant="outline" onClick={revocar} disabled={pending}>
+                {t('acciones.revocar')}
+              </Button>
+              <p className="text-muted-foreground text-xs">{t('firma.revocar_aviso')}</p>
+            </div>
+          ) : (
+            // Reglas/salida: no self-service → contactar al centro (que «anula»).
+            <p className="text-muted-foreground text-xs">{t('firma.revocar_contactar')}</p>
+          )}
         </div>
       )}
 

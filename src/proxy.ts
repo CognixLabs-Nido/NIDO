@@ -32,6 +32,19 @@ function isPublic(rest: string): boolean {
   return PUBLIC_PATTERNS.some((re) => re.test(rest))
 }
 
+/**
+ * Redirige PRESERVANDO las cookies que `supabase.auth.getUser()` pudo refrescar en
+ * `from` (rotación del token). Sin esto, un `NextResponse.redirect` nuevo descarta
+ * esas cookies → el token rotado se pierde → el siguiente request no tiene sesión y
+ * acaba en /login: abrir algo sin permiso CERRABA la sesión. (Gotcha clásico de
+ * @supabase/ssr: hay que propagar las cookies a TODA respuesta, incl. redirects.)
+ */
+function redirectConservandoCookies(url: URL, from: NextResponse): NextResponse {
+  const redirect = NextResponse.redirect(url)
+  for (const cookie of from.cookies.getAll()) redirect.cookies.set(cookie)
+  return redirect
+}
+
 export default async function proxy(request: NextRequest): Promise<NextResponse> {
   const intlResponse = intlMiddleware(request)
   const { pathname } = request.nextUrl
@@ -70,7 +83,7 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
     const url = request.nextUrl.clone()
     url.pathname = `/${locale}/login`
     url.searchParams.set('returnTo', pathname)
-    return NextResponse.redirect(url)
+    return redirectConservandoCookies(url, response)
   }
 
   if (required) {
@@ -88,7 +101,7 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
       const url = request.nextUrl.clone()
       url.pathname = `/${locale}/forbidden`
       url.search = ''
-      return NextResponse.redirect(url)
+      return redirectConservandoCookies(url, response)
     }
   }
 

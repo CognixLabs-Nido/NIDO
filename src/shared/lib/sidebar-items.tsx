@@ -91,6 +91,14 @@ export async function buildSidebarItems(
         icon: <CalendarCheckIcon />,
         trailing: agendaBadge,
       },
+      // Autorizaciones de la profe bajo SU layout (chrome de teacher). Recogidas y
+      // medicación de su aula + registrar/confirmar administración. No es la ruta
+      // admin (el layout admin redirige a no-admin → ese era el bloqueo histórico).
+      {
+        href: `/${locale}/teacher/autorizaciones`,
+        label: t('autorizaciones'),
+        icon: <FileSignatureIcon />,
+      },
       {
         href: `/${locale}/messages`,
         label: t('mensajeria'),

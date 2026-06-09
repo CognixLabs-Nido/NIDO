@@ -178,7 +178,8 @@
       "mensajeria": "Missatgeria",
       "recordatorios": "Recordatoris",
       "agenda": "Agenda",
-      "autorizaciones": "Autoritzacions"
+      "autorizaciones": "Autoritzacions",
+      "notificaciones": "Notificacions"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -376,7 +377,9 @@
       "calendario": "Calendari Escolar",
       "mensajeria": "Missatgeria",
       "recordatorios": "Recordatoris",
-      "agenda": "Agenda"
+      "agenda": "Agenda",
+      "autorizaciones": "Autoritzacions",
+      "notificaciones": "Notificacions"
     },
     "dashboard": {
       "title": "Les meues aules",
@@ -404,7 +407,8 @@
       "mensajeria": "Missatgeria",
       "recordatorios": "Recordatoris",
       "agenda": "Agenda",
-      "autorizaciones": "Autoritzacions"
+      "autorizaciones": "Autoritzacions",
+      "notificaciones": "Notificacions"
     },
     "dashboard": {
       "title": "Els meus xiquets",
@@ -1581,7 +1585,9 @@
       "confirmo": "He llegit el text i autoritze expressament el que s'hi indica.",
       "nombre": "Nom complet",
       "nombre_ayuda": "Ha de coincidir amb el nom del teu perfil.",
-      "trazo": "Signatura"
+      "trazo": "Signatura",
+      "revocar_contactar": "Per a anul·lar una firma ja feta, contacta amb el centre.",
+      "revocar_aviso": "En revocar avisarem la direcció i les profes de l’aula."
     },
     "roster": {
       "sin_ninos": "No hi ha xiquets en l'abast d'esta autorització.",
@@ -1634,7 +1640,8 @@
       "med_pauta_larga": "La pauta és massa llarga.",
       "med_fechas_incoherentes": "La data de fi no pot ser anterior a la d'inici.",
       "med_campos_requeridos": "Ompli medicament, dosi i pauta.",
-      "adm_notas_largas": "Les notes no poden superar els 500 caràcters."
+      "adm_notas_largas": "Les notes no poden superar els 500 caràcters.",
+      "excursion_evento_requerido": "Tria una excursió existent o crea’n una de nova."
     },
     "errors": {
       "no_autorizado": "No tens permís per a esta acció.",
@@ -1668,27 +1675,33 @@
       "adm_sin_firma": "La medicació no està firmada.",
       "adm_no_permitido": "No pots registrar esta administració (la medicació ha d'estar firmada i vigent hui).",
       "adm_confirmar_fallo": "No s'ha pogut confirmar l'administració.",
-      "adm_confirmar_no_permitido": "No pots confirmar esta administració (l'ha de confirmar un membre del personal distint del que la va administrar)."
+      "adm_confirmar_no_permitido": "No pots confirmar esta administració (l'ha de confirmar un membre del personal distint del que la va administrar).",
+      "revocar_no_permitido": "Només pots revocar recollida i medicació.",
+      "archivar_fallo": "No s’ha pogut arxivar. Torna-ho a provar.",
+      "archivar_no_permitido": "No tens permís per a arxivar esta medicació."
     },
     "tipo": {
       "salida": "Eixida",
       "medicacion": "Medicació",
       "recogida": "Arreplegada",
       "reglas_regimen_interno": "Règim intern",
-      "autorizacion_imagenes": "Imatges"
+      "autorizacion_imagenes": "Imatges",
+      "excursion": "Excursió"
     },
     "catalogo": {
       "titulo": "Catàleg de formats",
       "descripcion": "Els formats estàndard del centre. Edita el text, marca'l definitiu i publica'l.",
       "intro": "Crea el format estàndard d'un tipus. Després tecleja el seu text i publica'l.",
-      "vacio": "Encara no hi ha formats al catàleg."
+      "vacio": "Encara no hi ha formats al catàleg.",
+      "nuevo_formato": "Nou format"
     },
     "instancias": {
       "titulo": "Per signar",
       "descripcion": "Autoritzacions enviades o d'eixida que les famílies poden signar."
     },
     "enviar": {
-      "intro": "Agafa un format publicat i envia'l a una audiència."
+      "intro": "Agafa un format publicat i envia'l a una audiència.",
+      "sin_plantillas": "No hi ha formats publicats per a enviar. Crea’n un primer."
     },
     "ambito": {
       "nino": "Un xiquet/a",
@@ -1756,6 +1769,108 @@
       "administrada_por": "Administrada per {nombre} · {fecha}",
       "espera_segundo": "Esperant la confirmació d'un segon membre del personal.",
       "staff_generico": "Personal del centre"
+    },
+    "sin_acceso": {
+      "titulo": "No tens accés",
+      "descripcion": "No pots veure esta autorització. Si creus que és un error, contacta amb el centre."
+    },
+    "excursion": {
+      "accion": "Excursió",
+      "intro": "L'autorització d'excursió penja d'un esdeveniment del calendari. Tria l'excursió.",
+      "sin_eventos": "No hi ha excursions al calendari. Crea primer l'excursió (l'esdeveniment) i després torna ací per a la seua autorització.",
+      "crear_evento": "Crear excursió al calendari",
+      "crear_otra": "No hi és? Crear excursió al calendari",
+      "crear_nueva": "Crear excursió nova",
+      "nuevo_titulo": "Títol de l’excursió",
+      "nuevo_titulo_placeholder": "p. ex. Visita a la granja",
+      "nuevo_fecha": "Data",
+      "nuevo_aula": "Aula que va",
+      "texto": "Text de consentiment",
+      "texto_placeholder": "Text que firmaran les famílies (autoritze l’eixida…)",
+      "guardar_borrador": "Guardar com a esborrany (revisar abans de publicar)"
+    },
+    "tipos_area": {
+      "titulo": "Tipus d'autorització",
+      "descripcion": "El centre gestiona estos 5 tipus. Quatre són formats de catàleg; l'excursió penja d'un esdeveniment.",
+      "reglas_regimen_interno": "Format de catàleg. S’envia a les famílies per a firmar.",
+      "autorizacion_imagenes": "Format de catàleg. Consentiment d'imatge (firma en F11).",
+      "recogida": "La família indica qui recull el xiquet i firma.",
+      "medicacion": "La família autoritza una medicació amb les seues pautes i firma.",
+      "salida": "Excursió: penja d'un esdeveniment del calendari; no usa catàleg."
+    },
+    "teacher": {
+      "intro": "Recollides i medicacions dels xiquets de la teua aula. Des del detall registres i confirmes l’administració de medicació.",
+      "recogidas_titulo": "Recollides",
+      "recogidas_desc": "Qui pot recollir cada xiquet de la teua aula (firmat per la família).",
+      "recogidas_vacio": "No hi ha recollides a la teua aula de moment.",
+      "medicacion_titulo": "Medicació",
+      "medicacion_desc": "Pautes firmades. Obri’n una per a registrar o confirmar una administració.",
+      "medicacion_vacio": "No hi ha medicacions a la teua aula de moment."
+    },
+    "seguimiento": {
+      "pendientes_titulo": "Pendents de firma",
+      "pendientes_desc": "Allò enviat que encara no han firmat totes les famílies, amb el xiquet concret.",
+      "pendientes_vacio": "Tot allò enviat està firmat. Res pendent.",
+      "progreso": "{firmados} de {total} firmades",
+      "ultimas_titulo": "Últimes enviades",
+      "ultimas_desc": "Les 10 autoritzacions més recents enviades o iniciades.",
+      "ultimas_vacio": "Encara no has enviat cap autorització."
+    },
+    "nueva": {
+      "accion": "Nova autorització",
+      "modo_label": "Què vols crear?",
+      "modo_formato": "Enviar un format (règim intern, imatges)",
+      "modo_excursion": "Excursió"
+    },
+    "medicacion_lista": {
+      "titulo": "Medicació",
+      "desc": "Activitat de cada pauta: dosis donades i pendents de confirmar.",
+      "vacio": "No hi ha medicacions actives.",
+      "historico_titulo": "Històric de medicació",
+      "historico_desc": "Pautes acabades i arxivades.",
+      "historico_vacio": "No hi ha medicacions arxivades.",
+      "ver_historico": "Veure històric",
+      "ver_activas": "Veure actives",
+      "archivada": "Arxivada",
+      "terminada": "Acabada",
+      "dadas": "{n, plural, one {# dosi donada} other {# dosis donades}}",
+      "pendientes_confirmar": "{n, plural, one {# pendent de confirmar} other {# pendents de confirmar}}"
+    },
+    "archivar": {
+      "accion": "Arxivar",
+      "archivando": "Arxivant…",
+      "archivada_toast": "Medicació arxivada"
+    }
+  },
+  "notificaciones": {
+    "title": "Notificacions",
+    "subtitle": "Novetats recents que t'afecten.",
+    "vacio": "No hi ha novetats de moment.",
+    "nuevo": "Nou",
+    "pendiente_confirmacion": "Pendent de la teua confirmació",
+    "badge_aria": "Notificacions sense llegir: {n}",
+    "tipo": {
+      "evento": "Esdeveniment",
+      "recogida": "Recollida",
+      "medicacion": "Medicació",
+      "autorizacion": "Autorització",
+      "administracion": "Administració",
+      "revocacion": "Revocació"
+    },
+    "avisos": {
+      "pendientes_confirmar": "{n, plural, one {Tens # administració de medicació pendent de la teua confirmació} other {Tens # administracions de medicació pendents de la teua confirmació}}",
+      "pendientes_firma": "{n, plural, one {Tens # autorització pendent de firmar} other {Tens # autoritzacions pendents de firmar}}",
+      "medicaciones_activas": "{n, plural, one {# medicació activa hui} other {# medicacions actives hui}}",
+      "firmadas": "{n, plural, one {# firmada} other {# firmades}}",
+      "confirmadas": "{n, plural, one {# confirmada} other {# confirmades}}",
+      "todo_hecho": "Res pendent · {n} al dia",
+      "nuevas_firmas": "{n, plural, one {Ha arribat # firma nova d’una família} other {Han arribat # firmes noves de famílies}}",
+      "revocaciones": "{n, plural, one {Revocada # autorització: revisa qui recull / la medicació} other {Revocades # autoritzacions: revisa qui recull / la medicació}}",
+      "por_archivar": "{n, plural, one {# medicació acabada per a arxivar} other {# medicacions acabades per a arxivar}}"
+    },
+    "errors": {
+      "no_autorizado": "No autoritzat.",
+      "marcar_fallo": "No s'han pogut marcar com a vistes."
     }
   }
 }

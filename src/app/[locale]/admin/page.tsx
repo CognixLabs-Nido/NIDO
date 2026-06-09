@@ -18,6 +18,8 @@ import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getResumenAsistenciaCentro } from '@/features/asistencia/queries/get-resumen-asistencia-centro'
 import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
+import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
+import { getAvisosInicio } from '@/features/notificaciones/queries/get-avisos-inicio'
 import { cn } from '@/lib/utils'
 
 type StatTone = 'primary' | 'accent-warm' | 'success' | 'info'
@@ -66,6 +68,7 @@ export default async function AdminDashboard({ params }: PageProps) {
   const ninosCount = ninosResp.count ?? 0
   const usuariosCount = usuariosResp.count ?? 0
   const firstName = (user?.nombreCompleto ?? '').split(' ')[0]
+  const avisos = await getAvisosInicio('admin')
 
   return (
     <div className="space-y-8">
@@ -75,6 +78,7 @@ export default async function AdminDashboard({ params }: PageProps) {
         </h1>
         <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
       </header>
+      <AvisosInicio avisos={avisos} rol="admin" locale={locale} />
       <ResumenSemanaWidget
         centroId={centroId}
         agendaHref={`/${locale}/agenda`}

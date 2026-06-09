@@ -7,13 +7,13 @@ interface PageProps {
   params: Promise<{ locale: string; id: string }>
 }
 
-export default async function AdminAutorizacionDetallePage({ params }: PageProps) {
+export default async function TeacherAutorizacionDetallePage({ params }: PageProps) {
   const { locale, id } = await params
 
   const centroId = await getCentroActualId()
   if (!centroId) redirect(`/${locale}/login`)
   const rol = await getRolEnCentro(centroId)
-  if (rol !== 'admin') redirect(`/${locale}/forbidden`)
+  if (rol !== 'profe' && rol !== 'admin') redirect(`/${locale}/forbidden`)
 
-  return <AutorizacionDetalleView id={id} volverHref={`/${locale}/admin/autorizaciones`} />
+  return <AutorizacionDetalleView id={id} volverHref={`/${locale}/teacher/autorizaciones`} />
 }

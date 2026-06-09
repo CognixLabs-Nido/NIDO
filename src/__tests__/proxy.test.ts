@@ -57,6 +57,25 @@ describe('proxy — mapa de prefijos protegidos', () => {
     expect(roles).toEqual(['admin'])
   })
 
+  it('profe NO entra a /admin/autorizaciones: su ruta es /teacher/autorizaciones', () => {
+    // `/admin` es admin-only. La profe vive en /teacher/autorizaciones bajo el
+    // layout de teacher. Colgarla de /admin la bloqueaba (el layout admin redirige
+    // a no-admin) → era la causa raíz del fallo de acceso de la profe.
+    for (const ruta of ['/admin/autorizaciones', '/admin/autorizaciones/abc-123']) {
+      const roles = requiredRolesFor(ruta)
+      expect(roles, ruta).toEqual(['admin'])
+    }
+  })
+
+  it('profe puede entrar a /teacher/autorizaciones (lista y detalle)', () => {
+    for (const ruta of ['/teacher/autorizaciones', '/teacher/autorizaciones/abc-123']) {
+      const roles = requiredRolesFor(ruta)
+      expect(roles, ruta).toContain('profe')
+      expect(roles, ruta).toContain('admin')
+      expect(roles, ruta).not.toContain('tutor_legal')
+    }
+  })
+
   it('/family sigue requiriendo solo tutor_legal o autorizado', () => {
     const roles = requiredRolesFor('/family/calendario')
     expect(roles).toEqual(['tutor_legal', 'autorizado'])

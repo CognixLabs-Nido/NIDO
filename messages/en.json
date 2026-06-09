@@ -178,7 +178,8 @@
       "mensajeria": "Messages",
       "recordatorios": "Reminders",
       "agenda": "Agenda",
-      "autorizaciones": "Authorisations"
+      "autorizaciones": "Authorisations",
+      "notificaciones": "Notifications"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -376,7 +377,9 @@
       "calendario": "School Calendar",
       "mensajeria": "Messages",
       "recordatorios": "Reminders",
-      "agenda": "Agenda"
+      "agenda": "Agenda",
+      "autorizaciones": "Authorisations",
+      "notificaciones": "Notifications"
     },
     "dashboard": {
       "title": "My classrooms",
@@ -404,7 +407,8 @@
       "mensajeria": "Messages",
       "recordatorios": "Reminders",
       "agenda": "Agenda",
-      "autorizaciones": "Authorisations"
+      "autorizaciones": "Authorisations",
+      "notificaciones": "Notifications"
     },
     "dashboard": {
       "title": "My children",
@@ -1581,7 +1585,9 @@
       "confirmo": "I have read the text and expressly authorise what it states.",
       "nombre": "Full name",
       "nombre_ayuda": "It must match the name on your profile.",
-      "trazo": "Signature"
+      "trazo": "Signature",
+      "revocar_contactar": "To cancel a signature already made, contact the centre.",
+      "revocar_aviso": "Revoking will alert the management and the class teachers."
     },
     "roster": {
       "sin_ninos": "No children fall under this authorisation.",
@@ -1634,7 +1640,8 @@
       "med_pauta_larga": "Schedule is too long.",
       "med_fechas_incoherentes": "End date cannot be before start date.",
       "med_campos_requeridos": "Fill in medication, dose and schedule.",
-      "adm_notas_largas": "Notes can't exceed 500 characters."
+      "adm_notas_largas": "Notes can't exceed 500 characters.",
+      "excursion_evento_requerido": "Choose an existing field trip or create a new one."
     },
     "errors": {
       "no_autorizado": "You don't have permission for this action.",
@@ -1668,27 +1675,33 @@
       "adm_sin_firma": "The medication is not signed.",
       "adm_no_permitido": "You can't log this administration (the medication must be signed and valid today).",
       "adm_confirmar_fallo": "The administration could not be confirmed.",
-      "adm_confirmar_no_permitido": "You can't confirm this administration (it must be confirmed by a staff member other than the one who administered it)."
+      "adm_confirmar_no_permitido": "You can't confirm this administration (it must be confirmed by a staff member other than the one who administered it).",
+      "revocar_no_permitido": "You can only revoke pick-up and medication.",
+      "archivar_fallo": "Could not archive. Try again.",
+      "archivar_no_permitido": "You do not have permission to archive this medication."
     },
     "tipo": {
       "salida": "Outing",
       "medicacion": "Medication",
       "recogida": "Pickup",
       "reglas_regimen_interno": "House rules",
-      "autorizacion_imagenes": "Images"
+      "autorizacion_imagenes": "Images",
+      "excursion": "Excursion"
     },
     "catalogo": {
       "titulo": "Format catalog",
       "descripcion": "The center's standard formats. Edit the text, mark it final and publish it.",
       "intro": "Create the standard format for a type. Then write its text and publish it.",
-      "vacio": "No formats in the catalog yet."
+      "vacio": "No formats in the catalog yet.",
+      "nuevo_formato": "New format"
     },
     "instancias": {
       "titulo": "To sign",
       "descripcion": "Sent or trip authorizations that families can sign."
     },
     "enviar": {
-      "intro": "Take a published format and send it to an audience."
+      "intro": "Take a published format and send it to an audience.",
+      "sin_plantillas": "There are no published formats to send. Create one first."
     },
     "ambito": {
       "nino": "One child",
@@ -1756,6 +1769,108 @@
       "administrada_por": "Administered by {nombre} · {fecha}",
       "espera_segundo": "Waiting for a second staff member to confirm.",
       "staff_generico": "Centre staff"
+    },
+    "sin_acceso": {
+      "titulo": "You don't have access",
+      "descripcion": "You can't view this authorisation. If you think this is a mistake, contact the centre."
+    },
+    "excursion": {
+      "accion": "Field trip",
+      "intro": "A field-trip authorisation hangs off a calendar event. Choose the trip.",
+      "sin_eventos": "There are no field trips in the calendar. Create the trip (the event) first, then come back here for its authorisation.",
+      "crear_evento": "Create field trip in the calendar",
+      "crear_otra": "Not listed? Create a field trip in the calendar",
+      "crear_nueva": "Create a new field trip",
+      "nuevo_titulo": "Field trip title",
+      "nuevo_titulo_placeholder": "e.g. Visit to the farm",
+      "nuevo_fecha": "Date",
+      "nuevo_aula": "Class attending",
+      "texto": "Consent text",
+      "texto_placeholder": "Text families will sign (I authorise the trip…)",
+      "guardar_borrador": "Save as draft (review before publishing)"
+    },
+    "tipos_area": {
+      "titulo": "Authorisation types",
+      "descripcion": "The centre manages these 5 types. Four are catalogue formats; the field trip hangs off an event.",
+      "reglas_regimen_interno": "Catalogue format. Sent to families to sign.",
+      "autorizacion_imagenes": "Catalogue format. Image consent (signing in F11).",
+      "recogida": "The family states who picks up the child and signs.",
+      "medicacion": "The family authorises a medication with its schedule and signs.",
+      "salida": "Field trip: hangs off a calendar event; no catalogue."
+    },
+    "teacher": {
+      "intro": "Pick-ups and medication for the children in your classroom. Open one to record and confirm a medication administration.",
+      "recogidas_titulo": "Pick-ups",
+      "recogidas_desc": "Who may collect each child in your classroom (signed by the family).",
+      "recogidas_vacio": "No pick-ups in your classroom yet.",
+      "medicacion_titulo": "Medication",
+      "medicacion_desc": "Signed schedules. Open one to record or confirm an administration.",
+      "medicacion_vacio": "No medication in your classroom yet."
+    },
+    "seguimiento": {
+      "pendientes_titulo": "Pending signature",
+      "pendientes_desc": "What was sent and not all families have signed yet, with the specific child.",
+      "pendientes_vacio": "Everything sent is signed. Nothing pending.",
+      "progreso": "{firmados} of {total} signed",
+      "ultimas_titulo": "Recently sent",
+      "ultimas_desc": "The 10 most recently sent or started authorizations.",
+      "ultimas_vacio": "You have not sent any authorization yet."
+    },
+    "nueva": {
+      "accion": "New authorization",
+      "modo_label": "What do you want to create?",
+      "modo_formato": "Send a format (rules, images)",
+      "modo_excursion": "Field trip"
+    },
+    "medicacion_lista": {
+      "titulo": "Medication",
+      "desc": "Activity per schedule: doses given and pending confirmation.",
+      "vacio": "No active medication.",
+      "historico_titulo": "Medication history",
+      "historico_desc": "Finished and archived schedules.",
+      "historico_vacio": "No archived medication.",
+      "ver_historico": "View history",
+      "ver_activas": "View active",
+      "archivada": "Archived",
+      "terminada": "Finished",
+      "dadas": "{n, plural, one {# dose given} other {# doses given}}",
+      "pendientes_confirmar": "{n, plural, one {# pending confirmation} other {# pending confirmation}}"
+    },
+    "archivar": {
+      "accion": "Archive",
+      "archivando": "Archiving…",
+      "archivada_toast": "Medication archived"
+    }
+  },
+  "notificaciones": {
+    "title": "Notifications",
+    "subtitle": "Recent updates that involve you.",
+    "vacio": "Nothing new for now.",
+    "nuevo": "New",
+    "pendiente_confirmacion": "Pending your confirmation",
+    "badge_aria": "Unread notifications: {n}",
+    "tipo": {
+      "evento": "Event",
+      "recogida": "Pick-up",
+      "medicacion": "Medication",
+      "autorizacion": "Authorisation",
+      "administracion": "Administration",
+      "revocacion": "Revocation"
+    },
+    "avisos": {
+      "pendientes_confirmar": "{n, plural, one {You have # medication administration pending your confirmation} other {You have # medication administrations pending your confirmation}}",
+      "pendientes_firma": "{n, plural, one {You have # authorisation pending your signature} other {You have # authorisations pending your signature}}",
+      "medicaciones_activas": "{n, plural, one {# medication active today} other {# medications active today}}",
+      "firmadas": "{n, plural, one {# signed} other {# signed}}",
+      "confirmadas": "{n, plural, one {# confirmed} other {# confirmed}}",
+      "todo_hecho": "Nothing pending · {n} done",
+      "nuevas_firmas": "{n, plural, one {# new signature from a family has arrived} other {# new signatures from families have arrived}}",
+      "revocaciones": "{n, plural, one {# authorization revoked: check pick-up / medication} other {# authorizations revoked: check pick-up / medication}}",
+      "por_archivar": "{n, plural, one {# finished medication to archive} other {# finished medications to archive}}"
+    },
+    "errors": {
+      "no_autorizado": "Not authorised.",
+      "marcar_fallo": "Couldn't mark notifications as seen."
     }
   }
 }
