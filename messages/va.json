@@ -1685,7 +1685,8 @@
       "medicacion": "Medicació",
       "recogida": "Arreplegada",
       "reglas_regimen_interno": "Règim intern",
-      "autorizacion_imagenes": "Imatges"
+      "autorizacion_imagenes": "Imatges",
+      "excursion": "Excursió"
     },
     "catalogo": {
       "titulo": "Catàleg de formats",

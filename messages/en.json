@@ -1685,7 +1685,8 @@
       "medicacion": "Medication",
       "recogida": "Pickup",
       "reglas_regimen_interno": "House rules",
-      "autorizacion_imagenes": "Images"
+      "autorizacion_imagenes": "Images",
+      "excursion": "Excursion"
     },
     "catalogo": {
       "titulo": "Format catalog",

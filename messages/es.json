@@ -1685,7 +1685,8 @@
       "medicacion": "Medicación",
       "recogida": "Recogida",
       "reglas_regimen_interno": "Régimen interno",
-      "autorizacion_imagenes": "Imágenes"
+      "autorizacion_imagenes": "Imágenes",
+      "excursion": "Excursión"
     },
     "catalogo": {
       "titulo": "Catálogo de formatos",

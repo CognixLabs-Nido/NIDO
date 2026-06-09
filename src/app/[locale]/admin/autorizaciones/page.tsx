@@ -71,15 +71,11 @@ export default async function AdminAutorizacionesPage({ params, searchParams }: 
           <p className="text-muted-foreground text-sm">{t('admin_intro')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {/* Desplegable ÚNICO «Nueva autorización»: envía un formato (A) o crea una
-              excursión (evento existente o nuevo inline, sin salto al calendario).
-              El alta de formatos del catálogo vive en su propia sección. */}
-          <EnviarAutorizacionDialog
-            plantillas={plantillasEnviar}
-            ninos={ninos}
-            aulas={aulas}
-            eventos={eventos}
-          />
+          {/* Dos acciones de siempre: «Nueva autorización» (crea un formato del
+              catálogo o una excursión —evento existente o nuevo inline—) y
+              «Enviar autorización» (manda un formato publicado a una audiencia). */}
+          <CrearPlantillaDialog eventos={eventos} aulas={aulas} />
+          <EnviarAutorizacionDialog plantillas={plantillasEnviar} ninos={ninos} aulas={aulas} />
         </div>
       </header>
 
@@ -160,14 +156,12 @@ export default async function AdminAutorizacionesPage({ params, searchParams }: 
       {/* Medicación: actividad de cada pauta (dosis dadas/pendientes) + archivar. */}
       <SeccionMedicacion locale={locale} baseHref={BASE} puedeArchivar />
 
-      {/* Catálogo de formatos (plantillas durables) — solo admin. */}
+      {/* Catálogo de formatos (plantillas durables) — solo admin. El alta vive en
+          el botón «Nueva autorización» de la cabecera. */}
       <section className="space-y-3">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div className="space-y-1">
-            <h2 className="text-h2 text-foreground">{t('catalogo.titulo')}</h2>
-            <p className="text-muted-foreground text-sm">{t('catalogo.descripcion')}</p>
-          </div>
-          <CrearPlantillaDialog />
+        <div className="space-y-1">
+          <h2 className="text-h2 text-foreground">{t('catalogo.titulo')}</h2>
+          <p className="text-muted-foreground text-sm">{t('catalogo.descripcion')}</p>
         </div>
         {plantillas.length === 0 ? (
           <p className="text-muted-foreground text-sm">{t('catalogo.vacio')}</p>
