@@ -25,8 +25,9 @@ El plan se organiza en tres olas **scope-driven** (no por fecha; el responsable 
 | 5.5  | Push notifications (transversal — ADR-0025/0027)                | ✅ Cerrada   |
 | 5.6  | Mensajería admin ↔ familia + ventana anulación 5 min            | ✅ Cerrada   |
 | 6    | Recordatorios bidireccionales (E)                               | ✅ Cerrada   |
-| 7    | Calendario + eventos + confirmaciones (**lean**)                | ⏳ Pendiente |
-| 8    | Autorizaciones + firma digital                                  | ⏳ Pendiente |
+| 7    | Calendario + eventos + confirmaciones (**lean**)                | ✅ Cerrada   |
+| 7b   | Agenda de citas con invitados nominales + RSVP (ADR-0039)       | ✅ Cerrada   |
+| 8    | Autorizaciones + firma digital (ADR-0041)                       | ✅ Cerrada   |
 | 9    | Informes de evolución                                           | ⏳ Pendiente |
 | 10   | Fotos y publicaciones del aula                                  | ⏳ Pendiente |
 | 11   | Pulido final + producción (incl. tolerancia básica offline PWA) | ⏳ Pendiente |
