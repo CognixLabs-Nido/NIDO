@@ -762,3 +762,48 @@ Sexta fase: recordatorios entre centro y familias (y personales del staff). Arra
 ### Cierre
 
 **F6 oficialmente cerrada.** Push-a-device queda marcado como **bloqueante temprano de Ola 1** (antes/junto a F7). Próxima fase: **F7 — Calendario + eventos + confirmaciones (lean)**; la reserva de tutorías se difiere a Ola 3 (ver `docs/specs/scope-ola-1.md`).
+
+## Fase 7 + 7b — Calendario/eventos + Agenda de citas (nota-puente)
+
+> Estas fases se entregaron y mergearon sin entrada propia en este diario (el equipo fue rápido). Quedan documentadas en sus ADRs y specs; se anotan aquí solo para no romper la cadena.
+
+- **F7 — Calendario + eventos + confirmaciones (lean):** `eventos` + `confirmaciones_evento` con audiencia por ámbito. Ver **ADR-0038** y `docs/specs/f7-calendario.md`.
+- **F7b — Agenda de citas con invitados nominales y RSVP:** `citas` + `cita_invitados` + `preferencias_usuario`; badge `contar_invitaciones_pendientes()`. Ver **ADR-0039** y `docs/specs/agenda-citas.md`.
+- **AG-15 — Inicio: resumen de la semana:** consolidación del calendario en el home. Ver **ADR-0040**.
+
+## Fase 8 — Autorizaciones + firma digital
+
+Documento legalmente trazable para salida, medicación, recogida, régimen interno e imágenes. Modelo **catálogo de plantillas durables + instancia firmable por-niño** (patrón **A** la directora envía / patrón **B2** la familia inicia), **firma electrónica simple** (nombre tecleado + trazo dibujado + hash SHA-256 compuesto texto+`datos` + IP/UA), **append-only con freeze**, y **doble confirmación** en la administración de medicación.
+
+### PRs cerrados
+
+| PR      | Sub-fase | Resumen                                                                                                                                              |
+| ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **#53** | A (spec) | `docs`: spec de arranque `autorizaciones-firma.md` (D1–D9 + 6 flags ⚖️). Draft de Checkpoint A.                                                      |
+| **#54** | F8-0     | Migración + RLS (sin UI): `autorizaciones` + `firmas_autorizacion`, ENUMs, helpers row-aware, freeze, audit.                                         |
+| **#55** | F8-1     | Salida + firma digital (vertical slice): firma dibujada + hash + IP/UA.                                                                              |
+| **#56** | F8-2b    | Reglas de régimen interno (reúso de F8-1). Deja 1 instancia legacy a migrar.                                                                         |
+| **#59** | F8-RW-0  | Rework a **catálogo (plantilla durable) + patrones A/B2** (migración + RLS): `es_plantilla`, `ambito`, `plantilla_id`, CHECK de 5 formas.            |
+| **#60** | F8-RW-1  | Catálogo (UI) + Enviar a audiencia + fix 3 bugs UI.                                                                                                  |
+| **#61** | F8-RW-2  | Recogida B2 — la familia inicia su recogida.                                                                                                         |
+| **#62** | F8-3a    | Medicación B2 — la familia inicia su medicación (vigencia del tratamiento en `firmas.datos`).                                                        |
+| **#63** | F8-3b    | Registro de administración de medicación con **doble confirmación** (migración + RLS + tests).                                                       |
+| **#64** | accesos  | Accesos profe (`/teacher/autorizaciones`), avisos al panel de Inicio, reestructura de notificaciones, seguimiento admin, excursión inline, archivar. |
+
+### Migraciones
+
+`20260603120000_phase8_autorizaciones` · `20260607120000_phase8_rw0_catalogo` · `20260608120000_phase8_3b_registro_administracion` · `20260609120000_phase8_archivar_medicacion` (aditivas, aplicadas). **Pendiente de aplicar:** `20260608130000_phase8_migrar_reglas_56` (engancha la regla legacy #56; idempotente; salta centros sin plantilla publicada de Régimen interno).
+
+### Decisiones (ADRs)
+
+- **ADR-0041 — Modelo de autorizaciones + firma digital** (`accepted`): A2 firma simple auditable + B2 plantilla/instancia + C2 doble confirmación; append-only/freeze; archivar vía RPC `SECURITY DEFINER`; postura legal ⚖️ y follow-ups fuera de alcance.
+
+### Aprendizaje transversal
+
+- **Re-modelar antes del piloto sigue saliendo barato.** F8-RW-0 reescribió el modelo (plantilla/instancia) con migración aditiva; las filas legacy de #56 quedaron compatibles.
+- **Ampliar autorización sin tocar la policy de UPDATE:** RPC `SECURITY DEFINER` acotado (`archivar_autorizacion`) en vez de relajar `autorizaciones_update` — evita filtrar publicar/anular a la profe. Patrón reutilizable.
+- **No inventar texto legal.** Las plantillas arrancan en `PENDIENTE`; la migración de datos #56 salta centros sin plantilla en vez de fabricar contenido jurídico.
+
+### Cierre
+
+**F8 cerrada (Checkpoint C):** typecheck + lint + test (suite entera) + build en verde. La **validez jurídica NO está certificada** — 6 flags ⚖️ a abogado (ver ADR-0041 §legal). Follow-ups anotados (textos legales reales, imágenes firmable F11, adjuntos F10, F8-4 DNI condicional, recogida puntual futura, migración legacy #56, aviso del botón "Enviar"). Próxima fase: **F9 — Informes de evolución**.

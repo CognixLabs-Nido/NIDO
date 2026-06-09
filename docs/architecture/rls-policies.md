@@ -443,3 +443,43 @@ ENUM `recordatorio_destinatario` con **6 valores**: `familia_individual` · `fam
 - **Badge (RPC `contar_invitaciones_pendientes()`, AG-14)**: `SECURITY DEFINER STABLE`, usa `auth.uid()`. Cuenta `cita_invitados` `pendiente` del usuario JOIN `citas` `programada` y **aún no comenzada** (`(fecha + hora_inicio) AT TIME ZONE 'Europe/Madrid' > now()`), con `organizador_id <> auth.uid()` (el organizador no cuenta sus citas). Bypassa RLS pero solo cuenta filas del propio usuario → sin fuga (igual que la RPC de F6-C). **Sin push ni Realtime**. Test gateado: dos usuarios → cada uno su recuento; el organizador no cuenta las suyas; al aceptar deja de contar.
 
 - **Gotcha MVCC**: `usuario_es_audiencia_cita_row` es row-aware (recibe `centro_id`/`organizador_id` por parámetro) y su lookup interno consulta `cita_invitados` (otra tabla). Igual `cita_invitados`, cuyo helper lee `citas`. Tests `.insert().select()` en ambas tablas como bloqueo de regresión.
+
+## Autorizaciones y firma digital (Fase 8)
+
+3 tablas — `autorizaciones`, `firmas_autorizacion`, `administraciones_medicacion` — y 5 ENUMs. Ver [ADR-0041](../decisions/ADR-0041-modelo-autorizaciones-firma-digital.md) y spec de arranque `docs/specs/autorizaciones-firma.md`. **Documentos legales: las 3 tablas SÍ se auditan** (a diferencia de los RSVP de F7b, que son registro administrativo). Sin Realtime.
+
+> ⚖️ **Aviso legal**: F8 implementa un **mecanismo técnico auditable** (firma electrónica simple), **NO** certifica validez jurídica. Las afirmaciones de validez van marcadas ⚖️ y requieren abogado (eIDAS/LOPDGDD/normativa educativa). Ver ADR-0041 §legal.
+
+### Helpers nuevos (`STABLE SECURITY DEFINER SET search_path = public`, GRANT `authenticated`)
+
+- `centro_de_evento(p_evento_id)` → uuid; `es_profe_de_evento(p_evento_id)` → boolean (profe del aula del evento de ámbito `aula`).
+- **`usuario_es_audiencia_autorizacion_row(p_centro_id, p_tipo, p_es_plantilla, p_ambito, p_evento_id, p_nino_id, p_aula_id)`** → boolean. **Row-aware** (recibe los campos por parámetro, **NO re-lee `autorizaciones`** → evita el gotcha MVCC en `INSERT…RETURNING`). admin ⇒ TRUE; plantilla del catálogo ⇒ `pertenece_a_centro`; `salida` ⇒ audiencia del evento; ámbito `nino` ⇒ `es_profe_de_nino OR es_tutor_de`; ámbito `aula` ⇒ `es_profe_de_aula OR es_tutor_en_aula`; ámbito `centro` ⇒ `pertenece_a_centro`; legacy (nino_id seteado) ⇒ `es_profe_de_nino OR es_tutor_de`. (Sustituye a la versión de 5 args de F8-0.)
+- `autorizacion_aplica_a_nino(p_autorizacion_id, p_nino_id)` → boolean. Lee `autorizaciones` (tabla distinta de la que se inserta —`firmas`—, sin MVCC): plantilla ⇒ FALSE; `salida` ⇒ `evento_aplica_a_nino`; ámbito `aula` ⇒ matrícula activa; ámbito `centro` ⇒ niño del centro; resto ⇒ `nino_id = p_nino_id`.
+- `autorizacion_firmable(p_autorizacion_id)` → boolean: `es_plantilla=false AND estado='publicada' AND texto_definitivo AND` dentro de vigencia (`hoy_madrid()`). Enforza el guard de texto PENDIENTE (no se firma un borrador).
+- `autorizacion_plantilla_valida(p_plantilla_id, p_centro_id, p_tipo)` → boolean: existe plantilla `es_plantilla=true`, mismo centro+tipo, `publicada` + `texto_definitivo`. Gate del INSERT del tutor (B2).
+- `medicacion_administrable_hoy(p_autorizacion_id)` → boolean (F8-3b): espejo SQL de `estado-firma.ts`. Calcula la política efectiva (`ninos.requiere_ambos_firmantes` ⇒ `todos_los_principales`), exige que la **última** decisión (`DISTINCT ON (firmante_id) … ORDER BY firmado_at DESC`) de los tutores principales sea `firmado`, y que `hoy_madrid()` esté dentro de la vigencia del tratamiento (que viaja en `firmas.datos.medicacion.fecha_inicio/fecha_fin`).
+- **`archivar_autorizacion(p_autorizacion_id)`** → boolean — **RPC** `SECURITY DEFINER`, GRANT `authenticated`. Solo `tipo='medicacion'` no-plantilla; autoriza **`es_admin OR es_profe_de_nino`** (la familia NO); **idempotente**; setea `archivada_at=now()`, `archivada_por=auth.uid()`. Se hace por RPC **deliberadamente** para no ampliar la policy `autorizaciones_update` (autor|admin) a la profe (eso le abriría publicar/anular/editar el texto); el RPC toca solo las columnas de archivado.
+
+### RLS `autorizaciones`
+
+- **SELECT** `autorizaciones_select`: `usuario_es_audiencia_autorizacion_row(centro_id, tipo, es_plantilla, ambito, evento_id, nino_id, aula_id)` (row-aware).
+- **INSERT** `autorizaciones_insert`: `creado_por = auth.uid()` AND ( `es_admin(centro_id)` | profe de salida `tipo='salida' AND es_profe_de_evento(evento_id) AND centro_de_evento(evento_id)=centro_id` | **tutor B2**: `es_plantilla=false AND tipo ∈ {recogida,medicacion} AND ambito='nino' AND nino_id NOT NULL AND plantilla_id NOT NULL AND es_tutor_de(nino_id) AND autorizacion_plantilla_valida(plantilla_id, centro_id, tipo)` ).
+- **UPDATE** `autorizaciones_update`: `USING + WITH CHECK` simétricos `creado_por = auth.uid() OR es_admin(centro_id)`. El server action acota columnas; el trigger `bloquea_texto_tras_firma` congela el alcance consentido una vez hay firmas. Archivar medicación NO pasa por aquí (RPC `SECURITY DEFINER`).
+- **DELETE**: sin policy → **default DENY**. Retirar = `estado='anulada'` (conserva firmas). Archivar (`archivada_at`) ≠ anular.
+
+### RLS `firmas_autorizacion` (append-only, inmutable)
+
+- **SELECT** `firmas_select`: `firmante_id = auth.uid() OR es_tutor_de(nino_id) OR es_profe_de_nino(nino_id) OR es_admin(centro_de_nino(nino_id))`.
+- **INSERT** `firmas_insert`: `es_tutor_de(nino_id) AND firmante_id = auth.uid() AND autorizacion_aplica_a_nino(autorizacion_id, nino_id) AND autorizacion_firmable(autorizacion_id)`. Solo el tutor del niño; un borrador/PENDIENTE no es firmable; el trazo (`firma_imagen`) es obligatorio al firmar (CHECK).
+- **UPDATE / DELETE**: sin policy → **default DENY**. La firma es inmutable: **revocar o re-firmar = fila nueva** (`decision='revocado'`/`'firmado'`); el estado vigente es la última fila por (autorización, niño, firmante) ordenada por `firmado_at`. El **hash compuesto** (`texto_hash` = SHA-256 del texto exacto versionado + `datos` firmados) detecta cualquier alteración del documento.
+
+### RLS `administraciones_medicacion` (doble confirmación)
+
+- **SELECT** `adm_med_select`: `es_admin(centro_id) OR es_profe_de_nino(nino_id) OR es_tutor_de(nino_id)` (staff + familia, transparencia).
+- **INSERT** `adm_med_insert`: `administrado_por = auth.uid() AND confirmado_por IS NULL AND (es_admin OR es_profe_de_nino) AND centro_de_nino(nino_id)=centro_id AND autorizacion_aplica_a_nino(...) AND medicacion_administrable_hoy(autorizacion_id)`. La familia NO registra; quien registra no se autoconfirma.
+- **UPDATE** `adm_med_update_confirmar`: `USING (confirmado_por IS NULL AND administrado_por <> auth.uid() AND (es_admin OR es_profe_de_nino))` + `WITH CHECK (confirmado_por = auth.uid() AND administrado_por <> auth.uid() AND (es_admin OR es_profe_de_nino))`. El **segundo** staff (distinto del que administró) confirma nombrándose a sí mismo. La USING filtra solo pendientes → idempotencia por el patrón **"USING falso → 0 filas"** (`.select().maybeSingle()` en el action). El trigger `solo_confirmar` impide cualquier otra mutación y sella `confirmado_at` server-side.
+- **DELETE**: sin policy → **default DENY**.
+
+### Gotcha MVCC (Fase 8)
+
+Todas las SELECT policies de F8 son seguras frente a `INSERT…RETURNING`: `autorizaciones_select` usa el helper **row-aware** de 7 args (no re-lee `autorizaciones`); las de `firmas_autorizacion` y `administraciones_medicacion` delegan en helpers que leen **otras** tablas (`autorizaciones`, `ninos`, `vinculos_familiares`, `eventos`) ya commiteadas. Resuelve el aviso de "Implicaciones para fases siguientes" de la sección MVCC de F5.
