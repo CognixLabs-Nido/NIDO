@@ -2429,12 +2429,14 @@ export type Database = {
       es_profe_de_evento: { Args: { p_evento_id: string }; Returns: boolean }
       es_profe_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
       es_profe_en_centro: { Args: { p_centro_id: string }; Returns: boolean }
+      es_redactor_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
       es_tutor_de: { Args: { p_nino_id: string }; Returns: boolean }
       es_tutor_en_aula: { Args: { p_aula_id: string }; Returns: boolean }
       es_tutor_en_centro: {
         Args: { p_centro_id: string; p_tutor_id: string }
         Returns: boolean
       }
+      es_tutor_legal_de: { Args: { p_nino_id: string }; Returns: boolean }
       evento_aplica_a_nino: {
         Args: { p_evento_id: string; p_nino_id: string }
         Returns: boolean
@@ -2550,6 +2552,14 @@ export type Database = {
           p_ambito: Database['public']['Enums']['ambito_evento']
           p_aula_id: string
           p_centro_id: string
+          p_nino_id: string
+        }
+        Returns: boolean
+      }
+      usuario_es_audiencia_informe_row: {
+        Args: {
+          p_centro_id: string
+          p_estado: Database['public']['Enums']['estado_informe']
           p_nino_id: string
         }
         Returns: boolean
