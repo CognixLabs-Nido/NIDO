@@ -1043,7 +1043,17 @@
     },
     "tabs": {
       "conversaciones": "Conversaciones",
-      "anuncios": "Anuncios"
+      "anuncios": "Anuncios",
+      "mensajeria": "Mensajería"
+    },
+    "supervision": {
+      "tab": "Dirección",
+      "descripcion": "Supervisión de las conversaciones profe ↔ familia del centro. Solo lectura: ves el historial pero no intervienes.",
+      "solo_lectura": "Solo lectura",
+      "empty_lista": "No hay conversaciones profe ↔ familia en el centro todavía.",
+      "empty_panel": "Selecciona una conversación de la lista para ver el historial.",
+      "aside_label": "Conversaciones profe ↔ familia del centro",
+      "panel_label": "Historial de la conversación seleccionada"
     },
     "badge": {
       "direccion": "Dirección"

@@ -6,11 +6,13 @@ import { getAdminFamiliaDetalle } from '@/features/messaging/queries/get-admin-f
 import { getAdminFamiliaList } from '@/features/messaging/queries/get-admin-familia-list'
 import { getAnunciosDelUsuario } from '@/features/messaging/queries/get-anuncios'
 import { getConversacionDetalle } from '@/features/messaging/queries/get-conversacion-detalle'
+import { getConversacionesDelUsuario } from '@/features/messaging/queries/get-conversaciones'
 import { getNinosMensajeriaParaUsuario } from '@/features/messaging/queries/get-ninos-mensajeria'
 import { getTutoresParaAdminDireccion } from '@/features/messaging/queries/get-tutores-para-admin-direccion'
 import type {
   ConversacionAdminFamiliaHeader,
   ConversacionHeader,
+  ConversacionListItem,
   MensajeView,
   TutorDireccionItem,
 } from '@/features/messaging/types'
@@ -18,7 +20,7 @@ import { PushBanner } from '@/features/push/components/PushBanner'
 
 interface PageProps {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ nino?: string; tab?: string; tutor?: string }>
+  searchParams: Promise<{ nino?: string; tab?: string; tutor?: string; conv?: string }>
 }
 
 /**
@@ -35,7 +37,7 @@ interface PageProps {
  */
 export default async function MessagesPage({ params, searchParams }: PageProps) {
   const { locale } = await params
-  const { nino: ninoQuery, tab, tutor: tutorQuery } = await searchParams
+  const { nino: ninoQuery, tab, tutor: tutorQuery, conv: convQuery } = await searchParams
 
   const centroId = await getCentroActualId()
   if (!centroId) redirect(`/${locale}/login`)
@@ -60,18 +62,26 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
   // pinta los tutores con o sin hilo). Saltamos esa query para admin.
   // Paralelizamos las 3-4 queries independientes con Promise.all
   // (Nota D del checkpoint B).
-  const [ninos, anuncios, adminFamiliaItems, tutoresAdminDireccion] = await Promise.all([
-    rol === 'admin'
-      ? Promise.resolve([] as Awaited<ReturnType<typeof getNinosMensajeriaParaUsuario>>)
-      : getNinosMensajeriaParaUsuario(centroId, rol),
-    getAnunciosDelUsuario(),
-    rol === 'admin'
-      ? Promise.resolve([] as Awaited<ReturnType<typeof getAdminFamiliaList>>)
-      : getAdminFamiliaList(rol),
-    rol === 'admin'
-      ? getTutoresParaAdminDireccion(centroId)
-      : Promise.resolve([] as TutorDireccionItem[]),
-  ])
+  // Supervisión (tab "Dirección"): solo admin. La RLS deja al admin leer
+  // TODAS las conversaciones profe↔familia del centro; `getConversacionesDelUsuario`
+  // las devuelve ya con niño/aula/preview. Para profe/tutor no se carga (su
+  // lista la sirve `getNinosMensajeriaParaUsuario`).
+  const [ninos, anuncios, adminFamiliaItems, tutoresAdminDireccion, supervisionConversaciones] =
+    await Promise.all([
+      rol === 'admin'
+        ? Promise.resolve([] as Awaited<ReturnType<typeof getNinosMensajeriaParaUsuario>>)
+        : getNinosMensajeriaParaUsuario(centroId, rol),
+      getAnunciosDelUsuario(),
+      rol === 'admin'
+        ? Promise.resolve([] as Awaited<ReturnType<typeof getAdminFamiliaList>>)
+        : getAdminFamiliaList(rol),
+      rol === 'admin'
+        ? getTutoresParaAdminDireccion(centroId)
+        : Promise.resolve([] as TutorDireccionItem[]),
+      rol === 'admin'
+        ? getConversacionesDelUsuario()
+        : Promise.resolve([] as ConversacionListItem[]),
+    ])
 
   // Resolvemos el niño seleccionado en URL. Si no está en la lista del
   // usuario (manipulación o link viejo), lo ignoramos.
@@ -136,6 +146,24 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
     }
   }
 
+  // Supervisión admin (tab "Dirección"): resolver `?conv=<id>` contra la
+  // lista cargada (si el id no está, ignorar gracefully) y traer el hilo en
+  // solo lectura. La RLS ya garantiza que el admin solo lee lo de su centro.
+  const supervisionConvSeleccionadaId =
+    rol === 'admin' && convQuery && supervisionConversaciones.some((c) => c.id === convQuery)
+      ? convQuery
+      : null
+
+  let supervisionDetalleHeader: ConversacionHeader | null = null
+  let supervisionDetalleMensajes: MensajeView[] = []
+  if (supervisionConvSeleccionadaId) {
+    const detalle = await getConversacionDetalle(supervisionConvSeleccionadaId)
+    if (detalle) {
+      supervisionDetalleHeader = detalle.header
+      supervisionDetalleMensajes = detalle.mensajes
+    }
+  }
+
   // Forzamos tab='anuncios' si la URL lo indica (deep-link); cuando hay
   // niño seleccionado, la UI mantiene la pestaña Conversaciones.
   void tab
@@ -163,6 +191,10 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
         tutorAdminDireccionSeleccionadoId={tutorAdminDireccionSeleccionadoId}
         adminDireccionDetalleHeader={adminDireccionDetalleHeader}
         adminDireccionDetalleMensajes={adminDireccionDetalleMensajes}
+        supervisionConversaciones={supervisionConversaciones}
+        supervisionConvSeleccionadaId={supervisionConvSeleccionadaId}
+        supervisionDetalleHeader={supervisionDetalleHeader}
+        supervisionDetalleMensajes={supervisionDetalleMensajes}
       />
     </div>
   )

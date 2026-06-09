@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -31,10 +32,20 @@ export async function countNoLeidos(): Promise<UnreadCounts> {
   if (!userId) return { conversaciones: 0, anuncios: 0, total: 0 }
 
   // --- Conversaciones --------------------------------------------------
-  const { data: convs, error: convErr } = await supabase
-    .from('conversaciones')
-    .select('id')
-    .limit(200)
+  // El admin del centro tiene SELECT por RLS sobre TODAS las conversaciones
+  // profe↔familia del centro (supervisión), pero NO participa en ellas: no
+  // debe recibir avisos de no-leídos de mensajes privados profe↔tutor. Por
+  // eso, para admin restringimos el conteo a sus propios hilos admin↔familia
+  // (donde sí es interlocutor). Profe/tutor ya solo ven los suyos por RLS,
+  // así que su conteo es correcto sin filtro extra.
+  const centroId = await getCentroActualId()
+  const rol = centroId ? await getRolEnCentro(centroId) : null
+
+  let convQuery = supabase.from('conversaciones').select('id')
+  if (rol === 'admin') {
+    convQuery = convQuery.eq('tipo_conversacion', 'admin_familia').eq('admin_id', userId)
+  }
+  const { data: convs, error: convErr } = await convQuery.limit(200)
 
   if (convErr) {
     logger.warn('countNoLeidos: conversaciones', convErr.message)

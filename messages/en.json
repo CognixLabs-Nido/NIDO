@@ -1043,7 +1043,17 @@
     },
     "tabs": {
       "conversaciones": "Conversations",
-      "anuncios": "Announcements"
+      "anuncios": "Announcements",
+      "mensajeria": "Messaging"
+    },
+    "supervision": {
+      "tab": "Management",
+      "descripcion": "Oversight of teacher ↔ family conversations across the school. Read only: you see the history but do not take part.",
+      "solo_lectura": "Read only",
+      "empty_lista": "There are no teacher ↔ family conversations in the school yet.",
+      "empty_panel": "Select a conversation from the list to view its history.",
+      "aside_label": "Teacher ↔ family conversations in the school",
+      "panel_label": "History of the selected conversation"
     },
     "badge": {
       "direccion": "Management"

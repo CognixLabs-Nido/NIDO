@@ -19,12 +19,14 @@ import type {
   AnuncioListItem,
   ConversacionAdminFamiliaHeader,
   ConversacionHeader,
+  ConversacionListItem,
   MensajeView,
   TutorDireccionItem,
 } from '../types'
 
 import { AdminDireccionSplitView } from './AdminDireccionSplitView'
 import { AdminFamiliaSection } from './AdminFamiliaSection'
+import { AdminSupervisionSplitView } from './AdminSupervisionSplitView'
 import { ConversacionesSplitView } from './ConversacionesSplitView'
 
 interface Props {
@@ -65,6 +67,13 @@ interface Props {
    *  seleccionado aún no tiene hilo (modo "iniciar"). */
   adminDireccionDetalleHeader: ConversacionAdminFamiliaHeader | null
   adminDireccionDetalleMensajes: MensajeView[]
+  /** Tab "Dirección" (supervisión, solo admin): TODAS las conversaciones
+   *  profe↔familia del centro en SOLO LECTURA. RLS de admin las deja leer. */
+  supervisionConversaciones: ConversacionListItem[]
+  /** `?conv=<id>` resuelto en SSR para la supervisión; `null` si no aplica. */
+  supervisionConvSeleccionadaId: string | null
+  supervisionDetalleHeader: ConversacionHeader | null
+  supervisionDetalleMensajes: MensajeView[]
 }
 
 /**
@@ -93,18 +102,25 @@ export function MessagesView({
   tutorAdminDireccionSeleccionadoId,
   adminDireccionDetalleHeader,
   adminDireccionDetalleMensajes,
+  supervisionConversaciones,
+  supervisionConvSeleccionadaId,
+  supervisionDetalleHeader,
+  supervisionDetalleMensajes,
 }: Props) {
   const t = useTranslations('messages')
-  const tAdmin = useTranslations('messages.admin_familia')
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const tabRaw = searchParams.get('tab')
-  const tabActual: 'conversaciones' | 'anuncios' | 'direccion' =
+  // Admin: Anuncios (default) | Mensajería (escribe a tutor) | Dirección
+  // (supervisión read-only). Profe/tutor: Conversaciones (default) | Anuncios.
+  const tabActual: 'conversaciones' | 'anuncios' | 'mensajeria' | 'supervision' =
     rol === 'admin'
-      ? tabRaw === 'direccion'
-        ? 'direccion'
-        : 'anuncios'
+      ? tabRaw === 'mensajeria'
+        ? 'mensajeria'
+        : tabRaw === 'supervision'
+          ? 'supervision'
+          : 'anuncios'
       : tabRaw === 'anuncios'
         ? 'anuncios'
         : 'conversaciones'
@@ -115,9 +131,15 @@ export function MessagesView({
       if (v === 'anuncios') {
         params.set('tab', 'anuncios')
         params.delete('nino')
-      } else if (v === 'direccion') {
-        params.set('tab', 'direccion')
+        params.delete('conv')
+      } else if (v === 'mensajeria') {
+        params.set('tab', 'mensajeria')
         params.delete('nino')
+        params.delete('conv')
+      } else if (v === 'supervision') {
+        params.set('tab', 'supervision')
+        params.delete('nino')
+        params.delete('tutor')
       } else {
         params.delete('tab')
       }
@@ -175,14 +197,22 @@ export function MessagesView({
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="direccion">
-                <ShieldCheckIcon className="size-4" />
-                <span>{tAdmin('tab')}</span>
+              {/* "Mensajería": la directora escribe directamente a un tutor
+                  (hilos admin↔familia). Antes se llamaba "Dirección". */}
+              <TabsTrigger value="mensajeria">
+                <MessageCircleIcon className="size-4" />
+                <span>{t('tabs.mensajeria')}</span>
                 {unreadAdminDireccion > 0 && (
                   <Badge variant="default" className="ml-2 px-1.5 text-[10px]">
                     {unreadAdminDireccion}
                   </Badge>
                 )}
+              </TabsTrigger>
+              {/* "Dirección": supervisión SOLO LECTURA de las conversaciones
+                  profe↔familia del centro. Sin badge (no son avisos suyos). */}
+              <TabsTrigger value="supervision">
+                <ShieldCheckIcon className="size-4" />
+                <span>{t('supervision.tab')}</span>
               </TabsTrigger>
             </TabsList>
             {tabActual === 'anuncios' && puedePublicarAnuncio && (
@@ -198,20 +228,29 @@ export function MessagesView({
             <AnunciosList anuncios={anuncios} locale={locale} />
           </TabsContent>
 
-          <TabsContent value="direccion" className="pt-3">
-            {/* F5B-Items1+2: el split-view sustituye a la antigua lista
-                de hilos (`AdminFamiliaList` interno, ya eliminado).
-                Lazy-mount como hace el split-view profe: el componente
-                solo se monta cuando el tab está activo para evitar
-                suscripciones Realtime abiertas cuando el usuario está
-                en tab Anuncios. */}
-            {tabActual === 'direccion' && (
+          <TabsContent value="mensajeria" className="pt-3">
+            {/* Lazy-mount: el componente solo se monta cuando el tab está
+                activo, para no mantener suscripciones Realtime abiertas
+                mientras el usuario está en otra pestaña. */}
+            {tabActual === 'mensajeria' && (
               <AdminDireccionSplitView
                 locale={locale}
                 tutores={tutoresAdminDireccion}
                 tutorSeleccionadoId={tutorAdminDireccionSeleccionadoId}
                 detalleHeader={adminDireccionDetalleHeader}
                 detalleMensajes={adminDireccionDetalleMensajes}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="supervision" className="pt-3">
+            {tabActual === 'supervision' && (
+              <AdminSupervisionSplitView
+                locale={locale}
+                conversaciones={supervisionConversaciones}
+                convSeleccionadaId={supervisionConvSeleccionadaId}
+                detalleHeader={supervisionDetalleHeader}
+                detalleMensajes={supervisionDetalleMensajes}
               />
             )}
           </TabsContent>
