@@ -1691,7 +1691,8 @@
       "titulo": "Catálogo de formatos",
       "descripcion": "Los formatos estándar del centro. Edita el texto, márcalo definitivo y publícalo.",
       "intro": "Crea el formato estándar de un tipo. Luego teclea su texto y publícalo.",
-      "vacio": "Aún no hay formatos en el catálogo."
+      "vacio": "Aún no hay formatos en el catálogo.",
+      "nuevo_formato": "Nuevo formato"
     },
     "instancias": {
       "titulo": "Para firmar",
@@ -1781,7 +1782,8 @@
       "crear_nueva": "Crear excursión nueva",
       "nuevo_titulo": "Título de la excursión",
       "nuevo_titulo_placeholder": "p. ej. Visita a la granja",
-      "nuevo_fecha": "Fecha"
+      "nuevo_fecha": "Fecha",
+      "nuevo_aula": "Aula que va"
     },
     "tipos_area": {
       "titulo": "Tipos de autorización",

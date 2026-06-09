@@ -80,6 +80,7 @@ export function EnviarAutorizacionDialog({
   const [tituloSalida, setTituloSalida] = useState('')
   const [nuevoTitulo, setNuevoTitulo] = useState('')
   const [nuevoFecha, setNuevoFecha] = useState('')
+  const [nuevoAula, setNuevoAula] = useState('')
 
   const modoItems = useMemo(
     () => [
@@ -119,6 +120,7 @@ export function EnviarAutorizacionDialog({
     setTituloSalida('')
     setNuevoTitulo('')
     setNuevoFecha('')
+    setNuevoAula('')
   }
 
   function onSubmit() {
@@ -152,7 +154,7 @@ export function EnviarAutorizacionDialog({
       toast.error(t('errors.creacion_fallo'))
       return
     }
-    if (creaNuevo && (nuevoTitulo.trim().length === 0 || !nuevoFecha)) {
+    if (creaNuevo && (nuevoTitulo.trim().length === 0 || !nuevoFecha || !nuevoAula)) {
       toast.error(t('errors.creacion_fallo'))
       return
     }
@@ -160,7 +162,9 @@ export function EnviarAutorizacionDialog({
       const res = await crearAutorizacionExcursion({
         titulo: tituloSalida.trim(),
         evento_id: creaNuevo ? null : eventoId,
-        nuevo_evento: creaNuevo ? { titulo: nuevoTitulo.trim(), fecha: nuevoFecha } : null,
+        nuevo_evento: creaNuevo
+          ? { titulo: nuevoTitulo.trim(), fecha: nuevoFecha, aula_id: nuevoAula }
+          : null,
       })
       if (!res.success) {
         toast.error(tRoot(res.error))
@@ -347,6 +351,26 @@ export function EnviarAutorizacionDialog({
                       value={nuevoFecha}
                       onChange={(e) => setNuevoFecha(e.target.value)}
                     />
+                  </div>
+                  {/* Aula que va = audiencia del evento (las familias que firmarán). */}
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>{t('excursion.nuevo_aula')}</Label>
+                    <Select
+                      items={aulaItems}
+                      value={nuevoAula}
+                      onValueChange={(v) => setNuevoAula(v ?? '')}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={t('form.aula_placeholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {aulaItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               )}

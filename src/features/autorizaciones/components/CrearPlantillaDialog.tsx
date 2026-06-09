@@ -73,15 +73,15 @@ export function CrearPlantillaDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button>
+          <Button variant="outline">
             <PlusIcon className="mr-1 size-4" />
-            {t('acciones.nueva')}
+            {t('catalogo.nuevo_formato')}
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('acciones.nueva')}</DialogTitle>
+          <DialogTitle>{t('catalogo.nuevo_formato')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <p className="text-muted-foreground text-sm">{t('catalogo.intro')}</p>

@@ -117,10 +117,12 @@ export async function crearAutorizacionExcursion(
 
   let eventoId = evento_id ?? null
   if (nuevo_evento) {
-    // Crea el evento de excursión (ámbito centro) en el mismo flujo. crearEventoCore
+    // Crea el evento de excursión para EL AULA que va (ambito='aula') en el mismo
+    // flujo: su audiencia (familias del aula) recibirá la salida. crearEventoCore
     // resuelve centro_id server-side y aplica la RLS de eventos.
     const evRes = await crearEventoCore(supabase, user.id, {
-      ambito: 'centro',
+      ambito: 'aula',
+      aula_id: nuevo_evento.aula_id,
       tipo: 'excursion',
       titulo: nuevo_evento.titulo,
       fecha: nuevo_evento.fecha,

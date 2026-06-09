@@ -37,8 +37,13 @@ export interface SeguimientoEnvios {
  * instancias publicadas más recientes para no disparar un N+1 sin límite (un centro
  * tiene pocas instancias activas a la vez). La RLS ya filtra el alcance del rol.
  */
+// El SEGUIMIENTO es solo de lo que ENVÍA el centro (patrón A + salida): reglas,
+// imágenes y excursión/salida. recogida y medicación las INICIAN las familias
+// (entrantes) → salen en el panel y en la sección de medicación, no aquí.
+const TIPOS_ENVIADOS = new Set(['reglas_regimen_interno', 'autorizacion_imagenes', 'salida'])
+
 export async function getSeguimientoEnvios(maxDetalle = 20): Promise<SeguimientoEnvios> {
-  const instancias = await getAutorizacionesAdmin()
+  const instancias = (await getAutorizacionesAdmin()).filter((a) => TIPOS_ENVIADOS.has(a.tipo))
   const ultimas = instancias.slice(0, 10)
 
   const candidatas = instancias.filter((a) => a.estado === 'publicada').slice(0, maxDetalle)

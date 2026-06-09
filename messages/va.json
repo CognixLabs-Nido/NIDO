@@ -1691,7 +1691,8 @@
       "titulo": "Catàleg de formats",
       "descripcion": "Els formats estàndard del centre. Edita el text, marca'l definitiu i publica'l.",
       "intro": "Crea el format estàndard d'un tipus. Després tecleja el seu text i publica'l.",
-      "vacio": "Encara no hi ha formats al catàleg."
+      "vacio": "Encara no hi ha formats al catàleg.",
+      "nuevo_formato": "Nou format"
     },
     "instancias": {
       "titulo": "Per signar",
@@ -1781,7 +1782,8 @@
       "crear_nueva": "Crear excursió nova",
       "nuevo_titulo": "Títol de l’excursió",
       "nuevo_titulo_placeholder": "p. ex. Visita a la granja",
-      "nuevo_fecha": "Data"
+      "nuevo_fecha": "Data",
+      "nuevo_aula": "Aula que va"
     },
     "tipos_area": {
       "titulo": "Tipus d'autorització",

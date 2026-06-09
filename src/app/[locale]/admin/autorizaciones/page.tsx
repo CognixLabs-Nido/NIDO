@@ -71,9 +71,9 @@ export default async function AdminAutorizacionesPage({ params, searchParams }: 
           <p className="text-muted-foreground text-sm">{t('admin_intro')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <CrearPlantillaDialog />
-          {/* Desplegable único «Nueva autorización»: envía un formato (A) o crea una
-              excursión (evento existente o nuevo inline, sin salto al calendario). */}
+          {/* Desplegable ÚNICO «Nueva autorización»: envía un formato (A) o crea una
+              excursión (evento existente o nuevo inline, sin salto al calendario).
+              El alta de formatos del catálogo vive en su propia sección. */}
           <EnviarAutorizacionDialog
             plantillas={plantillasEnviar}
             ninos={ninos}
@@ -162,9 +162,12 @@ export default async function AdminAutorizacionesPage({ params, searchParams }: 
 
       {/* Catálogo de formatos (plantillas durables) — solo admin. */}
       <section className="space-y-3">
-        <div className="space-y-1">
-          <h2 className="text-h2 text-foreground">{t('catalogo.titulo')}</h2>
-          <p className="text-muted-foreground text-sm">{t('catalogo.descripcion')}</p>
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div className="space-y-1">
+            <h2 className="text-h2 text-foreground">{t('catalogo.titulo')}</h2>
+            <p className="text-muted-foreground text-sm">{t('catalogo.descripcion')}</p>
+          </div>
+          <CrearPlantillaDialog />
         </div>
         {plantillas.length === 0 ? (
           <p className="text-muted-foreground text-sm">{t('catalogo.vacio')}</p>

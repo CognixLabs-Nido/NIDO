@@ -40,7 +40,16 @@ export const crearAutorizacionExcursionSchema = z
   .object({
     titulo: tituloSchema,
     evento_id: z.string().uuid('autorizaciones.validation.evento_requerido').nullable().optional(),
-    nuevo_evento: z.object({ titulo: tituloSchema, fecha: fechaSchema }).nullable().optional(),
+    nuevo_evento: z
+      .object({
+        titulo: tituloSchema,
+        fecha: fechaSchema,
+        // Aula que va a la excursión = audiencia del evento (ambito='aula'). Las
+        // familias de ese aula reciben la salida y la firman.
+        aula_id: z.string().uuid('autorizaciones.validation.aula_requerida'),
+      })
+      .nullable()
+      .optional(),
   })
   .superRefine((v, ctx) => {
     const tieneExistente = !!v.evento_id

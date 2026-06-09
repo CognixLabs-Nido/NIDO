@@ -1691,7 +1691,8 @@
       "titulo": "Format catalog",
       "descripcion": "The center's standard formats. Edit the text, mark it final and publish it.",
       "intro": "Create the standard format for a type. Then write its text and publish it.",
-      "vacio": "No formats in the catalog yet."
+      "vacio": "No formats in the catalog yet.",
+      "nuevo_formato": "New format"
     },
     "instancias": {
       "titulo": "To sign",
@@ -1781,7 +1782,8 @@
       "crear_nueva": "Create a new field trip",
       "nuevo_titulo": "Field trip title",
       "nuevo_titulo_placeholder": "e.g. Visit to the farm",
-      "nuevo_fecha": "Date"
+      "nuevo_fecha": "Date",
+      "nuevo_aula": "Class attending"
     },
     "tipos_area": {
       "titulo": "Authorisation types",
