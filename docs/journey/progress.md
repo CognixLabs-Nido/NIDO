@@ -807,3 +807,20 @@ Documento legalmente trazable para salida, medicación, recogida, régimen inter
 ### Cierre
 
 **F8 cerrada (Checkpoint C):** typecheck + lint + test (suite entera) + build en verde. La **validez jurídica NO está certificada** — 6 flags ⚖️ a abogado (ver ADR-0041 §legal). Follow-ups anotados (textos legales reales, imágenes firmable F11, adjuntos F10, F8-4 DNI condicional, recogida puntual futura, migración legacy #56, aviso del botón "Enviar"). Próxima fase: **F9 — Informes de evolución**.
+
+## Reparación — Mensajería (admin)
+
+> **No es una fase numerada**: reparación del módulo de mensajería (F5/F5.6) sobre el rol admin. **Sin migración** — la RLS de admin (`es_admin(centro_id)` en `conversaciones_select` + `puede_participar_conversacion`) ya daba SELECT sobre las conversaciones profe↔familia del centro; solo faltaba la UI/query. **PR #66** (mergeado).
+
+### Cambios
+
+- **(a) Badge del sidebar.** El contador "Mensajería" del admin ya **no cuenta los mensajes privados profe↔tutor**. `countNoLeidos` es ahora consciente del rol: para admin cuenta solo sus hilos `admin_familia` (donde es interlocutor) + anuncios. Profe/tutor sin cambios (su RLS ya los limita a lo suyo).
+- **(b) Rename.** La pestaña admin **"Dirección" → "Mensajería"** (la directora escribe directamente a un tutor; hilos `admin_familia`). Conserva su badge de no-leídos propios.
+- **(c) Nueva pestaña "Dirección"** (solo admin) = **supervisión en SOLO LECTURA** de todas las conversaciones profe↔tutor del centro: lista (niño/aula/preview) + historial read-only con etiqueta "Solo lectura". Sin composer, sin acciones, no marca leído, sin badge. Componente `AdminSupervisionSplitView`; selección por `?conv=<id>`; reúsa `getConversacionesDelUsuario` (lista) y `getConversacionDetalle` (hilo).
+
+i18n es/en/va (`messages.tabs.mensajeria`, bloque `messages.supervision.*`). Verificado en local: typecheck + lint + build en verde; `MessagesView.test.tsx` 7/7 (admin pasa a 3 triggers).
+
+### Follow-ups (paquete RGPD de F11)
+
+- ⚖️ **Least-privilege.** La supervisión es solo lectura **en la UI**, pero la RLS todavía permite al admin **postear** en las conversaciones profe↔tutor (`es_admin` → `puede_participar_conversacion` → INSERT). Cerrarlo también a nivel RLS (migración aparte) durante el pase RGPD. Anotado en `scope-ola-1.md` (Paquete RGPD).
+- ⚖️ **Transparencia RGPD.** La pestaña "Dirección" expone a la directora **todos** los mensajes privados familia↔profe → debe constar en el aviso de privacidad / Registro de Actividades de Tratamiento (RAT). Anotado en `scope-ola-1.md` (Paquete RGPD).
