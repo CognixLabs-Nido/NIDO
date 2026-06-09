@@ -179,7 +179,8 @@
       "recordatorios": "Recordatorios",
       "agenda": "Agenda",
       "autorizaciones": "Autorizaciones",
-      "notificaciones": "Notificaciones"
+      "notificaciones": "Notificaciones",
+      "informes": "Informes"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -1881,6 +1882,64 @@
     "errors": {
       "no_autorizado": "No autorizado.",
       "marcar_fallo": "No se pudieron marcar como vistas."
+    }
+  },
+  "informes": {
+    "title": "Informes de evolución",
+    "admin_intro": "Define las plantillas de informe del centro: las áreas y los ítems que las profesoras valorarán en cada niño.",
+    "volver": "Volver",
+    "plantillas": {
+      "titulo": "Plantillas de informe",
+      "descripcion": "Cada plantilla define las áreas y los ítems del boletín. Puedes tener varias (p. ej. por tramo de edad).",
+      "activas_vacio": "Aún no has creado ninguna plantilla.",
+      "archivadas_titulo": "Plantillas archivadas",
+      "archivadas_vacio": "No hay plantillas archivadas.",
+      "ver_archivadas": "Ver archivadas",
+      "areas_resumen": "{areas} áreas · {items} ítems"
+    },
+    "acciones": {
+      "nueva": "Nueva plantilla",
+      "crear": "Crear",
+      "creando": "Creando…",
+      "editar": "Editar",
+      "guardar": "Guardar",
+      "guardando": "Guardando…",
+      "archivar": "Archivar",
+      "archivando": "Archivando…",
+      "creada_toast": "Plantilla creada.",
+      "guardada_toast": "Plantilla actualizada.",
+      "archivada_toast": "Plantilla archivada."
+    },
+    "form": {
+      "nombre": "Nombre de la plantilla",
+      "nombre_placeholder": "p. ej. «1-2 años»",
+      "estructura": "Áreas e ítems",
+      "anadir_area": "Añadir área",
+      "area_titulo": "Nombre del área",
+      "area_titulo_placeholder": "p. ej. «Autonomía»",
+      "anadir_item": "Añadir ítem",
+      "item_texto_placeholder": "p. ej. «Come solo»",
+      "escala_nota": "Todos los ítems se valoran con la misma escala: Conseguido / En proceso / No iniciado.",
+      "subir": "Subir",
+      "bajar": "Bajar",
+      "quitar": "Quitar",
+      "sin_areas": "Añade al menos un área con un ítem."
+    },
+    "validation": {
+      "nombre_vacio": "El nombre es obligatorio.",
+      "nombre_largo": "El nombre es demasiado largo (máx. 200).",
+      "sin_areas": "Añade al menos un área con un ítem.",
+      "area_titulo_vacio": "Cada área necesita un nombre.",
+      "area_titulo_largo": "El nombre del área es demasiado largo (máx. 200).",
+      "area_sin_items": "Cada área necesita al menos un ítem.",
+      "item_vacio": "El texto del ítem no puede estar vacío.",
+      "item_largo": "El texto del ítem es demasiado largo (máx. 500)."
+    },
+    "errors": {
+      "no_autorizado": "No tienes permiso para gestionar plantillas de informe.",
+      "creacion_fallo": "No se pudo crear la plantilla.",
+      "edicion_fallo": "No se pudieron guardar los cambios.",
+      "archivar_fallo": "No se pudo archivar la plantilla."
     }
   }
 }
