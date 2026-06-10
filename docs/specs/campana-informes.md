@@ -58,7 +58,7 @@ Reusa dos piezas ya construidas:
 **Pre-condiciones:**
 
 - Usuario `admin` del centro.
-- Curso académico: **activo por defecto**, pero se **permite elegir cursos pasados** (F9 no tiene ventana temporal — Q6 de F9). _(Resuelto Q7.)_
+- Curso académico: **solo el curso activo** del centro (resuelto server-side; no se abren campañas de cursos pasados). _(Resuelto Q7.)_
 
 **Flujo:**
 
@@ -158,7 +158,7 @@ export const periodoInformeEnum = z.enum(['trimestre_1', 'trimestre_2', 'trimest
 export const abrirCampanaSchema = z.object({
   periodo: periodoInformeEnum,
   fecha_limite: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'campana.validation.fecha_invalida'),
-  // curso_academico_id se resuelve en el server (curso activo) salvo decisión contraria.
+  // curso_academico_id se resuelve en el server = curso activo del centro (Q7).
 })
 
 // Cerrar campaña.
@@ -358,7 +358,7 @@ Las 9 preguntas abiertas quedaron cerradas por el responsable. Donde el "sí" no
 4. **"Cerrar" campaña.** `estado='cerrada'` → deja de generar el aviso; **no toca informes**; el **seguimiento sigue consultable** (histórico); la directora puede **reabrir** y **editar la `fecha_limite` mientras está abierta**. Reversible, sin borrado.
 5. ⚠️ **"Publicar todos" solo publica, NO crea.** Publica los informes existentes y completos; crear sigue siendo F9-2 individual. _(El "sí a todo" podría leerse como "también crear", pero crear en lote exige decidir qué plantilla usar — el centro puede tener varias (F9-1). Lo dejé en publicar-solo; si quieres crear-en-lote, es un añadido que necesita esa decisión.)_
 6. ⚠️ **Vínculo lógico, sin FK.** El informe se asocia a la campaña por (centro, curso, período); **no** se añade `campana_id` a `informes_evolucion`. Coherente con "capa no-puerta". _(Si prefieres trazabilidad fuerte "publicado en campaña X", se añade `campana_id` nullable después, sin migración compleja.)_
-7. **Curso: activo por defecto + se permiten cursos pasados** (F9 no tiene ventana temporal).
+7. **Curso: solo el curso activo.** Las campañas se abren únicamente sobre el curso académico activo del centro; no se abren campañas de cursos pasados.
 8. **Lote best-effort** (publica los completos, reporta los incompletos). No todo-o-nada.
 9. **Umbral de urgencia = 3 días naturales** antes de `fecha_limite` (`UMBRAL_URGENCIA_CAMPANA_DIAS = 3`).
 
