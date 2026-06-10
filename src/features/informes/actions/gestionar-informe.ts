@@ -9,6 +9,7 @@ import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 
 import { parseEstructura, respuestasToJson, todosValorados } from '../lib/estructura'
+import { sellarNotificado } from '../lib/lote'
 import {
   crearInformeSchema,
   despublicarInformeSchema,
@@ -202,7 +203,7 @@ export async function publicarInforme(
       estado: 'publicado',
       publicado_at: ahora,
       // Sella la PRIMERA notificación; en republicaciones se conserva (no re-avisa).
-      notificado_at: informe.notificado_at ?? ahora,
+      notificado_at: sellarNotificado(informe.notificado_at, ahora),
     })
     .eq('id', informe_id)
     .select('id')

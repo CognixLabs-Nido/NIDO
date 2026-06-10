@@ -51,3 +51,13 @@ export const despublicarInformeSchema = z.object({
   informe_id: z.string().uuid(),
 })
 export type DespublicarInformeInput = z.input<typeof despublicarInformeSchema>
+
+// --- Publicar en lote (F9-5-3) -----------------------------------------------
+// `aula_id` opcional: presente = una aula (profe o dirección); ausente = todas las
+// aulas del curso de la campaña (dirección "por centro"). La RLS acota qué informes
+// puede publicar realmente cada rol.
+export const publicarLoteSchema = z.object({
+  campana_id: z.string().uuid(),
+  aula_id: z.string().uuid().optional(),
+})
+export type PublicarLoteInput = z.input<typeof publicarLoteSchema>

@@ -1987,8 +1987,13 @@
         "abierta_toast": "Campaña abierta",
         "fecha_guardada_toast": "Fecha actualizada",
         "cerrada_toast": "Campaña cerrada",
-        "reabierta_toast": "Campaña reabierta"
+        "reabierta_toast": "Campaña reabierta",
+        "publicar_todos": "Publicar todos",
+        "publicar_todos_centro": "Publicar todos del centro",
+        "publicando": "Publicando…"
       },
+      "lote_resultado": "{publicados} publicados · {incompletos} sin publicar (faltan ítems)",
+      "lote_vacio": "No había informes que publicar.",
       "seguimiento": {
         "titulo": "Seguimiento",
         "descripcion": "Informes publicados frente a niños con matrícula activa, por aula.",
@@ -2008,7 +2013,8 @@
         "sin_curso_activo": "No hay un curso académico activo.",
         "creacion_fallo": "No se pudo abrir la campaña.",
         "edicion_fallo": "No se pudo actualizar la fecha.",
-        "cierre_fallo": "No se pudo cambiar el estado de la campaña."
+        "cierre_fallo": "No se pudo cambiar el estado de la campaña.",
+        "lote_fallo": "No se pudieron publicar los informes."
       }
     },
     "periodos": {

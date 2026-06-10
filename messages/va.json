@@ -1987,8 +1987,13 @@
         "abierta_toast": "Campanya oberta",
         "fecha_guardada_toast": "Data actualitzada",
         "cerrada_toast": "Campanya tancada",
-        "reabierta_toast": "Campanya reoberta"
+        "reabierta_toast": "Campanya reoberta",
+        "publicar_todos": "Publicar tots",
+        "publicar_todos_centro": "Publicar tots del centre",
+        "publicando": "Publicant…"
       },
+      "lote_resultado": "{publicados} publicats · {incompletos} sense publicar (falten ítems)",
+      "lote_vacio": "No hi havia informes per publicar.",
       "seguimiento": {
         "titulo": "Seguiment",
         "descripcion": "Informes publicats enfront de xiquets amb matrícula activa, per aula.",
@@ -2008,7 +2013,8 @@
         "sin_curso_activo": "No hi ha cap curs acadèmic actiu.",
         "creacion_fallo": "No s'ha pogut obrir la campanya.",
         "edicion_fallo": "No s'ha pogut actualitzar la data.",
-        "cierre_fallo": "No s'ha pogut canviar l'estat de la campanya."
+        "cierre_fallo": "No s'ha pogut canviar l'estat de la campanya.",
+        "lote_fallo": "No s'han pogut publicar els informes."
       }
     },
     "periodos": {

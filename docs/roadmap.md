@@ -89,5 +89,4 @@ Tras cerrar Fase 3 (agenda diaria), reorganizamos el resto de Ola 1 para refleja
 
 ## Informes de evolución (Fase 9)
 
-- **F9-5 — Campaña de informes** — _disparador: cuando la dirección quiera controlar plazos de entrega de los boletines_.
-  La dirección fija una **fecha límite por período/curso** y a las profes les aparecen los **informes pendientes de completar** en su **panel de INICIO**, reusando el sistema de avisos de inicio (PR #64). Pendiente tras F9-2/3/4 (rellenar/publicar, vista familia, PDF).
+- **F9-5 — Campaña de informes** — ✅ **Hecha** (F9-5-0 … F9-5-3). La dirección fija una **fecha límite por período/curso** (capa de coordinación, no-puerta), las profes ven los **informes pendientes** en su **INICIO** (avisos derivados de #64), la dirección sigue el avance **por aula** y todos publican **en lote** los completos. Ver `docs/specs/campana-informes.md`, ADR-0044 y la sección de Fase 9-5 en `progress.md`.

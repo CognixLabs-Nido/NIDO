@@ -858,3 +858,34 @@ Boletines de desarrollo cualitativos por niño y período (1.er/2.º/3.er trimes
 ### Cierre
 
 **F9 cerrada (Checkpoint):** typecheck + lint + build + suite completa (`--no-file-parallelism`) en verde. Vista profe (crear→publicar→corregir), vista familia (lista + histórico + aviso de inicio + detalle solo lectura) y **descarga PDF** operativas en preview con la migración aplicada. Follow-ups anotados: acuse de recibo de la familia (reusando F8) y versionado formal del informe quedan **fuera de F9** (spec §Fuera de alcance); diseño rico del PDF (logo/colores/tablas) sería Ola 3 (ADR-0043). Próxima fase: **F10 — Fotos y publicaciones del aula**.
+
+## Fase 9-5 — Campaña de informes
+
+Capa de **coordinación de plazos** sobre F9 (NO una puerta: no toca ni bloquea `informes_evolucion`, vínculo lógico por (centro, curso, período) sin FK — Q6). La dirección abre una **campaña** por período del curso activo con **fecha límite**; las profes ven sus **pendientes** en INICIO; la dirección **sigue el avance por aula**; y todos **publican en lote** los informes completos. Pendientes y seguimiento son **derivados** (sin tabla de avisos, patrón #64). Modelo en ADR-0044; spec `docs/specs/campana-informes.md` (`approved`, Q1–Q9).
+
+### PRs cerrados
+
+| PR      | Sub-fase | Resumen                                                                                                                                       |
+| ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **#74** | spec     | `docs`: spec `campana-informes.md` (Q1–Q9 resueltas, `approved`).                                                                             |
+| **#75** | F9-5-0   | Migración base (sin UI): tabla `campanas_informe` + ENUM `estado_campana_informe` + RLS (staff lee, admin escribe) + audit + tests. ADR-0044. |
+| **#76** | F9-5-1   | UI dirección: abrir/editar fecha/cerrar/reabrir campaña + **seguimiento por aula** (publicados vs pendientes, derivado).                      |
+| **#77** | F9-5-2   | Aviso de **pendientes en el INICIO de la profe** redactora (consolidado Q1, urgencia por fecha más próxima Q9, derivado).                     |
+| **#78** | F9-5-3   | **Publicar en lote** (best-effort, solo completos; profe por aula + dirección por aula/centro) + color ámbar de pendientes + cierre de F9-5.  |
+
+### Migraciones
+
+`20260610140000_phase9_5_0_campanas_informe` (F9-5-0, **aplicada** por SQL Editor — CLI SIGILL). F9-5-1/F9-5-2/F9-5-3 **sin migración** (reusan la capa de datos y `informes_evolucion_update` de F9).
+
+### Decisiones (ADRs)
+
+- **ADR-0044 — Modelo de campaña de informes** (`accepted`): tabla mínima de plazo (capa no-puerta), pendientes **derivados** (sin tabla de avisos), vínculo lógico por terna (sin FK), estado `abierta⇄cerrada` reversible. **Publicar en lote** (F9-5-3) reusa `publicarInforme` de F9-2: **best-effort** (publica los completos, deja los incompletos en borrador, no crea ni rellena — Q5/Q8), lo lanzan **profe** (su aula) y **dirección** (aula o centro), con la RLS de `informes_evolucion_update` como autorización (técnico/apoyo no publican).
+
+### Aprendizaje transversal
+
+- **Reusar la acción individual en el lote.** El "Publicar todos" no reimplementa la publicación: itera `publicarInforme` por borrador, heredando la validación de completitud (Q9) y el sellado de `notificado_at` (avisar una sola vez, Q8). El sellado se extrajo a `sellarNotificado(previo, ahora)` (puro, testeado) y se comparte con F9-2.
+- **Color como señal de estado, en un solo sitio.** `fondoInforme` pasa a verde=publicado / **ámbar=pendiente** (borrador o sin empezar); el helper único evita duplicar colores entre listas (profe, familia).
+
+### Cierre
+
+**F9-5 cerrada (Checkpoint):** typecheck + lint + build + suite completa (`--no-file-parallelism`) en verde. Campaña (abrir/seguimiento), aviso de INICIO de la profe y **publicar en lote** verificados en preview con la migración aplicada. Sin migración nueva en F9-5-1/2/3. Próxima fase: **F10 — Fotos y publicaciones del aula**.
