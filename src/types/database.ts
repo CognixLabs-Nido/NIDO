@@ -1877,6 +1877,64 @@ export type Database = {
           },
         ]
       }
+      campanas_informe: {
+        Row: {
+          centro_id: string
+          created_at: string
+          created_by: string
+          curso_academico_id: string
+          estado: Database['public']['Enums']['estado_campana_informe']
+          fecha_limite: string
+          id: string
+          periodo: Database['public']['Enums']['periodo_informe']
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          created_by: string
+          curso_academico_id: string
+          estado?: Database['public']['Enums']['estado_campana_informe']
+          fecha_limite: string
+          id?: string
+          periodo: Database['public']['Enums']['periodo_informe']
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          created_by?: string
+          curso_academico_id?: string
+          estado?: Database['public']['Enums']['estado_campana_informe']
+          fecha_limite?: string
+          id?: string
+          periodo?: Database['public']['Enums']['periodo_informe']
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'campanas_informe_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'campanas_informe_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'campanas_informe_curso_academico_id_fkey'
+            columns: ['curso_academico_id']
+            isOneToOne: false
+            referencedRelation: 'cursos_academicos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       plantillas_informe: {
         Row: {
           archivada_at: string | null
@@ -2585,6 +2643,7 @@ export type Database = {
       control_esfinteres: 'panal_completo' | 'transicion' | 'sin_panal_diurno' | 'sin_panal_total'
       curso_estado: 'planificado' | 'activo' | 'cerrado'
       estado_asistencia: 'presente' | 'ausente' | 'llegada_tarde' | 'salida_temprana'
+      estado_campana_informe: 'abierta' | 'cerrada'
       estado_general_agenda: 'bien' | 'regular' | 'mal' | 'mixto'
       estado_informe: 'borrador' | 'publicado'
       estado_plantilla_informe: 'activa' | 'archivada'
@@ -2790,6 +2849,7 @@ export const Constants = {
       control_esfinteres: ['panal_completo', 'transicion', 'sin_panal_diurno', 'sin_panal_total'],
       curso_estado: ['planificado', 'activo', 'cerrado'],
       estado_asistencia: ['presente', 'ausente', 'llegada_tarde', 'salida_temprana'],
+      estado_campana_informe: ['abierta', 'cerrada'],
       estado_general_agenda: ['bien', 'regular', 'mal', 'mixto'],
       estado_informe: ['borrador', 'publicado'],
       estado_plantilla_informe: ['activa', 'archivada'],
