@@ -1891,6 +1891,7 @@
     "title": "Informes de evolución",
     "admin_intro": "Define las plantillas de informe del centro: las áreas y los ítems que las profesoras valorarán en cada niño.",
     "volver": "Volver",
+    "descargar_pdf": "Descargar PDF",
     "plantillas": {
       "titulo": "Plantillas de informe",
       "descripcion": "Cada plantilla define las áreas y los ítems del boletín. Puedes tener varias (p. ej. por tramo de edad).",

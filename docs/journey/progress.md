@@ -824,3 +824,37 @@ i18n es/en/va (`messages.tabs.mensajeria`, bloque `messages.supervision.*`). Ver
 
 - ⚖️ **Least-privilege.** La supervisión es solo lectura **en la UI**, pero la RLS todavía permite al admin **postear** en las conversaciones profe↔tutor (`es_admin` → `puede_participar_conversacion` → INSERT). Cerrarlo también a nivel RLS (migración aparte) durante el pase RGPD. Anotado en `scope-ola-1.md` (Paquete RGPD).
 - ⚖️ **Transparencia RGPD.** La pestaña "Dirección" expone a la directora **todos** los mensajes privados familia↔profe → debe constar en el aviso de privacidad / Registro de Actividades de Tratamiento (RAT). Anotado en `scope-ola-1.md` (Paquete RGPD).
+
+## Fase 9 — Informes de evolución
+
+Boletines de desarrollo cualitativos por niño y período (1.er/2.º/3.er trimestre + fin de curso), estructurados en **áreas → ítems** con escala de 3 (Conseguido/En proceso/No iniciado). La dirección define **plantillas**; la profe (coordinadora/profesora) crea desde una plantilla con **snapshot congelado**, rellena, publica (todos los ítems valorados) y puede despublicar/corregir/republicar **sin re-avisar**; la familia consulta los **publicados** (solo lectura) y los **descarga en PDF**. Modelo en ADR-0042; PDF en ADR-0043.
+
+### PRs cerrados
+
+| PR      | Sub-fase | Resumen                                                                                                                                          |
+| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **#68** | spec     | `docs`: spec `informes-evolucion.md` (Q1–Q11 resueltas, `approved`).                                                                             |
+| **#69** | F9-0     | Migración + RLS + helpers row-aware + tests (sin UI): `plantillas_informe` + `informes_evolucion`, 4 ENUMs, snapshot, audit. ADR-0042.           |
+| **#70** | F9-1     | UI dirección: gestión de plantillas de informe (crear/editar/archivar, editor de áreas→ítems).                                                   |
+| **#71** | F9-2     | UI profe: rellenar y publicar el informe del niño (crear→borrador→publicar→despublicar/corregir; sella `notificado_at`).                         |
+| **#72** | F9-3     | UI familia: ver informes publicados (solo lectura) + histórico + aviso derivado en INICIO (marcador `informes_vistos`); sombreado verde reusado. |
+| **#73** | F9-4     | **Export PDF server-side** (pdf-lib) del informe publicado + botón en familia y profe/admin + tests + cierre de F9. ADR-0043.                    |
+
+### Migraciones
+
+`20260609130000_phase9_0_informes_evolucion` (F9-0, **aplicada**) · `20260610120000_phase9_2_fix_notificado_coherencia` (F9-2: dropea el CHECK `notificado_coherencia` para que `notificado_at` persista tras despublicar y no re-avise al republicar — Q8; **aplicada**). F9-1/F9-3/F9-4 **sin migración**. CLI Supabase con bug SIGILL en este equipo → ambas se aplicaron por SQL Editor.
+
+### Decisiones (ADRs)
+
+- **ADR-0042 — Modelo de informes de evolución** (`accepted`): 2 tablas + estructura áreas→ítems en JSONB; **snapshot congelado** por informe (no plantilla viva); escala de 3; RLS row-aware (familia solo publicados, tutor legal siempre / autorizado con `puede_ver_datos_pedagogicos`); sin ventana temporal (se corrigen períodos pasados).
+- **ADR-0043 — PDF del informe server-side con pdf-lib** (`accepted`): JS puro sin headless Chrome (serverless-friendly); contenido siempre en castellano (Q10) desde el snapshot; ruta neutra `/[locale]/informes/[id]/pdf` con autorización por RLS + metadatos (autor) vía service role tras verificar.
+
+### Aprendizaje transversal
+
+- **Aviso in-app sin tabla ni push.** El "informe publicado nuevo" reusa el patrón derivado de #64 (avisos de INICIO): se cuenta contra la RLS de la tabla origen y un marcador `informes_vistos` en `preferencias_usuario`; abrir el detalle lo marca visto. Q8 (no re-avisar) → marcador por **presencia**, no por instante.
+- **Service role tras autorizar para datos que la RLS oculta.** El nombre del autor (profe) no es legible por la familia (`usuarios` self/admin); el PDF autoriza primero con el cliente del usuario y solo entonces resuelve metadatos con service role (patrón ADR-0027).
+- **Descarga binaria = excepción legítima a "Server Actions, no API routes".** Un route handler con `Content-Disposition: attachment` es el vehículo correcto para el PDF.
+
+### Cierre
+
+**F9 cerrada (Checkpoint):** typecheck + lint + build + suite completa (`--no-file-parallelism`) en verde. Vista profe (crear→publicar→corregir), vista familia (lista + histórico + aviso de inicio + detalle solo lectura) y **descarga PDF** operativas en preview con la migración aplicada. Follow-ups anotados: acuse de recibo de la familia (reusando F8) y versionado formal del informe quedan **fuera de F9** (spec §Fuera de alcance); diseño rico del PDF (logo/colores/tablas) sería Ola 3 (ADR-0043). Próxima fase: **F10 — Fotos y publicaciones del aula**.

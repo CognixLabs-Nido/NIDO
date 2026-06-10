@@ -1,7 +1,9 @@
-import { ChevronLeftIcon } from 'lucide-react'
+import { ChevronLeftIcon, DownloadIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
+
+import { Button } from '@/components/ui/button'
 
 import { InformeView } from '@/features/informes/components/InformeView'
 import { getInformeEvolucionDetalle } from '@/features/informes/queries/get-informes-profe'
@@ -38,17 +40,28 @@ export default async function FamilyInformeDetallePage({ params }: PageProps) {
         {t('title')}
       </Link>
 
-      <header className="space-y-1">
-        <h1 className="text-h2 text-foreground">{informe.nino_nombre}</h1>
-        <p className="text-muted-foreground text-sm">
-          {t(`periodos.${informe.periodo}`)}
-          {informe.publicado_at && (
-            <>
-              {' · '}
-              {t('family_publicado_el', { fecha: informe.publicado_at.slice(0, 10) })}
-            </>
-          )}
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-h2 text-foreground">{informe.nino_nombre}</h1>
+          <p className="text-muted-foreground text-sm">
+            {t(`periodos.${informe.periodo}`)}
+            {informe.publicado_at && (
+              <>
+                {' · '}
+                {t('family_publicado_el', { fecha: informe.publicado_at.slice(0, 10) })}
+              </>
+            )}
+          </p>
+        </div>
+        {/* Descarga server-side (Q11). Anchor (no Link): es una descarga, no navegación. */}
+        <Button
+          variant="outline"
+          render={<a href={`/${locale}/informes/${informe.id}/pdf`} />}
+          data-testid="descargar-pdf-button"
+        >
+          <DownloadIcon className="size-4" />
+          <span className="ml-1">{t('descargar_pdf')}</span>
+        </Button>
       </header>
 
       <InformeView informe={informe} />

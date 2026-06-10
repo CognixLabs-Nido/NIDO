@@ -1891,6 +1891,7 @@
     "title": "Development reports",
     "admin_intro": "Define your centre's report templates: the areas and items teachers will assess for each child.",
     "volver": "Back",
+    "descargar_pdf": "Download PDF",
     "plantillas": {
       "titulo": "Report templates",
       "descripcion": "Each template defines the report’s areas and items. You can have several (e.g. by age group).",
