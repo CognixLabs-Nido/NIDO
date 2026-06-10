@@ -38,8 +38,10 @@ export default async function TeacherInformesPage({ params }: PageProps) {
     getCampanasInformeCursoActivo(centroId),
   ])
 
-  // Campañas abiertas: habilitan el "Publicar todos" por aula y período.
+  // Campañas abiertas: habilitan el "Publicar todos" por aula y, su período, el
+  // ámbar de "pendiente AHORA" (resto de períodos → gris/neutro).
   const campanasAbiertas = (campanasData?.campanas ?? []).filter((c) => c.estado === 'abierta')
+  const periodosConCampana = new Set(campanasAbiertas.map((c) => c.periodo))
 
   const puedeCrear = aulas.some((a) => a.puedeRedactar)
   // Niños de las aulas donde el profe redacta (para el diálogo de creación).
@@ -102,6 +104,9 @@ export default async function TeacherInformesPage({ params }: PageProps) {
                       {PERIODOS_INFORME.map((periodo) => {
                         const est = nino.porPeriodo[periodo]
                         const label = t(`periodos.${periodo}`)
+                        // Ámbar solo si el período tiene campaña abierta (= hay que
+                        // hacerlo ahora); si no, gris/neutro.
+                        const pendienteCampana = periodosConCampana.has(periodo)
                         if (est.id) {
                           return (
                             <Link
@@ -109,7 +114,7 @@ export default async function TeacherInformesPage({ params }: PageProps) {
                               href={`/${locale}/teacher/informes/${est.id}`}
                               className={cn(
                                 'flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs',
-                                fondoInforme(est.estado)
+                                fondoInforme(est.estado, pendienteCampana)
                               )}
                             >
                               <span>{label}</span>
@@ -124,7 +129,7 @@ export default async function TeacherInformesPage({ params }: PageProps) {
                             key={periodo}
                             className={cn(
                               'text-muted-foreground flex items-center gap-1.5 rounded-md border border-dashed px-2 py-1 text-xs',
-                              fondoInforme(null)
+                              fondoInforme(null, pendienteCampana)
                             )}
                           >
                             <span>{label}</span>
