@@ -380,7 +380,8 @@
       "recordatorios": "Recordatorios",
       "agenda": "Agenda",
       "autorizaciones": "Autorizaciones",
-      "notificaciones": "Notificaciones"
+      "notificaciones": "Notificaciones",
+      "informes": "Informes"
     },
     "dashboard": {
       "title": "Mis aulas",
@@ -1933,13 +1934,77 @@
       "area_titulo_largo": "El nombre del área es demasiado largo (máx. 200).",
       "area_sin_items": "Cada área necesita al menos un ítem.",
       "item_vacio": "El texto del ítem no puede estar vacío.",
-      "item_largo": "El texto del ítem es demasiado largo (máx. 500)."
+      "item_largo": "El texto del ítem es demasiado largo (máx. 500).",
+      "comentario_largo": "El comentario es demasiado largo (máx. 1000).",
+      "observaciones_largas": "Las observaciones son demasiado largas (máx. 4000).",
+      "nino_requerido": "Elige un niño.",
+      "plantilla_requerida": "Elige una plantilla."
     },
     "errors": {
       "no_autorizado": "No tienes permiso para gestionar plantillas de informe.",
       "creacion_fallo": "No se pudo crear la plantilla.",
       "edicion_fallo": "No se pudieron guardar los cambios.",
-      "archivar_fallo": "No se pudo archivar la plantilla."
+      "archivar_fallo": "No se pudo archivar la plantilla.",
+      "sin_curso_activo": "No hay un curso académico activo.",
+      "plantilla_no_disponible": "La plantilla elegida no está disponible.",
+      "guardado_fallo": "No se pudo guardar el borrador.",
+      "publicacion_fallo": "No se pudo publicar el informe.",
+      "despublicacion_fallo": "No se pudo despublicar el informe.",
+      "no_encontrado": "No se encontró el informe.",
+      "faltan_valoraciones": "Faltan ítems por valorar."
+    },
+    "periodos": {
+      "trimestre_1": "1.er trimestre",
+      "trimestre_2": "2.º trimestre",
+      "trimestre_3": "3.er trimestre",
+      "fin_curso": "Fin de curso"
+    },
+    "escala": {
+      "conseguido": "Conseguido",
+      "en_proceso": "En proceso",
+      "no_iniciado": "No iniciado"
+    },
+    "estado": {
+      "borrador": "Borrador",
+      "publicado": "Publicado"
+    },
+    "teacher_intro": "Rellena y publica el informe de evolución de cada niño de tu aula, por período.",
+    "teacher_sin_aulas": "No tienes aulas asignadas.",
+    "teacher_aula_vacia": "No hay niños matriculados en esta aula.",
+    "teacher_sin_iniciar": "sin iniciar",
+    "crear": {
+      "nuevo": "Nuevo informe",
+      "nino": "Niño",
+      "nino_placeholder": "Elige un niño",
+      "periodo": "Período",
+      "periodo_placeholder": "Elige un período",
+      "plantilla": "Plantilla",
+      "plantilla_placeholder": "Elige una plantilla",
+      "sin_plantillas": "El centro aún no tiene plantillas. La dirección debe crear una.",
+      "incompleto": "Elige niño, período y plantilla.",
+      "creando": "Creando…",
+      "continuar": "Continuar"
+    },
+    "detalle": {
+      "valoracion": "Valoración",
+      "valoracion_placeholder": "Sin valorar",
+      "comentario": "Comentario (opcional)",
+      "comentario_placeholder": "Añade un comentario…",
+      "observaciones": "Observaciones generales",
+      "observaciones_placeholder": "Observaciones del informe (opcional)…",
+      "guardar_borrador": "Guardar borrador",
+      "guardando": "Guardando…",
+      "publicar": "Publicar",
+      "publicando": "Publicando…",
+      "despublicar": "Despublicar para corregir",
+      "despublicando": "Despublicando…",
+      "despublicar_nota": "Al despublicar deja de verlo la familia. Cuando vuelvas a publicar no se le vuelve a avisar.",
+      "progreso": "{valorados} de {total} ítems valorados",
+      "solo_lectura": "Solo lectura",
+      "faltan_valoraciones": "Para publicar, valora todos los ítems.",
+      "guardado_toast": "Borrador guardado.",
+      "publicado_toast": "Informe publicado.",
+      "despublicado_toast": "Informe despublicado."
     }
   }
 }

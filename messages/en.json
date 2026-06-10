@@ -380,7 +380,8 @@
       "recordatorios": "Reminders",
       "agenda": "Agenda",
       "autorizaciones": "Authorisations",
-      "notificaciones": "Notifications"
+      "notificaciones": "Notifications",
+      "informes": "Reports"
     },
     "dashboard": {
       "title": "My classrooms",
@@ -1933,13 +1934,77 @@
       "area_titulo_largo": "The area name is too long (max. 200).",
       "area_sin_items": "Each area needs at least one item.",
       "item_vacio": "The item text can't be empty.",
-      "item_largo": "The item text is too long (max. 500)."
+      "item_largo": "The item text is too long (max. 500).",
+      "comentario_largo": "The comment is too long (max. 1000).",
+      "observaciones_largas": "The remarks are too long (max. 4000).",
+      "nino_requerido": "Choose a child.",
+      "plantilla_requerida": "Choose a template."
     },
     "errors": {
       "no_autorizado": "You don't have permission to manage report templates.",
       "creacion_fallo": "The template could not be created.",
       "edicion_fallo": "Changes could not be saved.",
-      "archivar_fallo": "The template could not be archived."
+      "archivar_fallo": "The template could not be archived.",
+      "sin_curso_activo": "There is no active academic year.",
+      "plantilla_no_disponible": "The chosen template is not available.",
+      "guardado_fallo": "The draft could not be saved.",
+      "publicacion_fallo": "The report could not be published.",
+      "despublicacion_fallo": "The report could not be unpublished.",
+      "no_encontrado": "Report not found.",
+      "faltan_valoraciones": "Some items are not rated."
+    },
+    "periodos": {
+      "trimestre_1": "1st term",
+      "trimestre_2": "2nd term",
+      "trimestre_3": "3rd term",
+      "fin_curso": "End of year"
+    },
+    "escala": {
+      "conseguido": "Achieved",
+      "en_proceso": "In progress",
+      "no_iniciado": "Not started"
+    },
+    "estado": {
+      "borrador": "Draft",
+      "publicado": "Published"
+    },
+    "teacher_intro": "Fill in and publish each child's development report for your class, by period.",
+    "teacher_sin_aulas": "You have no classes assigned.",
+    "teacher_aula_vacia": "There are no children enrolled in this class.",
+    "teacher_sin_iniciar": "not started",
+    "crear": {
+      "nuevo": "New report",
+      "nino": "Child",
+      "nino_placeholder": "Choose a child",
+      "periodo": "Period",
+      "periodo_placeholder": "Choose a period",
+      "plantilla": "Template",
+      "plantilla_placeholder": "Choose a template",
+      "sin_plantillas": "The centre has no templates yet. Management must create one.",
+      "incompleto": "Choose child, period and template.",
+      "creando": "Creating…",
+      "continuar": "Continue"
+    },
+    "detalle": {
+      "valoracion": "Rating",
+      "valoracion_placeholder": "Not rated",
+      "comentario": "Comment (optional)",
+      "comentario_placeholder": "Add a comment…",
+      "observaciones": "General remarks",
+      "observaciones_placeholder": "Report remarks (optional)…",
+      "guardar_borrador": "Save draft",
+      "guardando": "Saving…",
+      "publicar": "Publish",
+      "publicando": "Publishing…",
+      "despublicar": "Unpublish to correct",
+      "despublicando": "Unpublishing…",
+      "despublicar_nota": "Unpublishing hides it from the family. When you publish again they are not notified anew.",
+      "progreso": "{valorados} of {total} items rated",
+      "solo_lectura": "Read only",
+      "faltan_valoraciones": "To publish, rate every item.",
+      "guardado_toast": "Draft saved.",
+      "publicado_toast": "Report published.",
+      "despublicado_toast": "Report unpublished."
     }
   }
 }

@@ -106,6 +106,11 @@ export async function buildSidebarItems(
         icon: <FileSignatureIcon />,
       },
       {
+        href: `/${locale}/teacher/informes`,
+        label: t('informes'),
+        icon: <ClipboardListIcon />,
+      },
+      {
         href: `/${locale}/messages`,
         label: t('mensajeria'),
         icon: <MessageCircleIcon />,
