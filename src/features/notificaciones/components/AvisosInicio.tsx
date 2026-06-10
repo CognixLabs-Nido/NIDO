@@ -3,6 +3,7 @@ import {
   ArchiveIcon,
   CheckCircle2Icon,
   ClipboardCheckIcon,
+  ClipboardListIcon,
   PenLineIcon,
   PillIcon,
 } from 'lucide-react'
@@ -38,13 +39,16 @@ export async function AvisosInicio({
   const nuevasFirmasN = staff ? avisos.nuevasFirmas : 0
   const revocacionesN = staff ? avisos.revocaciones : 0
   const archivarN = staff ? avisos.medicacionesPorArchivar : 0
+  // Informes nuevos publicados: solo familia (F9-3).
+  const informesNuevosN = staff ? 0 : avisos.informesNuevos
   if (
     pendientesN <= 0 &&
     hechasN <= 0 &&
     medsN <= 0 &&
     nuevasFirmasN <= 0 &&
     revocacionesN <= 0 &&
-    archivarN <= 0
+    archivarN <= 0 &&
+    informesNuevosN <= 0
   )
     return null
 
@@ -56,6 +60,7 @@ export async function AvisosInicio({
       ? `/${locale}/admin/autorizaciones`
       : `/${locale}/teacher/autorizaciones`
   const pendientesHref = autorizacionesHref
+  const informesHref = `/${locale}/family/informes`
 
   const pendientesLabel = staff
     ? t('pendientes_confirmar', { n: pendientesN })
@@ -92,6 +97,20 @@ export async function AvisosInicio({
                 {hechasLabel}
               </span>
             )}
+          </span>
+        </Link>
+      )}
+
+      {/* Informe(s) de evolución recién publicado(s) que la familia no ha abierto
+          (F9-3). Verde (success), coherente con el sombreado de publicados. */}
+      {informesNuevosN > 0 && (
+        <Link
+          href={informesHref}
+          className="border-success-200 bg-success-50 hover:bg-success-100 flex items-center gap-3 rounded-xl border p-4 transition"
+        >
+          <ClipboardListIcon className="text-success-700 size-5 shrink-0" />
+          <span className="text-success-900 text-sm font-medium">
+            {t('informes_nuevos', { n: informesNuevosN })}
           </span>
         </Link>
       )}

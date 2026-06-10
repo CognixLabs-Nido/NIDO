@@ -4,7 +4,13 @@ import { getAutorizacionesFamilia } from '@/features/autorizaciones/queries/get-
 import { hoyMadridYmd } from '@/features/autorizaciones/lib/server-helpers'
 import { createClient } from '@/lib/supabase/server'
 
-import { cutoffNovedades, esStaff, getFirmasVistas, type RolNotif } from '../lib/helpers'
+import {
+  cutoffNovedades,
+  esStaff,
+  getFirmasVistas,
+  getInformesVistos,
+  type RolNotif,
+} from '../lib/helpers'
 import type { AvisosInicio } from '../types'
 
 const VACIO: AvisosInicio = {
@@ -16,6 +22,7 @@ const VACIO: AvisosInicio = {
   nuevasFirmas: 0,
   revocaciones: 0,
   medicacionesPorArchivar: 0,
+  informesNuevos: 0,
 }
 
 /**
@@ -114,6 +121,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
       nuevasFirmas,
       revocaciones,
       medicacionesPorArchivar: archivar.count ?? 0,
+      informesNuevos: 0,
     }
   }
 
@@ -129,6 +137,15 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
   ).length
   const firmadas = lista.filter((a) => a.estado_firma === 'firmado').length
 
+  // Informes de evolución PUBLICADOS de sus hijos que aún no ha abierto (F9-3). La
+  // RLS de `informes_evolucion` ya filtra a publicados legibles por esta familia;
+  // descontamos los que están en el marcador `informes_vistos` (presencia).
+  const [pub, vistos] = await Promise.all([
+    supabase.from('informes_evolucion').select('id').eq('estado', 'publicado'),
+    getInformesVistos(),
+  ])
+  const informesNuevos = (pub.data ?? []).filter((r) => !vistos[r.id]).length
+
   return {
     pendientesConfirmar: 0,
     pendientesFirma,
@@ -138,5 +155,6 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
     nuevasFirmas: 0,
     revocaciones: 0,
     medicacionesPorArchivar: 0,
+    informesNuevos,
   }
 }

@@ -88,6 +88,34 @@ export interface AulaInformes {
   ninos: NinoInformes[]
 }
 
+// --- Vista de familia (F9-3): solo informes publicados, agrupados ------------
+/** Un informe publicado de un período (item de la lista de familia). */
+export interface InformeFamiliaItem {
+  id: string
+  periodo: PeriodoInforme
+  /** Siempre 'publicado' (la familia no ve borradores); se conserva para `fondoInforme`. */
+  estado: EstadoInforme
+  publicado_at: string | null
+}
+
+/** Los informes publicados de un niño en un curso académico concreto. */
+export interface CursoInformesFamilia {
+  cursoId: string
+  /** Nombre del curso (p. ej. «2025-2026»); null si la familia no puede leerlo. */
+  cursoNombre: string | null
+  /** Informes del curso, ordenados por período. */
+  items: InformeFamiliaItem[]
+}
+
+/** Un hijo con sus informes publicados agrupados por curso (histórico incluido). */
+export interface NinoInformesFamilia {
+  ninoId: string
+  nombre: string
+  apellidos: string
+  /** Cursos con informes, del más reciente al más antiguo. */
+  cursos: CursoInformesFamilia[]
+}
+
 /** Detalle de un informe para rellenar/leer (estructura congelada + respuestas). */
 export interface InformeEvolucionDetalle {
   id: string

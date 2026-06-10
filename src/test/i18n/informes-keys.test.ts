@@ -48,12 +48,21 @@ describe('i18n consistency — informes (F9-1)', () => {
     })
   }
 
-  it('las entradas de nav (admin + teacher) existen en los 3 idiomas', () => {
+  it('las entradas de nav (admin + teacher + family) existen en los 3 idiomas', () => {
     for (const [, msgs] of [['es', es], ...LOCALES] as Array<[string, Record<string, unknown>]>) {
       const admin = msgs.admin as Record<string, Record<string, string>>
       const teacher = msgs.teacher as Record<string, Record<string, string>>
+      const family = msgs.family as Record<string, Record<string, string>>
       expect(admin.nav.informes?.length ?? 0).toBeGreaterThan(0)
       expect(teacher.nav.informes?.length ?? 0).toBeGreaterThan(0)
+      expect(family.nav.informes?.length ?? 0).toBeGreaterThan(0)
+    }
+  })
+
+  it('el aviso de inicio de informes nuevos (F9-3) existe en los 3 idiomas', () => {
+    for (const [, msgs] of [['es', es], ...LOCALES] as Array<[string, Record<string, unknown>]>) {
+      const notif = msgs.notificaciones as Record<string, Record<string, string>>
+      expect(notif.avisos.informes_nuevos?.length ?? 0).toBeGreaterThan(0)
     }
   })
 })

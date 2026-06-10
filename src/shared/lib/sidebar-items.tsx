@@ -137,6 +137,11 @@ export async function buildSidebarItems(
       icon: <FileSignatureIcon />,
     },
     {
+      href: `/${locale}/family/informes`,
+      label: t('informes'),
+      icon: <ClipboardListIcon />,
+    },
+    {
       href: `/${locale}/agenda`,
       label: t('agenda'),
       icon: <CalendarCheckIcon />,
