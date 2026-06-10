@@ -1987,8 +1987,13 @@
         "abierta_toast": "Campaign opened",
         "fecha_guardada_toast": "Deadline updated",
         "cerrada_toast": "Campaign closed",
-        "reabierta_toast": "Campaign reopened"
+        "reabierta_toast": "Campaign reopened",
+        "publicar_todos": "Publish all",
+        "publicar_todos_centro": "Publish all (whole centre)",
+        "publicando": "Publishing…"
       },
+      "lote_resultado": "{publicados} published · {incompletos} not published (missing items)",
+      "lote_vacio": "There were no reports to publish.",
       "seguimiento": {
         "titulo": "Progress",
         "descripcion": "Published reports versus children with an active enrolment, by classroom.",
@@ -2008,7 +2013,8 @@
         "sin_curso_activo": "There is no active academic year.",
         "creacion_fallo": "The campaign could not be opened.",
         "edicion_fallo": "The deadline could not be updated.",
-        "cierre_fallo": "The campaign status could not be changed."
+        "cierre_fallo": "The campaign status could not be changed.",
+        "lote_fallo": "The reports could not be published."
       }
     },
     "periodos": {

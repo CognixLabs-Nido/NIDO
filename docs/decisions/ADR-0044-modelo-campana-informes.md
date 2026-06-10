@@ -81,6 +81,15 @@ Decisiones de modelo cerradas en la spec (resumen):
 - **Negativas / límites:** sin traza informe→campaña por FK (si se necesita, `campana_id` nullable se añade después sin migración compleja); la derivación de pendientes es una query por carga (volumen pequeño, indexada).
 - **Siguiente:** F9-5-1+ (UI dirección abrir/cerrar + seguimiento; aviso derivado en INICIO de la profe; publicar en lote por aula reusando `publicarInforme`).
 
+## Addendum F9-5-3 — Publicar en lote (best-effort)
+
+La capa de UI se completa con el **"Publicar todos"**. Decisiones:
+
+- **Reusa `publicarInforme` de F9-2**, no reimplementa la publicación: el lote lee los informes en **borrador** de la terna (curso, período) de las aulas objetivo e itera la acción individual por cada uno. Así hereda la validación de completitud (Q9: todos los ítems valorados) y el **sellado de `notificado_at`** (avisar a la familia una sola vez, Q8). El sello se extrae a `sellarNotificado(previo, ahora) = previo ?? ahora` (puro, testeado) y se comparte entre la acción individual y el lote.
+- **Best-effort (Q5/Q8):** publica los **completos** e informa de cuántos quedaron **sin publicar por incompletos** (resumen `{ total, publicados, incompletos }`); los incompletos se quedan en borrador. **No crea ni rellena** nada (los "sin empezar" no existen como fila y no se tocan).
+- **Quién (Q2):** la **profe** para su aula (botón en su lista de informes, por campaña abierta) y la **dirección** para un aula o **todo el centro** (botones en el seguimiento). La autorización es la RLS existente `informes_evolucion_update` (redactora de su aula o admin del centro; técnico/apoyo no) — el lote **no añade policy ni migración**.
+- **Color de pendientes:** `fondoInforme` pasa a **verde = publicado / ámbar = pendiente** (borrador o sin empezar), helper único reutilizado en las listas.
+
 ## Referencias
 
 - Spec: `docs/specs/campana-informes.md` (approved; decisiones Q1–Q9).

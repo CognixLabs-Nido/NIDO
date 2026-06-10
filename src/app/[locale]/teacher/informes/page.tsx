@@ -6,7 +6,9 @@ import { getTranslations } from 'next-intl/server'
 import { cn } from '@/lib/utils'
 
 import { CrearInformeDialog } from '@/features/informes/components/CrearInformeDialog'
+import { PublicarLoteButton } from '@/features/informes/components/PublicarLoteButton'
 import { fondoInforme } from '@/features/informes/lib/estilos'
+import { getCampanasInformeCursoActivo } from '@/features/informes/queries/get-campanas-informe'
 import { getInformesDeMisAulas } from '@/features/informes/queries/get-informes-profe'
 import { getPlantillasInforme } from '@/features/informes/queries/get-plantillas-informe'
 import { PERIODOS_INFORME } from '@/features/informes/types'
@@ -30,10 +32,14 @@ export default async function TeacherInformesPage({ params }: PageProps) {
   const rol = await getRolEnCentro(centroId)
   if (rol !== 'profe' && rol !== 'admin') redirect(`/${locale}/forbidden`)
 
-  const [aulas, plantillas] = await Promise.all([
+  const [aulas, plantillas, campanasData] = await Promise.all([
     getInformesDeMisAulas(),
     getPlantillasInforme(false),
+    getCampanasInformeCursoActivo(centroId),
   ])
+
+  // Campañas abiertas: habilitan el "Publicar todos" por aula y período.
+  const campanasAbiertas = (campanasData?.campanas ?? []).filter((c) => c.estado === 'abierta')
 
   const puedeCrear = aulas.some((a) => a.puedeRedactar)
   // Niños de las aulas donde el profe redacta (para el diálogo de creación).
@@ -67,7 +73,22 @@ export default async function TeacherInformesPage({ params }: PageProps) {
       ) : (
         aulas.map((aula) => (
           <section key={aula.id} className="space-y-3">
-            <h2 className="text-h2 text-foreground">{aula.nombre}</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-h2 text-foreground">{aula.nombre}</h2>
+              {/* "Publicar todos" por campaña abierta (solo aulas donde redacta). */}
+              {aula.puedeRedactar && aula.ninos.length > 0 && campanasAbiertas.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {campanasAbiertas.map((c) => (
+                    <PublicarLoteButton
+                      key={c.id}
+                      campanaId={c.id}
+                      aulaId={aula.id}
+                      label={`${t('campana.acciones.publicar_todos')} · ${t(`periodos.${c.periodo}`)}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
             {aula.ninos.length === 0 ? (
               <p className="text-muted-foreground text-sm">{t('teacher_aula_vacia')}</p>
             ) : (
@@ -101,7 +122,10 @@ export default async function TeacherInformesPage({ params }: PageProps) {
                         return (
                           <span
                             key={periodo}
-                            className="text-muted-foreground flex items-center gap-1.5 rounded-md border border-dashed px-2 py-1 text-xs"
+                            className={cn(
+                              'text-muted-foreground flex items-center gap-1.5 rounded-md border border-dashed px-2 py-1 text-xs',
+                              fondoInforme(null)
+                            )}
                           >
                             <span>{label}</span>
                             <span>· {t('teacher_sin_iniciar')}</span>

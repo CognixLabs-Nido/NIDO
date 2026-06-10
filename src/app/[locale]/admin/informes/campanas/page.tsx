@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { CampanaEstadoButton } from '@/features/informes/components/CampanaEstadoButton'
 import { CampanaInformeDialog } from '@/features/informes/components/CampanaInformeDialog'
+import { PublicarLoteButton } from '@/features/informes/components/PublicarLoteButton'
 import { SeguimientoCampana } from '@/features/informes/components/SeguimientoCampana'
 import { getCampanasInformeCursoActivo } from '@/features/informes/queries/get-campanas-informe'
 import { getSeguimientoCampana } from '@/features/informes/queries/get-seguimiento-campana'
@@ -148,7 +149,24 @@ async function CampanasContenido({
             })}
           </nav>
 
-          <SeguimientoCampana seguimiento={seguimiento} />
+          {/* "Publicar todos del centro": todas las aulas de la campaña abierta. */}
+          {seleccionada && seleccionada.estado === 'abierta' && (
+            <div className="flex justify-end">
+              <PublicarLoteButton
+                campanaId={seleccionada.id}
+                label={t('campana.acciones.publicar_todos_centro')}
+                variant="default"
+              />
+            </div>
+          )}
+
+          {seleccionada && (
+            <SeguimientoCampana
+              seguimiento={seguimiento}
+              campanaId={seleccionada.id}
+              abierta={seleccionada.estado === 'abierta'}
+            />
+          )}
         </section>
       )}
     </>

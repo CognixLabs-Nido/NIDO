@@ -2,13 +2,24 @@ import { getTranslations } from 'next-intl/server'
 
 import type { SeguimientoAula } from '../types'
 
+import { PublicarLoteButton } from './PublicarLoteButton'
+
 /**
  * Tabla de seguimiento por aula de una campaña: publicados vs total, con la lista
- * desplegable de niños pendientes (para que la dirección pueda reclamar). Server
- * Component presentacional: recibe el `seguimiento` ya derivado. El desplegable usa
- * `<details>` nativo (accesible, sin JS).
+ * desplegable de niños pendientes (para que la dirección pueda reclamar) y, si la
+ * campaña está **abierta**, un "Publicar todos" por aula (F9-5-3). Server Component
+ * presentacional: recibe el `seguimiento` ya derivado. El desplegable usa `<details>`
+ * nativo (accesible, sin JS).
  */
-export async function SeguimientoCampana({ seguimiento }: { seguimiento: SeguimientoAula[] }) {
+export async function SeguimientoCampana({
+  seguimiento,
+  campanaId,
+  abierta,
+}: {
+  seguimiento: SeguimientoAula[]
+  campanaId: string
+  abierta: boolean
+}) {
   const t = await getTranslations('informes')
 
   if (seguimiento.length === 0) {
@@ -23,15 +34,27 @@ export async function SeguimientoCampana({ seguimiento }: { seguimiento: Seguimi
           <li key={aula.aulaId} className="px-4 py-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-medium">{aula.aulaNombre}</span>
-              <span
-                className={
-                  completa ? 'text-sm font-medium text-green-700' : 'text-muted-foreground text-sm'
-                }
-              >
-                {t('campana.seguimiento.total', {
-                  publicados: aula.publicados,
-                  total: aula.total,
-                })}
+              <span className="flex items-center gap-3">
+                <span
+                  className={
+                    completa
+                      ? 'text-sm font-medium text-green-700'
+                      : 'text-muted-foreground text-sm'
+                  }
+                >
+                  {t('campana.seguimiento.total', {
+                    publicados: aula.publicados,
+                    total: aula.total,
+                  })}
+                </span>
+                {/* "Publicar todos" del aula: solo si la campaña está abierta y queda algo. */}
+                {abierta && !completa && (
+                  <PublicarLoteButton
+                    campanaId={campanaId}
+                    aulaId={aula.aulaId}
+                    label={t('campana.acciones.publicar_todos')}
+                  />
+                )}
               </span>
             </div>
             {aula.pendientes.length > 0 && (
