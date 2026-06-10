@@ -41,6 +41,8 @@ export async function AvisosInicio({
   const archivarN = staff ? avisos.medicacionesPorArchivar : 0
   // Informes nuevos publicados: solo familia (F9-3).
   const informesNuevosN = staff ? 0 : avisos.informesNuevos
+  // Informes pendientes de campaña: solo profe redactora (F9-5-2).
+  const campanaPend = staff ? avisos.campanaPendientes : null
   if (
     pendientesN <= 0 &&
     hechasN <= 0 &&
@@ -48,7 +50,8 @@ export async function AvisosInicio({
     nuevasFirmasN <= 0 &&
     revocacionesN <= 0 &&
     archivarN <= 0 &&
-    informesNuevosN <= 0
+    informesNuevosN <= 0 &&
+    !campanaPend
   )
     return null
 
@@ -61,6 +64,24 @@ export async function AvisosInicio({
       : `/${locale}/teacher/autorizaciones`
   const pendientesHref = autorizacionesHref
   const informesHref = `/${locale}/family/informes`
+  const campanaInformesHref = `/${locale}/teacher/informes`
+
+  // Fecha límite (más próxima) formateada en el huso del centro para el aviso de campaña.
+  const campanaFechaFmt = campanaPend
+    ? new Intl.DateTimeFormat(locale, {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).format(new Date(`${campanaPend.fechaLimite}T12:00:00Z`))
+    : ''
+  const campanaLabel = campanaPend
+    ? campanaPend.vencida
+      ? t('campana_vencida', { n: campanaPend.n, fecha: campanaFechaFmt })
+      : campanaPend.urgente
+        ? t('campana_urgente', { n: campanaPend.n, fecha: campanaFechaFmt })
+        : t('campana_pendientes', { n: campanaPend.n, fecha: campanaFechaFmt })
+    : ''
 
   const pendientesLabel = staff
     ? t('pendientes_confirmar', { n: pendientesN })
@@ -78,6 +99,35 @@ export async function AvisosInicio({
           <AlertTriangleIcon className="size-5 shrink-0 text-red-700 dark:text-red-300" />
           <span className="text-sm font-medium text-red-900 dark:text-red-100">
             {t('revocaciones', { n: revocacionesN })}
+          </span>
+        </Link>
+      )}
+
+      {/* Informes pendientes de campaña (F9-5-2, solo profe redactora). Rojo si
+          urgente/vencida (≤3 días o pasada), ámbar si aún hay margen. El texto dice
+          siempre "vence el…/venció el…": el color no es el único indicador (AA). */}
+      {campanaPend && (
+        <Link
+          href={campanaInformesHref}
+          className={
+            campanaPend.urgente
+              ? 'flex items-center gap-3 rounded-xl border border-red-300 bg-red-50 p-4 transition hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:hover:bg-red-950/50'
+              : 'flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 transition hover:bg-amber-100 dark:border-amber-900/40 dark:bg-amber-950/30 dark:hover:bg-amber-950/50'
+          }
+        >
+          {campanaPend.urgente ? (
+            <AlertTriangleIcon className="size-5 shrink-0 text-red-700 dark:text-red-300" />
+          ) : (
+            <ClipboardListIcon className="size-5 shrink-0 text-amber-700 dark:text-amber-300" />
+          )}
+          <span
+            className={
+              campanaPend.urgente
+                ? 'text-sm font-medium text-red-900 dark:text-red-100'
+                : 'text-sm font-medium text-amber-900 dark:text-amber-100'
+            }
+          >
+            {campanaLabel}
           </span>
         </Link>
       )}

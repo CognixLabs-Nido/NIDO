@@ -2,6 +2,7 @@ import 'server-only'
 
 import { getAutorizacionesFamilia } from '@/features/autorizaciones/queries/get-autorizaciones-familia'
 import { hoyMadridYmd } from '@/features/autorizaciones/lib/server-helpers'
+import { getPendientesCampanaProfe } from '@/features/informes/queries/get-pendientes-campana-profe'
 import { createClient } from '@/lib/supabase/server'
 
 import {
@@ -23,6 +24,7 @@ const VACIO: AvisosInicio = {
   revocaciones: 0,
   medicacionesPorArchivar: 0,
   informesNuevos: 0,
+  campanaPendientes: null,
 }
 
 /**
@@ -57,7 +59,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
   const medicacionesActivas = meds.count ?? 0
 
   if (esStaff(rol)) {
-    const [pc, conf, nf, rev, archivar, vistas] = await Promise.all([
+    const [pc, conf, nf, rev, archivar, vistas, campanaPendientes] = await Promise.all([
       supabase
         .from('administraciones_medicacion')
         .select('id', { count: 'exact', head: true })
@@ -97,6 +99,9 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
         .is('archivada_at', null)
         .lt('vigencia_hasta', hoy),
       getFirmasVistas(),
+      // Informes pendientes de campaña para la profe redactora (F9-5-2). Devuelve
+      // null para admin (sin aulas de redacción) y si no queda nada pendiente.
+      getPendientesCampanaProfe(),
     ])
 
     // Una firma/revocación cuenta como "nueva" si su autorización no se ha abierto
@@ -122,6 +127,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
       revocaciones,
       medicacionesPorArchivar: archivar.count ?? 0,
       informesNuevos: 0,
+      campanaPendientes,
     }
   }
 
@@ -156,5 +162,6 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
     revocaciones: 0,
     medicacionesPorArchivar: 0,
     informesNuevos,
+    campanaPendientes: null,
   }
 }

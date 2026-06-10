@@ -1880,7 +1880,10 @@
       "nuevas_firmas": "{n, plural, one {Ha llegado # firma nueva de una familia} other {Han llegado # firmas nuevas de familias}}",
       "revocaciones": "{n, plural, one {Revocada # autorización: revisa quién recoge / la medicación} other {Revocadas # autorizaciones: revisa quién recoge / la medicación}}",
       "por_archivar": "{n, plural, one {# medicación terminada para archivar} other {# medicaciones terminadas para archivar}}",
-      "informes_nuevos": "{n, plural, one {Hay # informe de evolución nuevo} other {Hay # informes de evolución nuevos}}"
+      "informes_nuevos": "{n, plural, one {Hay # informe de evolución nuevo} other {Hay # informes de evolución nuevos}}",
+      "campana_pendientes": "{n, plural, one {Te queda # informe por completar} other {Te quedan # informes por completar}} · vence el {fecha}",
+      "campana_urgente": "{n, plural, one {# informe pendiente} other {# informes pendientes}} · vence el {fecha}",
+      "campana_vencida": "{n, plural, one {# informe pendiente} other {# informes pendientes}} · venció el {fecha}"
     },
     "errors": {
       "no_autorizado": "No autorizado.",

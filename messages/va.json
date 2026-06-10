@@ -1880,7 +1880,10 @@
       "nuevas_firmas": "{n, plural, one {Ha arribat # firma nova d’una família} other {Han arribat # firmes noves de famílies}}",
       "revocaciones": "{n, plural, one {Revocada # autorització: revisa qui recull / la medicació} other {Revocades # autoritzacions: revisa qui recull / la medicació}}",
       "por_archivar": "{n, plural, one {# medicació acabada per a arxivar} other {# medicacions acabades per a arxivar}}",
-      "informes_nuevos": "{n, plural, one {Hi ha # informe d'evolució nou} other {Hi ha # informes d'evolució nous}}"
+      "informes_nuevos": "{n, plural, one {Hi ha # informe d'evolució nou} other {Hi ha # informes d'evolució nous}}",
+      "campana_pendientes": "{n, plural, one {Et queda # informe per completar} other {Et queden # informes per completar}} · venç el {fecha}",
+      "campana_urgente": "{n, plural, one {# informe pendent} other {# informes pendents}} · venç el {fecha}",
+      "campana_vencida": "{n, plural, one {# informe pendent} other {# informes pendents}} · va vèncer el {fecha}"
     },
     "errors": {
       "no_autorizado": "No autoritzat.",

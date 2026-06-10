@@ -1880,7 +1880,10 @@
       "nuevas_firmas": "{n, plural, one {# new signature from a family has arrived} other {# new signatures from families have arrived}}",
       "revocaciones": "{n, plural, one {# authorization revoked: check pick-up / medication} other {# authorizations revoked: check pick-up / medication}}",
       "por_archivar": "{n, plural, one {# finished medication to archive} other {# finished medications to archive}}",
-      "informes_nuevos": "{n, plural, one {There is # new development report} other {There are # new development reports}}"
+      "informes_nuevos": "{n, plural, one {There is # new development report} other {There are # new development reports}}",
+      "campana_pendientes": "{n, plural, one {You have # report to complete} other {You have # reports to complete}} · due on {fecha}",
+      "campana_urgente": "{n, plural, one {# report pending} other {# reports pending}} · due on {fecha}",
+      "campana_vencida": "{n, plural, one {# report pending} other {# reports pending}} · was due on {fecha}"
     },
     "errors": {
       "no_autorizado": "Not authorised.",
