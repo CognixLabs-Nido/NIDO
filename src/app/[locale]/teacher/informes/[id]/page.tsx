@@ -1,7 +1,9 @@
-import { ArrowLeftIcon } from 'lucide-react'
+import { ArrowLeftIcon, DownloadIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
+
+import { Button } from '@/components/ui/button'
 
 import { InformeEditor } from '@/features/informes/components/InformeEditor'
 import { getInformeEvolucionDetalle } from '@/features/informes/queries/get-informes-profe'
@@ -38,9 +40,22 @@ export default async function TeacherInformeDetallePage({ params }: PageProps) {
         {t('volver')}
       </Link>
 
-      <header className="space-y-1">
-        <h1 className="text-h1 text-foreground">{informe.nino_nombre}</h1>
-        <p className="text-muted-foreground text-sm">{t(`periodos.${informe.periodo}`)}</p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-h1 text-foreground">{informe.nino_nombre}</h1>
+          <p className="text-muted-foreground text-sm">{t(`periodos.${informe.periodo}`)}</p>
+        </div>
+        {/* Reusa el generador de F9-4: solo cuando está publicado (mismo PDF que la familia). */}
+        {informe.estado === 'publicado' && (
+          <Button
+            variant="outline"
+            render={<a href={`/${locale}/informes/${informe.id}/pdf`} />}
+            data-testid="descargar-pdf-button"
+          >
+            <DownloadIcon className="size-4" />
+            <span className="ml-1">{t('descargar_pdf')}</span>
+          </Button>
+        )}
       </header>
 
       <InformeEditor informe={informe} />

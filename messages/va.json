@@ -1891,6 +1891,7 @@
     "title": "Informes d'evolució",
     "admin_intro": "Definix les plantilles d'informe del centre: les àrees i els ítems que les mestres valoraran en cada xiquet.",
     "volver": "Tornar",
+    "descargar_pdf": "Descarregar PDF",
     "plantillas": {
       "titulo": "Plantilles d'informe",
       "descripcion": "Cada plantilla definix les àrees i els ítems del butlletí. Pots tindre'n diverses (p. ex. per tram d'edat).",
