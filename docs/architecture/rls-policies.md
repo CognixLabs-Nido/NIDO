@@ -512,3 +512,17 @@ Todas las SELECT policies de F8 son seguras frente a `INSERT…RETURNING`: `auto
 ### Gotcha MVCC (Fase 9)
 
 `informes_evolucion_select` invoca `usuario_es_audiencia_informe_row`, que es **row-aware** y nunca re-lee `informes_evolucion` (sus lookups van a otras tablas ya commiteadas) → `.insert().select()` por la coordinadora funciona. Test explícito como bloqueo de regresión. `plantillas_informe_select` no usa helper que re-lea la propia tabla.
+
+## Campaña de informes (Fase 9-5)
+
+1 tabla — `campanas_informe` — y 1 ENUM (`estado_campana_informe`). Ver [ADR-0044](../decisions/ADR-0044-modelo-campana-informes.md) y spec `docs/specs/campana-informes.md`. **Capa de coordinación, NO una puerta**: no toca ni bloquea `informes_evolucion` (vínculo lógico por (centro, curso, período), sin FK — Q6). Se audita (`centro_id` directo). Sin Realtime.
+
+- **`campanas_informe`** — plazo de entrega de informes por (centro, curso activo, período). Reusa los helpers existentes; **no crea helpers nuevos**.
+  - **SELECT** `campanas_informe_select`: `es_admin(centro_id) OR es_profe_en_centro(centro_id)`. STAFF del centro (las profes necesitan leer la campaña y su fecha para el aviso de pendientes y el botón de publicar en lote). **La familia NO accede** (deliberadamente NO se usa `pertenece_a_centro`, que incluiría a los tutores — mismo criterio que `plantillas_informe` en F9).
+  - **INSERT** `campanas_informe_insert`: `es_admin(centro_id) AND created_by = auth.uid()`. Solo la dirección abre campañas.
+  - **UPDATE** `campanas_informe_update`: `USING + WITH CHECK` `es_admin(centro_id)`. Cubre cerrar, **reabrir** y **editar `fecha_limite`** (Q4). Solo admin.
+  - **DELETE**: sin policy → **default DENY**. Cerrar (`estado='cerrada'`, reversible) sustituye al borrado; sin `deleted_at`.
+
+- **Gotcha MVCC (Fase 9-5): no aplica.** `campanas_informe_select` usa `es_admin`/`es_profe_en_centro`, que leen `roles_usuario`/`profes_aulas` (otras tablas), **nunca** `campanas_informe`. Por eso **no** hace falta un helper row-aware nuevo (a diferencia de `informes_evolucion`, cuya audiencia depende de columnas del propio row). Test `.insert().select()` por el admin como bloqueo de regresión.
+
+- **Pendientes derivados (sin RLS propia):** "informes pendientes de la campaña" no es una tabla; se computa en la app (niños con matrícula activa sin informe publicado de la terna) reusando la RLS de `informes_evolucion` y el patrón de avisos de INICIO de #64. La publicación en lote reusa `informes_evolucion_update` (Fase 9) — no añade policy nueva.
