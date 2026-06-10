@@ -1956,6 +1956,58 @@
       "no_encontrado": "Report not found.",
       "faltan_valoraciones": "Some items are not rated."
     },
+    "campana": {
+      "title": "Report campaign",
+      "admin_intro": "Set a deadline per period and track report progress by classroom. The campaign coordinates, it does not block: reports are created and published the same whether or not a campaign exists.",
+      "ir_a_campanas": "Report campaigns",
+      "abrir": "Open campaign",
+      "cerrar": "Close campaign",
+      "periodo": "Period",
+      "periodo_placeholder": "Choose a period",
+      "fecha_limite": "Deadline",
+      "fecha_limite_valor": "Deadline: {fecha}",
+      "lista_titulo": "Campaigns",
+      "curso_activo": "Active year: {curso}",
+      "sin_curso_activo": "There is no active academic year. Activate a year to open campaigns.",
+      "sin_campanas": "No campaigns yet. Open one to start tracking progress.",
+      "estado": {
+        "abierta": "Open",
+        "cerrada": "Closed"
+      },
+      "acciones": {
+        "editar_fecha": "Edit deadline",
+        "abrir_confirmar": "Open campaign",
+        "guardar_fecha": "Save deadline",
+        "guardando": "Saving…",
+        "procesando": "Processing…",
+        "reabrir": "Reopen",
+        "abierta_toast": "Campaign opened",
+        "fecha_guardada_toast": "Deadline updated",
+        "cerrada_toast": "Campaign closed",
+        "reabierta_toast": "Campaign reopened"
+      },
+      "seguimiento": {
+        "titulo": "Progress",
+        "descripcion": "Published reports versus children with an active enrolment, by classroom.",
+        "periodo_nav": "Progress period",
+        "total": "{publicados} of {total} published",
+        "sin_aulas": "There are no classrooms with enrolled children in this year.",
+        "ver_pendientes": "{n, plural, one {View # pending} other {View # pending}}"
+      },
+      "validation": {
+        "periodo_invalido": "Choose a valid period.",
+        "fecha_invalida": "Invalid date. Format YYYY-MM-DD.",
+        "estado_invalido": "Invalid campaign status.",
+        "campana_duplicada": "A campaign already exists for this period and year."
+      },
+      "errors": {
+        "no_autorizado": "You do not have permission to manage report campaigns.",
+        "sin_curso_activo": "There is no active academic year.",
+        "creacion_fallo": "The campaign could not be opened.",
+        "edicion_fallo": "The deadline could not be updated.",
+        "cierre_fallo": "The campaign status could not be changed."
+      }
+    },
     "periodos": {
       "trimestre_1": "1st term",
       "trimestre_2": "2nd term",
