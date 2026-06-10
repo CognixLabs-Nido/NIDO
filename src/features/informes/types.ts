@@ -42,6 +42,47 @@ export interface PlantillaInformeItem {
   updated_at: string
 }
 
+// --- Campañas de informe (F9-5) ---------------------------------------------
+export type CampanaInformeRow = Database['public']['Tables']['campanas_informe']['Row']
+export type EstadoCampanaInforme = Database['public']['Enums']['estado_campana_informe']
+
+/** Una campaña del curso activo (item de la lista de dirección). */
+export interface CampanaInformeItem {
+  id: string
+  periodo: PeriodoInforme
+  /** Fecha límite (AAAA-MM-DD); informativa, no bloquea el flujo de F9. */
+  fecha_limite: string
+  estado: EstadoCampanaInforme
+  created_at: string
+  updated_at: string
+}
+
+/** Campañas del curso activo del centro, con el curso al que pertenecen. */
+export interface CampanasCursoActivo {
+  cursoId: string
+  cursoNombre: string
+  campanas: CampanaInformeItem[]
+}
+
+/** Un niño pendiente de informe (matrícula activa sin informe publicado). */
+export interface NinoPendiente {
+  id: string
+  nombre: string
+  apellidos: string
+}
+
+/** Progreso de una aula para la terna (curso, período) de una campaña. */
+export interface SeguimientoAula {
+  aulaId: string
+  aulaNombre: string
+  /** Niños con matrícula activa en el aula (denominador). */
+  total: number
+  /** Niños con informe publicado del período (numerador). */
+  publicados: number
+  /** Niños con matrícula activa SIN informe publicado (borrador o sin iniciar). */
+  pendientes: NinoPendiente[]
+}
+
 // --- Informes de evolución (F9-2) -------------------------------------------
 export type PeriodoInforme = Database['public']['Enums']['periodo_informe']
 export type EstadoInforme = Database['public']['Enums']['estado_informe']

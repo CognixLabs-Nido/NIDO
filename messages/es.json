@@ -1956,6 +1956,58 @@
       "no_encontrado": "No se encontró el informe.",
       "faltan_valoraciones": "Faltan ítems por valorar."
     },
+    "campana": {
+      "title": "Campaña de informes",
+      "admin_intro": "Fija una fecha límite por período y sigue el avance de los informes por aula. La campaña coordina, no bloquea: los informes se crean y publican igual exista o no campaña.",
+      "ir_a_campanas": "Campañas de informe",
+      "abrir": "Abrir campaña",
+      "cerrar": "Cerrar campaña",
+      "periodo": "Período",
+      "periodo_placeholder": "Elige un período",
+      "fecha_limite": "Fecha límite",
+      "fecha_limite_valor": "Fecha límite: {fecha}",
+      "lista_titulo": "Campañas",
+      "curso_activo": "Curso activo: {curso}",
+      "sin_curso_activo": "No hay un curso académico activo. Activa un curso para abrir campañas.",
+      "sin_campanas": "Aún no hay campañas. Abre una para empezar a seguir el avance.",
+      "estado": {
+        "abierta": "Abierta",
+        "cerrada": "Cerrada"
+      },
+      "acciones": {
+        "editar_fecha": "Editar fecha",
+        "abrir_confirmar": "Abrir campaña",
+        "guardar_fecha": "Guardar fecha",
+        "guardando": "Guardando…",
+        "procesando": "Procesando…",
+        "reabrir": "Reabrir",
+        "abierta_toast": "Campaña abierta",
+        "fecha_guardada_toast": "Fecha actualizada",
+        "cerrada_toast": "Campaña cerrada",
+        "reabierta_toast": "Campaña reabierta"
+      },
+      "seguimiento": {
+        "titulo": "Seguimiento",
+        "descripcion": "Informes publicados frente a niños con matrícula activa, por aula.",
+        "periodo_nav": "Período del seguimiento",
+        "total": "{publicados} de {total} publicados",
+        "sin_aulas": "No hay aulas con niños matriculados en este curso.",
+        "ver_pendientes": "{n, plural, one {Ver # pendiente} other {Ver # pendientes}}"
+      },
+      "validation": {
+        "periodo_invalido": "Elige un período válido.",
+        "fecha_invalida": "Fecha inválida. Formato AAAA-MM-DD.",
+        "estado_invalido": "Estado de campaña inválido.",
+        "campana_duplicada": "Ya existe una campaña para este período y curso."
+      },
+      "errors": {
+        "no_autorizado": "No tienes permiso para gestionar campañas de informe.",
+        "sin_curso_activo": "No hay un curso académico activo.",
+        "creacion_fallo": "No se pudo abrir la campaña.",
+        "edicion_fallo": "No se pudo actualizar la fecha.",
+        "cierre_fallo": "No se pudo cambiar el estado de la campaña."
+      }
+    },
     "periodos": {
       "trimestre_1": "1.er trimestre",
       "trimestre_2": "2.º trimestre",

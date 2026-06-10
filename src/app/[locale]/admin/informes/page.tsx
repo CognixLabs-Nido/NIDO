@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, ClipboardListIcon } from 'lucide-react'
+import { ArrowLeftIcon, CalendarRangeIcon, ClipboardListIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -76,6 +76,13 @@ export default async function AdminInformesPage({ params, searchParams }: PagePr
             {t('title')}
           </h1>
           <p className="text-muted-foreground text-sm">{t('admin_intro')}</p>
+          <Link
+            href={`/${locale}${BASE}/campanas`}
+            className="text-primary-700 hover:text-primary-800 inline-flex items-center gap-1 text-sm font-medium"
+          >
+            <CalendarRangeIcon className="size-4" />
+            {t('campana.ir_a_campanas')}
+          </Link>
         </div>
         <PlantillaInformeDialog />
       </header>

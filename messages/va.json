@@ -1956,6 +1956,58 @@
       "no_encontrado": "No s'ha trobat l'informe.",
       "faltan_valoraciones": "Falten ítems per valorar."
     },
+    "campana": {
+      "title": "Campanya d'informes",
+      "admin_intro": "Fixa una data límit per període i fes el seguiment de l'avanç dels informes per aula. La campanya coordina, no bloqueja: els informes es creen i publiquen igual existisca o no campanya.",
+      "ir_a_campanas": "Campanyes d'informes",
+      "abrir": "Obrir campanya",
+      "cerrar": "Tancar campanya",
+      "periodo": "Període",
+      "periodo_placeholder": "Tria un període",
+      "fecha_limite": "Data límit",
+      "fecha_limite_valor": "Data límit: {fecha}",
+      "lista_titulo": "Campanyes",
+      "curso_activo": "Curs actiu: {curso}",
+      "sin_curso_activo": "No hi ha cap curs acadèmic actiu. Activa un curs per obrir campanyes.",
+      "sin_campanas": "Encara no hi ha campanyes. Obri'n una per començar a seguir l'avanç.",
+      "estado": {
+        "abierta": "Oberta",
+        "cerrada": "Tancada"
+      },
+      "acciones": {
+        "editar_fecha": "Editar data",
+        "abrir_confirmar": "Obrir campanya",
+        "guardar_fecha": "Guardar data",
+        "guardando": "Guardant…",
+        "procesando": "Processant…",
+        "reabrir": "Reobrir",
+        "abierta_toast": "Campanya oberta",
+        "fecha_guardada_toast": "Data actualitzada",
+        "cerrada_toast": "Campanya tancada",
+        "reabierta_toast": "Campanya reoberta"
+      },
+      "seguimiento": {
+        "titulo": "Seguiment",
+        "descripcion": "Informes publicats enfront de xiquets amb matrícula activa, per aula.",
+        "periodo_nav": "Període del seguiment",
+        "total": "{publicados} de {total} publicats",
+        "sin_aulas": "No hi ha aules amb xiquets matriculats en aquest curs.",
+        "ver_pendientes": "{n, plural, one {Veure # pendent} other {Veure # pendents}}"
+      },
+      "validation": {
+        "periodo_invalido": "Tria un període vàlid.",
+        "fecha_invalida": "Data no vàlida. Format AAAA-MM-DD.",
+        "estado_invalido": "Estat de campanya no vàlid.",
+        "campana_duplicada": "Ja existeix una campanya per a aquest període i curs."
+      },
+      "errors": {
+        "no_autorizado": "No tens permís per gestionar campanyes d'informes.",
+        "sin_curso_activo": "No hi ha cap curs acadèmic actiu.",
+        "creacion_fallo": "No s'ha pogut obrir la campanya.",
+        "edicion_fallo": "No s'ha pogut actualitzar la data.",
+        "cierre_fallo": "No s'ha pogut canviar l'estat de la campanya."
+      }
+    },
     "periodos": {
       "trimestre_1": "1r trimestre",
       "trimestre_2": "2n trimestre",
