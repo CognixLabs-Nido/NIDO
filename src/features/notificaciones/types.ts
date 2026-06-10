@@ -26,6 +26,15 @@ export const PREF_NOTIF_VISTO = 'notificaciones_visto_at'
  */
 export const PREF_FIRMAS_VISTAS = 'autorizaciones_firmas_vistas'
 
+/**
+ * Clave del mapa por-informe `{ [informe_id]: iso_visto_at }` en
+ * preferencias_usuario (F9-3): registra cuándo la familia ABRIÓ cada informe
+ * publicado. El aviso de "informes nuevos" deja de contar los informes ya
+ * abiertos; basta con que exista la entrada (Q8: republicar tras corregir NO
+ * re-avisa, así que no comparamos instantes, solo presencia). KV, sin migración.
+ */
+export const PREF_INFORMES_VISTOS = 'informes_vistos'
+
 /** Ventana de novedades: solo se muestran/cuentan ítems de los últimos N días. */
 export const VENTANA_NOVEDADES_DIAS = 30
 
@@ -82,4 +91,10 @@ export interface AvisosInicio {
    * de archivarlas. Solo profe/admin (la familia no archiva).
    */
   medicacionesPorArchivar: number
+  /**
+   * Familia: informes de evolución PUBLICADOS de sus hijos que aún no ha abierto
+   * (F9-3). Aviso derivado de `informes_evolucion` (RLS → solo publicados legibles)
+   * menos el marcador `informes_vistos`. Solo familia (el staff no recibe este aviso).
+   */
+  informesNuevos: number
 }

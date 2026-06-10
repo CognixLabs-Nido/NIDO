@@ -410,6 +410,7 @@
       "recordatorios": "Reminders",
       "agenda": "Agenda",
       "autorizaciones": "Authorisations",
+      "informes": "Reports",
       "notificaciones": "Notifications"
     },
     "dashboard": {
@@ -1878,7 +1879,8 @@
       "todo_hecho": "Nothing pending · {n} done",
       "nuevas_firmas": "{n, plural, one {# new signature from a family has arrived} other {# new signatures from families have arrived}}",
       "revocaciones": "{n, plural, one {# authorization revoked: check pick-up / medication} other {# authorizations revoked: check pick-up / medication}}",
-      "por_archivar": "{n, plural, one {# finished medication to archive} other {# finished medications to archive}}"
+      "por_archivar": "{n, plural, one {# finished medication to archive} other {# finished medications to archive}}",
+      "informes_nuevos": "{n, plural, one {There is # new development report} other {There are # new development reports}}"
     },
     "errors": {
       "no_autorizado": "Not authorised.",
@@ -1972,6 +1974,10 @@
     "teacher_sin_aulas": "You have no classes assigned.",
     "teacher_aula_vacia": "There are no children enrolled in this class.",
     "teacher_sin_iniciar": "not started",
+    "family_intro": "Check your children's published development reports.",
+    "family_sin_informes": "No published reports yet.",
+    "family_sin_informes_desc": "When the school publishes a report for your child, it will appear here.",
+    "family_publicado_el": "Published on {fecha}",
     "crear": {
       "nuevo": "New report",
       "nino": "Child",

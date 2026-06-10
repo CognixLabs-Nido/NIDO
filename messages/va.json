@@ -410,6 +410,7 @@
       "recordatorios": "Recordatoris",
       "agenda": "Agenda",
       "autorizaciones": "Autoritzacions",
+      "informes": "Informes",
       "notificaciones": "Notificacions"
     },
     "dashboard": {
@@ -1878,7 +1879,8 @@
       "todo_hecho": "Res pendent · {n} al dia",
       "nuevas_firmas": "{n, plural, one {Ha arribat # firma nova d’una família} other {Han arribat # firmes noves de famílies}}",
       "revocaciones": "{n, plural, one {Revocada # autorització: revisa qui recull / la medicació} other {Revocades # autoritzacions: revisa qui recull / la medicació}}",
-      "por_archivar": "{n, plural, one {# medicació acabada per a arxivar} other {# medicacions acabades per a arxivar}}"
+      "por_archivar": "{n, plural, one {# medicació acabada per a arxivar} other {# medicacions acabades per a arxivar}}",
+      "informes_nuevos": "{n, plural, one {Hi ha # informe d'evolució nou} other {Hi ha # informes d'evolució nous}}"
     },
     "errors": {
       "no_autorizado": "No autoritzat.",
@@ -1972,6 +1974,10 @@
     "teacher_sin_aulas": "No tens aules assignades.",
     "teacher_aula_vacia": "No hi ha xiquets matriculats en esta aula.",
     "teacher_sin_iniciar": "sense iniciar",
+    "family_intro": "Consulta els informes d'evolució publicats dels teus fills.",
+    "family_sin_informes": "Encara no hi ha informes publicats.",
+    "family_sin_informes_desc": "Quan el centre publique un informe del teu fill, apareixerà ací.",
+    "family_publicado_el": "Publicat el {fecha}",
     "crear": {
       "nuevo": "Nou informe",
       "nino": "Xiquet",

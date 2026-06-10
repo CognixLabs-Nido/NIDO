@@ -410,6 +410,7 @@
       "recordatorios": "Recordatorios",
       "agenda": "Agenda",
       "autorizaciones": "Autorizaciones",
+      "informes": "Informes",
       "notificaciones": "Notificaciones"
     },
     "dashboard": {
@@ -1878,7 +1879,8 @@
       "todo_hecho": "Nada pendiente · {n} al día",
       "nuevas_firmas": "{n, plural, one {Ha llegado # firma nueva de una familia} other {Han llegado # firmas nuevas de familias}}",
       "revocaciones": "{n, plural, one {Revocada # autorización: revisa quién recoge / la medicación} other {Revocadas # autorizaciones: revisa quién recoge / la medicación}}",
-      "por_archivar": "{n, plural, one {# medicación terminada para archivar} other {# medicaciones terminadas para archivar}}"
+      "por_archivar": "{n, plural, one {# medicación terminada para archivar} other {# medicaciones terminadas para archivar}}",
+      "informes_nuevos": "{n, plural, one {Hay # informe de evolución nuevo} other {Hay # informes de evolución nuevos}}"
     },
     "errors": {
       "no_autorizado": "No autorizado.",
@@ -1972,6 +1974,10 @@
     "teacher_sin_aulas": "No tienes aulas asignadas.",
     "teacher_aula_vacia": "No hay niños matriculados en esta aula.",
     "teacher_sin_iniciar": "sin iniciar",
+    "family_intro": "Consulta los informes de evolución publicados de tus hijos.",
+    "family_sin_informes": "Aún no hay informes publicados.",
+    "family_sin_informes_desc": "Cuando el centro publique un informe de tu hijo, aparecerá aquí.",
+    "family_publicado_el": "Publicado el {fecha}",
     "crear": {
       "nuevo": "Nuevo informe",
       "nino": "Niño",

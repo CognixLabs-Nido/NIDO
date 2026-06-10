@@ -2,7 +2,12 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 
-import { PREF_FIRMAS_VISTAS, PREF_NOTIF_VISTO, VENTANA_NOVEDADES_DIAS } from '../types'
+import {
+  PREF_FIRMAS_VISTAS,
+  PREF_INFORMES_VISTOS,
+  PREF_NOTIF_VISTO,
+  VENTANA_NOVEDADES_DIAS,
+} from '../types'
 
 export type RolNotif = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
 
@@ -46,6 +51,28 @@ export async function getFirmasVistas(): Promise<Record<string, string>> {
     .from('preferencias_usuario')
     .select('valor')
     .eq('clave', PREF_FIRMAS_VISTAS)
+    .maybeSingle()
+  if (!data?.valor) return {}
+  try {
+    const parsed = JSON.parse(data.valor)
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {}
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Mapa `{ [informe_id]: iso_visto_at }` del usuario (F9-3): qué informes
+ * publicados ha abierto la familia. Vacío si nunca abrió ninguno o si el valor
+ * está corrupto. Solo se usa la PRESENCIA de la clave (Q8: no re-avisar al
+ * republicar) — el instante es informativo.
+ */
+export async function getInformesVistos(): Promise<Record<string, string>> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('preferencias_usuario')
+    .select('valor')
+    .eq('clave', PREF_INFORMES_VISTOS)
     .maybeSingle()
   if (!data?.valor) return {}
   try {
