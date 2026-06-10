@@ -3,7 +3,10 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
+import { cn } from '@/lib/utils'
+
 import { CrearInformeDialog } from '@/features/informes/components/CrearInformeDialog'
+import { fondoInforme } from '@/features/informes/lib/estilos'
 import { getInformesDeMisAulas } from '@/features/informes/queries/get-informes-profe'
 import { getPlantillasInforme } from '@/features/informes/queries/get-plantillas-informe'
 import { PERIODOS_INFORME } from '@/features/informes/types'
@@ -83,7 +86,10 @@ export default async function TeacherInformesPage({ params }: PageProps) {
                             <Link
                               key={periodo}
                               href={`/${locale}/teacher/informes/${est.id}`}
-                              className="bg-muted/40 hover:bg-muted flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs"
+                              className={cn(
+                                'flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs',
+                                fondoInforme(est.estado)
+                              )}
                             >
                               <span>{label}</span>
                               <span className="text-muted-foreground">

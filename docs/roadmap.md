@@ -86,3 +86,8 @@ Tras cerrar Fase 3 (agenda diaria), reorganizamos el resto de Ola 1 para refleja
 
 - **Campo "verificado por tutor"** en datos del niño — _disparador: cuando el flujo híbrido admin-propone/tutor-confirma sea necesario en algún campo concreto_.
   Hoy admin escribe, tutor lee. Si en algún campo se requiere que tutor confirme (ej. dirección de recogida, datos sanitarios cruciales), añadir `verificado_at` + `verificado_por`.
+
+## Informes de evolución (Fase 9)
+
+- **F9-5 — Campaña de informes** — _disparador: cuando la dirección quiera controlar plazos de entrega de los boletines_.
+  La dirección fija una **fecha límite por período/curso** y a las profes les aparecen los **informes pendientes de completar** en su **panel de INICIO**, reusando el sistema de avisos de inicio (PR #64). Pendiente tras F9-2/3/4 (rellenar/publicar, vista familia, PDF).
