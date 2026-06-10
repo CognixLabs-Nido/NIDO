@@ -64,6 +64,23 @@ export interface CampanasCursoActivo {
   campanas: CampanaInformeItem[]
 }
 
+/**
+ * Aviso consolidado de informes pendientes para el INICIO de la profe (F9-5-2).
+ * Una sola línea aunque haya varias campañas abiertas (Q1): `n` suma los informes
+ * que le faltan; `fechaLimite` es la **más próxima** entre las campañas con
+ * pendientes; `urgente`/`vencida` rigen el color (rojo) según el umbral de 3 días.
+ */
+export interface CampanaPendientesAviso {
+  /** Total de informes pendientes (suma de todas las campañas abiertas). */
+  n: number
+  /** Fecha límite más próxima (AAAA-MM-DD) entre las campañas con pendientes. */
+  fechaLimite: string
+  /** A ≤ 3 días naturales de la fecha o ya vencida → urgente (rojo). */
+  urgente: boolean
+  /** La fecha más próxima ya pasó. */
+  vencida: boolean
+}
+
 /** Un niño pendiente de informe (matrícula activa sin informe publicado). */
 export interface NinoPendiente {
   id: string

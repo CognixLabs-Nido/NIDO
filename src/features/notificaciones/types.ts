@@ -5,6 +5,8 @@
  * administraciones_medicacion) filtra el ámbito del rol automáticamente.
  */
 
+import type { CampanaPendientesAviso } from '@/features/informes/types'
+
 export type ActionResult<T = void> = { success: true; data: T } | { success: false; error: string }
 
 export function ok<T>(data: T): ActionResult<T> {
@@ -97,4 +99,10 @@ export interface AvisosInicio {
    * menos el marcador `informes_vistos`. Solo familia (el staff no recibe este aviso).
    */
   informesNuevos: number
+  /**
+   * Staff redactor (coordinadora/profesora): informes que le faltan por completar
+   * para las campañas ABIERTAS (F9-5-2). Aviso derivado consolidado (Q1) o `null` si
+   * no hay pendientes / no es redactora. Solo la profe (admin y familia: `null`).
+   */
+  campanaPendientes: CampanaPendientesAviso | null
 }
