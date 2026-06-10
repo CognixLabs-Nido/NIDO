@@ -1,7 +1,7 @@
 ---
 feature: campana-informes
 wave: 1
-status: draft
+status: approved
 priority: medium
 last_updated: 2026-06-10
 related_adrs: [ADR-0042, ADR-0043, ADR-0037, ADR-0025]
@@ -49,7 +49,7 @@ Reusa dos piezas ya construidas:
 - **No** crea tabla de avisos ni push nuevo: el aviso de pendientes es **derivado** (in-app, patrón #64). _(Si en el futuro se quiere push al abrir campaña, sería trabajo aparte.)_
 - **No** modela "informe no aplica a este niño" como entidad propia (ver preguntas abiertas sobre matrículas parciales/bajas).
 - **No** añade recordatorios automáticos por email ni escalado temporal (más allá del cambio de color del aviso).
-- **No** toca el modelo de `informes_evolucion` (la campaña no añade columnas a esa tabla; el vínculo es por (centro, curso, período), no por FK informe→campaña). _(Ver pregunta abierta si se prefiere FK.)_
+- **No** toca el modelo de `informes_evolucion` (la campaña no añade columnas a esa tabla; el vínculo es por (centro, curso, período), no por FK informe→campaña — _Resuelto Q6_).
 
 ## Comportamientos detallados
 
@@ -58,7 +58,7 @@ Reusa dos piezas ya construidas:
 **Pre-condiciones:**
 
 - Usuario `admin` del centro.
-- Existe un curso académico (se usa el **activo** por defecto; ver pregunta abierta sobre campañas de cursos pasados).
+- Curso académico: **activo por defecto**, pero se **permite elegir cursos pasados** (F9 no tiene ventana temporal — Q6 de F9). _(Resuelto Q7.)_
 
 **Flujo:**
 
@@ -81,13 +81,13 @@ Reusa dos piezas ya construidas:
 
 **Flujo (cálculo, sin tabla de avisos):**
 
-1. Para cada campaña abierta del centro/curso, se computan los **pendientes de la profe**: niños matriculados (activos) en las aulas donde la profe es **redactora**, que **no** tienen informe `publicado` del (curso, período) de la campaña. Un **borrador cuenta como pendiente** (decisión cerrada 2).
-2. El aviso muestra: período + nº de pendientes + **fecha límite**.
-3. **Urgencia por fecha:** el aviso pasa a **rojo (urgente)** cuando `hoy >= fecha_limite - UMBRAL` o ya venció (`hoy > fecha_limite`). Antes del umbral, estilo informativo normal. _(UMBRAL concreto en Validaciones; p. ej. 3 días — a confirmar.)_
+1. Para cada campaña abierta del centro/curso, se computan los **pendientes de la profe**: niños con **matrícula activa** (`fecha_baja IS NULL`) en las aulas donde la profe es **redactora**, que **no** tienen informe `publicado` del (curso, período) de la campaña. Un **borrador cuenta como pendiente** (decisión cerrada 2). **Los niños dados de baja NO cuentan**; una matrícula iniciada a mitad de período **sí** cuenta mientras esté activa. _(Resuelto Q3 — ver matiz en Decisiones resueltas.)_
+2. **Varias campañas abiertas a la vez: permitido** (p. ej. trimestre*1 y trimestre_2 — Q1). El aviso de la profe es **consolidado**: un único banner con el **total de pendientes** sumando las campañas abiertas y la **fecha límite más próxima** (`min(fecha_limite)`). El desglose por período se ve al entrar en la lista de informes. *(Resuelto Q1.)\_
+3. **Urgencia por fecha:** el aviso pasa a **rojo (urgente)** cuando `hoy >= fecha_limite − 3 días` o ya venció (`hoy > fecha_limite`); con varias campañas, manda la **fecha más próxima**. Antes del umbral, estilo informativo normal. _(UMBRAL = **3 días naturales**, resuelto Q9.)_
 
 **Post-condiciones:**
 
-- El aviso **no se "marca como visto"**: es un contador de estado real (como `pendientesConfirmar` en #64), no una novedad. Desaparece **solo** cuando los pendientes llegan a 0 (todos publicados) o se cierra la campaña.
+- El aviso **no se "marca como visto"**: es un contador de estado real (como `pendientesConfirmar` en #64), no una novedad. Desaparece **solo** cuando los pendientes llegan a 0 (todos publicados) o se cierran las campañas.
 
 ### Comportamiento 3: Seguimiento de la campaña (dirección)
 
@@ -106,8 +106,9 @@ Reusa dos piezas ya construidas:
 
 **Pre-condiciones:**
 
-- Usuario profe **redactor** (`coordinadora`/`profesora`) del aula.
-- Existe campaña `abierta` del (curso, período) — _(o, si se decide permitir lote sin campaña, ver pregunta abierta; por defecto el botón aparece en contexto de campaña)_.
+- Usuario profe **redactor** (`coordinadora`/`profesora`) del aula **o `admin` del centro** _(Resuelto Q2: la dirección también puede publicar en lote — por aula y, opcionalmente, de todo el centro)_.
+- Existe campaña `abierta` del (curso, período); el botón aparece **en contexto de campaña**.
+- **Solo publica** informes ya existentes y completos; **no crea** informes nuevos (crear sigue siendo F9-2 individual — _Resuelto Q5_).
 
 **Flujo:**
 
@@ -122,7 +123,7 @@ Reusa dos piezas ya construidas:
 
 - Los informes completos pasan a `publicado` y la familia recibe su aviso (F9-3) por cada uno recién publicado.
 - Baja el contador de pendientes del INICIO de la profe.
-- Atomicidad: ver pregunta abierta / decisión técnica (¿todo-o-nada vs best-effort por informe?). Recomendación: **best-effort por informe** (publica los que puede; reporta los que no), porque "todo-o-nada" haría que un solo informe incompleto impidiera publicar el resto, contradiciendo la US-05.
+- Atomicidad: **best-effort por informe** _(Resuelto Q8)_ — publica los que puede; reporta los que no. "Todo-o-nada" haría que un solo informe incompleto impidiera publicar el resto, contradiciendo la US-05.
 
 ### Comportamiento 5: Cerrar una campaña (dirección)
 
@@ -130,17 +131,17 @@ Reusa dos piezas ya construidas:
 
 **Flujo:** la directora pulsa "Cerrar campaña" → `estado='cerrada'`.
 
-**Post-condiciones:** deja de generar el aviso de pendientes en el INICIO de las profes. **No** toca los informes (los borradores siguen existiendo; se pueden seguir publicando individualmente por F9-2). _(Semántica exacta de "cerrar" → pregunta abierta.)_
+**Post-condiciones (Resuelto Q4):** deja de generar el aviso de pendientes en el INICIO de las profes. **No** toca los informes (los borradores siguen existiendo; se pueden seguir publicando individualmente por F9-2). La **vista de seguimiento sigue consultable** para campañas cerradas (foto histórica). La directora puede **reabrir** una campaña cerrada (`estado='abierta'`) y **editar la `fecha_limite` mientras está abierta**. Cerrar es reversible; no hay borrado.
 
 ## Casos edge
 
 - **Sin campaña abierta**: el INICIO de la profe no muestra aviso de campaña; el flujo F9 individual sigue disponible. La zona admin muestra "No hay campaña abierta para este período".
 - **Sin pendientes**: si la profe ya tiene todos publicados, el aviso no aparece (contador 0). El botón "Publicar todos" no publica nada (0 publicados) y lo indica.
 - **Fecha límite pasada**: no bloquea; el aviso queda en rojo "vencida hace N días" y se puede seguir publicando (decisión cerrada 3).
-- **Varias campañas abiertas a la vez** (p. ej. trimestre_1 y trimestre_2): cómo se agrega el aviso → **pregunta abierta**.
+- **Varias campañas abiertas a la vez** (p. ej. trimestre*1 y trimestre_2): **permitido**; el aviso de la profe es **consolidado** (total de pendientes + fecha más próxima) — \_Resuelto Q1*.
 - **Sin permisos**: una profe `tecnico`/`apoyo` (no redactora) no ve el aviso de pendientes ni el botón "Publicar todos" (no es audiencia de creación/publicación en F9). Un tutor nunca ve nada de campaña. Un admin de otro centro no ve la campaña (aislamiento).
-- **Niño con matrícula parcial / baja a mitad de período**: ¿cuenta como pendiente? → **pregunta abierta**.
-- **Niño sin plantilla/informe creado todavía**: cuenta como pendiente (no hay informe publicado). La profe debe crearlo (F9-2) y publicarlo; "Publicar todos" **no crea** informes, solo publica los existentes y completos. _(¿Debería "Publicar todos" crear los que falten desde una plantilla? → pregunta abierta.)_
+- **Niño con matrícula parcial / baja a mitad de período**: solo cuentan los de **matrícula activa** (`fecha_baja IS NULL`). Los dados de baja **no** cuentan como pendientes; una matrícula iniciada a mitad de período **sí** cuenta si está activa — _Resuelto Q3_.
+- **Niño sin informe creado todavía**: cuenta como pendiente (no hay informe publicado). La profe debe crearlo (F9-2) y publicarlo; "Publicar todos" **no crea** informes, solo publica los existentes y completos — _Resuelto Q5_.
 - **Concurrencia**: dos profes redactoras de la misma aula pulsan "Publicar todos" a la vez → idempotente por informe (publicar un informe ya publicado no hace nada; patrón "USING falso → 0 filas" + `.select().maybeSingle()`).
 - **Campaña duplicada**: el índice único `(centro, curso, período)` rechaza una segunda campaña para la misma terna; la UI lo traduce a un error claro.
 - **Idiomas**: fecha límite formateada por locale; el contenido del informe sigue en castellano (F9). Plurales en el aviso ("1 informe pendiente" / "N informes pendientes").
@@ -172,7 +173,7 @@ export const publicarLoteSchema = z.object({
 })
 ```
 
-- **UMBRAL de urgencia** del aviso: constante a fijar (propuesta: 3 días naturales antes de `fecha_limite`). _(A confirmar.)_
+- **UMBRAL de urgencia** del aviso: **3 días naturales** antes de `fecha_limite` (constante `UMBRAL_URGENCIA_CAMPANA_DIAS = 3`) — _Resuelto Q9_.
 - La regla de publicación (todos los ítems valorados) **no** se revalida en el schema del lote: se reusa `todosValorados(snapshot, respuestas)` de F9 por cada informe en el server action.
 
 ## Modelo de datos afectado
@@ -189,10 +190,10 @@ export const publicarLoteSchema = z.object({
   - `created_by uuid NOT NULL` → `usuarios` RESTRICT
   - `created_at`/`updated_at timestamptz`
   - **UNIQUE `(centro_id, curso_academico_id, periodo)`** — una campaña por terna.
-  - **Se audita** (`centro_id` directo), patrón del proyecto. **DELETE bloqueado** (cerrar = UPDATE de estado).
-  - _(Decidir si lleva `deleted_at` — propuesta: NO; "cerrar" es el estado terminal. Ver pregunta abierta.)_
+  - **Se audita** (`centro_id` directo), patrón del proyecto. **DELETE bloqueado** (cerrar = UPDATE de estado, reversible).
+  - **Sin `deleted_at`** _(Resuelto)_: el ciclo de vida es `abierta ⇄ cerrada` (reabrible); no hay borrado.
 
-**Tablas modificadas:** ninguna. _(En particular, `informes_evolucion` **no** gana FK a la campaña: el vínculo es lógico por (centro, curso, período). Ver pregunta abierta sobre añadir `campana_id` por trazabilidad.)_
+**Tablas modificadas:** ninguna _(Resuelto Q6)_. `informes_evolucion` **no** gana FK a la campaña: el vínculo es **lógico** por (centro, curso, período) — suficiente para el seguimiento y el lote, y coherente con "capa no-puerta" (los informes existen con independencia de las campañas). Si más adelante hace falta trazar "publicado en el marco de la campaña X", se añadiría `campana_id` nullable sin migración compleja.
 
 **Tablas consultadas (derivación de pendientes y seguimiento):** `campanas_informe`, `profes_aulas`, `aulas`, `matriculas`, `ninos`, `informes_evolucion`, `cursos_academicos`.
 
@@ -347,22 +348,18 @@ Namespace nuevo `campana` (o sub-bloque dentro de `informes` — a decidir). Cla
 
 ---
 
-## Preguntas abiertas (NO decididas — para el responsable)
+## Decisiones resueltas (revisión 2026-06-10 — «sí a todo»)
 
-1. **Varias campañas abiertas a la vez.** ¿Se permite tener abiertas simultáneamente, p. ej., `trimestre_1` y `trimestre_2`? El índice único es por (centro, curso, período), así que **técnicamente** podrían coexistir. Si se permite: **¿cómo se agrega el aviso de la profe** cuando hay varias? (¿un aviso por campaña? ¿uno consolidado con el total y la fecha más próxima/urgente?). Si NO se permite: ¿restringimos a una campaña abierta por centro a la vez (validación extra)?
+Las 9 preguntas abiertas quedaron cerradas por el responsable. Donde el "sí" no era binario se aplicó la recomendación; los tres puntos marcados ⚠️ son interpretaciones (el "sí" literal no encajaba) y pueden vetarse antes de F9-5-0.
 
-2. **¿La directora también puede publicar en lote, o solo la profe?** Decisión cerrada 5 dice "por defecto solo la profe". ¿Habilitamos también a la directora (es_admin) a "Publicar todos" de un aula / de todo el centro? La RLS de `informes_evolucion_update` ya se lo permite; es una decisión de **UX/producto**, no técnica.
+1. **Varias campañas abiertas a la vez: SÍ.** Pueden coexistir (p. ej. trimestre_1 y trimestre_2). El aviso de la profe es **consolidado**: total de pendientes sumando campañas abiertas + **fecha límite más próxima** (`min(fecha_limite)`), que también gobierna la urgencia. Desglose por período en la lista de informes.
+2. **La dirección también puede publicar en lote: SÍ.** Además de la profe redactora, `admin` puede "Publicar todos" (por aula y, opcionalmente, de todo el centro). La RLS de `informes_evolucion_update` ya lo permite.
+3. ⚠️ **Niños de baja / matrícula parcial.** Resuelto: **solo cuentan los de matrícula activa** (`fecha_baja IS NULL`); los **dados de baja NO** cuentan como pendientes; una matrícula iniciada a mitad de período **sí** cuenta si está activa. _(El "sí" literal contaría también las bajas, lo cual genera ruido; apliqué la regla operativa estándar. Vétalo si querías otra cosa.)_
+4. **"Cerrar" campaña.** `estado='cerrada'` → deja de generar el aviso; **no toca informes**; el **seguimiento sigue consultable** (histórico); la directora puede **reabrir** y **editar la `fecha_limite` mientras está abierta**. Reversible, sin borrado.
+5. ⚠️ **"Publicar todos" solo publica, NO crea.** Publica los informes existentes y completos; crear sigue siendo F9-2 individual. _(El "sí a todo" podría leerse como "también crear", pero crear en lote exige decidir qué plantilla usar — el centro puede tener varias (F9-1). Lo dejé en publicar-solo; si quieres crear-en-lote, es un añadido que necesita esa decisión.)_
+6. ⚠️ **Vínculo lógico, sin FK.** El informe se asocia a la campaña por (centro, curso, período); **no** se añade `campana_id` a `informes_evolucion`. Coherente con "capa no-puerta". _(Si prefieres trazabilidad fuerte "publicado en campaña X", se añade `campana_id` nullable después, sin migración compleja.)_
+7. **Curso: activo por defecto + se permiten cursos pasados** (F9 no tiene ventana temporal).
+8. **Lote best-effort** (publica los completos, reporta los incompletos). No todo-o-nada.
+9. **Umbral de urgencia = 3 días naturales** antes de `fecha_limite` (`UMBRAL_URGENCIA_CAMPANA_DIAS = 3`).
 
-3. **Niños que no deberían tener informe** (matrícula a mitad de período, bajas, altas posteriores a la fecha de corte): ¿**cuentan como pendientes**? Si no, **¿cuál es la regla de corte** (fecha de matrícula vs fecha de la campaña, baja activa, etc.)? Hoy la propuesta los contaría a todos los matriculados activos.
-
-4. **Qué hace exactamente "cerrar" una campaña.** Propuesta mínima: `estado='cerrada'` → deja de generar el aviso de pendientes; no toca informes. ¿Debe además **congelar el seguimiento** (foto final), **impedir reabrir**, o permitir reabrir? ¿Se puede **editar la fecha límite** de una campaña abierta?
-
-5. **¿"Publicar todos" debería también CREAR los informes que falten** desde una plantilla (para niños sin informe aún), o solo publicar los que ya existen y están completos? La propuesta actual **solo publica** (no crea); crear sigue siendo F9-2 individual. ¿Suficiente?
-
-6. **Vínculo informe↔campaña.** ¿Basta el vínculo lógico por (centro, curso, período), o quieres una **FK `campana_id` en `informes_evolucion`** para trazar "este informe se publicó en el marco de la campaña X"? Afecta a auditoría/analítica, no al flujo.
-
-7. **Curso de la campaña.** ¿Siempre el **curso activo**, o se permite abrir campañas de **cursos pasados** (para corregir/recopilar histórico)? F9 no tiene ventana temporal (Q6), así que técnicamente cabría.
-
-8. **Atomicidad del lote** (decisión técnica con cara de producto): ¿**best-effort** (recomendado: publica los completos, reporta los incompletos) o **todo-o-nada** (no publica nada si hay algún incompleto)? Recomiendo best-effort por la US-05.
-
-9. **Umbral de urgencia** del aviso rojo: ¿cuántos días antes de `fecha_limite` se pone en rojo? (propuesta: 3 días naturales).
+> Con esto la spec queda **`approved`**. Siguiente paso: **F9-5-0** (migración `campanas_informe` + ENUM + RLS + tests, sin UI), siguiendo el patrón de F9-0.
