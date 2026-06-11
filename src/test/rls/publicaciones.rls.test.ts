@@ -135,7 +135,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
   async function seedPublicacion(autor: string, aula_id = aula.id): Promise<string> {
     const { data, error } = await serviceClient
       .from('publicaciones')
-      .insert({ aula_id, autor_id: autor, texto: 'Día en el cole' })
+      .insert({ centro_id: centro.id, aula_id, autor_id: autor, texto: 'Día en el cole' })
       .select('id')
       .single()
     if (error || !data) throw new Error(`seedPublicacion falló: ${error?.message}`)
@@ -146,6 +146,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
   async function seedMedia(publicacion_id: string): Promise<string> {
     const payload: MediaInsert = {
       publicacion_id,
+      centro_id: centro.id,
       bucket: 'aula-fotos',
       path: `${centro.id}/${aula.id}/${publicacion_id}/${randomUUID()}.jpg`,
       mime: 'image/jpeg',
@@ -161,7 +162,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
     const c = await clientFor(coordinadora)
     const { data, error } = await c
       .from('publicaciones')
-      .insert({ aula_id: aula.id, autor_id: coordinadora.id, texto: 'Hola' })
+      .insert({ centro_id: centro.id, aula_id: aula.id, autor_id: coordinadora.id, texto: 'Hola' })
       .select('id, centro_id')
       .maybeSingle()
     expect(error).toBeNull()
@@ -174,7 +175,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
     const c = await clientFor(admin)
     const { data, error } = await c
       .from('publicaciones')
-      .insert({ aula_id: aula.id, autor_id: admin.id })
+      .insert({ centro_id: centro.id, aula_id: aula.id, autor_id: admin.id })
       .select('id')
       .maybeSingle()
     expect(error).toBeNull()
@@ -186,7 +187,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
     const c = await clientFor(tecnico)
     const { data, error } = await c
       .from('publicaciones')
-      .insert({ aula_id: aula.id, autor_id: tecnico.id })
+      .insert({ centro_id: centro.id, aula_id: aula.id, autor_id: tecnico.id })
       .select('id')
       .maybeSingle()
     expect(data).toBeNull()
@@ -197,7 +198,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
     const c = await clientFor(profeOtraAula)
     const { data, error } = await c
       .from('publicaciones')
-      .insert({ aula_id: aula.id, autor_id: profeOtraAula.id })
+      .insert({ centro_id: centro.id, aula_id: aula.id, autor_id: profeOtraAula.id })
       .select('id')
       .maybeSingle()
     expect(data).toBeNull()
@@ -230,7 +231,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
 
     const ok = await c
       .from('media_etiquetas')
-      .insert({ media_id: mediaId, nino_id: ninoVe.id })
+      .insert({ media_id: mediaId, nino_id: ninoVe.id, centro_id: centro.id })
       .select('id')
       .maybeSingle()
     expect(ok.error).toBeNull()
@@ -242,7 +243,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
     await setPuedeAparecer(ninoBloq.id, false)
     const ko = await c
       .from('media_etiquetas')
-      .insert({ media_id: mediaId, nino_id: ninoBloq.id })
+      .insert({ media_id: mediaId, nino_id: ninoBloq.id, centro_id: centro.id })
       .select('id')
       .maybeSingle()
     expect(ko.data).toBeNull()
@@ -258,7 +259,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
     await setPuedeAparecer(ninoTmp.id, true)
     const { error: etErr } = await serviceClient
       .from('media_etiquetas')
-      .insert({ media_id: mediaId, nino_id: ninoTmp.id })
+      .insert({ media_id: mediaId, nino_id: ninoTmp.id, centro_id: centro.id })
     expect(etErr).toBeNull()
 
     const cVe = await clientFor(tutorVe)
