@@ -1781,6 +1781,112 @@ export type Database = {
           },
         ]
       }
+      media: {
+        Row: {
+          alto: number | null
+          ancho: number | null
+          bucket: string
+          bytes: number | null
+          centro_id: string
+          created_at: string
+          hash: string | null
+          id: string
+          mime: string
+          path: string
+          path_miniatura: string | null
+          publicacion_id: string
+        }
+        Insert: {
+          alto?: number | null
+          ancho?: number | null
+          bucket: string
+          bytes?: number | null
+          centro_id: string
+          created_at?: string
+          hash?: string | null
+          id?: string
+          mime: string
+          path: string
+          path_miniatura?: string | null
+          publicacion_id: string
+        }
+        Update: {
+          alto?: number | null
+          ancho?: number | null
+          bucket?: string
+          bytes?: number | null
+          centro_id?: string
+          created_at?: string
+          hash?: string | null
+          id?: string
+          mime?: string
+          path?: string
+          path_miniatura?: string | null
+          publicacion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'media_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'media_publicacion_id_fkey'
+            columns: ['publicacion_id']
+            isOneToOne: false
+            referencedRelation: 'publicaciones'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      media_etiquetas: {
+        Row: {
+          centro_id: string
+          created_at: string
+          id: string
+          media_id: string
+          nino_id: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          id?: string
+          media_id: string
+          nino_id: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          id?: string
+          media_id?: string
+          nino_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'media_etiquetas_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'media_etiquetas_media_id_fkey'
+            columns: ['media_id']
+            isOneToOne: false
+            referencedRelation: 'media'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'media_etiquetas_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       mensajes: {
         Row: {
           autor_id: string
@@ -1889,6 +1995,7 @@ export type Database = {
           nacionalidad: string | null
           nombre: string
           notas_admin: string | null
+          puede_aparecer_en_fotos: boolean
           requiere_ambos_firmantes: boolean
           sexo: Database['public']['Enums']['nino_sexo'] | null
           updated_at: string
@@ -1905,6 +2012,7 @@ export type Database = {
           nacionalidad?: string | null
           nombre: string
           notas_admin?: string | null
+          puede_aparecer_en_fotos?: boolean
           requiere_ambos_firmantes?: boolean
           sexo?: Database['public']['Enums']['nino_sexo'] | null
           updated_at?: string
@@ -1921,6 +2029,7 @@ export type Database = {
           nacionalidad?: string | null
           nombre?: string
           notas_admin?: string | null
+          puede_aparecer_en_fotos?: boolean
           requiere_ambos_firmantes?: boolean
           sexo?: Database['public']['Enums']['nino_sexo'] | null
           updated_at?: string
@@ -2123,6 +2232,58 @@ export type Database = {
             columns: ['profe_id']
             isOneToOne: false
             referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      publicaciones: {
+        Row: {
+          aula_id: string
+          autor_id: string
+          centro_id: string
+          created_at: string
+          id: string
+          texto: string | null
+          updated_at: string
+        }
+        Insert: {
+          aula_id: string
+          autor_id: string
+          centro_id: string
+          created_at?: string
+          id?: string
+          texto?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aula_id?: string
+          autor_id?: string
+          centro_id?: string
+          created_at?: string
+          id?: string
+          texto?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'publicaciones_aula_id_fkey'
+            columns: ['aula_id']
+            isOneToOne: false
+            referencedRelation: 'aulas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'publicaciones_autor_id_fkey'
+            columns: ['autor_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'publicaciones_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
             referencedColumns: ['id']
           },
         ]
@@ -2448,6 +2609,14 @@ export type Database = {
         Args: { p_autorizacion_id: string }
         Returns: boolean
       }
+      aula_de_publicacion: {
+        Args: { p_publicacion_id: string }
+        Returns: string
+      }
+      autor_de_publicacion: {
+        Args: { p_publicacion_id: string }
+        Returns: string
+      }
       autorizacion_aplica_a_nino: {
         Args: { p_autorizacion_id: string; p_nino_id: string }
         Returns: boolean
@@ -2478,6 +2647,10 @@ export type Database = {
       centro_de_evento: { Args: { p_evento_id: string }; Returns: string }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
       centro_de_plantilla: { Args: { p_plantilla_id: string }; Returns: string }
+      centro_de_publicacion: {
+        Args: { p_publicacion_id: string }
+        Returns: string
+      }
       contar_invitaciones_pendientes: { Args: never; Returns: number }
       contar_recordatorios_pendientes: { Args: never; Returns: number }
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
@@ -2487,6 +2660,7 @@ export type Database = {
       es_profe_de_evento: { Args: { p_evento_id: string }; Returns: boolean }
       es_profe_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
       es_profe_en_centro: { Args: { p_centro_id: string }; Returns: boolean }
+      es_redactor_de_aula: { Args: { p_aula_id: string }; Returns: boolean }
       es_redactor_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
       es_tutor_de: { Args: { p_nino_id: string }; Returns: boolean }
       es_tutor_en_aula: { Args: { p_aula_id: string }; Returns: boolean }
@@ -2499,6 +2673,7 @@ export type Database = {
         Args: { p_evento_id: string; p_nino_id: string }
         Returns: boolean
       }
+      familia_ve_aula: { Args: { p_aula_id: string }; Returns: boolean }
       fecha_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       get_info_medica_emergencia: {
         Args: { p_nino_id: string }
@@ -2544,9 +2719,15 @@ export type Database = {
         Args: { p_conversacion_id: string }
         Returns: string
       }
+      nino_puede_aparecer: { Args: { p_nino_id: string }; Returns: boolean }
       nino_toma_comida_solida: { Args: { p_nino_id: string }; Returns: boolean }
       organizador_de_cita: { Args: { p_cita_id: string }; Returns: string }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
+      publicacion_de_media: { Args: { p_media_id: string }; Returns: string }
+      publicacion_tiene_nino_sin_permiso: {
+        Args: { p_publicacion_id: string }
+        Returns: boolean
+      }
       puede_participar_conversacion: {
         Args: { p_conversacion_id: string }
         Returns: boolean
@@ -2624,6 +2805,14 @@ export type Database = {
       }
       usuario_es_invitado_cita: {
         Args: { p_cita_id: string }
+        Returns: boolean
+      }
+      usuario_ve_publicacion_row: {
+        Args: {
+          p_aula_id: string
+          p_centro_id: string
+          p_publicacion_id: string
+        }
         Returns: boolean
       }
     }
