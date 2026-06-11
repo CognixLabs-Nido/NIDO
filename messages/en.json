@@ -355,6 +355,12 @@
         "aula_actual": "Current classroom",
         "confirmar_fuera_cohorte": "I confirm enrolling even if the age doesn't match the classroom cohort",
         "acciones": "Actions"
+      },
+      "fotos": {
+        "titulo": "Photos and image consent",
+        "toggle_label": "May appear in photos",
+        "ayuda": "Enable only if the family has signed the image consent. Without it, the teacher cannot tag this child in classroom photos.",
+        "guardado": "Consent updated."
       }
     },
     "audit": {
@@ -564,7 +570,9 @@
       "create_failed": "Could not register the child.",
       "aula_no_encontrada": "Classroom not found.",
       "aula_de_otro_centro": "The selected classroom doesn't belong to this centre.",
-      "no_encontrado": "Child not found."
+      "no_encontrado": "Child not found.",
+      "no_autorizado": "You don't have permission for this action.",
+      "actualizacion_fallo": "Could not update."
     }
   },
   "matricula": {
@@ -2073,6 +2081,55 @@
       "guardado_toast": "Draft saved.",
       "publicado_toast": "Report published.",
       "despublicado_toast": "Report unpublished."
+    }
+  },
+  "fotos": {
+    "title": "Classroom photos",
+    "subtitulo": "Share day-to-day moments with families. Only children with consent appear.",
+    "ver": "Photos",
+    "foto_alt": "Classroom photo",
+    "composer": {
+      "nueva": "New post",
+      "titulo": "New post",
+      "editar": "Edit post",
+      "texto_label": "Description",
+      "texto_placeholder": "Tell how the day went…",
+      "fotos_label": "Photos",
+      "procesando": "Processing photos…",
+      "quitar_foto": "Remove photo",
+      "publicar": "Publish",
+      "cerrar": "Close",
+      "publicada": "Post saved."
+    },
+    "etiquetar": {
+      "titulo": "Who appears?",
+      "sin_ninos": "No children with image consent in this classroom."
+    },
+    "lista": {
+      "vacia": "No photos yet.",
+      "editar": "Edit",
+      "borrar": "Delete",
+      "borrada": "Post deleted."
+    },
+    "validation": {
+      "aula_invalida": "Invalid classroom.",
+      "nino_invalido": "Invalid child.",
+      "texto_largo": "Text is too long (max 2000).",
+      "tipo_no_permitido": "File type not allowed. Use JPG, PNG or HEIC.",
+      "tamano_max": "Photo exceeds the maximum size (15 MB).",
+      "max_fotos": "Maximum 20 photos per post."
+    },
+    "errors": {
+      "no_autorizado": "You don't have permission for this action.",
+      "aula_no_encontrada": "Classroom not found.",
+      "creacion_fallo": "Could not create the post.",
+      "guardado_fallo": "Could not save.",
+      "borrado_fallo": "Could not delete.",
+      "etiquetado_fallo": "Could not tag.",
+      "nino_sin_permiso": "That child does not have image consent.",
+      "subida_fallo": "Could not upload the photo.",
+      "procesado_fallo": "Could not process the photo.",
+      "heic_fallo": "Could not convert the HEIC photo."
     }
   }
 }

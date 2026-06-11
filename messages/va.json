@@ -355,6 +355,12 @@
         "aula_actual": "Aula actual",
         "confirmar_fuera_cohorte": "Confirme matricular encara que l'edat no coincidisca amb la cohort",
         "acciones": "Accions"
+      },
+      "fotos": {
+        "titulo": "Fotos i consentiment d'imatge",
+        "toggle_label": "Pot aparéixer en fotos",
+        "ayuda": "Activa-ho només si la família ha firmat el consentiment d'imatge. Sense això, la mestra no pot etiquetar el xiquet en les fotos de l'aula.",
+        "guardado": "Consentiment actualitzat."
       }
     },
     "audit": {
@@ -564,7 +570,9 @@
       "create_failed": "No s'ha pogut registrar el xiquet.",
       "aula_no_encontrada": "Aula no trobada.",
       "aula_de_otro_centro": "L'aula seleccionada no pertany al centre.",
-      "no_encontrado": "Xiquet no trobat."
+      "no_encontrado": "Xiquet no trobat.",
+      "no_autorizado": "No tens permís per a esta acció.",
+      "actualizacion_fallo": "No s'ha pogut actualitzar."
     }
   },
   "matricula": {
@@ -2073,6 +2081,55 @@
       "guardado_toast": "Esborrany guardat.",
       "publicado_toast": "Informe publicat.",
       "despublicado_toast": "Informe despublicat."
+    }
+  },
+  "fotos": {
+    "title": "Fotos de l'aula",
+    "subtitulo": "Comparteix el dia a dia amb les famílies. Només apareixen els xiquets amb consentiment.",
+    "ver": "Fotos",
+    "foto_alt": "Foto de l'aula",
+    "composer": {
+      "nueva": "Nova publicació",
+      "titulo": "Nova publicació",
+      "editar": "Editar publicació",
+      "texto_label": "Descripció",
+      "texto_placeholder": "Conta com ha anat el dia…",
+      "fotos_label": "Fotos",
+      "procesando": "Processant fotos…",
+      "quitar_foto": "Llevar foto",
+      "publicar": "Publicar",
+      "cerrar": "Tancar",
+      "publicada": "Publicació guardada."
+    },
+    "etiquetar": {
+      "titulo": "Qui apareix?",
+      "sin_ninos": "No hi ha xiquets amb consentiment d'imatge en esta aula."
+    },
+    "lista": {
+      "vacia": "Encara no hi ha fotos.",
+      "editar": "Editar",
+      "borrar": "Esborrar",
+      "borrada": "Publicació esborrada."
+    },
+    "validation": {
+      "aula_invalida": "Aula no vàlida.",
+      "nino_invalido": "Xiquet no vàlid.",
+      "texto_largo": "El text és massa llarg (màx. 2000).",
+      "tipo_no_permitido": "Tipus d'arxiu no permés. Usa JPG, PNG o HEIC.",
+      "tamano_max": "La foto supera la grandària màxima (15 MB).",
+      "max_fotos": "Màxim 20 fotos per publicació."
+    },
+    "errors": {
+      "no_autorizado": "No tens permís per a esta acció.",
+      "aula_no_encontrada": "Aula no trobada.",
+      "creacion_fallo": "No s'ha pogut crear la publicació.",
+      "guardado_fallo": "No s'ha pogut guardar.",
+      "borrado_fallo": "No s'ha pogut esborrar.",
+      "etiquetado_fallo": "No s'ha pogut etiquetar.",
+      "nino_sin_permiso": "Eixe xiquet no té consentiment d'imatge.",
+      "subida_fallo": "No s'ha pogut pujar la foto.",
+      "procesado_fallo": "No s'ha pogut processar la foto.",
+      "heic_fallo": "No s'ha pogut convertir la foto HEIC."
     }
   }
 }

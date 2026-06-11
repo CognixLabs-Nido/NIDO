@@ -355,6 +355,12 @@
         "aula_actual": "Aula actual",
         "confirmar_fuera_cohorte": "Confirmo matricular aunque la edad no coincida con la cohorte del aula",
         "acciones": "Acciones"
+      },
+      "fotos": {
+        "titulo": "Fotos y consentimiento de imagen",
+        "toggle_label": "Puede aparecer en fotos",
+        "ayuda": "Actívalo solo si la familia ha firmado el consentimiento de imagen. Sin esto, la profe no puede etiquetar al niño en las fotos del aula.",
+        "guardado": "Consentimiento actualizado."
       }
     },
     "audit": {
@@ -564,7 +570,9 @@
       "create_failed": "No se pudo registrar al niño.",
       "aula_no_encontrada": "Aula no encontrada.",
       "aula_de_otro_centro": "El aula seleccionada no pertenece al centro.",
-      "no_encontrado": "Niño no encontrado."
+      "no_encontrado": "Niño no encontrado.",
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "actualizacion_fallo": "No se pudo actualizar."
     }
   },
   "matricula": {
@@ -2073,6 +2081,55 @@
       "guardado_toast": "Borrador guardado.",
       "publicado_toast": "Informe publicado.",
       "despublicado_toast": "Informe despublicado."
+    }
+  },
+  "fotos": {
+    "title": "Fotos del aula",
+    "subtitulo": "Comparte el día a día con las familias. Solo aparecen los niños con consentimiento.",
+    "ver": "Fotos",
+    "foto_alt": "Foto del aula",
+    "composer": {
+      "nueva": "Nueva publicación",
+      "titulo": "Nueva publicación",
+      "editar": "Editar publicación",
+      "texto_label": "Descripción",
+      "texto_placeholder": "Cuenta cómo ha ido el día…",
+      "fotos_label": "Fotos",
+      "procesando": "Procesando fotos…",
+      "quitar_foto": "Quitar foto",
+      "publicar": "Publicar",
+      "cerrar": "Cerrar",
+      "publicada": "Publicación guardada."
+    },
+    "etiquetar": {
+      "titulo": "¿Quién aparece?",
+      "sin_ninos": "No hay niños con consentimiento de imagen en este aula."
+    },
+    "lista": {
+      "vacia": "Aún no hay fotos.",
+      "editar": "Editar",
+      "borrar": "Borrar",
+      "borrada": "Publicación borrada."
+    },
+    "validation": {
+      "aula_invalida": "Aula no válida.",
+      "nino_invalido": "Niño no válido.",
+      "texto_largo": "El texto es demasiado largo (máx. 2000).",
+      "tipo_no_permitido": "Tipo de archivo no permitido. Usa JPG, PNG o HEIC.",
+      "tamano_max": "La foto supera el tamaño máximo (15 MB).",
+      "max_fotos": "Máximo 20 fotos por publicación."
+    },
+    "errors": {
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "aula_no_encontrada": "Aula no encontrada.",
+      "creacion_fallo": "No se pudo crear la publicación.",
+      "guardado_fallo": "No se pudo guardar.",
+      "borrado_fallo": "No se pudo borrar.",
+      "etiquetado_fallo": "No se pudo etiquetar.",
+      "nino_sin_permiso": "Ese niño no tiene consentimiento de imagen.",
+      "subida_fallo": "No se pudo subir la foto.",
+      "procesado_fallo": "No se pudo procesar la foto.",
+      "heic_fallo": "No se pudo convertir la foto HEIC."
     }
   }
 }
