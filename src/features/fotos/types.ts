@@ -21,8 +21,12 @@ export type MediaEtiquetaRow = Database['public']['Tables']['media_etiquetas']['
 export const MIME_FOTO_ENTRADA = ['image/jpeg', 'image/png', 'image/heic', 'image/heif'] as const
 export type MimeFotoEntrada = (typeof MIME_FOTO_ENTRADA)[number]
 
-/** MIME de salida tras procesar (CHECK de `media.mime`: jpeg|png|webp). */
-export const MIME_FOTO_SALIDA = 'image/webp'
+/**
+ * MIME de salida tras procesar. **JPEG**: lo admiten tanto el CHECK `media_mime_imagen`
+ * (jpeg|png|webp) como el `allowed_mime_types` del bucket `aula-fotos`
+ * (jpeg|png|heic|heif), que NO incluye webp. Encaja con la normalización HEIC→JPG.
+ */
+export const MIME_FOTO_SALIDA = 'image/jpeg'
 
 export const MAX_BYTES_FOTO = 15 * 1024 * 1024 // ~15 MB por foto
 export const MAX_FOTOS_PUBLICACION = 20

@@ -18,7 +18,8 @@ import { MAX_BYTES_FOTO } from '../types'
  *     metadatos** (sharp no los copia si no se pide `withMetadata()`), eliminando
  *     EXIF/geolocalización.
  *  4. Genera **original optimizado** (lado máx. 1600 px) + **miniatura** (lado máx.
- *     480 px), ambos **WebP** (uno de los MIME permitidos por el CHECK de `media`).
+ *     480 px), ambos **JPEG** — el bucket `aula-fotos` (F10-0) NO admite WebP en su
+ *     `allowed_mime_types`; JPEG lo aceptan el bucket y el CHECK `media_mime_imagen`.
  *
  * Idempotente por `hash` (SHA-256 del original procesado): la misma foto reprocesada
  * produce el mismo hash, lo que permite descartar duplicados aguas arriba.
@@ -28,21 +29,21 @@ import { MAX_BYTES_FOTO } from '../types'
 const MAX_LADO_ORIGINAL = 1600
 /** Lado mayor de la miniatura para la rejilla. */
 const MAX_LADO_MINIATURA = 480
-const CALIDAD_WEBP = 82
+const CALIDAD_JPEG = 82
 const CALIDAD_MINIATURA = 70
 
 export interface FotoProcesada {
-  /** Original optimizado (WebP), sin metadatos. */
+  /** Original optimizado (JPEG), sin metadatos. */
   original: Buffer
-  /** Miniatura (WebP), sin metadatos. */
+  /** Miniatura (JPEG), sin metadatos. */
   miniatura: Buffer
   /** Dimensiones del original optimizado. */
   ancho: number
   alto: number
   /** Bytes del original optimizado. */
   bytes: number
-  /** MIME de salida (siempre image/webp). */
-  mime: 'image/webp'
+  /** MIME de salida (siempre image/jpeg). */
+  mime: 'image/jpeg'
   /** SHA-256 hex del original optimizado (idempotencia / dedup). */
   hash: string
 }
@@ -106,11 +107,11 @@ export async function procesarFoto(entrada: Buffer): Promise<FotoProcesada> {
   }
 
   // 3. Original optimizado: aplica orientación EXIF y descarta metadatos (sin
-  //    `withMetadata()` sharp NO copia EXIF/GPS) → WebP.
+  //    `withMetadata()` sharp NO copia EXIF/GPS) → JPEG.
   const originalSharp = sharp(baseBuffer)
     .rotate()
     .resize(MAX_LADO_ORIGINAL, MAX_LADO_ORIGINAL, { fit: 'inside', withoutEnlargement: true })
-    .webp({ quality: CALIDAD_WEBP })
+    .jpeg({ quality: CALIDAD_JPEG, mozjpeg: true })
 
   let original: Buffer
   let info: sharp.OutputInfo
@@ -128,7 +129,7 @@ export async function procesarFoto(entrada: Buffer): Promise<FotoProcesada> {
     miniatura = await sharp(baseBuffer)
       .rotate()
       .resize(MAX_LADO_MINIATURA, MAX_LADO_MINIATURA, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: CALIDAD_MINIATURA })
+      .jpeg({ quality: CALIDAD_MINIATURA, mozjpeg: true })
       .toBuffer()
   } catch {
     throw new FotoInvalidaError('fotos.errors.procesado_fallo')
@@ -142,7 +143,7 @@ export async function procesarFoto(entrada: Buffer): Promise<FotoProcesada> {
     ancho: info.width,
     alto: info.height,
     bytes: original.byteLength,
-    mime: 'image/webp',
+    mime: 'image/jpeg',
     hash,
   }
 }

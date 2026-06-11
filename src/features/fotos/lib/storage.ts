@@ -27,8 +27,8 @@ export function prefijoPublicacion(
 export function rutasFotoNueva(prefijo: string): { original: string; miniatura: string } {
   const id = randomUUID()
   return {
-    original: `${prefijo}/${id}.webp`,
-    miniatura: `${prefijo}/${id}_thumb.webp`,
+    original: `${prefijo}/${id}.jpg`,
+    miniatura: `${prefijo}/${id}_thumb.jpg`,
   }
 }
 

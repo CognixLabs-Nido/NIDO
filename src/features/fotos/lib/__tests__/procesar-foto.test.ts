@@ -12,38 +12,38 @@ import { FotoInvalidaError, procesarFoto } from '../procesar-foto'
  * manejo de error). El gate de etiquetado se cubre en la suite RLS de F10-0.
  */
 
-/** JPEG de prueba con EXIF (incl. grupo GPS) embebido. */
+/** JPEG de prueba con EXIF embebido (metadatos que el pipeline debe descartar). */
 async function jpegConExif(width = 1200, height = 800): Promise<Buffer> {
   return sharp({
     create: { width, height, channels: 3, background: { r: 120, g: 160, b: 90 } },
   })
     .withExif({
       IFD0: { Copyright: 'NIDO', Make: 'TestCam', Model: 'X1' },
-      GPS: { GPSLatitudeRef: 'N', GPSLongitudeRef: 'E' },
     })
     .jpeg()
     .toBuffer()
 }
 
 describe('procesarFoto (F10-1)', () => {
-  it('quita EXIF/geolocalización y normaliza a WebP', async () => {
+  it('quita EXIF/geolocalización y normaliza a JPEG (no WebP — el bucket no lo admite)', async () => {
     const entrada = await jpegConExif()
     // Sanity: la entrada SÍ trae EXIF.
     expect((await sharp(entrada).metadata()).exif).toBeInstanceOf(Buffer)
 
     const out = await procesarFoto(entrada)
-    expect(out.mime).toBe('image/webp')
+    expect(out.mime).toBe('image/jpeg')
 
     const meta = await sharp(out.original).metadata()
-    expect(meta.format).toBe('webp')
+    expect(meta.format).toBe('jpeg')
+    expect(meta.format).not.toBe('webp')
     expect(meta.exif).toBeUndefined() // sin EXIF ni GPS
   })
 
-  it('genera una miniatura más pequeña que el original', async () => {
+  it('genera una miniatura JPEG más pequeña que el original', async () => {
     const out = await procesarFoto(await jpegConExif(1600, 1200))
     const orig = await sharp(out.original).metadata()
     const mini = await sharp(out.miniatura).metadata()
-    expect(mini.format).toBe('webp')
+    expect(mini.format).toBe('jpeg')
     expect(mini.width ?? 0).toBeLessThanOrEqual(480)
     expect(mini.width ?? 0).toBeLessThan(orig.width ?? 0)
     expect(out.miniatura.byteLength).toBeLessThan(out.original.byteLength)
@@ -67,7 +67,8 @@ describe('procesarFoto (F10-1)', () => {
       .png()
       .toBuffer()
     const out = await procesarFoto(png)
-    expect(out.mime).toBe('image/webp')
+    expect(out.mime).toBe('image/jpeg')
+    expect((await sharp(out.original).metadata()).format).toBe('jpeg')
     expect(out.ancho).toBe(600)
   })
 
