@@ -13,10 +13,6 @@ import {
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-// Decodificar un HEIC de iPhone (~12 MP) en JS puro (libheif) tarda ~20 s en frío;
-// el default de Vercel (10-15 s) lo cortaba (504 → "la foto desaparece"). 60 s da
-// margen de sobra; JPG/PNG terminan en milisegundos.
-export const maxDuration = 60
 
 interface RespuestaOk {
   success: true
@@ -42,7 +38,8 @@ function err(error: string, status = 400): Response {
  *
  * Excepción legítima a "Server Actions, no API routes" (binario, como el PDF de
  * F9-4): recibe `multipart/form-data` con `publicacion_id` + `file`, procesa con
- * `sharp` (HEIC→JPG, EXIF/GPS fuera, original + miniatura JPEG) y persiste.
+ * `sharp` (EXIF/GPS fuera, original + miniatura JPEG) y persiste. El HEIC se
+ * convierte a JPEG en el cliente (ver [BlogAulaCliente]); aquí solo llega JPG/PNG.
  *
  * Orden anti-huérfanos: (1) procesa, (2) inserta la fila `media` con el cliente
  * del usuario — la **RLS** autoriza (admin o autor de la publicación), (3) sube

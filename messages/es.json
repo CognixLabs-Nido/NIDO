@@ -2117,6 +2117,7 @@
       "texto_largo": "El texto es demasiado largo (máx. 2000).",
       "tipo_no_permitido": "Tipo de archivo no permitido. Usa JPG, PNG o HEIC.",
       "tamano_max": "Cada foto debe pesar como máximo 4 MB.",
+      "heic_demasiado_grande": "La foto HEIC es demasiado grande para convertirla aquí.",
       "max_fotos": "Máximo 20 fotos por publicación."
     },
     "errors": {
@@ -2129,7 +2130,8 @@
       "nino_sin_permiso": "Ese niño no tiene consentimiento de imagen.",
       "subida_fallo": "No se pudo subir la foto.",
       "procesado_fallo": "No se pudo procesar la foto.",
-      "heic_fallo": "No se pudo convertir la foto HEIC."
+      "heic_fallo": "No se pudo convertir la foto HEIC en el dispositivo.",
+      "heic_servidor": "Convierte la foto en el dispositivo antes de subirla."
     }
   }
 }

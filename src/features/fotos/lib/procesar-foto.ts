@@ -2,25 +2,27 @@ import 'server-only'
 
 import { createHash } from 'node:crypto'
 
-import decode from 'heic-decode'
 import sharp from 'sharp'
 
+import { esHeicBytes } from './es-heic'
 import { MAX_BYTES_FOTO } from '../types'
 
 /**
  * Pipeline de procesado de una foto (F10-1, spec §Comportamiento 1 + §Privacidad).
  *
+ * **HEIC se decodifica en el CLIENTE** (navegador → JPEG, ver [BlogAulaCliente]): el
+ * decode HEIC con libheif NO puede correr en la función serverless porque `@vercel/nft`
+ * no traza el `.wasm` de libheif al bundle → ENOENT al primer decode → 500 en frío. Por
+ * eso aquí el servidor solo recibe JPG/PNG; si pese a todo llega un HEIC, se rechaza con
+ * mensaje claro (`fotos.errors.heic_servidor`) en vez de reintroducir libheif.
+ *
  * Por cada binario subido:
- *  1. Revalida el **tipo real** (no el MIME declarado) por magic bytes / `sharp`.
- *  2. Para **HEIC/HEIF** decodifica a **píxeles RGBA crudos** con `heic-decode`
- *     (libheif; el binario prebuilt de `sharp` no decodifica HEIC) y los alimenta a
- *     sharp en **raw** — SIN re-codificar a JPEG con `jpeg-js`. Esto evita la doble
- *     codificación y recorta el tiempo de procesado (~28 s → ~19 s en 12 MP), que
- *     era lo que disparaba el timeout de la función en Vercel.
- *  3. Aplica la **orientación EXIF** (`.rotate()`) y luego **descarta TODOS los
+ *  1. Revalida el **tipo real** (no el MIME declarado) por magic bytes / `sharp` y
+ *     rechaza HEIC sin convertir.
+ *  2. Aplica la **orientación EXIF** (`.rotate()`) y luego **descarta TODOS los
  *     metadatos** (sharp no los copia si no se pide `withMetadata()`), eliminando
  *     EXIF/geolocalización.
- *  4. Genera **original optimizado** (lado máx. 1600 px) + **miniatura** (lado máx.
+ *  3. Genera **original optimizado** (lado máx. 1600 px) + **miniatura** (lado máx.
  *     480 px), ambos **JPEG** — el bucket `aula-fotos` (F10-0) NO admite WebP en su
  *     `allowed_mime_types`; JPEG lo aceptan el bucket y el CHECK `media_mime_imagen`.
  *
@@ -61,36 +63,17 @@ export class FotoInvalidaError extends Error {
   }
 }
 
-/**
- * Detecta HEIC/HEIF por la marca de la caja `ftyp` (ISO-BMFF). Los brands de
- * HEIC son `heic`, `heix`, `heim`, `heis`, `mif1`, `msf1`, `hevc`, `hevx`.
- */
-function esHeic(buf: Buffer): boolean {
-  if (buf.length < 12) return false
-  if (buf.toString('ascii', 4, 8) !== 'ftyp') return false
-  const brand = buf.toString('ascii', 8, 12)
-  return ['heic', 'heix', 'heim', 'heis', 'mif1', 'msf1', 'hevc', 'hevx'].includes(brand)
-}
-
 /** Una sharp instance es de un solo uso → factoría para crear pipelines frescos. */
 type CrearPipeline = () => sharp.Sharp
 
 /**
- * Resuelve la entrada a una factoría de pipelines sharp. HEIC/HEIF → RGBA crudo
- * (heic-decode) servido en `raw`; el resto → el binario codificado, validando el
- * tipo real. Lanza `FotoInvalidaError` si no es una imagen procesable.
+ * Resuelve la entrada a una factoría de pipelines sharp validando el tipo real.
+ * Rechaza HEIC sin convertir (la conversión va en el cliente, ver cabecera) y
+ * cualquier binario que no sea una imagen procesable.
  */
 async function crearFactoria(entrada: Buffer): Promise<CrearPipeline> {
-  if (esHeic(entrada)) {
-    let decoded: { width: number; height: number; data: ArrayBuffer }
-    try {
-      decoded = await decode({ buffer: entrada })
-    } catch {
-      throw new FotoInvalidaError('fotos.errors.heic_fallo')
-    }
-    const raw = Buffer.from(decoded.data)
-    const { width, height } = decoded
-    return () => sharp(raw, { raw: { width, height, channels: 4 } })
+  if (esHeicBytes(entrada)) {
+    throw new FotoInvalidaError('fotos.errors.heic_servidor')
   }
 
   // Valida el tipo REAL con sharp (no el MIME declarado por el cliente).
@@ -120,8 +103,8 @@ export async function procesarFoto(entrada: Buffer): Promise<FotoProcesada> {
 
   const crearPipeline = await crearFactoria(entrada)
 
-  // Original optimizado: aplica orientación EXIF (no-op en raw, ya orientado por
-  // libheif) y descarta metadatos (sin `withMetadata()` sharp NO copia EXIF/GPS).
+  // Original optimizado: aplica orientación EXIF (`.rotate()`) y descarta metadatos
+  // (sin `withMetadata()` sharp NO copia EXIF/GPS).
   let original: Buffer
   let info: sharp.OutputInfo
   try {

@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Procesado server-side (sharp + libheif asm.js): entorno node, no jsdom.
+// Procesado server-side (sharp, binario nativo de libvips): entorno node, no jsdom.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -12,12 +12,13 @@ import { FotoInvalidaError, procesarFoto } from '../procesar-foto'
 /**
  * Tests del pipeline de procesado (F10-1, spec §Privacidad / §Tests requeridos):
  * la salida NO conserva EXIF/geolocalización, genera miniatura, normaliza a JPEG
- * y rechaza tipos/tamaños no permitidos. La conversión **HEIC→JPG** se prueba con
- * un fixture HEIC real (`fixtures/sample-bridge.heic`, foto genérica sin PII). El
- * gate de etiquetado se cubre en la suite RLS de F10-0.
+ * y rechaza tipos/tamaños no permitidos. El **HEIC se convierte en el cliente**
+ * (libheif-wasm no carga en serverless); aquí se verifica que el servidor **rechaza**
+ * con mensaje claro un HEIC sin convertir (fixture real `fixtures/sample-bridge.heic`,
+ * foto genérica sin PII). El gate de etiquetado se cubre en la suite RLS de F10-0.
  */
 
-/** Fixture HEIC real (single-image) para el camino heic-decode → sharp. */
+/** Fixture HEIC real (single-image) para el rechazo server-side. */
 const SAMPLE_HEIC = readFileSync(join(__dirname, 'fixtures', 'sample-bridge.heic'))
 
 /** JPEG de prueba con EXIF embebido (metadatos que el pipeline debe descartar). */
@@ -102,31 +103,12 @@ describe('procesarFoto (F10-1)', () => {
     })
   })
 
-  it('convierte un HEIC real a JPEG (camino heic-decode → sharp, no WebP)', async () => {
-    const out = await procesarFoto(SAMPLE_HEIC)
-    expect(out.mime).toBe('image/jpeg')
-
-    const meta = await sharp(out.original).metadata()
-    expect(meta.format).toBe('jpeg')
-    expect(meta.format).not.toBe('heif')
-    expect(meta.exif).toBeUndefined() // sin EXIF/GPS
-
-    const mini = await sharp(out.miniatura).metadata()
-    expect(mini.format).toBe('jpeg')
-    expect(mini.width ?? 0).toBeLessThanOrEqual(480)
-    expect(out.ancho).toBeGreaterThan(0)
-    expect(out.alto).toBeGreaterThan(0)
-  })
-
-  it('reporta error si el HEIC no se puede decodificar', async () => {
-    // Cabecera ISO-BMFF con marca `ftypheic` pero contenido inválido → heic-decode falla.
-    const fakeHeic = Buffer.concat([
-      Buffer.from([0x00, 0x00, 0x00, 0x18]),
-      Buffer.from('ftypheic'),
-      Buffer.alloc(16, 0),
-    ])
-    await expect(procesarFoto(fakeHeic)).rejects.toMatchObject({
-      clave: 'fotos.errors.heic_fallo',
+  it('rechaza un HEIC real sin convertir (la conversión va en el cliente)', async () => {
+    // libheif NO corre en serverless (@vercel/nft no traza el .wasm) → el servidor no
+    // decodifica HEIC: lo rechaza con clave clara en vez de petar.
+    await expect(procesarFoto(SAMPLE_HEIC)).rejects.toBeInstanceOf(FotoInvalidaError)
+    await expect(procesarFoto(SAMPLE_HEIC)).rejects.toMatchObject({
+      clave: 'fotos.errors.heic_servidor',
     })
   })
 })

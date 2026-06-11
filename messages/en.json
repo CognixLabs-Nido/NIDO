@@ -2117,6 +2117,7 @@
       "texto_largo": "Text is too long (max 2000).",
       "tipo_no_permitido": "File type not allowed. Use JPG, PNG or HEIC.",
       "tamano_max": "Each photo must be at most 4 MB.",
+      "heic_demasiado_grande": "This HEIC photo is too large to convert here.",
       "max_fotos": "Maximum 20 photos per post."
     },
     "errors": {
@@ -2129,7 +2130,8 @@
       "nino_sin_permiso": "That child does not have image consent.",
       "subida_fallo": "Could not upload the photo.",
       "procesado_fallo": "Could not process the photo.",
-      "heic_fallo": "Could not convert the HEIC photo."
+      "heic_fallo": "Could not convert the HEIC photo on your device.",
+      "heic_servidor": "Convert the photo on your device before uploading it."
     }
   }
 }

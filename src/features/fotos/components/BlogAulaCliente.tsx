@@ -27,8 +27,46 @@ import {
   eliminarMedia,
   eliminarPublicacion,
 } from '../actions/gestionar-publicacion'
-import { MAX_BYTES_FOTO, MAX_FOTOS_PUBLICACION, MAX_TEXTO_PUBLICACION } from '../types'
+import { esHeicBytes } from '../lib/es-heic'
+import {
+  MAX_BYTES_FOTO,
+  MAX_BYTES_HEIC_ORIGEN,
+  MAX_FOTOS_PUBLICACION,
+  MAX_TEXTO_PUBLICACION,
+} from '../types'
 import type { MediaItem, NinoAulaFoto, PublicacionItem } from '../types'
+
+/**
+ * Prepara un archivo para subir: si es **HEIC/HEIF** lo convierte a **JPEG en el
+ * navegador** con `heic-to` (libheif-wasm carga bien en el cliente; en la función
+ * serverless NO, ver [procesarFoto]). El tope de 4 MB se aplica al **JPEG resultante**;
+ * un pre-tope generoso evita decodificar un HEIC gigantesco. Devuelve una clave i18n
+ * relativa al namespace `fotos` si hay que rechazar el archivo.
+ */
+async function prepararArchivo(
+  file: File
+): Promise<{ ok: true; file: File } | { ok: false; error: string }> {
+  let salida = file
+  const cabecera = new Uint8Array(await file.slice(0, 12).arrayBuffer())
+  if (esHeicBytes(cabecera)) {
+    if (file.size > MAX_BYTES_HEIC_ORIGEN) {
+      return { ok: false, error: 'validation.heic_demasiado_grande' }
+    }
+    try {
+      const { heicTo } = await import('heic-to/next')
+      const jpeg = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.82 })
+      const base = file.name.replace(/\.[^.]+$/, '') || 'foto'
+      salida = new File([jpeg], `${base}.jpg`, { type: 'image/jpeg' })
+    } catch {
+      return { ok: false, error: 'errors.heic_fallo' }
+    }
+  }
+  // Tope de 4 MB (margen bajo el límite de 4,5 MB del body de Vercel) sobre el JPEG final.
+  if (salida.size > MAX_BYTES_FOTO) {
+    return { ok: false, error: 'validation.tamano_max' }
+  }
+  return { ok: true, file: salida }
+}
 
 interface Props {
   locale: string
@@ -81,15 +119,16 @@ export function BlogAulaCliente({ locale, aulaId, ninos, puedePublicar, publicac
     }
     const seleccion = Array.from(files).slice(0, restantes)
     setSubiendo(true)
-    for (const file of seleccion) {
-      // Tope de 4 MB antes de subir (margen bajo el límite de Vercel) — aviso claro.
-      if (file.size > MAX_BYTES_FOTO) {
-        toast.error(t('validation.tamano_max'))
+    for (const original of seleccion) {
+      // HEIC → JPEG en el navegador + topes (origen y JPEG resultante). Clave i18n si falla.
+      const prep = await prepararArchivo(original)
+      if (!prep.ok) {
+        toast.error(t(prep.error))
         continue
       }
       const form = new FormData()
       form.append('publicacion_id', editor.id)
-      form.append('file', file)
+      form.append('file', prep.file)
       try {
         const res = await fetch(`/${locale}/fotos/upload`, { method: 'POST', body: form })
         const json = (await res.json()) as
