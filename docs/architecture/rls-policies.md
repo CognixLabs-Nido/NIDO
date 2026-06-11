@@ -526,3 +526,37 @@ Todas las SELECT policies de F8 son seguras frente a `INSERT…RETURNING`: `auto
 - **Gotcha MVCC (Fase 9-5): no aplica.** `campanas_informe_select` usa `es_admin`/`es_profe_en_centro`, que leen `roles_usuario`/`profes_aulas` (otras tablas), **nunca** `campanas_informe`. Por eso **no** hace falta un helper row-aware nuevo (a diferencia de `informes_evolucion`, cuya audiencia depende de columnas del propio row). Test `.insert().select()` por el admin como bloqueo de regresión.
 
 - **Pendientes derivados (sin RLS propia):** "informes pendientes de la campaña" no es una tabla; se computa en la app (niños con matrícula activa sin informe publicado de la terna) reusando la RLS de `informes_evolucion` y el patrón de avisos de INICIO de #64. La publicación en lote reusa `informes_evolucion_update` (Fase 9) — no añade policy nueva.
+
+## Fotos y publicaciones — blog del aula + Storage (Fase 10)
+
+3 tablas — `publicaciones`, `media`, `media_etiquetas` — + la columna `ninos.puede_aparecer_en_fotos` + **4 buckets de Storage**. Ver [ADR-0045](../decisions/ADR-0045-storage-buckets-y-blog-aula.md) y spec `docs/specs/fotos-publicaciones.md`. **Las 3 tablas se auditan** (`centro_id` directo). **Primer uso de Supabase Storage**: el acceso a los **objetos** se gobierna con políticas sobre `storage.objects`, no solo con la RLS de las tablas.
+
+### Helpers nuevos (`STABLE SECURITY DEFINER SET search_path = public`, GRANT `authenticated`)
+
+- `es_redactor_de_aula(p_aula_id)` → boolean. Profe del aula con `tipo_personal_aula IN ('coordinadora','profesora')` activa (corte de autoría P5/ADR-0032; espejo de `es_redactor_de_nino` por aula). tecnico/apoyo → false.
+- `familia_ve_aula(p_aula_id)` → boolean. ¿Soy familia con `puede_ver_fotos` de algún niño matriculado activo en el aula? Aquí se **conecta a RLS real** el permiso `puede_ver_fotos` (inerte hasta F10) vía `tiene_permiso_sobre(nino, 'puede_ver_fotos')`.
+- `nino_puede_aparecer(p_nino_id)` → boolean. Lee `ninos.puede_aparecer_en_fotos` (gate de etiquetado, P2).
+- `publicacion_tiene_nino_sin_permiso(p_publicacion_id)` → boolean. ¿La publicación etiqueta a algún niño sin permiso? (para ocultarla a la familia al **revocar** — P2). Lee `media`/`media_etiquetas`/`ninos` (NO `publicaciones`).
+- Lookups: `aula_de_publicacion`, `centro_de_publicacion`, `autor_de_publicacion` (leen `publicaciones`), `publicacion_de_media` (lee `media`).
+- **`usuario_ve_publicacion_row(p_centro_id, p_aula_id, p_publicacion_id)`** → boolean. **Row-aware** (recibe los campos por parámetro, **NO re-lee `publicaciones`** → evita el gotcha MVCC en `INSERT…RETURNING`). Devuelve `es_admin(centro) OR es_profe_de_aula(aula) OR (familia_ve_aula(aula) AND NOT publicacion_tiene_nino_sin_permiso(publicacion))`.
+- Reutiliza: `es_admin`, `es_profe_de_aula`, `es_profe_de_nino`, `es_profe_en_centro`, `es_tutor_de`, `tiene_permiso_sobre`, `centro_de_aula`.
+
+### RLS de las tablas
+
+- **`publicaciones`**:
+  - SELECT `publicaciones_select`: `usuario_ve_publicacion_row(centro_id, aula_id, id)` (row-aware). Staff del aula ve todo; familia con `puede_ver_fotos` ve **todo el blog del aula** (P2) salvo publicaciones que etiqueten a un niño sin permiso (ocultas).
+  - INSERT `publicaciones_insert`: `autor_id = auth.uid() AND (es_admin(centro_id) OR es_redactor_de_aula(aula_id))` (P5). `centro_id` lo deriva el trigger del aula.
+  - UPDATE `publicaciones_update`: `USING + WITH CHECK` `es_admin(centro_id) OR autor_id = auth.uid()` (editar; P-edición).
+  - DELETE `publicaciones_delete`: `es_admin(centro_id) OR autor_id = auth.uid()` (**borrado real**, el objeto en Storage lo borra el server; P-borrado).
+- **`media`** (SELECT hereda la visibilidad de su publicación vía lookups): INSERT/DELETE = autor de la publicación o admin. Sin UPDATE (default DENY; el procesado del pipeline F10-1 va por service role).
+- **`media_etiquetas`**: SELECT vía la publicación de la media; INSERT = (autor o admin) **AND** `nino_puede_aparecer(nino_id)` (gate P2 — el aviso a la profe es UI F10-2); DELETE = autor o admin.
+- **Gotcha MVCC (Fase 10):** `usuario_ve_publicacion_row` es row-aware y nunca re-lee `publicaciones`; sus lookups van a otras tablas. `media`/`media_etiquetas` resuelven la publicación con helpers que leen `publicaciones`/`media` (tablas distintas de la que se inserta) → `.insert().select()` seguro. Test explícito como bloqueo de regresión.
+
+### Políticas de Storage (`storage.objects`)
+
+Las rutas codifican el ámbito (`(storage.foldername(name))[n]`): `[1]=centroId` siempre; en `aula-fotos`, `[2]=aulaId`, `[3]=publicacionId`. Buckets **privados** (acceso solo por URL firmada ~1 h que genera el server tras autorizar) salvo el logo, **público**.
+
+- **`aula-fotos`** (blog): SELECT = `usuario_ve_publicacion_row(centroId, aulaId, publicacionId)`; INSERT = `es_admin(centroId) OR es_redactor_de_aula(aulaId)` (P5); DELETE = `es_admin(centroId) OR autor_de_publicacion(publicacionId)=auth.uid()`.
+- **`ninos-fotos`** (foto de la ficha, `ninos.foto_url`): SELECT = staff del niño (`es_admin`/`es_profe_de_nino`) + `es_tutor_de`; escribir/borrar = `es_admin` (ficha).
+- **`recogida-adjuntos`** (foto DNI de F8, `firmas.datos.adjuntos`): **baseline** staff del centro (`es_admin OR es_profe_en_centro`) lee/sube; el alcance fino atado a la firma se refina con la UI de adjuntos de F8. Sensible (DNIs de terceros) → RAT/retención en F11.
+- **`centro-assets`** (logo, **público** — ADR-0010): SELECT público; escribir/actualizar/borrar = `es_admin(centroId)`.
