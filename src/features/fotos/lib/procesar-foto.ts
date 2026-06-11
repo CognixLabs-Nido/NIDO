@@ -2,7 +2,7 @@ import 'server-only'
 
 import { createHash } from 'node:crypto'
 
-import convert from 'heic-convert'
+import decode from 'heic-decode'
 import sharp from 'sharp'
 
 import { MAX_BYTES_FOTO } from '../types'
@@ -12,8 +12,11 @@ import { MAX_BYTES_FOTO } from '../types'
  *
  * Por cada binario subido:
  *  1. Revalida el **tipo real** (no el MIME declarado) por magic bytes / `sharp`.
- *  2. Convierte **HEIC/HEIF → JPEG** con `heic-convert` (libheif; `sharp` no trae
- *     decodificador HEIC en su binario prebuilt).
+ *  2. Para **HEIC/HEIF** decodifica a **píxeles RGBA crudos** con `heic-decode`
+ *     (libheif; el binario prebuilt de `sharp` no decodifica HEIC) y los alimenta a
+ *     sharp en **raw** — SIN re-codificar a JPEG con `jpeg-js`. Esto evita la doble
+ *     codificación y recorta el tiempo de procesado (~28 s → ~19 s en 12 MP), que
+ *     era lo que disparaba el timeout de la función en Vercel.
  *  3. Aplica la **orientación EXIF** (`.rotate()`) y luego **descarta TODOS los
  *     metadatos** (sharp no los copia si no se pide `withMetadata()`), eliminando
  *     EXIF/geolocalización.
@@ -69,6 +72,40 @@ function esHeic(buf: Buffer): boolean {
   return ['heic', 'heix', 'heim', 'heis', 'mif1', 'msf1', 'hevc', 'hevx'].includes(brand)
 }
 
+/** Una sharp instance es de un solo uso → factoría para crear pipelines frescos. */
+type CrearPipeline = () => sharp.Sharp
+
+/**
+ * Resuelve la entrada a una factoría de pipelines sharp. HEIC/HEIF → RGBA crudo
+ * (heic-decode) servido en `raw`; el resto → el binario codificado, validando el
+ * tipo real. Lanza `FotoInvalidaError` si no es una imagen procesable.
+ */
+async function crearFactoria(entrada: Buffer): Promise<CrearPipeline> {
+  if (esHeic(entrada)) {
+    let decoded: { width: number; height: number; data: ArrayBuffer }
+    try {
+      decoded = await decode({ buffer: entrada })
+    } catch {
+      throw new FotoInvalidaError('fotos.errors.heic_fallo')
+    }
+    const raw = Buffer.from(decoded.data)
+    const { width, height } = decoded
+    return () => sharp(raw, { raw: { width, height, channels: 4 } })
+  }
+
+  // Valida el tipo REAL con sharp (no el MIME declarado por el cliente).
+  let formato: string | undefined
+  try {
+    formato = (await sharp(entrada).metadata()).format
+  } catch {
+    throw new FotoInvalidaError('fotos.validation.tipo_no_permitido')
+  }
+  if (!formato || !['jpeg', 'jpg', 'png', 'webp'].includes(formato)) {
+    throw new FotoInvalidaError('fotos.validation.tipo_no_permitido')
+  }
+  return () => sharp(entrada)
+}
+
 /**
  * Procesa un binario de imagen ya cargado en memoria. Lanza `FotoInvalidaError`
  * (con clave i18n) si el tipo/tamaño no son válidos o la decodificación falla.
@@ -81,52 +118,28 @@ export async function procesarFoto(entrada: Buffer): Promise<FotoProcesada> {
     throw new FotoInvalidaError('fotos.validation.tipo_no_permitido')
   }
 
-  // 1. Normaliza HEIC/HEIF → JPEG antes de pasar por sharp.
-  let baseBuffer = entrada
-  if (esHeic(entrada)) {
-    try {
-      const jpeg = await convert({ buffer: entrada, format: 'JPEG', quality: 0.92 })
-      baseBuffer = Buffer.from(jpeg)
-    } catch {
-      throw new FotoInvalidaError('fotos.errors.heic_fallo')
-    }
-  }
+  const crearPipeline = await crearFactoria(entrada)
 
-  // 2. Valida el tipo REAL con sharp (no el MIME declarado por el cliente).
-  let pipeline: sharp.Sharp
-  let formato: string | undefined
-  try {
-    pipeline = sharp(baseBuffer, { failOn: 'error' })
-    const meta = await pipeline.metadata()
-    formato = meta.format
-  } catch {
-    throw new FotoInvalidaError('fotos.validation.tipo_no_permitido')
-  }
-  if (!formato || !['jpeg', 'jpg', 'png', 'webp', 'heif'].includes(formato)) {
-    throw new FotoInvalidaError('fotos.validation.tipo_no_permitido')
-  }
-
-  // 3. Original optimizado: aplica orientación EXIF y descarta metadatos (sin
-  //    `withMetadata()` sharp NO copia EXIF/GPS) → JPEG.
-  const originalSharp = sharp(baseBuffer)
-    .rotate()
-    .resize(MAX_LADO_ORIGINAL, MAX_LADO_ORIGINAL, { fit: 'inside', withoutEnlargement: true })
-    .jpeg({ quality: CALIDAD_JPEG, mozjpeg: true })
-
+  // Original optimizado: aplica orientación EXIF (no-op en raw, ya orientado por
+  // libheif) y descarta metadatos (sin `withMetadata()` sharp NO copia EXIF/GPS).
   let original: Buffer
   let info: sharp.OutputInfo
   try {
-    const out = await originalSharp.toBuffer({ resolveWithObject: true })
+    const out = await crearPipeline()
+      .rotate()
+      .resize(MAX_LADO_ORIGINAL, MAX_LADO_ORIGINAL, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: CALIDAD_JPEG, mozjpeg: true })
+      .toBuffer({ resolveWithObject: true })
     original = out.data
     info = out.info
   } catch {
     throw new FotoInvalidaError('fotos.errors.procesado_fallo')
   }
 
-  // 4. Miniatura para la rejilla.
+  // Miniatura para la rejilla.
   let miniatura: Buffer
   try {
-    miniatura = await sharp(baseBuffer)
+    miniatura = await crearPipeline()
       .rotate()
       .resize(MAX_LADO_MINIATURA, MAX_LADO_MINIATURA, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: CALIDAD_MINIATURA, mozjpeg: true })

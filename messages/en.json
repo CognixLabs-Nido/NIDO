@@ -2116,7 +2116,7 @@
       "nino_invalido": "Invalid child.",
       "texto_largo": "Text is too long (max 2000).",
       "tipo_no_permitido": "File type not allowed. Use JPG, PNG or HEIC.",
-      "tamano_max": "Photo exceeds the maximum size (15 MB).",
+      "tamano_max": "Each photo must be at most 4 MB.",
       "max_fotos": "Maximum 20 photos per post."
     },
     "errors": {

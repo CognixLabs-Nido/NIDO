@@ -2116,7 +2116,7 @@
       "nino_invalido": "Niño no válido.",
       "texto_largo": "El texto es demasiado largo (máx. 2000).",
       "tipo_no_permitido": "Tipo de archivo no permitido. Usa JPG, PNG o HEIC.",
-      "tamano_max": "La foto supera el tamaño máximo (15 MB).",
+      "tamano_max": "Cada foto debe pesar como máximo 4 MB.",
       "max_fotos": "Máximo 20 fotos por publicación."
     },
     "errors": {

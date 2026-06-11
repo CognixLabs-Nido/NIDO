@@ -4,10 +4,19 @@ import { logger } from '@/shared/lib/logger'
 import { FotoInvalidaError, procesarFoto } from '@/features/fotos/lib/procesar-foto'
 import { firmarRutas, prefijoPublicacion, rutasFotoNueva } from '@/features/fotos/lib/storage'
 import { subirFotoSchema } from '@/features/fotos/schemas/publicaciones'
-import { BUCKET_AULA_FOTOS, MAX_FOTOS_PUBLICACION, MIME_FOTO_SALIDA } from '@/features/fotos/types'
+import {
+  BUCKET_AULA_FOTOS,
+  MAX_BYTES_FOTO,
+  MAX_FOTOS_PUBLICACION,
+  MIME_FOTO_SALIDA,
+} from '@/features/fotos/types'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+// Decodificar un HEIC de iPhone (~12 MP) en JS puro (libheif) tarda ~20 s en frío;
+// el default de Vercel (10-15 s) lo cortaba (504 → "la foto desaparece"). 60 s da
+// margen de sobra; JPG/PNG terminan en milisegundos.
+export const maxDuration = 60
 
 interface RespuestaOk {
   success: true
@@ -59,6 +68,10 @@ export async function POST(request: Request): Promise<Response> {
   if (!(file instanceof Blob) || typeof publicacionId !== 'string') {
     return err('fotos.errors.subida_fallo')
   }
+
+  // Tope de 4 MB (margen bajo el límite de 4,5 MB del body de Vercel) ANTES de
+  // procesar — para no fallar en silencio.
+  if (file.size > MAX_BYTES_FOTO) return err('fotos.validation.tamano_max')
 
   const parsed = subirFotoSchema.safeParse({ publicacion_id: publicacionId, mime: file.type })
   if (!parsed.success) {

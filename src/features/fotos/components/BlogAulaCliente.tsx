@@ -27,7 +27,7 @@ import {
   eliminarMedia,
   eliminarPublicacion,
 } from '../actions/gestionar-publicacion'
-import { MAX_FOTOS_PUBLICACION, MAX_TEXTO_PUBLICACION } from '../types'
+import { MAX_BYTES_FOTO, MAX_FOTOS_PUBLICACION, MAX_TEXTO_PUBLICACION } from '../types'
 import type { MediaItem, NinoAulaFoto, PublicacionItem } from '../types'
 
 interface Props {
@@ -82,6 +82,11 @@ export function BlogAulaCliente({ locale, aulaId, ninos, puedePublicar, publicac
     const seleccion = Array.from(files).slice(0, restantes)
     setSubiendo(true)
     for (const file of seleccion) {
+      // Tope de 4 MB antes de subir (margen bajo el límite de Vercel) — aviso claro.
+      if (file.size > MAX_BYTES_FOTO) {
+        toast.error(t('validation.tamano_max'))
+        continue
+      }
       const form = new FormData()
       form.append('publicacion_id', editor.id)
       form.append('file', file)

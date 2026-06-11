@@ -1,3 +1,8 @@
+// @vitest-environment node
+// Procesado server-side (sharp + libheif asm.js): entorno node, no jsdom.
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 
@@ -6,11 +11,14 @@ import { FotoInvalidaError, procesarFoto } from '../procesar-foto'
 
 /**
  * Tests del pipeline de procesado (F10-1, spec §Privacidad / §Tests requeridos):
- * la salida NO conserva EXIF/geolocalización, genera miniatura, normaliza a WebP
- * y rechaza tipos/tamaños no permitidos. La conversión HEIC→JPG se cubre por
- * enrutado (sin fixture HEIC: libheif no codifica, así que probamos detección +
- * manejo de error). El gate de etiquetado se cubre en la suite RLS de F10-0.
+ * la salida NO conserva EXIF/geolocalización, genera miniatura, normaliza a JPEG
+ * y rechaza tipos/tamaños no permitidos. La conversión **HEIC→JPG** se prueba con
+ * un fixture HEIC real (`fixtures/sample-bridge.heic`, foto genérica sin PII). El
+ * gate de etiquetado se cubre en la suite RLS de F10-0.
  */
+
+/** Fixture HEIC real (single-image) para el camino heic-decode → sharp. */
+const SAMPLE_HEIC = readFileSync(join(__dirname, 'fixtures', 'sample-bridge.heic'))
 
 /** JPEG de prueba con EXIF embebido (metadatos que el pipeline debe descartar). */
 async function jpegConExif(width = 1200, height = 800): Promise<Buffer> {
@@ -94,8 +102,24 @@ describe('procesarFoto (F10-1)', () => {
     })
   })
 
-  it('enruta HEIC al decodificador y reporta error si la conversión falla', async () => {
-    // Cabecera ISO-BMFF con marca `ftypheic` pero contenido inválido → heic-convert falla.
+  it('convierte un HEIC real a JPEG (camino heic-decode → sharp, no WebP)', async () => {
+    const out = await procesarFoto(SAMPLE_HEIC)
+    expect(out.mime).toBe('image/jpeg')
+
+    const meta = await sharp(out.original).metadata()
+    expect(meta.format).toBe('jpeg')
+    expect(meta.format).not.toBe('heif')
+    expect(meta.exif).toBeUndefined() // sin EXIF/GPS
+
+    const mini = await sharp(out.miniatura).metadata()
+    expect(mini.format).toBe('jpeg')
+    expect(mini.width ?? 0).toBeLessThanOrEqual(480)
+    expect(out.ancho).toBeGreaterThan(0)
+    expect(out.alto).toBeGreaterThan(0)
+  })
+
+  it('reporta error si el HEIC no se puede decodificar', async () => {
+    // Cabecera ISO-BMFF con marca `ftypheic` pero contenido inválido → heic-decode falla.
     const fakeHeic = Buffer.concat([
       Buffer.from([0x00, 0x00, 0x00, 0x18]),
       Buffer.from('ftypheic'),

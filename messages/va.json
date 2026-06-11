@@ -2116,7 +2116,7 @@
       "nino_invalido": "Xiquet no vàlid.",
       "texto_largo": "El text és massa llarg (màx. 2000).",
       "tipo_no_permitido": "Tipus d'arxiu no permés. Usa JPG, PNG o HEIC.",
-      "tamano_max": "La foto supera la grandària màxima (15 MB).",
+      "tamano_max": "Cada foto ha de pesar com a màxim 4 MB.",
       "max_fotos": "Màxim 20 fotos per publicació."
     },
     "errors": {

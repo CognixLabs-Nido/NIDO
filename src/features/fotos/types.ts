@@ -28,7 +28,13 @@ export type MimeFotoEntrada = (typeof MIME_FOTO_ENTRADA)[number]
  */
 export const MIME_FOTO_SALIDA = 'image/jpeg'
 
-export const MAX_BYTES_FOTO = 15 * 1024 * 1024 // ~15 MB por foto
+/**
+ * Tope por foto: **4 MB**. Margen bajo el límite de **4,5 MB** del body de una
+ * request a una función serverless de Vercel (la foto viaja en el multipart). Se
+ * valida en cliente y servidor; la subida directa a Storage (para tamaños mayores)
+ * queda para una iteración futura.
+ */
+export const MAX_BYTES_FOTO = 4 * 1024 * 1024
 export const MAX_FOTOS_PUBLICACION = 20
 export const MAX_TEXTO_PUBLICACION = 2000
 
