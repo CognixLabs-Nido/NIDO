@@ -2130,7 +2130,7 @@
       "nino_sin_permiso": "That child does not have image consent.",
       "subida_fallo": "Could not upload the photo.",
       "procesado_fallo": "Could not process the photo.",
-      "heic_fallo": "Could not convert the HEIC photo on your device.",
+      "heic_fallo": "Could not convert the HEIC photo on your device. Please try again.",
       "heic_servidor": "Convert the photo on your device before uploading it."
     }
   }

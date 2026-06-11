@@ -2130,7 +2130,7 @@
       "nino_sin_permiso": "Eixe xiquet no té consentiment d'imatge.",
       "subida_fallo": "No s'ha pogut pujar la foto.",
       "procesado_fallo": "No s'ha pogut processar la foto.",
-      "heic_fallo": "No s'ha pogut convertir la foto HEIC en el dispositiu.",
+      "heic_fallo": "No s'ha pogut convertir la foto HEIC en el dispositiu. Torna a provar-ho.",
       "heic_servidor": "Convertix la foto en el dispositiu abans de pujar-la."
     }
   }

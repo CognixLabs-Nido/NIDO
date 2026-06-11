@@ -2130,7 +2130,7 @@
       "nino_sin_permiso": "Ese niño no tiene consentimiento de imagen.",
       "subida_fallo": "No se pudo subir la foto.",
       "procesado_fallo": "No se pudo procesar la foto.",
-      "heic_fallo": "No se pudo convertir la foto HEIC en el dispositivo.",
+      "heic_fallo": "No se pudo convertir la foto HEIC en el dispositivo. Inténtalo de nuevo.",
       "heic_servidor": "Convierte la foto en el dispositivo antes de subirla."
     }
   }

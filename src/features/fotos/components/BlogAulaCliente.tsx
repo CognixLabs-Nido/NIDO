@@ -37,11 +37,41 @@ import {
 import type { MediaItem, NinoAulaFoto, PublicacionItem } from '../types'
 
 /**
+ * Margen de guarda para la conversión HEIC en el navegador. Generoso: un móvil viejo
+ * puede tardar varios segundos decodificando un HEIC de 12 MP en el hilo principal; el
+ * tope solo existe para rescatar de un cuelgue patológico (que la promesa nunca resuelva)
+ * y NUNCA dejar el spinner girando en silencio.
+ */
+const TIMEOUT_CONVERSION_HEIC_MS = 45_000
+
+/** `promesa` con tope de tiempo: rechaza si no resuelve antes de `ms`. Limpia el timer. */
+function conTimeout<T>(promesa: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms)
+    promesa.then(
+      (v) => {
+        clearTimeout(timer)
+        resolve(v)
+      },
+      (e) => {
+        clearTimeout(timer)
+        reject(e)
+      }
+    )
+  })
+}
+
+/**
  * Prepara un archivo para subir: si es **HEIC/HEIF** lo convierte a **JPEG en el
  * navegador** con `heic-to` (libheif-wasm carga bien en el cliente; en la función
  * serverless NO, ver [procesarFoto]). El tope de 4 MB se aplica al **JPEG resultante**;
  * un pre-tope generoso evita decodificar un HEIC gigantesco. Devuelve una clave i18n
  * relativa al namespace `fotos` si hay que rechazar el archivo.
+ *
+ * Usa el entry **principal** de `heic-to` (main-thread, wasm inline): a diferencia de
+ * `heic-to/next` (Web Worker desde `blob:`), un fallo de init/conversión SÍ lanza y entra
+ * en el `catch`. Además se envuelve con `conTimeout` para que un cuelgue nunca quede en
+ * silencio: timeout o excepción → clave de error → toast + subida abortada limpiamente.
  */
 async function prepararArchivo(
   file: File
@@ -53,8 +83,11 @@ async function prepararArchivo(
       return { ok: false, error: 'validation.heic_demasiado_grande' }
     }
     try {
-      const { heicTo } = await import('heic-to/next')
-      const jpeg = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.82 })
+      const { heicTo } = await import('heic-to')
+      const jpeg = await conTimeout(
+        heicTo({ blob: file, type: 'image/jpeg', quality: 0.82 }),
+        TIMEOUT_CONVERSION_HEIC_MS
+      )
       const base = file.name.replace(/\.[^.]+$/, '') || 'foto'
       salida = new File([jpeg], `${base}.jpg`, { type: 'image/jpeg' })
     } catch {
