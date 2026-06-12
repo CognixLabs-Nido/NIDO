@@ -27,6 +27,7 @@ import {
   getMatriculasPorNino,
   getNinoById,
 } from '@/features/ninos/queries/get-ninos'
+import { ConsentimientoFotosToggle } from '@/features/ninos/components/ConsentimientoFotosToggle'
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
@@ -136,6 +137,12 @@ export default async function NinoDetallePage({ params }: PageProps) {
               <Row k={t('fields.idioma_principal')} v={nino.idioma_principal} />
               <Row k={t('fields.nacionalidad')} v={nino.nacionalidad ?? '—'} />
               <Row k={t('fields.notas_admin')} v={nino.notas_admin ?? '—'} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="space-y-2 pt-1">
+              <h3 className="text-h3 text-foreground">{t('fotos.titulo')}</h3>
+              <ConsentimientoFotosToggle ninoId={nino.id} initial={nino.puede_aparecer_en_fotos} />
             </CardContent>
           </Card>
         </TabsContent>

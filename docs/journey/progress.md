@@ -889,3 +889,18 @@ Capa de **coordinación de plazos** sobre F9 (NO una puerta: no toca ni bloquea 
 ### Cierre
 
 **F9-5 cerrada (Checkpoint):** typecheck + lint + build + suite completa (`--no-file-parallelism`) en verde. Campaña (abrir/seguimiento), aviso de INICIO de la profe y **publicar en lote** verificados en preview con la migración aplicada. Sin migración nueva en F9-5-1/2/3. Próxima fase: **F10 — Fotos y publicaciones del aula**.
+
+## Fase 10 — Fotos y publicaciones del aula (en curso)
+
+### F10-1 — UI profe: crear publicación con fotos (PR #81, en revisión)
+
+Composer de la profe: crear publicación, subir fotos (procesado server-side con `sharp`: EXIF/geo fuera, original optimizado + miniatura JPEG, idempotencia por hash, rollback anti-huérfanos, enlaces firmados ~1 h), etiquetar niños con consentimiento y publicar. Tope 4 MB por foto (cliente + servidor).
+
+**Decisión sobre HEIC (diferida a follow-up):** en F10-1 el HEIC se **rechaza** con mensaje claro ("Convierte la foto a JPG o PNG antes de subirla"); **JPG/PNG funcionan**. Se descartaron 3 vías de decode tras reproducirlas/verificarlas:
+
+- **Cliente con `heic-to` / `heic2any`** → ambas decodifican en un **Web Worker `blob:` que cuelga en silencio** en el navegador (la promesa nunca resuelve ni rechaza → la foto "desaparecía" a ~3 s sin aviso). Reproducido en headless Chromium con un HEIC real de iPhone.
+- **Servidor con `heic-decode→sharp`** → el build de **Turbopack (Next 16.2.6) no embarca `libheif.wasm`** en la función serverless: `outputFileTracingIncludes` se ignora (verificado con el page-key correcto) y `require.resolve` del `.wasm` **rompe el build** ("Package libheif-js can't be external").
+
+El soporte HEIC queda como **follow-up con DOS candidatos** (decode server-side con build Webpack — Opción B; o decode en cliente con el **decodificador HEIC nativo del navegador** sin wasm, verificable solo en iPhone real). Ver `docs/follow-ups.md` (sección F11).
+
+**Aprendizaje transversal:** verificar los fixes que dependen del runtime (navegador/worker/wasm, función serverless) **en un entorno representativo antes de integrar/desplegar** — tres intentos por inferencia estática fallaron idénticos en producción; la causa solo se cerró reproduciendo en headless Chromium y comprobando el trace del build.

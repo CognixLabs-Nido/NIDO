@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, ClipboardCheckIcon, UtensilsIcon } from 'lucide-react'
+import { ChevronLeftIcon, ClipboardCheckIcon, ImagePlusIcon, UtensilsIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -27,6 +27,7 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
   const tNav = await getTranslations('teacher.nav')
   const tAsistencia = await getTranslations('asistencia')
   const tMenus = await getTranslations('menus.pase_de_lista')
+  const tFotos = await getTranslations('fotos')
 
   const aula = await getAulaById(id)
   if (!aula) notFound()
@@ -95,6 +96,14 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
           >
             <UtensilsIcon className="size-3.5" />
             {tMenus('ver')}
+          </Link>
+          <Link
+            href={`/${locale}/teacher/aula/${id}/fotos`}
+            data-testid="link-fotos"
+            className="border-border bg-background hover:bg-muted text-foreground inline-flex h-7 items-center gap-1 rounded-xl border px-2.5 text-[0.8rem] font-medium transition-colors"
+          >
+            <ImagePlusIcon className="size-3.5" />
+            {tFotos('ver')}
           </Link>
           {/* F6-C-3: recordatorio "a las familias de esta aula", con destino +
               aula preseleccionados. Solo staff (admin/profe) crea. */}
