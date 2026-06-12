@@ -4,6 +4,7 @@ import {
   CheckCircle2Icon,
   ClipboardCheckIcon,
   ClipboardListIcon,
+  ImageIcon,
   PenLineIcon,
   PillIcon,
 } from 'lucide-react'
@@ -41,6 +42,8 @@ export async function AvisosInicio({
   const archivarN = staff ? avisos.medicacionesPorArchivar : 0
   // Informes nuevos publicados: solo familia (F9-3).
   const informesNuevosN = staff ? 0 : avisos.informesNuevos
+  // Publicaciones de fotos nuevas: solo familia (F10-2).
+  const fotosNuevasN = staff ? 0 : avisos.fotosNuevas
   // Informes pendientes de campaña: solo profe redactora (F9-5-2).
   const campanaPend = staff ? avisos.campanaPendientes : null
   if (
@@ -51,6 +54,7 @@ export async function AvisosInicio({
     revocacionesN <= 0 &&
     archivarN <= 0 &&
     informesNuevosN <= 0 &&
+    fotosNuevasN <= 0 &&
     !campanaPend
   )
     return null
@@ -64,6 +68,7 @@ export async function AvisosInicio({
       : `/${locale}/teacher/autorizaciones`
   const pendientesHref = autorizacionesHref
   const informesHref = `/${locale}/family/informes`
+  const fotosHref = `/${locale}/family/fotos`
   const campanaInformesHref = `/${locale}/teacher/informes`
 
   // Fecha límite (más próxima) formateada en el huso del centro para el aviso de campaña.
@@ -161,6 +166,20 @@ export async function AvisosInicio({
           <ClipboardListIcon className="text-success-700 size-5 shrink-0" />
           <span className="text-success-900 text-sm font-medium">
             {t('informes_nuevos', { n: informesNuevosN })}
+          </span>
+        </Link>
+      )}
+
+      {/* Publicación(es) de fotos nuevas en el blog del aula que la familia no ha
+          abierto (F10-2). Azul-primario, distinto del verde de informes. */}
+      {fotosNuevasN > 0 && (
+        <Link
+          href={fotosHref}
+          className="border-primary-200 bg-primary-50 hover:bg-primary-100 flex items-center gap-3 rounded-xl border p-4 transition"
+        >
+          <ImageIcon className="text-primary-700 size-5 shrink-0" />
+          <span className="text-primary-900 text-sm font-medium">
+            {t('fotos_nuevas', { n: fotosNuevasN })}
           </span>
         </Link>
       )}

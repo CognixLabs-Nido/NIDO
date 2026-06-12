@@ -10,6 +10,7 @@ import {
   FileSignatureIcon,
   HistoryIcon,
   HomeIcon,
+  ImageIcon,
   LayoutDashboardIcon,
   MessageCircleIcon,
   UtensilsIcon,
@@ -141,6 +142,7 @@ export async function buildSidebarItems(
       label: t('informes'),
       icon: <ClipboardListIcon />,
     },
+    { href: `/${locale}/family/fotos`, label: t('fotos'), icon: <ImageIcon /> },
     {
       href: `/${locale}/agenda`,
       label: t('agenda'),

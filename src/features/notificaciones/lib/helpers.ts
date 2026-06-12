@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 
 import {
   PREF_FIRMAS_VISTAS,
+  PREF_FOTOS_VISTAS,
   PREF_INFORMES_VISTOS,
   PREF_NOTIF_VISTO,
   VENTANA_NOVEDADES_DIAS,
@@ -73,6 +74,27 @@ export async function getInformesVistos(): Promise<Record<string, string>> {
     .from('preferencias_usuario')
     .select('valor')
     .eq('clave', PREF_INFORMES_VISTOS)
+    .maybeSingle()
+  if (!data?.valor) return {}
+  try {
+    const parsed = JSON.parse(data.valor)
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {}
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Mapa `{ [publicacion_id]: iso_visto_at }` del usuario (F10-2): qué publicaciones
+ * del blog ha abierto la familia. Vacío si nunca abrió ninguna o si el valor está
+ * corrupto. Solo se usa la PRESENCIA (editar no re-avisa) — el instante es informativo.
+ */
+export async function getFotosVistas(): Promise<Record<string, string>> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('preferencias_usuario')
+    .select('valor')
+    .eq('clave', PREF_FOTOS_VISTAS)
     .maybeSingle()
   if (!data?.valor) return {}
   try {

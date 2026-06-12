@@ -417,6 +417,7 @@
       "agenda": "Agenda",
       "autorizaciones": "Authorisations",
       "informes": "Reports",
+      "fotos": "Photos",
       "notificaciones": "Notifications"
     },
     "dashboard": {
@@ -1889,6 +1890,7 @@
       "revocaciones": "{n, plural, one {# authorization revoked: check pick-up / medication} other {# authorizations revoked: check pick-up / medication}}",
       "por_archivar": "{n, plural, one {# finished medication to archive} other {# finished medications to archive}}",
       "informes_nuevos": "{n, plural, one {There is # new development report} other {There are # new development reports}}",
+      "fotos_nuevas": "{n, plural, one {There is # new post in the classroom blog} other {There are # new posts in the classroom blog}}",
       "campana_pendientes": "{n, plural, one {You have # report to complete} other {You have # reports to complete}} · due on {fecha}",
       "campana_urgente": "{n, plural, one {# report pending} other {# reports pending}} · due on {fecha}",
       "campana_vencida": "{n, plural, one {# report pending} other {# reports pending}} · was due on {fecha}"
@@ -2088,6 +2090,15 @@
     "subtitulo": "Share day-to-day moments with families. Only children with consent appear.",
     "ver": "Photos",
     "foto_alt": "Classroom photo",
+    "family": {
+      "titulo": "Classroom photos",
+      "subtitulo": "The photos shared by your child's classroom.",
+      "vacia": "No photos yet.",
+      "abrir": "Open photo",
+      "descargar": "Download",
+      "descarga_fallo": "Could not download the photo.",
+      "foto_titulo": "Photo"
+    },
     "composer": {
       "nueva": "New post",
       "titulo": "New post",

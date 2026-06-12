@@ -5,10 +5,12 @@ import { hoyMadridYmd } from '@/features/autorizaciones/lib/server-helpers'
 import { getPendientesCampanaProfe } from '@/features/informes/queries/get-pendientes-campana-profe'
 import { createClient } from '@/lib/supabase/server'
 
+import { contarNoVistas } from '../lib/derivar'
 import {
   cutoffNovedades,
   esStaff,
   getFirmasVistas,
+  getFotosVistas,
   getInformesVistos,
   type RolNotif,
 } from '../lib/helpers'
@@ -24,6 +26,7 @@ const VACIO: AvisosInicio = {
   revocaciones: 0,
   medicacionesPorArchivar: 0,
   informesNuevos: 0,
+  fotosNuevas: 0,
   campanaPendientes: null,
 }
 
@@ -127,6 +130,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
       revocaciones,
       medicacionesPorArchivar: archivar.count ?? 0,
       informesNuevos: 0,
+      fotosNuevas: 0,
       campanaPendientes,
     }
   }
@@ -150,7 +154,15 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
     supabase.from('informes_evolucion').select('id').eq('estado', 'publicado'),
     getInformesVistos(),
   ])
-  const informesNuevos = (pub.data ?? []).filter((r) => !vistos[r.id]).length
+  const informesNuevos = contarNoVistas(pub.data ?? [], vistos)
+
+  // Publicaciones del blog visibles para esta familia (RLS → P2 aula actual +
+  // P-histórico etiquetado, solo con `puede_ver_fotos`) que aún no ha abierto (F10-2).
+  const [fotos, fotosVistas] = await Promise.all([
+    supabase.from('publicaciones').select('id'),
+    getFotosVistas(),
+  ])
+  const fotosNuevas = contarNoVistas(fotos.data ?? [], fotosVistas)
 
   return {
     pendientesConfirmar: 0,
@@ -162,6 +174,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
     revocaciones: 0,
     medicacionesPorArchivar: 0,
     informesNuevos,
+    fotosNuevas,
     campanaPendientes: null,
   }
 }

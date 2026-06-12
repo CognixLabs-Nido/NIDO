@@ -89,3 +89,23 @@ export interface PublicacionItem {
   puedeGestionar: boolean
   media: MediaItem[]
 }
+
+/** Una foto para la vista de FAMILIA (solo lectura): sin etiquetas (privacidad). */
+export interface MediaFamiliaItem {
+  id: string
+  ancho: number | null
+  alto: number | null
+  /** Enlace firmado (~1 h) de la miniatura para el feed. */
+  urlMiniatura: string | null
+  /** Enlace firmado (~1 h) del original (abrir/descargar). */
+  url: string | null
+}
+
+/** Una publicación tal como la ve la FAMILIA (solo lectura, sin gestión ni etiquetas). */
+export interface PublicacionFamiliaItem {
+  id: string
+  texto: string | null
+  autorNombre: string | null
+  createdAt: string
+  media: MediaFamiliaItem[]
+}
