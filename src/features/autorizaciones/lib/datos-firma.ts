@@ -1,15 +1,18 @@
+import type { AdjuntoFirmaInput } from '../schemas/autorizaciones'
 import type { AdjuntoFirma, PersonaAutorizada, PersonaAutorizadaEdit } from '../types'
 
 /**
  * Extrae los adjuntos de DNI del estado del editor (cliente): para las personas
  * válidas (nombre + DNI) que tienen foto subida, ata `metadata.dni` a la persona.
- * El server revalida (RLS de Storage + `adjuntosDelNino`).
+ * Devuelve la forma de ENTRADA del schema (`bucket` literal) para encajar con el
+ * input de `crearRecogida`/`firmarAutorizacion`. El server revalida (RLS de Storage
+ * + `adjuntosDelNino`).
  */
-export function adjuntosDeEdicion(personas: PersonaAutorizadaEdit[]): AdjuntoFirma[] {
+export function adjuntosDeEdicion(personas: PersonaAutorizadaEdit[]): AdjuntoFirmaInput[] {
   return personas
     .filter((p) => p.nombre.trim().length > 0 && p.dni.trim().length > 0 && p.dni_adjunto)
     .map((p) => ({
-      bucket: p.dni_adjunto!.bucket,
+      bucket: 'recogida-adjuntos' as const,
       path: p.dni_adjunto!.path,
       hash: p.dni_adjunto!.hash,
       metadata: { tipo: 'dni_recogida' as const, dni: p.dni.trim() },
