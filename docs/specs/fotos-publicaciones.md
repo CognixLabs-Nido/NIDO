@@ -1,11 +1,13 @@
 ---
 feature: fotos-publicaciones
 wave: 1
-status: approved
+status: implemented
 priority: high
-last_updated: 2026-06-11
+last_updated: 2026-06-12
 related_adrs:
   [
+    ADR-0045-storage-buckets-y-blog-aula,
+    ADR-0046-cierre-f10-fotos-consentimiento-adjuntos-heic,
     ADR-0006-permisos-granulares-vinculos,
     ADR-0010-logo-centro-url-relativa,
     ADR-0032-enum-tipo-personal-aula,
@@ -14,6 +16,13 @@ related_adrs:
   ]
 related_specs: [scope-ola-1, autorizaciones-firma]
 ---
+
+> **Estado de implementación (cierre F10 — F10-0…F10-3, 2026-06-12).** La fase está **implementada y desplegada** (PRs #80/#81/#82/#83). Dos desviaciones respecto al texto original de esta spec, decididas durante la construcción (ver **ADR-0046**):
+>
+> 1. **HEIC NO se convierte: se RECHAZA** con aviso claro ("Convierte la foto a JPG o PNG antes de subirla"). El texto de abajo dice "HEIC→JPG en servidor"; resultó **inviable** en F10 (decode en cliente cuelga en un Web Worker; decode en servidor no embarca `libheif.wasm` con Turbopack). JPG/PNG funcionan en todas las subidas. Dos vías de retorno documentadas en ADR-0046 y `docs/follow-ups.md`.
+> 2. **Tope efectivo 4 MB/foto** (no 10–15 MB): margen bajo el body de 4,5 MB de una función Vercel. La subida directa a Storage para archivos mayores queda como follow-up.
+>
+> El resto (blog del aula, gate de consentimiento por RLS, vista de familia con histórico, avisos de INICIO, adjuntos foto-niño/logo/DNI sobre Storage) está **construido como se describe**. La foto del niño la sube el **tutor** desde su ficha (`/family/nino/[id]`) y dirección como alternativa — **no** hay wizard de onboarding F2.6 (queda como follow-up opcional).
 
 # Spec — Fotos y publicaciones del aula (F10)
 

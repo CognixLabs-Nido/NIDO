@@ -44,6 +44,47 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
   1. **Decode server-side con build Webpack en vez de Turbopack (Opción B).** Webpack + `outputFileTracingIncludes` **sí** embarca el `.wasm` (Turbopack no). Coste: cambia el pipeline de build de **toda la app** → más alcance/riesgo. Restaurar `heic-decode`/`libheif-js`, `serverExternalPackages`, `maxDuration=60` y el pipeline `heic-decode→sharp` (todo ya existió en ramas previas de #81).
   2. **[NO EXPLORADA, posiblemente más limpia] Decode en el cliente con el decodificador NATIVO del navegador, sin wasm.** `<img>`/`createImageBitmap` del HEIC → `<canvas>` → `toBlob('image/jpeg')`. Safari/iOS decodifica HEIC de forma nativa (es el formato propio del iPhone), así que evita el Web Worker que cuelga, el `.wasm` que no se embarca y el coste de CPU en servidor. **Limitación:** no funciona en navegadores sin HEIC nativo (Chrome/Firefox de escritorio) → **combinar con el rechazo actual como respaldo** (detectar soporte y, si no lo hay, mostrar el aviso de convertir). **Verificar en un iPhone REAL** — el harness headless de Chromium NO sirve (Chromium no tiene HEIC nativo).
      _(Ola 1 — candidato para F11 o tarea aparte)_
+- [ ] **Subida directa a Storage para fotos > ~4,5 MB** — hoy el tope efectivo es **4 MB/foto** (la foto viaja en el multipart de una función serverless de Vercel, body máx. ~4,5 MB). Las fotos grandes de móvil pueden superarlo. Iteración futura: subida directa cliente→Storage con URL firmada (saltando la función). Origen: F10-1/F10-3. _(Ola 1, F11 o tarea aparte)_
+- [ ] **Foto del DNI / foto del niño desde móvil = también HEIC** — el follow-up de HEIC de arriba **aplica también a las subidas de familia** de F10-3 (foto del niño y DNI de recogida), no solo al blog de la profe. _(Ola 1)_
+- [ ] **(Opcional) Wizard de onboarding del tutor** que empuje a poner la **foto del niño** al completar el alta tras la invitación — hoy la foto se sube desde la ficha persistente `/family/nino/[id]` (no hay asistente). Sería pieza de **F2.6**, no de F10. _(Ola 1 — opcional)_
+
+## Tooling / mantenimiento
+
+- [ ] **Fijar la versión del CLI de Supabase en el repo** (`package.json`/`.tool-versions`). Hoy `npm run db:types` usa `npx supabase` sin pin → al regenerar tipos cambia el formato (`Json`, reordenación) y mete **ruido de reformateo** de ~1600 líneas ajeno al esquema real. Menor pero recurrente. Origen: F10-2/F10-3. _(Ola 1)_
+
+## Consolidado de cierre de Ola 1 — backlog F11 / pendiente
+
+> **Auditoría al cerrar F10 (2026-06-12).** Lista única de TODO lo aparcado para F11 o tarea aparte, recogido de `progress.md` (cierres de F8, reparación de Mensajería, F10) y `scope-ola-1.md` (Bloqueantes). Las secciones de arriba detallan cada uno; aquí va el índice completo para no perder ninguno.
+
+**🔴 RGPD — bloqueante ANTES del primer dato real (familia/niño real en producción):**
+
+- [ ] **Derecho al olvido funcional** — anonimizar/redactar `valores_antes` en `audit_log` al ejercer borrado.
+- [ ] **Consentimiento de imagen de menores** + **`autorizacion_imagenes` firmable** (reusa F8; alimenta el interruptor `ninos.puede_aparecer_en_fotos`, hoy lo pone dirección a mano).
+- [ ] **Retención formal de fotos de menores y DNIs de terceros** (`recogida-adjuntos`) + **Registro de Actividades de Tratamiento (RAT)** + DPA con encargados.
+- [ ] ⚖️ **Least-privilege en supervisión de mensajería (admin):** la RLS aún deja a dirección **postear** en `profe_familia` (`es_admin`→`puede_participar_conversacion`→INSERT) aunque la UI sea solo-lectura. Cerrar a nivel RLS (excluir admin del INSERT, dejarle SELECT). Origen: reparación de Mensajería (PR #66).
+- [ ] ⚖️ **Transparencia del acceso de dirección a la mensajería privada:** la supervisión expone a dirección **todos** los mensajes familia↔profe → debe constar en el **aviso de privacidad** y el **RAT**. Origen: PR #66.
+
+**⚖️ Legal (bloquea uso con familias reales):**
+
+- [ ] **Textos legales reales + validación del abogado** de F8 (autorizaciones/firma): 6 flags ⚖️ pendientes (validez eIDAS/LOPDGDD/normativa educativa). F8 es un mecanismo técnico auditable, NO certifica validez jurídica.
+
+**📷 Fotos / Storage (F10):**
+
+- [ ] **HEIC en subida** (blog + foto niño + DNI), **dos vías**: (a) decode server-side con build Webpack; (b) decode nativo en el navegador del iPhone (sin wasm, verificar en iPhone real). Ver arriba.
+- [ ] **Subida directa a Storage para fotos > ~4,5 MB** (hoy tope 4 MB). Ver arriba.
+
+**🧰 Tooling:**
+
+- [ ] **Fijar la versión del CLI de Supabase** (ruido de reformateo de tipos). Ver arriba.
+
+**📝 Residuales de F8 (autorizaciones):**
+
+- [ ] **Migración legacy #56** — engancha las reglas de Régimen interno a la plantilla publicada; **pendiente de aplicar** al publicar el formato real (`20260608130000_phase8_migrar_reglas_56`, idempotente, salta centros sin plantilla).
+- [ ] **F8-4 — DNI del tutor condicional** (mostrar/pedir el DNI del propio firmante según política del centro).
+- [ ] **Recogida puntual con fecha futura** (hoy la puntual vale solo "hoy"; permitir programarla).
+- [ ] **Aviso del botón "Enviar" deshabilitado** en el flujo de firma (UX: explicar por qué está inactivo).
+
+**🧱 Otros pre-piloto / hardening** (detallados en las secciones de arriba): UI de alta de profesor + invitación; confirmar traducciones VA con nativo; drop de `es_profe_principal`; reactivar tests `skip` de `profes-aulas`; trigger audit de `profes_aulas` + sweep; cleanup de residuos de tests RLS en remoto; implementación de ADR-0028 (PWA/manifest); recalibrar alturas de `ConversacionView`; `process-logos.mjs` multi-fuente; seeds E2E; patrón `Select` de base-ui en jsdom.
 
 ## Resueltos
 
