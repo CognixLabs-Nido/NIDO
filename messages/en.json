@@ -210,6 +210,9 @@
         "email_contacto": "Contact email",
         "web": "Website",
         "idioma_default": "Default language"
+      },
+      "logo": {
+        "titulo": "Centre logo"
       }
     },
     "cursos": {
@@ -525,6 +528,17 @@
     },
     "errors": {
       "update_failed": "Could not update the centre."
+    },
+    "logo": {
+      "titulo": "Centre logo",
+      "alt": "Centre logo",
+      "sin_logo": "No logo",
+      "subir": "Upload logo",
+      "cambiar": "Change logo",
+      "ayuda": "PNG, JPG or WebP, up to 4 MB. Transparency is preserved.",
+      "subida_ok": "Logo updated.",
+      "subida_fallo": "Could not upload the logo.",
+      "no_autorizado": "You do not have permission to change the logo."
     }
   },
   "curso": {
@@ -1738,7 +1752,13 @@
       "parentesco": "Relationship (optional)",
       "quitar": "Remove",
       "anadir": "Add person",
-      "dni_aviso": "The document is stored as text; the photo will be added later.",
+      "dni_aviso": "You can attach a photo of each person's ID (optional). It is stored securely and only the centre can see it.",
+      "dni_foto": "ID photo",
+      "dni_foto_subir": "Attach ID photo",
+      "dni_foto_ok": "ID attached",
+      "dni_foto_quitar": "Remove",
+      "dni_foto_ver": "View the ID",
+      "dni_foto_fallo": "Could not upload the ID photo.",
       "lista_vigente": "Authorised people",
       "integra": "Signature intact",
       "no_integra": "Integrity not verified",
@@ -2098,6 +2118,13 @@
       "descargar": "Download",
       "descarga_fallo": "Could not download the photo.",
       "foto_titulo": "Photo"
+    },
+    "nino": {
+      "subir": "Upload photo",
+      "cambiar": "Change photo",
+      "ayuda": "JPG or PNG, up to 4 MB. Location data is removed.",
+      "subida_ok": "Photo updated.",
+      "subida_fallo": "Could not upload the photo."
     },
     "composer": {
       "nueva": "New post",

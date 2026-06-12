@@ -210,6 +210,9 @@
         "email_contacto": "Email de contacto",
         "web": "Web",
         "idioma_default": "Idioma por defecto"
+      },
+      "logo": {
+        "titulo": "Logo del centro"
       }
     },
     "cursos": {
@@ -525,6 +528,17 @@
     },
     "errors": {
       "update_failed": "No se pudo actualizar el centro."
+    },
+    "logo": {
+      "titulo": "Logo del centro",
+      "alt": "Logo del centro",
+      "sin_logo": "Sin logo",
+      "subir": "Subir logo",
+      "cambiar": "Cambiar logo",
+      "ayuda": "PNG, JPG o WebP, hasta 4 MB. Se conserva la transparencia.",
+      "subida_ok": "Logo actualizado.",
+      "subida_fallo": "No se pudo subir el logo.",
+      "no_autorizado": "No tienes permiso para cambiar el logo."
     }
   },
   "curso": {
@@ -1738,7 +1752,13 @@
       "parentesco": "Parentesco (opcional)",
       "quitar": "Quitar",
       "anadir": "Añadir persona",
-      "dni_aviso": "El documento se guarda como texto; la foto se añadirá más adelante.",
+      "dni_aviso": "Puedes adjuntar una foto del DNI de cada persona (opcional). Se guarda de forma segura y solo la ve el centro.",
+      "dni_foto": "Foto del DNI",
+      "dni_foto_subir": "Adjuntar foto del DNI",
+      "dni_foto_ok": "DNI adjuntado",
+      "dni_foto_quitar": "Quitar",
+      "dni_foto_ver": "Ver el DNI",
+      "dni_foto_fallo": "No se pudo subir la foto del DNI.",
       "lista_vigente": "Personas autorizadas",
       "integra": "Firma íntegra",
       "no_integra": "Integridad no verificada",
@@ -2098,6 +2118,13 @@
       "descargar": "Descargar",
       "descarga_fallo": "No se pudo descargar la foto.",
       "foto_titulo": "Foto"
+    },
+    "nino": {
+      "subir": "Subir foto",
+      "cambiar": "Cambiar foto",
+      "ayuda": "JPG o PNG, hasta 4 MB. Se quita la información de ubicación.",
+      "subida_ok": "Foto actualizada.",
+      "subida_fallo": "No se pudo subir la foto."
     },
     "composer": {
       "nueva": "Nueva publicación",

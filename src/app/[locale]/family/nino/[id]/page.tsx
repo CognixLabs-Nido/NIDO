@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
+import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
+import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 import { DatosPedagogicosReadOnly } from '@/features/datos-pedagogicos/components/DatosPedagogicosReadOnly'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { AgendaFamiliaSinPermiso } from '@/features/agenda-diaria/components/AgendaFamiliaSinPermiso'
@@ -78,7 +80,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const ausencias = permisos.puede_ver_agenda ? await getAusenciasNino(id) : []
   const puedeReportarAusencias = Boolean(permisos.puede_reportar_ausencias)
 
-  const initials = (nino.nombre.charAt(0) + (nino.apellidos.charAt(0) || '')).toUpperCase() || '?'
+  const foto = await firmarFotoNino(nino.foto_url)
 
   return (
     <div className="space-y-6">
@@ -91,9 +93,12 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
       </Link>
 
       <header className="bg-card border-border/60 flex flex-wrap items-center gap-4 rounded-2xl border p-5 shadow-md">
-        <div className="bg-primary-100 text-primary-700 flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-xl font-bold">
-          {initials}
-        </div>
+        <SubirFotoNino
+          ninoId={id}
+          locale={locale}
+          initialUrl={foto.urlMiniatura ?? foto.url}
+          alt={`${nino.nombre} ${nino.apellidos}`}
+        />
         <div className="min-w-0 flex-1">
           <h1 className="text-h2 text-foreground truncate">
             {nino.nombre} {nino.apellidos}

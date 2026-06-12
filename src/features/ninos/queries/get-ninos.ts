@@ -75,6 +75,8 @@ export interface NinoDetalle {
   idioma_principal: string
   notas_admin: string | null
   puede_aparecer_en_fotos: boolean
+  /** Ruta en Storage (bucket privado `ninos-fotos`); se firma para mostrar. F10-3. */
+  foto_url: string | null
 }
 
 export async function getNinoById(ninoId: string): Promise<NinoDetalle | null> {
@@ -82,7 +84,7 @@ export async function getNinoById(ninoId: string): Promise<NinoDetalle | null> {
   const { data } = await supabase
     .from('ninos')
     .select(
-      'id, centro_id, nombre, apellidos, fecha_nacimiento, sexo, nacionalidad, idioma_principal, notas_admin, puede_aparecer_en_fotos'
+      'id, centro_id, nombre, apellidos, fecha_nacimiento, sexo, nacionalidad, idioma_principal, notas_admin, puede_aparecer_en_fotos, foto_url'
     )
     .eq('id', ninoId)
     .is('deleted_at', null)

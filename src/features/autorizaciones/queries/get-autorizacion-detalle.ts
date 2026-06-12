@@ -2,7 +2,13 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import {
+  BUCKET_RECOGIDA_ADJUNTOS,
+  firmarRutasBucket,
+  rutaThumbDe,
+} from '@/shared/lib/adjuntos/storage'
 
+import { datosRecogida } from '../lib/datos-firma'
 import { hashFirma } from '../lib/hash'
 import {
   calcularEstadoNino,
@@ -12,6 +18,8 @@ import {
 } from '../lib/estado-firma'
 import { hoyMadridYmd } from '../lib/server-helpers'
 import type {
+  AdjuntoDniFirmado,
+  AdjuntoFirma,
   AutorizacionDetalle,
   MedicacionDatos,
   PersonaAutorizada,
@@ -66,6 +74,7 @@ export async function getAutorizacionDetalle(
   // Recogida/medicación: datos vigentes (última firma `firmado`) para prefill +
   // display, y verificación de integridad del hash contra texto + datos.
   let personas_vigentes: PersonaAutorizada[] | undefined
+  let adjuntos_recogida: AdjuntoDniFirmado[] | undefined
   let medicacion_vigente: MedicacionDatos | null | undefined
   let integridad_ok: boolean | null | undefined
   if (!aut.es_plantilla && (aut.tipo === 'recogida' || aut.tipo === 'medicacion')) {
@@ -80,13 +89,29 @@ export async function getAutorizacionDetalle(
     if (ultima) {
       const datos = ultima.datos as {
         personas?: PersonaAutorizada[]
+        adjuntos?: AdjuntoFirma[]
         medicacion?: MedicacionDatos
       } | null
       if (aut.tipo === 'recogida') {
         const personas = datos?.personas ?? []
+        const adjuntos = datos?.adjuntos ?? []
         personas_vigentes = personas
-        const recomputado = hashFirma(aut.texto, personas.length > 0 ? { personas } : undefined)
+        // Integridad: recompone el MISMO payload firmado (texto + personas + adjuntos).
+        const recomputado = hashFirma(
+          aut.texto,
+          personas.length > 0 ? datosRecogida(personas, adjuntos) : undefined
+        )
         integridad_ok = recomputado === ultima.texto_hash
+        // Firma las fotos de DNI para mostrarlas (la RLS de Storage ya autoriza al lector).
+        if (adjuntos.length > 0) {
+          const paths = adjuntos.flatMap((a) => [a.path, rutaThumbDe(a.path)])
+          const firmadas = await firmarRutasBucket(supabase, BUCKET_RECOGIDA_ADJUNTOS, paths)
+          adjuntos_recogida = adjuntos.map((a) => ({
+            dni: a.metadata?.dni,
+            url: firmadas.get(a.path) ?? null,
+            urlMiniatura: firmadas.get(rutaThumbDe(a.path)) ?? null,
+          }))
+        }
       } else {
         const medicacion = datos?.medicacion ?? null
         medicacion_vigente = medicacion
@@ -120,6 +145,7 @@ export async function getAutorizacionDetalle(
     es_autor: !!user && aut.creado_por === user.id,
     roster,
     personas_vigentes,
+    adjuntos_recogida,
     medicacion_vigente,
     integridad_ok,
   }

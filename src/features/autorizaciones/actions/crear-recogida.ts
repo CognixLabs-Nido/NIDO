@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
+import { adjuntosDelNino, datosRecogida } from '../lib/datos-firma'
 import { hashFirma } from '../lib/hash'
 import { getRequestContext } from '../lib/request-context'
 import { hoyMadridYmd, revalidarAutorizaciones } from '../lib/server-helpers'
@@ -142,16 +143,20 @@ export async function crearRecogida(
     instancia = creada
   }
 
-  // Firma append-only con la lista (hash compuesto texto + personas) + contexto.
+  // Firma append-only con la lista + fotos de DNI (hash compuesto texto + personas
+  // + adjuntos) + contexto. Los adjuntos se acotan al niño firmante (aislamiento).
   const personas = d.personas.map((p) => ({
     nombre: p.nombre.trim(),
     dni: p.dni.trim(),
     ...(p.parentesco?.trim() ? { parentesco: p.parentesco.trim() } : {}),
   }))
-  const texto_hash = hashFirma(instancia.texto, { personas })
-  const datos = {
-    personas,
-  } as Database['public']['Tables']['firmas_autorizacion']['Insert']['datos']
+  const adjuntos = adjuntosDelNino(d.adjuntos, d.nino_id)
+  const payload = datosRecogida(personas, adjuntos)
+  const texto_hash = hashFirma(instancia.texto, payload)
+  // `as unknown as`: los tipos nombrados (PersonaAutorizada/AdjuntoFirma) no encajan
+  // en la firma index de `Json` (a diferencia de los literales anónimos de F8).
+  const datos =
+    payload as unknown as Database['public']['Tables']['firmas_autorizacion']['Insert']['datos']
   const { ip, userAgent } = await getRequestContext()
 
   const { data: firma, error: firmaErr } = await supabase

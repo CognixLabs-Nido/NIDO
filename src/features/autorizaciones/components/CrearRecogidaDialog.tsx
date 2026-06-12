@@ -28,8 +28,9 @@ import {
 } from '@/components/ui/select'
 
 import { crearRecogida } from '../actions/crear-recogida'
+import { adjuntosDeEdicion } from '../lib/datos-firma'
 import { modalidadRecogidaEnum, type ModalidadRecogida } from '../schemas/autorizaciones'
-import type { PersonaAutorizada } from '../types'
+import type { PersonaAutorizada, PersonaAutorizadaEdit } from '../types'
 import { FirmaPad } from './FirmaPad'
 import { PersonasAutorizadasEditor } from './PersonasAutorizadasEditor'
 
@@ -61,7 +62,7 @@ export function CrearRecogidaDialog({
   const [open, setOpen] = useState(false)
   const [ninoId, setNinoId] = useState('')
   const [modalidad, setModalidad] = useState<ModalidadRecogida>('habitual')
-  const [personas, setPersonas] = useState<PersonaAutorizada[]>([
+  const [personas, setPersonas] = useState<PersonaAutorizadaEdit[]>([
     { nombre: '', dni: '', parentesco: '' },
   ])
   const [confirmo, setConfirmo] = useState(false)
@@ -121,6 +122,7 @@ export function CrearRecogidaDialog({
         nino_id: ninoId,
         modalidad,
         personas: personasValidas,
+        adjuntos: adjuntosDeEdicion(personas),
         nombre_tecleado: nombre.trim(),
         firma_imagen: firma,
         comentario: null,
@@ -190,7 +192,12 @@ export function CrearRecogidaDialog({
             </div>
           </div>
 
-          <PersonasAutorizadasEditor value={personas} onChange={setPersonas} disabled={pending} />
+          <PersonasAutorizadasEditor
+            value={personas}
+            onChange={setPersonas}
+            disabled={pending}
+            ninoId={ninoId || undefined}
+          />
 
           <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
             {t('recogida.rgpd_terceros')}

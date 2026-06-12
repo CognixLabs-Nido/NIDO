@@ -3,18 +3,20 @@ import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EditarCentroDialog } from '@/features/centros/components/EditarCentroDialog'
+import { SubirLogoCentro } from '@/features/centros/components/SubirLogoCentro'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { createClient } from '@/lib/supabase/server'
 import { EmptyState } from '@/shared/components/EmptyState'
 
-export default async function AdminCentroPage() {
+export default async function AdminCentroPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
   const t = await getTranslations('admin.centro')
   const supabase = await createClient()
   const centroId = (await getCentroActualId())!
 
   const { data: centro } = await supabase
     .from('centros')
-    .select('id, nombre, direccion, telefono, email_contacto, web, idioma_default')
+    .select('id, nombre, direccion, telefono, email_contacto, web, idioma_default, logo_url')
     .eq('id', centroId)
     .single()
 
@@ -50,6 +52,15 @@ export default async function AdminCentroPage() {
           <Row label={t('fields.email_contacto')} value={centro.email_contacto} />
           <Row label={t('fields.web')} value={centro.web ?? '—'} />
           <Row label={t('fields.idioma_default')} value={centro.idioma_default} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('logo.titulo')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SubirLogoCentro centroId={centro.id} locale={locale} initialUrl={centro.logo_url} />
         </CardContent>
       </Card>
     </div>
