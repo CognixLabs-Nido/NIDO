@@ -16,9 +16,11 @@ import {
   rechazarAutorizacion,
   revocarFirma,
 } from '../actions/firmar-autorizacion'
+import { adjuntosDeEdicion } from '../lib/datos-firma'
 import type {
   MedicacionDatos,
   PersonaAutorizada,
+  PersonaAutorizadaEdit,
   RosterFirmaNino,
   TipoAutorizacion,
 } from '../types'
@@ -107,7 +109,7 @@ function NinoFirmaRow({
   const [confirmo, setConfirmo] = useState(false)
   const [nombre, setNombre] = useState(nombrePerfil)
   const [firma, setFirma] = useState<string | null>(null)
-  const [personas, setPersonas] = useState<PersonaAutorizada[]>(
+  const [personas, setPersonas] = useState<PersonaAutorizadaEdit[]>(
     personasIniciales && personasIniciales.length > 0
       ? personasIniciales
       : [{ nombre: '', dni: '', parentesco: '' }]
@@ -152,7 +154,7 @@ function NinoFirmaRow({
         nino_id: roster.nino_id,
         nombre_tecleado: nombre.trim(),
         firma_imagen: firma,
-        ...(esRecogida ? { personas: personasValidas } : {}),
+        ...(esRecogida ? { personas: personasValidas, adjuntos: adjuntosDeEdicion(personas) } : {}),
         ...(esMedicacion && medicacionInicial ? { medicacion: medicacionInicial } : {}),
       })
       if (!res.success) {
@@ -224,7 +226,12 @@ function NinoFirmaRow({
       {firmable && !yaFirmado && (
         <div className="space-y-4">
           {esRecogida && (
-            <PersonasAutorizadasEditor value={personas} onChange={setPersonas} disabled={pending} />
+            <PersonasAutorizadasEditor
+              value={personas}
+              onChange={setPersonas}
+              disabled={pending}
+              ninoId={roster.nino_id}
+            />
           )}
           {esMedicacion && <MedicacionFicha medicacion={medicacionInicial ?? null} />}
           <label className="flex items-start gap-2 text-sm">

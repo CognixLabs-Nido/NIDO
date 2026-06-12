@@ -130,7 +130,11 @@ export async function AutorizacionDetalleView({
           aula + dirección) + flag de integridad del hash. */}
       {!aut.es_plantilla && aut.tipo === 'recogida' && (
         <section>
-          <RecogidaLista personas={aut.personas_vigentes ?? []} integridadOk={aut.integridad_ok} />
+          <RecogidaLista
+            personas={aut.personas_vigentes ?? []}
+            integridadOk={aut.integridad_ok}
+            adjuntos={aut.adjuntos_recogida}
+          />
         </section>
       )}
 

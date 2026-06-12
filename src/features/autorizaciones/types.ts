@@ -28,11 +28,40 @@ export type TipoVinculo = Database['public']['Enums']['tipo_vinculo']
 /** Estado de firma resultante de un niño dentro de una autorización. */
 export type EstadoFirmaNino = 'firmado' | 'pendiente' | 'rechazado' | 'revocado' | 'parcial'
 
-/** Persona autorizada a recoger (recogida, F8). DNI laxo; foto → F10. */
+/** Persona autorizada a recoger (recogida, F8). DNI laxo; foto del DNI en F10-3. */
 export interface PersonaAutorizada {
   nombre: string
   dni: string
   parentesco?: string
+}
+
+/**
+ * Referencia a un adjunto sobre Storage atado a la firma (`firmas.datos.adjuntos`,
+ * F10-3). En recogida: la **foto del DNI** de una persona autorizada. Se incluye en
+ * `datos` al firmar → queda **atado al `texto_hash`**. `metadata.dni` lo enlaza con
+ * la persona de la lista. **No** usa la tabla `media` (P-media-reuso).
+ */
+export interface AdjuntoFirma {
+  bucket: string
+  path: string
+  hash: string
+  metadata?: { tipo: 'dni_recogida'; dni?: string }
+}
+
+/** Persona autorizada con su foto de DNI opcional (estado del editor, F10-3). */
+export interface PersonaAutorizadaEdit extends PersonaAutorizada {
+  /** Adjunto del DNI ya subido (ruta+hash); se pliega a `datos.adjuntos` al firmar. */
+  dni_adjunto?: AdjuntoFirma
+  /** Enlace firmado del DNI subido, solo para el preview en el formulario. */
+  dni_url?: string | null
+}
+
+/** Adjunto de DNI ya firmado, con enlaces para mostrar (vista detalle). */
+export interface AdjuntoDniFirmado {
+  /** DNI de la persona a la que pertenece (enlace con la lista). */
+  dni?: string
+  url: string | null
+  urlMiniatura: string | null
 }
 
 /** Campos estructurados de una medicación (F8-3a). Adjunto/receta → F10. */
@@ -152,6 +181,8 @@ export interface AutorizacionDetalle {
   roster: RosterFirmaNino[]
   /** Recogida: lista de personas de la última firma `firmado` (vigente), para display. */
   personas_vigentes?: PersonaAutorizada[]
+  /** Recogida: fotos de DNI de la última firma `firmado`, firmadas para mostrar (F10-3). */
+  adjuntos_recogida?: AdjuntoDniFirmado[]
   /** Medicación: campos de la última firma `firmado` (vigente), para display. */
   medicacion_vigente?: MedicacionDatos | null
   /** Recogida/medicación: ¿el hash de la última firma `firmado` cuadra con texto+datos? `null` si no hay firma. */

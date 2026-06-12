@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
+import { adjuntosDelNino, datosRecogida } from '../lib/datos-firma'
 import { hashFirma } from '../lib/hash'
 import { getRequestContext } from '../lib/request-context'
 import { hoyMadridYmd, revalidarAutorizaciones } from '../lib/server-helpers'
@@ -21,6 +22,7 @@ import {
   fail,
   ok,
   type ActionResult,
+  type AdjuntoFirma,
   type FirmaDecision,
   type MedicacionDatos,
   type PersonaAutorizada,
@@ -47,6 +49,8 @@ interface DatosDecision {
   comentario: string | null
   /** Recogida: lista de personas autorizadas que se firma (atada al hash). */
   personas?: PersonaAutorizada[]
+  /** Recogida: fotos de DNI ya subidas (se pliegan a datos.adjuntos + hash, F10-3). */
+  adjuntos?: AdjuntoFirma[]
   /** Medicación: campos estructurados que se firman (atados al hash). */
   medicacion?: MedicacionDatos
 }
@@ -111,12 +115,12 @@ async function registrarDecision(
   //    contexto probatorio. Sin datos, hashFirma == sha256(texto) (compat F8-1/2b).
   const tienePersonas = !!d.personas && d.personas.length > 0
   const payload = tienePersonas
-    ? { personas: d.personas }
+    ? datosRecogida(d.personas!, adjuntosDelNino(d.adjuntos, d.nino_id))
     : d.medicacion
       ? { medicacion: d.medicacion }
       : undefined
   const datos = (payload ??
-    {}) as Database['public']['Tables']['firmas_autorizacion']['Insert']['datos']
+    {}) as unknown as Database['public']['Tables']['firmas_autorizacion']['Insert']['datos']
   const texto_hash = hashFirma(aut.texto, payload)
   const { ip, userAgent } = await getRequestContext()
 
@@ -193,6 +197,7 @@ export async function firmarAutorizacion(
       dni: p.dni.trim(),
       ...(p.parentesco?.trim() ? { parentesco: p.parentesco.trim() } : {}),
     })),
+    adjuntos: d.adjuntos,
     medicacion: d.medicacion
       ? {
           medicamento: d.medicacion.medicamento.trim(),

@@ -28,6 +28,8 @@ import {
   getNinoById,
 } from '@/features/ninos/queries/get-ninos'
 import { ConsentimientoFotosToggle } from '@/features/ninos/components/ConsentimientoFotosToggle'
+import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
+import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
@@ -45,6 +47,8 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const tFicha = await getTranslations('messages.ficha_nino')
   const nino = await getNinoById(id)
   if (!nino) notFound()
+
+  const foto = await firmarFotoNino(nino.foto_url)
 
   const supabase = await createClient()
   const [{ data: vinculos }, info, matriculas, datosPed] = await Promise.all([
@@ -140,8 +144,14 @@ export default async function NinoDetallePage({ params }: PageProps) {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="space-y-2 pt-1">
+            <CardContent className="space-y-4 pt-1">
               <h3 className="text-h3 text-foreground">{t('fotos.titulo')}</h3>
+              <SubirFotoNino
+                ninoId={nino.id}
+                locale={locale}
+                initialUrl={foto.urlMiniatura ?? foto.url}
+                alt={`${nino.nombre} ${nino.apellidos}`}
+              />
               <ConsentimientoFotosToggle ninoId={nino.id} initial={nino.puede_aparecer_en_fotos} />
             </CardContent>
           </Card>

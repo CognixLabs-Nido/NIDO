@@ -210,6 +210,9 @@
         "email_contacto": "Email de contacte",
         "web": "Web",
         "idioma_default": "Idioma per defecte"
+      },
+      "logo": {
+        "titulo": "Logo del centre"
       }
     },
     "cursos": {
@@ -525,6 +528,17 @@
     },
     "errors": {
       "update_failed": "No s'ha pogut actualitzar el centre."
+    },
+    "logo": {
+      "titulo": "Logo del centre",
+      "alt": "Logo del centre",
+      "sin_logo": "Sense logo",
+      "subir": "Pujar logo",
+      "cambiar": "Canviar logo",
+      "ayuda": "PNG, JPG o WebP, fins a 4 MB. Es conserva la transparència.",
+      "subida_ok": "Logo actualitzat.",
+      "subida_fallo": "No s'ha pogut pujar el logo.",
+      "no_autorizado": "No tens permís per a canviar el logo."
     }
   },
   "curso": {
@@ -1738,7 +1752,13 @@
       "parentesco": "Parentiu (opcional)",
       "quitar": "Llevar",
       "anadir": "Afegir persona",
-      "dni_aviso": "El document es guarda com a text; la foto s'afegirà més avant.",
+      "dni_aviso": "Pots adjuntar una foto del DNI de cada persona (opcional). Es guarda de forma segura i només la veu el centre.",
+      "dni_foto": "Foto del DNI",
+      "dni_foto_subir": "Adjuntar foto del DNI",
+      "dni_foto_ok": "DNI adjuntat",
+      "dni_foto_quitar": "Llevar",
+      "dni_foto_ver": "Veure el DNI",
+      "dni_foto_fallo": "No s'ha pogut pujar la foto del DNI.",
       "lista_vigente": "Persones autoritzades",
       "integra": "Signatura íntegra",
       "no_integra": "Integritat no verificada",
@@ -2098,6 +2118,13 @@
       "descargar": "Descarregar",
       "descarga_fallo": "No s'ha pogut descarregar la foto.",
       "foto_titulo": "Foto"
+    },
+    "nino": {
+      "subir": "Pujar foto",
+      "cambiar": "Canviar foto",
+      "ayuda": "JPG o PNG, fins a 4 MB. Es lleva la informació d'ubicació.",
+      "subida_ok": "Foto actualitzada.",
+      "subida_fallo": "No s'ha pogut pujar la foto."
     },
     "composer": {
       "nueva": "Nova publicació",

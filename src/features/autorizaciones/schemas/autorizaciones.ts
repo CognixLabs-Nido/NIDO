@@ -210,6 +210,24 @@ export const personasAutorizadasSchema = z
   .min(1, 'autorizaciones.validation.personas_vacio')
   .max(20, 'autorizaciones.validation.personas_muchas')
 
+// Adjunto sobre Storage atado a la firma (F10-3). En recogida: la foto del DNI de
+// una persona autorizada (bucket privado `recogida-adjuntos`). `path` y `hash` los
+// devuelve el route handler de subida; el server revalida que el `path` cuelgue del
+// niño firmante (2.º segmento = nino_id) antes de plegarlo al hash compuesto.
+export const adjuntoFirmaSchema = z.object({
+  bucket: z.literal('recogida-adjuntos'),
+  path: z.string().trim().min(1).max(500),
+  hash: z.string().regex(/^[0-9a-f]{64}$/),
+  metadata: z
+    .object({
+      tipo: z.literal('dni_recogida'),
+      dni: z.string().trim().max(20).optional(),
+    })
+    .optional(),
+})
+export const adjuntosFirmaSchema = z.array(adjuntoFirmaSchema).max(20)
+export type AdjuntoFirmaInput = z.input<typeof adjuntoFirmaSchema>
+
 // Campos estructurados de una medicación (F8-3a). Van en `firmas.datos.medicacion`
 // y se atan al hash compuesto. Las fechas definen la vigencia de la instancia
 // (fecha_inicio → vigencia_desde, fecha_fin → vigencia_hasta). El informe/receta
@@ -262,6 +280,9 @@ export const firmarAutorizacionSchema = z.object({
   // Medicación: campos estructurados (al firmar una instancia existente, p.ej. el
   // 2.º tutor de un niño con doble firma). Se ata al hash compuesto.
   medicacion: medicacionDatosSchema.optional(),
+  // Recogida: fotos de DNI ya subidas (1 opcional por persona). Se pliegan a
+  // `datos.adjuntos` y al hash compuesto (F10-3).
+  adjuntos: adjuntosFirmaSchema.optional(),
 })
 export type FirmarAutorizacionInput = z.input<typeof firmarAutorizacionSchema>
 
@@ -283,6 +304,8 @@ export const crearRecogidaSchema = z.object({
   firma_imagen: firmaImagenSchema,
   personas: personasAutorizadasSchema,
   comentario: comentarioSchema,
+  // Fotos de DNI ya subidas (1 opcional por persona). F10-3.
+  adjuntos: adjuntosFirmaSchema.optional(),
 })
 export type CrearRecogidaInput = z.input<typeof crearRecogidaSchema>
 
