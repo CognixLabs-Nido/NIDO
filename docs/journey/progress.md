@@ -890,9 +890,18 @@ Capa de **coordinación de plazos** sobre F9 (NO una puerta: no toca ni bloquea 
 
 **F9-5 cerrada (Checkpoint):** typecheck + lint + build + suite completa (`--no-file-parallelism`) en verde. Campaña (abrir/seguimiento), aviso de INICIO de la profe y **publicar en lote** verificados en preview con la migración aplicada. Sin migración nueva en F9-5-1/2/3. Próxima fase: **F10 — Fotos y publicaciones del aula**.
 
-## Fase 10 — Fotos y publicaciones del aula (en curso)
+## Fase 10 — Fotos y publicaciones del aula (CERRADA)
 
-### F10-1 — UI profe: crear publicación con fotos (PR #81, en revisión)
+### PRs cerrados
+
+| PR      | Sub-fase | Resumen                                                                                                                                                                      |
+| ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **#80** | F10-0    | Base de Storage + blog del aula (capa de datos, sin UI): 3 tablas + `ninos.puede_aparecer_en_fotos` + **4 buckets** + políticas `storage.objects` + RLS + audit. ADR-0045.   |
+| **#81** | F10-1    | UI profe: composer (subir/procesar con `sharp`, etiquetar con consentimiento, publicar). **HEIC rechazado** (ver abajo).                                                     |
+| **#82** | F10-2    | Vista familia del blog (solo lectura + descarga) + **histórico** (P-histórico) + aviso de publicación nueva en INICIO (patrón #64). Migración RLS del histórico.             |
+| **#83** | F10-3    | Adjuntos sobre Storage: foto del niño (tutor + admin), logo del centro (dirección), foto del DNI de recogida (tutor, atada al hash de F8). Migración de políticas del tutor. |
+
+### F10-1 — UI profe: crear publicación con fotos (PR #81)
 
 Composer de la profe: crear publicación, subir fotos (procesado server-side con `sharp`: EXIF/geo fuera, original optimizado + miniatura JPEG, idempotencia por hash, rollback anti-huérfanos, enlaces firmados ~1 h), etiquetar niños con consentimiento y publicar. Tope 4 MB por foto (cliente + servidor).
 
@@ -904,3 +913,38 @@ Composer de la profe: crear publicación, subir fotos (procesado server-side con
 El soporte HEIC queda como **follow-up con DOS candidatos** (decode server-side con build Webpack — Opción B; o decode en cliente con el **decodificador HEIC nativo del navegador** sin wasm, verificable solo en iPhone real). Ver `docs/follow-ups.md` (sección F11).
 
 **Aprendizaje transversal:** verificar los fixes que dependen del runtime (navegador/worker/wasm, función serverless) **en un entorno representativo antes de integrar/desplegar** — tres intentos por inferencia estática fallaron idénticos en producción; la causa solo se cerró reproduciendo en headless Chromium y comprobando el trace del build.
+
+### F10-2 — Vista familia + histórico + aviso de INICIO (PR #82)
+
+Vista lectora de la familia (miniaturas firmadas → original + descarga; **sin etiquetas**, privacidad) bajo el layout de familia, y **aviso in-app en INICIO** "Hay N publicaciones nuevas" (patrón #64, sin tabla de eventos: cuenta filas visibles por RLS no marcadas como vistas en `preferencias_usuario`; marca-vistas al abrir).
+
+**P-histórico (decisión + migración RLS nueva, Opción 1):** la visibilidad base de F10-0 (`familia_ve_aula`) exige matrícula **activa** → un niño que se va perdería todo el blog pasado, contradiciendo P-histórico. Se añadió una **vía "mi hijo está etiquetado"** a `usuario_ve_publicacion_row` vía el helper **row-aware** `publicacion_etiqueta_hijo_de` (lee `media`/`media_etiquetas` con `es_tutor_de` + `puede_ver_fotos`, no re-lee `publicaciones`). Resultado: la familia **conserva** las publicaciones pasadas donde su hijo sale etiquetado aunque cause baja/cambie de aula, y **deja de ver** lo nuevo del aula. Migración `20260612120000_phase10_2_fotos_familia_historico` (aditiva, `CREATE OR REPLACE`). Tests RLS gateados por `F10_2_MIGRATION_APPLIED` (5/5 contra remoto).
+
+### F10-3 — Adjuntos sobre Storage (PR #83)
+
+Los tres adjuntos que dependían de Storage, reusando buckets de F10-0 y procesado de F10-1 (EXIF fuera, HEIC rechazado). **Ninguno usa `media`** (campos propios — P-media-reuso):
+
+- **Foto del niño** (`ninos.foto_url`, bucket privado `ninos-fotos`): la sube el **tutor** desde la ficha de su hijo (`/family/nino/[id]`) y **dirección** (admin). Subida con el cliente del usuario (RLS de Storage gobierna); `foto_url` con service role tras autorizar. Enlace firmado para mostrar.
+- **Foto del DNI de recogida** (`firmas.datos.adjuntos`, bucket privado `recogida-adjuntos`): el tutor la sube **antes de firmar**, 1 opcional por persona; la referencia entra en `datos.adjuntos` y se pliega al `texto_hash` de la firma de F8 (append-only, retrocompatible). Threaded por `crearRecogida` y `firmarAutorizacion`; lectura firmada en `RecogidaLista`.
+- **Logo del centro** (`centros.logo_url`, bucket público `centro-assets`, ADR-0010): lo sube dirección desde `admin/centro`; PNG con transparencia; repunta `logo_url` y sustituye el seed hardcodeado. `next.config` con `remotePatterns` del host público.
+
+**Migración nueva** `20260613100000_phase10_3_adjuntos_storage_policies` (aditiva, solo `CREATE POLICY`): el **tutor** escribe bajo `{centroId}/{ninoId}/…` en `ninos-fotos` y `recogida-adjuntos` (`es_tutor_de(ninoId)`). Tests RLS gateados por `F10_3_MIGRATION_APPLIED` (7/7 contra remoto: aislamiento entre familias; el logo solo dirección).
+
+**Aprendizaje transversal (F10-3):** `tsc --noEmit` con **caché incremental** ocultó dos type-errors que CI (en limpio) sí marcó — un `as` a `Json` con tipos nombrados (`PersonaAutorizada`/`AdjuntoFirma`) que no encajan en la firma index. Lección: para el barrido pre-PR, **typecheck en frío** (borrar `*.tsbuildinfo`) o fiarse del build de CI; no del `tsc` local cacheado.
+
+### Migraciones (Fase 10)
+
+- `20260611120000_phase10_0_storage_publicaciones` (F10-0: tablas + buckets + políticas) — **aplicada**.
+- `20260612120000_phase10_2_fotos_familia_historico` (F10-2: vía histórico, `CREATE OR REPLACE`) — **aplicada**.
+- `20260613100000_phase10_3_adjuntos_storage_policies` (F10-3: escritura del tutor) — **aplicada**.
+
+Todas aplicadas a mano por SQL Editor (CLI SIGILL en el equipo) y registradas en `supabase_migrations.schema_migrations`.
+
+### Decisiones (ADRs)
+
+- **ADR-0045 — Storage en NIDO + modelo del blog** (`accepted`, F10-0): buckets por sensibilidad, políticas sobre `storage.objects` por prefijo de ruta, helpers row-aware, service role tras autorizar.
+- **ADR-0046 — Cierre de F10** (`accepted`): consentimiento/visibilidad efectivos por RLS; histórico de familia (vía "mi hijo etiquetado"); adjuntos (foto niño/logo/DNI, DNI atado al hash de F8); **rechazo de HEIC** con las dos vías documentadas para retomarlo.
+
+### Cierre
+
+**F10 cerrada (Checkpoint):** typecheck (en frío) + lint + build + **suite entera con TODOS los flags de F10 activados** (`F10_0/F10_2/F10_3_MIGRATION_APPLIED=1`, `--no-file-parallelism`) en verde contra el remoto con las 3 migraciones aplicadas. Números: **unit 1487/1487 passed** (79 archivos); **RLS 207 passed** (los 105 skipped son de otras fases por sus propios gates — F5/F5.6 mensajería, F5B34 profes-aulas, etc.); los **3 archivos RLS de F10** (`publicaciones`, `publicaciones-familia`, `adjuntos-storage`) corridos con sus flags dan **21/21 passed, 0 skipped** — verde real en lo de F10. Blog del aula (composer profe), vista familia (blog + histórico + aviso de inicio + descarga), y adjuntos (foto niño, DNI de recogida atado al hash, logo) verificados en preview. **HEIC se rechaza** con aviso claro (ADR-0046) — follow-up con dos vías. Próxima fase: **F11 — Pulido final + producción** (incluye el paquete RGPD bloqueante y el backlog consolidado en `docs/follow-ups.md`).

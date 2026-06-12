@@ -29,7 +29,7 @@ El plan se organiza en tres olas **scope-driven** (no por fecha; el responsable 
 | 7b   | Agenda de citas con invitados nominales + RSVP (ADR-0039)       | ✅ Cerrada   |
 | 8    | Autorizaciones + firma digital (ADR-0041)                       | ✅ Cerrada   |
 | 9    | Informes de evolución                                           | ✅ Cerrada   |
-| 10   | Fotos y publicaciones del aula                                  | ⏳ Pendiente |
+| 10   | Fotos y publicaciones del aula                                  | ✅ Cerrada   |
 | 11   | Pulido final + producción (incl. tolerancia básica offline PWA) | ⏳ Pendiente |
 
 > **F7 queda lean**: solo calendario + eventos + confirmaciones de asistencia. La **reserva de franjas para tutorías** se mueve a **Ola 3** (ver `research-comparativa-nido.md`).
