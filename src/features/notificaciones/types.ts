@@ -37,6 +37,15 @@ export const PREF_FIRMAS_VISTAS = 'autorizaciones_firmas_vistas'
  */
 export const PREF_INFORMES_VISTOS = 'informes_vistos'
 
+/**
+ * Clave del mapa por-publicación `{ [publicacion_id]: iso_visto_at }` en
+ * preferencias_usuario (F10-2): registra qué publicaciones del blog ha abierto la
+ * familia (al entrar en /family/fotos se marcan todas las visibles). El aviso de
+ * "publicaciones nuevas" deja de contar las ya vistas; basta la presencia (editar
+ * una publicación no re-avisa — P-edición). KV, sin migración.
+ */
+export const PREF_FOTOS_VISTAS = 'fotos_vistas'
+
 /** Ventana de novedades: solo se muestran/cuentan ítems de los últimos N días. */
 export const VENTANA_NOVEDADES_DIAS = 30
 
@@ -99,6 +108,13 @@ export interface AvisosInicio {
    * menos el marcador `informes_vistos`. Solo familia (el staff no recibe este aviso).
    */
   informesNuevos: number
+  /**
+   * Familia: publicaciones del blog del aula (o donde un hijo aparece etiquetado —
+   * P-histórico) que aún no ha abierto (F10-2). Aviso derivado de `publicaciones`
+   * (RLS → solo las visibles para esta familia con `puede_ver_fotos`) menos el
+   * marcador `fotos_vistas`. Solo familia (el staff no recibe este aviso).
+   */
+  fotosNuevas: number
   /**
    * Staff redactor (coordinadora/profesora): informes que le faltan por completar
    * para las campañas ABIERTAS (F9-5-2). Aviso derivado consolidado (Q1) o `null` si
