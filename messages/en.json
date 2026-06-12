@@ -2115,9 +2115,9 @@
       "aula_invalida": "Invalid classroom.",
       "nino_invalido": "Invalid child.",
       "texto_largo": "Text is too long (max 2000).",
-      "tipo_no_permitido": "File type not allowed. Use JPG, PNG or HEIC.",
+      "tipo_no_permitido": "File type not allowed. Use JPG or PNG.",
       "tamano_max": "Each photo must be at most 4 MB.",
-      "heic_demasiado_grande": "This HEIC photo is too large to convert here.",
+      "heic_no_soportado": "Convert the photo to JPG or PNG before uploading it.",
       "max_fotos": "Maximum 20 photos per post."
     },
     "errors": {
@@ -2129,9 +2129,7 @@
       "etiquetado_fallo": "Could not tag.",
       "nino_sin_permiso": "That child does not have image consent.",
       "subida_fallo": "Could not upload the photo.",
-      "procesado_fallo": "Could not process the photo.",
-      "heic_fallo": "Could not convert the HEIC photo on your device. Please try again.",
-      "heic_servidor": "Convert the photo on your device before uploading it."
+      "procesado_fallo": "Could not process the photo."
     }
   }
 }

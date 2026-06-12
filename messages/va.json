@@ -2115,9 +2115,9 @@
       "aula_invalida": "Aula no vàlida.",
       "nino_invalido": "Xiquet no vàlid.",
       "texto_largo": "El text és massa llarg (màx. 2000).",
-      "tipo_no_permitido": "Tipus d'arxiu no permés. Usa JPG, PNG o HEIC.",
+      "tipo_no_permitido": "Tipus d'arxiu no permés. Usa JPG o PNG.",
       "tamano_max": "Cada foto ha de pesar com a màxim 4 MB.",
-      "heic_demasiado_grande": "La foto HEIC és massa gran per a convertir-la ací.",
+      "heic_no_soportado": "Convertix la foto a JPG o PNG abans de pujar-la.",
       "max_fotos": "Màxim 20 fotos per publicació."
     },
     "errors": {
@@ -2129,9 +2129,7 @@
       "etiquetado_fallo": "No s'ha pogut etiquetar.",
       "nino_sin_permiso": "Eixe xiquet no té consentiment d'imatge.",
       "subida_fallo": "No s'ha pogut pujar la foto.",
-      "procesado_fallo": "No s'ha pogut processar la foto.",
-      "heic_fallo": "No s'ha pogut convertir la foto HEIC en el dispositiu. Torna a provar-ho.",
-      "heic_servidor": "Convertix la foto en el dispositiu abans de pujar-la."
+      "procesado_fallo": "No s'ha pogut processar la foto."
     }
   }
 }

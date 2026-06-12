@@ -12,10 +12,10 @@ import { FotoInvalidaError, procesarFoto } from '../procesar-foto'
 /**
  * Tests del pipeline de procesado (F10-1, spec §Privacidad / §Tests requeridos):
  * la salida NO conserva EXIF/geolocalización, genera miniatura, normaliza a JPEG
- * y rechaza tipos/tamaños no permitidos. El **HEIC se convierte en el cliente**
- * (libheif-wasm no carga en serverless); aquí se verifica que el servidor **rechaza**
- * con mensaje claro un HEIC sin convertir (fixture real `fixtures/sample-bridge.heic`,
- * foto genérica sin PII). El gate de etiquetado se cubre en la suite RLS de F10-0.
+ * y rechaza tipos/tamaños no permitidos. El **HEIC se rechaza** con mensaje claro
+ * (no se decodifica — ni cliente ni servidor; ver cabecera de `procesar-foto`); se
+ * verifica con un fixture HEIC real (`fixtures/sample-bridge.heic`, sin PII). El gate
+ * de etiquetado se cubre en la suite RLS de F10-0.
  */
 
 /** Fixture HEIC real (single-image) para el rechazo server-side. */
@@ -103,12 +103,10 @@ describe('procesarFoto (F10-1)', () => {
     })
   })
 
-  it('rechaza un HEIC real sin convertir (la conversión va en el cliente)', async () => {
-    // libheif NO corre en serverless (@vercel/nft no traza el .wasm) → el servidor no
-    // decodifica HEIC: lo rechaza con clave clara en vez de petar.
+  it('rechaza un HEIC real con mensaje claro (no se decodifica)', async () => {
     await expect(procesarFoto(SAMPLE_HEIC)).rejects.toBeInstanceOf(FotoInvalidaError)
     await expect(procesarFoto(SAMPLE_HEIC)).rejects.toMatchObject({
-      clave: 'fotos.errors.heic_servidor',
+      clave: 'fotos.validation.heic_no_soportado',
     })
   })
 })

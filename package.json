@@ -31,7 +31,6 @@
     "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "heic-to": "^1.5.2",
     "lucide-react": "^1.14.0",
     "next": "16.2.6",
     "next-intl": "^4.11.2",

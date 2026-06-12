@@ -38,8 +38,9 @@ function err(error: string, status = 400): Response {
  *
  * Excepción legítima a "Server Actions, no API routes" (binario, como el PDF de
  * F9-4): recibe `multipart/form-data` con `publicacion_id` + `file`, procesa con
- * `sharp` (EXIF/GPS fuera, original + miniatura JPEG) y persiste. El HEIC se
- * convierte a JPEG en el cliente (ver [BlogAulaCliente]); aquí solo llega JPG/PNG.
+ * `sharp` (EXIF/GPS fuera, original + miniatura JPEG) y persiste. Solo JPG/PNG: el
+ * HEIC se rechaza con mensaje claro (no se decodifica — ver [procesarFoto]). Si el
+ * procesado falla devuelve una clave i18n clara (no un 500 mudo).
  *
  * Orden anti-huérfanos: (1) procesa, (2) inserta la fila `media` con el cliente
  * del usuario — la **RLS** autoriza (admin o autor de la publicación), (3) sube

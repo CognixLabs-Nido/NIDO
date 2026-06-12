@@ -10,15 +10,14 @@ import { MAX_BYTES_FOTO } from '../types'
 /**
  * Pipeline de procesado de una foto (F10-1, spec §Comportamiento 1 + §Privacidad).
  *
- * **HEIC se decodifica en el CLIENTE** (navegador → JPEG, ver [BlogAulaCliente]): el
- * decode HEIC con libheif NO puede correr en la función serverless porque `@vercel/nft`
- * no traza el `.wasm` de libheif al bundle → ENOENT al primer decode → 500 en frío. Por
- * eso aquí el servidor solo recibe JPG/PNG; si pese a todo llega un HEIC, se rechaza con
- * mensaje claro (`fotos.errors.heic_servidor`) en vez de reintroducir libheif.
+ * **Solo JPG/PNG.** El **HEIC se rechaza** con mensaje claro (`fotos.validation.heic_no_soportado`):
+ * decodificarlo no es viable aquí — en el cliente `heic-to`/`heic2any` cuelgan en un Web Worker
+ * `blob:` (reproducido en headless), y en el servidor el `.wasm` de libheif NO llega a la función
+ * con el build de Turbopack (ni `outputFileTracingIncludes` ni `require.resolve` lo logran). El
+ * decode HEIC server-side requeriría build con Webpack; queda como follow-up.
  *
  * Por cada binario subido:
- *  1. Revalida el **tipo real** (no el MIME declarado) por magic bytes / `sharp` y
- *     rechaza HEIC sin convertir.
+ *  1. Revalida el **tipo real** (no el MIME declarado) por magic bytes / `sharp`; rechaza HEIC.
  *  2. Aplica la **orientación EXIF** (`.rotate()`) y luego **descarta TODOS los
  *     metadatos** (sharp no los copia si no se pide `withMetadata()`), eliminando
  *     EXIF/geolocalización.
@@ -68,12 +67,12 @@ type CrearPipeline = () => sharp.Sharp
 
 /**
  * Resuelve la entrada a una factoría de pipelines sharp validando el tipo real.
- * Rechaza HEIC sin convertir (la conversión va en el cliente, ver cabecera) y
- * cualquier binario que no sea una imagen procesable.
+ * Rechaza HEIC/HEIF (no se decodifica aquí, ver cabecera) y cualquier binario que
+ * no sea una imagen procesable. Lanza `FotoInvalidaError` (clave i18n).
  */
 async function crearFactoria(entrada: Buffer): Promise<CrearPipeline> {
   if (esHeicBytes(entrada)) {
-    throw new FotoInvalidaError('fotos.errors.heic_servidor')
+    throw new FotoInvalidaError('fotos.validation.heic_no_soportado')
   }
 
   // Valida el tipo REAL con sharp (no el MIME declarado por el cliente).

@@ -2115,9 +2115,9 @@
       "aula_invalida": "Aula no válida.",
       "nino_invalido": "Niño no válido.",
       "texto_largo": "El texto es demasiado largo (máx. 2000).",
-      "tipo_no_permitido": "Tipo de archivo no permitido. Usa JPG, PNG o HEIC.",
+      "tipo_no_permitido": "Tipo de archivo no permitido. Usa JPG o PNG.",
       "tamano_max": "Cada foto debe pesar como máximo 4 MB.",
-      "heic_demasiado_grande": "La foto HEIC es demasiado grande para convertirla aquí.",
+      "heic_no_soportado": "Convierte la foto a JPG o PNG antes de subirla.",
       "max_fotos": "Máximo 20 fotos por publicación."
     },
     "errors": {
@@ -2129,9 +2129,7 @@
       "etiquetado_fallo": "No se pudo etiquetar.",
       "nino_sin_permiso": "Ese niño no tiene consentimiento de imagen.",
       "subida_fallo": "No se pudo subir la foto.",
-      "procesado_fallo": "No se pudo procesar la foto.",
-      "heic_fallo": "No se pudo convertir la foto HEIC en el dispositivo. Inténtalo de nuevo.",
-      "heic_servidor": "Convierte la foto en el dispositivo antes de subirla."
+      "procesado_fallo": "No se pudo procesar la foto."
     }
   }
 }

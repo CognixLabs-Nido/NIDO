@@ -35,13 +35,6 @@ export const MIME_FOTO_SALIDA = 'image/jpeg'
  * queda para una iteración futura.
  */
 export const MAX_BYTES_FOTO = 4 * 1024 * 1024
-
-/**
- * Pre-tope del **HEIC de origen** (antes de convertirlo a JPEG en el navegador): no
- * intentamos decodificar un archivo gigantesco. Generoso (cubre 12-48 MP de iPhone);
- * el tope real de 4 MB se aplica al **JPEG resultante** tras la conversión.
- */
-export const MAX_BYTES_HEIC_ORIGEN = 40 * 1024 * 1024
 export const MAX_FOTOS_PUBLICACION = 20
 export const MAX_TEXTO_PUBLICACION = 2000
 

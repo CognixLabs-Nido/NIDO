@@ -28,78 +28,8 @@ import {
   eliminarPublicacion,
 } from '../actions/gestionar-publicacion'
 import { esHeicBytes } from '../lib/es-heic'
-import {
-  MAX_BYTES_FOTO,
-  MAX_BYTES_HEIC_ORIGEN,
-  MAX_FOTOS_PUBLICACION,
-  MAX_TEXTO_PUBLICACION,
-} from '../types'
+import { MAX_BYTES_FOTO, MAX_FOTOS_PUBLICACION, MAX_TEXTO_PUBLICACION } from '../types'
 import type { MediaItem, NinoAulaFoto, PublicacionItem } from '../types'
-
-/**
- * Margen de guarda para la conversión HEIC en el navegador. Generoso: un móvil viejo
- * puede tardar varios segundos decodificando un HEIC de 12 MP en el hilo principal; el
- * tope solo existe para rescatar de un cuelgue patológico (que la promesa nunca resuelva)
- * y NUNCA dejar el spinner girando en silencio.
- */
-const TIMEOUT_CONVERSION_HEIC_MS = 45_000
-
-/** `promesa` con tope de tiempo: rechaza si no resuelve antes de `ms`. Limpia el timer. */
-function conTimeout<T>(promesa: Promise<T>, ms: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('timeout')), ms)
-    promesa.then(
-      (v) => {
-        clearTimeout(timer)
-        resolve(v)
-      },
-      (e) => {
-        clearTimeout(timer)
-        reject(e)
-      }
-    )
-  })
-}
-
-/**
- * Prepara un archivo para subir: si es **HEIC/HEIF** lo convierte a **JPEG en el
- * navegador** con `heic-to` (libheif-wasm carga bien en el cliente; en la función
- * serverless NO, ver [procesarFoto]). El tope de 4 MB se aplica al **JPEG resultante**;
- * un pre-tope generoso evita decodificar un HEIC gigantesco. Devuelve una clave i18n
- * relativa al namespace `fotos` si hay que rechazar el archivo.
- *
- * Usa el entry **principal** de `heic-to` (main-thread, wasm inline): a diferencia de
- * `heic-to/next` (Web Worker desde `blob:`), un fallo de init/conversión SÍ lanza y entra
- * en el `catch`. Además se envuelve con `conTimeout` para que un cuelgue nunca quede en
- * silencio: timeout o excepción → clave de error → toast + subida abortada limpiamente.
- */
-async function prepararArchivo(
-  file: File
-): Promise<{ ok: true; file: File } | { ok: false; error: string }> {
-  let salida = file
-  const cabecera = new Uint8Array(await file.slice(0, 12).arrayBuffer())
-  if (esHeicBytes(cabecera)) {
-    if (file.size > MAX_BYTES_HEIC_ORIGEN) {
-      return { ok: false, error: 'validation.heic_demasiado_grande' }
-    }
-    try {
-      const { heicTo } = await import('heic-to')
-      const jpeg = await conTimeout(
-        heicTo({ blob: file, type: 'image/jpeg', quality: 0.82 }),
-        TIMEOUT_CONVERSION_HEIC_MS
-      )
-      const base = file.name.replace(/\.[^.]+$/, '') || 'foto'
-      salida = new File([jpeg], `${base}.jpg`, { type: 'image/jpeg' })
-    } catch {
-      return { ok: false, error: 'errors.heic_fallo' }
-    }
-  }
-  // Tope de 4 MB (margen bajo el límite de 4,5 MB del body de Vercel) sobre el JPEG final.
-  if (salida.size > MAX_BYTES_FOTO) {
-    return { ok: false, error: 'validation.tamano_max' }
-  }
-  return { ok: true, file: salida }
-}
 
 interface Props {
   locale: string
@@ -152,16 +82,22 @@ export function BlogAulaCliente({ locale, aulaId, ninos, puedePublicar, publicac
     }
     const seleccion = Array.from(files).slice(0, restantes)
     setSubiendo(true)
-    for (const original of seleccion) {
-      // HEIC → JPEG en el navegador + topes (origen y JPEG resultante). Clave i18n si falla.
-      const prep = await prepararArchivo(original)
-      if (!prep.ok) {
-        toast.error(t(prep.error))
+    for (const file of seleccion) {
+      // HEIC no soportado (no se decodifica ni en cliente ni en servidor) — aviso claro
+      // antes de subir. El servidor también lo rechaza como defensa.
+      const cabecera = new Uint8Array(await file.slice(0, 12).arrayBuffer())
+      if (esHeicBytes(cabecera)) {
+        toast.error(t('validation.heic_no_soportado'))
+        continue
+      }
+      // Tope de 4 MB sobre el archivo subido (margen bajo el límite de ~4,5 MB del body de Vercel).
+      if (file.size > MAX_BYTES_FOTO) {
+        toast.error(t('validation.tamano_max'))
         continue
       }
       const form = new FormData()
       form.append('publicacion_id', editor.id)
-      form.append('file', prep.file)
+      form.append('file', file)
       try {
         const res = await fetch(`/${locale}/fotos/upload`, { method: 'POST', body: form })
         const json = (await res.json()) as
