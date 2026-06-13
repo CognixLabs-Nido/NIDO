@@ -128,7 +128,7 @@ RAT/DPA.
   terceros/tracking hoy; si se añade analytics con cookies, sería su propia pieza).
 - Export de datos / portabilidad (art. 20) **automatizado** — ver Decisión Abierta #10
   (recomendación: derecho de acceso atendido manualmente por la dirección en F11; el
-  export self-service self-service queda a Ola 2/3 salvo que se decida lo contrario).
+  export self-service queda a Ola 2/3 salvo que se decida lo contrario).
 - Validez jurídica de la firma electrónica (eIDAS) — la **certifica el abogado**; F8/F11
   solo aportan el mecanismo técnico auditable.
 - Cifrado adicional más allá del ya existente (pgcrypto en `info_medica_emergencia`, ADR-0004).
