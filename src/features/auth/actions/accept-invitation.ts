@@ -80,8 +80,8 @@ export async function acceptInvitation(
       p_usuario_id: userId,
       p_tipo: tipo,
       p_version: CONSENT_VERSIONS[tipo],
-      p_ip: ip,
-      p_user_agent: userAgent,
+      p_ip: ip ?? undefined,
+      p_user_agent: userAgent ?? undefined,
     })
     if (consentErr) {
       // Rollback del usuario recién creado: sin consentimiento no se completa el alta.

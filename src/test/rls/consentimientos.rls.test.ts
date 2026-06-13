@@ -44,15 +44,11 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS consentimientos — F11-A (activación)
       p_usuario_id: userA.id,
       p_tipo: 'terminos',
       p_version: 'v1.0',
-      p_ip: null,
-      p_user_agent: null,
     })
     const { error: e2 } = await serviceClient.rpc('registrar_consentimiento', {
       p_usuario_id: userA.id,
       p_tipo: 'privacidad',
       p_version: 'v1.0',
-      p_ip: null,
-      p_user_agent: null,
     })
     expect(e1).toBeNull()
     expect(e2).toBeNull()
@@ -147,8 +143,6 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS consentimientos — F11-A (activación)
       p_usuario_id: userA.id,
       p_tipo: 'privacidad',
       p_version: 'v2.0',
-      p_ip: null,
-      p_user_agent: null,
     })
     expect(error).toBeNull()
 
@@ -181,8 +175,6 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS consentimientos — F11-A (activación)
       p_usuario_id: userA.id, // ← intento de suplantación
       p_tipo: 'terminos',
       p_version: 'v1.0',
-      p_ip: null,
-      p_user_agent: null,
     })
     expect(error).toBeTruthy()
   })

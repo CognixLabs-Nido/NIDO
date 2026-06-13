@@ -2610,17 +2610,17 @@ export type Database = {
       _get_medical_key: { Args: never; Returns: string }
       registrar_consentimiento: {
         Args: {
-          p_usuario_id: string
+          p_ip?: unknown
           p_tipo: Database['public']['Enums']['consentimiento_tipo']
+          p_user_agent?: string
+          p_usuario_id: string
           p_version: string
-          p_ip?: string | null
-          p_user_agent?: string | null
         }
         Returns: string
       }
       revocar_consentimiento: {
         Args: { p_tipo: Database['public']['Enums']['consentimiento_tipo'] }
-        Returns: string | null
+        Returns: string
       }
       archivar_autorizacion: {
         Args: { p_autorizacion_id: string }
