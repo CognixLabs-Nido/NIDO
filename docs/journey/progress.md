@@ -948,3 +948,19 @@ Todas aplicadas a mano por SQL Editor (CLI SIGILL en el equipo) y registradas en
 ### Cierre
 
 **F10 cerrada (Checkpoint):** typecheck (en frío) + lint + build + **suite entera con TODOS los flags de F10 activados** (`F10_0/F10_2/F10_3_MIGRATION_APPLIED=1`, `--no-file-parallelism`) en verde contra el remoto con las 3 migraciones aplicadas. Números: **unit 1487/1487 passed** (79 archivos); **RLS 207 passed** (los 105 skipped son de otras fases por sus propios gates — F5/F5.6 mensajería, F5B34 profes-aulas, etc.); los **3 archivos RLS de F10** (`publicaciones`, `publicaciones-familia`, `adjuntos-storage`) corridos con sus flags dan **21/21 passed, 0 skipped** — verde real en lo de F10. Blog del aula (composer profe), vista familia (blog + histórico + aviso de inicio + descarga), y adjuntos (foto niño, DNI de recogida atado al hash, logo) verificados en preview. **HEIC se rechaza** con aviso claro (ADR-0046) — follow-up con dos vías. Próxima fase: **F11 — Pulido final + producción** (incluye el paquete RGPD bloqueante y el backlog consolidado en `docs/follow-ups.md`).
+
+## Fase 12 — Funcionalidad pendiente post-F11 (registrada, sin abrir)
+
+> Registrada durante F11-A (2026-06-13). **F12 sigue siendo Ola 1** — secuencial tras F11,
+> no una ola posterior (Ola 1 = 100% de la funcionalidad; ver `scope-ola-1.md` §Modelo de
+> olas y §Backlog F12). Recoge funcionalidad core que quede pendiente o aflore al estabilizar
+> producción. **El análisis de cierre de F11 poblará F12**; aún no se abre ni se especifica.
+
+**Primer ítem identificado:**
+
+- **Tutorías — reserva de franjas formal con la profesora.** Hoy ya existe una **vía
+  informal** (la familia y la profe acuerdan la tutoría por **mensajería** y/o la cuelgan en
+  la **Agenda/Calendario** — citas de F7b `reunion_familia`). F12 añadiría la **capa de
+  reserva formal encima** (franjas ofertadas, autoservicio de reserva por la familia,
+  confirmación), **reusando** Agenda + mensajería, **no desde cero**. Se reclasificó desde la
+  etiqueta previa "Ola 3" (era funcionalidad, no una mejora de IA) → baja a F12 (Ola 1).

@@ -12,27 +12,30 @@ El plan se organiza en tres olas **scope-driven** (no por fecha; el responsable 
 
 ## Fases secuenciales (build del producto web)
 
-| #    | Fase                                                            | Estado       |
-| ---- | --------------------------------------------------------------- | ------------ |
-| 0    | Fundaciones (Next.js, Supabase, tooling, CI/CD)                 | ✅ Cerrada   |
-| 1    | Identidad y acceso (auth, invitaciones, roles)                  | ✅ Cerrada   |
-| 2    | Entidades core + RLS + audit log                                | ✅ Cerrada   |
-| 3    | Agenda diaria + bienestar (lactancia D, check-in B)             | ✅ Cerrada   |
-| 4    | Asistencia y ausencias                                          | ✅ Cerrada   |
-| 4.5a | Calendario laboral del centro                                   | ✅ Cerrada   |
-| 4.5b | Menú mensual + pase de lista comida                             | ✅ Cerrada   |
-| 5    | Mensajería profe ↔ familia + anuncios                           | ✅ Cerrada   |
-| 5.5  | Push notifications (transversal — ADR-0025/0027)                | ✅ Cerrada   |
-| 5.6  | Mensajería admin ↔ familia + ventana anulación 5 min            | ✅ Cerrada   |
-| 6    | Recordatorios bidireccionales (E)                               | ✅ Cerrada   |
-| 7    | Calendario + eventos + confirmaciones (**lean**)                | ✅ Cerrada   |
-| 7b   | Agenda de citas con invitados nominales + RSVP (ADR-0039)       | ✅ Cerrada   |
-| 8    | Autorizaciones + firma digital (ADR-0041)                       | ✅ Cerrada   |
-| 9    | Informes de evolución                                           | ✅ Cerrada   |
-| 10   | Fotos y publicaciones del aula                                  | ✅ Cerrada   |
-| 11   | Pulido final + producción (incl. tolerancia básica offline PWA) | ⏳ Pendiente |
+| #    | Fase                                                                      | Estado       |
+| ---- | ------------------------------------------------------------------------- | ------------ |
+| 0    | Fundaciones (Next.js, Supabase, tooling, CI/CD)                           | ✅ Cerrada   |
+| 1    | Identidad y acceso (auth, invitaciones, roles)                            | ✅ Cerrada   |
+| 2    | Entidades core + RLS + audit log                                          | ✅ Cerrada   |
+| 3    | Agenda diaria + bienestar (lactancia D, check-in B)                       | ✅ Cerrada   |
+| 4    | Asistencia y ausencias                                                    | ✅ Cerrada   |
+| 4.5a | Calendario laboral del centro                                             | ✅ Cerrada   |
+| 4.5b | Menú mensual + pase de lista comida                                       | ✅ Cerrada   |
+| 5    | Mensajería profe ↔ familia + anuncios                                     | ✅ Cerrada   |
+| 5.5  | Push notifications (transversal — ADR-0025/0027)                          | ✅ Cerrada   |
+| 5.6  | Mensajería admin ↔ familia + ventana anulación 5 min                      | ✅ Cerrada   |
+| 6    | Recordatorios bidireccionales (E)                                         | ✅ Cerrada   |
+| 7    | Calendario + eventos + confirmaciones (**lean**)                          | ✅ Cerrada   |
+| 7b   | Agenda de citas con invitados nominales + RSVP (ADR-0039)                 | ✅ Cerrada   |
+| 8    | Autorizaciones + firma digital (ADR-0041)                                 | ✅ Cerrada   |
+| 9    | Informes de evolución                                                     | ✅ Cerrada   |
+| 10   | Fotos y publicaciones del aula                                            | ✅ Cerrada   |
+| 11   | Pulido final + producción (incl. tolerancia básica offline PWA)           | ⏳ Pendiente |
+| 12   | Funcionalidad pendiente post-F11 (la puebla el análisis de cierre de F11) | ⏳ Pendiente |
 
-> **F7 queda lean**: solo calendario + eventos + confirmaciones de asistencia. La **reserva de franjas para tutorías** se mueve a **Ola 3** (ver `research-comparativa-nido.md`).
+> **F12 — funcionalidad pendiente post-F11.** Sigue siendo **Ola 1** (Ola 1 = 100% de la funcionalidad; F12 es secuencial, no una ola posterior). Recoge funcionalidad core que aflore tras estabilizar producción en F11. El **análisis de cierre de F11 poblará F12**; arranca con un primer ítem ya identificado (ver "Backlog F12" abajo).
+
+> **F7 queda lean**: solo calendario + eventos + confirmaciones de asistencia. La **reserva de franjas para tutorías** se mueve a **F12** (es funcionalidad, no una mejora → no va a Ola 3; ver "Backlog F12" abajo y `research-comparativa-nido.md`).
 
 ## Bloqueantes de Ola 1
 
@@ -60,6 +63,19 @@ Subieron a Ola 1 desde la doc previa. Se ubicarán en su fase cuando toque — *
   de la Agenda (día + semana, por rol). Sustituye el widget "Próximos días cerrados".
   **Pieza propia tras el core de la Agenda** (cruza F7 + Agenda; recupera el Dominio
   C "Inicio Hoy" de f7a). Ver `agenda-citas.md`.
+
+## Backlog F12 (funcionalidad pendiente post-F11)
+
+F12 es la fase que recoge la **funcionalidad core** que quede pendiente o aflore tras
+estabilizar producción en F11. **Sigue siendo Ola 1** (secuencial, no ola posterior). El
+**análisis de cierre de F11 poblará esta lista**; hoy arranca con un ítem ya identificado:
+
+- **Tutorías — reserva de franjas formal con la profesora.** Hoy ya existe una **vía
+  informal**: la familia y la profe acuerdan una tutoría por **mensajería** y/o la cuelgan
+  en la **Agenda/Calendario** (citas de F7b, `reunion_familia`). F12 añadiría la **capa de
+  reserva formal encima** —franjas ofertadas por la profe/centro, autoservicio de reserva
+  por la familia, confirmación— **no desde cero** (reusa Agenda + mensajería existentes).
+  Antes estaba mal etiquetada como Ola 3; es funcionalidad, por eso baja a F12 (Ola 1).
 
 ## Regla de avance
 
