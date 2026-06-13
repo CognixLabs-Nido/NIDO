@@ -76,6 +76,10 @@ estabilizar producción en F11. **Sigue siendo Ola 1** (secuencial, no ola poste
   reserva formal encima** —franjas ofertadas por la profe/centro, autoservicio de reserva
   por la familia, confirmación— **no desde cero** (reusa Agenda + mensajería existentes).
   Antes estaba mal etiquetada como Ola 3; es funcionalidad, por eso baja a F12 (Ola 1).
+- **Selección de idioma en el perfil.** Hoy el perfil **MUESTRA** el idioma pero **no
+  permite cambiarlo**. Añadir un selector (`es`/`en`/`va`) que **persista** la preferencia del
+  usuario y **aplique** el locale elegido (hoy el cambio de locale solo va por URL). Al
+  implementarlo, **verificar si es feature ausente o selector roto**.
 
 ## Regla de avance
 

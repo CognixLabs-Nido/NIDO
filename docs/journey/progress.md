@@ -956,7 +956,7 @@ Todas aplicadas a mano por SQL Editor (CLI SIGILL en el equipo) y registradas en
 > olas y §Backlog F12). Recoge funcionalidad core que quede pendiente o aflore al estabilizar
 > producción. **El análisis de cierre de F11 poblará F12**; aún no se abre ni se especifica.
 
-**Primer ítem identificado:**
+**Ítems identificados:**
 
 - **Tutorías — reserva de franjas formal con la profesora.** Hoy ya existe una **vía
   informal** (la familia y la profe acuerdan la tutoría por **mensajería** y/o la cuelgan en
@@ -964,3 +964,7 @@ Todas aplicadas a mano por SQL Editor (CLI SIGILL en el equipo) y registradas en
   reserva formal encima** (franjas ofertadas, autoservicio de reserva por la familia,
   confirmación), **reusando** Agenda + mensajería, **no desde cero**. Se reclasificó desde la
   etiqueta previa "Ola 3" (era funcionalidad, no una mejora de IA) → baja a F12 (Ola 1).
+- **Selección de idioma en el perfil.** Hoy el perfil **MUESTRA** el idioma pero **no permite
+  cambiarlo**. Añadir un selector (`es`/`en`/`va`) que **persista** la preferencia del usuario y
+  **aplique** el locale elegido (hoy el cambio de locale solo va por URL). Al implementarlo,
+  **verificar si es feature ausente o selector roto**.
