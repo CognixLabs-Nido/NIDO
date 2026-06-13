@@ -48,6 +48,13 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 - [ ] **Foto del DNI / foto del niño desde móvil = también HEIC** — el follow-up de HEIC de arriba **aplica también a las subidas de familia** de F10-3 (foto del niño y DNI de recogida), no solo al blog de la profe. _(Ola 1)_
 - [ ] **(Opcional) Wizard de onboarding del tutor** que empuje a poner la **foto del niño** al completar el alta tras la invitación — hoy la foto se sube desde la ficha persistente `/family/nino/[id]` (no hay asistente). Sería pieza de **F2.6**, no de F10. _(Ola 1 — opcional)_
 
+## F12 — funcionalidad pendiente post-F11 (Ola 1)
+
+> Fase **registrada, sin abrir** (PR #87). Sigue siendo **Ola 1** (secuencial tras F11, no una ola posterior). El análisis de cierre de F11 poblará esta lista. Backlog canónico en `scope-ola-1.md` (§Backlog F12) y `progress.md` (Fase 12); esta sección los refleja.
+
+- [ ] **Tutorías — reserva de franjas formal con la profesora.** Hoy existe una **vía informal** (familia y profe acuerdan la tutoría por **mensajería** y/o la cuelgan en la **Agenda/Calendario** — citas de F7b `reunion_familia`). F12 añadiría la **capa de reserva formal encima** (franjas ofertadas, autoservicio de reserva por la familia, confirmación), **reusando** Agenda + mensajería, **no desde cero**. Reclasificada desde la etiqueta previa "Ola 3" (es funcionalidad, no una mejora de IA). _(Ola 1, F12)_
+- [ ] **Selección de idioma en el perfil.** Hoy el perfil **MUESTRA** el idioma pero **no permite cambiarlo**. Añadir un selector (`es`/`en`/`va`) que **persista** la preferencia del usuario y **aplique** el locale elegido (hoy el cambio de locale solo va por URL). Al implementarlo, **verificar si es feature ausente o selector roto**. _(Ola 1, F12)_
+
 ## Tooling / mantenimiento
 
 - [ ] **Fijar la versión del CLI de Supabase en el repo** (`package.json`/`.tool-versions`). Hoy `npm run db:types` usa `npx supabase` sin pin → al regenerar tipos cambia el formato (`Json`, reordenación) y mete **ruido de reformateo** de ~1600 líneas ajeno al esquema real. Menor pero recurrente. Origen: F10-2/F10-3. _(Ola 1)_
