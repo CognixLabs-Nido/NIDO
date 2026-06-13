@@ -965,6 +965,7 @@ export type Database = {
           created_at: string
           id: string
           ip_address: unknown
+          revocado_en: string | null
           tipo: Database['public']['Enums']['consentimiento_tipo']
           user_agent: string | null
           usuario_id: string
@@ -975,6 +976,7 @@ export type Database = {
           created_at?: string
           id?: string
           ip_address?: unknown
+          revocado_en?: string | null
           tipo: Database['public']['Enums']['consentimiento_tipo']
           user_agent?: string | null
           usuario_id: string
@@ -985,6 +987,7 @@ export type Database = {
           created_at?: string
           id?: string
           ip_address?: unknown
+          revocado_en?: string | null
           tipo?: Database['public']['Enums']['consentimiento_tipo']
           user_agent?: string | null
           usuario_id?: string
@@ -2605,6 +2608,20 @@ export type Database = {
     }
     Functions: {
       _get_medical_key: { Args: never; Returns: string }
+      registrar_consentimiento: {
+        Args: {
+          p_usuario_id: string
+          p_tipo: Database['public']['Enums']['consentimiento_tipo']
+          p_version: string
+          p_ip?: string | null
+          p_user_agent?: string | null
+        }
+        Returns: string
+      }
+      revocar_consentimiento: {
+        Args: { p_tipo: Database['public']['Enums']['consentimiento_tipo'] }
+        Returns: string | null
+      }
       archivar_autorizacion: {
         Args: { p_autorizacion_id: string }
         Returns: boolean
