@@ -1,7 +1,7 @@
 ---
 feature: proteccion-datos
 wave: 1
-status: draft
+status: approved
 priority: critical
 last_updated: 2026-06-13
 related_adrs:
@@ -111,6 +111,9 @@ RAT/DPA.
 - Migración de least-privilege: quitar el INSERT del admin en `profe_familia`, conservando
   su SELECT (supervisión).
 - Enganche de retención (jobs/RPC de purga; la **política** redactada va en F11-B).
+- **Export completo de datos**: derecho de **acceso (art. 15)** + **portabilidad (art. 20)**,
+  con **auto-servicio de la familia** ("descargar mis datos", formato legible + máquina) y la
+  vía de la dirección. Es funcionalidad core de Ola 1, no se difiere (Decisión Abierta #10).
 - Páginas privacy/terms con estructura real + enlace visible + **marcadores de prueba**
   (no el texto final).
 
@@ -126,9 +129,6 @@ RAT/DPA.
 
 - Banner de cookies / gestor de consentimiento de cookies (la app no usa cookies de
   terceros/tracking hoy; si se añade analytics con cookies, sería su propia pieza).
-- Export de datos / portabilidad (art. 20) **automatizado** — ver Decisión Abierta #10
-  (recomendación: derecho de acceso atendido manualmente por la dirección en F11; el
-  export self-service queda a Ola 2/3 salvo que se decida lo contrario).
 - Validez jurídica de la firma electrónica (eIDAS) — la **certifica el abogado**; F8/F11
   solo aportan el mecanismo técnico auditable.
 - Cifrado adicional más allá del ya existente (pgcrypto en `info_medica_emergencia`, ADR-0004).
@@ -284,6 +284,9 @@ Comportamiento 4.
 - **Storage**: políticas de retención/purga (RPC o job) — Decisión #12.
 - **Nuevas RPC** `SECURITY DEFINER`: `ejercer_olvido_usuario`, registro/revocación de
   consentimiento, activación de imagen tras firma. Todas autorizadas y auditadas.
+- **Export** (acceso + portabilidad): recolector server-side (route handler con descarga
+  binaria, patrón ADR-0043 del PDF de F9) que arma el dump del sujeto respetando RLS; sin
+  tabla nueva. Auto-servicio en el perfil de la familia + vía de la dirección.
 
 ## Tests obligatorios (anticipo, no se implementan aquí)
 
@@ -296,6 +299,9 @@ Comportamiento 4.
 - Least-privilege: admin `insert` en `profe_familia` → `42501`; admin `select` OK; profe y
   familia inalterados.
 - Retención: barrido purga lo vencido y respeta lo vigente.
+- Export: la familia exporta **solo lo suyo** (acceso + portabilidad); la dirección, lo de su
+  centro; aislamiento RLS verificado (una familia no exporta datos de otra); el export queda
+  auditado.
 
 ---
 
@@ -375,12 +381,15 @@ homogéneo para el panel de consentimientos del usuario. `ninos.puede_aparecer_e
 transaccional** disparada por la firma. Evita divergencia (el bug clásico de "marcado a mano"
 que F11 viene a cerrar).
 
-**10. Export de datos / portabilidad (art. 20): ¿en F11 o diferido?**
-El inventario lo marcó ausente; el alcance de F11 lo dejó fuera salvo decisión contraria.
-**Recomendación:** **diferir el export self-service a Ola 2/3**; en F11 atender el **derecho
-de acceso de forma manual** (la dirección exporta vía consulta puntual documentada). El olvido
-SÍ es bloqueante (datos de menores); el export self-service no impide operar con familias.
-Confirmar que el responsable acepta atender acceso/portabilidad manualmente al principio.
+**10. Export de datos / portabilidad (art. 15 + art. 20). — RESUELTA: incluido completo en Ola 1.**
+El inventario lo marcó ausente. **Decisión:** es **funcionalidad core**, entra **completo en
+F11-A**, sin diferir. Cubre: **derecho de acceso (art. 15)** + **portabilidad (art. 20)** con
+**auto-servicio de la familia** ("descargar mis datos" desde su perfil) **y** la vía de la
+dirección (export de un usuario/niño del centro). Formato **legible + estructurado/máquina**
+(JSON; PDF opcional de cortesía). Respeta la RLS (la familia solo exporta lo suyo; la dirección,
+lo de su centro) y queda **auditado** (acceso a datos personales). Sub-decisión de
+implementación (alcance del dump, no de wave): qué tablas/Storage incluye y si los binarios van
+como enlaces firmados o empaquetados — se concreta al implementar F11-A.
 
 **11. Forma exacta del least-privilege en mensajería.**
 Opciones: (a) helper nuevo `puede_postear_en_conversacion` usado solo en `mensajes_insert`;
@@ -392,9 +401,12 @@ Migración inmutable nueva, no editar las aplicadas.
 **12. Plazos y automatización de retención.**
 **Recomendación:** plazos iniciales (a validar por abogado en F11-B): DNIs de recogida
 puntual → purga al caducar la recogida + 7 días; DNI de recogida habitual y fotos → mientras
-matrícula activa + 12 meses tras baja. Automatización: **RPC de barrido que la dirección
-dispara** desde un panel (semi-manual) en F11; cron automático queda a Ola 2 (evita borrados
-automáticos no supervisados sobre datos legales mientras el piloto madura).
+matrícula activa + 12 meses tras baja. Automatización: la **RPC de barrido** y el **cron
+programado** que la ejecuta entran **ambos en Ola 1** (F11-A) — la enforcement de retención es
+funcionalidad, no se difiere. Matiz operativo (no de wave): mientras el piloto madura, el cron
+puede arrancar en modo **avisar/semi-manual** (lista lo que vencería; la dirección confirma)
+antes de pasar a borrado autónomo; es un flag de operación dentro de F11, no una pieza de otra
+ola. (Corrige la etiqueta previa "Ola 2", que era el bucket equivocado: Ola 2 = app nativa.)
 
 **13. Versionado de los textos legales y re-consentimiento.**
 Cuando llegue el texto del abogado, su versión cambia (de `v1.0` marcador a la real).

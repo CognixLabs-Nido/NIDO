@@ -4,9 +4,9 @@
 
 El plan se organiza en tres olas **scope-driven** (no por fecha; el responsable controla el calendario):
 
-- **Ola 1 — producto web completo y desplegable.** Es el alcance de este documento. Cierra cuando la app web cubre todo el ciclo de un centro y puede operar en producción con datos reales.
-- **Ola 2 — app nativa (iOS + Android).** Reusa `packages/core` y el backend; añade lo que solo tiene sentido en nativo (offline-first real, push nativo, etc.).
-- **Ola 3 — mejoras y diferenciación.** Features de valor añadido sobre una base ya consolidada con datos reales.
+- **Ola 1 — producto web completo y desplegable.** Es el alcance de este documento. Cierra cuando la app web cubre todo el ciclo de un centro y puede operar en producción con datos reales. **Ola 1 = el 100% de la FUNCIONALIDAD.** Ninguna funcionalidad core se difiere a Ola 2/3: si algo es funcional (un derecho RGPD, un flujo de usuario, una capacidad de gestión), va en Ola 1. Lo único que se difiere es lo que **no** es funcionalidad core: la app nativa (Ola 2) y las mejoras (Ola 3).
+- **Ola 2 — app nativa (iOS + Android).** Reusa `packages/core` y el backend; añade **solo** lo que tiene sentido únicamente en nativo (offline-first real, push nativo, etc.). No es donde aterriza funcionalidad web pendiente.
+- **Ola 3 — MEJORAS (no funcionalidad core).** Valor añadido sobre una base ya consolidada con datos reales: p. ej. **IA para redactar mensajes**, **IA para identificar niños en fotos**, y diferenciadores análogos. **No** es un cajón para diferir funcionalidad básica.
 
 > El alcance de Ola 1 es **fijo**; las fechas las decide el responsable. No hay deadline externo.
 
