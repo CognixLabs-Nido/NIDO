@@ -2047,6 +2047,60 @@ export type Database = {
           },
         ]
       }
+      olvido_solicitudes: {
+        Row: {
+          centro_id: string
+          created_at: string
+          gracia_hasta: string
+          id: string
+          inmediato: boolean
+          purgado_en: string | null
+          solicitado_en: string
+          solicitado_por: string | null
+          sujeto_id: string
+          sujeto_tipo: Database['public']['Enums']['olvido_sujeto_tipo']
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          gracia_hasta: string
+          id?: string
+          inmediato?: boolean
+          purgado_en?: string | null
+          solicitado_en?: string
+          solicitado_por?: string | null
+          sujeto_id: string
+          sujeto_tipo: Database['public']['Enums']['olvido_sujeto_tipo']
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          gracia_hasta?: string
+          id?: string
+          inmediato?: boolean
+          purgado_en?: string | null
+          solicitado_en?: string
+          solicitado_por?: string | null
+          sujeto_id?: string
+          sujeto_tipo?: Database['public']['Enums']['olvido_sujeto_tipo']
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'olvido_solicitudes_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'olvido_solicitudes_solicitado_por_fkey'
+            columns: ['solicitado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       plantillas_informe: {
         Row: {
           archivada_at: string | null
@@ -2622,6 +2676,28 @@ export type Database = {
         Args: { p_tipo: Database['public']['Enums']['consentimiento_tipo'] }
         Returns: string
       }
+      solicitar_olvido_nino: {
+        Args: { p_inmediato?: boolean; p_nino_id: string }
+        Returns: string
+      }
+      solicitar_olvido_usuario: {
+        Args: { p_inmediato?: boolean; p_usuario_id: string }
+        Returns: string
+      }
+      olvido_pendientes: {
+        Args: never
+        Returns: {
+          centro_id: string
+          gracia_hasta: string
+          solicitud_id: string
+          sujeto_id: string
+          sujeto_tipo: Database['public']['Enums']['olvido_sujeto_tipo']
+        }[]
+      }
+      purgar_sujeto_db: {
+        Args: { p_solicitud_id: string }
+        Returns: undefined
+      }
       archivar_autorizacion: {
         Args: { p_autorizacion_id: string }
         Returns: boolean
@@ -2861,6 +2937,7 @@ export type Database = {
       momento_comida: 'desayuno' | 'media_manana' | 'comida' | 'merienda'
       motivo_ausencia: 'enfermedad' | 'cita_medica' | 'vacaciones' | 'familiar' | 'otro'
       nino_sexo: 'F' | 'M' | 'X'
+      olvido_sujeto_tipo: 'usuario' | 'nino'
       parentesco:
         | 'madre'
         | 'padre'
