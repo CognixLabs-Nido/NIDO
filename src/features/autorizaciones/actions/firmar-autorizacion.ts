@@ -249,11 +249,14 @@ export async function rechazarAutorizacion(
 
 /**
  * Revoca una firma previa añadiendo una fila nueva `decision='revocado'`
- * (append-only, conserva la traza — D4). **Self-service SOLO en recogida y
- * medicación** (info de seguridad reversible: cambió quién recoge / se paró una
- * medicina); reglas/salida NO se revocan (la familia contacta con el centro, que
- * «anula»). La revocación aparece como ALERTA en el feed de notificaciones de
- * admin + profes del aula del niño (deriva del row `revocado`; sin envío activo).
+ * (append-only, conserva la traza — D4). **Self-service en recogida, medicación e
+ * imágenes** (info reversible: cambió quién recoge / se paró una medicina /
+ * se retira el consentimiento de imagen del menor — derecho RGPD del tutor, F11-A3);
+ * reglas/salida NO se revocan (la familia contacta con el centro, que «anula»). En
+ * imágenes, el trigger `firma_imagen_sync` recalcula `puede_aparecer_en_fotos` y
+ * revoca el consentimiento del firmante, atómico con la fila. La revocación aparece
+ * como ALERTA en el feed de notificaciones de admin + profes del aula del niño
+ * (deriva del row `revocado`; sin envío activo).
  */
 export async function revocarFirma(
   input: RevocarFirmaInput
@@ -270,13 +273,16 @@ export async function revocarFirma(
   }
   const d = parsed.data
 
-  // Solo recogida/medicación admiten revocación self-service.
+  // Solo recogida/medicación/imágenes admiten revocación self-service (F11-A3).
   const { data: aut } = await supabase
     .from('autorizaciones')
     .select('tipo')
     .eq('id', d.autorizacion_id)
     .maybeSingle()
-  if (!aut || (aut.tipo !== 'recogida' && aut.tipo !== 'medicacion')) {
+  if (
+    !aut ||
+    (aut.tipo !== 'recogida' && aut.tipo !== 'medicacion' && aut.tipo !== 'autorizacion_imagenes')
+  ) {
     return fail('autorizaciones.errors.revocar_no_permitido')
   }
 
