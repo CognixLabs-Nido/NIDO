@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
+import { ExportButton } from '@/features/export/components/ExportButton'
 import { PushSettings } from '@/features/push/components/PushSettings'
 import { AuthShell } from '@/shared/components/AuthShell'
 import { createClient } from '@/lib/supabase/server'
@@ -14,6 +15,7 @@ interface PageProps {
 export default async function ProfilePage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('auth.profile')
+  const tExport = await getTranslations('export')
 
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
@@ -51,6 +53,14 @@ export default async function ProfilePage({ params }: PageProps) {
           </div>
           <div className="border-t border-dashed border-neutral-200 pt-4">
             <PushSettings />
+          </div>
+          <div className="space-y-2 border-t border-dashed border-neutral-200 pt-4">
+            <p className="text-muted-foreground text-xs">{tExport('perfil_descripcion')}</p>
+            <ExportButton
+              href={`/${locale}/export/me`}
+              label={tExport('descargar_mis_datos')}
+              filename="nido-mis-datos.zip"
+            />
           </div>
           <SignOutButton locale={locale} />
         </CardContent>

@@ -2169,5 +2169,14 @@
       "subida_fallo": "Could not upload the photo.",
       "procesado_fallo": "Could not process the photo."
     }
+  },
+  "export": {
+    "descargar_mis_datos": "Download my data",
+    "exportar_nino": "Export child data",
+    "exportar_usuario": "Export data",
+    "generando": "Generating…",
+    "exito": "Download ready",
+    "error": "Could not generate the export. Please try again.",
+    "perfil_descripcion": "Download a copy of your personal data and your children's (access and portability, GDPR)."
   }
 }
