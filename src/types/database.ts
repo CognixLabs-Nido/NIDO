@@ -1364,6 +1364,48 @@ export type Database = {
           },
         ]
       }
+      export_log: {
+        Row: {
+          centro_id: string
+          created_at: string
+          id: string
+          solicitado_por: string | null
+          sujeto_id: string
+          sujeto_tipo: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          id?: string
+          solicitado_por?: string | null
+          sujeto_id: string
+          sujeto_tipo: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          id?: string
+          solicitado_por?: string | null
+          sujeto_id?: string
+          sujeto_tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'export_log_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'export_log_solicitado_por_fkey'
+            columns: ['solicitado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       firmas_autorizacion: {
         Row: {
           autorizacion_id: string
