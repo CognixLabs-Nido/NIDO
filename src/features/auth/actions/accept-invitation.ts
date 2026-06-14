@@ -1,14 +1,14 @@
 'use server'
 
+import { getRequestContext } from '@/features/autorizaciones/lib/request-context'
 import { createClient } from '@/lib/supabase/server'
+import { CONSENT_OBLIGATORIOS, CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
 import { logger } from '@/shared/lib/logger'
 
 import { acceptInvitationSchema, type AcceptInvitationInput } from '../schemas/invitation'
 
 import { fail, ok, type ActionResult } from './types'
 import { createServiceRoleClient } from './_service-role'
-
-const CONSENT_VERSION = 'v1.0'
 
 // Acepta invitación para un email nuevo (flujo B2): crea usuario, login automático.
 export async function acceptInvitation(
@@ -70,13 +70,27 @@ export async function acceptInvitation(
     return fail('auth.invitation.errors.role_failed')
   }
 
-  await service
-    .from('usuarios')
-    .update({
-      consentimiento_terminos_version: CONSENT_VERSION,
-      consentimiento_privacidad_version: CONSENT_VERSION,
+  // Captura de consentimientos: la tabla `consentimientos` es la fuente de verdad
+  // (fila append-only por tipo+versión), y la caché de usuarios se refresca en la
+  // MISMA transacción dentro del RPC. Términos + privacidad son obligatorios en el
+  // alta. (Imagen → firma F8; datos_medicos → su flujo, no el alta.)
+  const { ip, userAgent } = await getRequestContext()
+  for (const tipo of CONSENT_OBLIGATORIOS) {
+    const { error: consentErr } = await service.rpc('registrar_consentimiento', {
+      p_usuario_id: userId,
+      p_tipo: tipo,
+      p_version: CONSENT_VERSIONS[tipo],
+      p_ip: ip ?? undefined,
+      p_user_agent: userAgent ?? undefined,
     })
-    .eq('id', userId)
+    if (consentErr) {
+      // Rollback del usuario recién creado: sin consentimiento no se completa el alta.
+      logger.warn('registrar_consentimiento falló', consentErr.message)
+      await service.from('roles_usuario').delete().eq('usuario_id', userId)
+      await service.auth.admin.deleteUser(userId).catch(() => {})
+      return fail('auth.invitation.errors.create_failed')
+    }
+  }
 
   await service
     .from('invitaciones')
