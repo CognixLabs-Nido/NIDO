@@ -24,7 +24,7 @@ export default async function InvitationPage({ params }: PageProps) {
   const service = createServiceRoleClient()
   const { data: invitation } = await service
     .from('invitaciones')
-    .select('email, expires_at, accepted_at, rejected_at')
+    .select('email, rol_objetivo, expires_at, accepted_at, rejected_at')
     .eq('token', token)
     .maybeSingle()
 
@@ -49,17 +49,29 @@ export default async function InvitationPage({ params }: PageProps) {
     return <ExistingAccountNotice locale={locale} email={invitation.email} />
   }
 
-  return <NewAccountFlow locale={locale} token={token} email={invitation.email} />
+  const requiereParentesco =
+    invitation.rol_objetivo === 'tutor_legal' || invitation.rol_objetivo === 'autorizado'
+
+  return (
+    <NewAccountFlow
+      locale={locale}
+      token={token}
+      email={invitation.email}
+      requiereParentesco={requiereParentesco}
+    />
+  )
 }
 
 function NewAccountFlow({
   locale,
   token,
   email,
+  requiereParentesco,
 }: {
   locale: string
   token: string
   email: string
+  requiereParentesco: boolean
 }) {
   const t = useTranslations('auth.invitation')
   return (
@@ -70,7 +82,12 @@ function NewAccountFlow({
           <CardDescription>{t('subtitle_new')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <AcceptInvitationForm locale={locale} token={token} email={email} />
+          <AcceptInvitationForm
+            locale={locale}
+            token={token}
+            email={email}
+            requiereParentesco={requiereParentesco}
+          />
         </CardContent>
       </Card>
     </AuthShell>

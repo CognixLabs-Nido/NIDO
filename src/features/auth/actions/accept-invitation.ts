@@ -1,6 +1,7 @@
 'use server'
 
 import { getRequestContext } from '@/features/autorizaciones/lib/request-context'
+import { parentescoEnum, permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createClient } from '@/lib/supabase/server'
 import { CONSENT_OBLIGATORIOS, CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
 import { logger } from '@/shared/lib/logger'
@@ -9,6 +10,55 @@ import { acceptInvitationSchema, type AcceptInvitationInput } from '../schemas/i
 
 import { fail, ok, type ActionResult } from './types'
 import { createServiceRoleClient } from './_service-role'
+
+type ServiceClient = ReturnType<typeof createServiceRoleClient>
+
+const ROLES_FAMILIA = ['tutor_legal', 'autorizado'] as const
+
+function esRolFamilia(rol: string): boolean {
+  return (ROLES_FAMILIA as readonly string[]).includes(rol)
+}
+
+/**
+ * Crea el vínculo familiar tutor↔niño al aceptar la invitación (auto-vínculo).
+ * IDEMPOTENTE: ON CONFLICT (nino_id, usuario_id) DO NOTHING vía upsert con
+ * ignoreDuplicates — si el admin ya lo creó a mano (crearVinculo), no falla.
+ * El `tipo_vinculo` viene de la invitación; fallback a principal si una invitación
+ * tutor_legal antigua viniera con NULL. `permisos` reusa permisosDefault (mismos
+ * que el camino admin → consistencia entre ambos caminos).
+ */
+async function crearVinculoAutomatico(
+  service: ServiceClient,
+  params: {
+    ninoId: string
+    usuarioId: string
+    rolObjetivo: string
+    tipoVinculoInvitacion: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado' | null
+    parentesco: string
+    descripcionParentesco: string | null
+  }
+): Promise<{ error: string | null }> {
+  const tipo =
+    params.tipoVinculoInvitacion ??
+    (params.rolObjetivo === 'autorizado' ? 'autorizado' : 'tutor_legal_principal')
+
+  const { error } = await service.from('vinculos_familiares').upsert(
+    {
+      nino_id: params.ninoId,
+      usuario_id: params.usuarioId,
+      tipo_vinculo: tipo,
+      parentesco: params.parentesco as ReturnType<typeof parentescoEnum.parse>,
+      descripcion_parentesco: params.descripcionParentesco,
+      permisos: permisosDefault(tipo),
+    },
+    { onConflict: 'nino_id,usuario_id', ignoreDuplicates: true }
+  )
+  if (error) {
+    logger.warn('auto-vínculo falló', error.message)
+    return { error: 'auth.invitation.errors.vinculo_failed' }
+  }
+  return { error: null }
+}
 
 // Acepta invitación para un email nuevo (flujo B2): crea usuario, login automático.
 export async function acceptInvitation(
@@ -24,7 +74,7 @@ export async function acceptInvitation(
   const { data: invitation, error: invErr } = await service
     .from('invitaciones')
     .select(
-      'id, email, rol_objetivo, centro_id, nino_id, aula_id, expires_at, accepted_at, rejected_at'
+      'id, email, rol_objetivo, centro_id, nino_id, aula_id, tipo_vinculo, expires_at, accepted_at, rejected_at'
     )
     .eq('token', parsed.data.token)
     .maybeSingle()
@@ -35,6 +85,13 @@ export async function acceptInvitation(
   }
   if (new Date(invitation.expires_at) < new Date()) {
     return fail('auth.invitation.errors.expired')
+  }
+
+  // Invitación de rol familiar con niño → exige parentesco para el auto-vínculo
+  // (lo valida ANTES de crear el usuario, para no tener que hacer rollback).
+  const creaVinculo = esRolFamilia(invitation.rol_objetivo) && !!invitation.nino_id
+  if (creaVinculo && !parsed.data.parentesco) {
+    return fail('vinculo.validation.parentesco_requerido')
   }
 
   // Verifica que el email NO existe (en B8 se gestiona por separado).
@@ -92,6 +149,23 @@ export async function acceptInvitation(
     }
   }
 
+  // Auto-vínculo tutor↔niño (idempotente). Solo roles familiares con niño.
+  if (creaVinculo && invitation.nino_id && parsed.data.parentesco) {
+    const { error: vinculoError } = await crearVinculoAutomatico(service, {
+      ninoId: invitation.nino_id,
+      usuarioId: userId,
+      rolObjetivo: invitation.rol_objetivo,
+      tipoVinculoInvitacion: invitation.tipo_vinculo,
+      parentesco: parsed.data.parentesco,
+      descripcionParentesco: parsed.data.descripcionParentesco ?? null,
+    })
+    if (vinculoError) {
+      await service.from('roles_usuario').delete().eq('usuario_id', userId)
+      await service.auth.admin.deleteUser(userId).catch(() => {})
+      return fail(vinculoError)
+    }
+  }
+
   await service
     .from('invitaciones')
     .update({ accepted_at: new Date().toISOString() })
@@ -111,8 +185,11 @@ export async function acceptInvitation(
 }
 
 // Acepta una invitación pendiente para un usuario YA autenticado (flujo B8).
+// `vinculo` recoge el parentesco que declara el usuario; obligatorio cuando la
+// invitación es de rol familiar (no necesita consents: ya los dio al registrarse).
 export async function acceptPendingInvitation(
-  invitationId: string
+  invitationId: string,
+  vinculo?: { parentesco?: string; descripcionParentesco?: string | null }
 ): Promise<ActionResult<{ rol: string }>> {
   const supabase = await createClient()
   const { data: user } = await supabase.auth.getUser()
@@ -121,7 +198,9 @@ export async function acceptPendingInvitation(
   const service = createServiceRoleClient()
   const { data: invitation } = await service
     .from('invitaciones')
-    .select('id, email, rol_objetivo, centro_id, expires_at, accepted_at, rejected_at')
+    .select(
+      'id, email, rol_objetivo, centro_id, nino_id, tipo_vinculo, expires_at, accepted_at, rejected_at'
+    )
     .eq('id', invitationId)
     .maybeSingle()
 
@@ -133,6 +212,16 @@ export async function acceptPendingInvitation(
     return fail('auth.invitation.errors.invalid')
   if (new Date(invitation.expires_at) < new Date()) return fail('auth.invitation.errors.expired')
 
+  // Valida parentesco para rol familiar ANTES de tocar nada.
+  const creaVinculo = esRolFamilia(invitation.rol_objetivo) && !!invitation.nino_id
+  if (creaVinculo) {
+    const parsedParentesco = parentescoEnum.safeParse(vinculo?.parentesco)
+    if (!parsedParentesco.success) return fail('vinculo.validation.parentesco_requerido')
+    if (parsedParentesco.data === 'otro' && !vinculo?.descripcionParentesco) {
+      return fail('vinculo.validation.descripcion_requerida')
+    }
+  }
+
   const { error: roleErr } = await service.from('roles_usuario').insert({
     usuario_id: user.user.id,
     centro_id: invitation.centro_id,
@@ -141,6 +230,19 @@ export async function acceptPendingInvitation(
   if (roleErr) {
     // Ignoramos error si el rol ya existía (UNIQUE constraint).
     if (!roleErr.message.includes('duplicate')) return fail('auth.invitation.errors.role_failed')
+  }
+
+  // Auto-vínculo idempotente (mismo que el flujo de nuevo usuario).
+  if (creaVinculo && invitation.nino_id && vinculo?.parentesco) {
+    const { error: vinculoError } = await crearVinculoAutomatico(service, {
+      ninoId: invitation.nino_id,
+      usuarioId: user.user.id,
+      rolObjetivo: invitation.rol_objetivo,
+      tipoVinculoInvitacion: invitation.tipo_vinculo,
+      parentesco: vinculo.parentesco,
+      descripcionParentesco: vinculo.descripcionParentesco ?? null,
+    })
+    if (vinculoError) return fail(vinculoError)
   }
 
   await service

@@ -139,7 +139,8 @@
         "uppercase_required": "Debe contener al menos una mayúscula.",
         "digit_required": "Debe contener al menos un número.",
         "symbol_required": "Debe contener al menos un símbolo."
-      }
+      },
+      "tipo_vinculo_invalido": "Tipo de vínculo no válido para este rol"
     },
     "common": {
       "sign_out": "Cerrar sesión",
@@ -607,11 +608,29 @@
     "validation": {
       "usuario_invalido": "Selecciona un usuario válido",
       "descripcion_requerida": "Indica la descripción del parentesco",
-      "usuario_sin_rol": "Este usuario no tiene rol familiar en el centro"
+      "usuario_sin_rol": "Este usuario no tiene rol familiar en el centro",
+      "parentesco_requerido": "Indica el parentesco"
     },
     "errors": {
       "create_failed": "No se pudo crear el vínculo.",
       "duplicado": "Este usuario ya está vinculado a este niño."
+    },
+    "fields": {
+      "parentesco": "Parentesco",
+      "parentesco_placeholder": "Selecciona el parentesco",
+      "descripcion_parentesco": "Descripción del parentesco"
+    },
+    "parentesco": {
+      "madre": "Madre",
+      "padre": "Padre",
+      "abuela": "Abuela",
+      "abuelo": "Abuelo",
+      "tia": "Tía",
+      "tio": "Tío",
+      "hermana": "Hermana",
+      "hermano": "Hermano",
+      "cuidadora": "Cuidador/a",
+      "otro": "Otro"
     }
   },
   "profeAula": {

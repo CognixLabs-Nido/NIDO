@@ -30,13 +30,27 @@ import {
   type AcceptInvitationInput,
 } from '@/features/auth/schemas/invitation'
 
+const PARENTESCO_OPCIONES = [
+  'madre',
+  'padre',
+  'abuela',
+  'abuelo',
+  'tia',
+  'tio',
+  'hermana',
+  'hermano',
+  'cuidadora',
+  'otro',
+] as const
+
 interface Props {
   locale: string
   token: string
   email: string
+  requiereParentesco?: boolean
 }
 
-export function AcceptInvitationForm({ locale, token, email }: Props) {
+export function AcceptInvitationForm({ locale, token, email, requiereParentesco = false }: Props) {
   const t = useTranslations()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -51,11 +65,19 @@ export function AcceptInvitationForm({ locale, token, email }: Props) {
       idiomaPreferido: locale as 'es' | 'en' | 'va',
       aceptaTerminos: false as unknown as true,
       aceptaPrivacidad: false as unknown as true,
+      parentesco: undefined,
+      descripcionParentesco: '',
     },
   })
 
+  const parentescoSel = form.watch('parentesco')
+
   function onSubmit(values: AcceptInvitationInput) {
     setServerErrorKey(null)
+    if (requiereParentesco && !values.parentesco) {
+      form.setError('parentesco', { message: t('vinculo.validation.parentesco_requerido') })
+      return
+    }
     startTransition(async () => {
       const result = await acceptInvitation(values)
       if (!result.success) {
@@ -133,6 +155,51 @@ export function AcceptInvitationForm({ locale, token, email }: Props) {
             </FormItem>
           )}
         />
+
+        {requiereParentesco && (
+          <>
+            <FormField
+              control={form.control}
+              name="parentesco"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('vinculo.fields.parentesco')}</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('vinculo.fields.parentesco_placeholder')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PARENTESCO_OPCIONES.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {t(`vinculo.parentesco.${p}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {parentescoSel === 'otro' && (
+              <FormField
+                control={form.control}
+                name="descripcionParentesco"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('vinculo.fields.descripcion_parentesco')}</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </>
+        )}
 
         <FormField
           control={form.control}

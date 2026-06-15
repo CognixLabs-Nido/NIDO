@@ -139,7 +139,8 @@
         "uppercase_required": "Ha de contindre almenys una majúscula.",
         "digit_required": "Ha de contindre almenys un número.",
         "symbol_required": "Ha de contindre almenys un símbol."
-      }
+      },
+      "tipo_vinculo_invalido": "Tipus de vincle no vàlid per a aquest rol"
     },
     "common": {
       "sign_out": "Tancar sessió",
@@ -607,11 +608,29 @@
     "validation": {
       "usuario_invalido": "Selecciona un usuari vàlid",
       "descripcion_requerida": "Indica la descripció del parentiu",
-      "usuario_sin_rol": "Este usuari no té rol familiar al centre"
+      "usuario_sin_rol": "Este usuari no té rol familiar al centre",
+      "parentesco_requerido": "Indica el parentiu"
     },
     "errors": {
       "create_failed": "No s'ha pogut crear el vincle.",
       "duplicado": "Este usuari ja està vinculat a este xiquet."
+    },
+    "fields": {
+      "parentesco": "Parentiu",
+      "parentesco_placeholder": "Selecciona el parentiu",
+      "descripcion_parentesco": "Descripció del parentiu"
+    },
+    "parentesco": {
+      "madre": "Mare",
+      "padre": "Pare",
+      "abuela": "Àvia",
+      "abuelo": "Avi",
+      "tia": "Tia",
+      "tio": "Tio",
+      "hermana": "Germana",
+      "hermano": "Germà",
+      "cuidadora": "Cuidador/a",
+      "otro": "Altre"
     }
   },
   "profeAula": {

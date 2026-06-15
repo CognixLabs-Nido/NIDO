@@ -139,7 +139,8 @@
         "uppercase_required": "Must contain at least one uppercase letter.",
         "digit_required": "Must contain at least one digit.",
         "symbol_required": "Must contain at least one symbol."
-      }
+      },
+      "tipo_vinculo_invalido": "Invalid relationship type for this role"
     },
     "common": {
       "sign_out": "Sign out",
@@ -607,11 +608,29 @@
     "validation": {
       "usuario_invalido": "Select a valid user",
       "descripcion_requerida": "Provide the relationship description",
-      "usuario_sin_rol": "This user has no family role in the centre"
+      "usuario_sin_rol": "This user has no family role in the centre",
+      "parentesco_requerido": "Select the relationship"
     },
     "errors": {
       "create_failed": "Could not create the link.",
       "duplicado": "This user is already linked to this child."
+    },
+    "fields": {
+      "parentesco": "Relationship",
+      "parentesco_placeholder": "Select the relationship",
+      "descripcion_parentesco": "Relationship description"
+    },
+    "parentesco": {
+      "madre": "Mother",
+      "padre": "Father",
+      "abuela": "Grandmother",
+      "abuelo": "Grandfather",
+      "tia": "Aunt",
+      "tio": "Uncle",
+      "hermana": "Sister",
+      "hermano": "Brother",
+      "cuidadora": "Caregiver",
+      "otro": "Other"
     }
   },
   "profeAula": {

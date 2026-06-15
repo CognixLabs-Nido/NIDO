@@ -40,7 +40,11 @@ export async function cambiarAula(input: CambioAulaInput): Promise<ActionResult<
   // 1) Cerrar la matrícula actual.
   const { error: cerrarErr } = await supabase
     .from('matriculas')
-    .update({ fecha_baja: parsed.data.fecha_baja, motivo_baja: parsed.data.motivo_baja ?? null })
+    .update({
+      fecha_baja: parsed.data.fecha_baja,
+      motivo_baja: parsed.data.motivo_baja ?? null,
+      estado: 'baja',
+    })
     .eq('id', actual.id)
   if (cerrarErr) {
     logger.warn('cambiarAula cerrar', cerrarErr.message)
