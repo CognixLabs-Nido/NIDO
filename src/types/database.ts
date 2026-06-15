@@ -6,6 +6,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '14.5'
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       administraciones_medicacion: {
@@ -2143,53 +2168,6 @@ export type Database = {
           },
         ]
       }
-      retencion_ejecuciones: {
-        Row: {
-          accion: Database['public']['Enums']['retencion_accion']
-          bucket: string
-          categoria: Database['public']['Enums']['retencion_categoria']
-          centro_id: string
-          ejecutado_en: string
-          id: string
-          motivo: string | null
-          objetos: number
-          ref_id: string | null
-          ref_tipo: string | null
-        }
-        Insert: {
-          accion: Database['public']['Enums']['retencion_accion']
-          bucket: string
-          categoria: Database['public']['Enums']['retencion_categoria']
-          centro_id: string
-          ejecutado_en?: string
-          id?: string
-          motivo?: string | null
-          objetos?: number
-          ref_id?: string | null
-          ref_tipo?: string | null
-        }
-        Update: {
-          accion?: Database['public']['Enums']['retencion_accion']
-          bucket?: string
-          categoria?: Database['public']['Enums']['retencion_categoria']
-          centro_id?: string
-          ejecutado_en?: string
-          id?: string
-          motivo?: string | null
-          objetos?: number
-          ref_id?: string | null
-          ref_tipo?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'retencion_ejecuciones_centro_id_fkey'
-            columns: ['centro_id']
-            isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
-          },
-        ]
-      }
       plantillas_informe: {
         Row: {
           archivada_at: string | null
@@ -2575,6 +2553,53 @@ export type Database = {
           },
         ]
       }
+      retencion_ejecuciones: {
+        Row: {
+          accion: Database['public']['Enums']['retencion_accion']
+          bucket: string
+          categoria: Database['public']['Enums']['retencion_categoria']
+          centro_id: string
+          ejecutado_en: string
+          id: string
+          motivo: string | null
+          objetos: number
+          ref_id: string | null
+          ref_tipo: string | null
+        }
+        Insert: {
+          accion: Database['public']['Enums']['retencion_accion']
+          bucket: string
+          categoria: Database['public']['Enums']['retencion_categoria']
+          centro_id: string
+          ejecutado_en?: string
+          id?: string
+          motivo?: string | null
+          objetos?: number
+          ref_id?: string | null
+          ref_tipo?: string | null
+        }
+        Update: {
+          accion?: Database['public']['Enums']['retencion_accion']
+          bucket?: string
+          categoria?: Database['public']['Enums']['retencion_categoria']
+          centro_id?: string
+          ejecutado_en?: string
+          id?: string
+          motivo?: string | null
+          objetos?: number
+          ref_id?: string | null
+          ref_tipo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'retencion_ejecuciones_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       roles_usuario: {
         Row: {
           centro_id: string
@@ -2751,42 +2776,7 @@ export type Database = {
     }
     Functions: {
       _get_medical_key: { Args: never; Returns: string }
-      registrar_consentimiento: {
-        Args: {
-          p_ip?: unknown
-          p_tipo: Database['public']['Enums']['consentimiento_tipo']
-          p_user_agent?: string
-          p_usuario_id: string
-          p_version: string
-        }
-        Returns: string
-      }
-      revocar_consentimiento: {
-        Args: { p_tipo: Database['public']['Enums']['consentimiento_tipo'] }
-        Returns: string
-      }
-      solicitar_olvido_nino: {
-        Args: { p_inmediato?: boolean; p_nino_id: string }
-        Returns: string
-      }
-      solicitar_olvido_usuario: {
-        Args: { p_inmediato?: boolean; p_usuario_id: string }
-        Returns: string
-      }
-      olvido_pendientes: {
-        Args: never
-        Returns: {
-          centro_id: string
-          gracia_hasta: string
-          solicitud_id: string
-          sujeto_id: string
-          sujeto_tipo: Database['public']['Enums']['olvido_sujeto_tipo']
-        }[]
-      }
-      purgar_sujeto_db: {
-        Args: { p_solicitud_id: string }
-        Returns: undefined
-      }
+      _redactar_jsonb: { Args: { claves: string[]; j: Json }; Returns: Json }
       archivar_autorizacion: {
         Args: { p_autorizacion_id: string }
         Returns: boolean
@@ -2870,6 +2860,10 @@ export type Database = {
       }
       hoy_madrid: { Args: never; Returns: string }
       idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
+      imagen_consentida: {
+        Args: { p_autorizacion_id: string; p_nino_id: string }
+        Returns: boolean
+      }
       medicacion_administrable_hoy: {
         Args: { p_autorizacion_id: string }
         Returns: boolean
@@ -2903,9 +2897,23 @@ export type Database = {
       }
       nino_puede_aparecer: { Args: { p_nino_id: string }; Returns: boolean }
       nino_toma_comida_solida: { Args: { p_nino_id: string }; Returns: boolean }
+      olvido_pendientes: {
+        Args: never
+        Returns: {
+          centro_id: string
+          gracia_hasta: string
+          solicitud_id: string
+          sujeto_id: string
+          sujeto_tipo: Database['public']['Enums']['olvido_sujeto_tipo']
+        }[]
+      }
       organizador_de_cita: { Args: { p_cita_id: string }; Returns: string }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
       publicacion_de_media: { Args: { p_media_id: string }; Returns: string }
+      publicacion_etiqueta_hijo_de: {
+        Args: { p_publicacion_id: string }
+        Returns: boolean
+      }
       publicacion_tiene_nino_sin_permiso: {
         Args: { p_publicacion_id: string }
         Returns: boolean
@@ -2913,6 +2921,25 @@ export type Database = {
       puede_participar_conversacion: {
         Args: { p_conversacion_id: string }
         Returns: boolean
+      }
+      puede_postear_en_conversacion: {
+        Args: { p_conversacion_id: string }
+        Returns: boolean
+      }
+      purgar_sujeto_db: { Args: { p_solicitud_id: string }; Returns: undefined }
+      registrar_consentimiento: {
+        Args: {
+          p_ip?: unknown
+          p_tipo: Database['public']['Enums']['consentimiento_tipo']
+          p_user_agent?: string
+          p_usuario_id: string
+          p_version: string
+        }
+        Returns: string
+      }
+      revocar_consentimiento: {
+        Args: { p_tipo: Database['public']['Enums']['consentimiento_tipo'] }
+        Returns: string
       }
       set_info_medica_emergencia_cifrada: {
         Args: {
@@ -2924,6 +2951,14 @@ export type Database = {
           p_notas_emergencia: string
           p_telefono_emergencia: string
         }
+        Returns: string
+      }
+      solicitar_olvido_nino: {
+        Args: { p_inmediato?: boolean; p_nino_id: string }
+        Returns: string
+      }
+      solicitar_olvido_usuario: {
+        Args: { p_inmediato?: boolean; p_usuario_id: string }
         Returns: string
       }
       tiene_permiso_sobre: {
@@ -3206,6 +3241,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       ambito_anuncio: ['aula', 'centro'],
@@ -3235,6 +3273,7 @@ export const Constants = {
       momento_comida: ['desayuno', 'media_manana', 'comida', 'merienda'],
       motivo_ausencia: ['enfermedad', 'cita_medica', 'vacaciones', 'familiar', 'otro'],
       nino_sexo: ['F', 'M', 'X'],
+      olvido_sujeto_tipo: ['usuario', 'nino'],
       parentesco: [
         'madre',
         'padre',
