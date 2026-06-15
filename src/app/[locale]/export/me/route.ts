@@ -1,3 +1,5 @@
+import { getTranslations } from 'next-intl/server'
+
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -14,7 +16,11 @@ export const runtime = 'nodejs'
  * los de su(s) hijo(s). Todo se recolecta con el cliente del usuario → la RLS
  * garantiza que solo sale lo suyo. Acceso art. 15 + portabilidad art. 20.
  */
-export async function GET(): Promise<Response> {
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ locale: string }> }
+): Promise<Response> {
+  const { locale } = await params
   const supabase = await createClient()
   const {
     data: { user },
@@ -65,7 +71,8 @@ export async function GET(): Promise<Response> {
     logger.error('export: registrarExport falló', e instanceof Error ? e.message : String(e))
   }
 
-  const zip = await empaquetarExport(doc)
+  const t = await getTranslations({ locale, namespace: 'export' })
+  const zip = await empaquetarExport(doc, t)
   const fecha = new Date().toISOString().slice(0, 10)
   return new Response(Buffer.from(zip), {
     status: 200,

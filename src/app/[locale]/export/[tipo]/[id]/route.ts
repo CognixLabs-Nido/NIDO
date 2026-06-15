@@ -1,3 +1,5 @@
+import { getTranslations } from 'next-intl/server'
+
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -19,7 +21,7 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ locale: string; tipo: string; id: string }> }
 ): Promise<Response> {
-  const { tipo, id } = await params
+  const { locale, tipo, id } = await params
   if (tipo !== 'usuario' && tipo !== 'nino') {
     return new Response('Tipo inválido', { status: 400 })
   }
@@ -60,7 +62,8 @@ export async function GET(
     logger.error('export: registrarExport falló', e instanceof Error ? e.message : String(e))
   }
 
-  const zip = await empaquetarExport(doc)
+  const t = await getTranslations({ locale, namespace: 'export' })
+  const zip = await empaquetarExport(doc, t)
   const fecha = new Date().toISOString().slice(0, 10)
   return new Response(Buffer.from(zip), {
     status: 200,
