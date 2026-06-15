@@ -367,6 +367,72 @@ function renderFotos(n: Record<string, unknown>, t: Etiquetador): string {
   return `<h3>${escape(t('doc.secciones.fotos'))}</h3>${enlaces ? `<ul>${enlaces}</ul>` : ''}${otras}`
 }
 
+/**
+ * Valoraciones de un informe: cruza la estructura congelada (áreas → ítems con
+ * `texto`) con las respuestas (`{ item_id: { valoracion, comentario } }`). Por
+ * cada ítem muestra el TEXTO de la pregunta (no "Item N") junto a su valoración.
+ */
+function renderValoracionesInforme(
+  estructura: unknown,
+  respuestas: unknown,
+  t: Etiquetador
+): string {
+  const areas = Array.isArray(estructura) ? estructura : []
+  const resp =
+    respuestas && typeof respuestas === 'object' ? (respuestas as Record<string, unknown>) : {}
+  const bloques: string[] = []
+  for (const area of areas) {
+    if (!area || typeof area !== 'object') continue
+    const a = area as Record<string, unknown>
+    const items = Array.isArray(a.items) ? a.items : []
+    const filas: string[] = []
+    for (const item of items) {
+      if (!item || typeof item !== 'object') continue
+      const it = item as Record<string, unknown>
+      const id = typeof it.id === 'string' ? it.id : ''
+      const pregunta =
+        (typeof it.texto === 'string' && it.texto) ||
+        (typeof it.titulo === 'string' && it.titulo) ||
+        ''
+      const r =
+        id && resp[id] && typeof resp[id] === 'object'
+          ? (resp[id] as Record<string, unknown>)
+          : null
+      if (!r) continue // ítem sin respuesta → no se muestra
+      const comentario = typeof r.comentario === 'string' ? r.comentario : ''
+      filas.push(
+        `<div class="item"><p class="pregunta">${escape(pregunta)}</p><dl>` +
+          `<dt>${escape(t('doc.campos.valoracion'))}</dt><dd>${formatearValor('', r.valoracion, t)}</dd>` +
+          (comentario
+            ? `<dt>${escape(t('doc.campos.comentario'))}</dt><dd>${formatearTexto(comentario, t)}</dd>`
+            : '') +
+          `</dl></div>`
+      )
+    }
+    if (filas.length === 0) continue
+    const titulo = typeof a.titulo === 'string' && a.titulo ? `<h4>${escape(a.titulo)}</h4>` : ''
+    bloques.push(titulo + filas.join(''))
+  }
+  return bloques.length ? bloques.join('') : `<p class="nil">${escape(t('doc.sin_datos'))}</p>`
+}
+
+/** Un informe: cabecera (período, fecha, observaciones) + sus valoraciones legibles. */
+function renderInforme(inf: Record<string, unknown>, t: Etiquetador): string {
+  const { respuestas, estructura_snapshot, ...resto } = inf
+  const cabecera = renderObjeto(resto, t)
+  const valoraciones = renderValoracionesInforme(estructura_snapshot, respuestas, t)
+  return `<div class="item">${cabecera}<h4 class="sub">${escape(t('doc.campos.respuestas'))}</h4>${valoraciones}</div>`
+}
+
+/** Sección de informes de evolución (cada informe con sus valoraciones legibles). */
+function seccionInformes(items: unknown, t: Etiquetador): string {
+  const arr = Array.isArray(items) ? items : []
+  const cuerpo = arr.length
+    ? arr.map((inf) => renderInforme((inf ?? {}) as Record<string, unknown>, t)).join('')
+    : `<p class="nil">${escape(t('doc.sin_datos'))}</p>`
+  return `<h3>${escape(t('doc.secciones.informes'))}</h3>${cuerpo}`
+}
+
 function renderNino(n: Record<string, unknown>, t: Etiquetador): string {
   const ficha = (n.ficha as Record<string, unknown>) ?? {}
   const nombre =
@@ -382,7 +448,7 @@ function renderNino(n: Record<string, unknown>, t: Etiquetador): string {
   ${seccion('agenda', n.agendas_diarias, t)}
   ${seccion('asistencias', n.asistencias, t)}
   ${seccion('ausencias', n.ausencias, t)}
-  ${seccion('informes', n.informes_evolucion, t)}
+  ${seccionInformes(n.informes_evolucion, t)}
   ${autorizaciones}${firmas}
   ${seccion('medicacion', n.administraciones_medicacion, t)}
   ${renderFotos(n, t)}
@@ -413,6 +479,9 @@ export function renderExportHtml(doc: DocumentoExport, t: Etiquetador): string {
   h1 { font-size: 1.6rem; }
   h2 { margin-top: 2.5rem; border-bottom: 2px solid #d9e2ec; padding-bottom: .3rem; }
   h3 { margin-top: 1.6rem; color: #334e68; font-size: 1.05rem; }
+  h4 { margin: 1rem 0 .3rem; color: #486581; font-size: .95rem; }
+  h4.sub { margin-top: .8rem; }
+  .pregunta { font-weight: 600; margin: 0 0 .2rem; color: #243b53; }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: .15rem 1rem; margin: .3rem 0 .3rem 0; }
   dt { font-weight: 600; color: #486581; }
   dd { margin: 0; }

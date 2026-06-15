@@ -122,6 +122,34 @@ describe('renderExportHtml', () => {
     expect(html).not.toContain('hola')
   })
 
+  it('informes: muestra el texto de la pregunta y la etiqueta "Valoración"', () => {
+    const html = renderExportHtml(
+      {
+        _meta: docDeNino()._meta,
+        nino: {
+          ficha: { nombre: 'Lía' },
+          informes_evolucion: [
+            {
+              id: 'inf1',
+              periodo: 'trimestre_2',
+              estructura_snapshot: [
+                { titulo: 'Autonomía', items: [{ id: 'i1', texto: '¿Come solo/a?' }] },
+              ],
+              respuestas: { i1: { valoracion: 'conseguido', comentario: 'Genial' } },
+            },
+          ],
+        },
+      } as never,
+      t
+    )
+    expect(html).toContain('¿Come solo/a?') // texto de la pregunta
+    expect(html).not.toContain('Item 1') // ya no el genérico
+    expect(html).toContain('doc.campos.valoracion') // etiqueta "Valoración" (no "Valoracion")
+    expect(html).toContain('doc.valores.conseguido') // valoración mapeada
+    expect(html).toContain('Autonomía') // título del área
+    expect(html).toContain('Genial') // comentario del ítem
+  })
+
   it('mapea valores de enum a su etiqueta i18n (no semi-crudos)', () => {
     const html = renderExportHtml(
       {

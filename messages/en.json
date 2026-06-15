@@ -2279,7 +2279,8 @@
         "puede_ver_fotos": "See photos",
         "puede_ver_agenda": "See daily log",
         "puede_ver_datos_pedagogicos": "See pedagogical data",
-        "puede_reportar_ausencias": "Report absences"
+        "puede_reportar_ausencias": "Report absences",
+        "valoracion": "Assessment"
       },
       "valores": {
         "terminos": "Terms",
