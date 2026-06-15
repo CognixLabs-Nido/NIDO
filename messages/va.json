@@ -2169,5 +2169,14 @@
       "subida_fallo": "No s'ha pogut pujar la foto.",
       "procesado_fallo": "No s'ha pogut processar la foto."
     }
+  },
+  "export": {
+    "descargar_mis_datos": "Descarregar les meues dades",
+    "exportar_nino": "Exportar dades del xiquet",
+    "exportar_usuario": "Exportar dades",
+    "generando": "Generant…",
+    "exito": "Descàrrega preparada",
+    "error": "No s'ha pogut generar l'exportació. Torna-ho a provar.",
+    "perfil_descripcion": "Descarrega una còpia de les teues dades personals i les dels teus fills (accés i portabilitat, RGPD)."
   }
 }
