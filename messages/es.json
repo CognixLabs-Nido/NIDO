@@ -2369,6 +2369,13 @@
         "programada": "Programada",
         "cancelada": "Cancelada"
       }
-    }
+    },
+    "descargar_mis_datos": "Descargar mis datos",
+    "exportar_nino": "Exportar datos del niño",
+    "exportar_usuario": "Exportar datos",
+    "generando": "Generando…",
+    "exito": "Descarga lista",
+    "error": "No se pudo generar el export. Inténtalo de nuevo.",
+    "perfil_descripcion": "Descarga una copia de tus datos personales y los de tus hijos (acceso y portabilidad, RGPD)."
   }
 }

@@ -32,6 +32,7 @@ import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
+import { ExportButton } from '@/features/export/components/ExportButton'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
 import { NuevoRecordatorioContextual } from '@/features/recordatorios/components/NuevoRecordatorioContextual'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -45,6 +46,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const t = await getTranslations('admin.ninos')
   const tMed = await getTranslations('medico')
   const tFicha = await getTranslations('messages.ficha_nino')
+  const tExport = await getTranslations('export')
   const nino = await getNinoById(id)
   if (!nino) notFound()
 
@@ -97,6 +99,13 @@ export default async function NinoDetallePage({ params }: PageProps) {
           rol="admin"
           centroId={nino.centro_id}
           preset={{ destinatario: 'familia_individual', nino_id: id }}
+        />
+        {/* F11-A5: export RGPD del niño a petición de acceso (dirección). */}
+        <ExportButton
+          href={`/${locale}/export/nino/${id}`}
+          label={tExport('exportar_nino')}
+          filename={`nido-export-nino.zip`}
+          size="sm"
         />
         {/* F5B-Item1: el botón "Escribir a la familia" del header se
             eliminó para admin. Para admin, el acceso a la conversación
@@ -245,12 +254,23 @@ export default async function NinoDetallePage({ params }: PageProps) {
                           {v.descripcion_parentesco ? ` (${v.descripcion_parentesco})` : ''}
                         </TableCell>
                         <TableCell className="text-right">
-                          {esTutor && v.usuario_id && (
-                            <AbrirConversacionDireccionButton
-                              tutorId={v.usuario_id}
-                              locale={locale}
-                            />
-                          )}
+                          <div className="flex justify-end gap-2">
+                            {v.usuario_id && (
+                              <ExportButton
+                                href={`/${locale}/export/usuario/${v.usuario_id}`}
+                                label={tExport('exportar_usuario')}
+                                filename="nido-export-usuario.zip"
+                                variant="ghost"
+                                size="sm"
+                              />
+                            )}
+                            {esTutor && v.usuario_id && (
+                              <AbrirConversacionDireccionButton
+                                tutorId={v.usuario_id}
+                                locale={locale}
+                              />
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
