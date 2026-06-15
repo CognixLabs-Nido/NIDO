@@ -1660,6 +1660,7 @@ export type Database = {
           nino_id: string | null
           rejected_at: string | null
           rol_objetivo: Database['public']['Enums']['user_role']
+          tipo_vinculo: Database['public']['Enums']['tipo_vinculo'] | null
           token: string
         }
         Insert: {
@@ -1674,6 +1675,7 @@ export type Database = {
           nino_id?: string | null
           rejected_at?: string | null
           rol_objetivo: Database['public']['Enums']['user_role']
+          tipo_vinculo?: Database['public']['Enums']['tipo_vinculo'] | null
           token?: string
         }
         Update: {
@@ -1688,6 +1690,7 @@ export type Database = {
           nino_id?: string | null
           rejected_at?: string | null
           rol_objetivo?: Database['public']['Enums']['user_role']
+          tipo_vinculo?: Database['public']['Enums']['tipo_vinculo'] | null
           token?: string
         }
         Relationships: [
@@ -1799,6 +1802,7 @@ export type Database = {
           created_at: string
           curso_academico_id: string
           deleted_at: string | null
+          estado: Database['public']['Enums']['matricula_estado']
           fecha_alta: string
           fecha_baja: string | null
           id: string
@@ -1810,6 +1814,7 @@ export type Database = {
           created_at?: string
           curso_academico_id: string
           deleted_at?: string | null
+          estado?: Database['public']['Enums']['matricula_estado']
           fecha_alta?: string
           fecha_baja?: string | null
           id?: string
@@ -1821,6 +1826,7 @@ export type Database = {
           created_at?: string
           curso_academico_id?: string
           deleted_at?: string | null
+          estado?: Database['public']['Enums']['matricula_estado']
           fecha_alta?: string
           fecha_baja?: string | null
           id?: string
@@ -3058,6 +3064,7 @@ export type Database = {
       firma_decision: 'firmado' | 'rechazado' | 'revocado'
       humor_agenda: 'feliz' | 'tranquilo' | 'inquieto' | 'triste' | 'cansado'
       lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
+      matricula_estado: 'pendiente' | 'activa' | 'baja'
       momento_comida: 'desayuno' | 'media_manana' | 'comida' | 'merienda'
       motivo_ausencia: 'enfermedad' | 'cita_medica' | 'vacaciones' | 'familiar' | 'otro'
       nino_sexo: 'F' | 'M' | 'X'
@@ -3270,6 +3277,7 @@ export const Constants = {
       firma_decision: ['firmado', 'rechazado', 'revocado'],
       humor_agenda: ['feliz', 'tranquilo', 'inquieto', 'triste', 'cansado'],
       lactancia_estado: ['materna', 'biberon', 'mixta', 'finalizada', 'no_aplica'],
+      matricula_estado: ['pendiente', 'activa', 'baja'],
       momento_comida: ['desayuno', 'media_manana', 'comida', 'merienda'],
       motivo_ausencia: ['enfermedad', 'cita_medica', 'vacaciones', 'familiar', 'otro'],
       nino_sexo: ['F', 'M', 'X'],

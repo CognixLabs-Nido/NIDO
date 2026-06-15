@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslations } from 'next-intl'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
@@ -29,14 +30,29 @@ import {
   acceptInvitationSchema,
   type AcceptInvitationInput,
 } from '@/features/auth/schemas/invitation'
+import { safeTranslateError } from '@/shared/lib/safe-translate'
+
+const PARENTESCO_OPCIONES = [
+  'madre',
+  'padre',
+  'abuela',
+  'abuelo',
+  'tia',
+  'tio',
+  'hermana',
+  'hermano',
+  'cuidadora',
+  'otro',
+] as const
 
 interface Props {
   locale: string
   token: string
   email: string
+  requiereParentesco?: boolean
 }
 
-export function AcceptInvitationForm({ locale, token, email }: Props) {
+export function AcceptInvitationForm({ locale, token, email, requiereParentesco = false }: Props) {
   const t = useTranslations()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -51,11 +67,20 @@ export function AcceptInvitationForm({ locale, token, email }: Props) {
       idiomaPreferido: locale as 'es' | 'en' | 'va',
       aceptaTerminos: false as unknown as true,
       aceptaPrivacidad: false as unknown as true,
+      parentesco: undefined,
+      descripcionParentesco: '',
     },
   })
 
+  const parentescoSel = form.watch('parentesco')
+
   function onSubmit(values: AcceptInvitationInput) {
     setServerErrorKey(null)
+    if (requiereParentesco && !values.parentesco) {
+      // La clave i18n la traduce FormMessage (safe-translate); no pre-traducir aquí.
+      form.setError('parentesco', { message: 'vinculo.validation.parentesco_requerido' })
+      return
+    }
     startTransition(async () => {
       const result = await acceptInvitation(values)
       if (!result.success) {
@@ -134,6 +159,51 @@ export function AcceptInvitationForm({ locale, token, email }: Props) {
           )}
         />
 
+        {requiereParentesco && (
+          <>
+            <FormField
+              control={form.control}
+              name="parentesco"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('vinculo.fields.parentesco')}</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('vinculo.fields.parentesco_placeholder')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PARENTESCO_OPCIONES.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {t(`vinculo.parentesco.${p}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {parentescoSel === 'otro' && (
+              <FormField
+                control={form.control}
+                name="descripcionParentesco"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('vinculo.fields.descripcion_parentesco')}</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </>
+        )}
+
         <FormField
           control={form.control}
           name="aceptaTerminos"
@@ -143,6 +213,14 @@ export function AcceptInvitationForm({ locale, token, email }: Props) {
                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <FormLabel>{t('auth.invitation.fields.terms')}</FormLabel>
+              <Link
+                href={`/${locale}/terms`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary text-sm underline"
+              >
+                {t('auth.invitation.fields.leer')}
+              </Link>
               <FormMessage />
             </FormItem>
           )}
@@ -157,6 +235,14 @@ export function AcceptInvitationForm({ locale, token, email }: Props) {
                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <FormLabel>{t('auth.invitation.fields.privacy')}</FormLabel>
+              <Link
+                href={`/${locale}/privacy`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary text-sm underline"
+              >
+                {t('auth.invitation.fields.leer')}
+              </Link>
               <FormMessage />
             </FormItem>
           )}
@@ -164,7 +250,7 @@ export function AcceptInvitationForm({ locale, token, email }: Props) {
 
         {serverErrorKey && (
           <p role="alert" className="text-destructive text-sm">
-            {t(serverErrorKey)}
+            {safeTranslateError(t, serverErrorKey)}
           </p>
         )}
 

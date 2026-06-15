@@ -41,6 +41,16 @@ export async function sendInvitation(
   const service = createServiceRoleClient()
   const expiresAt = new Date(Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString()
 
+  // Tipo de vínculo a crear al aceptar (auto-vínculo). Coherente con el CHECK de BD:
+  // tutor_legal → principal (default) o secundario; autorizado → 'autorizado';
+  // admin/profe → NULL (no llevan vínculo familiar).
+  const tipoVinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado' | null =
+    parsed.data.rolObjetivo === 'tutor_legal'
+      ? (parsed.data.tipoVinculo ?? 'tutor_legal_principal')
+      : parsed.data.rolObjetivo === 'autorizado'
+        ? 'autorizado'
+        : null
+
   // Deduplicar: si existe invitación pendiente con mismo email + centro + rol + nino, actualizar.
   const { data: existing } = await service
     .from('invitaciones')
@@ -61,6 +71,7 @@ export async function sendInvitation(
         expires_at: expiresAt,
         aula_id: parsed.data.aulaId ?? null,
         nino_id: parsed.data.ninoId ?? null,
+        tipo_vinculo: tipoVinculo,
       })
       .eq('id', existing.id)
     if (error) return fail('auth.invitation.errors.update_failed')
@@ -74,6 +85,7 @@ export async function sendInvitation(
         centro_id: parsed.data.centroId,
         nino_id: parsed.data.ninoId ?? null,
         aula_id: parsed.data.aulaId ?? null,
+        tipo_vinculo: tipoVinculo,
         invitado_por: user.user.id,
         expires_at: expiresAt,
       })

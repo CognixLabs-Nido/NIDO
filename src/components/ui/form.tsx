@@ -2,6 +2,7 @@
 
 import * as LabelPrimitive from '@radix-ui/react-label'
 import { Slot } from '@radix-ui/react-slot'
+import { useTranslations } from 'next-intl'
 import * as React from 'react'
 import {
   Controller,
@@ -15,6 +16,7 @@ import {
 
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { safeTranslateError } from '@/shared/lib/safe-translate'
 
 const Form = FormProvider
 
@@ -116,7 +118,10 @@ function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
 
 function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   const { error, formMessageId } = useFormField()
-  const body = error ? String(error?.message ?? '') : props.children
+  const t = useTranslations()
+  // Los mensajes de error son claves i18n; se traducen de forma segura (clave
+  // conocida → mensaje específico; si no → genérico, nunca el string crudo).
+  const body = error ? safeTranslateError(t, String(error?.message ?? '')) : props.children
   if (!body) return null
   return (
     <p
