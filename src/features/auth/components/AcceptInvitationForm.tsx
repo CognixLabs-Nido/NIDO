@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslations } from 'next-intl'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
@@ -29,6 +30,7 @@ import {
   acceptInvitationSchema,
   type AcceptInvitationInput,
 } from '@/features/auth/schemas/invitation'
+import { safeTranslateError } from '@/shared/lib/safe-translate'
 
 const PARENTESCO_OPCIONES = [
   'madre',
@@ -75,7 +77,8 @@ export function AcceptInvitationForm({ locale, token, email, requiereParentesco 
   function onSubmit(values: AcceptInvitationInput) {
     setServerErrorKey(null)
     if (requiereParentesco && !values.parentesco) {
-      form.setError('parentesco', { message: t('vinculo.validation.parentesco_requerido') })
+      // La clave i18n la traduce FormMessage (safe-translate); no pre-traducir aquí.
+      form.setError('parentesco', { message: 'vinculo.validation.parentesco_requerido' })
       return
     }
     startTransition(async () => {
@@ -210,6 +213,14 @@ export function AcceptInvitationForm({ locale, token, email, requiereParentesco 
                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <FormLabel>{t('auth.invitation.fields.terms')}</FormLabel>
+              <Link
+                href={`/${locale}/terms`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary text-sm underline"
+              >
+                {t('auth.invitation.fields.leer')}
+              </Link>
               <FormMessage />
             </FormItem>
           )}
@@ -224,6 +235,14 @@ export function AcceptInvitationForm({ locale, token, email, requiereParentesco 
                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <FormLabel>{t('auth.invitation.fields.privacy')}</FormLabel>
+              <Link
+                href={`/${locale}/privacy`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary text-sm underline"
+              >
+                {t('auth.invitation.fields.leer')}
+              </Link>
               <FormMessage />
             </FormItem>
           )}
@@ -231,7 +250,7 @@ export function AcceptInvitationForm({ locale, token, email, requiereParentesco 
 
         {serverErrorKey && (
           <p role="alert" className="text-destructive text-sm">
-            {t(serverErrorKey)}
+            {safeTranslateError(t, serverErrorKey)}
           </p>
         )}
 

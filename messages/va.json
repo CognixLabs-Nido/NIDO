@@ -66,7 +66,8 @@
         "name": "Nom complet",
         "language": "Idioma preferit",
         "terms": "He llegit i accepte els Termes i condicions.",
-        "privacy": "He llegit i accepte la Política de privacitat."
+        "privacy": "He llegit i accepte la Política de privacitat.",
+        "leer": "Llegir"
       },
       "submit": "Acceptar i entrar",
       "invalid": {

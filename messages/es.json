@@ -66,7 +66,8 @@
         "name": "Nombre completo",
         "language": "Idioma preferido",
         "terms": "He leído y acepto los Términos y condiciones.",
-        "privacy": "He leído y acepto la Política de privacidad."
+        "privacy": "He leído y acepto la Política de privacidad.",
+        "leer": "Leer"
       },
       "submit": "Aceptar y entrar",
       "invalid": {
