@@ -90,4 +90,51 @@ describe('renderExportHtml', () => {
     expect(html).toContain('doc.secciones.salud')
     expect(html).toContain('doc.secciones.autorizaciones_firmas')
   })
+
+  it('omite los campos vacíos en vez de pintar "—"', () => {
+    const html = renderExportHtml(
+      {
+        _meta: docDeNino()._meta,
+        nino: {
+          ficha: { nombre: 'Lía', apellidos: '', nacionalidad: null, fecha_nacimiento: undefined },
+        },
+      } as never,
+      t
+    )
+    expect(html).not.toContain('—')
+    expect(html).not.toContain('doc.campos.apellidos') // vacío → omitido
+    expect(html).not.toContain('doc.campos.nacionalidad') // null → omitido
+    expect(html).toContain('Lía') // el que sí tiene valor se mantiene
+  })
+
+  it('no incluye la sección de Mensajes (solo van en datos.json)', () => {
+    const html = renderExportHtml(
+      {
+        _meta: docDeNino()._meta,
+        usuario: {
+          ficha: { nombre_completo: 'Madre Pérez' },
+          mensajes: [{ contenido: 'hola', fecha: '2026-05-01' }],
+        },
+      } as never,
+      t
+    )
+    expect(html).not.toContain('doc.secciones.mensajes')
+    expect(html).not.toContain('hola')
+  })
+
+  it('mapea valores de enum a su etiqueta i18n (no semi-crudos)', () => {
+    const html = renderExportHtml(
+      {
+        _meta: docDeNino()._meta,
+        usuario: {
+          ficha: { nombre_completo: 'Madre Pérez', idioma_preferido: 'es' },
+          consentimientos: [{ tipo: 'terminos', aceptado_en: '2025-09-01' }],
+        },
+      } as never,
+      t
+    )
+    expect(html).toContain('doc.valores.es') // idioma "es" → etiqueta
+    expect(html).toContain('doc.valores.terminos') // consentimiento "terminos" → etiqueta
+    expect(html).not.toContain('>Terminos<') // ya no se humaniza el semi-crudo
+  })
 })

@@ -86,6 +86,114 @@ const CAMPOS_CONOCIDOS = new Set<string>([
   'puede_reportar_ausencias',
 ])
 
+// Valores de enum con etiqueta legible (con acentos) en messages
+// (export.doc.valores.*). Diccionario plano por VALOR crudo (los valores son
+// únicos entre sí). Lo no listado se humaniza (snake_case → "Texto legible").
+const VALORES_CONOCIDOS = new Set<string>([
+  // consentimiento_tipo
+  'terminos',
+  'privacidad',
+  'imagen',
+  'datos_medicos',
+  // tipo_autorizacion
+  'salida',
+  'medicacion',
+  'recogida',
+  'reglas_regimen_interno',
+  'autorizacion_imagenes',
+  // firma_decision
+  'firmado',
+  'rechazado',
+  'revocado',
+  // idioma
+  'es',
+  'en',
+  'va',
+  // tipo_vinculo
+  'tutor_legal_principal',
+  'tutor_legal_secundario',
+  'autorizado',
+  // parentesco
+  'madre',
+  'padre',
+  'abuela',
+  'abuelo',
+  'tia',
+  'tio',
+  'hermana',
+  'hermano',
+  'cuidadora',
+  'otro',
+  'otra',
+  // lactancia_estado
+  'materna',
+  'biberon',
+  'mixta',
+  'finalizada',
+  'no_aplica',
+  // control_esfinteres
+  'panal_completo',
+  'transicion',
+  'sin_panal_diurno',
+  'sin_panal_total',
+  // tipo_alimentacion
+  'omnivora',
+  'vegetariana',
+  'vegana',
+  'sin_lactosa',
+  'sin_gluten',
+  'religiosa_halal',
+  'religiosa_kosher',
+  // motivo_ausencia
+  'enfermedad',
+  'cita_medica',
+  'vacaciones',
+  'familiar',
+  // estado_asistencia
+  'presente',
+  'ausente',
+  'llegada_tarde',
+  'salida_temprana',
+  // tipo_deposicion / consistencia
+  'pipi',
+  'caca',
+  'mixto',
+  'normal',
+  'dura',
+  'blanda',
+  'diarrea',
+  // momento_comida
+  'desayuno',
+  'media_manana',
+  'comida',
+  'merienda',
+  // cantidad_comida
+  'todo',
+  'mayoria',
+  'mitad',
+  'poco',
+  'nada',
+  // tipo_biberon
+  'formula',
+  'agua',
+  'infusion',
+  'zumo',
+  // periodo_informe
+  'trimestre_1',
+  'trimestre_2',
+  'trimestre_3',
+  'fin_curso',
+  // valoracion_item_informe / estado genérico
+  'conseguido',
+  'en_proceso',
+  'no_iniciado',
+  'pendiente',
+  'completado',
+  'aceptado',
+  'programada',
+  'cancelada',
+])
+
 // Campos técnicos/internos que se OCULTAN del documento legible.
 const TECNICOS = new Set<string>([
   'id',
@@ -138,13 +246,16 @@ function etiqueta(k: string, t: Etiquetador): string {
 }
 
 /** YYYY-MM-DD[...] → DD/MM/AAAA (sin horas). HH:MM[:SS] → HH:MM. */
-function formatearTexto(v: string): string {
+function formatearTexto(v: string, t: Etiquetador): string {
   const fecha = v.match(/^(\d{4})-(\d{2})-(\d{2})/)
   if (fecha) return `${fecha[3]}/${fecha[2]}/${fecha[1]}`
   const hora = v.match(/^(\d{2}):(\d{2})/)
   if (hora) return `${hora[1]}:${hora[2]}`
-  // Enum/valor en snake_case o palabra suelta → humanizar; texto libre se respeta.
-  if (/^[a-z][a-z0-9_]{0,39}$/.test(v)) return humanizar(v)
+  // Enum/valor en snake_case o palabra suelta → etiqueta i18n si la conocemos
+  // (con acentos), si no humanizar; el texto libre se respeta.
+  if (/^[a-z][a-z0-9_]{0,39}$/.test(v)) {
+    return VALORES_CONOCIDOS.has(v) ? escape(t(`doc.valores.${v}`)) : humanizar(v)
+  }
   return escape(v)
 }
 
@@ -175,7 +286,7 @@ function formatearValor(k: string, v: unknown, t: Etiquetador): string {
   if (k === 'sexo' && (v === 'F' || v === 'M' || v === 'X')) return escape(t(`doc.sexo.${v}`))
   if (Array.isArray(v)) return renderLista(v, t)
   if (typeof v === 'object') return renderObjeto(v as Record<string, unknown>, t)
-  if (typeof v === 'string') return formatearTexto(v)
+  if (typeof v === 'string') return formatearTexto(v, t)
   return escape(String(v))
 }
 
@@ -199,6 +310,9 @@ function renderObjeto(obj: Record<string, unknown>, t: Etiquetador): string {
       continue
     }
     if (esTecnico(k)) continue
+    // Campo sin valor → se OMITE (no se pinta "—"). La firma se conserva: se
+    // renderiza como imagen o como texto "Firmado", nunca vacía.
+    if (k !== 'firma_imagen' && (esVacio(v) || (Array.isArray(v) && v.length === 0))) continue
     filas.push(`<dt>${escape(etiqueta(k, t))}</dt><dd>${formatearValor(k, v, t)}</dd>`)
   }
   const dl = filas.length ? `<dl>${filas.join('')}</dl>` : ''
@@ -228,7 +342,6 @@ function renderUsuario(u: Record<string, unknown>, t: Etiquetador): string {
   <h2>${escape(t('doc.secciones.tus_datos'))}</h2>
   ${renderObjeto((u.ficha as Record<string, unknown>) ?? {}, t)}
   ${seccion('consentimientos', u.consentimientos, t)}
-  ${seccion('mensajes', u.mensajes, t)}
   ${seccion('ausencias_reportadas', u.ausencias_reportadas, t)}
   ${seccion('invitaciones_citas', u.invitaciones_a_citas, t)}
   ${seccion('recordatorios', u.recordatorios_recibidos, t)}
@@ -283,7 +396,7 @@ function renderNino(n: Record<string, unknown>, t: Etiquetador): string {
  */
 export function renderExportHtml(doc: DocumentoExport, t: Etiquetador): string {
   const generado =
-    typeof doc._meta?.generado_en === 'string' ? formatearTexto(doc._meta.generado_en) : ''
+    typeof doc._meta?.generado_en === 'string' ? formatearTexto(doc._meta.generado_en, t) : ''
   const cuerpo: string[] = []
   if (doc.usuario) cuerpo.push(renderUsuario(doc.usuario, t))
   if (Array.isArray(doc.hijos)) for (const h of doc.hijos) cuerpo.push(renderNino(h, t))
