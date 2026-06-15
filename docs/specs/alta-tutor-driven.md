@@ -1,7 +1,7 @@
 ---
 feature: alta-tutor-driven
 wave: 1
-status: draft
+status: approved
 priority: high
 last_updated: 2026-06-15
 related_adrs: []
@@ -219,7 +219,7 @@ Esta spec recoge el mapa del estado actual, el flujo objetivo y las decisiones y
 - **Permisos cambiados mientras se usa:** si la dirección revoca el vínculo a media sesión, las siguientes escrituras fallan por RLS (gestión de error en el action).
 - **Idiomas:** todo el wizard en es/en/va; el idioma del tutor se fija en el paso 1.
 - **Datos sensibles:** info médica cifrada (Vault); cartilla en bucket privado; nunca loggear PII médica; el aviso de revocación a dirección sin PII.
-- **Soft delete:** el esqueleto creado y nunca completado (invitación expirada) se puede limpiar; definir retención del esqueleto huérfano (ver "Decisiones técnicas").
+- **Esqueleto huérfano** (creado y nunca completado, invitación expirada): lo gestiona la **dirección** — re-invitar **reusa** el mismo esqueleto, o lo borra. Además, **F11-A6 (retención)** lo auto-limpia con un predicado nuevo en su manifiesto extensible (matrícula `'pendiente'` + invitación expirada + sin `vinculos_familiares`, tras periodo de gracia). Decisión menor (d) cerrada.
 - **Concurrencia:** dirección y tutor editando el mismo niño → la whitelist evita choques de columnas (la dirección toca aula/flags; el tutor, datos de familia).
 
 ## Validaciones (Zod)
@@ -264,22 +264,23 @@ export const ActualizarNinoTutorSchema = z.object({
 
 ## Modelo de datos afectado
 
-**Tablas nuevas:** ninguna tabla de dominio nueva (reusa el modelo existente). Posible tabla/log para el **aviso de revocación a dirección** si no se reusa un canal existente (recordatorios/anuncios) — ver "Decisiones técnicas".
+**Tablas nuevas:** ninguna. El **aviso de revocación a dirección** NO crea tabla-log nueva: reusa un canal de notificación a dirección ya existente (recordatorio/anuncio), y el registro persistente del hecho ya vive en `consentimientos.revocado_en` (decisión menor (c) cerrada).
 
 **Tablas modificadas:**
 
 - `info_medica_emergencia`: **+ `cartilla_vacunas_path text NULL`** (ruta en bucket `cartilla-vacunas`).
-- `matriculas`: **+ estado pendiente/activa** (nuevo ENUM `matricula_estado` o columna booleana `activa` — ver "Decisiones técnicas"). Hoy solo tiene `fecha_alta`/`fecha_baja`.
-- `invitaciones`: **+ `tipo_vinculo`** (para que el accept lo aplique al crear el vínculo) — o derivarlo de `rol_objetivo` (decisión menor).
+- `matriculas`: **+ `estado matricula_estado NOT NULL DEFAULT 'activa'`** — nuevo ENUM `matricula_estado` con valores `'pendiente' | 'activa' | 'baja'` (decisión menor (a) cerrada). **Reconciliación con `fecha_baja`:** `fecha_baja` conserva la **fecha** de baja; `estado` es el **estado**, no se derivan el uno del otro (la fecha es un dato, el estado una transición explícita). El alta tutor-driven arranca en `'pendiente'`; la dirección activa a `'activa'` (Comportamiento 6); la baja pasa a `'baja'` y rellena `fecha_baja`.
+- `invitaciones`: **+ `tipo_vinculo tipo_vinculo NOT NULL DEFAULT 'tutor_legal_principal'`** (decisión menor (b) cerrada). El accept lo aplica al crear el `vinculos_familiares`. La dirección lo sube a `'tutor_legal_secundario'` al invitar al segundo tutor. **No** se deriva de `rol_objetivo` (que no distingue principal/secundario).
 
 **Tablas consultadas/escritas en el flujo:** `ninos`, `vinculos_familiares`, `datos_pedagogicos_nino`, `consentimientos`, `autorizaciones`/`firmas_autorizacion` (imagen), `usuarios`, `roles_usuario`, `audit_log` (triggers).
 
 **Migraciones que implicará (sin aplicar aún; CLI SIGILL → SQL Editor + línea `schema_migrations`):**
 
 1. Bucket privado `cartilla-vacunas` + políticas `storage.objects` (`es_tutor_de(((storage.foldername(name))[2])::uuid)` para INSERT/SELECT/DELETE del tutor; staff del centro para SELECT) + columna `cartilla_vacunas_path`.
-2. Estado de matrícula (ENUM o booleano) + backfill de las existentes a `activa`.
+2. ENUM `matricula_estado` (`'pendiente' | 'activa' | 'baja'`) + columna `matriculas.estado`. **Backfill:** existentes con `fecha_baja IS NOT NULL` → `'baja'`; el resto → `'activa'`.
 3. Helper `tiene_consentimiento(p_usuario_id, p_tipo)` y **RPC de escritura médica del tutor**.
-4. (Opcional) `invitaciones.tipo_vinculo`.
+4. `invitaciones.tipo_vinculo` (ENUM `tipo_vinculo`, default `'tutor_legal_principal'`).
+5. Predicado de auto-limpieza de **esqueletos huérfanos** en el manifiesto de F11-A6 (retención): ver "Decisiones técnicas" (d).
 
 ## RPC / helpers nuevos
 
@@ -315,7 +316,7 @@ export const ActualizarNinoTutorSchema = z.object({
 
 ## Eventos y notificaciones
 
-- **Aviso a la dirección al revocar `datos_medicos`** (no aprobación): vía canal existente (recordatorio/anuncio a dirección) o registro propio; **sin PII médica**.
+- **Aviso a la dirección al revocar `datos_medicos`** (no aprobación): reusa un **canal de notificación a dirección ya existente** (recordatorio/anuncio); **NO** se crea tabla-log nueva (el registro persistente ya está en `consentimientos.revocado_en`). **Sin PII médica** en el aviso.
 - Audit log: automático por triggers en `ninos`, `info_medica_emergencia`, `datos_pedagogicos_nino`, `vinculos_familiares`, `consentimientos` (vía RPC), `matriculas`.
 - Email: invitación (Supabase, existente).
 
@@ -374,8 +375,14 @@ Nuevos namespaces (es/en/va): `alta.*` (pasos, títulos, ayudas), `alta.medico.*
 
 - **ADR — Alta tutor-driven y auto-vínculo en accept.** Cambio de modelo (admin-driven → tutor-driven), creación de `vinculos_familiares` en `acceptInvitation`, esqueleto de niño, coexistencia con admin path.
 - **ADR — Escritura médica del tutor (RPC `SECURITY DEFINER` gateada por consentimiento).** Por qué RPC y no policy de UPDATE; gate de consentimiento; no exposición de Vault; alcance de columnas.
-- **ADR — Estado de matrícula (pendiente/activa).** Modelado (ENUM vs booleano), backfill, gate de activación por dirección.
-- **Pendientes de decisión menor (resolver en implementación):** (a) `matricula_estado` ENUM vs `activa boolean`; (b) `invitaciones.tipo_vinculo` nueva columna vs derivar de `rol_objetivo`; (c) canal del aviso de revocación (recordatorio/anuncio vs log propio); (d) retención del **esqueleto huérfano** (invitación expirada sin completar).
+- **ADR — Estado de matrícula.** ENUM `matricula_estado` (`'pendiente' | 'activa' | 'baja'`), reconciliación con `fecha_baja` (fecha = dato, estado = transición), backfill, gate de activación por dirección.
+
+### Decisiones menores resueltas (2026-06-15)
+
+- **(a) `matricula_estado`:** ENUM `('pendiente' | 'activa' | 'baja')`. `fecha_baja` conserva la fecha; el estado es el estado (no se derivan). Backfill: con `fecha_baja` → `'baja'`; resto → `'activa'`.
+- **(b) `invitaciones.tipo_vinculo`:** **nueva columna** (ENUM `tipo_vinculo`), default `'tutor_legal_principal'`; el admin la sube a `'tutor_legal_secundario'` para el segundo tutor. No se deriva de `rol_objetivo`.
+- **(c) aviso de revocación:** reusa canal de notificación a dirección ya existente; **sin tabla-log nueva** (el registro ya está en `consentimientos.revocado_en`); sin PII médica.
+- **(d) esqueleto huérfano:** lo gestiona el admin (re-invitar reusa el esqueleto, o lo borra) **y** F11-A6 lo auto-limpia con un predicado nuevo (matrícula `'pendiente'` + invitación expirada + sin `vinculos_familiares`, tras gracia), reusando su manifiesto extensible.
 
 ## Referencias
 
@@ -389,7 +396,7 @@ Nuevos namespaces (es/en/va): `alta.*` (pasos, títulos, ayudas), `alta.medico.*
 **Workflow de esta spec:**
 
 1. Claude Code escribe esta spec basándose en CLAUDE.md y las decisiones globales. ✅
-2. Responsable revisa y comenta (status: `draft` → `review`).
-3. Responsable aprueba (status: `review` → `approved`).
+2. Responsable revisa y comenta (status: `draft` → `review`). ✅
+3. Responsable aprueba (status: `review` → `approved`). ✅ (2026-06-15, con las 4 decisiones menores resueltas)
 4. Claude Code implementa por piezas (status: `approved` → `in-progress`).
 5. PR mergeado y desplegado (status: `in-progress` → `done`).
