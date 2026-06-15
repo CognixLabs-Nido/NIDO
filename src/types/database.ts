@@ -2143,6 +2143,53 @@ export type Database = {
           },
         ]
       }
+      retencion_ejecuciones: {
+        Row: {
+          accion: Database['public']['Enums']['retencion_accion']
+          bucket: string
+          categoria: Database['public']['Enums']['retencion_categoria']
+          centro_id: string
+          ejecutado_en: string
+          id: string
+          motivo: string | null
+          objetos: number
+          ref_id: string | null
+          ref_tipo: string | null
+        }
+        Insert: {
+          accion: Database['public']['Enums']['retencion_accion']
+          bucket: string
+          categoria: Database['public']['Enums']['retencion_categoria']
+          centro_id: string
+          ejecutado_en?: string
+          id?: string
+          motivo?: string | null
+          objetos?: number
+          ref_id?: string | null
+          ref_tipo?: string | null
+        }
+        Update: {
+          accion?: Database['public']['Enums']['retencion_accion']
+          bucket?: string
+          categoria?: Database['public']['Enums']['retencion_categoria']
+          centro_id?: string
+          ejecutado_en?: string
+          id?: string
+          motivo?: string | null
+          objetos?: number
+          ref_id?: string | null
+          ref_tipo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'retencion_ejecuciones_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       plantillas_informe: {
         Row: {
           archivada_at: string | null
@@ -3000,6 +3047,8 @@ export type Database = {
         | 'profe_individual'
         | 'profes_centro'
         | 'personal'
+      retencion_accion: 'simulado' | 'purgado'
+      retencion_categoria: 'dni_recogida' | 'foto_perfil_nino' | 'foto_blog_exclusiva'
       rsvp_estado: 'pendiente' | 'aceptado' | 'rechazado'
       tipo_alimentacion:
         | 'omnivora'
@@ -3208,6 +3257,8 @@ export const Constants = {
         'profes_centro',
         'personal',
       ],
+      retencion_accion: ['simulado', 'purgado'],
+      retencion_categoria: ['dni_recogida', 'foto_perfil_nino', 'foto_blog_exclusiva'],
       rsvp_estado: ['pendiente', 'aceptado', 'rechazado'],
       tipo_alimentacion: [
         'omnivora',
