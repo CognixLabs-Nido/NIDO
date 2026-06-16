@@ -108,7 +108,7 @@ export async function getTutoresParaAdminDireccionCore(
       bucket.hijos.push({
         nino_id: v.nino.id,
         nombre: v.nino.nombre,
-        apellidos: v.nino.apellidos,
+        apellidos: v.nino.apellidos ?? '',
       })
     }
   }

@@ -36,6 +36,18 @@ export const sendInvitationSchema = z
     path: ['tipoVinculo'],
   })
 
+// Alta tutor-driven (Pieza 2b): la dirección invita a la familia creando un
+// ESQUELETO de niño (solo nombre + aula); apellidos/fecha/identidad las completa
+// el tutor en el wizard. El centro se deriva server-side (no se pide en el input).
+export const invitarFamiliaConEsqueletoSchema = z.object({
+  nombreNino: z.string().min(1, 'nino.validation.nombre_requerido').max(80),
+  aulaId: z.string().uuid('nino.validation.aula_invalida'),
+  email: z.string().email({ message: 'auth.validation.email_invalid' }),
+  // Requerido (sin .default() para no romper el tipo input/output del zodResolver);
+  // el formulario lo provee vía defaultValues = 'tutor_legal_principal'.
+  tipoVinculo: tutorTipoVinculoEnum,
+})
+
 export const acceptInvitationSchema = z
   .object({
     token: z.string().uuid(),
@@ -56,4 +68,5 @@ export const acceptInvitationSchema = z
 
 export type UserRole = z.infer<typeof userRoleSchema>
 export type SendInvitationInput = z.infer<typeof sendInvitationSchema>
+export type InvitarFamiliaConEsqueletoInput = z.infer<typeof invitarFamiliaConEsqueletoSchema>
 export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>

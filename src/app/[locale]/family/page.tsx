@@ -22,7 +22,7 @@ export default async function FamilyDashboard({ params }: PageProps) {
   const userId = userData.user?.id
   const centroId = await getCentroActualId()
 
-  type NinoRow = { id: string; nombre: string; apellidos: string }
+  type NinoRow = { id: string; nombre: string; apellidos: string | null }
   let ninos: NinoRow[] = []
   if (userId) {
     const { data } = await supabase
@@ -70,7 +70,7 @@ export default async function FamilyDashboard({ params }: PageProps) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {ninos.map((n) => {
             const initials =
-              (n.nombre.charAt(0) + (n.apellidos.charAt(0) || '')).toUpperCase() || '?'
+              (n.nombre.charAt(0) + ((n.apellidos ?? '').charAt(0) || '')).toUpperCase() || '?'
             return (
               <Link
                 key={n.id}
@@ -84,9 +84,12 @@ export default async function FamilyDashboard({ params }: PageProps) {
                     </div>
                     <div className="min-w-0">
                       <h2 className="text-foreground truncate text-lg font-semibold">
-                        {n.nombre} {n.apellidos}
+                        {n.nombre}
+                        {n.apellidos ? ` ${n.apellidos}` : ''}
                       </h2>
-                      <p className="text-muted-foreground mt-0.5 text-sm">{t('ver_ficha')}</p>
+                      <p className="text-muted-foreground mt-0.5 text-sm">
+                        {n.apellidos ? t('ver_ficha') : t('datos_pendientes')}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>

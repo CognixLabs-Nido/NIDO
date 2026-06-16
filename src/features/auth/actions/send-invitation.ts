@@ -51,8 +51,11 @@ export async function sendInvitation(
         ? 'autorizado'
         : null
 
-  // Deduplicar: si existe invitación pendiente con mismo email + centro + rol + nino, actualizar.
-  const { data: existing } = await service
+  // Deduplicar: si existe invitación pendiente con mismo email + centro + rol + niño,
+  // actualizar. El `nino_id` ES parte de la clave (alta tutor-driven): un mismo tutor
+  // puede tener invitaciones abiertas para DOS niños distintos a la vez — sin acotar por
+  // niño, la 2.ª invitación clobbearía el `nino_id` de la 1.ª (esqueleto huérfano).
+  let dedupeQuery = service
     .from('invitaciones')
     .select('id')
     .eq('email', parsed.data.email)
@@ -60,8 +63,10 @@ export async function sendInvitation(
     .eq('rol_objetivo', parsed.data.rolObjetivo)
     .is('accepted_at', null)
     .is('rejected_at', null)
-    .limit(1)
-    .maybeSingle()
+  dedupeQuery = parsed.data.ninoId
+    ? dedupeQuery.eq('nino_id', parsed.data.ninoId)
+    : dedupeQuery.is('nino_id', null)
+  const { data: existing } = await dedupeQuery.limit(1).maybeSingle()
 
   let invitationId: string
   if (existing) {

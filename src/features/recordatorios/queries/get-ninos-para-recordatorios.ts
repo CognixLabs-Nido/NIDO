@@ -30,5 +30,6 @@ export async function getNinosParaRecordatorios(): Promise<NinoParaRecordatorio[
     logger.warn('getNinosParaRecordatorios', error.message)
     return []
   }
-  return data ?? []
+  // Esqueleto de niño (alta tutor-driven) puede traer apellidos NULL → coalesce.
+  return (data ?? []).map((n) => ({ ...n, apellidos: n.apellidos ?? '' }))
 }

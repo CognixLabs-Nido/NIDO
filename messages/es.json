@@ -366,6 +366,33 @@
         "toggle_label": "Puede aparecer en fotos",
         "ayuda": "Actívalo solo si la familia ha firmado el consentimiento de imagen. Sin esto, la profe no puede etiquetar al niño en las fotos del aula.",
         "guardado": "Consentimiento actualizado."
+      },
+      "badge": {
+        "alta_en_curso": "Alta en curso"
+      },
+      "activar_matricula": {
+        "ok": "Matrícula activada",
+        "activando": "Activando…",
+        "activar": "Activar matrícula"
+      },
+      "invitar": {
+        "cta": "Invitar familia",
+        "title": "Invitar a la familia",
+        "ok": "Invitación enviada",
+        "cancel": "Cancelar",
+        "enviar": "Enviar invitación",
+        "enviando": "Enviando…",
+        "fields": {
+          "nombre_nino": "Nombre del niño/a",
+          "aula": "Aula",
+          "aula_placeholder": "Selecciona un aula",
+          "email": "Email del tutor/a",
+          "tipo_vinculo": "Tipo de vínculo"
+        },
+        "tipo_vinculo": {
+          "principal": "Tutor/a legal principal",
+          "secundario": "Tutor/a legal secundario"
+        }
       }
     },
     "audit": {
@@ -430,7 +457,8 @@
       "subtitle": "Tus pequeños y sus aulas en NIDO.",
       "ningun_nino": "No tienes niños vinculados todavía.",
       "ningun_nino_descripcion": "Cuando un administrador te vincule a un niño, aparecerá aquí.",
-      "ver_ficha": "Ver ficha"
+      "ver_ficha": "Ver ficha",
+      "datos_pendientes": "Datos pendientes de completar"
     },
     "nino": {
       "basicos": "Datos básicos",
@@ -595,14 +623,18 @@
   "matricula": {
     "validation": {
       "aula_invalida": "Selecciona un aula",
-      "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)"
+      "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)",
+      "invalid": "Datos de matrícula inválidos."
     },
     "errors": {
       "create_failed": "No se pudo crear la matrícula.",
       "update_failed": "No se pudo actualizar la matrícula.",
       "no_encontrada": "Matrícula no encontrada.",
       "ya_dada_de_baja": "Esta matrícula ya está dada de baja.",
-      "misma_aula": "El niño ya está matriculado en esta aula."
+      "misma_aula": "El niño ya está matriculado en esta aula.",
+      "activar_failed": "No se pudo activar la matrícula.",
+      "no_pendiente": "La matrícula no está pendiente.",
+      "no_autorizado": "No tienes permiso para esta acción."
     }
   },
   "vinculo": {

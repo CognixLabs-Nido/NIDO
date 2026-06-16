@@ -105,7 +105,7 @@ Esta spec recoge el mapa del estado actual, el flujo objetivo y las decisiones y
   - ⚖️ **No se bloquea la matrícula sobre un consentimiento** (art. 7.4 RGPD: el consentimiento debe ser libre; condicionar un servicio a consentir un tratamiento no necesario lo invalida). El centro puede **exigirlo por política**, pero el software no lo fuerza. **Base legal a confirmar por abogado (F11-B).**
 - **D4 — Encaje de #88/A3/médico/cartilla + write-paths nuevos.**
   - terminos/privacidad: en `accept-invitation` (sin cambios de mecanismo).
-  - imagen: se firma como autorización A3 dentro del wizard → requiere **instanciar la autorización de imagen** para el esqueleto.
+  - imagen: se firma como autorización A3 dentro del wizard → la instancia de la autorización de imagen se crea **lazy en el paso de imagen del wizard** (NO en la invitación: instanciarla antes crearía una autorización firmable sin pantalla de firma). Corregido en Pieza 2b.
   - datos_medicos: `registrar_consentimiento` per-usuario.
   - **Nuevos:** (a) helper `tiene_consentimiento(p_usuario_id, p_tipo)`; (b) **RPC de escritura médica del tutor** (la pieza más sensible — ver más abajo); (c) bucket `cartilla-vacunas` + policy `es_tutor_de` + columna `info_medica_emergencia.cartilla_vacunas_path`; (d) `accept-invitation` crea `vinculos_familiares`; (e) **estado de matrícula** (pendiente/activa), hoy inexistente.
 - **D5 — Coexistencia.** Los dos caminos coexisten: admin path como override/fallback; tutor-driven por defecto en altas nuevas. **No se migran** niños existentes.
@@ -143,7 +143,7 @@ Esta spec recoge el mapa del estado actual, el flujo objetivo y las decisiones y
 
 1. La dirección rellena email del tutor + nombre del niño + aula (+ `tipo_vinculo`, default principal).
 2. El action crea (transaccional, service role): fila `ninos` esqueleto (`nombre`, `centro_id`, `aula_id` derivada), `matriculas` con `estado='pendiente'`, e `invitaciones` con `rol_objetivo='tutor_legal'`, `nino_id`, `aula_id`.
-3. Instancia la **autorización de imagen** (`tipo='autorizacion_imagenes'`) para ese niño desde la plantilla del centro (para que el tutor pueda firmarla en el paso 5).
+3. (La **autorización de imagen** NO se instancia aquí. Se crea **lazy en el paso de imagen del wizard** desde la plantilla del centro, justo antes de que el tutor la firme. Corregido en Pieza 2b — instanciarla en la invitación dejaría una autorización firmable sin pantalla de firma.)
 4. Envía email de invitación.
 
 **Post-condiciones:** esqueleto + matrícula pendiente + invitación abierta; nada PII de la familia aún.

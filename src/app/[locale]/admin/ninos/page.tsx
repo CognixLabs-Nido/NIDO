@@ -13,7 +13,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { InvitarFamiliaDialog } from '@/features/auth/components/InvitarFamiliaDialog'
+import { getAulasPorCurso } from '@/features/aulas/queries/get-aulas'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { getNinosPorCentro } from '@/features/ninos/queries/get-ninos'
 import { EmptyState } from '@/shared/components/EmptyState'
 
@@ -26,18 +29,23 @@ export default async function AdminNinosPage({ params }: PageProps) {
   const t = await getTranslations('admin.ninos')
   const centroId = (await getCentroActualId())!
   const ninos = await getNinosPorCentro(centroId)
+  const curso = await getCursoActivo(centroId)
+  const aulas = curso ? await getAulasPorCurso(curso.id) : []
 
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="text-h1 text-foreground">{t('title')}</h1>
-        <Link
-          href={`/${locale}/admin/ninos/nuevo`}
-          className={buttonVariants({ className: 'gap-2' })}
-        >
-          <PlusIcon className="size-4" />
-          {t('nuevo')}
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {aulas.length > 0 && <InvitarFamiliaDialog locale={locale} aulas={aulas} />}
+          <Link
+            href={`/${locale}/admin/ninos/nuevo`}
+            className={buttonVariants({ className: 'gap-2' })}
+          >
+            <PlusIcon className="size-4" />
+            {t('nuevo')}
+          </Link>
+        </div>
       </header>
       {ninos.length === 0 ? (
         <Card>
@@ -63,12 +71,14 @@ export default async function AdminNinosPage({ params }: PageProps) {
               {ninos.map((n) => (
                 <TableRow key={n.id}>
                   <TableCell className="font-medium">{n.nombre}</TableCell>
-                  <TableCell>{n.apellidos}</TableCell>
+                  <TableCell>{n.apellidos ?? '—'}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {n.fecha_nacimiento}
+                    {n.fecha_nacimiento ?? '—'}
                   </TableCell>
                   <TableCell>
-                    {n.aula_actual ? (
+                    {n.estado_matricula === 'pendiente' ? (
+                      <Badge variant="info">{t('badge.alta_en_curso')}</Badge>
+                    ) : n.aula_actual ? (
                       <Badge variant="warm">{n.aula_actual}</Badge>
                     ) : (
                       <span className="text-muted-foreground text-xs italic">

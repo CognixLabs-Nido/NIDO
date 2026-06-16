@@ -45,5 +45,9 @@ export async function getMedicacionContextoFamilia(): Promise<MedicacionContexto
     .limit(1)
     .maybeSingle()
 
-  return { plantillaDisponible: !!plantilla, ninos }
+  // Esqueleto de niño (alta tutor-driven) puede traer apellidos NULL → coalesce.
+  return {
+    plantillaDisponible: !!plantilla,
+    ninos: ninos.map((n) => ({ ...n, apellidos: n.apellidos ?? '' })),
+  }
 }

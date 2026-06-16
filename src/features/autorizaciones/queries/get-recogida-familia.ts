@@ -91,7 +91,8 @@ export async function getRecogidaContextoFamilia(): Promise<RecogidaContextoFami
 
   return {
     plantillaDisponible: !!plantilla,
-    ninos,
+    // Esqueleto de niño (alta tutor-driven) puede traer apellidos NULL → coalesce.
+    ninos: ninos.map((n) => ({ ...n, apellidos: n.apellidos ?? '' })),
     prefillPorNino,
   }
 }
