@@ -220,6 +220,7 @@ Esta spec recoge el mapa del estado actual, el flujo objetivo y las decisiones y
 - **Idiomas:** todo el wizard en es/en/va; el idioma del tutor se fija en el paso 1.
 - **Datos sensibles:** info médica cifrada (Vault); cartilla en bucket privado; nunca loggear PII médica; el aviso de revocación a dirección sin PII.
 - **Esqueleto huérfano** (creado y nunca completado, invitación expirada): lo gestiona la **dirección** — re-invitar **reusa** el mismo esqueleto, o lo borra. Además, **F11-A6 (retención)** lo auto-limpia con un predicado nuevo en su manifiesto extensible (matrícula `'pendiente'` + invitación expirada + sin `vinculos_familiares`, tras periodo de gracia). Decisión menor (d) cerrada.
+  - **Stub de `auth.users` (fix Fase 1).** El envío del correo va por `inviteUserByEmail`, que **pre-crea un usuario stub** (sin roles) por cada invitación. Si la invitación expira sin aceptarse, ese stub queda **huérfano en `auth.users`**. El predicado de auto-limpieza de esqueletos huérfanos de F11-A6 debe **borrar también el stub auth** del email invitado (criterio: usuario sin `roles_usuario` y cuya única invitación está expirada/no aceptada). Implementación junto a ese predicado, no en el fix de invitación.
 - **Concurrencia:** dirección y tutor editando el mismo niño → la whitelist evita choques de columnas (la dirección toca aula/flags; el tutor, datos de familia).
 
 ## Validaciones (Zod)

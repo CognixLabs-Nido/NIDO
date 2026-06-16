@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AcceptInvitationForm } from '@/features/auth/components/AcceptInvitationForm'
 import { notifyExistingAccountInvitation } from '@/features/auth/actions/accept-invitation'
 import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
+import { debeMostrarB8 } from '@/features/auth/lib/clasificar-cuenta'
 import { AuthShell } from '@/shared/components/AuthShell'
 
 interface PageProps {
@@ -37,14 +38,30 @@ export default async function InvitationPage({ params }: PageProps) {
     redirect(`/${locale}/invitation/expired`)
   }
 
-  // ¿Email ya existe en auth.users?
+  // ¿Email ya en auth.users? Hay que distinguir una cuenta REAL (con roles) de un
+  // STUB de `inviteUserByEmail` (fila pre-creada al enviar el correo, aún sin roles):
+  // el stub debe ver el FORMULARIO de alta; solo la cuenta real va a B8. Sin esto, el
+  // alta tutor-driven (y cualquier invitación) caía SIEMPRE en B8 → onboarding roto.
+  // La decisión es por roles, NO por sesión: la posible sesión-de-verify de GoTrue es
+  // irrelevante (la page la ignora), así que stub→form funciona con o sin ella.
   const { data: usersList } = await service.auth.admin.listUsers()
-  const emailExists = usersList?.users.some(
+  const authUser = usersList?.users.find(
     (u) => u.email?.toLowerCase() === invitation.email.toLowerCase()
   )
 
-  if (emailExists) {
-    // Dispara aviso (best-effort). Render flujo B8.
+  let tieneRoles = false
+  if (authUser) {
+    const { data: roles } = await service
+      .from('roles_usuario')
+      .select('usuario_id')
+      .eq('usuario_id', authUser.id)
+      .is('deleted_at', null)
+      .limit(1)
+    tieneRoles = (roles?.length ?? 0) > 0
+  }
+
+  if (debeMostrarB8(Boolean(authUser), tieneRoles)) {
+    // Cuenta real existente: dispara aviso (best-effort) y render flujo B8.
     await notifyExistingAccountInvitation(token).catch(() => {})
     return <ExistingAccountNotice locale={locale} email={invitation.email} />
   }
