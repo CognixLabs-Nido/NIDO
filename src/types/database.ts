@@ -1514,6 +1514,7 @@ export type Database = {
         Row: {
           alergias_graves: string | null
           alergias_leves: string | null
+          cartilla_vacunas_path: string | null
           created_at: string
           id: string
           medicacion_habitual: string | null
@@ -1526,6 +1527,7 @@ export type Database = {
         Insert: {
           alergias_graves?: string | null
           alergias_leves?: string | null
+          cartilla_vacunas_path?: string | null
           created_at?: string
           id?: string
           medicacion_habitual?: string | null
@@ -1538,6 +1540,7 @@ export type Database = {
         Update: {
           alergias_graves?: string | null
           alergias_leves?: string | null
+          cartilla_vacunas_path?: string | null
           created_at?: string
           id?: string
           medicacion_habitual?: string | null
@@ -2959,6 +2962,30 @@ export type Database = {
         }
         Returns: string
       }
+      set_info_medica_emergencia_cifrada_tutor: {
+        Args: {
+          p_alergias_graves: string
+          p_alergias_leves: string
+          p_cartilla_vacunas_path: string
+          p_medicacion_habitual: string
+          p_medico_familia: string
+          p_nino_id: string
+          p_notas_emergencia: string
+          p_telefono_emergencia: string
+        }
+        Returns: string
+      }
+      actualizar_identidad_nino_tutor: {
+        Args: {
+          p_apellidos: string
+          p_fecha_nacimiento: string
+          p_idioma_principal: string
+          p_nacionalidad: string
+          p_nino_id: string
+          p_sexo: Database['public']['Enums']['nino_sexo']
+        }
+        Returns: string
+      }
       solicitar_olvido_nino: {
         Args: { p_inmediato?: boolean; p_nino_id: string }
         Returns: string
@@ -2966,6 +2993,13 @@ export type Database = {
       solicitar_olvido_usuario: {
         Args: { p_inmediato?: boolean; p_usuario_id: string }
         Returns: string
+      }
+      tiene_consentimiento: {
+        Args: {
+          p_tipo: Database['public']['Enums']['consentimiento_tipo']
+          p_usuario_id: string
+        }
+        Returns: boolean
       }
       tiene_permiso_sobre: {
         Args: { p_nino_id: string; p_permiso: string }

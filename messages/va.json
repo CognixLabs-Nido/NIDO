@@ -609,7 +609,8 @@
       "fecha_formato": "Format de data invàlid (YYYY-MM-DD)",
       "fecha_futura": "La data de naixement no pot ser futura",
       "aula_invalida": "Selecciona una aula",
-      "fuera_de_cohorte": "L'any de naixement no coincideix amb la cohort. Marca la confirmació per a matricular igualment."
+      "fuera_de_cohorte": "L'any de naixement no coincideix amb la cohort. Marca la confirmació per a matricular igualment.",
+      "invalid": "Dades no vàlides."
     },
     "errors": {
       "create_failed": "No s'ha pogut registrar el xiquet.",
@@ -617,7 +618,9 @@
       "aula_de_otro_centro": "L'aula seleccionada no pertany al centre.",
       "no_encontrado": "Xiquet no trobat.",
       "no_autorizado": "No tens permís per a esta acció.",
-      "actualizacion_fallo": "No s'ha pogut actualitzar."
+      "actualizacion_fallo": "No s'ha pogut actualitzar.",
+      "guardar_fallo": "No s'han pogut guardar les dades. Torna-ho a provar.",
+      "medica_no_autorizado": "No tens permís per a guardar la informació mèdica (falta el consentiment de dades de salut?)."
     }
   },
   "matricula": {

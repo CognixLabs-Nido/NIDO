@@ -609,7 +609,8 @@
       "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)",
       "fecha_futura": "La fecha de nacimiento no puede ser futura",
       "aula_invalida": "Selecciona un aula",
-      "fuera_de_cohorte": "El año de nacimiento no coincide con la cohorte. Marca la confirmación para matricular igualmente."
+      "fuera_de_cohorte": "El año de nacimiento no coincide con la cohorte. Marca la confirmación para matricular igualmente.",
+      "invalid": "Datos no válidos."
     },
     "errors": {
       "create_failed": "No se pudo registrar al niño.",
@@ -617,7 +618,9 @@
       "aula_de_otro_centro": "El aula seleccionada no pertenece al centro.",
       "no_encontrado": "Niño no encontrado.",
       "no_autorizado": "No tienes permiso para esta acción.",
-      "actualizacion_fallo": "No se pudo actualizar."
+      "actualizacion_fallo": "No se pudo actualizar.",
+      "guardar_fallo": "No se pudieron guardar los datos. Inténtalo de nuevo.",
+      "medica_no_autorizado": "No tienes permiso para guardar la información médica (¿falta el consentimiento de datos de salud?)."
     }
   },
   "matricula": {
