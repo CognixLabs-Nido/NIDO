@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { esMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import type { Database } from '@/types/database'
 
 /**
@@ -38,14 +39,14 @@ export async function audienciaAnuncio(
     // Tutores con flag activo, vinculados a niños matriculados activos en el aula.
     const { data: tutores } = await supabase
       .from('vinculos_familiares')
-      .select('usuario_id, nino:ninos!inner(matriculas(aula_id, fecha_baja, deleted_at))')
+      .select('usuario_id, nino:ninos!inner(matriculas(aula_id, fecha_baja, deleted_at, estado))')
       .filter('permisos->puede_recibir_mensajes', 'eq', true)
       .is('deleted_at', null)
 
     for (const v of tutores ?? []) {
       const matriculas = v.nino?.matriculas ?? []
       for (const m of matriculas) {
-        if (m.aula_id === aulaId && m.fecha_baja === null && m.deleted_at === null) {
+        if (m.aula_id === aulaId && esMatriculaActiva(m)) {
           audiencia.add(v.usuario_id)
           break
         }
@@ -84,7 +85,7 @@ export async function audienciaAnuncio(
 
     const { data: tutores } = await supabase
       .from('vinculos_familiares')
-      .select('usuario_id, nino:ninos!inner(matriculas(aula_id, fecha_baja, deleted_at))')
+      .select('usuario_id, nino:ninos!inner(matriculas(aula_id, fecha_baja, deleted_at, estado))')
       .filter('permisos->puede_recibir_mensajes', 'eq', true)
       .is('deleted_at', null)
 
@@ -92,7 +93,7 @@ export async function audienciaAnuncio(
     for (const v of tutores ?? []) {
       const matriculas = v.nino?.matriculas ?? []
       for (const m of matriculas) {
-        if (m.fecha_baja === null && m.deleted_at === null && aulaSet.has(m.aula_id)) {
+        if (esMatriculaActiva(m) && aulaSet.has(m.aula_id)) {
           audiencia.add(v.usuario_id)
           break
         }

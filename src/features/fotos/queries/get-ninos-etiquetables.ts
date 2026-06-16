@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 
 import type { NinoAulaFoto } from '../types'
@@ -21,12 +22,12 @@ interface MatriculaJoinNino {
  */
 export async function getNinosAulaParaFotos(aulaId: string): Promise<NinoAulaFoto[]> {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('matriculas')
-    .select('ninos(id, nombre, apellidos, puede_aparecer_en_fotos)')
-    .eq('aula_id', aulaId)
-    .is('fecha_baja', null)
-    .is('deleted_at', null)
+  const { data } = await aplicarMatriculaActiva(
+    supabase
+      .from('matriculas')
+      .select('ninos(id, nombre, apellidos, puede_aparecer_en_fotos)')
+      .eq('aula_id', aulaId)
+  )
 
   return ((data ?? []) as MatriculaJoinNino[])
     .map((m) => m.ninos)

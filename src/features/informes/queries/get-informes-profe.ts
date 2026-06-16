@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
+import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 
 import { parseEstructura, parseRespuestas } from '../lib/estructura'
 import {
@@ -66,12 +67,12 @@ export async function getInformesDeMisAulas(): Promise<AulaInformes[]> {
   const aulaIds = aulas.map((a) => a.aula_id)
 
   // 2. Niños matriculados activos en esas aulas.
-  const { data: mat } = await supabase
-    .from('matriculas')
-    .select('aula_id, ninos(id, nombre, apellidos)')
-    .in('aula_id', aulaIds)
-    .is('fecha_baja', null)
-    .is('deleted_at', null)
+  const { data: mat } = await aplicarMatriculaActiva(
+    supabase
+      .from('matriculas')
+      .select('aula_id, ninos(id, nombre, apellidos)')
+      .in('aula_id', aulaIds)
+  )
 
   const matriculas = (mat ?? []) as MatriculaNinoRow[]
   const ninoIds = matriculas

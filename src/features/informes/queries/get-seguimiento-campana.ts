@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 
 import { derivarSeguimiento, type AulaSeed, type MatriculaSeed } from '../lib/seguimiento'
@@ -38,12 +39,12 @@ export async function getSeguimientoCampana(
   const aulaIds = aulas.map((a) => a.id)
 
   // 2. Matrículas activas (bajas excluidas; Q3) con el niño.
-  const { data: matData } = await supabase
-    .from('matriculas')
-    .select('aula_id, ninos(id, nombre, apellidos)')
-    .in('aula_id', aulaIds)
-    .is('fecha_baja', null)
-    .is('deleted_at', null)
+  const { data: matData } = await aplicarMatriculaActiva(
+    supabase
+      .from('matriculas')
+      .select('aula_id, ninos(id, nombre, apellidos)')
+      .in('aula_id', aulaIds)
+  )
 
   const matriculas: MatriculaSeed[] = ((matData ?? []) as MatriculaNinoRow[])
     .filter((m): m is MatriculaNinoRow & { ninos: NonNullable<MatriculaNinoRow['ninos']> } =>

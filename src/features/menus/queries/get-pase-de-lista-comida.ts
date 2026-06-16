@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -98,12 +99,12 @@ export async function getPaseDeListaComida(
   }
 
   // 4. Listar niños del aula que toman sólidos.
-  const { data: matriculas } = await supabase
-    .from('matriculas')
-    .select('ninos(id, nombre, apellidos, foto_url)')
-    .eq('aula_id', aulaId)
-    .is('fecha_baja', null)
-    .is('deleted_at', null)
+  const { data: matriculas } = await aplicarMatriculaActiva(
+    supabase
+      .from('matriculas')
+      .select('ninos(id, nombre, apellidos, foto_url)')
+      .eq('aula_id', aulaId)
+  )
 
   const ninosBruto = ((matriculas ?? []) as MatriculaJoinNino[])
     .map((m) => m.ninos)

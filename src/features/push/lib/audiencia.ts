@@ -1,5 +1,9 @@
 import 'server-only'
 
+import {
+  aplicarMatriculaActiva,
+  esMatriculaActiva,
+} from '@/features/matriculas/lib/matricula-activa'
 import { createServiceClient } from '@/lib/supabase/server'
 
 /**
@@ -28,12 +32,7 @@ export async function destinatariosDeNino(
   // independientes entre sí: lanzamos ambas queries en paralelo. `profes_aulas`
   // sí depende de los `aula_id` que devuelve `matriculas`, así que va después.
   const [matriculasRes, vinculosRes] = await Promise.all([
-    supabase
-      .from('matriculas')
-      .select('aula_id')
-      .eq('nino_id', ninoId)
-      .is('fecha_baja', null)
-      .is('deleted_at', null),
+    aplicarMatriculaActiva(supabase.from('matriculas').select('aula_id').eq('nino_id', ninoId)),
     supabase
       .from('vinculos_familiares')
       .select('usuario_id, permisos')
@@ -135,7 +134,9 @@ export async function destinatariosPushDeAnuncio(
   // ambigüedad con filtros JSONB en PostgREST.
   const { data: tutores } = await supabase
     .from('vinculos_familiares')
-    .select('usuario_id, permisos, nino:ninos!inner(matriculas(aula_id, fecha_baja, deleted_at))')
+    .select(
+      'usuario_id, permisos, nino:ninos!inner(matriculas(aula_id, fecha_baja, deleted_at, estado))'
+    )
     .is('deleted_at', null)
 
   const aulaSet = new Set(aulasObjetivo)
@@ -143,9 +144,7 @@ export async function destinatariosPushDeAnuncio(
     const permisos = (v.permisos as Record<string, boolean> | null) ?? {}
     if (permisos.puede_recibir_mensajes !== true) continue
     const matriculas = v.nino?.matriculas ?? []
-    const enAulaActiva = matriculas.some(
-      (m) => m.fecha_baja === null && m.deleted_at === null && aulaSet.has(m.aula_id)
-    )
+    const enAulaActiva = matriculas.some((m) => esMatriculaActiva(m) && aulaSet.has(m.aula_id))
     if (enAulaActiva) destinatarios.add(v.usuario_id)
   }
 

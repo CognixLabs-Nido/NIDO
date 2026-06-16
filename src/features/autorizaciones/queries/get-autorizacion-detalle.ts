@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import {
@@ -197,12 +198,9 @@ async function ninosDeAula(
   supabase: Awaited<ReturnType<typeof createClient>>,
   aulaId: string
 ): Promise<string[]> {
-  const { data: mats } = await supabase
-    .from('matriculas')
-    .select('nino_id')
-    .eq('aula_id', aulaId)
-    .is('fecha_baja', null)
-    .is('deleted_at', null)
+  const { data: mats } = await aplicarMatriculaActiva(
+    supabase.from('matriculas').select('nino_id').eq('aula_id', aulaId)
+  )
   return (mats ?? []).map((m) => m.nino_id)
 }
 

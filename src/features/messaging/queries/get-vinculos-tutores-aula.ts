@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
@@ -59,12 +60,9 @@ export async function getVinculosTutoresAulaCore(
   aulaId: string
 ): Promise<Map<string, VinculoTutorMin[]>> {
   // 1. Niños matriculados activos en el aula.
-  const { data: matriculas, error: matErr } = await supabase
-    .from('matriculas')
-    .select('nino_id')
-    .eq('aula_id', aulaId)
-    .is('fecha_baja', null)
-    .is('deleted_at', null)
+  const { data: matriculas, error: matErr } = await aplicarMatriculaActiva(
+    supabase.from('matriculas').select('nino_id').eq('aula_id', aulaId)
+  )
 
   if (matErr) {
     logger.warn('getVinculosTutoresAula: matriculas', matErr.message)

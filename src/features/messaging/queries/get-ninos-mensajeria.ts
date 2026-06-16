@@ -1,5 +1,9 @@
 import 'server-only'
 
+import {
+  aplicarMatriculaActiva,
+  esMatriculaActiva,
+} from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -77,12 +81,12 @@ export async function getNinosMensajeriaParaUsuario(
     if (aulasMap.size === 0) return []
 
     const aulaIds = Array.from(aulasMap.keys())
-    const { data: matriculas, error: matErr } = await supabase
-      .from('matriculas')
-      .select('aula_id, nino:ninos!inner(id, nombre, apellidos, deleted_at)')
-      .in('aula_id', aulaIds)
-      .is('fecha_baja', null)
-      .is('deleted_at', null)
+    const { data: matriculas, error: matErr } = await aplicarMatriculaActiva(
+      supabase
+        .from('matriculas')
+        .select('aula_id, nino:ninos!inner(id, nombre, apellidos, deleted_at)')
+        .in('aula_id', aulaIds)
+    )
 
     if (matErr) {
       logger.warn('getNinosMensajeriaParaUsuario: matriculas profe', matErr.message)
@@ -108,7 +112,7 @@ export async function getNinosMensajeriaParaUsuario(
     const { data: vinculos, error: vErr } = await supabase
       .from('vinculos_familiares')
       .select(
-        'permisos, nino:ninos!inner(id, nombre, apellidos, centro_id, deleted_at, matriculas(aula_id, fecha_baja, deleted_at, aula:aulas(nombre)))'
+        'permisos, nino:ninos!inner(id, nombre, apellidos, centro_id, deleted_at, matriculas(aula_id, fecha_baja, deleted_at, estado, aula:aulas(nombre)))'
       )
       .eq('usuario_id', userId)
       .is('deleted_at', null)
@@ -124,8 +128,7 @@ export async function getNinosMensajeriaParaUsuario(
       const permisos = (v.permisos as Record<string, boolean> | null) ?? {}
       if (permisos.puede_recibir_mensajes !== true) continue
 
-      const matriculaActiva =
-        v.nino.matriculas?.find((m) => m.fecha_baja === null && m.deleted_at === null) ?? null
+      const matriculaActiva = v.nino.matriculas?.find((m) => esMatriculaActiva(m)) ?? null
 
       ninos.push({
         id: v.nino.id,
@@ -137,13 +140,13 @@ export async function getNinosMensajeriaParaUsuario(
   } else if (rol === 'admin') {
     // Admin no usa el tab Conversaciones en la UI actual, pero devolvemos
     // todos los niños del centro por consistencia (futuras vistas).
-    const { data: matriculas, error: matErr } = await supabase
-      .from('matriculas')
-      .select(
-        'aula_id, nino:ninos!inner(id, nombre, apellidos, centro_id, deleted_at), aula:aulas(nombre)'
-      )
-      .is('fecha_baja', null)
-      .is('deleted_at', null)
+    const { data: matriculas, error: matErr } = await aplicarMatriculaActiva(
+      supabase
+        .from('matriculas')
+        .select(
+          'aula_id, nino:ninos!inner(id, nombre, apellidos, centro_id, deleted_at), aula:aulas(nombre)'
+        )
+    )
 
     if (matErr) {
       logger.warn('getNinosMensajeriaParaUsuario: matriculas admin', matErr.message)
