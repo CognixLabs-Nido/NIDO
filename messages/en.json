@@ -366,6 +366,33 @@
         "toggle_label": "May appear in photos",
         "ayuda": "Enable only if the family has signed the image consent. Without it, the teacher cannot tag this child in classroom photos.",
         "guardado": "Consent updated."
+      },
+      "badge": {
+        "alta_en_curso": "In progress"
+      },
+      "activar_matricula": {
+        "ok": "Enrolment activated",
+        "activando": "Activating…",
+        "activar": "Activate enrolment"
+      },
+      "invitar": {
+        "cta": "Invite family",
+        "title": "Invite the family",
+        "ok": "Invitation sent",
+        "cancel": "Cancel",
+        "enviar": "Send invitation",
+        "enviando": "Sending…",
+        "fields": {
+          "nombre_nino": "Child's first name",
+          "aula": "Classroom",
+          "aula_placeholder": "Select a classroom",
+          "email": "Guardian's email",
+          "tipo_vinculo": "Link type"
+        },
+        "tipo_vinculo": {
+          "principal": "Primary legal guardian",
+          "secundario": "Secondary legal guardian"
+        }
       }
     },
     "audit": {
@@ -430,7 +457,8 @@
       "subtitle": "Your little ones and their classrooms in NIDO.",
       "ningun_nino": "You have no linked children yet.",
       "ningun_nino_descripcion": "Once an admin links you to a child, they will appear here.",
-      "ver_ficha": "View profile"
+      "ver_ficha": "View profile",
+      "datos_pendientes": "Details pending"
     },
     "nino": {
       "basicos": "Basic data",
@@ -595,14 +623,18 @@
   "matricula": {
     "validation": {
       "aula_invalida": "Select a classroom",
-      "fecha_formato": "Invalid date format (YYYY-MM-DD)"
+      "fecha_formato": "Invalid date format (YYYY-MM-DD)",
+      "invalid": "Invalid enrolment data."
     },
     "errors": {
       "create_failed": "Could not create the enrolment.",
       "update_failed": "Could not update the enrolment.",
       "no_encontrada": "Enrolment not found.",
       "ya_dada_de_baja": "This enrolment is already ended.",
-      "misma_aula": "Child already enrolled in this classroom."
+      "misma_aula": "Child already enrolled in this classroom.",
+      "activar_failed": "Could not activate the enrolment.",
+      "no_pendiente": "The enrolment is not pending.",
+      "no_autorizado": "You don't have permission for this action."
     }
   },
   "vinculo": {

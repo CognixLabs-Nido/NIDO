@@ -366,6 +366,33 @@
         "toggle_label": "Pot aparéixer en fotos",
         "ayuda": "Activa-ho només si la família ha firmat el consentiment d'imatge. Sense això, la mestra no pot etiquetar el xiquet en les fotos de l'aula.",
         "guardado": "Consentiment actualitzat."
+      },
+      "badge": {
+        "alta_en_curso": "Alta en curs"
+      },
+      "activar_matricula": {
+        "ok": "Matrícula activada",
+        "activando": "Activant…",
+        "activar": "Activar matrícula"
+      },
+      "invitar": {
+        "cta": "Convidar família",
+        "title": "Convidar la família",
+        "ok": "Invitació enviada",
+        "cancel": "Cancel·lar",
+        "enviar": "Enviar invitació",
+        "enviando": "Enviant…",
+        "fields": {
+          "nombre_nino": "Nom del xiquet/a",
+          "aula": "Aula",
+          "aula_placeholder": "Selecciona una aula",
+          "email": "Correu del tutor/a",
+          "tipo_vinculo": "Tipus de vincle"
+        },
+        "tipo_vinculo": {
+          "principal": "Tutor/a legal principal",
+          "secundario": "Tutor/a legal secundari"
+        }
       }
     },
     "audit": {
@@ -430,7 +457,8 @@
       "subtitle": "Els teus xiquets i les seues aules en NIDO.",
       "ningun_nino": "Encara no tens xiquets vinculats.",
       "ningun_nino_descripcion": "Quan un administrador et vincule a un xiquet, apareixerà ací.",
-      "ver_ficha": "Veure fitxa"
+      "ver_ficha": "Veure fitxa",
+      "datos_pendientes": "Dades pendents"
     },
     "nino": {
       "basicos": "Dades bàsiques",
@@ -595,14 +623,18 @@
   "matricula": {
     "validation": {
       "aula_invalida": "Selecciona una aula",
-      "fecha_formato": "Format de data invàlid (YYYY-MM-DD)"
+      "fecha_formato": "Format de data invàlid (YYYY-MM-DD)",
+      "invalid": "Dades de matrícula no vàlides."
     },
     "errors": {
       "create_failed": "No s'ha pogut crear la matrícula.",
       "update_failed": "No s'ha pogut actualitzar la matrícula.",
       "no_encontrada": "Matrícula no trobada.",
       "ya_dada_de_baja": "Esta matrícula ja està donada de baixa.",
-      "misma_aula": "El xiquet ja està matriculat en esta aula."
+      "misma_aula": "El xiquet ja està matriculat en esta aula.",
+      "activar_failed": "No s'ha pogut activar la matrícula.",
+      "no_pendiente": "La matrícula no està pendent.",
+      "no_autorizado": "No tens permís per a aquesta acció."
     }
   },
   "vinculo": {

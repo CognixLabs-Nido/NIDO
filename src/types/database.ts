@@ -2060,11 +2060,11 @@ export type Database = {
       }
       ninos: {
         Row: {
-          apellidos: string
+          apellidos: string | null
           centro_id: string
           created_at: string
           deleted_at: string | null
-          fecha_nacimiento: string
+          fecha_nacimiento: string | null
           foto_url: string | null
           id: string
           idioma_principal: string
@@ -2077,11 +2077,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          apellidos: string
+          apellidos?: string | null
           centro_id: string
           created_at?: string
           deleted_at?: string | null
-          fecha_nacimiento: string
+          fecha_nacimiento?: string | null
           foto_url?: string | null
           id?: string
           idioma_principal?: string
@@ -2094,11 +2094,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          apellidos?: string
+          apellidos?: string | null
           centro_id?: string
           created_at?: string
           deleted_at?: string | null
-          fecha_nacimiento?: string
+          fecha_nacimiento?: string | null
           foto_url?: string | null
           id?: string
           idioma_principal?: string

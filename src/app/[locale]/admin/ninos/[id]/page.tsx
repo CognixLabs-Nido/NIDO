@@ -33,6 +33,7 @@ import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { ExportButton } from '@/features/export/components/ExportButton'
+import { ActivarMatriculaButton } from '@/features/matriculas/components/ActivarMatriculaButton'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
 import { NuevoRecordatorioContextual } from '@/features/recordatorios/components/NuevoRecordatorioContextual'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -67,7 +68,8 @@ export default async function NinoDetallePage({ params }: PageProps) {
   ])
 
   const matriculaActiva = matriculas.find((m) => m.fecha_baja === null)
-  const initials = (nino.nombre.charAt(0) + (nino.apellidos.charAt(0) || '')).toUpperCase() || '?'
+  const initials =
+    (nino.nombre.charAt(0) + ((nino.apellidos ?? '').charAt(0) || '')).toUpperCase() || '?'
 
   return (
     <div className="space-y-6">
@@ -85,13 +87,21 @@ export default async function NinoDetallePage({ params }: PageProps) {
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="text-h2 text-foreground truncate">
-            {nino.nombre} {nino.apellidos}
+            {nino.nombre}
+            {nino.apellidos ? ` ${nino.apellidos}` : ''}
           </h1>
           <p className="text-muted-foreground text-sm">
-            {t('fields.fecha_nacimiento')}: {nino.fecha_nacimiento}
+            {t('fields.fecha_nacimiento')}: {nino.fecha_nacimiento ?? '—'}
           </p>
         </div>
-        {matriculaActiva && <Badge variant="warm">{matriculaActiva.aula_nombre}</Badge>}
+        {matriculaActiva?.estado === 'pendiente' ? (
+          <div className="flex items-center gap-2">
+            <Badge variant="info">{t('badge.alta_en_curso')}</Badge>
+            <ActivarMatriculaButton matriculaId={matriculaActiva.id} />
+          </div>
+        ) : (
+          matriculaActiva && <Badge variant="warm">{matriculaActiva.aula_nombre}</Badge>
+        )}
         {/* F6-C-3: crear un recordatorio "familia concreta" sobre este niño,
             con destino + niño preseleccionados. Rol admin (área /admin). */}
         <NuevoRecordatorioContextual
@@ -144,8 +154,8 @@ export default async function NinoDetallePage({ params }: PageProps) {
           <Card>
             <CardContent className="space-y-2 text-sm">
               <Row k={t('fields.nombre')} v={nino.nombre} />
-              <Row k={t('fields.apellidos')} v={nino.apellidos} />
-              <Row k={t('fields.fecha_nacimiento')} v={nino.fecha_nacimiento} />
+              <Row k={t('fields.apellidos')} v={nino.apellidos ?? '—'} />
+              <Row k={t('fields.fecha_nacimiento')} v={nino.fecha_nacimiento ?? '—'} />
               <Row k={t('fields.sexo')} v={nino.sexo ?? '—'} />
               <Row k={t('fields.idioma_principal')} v={nino.idioma_principal} />
               <Row k={t('fields.nacionalidad')} v={nino.nacionalidad ?? '—'} />
@@ -159,7 +169,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
                 ninoId={nino.id}
                 locale={locale}
                 initialUrl={foto.urlMiniatura ?? foto.url}
-                alt={`${nino.nombre} ${nino.apellidos}`}
+                alt={`${nino.nombre} ${nino.apellidos ?? ''}`.trim()}
               />
               <ConsentimientoFotosToggle ninoId={nino.id} initial={nino.puede_aparecer_en_fotos} />
             </CardContent>

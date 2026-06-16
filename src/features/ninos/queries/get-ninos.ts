@@ -5,9 +5,13 @@ import { createClient } from '@/lib/supabase/server'
 export interface NinoListItem {
   id: string
   nombre: string
-  apellidos: string
-  fecha_nacimiento: string
+  // Nullable: un esqueleto de niño (alta tutor-driven) aún no tiene identidad —
+  // la completa el tutor en el wizard. Solo aflora aquí (lista de gestión).
+  apellidos: string | null
+  fecha_nacimiento: string | null
   aula_actual: string | null
+  /** estado de la matrícula vigente (fecha_baja IS NULL): 'pendiente' = esqueleto. */
+  estado_matricula: 'pendiente' | 'activa' | null
 }
 
 /**
@@ -44,7 +48,7 @@ export async function getNinosPorCentro(centroId: string): Promise<NinoListItem[
 
   const { data: matriculas } = await supabase
     .from('matriculas')
-    .select('nino_id, aulas(nombre)')
+    .select('nino_id, estado, aulas(nombre)')
     .in(
       'nino_id',
       ninos.map((n) => n.id)
@@ -53,14 +57,17 @@ export async function getNinosPorCentro(centroId: string): Promise<NinoListItem[
     .is('deleted_at', null)
 
   const aulaPorNino = new Map<string, string>()
+  const estadoPorNino = new Map<string, 'pendiente' | 'activa'>()
   for (const m of matriculas ?? []) {
     const nombre = extraerNombreAula(m.aulas)
     if (nombre) aulaPorNino.set(m.nino_id, nombre)
+    if (m.estado === 'pendiente' || m.estado === 'activa') estadoPorNino.set(m.nino_id, m.estado)
   }
 
   return ninos.map((n) => ({
     ...n,
     aula_actual: aulaPorNino.get(n.id) ?? null,
+    estado_matricula: estadoPorNino.get(n.id) ?? null,
   }))
 }
 
@@ -68,8 +75,9 @@ export interface NinoDetalle {
   id: string
   centro_id: string
   nombre: string
-  apellidos: string
-  fecha_nacimiento: string
+  // Nullable en el esqueleto (alta tutor-driven): el tutor completa identidad en el wizard.
+  apellidos: string | null
+  fecha_nacimiento: string | null
   sexo: 'F' | 'M' | 'X' | null
   nacionalidad: string | null
   idioma_principal: string
@@ -123,13 +131,14 @@ export interface MatriculaItem {
   fecha_alta: string
   fecha_baja: string | null
   motivo_baja: string | null
+  estado: 'pendiente' | 'activa' | 'baja'
 }
 
 export async function getMatriculasPorNino(ninoId: string): Promise<MatriculaItem[]> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('matriculas')
-    .select('id, aula_id, fecha_alta, fecha_baja, motivo_baja, aulas(nombre)')
+    .select('id, aula_id, fecha_alta, fecha_baja, motivo_baja, estado, aulas(nombre)')
     .eq('nino_id', ninoId)
     .is('deleted_at', null)
     .order('fecha_alta', { ascending: false })
@@ -141,5 +150,6 @@ export async function getMatriculasPorNino(ninoId: string): Promise<MatriculaIte
     fecha_alta: m.fecha_alta,
     fecha_baja: m.fecha_baja,
     motivo_baja: m.motivo_baja,
+    estado: m.estado,
   }))
 }

@@ -101,7 +101,7 @@ export async function getNinosMensajeriaParaUsuario(
       ninos.push({
         id: m.nino.id,
         nombre: m.nino.nombre,
-        apellidos: m.nino.apellidos,
+        apellidos: m.nino.apellidos ?? '',
         aula_nombre: aulasMap.get(m.aula_id) ?? null,
       })
     }
@@ -133,7 +133,7 @@ export async function getNinosMensajeriaParaUsuario(
       ninos.push({
         id: v.nino.id,
         nombre: v.nino.nombre,
-        apellidos: v.nino.apellidos,
+        apellidos: v.nino.apellidos ?? '',
         aula_nombre: matriculaActiva?.aula?.nombre ?? null,
       })
     }
@@ -161,7 +161,7 @@ export async function getNinosMensajeriaParaUsuario(
       ninos.push({
         id: m.nino.id,
         nombre: m.nino.nombre,
-        apellidos: m.nino.apellidos,
+        apellidos: m.nino.apellidos ?? '',
         aula_nombre: m.aula?.nombre ?? null,
       })
     }

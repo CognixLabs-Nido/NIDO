@@ -97,14 +97,15 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           ninoId={id}
           locale={locale}
           initialUrl={foto.urlMiniatura ?? foto.url}
-          alt={`${nino.nombre} ${nino.apellidos}`}
+          alt={`${nino.nombre} ${nino.apellidos ?? ''}`.trim()}
         />
         <div className="min-w-0 flex-1">
           <h1 className="text-h2 text-foreground truncate">
-            {nino.nombre} {nino.apellidos}
+            {nino.nombre}
+            {nino.apellidos ? ` ${nino.apellidos}` : ''}
           </h1>
           <p className="text-muted-foreground text-sm">
-            {t('fecha_nacimiento')}: {nino.fecha_nacimiento}
+            {t('fecha_nacimiento')}: {nino.fecha_nacimiento ?? '—'}
           </p>
         </div>
         {permisos.puede_recibir_mensajes && (
@@ -126,7 +127,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
         </h2>
         <Card>
           <CardContent className="space-y-2 text-sm">
-            <Row k={t('fecha_nacimiento')} v={nino.fecha_nacimiento} />
+            <Row k={t('fecha_nacimiento')} v={nino.fecha_nacimiento ?? '—'} />
             <Row k={t('idioma_principal')} v={nino.idioma_principal} />
             <Row k={t('nacionalidad')} v={nino.nacionalidad ?? '—'} />
           </CardContent>
