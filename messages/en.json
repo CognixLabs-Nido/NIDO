@@ -2432,5 +2432,43 @@
     "exito": "Download ready",
     "error": "Could not generate the export. Please try again.",
     "perfil_descripcion": "Download a copy of your personal data and your children's (access and portability, GDPR)."
+  },
+  "alta": {
+    "titulo": "Complete enrolment",
+    "subtitulo": "Complete {nombre}'s details for enrolment.",
+    "wizard": {
+      "step": "Step",
+      "progress": "Enrolment progress",
+      "siguiente": "Next",
+      "atras": "Back",
+      "guardando": "Saving...",
+      "guardar_siguiente": "Save and continue",
+      "paso": {
+        "identidad": "Child's details",
+        "pedagogicos": "Pedagogical details",
+        "consentimientos": "Consents",
+        "medico": "Medical details",
+        "imagen": "Image and photo"
+      }
+    },
+    "identidad": {
+      "guardado": "Details saved successfully"
+    },
+    "consentimientos": {
+      "datos_medicos_titulo": "Medical data consent",
+      "datos_medicos_texto": "I authorise the centre to process my child's medical data (allergies, medication, emergency contacts and vaccination record) for their care and safety.",
+      "otorgar": "I give my consent",
+      "otorgado": "Consent recorded",
+      "concedido": "Consent granted",
+      "imagen_nota": "Image use consent is recorded later, when you sign the image authorisation."
+    },
+    "placeholder": {
+      "medico": "The medical record and vaccination card are completed in the next step (coming soon).",
+      "imagen": "The image authorisation and photo are completed in the last step (coming soon)."
+    },
+    "errors": {
+      "no_autorizado": "You don't have permission for this action.",
+      "consentimiento_fallo": "The consent could not be recorded. Please try again."
+    }
   }
 }

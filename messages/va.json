@@ -2432,5 +2432,43 @@
     "exito": "Descàrrega preparada",
     "error": "No s'ha pogut generar l'exportació. Torna-ho a provar.",
     "perfil_descripcion": "Descarrega una còpia de les teues dades personals i les dels teus fills (accés i portabilitat, RGPD)."
+  },
+  "alta": {
+    "titulo": "Completar la matrícula",
+    "subtitulo": "Completa les dades de {nombre} per a la seua matrícula.",
+    "wizard": {
+      "step": "Pas",
+      "progress": "Progrés de la matrícula",
+      "siguiente": "Següent",
+      "atras": "Anterior",
+      "guardando": "Guardant...",
+      "guardar_siguiente": "Guarda i continua",
+      "paso": {
+        "identidad": "Dades del xiquet",
+        "pedagogicos": "Dades pedagògiques",
+        "consentimientos": "Consentiments",
+        "medico": "Dades mèdiques",
+        "imagen": "Imatge i foto"
+      }
+    },
+    "identidad": {
+      "guardado": "Dades guardades correctament"
+    },
+    "consentimientos": {
+      "datos_medicos_titulo": "Consentiment de dades mèdiques",
+      "datos_medicos_texto": "Autoritze el centre a tractar les dades mèdiques del meu fill/a (al·lèrgies, medicació, contactes d'emergència i cartilla de vacunes) per a la seua cura i seguretat.",
+      "otorgar": "Done el meu consentiment",
+      "otorgado": "Consentiment registrat",
+      "concedido": "Consentiment concedit",
+      "imagen_nota": "El consentiment d'ús d'imatge es registra més avant, en signar l'autorització d'imatge."
+    },
+    "placeholder": {
+      "medico": "La fitxa mèdica i la cartilla de vacunes es completen en el pas següent (disponible en breu).",
+      "imagen": "L'autorització d'imatge i la foto es completen en l'últim pas (disponible en breu)."
+    },
+    "errors": {
+      "no_autorizado": "No tens permís per a esta acció.",
+      "consentimiento_fallo": "No s'ha pogut registrar el consentiment. Torna-ho a provar."
+    }
   }
 }

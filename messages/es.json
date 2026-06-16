@@ -2432,5 +2432,43 @@
     "exito": "Descarga lista",
     "error": "No se pudo generar el export. Inténtalo de nuevo.",
     "perfil_descripcion": "Descarga una copia de tus datos personales y los de tus hijos (acceso y portabilidad, RGPD)."
+  },
+  "alta": {
+    "titulo": "Completar el alta",
+    "subtitulo": "Completa los datos de {nombre} para su matrícula.",
+    "wizard": {
+      "step": "Paso",
+      "progress": "Progreso del alta",
+      "siguiente": "Siguiente",
+      "atras": "Anterior",
+      "guardando": "Guardando...",
+      "guardar_siguiente": "Guardar y continuar",
+      "paso": {
+        "identidad": "Datos del niño",
+        "pedagogicos": "Datos pedagógicos",
+        "consentimientos": "Consentimientos",
+        "medico": "Datos médicos",
+        "imagen": "Imagen y foto"
+      }
+    },
+    "identidad": {
+      "guardado": "Datos guardados correctamente"
+    },
+    "consentimientos": {
+      "datos_medicos_titulo": "Consentimiento de datos médicos",
+      "datos_medicos_texto": "Autorizo al centro a tratar los datos médicos de mi hijo/a (alergias, medicación, contactos de emergencia y cartilla de vacunas) para su cuidado y seguridad.",
+      "otorgar": "Doy mi consentimiento",
+      "otorgado": "Consentimiento registrado",
+      "concedido": "Consentimiento concedido",
+      "imagen_nota": "El consentimiento de uso de imagen se registra más adelante, al firmar la autorización de imagen."
+    },
+    "placeholder": {
+      "medico": "La ficha médica y la cartilla de vacunas se completan en el siguiente paso (disponible en breve).",
+      "imagen": "La autorización de imagen y la foto se completan en el último paso (disponible en breve)."
+    },
+    "errors": {
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "consentimiento_fallo": "No se pudo registrar el consentimiento. Inténtalo de nuevo."
+    }
   }
 }
