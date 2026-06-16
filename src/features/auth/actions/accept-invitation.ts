@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { CONSENT_OBLIGATORIOS, CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
 import { logger } from '@/shared/lib/logger'
 
+import { clasificarCuenta } from '../lib/clasificar-cuenta'
 import { acceptInvitationSchema, type AcceptInvitationInput } from '../schemas/invitation'
 
 import { fail, ok, type ActionResult } from './types'
@@ -94,28 +95,63 @@ export async function acceptInvitation(
     return fail('vinculo.validation.parentesco_requerido')
   }
 
-  // Verifica que el email NO existe (en B8 se gestiona por separado).
+  // Clasifica la cuenta auth del email. `inviteUserByEmail` (enviado por
+  // `sendInvitation`) PRE-CREA un STUB en auth.users sin roles → aquí hay que
+  // COMPLETARLO, no crear de cero (createUser fallaría con "ya registrado"). Solo una
+  // cuenta REAL (con roles) se rechaza: esa va por B8 (acceptPendingInvitation).
   const { data: existing } = await service.auth.admin.listUsers()
-  const alreadyExists = existing.users.some(
+  const authUser = existing.users.find(
     (u) => u.email?.toLowerCase() === invitation.email.toLowerCase()
   )
-  if (alreadyExists) return fail('auth.invitation.errors.email_already_registered')
-
-  const { data: created, error: createErr } = await service.auth.admin.createUser({
-    email: invitation.email,
-    password: parsed.data.password,
-    email_confirm: true,
-    user_metadata: {
-      nombre_completo: parsed.data.nombreCompleto,
-      idioma_preferido: parsed.data.idiomaPreferido,
-    },
-  })
-  if (createErr || !created.user) {
-    logger.warn('createUser failed', createErr?.message)
-    return fail('auth.invitation.errors.create_failed')
+  let tieneRoles = false
+  if (authUser) {
+    const { data: rolesPrevios } = await service
+      .from('roles_usuario')
+      .select('usuario_id')
+      .eq('usuario_id', authUser.id)
+      .is('deleted_at', null)
+      .limit(1)
+    tieneRoles = (rolesPrevios?.length ?? 0) > 0
   }
+  const clase = clasificarCuenta(Boolean(authUser), tieneRoles)
+  if (clase === 'real') return fail('auth.invitation.errors.email_already_registered')
 
-  const userId = created.user.id
+  let userId: string
+  if (clase === 'stub' && authUser) {
+    // Completa el stub de `inviteUserByEmail`: fija la password real (sobrescribe el
+    // hash placeholder —bcrypt de secreto random, no usable—), confirma email y metadata.
+    const { data: updated, error: updateErr } = await service.auth.admin.updateUserById(
+      authUser.id,
+      {
+        password: parsed.data.password,
+        email_confirm: true,
+        user_metadata: {
+          nombre_completo: parsed.data.nombreCompleto,
+          idioma_preferido: parsed.data.idiomaPreferido,
+        },
+      }
+    )
+    if (updateErr || !updated.user) {
+      logger.warn('updateUserById (completar stub) failed', updateErr?.message)
+      return fail('auth.invitation.errors.create_failed')
+    }
+    userId = updated.user.id
+  } else {
+    const { data: created, error: createErr } = await service.auth.admin.createUser({
+      email: invitation.email,
+      password: parsed.data.password,
+      email_confirm: true,
+      user_metadata: {
+        nombre_completo: parsed.data.nombreCompleto,
+        idioma_preferido: parsed.data.idiomaPreferido,
+      },
+    })
+    if (createErr || !created.user) {
+      logger.warn('createUser failed', createErr?.message)
+      return fail('auth.invitation.errors.create_failed')
+    }
+    userId = created.user.id
+  }
 
   const { error: roleErr } = await service.from('roles_usuario').insert({
     usuario_id: userId,
