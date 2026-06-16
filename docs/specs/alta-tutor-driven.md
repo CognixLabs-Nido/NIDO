@@ -122,6 +122,12 @@ Esta spec recoge el mapa del estado actual, el flujo objetivo y las decisiones y
 
 ## Flujo objetivo (tutor-driven)
 
+> **Aclaraciones del responsable (2026-06-16, Pieza 3).** Refinan el flujo objetivo sin reabrir D1–D7:
+>
+> 1. **Tras aceptar, el tutor NO aterriza en el panel `/family`: va directo al asistente.** El panel queda **gateado hasta que la dirección ACTIVE la matrícula** (DEC-A → (b), no al completar los obligatorios). Como el panel está vacío hasta activar (endurecimiento 2a), liberar en la activación no cuesta nada y es la UX correcta; de paso cierra el viejo problema de "el tutor veía panel/anuncios nada más aceptar".
+> 2. **El asistente completa TODA la matrícula**, paso a paso, **guardable y reanudable** (avanzar/volver entre pasos; el progreso persiste en servidor por paso).
+> 3. **El ÚLTIMO paso es la validación de la dirección, que es la que ACTIVA.** Ciclo de estado **`pendiente → lista → activa → baja`** (DEC-B): el tutor, al pulsar "finalizar", pone la matrícula en **`'lista'`** y ve una pantalla intermedia **"completado, pendiente de validación"** (ni wizard ni panel). La **cola de validación** de la dirección = matrículas en `'lista'`; al validar, `activarMatricula` hace `'lista' → 'activa'` (Comportamiento 6) y abre el panel. El path admin completo (`NuevoNinoWizard`) sigue creando `'activa'` directo, sin pasar por `'lista'`.
+
 **Patrón: asistente guiado con guardado por paso (reanudable).** Como el esqueleto del niño ya existe, cada paso escribe a las tablas reales bajo RLS → el progreso persiste en servidor (no se pierde al recargar) y la dirección ve el avance. Tras el alta, las mismas secciones quedan editables desde `/family/nino/[id]` (ficha progresiva). Híbrido: orden guiado la primera vez, edición libre después.
 
 1. **Invitación (dirección).** `sendInvitation` extendido: crea esqueleto de niño (`nombre`, `centro_id`, `aula_id`/cohorte) + matrícula `pendiente` + invitación con `nino_id` y `tipo_vinculo`.
@@ -204,13 +210,23 @@ Esta spec recoge el mapa del estado actual, el flujo objetivo y las decisiones y
 
 ### Comportamiento 6: Activación de matrícula (dirección)
 
-**Pre-condiciones:** matrícula `pendiente`; admin del centro.
+**Pre-condiciones:** matrícula **`'lista'`** (el tutor finalizó el alta); admin del centro.
 
-**Flujo:** la dirección revisa el avance y activa (`pendiente → activa`). La activación es el gate operativo (confirma aula/cohorte).
+**Flujo:** la dirección revisa el avance y activa (`'lista' → 'activa'`). **`activarMatricula` gana guard (DEC-B (2)): solo activa una matrícula en `'lista'`** (no un esqueleto a medias en `'pendiente'`). La activación es el gate operativo (confirma aula/cohorte) y abre el panel del tutor.
 
-**Post-condiciones:** matrícula activa; el niño entra en los flujos normales (agenda, etc.).
+**Post-condiciones:** matrícula activa; el niño entra en los flujos normales (agenda, etc.); el tutor ya navega `/family`.
 
-**Casos edge:** activar con datos incompletos → permitido (lo obligatorio mínimo ya se valida en pasos previos; lo opcional no bloquea, D3); fuera de cohorte → confirmación explícita (como hoy en `crearNinoCompleto`).
+**Casos edge:** activar una matrícula que aún está en `'pendiente'` (el tutor no ha finalizado) → rechazado por el guard (`'lista'`-only); lo **opcional** no bloquea el paso del tutor a `'lista'` (D3, art. 7.4); fuera de cohorte → confirmación explícita (como hoy en `crearNinoCompleto`).
+
+### Comportamiento 7: Gate del panel del tutor (aclaración 2026-06-16)
+
+**Pre-condiciones:** tutor recién vinculado a un niño cuya matrícula está `pendiente`.
+
+**Flujo:** mientras la matrícula del hijo no esté **`'activa'`**, el acceso a `/family` (panel) **redirige al asistente** `/family/alta/{ninoId}`. El asistente es reanudable: detecta el primer paso incompleto y arranca ahí. Cuando el tutor finaliza, la matrícula pasa a `'lista'` y el tutor ve la pantalla intermedia **"completado, pendiente de validación"** (DEC-A → (b)): ni wizard ni panel. Solo tras la **activación por la dirección** (`'lista' → 'activa'`) se abre el panel.
+
+**Post-condiciones:** el tutor no consume el panel hasta que la dirección activa. (De todos modos el panel está casi vacío hasta entonces, porque las lecturas operativas ya exigen `estado='activa'` por el endurecimiento de la Pieza 2a — `'pendiente'` y `'lista'` quedan excluidas igual.)
+
+**Casos edge:** tutor con **varios hijos** en estados distintos → el gate aplica mientras exista algún hijo no-`'activa'`; reanudar lleva al primer alta incompleta. Override admin: si la dirección rellenó por el camino admin, la matrícula nace `'activa'` → sin gate.
 
 ## Casos edge (transversales)
 
@@ -270,7 +286,7 @@ export const ActualizarNinoTutorSchema = z.object({
 **Tablas modificadas:**
 
 - `info_medica_emergencia`: **+ `cartilla_vacunas_path text NULL`** (ruta en bucket `cartilla-vacunas`).
-- `matriculas`: **+ `estado matricula_estado NOT NULL DEFAULT 'activa'`** — nuevo ENUM `matricula_estado` con valores `'pendiente' | 'activa' | 'baja'` (decisión menor (a) cerrada). **Reconciliación con `fecha_baja`:** `fecha_baja` conserva la **fecha** de baja; `estado` es el **estado**, no se derivan el uno del otro (la fecha es un dato, el estado una transición explícita). El alta tutor-driven arranca en `'pendiente'`; la dirección activa a `'activa'` (Comportamiento 6); la baja pasa a `'baja'` y rellena `fecha_baja`.
+- `matriculas`: **`estado matricula_estado NOT NULL DEFAULT 'activa'`** — ENUM `matricula_estado`. Valores originales `'pendiente' | 'activa' | 'baja'` (2a/2b); **Pieza 3 AÑADE `'lista'`** (DEC-B) → ciclo `pendiente → lista → activa → baja` (`ALTER TYPE … ADD VALUE 'lista'`, additiva). **Reconciliación con `fecha_baja`:** `fecha_baja` conserva la **fecha** de baja; `estado` es el **estado**, no se derivan el uno del otro. El alta tutor-driven arranca en `'pendiente'`; el tutor finaliza → `'lista'`; la dirección valida → `'activa'` (Comportamiento 6); la baja → `'baja'` + `fecha_baja`. El gating operativo de 2a (`= 'activa'`) ya excluye `'lista'` igual que `'pendiente'`.
 - `invitaciones`: **+ `tipo_vinculo tipo_vinculo NOT NULL DEFAULT 'tutor_legal_principal'`** (decisión menor (b) cerrada). El accept lo aplica al crear el `vinculos_familiares`. La dirección lo sube a `'tutor_legal_secundario'` al invitar al segundo tutor. **No** se deriva de `rol_objetivo` (que no distingue principal/secundario).
 
 **Tablas consultadas/escritas en el flujo:** `ninos`, `vinculos_familiares`, `datos_pedagogicos_nino`, `consentimientos`, `autorizaciones`/`firmas_autorizacion` (imagen), `usuarios`, `roles_usuario`, `audit_log` (triggers).
@@ -287,15 +303,18 @@ export const ActualizarNinoTutorSchema = z.object({
 
 - **`set_info_medica_emergencia_cifrada_tutor(...)`** — la pieza **MÁS SENSIBLE**. `SECURITY DEFINER`, `search_path = public, extensions`. Acotada a lo médico de **su** hijo:
   - Autoriza con `es_tutor_de(p_nino_id) AND tiene_consentimiento(auth.uid(), 'datos_medicos')` (gate de consentimiento server-side).
-  - Cifra `alergias_graves`/`notas_emergencia` con la clave de Vault **sin exponerla** (igual que la RPC admin).
+  - Cifra `alergias_graves`/`notas_emergencia` con la clave de Vault **sin exponerla** (igual que la RPC admin, `pgp_sym_encrypt` + `_get_medical_key()`).
   - **No** puede tocar otros niños ni otras columnas (solo las 6 médicas + `cartilla_vacunas_path`).
+  - **`cartilla_vacunas_path` se escribe por esta misma RPC** (DEC-3a-1 → (a)): **7.º parámetro `p_cartilla_vacunas_path`**, NULL=preservar. Única puerta de escritura del tutor a `info_medica_emergencia` (auditable; enforce de que la cartilla solo entra con consentimiento).
   - Mismo cuidado que las RPC de F8/A4 (contrato NULL = preservar, ADR-0004).
-- **`tiene_consentimiento(p_usuario_id, p_tipo)`** → boolean — última fila vigente (`revocado_en IS NULL`) para (usuario, tipo). `STABLE SECURITY DEFINER`.
-- (Posible) RPC/action para la **escritura whitelist** de `ninos` y `datos_pedagogicos_nino` por el tutor.
+- **`actualizar_identidad_nino_tutor(p_nino_id, p_apellidos, p_fecha_nacimiento, p_sexo, p_nacionalidad, p_idioma_principal)`** (DEC-3a-2) — `SECURITY DEFINER`, gate `es_tutor_de(p_nino_id)`, whitelist 5 columnas de identidad (NULL=preservar). Obligatoria porque RLS no acota por columna y `ninos` tiene columnas admin-only. NO valida cohorte.
+- **`tiene_consentimiento(p_usuario_id, p_tipo consentimiento_tipo)`** → boolean — última fila vigente (`revocado_en IS NULL`) para (usuario, tipo). `STABLE SECURITY DEFINER`.
+- **Imagen lazy** (`crearImagenAutorizacion` + extensión de `autorizaciones_insert` para B2 tutor en `autorizacion_imagenes`): **Pieza 3b**, no 3a.
+- **`datos_pedagogicos_nino` NO usa RPC/whitelist** (DEC-D): la tabla es 1:1 y **todas** sus columnas son dato de familia (sin columnas admin-only) → se **abre RLS INSERT/UPDATE a `es_tutor_de`** y se reusa `upsertDatosPedagogicos` tal cual.
 
 ## Políticas RLS
 
-- **Storage `cartilla-vacunas`** (nuevo): patrón F10-3. INSERT/SELECT/DELETE del tutor con `es_tutor_de(((storage.foldername(name))[2])::uuid)` (ruta `{centroId}/{ninoId}/…`); SELECT staff del centro (`es_admin OR es_profe_en_centro`). Bucket privado, enlaces firmados ~1 h.
+- **Storage `cartilla-vacunas`** (nuevo): patrón F10-3. **INSERT** del tutor con `es_tutor_de([2]) AND tiene_consentimiento(auth.uid(),'datos_medicos')` (DEC-3a-1: ni el FICHERO se sube sin consentimiento — evita huérfanos de dato de salud; defensa extra sobre el gate de la RPC y de la UI); SELECT/DELETE del tutor con `es_tutor_de(((storage.foldername(name))[2])::uuid)` (ruta `{centroId}/{ninoId}/…`); SELECT staff del centro (`es_admin OR es_profe_en_centro`). Bucket privado, enlaces firmados ~1 h.
 - **`info_medica_emergencia`**: hoy INSERT/UPDATE solo admin. Se añade escritura del tutor **vía RPC `SECURITY DEFINER`** (no se abre una policy de UPDATE directa al tutor, para no exponer columnas ni el cifrado — mismo criterio que `archivar_autorizacion`/RPC de F8). La RPC hace el gate.
 - **`ninos` / `datos_pedagogicos_nino`**: la escritura del tutor va por RPC/action con whitelist (no `UPDATE` directo). Si se opta por policy, debe ser estrictamente acotada por columnas (preferible RPC).
 - **`vinculos_familiares`**: el INSERT del auto-vínculo lo hace `acceptInvitation` con **service role** (tras validar la invitación), no el cliente.

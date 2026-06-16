@@ -609,7 +609,8 @@
       "fecha_formato": "Invalid date format (YYYY-MM-DD)",
       "fecha_futura": "Date of birth cannot be in the future",
       "aula_invalida": "Select a classroom",
-      "fuera_de_cohorte": "Birth year doesn't match cohort. Tick the confirmation to enrol anyway."
+      "fuera_de_cohorte": "Birth year doesn't match cohort. Tick the confirmation to enrol anyway.",
+      "invalid": "Invalid data."
     },
     "errors": {
       "create_failed": "Could not register the child.",
@@ -617,7 +618,9 @@
       "aula_de_otro_centro": "The selected classroom doesn't belong to this centre.",
       "no_encontrado": "Child not found.",
       "no_autorizado": "You don't have permission for this action.",
-      "actualizacion_fallo": "Could not update."
+      "actualizacion_fallo": "Could not update.",
+      "guardar_fallo": "Could not save the data. Please try again.",
+      "medica_no_autorizado": "You are not allowed to save medical information (is the health-data consent missing?)."
     }
   },
   "matricula": {
