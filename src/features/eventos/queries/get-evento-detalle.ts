@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -39,12 +40,9 @@ export async function getEventoDetalle(eventoId: string): Promise<EventoDetalle 
   if (ev.ambito === 'nino' && ev.nino_id) {
     ninoIds = [ev.nino_id]
   } else if (ev.ambito === 'aula' && ev.aula_id) {
-    const { data: mats } = await supabase
-      .from('matriculas')
-      .select('nino_id')
-      .eq('aula_id', ev.aula_id)
-      .is('fecha_baja', null)
-      .is('deleted_at', null)
+    const { data: mats } = await aplicarMatriculaActiva(
+      supabase.from('matriculas').select('nino_id').eq('aula_id', ev.aula_id)
+    )
     ninoIds = (mats ?? []).map((m) => m.nino_id)
   } else if (ev.ambito === 'centro') {
     const { data: ns } = await supabase

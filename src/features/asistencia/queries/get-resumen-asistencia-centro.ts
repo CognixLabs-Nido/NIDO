@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { esMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 
 import type { ResumenAulaCount } from '../types'
@@ -14,21 +15,24 @@ export async function getResumenAsistenciaCentro(fecha: string): Promise<Resumen
 
   const { data: aulas } = await supabase
     .from('aulas')
-    .select('id, nombre, matriculas(nino_id, fecha_baja, deleted_at)')
+    .select('id, nombre, matriculas(nino_id, fecha_baja, deleted_at, estado)')
     .is('deleted_at', null)
 
   const aulasRows = (aulas ?? []) as Array<{
     id: string
     nombre: string
-    matriculas: Array<{ nino_id: string; fecha_baja: string | null; deleted_at: string | null }>
+    matriculas: Array<{
+      nino_id: string
+      fecha_baja: string | null
+      deleted_at: string | null
+      estado: string | null
+    }>
   }>
 
   // Recolectar todos los nino_id activos.
   const ninosByAula = new Map<string, string[]>()
   for (const a of aulasRows) {
-    const activos = a.matriculas
-      .filter((m) => m.fecha_baja === null && m.deleted_at === null)
-      .map((m) => m.nino_id)
+    const activos = a.matriculas.filter((m) => esMatriculaActiva(m)).map((m) => m.nino_id)
     ninosByAula.set(a.id, activos)
   }
 

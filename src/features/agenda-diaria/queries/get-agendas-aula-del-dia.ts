@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 
 import type { NinoAgendaResumen } from '../types'
@@ -26,12 +27,12 @@ export async function getAgendasAulaDelDia(
   const supabase = await createClient()
 
   // 1. Niños matriculados activos en el aula.
-  const { data: matriculas } = await supabase
-    .from('matriculas')
-    .select('ninos(id, nombre, apellidos, fecha_nacimiento, foto_url)')
-    .eq('aula_id', aulaId)
-    .is('fecha_baja', null)
-    .is('deleted_at', null)
+  const { data: matriculas } = await aplicarMatriculaActiva(
+    supabase
+      .from('matriculas')
+      .select('ninos(id, nombre, apellidos, fecha_nacimiento, foto_url)')
+      .eq('aula_id', aulaId)
+  )
 
   const ninos = ((matriculas ?? []) as MatriculaJoinNino[])
     .map((m) => m.ninos)

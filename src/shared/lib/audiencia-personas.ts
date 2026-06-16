@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import type { Database } from '@/types/database'
 
 type Client = SupabaseClient<Database>
@@ -21,12 +22,9 @@ type Client = SupabaseClient<Database>
 
 /** Niños con matrícula activa en un aula. */
 export async function ninosActivosDeAula(client: Client, aulaId: string): Promise<string[]> {
-  const { data } = await client
-    .from('matriculas')
-    .select('nino_id')
-    .eq('aula_id', aulaId)
-    .is('fecha_baja', null)
-    .is('deleted_at', null)
+  const { data } = await aplicarMatriculaActiva(
+    client.from('matriculas').select('nino_id').eq('aula_id', aulaId)
+  )
   return (data ?? []).map((m) => m.nino_id)
 }
 

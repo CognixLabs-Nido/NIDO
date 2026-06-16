@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
+import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 
 import { consolidarAvisoCampana, type CampanaPendienteEntry } from '../lib/aviso-campana'
 import type { CampanaPendientesAviso, PeriodoInforme } from '../types'
@@ -66,12 +67,9 @@ export async function getPendientesCampanaProfe(): Promise<CampanaPendientesAvis
   if (aulaIds.length === 0) return null
 
   // 3. Niños con matrícula activa en esas aulas (Q3: bajas excluidas).
-  const { data: matData } = await supabase
-    .from('matriculas')
-    .select('ninos(id)')
-    .in('aula_id', aulaIds)
-    .is('fecha_baja', null)
-    .is('deleted_at', null)
+  const { data: matData } = await aplicarMatriculaActiva(
+    supabase.from('matriculas').select('ninos(id)').in('aula_id', aulaIds)
+  )
   const ninoIds = ((matData ?? []) as MatriculaNinoRow[])
     .map((m) => m.ninos?.id)
     .filter((id): id is string => typeof id === 'string')

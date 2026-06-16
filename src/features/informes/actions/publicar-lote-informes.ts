@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 
 import { parseRespuestas } from '../lib/estructura'
 import { resumenLote, type ResumenLote } from '../lib/lote'
@@ -72,12 +73,9 @@ export async function publicarLoteInformes(
   if (aulaIds.length === 0) return ok({ total: 0, publicados: 0, incompletos: 0 })
 
   // Niños con matrícula activa en esas aulas (Q3: bajas excluidas).
-  const { data: mat } = await supabase
-    .from('matriculas')
-    .select('nino_id')
-    .in('aula_id', aulaIds)
-    .is('fecha_baja', null)
-    .is('deleted_at', null)
+  const { data: mat } = await aplicarMatriculaActiva(
+    supabase.from('matriculas').select('nino_id').in('aula_id', aulaIds)
+  )
   const ninoIds = (mat ?? []).map((m) => m.nino_id)
   if (ninoIds.length === 0) return ok({ total: 0, publicados: 0, incompletos: 0 })
 

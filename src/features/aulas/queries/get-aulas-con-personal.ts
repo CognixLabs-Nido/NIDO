@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 import { TIPO_PERSONAL_AULA_ORDER, type TipoPersonalAula } from '@/features/profes-aulas/types'
 import { logger } from '@/shared/lib/logger'
@@ -82,12 +83,7 @@ export async function getAulasConPersonalCore(
   // explicitamente (lección PR #32).
   const [{ data: matriculas, error: matErr }, { data: profes, error: profesErr }] =
     await Promise.all([
-      supabase
-        .from('matriculas')
-        .select('aula_id')
-        .in('aula_id', aulaIds)
-        .is('fecha_baja', null)
-        .is('deleted_at', null),
+      aplicarMatriculaActiva(supabase.from('matriculas').select('aula_id').in('aula_id', aulaIds)),
       supabase
         .from('profes_aulas')
         .select(
