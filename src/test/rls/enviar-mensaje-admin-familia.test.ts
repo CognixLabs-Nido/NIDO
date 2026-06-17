@@ -4,6 +4,7 @@ import { abrirConversacionAdminFamiliaCore } from '@/features/messaging/actions/
 import { enviarMensajeCore } from '@/features/messaging/actions/enviar-mensaje'
 
 import {
+  asignarProfeAula,
   asignarRol,
   clientFor,
   createTestAula,
@@ -42,6 +43,7 @@ describe('enviarMensaje — rama admin_familia + regresión profe_familia', () =
 
   let adminA: TestUser
   let tutorA: TestUser
+  let profeA: TestUser
 
   let convAdminFamilia: { id: string }
 
@@ -61,6 +63,11 @@ describe('enviarMensaje — rama admin_familia + regresión profe_familia', () =
       puede_recibir_mensajes: true,
     })
 
+    // Profe del aula del niño → puede postear profe_familia (es_profe_de_nino).
+    profeA = await createTestUser({ nombre: 'Profe EM A' })
+    await asignarRol(profeA.id, centroA.id, 'profe')
+    await asignarProfeAula(profeA.id, aulaA1.id)
+
     // Abrimos un hilo admin_familia para los tests posteriores.
     const adminClient = await clientFor(adminA)
     const open = await abrirConversacionAdminFamiliaCore(adminClient, adminA.id, tutorA.id)
@@ -69,10 +76,11 @@ describe('enviarMensaje — rama admin_familia + regresión profe_familia', () =
   }, 180_000)
 
   afterAll(async () => {
-    const usuarios = [adminA?.id, tutorA?.id].filter((u): u is string => Boolean(u))
+    const usuarios = [adminA?.id, tutorA?.id, profeA?.id].filter((u): u is string => Boolean(u))
     await serviceClient.from('mensajes').delete().in('autor_id', usuarios)
     await serviceClient.from('conversaciones').delete().in('tutor_id', [tutorA?.id])
     await serviceClient.from('conversaciones').delete().in('nino_id', [ninoA1.id])
+    await serviceClient.from('profes_aulas').delete().in('profe_id', usuarios)
     await serviceClient.from('vinculos_familiares').delete().in('usuario_id', usuarios)
     await serviceClient.from('roles_usuario').delete().in('usuario_id', usuarios)
     for (const u of usuarios) await deleteTestUser(u)
@@ -195,16 +203,22 @@ describe('enviarMensaje — rama admin_familia + regresión profe_familia', () =
   })
 
   // -------------------------------------------------------------------
-  // 3. Regresión profe_familia: la rama F5 sigue funcional al nivel
-  //    del action (creación lazy + INSERT) bajo el nuevo schema.
+  // 3. Regresión profe_familia + least-privilege F11-A.
+  //
+  //    La rama profe_familia sigue funcional (creación lazy + INSERT) bajo el
+  //    nuevo schema, PERO solo para quien puede POSTEAR: profe del niño o tutor
+  //    con `puede_recibir_mensajes`. El admin LEE (supervisión) pero NO postea
+  //    profe_familia desde la migración `20260613180000_phase11a_mensajeria_
+  //    least_privilege` (helper `puede_postear_en_conversacion`, RGPD). Antes de
+  //    F11-A este caso usaba `adminA` como autor y esperaba éxito — quedó obsoleto.
   // -------------------------------------------------------------------
 
-  it('regresión profe_familia: enviarMensajeCore con kind profe_familia crea conv lazy + inserta', async () => {
-    const adminClient = await clientFor(adminA)
-    const result = await enviarMensajeCore(adminClient, adminA.id, {
+  it('regresión profe_familia: el TUTOR crea la conv lazy + inserta', async () => {
+    const tutorClient = await clientFor(tutorA)
+    const result = await enviarMensajeCore(tutorClient, tutorA.id, {
       kind: 'profe_familia',
       nino_id: ninoA1.id,
-      contenido: 'mensaje profe_familia desde admin',
+      contenido: 'mensaje profe_familia desde el tutor',
     })
     expect(result.success).toBe(true)
     if (!result.success) return
@@ -217,5 +231,29 @@ describe('enviarMensaje — rama admin_familia + regresión profe_familia', () =
     expect(conv?.tipo_conversacion).toBe('profe_familia')
     expect(conv?.nino_id).toBe(ninoA1.id)
     expect(conv?.expires_at).toBeNull() // profe_familia nunca caduca
+  })
+
+  it('profe_familia: el PROFE del niño también puede postear', async () => {
+    const profeClient = await clientFor(profeA)
+    const result = await enviarMensajeCore(profeClient, profeA.id, {
+      kind: 'profe_familia',
+      nino_id: ninoA1.id,
+      contenido: 'mensaje profe_familia desde la profe',
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('least-privilege F11-A: el ADMIN NO puede postear profe_familia → sin_permisos', async () => {
+    // La directora supervisa (lee) pero no postea en hilos profe↔familia
+    // (helper `puede_postear_en_conversacion` excluye admin; RGPD bloqueante).
+    const adminClient = await clientFor(adminA)
+    const result = await enviarMensajeCore(adminClient, adminA.id, {
+      kind: 'profe_familia',
+      nino_id: ninoA1.id,
+      contenido: 'la dirección NO debería poder postear aquí',
+    })
+    expect(result.success).toBe(false)
+    if (result.success) return
+    expect(result.error).toBe('messages.errors.sin_permisos')
   })
 })
