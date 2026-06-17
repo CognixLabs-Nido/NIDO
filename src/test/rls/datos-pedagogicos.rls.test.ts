@@ -18,14 +18,23 @@ import {
 } from './setup'
 
 /**
- * RLS de `datos_pedagogicos_nino` (Fase 2.6).
+ * RLS de `datos_pedagogicos_nino` (Fase 2.6, semántica de SELECT actualizada en F11 3a).
+ *
+ * **D7 (alta tutor-driven):** la policy `dp_tutor_select` quedó en
+ * `es_tutor_legal_de(nino_id) OR tiene_permiso_sobre(nino_id,'puede_ver_datos_pedagogicos')`.
+ * Como `es_tutor_legal_de` cubre a tutor_legal **principal y secundario**, el tutor legal
+ * LEE SIEMPRE los datos pedagógicos de su hijo (los rellena en el wizard de alta), con
+ * independencia del flag `puede_ver_datos_pedagogicos`. Ese permiso **solo gatea al rol
+ * `autorizado`** (que NO es tutor legal). Antes de 3a el secundario sin permiso no leía;
+ * esa semantica quedo DEROGADA por D7.
  *
  * Verifica que:
  *  - admin de centro A no ve datos del centro B,
  *  - profe del aula actual del niño puede leer,
  *  - profe de otra aula no puede leer,
- *  - tutor con `puede_ver_datos_pedagogicos=true` puede leer,
- *  - tutor sin permiso no puede leer.
+ *  - tutor legal principal lee (con permiso),
+ *  - tutor legal secundario SIN permiso TAMBIÉN lee (D7),
+ *  - autorizado SIN permiso NO lee; autorizado CON permiso sí lee.
  */
 describe('RLS datos_pedagogicos_nino — aislamiento entre centros y permisos', () => {
   let centroA: { id: string }
@@ -43,6 +52,8 @@ describe('RLS datos_pedagogicos_nino — aislamiento entre centros y permisos', 
   let profeOtra: TestUser
   let tutorConPermiso: TestUser
   let tutorSinPermiso: TestUser
+  let autorizadoSinPermiso: TestUser
+  let autorizadoConPermiso: TestUser
 
   beforeAll(async () => {
     centroA = await createTestCentro('Centro Pedagógico A')
@@ -106,6 +117,19 @@ describe('RLS datos_pedagogicos_nino — aislamiento entre centros y permisos', 
     await crearVinculo(ninoA.id, tutorSinPermiso.id, 'tutor_legal_secundario', {
       puede_ver_datos_pedagogicos: false,
     })
+
+    // Rol `autorizado` (NO tutor legal): el flag `puede_ver_datos_pedagogicos` SÍ le gatea.
+    autorizadoSinPermiso = await createTestUser({ nombre: 'Autorizado sin permiso' })
+    await asignarRol(autorizadoSinPermiso.id, centroA.id, 'autorizado')
+    await crearVinculo(ninoA.id, autorizadoSinPermiso.id, 'autorizado', {
+      puede_ver_datos_pedagogicos: false,
+    })
+
+    autorizadoConPermiso = await createTestUser({ nombre: 'Autorizado con permiso' })
+    await asignarRol(autorizadoConPermiso.id, centroA.id, 'autorizado')
+    await crearVinculo(ninoA.id, autorizadoConPermiso.id, 'autorizado', {
+      puede_ver_datos_pedagogicos: true,
+    })
   }, 90_000)
 
   afterAll(async () => {
@@ -116,6 +140,8 @@ describe('RLS datos_pedagogicos_nino — aislamiento entre centros y permisos', 
       profeOtra?.id,
       tutorConPermiso?.id,
       tutorSinPermiso?.id,
+      autorizadoSinPermiso?.id,
+      autorizadoConPermiso?.id,
     ].filter((u): u is string => Boolean(u))
 
     await serviceClient.from('vinculos_familiares').delete().in('usuario_id', usuarios)
@@ -162,7 +188,7 @@ describe('RLS datos_pedagogicos_nino — aislamiento entre centros y permisos', 
     expect((data ?? []).length).toBe(0)
   })
 
-  it('tutor con permiso puede_ver_datos_pedagogicos lee la fila', async () => {
+  it('tutor legal principal (con permiso) lee la fila', async () => {
     const client = await clientFor(tutorConPermiso)
     const { data, error } = await client
       .from('datos_pedagogicos_nino')
@@ -172,13 +198,37 @@ describe('RLS datos_pedagogicos_nino — aislamiento entre centros y permisos', 
     expect((data ?? []).length).toBeGreaterThanOrEqual(1)
   })
 
-  it('tutor sin permiso puede_ver_datos_pedagogicos NO lee la fila', async () => {
+  it('tutor legal secundario SIN permiso TAMBIÉN lee la fila (D7: es_tutor_legal_de)', async () => {
+    // D7 (F11 3a): el tutor legal lee SIEMPRE los datos pedagógicos de su hijo (los
+    // rellena en el alta); `puede_ver_datos_pedagogicos` ya no le aplica. Solo gatea a
+    // `autorizado`. Antes de 3a este caso esperaba 0 filas — semántica derogada.
     const client = await clientFor(tutorSinPermiso)
     const { data, error } = await client
       .from('datos_pedagogicos_nino')
       .select('lactancia_estado')
       .eq('nino_id', ninoA.id)
     expect(error).toBeNull()
+    expect((data ?? []).length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('autorizado SIN permiso puede_ver_datos_pedagogicos NO lee la fila', async () => {
+    // El permiso SÍ gatea al rol `autorizado` (no es tutor legal → es_tutor_legal_de false).
+    const client = await clientFor(autorizadoSinPermiso)
+    const { data, error } = await client
+      .from('datos_pedagogicos_nino')
+      .select('lactancia_estado')
+      .eq('nino_id', ninoA.id)
+    expect(error).toBeNull()
     expect((data ?? []).length).toBe(0)
+  })
+
+  it('autorizado CON permiso puede_ver_datos_pedagogicos lee la fila', async () => {
+    const client = await clientFor(autorizadoConPermiso)
+    const { data, error } = await client
+      .from('datos_pedagogicos_nino')
+      .select('lactancia_estado')
+      .eq('nino_id', ninoA.id)
+    expect(error).toBeNull()
+    expect((data ?? []).length).toBeGreaterThanOrEqual(1)
   })
 })
