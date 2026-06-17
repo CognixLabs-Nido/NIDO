@@ -368,7 +368,8 @@
         "guardado": "Consentimiento actualizado."
       },
       "badge": {
-        "alta_en_curso": "Alta en curso"
+        "alta_en_curso": "Alta en curso",
+        "alta_pendiente_validacion": "Pendiente de validación"
       },
       "activar_matricula": {
         "ok": "Matrícula activada",
@@ -393,6 +394,22 @@
           "principal": "Tutor/a legal principal",
           "secundario": "Tutor/a legal secundario"
         }
+      },
+      "avance_alta": {
+        "titulo": "Avance del alta",
+        "estado": {
+          "pendiente": "Alta en curso",
+          "lista": "Pendiente de validación"
+        },
+        "items": {
+          "identidad": "Datos del niño",
+          "pedagogicos": "Datos pedagógicos",
+          "medico": "Datos médicos",
+          "imagen": "Autorización de imagen firmada"
+        },
+        "opcional": "opcional",
+        "activar_ayuda": "El tutor ha finalizado el alta. Revisa el avance y activa la matrícula.",
+        "pendiente_ayuda": "El tutor aún está completando el alta. Podrás activar cuando la finalice."
       }
     },
     "audit": {
@@ -636,8 +653,8 @@
       "ya_dada_de_baja": "Esta matrícula ya está dada de baja.",
       "misma_aula": "El niño ya está matriculado en esta aula.",
       "activar_failed": "No se pudo activar la matrícula.",
-      "no_pendiente": "La matrícula no está pendiente.",
-      "no_autorizado": "No tienes permiso para esta acción."
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "no_lista": "La matrícula no está lista para activar (el tutor aún no ha finalizado el alta)."
     }
   },
   "vinculo": {
@@ -2484,11 +2501,14 @@
     },
     "completado": {
       "titulo": "¡Alta completada!",
-      "texto": "Has completado los datos de {nombre}. La dirección del centro los revisará y activará la matrícula. Te avisaremos cuando esté lista."
+      "texto": "Has completado los datos de {nombre}. La dirección del centro los revisará y activará la matrícula. Te avisaremos cuando esté lista.",
+      "editar": "Revisar o editar"
     },
     "errors": {
       "no_autorizado": "No tienes permiso para esta acción.",
-      "consentimiento_fallo": "No se pudo registrar el consentimiento. Inténtalo de nuevo."
+      "consentimiento_fallo": "No se pudo registrar el consentimiento. Inténtalo de nuevo.",
+      "finalizar_fallo": "No se pudo finalizar el alta. Inténtalo de nuevo.",
+      "identidad_incompleta": "Completa primero los datos del niño (nombre y fecha de nacimiento)."
     }
   }
 }

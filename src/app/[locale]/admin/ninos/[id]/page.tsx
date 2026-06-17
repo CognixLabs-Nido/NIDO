@@ -33,7 +33,7 @@ import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { ExportButton } from '@/features/export/components/ExportButton'
-import { ActivarMatriculaButton } from '@/features/matriculas/components/ActivarMatriculaButton'
+import { AvanceAltaCard } from '@/features/matriculas/components/AvanceAltaCard'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
 import { NuevoRecordatorioContextual } from '@/features/recordatorios/components/NuevoRecordatorioContextual'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -71,6 +71,32 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const initials =
     (nino.nombre.charAt(0) + ((nino.apellidos ?? '').charAt(0) || '')).toUpperCase() || '?'
 
+  // Avance del alta (P3c) — solo relevante mientras la matrícula no está 'activa'.
+  const enAlta = matriculaActiva?.estado === 'pendiente' || matriculaActiva?.estado === 'lista'
+  let imagenFirmada = false
+  if (enAlta) {
+    const { data: autImg } = await supabase
+      .from('autorizaciones')
+      .select('id')
+      .eq('nino_id', id)
+      .eq('tipo', 'autorizacion_imagenes')
+      .eq('es_plantilla', false)
+      .limit(1)
+      .maybeSingle()
+    if (autImg) {
+      const { data: firma } = await supabase
+        .from('firmas_autorizacion')
+        .select('id')
+        .eq('autorizacion_id', autImg.id)
+        .eq('nino_id', id)
+        .eq('decision', 'firmado')
+        .limit(1)
+        .maybeSingle()
+      imagenFirmada = firma !== null
+    }
+  }
+  const medicoCompleto = !!info && Object.values(info).some((v) => v !== null && v !== '')
+
   return (
     <div className="space-y-6">
       <Link
@@ -95,10 +121,9 @@ export default async function NinoDetallePage({ params }: PageProps) {
           </p>
         </div>
         {matriculaActiva?.estado === 'pendiente' ? (
-          <div className="flex items-center gap-2">
-            <Badge variant="info">{t('badge.alta_en_curso')}</Badge>
-            <ActivarMatriculaButton matriculaId={matriculaActiva.id} />
-          </div>
+          <Badge variant="info">{t('badge.alta_en_curso')}</Badge>
+        ) : matriculaActiva?.estado === 'lista' ? (
+          <Badge variant="success">{t('badge.alta_pendiente_validacion')}</Badge>
         ) : (
           matriculaActiva && <Badge variant="warm">{matriculaActiva.aula_nombre}</Badge>
         )}
@@ -125,6 +150,17 @@ export default async function NinoDetallePage({ params }: PageProps) {
             redirector `/messages/nino/[id]` se conserva: profe lo usa
             desde NinoAgendaCard y family lo usa desde su ficha del niño. */}
       </header>
+
+      {enAlta && matriculaActiva && (
+        <AvanceAltaCard
+          estado={matriculaActiva.estado as 'pendiente' | 'lista'}
+          matriculaId={matriculaActiva.id}
+          identidad={Boolean(nino.apellidos && nino.fecha_nacimiento)}
+          pedagogicos={datosPed !== null}
+          medico={medicoCompleto}
+          imagen={imagenFirmada}
+        />
+      )}
 
       <Tabs defaultValue="personales">
         <TabsList>

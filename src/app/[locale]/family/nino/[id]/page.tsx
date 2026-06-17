@@ -8,11 +8,12 @@ import {
   MessageCircleIcon,
 } from 'lucide-react'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { primerNinoConAltaPendiente } from '@/features/alta/lib/gate-familia'
 import { createClient } from '@/lib/supabase/server'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
@@ -35,6 +36,11 @@ interface PageProps {
 export default async function FamilyNinoPage({ params, searchParams }: PageProps) {
   const { id, locale } = await params
   const { fecha: fechaQuery } = await searchParams
+
+  // Gate del panel (P3c): si hay un alta pendiente, al asistente (no a la ficha).
+  const ninoPendiente = await primerNinoConAltaPendiente()
+  if (ninoPendiente) redirect(`/${locale}/family/alta/${ninoPendiente}`)
+
   const t = await getTranslations('family.nino')
   const tNav = await getTranslations('family.nav')
   const tTabs = await getTranslations('family.nino.tabs')

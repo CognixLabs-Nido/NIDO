@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
@@ -8,6 +8,7 @@ import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-da
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
 
+import { AltaCompletadaScreen } from '@/features/alta/components/AltaCompletadaScreen'
 import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { pasoInicialAlta } from '@/features/alta/lib/estado-alta'
 
@@ -16,6 +17,7 @@ import type { ImagenPanelData, MedicaInicial } from '@/features/alta/lib/tipos'
 
 interface PageProps {
   params: Promise<{ locale: string; ninoId: string }>
+  searchParams: Promise<{ editar?: string }>
 }
 
 export const dynamic = 'force-dynamic'
@@ -34,8 +36,9 @@ export const dynamic = 'force-dynamic'
  * una action al entrar al paso, y `router.refresh()` re-ejecuta esta ruta para poblar el
  * panel (que así refleja el estado tras firmar).
  */
-export default async function AltaTutorPage({ params }: PageProps) {
+export default async function AltaTutorPage({ params, searchParams }: PageProps) {
   const { locale, ninoId } = await params
+  const { editar } = await searchParams
 
   const supabase = await createClient()
   const {
@@ -55,6 +58,30 @@ export default async function AltaTutorPage({ params }: PageProps) {
 
   const nino = await getNinoById(ninoId)
   if (!nino) notFound()
+
+  // Estado de la matrícula vigente → gate del flujo (Comportamiento 7):
+  //  - 'activa'  → ya validada por la dirección: al panel.
+  //  - 'lista'   → finalizada por el tutor, pendiente de validación: pantalla de cierre
+  //                (salvo ?editar=1, que reentra al wizard para corregir).
+  //  - resto ('pendiente'/sin matrícula) → wizard.
+  const { data: matricula } = await supabase
+    .from('matriculas')
+    .select('estado')
+    .eq('nino_id', ninoId)
+    .is('fecha_baja', null)
+    .is('deleted_at', null)
+    .maybeSingle()
+
+  if (matricula?.estado === 'activa') redirect(`/${locale}/family`)
+
+  if (matricula?.estado === 'lista' && editar !== '1') {
+    return (
+      <AltaCompletadaScreen
+        ninoNombre={nino.nombre}
+        editarHref={`/${locale}/family/alta/${ninoId}?editar=1`}
+      />
+    )
+  }
 
   const datosPed = await getDatosPedagogicos(ninoId)
   const datosPedagogicosInicial: DatosPedagogicosInput | null = datosPed

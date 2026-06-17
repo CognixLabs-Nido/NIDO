@@ -10,8 +10,9 @@ export interface NinoListItem {
   apellidos: string | null
   fecha_nacimiento: string | null
   aula_actual: string | null
-  /** estado de la matrícula vigente (fecha_baja IS NULL): 'pendiente' = esqueleto. */
-  estado_matricula: 'pendiente' | 'activa' | null
+  /** estado de la matrícula vigente (fecha_baja IS NULL): 'pendiente' = esqueleto a
+   *  medias; 'lista' = el tutor finalizó, pendiente de validación de la dirección. */
+  estado_matricula: 'pendiente' | 'lista' | 'activa' | null
 }
 
 /**
@@ -57,11 +58,12 @@ export async function getNinosPorCentro(centroId: string): Promise<NinoListItem[
     .is('deleted_at', null)
 
   const aulaPorNino = new Map<string, string>()
-  const estadoPorNino = new Map<string, 'pendiente' | 'activa'>()
+  const estadoPorNino = new Map<string, 'pendiente' | 'lista' | 'activa'>()
   for (const m of matriculas ?? []) {
     const nombre = extraerNombreAula(m.aulas)
     if (nombre) aulaPorNino.set(m.nino_id, nombre)
-    if (m.estado === 'pendiente' || m.estado === 'activa') estadoPorNino.set(m.nino_id, m.estado)
+    if (m.estado === 'pendiente' || m.estado === 'lista' || m.estado === 'activa')
+      estadoPorNino.set(m.nino_id, m.estado)
   }
 
   return ninos.map((n) => ({
@@ -131,7 +133,7 @@ export interface MatriculaItem {
   fecha_alta: string
   fecha_baja: string | null
   motivo_baja: string | null
-  estado: 'pendiente' | 'activa' | 'baja'
+  estado: 'pendiente' | 'lista' | 'activa' | 'baja'
 }
 
 export async function getMatriculasPorNino(ninoId: string): Promise<MatriculaItem[]> {

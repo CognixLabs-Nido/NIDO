@@ -78,6 +78,8 @@ export default async function AdminNinosPage({ params }: PageProps) {
                   <TableCell>
                     {n.estado_matricula === 'pendiente' ? (
                       <Badge variant="info">{t('badge.alta_en_curso')}</Badge>
+                    ) : n.estado_matricula === 'lista' ? (
+                      <Badge variant="success">{t('badge.alta_pendiente_validacion')}</Badge>
                     ) : n.aula_actual ? (
                       <Badge variant="warm">{n.aula_actual}</Badge>
                     ) : (
