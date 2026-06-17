@@ -2490,7 +2490,8 @@
       "cartilla_cambiar": "Change record",
       "cartilla_ayuda": "Image or photo of the record (JPG or PNG).",
       "cartilla_subida": "Record uploaded successfully",
-      "cartilla_ok": "Record saved"
+      "cartilla_ok": "Record saved",
+      "cartilla_ver": "View record"
     },
     "imagen": {
       "autorizacion_titulo": "Image authorisation",

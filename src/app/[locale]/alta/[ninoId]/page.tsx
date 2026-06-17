@@ -3,8 +3,10 @@ import { getTranslations } from 'next-intl/server'
 
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
+import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { createClient } from '@/lib/supabase/server'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
+import { firmarRutaCartilla } from '@/features/ninos/queries/get-cartilla'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
 
@@ -54,7 +56,17 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .eq('usuario_id', user.id)
     .is('deleted_at', null)
     .maybeSingle()
-  if (!vinculo) notFound()
+  if (!vinculo) {
+    // El usuario está autenticado (el proxy ya garantiza sesión) pero no es tutor de
+    // este niño: este flujo no es suyo. En vez de un `notFound()` —que para un admin/profe
+    // que teclea la URL parece un 404 de routing— lo devolvemos a su panel por rol. Sin
+    // rol conocido (caso anómalo) sí es notFound.
+    const centroId = await getCentroActualId()
+    const rol = centroId ? await getRolEnCentro(centroId) : null
+    if (rol === 'admin') redirect(`/${locale}/admin`)
+    if (rol === 'profe') redirect(`/${locale}/teacher`)
+    notFound()
+  }
 
   const nino = await getNinoById(ninoId)
   if (!nino) notFound()
@@ -130,6 +142,8 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .eq('nino_id', ninoId)
     .maybeSingle()
   const cartillaYaSubida = Boolean(ime?.cartilla_vacunas_path)
+  // Enlace firmado (~1 h) para ABRIR la cartilla y verificar el documento (lado tutor).
+  const cartillaUrl = await firmarRutaCartilla(ime?.cartilla_vacunas_path ?? null)
 
   // Foto actual del niño (enlace firmado ~1h) para SubirFotoNino.
   const foto = await firmarFotoNino(nino.foto_url)
@@ -205,6 +219,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         consintioDatosMedicos={consintioDatosMedicos}
         medicaInicial={medicaInicial}
         cartillaYaSubida={cartillaYaSubida}
+        cartillaUrl={cartillaUrl}
         fotoInicialUrl={foto.url ?? foto.urlMiniatura}
         imagenPanel={imagenPanel}
         imagenSinPlantilla={imagenSinPlantilla}

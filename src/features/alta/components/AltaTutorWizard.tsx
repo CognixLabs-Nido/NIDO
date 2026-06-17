@@ -28,6 +28,8 @@ interface Props {
   medicaInicial: MedicaInicial | null
   /** Ya hay una cartilla de vacunas persistida (la ruta la deriva de su path). */
   cartillaYaSubida: boolean
+  /** Enlace firmado de la cartilla para abrirla/verificarla; null si no hay. */
+  cartillaUrl: string | null
   fotoInicialUrl: string | null
   imagenPanel: ImagenPanelData | null
   imagenSinPlantilla: boolean
@@ -53,6 +55,7 @@ export function AltaTutorWizard({
   consintioDatosMedicos,
   medicaInicial,
   cartillaYaSubida,
+  cartillaUrl,
   fotoInicialUrl,
   imagenPanel,
   imagenSinPlantilla,
@@ -139,6 +142,7 @@ export function AltaTutorWizard({
             locale={locale}
             inicial={medicaInicial}
             cartillaYaSubida={cartillaYaSubida}
+            cartillaUrl={cartillaUrl}
             consintioDatosMedicos={consintio}
             onIrAConsentimientos={() => setStep(PASOS_ALTA.indexOf('consentimientos'))}
             onNext={goNext}

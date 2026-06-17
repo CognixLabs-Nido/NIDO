@@ -2490,7 +2490,8 @@
       "cartilla_cambiar": "Canviar cartilla",
       "cartilla_ayuda": "Imatge o foto de la cartilla (JPG o PNG).",
       "cartilla_subida": "Cartilla pujada correctament",
-      "cartilla_ok": "Cartilla guardada"
+      "cartilla_ok": "Cartilla guardada",
+      "cartilla_ver": "Veure cartilla"
     },
     "imagen": {
       "autorizacion_titulo": "Autorització d'imatge",
