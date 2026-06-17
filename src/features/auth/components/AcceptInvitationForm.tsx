@@ -3,7 +3,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 
@@ -54,7 +53,6 @@ interface Props {
 
 export function AcceptInvitationForm({ locale, token, email, requiereParentesco = false }: Props) {
   const t = useTranslations()
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [serverErrorKey, setServerErrorKey] = useState<string | null>(null)
 
@@ -93,8 +91,13 @@ export function AcceptInvitationForm({ locale, token, email, requiereParentesco 
           : result.data.primaryRole === 'profe'
             ? `/${locale}/teacher`
             : `/${locale}/family`
-      router.push(dashboard)
-      router.refresh()
+      // Navegación DURA (no router.push): el `signInWithPassword` corrió dentro de la
+      // server action y la cookie de sesión viaja en su respuesta. Sin middleware que
+      // sincronice la sesión a los Server Components, una navegación soft haría que el
+      // primer render del destino (p. ej. el gate de /family, P3c) no viera al usuario
+      // y se saltara el redirect al wizard. Un full-load garantiza que la request lleve
+      // la cookie. (El middleware `updateSession` queda como pieza dedicada aparte.)
+      window.location.assign(dashboard)
     })
   }
 
