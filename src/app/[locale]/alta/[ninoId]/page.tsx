@@ -78,7 +78,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     return (
       <AltaCompletadaScreen
         ninoNombre={nino.nombre}
-        editarHref={`/${locale}/family/alta/${ninoId}?editar=1`}
+        editarHref={`/${locale}/alta/${ninoId}?editar=1`}
       />
     )
   }

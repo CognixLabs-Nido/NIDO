@@ -87,7 +87,7 @@ export function PasoImagen({
       //  - entró sin ?editar  → la URL ya es limpia → `refresh` re-ejecuta el RSC.
       // Nunca ambas (replace+refresh juntas dejaban la transición colgada).
       if (searchParams.get('editar')) {
-        router.replace(`/${locale}/family/alta/${ninoId}`)
+        router.replace(`/${locale}/alta/${ninoId}`)
       } else {
         router.refresh()
       }

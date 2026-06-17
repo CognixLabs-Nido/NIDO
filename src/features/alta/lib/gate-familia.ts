@@ -8,7 +8,8 @@ import { createClient } from '@/lib/supabase/server'
  * NO está `'activa'`; o `null` si todas están activas / no aplica.
  *
  * Las páginas del panel (`/family`, `/family/nino/[id]`) redirigen a
- * `/family/alta/{ninoId}` mientras esto devuelva un id: el tutor no consume el panel
+ * `/{locale}/alta/{ninoId}` (layout focalizado, fuera de /family) mientras esto devuelva
+ * un id: el tutor no consume el panel
  * hasta que la dirección active la matrícula.
  *
  * **Bloqueo global** (arranque ANAIA): basta un hijo no-`activa` para gatear todo el

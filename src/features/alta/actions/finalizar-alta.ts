@@ -48,6 +48,6 @@ export async function finalizarAlta(ninoId: string): Promise<ActionResult<{ id: 
   // null (no había 'pendiente') = idempotente: ya estaba 'lista'/'activa' → éxito.
   // Revalida la ruta del alta (todas las locales) para que el RSC sirva la pantalla
   // "completado, pendiente de validación" tras una única navegación del cliente.
-  revalidatePath('/[locale]/family/alta/[ninoId]', 'page')
+  revalidatePath('/[locale]/alta/[ninoId]', 'page')
   return ok({ id: parsed.data })
 }

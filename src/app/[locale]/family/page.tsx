@@ -1,10 +1,8 @@
 import { BabyIcon } from 'lucide-react'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
-import { primerNinoConAltaPendiente } from '@/features/alta/lib/gate-familia'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
 import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
@@ -19,11 +17,8 @@ interface PageProps {
 export default async function FamilyDashboard({ params }: PageProps) {
   const { locale } = await params
 
-  // Gate del panel (P3c): mientras un hijo del que soy tutor legal no esté 'activa',
-  // el tutor va al asistente de alta, no al panel.
-  const ninoPendiente = await primerNinoConAltaPendiente()
-  if (ninoPendiente) redirect(`/${locale}/family/alta/${ninoPendiente}`)
-
+  // El gate del alta (P3c) vive ahora en `family/layout.tsx` → cubre todas las
+  // sub-rutas de /family; aquí no se duplica.
   const t = await getTranslations('family.dashboard')
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()

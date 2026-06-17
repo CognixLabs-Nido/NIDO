@@ -1,4 +1,5 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
+import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { FotoInvalidaError } from '@/features/fotos/lib/procesar-foto'
@@ -109,7 +110,12 @@ export async function POST(
   //    Verificable: el UPDATE debe afectar 1 fila. Si devuelve error O 0 filas
   //    (id que no casa, etc.) se hace rollback de los objetos y se falla — nunca
   //    dejar un objeto huérfano con `foto_url` NULL (bug F11 P3b-2).
-  const service = await createServiceClient()
+  //    Service role REAL (cookie-less): `createServiceClient` (cookie-bound) se
+  //    autentica como el TUTOR → su JWT prevalece sobre la service key y el UPDATE
+  //    de `ninos.foto_url` (admin-only en RLS) afecta 0 filas. La autorización
+  //    tutor↔niño ya está garantizada arriba: el SELECT de `ninos` (RLS) y la subida
+  //    al bucket (storage RLS `es_tutor_de([2]=ninoId)`, F10-3) impiden tocar otro niño.
+  const service = createServiceRoleClient()
   const { data: actualizado, error: updErr } = await service
     .from('ninos')
     .update({ foto_url: rutas.original })

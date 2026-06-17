@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { AgendaBadge } from '@/features/agenda/components/AgendaBadge'
 import { contarInvitacionesPendientes } from '@/features/agenda/queries/contar-invitaciones-pendientes'
+import { primerNinoConAltaPendiente } from '@/features/alta/lib/gate-familia'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
@@ -29,6 +30,14 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
   if (rol !== 'tutor_legal' && rol !== 'autorizado' && rol !== 'admin') {
     redirect(`/${locale}/forbidden`)
   }
+
+  // Gate del alta tutor-driven (P3c) a nivel de LAYOUT: cubre TODAS las sub-rutas de
+  // `/family/*` de una vez. Mientras un hijo del que soy tutor legal tenga matrícula
+  // no-`activa`, el tutor va al asistente de alta (`/[locale]/alta/[ninoId]`, fuera de
+  // este segmento → layout focalizado sin nav, sin bucle con este gate). admin /
+  // autorizado (sin vínculo tutor_legal) → null → sin redirect.
+  const ninoPendiente = await primerNinoConAltaPendiente()
+  if (ninoPendiente) redirect(`/${locale}/alta/${ninoPendiente}`)
 
   const user = await getCurrentUser()
   const centroLogo = await getCentroLogo(centroId)
