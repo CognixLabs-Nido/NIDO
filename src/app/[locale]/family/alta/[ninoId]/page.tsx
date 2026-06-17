@@ -1,14 +1,18 @@
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
+import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
+import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { createClient } from '@/lib/supabase/server'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
-import { getNinoById } from '@/features/ninos/queries/get-ninos'
+import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
+import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
 
 import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { pasoInicialAlta } from '@/features/alta/lib/estado-alta'
 
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
+import type { ImagenPanelData, MedicaInicial } from '@/features/alta/lib/tipos'
 
 interface PageProps {
   params: Promise<{ locale: string; ninoId: string }>
@@ -21,8 +25,14 @@ export const dynamic = 'force-dynamic'
  * pasos guardables y reanudables. Esta ruta server-side:
  *  1. verifica que el usuario es tutor del niño (vínculo activo; las RPCs/RLS de cada
  *     paso reenforzan `es_tutor_de`),
- *  2. pre-carga lo persistido (identidad, datos pedagógicos, consentimiento médico),
+ *  2. pre-carga lo persistido (identidad, datos pedagógicos, consentimiento médico,
+ *     info médica, foto, y el panel de firma de imagen si ya hay instancia),
  *  3. deriva el paso inicial (reanuda donde se dejó; único gate duro = identidad).
+ *
+ * La instancia de imagen NO se crea aquí (crearImagenAutorizacion llama revalidatePath,
+ * prohibido durante el render): solo se LEE. Si no existe, `PasoImagen` la instancia con
+ * una action al entrar al paso, y `router.refresh()` re-ejecuta esta ruta para poblar el
+ * panel (que así refleja el estado tras firmar).
  */
 export default async function AltaTutorPage({ params }: PageProps) {
   const { locale, ninoId } = await params
@@ -73,13 +83,65 @@ export default async function AltaTutorPage({ params }: PageProps) {
     .is('revocado_en', null)
     .limit(1)
     .maybeSingle()
+  const consintioDatosMedicos = consentMedico !== null
 
-  const estado = {
+  // Info médica descifrada (si el tutor tiene acceso de lectura; prefill del paso).
+  let medicaInicial: MedicaInicial | null = null
+  try {
+    medicaInicial = await getInfoMedica(ninoId)
+  } catch {
+    medicaInicial = null
+  }
+
+  // Foto actual del niño (enlace firmado ~1h) para SubirFotoNino.
+  const foto = await firmarFotoNino(nino.foto_url)
+
+  // Panel de firma de imagen: solo si YA existe la instancia (no se crea en render).
+  const { data: imagenInstancia } = await supabase
+    .from('autorizaciones')
+    .select('id')
+    .eq('nino_id', ninoId)
+    .eq('tipo', 'autorizacion_imagenes')
+    .eq('es_plantilla', false)
+    .eq('estado', 'publicada')
+    .limit(1)
+    .maybeSingle()
+
+  let imagenPanel: ImagenPanelData | null = null
+  if (imagenInstancia) {
+    const detalle = await getAutorizacionDetalle(imagenInstancia.id)
+    if (detalle) {
+      imagenPanel = {
+        autorizacionId: detalle.id,
+        firmable: detalle.firmable,
+        roster: detalle.roster,
+      }
+    }
+  }
+
+  // Sin instancia: ¿hay plantilla de imagen publicada? Si no, el paso se omite.
+  let imagenSinPlantilla = false
+  if (!imagenInstancia) {
+    const { data: plantilla } = await supabase
+      .from('autorizaciones')
+      .select('id')
+      .eq('centro_id', nino.centro_id)
+      .eq('tipo', 'autorizacion_imagenes')
+      .eq('es_plantilla', true)
+      .eq('estado', 'publicada')
+      .eq('texto_definitivo', true)
+      .limit(1)
+      .maybeSingle()
+    imagenSinPlantilla = plantilla === null
+  }
+
+  const perfil = await getCurrentUser()
+
+  const pasoInicial = pasoInicialAlta({
     identidadCompleta: Boolean(nino.apellidos && nino.fecha_nacimiento),
     pedagogicosCompletos: datosPed !== null,
-    consintioDatosMedicos: consentMedico !== null,
-  }
-  const pasoInicial = pasoInicialAlta(estado)
+    consintioDatosMedicos,
+  })
 
   const t = await getTranslations('alta')
 
@@ -92,6 +154,7 @@ export default async function AltaTutorPage({ params }: PageProps) {
       <AltaTutorWizard
         locale={locale}
         ninoId={ninoId}
+        ninoNombre={nino.nombre}
         pasoInicial={pasoInicial}
         identidadInicial={{
           apellidos: nino.apellidos,
@@ -101,7 +164,13 @@ export default async function AltaTutorPage({ params }: PageProps) {
           idioma_principal: nino.idioma_principal,
         }}
         datosPedagogicosInicial={datosPedagogicosInicial}
-        consintioDatosMedicos={estado.consintioDatosMedicos}
+        consintioDatosMedicos={consintioDatosMedicos}
+        medicaInicial={medicaInicial}
+        fotoInicialUrl={foto.url ?? foto.urlMiniatura}
+        imagenPanel={imagenPanel}
+        imagenSinPlantilla={imagenSinPlantilla}
+        currentUserId={user.id}
+        currentUserNombre={perfil?.nombreCompleto ?? ''}
       />
     </div>
   )

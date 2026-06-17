@@ -1,5 +1,6 @@
 'use client'
 
+import { CheckCircle2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 
@@ -10,41 +11,79 @@ import { DatosPedagogicosForm } from '@/features/datos-pedagogicos/components/Da
 import { PASOS_ALTA, type PasoAlta } from '../lib/estado-alta'
 import { PasoConsentimientos } from './PasoConsentimientos'
 import { PasoIdentidad, type IdentidadInicial } from './PasoIdentidad'
-import { PasoPlaceholder } from './PasoPlaceholder'
+import { PasoImagen } from './PasoImagen'
+import { PasoMedico } from './PasoMedico'
 
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
+import type { ImagenPanelData, MedicaInicial } from '../lib/tipos'
 
 interface Props {
   locale: string
   ninoId: string
+  ninoNombre: string
   /** Índice (0-based sobre PASOS_ALTA) en el que reanudar (lo deriva la ruta). */
   pasoInicial: number
   identidadInicial: IdentidadInicial
   datosPedagogicosInicial: DatosPedagogicosInput | null
   consintioDatosMedicos: boolean
+  medicaInicial: MedicaInicial | null
+  fotoInicialUrl: string | null
+  imagenPanel: ImagenPanelData | null
+  imagenSinPlantilla: boolean
+  currentUserId: string
+  currentUserNombre: string
 }
 
 /**
  * Pieza 3b-2 — wizard de alta del tutor. Stepper de 5 pasos; a diferencia del wizard
  * de admin (`NuevoNinoWizard`, un único submit), **cada paso persiste por su cuenta**
- * (guardable/reanudable). En 3b-2a los pasos médico e imagen son placeholders; 3b-2b
- * los sustituye por la ficha médica + cartilla y la firma de imagen + foto.
+ * (guardable/reanudable). 3b-2b completa los pasos pesados (médico + imagen/foto) y la
+ * pantalla final "completado, pendiente de validación" (la activación de la matrícula
+ * es 3c — aquí no se toca).
  */
 export function AltaTutorWizard({
   locale,
   ninoId,
+  ninoNombre,
   pasoInicial,
   identidadInicial,
   datosPedagogicosInicial,
   consintioDatosMedicos,
+  medicaInicial,
+  fotoInicialUrl,
+  imagenPanel,
+  imagenSinPlantilla,
+  currentUserId,
+  currentUserNombre,
 }: Props) {
   const t = useTranslations('alta')
   const total = PASOS_ALTA.length
   const [step, setStep] = useState<number>(Math.min(Math.max(pasoInicial, 0), total - 1))
+  // El consentimiento médico se liftea al shell: el paso médico lo necesita como gate.
+  const [consintio, setConsintio] = useState(consintioDatosMedicos)
+  const [finalizado, setFinalizado] = useState(false)
 
   const paso: PasoAlta = PASOS_ALTA[step]
   const goNext = () => setStep((s) => Math.min(s + 1, total - 1))
   const goBack = () => setStep((s) => Math.max(s - 1, 0))
+
+  if (finalizado) {
+    return (
+      <Card className="mx-auto max-w-2xl">
+        <CardContent className="space-y-3 py-10 text-center">
+          <CheckCircle2Icon
+            className="text-success-700 mx-auto size-12"
+            strokeWidth={1.75}
+            aria-hidden
+          />
+          <h2 className="text-h3">{t('completado.titulo')}</h2>
+          <p className="text-muted-foreground mx-auto max-w-md text-sm">
+            {t('completado.texto', { nombre: ninoNombre })}
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card className="mx-auto max-w-2xl">
@@ -98,17 +137,39 @@ export function AltaTutorWizard({
 
         {paso === 'consentimientos' && (
           <PasoConsentimientos
-            consintioInicial={consintioDatosMedicos}
+            consintioInicial={consintio}
+            onConsentir={() => setConsintio(true)}
             onNext={goNext}
             onBack={goBack}
           />
         )}
 
         {paso === 'medico' && (
-          <PasoPlaceholder texto={t('placeholder.medico')} onNext={goNext} onBack={goBack} />
+          <PasoMedico
+            ninoId={ninoId}
+            locale={locale}
+            inicial={medicaInicial}
+            consintioDatosMedicos={consintio}
+            onIrAConsentimientos={() => setStep(PASOS_ALTA.indexOf('consentimientos'))}
+            onNext={goNext}
+            onBack={goBack}
+          />
         )}
 
-        {paso === 'imagen' && <PasoPlaceholder texto={t('placeholder.imagen')} onBack={goBack} />}
+        {paso === 'imagen' && (
+          <PasoImagen
+            ninoId={ninoId}
+            locale={locale}
+            ninoNombre={ninoNombre}
+            panel={imagenPanel}
+            sinPlantilla={imagenSinPlantilla}
+            fotoInicialUrl={fotoInicialUrl}
+            currentUserId={currentUserId}
+            currentUserNombre={currentUserNombre}
+            onBack={goBack}
+            onFinalizar={() => setFinalizado(true)}
+          />
+        )}
       </CardContent>
     </Card>
   )

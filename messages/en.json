@@ -2441,6 +2441,7 @@
       "progress": "Enrolment progress",
       "siguiente": "Next",
       "atras": "Back",
+      "finalizar": "Finish",
       "guardando": "Saving...",
       "guardar_siguiente": "Save and continue",
       "paso": {
@@ -2462,9 +2463,28 @@
       "concedido": "Consent granted",
       "imagen_nota": "Image use consent is recorded later, when you sign the image authorisation."
     },
-    "placeholder": {
-      "medico": "The medical record and vaccination card are completed in the next step (coming soon).",
-      "imagen": "The image authorisation and photo are completed in the last step (coming soon)."
+    "medico": {
+      "guardado": "Medical details saved",
+      "requiere_consentimiento": "To fill in the medical details you first need to grant the medical data consent.",
+      "ir_a_consentimientos": "Go to consents",
+      "omitir": "Skip for now",
+      "cartilla_titulo": "Vaccination record",
+      "cartilla_subir": "Upload record",
+      "cartilla_cambiar": "Change record",
+      "cartilla_ayuda": "Image or photo of the record (JPG or PNG).",
+      "cartilla_subida": "Record uploaded successfully",
+      "cartilla_ok": "Record saved"
+    },
+    "imagen": {
+      "autorizacion_titulo": "Image authorisation",
+      "sin_plantilla": "The centre does not have an image authorisation template yet. This step will be completed later.",
+      "cargar": "Load image authorisation",
+      "cargar_ayuda": "Prepare the image authorisation to review and sign it.",
+      "foto_titulo": "Child's photo"
+    },
+    "completado": {
+      "titulo": "Enrolment complete!",
+      "texto": "You have completed {nombre}'s details. The centre will review them and activate the enrolment. We'll let you know when it's ready."
     },
     "errors": {
       "no_autorizado": "You don't have permission for this action.",

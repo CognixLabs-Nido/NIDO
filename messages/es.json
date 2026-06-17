@@ -2441,6 +2441,7 @@
       "progress": "Progreso del alta",
       "siguiente": "Siguiente",
       "atras": "Anterior",
+      "finalizar": "Finalizar",
       "guardando": "Guardando...",
       "guardar_siguiente": "Guardar y continuar",
       "paso": {
@@ -2462,9 +2463,28 @@
       "concedido": "Consentimiento concedido",
       "imagen_nota": "El consentimiento de uso de imagen se registra más adelante, al firmar la autorización de imagen."
     },
-    "placeholder": {
-      "medico": "La ficha médica y la cartilla de vacunas se completan en el siguiente paso (disponible en breve).",
-      "imagen": "La autorización de imagen y la foto se completan en el último paso (disponible en breve)."
+    "medico": {
+      "guardado": "Datos médicos guardados",
+      "requiere_consentimiento": "Para rellenar los datos médicos necesitas otorgar antes el consentimiento de datos médicos.",
+      "ir_a_consentimientos": "Ir a consentimientos",
+      "omitir": "Omitir por ahora",
+      "cartilla_titulo": "Cartilla de vacunas",
+      "cartilla_subir": "Subir cartilla",
+      "cartilla_cambiar": "Cambiar cartilla",
+      "cartilla_ayuda": "Imagen o foto de la cartilla (JPG o PNG).",
+      "cartilla_subida": "Cartilla subida correctamente",
+      "cartilla_ok": "Cartilla guardada"
+    },
+    "imagen": {
+      "autorizacion_titulo": "Autorización de imagen",
+      "sin_plantilla": "El centro aún no tiene una plantilla de autorización de imagen. Este paso se completará más adelante.",
+      "cargar": "Cargar autorización de imagen",
+      "cargar_ayuda": "Prepara la autorización de imagen para revisarla y firmarla.",
+      "foto_titulo": "Foto del niño"
+    },
+    "completado": {
+      "titulo": "¡Alta completada!",
+      "texto": "Has completado los datos de {nombre}. La dirección del centro los revisará y activará la matrícula. Te avisaremos cuando esté lista."
     },
     "errors": {
       "no_autorizado": "No tienes permiso para esta acción.",
