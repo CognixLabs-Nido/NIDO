@@ -2441,6 +2441,7 @@
       "progress": "Progrés de la matrícula",
       "siguiente": "Següent",
       "atras": "Anterior",
+      "finalizar": "Finalitzar",
       "guardando": "Guardant...",
       "guardar_siguiente": "Guarda i continua",
       "paso": {
@@ -2462,9 +2463,28 @@
       "concedido": "Consentiment concedit",
       "imagen_nota": "El consentiment d'ús d'imatge es registra més avant, en signar l'autorització d'imatge."
     },
-    "placeholder": {
-      "medico": "La fitxa mèdica i la cartilla de vacunes es completen en el pas següent (disponible en breu).",
-      "imagen": "L'autorització d'imatge i la foto es completen en l'últim pas (disponible en breu)."
+    "medico": {
+      "guardado": "Dades mèdiques guardades",
+      "requiere_consentimiento": "Per a omplir les dades mèdiques necessites atorgar abans el consentiment de dades mèdiques.",
+      "ir_a_consentimientos": "Anar a consentiments",
+      "omitir": "Ometre per ara",
+      "cartilla_titulo": "Cartilla de vacunes",
+      "cartilla_subir": "Pujar cartilla",
+      "cartilla_cambiar": "Canviar cartilla",
+      "cartilla_ayuda": "Imatge o foto de la cartilla (JPG o PNG).",
+      "cartilla_subida": "Cartilla pujada correctament",
+      "cartilla_ok": "Cartilla guardada"
+    },
+    "imagen": {
+      "autorizacion_titulo": "Autorització d'imatge",
+      "sin_plantilla": "El centre encara no té una plantilla d'autorització d'imatge. Este pas es completarà més avant.",
+      "cargar": "Carregar autorització d'imatge",
+      "cargar_ayuda": "Prepara l'autorització d'imatge per a revisar-la i signar-la.",
+      "foto_titulo": "Foto del xiquet"
+    },
+    "completado": {
+      "titulo": "Matrícula completada!",
+      "texto": "Has completat les dades de {nombre}. La direcció del centre les revisarà i activarà la matrícula. T'avisarem quan estiga llesta."
     },
     "errors": {
       "no_autorizado": "No tens permís per a esta acció.",

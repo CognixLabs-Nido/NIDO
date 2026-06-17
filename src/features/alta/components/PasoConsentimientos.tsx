@@ -11,6 +11,8 @@ import { registrarConsentimientoTutor } from '../actions/registrar-consentimient
 
 interface Props {
   consintioInicial: boolean
+  /** Avisa al shell del wizard para que el paso médico desbloquee el gate. */
+  onConsentir: () => void
   onNext: () => void
   onBack: () => void
 }
@@ -22,7 +24,7 @@ interface Props {
  * aquí: se materializa al FIRMAR la autorización de imagen (paso posterior). Es
  * opcional: si el tutor no lo otorga, simplemente no podrá completar el paso médico.
  */
-export function PasoConsentimientos({ consintioInicial, onNext, onBack }: Props) {
+export function PasoConsentimientos({ consintioInicial, onConsentir, onNext, onBack }: Props) {
   const t = useTranslations('alta')
   const tErrors = useTranslations()
   const [consintio, setConsintio] = useState(consintioInicial)
@@ -33,6 +35,7 @@ export function PasoConsentimientos({ consintioInicial, onNext, onBack }: Props)
       const r = await registrarConsentimientoTutor({ tipo: 'datos_medicos' })
       if (r.success) {
         setConsintio(true)
+        onConsentir()
         toast.success(t('consentimientos.otorgado'))
       } else {
         toast.error(tErrors(r.error))
