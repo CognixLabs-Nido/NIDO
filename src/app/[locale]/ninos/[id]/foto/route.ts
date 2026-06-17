@@ -106,16 +106,21 @@ export async function POST(
   }
 
   // 3. Service role tras autorizar: actualiza foto_url + limpia la foto anterior.
+  //    Verificable: el UPDATE debe afectar 1 fila. Si devuelve error O 0 filas
+  //    (id que no casa, etc.) se hace rollback de los objetos y se falla — nunca
+  //    dejar un objeto huérfano con `foto_url` NULL (bug F11 P3b-2).
   const service = await createServiceClient()
-  const { error: updErr } = await service
+  const { data: actualizado, error: updErr } = await service
     .from('ninos')
     .update({ foto_url: rutas.original })
     .eq('id', nino.id)
-  if (updErr) {
+    .select('id')
+    .maybeSingle()
+  if (updErr || !actualizado) {
     await borrarObjetosBucket(service, BUCKET_NINOS_FOTOS, [rutas.original, rutas.miniatura]).catch(
       () => undefined
     )
-    logger.warn('ninos/foto: update foto_url', updErr.message)
+    logger.warn('ninos/foto: update foto_url', updErr?.message ?? 'sin fila afectada')
     return err('fotos.errors.subida_fallo', 500)
   }
   if (nino.foto_url && nino.foto_url !== rutas.original) {

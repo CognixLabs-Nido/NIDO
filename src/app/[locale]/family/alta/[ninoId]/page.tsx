@@ -120,6 +120,17 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     medicaInicial = null
   }
 
+  // ¿Hay cartilla ya subida? Su path NO va en la RPC de descifrado; lo leemos directo
+  // (columna en claro; la RLS `ime_tutor_select` lo permite al tutor con
+  // `puede_ver_info_medica`). Boolean → SubirCartilla muestra "ya subida" (no se
+  // previsualiza el documento sensible, así que no hace falta firmar la URL).
+  const { data: ime } = await supabase
+    .from('info_medica_emergencia')
+    .select('cartilla_vacunas_path')
+    .eq('nino_id', ninoId)
+    .maybeSingle()
+  const cartillaYaSubida = Boolean(ime?.cartilla_vacunas_path)
+
   // Foto actual del niño (enlace firmado ~1h) para SubirFotoNino.
   const foto = await firmarFotoNino(nino.foto_url)
 
@@ -193,6 +204,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         datosPedagogicosInicial={datosPedagogicosInicial}
         consintioDatosMedicos={consintioDatosMedicos}
         medicaInicial={medicaInicial}
+        cartillaYaSubida={cartillaYaSubida}
         fotoInicialUrl={foto.url ?? foto.urlMiniatura}
         imagenPanel={imagenPanel}
         imagenSinPlantilla={imagenSinPlantilla}

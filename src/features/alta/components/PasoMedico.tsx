@@ -21,6 +21,8 @@ interface Props {
   ninoId: string
   locale: string
   inicial: MedicaInicial | null
+  /** Ya hay una cartilla persistida → SubirCartilla muestra el estado "ya subida". */
+  cartillaYaSubida: boolean
   /** Gate: la RPC médica y el bucket cartilla exigen consentimiento `datos_medicos`. */
   consintioDatosMedicos: boolean
   onIrAConsentimientos: () => void
@@ -38,6 +40,7 @@ export function PasoMedico({
   ninoId,
   locale,
   inicial,
+  cartillaYaSubida,
   consintioDatosMedicos,
   onIrAConsentimientos,
   onNext,
@@ -130,7 +133,7 @@ export function PasoMedico({
 
         <div className="space-y-1.5 border-t pt-3">
           <p className="text-sm font-medium">{t('medico.cartilla_titulo')}</p>
-          <SubirCartilla ninoId={ninoId} locale={locale} yaSubida={false} />
+          <SubirCartilla ninoId={ninoId} locale={locale} yaSubida={cartillaYaSubida} />
         </div>
 
         <div className="flex justify-between border-t pt-4">

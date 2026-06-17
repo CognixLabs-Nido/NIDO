@@ -26,6 +26,8 @@ interface Props {
   datosPedagogicosInicial: DatosPedagogicosInput | null
   consintioDatosMedicos: boolean
   medicaInicial: MedicaInicial | null
+  /** Ya hay una cartilla de vacunas persistida (la ruta la deriva de su path). */
+  cartillaYaSubida: boolean
   fotoInicialUrl: string | null
   imagenPanel: ImagenPanelData | null
   imagenSinPlantilla: boolean
@@ -50,6 +52,7 @@ export function AltaTutorWizard({
   datosPedagogicosInicial,
   consintioDatosMedicos,
   medicaInicial,
+  cartillaYaSubida,
   fotoInicialUrl,
   imagenPanel,
   imagenSinPlantilla,
@@ -95,7 +98,12 @@ export function AltaTutorWizard({
       </CardHeader>
       <CardContent>
         {paso === 'identidad' && (
-          <PasoIdentidad ninoId={ninoId} inicial={identidadInicial} onNext={goNext} />
+          <PasoIdentidad
+            ninoId={ninoId}
+            ninoNombre={ninoNombre}
+            inicial={identidadInicial}
+            onNext={goNext}
+          />
         )}
 
         {paso === 'pedagogicos' && (
@@ -130,6 +138,7 @@ export function AltaTutorWizard({
             ninoId={ninoId}
             locale={locale}
             inicial={medicaInicial}
+            cartillaYaSubida={cartillaYaSubida}
             consintioDatosMedicos={consintio}
             onIrAConsentimientos={() => setStep(PASOS_ALTA.indexOf('consentimientos'))}
             onNext={goNext}

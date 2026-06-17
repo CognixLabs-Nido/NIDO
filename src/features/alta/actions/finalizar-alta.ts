@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { createClient } from '@/lib/supabase/server'
@@ -45,5 +46,8 @@ export async function finalizarAlta(ninoId: string): Promise<ActionResult<{ id: 
   }
 
   // null (no había 'pendiente') = idempotente: ya estaba 'lista'/'activa' → éxito.
+  // Revalida la ruta del alta (todas las locales) para que el RSC sirva la pantalla
+  // "completado, pendiente de validación" tras una única navegación del cliente.
+  revalidatePath('/[locale]/family/alta/[ninoId]', 'page')
   return ok({ id: parsed.data })
 }

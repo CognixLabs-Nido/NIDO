@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
@@ -52,6 +52,7 @@ export function PasoImagen({
   const t = useTranslations('alta')
   const tErrors = useTranslations()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [pending, startTransition] = useTransition()
   const [finalizando, startFinalizar] = useTransition()
   const [omitido, setOmitido] = useState(false)
@@ -79,10 +80,17 @@ export function PasoImagen({
         toast.error(tErrors(r.error))
         return
       }
-      // Matrícula → 'lista'. Navega a la ruta limpia (sin ?editar): mostrará la
-      // pantalla "completado, pendiente de validación".
-      router.replace(`/${locale}/family/alta/${ninoId}`)
-      router.refresh()
+      // Matrícula → 'lista'. `finalizarAlta` ya revalidó el RSC server-side; aquí UNA
+      // sola navegación (espeja `instanciar()`, que sí funciona) para terminar SIEMPRE
+      // en la pantalla "completado, pendiente de validación" con URL limpia:
+      //  - entró con ?editar=1 → `replace` a la URL sin query (la ruta sirve la pantalla).
+      //  - entró sin ?editar  → la URL ya es limpia → `refresh` re-ejecuta el RSC.
+      // Nunca ambas (replace+refresh juntas dejaban la transición colgada).
+      if (searchParams.get('editar')) {
+        router.replace(`/${locale}/family/alta/${ninoId}`)
+      } else {
+        router.refresh()
+      }
     })
   }
 
