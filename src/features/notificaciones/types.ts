@@ -121,4 +121,11 @@ export interface AvisosInicio {
    * no hay pendientes / no es redactora. Solo la profe (admin y familia: `null`).
    */
   campanaPendientes: CampanaPendientesAviso | null
+  /**
+   * Admin: matrículas en estado `'lista'` de su centro — altas que el tutor ya
+   * finalizó y esperan la validación del director (cola de validación). El count se
+   * calcula en el dashboard admin (la RLS `matriculas_admin_all` acota al centro) y
+   * se inyecta aquí; para profe/familia es 0.
+   */
+  altasPendientesValidar: number
 }

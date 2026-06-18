@@ -306,6 +306,15 @@
       "ver": "Ver",
       "empty": "Sin niños todavía. Crea el primero.",
       "sin_matricula_activa": "Sin matrícula activa",
+      "filtro": {
+        "activo": "Mostrando: {estado}",
+        "quitar": "Ver todos",
+        "estado": {
+          "pendiente": "Altas en curso",
+          "lista": "Altas pendientes de validar",
+          "activa": "Matrícula activa"
+        }
+      },
       "nuevo_sin_aulas": "Necesitas al menos un aula creada antes de registrar un niño.",
       "created": "Niño registrado correctamente",
       "wizard": {
@@ -1985,7 +1994,8 @@
       "fotos_nuevas": "{n, plural, one {Hay # publicación nueva en el blog del aula} other {Hay # publicaciones nuevas en el blog del aula}}",
       "campana_pendientes": "{n, plural, one {Te queda # informe por completar} other {Te quedan # informes por completar}} · vence el {fecha}",
       "campana_urgente": "{n, plural, one {# informe pendiente} other {# informes pendientes}} · vence el {fecha}",
-      "campana_vencida": "{n, plural, one {# informe pendiente} other {# informes pendientes}} · venció el {fecha}"
+      "campana_vencida": "{n, plural, one {# informe pendiente} other {# informes pendientes}} · venció el {fecha}",
+      "altas_pendientes_validar": "{n, plural, one {# alta pendiente de validar} other {# altas pendientes de validar}}"
     },
     "errors": {
       "no_autorizado": "No autorizado.",

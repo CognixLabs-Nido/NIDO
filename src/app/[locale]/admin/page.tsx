@@ -44,7 +44,15 @@ export default async function AdminDashboard({ params }: PageProps) {
   const user = await getCurrentUser()
   const fecha = hoyMadrid()
 
-  const [aulasResp, ninosResp, usuariosResp, cursoActivo, resumenAsistencia] = await Promise.all([
+  const [
+    aulasResp,
+    ninosResp,
+    usuariosResp,
+    altasListaResp,
+    cursoActivo,
+    resumenAsistencia,
+    avisosBase,
+  ] = await Promise.all([
     supabase
       .from('aulas')
       .select('id', { count: 'exact', head: true })
@@ -60,15 +68,24 @@ export default async function AdminDashboard({ params }: PageProps) {
       .select('usuario_id', { count: 'exact', head: true })
       .eq('centro_id', centroId)
       .is('deleted_at', null),
+    // Matrículas en 'lista' = altas finalizadas por el tutor, pendientes de validar.
+    // La RLS `matriculas_admin_all` acota al centro del admin (sin filtro extra).
+    supabase
+      .from('matriculas')
+      .select('id', { count: 'exact', head: true })
+      .eq('estado', 'lista')
+      .is('fecha_baja', null)
+      .is('deleted_at', null),
     getCursoActivo(centroId),
     getResumenAsistenciaCentro(fecha),
+    getAvisosInicio('admin'),
   ])
 
   const aulasCount = aulasResp.count ?? 0
   const ninosCount = ninosResp.count ?? 0
   const usuariosCount = usuariosResp.count ?? 0
   const firstName = (user?.nombreCompleto ?? '').split(' ')[0]
-  const avisos = await getAvisosInicio('admin')
+  const avisos = { ...avisosBase, altasPendientesValidar: altasListaResp.count ?? 0 }
 
   return (
     <div className="space-y-8">
