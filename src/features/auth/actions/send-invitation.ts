@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getAppUrl } from '@/shared/lib/app-url'
 import { logger } from '@/shared/lib/logger'
 
 import { sendInvitationSchema, type SendInvitationInput } from '../schemas/invitation'
@@ -108,8 +109,7 @@ export async function sendInvitation(
 
   if (!invitation) return fail('auth.invitation.errors.lookup_failed')
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const redirectTo = `${appUrl}/${locale}/invitation/${invitation.token}`
+  const redirectTo = `${getAppUrl()}/${locale}/invitation/${invitation.token}`
 
   const { error: emailError } = await service.auth.admin.inviteUserByEmail(parsed.data.email, {
     redirectTo,
