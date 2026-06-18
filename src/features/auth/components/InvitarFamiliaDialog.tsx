@@ -103,26 +103,36 @@ export function InvitarFamiliaDialog({ locale, aulas }: Props) {
             <FormField
               control={form.control}
               name="aulaId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('fields.aula')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || undefined}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('fields.aula_placeholder')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {aulas.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                // base-ui necesita `items` para que el trigger (SelectValue) resuelva el
+                // label del aula seleccionada; sin esto pintaba el UUID crudo (espejo de
+                // NuevoNinoWizard).
+                const aulaItems = aulas.map((a) => ({ value: a.id, label: a.nombre }))
+                return (
+                  <FormItem>
+                    <FormLabel>{t('fields.aula')}</FormLabel>
+                    <Select
+                      items={aulaItems}
+                      onValueChange={field.onChange}
+                      value={field.value || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('fields.aula_placeholder')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {aulaItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
             />
             <FormField
               control={form.control}
@@ -140,27 +150,34 @@ export function InvitarFamiliaDialog({ locale, aulas }: Props) {
             <FormField
               control={form.control}
               name="tipoVinculo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('fields.tipo_vinculo')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="tutor_legal_principal">
-                        {t('tipo_vinculo.principal')}
-                      </SelectItem>
-                      <SelectItem value="tutor_legal_secundario">
-                        {t('tipo_vinculo.secundario')}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                // Igual que el aula: `items` con labels traducidos para que el trigger no
+                // pinte el value crudo ('tutor_legal_principal').
+                const tipoItems = [
+                  { value: 'tutor_legal_principal', label: t('tipo_vinculo.principal') },
+                  { value: 'tutor_legal_secundario', label: t('tipo_vinculo.secundario') },
+                ]
+                return (
+                  <FormItem>
+                    <FormLabel>{t('fields.tipo_vinculo')}</FormLabel>
+                    <Select items={tipoItems} onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {tipoItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
             />
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
