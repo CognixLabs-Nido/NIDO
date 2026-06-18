@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getAppUrl } from '@/shared/lib/app-url'
 import { logger } from '@/shared/lib/logger'
 
 import {
@@ -19,9 +20,8 @@ export async function requestPasswordReset(
   if (!parsed.success) return ok(undefined)
 
   const supabase = await createClient()
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${appUrl}/${locale}/reset-password`,
+    redirectTo: `${getAppUrl()}/${locale}/reset-password`,
   })
 
   if (error) {
