@@ -1,5 +1,7 @@
 'use server'
 
+import { redirect } from 'next/navigation'
+
 import { getRequestContext } from '@/features/autorizaciones/lib/request-context'
 import { parentescoEnum, permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createClient } from '@/lib/supabase/server'
@@ -62,9 +64,15 @@ async function crearVinculoAutomatico(
 }
 
 // Acepta invitación para un email nuevo (flujo B2): crea usuario, login automático.
+// En ÉXITO redirige server-side al panel (ya NO devuelve datos para navegar en cliente):
+// con `updateSession` en el proxy, el middleware refresca/propaga la cookie de sesión
+// recién creada por `signInWithPassword`, así que el gate del destino (P3c en /family →
+// /alta) ya ve al tutor. Sustituye al band-aid `window.location.assign` (4910fbc) y mata
+// el flash "enlace inválido" (la ruta token ya no se re-renderiza tras la mutación).
 export async function acceptInvitation(
-  input: AcceptInvitationInput
-): Promise<ActionResult<{ userId: string; primaryRole: string }>> {
+  input: AcceptInvitationInput,
+  locale: string = 'es'
+): Promise<ActionResult<never>> {
   const parsed = acceptInvitationSchema.safeParse(input)
   if (!parsed.success) {
     const first = parsed.error.issues[0]?.message ?? 'auth.validation.invalid'
@@ -217,7 +225,17 @@ export async function acceptInvitation(
     logger.warn('signIn tras accept-invitation falló', signInErr.message)
   }
 
-  return ok({ userId, primaryRole: invitation.rol_objetivo })
+  // Navegación server-side (no cliente): el proxy con updateSession garantiza que la
+  // cookie viaje al destino. Mismo mapeo por rol que tenía el cliente (admin→/admin,
+  // profe→/teacher, familia→/family; el gate P3c reenvía al tutor a /alta).
+  redirect(dashboardPorRol(locale, invitation.rol_objetivo))
+}
+
+/** Panel inicial según el rol objetivo de la invitación. */
+function dashboardPorRol(locale: string, rolObjetivo: string): string {
+  if (rolObjetivo === 'admin') return `/${locale}/admin`
+  if (rolObjetivo === 'profe') return `/${locale}/teacher`
+  return `/${locale}/family`
 }
 
 // Acepta una invitación pendiente para un usuario YA autenticado (flujo B8).

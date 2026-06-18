@@ -8,6 +8,7 @@ import { AcceptInvitationForm } from '@/features/auth/components/AcceptInvitatio
 import { notifyExistingAccountInvitation } from '@/features/auth/actions/accept-invitation'
 import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
 import { debeMostrarB8 } from '@/features/auth/lib/clasificar-cuenta'
+import { createClient } from '@/lib/supabase/server'
 import { AuthShell } from '@/shared/components/AuthShell'
 
 interface PageProps {
@@ -29,12 +30,26 @@ export default async function InvitationPage({ params }: PageProps) {
     .eq('token', token)
     .maybeSingle()
 
-  if (
-    !invitation ||
-    invitation.accepted_at ||
-    invitation.rejected_at ||
-    new Date(invitation.expires_at) < new Date()
-  ) {
+  if (!invitation) redirect(`/${locale}/invitation/expired`)
+
+  const caducada = new Date(invitation.expires_at) < new Date()
+  const yaUsada = Boolean(invitation.accepted_at || invitation.rejected_at)
+
+  if (yaUsada || caducada) {
+    // Defensivo (C): si el enlace YA se usó (aceptado, no caducado) y quien lo re-pulsa es
+    // el PROPIO invitado con sesión válida (email de sesión == email de la invitación),
+    // mándalo a su panel en vez de a "enlace inválido" —que confunde al usuario legítimo
+    // que vuelve a clicar el correo—. Cualquier otro caso (caducado, rechazado, sin sesión
+    // o sesión de otra cuenta) sigue yendo a /expired.
+    if (invitation.accepted_at && !caducada) {
+      const userClient = await createClient()
+      const {
+        data: { user },
+      } = await userClient.auth.getUser()
+      if (user?.email && user.email.toLowerCase() === invitation.email.toLowerCase()) {
+        redirect(dashboardPorRol(locale, invitation.rol_objetivo))
+      }
+    }
     redirect(`/${locale}/invitation/expired`)
   }
 
@@ -143,6 +158,13 @@ function ExistingAccountNotice({ locale, email }: { locale: string; email: strin
       </Card>
     </AuthShell>
   )
+}
+
+/** Panel inicial según el rol objetivo de la invitación (espejo de la action). */
+function dashboardPorRol(locale: string, rolObjetivo: string): string {
+  if (rolObjetivo === 'admin') return `/${locale}/admin`
+  if (rolObjetivo === 'profe') return `/${locale}/teacher`
+  return `/${locale}/family`
 }
 
 function obfuscateEmail(email: string): string {

@@ -80,24 +80,13 @@ export function AcceptInvitationForm({ locale, token, email, requiereParentesco 
       return
     }
     startTransition(async () => {
-      const result = await acceptInvitation(values)
+      // En ÉXITO la propia Server Action redirige server-side (el proxy con updateSession
+      // propaga la cookie de sesión al destino → el gate P3c de /family reenvía a /alta),
+      // así que el código de aquí solo se ejecuta en caso de error.
+      const result = await acceptInvitation(values, locale)
       if (!result.success) {
         setServerErrorKey(result.error)
-        return
       }
-      const dashboard =
-        result.data.primaryRole === 'admin'
-          ? `/${locale}/admin`
-          : result.data.primaryRole === 'profe'
-            ? `/${locale}/teacher`
-            : `/${locale}/family`
-      // Navegación DURA (no router.push): el `signInWithPassword` corrió dentro de la
-      // server action y la cookie de sesión viaja en su respuesta. Sin middleware que
-      // sincronice la sesión a los Server Components, una navegación soft haría que el
-      // primer render del destino (p. ej. el gate de /family, P3c) no viera al usuario
-      // y se saltara el redirect al wizard. Un full-load garantiza que la request lleve
-      // la cookie. (El middleware `updateSession` queda como pieza dedicada aparte.)
-      window.location.assign(dashboard)
     })
   }
 
