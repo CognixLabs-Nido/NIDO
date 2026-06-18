@@ -368,7 +368,8 @@
         "guardado": "Consent updated."
       },
       "badge": {
-        "alta_en_curso": "In progress"
+        "alta_en_curso": "In progress",
+        "alta_pendiente_validacion": "Pending validation"
       },
       "activar_matricula": {
         "ok": "Enrolment activated",
@@ -393,6 +394,22 @@
           "principal": "Primary legal guardian",
           "secundario": "Secondary legal guardian"
         }
+      },
+      "avance_alta": {
+        "titulo": "Enrolment progress",
+        "estado": {
+          "pendiente": "Enrolment in progress",
+          "lista": "Pending validation"
+        },
+        "items": {
+          "identidad": "Child's details",
+          "pedagogicos": "Pedagogical details",
+          "medico": "Medical details",
+          "imagen": "Signed image authorisation"
+        },
+        "opcional": "optional",
+        "activar_ayuda": "The guardian finished the enrolment. Review the progress and activate it.",
+        "pendiente_ayuda": "The guardian is still completing the enrolment. You'll be able to activate it once finished."
       }
     },
     "audit": {
@@ -528,7 +545,7 @@
       "sin_panal_total": "No diapers"
     },
     "alimentacion_opciones": {
-      "omnivora": "Omnivorous",
+      "omnivora": "Standard / no restrictions",
       "vegetariana": "Vegetarian",
       "vegana": "Vegan",
       "sin_lactosa": "Lactose-free",
@@ -636,8 +653,8 @@
       "ya_dada_de_baja": "This enrolment is already ended.",
       "misma_aula": "Child already enrolled in this classroom.",
       "activar_failed": "Could not activate the enrolment.",
-      "no_pendiente": "The enrolment is not pending.",
-      "no_autorizado": "You don't have permission for this action."
+      "no_autorizado": "You don't have permission for this action.",
+      "no_lista": "The enrolment is not ready to activate (the guardian hasn't finished it yet)."
     }
   },
   "vinculo": {
@@ -2473,7 +2490,8 @@
       "cartilla_cambiar": "Change record",
       "cartilla_ayuda": "Image or photo of the record (JPG or PNG).",
       "cartilla_subida": "Record uploaded successfully",
-      "cartilla_ok": "Record saved"
+      "cartilla_ok": "Record saved",
+      "cartilla_ver": "View record"
     },
     "imagen": {
       "autorizacion_titulo": "Image authorisation",
@@ -2484,11 +2502,14 @@
     },
     "completado": {
       "titulo": "Enrolment complete!",
-      "texto": "You have completed {nombre}'s details. The centre will review them and activate the enrolment. We'll let you know when it's ready."
+      "texto": "You have completed {nombre}'s details. The centre will review them and activate the enrolment. We'll let you know when it's ready.",
+      "editar": "Review or edit"
     },
     "errors": {
       "no_autorizado": "You don't have permission for this action.",
-      "consentimiento_fallo": "The consent could not be recorded. Please try again."
+      "consentimiento_fallo": "The consent could not be recorded. Please try again.",
+      "finalizar_fallo": "The enrolment could not be finished. Please try again.",
+      "identidad_incompleta": "Fill in the child's details first (name and date of birth)."
     }
   }
 }

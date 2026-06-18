@@ -35,6 +35,9 @@ interface PageProps {
 export default async function FamilyNinoPage({ params, searchParams }: PageProps) {
   const { id, locale } = await params
   const { fecha: fechaQuery } = await searchParams
+
+  // El gate del alta (P3c) vive ahora en `family/layout.tsx` (cubre todas las
+  // sub-rutas de /family); aquí no se duplica.
   const t = await getTranslations('family.nino')
   const tNav = await getTranslations('family.nav')
   const tTabs = await getTranslations('family.nino.tabs')

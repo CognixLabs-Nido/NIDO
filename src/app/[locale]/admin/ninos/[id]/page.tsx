@@ -1,6 +1,7 @@
 import {
   BookOpenIcon,
   ChevronLeftIcon,
+  ExternalLinkIcon,
   HeartIcon,
   InfoIcon,
   UsersIcon,
@@ -29,11 +30,12 @@ import {
 } from '@/features/ninos/queries/get-ninos'
 import { ConsentimientoFotosToggle } from '@/features/ninos/components/ConsentimientoFotosToggle'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
+import { firmarRutaCartilla } from '@/features/ninos/queries/get-cartilla'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { ExportButton } from '@/features/export/components/ExportButton'
-import { ActivarMatriculaButton } from '@/features/matriculas/components/ActivarMatriculaButton'
+import { AvanceAltaCard } from '@/features/matriculas/components/AvanceAltaCard'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
 import { NuevoRecordatorioContextual } from '@/features/recordatorios/components/NuevoRecordatorioContextual'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -46,6 +48,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const { id, locale } = await params
   const t = await getTranslations('admin.ninos')
   const tMed = await getTranslations('medico')
+  const tAlta = await getTranslations('alta')
   const tFicha = await getTranslations('messages.ficha_nino')
   const tExport = await getTranslations('export')
   const nino = await getNinoById(id)
@@ -54,7 +57,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const foto = await firmarFotoNino(nino.foto_url)
 
   const supabase = await createClient()
-  const [{ data: vinculos }, info, matriculas, datosPed] = await Promise.all([
+  const [{ data: vinculos }, info, matriculas, datosPed, { data: ime }] = await Promise.all([
     supabase
       .from('vinculos_familiares')
       .select(
@@ -65,11 +68,46 @@ export default async function NinoDetallePage({ params }: PageProps) {
     getInfoMedica(id),
     getMatriculasPorNino(id),
     getDatosPedagogicos(id),
+    // La cartilla NO viaja en la RPC de descifrado: su path está en claro en la tabla
+    // (RLS `ime_admin_all` deja leerlo a dirección). Lo firmamos para que la directora
+    // pueda ABRIRLA y verificar el documento antes de activar la matrícula.
+    supabase
+      .from('info_medica_emergencia')
+      .select('cartilla_vacunas_path')
+      .eq('nino_id', id)
+      .maybeSingle(),
   ])
+  const cartillaUrl = await firmarRutaCartilla(ime?.cartilla_vacunas_path ?? null)
 
   const matriculaActiva = matriculas.find((m) => m.fecha_baja === null)
   const initials =
     (nino.nombre.charAt(0) + ((nino.apellidos ?? '').charAt(0) || '')).toUpperCase() || '?'
+
+  // Avance del alta (P3c) — solo relevante mientras la matrícula no está 'activa'.
+  const enAlta = matriculaActiva?.estado === 'pendiente' || matriculaActiva?.estado === 'lista'
+  let imagenFirmada = false
+  if (enAlta) {
+    const { data: autImg } = await supabase
+      .from('autorizaciones')
+      .select('id')
+      .eq('nino_id', id)
+      .eq('tipo', 'autorizacion_imagenes')
+      .eq('es_plantilla', false)
+      .limit(1)
+      .maybeSingle()
+    if (autImg) {
+      const { data: firma } = await supabase
+        .from('firmas_autorizacion')
+        .select('id')
+        .eq('autorizacion_id', autImg.id)
+        .eq('nino_id', id)
+        .eq('decision', 'firmado')
+        .limit(1)
+        .maybeSingle()
+      imagenFirmada = firma !== null
+    }
+  }
+  const medicoCompleto = !!info && Object.values(info).some((v) => v !== null && v !== '')
 
   return (
     <div className="space-y-6">
@@ -95,10 +133,9 @@ export default async function NinoDetallePage({ params }: PageProps) {
           </p>
         </div>
         {matriculaActiva?.estado === 'pendiente' ? (
-          <div className="flex items-center gap-2">
-            <Badge variant="info">{t('badge.alta_en_curso')}</Badge>
-            <ActivarMatriculaButton matriculaId={matriculaActiva.id} />
-          </div>
+          <Badge variant="info">{t('badge.alta_en_curso')}</Badge>
+        ) : matriculaActiva?.estado === 'lista' ? (
+          <Badge variant="success">{t('badge.alta_pendiente_validacion')}</Badge>
         ) : (
           matriculaActiva && <Badge variant="warm">{matriculaActiva.aula_nombre}</Badge>
         )}
@@ -125,6 +162,17 @@ export default async function NinoDetallePage({ params }: PageProps) {
             redirector `/messages/nino/[id]` se conserva: profe lo usa
             desde NinoAgendaCard y family lo usa desde su ficha del niño. */}
       </header>
+
+      {enAlta && matriculaActiva && (
+        <AvanceAltaCard
+          estado={matriculaActiva.estado as 'pendiente' | 'lista'}
+          matriculaId={matriculaActiva.id}
+          identidad={Boolean(nino.apellidos && nino.fecha_nacimiento)}
+          pedagogicos={datosPed !== null}
+          medico={medicoCompleto}
+          imagen={imagenFirmada}
+        />
+      )}
 
       <Tabs defaultValue="personales">
         <TabsList>
@@ -182,6 +230,17 @@ export default async function NinoDetallePage({ params }: PageProps) {
               <p className="text-muted-foreground border-info-300 bg-info-100 text-info-700 border-l-4 px-3 py-2 text-xs">
                 {tMed('aviso_cifrado')}
               </p>
+              {cartillaUrl && (
+                <a
+                  href={cartillaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline"
+                >
+                  <ExternalLinkIcon className="size-3.5" aria-hidden />
+                  {tAlta('medico.cartilla_ver')}
+                </a>
+              )}
               {info ? (
                 <>
                   <Row k={t('fields.alergias_graves')} v={info.alergias_graves ?? '—'} />

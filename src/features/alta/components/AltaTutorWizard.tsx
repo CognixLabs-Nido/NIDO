@@ -1,6 +1,5 @@
 'use client'
 
-import { CheckCircle2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 
@@ -27,6 +26,10 @@ interface Props {
   datosPedagogicosInicial: DatosPedagogicosInput | null
   consintioDatosMedicos: boolean
   medicaInicial: MedicaInicial | null
+  /** Ya hay una cartilla de vacunas persistida (la ruta la deriva de su path). */
+  cartillaYaSubida: boolean
+  /** Enlace firmado de la cartilla para abrirla/verificarla; null si no hay. */
+  cartillaUrl: string | null
   fotoInicialUrl: string | null
   imagenPanel: ImagenPanelData | null
   imagenSinPlantilla: boolean
@@ -37,9 +40,10 @@ interface Props {
 /**
  * Pieza 3b-2 — wizard de alta del tutor. Stepper de 5 pasos; a diferencia del wizard
  * de admin (`NuevoNinoWizard`, un único submit), **cada paso persiste por su cuenta**
- * (guardable/reanudable). 3b-2b completa los pasos pesados (médico + imagen/foto) y la
- * pantalla final "completado, pendiente de validación" (la activación de la matrícula
- * es 3c — aquí no se toca).
+ * (guardable/reanudable). Pasos pesados (médico + imagen/foto). Al "Finalizar"
+ * (P3c), `PasoImagen` llama a `finalizarAlta` (matrícula → 'lista') y navega; la ruta
+ * sirve entonces la pantalla "completado, pendiente de validación". La activación
+ * (`'lista' → 'activa'`) la hace la dirección.
  */
 export function AltaTutorWizard({
   locale,
@@ -50,6 +54,8 @@ export function AltaTutorWizard({
   datosPedagogicosInicial,
   consintioDatosMedicos,
   medicaInicial,
+  cartillaYaSubida,
+  cartillaUrl,
   fotoInicialUrl,
   imagenPanel,
   imagenSinPlantilla,
@@ -61,29 +67,10 @@ export function AltaTutorWizard({
   const [step, setStep] = useState<number>(Math.min(Math.max(pasoInicial, 0), total - 1))
   // El consentimiento médico se liftea al shell: el paso médico lo necesita como gate.
   const [consintio, setConsintio] = useState(consintioDatosMedicos)
-  const [finalizado, setFinalizado] = useState(false)
 
   const paso: PasoAlta = PASOS_ALTA[step]
   const goNext = () => setStep((s) => Math.min(s + 1, total - 1))
   const goBack = () => setStep((s) => Math.max(s - 1, 0))
-
-  if (finalizado) {
-    return (
-      <Card className="mx-auto max-w-2xl">
-        <CardContent className="space-y-3 py-10 text-center">
-          <CheckCircle2Icon
-            className="text-success-700 mx-auto size-12"
-            strokeWidth={1.75}
-            aria-hidden
-          />
-          <h2 className="text-h3">{t('completado.titulo')}</h2>
-          <p className="text-muted-foreground mx-auto max-w-md text-sm">
-            {t('completado.texto', { nombre: ninoNombre })}
-          </p>
-        </CardContent>
-      </Card>
-    )
-  }
 
   return (
     <Card className="mx-auto max-w-2xl">
@@ -114,7 +101,12 @@ export function AltaTutorWizard({
       </CardHeader>
       <CardContent>
         {paso === 'identidad' && (
-          <PasoIdentidad ninoId={ninoId} inicial={identidadInicial} onNext={goNext} />
+          <PasoIdentidad
+            ninoId={ninoId}
+            ninoNombre={ninoNombre}
+            inicial={identidadInicial}
+            onNext={goNext}
+          />
         )}
 
         {paso === 'pedagogicos' && (
@@ -149,6 +141,8 @@ export function AltaTutorWizard({
             ninoId={ninoId}
             locale={locale}
             inicial={medicaInicial}
+            cartillaYaSubida={cartillaYaSubida}
+            cartillaUrl={cartillaUrl}
             consintioDatosMedicos={consintio}
             onIrAConsentimientos={() => setStep(PASOS_ALTA.indexOf('consentimientos'))}
             onNext={goNext}
@@ -167,7 +161,6 @@ export function AltaTutorWizard({
             currentUserId={currentUserId}
             currentUserNombre={currentUserNombre}
             onBack={goBack}
-            onFinalizar={() => setFinalizado(true)}
           />
         )}
       </CardContent>

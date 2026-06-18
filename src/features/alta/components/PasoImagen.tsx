@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
@@ -11,6 +11,7 @@ import { crearImagenAutorizacion } from '@/features/autorizaciones/actions/crear
 import { FirmarAutorizacionPanel } from '@/features/autorizaciones/components/FirmarAutorizacionPanel'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 
+import { finalizarAlta } from '../actions/finalizar-alta'
 import type { ImagenPanelData } from '../lib/tipos'
 
 interface Props {
@@ -25,7 +26,6 @@ interface Props {
   currentUserId: string
   currentUserNombre: string
   onBack: () => void
-  onFinalizar: () => void
 }
 
 /**
@@ -34,7 +34,9 @@ interface Props {
  * `crearImagenAutorizacion` (la action, que sí puede revalidar) y `router.refresh()`
  * re-ejecuta la ruta para poblar el panel. La firma usa `FirmarAutorizacionPanel`
  * (al firmar, el trigger sincroniza el consentimiento de imagen + `puede_aparecer_en_fotos`).
- * Edge `sin_plantilla` → el paso se omite. Cierra con "Finalizar".
+ * Edge `sin_plantilla` → el paso se omite. Al "Finalizar" (P3c) llama a `finalizarAlta`
+ * (matrícula → 'lista') y navega a la ruta limpia, que sirve la pantalla "completado,
+ * pendiente de validación". Si falta identidad, la action lo rechaza con mensaje claro.
  */
 export function PasoImagen({
   ninoId,
@@ -46,12 +48,13 @@ export function PasoImagen({
   currentUserId,
   currentUserNombre,
   onBack,
-  onFinalizar,
 }: Props) {
   const t = useTranslations('alta')
   const tErrors = useTranslations()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [pending, startTransition] = useTransition()
+  const [finalizando, startFinalizar] = useTransition()
   const [omitido, setOmitido] = useState(false)
 
   function instanciar() {
@@ -67,6 +70,27 @@ export function PasoImagen({
       }
       // 'lista' → la ruta re-leerá la instancia y poblará el panel.
       router.refresh()
+    })
+  }
+
+  function finalizar() {
+    startFinalizar(async () => {
+      const r = await finalizarAlta(ninoId)
+      if (!r.success) {
+        toast.error(tErrors(r.error))
+        return
+      }
+      // Matrícula → 'lista'. `finalizarAlta` ya revalidó el RSC server-side; aquí UNA
+      // sola navegación (espeja `instanciar()`, que sí funciona) para terminar SIEMPRE
+      // en la pantalla "completado, pendiente de validación" con URL limpia:
+      //  - entró con ?editar=1 → `replace` a la URL sin query (la ruta sirve la pantalla).
+      //  - entró sin ?editar  → la URL ya es limpia → `refresh` re-ejecuta el RSC.
+      // Nunca ambas (replace+refresh juntas dejaban la transición colgada).
+      if (searchParams.get('editar')) {
+        router.replace(`/${locale}/alta/${ninoId}`)
+      } else {
+        router.refresh()
+      }
     })
   }
 
@@ -113,8 +137,8 @@ export function PasoImagen({
         <Button type="button" variant="outline" onClick={onBack}>
           {t('wizard.atras')}
         </Button>
-        <Button type="button" onClick={onFinalizar}>
-          {t('wizard.finalizar')}
+        <Button type="button" onClick={finalizar} disabled={finalizando}>
+          {finalizando ? t('wizard.guardando') : t('wizard.finalizar')}
         </Button>
       </div>
     </div>

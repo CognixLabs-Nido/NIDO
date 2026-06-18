@@ -1,13 +1,16 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
+import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { createClient } from '@/lib/supabase/server'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
+import { firmarRutaCartilla } from '@/features/ninos/queries/get-cartilla'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
 
+import { AltaCompletadaScreen } from '@/features/alta/components/AltaCompletadaScreen'
 import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { pasoInicialAlta } from '@/features/alta/lib/estado-alta'
 
@@ -16,6 +19,7 @@ import type { ImagenPanelData, MedicaInicial } from '@/features/alta/lib/tipos'
 
 interface PageProps {
   params: Promise<{ locale: string; ninoId: string }>
+  searchParams: Promise<{ editar?: string }>
 }
 
 export const dynamic = 'force-dynamic'
@@ -34,8 +38,9 @@ export const dynamic = 'force-dynamic'
  * una action al entrar al paso, y `router.refresh()` re-ejecuta esta ruta para poblar el
  * panel (que así refleja el estado tras firmar).
  */
-export default async function AltaTutorPage({ params }: PageProps) {
+export default async function AltaTutorPage({ params, searchParams }: PageProps) {
   const { locale, ninoId } = await params
+  const { editar } = await searchParams
 
   const supabase = await createClient()
   const {
@@ -51,10 +56,44 @@ export default async function AltaTutorPage({ params }: PageProps) {
     .eq('usuario_id', user.id)
     .is('deleted_at', null)
     .maybeSingle()
-  if (!vinculo) notFound()
+  if (!vinculo) {
+    // El usuario está autenticado (el proxy ya garantiza sesión) pero no es tutor de
+    // este niño: este flujo no es suyo. En vez de un `notFound()` —que para un admin/profe
+    // que teclea la URL parece un 404 de routing— lo devolvemos a su panel por rol. Sin
+    // rol conocido (caso anómalo) sí es notFound.
+    const centroId = await getCentroActualId()
+    const rol = centroId ? await getRolEnCentro(centroId) : null
+    if (rol === 'admin') redirect(`/${locale}/admin`)
+    if (rol === 'profe') redirect(`/${locale}/teacher`)
+    notFound()
+  }
 
   const nino = await getNinoById(ninoId)
   if (!nino) notFound()
+
+  // Estado de la matrícula vigente → gate del flujo (Comportamiento 7):
+  //  - 'activa'  → ya validada por la dirección: al panel.
+  //  - 'lista'   → finalizada por el tutor, pendiente de validación: pantalla de cierre
+  //                (salvo ?editar=1, que reentra al wizard para corregir).
+  //  - resto ('pendiente'/sin matrícula) → wizard.
+  const { data: matricula } = await supabase
+    .from('matriculas')
+    .select('estado')
+    .eq('nino_id', ninoId)
+    .is('fecha_baja', null)
+    .is('deleted_at', null)
+    .maybeSingle()
+
+  if (matricula?.estado === 'activa') redirect(`/${locale}/family`)
+
+  if (matricula?.estado === 'lista' && editar !== '1') {
+    return (
+      <AltaCompletadaScreen
+        ninoNombre={nino.nombre}
+        editarHref={`/${locale}/alta/${ninoId}?editar=1`}
+      />
+    )
+  }
 
   const datosPed = await getDatosPedagogicos(ninoId)
   const datosPedagogicosInicial: DatosPedagogicosInput | null = datosPed
@@ -92,6 +131,19 @@ export default async function AltaTutorPage({ params }: PageProps) {
   } catch {
     medicaInicial = null
   }
+
+  // ¿Hay cartilla ya subida? Su path NO va en la RPC de descifrado; lo leemos directo
+  // (columna en claro; la RLS `ime_tutor_select` lo permite al tutor con
+  // `puede_ver_info_medica`). Boolean → SubirCartilla muestra "ya subida" (no se
+  // previsualiza el documento sensible, así que no hace falta firmar la URL).
+  const { data: ime } = await supabase
+    .from('info_medica_emergencia')
+    .select('cartilla_vacunas_path')
+    .eq('nino_id', ninoId)
+    .maybeSingle()
+  const cartillaYaSubida = Boolean(ime?.cartilla_vacunas_path)
+  // Enlace firmado (~1 h) para ABRIR la cartilla y verificar el documento (lado tutor).
+  const cartillaUrl = await firmarRutaCartilla(ime?.cartilla_vacunas_path ?? null)
 
   // Foto actual del niño (enlace firmado ~1h) para SubirFotoNino.
   const foto = await firmarFotoNino(nino.foto_url)
@@ -166,6 +218,8 @@ export default async function AltaTutorPage({ params }: PageProps) {
         datosPedagogicosInicial={datosPedagogicosInicial}
         consintioDatosMedicos={consintioDatosMedicos}
         medicaInicial={medicaInicial}
+        cartillaYaSubida={cartillaYaSubida}
+        cartillaUrl={cartillaUrl}
         fotoInicialUrl={foto.url ?? foto.urlMiniatura}
         imagenPanel={imagenPanel}
         imagenSinPlantilla={imagenSinPlantilla}

@@ -16,6 +16,9 @@ interface PageProps {
 
 export default async function FamilyDashboard({ params }: PageProps) {
   const { locale } = await params
+
+  // El gate del alta (P3c) vive ahora en `family/layout.tsx` → cubre todas las
+  // sub-rutas de /family; aquí no se duplica.
   const t = await getTranslations('family.dashboard')
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()

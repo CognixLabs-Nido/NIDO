@@ -2790,6 +2790,10 @@ export type Database = {
         Args: { p_autorizacion_id: string }
         Returns: boolean
       }
+      marcar_matricula_lista: {
+        Args: { p_nino_id: string }
+        Returns: string
+      }
       aula_de_publicacion: {
         Args: { p_publicacion_id: string }
         Returns: string
@@ -3098,7 +3102,7 @@ export type Database = {
       firma_decision: 'firmado' | 'rechazado' | 'revocado'
       humor_agenda: 'feliz' | 'tranquilo' | 'inquieto' | 'triste' | 'cansado'
       lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
-      matricula_estado: 'pendiente' | 'activa' | 'baja'
+      matricula_estado: 'pendiente' | 'lista' | 'activa' | 'baja'
       momento_comida: 'desayuno' | 'media_manana' | 'comida' | 'merienda'
       motivo_ausencia: 'enfermedad' | 'cita_medica' | 'vacaciones' | 'familiar' | 'otro'
       nino_sexo: 'F' | 'M' | 'X'
@@ -3311,7 +3315,7 @@ export const Constants = {
       firma_decision: ['firmado', 'rechazado', 'revocado'],
       humor_agenda: ['feliz', 'tranquilo', 'inquieto', 'triste', 'cansado'],
       lactancia_estado: ['materna', 'biberon', 'mixta', 'finalizada', 'no_aplica'],
-      matricula_estado: ['pendiente', 'activa', 'baja'],
+      matricula_estado: ['pendiente', 'lista', 'activa', 'baja'],
       momento_comida: ['desayuno', 'media_manana', 'comida', 'merienda'],
       motivo_ausencia: ['enfermedad', 'cita_medica', 'vacaciones', 'familiar', 'otro'],
       nino_sexo: ['F', 'M', 'X'],

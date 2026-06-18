@@ -368,7 +368,8 @@
         "guardado": "Consentiment actualitzat."
       },
       "badge": {
-        "alta_en_curso": "Alta en curs"
+        "alta_en_curso": "Alta en curs",
+        "alta_pendiente_validacion": "Pendent de validació"
       },
       "activar_matricula": {
         "ok": "Matrícula activada",
@@ -393,6 +394,22 @@
           "principal": "Tutor/a legal principal",
           "secundario": "Tutor/a legal secundari"
         }
+      },
+      "avance_alta": {
+        "titulo": "Avanç de la matrícula",
+        "estado": {
+          "pendiente": "Matrícula en curs",
+          "lista": "Pendent de validació"
+        },
+        "items": {
+          "identidad": "Dades del xiquet",
+          "pedagogicos": "Dades pedagògiques",
+          "medico": "Dades mèdiques",
+          "imagen": "Autorització d'imatge signada"
+        },
+        "opcional": "opcional",
+        "activar_ayuda": "El tutor ha finalitzat l'alta. Revisa l'avanç i activa la matrícula.",
+        "pendiente_ayuda": "El tutor encara està completant l'alta. Podràs activar quan la finalitze."
       }
     },
     "audit": {
@@ -528,7 +545,7 @@
       "sin_panal_total": "Sense bolquer"
     },
     "alimentacion_opciones": {
-      "omnivora": "Omnívora",
+      "omnivora": "Estàndard / sense restriccions",
       "vegetariana": "Vegetariana",
       "vegana": "Vegana",
       "sin_lactosa": "Sense lactosa",
@@ -636,8 +653,8 @@
       "ya_dada_de_baja": "Esta matrícula ja està donada de baixa.",
       "misma_aula": "El xiquet ja està matriculat en esta aula.",
       "activar_failed": "No s'ha pogut activar la matrícula.",
-      "no_pendiente": "La matrícula no està pendent.",
-      "no_autorizado": "No tens permís per a aquesta acció."
+      "no_autorizado": "No tens permís per a aquesta acció.",
+      "no_lista": "La matrícula no està llesta per a activar (el tutor encara no ha finalitzat l'alta)."
     }
   },
   "vinculo": {
@@ -2473,7 +2490,8 @@
       "cartilla_cambiar": "Canviar cartilla",
       "cartilla_ayuda": "Imatge o foto de la cartilla (JPG o PNG).",
       "cartilla_subida": "Cartilla pujada correctament",
-      "cartilla_ok": "Cartilla guardada"
+      "cartilla_ok": "Cartilla guardada",
+      "cartilla_ver": "Veure cartilla"
     },
     "imagen": {
       "autorizacion_titulo": "Autorització d'imatge",
@@ -2484,11 +2502,14 @@
     },
     "completado": {
       "titulo": "Matrícula completada!",
-      "texto": "Has completat les dades de {nombre}. La direcció del centre les revisarà i activarà la matrícula. T'avisarem quan estiga llesta."
+      "texto": "Has completat les dades de {nombre}. La direcció del centre les revisarà i activarà la matrícula. T'avisarem quan estiga llesta.",
+      "editar": "Revisar o editar"
     },
     "errors": {
       "no_autorizado": "No tens permís per a esta acció.",
-      "consentimiento_fallo": "No s'ha pogut registrar el consentiment. Torna-ho a provar."
+      "consentimiento_fallo": "No s'ha pogut registrar el consentiment. Torna-ho a provar.",
+      "finalizar_fallo": "No s'ha pogut finalitzar l'alta. Torna-ho a provar.",
+      "identidad_incompleta": "Completa primer les dades del xiquet (nom i data de naixement)."
     }
   }
 }
