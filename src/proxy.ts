@@ -53,13 +53,12 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
   // ya prefijada por locale.
   const { locale, rest } = stripLocale(pathname)
 
-  if (isPublic(rest)) {
-    return intlResponse
-  }
-
-  const required = requiredRolesFor(rest)
-
-  // Construye un cliente Supabase que lea cookies del request y propague a la response.
+  // updateSession (patrón estándar @supabase/ssr): refresca la sesión y PROPAGA las
+  // cookies rotadas a la response en TODAS las rutas, también las públicas. Sin esto, el
+  // token que rota dentro de una Server Action / Server Component no se sincroniza a la
+  // siguiente request y el destino no ve la sesión (causa del band-aid 4910fbc). El
+  // gating de rol (requiredRolesFor) se SUMA debajo; no se sustituye.
+  // ⚠️ Gotcha @supabase/ssr: NO meter lógica entre createServerClient y getUser().
   const response = intlResponse
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -79,6 +78,12 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
   const { data: userData } = await supabase.auth.getUser()
   const user = userData.user
 
+  // Rutas públicas: la sesión ya quedó refrescada en `response`; ni se gatea ni se
+  // redirige a login (un invitado/anónimo puede verlas).
+  if (isPublic(rest)) {
+    return response
+  }
+
   if (!user) {
     const url = request.nextUrl.clone()
     url.pathname = `/${locale}/login`
@@ -86,6 +91,7 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
     return redirectConservandoCookies(url, response)
   }
 
+  const required = requiredRolesFor(rest)
   if (required) {
     const { data: roles } = await supabase
       .from('roles_usuario')

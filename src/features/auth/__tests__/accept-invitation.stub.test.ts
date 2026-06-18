@@ -111,6 +111,12 @@ vi.mock('@/features/autorizaciones/lib/request-context', () => ({
   getRequestContext: vi.fn(() => Promise.resolve({ ip: '1.2.3.4', userAgent: 'test' })),
 }))
 
+// En ÉXITO la action navega server-side con `redirect()`; lo mockeamos como spy no-op
+// para poder afirmar el destino (panel por rol) sin que lance NEXT_REDIRECT en el test.
+vi.mock('next/navigation', () => ({ redirect: vi.fn() }))
+
+import { redirect } from 'next/navigation'
+
 import { acceptInvitation } from '../actions/accept-invitation'
 
 const VALID_INPUT = {
@@ -130,6 +136,7 @@ beforeEach(() => {
   createSpy = vi.fn(() => Promise.resolve({ data: { user: { id: 'new-id' } }, error: null }))
   deleteSpy = vi.fn(() => Promise.resolve({ error: null }))
   signInSpy = vi.fn(() => Promise.resolve({ error: null }))
+  vi.mocked(redirect).mockClear()
 })
 
 describe('acceptInvitation — completar stub vs crear vs rechazar', () => {
@@ -137,9 +144,8 @@ describe('acceptInvitation — completar stub vs crear vs rechazar', () => {
     usersFixture = [{ id: 'stub-id', email: 'tutor@nido.test' }]
     rolesParaUsuario = [] // sin roles → stub
 
-    const r = await acceptInvitation(VALID_INPUT)
+    await acceptInvitation(VALID_INPUT)
 
-    expect(r.success).toBe(true)
     expect(updateSpy).toHaveBeenCalledTimes(1)
     expect(updateSpy).toHaveBeenCalledWith(
       'stub-id',
@@ -148,6 +154,9 @@ describe('acceptInvitation — completar stub vs crear vs rechazar', () => {
     expect(createSpy).not.toHaveBeenCalled()
     // El alta completa: login automático tras aceptar.
     expect(signInSpy).toHaveBeenCalledTimes(1)
+    // …y redirección server-side al panel del rol (tutor_legal → /family; el gate P3c
+    // reenvía a /alta). locale por defecto 'es'.
+    expect(redirect).toHaveBeenCalledWith('/es/family')
   })
 
   it('REAL (auth.users con roles) → email_already_registered, sin update ni create', async () => {
@@ -165,11 +174,11 @@ describe('acceptInvitation — completar stub vs crear vs rechazar', () => {
   it('NUEVA (sin auth.users) → createUser, NO updateUserById, alta OK', async () => {
     usersFixture = [] // email totalmente nuevo
 
-    const r = await acceptInvitation(VALID_INPUT)
+    await acceptInvitation(VALID_INPUT)
 
-    expect(r.success).toBe(true)
     expect(createSpy).toHaveBeenCalledTimes(1)
     expect(updateSpy).not.toHaveBeenCalled()
     expect(signInSpy).toHaveBeenCalledTimes(1)
+    expect(redirect).toHaveBeenCalledWith('/es/family')
   })
 })
