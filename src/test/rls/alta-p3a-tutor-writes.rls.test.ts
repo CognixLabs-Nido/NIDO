@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
+  asignarRol,
   clientFor,
   createTestCentro,
   createTestNino,
@@ -25,11 +26,16 @@ import type { Database } from '@/types/database'
  *   2. RPC de identidad: el tutor escribe la whitelist; no toca centro; no el de otro.
  *   3. `datos_pedagogicos_nino`: el tutor escribe el suyo; RLS deniega el de otra familia.
  *   4. `tiene_consentimiento` refleja alta/revocación.
+ *   5. F11-E: los 6 writes apretados a es_tutor_legal_de deniegan al 'autorizado';
+ *      la dirección (admin) sigue cambiando la foto vía actualizar_foto_nino_tutor.
  *
  * Gateado: F11_ALTA_P3A_MIGRATION_APPLIED=1
  */
 
 const APPLIED = process.env.F11_ALTA_P3A_MIGRATION_APPLIED === '1'
+
+// Cabecera mínima de un JPEG válido para los intentos de subida a Storage (F11-E).
+const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])
 
 // El tipo generado declara los args de la RPC médica como no-nullable, pero acepta
 // NULL (contrato "NULL = preservar"). Cast local para los tests (igual que las actions).
@@ -73,9 +79,12 @@ describe.skipIf(!APPLIED)('Alta P3a — escritura del tutor (RLS/RPC)', () => {
   let tutorCon: TestUser // tutor LEGAL de ninoA, CON consentimiento datos_medicos
   let tutorSin: TestUser // tutor LEGAL de ninoB, SIN consentimiento
   let autorizadoA: TestUser // AUTORIZADO de ninoA, sin puede_ver_datos_pedagogicos
+  let admin: TestUser // dirección del centro (F11-E: regresión foto)
+  let ninoE: { id: string } // niño SIN fila pedagógica (F11-E: dp_tutor_insert denegado)
   let clientCon: SupabaseClient<Database>
   let clientSin: SupabaseClient<Database>
   let clientAut: SupabaseClient<Database>
+  let clientAdmin: SupabaseClient<Database>
 
   beforeAll(async () => {
     centro = await createTestCentro('Centro Alta P3a')
@@ -89,9 +98,17 @@ describe.skipIf(!APPLIED)('Alta P3a — escritura del tutor (RLS/RPC)', () => {
     await crearVinculo(ninoB.id, tutorSin.id, 'tutor_legal_principal', {})
     autorizadoA = await createTestUser({ nombre: 'Autorizado A' })
     await crearVinculo(ninoA.id, autorizadoA.id, 'autorizado', {})
+    // F11-E: niño sin fila pedagógica con el MISMO autorizado vinculado, para probar
+    // que dp_tutor_insert deniega al autorizado (no a un extraño).
+    ninoE = await createTestNino(centro.id, 'Nino E P3a')
+    await crearVinculo(ninoE.id, autorizadoA.id, 'autorizado', {})
+    // F11-E: dirección del centro, para la regresión "admin SÍ cambia la foto".
+    admin = await createTestUser({ nombre: 'Admin Dir P3a' })
+    await asignarRol(admin.id, centro.id, 'admin')
     clientCon = await clientFor(tutorCon)
     clientSin = await clientFor(tutorSin)
     clientAut = await clientFor(autorizadoA)
+    clientAdmin = await clientFor(admin)
 
     // tutorCon otorga el consentimiento de datos médicos (auth.uid() = su id).
     await clientCon.rpc('registrar_consentimiento', {
@@ -106,6 +123,7 @@ describe.skipIf(!APPLIED)('Alta P3a — escritura del tutor (RLS/RPC)', () => {
     await deleteTestUser(tutorCon.id)
     await deleteTestUser(tutorSin.id)
     await deleteTestUser(autorizadoA.id)
+    await deleteTestUser(admin.id)
   })
 
   it('tiene_consentimiento refleja alta y revocación', async () => {
@@ -236,5 +254,105 @@ describe.skipIf(!APPLIED)('Alta P3a — escritura del tutor (RLS/RPC)', () => {
     // SELECT bajo RLS: filas denegadas se filtran (sin error) → resultado vacío.
     expect(error).toBeNull()
     expect(data ?? []).toHaveLength(0)
+  })
+
+  // ---------------------------------------------------------------------------
+  // F11-E — los 6 writes del alta se apretaron de es_tutor_de a es_tutor_legal_de.
+  // Un 'autorizado' (vinculado a ninoA/ninoE, pero NO tutor legal) queda denegado en
+  // todos; la dirección (admin) sigue pudiendo cambiar la foto (regresión).
+  // ---------------------------------------------------------------------------
+  describe('F11-E — apretado a tutor legal (autorizado denegado)', () => {
+    it('RPC médica: un autorizado NO puede escribir la médica (42501)', async () => {
+      const { error } = await clientAut.rpc(
+        'set_info_medica_emergencia_cifrada_tutor',
+        medicaArgs(ninoA.id, { p_alergias_graves: 'X' })
+      )
+      expect(error?.code).toBe('42501')
+    })
+
+    it('RPC identidad: un autorizado NO puede escribir la identidad (42501)', async () => {
+      const { error } = await clientAut.rpc('actualizar_identidad_nino_tutor', {
+        p_nino_id: ninoA.id,
+        p_apellidos: 'Hack',
+        p_fecha_nacimiento: '2024-01-01',
+        p_sexo: 'M',
+        p_nacionalidad: 'ES',
+        p_idioma_principal: 'es',
+      } as unknown as IdentidadArgs)
+      expect(error?.code).toBe('42501')
+    })
+
+    it('dp_tutor_insert: un autorizado NO puede insertar pedagógicos (WITH CHECK deniega)', async () => {
+      const { error } = await clientAut
+        .from('datos_pedagogicos_nino')
+        .insert({
+          nino_id: ninoE.id,
+          lactancia_estado: 'no_aplica',
+          control_esfinteres: 'panal_completo',
+          tipo_alimentacion: 'omnivora',
+          idiomas_casa: ['es'],
+          tiene_hermanos_en_centro: false,
+        })
+        .select('id')
+        .maybeSingle()
+      expect(error).not.toBeNull() // RLS WITH CHECK es_tutor_legal_de(ninoE) = false
+    })
+
+    it('dp_tutor_update: un autorizado NO puede actualizar pedagógicos (USING → 0 filas)', async () => {
+      // ninoA tiene fila pedagógica (la escribió tutorCon). USING es_tutor_legal_de
+      // filtra → 0 filas, sin error (gotcha "USING falso → 0 filas").
+      const { data, error } = await clientAut
+        .from('datos_pedagogicos_nino')
+        .update({ tiene_hermanos_en_centro: true })
+        .eq('nino_id', ninoA.id)
+        .select('id')
+        .maybeSingle()
+      expect(error).toBeNull()
+      expect(data).toBeNull()
+    })
+
+    it('storage cartilla-vacunas: un autorizado NO puede subir (RLS deniega)', async () => {
+      const res = await clientAut.storage
+        .from('cartilla-vacunas')
+        .upload(`${centro.id}/${ninoA.id}/cartilla.jpg`, JPG, {
+          contentType: 'image/jpeg',
+          upsert: true,
+        })
+      expect(res.error).toBeTruthy()
+    })
+
+    it('storage ninos-fotos: un autorizado NO puede subir la foto (RLS deniega)', async () => {
+      const res = await clientAut.storage
+        .from('ninos-fotos')
+        .upload(`${centro.id}/${ninoA.id}/foto.jpg`, JPG, {
+          contentType: 'image/jpeg',
+          upsert: true,
+        })
+      expect(res.error).toBeTruthy()
+    })
+
+    it('RPC foto: un autorizado NO puede cambiar la foto (42501)', async () => {
+      const { error } = await clientAut.rpc('actualizar_foto_nino_tutor', {
+        p_nino_id: ninoA.id,
+        p_foto_path: `${centro.id}/${ninoA.id}/foto.jpg`,
+      })
+      expect(error?.code).toBe('42501')
+    })
+
+    it('RPC foto: la dirección (admin) SÍ cambia la foto (regresión: no rompemos a dirección)', async () => {
+      const path = `${centro.id}/${ninoA.id}/admin-foto.jpg`
+      const { error } = await clientAdmin.rpc('actualizar_foto_nino_tutor', {
+        p_nino_id: ninoA.id,
+        p_foto_path: path,
+      })
+      expect(error).toBeNull()
+
+      const { data: nino } = await serviceClient
+        .from('ninos')
+        .select('foto_url')
+        .eq('id', ninoA.id)
+        .single()
+      expect(nino?.foto_url).toBe(path)
+    })
   })
 })
