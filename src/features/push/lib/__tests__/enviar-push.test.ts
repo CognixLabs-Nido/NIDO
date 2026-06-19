@@ -73,8 +73,8 @@ function setupMocks(opts: {
     sendNotification,
   }))
 
-  vi.doMock('@/lib/supabase/server', () => ({
-    createServiceClient: vi.fn(async () => ({
+  vi.doMock('@/features/auth/actions/_service-role', () => ({
+    createServiceRoleClient: vi.fn(() => ({
       from: (_table: string) => ({
         select: () => ({
           in: () => Promise.resolve({ data: opts.subs, error: opts.selectError ?? null }),
@@ -103,7 +103,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.doUnmock('web-push')
-  vi.doUnmock('@/lib/supabase/server')
+  vi.doUnmock('@/features/auth/actions/_service-role')
   vi.unstubAllEnvs()
   process.env.VAPID_PUBLIC_KEY = ORIG_ENV.VAPID_PUBLIC_KEY
   process.env.VAPID_PRIVATE_KEY = ORIG_ENV.VAPID_PRIVATE_KEY

@@ -1,6 +1,6 @@
 'use server'
 
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
 import { logger } from '@/shared/lib/logger'
 import { borrarObjetosBucket } from '@/shared/lib/adjuntos/storage'
 
@@ -25,7 +25,7 @@ export async function barrerRetencion(opts: {
   dryRun: boolean
 }): Promise<ActionResult<ResultadoBarrido>> {
   const { dryRun } = opts
-  const service = await createServiceClient()
+  const service = createServiceRoleClient()
 
   let objetosPurgados = 0
   let fallidos = 0
