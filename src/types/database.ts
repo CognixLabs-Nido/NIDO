@@ -2786,13 +2786,24 @@ export type Database = {
     Functions: {
       _get_medical_key: { Args: never; Returns: string }
       _redactar_jsonb: { Args: { claves: string[]; j: Json }; Returns: Json }
+      actualizar_foto_nino_tutor: {
+        Args: { p_foto_path: string; p_nino_id: string }
+        Returns: string
+      }
+      actualizar_identidad_nino_tutor: {
+        Args: {
+          p_apellidos: string
+          p_fecha_nacimiento: string
+          p_idioma_principal: string
+          p_nacionalidad: string
+          p_nino_id: string
+          p_sexo: Database['public']['Enums']['nino_sexo']
+        }
+        Returns: string
+      }
       archivar_autorizacion: {
         Args: { p_autorizacion_id: string }
         Returns: boolean
-      }
-      marcar_matricula_lista: {
-        Args: { p_nino_id: string }
-        Returns: string
       }
       aula_de_publicacion: {
         Args: { p_publicacion_id: string }
@@ -2877,6 +2888,7 @@ export type Database = {
         Args: { p_autorizacion_id: string; p_nino_id: string }
         Returns: boolean
       }
+      marcar_matricula_lista: { Args: { p_nino_id: string }; Returns: string }
       medicacion_administrable_hoy: {
         Args: { p_autorizacion_id: string }
         Returns: boolean
@@ -2976,17 +2988,6 @@ export type Database = {
           p_nino_id: string
           p_notas_emergencia: string
           p_telefono_emergencia: string
-        }
-        Returns: string
-      }
-      actualizar_identidad_nino_tutor: {
-        Args: {
-          p_apellidos: string
-          p_fecha_nacimiento: string
-          p_idioma_principal: string
-          p_nacionalidad: string
-          p_nino_id: string
-          p_sexo: Database['public']['Enums']['nino_sexo']
         }
         Returns: string
       }

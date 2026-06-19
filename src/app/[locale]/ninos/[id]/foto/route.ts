@@ -106,27 +106,25 @@ export async function POST(
     return err('fotos.errors.subida_fallo', 500)
   }
 
-  // 3. Service role tras autorizar: actualiza foto_url + limpia la foto anterior.
-  //    Verificable: el UPDATE debe afectar 1 fila. Si devuelve error O 0 filas
-  //    (id que no casa, etc.) se hace rollback de los objetos y se falla — nunca
-  //    dejar un objeto huérfano con `foto_url` NULL (bug F11 P3b-2).
-  //    Service role REAL (cookie-less): `createServiceClient` (cookie-bound) se
-  //    autentica como el TUTOR → su JWT prevalece sobre la service key y el UPDATE
-  //    de `ninos.foto_url` (admin-only en RLS) afecta 0 filas. La autorización
-  //    tutor↔niño ya está garantizada arriba: el SELECT de `ninos` (RLS) y la subida
-  //    al bucket (storage RLS `es_tutor_de([2]=ninoId)`, F10-3) impiden tocar otro niño.
+  // 3. El UPDATE de `ninos.foto_url` pasa por la RPC `actualizar_foto_nino_tutor`
+  //    (SECURITY DEFINER, F11-E) con el cliente del USUARIO: el gate interno
+  //    (`es_admin(centro) OR es_tutor_legal_de` + backstop de path) sustituye al
+  //    UPDATE service-role sin gate del legado #108. La RPC bypassa la RLS admin-only
+  //    de `ninos` por dentro. 42501 = el gate rechazó (ni admin ni tutor legal);
+  //    cualquier otro error (incl. 0 filas → check_violation) → rollback + 500, nunca
+  //    dejar un objeto huérfano. El service role se mantiene solo para limpiar la foto
+  //    anterior y firmar las URLs (storage admin).
   const service = createServiceRoleClient()
-  const { data: actualizado, error: updErr } = await service
-    .from('ninos')
-    .update({ foto_url: rutas.original })
-    .eq('id', nino.id)
-    .select('id')
-    .maybeSingle()
-  if (updErr || !actualizado) {
+  const { error: updErr } = await supabase.rpc('actualizar_foto_nino_tutor', {
+    p_nino_id: nino.id,
+    p_foto_path: rutas.original,
+  })
+  if (updErr) {
     await borrarObjetosBucket(service, BUCKET_NINOS_FOTOS, [rutas.original, rutas.miniatura]).catch(
       () => undefined
     )
-    logger.warn('ninos/foto: update foto_url', updErr?.message ?? 'sin fila afectada')
+    if (updErr.code === '42501') return err('fotos.errors.no_autorizado', 403)
+    logger.warn('ninos/foto: update foto_url', updErr.message)
     return err('fotos.errors.subida_fallo', 500)
   }
   if (nino.foto_url && nino.foto_url !== rutas.original) {
