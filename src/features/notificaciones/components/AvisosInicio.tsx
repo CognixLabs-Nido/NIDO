@@ -46,6 +46,8 @@ export async function AvisosInicio({
   const fotosNuevasN = staff ? 0 : avisos.fotosNuevas
   // Informes pendientes de campaña: solo profe redactora (F9-5-2).
   const campanaPend = staff ? avisos.campanaPendientes : null
+  // Altas (matrículas en 'lista') pendientes de validar: solo admin (#4 dashboard).
+  const altasPendientesN = esAdmin ? avisos.altasPendientesValidar : 0
   if (
     pendientesN <= 0 &&
     hechasN <= 0 &&
@@ -55,6 +57,7 @@ export async function AvisosInicio({
     archivarN <= 0 &&
     informesNuevosN <= 0 &&
     fotosNuevasN <= 0 &&
+    altasPendientesN <= 0 &&
     !campanaPend
   )
     return null
@@ -70,6 +73,7 @@ export async function AvisosInicio({
   const informesHref = `/${locale}/family/informes`
   const fotosHref = `/${locale}/family/fotos`
   const campanaInformesHref = `/${locale}/teacher/informes`
+  const altasPendientesHref = `/${locale}/admin/ninos?estado=lista`
 
   // Fecha límite (más próxima) formateada en el huso del centro para el aviso de campaña.
   const campanaFechaFmt = campanaPend
@@ -152,6 +156,20 @@ export async function AvisosInicio({
                 {hechasLabel}
               </span>
             )}
+          </span>
+        </Link>
+      )}
+
+      {/* Altas (matrículas en 'lista') pendientes de validar por el director (#4
+          dashboard). Ámbar (acción pendiente), enlaza a la lista filtrada por 'lista'. */}
+      {altasPendientesN > 0 && (
+        <Link
+          href={altasPendientesHref}
+          className="flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 transition hover:bg-amber-100 dark:border-amber-900/40 dark:bg-amber-950/30 dark:hover:bg-amber-950/50"
+        >
+          <ClipboardCheckIcon className="size-5 shrink-0 text-amber-700 dark:text-amber-300" />
+          <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+            {t('altas_pendientes_validar', { n: altasPendientesN })}
           </span>
         </Link>
       )}

@@ -306,6 +306,15 @@
       "ver": "Veure",
       "empty": "Encara no hi ha xiquets. Registra el primer.",
       "sin_matricula_activa": "Sense matrícula activa",
+      "filtro": {
+        "activo": "Mostrant: {estado}",
+        "quitar": "Veure tots",
+        "estado": {
+          "pendiente": "Altes en curs",
+          "lista": "Altes pendents de validar",
+          "activa": "Matrícula activa"
+        }
+      },
       "nuevo_sin_aulas": "Necessites almenys una aula creada abans de registrar un xiquet.",
       "created": "Xiquet registrat correctament",
       "wizard": {
@@ -1985,7 +1994,8 @@
       "fotos_nuevas": "{n, plural, one {Hi ha # publicació nova al blog de l'aula} other {Hi ha # publicacions noves al blog de l'aula}}",
       "campana_pendientes": "{n, plural, one {Et queda # informe per completar} other {Et queden # informes per completar}} · venç el {fecha}",
       "campana_urgente": "{n, plural, one {# informe pendent} other {# informes pendents}} · venç el {fecha}",
-      "campana_vencida": "{n, plural, one {# informe pendent} other {# informes pendents}} · va vèncer el {fecha}"
+      "campana_vencida": "{n, plural, one {# informe pendent} other {# informes pendents}} · va vèncer el {fecha}",
+      "altas_pendientes_validar": "{n, plural, one {# alta pendent de validar} other {# altes pendents de validar}}"
     },
     "errors": {
       "no_autorizado": "No autoritzat.",

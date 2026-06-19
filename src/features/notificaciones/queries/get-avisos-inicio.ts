@@ -28,6 +28,7 @@ const VACIO: AvisosInicio = {
   informesNuevos: 0,
   fotosNuevas: 0,
   campanaPendientes: null,
+  altasPendientesValidar: 0,
 }
 
 /**
@@ -132,6 +133,8 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
       informesNuevos: 0,
       fotosNuevas: 0,
       campanaPendientes,
+      // El count real lo inyecta el dashboard admin (RLS acota al centro); aquí 0.
+      altasPendientesValidar: 0,
     }
   }
 
@@ -176,5 +179,6 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
     informesNuevos,
     fotosNuevas,
     campanaPendientes: null,
+    altasPendientesValidar: 0,
   }
 }

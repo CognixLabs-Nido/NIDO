@@ -306,6 +306,15 @@
       "ver": "View",
       "empty": "No children yet. Register the first one.",
       "sin_matricula_activa": "No active enrolment",
+      "filtro": {
+        "activo": "Showing: {estado}",
+        "quitar": "Show all",
+        "estado": {
+          "pendiente": "In progress",
+          "lista": "Pending validation",
+          "activa": "Active enrolment"
+        }
+      },
       "nuevo_sin_aulas": "You need at least one classroom before registering a child.",
       "created": "Child registered successfully",
       "wizard": {
@@ -1985,7 +1994,8 @@
       "fotos_nuevas": "{n, plural, one {There is # new post in the classroom blog} other {There are # new posts in the classroom blog}}",
       "campana_pendientes": "{n, plural, one {You have # report to complete} other {You have # reports to complete}} · due on {fecha}",
       "campana_urgente": "{n, plural, one {# report pending} other {# reports pending}} · due on {fecha}",
-      "campana_vencida": "{n, plural, one {# report pending} other {# reports pending}} · was due on {fecha}"
+      "campana_vencida": "{n, plural, one {# report pending} other {# reports pending}} · was due on {fecha}",
+      "altas_pendientes_validar": "{n, plural, one {# enrolment pending validation} other {# enrolments pending validation}}"
     },
     "errors": {
       "no_autorizado": "Not authorised.",

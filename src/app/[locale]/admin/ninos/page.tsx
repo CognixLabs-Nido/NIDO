@@ -1,4 +1,4 @@
-import { BabyIcon, ChevronRightIcon, PlusIcon } from 'lucide-react'
+import { BabyIcon, ChevronRightIcon, PlusIcon, XIcon } from 'lucide-react'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 
@@ -22,15 +22,26 @@ import { EmptyState } from '@/shared/components/EmptyState'
 
 interface PageProps {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ estado?: string }>
 }
 
-export default async function AdminNinosPage({ params }: PageProps) {
+const ESTADOS_FILTRABLES = ['pendiente', 'lista', 'activa'] as const
+type EstadoFiltrable = (typeof ESTADOS_FILTRABLES)[number]
+
+export default async function AdminNinosPage({ params, searchParams }: PageProps) {
   const { locale } = await params
+  const { estado } = await searchParams
   const t = await getTranslations('admin.ninos')
   const centroId = (await getCentroActualId())!
-  const ninos = await getNinosPorCentro(centroId)
+  const todos = await getNinosPorCentro(centroId)
   const curso = await getCursoActivo(centroId)
   const aulas = curso ? await getAulasPorCurso(curso.id) : []
+
+  // Deep-link desde el dashboard: ?estado=lista aterriza en las altas a validar.
+  const estadoFiltro = ESTADOS_FILTRABLES.includes(estado as EstadoFiltrable)
+    ? (estado as EstadoFiltrable)
+    : null
+  const ninos = estadoFiltro ? todos.filter((n) => n.estado_matricula === estadoFiltro) : todos
 
   return (
     <div className="space-y-6">
@@ -47,6 +58,20 @@ export default async function AdminNinosPage({ params }: PageProps) {
           </Link>
         </div>
       </header>
+      {estadoFiltro && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="success">
+            {t('filtro.activo', { estado: t(`filtro.estado.${estadoFiltro}`) })}
+          </Badge>
+          <Link
+            href={`/${locale}/admin/ninos`}
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs font-medium"
+          >
+            <XIcon className="size-3.5" />
+            {t('filtro.quitar')}
+          </Link>
+        </div>
+      )}
       {ninos.length === 0 ? (
         <Card>
           <EmptyState
