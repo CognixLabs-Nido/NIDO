@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
 import {
   ninosActivosDeAula,
   ninosDeCentro,
@@ -51,7 +51,7 @@ export async function expandirDestinatariosRecordatorio(
       : []
   }
 
-  const supabase = await createServiceClient()
+  const supabase = createServiceRoleClient()
   const destinatarios = new Set<string>()
 
   if (rec.destinatario === 'profes_centro') {

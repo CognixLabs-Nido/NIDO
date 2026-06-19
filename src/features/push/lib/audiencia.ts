@@ -1,10 +1,10 @@
 import 'server-only'
 
+import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
 import {
   aplicarMatriculaActiva,
   esMatriculaActiva,
 } from '@/features/matriculas/lib/matricula-activa'
-import { createServiceClient } from '@/lib/supabase/server'
 
 /**
  * Devuelve los `usuario_id` que deben recibir un push tras un mensaje nuevo
@@ -26,7 +26,7 @@ export async function destinatariosDeNino(
   ninoId: string,
   excluyendoUserId: string
 ): Promise<string[]> {
-  const supabase = await createServiceClient()
+  const supabase = createServiceRoleClient()
 
   // Profes (vía matriculas → profes_aulas) y vínculos familiares son
   // independientes entre sí: lanzamos ambas queries en paralelo. `profes_aulas`
@@ -112,7 +112,7 @@ export async function destinatariosPushDeAnuncio(
   },
   excluyendoUserId: string
 ): Promise<string[]> {
-  const supabase = await createServiceClient()
+  const supabase = createServiceRoleClient()
   const destinatarios = new Set<string>()
 
   let aulasObjetivo: string[] = []
@@ -161,7 +161,7 @@ export async function destinatariosPushDeAnuncio(
 export async function getAutorPushInfo(
   userId: string
 ): Promise<{ nombre: string; idioma: string }> {
-  const supabase = await createServiceClient()
+  const supabase = createServiceRoleClient()
   const { data } = await supabase
     .from('usuarios')
     .select('nombre_completo, idioma_preferido')

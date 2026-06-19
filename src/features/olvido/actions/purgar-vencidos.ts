@@ -2,7 +2,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
 import { logger } from '@/shared/lib/logger'
 import { borrarObjetosBucket } from '@/shared/lib/adjuntos/storage'
 
@@ -29,7 +29,7 @@ export interface ResultadoPurga {
  * reintenta en la siguiente pasada sin dañar a las demás.
  */
 export async function purgarVencidos(): Promise<ActionResult<ResultadoPurga>> {
-  const service = await createServiceClient()
+  const service = createServiceRoleClient()
   const { data: pendientes, error } = await service.rpc('olvido_pendientes')
   if (error) {
     logger.error('olvido: olvido_pendientes falló', error.message)

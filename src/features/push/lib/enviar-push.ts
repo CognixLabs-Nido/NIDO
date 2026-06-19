@@ -1,6 +1,6 @@
 import webpush from 'web-push'
 
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
 
 import type { PushPayload, PushSubscriptionRow } from '../types'
 
@@ -99,7 +99,7 @@ export async function enviarPushANotificarUsuarios(
     return { enviados: 0, expirados: 0, errores: 0, total: 0 }
   }
 
-  const supabase = await createServiceClient()
+  const supabase = createServiceRoleClient()
 
   const { data: subs, error } = await supabase
     .from('push_subscriptions')

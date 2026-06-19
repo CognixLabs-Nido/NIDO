@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // Fixtures por tabla que el fake service client devuelve. Cada test los reescribe.
 let fixtures: Record<string, unknown[]>
 
-vi.mock('@/lib/supabase/server', () => ({
-  createServiceClient: vi.fn(async () => ({
+vi.mock('@/features/auth/actions/_service-role', () => ({
+  createServiceRoleClient: vi.fn(() => ({
     from: (table: string) => {
       // Builder encadenable y "thenable": cualquier .select/.eq/.in/.is devuelve
       // this, y al await-earlo resuelve { data } con la fixture de esa tabla.

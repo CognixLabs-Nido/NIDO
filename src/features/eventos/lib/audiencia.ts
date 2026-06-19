@@ -1,7 +1,7 @@
 import 'server-only'
 
+import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
 import { expandirDestinatariosRecordatorio } from '@/features/recordatorios/lib/audiencia'
-import { createServiceClient } from '@/lib/supabase/server'
 
 import type { AmbitoEvento } from '../types'
 
@@ -57,7 +57,7 @@ export async function tutoresDeNinosConfirmados(
   eventoId: string,
   excluyendoUserId: string
 ): Promise<string[]> {
-  const supabase = await createServiceClient()
+  const supabase = createServiceRoleClient()
 
   const { data: confs } = await supabase
     .from('confirmaciones_evento')

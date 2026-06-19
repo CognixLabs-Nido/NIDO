@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // La audiencia de eventos reusa el motor de F6-C: solo verificamos el MAPEO
-// ámbito→destino (cero duplicación). `@/lib/supabase/server` se mockea porque el
-// módulo lo importa para `tutoresDeNinosConfirmados` (no usado aquí).
+// ámbito→destino (cero duplicación). `@/features/auth/actions/_service-role` se
+// mockea porque el módulo lo importa para `tutoresDeNinosConfirmados` (no usado aquí).
 const expandirMock = vi.hoisted(() => vi.fn(() => Promise.resolve(['u1'])))
 vi.mock('@/features/recordatorios/lib/audiencia', () => ({
   expandirDestinatariosRecordatorio: expandirMock,
 }))
-vi.mock('@/lib/supabase/server', () => ({
-  createServiceClient: vi.fn(),
+vi.mock('@/features/auth/actions/_service-role', () => ({
+  createServiceRoleClient: vi.fn(),
 }))
 
 import { audienciaPushEvento } from '../audiencia'
