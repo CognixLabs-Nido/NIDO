@@ -12,15 +12,21 @@ import {
 } from './setup'
 
 import { FUENTES_RETENCION } from '@/features/retencion/lib/fuentes-retencion'
+import { BUCKET_NINOS_FOTOS, borrarObjetosBucket } from '@/shared/lib/adjuntos/storage'
 
 /**
  * F11-A6 — esqueleto huérfano (niño-arm). Verifica end-to-end contra la BD remota:
- *   · listar() ve SOLO el huérfano sintético (matrícula 'pendiente' + sin vínculos +
+ *   · listar() ve SOLO los huérfanos sintéticos (matrícula 'pendiente' + sin vínculos +
  *     invitación vencida tras gracia), NO los controles (invitación válida / con vínculo).
  *   · limpiarDb() (RPC atómica) borra el huérfano y NO toca los controles.
+ *   · huérfano CON foto en ninos-fotos: listar lo emite con el objeto en paths; el
+ *     barrido (borrarObjetosBucket → RPC) borra objeto + filas.
  *
  * Gateado: F11_A6_MIGRATION_APPLIED=1
  */
+
+// Cabecera mínima de un JPEG válido para la subida sintética a ninos-fotos.
+const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])
 
 const APPLIED = process.env.F11_A6_MIGRATION_APPLIED === '1'
 
@@ -56,6 +62,14 @@ async function existeNino(ninoId: string): Promise<boolean> {
   return data !== null
 }
 
+/** Nombres de objetos presentes bajo el prefijo del niño en ninos-fotos. */
+async function objetosFoto(centroId: string, ninoId: string): Promise<string[]> {
+  const { data } = await serviceClient.storage
+    .from(BUCKET_NINOS_FOTOS)
+    .list(`${centroId}/${ninoId}`)
+  return (data ?? []).filter((o) => o.id !== null).map((o) => o.name)
+}
+
 describe.skipIf(!APPLIED)('A6 — esqueleto huérfano niño-arm (RLS/RPC)', () => {
   let centro: { id: string }
   let cursoId: string
@@ -63,6 +77,7 @@ describe.skipIf(!APPLIED)('A6 — esqueleto huérfano niño-arm (RLS/RPC)', () =
   let ninoHuerfano: { id: string } // pendiente + invitación vencida + sin vínculo
   let ninoValido: { id: string } // pendiente + invitación VÁLIDA (no huérfano)
   let ninoConVinculo: { id: string } // pendiente + invitación vencida + CON vínculo (no huérfano)
+  let ninoConFoto: { id: string } // huérfano CON objeto en ninos-fotos
   let tutor: TestUser
 
   beforeAll(async () => {
@@ -85,11 +100,26 @@ describe.skipIf(!APPLIED)('A6 — esqueleto huérfano niño-arm (RLS/RPC)', () =
     await invitacion(centro.id, ninoConVinculo.id, diasDesdeHoy(-40)) // vencida...
     tutor = await createTestUser({ nombre: 'Tutor A6' })
     await crearVinculo(ninoConVinculo.id, tutor.id, 'tutor_legal_principal', {}) // ...pero alguien aceptó → NO huérfano
+
+    ninoConFoto = await createTestNino(centro.id, 'ConFoto A6')
+    await matriculaPendiente(ninoConFoto.id, aulaId, cursoId)
+    await invitacion(centro.id, ninoConFoto.id, diasDesdeHoy(-40)) // huérfano...
+    // ...y la directora le subió foto antes de la aceptación (es_admin, sin vínculo).
+    await serviceClient.storage
+      .from(BUCKET_NINOS_FOTOS)
+      .upload(`${centro.id}/${ninoConFoto.id}/probe.jpg`, JPG, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      })
   })
 
   afterAll(async () => {
     // Orden FK-safe (ninos→centros es RESTRICT). Best-effort.
-    const ids = [ninoValido?.id, ninoConVinculo?.id].filter(Boolean)
+    await serviceClient.storage
+      .from(BUCKET_NINOS_FOTOS)
+      .remove([`${centro.id}/${ninoConFoto?.id}/probe.jpg`])
+      .catch(() => {})
+    const ids = [ninoValido?.id, ninoConVinculo?.id, ninoConFoto?.id].filter(Boolean)
     await serviceClient.from('vinculos_familiares').delete().in('nino_id', ids)
     await serviceClient.from('invitaciones').delete().eq('centro_id', centro.id)
     await serviceClient.from('matriculas').delete().in('nino_id', ids)
@@ -122,6 +152,21 @@ describe.skipIf(!APPLIED)('A6 — esqueleto huérfano niño-arm (RLS/RPC)', () =
     expect(await existeNino(ninoHuerfano.id)).toBe(false) // borrado (CASCADE: matrícula + invitación)
     expect(await existeNino(ninoValido.id)).toBe(true) // intacto
     expect(await existeNino(ninoConVinculo.id)).toBe(true) // intacto
+  })
+
+  it('huérfano CON foto: listar lo emite con el objeto en paths; el barrido borra objeto + filas', async () => {
+    const unidades = await fuente!.listar(serviceClient, new Date().toISOString())
+    const unidad = unidades.find((u) => u.refId === ninoConFoto.id)!
+    expect(unidad.bucket).toBe(BUCKET_NINOS_FOTOS)
+    expect(unidad.paths).toContain(`${centro.id}/${ninoConFoto.id}/probe.jpg`)
+    expect(await objetosFoto(centro.id, ninoConFoto.id)).toContain('probe.jpg') // objeto presente antes
+
+    // Mismo orden que el orquestador: Storage primero, luego las filas (RPC atómica).
+    await borrarObjetosBucket(serviceClient, unidad.bucket, unidad.paths)
+    await fuente!.limpiarDb!(serviceClient, unidad)
+
+    expect(await objetosFoto(centro.id, ninoConFoto.id)).toEqual([]) // objeto borrado
+    expect(await existeNino(ninoConFoto.id)).toBe(false) // filas borradas (CASCADE)
   })
 
   it('la RPC re-valida: borrar un no-huérfano (con invitación válida) es rechazado', async () => {
