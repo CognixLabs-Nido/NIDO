@@ -34,7 +34,7 @@ Reusa `packages/core` y el backend Supabase. Aporta lo que solo tiene sentido en
 Sobre una base ya consolidada con datos reales:
 
 - Diferenciales: **A** (hitos de desarrollo), **4** (libro del año), **2** (rutinas visuales de aula), **C** (período de adaptación reforzado), **5** (acceso granular abuelos/cuidadores), **6** (IA aplicada).
-- Mejoras de productividad: mensajes predefinidos, mensajería interna entre staff, rellenado en grupo, actividades predefinidas, cambio de horario por familia, **reserva de franjas para tutorías**, plantillas/comentarios reutilizables en informes, etiquetas, modo "no molestar", histórico de cursos pasados.
+- Mejoras de productividad: mensajes predefinidos, mensajería interna entre staff, rellenado en grupo, actividades predefinidas, cambio de horario por familia, plantillas/comentarios reutilizables en informes, etiquetas, modo "no molestar", histórico de cursos pasados.
 
 ### Fuera del plan
 
@@ -99,12 +99,12 @@ Leyenda: ✅ tiene | ⚪ no se menciona | 💡 destacado | 1️⃣2️⃣3️⃣
 
 ### Calendario, eventos y tutorías
 
-| Función                                 | Tyra | Schooltivity | Mia Plus | NIDO |
-| --------------------------------------- | ---- | ------------ | -------- | ---- |
-| Calendario escolar (festivos, eventos)  | ✅   | ✅           | ✅       | 1️⃣   |
-| Eventos con confirmación de asistencia  | ✅   | ✅           | ✅       | 1️⃣   |
-| Reserva de franjas para tutorías        | ✅   | ⚪           | 💡       | 3️⃣   |
-| Calendario reutilizable curso siguiente | ⚪   | ⚪           | 💡       | 3️⃣   |
+| Función                                 | Tyra | Schooltivity | Mia Plus | NIDO                                                                                        |
+| --------------------------------------- | ---- | ------------ | -------- | ------------------------------------------------------------------------------------------- |
+| Calendario escolar (festivos, eventos)  | ✅   | ✅           | ✅       | 1️⃣                                                                                          |
+| Eventos con confirmación de asistencia  | ✅   | ✅           | ✅       | 1️⃣                                                                                          |
+| Reserva de franjas para tutorías        | ✅   | ⚪           | 💡       | 1️⃣ (F12) ⚠️ reclasificada desde Ola 3 → es funcionalidad, ver `scope-ola-1.md` §Backlog F12 |
+| Calendario reutilizable curso siguiente | ⚪   | ⚪           | 💡       | 3️⃣                                                                                          |
 
 ### Documentación y autorizaciones
 
