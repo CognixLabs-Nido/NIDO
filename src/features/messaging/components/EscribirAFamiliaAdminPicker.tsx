@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+import { MESSAGES_TAB } from '../lib/messages-tabs'
 import type { VinculoTutorMin } from '../queries/get-vinculos-tutores-aula'
 
 interface Props {
@@ -39,7 +40,7 @@ interface Props {
  *    sin `href`) con texto `picker_sin_tutores` en sr-only. No oculto
  *    para mantener la posición visual y comunicar el motivo.
  *  - 1 tutor: `<Link>` directo a
- *    `/messages?tab=direccion&tutor=<usuario_id>` con el tutor de
+ *    `/messages?tab=mensajeria&tutor=<usuario_id>` con el tutor de
  *    mayor prioridad (`tutor_legal_principal > secundario > autorizado`).
  *  - ≥2 tutores: `<Dialog>` con la lista ordenada (principal arriba),
  *    badge `tipo_vinculo` por fila. Click navega y cierra el dialog.
@@ -51,7 +52,7 @@ interface Props {
  * posición — los E2E reales no saben que la URL destino cambió.
  *
  * NO recibe `ninoId` en la URL final (el SplitView del PR #32 admite
- * `?tab=direccion&tutor=<id>`, no acepta `?nino=` en ese tab); la prop
+ * `?tab=mensajeria&tutor=<id>`, no acepta `?nino=` en ese tab); la prop
  * se conserva por simetría / telemetría.
  *
  * Para profe, este componente NO se renderiza — `NinoAgendaCard`
@@ -97,7 +98,7 @@ export function EscribirAFamiliaAdminPicker({ ninoId: _ninoId, vinculos, locale 
     const t1 = ordenados[0]!
     return (
       <Link
-        href={`/${locale}/messages?tab=direccion&tutor=${t1.usuario_id}`}
+        href={`/${locale}/messages?tab=${MESSAGES_TAB.mensajeria}&tutor=${t1.usuario_id}`}
         className={wrapperClass}
         aria-label={tFicha('escribir_familia')}
         data-testid="escribir-familia-button"
@@ -139,7 +140,9 @@ export function EscribirAFamiliaAdminPicker({ ninoId: _ninoId, vinculos, locale 
               <button
                 type="button"
                 onClick={() => {
-                  router.push(`/${locale}/messages?tab=direccion&tutor=${v.usuario_id}`)
+                  router.push(
+                    `/${locale}/messages?tab=${MESSAGES_TAB.mensajeria}&tutor=${v.usuario_id}`
+                  )
                   setOpen(false)
                 }}
                 className="hover:bg-muted/40 flex w-full items-center justify-between gap-3 px-2 py-3 text-left transition-colors"

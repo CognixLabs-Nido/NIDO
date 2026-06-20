@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
 import { marcarConversacionLeida } from '../actions/marcar-conversacion-leida'
+import { MESSAGES_TAB } from '../lib/messages-tabs'
 import { useMessagingRealtime } from '../lib/use-messaging-realtime'
 import type { ConversacionAdminFamiliaHeader, MensajeView, TutorDireccionItem } from '../types'
 
@@ -112,7 +113,7 @@ export function AdminDireccionSplitView({
   }, [detalleHeader?.id, detalleMensajes.length, router])
 
   function selectTutor(tutorId: string) {
-    router.push(`/${locale}/messages?tab=direccion&tutor=${tutorId}`)
+    router.push(`/${locale}/messages?tab=${MESSAGES_TAB.mensajeria}&tutor=${tutorId}`)
   }
 
   return (

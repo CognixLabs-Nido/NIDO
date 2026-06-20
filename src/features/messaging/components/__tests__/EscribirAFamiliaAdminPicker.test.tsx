@@ -57,7 +57,7 @@ describe('EscribirAFamiliaAdminPicker', () => {
     )
     const link = screen.getByTestId('escribir-familia-button') as HTMLAnchorElement
     expect(link.tagName.toLowerCase()).toBe('a')
-    expect(link.getAttribute('href')).toBe('/es/messages?tab=direccion&tutor=u-100')
+    expect(link.getAttribute('href')).toBe('/es/messages?tab=mensajeria&tutor=u-100')
   })
 
   it('1 tutor autorizado: igual usa Link directo con su id', () => {
@@ -69,7 +69,7 @@ describe('EscribirAFamiliaAdminPicker', () => {
       />
     )
     const link = screen.getByTestId('escribir-familia-button') as HTMLAnchorElement
-    expect(link.getAttribute('href')).toBe('/es/messages?tab=direccion&tutor=u-200')
+    expect(link.getAttribute('href')).toBe('/es/messages?tab=mensajeria&tutor=u-200')
   })
 
   it('≥2 tutores: click abre Dialog y las filas aparecen ordenadas (principal → secundario → autorizado)', () => {
@@ -114,7 +114,7 @@ describe('EscribirAFamiliaAdminPicker', () => {
     )
     fireEvent.click(screen.getByTestId('escribir-familia-button'))
     fireEvent.click(screen.getByTestId('picker-tutor-item-u-b'))
-    expect(pushMock).toHaveBeenCalledWith('/es/messages?tab=direccion&tutor=u-b')
+    expect(pushMock).toHaveBeenCalledWith('/es/messages?tab=mensajeria&tutor=u-b')
   })
 
   it('2 tutores del mismo tipo: orden alfabético por nombre', () => {
