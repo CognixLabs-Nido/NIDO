@@ -50,6 +50,14 @@ describe('F11-D — push/audiencia resuelve destinatarios vía service-role', ()
   let profeDest: TestUser // profe del aula → destinatario
 
   beforeAll(async () => {
+    // `enviarPushANotificarUsuarios` hace short-circuit (`return total:0`) si faltan
+    // las VAPID env. En CI no hay `.env.local` ni secretos VAPID, así que sin esto el
+    // motor nunca llega al SELECT que este test verifica. `web-push` está mockeado, así
+    // que valores dummy bastan (no se valida el formato de la clave). Stub local al test.
+    vi.stubEnv('VAPID_PUBLIC_KEY', 'test-vapid-public-key')
+    vi.stubEnv('VAPID_PRIVATE_KEY', 'test-vapid-private-key')
+    vi.stubEnv('VAPID_SUBJECT', 'mailto:test@nido.test')
+
     centro = await createTestCentro('Centro F11D push')
     const curso = await createTestCurso(centro.id)
     const aula = await createTestAula(centro.id, curso.id)
@@ -100,6 +108,7 @@ describe('F11-D — push/audiencia resuelve destinatarios vía service-role', ()
     await deleteTestUser(emisor.id)
     await deleteTestUser(tutorDest.id)
     await deleteTestUser(profeDest.id)
+    vi.unstubAllEnvs()
   })
 
   it('destinatariosDeNino: co-tutor con flag + profe del aula, excluye al emisor (N>0)', async () => {
