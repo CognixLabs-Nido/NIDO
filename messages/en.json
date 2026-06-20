@@ -507,6 +507,15 @@
           "cta_admin": "Contact the admin"
         },
         "historico_vacio": "No records for this day."
+      },
+      "borrar_medica": {
+        "boton": "Delete my medical information",
+        "confirm_title": "Delete the medical information?",
+        "confirm_descripcion": "All the medical information you have shared (allergies, medication, notes and emergency phone) will be deleted. This action cannot be undone.",
+        "cancelar": "Cancel",
+        "confirm_si": "Delete",
+        "borrando": "Deleting…",
+        "borrado": "Medical information deleted."
       }
     }
   },
@@ -646,7 +655,8 @@
       "no_autorizado": "You don't have permission for this action.",
       "actualizacion_fallo": "Could not update.",
       "guardar_fallo": "Could not save the data. Please try again.",
-      "medica_no_autorizado": "You are not allowed to save medical information (is the health-data consent missing?)."
+      "medica_no_autorizado": "You don't have permission to manage this child's medical information.",
+      "borrar_medica_fallo": "The medical information could not be deleted. Please try again."
     }
   },
   "matricula": {

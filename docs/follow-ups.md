@@ -70,7 +70,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 - [ ] **Derecho al olvido funcional** — anonimizar/redactar `valores_antes` en `audit_log` al ejercer borrado.
 - [ ] **Consentimiento de imagen de menores** + **`autorizacion_imagenes` firmable** (reusa F8; alimenta el interruptor `ninos.puede_aparecer_en_fotos`, hoy lo pone dirección a mano).
 - [ ] **Retención formal de fotos de menores y DNIs de terceros** (`recogida-adjuntos`) + **Registro de Actividades de Tratamiento (RAT)** + DPA con encargados.
-- [ ] ⚖️ **Least-privilege en supervisión de mensajería (admin):** la RLS aún deja a dirección **postear** en `profe_familia` (`es_admin`→`puede_participar_conversacion`→INSERT) aunque la UI sea solo-lectura. Cerrar a nivel RLS (excluir admin del INSERT, dejarle SELECT). Origen: reparación de Mensajería (PR #66).
+- [x] ⚖️ **Least-privilege en supervisión de mensajería (admin):** **CERRADO en F11-A** (`20260613180000_phase11a_mensajeria_least_privilege`): el helper `puede_postear_en_conversacion` excluye al admin en `profe_familia` (lee pero no postea); regresión en `enviar-mensaje-admin-familia.test.ts`. Origen: reparación de Mensajería (PR #66). _(Queda aparte la transparencia/RAT del acceso de lectura — ítem siguiente.)_
 - [ ] ⚖️ **Transparencia del acceso de dirección a la mensajería privada:** la supervisión expone a dirección **todos** los mensajes familia↔profe → debe constar en el **aviso de privacidad** y el **RAT**. Origen: PR #66.
 
 **⚖️ Legal (bloquea uso con familias reales):**
@@ -111,7 +111,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 **📝 Doc stale a corregir:**
 
-- [ ] **`scope-ola-1.md` — "Least-privilege en supervisión de mensajería (admin)"** está listado como bloqueante RGPD pendiente ("la RLS todavía le permite postear… cerrarlo con una migración aparte"). **Ya cerrado** por `20260613180000_phase11a_mensajeria_least_privilege.sql` (F11-A): el helper `puede_postear_en_conversacion` excluye al admin en `profe_familia` (lee pero no postea). Actualizar el texto del bloqueante a "resuelto en F11-A" (queda aparte la **transparencia/RAT** del acceso de lectura, que sí sigue pendiente). Regresión blindada en `enviar-mensaje-admin-familia.test.ts` (admin posteando profe_familia → `sin_permisos`).
+- [x] **`scope-ola-1.md` — "Least-privilege en supervisión de mensajería (admin)"** estaba listado como bloqueante RGPD pendiente. **Texto actualizado a CERRADO** (F11-F2): el bloqueante ya estaba resuelto por `20260613180000_phase11a_mensajeria_least_privilege.sql` (F11-A) — el helper `puede_postear_en_conversacion` excluye al admin en `profe_familia` (lee pero no postea). Queda aparte la **transparencia/RAT** del acceso de lectura, que sí sigue pendiente. Regresión blindada en `enviar-mensaje-admin-familia.test.ts` (admin posteando profe_familia → `sin_permisos`).
 
 **🧱 Otros pre-piloto / hardening** (detallados en las secciones de arriba): UI de alta de profesor + invitación; confirmar traducciones VA con nativo; drop de `es_profe_principal`; reactivar tests `skip` de `profes-aulas`; trigger audit de `profes_aulas` + sweep; cleanup de residuos de tests RLS en remoto; implementación de ADR-0028 (PWA/manifest); recalibrar alturas de `ConversacionView`; `process-logos.mjs` multi-fuente; seeds E2E; patrón `Select` de base-ui en jsdom.
 

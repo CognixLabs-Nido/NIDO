@@ -507,6 +507,15 @@
           "cta_admin": "Contactar con el administrador"
         },
         "historico_vacio": "Sin registros este día."
+      },
+      "borrar_medica": {
+        "boton": "Borrar mi información médica",
+        "confirm_title": "¿Borrar la información médica?",
+        "confirm_descripcion": "Se eliminará toda la información médica que has compartido (alergias, medicación, notas y teléfono de emergencia). Esta acción no se puede deshacer.",
+        "cancelar": "Cancelar",
+        "confirm_si": "Borrar",
+        "borrando": "Borrando…",
+        "borrado": "Información médica borrada."
       }
     }
   },
@@ -646,7 +655,8 @@
       "no_autorizado": "No tienes permiso para esta acción.",
       "actualizacion_fallo": "No se pudo actualizar.",
       "guardar_fallo": "No se pudieron guardar los datos. Inténtalo de nuevo.",
-      "medica_no_autorizado": "No tienes permiso para guardar la información médica (¿falta el consentimiento de datos de salud?)."
+      "medica_no_autorizado": "No tienes permiso para gestionar la información médica de este niño.",
+      "borrar_medica_fallo": "No se pudo borrar la información médica. Inténtalo de nuevo."
     }
   },
   "matricula": {

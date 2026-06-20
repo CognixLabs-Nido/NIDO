@@ -46,7 +46,7 @@ Dos trabajos transversales son **bloqueantes** y no se ubican en la cola normal 
   - Derecho al olvido funcional (anonimización/redacción, incl. `valores_antes` en `audit_log`).
   - Consentimiento de imagen de menores.
   - Registro de actividades de tratamiento (+ DPA con encargados).
-  - ⚖️ **Least-privilege en supervisión de mensajería (admin).** La pestaña "Dirección" deja a la directora **leer** las conversaciones profe↔familia (solo lectura en la UI), pero la RLS todavía le permite **postear** en ellas (`es_admin` → `puede_participar_conversacion` → INSERT). Cerrarlo a nivel RLS con una migración aparte (p. ej. excluir a admin del INSERT en `profe_familia`, dejándole solo SELECT). Origen: reparación de Mensajería (PR #66), ver `docs/journey/progress.md`.
+  - ✅ **Least-privilege en supervisión de mensajería (admin) — CERRADO.** La pestaña "Dirección" deja a la directora **leer** las conversaciones profe↔familia (solo lectura), y desde `20260613180000_phase11a_mensajeria_least_privilege` (F11-A) la RLS ya **no** le permite postear: se excluyó a admin del INSERT en `profe_familia`, dejándole solo SELECT. Origen: reparación de Mensajería (PR #66), ver `docs/journey/progress.md`.
   - ⚖️ **Transparencia del acceso de dirección a la mensajería privada.** La supervisión expone a la directora **todos** los mensajes privados familia↔profe del centro → debe constar en el **aviso de privacidad** y en el **Registro de Actividades de Tratamiento (RAT)**. Origen: reparación de Mensajería (PR #66).
 
 ## Items promovidos a Ola 1 (modelo de olas nuevo)

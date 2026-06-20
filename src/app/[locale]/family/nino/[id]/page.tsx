@@ -17,6 +17,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
+import { BorrarInfoMedica } from '@/features/ninos/components/BorrarInfoMedica'
 import { DatosPedagogicosReadOnly } from '@/features/datos-pedagogicos/components/DatosPedagogicosReadOnly'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { AgendaFamiliaSinPermiso } from '@/features/agenda-diaria/components/AgendaFamiliaSinPermiso'
@@ -63,15 +64,21 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const userId = userData.user?.id
 
   let permisos: Record<string, boolean> = {}
+  // Tutor legal (principal/secundario) → puede retirar la info médica voluntaria
+  // (Flag-2 / F11-F2). Mismo criterio que el gate de la RPC `es_tutor_legal_de`.
+  let esTutorLegal = false
   if (userId) {
     const { data: vinculo } = await supabase
       .from('vinculos_familiares')
-      .select('permisos')
+      .select('permisos, tipo_vinculo')
       .eq('usuario_id', userId)
       .eq('nino_id', id)
       .is('deleted_at', null)
       .maybeSingle()
     permisos = (vinculo?.permisos as Record<string, boolean> | null) ?? {}
+    esTutorLegal =
+      vinculo?.tipo_vinculo === 'tutor_legal_principal' ||
+      vinculo?.tipo_vinculo === 'tutor_legal_secundario'
   }
 
   // Agenda del día: cargamos siempre la estructura (RLS filtra si no hay
@@ -190,6 +197,11 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
               <Row k={t('telefono_emergencia')} v={infoMedica.telefono_emergencia ?? '—'} />
             </CardContent>
           </Card>
+          {esTutorLegal && (
+            <div className="flex justify-end">
+              <BorrarInfoMedica ninoId={id} />
+            </div>
+          )}
         </section>
       )}
     </div>
