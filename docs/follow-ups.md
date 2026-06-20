@@ -6,6 +6,10 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 > **Olas (modelo nuevo):** 1️⃣ producto web completo · 2️⃣ app nativa · 3️⃣ mejoras/diferenciación. Plan **scope-driven**, sin deadline externo. Cada entrada se etiqueta con la ola a la que pertenece.
 
+## Registro de operaciones de mantenimiento
+
+- 2026-06-20 · Purga de datos de test (operación de mantenimiento, sin migración): 6.830 usuarios fixture `rls-%` + árbol (174 centros, 235 niños…) + 18.541 filas de `audit_log` de fixtures, borrado SCOPED en orden FK; + tutor8 (usuario `be863720` + niño `4f930fd3`) por IDs. Scope estricto: datos/audit de usuarios reales de ANAIA intactos (verificado: 13 usuarios, 5 niños, 4 fotos, 250 audit, 0 huérfanos).
+
 ## Bloqueantes pre-piloto — Ola 1
 
 - [ ] **UI de alta de profesor + invitación al centro** (admin de usuarios). Hoy el admin del centro depende del **SQL Editor** para dar de alta personal. Sin esta UI el piloto no es autónomo. PR aparte post-sprint. _(Ola 1)_
