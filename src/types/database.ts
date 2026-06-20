@@ -2826,6 +2826,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      borrar_info_medica_nino_tutor: {
+        Args: { p_nino_id: string }
+        Returns: undefined
+      }
       centro_abierto: {
         Args: { p_centro_id: string; p_fecha: string }
         Returns: boolean

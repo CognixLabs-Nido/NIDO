@@ -507,6 +507,15 @@
           "cta_admin": "Contactar amb l'administrador"
         },
         "historico_vacio": "Sense registres aquest dia."
+      },
+      "borrar_medica": {
+        "boton": "Esborrar la meua informació mèdica",
+        "confirm_title": "Voleu esborrar la informació mèdica?",
+        "confirm_descripcion": "S'eliminarà tota la informació mèdica que has compartit (al·lèrgies, medicació, notes i telèfon d'emergència). Aquesta acció no es pot desfer.",
+        "cancelar": "Cancel·lar",
+        "confirm_si": "Esborrar",
+        "borrando": "Esborrant…",
+        "borrado": "Informació mèdica esborrada."
       }
     }
   },
@@ -646,7 +655,8 @@
       "no_autorizado": "No tens permís per a esta acció.",
       "actualizacion_fallo": "No s'ha pogut actualitzar.",
       "guardar_fallo": "No s'han pogut guardar les dades. Torna-ho a provar.",
-      "medica_no_autorizado": "No tens permís per a guardar la informació mèdica (falta el consentiment de dades de salut?)."
+      "medica_no_autorizado": "No tens permís per a gestionar la informació mèdica d'aquest xiquet.",
+      "borrar_medica_fallo": "No s'ha pogut esborrar la informació mèdica. Torna-ho a provar."
     }
   },
   "matricula": {
