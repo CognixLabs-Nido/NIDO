@@ -13,42 +13,22 @@ import { Textarea } from '@/components/ui/textarea'
 import { guardarInfoMedicaTutor } from '@/features/ninos/actions/guardar-info-medica-tutor'
 import { infoMedicaSchema, type InfoMedicaInput } from '@/features/ninos/schemas/nino'
 
-import { SubirCartilla } from './SubirCartilla'
-
 import type { MedicaInicial } from '../lib/tipos'
 
 interface Props {
   ninoId: string
-  locale: string
   inicial: MedicaInicial | null
-  /** Ya hay una cartilla persistida → SubirCartilla muestra el estado "ya subida". */
-  cartillaYaSubida: boolean
-  /** Enlace firmado de la cartilla para abrirla/verificarla; null si no hay. */
-  cartillaUrl: string | null
-  /** Gate: la RPC médica y el bucket cartilla exigen consentimiento `datos_medicos`. */
-  consintioDatosMedicos: boolean
-  onIrAConsentimientos: () => void
   onNext: () => void
   onBack: () => void
 }
 
 /**
- * Paso 4 (OPCIONAL, art. 7.4) — ficha médica del niño + cartilla de vacunas. Escribe
- * por `guardarInfoMedicaTutor` (RPC cifrada, NULL=preserva) y la cartilla por la ruta
- * de 3b-1. Ambas están gateadas por el consentimiento `datos_medicos`: sin él, el paso
- * muestra un aviso para volver a consentimientos en vez del formulario.
+ * Paso 4 (VOLUNTARIO, art. 7.4) — ficha médica del niño. Escribe por
+ * `guardarInfoMedicaTutor` (RPC cifrada, NULL=preserva, gate solo `es_tutor_legal_de`).
+ * Desde F11-F la info médica es voluntaria y ya NO depende del consentimiento: el
+ * formulario se muestra siempre y el tutor puede rellenarlo o saltarlo ("Omitir").
  */
-export function PasoMedico({
-  ninoId,
-  locale,
-  inicial,
-  cartillaYaSubida,
-  cartillaUrl,
-  consintioDatosMedicos,
-  onIrAConsentimientos,
-  onNext,
-  onBack,
-}: Props) {
+export function PasoMedico({ ninoId, inicial, onNext, onBack }: Props) {
   const t = useTranslations('alta')
   const tNino = useTranslations('admin.ninos')
   const tMed = useTranslations('medico')
@@ -77,28 +57,6 @@ export function PasoMedico({
         toast.error(tErrors(r.error))
       }
     })
-  }
-
-  // Sin consentimiento: el paso es opcional → permite saltarlo o ir a consentirlo.
-  if (!consintioDatosMedicos) {
-    return (
-      <div className="space-y-4">
-        <div className="bg-muted/40 rounded-lg border p-4 text-sm">
-          <p>{t('medico.requiere_consentimiento')}</p>
-          <Button type="button" variant="outline" className="mt-3" onClick={onIrAConsentimientos}>
-            {t('medico.ir_a_consentimientos')}
-          </Button>
-        </div>
-        <div className="flex justify-between border-t pt-4">
-          <Button type="button" variant="outline" onClick={onBack}>
-            {t('wizard.atras')}
-          </Button>
-          <Button type="button" onClick={onNext}>
-            {t('medico.omitir')}
-          </Button>
-        </div>
-      </div>
-    )
   }
 
   const campos: { name: keyof InfoMedicaInput; textarea?: boolean }[] = [
@@ -134,23 +92,18 @@ export function PasoMedico({
           />
         ))}
 
-        <div className="space-y-1.5 border-t pt-3">
-          <p className="text-sm font-medium">{t('medico.cartilla_titulo')}</p>
-          <SubirCartilla
-            ninoId={ninoId}
-            locale={locale}
-            yaSubida={cartillaYaSubida}
-            cartillaUrl={cartillaUrl}
-          />
-        </div>
-
         <div className="flex justify-between border-t pt-4">
           <Button type="button" variant="outline" onClick={onBack} disabled={pending}>
             {t('wizard.atras')}
           </Button>
-          <Button type="submit" disabled={pending}>
-            {pending ? t('wizard.guardando') : t('wizard.guardar_siguiente')}
-          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="ghost" onClick={onNext} disabled={pending}>
+              {t('medico.omitir')}
+            </Button>
+            <Button type="submit" disabled={pending}>
+              {pending ? t('wizard.guardando') : t('wizard.guardar_siguiente')}
+            </Button>
+          </div>
         </div>
       </form>
     </Form>

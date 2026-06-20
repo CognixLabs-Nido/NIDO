@@ -21,8 +21,8 @@ import type { Database } from '@/types/database'
  *
  * Migración 20260616170000_phase11_alta_p3a_tutor_writes. Verifica los gates de las
  * piezas más sensibles (RLS/RPC), sin UI:
- *   1. RPC médica del tutor: rechaza sin consentimiento; acepta con él; cifra y escribe
- *      cartilla; no puede tocar el niño de otra familia.
+ *   1. RPC médica del tutor: VOLUNTARIA desde F11-F (gate solo es_tutor_legal_de, sin
+ *      consentimiento); cifra y escribe; no puede tocar el niño de otra familia.
  *   2. RPC de identidad: el tutor escribe la whitelist; no toca centro; no el de otro.
  *   3. `datos_pedagogicos_nino`: el tutor escribe el suyo; RLS deniega el de otra familia.
  *   4. `tiene_consentimiento` refleja alta/revocación.
@@ -47,7 +47,6 @@ type MedicaArgs = {
   p_alergias_leves: string
   p_medico_familia: string
   p_telefono_emergencia: string
-  p_cartilla_vacunas_path: string
 }
 type IdentidadArgs = {
   p_nino_id: string
@@ -67,7 +66,6 @@ function medicaArgs(ninoId: string, over: Partial<Record<keyof MedicaArgs, unkno
     p_alergias_leves: null,
     p_medico_familia: null,
     p_telefono_emergencia: null,
-    p_cartilla_vacunas_path: null,
     ...over,
   } as unknown as MedicaArgs
 }
@@ -140,34 +138,31 @@ describe.skipIf(!APPLIED)('Alta P3a — escritura del tutor (RLS/RPC)', () => {
     expect(sin).toBe(false)
   })
 
-  it('RPC médica RECHAZA sin consentimiento vigente', async () => {
-    const { error } = await clientSin.rpc(
+  it('RPC médica ACEPTA sin consentimiento (F11-F: voluntaria, gate solo es_tutor_legal_de)', async () => {
+    // tutorSin es tutor LEGAL de ninoB pero NO tiene consentimiento datos_medicos.
+    // Desde F11-F la médica es voluntaria → debe ACEPTAR (antes daba 42501).
+    const { data, error } = await clientSin.rpc(
       'set_info_medica_emergencia_cifrada_tutor',
       medicaArgs(ninoB.id, { p_alergias_graves: 'Polen' })
     )
-    expect(error).not.toBeNull()
-    expect(error?.code).toBe('42501')
+    expect(error).toBeNull()
+    expect(data).toBeTruthy()
   })
 
-  it('RPC médica ACEPTA con consentimiento: cifra y escribe cartilla', async () => {
-    const cartilla = `${centro.id}/${ninoA.id}/cartilla.jpg`
+  it('RPC médica cifra y escribe (tutor legal)', async () => {
     const { data, error } = await clientCon.rpc(
       'set_info_medica_emergencia_cifrada_tutor',
-      medicaArgs(ninoA.id, {
-        p_alergias_graves: 'Frutos secos (grave)',
-        p_cartilla_vacunas_path: cartilla,
-      })
+      medicaArgs(ninoA.id, { p_alergias_graves: 'Frutos secos (grave)' })
     )
     expect(error).toBeNull()
     expect(data).toBeTruthy()
 
-    // Verifica vía service: alergias cifradas (bytea no nulo) + cartilla guardada.
+    // Verifica vía service: alergias cifradas (bytea no nulo).
     const { data: row } = await serviceClient
       .from('info_medica_emergencia')
-      .select('alergias_graves, cartilla_vacunas_path')
+      .select('alergias_graves')
       .eq('nino_id', ninoA.id)
       .single()
-    expect(row?.cartilla_vacunas_path).toBe(cartilla)
     expect(row?.alergias_graves).not.toBeNull()
   })
 
@@ -309,16 +304,6 @@ describe.skipIf(!APPLIED)('Alta P3a — escritura del tutor (RLS/RPC)', () => {
         .maybeSingle()
       expect(error).toBeNull()
       expect(data).toBeNull()
-    })
-
-    it('storage cartilla-vacunas: un autorizado NO puede subir (RLS deniega)', async () => {
-      const res = await clientAut.storage
-        .from('cartilla-vacunas')
-        .upload(`${centro.id}/${ninoA.id}/cartilla.jpg`, JPG, {
-          contentType: 'image/jpeg',
-          upsert: true,
-        })
-      expect(res.error).toBeTruthy()
     })
 
     it('storage ninos-fotos: un autorizado NO puede subir la foto (RLS deniega)', async () => {

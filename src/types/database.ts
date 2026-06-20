@@ -1514,7 +1514,6 @@ export type Database = {
         Row: {
           alergias_graves: string | null
           alergias_leves: string | null
-          cartilla_vacunas_path: string | null
           created_at: string
           id: string
           medicacion_habitual: string | null
@@ -1527,7 +1526,6 @@ export type Database = {
         Insert: {
           alergias_graves?: string | null
           alergias_leves?: string | null
-          cartilla_vacunas_path?: string | null
           created_at?: string
           id?: string
           medicacion_habitual?: string | null
@@ -1540,7 +1538,6 @@ export type Database = {
         Update: {
           alergias_graves?: string | null
           alergias_leves?: string | null
-          cartilla_vacunas_path?: string | null
           created_at?: string
           id?: string
           medicacion_habitual?: string | null
@@ -2982,7 +2979,6 @@ export type Database = {
         Args: {
           p_alergias_graves: string
           p_alergias_leves: string
-          p_cartilla_vacunas_path: string
           p_medicacion_habitual: string
           p_medico_familia: string
           p_nino_id: string

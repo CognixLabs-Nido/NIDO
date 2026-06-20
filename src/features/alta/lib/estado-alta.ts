@@ -3,8 +3,9 @@
  * 5 pasos, guardable y reanudable: cada paso persiste por su cuenta (no hay un submit
  * final único), así que al volver se reanuda donde se dejó.
  *
- * Orden de los pasos. `consentimientos` precede a `medico` porque la ficha médica y la
- * cartilla exigen el consentimiento `datos_medicos` (RPC + RLS de storage de 3a).
+ * Orden de los pasos. `consentimientos` (acuse de confidencialidad de datos médicos,
+ * F11-F) precede a `medico`; el acuse es obligatorio para cerrar el alta, aunque la
+ * ficha médica en sí sea voluntaria y ya no dependa de él.
  */
 export const PASOS_ALTA = [
   'identidad',

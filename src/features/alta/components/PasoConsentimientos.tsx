@@ -18,11 +18,12 @@ interface Props {
 }
 
 /**
- * Paso 3 — consentimientos. El tutor otorga el consentimiento de `datos_medicos`
- * (acto afirmativo), prerrequisito de la ficha médica y la cartilla (la RPC médica y
- * la RLS del bucket cartilla lo exigen). El consentimiento de `imagen` NO se otorga
- * aquí: se materializa al FIRMAR la autorización de imagen (paso posterior). Es
- * opcional: si el tutor no lo otorga, simplemente no podrá completar el paso médico.
+ * Paso 3 — acuse de confidencialidad de datos médicos (F11-F). El tutor confirma que
+ * ha leído cómo se tratan los datos médicos (registro append-only en `consentimientos`,
+ * tipo `datos_medicos` v2.0, sin firma). Ya NO gatea la escritura médica (voluntaria),
+ * pero es OBLIGATORIO para cerrar el alta (backstop en `marcar_matricula_lista`). El
+ * consentimiento de `imagen` NO se otorga aquí: se materializa al FIRMAR la
+ * autorización de imagen (paso posterior).
  */
 export function PasoConsentimientos({ consintioInicial, onConsentir, onNext, onBack }: Props) {
   const t = useTranslations('alta')

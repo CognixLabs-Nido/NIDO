@@ -24,9 +24,10 @@ import type { Database } from '@/types/database'
  * Migraciones 20260617120000 (ENUM 'lista') + 20260617120100 (RPC
  * `marcar_matricula_lista`). Verifica:
  *   1. RPC `marcar_matricula_lista` (el tutor LEGAL finaliza: pendiente → lista):
- *      - tutor legal + identidad completa → 'lista';
+ *      - tutor legal + identidad completa + acuse datos_medicos → 'lista';
  *      - idempotente (2.ª llamada → null, sigue 'lista');
  *      - sin identidad (apellidos null) → null, sigue 'pendiente' (backstop);
+ *      - sin acuse datos_medicos (F11-F) → rechazada, sigue 'pendiente';
  *      - 'autorizado' (no es tutor legal) → rechazada (es_tutor_legal_de).
  *   2. Guard de activarMatricula (a nivel RLS/DB): admin solo activa una 'lista'
  *      (no una 'pendiente') — espejo del `.eq('estado','lista')` de la action.
@@ -60,12 +61,16 @@ describe.skipIf(!APPLIED)('Alta P3c — activación de matrícula (RPC + guard)'
   let centro: { id: string }
   let ninoOk: { id: string }
   let ninoSinId: { id: string }
+  let ninoSinAcuse: { id: string }
   let matOk: string
   let matSinId: string
+  let matSinAcuse: string
   let tutorLegal: TestUser
+  let tutorSinAcuse: TestUser
   let autorizado: TestUser
   let admin: TestUser
   let clientTutor: SupabaseClient<Database>
+  let clientSinAcuse: SupabaseClient<Database>
   let clientAutorizado: SupabaseClient<Database>
   let clientAdmin: SupabaseClient<Database>
 
@@ -73,6 +78,7 @@ describe.skipIf(!APPLIED)('Alta P3c — activación de matrícula (RPC + guard)'
     centro = await createTestCentro('Centro Alta P3c')
     ninoOk = await createTestNino(centro.id, 'Nino OK P3c') // identidad completa (helper)
     ninoSinId = await createTestNino(centro.id, 'Nino SinId P3c')
+    ninoSinAcuse = await createTestNino(centro.id, 'Nino SinAcuse P3c') // identidad completa
     // ninoSinId: identidad incompleta → backstop debe impedir 'lista'.
     await serviceClient
       .from('ninos')
@@ -83,25 +89,38 @@ describe.skipIf(!APPLIED)('Alta P3c — activación de matrícula (RPC + guard)'
     const aula = await createTestAula(centro.id, curso.id, 'Aula P3c')
     matOk = await crearMatriculaPendiente(ninoOk.id, aula.id, curso.id)
     matSinId = await crearMatriculaPendiente(ninoSinId.id, aula.id, curso.id)
+    matSinAcuse = await crearMatriculaPendiente(ninoSinAcuse.id, aula.id, curso.id)
 
     tutorLegal = await createTestUser({ nombre: 'Tutor Legal 3c' })
+    tutorSinAcuse = await createTestUser({ nombre: 'Tutor SinAcuse 3c' })
     autorizado = await createTestUser({ nombre: 'Autorizado 3c' })
     admin = await createTestUser({ nombre: 'Admin 3c' })
     await asignarRol(tutorLegal.id, centro.id, 'tutor_legal')
+    await asignarRol(tutorSinAcuse.id, centro.id, 'tutor_legal')
     await asignarRol(autorizado.id, centro.id, 'autorizado')
     await asignarRol(admin.id, centro.id, 'admin')
     await crearVinculo(ninoOk.id, tutorLegal.id, 'tutor_legal_principal', {})
     await crearVinculo(ninoSinId.id, tutorLegal.id, 'tutor_legal_principal', {})
+    await crearVinculo(ninoSinAcuse.id, tutorSinAcuse.id, 'tutor_legal_principal', {})
     await crearVinculo(ninoOk.id, autorizado.id, 'autorizado', {})
 
     clientTutor = await clientFor(tutorLegal)
+    clientSinAcuse = await clientFor(tutorSinAcuse)
     clientAutorizado = await clientFor(autorizado)
     clientAdmin = await clientFor(admin)
+
+    // F11-F: el tutor que SÍ finaliza necesita el acuse datos_medicos registrado
+    // (backstop de marcar_matricula_lista). tutorSinAcuse NO lo registra a propósito.
+    await clientTutor.rpc('registrar_consentimiento', {
+      p_usuario_id: tutorLegal.id,
+      p_tipo: 'datos_medicos',
+      p_version: 'v2.0',
+    })
   }, 90_000)
 
   afterAll(async () => {
-    const usuarios = [tutorLegal?.id, autorizado?.id, admin?.id].filter((u): u is string =>
-      Boolean(u)
+    const usuarios = [tutorLegal?.id, tutorSinAcuse?.id, autorizado?.id, admin?.id].filter(
+      (u): u is string => Boolean(u)
     )
     await serviceClient.from('vinculos_familiares').delete().in('usuario_id', usuarios)
     await serviceClient.from('roles_usuario').delete().in('usuario_id', usuarios)
@@ -149,6 +168,15 @@ describe.skipIf(!APPLIED)('Alta P3c — activación de matrícula (RPC + guard)'
   it("'autorizado' (no es tutor legal) NO puede finalizar → rechazada", async () => {
     const { error } = await clientAutorizado.rpc('marcar_matricula_lista', { p_nino_id: ninoOk.id })
     expect(error).not.toBeNull() // es_tutor_legal_de false → RAISE insufficient_privilege
+  })
+
+  it('F11-F: tutor legal SIN acuse datos_medicos NO finaliza → rechazada, sigue pendiente', async () => {
+    const { error } = await clientSinAcuse.rpc('marcar_matricula_lista', {
+      p_nino_id: ninoSinAcuse.id,
+    })
+    expect(error).not.toBeNull() // backstop del acuse → RAISE insufficient_privilege (42501)
+    expect(error?.code).toBe('42501')
+    expect(await estadoDe(matSinAcuse)).toBe('pendiente')
   })
 
   it('guard activarMatricula: admin NO activa una pendiente (0 filas)', async () => {

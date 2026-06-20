@@ -9,11 +9,11 @@ import { CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
 import { fail, ok, type ActionResult } from '../../centros/types'
 
 /**
- * Pieza 3b-2a — el TUTOR otorga su propio consentimiento dentro del wizard de alta.
- * Hoy solo `datos_medicos` (la cartilla + la ficha médica del tutor lo exigen; la RPC
- * médica y la RLS del bucket cartilla gatean por `tiene_consentimiento(...,'datos_medicos')`).
- * El consentimiento de `imagen` NO se otorga aquí: se materializa al FIRMAR la
- * autorización de imagen (trigger `firma_imagen_sync_trg`), no como checkbox.
+ * Pieza 3b-2a — el TUTOR registra su acuse dentro del wizard de alta. Hoy solo
+ * `datos_medicos`, que desde F11-F es un ACUSE de confidencialidad (v2.0): no gatea
+ * la escritura médica (voluntaria), pero es obligatorio para cerrar el alta (backstop
+ * en `marcar_matricula_lista`). El consentimiento de `imagen` NO se otorga aquí: se
+ * materializa al FIRMAR la autorización de imagen (trigger `firma_imagen_sync_trg`).
  */
 const registrarConsentimientoTutorSchema = z.object({
   tipo: z.literal('datos_medicos'),

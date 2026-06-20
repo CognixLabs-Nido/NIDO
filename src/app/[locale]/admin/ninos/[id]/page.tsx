@@ -1,7 +1,6 @@
 import {
   BookOpenIcon,
   ChevronLeftIcon,
-  ExternalLinkIcon,
   HeartIcon,
   InfoIcon,
   UsersIcon,
@@ -30,7 +29,6 @@ import {
 } from '@/features/ninos/queries/get-ninos'
 import { ConsentimientoFotosToggle } from '@/features/ninos/components/ConsentimientoFotosToggle'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
-import { firmarRutaCartilla } from '@/features/ninos/queries/get-cartilla'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
@@ -48,7 +46,6 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const { id, locale } = await params
   const t = await getTranslations('admin.ninos')
   const tMed = await getTranslations('medico')
-  const tAlta = await getTranslations('alta')
   const tFicha = await getTranslations('messages.ficha_nino')
   const tExport = await getTranslations('export')
   const nino = await getNinoById(id)
@@ -57,7 +54,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const foto = await firmarFotoNino(nino.foto_url)
 
   const supabase = await createClient()
-  const [{ data: vinculos }, info, matriculas, datosPed, { data: ime }] = await Promise.all([
+  const [{ data: vinculos }, info, matriculas, datosPed] = await Promise.all([
     supabase
       .from('vinculos_familiares')
       .select(
@@ -68,16 +65,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
     getInfoMedica(id),
     getMatriculasPorNino(id),
     getDatosPedagogicos(id),
-    // La cartilla NO viaja en la RPC de descifrado: su path está en claro en la tabla
-    // (RLS `ime_admin_all` deja leerlo a dirección). Lo firmamos para que la directora
-    // pueda ABRIRLA y verificar el documento antes de activar la matrícula.
-    supabase
-      .from('info_medica_emergencia')
-      .select('cartilla_vacunas_path')
-      .eq('nino_id', id)
-      .maybeSingle(),
   ])
-  const cartillaUrl = await firmarRutaCartilla(ime?.cartilla_vacunas_path ?? null)
 
   const matriculaActiva = matriculas.find((m) => m.fecha_baja === null)
   const initials =
@@ -230,17 +218,6 @@ export default async function NinoDetallePage({ params }: PageProps) {
               <p className="text-muted-foreground border-info-300 bg-info-100 text-info-700 border-l-4 px-3 py-2 text-xs">
                 {tMed('aviso_cifrado')}
               </p>
-              {cartillaUrl && (
-                <a
-                  href={cartillaUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline"
-                >
-                  <ExternalLinkIcon className="size-3.5" aria-hidden />
-                  {tAlta('medico.cartilla_ver')}
-                </a>
-              )}
               {info ? (
                 <>
                   <Row k={t('fields.alergias_graves')} v={info.alergias_graves ?? '—'} />

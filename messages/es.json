@@ -2483,25 +2483,16 @@
       "guardado": "Datos guardados correctamente"
     },
     "consentimientos": {
-      "datos_medicos_titulo": "Consentimiento de datos médicos",
-      "datos_medicos_texto": "Autorizo al centro a tratar los datos médicos de mi hijo/a (alergias, medicación, contactos de emergencia y cartilla de vacunas) para su cuidado y seguridad.",
-      "otorgar": "Doy mi consentimiento",
-      "otorgado": "Consentimiento registrado",
-      "concedido": "Consentimiento concedido",
+      "datos_medicos_titulo": "Confidencialidad de los datos médicos",
+      "datos_medicos_texto": "He leído cómo se tratan los datos médicos de mi hijo/a: el centro los guarda cifrados y de forma confidencial, y solo el equipo educativo y la dirección acceden a ellos para su cuidado y seguridad.",
+      "otorgar": "He leído y confirmo",
+      "otorgado": "Acuse registrado",
+      "concedido": "Acuse registrado",
       "imagen_nota": "El consentimiento de uso de imagen se registra más adelante, al firmar la autorización de imagen."
     },
     "medico": {
       "guardado": "Datos médicos guardados",
-      "requiere_consentimiento": "Para rellenar los datos médicos necesitas otorgar antes el consentimiento de datos médicos.",
-      "ir_a_consentimientos": "Ir a consentimientos",
-      "omitir": "Omitir por ahora",
-      "cartilla_titulo": "Cartilla de vacunas",
-      "cartilla_subir": "Subir cartilla",
-      "cartilla_cambiar": "Cambiar cartilla",
-      "cartilla_ayuda": "Imagen o foto de la cartilla (JPG o PNG).",
-      "cartilla_subida": "Cartilla subida correctamente",
-      "cartilla_ok": "Cartilla guardada",
-      "cartilla_ver": "Ver cartilla"
+      "omitir": "Omitir por ahora"
     },
     "imagen": {
       "autorizacion_titulo": "Autorización de imagen",
@@ -2519,7 +2510,8 @@
       "no_autorizado": "No tienes permiso para esta acción.",
       "consentimiento_fallo": "No se pudo registrar el consentimiento. Inténtalo de nuevo.",
       "finalizar_fallo": "No se pudo finalizar el alta. Inténtalo de nuevo.",
-      "identidad_incompleta": "Completa primero los datos del niño (nombre y fecha de nacimiento)."
+      "identidad_incompleta": "Completa primero los datos del niño (nombre y fecha de nacimiento).",
+      "acuse_pendiente": "Confirma antes el acuse de confidencialidad de los datos médicos."
     }
   }
 }

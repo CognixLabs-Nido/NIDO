@@ -8,11 +8,11 @@ import { infoMedicaTutorSchema, type InfoMedicaTutorInput } from '../schemas/nin
 import { fail, ok, type ActionResult } from '../../centros/types'
 
 /**
- * Pieza 3a — el TUTOR escribe la info médica de su hijo (+ ruta de cartilla) vía la
- * RPC `set_info_medica_emergencia_cifrada_tutor` (SECURITY DEFINER). La RPC gatea con
- * `es_tutor_de(nino_id) AND tiene_consentimiento(auth.uid(),'datos_medicos')` y cifra
- * en servidor sin exponer la clave de Vault. NULL = preservar (ADR-0004). Si no hay
- * consentimiento vigente, la RPC lanza `insufficient_privilege` (42501).
+ * Pieza 3a — el TUTOR escribe la info médica de su hijo vía la RPC
+ * `set_info_medica_emergencia_cifrada_tutor` (SECURITY DEFINER). La RPC gatea solo con
+ * `es_tutor_legal_de(nino_id)` y cifra en servidor sin exponer la clave de Vault.
+ * NULL = preservar (ADR-0004). La info médica es VOLUNTARIA (F11-F): sin gate de
+ * consentimiento. Si el llamante no es tutor legal, la RPC lanza 42501.
  */
 export async function guardarInfoMedicaTutor(
   input: InfoMedicaTutorInput
@@ -34,7 +34,6 @@ export async function guardarInfoMedicaTutor(
     p_alergias_leves: d.alergias_leves ?? null,
     p_medico_familia: d.medico_familia ?? null,
     p_telefono_emergencia: d.telefono_emergencia ?? null,
-    p_cartilla_vacunas_path: d.cartilla_vacunas_path ?? null,
   } as unknown as {
     p_nino_id: string
     p_alergias_graves: string
@@ -43,13 +42,12 @@ export async function guardarInfoMedicaTutor(
     p_alergias_leves: string
     p_medico_familia: string
     p_telefono_emergencia: string
-    p_cartilla_vacunas_path: string
   }
 
   const { data, error } = await supabase.rpc('set_info_medica_emergencia_cifrada_tutor', rpcArgs)
   if (error) {
     logger.warn('guardarInfoMedicaTutor', error.message)
-    // 42501 = sin consentimiento vigente o no es tutor del niño (gate de la RPC).
+    // 42501 = no es tutor legal del niño (gate de la RPC).
     if (error.code === '42501') return fail('nino.errors.medica_no_autorizado')
     return fail('nino.errors.guardar_fallo')
   }

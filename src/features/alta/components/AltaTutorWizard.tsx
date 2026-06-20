@@ -26,10 +26,6 @@ interface Props {
   datosPedagogicosInicial: DatosPedagogicosInput | null
   consintioDatosMedicos: boolean
   medicaInicial: MedicaInicial | null
-  /** Ya hay una cartilla de vacunas persistida (la ruta la deriva de su path). */
-  cartillaYaSubida: boolean
-  /** Enlace firmado de la cartilla para abrirla/verificarla; null si no hay. */
-  cartillaUrl: string | null
   fotoInicialUrl: string | null
   imagenPanel: ImagenPanelData | null
   imagenSinPlantilla: boolean
@@ -54,8 +50,6 @@ export function AltaTutorWizard({
   datosPedagogicosInicial,
   consintioDatosMedicos,
   medicaInicial,
-  cartillaYaSubida,
-  cartillaUrl,
   fotoInicialUrl,
   imagenPanel,
   imagenSinPlantilla,
@@ -65,7 +59,7 @@ export function AltaTutorWizard({
   const t = useTranslations('alta')
   const total = PASOS_ALTA.length
   const [step, setStep] = useState<number>(Math.min(Math.max(pasoInicial, 0), total - 1))
-  // El consentimiento médico se liftea al shell: el paso médico lo necesita como gate.
+  // El acuse de datos médicos se liftea al shell para reflejar el check al volver al paso.
   const [consintio, setConsintio] = useState(consintioDatosMedicos)
 
   const paso: PasoAlta = PASOS_ALTA[step]
@@ -137,17 +131,7 @@ export function AltaTutorWizard({
         )}
 
         {paso === 'medico' && (
-          <PasoMedico
-            ninoId={ninoId}
-            locale={locale}
-            inicial={medicaInicial}
-            cartillaYaSubida={cartillaYaSubida}
-            cartillaUrl={cartillaUrl}
-            consintioDatosMedicos={consintio}
-            onIrAConsentimientos={() => setStep(PASOS_ALTA.indexOf('consentimientos'))}
-            onNext={goNext}
-            onBack={goBack}
-          />
+          <PasoMedico ninoId={ninoId} inicial={medicaInicial} onNext={goNext} onBack={goBack} />
         )}
 
         {paso === 'imagen' && (

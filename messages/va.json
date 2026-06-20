@@ -2483,25 +2483,16 @@
       "guardado": "Dades guardades correctament"
     },
     "consentimientos": {
-      "datos_medicos_titulo": "Consentiment de dades mèdiques",
-      "datos_medicos_texto": "Autoritze el centre a tractar les dades mèdiques del meu fill/a (al·lèrgies, medicació, contactes d'emergència i cartilla de vacunes) per a la seua cura i seguretat.",
-      "otorgar": "Done el meu consentiment",
-      "otorgado": "Consentiment registrat",
-      "concedido": "Consentiment concedit",
+      "datos_medicos_titulo": "Confidencialitat de les dades mèdiques",
+      "datos_medicos_texto": "He llegit com es tracten les dades mèdiques del meu fill/a: el centre les guarda xifrades i de manera confidencial, i només l'equip educatiu i la direcció hi accedeixen per a la seua cura i seguretat.",
+      "otorgar": "He llegit i confirme",
+      "otorgado": "Justificant registrat",
+      "concedido": "Justificant registrat",
       "imagen_nota": "El consentiment d'ús d'imatge es registra més avant, en signar l'autorització d'imatge."
     },
     "medico": {
       "guardado": "Dades mèdiques guardades",
-      "requiere_consentimiento": "Per a omplir les dades mèdiques necessites atorgar abans el consentiment de dades mèdiques.",
-      "ir_a_consentimientos": "Anar a consentiments",
-      "omitir": "Ometre per ara",
-      "cartilla_titulo": "Cartilla de vacunes",
-      "cartilla_subir": "Pujar cartilla",
-      "cartilla_cambiar": "Canviar cartilla",
-      "cartilla_ayuda": "Imatge o foto de la cartilla (JPG o PNG).",
-      "cartilla_subida": "Cartilla pujada correctament",
-      "cartilla_ok": "Cartilla guardada",
-      "cartilla_ver": "Veure cartilla"
+      "omitir": "Ometre per ara"
     },
     "imagen": {
       "autorizacion_titulo": "Autorització d'imatge",
@@ -2519,7 +2510,8 @@
       "no_autorizado": "No tens permís per a esta acció.",
       "consentimiento_fallo": "No s'ha pogut registrar el consentiment. Torna-ho a provar.",
       "finalizar_fallo": "No s'ha pogut finalitzar l'alta. Torna-ho a provar.",
-      "identidad_incompleta": "Completa primer les dades del xiquet (nom i data de naixement)."
+      "identidad_incompleta": "Completa primer les dades del xiquet (nom i data de naixement).",
+      "acuse_pendiente": "Confirma abans el justificant de confidencialitat de les dades mèdiques."
     }
   }
 }
