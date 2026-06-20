@@ -13,7 +13,7 @@ related_adrs: [ADR-0029]
 
 ## Resumen ejecutivo
 
-El botón "Escribir a la familia" del componente cliente `NinoAgendaCard` (vista de aula) seguía el flujo F5 profe→familia (`/messages/nino/<id>` → `/messages?nino=<id>`). El admin reusa la página `/teacher/aula/[id]` para supervisar y allí ese flujo cae en tab Anuncios (mismo síntoma del Item 1 del PR #32). Aplicamos **Opción B**: para admin, el botón redirige al SplitView del PR #32 (`/messages?tab=direccion&tutor=<usuarioId>`) con preselección del tutor; si el niño tiene varios tutores activos, abre un Dialog picker para que el admin elija. Para profe se mantiene el flujo actual bit-a-bit, sin regresión.
+El botón "Escribir a la familia" del componente cliente `NinoAgendaCard` (vista de aula) seguía el flujo F5 profe→familia (`/messages/nino/<id>` → `/messages?nino=<id>`). El admin reusa la página `/teacher/aula/[id]` para supervisar y allí ese flujo cae en tab Anuncios (mismo síntoma del Item 1 del PR #32). Aplicamos **Opción B**: para admin, el botón redirige al SplitView del PR #32 (`/messages?tab=mensajeria&tutor=<usuarioId>`) con preselección del tutor; si el niño tiene varios tutores activos, abre un Dialog picker para que el admin elija. Para profe se mantiene el flujo actual bit-a-bit, sin regresión.
 
 ## Decisiones cerradas
 
@@ -33,7 +33,7 @@ El botón "Escribir a la familia" del componente cliente `NinoAgendaCard` (vista
 | Caso                    | Render                                                                                                                                                                                                                                                                                                           |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `vinculos.length === 0` | `<span>` con `aria-disabled="true"`, sin `href`, `tabIndex={-1}`, clase visual idéntica al Link normal pero con `opacity-60` + `cursor-not-allowed`. Texto sr-only "Sin tutores con vínculo activo en este niño". `data-testid="escribir-familia-button"`.                                                       |
-| `vinculos.length === 1` | `<Link>` directo a `/messages?tab=direccion&tutor=<usuario_id>`. Misma apariencia visual que el Link profe. `data-testid="escribir-familia-button"`.                                                                                                                                                             |
+| `vinculos.length === 1` | `<Link>` directo a `/messages?tab=mensajeria&tutor=<usuario_id>`. Misma apariencia visual que el Link profe. `data-testid="escribir-familia-button"`.                                                                                                                                                            |
 | `vinculos.length >= 2`  | `<Dialog>` con `<DialogTrigger render={<button>...</button>}>`. `DialogContent` contiene `<ul>` con cada tutor como `<button>` (`data-testid="picker-tutor-item-<id>"`) que ejecuta `router.push` y cierra el dialog. Badge con `tipo_vinculo`. `data-testid` del trigger es el mismo `escribir-familia-button`. |
 
 ## Datos disponibles vs por cargar
@@ -53,7 +53,7 @@ El botón "Escribir a la familia" del componente cliente `NinoAgendaCard` (vista
 
 - **Vitest unit** ([**tests**/get-vinculos-tutores-aula.test.ts](../../src/features/messaging/queries/__tests__/get-vinculos-tutores-aula.test.ts)) — 6 casos del `*Core`: agrupación por `nino_id`, aula vacía, 3 tipos coexistiendo, errores en matriculas/vinculos → Map vacío, `nombre_completo` NULL fallback.
 - **Vitest unit del componente** ([**tests**/EscribirAFamiliaAdminPicker.test.tsx](../../src/features/messaging/components/__tests__/EscribirAFamiliaAdminPicker.test.tsx)) — 6 casos: 0 tutores (aria-disabled + sr-only), 1 tutor (Link directo), 1 autorizado (también Link), ≥2 (Dialog abre + orden), navegación `router.push`, orden alfabético con mismo tipo.
-- **Playwright E2E** bajo `test.skip` (gated por `E2E_REAL_SESSIONS=1`): admin abre `/teacher/aula/<E2E_AULA_ID>`, click en el primer "Escribir a la familia", verifica URL `?tab=direccion&tutor=<id>` y que el item del SplitView queda seleccionado. TODO sobre el seed multi-tutor para validar el caso Dialog.
+- **Playwright E2E** bajo `test.skip` (gated por `E2E_REAL_SESSIONS=1`): admin abre `/teacher/aula/<E2E_AULA_ID>`, click en el primer "Escribir a la familia", verifica URL `?tab=mensajeria&tutor=<id>` y que el item del SplitView queda seleccionado. TODO sobre el seed multi-tutor para validar el caso Dialog.
 
 ## Riesgos / gotchas — confirmados sin sorpresas
 

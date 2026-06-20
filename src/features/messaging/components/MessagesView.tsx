@@ -24,6 +24,8 @@ import type {
   TutorDireccionItem,
 } from '../types'
 
+import { MESSAGES_TAB, type MessagesTab } from '../lib/messages-tabs'
+
 import { AdminDireccionSplitView } from './AdminDireccionSplitView'
 import { AdminFamiliaSection } from './AdminFamiliaSection'
 import { AdminSupervisionSplitView } from './AdminSupervisionSplitView'
@@ -83,8 +85,9 @@ interface Props {
  *  - Profe/Tutor: tabs Conversaciones (split-view WhatsApp-style) + Anuncios.
  *    F5.6 añade arriba del split-view una sección "Dirección" para tutor.
  *
- * Tabs controladas por URL (`?tab=anuncios|conversaciones|direccion`) para
- * deep-link.
+ * Tabs controladas por URL (`?tab=anuncios|conversaciones|mensajeria|supervision`)
+ * para deep-link. Los literales viven en `MESSAGES_TAB` (fuente única compartida
+ * con los constructores de URL de los split-views).
  */
 export function MessagesView({
   locale,
@@ -114,30 +117,30 @@ export function MessagesView({
   const tabRaw = searchParams.get('tab')
   // Admin: Anuncios (default) | Mensajería (escribe a tutor) | Dirección
   // (supervisión read-only). Profe/tutor: Conversaciones (default) | Anuncios.
-  const tabActual: 'conversaciones' | 'anuncios' | 'mensajeria' | 'supervision' =
+  const tabActual: MessagesTab =
     rol === 'admin'
-      ? tabRaw === 'mensajeria'
-        ? 'mensajeria'
-        : tabRaw === 'supervision'
-          ? 'supervision'
-          : 'anuncios'
-      : tabRaw === 'anuncios'
-        ? 'anuncios'
-        : 'conversaciones'
+      ? tabRaw === MESSAGES_TAB.mensajeria
+        ? MESSAGES_TAB.mensajeria
+        : tabRaw === MESSAGES_TAB.supervision
+          ? MESSAGES_TAB.supervision
+          : MESSAGES_TAB.anuncios
+      : tabRaw === MESSAGES_TAB.anuncios
+        ? MESSAGES_TAB.anuncios
+        : MESSAGES_TAB.conversaciones
 
   const onTabChange = useCallback(
     (v: string) => {
       const params = new URLSearchParams(searchParams.toString())
-      if (v === 'anuncios') {
-        params.set('tab', 'anuncios')
+      if (v === MESSAGES_TAB.anuncios) {
+        params.set('tab', MESSAGES_TAB.anuncios)
         params.delete('nino')
         params.delete('conv')
-      } else if (v === 'mensajeria') {
-        params.set('tab', 'mensajeria')
+      } else if (v === MESSAGES_TAB.mensajeria) {
+        params.set('tab', MESSAGES_TAB.mensajeria)
         params.delete('nino')
         params.delete('conv')
-      } else if (v === 'supervision') {
-        params.set('tab', 'supervision')
+      } else if (v === MESSAGES_TAB.supervision) {
+        params.set('tab', MESSAGES_TAB.supervision)
         params.delete('nino')
         params.delete('tutor')
       } else {
@@ -188,7 +191,7 @@ export function MessagesView({
         <Tabs value={tabActual} onValueChange={onTabChange}>
           <div className="flex items-center justify-between gap-4">
             <TabsList>
-              <TabsTrigger value="anuncios">
+              <TabsTrigger value={MESSAGES_TAB.anuncios}>
                 <MegaphoneIcon className="size-4" />
                 <span>{t('tabs.anuncios')}</span>
                 {unreadAnuncios > 0 && (
@@ -199,7 +202,7 @@ export function MessagesView({
               </TabsTrigger>
               {/* "Mensajería": la directora escribe directamente a un tutor
                   (hilos admin↔familia). Antes se llamaba "Dirección". */}
-              <TabsTrigger value="mensajeria">
+              <TabsTrigger value={MESSAGES_TAB.mensajeria}>
                 <MessageCircleIcon className="size-4" />
                 <span>{t('tabs.mensajeria')}</span>
                 {unreadAdminDireccion > 0 && (
@@ -210,12 +213,12 @@ export function MessagesView({
               </TabsTrigger>
               {/* "Dirección": supervisión SOLO LECTURA de las conversaciones
                   profe↔familia del centro. Sin badge (no son avisos suyos). */}
-              <TabsTrigger value="supervision">
+              <TabsTrigger value={MESSAGES_TAB.supervision}>
                 <ShieldCheckIcon className="size-4" />
                 <span>{t('supervision.tab')}</span>
               </TabsTrigger>
             </TabsList>
-            {tabActual === 'anuncios' && puedePublicarAnuncio && (
+            {tabActual === MESSAGES_TAB.anuncios && puedePublicarAnuncio && (
               <Button render={<Link href={`/${locale}/messages/nuevo-anuncio`} />}>
                 <MegaphoneIcon className="size-4" />
                 <PlusIcon className="size-3" />
@@ -224,15 +227,15 @@ export function MessagesView({
             )}
           </div>
 
-          <TabsContent value="anuncios" className="pt-3">
+          <TabsContent value={MESSAGES_TAB.anuncios} className="pt-3">
             <AnunciosList anuncios={anuncios} locale={locale} />
           </TabsContent>
 
-          <TabsContent value="mensajeria" className="pt-3">
+          <TabsContent value={MESSAGES_TAB.mensajeria} className="pt-3">
             {/* Lazy-mount: el componente solo se monta cuando el tab está
                 activo, para no mantener suscripciones Realtime abiertas
                 mientras el usuario está en otra pestaña. */}
-            {tabActual === 'mensajeria' && (
+            {tabActual === MESSAGES_TAB.mensajeria && (
               <AdminDireccionSplitView
                 locale={locale}
                 tutores={tutoresAdminDireccion}
@@ -243,8 +246,8 @@ export function MessagesView({
             )}
           </TabsContent>
 
-          <TabsContent value="supervision" className="pt-3">
-            {tabActual === 'supervision' && (
+          <TabsContent value={MESSAGES_TAB.supervision} className="pt-3">
+            {tabActual === MESSAGES_TAB.supervision && (
               <AdminSupervisionSplitView
                 locale={locale}
                 conversaciones={supervisionConversaciones}
@@ -269,7 +272,7 @@ export function MessagesView({
       <Tabs value={tabActual} onValueChange={onTabChange}>
         <div className="flex items-center justify-between gap-4">
           <TabsList>
-            <TabsTrigger value="conversaciones">
+            <TabsTrigger value={MESSAGES_TAB.conversaciones}>
               <MessageCircleIcon className="size-4" />
               <span>{t('tabs.conversaciones')}</span>
               {(unreadConversaciones > 0 || unreadAdminFamilia > 0) && (
@@ -278,7 +281,7 @@ export function MessagesView({
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="anuncios">
+            <TabsTrigger value={MESSAGES_TAB.anuncios}>
               <MegaphoneIcon className="size-4" />
               <span>{t('tabs.anuncios')}</span>
               {unreadAnuncios > 0 && (
@@ -288,7 +291,7 @@ export function MessagesView({
               )}
             </TabsTrigger>
           </TabsList>
-          {tabActual === 'anuncios' && puedePublicarAnuncio && (
+          {tabActual === MESSAGES_TAB.anuncios && puedePublicarAnuncio && (
             <Button render={<Link href={`/${locale}/messages/nuevo-anuncio`} />}>
               <MegaphoneIcon className="size-4" />
               <PlusIcon className="size-3" />
@@ -297,14 +300,14 @@ export function MessagesView({
           )}
         </div>
 
-        <TabsContent value="conversaciones" className="space-y-4 pt-3">
+        <TabsContent value={MESSAGES_TAB.conversaciones} className="space-y-4 pt-3">
           <AdminFamiliaSection locale={locale} items={adminFamiliaItems} />
           {/* Lazy-mount: shadcn Tabs no es lazy por defecto y monta el
               contenido de todas las tabs aunque estén ocultas, manteniendo
               la suscripción Realtime de ConversacionesSplitView abierta
               cuando el usuario está en tab Anuncios. Condicionar el render
               a la tab activa cierra el canal automáticamente al cambiar. */}
-          {tabActual === 'conversaciones' && (
+          {tabActual === MESSAGES_TAB.conversaciones && (
             <ConversacionesSplitView
               locale={locale}
               rol={rol}
@@ -318,7 +321,7 @@ export function MessagesView({
           )}
         </TabsContent>
 
-        <TabsContent value="anuncios" className="pt-3">
+        <TabsContent value={MESSAGES_TAB.anuncios} className="pt-3">
           <AnunciosList anuncios={anuncios} locale={locale} />
         </TabsContent>
       </Tabs>

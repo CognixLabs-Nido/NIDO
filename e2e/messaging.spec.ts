@@ -405,7 +405,7 @@ test.describe('Fase 5.6 — admin↔familia + ventana anulación (skip por defec
   })
 
   // ─── F5B Items 1+2 — Admin direccion split-view ────────────────────────
-  // El admin entra a `/messages?tab=direccion`, ve la lista de tutores del
+  // El admin entra a `/messages?tab=mensajeria`, ve la lista de tutores del
   // centro, busca uno, lo selecciona y escribe el primer mensaje. El tutor
   // recibe el hilo en la sección "Dirección" de su tab Conversaciones.
 
@@ -427,7 +427,7 @@ test.describe('Fase 5.6 — admin↔familia + ventana anulación (skip por defec
     await adminPage.getByRole('button', { name: /entrar|sign in/i }).click()
     await adminPage.waitForURL(/\/es\/admin/)
 
-    await adminPage.goto('/es/messages?tab=direccion')
+    await adminPage.goto('/es/messages?tab=mensajeria')
 
     // El sidebar muestra al menos al tutor conocido. Su `data-testid` es
     // `tutor-list-item-<usuario_id>` — necesitamos el id, que vive en
@@ -447,7 +447,7 @@ test.describe('Fase 5.6 — admin↔familia + ventana anulación (skip por defec
     // Seleccionar el tutor.
     await tutorItem.click()
     await adminPage.waitForURL(
-      new RegExp(`/es/messages\\?tab=direccion&tutor=${process.env.E2E_TUTOR_ID}`)
+      new RegExp(`/es/messages\\?tab=mensajeria&tutor=${process.env.E2E_TUTOR_ID}`)
     )
 
     // Si el hilo NO existía aún, el panel muestra `panel-iniciar-empty`;
@@ -521,11 +521,11 @@ test.describe('Fase 5.6 — admin↔familia + ventana anulación (skip por defec
     await expect(escribirBtn).toBeVisible({ timeout: 10_000 })
 
     // Caso esperado en el seed actual (1 tutor por niño): click navega
-    // directo al SplitView con ?tab=direccion&tutor=<id>. Si en el seed
+    // directo al SplitView con ?tab=mensajeria&tutor=<id>. Si en el seed
     // hay ≥2 tutores, el botón abre Dialog; añadiremos rama cuando
     // exista el helper de seed multi-tutor.
     await escribirBtn.click()
-    await adminPage.waitForURL(/\/es\/messages\?tab=direccion&tutor=/, { timeout: 10_000 })
+    await adminPage.waitForURL(/\/es\/messages\?tab=mensajeria&tutor=/, { timeout: 10_000 })
 
     // Verifica que el SplitView del PR #32 está montado y el tutor
     // queda preseleccionado (el item de la lista activa coincide con el
