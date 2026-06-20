@@ -21,7 +21,9 @@ export type ConsentTipo = Database['public']['Enums']['consentimiento_tipo']
 export const CONSENT_VERSIONS: Record<ConsentTipo, string> = {
   terminos: 'v1.0',
   privacidad: 'v1.0',
-  datos_medicos: 'v1.0',
+  // v2.0 (F11-F): `datos_medicos` pasó de consentimiento de tratamiento a ACUSE de
+  // confidencialidad (texto nuevo, sin firma). Las filas v1.0 quedan como histórico.
+  datos_medicos: 'v2.0',
   imagen: 'v1.0',
 }
 

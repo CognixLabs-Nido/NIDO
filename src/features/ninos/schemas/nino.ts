@@ -46,11 +46,11 @@ export const actualizarNinoTutorSchema = z.object({
   idioma_principal: z.enum(['es', 'en', 'va']),
 })
 
-// Info médica del tutor: misma forma que la admin + cartilla. Gateada por la RPC
-// `set_info_medica_emergencia_cifrada_tutor` (es_tutor_de + tiene_consentimiento).
+// Info médica del tutor: misma forma que la admin. Gateada por la RPC
+// `set_info_medica_emergencia_cifrada_tutor` (solo `es_tutor_legal_de`; la info
+// médica es voluntaria desde F11-F, sin gate de consentimiento).
 export const infoMedicaTutorSchema = infoMedicaSchema.extend({
   nino_id: z.string().uuid(),
-  cartilla_vacunas_path: z.string().max(400).optional().nullable(),
 })
 
 export type NinoInput = z.infer<typeof ninoSchema>

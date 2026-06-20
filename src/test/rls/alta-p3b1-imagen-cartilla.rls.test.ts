@@ -12,27 +12,26 @@ import {
   type TestUser,
 } from './setup'
 
-import { BUCKET_CARTILLA_VACUNAS } from '@/shared/lib/adjuntos/storage'
-
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 
 /**
- * F11 · Alta tutor-driven · Pieza 3b-1 — glue backend (imagen lazy + cartilla).
+ * F11 · Alta tutor-driven · Pieza 3b-1 — glue backend (imagen lazy).
  *
  * Migración 20260616180000 (extiende `autorizaciones_insert` al B2 del tutor en
- * `autorizacion_imagenes`) + las policies de Storage `cartilla-vacunas` de 3a. Verifica:
+ * `autorizacion_imagenes`). Verifica:
  *   1. El tutor instancia (INSERT) una autorización de imagen B2 de SU hijo; un tutor
  *      ajeno NO. (La orquestación find-or-create / "sin plantilla omite" vive en la
  *      action `crearImagenAutorizacion`, no invocable en vitest → preview/3b-2.)
- *   2. Storage cartilla: el tutor sube SOLO con consentimiento `datos_medicos`.
+ *
+ * (La cartilla de vacunas se eliminó en F11-F; sus tests de Storage ya no existen.)
  *
  * Gateado: F11_ALTA_P3B1_MIGRATION_APPLIED=1
  */
 
 const APPLIED = process.env.F11_ALTA_P3B1_MIGRATION_APPLIED === '1'
 
-describe.skipIf(!APPLIED)('Alta P3b-1 — imagen B2 + cartilla (RLS/Storage)', () => {
+describe.skipIf(!APPLIED)('Alta P3b-1 — imagen B2 (RLS)', () => {
   let centro: { id: string }
   let ninoA: { id: string }
   let ninoB: { id: string }
@@ -41,7 +40,6 @@ describe.skipIf(!APPLIED)('Alta P3b-1 — imagen B2 + cartilla (RLS/Storage)', (
   let clientA: SupabaseClient<Database>
   let clientB: SupabaseClient<Database>
   let plantillaImagenId: string
-  const objetosSubidos: string[] = []
 
   beforeAll(async () => {
     centro = await createTestCentro('Centro Alta P3b1')
@@ -75,9 +73,6 @@ describe.skipIf(!APPLIED)('Alta P3b-1 — imagen B2 + cartilla (RLS/Storage)', (
   })
 
   afterAll(async () => {
-    if (objetosSubidos.length > 0) {
-      await serviceClient.storage.from(BUCKET_CARTILLA_VACUNAS).remove(objetosSubidos)
-    }
     await deleteTestCentro(centro.id)
     await deleteTestUser(tutorA.id)
     await deleteTestUser(tutorB.id)
@@ -122,27 +117,5 @@ describe.skipIf(!APPLIED)('Alta P3b-1 — imagen B2 + cartilla (RLS/Storage)', (
       .maybeSingle()
     expect(error).not.toBeNull()
     expect(error?.code).toBe('42501')
-  })
-
-  it('cartilla: el tutor NO sube sin consentimiento de datos médicos', async () => {
-    const path = `${centro.id}/${ninoA.id}/cartilla-sin.jpg`
-    const { error } = await clientA.storage
-      .from(BUCKET_CARTILLA_VACUNAS)
-      .upload(path, Buffer.from([1, 2, 3]), { contentType: 'image/jpeg', upsert: true })
-    expect(error).not.toBeNull() // RLS storage: falta tiene_consentimiento('datos_medicos')
-  })
-
-  it('cartilla: el tutor sube CON consentimiento de datos médicos', async () => {
-    await clientA.rpc('registrar_consentimiento', {
-      p_usuario_id: tutorA.id,
-      p_tipo: 'datos_medicos',
-      p_version: 'v1.0',
-    })
-    const path = `${centro.id}/${ninoA.id}/cartilla-con.jpg`
-    const { error } = await clientA.storage
-      .from(BUCKET_CARTILLA_VACUNAS)
-      .upload(path, Buffer.from([1, 2, 3]), { contentType: 'image/jpeg', upsert: true })
-    expect(error).toBeNull()
-    if (!error) objetosSubidos.push(path)
   })
 })

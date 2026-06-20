@@ -2483,25 +2483,16 @@
       "guardado": "Details saved successfully"
     },
     "consentimientos": {
-      "datos_medicos_titulo": "Medical data consent",
-      "datos_medicos_texto": "I authorise the centre to process my child's medical data (allergies, medication, emergency contacts and vaccination record) for their care and safety.",
-      "otorgar": "I give my consent",
-      "otorgado": "Consent recorded",
-      "concedido": "Consent granted",
+      "datos_medicos_titulo": "Medical data confidentiality",
+      "datos_medicos_texto": "I have read how my child's medical data is handled: the centre stores it encrypted and confidential, and only the teaching team and management access it for their care and safety.",
+      "otorgar": "I have read and confirm",
+      "otorgado": "Acknowledgement recorded",
+      "concedido": "Acknowledgement recorded",
       "imagen_nota": "Image use consent is recorded later, when you sign the image authorisation."
     },
     "medico": {
       "guardado": "Medical details saved",
-      "requiere_consentimiento": "To fill in the medical details you first need to grant the medical data consent.",
-      "ir_a_consentimientos": "Go to consents",
-      "omitir": "Skip for now",
-      "cartilla_titulo": "Vaccination record",
-      "cartilla_subir": "Upload record",
-      "cartilla_cambiar": "Change record",
-      "cartilla_ayuda": "Image or photo of the record (JPG or PNG).",
-      "cartilla_subida": "Record uploaded successfully",
-      "cartilla_ok": "Record saved",
-      "cartilla_ver": "View record"
+      "omitir": "Skip for now"
     },
     "imagen": {
       "autorizacion_titulo": "Image authorisation",
@@ -2519,7 +2510,8 @@
       "no_autorizado": "You don't have permission for this action.",
       "consentimiento_fallo": "The consent could not be recorded. Please try again.",
       "finalizar_fallo": "The enrolment could not be finished. Please try again.",
-      "identidad_incompleta": "Fill in the child's details first (name and date of birth)."
+      "identidad_incompleta": "Fill in the child's details first (name and date of birth).",
+      "acuse_pendiente": "Confirm the medical data confidentiality acknowledgement first."
     }
   }
 }
