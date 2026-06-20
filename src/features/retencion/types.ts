@@ -44,7 +44,7 @@ export interface UnidadRetencion {
   categoria: RetencionCategoria
   centroId: string
   /** Tipo de referencia para la traza (sin PII). */
-  refTipo: 'nino' | 'firma'
+  refTipo: 'nino' | 'firma' | 'usuario'
   refId: string
   bucket: string
   /** Rutas de Storage a borrar (solo en purga real, no en dry-run). */

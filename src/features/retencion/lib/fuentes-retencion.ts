@@ -333,6 +333,39 @@ async function listarEsqueletoHuerfano(
   return unidades
 }
 
+/**
+ * Stub huérfano (A6.3): `auth.users` dejado por `inviteUserByEmail` cuando la
+ * familia nunca aceptó (sin rol, sin vínculos, sin confirmar, con invitación pero
+ * todas vencidas). PostgREST no llega a `auth.*`, por eso la selección va por RPC
+ * (`listar_esqueletos_huerfanos_stub`, SECURITY DEFINER). El borrado de `auth.users`
+ * NO es por SQL → `limpiarDb` re-valida y llama a la Admin API.
+ */
+async function listarEsqueletoHuerfanoStub(
+  service: Service,
+  ahoraISO: string
+): Promise<UnidadRetencion[]> {
+  const cutoff = cutoffTimestamp(ahoraISO, GRACIA_ESQUELETO_DIAS)
+  const { data, error } = await service.rpc('listar_esqueletos_huerfanos_stub', {
+    p_cutoff: cutoff,
+  })
+  if (error) throw new Error(`listar_esqueletos_huerfanos_stub: ${error.message}`)
+
+  const unidades: UnidadRetencion[] = []
+  for (const row of data ?? []) {
+    if (!row.centro_id) continue // defensivo: el predicado garantiza invitación → centro
+    unidades.push({
+      categoria: 'esqueleto_huerfano',
+      centroId: row.centro_id,
+      refTipo: 'usuario',
+      refId: row.usuario_id,
+      bucket: '',
+      paths: [],
+      motivo: 'stub_invitacion_muerta',
+    })
+  }
+  return unidades
+}
+
 // =============================================================================
 // Manifiesto declarativo (extensible — D7: añadir categorías sin reescribir el
 // orquestador; p. ej. agendas/asistencias/mensajes cuando lo fije F11-B).
@@ -385,6 +418,27 @@ export const FUENTES_RETENCION: readonly FuenteRetencion[] = [
         p_cutoff: cutoff,
       })
       if (error) throw new Error(`purgar_esqueleto_huerfano_nino(${u.refId}): ${error.message}`)
+    },
+  },
+  // Stub huérfano (A6.3): borra el stub de auth.users vía Admin API tras re-validar
+  // el predicado (TOCTOU: pudo aceptar o re-invitarse). auth.users no se toca por SQL.
+  // El throw aborta ESE candidato (el orquestador cuenta fallidos y sigue la tanda).
+  {
+    nombre: 'esqueleto-huerfano-stub',
+    categoria: 'esqueleto_huerfano',
+    listar: listarEsqueletoHuerfanoStub,
+    async limpiarDb(service, u) {
+      const cutoff = cutoffTimestamp(new Date().toISOString(), GRACIA_ESQUELETO_DIAS)
+      // Re-validación autoritativa server-side (TOCTOU entre listar y limpiar).
+      const { data: purgable, error: errVal } = await service.rpc('es_esqueleto_stub_purgable', {
+        p_usuario_id: u.refId,
+        p_cutoff: cutoff,
+      })
+      if (errVal) throw new Error(`es_esqueleto_stub_purgable(${u.refId}): ${errVal.message}`)
+      if (!purgable) throw new Error(`stub ${u.refId} ya no es purgable (re-validación TOCTOU)`)
+      // auth.users no se borra por SQL → Admin API (cascadea a public.usuarios).
+      const { error: errDel } = await service.auth.admin.deleteUser(u.refId)
+      if (errDel) throw new Error(`deleteUser(${u.refId}): ${errDel.message}`)
     },
   },
 ]
