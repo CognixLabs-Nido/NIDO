@@ -13,6 +13,7 @@ import {
 import { BUCKET_AULA_FOTOS } from '@/features/fotos/types'
 
 import {
+  GRACIA_ESQUELETO_DIAS,
   RETENCION_FOTOS_MESES,
   RETENCION_RECOGIDA_HABITUAL_MESES,
   RETENCION_RECOGIDA_PUNTUAL_DIAS,
@@ -63,6 +64,68 @@ export function ninosVencidosPorBaja(filas: readonly MatriculaMin[], cutoff: str
     if (!activa && ultimaBaja != null && ultimaBaja < cutoff) out.add(ninoId)
   }
   return out
+}
+
+// -----------------------------------------------------------------------------
+// Esqueleto huérfano (A6): alta tutor-driven abandonada. Predicados PUROS.
+// -----------------------------------------------------------------------------
+
+/** `ahoraISO` − N días → instante de corte ISO (timestamptz). */
+export function cutoffTimestamp(ahoraISO: string, dias: number): string {
+  const d = new Date(ahoraISO)
+  d.setDate(d.getDate() - dias)
+  return d.toISOString()
+}
+
+/** Fila mínima de invitación para el predicado de esqueleto huérfano. */
+export interface InvitacionMin {
+  accepted_at: string | null
+  rejected_at: string | null
+  expires_at: string
+}
+
+/** Fila mínima de matrícula para el predicado de esqueleto huérfano. */
+export interface MatriculaEstadoMin {
+  estado: string
+  fecha_baja: string | null
+  deleted_at: string | null
+}
+
+const invitacionAbierta = (i: InvitacionMin): boolean =>
+  i.accepted_at == null && i.rejected_at == null
+
+/** Invitación abierta y ya vencida (más allá de la gracia): `expires_at < cutoff`. */
+export function invitacionVencida(i: InvitacionMin, cutoffISO: string): boolean {
+  return invitacionAbierta(i) && new Date(i.expires_at).getTime() < new Date(cutoffISO).getTime()
+}
+
+/** Invitación abierta y aún válida (dentro de gracia): `expires_at >= cutoff`. Protege. */
+export function invitacionAbiertaValida(i: InvitacionMin, cutoffISO: string): boolean {
+  return invitacionAbierta(i) && new Date(i.expires_at).getTime() >= new Date(cutoffISO).getTime()
+}
+
+/** Datos mínimos de un niño para decidir si es esqueleto huérfano. */
+export interface NinoEsqueletoInput {
+  matriculas: readonly MatriculaEstadoMin[]
+  /** nº de `vinculos_familiares` activos (deleted_at IS NULL). */
+  vinculosActivos: number
+  invitaciones: readonly InvitacionMin[]
+}
+
+/**
+ * Esqueleto huérfano = alta nunca completada: matrícula 'pendiente' viva + SIN
+ * vínculos activos (nadie aceptó) + ALGUNA invitación vencida tras gracia + NINGUNA
+ * invitación abierta-válida (nadie la reactivó). Puro: recibe filas ya cargadas.
+ */
+export function esEsqueletoHuerfano(input: NinoEsqueletoInput, cutoffISO: string): boolean {
+  const tienePendiente = input.matriculas.some(
+    (m) => m.estado === 'pendiente' && m.fecha_baja == null && m.deleted_at == null
+  )
+  if (!tienePendiente) return false
+  if (input.vinculosActivos > 0) return false
+  const hayVencida = input.invitaciones.some((i) => invitacionVencida(i, cutoffISO))
+  const hayAbiertaValida = input.invitaciones.some((i) => invitacionAbiertaValida(i, cutoffISO))
+  return hayVencida && !hayAbiertaValida
 }
 
 /** Adjuntos de una firma que viven en `recogida-adjuntos` → rutas. */
@@ -211,6 +274,65 @@ async function mediaExclusivaDe(service: Service, ninoId: string): Promise<strin
   )
 }
 
+/**
+ * Esqueleto huérfano (A6): niños con alta abandonada. Dry-run friendly (solo lee).
+ * El borrado real lo hace `limpiarDb` vía la RPC atómica `purgar_esqueleto_huerfano_nino`
+ * (re-valida el predicado server-side y aborta si aparece actividad real). Sin Storage.
+ */
+async function listarEsqueletoHuerfano(
+  service: Service,
+  ahoraISO: string
+): Promise<UnidadRetencion[]> {
+  const cutoff = cutoffTimestamp(ahoraISO, GRACIA_ESQUELETO_DIAS)
+
+  // Anclaje: niños con matrícula 'pendiente' viva (acota el universo).
+  const { data: pend } = await service
+    .from('matriculas')
+    .select('nino_id')
+    .eq('estado', 'pendiente')
+    .is('fecha_baja', null)
+    .is('deleted_at', null)
+  const ninoIds = [...new Set((pend ?? []).map((m) => m.nino_id))]
+  if (ninoIds.length === 0) return []
+
+  const [{ data: ninos }, { data: mats }, { data: vincs }, { data: invs }] = await Promise.all([
+    service.from('ninos').select('id, centro_id').in('id', ninoIds),
+    service
+      .from('matriculas')
+      .select('nino_id, estado, fecha_baja, deleted_at')
+      .in('nino_id', ninoIds),
+    service
+      .from('vinculos_familiares')
+      .select('nino_id')
+      .in('nino_id', ninoIds)
+      .is('deleted_at', null),
+    service
+      .from('invitaciones')
+      .select('nino_id, accepted_at, rejected_at, expires_at')
+      .in('nino_id', ninoIds),
+  ])
+
+  const unidades: UnidadRetencion[] = []
+  for (const n of ninos ?? []) {
+    const input: NinoEsqueletoInput = {
+      matriculas: (mats ?? []).filter((m) => m.nino_id === n.id),
+      vinculosActivos: (vincs ?? []).filter((v) => v.nino_id === n.id).length,
+      invitaciones: (invs ?? []).filter((i) => i.nino_id === n.id),
+    }
+    if (!esEsqueletoHuerfano(input, cutoff)) continue
+    unidades.push({
+      categoria: 'esqueleto_huerfano',
+      centroId: n.centro_id,
+      refTipo: 'nino',
+      refId: n.id,
+      bucket: '',
+      paths: [],
+      motivo: 'alta_abandonada',
+    })
+  }
+  return unidades
+}
+
 // =============================================================================
 // Manifiesto declarativo (extensible — D7: añadir categorías sin reescribir el
 // orquestador; p. ej. agendas/asistencias/mensajes cuando lo fije F11-B).
@@ -247,6 +369,22 @@ export const FUENTES_RETENCION: readonly FuenteRetencion[] = [
       const exclusivos = await mediaExclusivaDe(service, u.refId)
       if (exclusivos.length > 0) await service.from('media').delete().in('id', exclusivos)
       await service.from('media_etiquetas').delete().eq('nino_id', u.refId)
+    },
+  },
+  // Esqueleto huérfano (A6): alta abandonada → borrado PERMANENTE atómico vía RPC.
+  // La RPC re-valida el predicado (TOCTOU) y aborta el huérfano CONCRETO si topa con
+  // actividad real; el throw lo captura el orquestador (cuenta fallidos, sigue la tanda).
+  {
+    nombre: 'esqueleto-huerfano-nino',
+    categoria: 'esqueleto_huerfano',
+    listar: listarEsqueletoHuerfano,
+    async limpiarDb(service, u) {
+      const cutoff = cutoffTimestamp(new Date().toISOString(), GRACIA_ESQUELETO_DIAS)
+      const { error } = await service.rpc('purgar_esqueleto_huerfano_nino', {
+        p_nino_id: u.refId,
+        p_cutoff: cutoff,
+      })
+      if (error) throw new Error(`purgar_esqueleto_huerfano_nino(${u.refId}): ${error.message}`)
     },
   },
 ]
