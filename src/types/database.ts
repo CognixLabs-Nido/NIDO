@@ -2853,6 +2853,10 @@ export type Database = {
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
+      es_esqueleto_stub_purgable: {
+        Args: { p_cutoff: string; p_usuario_id: string }
+        Returns: boolean
+      }
       es_profe_de_aula: { Args: { p_aula_id: string }; Returns: boolean }
       es_profe_de_evento: { Args: { p_evento_id: string }; Returns: boolean }
       es_profe_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
@@ -2888,6 +2892,13 @@ export type Database = {
       imagen_consentida: {
         Args: { p_autorizacion_id: string; p_nino_id: string }
         Returns: boolean
+      }
+      listar_esqueletos_huerfanos_stub: {
+        Args: { p_cutoff: string }
+        Returns: {
+          centro_id: string
+          usuario_id: string
+        }[]
       }
       marcar_matricula_lista: { Args: { p_nino_id: string }; Returns: string }
       medicacion_administrable_hoy: {
@@ -2951,6 +2962,10 @@ export type Database = {
       puede_postear_en_conversacion: {
         Args: { p_conversacion_id: string }
         Returns: boolean
+      }
+      purgar_esqueleto_huerfano_nino: {
+        Args: { p_cutoff: string; p_nino_id: string }
+        Returns: undefined
       }
       purgar_sujeto_db: { Args: { p_solicitud_id: string }; Returns: undefined }
       registrar_consentimiento: {
@@ -3129,7 +3144,11 @@ export type Database = {
         | 'profes_centro'
         | 'personal'
       retencion_accion: 'simulado' | 'purgado'
-      retencion_categoria: 'dni_recogida' | 'foto_perfil_nino' | 'foto_blog_exclusiva'
+      retencion_categoria:
+        | 'dni_recogida'
+        | 'foto_perfil_nino'
+        | 'foto_blog_exclusiva'
+        | 'esqueleto_huerfano'
       rsvp_estado: 'pendiente' | 'aceptado' | 'rechazado'
       tipo_alimentacion:
         | 'omnivora'
@@ -3344,7 +3363,12 @@ export const Constants = {
         'personal',
       ],
       retencion_accion: ['simulado', 'purgado'],
-      retencion_categoria: ['dni_recogida', 'foto_perfil_nino', 'foto_blog_exclusiva'],
+      retencion_categoria: [
+        'dni_recogida',
+        'foto_perfil_nino',
+        'foto_blog_exclusiva',
+        'esqueleto_huerfano',
+      ],
       rsvp_estado: ['pendiente', 'aceptado', 'rechazado'],
       tipo_alimentacion: [
         'omnivora',
