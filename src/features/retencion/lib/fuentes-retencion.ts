@@ -279,6 +279,25 @@ async function mediaExclusivaDe(service: Service, ninoId: string): Promise<strin
  * El borrado real lo hace `limpiarDb` vía la RPC atómica `purgar_esqueleto_huerfano_nino`
  * (re-valida el predicado server-side y aborta si aparece actividad real). Sin Storage.
  */
+/**
+ * Objetos físicos de un niño en `ninos-fotos`, enumerados por PREFIJO (no por
+ * `foto_url`): así se pillan también los objetos colgados de re-subidas anteriores
+ * (la ruta usa un uuid nuevo cada vez → la subida previa queda huérfana). La foto
+ * puede existir porque la directora (es_admin) puede subirla ANTES de que el tutor
+ * acepte. Devuelve rutas completas.
+ */
+async function objetosNinoFotos(
+  service: Service,
+  centroId: string,
+  ninoId: string
+): Promise<string[]> {
+  const prefijo = `${centroId}/${ninoId}`
+  const { data } = await service.storage.from(BUCKET_NINOS_FOTOS).list(prefijo)
+  return (data ?? [])
+    .filter((o) => o.id !== null) // descarta pseudo-carpetas (id null), solo ficheros
+    .map((o) => `${prefijo}/${o.name}`)
+}
+
 async function listarEsqueletoHuerfano(
   service: Service,
   ahoraISO: string
@@ -320,13 +339,16 @@ async function listarEsqueletoHuerfano(
       invitaciones: (invs ?? []).filter((i) => i.nino_id === n.id),
     }
     if (!esEsqueletoHuerfano(input, cutoff)) continue
+    // La directora pudo subir foto antes de la aceptación → barre también el objeto
+    // (el orquestador hace borrarObjetosBucket ANTES de la RPC que borra las filas).
+    const paths = await objetosNinoFotos(service, n.centro_id, n.id)
     unidades.push({
       categoria: 'esqueleto_huerfano',
       centroId: n.centro_id,
       refTipo: 'nino',
       refId: n.id,
-      bucket: '',
-      paths: [],
+      bucket: paths.length > 0 ? BUCKET_NINOS_FOTOS : '',
+      paths,
       motivo: 'alta_abandonada',
     })
   }
