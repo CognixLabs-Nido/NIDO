@@ -60,6 +60,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 - [ ] **Tutorías — reserva de franjas formal con la profesora.** Hoy existe una **vía informal** (familia y profe acuerdan la tutoría por **mensajería** y/o la cuelgan en la **Agenda/Calendario** — citas de F7b `reunion_familia`). F12 añadiría la **capa de reserva formal encima** (franjas ofertadas, autoservicio de reserva por la familia, confirmación), **reusando** Agenda + mensajería, **no desde cero**. Reclasificada desde la etiqueta previa "Ola 3" (es funcionalidad, no una mejora de IA). _(Ola 1, F12)_
 - [ ] **Selección de idioma en el perfil.** Hoy el perfil **MUESTRA** el idioma pero **no permite cambiarlo**. Añadir un selector (`es`/`en`/`va`) que **persista** la preferencia del usuario y **aplique** el locale elegido (hoy el cambio de locale solo va por URL). Al implementarlo, **verificar si es feature ausente o selector roto**. _(Ola 1, F12)_
+- [ ] **Branding por centro (white-label).** La app es **NIDO por defecto**; al ser invitado a un centro, la **PWA se instala con el nombre + logo del centro** en la pantalla de inicio del dispositivo. **Decisión pendiente:** subdominios por centro vs. manifest dinámico (cada vía tiene implicaciones distintas en instalación PWA, caché del manifest y deploy). Mantener el **footer "NIDO by Cognix Labs"** en todas las pestañas (web y app) como atribución de marca. _(Ola 1, F12)_
 
 ## Ola 2 — infra de test y rendimiento (pre-ola-2)
 
