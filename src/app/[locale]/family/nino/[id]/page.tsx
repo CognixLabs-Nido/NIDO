@@ -18,6 +18,7 @@ import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 import { BorrarInfoMedica } from '@/features/ninos/components/BorrarInfoMedica'
+import { EditarInfoMedica } from '@/features/ninos/components/EditarInfoMedica'
 import { DatosPedagogicosReadOnly } from '@/features/datos-pedagogicos/components/DatosPedagogicosReadOnly'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { AgendaFamiliaSinPermiso } from '@/features/agenda-diaria/components/AgendaFamiliaSinPermiso'
@@ -183,23 +184,33 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
         />
       </section>
 
-      {permisos.puede_ver_info_medica && infoMedica && (
+      {(permisos.puede_ver_info_medica || esTutorLegal) && (
         <section className="space-y-4">
           <h2 className="text-h3 text-foreground flex items-center gap-2">
             <HeartIcon className="text-coral-500 size-5" />
             {t('info_medica')}
           </h2>
-          <Card>
-            <CardContent className="space-y-2 text-sm">
-              <Row k={t('alergias_graves')} v={infoMedica.alergias_graves ?? '—'} />
-              <Row k={t('notas_emergencia')} v={infoMedica.notas_emergencia ?? '—'} />
-              <Row k={t('medicacion_habitual')} v={infoMedica.medicacion_habitual ?? '—'} />
-              <Row k={t('telefono_emergencia')} v={infoMedica.telefono_emergencia ?? '—'} />
-            </CardContent>
-          </Card>
+          {permisos.puede_ver_info_medica && infoMedica ? (
+            <Card>
+              <CardContent className="space-y-2 text-sm">
+                <Row k={t('alergias_graves')} v={infoMedica.alergias_graves ?? '—'} />
+                <Row k={t('alergias_leves')} v={infoMedica.alergias_leves ?? '—'} />
+                <Row k={t('notas_emergencia')} v={infoMedica.notas_emergencia ?? '—'} />
+                <Row k={t('medicacion_habitual')} v={infoMedica.medicacion_habitual ?? '—'} />
+                <Row k={t('medico_familia')} v={infoMedica.medico_familia ?? '—'} />
+                <Row k={t('telefono_emergencia')} v={infoMedica.telefono_emergencia ?? '—'} />
+              </CardContent>
+            </Card>
+          ) : (
+            <p className="text-muted-foreground text-sm">{t('sin_info_medica')}</p>
+          )}
           {esTutorLegal && (
-            <div className="flex justify-end">
-              <BorrarInfoMedica ninoId={id} />
+            <div className="flex justify-end gap-2">
+              <EditarInfoMedica
+                ninoId={id}
+                inicial={permisos.puede_ver_info_medica ? infoMedica : null}
+              />
+              {infoMedica && <BorrarInfoMedica ninoId={id} />}
             </div>
           )}
         </section>

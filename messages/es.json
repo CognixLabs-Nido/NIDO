@@ -516,6 +516,19 @@
         "confirm_si": "Borrar",
         "borrando": "Borrando…",
         "borrado": "Información médica borrada."
+      },
+      "alergias_leves": "Alergias leves",
+      "medico_familia": "Médico de familia",
+      "sin_info_medica": "Sin información médica registrada.",
+      "editar_medica": {
+        "boton_editar": "Editar",
+        "boton_anadir": "Añadir información médica",
+        "titulo_editar": "Editar información médica",
+        "titulo_anadir": "Añadir información médica",
+        "guardado": "Información médica guardada",
+        "guardando": "Guardando…",
+        "guardar": "Guardar",
+        "cancelar": "Cancelar"
       }
     }
   },
