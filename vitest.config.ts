@@ -75,8 +75,14 @@ export default defineConfig({
         test: {
           name: 'rls',
           include: REMOTE_GLOBS,
-          // Red contra Supabase Cloud + backoff de retry de Auth.
-          testTimeout: 20_000,
+          // 90s (antes 20s): además de la red + backoff de Auth, los tests pesados
+          // (purgar_sujeto_db, INSERT con triggers de audit) corren contra la BD
+          // remota compartida bajo contención de varios runs de CI. Con el
+          // statement_timeout de service_role subido a 60s (migración
+          // 20260622090000_cistab_service_role_statement_timeout), el cuello de
+          // botella pasaba a ser este testTimeout — se alinea con hookTimeout (90s)
+          // para que la ventana de vitest no corte el statement ya destrangulado.
+          testTimeout: 90_000,
           // 90s (antes 30s): desde #124 la CI corre las ~150 suites RLS en paralelo
           // contra una sola BD remota; los `afterAll` hacen borrados pesados (cascadas)
           // que bajo contención rebasan 30s → "Hook timed out in 30000ms" en un fichero
