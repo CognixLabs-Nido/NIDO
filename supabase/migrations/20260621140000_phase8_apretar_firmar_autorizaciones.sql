@@ -66,10 +66,11 @@ CREATE POLICY autorizaciones_insert ON public.autorizaciones
       OR (tipo = 'salida'
           AND public.es_profe_de_evento(evento_id)
           AND public.centro_de_evento(evento_id) = centro_id)
-      -- tutor: instancia B2 de recogida/medicación de su propio hijo desde la plantilla.
+      -- tutor: instancia B2 de recogida/medicación/imagen de su propio hijo desde la
+      -- plantilla. Base = F11 P3b-1 (20260616180000, incluye 'autorizacion_imagenes').
       -- F8 hardening: es_tutor_de → tiene_permiso_sobre(..,'puede_firmar_autorizaciones').
       OR (es_plantilla = false
-          AND tipo IN ('recogida', 'medicacion')
+          AND tipo = ANY (ARRAY['recogida', 'medicacion', 'autorizacion_imagenes']::tipo_autorizacion[])
           AND ambito = 'nino'
           AND nino_id IS NOT NULL
           AND plantilla_id IS NOT NULL

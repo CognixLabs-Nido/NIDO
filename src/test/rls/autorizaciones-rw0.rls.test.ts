@@ -87,9 +87,13 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS autorizaciones — F8-RW-0 (catálogo +
     await asignarRol(tutor.id, centro.id, 'tutor_legal')
     await asignarRol(tutorB.id, centroB.id, 'tutor_legal')
     await asignarProfeAula(profe.id, aula.id)
-    await crearVinculo(nino.id, tutor.id, 'tutor_legal_principal', { puede_recibir_mensajes: true })
+    await crearVinculo(nino.id, tutor.id, 'tutor_legal_principal', {
+      puede_recibir_mensajes: true,
+      puede_firmar_autorizaciones: true,
+    })
     await crearVinculo(ninoB.id, tutorB.id, 'tutor_legal_principal', {
       puede_recibir_mensajes: true,
+      puede_firmar_autorizaciones: true,
     })
   })
 
