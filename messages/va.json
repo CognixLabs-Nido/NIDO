@@ -516,6 +516,19 @@
         "confirm_si": "Esborrar",
         "borrando": "Esborrant…",
         "borrado": "Informació mèdica esborrada."
+      },
+      "alergias_leves": "Al·lèrgies lleus",
+      "medico_familia": "Metge de família",
+      "sin_info_medica": "Sense informació mèdica registrada.",
+      "editar_medica": {
+        "boton_editar": "Editar",
+        "boton_anadir": "Afegir informació mèdica",
+        "titulo_editar": "Editar informació mèdica",
+        "titulo_anadir": "Afegir informació mèdica",
+        "guardado": "Informació mèdica guardada",
+        "guardando": "Guardant…",
+        "guardar": "Guardar",
+        "cancelar": "Cancel·lar"
       }
     }
   },

@@ -7,10 +7,9 @@ import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { Form } from '@/components/ui/form'
 import { guardarInfoMedicaTutor } from '@/features/ninos/actions/guardar-info-medica-tutor'
+import { InfoMedicaFields } from '@/features/ninos/components/InfoMedicaFields'
 import { infoMedicaSchema, type InfoMedicaInput } from '@/features/ninos/schemas/nino'
 
 import type { MedicaInicial } from '../lib/tipos'
@@ -30,7 +29,6 @@ interface Props {
  */
 export function PasoMedico({ ninoId, inicial, onNext, onBack }: Props) {
   const t = useTranslations('alta')
-  const tNino = useTranslations('admin.ninos')
   const tMed = useTranslations('medico')
   const tErrors = useTranslations()
   const [pending, startTransition] = useTransition()
@@ -59,38 +57,11 @@ export function PasoMedico({ ninoId, inicial, onNext, onBack }: Props) {
     })
   }
 
-  const campos: { name: keyof InfoMedicaInput; textarea?: boolean }[] = [
-    { name: 'alergias_graves', textarea: true },
-    { name: 'notas_emergencia', textarea: true },
-    { name: 'medicacion_habitual', textarea: true },
-    { name: 'alergias_leves', textarea: true },
-    { name: 'medico_familia' },
-    { name: 'telefono_emergencia' },
-  ]
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
         <p className="text-muted-foreground text-xs">{tMed('aviso_cifrado')}</p>
-        {campos.map(({ name, textarea }) => (
-          <FormField
-            key={name}
-            control={form.control}
-            name={name}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{tNino(`fields.${name}`)}</FormLabel>
-                <FormControl>
-                  {textarea ? (
-                    <Textarea rows={2} {...field} value={field.value ?? ''} />
-                  ) : (
-                    <Input {...field} value={field.value ?? ''} />
-                  )}
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        ))}
+        <InfoMedicaFields control={form.control} />
 
         <div className="flex justify-between border-t pt-4">
           <Button type="button" variant="outline" onClick={onBack} disabled={pending}>

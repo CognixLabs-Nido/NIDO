@@ -3002,6 +3002,7 @@ export type Database = {
           p_medico_familia: string
           p_nino_id: string
           p_notas_emergencia: string
+          p_reemplazar?: boolean
           p_telefono_emergencia: string
         }
         Returns: string
