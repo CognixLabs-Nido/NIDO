@@ -30,6 +30,9 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 - [ ] **Columna "Apoyos" en `/admin/aulas`** — añadir cuando aparezca el primer `apoyo` real en ANAIA (omitida hoy por YAGNI, ver ADR-0033). _(Ola 1)_
 - [ ] **Telemetría de `getTutoresParaAdminDireccion`** — solo si hay reporte de lentitud o un centro supera ~100 tutores. _(Ola 1)_
 - [ ] **Refinar `autorizado` vs `tutor_legal` en la sidebar** — hoy comparten la lista de items de familia. Decisión de producto, a resolver pre-piloto (detectado en auditoría del item 6 del sprint pre-F6). _(Ola 1)_
+- [ ] **F8 · Migración legacy #56** — engancha las reglas de Régimen interno a la plantilla publicada. **Disparador:** al **publicar el formato real** de Régimen interno (`20260608130000_phase8_migrar_reglas_56`, idempotente, salta centros sin plantilla). _(Ola 1 — condicional)_
+- [ ] **F8 · Recogida puntual con fecha futura** — hoy la recogida puntual vale solo "hoy". **Disparador:** cuando se necesite **programar una recogida puntual con fecha futura** (vigencia propia). _(Ola 1 — condicional)_
+- [ ] **F8 · Aviso del botón "Enviar" deshabilitado** — UX del flujo de firma: explicar por qué el botón está inactivo. **Disparador:** reporte de confusión de usuario o pase de UX pre-piloto. _(Ola 1 — condicional)_
 
 ## Post-F6 — Ola 1
 
@@ -98,12 +101,11 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 - [ ] **Fijar la versión del CLI de Supabase** (ruido de reformateo de tipos). Ver arriba.
 
-**📝 Residuales de F8 (autorizaciones):**
+**📝 F8 (autorizaciones) — CERRADO ✅ (vía #128, 2026-06-21)**
 
-- [ ] **Migración legacy #56** — engancha las reglas de Régimen interno a la plantilla publicada; **pendiente de aplicar** al publicar el formato real (`20260608130000_phase8_migrar_reglas_56`, idempotente, salta centros sin plantilla).
+F8 autorizaciones queda **cerrado**: el WRITE de firma e instancia se apretó al permiso `puede_firmar_autorizaciones` (enfoque B; ver el item del apriete en "Residuales de F11" abajo, migración `20260621140000`) y **F8-4 (DNI condicional)** se resolvió a favor de la firma simple. Los residuales que quedaban (legacy #56, recogida puntual, aviso del botón "Enviar") **no son accionables ahora** — son **condicionales a su disparador** y se movieron a "Reactivos / condicionales (solo cuando se cumpla la condición)" arriba.
+
 - [x] **F8-4 — DNI del tutor condicional** ✅ **RESUELTO (decisión 2026-06-21).** La firma electrónica **simple** (nombre tecleado + trazo + hash del texto + IP/UA) **basta** para la validez del mecanismo; **no** se embebe el DNI del firmante en la firma. El DNI/identificación del tutor, cuando haga falta, se recoge en la **fase de documentación del alta** (post-F11-B), no acoplado a `firmas_autorizacion`. Por tanto F8 NO añade `usuarios.dni`/`tutor_datos` ni toca el modelo de firma.
-- [ ] **Recogida puntual con fecha futura** (hoy la puntual vale solo "hoy"; permitir programarla).
-- [ ] **Aviso del botón "Enviar" deshabilitado** en el flujo de firma (UX: explicar por qué está inactivo).
 
 **📝 Residuales de F11 (alta tutor-driven):**
 
