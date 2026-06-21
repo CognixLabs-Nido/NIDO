@@ -172,15 +172,21 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS imagen firmable — F11-A3', () => {
 
     tutorUno = await createTestUser({ nombre: 'Tutor IMG Uno' })
     await asignarRol(tutorUno.id, centro.id, 'tutor_legal')
-    await crearVinculo(ninoUno.id, tutorUno.id, 'tutor_legal_principal', {})
+    await crearVinculo(ninoUno.id, tutorUno.id, 'tutor_legal_principal', {
+      puede_firmar_autorizaciones: true,
+    })
 
     tutorA = await createTestUser({ nombre: 'Tutor IMG A' })
     await asignarRol(tutorA.id, centro.id, 'tutor_legal')
-    await crearVinculo(ninoAmbos.id, tutorA.id, 'tutor_legal_principal', {})
+    await crearVinculo(ninoAmbos.id, tutorA.id, 'tutor_legal_principal', {
+      puede_firmar_autorizaciones: true,
+    })
 
     tutorB = await createTestUser({ nombre: 'Tutor IMG B' })
     await asignarRol(tutorB.id, centro.id, 'tutor_legal')
-    await crearVinculo(ninoAmbos.id, tutorB.id, 'tutor_legal_principal', {})
+    await crearVinculo(ninoAmbos.id, tutorB.id, 'tutor_legal_principal', {
+      puede_firmar_autorizaciones: true,
+    })
 
     plantillaImagenes = await crearPlantilla('autorizacion_imagenes')
     plantillaRecogida = await crearPlantilla('recogida')
@@ -298,7 +304,9 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS imagen firmable — F11-A3', () => {
     await matricular(ninoR.id, aula.id, curso.id)
     const tutorR = await createTestUser({ nombre: 'Tutor IMG R' })
     await asignarRol(tutorR.id, centro.id, 'tutor_legal')
-    await crearVinculo(ninoR.id, tutorR.id, 'tutor_legal_principal', {})
+    await crearVinculo(ninoR.id, tutorR.id, 'tutor_legal_principal', {
+      puede_firmar_autorizaciones: true,
+    })
 
     const { data: inst } = await serviceClient
       .from('autorizaciones')

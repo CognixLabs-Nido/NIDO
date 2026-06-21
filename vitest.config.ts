@@ -77,7 +77,13 @@ export default defineConfig({
           include: REMOTE_GLOBS,
           // Red contra Supabase Cloud + backoff de retry de Auth.
           testTimeout: 20_000,
-          hookTimeout: 30_000,
+          // 90s (antes 30s): desde #124 la CI corre las ~150 suites RLS en paralelo
+          // contra una sola BD remota; los `afterAll` hacen borrados pesados (cascadas)
+          // que bajo contención rebasan 30s → "Hook timed out in 30000ms" en un fichero
+          // distinto cada run (autorizaciones/retencion/campanas…). Subir el margen del
+          // teardown absorbe la contención. NO cubre los statement_timeout de Postgres
+          // (p. ej. purgar_sujeto_db) — esa flakiness es otra y queda para ola 2.
+          hookTimeout: 90_000,
         },
       },
       {

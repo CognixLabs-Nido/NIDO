@@ -47,8 +47,12 @@ describe.skipIf(!APPLIED)('Alta P3b-1 — imagen B2 (RLS)', () => {
     ninoB = await createTestNino(centro.id, 'Nino B P3b1')
     tutorA = await createTestUser({ nombre: 'Tutor A 3b1' })
     tutorB = await createTestUser({ nombre: 'Tutor B 3b1' })
-    await crearVinculo(ninoA.id, tutorA.id, 'tutor_legal_principal', {})
-    await crearVinculo(ninoB.id, tutorB.id, 'tutor_legal_principal', {})
+    await crearVinculo(ninoA.id, tutorA.id, 'tutor_legal_principal', {
+      puede_firmar_autorizaciones: true,
+    })
+    await crearVinculo(ninoB.id, tutorB.id, 'tutor_legal_principal', {
+      puede_firmar_autorizaciones: true,
+    })
     clientA = await clientFor(tutorA)
     clientB = await clientFor(tutorB)
 

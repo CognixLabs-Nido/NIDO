@@ -545,11 +545,16 @@ administrado_por`, `.maybeSingle()`. DELETE: DENY.
 > ⚠️ F8-3b es **registro de seguridad operativo**, NO la firma legal. La validez de la pauta y si
 > requiere prescripción médica adjunta es ⚖️ (abogado/sanitario).
 
-### F8-4 — Datos administrativos del tutor (condicional, ⚖️)
+### F8-4 — Datos administrativos del tutor (condicional, ⚖️) — ✅ RESUELTO (2026-06-21)
 
-**Solo si el abogado exige DNI/identificación** para la validez de la firma (🔒 D7). Migración
-aditiva: `usuarios.dni`/`usuarios.direccion` o tabla `tutor_datos` (RLS self + admin). Si el abogado
-dice que la firma simple basta sin DNI, **esta sub-fase no se hace**.
+**Decisión: la firma electrónica simple basta; esta sub-fase NO se hace en F8.** La firma simple
+(nombre tecleado + trazo + hash del texto + IP/UA) es suficiente para la validez del mecanismo y
+**no se embebe el DNI del firmante** en `firmas_autorizacion`. El DNI/identificación del tutor,
+cuando se requiera, se recoge en la **fase de documentación del alta** (post-F11-B), desacoplado de
+la firma. Por tanto F8 **no** añade `usuarios.dni`/`usuarios.direccion` ni `tutor_datos`.
+
+> Histórico (🔒 D7): la sub-fase era condicional a que el abogado exigiera DNI/identificación para
+> la validez de la firma. Resuelto a favor de la firma simple.
 
 ### Cierre
 
