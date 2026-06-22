@@ -2,7 +2,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { logger } from '@/shared/lib/logger'
 import { borrarObjetosBucket } from '@/shared/lib/adjuntos/storage'
 

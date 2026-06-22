@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { PendingInvitationsList } from '@/features/auth/components/PendingInvitationsList'
 import { createClient } from '@/lib/supabase/server'
 

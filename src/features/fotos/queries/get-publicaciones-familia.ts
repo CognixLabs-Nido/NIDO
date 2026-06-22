@@ -1,6 +1,7 @@
 import 'server-only'
 
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 import { firmarRutas } from '../lib/storage'
 import type { MediaFamiliaItem, PublicacionFamiliaItem } from '../types'
@@ -66,7 +67,7 @@ export async function getPublicacionesFamilia(): Promise<PublicacionFamiliaItem[
 
   // Firma todas las rutas (original + miniatura) en un lote (evita N+1) y resuelve los
   // nombres de autor con service role (la familia no puede leer `usuarios` por RLS).
-  const service = await createServiceClient()
+  const service = createServiceRoleClient()
   const rutas = medias.flatMap((m) => [m.path, m.path_miniatura].filter((p): p is string => !!p))
   const autorIds = [...new Set(publicaciones.map((p) => p.autor_id))]
   const [firmadas, autoresRes] = await Promise.all([

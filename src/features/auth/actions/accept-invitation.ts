@@ -12,7 +12,7 @@ import { clasificarCuenta } from '../lib/clasificar-cuenta'
 import { acceptInvitationSchema, type AcceptInvitationInput } from '../schemas/invitation'
 
 import { fail, ok, type ActionResult } from './types'
-import { createServiceRoleClient } from './_service-role'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>
 

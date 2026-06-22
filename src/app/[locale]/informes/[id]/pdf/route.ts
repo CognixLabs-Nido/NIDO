@@ -1,4 +1,5 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 import { generarInformePdf } from '@/features/informes/lib/informe-pdf'
 import {
@@ -28,7 +29,7 @@ export async function GET(
   if (!row) return new Response('Not found', { status: 404 })
 
   // 2. Metadatos (centro/curso/autor) con service role, ya autorizado.
-  const service = await createServiceClient()
+  const service = createServiceRoleClient()
   const data = await assembleInformePdfData(service, row)
 
   // 3. Generación.

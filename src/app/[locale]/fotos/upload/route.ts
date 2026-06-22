@@ -1,4 +1,5 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { FotoInvalidaError, procesarFoto } from '@/features/fotos/lib/procesar-foto'
@@ -130,7 +131,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // 3. Sube los objetos con service role (ya autorizado).
-  const service = await createServiceClient()
+  const service = createServiceRoleClient()
   const subirOriginal = await service.storage
     .from(BUCKET_AULA_FOTOS)
     .upload(rutas.original, procesada.original, { contentType: MIME_FOTO_SALIDA, upsert: false })

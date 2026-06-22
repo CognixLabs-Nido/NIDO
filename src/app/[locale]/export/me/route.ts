@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { empaquetarExport } from '@/features/export/lib/empaquetar'
@@ -27,9 +28,9 @@ export async function GET(
   } = await supabase.auth.getUser()
   if (!user) return new Response('No autenticado', { status: 401 })
 
-  const service = await createServiceClient()
+  const service = createServiceRoleClient()
 
-  const usuarioRec = await recolectarUsuario(supabase, service, user.id)
+  const usuarioRec = await recolectarUsuario(supabase, user.id)
   if (!usuarioRec) return new Response('Sin datos', { status: 404 })
 
   // Hijos de los que es tutor legal (no 'autorizado').

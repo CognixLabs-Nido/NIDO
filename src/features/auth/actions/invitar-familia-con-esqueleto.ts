@@ -13,7 +13,7 @@ import {
 
 import { sendInvitation } from './send-invitation'
 import { fail, ok, type ActionResult } from './types'
-import { createServiceRoleClient } from './_service-role'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 
 /**
  * Alta tutor-driven (Pieza 2b). La dirección invita a la familia creando, en una

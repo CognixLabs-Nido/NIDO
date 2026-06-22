@@ -9,7 +9,7 @@ import { logger } from '@/shared/lib/logger'
 import { signInSchema, type SignInInput } from '../schemas/sign-in'
 
 import { fail, ok, type ActionResult } from './types'
-import { createServiceRoleClient } from './_service-role'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 
 const MAX_FAILED_ATTEMPTS = 5
 const WINDOW_MINUTES = 15

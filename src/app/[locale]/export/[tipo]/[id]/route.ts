@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { empaquetarExport } from '@/features/export/lib/empaquetar'
@@ -16,6 +17,11 @@ export const runtime = 'nodejs'
  * acceso (export de un usuario/niño de su centro) y también un tutor para un hijo.
  * Ruta neutra de rol: la RLS del solicitante decide qué puede leer; si no es
  * accesible → 404. No expone datos de terceros más allá de lo que la RLS ya permite.
+ *
+ * ⚠️ La AUTORIZACIÓN vive DENTRO de `recolectar*`: leen al sujeto con el cliente de
+ * sesión (`supabase`, RLS) y devuelven `null` si no es accesible. El cliente
+ * service-role solo firma adjuntos de Storage + escribe el log de export (ya
+ * autorizado). NO mover reads de `supabase` a `service` aquí: saltaría la RLS.
  */
 export async function GET(
   _request: Request,
@@ -33,12 +39,12 @@ export async function GET(
   } = await supabase.auth.getUser()
   if (!user) return new Response('No autenticado', { status: 401 })
 
-  const service = await createServiceClient()
+  const service = createServiceRoleClient()
 
   const rec =
     sujetoTipo === 'nino'
       ? await recolectarNino(supabase, service, id)
-      : await recolectarUsuario(supabase, service, id)
+      : await recolectarUsuario(supabase, id)
   if (!rec) return new Response('Sin datos o no autorizado', { status: 404 })
 
   const doc: DocumentoExport = {

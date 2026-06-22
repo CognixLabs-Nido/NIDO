@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/lib/supabase/server', () => ({
-  createServiceClient: vi.fn(() => Promise.resolve({})),
+vi.mock('@/lib/supabase/admin', () => ({
+  createServiceRoleClient: vi.fn(() => ({})),
 }))
 
 const personas = vi.hoisted(() => ({

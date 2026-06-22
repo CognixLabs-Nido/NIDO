@@ -2,7 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { getAulaById } from '@/features/aulas/queries/get-aulas'
@@ -148,7 +149,7 @@ export async function eliminarPublicacion(
   // La fila se borró (CASCADE limpió media/etiquetas). Ahora los objetos.
   const paths = (medias ?? []).flatMap((m) => [m.path, m.path_miniatura])
   if (paths.length > 0) {
-    const service = await createServiceClient()
+    const service = createServiceRoleClient()
     await borrarObjetos(
       service,
       paths.filter((p): p is string => typeof p === 'string')
@@ -196,7 +197,7 @@ export async function eliminarMedia(
   if (!count) return fail('fotos.errors.no_autorizado')
 
   if (media) {
-    const service = await createServiceClient()
+    const service = createServiceRoleClient()
     await borrarObjetos(
       service,
       [media.path, media.path_miniatura].filter((p): p is string => typeof p === 'string')

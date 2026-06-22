@@ -103,7 +103,7 @@ vi.mock('@/lib/supabase/server', () => ({
   ),
 }))
 
-vi.mock('../actions/_service-role', () => ({
+vi.mock('@/lib/supabase/admin', () => ({
   createServiceRoleClient: () => makeServiceFake(),
 }))
 

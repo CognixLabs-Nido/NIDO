@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { expandirDestinatariosRecordatorio } from '@/features/recordatorios/lib/audiencia'
 
 import type { AmbitoEvento } from '../types'

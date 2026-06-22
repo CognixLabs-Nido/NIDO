@@ -7,7 +7,7 @@ import { logger } from '@/shared/lib/logger'
 import { sendInvitationSchema, type SendInvitationInput } from '../schemas/invitation'
 
 import { fail, ok, type ActionResult } from './types'
-import { createServiceRoleClient } from './_service-role'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 
 const INVITATION_TTL_DAYS = 7
 

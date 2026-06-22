@@ -1,6 +1,7 @@
 import 'server-only'
 
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 import { getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 
@@ -74,7 +75,7 @@ export async function getPublicacionesAula(
     : { data: [] }
 
   // Firma todas las rutas (original + miniatura) en un lote (evita N+1).
-  const service = await createServiceClient()
+  const service = createServiceRoleClient()
   const rutas = medias.flatMap((m) => [m.path, m.path_miniatura].filter((p): p is string => !!p))
   const firmadas = await firmarRutas(service, rutas)
 

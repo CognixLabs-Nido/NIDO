@@ -40,7 +40,6 @@ async function firmar(
  */
 export async function recolectarUsuario(
   client: Client,
-  _service: Client,
   usuarioId: string
 ): Promise<Recolectado | null> {
   const { data: usuario } = await client
