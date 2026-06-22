@@ -97,7 +97,8 @@
         "role_failed": "No s'ha pogut assignar el rol.",
         "update_failed": "No s'ha pogut actualitzar la invitació.",
         "insert_failed": "No s'ha pogut registrar la invitació.",
-        "lookup_failed": "No s'ha pogut localitzar la invitació."
+        "lookup_failed": "No s'ha pogut localitzar la invitació.",
+        "coordinadora_ocupada": "Eixa aula ja té una coordinadora activa. Tria un altre rol o canvia primer la coordinadora des d'Aules."
       }
     },
     "select_role": {
@@ -141,7 +142,8 @@
         "digit_required": "Ha de contindre almenys un número.",
         "symbol_required": "Ha de contindre almenys un símbol."
       },
-      "tipo_vinculo_invalido": "Tipus de vincle no vàlid per a aquest rol"
+      "tipo_vinculo_invalido": "Tipus de vincle no vàlid per a aquest rol",
+      "nombre_invalido": "El nom ha de tindre entre 2 i 120 caràcters."
     },
     "common": {
       "sign_out": "Tancar sessió",
@@ -182,7 +184,8 @@
       "agenda": "Agenda",
       "autorizaciones": "Autoritzacions",
       "notificaciones": "Notificacions",
-      "informes": "Informes"
+      "informes": "Informes",
+      "personal": "Personal"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -431,6 +434,42 @@
         "tabla": "Taula",
         "accion": "Acció",
         "usuario": "Usuari"
+      }
+    },
+    "personal": {
+      "title": "Personal",
+      "subtitle": "Convida professors i gestiona les invitacions pendents.",
+      "sin_curso_activo": "No hi ha un curs actiu. Crea un abans de convidar personal.",
+      "invitar": {
+        "cta": "Convidar profe",
+        "title": "Convidar un professor/a",
+        "ok": "Invitació enviada",
+        "cancel": "Cancel·lar",
+        "enviar": "Enviar invitació",
+        "enviando": "Enviant…",
+        "fields": {
+          "nombre": "Nom complet",
+          "email": "Email",
+          "aula": "Aula",
+          "aula_placeholder": "Selecciona una aula",
+          "tipo_personal": "Rol a l'aula"
+        }
+      },
+      "tipo_personal": {
+        "coordinadora": "Coordinadora",
+        "profesora": "Professora",
+        "tecnico": "Tècnic/a",
+        "apoyo": "Suport"
+      },
+      "pendientes": {
+        "title": "Invitacions pendents",
+        "empty": "No hi ha invitacions de professor pendents.",
+        "reenviar": "Reenviar",
+        "revocar": "Revocar",
+        "reenviada": "Invitació reenviada",
+        "revocada": "Invitació revocada",
+        "expira": "Caduca el {fecha}",
+        "caducada": "Caducada"
       }
     }
   },

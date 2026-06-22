@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { TIPO_PERSONAL_AULA } from '@/features/profes-aulas/types'
 import { parentescoEnum } from '@/features/vinculos/schemas/vinculo'
 
 import { passwordSchema } from './password'
@@ -48,6 +49,16 @@ export const invitarFamiliaConEsqueletoSchema = z.object({
   tipoVinculo: tutorTipoVinculoEnum,
 })
 
+// Onboarding de profesor (F11-C-1): la dirección invita a un profe fijando su
+// nombre, email, un aula y su "rol" en el aula (tipo_personal_aula). El centro se
+// deriva server-side del aula (no se pide). El user_role siempre es 'profe'.
+export const invitarProfeSchema = z.object({
+  nombreCompleto: z.string().min(2, 'auth.validation.nombre_invalido').max(120),
+  email: z.string().email({ message: 'auth.validation.email_invalid' }),
+  aulaId: z.string().uuid('auth.validation.aula_id_required'),
+  tipoPersonalAula: z.enum(TIPO_PERSONAL_AULA),
+})
+
 export const acceptInvitationSchema = z
   .object({
     token: z.string().uuid(),
@@ -69,4 +80,5 @@ export const acceptInvitationSchema = z
 export type UserRole = z.infer<typeof userRoleSchema>
 export type SendInvitationInput = z.infer<typeof sendInvitationSchema>
 export type InvitarFamiliaConEsqueletoInput = z.infer<typeof invitarFamiliaConEsqueletoSchema>
+export type InvitarProfeInput = z.infer<typeof invitarProfeSchema>
 export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>

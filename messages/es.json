@@ -97,7 +97,8 @@
         "role_failed": "No se pudo asignar el rol.",
         "update_failed": "No se pudo actualizar la invitación.",
         "insert_failed": "No se pudo registrar la invitación.",
-        "lookup_failed": "No se pudo localizar la invitación."
+        "lookup_failed": "No se pudo localizar la invitación.",
+        "coordinadora_ocupada": "Esa aula ya tiene una coordinadora activa. Elige otro rol o cambia primero la coordinadora desde Aulas."
       }
     },
     "select_role": {
@@ -141,7 +142,8 @@
         "digit_required": "Debe contener al menos un número.",
         "symbol_required": "Debe contener al menos un símbolo."
       },
-      "tipo_vinculo_invalido": "Tipo de vínculo no válido para este rol"
+      "tipo_vinculo_invalido": "Tipo de vínculo no válido para este rol",
+      "nombre_invalido": "El nombre debe tener entre 2 y 120 caracteres."
     },
     "common": {
       "sign_out": "Cerrar sesión",
@@ -182,7 +184,8 @@
       "agenda": "Agenda",
       "autorizaciones": "Autorizaciones",
       "notificaciones": "Notificaciones",
-      "informes": "Informes"
+      "informes": "Informes",
+      "personal": "Personal"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -431,6 +434,42 @@
         "tabla": "Tabla",
         "accion": "Acción",
         "usuario": "Usuario"
+      }
+    },
+    "personal": {
+      "title": "Personal",
+      "subtitle": "Invita a profesores y gestiona las invitaciones pendientes.",
+      "sin_curso_activo": "No hay un curso activo. Crea uno antes de invitar personal.",
+      "invitar": {
+        "cta": "Invitar profe",
+        "title": "Invitar a un profesor/a",
+        "ok": "Invitación enviada",
+        "cancel": "Cancelar",
+        "enviar": "Enviar invitación",
+        "enviando": "Enviando…",
+        "fields": {
+          "nombre": "Nombre completo",
+          "email": "Email",
+          "aula": "Aula",
+          "aula_placeholder": "Selecciona un aula",
+          "tipo_personal": "Rol en el aula"
+        }
+      },
+      "tipo_personal": {
+        "coordinadora": "Coordinadora",
+        "profesora": "Profesora",
+        "tecnico": "Técnico/a",
+        "apoyo": "Apoyo"
+      },
+      "pendientes": {
+        "title": "Invitaciones pendientes",
+        "empty": "No hay invitaciones de profesor pendientes.",
+        "reenviar": "Reenviar",
+        "revocar": "Revocar",
+        "reenviada": "Invitación reenviada",
+        "revocada": "Invitación revocada",
+        "expira": "Caduca el {fecha}",
+        "caducada": "Caducada"
       }
     }
   },

@@ -13,6 +13,7 @@ import {
   ImageIcon,
   LayoutDashboardIcon,
   MessageCircleIcon,
+  UsersIcon,
   UtensilsIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -48,6 +49,7 @@ export async function buildSidebarItems(
       { href: `/${locale}/admin/centro`, label: t('centro'), icon: <Building2Icon /> },
       { href: `/${locale}/admin/cursos`, label: t('cursos'), icon: <CalendarDaysIcon /> },
       { href: `/${locale}/admin/aulas`, label: t('aulas'), icon: <BookOpenIcon /> },
+      { href: `/${locale}/admin/personal`, label: t('personal'), icon: <UsersIcon /> },
       { href: `/${locale}/admin/calendario`, label: t('calendario'), icon: <CalendarRangeIcon /> },
       {
         href: `/${locale}/agenda`,
