@@ -97,7 +97,8 @@
         "role_failed": "We could not assign the role.",
         "update_failed": "We could not update the invitation.",
         "insert_failed": "We could not record the invitation.",
-        "lookup_failed": "We could not look up the invitation."
+        "lookup_failed": "We could not look up the invitation.",
+        "coordinadora_ocupada": "That classroom already has an active coordinator. Choose another role or change the coordinator first from Classrooms."
       }
     },
     "select_role": {
@@ -141,7 +142,8 @@
         "digit_required": "Must contain at least one digit.",
         "symbol_required": "Must contain at least one symbol."
       },
-      "tipo_vinculo_invalido": "Invalid relationship type for this role"
+      "tipo_vinculo_invalido": "Invalid relationship type for this role",
+      "nombre_invalido": "The name must be between 2 and 120 characters."
     },
     "common": {
       "sign_out": "Sign out",
@@ -182,7 +184,8 @@
       "agenda": "Agenda",
       "autorizaciones": "Authorisations",
       "notificaciones": "Notifications",
-      "informes": "Reports"
+      "informes": "Reports",
+      "personal": "Staff"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -431,6 +434,42 @@
         "tabla": "Table",
         "accion": "Action",
         "usuario": "User"
+      }
+    },
+    "personal": {
+      "title": "Staff",
+      "subtitle": "Invite teachers and manage pending invitations.",
+      "sin_curso_activo": "There is no active course. Create one before inviting staff.",
+      "invitar": {
+        "cta": "Invite teacher",
+        "title": "Invite a teacher",
+        "ok": "Invitation sent",
+        "cancel": "Cancel",
+        "enviar": "Send invitation",
+        "enviando": "Sending…",
+        "fields": {
+          "nombre": "Full name",
+          "email": "Email",
+          "aula": "Classroom",
+          "aula_placeholder": "Select a classroom",
+          "tipo_personal": "Role in the classroom"
+        }
+      },
+      "tipo_personal": {
+        "coordinadora": "Coordinator",
+        "profesora": "Teacher",
+        "tecnico": "Assistant",
+        "apoyo": "Support"
+      },
+      "pendientes": {
+        "title": "Pending invitations",
+        "empty": "There are no pending teacher invitations.",
+        "reenviar": "Resend",
+        "revocar": "Revoke",
+        "reenviada": "Invitation resent",
+        "revocada": "Invitation revoked",
+        "expira": "Expires on {fecha}",
+        "caducada": "Expired"
       }
     }
   },
