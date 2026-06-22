@@ -12,6 +12,8 @@ type Client = SupabaseClient<Database>
 export const BUCKET_NINOS_FOTOS = 'ninos-fotos'
 export const BUCKET_RECOGIDA_ADJUNTOS = 'recogida-adjuntos'
 export const BUCKET_CENTRO_ASSETS = 'centro-assets'
+/** Avatar de usuario (bucket privado creado en F11-C-0; espejo de `ninos-fotos`). */
+export const BUCKET_USUARIOS_FOTOS = 'usuarios-fotos'
 
 /** TTL de las URLs firmadas de los buckets privados (~1 h, P4). */
 export const SIGNED_URL_TTL_SEGUNDOS = 60 * 60

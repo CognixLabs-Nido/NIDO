@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { Database } from '@/types/database'
 
+import { acceptInvitationSchema } from '../../schemas/invitation'
 import { acceptPendingInvitationCore } from '../accept-invitation'
 
 /**
@@ -145,5 +146,29 @@ describe('acceptPendingInvitationCore — B8-profe', () => {
     const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
     expect(r.success).toBe(false)
     if (!r.success) expect(r.error).toBe('auth.invitation.errors.invalid')
+  })
+})
+
+describe('accept: la foto es OPCIONAL (decisión D, F11-C-3)', () => {
+  // El avatar NO forma parte del contrato del accept: se sube por una route handler
+  // aparte TRAS crear la cuenta. Por eso un alta sin foto valida sin más y nada en el
+  // schema puede bloquear el alta por ausencia de imagen.
+  const baseInput = {
+    token: '11111111-1111-4111-8111-111111111111',
+    nombreCompleto: 'Profe Pruebas',
+    password: 'Una-Clave-Larga-2026!',
+    idiomaPreferido: 'es' as const,
+    aceptaTerminos: true as const,
+    aceptaPrivacidad: true as const,
+  }
+
+  it('el schema de accept parsea sin foto', () => {
+    expect(acceptInvitationSchema.safeParse(baseInput).success).toBe(true)
+  })
+
+  it('el alta sin foto produce un objeto válido sin campo de imagen', () => {
+    const parsed = acceptInvitationSchema.parse(baseInput)
+    expect('foto' in parsed).toBe(false)
+    expect('avatar' in parsed).toBe(false)
   })
 })

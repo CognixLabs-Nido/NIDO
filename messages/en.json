@@ -150,6 +150,16 @@
       "sign_out": "Sign out",
       "terms": "Terms of Service",
       "privacy": "Privacy Policy"
+    },
+    "avatar": {
+      "actualizada": "Profile photo updated",
+      "alt": "Profile photo",
+      "cambiar": "Change photo",
+      "subir": "Upload photo",
+      "subiendo": "Uploading…",
+      "campo_label": "Profile photo (optional)",
+      "campo_ayuda": "JPG or PNG, max 4 MB. You can add it later from your profile.",
+      "opcional_fallo": "Couldn’t upload the photo; you can add it later from your profile."
     }
   },
   "legal": {

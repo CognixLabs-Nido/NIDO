@@ -150,6 +150,16 @@
       "sign_out": "Tancar sessió",
       "terms": "Termes i condicions",
       "privacy": "Política de privacitat"
+    },
+    "avatar": {
+      "actualizada": "Foto de perfil actualitzada",
+      "alt": "Foto de perfil",
+      "cambiar": "Canviar foto",
+      "subir": "Pujar foto",
+      "subiendo": "Pujant…",
+      "campo_label": "Foto de perfil (opcional)",
+      "campo_ayuda": "JPG o PNG, màxim 4 MB. Pots afegir-la després des del teu perfil.",
+      "opcional_fallo": "No s’ha pogut pujar la foto; pots afegir-la després des del teu perfil."
     }
   },
   "legal": {

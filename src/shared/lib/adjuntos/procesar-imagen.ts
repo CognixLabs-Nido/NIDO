@@ -128,6 +128,16 @@ export function procesarDocumento(entrada: Buffer): Promise<ImagenProcesada> {
 }
 
 /**
+ * **Avatar de usuario** (F11-C-3, bucket privado `usuarios-fotos`). Foto de perfil de
+ * un adulto del personal/familia: tamaño de perfil (≤1024 px) + miniatura/avatar
+ * (≤256 px) para el header. JPEG, sin EXIF, HEIC rechazado — mismo criterio que la
+ * foto del niño.
+ */
+export function procesarFotoAvatar(entrada: Buffer): Promise<ImagenProcesada> {
+  return procesarJpeg(entrada, { maxLado: 1024, calidad: 82, maxLadoMini: 256, calidadMini: 72 })
+}
+
+/**
  * **Logo del centro** (bucket público `centro-assets`, ADR-0010). Conserva la
  * **transparencia** (salida **PNG**, no JPEG), reescala a ≤480 px de lado, quita
  * metadatos. No genera miniatura (`miniatura` === `original`).

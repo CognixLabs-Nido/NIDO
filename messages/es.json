@@ -150,6 +150,16 @@
       "sign_out": "Cerrar sesión",
       "terms": "Términos y condiciones",
       "privacy": "Política de privacidad"
+    },
+    "avatar": {
+      "actualizada": "Foto de perfil actualizada",
+      "alt": "Foto de perfil",
+      "cambiar": "Cambiar foto",
+      "subir": "Subir foto",
+      "subiendo": "Subiendo…",
+      "campo_label": "Foto de perfil (opcional)",
+      "campo_ayuda": "JPG o PNG, máximo 4 MB. Puedes añadirla luego desde tu perfil.",
+      "opcional_fallo": "No se pudo subir la foto; puedes añadirla luego desde tu perfil."
     }
   },
   "legal": {

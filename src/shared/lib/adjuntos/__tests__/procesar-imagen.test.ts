@@ -11,6 +11,7 @@ import { FotoInvalidaError } from '@/features/fotos/lib/procesar-foto'
 import {
   MAX_BYTES_ADJUNTO,
   procesarDocumento,
+  procesarFotoAvatar,
   procesarFotoNino,
   procesarLogo,
 } from '../procesar-imagen'
@@ -65,6 +66,35 @@ describe('procesarFotoNino (F10-3)', () => {
   it('rechaza HEIC con mensaje claro', async () => {
     await expect(procesarFotoNino(SAMPLE_HEIC)).rejects.toMatchObject({
       clave: 'fotos.validation.heic_no_soportado',
+    })
+  })
+})
+
+describe('procesarFotoAvatar (F11-C-3 — avatar de usuario)', () => {
+  it('quita EXIF y normaliza a JPEG con miniatura ≤256', async () => {
+    const entrada = await jpegConExif(1600, 1200)
+    expect((await sharp(entrada).metadata()).exif).toBeInstanceOf(Buffer)
+
+    const out = await procesarFotoAvatar(entrada)
+    expect(out.mime).toBe('image/jpeg')
+    const meta = await sharp(out.original).metadata()
+    expect(meta.format).toBe('jpeg')
+    expect(meta.exif).toBeUndefined()
+    expect(out.ancho).toBeLessThanOrEqual(1024)
+    const mini = await sharp(out.miniatura).metadata()
+    expect(mini.width ?? 0).toBeLessThanOrEqual(256)
+  })
+
+  it('rechaza HEIC con mensaje claro (ADR-0046)', async () => {
+    await expect(procesarFotoAvatar(SAMPLE_HEIC)).rejects.toMatchObject({
+      clave: 'fotos.validation.heic_no_soportado',
+    })
+  })
+
+  it('rechaza un archivo que supera el tope de 4 MB', async () => {
+    const grande = Buffer.alloc(MAX_BYTES_ADJUNTO + 1, 0)
+    await expect(procesarFotoAvatar(grande)).rejects.toMatchObject({
+      clave: 'fotos.validation.tamano_max',
     })
   })
 })
