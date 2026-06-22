@@ -98,7 +98,8 @@
         "update_failed": "No s'ha pogut actualitzar la invitació.",
         "insert_failed": "No s'ha pogut registrar la invitació.",
         "lookup_failed": "No s'ha pogut localitzar la invitació.",
-        "coordinadora_ocupada": "Eixa aula ja té una coordinadora activa. Tria un altre rol o canvia primer la coordinadora des d'Aules."
+        "coordinadora_ocupada": "Eixa aula ja té una coordinadora activa. Tria un altre rol o canvia primer la coordinadora des d'Aules.",
+        "profe_aula_failed": "No s’ha pogut vincular el professor amb l’aula. Torna-ho a provar o contacta amb direcció."
       }
     },
     "select_role": {

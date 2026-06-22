@@ -48,10 +48,22 @@ interface Props {
   locale: string
   token: string
   email: string
+  /**
+   * Nombre que fijó la dirección en la invitación (decisión C de onboarding-profe):
+   * prefill EDITABLE, no read-only — el invitado puede corregirlo al aceptar. Vacío
+   * para invitaciones sin nombre preasignado (p. ej. familia).
+   */
+  nombreInicial?: string
   requiereParentesco?: boolean
 }
 
-export function AcceptInvitationForm({ locale, token, email, requiereParentesco = false }: Props) {
+export function AcceptInvitationForm({
+  locale,
+  token,
+  email,
+  nombreInicial = '',
+  requiereParentesco = false,
+}: Props) {
   const t = useTranslations()
   const [pending, startTransition] = useTransition()
   const [serverErrorKey, setServerErrorKey] = useState<string | null>(null)
@@ -60,7 +72,7 @@ export function AcceptInvitationForm({ locale, token, email, requiereParentesco 
     resolver: zodResolver(acceptInvitationSchema),
     defaultValues: {
       token,
-      nombreCompleto: '',
+      nombreCompleto: nombreInicial,
       password: '',
       idiomaPreferido: locale as 'es' | 'en' | 'va',
       aceptaTerminos: false as unknown as true,

@@ -98,7 +98,8 @@
         "update_failed": "No se pudo actualizar la invitación.",
         "insert_failed": "No se pudo registrar la invitación.",
         "lookup_failed": "No se pudo localizar la invitación.",
-        "coordinadora_ocupada": "Esa aula ya tiene una coordinadora activa. Elige otro rol o cambia primero la coordinadora desde Aulas."
+        "coordinadora_ocupada": "Esa aula ya tiene una coordinadora activa. Elige otro rol o cambia primero la coordinadora desde Aulas.",
+        "profe_aula_failed": "No se pudo vincular al profesor con el aula. Inténtalo de nuevo o contacta con dirección."
       }
     },
     "select_role": {
