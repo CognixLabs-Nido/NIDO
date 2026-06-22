@@ -26,7 +26,7 @@ export default async function InvitationPage({ params }: PageProps) {
   const service = createServiceRoleClient()
   const { data: invitation } = await service
     .from('invitaciones')
-    .select('email, rol_objetivo, expires_at, accepted_at, rejected_at')
+    .select('email, rol_objetivo, nombre_completo, expires_at, accepted_at, rejected_at')
     .eq('token', token)
     .maybeSingle()
 
@@ -89,6 +89,7 @@ export default async function InvitationPage({ params }: PageProps) {
       locale={locale}
       token={token}
       email={invitation.email}
+      nombreInicial={invitation.nombre_completo ?? ''}
       requiereParentesco={requiereParentesco}
     />
   )
@@ -98,11 +99,13 @@ function NewAccountFlow({
   locale,
   token,
   email,
+  nombreInicial,
   requiereParentesco,
 }: {
   locale: string
   token: string
   email: string
+  nombreInicial: string
   requiereParentesco: boolean
 }) {
   const t = useTranslations('auth.invitation')
@@ -118,6 +121,7 @@ function NewAccountFlow({
             locale={locale}
             token={token}
             email={email}
+            nombreInicial={nombreInicial}
             requiereParentesco={requiereParentesco}
           />
         </CardContent>

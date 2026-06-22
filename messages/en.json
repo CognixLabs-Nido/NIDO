@@ -98,7 +98,8 @@
         "update_failed": "We could not update the invitation.",
         "insert_failed": "We could not record the invitation.",
         "lookup_failed": "We could not look up the invitation.",
-        "coordinadora_ocupada": "That classroom already has an active coordinator. Choose another role or change the coordinator first from Classrooms."
+        "coordinadora_ocupada": "That classroom already has an active coordinator. Choose another role or change the coordinator first from Classrooms.",
+        "profe_aula_failed": "Could not link the teacher to the classroom. Please try again or contact the school office."
       }
     },
     "select_role": {

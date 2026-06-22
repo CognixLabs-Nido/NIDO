@@ -1,5 +1,6 @@
 'use server'
 
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 
 import { getRequestContext } from '@/features/autorizaciones/lib/request-context'
@@ -7,14 +8,16 @@ import { parentescoEnum, permisosDefault } from '@/features/vinculos/schemas/vin
 import { createClient } from '@/lib/supabase/server'
 import { CONSENT_OBLIGATORIOS, CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
 import { logger } from '@/shared/lib/logger'
+import type { Database } from '@/types/database'
 
 import { clasificarCuenta } from '../lib/clasificar-cuenta'
+import { crearVinculoProfeAula } from '../lib/vincular-profe-aula'
 import { acceptInvitationSchema, type AcceptInvitationInput } from '../schemas/invitation'
 
 import { fail, ok, type ActionResult } from './types'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 
-type ServiceClient = ReturnType<typeof createServiceRoleClient>
+type ServiceClient = SupabaseClient<Database>
 
 const ROLES_FAMILIA = ['tutor_legal', 'autorizado'] as const
 
@@ -83,7 +86,7 @@ export async function acceptInvitation(
   const { data: invitation, error: invErr } = await service
     .from('invitaciones')
     .select(
-      'id, email, rol_objetivo, centro_id, nino_id, aula_id, tipo_vinculo, expires_at, accepted_at, rejected_at'
+      'id, email, rol_objetivo, centro_id, nino_id, aula_id, tipo_personal_aula, tipo_vinculo, expires_at, accepted_at, rejected_at'
     )
     .eq('token', parsed.data.token)
     .maybeSingle()
@@ -210,6 +213,26 @@ export async function acceptInvitation(
     }
   }
 
+  // Auto-vínculo profe → profes_aulas (rama F11-C-2; solo rol 'profe' con aula).
+  if (invitation.rol_objetivo === 'profe' && invitation.aula_id) {
+    const { error: profeError } = await crearVinculoProfeAula(service, {
+      profeId: userId,
+      aulaId: invitation.aula_id,
+      tipoPersonalAula: invitation.tipo_personal_aula,
+    })
+    if (profeError) {
+      // 23505 coordinadora (decisión E): conflicto recuperable — la cuenta queda
+      // creada y el vínculo se completa desde gestión o vía B8 cuando se libere el
+      // slot (no se marca `accepted_at`). Cualquier otro error es un fallo real de
+      // inserción → rollback de la cuenta recién creada.
+      if (profeError !== 'auth.invitation.errors.coordinadora_ocupada') {
+        await service.from('roles_usuario').delete().eq('usuario_id', userId)
+        await service.auth.admin.deleteUser(userId).catch(() => {})
+      }
+      return fail(profeError)
+    }
+  }
+
   await service
     .from('invitaciones')
     .update({ accepted_at: new Date().toISOString() })
@@ -250,16 +273,41 @@ export async function acceptPendingInvitation(
   if (!user.user?.email) return fail('auth.invitation.errors.unauthenticated')
 
   const service = createServiceRoleClient()
+  return acceptPendingInvitationCore(
+    { serviceClient: service, user: { id: user.user.id, email: user.user.email } },
+    invitationId,
+    vinculo
+  )
+}
+
+interface AcceptPendingDeps {
+  serviceClient: ServiceClient
+  user: { id: string; email: string }
+}
+
+/**
+ * Núcleo testeable de B8 (cliente service-role + usuario de sesión inyectables).
+ * Inserta el rol objetivo (idempotente) y, según el rol, el auto-vínculo: familiar
+ * (`vinculos_familiares`) o, en B8-profe (decisión F, F11-C-2), `profes_aulas`. Un
+ * profe que ya tiene cuenta (p. ej. también es tutor) queda vinculado a su aula sin
+ * crear otra cuenta. El 23505 de coordinadora se devuelve como mensaje amable.
+ */
+export async function acceptPendingInvitationCore(
+  deps: AcceptPendingDeps,
+  invitationId: string,
+  vinculo?: { parentesco?: string; descripcionParentesco?: string | null }
+): Promise<ActionResult<{ rol: string }>> {
+  const { serviceClient: service, user } = deps
   const { data: invitation } = await service
     .from('invitaciones')
     .select(
-      'id, email, rol_objetivo, centro_id, nino_id, tipo_vinculo, expires_at, accepted_at, rejected_at'
+      'id, email, rol_objetivo, centro_id, nino_id, aula_id, tipo_personal_aula, tipo_vinculo, expires_at, accepted_at, rejected_at'
     )
     .eq('id', invitationId)
     .maybeSingle()
 
   if (!invitation) return fail('auth.invitation.errors.invalid')
-  if (invitation.email.toLowerCase() !== user.user.email.toLowerCase()) {
+  if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
     return fail('auth.invitation.errors.email_mismatch')
   }
   if (invitation.accepted_at || invitation.rejected_at)
@@ -277,7 +325,7 @@ export async function acceptPendingInvitation(
   }
 
   const { error: roleErr } = await service.from('roles_usuario').insert({
-    usuario_id: user.user.id,
+    usuario_id: user.id,
     centro_id: invitation.centro_id,
     rol: invitation.rol_objetivo,
   })
@@ -290,13 +338,26 @@ export async function acceptPendingInvitation(
   if (creaVinculo && invitation.nino_id && vinculo?.parentesco) {
     const { error: vinculoError } = await crearVinculoAutomatico(service, {
       ninoId: invitation.nino_id,
-      usuarioId: user.user.id,
+      usuarioId: user.id,
       rolObjetivo: invitation.rol_objetivo,
       tipoVinculoInvitacion: invitation.tipo_vinculo,
       parentesco: vinculo.parentesco,
       descripcionParentesco: vinculo.descripcionParentesco ?? null,
     })
     if (vinculoError) return fail(vinculoError)
+  }
+
+  // B8-profe (decisión F): inserta `profes_aulas`. El rol 'profe' ya se insertó
+  // arriba (idempotente); si el vínculo de aula falla con 23505 no marcamos
+  // `accepted_at` → un reintento (cuando se libere el slot de coordinadora)
+  // re-inserta el rol (duplicate ignorado) y completa el vínculo.
+  if (invitation.rol_objetivo === 'profe' && invitation.aula_id) {
+    const { error: profeError } = await crearVinculoProfeAula(service, {
+      profeId: user.id,
+      aulaId: invitation.aula_id,
+      tipoPersonalAula: invitation.tipo_personal_aula,
+    })
+    if (profeError) return fail(profeError)
   }
 
   await service
