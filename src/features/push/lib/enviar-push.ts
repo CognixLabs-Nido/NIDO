@@ -1,6 +1,6 @@
 import webpush from 'web-push'
 
-import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 
 import type { PushPayload, PushSubscriptionRow } from '../types'
 

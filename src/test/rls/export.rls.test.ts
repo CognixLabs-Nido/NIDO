@@ -135,7 +135,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS export de datos — F11-A5', () => {
   // e01 — la familia recolecta su propio usuario
   it('e01 — recolectarUsuario devuelve la ficha + consentimientos + vínculos del sujeto', async () => {
     const c = await clientFor(tutor)
-    const rec = await recolectarUsuario(c, serviceClient, tutor.id)
+    const rec = await recolectarUsuario(c, tutor.id)
     expect(rec).not.toBeNull()
     expect((rec!.data.ficha as { id: string }).id).toBe(tutor.id)
     expect((rec!.data.consentimientos as unknown[]).length).toBeGreaterThan(0)
@@ -236,7 +236,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS export de datos — F11-A5', () => {
       .from('mensajes')
       .insert({ conversacion_id: conv!.id, autor_id: tutor.id, contenido: 'Hola, soy la familia' })
 
-    const rec = await recolectarUsuario(await clientFor(tutor), serviceClient, tutor.id)
+    const rec = await recolectarUsuario(await clientFor(tutor), tutor.id)
     const mensajes = rec!.data.mensajes as Array<{ contenido: string }>
     expect(mensajes.some((m) => m.contenido === 'Hola, soy la familia')).toBe(true)
   })

@@ -1,4 +1,4 @@
-import { createServiceRoleClient } from '@/features/auth/actions/_service-role'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 

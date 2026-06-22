@@ -10,22 +10,23 @@ vi.mock('../../lib/invitados', () => ({
   resolverInvitadosSnapshot: (...args: unknown[]) => snapshotMock(...args),
 }))
 
-// createServiceClient solo lo usa la limpieza best-effort.
-const serviceDeleteSpy = vi.fn()
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
-  createServiceClient: vi.fn(() =>
-    Promise.resolve({
-      from: () => ({
-        delete: () => ({
-          eq: () => {
-            serviceDeleteSpy()
-            return Promise.resolve({ error: null })
-          },
-        }),
+}))
+
+// createServiceRoleClient solo lo usa la limpieza best-effort (cliente síncrono).
+const serviceDeleteSpy = vi.fn()
+vi.mock('@/lib/supabase/admin', () => ({
+  createServiceRoleClient: vi.fn(() => ({
+    from: () => ({
+      delete: () => ({
+        eq: () => {
+          serviceDeleteSpy()
+          return Promise.resolve({ error: null })
+        },
       }),
-    })
-  ),
+    }),
+  })),
 }))
 
 import { crearCitaCore } from '../crear-cita'

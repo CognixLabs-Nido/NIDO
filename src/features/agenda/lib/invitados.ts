@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 import {
   ninosActivosDeAula,
   profesDeAula,
@@ -41,6 +41,12 @@ interface ResolverArgs {
  * organizador no tiene RLS para leer todos los vínculos/roles del centro (su
  * auth ya la verificó el server action; la escritura posterior sí va bajo RLS).
  *
+ * ⚠️ CONTRATO — CALLER-AUTHORIZED. Este módulo resuelve audiencia CROSS-USER con
+ * service role (bypassa RLS). NO autoriza al organizador: el CALLER (el server
+ * action de crear/editar cita) DEBE haber verificado el permiso del organizador
+ * ANTES de llamar (en la práctica, el INSERT de la cita bajo RLS es ese gate).
+ * Invocar esto desde un camino sin esa autorización FILTRARÍA vínculos del centro.
+ *
  *  - `reunion_familia`  → TODOS los tutores/autorizados del niño (invitación
  *                         dirigida; NO se filtra por `puede_recibir_mensajes`).
  *  - `reunion_clase`    → familias del aula (broadcast-like → SÍ respeta el flag)
@@ -51,7 +57,7 @@ interface ResolverArgs {
  * El organizador nunca se invita a sí mismo (se excluye al final).
  */
 export async function resolverInvitadosSnapshot(args: ResolverArgs): Promise<InvitadosSnapshot> {
-  const supabase = await createServiceClient()
+  const supabase = createServiceRoleClient()
   const internos = new Set<string>()
   const externos: string[] = []
 
@@ -95,7 +101,7 @@ interface ExplicitosArgs {
 export async function resolverInvitadosExplicitos(
   args: ExplicitosArgs
 ): Promise<InvitadosSnapshot> {
-  const supabase = await createServiceClient()
+  const supabase = createServiceRoleClient()
   const internos = new Set<string>()
   const externos: string[] = []
 

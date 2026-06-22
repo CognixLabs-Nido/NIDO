@@ -2,7 +2,8 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
@@ -120,7 +121,7 @@ export async function crearCitaCore(
     // Limpieza best-effort SOLO en esta rama: la cita ya existe pero quedó sin
     // invitados. El DELETE de usuario está bloqueado (default DENY) → service
     // role. El audit de citas registra el DELETE (valores_antes) → trazabilidad.
-    const service = await createServiceClient()
+    const service = createServiceRoleClient()
     const { error: delErr } = await service.from('citas').delete().eq('id', creada.id)
     if (delErr) logger.warn('crearCita: limpieza de cita huérfana', delErr.message)
     return fail('citas.errors.invitados_fallo')

@@ -1,6 +1,7 @@
 import 'server-only'
 
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import type { CitaDetalle, InvitadoRoster, RsvpEstado } from '../types'
@@ -49,7 +50,7 @@ export async function getCitaDetalle(citaId: string): Promise<CitaDetalle | null
     .filter((id): id is string => id !== null)
   const nombres = new Map<string, string>()
   if (usuarioIds.length > 0) {
-    const service = await createServiceClient()
+    const service = createServiceRoleClient()
     const { data: usuarios } = await service
       .from('usuarios')
       .select('id, nombre_completo')
