@@ -1658,8 +1658,10 @@ export type Database = {
           id: string
           invitado_por: string | null
           nino_id: string | null
+          nombre_completo: string | null
           rejected_at: string | null
           rol_objetivo: Database['public']['Enums']['user_role']
+          tipo_personal_aula: Database['public']['Enums']['tipo_personal_aula'] | null
           tipo_vinculo: Database['public']['Enums']['tipo_vinculo'] | null
           token: string
         }
@@ -1673,8 +1675,10 @@ export type Database = {
           id?: string
           invitado_por?: string | null
           nino_id?: string | null
+          nombre_completo?: string | null
           rejected_at?: string | null
           rol_objetivo: Database['public']['Enums']['user_role']
+          tipo_personal_aula?: Database['public']['Enums']['tipo_personal_aula'] | null
           tipo_vinculo?: Database['public']['Enums']['tipo_vinculo'] | null
           token?: string
         }
@@ -1688,8 +1692,10 @@ export type Database = {
           id?: string
           invitado_por?: string | null
           nino_id?: string | null
+          nombre_completo?: string | null
           rejected_at?: string | null
           rol_objetivo?: Database['public']['Enums']['user_role']
+          tipo_personal_aula?: Database['public']['Enums']['tipo_personal_aula'] | null
           tipo_vinculo?: Database['public']['Enums']['tipo_vinculo'] | null
           token?: string
         }
@@ -2695,6 +2701,7 @@ export type Database = {
           consentimiento_terminos_version: string | null
           created_at: string
           deleted_at: string | null
+          foto_url: string | null
           id: string
           idioma_preferido: string
           nombre_completo: string
@@ -2705,6 +2712,7 @@ export type Database = {
           consentimiento_terminos_version?: string | null
           created_at?: string
           deleted_at?: string | null
+          foto_url?: string | null
           id: string
           idioma_preferido?: string
           nombre_completo: string
@@ -2715,6 +2723,7 @@ export type Database = {
           consentimiento_terminos_version?: string | null
           created_at?: string
           deleted_at?: string | null
+          foto_url?: string | null
           id?: string
           idioma_preferido?: string
           nombre_completo?: string
