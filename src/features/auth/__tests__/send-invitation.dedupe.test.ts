@@ -23,6 +23,8 @@ let calls: {
 }
 // Qué niños tienen ya invitación abierta (para simular el dedupe).
 let existingForNino: Record<string, boolean>
+// Args con los que se llamó a inviteUserByEmail (para verificar el payload `data`).
+let lastInviteArgs: { email: string; opts: { data?: Record<string, unknown> } } | null
 
 function makeServiceFake() {
   function builder(table: string) {
@@ -43,6 +45,8 @@ function makeServiceFake() {
         const key = state.ninoFilter?.type === 'eq' ? String(state.ninoFilter.value) : '__null__'
         return { data: existingForNino[key] ? { id: 'existing-id' } : null, error: null }
       }
+      // nombre del centro para la firma del email
+      if (state.table === 'centros') return { data: { nombre: 'Escuela Demo' }, error: null }
       // roles_usuario u otros selects de lista
       return { data: [{ rol: 'admin', centro_id: CENTRO }], error: null }
     }
@@ -85,7 +89,14 @@ function makeServiceFake() {
   }
   return {
     from: (table: string) => builder(table),
-    auth: { admin: { inviteUserByEmail: vi.fn(() => Promise.resolve({ error: null })) } },
+    auth: {
+      admin: {
+        inviteUserByEmail: vi.fn((email: string, opts: { data?: Record<string, unknown> }) => {
+          lastInviteArgs = { email, opts }
+          return Promise.resolve({ error: null })
+        }),
+      },
+    },
   }
 }
 
@@ -115,6 +126,7 @@ import { sendInvitation } from '../actions/send-invitation'
 beforeEach(() => {
   calls = { insert: 0, update: 0, ninoFilter: null }
   existingForNino = {}
+  lastInviteArgs = null
 })
 
 describe('sendInvitation — dedupe nino_id-aware', () => {
@@ -157,5 +169,19 @@ describe('sendInvitation — dedupe nino_id-aware', () => {
     expect(r.success).toBe(true)
     expect(calls.ninoFilter).toEqual({ type: 'is', value: null })
     expect(calls.insert).toBe(1)
+  })
+
+  it('(4) inyecta centro_nombre + rol_objetivo en el payload del email (firma personalizada)', async () => {
+    const r = await sendInvitation({
+      email: 'profe@nido.test',
+      rolObjetivo: 'profe',
+      centroId: CENTRO,
+      aulaId: '55555555-5555-4555-8555-555555555555',
+    })
+    expect(r.success).toBe(true)
+    expect(lastInviteArgs?.opts.data).toMatchObject({
+      rol_objetivo: 'profe',
+      centro_nombre: 'Escuela Demo',
+    })
   })
 })
