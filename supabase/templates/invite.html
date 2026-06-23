@@ -1,0 +1,24 @@
+<div style="margin:0;padding:0;background-color:#f4f6f8;font-family:Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:24px 0;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e6e9ed;">
+        <tr><td style="background-color:#1f7a5c;padding:20px 32px;">
+          <span style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:0.5px;">NIDO</span>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <h1 style="margin:0 0 16px;font-size:20px;color:#1a1a1a;">Hola,</h1>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#3d4450;">La escuela infantil te ha invitado a unirte a <strong>NIDO</strong>, la plataforma donde se gestiona el d&iacute;a a d&iacute;a del centro: comunicaciones, agenda, fotos y autorizaciones.</p>
+          <p style="margin:0 0 8px;font-size:15px;line-height:1.6;color:#3d4450;">Pulsa el bot&oacute;n para crear tu cuenta y completar tu acceso:</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center" style="border-radius:8px;background-color:#1f7a5c;">
+            <a href="{{ .RedirectTo }}" style="display:inline-block;padding:13px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">Completar mi acceso</a>
+          </td></tr></table>
+          <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#6b7280;">Si el bot&oacute;n no funciona, copia este enlace en tu navegador:</p>
+          <p style="margin:0 0 16px;font-size:13px;line-height:1.5;word-break:break-all;"><a href="{{ .RedirectTo }}" style="color:#1f7a5c;">{{ .RedirectTo }}</a></p>
+          <p style="margin:0 0 24px;font-size:13px;line-height:1.6;color:#6b7280;">Este enlace es personal, no lo compartas. Si no esperabas esta invitaci&oacute;n, puedes ignorar este correo.</p>
+          <p style="margin:0;font-size:14px;color:#3d4450;">Un saludo,<br/>El equipo de {{ if .Data.centro_nombre }}{{ .Data.centro_nombre }}{{ else }}la escuela{{ end }}</p>
+        </td></tr>
+      </table>
+      <p style="max-width:480px;margin:16px auto 0;font-size:11px;color:#9aa1ab;text-align:center;">NIDO &middot; Plataforma de gesti&oacute;n para escuelas infantiles</p>
+    </td></tr>
+  </table>
+</div>

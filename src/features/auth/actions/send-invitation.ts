@@ -109,11 +109,23 @@ export async function sendInvitation(
 
   if (!invitation) return fail('auth.invitation.errors.lookup_failed')
 
+  // Nombre del centro para personalizar la firma del email ({{ .Data.centro_nombre }}
+  // en la plantilla de invitación). Si faltara, la plantilla cae a "la escuela".
+  const { data: centro } = await service
+    .from('centros')
+    .select('nombre')
+    .eq('id', parsed.data.centroId)
+    .maybeSingle()
+
   const redirectTo = `${getAppUrl()}/${locale}/invitation/${invitation.token}`
 
   const { error: emailError } = await service.auth.admin.inviteUserByEmail(parsed.data.email, {
     redirectTo,
-    data: { token: invitation.token, rol_objetivo: parsed.data.rolObjetivo },
+    data: {
+      token: invitation.token,
+      rol_objetivo: parsed.data.rolObjetivo,
+      centro_nombre: centro?.nombre ?? null,
+    },
   })
   if (emailError) {
     logger.warn('inviteUserByEmail error', emailError.message)
