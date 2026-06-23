@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -91,7 +91,7 @@ export function AcceptInvitationForm({
     },
   })
 
-  const parentescoSel = form.watch('parentesco')
+  const parentescoSel = useWatch({ control: form.control, name: 'parentesco' })
 
   function onSubmit(values: AcceptInvitationInput) {
     setServerErrorKey(null)

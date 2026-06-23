@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -149,7 +149,7 @@ export function CitaFormDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, fechaInicial, horaInicial])
 
-  const tipo = form.watch('tipo')
+  const tipo = useWatch({ control: form.control, name: 'tipo' })
 
   // base-ui `Select.Value` pinta el `value` crudo (id) salvo que `Select.Root`
   // reciba `items` (value→label). Sin esto, el control mostraría el UUID / la

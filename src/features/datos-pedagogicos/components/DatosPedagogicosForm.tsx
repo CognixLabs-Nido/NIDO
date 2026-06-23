@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState, useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
@@ -106,7 +106,7 @@ export function DatosPedagogicosForm({ ninoId, locale, initial }: Props) {
   }
 
   // Asegura tipos correctos para tipo_alimentacion en el render (evita TS warns).
-  const tipoAlim = form.watch('tipo_alimentacion')
+  const tipoAlim = useWatch({ control: form.control, name: 'tipo_alimentacion' })
 
   return (
     <Form {...form}>

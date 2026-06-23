@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -134,7 +134,7 @@ export function RecordatorioFormDialog({
     defaultValues: recordatorioFormDefaults(destinos, preset),
   })
 
-  const destino = form.watch('destinatario')
+  const destino = useWatch({ control: form.control, name: 'destinatario' })
   const destinoItems = destinos.map((d) => ({ value: d, label: tDestinos(d) }))
   const ninoItems = ninos.map((n) => ({ value: n.id, label: `${n.nombre} ${n.apellidos}` }))
   const aulaItems = aulas.map((a) => ({ value: a.id, label: a.nombre }))
