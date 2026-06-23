@@ -949,6 +949,58 @@ Todas aplicadas a mano por SQL Editor (CLI SIGILL en el equipo) y registradas en
 
 **F10 cerrada (Checkpoint):** typecheck (en frío) + lint + build + **suite entera con TODOS los flags de F10 activados** (`F10_0/F10_2/F10_3_MIGRATION_APPLIED=1`, `--no-file-parallelism`) en verde contra el remoto con las 3 migraciones aplicadas. Números: **unit 1487/1487 passed** (79 archivos); **RLS 207 passed** (los 105 skipped son de otras fases por sus propios gates — F5/F5.6 mensajería, F5B34 profes-aulas, etc.); los **3 archivos RLS de F10** (`publicaciones`, `publicaciones-familia`, `adjuntos-storage`) corridos con sus flags dan **21/21 passed, 0 skipped** — verde real en lo de F10. Blog del aula (composer profe), vista familia (blog + histórico + aviso de inicio + descarga), y adjuntos (foto niño, DNI de recogida atado al hash, logo) verificados en preview. **HEIC se rechaza** con aviso claro (ADR-0046) — follow-up con dos vías. Próxima fase: **F11 — Pulido final + producción** (incluye el paquete RGPD bloqueante y el backlog consolidado en `docs/follow-ups.md`).
 
+## Fase 11-C — Onboarding de profesor (CERRADA)
+
+Alta de personal (profe) autónoma desde la app, sin SQL Editor. **Reusa la infra de
+invitación/accept de tutores (D6)** con una rama propia hacia `profes_aulas` + avatar de
+usuario. Decisiones A–F y diseño en ADR-0047; spec `docs/specs/onboarding-profe.md`.
+
+### PRs cerrados
+
+- **#133 (F11-C-0)** — Fundación: migración aditiva (`invitaciones.nombre_completo` +
+  `tipo_personal_aula`, `usuarios.foto_url`) + bucket privado `usuarios-fotos` + 4 policies.
+- **#134 (F11-C-1)** — Invitar profe: action `invitarProfe` (Core+wrapper, gate `es_admin`
+  vía `sendInvitation`), `InvitarProfeDialog`, reenviar/revocar, validación
+  coordinadora-única **al invitar** (decisión E); página `admin/personal` + nav.
+- **#135 (F11-C-2)** — Accept: rama `profes_aulas` (service-role) en `acceptInvitation`
+  (cuenta nueva) y `acceptPendingInvitation` (B8-profe, decisión F); prefill **editable**
+  del nombre (decisión C); red del `23505` de coordinadora (mensaje amable, sin romper el
+  accept).
+- **#136 (F11-C-3)** — Avatar: route handler `usuarios/[id]/avatar` (sharp EXIF-strip→JPEG,
+  HEIC rechazado, tope 4 MB, ruta `{centroId}/{usuarioId}`, UPDATE `foto_url` + firma por
+  service-role tras el gate de Storage); `AvatarUploader` en perfil; foto **opcional** en el
+  accept (decisión D) vía split `acceptInvitationCore`/wrapper sin romper el redirect.
+- **F11-C-4** — Cierre: test end-to-end RLS/gated + ADR-0047 + esta entrada + gap tachado.
+
+### Migraciones
+
+- `20260622100000_phase11c_0_onboarding_profe_fundacion` (F11-C-0, aditiva). El resto de
+  subfases (C-1…C-4) **no** tocan migraciones.
+
+### Decisiones (ADRs)
+
+- **ADR-0047 — Onboarding de personal**: reuso de D6 con rama profe (vs flujo a medida vs
+  SQL Editor) + bucket propio `usuarios-fotos` (vs reusar `ninos-fotos`) + decisiones A–F.
+
+### Aprendizaje transversal
+
+- El avatar fuerza un split `acceptInvitationCore` (sin redirect) + wrapper: el camino sin
+  foto conserva el redirect server-side de siempre (no-flash + propagación de cookie); el
+  camino con foto crea la cuenta, sube por la route handler (ya hay sesión) y redirige con
+  `redirigirAlPanel`. El binario de hasta 4 MB excede el body de las server actions → la
+  subida va por route handler multipart (patrón F10-3), no por action.
+
+### Cierre
+
+**F11-C cerrada:** typecheck + lint + build + suite unit en verde en cada PR (última:
+**1577/1577**). Tests del flujo: action+schema (17), accept B8-profe + helper + 23505 (9),
+procesado de avatar (3), foto opcional no rompe el accept (2). Test **end-to-end RLS gated**
+(`F11C0_MIGRATION_APPLIED=1`, `onboarding-profe.rls`): invitación → accept (cuenta nueva y
+B8) → `profes_aulas` con tipo correcto → aislamiento entre centros → conflicto coordinadora
+(23505) → aislamiento del bucket `usuarios-fotos`. El flujo de las acciones reales (usan
+`next/headers` + `auth.admin`) se verifica en preview (no invocable en vitest, igual que
+`alta-p1-fundacion.rls`). Gap "UI de alta de profesor" tachado en `docs/follow-ups.md`.
+
 ## Fase 12 — Funcionalidad pendiente post-F11 (registrada, sin abrir)
 
 > Registrada durante F11-A (2026-06-13). **F12 sigue siendo Ola 1** — secuencial tras F11,

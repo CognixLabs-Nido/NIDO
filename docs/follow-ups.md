@@ -12,7 +12,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 ## Bloqueantes pre-piloto — Ola 1
 
-- [ ] **UI de alta de profesor + invitación al centro** (admin de usuarios). Hoy el admin del centro depende del **SQL Editor** para dar de alta personal. Sin esta UI el piloto no es autónomo. PR aparte post-sprint. _(Ola 1)_
+- [x] ~~**UI de alta de profesor + invitación al centro** (admin de usuarios). Hoy el admin del centro depende del **SQL Editor** para dar de alta personal. Sin esta UI el piloto no es autónomo. PR aparte post-sprint.~~ **CERRADO en F11-C** (PRs #133–#136): página `admin/personal` con invitar/reenviar/revocar profe, accept con rama `profes_aulas` (cuenta nueva + B8) y avatar de usuario. Ver ADR-0047 y `docs/specs/onboarding-profe.md`. _(Ola 1)_
 - [ ] **Confirmar traducciones VA con usuario nativo.** Quedan TODOs de valenciano en el código de los PRs **#35, #36, #40** (strings marcados en componente, no en JSON). Revisar con hablante nativo antes del piloto. _(Ola 1)_
 
 ## Hardening — post 1 sprint en producción (Ola 1)
@@ -127,7 +127,7 @@ F8 autorizaciones queda **cerrado**: el WRITE de firma e instancia se apretó al
 
 - [x] **`scope-ola-1.md` — "Least-privilege en supervisión de mensajería (admin)"** estaba listado como bloqueante RGPD pendiente. **Texto actualizado a CERRADO** (F11-F2): el bloqueante ya estaba resuelto por `20260613180000_phase11a_mensajeria_least_privilege.sql` (F11-A) — el helper `puede_postear_en_conversacion` excluye al admin en `profe_familia` (lee pero no postea). Queda aparte la **transparencia/RAT** del acceso de lectura, que sí sigue pendiente. Regresión blindada en `enviar-mensaje-admin-familia.test.ts` (admin posteando profe_familia → `sin_permisos`).
 
-**🧱 Otros pre-piloto / hardening** (detallados en las secciones de arriba): UI de alta de profesor + invitación; confirmar traducciones VA con nativo; drop de `es_profe_principal`; reactivar tests `skip` de `profes-aulas`; trigger audit de `profes_aulas` + sweep; cleanup de residuos de tests RLS en remoto; implementación de ADR-0028 (PWA/manifest); recalibrar alturas de `ConversacionView`; `process-logos.mjs` multi-fuente; seeds E2E; patrón `Select` de base-ui en jsdom.
+**🧱 Otros pre-piloto / hardening** (detallados en las secciones de arriba): ~~UI de alta de profesor + invitación~~ (✅ cerrado en F11-C); confirmar traducciones VA con nativo; drop de `es_profe_principal`; reactivar tests `skip` de `profes-aulas`; trigger audit de `profes_aulas` + sweep; cleanup de residuos de tests RLS en remoto; implementación de ADR-0028 (PWA/manifest); recalibrar alturas de `ConversacionView`; `process-logos.mjs` multi-fuente; seeds E2E; patrón `Select` de base-ui en jsdom.
 
 ## Resueltos
 
