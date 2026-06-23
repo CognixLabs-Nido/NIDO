@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
@@ -177,7 +177,7 @@ export function EventoFormDialog(props: Props) {
     defaultValues: valoresIniciales(evento, ambitos[0] ?? 'aula'),
   })
 
-  const ambito = form.watch('ambito')
+  const ambito = useWatch({ control: form.control, name: 'ambito' })
   const ambitoItems = ambitos.map((a) => ({ value: a, label: t(`ambitos.${a}`) }))
   const tipoItems = TIPOS.map((tp) => ({ value: tp, label: t(`tipos.${tp}`) }))
   const aulaItems = aulas.map((a) => ({ value: a.id, label: a.nombre }))

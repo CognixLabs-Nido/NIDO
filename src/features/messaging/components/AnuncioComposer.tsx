@@ -1,7 +1,7 @@
 'use client'
 
 import { useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -62,7 +62,7 @@ export function AnuncioComposer({ locale, rolEsAdmin, aulas }: Props) {
     },
   })
 
-  const ambito = form.watch('ambito')
+  const ambito = useWatch({ control: form.control, name: 'ambito' })
 
   // `items` para Select.Root: la prop es obligatoria cuando el value no es ya
   // human-readable (UUIDs, enums opacos). Sin esto, Select.Value renderiza el
