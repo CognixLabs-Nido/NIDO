@@ -255,7 +255,6 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS autorizaciones — F8-RW-0 (catálogo +
   })
 
   it('B2 acotado: el tutor NO crea instancia para un niño ajeno, ni sin plantilla, ni con plantilla de otro centro', async () => {
-    const plantilla = await crearPlantilla('medicacion')
     const plantillaB = await crearPlantilla('medicacion', centroB.id)
     const c = await clientFor(tutor)
 

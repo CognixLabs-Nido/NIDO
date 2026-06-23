@@ -78,8 +78,7 @@ async function crearVinculoAutomatico(
 // cuenta (ya hay sesión) y luego redirigir server-side con `redirigirAlPanel`. El
 // camino SIN avatar usa el wrapper `acceptInvitation` (un solo round-trip, sin cambios).
 export async function acceptInvitationCore(
-  input: AcceptInvitationInput,
-  locale: string = 'es'
+  input: AcceptInvitationInput
 ): Promise<ActionResult<{ rol: string; usuarioId: string }>> {
   const parsed = acceptInvitationSchema.safeParse(input)
   if (!parsed.success) {
@@ -265,7 +264,7 @@ export async function acceptInvitation(
   input: AcceptInvitationInput,
   locale: string = 'es'
 ): Promise<ActionResult<never>> {
-  const r = await acceptInvitationCore(input, locale)
+  const r = await acceptInvitationCore(input)
   if (!r.success) return r
   redirect(dashboardPorRol(locale, r.data.rol))
 }

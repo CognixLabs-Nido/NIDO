@@ -6,8 +6,6 @@ import type { Database } from '@/types/database'
 
 import { BUCKET_NINOS_FOTOS } from '@/shared/lib/adjuntos/storage'
 
-import { BUCKET_AULA_FOTOS } from '@/features/fotos/types'
-
 import { EXPORT_URL_TTL_SEGUNDOS, type AdjuntoExport } from '../types'
 
 type Client = SupabaseClient<Database>
