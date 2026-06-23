@@ -481,6 +481,10 @@
         "revocada": "Invitació revocada",
         "expira": "Caduca el {fecha}",
         "caducada": "Caducada"
+      },
+      "activos": {
+        "title": "Personal actiu",
+        "empty": "Encara no hi ha personal donat d'alta al centre."
       }
     }
   },

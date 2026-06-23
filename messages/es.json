@@ -481,6 +481,10 @@
         "revocada": "Invitación revocada",
         "expira": "Caduca el {fecha}",
         "caducada": "Caducada"
+      },
+      "activos": {
+        "title": "Personal activo",
+        "empty": "Aún no hay personal dado de alta en el centro."
       }
     }
   },

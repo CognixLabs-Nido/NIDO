@@ -481,6 +481,10 @@
         "revocada": "Invitation revoked",
         "expira": "Expires on {fecha}",
         "caducada": "Expired"
+      },
+      "activos": {
+        "title": "Active staff",
+        "empty": "There is no staff registered in the centre yet."
       }
     }
   },
