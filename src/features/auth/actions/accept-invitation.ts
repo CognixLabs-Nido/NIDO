@@ -67,15 +67,20 @@ async function crearVinculoAutomatico(
 }
 
 // Acepta invitación para un email nuevo (flujo B2): crea usuario, login automático.
-// En ÉXITO redirige server-side al panel (ya NO devuelve datos para navegar en cliente):
-// con `updateSession` en el proxy, el middleware refresca/propaga la cookie de sesión
-// recién creada por `signInWithPassword`, así que el gate del destino (P3c en /family →
-// /alta) ya ve al tutor. Sustituye al band-aid `window.location.assign` (4910fbc) y mata
-// el flash "enlace inválido" (la ruta token ya no se re-renderiza tras la mutación).
-export async function acceptInvitation(
+// En ÉXITO redirige server-side al panel (ver `acceptInvitation`): con `updateSession`
+// en el proxy, el middleware refresca/propaga la cookie de sesión recién creada por
+// `signInWithPassword`, así que el gate del destino (P3c en /family → /alta) ya ve al
+// tutor. Sustituye al band-aid `window.location.assign` (4910fbc) y mata el flash
+// "enlace inválido" (la ruta token ya no se re-renderiza tras la mutación).
+//
+// `acceptInvitationCore` hace todo MENOS el `redirect`: devuelve `{ rol, usuarioId }`
+// para que el camino con avatar opcional (F11-C-3) pueda subir la foto tras crear la
+// cuenta (ya hay sesión) y luego redirigir server-side con `redirigirAlPanel`. El
+// camino SIN avatar usa el wrapper `acceptInvitation` (un solo round-trip, sin cambios).
+export async function acceptInvitationCore(
   input: AcceptInvitationInput,
   locale: string = 'es'
-): Promise<ActionResult<never>> {
+): Promise<ActionResult<{ rol: string; usuarioId: string }>> {
   const parsed = acceptInvitationSchema.safeParse(input)
   if (!parsed.success) {
     const first = parsed.error.issues[0]?.message ?? 'auth.validation.invalid'
@@ -248,10 +253,30 @@ export async function acceptInvitation(
     logger.warn('signIn tras accept-invitation falló', signInErr.message)
   }
 
-  // Navegación server-side (no cliente): el proxy con updateSession garantiza que la
-  // cookie viaje al destino. Mismo mapeo por rol que tenía el cliente (admin→/admin,
-  // profe→/teacher, familia→/family; el gate P3c reenvía al tutor a /alta).
-  redirect(dashboardPorRol(locale, invitation.rol_objetivo))
+  return ok({ rol: invitation.rol_objetivo, usuarioId: userId })
+}
+
+/**
+ * Wrapper B2 sin avatar (comportamiento histórico, un solo round-trip): crea la cuenta
+ * y, en éxito, redirige server-side al panel (la cookie viaja al destino vía
+ * updateSession). El camino con avatar usa `acceptInvitationCore` + `redirigirAlPanel`.
+ */
+export async function acceptInvitation(
+  input: AcceptInvitationInput,
+  locale: string = 'es'
+): Promise<ActionResult<never>> {
+  const r = await acceptInvitationCore(input, locale)
+  if (!r.success) return r
+  redirect(dashboardPorRol(locale, r.data.rol))
+}
+
+/**
+ * Redirige al panel tras un alta con `acceptInvitationCore` (avatar opcional ya
+ * subido). Es un `redirect` server-side aislado para conservar el mismo no-flash /
+ * propagación de cookie que el wrapper, sin re-ejecutar la mutación de alta.
+ */
+export async function redirigirAlPanel(locale: string, rol: string): Promise<never> {
+  redirect(dashboardPorRol(locale, rol))
 }
 
 /** Panel inicial según el rol objetivo de la invitación. */

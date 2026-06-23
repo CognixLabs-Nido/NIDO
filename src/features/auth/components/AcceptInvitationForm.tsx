@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -24,11 +25,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { acceptInvitation } from '@/features/auth/actions/accept-invitation'
+import {
+  acceptInvitation,
+  acceptInvitationCore,
+  redirigirAlPanel,
+} from '@/features/auth/actions/accept-invitation'
 import {
   acceptInvitationSchema,
   type AcceptInvitationInput,
 } from '@/features/auth/schemas/invitation'
+import { subirAvatar } from '@/features/usuarios/lib/subir-avatar'
 import { safeTranslateError } from '@/shared/lib/safe-translate'
 
 const PARENTESCO_OPCIONES = [
@@ -67,6 +73,9 @@ export function AcceptInvitationForm({
   const t = useTranslations()
   const [pending, startTransition] = useTransition()
   const [serverErrorKey, setServerErrorKey] = useState<string | null>(null)
+  // Avatar OPCIONAL (decisión D): no bloquea el alta. Se sube TRAS crear la cuenta
+  // (ya hay sesión), por eso solo guardamos el File aquí y lo enviamos en onSubmit.
+  const [fotoFile, setFotoFile] = useState<File | null>(null)
 
   const form = useForm<AcceptInvitationInput>({
     resolver: zodResolver(acceptInvitationSchema),
@@ -92,13 +101,24 @@ export function AcceptInvitationForm({
       return
     }
     startTransition(async () => {
-      // En ÉXITO la propia Server Action redirige server-side (el proxy con updateSession
-      // propaga la cookie de sesión al destino → el gate P3c de /family reenvía a /alta),
-      // así que el código de aquí solo se ejecuta en caso de error.
-      const result = await acceptInvitation(values, locale)
+      // Sin avatar: el wrapper redirige server-side en ÉXITO (el proxy con updateSession
+      // propaga la cookie al destino → el gate P3c de /family reenvía a /alta), así que el
+      // código de aquí solo se ejecuta en caso de error. Camino histórico, sin cambios.
+      if (!fotoFile) {
+        const result = await acceptInvitation(values, locale)
+        if (!result.success) setServerErrorKey(result.error)
+        return
+      }
+      // Con avatar: crear la cuenta SIN redirigir (ya hay sesión), subir la foto (best-
+      // effort, decisión D: no bloquea el alta) y redirigir server-side al panel.
+      const result = await acceptInvitationCore(values, locale)
       if (!result.success) {
         setServerErrorKey(result.error)
+        return
       }
+      const sub = await subirAvatar(locale, result.data.usuarioId, fotoFile)
+      if (!sub.ok) toast.warning(safeTranslateError(t, 'auth.avatar.opcional_fallo'))
+      await redirigirAlPanel(locale, result.data.rol)
     })
   }
 
@@ -162,6 +182,19 @@ export function AcceptInvitationForm({
             </FormItem>
           )}
         />
+
+        <FormItem>
+          <FormLabel>{t('auth.avatar.campo_label')}</FormLabel>
+          <FormControl>
+            <Input
+              type="file"
+              accept="image/jpeg,image/png"
+              disabled={pending}
+              onChange={(e) => setFotoFile(e.target.files?.[0] ?? null)}
+            />
+          </FormControl>
+          <p className="text-muted-foreground text-xs">{t('auth.avatar.campo_ayuda')}</p>
+        </FormItem>
 
         {requiereParentesco && (
           <>
