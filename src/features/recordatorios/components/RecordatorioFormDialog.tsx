@@ -112,7 +112,14 @@ const formSchema = z
 
 type FormValues = z.infer<typeof formSchema>
 
-export function RecordatorioFormDialog({ locale, destinos, ninos, aulas, profes, preset }: Props) {
+export function RecordatorioFormDialog({
+  locale: _locale,
+  destinos,
+  ninos,
+  aulas,
+  profes,
+  preset,
+}: Props) {
   const t = useTranslations('recordatorios')
   const tDestinos = useTranslations('recordatorios.destinos')
   const tForm = useTranslations('recordatorios.form')

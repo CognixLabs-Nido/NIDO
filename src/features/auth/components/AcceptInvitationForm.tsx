@@ -111,7 +111,7 @@ export function AcceptInvitationForm({
       }
       // Con avatar: crear la cuenta SIN redirigir (ya hay sesión), subir la foto (best-
       // effort, decisión D: no bloquea el alta) y redirigir server-side al panel.
-      const result = await acceptInvitationCore(values, locale)
+      const result = await acceptInvitationCore(values)
       if (!result.success) {
         setServerErrorKey(result.error)
         return
