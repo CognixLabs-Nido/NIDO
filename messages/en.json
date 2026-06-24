@@ -179,12 +179,32 @@
     "cta_login": "Sign in",
     "phase": "Phase 2 — Core entities"
   },
+  "rollover": {
+    "validation": {
+      "invalid": "Invalid data.",
+      "id_invalido": "Invalid identifier."
+    },
+    "errors": {
+      "destino_no_encontrado": "Target course not found.",
+      "destino_no_planificado": "The target course is not planned.",
+      "sin_curso_activo": "The centre has no active course to advance from.",
+      "sin_aulas_destino": "Configure the target course's classrooms first.",
+      "aula_no_en_destino": "That classroom is not configured in the target course.",
+      "no_pendiente": "That enrolment is not an editable proposal.",
+      "copiar_fallo": "Could not copy the setup.",
+      "proponer_fallo": "Could not propose the enrolments.",
+      "asignar_fallo": "Could not assign the classroom.",
+      "descartar_fallo": "Could not discard the proposal.",
+      "confirmar_fallo": "Could not confirm advancing."
+    }
+  },
   "admin": {
     "nav": {
       "aria_label": "Admin navigation",
       "dashboard": "Dashboard",
       "centro": "Centre",
       "cursos": "Years",
+      "pasarDeCurso": "Advance year",
       "aulas": "Classrooms",
       "ninos": "Children",
       "audit": "Audit log",
@@ -231,6 +251,35 @@
       "logo": {
         "titulo": "Centre logo"
       }
+    },
+    "pasarDeCurso": {
+      "title": "Advance to next year",
+      "sin_planificado": "No planned academic year",
+      "sin_planificado_desc": "First create next year's course in Academic years.",
+      "error_estado": "Could not load the course state.",
+      "sin_origen": "No active course",
+      "curso_destino": "Target course",
+      "paso_config": "1. Configure next year's classrooms",
+      "aulas_configuradas": "{n} classrooms configured in the target course.",
+      "copiar_config": "Copy the active course's setup",
+      "config_copiada": "Setup copied",
+      "paso_proponer": "2. Propose enrolments",
+      "resumen_propuesta": "{pendientes} proposals saved · {porGenerar} to generate · {graduados} graduating · {revisar} to review.",
+      "proponer": "Propose enrolments by age",
+      "propuestas_generadas": "Enrolments proposed",
+      "por_aula": "Occupancy per classroom",
+      "revisar_titulo": "Need your decision",
+      "sin_fecha": "No date of birth",
+      "multiples": "Several possible classrooms",
+      "asignar": "Assign",
+      "asignada": "Classroom assigned",
+      "graduado": "Graduating (no classroom by age)",
+      "mantener_graduado": "Keep as graduating",
+      "descartar": "Discard proposal",
+      "descartada": "Proposal discarded",
+      "confirmar": "Confirm advancing",
+      "confirmado": "Course activated",
+      "ya_confirmado": "Already confirmed"
     },
     "cursos": {
       "title": "Academic years",

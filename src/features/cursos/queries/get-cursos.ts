@@ -32,3 +32,16 @@ export async function getCursoActivo(centroId: string): Promise<CursoListItem | 
     .maybeSingle()
   return (data as CursoListItem | null) ?? null
 }
+
+/** Cursos planificados (candidatos a destino del "pasar de curso"), por fecha. */
+export async function getCursosPlanificados(centroId: string): Promise<CursoListItem[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('cursos_academicos')
+    .select('id, nombre, fecha_inicio, fecha_fin, estado')
+    .eq('centro_id', centroId)
+    .eq('estado', 'planificado')
+    .is('deleted_at', null)
+    .order('fecha_inicio', { ascending: true })
+  return (data ?? []) as CursoListItem[]
+}
