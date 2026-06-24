@@ -654,6 +654,83 @@ export type Database = {
           },
         ]
       }
+      cambios_pendientes: {
+        Row: {
+          campo: string | null
+          centro_id: string
+          created_at: string
+          decided_at: string | null
+          entidad: string
+          estado: Database['public']['Enums']['estado_cambio_pendiente']
+          id: string
+          nino_id: string
+          payload: Json | null
+          registro_id: string
+          revisado_por: string | null
+          solicitado_por: string
+          valor_propuesto: Json | null
+        }
+        Insert: {
+          campo?: string | null
+          centro_id: string
+          created_at?: string
+          decided_at?: string | null
+          entidad: string
+          estado?: Database['public']['Enums']['estado_cambio_pendiente']
+          id?: string
+          nino_id: string
+          payload?: Json | null
+          registro_id: string
+          revisado_por?: string | null
+          solicitado_por: string
+          valor_propuesto?: Json | null
+        }
+        Update: {
+          campo?: string | null
+          centro_id?: string
+          created_at?: string
+          decided_at?: string | null
+          entidad?: string
+          estado?: Database['public']['Enums']['estado_cambio_pendiente']
+          id?: string
+          nino_id?: string
+          payload?: Json | null
+          registro_id?: string
+          revisado_por?: string | null
+          solicitado_por?: string
+          valor_propuesto?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'cambios_pendientes_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'cambios_pendientes_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'cambios_pendientes_revisado_por_fkey'
+            columns: ['revisado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'cambios_pendientes_solicitado_por_fkey'
+            columns: ['solicitado_por']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       campanas_informe: {
         Row: {
           centro_id: string
@@ -1240,6 +1317,82 @@ export type Database = {
             columns: ['nino_id']
             isOneToOne: true
             referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      datos_tutor: {
+        Row: {
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          direccion_calle: string | null
+          direccion_ciudad: string | null
+          direccion_cp: string | null
+          direccion_numero: string | null
+          dni_documento_path: string | null
+          email: string | null
+          id: string
+          nino_id: string
+          nombre_completo: string | null
+          tipo_vinculo: Database['public']['Enums']['tipo_vinculo']
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          direccion_calle?: string | null
+          direccion_ciudad?: string | null
+          direccion_cp?: string | null
+          direccion_numero?: string | null
+          dni_documento_path?: string | null
+          email?: string | null
+          id?: string
+          nino_id: string
+          nombre_completo?: string | null
+          tipo_vinculo: Database['public']['Enums']['tipo_vinculo']
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          direccion_calle?: string | null
+          direccion_ciudad?: string | null
+          direccion_cp?: string | null
+          direccion_numero?: string | null
+          dni_documento_path?: string | null
+          email?: string | null
+          id?: string
+          nino_id?: string
+          nombre_completo?: string | null
+          tipo_vinculo?: Database['public']['Enums']['tipo_vinculo']
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'datos_tutor_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'datos_tutor_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'datos_tutor_usuario_id_fkey'
+            columns: ['usuario_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
             referencedColumns: ['id']
           },
         ]
@@ -1901,6 +2054,91 @@ export type Database = {
           },
         ]
       }
+      mandatos_sepa: {
+        Row: {
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          documento_path: string | null
+          estado: Database['public']['Enums']['estado_mandato_sepa']
+          fecha_firma: string | null
+          firma_imagen: string | null
+          iban: string
+          id: string
+          identificador_mandato: string
+          ip_address: unknown
+          nino_id: string
+          nombre_tecleado: string | null
+          texto_hash: string | null
+          titular: string
+          updated_at: string
+          user_agent: string | null
+          usuario_id: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          documento_path?: string | null
+          estado?: Database['public']['Enums']['estado_mandato_sepa']
+          fecha_firma?: string | null
+          firma_imagen?: string | null
+          iban: string
+          id?: string
+          identificador_mandato: string
+          ip_address?: unknown
+          nino_id: string
+          nombre_tecleado?: string | null
+          texto_hash?: string | null
+          titular: string
+          updated_at?: string
+          user_agent?: string | null
+          usuario_id: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          documento_path?: string | null
+          estado?: Database['public']['Enums']['estado_mandato_sepa']
+          fecha_firma?: string | null
+          firma_imagen?: string | null
+          iban?: string
+          id?: string
+          identificador_mandato?: string
+          ip_address?: unknown
+          nino_id?: string
+          nombre_tecleado?: string | null
+          texto_hash?: string | null
+          titular?: string
+          updated_at?: string
+          user_agent?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'mandatos_sepa_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'mandatos_sepa_nino_id_fkey'
+            columns: ['nino_id']
+            isOneToOne: false
+            referencedRelation: 'ninos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'mandatos_sepa_usuario_id_fkey'
+            columns: ['usuario_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       matriculas: {
         Row: {
           aula_id: string
@@ -2162,10 +2400,16 @@ export type Database = {
           centro_id: string
           created_at: string
           deleted_at: string | null
+          direccion_calle: string | null
+          direccion_ciudad: string | null
+          direccion_cp: string | null
+          direccion_numero: string | null
+          estado_civil_familia: Database['public']['Enums']['estado_civil'] | null
           fecha_nacimiento: string | null
           foto_url: string | null
           id: string
           idioma_principal: string
+          libro_familia_path: string | null
           nacionalidad: string | null
           nombre: string
           notas_admin: string | null
@@ -2179,10 +2423,16 @@ export type Database = {
           centro_id: string
           created_at?: string
           deleted_at?: string | null
+          direccion_calle?: string | null
+          direccion_ciudad?: string | null
+          direccion_cp?: string | null
+          direccion_numero?: string | null
+          estado_civil_familia?: Database['public']['Enums']['estado_civil'] | null
           fecha_nacimiento?: string | null
           foto_url?: string | null
           id?: string
           idioma_principal?: string
+          libro_familia_path?: string | null
           nacionalidad?: string | null
           nombre: string
           notas_admin?: string | null
@@ -2196,10 +2446,16 @@ export type Database = {
           centro_id?: string
           created_at?: string
           deleted_at?: string | null
+          direccion_calle?: string | null
+          direccion_ciudad?: string | null
+          direccion_cp?: string | null
+          direccion_numero?: string | null
+          estado_civil_familia?: Database['public']['Enums']['estado_civil'] | null
           fecha_nacimiento?: string | null
           foto_url?: string | null
           id?: string
           idioma_principal?: string
+          libro_familia_path?: string | null
           nacionalidad?: string | null
           nombre?: string
           notas_admin?: string | null
@@ -3223,10 +3479,19 @@ export type Database = {
       control_esfinteres: 'panal_completo' | 'transicion' | 'sin_panal_diurno' | 'sin_panal_total'
       curso_estado: 'planificado' | 'activo' | 'cerrado'
       estado_asistencia: 'presente' | 'ausente' | 'llegada_tarde' | 'salida_temprana'
+      estado_cambio_pendiente: 'pendiente' | 'aprobado' | 'rechazado'
       estado_campana_informe: 'abierta' | 'cerrada'
+      estado_civil:
+        | 'casados'
+        | 'separados'
+        | 'divorciados'
+        | 'pareja_de_hecho'
+        | 'soltero'
+        | 'viudo'
       estado_general_agenda: 'bien' | 'regular' | 'mal' | 'mixto'
       estado_informe: 'borrador' | 'publicado'
       estado_lista_espera: 'en_espera' | 'invitado' | 'descartado'
+      estado_mandato_sepa: 'activo' | 'revocado'
       estado_plantilla_informe: 'activa' | 'archivada'
       estado_plantilla_menu: 'borrador' | 'publicada' | 'archivada'
       evento_estado: 'programado' | 'cancelado'
@@ -3441,10 +3706,13 @@ export const Constants = {
       control_esfinteres: ['panal_completo', 'transicion', 'sin_panal_diurno', 'sin_panal_total'],
       curso_estado: ['planificado', 'activo', 'cerrado'],
       estado_asistencia: ['presente', 'ausente', 'llegada_tarde', 'salida_temprana'],
+      estado_cambio_pendiente: ['pendiente', 'aprobado', 'rechazado'],
       estado_campana_informe: ['abierta', 'cerrada'],
+      estado_civil: ['casados', 'separados', 'divorciados', 'pareja_de_hecho', 'soltero', 'viudo'],
       estado_general_agenda: ['bien', 'regular', 'mal', 'mixto'],
       estado_informe: ['borrador', 'publicado'],
       estado_lista_espera: ['en_espera', 'invitado', 'descartado'],
+      estado_mandato_sepa: ['activo', 'revocado'],
       estado_plantilla_informe: ['activa', 'archivada'],
       estado_plantilla_menu: ['borrador', 'publicada', 'archivada'],
       evento_estado: ['programado', 'cancelado'],
