@@ -179,12 +179,32 @@
     "cta_login": "Iniciar sesión",
     "phase": "Fase 2 — Entidades core"
   },
+  "rollover": {
+    "validation": {
+      "invalid": "Datos no válidos.",
+      "id_invalido": "Identificador no válido."
+    },
+    "errors": {
+      "destino_no_encontrado": "Curso destino no encontrado.",
+      "destino_no_planificado": "El curso destino no está planificado.",
+      "sin_curso_activo": "El centro no tiene un curso activo del que pasar.",
+      "sin_aulas_destino": "Configura primero las aulas del curso destino.",
+      "aula_no_en_destino": "Esa aula no está configurada en el curso destino.",
+      "no_pendiente": "Esa matrícula no es una propuesta editable.",
+      "copiar_fallo": "No se pudo copiar la configuración.",
+      "proponer_fallo": "No se pudieron proponer las matrículas.",
+      "asignar_fallo": "No se pudo asignar el aula.",
+      "descartar_fallo": "No se pudo descartar la propuesta.",
+      "confirmar_fallo": "No se pudo confirmar el pase de curso."
+    }
+  },
   "admin": {
     "nav": {
       "aria_label": "Navegación admin",
       "dashboard": "Panel",
       "centro": "Centro",
       "cursos": "Cursos",
+      "pasarDeCurso": "Pasar de curso",
       "aulas": "Aulas",
       "ninos": "Niños",
       "audit": "Audit log",
@@ -231,6 +251,35 @@
       "logo": {
         "titulo": "Logo del centro"
       }
+    },
+    "pasarDeCurso": {
+      "title": "Pasar de curso",
+      "sin_planificado": "No hay ningún curso planificado",
+      "sin_planificado_desc": "Crea primero el curso del año siguiente en Cursos académicos.",
+      "error_estado": "No se pudo cargar el estado del curso.",
+      "sin_origen": "Sin curso activo",
+      "curso_destino": "Curso destino",
+      "paso_config": "1. Configurar aulas del curso siguiente",
+      "aulas_configuradas": "{n} aulas configuradas en el curso destino.",
+      "copiar_config": "Copiar configuración del curso activo",
+      "config_copiada": "Configuración copiada",
+      "paso_proponer": "2. Proponer matrículas",
+      "resumen_propuesta": "{pendientes} propuestas guardadas · {porGenerar} por generar · {graduados} se gradúan · {revisar} a revisar.",
+      "proponer": "Proponer matrículas por edad",
+      "propuestas_generadas": "Matrículas propuestas",
+      "por_aula": "Ocupación por aula",
+      "revisar_titulo": "Requieren tu decisión",
+      "sin_fecha": "Sin fecha de nacimiento",
+      "multiples": "Varias aulas posibles",
+      "asignar": "Asignar",
+      "asignada": "Aula asignada",
+      "graduado": "Se gradúa (sin aula por edad)",
+      "mantener_graduado": "Mantener como graduado",
+      "descartar": "Descartar propuesta",
+      "descartada": "Propuesta descartada",
+      "confirmar": "Confirmar pasar de curso",
+      "confirmado": "Curso activado",
+      "ya_confirmado": "Ya confirmado"
     },
     "cursos": {
       "title": "Cursos académicos",
