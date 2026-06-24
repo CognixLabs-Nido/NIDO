@@ -8,7 +8,7 @@ import { TIPO_PERSONAL_AULA_ORDER, type TipoPersonalAula } from '@/features/prof
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
-import type { AulaListItem } from './get-aulas'
+import { getAulasPorCursoCore, type AulaListItem } from './get-aulas'
 
 /**
  * F5B-#34 — Query enriquecida para la tabla `/admin/aulas` (PR #35).
@@ -61,29 +61,25 @@ export async function getAulasConPersonalCore(
   supabase: SupabaseClient<Database>,
   cursoAcademicoId: string
 ): Promise<AulaConPersonal[]> {
-  const { data: aulas, error: aulasErr } = await supabase
-    .from('aulas')
-    .select('id, centro_id, nombre, cohorte_anos_nacimiento, capacidad_maxima, descripcion')
-    .eq('curso_academico_id', cursoAcademicoId)
-    .is('deleted_at', null)
-    .order('nombre', { ascending: true })
-
-  if (aulasErr) {
-    logger.warn('getAulasConPersonal: aulas', aulasErr.message)
-    return []
-  }
-
-  const aulasList = (aulas ?? []) as AulaListItem[]
+  // F11-H: las aulas del curso y su config (tramo/capacidad) salen de aulas_curso.
+  const aulasList = await getAulasPorCursoCore(supabase, cursoAcademicoId)
   if (aulasList.length === 0) return []
 
   const aulaIds = aulasList.map((a) => a.id)
 
   // Promise.all: matriculas activas y profes activos en paralelo. Las
   // dos lecturas son independientes — la spec de D6 lo exige
-  // explicitamente (lección PR #32).
+  // explicitamente (lección PR #32). Ambas se cualifican por el curso
+  // (matrícula y asignación de personal son por curso en F11-H).
   const [{ data: matriculas, error: matErr }, { data: profes, error: profesErr }] =
     await Promise.all([
-      aplicarMatriculaActiva(supabase.from('matriculas').select('aula_id').in('aula_id', aulaIds)),
+      aplicarMatriculaActiva(
+        supabase
+          .from('matriculas')
+          .select('aula_id')
+          .eq('curso_academico_id', cursoAcademicoId)
+          .in('aula_id', aulaIds)
+      ),
       supabase
         .from('profes_aulas')
         .select(
@@ -93,6 +89,7 @@ export async function getAulasConPersonalCore(
           profe:usuarios!inner(id, nombre_completo)
           `
         )
+        .eq('curso_academico_id', cursoAcademicoId)
         .in('aula_id', aulaIds)
         .is('fecha_fin', null)
         .is('deleted_at', null),

@@ -64,11 +64,17 @@ export async function publicarLoteInformes(
     aulaIds = [aula_id]
   } else {
     const { data: aulas } = await supabase
-      .from('aulas')
-      .select('id')
+      .from('aulas_curso')
+      .select('aula_id, aula:aulas!inner(deleted_at)')
       .eq('curso_academico_id', campana.curso_academico_id)
-      .is('deleted_at', null)
-    aulaIds = (aulas ?? []).map((a) => a.id)
+    aulaIds = (
+      (aulas ?? []) as unknown as Array<{
+        aula_id: string
+        aula: { deleted_at: string | null } | null
+      }>
+    )
+      .filter((r) => r.aula && r.aula.deleted_at === null)
+      .map((r) => r.aula_id)
   }
   if (aulaIds.length === 0) return ok({ total: 0, publicados: 0, incompletos: 0 })
 

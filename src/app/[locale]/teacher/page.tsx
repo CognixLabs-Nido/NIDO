@@ -24,22 +24,51 @@ export default async function TeacherDashboard({ params }: PageProps) {
   const centroId = await getCentroActualId()
 
   type AulaRow = { id: string; nombre: string; cohorte_anos_nacimiento: number[] }
-  let aulas: AulaRow[] = []
+  const aulas: AulaRow[] = []
   if (userId) {
+    // F11-H: la asignación es por (aula, curso) y el tramo de edad vive en aulas_curso.
     const { data } = await supabase
       .from('profes_aulas')
-      .select('aulas(id, nombre, cohorte_anos_nacimiento)')
+      .select('aula_id, curso_academico_id, aula:aulas!inner(id, nombre, deleted_at)')
       .eq('profe_id', userId)
       .is('fecha_fin', null)
       .is('deleted_at', null)
-    aulas = (data ?? [])
-      .map((r): AulaRow | null => {
-        const raw = r.aulas as AulaRow | AulaRow[] | null
-        if (!raw) return null
-        if (Array.isArray(raw)) return raw[0] ?? null
-        return raw
+
+    const activos = (
+      (data ?? []) as unknown as Array<{
+        aula_id: string
+        curso_academico_id: string
+        aula: { id: string; nombre: string; deleted_at: string | null } | null
+      }>
+    ).filter((r) => r.aula && r.aula.deleted_at === null)
+
+    const aulaIds = activos.map((r) => r.aula_id)
+    const tramoPorAulaCurso = new Map<string, number[]>()
+    if (aulaIds.length > 0) {
+      const { data: configs } = await supabase
+        .from('aulas_curso')
+        .select('aula_id, curso_academico_id, tramo_edad')
+        .in('aula_id', aulaIds)
+      for (const c of (configs ?? []) as Array<{
+        aula_id: string
+        curso_academico_id: string
+        tramo_edad: number[]
+      }>) {
+        tramoPorAulaCurso.set(`${c.aula_id}:${c.curso_academico_id}`, c.tramo_edad)
+      }
+    }
+
+    const seen = new Set<string>()
+    for (const r of activos) {
+      if (!r.aula || seen.has(r.aula_id)) continue
+      seen.add(r.aula_id)
+      aulas.push({
+        id: r.aula.id,
+        nombre: r.aula.nombre,
+        cohorte_anos_nacimiento:
+          tramoPorAulaCurso.get(`${r.aula_id}:${r.curso_academico_id}`) ?? [],
       })
-      .filter((a): a is AulaRow => a !== null)
+    }
   }
 
   const avisos = await getAvisosInicio('profe')

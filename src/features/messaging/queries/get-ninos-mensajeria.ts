@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { getAulaNombresPorIds } from '@/features/aulas/queries/get-aula-nombres'
 import {
   aplicarMatriculaActiva,
   esMatriculaActiva,
@@ -112,7 +113,7 @@ export async function getNinosMensajeriaParaUsuario(
     const { data: vinculos, error: vErr } = await supabase
       .from('vinculos_familiares')
       .select(
-        'permisos, nino:ninos!inner(id, nombre, apellidos, centro_id, deleted_at, matriculas(aula_id, fecha_baja, deleted_at, estado, aula:aulas(nombre)))'
+        'permisos, nino:ninos!inner(id, nombre, apellidos, centro_id, deleted_at, matriculas(aula_id, fecha_baja, deleted_at, estado))'
       )
       .eq('usuario_id', userId)
       .is('deleted_at', null)
@@ -122,6 +123,7 @@ export async function getNinosMensajeriaParaUsuario(
       return []
     }
 
+    const pend: Array<{ idx: number; aulaId: string | null }> = []
     for (const v of vinculos ?? []) {
       if (!v.nino || v.nino.deleted_at !== null) continue
       if (v.nino.centro_id !== centroId) continue
@@ -134,8 +136,17 @@ export async function getNinosMensajeriaParaUsuario(
         id: v.nino.id,
         nombre: v.nino.nombre,
         apellidos: v.nino.apellidos ?? '',
-        aula_nombre: matriculaActiva?.aula?.nombre ?? null,
+        aula_nombre: null,
       })
+      pend.push({ idx: ninos.length - 1, aulaId: matriculaActiva?.aula_id ?? null })
+    }
+    // F11-H: nombre de aula por id (ya no se anida en matriculas).
+    const aulaNombres = await getAulaNombresPorIds(
+      supabase,
+      pend.map((p) => p.aulaId)
+    )
+    for (const p of pend) {
+      if (p.aulaId) ninos[p.idx].aula_nombre = aulaNombres.get(p.aulaId) ?? null
     }
   } else if (rol === 'admin') {
     // Admin no usa el tab Conversaciones en la UI actual, pero devolvemos
@@ -143,9 +154,7 @@ export async function getNinosMensajeriaParaUsuario(
     const { data: matriculas, error: matErr } = await aplicarMatriculaActiva(
       supabase
         .from('matriculas')
-        .select(
-          'aula_id, nino:ninos!inner(id, nombre, apellidos, centro_id, deleted_at), aula:aulas(nombre)'
-        )
+        .select('aula_id, nino:ninos!inner(id, nombre, apellidos, centro_id, deleted_at)')
     )
 
     if (matErr) {
@@ -153,6 +162,7 @@ export async function getNinosMensajeriaParaUsuario(
       return []
     }
     const seen = new Set<string>()
+    const pend: Array<{ idx: number; aulaId: string | null }> = []
     for (const m of matriculas ?? []) {
       if (!m.nino || m.nino.deleted_at !== null) continue
       if (m.nino.centro_id !== centroId) continue
@@ -162,8 +172,17 @@ export async function getNinosMensajeriaParaUsuario(
         id: m.nino.id,
         nombre: m.nino.nombre,
         apellidos: m.nino.apellidos ?? '',
-        aula_nombre: m.aula?.nombre ?? null,
+        aula_nombre: null,
       })
+      pend.push({ idx: ninos.length - 1, aulaId: m.aula_id ?? null })
+    }
+    // F11-H: nombre de aula por id (ya no se anida en matriculas).
+    const aulaNombres = await getAulaNombresPorIds(
+      supabase,
+      pend.map((p) => p.aulaId)
+    )
+    for (const p of pend) {
+      if (p.aulaId) ninos[p.idx].aula_nombre = aulaNombres.get(p.aulaId) ?? null
     }
   }
 

@@ -99,7 +99,8 @@
         "insert_failed": "No se pudo registrar la invitación.",
         "lookup_failed": "No se pudo localizar la invitación.",
         "coordinadora_ocupada": "Esa aula ya tiene una coordinadora activa. Elige otro rol o cambia primero la coordinadora desde Aulas.",
-        "profe_aula_failed": "No se pudo vincular al profesor con el aula. Inténtalo de nuevo o contacta con dirección."
+        "profe_aula_failed": "No se pudo vincular al profesor con el aula. Inténtalo de nuevo o contacta con dirección.",
+        "sin_curso_activo": "El centro no tiene un curso académico activo."
       }
     },
     "select_role": {
@@ -718,6 +719,7 @@
       "create_failed": "No se pudo registrar al niño.",
       "aula_no_encontrada": "Aula no encontrada.",
       "aula_de_otro_centro": "El aula seleccionada no pertenece al centro.",
+      "sin_curso_activo": "El centro no tiene un curso académico activo.",
       "no_encontrado": "Niño no encontrado.",
       "no_autorizado": "No tienes permiso para esta acción.",
       "actualizacion_fallo": "No se pudo actualizar.",
@@ -784,6 +786,7 @@
       "create_failed": "No se pudo asignar el profe al aula.",
       "ya_principal": "Ya hay un profe principal en esta aula.",
       "usuario_sin_rol_profe": "Este usuario no tiene rol profe en el centro.",
+      "sin_curso_activo": "El centro no tiene un curso académico activo.",
       "terminar_fallo": "No se pudo retirar a la persona del aula.",
       "asignacion_no_encontrada": "No se encontró la asignación (puede que ya no esté activa).",
       "cambiar_tipo_fallo": "No se pudo cambiar el tipo de personal.",

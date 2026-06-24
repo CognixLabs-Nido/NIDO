@@ -113,9 +113,19 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-2 (familia · his
     aula_id: string,
     tipo: Database['public']['Enums']['tipo_personal_aula']
   ): Promise<void> {
-    const { error } = await serviceClient
-      .from('profes_aulas')
-      .insert({ profe_id, aula_id, fecha_inicio: '2026-09-01', tipo_personal_aula: tipo })
+    const { data: ac } = await serviceClient
+      .from('aulas_curso')
+      .select('curso_academico_id')
+      .eq('aula_id', aula_id)
+      .limit(1)
+      .maybeSingle()
+    const { error } = await serviceClient.from('profes_aulas').insert({
+      profe_id,
+      aula_id,
+      curso_academico_id: ac!.curso_academico_id,
+      fecha_inicio: '2026-09-01',
+      tipo_personal_aula: tipo,
+    })
     if (error) throw new Error(`asignarProfeConTipo falló: ${error.message}`)
   }
 

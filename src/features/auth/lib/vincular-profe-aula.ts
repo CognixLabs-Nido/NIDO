@@ -34,9 +34,24 @@ export async function crearVinculoProfeAula(
     tipoPersonalAula: Database['public']['Enums']['tipo_personal_aula'] | null
   }
 ): Promise<{ error: string | null }> {
+  // F11-H: la asignación de personal es por curso. Se vincula al curso ACTIVO
+  // del centro del aula (el único operativo en el momento de aceptar).
+  const { data: aulaRow } = await service
+    .from('aulas')
+    .select('centro_id')
+    .eq('id', params.aulaId)
+    .maybeSingle()
+  if (!aulaRow) return { error: 'auth.invitation.errors.profe_aula_failed' }
+
+  const { data: cursoActivoId } = await service.rpc('curso_activo_de_centro', {
+    p_centro_id: aulaRow.centro_id,
+  })
+  if (!cursoActivoId) return { error: 'auth.invitation.errors.sin_curso_activo' }
+
   const { error } = await service.from('profes_aulas').insert({
     profe_id: params.profeId,
     aula_id: params.aulaId,
+    curso_academico_id: cursoActivoId,
     tipo_personal_aula: params.tipoPersonalAula ?? 'profesora',
   })
   if (error) {

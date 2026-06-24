@@ -27,14 +27,20 @@ export async function getSeguimientoCampana(
 ): Promise<SeguimientoAula[]> {
   const supabase = await createClient()
 
-  // 1. Aulas del curso activo.
+  // 1. Aulas del curso (F11-H: la pertenencia aula↔curso vive en aulas_curso).
   const { data: aulasData } = await supabase
-    .from('aulas')
-    .select('id, nombre')
+    .from('aulas_curso')
+    .select('aula_id, aula:aulas!inner(nombre, deleted_at)')
     .eq('curso_academico_id', cursoId)
-    .is('deleted_at', null)
 
-  const aulas = (aulasData ?? []) as AulaSeed[]
+  const aulas = (
+    (aulasData ?? []) as unknown as Array<{
+      aula_id: string
+      aula: { nombre: string; deleted_at: string | null } | null
+    }>
+  )
+    .filter((r) => r.aula && r.aula.deleted_at === null)
+    .map((r) => ({ id: r.aula_id, nombre: r.aula!.nombre }) satisfies AulaSeed)
   if (aulas.length === 0) return []
   const aulaIds = aulas.map((a) => a.id)
 

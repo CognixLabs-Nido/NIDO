@@ -68,6 +68,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS campañas de informe — F9-5-0', () =>
     const { error } = await serviceClient.from('profes_aulas').insert({
       profe_id: profe.id,
       aula_id: aula.id,
+      curso_academico_id: aula.curso_academico_id,
       fecha_inicio: '2026-09-01',
       tipo_personal_aula: 'profesora',
     })

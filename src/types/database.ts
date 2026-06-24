@@ -316,11 +316,8 @@ export type Database = {
       }
       aulas: {
         Row: {
-          capacidad_maxima: number
           centro_id: string
-          cohorte_anos_nacimiento: number[]
           created_at: string
-          curso_academico_id: string
           deleted_at: string | null
           descripcion: string | null
           id: string
@@ -328,11 +325,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          capacidad_maxima?: number
           centro_id: string
-          cohorte_anos_nacimiento: number[]
           created_at?: string
-          curso_academico_id: string
           deleted_at?: string | null
           descripcion?: string | null
           id?: string
@@ -340,11 +334,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          capacidad_maxima?: number
           centro_id?: string
-          cohorte_anos_nacimiento?: number[]
           created_at?: string
-          curso_academico_id?: string
           deleted_at?: string | null
           descripcion?: string | null
           id?: string
@@ -359,8 +350,56 @@ export type Database = {
             referencedRelation: 'centros'
             referencedColumns: ['id']
           },
+        ]
+      }
+      aulas_curso: {
+        Row: {
+          aula_id: string
+          capacidad: number
+          centro_id: string
+          created_at: string
+          curso_academico_id: string
+          id: string
+          tramo_edad: number[]
+          updated_at: string
+        }
+        Insert: {
+          aula_id: string
+          capacidad?: number
+          centro_id: string
+          created_at?: string
+          curso_academico_id: string
+          id?: string
+          tramo_edad: number[]
+          updated_at?: string
+        }
+        Update: {
+          aula_id?: string
+          capacidad?: number
+          centro_id?: string
+          created_at?: string
+          curso_academico_id?: string
+          id?: string
+          tramo_edad?: number[]
+          updated_at?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: 'aulas_curso_academico_id_fkey'
+            foreignKeyName: 'aulas_curso_aula_id_fkey'
+            columns: ['aula_id']
+            isOneToOne: false
+            referencedRelation: 'aulas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'aulas_curso_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'aulas_curso_curso_academico_id_fkey'
             columns: ['curso_academico_id']
             isOneToOne: false
             referencedRelation: 'cursos_academicos'
@@ -1802,6 +1841,66 @@ export type Database = {
           },
         ]
       }
+      lista_espera: {
+        Row: {
+          centro_id: string
+          created_at: string
+          curso_academico_id: string
+          email_tutor: string | null
+          estado: Database['public']['Enums']['estado_lista_espera']
+          fecha_nacimiento: string | null
+          id: string
+          nombre_nino: string
+          nota: string | null
+          posicion: number
+          telefono_tutor: string | null
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          curso_academico_id: string
+          email_tutor?: string | null
+          estado?: Database['public']['Enums']['estado_lista_espera']
+          fecha_nacimiento?: string | null
+          id?: string
+          nombre_nino: string
+          nota?: string | null
+          posicion: number
+          telefono_tutor?: string | null
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          curso_academico_id?: string
+          email_tutor?: string | null
+          estado?: Database['public']['Enums']['estado_lista_espera']
+          fecha_nacimiento?: string | null
+          id?: string
+          nombre_nino?: string
+          nota?: string | null
+          posicion?: number
+          telefono_tutor?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'lista_espera_centro_id_fkey'
+            columns: ['centro_id']
+            isOneToOne: false
+            referencedRelation: 'centros'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'lista_espera_curso_academico_id_fkey'
+            columns: ['curso_academico_id']
+            isOneToOne: false
+            referencedRelation: 'cursos_academicos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       matriculas: {
         Row: {
           aula_id: string
@@ -1841,18 +1940,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'matriculas_aula_id_fkey'
-            columns: ['aula_id']
+            foreignKeyName: 'matriculas_aula_curso_fkey'
+            columns: ['aula_id', 'curso_academico_id']
             isOneToOne: false
-            referencedRelation: 'aulas'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'matriculas_curso_academico_id_fkey'
-            columns: ['curso_academico_id']
-            isOneToOne: false
-            referencedRelation: 'cursos_academicos'
-            referencedColumns: ['id']
+            referencedRelation: 'aulas_curso'
+            referencedColumns: ['aula_id', 'curso_academico_id']
           },
           {
             foreignKeyName: 'matriculas_nino_id_fkey'
@@ -2325,6 +2417,7 @@ export type Database = {
         Row: {
           aula_id: string
           created_at: string
+          curso_academico_id: string
           deleted_at: string | null
           es_profe_principal: boolean
           fecha_fin: string | null
@@ -2336,6 +2429,7 @@ export type Database = {
         Insert: {
           aula_id: string
           created_at?: string
+          curso_academico_id: string
           deleted_at?: string | null
           es_profe_principal?: boolean
           fecha_fin?: string | null
@@ -2347,6 +2441,7 @@ export type Database = {
         Update: {
           aula_id?: string
           created_at?: string
+          curso_academico_id?: string
           deleted_at?: string | null
           es_profe_principal?: boolean
           fecha_fin?: string | null
@@ -2361,6 +2456,13 @@ export type Database = {
             columns: ['aula_id']
             isOneToOne: false
             referencedRelation: 'aulas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'profes_aulas_curso_academico_id_fkey'
+            columns: ['curso_academico_id']
+            isOneToOne: false
+            referencedRelation: 'cursos_academicos'
             referencedColumns: ['id']
           },
           {
@@ -2850,6 +2952,7 @@ export type Database = {
         Args: { p_conversacion_id: string }
         Returns: string
       }
+      centro_de_curso: { Args: { p_curso_id: string }; Returns: string }
       centro_de_evento: { Args: { p_evento_id: string }; Returns: string }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
       centro_de_plantilla: { Args: { p_plantilla_id: string }; Returns: string }
@@ -2860,6 +2963,7 @@ export type Database = {
       contar_invitaciones_pendientes: { Args: never; Returns: number }
       contar_recordatorios_pendientes: { Args: never; Returns: number }
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
+      curso_activo_de_centro: { Args: { p_centro_id: string }; Returns: string }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
       es_esqueleto_stub_purgable: {
@@ -3122,6 +3226,7 @@ export type Database = {
       estado_campana_informe: 'abierta' | 'cerrada'
       estado_general_agenda: 'bien' | 'regular' | 'mal' | 'mixto'
       estado_informe: 'borrador' | 'publicado'
+      estado_lista_espera: 'en_espera' | 'invitado' | 'descartado'
       estado_plantilla_informe: 'activa' | 'archivada'
       estado_plantilla_menu: 'borrador' | 'publicada' | 'archivada'
       evento_estado: 'programado' | 'cancelado'
@@ -3339,6 +3444,7 @@ export const Constants = {
       estado_campana_informe: ['abierta', 'cerrada'],
       estado_general_agenda: ['bien', 'regular', 'mal', 'mixto'],
       estado_informe: ['borrador', 'publicado'],
+      estado_lista_espera: ['en_espera', 'invitado', 'descartado'],
       estado_plantilla_informe: ['activa', 'archivada'],
       estado_plantilla_menu: ['borrador', 'publicada', 'archivada'],
       evento_estado: ['programado', 'cancelado'],

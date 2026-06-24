@@ -51,10 +51,24 @@ interface FakeSetup {
 }
 
 function makeClient(setup: FakeSetup): SupabaseClient<Database> {
+  // F11-H: getAulasPorCursoCore lee `aulas_curso` (join a `aulas`) en vez de
+  // `aulas` con columnas de curso. El fake traduce cada FakeAula a la forma del
+  // join (aula_id + tramo_edad/capacidad + aula embebida).
+  const aulasCursoRows = setup.aulas.map((a) => ({
+    aula_id: a.id,
+    tramo_edad: a.cohorte_anos_nacimiento,
+    capacidad: a.capacidad_maxima,
+    aula: {
+      centro_id: a.centro_id,
+      nombre: a.nombre,
+      descripcion: a.descripcion,
+      deleted_at: null,
+    },
+  }))
   const fake = {
     from: (table: string) => {
-      if (table === 'aulas') {
-        return chain({ data: setup.aulas, error: setup.aulasErr ?? null })
+      if (table === 'aulas_curso') {
+        return chain({ data: aulasCursoRows, error: setup.aulasErr ?? null })
       }
       if (table === 'matriculas') {
         return chain({ data: setup.matriculas, error: setup.matriculasErr ?? null })
