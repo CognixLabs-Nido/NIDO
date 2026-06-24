@@ -20,6 +20,12 @@ export const asignarAulaPropuestaSchema = z.object({
 })
 export type AsignarAulaPropuestaInput = z.infer<typeof asignarAulaPropuestaSchema>
 
+export const quitarAulaPropuestaSchema = z.object({
+  curso_destino_id: uuid,
+  nino_id: uuid,
+})
+export type QuitarAulaPropuestaInput = z.infer<typeof quitarAulaPropuestaSchema>
+
 export const cursoDestinoSchema = z.object({
   curso_destino_id: uuid,
 })

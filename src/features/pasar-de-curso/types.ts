@@ -1,4 +1,9 @@
-import type { AulaDestinoRollover, NinoActivoRollover, ResultadoPropuesta } from './lib/proponer'
+import type {
+  AulaDestinoRollover,
+  FilaRollover,
+  NinoActivoRollover,
+  ResultadoPropuesta,
+} from './lib/proponer'
 
 export interface PendienteDestino {
   nino_id: string
@@ -15,4 +20,4 @@ export interface EstadoRollover {
   pendientes: PendienteDestino[]
 }
 
-export type { ResultadoPropuesta }
+export type { FilaRollover, ResultadoPropuesta }

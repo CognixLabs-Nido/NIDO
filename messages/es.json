@@ -195,7 +195,8 @@
       "proponer_fallo": "No se pudieron proponer las matrículas.",
       "asignar_fallo": "No se pudo asignar el aula.",
       "descartar_fallo": "No se pudo descartar la propuesta.",
-      "confirmar_fallo": "No se pudo confirmar el pase de curso."
+      "confirmar_fallo": "No se pudo confirmar el pase de curso.",
+      "quitar_fallo": "No se pudo quitar la propuesta."
     }
   },
   "admin": {
@@ -279,7 +280,17 @@
       "descartada": "Propuesta descartada",
       "confirmar": "Confirmar pasar de curso",
       "confirmado": "Curso activado",
-      "ya_confirmado": "Ya confirmado"
+      "ya_confirmado": "Ya confirmado",
+      "paso_revisar": "3. Revisar y confirmar",
+      "sin_ninos": "No hay niños con matrícula activa en el curso actual.",
+      "col_nino": "Niño",
+      "col_aula_actual": "Aula actual",
+      "col_aula_propuesta": "Aula propuesta",
+      "col_accion": "Acción",
+      "continua": "Continúa",
+      "opcion_gradua": "Se gradúa (sale del centro)",
+      "marcado_graduado": "Marcado como graduado",
+      "sin_aula": "Sin aula"
     },
     "cursos": {
       "title": "Cursos académicos",

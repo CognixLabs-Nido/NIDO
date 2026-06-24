@@ -195,7 +195,8 @@
       "proponer_fallo": "No s'han pogut proposar les matrícules.",
       "asignar_fallo": "No s'ha pogut assignar l'aula.",
       "descartar_fallo": "No s'ha pogut descartar la proposta.",
-      "confirmar_fallo": "No s'ha pogut confirmar el pas de curs."
+      "confirmar_fallo": "No s'ha pogut confirmar el pas de curs.",
+      "quitar_fallo": "No s’ha pogut llevar la proposta."
     }
   },
   "admin": {
@@ -279,7 +280,17 @@
       "descartada": "Proposta descartada",
       "confirmar": "Confirmar passar de curs",
       "confirmado": "Curs activat",
-      "ya_confirmado": "Ja confirmat"
+      "ya_confirmado": "Ja confirmat",
+      "paso_revisar": "3. Revisar i confirmar",
+      "sin_ninos": "No hi ha xiquets amb matrícula activa en el curs actual.",
+      "col_nino": "Xiquet",
+      "col_aula_actual": "Aula actual",
+      "col_aula_propuesta": "Aula proposada",
+      "col_accion": "Acció",
+      "continua": "Continua",
+      "opcion_gradua": "Es gradua (ix del centre)",
+      "marcado_graduado": "Marcat com a graduat",
+      "sin_aula": "Sense aula"
     },
     "cursos": {
       "title": "Cursos acadèmics",
