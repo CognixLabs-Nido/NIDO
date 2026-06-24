@@ -54,7 +54,7 @@ export async function moverProfeAulaCore(
   // Origen: debe existir y estar activo.
   const { data: origen, error: origenErr } = await supabase
     .from('profes_aulas')
-    .select('id, profe_id, aula_id, tipo_personal_aula')
+    .select('id, profe_id, aula_id, curso_academico_id, tipo_personal_aula')
     .eq('id', asignacion_id)
     .is('fecha_fin', null)
     .is('deleted_at', null)
@@ -73,6 +73,7 @@ export async function moverProfeAulaCore(
     .select('id')
     .eq('profe_id', origen.profe_id)
     .eq('aula_id', aula_destino_id)
+    .eq('curso_academico_id', origen.curso_academico_id)
     .is('fecha_fin', null)
     .is('deleted_at', null)
     .maybeSingle()
@@ -92,6 +93,7 @@ export async function moverProfeAulaCore(
     .insert({
       profe_id: origen.profe_id,
       aula_id: aula_destino_id,
+      curso_academico_id: origen.curso_academico_id,
       fecha_inicio: hoyMadrid(),
       tipo_personal_aula: tipoDestino,
     })

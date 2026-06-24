@@ -36,9 +36,15 @@ interface FakeSetup {
 }
 
 function makeClient(setup: FakeSetup): SupabaseClient<Database> {
+  // F11-H: las aulas del curso salen de `aulas_curso` (join a `aulas`).
+  const aulasCursoRows = setup.aulas.map((a) => ({
+    aula_id: a.id,
+    aula: { nombre: a.nombre, deleted_at: null },
+  }))
   const fake = {
     from: (table: string) => {
-      if (table === 'aulas') return chain({ data: setup.aulas, error: setup.aulasErr ?? null })
+      if (table === 'aulas_curso')
+        return chain({ data: aulasCursoRows, error: setup.aulasErr ?? null })
       if (table === 'profes_aulas')
         return chain({ data: setup.profes, error: setup.profesErr ?? null })
       throw new Error(`unexpected table: ${table}`)

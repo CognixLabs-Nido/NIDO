@@ -55,14 +55,25 @@ export async function invitarFamiliaConEsqueleto(
 
   const service = createServiceRoleClient()
 
-  // 1. Aula → curso (y verificación de centro).
-  const { data: aula, error: aulaErr } = await service
-    .from('aulas')
-    .select('id, curso_academico_id, centro_id')
-    .eq('id', parsed.data.aulaId)
-    .is('deleted_at', null)
+  // 1. Curso activo del centro + verificación de que el aula está configurada en
+  //    ese curso (F11-H: el curso ya no vive en el aula, sino en aulas_curso).
+  const { data: cursoActivoId } = await service.rpc('curso_activo_de_centro', {
+    p_centro_id: centroId,
+  })
+  if (!cursoActivoId) return fail('nino.errors.sin_curso_activo')
+
+  const { data: aulaCurso, error: aulaErr } = await service
+    .from('aulas_curso')
+    .select('aula:aulas!inner(id, centro_id, deleted_at)')
+    .eq('aula_id', parsed.data.aulaId)
+    .eq('curso_academico_id', cursoActivoId)
     .maybeSingle()
-  if (aulaErr || !aula) return fail('nino.errors.aula_no_encontrada')
+  const aula = (
+    aulaCurso as {
+      aula: { id: string; centro_id: string; deleted_at: string | null } | null
+    } | null
+  )?.aula
+  if (aulaErr || !aula || aula.deleted_at !== null) return fail('nino.errors.aula_no_encontrada')
   if (aula.centro_id !== centroId) return fail('nino.errors.aula_de_otro_centro')
 
   // 2. Esqueleto de niño (apellidos/fecha_nacimiento NULL → los completa el tutor).
@@ -81,7 +92,7 @@ export async function invitarFamiliaConEsqueleto(
   const { error: matErr } = await service.from('matriculas').insert({
     nino_id: nino.id,
     aula_id: aula.id,
-    curso_academico_id: aula.curso_academico_id,
+    curso_academico_id: cursoActivoId,
     fecha_alta: hoy,
     estado: 'pendiente',
   })

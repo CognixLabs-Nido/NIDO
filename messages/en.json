@@ -99,7 +99,8 @@
         "insert_failed": "We could not record the invitation.",
         "lookup_failed": "We could not look up the invitation.",
         "coordinadora_ocupada": "That classroom already has an active coordinator. Choose another role or change the coordinator first from Classrooms.",
-        "profe_aula_failed": "Could not link the teacher to the classroom. Please try again or contact the school office."
+        "profe_aula_failed": "Could not link the teacher to the classroom. Please try again or contact the school office.",
+        "sin_curso_activo": "The centre has no active academic year."
       }
     },
     "select_role": {
@@ -718,6 +719,7 @@
       "create_failed": "Could not register the child.",
       "aula_no_encontrada": "Classroom not found.",
       "aula_de_otro_centro": "The selected classroom doesn't belong to this centre.",
+      "sin_curso_activo": "The centre has no active academic year.",
       "no_encontrado": "Child not found.",
       "no_autorizado": "You don't have permission for this action.",
       "actualizacion_fallo": "Could not update.",
@@ -784,6 +786,7 @@
       "create_failed": "Could not assign the teacher to the classroom.",
       "ya_principal": "There is already a lead teacher in this classroom.",
       "usuario_sin_rol_profe": "This user has no teacher role in the centre.",
+      "sin_curso_activo": "The centre has no active academic year.",
       "terminar_fallo": "Could not remove the person from the classroom.",
       "asignacion_no_encontrada": "Assignment not found (it may no longer be active).",
       "cambiar_tipo_fallo": "Could not change the staff type.",

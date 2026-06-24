@@ -215,18 +215,24 @@ export async function createTestAula(
   cohorte: number[] = [2024]
 ): Promise<TestAula> {
   const finalNombre = nombre ?? `Aula-${randomUUID().slice(0, 8)}`
+  // F11-H: el aula física (aulas) y su configuración por curso (aulas_curso) son
+  // dos filas. El fixture crea ambas para el curso dado.
   const { data, error } = await serviceClient
     .from('aulas')
-    .insert({
-      centro_id,
-      curso_academico_id,
-      nombre: finalNombre,
-      cohorte_anos_nacimiento: cohorte,
-      capacidad_maxima: 12,
-    })
+    .insert({ centro_id, nombre: finalNombre })
     .select('id')
     .single()
   if (error || !data) throw new Error(`createTestAula falló: ${error?.message}`)
+
+  const { error: cursoErr } = await serviceClient.from('aulas_curso').insert({
+    centro_id,
+    aula_id: data.id,
+    curso_academico_id,
+    tramo_edad: cohorte,
+    capacidad: 12,
+  })
+  if (cursoErr) throw new Error(`createTestAula (aulas_curso) falló: ${cursoErr.message}`)
+
   return { id: data.id, centro_id, curso_academico_id }
 }
 
@@ -265,10 +271,27 @@ export async function matricular(
   return data.id
 }
 
-export async function asignarProfeAula(profe_id: string, aula_id: string): Promise<string> {
+export async function asignarProfeAula(
+  profe_id: string,
+  aula_id: string,
+  curso_academico_id?: string
+): Promise<string> {
+  // F11-H: la asignación es por (aula, curso). Si no se pasa el curso, se deriva
+  // del aulas_curso del aula (los fixtures crean una sola config por aula).
+  let curso = curso_academico_id
+  if (!curso) {
+    const { data: ac } = await serviceClient
+      .from('aulas_curso')
+      .select('curso_academico_id')
+      .eq('aula_id', aula_id)
+      .limit(1)
+      .maybeSingle()
+    if (!ac) throw new Error(`asignarProfeAula falló: aula ${aula_id} sin aulas_curso`)
+    curso = ac.curso_academico_id
+  }
   const { data, error } = await serviceClient
     .from('profes_aulas')
-    .insert({ profe_id, aula_id, fecha_inicio: '2026-09-01' })
+    .insert({ profe_id, aula_id, curso_academico_id: curso, fecha_inicio: '2026-09-01' })
     .select('id')
     .single()
   if (error || !data) throw new Error(`asignarProfeAula falló: ${error?.message}`)

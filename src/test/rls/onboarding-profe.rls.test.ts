@@ -6,6 +6,7 @@ import {
   asignarRol,
   clientFor,
   createTestAula,
+  type TestAula,
   createTestCentro,
   createTestCurso,
   createTestNino,
@@ -46,7 +47,7 @@ describe.skipIf(!APPLIED)('Onboarding de profe — flujo completo (DB/RLS)', () 
   let centroA: { id: string }
   let cursoA: { id: string }
   let aulaA1: { id: string }
-  let aulaA2: { id: string }
+  let aulaA2: TestAula
   let centroB: { id: string }
   let cursoB: { id: string }
   let aulaB1: { id: string }
@@ -113,9 +114,16 @@ describe.skipIf(!APPLIED)('Onboarding de profe — flujo completo (DB/RLS)', () 
     const user = await createTestUser({ nombre: 'Profe Nuevo' })
     usuarios.push(user.id)
     await asignarRol(user.id, centroA.id, 'profe')
+    const { data: ac } = await serviceClient
+      .from('aulas_curso')
+      .select('curso_academico_id')
+      .eq('aula_id', inv.aula_id!)
+      .limit(1)
+      .maybeSingle()
     const { error } = await serviceClient.from('profes_aulas').insert({
       profe_id: user.id,
       aula_id: inv.aula_id!,
+      curso_academico_id: ac!.curso_academico_id,
       tipo_personal_aula: inv.tipo_personal_aula!,
     })
     if (error) throw new Error(`aceptarCuentaNueva (profes_aulas): ${error.message}`)
@@ -179,6 +187,7 @@ describe.skipIf(!APPLIED)('Onboarding de profe — flujo completo (DB/RLS)', () 
     const { error } = await serviceClient.from('profes_aulas').insert({
       profe_id: tutor.id,
       aula_id: inv.aula_id!,
+      curso_academico_id: aulaA2.curso_academico_id,
       tipo_personal_aula: inv.tipo_personal_aula!,
     })
     expect(error).toBeNull()
@@ -210,14 +219,20 @@ describe.skipIf(!APPLIED)('Onboarding de profe — flujo completo (DB/RLS)', () 
     await asignarRol(coord1.id, centroA.id, 'profe')
     await asignarRol(coord2.id, centroA.id, 'profe')
 
-    const primera = await serviceClient
-      .from('profes_aulas')
-      .insert({ profe_id: coord1.id, aula_id: aula.id, tipo_personal_aula: 'coordinadora' })
+    const primera = await serviceClient.from('profes_aulas').insert({
+      profe_id: coord1.id,
+      aula_id: aula.id,
+      curso_academico_id: aula.curso_academico_id,
+      tipo_personal_aula: 'coordinadora',
+    })
     expect(primera.error).toBeNull()
 
-    const segunda = await serviceClient
-      .from('profes_aulas')
-      .insert({ profe_id: coord2.id, aula_id: aula.id, tipo_personal_aula: 'coordinadora' })
+    const segunda = await serviceClient.from('profes_aulas').insert({
+      profe_id: coord2.id,
+      aula_id: aula.id,
+      curso_academico_id: aula.curso_academico_id,
+      tipo_personal_aula: 'coordinadora',
+    })
     expect(segunda.error?.code).toBe('23505')
   })
 

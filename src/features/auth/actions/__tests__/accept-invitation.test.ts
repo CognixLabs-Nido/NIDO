@@ -52,11 +52,20 @@ function makeFake(responses: Resp[]) {
       calls.push({ table, op: 'update', patch })
       return b
     }
-    b.then = (resolve: (v: Resp) => unknown) => resolve(next())
+    b.then = (resolve: (v: Resp) => unknown) => {
+      // F11-H: la lookup de `aulas` (centro_id para resolver el curso activo en
+      // crearVinculoProfeAula) no consume la cola posicional de respuestas.
+      if (table === 'aulas') return resolve({ data: { centro_id: CENTRO }, error: null })
+      return resolve(next())
+    }
     return b
   }
 
-  const fake = { from: (table: string) => builder(table) } as unknown as SupabaseClient<Database>
+  const fake = {
+    from: (table: string) => builder(table),
+    // F11-H: curso activo del centro del aula (siempre presente en estos tests).
+    rpc: (_fn: string, _args: unknown) => Promise.resolve({ data: 'curso-1', error: null }),
+  } as unknown as SupabaseClient<Database>
   return { fake, calls }
 }
 

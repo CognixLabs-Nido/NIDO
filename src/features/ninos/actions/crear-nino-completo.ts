@@ -27,26 +27,34 @@ export async function crearNinoCompleto(
 
   const supabase = await createClient()
 
-  // Lookup del aula para verificar cohorte (si no se ha confirmado fuera de cohorte).
-  const { data: aula, error: aulaErr } = await supabase
-    .from('aulas')
-    .select('id, cohorte_anos_nacimiento, curso_academico_id, centro_id')
-    .eq('id', parsed.data.aula_id)
-    .is('deleted_at', null)
+  // F11-H: la matrícula operativa va al curso ACTIVO del centro.
+  const { data: cursoActivoId } = await supabase.rpc('curso_activo_de_centro', {
+    p_centro_id: centroId,
+  })
+  if (!cursoActivoId) return fail('nino.errors.sin_curso_activo')
+
+  // Config del aula en ese curso (aulas_curso): valida que el aula existe en el
+  // curso y aporta el tramo de edad para la verificación de cohorte.
+  const { data: aulaCurso, error: aulaErr } = await supabase
+    .from('aulas_curso')
+    .select('tramo_edad, aula:aulas!inner(centro_id, deleted_at)')
+    .eq('aula_id', parsed.data.aula_id)
+    .eq('curso_academico_id', cursoActivoId)
     .maybeSingle()
 
-  if (aulaErr || !aula) {
+  const aula = aulaCurso as {
+    tramo_edad: number[]
+    aula: { centro_id: string; deleted_at: string | null } | null
+  } | null
+  if (aulaErr || !aula || !aula.aula || aula.aula.deleted_at !== null) {
     logger.warn('crearNinoCompleto aula lookup error', aulaErr?.message)
     return fail('nino.errors.aula_no_encontrada')
   }
-  if (aula.centro_id !== centroId) {
+  if (aula.aula.centro_id !== centroId) {
     return fail('nino.errors.aula_de_otro_centro')
   }
 
-  const dentroDeCohorte = fechaEnCohorte(
-    parsed.data.datos.fecha_nacimiento,
-    aula.cohorte_anos_nacimiento
-  )
+  const dentroDeCohorte = fechaEnCohorte(parsed.data.datos.fecha_nacimiento, aula.tramo_edad)
   if (!dentroDeCohorte && !parsed.data.confirmar_fuera_cohorte) {
     return fail('nino.validation.fuera_de_cohorte')
   }
@@ -103,7 +111,7 @@ export async function crearNinoCompleto(
     .insert({
       nino_id: nino.id,
       aula_id: parsed.data.aula_id,
-      curso_academico_id: aula.curso_academico_id,
+      curso_academico_id: cursoActivoId,
       fecha_alta: new Date().toISOString().slice(0, 10),
     })
     .select('id')

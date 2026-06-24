@@ -28,6 +28,13 @@ export async function asignarProfeAula(
     .maybeSingle()
   if (!aula) return fail('aula.errors.no_encontrada')
 
+  // F11-H: la asignación de personal es por curso. Se asigna al curso ACTIVO
+  // del centro (el único operativo). Sin curso activo no hay dónde asignar.
+  const { data: cursoActivoId } = await supabase.rpc('curso_activo_de_centro', {
+    p_centro_id: aula.centro_id,
+  })
+  if (!cursoActivoId) return fail('profeAula.errors.sin_curso_activo')
+
   const { data: rol } = await supabase
     .from('roles_usuario')
     .select('rol')
@@ -50,6 +57,7 @@ export async function asignarProfeAula(
     .insert({
       profe_id: parsed.data.profe_id,
       aula_id: aulaId,
+      curso_academico_id: cursoActivoId,
       fecha_inicio: parsed.data.fecha_inicio,
       tipo_personal_aula: parsed.data.tipo_personal_aula,
     })

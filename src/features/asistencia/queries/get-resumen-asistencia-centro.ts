@@ -13,27 +13,35 @@ import type { ResumenAulaCount } from '../types'
 export async function getResumenAsistenciaCentro(fecha: string): Promise<ResumenAulaCount[]> {
   const supabase = await createClient()
 
-  const { data: aulas } = await supabase
-    .from('aulas')
-    .select('id, nombre, matriculas(nino_id, fecha_baja, deleted_at, estado)')
-    .is('deleted_at', null)
+  // F11-H: matriculas ya no tiene FK directa a aulas (es compuesta a aulas_curso),
+  // así que no se puede anidar `aulas(matriculas(...))`. Se leen por separado y se
+  // agrupan por aula_id. RLS filtra ambas a las aulas/matrículas del centro.
+  const { data: aulas } = await supabase.from('aulas').select('id, nombre').is('deleted_at', null)
 
-  const aulasRows = (aulas ?? []) as Array<{
-    id: string
-    nombre: string
-    matriculas: Array<{
-      nino_id: string
-      fecha_baja: string | null
-      deleted_at: string | null
-      estado: string | null
-    }>
+  const aulasRows = (aulas ?? []) as Array<{ id: string; nombre: string }>
+
+  const aulaIds = aulasRows.map((a) => a.id)
+  const { data: matriculas } = aulaIds.length
+    ? await supabase
+        .from('matriculas')
+        .select('aula_id, nino_id, fecha_baja, deleted_at, estado')
+        .in('aula_id', aulaIds)
+    : { data: [] }
+
+  const matriculasRows = (matriculas ?? []) as Array<{
+    aula_id: string
+    nino_id: string
+    fecha_baja: string | null
+    deleted_at: string | null
+    estado: string | null
   }>
 
-  // Recolectar todos los nino_id activos.
+  // Recolectar todos los nino_id activos por aula.
   const ninosByAula = new Map<string, string[]>()
-  for (const a of aulasRows) {
-    const activos = a.matriculas.filter((m) => esMatriculaActiva(m)).map((m) => m.nino_id)
-    ninosByAula.set(a.id, activos)
+  for (const a of aulasRows) ninosByAula.set(a.id, [])
+  for (const m of matriculasRows) {
+    if (!esMatriculaActiva(m)) continue
+    ninosByAula.get(m.aula_id)?.push(m.nino_id)
   }
 
   const todosNinoIds = Array.from(new Set(aulasRows.flatMap((a) => ninosByAula.get(a.id) ?? [])))

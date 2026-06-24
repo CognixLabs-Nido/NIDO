@@ -99,7 +99,8 @@
         "insert_failed": "No s'ha pogut registrar la invitació.",
         "lookup_failed": "No s'ha pogut localitzar la invitació.",
         "coordinadora_ocupada": "Eixa aula ja té una coordinadora activa. Tria un altre rol o canvia primer la coordinadora des d'Aules.",
-        "profe_aula_failed": "No s’ha pogut vincular el professor amb l’aula. Torna-ho a provar o contacta amb direcció."
+        "profe_aula_failed": "No s’ha pogut vincular el professor amb l’aula. Torna-ho a provar o contacta amb direcció.",
+        "sin_curso_activo": "El centre no té un curs acadèmic actiu."
       }
     },
     "select_role": {
@@ -718,6 +719,7 @@
       "create_failed": "No s'ha pogut registrar el xiquet.",
       "aula_no_encontrada": "Aula no trobada.",
       "aula_de_otro_centro": "L'aula seleccionada no pertany al centre.",
+      "sin_curso_activo": "El centre no té un curs acadèmic actiu.",
       "no_encontrado": "Xiquet no trobat.",
       "no_autorizado": "No tens permís per a esta acció.",
       "actualizacion_fallo": "No s'ha pogut actualitzar.",
@@ -784,6 +786,7 @@
       "create_failed": "No s'ha pogut assignar el profe a l'aula.",
       "ya_principal": "Ja hi ha un profe principal en esta aula.",
       "usuario_sin_rol_profe": "Este usuari no té rol profe al centre.",
+      "sin_curso_activo": "El centre no té un curs acadèmic actiu.",
       "terminar_fallo": "No s'ha pogut llevar la persona de l'aula.",
       "asignacion_no_encontrada": "No s'ha trobat l'assignació (potser ja no està activa).",
       "cambiar_tipo_fallo": "No s'ha pogut canviar el tipus de personal.",

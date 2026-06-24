@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { getAulaNombresPorIds } from '@/features/aulas/queries/get-aula-nombres'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -47,8 +48,7 @@ export async function getConversacionDetalle(
         apellidos,
         matriculas (
           aula_id,
-          fecha_baja,
-          aula:aulas (nombre)
+          fecha_baja
         )
       )
       `
@@ -138,6 +138,11 @@ export async function getConversacionDetalle(
   const matricula =
     conv.nino?.matriculas?.find((m) => m.fecha_baja === null) ?? conv.nino?.matriculas?.[0] ?? null
 
+  // F11-H: el nombre del aula ya no se anida en matriculas; se resuelve por id.
+  const aulaNombre = matricula?.aula_id
+    ? ((await getAulaNombresPorIds(supabase, [matricula.aula_id])).get(matricula.aula_id) ?? null)
+    : null
+
   // Profes activos del aula actual del niño. Para la vista del tutor: la
   // cabecera muestra al/los profe(s) en lugar del nombre del niño. La RLS
   // de `profes_aulas` permite a participantes de la conversación (admin
@@ -179,7 +184,7 @@ export async function getConversacionDetalle(
       nino_id: conv.nino_id,
       nino_nombre: conv.nino?.nombre ?? '',
       nino_apellidos: conv.nino?.apellidos ?? '',
-      aula_nombre: matricula?.aula?.nombre ?? null,
+      aula_nombre: aulaNombre,
       profes_aula,
     },
     mensajes: mensajesView,

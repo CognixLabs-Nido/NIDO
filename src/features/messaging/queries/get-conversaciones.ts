@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { getAulaNombresPorIds } from '@/features/aulas/queries/get-aula-nombres'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -43,10 +44,7 @@ export async function getConversacionesDelUsuario(): Promise<ConversacionListIte
         apellidos,
         matriculas (
           aula_id,
-          fecha_baja,
-          aula:aulas (
-            nombre
-          )
+          fecha_baja
         )
       )
       `
@@ -111,18 +109,25 @@ export async function getConversacionesDelUsuario(): Promise<ConversacionListIte
   // + INNER JOIN con `ninos`, `c.nino_id` siempre está poblado, pero TS lo ve
   // como `string | null` por la columna nullable. Filtrar aquí cierra el narrow
   // sin cast ciego.
+  // F11-H: resolución del nombre de aula por id (ya no se anida en matriculas).
+  const matriculaDe = (c: (typeof conversaciones)[number]) =>
+    c.nino?.matriculas?.find((m) => m.fecha_baja === null) ?? c.nino?.matriculas?.[0] ?? null
+  const aulaNombres = await getAulaNombresPorIds(
+    supabase,
+    conversaciones.map((c) => matriculaDe(c)?.aula_id)
+  )
+
   const items: ConversacionListItem[] = conversaciones
     .filter((c): c is typeof c & { nino_id: string } => c.nino_id !== null)
     .map((c) => {
-      const matricula =
-        c.nino?.matriculas?.find((m) => m.fecha_baja === null) ?? c.nino?.matriculas?.[0] ?? null
+      const matricula = matriculaDe(c)
       const last = lastByConv.get(c.id) ?? null
       return {
         id: c.id,
         nino_id: c.nino_id,
         nino_nombre: c.nino?.nombre ?? '',
         nino_apellidos: c.nino?.apellidos ?? '',
-        aula_nombre: matricula?.aula?.nombre ?? null,
+        aula_nombre: matricula?.aula_id ? (aulaNombres.get(matricula.aula_id) ?? null) : null,
         last_message_at: c.last_message_at,
         last_message_preview: last ? (last.erroneo ? null : last.contenido.slice(0, 140)) : null,
         unread_count: unreadByConv.get(c.id) ?? 0,

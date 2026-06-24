@@ -4,6 +4,7 @@ import {
   asignarRol,
   clientFor,
   createTestAula,
+  type TestAula,
   createTestCentro,
   createTestCurso,
   createTestUser,
@@ -50,8 +51,8 @@ describe.skipIf(!MIGRATION_APPLIED)(
     let centroA: { id: string }
     let centroB: { id: string }
     let cursoA: { id: string }
-    let aulaA1: { id: string }
-    let aulaA2: { id: string }
+    let aulaA1: TestAula
+    let aulaA2: TestAula
     let adminA: TestUser
     let adminB: TestUser
     let profe1: TestUser
@@ -102,6 +103,7 @@ describe.skipIf(!MIGRATION_APPLIED)(
       const { error: e1 } = await serviceClient.from('profes_aulas').insert({
         profe_id: profe1.id,
         aula_id: aulaA1.id,
+        curso_academico_id: aulaA1.curso_academico_id,
         fecha_inicio: '2026-09-01',
         tipo_personal_aula: 'coordinadora',
       })
@@ -109,6 +111,7 @@ describe.skipIf(!MIGRATION_APPLIED)(
       const { error: e2 } = await serviceClient.from('profes_aulas').insert({
         profe_id: profe2.id,
         aula_id: aulaA2.id,
+        curso_academico_id: aulaA2.curso_academico_id,
         fecha_inicio: '2026-09-01',
         tipo_personal_aula: 'profesora',
       })
@@ -173,6 +176,7 @@ describe.skipIf(!MIGRATION_APPLIED)(
       const { error } = await serviceClient.from('profes_aulas').insert({
         profe_id: otroProfe.id,
         aula_id: aulaA1.id,
+        curso_academico_id: aulaA1.curso_academico_id,
         fecha_inicio: '2026-09-01',
         tipo_personal_aula: 'coordinadora',
       })
@@ -267,6 +271,7 @@ describe.skipIf(!MIGRATION_APPLIED)(
         .insert({
           profe_id: profe2.id,
           aula_id: aulaA1.id,
+          curso_academico_id: aulaA1.curso_academico_id,
           fecha_inicio: '2026-09-01',
           tipo_personal_aula: 'profesora',
         })

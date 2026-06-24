@@ -45,6 +45,11 @@ interface ProfeRow {
   profe: { id: string; nombre_completo: string; foto_url: string | null } | null
 }
 
+interface AulaCursoNombreRow {
+  aula_id: string
+  aula: { nombre: string; deleted_at: string | null } | null
+}
+
 export async function getPersonalActivoCentro(
   cursoAcademicoId: string
 ): Promise<PersonalActivoItem[]> {
@@ -69,17 +74,19 @@ export async function getPersonalActivoCentroCore(
   cursoAcademicoId: string,
   emailResolver: EmailResolver
 ): Promise<PersonalActivoItem[]> {
-  const { data: aulas, error: aulasErr } = await supabase
-    .from('aulas')
-    .select('id, nombre')
+  // F11-H: las aulas del curso (id + nombre físico) salen de aulas_curso → aulas.
+  const { data: aulasCurso, error: aulasErr } = await supabase
+    .from('aulas_curso')
+    .select('aula_id, aula:aulas!inner(nombre, deleted_at)')
     .eq('curso_academico_id', cursoAcademicoId)
-    .is('deleted_at', null)
 
   if (aulasErr) {
     logger.warn('getPersonalActivoCentro: aulas', aulasErr.message)
     return []
   }
-  const aulasList = (aulas ?? []) as { id: string; nombre: string }[]
+  const aulasList = ((aulasCurso ?? []) as unknown as AulaCursoNombreRow[])
+    .filter((r) => r.aula && r.aula.deleted_at === null)
+    .map((r) => ({ id: r.aula_id, nombre: r.aula!.nombre }))
   if (aulasList.length === 0) return []
   const aulaNombre = new Map(aulasList.map((a) => [a.id, a.nombre]))
   const aulaIds = aulasList.map((a) => a.id)
@@ -87,6 +94,7 @@ export async function getPersonalActivoCentroCore(
   const { data: profes, error: profesErr } = await supabase
     .from('profes_aulas')
     .select('aula_id, tipo_personal_aula, profe:usuarios!inner(id, nombre_completo, foto_url)')
+    .eq('curso_academico_id', cursoAcademicoId)
     .in('aula_id', aulaIds)
     .is('fecha_fin', null)
     .is('deleted_at', null)
