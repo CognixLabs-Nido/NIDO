@@ -54,6 +54,7 @@ export async function buildSidebarItems(
         label: t('pasarDeCurso'),
         icon: <GraduationCapIcon />,
       },
+      { href: `/${locale}/admin/admisiones`, label: t('admisiones'), icon: <ClipboardListIcon /> },
       { href: `/${locale}/admin/aulas`, label: t('aulas'), icon: <BookOpenIcon /> },
       { href: `/${locale}/admin/personal`, label: t('personal'), icon: <UsersIcon /> },
       { href: `/${locale}/admin/calendario`, label: t('calendario'), icon: <CalendarRangeIcon /> },

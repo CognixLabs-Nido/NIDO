@@ -218,7 +218,8 @@
       "autorizaciones": "Autorizaciones",
       "notificaciones": "Notificaciones",
       "informes": "Informes",
-      "personal": "Personal"
+      "personal": "Personal",
+      "admisiones": "Admisiones"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -546,6 +547,45 @@
       "activos": {
         "title": "Personal activo",
         "empty": "Aún no hay personal dado de alta en el centro."
+      }
+    },
+    "admisiones": {
+      "title": "Admisiones — Lista de espera",
+      "subtitle": "Prospectos por curso. Arrastra para reordenar la cola.",
+      "sin_cursos": "No hay cursos",
+      "sin_cursos_desc": "Crea primero un curso académico.",
+      "curso": "Curso",
+      "nuevo": "Añadir prospecto",
+      "vacio": "Lista de espera vacía",
+      "vacio_desc": "Añade el primer prospecto de este curso.",
+      "estado": "Estado",
+      "acciones": "Acciones",
+      "editar": "Editar",
+      "invitar": "Invitar al alta",
+      "borrar": "Borrar",
+      "nuevo_title": "Nuevo prospecto",
+      "editar_title": "Editar prospecto",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "creado": "Prospecto añadido",
+      "editado": "Prospecto actualizado",
+      "invitado": "Invitación enviada",
+      "borrado": "Prospecto descartado",
+      "borrar_title": "Descartar prospecto",
+      "borrar_confirma": "¿Descartar a {nombre} de la lista de espera?",
+      "fields": {
+        "nombre_nino": "Nombre del niño",
+        "fecha_nacimiento": "Fecha de nacimiento",
+        "contacto": "Contacto",
+        "telefono_tutor": "Teléfono",
+        "email_tutor": "Email",
+        "nota": "Nota"
+      },
+      "estados": {
+        "en_espera": "En espera",
+        "invitado": "Invitado",
+        "descartado": "Descartado"
       }
     }
   },
@@ -2652,6 +2692,30 @@
       "finalizar_fallo": "No se pudo finalizar el alta. Inténtalo de nuevo.",
       "identidad_incompleta": "Completa primero los datos del niño (nombre y fecha de nacimiento).",
       "acuse_pendiente": "Confirma antes el acuse de confidencialidad de los datos médicos."
+    }
+  },
+  "listaEspera": {
+    "validation": {
+      "invalid": "Datos no válidos.",
+      "id_invalido": "Identificador no válido.",
+      "nombre_requerido": "El nombre es obligatorio.",
+      "nombre_largo": "Nombre demasiado largo.",
+      "fecha_invalida": "Fecha no válida.",
+      "telefono_largo": "Teléfono demasiado largo.",
+      "email_largo": "Email demasiado largo.",
+      "email_invalido": "Email no válido.",
+      "nota_larga": "Nota demasiado larga.",
+      "orden_vacio": "Orden vacío."
+    },
+    "errors": {
+      "sin_centro": "No se encontró el centro.",
+      "crear_fallo": "No se pudo añadir el prospecto.",
+      "editar_fallo": "No se pudo actualizar el prospecto.",
+      "descartar_fallo": "No se pudo descartar el prospecto.",
+      "reordenar_fallo": "No se pudo guardar el orden.",
+      "no_encontrado": "Prospecto no encontrado.",
+      "no_en_espera": "El prospecto ya no está en espera.",
+      "sin_email": "Falta el email del tutor para invitar."
     }
   }
 }
