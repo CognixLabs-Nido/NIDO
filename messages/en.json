@@ -195,7 +195,8 @@
       "proponer_fallo": "Could not propose the enrolments.",
       "asignar_fallo": "Could not assign the classroom.",
       "descartar_fallo": "Could not discard the proposal.",
-      "confirmar_fallo": "Could not confirm advancing."
+      "confirmar_fallo": "Could not confirm advancing.",
+      "quitar_fallo": "Could not remove the proposal."
     }
   },
   "admin": {
@@ -279,7 +280,17 @@
       "descartada": "Proposal discarded",
       "confirmar": "Confirm advancing",
       "confirmado": "Course activated",
-      "ya_confirmado": "Already confirmed"
+      "ya_confirmado": "Already confirmed",
+      "paso_revisar": "3. Review and confirm",
+      "sin_ninos": "No children with an active enrolment in the current year.",
+      "col_nino": "Child",
+      "col_aula_actual": "Current room",
+      "col_aula_propuesta": "Proposed room",
+      "col_accion": "Action",
+      "continua": "Continues",
+      "opcion_gradua": "Graduates (leaves the centre)",
+      "marcado_graduado": "Marked as graduated",
+      "sin_aula": "No room"
     },
     "cursos": {
       "title": "Academic years",

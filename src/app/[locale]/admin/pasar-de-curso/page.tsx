@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { Card } from '@/components/ui/card'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { getCursosPlanificados } from '@/features/cursos/queries/get-cursos'
-import { computarPropuesta } from '@/features/pasar-de-curso/lib/proponer'
+import { computarPropuesta, construirFilasRollover } from '@/features/pasar-de-curso/lib/proponer'
 import { getEstadoRollover } from '@/features/pasar-de-curso/queries/get-estado-rollover'
 import { PasarDeCursoWizard } from '@/features/pasar-de-curso/components/PasarDeCursoWizard'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -49,11 +49,14 @@ export default async function PasarDeCursoPage({ searchParams }: PageProps) {
   }
 
   // Propuesta "pendiente de generar" (niños aún sin matrícula en el destino).
+  const pendientesMap = new Map(estado.pendientes.map((p) => [p.nino_id, p.aula_id]))
   const preview = computarPropuesta(
     estado.ninosActivos,
     estado.aulasDestino,
-    new Set(estado.pendientes.map((p) => p.nino_id))
+    new Set(pendientesMap.keys())
   )
+  // Tabla de revisión (decisión H-2-1): 1 fila por niño activo, propuesta pre-rellena.
+  const filas = construirFilasRollover(estado.ninosActivos, preview, pendientesMap)
 
   return (
     <div className="space-y-6">
@@ -70,6 +73,7 @@ export default async function PasarDeCursoPage({ searchParams }: PageProps) {
       <PasarDeCursoWizard
         estado={estado}
         preview={preview}
+        filas={filas}
         planificados={planificados.map((c) => ({ id: c.id, nombre: c.nombre }))}
       />
     </div>

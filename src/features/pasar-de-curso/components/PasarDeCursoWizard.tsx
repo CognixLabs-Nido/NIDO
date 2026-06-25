@@ -2,29 +2,38 @@
 
 import { AlertTriangleIcon } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 import { asignarAulaPropuesta } from '../actions/asignar-aula-propuesta'
 import { confirmarRollover } from '../actions/confirmar-rollover'
 import { copiarConfigCurso } from '../actions/copiar-config-curso'
 import { descartarPropuesta } from '../actions/descartar-propuesta'
 import { proponerMatriculas } from '../actions/proponer-matriculas'
-import type { ItemGraduado, ItemRevisar } from '../lib/proponer'
-import type { EstadoRollover, ResultadoPropuesta } from '../types'
+import { quitarAulaPropuesta } from '../actions/quitar-aula-propuesta'
+import type { EstadoRollover, FilaRollover, ResultadoPropuesta } from '../types'
 
 interface Props {
   estado: EstadoRollover
   preview: ResultadoPropuesta
+  filas: FilaRollover[]
   planificados: { id: string; nombre: string }[]
 }
 
-export function PasarDeCursoWizard({ estado, preview, planificados }: Props) {
+export function PasarDeCursoWizard({ estado, preview, filas, planificados }: Props) {
   const t = useTranslations('admin.pasarDeCurso')
   const tErrors = useTranslations()
   const router = useRouter()
@@ -32,6 +41,8 @@ export function PasarDeCursoWizard({ estado, preview, planificados }: Props) {
   const [pending, start] = useTransition()
 
   const cursoId = estado.cursoDestino.id
+  const yaConfirmado = estado.cursoDestino.estado !== 'planificado'
+  const aulas = estado.aulasDestino.map((a) => ({ id: a.aula_id, nombre: a.nombre }))
 
   // Ocupación persistida (pendientes) por aula → aforo.
   const ocupacion = new Map<string, number>()
@@ -47,8 +58,6 @@ export function PasarDeCursoWizard({ estado, preview, planificados }: Props) {
         toast.error(tErrors(r.error ?? 'rollover.errors.proponer_fallo'))
       }
     })
-
-  const yaConfirmado = estado.cursoDestino.estado !== 'planificado'
 
   return (
     <div className="space-y-6">
@@ -134,34 +143,36 @@ export function PasarDeCursoWizard({ estado, preview, planificados }: Props) {
         </Card>
       )}
 
-      {/* Revisión manual: graduados + requieren elección */}
-      {(preview.requiereEleccion.length > 0 || preview.graduados.length > 0) && (
-        <Card className="space-y-3 p-4">
-          <h2 className="text-foreground font-semibold">{t('revisar_titulo')}</h2>
-          <ul className="space-y-2">
-            {preview.requiereEleccion.map((item) => (
-              <FilaAsignar
-                key={item.nino_id}
-                item={item}
-                aulas={estado.aulasDestino.map((a) => ({ id: a.aula_id, nombre: a.nombre }))}
-                cursoId={cursoId}
-                disabled={pending || yaConfirmado}
-                onDone={() => router.refresh()}
-              />
-            ))}
-            {preview.graduados.map((g) => (
-              <FilaGraduado
-                key={g.nino_id}
-                item={g}
-                aulas={estado.aulasDestino.map((a) => ({ id: a.aula_id, nombre: a.nombre }))}
-                cursoId={cursoId}
-                disabled={pending || yaConfirmado}
-                onDone={() => router.refresh()}
-              />
-            ))}
-          </ul>
-        </Card>
-      )}
+      {/* Paso 3 — tabla de revisión (1 fila por niño) */}
+      <Card className="space-y-3 p-4">
+        <h2 className="text-foreground font-semibold">{t('paso_revisar')}</h2>
+        {filas.length === 0 ? (
+          <p className="text-muted-foreground text-sm">{t('sin_ninos')}</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('col_nino')}</TableHead>
+                <TableHead>{t('col_aula_actual')}</TableHead>
+                <TableHead>{t('col_aula_propuesta')}</TableHead>
+                <TableHead>{t('col_accion')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filas.map((fila) => (
+                <FilaTabla
+                  key={fila.nino_id}
+                  fila={fila}
+                  aulas={aulas}
+                  cursoId={cursoId}
+                  disabled={pending || yaConfirmado}
+                  onDone={() => router.refresh()}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Card>
 
       {/* Confirmar / descartar */}
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
@@ -192,14 +203,17 @@ function nombreNino(item: { nombre: string; apellidos: string | null }): string 
   return `${item.nombre} ${item.apellidos ?? ''}`.trim()
 }
 
-function FilaAsignar({
-  item,
+/** Valor del desplegable cuando el niño no sube a ninguna sala (se gradúa). */
+const GRADUA = '__gradua__'
+
+function FilaTabla({
+  fila,
   aulas,
   cursoId,
   disabled,
   onDone,
 }: {
-  item: ItemRevisar
+  fila: FilaRollover
   aulas: { id: string; nombre: string }[]
   cursoId: string
   disabled: boolean
@@ -207,108 +221,55 @@ function FilaAsignar({
 }) {
   const t = useTranslations('admin.pasarDeCurso')
   const tErrors = useTranslations()
-  const candidatas =
-    item.motivo === 'multiples_candidatas' ? item.candidatas : aulas.map((a) => a.id)
-  const [aulaId, setAulaId] = useState(candidatas[0] ?? '')
   const [pending, start] = useTransition()
+  const valor = fila.aula_propuesta_id ?? GRADUA
+
+  const cambiar = (nuevo: string) =>
+    start(async () => {
+      const r =
+        nuevo === GRADUA
+          ? await quitarAulaPropuesta({ curso_destino_id: cursoId, nino_id: fila.nino_id })
+          : await asignarAulaPropuesta({
+              curso_destino_id: cursoId,
+              nino_id: fila.nino_id,
+              aula_id: nuevo,
+            })
+      if (r.success) {
+        toast.success(nuevo === GRADUA ? t('marcado_graduado') : t('asignada'))
+        onDone()
+      } else {
+        toast.error(tErrors(r.error ?? 'rollover.errors.asignar_fallo'))
+      }
+    })
 
   return (
-    <li className="flex flex-wrap items-center gap-2 text-sm">
-      <span className="text-foreground min-w-40 font-medium">{nombreNino(item)}</span>
-      <Badge variant="outline">
-        {item.motivo === 'sin_fecha_nacimiento' ? t('sin_fecha') : t('multiples')}
-      </Badge>
-      <select
-        className="border-border bg-background rounded-md border px-2 py-1"
-        value={aulaId}
-        onChange={(e) => setAulaId(e.target.value)}
-      >
-        {aulas
-          .filter((a) => candidatas.includes(a.id))
-          .map((a) => (
+    <TableRow>
+      <TableCell className="font-medium">{nombreNino(fila)}</TableCell>
+      <TableCell className="text-muted-foreground">
+        {fila.aula_actual_nombre ?? t('sin_aula')}
+      </TableCell>
+      <TableCell>
+        <select
+          className="border-border bg-background rounded-md border px-2 py-1 text-sm"
+          value={valor}
+          disabled={disabled || pending}
+          onChange={(e) => cambiar(e.target.value)}
+        >
+          {aulas.map((a) => (
             <option key={a.id} value={a.id}>
               {a.nombre}
             </option>
           ))}
-      </select>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={disabled || pending || !aulaId}
-        onClick={() =>
-          start(async () => {
-            const r = await asignarAulaPropuesta({
-              curso_destino_id: cursoId,
-              nino_id: item.nino_id,
-              aula_id: aulaId,
-            })
-            if (r.success) {
-              toast.success(t('asignada'))
-              onDone()
-            } else toast.error(tErrors(r.error))
-          })
-        }
-      >
-        {t('asignar')}
-      </Button>
-    </li>
-  )
-}
-
-function FilaGraduado({
-  item,
-  aulas,
-  cursoId,
-  disabled,
-  onDone,
-}: {
-  item: ItemGraduado
-  aulas: { id: string; nombre: string }[]
-  cursoId: string
-  disabled: boolean
-  onDone: () => void
-}) {
-  const t = useTranslations('admin.pasarDeCurso')
-  const tErrors = useTranslations()
-  const [aulaId, setAulaId] = useState('')
-  const [pending, start] = useTransition()
-
-  return (
-    <li className="flex flex-wrap items-center gap-2 text-sm">
-      <span className="text-foreground min-w-40 font-medium">{nombreNino(item)}</span>
-      <Badge variant="secondary">{t('graduado')}</Badge>
-      <select
-        className="border-border bg-background rounded-md border px-2 py-1"
-        value={aulaId}
-        onChange={(e) => setAulaId(e.target.value)}
-      >
-        <option value="">{t('mantener_graduado')}</option>
-        {aulas.map((a) => (
-          <option key={a.id} value={a.id}>
-            {a.nombre}
-          </option>
-        ))}
-      </select>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={disabled || pending || !aulaId}
-        onClick={() =>
-          start(async () => {
-            const r = await asignarAulaPropuesta({
-              curso_destino_id: cursoId,
-              nino_id: item.nino_id,
-              aula_id: aulaId,
-            })
-            if (r.success) {
-              toast.success(t('asignada'))
-              onDone()
-            } else toast.error(tErrors(r.error))
-          })
-        }
-      >
-        {t('asignar')}
-      </Button>
-    </li>
+          <option value={GRADUA}>{t('opcion_gradua')}</option>
+        </select>
+      </TableCell>
+      <TableCell>
+        {fila.accion === 'gradua' ? (
+          <Badge variant="secondary">{t('graduado')}</Badge>
+        ) : (
+          <Badge variant="outline">{t('continua')}</Badge>
+        )}
+      </TableCell>
+    </TableRow>
   )
 }

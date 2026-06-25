@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { getAulaNombresPorIds } from '@/features/aulas/queries/get-aula-nombres'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
@@ -63,18 +64,21 @@ export async function getEstadoRolloverCore(
     }))
 
   // 4. Niños con matrícula ACTIVA en el curso origen (los candidatos a subir).
+  //    Se trae también el `aula_id` de origen: la matrícula ya no embebe `aulas`
+  //    (FK compuesta a `aulas_curso`), así que el nombre se resuelve por id aparte.
   let ninosActivos: NinoActivoRollover[] = []
   if (origen) {
     const { data: matRaw } = await supabase
       .from('matriculas')
-      .select('nino:ninos!inner(id, nombre, apellidos, fecha_nacimiento, deleted_at)')
+      .select('aula_id, nino:ninos!inner(id, nombre, apellidos, fecha_nacimiento, deleted_at)')
       .eq('curso_academico_id', origen.id)
       .eq('estado', 'activa')
       .is('fecha_baja', null)
       .is('deleted_at', null)
 
-    ninosActivos = (
+    const filas = (
       (matRaw ?? []) as unknown as Array<{
+        aula_id: string | null
         nino: {
           id: string
           nombre: string
@@ -83,14 +87,21 @@ export async function getEstadoRolloverCore(
           deleted_at: string | null
         } | null
       }>
+    ).filter((r) => r.nino && r.nino.deleted_at === null)
+
+    const nombresAula = await getAulaNombresPorIds(
+      supabase,
+      filas.map((r) => r.aula_id)
     )
-      .filter((r) => r.nino && r.nino.deleted_at === null)
-      .map((r) => ({
-        nino_id: r.nino!.id,
-        nombre: r.nino!.nombre,
-        apellidos: r.nino!.apellidos,
-        fecha_nacimiento: r.nino!.fecha_nacimiento,
-      }))
+
+    ninosActivos = filas.map((r) => ({
+      nino_id: r.nino!.id,
+      nombre: r.nino!.nombre,
+      apellidos: r.nino!.apellidos,
+      fecha_nacimiento: r.nino!.fecha_nacimiento,
+      aula_origen_id: r.aula_id,
+      aula_origen_nombre: r.aula_id ? (nombresAula.get(r.aula_id) ?? null) : null,
+    }))
   }
 
   // 5. Pendientes ya creadas en el destino (propuesta persistida → idempotencia).
