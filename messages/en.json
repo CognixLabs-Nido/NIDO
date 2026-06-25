@@ -218,7 +218,8 @@
       "autorizaciones": "Authorisations",
       "notificaciones": "Notifications",
       "informes": "Reports",
-      "personal": "Staff"
+      "personal": "Staff",
+      "admisiones": "Admissions"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -546,6 +547,45 @@
       "activos": {
         "title": "Active staff",
         "empty": "There is no staff registered in the centre yet."
+      }
+    },
+    "admisiones": {
+      "title": "Admissions — Waiting list",
+      "subtitle": "Prospects by year. Drag to reorder the queue.",
+      "sin_cursos": "No academic years",
+      "sin_cursos_desc": "Create an academic year first.",
+      "curso": "Year",
+      "nuevo": "Add prospect",
+      "vacio": "Empty waiting list",
+      "vacio_desc": "Add the first prospect for this year.",
+      "estado": "Status",
+      "acciones": "Actions",
+      "editar": "Edit",
+      "invitar": "Invite to enrol",
+      "borrar": "Delete",
+      "nuevo_title": "New prospect",
+      "editar_title": "Edit prospect",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "creado": "Prospect added",
+      "editado": "Prospect updated",
+      "invitado": "Invitation sent",
+      "borrado": "Prospect discarded",
+      "borrar_title": "Discard prospect",
+      "borrar_confirma": "Discard {nombre} from the waiting list?",
+      "fields": {
+        "nombre_nino": "Child’s name",
+        "fecha_nacimiento": "Date of birth",
+        "contacto": "Contact",
+        "telefono_tutor": "Phone",
+        "email_tutor": "Email",
+        "nota": "Note"
+      },
+      "estados": {
+        "en_espera": "Waiting",
+        "invitado": "Invited",
+        "descartado": "Discarded"
       }
     }
   },
@@ -2652,6 +2692,30 @@
       "finalizar_fallo": "The enrolment could not be finished. Please try again.",
       "identidad_incompleta": "Fill in the child's details first (name and date of birth).",
       "acuse_pendiente": "Confirm the medical data confidentiality acknowledgement first."
+    }
+  },
+  "listaEspera": {
+    "validation": {
+      "invalid": "Invalid data.",
+      "id_invalido": "Invalid identifier.",
+      "nombre_requerido": "Name is required.",
+      "nombre_largo": "Name too long.",
+      "fecha_invalida": "Invalid date.",
+      "telefono_largo": "Phone too long.",
+      "email_largo": "Email too long.",
+      "email_invalido": "Invalid email.",
+      "nota_larga": "Note too long.",
+      "orden_vacio": "Empty order."
+    },
+    "errors": {
+      "sin_centro": "Centre not found.",
+      "crear_fallo": "Could not add the prospect.",
+      "editar_fallo": "Could not update the prospect.",
+      "descartar_fallo": "Could not discard the prospect.",
+      "reordenar_fallo": "Could not save the order.",
+      "no_encontrado": "Prospect not found.",
+      "no_en_espera": "The prospect is no longer waiting.",
+      "sin_email": "The tutor’s email is required to invite."
     }
   }
 }
