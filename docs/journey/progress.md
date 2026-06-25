@@ -1001,6 +1001,37 @@ B8) → `profes_aulas` con tipo correcto → aislamiento entre centros → confl
 `next/headers` + `auth.admin`) se verifica en preview (no invocable en vitest, igual que
 `alta-p1-fundacion.rls`). Gap "UI de alta de profesor" tachado en `docs/follow-ups.md`.
 
+## Fase 11-H — Matrícula multi-curso (CERRADA)
+
+Remodel del acoplamiento aula↔curso para soportar el **ciclo anual completo** de un centro 0-3: salas físicas estables, configuración (tramo de edad + capacidad) por curso, matrícula y personal por curso, "pasar de curso" (rollover) y lista de espera de admisiones. Cinco subfases secuenciales H-0…H-4.
+
+### PRs cerrados
+
+- **H-0 (#143/#144 fundación + capa app)** — migración `20260624130000`: `aulas` pasa a sala física (`ALTER`), nueva `aulas_curso (aula_id, curso, tramo_edad, capacidad)` con `UNIQUE(aula_id, curso)`, `matriculas` recreada con FK **compuesta** a `aulas_curso` + `UNIQUE(nino, curso)` activo, `profes_aulas` con `curso_academico_id`, `lista_espera` (admin-only). Helpers cualificados por curso activo (`es_profe_de_aula`/`es_redactor_de_aula` anclados a `curso_activo_de_centro`; `es_profe_de_nino`/`es_redactor_de_nino` con JOIN curso-exacto sobre matrícula `activa`). Nuevos `curso_activo_de_centro`/`centro_de_curso`.
+- **H-1 (#144)** — capa de aplicación migrada al modelo aula/aulas_curso: queries, actions y asignación de personal por curso; `matriculas` ya no anida `aulas` por PostgREST → nombres por id (`getAulaNombresPorIds`). Sync de tipos en #145.
+- **H-2 (#146 backend + #147 tabla)** — "pasar de curso": núcleo puro `computarPropuesta` (propuesta por año de nacimiento), tabla de revisión (1 fila por niño, aula propuesta editable, continúa/se gradúa). **Agrupación por aula de origen** cuando hay ≥2 salas candidatas para el mismo tramo (round-robin determinista; mantiene el grupo unido). Aforo **avisa, no bloquea**. Matrículas propuestas se persisten `pendiente` en el curso planificado (invisibles a staff por RLS); confirmar = flip `pendiente→activa` + activar curso.
+- **H-3 (#148)** — UI de admisiones (`/admin/admisiones`): lista de espera por curso, alta/edición/baja blanda (`estado='descartado'`), reordenar la cola con **drag-and-drop nativo** (persiste `posicion`), "invitar al alta" (crea esqueleto de niño + `sendInvitation` reusando D6 → `estado='invitado'`).
+
+### H-4 — Consolidación (este PR)
+
+Cierre de F11-H sin lógica nueva:
+
+- **Tests RLS/gated del modelo** (`src/test/rls/multicurso.rls.test.ts`, gate `F11_H0_MIGRATION_APPLIED`, 18 casos): aulas_curso (admin escribe / staff+familia leen / aislamiento entre centros), profes_aulas cualificado (profe del curso pasado NO ve al niño del activo), matriculas (FK compuesta 23503, UNIQUE 23505, políticas admin/profe/tutor), lista_espera (admin-only + aislamiento), aforo (no bloquea), doble matrícula (planificada invisible para staff; admin la ve), "pasar de curso" end-to-end (pendiente→activa + cierre/activación con un único curso activo por centro).
+- Flag `F11_H0_MIGRATION_APPLIED='1'` añadido a `ci-pr.yml` y `ci-main.yml`.
+- **ADR-0048** (matrícula multi-curso) + esta entrada.
+
+### Decisiones (ADRs)
+
+- **ADR-0048-matricula-multicurso**: aula física + `aulas_curso` + helpers cualificados por curso (Opción B) + agrupación por aula de origen en el rollover + aforo informativo.
+
+### Aprendizaje transversal
+
+- Matiz de visibilidad: la invisibilidad del curso planificado es para **staff** y para el acceso **operativo** (gating por `estado='activa'`). `matriculas_tutor_select` (= `es_tutor_de`) **no** filtra por curso → la familia ve la **fila** de matrícula planificada de su hijo (benigno: no abre datos operativos). Documentado en el ADR y afirmado a la verdad en los tests.
+
+### Cierre
+
+**F11-H cerrada:** verde local (typecheck + lint + unit + build) en cada PR; `multicurso.rls.test.ts` 18/18 contra el remoto. Modelo multi-curso operativo de admisiones a rollover.
+
 ## Fase 12 — Funcionalidad pendiente post-F11 (registrada, sin abrir)
 
 > Registrada durante F11-A (2026-06-13). **F12 sigue siendo Ola 1** — secuencial tras F11,

@@ -131,4 +131,5 @@ F8 autorizaciones queda **cerrado**: el WRITE de firma e instancia se apretó al
 
 ## Resueltos
 
+- [x] **Gestión multi-curso + capacidad/tramo por aula + lista de espera (admisiones)** — **CERRADO en F11-H** (H-0…H-4). Aula física + `aulas_curso` (tramo de edad + capacidad **por curso**), matrícula y personal por curso, "pasar de curso" (rollover con agrupación por aula de origen; aforo informativo) y `lista_espera` admin-only con UI de admisiones. Tests en `multicurso.rls.test.ts` (gate `F11_H0_MIGRATION_APPLIED`, ya cableado en CI). Ver **ADR-0048** y `progress.md` (Fase 11-H). _(Ola 1)_
 - [x] **Índice del README de `docs/decisions/`** — actualizado hasta **ADR-0037** (con 0035 `superseded` por 0037 y 0036 `accepted`) en el sprint de sincronización de docs de planificación. _(cerrado en el PR de docs/sync-planificacion-olas)_
