@@ -162,6 +162,10 @@ function AltaInvitacionFlow({
         familiaEstadoCivil={null}
         datosTutor1={null}
         datosTutor2={null}
+        centroId=""
+        centroNombre=""
+        centroDireccion=""
+        mandatoSepaInicial={null}
         currentUserId=""
         currentUserNombre=""
       />

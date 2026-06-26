@@ -8,12 +8,18 @@ import { createClient } from '@/lib/supabase/server'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
-import { BUCKET_DNI_TUTORES, BUCKET_LIBRO_FAMILIA, firmarRuta } from '@/shared/lib/adjuntos/storage'
+import {
+  BUCKET_DNI_TUTORES,
+  BUCKET_LIBRO_FAMILIA,
+  BUCKET_MANDATO_SEPA,
+  firmarRuta,
+} from '@/shared/lib/adjuntos/storage'
 
 import { AltaCompletadaScreen } from '@/features/alta/components/AltaCompletadaScreen'
 import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { pasoInicialAlta } from '@/features/alta/lib/estado-alta'
 
+import type { MandatoSepaInicial } from '@/features/alta/components/PasoSepa'
 import type { DatosTutorInicial } from '@/features/alta/components/PasoTutor'
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
 import type { EstadoCivil } from '@/features/alta/schemas/alta-documentos'
@@ -27,7 +33,7 @@ interface PageProps {
 export const dynamic = 'force-dynamic'
 
 /**
- * Wizard de alta del tutor (F11-G, 7 pasos). Esta ruta es la **entrada de reanudación**
+ * Wizard de alta del tutor (F11-G, 8 pasos). Esta ruta es la **entrada de reanudación**
  * (post-login): el paso `cuenta` se hizo en `/invitation/[token]`. Verifica tutela, gatea
  * por estado de matrícula y pre-carga lo persistido de cada paso (identidad + dirección,
  * pedagógicos, libro de familia, foto, paneles de firma de normas e imagen, datos de los
@@ -224,6 +230,30 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const normasPanel = await panelFirma(supabase, ninoId, 'reglas_regimen_interno', true)
   const normasSinPlantilla = normasPanel === null
 
+  // SEPA (G-2): datos del centro (acreedor) y mandato activo previo del tutor 1 (titular).
+  const { data: centro } = await supabase
+    .from('centros')
+    .select('nombre, direccion')
+    .eq('id', nino.centro_id)
+    .maybeSingle()
+
+  const { data: mandatoRow } = await supabase
+    .from('mandatos_sepa')
+    .select('iban, titular, identificador_mandato, documento_path')
+    .eq('nino_id', ninoId)
+    .eq('usuario_id', user.id)
+    .eq('estado', 'activo')
+    .is('deleted_at', null)
+    .maybeSingle()
+  const mandatoSepaInicial: MandatoSepaInicial | null = mandatoRow
+    ? {
+        iban: mandatoRow.iban,
+        titular: mandatoRow.titular,
+        identificador: mandatoRow.identificador_mandato,
+        documentoUrl: await firmarRuta(supabase, BUCKET_MANDATO_SEPA, mandatoRow.documento_path),
+      }
+    : null
+
   const pasoInicial = pasoInicialAlta({
     identidadCompleta: Boolean(nino.apellidos && nino.fecha_nacimiento),
     consintioDatosMedicos,
@@ -262,6 +292,10 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         familiaEstadoCivil={familiaEstadoCivil}
         datosTutor1={datosTutor1}
         datosTutor2={datosTutor2}
+        centroId={nino.centro_id}
+        centroNombre={centro?.nombre ?? ''}
+        centroDireccion={centro?.direccion ?? ''}
+        mandatoSepaInicial={mandatoSepaInicial}
         currentUserId={user.id}
         currentUserNombre={perfil?.nombreCompleto ?? ''}
       />

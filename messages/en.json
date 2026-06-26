@@ -2662,7 +2662,8 @@
         "menor": "Child's details",
         "tutor1": "Guardian 1",
         "tutor2": "Guardian 2",
-        "emergencia": "Emergency"
+        "emergencia": "Emergency",
+        "sepa": "Direct debit"
       }
     },
     "identidad": {
@@ -2755,6 +2756,36 @@
         "guardado": "The data could not be saved. Please try again.",
         "email": "Enter a valid email.",
         "nombre": "The name must be at least 2 characters."
+      }
+    },
+    "sepa": {
+      "intro": "Set up direct debit for fees. Enter the IBAN and sign the SEPA mandate. You can skip this step and provide it later.",
+      "mandato_titulo": "SEPA direct debit mandate",
+      "titular_label": "Account holder",
+      "iban_label": "IBAN",
+      "iban_placeholder": "ES00 0000 0000 0000 0000 0000",
+      "iban_ayuda": "The format and check digits are validated. Spanish accounts are 24 characters long.",
+      "nombre_tecleado_label": "Full name (signature)",
+      "nombre_tecleado_ayuda": "Type your full name as a signing act, in addition to the drawn signature.",
+      "firma_titulo": "Signature",
+      "acreedor_titulo": "Creditor",
+      "deudor_titulo": "Debtor",
+      "referencia": "Mandate reference",
+      "tipo": "Payment type",
+      "tipo_recurrente": "Recurrent",
+      "fecha": "Date",
+      "texto_legal": "By signing this mandate, you authorise the creditor to send instructions to your bank to debit your account, and your bank to debit your account in accordance with those instructions. You are entitled to a refund from your bank under the terms and conditions of your agreement with it, within eight weeks of the debit date.",
+      "guardado": "SEPA mandate saved",
+      "omitir": "Skip for now",
+      "pdf": {
+        "titulo": "SEPA direct debit mandate order"
+      },
+      "errors": {
+        "iban": "Invalid IBAN",
+        "titular": "Enter the account holder",
+        "nombre": "Type your full name to sign",
+        "firma": "Draw your signature to continue",
+        "guardado": "Could not save the SEPA mandate"
       }
     }
   },
