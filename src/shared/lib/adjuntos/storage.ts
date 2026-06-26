@@ -14,6 +14,10 @@ export const BUCKET_RECOGIDA_ADJUNTOS = 'recogida-adjuntos'
 export const BUCKET_CENTRO_ASSETS = 'centro-assets'
 /** Avatar de usuario (bucket privado creado en F11-C-0; espejo de `ninos-fotos`). */
 export const BUCKET_USUARIOS_FOTOS = 'usuarios-fotos'
+/** Buckets de documentos del alta (PRIVADOS, application/pdf, creados en F11-G-0). */
+export const BUCKET_LIBRO_FAMILIA = 'libro-familia'
+export const BUCKET_DNI_TUTORES = 'dni-tutores'
+export const BUCKET_MANDATO_SEPA = 'mandato-sepa'
 
 /** TTL de las URLs firmadas de los buckets privados (~1 h, P4). */
 export const SIGNED_URL_TTL_SEGUNDOS = 60 * 60

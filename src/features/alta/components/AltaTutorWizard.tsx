@@ -1,20 +1,33 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
+
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { toast } from 'sonner'
 
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DatosPedagogicosForm } from '@/features/datos-pedagogicos/components/DatosPedagogicosForm'
 
-import { PASOS_ALTA, type PasoAlta } from '../lib/estado-alta'
-import { PasoConsentimientos } from './PasoConsentimientos'
-import { PasoIdentidad, type IdentidadInicial } from './PasoIdentidad'
-import { PasoImagen } from './PasoImagen'
+import { finalizarAlta } from '../actions/finalizar-alta'
+import { PASOS_ALTA, PASO_MIN_AUTENTICADO, type PasoAlta } from '../lib/estado-alta'
+import { PasoAcuses } from './PasoAcuses'
+import { PasoCuenta } from './PasoCuenta'
 import { PasoMedico } from './PasoMedico'
+import { PasoMenor, type DireccionInicial } from './PasoMenor'
+import { PasoTutor, type DatosTutorInicial } from './PasoTutor'
+import type { IdentidadInicial } from './PasoIdentidad'
 
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
-import type { ImagenPanelData, MedicaInicial } from '../lib/tipos'
+import type { EstadoCivil } from '../schemas/alta-documentos'
+import type { FirmaPanelData, ImagenPanelData, MedicaInicial } from '../lib/tipos'
+
+/** Datos de la invitación para el paso `cuenta` (solo en `/invitation/[token]`). */
+export interface ModoInvitacion {
+  token: string
+  email: string
+  nombreInicial: string
+  requiereParentesco: boolean
+}
 
 interface Props {
   locale: string
@@ -22,49 +35,87 @@ interface Props {
   ninoNombre: string
   /** Índice (0-based sobre PASOS_ALTA) en el que reanudar (lo deriva la ruta). */
   pasoInicial: number
+  /** Presente solo en `/invitation/[token]`: el wizard muestra el paso `cuenta`. */
+  modoInvitacion?: ModoInvitacion
   identidadInicial: IdentidadInicial
+  direccionInicial: DireccionInicial
   datosPedagogicosInicial: DatosPedagogicosInput | null
+  libroFamiliaUrl: string | null
   consintioDatosMedicos: boolean
   medicaInicial: MedicaInicial | null
   fotoInicialUrl: string | null
   imagenPanel: ImagenPanelData | null
   imagenSinPlantilla: boolean
+  normasPanel: FirmaPanelData | null
+  normasSinPlantilla: boolean
+  familiaEstadoCivil: EstadoCivil | null
+  datosTutor1: DatosTutorInicial | null
+  datosTutor2: DatosTutorInicial | null
   currentUserId: string
   currentUserNombre: string
 }
 
 /**
- * Pieza 3b-2 — wizard de alta del tutor. Stepper de 5 pasos; a diferencia del wizard
- * de admin (`NuevoNinoWizard`, un único submit), **cada paso persiste por su cuenta**
- * (guardable/reanudable). Pasos pesados (médico + imagen/foto). Al "Finalizar"
- * (P3c), `PasoImagen` llama a `finalizarAlta` (matrícula → 'lista') y navega; la ruta
- * sirve entonces la pantalla "completado, pendiente de validación". La activación
- * (`'lista' → 'activa'`) la hace la dirección.
+ * Wizard de alta del tutor (F11-G) — 7 pasos guardables/reanudables, DOS entradas al
+ * MISMO componente: `/invitation/[token]` (paso `cuenta`, pre-login) y `/alta/[ninoId]`
+ * (pasos 2-7, post-login; reanudación). En `/alta` el paso `cuenta` es inalcanzable
+ * (`PASO_MIN_AUTENTICADO`). El último paso (`emergencia`) finaliza el alta
+ * (`finalizarAlta`, matrícula → 'lista') y la ruta sirve la pantalla "pendiente de
+ * validación".
  */
 export function AltaTutorWizard({
   locale,
   ninoId,
   ninoNombre,
   pasoInicial,
+  modoInvitacion,
   identidadInicial,
+  direccionInicial,
   datosPedagogicosInicial,
+  libroFamiliaUrl,
   consintioDatosMedicos,
   medicaInicial,
   fotoInicialUrl,
   imagenPanel,
   imagenSinPlantilla,
+  normasPanel,
+  normasSinPlantilla,
+  familiaEstadoCivil,
+  datosTutor1,
+  datosTutor2,
   currentUserId,
   currentUserNombre,
 }: Props) {
   const t = useTranslations('alta')
+  const tErrors = useTranslations()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const total = PASOS_ALTA.length
-  const [step, setStep] = useState<number>(Math.min(Math.max(pasoInicial, 0), total - 1))
-  // El acuse de datos médicos se liftea al shell para reflejar el check al volver al paso.
+  const pasoMin = modoInvitacion ? 0 : PASO_MIN_AUTENTICADO
+  const [step, setStep] = useState<number>(
+    Math.min(Math.max(modoInvitacion ? 0 : pasoInicial, pasoMin), total - 1)
+  )
   const [consintio, setConsintio] = useState(consintioDatosMedicos)
+  const [, startFinalizar] = useTransition()
 
   const paso: PasoAlta = PASOS_ALTA[step]
   const goNext = () => setStep((s) => Math.min(s + 1, total - 1))
-  const goBack = () => setStep((s) => Math.max(s - 1, 0))
+  const goBack = () => setStep((s) => Math.max(s - 1, pasoMin))
+
+  function finalizar() {
+    startFinalizar(async () => {
+      const r = await finalizarAlta(ninoId)
+      if (!r.success) {
+        toast.error(tErrors(r.error))
+        return
+      }
+      if (searchParams.get('editar')) {
+        router.replace(`/${locale}/alta/${ninoId}`)
+      } else {
+        router.refresh()
+      }
+    })
+  }
 
   return (
     <Card className="mx-auto max-w-2xl">
@@ -94,35 +145,84 @@ export function AltaTutorWizard({
         </div>
       </CardHeader>
       <CardContent>
-        {paso === 'identidad' && (
-          <PasoIdentidad
+        {paso === 'cuenta' && modoInvitacion && (
+          <PasoCuenta
+            locale={locale}
+            token={modoInvitacion.token}
+            email={modoInvitacion.email}
             ninoId={ninoId}
-            ninoNombre={ninoNombre}
-            inicial={identidadInicial}
-            onNext={goNext}
+            nombreInicial={modoInvitacion.nombreInicial}
+            requiereParentesco={modoInvitacion.requiereParentesco}
           />
         )}
 
-        {paso === 'pedagogicos' && (
-          <div className="space-y-4">
-            <DatosPedagogicosForm
-              ninoId={ninoId}
-              locale={locale}
-              initial={datosPedagogicosInicial}
-            />
-            <div className="flex justify-between border-t pt-4">
-              <Button type="button" variant="outline" onClick={goBack}>
-                {t('wizard.atras')}
-              </Button>
-              <Button type="button" onClick={goNext}>
-                {t('wizard.siguiente')}
-              </Button>
-            </div>
-          </div>
+        {paso === 'acuses' && (
+          <PasoAcuses
+            locale={locale}
+            normasPanel={normasPanel}
+            normasSinPlantilla={normasSinPlantilla}
+            currentUserId={currentUserId}
+            currentUserNombre={currentUserNombre}
+            onNext={goNext}
+            onBack={goBack}
+          />
         )}
 
-        {paso === 'consentimientos' && (
-          <PasoConsentimientos
+        {paso === 'menor' && (
+          <PasoMenor
+            locale={locale}
+            ninoId={ninoId}
+            ninoNombre={ninoNombre}
+            identidadInicial={identidadInicial}
+            direccionInicial={direccionInicial}
+            datosPedagogicosInicial={datosPedagogicosInicial}
+            libroFamiliaUrl={libroFamiliaUrl}
+            fotoInicialUrl={fotoInicialUrl}
+            imagenPanel={imagenPanel}
+            imagenSinPlantilla={imagenSinPlantilla}
+            currentUserId={currentUserId}
+            currentUserNombre={currentUserNombre}
+            onNext={goNext}
+            onBack={goBack}
+          />
+        )}
+
+        {paso === 'tutor1' && (
+          <PasoTutor
+            locale={locale}
+            ninoId={ninoId}
+            tipoVinculo="tutor_legal_principal"
+            inicial={datosTutor1}
+            estadoCivilInicial={familiaEstadoCivil}
+            mostrarEstadoCivil
+            emailReadonly
+            opcional={false}
+            onNext={goNext}
+            onBack={goBack}
+          />
+        )}
+
+        {paso === 'tutor2' && (
+          <PasoTutor
+            locale={locale}
+            ninoId={ninoId}
+            tipoVinculo="tutor_legal_secundario"
+            inicial={datosTutor2}
+            estadoCivilInicial={null}
+            mostrarEstadoCivil={false}
+            emailReadonly={false}
+            opcional
+            onNext={goNext}
+            onBack={goBack}
+          />
+        )}
+
+        {paso === 'medico' && (
+          <PasoMedico
+            ninoId={ninoId}
+            inicial={medicaInicial}
+            variante="general"
+            mostrarConsentimiento
             consintioInicial={consintio}
             onConsentir={() => setConsintio(true)}
             onNext={goNext}
@@ -130,20 +230,13 @@ export function AltaTutorWizard({
           />
         )}
 
-        {paso === 'medico' && (
-          <PasoMedico ninoId={ninoId} inicial={medicaInicial} onNext={goNext} onBack={goBack} />
-        )}
-
-        {paso === 'imagen' && (
-          <PasoImagen
+        {paso === 'emergencia' && (
+          <PasoMedico
             ninoId={ninoId}
-            locale={locale}
-            ninoNombre={ninoNombre}
-            panel={imagenPanel}
-            sinPlantilla={imagenSinPlantilla}
-            fotoInicialUrl={fotoInicialUrl}
-            currentUserId={currentUserId}
-            currentUserNombre={currentUserNombre}
+            inicial={medicaInicial}
+            variante="emergencia"
+            esUltimo
+            onNext={finalizar}
             onBack={goBack}
           />
         )}

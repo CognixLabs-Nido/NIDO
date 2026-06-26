@@ -2656,7 +2656,13 @@
         "pedagogicos": "Datos pedagógicos",
         "consentimientos": "Consentimientos",
         "medico": "Datos médicos",
-        "imagen": "Imagen y foto"
+        "imagen": "Imagen y foto",
+        "cuenta": "Tu cuenta",
+        "acuses": "Acuses",
+        "menor": "Datos del menor",
+        "tutor1": "Tutor/a 1",
+        "tutor2": "Tutor/a 2",
+        "emergencia": "Emergencias"
       }
     },
     "identidad": {
@@ -2692,6 +2698,64 @@
       "finalizar_fallo": "No se pudo finalizar el alta. Inténtalo de nuevo.",
       "identidad_incompleta": "Completa primero los datos del niño (nombre y fecha de nacimiento).",
       "acuse_pendiente": "Confirma antes el acuse de confidencialidad de los datos médicos."
+    },
+    "acuses": {
+      "normas_titulo": "Normas de régimen interno",
+      "normas_sin_plantilla": "El centro aún no tiene publicadas las normas para firmar. Este acuse se completará más adelante.",
+      "privacidad_titulo": "Privacidad",
+      "privacidad_aceptada": "Aceptaste el aviso de privacidad al crear tu cuenta.",
+      "privacidad_ver": "Ver aviso de privacidad"
+    },
+    "menor": {
+      "direccion_titulo": "Dirección del menor",
+      "direccion_calle": "Calle",
+      "direccion_numero": "Número",
+      "direccion_cp": "Código postal",
+      "direccion_ciudad": "Ciudad",
+      "guardar_datos": "Guardar datos",
+      "pedagogicos_titulo": "Datos pedagógicos"
+    },
+    "tutor": {
+      "guardado": "Datos del tutor guardados",
+      "nombre": "Nombre completo",
+      "email": "Correo electrónico",
+      "estado_civil": "Estado civil de la familia",
+      "estado_civil_placeholder": "Selecciona una opción",
+      "sin_segundo": "No hay segundo tutor",
+      "estado_civil_opciones": {
+        "casados": "Casados",
+        "separados": "Separados",
+        "divorciados": "Divorciados",
+        "pareja_de_hecho": "Pareja de hecho",
+        "soltero": "Soltero/a",
+        "viudo": "Viudo/a"
+      }
+    },
+    "documentos": {
+      "subido": "Documento subido",
+      "ver": "Ver",
+      "max_imagenes": "Puedes subir hasta {max} imágenes (se combinan en un PDF).",
+      "subiendo": "Subiendo...",
+      "reemplazar": "Reemplazar",
+      "subir": "Subir",
+      "libro_familia_titulo": "Libro de familia",
+      "libro_familia_ayuda": "Sube una o varias fotos de las páginas; se combinan en un solo PDF.",
+      "dni_titulo": "DNI / NIE",
+      "dni_ayuda": "Sube las dos caras del documento; se combinan en un solo PDF.",
+      "errors": {
+        "tipo_imagen": "El archivo debe ser una imagen.",
+        "imagen_invalida": "No se pudo leer la imagen.",
+        "procesado": "No se pudo procesar el documento.",
+        "sin_imagenes": "Añade al menos una imagen.",
+        "demasiadas_imagenes": "Demasiadas imágenes para un documento.",
+        "subida": "No se pudo subir el documento. Inténtalo de nuevo.",
+        "tipo_pdf": "El documento debe ser un PDF.",
+        "tamano": "El documento supera el tamaño máximo (10 MB).",
+        "datos_invalidos": "Datos no válidos.",
+        "guardado": "No se pudieron guardar los datos. Inténtalo de nuevo.",
+        "email": "Introduce un correo electrónico válido.",
+        "nombre": "El nombre debe tener al menos 2 caracteres."
+      }
     }
   },
   "listaEspera": {

@@ -2656,7 +2656,13 @@
         "pedagogicos": "Pedagogical details",
         "consentimientos": "Consents",
         "medico": "Medical details",
-        "imagen": "Image and photo"
+        "imagen": "Image and photo",
+        "cuenta": "Your account",
+        "acuses": "Acknowledgements",
+        "menor": "Child's details",
+        "tutor1": "Guardian 1",
+        "tutor2": "Guardian 2",
+        "emergencia": "Emergency"
       }
     },
     "identidad": {
@@ -2692,6 +2698,64 @@
       "finalizar_fallo": "The enrolment could not be finished. Please try again.",
       "identidad_incompleta": "Fill in the child's details first (name and date of birth).",
       "acuse_pendiente": "Confirm the medical data confidentiality acknowledgement first."
+    },
+    "acuses": {
+      "normas_titulo": "Internal rules",
+      "normas_sin_plantilla": "The centre hasn't published the rules to sign yet. This acknowledgement will be completed later.",
+      "privacidad_titulo": "Privacy",
+      "privacidad_aceptada": "You accepted the privacy notice when creating your account.",
+      "privacidad_ver": "View privacy notice"
+    },
+    "menor": {
+      "direccion_titulo": "Child's address",
+      "direccion_calle": "Street",
+      "direccion_numero": "Number",
+      "direccion_cp": "Postcode",
+      "direccion_ciudad": "City",
+      "guardar_datos": "Save details",
+      "pedagogicos_titulo": "Pedagogical details"
+    },
+    "tutor": {
+      "guardado": "Guardian details saved",
+      "nombre": "Full name",
+      "email": "Email",
+      "estado_civil": "Family marital status",
+      "estado_civil_placeholder": "Select an option",
+      "sin_segundo": "No second guardian",
+      "estado_civil_opciones": {
+        "casados": "Married",
+        "separados": "Separated",
+        "divorciados": "Divorced",
+        "pareja_de_hecho": "Domestic partnership",
+        "soltero": "Single",
+        "viudo": "Widowed"
+      }
+    },
+    "documentos": {
+      "subido": "Document uploaded",
+      "ver": "View",
+      "max_imagenes": "You can upload up to {max} images (combined into one PDF).",
+      "subiendo": "Uploading...",
+      "reemplazar": "Replace",
+      "subir": "Upload",
+      "libro_familia_titulo": "Family record book",
+      "libro_familia_ayuda": "Upload one or more photos of the pages; they're combined into a single PDF.",
+      "dni_titulo": "ID document",
+      "dni_ayuda": "Upload both sides of the document; they're combined into a single PDF.",
+      "errors": {
+        "tipo_imagen": "The file must be an image.",
+        "imagen_invalida": "The image could not be read.",
+        "procesado": "The document could not be processed.",
+        "sin_imagenes": "Add at least one image.",
+        "demasiadas_imagenes": "Too many images for one document.",
+        "subida": "The document could not be uploaded. Please try again.",
+        "tipo_pdf": "The document must be a PDF.",
+        "tamano": "The document exceeds the maximum size (10 MB).",
+        "datos_invalidos": "Invalid data.",
+        "guardado": "The data could not be saved. Please try again.",
+        "email": "Enter a valid email.",
+        "nombre": "The name must be at least 2 characters."
+      }
     }
   },
   "listaEspera": {
