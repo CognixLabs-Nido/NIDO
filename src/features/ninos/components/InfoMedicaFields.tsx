@@ -25,12 +25,21 @@ const CAMPOS: { name: keyof InfoMedicaInput; textarea?: boolean }[] = [
  * familia, para que ambos rendericen exactamente el mismo set de campos. Cada consumidor
  * aporta su propio `form`, su `onSubmit` y sus botones.
  */
-export function InfoMedicaFields({ control }: { control: Control<InfoMedicaInput> }) {
+export function InfoMedicaFields({
+  control,
+  campos,
+}: {
+  control: Control<InfoMedicaInput>
+  /** Subconjunto de campos a mostrar (por defecto los 6). Permite partir la ficha en
+   * general/emergencia (F11-G) sin duplicar el marcado. */
+  campos?: (keyof InfoMedicaInput)[]
+}) {
   const tNino = useTranslations('admin.ninos')
+  const visibles = campos ? CAMPOS.filter((c) => campos.includes(c.name)) : CAMPOS
 
   return (
     <>
-      {CAMPOS.map(({ name, textarea }) => (
+      {visibles.map(({ name, textarea }) => (
         <FormField
           key={name}
           control={control}

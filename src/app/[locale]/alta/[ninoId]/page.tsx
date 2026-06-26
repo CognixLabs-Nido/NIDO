@@ -8,13 +8,16 @@ import { createClient } from '@/lib/supabase/server'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
+import { BUCKET_DNI_TUTORES, BUCKET_LIBRO_FAMILIA, firmarRuta } from '@/shared/lib/adjuntos/storage'
 
 import { AltaCompletadaScreen } from '@/features/alta/components/AltaCompletadaScreen'
 import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { pasoInicialAlta } from '@/features/alta/lib/estado-alta'
 
+import type { DatosTutorInicial } from '@/features/alta/components/PasoTutor'
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
-import type { ImagenPanelData, MedicaInicial } from '@/features/alta/lib/tipos'
+import type { EstadoCivil } from '@/features/alta/schemas/alta-documentos'
+import type { FirmaPanelData, MedicaInicial } from '@/features/alta/lib/tipos'
 
 interface PageProps {
   params: Promise<{ locale: string; ninoId: string }>
@@ -24,18 +27,11 @@ interface PageProps {
 export const dynamic = 'force-dynamic'
 
 /**
- * Wizard de alta del tutor (Pieza 3b-2). El tutor completa la matrícula de su hijo en
- * pasos guardables y reanudables. Esta ruta server-side:
- *  1. verifica que el usuario es tutor del niño (vínculo activo; las RPCs/RLS de cada
- *     paso reenforzan `es_tutor_de`),
- *  2. pre-carga lo persistido (identidad, datos pedagógicos, consentimiento médico,
- *     info médica, foto, y el panel de firma de imagen si ya hay instancia),
- *  3. deriva el paso inicial (reanuda donde se dejó; único gate duro = identidad).
- *
- * La instancia de imagen NO se crea aquí (crearImagenAutorizacion llama revalidatePath,
- * prohibido durante el render): solo se LEE. Si no existe, `PasoImagen` la instancia con
- * una action al entrar al paso, y `router.refresh()` re-ejecuta esta ruta para poblar el
- * panel (que así refleja el estado tras firmar).
+ * Wizard de alta del tutor (F11-G, 7 pasos). Esta ruta es la **entrada de reanudación**
+ * (post-login): el paso `cuenta` se hizo en `/invitation/[token]`. Verifica tutela, gatea
+ * por estado de matrícula y pre-carga lo persistido de cada paso (identidad + dirección,
+ * pedagógicos, libro de familia, foto, paneles de firma de normas e imagen, datos de los
+ * tutores con sus DNIs, y los valores de familia que se propagan entre hermanos).
  */
 export default async function AltaTutorPage({ params, searchParams }: PageProps) {
   const { locale, ninoId } = await params
@@ -47,7 +43,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   } = await supabase.auth.getUser()
   if (!user) notFound()
 
-  // Vínculo activo con el niño (la edición real la gatean las RPCs por `es_tutor_de`).
+  // Vínculo activo con el niño (la edición real la gatean las RPCs/RLS por tutela).
   const { data: vinculo } = await supabase
     .from('vinculos_familiares')
     .select('id')
@@ -56,10 +52,6 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .is('deleted_at', null)
     .maybeSingle()
   if (!vinculo) {
-    // El usuario está autenticado (el proxy ya garantiza sesión) pero no es tutor de
-    // este niño: este flujo no es suyo. En vez de un `notFound()` —que para un admin/profe
-    // que teclea la URL parece un 404 de routing— lo devolvemos a su panel por rol. Sin
-    // rol conocido (caso anómalo) sí es notFound.
     const centroId = await getCentroActualId()
     const rol = centroId ? await getRolEnCentro(centroId) : null
     if (rol === 'admin') redirect(`/${locale}/admin`)
@@ -70,11 +62,6 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const nino = await getNinoById(ninoId)
   if (!nino) notFound()
 
-  // Estado de la matrícula vigente → gate del flujo (Comportamiento 7):
-  //  - 'activa'  → ya validada por la dirección: al panel.
-  //  - 'lista'   → finalizada por el tutor, pendiente de validación: pantalla de cierre
-  //                (salvo ?editar=1, que reentra al wizard para corregir).
-  //  - resto ('pendiente'/sin matrícula) → wizard.
   const { data: matricula } = await supabase
     .from('matriculas')
     .select('estado')
@@ -84,7 +71,6 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .maybeSingle()
 
   if (matricula?.estado === 'activa') redirect(`/${locale}/family`)
-
   if (matricula?.estado === 'lista' && editar !== '1') {
     return (
       <AltaCompletadaScreen
@@ -92,6 +78,103 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         editarHref={`/${locale}/alta/${ninoId}?editar=1`}
       />
     )
+  }
+
+  // Columnas nuevas de `ninos` (G-0): dirección del menor, libro de familia, estado civil.
+  const { data: ninoExtra } = await supabase
+    .from('ninos')
+    .select(
+      'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, libro_familia_path, estado_civil_familia'
+    )
+    .eq('id', ninoId)
+    .maybeSingle()
+
+  // Propagación entre hermanos: si el niño no tiene dirección/estado civil, se rellena por
+  // defecto con el de otro hijo del tutor (riesgo de divergencia aceptado, decisión G-1).
+  const { data: hermanosVinc } = await supabase
+    .from('vinculos_familiares')
+    .select('nino_id')
+    .eq('usuario_id', user.id)
+    .is('deleted_at', null)
+    .neq('nino_id', ninoId)
+  const hermanosIds = (hermanosVinc ?? []).map((h) => h.nino_id)
+
+  let hermanoEstadoCivil: EstadoCivil | null = null
+  let hermanoDireccion: {
+    direccion_calle: string | null
+    direccion_numero: string | null
+    direccion_cp: string | null
+    direccion_ciudad: string | null
+  } | null = null
+  if (hermanosIds.length > 0) {
+    const { data: hermanos } = await supabase
+      .from('ninos')
+      .select(
+        'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, estado_civil_familia'
+      )
+      .in('id', hermanosIds)
+      .is('deleted_at', null)
+    for (const h of hermanos ?? []) {
+      if (!hermanoEstadoCivil && h.estado_civil_familia) hermanoEstadoCivil = h.estado_civil_familia
+      if (!hermanoDireccion && h.direccion_calle) hermanoDireccion = h
+    }
+  }
+
+  const direccionInicial = {
+    direccion_calle: ninoExtra?.direccion_calle ?? hermanoDireccion?.direccion_calle ?? null,
+    direccion_numero: ninoExtra?.direccion_numero ?? hermanoDireccion?.direccion_numero ?? null,
+    direccion_cp: ninoExtra?.direccion_cp ?? hermanoDireccion?.direccion_cp ?? null,
+    direccion_ciudad: ninoExtra?.direccion_ciudad ?? hermanoDireccion?.direccion_ciudad ?? null,
+  }
+  const familiaEstadoCivil: EstadoCivil | null =
+    ninoExtra?.estado_civil_familia ?? hermanoEstadoCivil
+
+  const libroFamiliaUrl = ninoExtra?.libro_familia_path
+    ? await firmarRuta(supabase, BUCKET_LIBRO_FAMILIA, ninoExtra.libro_familia_path)
+    : null
+
+  // Datos de los tutores (principal/secundario) con su DNI firmado.
+  const { data: tutoresRows } = await supabase
+    .from('datos_tutor')
+    .select(
+      'tipo_vinculo, email, nombre_completo, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, dni_documento_path'
+    )
+    .eq('nino_id', ninoId)
+    .is('deleted_at', null)
+
+  async function aDatosTutor(
+    tipo: 'tutor_legal_principal' | 'tutor_legal_secundario'
+  ): Promise<DatosTutorInicial | null> {
+    const row = (tutoresRows ?? []).find((r) => r.tipo_vinculo === tipo)
+    if (!row) return null
+    const dniUrl = row.dni_documento_path
+      ? await firmarRuta(supabase, BUCKET_DNI_TUTORES, row.dni_documento_path)
+      : null
+    return {
+      email: row.email,
+      nombre_completo: row.nombre_completo,
+      direccion_calle: row.direccion_calle,
+      direccion_numero: row.direccion_numero,
+      direccion_cp: row.direccion_cp,
+      direccion_ciudad: row.direccion_ciudad,
+      dni_url: dniUrl,
+    }
+  }
+  let datosTutor1 = await aDatosTutor('tutor_legal_principal')
+  const datosTutor2 = await aDatosTutor('tutor_legal_secundario')
+
+  // Prefill del tutor 1: nombre/email de su cuenta; dirección heredada de un hermano si falta.
+  const perfil = await getCurrentUser()
+  if (!datosTutor1) {
+    datosTutor1 = {
+      email: user.email ?? null,
+      nombre_completo: perfil?.nombreCompleto ?? null,
+      direccion_calle: hermanoDireccion?.direccion_calle ?? null,
+      direccion_numero: hermanoDireccion?.direccion_numero ?? null,
+      direccion_cp: hermanoDireccion?.direccion_cp ?? null,
+      direccion_ciudad: hermanoDireccion?.direccion_ciudad ?? null,
+      dni_url: null,
+    }
   }
 
   const datosPed = await getDatosPedagogicos(ninoId)
@@ -112,7 +195,6 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
       }
     : null
 
-  // Consentimiento de datos médicos vigente (RLS `consentimientos_self_select`).
   const { data: consentMedico } = await supabase
     .from('consentimientos')
     .select('id')
@@ -123,7 +205,6 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .maybeSingle()
   const consintioDatosMedicos = consentMedico !== null
 
-  // Info médica descifrada (si el tutor tiene acceso de lectura; prefill del paso).
   let medicaInicial: MedicaInicial | null = null
   try {
     medicaInicial = await getInfoMedica(ninoId)
@@ -131,53 +212,20 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     medicaInicial = null
   }
 
-  // Foto actual del niño (enlace firmado ~1h) para SubirFotoNino.
   const foto = await firmarFotoNino(nino.foto_url)
 
-  // Panel de firma de imagen: solo si YA existe la instancia (no se crea en render).
-  const { data: imagenInstancia } = await supabase
-    .from('autorizaciones')
-    .select('id')
-    .eq('nino_id', ninoId)
-    .eq('tipo', 'autorizacion_imagenes')
-    .eq('es_plantilla', false)
-    .eq('estado', 'publicada')
-    .limit(1)
-    .maybeSingle()
+  // Panel de firma de imagen (instancia por niño, igual que el flujo previo).
+  const imagenPanel = await panelFirma(supabase, ninoId, 'autorizacion_imagenes', false)
+  const imagenSinPlantilla =
+    imagenPanel === null && (await sinPlantilla(supabase, nino.centro_id, 'autorizacion_imagenes'))
 
-  let imagenPanel: ImagenPanelData | null = null
-  if (imagenInstancia) {
-    const detalle = await getAutorizacionDetalle(imagenInstancia.id)
-    if (detalle) {
-      imagenPanel = {
-        autorizacionId: detalle.id,
-        firmable: detalle.firmable,
-        roster: detalle.roster,
-      }
-    }
-  }
-
-  // Sin instancia: ¿hay plantilla de imagen publicada? Si no, el paso se omite.
-  let imagenSinPlantilla = false
-  if (!imagenInstancia) {
-    const { data: plantilla } = await supabase
-      .from('autorizaciones')
-      .select('id')
-      .eq('centro_id', nino.centro_id)
-      .eq('tipo', 'autorizacion_imagenes')
-      .eq('es_plantilla', true)
-      .eq('estado', 'publicada')
-      .eq('texto_definitivo', true)
-      .limit(1)
-      .maybeSingle()
-    imagenSinPlantilla = plantilla === null
-  }
-
-  const perfil = await getCurrentUser()
+  // Panel de firma de NORMAS (reglas_regimen_interno, patrón A: la dirección la publica;
+  // la familia la firma). La RLS de `autorizaciones` filtra a las aplicables al niño.
+  const normasPanel = await panelFirma(supabase, ninoId, 'reglas_regimen_interno', true)
+  const normasSinPlantilla = normasPanel === null
 
   const pasoInicial = pasoInicialAlta({
     identidadCompleta: Boolean(nino.apellidos && nino.fecha_nacimiento),
-    pedagogicosCompletos: datosPed !== null,
     consintioDatosMedicos,
   })
 
@@ -201,15 +249,67 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
           nacionalidad: nino.nacionalidad,
           idioma_principal: nino.idioma_principal,
         }}
+        direccionInicial={direccionInicial}
         datosPedagogicosInicial={datosPedagogicosInicial}
+        libroFamiliaUrl={libroFamiliaUrl}
         consintioDatosMedicos={consintioDatosMedicos}
         medicaInicial={medicaInicial}
         fotoInicialUrl={foto.url ?? foto.urlMiniatura}
         imagenPanel={imagenPanel}
         imagenSinPlantilla={imagenSinPlantilla}
+        normasPanel={normasPanel}
+        normasSinPlantilla={normasSinPlantilla}
+        familiaEstadoCivil={familiaEstadoCivil}
+        datosTutor1={datosTutor1}
+        datosTutor2={datosTutor2}
         currentUserId={user.id}
         currentUserNombre={perfil?.nombreCompleto ?? ''}
       />
     </div>
   )
+}
+
+type ServerClient = Awaited<ReturnType<typeof createClient>>
+
+/** Busca una instancia publicada del tipo dado, visible para el tutor (RLS), y devuelve
+ * su panel de firma (firmable + roster). `porNino=false` → patrón A (reglas, ámbito
+ * aula/centro, sin nino_id). Null si no hay ninguna. */
+async function panelFirma(
+  supabase: ServerClient,
+  ninoId: string,
+  tipo: 'autorizacion_imagenes' | 'reglas_regimen_interno',
+  patronA: boolean
+): Promise<FirmaPanelData | null> {
+  let query = supabase
+    .from('autorizaciones')
+    .select('id')
+    .eq('tipo', tipo)
+    .eq('es_plantilla', false)
+    .eq('estado', 'publicada')
+    .limit(1)
+  if (!patronA) query = query.eq('nino_id', ninoId)
+  const { data: instancia } = await query.maybeSingle()
+  if (!instancia) return null
+  const detalle = await getAutorizacionDetalle(instancia.id)
+  if (!detalle) return null
+  return { autorizacionId: detalle.id, firmable: detalle.firmable, roster: detalle.roster }
+}
+
+/** ¿El centro NO tiene plantilla publicada del tipo? → el paso de firma se omite. */
+async function sinPlantilla(
+  supabase: ServerClient,
+  centroId: string,
+  tipo: 'autorizacion_imagenes' | 'reglas_regimen_interno'
+): Promise<boolean> {
+  const { data: plantilla } = await supabase
+    .from('autorizaciones')
+    .select('id')
+    .eq('centro_id', centroId)
+    .eq('tipo', tipo)
+    .eq('es_plantilla', true)
+    .eq('estado', 'publicada')
+    .eq('texto_definitivo', true)
+    .limit(1)
+    .maybeSingle()
+  return plantilla === null
 }

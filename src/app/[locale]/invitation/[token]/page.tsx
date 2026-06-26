@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { AcceptInvitationForm } from '@/features/auth/components/AcceptInvitationForm'
 import { notifyExistingAccountInvitation } from '@/features/auth/actions/accept-invitation'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
@@ -26,7 +27,7 @@ export default async function InvitationPage({ params }: PageProps) {
   const service = createServiceRoleClient()
   const { data: invitation } = await service
     .from('invitaciones')
-    .select('email, rol_objetivo, nombre_completo, expires_at, accepted_at, rejected_at')
+    .select('email, rol_objetivo, nombre_completo, nino_id, expires_at, accepted_at, rejected_at')
     .eq('token', token)
     .maybeSingle()
 
@@ -84,6 +85,21 @@ export default async function InvitationPage({ params }: PageProps) {
   const requiereParentesco =
     invitation.rol_objetivo === 'tutor_legal' || invitation.rol_objetivo === 'autorizado'
 
+  // Alta con documentos (F11-G): el tutor legal con niño entra al wizard de 8 pasos en su
+  // paso `cuenta` (pre-login). Al crear la cuenta, el MISMO wizard reanuda en `/alta`. El
+  // resto de invitaciones (autorizado, profe, admin) siguen el alta de cuenta clásica.
+  if (invitation.rol_objetivo === 'tutor_legal' && invitation.nino_id) {
+    return (
+      <AltaInvitacionFlow
+        locale={locale}
+        token={token}
+        email={invitation.email}
+        ninoId={invitation.nino_id}
+        nombreInicial={invitation.nombre_completo ?? ''}
+      />
+    )
+  }
+
   return (
     <NewAccountFlow
       locale={locale}
@@ -92,6 +108,64 @@ export default async function InvitationPage({ params }: PageProps) {
       nombreInicial={invitation.nombre_completo ?? ''}
       requiereParentesco={requiereParentesco}
     />
+  )
+}
+
+/**
+ * Entrada al wizard de alta (F11-G) por el paso `cuenta`. Pre-login: solo se renderiza ese
+ * paso (los preloads autenticados van vacíos; el wizard no los usa en modo invitación). Al
+ * crear la cuenta, `PasoCuenta` navega a `/alta/[ninoId]`, donde el MISMO wizard reanuda.
+ */
+function AltaInvitacionFlow({
+  locale,
+  token,
+  email,
+  ninoId,
+  nombreInicial,
+}: {
+  locale: string
+  token: string
+  email: string
+  ninoId: string
+  nombreInicial: string
+}) {
+  return (
+    <AuthShell locale={locale}>
+      <AltaTutorWizard
+        locale={locale}
+        ninoId={ninoId}
+        ninoNombre=""
+        pasoInicial={0}
+        modoInvitacion={{ token, email, nombreInicial, requiereParentesco: true }}
+        identidadInicial={{
+          apellidos: null,
+          fecha_nacimiento: null,
+          sexo: null,
+          nacionalidad: null,
+          idioma_principal: locale,
+        }}
+        direccionInicial={{
+          direccion_calle: null,
+          direccion_numero: null,
+          direccion_cp: null,
+          direccion_ciudad: null,
+        }}
+        datosPedagogicosInicial={null}
+        libroFamiliaUrl={null}
+        consintioDatosMedicos={false}
+        medicaInicial={null}
+        fotoInicialUrl={null}
+        imagenPanel={null}
+        imagenSinPlantilla={false}
+        normasPanel={null}
+        normasSinPlantilla={false}
+        familiaEstadoCivil={null}
+        datosTutor1={null}
+        datosTutor2={null}
+        currentUserId=""
+        currentUserNombre=""
+      />
+    </AuthShell>
   )
 }
 
