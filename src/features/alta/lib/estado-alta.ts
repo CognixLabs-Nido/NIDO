@@ -1,11 +1,12 @@
 /**
- * F11-G — modelo del wizard de alta del tutor, ahora de **7 pasos** con documentos. Cada
+ * F11-G — modelo del wizard de alta del tutor, ahora de **8 pasos** con documentos. Cada
  * paso persiste por su cuenta (guardable y reanudable). El paso `cuenta` (creación de la
  * cuenta del tutor 1) vive en `/invitation/[token]` (pre-login); del paso 2 en adelante el
  * MISMO wizard corre en `/alta/[ninoId]` ya autenticado (arquitectura A). Por eso en `/alta`
  * el paso `cuenta` queda inalcanzable (clamp `PASO_MIN_AUTENTICADO`).
  *
- * El SEPA (decisión: G-2) NO está aquí: el stepper muestra estos 7 pasos.
+ * El último paso es `sepa` (G-2): IBAN + mandato SEPA firmado. Es opcional (omitible) y al
+ * guardarlo —o al omitirlo— finaliza el alta (`finalizarAlta`).
  */
 export const PASOS_ALTA = [
   'cuenta',
@@ -15,6 +16,7 @@ export const PASOS_ALTA = [
   'tutor2',
   'medico',
   'emergencia',
+  'sepa',
 ] as const
 
 export type PasoAlta = (typeof PASOS_ALTA)[number]
@@ -34,8 +36,8 @@ export interface EstadoAlta {
  * Índice (0-based sobre `PASOS_ALTA`) en el que reanudar dentro de `/alta` (post-login):
  *  - sin identidad → `acuses` (arranque del flujo tras crear la cuenta),
  *  - identidad hecha pero sin acuse médico → `medico` (lo único que falta para cerrar),
- *  - todo lo obligatorio hecho → `emergencia` (último paso, revisable).
- * Los pasos `tutor1`/`tutor2`/documentos no tienen señal dura (opcionales o de
+ *  - todo lo obligatorio hecho → `emergencia` (desde ahí se avanza al SEPA y se finaliza).
+ * Los pasos `tutor1`/`tutor2`/documentos/`sepa` no tienen señal dura (opcionales o de
  * persistencia propia), así que nunca atascan la reanudación.
  */
 export function pasoInicialAlta(estado: EstadoAlta): number {

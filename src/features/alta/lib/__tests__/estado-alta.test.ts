@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { PASOS_ALTA, PASO_MIN_AUTENTICADO, pasoInicialAlta, type EstadoAlta } from '../estado-alta'
 
 /**
- * Reanudación del wizard de alta (F11-G, 7 pasos). En `/alta` (post-login) el paso
- * `cuenta` ya está hecho, así que la reanudación nunca aterriza antes de `acuses`. El
- * único gate duro es la identidad; el acuse médico decide el salto a `medico`.
+ * Reanudación del wizard de alta (F11-G, 8 pasos; `sepa` es el último, G-2). En `/alta`
+ * (post-login) el paso `cuenta` ya está hecho, así que la reanudación nunca aterriza antes
+ * de `acuses`. El único gate duro es la identidad; el acuse médico decide el salto a `medico`.
  */
 describe('pasoInicialAlta', () => {
   const base: EstadoAlta = {
@@ -21,7 +21,7 @@ describe('pasoInicialAlta', () => {
     expect(pasoInicialAlta({ ...base, identidadCompleta: true })).toBe(PASOS_ALTA.indexOf('medico'))
   })
 
-  it('identidad + acuse médico → aterriza en emergencia (último paso, revisable)', () => {
+  it('identidad + acuse médico → aterriza en emergencia (desde ahí se avanza al SEPA)', () => {
     expect(pasoInicialAlta({ identidadCompleta: true, consintioDatosMedicos: true })).toBe(
       PASOS_ALTA.indexOf('emergencia')
     )
@@ -30,5 +30,10 @@ describe('pasoInicialAlta', () => {
   it('el primer paso navegable post-login es acuses (cuenta queda detrás)', () => {
     expect(PASO_MIN_AUTENTICADO).toBe(PASOS_ALTA.indexOf('acuses'))
     expect(PASOS_ALTA[0]).toBe('cuenta')
+  })
+
+  it('el último paso del wizard es sepa (IBAN + mandato, G-2)', () => {
+    expect(PASOS_ALTA[PASOS_ALTA.length - 1]).toBe('sepa')
+    expect(PASOS_ALTA).toHaveLength(8)
   })
 })

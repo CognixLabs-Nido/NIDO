@@ -14,6 +14,7 @@ import { PasoAcuses } from './PasoAcuses'
 import { PasoCuenta } from './PasoCuenta'
 import { PasoMedico } from './PasoMedico'
 import { PasoMenor, type DireccionInicial } from './PasoMenor'
+import { PasoSepa, type MandatoSepaInicial } from './PasoSepa'
 import { PasoTutor, type DatosTutorInicial } from './PasoTutor'
 import type { IdentidadInicial } from './PasoIdentidad'
 
@@ -51,17 +52,22 @@ interface Props {
   familiaEstadoCivil: EstadoCivil | null
   datosTutor1: DatosTutorInicial | null
   datosTutor2: DatosTutorInicial | null
+  /** Datos del centro (acreedor) y mandato SEPA previo para el paso 8 (G-2). */
+  centroId: string
+  centroNombre: string
+  centroDireccion: string
+  mandatoSepaInicial: MandatoSepaInicial | null
   currentUserId: string
   currentUserNombre: string
 }
 
 /**
- * Wizard de alta del tutor (F11-G) — 7 pasos guardables/reanudables, DOS entradas al
+ * Wizard de alta del tutor (F11-G) — 8 pasos guardables/reanudables, DOS entradas al
  * MISMO componente: `/invitation/[token]` (paso `cuenta`, pre-login) y `/alta/[ninoId]`
- * (pasos 2-7, post-login; reanudación). En `/alta` el paso `cuenta` es inalcanzable
- * (`PASO_MIN_AUTENTICADO`). El último paso (`emergencia`) finaliza el alta
- * (`finalizarAlta`, matrícula → 'lista') y la ruta sirve la pantalla "pendiente de
- * validación".
+ * (pasos 2-8, post-login; reanudación). En `/alta` el paso `cuenta` es inalcanzable
+ * (`PASO_MIN_AUTENTICADO`). El último paso (`sepa`: IBAN + mandato SEPA, G-2) finaliza el
+ * alta (`finalizarAlta`, matrícula → 'lista') tanto al guardar el mandato como al omitirlo,
+ * y la ruta sirve la pantalla "pendiente de validación".
  */
 export function AltaTutorWizard({
   locale,
@@ -83,6 +89,10 @@ export function AltaTutorWizard({
   familiaEstadoCivil,
   datosTutor1,
   datosTutor2,
+  centroId,
+  centroNombre,
+  centroDireccion,
+  mandatoSepaInicial,
   currentUserId,
   currentUserNombre,
 }: Props) {
@@ -235,8 +245,22 @@ export function AltaTutorWizard({
             ninoId={ninoId}
             inicial={medicaInicial}
             variante="emergencia"
-            esUltimo
-            onNext={finalizar}
+            onNext={goNext}
+            onBack={goBack}
+          />
+        )}
+
+        {paso === 'sepa' && (
+          <PasoSepa
+            locale={locale}
+            ninoId={ninoId}
+            centroId={centroId}
+            centroNombre={centroNombre}
+            centroDireccion={centroDireccion}
+            titularSugerido={datosTutor1?.nombre_completo ?? currentUserNombre}
+            currentUserId={currentUserId}
+            inicial={mandatoSepaInicial}
+            onFinalizar={finalizar}
             onBack={goBack}
           />
         )}

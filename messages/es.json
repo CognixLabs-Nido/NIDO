@@ -2662,7 +2662,8 @@
         "menor": "Datos del menor",
         "tutor1": "Tutor/a 1",
         "tutor2": "Tutor/a 2",
-        "emergencia": "Emergencias"
+        "emergencia": "Emergencias",
+        "sepa": "Domiciliación bancaria"
       }
     },
     "identidad": {
@@ -2755,6 +2756,36 @@
         "guardado": "No se pudieron guardar los datos. Inténtalo de nuevo.",
         "email": "Introduce un correo electrónico válido.",
         "nombre": "El nombre debe tener al menos 2 caracteres."
+      }
+    },
+    "sepa": {
+      "intro": "Domicilia el pago de las cuotas. Introduce el IBAN y firma el mandato SEPA. Puedes omitir este paso y aportarlo más adelante.",
+      "mandato_titulo": "Mandato de adeudo directo SEPA",
+      "titular_label": "Titular de la cuenta",
+      "iban_label": "IBAN",
+      "iban_placeholder": "ES00 0000 0000 0000 0000 0000",
+      "iban_ayuda": "Se valida el formato y los dígitos de control. Para cuentas españolas son 24 caracteres.",
+      "nombre_tecleado_label": "Nombre y apellidos (firma)",
+      "nombre_tecleado_ayuda": "Escribe tu nombre completo como acto de firma, además del trazo.",
+      "firma_titulo": "Firma",
+      "acreedor_titulo": "Acreedor",
+      "deudor_titulo": "Deudor",
+      "referencia": "Referencia del mandato",
+      "tipo": "Tipo de pago",
+      "tipo_recurrente": "Recurrente",
+      "fecha": "Fecha",
+      "texto_legal": "Mediante la firma de este mandato, autorizo al acreedor a enviar instrucciones a mi entidad para adeudar en mi cuenta, y a mi entidad a efectuar los adeudos conforme a dichas instrucciones. Dispongo del derecho a la devolución por mi entidad en los términos y condiciones del contrato suscrito con ella, dentro de las ocho semanas siguientes a la fecha de adeudo.",
+      "guardado": "Mandato SEPA guardado",
+      "omitir": "Omitir por ahora",
+      "pdf": {
+        "titulo": "Orden de domiciliación de adeudo directo SEPA"
+      },
+      "errors": {
+        "iban": "IBAN no válido",
+        "titular": "Indica el titular de la cuenta",
+        "nombre": "Escribe tu nombre y apellidos para firmar",
+        "firma": "Dibuja tu firma para continuar",
+        "guardado": "No se pudo guardar el mandato SEPA"
       }
     }
   },
