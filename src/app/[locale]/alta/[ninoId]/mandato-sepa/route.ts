@@ -1,13 +1,11 @@
-import { createHash, randomUUID } from 'node:crypto'
+import { createHash } from 'node:crypto'
 
-import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import { esTutorLegalDe } from '@/features/alta/lib/authz-tutor'
 import { ibanValido, normalizarIban } from '@/features/alta/lib/iban'
 import { MAX_LARGO_IDENTIFICADOR, textoCanonicoMandato } from '@/features/alta/lib/mandato-sepa'
-import { BUCKET_MANDATO_SEPA, borrarObjetosBucket, firmarRuta } from '@/shared/lib/adjuntos/storage'
+import { BUCKET_MANDATO_SEPA, firmarRuta } from '@/shared/lib/adjuntos/storage'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -29,14 +27,16 @@ function err(error: string, status = 400): Response {
 }
 
 /**
- * F11-G-2 — alta del **mandato SEPA Core** (paso 8 del wizard). El tutor 1 (titular) firma
- * con trazo; el cliente genera el PDF (jsPDF) y lo envía aquí junto al IBAN, el titular, el
- * identificador único y el trazo. La subida del PDF va con el cliente del USUARIO (la RLS de
- * `storage.objects` del bucket `mandato-sepa` autoriza al tutor legal bajo `{centroId}/{ninoId}`).
- * La fila de `mandatos_sepa` (firma auto-contenida + `texto_hash` recalculado en servidor) se
- * escribe con **service role tras autorizar** `es_tutor_legal_de` (patrón #108, sin migración):
- * mantiene la escritura atómica y server-controlada (hash, IP/UA, fecha). Re-enviar reemplaza
- * el mandato activo del tutor (limpia el PDF previo).
+ * F11-G-2 (cifrado en G-2bis) — alta del **mandato SEPA Core** (paso 8 del wizard). El tutor 1
+ * (titular) firma con trazo; el cliente genera el PDF (jsPDF) y lo envía aquí junto al IBAN, el
+ * titular, el identificador único y el trazo. Todo va con el **cliente del USUARIO**:
+ *  - el PDF se sube al bucket `mandato-sepa` en una ruta DETERMINISTA `{centroId}/{ninoId}/mandato.pdf`
+ *    con `upsert` (la RLS de storage autoriza al tutor legal; re-firmar sobrescribe, sin huérfanos),
+ *  - la fila de `mandatos_sepa` se persiste vía RPC `registrar_mandato_sepa` (SECURITY DEFINER) que
+ *    **autoriza `es_tutor_legal_de` y CIFRA el IBAN** antes del upsert → el route ya NO usa
+ *    service-role (#108).
+ * El `texto_hash` se calcula aquí (servidor) sobre el IBAN **en claro del formulario** (ancla el
+ * contenido firmado, independiente del cifrado en reposo). El IBAN nunca se almacena en claro.
  */
 export async function POST(
   request: Request,
@@ -99,33 +99,14 @@ export async function POST(
     return err('alta.sepa.errors.firma')
 
   const iban = normalizarIban(ibanRaw)
-  const path = `${nino.centro_id}/${nino.id}/mandato-${randomUUID()}.pdf`
+  // Ruta determinista (1 mandato por niño): re-firmar sobrescribe, sin huérfanos.
+  const path = `${nino.centro_id}/${nino.id}/mandato.pdf`
 
-  // 1. Subida del PDF con el cliente del usuario → la RLS de storage autoriza (admin/tutor).
-  const subida = await supabase.storage
-    .from(BUCKET_MANDATO_SEPA)
-    .upload(path, file, { contentType: 'application/pdf', upsert: false })
-  if (subida.error) {
-    const msg = subida.error.message
-    if (/row-level security|unauthorized|403/i.test(msg))
-      return err('alta.errors.no_autorizado', 403)
-    logger.warn('mandato-sepa: upload', msg)
-    return err('alta.documentos.errors.subida', 500)
-  }
-
-  // 2. La fila va por service role; se autoriza en app: solo tutor legal del niño.
-  const autorizado = await esTutorLegalDe(supabase, nino.id, user.id)
-  if (!autorizado) {
-    await borrarObjetosBucket(supabase, BUCKET_MANDATO_SEPA, [path]).catch(() => undefined)
-    return err('alta.errors.no_autorizado', 403)
-  }
-
-  const service = createServiceRoleClient()
-
-  // Acreedor = centro (nombre + dirección) para el canónico que se hashea.
-  const { data: centro } = await service
+  // Acreedor = centro (nombre) para el canónico que se hashea. Lo lee el cliente de usuario
+  // (RLS `centros`: pertenece_a_centro → el tutor lo ve).
+  const { data: centro } = await supabase
     .from('centros')
-    .select('nombre, direccion')
+    .select('nombre')
     .eq('id', nino.centro_id)
     .maybeSingle()
 
@@ -142,64 +123,45 @@ export async function POST(
     )
     .digest('hex')
 
+  // 1. Subida del PDF (cliente de usuario; RLS de storage autoriza al tutor). `upsert` para
+  //    sobrescribir en re-firma sin necesitar DELETE (que es admin-only en este bucket).
+  const subida = await supabase.storage
+    .from(BUCKET_MANDATO_SEPA)
+    .upload(path, file, { contentType: 'application/pdf', upsert: true })
+  if (subida.error) {
+    const msg = subida.error.message
+    if (/row-level security|unauthorized|403/i.test(msg))
+      return err('alta.errors.no_autorizado', 403)
+    logger.warn('mandato-sepa: upload', msg)
+    return err('alta.documentos.errors.subida', 500)
+  }
+
+  // 2. Fila vía RPC SECURITY DEFINER: autoriza es_tutor_legal_de y CIFRA el IBAN antes del
+  //    upsert (sin service-role). El IBAN en claro solo viaja como parámetro, nunca se almacena.
   const ipAddress = (request.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || null
   const userAgent = request.headers.get('user-agent')?.slice(0, 500) ?? null
 
-  const fila = {
-    iban,
-    titular: titular.trim(),
-    identificador_mandato: identificador,
-    documento_path: path,
-    estado: 'activo' as const,
-    firma_imagen: firmaImagen,
-    nombre_tecleado: nombreTecleado.trim(),
-    texto_hash: textoHash,
-    ip_address: ipAddress,
-    user_agent: userAgent,
-    fecha_firma: fechaFirmaIso,
+  const { error: rpcErr } = await supabase.rpc('registrar_mandato_sepa', {
+    p_nino_id: nino.id,
+    p_iban: iban,
+    p_titular: titular.trim(),
+    p_identificador_mandato: identificador,
+    p_documento_path: path,
+    p_firma_imagen: firmaImagen,
+    p_nombre_tecleado: nombreTecleado.trim(),
+    p_texto_hash: textoHash,
+    p_ip_address: ipAddress,
+    p_user_agent: userAgent ?? '',
+    p_fecha_firma: fechaFirmaIso,
+  })
+  if (rpcErr) {
+    // El PDF queda en su ruta determinista (se sobrescribe en el próximo intento).
+    if (/no autorizado|42501/i.test(rpcErr.message)) return err('alta.errors.no_autorizado', 403)
+    logger.warn('mandato-sepa: rpc', rpcErr.message)
+    return err('alta.sepa.errors.guardado', 500)
   }
 
-  // Reemplaza el mandato activo del tutor (1 por nino+usuario); si no hay, lo crea.
-  const { data: existente } = await service
-    .from('mandatos_sepa')
-    .select('id, documento_path')
-    .eq('nino_id', nino.id)
-    .eq('usuario_id', user.id)
-    .is('deleted_at', null)
-    .maybeSingle()
-
-  let docPrevio: string | null = null
-  if (existente) {
-    docPrevio = existente.documento_path
-    const { error: updErr } = await service
-      .from('mandatos_sepa')
-      .update(fila)
-      .eq('id', existente.id)
-    if (updErr) {
-      await borrarObjetosBucket(service, BUCKET_MANDATO_SEPA, [path]).catch(() => undefined)
-      logger.warn('mandato-sepa: update', updErr.message)
-      return err('alta.sepa.errors.guardado', 500)
-    }
-  } else {
-    const { error: insErr } = await service.from('mandatos_sepa').insert({
-      centro_id: nino.centro_id,
-      nino_id: nino.id,
-      usuario_id: user.id,
-      ...fila,
-    })
-    if (insErr) {
-      await borrarObjetosBucket(service, BUCKET_MANDATO_SEPA, [path]).catch(() => undefined)
-      logger.warn('mandato-sepa: insert', insErr.message)
-      return err('alta.sepa.errors.guardado', 500)
-    }
-  }
-
-  // Limpia el PDF anterior (sustitución; best-effort, sin huérfanos).
-  if (docPrevio && docPrevio !== path) {
-    await borrarObjetosBucket(service, BUCKET_MANDATO_SEPA, [docPrevio]).catch(() => undefined)
-  }
-
-  const url = await firmarRuta(service, BUCKET_MANDATO_SEPA, path)
+  const url = await firmarRuta(supabase, BUCKET_MANDATO_SEPA, path)
   return Response.json({
     success: true,
     mandato: { identificador, documento: { path, url } },
