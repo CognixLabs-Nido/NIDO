@@ -2063,7 +2063,7 @@ export type Database = {
           estado: Database['public']['Enums']['estado_mandato_sepa']
           fecha_firma: string | null
           firma_imagen: string | null
-          iban: string
+          iban_cifrado: string
           id: string
           identificador_mandato: string
           ip_address: unknown
@@ -2083,7 +2083,7 @@ export type Database = {
           estado?: Database['public']['Enums']['estado_mandato_sepa']
           fecha_firma?: string | null
           firma_imagen?: string | null
-          iban: string
+          iban_cifrado: string
           id?: string
           identificador_mandato: string
           ip_address?: unknown
@@ -2103,7 +2103,7 @@ export type Database = {
           estado?: Database['public']['Enums']['estado_mandato_sepa']
           fecha_firma?: string | null
           firma_imagen?: string | null
-          iban?: string
+          iban_cifrado?: string
           id?: string
           identificador_mandato?: string
           ip_address?: unknown
@@ -3344,6 +3344,22 @@ export type Database = {
           p_user_agent?: string
           p_usuario_id: string
           p_version: string
+        }
+        Returns: string
+      }
+      registrar_mandato_sepa: {
+        Args: {
+          p_documento_path: string
+          p_fecha_firma: string
+          p_firma_imagen: string
+          p_iban: string
+          p_identificador_mandato: string
+          p_ip_address: unknown
+          p_nino_id: string
+          p_nombre_tecleado: string
+          p_texto_hash: string
+          p_titular: string
+          p_user_agent: string
         }
         Returns: string
       }

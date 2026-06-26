@@ -28,7 +28,6 @@ import { generarIdentificadorMandato } from '../lib/mandato-sepa'
 import { sepaMandatoFormSchema, type SepaMandatoFormInput } from '../schemas/sepa'
 
 export interface MandatoSepaInicial {
-  iban: string
   titular: string
   identificador: string
   documentoUrl: string | null
@@ -88,7 +87,8 @@ export function PasoSepa({
   const form = useForm<SepaMandatoFormInput>({
     resolver: zodResolver(sepaMandatoFormSchema),
     defaultValues: {
-      iban: inicial?.iban ?? '',
+      // El IBAN cifrado en reposo no se pre-rellena (G-2bis): re-editar = reintroducirlo.
+      iban: '',
       titular: inicial?.titular ?? titularSugerido,
     },
   })

@@ -237,9 +237,10 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .eq('id', nino.centro_id)
     .maybeSingle()
 
+  // El IBAN va cifrado (G-2bis) y no se pre-rellena: solo titular/identificador/PDF para el preview.
   const { data: mandatoRow } = await supabase
     .from('mandatos_sepa')
-    .select('iban, titular, identificador_mandato, documento_path')
+    .select('titular, identificador_mandato, documento_path')
     .eq('nino_id', ninoId)
     .eq('usuario_id', user.id)
     .eq('estado', 'activo')
@@ -247,7 +248,6 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .maybeSingle()
   const mandatoSepaInicial: MandatoSepaInicial | null = mandatoRow
     ? {
-        iban: mandatoRow.iban,
         titular: mandatoRow.titular,
         identificador: mandatoRow.identificador_mandato,
         documentoUrl: await firmarRuta(supabase, BUCKET_MANDATO_SEPA, mandatoRow.documento_path),

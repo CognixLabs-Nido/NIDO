@@ -1032,6 +1032,23 @@ Cierre de F11-H sin lógica nueva:
 
 **F11-H cerrada:** verde local (typecheck + lint + unit + build) en cada PR; `multicurso.rls.test.ts` 18/18 contra el remoto. Modelo multi-curso operativo de admisiones a rollover.
 
+## F11-G — Altas con documentos (en curso): blocker de cifrado del IBAN
+
+> Subfases una-por-PR (patrón F11-C). **G-1** (wizard 8 pasos + documentos, PR #150) y **G-2**
+> (paso 8: IBAN + mandato SEPA firmado, PR #151) **mergeados**. El cierre de F11-G y su ADR van
+> al completar las subfases restantes (G-3+).
+
+🔒 **BLOQUEANTE DURO pre-piloto — cifrado del IBAN (F11-G-2bis).** G-2 dejó el IBAN **en claro**
+en `mandatos_sepa.iban`. **Ningún IBAN real puede entrar en BD** antes de **mergear + aplicar** la
+migración `20260626120000_phase11g_2bis_cifrar_iban` (PR aparte): columna `iban_cifrado bytea`
+(pgcrypto, clave `sepa_encryption_key` en **Vault**, separada de la médica), DROP del `iban` en
+claro, RPC `registrar_mandato_sepa` SECURITY DEFINER (autoriza `es_tutor_legal_de` + cifra; el
+route deja de usar service-role). Descifrado **solo** server-side por el proceso de remesas de
+dirección (Fase B, pain.008) — `get_mandatos_remesa` diferido a Fase B. **Prerrequisito de
+operador**: crear `sepa_encryption_key` en Vault **antes** de aplicar (si no, la migración
+revierte). Registrado en `scope-ola-1.md` §Paquete RGPD, mismo tier. Patrón espejo de
+`info_medica_emergencia` (ADR-0004).
+
 ## Fase 12 — Funcionalidad pendiente post-F11 (registrada, sin abrir)
 
 > Registrada durante F11-A (2026-06-13). **F12 sigue siendo Ola 1** — secuencial tras F11,
