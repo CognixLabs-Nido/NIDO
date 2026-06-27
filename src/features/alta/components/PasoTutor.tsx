@@ -148,7 +148,8 @@ export function PasoTutor({
           return
         }
       }
-      toast.success(t('tutor.guardado'))
+      // Alta ya validada (decisión J): los datos del tutor se encolaron a validación.
+      toast.success(r.data.pendienteValidacion ? t('validacion.enviado') : t('tutor.guardado'))
       onNext()
     })
   }

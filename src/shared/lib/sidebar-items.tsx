@@ -6,6 +6,7 @@ import {
   CalendarCheckIcon,
   CalendarDaysIcon,
   CalendarRangeIcon,
+  ClipboardCheckIcon,
   ClipboardListIcon,
   FileSignatureIcon,
   GraduationCapIcon,
@@ -41,7 +42,8 @@ export async function buildSidebarItems(
   locale: string,
   badge?: ReactNode,
   recordatoriosBadge?: ReactNode,
-  agendaBadge?: ReactNode
+  agendaBadge?: ReactNode,
+  pendientesBadge?: ReactNode
 ): Promise<SidebarItem[]> {
   if (rol === 'admin') {
     const t = await getTranslations('admin.nav')
@@ -55,6 +57,12 @@ export async function buildSidebarItems(
         icon: <GraduationCapIcon />,
       },
       { href: `/${locale}/admin/admisiones`, label: t('admisiones'), icon: <ClipboardListIcon /> },
+      {
+        href: `/${locale}/admin/pendientes`,
+        label: t('pendientes'),
+        icon: <ClipboardCheckIcon />,
+        trailing: pendientesBadge,
+      },
       { href: `/${locale}/admin/aulas`, label: t('aulas'), icon: <BookOpenIcon /> },
       { href: `/${locale}/admin/personal`, label: t('personal'), icon: <UsersIcon /> },
       { href: `/${locale}/admin/calendario`, label: t('calendario'), icon: <CalendarRangeIcon /> },

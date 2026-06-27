@@ -76,7 +76,10 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .is('deleted_at', null)
     .maybeSingle()
 
-  if (matricula?.estado === 'activa') redirect(`/${locale}/family`)
+  // Alta YA validada (matrícula 'activa'): el wizard solo se reabre en modo edición
+  // (`?editar=1`). Sin ese flag, el tutor va a su panel. En modo edición, los write-paths
+  // detectan `activa` y encolan en `cambios_pendientes` (decisión J) en vez de aplicar.
+  if (matricula?.estado === 'activa' && editar !== '1') redirect(`/${locale}/family`)
   if (matricula?.estado === 'lista' && editar !== '1') {
     return (
       <AltaCompletadaScreen
@@ -260,6 +263,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   })
 
   const t = await getTranslations('alta')
+  const enEdicionValidada = matricula?.estado === 'activa' && editar === '1'
 
   return (
     <div className="space-y-4">
@@ -267,6 +271,11 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         <h1 className="text-h2">{t('titulo')}</h1>
         <p className="text-muted-foreground text-sm">{t('subtitulo', { nombre: nino.nombre })}</p>
       </header>
+      {enEdicionValidada && (
+        <p className="border-accent-warm-300 bg-accent-warm-50 text-accent-warm-800 rounded-xl border p-3 text-sm">
+          {t('edicion_validada_aviso')}
+        </p>
+      )}
       <AltaTutorWizard
         locale={locale}
         ninoId={ninoId}

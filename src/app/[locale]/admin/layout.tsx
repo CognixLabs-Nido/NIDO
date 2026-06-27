@@ -4,6 +4,8 @@ import { getTranslations } from 'next-intl/server'
 import { AgendaBadge } from '@/features/agenda/components/AgendaBadge'
 import { contarInvitacionesPendientes } from '@/features/agenda/queries/contar-invitaciones-pendientes'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
+import { CambiosPendientesBadge } from '@/features/cambios-pendientes/components/CambiosPendientesBadge'
+import { contarCambiosPendientes } from '@/features/cambios-pendientes/queries/get-cola'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { MessagingBadge } from '@/features/messaging/components/MessagingBadge'
@@ -33,13 +35,15 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
   const { total: unread } = await countNoLeidos()
   const recordatoriosPendientes = await contarRecordatoriosPendientes()
   const invitacionesPendientes = await contarInvitacionesPendientes()
+  const cambiosPendientes = await contarCambiosPendientes()
 
   const items = await buildSidebarItems(
     'admin',
     locale,
     <MessagingBadge initialTotal={unread} />,
     <RecordatoriosBadge initialTotal={recordatoriosPendientes} />,
-    <AgendaBadge initialTotal={invitacionesPendientes} />
+    <AgendaBadge initialTotal={invitacionesPendientes} />,
+    <CambiosPendientesBadge total={cambiosPendientes} />
   )
 
   return (

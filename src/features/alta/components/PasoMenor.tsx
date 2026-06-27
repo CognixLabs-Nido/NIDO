@@ -149,7 +149,10 @@ export function PasoMenor({
         toast.error(tErrors(dir.error))
         return
       }
-      toast.success(t('identidad.guardado'))
+      // Alta ya validada (decisión J): la dirección se encoló a validación de dirección.
+      toast.success(
+        dir.data.pendienteValidacion ? t('validacion.enviado') : t('identidad.guardado')
+      )
     })
   }
 

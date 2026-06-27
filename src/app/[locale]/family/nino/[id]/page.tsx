@@ -6,6 +6,7 @@ import {
   HeartIcon,
   InfoIcon,
   MessageCircleIcon,
+  PencilIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -119,16 +120,28 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
             {t('fecha_nacimiento')}: {nino.fecha_nacimiento ?? '—'}
           </p>
         </div>
-        {permisos.puede_recibir_mensajes && (
-          <Button
-            variant="default"
-            render={<Link href={`/${locale}/messages/nino/${id}`} />}
-            data-testid="escribir-profe-button"
-          >
-            <MessageCircleIcon className="size-4" />
-            <span className="ml-1">{tFicha('escribir_profe')}</span>
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {esTutorLegal && (
+            <Button
+              variant="outline"
+              render={<Link href={`/${locale}/alta/${id}?editar=1`} />}
+              data-testid="editar-datos-button"
+            >
+              <PencilIcon className="size-4" />
+              <span className="ml-1">{t('editar_datos')}</span>
+            </Button>
+          )}
+          {permisos.puede_recibir_mensajes && (
+            <Button
+              variant="default"
+              render={<Link href={`/${locale}/messages/nino/${id}`} />}
+              data-testid="escribir-profe-button"
+            >
+              <MessageCircleIcon className="size-4" />
+              <span className="ml-1">{tFicha('escribir_profe')}</span>
+            </Button>
+          )}
+        </div>
       </header>
 
       <section className="space-y-4">
