@@ -33,6 +33,393 @@ export type Database = {
   }
   public: {
     Tables: {
+      asignacion_cuota: {
+        Row: {
+          anio: number
+          centro_id: string
+          concepto_id: string
+          created_at: string
+          id: string
+          mes: number
+          modalidad: Database['public']['Enums']['modalidad_cobro']
+          nino_id: string
+          updated_at: string
+        }
+        Insert: {
+          anio: number
+          centro_id: string
+          concepto_id: string
+          created_at?: string
+          id?: string
+          mes: number
+          modalidad: Database['public']['Enums']['modalidad_cobro']
+          nino_id: string
+          updated_at?: string
+        }
+        Update: {
+          anio?: number
+          centro_id?: string
+          concepto_id?: string
+          created_at?: string
+          id?: string
+          mes?: number
+          modalidad?: Database['public']['Enums']['modalidad_cobro']
+          nino_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      becas: {
+        Row: {
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          fecha_desde: string
+          fecha_hasta: string | null
+          id: string
+          importe_centimos: number
+          nino_id: string
+          tipo_beca_id: string
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          fecha_desde: string
+          fecha_hasta?: string | null
+          id?: string
+          importe_centimos: number
+          nino_id: string
+          tipo_beca_id: string
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          fecha_desde?: string
+          fecha_hasta?: string | null
+          id?: string
+          importe_centimos?: number
+          nino_id?: string
+          tipo_beca_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cierre_mensual: {
+        Row: {
+          anio: number
+          centro_id: string
+          cerrado_at: string
+          cerrado_por: string
+          created_at: string
+          id: string
+          mes: number
+        }
+        Insert: {
+          anio: number
+          centro_id: string
+          cerrado_at?: string
+          cerrado_por: string
+          created_at?: string
+          id?: string
+          mes: number
+        }
+        Update: {
+          anio?: number
+          centro_id?: string
+          cerrado_at?: string
+          cerrado_por?: string
+          created_at?: string
+          id?: string
+          mes?: number
+        }
+        Relationships: []
+      }
+      conceptos_cobro: {
+        Row: {
+          activo: boolean
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          nombre: string
+          precio_centimos: number
+          tipo_concepto: Database['public']['Enums']['tipo_concepto']
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          nombre: string
+          precio_centimos: number
+          tipo_concepto: Database['public']['Enums']['tipo_concepto']
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          nombre?: string
+          precio_centimos?: number
+          tipo_concepto?: Database['public']['Enums']['tipo_concepto']
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lineas_recibo: {
+        Row: {
+          cantidad: number
+          centro_id: string
+          concepto_id: string | null
+          created_at: string
+          descripcion: string
+          id: string
+          importe_centimos: number
+          precio_unitario_centimos: number
+          recibo_id: string
+        }
+        Insert: {
+          cantidad?: number
+          centro_id: string
+          concepto_id?: string | null
+          created_at?: string
+          descripcion: string
+          id?: string
+          importe_centimos: number
+          precio_unitario_centimos: number
+          recibo_id: string
+        }
+        Update: {
+          cantidad?: number
+          centro_id?: string
+          concepto_id?: string | null
+          created_at?: string
+          descripcion?: string
+          id?: string
+          importe_centimos?: number
+          precio_unitario_centimos?: number
+          recibo_id?: string
+        }
+        Relationships: []
+      }
+      metodo_pago_familia: {
+        Row: {
+          anio: number
+          centro_id: string
+          created_at: string
+          id: string
+          mes: number
+          metodo: Database['public']['Enums']['metodo_pago']
+          nino_id: string
+          updated_at: string
+        }
+        Insert: {
+          anio: number
+          centro_id: string
+          created_at?: string
+          id?: string
+          mes: number
+          metodo: Database['public']['Enums']['metodo_pago']
+          nino_id: string
+          updated_at?: string
+        }
+        Update: {
+          anio?: number
+          centro_id?: string
+          created_at?: string
+          id?: string
+          mes?: number
+          metodo?: Database['public']['Enums']['metodo_pago']
+          nino_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      parte_servicio_diario: {
+        Row: {
+          centro_id: string
+          created_at: string
+          fecha: string
+          id: string
+          nino_id: string
+          presente: boolean
+          servicio: Database['public']['Enums']['servicio_diario']
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          fecha: string
+          id?: string
+          nino_id: string
+          presente?: boolean
+          servicio: Database['public']['Enums']['servicio_diario']
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          fecha?: string
+          id?: string
+          nino_id?: string
+          presente?: boolean
+          servicio?: Database['public']['Enums']['servicio_diario']
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      recibos: {
+        Row: {
+          anio: number
+          centro_id: string
+          concepto_esporadico: string | null
+          created_at: string
+          deleted_at: string | null
+          devuelto_de_recibo_id: string | null
+          es_esporadico: boolean
+          estado: Database['public']['Enums']['estado_recibo']
+          fecha_envio_banco: string | null
+          id: string
+          mes: number
+          metodo: Database['public']['Enums']['metodo_pago']
+          nino_id: string
+          total_centimos: number
+          updated_at: string
+        }
+        Insert: {
+          anio: number
+          centro_id: string
+          concepto_esporadico?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          devuelto_de_recibo_id?: string | null
+          es_esporadico?: boolean
+          estado?: Database['public']['Enums']['estado_recibo']
+          fecha_envio_banco?: string | null
+          id?: string
+          mes: number
+          metodo: Database['public']['Enums']['metodo_pago']
+          nino_id: string
+          total_centimos?: number
+          updated_at?: string
+        }
+        Update: {
+          anio?: number
+          centro_id?: string
+          concepto_esporadico?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          devuelto_de_recibo_id?: string | null
+          es_esporadico?: boolean
+          estado?: Database['public']['Enums']['estado_recibo']
+          fecha_envio_banco?: string | null
+          id?: string
+          mes?: number
+          metodo?: Database['public']['Enums']['metodo_pago']
+          nino_id?: string
+          total_centimos?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      recibos_remesa: {
+        Row: {
+          centro_id: string
+          created_at: string
+          id: string
+          recibo_id: string
+          remesa_id: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          id?: string
+          recibo_id: string
+          remesa_id: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          id?: string
+          recibo_id?: string
+          remesa_id?: string
+        }
+        Relationships: []
+      }
+      remesas: {
+        Row: {
+          anio: number
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          estado: Database['public']['Enums']['estado_remesa']
+          fecha_envio_banco: string | null
+          id: string
+          mes: number
+          updated_at: string
+        }
+        Insert: {
+          anio: number
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          estado?: Database['public']['Enums']['estado_remesa']
+          fecha_envio_banco?: string | null
+          id?: string
+          mes: number
+          updated_at?: string
+        }
+        Update: {
+          anio?: number
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          estado?: Database['public']['Enums']['estado_remesa']
+          fecha_envio_banco?: string | null
+          id?: string
+          mes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tipos_beca: {
+        Row: {
+          activo: boolean
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       administraciones_medicacion: {
         Row: {
           administrado_en: string
@@ -3510,11 +3897,15 @@ export type Database = {
       estado_mandato_sepa: 'activo' | 'revocado'
       estado_plantilla_informe: 'activa' | 'archivada'
       estado_plantilla_menu: 'borrador' | 'publicada' | 'archivada'
+      estado_recibo: 'pendiente_procesar' | 'enviado_banco' | 'devuelto' | 'cobrado_manual'
+      estado_remesa: 'borrador' | 'enviada'
       evento_estado: 'programado' | 'cancelado'
       firma_decision: 'firmado' | 'rechazado' | 'revocado'
       humor_agenda: 'feliz' | 'tranquilo' | 'inquieto' | 'triste' | 'cansado'
       lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
       matricula_estado: 'pendiente' | 'lista' | 'activa' | 'baja'
+      metodo_pago: 'sepa' | 'efectivo' | 'cheque_guarderia' | 'transferencia'
+      modalidad_cobro: 'mensual' | 'diario'
       momento_comida: 'desayuno' | 'media_manana' | 'comida' | 'merienda'
       motivo_ausencia: 'enfermedad' | 'cita_medica' | 'vacaciones' | 'familiar' | 'otro'
       nino_sexo: 'F' | 'M' | 'X'
@@ -3546,6 +3937,7 @@ export type Database = {
         | 'foto_blog_exclusiva'
         | 'esqueleto_huerfano'
       rsvp_estado: 'pendiente' | 'aceptado' | 'rechazado'
+      servicio_diario: 'comedor' | 'matinera' | 'vespertina'
       tipo_alimentacion:
         | 'omnivora'
         | 'vegetariana'
@@ -3563,6 +3955,7 @@ export type Database = {
         | 'autorizacion_imagenes'
       tipo_biberon: 'materna' | 'formula' | 'agua' | 'infusion' | 'zumo'
       tipo_cita: 'reunion_familia' | 'reunion_clase' | 'reunion_claustro' | 'visita'
+      tipo_concepto: 'mensual' | 'diario' | 'esporadico'
       tipo_conversacion: 'profe_familia' | 'admin_familia'
       tipo_deposicion: 'pipi' | 'caca' | 'mixto'
       tipo_dia_centro:
@@ -3731,11 +4124,15 @@ export const Constants = {
       estado_mandato_sepa: ['activo', 'revocado'],
       estado_plantilla_informe: ['activa', 'archivada'],
       estado_plantilla_menu: ['borrador', 'publicada', 'archivada'],
+      estado_recibo: ['pendiente_procesar', 'enviado_banco', 'devuelto', 'cobrado_manual'],
+      estado_remesa: ['borrador', 'enviada'],
       evento_estado: ['programado', 'cancelado'],
       firma_decision: ['firmado', 'rechazado', 'revocado'],
       humor_agenda: ['feliz', 'tranquilo', 'inquieto', 'triste', 'cansado'],
       lactancia_estado: ['materna', 'biberon', 'mixta', 'finalizada', 'no_aplica'],
       matricula_estado: ['pendiente', 'lista', 'activa', 'baja'],
+      metodo_pago: ['sepa', 'efectivo', 'cheque_guarderia', 'transferencia'],
+      modalidad_cobro: ['mensual', 'diario'],
       momento_comida: ['desayuno', 'media_manana', 'comida', 'merienda'],
       motivo_ausencia: ['enfermedad', 'cita_medica', 'vacaciones', 'familiar', 'otro'],
       nino_sexo: ['F', 'M', 'X'],
@@ -3770,6 +4167,7 @@ export const Constants = {
         'esqueleto_huerfano',
       ],
       rsvp_estado: ['pendiente', 'aceptado', 'rechazado'],
+      servicio_diario: ['comedor', 'matinera', 'vespertina'],
       tipo_alimentacion: [
         'omnivora',
         'vegetariana',
@@ -3789,6 +4187,7 @@ export const Constants = {
       ],
       tipo_biberon: ['materna', 'formula', 'agua', 'infusion', 'zumo'],
       tipo_cita: ['reunion_familia', 'reunion_clase', 'reunion_claustro', 'visita'],
+      tipo_concepto: ['mensual', 'diario', 'esporadico'],
       tipo_conversacion: ['profe_familia', 'admin_familia'],
       tipo_deposicion: ['pipi', 'caca', 'mixto'],
       tipo_dia_centro: [
