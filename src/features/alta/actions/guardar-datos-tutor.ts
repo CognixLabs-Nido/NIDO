@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { altaValidada, registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
 import { logger } from '@/shared/lib/logger'
 
 import { guardarDatosTutorSchema, type GuardarDatosTutorInput } from '../schemas/alta-documentos'
@@ -17,7 +18,7 @@ import { fail, ok, type ActionResult } from '../../centros/types'
  */
 export async function guardarDatosTutor(
   input: GuardarDatosTutorInput
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ id?: string; pendienteValidacion?: boolean }>> {
   const parsed = guardarDatosTutorSchema.safeParse(input)
   if (!parsed.success) {
     return fail(parsed.error.issues[0]?.message ?? 'alta.documentos.errors.datos_invalidos')
@@ -31,6 +32,18 @@ export async function guardarDatosTutor(
 
   const { nino_id, tipo_vinculo, email, nombre_completo, ...direccion } = parsed.data
   const usuarioId = tipo_vinculo === 'tutor_legal_principal' ? user.id : null
+
+  // Decisión J: con el alta YA validada, la edición no se aplica directa → cola de validación.
+  if (await altaValidada(supabase, nino_id)) {
+    const r = await registrarCambioPendiente(supabase, {
+      ninoId: nino_id,
+      usuarioId: user.id,
+      entidad: 'datos_tutor',
+      payload: { tipo_vinculo, email, nombre_completo, ...direccion },
+    })
+    if (!r.ok) return fail(r.error)
+    return ok({ pendienteValidacion: true })
+  }
 
   // ¿Ya existe la fila (nino, tipo_vinculo) viva? → UPDATE; si no → INSERT (centro_id lo
   // pone el trigger `datos_tutor_set_centro_id`).

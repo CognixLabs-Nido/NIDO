@@ -219,7 +219,8 @@
       "notificaciones": "Notificaciones",
       "informes": "Informes",
       "personal": "Personal",
-      "admisiones": "Admisiones"
+      "admisiones": "Admisiones",
+      "pendientes": "Validaciones"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -587,6 +588,51 @@
         "invitado": "Invitado",
         "descartado": "Descartado"
       }
+    },
+    "pendientes": {
+      "title": "Validaciones pendientes",
+      "subtitle": "Cambios de datos sensibles que las familias han hecho sobre altas ya validadas y esperan tu aprobación.",
+      "aprobar": "Aprobar",
+      "rechazar": "Rechazar",
+      "aprobado": "Cambio aprobado y aplicado.",
+      "rechazado": "Cambio rechazado. El dato queda como estaba.",
+      "vacio": "No hay cambios pendientes",
+      "vacio_desc": "Cuando una familia edite un dato sensible de un alta ya validada, aparecerá aquí para tu revisión.",
+      "solicitado_por": "Solicitado por {nombre}",
+      "nino_desconocido": "Niño/a",
+      "solicitante_desconocido": "una familia",
+      "badge_aria": "{n} cambios pendientes de validar",
+      "entidad": {
+        "ninos_familia": "Datos del menor (dirección / situación familiar)",
+        "ninos_libro_familia": "Libro de familia",
+        "datos_tutor": "Datos de un tutor",
+        "datos_tutor_dni": "DNI de un tutor"
+      },
+      "errors": {
+        "registro": "No se pudo registrar el cambio. Inténtalo de nuevo.",
+        "invalido": "Solicitud no válida.",
+        "decidir": "No se pudo procesar la decisión. Inténtalo de nuevo.",
+        "no_pendiente": "Este cambio ya no está pendiente.",
+        "aplicar": "No se pudo aplicar el cambio. Se ha dejado pendiente para reintentar."
+      }
+    },
+    "purga": {
+      "title": "Purga de documentos por curso",
+      "descripcion": "Borra los documentos sensibles (libro de familia, DNI de tutores, mandato SEPA) de un curso cuyo fin fue hace 5 años o más. Solo afecta a niños que ya no están matriculados. Acción manual e irreversible.",
+      "sin_cursos": "No hay cursos con 5 o más años de antigüedad para purgar.",
+      "seleccionar_curso": "Selecciona un curso",
+      "fin": "fin {fecha}",
+      "confirmar_label": "Para confirmar, teclea el nombre exacto del curso: {nombre}",
+      "purgar": "Purgar documentos",
+      "purgando": "Purgando…",
+      "purgado": "Purga completada: {documentos} documentos de {ninos} niños/as.",
+      "errors": {
+        "invalido": "Solicitud no válida.",
+        "no_autorizado": "No tienes permiso para purgar este curso.",
+        "curso_no_encontrado": "No se encontró el curso.",
+        "nombre_no_coincide": "El nombre tecleado no coincide con el del curso.",
+        "no_purgable": "Este curso aún no cumple los 5 años de antigüedad."
+      }
     }
   },
   "teacher": {
@@ -684,7 +730,8 @@
         "guardando": "Guardando…",
         "guardar": "Guardar",
         "cancelar": "Cancelar"
-      }
+      },
+      "editar_datos": "Editar datos"
     }
   },
   "pedagogico": {
@@ -2756,6 +2803,9 @@
         "guardado": "No se pudieron guardar los datos. Inténtalo de nuevo.",
         "email": "Introduce un correo electrónico válido.",
         "nombre": "El nombre debe tener al menos 2 caracteres."
+      },
+      "validacion": {
+        "enviado": "Cambio enviado a validación de dirección."
       }
     },
     "sepa": {
@@ -2787,7 +2837,11 @@
         "firma": "Dibuja tu firma para continuar",
         "guardado": "No se pudo guardar el mandato SEPA"
       }
-    }
+    },
+    "validacion": {
+      "enviado": "Cambio enviado a validación de dirección."
+    },
+    "edicion_validada_aviso": "El alta ya está validada. Los cambios en datos o documentos sensibles se enviarán a la dirección para su aprobación antes de aplicarse."
   },
   "listaEspera": {
     "validation": {

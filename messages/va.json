@@ -219,7 +219,8 @@
       "notificaciones": "Notificacions",
       "informes": "Informes",
       "personal": "Personal",
-      "admisiones": "Admissions"
+      "admisiones": "Admissions",
+      "pendientes": "Validacions"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -587,6 +588,51 @@
         "invitado": "Convidat",
         "descartado": "Descartat"
       }
+    },
+    "pendientes": {
+      "title": "Validacions pendents",
+      "subtitle": "Canvis de dades sensibles que les famílies han fet sobre altes ja validades i esperen la teua aprovació.",
+      "aprobar": "Aprovar",
+      "rechazar": "Rebutjar",
+      "aprobado": "Canvi aprovat i aplicat.",
+      "rechazado": "Canvi rebutjat. La dada queda com estava.",
+      "vacio": "No hi ha canvis pendents",
+      "vacio_desc": "Quan una família edite una dada sensible d'una alta ja validada, apareixerà ací per a la teua revisió.",
+      "solicitado_por": "Sol·licitat per {nombre}",
+      "nino_desconocido": "Xiquet/a",
+      "solicitante_desconocido": "una família",
+      "badge_aria": "{n} canvis pendents de validar",
+      "entidad": {
+        "ninos_familia": "Dades del menor (adreça / situació familiar)",
+        "ninos_libro_familia": "Llibre de família",
+        "datos_tutor": "Dades d'un tutor",
+        "datos_tutor_dni": "DNI d'un tutor"
+      },
+      "errors": {
+        "registro": "No s'ha pogut registrar el canvi. Torna a provar-ho.",
+        "invalido": "Sol·licitud no vàlida.",
+        "decidir": "No s'ha pogut processar la decisió. Torna a provar-ho.",
+        "no_pendiente": "Este canvi ja no està pendent.",
+        "aplicar": "No s'ha pogut aplicar el canvi. S ha deixat pendent per a reintentar."
+      }
+    },
+    "purga": {
+      "title": "Purga de documents per curs",
+      "descripcion": "Esborra els documents sensibles (llibre de família, DNI de tutors, mandat SEPA) d'un curs que va acabar fa 5 anys o més. Només afecta xiquets que ja no estan matriculats. Acció manual i irreversible.",
+      "sin_cursos": "No hi ha cursos amb 5 anys o més d'antiguitat per a purgar.",
+      "seleccionar_curso": "Selecciona un curs",
+      "fin": "fi {fecha}",
+      "confirmar_label": "Per a confirmar, tecleja el nom exacte del curs: {nombre}",
+      "purgar": "Purgar documents",
+      "purgando": "Purgant…",
+      "purgado": "Purga completada: {documentos} documents de {ninos} xiquets/es.",
+      "errors": {
+        "invalido": "Sol·licitud no vàlida.",
+        "no_autorizado": "No tens permís per a purgar este curs.",
+        "curso_no_encontrado": "No s'ha trobat el curs.",
+        "nombre_no_coincide": "El nom teclejat no coincidix amb el del curs.",
+        "no_purgable": "Este curs encara no complix els 5 anys d'antiguitat."
+      }
     }
   },
   "teacher": {
@@ -684,7 +730,8 @@
         "guardando": "Guardant…",
         "guardar": "Guardar",
         "cancelar": "Cancel·lar"
-      }
+      },
+      "editar_datos": "Editar dades"
     }
   },
   "pedagogico": {
@@ -2756,6 +2803,9 @@
         "guardado": "No s'han pogut desar les dades. Torna-ho a provar.",
         "email": "Introdueix un correu electrònic vàlid.",
         "nombre": "El nom ha de tindre almenys 2 caràcters."
+      },
+      "validacion": {
+        "enviado": "Canvi enviat a validació de direcció."
       }
     },
     "sepa": {
@@ -2787,7 +2837,11 @@
         "firma": "Dibuixa la teua firma per a continuar",
         "guardado": "No s'ha pogut guardar el mandat SEPA"
       }
-    }
+    },
+    "validacion": {
+      "enviado": "Canvi enviat a validació de direcció."
+    },
+    "edicion_validada_aviso": "L'alta ja està validada. Els canvis en dades o documents sensibles s'enviaran a la direcció per a la seua aprovació abans d'aplicar-se."
   },
   "listaEspera": {
     "validation": {

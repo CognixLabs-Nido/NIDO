@@ -2,6 +2,7 @@
 
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { altaValidada, registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
 import { logger } from '@/shared/lib/logger'
 
 import { esTutorLegalDe } from '../lib/authz-tutor'
@@ -26,7 +27,7 @@ import { fail, ok, type ActionResult } from '../../centros/types'
  */
 export async function actualizarNinoFamilia(
   input: ActualizarNinoFamiliaInput
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ id: string; pendienteValidacion?: boolean }>> {
   const parsed = actualizarNinoFamiliaSchema.safeParse(input)
   if (!parsed.success) return fail('alta.documentos.errors.datos_invalidos')
 
@@ -55,6 +56,18 @@ export async function actualizarNinoFamilia(
   if (resto.estado_civil_familia !== undefined)
     patch.estado_civil_familia = resto.estado_civil_familia
   if (Object.keys(patch).length === 0) return ok({ id: nino_id })
+
+  // Decisión J: con el alta YA validada, la edición no se aplica directa → cola de validación.
+  if (await altaValidada(supabase, nino_id)) {
+    const r = await registrarCambioPendiente(supabase, {
+      ninoId: nino_id,
+      usuarioId: user.id,
+      entidad: 'ninos_familia',
+      payload: patch,
+    })
+    if (!r.ok) return fail(r.error)
+    return ok({ id: nino_id, pendienteValidacion: true })
+  }
 
   const service = createServiceRoleClient()
   const { error } = await service.from('ninos').update(patch).eq('id', nino_id)

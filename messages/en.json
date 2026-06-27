@@ -219,7 +219,8 @@
       "notificaciones": "Notifications",
       "informes": "Reports",
       "personal": "Staff",
-      "admisiones": "Admissions"
+      "admisiones": "Admissions",
+      "pendientes": "Validations"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -587,6 +588,51 @@
         "invitado": "Invited",
         "descartado": "Discarded"
       }
+    },
+    "pendientes": {
+      "title": "Pending validations",
+      "subtitle": "Changes to sensitive data made by families on already-validated registrations, awaiting your approval.",
+      "aprobar": "Approve",
+      "rechazar": "Reject",
+      "aprobado": "Change approved and applied.",
+      "rechazado": "Change rejected. The data stays as it was.",
+      "vacio": "No pending changes",
+      "vacio_desc": "When a family edits sensitive data on an already-validated registration, it will appear here for your review.",
+      "solicitado_por": "Requested by {nombre}",
+      "nino_desconocido": "Child",
+      "solicitante_desconocido": "a family",
+      "badge_aria": "{n} changes pending validation",
+      "entidad": {
+        "ninos_familia": "Child data (address / family situation)",
+        "ninos_libro_familia": "Family book",
+        "datos_tutor": "Guardian data",
+        "datos_tutor_dni": "Guardian ID document"
+      },
+      "errors": {
+        "registro": "The change could not be registered. Please try again.",
+        "invalido": "Invalid request.",
+        "decidir": "The decision could not be processed. Please try again.",
+        "no_pendiente": "This change is no longer pending.",
+        "aplicar": "The change could not be applied. It has been left pending for retry."
+      }
+    },
+    "purga": {
+      "title": "Document purge by course",
+      "descripcion": "Delete the sensitive documents (family book, guardian IDs, SEPA mandate) of a course that ended 5 or more years ago. Only affects children who are no longer enrolled. Manual and irreversible action.",
+      "sin_cursos": "There are no courses 5 or more years old to purge.",
+      "seleccionar_curso": "Select a course",
+      "fin": "ended {fecha}",
+      "confirmar_label": "To confirm, type the exact course name: {nombre}",
+      "purgar": "Purge documents",
+      "purgando": "Purging…",
+      "purgado": "Purge complete: {documentos} documents from {ninos} children.",
+      "errors": {
+        "invalido": "Invalid request.",
+        "no_autorizado": "You do not have permission to purge this course.",
+        "curso_no_encontrado": "Course not found.",
+        "nombre_no_coincide": "The name you typed does not match the course name.",
+        "no_purgable": "This course is not yet 5 years old."
+      }
     }
   },
   "teacher": {
@@ -684,7 +730,8 @@
         "guardando": "Saving…",
         "guardar": "Save",
         "cancelar": "Cancel"
-      }
+      },
+      "editar_datos": "Edit data"
     }
   },
   "pedagogico": {
@@ -2756,6 +2803,9 @@
         "guardado": "The data could not be saved. Please try again.",
         "email": "Enter a valid email.",
         "nombre": "The name must be at least 2 characters."
+      },
+      "validacion": {
+        "enviado": "Change sent to management for validation."
       }
     },
     "sepa": {
@@ -2787,7 +2837,11 @@
         "firma": "Draw your signature to continue",
         "guardado": "Could not save the SEPA mandate"
       }
-    }
+    },
+    "validacion": {
+      "enviado": "Change sent to management for validation."
+    },
+    "edicion_validada_aviso": "This registration is already validated. Changes to sensitive data or documents will be sent to management for approval before they take effect."
   },
   "listaEspera": {
     "validation": {

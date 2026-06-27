@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
+import { invitarTutor2AlValidar } from '../lib/invitar-tutor-2'
 
 const matriculaIdSchema = z.string().uuid()
 
@@ -34,7 +35,7 @@ export async function activarMatricula(matriculaId: string): Promise<ActionResul
     .update({ estado: 'activa' })
     .eq('id', parsed.data)
     .eq('estado', 'lista')
-    .select('id')
+    .select('id, nino_id')
     .maybeSingle()
 
   if (error) {
@@ -43,6 +44,10 @@ export async function activarMatricula(matriculaId: string): Promise<ActionResul
     return fail('matricula.errors.activar_failed')
   }
   if (!data) return fail('matricula.errors.no_lista')
+
+  // Decisión D-a: al validar el alta, invitar al tutor 2 con el email del wizard
+  // (best-effort, idempotente; un fallo no revierte la activación ya hecha).
+  await invitarTutor2AlValidar(supabase, data.nino_id)
 
   revalidatePath('/[locale]/admin/ninos', 'page')
   return ok({ id: data.id })

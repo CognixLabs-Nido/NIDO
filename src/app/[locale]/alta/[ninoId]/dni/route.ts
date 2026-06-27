@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
 import { createClient } from '@/lib/supabase/server'
+import { altaValidada, registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
 import { logger } from '@/shared/lib/logger'
 
 import { BUCKET_DNI_TUTORES, borrarObjetosBucket, firmarRuta } from '@/shared/lib/adjuntos/storage'
@@ -14,6 +15,7 @@ const VINCULOS_LEGALES = ['tutor_legal_principal', 'tutor_legal_secundario'] as 
 interface RespuestaOk {
   success: true
   documento: { path: string; url: string | null }
+  pendienteValidacion?: boolean
 }
 interface RespuestaError {
   success: false
@@ -82,6 +84,27 @@ export async function POST(
       return err('alta.errors.no_autorizado', 403)
     logger.warn('dni: upload', msg)
     return err('alta.documentos.errors.subida', 500)
+  }
+
+  // Decisión J: con el alta YA validada, el documento NO se aplica directo → cola de
+  // validación. El PDF queda staged; al aprobar se fija `dni_documento_path`.
+  if (await altaValidada(supabase, nino.id)) {
+    const r = await registrarCambioPendiente(supabase, {
+      ninoId: nino.id,
+      usuarioId: user.id,
+      entidad: 'datos_tutor_dni',
+      payload: { tipo_vinculo: tv, path },
+    })
+    if (!r.ok) {
+      await borrarObjetosBucket(supabase, BUCKET_DNI_TUTORES, [path]).catch(() => undefined)
+      return err(r.error, 403)
+    }
+    const urlStaged = await firmarRuta(supabase, BUCKET_DNI_TUTORES, path)
+    return Response.json({
+      success: true,
+      documento: { path, url: urlStaged },
+      pendienteValidacion: true,
+    } satisfies RespuestaOk)
   }
 
   // Fija dni_documento_path en la fila (nino, tipo_vinculo); crea la fila si no existía.

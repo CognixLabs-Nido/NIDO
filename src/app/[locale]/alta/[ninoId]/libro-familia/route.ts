@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { esTutorLegalDe } from '@/features/alta/lib/authz-tutor'
+import { altaValidada, registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
 import {
   BUCKET_LIBRO_FAMILIA,
   borrarObjetosBucket,
@@ -20,6 +21,7 @@ const MAX_PDF_BYTES = 10 * 1024 * 1024
 interface RespuestaOk {
   success: true
   documento: { path: string; url: string | null }
+  pendienteValidacion?: boolean
 }
 interface RespuestaError {
   success: false
@@ -90,6 +92,27 @@ export async function POST(
   if (!autorizado) {
     await borrarObjetosBucket(supabase, BUCKET_LIBRO_FAMILIA, [path]).catch(() => undefined)
     return err('alta.errors.no_autorizado', 403)
+  }
+
+  // Decisión J: con el alta YA validada, el documento NO se aplica directo → cola de
+  // validación. El PDF queda staged en su ruta; al aprobar se fija `libro_familia_path`.
+  if (await altaValidada(supabase, nino.id)) {
+    const r = await registrarCambioPendiente(supabase, {
+      ninoId: nino.id,
+      usuarioId: user.id,
+      entidad: 'ninos_libro_familia',
+      payload: { path },
+    })
+    if (!r.ok) {
+      await borrarObjetosBucket(supabase, BUCKET_LIBRO_FAMILIA, [path]).catch(() => undefined)
+      return err(r.error, 403)
+    }
+    const urlStaged = await firmarRuta(supabase, BUCKET_LIBRO_FAMILIA, path)
+    return Response.json({
+      success: true,
+      documento: { path, url: urlStaged },
+      pendienteValidacion: true,
+    } satisfies RespuestaOk)
   }
 
   const service = createServiceRoleClient()

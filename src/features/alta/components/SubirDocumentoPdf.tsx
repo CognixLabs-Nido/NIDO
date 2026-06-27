@@ -30,6 +30,8 @@ interface RespuestaSubida {
   success: boolean
   error?: string
   documento?: { path: string; url: string | null }
+  /** Alta ya validada (decisión J): el documento quedó en cola de validación de dirección. */
+  pendienteValidacion?: boolean
 }
 
 /**
@@ -92,7 +94,7 @@ export function SubirDocumentoPdf({
       setSubido(true)
       setPreviewUrl(json.documento?.url ?? null)
       setFiles([])
-      toast.success(t('subido'))
+      toast.success(json.pendienteValidacion ? t('validacion.enviado') : t('subido'))
     })
   }
 
