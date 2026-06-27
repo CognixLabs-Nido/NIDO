@@ -12,11 +12,18 @@ export interface CursoPurgable {
   fechaFin: string
 }
 
-/** Fecha límite de purga: hoy menos `ANIOS_RETENCION_CURSO` años (YYYY-MM-DD). */
-function fechaLimitePurga(): string {
-  const hoy = new Date()
+/**
+ * Fecha límite de purga: hoy menos `ANIOS_RETENCION_CURSO` años (YYYY-MM-DD). Un curso es
+ * purgable si `fecha_fin <= fechaLimitePurga()`. `referencia` permite testearla con una fecha
+ * fija (por defecto, ahora).
+ */
+export function fechaLimitePurga(referencia: Date = new Date()): string {
   const limite = new Date(
-    Date.UTC(hoy.getUTCFullYear() - ANIOS_RETENCION_CURSO, hoy.getUTCMonth(), hoy.getUTCDate())
+    Date.UTC(
+      referencia.getUTCFullYear() - ANIOS_RETENCION_CURSO,
+      referencia.getUTCMonth(),
+      referencia.getUTCDate()
+    )
   )
   return limite.toISOString().slice(0, 10)
 }

@@ -51,7 +51,13 @@ export function PurgaCursoPanel({ cursos }: Props) {
         toast.error(safeTranslateError(tErrors, r.error))
         return
       }
-      toast.success(t('purgado', { documentos: r.data.documentos, ninos: r.data.ninos }))
+      toast.success(
+        t('purgado', {
+          documentos: r.data.documentos,
+          filas: r.data.filas,
+          ninos: r.data.ninos,
+        })
+      )
       setCursoId(null)
       setConfirmacion('')
     })

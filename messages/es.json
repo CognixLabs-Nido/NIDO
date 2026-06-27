@@ -625,7 +625,7 @@
       "confirmar_label": "Para confirmar, teclea el nombre exacto del curso: {nombre}",
       "purgar": "Purgar documentos",
       "purgando": "Purgando…",
-      "purgado": "Purga completada: {documentos} documentos de {ninos} niños/as.",
+      "purgado": "Purga completada: {documentos} documentos y {filas} registros de {ninos} niños/as.",
       "errors": {
         "invalido": "Solicitud no válida.",
         "no_autorizado": "No tienes permiso para purgar este curso.",

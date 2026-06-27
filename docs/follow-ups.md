@@ -82,7 +82,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 **🔴 RGPD — bloqueante ANTES del primer dato real (familia/niño real en producción):**
 
-- [ ] **Derecho al olvido funcional** — anonimizar/redactar `valores_antes` en `audit_log` al ejercer borrado.
+- [ ] **Derecho al olvido funcional** — anonimizar/redactar `valores_antes` en `audit_log` al ejercer borrado. **Disparador concreto desde F11-G-4:** la **purga semimanual de curso** (`purgarCurso`) anula `direccion_*`/`estado_civil_familia` del menor en `ninos` (**tabla auditada**) → la dirección queda copiada en `audit_log.valores_antes`. Las 3 tablas que la purga **hard-borra** (`datos_tutor`/`mandatos_sepa`/`cambios_pendientes`) NO están auditadas → su DELETE no copia PII. Falta la redacción de `valores_antes` para el caso `ninos`.
 - [ ] **Consentimiento de imagen de menores** + **`autorizacion_imagenes` firmable** (reusa F8; alimenta el interruptor `ninos.puede_aparecer_en_fotos`, hoy lo pone dirección a mano).
 - [ ] **Retención formal de fotos de menores y DNIs de terceros** (`recogida-adjuntos`) + **Registro de Actividades de Tratamiento (RAT)** + DPA con encargados.
 - [x] ⚖️ **Least-privilege en supervisión de mensajería (admin):** **CERRADO en F11-A** (`20260613180000_phase11a_mensajeria_least_privilege`): el helper `puede_postear_en_conversacion` excluye al admin en `profe_familia` (lee pero no postea); regresión en `enviar-mensaje-admin-familia.test.ts`. Origen: reparación de Mensajería (PR #66). _(Queda aparte la transparencia/RAT del acceso de lectura — ítem siguiente.)_
@@ -106,6 +106,12 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 F8 autorizaciones queda **cerrado**: el WRITE de firma e instancia se apretó al permiso `puede_firmar_autorizaciones` (enfoque B; ver el item del apriete en "Residuales de F11" abajo, migración `20260621140000`) y **F8-4 (DNI condicional)** se resolvió a favor de la firma simple. Los residuales que quedaban (legacy #56, recogida puntual, aviso del botón "Enviar") **no son accionables ahora** — son **condicionales a su disparador** y se movieron a "Reactivos / condicionales (solo cuando se cumpla la condición)" arriba.
 
 - [x] **F8-4 — DNI del tutor condicional** ✅ **RESUELTO (decisión 2026-06-21).** La firma electrónica **simple** (nombre tecleado + trazo + hash del texto + IP/UA) **basta** para la validez del mecanismo; **no** se embebe el DNI del firmante en la firma. El DNI/identificación del tutor, cuando haga falta, se recoge en la **fase de documentación del alta** (post-F11-B), no acoplado a `firmas_autorizacion`. Por tanto F8 NO añade `usuarios.dni`/`tutor_datos` ni toca el modelo de firma.
+
+**📝 F11-G (altas con documentos) — CERRADO ✅ (G-0 a G-4, ADR-0049)**
+
+- [x] **Documentos obligatorios en el alta** — libro de familia, DNI de tutores y mandato SEPA firmado capturados en el wizard de 8 pasos; 3 buckets privados (RLS admin + tutor legal, profe NO); IBAN cifrado en reposo (G-2bis); edición con validación de dirección (`cambios_pendientes` + `/admin/pendientes`); invitación al tutor 2 al validar; purga semimanual de curso. Tests RLS gated (`F11G_RLS_APPLIED`). Sustituye el alta tutor-driven mínima (F11-P).
+- [x] **Purga RGPD — borra el dato estructurado (gap de G-3 cerrado en G-4).** `purgarCurso` hard-borra filas `datos_tutor`/`mandatos_sepa`/`cambios_pendientes` del alumni + anula dirección/estado civil del menor (sin SQL nuevo). **Conserva** `audit_log` (legal).
+- [ ] ⚖️ **F11-B — revisión del criterio de retención/olvido de la purga (posible abogado).** Decisiones a validar legalmente antes del piloto: (a) qué del **menor** debe borrarse a los 5 años más allá de dirección/estado civil (identidad core, médica, pedagógica — hoy NO se tocan; olvido general); (b) si `mandatos_sepa` debe **anonimizarse** en vez de hard-delete por valor de auditoría financiera (hoy se borra); (c) la **redacción de `valores_antes`** del caso `ninos` (ver "Derecho al olvido funcional" arriba). _(Ola 1 — RGPD, F11-B)_
 
 **📝 Residuales de F11 (alta tutor-driven):**
 
