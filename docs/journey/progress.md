@@ -1032,11 +1032,12 @@ Cierre de F11-H sin lógica nueva:
 
 **F11-H cerrada:** verde local (typecheck + lint + unit + build) en cada PR; `multicurso.rls.test.ts` 18/18 contra el remoto. Modelo multi-curso operativo de admisiones a rollover.
 
-## F11-G — Altas con documentos (en curso): blocker de cifrado del IBAN
+## F11-G — Altas con documentos (CERRADA): G-0 a G-4
 
-> Subfases una-por-PR (patrón F11-C). **G-1** (wizard 8 pasos + documentos, PR #150) y **G-2**
-> (paso 8: IBAN + mandato SEPA firmado, PR #151) **mergeados**. El cierre de F11-G y su ADR van
-> al completar las subfases restantes (G-3+).
+> Subfases una-por-PR (patrón F11-C). **G-1** (wizard 8 pasos + documentos, PR #150), **G-2**
+> (paso 8: IBAN + mandato SEPA firmado, PR #151), **G-2bis** (cifrado IBAN, PR #152), **G-3**
+> (validación de cambios + invitación tutor 2 + purga de PDFs, PR #153) y **G-4** (cierre)
+> **mergeados**. ADR-0049 consolida la fase.
 
 🔒 **BLOQUEANTE DURO pre-piloto — cifrado del IBAN (F11-G-2bis).** G-2 dejó el IBAN **en claro**
 en `mandatos_sepa.iban`. **Ningún IBAN real puede entrar en BD** antes de **mergear + aplicar** la
@@ -1048,6 +1049,28 @@ dirección (Fase B, pain.008) — `get_mandatos_remesa` diferido a Fase B. **Pre
 operador**: crear `sepa_encryption_key` en Vault **antes** de aplicar (si no, la migración
 revierte). Registrado en `scope-ola-1.md` §Paquete RGPD, mismo tier. Patrón espejo de
 `info_medica_emergencia` (ADR-0004).
+
+**G-3 (PR #153) — validación de cambios + invitación tutor 2 + purga (PDFs).** Decisión J:
+con el alta validada (matrícula `activa`), las ediciones de datos/documentos sensibles
+(dirección del menor, datos del tutor, libro de familia, DNI) **se encolan** en
+`cambios_pendientes` en vez de aplicarse; cola `/admin/pendientes` con aprobar/rechazar +
+badge in-app (sin push/email); wizard reabrible con `?editar=1`. Decisión D-a: al activar la
+matrícula se invita al tutor 2 con el email del wizard (best-effort, idempotente). Decisión H:
+purga semimanual de curso (fin ≥5 años, doble validación, solo alumni) — en G-3 borraba **solo
+PDFs + anulaba rutas**. Sin migración (esquema de G-0).
+
+**G-4 (cierre) — completa la purga al DATO ESTRUCTURADO + tests + ADR.** El responsable
+detectó el gap RGPD de G-3 (la purga dejaba vivo el dato personal). G-4 amplía `purgarCurso`:
+**hard-delete** de filas `datos_tutor` / `mandatos_sepa` (incl. `iban_cifrado`) /
+`cambios_pendientes` del alumni + **anulado** de dirección/estado civil del menor en `ninos`
+(la ficha del niño NO se borra → olvido general = F11-B). Factible **sin SQL nuevo** (ninguna
+de las 3 tablas tiene trigger de protección de DELETE ni FK entrante con RESTRICT; service role
+bypassa la RLS default-DENY). **Conserva por ley:** `audit_log` (append-only). **Matiz RGPD
+abierto → F11-B:** anular columnas de `ninos` (tabla auditada) copia la dirección a
+`audit_log.valores_antes` → redacción pendiente (ver follow-ups; posible abogado). Tests RLS
+gated nuevos `f11g-validacion-purga.rls.test.ts` (`F11G_RLS_APPLIED=1`): datos_tutor /
+mandatos_sepa (IBAN nunca en claro al cliente) / cambios_pendientes / 3 buckets. Unit del
+corte de 5 años (`fechaLimitePurga`). ADR-0049. Verde local typecheck/lint/unit/build.
 
 ## Fase 12 — Funcionalidad pendiente post-F11 (registrada, sin abrir)
 

@@ -625,7 +625,7 @@
       "confirmar_label": "To confirm, type the exact course name: {nombre}",
       "purgar": "Purge documents",
       "purgando": "Purging…",
-      "purgado": "Purge complete: {documentos} documents from {ninos} children.",
+      "purgado": "Purge complete: {documentos} documents and {filas} records from {ninos} children.",
       "errors": {
         "invalido": "Invalid request.",
         "no_autorizado": "You do not have permission to purge this course.",
