@@ -39,6 +39,7 @@ export type Database = {
           centro_id: string
           concepto_id: string
           created_at: string
+          deleted_at: string | null
           id: string
           mes: number
           modalidad: Database['public']['Enums']['modalidad_cobro']
@@ -50,6 +51,7 @@ export type Database = {
           centro_id: string
           concepto_id: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           mes: number
           modalidad: Database['public']['Enums']['modalidad_cobro']
@@ -61,6 +63,7 @@ export type Database = {
           centro_id?: string
           concepto_id?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           mes?: number
           modalidad?: Database['public']['Enums']['modalidad_cobro']
@@ -215,6 +218,7 @@ export type Database = {
           anio: number
           centro_id: string
           created_at: string
+          deleted_at: string | null
           id: string
           mes: number
           metodo: Database['public']['Enums']['metodo_pago']
@@ -225,6 +229,7 @@ export type Database = {
           anio: number
           centro_id: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           mes: number
           metodo: Database['public']['Enums']['metodo_pago']
@@ -235,6 +240,7 @@ export type Database = {
           anio?: number
           centro_id?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           mes?: number
           metodo?: Database['public']['Enums']['metodo_pago']

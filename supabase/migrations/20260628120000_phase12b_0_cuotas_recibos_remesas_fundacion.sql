@@ -179,15 +179,17 @@ CREATE TABLE public.asignacion_cuota (
   modalidad   public.modalidad_cobro NOT NULL,
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now(),
+  deleted_at  timestamptz NULL,
   CONSTRAINT asignacion_cuota_anio_valido CHECK (anio BETWEEN 2024 AND 2100),
   CONSTRAINT asignacion_cuota_mes_valido  CHECK (mes BETWEEN 1 AND 12)
 );
 
+-- Único ignorando soft-deleted: una asignación viva por (niño, concepto, mes).
 CREATE UNIQUE INDEX idx_asignacion_cuota_unica
-  ON public.asignacion_cuota (nino_id, concepto_id, anio, mes);
+  ON public.asignacion_cuota (nino_id, concepto_id, anio, mes) WHERE deleted_at IS NULL;
 
 COMMENT ON TABLE public.asignacion_cuota IS
-  'F12-B (decisión C): modalidad de cobro (mensual|diario) que la directora fija por niño, concepto y mes. Sin prorrateo intra-mes. La derivación de centro_id usa el trigger compartido derivar_centro_id_de_nino().';
+  'F12-B (decisión C): modalidad de cobro (mensual|diario) que la directora fija por niño, concepto y mes. Sin prorrateo intra-mes. Soft-delete (deleted_at): se conserva por qué se cobró. La derivación de centro_id usa el trigger compartido derivar_centro_id_de_nino().';
 
 CREATE TRIGGER asignacion_cuota_set_centro_id
   BEFORE INSERT ON public.asignacion_cuota
@@ -204,8 +206,7 @@ CREATE POLICY asignacion_cuota_insert ON public.asignacion_cuota
   FOR INSERT TO authenticated WITH CHECK (public.es_admin(centro_id));
 CREATE POLICY asignacion_cuota_update ON public.asignacion_cuota
   FOR UPDATE TO authenticated USING (public.es_admin(centro_id)) WITH CHECK (public.es_admin(centro_id));
-CREATE POLICY asignacion_cuota_delete ON public.asignacion_cuota
-  FOR DELETE TO authenticated USING (public.es_admin(centro_id));
+-- DELETE: sin policy → default DENY (baja = soft delete con deleted_at vía UPDATE).
 
 -- ─── 6. becas: beca concreta por niño (tipo + importe + periodo) ──────────────
 CREATE TABLE public.becas (
@@ -255,15 +256,17 @@ CREATE TABLE public.metodo_pago_familia (
   metodo     public.metodo_pago NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
+  deleted_at timestamptz NULL,
   CONSTRAINT metodo_pago_familia_anio_valido CHECK (anio BETWEEN 2024 AND 2100),
   CONSTRAINT metodo_pago_familia_mes_valido  CHECK (mes BETWEEN 1 AND 12)
 );
 
+-- Único ignorando soft-deleted: una forma de pago viva por (niño, mes).
 CREATE UNIQUE INDEX idx_metodo_pago_familia_unico
-  ON public.metodo_pago_familia (nino_id, anio, mes);
+  ON public.metodo_pago_familia (nino_id, anio, mes) WHERE deleted_at IS NULL;
 
 COMMENT ON TABLE public.metodo_pago_familia IS
-  'F12-B (decisión H): forma de pago (sepa|efectivo|cheque_guarderia|transferencia) por niño y mes, ajustable. Solo `sepa` entra al XML pain.008; el resto genera recibo en pendiente_procesar. La copia entre hermanos se hace en la UI de B-2.';
+  'F12-B (decisión H): forma de pago (sepa|efectivo|cheque_guarderia|transferencia) por niño y mes, ajustable. Soft-delete (deleted_at): se conserva qué método se usó. Solo `sepa` entra al XML pain.008; el resto genera recibo en pendiente_procesar. La copia entre hermanos se hace en la UI de B-2.';
 
 CREATE TRIGGER metodo_pago_familia_set_centro_id
   BEFORE INSERT ON public.metodo_pago_familia
@@ -469,7 +472,9 @@ CREATE TABLE public.remesas (
   )
 );
 
-CREATE UNIQUE INDEX idx_remesas_centro_periodo
+-- NO único (decisión I relajada): puede haber >1 remesa en el mismo mes (re-giros de
+-- devoluciones). Índice de búsqueda por periodo, no restricción de unicidad.
+CREATE INDEX idx_remesas_centro_periodo
   ON public.remesas (centro_id, anio, mes) WHERE deleted_at IS NULL;
 
 COMMENT ON TABLE public.remesas IS
