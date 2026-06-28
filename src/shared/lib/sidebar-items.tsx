@@ -8,6 +8,7 @@ import {
   CalendarRangeIcon,
   ClipboardCheckIcon,
   ClipboardListIcon,
+  CoinsIcon,
   FileSignatureIcon,
   GraduationCapIcon,
   HistoryIcon,
@@ -73,6 +74,7 @@ export async function buildSidebarItems(
         trailing: agendaBadge,
       },
       { href: `/${locale}/admin/menus`, label: t('menus'), icon: <UtensilsIcon /> },
+      { href: `/${locale}/admin/cuotas`, label: t('cuotas'), icon: <CoinsIcon /> },
       {
         href: `/${locale}/admin/autorizaciones`,
         label: t('autorizaciones'),

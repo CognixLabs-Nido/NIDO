@@ -212,6 +212,7 @@
       "perfil": "Profile",
       "calendario": "School Calendar",
       "menus": "Menus",
+      "cuotas": "Fees",
       "mensajeria": "Messages",
       "recordatorios": "Reminders",
       "agenda": "Agenda",
@@ -318,6 +319,38 @@
         "planificado": "Planned",
         "activo": "Active",
         "cerrado": "Closed"
+      }
+    },
+    "cuotas": {
+      "title": "Fees",
+      "subtitle": "Catalogue of the centre's billing items.",
+      "nuevo": "New item",
+      "nuevo_title": "New item",
+      "editar": "Edit",
+      "editar_title": "Edit item",
+      "eliminar": "Delete",
+      "eliminar_title": "Delete item",
+      "eliminar_confirm": "Delete the item “{nombre}”? It will no longer be available for new charges.",
+      "save_new": "Create",
+      "save_edit": "Save",
+      "saving": "Saving...",
+      "deleting": "Deleting...",
+      "cancel": "Cancel",
+      "created": "Item created",
+      "updated": "Item updated",
+      "deleted": "Item deleted",
+      "empty": "No items yet. Create the first one.",
+      "fields": {
+        "nombre": "Name",
+        "tipo": "Type",
+        "precio": "Price (€)",
+        "activo": "Active",
+        "acciones": "Actions"
+      },
+      "tipos": {
+        "mensual": "Monthly",
+        "diario": "Daily",
+        "esporadico": "One-off"
       }
     },
     "aulas": {
@@ -836,6 +869,25 @@
     },
     "error": {
       "no_reabrir_cerrado": "A closed year cannot be reopened."
+    }
+  },
+  "conceptos_cobro": {
+    "validation": {
+      "invalid": "Invalid item data",
+      "nombre_requerido": "Name required",
+      "nombre_largo": "Name too long (max. 120)",
+      "tipo_invalido": "Invalid item type",
+      "precio_invalido": "Enter a valid price",
+      "precio_negativo": "Price cannot be negative",
+      "precio_largo": "Price too high"
+    },
+    "errors": {
+      "nombre_duplicado": "An item with that name already exists in the centre.",
+      "no_autorizado": "You don't have permission for this action.",
+      "create_failed": "Could not create the item.",
+      "update_failed": "Could not update the item.",
+      "delete_failed": "Could not delete the item.",
+      "no_encontrado": "Item not found."
     }
   },
   "aula": {

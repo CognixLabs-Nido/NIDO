@@ -212,6 +212,7 @@
       "perfil": "Perfil",
       "calendario": "Calendari Escolar",
       "menus": "Menús",
+      "cuotas": "Quotes",
       "mensajeria": "Missatgeria",
       "recordatorios": "Recordatoris",
       "agenda": "Agenda",
@@ -318,6 +319,38 @@
         "planificado": "Planificat",
         "activo": "Actiu",
         "cerrado": "Tancat"
+      }
+    },
+    "cuotas": {
+      "title": "Quotes",
+      "subtitle": "Catàleg de conceptes de cobrament del centre.",
+      "nuevo": "Nou concepte",
+      "nuevo_title": "Nou concepte",
+      "editar": "Editar",
+      "editar_title": "Editar concepte",
+      "eliminar": "Eliminar",
+      "eliminar_title": "Eliminar concepte",
+      "eliminar_confirm": "Eliminar el concepte «{nombre}»? Deixarà d'estar disponible per a cobraments nous.",
+      "save_new": "Crear",
+      "save_edit": "Guardar",
+      "saving": "Guardant...",
+      "deleting": "Eliminant...",
+      "cancel": "Cancel·lar",
+      "created": "Concepte creat",
+      "updated": "Concepte actualitzat",
+      "deleted": "Concepte eliminat",
+      "empty": "Encara no hi ha conceptes. Crea el primer.",
+      "fields": {
+        "nombre": "Nom",
+        "tipo": "Tipus",
+        "precio": "Preu (€)",
+        "activo": "Actiu",
+        "acciones": "Accions"
+      },
+      "tipos": {
+        "mensual": "Mensual",
+        "diario": "Diari",
+        "esporadico": "Esporàdic"
       }
     },
     "aulas": {
@@ -836,6 +869,25 @@
     },
     "error": {
       "no_reabrir_cerrado": "Un curs tancat no pot reobrir-se."
+    }
+  },
+  "conceptos_cobro": {
+    "validation": {
+      "invalid": "Dades del concepte no vàlides",
+      "nombre_requerido": "Nom requerit",
+      "nombre_largo": "Nom massa llarg (màx. 120)",
+      "tipo_invalido": "Tipus de concepte no vàlid",
+      "precio_invalido": "Introdueix un preu vàlid",
+      "precio_negativo": "El preu no pot ser negatiu",
+      "precio_largo": "Preu massa alt"
+    },
+    "errors": {
+      "nombre_duplicado": "Ja existeix un concepte amb eixe nom al centre.",
+      "no_autorizado": "No tens permís per a esta acció.",
+      "create_failed": "No s'ha pogut crear el concepte.",
+      "update_failed": "No s'ha pogut actualitzar el concepte.",
+      "delete_failed": "No s'ha pogut eliminar el concepte.",
+      "no_encontrado": "Concepte no trobat."
     }
   },
   "aula": {
