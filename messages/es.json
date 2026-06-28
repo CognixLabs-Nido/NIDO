@@ -345,12 +345,77 @@
         "tipo": "Tipo",
         "precio": "Precio (€)",
         "activo": "Activo",
-        "acciones": "Acciones"
+        "acciones": "Acciones",
+        "nino": "Niño/a",
+        "metodo": "Método de pago",
+        "conceptos": "Conceptos",
+        "modalidad": "Modalidad"
       },
       "tipos": {
         "mensual": "Mensual",
         "diario": "Diario",
         "esporadico": "Esporádico"
+      },
+      "tab_conceptos": "Conceptos",
+      "tab_asignacion": "Asignación mensual",
+      "tab_becas": "Becas",
+      "periodo": "Periodo",
+      "mes": "Mes",
+      "anio": "Año",
+      "aviso_config": "Esto es solo configuración: se aplicará al cerrar el mes. Aún no se generan recibos ni se calcula nada.",
+      "sin_ninos": "No hay niños/as con matrícula activa.",
+      "sin_metodo": "Sin método",
+      "metodo_guardado": "Método guardado",
+      "conceptos_configurados": "{n} configurados",
+      "configurar": "Configurar",
+      "modalidad_title": "Modalidad · {nombre}",
+      "sin_conceptos_asignables": "No hay conceptos mensuales/diarios activos. Créalos en la pestaña Conceptos.",
+      "cerrar": "Cerrar",
+      "metodos": {
+        "sepa": "SEPA (domiciliación)",
+        "efectivo": "Efectivo",
+        "cheque_guarderia": "Cheque guardería",
+        "transferencia": "Transferencia"
+      },
+      "modalidades": {
+        "ninguna": "No se cobra",
+        "mensual": "Mensual",
+        "diario": "Diario"
+      },
+      "becas": {
+        "becas_title": "Becas asignadas",
+        "nueva": "Nueva beca",
+        "nueva_title": "Nueva beca",
+        "editar_title": "Editar beca",
+        "becas_empty": "No hay becas asignadas todavía.",
+        "created": "Beca creada",
+        "updated": "Beca actualizada",
+        "deleted": "Beca eliminada",
+        "eliminar_title": "Eliminar beca",
+        "eliminar_confirm": "¿Eliminar la beca de «{nombre}»?",
+        "elige_nino": "Elige un niño/a",
+        "elige_tipo": "Elige un tipo",
+        "activo_si": "Sí",
+        "tipos_title": "Tipos de beca",
+        "tipo_nuevo": "Nuevo tipo",
+        "tipo_nuevo_title": "Nuevo tipo de beca",
+        "tipo_editar_title": "Editar tipo de beca",
+        "tipos_empty": "No hay tipos de beca. Crea el primero.",
+        "tipo_created": "Tipo creado",
+        "tipo_updated": "Tipo actualizado",
+        "tipo_deleted": "Tipo eliminado",
+        "tipo_eliminar_title": "Eliminar tipo de beca",
+        "tipo_eliminar_confirm": "¿Eliminar el tipo «{nombre}»?",
+        "fields": {
+          "tipo_nombre": "Nombre",
+          "tipo_activo": "Activo",
+          "nino": "Niño/a",
+          "tipo": "Tipo",
+          "importe": "Importe (€)",
+          "desde": "Desde",
+          "hasta": "Hasta",
+          "periodo": "Periodo"
+        }
       }
     },
     "aulas": {
@@ -888,6 +953,40 @@
       "update_failed": "No se pudo actualizar el concepto.",
       "delete_failed": "No se pudo eliminar el concepto.",
       "no_encontrado": "Concepto no encontrado."
+    }
+  },
+  "cuotas_config": {
+    "errors": {
+      "invalid": "Datos no válidos.",
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "modalidad_failed": "No se pudo guardar la modalidad.",
+      "metodo_failed": "No se pudo guardar el método de pago."
+    }
+  },
+  "becas": {
+    "validation": {
+      "invalid": "Datos de la beca no válidos",
+      "tipo_nombre_requerido": "Nombre requerido",
+      "tipo_nombre_largo": "Nombre demasiado largo (máx. 120)",
+      "nino_requerido": "Selecciona un niño/a",
+      "tipo_requerido": "Selecciona un tipo de beca",
+      "importe_invalido": "Introduce un importe válido",
+      "importe_positivo": "El importe debe ser mayor que 0",
+      "importe_largo": "Importe demasiado alto",
+      "desde_requerido": "Indica la fecha de inicio",
+      "periodo": "La fecha de fin no puede ser anterior a la de inicio"
+    },
+    "errors": {
+      "tipo_duplicado": "Ya existe un tipo de beca con ese nombre en el centro.",
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "tipo_create_failed": "No se pudo crear el tipo de beca.",
+      "tipo_update_failed": "No se pudo actualizar el tipo de beca.",
+      "tipo_delete_failed": "No se pudo eliminar el tipo de beca.",
+      "tipo_no_encontrado": "Tipo de beca no encontrado.",
+      "create_failed": "No se pudo crear la beca.",
+      "update_failed": "No se pudo actualizar la beca.",
+      "delete_failed": "No se pudo eliminar la beca.",
+      "no_encontrado": "Beca no encontrada."
     }
   },
   "aula": {

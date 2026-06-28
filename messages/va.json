@@ -345,12 +345,77 @@
         "tipo": "Tipus",
         "precio": "Preu (€)",
         "activo": "Actiu",
-        "acciones": "Accions"
+        "acciones": "Accions",
+        "nino": "Xiquet/a",
+        "metodo": "Mètode de pagament",
+        "conceptos": "Conceptes",
+        "modalidad": "Modalitat"
       },
       "tipos": {
         "mensual": "Mensual",
         "diario": "Diari",
         "esporadico": "Esporàdic"
+      },
+      "tab_conceptos": "Conceptes",
+      "tab_asignacion": "Assignació mensual",
+      "tab_becas": "Beques",
+      "periodo": "Període",
+      "mes": "Mes",
+      "anio": "Any",
+      "aviso_config": "Açò és només configuració: s'aplicarà en tancar el mes. Encara no es generen rebuts ni es calcula res.",
+      "sin_ninos": "No hi ha xiquets/es amb matrícula activa.",
+      "sin_metodo": "Sense mètode",
+      "metodo_guardado": "Mètode guardat",
+      "conceptos_configurados": "{n} configurats",
+      "configurar": "Configurar",
+      "modalidad_title": "Modalitat · {nombre}",
+      "sin_conceptos_asignables": "No hi ha conceptes mensuals/diaris actius. Crea'ls a la pestanya Conceptes.",
+      "cerrar": "Tancar",
+      "metodos": {
+        "sepa": "SEPA (domiciliació)",
+        "efectivo": "Efectiu",
+        "cheque_guarderia": "Xec guarderia",
+        "transferencia": "Transferència"
+      },
+      "modalidades": {
+        "ninguna": "No es cobra",
+        "mensual": "Mensual",
+        "diario": "Diari"
+      },
+      "becas": {
+        "becas_title": "Beques assignades",
+        "nueva": "Nova beca",
+        "nueva_title": "Nova beca",
+        "editar_title": "Editar beca",
+        "becas_empty": "Encara no hi ha beques assignades.",
+        "created": "Beca creada",
+        "updated": "Beca actualitzada",
+        "deleted": "Beca eliminada",
+        "eliminar_title": "Eliminar beca",
+        "eliminar_confirm": "Eliminar la beca de «{nombre}»?",
+        "elige_nino": "Tria un xiquet/a",
+        "elige_tipo": "Tria un tipus",
+        "activo_si": "Sí",
+        "tipos_title": "Tipus de beca",
+        "tipo_nuevo": "Nou tipus",
+        "tipo_nuevo_title": "Nou tipus de beca",
+        "tipo_editar_title": "Editar tipus de beca",
+        "tipos_empty": "No hi ha tipus de beca. Crea el primer.",
+        "tipo_created": "Tipus creat",
+        "tipo_updated": "Tipus actualitzat",
+        "tipo_deleted": "Tipus eliminat",
+        "tipo_eliminar_title": "Eliminar tipus de beca",
+        "tipo_eliminar_confirm": "Eliminar el tipus «{nombre}»?",
+        "fields": {
+          "tipo_nombre": "Nom",
+          "tipo_activo": "Actiu",
+          "nino": "Xiquet/a",
+          "tipo": "Tipus",
+          "importe": "Import (€)",
+          "desde": "Des de",
+          "hasta": "Fins a",
+          "periodo": "Període"
+        }
       }
     },
     "aulas": {
@@ -888,6 +953,40 @@
       "update_failed": "No s'ha pogut actualitzar el concepte.",
       "delete_failed": "No s'ha pogut eliminar el concepte.",
       "no_encontrado": "Concepte no trobat."
+    }
+  },
+  "cuotas_config": {
+    "errors": {
+      "invalid": "Dades no vàlides.",
+      "no_autorizado": "No tens permís per a esta acció.",
+      "modalidad_failed": "No s'ha pogut guardar la modalitat.",
+      "metodo_failed": "No s'ha pogut guardar el mètode de pagament."
+    }
+  },
+  "becas": {
+    "validation": {
+      "invalid": "Dades de la beca no vàlides",
+      "tipo_nombre_requerido": "Nom requerit",
+      "tipo_nombre_largo": "Nom massa llarg (màx. 120)",
+      "nino_requerido": "Selecciona un xiquet/a",
+      "tipo_requerido": "Selecciona un tipus de beca",
+      "importe_invalido": "Introdueix un import vàlid",
+      "importe_positivo": "L'import ha de ser major que 0",
+      "importe_largo": "Import massa alt",
+      "desde_requerido": "Indica la data d'inici",
+      "periodo": "La data de fi no pot ser anterior a la d'inici"
+    },
+    "errors": {
+      "tipo_duplicado": "Ja existeix un tipus de beca amb eixe nom al centre.",
+      "no_autorizado": "No tens permís per a esta acció.",
+      "tipo_create_failed": "No s'ha pogut crear el tipus de beca.",
+      "tipo_update_failed": "No s'ha pogut actualitzar el tipus de beca.",
+      "tipo_delete_failed": "No s'ha pogut eliminar el tipus de beca.",
+      "tipo_no_encontrado": "Tipus de beca no trobat.",
+      "create_failed": "No s'ha pogut crear la beca.",
+      "update_failed": "No s'ha pogut actualitzar la beca.",
+      "delete_failed": "No s'ha pogut eliminar la beca.",
+      "no_encontrado": "Beca no trobada."
     }
   },
   "aula": {
