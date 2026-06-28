@@ -1122,6 +1122,26 @@ hace inmutable el marcador `cierre_mensual`). (2) **B-6** — el estado `devuelt
 `fecha_envio_banco` y añadir `fecha_devolucion` (las R-transactions SEPA referencian el envío original;
 hoy el CHECK la anula).
 
+### B-1 — Catálogo de conceptos (MERGEADO, PR #156)
+
+CRUD admin de `conceptos_cobro` en `/admin/cuotas` (hub del módulo). Feature `conceptos-cobro`
+(schema/query/acciones/2 componentes); activar/desactivar = flag `activo`, eliminar = soft-delete.
+Helper `src/shared/lib/format-money.ts` (euros↔céntimos) + test. Item "Cuotas" en sidebar. i18n es/en/va.
+
+### B-2 — Configuración de cobro por niño/mes (este PR)
+
+Sin tocar BD. `/admin/cuotas` pasa a **Tabs**: Conceptos (B-1) · Asignación mensual · Becas.
+
+- **Asignación** (`cuotas-config`): selector año/mes por searchParams (re-fetch server, RLS-safe). Por
+  niño activo: **método de pago** (Select; `setMetodoPago` con **copia a hermanos** que aún no tengan
+  método ese mes — vínculos legales compartidos) y **modalidad** mensual|diario|ninguna por concepto
+  (`setModalidad`, soft-delete al poner "ninguna"). Solo conceptos activos de tipo mensual/diario.
+- **Becas** (`becas`): CRUD de `tipos_beca` (lista estándar) + asignar `becas` a un niño (tipo,
+  importe €→céntimos positivo, periodo desde/hasta). La línea negativa la crea el motor de B-4.
+- Aviso en la UI: "solo configuración; se aplica al cerrar el mes". i18n es/en/va.
+- ⚠️ **Hueco para B-4 (en follow-ups):** `conceptos_cobro` tiene un solo `precio_centimos`, pero
+  mensual vs diario necesitan dos precios → decisión de esquema antes del motor de cierre.
+
 ## Fase 12 — Funcionalidad pendiente post-F11 (registrada, sin abrir)
 
 > Registrada durante F11-A (2026-06-13). **F12 sigue siendo Ola 1** — secuencial tras F11,
