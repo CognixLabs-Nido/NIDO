@@ -212,6 +212,7 @@
       "perfil": "Perfil",
       "calendario": "Calendario Escolar",
       "menus": "Menús",
+      "cuotas": "Cuotas",
       "mensajeria": "Mensajería",
       "recordatorios": "Recordatorios",
       "agenda": "Agenda",
@@ -318,6 +319,38 @@
         "planificado": "Planificado",
         "activo": "Activo",
         "cerrado": "Cerrado"
+      }
+    },
+    "cuotas": {
+      "title": "Cuotas",
+      "subtitle": "Catálogo de conceptos de cobro del centro.",
+      "nuevo": "Nuevo concepto",
+      "nuevo_title": "Nuevo concepto",
+      "editar": "Editar",
+      "editar_title": "Editar concepto",
+      "eliminar": "Eliminar",
+      "eliminar_title": "Eliminar concepto",
+      "eliminar_confirm": "¿Eliminar el concepto «{nombre}»? Dejará de estar disponible para cobros nuevos.",
+      "save_new": "Crear",
+      "save_edit": "Guardar",
+      "saving": "Guardando...",
+      "deleting": "Eliminando...",
+      "cancel": "Cancelar",
+      "created": "Concepto creado",
+      "updated": "Concepto actualizado",
+      "deleted": "Concepto eliminado",
+      "empty": "No hay conceptos todavía. Crea el primero.",
+      "fields": {
+        "nombre": "Nombre",
+        "tipo": "Tipo",
+        "precio": "Precio (€)",
+        "activo": "Activo",
+        "acciones": "Acciones"
+      },
+      "tipos": {
+        "mensual": "Mensual",
+        "diario": "Diario",
+        "esporadico": "Esporádico"
       }
     },
     "aulas": {
@@ -836,6 +869,25 @@
     },
     "error": {
       "no_reabrir_cerrado": "Un curso cerrado no puede reabrirse."
+    }
+  },
+  "conceptos_cobro": {
+    "validation": {
+      "invalid": "Datos del concepto no válidos",
+      "nombre_requerido": "Nombre requerido",
+      "nombre_largo": "Nombre demasiado largo (máx. 120)",
+      "tipo_invalido": "Tipo de concepto no válido",
+      "precio_invalido": "Introduce un precio válido",
+      "precio_negativo": "El precio no puede ser negativo",
+      "precio_largo": "Precio demasiado alto"
+    },
+    "errors": {
+      "nombre_duplicado": "Ya existe un concepto con ese nombre en el centro.",
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "create_failed": "No se pudo crear el concepto.",
+      "update_failed": "No se pudo actualizar el concepto.",
+      "delete_failed": "No se pudo eliminar el concepto.",
+      "no_encontrado": "Concepto no encontrado."
     }
   },
   "aula": {
