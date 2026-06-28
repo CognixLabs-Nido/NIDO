@@ -1072,6 +1072,56 @@ gated nuevos `f11g-validacion-purga.rls.test.ts` (`F11G_RLS_APPLIED=1`): datos_t
 mandatos_sepa (IBAN nunca en claro al cliente) / cambios_pendientes / 3 buckets. Unit del
 corte de 5 años (`fechaLimitePurga`). ADR-0049. Verde local typecheck/lint/unit/build.
 
+## F12-B — Cuotas, recibos y remesas SEPA (EN CURSO): B-0 abierto
+
+> Primera fase de funcionalidad de F12. Sucede a F11-G/H y **consume** el mandato SEPA capturado
+> en G-2/G-2bis (`mandatos_sepa.iban_cifrado` + `identificador_mandato`). Subfases una-por-PR
+> (patrón F11-G): **B-0** fundación (migración) · **B-1** catálogo de conceptos · **B-2** asignación
+> modalidad/método/becas · **B-3** parte diario de las profes · **B-4** motor de cierre + recibos ·
+> **B-5** RPC `get_mandatos_remesa` + XML pain.008 bajo demanda · **B-6** devoluciones · **B-7** vistas
+> admin/familia + notificación in-app · **B-8** cierre (ADR + tests completos). Decisiones A–K
+> cerradas por el responsable (2026-06-28).
+
+### B-0 — Fundación (este PR, solo migración, sin UI)
+
+Migración `20260628120000_phase12b_0_cuotas_recibos_remesas_fundacion.sql` (aditiva, **sin aplicar**;
+se aplica por SQL Editor — CLI SIGILL). **11 tablas** con `centro_id` redundante, RLS default-DENY,
+audit y triggers `set_centro_id`/`set_updated_at`:
+
+- **Catálogo:** `conceptos_cobro` (mensual/diario/esporadico + precio vigente), `tipos_beca` (lista
+  estándar por centro). Admin-only.
+- **Asignación:** `asignacion_cuota` (modalidad mensual|diario por niño/concepto/mes, sin prorrateo —
+  dec. C), `metodo_pago_familia` (sepa|efectivo|cheque_guarderia|transferencia por niño/mes — dec. H),
+  `becas` (tipo + importe + periodo; línea **negativa** que resta sobre el total — dec. E). Admin-only.
+  Las tres con **soft-delete** (`deleted_at`, sin hard DELETE; índice único parcial WHERE deleted_at
+  IS NULL) — valor de auditoría: por qué se cobró/becó/qué método (ajuste post-review).
+- **Parte de las profes:** `parte_servicio_diario` (comedor/matinera/vespertina por niño/fecha — dec. B;
+  **tabla propia**, NO se reutiliza `comidas`). La profe del niño (o admin) apunta y lee; el tutor NO.
+- **Cierre + recibos:** `cierre_mensual` (manual e **INMUTABLE** — dec. F: sin UPDATE/DELETE),
+  `recibos` (total puede ser **negativo** = saldo a favor; `es_esporadico`; `devuelto_de_recibo_id`;
+  estados pendiente_procesar|enviado_banco+fecha|devuelto|cobrado_manual — dec. I), `lineas_recibo`
+  (importe **congelado** — dec. J; admite negativos para becas/saldo). El **tutor ve** sus recibos+líneas.
+- **Remesas:** `remesas` (estado borrador|enviada + fecha; **SIN xml_path** — dec. G1, el XML se genera
+  bajo demanda y no se almacena; índice de periodo **NO único** → puede haber >1 remesa/mes por re-giros,
+  ajuste post-review), `recibos_remesa`. Admin-only.
+
+**6 ENUMs:** `tipo_concepto`, `modalidad_cobro`, `metodo_pago`, `servicio_diario`, `estado_recibo`,
+`estado_remesa`. **Helpers nuevos:** `centro_de_recibo`, `nino_de_recibo`, `centro_de_remesa` +
+triggers `derivar_centro_id_de_recibo`/`_de_remesa` (reusa `derivar_centro_id_de_nino` de G-0).
+`audit_trigger_function` ampliada (+11 ramas, preserva las previas). Tipos en `database.ts` a mano
+(patrón H-0, para tipar el test gated antes de aplicar). Test RLS gated
+`f12b-cuotas-recibos.rls.test.ts` (`F12B_RLS_APPLIED`). Verde local: typecheck/lint/build + unit
+1645✓ + gated 7 skipped. **Sin bucket** (dec. G1). **Dependencia RGPD con F11-B** registrada en
+follow-ups (retención de recibos/remesas, IBAN en el XML, RAT). **El usuario mergea; no empezar B-1
+hasta mergear B-0.**
+
+🔒 **Dos requisitos obligatorios diferidos (registrados en follow-ups, no opcionales):** (1) **B-4** —
+trigger de congelado del mes cerrado (bloquear UPDATE/DELETE de `recibos`/`lineas_recibo`/
+`parte_servicio_diario` con `cierre_mensual` del periodo; sin él la decisión F no se cumple, B-0 solo
+hace inmutable el marcador `cierre_mensual`). (2) **B-6** — el estado `devuelto` debe **conservar**
+`fecha_envio_banco` y añadir `fecha_devolucion` (las R-transactions SEPA referencian el envío original;
+hoy el CHECK la anula).
+
 ## Fase 12 — Funcionalidad pendiente post-F11 (registrada, sin abrir)
 
 > Registrada durante F11-A (2026-06-13). **F12 sigue siendo Ola 1** — secuencial tras F11,
