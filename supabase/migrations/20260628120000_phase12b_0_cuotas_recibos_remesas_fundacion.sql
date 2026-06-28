@@ -8,13 +8,23 @@
 -- que capturó F11-G-2/G-2bis. Fuente de verdad: decisiones A–K cerradas por el
 -- responsable (2026-06-28), recogidas en memoria del proyecto (project_nido_f12b_*).
 --
+-- ORDEN DE DEPENDENCIAS (importante): las funciones LANGUAGE sql validan su cuerpo al
+-- CREARSE (a diferencia de plpgsql, que difiere). Por eso centro_de_recibo/nino_de_recibo
+-- se definen DESPUÉS de crear `recibos`, y centro_de_remesa DESPUÉS de crear `remesas`.
+-- Además nino_de_recibo se usa en la policy SELECT de `lineas_recibo` (se resuelve en
+-- CREATE POLICY) → debe existir antes de esa tabla. Secuencia: tablas de catálogo →
+-- asignación → parte → cierre → recibos → (helpers de recibo) → lineas_recibo → remesas →
+-- (helper de remesa) → recibos_remesa → audit. Las FK siempre apuntan a tablas ya creadas
+-- (conceptos_cobro antes de asignacion_cuota/lineas_recibo; tipos_beca antes de becas;
+-- recibos antes de lineas_recibo/recibos_remesa; remesas antes de recibos_remesa).
+--
 -- DECISIONES DE MODELADO (A–K):
 --  A. Código F12-B (Ola 1, post-F11). Subfases B-0..B-8, un PR por subfase.
 --  B. Señal de cobro diario = tabla NUEVA parte_servicio_diario (comedor/matinera/
 --     vespertina, presente bool, por niño/fecha/servicio). NO se reutiliza `comidas`
 --     (es señal nutricional, con su propia ventana de edición y semántica).
 --  C. Modalidad por niño/mes = asignacion_cuota(nino,concepto,anio,mes,modalidad),
---     UNIQUE(nino,concepto,anio,mes). Sin prorrateo intra-mes (1 modalidad/mes).
+--     UNIQUE(nino,concepto,anio,mes) ignorando soft-deleted. Sin prorrateo intra-mes.
 --  D. Cálculo en el cierre (B-4, no aquí): mensual → 1 línea precio mensual; diario →
 --     nº días marcados en parte_servicio_diario × precio diario.
 --  E. BECAS = línea NEGATIVA propia (no exención total, no 0 €), importe configurable;
@@ -25,14 +35,22 @@
 --     admiten negativos (sin CHECK de signo). Saldo al irse del centro = manual.
 --  F. Cierre de mes INMUTABLE (F2): cierre_mensual sin UPDATE/DELETE (no se reabre).
 --     Los errores se corrigen con recibos correctivos/esporádicos y devoluciones.
+--     OJO — REQUISITO de B-4 (no opcional): un trigger debe congelar UPDATE/DELETE de
+--     recibos/lineas_recibo/parte_servicio_diario cuyo (centro,anio,mes) tenga
+--     cierre_mensual (patrón bloquea_texto_tras_firma de F8). B-0 solo hace inmutable el
+--     MARCADOR cierre_mensual; sin ese trigger la decisión F no se cumple del todo.
 --  G. XML SEPA G1: NO se almacena en servidor. Se genera bajo demanda y se descarga
 --     (regenerable). → NO hay bucket remesas-sepa ni columna xml_path. `remesas` guarda
---     estado + fecha_envio_banco, no el fichero.
+--     estado + fecha_envio_banco, no el fichero. Índice de periodo NO único: puede haber
+--     >1 remesa en el mismo mes (re-giros de devoluciones).
 --  H. metodo_pago_familia a nivel NIÑO, por niño/mes; un hermano hereda la forma del
 --     otro (copia en la UI de B-2, no aquí). Solo `sepa` entra al XML; el resto genera
 --     recibo en estado 'pendiente_procesar'.
 --  I. Estados de recibo: pendiente_procesar | enviado_banco (con fecha_envio_banco) |
 --     devuelto | cobrado_manual. Sin reconciliación automática con el banco.
+--     OJO — REQUISITO de B-6: 'devuelto' debe CONSERVAR fecha_envio_banco + añadir
+--     fecha_devolucion (las R-transactions SEPA referencian el envío original). En B-0 el
+--     CHECK exige fecha solo en enviado_banco; se relaja en B-6.
 --  J. Precio CONGELADO: el catálogo guarda el precio vigente; la LÍNEA del recibo
 --     congela el importe aplicado (precio_unitario_centimos + importe_centimos).
 --     Cambiar un precio del catálogo NO reescribe recibos pasados.
@@ -40,6 +58,9 @@
 --     el parte diario (no ve recibos ni remesas); el IBAN nunca es legible por cliente
 --     (descifrado = RPC server-side admin-only de B-5). Dependencia RGPD con F11-B
 --     (retención de recibos/remesas, IBAN, RAT) registrada en follow-ups.
+--  + Las tres tablas de asignación (asignacion_cuota, becas, metodo_pago_familia) usan
+--    SOFT-DELETE (deleted_at, sin hard DELETE): valor de auditoría (por qué se cobró/
+--    becó/qué método). Sus índices únicos ignoran las filas soft-deleted.
 --
 -- Gotcha MVCC (ADR-0007 + §MVCC): las policies usan es_admin(centro_id),
 -- es_tutor_legal_de(nino_id), es_profe_de_nino(nino_id) y los lookups nino_de_recibo /
@@ -63,45 +84,7 @@ CREATE TYPE public.servicio_diario AS ENUM ('comedor', 'matinera', 'vespertina')
 CREATE TYPE public.estado_recibo  AS ENUM ('pendiente_procesar', 'enviado_banco', 'devuelto', 'cobrado_manual');
 CREATE TYPE public.estado_remesa  AS ENUM ('borrador', 'enviada');
 
--- ─── 2. Helpers nuevos (STABLE SECURITY DEFINER) ─────────────────────────────
--- Lookups de centro/niño desde recibo/remesa, para RLS simple y triggers de
--- derivación. Leen tablas distintas a la insertada → seguros frente al gotcha MVCC.
-CREATE OR REPLACE FUNCTION public.centro_de_recibo(p_recibo_id uuid)
-RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT centro_id FROM public.recibos WHERE id = p_recibo_id;
-$$;
-
-CREATE OR REPLACE FUNCTION public.nino_de_recibo(p_recibo_id uuid)
-RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT nino_id FROM public.recibos WHERE id = p_recibo_id;
-$$;
-
-CREATE OR REPLACE FUNCTION public.centro_de_remesa(p_remesa_id uuid)
-RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT centro_id FROM public.remesas WHERE id = p_remesa_id;
-$$;
-
-GRANT EXECUTE ON FUNCTION public.centro_de_recibo(uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.nino_de_recibo(uuid)   TO authenticated;
-GRANT EXECUTE ON FUNCTION public.centro_de_remesa(uuid) TO authenticated;
-
--- Triggers de derivación de centro_id desde la fila padre (recibo/remesa).
--- (derivar_centro_id_de_nino() ya existe desde F11-G-0 para las tablas con nino_id.)
-CREATE OR REPLACE FUNCTION public.derivar_centro_id_de_recibo()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  NEW.centro_id := public.centro_de_recibo(NEW.recibo_id);
-  RETURN NEW;
-END $$;
-
-CREATE OR REPLACE FUNCTION public.derivar_centro_id_de_remesa()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  NEW.centro_id := public.centro_de_remesa(NEW.remesa_id);
-  RETURN NEW;
-END $$;
-
--- ─── 3. conceptos_cobro: catálogo editable por centro (con precio vigente) ────
+-- ─── 2. conceptos_cobro: catálogo editable por centro (con precio vigente) ────
 CREATE TABLE public.conceptos_cobro (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   centro_id       uuid NOT NULL REFERENCES public.centros(id) ON DELETE CASCADE,
@@ -136,7 +119,7 @@ CREATE POLICY conceptos_cobro_update ON public.conceptos_cobro
   FOR UPDATE TO authenticated USING (public.es_admin(centro_id)) WITH CHECK (public.es_admin(centro_id));
 -- DELETE: sin policy → default DENY (baja = soft delete vía UPDATE).
 
--- ─── 4. tipos_beca: lista estándar de becas por centro (Conselleria, comedor…) ─
+-- ─── 3. tipos_beca: lista estándar de becas por centro (Conselleria, comedor…) ─
 CREATE TABLE public.tipos_beca (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   centro_id  uuid NOT NULL REFERENCES public.centros(id) ON DELETE CASCADE,
@@ -168,7 +151,7 @@ CREATE POLICY tipos_beca_update ON public.tipos_beca
   FOR UPDATE TO authenticated USING (public.es_admin(centro_id)) WITH CHECK (public.es_admin(centro_id));
 -- DELETE: sin policy → default DENY.
 
--- ─── 5. asignacion_cuota: modalidad mensual|diario por niño/concepto/mes ──────
+-- ─── 4. asignacion_cuota: modalidad mensual|diario por niño/concepto/mes ──────
 CREATE TABLE public.asignacion_cuota (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   centro_id   uuid NOT NULL REFERENCES public.centros(id) ON DELETE CASCADE,
@@ -208,7 +191,7 @@ CREATE POLICY asignacion_cuota_update ON public.asignacion_cuota
   FOR UPDATE TO authenticated USING (public.es_admin(centro_id)) WITH CHECK (public.es_admin(centro_id));
 -- DELETE: sin policy → default DENY (baja = soft delete con deleted_at vía UPDATE).
 
--- ─── 6. becas: beca concreta por niño (tipo + importe + periodo) ──────────────
+-- ─── 5. becas: beca concreta por niño (tipo + importe + periodo) ──────────────
 CREATE TABLE public.becas (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   centro_id       uuid NOT NULL REFERENCES public.centros(id) ON DELETE CASCADE,
@@ -227,7 +210,7 @@ CREATE TABLE public.becas (
 CREATE INDEX idx_becas_nino ON public.becas (nino_id) WHERE deleted_at IS NULL;
 
 COMMENT ON TABLE public.becas IS
-  'F12-B (decisión E): beca concreta de un niño (tipo de tipos_beca + importe en céntimos + periodo). El importe se guarda POSITIVO (magnitud); el motor de cierre (B-4) crea una línea NEGATIVA que resta sobre el total del recibo. El total puede quedar negativo (saldo a favor).';
+  'F12-B (decisión E): beca concreta de un niño (tipo de tipos_beca + importe en céntimos + periodo). El importe se guarda POSITIVO (magnitud); el motor de cierre (B-4) crea una línea NEGATIVA que resta sobre el total del recibo. El total puede quedar negativo (saldo a favor). Soft-delete (deleted_at).';
 
 CREATE TRIGGER becas_set_centro_id
   BEFORE INSERT ON public.becas
@@ -246,7 +229,7 @@ CREATE POLICY becas_update ON public.becas
   FOR UPDATE TO authenticated USING (public.es_admin(centro_id)) WITH CHECK (public.es_admin(centro_id));
 -- DELETE: sin policy → default DENY (baja = soft delete vía UPDATE).
 
--- ─── 7. metodo_pago_familia: forma de pago por niño/mes ───────────────────────
+-- ─── 6. metodo_pago_familia: forma de pago por niño/mes ───────────────────────
 CREATE TABLE public.metodo_pago_familia (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   centro_id  uuid NOT NULL REFERENCES public.centros(id) ON DELETE CASCADE,
@@ -283,9 +266,9 @@ CREATE POLICY metodo_pago_familia_insert ON public.metodo_pago_familia
   FOR INSERT TO authenticated WITH CHECK (public.es_admin(centro_id));
 CREATE POLICY metodo_pago_familia_update ON public.metodo_pago_familia
   FOR UPDATE TO authenticated USING (public.es_admin(centro_id)) WITH CHECK (public.es_admin(centro_id));
--- DELETE: sin policy → default DENY.
+-- DELETE: sin policy → default DENY (baja = soft delete vía UPDATE).
 
--- ─── 8. parte_servicio_diario: el parte de las profes (comedor/matinera/vesp.) ─
+-- ─── 7. parte_servicio_diario: el parte de las profes (comedor/matinera/vesp.) ─
 CREATE TABLE public.parte_servicio_diario (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   centro_id  uuid NOT NULL REFERENCES public.centros(id) ON DELETE CASCADE,
@@ -325,7 +308,7 @@ CREATE POLICY parte_servicio_diario_update ON public.parte_servicio_diario
   WITH CHECK (public.es_admin(centro_id) OR public.es_profe_de_nino(nino_id));
 -- DELETE: sin policy → default DENY.
 
--- ─── 9. cierre_mensual: cierre manual e INMUTABLE del mes (decisión F) ─────────
+-- ─── 8. cierre_mensual: cierre manual e INMUTABLE del mes (decisión F) ─────────
 CREATE TABLE public.cierre_mensual (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   centro_id  uuid NOT NULL REFERENCES public.centros(id)  ON DELETE CASCADE,
@@ -352,7 +335,7 @@ CREATE POLICY cierre_mensual_insert ON public.cierre_mensual
   FOR INSERT TO authenticated WITH CHECK (public.es_admin(centro_id) AND cerrado_por = auth.uid());
 -- UPDATE/DELETE: sin policy → default DENY (cierre inmutable, decisión F).
 
--- ─── 10. recibos: recibo por niño/mes (regular, esporádico o devolución) ───────
+-- ─── 9. recibos: recibo por niño/mes (regular, esporádico o devolución) ────────
 CREATE TABLE public.recibos (
   id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   centro_id            uuid NOT NULL REFERENCES public.centros(id) ON DELETE CASCADE,
@@ -375,6 +358,7 @@ CREATE TABLE public.recibos (
     concepto_esporadico IS NULL OR char_length(concepto_esporadico) BETWEEN 1 AND 200
   ),
   -- enviado_banco exige fecha; el resto de estados NO la llevan.
+  -- (B-6 relajará esto para que 'devuelto' conserve fecha_envio_banco + fecha_devolucion.)
   CONSTRAINT recibos_envio_banco_fecha CHECK (
     (estado = 'enviado_banco' AND fecha_envio_banco IS NOT NULL) OR
     (estado <> 'enviado_banco' AND fecha_envio_banco IS NULL)
@@ -412,6 +396,29 @@ CREATE POLICY recibos_insert ON public.recibos
 CREATE POLICY recibos_update ON public.recibos
   FOR UPDATE TO authenticated USING (public.es_admin(centro_id)) WITH CHECK (public.es_admin(centro_id));
 -- DELETE: sin policy → default DENY.
+
+-- ─── 10. Helpers de recibo (DESPUÉS de crear `recibos`: las funciones SQL validan
+-- su cuerpo al crearse). Usados por el trigger de derivación de lineas_recibo y por su
+-- policy SELECT. Leen `recibos` (tabla distinta de la que se inserta) → MVCC seguro.
+CREATE OR REPLACE FUNCTION public.centro_de_recibo(p_recibo_id uuid)
+RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT centro_id FROM public.recibos WHERE id = p_recibo_id;
+$$;
+
+CREATE OR REPLACE FUNCTION public.nino_de_recibo(p_recibo_id uuid)
+RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT nino_id FROM public.recibos WHERE id = p_recibo_id;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.centro_de_recibo(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.nino_de_recibo(uuid)   TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.derivar_centro_id_de_recibo()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  NEW.centro_id := public.centro_de_recibo(NEW.recibo_id);
+  RETURN NEW;
+END $$;
 
 -- ─── 11. lineas_recibo: desglose congelado del recibo (permite negativos) ──────
 CREATE TABLE public.lineas_recibo (
@@ -494,7 +501,23 @@ CREATE POLICY remesas_update ON public.remesas
   FOR UPDATE TO authenticated USING (public.es_admin(centro_id)) WITH CHECK (public.es_admin(centro_id));
 -- DELETE: sin policy → default DENY (baja = soft delete vía UPDATE).
 
--- ─── 13. recibos_remesa: qué recibos SEPA entraron en una remesa ──────────────
+-- ─── 13. Helper de remesa (DESPUÉS de crear `remesas`: la función SQL valida su
+-- cuerpo al crearse). Usado por el trigger de derivación de recibos_remesa.
+CREATE OR REPLACE FUNCTION public.centro_de_remesa(p_remesa_id uuid)
+RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT centro_id FROM public.remesas WHERE id = p_remesa_id;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.centro_de_remesa(uuid) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.derivar_centro_id_de_remesa()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  NEW.centro_id := public.centro_de_remesa(NEW.remesa_id);
+  RETURN NEW;
+END $$;
+
+-- ─── 14. recibos_remesa: qué recibos SEPA entraron en una remesa ──────────────
 CREATE TABLE public.recibos_remesa (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   centro_id  uuid NOT NULL REFERENCES public.centros(id)  ON DELETE CASCADE,
@@ -524,7 +547,7 @@ CREATE POLICY recibos_remesa_delete ON public.recibos_remesa
   FOR DELETE TO authenticated USING (public.es_admin(centro_id));
 -- UPDATE: sin policy → default DENY (relación inmutable; se borra y recrea).
 
--- ─── 14. audit_trigger_function ampliada (+ 11 ramas) + triggers ──────────────
+-- ─── 15. audit_trigger_function ampliada (+ 11 ramas) + triggers ──────────────
 -- CREATE OR REPLACE preserva TODAS las ramas previas (Fases 2..11-H). Las 11 tablas
 -- nuevas llevan centro_id poblado (directo o derivado por trigger BEFORE INSERT, que
 -- corre antes del AFTER de audit) → rama uniforme COALESCE((NEW).centro_id,(OLD).centro_id).
