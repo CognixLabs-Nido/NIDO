@@ -65,16 +65,14 @@ export async function setModalidad(
 
   const { error } = existente
     ? await supabase.from('asignacion_cuota').update({ modalidad }).eq('id', existente.id)
-    : await supabase
-        .from('asignacion_cuota')
-        .insert({
-          centro_id: centroId,
-          nino_id: ninoId,
-          concepto_id: conceptoId,
-          anio,
-          mes,
-          modalidad,
-        })
+    : await supabase.from('asignacion_cuota').insert({
+        centro_id: centroId,
+        nino_id: ninoId,
+        concepto_id: conceptoId,
+        anio,
+        mes,
+        modalidad,
+      })
 
   if (error) {
     logger.warn('setModalidad upsert', error.message)
