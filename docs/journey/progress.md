@@ -1142,6 +1142,25 @@ Sin tocar BD. `/admin/cuotas` pasa a **Tabs**: Conceptos (B-1) · Asignación me
 - ⚠️ **Hueco para B-4 (en follow-ups):** `conceptos_cobro` tiene un solo `precio_centimos`, pero
   mensual vs diario necesitan dos precios → decisión de esquema antes del motor de cierre.
 
+### B-3 — Parte de servicio diario (este PR)
+
+Sin tocar BD (esquema en B-0). Feature nuevo `parte-servicio`; pase de lista para que las profes
+apunten cada día quién se queda a **comedor / matinera / vespertina**.
+
+- **Ruta**: `/teacher/aula/[id]/servicio` (link en el dashboard de aula, junto a asistencia/comida/
+  fotos). Guard profe del aula **o** admin; el tutor **no** lo ve (lo enforza la RLS de B-0:
+  `es_profe_de_nino` + `es_admin`).
+- **UI** (reusa `PaseDeListaTable`, ADR-0014): tabs de servicio (state local) + `ServicioDayPicker`
+  (searchParams) + columna `presente` Sí/No por niño. Pre-carga los 3 servicios en una pasada server.
+- **Escritura**: `batchUpsertParteServicio` → UPSERT en `parte_servicio_diario` por
+  `(nino_id, fecha, servicio)`. DELETE denegado → "no se queda" se guarda como `presente=false`.
+- **Edición**: hoy y días **pasados** editan (corregir olvidos antes del cierre de B-4; la RLS del
+  parte no tiene ventana); el **futuro** es solo lectura.
+- Lazy (ADR-0015): no se crean filas por adelantado; `null` = nadie lo ha apuntado. i18n es/en/va.
+- Tests de schema (7/7). Verde local: typecheck/lint/format/build; unit del feature verde (la suite
+  RLS completa quedó flaky por saturación de la máquina — fallos solo en `src/test/rls/*`, ajenos a
+  B-3; CI es la señal autoritativa).
+
 ## Fase 12 — Funcionalidad pendiente post-F11 (registrada, sin abrir)
 
 > Registrada durante F11-A (2026-06-13). **F12 sigue siendo Ola 1** — secuencial tras F11,

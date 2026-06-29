@@ -1299,6 +1299,49 @@
       "ver_aula": "Obrir aula"
     }
   },
+  "parte_servicio": {
+    "title": "Part de servei",
+    "subtitle": "Apunta qui es queda a menjador, matinera o vespertina cada dia.",
+    "ver": "Part de servei",
+    "ayuda": "Marca els xiquets que es queden a este servei. Serveix per al cobrament del mes.",
+    "ningun_nino": "Encara no hi ha xiquets matriculats en esta aula.",
+    "guardar": "Guardar part",
+    "selector_servicio_label": "Selecció de servei",
+    "selector": {
+      "anterior": "Dia anterior",
+      "siguiente": "Dia següent",
+      "dia_futuro": "Dia futur",
+      "volver_a_hoy": "Tornar a hui"
+    },
+    "servicios": {
+      "comedor": "Menjador",
+      "matinera": "Matinera",
+      "vespertina": "Vespertina"
+    },
+    "columna": {
+      "presente": "Es queda?"
+    },
+    "opciones": {
+      "si": "Sí",
+      "no": "No"
+    },
+    "quick_actions": {
+      "todos_se_quedan": "Tots es queden"
+    },
+    "status": {
+      "pending": "Sense marcar",
+      "dirty": "Sense guardar",
+      "saved": "Guardat",
+      "error": "Error"
+    },
+    "validation": {
+      "fecha_invalida": "Data no vàlida."
+    },
+    "errors": {
+      "sin_permiso": "No tens permís per a editar este part.",
+      "guardar_fallo": "No s'ha pogut guardar. Torna-ho a intentar."
+    }
+  },
   "ausencia": {
     "title": "Absències",
     "ninguna": "Encara no s'ha reportat cap absència.",
