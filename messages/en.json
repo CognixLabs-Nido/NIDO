@@ -1299,6 +1299,49 @@
       "ver_aula": "Open classroom"
     }
   },
+  "parte_servicio": {
+    "title": "Service log",
+    "subtitle": "Record who stays for lunch, early-care or after-care each day.",
+    "ver": "Service log",
+    "ayuda": "Check the children who stay for this service. Used for monthly billing.",
+    "ningun_nino": "No children enrolled in this classroom yet.",
+    "guardar": "Save log",
+    "selector_servicio_label": "Service selection",
+    "selector": {
+      "anterior": "Previous day",
+      "siguiente": "Next day",
+      "dia_futuro": "Future day",
+      "volver_a_hoy": "Back to today"
+    },
+    "servicios": {
+      "comedor": "Lunch",
+      "matinera": "Early care",
+      "vespertina": "After care"
+    },
+    "columna": {
+      "presente": "Staying?"
+    },
+    "opciones": {
+      "si": "Yes",
+      "no": "No"
+    },
+    "quick_actions": {
+      "todos_se_quedan": "Everyone stays"
+    },
+    "status": {
+      "pending": "Unmarked",
+      "dirty": "Unsaved",
+      "saved": "Saved",
+      "error": "Error"
+    },
+    "validation": {
+      "fecha_invalida": "Invalid date."
+    },
+    "errors": {
+      "sin_permiso": "You don't have permission to edit this log.",
+      "guardar_fallo": "Couldn't save. Please try again."
+    }
+  },
   "ausencia": {
     "title": "Absences",
     "ninguna": "No absences reported yet.",

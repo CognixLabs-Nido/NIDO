@@ -1299,6 +1299,49 @@
       "ver_aula": "Ver aula"
     }
   },
+  "parte_servicio": {
+    "title": "Parte de servicio",
+    "subtitle": "Apunta quién se queda a comedor, matinera o vespertina cada día.",
+    "ver": "Parte de servicio",
+    "ayuda": "Marca a los niños que se quedan a este servicio. Sirve para el cobro del mes.",
+    "ningun_nino": "No hay niños matriculados todavía en esta aula.",
+    "guardar": "Guardar parte",
+    "selector_servicio_label": "Selección de servicio",
+    "selector": {
+      "anterior": "Día anterior",
+      "siguiente": "Día siguiente",
+      "dia_futuro": "Día futuro",
+      "volver_a_hoy": "Volver a hoy"
+    },
+    "servicios": {
+      "comedor": "Comedor",
+      "matinera": "Matinera",
+      "vespertina": "Vespertina"
+    },
+    "columna": {
+      "presente": "¿Se queda?"
+    },
+    "opciones": {
+      "si": "Sí",
+      "no": "No"
+    },
+    "quick_actions": {
+      "todos_se_quedan": "Todos se quedan"
+    },
+    "status": {
+      "pending": "Sin marcar",
+      "dirty": "Sin guardar",
+      "saved": "Guardado",
+      "error": "Error"
+    },
+    "validation": {
+      "fecha_invalida": "Fecha inválida."
+    },
+    "errors": {
+      "sin_permiso": "No tienes permiso para editar este parte.",
+      "guardar_fallo": "No se pudo guardar. Inténtalo de nuevo."
+    }
+  },
   "ausencia": {
     "title": "Ausencias",
     "ninguna": "Aún no se ha reportado ninguna ausencia.",

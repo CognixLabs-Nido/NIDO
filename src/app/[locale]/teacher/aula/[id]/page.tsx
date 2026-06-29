@@ -1,4 +1,10 @@
-import { ChevronLeftIcon, ClipboardCheckIcon, ImagePlusIcon, UtensilsIcon } from 'lucide-react'
+import {
+  ChevronLeftIcon,
+  ClipboardCheckIcon,
+  ClipboardListIcon,
+  ImagePlusIcon,
+  UtensilsIcon,
+} from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -27,6 +33,7 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
   const tNav = await getTranslations('teacher.nav')
   const tAsistencia = await getTranslations('asistencia')
   const tMenus = await getTranslations('menus.pase_de_lista')
+  const tServicio = await getTranslations('parte_servicio')
   const tFotos = await getTranslations('fotos')
 
   const aula = await getAulaById(id)
@@ -96,6 +103,14 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
           >
             <UtensilsIcon className="size-3.5" />
             {tMenus('ver')}
+          </Link>
+          <Link
+            href={`/${locale}/teacher/aula/${id}/servicio`}
+            data-testid="link-servicio"
+            className="border-border bg-background hover:bg-muted text-foreground inline-flex h-7 items-center gap-1 rounded-xl border px-2.5 text-[0.8rem] font-medium transition-colors"
+          >
+            <ClipboardListIcon className="size-3.5" />
+            {tServicio('ver')}
           </Link>
           <Link
             href={`/${locale}/teacher/aula/${id}/fotos`}
