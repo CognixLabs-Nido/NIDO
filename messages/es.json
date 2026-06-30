@@ -344,6 +344,10 @@
         "nombre": "Nombre",
         "tipo": "Tipo",
         "precio": "Precio (€)",
+        "precio_diario": "Precio por día (€)",
+        "precio_mensual_opcional": "Precio mensual (€, opcional)",
+        "servicio": "Servicio",
+        "servicio_placeholder": "Elige un servicio",
         "activo": "Activo",
         "acciones": "Acciones",
         "nino": "Niño/a",
@@ -356,9 +360,16 @@
         "diario": "Diario",
         "esporadico": "Esporádico"
       },
+      "servicios": {
+        "comedor": "Comedor",
+        "matinera": "Matinera",
+        "vespertina": "Vespertina"
+      },
+      "precio_por_dia": "{precio}/día",
       "tab_conceptos": "Conceptos",
       "tab_asignacion": "Asignación mensual",
       "tab_becas": "Becas",
+      "tab_cierre": "Cierre",
       "periodo": "Periodo",
       "mes": "Mes",
       "anio": "Año",
@@ -374,7 +385,6 @@
       "metodos": {
         "sepa": "SEPA (domiciliación)",
         "efectivo": "Efectivo",
-        "cheque_guarderia": "Cheque guardería",
         "transferencia": "Transferencia"
       },
       "modalidades": {
@@ -944,7 +954,10 @@
       "tipo_invalido": "Tipo de concepto no válido",
       "precio_invalido": "Introduce un precio válido",
       "precio_negativo": "El precio no puede ser negativo",
-      "precio_largo": "Precio demasiado alto"
+      "precio_largo": "Precio demasiado alto",
+      "precio_requerido": "Introduce el precio",
+      "precio_diario_requerido": "Introduce el precio por día",
+      "servicio_requerido": "Elige el servicio que factura"
     },
     "errors": {
       "nombre_duplicado": "Ya existe un concepto con ese nombre en el centro.",
@@ -961,6 +974,61 @@
       "no_autorizado": "No tienes permiso para esta acción.",
       "modalidad_failed": "No se pudo guardar la modalidad.",
       "metodo_failed": "No se pudo guardar el método de pago."
+    }
+  },
+  "cierre_cobros": {
+    "estado_titulo": "Estado del mes",
+    "cerrado": "Cerrado",
+    "abierto": "Abierto",
+    "resumen_cerrado": "{num} recibos generados · total {total}.",
+    "aviso_cerrar": "Al cerrar el mes se generan los recibos de cada niño/a (cuotas, becas y saldo arrastrado) y el periodo queda inmutable. Las correcciones se hacen con recibos esporádicos o devoluciones.",
+    "cerrar_mes": "Cerrar mes",
+    "cerrando": "Cerrando…",
+    "cerrado_ok": "Mes cerrado. Recibos generados.",
+    "confirm_title": "¿Cerrar el mes?",
+    "confirm_desc": "Se generarán los recibos del periodo y quedará inmutable. Esta acción no se puede deshacer.",
+    "cancel": "Cancelar",
+    "nuevo_esporadico": "Recibo esporádico",
+    "esporadico_title": "Nuevo recibo esporádico",
+    "esporadico_ok": "Recibo esporádico creado.",
+    "crear_esporadico": "Crear recibo",
+    "guardando": "Guardando…",
+    "anadir_linea": "Añadir línea",
+    "quitar_linea": "Quitar línea",
+    "fields": {
+      "nino": "Niño/a",
+      "nino_placeholder": "Elige un niño/a",
+      "concepto": "Concepto",
+      "concepto_placeholder": "Uniforme, excursión…",
+      "metodo": "Método de pago",
+      "lineas": "Líneas",
+      "linea_desc": "Descripción",
+      "linea_cantidad": "Cantidad",
+      "linea_importe": "Importe (€)"
+    },
+    "metodos": {
+      "ninguno": "Sin método (lo marca luego)",
+      "sepa": "SEPA (domiciliación)",
+      "efectivo": "Efectivo",
+      "transferencia": "Transferencia"
+    },
+    "validation": {
+      "nino_requerido": "Selecciona un niño/a",
+      "concepto_requerido": "Indica el concepto",
+      "concepto_largo": "Concepto demasiado largo (máx. 200)",
+      "descripcion_requerida": "Indica la descripción",
+      "descripcion_larga": "Descripción demasiado larga (máx. 200)",
+      "cantidad_invalida": "Cantidad no válida",
+      "importe_invalido": "Introduce un importe válido",
+      "importe_negativo": "El importe no puede ser negativo",
+      "importe_largo": "Importe demasiado alto",
+      "sin_lineas": "Añade al menos una línea"
+    },
+    "errors": {
+      "invalid": "Datos no válidos.",
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "cerrar_failed": "No se pudo cerrar el mes.",
+      "esporadico_failed": "No se pudo crear el recibo esporádico."
     }
   },
   "becas": {

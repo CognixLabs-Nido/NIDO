@@ -16,7 +16,7 @@ const inputSchema = z.object({
   ninoId: z.string().uuid(),
   anio: z.number().int().min(2024).max(2100),
   mes: z.number().int().min(1).max(12),
-  metodo: z.enum(['sepa', 'efectivo', 'cheque_guarderia', 'transferencia']),
+  metodo: z.enum(['sepa', 'efectivo', 'transferencia']),
 })
 
 type MetodoPago = Database['public']['Enums']['metodo_pago']

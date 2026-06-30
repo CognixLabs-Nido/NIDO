@@ -1161,6 +1161,36 @@ apunten cada día quién se queda a **comedor / matinera / vespertina**.
   RLS completa quedó flaky por saturación de la máquina — fallos solo en `src/test/rls/*`, ajenos a
   B-3; CI es la señal autoritativa).
 
+### B-4 — Motor de cierre + recibos (este PR · lleva esquema)
+
+Migración `20260630120000_phase12b_4_motor_cierre.sql`. Decisiones cerradas (2026-06-30):
+
+- **Doble precio + servicio** en `conceptos_cobro`: `precio_mensual_centimos` / `precio_diario_centimos`
+  (ambos nullable) + `servicio servicio_diario` (obligatorio en `diario`, NULL en mensual/esporádico).
+  Migra el `precio_centimos` único → mensual y se elimina. CHECK de coherencia por tipo. **Resuelve el
+  hueco detectado en B-2** (un solo precio). Esporádico reusa `precio_mensual_centimos` como precio único.
+- **`cheque_guarderia` deja de ser método**: es un descuento → se modela como un `tipos_beca` (línea
+  negativa). Se elimina del ENUM `metodo_pago` (sin datos reales; swap de tipo en 2 columnas).
+- **`recibos.metodo` → NULLABLE**: la directora marca el giro explícitamente; sin `metodo_pago_familia`
+  el recibo queda `pendiente_procesar` sin método, fuera de remesa (nada de default inteligente).
+- **Trigger de congelado** (`congelar_si_mes_cerrado`, patrón `bloquea_texto_tras_firma` de F8): con
+  `cierre_mensual` del periodo bloquea INSERT/UPDATE/DELETE del **parte** y UPDATE/DELETE de **recibos
+  regulares + sus líneas**. Exentos: esporádicos y devoluciones (las correcciones van por ahí). Cumple
+  la decisión F (B-0 solo hacía inmutable el marcador). Helper `mes_cerrado(centro,anio,mes)`.
+- **Motor = RPC `cerrar_mes_cobros`** (SECURITY DEFINER, chequea `es_admin`), **atómica + idempotente**:
+  por cada niño con matrícula activa genera recibo + líneas (mensual→precio_mensual; diario→nº días
+  presente en parte × precio_diario; becas activas→línea negativa; saldo<0 del mes anterior→línea de
+  apertura; método congelado de `metodo_pago_familia` o NULL). Recibo solo si ≥1 línea; total puede ser
+  negativo (arrastra). Inserta `cierre_mensual` **al final** (durante el cálculo el mes no está cerrado →
+  pasa el congelado; re-cerrar = no-op). La invoca la action fina `cerrarMes`.
+- **`crear_recibo_esporadico`** (RPC) + action `crearReciboEsporadico`: recibo esporádico con líneas,
+  fuera del cierre, permitido aunque el mes esté cerrado.
+- **UI mínima**: pestaña **Cierre** en `/admin/cuotas` (selector mes + estado + botón cerrar con confirm +
+  diálogo de recibo esporádico con líneas dinámicas). Feature B-1 `conceptos-cobro` migrado a dos
+  precios + selector de servicio; B-2 limpia `cheque_guarderia` del selector de método. i18n es/en/va.
+- `database.ts` a mano (columnas + ENUM + 3 funciones). Tests de schema (17/17). **SIN aplicar** (CLI
+  SIGILL → SQL Editor; tras aplicar: registrar versión + `npm run db:types`).
+
 ## Fase 12 — Funcionalidad pendiente post-F11 (registrada, sin abrir)
 
 > Registrada durante F11-A (2026-06-13). **F12 sigue siendo Ola 1** — secuencial tras F11,

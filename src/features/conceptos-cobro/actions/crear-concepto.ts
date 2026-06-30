@@ -18,14 +18,24 @@ export async function crearConcepto(
     return fail(parsed.error.issues[0]?.message ?? 'conceptos_cobro.validation.invalid')
   }
 
+  const tipo = parsed.data.tipo_concepto
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('conceptos_cobro')
     .insert({
       centro_id: centroId,
       nombre: parsed.data.nombre,
-      tipo_concepto: parsed.data.tipo_concepto,
-      precio_centimos: eurosACentimos(parsed.data.precio_euros),
+      tipo_concepto: tipo,
+      // mensual/esporádico → solo precio mensual; diario → precio diario + servicio (mensual opcional).
+      precio_mensual_centimos:
+        parsed.data.precio_mensual_euros != null
+          ? eurosACentimos(parsed.data.precio_mensual_euros)
+          : null,
+      precio_diario_centimos:
+        tipo === 'diario' && parsed.data.precio_diario_euros != null
+          ? eurosACentimos(parsed.data.precio_diario_euros)
+          : null,
+      servicio: tipo === 'diario' ? parsed.data.servicio : null,
       activo: parsed.data.activo,
     })
     .select('id')

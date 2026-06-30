@@ -29,7 +29,7 @@ import type { ConceptoAsignable } from '../queries/get-conceptos-asignables'
 import type { ConfigNinoMes } from '../queries/get-config-mes'
 
 type MetodoPago = Database['public']['Enums']['metodo_pago']
-const METODOS: MetodoPago[] = ['sepa', 'efectivo', 'cheque_guarderia', 'transferencia']
+const METODOS: MetodoPago[] = ['sepa', 'efectivo', 'transferencia']
 
 interface Props {
   centroId: string

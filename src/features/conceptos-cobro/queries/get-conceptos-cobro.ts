@@ -9,7 +9,9 @@ export interface ConceptoCobroListItem {
   id: string
   nombre: string
   tipo_concepto: Database['public']['Enums']['tipo_concepto']
-  precio_centimos: number
+  precio_mensual_centimos: number | null
+  precio_diario_centimos: number | null
+  servicio: Database['public']['Enums']['servicio_diario'] | null
   activo: boolean
 }
 
@@ -32,7 +34,9 @@ export async function getConceptosCobroCore(
 ): Promise<ConceptoCobroListItem[]> {
   const { data } = await supabase
     .from('conceptos_cobro')
-    .select('id, nombre, tipo_concepto, precio_centimos, activo')
+    .select(
+      'id, nombre, tipo_concepto, precio_mensual_centimos, precio_diario_centimos, servicio, activo'
+    )
     .eq('centro_id', centroId)
     .is('deleted_at', null)
 

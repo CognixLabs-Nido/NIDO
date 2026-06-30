@@ -344,6 +344,10 @@
         "nombre": "Name",
         "tipo": "Type",
         "precio": "Price (€)",
+        "precio_diario": "Price per day (€)",
+        "precio_mensual_opcional": "Monthly price (€, optional)",
+        "servicio": "Service",
+        "servicio_placeholder": "Pick a service",
         "activo": "Active",
         "acciones": "Actions",
         "nino": "Child",
@@ -356,9 +360,16 @@
         "diario": "Daily",
         "esporadico": "One-off"
       },
+      "servicios": {
+        "comedor": "Lunch",
+        "matinera": "Early care",
+        "vespertina": "After care"
+      },
+      "precio_por_dia": "{precio}/day",
       "tab_conceptos": "Items",
       "tab_asignacion": "Monthly setup",
       "tab_becas": "Grants",
+      "tab_cierre": "Closing",
       "periodo": "Period",
       "mes": "Month",
       "anio": "Year",
@@ -374,7 +385,6 @@
       "metodos": {
         "sepa": "SEPA (direct debit)",
         "efectivo": "Cash",
-        "cheque_guarderia": "Childcare voucher",
         "transferencia": "Bank transfer"
       },
       "modalidades": {
@@ -944,7 +954,10 @@
       "tipo_invalido": "Invalid item type",
       "precio_invalido": "Enter a valid price",
       "precio_negativo": "Price cannot be negative",
-      "precio_largo": "Price too high"
+      "precio_largo": "Price too high",
+      "precio_requerido": "Enter the price",
+      "precio_diario_requerido": "Enter the price per day",
+      "servicio_requerido": "Pick the service it charges"
     },
     "errors": {
       "nombre_duplicado": "An item with that name already exists in the centre.",
@@ -961,6 +974,61 @@
       "no_autorizado": "You don't have permission for this action.",
       "modalidad_failed": "Could not save the mode.",
       "metodo_failed": "Could not save the payment method."
+    }
+  },
+  "cierre_cobros": {
+    "estado_titulo": "Month status",
+    "cerrado": "Closed",
+    "abierto": "Open",
+    "resumen_cerrado": "{num} receipts generated · total {total}.",
+    "aviso_cerrar": "Closing the month generates each child's receipts (fees, grants and carried-over balance) and freezes the period. Corrections are made with one-off receipts or refunds.",
+    "cerrar_mes": "Close month",
+    "cerrando": "Closing…",
+    "cerrado_ok": "Month closed. Receipts generated.",
+    "confirm_title": "Close the month?",
+    "confirm_desc": "The period's receipts will be generated and frozen. This action cannot be undone.",
+    "cancel": "Cancel",
+    "nuevo_esporadico": "One-off receipt",
+    "esporadico_title": "New one-off receipt",
+    "esporadico_ok": "One-off receipt created.",
+    "crear_esporadico": "Create receipt",
+    "guardando": "Saving…",
+    "anadir_linea": "Add line",
+    "quitar_linea": "Remove line",
+    "fields": {
+      "nino": "Child",
+      "nino_placeholder": "Pick a child",
+      "concepto": "Concept",
+      "concepto_placeholder": "Uniform, field trip…",
+      "metodo": "Payment method",
+      "lineas": "Lines",
+      "linea_desc": "Description",
+      "linea_cantidad": "Qty",
+      "linea_importe": "Amount (€)"
+    },
+    "metodos": {
+      "ninguno": "No method (set later)",
+      "sepa": "SEPA (direct debit)",
+      "efectivo": "Cash",
+      "transferencia": "Bank transfer"
+    },
+    "validation": {
+      "nino_requerido": "Select a child",
+      "concepto_requerido": "Enter the concept",
+      "concepto_largo": "Concept too long (max. 200)",
+      "descripcion_requerida": "Enter the description",
+      "descripcion_larga": "Description too long (max. 200)",
+      "cantidad_invalida": "Invalid quantity",
+      "importe_invalido": "Enter a valid amount",
+      "importe_negativo": "Amount cannot be negative",
+      "importe_largo": "Amount too high",
+      "sin_lineas": "Add at least one line"
+    },
+    "errors": {
+      "invalid": "Invalid data.",
+      "no_autorizado": "You don't have permission for this action.",
+      "cerrar_failed": "Could not close the month.",
+      "esporadico_failed": "Could not create the one-off receipt."
     }
   },
   "becas": {

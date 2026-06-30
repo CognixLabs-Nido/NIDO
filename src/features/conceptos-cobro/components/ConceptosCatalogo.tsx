@@ -95,7 +95,11 @@ function ConceptoRow({
       <TableCell>
         <Badge variant="secondary">{t(`tipos.${concepto.tipo_concepto}`)}</Badge>
       </TableCell>
-      <TableCell>{formatEuros(concepto.precio_centimos)}</TableCell>
+      <TableCell>
+        {concepto.tipo_concepto === 'diario'
+          ? t('precio_por_dia', { precio: formatEuros(concepto.precio_diario_centimos ?? 0) })
+          : formatEuros(concepto.precio_mensual_centimos ?? 0)}
+      </TableCell>
       <TableCell>
         <Checkbox
           checked={concepto.activo}

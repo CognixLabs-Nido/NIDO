@@ -149,7 +149,9 @@ export type Database = {
           deleted_at: string | null
           id: string
           nombre: string
-          precio_centimos: number
+          precio_diario_centimos: number | null
+          precio_mensual_centimos: number | null
+          servicio: Database['public']['Enums']['servicio_diario'] | null
           tipo_concepto: Database['public']['Enums']['tipo_concepto']
           updated_at: string
         }
@@ -160,7 +162,9 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           nombre: string
-          precio_centimos: number
+          precio_diario_centimos?: number | null
+          precio_mensual_centimos?: number | null
+          servicio?: Database['public']['Enums']['servicio_diario'] | null
           tipo_concepto: Database['public']['Enums']['tipo_concepto']
           updated_at?: string
         }
@@ -171,7 +175,9 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           nombre?: string
-          precio_centimos?: number
+          precio_diario_centimos?: number | null
+          precio_mensual_centimos?: number | null
+          servicio?: Database['public']['Enums']['servicio_diario'] | null
           tipo_concepto?: Database['public']['Enums']['tipo_concepto']
           updated_at?: string
         }
@@ -295,7 +301,7 @@ export type Database = {
           fecha_envio_banco: string | null
           id: string
           mes: number
-          metodo: Database['public']['Enums']['metodo_pago']
+          metodo: Database['public']['Enums']['metodo_pago'] | null
           nino_id: string
           total_centimos: number
           updated_at: string
@@ -312,7 +318,7 @@ export type Database = {
           fecha_envio_banco?: string | null
           id?: string
           mes: number
-          metodo: Database['public']['Enums']['metodo_pago']
+          metodo?: Database['public']['Enums']['metodo_pago'] | null
           nino_id: string
           total_centimos?: number
           updated_at?: string
@@ -329,7 +335,7 @@ export type Database = {
           fecha_envio_banco?: string | null
           id?: string
           mes?: number
-          metodo?: Database['public']['Enums']['metodo_pago']
+          metodo?: Database['public']['Enums']['metodo_pago'] | null
           nino_id?: string
           total_centimos?: number
           updated_at?: string
@@ -3543,6 +3549,26 @@ export type Database = {
     Functions: {
       _get_medical_key: { Args: never; Returns: string }
       _redactar_jsonb: { Args: { claves: string[]; j: Json }; Returns: Json }
+      cerrar_mes_cobros: {
+        Args: { p_anio: number; p_centro_id: string; p_mes: number }
+        Returns: string
+      }
+      crear_recibo_esporadico: {
+        Args: {
+          p_anio: number
+          p_centro_id: string
+          p_concepto: string
+          p_lineas: Json
+          p_mes: number
+          p_metodo: string | null
+          p_nino_id: string
+        }
+        Returns: string
+      }
+      mes_cerrado: {
+        Args: { p_anio: number; p_centro_id: string; p_mes: number }
+        Returns: boolean
+      }
       actualizar_foto_nino_tutor: {
         Args: { p_foto_path: string; p_nino_id: string }
         Returns: string
@@ -3910,7 +3936,7 @@ export type Database = {
       humor_agenda: 'feliz' | 'tranquilo' | 'inquieto' | 'triste' | 'cansado'
       lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
       matricula_estado: 'pendiente' | 'lista' | 'activa' | 'baja'
-      metodo_pago: 'sepa' | 'efectivo' | 'cheque_guarderia' | 'transferencia'
+      metodo_pago: 'sepa' | 'efectivo' | 'transferencia'
       modalidad_cobro: 'mensual' | 'diario'
       momento_comida: 'desayuno' | 'media_manana' | 'comida' | 'merienda'
       motivo_ausencia: 'enfermedad' | 'cita_medica' | 'vacaciones' | 'familiar' | 'otro'
@@ -4137,7 +4163,7 @@ export const Constants = {
       humor_agenda: ['feliz', 'tranquilo', 'inquieto', 'triste', 'cansado'],
       lactancia_estado: ['materna', 'biberon', 'mixta', 'finalizada', 'no_aplica'],
       matricula_estado: ['pendiente', 'lista', 'activa', 'baja'],
-      metodo_pago: ['sepa', 'efectivo', 'cheque_guarderia', 'transferencia'],
+      metodo_pago: ['sepa', 'efectivo', 'transferencia'],
       modalidad_cobro: ['mensual', 'diario'],
       momento_comida: ['desayuno', 'media_manana', 'comida', 'merienda'],
       motivo_ausencia: ['enfermedad', 'cita_medica', 'vacaciones', 'familiar', 'otro'],
