@@ -5,6 +5,8 @@ import { BecasPanel } from '@/features/becas/components/BecasPanel'
 import { getBecas } from '@/features/becas/queries/get-becas'
 import { getTiposBeca } from '@/features/becas/queries/get-tipos-beca'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { CierrePanel } from '@/features/cierre-cobros/components/CierrePanel'
+import { getCierreMes } from '@/features/cierre-cobros/queries/get-cierre-mes'
 import { ConceptosCatalogo } from '@/features/conceptos-cobro/components/ConceptosCatalogo'
 import { getConceptosCobro } from '@/features/conceptos-cobro/queries/get-conceptos-cobro'
 import { AsignacionMensualPanel } from '@/features/cuotas-config/components/AsignacionMensualPanel'
@@ -26,18 +28,20 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
   const ahora = new Date()
   const anio = clamp(Number(sp.anio), 2024, 2100) ?? ahora.getFullYear()
   const mes = clamp(Number(sp.mes), 1, 12) ?? ahora.getMonth() + 1
-  const tab = ['conceptos', 'asignacion', 'becas'].includes(sp.tab ?? '')
+  const tab = ['conceptos', 'asignacion', 'becas', 'cierre'].includes(sp.tab ?? '')
     ? (sp.tab as string)
     : 'conceptos'
 
-  const [conceptos, conceptosAsignables, configMes, tipos, becas, ninosCentro] = await Promise.all([
-    getConceptosCobro(centroId),
-    getConceptosAsignables(centroId),
-    getConfigMes(centroId, anio, mes),
-    getTiposBeca(centroId),
-    getBecas(centroId),
-    getNinosPorCentro(centroId),
-  ])
+  const [conceptos, conceptosAsignables, configMes, tipos, becas, ninosCentro, cierre] =
+    await Promise.all([
+      getConceptosCobro(centroId),
+      getConceptosAsignables(centroId),
+      getConfigMes(centroId, anio, mes),
+      getTiposBeca(centroId),
+      getBecas(centroId),
+      getNinosPorCentro(centroId),
+      getCierreMes(centroId, anio, mes),
+    ])
 
   const ninosActivos = ninosCentro
     .filter((n) => n.estado_matricula === 'activa')
@@ -55,6 +59,7 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
           <TabsTrigger value="conceptos">{t('tab_conceptos')}</TabsTrigger>
           <TabsTrigger value="asignacion">{t('tab_asignacion')}</TabsTrigger>
           <TabsTrigger value="becas">{t('tab_becas')}</TabsTrigger>
+          <TabsTrigger value="cierre">{t('tab_cierre')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="conceptos" className="pt-4">
@@ -73,6 +78,16 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
 
         <TabsContent value="becas" className="pt-4">
           <BecasPanel centroId={centroId} becas={becas} tipos={tipos} ninos={ninosActivos} />
+        </TabsContent>
+
+        <TabsContent value="cierre" className="pt-4">
+          <CierrePanel
+            centroId={centroId}
+            anio={anio}
+            mes={mes}
+            resumen={cierre}
+            ninos={ninosActivos}
+          />
         </TabsContent>
       </Tabs>
     </div>

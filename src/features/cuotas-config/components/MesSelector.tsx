@@ -15,11 +15,13 @@ import {
 interface Props {
   anio: number
   mes: number
+  /** Pestaña a preservar al navegar (por defecto 'asignacion'). */
+  tab?: string
 }
 
-// Selector de año/mes. Empuja los searchParams (?anio&mes&tab=asignacion) para que la
-// página recargue la configuración del mes en el servidor (RLS-safe, sin fetch cliente).
-export function MesSelector({ anio, mes }: Props) {
+// Selector de año/mes. Empuja los searchParams (?anio&mes&tab=...) para que la página
+// recargue la configuración del mes en el servidor (RLS-safe, sin fetch cliente).
+export function MesSelector({ anio, mes, tab = 'asignacion' }: Props) {
   const t = useTranslations('admin.cuotas')
   const locale = useLocale()
   const router = useRouter()
@@ -37,7 +39,7 @@ export function MesSelector({ anio, mes }: Props) {
 
   function navegar(nextAnio: number, nextMes: number) {
     const params = new URLSearchParams(searchParams.toString())
-    params.set('tab', 'asignacion')
+    params.set('tab', tab)
     params.set('anio', String(nextAnio))
     params.set('mes', String(nextMes))
     startTransition(() => router.push(`${pathname}?${params.toString()}`))

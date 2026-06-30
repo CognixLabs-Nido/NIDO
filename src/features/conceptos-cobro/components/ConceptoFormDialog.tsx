@@ -1,7 +1,7 @@
 'use client'
 
 import { type ReactElement, useState, useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
@@ -37,6 +37,7 @@ import { actualizarConcepto } from '../actions/actualizar-concepto'
 import { crearConcepto } from '../actions/crear-concepto'
 import {
   conceptoCobroSchema,
+  SERVICIOS_DIARIOS,
   TIPOS_CONCEPTO,
   type ConceptoCobroInput,
 } from '../schemas/concepto-cobro'
@@ -48,6 +49,9 @@ interface Props {
   concepto?: ConceptoCobroListItem
   trigger: ReactElement
 }
+
+const eurosOrNull = (centimos: number | null | undefined): number | null =>
+  centimos == null ? null : centimosAEuros(centimos)
 
 export function ConceptoFormDialog({ centroId, concepto, trigger }: Props) {
   const t = useTranslations('admin.cuotas')
@@ -61,12 +65,20 @@ export function ConceptoFormDialog({ centroId, concepto, trigger }: Props) {
     defaultValues: {
       nombre: concepto?.nombre ?? '',
       tipo_concepto: concepto?.tipo_concepto ?? 'mensual',
-      precio_euros: concepto ? centimosAEuros(concepto.precio_centimos) : 0,
+      precio_mensual_euros: eurosOrNull(concepto?.precio_mensual_centimos),
+      precio_diario_euros: eurosOrNull(concepto?.precio_diario_centimos),
+      servicio: concepto?.servicio ?? null,
       activo: concepto?.activo ?? true,
     },
   })
 
+  const tipo = useWatch({ control: form.control, name: 'tipo_concepto' })
+  const esDiario = tipo === 'diario'
   const tipoItems = TIPOS_CONCEPTO.map((value) => ({ value, label: t(`tipos.${value}`) }))
+  const servicioItems = SERVICIOS_DIARIOS.map((value) => ({
+    value,
+    label: t(`servicios.${value}`),
+  }))
 
   function onSubmit(values: ConceptoCobroInput) {
     startTransition(async () => {
@@ -131,21 +143,81 @@ export function ConceptoFormDialog({ centroId, concepto, trigger }: Props) {
               )}
             />
 
+            {esDiario && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="precio_diario_euros"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('fields.precio_diario')}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          inputMode="decimal"
+                          value={
+                            field.value == null || Number.isNaN(field.value) ? '' : field.value
+                          }
+                          onChange={(e) =>
+                            field.onChange(e.target.value === '' ? null : Number(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="servicio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('fields.servicio')}</FormLabel>
+                      <Select
+                        items={servicioItems}
+                        value={field.value ?? undefined}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('fields.servicio_placeholder')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {servicioItems.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
+
             <FormField
               control={form.control}
-              name="precio_euros"
+              name="precio_mensual_euros"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('fields.precio')}</FormLabel>
+                  <FormLabel>
+                    {esDiario ? t('fields.precio_mensual_opcional') : t('fields.precio')}
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       min={0}
                       step={0.01}
                       inputMode="decimal"
-                      value={Number.isNaN(field.value) ? '' : field.value}
+                      value={field.value == null || Number.isNaN(field.value) ? '' : field.value}
                       onChange={(e) =>
-                        field.onChange(e.target.value === '' ? NaN : Number(e.target.value))
+                        field.onChange(e.target.value === '' ? null : Number(e.target.value))
                       }
                     />
                   </FormControl>

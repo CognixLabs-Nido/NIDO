@@ -344,6 +344,10 @@
         "nombre": "Nom",
         "tipo": "Tipus",
         "precio": "Preu (€)",
+        "precio_diario": "Preu per dia (€)",
+        "precio_mensual_opcional": "Preu mensual (€, opcional)",
+        "servicio": "Servei",
+        "servicio_placeholder": "Tria un servei",
         "activo": "Actiu",
         "acciones": "Accions",
         "nino": "Xiquet/a",
@@ -356,9 +360,16 @@
         "diario": "Diari",
         "esporadico": "Esporàdic"
       },
+      "servicios": {
+        "comedor": "Menjador",
+        "matinera": "Matinera",
+        "vespertina": "Vespertina"
+      },
+      "precio_por_dia": "{precio}/dia",
       "tab_conceptos": "Conceptes",
       "tab_asignacion": "Assignació mensual",
       "tab_becas": "Beques",
+      "tab_cierre": "Tancament",
       "periodo": "Període",
       "mes": "Mes",
       "anio": "Any",
@@ -374,7 +385,6 @@
       "metodos": {
         "sepa": "SEPA (domiciliació)",
         "efectivo": "Efectiu",
-        "cheque_guarderia": "Xec guarderia",
         "transferencia": "Transferència"
       },
       "modalidades": {
@@ -944,7 +954,10 @@
       "tipo_invalido": "Tipus de concepte no vàlid",
       "precio_invalido": "Introdueix un preu vàlid",
       "precio_negativo": "El preu no pot ser negatiu",
-      "precio_largo": "Preu massa alt"
+      "precio_largo": "Preu massa alt",
+      "precio_requerido": "Introdueix el preu",
+      "precio_diario_requerido": "Introdueix el preu per dia",
+      "servicio_requerido": "Tria el servei que factura"
     },
     "errors": {
       "nombre_duplicado": "Ja existeix un concepte amb eixe nom al centre.",
@@ -961,6 +974,61 @@
       "no_autorizado": "No tens permís per a esta acció.",
       "modalidad_failed": "No s'ha pogut guardar la modalitat.",
       "metodo_failed": "No s'ha pogut guardar el mètode de pagament."
+    }
+  },
+  "cierre_cobros": {
+    "estado_titulo": "Estat del mes",
+    "cerrado": "Tancat",
+    "abierto": "Obert",
+    "resumen_cerrado": "{num} rebuts generats · total {total}.",
+    "aviso_cerrar": "En tancar el mes es generen els rebuts de cada xiquet/a (quotes, beques i saldo arrossegat) i el període queda immutable. Les correccions es fan amb rebuts esporàdics o devolucions.",
+    "cerrar_mes": "Tancar mes",
+    "cerrando": "Tancant…",
+    "cerrado_ok": "Mes tancat. Rebuts generats.",
+    "confirm_title": "Tancar el mes?",
+    "confirm_desc": "Es generaran els rebuts del període i quedarà immutable. Esta acció no es pot desfer.",
+    "cancel": "Cancel·lar",
+    "nuevo_esporadico": "Rebut esporàdic",
+    "esporadico_title": "Nou rebut esporàdic",
+    "esporadico_ok": "Rebut esporàdic creat.",
+    "crear_esporadico": "Crear rebut",
+    "guardando": "Guardant…",
+    "anadir_linea": "Afegir línia",
+    "quitar_linea": "Llevar línia",
+    "fields": {
+      "nino": "Xiquet/a",
+      "nino_placeholder": "Tria un xiquet/a",
+      "concepto": "Concepte",
+      "concepto_placeholder": "Uniforme, eixida…",
+      "metodo": "Mètode de pagament",
+      "lineas": "Línies",
+      "linea_desc": "Descripció",
+      "linea_cantidad": "Quantitat",
+      "linea_importe": "Import (€)"
+    },
+    "metodos": {
+      "ninguno": "Sense mètode (es marca després)",
+      "sepa": "SEPA (domiciliació)",
+      "efectivo": "Efectiu",
+      "transferencia": "Transferència"
+    },
+    "validation": {
+      "nino_requerido": "Selecciona un xiquet/a",
+      "concepto_requerido": "Indica el concepte",
+      "concepto_largo": "Concepte massa llarg (màx. 200)",
+      "descripcion_requerida": "Indica la descripció",
+      "descripcion_larga": "Descripció massa llarga (màx. 200)",
+      "cantidad_invalida": "Quantitat no vàlida",
+      "importe_invalido": "Introdueix un import vàlid",
+      "importe_negativo": "L'import no pot ser negatiu",
+      "importe_largo": "Import massa alt",
+      "sin_lineas": "Afig almenys una línia"
+    },
+    "errors": {
+      "invalid": "Dades no vàlides.",
+      "no_autorizado": "No tens permís per a esta acció.",
+      "cerrar_failed": "No s'ha pogut tancar el mes.",
+      "esporadico_failed": "No s'ha pogut crear el rebut esporàdic."
     }
   },
   "becas": {
