@@ -298,6 +298,7 @@ export type Database = {
           devuelto_de_recibo_id: string | null
           es_esporadico: boolean
           estado: Database['public']['Enums']['estado_recibo']
+          fecha_devolucion: string | null
           fecha_envio_banco: string | null
           id: string
           mes: number
@@ -315,6 +316,7 @@ export type Database = {
           devuelto_de_recibo_id?: string | null
           es_esporadico?: boolean
           estado?: Database['public']['Enums']['estado_recibo']
+          fecha_devolucion?: string | null
           fecha_envio_banco?: string | null
           id?: string
           mes: number
@@ -332,6 +334,7 @@ export type Database = {
           devuelto_de_recibo_id?: string | null
           es_esporadico?: boolean
           estado?: Database['public']['Enums']['estado_recibo']
+          fecha_devolucion?: string | null
           fecha_envio_banco?: string | null
           id?: string
           mes?: number

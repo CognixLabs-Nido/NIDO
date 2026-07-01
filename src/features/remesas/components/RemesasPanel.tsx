@@ -15,9 +15,11 @@ import { formatEuros } from '@/shared/lib/format-money'
 import { crearRemesa } from '../actions/crear-remesa'
 import { marcarRemesaEnviada } from '../actions/marcar-remesa-enviada'
 import type { DatosAcreedorConfig } from '../queries/get-datos-acreedor'
+import type { ReciboGestion } from '../queries/get-recibos-gestion'
 import type { ReciboSepaRemesable } from '../queries/get-recibos-sepa-remesables'
 import type { RemesaListItem } from '../queries/get-remesas-mes'
 import { DatosAcreedorDialog } from './DatosAcreedorDialog'
+import { DevolucionesPanel } from './DevolucionesPanel'
 import { RemesaXmlButton } from './RemesaXmlButton'
 
 interface Props {
@@ -26,9 +28,10 @@ interface Props {
   acreedor: DatosAcreedorConfig
   recibos: ReciboSepaRemesable[]
   remesas: RemesaListItem[]
+  recibosGestion: ReciboGestion[]
 }
 
-export function RemesasPanel({ anio, mes, acreedor, recibos, remesas }: Props) {
+export function RemesasPanel({ anio, mes, acreedor, recibos, remesas, recibosGestion }: Props) {
   const t = useTranslations('remesas')
   const tErrors = useTranslations()
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set())
@@ -225,6 +228,8 @@ export function RemesasPanel({ anio, mes, acreedor, recibos, remesas }: Props) {
           </div>
         )}
       </Card>
+
+      <DevolucionesPanel recibos={recibosGestion} />
     </div>
   )
 }

@@ -15,6 +15,7 @@ import { getConfigMes } from '@/features/cuotas-config/queries/get-config-mes'
 import { getNinosPorCentro } from '@/features/ninos/queries/get-ninos'
 import { RemesasPanel } from '@/features/remesas/components/RemesasPanel'
 import { getDatosAcreedor } from '@/features/remesas/queries/get-datos-acreedor'
+import { getRecibosGestion } from '@/features/remesas/queries/get-recibos-gestion'
 import { getRecibosSepaRemesables } from '@/features/remesas/queries/get-recibos-sepa-remesables'
 import { getRemesasMes } from '@/features/remesas/queries/get-remesas-mes'
 
@@ -47,6 +48,7 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
     acreedor,
     recibosSepa,
     remesas,
+    recibosGestion,
   ] = await Promise.all([
     getConceptosCobro(centroId),
     getConceptosAsignables(centroId),
@@ -58,6 +60,7 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
     getDatosAcreedor(centroId),
     getRecibosSepaRemesables(centroId, anio, mes),
     getRemesasMes(centroId, anio, mes),
+    getRecibosGestion(centroId, anio, mes),
   ])
 
   const ninosActivos = ninosCentro
@@ -115,6 +118,7 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
             acreedor={acreedor}
             recibos={recibosSepa}
             remesas={remesas}
+            recibosGestion={recibosGestion}
           />
         </TabsContent>
       </Tabs>

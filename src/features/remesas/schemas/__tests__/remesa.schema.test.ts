@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { crearRemesaSchema, datosAcreedorSchema, marcarRemesaEnviadaSchema } from '../remesa'
+import {
+  crearRegiroSchema,
+  crearRemesaSchema,
+  datosAcreedorSchema,
+  gastosDevolucionSchema,
+  marcarCobradoManualSchema,
+  marcarReciboDevueltoSchema,
+  marcarRemesaEnviadaSchema,
+} from '../remesa'
 
 const UUID = '11111111-1111-4111-8111-111111111111'
 
@@ -82,5 +90,34 @@ describe('datosAcreedorSchema', () => {
       iban: 'ES9121000418450200051332',
     })
     expect(r.success).toBe(true)
+  })
+})
+
+describe('esquemas de devolución (B-6)', () => {
+  it('marcarReciboDevueltoSchema exige uuid', () => {
+    expect(marcarReciboDevueltoSchema.safeParse({ reciboId: UUID }).success).toBe(true)
+    expect(marcarReciboDevueltoSchema.safeParse({ reciboId: 'x' }).success).toBe(false)
+  })
+
+  it('marcarCobradoManualSchema exige uuid', () => {
+    expect(marcarCobradoManualSchema.safeParse({ reciboId: UUID }).success).toBe(true)
+  })
+
+  it('crearRegiroSchema exige uuid', () => {
+    expect(crearRegiroSchema.safeParse({ reciboId: UUID }).success).toBe(true)
+  })
+
+  it('gastosDevolucionSchema: importe > 0 y método válido', () => {
+    expect(
+      gastosDevolucionSchema.safeParse({ reciboId: UUID, importe_euros: 3.5, metodo: 'sepa' })
+        .success
+    ).toBe(true)
+    expect(
+      gastosDevolucionSchema.safeParse({ reciboId: UUID, importe_euros: 0, metodo: 'sepa' }).success
+    ).toBe(false)
+    expect(
+      gastosDevolucionSchema.safeParse({ reciboId: UUID, importe_euros: 3, metodo: 'cheque' })
+        .success
+    ).toBe(false)
   })
 })
