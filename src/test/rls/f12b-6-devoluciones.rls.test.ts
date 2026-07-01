@@ -93,6 +93,13 @@ describe.skipIf(!APPLIED)('F12-B-6 — devoluciones (CHECK + congelado)', () => 
 
   afterAll(async () => {
     await serviceClient.from('cierre_mensual').delete().eq('centro_id', centroA.id)
+    // Los re-giros referencian al recibo original con ON DELETE RESTRICT: borrarlos
+    // primero (los linked) para que el DELETE masivo de recibos no viole la FK.
+    await serviceClient
+      .from('recibos')
+      .delete()
+      .eq('centro_id', centroA.id)
+      .not('devuelto_de_recibo_id', 'is', null)
     await serviceClient.from('recibos').delete().eq('centro_id', centroA.id)
     await deleteTestUser(adminA.id)
     await deleteTestCentro(centroA.id)
@@ -145,5 +152,28 @@ describe.skipIf(!APPLIED)('F12-B-6 — devoluciones (CHECK + congelado)', () => 
     expect(data?.estado).toBe('cobrado_manual')
     expect(data?.fecha_envio_banco).toBeNull()
     expect(data?.fecha_devolucion).toBeNull()
+  })
+
+  it('re-giro: un recibo NUEVO ligado (devuelto_de_recibo_id) en mes CERRADO es EXENTO del congelado', async () => {
+    // El re-giro re-cobra un devuelto: recibo nuevo pendiente_procesar en el mismo mes
+    // cerrado. El trigger exime a los recibos con devuelto_de_recibo_id (y a los
+    // esporádicos), así que el INSERT PASA pese al cierre.
+    const { data, error } = await cAdminA
+      .from('recibos')
+      .insert({
+        centro_id: centroA.id,
+        nino_id: ninoA.id,
+        anio: 2025,
+        mes: 3,
+        metodo: 'sepa',
+        estado: 'pendiente_procesar',
+        total_centimos: 12000,
+        es_esporadico: false,
+        devuelto_de_recibo_id: reciboCerrado,
+      })
+      .select('id, devuelto_de_recibo_id')
+      .maybeSingle()
+    expect(error).toBeNull()
+    expect(data?.devuelto_de_recibo_id).toBe(reciboCerrado)
   })
 })
