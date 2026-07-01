@@ -294,13 +294,15 @@ describe.skipIf(!APPLIED)(
     // ─── recibos + lineas_recibo ─────────────────────────────────────────────────
     describe('recibos + lineas_recibo', () => {
       it('el admin emite recibo y líneas; el tutor ve los SUYOS; profe NO; tutor ajeno NO', async () => {
+        // Mes 7 (ABIERTO): el bloque de cierre_mensual cerró 2026-06, y el trigger de
+        // congelado (B-4) bloquea INSERT de un recibo regular en un mes ya cerrado.
         const recibo = await cAdminA
           .from('recibos')
           .insert({
             centro_id: centroA.id,
             nino_id: ninoA.id,
             anio: 2026,
-            mes: 6,
+            mes: 7,
             metodo: 'sepa',
             total_centimos: 9000,
           })
@@ -315,7 +317,7 @@ describe.skipIf(!APPLIED)(
             centro_id: centroA.id,
             recibo_id: reciboId,
             concepto_id: conceptoId,
-            descripcion: 'Comedor junio',
+            descripcion: 'Comedor julio',
             cantidad: 1,
             precio_unitario_centimos: 9000,
             importe_centimos: 9000,
