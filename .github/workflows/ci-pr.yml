@@ -65,3 +65,6 @@ jobs:
           F11_F3_MIGRATION_APPLIED: '1'
           F8_FIRMAR_PERMISO_MIGRATION_APPLIED: '1'
           F11_H0_MIGRATION_APPLIED: '1'
+          F12B_RLS_APPLIED: '1'
+          F12B_5_RLS_APPLIED: '1'
+          F12B_6_RLS_APPLIED: '1'
