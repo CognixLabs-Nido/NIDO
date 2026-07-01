@@ -1060,34 +1060,68 @@
     "guardar": "Save",
     "guardando": "Saving…",
     "cancel": "Cancel",
+    "devoluciones_title": "Collections and returns",
+    "sin_cobros": "No receipts sent to the bank in this period.",
+    "regiro_badge": "Re-charge",
+    "devuelta_el": "Returned on {fecha}",
+    "marcar_devuelto": "Mark returned",
+    "regirar": "Re-charge",
+    "cobrar_manual": "Collected manually",
+    "anadir_gastos": "Return fees",
+    "devuelto_ok": "Receipt marked as returned.",
+    "regiro_ok": "Re-charge created (pending remittance).",
+    "cobrado_manual_ok": "Receipt marked as manually collected.",
+    "gastos_ok": "Return fees registered.",
+    "gastos_title": "Return fees",
     "estado": {
       "borrador": "Draft",
       "enviada": "Sent"
     },
+    "estado_recibo": {
+      "enviado_banco": "Sent to bank",
+      "devuelto": "Returned",
+      "cobrado_manual": "Collected manually"
+    },
+    "metodos": {
+      "sepa": "SEPA (direct debit)",
+      "efectivo": "Cash",
+      "transferencia": "Transfer"
+    },
     "fields": {
       "identificador_acreedor": "Creditor identifier (CID)",
       "bic_acreedor": "Creditor BIC",
-      "iban_acreedor": "Creditor IBAN"
+      "iban_acreedor": "Creditor IBAN",
+      "importe_gastos": "Fee amount (€)",
+      "metodo": "Payment method"
     },
     "validation": {
       "sin_recibos": "Select at least one receipt",
       "cid_invalido": "Invalid creditor identifier",
       "bic_invalido": "The BIC must be 8 or 11 characters",
-      "iban_invalido": "Invalid IBAN"
+      "iban_invalido": "Invalid IBAN",
+      "importe_invalido": "Enter a valid amount",
+      "importe_positivo": "The amount must be greater than 0"
     },
     "errors": {
       "invalid": "Invalid data.",
       "no_autorizado": "You don't have permission for this action.",
       "guardar_acreedor_failed": "Could not save the creditor details.",
       "crear_failed": "Could not create the remittance.",
-      "no_encontrada": "Remittance not found.",
+      "no_encontrada": "Receipt or remittance not found.",
       "ya_enviada": "The remittance was already sent.",
       "enviar_failed": "Could not mark the remittance as sent.",
       "enviar_recibos_failed": "The remittance was marked, but some receipts failed.",
       "sin_mandato": "{num} receipt(s) without an active SEPA mandate. Fix this before generating the file.",
       "acreedor_incompleto": "Complete the creditor details (CID and IBAN) before generating the file.",
       "remesa_vacia": "The remittance has no chargeable receipts (amount greater than 0).",
-      "xml_failed": "Could not generate the SEPA file."
+      "xml_failed": "Could not generate the SEPA file.",
+      "no_devolvible": "Only a receipt sent to the bank can be marked as returned.",
+      "devolver_failed": "Could not mark the receipt as returned.",
+      "no_cobrable_manual": "This receipt cannot be marked as manually collected.",
+      "cobrar_manual_failed": "Could not mark as manually collected.",
+      "no_regirable": "Only a returned receipt can be re-charged.",
+      "regiro_failed": "Could not create the re-charge.",
+      "gastos_failed": "Could not register the return fees."
     }
   },
   "becas": {

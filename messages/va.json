@@ -1060,34 +1060,68 @@
     "guardar": "Guardar",
     "guardando": "Guardant…",
     "cancel": "Cancel·lar",
+    "devoluciones_title": "Cobraments i devolucions",
+    "sin_cobros": "No hi ha rebuts enviats al banc en este període.",
+    "regiro_badge": "Re-gir",
+    "devuelta_el": "Retornat el {fecha}",
+    "marcar_devuelto": "Marcar retornat",
+    "regirar": "Re-girar",
+    "cobrar_manual": "Cobrat manual",
+    "anadir_gastos": "Despeses devolució",
+    "devuelto_ok": "Rebut marcat com a retornat.",
+    "regiro_ok": "Re-gir creat (pendent de remesar).",
+    "cobrado_manual_ok": "Rebut marcat com a cobrat manualment.",
+    "gastos_ok": "Despeses de devolució registrades.",
+    "gastos_title": "Despeses de devolució",
     "estado": {
       "borrador": "Esborrany",
       "enviada": "Enviada"
     },
+    "estado_recibo": {
+      "enviado_banco": "Enviat al banc",
+      "devuelto": "Retornat",
+      "cobrado_manual": "Cobrat manual"
+    },
+    "metodos": {
+      "sepa": "SEPA (domiciliació)",
+      "efectivo": "Efectiu",
+      "transferencia": "Transferència"
+    },
     "fields": {
       "identificador_acreedor": "Identificador de creditor (CID)",
       "bic_acreedor": "BIC del creditor",
-      "iban_acreedor": "IBAN del creditor"
+      "iban_acreedor": "IBAN del creditor",
+      "importe_gastos": "Import de les despeses (€)",
+      "metodo": "Mètode de pagament"
     },
     "validation": {
       "sin_recibos": "Selecciona almenys un rebut",
       "cid_invalido": "Identificador de creditor no vàlid",
       "bic_invalido": "El BIC ha de tindre 8 o 11 caràcters",
-      "iban_invalido": "IBAN no vàlid"
+      "iban_invalido": "IBAN no vàlid",
+      "importe_invalido": "Introduïx un import vàlid",
+      "importe_positivo": "L'import ha de ser major que 0"
     },
     "errors": {
       "invalid": "Dades no vàlides.",
       "no_autorizado": "No tens permís per a esta acció.",
       "guardar_acreedor_failed": "No s'han pogut guardar les dades del creditor.",
       "crear_failed": "No s'ha pogut crear la remesa.",
-      "no_encontrada": "Remesa no trobada.",
+      "no_encontrada": "Rebut o remesa no trobat.",
       "ya_enviada": "La remesa ja estava enviada.",
       "enviar_failed": "No s'ha pogut marcar la remesa com a enviada.",
       "enviar_recibos_failed": "La remesa es va marcar, però van fallar alguns rebuts.",
       "sin_mandato": "{num} rebut(s) sense mandat SEPA actiu. Corregix-ho abans de generar el fitxer.",
       "acreedor_incompleto": "Completa les dades del creditor (CID i IBAN) abans de generar el fitxer.",
       "remesa_vacia": "La remesa no té rebuts domiciliables (import major que 0).",
-      "xml_failed": "No s'ha pogut generar el fitxer SEPA."
+      "xml_failed": "No s'ha pogut generar el fitxer SEPA.",
+      "no_devolvible": "Només es pot marcar retornat un rebut enviat al banc.",
+      "devolver_failed": "No s'ha pogut marcar el rebut com a retornat.",
+      "no_cobrable_manual": "Este rebut no es pot marcar com a cobrat manual.",
+      "cobrar_manual_failed": "No s'ha pogut marcar com a cobrat manual.",
+      "no_regirable": "Només es pot re-girar un rebut retornat.",
+      "regiro_failed": "No s'ha pogut crear el re-gir.",
+      "gastos_failed": "No s'han pogut registrar les despeses de devolució."
     }
   },
   "becas": {

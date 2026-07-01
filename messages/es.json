@@ -1060,34 +1060,68 @@
     "guardar": "Guardar",
     "guardando": "Guardando…",
     "cancel": "Cancelar",
+    "devoluciones_title": "Cobros y devoluciones",
+    "sin_cobros": "No hay recibos enviados al banco en este periodo.",
+    "regiro_badge": "Re-giro",
+    "devuelta_el": "Devuelto el {fecha}",
+    "marcar_devuelto": "Marcar devuelto",
+    "regirar": "Re-girar",
+    "cobrar_manual": "Cobrado manual",
+    "anadir_gastos": "Gastos devolución",
+    "devuelto_ok": "Recibo marcado como devuelto.",
+    "regiro_ok": "Re-giro creado (pendiente de remesar).",
+    "cobrado_manual_ok": "Recibo marcado como cobrado manualmente.",
+    "gastos_ok": "Gastos de devolución registrados.",
+    "gastos_title": "Gastos de devolución",
     "estado": {
       "borrador": "Borrador",
       "enviada": "Enviada"
     },
+    "estado_recibo": {
+      "enviado_banco": "Enviado al banco",
+      "devuelto": "Devuelto",
+      "cobrado_manual": "Cobrado manual"
+    },
+    "metodos": {
+      "sepa": "SEPA (domiciliación)",
+      "efectivo": "Efectivo",
+      "transferencia": "Transferencia"
+    },
     "fields": {
       "identificador_acreedor": "Identificador de acreedor (CID)",
       "bic_acreedor": "BIC del acreedor",
-      "iban_acreedor": "IBAN del acreedor"
+      "iban_acreedor": "IBAN del acreedor",
+      "importe_gastos": "Importe de los gastos (€)",
+      "metodo": "Método de pago"
     },
     "validation": {
       "sin_recibos": "Selecciona al menos un recibo",
       "cid_invalido": "Identificador de acreedor no válido",
       "bic_invalido": "El BIC debe tener 8 u 11 caracteres",
-      "iban_invalido": "IBAN no válido"
+      "iban_invalido": "IBAN no válido",
+      "importe_invalido": "Introduce un importe válido",
+      "importe_positivo": "El importe debe ser mayor que 0"
     },
     "errors": {
       "invalid": "Datos no válidos.",
       "no_autorizado": "No tienes permiso para esta acción.",
       "guardar_acreedor_failed": "No se pudieron guardar los datos del acreedor.",
       "crear_failed": "No se pudo crear la remesa.",
-      "no_encontrada": "Remesa no encontrada.",
+      "no_encontrada": "Recibo o remesa no encontrado.",
       "ya_enviada": "La remesa ya estaba enviada.",
       "enviar_failed": "No se pudo marcar la remesa como enviada.",
       "enviar_recibos_failed": "La remesa se marcó, pero fallaron algunos recibos.",
       "sin_mandato": "{num} recibo(s) sin mandato SEPA activo. Corrígelo antes de generar el fichero.",
       "acreedor_incompleto": "Completa los datos del acreedor (CID e IBAN) antes de generar el fichero.",
       "remesa_vacia": "La remesa no tiene recibos domiciliables (importe mayor que 0).",
-      "xml_failed": "No se pudo generar el fichero SEPA."
+      "xml_failed": "No se pudo generar el fichero SEPA.",
+      "no_devolvible": "Solo puede marcarse devuelto un recibo enviado al banco.",
+      "devolver_failed": "No se pudo marcar el recibo como devuelto.",
+      "no_cobrable_manual": "Este recibo no se puede marcar como cobrado manual.",
+      "cobrar_manual_failed": "No se pudo marcar como cobrado manual.",
+      "no_regirable": "Solo puede re-girarse un recibo devuelto.",
+      "regiro_failed": "No se pudo crear el re-giro.",
+      "gastos_failed": "No se pudieron registrar los gastos de devolución."
     }
   },
   "becas": {
