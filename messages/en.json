@@ -370,6 +370,7 @@
       "tab_asignacion": "Monthly setup",
       "tab_becas": "Grants",
       "tab_cierre": "Closing",
+      "tab_remesas": "Remittances",
       "periodo": "Period",
       "mes": "Month",
       "anio": "Year",
@@ -1029,6 +1030,64 @@
       "no_autorizado": "You don't have permission for this action.",
       "cerrar_failed": "Could not close the month.",
       "esporadico_failed": "Could not create the one-off receipt."
+    }
+  },
+  "remesas": {
+    "acreedor_title": "Creditor details (SEPA)",
+    "acreedor_editar": "Edit",
+    "acreedor_incompleto_aviso": "The creditor identifier or IBAN is missing. Complete them to generate the SEPA file.",
+    "iban_configurado": "IBAN configured",
+    "iban_sin_configurar": "No IBAN configured",
+    "iban_cambiar_placeholder": "Re-enter the IBAN to change it",
+    "iban_ayuda": "For security, the stored IBAN is not shown. Leave it blank to keep it; re-enter it in full to change it.",
+    "acreedor_guardado": "Creditor details saved.",
+    "marcar_title": "SEPA receipts for the period",
+    "sin_recibos_sepa": "There are no SEPA receipts pending remittance in this period.",
+    "seleccionar_todos": "Select all",
+    "seleccionados": "{num} selected",
+    "esporadico": "One-off",
+    "sin_mandato_badge": "No mandate",
+    "crear_remesa": "Create remittance",
+    "remesa_creada": "Remittance created (draft).",
+    "remesas_title": "Remittances for the period",
+    "sin_remesas": "No remittances in this period yet.",
+    "remesa_resumen": "{num} receipts · {total}",
+    "enviada_el": "Sent to the bank on {fecha}",
+    "marcar_enviada": "Mark as sent",
+    "remesa_enviada": "Remittance marked as sent.",
+    "descargar_xml": "Download XML",
+    "xml_ok": "SEPA file generated.",
+    "guardar": "Save",
+    "guardando": "Saving…",
+    "cancel": "Cancel",
+    "estado": {
+      "borrador": "Draft",
+      "enviada": "Sent"
+    },
+    "fields": {
+      "identificador_acreedor": "Creditor identifier (CID)",
+      "bic_acreedor": "Creditor BIC",
+      "iban_acreedor": "Creditor IBAN"
+    },
+    "validation": {
+      "sin_recibos": "Select at least one receipt",
+      "cid_invalido": "Invalid creditor identifier",
+      "bic_invalido": "The BIC must be 8 or 11 characters",
+      "iban_invalido": "Invalid IBAN"
+    },
+    "errors": {
+      "invalid": "Invalid data.",
+      "no_autorizado": "You don't have permission for this action.",
+      "guardar_acreedor_failed": "Could not save the creditor details.",
+      "crear_failed": "Could not create the remittance.",
+      "no_encontrada": "Remittance not found.",
+      "ya_enviada": "The remittance was already sent.",
+      "enviar_failed": "Could not mark the remittance as sent.",
+      "enviar_recibos_failed": "The remittance was marked, but some receipts failed.",
+      "sin_mandato": "{num} receipt(s) without an active SEPA mandate. Fix this before generating the file.",
+      "acreedor_incompleto": "Complete the creditor details (CID and IBAN) before generating the file.",
+      "remesa_vacia": "The remittance has no chargeable receipts (amount greater than 0).",
+      "xml_failed": "Could not generate the SEPA file."
     }
   },
   "becas": {

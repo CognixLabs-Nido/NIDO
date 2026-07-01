@@ -1190,11 +1190,14 @@ export type Database = {
       }
       centros: {
         Row: {
+          bic_acreedor: string | null
           created_at: string
           deleted_at: string | null
           direccion: string
           email_contacto: string
+          iban_acreedor_cifrado: string | null
           id: string
+          identificador_acreedor: string | null
           idioma_default: string
           logo_url: string | null
           nombre: string
@@ -1203,11 +1206,14 @@ export type Database = {
           web: string | null
         }
         Insert: {
+          bic_acreedor?: string | null
           created_at?: string
           deleted_at?: string | null
           direccion: string
           email_contacto: string
+          iban_acreedor_cifrado?: string | null
           id?: string
+          identificador_acreedor?: string | null
           idioma_default?: string
           logo_url?: string | null
           nombre: string
@@ -1216,11 +1222,14 @@ export type Database = {
           web?: string | null
         }
         Update: {
+          bic_acreedor?: string | null
           created_at?: string
           deleted_at?: string | null
           direccion?: string
           email_contacto?: string
+          iban_acreedor_cifrado?: string | null
           id?: string
+          identificador_acreedor?: string | null
           idioma_default?: string
           logo_url?: string | null
           nombre?: string
@@ -3568,6 +3577,35 @@ export type Database = {
       mes_cerrado: {
         Args: { p_anio: number; p_centro_id: string; p_mes: number }
         Returns: boolean
+      }
+      get_mandatos_remesa: {
+        Args: { p_remesa_id: string }
+        Returns: {
+          recibo_id: string
+          nino_id: string
+          total_centimos: number
+          identificador_mandato: string | null
+          iban: string | null
+          titular: string | null
+          fecha_mandato: string | null
+        }[]
+      }
+      set_datos_acreedor: {
+        Args: {
+          p_centro_id: string
+          p_identificador_acreedor: string
+          p_bic_acreedor: string
+          p_iban: string | null
+        }
+        Returns: undefined
+      }
+      get_datos_acreedor: {
+        Args: { p_centro_id: string }
+        Returns: {
+          identificador_acreedor: string | null
+          bic_acreedor: string | null
+          iban: string | null
+        }[]
       }
       actualizar_foto_nino_tutor: {
         Args: { p_foto_path: string; p_nino_id: string }

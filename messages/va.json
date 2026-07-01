@@ -370,6 +370,7 @@
       "tab_asignacion": "Assignació mensual",
       "tab_becas": "Beques",
       "tab_cierre": "Tancament",
+      "tab_remesas": "Remeses",
       "periodo": "Període",
       "mes": "Mes",
       "anio": "Any",
@@ -1029,6 +1030,64 @@
       "no_autorizado": "No tens permís per a esta acció.",
       "cerrar_failed": "No s'ha pogut tancar el mes.",
       "esporadico_failed": "No s'ha pogut crear el rebut esporàdic."
+    }
+  },
+  "remesas": {
+    "acreedor_title": "Dades del creditor (SEPA)",
+    "acreedor_editar": "Editar",
+    "acreedor_incompleto_aviso": "Falta l'identificador de creditor o l'IBAN. Completa'ls per a poder generar el fitxer SEPA.",
+    "iban_configurado": "IBAN configurat",
+    "iban_sin_configurar": "Sense IBAN configurat",
+    "iban_cambiar_placeholder": "Reintroduïx l'IBAN per a canviar-lo",
+    "iban_ayuda": "Per seguretat, l'IBAN guardat no es mostra. Deixa'l buit per a conservar-lo; reintroduïx-lo complet per a canviar-lo.",
+    "acreedor_guardado": "Dades del creditor guardades.",
+    "marcar_title": "Rebuts SEPA del període",
+    "sin_recibos_sepa": "No hi ha rebuts de mètode SEPA pendents de remesar en este període.",
+    "seleccionar_todos": "Seleccionar tots",
+    "seleccionados": "{num} seleccionats",
+    "esporadico": "Esporàdic",
+    "sin_mandato_badge": "Sense mandat",
+    "crear_remesa": "Crear remesa",
+    "remesa_creada": "Remesa creada (esborrany).",
+    "remesas_title": "Remeses del període",
+    "sin_remesas": "Encara no hi ha remeses en este període.",
+    "remesa_resumen": "{num} rebuts · {total}",
+    "enviada_el": "Enviada al banc el {fecha}",
+    "marcar_enviada": "Marcar enviada",
+    "remesa_enviada": "Remesa marcada com a enviada.",
+    "descargar_xml": "Descarregar XML",
+    "xml_ok": "Fitxer SEPA generat.",
+    "guardar": "Guardar",
+    "guardando": "Guardant…",
+    "cancel": "Cancel·lar",
+    "estado": {
+      "borrador": "Esborrany",
+      "enviada": "Enviada"
+    },
+    "fields": {
+      "identificador_acreedor": "Identificador de creditor (CID)",
+      "bic_acreedor": "BIC del creditor",
+      "iban_acreedor": "IBAN del creditor"
+    },
+    "validation": {
+      "sin_recibos": "Selecciona almenys un rebut",
+      "cid_invalido": "Identificador de creditor no vàlid",
+      "bic_invalido": "El BIC ha de tindre 8 o 11 caràcters",
+      "iban_invalido": "IBAN no vàlid"
+    },
+    "errors": {
+      "invalid": "Dades no vàlides.",
+      "no_autorizado": "No tens permís per a esta acció.",
+      "guardar_acreedor_failed": "No s'han pogut guardar les dades del creditor.",
+      "crear_failed": "No s'ha pogut crear la remesa.",
+      "no_encontrada": "Remesa no trobada.",
+      "ya_enviada": "La remesa ja estava enviada.",
+      "enviar_failed": "No s'ha pogut marcar la remesa com a enviada.",
+      "enviar_recibos_failed": "La remesa es va marcar, però van fallar alguns rebuts.",
+      "sin_mandato": "{num} rebut(s) sense mandat SEPA actiu. Corregix-ho abans de generar el fitxer.",
+      "acreedor_incompleto": "Completa les dades del creditor (CID i IBAN) abans de generar el fitxer.",
+      "remesa_vacia": "La remesa no té rebuts domiciliables (import major que 0).",
+      "xml_failed": "No s'ha pogut generar el fitxer SEPA."
     }
   },
   "becas": {
