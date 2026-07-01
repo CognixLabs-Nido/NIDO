@@ -1072,7 +1072,7 @@ gated nuevos `f11g-validacion-purga.rls.test.ts` (`F11G_RLS_APPLIED=1`): datos_t
 mandatos_sepa (IBAN nunca en claro al cliente) / cambios_pendientes / 3 buckets. Unit del
 corte de 5 años (`fechaLimitePurga`). ADR-0049. Verde local typecheck/lint/unit/build.
 
-## F12-B — Cuotas, recibos y remesas SEPA (EN CURSO): B-0 abierto
+## F12-B — Cuotas, recibos y remesas SEPA (CERRADA): B-0 a B-8
 
 > Primera fase de funcionalidad de F12. Sucede a F11-G/H y **consume** el mandato SEPA capturado
 > en G-2/G-2bis (`mandatos_sepa.iban_cifrado` + `identificador_mandato`). Subfases una-por-PR
@@ -1190,6 +1190,70 @@ Migración `20260630120000_phase12b_4_motor_cierre.sql`. Decisiones cerradas (20
   precios + selector de servicio; B-2 limpia `cheque_guarderia` del selector de método. i18n es/en/va.
 - `database.ts` a mano (columnas + ENUM + 3 funciones). Tests de schema (17/17). **SIN aplicar** (CLI
   SIGILL → SQL Editor; tras aplicar: registrar versión + `npm run db:types`).
+
+### B-5 — Remesa SEPA + XML pain.008 (MERGEADO, PR #160 · lleva esquema)
+
+Migración `20260701120000_phase12b_5_get_mandatos_remesa.sql` (aplicada). Opción A confirmada:
+
+- **`get_mandatos_remesa(p_remesa_id)`** SECURITY DEFINER STABLE admin-only: descifra el IBAN de los
+  DEUDORES de esa remesa (firma **por remesa**, no por periodo — con >1 remesa/mes la firma por periodo
+  era ambigua). Enlace recibo→mandato por `nino_id`, mandato activo más reciente (LATERAL LIMIT 1); LEFT
+  JOIN → recibo sin mandato sale con NULL (el generador lo rechaza y lista niños, no se cae en silencio).
+- **Acreedor en `centros`**: `identificador_acreedor` (CID) + `bic_acreedor` en claro, `iban_acreedor_cifrado`
+  bytea **cifrado** (mismo trato pgcrypto que `mandatos_sepa`). RPCs `set_datos_acreedor` (cifra) /
+  `get_datos_acreedor` (descifra, solo para el generador). El form no descifra: muestra "IBAN configurado ✓".
+- **Congelado afinado** (`congelar_si_mes_cerrado` CREATE OR REPLACE): en recibo regular de mes cerrado, un
+  UPDATE que **solo** cambia `estado`/`fecha_envio_banco` PASA (ciclo de cobro); tocar `total_centimos`/
+  `metodo`/`nino_id`/`anio`/`mes`/`es_esporadico`/`concepto_esporadico`/`devuelto_de_recibo_id`, o
+  INSERT/DELETE, FALLA P0001 (compara col a col con `IS NOT DISTINCT FROM`).
+- **Generador pain.008.001.02** en TS puro determinista (recibe timestamps por parámetro) + validador
+  `preparar-remesa`. Ruta `GET /[locale]/admin/remesas/[id]/xml` genera+descarga **bajo demanda** (G1: el
+  XML no se almacena, regenerable). Feature `remesas` + pestaña Remesas. i18n 48/48/48. Secuencia RCUR fija.
+
+### B-6 — Devoluciones (MERGEADO, PR #161 · lleva esquema)
+
+Migración `20260701140000_phase12b_6_devoluciones.sql` (aplicada). Ajuste de esquema anotado en B-0:
+
+- `recibos.fecha_devolucion date` + CHECK `recibos_envio_banco_fecha` reescrito: `enviado_banco` exige
+  envío y sin devolución; `devuelto` **CONSERVA `fecha_envio_banco`** (las R-transactions referencian el
+  envío original) **y exige `fecha_devolucion`**; el resto (pendiente/cobrado_manual) sin fechas.
+- Sin RPC nueva: marcar devuelto/cobrado_manual = UPDATE in-place (el congelado afinado lo permite); los
+  gastos de devolución reusan `crear_recibo_esporadico`; el **re-giro** = recibo nuevo ligado por
+  `devuelto_de_recibo_id` (exento del congelado y del unique-regular) → entra a una remesa nueva.
+- Feature `remesas`: panel de Cobros y devoluciones + diálogo de gastos. i18n 78/78/78.
+
+### B-7 — Vistas de recibos + aviso in-app (MERGEADO, PR #162 · SIN esquema)
+
+Sin migración (el esquema B-0..B-6 lo cubre). Tres piezas:
+
+- **Resumen admin**: pestaña **Resumen** en `/admin/cuotas` con tabla **pivote** de recibos del periodo
+  (filas = recibo con tutor+niño+estado+método, columnas por concepto, totales fila/columna/general) +
+  **export CSV** bajo demanda (helper `export-csv` con BOM + escape RFC 4180; ruta dedicada).
+- **Vista familia (solo lectura)**: `/family/recibos` (lista agrupada por niño) + `/family/recibos/[id]`
+  (desglose de líneas). Reusa la RLS de B-0 (`es_tutor_legal_de`).
+- **Aviso in-app "recibos nuevos"** DERIVADO (patrón informes/fotos, sin tabla ni migración): contador en
+  `AvisosInicio` = recibos visibles menos el marcador `recibos_vistos` en `preferencias_usuario`. **Cubre
+  el cierre mensual** (los recibos generados afloran en la siguiente navegación) **sin push ni email**;
+  no es Realtime en vivo (eso exigiría publicar `recibos` en `supabase_realtime` = migración). i18n
+  namespace `recibos` es/en/va. Tests unit: builder pivote / pivote→CSV / export-csv.
+
+### B-8 — Cierre de fase (este PR + PR de tests)
+
+- **Tests RLS gated activados en CI**: las migraciones B-0/B-4/B-5/B-6 están aplicadas al remoto, así que
+  `ci-pr.yml` cablea `F12B_RLS_APPLIED` / `F12B_5_RLS_APPLIED` / `F12B_6_RLS_APPLIED`. Nuevo suite **B-7**
+  (aislamiento entre dos familias del **mismo** centro; admin ve el centro; profe nada) + caso de **re-giro**
+  exento en B-6. Ajuste del suite B-0 (bloque de recibos usa mes abierto, porque el congelado de B-4 —
+  posterior a su escritura— bloquea INSERT regular en mes cerrado). 4 suites / 22 tests verdes contra remoto.
+- **ADR-0050** (decisiones A-K, subfases, modelo becas/saldo, cifrado IBAN acreedor, congelado afinado,
+  XML bajo demanda G1, follow-ups).
+
+### Cierre
+
+**F12-B cerrada (B-0..B-8):** ciclo completo de cobros — catálogo de conceptos, asignación por niño/mes,
+parte de servicio diario, motor de cierre atómico (recibos + líneas congeladas + becas + saldo), remesa
+SEPA pain.008 bajo demanda con IBAN cifrado descifrado solo server-side, devoluciones/re-giros, vistas
+admin (pivote + CSV) y familia (recibos + desglose), y aviso in-app derivado del cierre. Todas las
+migraciones aplicadas; gated RLS contando en CI. Follow-ups en `docs/follow-ups.md`.
 
 ## Fase 12 — Funcionalidad pendiente post-F11 (registrada, sin abrir)
 
