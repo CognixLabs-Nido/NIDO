@@ -370,6 +370,7 @@
       "tab_asignacion": "Asignación mensual",
       "tab_becas": "Becas",
       "tab_cierre": "Cierre",
+      "tab_remesas": "Remesas",
       "periodo": "Periodo",
       "mes": "Mes",
       "anio": "Año",
@@ -1029,6 +1030,64 @@
       "no_autorizado": "No tienes permiso para esta acción.",
       "cerrar_failed": "No se pudo cerrar el mes.",
       "esporadico_failed": "No se pudo crear el recibo esporádico."
+    }
+  },
+  "remesas": {
+    "acreedor_title": "Datos del acreedor (SEPA)",
+    "acreedor_editar": "Editar",
+    "acreedor_incompleto_aviso": "Falta el identificador de acreedor o el IBAN. Complétalos para poder generar el fichero SEPA.",
+    "iban_configurado": "IBAN configurado",
+    "iban_sin_configurar": "Sin IBAN configurado",
+    "iban_cambiar_placeholder": "Reintroduce el IBAN para cambiarlo",
+    "iban_ayuda": "Por seguridad, el IBAN guardado no se muestra. Déjalo vacío para conservarlo; reintrodúcelo completo para cambiarlo.",
+    "acreedor_guardado": "Datos del acreedor guardados.",
+    "marcar_title": "Recibos SEPA del periodo",
+    "sin_recibos_sepa": "No hay recibos de método SEPA pendientes de remesar en este periodo.",
+    "seleccionar_todos": "Seleccionar todos",
+    "seleccionados": "{num} seleccionados",
+    "esporadico": "Esporádico",
+    "sin_mandato_badge": "Sin mandato",
+    "crear_remesa": "Crear remesa",
+    "remesa_creada": "Remesa creada (borrador).",
+    "remesas_title": "Remesas del periodo",
+    "sin_remesas": "Aún no hay remesas en este periodo.",
+    "remesa_resumen": "{num} recibos · {total}",
+    "enviada_el": "Enviada al banco el {fecha}",
+    "marcar_enviada": "Marcar enviada",
+    "remesa_enviada": "Remesa marcada como enviada.",
+    "descargar_xml": "Descargar XML",
+    "xml_ok": "Fichero SEPA generado.",
+    "guardar": "Guardar",
+    "guardando": "Guardando…",
+    "cancel": "Cancelar",
+    "estado": {
+      "borrador": "Borrador",
+      "enviada": "Enviada"
+    },
+    "fields": {
+      "identificador_acreedor": "Identificador de acreedor (CID)",
+      "bic_acreedor": "BIC del acreedor",
+      "iban_acreedor": "IBAN del acreedor"
+    },
+    "validation": {
+      "sin_recibos": "Selecciona al menos un recibo",
+      "cid_invalido": "Identificador de acreedor no válido",
+      "bic_invalido": "El BIC debe tener 8 u 11 caracteres",
+      "iban_invalido": "IBAN no válido"
+    },
+    "errors": {
+      "invalid": "Datos no válidos.",
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "guardar_acreedor_failed": "No se pudieron guardar los datos del acreedor.",
+      "crear_failed": "No se pudo crear la remesa.",
+      "no_encontrada": "Remesa no encontrada.",
+      "ya_enviada": "La remesa ya estaba enviada.",
+      "enviar_failed": "No se pudo marcar la remesa como enviada.",
+      "enviar_recibos_failed": "La remesa se marcó, pero fallaron algunos recibos.",
+      "sin_mandato": "{num} recibo(s) sin mandato SEPA activo. Corrígelo antes de generar el fichero.",
+      "acreedor_incompleto": "Completa los datos del acreedor (CID e IBAN) antes de generar el fichero.",
+      "remesa_vacia": "La remesa no tiene recibos domiciliables (importe mayor que 0).",
+      "xml_failed": "No se pudo generar el fichero SEPA."
     }
   },
   "becas": {

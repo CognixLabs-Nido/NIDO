@@ -13,6 +13,10 @@ import { AsignacionMensualPanel } from '@/features/cuotas-config/components/Asig
 import { getConceptosAsignables } from '@/features/cuotas-config/queries/get-conceptos-asignables'
 import { getConfigMes } from '@/features/cuotas-config/queries/get-config-mes'
 import { getNinosPorCentro } from '@/features/ninos/queries/get-ninos'
+import { RemesasPanel } from '@/features/remesas/components/RemesasPanel'
+import { getDatosAcreedor } from '@/features/remesas/queries/get-datos-acreedor'
+import { getRecibosSepaRemesables } from '@/features/remesas/queries/get-recibos-sepa-remesables'
+import { getRemesasMes } from '@/features/remesas/queries/get-remesas-mes'
 
 interface PageProps {
   searchParams: Promise<{ tab?: string; anio?: string; mes?: string }>
@@ -28,20 +32,33 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
   const ahora = new Date()
   const anio = clamp(Number(sp.anio), 2024, 2100) ?? ahora.getFullYear()
   const mes = clamp(Number(sp.mes), 1, 12) ?? ahora.getMonth() + 1
-  const tab = ['conceptos', 'asignacion', 'becas', 'cierre'].includes(sp.tab ?? '')
+  const tab = ['conceptos', 'asignacion', 'becas', 'cierre', 'remesas'].includes(sp.tab ?? '')
     ? (sp.tab as string)
     : 'conceptos'
 
-  const [conceptos, conceptosAsignables, configMes, tipos, becas, ninosCentro, cierre] =
-    await Promise.all([
-      getConceptosCobro(centroId),
-      getConceptosAsignables(centroId),
-      getConfigMes(centroId, anio, mes),
-      getTiposBeca(centroId),
-      getBecas(centroId),
-      getNinosPorCentro(centroId),
-      getCierreMes(centroId, anio, mes),
-    ])
+  const [
+    conceptos,
+    conceptosAsignables,
+    configMes,
+    tipos,
+    becas,
+    ninosCentro,
+    cierre,
+    acreedor,
+    recibosSepa,
+    remesas,
+  ] = await Promise.all([
+    getConceptosCobro(centroId),
+    getConceptosAsignables(centroId),
+    getConfigMes(centroId, anio, mes),
+    getTiposBeca(centroId),
+    getBecas(centroId),
+    getNinosPorCentro(centroId),
+    getCierreMes(centroId, anio, mes),
+    getDatosAcreedor(centroId),
+    getRecibosSepaRemesables(centroId, anio, mes),
+    getRemesasMes(centroId, anio, mes),
+  ])
 
   const ninosActivos = ninosCentro
     .filter((n) => n.estado_matricula === 'activa')
@@ -60,6 +77,7 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
           <TabsTrigger value="asignacion">{t('tab_asignacion')}</TabsTrigger>
           <TabsTrigger value="becas">{t('tab_becas')}</TabsTrigger>
           <TabsTrigger value="cierre">{t('tab_cierre')}</TabsTrigger>
+          <TabsTrigger value="remesas">{t('tab_remesas')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="conceptos" className="pt-4">
@@ -87,6 +105,16 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
             mes={mes}
             resumen={cierre}
             ninos={ninosActivos}
+          />
+        </TabsContent>
+
+        <TabsContent value="remesas" className="pt-4">
+          <RemesasPanel
+            anio={anio}
+            mes={mes}
+            acreedor={acreedor}
+            recibos={recibosSepa}
+            remesas={remesas}
           />
         </TabsContent>
       </Tabs>
