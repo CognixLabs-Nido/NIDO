@@ -427,7 +427,8 @@
           "hasta": "To",
           "periodo": "Period"
         }
-      }
+      },
+      "tab_resumen": "Summary"
     },
     "aulas": {
       "title": "Classrooms",
@@ -786,7 +787,8 @@
       "autorizaciones": "Authorisations",
       "informes": "Reports",
       "fotos": "Photos",
-      "notificaciones": "Notifications"
+      "notificaciones": "Notifications",
+      "recibos": "Receipts"
     },
     "dashboard": {
       "title": "My children",
@@ -2577,7 +2579,8 @@
       "campana_pendientes": "{n, plural, one {You have # report to complete} other {You have # reports to complete}} · due on {fecha}",
       "campana_urgente": "{n, plural, one {# report pending} other {# reports pending}} · due on {fecha}",
       "campana_vencida": "{n, plural, one {# report pending} other {# reports pending}} · was due on {fecha}",
-      "altas_pendientes_validar": "{n, plural, one {# enrolment pending validation} other {# enrolments pending validation}}"
+      "altas_pendientes_validar": "{n, plural, one {# enrolment pending validation} other {# enrolments pending validation}}",
+      "recibos_nuevos": "{n, plural, one {You have # new receipt} other {You have # new receipts}}"
     },
     "errors": {
       "no_autorizado": "Not authorised.",
@@ -3220,6 +3223,47 @@
       "no_encontrado": "Prospect not found.",
       "no_en_espera": "The prospect is no longer waiting.",
       "sin_email": "The tutor’s email is required to invite."
+    }
+  },
+  "recibos": {
+    "title": "Receipts",
+    "family_intro": "Check your children's receipts: amount, status and breakdown by item.",
+    "family_sin_recibos": "No receipts yet",
+    "family_sin_recibos_desc": "When the school generates receipts, they will appear here.",
+    "estado_recibo": {
+      "pendiente_procesar": "Pending",
+      "enviado_banco": "Sent to bank",
+      "devuelto": "Returned",
+      "cobrado_manual": "Collected manually"
+    },
+    "metodos": {
+      "sepa": "SEPA (direct debit)",
+      "efectivo": "Cash",
+      "transferencia": "Transfer"
+    },
+    "esporadico_badge": "One-off",
+    "regiro_badge": "Re-charge",
+    "total": "Total",
+    "back": "Back to receipts",
+    "desglose_title": "Receipt breakdown",
+    "concepto": "Item",
+    "cantidad": "Quantity",
+    "precio_unitario": "Unit price",
+    "importe": "Amount",
+    "metodo_label": "Method",
+    "sin_metodo": "No method",
+    "enviado_el": "Sent to bank on {fecha}",
+    "devuelto_el": "Returned on {fecha}",
+    "pivote_title": "Receipts summary for the period",
+    "pivote_vacia": "No receipts generated for period {periodo}.",
+    "exportar_csv": "Export CSV",
+    "csv": {
+      "tutor": "Guardian",
+      "nino": "Child",
+      "estado": "Status",
+      "metodo": "Method",
+      "total": "Total",
+      "totales": "Totals"
     }
   }
 }

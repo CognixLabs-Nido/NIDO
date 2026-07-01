@@ -427,7 +427,8 @@
           "hasta": "Fins a",
           "periodo": "Període"
         }
-      }
+      },
+      "tab_resumen": "Resum"
     },
     "aulas": {
       "title": "Aules",
@@ -786,7 +787,8 @@
       "autorizaciones": "Autoritzacions",
       "informes": "Informes",
       "fotos": "Fotos",
-      "notificaciones": "Notificacions"
+      "notificaciones": "Notificacions",
+      "recibos": "Rebuts"
     },
     "dashboard": {
       "title": "Els meus xiquets",
@@ -2577,7 +2579,8 @@
       "campana_pendientes": "{n, plural, one {Et queda # informe per completar} other {Et queden # informes per completar}} · venç el {fecha}",
       "campana_urgente": "{n, plural, one {# informe pendent} other {# informes pendents}} · venç el {fecha}",
       "campana_vencida": "{n, plural, one {# informe pendent} other {# informes pendents}} · va vèncer el {fecha}",
-      "altas_pendientes_validar": "{n, plural, one {# alta pendent de validar} other {# altes pendents de validar}}"
+      "altas_pendientes_validar": "{n, plural, one {# alta pendent de validar} other {# altes pendents de validar}}",
+      "recibos_nuevos": "{n, plural, one {Tens # rebut nou} other {Tens # rebuts nous}}"
     },
     "errors": {
       "no_autorizado": "No autoritzat.",
@@ -3220,6 +3223,47 @@
       "no_encontrado": "Prospecte no trobat.",
       "no_en_espera": "El prospecte ja no està en espera.",
       "sin_email": "Falta el correu del tutor per a convidar."
+    }
+  },
+  "recibos": {
+    "title": "Rebuts",
+    "family_intro": "Consulta els rebuts dels teus fills: import, estat i desglossament de conceptes.",
+    "family_sin_recibos": "Encara no hi ha rebuts",
+    "family_sin_recibos_desc": "Quan el centre genere rebuts, apareixeran ací.",
+    "estado_recibo": {
+      "pendiente_procesar": "Pendent",
+      "enviado_banco": "Enviat al banc",
+      "devuelto": "Retornat",
+      "cobrado_manual": "Cobrat manual"
+    },
+    "metodos": {
+      "sepa": "SEPA (domiciliació)",
+      "efectivo": "Efectiu",
+      "transferencia": "Transferència"
+    },
+    "esporadico_badge": "Esporàdic",
+    "regiro_badge": "Re-gir",
+    "total": "Total",
+    "back": "Tornar a rebuts",
+    "desglose_title": "Desglossament del rebut",
+    "concepto": "Concepte",
+    "cantidad": "Quantitat",
+    "precio_unitario": "Preu unitari",
+    "importe": "Import",
+    "metodo_label": "Mètode",
+    "sin_metodo": "Sense mètode",
+    "enviado_el": "Enviat al banc el {fecha}",
+    "devuelto_el": "Retornat el {fecha}",
+    "pivote_title": "Resum de rebuts del període",
+    "pivote_vacia": "No hi ha rebuts generats per al període {periodo}.",
+    "exportar_csv": "Exportar CSV",
+    "csv": {
+      "tutor": "Tutor/a",
+      "nino": "Xiquet/a",
+      "estado": "Estat",
+      "metodo": "Mètode",
+      "total": "Total",
+      "totales": "Totals"
     }
   }
 }
