@@ -12,6 +12,7 @@ import {
   getFirmasVistas,
   getFotosVistas,
   getInformesVistos,
+  getRecibosVistos,
   type RolNotif,
 } from '../lib/helpers'
 import type { AvisosInicio } from '../types'
@@ -27,6 +28,7 @@ const VACIO: AvisosInicio = {
   medicacionesPorArchivar: 0,
   informesNuevos: 0,
   fotosNuevas: 0,
+  recibosNuevos: 0,
   campanaPendientes: null,
   altasPendientesValidar: 0,
 }
@@ -132,6 +134,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
       medicacionesPorArchivar: archivar.count ?? 0,
       informesNuevos: 0,
       fotosNuevas: 0,
+      recibosNuevos: 0,
       campanaPendientes,
       // El count real lo inyecta el dashboard admin (RLS acota al centro); aquí 0.
       altasPendientesValidar: 0,
@@ -167,6 +170,16 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
   ])
   const fotosNuevas = contarNoVistas(fotos.data ?? [], fotosVistas)
 
+  // Recibos de sus hijos que aún no ha visto (F12-B-7). La RLS de `recibos` ya filtra a
+  // los de sus hijos (es_tutor_legal_de); descontamos los del marcador `recibos_vistos`
+  // (presencia). Cubre el cierre mensual: los recibos recién generados afloran aquí en la
+  // siguiente navegación de la familia — sin push ni email (patrón derivado de informes/fotos).
+  const [recibos, recibosVistos] = await Promise.all([
+    supabase.from('recibos').select('id').is('deleted_at', null),
+    getRecibosVistos(),
+  ])
+  const recibosNuevos = contarNoVistas(recibos.data ?? [], recibosVistos)
+
   return {
     pendientesConfirmar: 0,
     pendientesFirma,
@@ -178,6 +191,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
     medicacionesPorArchivar: 0,
     informesNuevos,
     fotosNuevas,
+    recibosNuevos,
     campanaPendientes: null,
     altasPendientesValidar: 0,
   }

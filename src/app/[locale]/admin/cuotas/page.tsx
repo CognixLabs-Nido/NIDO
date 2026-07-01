@@ -13,6 +13,8 @@ import { AsignacionMensualPanel } from '@/features/cuotas-config/components/Asig
 import { getConceptosAsignables } from '@/features/cuotas-config/queries/get-conceptos-asignables'
 import { getConfigMes } from '@/features/cuotas-config/queries/get-config-mes'
 import { getNinosPorCentro } from '@/features/ninos/queries/get-ninos'
+import { PivotePanel } from '@/features/recibos/components/PivotePanel'
+import { getPivotePeriodo } from '@/features/recibos/queries/get-pivote-periodo'
 import { RemesasPanel } from '@/features/remesas/components/RemesasPanel'
 import { getDatosAcreedor } from '@/features/remesas/queries/get-datos-acreedor'
 import { getRecibosGestion } from '@/features/remesas/queries/get-recibos-gestion'
@@ -20,20 +22,25 @@ import { getRecibosSepaRemesables } from '@/features/remesas/queries/get-recibos
 import { getRemesasMes } from '@/features/remesas/queries/get-remesas-mes'
 
 interface PageProps {
+  params: Promise<{ locale: string }>
   searchParams: Promise<{ tab?: string; anio?: string; mes?: string }>
 }
 
-// F12-B-2: configuración de cobro por niño y mes. Tabs: catálogo de conceptos (B-1),
-// asignación mensual (modalidad + método) y becas. El layout admin valida rol + centro.
-export default async function AdminCuotasPage({ searchParams }: PageProps) {
+// F12-B-2/7: configuración de cobro por niño y mes + gestión de remesas + resumen pivote.
+// Tabs: catálogo de conceptos (B-1), asignación mensual, becas, cierre, remesas y resumen
+// (pivote de recibos del período, B-7). El layout admin valida rol + centro.
+export default async function AdminCuotasPage({ params, searchParams }: PageProps) {
   const t = await getTranslations('admin.cuotas')
+  const { locale } = await params
   const sp = await searchParams
   const centroId = (await getCentroActualId())!
 
   const ahora = new Date()
   const anio = clamp(Number(sp.anio), 2024, 2100) ?? ahora.getFullYear()
   const mes = clamp(Number(sp.mes), 1, 12) ?? ahora.getMonth() + 1
-  const tab = ['conceptos', 'asignacion', 'becas', 'cierre', 'remesas'].includes(sp.tab ?? '')
+  const tab = ['conceptos', 'asignacion', 'becas', 'cierre', 'remesas', 'resumen'].includes(
+    sp.tab ?? ''
+  )
     ? (sp.tab as string)
     : 'conceptos'
 
@@ -49,6 +56,7 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
     recibosSepa,
     remesas,
     recibosGestion,
+    pivote,
   ] = await Promise.all([
     getConceptosCobro(centroId),
     getConceptosAsignables(centroId),
@@ -61,6 +69,7 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
     getRecibosSepaRemesables(centroId, anio, mes),
     getRemesasMes(centroId, anio, mes),
     getRecibosGestion(centroId, anio, mes),
+    getPivotePeriodo(centroId, anio, mes),
   ])
 
   const ninosActivos = ninosCentro
@@ -81,6 +90,7 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
           <TabsTrigger value="becas">{t('tab_becas')}</TabsTrigger>
           <TabsTrigger value="cierre">{t('tab_cierre')}</TabsTrigger>
           <TabsTrigger value="remesas">{t('tab_remesas')}</TabsTrigger>
+          <TabsTrigger value="resumen">{t('tab_resumen')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="conceptos" className="pt-4">
@@ -120,6 +130,10 @@ export default async function AdminCuotasPage({ searchParams }: PageProps) {
             remesas={remesas}
             recibosGestion={recibosGestion}
           />
+        </TabsContent>
+
+        <TabsContent value="resumen" className="pt-4">
+          <PivotePanel locale={locale} anio={anio} mes={mes} pivote={pivote} />
         </TabsContent>
       </Tabs>
     </div>

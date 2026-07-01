@@ -46,6 +46,16 @@ export const PREF_INFORMES_VISTOS = 'informes_vistos'
  */
 export const PREF_FOTOS_VISTAS = 'fotos_vistas'
 
+/**
+ * Clave del mapa por-recibo `{ [recibo_id]: iso_visto_at }` en
+ * preferencias_usuario (F12-B-7): registra qué recibos ha abierto/visto la familia
+ * (al entrar en /family/recibos se marcan todos los visibles). El aviso de "recibos
+ * nuevos" deja de contar los ya vistos; basta la presencia (mismo patrón que
+ * `informes_vistos`/`fotos_vistas` — sin migración, sin tabla ni push). Cubre los
+ * recibos que genera el cierre mensual: surgen como aviso en la siguiente navegación.
+ */
+export const PREF_RECIBOS_VISTOS = 'recibos_vistos'
+
 /** Ventana de novedades: solo se muestran/cuentan ítems de los últimos N días. */
 export const VENTANA_NOVEDADES_DIAS = 30
 
@@ -115,6 +125,13 @@ export interface AvisosInicio {
    * marcador `fotos_vistas`. Solo familia (el staff no recibe este aviso).
    */
   fotosNuevas: number
+  /**
+   * Familia: recibos de sus hijos que aún no ha visto (F12-B-7). Aviso derivado de
+   * `recibos` (RLS → solo los de sus hijos vía `es_tutor_legal_de`) menos el marcador
+   * `recibos_vistos`. Cubre los recibos generados al cerrar el mes (sin push ni email:
+   * mismo patrón derivado que informes/fotos). Solo familia (el staff no lo recibe).
+   */
+  recibosNuevos: number
   /**
    * Staff redactor (coordinadora/profesora): informes que le faltan por completar
    * para las campañas ABIERTAS (F9-5-2). Aviso derivado consolidado (Q1) o `null` si

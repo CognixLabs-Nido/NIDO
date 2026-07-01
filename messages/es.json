@@ -427,7 +427,8 @@
           "hasta": "Hasta",
           "periodo": "Periodo"
         }
-      }
+      },
+      "tab_resumen": "Resumen"
     },
     "aulas": {
       "title": "Aulas",
@@ -786,7 +787,8 @@
       "autorizaciones": "Autorizaciones",
       "informes": "Informes",
       "fotos": "Fotos",
-      "notificaciones": "Notificaciones"
+      "notificaciones": "Notificaciones",
+      "recibos": "Recibos"
     },
     "dashboard": {
       "title": "Mis niños",
@@ -2577,7 +2579,8 @@
       "campana_pendientes": "{n, plural, one {Te queda # informe por completar} other {Te quedan # informes por completar}} · vence el {fecha}",
       "campana_urgente": "{n, plural, one {# informe pendiente} other {# informes pendientes}} · vence el {fecha}",
       "campana_vencida": "{n, plural, one {# informe pendiente} other {# informes pendientes}} · venció el {fecha}",
-      "altas_pendientes_validar": "{n, plural, one {# alta pendiente de validar} other {# altas pendientes de validar}}"
+      "altas_pendientes_validar": "{n, plural, one {# alta pendiente de validar} other {# altas pendientes de validar}}",
+      "recibos_nuevos": "{n, plural, one {Tienes # recibo nuevo} other {Tienes # recibos nuevos}}"
     },
     "errors": {
       "no_autorizado": "No autorizado.",
@@ -3220,6 +3223,47 @@
       "no_encontrado": "Prospecto no encontrado.",
       "no_en_espera": "El prospecto ya no está en espera.",
       "sin_email": "Falta el email del tutor para invitar."
+    }
+  },
+  "recibos": {
+    "title": "Recibos",
+    "family_intro": "Consulta los recibos de tus hijos: importe, estado y desglose de conceptos.",
+    "family_sin_recibos": "Todavía no hay recibos",
+    "family_sin_recibos_desc": "Cuando el centro genere recibos, aparecerán aquí.",
+    "estado_recibo": {
+      "pendiente_procesar": "Pendiente",
+      "enviado_banco": "Enviado al banco",
+      "devuelto": "Devuelto",
+      "cobrado_manual": "Cobrado manual"
+    },
+    "metodos": {
+      "sepa": "SEPA (domiciliación)",
+      "efectivo": "Efectivo",
+      "transferencia": "Transferencia"
+    },
+    "esporadico_badge": "Esporádico",
+    "regiro_badge": "Re-giro",
+    "total": "Total",
+    "back": "Volver a recibos",
+    "desglose_title": "Desglose del recibo",
+    "concepto": "Concepto",
+    "cantidad": "Cantidad",
+    "precio_unitario": "Precio unitario",
+    "importe": "Importe",
+    "metodo_label": "Método",
+    "sin_metodo": "Sin método",
+    "enviado_el": "Enviado al banco el {fecha}",
+    "devuelto_el": "Devuelto el {fecha}",
+    "pivote_title": "Resumen de recibos del período",
+    "pivote_vacia": "No hay recibos generados para el período {periodo}.",
+    "exportar_csv": "Exportar CSV",
+    "csv": {
+      "tutor": "Tutor/a",
+      "nino": "Niño/a",
+      "estado": "Estado",
+      "metodo": "Método",
+      "total": "Total",
+      "totales": "Totales"
     }
   }
 }

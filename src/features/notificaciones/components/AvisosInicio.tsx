@@ -4,6 +4,7 @@ import {
   CheckCircle2Icon,
   ClipboardCheckIcon,
   ClipboardListIcon,
+  CoinsIcon,
   ImageIcon,
   PenLineIcon,
   PillIcon,
@@ -44,6 +45,8 @@ export async function AvisosInicio({
   const informesNuevosN = staff ? 0 : avisos.informesNuevos
   // Publicaciones de fotos nuevas: solo familia (F10-2).
   const fotosNuevasN = staff ? 0 : avisos.fotosNuevas
+  // Recibos nuevos que la familia no ha visto: solo familia (F12-B-7).
+  const recibosNuevosN = staff ? 0 : avisos.recibosNuevos
   // Informes pendientes de campaña: solo profe redactora (F9-5-2).
   const campanaPend = staff ? avisos.campanaPendientes : null
   // Altas (matrículas en 'lista') pendientes de validar: solo admin (#4 dashboard).
@@ -57,6 +60,7 @@ export async function AvisosInicio({
     archivarN <= 0 &&
     informesNuevosN <= 0 &&
     fotosNuevasN <= 0 &&
+    recibosNuevosN <= 0 &&
     altasPendientesN <= 0 &&
     !campanaPend
   )
@@ -72,6 +76,7 @@ export async function AvisosInicio({
   const pendientesHref = autorizacionesHref
   const informesHref = `/${locale}/family/informes`
   const fotosHref = `/${locale}/family/fotos`
+  const recibosHref = `/${locale}/family/recibos`
   const campanaInformesHref = `/${locale}/teacher/informes`
   const altasPendientesHref = `/${locale}/admin/ninos?estado=lista`
 
@@ -198,6 +203,20 @@ export async function AvisosInicio({
           <ImageIcon className="text-primary-700 size-5 shrink-0" />
           <span className="text-primary-900 text-sm font-medium">
             {t('fotos_nuevas', { n: fotosNuevasN })}
+          </span>
+        </Link>
+      )}
+
+      {/* Recibo(s) nuevos que la familia no ha visto (F12-B-7): p. ej. al cerrar el mes.
+          Color ámbar-tierra (CoinsIcon), distinto del verde de informes y el azul de fotos. */}
+      {recibosNuevosN > 0 && (
+        <Link
+          href={recibosHref}
+          className="flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 transition hover:bg-amber-100 dark:border-amber-900/40 dark:bg-amber-950/30 dark:hover:bg-amber-950/50"
+        >
+          <CoinsIcon className="size-5 shrink-0 text-amber-700 dark:text-amber-300" />
+          <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+            {t('recibos_nuevos', { n: recibosNuevosN })}
           </span>
         </Link>
       )}

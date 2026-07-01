@@ -7,6 +7,7 @@ import {
   PREF_FOTOS_VISTAS,
   PREF_INFORMES_VISTOS,
   PREF_NOTIF_VISTO,
+  PREF_RECIBOS_VISTOS,
   VENTANA_NOVEDADES_DIAS,
 } from '../types'
 
@@ -95,6 +96,27 @@ export async function getFotosVistas(): Promise<Record<string, string>> {
     .from('preferencias_usuario')
     .select('valor')
     .eq('clave', PREF_FOTOS_VISTAS)
+    .maybeSingle()
+  if (!data?.valor) return {}
+  try {
+    const parsed = JSON.parse(data.valor)
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {}
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Mapa `{ [recibo_id]: iso_visto_at }` del usuario (F12-B-7): qué recibos ha visto la
+ * familia. Vacío si nunca abrió ninguno o si el valor está corrupto. Solo se usa la
+ * PRESENCIA de la clave (mismo patrón que informes/fotos) — el instante es informativo.
+ */
+export async function getRecibosVistos(): Promise<Record<string, string>> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('preferencias_usuario')
+    .select('valor')
+    .eq('clave', PREF_RECIBOS_VISTOS)
     .maybeSingle()
   if (!data?.valor) return {}
   try {
