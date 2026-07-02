@@ -88,7 +88,7 @@ export function NuevaAulaDialog({ centroId, cursoAcademicoId }: Props) {
               )}
             />
             <FormItem>
-              <FormLabel>{t('fields.cohorte')}</FormLabel>
+              <FormLabel>{t('fields.anio_nacimiento')}</FormLabel>
               <Controller
                 control={form.control}
                 name="cohorte_anos_nacimiento"
