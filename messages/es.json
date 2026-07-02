@@ -663,6 +663,15 @@
         "en_espera": "En espera",
         "invitado": "Invitado",
         "descartado": "Descartado"
+      },
+      "invitar_dialog": {
+        "title": "Invitar al alta",
+        "aula_label": "Aula",
+        "aula_placeholder": "Selecciona un aula",
+        "exceso": "Has llegado al máximo admitido en el aula ({capacidad} alumnos). ¿Seguro que quieres añadir otro y exceder el límite permitido?",
+        "confirmar_exceso": "Añadir igualmente",
+        "invitar": "Invitar",
+        "sin_aulas": "No hay aulas configuradas en el curso activo."
       }
     },
     "pendientes": {
@@ -3172,7 +3181,8 @@
       "email_largo": "Email demasiado largo.",
       "email_invalido": "Email no válido.",
       "nota_larga": "Nota demasiado larga.",
-      "orden_vacio": "Orden vacío."
+      "orden_vacio": "Orden vacío.",
+      "aula_invalida": "Aula no válida."
     },
     "errors": {
       "sin_centro": "No se encontró el centro.",
@@ -3182,7 +3192,9 @@
       "reordenar_fallo": "No se pudo guardar el orden.",
       "no_encontrado": "Prospecto no encontrado.",
       "no_en_espera": "El prospecto ya no está en espera.",
-      "sin_email": "Falta el email del tutor para invitar."
+      "sin_email": "Falta el email del tutor para invitar.",
+      "sin_curso_activo": "El centro no tiene un curso académico activo.",
+      "aula_invalida": "El aula seleccionada no pertenece al curso activo."
     }
   },
   "recibos": {

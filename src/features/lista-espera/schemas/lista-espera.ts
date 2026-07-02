@@ -52,7 +52,11 @@ export type EditarProspectoInput = z.input<typeof editarProspectoSchema>
 export const descartarProspectoSchema = z.object({ id: uuid })
 export type DescartarProspectoInput = z.infer<typeof descartarProspectoSchema>
 
-export const invitarAlAltaSchema = z.object({ id: uuid })
+export const invitarAlAltaSchema = z.object({
+  id: uuid,
+  // Aula (física) del curso activo contra la que se crea la matrícula pendiente.
+  aulaId: z.string().uuid('listaEspera.validation.aula_invalida'),
+})
 export type InvitarAlAltaInput = z.infer<typeof invitarAlAltaSchema>
 
 export const reordenarListaEsperaSchema = z.object({
