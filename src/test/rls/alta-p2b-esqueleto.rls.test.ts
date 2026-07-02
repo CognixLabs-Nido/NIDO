@@ -18,7 +18,7 @@ import {
  *   3. "Activar matrícula" = UPDATE estado pendiente→activa (lo que la pieza 2a deja
  *      entrar en operativas).
  *
- * La orquestación (`invitarFamiliaConEsqueleto`, `activarMatricula`) usa createClient/
+ * La orquestación de alta (`activarMatricula` y el alta por invitación) usa createClient/
  * next/headers → no invocable en vitest; se verifica en preview. El dedupe nino_id-aware
  * tiene su propio test unit con mocks (`send-invitation.dedupe.test.ts`).
  *

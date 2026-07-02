@@ -15,9 +15,3 @@ export const aulaSchema = z.object({
 })
 
 export type AulaInput = z.infer<typeof aulaSchema>
-
-/** Helper compartido cliente/servidor: ¿la fecha de nacimiento encaja en la cohorte? */
-export function fechaEnCohorte(fechaNacimientoIso: string, cohorte: number[]): boolean {
-  const anio = Number(fechaNacimientoIso.slice(0, 4))
-  return cohorte.includes(anio)
-}

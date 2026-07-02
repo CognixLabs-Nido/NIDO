@@ -2,11 +2,7 @@ import { randomUUID } from 'crypto'
 
 import { describe, expect, it } from 'vitest'
 
-import {
-  acceptInvitationSchema,
-  invitarFamiliaConEsqueletoSchema,
-  sendInvitationSchema,
-} from '../schemas/invitation'
+import { acceptInvitationSchema, sendInvitationSchema } from '../schemas/invitation'
 
 describe('sendInvitationSchema', () => {
   it('acepta una invitación bien formada para tutor con niño', () => {
@@ -141,39 +137,5 @@ describe('acceptInvitationSchema', () => {
         result.error.issues.some((i) => i.message === 'vinculo.validation.descripcion_requerida')
       ).toBe(true)
     }
-  })
-})
-
-describe('invitarFamiliaConEsqueletoSchema', () => {
-  it('acepta nombre + aula + email + tipoVinculo', () => {
-    const result = invitarFamiliaConEsqueletoSchema.safeParse({
-      nombreNino: 'Niño Demo',
-      aulaId: randomUUID(),
-      email: 'tutor@nido.test',
-      tipoVinculo: 'tutor_legal_principal',
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it('rechaza email inválido y nombre vacío', () => {
-    expect(
-      invitarFamiliaConEsqueletoSchema.safeParse({
-        nombreNino: '',
-        aulaId: randomUUID(),
-        email: 'no-es-email',
-        tipoVinculo: 'tutor_legal_principal',
-      }).success
-    ).toBe(false)
-  })
-
-  it('rechaza aula no-uuid', () => {
-    expect(
-      invitarFamiliaConEsqueletoSchema.safeParse({
-        nombreNino: 'Niño Demo',
-        aulaId: 'no-uuid',
-        email: 'tutor@nido.test',
-        tipoVinculo: 'tutor_legal_principal',
-      }).success
-    ).toBe(false)
   })
 })

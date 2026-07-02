@@ -25,7 +25,7 @@ export async function guardarInfoMedicaTutor(
   const d = parsed.data
   const supabase = await createClient()
   // El tipo generado declara los args como no-nullable, pero la RPC acepta NULL
-  // (contrato "NULL = preservar"). Mismo patrón que `crearNinoCompleto`.
+  // (contrato "NULL = preservar" del setter médico).
   const rpcArgs = {
     p_nino_id: d.nino_id,
     p_alergias_graves: d.alergias_graves ?? null,
