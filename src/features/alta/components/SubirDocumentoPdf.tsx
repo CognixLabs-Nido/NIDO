@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 
 import { CheckCircle2Icon, FileTextIcon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
@@ -51,6 +52,7 @@ export function SubirDocumentoPdf({
 }: Props) {
   const t = useTranslations('alta.documentos')
   const tErrors = useTranslations()
+  const router = useRouter()
   const [files, setFiles] = useState<File[]>([])
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialUrl ?? null)
   const [subido, setSubido] = useState<boolean>(Boolean(initialUrl))
@@ -95,6 +97,11 @@ export function SubirDocumentoPdf({
       setPreviewUrl(json.documento?.url ?? null)
       setFiles([])
       toast.success(json.pendienteValidacion ? t('validacion.enviado') : t('subido'))
+      // El handler ya persistió (Storage + ruta en BD) ANTES de responder, así que la
+      // fuente server refleja el documento aquí. Refrescamos el RSC para que `initialUrl`
+      // deje de estar rancio: al re-montarse el paso tras navegar, muestra "subido" con su
+      // preview sin re-subir (rehidratación, BUG 1 / PR-4a-1).
+      router.refresh()
     })
   }
 
