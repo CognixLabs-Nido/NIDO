@@ -1,0 +1,80 @@
+name: RLS suite (remote DB)
+
+# Suites RLS/audit que hablan con la BD Supabase remota compartida. SACADAS del CI de
+# cada PR (ci-pr.yml) para no saturar el pool ni quemar minutos: aquí corren aisladas,
+# SERIALIZADAS y solo bajo demanda o de madrugada.
+#
+# - Serialización DENTRO del run: vitest usa `fileParallelism: false` (vitest.config.ts)
+#   → los ficheros RLS corren de uno en uno contra el remoto (nunca en paralelo).
+# - Serialización ENTRE runs: el bloque `concurrency` (group global + cancel-in-progress
+#   false) encola cualquier run solapado → NUNCA hay dos runs tocando la BD a la vez.
+
+on:
+  workflow_dispatch: {} # lanzable a mano (GitHub UI / `gh workflow run rls-suite.yml`).
+  schedule:
+    # 02:00 UTC = 03:00 CET / 04:00 CEST — madrugada Europe/Madrid, baja actividad.
+    - cron: '0 2 * * *'
+
+# Un único run de la suite RLS a la vez (global, no por rama): si llega otro (nightly +
+# dispatch manual solapados), se ENCOLA en vez de correr en paralelo. No cancelamos el
+# que ya corre (cancel-in-progress: false) para no dejar la BD a medias.
+concurrency:
+  group: rls-suite
+  cancel-in-progress: false
+
+jobs:
+  rls:
+    name: RLS + audit (serializado, remoto)
+    runs-on: ubuntu-latest
+    # Corta un cuelgue por saturación del pool en vez de dejarlo hasta el tope de 6h.
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # Solo el proyecto `rls` (src/test/rls/** + src/test/audit/**) contra el remoto.
+      - name: RLS + audit tests
+        run: npm run test:rls
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Flags de gated-tests: todas las migraciones están aplicadas en el remoto.
+          F5B34_MIGRATION_APPLIED: '1'
+          RECORDATORIOS_MIGRATION_APPLIED: '1'
+          EVENTOS_MIGRATION_APPLIED: '1'
+          AGENDA_MIGRATION_APPLIED: '1'
+          F8_MIGRATION_APPLIED: '1'
+          F8_RW0_MIGRATION_APPLIED: '1'
+          F8_3B_MIGRATION_APPLIED: '1'
+          F9_0_MIGRATION_APPLIED: '1'
+          F9_5_0_MIGRATION_APPLIED: '1'
+          F10_0_MIGRATION_APPLIED: '1'
+          F10_2_MIGRATION_APPLIED: '1'
+          F10_3_MIGRATION_APPLIED: '1'
+          F11_ALTA_P1_MIGRATION_APPLIED: '1'
+          F11_ALTA_P2A_MIGRATION_APPLIED: '1'
+          F11_ALTA_P2B_MIGRATION_APPLIED: '1'
+          F11_ALTA_P3A_MIGRATION_APPLIED: '1'
+          F11_ALTA_P3B1_MIGRATION_APPLIED: '1'
+          F11_ALTA_P3C_MIGRATION_APPLIED: '1'
+          F11_ALTA_P3F2_MIGRATION_APPLIED: '1'
+          F11_A6_MIGRATION_APPLIED: '1'
+          F11A_CONSENT_MIGRATION_APPLIED: '1'
+          F11A_LEASTPRIV_MIGRATION_APPLIED: '1'
+          F11A3_IMAGEN_MIGRATION_APPLIED: '1'
+          F11A4_OLVIDO_MIGRATION_APPLIED: '1'
+          F11A5_EXPORT_MIGRATION_APPLIED: '1'
+          F11A6_RETENCION_MIGRATION_APPLIED: '1'
+          F11_F3_MIGRATION_APPLIED: '1'
+          F8_FIRMAR_PERMISO_MIGRATION_APPLIED: '1'
+          F11_H0_MIGRATION_APPLIED: '1'
+          F12B_RLS_APPLIED: '1'
+          F12B_5_RLS_APPLIED: '1'
+          F12B_6_RLS_APPLIED: '1'
