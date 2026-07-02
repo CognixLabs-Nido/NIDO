@@ -663,6 +663,15 @@
         "en_espera": "En espera",
         "invitado": "Convidat",
         "descartado": "Descartat"
+      },
+      "invitar_dialog": {
+        "title": "Convidar a l'alta",
+        "aula_label": "Aula",
+        "aula_placeholder": "Selecciona una aula",
+        "exceso": "Has arribat al màxim admés en l'aula ({capacidad} xiquets). Segur que vols afegir-ne un altre i excedir el límit permés?",
+        "confirmar_exceso": "Afegir igualment",
+        "invitar": "Convidar",
+        "sin_aulas": "No hi ha aules configurades en el curs actiu."
       }
     },
     "pendientes": {
@@ -3172,7 +3181,8 @@
       "email_largo": "Correu massa llarg.",
       "email_invalido": "Correu no vàlid.",
       "nota_larga": "Nota massa llarga.",
-      "orden_vacio": "Ordre buit."
+      "orden_vacio": "Ordre buit.",
+      "aula_invalida": "Aula no vàlida."
     },
     "errors": {
       "sin_centro": "No s’ha trobat el centre.",
@@ -3182,7 +3192,9 @@
       "reordenar_fallo": "No s’ha pogut guardar l’ordre.",
       "no_encontrado": "Prospecte no trobat.",
       "no_en_espera": "El prospecte ja no està en espera.",
-      "sin_email": "Falta el correu del tutor per a convidar."
+      "sin_email": "Falta el correu del tutor per a convidar.",
+      "sin_curso_activo": "El centre no té un curs acadèmic actiu.",
+      "aula_invalida": "L'aula seleccionada no pertany al curs actiu."
     }
   },
   "recibos": {

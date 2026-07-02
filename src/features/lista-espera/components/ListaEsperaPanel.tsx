@@ -23,6 +23,7 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { descartarProspecto } from '../actions/descartar-prospecto'
 import { invitarAlAlta } from '../actions/invitar-al-alta'
 import { reordenarListaEspera } from '../actions/reordenar-lista-espera'
+import { superaCapacidad, type AulaConOcupacion } from '../lib/ocupacion'
 import type { ProspectoListItem } from '../queries/get-lista-espera'
 
 import { ProspectoFormDialog } from './ProspectoFormDialog'
@@ -36,10 +37,18 @@ interface Props {
   cursos: CursoOpcion[]
   cursoSeleccionadoId: string
   prospectos: ProspectoListItem[]
+  /** Aulas del curso ACTIVO con ocupación (para fijar aula + aviso de capacidad al invitar). */
+  aulas: AulaConOcupacion[]
   locale: string
 }
 
-export function ListaEsperaPanel({ cursos, cursoSeleccionadoId, prospectos, locale }: Props) {
+export function ListaEsperaPanel({
+  cursos,
+  cursoSeleccionadoId,
+  prospectos,
+  aulas,
+  locale,
+}: Props) {
   const t = useTranslations('admin.admisiones')
   const tErrors = useTranslations()
   const router = useRouter()
@@ -155,7 +164,7 @@ export function ListaEsperaPanel({ cursos, cursoSeleccionadoId, prospectos, loca
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
                       {p.estado === 'en_espera' && (
-                        <InvitarBoton id={p.id} locale={locale} disabled={pending} />
+                        <InvitarBoton id={p.id} aulas={aulas} locale={locale} disabled={pending} />
                       )}
                       <ProspectoFormDialog
                         cursoId={cursoSeleccionadoId}
@@ -179,32 +188,99 @@ export function ListaEsperaPanel({ cursos, cursoSeleccionadoId, prospectos, loca
   )
 }
 
-function InvitarBoton({ id, locale, disabled }: { id: string; locale: string; disabled: boolean }) {
+function InvitarBoton({
+  id,
+  aulas,
+  locale,
+  disabled,
+}: {
+  id: string
+  aulas: AulaConOcupacion[]
+  locale: string
+  disabled: boolean
+}) {
   const t = useTranslations('admin.admisiones')
   const tErrors = useTranslations()
   const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [aulaId, setAulaId] = useState('')
   const [pending, start] = useTransition()
-  return (
-    <Button
-      size="icon"
-      variant="ghost"
-      aria-label={t('invitar')}
-      title={t('invitar')}
-      disabled={disabled || pending}
-      onClick={() =>
-        start(async () => {
-          const r = await invitarAlAlta({ id }, locale)
-          if (r.success) {
-            toast.success(t('invitado'))
-            router.refresh()
-          } else {
-            toast.error(tErrors(r.error))
-          }
-        })
+
+  const aulaSel = aulas.find((a) => a.aulaId === aulaId)
+  const exceso = aulaSel ? superaCapacidad(aulaSel.ocupacion, aulaSel.capacidad) : false
+
+  const invitar = () =>
+    start(async () => {
+      const r = await invitarAlAlta({ id, aulaId }, locale)
+      if (r.success) {
+        toast.success(t('invitado'))
+        setOpen(false)
+        setAulaId('')
+        router.refresh()
+      } else {
+        toast.error(tErrors(r.error))
       }
-    >
-      <UserPlusIcon className="size-4" />
-    </Button>
+    })
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label={t('invitar')}
+        title={t('invitar')}
+        disabled={disabled}
+        onClick={() => setOpen(true)}
+      >
+        <UserPlusIcon className="size-4" />
+      </Button>
+      <DialogContent className="sm:max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle>{t('invitar_dialog.title')}</DialogTitle>
+        </DialogHeader>
+
+        {aulas.length === 0 ? (
+          <p className="text-muted-foreground text-sm">{t('invitar_dialog.sin_aulas')}</p>
+        ) : (
+          <div className="space-y-4">
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium">{t('invitar_dialog.aula_label')}</span>
+              <select
+                className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
+                value={aulaId}
+                onChange={(e) => setAulaId(e.target.value)}
+              >
+                <option value="">{t('invitar_dialog.aula_placeholder')}</option>
+                {aulas.map((a) => (
+                  <option key={a.aulaId} value={a.aulaId}>
+                    {a.nombre} ({a.ocupacion}/{a.capacidad})
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {exceso && aulaSel && (
+              <p className="text-destructive text-sm">
+                {t('invitar_dialog.exceso', { capacidad: aulaSel.capacidad })}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+                {t('cancel')}
+              </Button>
+              <Button
+                variant={exceso ? 'destructive' : 'default'}
+                onClick={invitar}
+                disabled={pending || !aulaId}
+              >
+                {exceso ? t('invitar_dialog.confirmar_exceso') : t('invitar_dialog.invitar')}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }
 

@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { getCursosPorCentro } from '@/features/cursos/queries/get-cursos'
 import { ListaEsperaPanel } from '@/features/lista-espera/components/ListaEsperaPanel'
+import { getAulasConOcupacion } from '@/features/lista-espera/queries/get-aulas-con-ocupacion'
 import { getListaEspera } from '@/features/lista-espera/queries/get-lista-espera'
 import { EmptyState } from '@/shared/components/EmptyState'
 
@@ -39,6 +40,11 @@ export default async function AdmisionesPage({ params, searchParams }: PageProps
     cursos.find((c) => c.id === curso) ?? cursos.find((c) => c.estado === 'activo') ?? cursos[0]!
   const prospectos = await getListaEspera(seleccionado.id)
 
+  // Aulas del CURSO ACTIVO con su ocupación: al invitar se fija el aula y se crea la
+  // matrícula pendiente contra el curso activo (el alta opera siempre sobre él).
+  const cursoActivo = cursos.find((c) => c.estado === 'activo')
+  const aulas = cursoActivo ? await getAulasConOcupacion(cursoActivo.id) : []
+
   return (
     <div className="space-y-6">
       <header className="space-y-1">
@@ -49,6 +55,7 @@ export default async function AdmisionesPage({ params, searchParams }: PageProps
         cursos={cursos.map((c) => ({ id: c.id, nombre: c.nombre }))}
         cursoSeleccionadoId={seleccionado.id}
         prospectos={prospectos}
+        aulas={aulas}
         locale={locale}
       />
     </div>

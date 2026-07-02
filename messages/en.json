@@ -663,6 +663,15 @@
         "en_espera": "Waiting",
         "invitado": "Invited",
         "descartado": "Discarded"
+      },
+      "invitar_dialog": {
+        "title": "Invite to enrolment",
+        "aula_label": "Classroom",
+        "aula_placeholder": "Select a classroom",
+        "exceso": "You've reached the maximum for this classroom ({capacidad} children). Are you sure you want to add another and exceed the limit?",
+        "confirmar_exceso": "Add anyway",
+        "invitar": "Invite",
+        "sin_aulas": "No classrooms configured for the active year."
       }
     },
     "pendientes": {
@@ -3172,7 +3181,8 @@
       "email_largo": "Email too long.",
       "email_invalido": "Invalid email.",
       "nota_larga": "Note too long.",
-      "orden_vacio": "Empty order."
+      "orden_vacio": "Empty order.",
+      "aula_invalida": "Invalid classroom."
     },
     "errors": {
       "sin_centro": "Centre not found.",
@@ -3182,7 +3192,9 @@
       "reordenar_fallo": "Could not save the order.",
       "no_encontrado": "Prospect not found.",
       "no_en_espera": "The prospect is no longer waiting.",
-      "sin_email": "The tutor’s email is required to invite."
+      "sin_email": "The tutor’s email is required to invite.",
+      "sin_curso_activo": "The centre has no active academic year.",
+      "aula_invalida": "The selected classroom doesn't belong to the active year."
     }
   },
   "recibos": {
