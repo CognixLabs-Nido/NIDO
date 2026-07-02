@@ -489,7 +489,6 @@
     },
     "ninos": {
       "title": "Niños",
-      "nuevo": "Nuevo niño",
       "ver": "Ver",
       "empty": "Sin niños todavía. Crea el primero.",
       "sin_matricula_activa": "Sin matrícula activa",
@@ -501,20 +500,6 @@
           "lista": "Altas pendientes de validar",
           "activa": "Matrícula activa"
         }
-      },
-      "nuevo_sin_aulas": "Necesitas al menos un aula creada antes de registrar un niño.",
-      "created": "Niño registrado correctamente",
-      "wizard": {
-        "title": "Registrar nuevo niño",
-        "step": "Paso",
-        "progress": "Progreso del registro",
-        "paso1": "Datos personales",
-        "paso2": "Datos médicos",
-        "paso3": "Asignar aula",
-        "next": "Siguiente",
-        "back": "Anterior",
-        "submit": "Guardar",
-        "saving": "Guardando..."
       },
       "tabs": {
         "personales": "Datos personales",
@@ -571,25 +556,6 @@
         "ok": "Matrícula activada",
         "activando": "Activando…",
         "activar": "Activar matrícula"
-      },
-      "invitar": {
-        "cta": "Invitar familia",
-        "title": "Invitar a la familia",
-        "ok": "Invitación enviada",
-        "cancel": "Cancelar",
-        "enviar": "Enviar invitación",
-        "enviando": "Enviando…",
-        "fields": {
-          "nombre_nino": "Nombre del niño/a",
-          "aula": "Aula",
-          "aula_placeholder": "Selecciona un aula",
-          "email": "Email del tutor/a",
-          "tipo_vinculo": "Tipo de vínculo"
-        },
-        "tipo_vinculo": {
-          "principal": "Tutor/a legal principal",
-          "secundario": "Tutor/a legal secundario"
-        }
       },
       "avance_alta": {
         "titulo": "Avance del alta",
@@ -1173,14 +1139,10 @@
       "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)",
       "fecha_futura": "La fecha de nacimiento no puede ser futura",
       "aula_invalida": "Selecciona un aula",
-      "fuera_de_cohorte": "El año de nacimiento no coincide con la cohorte. Marca la confirmación para matricular igualmente.",
       "invalid": "Datos no válidos."
     },
     "errors": {
       "create_failed": "No se pudo registrar al niño.",
-      "aula_no_encontrada": "Aula no encontrada.",
-      "aula_de_otro_centro": "El aula seleccionada no pertenece al centro.",
-      "sin_curso_activo": "El centro no tiene un curso académico activo.",
       "no_encontrado": "Niño no encontrado.",
       "no_autorizado": "No tienes permiso para esta acción.",
       "actualizacion_fallo": "No se pudo actualizar.",
@@ -1260,9 +1222,7 @@
   },
   "medico": {
     "aviso_cifrado": "Estos datos se almacenan cifrados.",
-    "error": {
-      "cifrado_no_configurado": "La configuración de cifrado de datos médicos no está disponible. Contacta con soporte."
-    }
+    "error": {}
   },
   "agenda": {
     "title": "Agenda diaria",

@@ -489,7 +489,6 @@
     },
     "ninos": {
       "title": "Children",
-      "nuevo": "New child",
       "ver": "View",
       "empty": "No children yet. Register the first one.",
       "sin_matricula_activa": "No active enrolment",
@@ -501,20 +500,6 @@
           "lista": "Pending validation",
           "activa": "Active enrolment"
         }
-      },
-      "nuevo_sin_aulas": "You need at least one classroom before registering a child.",
-      "created": "Child registered successfully",
-      "wizard": {
-        "title": "Register new child",
-        "step": "Step",
-        "progress": "Registration progress",
-        "paso1": "Personal data",
-        "paso2": "Medical data",
-        "paso3": "Assign classroom",
-        "next": "Next",
-        "back": "Back",
-        "submit": "Save",
-        "saving": "Saving..."
       },
       "tabs": {
         "personales": "Personal",
@@ -571,25 +556,6 @@
         "ok": "Enrolment activated",
         "activando": "Activating…",
         "activar": "Activate enrolment"
-      },
-      "invitar": {
-        "cta": "Invite family",
-        "title": "Invite the family",
-        "ok": "Invitation sent",
-        "cancel": "Cancel",
-        "enviar": "Send invitation",
-        "enviando": "Sending…",
-        "fields": {
-          "nombre_nino": "Child's first name",
-          "aula": "Classroom",
-          "aula_placeholder": "Select a classroom",
-          "email": "Guardian's email",
-          "tipo_vinculo": "Link type"
-        },
-        "tipo_vinculo": {
-          "principal": "Primary legal guardian",
-          "secundario": "Secondary legal guardian"
-        }
       },
       "avance_alta": {
         "titulo": "Enrolment progress",
@@ -1173,14 +1139,10 @@
       "fecha_formato": "Invalid date format (YYYY-MM-DD)",
       "fecha_futura": "Date of birth cannot be in the future",
       "aula_invalida": "Select a classroom",
-      "fuera_de_cohorte": "Birth year doesn't match cohort. Tick the confirmation to enrol anyway.",
       "invalid": "Invalid data."
     },
     "errors": {
       "create_failed": "Could not register the child.",
-      "aula_no_encontrada": "Classroom not found.",
-      "aula_de_otro_centro": "The selected classroom doesn't belong to this centre.",
-      "sin_curso_activo": "The centre has no active academic year.",
       "no_encontrado": "Child not found.",
       "no_autorizado": "You don't have permission for this action.",
       "actualizacion_fallo": "Could not update.",
@@ -1260,9 +1222,7 @@
   },
   "medico": {
     "aviso_cifrado": "These details are stored encrypted.",
-    "error": {
-      "cifrado_no_configurado": "Medical data encryption is not configured. Contact support."
-    }
+    "error": {}
   },
   "agenda": {
     "title": "Daily agenda",

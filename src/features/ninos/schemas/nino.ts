@@ -24,13 +24,6 @@ export const infoMedicaSchema = z.object({
   telefono_emergencia: z.string().max(30).optional().nullable(),
 })
 
-export const crearNinoCompletoSchema = z.object({
-  datos: ninoSchema,
-  medica: infoMedicaSchema.optional(),
-  aula_id: z.string().uuid('nino.validation.aula_invalida'),
-  confirmar_fuera_cohorte: z.boolean().optional(),
-})
-
 // Pieza 3a — escritura del TUTOR. Identidad del niño (whitelist: SIN aula/centro/
 // flags/notas_admin → esas las fija la dirección). La RPC SECURITY DEFINER enforce
 // el gate `es_tutor_de`; el schema valida forma server-side.
@@ -55,6 +48,5 @@ export const infoMedicaTutorSchema = infoMedicaSchema.extend({
 
 export type NinoInput = z.infer<typeof ninoSchema>
 export type InfoMedicaInput = z.infer<typeof infoMedicaSchema>
-export type CrearNinoCompletoInput = z.infer<typeof crearNinoCompletoSchema>
 export type ActualizarNinoTutorInput = z.infer<typeof actualizarNinoTutorSchema>
 export type InfoMedicaTutorInput = z.infer<typeof infoMedicaTutorSchema>

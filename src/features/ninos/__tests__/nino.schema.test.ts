@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { crearNinoCompletoSchema, infoMedicaSchema, ninoSchema } from '../schemas/nino'
+import { infoMedicaSchema, ninoSchema } from '../schemas/nino'
 
 describe('ninoSchema — campos personales', () => {
   const base = {
@@ -56,37 +56,5 @@ describe('infoMedicaSchema — incluye alergias_leves', () => {
   it('rechaza alergias_leves con > 2000 caracteres', () => {
     const r = infoMedicaSchema.safeParse({ alergias_leves: 'a'.repeat(2001) })
     expect(r.success).toBe(false)
-  })
-})
-
-describe('crearNinoCompletoSchema — wizard 3 pasos', () => {
-  const baseDatos = {
-    nombre: 'Lucas',
-    apellidos: 'García',
-    fecha_nacimiento: '2025-06-10',
-    sexo: 'M' as const,
-    idioma_principal: 'es' as const,
-  }
-
-  it('acepta entrada con sexo y alergias_leves rellenos', () => {
-    const r = crearNinoCompletoSchema.safeParse({
-      datos: baseDatos,
-      medica: { alergias_leves: 'polen', medicacion_habitual: null },
-      aula_id: 'a1b2c3d4-e5f6-4789-8abc-def012345678',
-    })
-    if (!r.success) {
-      // Surface the issue para diagnosticar.
-      throw new Error(`Esperado válido, errores: ${JSON.stringify(r.error.issues)}`)
-    }
-    expect(r.data.datos.sexo).toBe('M')
-    expect(r.data.medica?.alergias_leves).toBe('polen')
-  })
-
-  it('acepta sin medica (todos los datos médicos opcionales)', () => {
-    const r = crearNinoCompletoSchema.safeParse({
-      datos: { ...baseDatos, sexo: null },
-      aula_id: 'a1b2c3d4-e5f6-4789-8abc-def012345678',
-    })
-    expect(r.success).toBe(true)
   })
 })

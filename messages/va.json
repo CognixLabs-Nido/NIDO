@@ -489,7 +489,6 @@
     },
     "ninos": {
       "title": "Xiquets",
-      "nuevo": "Nou xiquet",
       "ver": "Veure",
       "empty": "Encara no hi ha xiquets. Registra el primer.",
       "sin_matricula_activa": "Sense matrícula activa",
@@ -501,20 +500,6 @@
           "lista": "Altes pendents de validar",
           "activa": "Matrícula activa"
         }
-      },
-      "nuevo_sin_aulas": "Necessites almenys una aula creada abans de registrar un xiquet.",
-      "created": "Xiquet registrat correctament",
-      "wizard": {
-        "title": "Registrar nou xiquet",
-        "step": "Pas",
-        "progress": "Progrés del registre",
-        "paso1": "Dades personals",
-        "paso2": "Dades mèdiques",
-        "paso3": "Assignar aula",
-        "next": "Següent",
-        "back": "Anterior",
-        "submit": "Guardar",
-        "saving": "Guardant..."
       },
       "tabs": {
         "personales": "Personals",
@@ -571,25 +556,6 @@
         "ok": "Matrícula activada",
         "activando": "Activant…",
         "activar": "Activar matrícula"
-      },
-      "invitar": {
-        "cta": "Convidar família",
-        "title": "Convidar la família",
-        "ok": "Invitació enviada",
-        "cancel": "Cancel·lar",
-        "enviar": "Enviar invitació",
-        "enviando": "Enviant…",
-        "fields": {
-          "nombre_nino": "Nom del xiquet/a",
-          "aula": "Aula",
-          "aula_placeholder": "Selecciona una aula",
-          "email": "Correu del tutor/a",
-          "tipo_vinculo": "Tipus de vincle"
-        },
-        "tipo_vinculo": {
-          "principal": "Tutor/a legal principal",
-          "secundario": "Tutor/a legal secundari"
-        }
       },
       "avance_alta": {
         "titulo": "Avanç de la matrícula",
@@ -1173,14 +1139,10 @@
       "fecha_formato": "Format de data invàlid (YYYY-MM-DD)",
       "fecha_futura": "La data de naixement no pot ser futura",
       "aula_invalida": "Selecciona una aula",
-      "fuera_de_cohorte": "L'any de naixement no coincideix amb la cohort. Marca la confirmació per a matricular igualment.",
       "invalid": "Dades no vàlides."
     },
     "errors": {
       "create_failed": "No s'ha pogut registrar el xiquet.",
-      "aula_no_encontrada": "Aula no trobada.",
-      "aula_de_otro_centro": "L'aula seleccionada no pertany al centre.",
-      "sin_curso_activo": "El centre no té un curs acadèmic actiu.",
       "no_encontrado": "Xiquet no trobat.",
       "no_autorizado": "No tens permís per a esta acció.",
       "actualizacion_fallo": "No s'ha pogut actualitzar.",
@@ -1260,9 +1222,7 @@
   },
   "medico": {
     "aviso_cifrado": "Estes dades s'emmagatzemen xifrades.",
-    "error": {
-      "cifrado_no_configurado": "La configuració del xifratge de dades mèdiques no està disponible. Contacta amb suport."
-    }
+    "error": {}
   },
   "agenda": {
     "title": "Agenda diària",
