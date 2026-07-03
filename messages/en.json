@@ -701,6 +701,20 @@
         "confirmar_exceso": "Add anyway",
         "invitar": "Invite",
         "sin_aulas": "No classrooms configured for the active year."
+      },
+      "completar": "Complete (Management)",
+      "completado": "Registration created. Tell the guardian to activate their account.",
+      "completar_dialog": {
+        "title": "Complete registration (Management)",
+        "descripcion": "You create the guardian's account with these credentials. No email is sent: tell them to sign in via “Forgot your password” to set their own.",
+        "email_label": "Guardian's email",
+        "email_placeholder": "guardian@example.com",
+        "password_label": "Temporary password",
+        "password_hint": "At least 12 characters, with an uppercase letter, a number and a symbol.",
+        "parentesco_label": "Relationship",
+        "parentesco_placeholder": "Select the relationship",
+        "descripcion_label": "Specify the relationship",
+        "crear": "Create registration"
       }
     },
     "pendientes": {

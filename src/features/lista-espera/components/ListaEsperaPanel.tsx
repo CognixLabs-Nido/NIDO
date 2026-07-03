@@ -1,6 +1,12 @@
 'use client'
 
-import { GripVerticalIcon, PencilIcon, Trash2Icon, UserPlusIcon } from 'lucide-react'
+import {
+  GripVerticalIcon,
+  PencilIcon,
+  Trash2Icon,
+  UserPlusIcon,
+  UserRoundPenIcon,
+} from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
@@ -20,6 +26,9 @@ import {
 } from '@/components/ui/table'
 import { EmptyState } from '@/shared/components/EmptyState'
 
+import { parentescoEnum } from '@/features/vinculos/schemas/vinculo'
+
+import { completarEnDireccion } from '../actions/completar-direccion'
 import { descartarProspecto } from '../actions/descartar-prospecto'
 import { invitarAlAlta } from '../actions/invitar-al-alta'
 import { reordenarListaEspera } from '../actions/reordenar-lista-espera'
@@ -164,7 +173,20 @@ export function ListaEsperaPanel({
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
                       {p.estado === 'en_espera' && (
-                        <InvitarBoton id={p.id} aulas={aulas} locale={locale} disabled={pending} />
+                        <>
+                          <InvitarBoton
+                            id={p.id}
+                            aulas={aulas}
+                            locale={locale}
+                            disabled={pending}
+                          />
+                          <CompletarBoton
+                            id={p.id}
+                            aulas={aulas}
+                            locale={locale}
+                            disabled={pending}
+                          />
+                        </>
                       )}
                       <ProspectoFormDialog
                         cursoId={cursoSeleccionadoId}
@@ -275,6 +297,200 @@ function InvitarBoton({
                 disabled={pending || !aulaId}
               >
                 {exceso ? t('invitar_dialog.confirmar_exceso') : t('invitar_dialog.invitar')}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/**
+ * Botón "Completar (Dirección)" (PR-3a): la Dirección crea el alta en nombre del tutor SIN
+ * enviar email. Pide aula (como invitar) + credenciales que la Dirección fija para el tutor
+ * (email + contraseña provisional) + parentesco. Al confirmar, `completarEnDireccion` crea
+ * cuenta + rol + vínculo + niño + matrícula, y llevamos a la ficha del niño. El cableado del
+ * wizard en "modo Dirección" y las acciones tutor-only llegan en PR-3b.
+ */
+function CompletarBoton({
+  id,
+  aulas,
+  locale,
+  disabled,
+}: {
+  id: string
+  aulas: AulaConOcupacion[]
+  locale: string
+  disabled: boolean
+}) {
+  const t = useTranslations('admin.admisiones')
+  const tParentesco = useTranslations('vinculo.parentesco')
+  const tErrors = useTranslations()
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [aulaId, setAulaId] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [parentesco, setParentesco] = useState('')
+  const [descripcion, setDescripcion] = useState('')
+  const [pending, start] = useTransition()
+
+  const aulaSel = aulas.find((a) => a.aulaId === aulaId)
+  const exceso = aulaSel ? superaCapacidad(aulaSel.ocupacion, aulaSel.capacidad) : false
+  const requiereDescripcion = parentesco === 'otro'
+  const listo =
+    !!aulaId && !!email && !!password && !!parentesco && (!requiereDescripcion || !!descripcion)
+
+  const reset = () => {
+    setAulaId('')
+    setEmail('')
+    setPassword('')
+    setParentesco('')
+    setDescripcion('')
+  }
+
+  const completar = () =>
+    start(async () => {
+      const r = await completarEnDireccion(
+        {
+          id,
+          aulaId,
+          email,
+          password,
+          parentesco: parentesco as (typeof parentescoEnum.options)[number],
+          descripcionParentesco: requiereDescripcion ? descripcion : null,
+        },
+        locale as 'es' | 'en' | 'va'
+      )
+      if (r.success) {
+        toast.success(t('completado'))
+        setOpen(false)
+        reset()
+        router.push(`/${locale}/admin/ninos/${r.data.ninoId}`)
+      } else {
+        toast.error(tErrors(r.error))
+      }
+    })
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o)
+        if (!o) reset()
+      }}
+    >
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label={t('completar')}
+        title={t('completar')}
+        disabled={disabled}
+        onClick={() => setOpen(true)}
+      >
+        <UserRoundPenIcon className="size-4" />
+      </Button>
+      <DialogContent className="sm:max-w-[440px]">
+        <DialogHeader>
+          <DialogTitle>{t('completar_dialog.title')}</DialogTitle>
+        </DialogHeader>
+
+        {aulas.length === 0 ? (
+          <p className="text-muted-foreground text-sm">{t('invitar_dialog.sin_aulas')}</p>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-muted-foreground text-sm">{t('completar_dialog.descripcion')}</p>
+
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium">{t('invitar_dialog.aula_label')}</span>
+              <select
+                className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
+                value={aulaId}
+                onChange={(e) => setAulaId(e.target.value)}
+              >
+                <option value="">{t('invitar_dialog.aula_placeholder')}</option>
+                {aulas.map((a) => (
+                  <option key={a.aulaId} value={a.aulaId}>
+                    {a.nombre} ({a.ocupacion}/{a.capacidad})
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {exceso && aulaSel && (
+              <p className="text-destructive text-sm">
+                {t('invitar_dialog.exceso', { capacidad: aulaSel.capacidad })}
+              </p>
+            )}
+
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium">{t('completar_dialog.email_label')}</span>
+              <input
+                type="email"
+                autoComplete="off"
+                className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
+                placeholder={t('completar_dialog.email_placeholder')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
+
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium">{t('completar_dialog.password_label')}</span>
+              <input
+                type="password"
+                autoComplete="new-password"
+                className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <span className="text-muted-foreground block text-xs">
+                {t('completar_dialog.password_hint')}
+              </span>
+            </label>
+
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium">{t('completar_dialog.parentesco_label')}</span>
+              <select
+                className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
+                value={parentesco}
+                onChange={(e) => setParentesco(e.target.value)}
+              >
+                <option value="">{t('completar_dialog.parentesco_placeholder')}</option>
+                {parentescoEnum.options.map((p) => (
+                  <option key={p} value={p}>
+                    {tParentesco(p)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {requiereDescripcion && (
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium">
+                  {t('completar_dialog.descripcion_label')}
+                </span>
+                <input
+                  type="text"
+                  maxLength={120}
+                  className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
+                  value={descripcion}
+                  onChange={(e) => setDescripcion(e.target.value)}
+                />
+              </label>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+                {t('cancel')}
+              </Button>
+              <Button
+                variant={exceso ? 'destructive' : 'default'}
+                onClick={completar}
+                disabled={pending || !listo}
+              >
+                {t('completar_dialog.crear')}
               </Button>
             </div>
           </div>

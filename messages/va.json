@@ -701,6 +701,20 @@
         "confirmar_exceso": "Afegir igualment",
         "invitar": "Convidar",
         "sin_aulas": "No hi ha aules configurades en el curs actiu."
+      },
+      "completar": "Completar (Direcció)",
+      "completado": "Alta creada. Avisa el tutor perquè active el seu compte.",
+      "completar_dialog": {
+        "title": "Completar alta (Direcció)",
+        "descripcion": "Crees el compte del tutor amb estes credencials. No s'envia cap correu: digues-li que entre amb «He oblidat la contrasenya» per a fixar la seua.",
+        "email_label": "Correu del tutor",
+        "email_placeholder": "tutor@exemple.com",
+        "password_label": "Contrasenya provisional",
+        "password_hint": "Mínim 12 caràcters, amb majúscula, número i símbol.",
+        "parentesco_label": "Parentiu",
+        "parentesco_placeholder": "Selecciona el parentiu",
+        "descripcion_label": "Especifica el parentiu",
+        "crear": "Crear alta"
       }
     },
     "pendientes": {

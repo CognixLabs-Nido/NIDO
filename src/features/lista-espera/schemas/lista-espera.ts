@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+import { passwordSchema } from '@/features/auth/schemas/password'
+import { parentescoEnum } from '@/features/vinculos/schemas/vinculo'
+
 const uuid = z.string().uuid('listaEspera.validation.id_invalido')
 
 /** Campos comunes del prospecto (alta y edición). */
@@ -65,6 +68,27 @@ export const invitarAlAltaSchema = z.object({
   aulaId: z.string().uuid('listaEspera.validation.aula_invalida'),
 })
 export type InvitarAlAltaInput = z.infer<typeof invitarAlAltaSchema>
+
+/**
+ * Modo "Completa Dirección" (PR-3a): la Dirección crea el alta en nombre del tutor sin
+ * enviar email. Además del aula (como al invitar) pide las credenciales que la Dirección
+ * fija para el tutor (email + contraseña provisional, mismas reglas que el registro) y el
+ * parentesco del vínculo familiar. `descripcionParentesco` es obligatorio si parentesco='otro'.
+ */
+export const completarDireccionSchema = z
+  .object({
+    id: uuid,
+    aulaId: z.string().uuid('listaEspera.validation.aula_invalida'),
+    email: z.string().trim().email('listaEspera.validation.email_invalido'),
+    password: passwordSchema,
+    parentesco: parentescoEnum,
+    descripcionParentesco: z.string().trim().max(120).optional().nullable(),
+  })
+  .refine((d) => (d.parentesco === 'otro' ? !!d.descripcionParentesco : true), {
+    message: 'vinculo.validation.descripcion_requerida',
+    path: ['descripcionParentesco'],
+  })
+export type CompletarDireccionInput = z.infer<typeof completarDireccionSchema>
 
 export const reordenarListaEsperaSchema = z.object({
   curso_academico_id: uuid,
