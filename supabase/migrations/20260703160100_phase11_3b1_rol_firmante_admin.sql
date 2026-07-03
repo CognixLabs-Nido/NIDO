@@ -1,0 +1,23 @@
+-- =============================================================================
+-- F11 alta PR-3b-1 (modo "Completa Dirección") — (2/6) rol_firmante = 'admin'
+-- -----------------------------------------------------------------------------
+-- Cuando la Directora firma A SU NOMBRE, `firmas_autorizacion.rol_firmante` (tipo
+-- `tipo_vinculo`, NOT NULL) necesita un valor honesto: la admin no es tutor ni
+-- autorizado. Se añade el valor 'admin' al ENUM (snapshot real del rol de quien
+-- firma → preserva la trazabilidad legal de F8; opción (a), la más limpia).
+--
+-- Verificado que ADD VALUE no choca: los únicos CHECK que enumeran `tipo_vinculo`
+-- son por-fila y de coherencia en OTRAS tablas (invitaciones_tipo_vinculo_coherente,
+-- datos_tutor_tipo_vinculo_legal) — no se re-evalúan sobre filas existentes ni
+-- impiden ampliar el dominio del ENUM; el resto de usos son filtros
+-- `tipo_vinculo IN (...)` en helpers/policies (no rechazan el nuevo valor). Ninguna
+-- fila de `vinculos_familiares` usará 'admin' (solo `rol_firmante` en firmas).
+--
+-- Idempotente (ADD VALUE IF NOT EXISTS). Debe ir en su propia migración/transacción
+-- y NO se usa el valor 'admin' aquí (Postgres no permite usar un valor de ENUM en la
+-- misma transacción en que se añade; lo consume la app al firmar, más tarde).
+--
+-- APLICAR POR SQL EDITOR (rol postgres). NO por CLI.
+-- =============================================================================
+
+ALTER TYPE public.tipo_vinculo ADD VALUE IF NOT EXISTS 'admin';
