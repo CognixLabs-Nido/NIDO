@@ -714,7 +714,9 @@
         "parentesco_label": "Parentesco",
         "parentesco_placeholder": "Selecciona el parentesco",
         "descripcion_label": "Especifica el parentesco",
-        "crear": "Crear alta"
+        "crear": "Crear alta",
+        "nombre_label": "Nombre del tutor",
+        "apellidos_label": "Apellidos del tutor"
       }
     },
     "pendientes": {
@@ -3241,7 +3243,11 @@
       "email_invalido": "Email no válido.",
       "nota_larga": "Nota demasiado larga.",
       "orden_vacio": "Orden vacío.",
-      "aula_invalida": "Aula no válida."
+      "aula_invalida": "Aula no válida.",
+      "nombre_tutor_requerido": "Indica el nombre del tutor",
+      "nombre_tutor_largo": "El nombre es demasiado largo",
+      "apellidos_tutor_requerido": "Indica los apellidos del tutor",
+      "apellidos_tutor_largo": "Los apellidos son demasiado largos"
     },
     "errors": {
       "sin_centro": "No se encontró el centro.",

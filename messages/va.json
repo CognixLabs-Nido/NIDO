@@ -714,7 +714,9 @@
         "parentesco_label": "Parentiu",
         "parentesco_placeholder": "Selecciona el parentiu",
         "descripcion_label": "Especifica el parentiu",
-        "crear": "Crear alta"
+        "crear": "Crear alta",
+        "nombre_label": "Nom del tutor",
+        "apellidos_label": "Cognoms del tutor"
       }
     },
     "pendientes": {
@@ -3241,7 +3243,11 @@
       "email_invalido": "Correu no vàlid.",
       "nota_larga": "Nota massa llarga.",
       "orden_vacio": "Ordre buit.",
-      "aula_invalida": "Aula no vàlida."
+      "aula_invalida": "Aula no vàlida.",
+      "nombre_tutor_requerido": "Indica el nom del tutor",
+      "nombre_tutor_largo": "El nom és massa llarg",
+      "apellidos_tutor_requerido": "Indica els cognoms del tutor",
+      "apellidos_tutor_largo": "Els cognoms són massa llargs"
     },
     "errors": {
       "sin_centro": "No s’ha trobat el centre.",

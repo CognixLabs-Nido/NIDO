@@ -12,6 +12,8 @@ export interface CrearTutorDirectoParams {
   /** Cuenta del tutor: la Dirección teclea email + contraseña provisional. */
   email: string
   password: string
+  /** Nombre completo REAL del tutor (nombre + apellidos tecleados por la Dirección). */
+  nombreCompleto: string
   /** Centro y niño contra los que se crean rol y vínculo (ya existentes al llamar). */
   centroId: string
   ninoId: string
@@ -35,6 +37,10 @@ export interface CrearTutorDirectoParams {
  *   - INSERT `roles_usuario` (rol tutor_legal en el centro del niño),
  *   - upsert `vinculos_familiares` con `permisosDefault` (mismo patrón que `crearVinculoAutomatico`).
  *
+ * El nombre del tutor es el REAL que teclea la Dirección (nombre + apellidos): se pasa como
+ * `user_metadata.nombre_completo`, así `handle_new_user` lo usa tal cual y NUNCA cae al
+ * fallback del local-part del email (el email no guarda relación con el nombre).
+ *
  * NO captura consentimientos (términos/privacidad): los presta el propio tutor, no la
  * Dirección → quedan para cuando el tutor entre (PR-3b / activación). Tampoco crea niño ni
  * matrícula: eso lo hace el orquestador ANTES (necesita el `ninoId` aquí).
@@ -47,13 +53,16 @@ export async function crearTutorDirecto(
   params: CrearTutorDirectoParams
 ): Promise<ActionResult<{ usuarioId: string }>> {
   // Cuenta nueva con credenciales puestas por la Dirección. `email_confirm:true` la deja
-  // usable de inmediato; el trigger `handle_new_user` puebla `public.usuarios` (el nombre
-  // cae al fallback local-part del email hasta que el tutor lo edite en su perfil).
+  // usable de inmediato; el trigger `handle_new_user` puebla `public.usuarios` con el
+  // `nombre_completo` REAL de la metadata (nombre + apellidos tecleados), sin fallback.
   const { data: created, error: createErr } = await service.auth.admin.createUser({
     email: params.email,
     password: params.password,
     email_confirm: true,
-    user_metadata: { idioma_preferido: params.idiomaPreferido },
+    user_metadata: {
+      nombre_completo: params.nombreCompleto,
+      idioma_preferido: params.idiomaPreferido,
+    },
   })
   if (createErr || !created.user) {
     logger.warn('crearTutorDirecto createUser', createErr?.message)

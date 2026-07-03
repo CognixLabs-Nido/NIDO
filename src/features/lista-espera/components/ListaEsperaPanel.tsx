@@ -330,6 +330,8 @@ function CompletarBoton({
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [aulaId, setAulaId] = useState('')
+  const [nombre, setNombre] = useState('')
+  const [apellidos, setApellidos] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [parentesco, setParentesco] = useState('')
@@ -340,10 +342,18 @@ function CompletarBoton({
   const exceso = aulaSel ? superaCapacidad(aulaSel.ocupacion, aulaSel.capacidad) : false
   const requiereDescripcion = parentesco === 'otro'
   const listo =
-    !!aulaId && !!email && !!password && !!parentesco && (!requiereDescripcion || !!descripcion)
+    !!aulaId &&
+    !!nombre.trim() &&
+    !!apellidos.trim() &&
+    !!email &&
+    !!password &&
+    !!parentesco &&
+    (!requiereDescripcion || !!descripcion)
 
   const reset = () => {
     setAulaId('')
+    setNombre('')
+    setApellidos('')
     setEmail('')
     setPassword('')
     setParentesco('')
@@ -356,6 +366,8 @@ function CompletarBoton({
         {
           id,
           aulaId,
+          nombreTutor: nombre,
+          apellidosTutor: apellidos,
           email,
           password,
           parentesco: parentesco as (typeof parentescoEnum.options)[number],
@@ -423,6 +435,31 @@ function CompletarBoton({
                 {t('invitar_dialog.exceso', { capacidad: aulaSel.capacidad })}
               </p>
             )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium">{t('completar_dialog.nombre_label')}</span>
+                <input
+                  type="text"
+                  maxLength={80}
+                  autoComplete="off"
+                  className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium">{t('completar_dialog.apellidos_label')}</span>
+                <input
+                  type="text"
+                  maxLength={80}
+                  autoComplete="off"
+                  className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
+                  value={apellidos}
+                  onChange={(e) => setApellidos(e.target.value)}
+                />
+              </label>
+            </div>
 
             <label className="block space-y-1.5">
               <span className="text-sm font-medium">{t('completar_dialog.email_label')}</span>

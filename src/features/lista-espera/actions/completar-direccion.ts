@@ -127,6 +127,8 @@ export async function completarEnDireccion(
   const tutor = await crearTutorDirecto(service, {
     email: parsed.data.email,
     password: parsed.data.password,
+    // Nombre completo REAL del tutor (nombre + apellidos tecleados por la Dirección).
+    nombreCompleto: `${parsed.data.nombreTutor} ${parsed.data.apellidosTutor}`,
     centroId,
     ninoId: nino.id,
     parentesco: parsed.data.parentesco,

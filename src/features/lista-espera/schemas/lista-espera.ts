@@ -79,6 +79,18 @@ export const completarDireccionSchema = z
   .object({
     id: uuid,
     aulaId: z.string().uuid('listaEspera.validation.aula_invalida'),
+    // Nombre y apellidos REALES del tutor (los teclea la Dirección): el email no guarda
+    // relación con el nombre, así que no se deriva de él. Obligatorios → nunca hay fallback.
+    nombreTutor: z
+      .string()
+      .trim()
+      .min(1, 'listaEspera.validation.nombre_tutor_requerido')
+      .max(80, 'listaEspera.validation.nombre_tutor_largo'),
+    apellidosTutor: z
+      .string()
+      .trim()
+      .min(1, 'listaEspera.validation.apellidos_tutor_requerido')
+      .max(80, 'listaEspera.validation.apellidos_tutor_largo'),
     email: z.string().trim().email('listaEspera.validation.email_invalido'),
     password: passwordSchema,
     parentesco: parentescoEnum,

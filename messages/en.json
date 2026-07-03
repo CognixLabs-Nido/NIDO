@@ -714,7 +714,9 @@
         "parentesco_label": "Relationship",
         "parentesco_placeholder": "Select the relationship",
         "descripcion_label": "Specify the relationship",
-        "crear": "Create registration"
+        "crear": "Create registration",
+        "nombre_label": "Guardian's first name",
+        "apellidos_label": "Guardian's last name"
       }
     },
     "pendientes": {
@@ -3241,7 +3243,11 @@
       "email_invalido": "Invalid email.",
       "nota_larga": "Note too long.",
       "orden_vacio": "Empty order.",
-      "aula_invalida": "Invalid classroom."
+      "aula_invalida": "Invalid classroom.",
+      "nombre_tutor_requerido": "Enter the guardian's first name",
+      "nombre_tutor_largo": "The first name is too long",
+      "apellidos_tutor_requerido": "Enter the guardian's last name",
+      "apellidos_tutor_largo": "The last name is too long"
     },
     "errors": {
       "sin_centro": "Centre not found.",
