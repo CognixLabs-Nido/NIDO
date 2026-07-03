@@ -27,6 +27,7 @@ export async function actualizarNinoTutor(
   // (contrato "NULL = preservar" del setter médico).
   const rpcArgs = {
     p_nino_id: d.nino_id,
+    p_nombre: d.nombre,
     p_apellidos: d.apellidos,
     p_fecha_nacimiento: d.fecha_nacimiento,
     p_sexo: d.sexo ?? null,
@@ -34,6 +35,7 @@ export async function actualizarNinoTutor(
     p_idioma_principal: d.idioma_principal,
   } as unknown as {
     p_nino_id: string
+    p_nombre: string
     p_apellidos: string
     p_fecha_nacimiento: string
     p_sexo: 'F' | 'M' | 'X'

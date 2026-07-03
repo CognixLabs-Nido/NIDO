@@ -29,6 +29,7 @@ export const infoMedicaSchema = z.object({
 // el gate `es_tutor_de`; el schema valida forma server-side.
 export const actualizarNinoTutorSchema = z.object({
   nino_id: z.string().uuid(),
+  nombre: z.string().min(1, 'nino.validation.nombre_requerido').max(80),
   apellidos: z.string().min(1, 'nino.validation.apellidos_requeridos').max(120),
   fecha_nacimiento: z
     .string()

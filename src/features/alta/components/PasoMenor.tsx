@@ -112,6 +112,7 @@ export function PasoMenor({
     resolver: zodResolver(menorFormSchema),
     defaultValues: {
       nino_id: ninoId,
+      nombre: ninoNombre,
       apellidos: identidadInicial.apellidos ?? '',
       fecha_nacimiento: identidadInicial.fecha_nacimiento ?? '',
       sexo: identidadInicial.sexo,
@@ -128,6 +129,7 @@ export function PasoMenor({
     startDatos(async () => {
       const ident = await actualizarNinoTutor({
         nino_id: values.nino_id,
+        nombre: values.nombre,
         apellidos: values.apellidos,
         fecha_nacimiento: values.fecha_nacimiento,
         sexo: values.sexo,
@@ -184,12 +186,21 @@ export function PasoMenor({
       {/* Filiación + dirección */}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(guardarDatos)} className="space-y-3">
-          <FormItem>
-            <FormLabel>{tNino('fields.nombre')}</FormLabel>
-            <FormControl>
-              <Input value={ninoNombre} disabled readOnly />
-            </FormControl>
-          </FormItem>
+          {/* Nombre editable por el tutor (PR-4c-2): la RPC `actualizar_identidad_nino_tutor`
+              ya incluye `p_nombre` (COALESCE = preservar). Mismo camino whitelisteado. */}
+          <FormField
+            control={form.control}
+            name="nombre"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{tNino('fields.nombre')}</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="apellidos"
