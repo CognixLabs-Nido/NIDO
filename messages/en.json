@@ -3072,7 +3072,8 @@
       "consentimiento_fallo": "The consent could not be recorded. Please try again.",
       "finalizar_fallo": "The enrolment could not be finished. Please try again.",
       "identidad_incompleta": "Fill in the child's details first (name and date of birth).",
-      "acuse_pendiente": "Confirm the medical data confidentiality acknowledgement first."
+      "acuse_pendiente": "Confirm the medical data confidentiality acknowledgement first.",
+      "incompleto": "Some required details are still missing."
     },
     "acuses": {
       "normas_titulo": "Internal rules",
@@ -3168,7 +3169,19 @@
     "validacion": {
       "enviado": "Change sent to management for validation."
     },
-    "edicion_validada_aviso": "This registration is already validated. Changes to sensitive data or documents will be sent to management for approval before they take effect."
+    "edicion_validada_aviso": "This registration is already validated. Changes to sensitive data or documents will be sent to management for approval before they take effect.",
+    "finalizar": {
+      "exito": "Registration complete. The school will review it.",
+      "incompleto_titulo": "Some required sections are still missing before you can finish:",
+      "bloques": {
+        "identidad": "Child's details",
+        "tutor1": "Guardian 1 details",
+        "medico": "Medical and emergency details",
+        "documentos": "Documents (family book and ID)",
+        "sepa": "SEPA mandate",
+        "imagen": "Image consent"
+      }
+    }
   },
   "listaEspera": {
     "validation": {

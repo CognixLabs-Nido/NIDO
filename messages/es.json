@@ -3072,7 +3072,8 @@
       "consentimiento_fallo": "No se pudo registrar el consentimiento. Inténtalo de nuevo.",
       "finalizar_fallo": "No se pudo finalizar el alta. Inténtalo de nuevo.",
       "identidad_incompleta": "Completa primero los datos del niño (nombre y fecha de nacimiento).",
-      "acuse_pendiente": "Confirma antes el acuse de confidencialidad de los datos médicos."
+      "acuse_pendiente": "Confirma antes el acuse de confidencialidad de los datos médicos.",
+      "incompleto": "Faltan datos obligatorios por completar."
     },
     "acuses": {
       "normas_titulo": "Normas de régimen interno",
@@ -3168,7 +3169,19 @@
     "validacion": {
       "enviado": "Cambio enviado a validación de dirección."
     },
-    "edicion_validada_aviso": "El alta ya está validada. Los cambios en datos o documentos sensibles se enviarán a la dirección para su aprobación antes de aplicarse."
+    "edicion_validada_aviso": "El alta ya está validada. Los cambios en datos o documentos sensibles se enviarán a la dirección para su aprobación antes de aplicarse.",
+    "finalizar": {
+      "exito": "Alta completada. La dirección la revisará.",
+      "incompleto_titulo": "Faltan bloques obligatorios por completar antes de finalizar:",
+      "bloques": {
+        "identidad": "Datos del menor",
+        "tutor1": "Datos del tutor 1",
+        "medico": "Datos médicos y de emergencia",
+        "documentos": "Documentos (libro de familia y DNI)",
+        "sepa": "Mandato SEPA",
+        "imagen": "Autorización de imagen"
+      }
+    }
   },
   "listaEspera": {
     "validation": {
