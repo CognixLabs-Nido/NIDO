@@ -1,6 +1,7 @@
 import {
   BookOpenIcon,
   ChevronLeftIcon,
+  FileTextIcon,
   HeartIcon,
   InfoIcon,
   UsersIcon,
@@ -33,6 +34,8 @@ import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { ExportButton } from '@/features/export/components/ExportButton'
+import { AltaDocumentacionTab } from '@/features/ninos/components/AltaDocumentacionTab'
+import { getAltaDocumentacion } from '@/features/ninos/queries/get-alta-documentacion'
 import { AvanceAltaCard } from '@/features/matriculas/components/AvanceAltaCard'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
 import { NuevoRecordatorioContextual } from '@/features/recordatorios/components/NuevoRecordatorioContextual'
@@ -54,7 +57,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const foto = await firmarFotoNino(nino.foto_url)
 
   const supabase = await createClient()
-  const [{ data: vinculos }, info, matriculas, datosPed] = await Promise.all([
+  const [{ data: vinculos }, info, matriculas, datosPed, altaDoc] = await Promise.all([
     supabase
       .from('vinculos_familiares')
       .select(
@@ -65,6 +68,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
     getInfoMedica(id),
     getMatriculasPorNino(id),
     getDatosPedagogicos(id),
+    getAltaDocumentacion(id),
   ])
 
   const matriculaActiva = matriculas.find((m) => m.fecha_baja === null)
@@ -183,6 +187,10 @@ export default async function NinoDetallePage({ params }: PageProps) {
           <TabsTrigger value="matriculas">
             <GraduationCapIcon className="size-4" />
             {t('tabs.matriculas')}
+          </TabsTrigger>
+          <TabsTrigger value="documentacion">
+            <FileTextIcon className="size-4" />
+            {t('tabs.documentacion')}
           </TabsTrigger>
         </TabsList>
 
@@ -365,6 +373,10 @@ export default async function NinoDetallePage({ params }: PageProps) {
               </Table>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="documentacion" className="pt-3">
+          <AltaDocumentacionTab data={altaDoc} locale={locale} />
         </TabsContent>
       </Tabs>
     </div>
