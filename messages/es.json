@@ -506,7 +506,8 @@
         "medica": "Datos médicos",
         "pedagogico": "Pedagógico",
         "vinculos": "Familia y autorizados",
-        "matriculas": "Matrículas"
+        "matriculas": "Matrículas",
+        "documentacion": "Alta / Documentación"
       },
       "medica_vacia": "Sin datos médicos registrados.",
       "vinculos_vacios": "Sin vínculos familiares registrados.",
@@ -572,6 +573,33 @@
         "opcional": "opcional",
         "activar_ayuda": "El tutor ha finalizado el alta. Revisa el avance y activa la matrícula.",
         "pendiente_ayuda": "El tutor aún está completando el alta. Podrás activar cuando la finalice."
+      },
+      "alta_doc": {
+        "tutores_titulo": "Tutores legales",
+        "sin_tutores": "Sin datos de tutores",
+        "tutor_legal_principal": "Tutor principal",
+        "tutor_legal_secundario": "Tutor secundario",
+        "email": "Email",
+        "direccion": "Dirección",
+        "dni": "DNI",
+        "ver_documento": "Ver documento",
+        "sepa_titulo": "Domiciliación SEPA",
+        "sepa_sin_mandato": "Sin mandato activo",
+        "sepa_estado": "Estado",
+        "sepa_titular": "Titular",
+        "sepa_identificador": "Referencia del mandato",
+        "sepa_fecha_firma": "Fecha de firma",
+        "sepa_documento": "Mandato",
+        "estado_activo": "Activo",
+        "estado_revocado": "Revocado",
+        "consent_titulo": "Consentimientos",
+        "consent_medico": "Datos médicos",
+        "consent_otorgado": "Otorgado",
+        "consent_version": "Versión",
+        "consent_fecha": "Fecha",
+        "consent_sin": "No otorgado",
+        "documentos_titulo": "Documentos",
+        "doc_libro_familia": "Libro de familia"
       }
     },
     "audit": {

@@ -506,7 +506,8 @@
         "medica": "Medical",
         "pedagogico": "Pedagogical",
         "vinculos": "Family & authorised",
-        "matriculas": "Enrolments"
+        "matriculas": "Enrolments",
+        "documentacion": "Enrollment / Documents"
       },
       "medica_vacia": "No medical data recorded.",
       "vinculos_vacios": "No family ties recorded.",
@@ -572,6 +573,33 @@
         "opcional": "optional",
         "activar_ayuda": "The guardian finished the enrolment. Review the progress and activate it.",
         "pendiente_ayuda": "The guardian is still completing the enrolment. You'll be able to activate it once finished."
+      },
+      "alta_doc": {
+        "tutores_titulo": "Legal guardians",
+        "sin_tutores": "No guardian data",
+        "tutor_legal_principal": "Primary guardian",
+        "tutor_legal_secundario": "Secondary guardian",
+        "email": "Email",
+        "direccion": "Address",
+        "dni": "ID document",
+        "ver_documento": "View document",
+        "sepa_titulo": "SEPA direct debit",
+        "sepa_sin_mandato": "No active mandate",
+        "sepa_estado": "Status",
+        "sepa_titular": "Account holder",
+        "sepa_identificador": "Mandate reference",
+        "sepa_fecha_firma": "Signature date",
+        "sepa_documento": "Mandate",
+        "estado_activo": "Active",
+        "estado_revocado": "Revoked",
+        "consent_titulo": "Consents",
+        "consent_medico": "Medical data",
+        "consent_otorgado": "Granted",
+        "consent_version": "Version",
+        "consent_fecha": "Date",
+        "consent_sin": "Not granted",
+        "documentos_titulo": "Documents",
+        "doc_libro_familia": "Family book"
       }
     },
     "audit": {

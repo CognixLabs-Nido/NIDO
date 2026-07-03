@@ -506,7 +506,8 @@
         "medica": "Mèdiques",
         "pedagogico": "Pedagògic",
         "vinculos": "Família i autoritzats",
-        "matriculas": "Matrícules"
+        "matriculas": "Matrícules",
+        "documentacion": "Alta / Documentació"
       },
       "medica_vacia": "Sense dades mèdiques registrades.",
       "vinculos_vacios": "Sense vincles familiars registrats.",
@@ -572,6 +573,33 @@
         "opcional": "opcional",
         "activar_ayuda": "El tutor ha finalitzat l'alta. Revisa l'avanç i activa la matrícula.",
         "pendiente_ayuda": "El tutor encara està completant l'alta. Podràs activar quan la finalitze."
+      },
+      "alta_doc": {
+        "tutores_titulo": "Tutors legals",
+        "sin_tutores": "Sense dades de tutors",
+        "tutor_legal_principal": "Tutor principal",
+        "tutor_legal_secundario": "Tutor secundari",
+        "email": "Correu electrònic",
+        "direccion": "Adreça",
+        "dni": "DNI",
+        "ver_documento": "Veure document",
+        "sepa_titulo": "Domiciliació SEPA",
+        "sepa_sin_mandato": "Sense mandat actiu",
+        "sepa_estado": "Estat",
+        "sepa_titular": "Titular",
+        "sepa_identificador": "Referència del mandat",
+        "sepa_fecha_firma": "Data de firma",
+        "sepa_documento": "Mandat",
+        "estado_activo": "Actiu",
+        "estado_revocado": "Revocat",
+        "consent_titulo": "Consentiments",
+        "consent_medico": "Dades mèdiques",
+        "consent_otorgado": "Atorgat",
+        "consent_version": "Versió",
+        "consent_fecha": "Data",
+        "consent_sin": "No atorgat",
+        "documentos_titulo": "Documents",
+        "doc_libro_familia": "Llibre de família"
       }
     },
     "audit": {
