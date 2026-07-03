@@ -701,6 +701,22 @@
         "confirmar_exceso": "Afegir igualment",
         "invitar": "Convidar",
         "sin_aulas": "No hi ha aules configurades en el curs actiu."
+      },
+      "completar": "Completar (Direcció)",
+      "completado": "Alta creada. Avisa el tutor perquè active el seu compte.",
+      "completar_dialog": {
+        "title": "Completar alta (Direcció)",
+        "descripcion": "Crees el compte del tutor amb estes credencials. No s'envia cap correu: digues-li que entre amb «He oblidat la contrasenya» per a fixar la seua.",
+        "email_label": "Correu del tutor",
+        "email_placeholder": "tutor@exemple.com",
+        "password_label": "Contrasenya provisional",
+        "password_hint": "Mínim 12 caràcters, amb majúscula, número i símbol.",
+        "parentesco_label": "Parentiu",
+        "parentesco_placeholder": "Selecciona el parentiu",
+        "descripcion_label": "Especifica el parentiu",
+        "crear": "Crear alta",
+        "nombre_label": "Nom del tutor",
+        "apellidos_label": "Cognoms del tutor"
       }
     },
     "pendientes": {
@@ -3227,7 +3243,11 @@
       "email_invalido": "Correu no vàlid.",
       "nota_larga": "Nota massa llarga.",
       "orden_vacio": "Ordre buit.",
-      "aula_invalida": "Aula no vàlida."
+      "aula_invalida": "Aula no vàlida.",
+      "nombre_tutor_requerido": "Indica el nom del tutor",
+      "nombre_tutor_largo": "El nom és massa llarg",
+      "apellidos_tutor_requerido": "Indica els cognoms del tutor",
+      "apellidos_tutor_largo": "Els cognoms són massa llargs"
     },
     "errors": {
       "sin_centro": "No s’ha trobat el centre.",

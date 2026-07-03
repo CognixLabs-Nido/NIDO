@@ -701,6 +701,22 @@
         "confirmar_exceso": "Add anyway",
         "invitar": "Invite",
         "sin_aulas": "No classrooms configured for the active year."
+      },
+      "completar": "Complete (Management)",
+      "completado": "Registration created. Tell the guardian to activate their account.",
+      "completar_dialog": {
+        "title": "Complete registration (Management)",
+        "descripcion": "You create the guardian's account with these credentials. No email is sent: tell them to sign in via “Forgot your password” to set their own.",
+        "email_label": "Guardian's email",
+        "email_placeholder": "guardian@example.com",
+        "password_label": "Temporary password",
+        "password_hint": "At least 12 characters, with an uppercase letter, a number and a symbol.",
+        "parentesco_label": "Relationship",
+        "parentesco_placeholder": "Select the relationship",
+        "descripcion_label": "Specify the relationship",
+        "crear": "Create registration",
+        "nombre_label": "Guardian's first name",
+        "apellidos_label": "Guardian's last name"
       }
     },
     "pendientes": {
@@ -3227,7 +3243,11 @@
       "email_invalido": "Invalid email.",
       "nota_larga": "Note too long.",
       "orden_vacio": "Empty order.",
-      "aula_invalida": "Invalid classroom."
+      "aula_invalida": "Invalid classroom.",
+      "nombre_tutor_requerido": "Enter the guardian's first name",
+      "nombre_tutor_largo": "The first name is too long",
+      "apellidos_tutor_requerido": "Enter the guardian's last name",
+      "apellidos_tutor_largo": "The last name is too long"
     },
     "errors": {
       "sin_centro": "Centre not found.",

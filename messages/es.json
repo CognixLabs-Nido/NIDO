@@ -701,6 +701,22 @@
         "confirmar_exceso": "Añadir igualmente",
         "invitar": "Invitar",
         "sin_aulas": "No hay aulas configuradas en el curso activo."
+      },
+      "completar": "Completar (Dirección)",
+      "completado": "Alta creada. Avisa al tutor para que active su cuenta.",
+      "completar_dialog": {
+        "title": "Completar alta (Dirección)",
+        "descripcion": "Creas la cuenta del tutor con estas credenciales. No se envía ningún email: comunícale que entre con «He olvidado la contraseña» para fijar la suya.",
+        "email_label": "Email del tutor",
+        "email_placeholder": "tutor@ejemplo.com",
+        "password_label": "Contraseña provisional",
+        "password_hint": "Mínimo 12 caracteres, con mayúscula, número y símbolo.",
+        "parentesco_label": "Parentesco",
+        "parentesco_placeholder": "Selecciona el parentesco",
+        "descripcion_label": "Especifica el parentesco",
+        "crear": "Crear alta",
+        "nombre_label": "Nombre del tutor",
+        "apellidos_label": "Apellidos del tutor"
       }
     },
     "pendientes": {
@@ -3227,7 +3243,11 @@
       "email_invalido": "Email no válido.",
       "nota_larga": "Nota demasiado larga.",
       "orden_vacio": "Orden vacío.",
-      "aula_invalida": "Aula no válida."
+      "aula_invalida": "Aula no válida.",
+      "nombre_tutor_requerido": "Indica el nombre del tutor",
+      "nombre_tutor_largo": "El nombre es demasiado largo",
+      "apellidos_tutor_requerido": "Indica los apellidos del tutor",
+      "apellidos_tutor_largo": "Los apellidos son demasiado largos"
     },
     "errors": {
       "sin_centro": "No se encontró el centro.",
