@@ -108,6 +108,16 @@ export function AltaTutorWizard({
   const [consintio, setConsintio] = useState(consintioDatosMedicos)
   const [, startFinalizar] = useTransition()
 
+  // SEPA (paso 8): su estado tecleado vive ELEVADO aquí, en el contenedor, para que
+  // sobreviva al desmontaje del paso al navegar (BUG 2 / PR-4a-2). Solo memoria: NO se
+  // persiste a BD; el mandato se registra igual que antes al finalizar (misma RPC/cifrado).
+  const sepaTitularInicial =
+    mandatoSepaInicial?.titular ?? datosTutor1?.nombre_completo ?? currentUserNombre
+  const [sepaFirma, setSepaFirma] = useState<string | null>(null)
+  const [sepaIban, setSepaIban] = useState('')
+  const [sepaTitular, setSepaTitular] = useState(sepaTitularInicial)
+  const [sepaNombreTecleado, setSepaNombreTecleado] = useState(sepaTitularInicial)
+
   const paso: PasoAlta = PASOS_ALTA[step]
   const goNext = () => setStep((s) => Math.min(s + 1, total - 1))
   const goBack = () => setStep((s) => Math.max(s - 1, pasoMin))
@@ -257,9 +267,16 @@ export function AltaTutorWizard({
             centroId={centroId}
             centroNombre={centroNombre}
             centroDireccion={centroDireccion}
-            titularSugerido={datosTutor1?.nombre_completo ?? currentUserNombre}
             currentUserId={currentUserId}
             inicial={mandatoSepaInicial}
+            firma={sepaFirma}
+            onFirmaChange={setSepaFirma}
+            iban={sepaIban}
+            onIbanChange={setSepaIban}
+            titular={sepaTitular}
+            onTitularChange={setSepaTitular}
+            nombreTecleado={sepaNombreTecleado}
+            onNombreTecleadoChange={setSepaNombreTecleado}
             onFinalizar={finalizar}
             onBack={goBack}
           />
