@@ -3134,7 +3134,8 @@
         "pareja_de_hecho": "Parella de fet",
         "soltero": "Solter/a",
         "viudo": "Vidu/a"
-      }
+      },
+      "misma_direccion": "Mateixa adreça que el xiquet"
     },
     "documentos": {
       "subido": "Document pujat",

@@ -107,6 +107,11 @@ export function AltaTutorWizard({
   )
   const [consintio, setConsintio] = useState(consintioDatosMedicos)
   const [, startFinalizar] = useTransition()
+
+  // Dirección del NIÑO elevada al contenedor (BUG 5 / PR-4d), mismo patrón que SEPA: el
+  // paso del menor se desmonta al navegar, pero los pasos de tutor necesitan leerla para
+  // el botón "misma dirección que el niño". PasoMenor la sincroniza en vivo; solo memoria.
+  const [direccionNino, setDireccionNino] = useState<DireccionInicial>(direccionInicial)
   // Bloques obligatorios que faltan al intentar finalizar (checklist "qué falta"). null =
   // aún no se ha intentado o el último intento fue completo (PR-4b).
   const [faltan, setFaltan] = useState<BloqueAlta[] | null>(null)
@@ -228,6 +233,7 @@ export function AltaTutorWizard({
             imagenSinPlantilla={imagenSinPlantilla}
             currentUserId={currentUserId}
             currentUserNombre={currentUserNombre}
+            onDireccionChange={setDireccionNino}
             onNext={goNext}
             onBack={goBack}
           />
@@ -243,6 +249,7 @@ export function AltaTutorWizard({
             mostrarEstadoCivil
             emailReadonly
             opcional={false}
+            direccionNino={direccionNino}
             onNext={goNext}
             onBack={goBack}
           />
@@ -258,6 +265,7 @@ export function AltaTutorWizard({
             mostrarEstadoCivil={false}
             emailReadonly={false}
             opcional
+            direccionNino={direccionNino}
             onNext={goNext}
             onBack={goBack}
           />

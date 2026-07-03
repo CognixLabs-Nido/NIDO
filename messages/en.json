@@ -3134,7 +3134,8 @@
         "pareja_de_hecho": "Domestic partnership",
         "soltero": "Single",
         "viudo": "Widowed"
-      }
+      },
+      "misma_direccion": "Same address as the child"
     },
     "documentos": {
       "subido": "Document uploaded",
