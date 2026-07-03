@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-import { finalizarAlta } from '../actions/finalizar-alta'
+import { finalizarAlta, type BloqueAlta } from '../actions/finalizar-alta'
 import { PASOS_ALTA, PASO_MIN_AUTENTICADO, type PasoAlta } from '../lib/estado-alta'
 import { PasoAcuses } from './PasoAcuses'
 import { PasoCuenta } from './PasoCuenta'
@@ -107,6 +107,9 @@ export function AltaTutorWizard({
   )
   const [consintio, setConsintio] = useState(consintioDatosMedicos)
   const [, startFinalizar] = useTransition()
+  // Bloques obligatorios que faltan al intentar finalizar (checklist "qué falta"). null =
+  // aún no se ha intentado o el último intento fue completo (PR-4b).
+  const [faltan, setFaltan] = useState<BloqueAlta[] | null>(null)
 
   // SEPA (paso 8): su estado tecleado vive ELEVADO aquí, en el contenedor, para que
   // sobreviva al desmontaje del paso al navegar (BUG 2 / PR-4a-2). Solo memoria: NO se
@@ -126,9 +129,18 @@ export function AltaTutorWizard({
     startFinalizar(async () => {
       const r = await finalizarAlta(ninoId)
       if (!r.success) {
-        toast.error(tErrors(r.error))
+        if (r.faltan && r.faltan.length > 0) {
+          // Gate de completitud: no se finaliza; se muestra el checklist de lo que falta.
+          setFaltan(r.faltan)
+          toast.error(t('finalizar.incompleto_titulo'))
+        } else {
+          toast.error(tErrors(r.error))
+        }
         return
       }
+      // Éxito explícito: confirmación + la ruta sirve la pantalla "completado" tras navegar.
+      setFaltan(null)
+      toast.success(t('finalizar.exito'))
       if (searchParams.get('editar')) {
         router.replace(`/${locale}/alta/${ninoId}`)
       } else {
@@ -165,6 +177,20 @@ export function AltaTutorWizard({
         </div>
       </CardHeader>
       <CardContent>
+        {faltan && faltan.length > 0 && (
+          <div
+            role="alert"
+            className="border-destructive/40 bg-destructive/5 mb-4 rounded-lg border p-3 text-sm"
+          >
+            <p className="text-destructive font-medium">{t('finalizar.incompleto_titulo')}</p>
+            <ul className="text-muted-foreground mt-2 list-disc space-y-0.5 pl-5">
+              {faltan.map((bloque) => (
+                <li key={bloque}>{t(`finalizar.bloques.${bloque}`)}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {paso === 'cuenta' && modoInvitacion && (
           <PasoCuenta
             locale={locale}
