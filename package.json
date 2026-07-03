@@ -16,7 +16,7 @@
     "test:unit": "vitest run --project unit",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "db:types": "npx supabase gen types typescript --project-id ttroedkdgomfmohgojvg > src/types/database.ts",
+    "db:types": "npx supabase@2.98.2 gen types typescript --project-id ttroedkdgomfmohgojvg > src/types/database.ts",
     "prepare": "husky"
   },
   "dependencies": {
