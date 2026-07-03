@@ -33,6 +33,7 @@ import {
   type TipoVinculoLegal,
 } from '../schemas/alta-documentos'
 import { SubirDocumentoPdf } from './SubirDocumentoPdf'
+import type { DireccionInicial } from './PasoMenor'
 
 const ESTADO_CIVIL_OPCIONES: EstadoCivil[] = [
   'casados',
@@ -81,6 +82,8 @@ interface Props {
   emailReadonly: boolean
   /** El tutor 2 es OPCIONAL: se puede saltar sin guardar. */
   opcional: boolean
+  /** PR-4d: dirección tecleada del niño (elevada al contenedor) para el botón de copia. */
+  direccionNino: DireccionInicial | null
   onNext: () => void
   onBack: () => void
 }
@@ -101,6 +104,7 @@ export function PasoTutor({
   mostrarEstadoCivil,
   emailReadonly,
   opcional,
+  direccionNino,
   onNext,
   onBack,
 }: Props) {
@@ -108,6 +112,14 @@ export function PasoTutor({
   const tDoc = useTranslations('alta.documentos')
   const tErrors = useTranslations()
   const [pending, startTransition] = useTransition()
+
+  // PR-4d: ¿el niño tiene alguna dirección tecleada? Si no, el botón de copia se deshabilita.
+  const hayDireccionNino = Boolean(
+    direccionNino?.direccion_calle ||
+    direccionNino?.direccion_numero ||
+    direccionNino?.direccion_cp ||
+    direccionNino?.direccion_ciudad
+  )
 
   const form = useForm<TutorFormInput>({
     resolver: zodResolver(tutorFormSchema),
@@ -121,6 +133,16 @@ export function PasoTutor({
       estado_civil_familia: estadoCivilInicial,
     },
   })
+
+  // Copia la dirección del niño a los campos del tutor, que quedan EDITABLES (setValue no
+  // los bloquea). No afecta al niño ni al otro tutor: cada form es independiente.
+  function copiarDireccionNino() {
+    if (!direccionNino) return
+    form.setValue('direccion_calle', direccionNino.direccion_calle ?? '', { shouldDirty: true })
+    form.setValue('direccion_numero', direccionNino.direccion_numero ?? '', { shouldDirty: true })
+    form.setValue('direccion_cp', direccionNino.direccion_cp ?? '', { shouldDirty: true })
+    form.setValue('direccion_ciudad', direccionNino.direccion_ciudad ?? '', { shouldDirty: true })
+  }
 
   function onSubmit(values: TutorFormInput) {
     startTransition(async () => {
@@ -190,7 +212,20 @@ export function PasoTutor({
           )}
         />
 
-        <h3 className="border-t pt-4 text-sm font-semibold">{t('menor.direccion_titulo')}</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
+          <h3 className="text-sm font-semibold">{t('menor.direccion_titulo')}</h3>
+          {/* PR-4d: copia la dirección del niño (editable tras copiar). Deshabilitado si el
+              niño aún no tiene dirección tecleada → no rompe. */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={copiarDireccionNino}
+            disabled={!hayDireccionNino}
+          >
+            {t('tutor.misma_direccion')}
+          </Button>
+        </div>
         <FormField
           control={form.control}
           name="direccion_calle"

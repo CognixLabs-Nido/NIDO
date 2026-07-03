@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -67,6 +67,9 @@ interface Props {
   imagenSinPlantilla: boolean
   currentUserId: string
   currentUserNombre: string
+  /** PR-4d: eleva la dirección del niño al contenedor para el botón "misma dirección"
+   *  de los pasos de tutor (el paso del menor se desmonta al navegar). */
+  onDireccionChange: (dir: DireccionInicial) => void
   onNext: () => void
   onBack: () => void
 }
@@ -96,6 +99,7 @@ export function PasoMenor({
   imagenSinPlantilla,
   currentUserId,
   currentUserNombre,
+  onDireccionChange,
   onNext,
   onBack,
 }: Props) {
@@ -124,6 +128,22 @@ export function PasoMenor({
       direccion_ciudad: direccionInicial.direccion_ciudad,
     },
   })
+
+  // PR-4d: sincroniza en vivo la dirección tecleada del niño hacia el contenedor, para que
+  // el botón "misma dirección" de los pasos de tutor la lea aunque este paso se desmonte.
+  // Solo reacciona a los 4 campos de dirección (no al resto del form).
+  useEffect(() => {
+    const sub = form.watch((v, { name }) => {
+      if (name && !name.startsWith('direccion_')) return
+      onDireccionChange({
+        direccion_calle: v.direccion_calle ?? null,
+        direccion_numero: v.direccion_numero ?? null,
+        direccion_cp: v.direccion_cp ?? null,
+        direccion_ciudad: v.direccion_ciudad ?? null,
+      })
+    })
+    return () => sub.unsubscribe()
+  }, [form, onDireccionChange])
 
   function guardarDatos(values: MenorFormInput) {
     startDatos(async () => {
