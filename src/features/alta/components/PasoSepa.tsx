@@ -45,11 +45,23 @@ interface Props {
   centroId: string
   centroNombre: string
   centroDireccion: string
-  /** Titular sugerido (nombre del tutor 1). */
-  titularSugerido: string
   /** Id del tutor 1 (firmante/titular) para el identificador del mandato. */
   currentUserId: string
   inicial: MandatoSepaInicial | null
+  /**
+   * Estado tecleado ELEVADO al contenedor (PR-4a-2): así sobrevive al desmontaje del paso
+   * al navegar. El paso lee/escribe vía estos props+setters; no guarda nada en BD hasta
+   * finalizar. NOTA: `firma` (trazo) se conserva como dato para la finalización, pero el
+   * lienzo de `FirmaPad` no re-dibuja el trazo al remontar (no expone prop de valor).
+   */
+  firma: string | null
+  onFirmaChange: (v: string | null) => void
+  iban: string
+  onIbanChange: (v: string) => void
+  titular: string
+  onTitularChange: (v: string) => void
+  nombreTecleado: string
+  onNombreTecleadoChange: (v: string) => void
   /** Último paso: al guardar (o al omitir) se finaliza el alta. */
   onFinalizar: () => void
   onBack: () => void
@@ -69,27 +81,34 @@ export function PasoSepa({
   centroId,
   centroNombre,
   centroDireccion,
-  titularSugerido,
   currentUserId,
   inicial,
+  firma,
+  onFirmaChange,
+  iban,
+  onIbanChange,
+  titular,
+  onTitularChange,
+  nombreTecleado,
+  onNombreTecleadoChange,
   onFinalizar,
   onBack,
 }: Props) {
   const t = useTranslations('alta')
   const tSepa = useTranslations('alta.sepa')
   const tErrors = useTranslations()
-  const [firma, setFirma] = useState<string | null>(null)
-  const [nombreTecleado, setNombreTecleado] = useState<string>(inicial?.titular ?? titularSugerido)
   const [subido, setSubido] = useState<boolean>(Boolean(inicial))
   const [previewUrl, setPreviewUrl] = useState<string | null>(inicial?.documentoUrl ?? null)
   const [pending, startTransition] = useTransition()
 
   const form = useForm<SepaMandatoFormInput>({
     resolver: zodResolver(sepaMandatoFormSchema),
+    // Se siembran desde el estado elevado al contenedor: al remontar el paso tras navegar,
+    // el IBAN/titular tecleados se recuperan (no se pierden). El IBAN cifrado en reposo
+    // (G-2bis) nunca se pre-rellena desde BD; aquí solo persiste lo tecleado en memoria.
     defaultValues: {
-      // El IBAN cifrado en reposo no se pre-rellena (G-2bis): re-editar = reintroducirlo.
-      iban: '',
-      titular: inicial?.titular ?? titularSugerido,
+      iban,
+      titular,
     },
   })
 
@@ -197,7 +216,13 @@ export function PasoSepa({
             <FormItem>
               <FormLabel>{tSepa('titular_label')}</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e)
+                    onTitularChange(e.target.value)
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -210,7 +235,15 @@ export function PasoSepa({
             <FormItem>
               <FormLabel>{tSepa('iban_label')}</FormLabel>
               <FormControl>
-                <Input {...field} placeholder={tSepa('iban_placeholder')} autoComplete="off" />
+                <Input
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e)
+                    onIbanChange(e.target.value)
+                  }}
+                  placeholder={tSepa('iban_placeholder')}
+                  autoComplete="off"
+                />
               </FormControl>
               <FormDescription>{tSepa('iban_ayuda')}</FormDescription>
               <FormMessage />
@@ -236,7 +269,7 @@ export function PasoSepa({
           <Input
             id="nombre_tecleado"
             value={nombreTecleado}
-            onChange={(e) => setNombreTecleado(e.target.value)}
+            onChange={(e) => onNombreTecleadoChange(e.target.value)}
             autoComplete="off"
           />
           <p className="text-muted-foreground text-xs">{tSepa('nombre_tecleado_ayuda')}</p>
@@ -244,7 +277,7 @@ export function PasoSepa({
 
         <div className="space-y-2">
           <Label>{tSepa('firma_titulo')}</Label>
-          <FirmaPad onChange={setFirma} disabled={pending} />
+          <FirmaPad onChange={onFirmaChange} disabled={pending} />
         </div>
 
         <div className="flex justify-between border-t pt-4">
