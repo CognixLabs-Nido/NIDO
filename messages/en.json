@@ -653,6 +653,7 @@
       "borrar_confirma": "Discard {nombre} from the waiting list?",
       "fields": {
         "nombre_nino": "Child’s name",
+        "apellidos_nino": "Child’s last name",
         "fecha_nacimiento": "Date of birth",
         "contacto": "Contact",
         "telefono_tutor": "Phone",
@@ -3188,7 +3189,9 @@
       "invalid": "Invalid data.",
       "id_invalido": "Invalid identifier.",
       "nombre_requerido": "Name is required.",
+      "apellidos_requerido": "Last name is required.",
       "nombre_largo": "Name too long.",
+      "apellidos_largo": "Last name too long.",
       "fecha_invalida": "Invalid date.",
       "telefono_largo": "Phone too long.",
       "email_largo": "Email too long.",

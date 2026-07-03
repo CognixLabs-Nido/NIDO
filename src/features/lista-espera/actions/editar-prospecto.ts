@@ -25,6 +25,7 @@ export async function editarProspecto(
     .from('lista_espera')
     .update({
       nombre_nino: data.nombre_nino,
+      apellidos_nino: data.apellidos_nino,
       fecha_nacimiento: data.fecha_nacimiento,
       telefono_tutor: data.telefono_tutor,
       email_tutor: data.email_tutor,

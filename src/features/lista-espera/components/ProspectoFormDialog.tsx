@@ -23,6 +23,7 @@ import type { ProspectoListItem } from '../queries/get-lista-espera'
 
 interface FormValues {
   nombre_nino: string
+  apellidos_nino: string
   fecha_nacimiento: string
   telefono_tutor: string
   email_tutor: string
@@ -47,6 +48,7 @@ export function ProspectoFormDialog({ cursoId, prospecto, trigger }: Props) {
   const form = useForm<FormValues>({
     defaultValues: {
       nombre_nino: prospecto?.nombre_nino ?? '',
+      apellidos_nino: prospecto?.apellidos_nino ?? '',
       fecha_nacimiento: prospecto?.fecha_nacimiento ?? '',
       telefono_tutor: prospecto?.telefono_tutor ?? '',
       email_tutor: prospecto?.email_tutor ?? '',
@@ -82,6 +84,14 @@ export function ProspectoFormDialog({ cursoId, prospecto, trigger }: Props) {
             <Input
               id="nombre_nino"
               {...form.register('nombre_nino', { required: true })}
+              autoComplete="off"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="apellidos_nino">{t('fields.apellidos_nino')}</Label>
+            <Input
+              id="apellidos_nino"
+              {...form.register('apellidos_nino', { required: true })}
               autoComplete="off"
             />
           </div>

@@ -653,6 +653,7 @@
       "borrar_confirma": "¿Descartar a {nombre} de la lista de espera?",
       "fields": {
         "nombre_nino": "Nombre del niño",
+        "apellidos_nino": "Apellidos del niño",
         "fecha_nacimiento": "Fecha de nacimiento",
         "contacto": "Contacto",
         "telefono_tutor": "Teléfono",
@@ -3188,7 +3189,9 @@
       "invalid": "Datos no válidos.",
       "id_invalido": "Identificador no válido.",
       "nombre_requerido": "El nombre es obligatorio.",
+      "apellidos_requerido": "Los apellidos son obligatorios.",
       "nombre_largo": "Nombre demasiado largo.",
+      "apellidos_largo": "Apellidos demasiado largos.",
       "fecha_invalida": "Fecha no válida.",
       "telefono_largo": "Teléfono demasiado largo.",
       "email_largo": "Email demasiado largo.",
