@@ -2,3 +2,9 @@
 node_modules
 public
 *.lock
+
+# Artefacto generado por `npm run db:types` (supabase gen types). Es la ÚNICA fuente de
+# verdad de su formato: NO se reformatea a mano ni por Prettier (singleQuote:true peleaba
+# con las comillas dobles del generador → diff cosmético gigante en cada commit). Regenerar
+# tras aplicar migraciones; no editar.
+src/types/database.ts

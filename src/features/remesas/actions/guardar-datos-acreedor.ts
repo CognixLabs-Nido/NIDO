@@ -26,7 +26,14 @@ export async function guardarDatosAcreedor(input: DatosAcreedorInput): Promise<A
     p_centro_id: centroId,
     p_identificador_acreedor: parsed.data.identificador_acreedor,
     p_bic_acreedor: parsed.data.bic_acreedor,
-    p_iban: parsed.data.iban === '' ? null : parsed.data.iban,
+    // `as string`: el generador de tipos de Supabase NO expresa la nulabilidad de los
+    // argumentos de RPC (Postgres no reporta si un parámetro admite NULL), así que emite
+    // `p_iban: string`. El runtime SÍ acepta null a propósito — la función SQL documenta
+    // `p_iban text  -- NULL o '' = preservar el IBAN cifrado existente` y hace
+    // `coalesce(p_iban, '')`; enviar null es el modo "no reescribir el IBAN". El cast solo
+    // compensa esa limitación del generador: NO lo elimines ni lo "arregles" — sin él, cada
+    // regeneración de database.ts rompe el typecheck. Ver PR de resync de database.ts.
+    p_iban: (parsed.data.iban === '' ? null : parsed.data.iban) as string,
   })
 
   if (error) {

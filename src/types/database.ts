@@ -1,440 +1,19 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.5'
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
-      asignacion_cuota: {
-        Row: {
-          anio: number
-          centro_id: string
-          concepto_id: string
-          created_at: string
-          deleted_at: string | null
-          id: string
-          mes: number
-          modalidad: Database['public']['Enums']['modalidad_cobro']
-          nino_id: string
-          updated_at: string
-        }
-        Insert: {
-          anio: number
-          centro_id: string
-          concepto_id: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          mes: number
-          modalidad: Database['public']['Enums']['modalidad_cobro']
-          nino_id: string
-          updated_at?: string
-        }
-        Update: {
-          anio?: number
-          centro_id?: string
-          concepto_id?: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          mes?: number
-          modalidad?: Database['public']['Enums']['modalidad_cobro']
-          nino_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      becas: {
-        Row: {
-          centro_id: string
-          created_at: string
-          deleted_at: string | null
-          fecha_desde: string
-          fecha_hasta: string | null
-          id: string
-          importe_centimos: number
-          nino_id: string
-          tipo_beca_id: string
-          updated_at: string
-        }
-        Insert: {
-          centro_id: string
-          created_at?: string
-          deleted_at?: string | null
-          fecha_desde: string
-          fecha_hasta?: string | null
-          id?: string
-          importe_centimos: number
-          nino_id: string
-          tipo_beca_id: string
-          updated_at?: string
-        }
-        Update: {
-          centro_id?: string
-          created_at?: string
-          deleted_at?: string | null
-          fecha_desde?: string
-          fecha_hasta?: string | null
-          id?: string
-          importe_centimos?: number
-          nino_id?: string
-          tipo_beca_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      cierre_mensual: {
-        Row: {
-          anio: number
-          centro_id: string
-          cerrado_at: string
-          cerrado_por: string
-          created_at: string
-          id: string
-          mes: number
-        }
-        Insert: {
-          anio: number
-          centro_id: string
-          cerrado_at?: string
-          cerrado_por: string
-          created_at?: string
-          id?: string
-          mes: number
-        }
-        Update: {
-          anio?: number
-          centro_id?: string
-          cerrado_at?: string
-          cerrado_por?: string
-          created_at?: string
-          id?: string
-          mes?: number
-        }
-        Relationships: []
-      }
-      conceptos_cobro: {
-        Row: {
-          activo: boolean
-          centro_id: string
-          created_at: string
-          deleted_at: string | null
-          id: string
-          nombre: string
-          precio_diario_centimos: number | null
-          precio_mensual_centimos: number | null
-          servicio: Database['public']['Enums']['servicio_diario'] | null
-          tipo_concepto: Database['public']['Enums']['tipo_concepto']
-          updated_at: string
-        }
-        Insert: {
-          activo?: boolean
-          centro_id: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          nombre: string
-          precio_diario_centimos?: number | null
-          precio_mensual_centimos?: number | null
-          servicio?: Database['public']['Enums']['servicio_diario'] | null
-          tipo_concepto: Database['public']['Enums']['tipo_concepto']
-          updated_at?: string
-        }
-        Update: {
-          activo?: boolean
-          centro_id?: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          nombre?: string
-          precio_diario_centimos?: number | null
-          precio_mensual_centimos?: number | null
-          servicio?: Database['public']['Enums']['servicio_diario'] | null
-          tipo_concepto?: Database['public']['Enums']['tipo_concepto']
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      lineas_recibo: {
-        Row: {
-          cantidad: number
-          centro_id: string
-          concepto_id: string | null
-          created_at: string
-          descripcion: string
-          id: string
-          importe_centimos: number
-          precio_unitario_centimos: number
-          recibo_id: string
-        }
-        Insert: {
-          cantidad?: number
-          centro_id: string
-          concepto_id?: string | null
-          created_at?: string
-          descripcion: string
-          id?: string
-          importe_centimos: number
-          precio_unitario_centimos: number
-          recibo_id: string
-        }
-        Update: {
-          cantidad?: number
-          centro_id?: string
-          concepto_id?: string | null
-          created_at?: string
-          descripcion?: string
-          id?: string
-          importe_centimos?: number
-          precio_unitario_centimos?: number
-          recibo_id?: string
-        }
-        Relationships: []
-      }
-      metodo_pago_familia: {
-        Row: {
-          anio: number
-          centro_id: string
-          created_at: string
-          deleted_at: string | null
-          id: string
-          mes: number
-          metodo: Database['public']['Enums']['metodo_pago']
-          nino_id: string
-          updated_at: string
-        }
-        Insert: {
-          anio: number
-          centro_id: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          mes: number
-          metodo: Database['public']['Enums']['metodo_pago']
-          nino_id: string
-          updated_at?: string
-        }
-        Update: {
-          anio?: number
-          centro_id?: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          mes?: number
-          metodo?: Database['public']['Enums']['metodo_pago']
-          nino_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      parte_servicio_diario: {
-        Row: {
-          centro_id: string
-          created_at: string
-          fecha: string
-          id: string
-          nino_id: string
-          presente: boolean
-          servicio: Database['public']['Enums']['servicio_diario']
-          updated_at: string
-        }
-        Insert: {
-          centro_id: string
-          created_at?: string
-          fecha: string
-          id?: string
-          nino_id: string
-          presente?: boolean
-          servicio: Database['public']['Enums']['servicio_diario']
-          updated_at?: string
-        }
-        Update: {
-          centro_id?: string
-          created_at?: string
-          fecha?: string
-          id?: string
-          nino_id?: string
-          presente?: boolean
-          servicio?: Database['public']['Enums']['servicio_diario']
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      recibos: {
-        Row: {
-          anio: number
-          centro_id: string
-          concepto_esporadico: string | null
-          created_at: string
-          deleted_at: string | null
-          devuelto_de_recibo_id: string | null
-          es_esporadico: boolean
-          estado: Database['public']['Enums']['estado_recibo']
-          fecha_devolucion: string | null
-          fecha_envio_banco: string | null
-          id: string
-          mes: number
-          metodo: Database['public']['Enums']['metodo_pago'] | null
-          nino_id: string
-          total_centimos: number
-          updated_at: string
-        }
-        Insert: {
-          anio: number
-          centro_id: string
-          concepto_esporadico?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          devuelto_de_recibo_id?: string | null
-          es_esporadico?: boolean
-          estado?: Database['public']['Enums']['estado_recibo']
-          fecha_devolucion?: string | null
-          fecha_envio_banco?: string | null
-          id?: string
-          mes: number
-          metodo?: Database['public']['Enums']['metodo_pago'] | null
-          nino_id: string
-          total_centimos?: number
-          updated_at?: string
-        }
-        Update: {
-          anio?: number
-          centro_id?: string
-          concepto_esporadico?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          devuelto_de_recibo_id?: string | null
-          es_esporadico?: boolean
-          estado?: Database['public']['Enums']['estado_recibo']
-          fecha_devolucion?: string | null
-          fecha_envio_banco?: string | null
-          id?: string
-          mes?: number
-          metodo?: Database['public']['Enums']['metodo_pago'] | null
-          nino_id?: string
-          total_centimos?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      recibos_remesa: {
-        Row: {
-          centro_id: string
-          created_at: string
-          id: string
-          recibo_id: string
-          remesa_id: string
-        }
-        Insert: {
-          centro_id: string
-          created_at?: string
-          id?: string
-          recibo_id: string
-          remesa_id: string
-        }
-        Update: {
-          centro_id?: string
-          created_at?: string
-          id?: string
-          recibo_id?: string
-          remesa_id?: string
-        }
-        Relationships: []
-      }
-      remesas: {
-        Row: {
-          anio: number
-          centro_id: string
-          created_at: string
-          deleted_at: string | null
-          estado: Database['public']['Enums']['estado_remesa']
-          fecha_envio_banco: string | null
-          id: string
-          mes: number
-          updated_at: string
-        }
-        Insert: {
-          anio: number
-          centro_id: string
-          created_at?: string
-          deleted_at?: string | null
-          estado?: Database['public']['Enums']['estado_remesa']
-          fecha_envio_banco?: string | null
-          id?: string
-          mes: number
-          updated_at?: string
-        }
-        Update: {
-          anio?: number
-          centro_id?: string
-          created_at?: string
-          deleted_at?: string | null
-          estado?: Database['public']['Enums']['estado_remesa']
-          fecha_envio_banco?: string | null
-          id?: string
-          mes?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      tipos_beca: {
-        Row: {
-          activo: boolean
-          centro_id: string
-          created_at: string
-          deleted_at: string | null
-          id: string
-          nombre: string
-          updated_at: string
-        }
-        Insert: {
-          activo?: boolean
-          centro_id: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          nombre: string
-          updated_at?: string
-        }
-        Update: {
-          activo?: boolean
-          centro_id?: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          nombre?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       administraciones_medicacion: {
         Row: {
           administrado_en: string
@@ -480,48 +59,50 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'administraciones_medicacion_administrado_por_fkey'
-            columns: ['administrado_por']
+            foreignKeyName: "administraciones_medicacion_administrado_por_fkey"
+            columns: ["administrado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'administraciones_medicacion_autorizacion_id_fkey'
-            columns: ['autorizacion_id']
+            foreignKeyName: "administraciones_medicacion_autorizacion_id_fkey"
+            columns: ["autorizacion_id"]
             isOneToOne: false
-            referencedRelation: 'autorizaciones'
-            referencedColumns: ['id']
+            referencedRelation: "autorizaciones"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'administraciones_medicacion_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "administraciones_medicacion_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'administraciones_medicacion_confirmado_por_fkey'
-            columns: ['confirmado_por']
+            foreignKeyName: "administraciones_medicacion_confirmado_por_fkey"
+            columns: ["confirmado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'administraciones_medicacion_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "administraciones_medicacion_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
       agendas_diarias: {
         Row: {
           created_at: string
-          estado_general: Database['public']['Enums']['estado_general_agenda'] | null
+          estado_general:
+            | Database["public"]["Enums"]["estado_general_agenda"]
+            | null
           fecha: string
-          humor: Database['public']['Enums']['humor_agenda'] | null
+          humor: Database["public"]["Enums"]["humor_agenda"] | null
           id: string
           nino_id: string
           observaciones_generales: string | null
@@ -529,9 +110,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          estado_general?: Database['public']['Enums']['estado_general_agenda'] | null
+          estado_general?:
+            | Database["public"]["Enums"]["estado_general_agenda"]
+            | null
           fecha: string
-          humor?: Database['public']['Enums']['humor_agenda'] | null
+          humor?: Database["public"]["Enums"]["humor_agenda"] | null
           id?: string
           nino_id: string
           observaciones_generales?: string | null
@@ -539,9 +122,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          estado_general?: Database['public']['Enums']['estado_general_agenda'] | null
+          estado_general?:
+            | Database["public"]["Enums"]["estado_general_agenda"]
+            | null
           fecha?: string
-          humor?: Database['public']['Enums']['humor_agenda'] | null
+          humor?: Database["public"]["Enums"]["humor_agenda"] | null
           id?: string
           nino_id?: string
           observaciones_generales?: string | null
@@ -549,17 +134,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'agendas_diarias_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "agendas_diarias_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
       anuncios: {
         Row: {
-          ambito: Database['public']['Enums']['ambito_anuncio']
+          ambito: Database["public"]["Enums"]["ambito_anuncio"]
           aula_id: string | null
           autor_id: string
           centro_id: string
@@ -571,7 +156,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          ambito: Database['public']['Enums']['ambito_anuncio']
+          ambito: Database["public"]["Enums"]["ambito_anuncio"]
           aula_id?: string | null
           autor_id: string
           centro_id: string
@@ -583,7 +168,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          ambito?: Database['public']['Enums']['ambito_anuncio']
+          ambito?: Database["public"]["Enums"]["ambito_anuncio"]
           aula_id?: string | null
           autor_id?: string
           centro_id?: string
@@ -596,32 +181,93 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'anuncios_aula_id_fkey'
-            columns: ['aula_id']
+            foreignKeyName: "anuncios_aula_id_fkey"
+            columns: ["aula_id"]
             isOneToOne: false
-            referencedRelation: 'aulas'
-            referencedColumns: ['id']
+            referencedRelation: "aulas"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'anuncios_autor_id_fkey'
-            columns: ['autor_id']
+            foreignKeyName: "anuncios_autor_id_fkey"
+            columns: ["autor_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'anuncios_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "anuncios_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asignacion_cuota: {
+        Row: {
+          anio: number
+          centro_id: string
+          concepto_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          mes: number
+          modalidad: Database["public"]["Enums"]["modalidad_cobro"]
+          nino_id: string
+          updated_at: string
+        }
+        Insert: {
+          anio: number
+          centro_id: string
+          concepto_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          mes: number
+          modalidad: Database["public"]["Enums"]["modalidad_cobro"]
+          nino_id: string
+          updated_at?: string
+        }
+        Update: {
+          anio?: number
+          centro_id?: string
+          concepto_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          mes?: number
+          modalidad?: Database["public"]["Enums"]["modalidad_cobro"]
+          nino_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asignacion_cuota_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asignacion_cuota_concepto_id_fkey"
+            columns: ["concepto_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_cobro"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asignacion_cuota_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
       asistencias: {
         Row: {
           created_at: string
-          estado: Database['public']['Enums']['estado_asistencia']
+          estado: Database["public"]["Enums"]["estado_asistencia"]
           fecha: string
           hora_llegada: string | null
           hora_salida: string | null
@@ -633,7 +279,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          estado: Database['public']['Enums']['estado_asistencia']
+          estado: Database["public"]["Enums"]["estado_asistencia"]
           fecha: string
           hora_llegada?: string | null
           hora_salida?: string | null
@@ -645,7 +291,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          estado?: Database['public']['Enums']['estado_asistencia']
+          estado?: Database["public"]["Enums"]["estado_asistencia"]
           fecha?: string
           hora_llegada?: string | null
           hora_salida?: string | null
@@ -657,24 +303,24 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'asistencias_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "asistencias_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'asistencias_registrada_por_fkey'
-            columns: ['registrada_por']
+            foreignKeyName: "asistencias_registrada_por_fkey"
+            columns: ["registrada_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
       audit_log: {
         Row: {
-          accion: Database['public']['Enums']['audit_accion']
+          accion: Database["public"]["Enums"]["audit_accion"]
           centro_id: string | null
           id: string
           registro_id: string | null
@@ -685,7 +331,7 @@ export type Database = {
           valores_despues: Json | null
         }
         Insert: {
-          accion: Database['public']['Enums']['audit_accion']
+          accion: Database["public"]["Enums"]["audit_accion"]
           centro_id?: string | null
           id?: string
           registro_id?: string | null
@@ -696,7 +342,7 @@ export type Database = {
           valores_despues?: Json | null
         }
         Update: {
-          accion?: Database['public']['Enums']['audit_accion']
+          accion?: Database["public"]["Enums"]["audit_accion"]
           centro_id?: string | null
           id?: string
           registro_id?: string | null
@@ -708,11 +354,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'audit_log_usuario_id_fkey'
-            columns: ['usuario_id']
+            foreignKeyName: "audit_log_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -746,11 +392,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'aulas_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "aulas_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -787,25 +433,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'aulas_curso_aula_id_fkey'
-            columns: ['aula_id']
+            foreignKeyName: "aulas_curso_aula_id_fkey"
+            columns: ["aula_id"]
             isOneToOne: false
-            referencedRelation: 'aulas'
-            referencedColumns: ['id']
+            referencedRelation: "aulas"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'aulas_curso_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "aulas_curso_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'aulas_curso_curso_academico_id_fkey'
-            columns: ['curso_academico_id']
+            foreignKeyName: "aulas_curso_curso_academico_id_fkey"
+            columns: ["curso_academico_id"]
             isOneToOne: false
-            referencedRelation: 'cursos_academicos'
-            referencedColumns: ['id']
+            referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -816,7 +462,7 @@ export type Database = {
           fecha_fin: string
           fecha_inicio: string
           id: string
-          motivo: Database['public']['Enums']['motivo_ausencia']
+          motivo: Database["public"]["Enums"]["motivo_ausencia"]
           nino_id: string
           reportada_por: string | null
           updated_at: string
@@ -827,7 +473,7 @@ export type Database = {
           fecha_fin: string
           fecha_inicio: string
           id?: string
-          motivo: Database['public']['Enums']['motivo_ausencia']
+          motivo: Database["public"]["Enums"]["motivo_ausencia"]
           nino_id: string
           reportada_por?: string | null
           updated_at?: string
@@ -838,25 +484,25 @@ export type Database = {
           fecha_fin?: string
           fecha_inicio?: string
           id?: string
-          motivo?: Database['public']['Enums']['motivo_ausencia']
+          motivo?: Database["public"]["Enums"]["motivo_ausencia"]
           nino_id?: string
           reportada_por?: string | null
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'ausencias_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "ausencias_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'ausencias_reportada_por_fkey'
-            columns: ['reportada_por']
+            foreignKeyName: "ausencias_reportada_por_fkey"
+            columns: ["reportada_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -886,7 +532,7 @@ export type Database = {
       }
       autorizaciones: {
         Row: {
-          ambito: Database['public']['Enums']['autorizacion_ambito'] | null
+          ambito: Database["public"]["Enums"]["autorizacion_ambito"] | null
           archivada_at: string | null
           archivada_por: string | null
           aula_id: string | null
@@ -895,23 +541,23 @@ export type Database = {
           created_at: string
           datos: Json
           es_plantilla: boolean
-          estado: Database['public']['Enums']['autorizacion_estado']
+          estado: Database["public"]["Enums"]["autorizacion_estado"]
           evento_id: string | null
-          firmantes_requeridos: Database['public']['Enums']['politica_firmantes']
+          firmantes_requeridos: Database["public"]["Enums"]["politica_firmantes"]
           id: string
           nino_id: string | null
           plantilla_id: string | null
           texto: string
           texto_definitivo: boolean
           texto_version: string
-          tipo: Database['public']['Enums']['tipo_autorizacion']
+          tipo: Database["public"]["Enums"]["tipo_autorizacion"]
           titulo: string
           updated_at: string
           vigencia_desde: string | null
           vigencia_hasta: string | null
         }
         Insert: {
-          ambito?: Database['public']['Enums']['autorizacion_ambito'] | null
+          ambito?: Database["public"]["Enums"]["autorizacion_ambito"] | null
           archivada_at?: string | null
           archivada_por?: string | null
           aula_id?: string | null
@@ -920,23 +566,23 @@ export type Database = {
           created_at?: string
           datos?: Json
           es_plantilla?: boolean
-          estado?: Database['public']['Enums']['autorizacion_estado']
+          estado?: Database["public"]["Enums"]["autorizacion_estado"]
           evento_id?: string | null
-          firmantes_requeridos?: Database['public']['Enums']['politica_firmantes']
+          firmantes_requeridos?: Database["public"]["Enums"]["politica_firmantes"]
           id?: string
           nino_id?: string | null
           plantilla_id?: string | null
           texto: string
           texto_definitivo?: boolean
           texto_version?: string
-          tipo: Database['public']['Enums']['tipo_autorizacion']
+          tipo: Database["public"]["Enums"]["tipo_autorizacion"]
           titulo: string
           updated_at?: string
           vigencia_desde?: string | null
           vigencia_hasta?: string | null
         }
         Update: {
-          ambito?: Database['public']['Enums']['autorizacion_ambito'] | null
+          ambito?: Database["public"]["Enums"]["autorizacion_ambito"] | null
           archivada_at?: string | null
           archivada_por?: string | null
           aula_id?: string | null
@@ -945,16 +591,16 @@ export type Database = {
           created_at?: string
           datos?: Json
           es_plantilla?: boolean
-          estado?: Database['public']['Enums']['autorizacion_estado']
+          estado?: Database["public"]["Enums"]["autorizacion_estado"]
           evento_id?: string | null
-          firmantes_requeridos?: Database['public']['Enums']['politica_firmantes']
+          firmantes_requeridos?: Database["public"]["Enums"]["politica_firmantes"]
           id?: string
           nino_id?: string | null
           plantilla_id?: string | null
           texto?: string
           texto_definitivo?: boolean
           texto_version?: string
-          tipo?: Database['public']['Enums']['tipo_autorizacion']
+          tipo?: Database["public"]["Enums"]["tipo_autorizacion"]
           titulo?: string
           updated_at?: string
           vigencia_desde?: string | null
@@ -962,53 +608,114 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'autorizaciones_archivada_por_fkey'
-            columns: ['archivada_por']
+            foreignKeyName: "autorizaciones_archivada_por_fkey"
+            columns: ["archivada_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'autorizaciones_aula_id_fkey'
-            columns: ['aula_id']
+            foreignKeyName: "autorizaciones_aula_id_fkey"
+            columns: ["aula_id"]
             isOneToOne: false
-            referencedRelation: 'aulas'
-            referencedColumns: ['id']
+            referencedRelation: "aulas"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'autorizaciones_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "autorizaciones_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'autorizaciones_creado_por_fkey'
-            columns: ['creado_por']
+            foreignKeyName: "autorizaciones_creado_por_fkey"
+            columns: ["creado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'autorizaciones_evento_id_fkey'
-            columns: ['evento_id']
+            foreignKeyName: "autorizaciones_evento_id_fkey"
+            columns: ["evento_id"]
             isOneToOne: false
-            referencedRelation: 'eventos'
-            referencedColumns: ['id']
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'autorizaciones_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "autorizaciones_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'autorizaciones_plantilla_id_fkey'
-            columns: ['plantilla_id']
+            foreignKeyName: "autorizaciones_plantilla_id_fkey"
+            columns: ["plantilla_id"]
             isOneToOne: false
-            referencedRelation: 'autorizaciones'
-            referencedColumns: ['id']
+            referencedRelation: "autorizaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      becas: {
+        Row: {
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          fecha_desde: string
+          fecha_hasta: string | null
+          id: string
+          importe_centimos: number
+          nino_id: string
+          tipo_beca_id: string
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          fecha_desde: string
+          fecha_hasta?: string | null
+          id?: string
+          importe_centimos: number
+          nino_id: string
+          tipo_beca_id: string
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          fecha_desde?: string
+          fecha_hasta?: string | null
+          id?: string
+          importe_centimos?: number
+          nino_id?: string
+          tipo_beca_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "becas_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "becas_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "becas_tipo_beca_id_fkey"
+            columns: ["tipo_beca_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_beca"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1020,7 +727,7 @@ export type Database = {
           hora: string
           id: string
           observaciones: string | null
-          tipo: Database['public']['Enums']['tipo_biberon']
+          tipo: Database["public"]["Enums"]["tipo_biberon"]
           tomado_completo: boolean
           updated_at: string
         }
@@ -1031,7 +738,7 @@ export type Database = {
           hora: string
           id?: string
           observaciones?: string | null
-          tipo: Database['public']['Enums']['tipo_biberon']
+          tipo: Database["public"]["Enums"]["tipo_biberon"]
           tomado_completo?: boolean
           updated_at?: string
         }
@@ -1042,17 +749,17 @@ export type Database = {
           hora?: string
           id?: string
           observaciones?: string | null
-          tipo?: Database['public']['Enums']['tipo_biberon']
+          tipo?: Database["public"]["Enums"]["tipo_biberon"]
           tomado_completo?: boolean
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'biberones_agenda_id_fkey'
-            columns: ['agenda_id']
+            foreignKeyName: "biberones_agenda_id_fkey"
+            columns: ["agenda_id"]
             isOneToOne: false
-            referencedRelation: 'agendas_diarias'
-            referencedColumns: ['id']
+            referencedRelation: "agendas_diarias"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1063,7 +770,7 @@ export type Database = {
           created_at: string
           decided_at: string | null
           entidad: string
-          estado: Database['public']['Enums']['estado_cambio_pendiente']
+          estado: Database["public"]["Enums"]["estado_cambio_pendiente"]
           id: string
           nino_id: string
           payload: Json | null
@@ -1078,7 +785,7 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           entidad: string
-          estado?: Database['public']['Enums']['estado_cambio_pendiente']
+          estado?: Database["public"]["Enums"]["estado_cambio_pendiente"]
           id?: string
           nino_id: string
           payload?: Json | null
@@ -1093,7 +800,7 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           entidad?: string
-          estado?: Database['public']['Enums']['estado_cambio_pendiente']
+          estado?: Database["public"]["Enums"]["estado_cambio_pendiente"]
           id?: string
           nino_id?: string
           payload?: Json | null
@@ -1104,32 +811,32 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'cambios_pendientes_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "cambios_pendientes_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'cambios_pendientes_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "cambios_pendientes_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'cambios_pendientes_revisado_por_fkey'
-            columns: ['revisado_por']
+            foreignKeyName: "cambios_pendientes_revisado_por_fkey"
+            columns: ["revisado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'cambios_pendientes_solicitado_por_fkey'
-            columns: ['solicitado_por']
+            foreignKeyName: "cambios_pendientes_solicitado_por_fkey"
+            columns: ["solicitado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1139,10 +846,10 @@ export type Database = {
           created_at: string
           created_by: string
           curso_academico_id: string
-          estado: Database['public']['Enums']['estado_campana_informe']
+          estado: Database["public"]["Enums"]["estado_campana_informe"]
           fecha_limite: string
           id: string
-          periodo: Database['public']['Enums']['periodo_informe']
+          periodo: Database["public"]["Enums"]["periodo_informe"]
           updated_at: string
         }
         Insert: {
@@ -1150,10 +857,10 @@ export type Database = {
           created_at?: string
           created_by: string
           curso_academico_id: string
-          estado?: Database['public']['Enums']['estado_campana_informe']
+          estado?: Database["public"]["Enums"]["estado_campana_informe"]
           fecha_limite: string
           id?: string
-          periodo: Database['public']['Enums']['periodo_informe']
+          periodo: Database["public"]["Enums"]["periodo_informe"]
           updated_at?: string
         }
         Update: {
@@ -1161,33 +868,33 @@ export type Database = {
           created_at?: string
           created_by?: string
           curso_academico_id?: string
-          estado?: Database['public']['Enums']['estado_campana_informe']
+          estado?: Database["public"]["Enums"]["estado_campana_informe"]
           fecha_limite?: string
           id?: string
-          periodo?: Database['public']['Enums']['periodo_informe']
+          periodo?: Database["public"]["Enums"]["periodo_informe"]
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'campanas_informe_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "campanas_informe_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'campanas_informe_created_by_fkey'
-            columns: ['created_by']
+            foreignKeyName: "campanas_informe_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'campanas_informe_curso_academico_id_fkey'
-            columns: ['curso_academico_id']
+            foreignKeyName: "campanas_informe_curso_academico_id_fkey"
+            columns: ["curso_academico_id"]
             isOneToOne: false
-            referencedRelation: 'cursos_academicos'
-            referencedColumns: ['id']
+            referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1242,13 +949,58 @@ export type Database = {
         }
         Relationships: []
       }
+      cierre_mensual: {
+        Row: {
+          anio: number
+          centro_id: string
+          cerrado_at: string
+          cerrado_por: string
+          created_at: string
+          id: string
+          mes: number
+        }
+        Insert: {
+          anio: number
+          centro_id: string
+          cerrado_at?: string
+          cerrado_por: string
+          created_at?: string
+          id?: string
+          mes: number
+        }
+        Update: {
+          anio?: number
+          centro_id?: string
+          cerrado_at?: string
+          cerrado_por?: string
+          created_at?: string
+          id?: string
+          mes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cierre_mensual_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cierre_mensual_cerrado_por_fkey"
+            columns: ["cerrado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cita_invitados: {
         Row: {
           centro_id: string
           cita_id: string
           comentario: string | null
           created_at: string
-          estado: Database['public']['Enums']['rsvp_estado']
+          estado: Database["public"]["Enums"]["rsvp_estado"]
           id: string
           nombre_externo: string | null
           respondido_at: string | null
@@ -1261,7 +1013,7 @@ export type Database = {
           cita_id: string
           comentario?: string | null
           created_at?: string
-          estado?: Database['public']['Enums']['rsvp_estado']
+          estado?: Database["public"]["Enums"]["rsvp_estado"]
           id?: string
           nombre_externo?: string | null
           respondido_at?: string | null
@@ -1274,7 +1026,7 @@ export type Database = {
           cita_id?: string
           comentario?: string | null
           created_at?: string
-          estado?: Database['public']['Enums']['rsvp_estado']
+          estado?: Database["public"]["Enums"]["rsvp_estado"]
           id?: string
           nombre_externo?: string | null
           respondido_at?: string | null
@@ -1284,32 +1036,32 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'cita_invitados_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "cita_invitados_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'cita_invitados_cita_id_fkey'
-            columns: ['cita_id']
+            foreignKeyName: "cita_invitados_cita_id_fkey"
+            columns: ["cita_id"]
             isOneToOne: false
-            referencedRelation: 'citas'
-            referencedColumns: ['id']
+            referencedRelation: "citas"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'cita_invitados_respondido_por_fkey'
-            columns: ['respondido_por']
+            foreignKeyName: "cita_invitados_respondido_por_fkey"
+            columns: ["respondido_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'cita_invitados_usuario_id_fkey'
-            columns: ['usuario_id']
+            foreignKeyName: "cita_invitados_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1319,7 +1071,7 @@ export type Database = {
           centro_id: string
           created_at: string
           descripcion: string | null
-          estado: Database['public']['Enums']['cita_estado']
+          estado: Database["public"]["Enums"]["cita_estado"]
           fecha: string
           hora_fin: string | null
           hora_inicio: string
@@ -1327,7 +1079,7 @@ export type Database = {
           lugar: string | null
           nino_id: string | null
           organizador_id: string
-          tipo: Database['public']['Enums']['tipo_cita']
+          tipo: Database["public"]["Enums"]["tipo_cita"]
           titulo: string
           updated_at: string
         }
@@ -1336,7 +1088,7 @@ export type Database = {
           centro_id: string
           created_at?: string
           descripcion?: string | null
-          estado?: Database['public']['Enums']['cita_estado']
+          estado?: Database["public"]["Enums"]["cita_estado"]
           fecha: string
           hora_fin?: string | null
           hora_inicio: string
@@ -1344,7 +1096,7 @@ export type Database = {
           lugar?: string | null
           nino_id?: string | null
           organizador_id: string
-          tipo: Database['public']['Enums']['tipo_cita']
+          tipo: Database["public"]["Enums"]["tipo_cita"]
           titulo: string
           updated_at?: string
         }
@@ -1353,7 +1105,7 @@ export type Database = {
           centro_id?: string
           created_at?: string
           descripcion?: string | null
-          estado?: Database['public']['Enums']['cita_estado']
+          estado?: Database["public"]["Enums"]["cita_estado"]
           fecha?: string
           hora_fin?: string | null
           hora_inicio?: string
@@ -1361,95 +1113,145 @@ export type Database = {
           lugar?: string | null
           nino_id?: string | null
           organizador_id?: string
-          tipo?: Database['public']['Enums']['tipo_cita']
+          tipo?: Database["public"]["Enums"]["tipo_cita"]
           titulo?: string
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'citas_aula_id_fkey'
-            columns: ['aula_id']
+            foreignKeyName: "citas_aula_id_fkey"
+            columns: ["aula_id"]
             isOneToOne: false
-            referencedRelation: 'aulas'
-            referencedColumns: ['id']
+            referencedRelation: "aulas"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'citas_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "citas_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'citas_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "citas_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'citas_organizador_id_fkey'
-            columns: ['organizador_id']
+            foreignKeyName: "citas_organizador_id_fkey"
+            columns: ["organizador_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
       comidas: {
         Row: {
           agenda_id: string
-          cantidad: Database['public']['Enums']['cantidad_comida']
+          cantidad: Database["public"]["Enums"]["cantidad_comida"]
           created_at: string
           descripcion: string | null
           hora: string | null
           id: string
           menu_dia_id: string | null
-          momento: Database['public']['Enums']['momento_comida']
+          momento: Database["public"]["Enums"]["momento_comida"]
           observaciones: string | null
-          tipo_plato: Database['public']['Enums']['tipo_plato_comida'] | null
+          tipo_plato: Database["public"]["Enums"]["tipo_plato_comida"] | null
           updated_at: string
         }
         Insert: {
           agenda_id: string
-          cantidad: Database['public']['Enums']['cantidad_comida']
+          cantidad: Database["public"]["Enums"]["cantidad_comida"]
           created_at?: string
           descripcion?: string | null
           hora?: string | null
           id?: string
           menu_dia_id?: string | null
-          momento: Database['public']['Enums']['momento_comida']
+          momento: Database["public"]["Enums"]["momento_comida"]
           observaciones?: string | null
-          tipo_plato?: Database['public']['Enums']['tipo_plato_comida'] | null
+          tipo_plato?: Database["public"]["Enums"]["tipo_plato_comida"] | null
           updated_at?: string
         }
         Update: {
           agenda_id?: string
-          cantidad?: Database['public']['Enums']['cantidad_comida']
+          cantidad?: Database["public"]["Enums"]["cantidad_comida"]
           created_at?: string
           descripcion?: string | null
           hora?: string | null
           id?: string
           menu_dia_id?: string | null
-          momento?: Database['public']['Enums']['momento_comida']
+          momento?: Database["public"]["Enums"]["momento_comida"]
           observaciones?: string | null
-          tipo_plato?: Database['public']['Enums']['tipo_plato_comida'] | null
+          tipo_plato?: Database["public"]["Enums"]["tipo_plato_comida"] | null
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'comidas_agenda_id_fkey'
-            columns: ['agenda_id']
+            foreignKeyName: "comidas_agenda_id_fkey"
+            columns: ["agenda_id"]
             isOneToOne: false
-            referencedRelation: 'agendas_diarias'
-            referencedColumns: ['id']
+            referencedRelation: "agendas_diarias"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'comidas_menu_dia_id_fkey'
-            columns: ['menu_dia_id']
+            foreignKeyName: "comidas_menu_dia_id_fkey"
+            columns: ["menu_dia_id"]
             isOneToOne: false
-            referencedRelation: 'menu_dia'
-            referencedColumns: ['id']
+            referencedRelation: "menu_dia"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conceptos_cobro: {
+        Row: {
+          activo: boolean
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          nombre: string
+          precio_diario_centimos: number | null
+          precio_mensual_centimos: number | null
+          servicio: Database["public"]["Enums"]["servicio_diario"] | null
+          tipo_concepto: Database["public"]["Enums"]["tipo_concepto"]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          nombre: string
+          precio_diario_centimos?: number | null
+          precio_mensual_centimos?: number | null
+          servicio?: Database["public"]["Enums"]["servicio_diario"] | null
+          tipo_concepto: Database["public"]["Enums"]["tipo_concepto"]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          nombre?: string
+          precio_diario_centimos?: number | null
+          precio_mensual_centimos?: number | null
+          servicio?: Database["public"]["Enums"]["servicio_diario"] | null
+          tipo_concepto?: Database["public"]["Enums"]["tipo_concepto"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conceptos_cobro_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1459,7 +1261,7 @@ export type Database = {
           confirmado_at: string
           confirmado_por: string
           created_at: string
-          estado: Database['public']['Enums']['confirmacion_estado']
+          estado: Database["public"]["Enums"]["confirmacion_estado"]
           evento_id: string
           id: string
           nino_id: string
@@ -1470,7 +1272,7 @@ export type Database = {
           confirmado_at?: string
           confirmado_por: string
           created_at?: string
-          estado: Database['public']['Enums']['confirmacion_estado']
+          estado: Database["public"]["Enums"]["confirmacion_estado"]
           evento_id: string
           id?: string
           nino_id: string
@@ -1481,7 +1283,7 @@ export type Database = {
           confirmado_at?: string
           confirmado_por?: string
           created_at?: string
-          estado?: Database['public']['Enums']['confirmacion_estado']
+          estado?: Database["public"]["Enums"]["confirmacion_estado"]
           evento_id?: string
           id?: string
           nino_id?: string
@@ -1489,25 +1291,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'confirmaciones_evento_confirmado_por_fkey'
-            columns: ['confirmado_por']
+            foreignKeyName: "confirmaciones_evento_confirmado_por_fkey"
+            columns: ["confirmado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'confirmaciones_evento_evento_id_fkey'
-            columns: ['evento_id']
+            foreignKeyName: "confirmaciones_evento_evento_id_fkey"
+            columns: ["evento_id"]
             isOneToOne: false
-            referencedRelation: 'eventos'
-            referencedColumns: ['id']
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'confirmaciones_evento_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "confirmaciones_evento_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1518,7 +1320,7 @@ export type Database = {
           id: string
           ip_address: unknown
           revocado_en: string | null
-          tipo: Database['public']['Enums']['consentimiento_tipo']
+          tipo: Database["public"]["Enums"]["consentimiento_tipo"]
           user_agent: string | null
           usuario_id: string
           version: string
@@ -1529,7 +1331,7 @@ export type Database = {
           id?: string
           ip_address?: unknown
           revocado_en?: string | null
-          tipo: Database['public']['Enums']['consentimiento_tipo']
+          tipo: Database["public"]["Enums"]["consentimiento_tipo"]
           user_agent?: string | null
           usuario_id: string
           version: string
@@ -1540,18 +1342,18 @@ export type Database = {
           id?: string
           ip_address?: unknown
           revocado_en?: string | null
-          tipo?: Database['public']['Enums']['consentimiento_tipo']
+          tipo?: Database["public"]["Enums"]["consentimiento_tipo"]
           user_agent?: string | null
           usuario_id?: string
           version?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'consentimientos_usuario_id_fkey'
-            columns: ['usuario_id']
+            foreignKeyName: "consentimientos_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1564,7 +1366,7 @@ export type Database = {
           id: string
           last_message_at: string | null
           nino_id: string | null
-          tipo_conversacion: Database['public']['Enums']['tipo_conversacion']
+          tipo_conversacion: Database["public"]["Enums"]["tipo_conversacion"]
           tutor_id: string | null
           updated_at: string
         }
@@ -1576,7 +1378,7 @@ export type Database = {
           id?: string
           last_message_at?: string | null
           nino_id?: string | null
-          tipo_conversacion?: Database['public']['Enums']['tipo_conversacion']
+          tipo_conversacion?: Database["public"]["Enums"]["tipo_conversacion"]
           tutor_id?: string | null
           updated_at?: string
         }
@@ -1588,38 +1390,38 @@ export type Database = {
           id?: string
           last_message_at?: string | null
           nino_id?: string | null
-          tipo_conversacion?: Database['public']['Enums']['tipo_conversacion']
+          tipo_conversacion?: Database["public"]["Enums"]["tipo_conversacion"]
           tutor_id?: string | null
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'conversaciones_admin_id_fkey'
-            columns: ['admin_id']
+            foreignKeyName: "conversaciones_admin_id_fkey"
+            columns: ["admin_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'conversaciones_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "conversaciones_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'conversaciones_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "conversaciones_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: true
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'conversaciones_tutor_id_fkey'
-            columns: ['tutor_id']
+            foreignKeyName: "conversaciones_tutor_id_fkey"
+            columns: ["tutor_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1628,7 +1430,7 @@ export type Database = {
           centro_id: string
           created_at: string
           deleted_at: string | null
-          estado: Database['public']['Enums']['curso_estado']
+          estado: Database["public"]["Enums"]["curso_estado"]
           fecha_fin: string
           fecha_inicio: string
           id: string
@@ -1639,7 +1441,7 @@ export type Database = {
           centro_id: string
           created_at?: string
           deleted_at?: string | null
-          estado?: Database['public']['Enums']['curso_estado']
+          estado?: Database["public"]["Enums"]["curso_estado"]
           fecha_fin: string
           fecha_inicio: string
           id?: string
@@ -1650,7 +1452,7 @@ export type Database = {
           centro_id?: string
           created_at?: string
           deleted_at?: string | null
-          estado?: Database['public']['Enums']['curso_estado']
+          estado?: Database["public"]["Enums"]["curso_estado"]
           fecha_fin?: string
           fecha_inicio?: string
           id?: string
@@ -1659,76 +1461,76 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'cursos_academicos_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "cursos_academicos_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
         ]
       }
       datos_pedagogicos_nino: {
         Row: {
           alimentacion_observaciones: string | null
-          control_esfinteres: Database['public']['Enums']['control_esfinteres']
+          control_esfinteres: Database["public"]["Enums"]["control_esfinteres"]
           control_esfinteres_observaciones: string | null
           created_at: string
           deleted_at: string | null
           id: string
           idiomas_casa: string[]
-          lactancia_estado: Database['public']['Enums']['lactancia_estado']
+          lactancia_estado: Database["public"]["Enums"]["lactancia_estado"]
           lactancia_observaciones: string | null
           nino_id: string
           siesta_horario_habitual: string | null
           siesta_numero_diario: number | null
           siesta_observaciones: string | null
           tiene_hermanos_en_centro: boolean
-          tipo_alimentacion: Database['public']['Enums']['tipo_alimentacion']
+          tipo_alimentacion: Database["public"]["Enums"]["tipo_alimentacion"]
           updated_at: string
         }
         Insert: {
           alimentacion_observaciones?: string | null
-          control_esfinteres: Database['public']['Enums']['control_esfinteres']
+          control_esfinteres: Database["public"]["Enums"]["control_esfinteres"]
           control_esfinteres_observaciones?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
           idiomas_casa: string[]
-          lactancia_estado: Database['public']['Enums']['lactancia_estado']
+          lactancia_estado: Database["public"]["Enums"]["lactancia_estado"]
           lactancia_observaciones?: string | null
           nino_id: string
           siesta_horario_habitual?: string | null
           siesta_numero_diario?: number | null
           siesta_observaciones?: string | null
           tiene_hermanos_en_centro?: boolean
-          tipo_alimentacion: Database['public']['Enums']['tipo_alimentacion']
+          tipo_alimentacion: Database["public"]["Enums"]["tipo_alimentacion"]
           updated_at?: string
         }
         Update: {
           alimentacion_observaciones?: string | null
-          control_esfinteres?: Database['public']['Enums']['control_esfinteres']
+          control_esfinteres?: Database["public"]["Enums"]["control_esfinteres"]
           control_esfinteres_observaciones?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
           idiomas_casa?: string[]
-          lactancia_estado?: Database['public']['Enums']['lactancia_estado']
+          lactancia_estado?: Database["public"]["Enums"]["lactancia_estado"]
           lactancia_observaciones?: string | null
           nino_id?: string
           siesta_horario_habitual?: string | null
           siesta_numero_diario?: number | null
           siesta_observaciones?: string | null
           tiene_hermanos_en_centro?: boolean
-          tipo_alimentacion?: Database['public']['Enums']['tipo_alimentacion']
+          tipo_alimentacion?: Database["public"]["Enums"]["tipo_alimentacion"]
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'datos_pedagogicos_nino_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "datos_pedagogicos_nino_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: true
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1746,7 +1548,7 @@ export type Database = {
           id: string
           nino_id: string
           nombre_completo: string | null
-          tipo_vinculo: Database['public']['Enums']['tipo_vinculo']
+          tipo_vinculo: Database["public"]["Enums"]["tipo_vinculo"]
           updated_at: string
           usuario_id: string | null
         }
@@ -1763,7 +1565,7 @@ export type Database = {
           id?: string
           nino_id: string
           nombre_completo?: string | null
-          tipo_vinculo: Database['public']['Enums']['tipo_vinculo']
+          tipo_vinculo: Database["public"]["Enums"]["tipo_vinculo"]
           updated_at?: string
           usuario_id?: string | null
         }
@@ -1780,75 +1582,81 @@ export type Database = {
           id?: string
           nino_id?: string
           nombre_completo?: string | null
-          tipo_vinculo?: Database['public']['Enums']['tipo_vinculo']
+          tipo_vinculo?: Database["public"]["Enums"]["tipo_vinculo"]
           updated_at?: string
           usuario_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'datos_tutor_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "datos_tutor_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'datos_tutor_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "datos_tutor_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'datos_tutor_usuario_id_fkey'
-            columns: ['usuario_id']
+            foreignKeyName: "datos_tutor_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
       deposiciones: {
         Row: {
           agenda_id: string
-          cantidad: Database['public']['Enums']['cantidad_deposicion']
-          consistencia: Database['public']['Enums']['consistencia_deposicion'] | null
+          cantidad: Database["public"]["Enums"]["cantidad_deposicion"]
+          consistencia:
+            | Database["public"]["Enums"]["consistencia_deposicion"]
+            | null
           created_at: string
           hora: string | null
           id: string
           observaciones: string | null
-          tipo: Database['public']['Enums']['tipo_deposicion']
+          tipo: Database["public"]["Enums"]["tipo_deposicion"]
           updated_at: string
         }
         Insert: {
           agenda_id: string
-          cantidad: Database['public']['Enums']['cantidad_deposicion']
-          consistencia?: Database['public']['Enums']['consistencia_deposicion'] | null
+          cantidad: Database["public"]["Enums"]["cantidad_deposicion"]
+          consistencia?:
+            | Database["public"]["Enums"]["consistencia_deposicion"]
+            | null
           created_at?: string
           hora?: string | null
           id?: string
           observaciones?: string | null
-          tipo: Database['public']['Enums']['tipo_deposicion']
+          tipo: Database["public"]["Enums"]["tipo_deposicion"]
           updated_at?: string
         }
         Update: {
           agenda_id?: string
-          cantidad?: Database['public']['Enums']['cantidad_deposicion']
-          consistencia?: Database['public']['Enums']['consistencia_deposicion'] | null
+          cantidad?: Database["public"]["Enums"]["cantidad_deposicion"]
+          consistencia?:
+            | Database["public"]["Enums"]["consistencia_deposicion"]
+            | null
           created_at?: string
           hora?: string | null
           id?: string
           observaciones?: string | null
-          tipo?: Database['public']['Enums']['tipo_deposicion']
+          tipo?: Database["public"]["Enums"]["tipo_deposicion"]
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'deposiciones_agenda_id_fkey'
-            columns: ['agenda_id']
+            foreignKeyName: "deposiciones_agenda_id_fkey"
+            columns: ["agenda_id"]
             isOneToOne: false
-            referencedRelation: 'agendas_diarias'
-            referencedColumns: ['id']
+            referencedRelation: "agendas_diarias"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1860,7 +1668,7 @@ export type Database = {
           fecha: string
           id: string
           observaciones: string | null
-          tipo: Database['public']['Enums']['tipo_dia_centro']
+          tipo: Database["public"]["Enums"]["tipo_dia_centro"]
           updated_at: string
         }
         Insert: {
@@ -1870,7 +1678,7 @@ export type Database = {
           fecha: string
           id?: string
           observaciones?: string | null
-          tipo: Database['public']['Enums']['tipo_dia_centro']
+          tipo: Database["public"]["Enums"]["tipo_dia_centro"]
           updated_at?: string
         }
         Update: {
@@ -1880,35 +1688,35 @@ export type Database = {
           fecha?: string
           id?: string
           observaciones?: string | null
-          tipo?: Database['public']['Enums']['tipo_dia_centro']
+          tipo?: Database["public"]["Enums"]["tipo_dia_centro"]
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'dias_centro_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "dias_centro_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'dias_centro_creado_por_fkey'
-            columns: ['creado_por']
+            foreignKeyName: "dias_centro_creado_por_fkey"
+            columns: ["creado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
       eventos: {
         Row: {
-          ambito: Database['public']['Enums']['ambito_evento']
+          ambito: Database["public"]["Enums"]["ambito_evento"]
           aula_id: string | null
           centro_id: string
           creado_por: string
           created_at: string
           descripcion: string | null
-          estado: Database['public']['Enums']['evento_estado']
+          estado: Database["public"]["Enums"]["evento_estado"]
           fecha: string
           fecha_fin: string | null
           hora_fin: string | null
@@ -1917,18 +1725,18 @@ export type Database = {
           lugar: string | null
           nino_id: string | null
           requiere_confirmacion: boolean
-          tipo: Database['public']['Enums']['tipo_evento']
+          tipo: Database["public"]["Enums"]["tipo_evento"]
           titulo: string
           updated_at: string
         }
         Insert: {
-          ambito: Database['public']['Enums']['ambito_evento']
+          ambito: Database["public"]["Enums"]["ambito_evento"]
           aula_id?: string | null
           centro_id: string
           creado_por: string
           created_at?: string
           descripcion?: string | null
-          estado?: Database['public']['Enums']['evento_estado']
+          estado?: Database["public"]["Enums"]["evento_estado"]
           fecha: string
           fecha_fin?: string | null
           hora_fin?: string | null
@@ -1937,18 +1745,18 @@ export type Database = {
           lugar?: string | null
           nino_id?: string | null
           requiere_confirmacion?: boolean
-          tipo: Database['public']['Enums']['tipo_evento']
+          tipo: Database["public"]["Enums"]["tipo_evento"]
           titulo: string
           updated_at?: string
         }
         Update: {
-          ambito?: Database['public']['Enums']['ambito_evento']
+          ambito?: Database["public"]["Enums"]["ambito_evento"]
           aula_id?: string | null
           centro_id?: string
           creado_por?: string
           created_at?: string
           descripcion?: string | null
-          estado?: Database['public']['Enums']['evento_estado']
+          estado?: Database["public"]["Enums"]["evento_estado"]
           fecha?: string
           fecha_fin?: string | null
           hora_fin?: string | null
@@ -1957,38 +1765,38 @@ export type Database = {
           lugar?: string | null
           nino_id?: string | null
           requiere_confirmacion?: boolean
-          tipo?: Database['public']['Enums']['tipo_evento']
+          tipo?: Database["public"]["Enums"]["tipo_evento"]
           titulo?: string
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'eventos_aula_id_fkey'
-            columns: ['aula_id']
+            foreignKeyName: "eventos_aula_id_fkey"
+            columns: ["aula_id"]
             isOneToOne: false
-            referencedRelation: 'aulas'
-            referencedColumns: ['id']
+            referencedRelation: "aulas"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'eventos_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "eventos_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'eventos_creado_por_fkey'
-            columns: ['creado_por']
+            foreignKeyName: "eventos_creado_por_fkey"
+            columns: ["creado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'eventos_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "eventos_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2019,18 +1827,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'export_log_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "export_log_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'export_log_solicitado_por_fkey'
-            columns: ['solicitado_por']
+            foreignKeyName: "export_log_solicitado_por_fkey"
+            columns: ["solicitado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2040,7 +1848,7 @@ export type Database = {
           comentario: string | null
           created_at: string
           datos: Json
-          decision: Database['public']['Enums']['firma_decision']
+          decision: Database["public"]["Enums"]["firma_decision"]
           firma_imagen: string | null
           firmado_at: string
           firmante_id: string
@@ -2048,7 +1856,7 @@ export type Database = {
           ip_address: unknown
           nino_id: string
           nombre_tecleado: string
-          rol_firmante: Database['public']['Enums']['tipo_vinculo']
+          rol_firmante: Database["public"]["Enums"]["tipo_vinculo"]
           texto_hash: string
           texto_version: string
           user_agent: string | null
@@ -2058,7 +1866,7 @@ export type Database = {
           comentario?: string | null
           created_at?: string
           datos?: Json
-          decision: Database['public']['Enums']['firma_decision']
+          decision: Database["public"]["Enums"]["firma_decision"]
           firma_imagen?: string | null
           firmado_at?: string
           firmante_id: string
@@ -2066,7 +1874,7 @@ export type Database = {
           ip_address?: unknown
           nino_id: string
           nombre_tecleado: string
-          rol_firmante: Database['public']['Enums']['tipo_vinculo']
+          rol_firmante: Database["public"]["Enums"]["tipo_vinculo"]
           texto_hash: string
           texto_version: string
           user_agent?: string | null
@@ -2076,7 +1884,7 @@ export type Database = {
           comentario?: string | null
           created_at?: string
           datos?: Json
-          decision?: Database['public']['Enums']['firma_decision']
+          decision?: Database["public"]["Enums"]["firma_decision"]
           firma_imagen?: string | null
           firmado_at?: string
           firmante_id?: string
@@ -2084,32 +1892,32 @@ export type Database = {
           ip_address?: unknown
           nino_id?: string
           nombre_tecleado?: string
-          rol_firmante?: Database['public']['Enums']['tipo_vinculo']
+          rol_firmante?: Database["public"]["Enums"]["tipo_vinculo"]
           texto_hash?: string
           texto_version?: string
           user_agent?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'firmas_autorizacion_autorizacion_id_fkey'
-            columns: ['autorizacion_id']
+            foreignKeyName: "firmas_autorizacion_autorizacion_id_fkey"
+            columns: ["autorizacion_id"]
             isOneToOne: false
-            referencedRelation: 'autorizaciones'
-            referencedColumns: ['id']
+            referencedRelation: "autorizaciones"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'firmas_autorizacion_firmante_id_fkey'
-            columns: ['firmante_id']
+            foreignKeyName: "firmas_autorizacion_firmante_id_fkey"
+            columns: ["firmante_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'firmas_autorizacion_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "firmas_autorizacion_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2152,11 +1960,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'info_medica_emergencia_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "info_medica_emergencia_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: true
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2166,13 +1974,13 @@ export type Database = {
           creado_por: string
           created_at: string
           curso_academico_id: string
-          estado: Database['public']['Enums']['estado_informe']
+          estado: Database["public"]["Enums"]["estado_informe"]
           estructura_snapshot: Json
           id: string
           nino_id: string
           notificado_at: string | null
           observaciones_generales: string | null
-          periodo: Database['public']['Enums']['periodo_informe']
+          periodo: Database["public"]["Enums"]["periodo_informe"]
           plantilla_id: string
           publicado_at: string | null
           respuestas: Json
@@ -2183,13 +1991,13 @@ export type Database = {
           creado_por: string
           created_at?: string
           curso_academico_id: string
-          estado?: Database['public']['Enums']['estado_informe']
+          estado?: Database["public"]["Enums"]["estado_informe"]
           estructura_snapshot: Json
           id?: string
           nino_id: string
           notificado_at?: string | null
           observaciones_generales?: string | null
-          periodo: Database['public']['Enums']['periodo_informe']
+          periodo: Database["public"]["Enums"]["periodo_informe"]
           plantilla_id: string
           publicado_at?: string | null
           respuestas?: Json
@@ -2200,13 +2008,13 @@ export type Database = {
           creado_por?: string
           created_at?: string
           curso_academico_id?: string
-          estado?: Database['public']['Enums']['estado_informe']
+          estado?: Database["public"]["Enums"]["estado_informe"]
           estructura_snapshot?: Json
           id?: string
           nino_id?: string
           notificado_at?: string | null
           observaciones_generales?: string | null
-          periodo?: Database['public']['Enums']['periodo_informe']
+          periodo?: Database["public"]["Enums"]["periodo_informe"]
           plantilla_id?: string
           publicado_at?: string | null
           respuestas?: Json
@@ -2214,39 +2022,39 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'informes_evolucion_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "informes_evolucion_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'informes_evolucion_creado_por_fkey'
-            columns: ['creado_por']
+            foreignKeyName: "informes_evolucion_creado_por_fkey"
+            columns: ["creado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'informes_evolucion_curso_academico_id_fkey'
-            columns: ['curso_academico_id']
+            foreignKeyName: "informes_evolucion_curso_academico_id_fkey"
+            columns: ["curso_academico_id"]
             isOneToOne: false
-            referencedRelation: 'cursos_academicos'
-            referencedColumns: ['id']
+            referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'informes_evolucion_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "informes_evolucion_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'informes_evolucion_plantilla_id_fkey'
-            columns: ['plantilla_id']
+            foreignKeyName: "informes_evolucion_plantilla_id_fkey"
+            columns: ["plantilla_id"]
             isOneToOne: false
-            referencedRelation: 'plantillas_informe'
-            referencedColumns: ['id']
+            referencedRelation: "plantillas_informe"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2263,9 +2071,11 @@ export type Database = {
           nino_id: string | null
           nombre_completo: string | null
           rejected_at: string | null
-          rol_objetivo: Database['public']['Enums']['user_role']
-          tipo_personal_aula: Database['public']['Enums']['tipo_personal_aula'] | null
-          tipo_vinculo: Database['public']['Enums']['tipo_vinculo'] | null
+          rol_objetivo: Database["public"]["Enums"]["user_role"]
+          tipo_personal_aula:
+            | Database["public"]["Enums"]["tipo_personal_aula"]
+            | null
+          tipo_vinculo: Database["public"]["Enums"]["tipo_vinculo"] | null
           token: string
         }
         Insert: {
@@ -2280,9 +2090,11 @@ export type Database = {
           nino_id?: string | null
           nombre_completo?: string | null
           rejected_at?: string | null
-          rol_objetivo: Database['public']['Enums']['user_role']
-          tipo_personal_aula?: Database['public']['Enums']['tipo_personal_aula'] | null
-          tipo_vinculo?: Database['public']['Enums']['tipo_vinculo'] | null
+          rol_objetivo: Database["public"]["Enums"]["user_role"]
+          tipo_personal_aula?:
+            | Database["public"]["Enums"]["tipo_personal_aula"]
+            | null
+          tipo_vinculo?: Database["public"]["Enums"]["tipo_vinculo"] | null
           token?: string
         }
         Update: {
@@ -2297,39 +2109,41 @@ export type Database = {
           nino_id?: string | null
           nombre_completo?: string | null
           rejected_at?: string | null
-          rol_objetivo?: Database['public']['Enums']['user_role']
-          tipo_personal_aula?: Database['public']['Enums']['tipo_personal_aula'] | null
-          tipo_vinculo?: Database['public']['Enums']['tipo_vinculo'] | null
+          rol_objetivo?: Database["public"]["Enums"]["user_role"]
+          tipo_personal_aula?:
+            | Database["public"]["Enums"]["tipo_personal_aula"]
+            | null
+          tipo_vinculo?: Database["public"]["Enums"]["tipo_vinculo"] | null
           token?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'invitaciones_aula_id_fkey'
-            columns: ['aula_id']
+            foreignKeyName: "invitaciones_aula_id_fkey"
+            columns: ["aula_id"]
             isOneToOne: false
-            referencedRelation: 'aulas'
-            referencedColumns: ['id']
+            referencedRelation: "aulas"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'invitaciones_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "invitaciones_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'invitaciones_invitado_por_fkey'
-            columns: ['invitado_por']
+            foreignKeyName: "invitaciones_invitado_por_fkey"
+            columns: ["invitado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'invitaciones_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "invitaciones_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2354,18 +2168,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'lectura_anuncio_anuncio_id_fkey'
-            columns: ['anuncio_id']
+            foreignKeyName: "lectura_anuncio_anuncio_id_fkey"
+            columns: ["anuncio_id"]
             isOneToOne: false
-            referencedRelation: 'anuncios'
-            referencedColumns: ['id']
+            referencedRelation: "anuncios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'lectura_anuncio_usuario_id_fkey'
-            columns: ['usuario_id']
+            foreignKeyName: "lectura_anuncio_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2390,28 +2204,87 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'lectura_conversacion_conversacion_id_fkey'
-            columns: ['conversacion_id']
+            foreignKeyName: "lectura_conversacion_conversacion_id_fkey"
+            columns: ["conversacion_id"]
             isOneToOne: false
-            referencedRelation: 'conversaciones'
-            referencedColumns: ['id']
+            referencedRelation: "conversaciones"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'lectura_conversacion_usuario_id_fkey'
-            columns: ['usuario_id']
+            foreignKeyName: "lectura_conversacion_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lineas_recibo: {
+        Row: {
+          cantidad: number
+          centro_id: string
+          concepto_id: string | null
+          created_at: string
+          descripcion: string
+          id: string
+          importe_centimos: number
+          precio_unitario_centimos: number
+          recibo_id: string
+        }
+        Insert: {
+          cantidad?: number
+          centro_id: string
+          concepto_id?: string | null
+          created_at?: string
+          descripcion: string
+          id?: string
+          importe_centimos: number
+          precio_unitario_centimos: number
+          recibo_id: string
+        }
+        Update: {
+          cantidad?: number
+          centro_id?: string
+          concepto_id?: string | null
+          created_at?: string
+          descripcion?: string
+          id?: string
+          importe_centimos?: number
+          precio_unitario_centimos?: number
+          recibo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lineas_recibo_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lineas_recibo_concepto_id_fkey"
+            columns: ["concepto_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_cobro"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lineas_recibo_recibo_id_fkey"
+            columns: ["recibo_id"]
+            isOneToOne: false
+            referencedRelation: "recibos"
+            referencedColumns: ["id"]
           },
         ]
       }
       lista_espera: {
         Row: {
+          apellidos_nino: string | null
           centro_id: string
           created_at: string
           curso_academico_id: string
           email_tutor: string | null
-          estado: Database['public']['Enums']['estado_lista_espera']
+          estado: Database["public"]["Enums"]["estado_lista_espera"]
           fecha_nacimiento: string | null
           id: string
           nombre_nino: string
@@ -2421,11 +2294,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          apellidos_nino?: string | null
           centro_id: string
           created_at?: string
           curso_academico_id: string
           email_tutor?: string | null
-          estado?: Database['public']['Enums']['estado_lista_espera']
+          estado?: Database["public"]["Enums"]["estado_lista_espera"]
           fecha_nacimiento?: string | null
           id?: string
           nombre_nino: string
@@ -2435,11 +2309,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          apellidos_nino?: string | null
           centro_id?: string
           created_at?: string
           curso_academico_id?: string
           email_tutor?: string | null
-          estado?: Database['public']['Enums']['estado_lista_espera']
+          estado?: Database["public"]["Enums"]["estado_lista_espera"]
           fecha_nacimiento?: string | null
           id?: string
           nombre_nino?: string
@@ -2450,18 +2325,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'lista_espera_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "lista_espera_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'lista_espera_curso_academico_id_fkey'
-            columns: ['curso_academico_id']
+            foreignKeyName: "lista_espera_curso_academico_id_fkey"
+            columns: ["curso_academico_id"]
             isOneToOne: false
-            referencedRelation: 'cursos_academicos'
-            referencedColumns: ['id']
+            referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2471,7 +2346,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           documento_path: string | null
-          estado: Database['public']['Enums']['estado_mandato_sepa']
+          estado: Database["public"]["Enums"]["estado_mandato_sepa"]
           fecha_firma: string | null
           firma_imagen: string | null
           iban_cifrado: string
@@ -2491,7 +2366,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           documento_path?: string | null
-          estado?: Database['public']['Enums']['estado_mandato_sepa']
+          estado?: Database["public"]["Enums"]["estado_mandato_sepa"]
           fecha_firma?: string | null
           firma_imagen?: string | null
           iban_cifrado: string
@@ -2511,7 +2386,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           documento_path?: string | null
-          estado?: Database['public']['Enums']['estado_mandato_sepa']
+          estado?: Database["public"]["Enums"]["estado_mandato_sepa"]
           fecha_firma?: string | null
           firma_imagen?: string | null
           iban_cifrado?: string
@@ -2528,25 +2403,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'mandatos_sepa_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "mandatos_sepa_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'mandatos_sepa_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "mandatos_sepa_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'mandatos_sepa_usuario_id_fkey'
-            columns: ['usuario_id']
+            foreignKeyName: "mandatos_sepa_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2556,7 +2431,7 @@ export type Database = {
           created_at: string
           curso_academico_id: string
           deleted_at: string | null
-          estado: Database['public']['Enums']['matricula_estado']
+          estado: Database["public"]["Enums"]["matricula_estado"]
           fecha_alta: string
           fecha_baja: string | null
           id: string
@@ -2568,7 +2443,7 @@ export type Database = {
           created_at?: string
           curso_academico_id: string
           deleted_at?: string | null
-          estado?: Database['public']['Enums']['matricula_estado']
+          estado?: Database["public"]["Enums"]["matricula_estado"]
           fecha_alta?: string
           fecha_baja?: string | null
           id?: string
@@ -2580,7 +2455,7 @@ export type Database = {
           created_at?: string
           curso_academico_id?: string
           deleted_at?: string | null
-          estado?: Database['public']['Enums']['matricula_estado']
+          estado?: Database["public"]["Enums"]["matricula_estado"]
           fecha_alta?: string
           fecha_baja?: string | null
           id?: string
@@ -2589,18 +2464,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'matriculas_aula_curso_fkey'
-            columns: ['aula_id', 'curso_academico_id']
+            foreignKeyName: "matriculas_aula_curso_fkey"
+            columns: ["aula_id", "curso_academico_id"]
             isOneToOne: false
-            referencedRelation: 'aulas_curso'
-            referencedColumns: ['aula_id', 'curso_academico_id']
+            referencedRelation: "aulas_curso"
+            referencedColumns: ["aula_id", "curso_academico_id"]
           },
           {
-            foreignKeyName: 'matriculas_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "matriculas_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2649,18 +2524,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'media_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "media_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'media_publicacion_id_fkey'
-            columns: ['publicacion_id']
+            foreignKeyName: "media_publicacion_id_fkey"
+            columns: ["publicacion_id"]
             isOneToOne: false
-            referencedRelation: 'publicaciones'
-            referencedColumns: ['id']
+            referencedRelation: "publicaciones"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2688,25 +2563,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'media_etiquetas_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "media_etiquetas_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'media_etiquetas_media_id_fkey'
-            columns: ['media_id']
+            foreignKeyName: "media_etiquetas_media_id_fkey"
+            columns: ["media_id"]
             isOneToOne: false
-            referencedRelation: 'media'
-            referencedColumns: ['id']
+            referencedRelation: "media"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'media_etiquetas_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "media_etiquetas_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2740,18 +2615,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'mensajes_autor_id_fkey'
-            columns: ['autor_id']
+            foreignKeyName: "mensajes_autor_id_fkey"
+            columns: ["autor_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'mensajes_conversacion_id_fkey'
-            columns: ['conversacion_id']
+            foreignKeyName: "mensajes_conversacion_id_fkey"
+            columns: ["conversacion_id"]
             isOneToOne: false
-            referencedRelation: 'conversaciones'
-            referencedColumns: ['id']
+            referencedRelation: "conversaciones"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2797,11 +2672,62 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'menu_dia_plantilla_id_fkey'
-            columns: ['plantilla_id']
+            foreignKeyName: "menu_dia_plantilla_id_fkey"
+            columns: ["plantilla_id"]
             isOneToOne: false
-            referencedRelation: 'plantillas_menu_mensual'
-            referencedColumns: ['id']
+            referencedRelation: "plantillas_menu_mensual"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metodo_pago_familia: {
+        Row: {
+          anio: number
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          mes: number
+          metodo: Database["public"]["Enums"]["metodo_pago"]
+          nino_id: string
+          updated_at: string
+        }
+        Insert: {
+          anio: number
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          mes: number
+          metodo: Database["public"]["Enums"]["metodo_pago"]
+          nino_id: string
+          updated_at?: string
+        }
+        Update: {
+          anio?: number
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          mes?: number
+          metodo?: Database["public"]["Enums"]["metodo_pago"]
+          nino_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metodo_pago_familia_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metodo_pago_familia_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2815,7 +2741,9 @@ export type Database = {
           direccion_ciudad: string | null
           direccion_cp: string | null
           direccion_numero: string | null
-          estado_civil_familia: Database['public']['Enums']['estado_civil'] | null
+          estado_civil_familia:
+            | Database["public"]["Enums"]["estado_civil"]
+            | null
           fecha_nacimiento: string | null
           foto_url: string | null
           id: string
@@ -2826,7 +2754,7 @@ export type Database = {
           notas_admin: string | null
           puede_aparecer_en_fotos: boolean
           requiere_ambos_firmantes: boolean
-          sexo: Database['public']['Enums']['nino_sexo'] | null
+          sexo: Database["public"]["Enums"]["nino_sexo"] | null
           updated_at: string
         }
         Insert: {
@@ -2838,7 +2766,9 @@ export type Database = {
           direccion_ciudad?: string | null
           direccion_cp?: string | null
           direccion_numero?: string | null
-          estado_civil_familia?: Database['public']['Enums']['estado_civil'] | null
+          estado_civil_familia?:
+            | Database["public"]["Enums"]["estado_civil"]
+            | null
           fecha_nacimiento?: string | null
           foto_url?: string | null
           id?: string
@@ -2849,7 +2779,7 @@ export type Database = {
           notas_admin?: string | null
           puede_aparecer_en_fotos?: boolean
           requiere_ambos_firmantes?: boolean
-          sexo?: Database['public']['Enums']['nino_sexo'] | null
+          sexo?: Database["public"]["Enums"]["nino_sexo"] | null
           updated_at?: string
         }
         Update: {
@@ -2861,7 +2791,9 @@ export type Database = {
           direccion_ciudad?: string | null
           direccion_cp?: string | null
           direccion_numero?: string | null
-          estado_civil_familia?: Database['public']['Enums']['estado_civil'] | null
+          estado_civil_familia?:
+            | Database["public"]["Enums"]["estado_civil"]
+            | null
           fecha_nacimiento?: string | null
           foto_url?: string | null
           id?: string
@@ -2872,16 +2804,16 @@ export type Database = {
           notas_admin?: string | null
           puede_aparecer_en_fotos?: boolean
           requiere_ambos_firmantes?: boolean
-          sexo?: Database['public']['Enums']['nino_sexo'] | null
+          sexo?: Database["public"]["Enums"]["nino_sexo"] | null
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'ninos_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "ninos_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2896,7 +2828,7 @@ export type Database = {
           solicitado_en: string
           solicitado_por: string | null
           sujeto_id: string
-          sujeto_tipo: Database['public']['Enums']['olvido_sujeto_tipo']
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
         }
         Insert: {
           centro_id: string
@@ -2908,7 +2840,7 @@ export type Database = {
           solicitado_en?: string
           solicitado_por?: string | null
           sujeto_id: string
-          sujeto_tipo: Database['public']['Enums']['olvido_sujeto_tipo']
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
         }
         Update: {
           centro_id?: string
@@ -2920,22 +2852,70 @@ export type Database = {
           solicitado_en?: string
           solicitado_por?: string | null
           sujeto_id?: string
-          sujeto_tipo?: Database['public']['Enums']['olvido_sujeto_tipo']
+          sujeto_tipo?: Database["public"]["Enums"]["olvido_sujeto_tipo"]
         }
         Relationships: [
           {
-            foreignKeyName: 'olvido_solicitudes_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "olvido_solicitudes_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'olvido_solicitudes_solicitado_por_fkey'
-            columns: ['solicitado_por']
+            foreignKeyName: "olvido_solicitudes_solicitado_por_fkey"
+            columns: ["solicitado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parte_servicio_diario: {
+        Row: {
+          centro_id: string
+          created_at: string
+          fecha: string
+          id: string
+          nino_id: string
+          presente: boolean
+          servicio: Database["public"]["Enums"]["servicio_diario"]
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          fecha: string
+          id?: string
+          nino_id: string
+          presente?: boolean
+          servicio: Database["public"]["Enums"]["servicio_diario"]
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          fecha?: string
+          id?: string
+          nino_id?: string
+          presente?: boolean
+          servicio?: Database["public"]["Enums"]["servicio_diario"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parte_servicio_diario_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parte_servicio_diario_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2946,7 +2926,7 @@ export type Database = {
           centro_id: string
           creado_por: string
           created_at: string
-          estado: Database['public']['Enums']['estado_plantilla_informe']
+          estado: Database["public"]["Enums"]["estado_plantilla_informe"]
           estructura: Json
           id: string
           titulo: string
@@ -2958,7 +2938,7 @@ export type Database = {
           centro_id: string
           creado_por: string
           created_at?: string
-          estado?: Database['public']['Enums']['estado_plantilla_informe']
+          estado?: Database["public"]["Enums"]["estado_plantilla_informe"]
           estructura?: Json
           id?: string
           titulo: string
@@ -2970,7 +2950,7 @@ export type Database = {
           centro_id?: string
           creado_por?: string
           created_at?: string
-          estado?: Database['public']['Enums']['estado_plantilla_informe']
+          estado?: Database["public"]["Enums"]["estado_plantilla_informe"]
           estructura?: Json
           id?: string
           titulo?: string
@@ -2978,25 +2958,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'plantillas_informe_archivada_por_fkey'
-            columns: ['archivada_por']
+            foreignKeyName: "plantillas_informe_archivada_por_fkey"
+            columns: ["archivada_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'plantillas_informe_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "plantillas_informe_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'plantillas_informe_creado_por_fkey'
-            columns: ['creado_por']
+            foreignKeyName: "plantillas_informe_creado_por_fkey"
+            columns: ["creado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3007,7 +2987,7 @@ export type Database = {
           creada_por: string | null
           created_at: string
           deleted_at: string | null
-          estado: Database['public']['Enums']['estado_plantilla_menu']
+          estado: Database["public"]["Enums"]["estado_plantilla_menu"]
           id: string
           mes: number
           updated_at: string
@@ -3018,7 +2998,7 @@ export type Database = {
           creada_por?: string | null
           created_at?: string
           deleted_at?: string | null
-          estado?: Database['public']['Enums']['estado_plantilla_menu']
+          estado?: Database["public"]["Enums"]["estado_plantilla_menu"]
           id?: string
           mes: number
           updated_at?: string
@@ -3029,25 +3009,25 @@ export type Database = {
           creada_por?: string | null
           created_at?: string
           deleted_at?: string | null
-          estado?: Database['public']['Enums']['estado_plantilla_menu']
+          estado?: Database["public"]["Enums"]["estado_plantilla_menu"]
           id?: string
           mes?: number
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'plantillas_menu_mensual_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "plantillas_menu_mensual_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'plantillas_menu_mensual_creada_por_fkey'
-            columns: ['creada_por']
+            foreignKeyName: "plantillas_menu_mensual_creada_por_fkey"
+            columns: ["creada_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3072,11 +3052,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'preferencias_usuario_usuario_id_fkey'
-            columns: ['usuario_id']
+            foreignKeyName: "preferencias_usuario_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3091,7 +3071,7 @@ export type Database = {
           fecha_inicio: string
           id: string
           profe_id: string
-          tipo_personal_aula: Database['public']['Enums']['tipo_personal_aula']
+          tipo_personal_aula: Database["public"]["Enums"]["tipo_personal_aula"]
         }
         Insert: {
           aula_id: string
@@ -3103,7 +3083,7 @@ export type Database = {
           fecha_inicio?: string
           id?: string
           profe_id: string
-          tipo_personal_aula?: Database['public']['Enums']['tipo_personal_aula']
+          tipo_personal_aula?: Database["public"]["Enums"]["tipo_personal_aula"]
         }
         Update: {
           aula_id?: string
@@ -3115,29 +3095,29 @@ export type Database = {
           fecha_inicio?: string
           id?: string
           profe_id?: string
-          tipo_personal_aula?: Database['public']['Enums']['tipo_personal_aula']
+          tipo_personal_aula?: Database["public"]["Enums"]["tipo_personal_aula"]
         }
         Relationships: [
           {
-            foreignKeyName: 'profes_aulas_aula_id_fkey'
-            columns: ['aula_id']
+            foreignKeyName: "profes_aulas_aula_id_fkey"
+            columns: ["aula_id"]
             isOneToOne: false
-            referencedRelation: 'aulas'
-            referencedColumns: ['id']
+            referencedRelation: "aulas"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'profes_aulas_curso_academico_id_fkey'
-            columns: ['curso_academico_id']
+            foreignKeyName: "profes_aulas_curso_academico_id_fkey"
+            columns: ["curso_academico_id"]
             isOneToOne: false
-            referencedRelation: 'cursos_academicos'
-            referencedColumns: ['id']
+            referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'profes_aulas_profe_id_fkey'
-            columns: ['profe_id']
+            foreignKeyName: "profes_aulas_profe_id_fkey"
+            columns: ["profe_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3171,25 +3151,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'publicaciones_aula_id_fkey'
-            columns: ['aula_id']
+            foreignKeyName: "publicaciones_aula_id_fkey"
+            columns: ["aula_id"]
             isOneToOne: false
-            referencedRelation: 'aulas'
-            referencedColumns: ['id']
+            referencedRelation: "aulas"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'publicaciones_autor_id_fkey'
-            columns: ['autor_id']
+            foreignKeyName: "publicaciones_autor_id_fkey"
+            columns: ["autor_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'publicaciones_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "publicaciones_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3229,11 +3209,136 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'push_subscriptions_usuario_id_fkey'
-            columns: ['usuario_id']
+            foreignKeyName: "push_subscriptions_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recibos: {
+        Row: {
+          anio: number
+          centro_id: string
+          concepto_esporadico: string | null
+          created_at: string
+          deleted_at: string | null
+          devuelto_de_recibo_id: string | null
+          es_esporadico: boolean
+          estado: Database["public"]["Enums"]["estado_recibo"]
+          fecha_devolucion: string | null
+          fecha_envio_banco: string | null
+          id: string
+          mes: number
+          metodo: Database["public"]["Enums"]["metodo_pago"] | null
+          nino_id: string
+          total_centimos: number
+          updated_at: string
+        }
+        Insert: {
+          anio: number
+          centro_id: string
+          concepto_esporadico?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          devuelto_de_recibo_id?: string | null
+          es_esporadico?: boolean
+          estado?: Database["public"]["Enums"]["estado_recibo"]
+          fecha_devolucion?: string | null
+          fecha_envio_banco?: string | null
+          id?: string
+          mes: number
+          metodo?: Database["public"]["Enums"]["metodo_pago"] | null
+          nino_id: string
+          total_centimos?: number
+          updated_at?: string
+        }
+        Update: {
+          anio?: number
+          centro_id?: string
+          concepto_esporadico?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          devuelto_de_recibo_id?: string | null
+          es_esporadico?: boolean
+          estado?: Database["public"]["Enums"]["estado_recibo"]
+          fecha_devolucion?: string | null
+          fecha_envio_banco?: string | null
+          id?: string
+          mes?: number
+          metodo?: Database["public"]["Enums"]["metodo_pago"] | null
+          nino_id?: string
+          total_centimos?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recibos_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recibos_devuelto_de_recibo_id_fkey"
+            columns: ["devuelto_de_recibo_id"]
+            isOneToOne: false
+            referencedRelation: "recibos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recibos_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recibos_remesa: {
+        Row: {
+          centro_id: string
+          created_at: string
+          id: string
+          recibo_id: string
+          remesa_id: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          id?: string
+          recibo_id: string
+          remesa_id: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          id?: string
+          recibo_id?: string
+          remesa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recibos_remesa_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recibos_remesa_recibo_id_fkey"
+            columns: ["recibo_id"]
+            isOneToOne: false
+            referencedRelation: "recibos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recibos_remesa_remesa_id_fkey"
+            columns: ["remesa_id"]
+            isOneToOne: false
+            referencedRelation: "remesas"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3246,7 +3351,7 @@ export type Database = {
           creado_por: string
           created_at: string
           descripcion: string | null
-          destinatario: Database['public']['Enums']['recordatorio_destinatario']
+          destinatario: Database["public"]["Enums"]["recordatorio_destinatario"]
           erroneo: boolean
           id: string
           nino_id: string | null
@@ -3263,7 +3368,7 @@ export type Database = {
           creado_por: string
           created_at?: string
           descripcion?: string | null
-          destinatario: Database['public']['Enums']['recordatorio_destinatario']
+          destinatario: Database["public"]["Enums"]["recordatorio_destinatario"]
           erroneo?: boolean
           id?: string
           nino_id?: string | null
@@ -3280,7 +3385,7 @@ export type Database = {
           creado_por?: string
           created_at?: string
           descripcion?: string | null
-          destinatario?: Database['public']['Enums']['recordatorio_destinatario']
+          destinatario?: Database["public"]["Enums"]["recordatorio_destinatario"]
           erroneo?: boolean
           id?: string
           nino_id?: string | null
@@ -3291,54 +3396,98 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'recordatorios_aula_id_fkey'
-            columns: ['aula_id']
+            foreignKeyName: "recordatorios_aula_id_fkey"
+            columns: ["aula_id"]
             isOneToOne: false
-            referencedRelation: 'aulas'
-            referencedColumns: ['id']
+            referencedRelation: "aulas"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'recordatorios_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "recordatorios_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'recordatorios_completado_por_fkey'
-            columns: ['completado_por']
+            foreignKeyName: "recordatorios_completado_por_fkey"
+            columns: ["completado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'recordatorios_creado_por_fkey'
-            columns: ['creado_por']
+            foreignKeyName: "recordatorios_creado_por_fkey"
+            columns: ["creado_por"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'recordatorios_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "recordatorios_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'recordatorios_usuario_destinatario_id_fkey'
-            columns: ['usuario_destinatario_id']
+            foreignKeyName: "recordatorios_usuario_destinatario_id_fkey"
+            columns: ["usuario_destinatario_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      remesas: {
+        Row: {
+          anio: number
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          estado: Database["public"]["Enums"]["estado_remesa"]
+          fecha_envio_banco: string | null
+          id: string
+          mes: number
+          updated_at: string
+        }
+        Insert: {
+          anio: number
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          estado?: Database["public"]["Enums"]["estado_remesa"]
+          fecha_envio_banco?: string | null
+          id?: string
+          mes: number
+          updated_at?: string
+        }
+        Update: {
+          anio?: number
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          estado?: Database["public"]["Enums"]["estado_remesa"]
+          fecha_envio_banco?: string | null
+          id?: string
+          mes?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remesas_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
         ]
       }
       retencion_ejecuciones: {
         Row: {
-          accion: Database['public']['Enums']['retencion_accion']
+          accion: Database["public"]["Enums"]["retencion_accion"]
           bucket: string
-          categoria: Database['public']['Enums']['retencion_categoria']
+          categoria: Database["public"]["Enums"]["retencion_categoria"]
           centro_id: string
           ejecutado_en: string
           id: string
@@ -3348,9 +3497,9 @@ export type Database = {
           ref_tipo: string | null
         }
         Insert: {
-          accion: Database['public']['Enums']['retencion_accion']
+          accion: Database["public"]["Enums"]["retencion_accion"]
           bucket: string
-          categoria: Database['public']['Enums']['retencion_categoria']
+          categoria: Database["public"]["Enums"]["retencion_categoria"]
           centro_id: string
           ejecutado_en?: string
           id?: string
@@ -3360,9 +3509,9 @@ export type Database = {
           ref_tipo?: string | null
         }
         Update: {
-          accion?: Database['public']['Enums']['retencion_accion']
+          accion?: Database["public"]["Enums"]["retencion_accion"]
           bucket?: string
-          categoria?: Database['public']['Enums']['retencion_categoria']
+          categoria?: Database["public"]["Enums"]["retencion_categoria"]
           centro_id?: string
           ejecutado_en?: string
           id?: string
@@ -3373,11 +3522,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'retencion_ejecuciones_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "retencion_ejecuciones_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3387,7 +3536,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           id: string
-          rol: Database['public']['Enums']['user_role']
+          rol: Database["public"]["Enums"]["user_role"]
           usuario_id: string
         }
         Insert: {
@@ -3395,7 +3544,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
-          rol: Database['public']['Enums']['user_role']
+          rol: Database["public"]["Enums"]["user_role"]
           usuario_id: string
         }
         Update: {
@@ -3403,30 +3552,30 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
-          rol?: Database['public']['Enums']['user_role']
+          rol?: Database["public"]["Enums"]["user_role"]
           usuario_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'roles_usuario_centro_id_fkey'
-            columns: ['centro_id']
+            foreignKeyName: "roles_usuario_centro_id_fkey"
+            columns: ["centro_id"]
             isOneToOne: false
-            referencedRelation: 'centros'
-            referencedColumns: ['id']
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'roles_usuario_usuario_id_fkey'
-            columns: ['usuario_id']
+            foreignKeyName: "roles_usuario_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
       suenos: {
         Row: {
           agenda_id: string
-          calidad: Database['public']['Enums']['calidad_sueno'] | null
+          calidad: Database["public"]["Enums"]["calidad_sueno"] | null
           created_at: string
           hora_fin: string | null
           hora_inicio: string
@@ -3436,7 +3585,7 @@ export type Database = {
         }
         Insert: {
           agenda_id: string
-          calidad?: Database['public']['Enums']['calidad_sueno'] | null
+          calidad?: Database["public"]["Enums"]["calidad_sueno"] | null
           created_at?: string
           hora_fin?: string | null
           hora_inicio: string
@@ -3446,7 +3595,7 @@ export type Database = {
         }
         Update: {
           agenda_id?: string
-          calidad?: Database['public']['Enums']['calidad_sueno'] | null
+          calidad?: Database["public"]["Enums"]["calidad_sueno"] | null
           created_at?: string
           hora_fin?: string | null
           hora_inicio?: string
@@ -3456,11 +3605,49 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'suenos_agenda_id_fkey'
-            columns: ['agenda_id']
+            foreignKeyName: "suenos_agenda_id_fkey"
+            columns: ["agenda_id"]
             isOneToOne: false
-            referencedRelation: 'agendas_diarias'
-            referencedColumns: ['id']
+            referencedRelation: "agendas_diarias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tipos_beca: {
+        Row: {
+          activo: boolean
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tipos_beca_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3507,9 +3694,9 @@ export type Database = {
           descripcion_parentesco: string | null
           id: string
           nino_id: string
-          parentesco: Database['public']['Enums']['parentesco']
+          parentesco: Database["public"]["Enums"]["parentesco"]
           permisos: Json
-          tipo_vinculo: Database['public']['Enums']['tipo_vinculo']
+          tipo_vinculo: Database["public"]["Enums"]["tipo_vinculo"]
           updated_at: string
           usuario_id: string
         }
@@ -3519,9 +3706,9 @@ export type Database = {
           descripcion_parentesco?: string | null
           id?: string
           nino_id: string
-          parentesco: Database['public']['Enums']['parentesco']
+          parentesco: Database["public"]["Enums"]["parentesco"]
           permisos?: Json
-          tipo_vinculo: Database['public']['Enums']['tipo_vinculo']
+          tipo_vinculo: Database["public"]["Enums"]["tipo_vinculo"]
           updated_at?: string
           usuario_id: string
         }
@@ -3531,26 +3718,26 @@ export type Database = {
           descripcion_parentesco?: string | null
           id?: string
           nino_id?: string
-          parentesco?: Database['public']['Enums']['parentesco']
+          parentesco?: Database["public"]["Enums"]["parentesco"]
           permisos?: Json
-          tipo_vinculo?: Database['public']['Enums']['tipo_vinculo']
+          tipo_vinculo?: Database["public"]["Enums"]["tipo_vinculo"]
           updated_at?: string
           usuario_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'vinculos_familiares_nino_id_fkey'
-            columns: ['nino_id']
+            foreignKeyName: "vinculos_familiares_nino_id_fkey"
+            columns: ["nino_id"]
             isOneToOne: false
-            referencedRelation: 'ninos'
-            referencedColumns: ['id']
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'vinculos_familiares_usuario_id_fkey'
-            columns: ['usuario_id']
+            foreignKeyName: "vinculos_familiares_usuario_id_fkey"
+            columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3560,56 +3747,8 @@ export type Database = {
     }
     Functions: {
       _get_medical_key: { Args: never; Returns: string }
+      _get_sepa_key: { Args: never; Returns: string }
       _redactar_jsonb: { Args: { claves: string[]; j: Json }; Returns: Json }
-      cerrar_mes_cobros: {
-        Args: { p_anio: number; p_centro_id: string; p_mes: number }
-        Returns: string
-      }
-      crear_recibo_esporadico: {
-        Args: {
-          p_anio: number
-          p_centro_id: string
-          p_concepto: string
-          p_lineas: Json
-          p_mes: number
-          p_metodo: string | null
-          p_nino_id: string
-        }
-        Returns: string
-      }
-      mes_cerrado: {
-        Args: { p_anio: number; p_centro_id: string; p_mes: number }
-        Returns: boolean
-      }
-      get_mandatos_remesa: {
-        Args: { p_remesa_id: string }
-        Returns: {
-          recibo_id: string
-          nino_id: string
-          total_centimos: number
-          identificador_mandato: string | null
-          iban: string | null
-          titular: string | null
-          fecha_mandato: string | null
-        }[]
-      }
-      set_datos_acreedor: {
-        Args: {
-          p_centro_id: string
-          p_identificador_acreedor: string
-          p_bic_acreedor: string
-          p_iban: string | null
-        }
-        Returns: undefined
-      }
-      get_datos_acreedor: {
-        Args: { p_centro_id: string }
-        Returns: {
-          identificador_acreedor: string | null
-          bic_acreedor: string | null
-          iban: string | null
-        }[]
-      }
       actualizar_foto_nino_tutor: {
         Args: { p_foto_path: string; p_nino_id: string }
         Returns: string
@@ -3621,7 +3760,7 @@ export type Database = {
           p_idioma_principal: string
           p_nacionalidad: string
           p_nino_id: string
-          p_sexo: Database['public']['Enums']['nino_sexo']
+          p_sexo: Database["public"]["Enums"]["nino_sexo"]
         }
         Returns: string
       }
@@ -3649,7 +3788,7 @@ export type Database = {
         Args: {
           p_centro_id: string
           p_plantilla_id: string
-          p_tipo: Database['public']['Enums']['tipo_autorizacion']
+          p_tipo: Database["public"]["Enums"]["tipo_autorizacion"]
         }
         Returns: boolean
       }
@@ -3676,9 +3815,27 @@ export type Database = {
         Args: { p_publicacion_id: string }
         Returns: string
       }
+      centro_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
+      centro_de_remesa: { Args: { p_remesa_id: string }; Returns: string }
+      cerrar_mes_cobros: {
+        Args: { p_anio: number; p_centro_id: string; p_mes: number }
+        Returns: string
+      }
       contar_invitaciones_pendientes: { Args: never; Returns: number }
       contar_recordatorios_pendientes: { Args: never; Returns: number }
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
+      crear_recibo_esporadico: {
+        Args: {
+          p_anio: number
+          p_centro_id: string
+          p_concepto: string
+          p_lineas: Json
+          p_mes: number
+          p_metodo: string
+          p_nino_id: string
+        }
+        Returns: string
+      }
       curso_activo_de_centro: { Args: { p_centro_id: string }; Returns: string }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
@@ -3705,6 +3862,14 @@ export type Database = {
       }
       familia_ve_aula: { Args: { p_aula_id: string }; Returns: boolean }
       fecha_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
+      get_datos_acreedor: {
+        Args: { p_centro_id: string }
+        Returns: {
+          bic_acreedor: string
+          iban: string
+          identificador_acreedor: string
+        }[]
+      }
       get_info_medica_emergencia: {
         Args: { p_nino_id: string }
         Returns: {
@@ -3714,6 +3879,18 @@ export type Database = {
           medico_familia: string
           notas_emergencia: string
           telefono_emergencia: string
+        }[]
+      }
+      get_mandatos_remesa: {
+        Args: { p_remesa_id: string }
+        Returns: {
+          fecha_mandato: string
+          iban: string
+          identificador_mandato: string
+          nino_id: string
+          recibo_id: string
+          titular: string
+          total_centimos: number
         }[]
       }
       hoy_madrid: { Args: never; Returns: string }
@@ -3750,17 +3927,22 @@ export type Database = {
           updated_at: string
         }
         SetofOptions: {
-          from: '*'
-          to: 'menu_dia'
+          from: "*"
+          to: "menu_dia"
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      mes_cerrado: {
+        Args: { p_anio: number; p_centro_id: string; p_mes: number }
+        Returns: boolean
       }
       nino_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       nino_de_conversacion: {
         Args: { p_conversacion_id: string }
         Returns: string
       }
+      nino_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       nino_puede_aparecer: { Args: { p_nino_id: string }; Returns: boolean }
       nino_toma_comida_solida: { Args: { p_nino_id: string }; Returns: boolean }
       olvido_pendientes: {
@@ -3770,7 +3952,7 @@ export type Database = {
           gracia_hasta: string
           solicitud_id: string
           sujeto_id: string
-          sujeto_tipo: Database['public']['Enums']['olvido_sujeto_tipo']
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
         }[]
       }
       organizador_de_cita: { Args: { p_cita_id: string }; Returns: string }
@@ -3800,7 +3982,7 @@ export type Database = {
       registrar_consentimiento: {
         Args: {
           p_ip?: unknown
-          p_tipo: Database['public']['Enums']['consentimiento_tipo']
+          p_tipo: Database["public"]["Enums"]["consentimiento_tipo"]
           p_user_agent?: string
           p_usuario_id: string
           p_version: string
@@ -3824,8 +4006,17 @@ export type Database = {
         Returns: string
       }
       revocar_consentimiento: {
-        Args: { p_tipo: Database['public']['Enums']['consentimiento_tipo'] }
+        Args: { p_tipo: Database["public"]["Enums"]["consentimiento_tipo"] }
         Returns: string
+      }
+      set_datos_acreedor: {
+        Args: {
+          p_bic_acreedor: string
+          p_centro_id: string
+          p_iban: string
+          p_identificador_acreedor: string
+        }
+        Returns: undefined
       }
       set_info_medica_emergencia_cifrada: {
         Args: {
@@ -3862,7 +4053,7 @@ export type Database = {
       }
       tiene_consentimiento: {
         Args: {
-          p_tipo: Database['public']['Enums']['consentimiento_tipo']
+          p_tipo: Database["public"]["Enums"]["consentimiento_tipo"]
           p_usuario_id: string
         }
         Returns: boolean
@@ -3873,7 +4064,7 @@ export type Database = {
       }
       tipo_de_dia: {
         Args: { p_centro_id: string; p_fecha: string }
-        Returns: Database['public']['Enums']['tipo_dia_centro']
+        Returns: Database["public"]["Enums"]["tipo_dia_centro"]
       }
       usuario_actual: { Args: never; Returns: string }
       usuario_es_audiencia_anuncio: {
@@ -3882,7 +4073,7 @@ export type Database = {
       }
       usuario_es_audiencia_anuncio_row: {
         Args: {
-          p_ambito: Database['public']['Enums']['ambito_anuncio']
+          p_ambito: Database["public"]["Enums"]["ambito_anuncio"]
           p_aula_id: string
           p_autor_id: string
           p_centro_id: string
@@ -3891,13 +4082,13 @@ export type Database = {
       }
       usuario_es_audiencia_autorizacion_row: {
         Args: {
-          p_ambito: Database['public']['Enums']['autorizacion_ambito']
+          p_ambito: Database["public"]["Enums"]["autorizacion_ambito"]
           p_aula_id: string
           p_centro_id: string
           p_es_plantilla: boolean
           p_evento_id: string
           p_nino_id: string
-          p_tipo: Database['public']['Enums']['tipo_autorizacion']
+          p_tipo: Database["public"]["Enums"]["tipo_autorizacion"]
         }
         Returns: boolean
       }
@@ -3911,7 +4102,7 @@ export type Database = {
       }
       usuario_es_audiencia_evento_row: {
         Args: {
-          p_ambito: Database['public']['Enums']['ambito_evento']
+          p_ambito: Database["public"]["Enums"]["ambito_evento"]
           p_aula_id: string
           p_centro_id: string
           p_nino_id: string
@@ -3921,7 +4112,7 @@ export type Database = {
       usuario_es_audiencia_informe_row: {
         Args: {
           p_centro_id: string
-          p_estado: Database['public']['Enums']['estado_informe']
+          p_estado: Database["public"]["Enums"]["estado_informe"]
           p_nino_id: string
         }
         Returns: boolean
@@ -3940,111 +4131,151 @@ export type Database = {
       }
     }
     Enums: {
-      ambito_anuncio: 'aula' | 'centro'
-      ambito_evento: 'centro' | 'aula' | 'nino'
-      audit_accion: 'INSERT' | 'UPDATE' | 'DELETE'
-      autorizacion_ambito: 'nino' | 'aula' | 'centro'
-      autorizacion_estado: 'borrador' | 'publicada' | 'anulada'
-      calidad_sueno: 'profundo' | 'tranquilo' | 'intermitente' | 'nada'
-      cantidad_comida: 'todo' | 'mayoria' | 'mitad' | 'poco' | 'nada'
-      cantidad_deposicion: 'mucha' | 'normal' | 'poca'
-      cita_estado: 'programada' | 'cancelada'
-      confirmacion_estado: 'pendiente' | 'confirmado' | 'rechazado'
-      consentimiento_tipo: 'terminos' | 'privacidad' | 'imagen' | 'datos_medicos'
-      consistencia_deposicion: 'normal' | 'dura' | 'blanda' | 'diarrea'
-      control_esfinteres: 'panal_completo' | 'transicion' | 'sin_panal_diurno' | 'sin_panal_total'
-      curso_estado: 'planificado' | 'activo' | 'cerrado'
-      estado_asistencia: 'presente' | 'ausente' | 'llegada_tarde' | 'salida_temprana'
-      estado_cambio_pendiente: 'pendiente' | 'aprobado' | 'rechazado'
-      estado_campana_informe: 'abierta' | 'cerrada'
+      ambito_anuncio: "aula" | "centro"
+      ambito_evento: "centro" | "aula" | "nino"
+      audit_accion: "INSERT" | "UPDATE" | "DELETE"
+      autorizacion_ambito: "nino" | "aula" | "centro"
+      autorizacion_estado: "borrador" | "publicada" | "anulada"
+      calidad_sueno: "profundo" | "tranquilo" | "intermitente" | "nada"
+      cantidad_comida: "todo" | "mayoria" | "mitad" | "poco" | "nada"
+      cantidad_deposicion: "mucha" | "normal" | "poca"
+      cita_estado: "programada" | "cancelada"
+      confirmacion_estado: "pendiente" | "confirmado" | "rechazado"
+      consentimiento_tipo:
+        | "terminos"
+        | "privacidad"
+        | "imagen"
+        | "datos_medicos"
+      consistencia_deposicion: "normal" | "dura" | "blanda" | "diarrea"
+      control_esfinteres:
+        | "panal_completo"
+        | "transicion"
+        | "sin_panal_diurno"
+        | "sin_panal_total"
+      curso_estado: "planificado" | "activo" | "cerrado"
+      estado_asistencia:
+        | "presente"
+        | "ausente"
+        | "llegada_tarde"
+        | "salida_temprana"
+      estado_cambio_pendiente: "pendiente" | "aprobado" | "rechazado"
+      estado_campana_informe: "abierta" | "cerrada"
       estado_civil:
-        | 'casados'
-        | 'separados'
-        | 'divorciados'
-        | 'pareja_de_hecho'
-        | 'soltero'
-        | 'viudo'
-      estado_general_agenda: 'bien' | 'regular' | 'mal' | 'mixto'
-      estado_informe: 'borrador' | 'publicado'
-      estado_lista_espera: 'en_espera' | 'invitado' | 'descartado'
-      estado_mandato_sepa: 'activo' | 'revocado'
-      estado_plantilla_informe: 'activa' | 'archivada'
-      estado_plantilla_menu: 'borrador' | 'publicada' | 'archivada'
-      estado_recibo: 'pendiente_procesar' | 'enviado_banco' | 'devuelto' | 'cobrado_manual'
-      estado_remesa: 'borrador' | 'enviada'
-      evento_estado: 'programado' | 'cancelado'
-      firma_decision: 'firmado' | 'rechazado' | 'revocado'
-      humor_agenda: 'feliz' | 'tranquilo' | 'inquieto' | 'triste' | 'cansado'
-      lactancia_estado: 'materna' | 'biberon' | 'mixta' | 'finalizada' | 'no_aplica'
-      matricula_estado: 'pendiente' | 'lista' | 'activa' | 'baja'
-      metodo_pago: 'sepa' | 'efectivo' | 'transferencia'
-      modalidad_cobro: 'mensual' | 'diario'
-      momento_comida: 'desayuno' | 'media_manana' | 'comida' | 'merienda'
-      motivo_ausencia: 'enfermedad' | 'cita_medica' | 'vacaciones' | 'familiar' | 'otro'
-      nino_sexo: 'F' | 'M' | 'X'
-      olvido_sujeto_tipo: 'usuario' | 'nino'
+        | "casados"
+        | "separados"
+        | "divorciados"
+        | "pareja_de_hecho"
+        | "soltero"
+        | "viudo"
+      estado_general_agenda: "bien" | "regular" | "mal" | "mixto"
+      estado_informe: "borrador" | "publicado"
+      estado_lista_espera: "en_espera" | "invitado" | "descartado"
+      estado_mandato_sepa: "activo" | "revocado"
+      estado_plantilla_informe: "activa" | "archivada"
+      estado_plantilla_menu: "borrador" | "publicada" | "archivada"
+      estado_recibo:
+        | "pendiente_procesar"
+        | "enviado_banco"
+        | "devuelto"
+        | "cobrado_manual"
+      estado_remesa: "borrador" | "enviada"
+      evento_estado: "programado" | "cancelado"
+      firma_decision: "firmado" | "rechazado" | "revocado"
+      humor_agenda: "feliz" | "tranquilo" | "inquieto" | "triste" | "cansado"
+      lactancia_estado:
+        | "materna"
+        | "biberon"
+        | "mixta"
+        | "finalizada"
+        | "no_aplica"
+      matricula_estado: "pendiente" | "lista" | "activa" | "baja"
+      metodo_pago: "sepa" | "efectivo" | "transferencia"
+      modalidad_cobro: "mensual" | "diario"
+      momento_comida: "desayuno" | "media_manana" | "comida" | "merienda"
+      motivo_ausencia:
+        | "enfermedad"
+        | "cita_medica"
+        | "vacaciones"
+        | "familiar"
+        | "otro"
+      nino_sexo: "F" | "M" | "X"
+      olvido_sujeto_tipo: "usuario" | "nino"
       parentesco:
-        | 'madre'
-        | 'padre'
-        | 'abuela'
-        | 'abuelo'
-        | 'tia'
-        | 'tio'
-        | 'hermana'
-        | 'hermano'
-        | 'cuidadora'
-        | 'otro'
-      periodo_informe: 'trimestre_1' | 'trimestre_2' | 'trimestre_3' | 'fin_curso'
-      politica_firmantes: 'uno_principal' | 'todos_los_principales' | 'cualquiera'
+        | "madre"
+        | "padre"
+        | "abuela"
+        | "abuelo"
+        | "tia"
+        | "tio"
+        | "hermana"
+        | "hermano"
+        | "cuidadora"
+        | "otro"
+      periodo_informe:
+        | "trimestre_1"
+        | "trimestre_2"
+        | "trimestre_3"
+        | "fin_curso"
+      politica_firmantes:
+        | "uno_principal"
+        | "todos_los_principales"
+        | "cualquiera"
       recordatorio_destinatario:
-        | 'familia_individual'
-        | 'familias_aula'
-        | 'familias_centro'
-        | 'profe_individual'
-        | 'profes_centro'
-        | 'personal'
-      retencion_accion: 'simulado' | 'purgado'
+        | "familia_individual"
+        | "familias_aula"
+        | "familias_centro"
+        | "profe_individual"
+        | "profes_centro"
+        | "personal"
+      retencion_accion: "simulado" | "purgado"
       retencion_categoria:
-        | 'dni_recogida'
-        | 'foto_perfil_nino'
-        | 'foto_blog_exclusiva'
-        | 'esqueleto_huerfano'
-      rsvp_estado: 'pendiente' | 'aceptado' | 'rechazado'
-      servicio_diario: 'comedor' | 'matinera' | 'vespertina'
+        | "dni_recogida"
+        | "foto_perfil_nino"
+        | "foto_blog_exclusiva"
+        | "esqueleto_huerfano"
+      rsvp_estado: "pendiente" | "aceptado" | "rechazado"
+      servicio_diario: "comedor" | "matinera" | "vespertina"
       tipo_alimentacion:
-        | 'omnivora'
-        | 'vegetariana'
-        | 'vegana'
-        | 'sin_lactosa'
-        | 'sin_gluten'
-        | 'religiosa_halal'
-        | 'religiosa_kosher'
-        | 'otra'
+        | "omnivora"
+        | "vegetariana"
+        | "vegana"
+        | "sin_lactosa"
+        | "sin_gluten"
+        | "religiosa_halal"
+        | "religiosa_kosher"
+        | "otra"
       tipo_autorizacion:
-        | 'salida'
-        | 'medicacion'
-        | 'recogida'
-        | 'reglas_regimen_interno'
-        | 'autorizacion_imagenes'
-      tipo_biberon: 'materna' | 'formula' | 'agua' | 'infusion' | 'zumo'
-      tipo_cita: 'reunion_familia' | 'reunion_clase' | 'reunion_claustro' | 'visita'
-      tipo_concepto: 'mensual' | 'diario' | 'esporadico'
-      tipo_conversacion: 'profe_familia' | 'admin_familia'
-      tipo_deposicion: 'pipi' | 'caca' | 'mixto'
+        | "salida"
+        | "medicacion"
+        | "recogida"
+        | "reglas_regimen_interno"
+        | "autorizacion_imagenes"
+      tipo_biberon: "materna" | "formula" | "agua" | "infusion" | "zumo"
+      tipo_cita:
+        | "reunion_familia"
+        | "reunion_clase"
+        | "reunion_claustro"
+        | "visita"
+      tipo_concepto: "mensual" | "diario" | "esporadico"
+      tipo_conversacion: "profe_familia" | "admin_familia"
+      tipo_deposicion: "pipi" | "caca" | "mixto"
       tipo_dia_centro:
-        | 'lectivo'
-        | 'festivo'
-        | 'vacaciones'
-        | 'escuela_verano'
-        | 'escuela_navidad'
-        | 'jornada_reducida'
-        | 'cerrado'
-      tipo_evento: 'excursion' | 'reunion' | 'fiesta' | 'vacaciones' | 'otro'
-      tipo_personal_aula: 'coordinadora' | 'profesora' | 'tecnico' | 'apoyo'
-      tipo_plato_comida: 'primer_plato' | 'segundo_plato' | 'postre' | 'unico'
-      tipo_vinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado'
-      user_role: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
-      valoracion_item_informe: 'conseguido' | 'en_proceso' | 'no_iniciado'
+        | "lectivo"
+        | "festivo"
+        | "vacaciones"
+        | "escuela_verano"
+        | "escuela_navidad"
+        | "jornada_reducida"
+        | "cerrado"
+      tipo_evento: "excursion" | "reunion" | "fiesta" | "vacaciones" | "otro"
+      tipo_personal_aula: "coordinadora" | "profesora" | "tecnico" | "apoyo"
+      tipo_plato_comida: "primer_plato" | "segundo_plato" | "postre" | "unico"
+      tipo_vinculo:
+        | "tutor_legal_principal"
+        | "tutor_legal_secundario"
+        | "autorizado"
+      user_role: "admin" | "profe" | "tutor_legal" | "autorizado"
+      valoracion_item_informe: "conseguido" | "en_proceso" | "no_iniciado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4052,31 +4283,33 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
-    ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -4085,23 +4318,23 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -4110,23 +4343,23 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -4135,149 +4368,203 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema['Enums']
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
-    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema['CompositeTypes']
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
-    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
-      ambito_anuncio: ['aula', 'centro'],
-      ambito_evento: ['centro', 'aula', 'nino'],
-      audit_accion: ['INSERT', 'UPDATE', 'DELETE'],
-      autorizacion_ambito: ['nino', 'aula', 'centro'],
-      autorizacion_estado: ['borrador', 'publicada', 'anulada'],
-      calidad_sueno: ['profundo', 'tranquilo', 'intermitente', 'nada'],
-      cantidad_comida: ['todo', 'mayoria', 'mitad', 'poco', 'nada'],
-      cantidad_deposicion: ['mucha', 'normal', 'poca'],
-      cita_estado: ['programada', 'cancelada'],
-      confirmacion_estado: ['pendiente', 'confirmado', 'rechazado'],
-      consentimiento_tipo: ['terminos', 'privacidad', 'imagen', 'datos_medicos'],
-      consistencia_deposicion: ['normal', 'dura', 'blanda', 'diarrea'],
-      control_esfinteres: ['panal_completo', 'transicion', 'sin_panal_diurno', 'sin_panal_total'],
-      curso_estado: ['planificado', 'activo', 'cerrado'],
-      estado_asistencia: ['presente', 'ausente', 'llegada_tarde', 'salida_temprana'],
-      estado_cambio_pendiente: ['pendiente', 'aprobado', 'rechazado'],
-      estado_campana_informe: ['abierta', 'cerrada'],
-      estado_civil: ['casados', 'separados', 'divorciados', 'pareja_de_hecho', 'soltero', 'viudo'],
-      estado_general_agenda: ['bien', 'regular', 'mal', 'mixto'],
-      estado_informe: ['borrador', 'publicado'],
-      estado_lista_espera: ['en_espera', 'invitado', 'descartado'],
-      estado_mandato_sepa: ['activo', 'revocado'],
-      estado_plantilla_informe: ['activa', 'archivada'],
-      estado_plantilla_menu: ['borrador', 'publicada', 'archivada'],
-      estado_recibo: ['pendiente_procesar', 'enviado_banco', 'devuelto', 'cobrado_manual'],
-      estado_remesa: ['borrador', 'enviada'],
-      evento_estado: ['programado', 'cancelado'],
-      firma_decision: ['firmado', 'rechazado', 'revocado'],
-      humor_agenda: ['feliz', 'tranquilo', 'inquieto', 'triste', 'cansado'],
-      lactancia_estado: ['materna', 'biberon', 'mixta', 'finalizada', 'no_aplica'],
-      matricula_estado: ['pendiente', 'lista', 'activa', 'baja'],
-      metodo_pago: ['sepa', 'efectivo', 'transferencia'],
-      modalidad_cobro: ['mensual', 'diario'],
-      momento_comida: ['desayuno', 'media_manana', 'comida', 'merienda'],
-      motivo_ausencia: ['enfermedad', 'cita_medica', 'vacaciones', 'familiar', 'otro'],
-      nino_sexo: ['F', 'M', 'X'],
-      olvido_sujeto_tipo: ['usuario', 'nino'],
+      ambito_anuncio: ["aula", "centro"],
+      ambito_evento: ["centro", "aula", "nino"],
+      audit_accion: ["INSERT", "UPDATE", "DELETE"],
+      autorizacion_ambito: ["nino", "aula", "centro"],
+      autorizacion_estado: ["borrador", "publicada", "anulada"],
+      calidad_sueno: ["profundo", "tranquilo", "intermitente", "nada"],
+      cantidad_comida: ["todo", "mayoria", "mitad", "poco", "nada"],
+      cantidad_deposicion: ["mucha", "normal", "poca"],
+      cita_estado: ["programada", "cancelada"],
+      confirmacion_estado: ["pendiente", "confirmado", "rechazado"],
+      consentimiento_tipo: [
+        "terminos",
+        "privacidad",
+        "imagen",
+        "datos_medicos",
+      ],
+      consistencia_deposicion: ["normal", "dura", "blanda", "diarrea"],
+      control_esfinteres: [
+        "panal_completo",
+        "transicion",
+        "sin_panal_diurno",
+        "sin_panal_total",
+      ],
+      curso_estado: ["planificado", "activo", "cerrado"],
+      estado_asistencia: [
+        "presente",
+        "ausente",
+        "llegada_tarde",
+        "salida_temprana",
+      ],
+      estado_cambio_pendiente: ["pendiente", "aprobado", "rechazado"],
+      estado_campana_informe: ["abierta", "cerrada"],
+      estado_civil: [
+        "casados",
+        "separados",
+        "divorciados",
+        "pareja_de_hecho",
+        "soltero",
+        "viudo",
+      ],
+      estado_general_agenda: ["bien", "regular", "mal", "mixto"],
+      estado_informe: ["borrador", "publicado"],
+      estado_lista_espera: ["en_espera", "invitado", "descartado"],
+      estado_mandato_sepa: ["activo", "revocado"],
+      estado_plantilla_informe: ["activa", "archivada"],
+      estado_plantilla_menu: ["borrador", "publicada", "archivada"],
+      estado_recibo: [
+        "pendiente_procesar",
+        "enviado_banco",
+        "devuelto",
+        "cobrado_manual",
+      ],
+      estado_remesa: ["borrador", "enviada"],
+      evento_estado: ["programado", "cancelado"],
+      firma_decision: ["firmado", "rechazado", "revocado"],
+      humor_agenda: ["feliz", "tranquilo", "inquieto", "triste", "cansado"],
+      lactancia_estado: [
+        "materna",
+        "biberon",
+        "mixta",
+        "finalizada",
+        "no_aplica",
+      ],
+      matricula_estado: ["pendiente", "lista", "activa", "baja"],
+      metodo_pago: ["sepa", "efectivo", "transferencia"],
+      modalidad_cobro: ["mensual", "diario"],
+      momento_comida: ["desayuno", "media_manana", "comida", "merienda"],
+      motivo_ausencia: [
+        "enfermedad",
+        "cita_medica",
+        "vacaciones",
+        "familiar",
+        "otro",
+      ],
+      nino_sexo: ["F", "M", "X"],
+      olvido_sujeto_tipo: ["usuario", "nino"],
       parentesco: [
-        'madre',
-        'padre',
-        'abuela',
-        'abuelo',
-        'tia',
-        'tio',
-        'hermana',
-        'hermano',
-        'cuidadora',
-        'otro',
+        "madre",
+        "padre",
+        "abuela",
+        "abuelo",
+        "tia",
+        "tio",
+        "hermana",
+        "hermano",
+        "cuidadora",
+        "otro",
       ],
-      periodo_informe: ['trimestre_1', 'trimestre_2', 'trimestre_3', 'fin_curso'],
-      politica_firmantes: ['uno_principal', 'todos_los_principales', 'cualquiera'],
+      periodo_informe: [
+        "trimestre_1",
+        "trimestre_2",
+        "trimestre_3",
+        "fin_curso",
+      ],
+      politica_firmantes: [
+        "uno_principal",
+        "todos_los_principales",
+        "cualquiera",
+      ],
       recordatorio_destinatario: [
-        'familia_individual',
-        'familias_aula',
-        'familias_centro',
-        'profe_individual',
-        'profes_centro',
-        'personal',
+        "familia_individual",
+        "familias_aula",
+        "familias_centro",
+        "profe_individual",
+        "profes_centro",
+        "personal",
       ],
-      retencion_accion: ['simulado', 'purgado'],
+      retencion_accion: ["simulado", "purgado"],
       retencion_categoria: [
-        'dni_recogida',
-        'foto_perfil_nino',
-        'foto_blog_exclusiva',
-        'esqueleto_huerfano',
+        "dni_recogida",
+        "foto_perfil_nino",
+        "foto_blog_exclusiva",
+        "esqueleto_huerfano",
       ],
-      rsvp_estado: ['pendiente', 'aceptado', 'rechazado'],
-      servicio_diario: ['comedor', 'matinera', 'vespertina'],
+      rsvp_estado: ["pendiente", "aceptado", "rechazado"],
+      servicio_diario: ["comedor", "matinera", "vespertina"],
       tipo_alimentacion: [
-        'omnivora',
-        'vegetariana',
-        'vegana',
-        'sin_lactosa',
-        'sin_gluten',
-        'religiosa_halal',
-        'religiosa_kosher',
-        'otra',
+        "omnivora",
+        "vegetariana",
+        "vegana",
+        "sin_lactosa",
+        "sin_gluten",
+        "religiosa_halal",
+        "religiosa_kosher",
+        "otra",
       ],
       tipo_autorizacion: [
-        'salida',
-        'medicacion',
-        'recogida',
-        'reglas_regimen_interno',
-        'autorizacion_imagenes',
+        "salida",
+        "medicacion",
+        "recogida",
+        "reglas_regimen_interno",
+        "autorizacion_imagenes",
       ],
-      tipo_biberon: ['materna', 'formula', 'agua', 'infusion', 'zumo'],
-      tipo_cita: ['reunion_familia', 'reunion_clase', 'reunion_claustro', 'visita'],
-      tipo_concepto: ['mensual', 'diario', 'esporadico'],
-      tipo_conversacion: ['profe_familia', 'admin_familia'],
-      tipo_deposicion: ['pipi', 'caca', 'mixto'],
+      tipo_biberon: ["materna", "formula", "agua", "infusion", "zumo"],
+      tipo_cita: [
+        "reunion_familia",
+        "reunion_clase",
+        "reunion_claustro",
+        "visita",
+      ],
+      tipo_concepto: ["mensual", "diario", "esporadico"],
+      tipo_conversacion: ["profe_familia", "admin_familia"],
+      tipo_deposicion: ["pipi", "caca", "mixto"],
       tipo_dia_centro: [
-        'lectivo',
-        'festivo',
-        'vacaciones',
-        'escuela_verano',
-        'escuela_navidad',
-        'jornada_reducida',
-        'cerrado',
+        "lectivo",
+        "festivo",
+        "vacaciones",
+        "escuela_verano",
+        "escuela_navidad",
+        "jornada_reducida",
+        "cerrado",
       ],
-      tipo_evento: ['excursion', 'reunion', 'fiesta', 'vacaciones', 'otro'],
-      tipo_personal_aula: ['coordinadora', 'profesora', 'tecnico', 'apoyo'],
-      tipo_plato_comida: ['primer_plato', 'segundo_plato', 'postre', 'unico'],
-      tipo_vinculo: ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'],
-      user_role: ['admin', 'profe', 'tutor_legal', 'autorizado'],
-      valoracion_item_informe: ['conseguido', 'en_proceso', 'no_iniciado'],
+      tipo_evento: ["excursion", "reunion", "fiesta", "vacaciones", "otro"],
+      tipo_personal_aula: ["coordinadora", "profesora", "tecnico", "apoyo"],
+      tipo_plato_comida: ["primer_plato", "segundo_plato", "postre", "unico"],
+      tipo_vinculo: [
+        "tutor_legal_principal",
+        "tutor_legal_secundario",
+        "autorizado",
+      ],
+      user_role: ["admin", "profe", "tutor_legal", "autorizado"],
+      valoracion_item_informe: ["conseguido", "en_proceso", "no_iniciado"],
     },
   },
 } as const

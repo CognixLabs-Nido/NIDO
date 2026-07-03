@@ -40,7 +40,13 @@ export async function crearReciboEsporadico(
     p_anio: parsed.data.anio,
     p_mes: parsed.data.mes,
     p_concepto: parsed.data.concepto,
-    p_metodo: parsed.data.metodo,
+    // `as string`: el generador de tipos de Supabase NO expresa la nulabilidad de los
+    // argumentos de RPC (Postgres no reporta si un parámetro admite NULL), así que emite
+    // `p_metodo: string`. El runtime SÍ acepta null a propósito (la función SQL declara
+    // `p_metodo text` sin NOT NULL). El cast solo compensa esa limitación del generador:
+    // NO lo elimines ni lo "arregles" — sin él, cada regeneración de database.ts rompe el
+    // typecheck. Ver PR de resync de database.ts.
+    p_metodo: parsed.data.metodo as string,
     p_lineas: lineas,
   })
 
