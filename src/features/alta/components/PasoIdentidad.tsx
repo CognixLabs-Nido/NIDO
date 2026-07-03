@@ -64,6 +64,7 @@ export function PasoIdentidad({ ninoId, ninoNombre, inicial, onNext }: Props) {
     resolver: zodResolver(actualizarNinoTutorSchema),
     defaultValues: {
       nino_id: ninoId,
+      nombre: ninoNombre,
       apellidos: inicial.apellidos ?? '',
       fecha_nacimiento: inicial.fecha_nacimiento ?? '',
       sexo: inicial.sexo,
@@ -94,14 +95,21 @@ export function PasoIdentidad({ ninoId, ninoNombre, inicial, onNext }: Props) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-        {/* Nombre: lo fija la dirección al crear el esqueleto; el tutor no lo edita
-            (la RPC `actualizar_identidad_nino_tutor` no lo incluye). Read-only. */}
-        <FormItem>
-          <FormLabel>{tNino('fields.nombre')}</FormLabel>
-          <FormControl>
-            <Input value={ninoNombre} disabled readOnly />
-          </FormControl>
-        </FormItem>
+        {/* Nombre editable por el tutor (PR-4c-2): la RPC `actualizar_identidad_nino_tutor`
+            ya incluye `p_nombre` (COALESCE = preservar). Mismo camino whitelisteado. */}
+        <FormField
+          control={form.control}
+          name="nombre"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{tNino('fields.nombre')}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="apellidos"

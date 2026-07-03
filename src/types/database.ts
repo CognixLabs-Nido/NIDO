@@ -3760,6 +3760,7 @@ export type Database = {
           p_idioma_principal: string
           p_nacionalidad: string
           p_nino_id: string
+          p_nombre?: string
           p_sexo: Database["public"]["Enums"]["nino_sexo"]
         }
         Returns: string
