@@ -653,6 +653,7 @@
       "borrar_confirma": "Vols descartar {nombre} de la llista d’espera?",
       "fields": {
         "nombre_nino": "Nom del xiquet",
+        "apellidos_nino": "Cognoms del xiquet",
         "fecha_nacimiento": "Data de naixement",
         "contacto": "Contacte",
         "telefono_tutor": "Telèfon",
@@ -3188,7 +3189,9 @@
       "invalid": "Dades no vàlides.",
       "id_invalido": "Identificador no vàlid.",
       "nombre_requerido": "El nom és obligatori.",
+      "apellidos_requerido": "Els cognoms són obligatoris.",
       "nombre_largo": "Nom massa llarg.",
+      "apellidos_largo": "Cognoms massa llargs.",
       "fecha_invalida": "Data no vàlida.",
       "telefono_largo": "Telèfon massa llarg.",
       "email_largo": "Correu massa llarg.",

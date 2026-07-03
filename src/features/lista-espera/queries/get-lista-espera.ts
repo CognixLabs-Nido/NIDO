@@ -8,6 +8,7 @@ import type { Database } from '@/types/database'
 export interface ProspectoListItem {
   id: string
   nombre_nino: string
+  apellidos_nino: string | null
   fecha_nacimiento: string | null
   telefono_tutor: string | null
   email_tutor: string | null
@@ -33,7 +34,7 @@ export async function getListaEsperaCore(
   const { data } = await supabase
     .from('lista_espera')
     .select(
-      'id, nombre_nino, fecha_nacimiento, telefono_tutor, email_tutor, nota, posicion, estado'
+      'id, nombre_nino, apellidos_nino, fecha_nacimiento, telefono_tutor, email_tutor, nota, posicion, estado'
     )
     .eq('curso_academico_id', cursoAcademicoId)
     .neq('estado', 'descartado')

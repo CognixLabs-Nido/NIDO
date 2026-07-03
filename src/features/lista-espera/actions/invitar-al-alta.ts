@@ -67,7 +67,7 @@ export async function invitarAlAlta(
   // Prospecto (RLS admin lo acota a su centro). Debe estar en espera y tener email.
   const { data: prospecto } = await supabase
     .from('lista_espera')
-    .select('id, centro_id, nombre_nino, fecha_nacimiento, email_tutor, estado')
+    .select('id, centro_id, nombre_nino, apellidos_nino, fecha_nacimiento, email_tutor, estado')
     .eq('id', parsed.data.id)
     .maybeSingle()
   if (!prospecto || prospecto.centro_id !== centroId)
@@ -77,12 +77,15 @@ export async function invitarAlAlta(
 
   const service = createServiceRoleClient()
 
-  // 1. Esqueleto de niño (apellidos NULL → los completa el tutor en el wizard).
+  // 1. Esqueleto de niño con nombre y apellidos SEPARADOS (PR-4c-1). Prospectos previos a la
+  //    columna `apellidos_nino` la traen NULL → `ninos.apellidos` queda NULL (nullable desde
+  //    P2b); el tutor lo completa en el wizard (editable en 4c-2). No rompe la invitación.
   const { data: nino, error: ninoErr } = await service
     .from('ninos')
     .insert({
       centro_id: centroId,
       nombre: prospecto.nombre_nino,
+      apellidos: prospecto.apellidos_nino,
       fecha_nacimiento: prospecto.fecha_nacimiento,
     })
     .select('id')

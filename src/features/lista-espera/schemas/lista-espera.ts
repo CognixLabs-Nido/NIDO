@@ -9,6 +9,13 @@ const camposProspecto = {
     .trim()
     .min(1, 'listaEspera.validation.nombre_requerido')
     .max(120, 'listaEspera.validation.nombre_largo'),
+  // Apellidos separados del nombre (PR-4c-1). Obligatorio en el formulario para datos
+  // limpios; la columna en BD es nullable solo por los prospectos previos a esta columna.
+  apellidos_nino: z
+    .string()
+    .trim()
+    .min(1, 'listaEspera.validation.apellidos_requerido')
+    .max(120, 'listaEspera.validation.apellidos_largo'),
   // Inputs de tipo date/text envían ''; lo normalizamos a null (columnas nullables).
   fecha_nacimiento: z
     .string()
