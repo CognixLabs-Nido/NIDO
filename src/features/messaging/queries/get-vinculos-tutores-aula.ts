@@ -43,6 +43,20 @@ export interface VinculoTutorMin {
   tipo_vinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado'
 }
 
+// Los tres tipos de vínculo familiar que devuelve esta query. El ENUM `tipo_vinculo`
+// ganó el valor 'admin' (F11 "Completa Dirección": `rol_firmante` de firmas), que NUNCA
+// es un vínculo de `vinculos_familiares`. El `.in('tipo_vinculo', ...)` de la query ya lo
+// excluye; este type-guard lo refleja para el narrowing de TS (sin cambiar el filtrado).
+const TIPOS_VINCULO_FAMILIAR = [
+  'tutor_legal_principal',
+  'tutor_legal_secundario',
+  'autorizado',
+] as const satisfies readonly VinculoTutorMin['tipo_vinculo'][]
+
+function esTipoVinculoFamiliar(tipo: string): tipo is VinculoTutorMin['tipo_vinculo'] {
+  return (TIPOS_VINCULO_FAMILIAR as readonly string[]).includes(tipo)
+}
+
 export async function getVinculosTutoresAula(
   aulaId: string
 ): Promise<Map<string, VinculoTutorMin[]>> {
@@ -94,6 +108,8 @@ export async function getVinculosTutoresAulaCore(
 
   const map = new Map<string, VinculoTutorMin[]>()
   for (const v of vinculos ?? []) {
+    // El filtro `.in('tipo_vinculo', ...)` ya excluye 'admin'; el guard estrecha el tipo.
+    if (!esTipoVinculoFamiliar(v.tipo_vinculo)) continue
     const bucket = map.get(v.nino_id) ?? []
     bucket.push({
       usuario_id: v.usuario_id,
