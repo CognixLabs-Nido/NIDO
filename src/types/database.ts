@@ -1854,6 +1854,7 @@ export type Database = {
           firmante_id: string
           id: string
           ip_address: unknown
+          metodo_firma: Database["public"]["Enums"]["firma_metodo"]
           nino_id: string
           nombre_tecleado: string
           rol_firmante: Database["public"]["Enums"]["tipo_vinculo"]
@@ -1872,6 +1873,7 @@ export type Database = {
           firmante_id: string
           id?: string
           ip_address?: unknown
+          metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
           nino_id: string
           nombre_tecleado: string
           rol_firmante: Database["public"]["Enums"]["tipo_vinculo"]
@@ -1890,6 +1892,7 @@ export type Database = {
           firmante_id?: string
           id?: string
           ip_address?: unknown
+          metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
           nino_id?: string
           nombre_tecleado?: string
           rol_firmante?: Database["public"]["Enums"]["tipo_vinculo"]
@@ -4182,6 +4185,7 @@ export type Database = {
       estado_remesa: "borrador" | "enviada"
       evento_estado: "programado" | "cancelado"
       firma_decision: "firmado" | "rechazado" | "revocado"
+      firma_metodo: "digital" | "presencial"
       humor_agenda: "feliz" | "tranquilo" | "inquieto" | "triste" | "cansado"
       lactancia_estado:
         | "materna"
@@ -4275,6 +4279,7 @@ export type Database = {
         | "tutor_legal_principal"
         | "tutor_legal_secundario"
         | "autorizado"
+        | "admin"
       user_role: "admin" | "profe" | "tutor_legal" | "autorizado"
       valoracion_item_informe: "conseguido" | "en_proceso" | "no_iniciado"
     }
@@ -4459,6 +4464,7 @@ export const Constants = {
       estado_remesa: ["borrador", "enviada"],
       evento_estado: ["programado", "cancelado"],
       firma_decision: ["firmado", "rechazado", "revocado"],
+      firma_metodo: ["digital", "presencial"],
       humor_agenda: ["feliz", "tranquilo", "inquieto", "triste", "cansado"],
       lactancia_estado: [
         "materna",
@@ -4563,6 +4569,7 @@ export const Constants = {
         "tutor_legal_principal",
         "tutor_legal_secundario",
         "autorizado",
+        "admin",
       ],
       user_role: ["admin", "profe", "tutor_legal", "autorizado"],
       valoracion_item_informe: ["conseguido", "en_proceso", "no_iniciado"],
