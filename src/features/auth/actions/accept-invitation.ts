@@ -25,6 +25,20 @@ function esRolFamilia(rol: string): boolean {
   return (ROLES_FAMILIA as readonly string[]).includes(rol)
 }
 
+// Subconjunto de `tipo_vinculo` que representa un vínculo familiar real. El ENUM ganó
+// el valor 'admin' (F11 "Completa Dirección"), que solo se usa como `rol_firmante` en
+// `firmas_autorizacion` (quién firmó) y NUNCA es un vínculo de `vinculos_familiares` ni
+// de una invitación. Este helper estrecha el valor leído de la invitación a ese
+// subconjunto antes de pasarlo al auto-vínculo (no cambia el comportamiento: una
+// invitación jamás trae 'admin'; la rama es defensiva y cae al fallback por rol).
+type TipoVinculoFamiliar = 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado'
+
+function narrowTipoVinculoInvitacion(
+  tipo: Database['public']['Enums']['tipo_vinculo'] | null
+): TipoVinculoFamiliar | null {
+  return tipo === 'admin' ? null : tipo
+}
+
 /**
  * Crea el vínculo familiar tutor↔niño al aceptar la invitación (auto-vínculo).
  * IDEMPOTENTE: ON CONFLICT (nino_id, usuario_id) DO NOTHING vía upsert con
@@ -39,7 +53,7 @@ async function crearVinculoAutomatico(
     ninoId: string
     usuarioId: string
     rolObjetivo: string
-    tipoVinculoInvitacion: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado' | null
+    tipoVinculoInvitacion: TipoVinculoFamiliar | null
     parentesco: string
     descripcionParentesco: string | null
   }
@@ -206,7 +220,7 @@ export async function acceptInvitationCore(
       ninoId: invitation.nino_id,
       usuarioId: userId,
       rolObjetivo: invitation.rol_objetivo,
-      tipoVinculoInvitacion: invitation.tipo_vinculo,
+      tipoVinculoInvitacion: narrowTipoVinculoInvitacion(invitation.tipo_vinculo),
       parentesco: parsed.data.parentesco,
       descripcionParentesco: parsed.data.descripcionParentesco ?? null,
     })
@@ -364,7 +378,7 @@ export async function acceptPendingInvitationCore(
       ninoId: invitation.nino_id,
       usuarioId: user.id,
       rolObjetivo: invitation.rol_objetivo,
-      tipoVinculoInvitacion: invitation.tipo_vinculo,
+      tipoVinculoInvitacion: narrowTipoVinculoInvitacion(invitation.tipo_vinculo),
       parentesco: vinculo.parentesco,
       descripcionParentesco: vinculo.descripcionParentesco ?? null,
     })
