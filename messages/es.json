@@ -3216,6 +3216,7 @@
       "enviado": "Cambio enviado a validación de dirección."
     },
     "edicion_validada_aviso": "El alta ya está validada. Los cambios en datos o documentos sensibles se enviarán a la dirección para su aprobación antes de aplicarse.",
+    "modo_direccion_aviso": "Modo Dirección — carga de documentación con respaldo en papel. Las firmas se registran a tu nombre como constancia de que tienes la documentación firmada físicamente.",
     "finalizar": {
       "exito": "Alta completada. La dirección la revisará.",
       "incompleto_titulo": "Faltan bloques obligatorios por completar antes de finalizar:",

@@ -3216,6 +3216,7 @@
       "enviado": "Canvi enviat a validació de direcció."
     },
     "edicion_validada_aviso": "L'alta ja està validada. Els canvis en dades o documents sensibles s'enviaran a la direcció per a la seua aprovació abans d'aplicar-se.",
+    "modo_direccion_aviso": "Mode Direcció — càrrega de documentació amb suport en paper. Les firmes es registren al teu nom com a constància que tens la documentació firmada físicament.",
     "finalizar": {
       "exito": "Alta completada. La direcció la revisarà.",
       "incompleto_titulo": "Falten blocs obligatoris per completar abans de finalitzar:",
