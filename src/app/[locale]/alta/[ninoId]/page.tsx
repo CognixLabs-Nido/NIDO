@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { createClient } from '@/lib/supabase/server'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
@@ -17,6 +17,7 @@ import {
 
 import { AltaCompletadaScreen } from '@/features/alta/components/AltaCompletadaScreen'
 import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
+import { resolverEntradaAlta } from '@/features/alta/lib/entrada-alta'
 import { pasoInicialAlta } from '@/features/alta/lib/estado-alta'
 
 import type { MandatoSepaInicial } from '@/features/alta/components/PasoSepa'
@@ -49,7 +50,15 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   } = await supabase.auth.getUser()
   if (!user) notFound()
 
-  // Vínculo activo con el niño (la edición real la gatean las RPCs/RLS por tutela).
+  const nino = await getNinoById(ninoId)
+  if (!nino) notFound()
+
+  // Gate de entrada (PR-3b-2 · B1). Con vínculo activo usuario↔niño → entrada normal de
+  // tutor. Sin vínculo, admin DEL CENTRO DEL NIÑO → MODO DIRECCIÓN (carga de
+  // documentación en papel; la firma va a nombre de la Directora, presencial — eso lo
+  // cablea B2). Profe → su panel; resto (admin de OTRO centro, sin rol) → notFound. El
+  // rol se ata a `nino.centro_id`, NO al centro genérico, para que un admin de otro
+  // centro no entre. La decisión pura vive en `resolverEntradaAlta` (testeada aislada).
   const { data: vinculo } = await supabase
     .from('vinculos_familiares')
     .select('id')
@@ -57,16 +66,16 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .eq('usuario_id', user.id)
     .is('deleted_at', null)
     .maybeSingle()
-  if (!vinculo) {
-    const centroId = await getCentroActualId()
-    const rol = centroId ? await getRolEnCentro(centroId) : null
-    if (rol === 'admin') redirect(`/${locale}/admin`)
-    if (rol === 'profe') redirect(`/${locale}/teacher`)
-    notFound()
-  }
 
-  const nino = await getNinoById(ninoId)
-  if (!nino) notFound()
+  const tieneVinculo = vinculo !== null
+  const entrada = resolverEntradaAlta({
+    tieneVinculo,
+    // Solo consultamos el rol si NO hay vínculo (el tutor no necesita el lookup).
+    rolEnCentroNino: tieneVinculo ? null : await getRolEnCentro(nino.centro_id),
+  })
+  if (entrada.tipo === 'redirect') redirect(`/${locale}/${entrada.destino}`)
+  if (entrada.tipo === 'notfound') notFound()
+  const modoDireccion = entrada.tipo === 'direccion'
 
   const { data: matricula } = await supabase
     .from('matriculas')
@@ -307,6 +316,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         mandatoSepaInicial={mandatoSepaInicial}
         currentUserId={user.id}
         currentUserNombre={perfil?.nombreCompleto ?? ''}
+        modoDireccion={modoDireccion}
       />
     </div>
   )

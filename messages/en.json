@@ -3216,6 +3216,7 @@
       "enviado": "Change sent to management for validation."
     },
     "edicion_validada_aviso": "This registration is already validated. Changes to sensitive data or documents will be sent to management for approval before they take effect.",
+    "modo_direccion_aviso": "Management mode — uploading documentation with paper backing. Signatures are recorded in your name as evidence that you hold the physically signed documents.",
     "finalizar": {
       "exito": "Registration complete. The school will review it.",
       "incompleto_titulo": "Some required sections are still missing before you can finish:",

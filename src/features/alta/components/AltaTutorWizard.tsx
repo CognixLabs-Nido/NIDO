@@ -59,6 +59,12 @@ interface Props {
   mandatoSepaInicial: MandatoSepaInicial | null
   currentUserId: string
   currentUserNombre: string
+  /**
+   * PR-3b-2 · B1: `true` cuando quien abre el wizard es la Dirección del centro del niño
+   * (sin vínculo, admin del centro) cargando la documentación en papel. Lo deriva el gate
+   * server-side (NO de la URL). En B1 solo pinta el banner; los write-paths se cablean en B2.
+   */
+  modoDireccion?: boolean
 }
 
 /**
@@ -95,6 +101,7 @@ export function AltaTutorWizard({
   mandatoSepaInicial,
   currentUserId,
   currentUserNombre,
+  modoDireccion = false,
 }: Props) {
   const t = useTranslations('alta')
   const tErrors = useTranslations()
@@ -156,6 +163,14 @@ export function AltaTutorWizard({
 
   return (
     <Card className="mx-auto max-w-2xl">
+      {modoDireccion && (
+        <div
+          role="note"
+          className="border-accent-warm-300 bg-accent-warm-50 text-accent-warm-800 mx-6 mt-6 rounded-xl border p-3 text-sm"
+        >
+          {t('modo_direccion_aviso')}
+        </div>
+      )}
       <CardHeader>
         <CardTitle>{t(`wizard.paso.${paso}`)}</CardTitle>
         <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
