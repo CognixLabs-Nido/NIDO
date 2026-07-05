@@ -1319,6 +1319,7 @@ export type Database = {
           created_at: string
           id: string
           ip_address: unknown
+          metodo_firma: Database["public"]["Enums"]["firma_metodo"]
           revocado_en: string | null
           tipo: Database["public"]["Enums"]["consentimiento_tipo"]
           user_agent: string | null
@@ -1330,6 +1331,7 @@ export type Database = {
           created_at?: string
           id?: string
           ip_address?: unknown
+          metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
           revocado_en?: string | null
           tipo: Database["public"]["Enums"]["consentimiento_tipo"]
           user_agent?: string | null
@@ -1341,6 +1343,7 @@ export type Database = {
           created_at?: string
           id?: string
           ip_address?: unknown
+          metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
           revocado_en?: string | null
           tipo?: Database["public"]["Enums"]["consentimiento_tipo"]
           user_agent?: string | null
@@ -2356,6 +2359,7 @@ export type Database = {
           id: string
           identificador_mandato: string
           ip_address: unknown
+          metodo_firma: Database["public"]["Enums"]["firma_metodo"]
           nino_id: string
           nombre_tecleado: string | null
           texto_hash: string | null
@@ -2376,6 +2380,7 @@ export type Database = {
           id?: string
           identificador_mandato: string
           ip_address?: unknown
+          metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
           nino_id: string
           nombre_tecleado?: string | null
           texto_hash?: string | null
@@ -2396,6 +2401,7 @@ export type Database = {
           id?: string
           identificador_mandato?: string
           ip_address?: unknown
+          metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
           nino_id?: string
           nombre_tecleado?: string | null
           texto_hash?: string | null
@@ -3986,6 +3992,7 @@ export type Database = {
       registrar_consentimiento: {
         Args: {
           p_ip?: unknown
+          p_metodo?: Database["public"]["Enums"]["firma_metodo"]
           p_tipo: Database["public"]["Enums"]["consentimiento_tipo"]
           p_user_agent?: string
           p_usuario_id: string
@@ -4001,6 +4008,7 @@ export type Database = {
           p_iban: string
           p_identificador_mandato: string
           p_ip_address: unknown
+          p_metodo?: Database["public"]["Enums"]["firma_metodo"]
           p_nino_id: string
           p_nombre_tecleado: string
           p_texto_hash: string
