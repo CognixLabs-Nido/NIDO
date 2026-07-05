@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { parentescoEnum, permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { logger } from '@/shared/lib/logger'
+import { CONSENT_OBLIGATORIOS, CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
 import type { Database } from '@/types/database'
 
 import { fail, ok, type ActionResult } from '../actions/types'
@@ -41,9 +42,13 @@ export interface CrearTutorDirectoParams {
  * `user_metadata.nombre_completo`, así `handle_new_user` lo usa tal cual y NUNCA cae al
  * fallback del local-part del email (el email no guarda relación con el nombre).
  *
- * NO captura consentimientos (términos/privacidad): los presta el propio tutor, no la
- * Dirección → quedan para cuando el tutor entre (PR-3b / activación). Tampoco crea niño ni
- * matrícula: eso lo hace el orquestador ANTES (necesita el `ninoId` aquí).
+ * Consentimientos (términos/privacidad) — PR-3b-2 · B2: la familia firmó TODO en PAPEL, así
+ * que se registran A NOMBRE DEL TUTOR (`p_usuario_id=usuarioId`, vía service-role → el gate
+ * `auth.uid()<>p_usuario_id` no aplica con auth.uid() NULL) y marcados `metodo_firma='presencial'`
+ * (respaldo físico). Espejo del bucle de `acceptInvitationCore` pero en papel: así el tutor
+ * queda con sus acuses completos y NO es re-preguntado al entrar (su caché en `usuarios` se
+ * puebla). No bloquean el alta si fallan (best-effort, se loguea). NO crea niño ni matrícula:
+ * eso lo hace el orquestador ANTES (necesita el `ninoId` aquí).
  *
  * Rollback interno en cascada: si falla rol o vínculo, borra la cuenta recién creada para
  * no dejar un usuario huérfano. El niño/matrícula los revierte el orquestador si esto falla.
@@ -108,6 +113,22 @@ export async function crearTutorDirecto(
     await service.from('roles_usuario').delete().eq('usuario_id', usuarioId)
     await service.auth.admin.deleteUser(usuarioId).catch(() => {})
     return fail('vinculo.errors.create_failed')
+  }
+
+  // Acuses obligatorios (términos + privacidad) A NOMBRE DEL TUTOR, marcados PRESENCIAL:
+  // la familia los firmó en papel; la Directora los deja constancia. Espejo del bucle de
+  // `acceptInvitationCore` pero con `p_metodo='presencial'`. Best-effort: si alguno falla,
+  // se loguea pero NO se revierte la cuenta (el tutor podrá re-consentir al entrar).
+  for (const tipo of CONSENT_OBLIGATORIOS) {
+    const { error: consentErr } = await service.rpc('registrar_consentimiento', {
+      p_usuario_id: usuarioId,
+      p_tipo: tipo,
+      p_version: CONSENT_VERSIONS[tipo],
+      p_metodo: 'presencial',
+    })
+    if (consentErr) {
+      logger.warn('crearTutorDirecto consentimiento presencial', consentErr.message)
+    }
   }
 
   return ok({ usuarioId })

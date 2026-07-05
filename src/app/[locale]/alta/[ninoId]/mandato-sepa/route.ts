@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { esAdminDeCentroDeNino } from '@/features/alta/lib/authz-tutor'
 import { ibanValido, normalizarIban } from '@/features/alta/lib/iban'
 import { MAX_LARGO_IDENTIFICADOR, textoCanonicoMandato } from '@/features/alta/lib/mandato-sepa'
 import { BUCKET_MANDATO_SEPA, firmarRuta } from '@/shared/lib/adjuntos/storage'
@@ -58,6 +59,11 @@ export async function POST(
     .maybeSingle()
   if (!nino) return err('alta.errors.no_autorizado', 403)
 
+  // Modo Dirección (B2): la Directora del centro del niño registra el mandato con respaldo
+  // en PAPEL. Se RE-DERIVA server-side (nunca del cliente) → 'presencial' + sin trazo (el
+  // PDF se genera con la nota "firmado en papel"). Tutor legal => 'digital' con trazo (igual).
+  const esPresencial = await esAdminDeCentroDeNino(supabase, nino.id, user.id)
+
   let form: FormData
   try {
     form = await request.formData()
@@ -91,12 +97,16 @@ export async function POST(
     nombreTecleado.length > 140
   )
     return err('alta.sepa.errors.nombre')
+  // Presencial (modo Dirección): sin trazo (firma_imagen vacía). Digital (tutor): trazo
+  // válido obligatorio, como hasta ahora.
   if (
-    typeof firmaImagen !== 'string' ||
-    !firmaImagen.startsWith('data:image/') ||
-    firmaImagen.length > MAX_FIRMA_CHARS
+    !esPresencial &&
+    (typeof firmaImagen !== 'string' ||
+      !firmaImagen.startsWith('data:image/') ||
+      firmaImagen.length > MAX_FIRMA_CHARS)
   )
     return err('alta.sepa.errors.firma')
+  const firmaParaRpc = esPresencial ? '' : (firmaImagen as string)
 
   const iban = normalizarIban(ibanRaw)
   // Ruta determinista (1 mandato por niño): re-firmar sobrescribe, sin huérfanos.
@@ -147,12 +157,13 @@ export async function POST(
     p_titular: titular.trim(),
     p_identificador_mandato: identificador,
     p_documento_path: path,
-    p_firma_imagen: firmaImagen,
+    p_firma_imagen: firmaParaRpc,
     p_nombre_tecleado: nombreTecleado.trim(),
     p_texto_hash: textoHash,
     p_ip_address: ipAddress,
     p_user_agent: userAgent ?? '',
     p_fecha_firma: fechaFirmaIso,
+    p_metodo: esPresencial ? 'presencial' : 'digital',
   })
   if (rpcErr) {
     // El PDF queda en su ruta determinista (se sobrescribe en el próximo intento).

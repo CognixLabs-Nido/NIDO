@@ -41,6 +41,13 @@ interface Props {
   personasIniciales?: PersonaAutorizada[]
   /** Medicación: datos vigentes (el 2.º tutor firma los mismos, read-only). */
   medicacionInicial?: MedicacionDatos | null
+  /**
+   * PR-3b-2 · B2 — variante PRESENCIAL (modo "Completa Dirección"): sin trazo (canvas),
+   * la Directora deja constancia de que tiene el papel firmado. **Estrictamente opt-in**:
+   * por defecto `false` → el panel se comporta EXACTAMENTE igual que hoy (las pantallas
+   * que no lo pasan no cambian). El servidor RE-DERIVA metodo_firma; este prop es solo la UI.
+   */
+  presencial?: boolean
 }
 
 /**
@@ -58,6 +65,7 @@ export function FirmarAutorizacionPanel({
   currentUserNombre,
   personasIniciales,
   medicacionInicial,
+  presencial = false,
 }: Props) {
   const t = useTranslations('autorizaciones')
 
@@ -78,6 +86,7 @@ export function FirmarAutorizacionPanel({
           nombrePerfil={currentUserNombre}
           personasIniciales={personasIniciales}
           medicacionInicial={medicacionInicial}
+          presencial={presencial}
         />
       ))}
     </div>
@@ -93,6 +102,7 @@ function NinoFirmaRow({
   nombrePerfil,
   personasIniciales,
   medicacionInicial,
+  presencial,
 }: {
   autorizacionId: string
   tipo: TipoAutorizacion
@@ -102,6 +112,7 @@ function NinoFirmaRow({
   nombrePerfil: string
   personasIniciales?: PersonaAutorizada[]
   medicacionInicial?: MedicacionDatos | null
+  presencial: boolean
 }) {
   const t = useTranslations('autorizaciones')
   const tRoot = useTranslations()
@@ -136,7 +147,8 @@ function NinoFirmaRow({
       toast.error(t('errors.confirma_requerido'))
       return
     }
-    if (!firma) {
+    // Presencial (modo Dirección): sin trazo (decisión A). Digital: trazo obligatorio.
+    if (!presencial && !firma) {
       toast.error(t('validation.firma_requerida'))
       return
     }
@@ -153,7 +165,7 @@ function NinoFirmaRow({
         autorizacion_id: autorizacionId,
         nino_id: roster.nino_id,
         nombre_tecleado: nombre.trim(),
-        firma_imagen: firma,
+        firma_imagen: presencial ? null : firma,
         ...(esRecogida ? { personas: personasValidas, adjuntos: adjuntosDeEdicion(personas) } : {}),
         ...(esMedicacion && medicacionInicial ? { medicacion: medicacionInicial } : {}),
       })
@@ -248,13 +260,23 @@ function NinoFirmaRow({
             />
             <p className="text-muted-foreground text-xs">{t('firma.nombre_ayuda')}</p>
           </div>
-          <div className="space-y-1">
-            <Label>{t('firma.trazo')}</Label>
-            <FirmaPad onChange={setFirma} disabled={pending} />
-          </div>
+          {presencial ? (
+            // Modo Dirección: sin canvas — constancia de firma en papel (decisión A).
+            <p className="border-accent-warm-300 bg-accent-warm-50 text-accent-warm-800 rounded-lg border p-3 text-sm">
+              {t('firma.presencial_aviso')}
+            </p>
+          ) : (
+            <div className="space-y-1">
+              <Label>{t('firma.trazo')}</Label>
+              <FirmaPad onChange={setFirma} disabled={pending} />
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={firmar} disabled={pending || !confirmo || !firma || !listaOk}>
-              {t('acciones.firmar')}
+            <Button
+              onClick={firmar}
+              disabled={pending || !confirmo || (!presencial && !firma) || !listaOk}
+            >
+              {presencial ? t('acciones.firmar_presencial') : t('acciones.firmar')}
             </Button>
             <Button variant="outline" onClick={rechazar} disabled={pending}>
               {t('acciones.rechazar')}

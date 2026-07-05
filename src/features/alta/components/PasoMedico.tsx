@@ -99,7 +99,7 @@ export function PasoMedico({
 
   function otorgarConsentimiento() {
     startConsentir(async () => {
-      const r = await registrarConsentimientoTutor({ tipo: 'datos_medicos' })
+      const r = await registrarConsentimientoTutor({ tipo: 'datos_medicos', nino_id: ninoId })
       if (r.success) {
         setConsintio(true)
         onConsentir?.()

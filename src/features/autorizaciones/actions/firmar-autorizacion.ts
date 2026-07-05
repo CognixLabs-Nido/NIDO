@@ -2,6 +2,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { esAdminDeCentroDeNino } from '@/features/alta/lib/authz-tutor'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
@@ -101,7 +102,11 @@ async function registrarDecision(
     return fail('autorizaciones.errors.no_firmable')
   }
 
-  // 3. rol_firmante = snapshot del vínculo del tutor con el niño.
+  // 3. rol_firmante + metodo_firma. Tutor con vínculo => snapshot del vínculo, firma
+  //    DIGITAL (trazo). Sin vínculo pero ADMIN del centro del niño (modo Dirección, B2)
+  //    => rol_firmante='admin', firma PRESENCIAL (respaldo en papel, sin trazo). Se
+  //    RE-DERIVA server-side con `esAdminDeCentroDeNino` (nunca del cliente). La RLS
+  //    `firmas_insert` (#180) ya acepta `es_admin(centro_de_nino(...))` además del tutor.
   const { data: vinculo } = await supabase
     .from('vinculos_familiares')
     .select('tipo_vinculo')
@@ -109,7 +114,24 @@ async function registrarDecision(
     .eq('usuario_id', userId)
     .is('deleted_at', null)
     .maybeSingle()
-  if (!vinculo) return fail('autorizaciones.errors.no_es_tutor')
+
+  let rolFirmante: Database['public']['Enums']['tipo_vinculo']
+  let metodoFirma: Database['public']['Enums']['firma_metodo']
+  if (vinculo) {
+    rolFirmante = vinculo.tipo_vinculo
+    metodoFirma = 'digital'
+  } else if (await esAdminDeCentroDeNino(supabase, d.nino_id, userId)) {
+    rolFirmante = 'admin'
+    metodoFirma = 'presencial'
+  } else {
+    return fail('autorizaciones.errors.no_es_tutor')
+  }
+
+  // Guard: la firma DIGITAL firmada exige trazo (espejo del CHECK de BD; error claro).
+  // En presencial (admin) el trazo es NULL por diseño (decisión A).
+  if (metodoFirma === 'digital' && d.decision === 'firmado' && !d.firma_imagen) {
+    return fail('autorizaciones.validation.firma_requerida')
+  }
 
   // 4. Hash **compuesto** texto + datos (recogida: lista; medicación: campos) +
   //    contexto probatorio. Sin datos, hashFirma == sha256(texto) (compat F8-1/2b).
@@ -131,7 +153,8 @@ async function registrarDecision(
       autorizacion_id: aut.id,
       nino_id: d.nino_id,
       firmante_id: userId,
-      rol_firmante: vinculo.tipo_vinculo,
+      rol_firmante: rolFirmante,
+      metodo_firma: metodoFirma,
       decision: d.decision,
       texto_hash,
       texto_version: aut.texto_version,
