@@ -62,6 +62,8 @@ interface Props {
   onTitularChange: (v: string) => void
   nombreTecleado: string
   onNombreTecleadoChange: (v: string) => void
+  /** PR-3b-2 · B2: modo Dirección → mandato PRESENCIAL (sin trazo; PDF con nota "en papel"). */
+  modoDireccion?: boolean
   /** Último paso: al guardar (o al omitir) se finaliza el alta. */
   onFinalizar: () => void
   onBack: () => void
@@ -91,6 +93,7 @@ export function PasoSepa({
   onTitularChange,
   nombreTecleado,
   onNombreTecleadoChange,
+  modoDireccion = false,
   onFinalizar,
   onBack,
 }: Props) {
@@ -117,7 +120,8 @@ export function PasoSepa({
       toast.error(tSepa('errors.nombre'))
       return
     }
-    if (!firma) {
+    // Presencial (modo Dirección): sin trazo (decisión A). Digital: trazo obligatorio.
+    if (!modoDireccion && !firma) {
       toast.error(tSepa('errors.firma'))
       return
     }
@@ -134,7 +138,8 @@ export function PasoSepa({
           titular: values.titular,
           acreedorNombre: centroNombre,
           acreedorDireccion: centroDireccion,
-          firmaDataUrl: firma,
+          firmaDataUrl: modoDireccion ? null : firma,
+          firmaPresencialNota: modoDireccion ? tSepa('firma_presencial_nota') : undefined,
           fechaLegible,
           textoLegal: tSepa('texto_legal'),
           labels: {
@@ -161,7 +166,8 @@ export function PasoSepa({
       body.append('titular', values.titular)
       body.append('identificador_mandato', identificador)
       body.append('nombre_tecleado', nombreTecleado.trim())
-      body.append('firma_imagen', firma)
+      // Presencial: sin trazo (el route lo acepta al re-derivar admin del centro).
+      body.append('firma_imagen', modoDireccion ? '' : (firma ?? ''))
 
       let json: RespuestaMandato
       try {
@@ -277,7 +283,14 @@ export function PasoSepa({
 
         <div className="space-y-2">
           <Label>{tSepa('firma_titulo')}</Label>
-          <FirmaPad onChange={onFirmaChange} disabled={pending} />
+          {modoDireccion ? (
+            // Modo Dirección: sin canvas — mandato firmado en papel (decisión A).
+            <p className="border-accent-warm-300 bg-accent-warm-50 text-accent-warm-800 rounded-lg border p-3 text-sm">
+              {tSepa('firma_presencial_aviso')}
+            </p>
+          ) : (
+            <FirmaPad onChange={onFirmaChange} disabled={pending} />
+          )}
         </div>
 
         <div className="flex justify-between border-t pt-4">

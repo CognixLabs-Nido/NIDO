@@ -272,7 +272,11 @@ export const firmarAutorizacionSchema = z.object({
     .trim()
     .min(1, 'autorizaciones.validation.nombre_vacio')
     .max(200, 'autorizaciones.validation.nombre_largo'),
-  firma_imagen: firmaImagenSchema,
+  // PR-3b-2 · B2: `null` cuando la Dirección firma PRESENCIAL (respaldo en papel, sin
+  // trazo — decisión A). El action decide metodo_firma server-side: tutor con vínculo =>
+  // 'digital' (exige trazo: guard + CHECK BD); admin del centro sin vínculo => 'presencial'
+  // (trazo NULL permitido por el CHECK de #180). El tutor digital sigue enviando trazo.
+  firma_imagen: firmaImagenSchema.nullable(),
   comentario: comentarioSchema,
   // Recogida: lista de personas autorizadas (se ata al hash compuesto). Opcional
   // en el esquema (otros tipos no la llevan); el action la exige en recogida.

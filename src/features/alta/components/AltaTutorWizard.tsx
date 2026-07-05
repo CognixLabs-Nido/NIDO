@@ -229,6 +229,7 @@ export function AltaTutorWizard({
             normasSinPlantilla={normasSinPlantilla}
             currentUserId={currentUserId}
             currentUserNombre={currentUserNombre}
+            modoDireccion={modoDireccion}
             onNext={goNext}
             onBack={goBack}
           />
@@ -248,6 +249,7 @@ export function AltaTutorWizard({
             imagenSinPlantilla={imagenSinPlantilla}
             currentUserId={currentUserId}
             currentUserNombre={currentUserNombre}
+            modoDireccion={modoDireccion}
             onDireccionChange={setDireccionNino}
             onNext={goNext}
             onBack={goBack}
@@ -326,6 +328,7 @@ export function AltaTutorWizard({
             onTitularChange={setSepaTitular}
             nombreTecleado={sepaNombreTecleado}
             onNombreTecleadoChange={setSepaNombreTecleado}
+            modoDireccion={modoDireccion}
             onFinalizar={finalizar}
             onBack={goBack}
           />

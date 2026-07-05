@@ -4,7 +4,7 @@ import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import { esTutorLegalDe } from '@/features/alta/lib/authz-tutor'
+import { esAdminDeCentroDeNino, esTutorLegalDe } from '@/features/alta/lib/authz-tutor'
 import { altaValidada, registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
 import {
   BUCKET_LIBRO_FAMILIA,
@@ -87,8 +87,11 @@ export async function POST(
   }
 
   // 2. El UPDATE de `ninos.libro_familia_path` requiere service role (tabla admin-only).
-  //    Se autoriza en app: solo tutor legal del niño. Si no, limpia el objeto subido.
-  const autorizado = await esTutorLegalDe(supabase, nino.id, user.id)
+  //    Se autoriza en app: tutor legal del niño O admin del centro (modo Dirección, B2 —
+  //    carga del libro en papel). Camino tutor intacto (OR). Si no, limpia el objeto subido.
+  const autorizado =
+    (await esTutorLegalDe(supabase, nino.id, user.id)) ||
+    (await esAdminDeCentroDeNino(supabase, nino.id, user.id))
   if (!autorizado) {
     await borrarObjetosBucket(supabase, BUCKET_LIBRO_FAMILIA, [path]).catch(() => undefined)
     return err('alta.errors.no_autorizado', 403)

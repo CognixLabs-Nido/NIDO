@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { altaValidada, registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
 import { logger } from '@/shared/lib/logger'
 
-import { esTutorLegalDe } from '../lib/authz-tutor'
+import { esAdminDeCentroDeNino, esTutorLegalDe } from '../lib/authz-tutor'
 import {
   actualizarNinoFamiliaSchema,
   type ActualizarNinoFamiliaInput,
@@ -37,7 +37,11 @@ export async function actualizarNinoFamilia(
   } = await supabase.auth.getUser()
   if (!user) return fail('alta.errors.no_autorizado')
 
-  const autorizado = await esTutorLegalDe(supabase, parsed.data.nino_id, user.id)
+  // Modo Dirección (B2): la Directora del centro del niño también carga estos datos (papel).
+  // Se AMPLÍA el gate a admin del centro; el camino tutor queda intacto (OR, no sustitución).
+  const autorizado =
+    (await esTutorLegalDe(supabase, parsed.data.nino_id, user.id)) ||
+    (await esAdminDeCentroDeNino(supabase, parsed.data.nino_id, user.id))
   if (!autorizado) return fail('alta.errors.no_autorizado')
 
   // Construye el patch solo con las claves presentes (preserva lo no enviado).

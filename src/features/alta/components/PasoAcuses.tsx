@@ -17,6 +17,8 @@ interface Props {
   normasSinPlantilla: boolean
   currentUserId: string
   currentUserNombre: string
+  /** PR-3b-2 · B2: firma PRESENCIAL de las normas cuando lo rellena la Dirección (papel). */
+  modoDireccion?: boolean
   onNext: () => void
   onBack: () => void
 }
@@ -35,6 +37,7 @@ export function PasoAcuses({
   normasSinPlantilla,
   currentUserId,
   currentUserNombre,
+  modoDireccion = false,
   onNext,
   onBack,
 }: Props) {
@@ -55,6 +58,7 @@ export function PasoAcuses({
             roster={normasPanel.roster}
             currentUserId={currentUserId}
             currentUserNombre={currentUserNombre}
+            presencial={modoDireccion}
           />
         )}
       </section>

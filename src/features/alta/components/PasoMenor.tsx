@@ -67,6 +67,8 @@ interface Props {
   imagenSinPlantilla: boolean
   currentUserId: string
   currentUserNombre: string
+  /** PR-3b-2 · B2: firma PRESENCIAL de la autorización de imagen cuando lo rellena Dirección. */
+  modoDireccion?: boolean
   /** PR-4d: eleva la dirección del niño al contenedor para el botón "misma dirección"
    *  de los pasos de tutor (el paso del menor se desmonta al navegar). */
   onDireccionChange: (dir: DireccionInicial) => void
@@ -99,6 +101,7 @@ export function PasoMenor({
   imagenSinPlantilla,
   currentUserId,
   currentUserNombre,
+  modoDireccion = false,
   onDireccionChange,
   onNext,
   onBack,
@@ -412,6 +415,7 @@ export function PasoMenor({
             roster={imagenPanel.roster}
             currentUserId={currentUserId}
             currentUserNombre={currentUserNombre}
+            presencial={modoDireccion}
           />
         ) : (
           <div className="space-y-2">
