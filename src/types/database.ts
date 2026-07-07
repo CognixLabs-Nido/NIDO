@@ -1845,6 +1845,107 @@ export type Database = {
           },
         ]
       }
+      familia_tutores: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          direccion_calle: string | null
+          direccion_ciudad: string | null
+          direccion_cp: string | null
+          direccion_numero: string | null
+          dni_documento_path: string | null
+          email: string | null
+          familia_id: string
+          id: string
+          nombre_completo: string | null
+          rol_familia: string
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          direccion_calle?: string | null
+          direccion_ciudad?: string | null
+          direccion_cp?: string | null
+          direccion_numero?: string | null
+          dni_documento_path?: string | null
+          email?: string | null
+          familia_id: string
+          id?: string
+          nombre_completo?: string | null
+          rol_familia: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          direccion_calle?: string | null
+          direccion_ciudad?: string | null
+          direccion_cp?: string | null
+          direccion_numero?: string | null
+          dni_documento_path?: string | null
+          email?: string | null
+          familia_id?: string
+          id?: string
+          nombre_completo?: string | null
+          rol_familia?: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "familia_tutores_familia_id_fkey"
+            columns: ["familia_id"]
+            isOneToOne: false
+            referencedRelation: "familias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "familia_tutores_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      familias: {
+        Row: {
+          centro_id: string
+          created_at: string
+          deleted_at: string | null
+          etiqueta: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          deleted_at?: string | null
+          etiqueta: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          etiqueta?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "familias_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       firmas_autorizacion: {
         Row: {
           autorizacion_id: string
@@ -2353,6 +2454,7 @@ export type Database = {
           deleted_at: string | null
           documento_path: string | null
           estado: Database["public"]["Enums"]["estado_mandato_sepa"]
+          familia_id: string | null
           fecha_firma: string | null
           firma_imagen: string | null
           iban_cifrado: string
@@ -2374,6 +2476,7 @@ export type Database = {
           deleted_at?: string | null
           documento_path?: string | null
           estado?: Database["public"]["Enums"]["estado_mandato_sepa"]
+          familia_id?: string | null
           fecha_firma?: string | null
           firma_imagen?: string | null
           iban_cifrado: string
@@ -2395,6 +2498,7 @@ export type Database = {
           deleted_at?: string | null
           documento_path?: string | null
           estado?: Database["public"]["Enums"]["estado_mandato_sepa"]
+          familia_id?: string | null
           fecha_firma?: string | null
           firma_imagen?: string | null
           iban_cifrado?: string
@@ -2416,6 +2520,13 @@ export type Database = {
             columns: ["centro_id"]
             isOneToOne: false
             referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mandatos_sepa_familia_id_fkey"
+            columns: ["familia_id"]
+            isOneToOne: false
+            referencedRelation: "familias"
             referencedColumns: ["id"]
           },
           {
@@ -2695,6 +2806,7 @@ export type Database = {
           centro_id: string
           created_at: string
           deleted_at: string | null
+          familia_id: string | null
           id: string
           mes: number
           metodo: Database["public"]["Enums"]["metodo_pago"]
@@ -2706,6 +2818,7 @@ export type Database = {
           centro_id: string
           created_at?: string
           deleted_at?: string | null
+          familia_id?: string | null
           id?: string
           mes: number
           metodo: Database["public"]["Enums"]["metodo_pago"]
@@ -2717,6 +2830,7 @@ export type Database = {
           centro_id?: string
           created_at?: string
           deleted_at?: string | null
+          familia_id?: string | null
           id?: string
           mes?: number
           metodo?: Database["public"]["Enums"]["metodo_pago"]
@@ -2729,6 +2843,13 @@ export type Database = {
             columns: ["centro_id"]
             isOneToOne: false
             referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metodo_pago_familia_familia_id_fkey"
+            columns: ["familia_id"]
+            isOneToOne: false
+            referencedRelation: "familias"
             referencedColumns: ["id"]
           },
           {
@@ -2753,6 +2874,7 @@ export type Database = {
           estado_civil_familia:
             | Database["public"]["Enums"]["estado_civil"]
             | null
+          familia_id: string | null
           fecha_nacimiento: string | null
           foto_url: string | null
           id: string
@@ -2778,6 +2900,7 @@ export type Database = {
           estado_civil_familia?:
             | Database["public"]["Enums"]["estado_civil"]
             | null
+          familia_id?: string | null
           fecha_nacimiento?: string | null
           foto_url?: string | null
           id?: string
@@ -2803,6 +2926,7 @@ export type Database = {
           estado_civil_familia?:
             | Database["public"]["Enums"]["estado_civil"]
             | null
+          familia_id?: string | null
           fecha_nacimiento?: string | null
           foto_url?: string | null
           id?: string
@@ -2822,6 +2946,13 @@ export type Database = {
             columns: ["centro_id"]
             isOneToOne: false
             referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ninos_familia_id_fkey"
+            columns: ["familia_id"]
+            isOneToOne: false
+            referencedRelation: "familias"
             referencedColumns: ["id"]
           },
         ]
@@ -3236,6 +3367,7 @@ export type Database = {
           devuelto_de_recibo_id: string | null
           es_esporadico: boolean
           estado: Database["public"]["Enums"]["estado_recibo"]
+          familia_id: string | null
           fecha_devolucion: string | null
           fecha_envio_banco: string | null
           id: string
@@ -3254,6 +3386,7 @@ export type Database = {
           devuelto_de_recibo_id?: string | null
           es_esporadico?: boolean
           estado?: Database["public"]["Enums"]["estado_recibo"]
+          familia_id?: string | null
           fecha_devolucion?: string | null
           fecha_envio_banco?: string | null
           id?: string
@@ -3272,6 +3405,7 @@ export type Database = {
           devuelto_de_recibo_id?: string | null
           es_esporadico?: boolean
           estado?: Database["public"]["Enums"]["estado_recibo"]
+          familia_id?: string | null
           fecha_devolucion?: string | null
           fecha_envio_banco?: string | null
           id?: string
@@ -3294,6 +3428,13 @@ export type Database = {
             columns: ["devuelto_de_recibo_id"]
             isOneToOne: false
             referencedRelation: "recibos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recibos_familia_id_fkey"
+            columns: ["familia_id"]
+            isOneToOne: false
+            referencedRelation: "familias"
             referencedColumns: ["id"]
           },
           {
@@ -3819,6 +3960,7 @@ export type Database = {
       }
       centro_de_curso: { Args: { p_curso_id: string }; Returns: string }
       centro_de_evento: { Args: { p_evento_id: string }; Returns: string }
+      centro_de_familia: { Args: { p_familia_id: string }; Returns: string }
       centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
       centro_de_plantilla: { Args: { p_plantilla_id: string }; Returns: string }
       centro_de_publicacion: {
@@ -3860,6 +4002,7 @@ export type Database = {
       es_redactor_de_aula: { Args: { p_aula_id: string }; Returns: boolean }
       es_redactor_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
       es_tutor_de: { Args: { p_nino_id: string }; Returns: boolean }
+      es_tutor_de_familia: { Args: { p_familia_id: string }; Returns: boolean }
       es_tutor_en_aula: { Args: { p_aula_id: string }; Returns: boolean }
       es_tutor_en_centro: {
         Args: { p_centro_id: string; p_tutor_id: string }
@@ -3870,6 +4013,7 @@ export type Database = {
         Args: { p_evento_id: string; p_nino_id: string }
         Returns: boolean
       }
+      familia_de_nino: { Args: { p_nino_id: string }; Returns: string }
       familia_ve_aula: { Args: { p_aula_id: string }; Returns: boolean }
       fecha_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       get_datos_acreedor: {
