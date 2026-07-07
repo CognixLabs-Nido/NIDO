@@ -203,6 +203,83 @@ export type Database = {
           },
         ]
       }
+      aplicaciones_concepto: {
+        Row: {
+          anio: number
+          cantidad: number
+          centro_id: string
+          concepto_id: string
+          created_at: string
+          deleted_at: string | null
+          familia_id: string | null
+          id: string
+          importe_override_centimos: number | null
+          mes: number
+          nino_id: string | null
+          origen: string
+          updated_at: string
+        }
+        Insert: {
+          anio: number
+          cantidad?: number
+          centro_id: string
+          concepto_id: string
+          created_at?: string
+          deleted_at?: string | null
+          familia_id?: string | null
+          id?: string
+          importe_override_centimos?: number | null
+          mes: number
+          nino_id?: string | null
+          origen: string
+          updated_at?: string
+        }
+        Update: {
+          anio?: number
+          cantidad?: number
+          centro_id?: string
+          concepto_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          familia_id?: string | null
+          id?: string
+          importe_override_centimos?: number | null
+          mes?: number
+          nino_id?: string | null
+          origen?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aplicaciones_concepto_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aplicaciones_concepto_concepto_id_fkey"
+            columns: ["concepto_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_cobro"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aplicaciones_concepto_familia_id_fkey"
+            columns: ["familia_id"]
+            isOneToOne: false
+            referencedRelation: "familias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aplicaciones_concepto_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asignacion_cuota: {
         Row: {
           anio: number
@@ -1208,41 +1285,59 @@ export type Database = {
       conceptos_cobro: {
         Row: {
           activo: boolean
+          ambito: string
+          aplicacion: string
           centro_id: string
           created_at: string
           deleted_at: string | null
           id: string
+          importe_centimos: number | null
           nombre: string
+          porcentaje_bp: number | null
           precio_diario_centimos: number | null
           precio_mensual_centimos: number | null
           servicio: Database["public"]["Enums"]["servicio_diario"] | null
+          signo: number
           tipo_concepto: Database["public"]["Enums"]["tipo_concepto"]
+          tipo_valor: string
           updated_at: string
         }
         Insert: {
           activo?: boolean
+          ambito?: string
+          aplicacion?: string
           centro_id: string
           created_at?: string
           deleted_at?: string | null
           id?: string
+          importe_centimos?: number | null
           nombre: string
+          porcentaje_bp?: number | null
           precio_diario_centimos?: number | null
           precio_mensual_centimos?: number | null
           servicio?: Database["public"]["Enums"]["servicio_diario"] | null
+          signo?: number
           tipo_concepto: Database["public"]["Enums"]["tipo_concepto"]
+          tipo_valor?: string
           updated_at?: string
         }
         Update: {
           activo?: boolean
+          ambito?: string
+          aplicacion?: string
           centro_id?: string
           created_at?: string
           deleted_at?: string | null
           id?: string
+          importe_centimos?: number | null
           nombre?: string
+          porcentaje_bp?: number | null
           precio_diario_centimos?: number | null
           precio_mensual_centimos?: number | null
           servicio?: Database["public"]["Enums"]["servicio_diario"] | null
+          signo?: number
           tipo_concepto?: Database["public"]["Enums"]["tipo_concepto"]
+          tipo_valor?: string
           updated_at?: string
         }
         Relationships: [
