@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import { sendInvitation } from '@/features/auth/actions/send-invitation'
+import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -33,8 +34,11 @@ export async function invitarAlAlta(
     return fail(parsed.error.issues[0]?.message ?? 'listaEspera.validation.invalid')
 
   const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) return fail('auth.invitation.errors.unauthenticated')
+  const { data: userData, indisponible: authIndisponible } = await llamarGoTrue('getUser', () =>
+    supabase.auth.getUser()
+  )
+  if (authIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+  if (!userData?.user) return fail('auth.invitation.errors.unauthenticated')
 
   const centroId = await getCentroActualId()
   if (!centroId) return fail('listaEspera.errors.sin_centro')

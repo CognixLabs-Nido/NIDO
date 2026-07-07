@@ -233,14 +233,19 @@ function InvitarBoton({
 
   const invitar = () =>
     start(async () => {
-      const r = await invitarAlAlta({ id, aulaId }, locale)
-      if (r.success) {
-        toast.success(t('invitado'))
-        setOpen(false)
-        setAulaId('')
-        router.refresh()
-      } else {
-        toast.error(tErrors(r.error))
+      try {
+        const r = await invitarAlAlta({ id, aulaId }, locale)
+        if (r.success) {
+          toast.success(t('invitado'))
+          setOpen(false)
+          setAulaId('')
+          router.refresh()
+        } else {
+          toast.error(tErrors(r.error))
+        }
+      } catch {
+        // Rejección de la server action (timeout de función serverless, red): antes muda.
+        toast.error(tErrors('auth.invitation.errors.servicio_cuentas_no_disponible'))
       }
     })
 
@@ -362,26 +367,32 @@ function CompletarBoton({
 
   const completar = () =>
     start(async () => {
-      const r = await completarEnDireccion(
-        {
-          id,
-          aulaId,
-          nombreTutor: nombre,
-          apellidosTutor: apellidos,
-          email,
-          password,
-          parentesco: parentesco as (typeof parentescoEnum.options)[number],
-          descripcionParentesco: requiereDescripcion ? descripcion : null,
-        },
-        locale as 'es' | 'en' | 'va'
-      )
-      if (r.success) {
-        toast.success(t('completado'))
-        setOpen(false)
-        reset()
-        router.push(`/${locale}/admin/ninos/${r.data.ninoId}`)
-      } else {
-        toast.error(tErrors(r.error))
+      try {
+        const r = await completarEnDireccion(
+          {
+            id,
+            aulaId,
+            nombreTutor: nombre,
+            apellidosTutor: apellidos,
+            email,
+            password,
+            parentesco: parentesco as (typeof parentescoEnum.options)[number],
+            descripcionParentesco: requiereDescripcion ? descripcion : null,
+          },
+          locale as 'es' | 'en' | 'va'
+        )
+        if (r.success) {
+          toast.success(t('completado'))
+          setOpen(false)
+          reset()
+          router.push(`/${locale}/admin/ninos/${r.data.ninoId}`)
+        } else {
+          toast.error(tErrors(r.error))
+        }
+      } catch {
+        // Rejección de la server action (timeout de función serverless, red): antes se
+        // tragaba en el useTransition → botón mudo (BUG 1). Ahora se avisa.
+        toast.error(tErrors('auth.invitation.errors.servicio_cuentas_no_disponible'))
       }
     })
 

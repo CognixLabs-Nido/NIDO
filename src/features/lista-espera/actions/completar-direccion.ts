@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import { crearTutorDirecto } from '@/features/auth/lib/crear-tutor-directo'
+import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -36,8 +37,11 @@ export async function completarEnDireccion(
     return fail(parsed.error.issues[0]?.message ?? 'listaEspera.validation.invalid')
 
   const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) return fail('auth.invitation.errors.unauthenticated')
+  const { data: userData, indisponible: authIndisponible } = await llamarGoTrue('getUser', () =>
+    supabase.auth.getUser()
+  )
+  if (authIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+  if (!userData?.user) return fail('auth.invitation.errors.unauthenticated')
 
   const centroId = await getCentroActualId()
   if (!centroId) return fail('listaEspera.errors.sin_centro')
@@ -82,8 +86,11 @@ export async function completarEnDireccion(
   // Pre-chequeo: email ya registrado → fallamos ANTES de crear niño/matrícula (evita el
   // churn de crear+revertir en el error más común). `createUser` es el guard autoritativo
   // (cubre el borde de un email en la página 2 de listUsers), y ahí el rollback igual limpia.
-  const { data: existentes } = await service.auth.admin.listUsers()
-  const yaExiste = existentes.users.some(
+  const { data: existentes, indisponible: listIndisponible } = await llamarGoTrue('listUsers', () =>
+    service.auth.admin.listUsers()
+  )
+  if (listIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+  const yaExiste = (existentes?.users ?? []).some(
     (u) => u.email?.toLowerCase() === parsed.data.email.toLowerCase()
   )
   if (yaExiste) return fail('auth.invitation.errors.email_already_registered')
