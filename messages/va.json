@@ -100,7 +100,9 @@
         "lookup_failed": "No s'ha pogut localitzar la invitació.",
         "coordinadora_ocupada": "Eixa aula ja té una coordinadora activa. Tria un altre rol o canvia primer la coordinadora des d'Aules.",
         "profe_aula_failed": "No s’ha pogut vincular el professor amb l’aula. Torna-ho a provar o contacta amb direcció.",
-        "sin_curso_activo": "El centre no té un curs acadèmic actiu."
+        "sin_curso_activo": "El centre no té un curs acadèmic actiu.",
+        "servicio_cuentas_no_disponible": "El servici de comptes no respon ara mateix. Torna-ho a provar d'ací a uns segons.",
+        "email_no_enviado": "No s'ha pogut enviar la invitació per correu. Torna-ho a provar."
       }
     },
     "select_role": {
@@ -3264,7 +3266,8 @@
       "no_en_espera": "El prospecte ja no està en espera.",
       "sin_email": "Falta el correu del tutor per a convidar.",
       "sin_curso_activo": "El centre no té un curs acadèmic actiu.",
-      "aula_invalida": "L'aula seleccionada no pertany al curs actiu."
+      "aula_invalida": "L'aula seleccionada no pertany al curs actiu.",
+      "tutor_ya_registrado": "Aquest correu ja té un compte; no s'ha enviat cap invitació."
     }
   },
   "recibos": {

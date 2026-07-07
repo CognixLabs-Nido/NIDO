@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAppUrl } from '@/shared/lib/app-url'
 import { logger } from '@/shared/lib/logger'
 
+import { llamarGoTrue } from '../lib/llamar-gotrue'
 import { sendInvitationSchema, type SendInvitationInput } from '../schemas/invitation'
 
 import { fail, ok, type ActionResult } from './types'
@@ -23,8 +24,11 @@ export async function sendInvitation(
 
   // Validar usuario autenticado y que sea admin del centro objetivo.
   const supabase = await createClient()
-  const { data: user } = await supabase.auth.getUser()
-  if (!user.user) return fail('auth.invitation.errors.unauthenticated')
+  const { data: user, indisponible: authIndisponible } = await llamarGoTrue('getUser', () =>
+    supabase.auth.getUser()
+  )
+  if (authIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+  if (!user?.user) return fail('auth.invitation.errors.unauthenticated')
 
   const { data: callerRoles } = await supabase
     .from('roles_usuario')
@@ -119,17 +123,28 @@ export async function sendInvitation(
 
   const redirectTo = `${getAppUrl()}/${locale}/invitation/${invitation.token}`
 
-  const { error: emailError } = await service.auth.admin.inviteUserByEmail(parsed.data.email, {
-    redirectTo,
-    data: {
-      token: invitation.token,
-      rol_objetivo: parsed.data.rolObjetivo,
-      centro_nombre: centro?.nombre ?? null,
-    },
-  })
+  const { error: emailError, indisponible: emailIndisponible } = await llamarGoTrue(
+    'inviteUserByEmail',
+    () =>
+      service.auth.admin.inviteUserByEmail(parsed.data.email, {
+        redirectTo,
+        data: {
+          token: invitation.token,
+          rol_objetivo: parsed.data.rolObjetivo,
+          centro_nombre: centro?.nombre ?? null,
+        },
+      })
+  )
+  // PR-A: dejar de reportar éxito falso. Si el email NO salió, se devuelve `fail` para que la
+  // UI lo muestre (afecta a TODOS los callers de sendInvitation — corrección consistente del
+  // mismo bug). NO se vincula la cuenta existente ni se reinvita: la resolución es PR-D.
+  if (emailIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
   if (emailError) {
     logger.warn('inviteUserByEmail error', emailError.message)
-    // No abortamos — la invitación queda en BD y se puede reenviar.
+    // Cuenta ya registrada (padre con cuenta previa): se AVISA, no se resuelve aquí (PR-D).
+    if (emailError.code === 'email_exists' || emailError.status === 422)
+      return fail('listaEspera.errors.tutor_ya_registrado')
+    return fail('auth.invitation.errors.email_no_enviado')
   }
 
   return ok({ invitationId })

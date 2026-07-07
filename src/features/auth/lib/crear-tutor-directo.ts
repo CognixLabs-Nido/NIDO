@@ -6,6 +6,7 @@ import { CONSENT_OBLIGATORIOS, CONSENT_VERSIONS } from '@/shared/lib/consent-ver
 import type { Database } from '@/types/database'
 
 import { fail, ok, type ActionResult } from '../actions/types'
+import { llamarGoTrue } from './llamar-gotrue'
 
 type ServiceClient = SupabaseClient<Database>
 
@@ -60,16 +61,23 @@ export async function crearTutorDirecto(
   // Cuenta nueva con credenciales puestas por la Dirección. `email_confirm:true` la deja
   // usable de inmediato; el trigger `handle_new_user` puebla `public.usuarios` con el
   // `nombre_completo` REAL de la metadata (nombre + apellidos tecleados), sin fallback.
-  const { data: created, error: createErr } = await service.auth.admin.createUser({
-    email: params.email,
-    password: params.password,
-    email_confirm: true,
-    user_metadata: {
-      nombre_completo: params.nombreCompleto,
-      idioma_preferido: params.idiomaPreferido,
-    },
-  })
-  if (createErr || !created.user) {
+  const {
+    data: created,
+    error: createErr,
+    indisponible,
+  } = await llamarGoTrue('createUser', () =>
+    service.auth.admin.createUser({
+      email: params.email,
+      password: params.password,
+      email_confirm: true,
+      user_metadata: {
+        nombre_completo: params.nombreCompleto,
+        idioma_preferido: params.idiomaPreferido,
+      },
+    })
+  )
+  if (indisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+  if (createErr || !created?.user) {
     logger.warn('crearTutorDirecto createUser', createErr?.message)
     // Email ya registrado → mensaje específico (Supabase responde 422/"already registered").
     const dup =

@@ -100,7 +100,9 @@
         "lookup_failed": "We could not look up the invitation.",
         "coordinadora_ocupada": "That classroom already has an active coordinator. Choose another role or change the coordinator first from Classrooms.",
         "profe_aula_failed": "Could not link the teacher to the classroom. Please try again or contact the school office.",
-        "sin_curso_activo": "The centre has no active academic year."
+        "sin_curso_activo": "The centre has no active academic year.",
+        "servicio_cuentas_no_disponible": "The accounts service isn't responding right now. Please try again in a few seconds.",
+        "email_no_enviado": "The invitation email couldn't be sent. Please try again."
       }
     },
     "select_role": {
@@ -3264,7 +3266,8 @@
       "no_en_espera": "The prospect is no longer waiting.",
       "sin_email": "The tutor’s email is required to invite.",
       "sin_curso_activo": "The centre has no active academic year.",
-      "aula_invalida": "The selected classroom doesn't belong to the active year."
+      "aula_invalida": "The selected classroom doesn't belong to the active year.",
+      "tutor_ya_registrado": "This email already has an account; no invitation was sent."
     }
   },
   "recibos": {
