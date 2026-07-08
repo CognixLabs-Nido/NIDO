@@ -187,27 +187,60 @@ export async function acceptInvitationCore(
   // habría marcado la cuenta como 'real' y roto el routing de la invitación. El id NO cambia
   // (el stub se completó in situ); esto solo rellena el hueco: `usuario_id` + `nombre_completo`
   // (que `lista_espera` no tenía al invitar). El UPDATE de `usuario_id` está EXENTO del
-  // congelado de F-2a por ser `service_role` (el caso previsto). Idempotente (`usuario_id IS
-  // NULL`). Solo altas por invitación de rol familiar con niño; el perfil es el titular de su
-  // familia (uno por familia → sin ambigüedad). Sin backfill, el tutor quedaría sin perfil.
+  // congelado de F-2a por ser `service_role` (el caso previsto). Solo altas por invitación de
+  // rol familiar con niño.
+  //
+  // El perfil se identifica por el EMAIL de la invitación (único por tutor), NO por "el primer
+  // NULL de la familia": con 2 tutores pendientes (F-2b-2c) cada accept debe enlazar el SUYO,
+  // nunca el del otro. Ningún fallo se traga: familia/perfil no resueltos, o un UPDATE que no
+  // toca su fila (0 filas por carrera), revierten la activación (deleteUser) y devuelven error
+  // visible — mismo principio que el rollback de rol/consents más abajo (PR-A: sin éxito falso).
   if (creaVinculo && invitation.nino_id) {
-    const { data: ninoFam } = await service
+    const emailInv = invitation.email.trim().toLowerCase()
+
+    const { data: ninoFam, error: ninoFamErr } = await service
       .from('ninos')
       .select('familia_id')
       .eq('id', invitation.nino_id)
       .maybeSingle()
-    if (ninoFam?.familia_id) {
-      const { error: backfillErr } = await service
-        .from('familia_tutores')
-        .update({ usuario_id: userId, nombre_completo: parsed.data.nombreCompleto })
-        .eq('familia_id', ninoFam.familia_id)
-        .is('usuario_id', null)
-      if (backfillErr) {
-        // Sin enlace no se completa el alta: rollback de la cuenta recién activada.
-        logger.warn('backfill familia_tutores.usuario_id falló', backfillErr.message)
-        await service.auth.admin.deleteUser(userId).catch(() => {})
-        return fail('auth.invitation.errors.create_failed')
-      }
+    if (ninoFamErr || !ninoFam?.familia_id) {
+      logger.warn('backfill: familia del niño no resuelta', ninoFamErr?.message)
+      await service.auth.admin.deleteUser(userId).catch(() => {})
+      return fail('auth.invitation.errors.create_failed')
+    }
+
+    // Candidatos pendientes de la familia; se casa por email en minúsculas (evita los
+    // comodines `_`/`%` de `ilike` y las diferencias de mayúsculas). El email se escribió en
+    // `familia_tutores` al invitar (RPC: `p_tutor_email`).
+    const { data: perfiles, error: perfilesErr } = await service
+      .from('familia_tutores')
+      .select('id, email')
+      .eq('familia_id', ninoFam.familia_id)
+      .is('usuario_id', null)
+    if (perfilesErr) {
+      logger.warn('backfill: lookup de perfil falló', perfilesErr.message)
+      await service.auth.admin.deleteUser(userId).catch(() => {})
+      return fail('auth.invitation.errors.create_failed')
+    }
+    const perfil = perfiles?.find((p) => (p.email ?? '').trim().toLowerCase() === emailInv)
+    if (!perfil) {
+      logger.warn('backfill: perfil pendiente no encontrado por email')
+      await service.auth.admin.deleteUser(userId).catch(() => {})
+      return fail('auth.invitation.errors.create_failed')
+    }
+
+    const { data: linked, error: backfillErr } = await service
+      .from('familia_tutores')
+      .update({ usuario_id: userId, nombre_completo: parsed.data.nombreCompleto })
+      .eq('id', perfil.id)
+      .is('usuario_id', null)
+      .select('id')
+      .maybeSingle()
+    if (backfillErr || !linked) {
+      // Error, o 0 filas (otra sesión lo enlazó entre el SELECT y el UPDATE): NO seguir mudo.
+      logger.warn('backfill familia_tutores.usuario_id falló', backfillErr?.message)
+      await service.auth.admin.deleteUser(userId).catch(() => {})
+      return fail('auth.invitation.errors.create_failed')
     }
   }
 
