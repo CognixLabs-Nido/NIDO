@@ -5,12 +5,31 @@ import { revalidatePath } from 'next/cache'
 import { crearTutorDirecto } from '@/features/auth/lib/crear-tutor-directo'
 import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import type { Json } from '@/types/database'
 
 import { completarDireccionSchema, type CompletarDireccionInput } from '../schemas/lista-espera'
 import { fail, ok, type ActionResult } from '../../centros/types'
+
+/** Retorno JSON de la RPC `crear_o_anadir_a_familia` (F-2b-1). */
+type ResultadoCrearFamilia = {
+  resultado: 'familia_creada' | 'nino_anadido' | 'colision'
+  familia_id: string | null
+  nino_id: string | null
+  matricula_id?: string | null
+  colision_info: { motivo: string; nombre_existente: string | null } | null
+}
+
+/**
+ * Éxito de `completarEnDireccion`: alta creada (`ok` con nino_id) o COLISIÓN detectada por
+ * la RPC (email ya en el centro con otro nombre) → la UI avisa a Dirección y NO navega.
+ */
+export type CompletarEnDireccionOk =
+  | { resultado: 'ok'; ninoId: string; usuarioId: string }
+  | { resultado: 'colision'; nombreExistente: string | null }
 
 /**
  * F11 alta PR-3a "Completa Dirección" (ENTRADA): la Dirección promociona un prospecto a
@@ -31,7 +50,7 @@ import { fail, ok, type ActionResult } from '../../centros/types'
 export async function completarEnDireccion(
   input: CompletarDireccionInput,
   locale: 'es' | 'en' | 'va' = 'es'
-): Promise<ActionResult<{ ninoId: string; usuarioId: string }>> {
+): Promise<ActionResult<CompletarEnDireccionOk>> {
   const parsed = completarDireccionSchema.safeParse(input)
   if (!parsed.success)
     return fail(parsed.error.issues[0]?.message ?? 'listaEspera.validation.invalid')
@@ -81,74 +100,59 @@ export async function completarEnDireccion(
     return fail('listaEspera.errors.no_encontrado')
   if (prospecto.estado !== 'en_espera') return fail('listaEspera.errors.no_en_espera')
 
+  // `fecha_nacimiento` es obligatoria para crear el niño (`ninos.fecha_nacimiento` NOT NULL).
+  // Se captura en un const para que el narrowing sobreviva a los `await` posteriores.
+  const fechaNacimiento = prospecto.fecha_nacimiento
+  if (!fechaNacimiento) return fail('listaEspera.errors.sin_fecha_nacimiento')
+
   const service = createServiceRoleClient()
 
-  // Pre-chequeo: email ya registrado → fallamos ANTES de crear niño/matrícula (evita el
-  // churn de crear+revertir en el error más común). `createUser` es el guard autoritativo
-  // (cubre el borde de un email en la página 2 de listUsers), y ahí el rollback igual limpia.
-  const { data: existentes, indisponible: listIndisponible } = await llamarGoTrue('listUsers', () =>
-    service.auth.admin.listUsers()
-  )
-  if (listIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
-  const yaExiste = (existentes?.users ?? []).some(
-    (u) => u.email?.toLowerCase() === parsed.data.email.toLowerCase()
-  )
-  if (yaExiste) return fail('auth.invitation.errors.email_already_registered')
-
-  // 1. Esqueleto de niño (nombre + apellidos separados, PR-4c-1; apellidos puede ser NULL
-  //    en prospectos antiguos → el tutor lo completa en el wizard).
-  const { data: nino, error: ninoErr } = await service
-    .from('ninos')
-    .insert({
-      centro_id: centroId,
-      nombre: prospecto.nombre_nino,
-      apellidos: prospecto.apellidos_nino,
-      fecha_nacimiento: prospecto.fecha_nacimiento,
-    })
-    .select('id')
-    .single()
-  if (ninoErr || !nino) {
-    logger.warn('completarEnDireccion nino insert', ninoErr?.message)
-    return fail('nino.errors.create_failed')
-  }
-
-  // 2. Matrícula PENDIENTE contra (aula elegida, curso activo).
-  const { data: matricula, error: matErr } = await service
-    .from('matriculas')
-    .insert({
-      nino_id: nino.id,
-      aula_id: parsed.data.aulaId,
-      curso_academico_id: cursoActivoId,
-      estado: 'pendiente',
-    })
-    .select('id')
-    .single()
-  if (matErr || !matricula) {
-    logger.warn('completarEnDireccion matricula insert', matErr?.message)
-    await service.from('ninos').update({ deleted_at: new Date().toISOString() }).eq('id', nino.id)
-    return fail('matricula.errors.create_failed')
-  }
-
-  // 3. Cuenta del tutor + rol + vínculo (SIN email). Rollback interno de la cuenta si falla
-  //    rol/vínculo; aquí revertimos niño + matrícula si `crearTutorDirecto` devuelve error.
+  // 1. Cuenta GoTrue PRIMERO (defensiva PR-A vía `crearTutorDirecto`). Si GoTrue falla, no se
+  //    escribe nada en BD. Idempotente en reintento: una cuenta `stub` de un intento previo se
+  //    reutiliza (no se re-crea). NO se crea niño/matrícula/rol/vínculo/perfil aquí: eso es la RPC.
   const tutor = await crearTutorDirecto(service, {
     email: parsed.data.email,
     password: parsed.data.password,
     // Nombre completo REAL del tutor (nombre + apellidos tecleados por la Dirección).
     nombreCompleto: `${parsed.data.nombreTutor} ${parsed.data.apellidosTutor}`,
-    centroId,
-    ninoId: nino.id,
-    parentesco: parsed.data.parentesco,
-    descripcionParentesco: parsed.data.descripcionParentesco ?? null,
     idiomaPreferido: locale,
   })
-  if (!tutor.success) {
-    await service.from('matriculas').delete().eq('id', matricula.id)
-    await service.from('ninos').update({ deleted_at: new Date().toISOString() }).eq('id', nino.id)
-    return fail(tutor.error)
+  if (!tutor.success) return fail(tutor.error)
+
+  // 2. RPC transaccional (cliente AUTENTICADO → `es_admin(auth.uid(), p_centro_id)` autoriza
+  //    dentro; `p_centro_id` es server-derivado, no falseable). En UNA transacción crea:
+  //    familia + perfil en familia_tutores + niño (familia_id) + matrícula pendiente + vínculo
+  //    + rol. Todo-o-nada: aquí NO queda ninguna escritura suelta que duplique lo suyo.
+  const { data: rpcData, error: rpcError } = await supabase.rpc('crear_o_anadir_a_familia', {
+    p_nombre_nino: prospecto.nombre_nino,
+    p_apellidos_nino: prospecto.apellidos_nino ?? '',
+    p_fecha_nacimiento: fechaNacimiento,
+    p_centro_id: centroId,
+    p_aula_id: parsed.data.aulaId,
+    p_tutor_email: parsed.data.email,
+    p_tutor_nombre_completo: `${parsed.data.nombreTutor} ${parsed.data.apellidosTutor}`,
+    p_parentesco: parsed.data.parentesco,
+    p_descripcion_parentesco: parsed.data.descripcionParentesco ?? '',
+    p_usuario_id: tutor.data.usuarioId,
+    p_permisos: permisosDefault('tutor_legal_principal') as Json,
+  })
+  if (rpcError) {
+    // NO se borra la cuenta (frágil): el reintento es idempotente — la RPC es atómica (no dejó
+    // residuo en BD) y `crearTutorDirecto` reutiliza la cuenta `stub` en el siguiente intento.
+    logger.warn('completarEnDireccion rpc', rpcError.message)
+    return fail('listaEspera.errors.alta_fallo')
   }
 
-  // 4. El prospecto sale de la cola. Best-effort: si falla, el alta ya está creada; log y
+  const res = rpcData as ResultadoCrearFamilia
+  if (res.resultado === 'colision') {
+    // Email ya en el centro con OTRO nombre → avisar a Dirección; NO completar (patrón PR-A).
+    return ok({
+      resultado: 'colision',
+      nombreExistente: res.colision_info?.nombre_existente ?? null,
+    })
+  }
+
+  // 3. El prospecto sale de la cola. Best-effort: si falla, el alta ya está creada; log y
   //    seguimos (el prospecto queda en_espera y se puede descartar a mano).
   const { error: estadoErr } = await supabase
     .from('lista_espera')
@@ -159,5 +163,5 @@ export async function completarEnDireccion(
   }
 
   revalidatePath('/[locale]/admin/admisiones', 'page')
-  return ok({ ninoId: nino.id, usuarioId: tutor.data.usuarioId })
+  return ok({ resultado: 'ok', ninoId: res.nino_id as string, usuarioId: tutor.data.usuarioId })
 }

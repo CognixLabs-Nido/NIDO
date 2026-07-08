@@ -3267,7 +3267,10 @@
       "sin_email": "Falta el email del tutor para invitar.",
       "sin_curso_activo": "El centro no tiene un curso académico activo.",
       "aula_invalida": "El aula seleccionada no pertenece al curso activo.",
-      "tutor_ya_registrado": "Este email ya tiene una cuenta; no se ha enviado invitación."
+      "tutor_ya_registrado": "Este email ya tiene una cuenta; no se ha enviado invitación.",
+      "colision_email_familia": "Ese email ya existe en este centro con el nombre {nombre}. Corrige el email o los datos, o usa el alta como hermano.",
+      "alta_fallo": "No se pudo completar el alta. Inténtalo de nuevo.",
+      "sin_fecha_nacimiento": "Falta la fecha de nacimiento del niño; complétala antes de dar el alta."
     }
   },
   "recibos": {

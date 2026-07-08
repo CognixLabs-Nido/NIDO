@@ -3267,7 +3267,10 @@
       "sin_email": "The tutor’s email is required to invite.",
       "sin_curso_activo": "The centre has no active academic year.",
       "aula_invalida": "The selected classroom doesn't belong to the active year.",
-      "tutor_ya_registrado": "This email already has an account; no invitation was sent."
+      "tutor_ya_registrado": "This email already has an account; no invitation was sent.",
+      "colision_email_familia": "That email already exists in this centre under the name {nombre}. Fix the email or details, or use the sibling enrolment.",
+      "alta_fallo": "The enrolment could not be completed. Please try again.",
+      "sin_fecha_nacimiento": "The child's date of birth is missing; fill it in before enrolling."
     }
   },
   "recibos": {
