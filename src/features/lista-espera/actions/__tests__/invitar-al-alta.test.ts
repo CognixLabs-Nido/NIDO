@@ -31,9 +31,15 @@ const PROSPECTO_ROW = {
   estado: 'en_espera',
 }
 
-let sendInvitationSpy: ReturnType<typeof vi.fn>
+// Firma del mock de `sendInvitation` (Result de la action). Tipar el spy con la firma
+// explícita lo hace callable en el typecheck estricto del CI (evita TS2348 al llamarlo).
+type SendInvitationFn = (
+  ...args: unknown[]
+) => Promise<{ success: boolean; data?: { invitationId: string }; error?: string }>
+
+let sendInvitationSpy: ReturnType<typeof vi.fn<SendInvitationFn>>
 let rpcSpy: ReturnType<typeof vi.fn>
-let estadoUpdateSpy: ReturnType<typeof vi.fn>
+let estadoUpdateSpy: ReturnType<typeof vi.fn<() => void>>
 
 function makeServerFake() {
   function builder(table: string) {
@@ -107,8 +113,10 @@ beforeEach(() => {
     data: { resultado: 'familia_creada', familia_id: 'fam-1', nino_id: NINO, colision_info: null },
     error: null,
   }
-  sendInvitationSpy = vi.fn(() => Promise.resolve({ success: true, data: { invitationId: 'inv-1' } }))
-  estadoUpdateSpy = vi.fn()
+  sendInvitationSpy = vi.fn<SendInvitationFn>(() =>
+    Promise.resolve({ success: true, data: { invitationId: 'inv-1' } })
+  )
+  estadoUpdateSpy = vi.fn<() => void>()
 })
 
 describe('invitarAlAlta — cableado a la RPC de familia (F-2b-2b)', () => {
@@ -123,13 +131,17 @@ describe('invitarAlAlta — cableado a la RPC de familia (F-2b-2b)', () => {
     // La RPC de alta se invoca con p_usuario_id NULL (no crea rol al invitar).
     const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
     expect(altaCall).toBeDefined()
-    expect(altaCall?.[1]).toMatchObject({ p_usuario_id: null, p_centro_id: CENTRO, p_aula_id: AULA })
+    expect(altaCall?.[1]).toMatchObject({
+      p_usuario_id: null,
+      p_centro_id: CENTRO,
+      p_aula_id: AULA,
+    })
     // Invitación enviada + prospecto marcado invitado.
     expect(sendInvitationSpy).toHaveBeenCalledTimes(1)
     expect(estadoUpdateSpy).toHaveBeenCalledTimes(1)
   })
 
-  it("colisión → NO invita y devuelve el aviso con el nombre existente", async () => {
+  it('colisión → NO invita y devuelve el aviso con el nombre existente', async () => {
     rpcAltaResult = {
       data: {
         resultado: 'colision',
