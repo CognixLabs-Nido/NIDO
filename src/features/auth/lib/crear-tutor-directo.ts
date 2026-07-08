@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import { parentescoEnum, permisosDefault } from '@/features/vinculos/schemas/vinculo'
+import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
 import { logger } from '@/shared/lib/logger'
 import { CONSENT_OBLIGATORIOS, CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
 import type { Database } from '@/types/database'
@@ -16,117 +16,117 @@ export interface CrearTutorDirectoParams {
   password: string
   /** Nombre completo REAL del tutor (nombre + apellidos tecleados por la Dirección). */
   nombreCompleto: string
-  /** Centro y niño contra los que se crean rol y vínculo (ya existentes al llamar). */
-  centroId: string
-  ninoId: string
-  /** Parentesco declarado en el diálogo para el vínculo familiar. */
-  parentesco: string
-  descripcionParentesco: string | null
   /** Idioma de la cuenta (metadata → `usuarios.idioma_preferido` vía handle_new_user). */
   idiomaPreferido: 'es' | 'en' | 'va'
 }
 
 /**
- * Modo "Completa Dirección" (PR-3a): crea la cuenta del tutor SIN invitación por email.
- * A diferencia de `acceptInvitationCore`, la Dirección pone email+contraseña y NO se manda
- * correo (`createUser`, no `inviteUserByEmail`). El tutor activa luego con "he olvidado la
- * contraseña" (resetPasswordForEmail funciona: la cuenta nace con `email_confirm:true` y
- * contraseña real, indistinguible de una normal).
+ * Modo "Completa Dirección" (F-2b-2a) — **solo la cuenta GoTrue + consentimientos**.
  *
- * Reutiliza el mismo andamiaje service-role de accept-invitation:
- *   - `createServiceRoleClient` (lo pasa el orquestador para compartir cliente y rollback),
- *   - `service.auth.admin.createUser` (idéntico al camino "cuenta nueva" de B2),
- *   - INSERT `roles_usuario` (rol tutor_legal en el centro del niño),
- *   - upsert `vinculos_familiares` con `permisosDefault` (mismo patrón que `crearVinculoAutomatico`).
+ * FRONTERA LIMPIA: desde F-2b-2a el niño, la matrícula, la familia, el perfil del tutor
+ * (`familia_tutores`), el rol y el vínculo los crea la RPC transaccional
+ * `crear_o_anadir_a_familia` (atómica). Aquí NO queda NINGUNA escritura de esas entidades:
+ * lo único fuera de la RPC es la cuenta de Supabase Auth (no es SQL → no puede ir dentro
+ * de la transacción) y sus acuses de consentimiento presencial (best-effort, por usuario).
  *
- * El nombre del tutor es el REAL que teclea la Dirección (nombre + apellidos): se pasa como
- * `user_metadata.nombre_completo`, así `handle_new_user` lo usa tal cual y NUNCA cae al
- * fallback del local-part del email (el email no guarda relación con el nombre).
+ * Idempotencia del reintento: `clasificarCuenta` distingue `nueva`/`stub`/`real`. Si la RPC
+ * falló tras crear la cuenta, el reintento la ve como `stub` (cuenta sin roles) y la
+ * REUTILIZA (no re-crea, no falla por "email exists"); una cuenta `real` (ya operativa) se
+ * rechaza (la resolución cuenta-existente llega en una fase posterior). GoTrue va envuelto en
+ * `llamarGoTrue` (PR-A): un fallo de infraestructura devuelve `servicio_no_disponible` sin
+ * dejar estado a medias.
  *
- * Consentimientos (términos/privacidad) — PR-3b-2 · B2: la familia firmó TODO en PAPEL, así
- * que se registran A NOMBRE DEL TUTOR (`p_usuario_id=usuarioId`, vía service-role → el gate
- * `auth.uid()<>p_usuario_id` no aplica con auth.uid() NULL) y marcados `metodo_firma='presencial'`
- * (respaldo físico). Espejo del bucle de `acceptInvitationCore` pero en papel: así el tutor
- * queda con sus acuses completos y NO es re-preguntado al entrar (su caché en `usuarios` se
- * puebla). No bloquean el alta si fallan (best-effort, se loguea). NO crea niño ni matrícula:
- * eso lo hace el orquestador ANTES (necesita el `ninoId` aquí).
- *
- * Rollback interno en cascada: si falla rol o vínculo, borra la cuenta recién creada para
- * no dejar un usuario huérfano. El niño/matrícula los revierte el orquestador si esto falla.
+ * Consentimientos (términos/privacidad) — la familia firmó en PAPEL: se registran a nombre
+ * del tutor con `metodo_firma='presencial'` (best-effort; si falla se loguea y NO se aborta:
+ * el tutor podrá re-consentir al entrar). NO crea niño/matrícula/rol/vínculo: eso es la RPC.
  */
 export async function crearTutorDirecto(
   service: ServiceClient,
   params: CrearTutorDirectoParams
 ): Promise<ActionResult<{ usuarioId: string }>> {
-  // Cuenta nueva con credenciales puestas por la Dirección. `email_confirm:true` la deja
-  // usable de inmediato; el trigger `handle_new_user` puebla `public.usuarios` con el
-  // `nombre_completo` REAL de la metadata (nombre + apellidos tecleados), sin fallback.
-  const {
-    data: created,
-    error: createErr,
-    indisponible,
-  } = await llamarGoTrue('createUser', () =>
-    service.auth.admin.createUser({
-      email: params.email,
-      password: params.password,
-      email_confirm: true,
-      user_metadata: {
-        nombre_completo: params.nombreCompleto,
-        idioma_preferido: params.idiomaPreferido,
-      },
-    })
+  // 1. Clasificar la cuenta del email (idempotencia del reintento). `listUsers` localiza la
+  //    fila auth; la señal de "cuenta real" es tener al menos un rol (igual que accept-invitation).
+  const { data: existentes, indisponible: listIndisponible } = await llamarGoTrue('listUsers', () =>
+    service.auth.admin.listUsers()
   )
-  if (indisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
-  if (createErr || !created?.user) {
-    logger.warn('crearTutorDirecto createUser', createErr?.message)
-    // Email ya registrado → mensaje específico (Supabase responde 422/"already registered").
-    const dup =
-      createErr?.status === 422 ||
-      (createErr?.message ?? '').toLowerCase().includes('already') ||
-      (createErr?.message ?? '').toLowerCase().includes('registered')
-    return fail(
-      dup
-        ? 'auth.invitation.errors.email_already_registered'
-        : 'auth.invitation.errors.create_failed'
+  if (listIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+
+  const authUser = (existentes?.users ?? []).find(
+    (u) => u.email?.toLowerCase() === params.email.toLowerCase()
+  )
+  let tieneRoles = false
+  if (authUser) {
+    const { data: rolesPrevios } = await service
+      .from('roles_usuario')
+      .select('usuario_id')
+      .eq('usuario_id', authUser.id)
+      .is('deleted_at', null)
+      .limit(1)
+    tieneRoles = (rolesPrevios?.length ?? 0) > 0
+  }
+  const clase = clasificarCuenta(Boolean(authUser), tieneRoles)
+  // Cuenta operativa (con roles): la resolución cuenta-existente es una fase posterior.
+  if (clase === 'real') return fail('auth.invitation.errors.email_already_registered')
+
+  let usuarioId: string
+  if (clase === 'stub' && authUser) {
+    // Reintento: completa el stub (fija password real, confirma email y metadata) SIN re-crear.
+    const {
+      data: updated,
+      error: updateErr,
+      indisponible: updIndisponible,
+    } = await llamarGoTrue('updateUserById', () =>
+      service.auth.admin.updateUserById(authUser.id, {
+        password: params.password,
+        email_confirm: true,
+        user_metadata: {
+          nombre_completo: params.nombreCompleto,
+          idioma_preferido: params.idiomaPreferido,
+        },
+      })
     )
+    if (updIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+    if (updateErr || !updated?.user) {
+      logger.warn('crearTutorDirecto updateUserById', updateErr?.message)
+      return fail('auth.invitation.errors.create_failed')
+    }
+    usuarioId = updated.user.id
+  } else {
+    // Cuenta nueva con credenciales de la Dirección. `email_confirm:true` la deja usable ya;
+    // `handle_new_user` puebla `public.usuarios` con el nombre REAL de la metadata.
+    const {
+      data: created,
+      error: createErr,
+      indisponible: creaIndisponible,
+    } = await llamarGoTrue('createUser', () =>
+      service.auth.admin.createUser({
+        email: params.email,
+        password: params.password,
+        email_confirm: true,
+        user_metadata: {
+          nombre_completo: params.nombreCompleto,
+          idioma_preferido: params.idiomaPreferido,
+        },
+      })
+    )
+    if (creaIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+    if (createErr || !created?.user) {
+      logger.warn('crearTutorDirecto createUser', createErr?.message)
+      const dup =
+        createErr?.status === 422 ||
+        (createErr?.message ?? '').toLowerCase().includes('already') ||
+        (createErr?.message ?? '').toLowerCase().includes('registered')
+      return fail(
+        dup
+          ? 'auth.invitation.errors.email_already_registered'
+          : 'auth.invitation.errors.create_failed'
+      )
+    }
+    usuarioId = created.user.id
   }
-  const usuarioId = created.user.id
 
-  const { error: roleErr } = await service.from('roles_usuario').insert({
-    usuario_id: usuarioId,
-    centro_id: params.centroId,
-    rol: 'tutor_legal',
-  })
-  if (roleErr) {
-    logger.warn('crearTutorDirecto rol', roleErr.message)
-    await service.auth.admin.deleteUser(usuarioId).catch(() => {})
-    return fail('auth.invitation.errors.role_failed')
-  }
-
-  // Vínculo tutor↔niño (tutor_legal_principal, permisos por defecto = todos true). Upsert
-  // idempotente como en `crearVinculoAutomatico`: si ya existiera, no falla.
-  const { error: vinculoErr } = await service.from('vinculos_familiares').upsert(
-    {
-      nino_id: params.ninoId,
-      usuario_id: usuarioId,
-      tipo_vinculo: 'tutor_legal_principal',
-      parentesco: params.parentesco as ReturnType<typeof parentescoEnum.parse>,
-      descripcion_parentesco: params.descripcionParentesco,
-      permisos: permisosDefault('tutor_legal_principal'),
-    },
-    { onConflict: 'nino_id,usuario_id', ignoreDuplicates: true }
-  )
-  if (vinculoErr) {
-    logger.warn('crearTutorDirecto vínculo', vinculoErr.message)
-    await service.from('roles_usuario').delete().eq('usuario_id', usuarioId)
-    await service.auth.admin.deleteUser(usuarioId).catch(() => {})
-    return fail('vinculo.errors.create_failed')
-  }
-
-  // Acuses obligatorios (términos + privacidad) A NOMBRE DEL TUTOR, marcados PRESENCIAL:
-  // la familia los firmó en papel; la Directora los deja constancia. Espejo del bucle de
-  // `acceptInvitationCore` pero con `p_metodo='presencial'`. Best-effort: si alguno falla,
-  // se loguea pero NO se revierte la cuenta (el tutor podrá re-consentir al entrar).
+  // 2. Acuses obligatorios (términos + privacidad) A NOMBRE DEL TUTOR, marcados PRESENCIAL.
+  //    Best-effort: si alguno falla, se loguea pero NO se revierte (el tutor re-consiente al entrar).
   for (const tipo of CONSENT_OBLIGATORIOS) {
     const { error: consentErr } = await service.rpc('registrar_consentimiento', {
       p_usuario_id: usuarioId,

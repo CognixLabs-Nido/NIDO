@@ -382,6 +382,15 @@ function CompletarBoton({
           locale as 'es' | 'en' | 'va'
         )
         if (r.success) {
+          if (r.data.resultado === 'colision') {
+            // Email ya en el centro con otros datos → aviso; Dirección corrige (no navega).
+            toast.error(
+              tErrors('listaEspera.errors.colision_email_familia', {
+                nombre: r.data.nombreExistente ?? '—',
+              })
+            )
+            return
+          }
           toast.success(t('completado'))
           setOpen(false)
           reset()

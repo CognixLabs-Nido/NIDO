@@ -3267,7 +3267,10 @@
       "sin_email": "Falta el correu del tutor per a convidar.",
       "sin_curso_activo": "El centre no té un curs acadèmic actiu.",
       "aula_invalida": "L'aula seleccionada no pertany al curs actiu.",
-      "tutor_ya_registrado": "Aquest correu ja té un compte; no s'ha enviat cap invitació."
+      "tutor_ya_registrado": "Aquest correu ja té un compte; no s'ha enviat cap invitació.",
+      "colision_email_familia": "Aquest correu ja existeix en aquest centre amb el nom {nombre}. Corregeix el correu o les dades, o fes servir l'alta com a germà.",
+      "alta_fallo": "No s'ha pogut completar l'alta. Torna-ho a provar.",
+      "sin_fecha_nacimiento": "Falta la data de naixement del xiquet; emplena-la abans de fer l'alta."
     }
   },
   "recibos": {
