@@ -52,6 +52,13 @@ function makeServiceFake() {
         return { data: rolesParaUsuario, error: null }
       }
       if (table === 'vinculos_familiares') return { error: null }
+      // F-2b-2b: backfill del perfil. `ninos` → familia del niño; `familia_tutores` select →
+      // candidatos pendientes (casa por email de la invitación); update → fila enlazada.
+      if (table === 'ninos') return { data: { familia_id: 'fam-1' }, error: null }
+      if (table === 'familia_tutores') {
+        if (state.op === 'update') return { data: { id: 'ft-1' }, error: null }
+        return { data: [{ id: 'ft-1', email: INVITATION_ROW.email }], error: null }
+      }
       return { data: null, error: null }
     }
     const b: Record<string, unknown> = {}
