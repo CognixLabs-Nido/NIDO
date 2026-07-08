@@ -182,6 +182,35 @@ export async function acceptInvitationCore(
     userId = created.user.id
   }
 
+  // F-2b-2b: enlazar la cuenta recién activada al perfil `familia_tutores` que se creó al
+  // INVITAR con `usuario_id` NULL. La RPC no pudo ponerlo entonces: crear el rol al invitar
+  // habría marcado la cuenta como 'real' y roto el routing de la invitación. El id NO cambia
+  // (el stub se completó in situ); esto solo rellena el hueco: `usuario_id` + `nombre_completo`
+  // (que `lista_espera` no tenía al invitar). El UPDATE de `usuario_id` está EXENTO del
+  // congelado de F-2a por ser `service_role` (el caso previsto). Idempotente (`usuario_id IS
+  // NULL`). Solo altas por invitación de rol familiar con niño; el perfil es el titular de su
+  // familia (uno por familia → sin ambigüedad). Sin backfill, el tutor quedaría sin perfil.
+  if (creaVinculo && invitation.nino_id) {
+    const { data: ninoFam } = await service
+      .from('ninos')
+      .select('familia_id')
+      .eq('id', invitation.nino_id)
+      .maybeSingle()
+    if (ninoFam?.familia_id) {
+      const { error: backfillErr } = await service
+        .from('familia_tutores')
+        .update({ usuario_id: userId, nombre_completo: parsed.data.nombreCompleto })
+        .eq('familia_id', ninoFam.familia_id)
+        .is('usuario_id', null)
+      if (backfillErr) {
+        // Sin enlace no se completa el alta: rollback de la cuenta recién activada.
+        logger.warn('backfill familia_tutores.usuario_id falló', backfillErr.message)
+        await service.auth.admin.deleteUser(userId).catch(() => {})
+        return fail('auth.invitation.errors.create_failed')
+      }
+    }
+  }
+
   const { error: roleErr } = await service.from('roles_usuario').insert({
     usuario_id: userId,
     centro_id: invitation.centro_id,

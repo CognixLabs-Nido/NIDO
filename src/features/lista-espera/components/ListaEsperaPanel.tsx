@@ -236,6 +236,15 @@ function InvitarBoton({
       try {
         const r = await invitarAlAlta({ id, aulaId }, locale)
         if (r.success) {
+          if (r.data.resultado === 'colision') {
+            // La RPC detectó el email ya en el centro con otro perfil → avisar, NO invitar.
+            toast.error(
+              tErrors('listaEspera.errors.colision_email_familia', {
+                nombre: r.data.nombreExistente ?? '—',
+              })
+            )
+            return
+          }
           toast.success(t('invitado'))
           setOpen(false)
           setAulaId('')
