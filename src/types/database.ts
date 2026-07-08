@@ -4071,6 +4071,22 @@ export type Database = {
       contar_invitaciones_pendientes: { Args: never; Returns: number }
       contar_recordatorios_pendientes: { Args: never; Returns: number }
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
+      crear_o_anadir_a_familia: {
+        Args: {
+          p_apellidos_nino: string
+          p_aula_id: string
+          p_centro_id: string
+          p_descripcion_parentesco: string
+          p_fecha_nacimiento: string
+          p_nombre_nino: string
+          p_parentesco: string
+          p_permisos: Json
+          p_tutor_email: string
+          p_tutor_nombre_completo: string
+          p_usuario_id: string
+        }
+        Returns: Json
+      }
       crear_recibo_esporadico: {
         Args: {
           p_anio: number
