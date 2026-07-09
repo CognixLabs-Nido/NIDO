@@ -11,7 +11,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --project unit",
     "test:rls": "vitest run --project rls",
     "test:unit": "vitest run --project unit",
     "test:watch": "vitest",

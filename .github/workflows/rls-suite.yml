@@ -18,6 +18,17 @@ on:
 # Un único run de la suite RLS a la vez (global, no por rama): si llega otro (nightly +
 # dispatch manual solapados), se ENCOLA en vez de correr en paralelo. No cancelamos el
 # que ya corre (cancel-in-progress: false) para no dejar la BD a medias.
+#
+# REGLA (no romper): TODO workflow que ejecute el proyecto `rls` (`npm run test:rls` o
+# `vitest run --project rls`) escribe fixtures en el remoto compartido y DEBE ir bajo
+# este mismo bloque `concurrency: { group: rls-suite, cancel-in-progress: false }`. Hoy
+# el único ejecutor es este workflow: ci-main.yml y ci-pr.yml corren solo `--project unit`
+# (sin BD) a propósito, por eso NO se les mete en este grupo (serializaría lo que no
+# compite). Si algún día otro workflow corre rls, se une a este grupo — no a uno nuevo.
+#
+# RESIDUAL (fuera del alcance de GitHub concurrency): lanzar `npm run test:rls` EN LOCAL
+# mientras puede correr el nightly colisiona con él (dos wipes+writes sobre el mismo
+# remoto). No lo previene este bloque; evítalo manualmente.
 concurrency:
   group: rls-suite
   cancel-in-progress: false

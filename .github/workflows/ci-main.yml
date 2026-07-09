@@ -24,41 +24,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Solo el proyecto `unit` (jsdom, sin red): NO arrastra el proyecto `rls`
+      # (src/test/rls/** + src/test/audit/**). Los tests RLS/audit hablan con el
+      # remoto compartido y corren SERIALIZADOS en `rls-suite.yml`; correrlos aquí
+      # metía a ci-main como un segundo ejecutor concurrente de la suite RLS sin
+      # serializar → colisión de fixtures con el nightly/dispatch (rompió tras #195).
+      # Por eso NO se usa `npm test` genérico: se nombra el proyecto explícito, igual
+      # que ci-pr.yml. Sin `secrets` de Supabase ni flags de migración: `unit` no toca BD.
       - name: Unit tests
-        run: npm test
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          # Gated-tests RLS/audit: las 26 migraciones están aplicadas en el remoto
-          # (fases cerradas). Activados tras dry-run local 213/213 verde. NO incluye
-          # E2E_REAL_SESSIONS (Playwright corre aparte, no en este job).
-          F5B34_MIGRATION_APPLIED: '1'
-          RECORDATORIOS_MIGRATION_APPLIED: '1'
-          EVENTOS_MIGRATION_APPLIED: '1'
-          AGENDA_MIGRATION_APPLIED: '1'
-          F8_MIGRATION_APPLIED: '1'
-          F8_RW0_MIGRATION_APPLIED: '1'
-          F8_3B_MIGRATION_APPLIED: '1'
-          F9_0_MIGRATION_APPLIED: '1'
-          F9_5_0_MIGRATION_APPLIED: '1'
-          F10_0_MIGRATION_APPLIED: '1'
-          F10_2_MIGRATION_APPLIED: '1'
-          F10_3_MIGRATION_APPLIED: '1'
-          F11_ALTA_P1_MIGRATION_APPLIED: '1'
-          F11_ALTA_P2A_MIGRATION_APPLIED: '1'
-          F11_ALTA_P2B_MIGRATION_APPLIED: '1'
-          F11_ALTA_P3A_MIGRATION_APPLIED: '1'
-          F11_ALTA_P3B1_MIGRATION_APPLIED: '1'
-          F11_ALTA_P3C_MIGRATION_APPLIED: '1'
-          F11_ALTA_P3F2_MIGRATION_APPLIED: '1'
-          F11_A6_MIGRATION_APPLIED: '1'
-          F11A_CONSENT_MIGRATION_APPLIED: '1'
-          F11A_LEASTPRIV_MIGRATION_APPLIED: '1'
-          F11A3_IMAGEN_MIGRATION_APPLIED: '1'
-          F11A4_OLVIDO_MIGRATION_APPLIED: '1'
-          F11A5_EXPORT_MIGRATION_APPLIED: '1'
-          F11A6_RETENCION_MIGRATION_APPLIED: '1'
-          F11_F3_MIGRATION_APPLIED: '1'
-          F8_FIRMAR_PERMISO_MIGRATION_APPLIED: '1'
-          F11_H0_MIGRATION_APPLIED: '1'
+        run: npm run test:unit
