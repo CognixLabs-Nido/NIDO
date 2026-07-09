@@ -75,6 +75,11 @@ export default defineConfig({
         test: {
           name: 'rls',
           include: REMOTE_GLOBS,
+          // Wipe bruto ACOTADO al arrancar (solo este proyecto; NO en `unit`, que
+          // no toca la BD). Limpia el residuo de test (@nido.test) de la corrida
+          // anterior antes de empezar → un crash no contamina la siguiente. Ver
+          // el INVARIANTE de seguridad en el propio fichero.
+          globalSetup: ['./src/test/rls/global-setup.ts'],
           // 90s (antes 20s): además de la red + backoff de Auth, los tests pesados
           // (purgar_sujeto_db, INSERT con triggers de audit) corren contra la BD
           // remota compartida bajo contención de varios runs de CI. Con el
