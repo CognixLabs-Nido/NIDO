@@ -119,7 +119,9 @@ describe.skipIf(!APPLIED)('A6 — esqueleto huérfano niño-arm (RLS/RPC)', () =
       .from(BUCKET_NINOS_FOTOS)
       .remove([`${centro.id}/${ninoConFoto?.id}/probe.jpg`])
       .catch(() => {})
-    const ids = [ninoValido?.id, ninoConVinculo?.id, ninoConFoto?.id].filter(Boolean)
+    const ids = [ninoHuerfano?.id, ninoValido?.id, ninoConVinculo?.id, ninoConFoto?.id].filter(
+      Boolean
+    )
     await serviceClient.from('vinculos_familiares').delete().in('nino_id', ids)
     await serviceClient.from('invitaciones').delete().eq('centro_id', centro.id)
     await serviceClient.from('matriculas').delete().in('nino_id', ids)

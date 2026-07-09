@@ -125,10 +125,30 @@ export async function clientFor(user: TestUser): Promise<SupabaseClient<Database
   })
 }
 
+/**
+ * Formatea un error de Supabase (GoTrue Auth o PostgREST) para el log de teardown.
+ * GoTrue trae `status` + `name` con `message` VACÍO; PostgREST trae `code` + `message` +
+ * `details`. Se emiten todos los campos útiles para que el leak sea diagnosticable en CI.
+ */
+function formatSupabaseError(e: unknown): string {
+  const o = (e ?? {}) as {
+    status?: number
+    name?: string
+    code?: string
+    message?: string
+    details?: string
+  }
+  return `status=${o.status ?? '-'} name=${o.name ?? '-'} code=${o.code ?? '-'} message=${o.message || '-'} details=${o.details ?? '-'}`
+}
+
 export async function deleteTestUser(userId: string): Promise<void> {
-  await serviceClient.auth.admin.deleteUser(userId).catch(() => {
-    /* ignore */
-  })
+  // Best-effort a nivel de fichero: NO lanza (un teardown fallido no debe tumbar la
+  // suite), pero YA NO traga el error — lo loggea ruidoso para que el leak sea visible
+  // en CI. `error.message` viene vacío en GoTrue → se reporta status + name.
+  const { error } = await serviceClient.auth.admin.deleteUser(userId)
+  if (error) {
+    console.error(`deleteTestUser(${userId}) falló: ${formatSupabaseError(error)}`)
+  }
 }
 
 export function fakeCentroId(): string {
@@ -147,6 +167,13 @@ export interface TestCentro {
   nombre: string
 }
 
+/**
+ * INVARIANTE DE SEGURIDAD (del que depende el wipe de PR-C): los centros de TEST usan
+ * SIEMPRE `email_contacto` en el dominio `@nido.test`; los centros REALES (p. ej. ANAIA)
+ * NUNCA. El wipe de `globalSetup` identifica lo borrable por ese patrón
+ * (`email_contacto LIKE '%@nido.test'`, más un guard por id de ANAIA). Si un centro real
+ * usara `@nido.test`, el wipe podría alcanzarlo → NO romper esta convención.
+ */
 export async function createTestCentro(nombre?: string): Promise<TestCentro> {
   const id = randomUUID()
   const finalNombre = nombre ?? `Centro Test ${id.slice(0, 8)}`
@@ -163,9 +190,41 @@ export async function createTestCentro(nombre?: string): Promise<TestCentro> {
 }
 
 export async function deleteTestCentro(id: string): Promise<void> {
-  // hard delete: el centro va con cascade implícito de los datos creados arriba.
-  // RESTRICT en roles_usuario y otras tablas obliga a limpiar dependencias antes.
-  await serviceClient.from('centros').delete().eq('id', id)
+  // FK-safe: borra los dependientes del centro EN ORDEN antes del DELETE de centros
+  // (RESTRICT en roles_usuario, matriculas, ninos y otras bloquea el borrado directo).
+  // Best-effort a nivel de fichero, pero YA NO muere mudo: inspecciona el error final.
+  const svc = serviceClient
+
+  // Niños del centro: los dependientes con FK RESTRICT sobre ninos hay que borrarlos
+  // ANTES que los propios niños. El resto (vinculos, autorizaciones-instancia, firmas,
+  // datos_tutor, facturación, citas, eventos, recordatorios…) cae por CASCADE al borrar ninos.
+  const { data: ninos } = await svc.from('ninos').select('id').eq('centro_id', id)
+  const ninoIds = (ninos ?? []).map((n) => n.id)
+  if (ninoIds.length > 0) {
+    await svc.from('administraciones_medicacion').delete().in('nino_id', ninoIds)
+    await svc.from('informes_evolucion').delete().in('nino_id', ninoIds)
+    await svc.from('conversaciones').delete().in('nino_id', ninoIds)
+    await svc.from('asistencias').delete().in('nino_id', ninoIds)
+    await svc.from('ausencias').delete().in('nino_id', ninoIds)
+    await svc.from('agendas_diarias').delete().in('nino_id', ninoIds)
+    await svc.from('info_medica_emergencia').delete().in('nino_id', ninoIds)
+    await svc.from('datos_pedagogicos_nino').delete().in('nino_id', ninoIds)
+    await svc.from('matriculas').delete().in('nino_id', ninoIds)
+    await svc.from('ninos').delete().in('id', ninoIds)
+  }
+
+  // Estructura del centro: aulas cascadea aulas_curso + profes_aulas; familias cascadea
+  // familia_tutores.
+  await svc.from('aulas').delete().eq('centro_id', id)
+  await svc.from('cursos_academicos').delete().eq('centro_id', id)
+  await svc.from('familias').delete().eq('centro_id', id)
+  await svc.from('roles_usuario').delete().eq('centro_id', id)
+  await svc.from('invitaciones').delete().eq('centro_id', id)
+
+  const { error } = await svc.from('centros').delete().eq('id', id)
+  if (error) {
+    console.error(`deleteTestCentro(${id}) falló: ${formatSupabaseError(error)}`)
+  }
 }
 
 export async function asignarRol(
