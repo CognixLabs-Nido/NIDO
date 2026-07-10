@@ -17,7 +17,7 @@ export const rolFamiliaEnum = z.enum(['titular', 'segundo_tutor'])
 export type RolFamilia = z.infer<typeof rolFamiliaEnum>
 
 /**
- * Mapeo ÚNICO tipo_vinculo (por-niño, legado `datos_tutor`) ↔ rol_familia (perfil
+ * Mapeo ÚNICO tipo_vinculo (por-niño, del legado ya eliminado en F-2b-5) ↔ rol_familia (perfil
  * compartido `familia_tutores`). Todo el wizard/cola escribe y lee por este par:
  * `tutor_legal_principal`⇄`titular`, `tutor_legal_secundario`⇄`segundo_tutor`.
  */

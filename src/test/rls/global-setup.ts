@@ -232,7 +232,7 @@ export default async function globalSetup(): Promise<void> {
   await delWhereIn('olvido_solicitudes', 'solicitado_por', userIds)
 
   // ---------------------------------------------------------------------------
-  // 6. NIÑOS → FAMILIAS → estructura → centros. ninos cascadea datos_tutor,
+  // 6. NIÑOS → FAMILIAS → estructura → centros. ninos cascadea
   //    vinculos, cambios_pendientes, consentimientos(nino), asignacion_cuota,
   //    becas, metodo_pago_familia, parte_servicio_diario, mandatos_sepa.
   // ---------------------------------------------------------------------------

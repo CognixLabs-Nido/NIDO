@@ -22,11 +22,13 @@ import type { Database } from '@/types/database'
 
 /**
  * F11-G-4 — RLS del modelo de "Altas con documentos" (cierra el pendiente de G-1) +
- * aislamiento entre centros. Cubre las 3 tablas (datos_tutor, mandatos_sepa,
- * cambios_pendientes) y los 3 buckets privados (libro-familia, dni-tutores, mandato-sepa).
+ * aislamiento entre centros. Cubre 2 tablas (mandatos_sepa, cambios_pendientes) y los 3
+ * buckets privados (libro-familia, dni-tutores, mandato-sepa).
+ *
+ * (La parte de `datos_tutor` se retiró en F-2b-5 junto con el DROP de la tabla, ya
+ * migrada a `familia_tutores`.)
  *
  * Criterios verificados:
- *  - datos_tutor: admin del centro y tutor legal del niño LEEN; profe NO; aislamiento centro.
  *  - mandatos_sepa: admin/tutor legal LEEN; profe NO; el IBAN viaja CIFRADO (iban_cifrado
  *    bytea) — el cliente nunca obtiene el texto claro (descifrar = RPC de Fase B, diferida).
  *  - cambios_pendientes: el tutor legal encola lo suyo (solicitado_por=auth.uid()); admin
@@ -44,7 +46,7 @@ const PDF = Buffer.from('%PDF-1.4\n%%EOF\n')
 const IBAN_TEST = 'ES9121000418450200051332' // 24 chars, válido por longitud
 
 describe.skipIf(!APPLIED)(
-  'F11-G — RLS validación + buckets (datos_tutor / mandatos_sepa / cambios_pendientes)',
+  'F11-G — RLS validación + buckets (mandatos_sepa / cambios_pendientes)',
   () => {
     let centroA: { id: string }
     let centroB: { id: string }
@@ -91,60 +93,12 @@ describe.skipIf(!APPLIED)(
       // Limpieza explícita de las filas creadas en tablas con FK RESTRICT a usuarios.
       await serviceClient.from('cambios_pendientes').delete().eq('nino_id', ninoA.id)
       await serviceClient.from('mandatos_sepa').delete().eq('nino_id', ninoA.id)
-      await serviceClient.from('datos_tutor').delete().eq('nino_id', ninoA.id)
       await deleteTestCentro(centroA.id)
       await deleteTestCentro(centroB.id)
       await deleteTestUser(adminA.id)
       await deleteTestUser(profeA.id)
       await deleteTestUser(tutorA.id)
       await deleteTestUser(tutorB.id)
-    })
-
-    // ─── datos_tutor ───────────────────────────────────────────────────────────
-    describe('datos_tutor', () => {
-      it('el tutor legal inserta sus datos; admin y tutor LEEN; profe NO; aislamiento centro', async () => {
-        const ins = await cTutorA
-          .from('datos_tutor')
-          .insert({
-            centro_id: centroA.id, // el trigger lo deriva; el tipo generado lo exige
-            nino_id: ninoA.id,
-            tipo_vinculo: 'tutor_legal_principal',
-            usuario_id: tutorA.id,
-            nombre_completo: 'Madre Test',
-            email: 'madre@nido.test',
-          })
-          .select('id')
-          .maybeSingle()
-        expect(ins.error).toBeNull()
-        expect(ins.data).not.toBeNull()
-
-        const admin = await cAdminA.from('datos_tutor').select('id').eq('nino_id', ninoA.id)
-        expect(admin.data ?? []).toHaveLength(1)
-
-        const tutor = await cTutorA.from('datos_tutor').select('id').eq('nino_id', ninoA.id)
-        expect(tutor.data ?? []).toHaveLength(1)
-
-        const profe = await cProfeA.from('datos_tutor').select('id').eq('nino_id', ninoA.id)
-        expect(profe.error).toBeNull()
-        expect(profe.data ?? []).toHaveLength(0) // profe NO es admin ni tutor legal
-
-        const ajeno = await cTutorB.from('datos_tutor').select('id').eq('nino_id', ninoA.id)
-        expect(ajeno.data ?? []).toHaveLength(0) // otro centro/familia
-      })
-
-      it('un tutor NO inserta datos_tutor de un niño ajeno (WITH CHECK)', async () => {
-        const r = await cTutorA
-          .from('datos_tutor')
-          .insert({
-            centro_id: centroA.id,
-            nino_id: ninoA2.id,
-            tipo_vinculo: 'tutor_legal_principal',
-            usuario_id: tutorA.id,
-          })
-          .select('id')
-          .maybeSingle()
-        expect(r.error).not.toBeNull()
-      })
     })
 
     // ─── mandatos_sepa ──────────────────────────────────────────────────────────
