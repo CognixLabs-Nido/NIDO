@@ -3776,7 +3776,7 @@ export type Database = {
           nino_id: string
         }
         Insert: {
-          centro_id?: string
+          centro_id: string
           created_at?: string
           created_by?: string | null
           curso_academico_id: string
@@ -3800,6 +3800,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "rollover_finaliza_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "rollover_finaliza_curso_academico_id_fkey"
             columns: ["curso_academico_id"]
             isOneToOne: false
@@ -3811,13 +3818,6 @@ export type Database = {
             columns: ["nino_id"]
             isOneToOne: false
             referencedRelation: "ninos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rollover_finaliza_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]
