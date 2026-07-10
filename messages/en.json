@@ -747,24 +747,6 @@
         "no_pendiente": "This change is no longer pending.",
         "aplicar": "The change could not be applied. It has been left pending for retry."
       }
-    },
-    "purga": {
-      "title": "Document purge by course",
-      "descripcion": "Delete the sensitive documents (family book, guardian IDs, SEPA mandate) of a course that ended 5 or more years ago. Only affects children who are no longer enrolled. Manual and irreversible action.",
-      "sin_cursos": "There are no courses 5 or more years old to purge.",
-      "seleccionar_curso": "Select a course",
-      "fin": "ended {fecha}",
-      "confirmar_label": "To confirm, type the exact course name: {nombre}",
-      "purgar": "Purge documents",
-      "purgando": "Purging…",
-      "purgado": "Purge complete: {documentos} documents and {filas} records from {ninos} children.",
-      "errors": {
-        "invalido": "Invalid request.",
-        "no_autorizado": "You do not have permission to purge this course.",
-        "curso_no_encontrado": "Course not found.",
-        "nombre_no_coincide": "The name you typed does not match the course name.",
-        "no_purgable": "This course is not yet 5 years old."
-      }
     }
   },
   "teacher": {
