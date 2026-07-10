@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       administraciones_medicacion: {
@@ -1632,82 +1657,6 @@ export type Database = {
           },
         ]
       }
-      datos_tutor: {
-        Row: {
-          centro_id: string
-          created_at: string
-          deleted_at: string | null
-          direccion_calle: string | null
-          direccion_ciudad: string | null
-          direccion_cp: string | null
-          direccion_numero: string | null
-          dni_documento_path: string | null
-          email: string | null
-          id: string
-          nino_id: string
-          nombre_completo: string | null
-          tipo_vinculo: Database["public"]["Enums"]["tipo_vinculo"]
-          updated_at: string
-          usuario_id: string | null
-        }
-        Insert: {
-          centro_id: string
-          created_at?: string
-          deleted_at?: string | null
-          direccion_calle?: string | null
-          direccion_ciudad?: string | null
-          direccion_cp?: string | null
-          direccion_numero?: string | null
-          dni_documento_path?: string | null
-          email?: string | null
-          id?: string
-          nino_id: string
-          nombre_completo?: string | null
-          tipo_vinculo: Database["public"]["Enums"]["tipo_vinculo"]
-          updated_at?: string
-          usuario_id?: string | null
-        }
-        Update: {
-          centro_id?: string
-          created_at?: string
-          deleted_at?: string | null
-          direccion_calle?: string | null
-          direccion_ciudad?: string | null
-          direccion_cp?: string | null
-          direccion_numero?: string | null
-          dni_documento_path?: string | null
-          email?: string | null
-          id?: string
-          nino_id?: string
-          nombre_completo?: string | null
-          tipo_vinculo?: Database["public"]["Enums"]["tipo_vinculo"]
-          updated_at?: string
-          usuario_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "datos_tutor_centro_id_fkey"
-            columns: ["centro_id"]
-            isOneToOne: false
-            referencedRelation: "centros"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "datos_tutor_nino_id_fkey"
-            columns: ["nino_id"]
-            isOneToOne: false
-            referencedRelation: "ninos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "datos_tutor_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       deposiciones: {
         Row: {
           agenda_id: string
@@ -2969,7 +2918,7 @@ export type Database = {
           estado_civil_familia:
             | Database["public"]["Enums"]["estado_civil"]
             | null
-          familia_id: string | null
+          familia_id: string
           fecha_nacimiento: string | null
           foto_url: string | null
           id: string
@@ -2995,7 +2944,7 @@ export type Database = {
           estado_civil_familia?:
             | Database["public"]["Enums"]["estado_civil"]
             | null
-          familia_id?: string | null
+          familia_id: string
           fecha_nacimiento?: string | null
           foto_url?: string | null
           id?: string
@@ -3021,7 +2970,7 @@ export type Database = {
           estado_civil_familia?:
             | Database["public"]["Enums"]["estado_civil"]
             | null
-          familia_id?: string | null
+          familia_id?: string
           fecha_nacimiento?: string | null
           foto_url?: string | null
           id?: string
@@ -4670,6 +4619,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       ambito_anuncio: ["aula", "centro"],
