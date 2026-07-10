@@ -315,6 +315,12 @@ export async function createTestFamilia(centro_id: string): Promise<string> {
   return data.id
 }
 
+/**
+ * ÚNICO camino normal de creación de niños en tests. Cualquier insert crudo en `ninos`
+ * (p. ej. el test del esqueleto, que deja apellidos/fecha_nacimiento NULL y no puede usar
+ * este factory) DEBE setear `familia_id` (NOT NULL desde F-2b-3) creando la familia con
+ * `createTestFamilia`. No insertes en `ninos` sin familia_id: la RLS suite falla.
+ */
 export async function createTestNino(centro_id: string, nombre?: string): Promise<TestNino> {
   const finalNombre = nombre ?? `NinoTest-${randomUUID().slice(0, 8)}`
   // familia_id es NOT NULL (F-2b-3): se crea una familia para el niño de test.
