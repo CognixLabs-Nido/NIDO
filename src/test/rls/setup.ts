@@ -197,7 +197,7 @@ export async function deleteTestCentro(id: string): Promise<void> {
 
   // Niños del centro: los dependientes con FK RESTRICT sobre ninos hay que borrarlos
   // ANTES que los propios niños. El resto (vinculos, autorizaciones-instancia, firmas,
-  // datos_tutor, facturación, citas, eventos, recordatorios…) cae por CASCADE al borrar ninos.
+  // facturación, citas, eventos, recordatorios…) cae por CASCADE al borrar ninos.
   const { data: ninos } = await svc.from('ninos').select('id').eq('centro_id', id)
   const ninoIds = (ninos ?? []).map((n) => n.id)
   if (ninoIds.length > 0) {

@@ -13,8 +13,8 @@ import {
 
 /**
  * F-2b-3 — LECTURA única del perfil compartido del tutor desde `familia_tutores`
- * (identidad + dirección + DNI), resuelta por familia del niño. Sustituye las lecturas
- * por `datos_tutor.nino_id`. Mapea `rol_familia → tipo_vinculo` para conservar el contrato
+ * (identidad + dirección + DNI), resuelta por familia del niño. Sustituye el antiguo perfil
+ * por-niño (tabla `datos_tutor`, eliminada en F-2b-5). Mapea `rol_familia → tipo_vinculo` para conservar el contrato
  * de la UI (que sigue hablando de `tutor_legal_principal/secundario`). El titular va primero.
  */
 export interface TutorFamiliaRow {
