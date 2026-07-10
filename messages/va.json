@@ -747,24 +747,6 @@
         "no_pendiente": "Este canvi ja no està pendent.",
         "aplicar": "No s'ha pogut aplicar el canvi. S ha deixat pendent per a reintentar."
       }
-    },
-    "purga": {
-      "title": "Purga de documents per curs",
-      "descripcion": "Esborra els documents sensibles (llibre de família, DNI de tutors, mandat SEPA) d'un curs que va acabar fa 5 anys o més. Només afecta xiquets que ja no estan matriculats. Acció manual i irreversible.",
-      "sin_cursos": "No hi ha cursos amb 5 anys o més d'antiguitat per a purgar.",
-      "seleccionar_curso": "Selecciona un curs",
-      "fin": "fi {fecha}",
-      "confirmar_label": "Per a confirmar, tecleja el nom exacte del curs: {nombre}",
-      "purgar": "Purgar documents",
-      "purgando": "Purgant…",
-      "purgado": "Purga completada: {documentos} documents i {filas} registres de {ninos} xiquets/es.",
-      "errors": {
-        "invalido": "Sol·licitud no vàlida.",
-        "no_autorizado": "No tens permís per a purgar este curs.",
-        "curso_no_encontrado": "No s'ha trobat el curs.",
-        "nombre_no_coincide": "El nom teclejat no coincidix amb el del curs.",
-        "no_purgable": "Este curs encara no complix els 5 anys d'antiguitat."
-      }
     }
   },
   "teacher": {

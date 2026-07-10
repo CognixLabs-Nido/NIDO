@@ -3,10 +3,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { ExportButton } from '@/features/export/components/ExportButton'
-import { PurgaCursoPanel } from '@/features/purga/components/PurgaCursoPanel'
-import { getCursosPurgables } from '@/features/purga/queries/get-cursos-purgables'
 import { PushSettings } from '@/features/push/components/PushSettings'
 import { AvatarUploader } from '@/features/usuarios/components/AvatarUploader'
 import { BUCKET_USUARIOS_FOTOS, firmarRuta } from '@/shared/lib/adjuntos/storage'
@@ -43,13 +40,6 @@ export default async function ProfilePage({ params }: PageProps) {
 
   const initials = (nombre.charAt(0) || user?.email?.charAt(0) || '?').toUpperCase()
 
-  // Purga de documentos por curso (decisión H): solo la dirección. La RLS de los
-  // cursos limita al centro; el action re-verifica admin + corte de 5 años.
-  const centroId = await getCentroActualId()
-  const esAdmin = centroId ? (await getRolEnCentro(centroId)) === 'admin' : false
-  const cursosPurgables = esAdmin ? await getCursosPurgables() : []
-  const tPurga = await getTranslations('admin.purga')
-
   return (
     <AuthShell locale={locale}>
       <Card className="w-full max-w-md shadow-lg">
@@ -80,12 +70,6 @@ export default async function ProfilePage({ params }: PageProps) {
               filename="nido-mis-datos.zip"
             />
           </div>
-          {esAdmin && (
-            <div className="space-y-2 border-t border-dashed border-neutral-200 pt-4">
-              <h2 className="text-foreground text-sm font-semibold">{tPurga('title')}</h2>
-              <PurgaCursoPanel cursos={cursosPurgables} />
-            </div>
-          )}
           <SignOutButton locale={locale} />
         </CardContent>
       </Card>

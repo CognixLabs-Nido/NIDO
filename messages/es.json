@@ -747,24 +747,6 @@
         "no_pendiente": "Este cambio ya no está pendiente.",
         "aplicar": "No se pudo aplicar el cambio. Se ha dejado pendiente para reintentar."
       }
-    },
-    "purga": {
-      "title": "Purga de documentos por curso",
-      "descripcion": "Borra los documentos sensibles (libro de familia, DNI de tutores, mandato SEPA) de un curso cuyo fin fue hace 5 años o más. Solo afecta a niños que ya no están matriculados. Acción manual e irreversible.",
-      "sin_cursos": "No hay cursos con 5 o más años de antigüedad para purgar.",
-      "seleccionar_curso": "Selecciona un curso",
-      "fin": "fin {fecha}",
-      "confirmar_label": "Para confirmar, teclea el nombre exacto del curso: {nombre}",
-      "purgar": "Purgar documentos",
-      "purgando": "Purgando…",
-      "purgado": "Purga completada: {documentos} documentos y {filas} registros de {ninos} niños/as.",
-      "errors": {
-        "invalido": "Solicitud no válida.",
-        "no_autorizado": "No tienes permiso para purgar este curso.",
-        "curso_no_encontrado": "No se encontró el curso.",
-        "nombre_no_coincide": "El nombre tecleado no coincide con el del curso.",
-        "no_purgable": "Este curso aún no cumple los 5 años de antigüedad."
-      }
     }
   },
   "teacher": {
