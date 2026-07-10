@@ -300,12 +300,30 @@ export interface TestNino {
   centro_id: string
 }
 
+/**
+ * F-2b-3 — crea una familia de test para un centro. `ninos.familia_id` es NOT NULL desde
+ * F-2b-3, así que cada niño de test necesita una familia. La limpieza borra familias por
+ * `centro_id` (cascada `familia_tutores`), así que no requiere teardown propio.
+ */
+export async function createTestFamilia(centro_id: string): Promise<string> {
+  const { data, error } = await serviceClient
+    .from('familias')
+    .insert({ centro_id, etiqueta: `FamiliaTest-${randomUUID().slice(0, 8)}` })
+    .select('id')
+    .single()
+  if (error || !data) throw new Error(`createTestFamilia falló: ${error?.message}`)
+  return data.id
+}
+
 export async function createTestNino(centro_id: string, nombre?: string): Promise<TestNino> {
   const finalNombre = nombre ?? `NinoTest-${randomUUID().slice(0, 8)}`
+  // familia_id es NOT NULL (F-2b-3): se crea una familia para el niño de test.
+  const familia_id = await createTestFamilia(centro_id)
   const { data, error } = await serviceClient
     .from('ninos')
     .insert({
       centro_id,
+      familia_id,
       nombre: finalNombre,
       apellidos: 'Apellido Test',
       fecha_nacimiento: '2024-03-15',

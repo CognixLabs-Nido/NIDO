@@ -19,6 +19,7 @@ import { AltaCompletadaScreen } from '@/features/alta/components/AltaCompletadaS
 import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { resolverEntradaAlta } from '@/features/alta/lib/entrada-alta'
 import { pasoInicialAlta } from '@/features/alta/lib/estado-alta'
+import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
 
 import type { MandatoSepaInicial } from '@/features/alta/components/PasoSepa'
 import type { DatosTutorInicial } from '@/features/alta/components/PasoTutor'
@@ -151,19 +152,14 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     ? await firmarRuta(supabase, BUCKET_LIBRO_FAMILIA, ninoExtra.libro_familia_path)
     : null
 
-  // Datos de los tutores (principal/secundario) con su DNI firmado.
-  const { data: tutoresRows } = await supabase
-    .from('datos_tutor')
-    .select(
-      'tipo_vinculo, email, nombre_completo, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, dni_documento_path'
-    )
-    .eq('nino_id', ninoId)
-    .is('deleted_at', null)
+  // Datos de los tutores (principal/secundario) con su DNI firmado, desde el perfil
+  // COMPARTIDO `familia_tutores` (F-2b-3), resuelto por la familia del niño.
+  const { tutores: tutoresRows } = await leerTutoresDeNino(supabase, ninoId)
 
   async function aDatosTutor(
     tipo: 'tutor_legal_principal' | 'tutor_legal_secundario'
   ): Promise<DatosTutorInicial | null> {
-    const row = (tutoresRows ?? []).find((r) => r.tipo_vinculo === tipo)
+    const row = tutoresRows.find((r) => r.tipo_vinculo === tipo)
     if (!row) return null
     const dniUrl = row.dni_documento_path
       ? await firmarRuta(supabase, BUCKET_DNI_TUTORES, row.dni_documento_path)

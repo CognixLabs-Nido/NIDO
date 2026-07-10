@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
 import { createClient } from '@/lib/supabase/server'
 import {
   BUCKET_DNI_TUTORES,
@@ -46,7 +47,7 @@ export interface AltaDocumentacion {
 }
 
 /**
- * PR-4g — resumen del ALTA para el panel de Dirección: tutores (datos_tutor),
+ * PR-4g — resumen del ALTA para el panel de Dirección: tutores (familia_tutores, F-2b-3),
  * mandato SEPA (sin IBAN), consentimiento de datos médicos y documentos privados
  * (libro de familia, DNIs, PDF mandato) con URL firmada (~1 h).
  *
@@ -57,15 +58,10 @@ export interface AltaDocumentacion {
 export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocumentacion> {
   const supabase = await createClient()
 
-  const [{ data: tutoresRows }, { data: mandatoRow }, { data: ninoRow }] = await Promise.all([
-    supabase
-      .from('datos_tutor')
-      .select(
-        'id, tipo_vinculo, usuario_id, nombre_completo, email, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, dni_documento_path'
-      )
-      .eq('nino_id', ninoId)
-      .is('deleted_at', null)
-      .order('tipo_vinculo', { ascending: true }),
+  // Tutores desde el perfil COMPARTIDO `familia_tutores` (F-2b-3), resuelto por familia del
+  // niño; el helper mapea rol_familia→tipo_vinculo y ordena titular primero.
+  const [{ tutores: tutoresRows }, { data: mandatoRow }, { data: ninoRow }] = await Promise.all([
+    leerTutoresDeNino(supabase, ninoId),
     supabase
       .from('mandatos_sepa')
       .select('estado, titular, identificador_mandato, fecha_firma, documento_path')

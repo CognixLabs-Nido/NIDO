@@ -12,6 +12,22 @@ export const estadoCivilEnum = z.enum([
 
 export const tipoVinculoLegalEnum = z.enum(['tutor_legal_principal', 'tutor_legal_secundario'])
 
+/** Rol en el perfil compartido de `familia_tutores` (espejo del CHECK de F-0). */
+export const rolFamiliaEnum = z.enum(['titular', 'segundo_tutor'])
+export type RolFamilia = z.infer<typeof rolFamiliaEnum>
+
+/**
+ * Mapeo ÚNICO tipo_vinculo (por-niño, legado `datos_tutor`) ↔ rol_familia (perfil
+ * compartido `familia_tutores`). Todo el wizard/cola escribe y lee por este par:
+ * `tutor_legal_principal`⇄`titular`, `tutor_legal_secundario`⇄`segundo_tutor`.
+ */
+export function rolFamiliaDeVinculo(tv: z.infer<typeof tipoVinculoLegalEnum>): RolFamilia {
+  return tv === 'tutor_legal_principal' ? 'titular' : 'segundo_tutor'
+}
+export function vinculoDeRolFamilia(rol: RolFamilia): z.infer<typeof tipoVinculoLegalEnum> {
+  return rol === 'titular' ? 'tutor_legal_principal' : 'tutor_legal_secundario'
+}
+
 /** Bloque de dirección reutilizado por menor y tutores (longitudes = CHECK de G-0). */
 const direccionFields = {
   direccion_calle: z.string().max(200).optional().nullable(),

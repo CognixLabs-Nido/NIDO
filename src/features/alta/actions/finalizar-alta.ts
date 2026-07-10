@@ -7,6 +7,8 @@ import { getInfoMedica } from '@/features/ninos/queries/get-ninos'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { leerTutoresDeNino } from '../lib/tutores-familia'
+
 import { fail, ok } from '../../centros/types'
 
 /**
@@ -73,15 +75,10 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   if (!nino) return fail('alta.errors.finalizar_fallo')
   if (!nino.apellidos || !nino.fecha_nacimiento) faltan.push('identidad')
 
-  // Tutor 1 (identidad) + su DNI (documento). Todos los campos de `datos_tutor` son
-  // opcionales en el schema; la señal de "tutor 1 hecho" es tener `nombre_completo`.
-  const { data: tutor1 } = await supabase
-    .from('datos_tutor')
-    .select('nombre_completo, dni_documento_path')
-    .eq('nino_id', id)
-    .eq('tipo_vinculo', 'tutor_legal_principal')
-    .is('deleted_at', null)
-    .maybeSingle()
+  // Tutor 1 (identidad) + su DNI (documento) desde el perfil COMPARTIDO `familia_tutores`
+  // (F-2b-3): el titular. La señal de "tutor 1 hecho" es tener `nombre_completo`.
+  const { tutores } = await leerTutoresDeNino(supabase, id)
+  const tutor1 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_principal')
   if (!tutor1?.nombre_completo) faltan.push('tutor1')
 
   // Médico + emergencia: acuse `datos_medicos` vigente + teléfono de emergencia (el resto de
