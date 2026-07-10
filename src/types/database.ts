@@ -3766,6 +3766,62 @@ export type Database = {
           },
         ]
       }
+      rollover_finaliza: {
+        Row: {
+          centro_id: string
+          created_at: string
+          created_by: string | null
+          curso_academico_id: string
+          id: string
+          nino_id: string
+        }
+        Insert: {
+          centro_id?: string
+          created_at?: string
+          created_by?: string | null
+          curso_academico_id: string
+          id?: string
+          nino_id: string
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          created_by?: string | null
+          curso_academico_id?: string
+          id?: string
+          nino_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rollover_finaliza_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rollover_finaliza_curso_academico_id_fkey"
+            columns: ["curso_academico_id"]
+            isOneToOne: false
+            referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rollover_finaliza_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rollover_finaliza_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suenos: {
         Row: {
           agenda_id: string

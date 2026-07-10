@@ -114,11 +114,19 @@ export async function getEstadoRolloverCore(
 
   const pendientes = (pendRaw ?? []) as PendienteDestino[]
 
+  // 6. F-3-A: niños marcados "Finaliza" en el destino (destino real, no ausencia de aula).
+  const { data: finRaw } = await supabase
+    .from('rollover_finaliza')
+    .select('nino_id')
+    .eq('curso_academico_id', cursoDestinoId)
+  const finalizados = (finRaw ?? []).map((r) => r.nino_id)
+
   return {
     cursoDestino: { id: destino.id, nombre: destino.nombre, estado: destino.estado },
     cursoOrigen: origen ? { id: origen.id, nombre: origen.nombre } : null,
     aulasDestino,
     ninosActivos,
     pendientes,
+    finalizados,
   }
 }

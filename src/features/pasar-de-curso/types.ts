@@ -18,6 +18,8 @@ export interface EstadoRollover {
   ninosActivos: NinoActivoRollover[]
   /** Matrículas `pendiente` ya creadas en el curso destino (propuesta persistida). */
   pendientes: PendienteDestino[]
+  /** F-3-A: nino_id con fila `rollover_finaliza` en el curso destino (destino "Finaliza"). */
+  finalizados: string[]
 }
 
 export type { FilaRollover, ResultadoPropuesta }

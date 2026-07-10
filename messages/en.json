@@ -198,7 +198,9 @@
       "asignar_fallo": "Could not assign the classroom.",
       "descartar_fallo": "Could not discard the proposal.",
       "confirmar_fallo": "Could not confirm advancing.",
-      "quitar_fallo": "Could not remove the proposal."
+      "quitar_fallo": "Could not remove the proposal.",
+      "incompletos": "Some children have no assigned destination (classroom or Finishing). Resolve them before confirming.",
+      "finaliza_fallo": "Couldn't mark as Finishing. Please try again."
     }
   },
   "admin": {
@@ -279,8 +281,6 @@
       "multiples": "Several possible classrooms",
       "asignar": "Assign",
       "asignada": "Classroom assigned",
-      "graduado": "Graduating (no classroom by age)",
-      "mantener_graduado": "Keep as graduating",
       "descartar": "Discard proposal",
       "descartada": "Proposal discarded",
       "confirmar": "Confirm advancing",
@@ -293,9 +293,16 @@
       "col_aula_propuesta": "Proposed room",
       "col_accion": "Action",
       "continua": "Continues",
-      "opcion_gradua": "Graduates (leaves the centre)",
-      "marcado_graduado": "Marked as graduated",
-      "sin_aula": "No room"
+      "sin_aula": "No room",
+      "finaliza": "Finishing",
+      "sin_resolver": "Unresolved",
+      "opcion_finaliza": "Finishing (leaves the centre)",
+      "marcado_finaliza": "Marked as Finishing",
+      "finaliza_titulo": "Finishing",
+      "finaliza_vacio": "No one in Finishing.",
+      "reasignar_aula": "Reassign to a classroom…",
+      "faltan_destino": "{n} children still have no destination (classroom or Finishing).",
+      "sin_marcar": "Unset"
     },
     "cursos": {
       "title": "Academic years",

@@ -6,6 +6,8 @@ import { activarCurso } from '@/features/cursos/actions/activar-curso'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { ninosSinResolver } from '../lib/proponer'
+import { getEstadoRolloverCore } from '../queries/get-estado-rollover'
 import { cursoDestinoSchema, type CursoDestinoInput } from '../schemas/rollover'
 import { fail, ok, type ActionResult } from '../../centros/types'
 
@@ -31,15 +33,20 @@ export async function confirmarRollover(input: CursoDestinoInput): Promise<Actio
 
   const supabase = await createClient()
 
-  const { data: destino } = await supabase
-    .from('cursos_academicos')
-    .select('estado')
-    .eq('id', cursoId)
-    .is('deleted_at', null)
-    .maybeSingle()
-  if (!destino) return fail('rollover.errors.destino_no_encontrado')
-  if (destino.estado === 'activo') return ok(undefined) // ya confirmado (idempotente)
-  if (destino.estado !== 'planificado') return fail('rollover.errors.destino_no_planificado')
+  const estado = await getEstadoRolloverCore(supabase, cursoId)
+  if (!estado) return fail('rollover.errors.destino_no_encontrado')
+  if (estado.cursoDestino.estado === 'activo') return ok(undefined) // ya confirmado (idempotente)
+  if (estado.cursoDestino.estado !== 'planificado')
+    return fail('rollover.errors.destino_no_planificado')
+
+  // F-3-A — GATE DE COMPLETITUD: ningún niño activo del curso origen puede quedar sin
+  // destino resuelto (ni matrícula pendiente = aula, ni fila `rollover_finaliza`). Va
+  // ANTES del flip: si falta alguno, no se confirma. El conteo se muestra en la UI.
+  const pendSet = new Set(estado.pendientes.map((p) => p.nino_id))
+  const finSet = new Set(estado.finalizados)
+  if (ninosSinResolver(estado.ninosActivos, pendSet, finSet).length > 0) {
+    return fail('rollover.errors.incompletos')
+  }
 
   // 1) pendiente → activa (aún planificado = invisible para staff).
   const { error: flipErr } = await supabase

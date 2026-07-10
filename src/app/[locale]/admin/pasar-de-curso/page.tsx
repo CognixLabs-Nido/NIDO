@@ -55,8 +55,13 @@ export default async function PasarDeCursoPage({ searchParams }: PageProps) {
     estado.aulasDestino,
     new Set(pendientesMap.keys())
   )
-  // Tabla de revisión (decisión H-2-1): 1 fila por niño activo, propuesta pre-rellena.
-  const filas = construirFilasRollover(estado.ninosActivos, preview, pendientesMap)
+  // Tabla de revisión (decisión H-2-1): 1 fila por niño activo. F-3-A: el destino
+  // refleja lo PERSISTIDO (aula pendiente / Finaliza / sin resolver).
+  const filas = construirFilasRollover(
+    estado.ninosActivos,
+    pendientesMap,
+    new Set(estado.finalizados)
+  )
 
   return (
     <div className="space-y-6">

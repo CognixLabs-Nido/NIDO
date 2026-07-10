@@ -20,11 +20,12 @@ export const asignarAulaPropuestaSchema = z.object({
 })
 export type AsignarAulaPropuestaInput = z.infer<typeof asignarAulaPropuestaSchema>
 
-export const quitarAulaPropuestaSchema = z.object({
+/** F-3-A: marcar a un niño como destino "Finaliza" en el curso destino. */
+export const marcarFinalizaSchema = z.object({
   curso_destino_id: uuid,
   nino_id: uuid,
 })
-export type QuitarAulaPropuestaInput = z.infer<typeof quitarAulaPropuestaSchema>
+export type MarcarFinalizaInput = z.infer<typeof marcarFinalizaSchema>
 
 export const cursoDestinoSchema = z.object({
   curso_destino_id: uuid,

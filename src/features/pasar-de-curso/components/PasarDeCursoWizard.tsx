@@ -1,8 +1,9 @@
 'use client'
 
-import { AlertTriangleIcon } from 'lucide-react'
+import { useState, useTransition } from 'react'
+
+import { AlertTriangleIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
-import { useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
@@ -22,8 +23,8 @@ import { asignarAulaPropuesta } from '../actions/asignar-aula-propuesta'
 import { confirmarRollover } from '../actions/confirmar-rollover'
 import { copiarConfigCurso } from '../actions/copiar-config-curso'
 import { descartarPropuesta } from '../actions/descartar-propuesta'
+import { marcarFinaliza } from '../actions/marcar-finaliza'
 import { proponerMatriculas } from '../actions/proponer-matriculas'
-import { quitarAulaPropuesta } from '../actions/quitar-aula-propuesta'
 import type { EstadoRollover, FilaRollover, ResultadoPropuesta } from '../types'
 
 interface Props {
@@ -32,6 +33,10 @@ interface Props {
   filas: FilaRollover[]
   planificados: { id: string; nombre: string }[]
 }
+
+/** Destinos no-aula del `<select>` por fila. */
+const FINALIZA = '__finaliza__'
+const SIN_MARCAR = '__sin_marcar__'
 
 export function PasarDeCursoWizard({ estado, preview, filas, planificados }: Props) {
   const t = useTranslations('admin.pasarDeCurso')
@@ -47,6 +52,10 @@ export function PasarDeCursoWizard({ estado, preview, filas, planificados }: Pro
   // Ocupación persistida (pendientes) por aula → aforo.
   const ocupacion = new Map<string, number>()
   for (const p of estado.pendientes) ocupacion.set(p.aula_id, (ocupacion.get(p.aula_id) ?? 0) + 1)
+
+  // F-3-A: miembros de "Finaliza" y niños aún sin destino (bloquean confirmar).
+  const finalizados = filas.filter((f) => f.accion === 'finaliza')
+  const sinResolver = filas.filter((f) => f.accion === 'sin_resolver').length
 
   const run = (fn: () => Promise<{ success: boolean; error?: string }>, okMsg: string) =>
     start(async () => {
@@ -121,7 +130,7 @@ export function PasarDeCursoWizard({ estado, preview, filas, planificados }: Pro
         </Button>
       </Card>
 
-      {/* Aforo por aula (propuesta persistida) */}
+      {/* Ocupación por destino (aulas + Finaliza) */}
       {estado.aulasDestino.length > 0 && (
         <Card className="space-y-2 p-4">
           <h2 className="text-foreground font-semibold">{t('por_aula')}</h2>
@@ -140,6 +149,14 @@ export function PasarDeCursoWizard({ estado, preview, filas, planificados }: Pro
               )
             })}
           </ul>
+          {/* F-3-A: "Finaliza" como destino más (sin aforo, solo recuento + miembros). */}
+          <FinalizaContenedor
+            miembros={finalizados}
+            aulas={aulas}
+            cursoId={cursoId}
+            disabled={pending || yaConfirmado}
+            onDone={() => router.refresh()}
+          />
         </Card>
       )}
 
@@ -179,21 +196,28 @@ export function PasarDeCursoWizard({ estado, preview, filas, planificados }: Pro
         <Button
           size="sm"
           variant="ghost"
-          disabled={pending || yaConfirmado || estado.pendientes.length === 0}
+          disabled={pending || yaConfirmado || estado.pendientes.length + finalizados.length === 0}
           onClick={() =>
             run(() => descartarPropuesta({ curso_destino_id: cursoId }), t('descartada'))
           }
         >
           {t('descartar')}
         </Button>
-        <Button
-          disabled={pending || yaConfirmado}
-          onClick={() =>
-            run(() => confirmarRollover({ curso_destino_id: cursoId }), t('confirmado'))
-          }
-        >
-          {yaConfirmado ? t('ya_confirmado') : t('confirmar')}
-        </Button>
+        <div className="flex items-center gap-3">
+          {!yaConfirmado && sinResolver > 0 && (
+            <span className="text-destructive text-sm">
+              {t('faltan_destino', { n: sinResolver })}
+            </span>
+          )}
+          <Button
+            disabled={pending || yaConfirmado || sinResolver > 0}
+            onClick={() =>
+              run(() => confirmarRollover({ curso_destino_id: cursoId }), t('confirmado'))
+            }
+          >
+            {yaConfirmado ? t('ya_confirmado') : t('confirmar')}
+          </Button>
+        </div>
       </Card>
     </div>
   )
@@ -203,8 +227,82 @@ function nombreNino(item: { nombre: string; apellidos: string | null }): string 
   return `${item.nombre} ${item.apellidos ?? ''}`.trim()
 }
 
-/** Valor del desplegable cuando el niño no sube a ninguna sala (se gradúa). */
-const GRADUA = '__gradua__'
+/** Contenedor "Finaliza": recuento + lista desplegable de miembros, cada uno reasignable a un aula. */
+function FinalizaContenedor({
+  miembros,
+  aulas,
+  cursoId,
+  disabled,
+  onDone,
+}: {
+  miembros: FilaRollover[]
+  aulas: { id: string; nombre: string }[]
+  cursoId: string
+  disabled: boolean
+  onDone: () => void
+}) {
+  const t = useTranslations('admin.pasarDeCurso')
+  const tErrors = useTranslations()
+  const [abierto, setAbierto] = useState(false)
+  const [pending, start] = useTransition()
+
+  const reasignar = (ninoId: string, aulaId: string) =>
+    start(async () => {
+      const r = await asignarAulaPropuesta({
+        curso_destino_id: cursoId,
+        nino_id: ninoId,
+        aula_id: aulaId,
+      })
+      if (r.success) {
+        toast.success(t('asignada'))
+        onDone()
+      } else {
+        toast.error(tErrors(r.error ?? 'rollover.errors.asignar_fallo'))
+      }
+    })
+
+  return (
+    <div className="border-border/60 border-t pt-2">
+      <button
+        type="button"
+        className="flex items-center gap-1.5 text-sm"
+        onClick={() => setAbierto((v) => !v)}
+        aria-expanded={abierto}
+      >
+        {abierto ? <ChevronDownIcon className="size-4" /> : <ChevronRightIcon className="size-4" />}
+        <span className="text-foreground font-medium">{t('finaliza_titulo')}</span>
+        <Badge variant="secondary">{miembros.length}</Badge>
+      </button>
+      {abierto &&
+        (miembros.length === 0 ? (
+          <p className="text-muted-foreground mt-2 pl-6 text-sm">{t('finaliza_vacio')}</p>
+        ) : (
+          <ul className="mt-2 space-y-1 pl-6 text-sm">
+            {miembros.map((m) => (
+              <li key={m.nino_id} className="flex items-center gap-2">
+                <span className="text-foreground">{nombreNino(m)}</span>
+                <select
+                  className="border-border bg-background ml-auto rounded-md border px-2 py-1 text-sm"
+                  value={SIN_MARCAR}
+                  disabled={disabled || pending}
+                  onChange={(e) => reasignar(m.nino_id, e.target.value)}
+                >
+                  <option value={SIN_MARCAR} disabled>
+                    {t('reasignar_aula')}
+                  </option>
+                  {aulas.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.nombre}
+                    </option>
+                  ))}
+                </select>
+              </li>
+            ))}
+          </ul>
+        ))}
+    </div>
+  )
+}
 
 function FilaTabla({
   fila,
@@ -222,20 +320,27 @@ function FilaTabla({
   const t = useTranslations('admin.pasarDeCurso')
   const tErrors = useTranslations()
   const [pending, start] = useTransition()
-  const valor = fila.aula_propuesta_id ?? GRADUA
+
+  // Valor del <select>: aula real (continua), FINALIZA, o placeholder no seleccionable.
+  const valor =
+    fila.accion === 'continua'
+      ? (fila.aula_propuesta_id ?? SIN_MARCAR)
+      : fila.accion === 'finaliza'
+        ? FINALIZA
+        : SIN_MARCAR
 
   const cambiar = (nuevo: string) =>
     start(async () => {
       const r =
-        nuevo === GRADUA
-          ? await quitarAulaPropuesta({ curso_destino_id: cursoId, nino_id: fila.nino_id })
+        nuevo === FINALIZA
+          ? await marcarFinaliza({ curso_destino_id: cursoId, nino_id: fila.nino_id })
           : await asignarAulaPropuesta({
               curso_destino_id: cursoId,
               nino_id: fila.nino_id,
               aula_id: nuevo,
             })
       if (r.success) {
-        toast.success(nuevo === GRADUA ? t('marcado_graduado') : t('asignada'))
+        toast.success(nuevo === FINALIZA ? t('marcado_finaliza') : t('asignada'))
         onDone()
       } else {
         toast.error(tErrors(r.error ?? 'rollover.errors.asignar_fallo'))
@@ -255,17 +360,25 @@ function FilaTabla({
           disabled={disabled || pending}
           onChange={(e) => cambiar(e.target.value)}
         >
+          {/* Placeholder no seleccionable para "sin marcar". */}
+          {fila.accion === 'sin_resolver' && (
+            <option value={SIN_MARCAR} disabled>
+              {t('sin_marcar')}
+            </option>
+          )}
           {aulas.map((a) => (
             <option key={a.id} value={a.id}>
               {a.nombre}
             </option>
           ))}
-          <option value={GRADUA}>{t('opcion_gradua')}</option>
+          <option value={FINALIZA}>{t('opcion_finaliza')}</option>
         </select>
       </TableCell>
       <TableCell>
-        {fila.accion === 'gradua' ? (
-          <Badge variant="secondary">{t('graduado')}</Badge>
+        {fila.accion === 'finaliza' ? (
+          <Badge variant="secondary">{t('finaliza')}</Badge>
+        ) : fila.accion === 'sin_resolver' ? (
+          <Badge variant="destructive">{t('sin_resolver')}</Badge>
         ) : (
           <Badge variant="outline">{t('continua')}</Badge>
         )}

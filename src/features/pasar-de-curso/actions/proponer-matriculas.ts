@@ -35,7 +35,9 @@ export async function proponerMatriculas(
   if (!estado.cursoOrigen) return fail('rollover.errors.sin_curso_activo')
   if (estado.aulasDestino.length === 0) return fail('rollover.errors.sin_aulas_destino')
 
-  const yaConDestino = new Set(estado.pendientes.map((p) => p.nino_id))
+  // F-3-A: los ya decididos = con matrícula pendiente (aula) O marcados "Finaliza".
+  // A ninguno se le auto-propone aula (idempotencia + no pisar la decisión de Finaliza).
+  const yaConDestino = new Set([...estado.pendientes.map((p) => p.nino_id), ...estado.finalizados])
   const resultado = computarPropuesta(estado.ninosActivos, estado.aulasDestino, yaConDestino)
 
   let insertadas = 0
