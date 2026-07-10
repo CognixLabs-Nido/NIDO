@@ -4,10 +4,24 @@ import {
   actualizarNinoFamiliaSchema,
   estadoCivilEnum,
   guardarDatosTutorSchema,
+  rolFamiliaDeVinculo,
   tipoVinculoLegalEnum,
+  vinculoDeRolFamilia,
 } from '../alta-documentos'
 
 const NINO = '11111111-1111-4111-8111-111111111111'
+
+describe('mapeo tipo_vinculo ↔ rol_familia', () => {
+  it('vínculo → rol y rol → vínculo son inversos (F-2b-3)', () => {
+    expect(rolFamiliaDeVinculo('tutor_legal_principal')).toBe('titular')
+    expect(rolFamiliaDeVinculo('tutor_legal_secundario')).toBe('segundo_tutor')
+    expect(vinculoDeRolFamilia('titular')).toBe('tutor_legal_principal')
+    expect(vinculoDeRolFamilia('segundo_tutor')).toBe('tutor_legal_secundario')
+    for (const tv of ['tutor_legal_principal', 'tutor_legal_secundario'] as const) {
+      expect(vinculoDeRolFamilia(rolFamiliaDeVinculo(tv))).toBe(tv)
+    }
+  })
+})
 
 describe('alta-documentos schemas', () => {
   it('estadoCivilEnum acepta los 6 valores del ENUM y rechaza otros', () => {

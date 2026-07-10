@@ -3180,7 +3180,8 @@
         "datos_invalidos": "Invalid data.",
         "guardado": "The data could not be saved. Please try again.",
         "email": "Enter a valid email.",
-        "nombre": "The name must be at least 2 characters."
+        "nombre": "The name must be at least 2 characters.",
+        "tutor_duplicado": "This guardian already exists. Reload the page to see the current data."
       },
       "validacion": {
         "enviado": "Change sent to management for validation."

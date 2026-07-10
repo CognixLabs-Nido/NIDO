@@ -3180,7 +3180,8 @@
         "datos_invalidos": "Dades no vàlides.",
         "guardado": "No s'han pogut desar les dades. Torna-ho a provar.",
         "email": "Introdueix un correu electrònic vàlid.",
-        "nombre": "El nom ha de tindre almenys 2 caràcters."
+        "nombre": "El nom ha de tindre almenys 2 caràcters.",
+        "tutor_duplicado": "Este tutor ja existix. Recarrega la pàgina per a veure les dades actuals."
       },
       "validacion": {
         "enviado": "Canvi enviat a validació de direcció."

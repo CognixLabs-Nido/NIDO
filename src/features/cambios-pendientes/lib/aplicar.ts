@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { rolFamiliaDeVinculo } from '@/features/alta/schemas/alta-documentos'
 import type { Database } from '@/types/database'
 
 import {
@@ -24,6 +25,17 @@ export interface CambioRow {
   entidad: string
   nino_id: string
   payload: unknown
+}
+
+/** Resuelve la familia del niño (NOT NULL desde F-2b-3); lanza si no la encuentra. */
+async function familiaDeNino(service: Service, ninoId: string): Promise<string> {
+  const { data: nino } = await service
+    .from('ninos')
+    .select('familia_id')
+    .eq('id', ninoId)
+    .maybeSingle()
+  if (!nino?.familia_id) throw new Error('familia_no_encontrada')
+  return nino.familia_id
 }
 
 /**
@@ -78,30 +90,28 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
       direccion_cp: p.direccion_cp ?? null,
       direccion_ciudad: p.direccion_ciudad ?? null,
     }
+    // F-2b-3: escribe el perfil COMPARTIDO `familia_tutores` (no `datos_tutor`) → cierra el
+    // split-brain (3b escribe familia_tutores antes de validar; la cola tras validar también).
+    // service_role: exento del congelado (y además solo toca identidad/dirección).
+    const familiaId = await familiaDeNino(service, row.nino_id)
+    const rolFamilia = rolFamiliaDeVinculo(p.tipo_vinculo)
     const { data: existente } = await service
-      .from('datos_tutor')
+      .from('familia_tutores')
       .select('id')
-      .eq('nino_id', row.nino_id)
-      .eq('tipo_vinculo', p.tipo_vinculo)
+      .eq('familia_id', familiaId)
+      .eq('rol_familia', rolFamilia)
       .is('deleted_at', null)
       .maybeSingle()
     if (existente) {
-      const { error } = await service.from('datos_tutor').update(identidad).eq('id', existente.id)
+      const { error } = await service
+        .from('familia_tutores')
+        .update(identidad)
+        .eq('id', existente.id)
       if (error) throw new Error(error.message)
     } else {
-      const { data: nino } = await service
-        .from('ninos')
-        .select('centro_id')
-        .eq('id', row.nino_id)
-        .maybeSingle()
-      if (!nino) throw new Error('nino_no_encontrado')
-      const { error } = await service.from('datos_tutor').insert({
-        centro_id: nino.centro_id,
-        nino_id: row.nino_id,
-        tipo_vinculo: p.tipo_vinculo,
-        usuario_id: null,
-        ...identidad,
-      })
+      const { error } = await service
+        .from('familia_tutores')
+        .insert({ familia_id: familiaId, rol_familia: rolFamilia, usuario_id: null, ...identidad })
       if (error) throw new Error(error.message)
     }
     return
@@ -109,16 +119,18 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
 
   if (entidad === 'datos_tutor_dni') {
     const p = payloadDatosTutorDniSchema.parse(row.payload)
+    const familiaId = await familiaDeNino(service, row.nino_id)
+    const rolFamilia = rolFamiliaDeVinculo(p.tipo_vinculo)
     const { data: existente } = await service
-      .from('datos_tutor')
+      .from('familia_tutores')
       .select('id, dni_documento_path')
-      .eq('nino_id', row.nino_id)
-      .eq('tipo_vinculo', p.tipo_vinculo)
+      .eq('familia_id', familiaId)
+      .eq('rol_familia', rolFamilia)
       .is('deleted_at', null)
       .maybeSingle()
     if (existente) {
       const { error } = await service
-        .from('datos_tutor')
+        .from('familia_tutores')
         .update({ dni_documento_path: p.path })
         .eq('id', existente.id)
       if (error) throw new Error(error.message)
@@ -128,16 +140,9 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
         ]).catch(() => undefined)
       }
     } else {
-      const { data: nino } = await service
-        .from('ninos')
-        .select('centro_id')
-        .eq('id', row.nino_id)
-        .maybeSingle()
-      if (!nino) throw new Error('nino_no_encontrado')
-      const { error } = await service.from('datos_tutor').insert({
-        centro_id: nino.centro_id,
-        nino_id: row.nino_id,
-        tipo_vinculo: p.tipo_vinculo,
+      const { error } = await service.from('familia_tutores').insert({
+        familia_id: familiaId,
+        rol_familia: rolFamilia,
         usuario_id: null,
         dni_documento_path: p.path,
       })

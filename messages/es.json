@@ -3180,7 +3180,8 @@
         "datos_invalidos": "Datos no válidos.",
         "guardado": "No se pudieron guardar los datos. Inténtalo de nuevo.",
         "email": "Introduce un correo electrónico válido.",
-        "nombre": "El nombre debe tener al menos 2 caracteres."
+        "nombre": "El nombre debe tener al menos 2 caracteres.",
+        "tutor_duplicado": "Este tutor ya existe. Recarga la página para ver los datos actuales."
       },
       "validacion": {
         "enviado": "Cambio enviado a validación de dirección."

@@ -90,7 +90,7 @@ interface Props {
 
 /**
  * Pasos 4 y 5 del alta (G-1) — datos del tutor 1 (principal) y del tutor 2 (secundario,
- * OPCIONAL y sin cuenta). Un submit: `guardarDatosTutor` (upsert de `datos_tutor`) y, solo
+ * OPCIONAL y sin cuenta). Un submit: `guardarDatosTutor` (upsert de `familia_tutores`) y, solo
  * para el tutor 1, `actualizarNinoFamilia` con `estado_civil_familia` (1 valor por familia,
  * decisión F). El DNI (2 caras → PDF) lo sube `SubirDocumentoPdf` a su ruta. El tutor 2 se
  * salta limpio con "No hay segundo tutor" (avanza sin escribir nada).
