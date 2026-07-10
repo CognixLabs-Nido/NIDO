@@ -240,14 +240,19 @@ export default async function globalSetup(): Promise<void> {
   await delWhereIn('familias', 'id', familiaIds) // cascadea familia_tutores
   await delWhereIn('aulas', 'centro_id', centroIds) // cascadea aulas_curso + profes_aulas
   await delWhereIn('cursos_academicos', 'centro_id', centroIds)
-  // NOTA: roles_usuario, conceptos_cobro y tipos_beca NO se borran aquí.
-  //  - roles_usuario.centro_id NO tiene FK a centros → no bloquea DELETE centros;
-  //    cae por CASCADE de usuarios al borrar la cuenta (paso 8).
-  //  - conceptos_cobro y tipos_beca son CATÁLOGO (config de F-1, lo usa el motor de
-  //    recibos F-4), NO test data; además centro_id → centros es ON DELETE CASCADE →
-  //    se van solas al borrar el centro. Sus referencias RESTRICT (asignacion_cuota,
-  //    becas — CASCADE de ninos, ya borrados; aplicaciones_concepto — paso 1) ya no
-  //    existen, así que la cascada de centros no se bloquea.
+  // roles_usuario.centro_id → centros es ON DELETE **RESTRICT** (verificado contra
+  // pg_constraint: roles_usuario_centro_id_fkey). Bloquea el DELETE de centros y hay
+  // que vaciarlo ANTES, anclado a centro_id IN centroIds. NO basta con que caiga por
+  // CASCADE de usuarios al borrar la cuenta (paso 8): eso ocurre DESPUÉS de este
+  // DELETE de centros → llega tarde. (Corrige la regresión de #195, que lo quitó
+  // apoyándose en la premisa falsa de que no había FK a centros.)
+  await delWhereIn('roles_usuario', 'centro_id', centroIds)
+  // NOTA: conceptos_cobro y tipos_beca NO se borran aquí. Son CATÁLOGO (config de F-1,
+  // lo usa el motor de recibos F-4), NO test data; y su centro_id → centros es ON DELETE
+  // **CASCADE** (verificado: conceptos_cobro_centro_id_fkey, tipos_beca_centro_id_fkey)
+  // → se van solas al borrar el centro. Sus referencias RESTRICT (asignacion_cuota,
+  // becas — CASCADE de ninos, ya borrados; aplicaciones_concepto — paso 1, ya vaciada)
+  // no existen a esta altura, así que la cascada de centros no se bloquea.
   await delWhereIn('centros', 'id', centroIds)
 
   // ---------------------------------------------------------------------------
