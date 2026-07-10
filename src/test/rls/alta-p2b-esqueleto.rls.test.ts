@@ -4,6 +4,7 @@ import {
   createTestAula,
   createTestCentro,
   createTestCurso,
+  createTestFamilia,
   deleteTestCentro,
   serviceClient,
 } from './setup'
@@ -31,11 +32,15 @@ describe.skipIf(!APPLIED)('Alta P2b — esqueleto (DB)', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string; curso_academico_id: string }
+  let familiaId: string
 
   beforeAll(async () => {
     centro = await createTestCentro('Centro Alta P2b')
     curso = await createTestCurso(centro.id)
     aula = await createTestAula(centro.id, curso.id)
+    // familia_id es NOT NULL (F-2b-3): el esqueleto necesita familia. Se crea explícita
+    // (no vía createTestNino, que setearía apellidos/fecha_nacimiento y rompería el test).
+    familiaId = await createTestFamilia(centro.id)
   })
 
   afterAll(async () => {
@@ -45,7 +50,7 @@ describe.skipIf(!APPLIED)('Alta P2b — esqueleto (DB)', () => {
   it('inserta un esqueleto de niño con apellidos/fecha_nacimiento NULL', async () => {
     const { data: nino, error } = await serviceClient
       .from('ninos')
-      .insert({ centro_id: centro.id, nombre: 'Esqueleto Demo' })
+      .insert({ centro_id: centro.id, familia_id: familiaId, nombre: 'Esqueleto Demo' })
       .select('id, nombre, apellidos, fecha_nacimiento')
       .single()
     expect(error).toBeNull()
@@ -60,7 +65,7 @@ describe.skipIf(!APPLIED)('Alta P2b — esqueleto (DB)', () => {
   it('matrícula del esqueleto nace pendiente y se activa con UPDATE estado', async () => {
     const { data: nino } = await serviceClient
       .from('ninos')
-      .insert({ centro_id: centro.id, nombre: 'Esqueleto Activar' })
+      .insert({ centro_id: centro.id, familia_id: familiaId, nombre: 'Esqueleto Activar' })
       .select('id')
       .single()
     expect(nino).not.toBeNull()

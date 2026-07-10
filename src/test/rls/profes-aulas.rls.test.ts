@@ -7,6 +7,7 @@ import {
   type TestAula,
   createTestCentro,
   createTestCurso,
+  createTestNino,
   createTestUser,
   crearVinculo,
   deleteTestCentro,
@@ -80,18 +81,9 @@ describe.skipIf(!MIGRATION_APPLIED)(
       await asignarRol(profe2.id, centroA.id, 'profe')
       await asignarRol(tutor.id, centroA.id, 'tutor_legal')
 
-      // Niño + vínculo del tutor para que tenga presencia en el centro.
-      const { data: nino, error: ninoErr } = await serviceClient
-        .from('ninos')
-        .insert({
-          centro_id: centroA.id,
-          nombre: 'Niño RLS',
-          apellidos: 'profe-aulas',
-          fecha_nacimiento: '2024-03-15',
-        })
-        .select('id')
-        .single()
-      if (ninoErr || !nino) throw new Error(`createNino RLS: ${ninoErr?.message}`)
+      // Niño + vínculo del tutor para que tenga presencia en el centro. Vía el factory
+      // (único camino normal de creación de niños en tests; setea familia_id).
+      const nino = await createTestNino(centroA.id, 'Niño RLS')
       ninoA = { id: nino.id }
       await crearVinculo(ninoA.id, tutor.id, 'tutor_legal_principal', {
         puede_ver_agenda: true,
