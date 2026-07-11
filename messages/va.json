@@ -198,7 +198,9 @@
       "asignar_fallo": "No s'ha pogut assignar l'aula.",
       "descartar_fallo": "No s'ha pogut descartar la proposta.",
       "confirmar_fallo": "No s'ha pogut confirmar el pas de curs.",
-      "quitar_fallo": "No s’ha pogut llevar la proposta."
+      "quitar_fallo": "No s’ha pogut llevar la proposta.",
+      "incompletos": "Hi ha xiquets/es sense destí assignat (aula o Finalitza). Resol-los abans de confirmar.",
+      "finaliza_fallo": "No s'ha pogut marcar Finalitza. Torna-ho a provar."
     }
   },
   "admin": {
@@ -279,8 +281,6 @@
       "multiples": "Diverses aules possibles",
       "asignar": "Assignar",
       "asignada": "Aula assignada",
-      "graduado": "Es gradua (sense aula per edat)",
-      "mantener_graduado": "Mantindre com a graduat",
       "descartar": "Descartar proposta",
       "descartada": "Proposta descartada",
       "confirmar": "Confirmar passar de curs",
@@ -293,9 +293,16 @@
       "col_aula_propuesta": "Aula proposada",
       "col_accion": "Acció",
       "continua": "Continua",
-      "opcion_gradua": "Es gradua (ix del centre)",
-      "marcado_graduado": "Marcat com a graduat",
-      "sin_aula": "Sense aula"
+      "sin_aula": "Sense aula",
+      "finaliza": "Finalitza",
+      "sin_resolver": "Sense resoldre",
+      "opcion_finaliza": "Finalitza (ix del centre)",
+      "marcado_finaliza": "Marcat com a Finalitza",
+      "finaliza_titulo": "Finalitza",
+      "finaliza_vacio": "Ningú en Finalitza.",
+      "reasignar_aula": "Reassignar a una aula…",
+      "faltan_destino": "Falten {n} xiquets/es per assignar destí (aula o Finalitza).",
+      "sin_marcar": "Sense marcar"
     },
     "cursos": {
       "title": "Cursos acadèmics",

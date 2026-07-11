@@ -198,7 +198,9 @@
       "asignar_fallo": "No se pudo asignar el aula.",
       "descartar_fallo": "No se pudo descartar la propuesta.",
       "confirmar_fallo": "No se pudo confirmar el pase de curso.",
-      "quitar_fallo": "No se pudo quitar la propuesta."
+      "quitar_fallo": "No se pudo quitar la propuesta.",
+      "incompletos": "Hay niños/as sin destino asignado (aula o Finaliza). Resuélvelos antes de confirmar.",
+      "finaliza_fallo": "No se pudo marcar Finaliza. Inténtalo de nuevo."
     }
   },
   "admin": {
@@ -279,8 +281,6 @@
       "multiples": "Varias aulas posibles",
       "asignar": "Asignar",
       "asignada": "Aula asignada",
-      "graduado": "Se gradúa (sin aula por edad)",
-      "mantener_graduado": "Mantener como graduado",
       "descartar": "Descartar propuesta",
       "descartada": "Propuesta descartada",
       "confirmar": "Confirmar pasar de curso",
@@ -293,9 +293,16 @@
       "col_aula_propuesta": "Aula propuesta",
       "col_accion": "Acción",
       "continua": "Continúa",
-      "opcion_gradua": "Se gradúa (sale del centro)",
-      "marcado_graduado": "Marcado como graduado",
-      "sin_aula": "Sin aula"
+      "sin_aula": "Sin aula",
+      "finaliza": "Finaliza",
+      "sin_resolver": "Sin resolver",
+      "opcion_finaliza": "Finaliza (sale del centro)",
+      "marcado_finaliza": "Marcado como Finaliza",
+      "finaliza_titulo": "Finaliza",
+      "finaliza_vacio": "Nadie en Finaliza.",
+      "reasignar_aula": "Reasignar a un aula…",
+      "faltan_destino": "Faltan {n} niños/as por asignar destino (aula o Finaliza).",
+      "sin_marcar": "Sin marcar"
     },
     "cursos": {
       "title": "Cursos académicos",

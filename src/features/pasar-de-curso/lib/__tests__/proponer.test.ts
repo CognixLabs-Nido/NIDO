@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 import {
   computarPropuesta,
   construirFilasRollover,
+  ninosSinResolver,
   type AulaDestinoRollover,
   type NinoActivoRollover,
-  type ResultadoPropuesta,
 } from '../proponer'
 
 const AULA_BEBES: AulaDestinoRollover = {
@@ -129,31 +129,48 @@ describe('computarPropuesta', () => {
   })
 })
 
-describe('construirFilasRollover', () => {
+describe('construirFilasRollover (F-3-A: 3 estados persistidos)', () => {
   const NORTE = { id: 'o-norte', nombre: 'Norte' }
+  const ninos = [nino('1', 2024, NORTE), nino('2', 2022, NORTE), nino('3', 2024, NORTE)]
 
-  it('una fila por niño con aula actual y propuesta pre-rellena', () => {
-    const ninos = [nino('1', 2024, NORTE), nino('2', 2022, NORTE)]
-    const resultado = computarPropuesta(ninos, AULAS, new Set())
-    const filas = construirFilasRollover(ninos, resultado, new Map())
-
-    expect(filas).toHaveLength(2)
+  it('matrícula pendiente → continua (aula persistida), refleja el aula real', () => {
+    const filas = construirFilasRollover(ninos, new Map([['1', 'a-2a3']]), new Set())
     const f1 = filas.find((f) => f.nino_id === '1')!
     expect(f1.aula_actual_nombre).toBe('Norte')
-    expect(f1.aula_propuesta_id).toBe('a-1a2')
+    expect(f1.aula_propuesta_id).toBe('a-2a3')
     expect(f1.accion).toBe('continua')
-
-    const f2 = filas.find((f) => f.nino_id === '2')! // 2022 → graduado
-    expect(f2.aula_propuesta_id).toBeNull()
-    expect(f2.accion).toBe('gradua')
   })
 
-  it('la propuesta persistida (pendiente) tiene prioridad sobre la calculada', () => {
-    const ninos = [nino('1', 2024, NORTE)]
-    const resultado: ResultadoPropuesta = computarPropuesta(ninos, AULAS, new Set(['1']))
-    // El niño ya tiene una pendiente en 'a-2a3' (override de la directora).
-    const filas = construirFilasRollover(ninos, resultado, new Map([['1', 'a-2a3']]))
-    expect(filas[0]!.aula_propuesta_id).toBe('a-2a3')
-    expect(filas[0]!.accion).toBe('continua')
+  it('fila rollover_finaliza → finaliza (sin aula)', () => {
+    const filas = construirFilasRollover(ninos, new Map(), new Set(['2']))
+    const f2 = filas.find((f) => f.nino_id === '2')!
+    expect(f2.aula_propuesta_id).toBeNull()
+    expect(f2.accion).toBe('finaliza')
+  })
+
+  it('ni pendiente ni finaliza → sin_resolver (NO usa la propuesta calculada)', () => {
+    const filas = construirFilasRollover(ninos, new Map(), new Set())
+    expect(filas.every((f) => f.accion === 'sin_resolver')).toBe(true)
+    expect(filas.every((f) => f.aula_propuesta_id === null)).toBe(true)
+  })
+
+  it('los tres estados a la vez', () => {
+    const filas = construirFilasRollover(ninos, new Map([['1', 'a-1a2']]), new Set(['2']))
+    expect(filas.find((f) => f.nino_id === '1')!.accion).toBe('continua')
+    expect(filas.find((f) => f.nino_id === '2')!.accion).toBe('finaliza')
+    expect(filas.find((f) => f.nino_id === '3')!.accion).toBe('sin_resolver')
+  })
+})
+
+describe('ninosSinResolver (gate de completitud)', () => {
+  const NORTE = { id: 'o-norte', nombre: 'Norte' }
+  const ninos = [nino('1', 2024, NORTE), nino('2', 2024, NORTE), nino('3', 2024, NORTE)]
+
+  it('vacío cuando todos están resueltos (aula o Finaliza)', () => {
+    expect(ninosSinResolver(ninos, new Set(['1', '2']), new Set(['3']))).toEqual([])
+  })
+
+  it('lista a los que no tienen ni aula ni Finaliza', () => {
+    expect(ninosSinResolver(ninos, new Set(['1']), new Set()).sort()).toEqual(['2', '3'])
   })
 })

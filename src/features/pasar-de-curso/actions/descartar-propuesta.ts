@@ -3,16 +3,15 @@
 import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/shared/lib/logger'
 
+import { descartarPropuestaCore } from '../lib/mutaciones-rollover'
 import { cursoDestinoSchema, type CursoDestinoInput } from '../schemas/rollover'
 import { fail, ok, type ActionResult } from '../../centros/types'
 
 /**
  * F11-H-2: descarta la propuesta del curso destino — borra todas las matrículas
- * `pendiente` de ese curso. Escape para empezar de cero si la directora abandona
- * o quiere rehacer. Solo afecta a `pendiente` (no toca activas/históricas) y solo
- * si el destino sigue planificado (no se "descarta" un rollover ya confirmado).
+ * `pendiente` de ese curso. F-3-A: borra también todas las filas `rollover_finaliza`
+ * del destino (reset global). Solo si el destino sigue planificado.
  */
 export async function descartarPropuesta(
   input: CursoDestinoInput
@@ -21,27 +20,9 @@ export async function descartarPropuesta(
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'rollover.validation.invalid')
 
   const supabase = await createClient()
-
-  const { data: destino } = await supabase
-    .from('cursos_academicos')
-    .select('estado')
-    .eq('id', parsed.data.curso_destino_id)
-    .is('deleted_at', null)
-    .maybeSingle()
-  if (!destino) return fail('rollover.errors.destino_no_encontrado')
-  if (destino.estado !== 'planificado') return fail('rollover.errors.destino_no_planificado')
-
-  const { data: borradas, error } = await supabase
-    .from('matriculas')
-    .delete()
-    .eq('curso_academico_id', parsed.data.curso_destino_id)
-    .eq('estado', 'pendiente')
-    .select('id')
-  if (error) {
-    logger.warn('descartarPropuesta', error.message)
-    return fail('rollover.errors.descartar_fallo')
-  }
+  const res = await descartarPropuestaCore(supabase, parsed.data.curso_destino_id)
+  if (!res.success) return res
 
   revalidatePath('/[locale]/admin/pasar-de-curso', 'page')
-  return ok({ borradas: (borradas ?? []).length })
+  return ok(res.data)
 }

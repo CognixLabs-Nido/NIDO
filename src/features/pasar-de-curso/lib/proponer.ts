@@ -176,37 +176,61 @@ export interface FilaRollover {
   apellidos: string | null
   aula_actual_id: string | null
   aula_actual_nombre: string | null
-  /** Sala propuesta pre-rellena (persistida si existe, si no la calculada). null = se gradúa / sin resolver. */
+  /** Sala destino PERSISTIDA (matrícula `pendiente`). null = sin aula (Finaliza o sin marcar). */
   aula_propuesta_id: string | null
-  accion: 'continua' | 'gradua'
+  /**
+   * Destino PERSISTIDO del niño (F-3-A): `continua` = matrícula pendiente en un aula;
+   * `finaliza` = fila en `rollover_finaliza`; `sin_resolver` = ninguno de los dos (la
+   * validación al confirmar lo bloquea). Refleja SOLO lo persistido — coherente con el
+   * gate de completitud —, no la propuesta calculada (que se persiste al pulsar "Proponer").
+   */
+  accion: 'continua' | 'finaliza' | 'sin_resolver'
 }
 
 /**
  * Construye las filas de la tabla de revisión: UNA por niño activo del curso
- * origen, con su sala actual y la sala propuesta pre-rellena. La propuesta
- * persistida (matrícula `pendiente` ya guardada) tiene prioridad sobre la
- * calculada → reanudable e idempotente. Pura y testeable.
+ * origen, con su sala actual y su destino PERSISTIDO. Solo cuenta lo guardado en
+ * BD (matrícula `pendiente` = aula; fila `rollover_finaliza` = Finaliza); un niño
+ * sin ninguno queda `sin_resolver` y el `<select>` arranca en placeholder. La
+ * propuesta calculada NO pre-rellena aquí: se materializa al pulsar "Proponer".
+ * Pura y testeable.
  */
 export function construirFilasRollover(
   ninos: NinoActivoRollover[],
-  resultado: ResultadoPropuesta,
-  pendientes: ReadonlyMap<string, string>
+  pendientes: ReadonlyMap<string, string>,
+  finalizados: ReadonlySet<string>
 ): FilaRollover[] {
-  const propuestaPorNino = new Map(resultado.propuestas.map((p) => [p.nino_id, p.aula_destino_id]))
-  const graduadosSet = new Set(resultado.graduados.map((g) => g.nino_id))
-
   return ninos.map((n) => {
-    const aulaPropuesta = pendientes.get(n.nino_id) ?? propuestaPorNino.get(n.nino_id) ?? null
-    const accion: 'continua' | 'gradua' =
-      aulaPropuesta !== null ? 'continua' : graduadosSet.has(n.nino_id) ? 'gradua' : 'continua'
+    const aulaPersistida = pendientes.get(n.nino_id) ?? null
+    const accion: 'continua' | 'finaliza' | 'sin_resolver' =
+      aulaPersistida !== null
+        ? 'continua'
+        : finalizados.has(n.nino_id)
+          ? 'finaliza'
+          : 'sin_resolver'
     return {
       nino_id: n.nino_id,
       nombre: n.nombre,
       apellidos: n.apellidos,
       aula_actual_id: n.aula_origen_id,
       aula_actual_nombre: n.aula_origen_nombre,
-      aula_propuesta_id: aulaPropuesta,
+      aula_propuesta_id: aulaPersistida,
       accion,
     }
   })
+}
+
+/**
+ * F-3-A — niños activos del curso origen SIN destino resuelto: ni matrícula
+ * `pendiente` (aula) ni fila `rollover_finaliza`. Predicado puro del gate de
+ * completitud que bloquea `confirmarRollover`. Devuelve los `nino_id` pendientes.
+ */
+export function ninosSinResolver(
+  ninos: NinoActivoRollover[],
+  pendientes: ReadonlySet<string>,
+  finalizados: ReadonlySet<string>
+): string[] {
+  return ninos
+    .filter((n) => !pendientes.has(n.nino_id) && !finalizados.has(n.nino_id))
+    .map((n) => n.nino_id)
 }
