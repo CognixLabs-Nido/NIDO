@@ -4019,6 +4019,10 @@ export type Database = {
         Args: { p_autorizacion_id: string }
         Returns: boolean
       }
+      archivar_nino: {
+        Args: { p_fecha_baja?: string; p_motivo?: string; p_nino_id: string }
+        Returns: Json
+      }
       aula_de_publicacion: {
         Args: { p_publicacion_id: string }
         Returns: string
