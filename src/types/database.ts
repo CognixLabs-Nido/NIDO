@@ -4282,7 +4282,10 @@ export type Database = {
         }
         Returns: string
       }
-      revocar_acceso_familia: { Args: { p_familia_id: string }; Returns: Json }
+      revocar_acceso_familia: {
+        Args: { p_familia_id: string }
+        Returns: Json
+      }
       revocar_consentimiento: {
         Args: { p_tipo: Database["public"]["Enums"]["consentimiento_tipo"] }
         Returns: string
