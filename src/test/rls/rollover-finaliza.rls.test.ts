@@ -101,12 +101,12 @@ describe.skipIf(!APPLIED)('F-3-A — rollover_finaliza (RLS + exclusión mutua)'
   it('admin del centro inserta y LEE su fila (.insert().select() — MVCC); centro_id por trigger', async () => {
     const { data, error } = await cAdminA
       .from('rollover_finaliza')
-      .insert({ curso_academico_id: cursoDestino.id, nino_id: ninoA.id })
+      .insert({ centro_id: centroA.id, curso_academico_id: cursoDestino.id, nino_id: ninoA.id })
       .select('id, centro_id')
       .single()
     expect(error).toBeNull()
     expect(data).not.toBeNull()
-    expect(data!.centro_id).toBe(centroA.id) // lo derivó el trigger del curso
+    expect(data!.centro_id).toBe(centroA.id) // pasado explícito y derivado por el trigger del curso
 
     const { data: sel } = await cAdminA
       .from('rollover_finaliza')
@@ -121,14 +121,14 @@ describe.skipIf(!APPLIED)('F-3-A — rollover_finaliza (RLS + exclusión mutua)'
   it('profe NO accede; tutor NO accede (default DENY)', async () => {
     const profeIns = await cProfeA
       .from('rollover_finaliza')
-      .insert({ curso_academico_id: cursoDestino.id, nino_id: ninoA.id })
+      .insert({ centro_id: centroA.id, curso_academico_id: cursoDestino.id, nino_id: ninoA.id })
       .select('id')
       .maybeSingle()
     expect(profeIns.error).not.toBeNull()
 
     const tutorIns = await cTutorA
       .from('rollover_finaliza')
-      .insert({ curso_academico_id: cursoDestino.id, nino_id: ninoA.id })
+      .insert({ centro_id: centroA.id, curso_academico_id: cursoDestino.id, nino_id: ninoA.id })
       .select('id')
       .maybeSingle()
     expect(tutorIns.error).not.toBeNull()
@@ -154,7 +154,7 @@ describe.skipIf(!APPLIED)('F-3-A — rollover_finaliza (RLS + exclusión mutua)'
 
     const ins = await cAdminB
       .from('rollover_finaliza')
-      .insert({ curso_academico_id: cursoDestino.id, nino_id: ninoA.id })
+      .insert({ centro_id: centroA.id, curso_academico_id: cursoDestino.id, nino_id: ninoA.id })
       .select('id')
       .maybeSingle()
     expect(ins.error).not.toBeNull() // WITH CHECK es_admin(centroA) → false para adminB

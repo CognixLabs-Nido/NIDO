@@ -15,20 +15,25 @@ import { fail, ok, type ActionResult } from '../../centros/types'
 
 type DB = SupabaseClient<Database>
 
-/** El destino debe existir y seguir `planificado` (no se toca un rollover ya confirmado). */
+/**
+ * El destino debe existir y seguir `planificado` (no se toca un rollover ya confirmado).
+ * Devuelve el `centroId` del curso para poblar `centro_id` en los inserts (convención
+ * del repo: se pasa explícito aunque el trigger `set_centro_id` lo derive — igual que
+ * `aulas_curso` en `create-aula`/`copiar-config-curso`).
+ */
 async function destinoPlanificado(
   supabase: DB,
   cursoDestinoId: string
-): Promise<ActionResult<void>> {
+): Promise<ActionResult<{ centroId: string }>> {
   const { data: destino } = await supabase
     .from('cursos_academicos')
-    .select('estado')
+    .select('estado, centro_id')
     .eq('id', cursoDestinoId)
     .is('deleted_at', null)
     .maybeSingle()
   if (!destino) return fail('rollover.errors.destino_no_encontrado')
   if (destino.estado !== 'planificado') return fail('rollover.errors.destino_no_planificado')
-  return ok(undefined)
+  return ok({ centroId: destino.centro_id })
 }
 
 /**
@@ -55,11 +60,12 @@ export async function marcarFinalizaCore(
     return fail('rollover.errors.finaliza_fallo')
   }
 
-  // Registra la decisión (centro_id lo pone el trigger). Idempotente por UNIQUE(curso,niño).
+  // Registra la decisión. `centro_id` se pasa explícito (convención del repo) aunque el
+  // trigger lo derive del curso. Idempotente por UNIQUE(curso, niño).
   const { error: insErr } = await supabase
     .from('rollover_finaliza')
     .upsert(
-      { curso_academico_id: cursoDestinoId, nino_id: ninoId },
+      { centro_id: g.data.centroId, curso_academico_id: cursoDestinoId, nino_id: ninoId },
       { onConflict: 'curso_academico_id,nino_id', ignoreDuplicates: true }
     )
   if (insErr) {
