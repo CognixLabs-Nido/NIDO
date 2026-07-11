@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { activarCurso } from '@/features/cursos/actions/activar-curso'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -12,19 +11,23 @@ import { cursoDestinoSchema, type CursoDestinoInput } from '../schemas/rollover'
 import { fail, ok, type ActionResult } from '../../centros/types'
 
 /**
- * F11-H-2: confirma el "pasar de curso". Dos pasos, en ESTE orden por seguridad:
+ * F11-H-2 + F-3-C-2: confirma el "pasar de curso".
  *
- *  1. Pasa las matrículas `pendiente` del curso destino a `activa`. Se hace
- *     MIENTRAS el curso sigue `planificado` → siguen invisibles para el staff
- *     (la RLS de profe filtra por curso activo, no por estado). Así no hay ninguna
- *     ventana en la que el staff vea pendientes.
- *  2. Activa el curso destino (`activarCurso` cierra el activo anterior y abre
- *     este). A partir de aquí las matrículas (ya `activa`) son las operativas.
+ *  1. GATE DE COMPLETITUD (F-3-A, en TS): ningún niño activo del curso origen
+ *     puede quedar sin destino resuelto. Pre-chequeo antes de la RPC; el conteo se
+ *     muestra en la UI. (La atomicidad del cierre la garantiza la RPC, no este
+ *     gate; una carrera improbable entre el gate y la RPC solo afectaría a un niño
+ *     recién dejado sin resolver, que la RPC simplemente no procesaría.)
+ *  2. RPC `cerrar_curso` (F-3-C-2): TODO el cierre en UNA transacción SQL
+ *     (todo-o-nada) — archiva finalizadores + revoca familias vacías, cierra la
+ *     matrícula VIEJA de los que continúan (arreglo de la fuga multicurso), cierra
+ *     las profes_aulas viejas, hace el flip pendiente→activa del destino y activa
+ *     el curso destino cerrando el saliente. Si algo falla, revierte entero y el
+ *     curso NO queda cerrado (el error crudo es el reporte; se corrige y reintenta).
  *
- * No es transaccional desde el cliente (decisión J: sin RPC SQL nuevo), pero el
- * orden elegido deja cualquier corte intermedio en estado consistente: tras el
- * paso 1 el curso sigue planificado (nada cambió operativamente); el paso 2 es el
- * único que "publica" el rollover.
+ * La parte atómica (antes repartida en un flip PostgREST + `activarCurso`) vive
+ * ahora ÍNTEGRA en la RPC; esta server action solo la invoca. `activarCurso`
+ * sigue existiendo para su propio botón de "activar curso" (fuera del rollover).
  */
 export async function confirmarRollover(input: CursoDestinoInput): Promise<ActionResult<void>> {
   const parsed = cursoDestinoSchema.safeParse(input)
@@ -39,29 +42,21 @@ export async function confirmarRollover(input: CursoDestinoInput): Promise<Actio
   if (estado.cursoDestino.estado !== 'planificado')
     return fail('rollover.errors.destino_no_planificado')
 
-  // F-3-A — GATE DE COMPLETITUD: ningún niño activo del curso origen puede quedar sin
-  // destino resuelto (ni matrícula pendiente = aula, ni fila `rollover_finaliza`). Va
-  // ANTES del flip: si falta alguno, no se confirma. El conteo se muestra en la UI.
+  // 1) F-3-A — GATE DE COMPLETITUD (pre-chequeo, ANTES de la RPC).
   const pendSet = new Set(estado.pendientes.map((p) => p.nino_id))
   const finSet = new Set(estado.finalizados)
   if (ninosSinResolver(estado.ninosActivos, pendSet, finSet).length > 0) {
     return fail('rollover.errors.incompletos')
   }
 
-  // 1) pendiente → activa (aún planificado = invisible para staff).
-  const { error: flipErr } = await supabase
-    .from('matriculas')
-    .update({ estado: 'activa' })
-    .eq('curso_academico_id', cursoId)
-    .eq('estado', 'pendiente')
-  if (flipErr) {
-    logger.warn('confirmarRollover flip', flipErr.message)
+  // 2) Cierre atómico completo (todo-o-nada) en la RPC.
+  const { error: cierreErr } = await supabase.rpc('cerrar_curso', {
+    p_curso_destino_id: cursoId,
+  })
+  if (cierreErr) {
+    logger.warn('confirmarRollover cerrar_curso', cierreErr.message)
     return fail('rollover.errors.confirmar_fallo')
   }
-
-  // 2) activar el curso destino (cierra el activo previo).
-  const res = await activarCurso(cursoId)
-  if (!res.success) return fail(res.error)
 
   revalidatePath('/[locale]/admin/pasar-de-curso', 'page')
   revalidatePath('/[locale]/admin/cursos', 'page')

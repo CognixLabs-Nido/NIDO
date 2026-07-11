@@ -4073,6 +4073,7 @@ export type Database = {
       }
       centro_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       centro_de_remesa: { Args: { p_remesa_id: string }; Returns: string }
+      cerrar_curso: { Args: { p_curso_destino_id: string }; Returns: Json }
       cerrar_mes_cobros: {
         Args: { p_anio: number; p_centro_id: string; p_mes: number }
         Returns: string
