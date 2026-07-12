@@ -760,6 +760,50 @@
         "crear": "Crear alta",
         "nombre_label": "Nombre del tutor",
         "apellidos_label": "Apellidos del tutor"
+      },
+      "anadirHijo": {
+        "boton": "Añadir hijo a familia existente",
+        "titulo": "Añadir hijo a familia existente",
+        "paso1_desc": "Elige la familia a la que añadir el nuevo hijo.",
+        "paso2_desc": "Datos del nuevo hijo para la familia «{familia}».",
+        "filtro": {
+          "todas": "Todas",
+          "activas": "Activas",
+          "inactivas": "Inactivas"
+        },
+        "buscar_placeholder": "Buscar por familia o titular…",
+        "sin_familias": "No hay familias que coincidan",
+        "inactiva": "Inactiva",
+        "hijos": "{n, plural, =0 {sin hijos activos} one {# hijo activo} other {# hijos activos}}",
+        "sin_curso_activo": "El centro no tiene un curso académico activo. Activa un curso antes de añadir el hijo.",
+        "fields": {
+          "nombre": "Nombre",
+          "apellidos": "Apellidos",
+          "fecha_nacimiento": "Fecha de nacimiento",
+          "aula": "Aula del curso activo"
+        },
+        "aula_placeholder": "Elige un aula",
+        "volver": "Volver",
+        "cancelar": "Cancelar",
+        "confirmar": "Añadir hijo",
+        "procesando": "Añadiendo…",
+        "exito": "Hijo añadido a la familia",
+        "push_titulo": "Nuevo hijo en tu familia",
+        "push_cuerpo": "Se ha añadido a {nombre} a tu familia",
+        "validation": {
+          "nombre_requerido": "Indica el nombre del niño",
+          "apellidos_requerido": "Indica los apellidos del niño",
+          "fecha_requerida": "Indica la fecha de nacimiento",
+          "aula_requerida": "Elige un aula del curso activo",
+          "invalid": "Datos no válidos"
+        },
+        "errors": {
+          "familia_no_encontrada": "Familia no encontrada",
+          "familia_no_elegible": "Esta familia no tiene ningún adulto con cuenta; usa el flujo de invitación",
+          "no_autorizado": "No tienes permiso para añadir hijos en este centro",
+          "colision": "El nombre del titular no coincide con el registrado en la familia; revísalo antes de continuar",
+          "fallo": "No se pudo añadir el hijo"
+        }
       }
     },
     "pendientes": {
