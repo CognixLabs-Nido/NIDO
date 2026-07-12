@@ -622,6 +622,19 @@
         "procesando": "Processant…",
         "exito": "Xiquet donat de baixa"
       },
+      "desarchivar": {
+        "boton": "Reincorporar",
+        "titulo": "Reincorporar el xiquet",
+        "aviso": "Torna a donar d'alta {nombre} amb una nova matrícula en el curs actiu. El seu historial de baixes es conserva.",
+        "sin_curso_activo": "El centre no té un curs acadèmic actiu. Activa un curs abans de reincorporar.",
+        "aula_label": "Aula del curs actiu",
+        "aula_placeholder": "Tria una aula",
+        "confirm_nombre_label": "Escriu el nom complet del xiquet per a confirmar",
+        "cancelar": "Cancel·lar",
+        "confirmar": "Reincorporar",
+        "procesando": "Processant…",
+        "exito": "Xiquet reincorporat"
+      },
       "archivo": {
         "link": "Veure baixes / arxiu",
         "titulo": "Alumnes donats de baixa",
@@ -1225,6 +1238,16 @@
       "errors": {
         "no_autorizado": "No tens permís per a donar de baixa este xiquet",
         "fallo": "No s'ha pogut donar de baixa el xiquet"
+      }
+    },
+    "desarchivar": {
+      "validation": {
+        "aula_requerida": "Tria una aula del curs actiu",
+        "invalid": "Dades de reincorporació no vàlides"
+      },
+      "errors": {
+        "no_autorizado": "No tens permís per a reincorporar este xiquet",
+        "fallo": "No s'ha pogut reincorporar el xiquet"
       }
     }
   },

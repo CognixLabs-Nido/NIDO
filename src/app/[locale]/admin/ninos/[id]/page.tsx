@@ -40,6 +40,8 @@ import { getAltaDocumentacion } from '@/features/ninos/queries/get-alta-document
 import { AvanceAltaCard } from '@/features/matriculas/components/AvanceAltaCard'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
 import { DarDeBajaNinoButton } from '@/features/ninos/components/DarDeBajaNinoButton'
+import { ReincorporarNinoButton } from '@/features/ninos/components/ReincorporarNinoButton'
+import { getAulasCursoActivo } from '@/features/aulas/queries/get-aulas-curso-activo'
 import { NuevoRecordatorioContextual } from '@/features/recordatorios/components/NuevoRecordatorioContextual'
 import { EmptyState } from '@/shared/components/EmptyState'
 
@@ -110,6 +112,12 @@ export default async function NinoDetallePage({ params }: PageProps) {
     }
   }
   const medicoCompleto = !!info && Object.values(info).some((v) => v !== null && v !== '')
+
+  // F-3-F: para reincorporar (desarchivar) se elige aula del curso activo. Solo se
+  // consulta en la ficha de un archivado (donde aparece el botón). Vacío ⇒ sin curso activo.
+  const aulasReincorporar = archivado
+    ? (await getAulasCursoActivo(nino.centro_id)).map((a) => ({ id: a.id, nombre: a.nombre }))
+    : []
 
   return (
     <div className="space-y-6">
@@ -187,6 +195,15 @@ export default async function NinoDetallePage({ params }: PageProps) {
           {ultimaBaja?.motivo_baja && (
             <span className="text-warm-700">· {ultimaBaja.motivo_baja}</span>
           )}
+          {/* F-3-F: reincorporar (desarchivar) al niño. Doble gate (aula del curso
+              activo + teclear el nombre). Abre una matrícula nueva; el historial queda. */}
+          <div className="ml-auto">
+            <ReincorporarNinoButton
+              ninoId={id}
+              nombreCompleto={`${nino.nombre}${nino.apellidos ? ` ${nino.apellidos}` : ''}`}
+              aulas={aulasReincorporar}
+            />
+          </div>
         </div>
       )}
 

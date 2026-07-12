@@ -90,3 +90,4 @@ jobs:
           F12B_5_RLS_APPLIED: '1'
           F12B_6_RLS_APPLIED: '1'
           F3D_MIGRATION_APPLIED: '1'
+          F3F_MIGRATION_APPLIED: '1'

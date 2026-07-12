@@ -622,6 +622,19 @@
         "procesando": "Processing…",
         "exito": "Child deregistered"
       },
+      "desarchivar": {
+        "boton": "Reinstate",
+        "titulo": "Reinstate child",
+        "aviso": "Re-enrols {nombre} with a new enrolment in the active year. Their deregistration history is kept.",
+        "sin_curso_activo": "The centre has no active academic year. Activate a year before reinstating.",
+        "aula_label": "Classroom of the active year",
+        "aula_placeholder": "Choose a classroom",
+        "confirm_nombre_label": "Type the child's full name to confirm",
+        "cancelar": "Cancel",
+        "confirmar": "Reinstate",
+        "procesando": "Processing…",
+        "exito": "Child reinstated"
+      },
       "archivo": {
         "link": "View leavers / archive",
         "titulo": "Deregistered children",
@@ -1225,6 +1238,16 @@
       "errors": {
         "no_autorizado": "You don't have permission to deregister this child",
         "fallo": "Could not deregister the child"
+      }
+    },
+    "desarchivar": {
+      "validation": {
+        "aula_requerida": "Choose a classroom of the active year",
+        "invalid": "Invalid reinstatement data"
+      },
+      "errors": {
+        "no_autorizado": "You don't have permission to reinstate this child",
+        "fallo": "The child could not be reinstated"
       }
     }
   },
