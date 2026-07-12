@@ -3,9 +3,11 @@
 import { revalidatePath } from 'next/cache'
 
 import { sendInvitation } from '@/features/auth/actions/send-invitation'
+import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
 import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Json } from '@/types/database'
@@ -100,11 +102,44 @@ export async function invitarAlAlta(
     return fail('listaEspera.errors.no_encontrado')
   if (prospecto.estado !== 'en_espera') return fail('listaEspera.errors.no_en_espera')
   if (!prospecto.email_tutor) return fail('listaEspera.errors.sin_email')
+  // Const para que el narrowing (no-null) sobreviva a los `await` posteriores.
+  const emailTutor = prospecto.email_tutor
 
   // `fecha_nacimiento` es obligatoria para crear el niño (la RPC la exige NOT NULL).
   // Const para que el narrowing sobreviva a los `await` posteriores.
   const fechaNacimiento = prospecto.fecha_nacimiento
   if (!fechaNacimiento) return fail('listaEspera.errors.sin_fecha_nacimiento')
+
+  // GUARDARRAÍL F-2b-4-3 (ANTES de cualquier escritura): si el email ya tiene una cuenta
+  // OPERATIVA (con roles), invitar dejaría un niño ESQUELETO huérfano — la RPC de abajo lo
+  // crearía y luego `inviteUserByEmail` fallaría con `email_exists`, sin vínculo ni
+  // invitación. El camino correcto para un tutor con cuenta es "Añadir hijo a familia
+  // existente" (F-2b-4-2), que da acceso directo. Se detecta con el MISMO patrón que
+  // `crearTutorDirecto`/`accept-invitation`: `listUsers` (service-role) + roles activos →
+  // `clasificarCuenta`. Como la comprobación va antes de la RPC, no se escribe NADA si es
+  // 'real': no se crea niño, no queda huérfano. Cuentas `nueva`/`stub` (sin roles) siguen
+  // por el flujo de invitación normal sin cambios.
+  const service = createServiceRoleClient()
+  const { data: existentes, indisponible: listIndisponible } = await llamarGoTrue('listUsers', () =>
+    service.auth.admin.listUsers()
+  )
+  if (listIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+  const authUser = (existentes?.users ?? []).find(
+    (u) => u.email?.toLowerCase() === emailTutor.toLowerCase()
+  )
+  let tieneRoles = false
+  if (authUser) {
+    const { data: rolesPrevios } = await service
+      .from('roles_usuario')
+      .select('usuario_id')
+      .eq('usuario_id', authUser.id)
+      .is('deleted_at', null)
+      .limit(1)
+    tieneRoles = (rolesPrevios?.length ?? 0) > 0
+  }
+  if (clasificarCuenta(Boolean(authUser), tieneRoles) === 'real') {
+    return fail('listaEspera.errors.tutor_ya_registrado_usar_anadir_hijo')
+  }
 
   // 1. RPC transaccional con `p_usuario_id = NULL` (ver cabecera): crea familia + perfil
   //    `familia_tutores`(usuario_id NULL) + niño(familia_id) + matrícula pendiente, y OMITE
