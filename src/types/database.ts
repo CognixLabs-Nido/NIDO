@@ -4115,6 +4115,10 @@ export type Database = {
       }
       curso_activo_de_centro: { Args: { p_centro_id: string }; Returns: string }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
+      desarchivar_nino: {
+        Args: { p_aula_id: string; p_nino_id: string }
+        Returns: Json
+      }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
       es_esqueleto_stub_purgable: {
         Args: { p_cutoff: string; p_usuario_id: string }

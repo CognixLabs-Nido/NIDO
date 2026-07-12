@@ -622,6 +622,19 @@
         "procesando": "Procesando…",
         "exito": "Niño dado de baja"
       },
+      "desarchivar": {
+        "boton": "Reincorporar",
+        "titulo": "Reincorporar al niño",
+        "aviso": "Vuelve a dar de alta a {nombre} con una nueva matrícula en el curso activo. Su historial de bajas se conserva.",
+        "sin_curso_activo": "El centro no tiene un curso académico activo. Activa un curso antes de reincorporar.",
+        "aula_label": "Aula del curso activo",
+        "aula_placeholder": "Elige un aula",
+        "confirm_nombre_label": "Escribe el nombre completo del niño para confirmar",
+        "cancelar": "Cancelar",
+        "confirmar": "Reincorporar",
+        "procesando": "Procesando…",
+        "exito": "Niño reincorporado"
+      },
       "archivo": {
         "link": "Ver bajas / archivo",
         "titulo": "Alumnos dados de baja",
@@ -1225,6 +1238,16 @@
       "errors": {
         "no_autorizado": "No tienes permiso para dar de baja a este niño",
         "fallo": "No se pudo dar de baja al niño"
+      }
+    },
+    "desarchivar": {
+      "validation": {
+        "aula_requerida": "Elige un aula del curso activo",
+        "invalid": "Datos de reincorporación no válidos"
+      },
+      "errors": {
+        "no_autorizado": "No tienes permiso para reincorporar a este niño",
+        "fallo": "No se pudo reincorporar al niño"
       }
     }
   },
