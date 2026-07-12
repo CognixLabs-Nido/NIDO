@@ -10,8 +10,18 @@ import { elegirAdultoConCuenta, type TutorFamiliaMinimo } from '../adulto-con-cu
 describe('elegirAdultoConCuenta', () => {
   it('prefiere el titular con cuenta y devuelve su nombre GUARDADO exacto', () => {
     const tutores: TutorFamiliaMinimo[] = [
-      { usuario_id: 'u-seg', nombre_completo: 'Segundo Tutor', email: 's@x.com', rol_familia: 'segundo_tutor' },
-      { usuario_id: 'u-tit', nombre_completo: 'María Titular', email: 't@x.com', rol_familia: 'titular' },
+      {
+        usuario_id: 'u-seg',
+        nombre_completo: 'Segundo Tutor',
+        email: 's@x.com',
+        rol_familia: 'segundo_tutor',
+      },
+      {
+        usuario_id: 'u-tit',
+        nombre_completo: 'María Titular',
+        email: 't@x.com',
+        rol_familia: 'titular',
+      },
     ]
     const r = elegirAdultoConCuenta(tutores)
     expect(r).not.toBeNull()
@@ -22,8 +32,18 @@ describe('elegirAdultoConCuenta', () => {
 
   it('usa el segundo_tutor con cuenta si el titular NO tiene cuenta (invitación pendiente)', () => {
     const tutores: TutorFamiliaMinimo[] = [
-      { usuario_id: null, nombre_completo: 'Titular Sin Cuenta', email: 't@x.com', rol_familia: 'titular' },
-      { usuario_id: 'u-seg', nombre_completo: 'Segundo Con Cuenta', email: 's@x.com', rol_familia: 'segundo_tutor' },
+      {
+        usuario_id: null,
+        nombre_completo: 'Titular Sin Cuenta',
+        email: 't@x.com',
+        rol_familia: 'titular',
+      },
+      {
+        usuario_id: 'u-seg',
+        nombre_completo: 'Segundo Con Cuenta',
+        email: 's@x.com',
+        rol_familia: 'segundo_tutor',
+      },
     ]
     const r = elegirAdultoConCuenta(tutores)
     expect(r!.usuarioId).toBe('u-seg')
@@ -32,8 +52,18 @@ describe('elegirAdultoConCuenta', () => {
 
   it('rechaza (null) una familia sin NINGÚN adulto con cuenta → no elegible', () => {
     const tutores: TutorFamiliaMinimo[] = [
-      { usuario_id: null, nombre_completo: 'Titular Invitado', email: 't@x.com', rol_familia: 'titular' },
-      { usuario_id: null, nombre_completo: 'Segundo Invitado', email: 's@x.com', rol_familia: 'segundo_tutor' },
+      {
+        usuario_id: null,
+        nombre_completo: 'Titular Invitado',
+        email: 't@x.com',
+        rol_familia: 'titular',
+      },
+      {
+        usuario_id: null,
+        nombre_completo: 'Segundo Invitado',
+        email: 's@x.com',
+        rol_familia: 'segundo_tutor',
+      },
     ]
     expect(elegirAdultoConCuenta(tutores)).toBeNull()
   })

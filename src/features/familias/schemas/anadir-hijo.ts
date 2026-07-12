@@ -9,7 +9,11 @@ import { z } from 'zod'
  */
 export const anadirHijoAFamiliaSchema = z.object({
   familia_id: z.string().uuid(),
-  nombre: z.string().trim().min(1, 'admin.admisiones.anadirHijo.validation.nombre_requerido').max(120),
+  nombre: z
+    .string()
+    .trim()
+    .min(1, 'admin.admisiones.anadirHijo.validation.nombre_requerido')
+    .max(120),
   apellidos: z
     .string()
     .trim()
