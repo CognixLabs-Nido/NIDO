@@ -521,6 +521,19 @@
       "medica_vacia": "Sense dades mèdiques registrades.",
       "vinculos_vacios": "Sense vincles familiars registrats.",
       "matriculas_vacias": "Sense matrícules en este curs.",
+      "historico": {
+        "en_curso_fecha": "en curs",
+        "estado": {
+          "en_curso": "En curs",
+          "activa": "Activa",
+          "paso_curso": "Va passar de curs",
+          "finalizo_etapa": "Va finalitzar l'etapa",
+          "baja_motivo": "Baixa: {motivo}",
+          "baja_sin_motivo": "Baixa",
+          "pendiente": "Alta pendent",
+          "validar": "Pendent de validar"
+        }
+      },
       "sexo_opciones": {
         "F": "Femení",
         "M": "Masculí",

@@ -521,6 +521,19 @@
       "medica_vacia": "No medical data recorded.",
       "vinculos_vacios": "No family ties recorded.",
       "matriculas_vacias": "No enrolments in this year.",
+      "historico": {
+        "en_curso_fecha": "ongoing",
+        "estado": {
+          "en_curso": "Ongoing",
+          "activa": "Active",
+          "paso_curso": "Moved up",
+          "finalizo_etapa": "Completed stage",
+          "baja_motivo": "Left: {motivo}",
+          "baja_sin_motivo": "Left",
+          "pendiente": "Enrolment pending",
+          "validar": "Pending validation"
+        }
+      },
       "sexo_opciones": {
         "F": "Female",
         "M": "Male",
