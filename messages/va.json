@@ -760,6 +760,50 @@
         "crear": "Crear alta",
         "nombre_label": "Nom del tutor",
         "apellidos_label": "Cognoms del tutor"
+      },
+      "anadirHijo": {
+        "boton": "Afegir fill a família existent",
+        "titulo": "Afegir fill a família existent",
+        "paso1_desc": "Tria la família a la qual afegir el nou fill.",
+        "paso2_desc": "Dades del nou fill per a la família «{familia}».",
+        "filtro": {
+          "todas": "Totes",
+          "activas": "Actives",
+          "inactivas": "Inactives"
+        },
+        "buscar_placeholder": "Cerca per família o titular…",
+        "sin_familias": "No hi ha famílies que coincidisquen",
+        "inactiva": "Inactiva",
+        "hijos": "{n, plural, =0 {sense fills actius} one {# fill actiu} other {# fills actius}}",
+        "sin_curso_activo": "El centre no té un curs acadèmic actiu. Activa un curs abans d'afegir el fill.",
+        "fields": {
+          "nombre": "Nom",
+          "apellidos": "Cognoms",
+          "fecha_nacimiento": "Data de naixement",
+          "aula": "Aula del curs actiu"
+        },
+        "aula_placeholder": "Tria una aula",
+        "volver": "Tornar",
+        "cancelar": "Cancel·lar",
+        "confirmar": "Afegir fill",
+        "procesando": "Afegint…",
+        "exito": "Fill afegit a la família",
+        "push_titulo": "Nou fill a la teua família",
+        "push_cuerpo": "S'ha afegit {nombre} a la teua família",
+        "validation": {
+          "nombre_requerido": "Indica el nom del xiquet",
+          "apellidos_requerido": "Indica els cognoms del xiquet",
+          "fecha_requerida": "Indica la data de naixement",
+          "aula_requerida": "Tria una aula del curs actiu",
+          "invalid": "Dades no vàlides"
+        },
+        "errors": {
+          "familia_no_encontrada": "Família no trobada",
+          "familia_no_elegible": "Esta família no té cap adult amb compte; usa el flux d'invitació",
+          "no_autorizado": "No tens permís per a afegir fills en este centre",
+          "colision": "El nom del titular no coincidix amb el registrat en la família; revisa'l abans de continuar",
+          "fallo": "No s'ha pogut afegir el fill"
+        }
       }
     },
     "pendientes": {

@@ -760,6 +760,50 @@
         "crear": "Create registration",
         "nombre_label": "Guardian's first name",
         "apellidos_label": "Guardian's last name"
+      },
+      "anadirHijo": {
+        "boton": "Add child to existing family",
+        "titulo": "Add child to existing family",
+        "paso1_desc": "Choose the family to add the new child to.",
+        "paso2_desc": "Details of the new child for the «{familia}» family.",
+        "filtro": {
+          "todas": "All",
+          "activas": "Active",
+          "inactivas": "Inactive"
+        },
+        "buscar_placeholder": "Search by family or guardian…",
+        "sin_familias": "No matching families",
+        "inactiva": "Inactive",
+        "hijos": "{n, plural, =0 {no active children} one {# active child} other {# active children}}",
+        "sin_curso_activo": "The centre has no active academic year. Activate a year before adding the child.",
+        "fields": {
+          "nombre": "First name",
+          "apellidos": "Surname",
+          "fecha_nacimiento": "Date of birth",
+          "aula": "Classroom of the active year"
+        },
+        "aula_placeholder": "Choose a classroom",
+        "volver": "Back",
+        "cancelar": "Cancel",
+        "confirmar": "Add child",
+        "procesando": "Adding…",
+        "exito": "Child added to the family",
+        "push_titulo": "New child in your family",
+        "push_cuerpo": "{nombre} has been added to your family",
+        "validation": {
+          "nombre_requerido": "Enter the child's first name",
+          "apellidos_requerido": "Enter the child's surname",
+          "fecha_requerida": "Enter the date of birth",
+          "aula_requerida": "Choose a classroom of the active year",
+          "invalid": "Invalid data"
+        },
+        "errors": {
+          "familia_no_encontrada": "Family not found",
+          "familia_no_elegible": "This family has no adult with an account; use the invitation flow",
+          "no_autorizado": "You don't have permission to add children in this centre",
+          "colision": "The guardian's name doesn't match the one on record for the family; check it before continuing",
+          "fallo": "The child could not be added"
+        }
       }
     },
     "pendientes": {
