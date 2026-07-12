@@ -609,6 +609,18 @@
         "consent_sin": "No otorgado",
         "documentos_titulo": "Documentos",
         "doc_libro_familia": "Libro de familia"
+      },
+      "baja": {
+        "boton": "Dar de baja",
+        "titulo": "Dar de baja al niño",
+        "aviso": "Esto archiva a {nombre} y cierra su matrícula. Si es hijo único, sus tutores pierden el acceso.",
+        "motivo_label": "Motivo de la baja",
+        "motivo_placeholder": "Indica el motivo de la baja",
+        "confirm_nombre_label": "Escribe el nombre completo del niño para confirmar",
+        "cancelar": "Cancelar",
+        "confirmar": "Dar de baja",
+        "procesando": "Procesando…",
+        "exito": "Niño dado de baja"
       }
     },
     "audit": {
@@ -1194,6 +1206,17 @@
       "guardar_fallo": "No se pudieron guardar los datos. Inténtalo de nuevo.",
       "medica_no_autorizado": "No tienes permiso para gestionar la información médica de este niño.",
       "borrar_medica_fallo": "No se pudo borrar la información médica. Inténtalo de nuevo."
+    },
+    "baja": {
+      "validation": {
+        "motivo_requerido": "Indica el motivo de la baja",
+        "motivo_largo": "El motivo no puede superar 500 caracteres",
+        "invalid": "Datos de baja no válidos"
+      },
+      "errors": {
+        "no_autorizado": "No tienes permiso para dar de baja a este niño",
+        "fallo": "No se pudo dar de baja al niño"
+      }
     }
   },
   "matricula": {

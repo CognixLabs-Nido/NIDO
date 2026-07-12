@@ -609,6 +609,18 @@
         "consent_sin": "No atorgat",
         "documentos_titulo": "Documents",
         "doc_libro_familia": "Llibre de família"
+      },
+      "baja": {
+        "boton": "Donar de baixa",
+        "titulo": "Donar de baixa el xiquet",
+        "aviso": "Açò arxiva a {nombre} i tanca la seua matrícula. Si és fill únic, els seus tutors perden l'accés.",
+        "motivo_label": "Motiu de la baixa",
+        "motivo_placeholder": "Indica el motiu de la baixa",
+        "confirm_nombre_label": "Escriu el nom complet del xiquet per a confirmar",
+        "cancelar": "Cancel·lar",
+        "confirmar": "Donar de baixa",
+        "procesando": "Processant…",
+        "exito": "Xiquet donat de baixa"
       }
     },
     "audit": {
@@ -1194,6 +1206,17 @@
       "guardar_fallo": "No s'han pogut guardar les dades. Torna-ho a provar.",
       "medica_no_autorizado": "No tens permís per a gestionar la informació mèdica d'aquest xiquet.",
       "borrar_medica_fallo": "No s'ha pogut esborrar la informació mèdica. Torna-ho a provar."
+    },
+    "baja": {
+      "validation": {
+        "motivo_requerido": "Indica el motiu de la baixa",
+        "motivo_largo": "El motiu no pot superar 500 caràcters",
+        "invalid": "Dades de baixa no vàlides"
+      },
+      "errors": {
+        "no_autorizado": "No tens permís per a donar de baixa este xiquet",
+        "fallo": "No s'ha pogut donar de baixa el xiquet"
+      }
     }
   },
   "matricula": {

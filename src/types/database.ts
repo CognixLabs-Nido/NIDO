@@ -4047,6 +4047,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      baja_nino: {
+        Args: { p_motivo?: string; p_nino_id: string }
+        Returns: Json
+      }
       borrar_info_medica_nino_tutor: {
         Args: { p_nino_id: string }
         Returns: undefined
