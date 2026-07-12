@@ -176,8 +176,11 @@ describe.skipIf(!APPLIED)('F-3-D — baja_nino (RPC)', () => {
     const e = await nuevoEscenario()
     const familiaId = await createTestFamilia(e.centroId)
     const baja = await crearNino(e, { familiaId, conTutor: true, nombre: 'Hermano Baja' })
-    // Segundo hijo de la MISMA familia, permanece activo.
-    await crearNino(e, { familiaId, nombre: 'Hermano Activo' })
+    // Segundo hijo de la MISMA familia, permanece activo. Como en el alta real
+    // (crear_o_anadir_a_familia crea un vínculo por niño), el hermano comparte el
+    // mismo tutor de la familia vía su propio vínculo vivo.
+    const activo = await crearNino(e, { familiaId, nombre: 'Hermano Activo' })
+    await crearVinculo(activo.ninoId, baja.tutor!.id, 'tutor_legal_principal')
 
     const { data, error } = await cAdmin.rpc('baja_nino', {
       p_nino_id: baja.ninoId,
@@ -189,6 +192,33 @@ describe.skipIf(!APPLIED)('F-3-D — baja_nino (RPC)', () => {
     expect(await ninoArchivado(baja.ninoId)).toBe(true)
     expect(await familiaInactiva(familiaId)).toBe(false) // hermano activo protege
     expect(await rolesActivos([baja.tutor!.id])).toBe(1)
+  })
+
+  it('hermano en invitación pendiente (sin vínculo) → familia NO revocada', async () => {
+    // Hueco que motivó el guard por familia_id: un niño invitado activo cuyo tutor aún
+    // no ha aceptado (familia_tutores.usuario_id NULL) NO tiene vínculo vivo. Dar de
+    // baja a un hermano CON vínculo no debe revocar la familia: el invitado sigue activo.
+    const e = await nuevoEscenario()
+    const familiaId = await createTestFamilia(e.centroId)
+    const conVinculo = await crearNino(e, { familiaId, conTutor: true, nombre: 'Con Vínculo' })
+    // Invitación pendiente: familia_tutor sin cuenta + niño activo sin vínculo vivo.
+    await serviceClient
+      .from('familia_tutores')
+      .insert({ familia_id: familiaId, usuario_id: null, rol_familia: 'segundo_tutor' })
+    const invitado = await crearNino(e, { familiaId, nombre: 'Invitado' })
+
+    const { data, error } = await cAdmin.rpc('baja_nino', {
+      p_nino_id: conVinculo.ninoId,
+      p_motivo: 'traslado',
+    })
+    expect(error).toBeNull()
+    // Con el guard viejo (por vínculo) esto sería true (bug); con el nuevo, false.
+    expect(data).toMatchObject({ archivado: true, familia_revocada: false })
+
+    expect(await ninoArchivado(conVinculo.ninoId)).toBe(true)
+    expect(await ninoArchivado(invitado.ninoId)).toBe(false) // el invitado sigue activo
+    expect(await familiaInactiva(familiaId)).toBe(false) // el invitado protege por familia_id
+    expect(await rolesActivos([conVinculo.tutor!.id])).toBe(1)
   })
 
   it('motivo registrado → matriculas.motivo_baja + audit_log', async () => {
