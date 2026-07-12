@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import type { HistoricoTramo } from '@/features/ninos/lib/historico-matriculas'
 
 export interface NinoListItem {
   id: string
@@ -30,6 +31,15 @@ function extraerNombreAula(raw: unknown): string | null {
   }
   if (typeof raw === 'object' && 'nombre' in raw) {
     return (raw as { nombre: string }).nombre
+  }
+  return null
+}
+
+/** Como `extraerNombreAula` pero para el embebido `cursos_academicos` (nombre + fecha_inicio). */
+function extraerCurso(raw: unknown): { nombre: string; fecha_inicio: string } | null {
+  const obj = Array.isArray(raw) ? raw[0] : raw
+  if (obj && typeof obj === 'object' && 'nombre' in obj && 'fecha_inicio' in obj) {
+    return obj as { nombre: string; fecha_inicio: string }
   }
   return null
 }
@@ -228,4 +238,40 @@ export async function getMatriculasPorNino(ninoId: string): Promise<MatriculaIte
     motivo_baja: m.motivo_baja,
     estado: m.estado,
   }))
+}
+
+/**
+ * F-8 — Histórico del niño (recorrido por aulas/cursos). Hermana de
+ * `getMatriculasPorNino`: además del aula trae el CURSO académico (nombre + fecha_inicio)
+ * para poder agrupar por año. Devuelve TODOS los tramos (incl. pendiente/lista/baja) — la
+ * RLS admin ya permite ver todo el histórico, incluidos niños archivados. El agrupado y el
+ * orden final los hace `agruparHistoricoPorCurso` (lib pura); aquí solo se filtra el
+ * soft-delete y se ordena por `fecha_alta` como base estable.
+ */
+export async function getHistoricoMatriculas(ninoId: string): Promise<HistoricoTramo[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('matriculas')
+    .select(
+      'id, aula_id, curso_academico_id, fecha_alta, fecha_baja, motivo_baja, estado, aulas(nombre), cursos_academicos(nombre, fecha_inicio)'
+    )
+    .eq('nino_id', ninoId)
+    .is('deleted_at', null)
+    .order('fecha_alta', { ascending: true })
+
+  return (data ?? []).map((m) => {
+    const curso = extraerCurso(m.cursos_academicos)
+    return {
+      id: m.id,
+      aula_id: m.aula_id,
+      aula_nombre: extraerNombreAula(m.aulas) ?? '—',
+      curso_id: m.curso_academico_id,
+      curso_nombre: curso?.nombre ?? '—',
+      curso_fecha_inicio: curso?.fecha_inicio ?? '',
+      fecha_alta: m.fecha_alta,
+      fecha_baja: m.fecha_baja,
+      motivo_baja: m.motivo_baja,
+      estado: m.estado,
+    }
+  })
 }

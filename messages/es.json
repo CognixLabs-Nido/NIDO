@@ -521,6 +521,19 @@
       "medica_vacia": "Sin datos médicos registrados.",
       "vinculos_vacios": "Sin vínculos familiares registrados.",
       "matriculas_vacias": "Sin matrículas en este curso.",
+      "historico": {
+        "en_curso_fecha": "en curso",
+        "estado": {
+          "en_curso": "En curso",
+          "activa": "Activa",
+          "paso_curso": "Pasó de curso",
+          "finalizo_etapa": "Finalizó etapa",
+          "baja_motivo": "Baja: {motivo}",
+          "baja_sin_motivo": "Baja",
+          "pendiente": "Alta pendiente",
+          "validar": "Pendiente de validar"
+        }
+      },
       "sexo_opciones": {
         "F": "Femenino",
         "M": "Masculino",

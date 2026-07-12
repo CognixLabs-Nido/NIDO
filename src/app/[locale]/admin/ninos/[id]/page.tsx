@@ -25,10 +25,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { createClient } from '@/lib/supabase/server'
 import {
+  getHistoricoMatriculas,
   getInfoMedica,
   getMatriculasPorNino,
   getNinoById,
 } from '@/features/ninos/queries/get-ninos'
+import { HistorialMatriculas } from '@/features/ninos/components/HistorialMatriculas'
 import { ConsentimientoFotosToggle } from '@/features/ninos/components/ConsentimientoFotosToggle'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
@@ -65,7 +67,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const foto = await firmarFotoNino(nino.foto_url)
 
   const supabase = await createClient()
-  const [{ data: vinculos }, info, matriculas, datosPed, altaDoc] = await Promise.all([
+  const [{ data: vinculos }, info, matriculas, historico, datosPed, altaDoc] = await Promise.all([
     supabase
       .from('vinculos_familiares')
       .select(
@@ -75,6 +77,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
       .is('deleted_at', null),
     getInfoMedica(id),
     getMatriculasPorNino(id),
+    getHistoricoMatriculas(id),
     getDatosPedagogicos(id),
     getAltaDocumentacion(id),
   ])
@@ -449,44 +452,11 @@ export default async function NinoDetallePage({ params }: PageProps) {
           )}
         </TabsContent>
 
+        {/* F-8: la tab "Matrículas" se reconstruye como HISTÓRICO agrupado por curso
+            académico (recorrido por aulas/cursos). Solo lectura: se muestra igual en la
+            ficha normal y en la archivada (F-3-E-1). */}
         <TabsContent value="matriculas" className="pt-3">
-          {matriculas.length === 0 ? (
-            <Card>
-              <EmptyState
-                icon={<GraduationCapIcon strokeWidth={1.75} />}
-                title={t('matriculas_vacias')}
-              />
-            </Card>
-          ) : (
-            <Card className="overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('fields.aula')}</TableHead>
-                    <TableHead>{t('fields.fecha_alta')}</TableHead>
-                    <TableHead>{t('fields.fecha_baja')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {matriculas.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell className="font-medium">{m.aula_nombre}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {m.fecha_alta}
-                      </TableCell>
-                      <TableCell>
-                        {m.fecha_baja ? (
-                          <span className="text-muted-foreground text-sm">{m.fecha_baja}</span>
-                        ) : (
-                          <Badge variant="success">·</Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
-          )}
+          <HistorialMatriculas tramos={historico} />
         </TabsContent>
 
         <TabsContent value="documentacion" className="pt-3">
