@@ -10,11 +10,3 @@ export const cambioAulaSchema = z.object({
 })
 
 export type CambioAulaInput = z.infer<typeof cambioAulaSchema>
-
-export const darDeBajaSchema = z.object({
-  matricula_id: z.string().uuid(),
-  fecha_baja: z.string().regex(fechaRegex),
-  motivo_baja: z.string().max(500).optional().nullable(),
-})
-
-export type DarDeBajaInput = z.infer<typeof darDeBajaSchema>

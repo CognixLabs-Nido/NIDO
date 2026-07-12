@@ -38,6 +38,7 @@ import { AltaDocumentacionTab } from '@/features/ninos/components/AltaDocumentac
 import { getAltaDocumentacion } from '@/features/ninos/queries/get-alta-documentacion'
 import { AvanceAltaCard } from '@/features/matriculas/components/AvanceAltaCard'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
+import { DarDeBajaNinoButton } from '@/features/ninos/components/DarDeBajaNinoButton'
 import { NuevoRecordatorioContextual } from '@/features/recordatorios/components/NuevoRecordatorioContextual'
 import { EmptyState } from '@/shared/components/EmptyState'
 
@@ -145,6 +146,14 @@ export default async function NinoDetallePage({ params }: PageProps) {
           label={tExport('exportar_nino')}
           filename={`nido-export-nino.zip`}
           size="sm"
+        />
+        {/* F-3-D: baja intra-curso (dirección). Archiva al niño y corta el acceso de
+            sus tutores si es hijo único. Doble gate anti-accidente en el diálogo. */}
+        <DarDeBajaNinoButton
+          ninoId={id}
+          centroId={nino.centro_id}
+          nombreCompleto={`${nino.nombre}${nino.apellidos ? ` ${nino.apellidos}` : ''}`}
+          locale={locale}
         />
         {/* F5B-Item1: el botón "Escribir a la familia" del header se
             eliminó para admin. Para admin, el acceso a la conversación

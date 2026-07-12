@@ -609,6 +609,18 @@
         "consent_sin": "Not granted",
         "documentos_titulo": "Documents",
         "doc_libro_familia": "Family book"
+      },
+      "baja": {
+        "boton": "Deregister",
+        "titulo": "Deregister child",
+        "aviso": "This archives {nombre} and closes their enrolment. If they are an only child, their guardians lose access.",
+        "motivo_label": "Reason for leaving",
+        "motivo_placeholder": "Enter the reason",
+        "confirm_nombre_label": "Type the child's full name to confirm",
+        "cancelar": "Cancel",
+        "confirmar": "Deregister",
+        "procesando": "Processing…",
+        "exito": "Child deregistered"
       }
     },
     "audit": {
@@ -1194,6 +1206,17 @@
       "guardar_fallo": "Could not save the data. Please try again.",
       "medica_no_autorizado": "You don't have permission to manage this child's medical information.",
       "borrar_medica_fallo": "The medical information could not be deleted. Please try again."
+    },
+    "baja": {
+      "validation": {
+        "motivo_requerido": "Enter the reason for leaving",
+        "motivo_largo": "The reason cannot exceed 500 characters",
+        "invalid": "Invalid deregistration data"
+      },
+      "errors": {
+        "no_autorizado": "You don't have permission to deregister this child",
+        "fallo": "Could not deregister the child"
+      }
     }
   },
   "matricula": {
