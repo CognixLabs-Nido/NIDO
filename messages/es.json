@@ -621,6 +621,15 @@
         "confirmar": "Dar de baja",
         "procesando": "Procesando…",
         "exito": "Niño dado de baja"
+      },
+      "archivo": {
+        "link": "Ver bajas / archivo",
+        "titulo": "Alumnos dados de baja",
+        "volver": "Volver a alumnos activos",
+        "empty": "No hay alumnos dados de baja",
+        "col_fecha_baja": "Fecha de baja",
+        "col_motivo": "Motivo",
+        "banner_titulo": "Alumno dado de baja"
       }
     },
     "audit": {

@@ -73,6 +73,64 @@ export async function getNinosPorCentro(centroId: string): Promise<NinoListItem[
   }))
 }
 
+export interface NinoArchivadoItem {
+  id: string
+  nombre: string
+  apellidos: string | null
+  /** fecha_baja de la última matrícula cerrada (la de fecha_baja más reciente). */
+  fecha_baja: string | null
+  motivo_baja: string | null
+}
+
+/**
+ * F-3-E — niños ARCHIVADOS (dados de baja: `deleted_at IS NOT NULL`) del centro,
+ * para la sección de archivo de Dirección. Deliberadamente NO reutiliza
+ * `getNinosPorCentro` (ese solo lista activos). La RLS admin (`ninos_admin_all`)
+ * no filtra `deleted_at`, así que basta invertir el filtro; no se toca RLS.
+ *
+ * Cada fila lleva `fecha_baja`/`motivo_baja` de su ÚLTIMA matrícula cerrada
+ * (`estado='baja'`, la de `fecha_baja` más reciente). Las matrículas del archivado
+ * siguen legibles (`archivar_nino` pone `estado='baja'`, no `matriculas.deleted_at`).
+ */
+export async function getNinosArchivadosPorCentro(centroId: string): Promise<NinoArchivadoItem[]> {
+  const supabase = await createClient()
+  const { data: ninos } = await supabase
+    .from('ninos')
+    .select('id, nombre, apellidos')
+    .eq('centro_id', centroId)
+    .not('deleted_at', 'is', null)
+    .order('apellidos', { ascending: true })
+
+  if (!ninos?.length) return []
+
+  const { data: bajas } = await supabase
+    .from('matriculas')
+    .select('nino_id, fecha_baja, motivo_baja')
+    .in(
+      'nino_id',
+      ninos.map((n) => n.id)
+    )
+    .eq('estado', 'baja')
+    .is('deleted_at', null)
+
+  // Última baja por niño (fecha_baja más reciente).
+  const ultimaBaja = new Map<string, { fecha_baja: string | null; motivo_baja: string | null }>()
+  for (const b of bajas ?? []) {
+    const prev = ultimaBaja.get(b.nino_id)
+    if (!prev || (b.fecha_baja ?? '') > (prev.fecha_baja ?? '')) {
+      ultimaBaja.set(b.nino_id, { fecha_baja: b.fecha_baja, motivo_baja: b.motivo_baja })
+    }
+  }
+
+  return ninos.map((n) => ({
+    id: n.id,
+    nombre: n.nombre,
+    apellidos: n.apellidos,
+    fecha_baja: ultimaBaja.get(n.id)?.fecha_baja ?? null,
+    motivo_baja: ultimaBaja.get(n.id)?.motivo_baja ?? null,
+  }))
+}
+
 export interface NinoDetalle {
   id: string
   centro_id: string
@@ -87,18 +145,34 @@ export interface NinoDetalle {
   puede_aparecer_en_fotos: boolean
   /** Ruta en Storage (bucket privado `ninos-fotos`); se firma para mostrar. F10-3. */
   foto_url: string | null
+  /** F-3-E: NULL = activo; con valor = archivado (dado de baja). */
+  deleted_at: string | null
 }
 
-export async function getNinoById(ninoId: string): Promise<NinoDetalle | null> {
+/**
+ * Ficha de un niño por id. Por defecto SOLO devuelve niños activos
+ * (`deleted_at IS NULL`) — el comportamiento histórico del que dependen la vista
+ * del tutor (`/family/nino/[id]`) y el alta (`/alta/[ninoId]`): un archivado da
+ * `notFound()`.
+ *
+ * F-3-E — con `incluirArchivado: true` NO se aplica ese filtro, de modo que un
+ * niño dado de baja se puede abrir en solo-lectura. Esta puerta la usa SOLO la
+ * ficha de Dirección (`/admin/ninos/[id]`, ya gateada a admin por ruta + RLS);
+ * no se relaja el filtro por defecto de los demás llamadores.
+ */
+export async function getNinoById(
+  ninoId: string,
+  opts?: { incluirArchivado?: boolean }
+): Promise<NinoDetalle | null> {
   const supabase = await createClient()
-  const { data } = await supabase
+  let query = supabase
     .from('ninos')
     .select(
-      'id, centro_id, nombre, apellidos, fecha_nacimiento, sexo, nacionalidad, idioma_principal, notas_admin, puede_aparecer_en_fotos, foto_url'
+      'id, centro_id, nombre, apellidos, fecha_nacimiento, sexo, nacionalidad, idioma_principal, notas_admin, puede_aparecer_en_fotos, foto_url, deleted_at'
     )
     .eq('id', ninoId)
-    .is('deleted_at', null)
-    .maybeSingle()
+  if (!opts?.incluirArchivado) query = query.is('deleted_at', null)
+  const { data } = await query.maybeSingle()
   return (data as NinoDetalle | null) ?? null
 }
 

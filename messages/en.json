@@ -621,6 +621,15 @@
         "confirmar": "Deregister",
         "procesando": "Processing…",
         "exito": "Child deregistered"
+      },
+      "archivo": {
+        "link": "View leavers / archive",
+        "titulo": "Deregistered children",
+        "volver": "Back to active children",
+        "empty": "No deregistered children",
+        "col_fecha_baja": "Leave date",
+        "col_motivo": "Reason",
+        "banner_titulo": "Deregistered child"
       }
     },
     "audit": {

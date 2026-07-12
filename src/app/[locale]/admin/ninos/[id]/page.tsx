@@ -1,4 +1,5 @@
 import {
+  ArchiveIcon,
   BookOpenIcon,
   ChevronLeftIcon,
   FileTextIcon,
@@ -52,8 +53,12 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const tMed = await getTranslations('medico')
   const tFicha = await getTranslations('messages.ficha_nino')
   const tExport = await getTranslations('export')
-  const nino = await getNinoById(id)
+  const tPed = await getTranslations('pedagogico')
+  // F-3-E — en la ficha de Dirección se pueden abrir también los archivados (baja),
+  // en solo-lectura. La RLS admin ya lo gatea; el tutor y el alta siguen dando notFound.
+  const nino = await getNinoById(id, { incluirArchivado: true })
   if (!nino) notFound()
+  const archivado = nino.deleted_at !== null
 
   const foto = await firmarFotoNino(nino.foto_url)
 
@@ -73,6 +78,10 @@ export default async function NinoDetallePage({ params }: PageProps) {
   ])
 
   const matriculaActiva = matriculas.find((m) => m.fecha_baja === null)
+  // Datos de baja para el banner de archivado: la última matrícula cerrada.
+  const ultimaBaja = matriculas
+    .filter((m) => m.estado === 'baja')
+    .sort((a, b) => (b.fecha_baja ?? '').localeCompare(a.fecha_baja ?? ''))[0]
   const initials =
     (nino.nombre.charAt(0) + ((nino.apellidos ?? '').charAt(0) || '')).toUpperCase() || '?'
 
@@ -132,29 +141,35 @@ export default async function NinoDetallePage({ params }: PageProps) {
         ) : (
           matriculaActiva && <Badge variant="warm">{matriculaActiva.aula_nombre}</Badge>
         )}
-        {/* F6-C-3: crear un recordatorio "familia concreta" sobre este niño,
-            con destino + niño preseleccionados. Rol admin (área /admin). */}
-        <NuevoRecordatorioContextual
-          locale={locale}
-          rol="admin"
-          centroId={nino.centro_id}
-          preset={{ destinatario: 'familia_individual', nino_id: id }}
-        />
-        {/* F11-A5: export RGPD del niño a petición de acceso (dirección). */}
-        <ExportButton
-          href={`/${locale}/export/nino/${id}`}
-          label={tExport('exportar_nino')}
-          filename={`nido-export-nino.zip`}
-          size="sm"
-        />
-        {/* F-3-D: baja intra-curso (dirección). Archiva al niño y corta el acceso de
-            sus tutores si es hijo único. Doble gate anti-accidente en el diálogo. */}
-        <DarDeBajaNinoButton
-          ninoId={id}
-          centroId={nino.centro_id}
-          nombreCompleto={`${nino.nombre}${nino.apellidos ? ` ${nino.apellidos}` : ''}`}
-          locale={locale}
-        />
+        {/* F-3-E: en un niño ARCHIVADO (baja) la ficha es solo-lectura → se ocultan
+            TODAS las acciones de escritura (recordatorio, export, dar de baja). */}
+        {!archivado && (
+          <>
+            {/* F6-C-3: crear un recordatorio "familia concreta" sobre este niño,
+                con destino + niño preseleccionados. Rol admin (área /admin). */}
+            <NuevoRecordatorioContextual
+              locale={locale}
+              rol="admin"
+              centroId={nino.centro_id}
+              preset={{ destinatario: 'familia_individual', nino_id: id }}
+            />
+            {/* F11-A5: export RGPD del niño a petición de acceso (dirección). */}
+            <ExportButton
+              href={`/${locale}/export/nino/${id}`}
+              label={tExport('exportar_nino')}
+              filename={`nido-export-nino.zip`}
+              size="sm"
+            />
+            {/* F-3-D: baja intra-curso (dirección). Archiva al niño y corta el acceso de
+                sus tutores si es hijo único. Doble gate anti-accidente en el diálogo. */}
+            <DarDeBajaNinoButton
+              ninoId={id}
+              centroId={nino.centro_id}
+              nombreCompleto={`${nino.nombre}${nino.apellidos ? ` ${nino.apellidos}` : ''}`}
+              locale={locale}
+            />
+          </>
+        )}
         {/* F5B-Item1: el botón "Escribir a la familia" del header se
             eliminó para admin. Para admin, el acceso a la conversación
             con la dirección está ahora en `/messages` tab Dirección
@@ -163,6 +178,17 @@ export default async function NinoDetallePage({ params }: PageProps) {
             redirector `/messages/nino/[id]` se conserva: profe lo usa
             desde NinoAgendaCard y family lo usa desde su ficha del niño. */}
       </header>
+
+      {archivado && (
+        <div className="border-warm-300 bg-warm-100 text-warm-800 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border-l-4 px-4 py-3 text-sm">
+          <ArchiveIcon className="size-4 shrink-0" />
+          <span className="font-semibold">{t('archivo.banner_titulo')}</span>
+          {ultimaBaja?.fecha_baja && <span>· {ultimaBaja.fecha_baja}</span>}
+          {ultimaBaja?.motivo_baja && (
+            <span className="text-warm-700">· {ultimaBaja.motivo_baja}</span>
+          )}
+        </div>
+      )}
 
       {enAlta && matriculaActiva && (
         <AvanceAltaCard
@@ -215,18 +241,24 @@ export default async function NinoDetallePage({ params }: PageProps) {
               <Row k={t('fields.notas_admin')} v={nino.notas_admin ?? '—'} />
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="space-y-4 pt-1">
-              <h3 className="text-h3 text-foreground">{t('fotos.titulo')}</h3>
-              <SubirFotoNino
-                ninoId={nino.id}
-                locale={locale}
-                initialUrl={foto.urlMiniatura ?? foto.url}
-                alt={`${nino.nombre} ${nino.apellidos ?? ''}`.trim()}
-              />
-              <ConsentimientoFotosToggle ninoId={nino.id} initial={nino.puede_aparecer_en_fotos} />
-            </CardContent>
-          </Card>
+          {/* F-3-E: foto y consentimiento son de escritura → ocultos en archivado. */}
+          {!archivado && (
+            <Card>
+              <CardContent className="space-y-4 pt-1">
+                <h3 className="text-h3 text-foreground">{t('fotos.titulo')}</h3>
+                <SubirFotoNino
+                  ninoId={nino.id}
+                  locale={locale}
+                  initialUrl={foto.urlMiniatura ?? foto.url}
+                  alt={`${nino.nombre} ${nino.apellidos ?? ''}`.trim()}
+                />
+                <ConsentimientoFotosToggle
+                  ninoId={nino.id}
+                  initial={nino.puede_aparecer_en_fotos}
+                />
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="medica" className="space-y-3 pt-3">
@@ -252,28 +284,81 @@ export default async function NinoDetallePage({ params }: PageProps) {
         </TabsContent>
 
         <TabsContent value="pedagogico" className="space-y-3 pt-3">
-          <DatosPedagogicosTab
-            ninoId={id}
-            locale={locale}
-            initial={
-              datosPed
-                ? {
-                    nino_id: datosPed.nino_id,
-                    lactancia_estado: datosPed.lactancia_estado,
-                    lactancia_observaciones: datosPed.lactancia_observaciones,
-                    control_esfinteres: datosPed.control_esfinteres,
-                    control_esfinteres_observaciones: datosPed.control_esfinteres_observaciones,
-                    siesta_horario_habitual: datosPed.siesta_horario_habitual,
-                    siesta_numero_diario: datosPed.siesta_numero_diario,
-                    siesta_observaciones: datosPed.siesta_observaciones,
-                    tipo_alimentacion: datosPed.tipo_alimentacion,
-                    alimentacion_observaciones: datosPed.alimentacion_observaciones,
-                    idiomas_casa: datosPed.idiomas_casa,
-                    tiene_hermanos_en_centro: datosPed.tiene_hermanos_en_centro,
-                  }
-                : null
-            }
-          />
+          {archivado ? (
+            // F-3-E: en archivado, el form editable se sustituye por lectura.
+            datosPed ? (
+              <Card>
+                <CardContent className="space-y-2 text-sm">
+                  <Row
+                    k={tPed('fields.lactancia_estado')}
+                    v={
+                      datosPed.lactancia_estado
+                        ? tPed(`lactancia_opciones.${datosPed.lactancia_estado}`)
+                        : '—'
+                    }
+                  />
+                  <Row
+                    k={tPed('fields.control_esfinteres')}
+                    v={
+                      datosPed.control_esfinteres
+                        ? tPed(`control_esfinteres_opciones.${datosPed.control_esfinteres}`)
+                        : '—'
+                    }
+                  />
+                  <Row
+                    k={tPed('fields.siesta_horario_habitual')}
+                    v={datosPed.siesta_horario_habitual ?? '—'}
+                  />
+                  <Row
+                    k={tPed('fields.tipo_alimentacion')}
+                    v={
+                      datosPed.tipo_alimentacion
+                        ? tPed(`alimentacion_opciones.${datosPed.tipo_alimentacion}`)
+                        : '—'
+                    }
+                  />
+                  <Row
+                    k={tPed('fields.idiomas_casa')}
+                    v={datosPed.idiomas_casa?.length ? datosPed.idiomas_casa.join(', ') : '—'}
+                  />
+                  <Row
+                    k={tPed('fields.tiene_hermanos_en_centro')}
+                    v={datosPed.tiene_hermanos_en_centro ? tPed('si') : tPed('no')}
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <EmptyState
+                  icon={<BookOpenIcon strokeWidth={1.75} />}
+                  title={tPed('vacio_title')}
+                />
+              </Card>
+            )
+          ) : (
+            <DatosPedagogicosTab
+              ninoId={id}
+              locale={locale}
+              initial={
+                datosPed
+                  ? {
+                      nino_id: datosPed.nino_id,
+                      lactancia_estado: datosPed.lactancia_estado,
+                      lactancia_observaciones: datosPed.lactancia_observaciones,
+                      control_esfinteres: datosPed.control_esfinteres,
+                      control_esfinteres_observaciones: datosPed.control_esfinteres_observaciones,
+                      siesta_horario_habitual: datosPed.siesta_horario_habitual,
+                      siesta_numero_diario: datosPed.siesta_numero_diario,
+                      siesta_observaciones: datosPed.siesta_observaciones,
+                      tipo_alimentacion: datosPed.tipo_alimentacion,
+                      alimentacion_observaciones: datosPed.alimentacion_observaciones,
+                      idiomas_casa: datosPed.idiomas_casa,
+                      tiene_hermanos_en_centro: datosPed.tiene_hermanos_en_centro,
+                    }
+                  : null
+              }
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="vinculos" className="pt-3">
@@ -317,23 +402,26 @@ export default async function NinoDetallePage({ params }: PageProps) {
                           {v.descripcion_parentesco ? ` (${v.descripcion_parentesco})` : ''}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            {v.usuario_id && (
-                              <ExportButton
-                                href={`/${locale}/export/usuario/${v.usuario_id}`}
-                                label={tExport('exportar_usuario')}
-                                filename="nido-export-usuario.zip"
-                                variant="ghost"
-                                size="sm"
-                              />
-                            )}
-                            {esTutor && v.usuario_id && (
-                              <AbrirConversacionDireccionButton
-                                tutorId={v.usuario_id}
-                                locale={locale}
-                              />
-                            )}
-                          </div>
+                          {/* F-3-E: acciones (export tutor, escribir a familia) ocultas en archivado. */}
+                          {!archivado && (
+                            <div className="flex justify-end gap-2">
+                              {v.usuario_id && (
+                                <ExportButton
+                                  href={`/${locale}/export/usuario/${v.usuario_id}`}
+                                  label={tExport('exportar_usuario')}
+                                  filename="nido-export-usuario.zip"
+                                  variant="ghost"
+                                  size="sm"
+                                />
+                              )}
+                              {esTutor && v.usuario_id && (
+                                <AbrirConversacionDireccionButton
+                                  tutorId={v.usuario_id}
+                                  locale={locale}
+                                />
+                              )}
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )

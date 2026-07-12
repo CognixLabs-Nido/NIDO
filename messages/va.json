@@ -621,6 +621,15 @@
         "confirmar": "Donar de baixa",
         "procesando": "Processant…",
         "exito": "Xiquet donat de baixa"
+      },
+      "archivo": {
+        "link": "Veure baixes / arxiu",
+        "titulo": "Alumnes donats de baixa",
+        "volver": "Tornar als alumnes actius",
+        "empty": "No hi ha alumnes donats de baixa",
+        "col_fecha_baja": "Data de baixa",
+        "col_motivo": "Motiu",
+        "banner_titulo": "Alumne donat de baixa"
       }
     },
     "audit": {
