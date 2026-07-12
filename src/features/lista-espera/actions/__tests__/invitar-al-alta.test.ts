@@ -21,6 +21,12 @@ const NINO = '22222222-2222-4222-8222-222222222222'
 // Configurable por test: lo que devuelve la RPC de alta.
 let rpcAltaResult: { data: unknown; error: unknown }
 
+// Configurable por test para el GUARDARRAÍL F-2b-4-3 (cliente service-role):
+//  - `authUsersList`: filas auth.users que devuelve `listUsers` (find por email).
+//  - `rolesResult`  : filas `roles_usuario` activas del tutor (≥1 → cuenta 'real').
+let authUsersList: Array<{ id: string; email: string }>
+let rolesResult: Array<{ usuario_id: string }>
+
 const PROSPECTO_ROW = {
   id: PROSPECTO,
   centro_id: CENTRO,
@@ -88,6 +94,32 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() => Promise.resolve(makeServerFake())),
 }))
 
+// Cliente service-role del guardarraíl: `auth.admin.listUsers` + lectura de `roles_usuario`.
+function makeServiceFake() {
+  function rolesBuilder() {
+    const b: Record<string, unknown> = {}
+    const self = () => b as never
+    b.select = () => self()
+    b.eq = () => self()
+    b.is = () => self()
+    b.limit = () => self()
+    b.then = (resolve: (v: unknown) => void) => resolve({ data: rolesResult, error: null })
+    return b
+  }
+  return {
+    from: () => rolesBuilder(),
+    auth: {
+      admin: {
+        listUsers: vi.fn(() => Promise.resolve({ data: { users: authUsersList }, error: null })),
+      },
+    },
+  }
+}
+
+vi.mock('@/lib/supabase/admin', () => ({
+  createServiceRoleClient: vi.fn(() => makeServiceFake()),
+}))
+
 vi.mock('@/features/centros/queries/get-centro-actual', () => ({
   getCentroActualId: vi.fn(() => Promise.resolve(CENTRO)),
 }))
@@ -117,6 +149,9 @@ beforeEach(() => {
     Promise.resolve({ success: true, data: { invitationId: 'inv-1' } })
   )
   estadoUpdateSpy = vi.fn<() => void>()
+  // Por defecto: email SIN cuenta (clase 'nueva') → el guardarraíl no dispara.
+  authUsersList = []
+  rolesResult = []
 })
 
 describe('invitarAlAlta — cableado a la RPC de familia (F-2b-2b)', () => {
@@ -172,5 +207,47 @@ describe('invitarAlAlta — cableado a la RPC de familia (F-2b-2b)', () => {
     expect(r.success).toBe(false)
     if (!r.success) expect(r.error).toBe('listaEspera.errors.alta_fallo')
     expect(sendInvitationSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('invitarAlAlta — guardarraíl cuenta existente (F-2b-4-3)', () => {
+  it("email con cuenta REAL (con roles) → fail que redirige a 'añadir hijo', SIN llamar a la RPC ni invitar", async () => {
+    // El tutor del prospecto ya tiene cuenta operativa (fila auth + ≥1 rol activo).
+    authUsersList = [{ id: 'tutor-uid', email: 'tutor@nido.test' }]
+    rolesResult = [{ usuario_id: 'tutor-uid' }]
+
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
+
+    expect(r.success).toBe(false)
+    if (!r.success) expect(r.error).toBe('listaEspera.errors.tutor_ya_registrado_usar_anadir_hijo')
+    // Ninguna escritura: la RPC de alta NO se invoca (no se crea niño huérfano) y no se invita.
+    const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
+    expect(altaCall).toBeUndefined()
+    expect(sendInvitationSpy).not.toHaveBeenCalled()
+    expect(estadoUpdateSpy).not.toHaveBeenCalled()
+  })
+
+  it('email con cuenta STUB (fila auth sin roles) → sigue el flujo de invitación normal (RPC con p_usuario_id NULL)', async () => {
+    // Existe la fila auth (p. ej. de un invite previo) pero SIN roles → clase 'stub'.
+    authUsersList = [{ id: 'stub-uid', email: 'tutor@nido.test' }]
+    rolesResult = []
+
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
+
+    expect(r.success).toBe(true)
+    const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
+    expect(altaCall).toBeDefined()
+    expect(altaCall?.[1]).toMatchObject({ p_usuario_id: null })
+    expect(sendInvitationSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('email NUEVO (sin fila auth) → flujo de invitación normal (RPC con p_usuario_id NULL)', async () => {
+    // authUsersList=[] por defecto → clase 'nueva' → el guardarraíl no dispara.
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
+
+    expect(r.success).toBe(true)
+    const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
+    expect(altaCall?.[1]).toMatchObject({ p_usuario_id: null })
+    expect(sendInvitationSpy).toHaveBeenCalledTimes(1)
   })
 })
