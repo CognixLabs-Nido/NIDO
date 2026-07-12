@@ -92,3 +92,4 @@ jobs:
           F3D_MIGRATION_APPLIED: '1'
           F3F_MIGRATION_APPLIED: '1'
           F2B41_MIGRATION_APPLIED: '1'
+          F40_MIGRATION_APPLIED: '1'

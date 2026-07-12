@@ -362,7 +362,14 @@
         "nino": "Child",
         "metodo": "Payment method",
         "conceptos": "Items",
-        "modalidad": "Mode"
+        "modalidad": "Mode",
+        "signo": "Charge or discount",
+        "tipo_valor": "Value type",
+        "importe": "Amount (€)",
+        "porcentaje": "Percentage (%)",
+        "ambito": "Scope",
+        "concepto_base": "Base concept",
+        "concepto_base_placeholder": "Choose the concept it applies to"
       },
       "tipos": {
         "mensual": "Monthly",
@@ -437,7 +444,19 @@
           "periodo": "Period"
         }
       },
-      "tab_resumen": "Summary"
+      "tab_resumen": "Summary",
+      "signos": {
+        "cobro": "Charge",
+        "descuento": "Discount"
+      },
+      "valores": {
+        "fijo": "Fixed amount",
+        "porcentaje": "Percentage"
+      },
+      "ambitos": {
+        "nino": "Per child",
+        "familia": "Per family"
+      }
     },
     "aulas": {
       "title": "Classrooms",
@@ -1062,7 +1081,17 @@
       "precio_largo": "Price too high",
       "precio_requerido": "Enter the price",
       "precio_diario_requerido": "Enter the price per day",
-      "servicio_requerido": "Pick the service it charges"
+      "servicio_requerido": "Pick the service it charges",
+      "porcentaje_invalido": "Invalid percentage",
+      "porcentaje_negativo": "Percentage cannot be negative",
+      "porcentaje_largo": "Percentage cannot exceed 100",
+      "signo_invalido": "Select charge or discount",
+      "tipo_valor_invalido": "Select the value type",
+      "ambito_invalido": "Select the scope",
+      "importe_requerido": "Enter the amount",
+      "porcentaje_requerido": "Enter the percentage",
+      "concepto_base_requerido": "A percentage discount needs a base concept",
+      "concepto_base_no_permitido": "Only a percentage discount has a base concept"
     },
     "errors": {
       "nombre_duplicado": "An item with that name already exists in the centre.",
