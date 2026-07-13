@@ -2506,6 +2506,7 @@ export type Database = {
           fecha_firma: string | null
           firma_imagen: string | null
           iban_cifrado: string
+          iban_ultimos4: string | null
           id: string
           identificador_mandato: string
           ip_address: unknown
@@ -2528,6 +2529,7 @@ export type Database = {
           fecha_firma?: string | null
           firma_imagen?: string | null
           iban_cifrado: string
+          iban_ultimos4?: string | null
           id?: string
           identificador_mandato: string
           ip_address?: unknown
@@ -2550,6 +2552,7 @@ export type Database = {
           fecha_firma?: string | null
           firma_imagen?: string | null
           iban_cifrado?: string
+          iban_ultimos4?: string | null
           id?: string
           identificador_mandato?: string
           ip_address?: unknown

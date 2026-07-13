@@ -17,6 +17,7 @@ import {
 
 import { AltaCompletadaScreen } from '@/features/alta/components/AltaCompletadaScreen'
 import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
+import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
 import { resolverEntradaAlta } from '@/features/alta/lib/entrada-alta'
 import { pasoInicialAlta } from '@/features/alta/lib/estado-alta'
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
@@ -103,7 +104,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const { data: ninoExtra } = await supabase
     .from('ninos')
     .select(
-      'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, libro_familia_path, estado_civil_familia'
+      'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, libro_familia_path, estado_civil_familia, familia_id'
     )
     .eq('id', ninoId)
     .maybeSingle()
@@ -262,6 +263,13 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
       }
     : null
 
+  // F-2c-2: el mandato es de la FAMILIA. Si la familia del niño YA tiene uno activo (p. ej.
+  // el 2º hijo, o un reintento del 1º), el paso 8 muestra un INFORMATIVO enmascarado
+  // (****{ultimos4}) sin re-pedir IBAN/firma. Se resuelve por familia (RLS del tutor).
+  const mandatoFamilia = ninoExtra?.familia_id
+    ? await familiaTieneMandatoActivo(ninoExtra.familia_id)
+    : null
+
   const pasoInicial = pasoInicialAlta({
     identidadCompleta: Boolean(nino.apellidos && nino.fecha_nacimiento),
     consintioDatosMedicos,
@@ -310,6 +318,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         centroNombre={centro?.nombre ?? ''}
         centroDireccion={centro?.direccion ?? ''}
         mandatoSepaInicial={mandatoSepaInicial}
+        mandatoFamilia={mandatoFamilia}
         currentUserId={user.id}
         currentUserNombre={perfil?.nombreCompleto ?? ''}
         modoDireccion={modoDireccion}

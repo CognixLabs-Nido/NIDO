@@ -3418,6 +3418,13 @@
       "texto_legal": "Mitjançant la firma d'este mandat, autoritze el creditor a enviar instruccions a la meua entitat per a adeudar en el meu compte, i a la meua entitat a efectuar els adeudaments conforme a les dites instruccions. Dispose del dret a la devolució per la meua entitat en els termes i condicions del contracte subscrit amb ella, dins de les huit setmanes següents a la data d'adeudament.",
       "guardado": "Mandat SEPA guardat",
       "omitir": "Ometre per ara",
+      "informativo": {
+        "intro": "Esta família ja té una domiciliació bancària activa. No cal tornar a introduir l'IBAN ni firmar: la domiciliació de la família també cobrix este xiquet.",
+        "titulo": "Domiciliació bancària activa",
+        "a_nombre_de": "a nom de {titular}",
+        "nota": "Si necessites canviar el compte, fes-ho des de la gestió de la família.",
+        "sin_ultimos4": "Compte registrat"
+      },
       "pdf": {
         "titulo": "Orde de domiciliació d'adeudament directe SEPA"
       },
