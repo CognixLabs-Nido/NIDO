@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 
-import { CheckCircle2Icon, FileTextIcon } from 'lucide-react'
+import { CheckCircle2Icon, FileTextIcon, LandmarkIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
@@ -27,6 +27,8 @@ import { generarMandatoPdf } from '../lib/mandato-pdf'
 import { generarIdentificadorMandato } from '../lib/mandato-sepa'
 import { sepaMandatoFormSchema, type SepaMandatoFormInput } from '../schemas/sepa'
 
+import type { MandatoFamiliaActivo } from '../queries/get-mandato-familia'
+
 export interface MandatoSepaInicial {
   titular: string
   identificador: string
@@ -48,6 +50,12 @@ interface Props {
   /** Id del tutor 1 (firmante/titular) para el identificador del mandato. */
   currentUserId: string
   inicial: MandatoSepaInicial | null
+  /**
+   * F-2c-2: mandato SEPA activo de la FAMILIA (o null). Si existe, el paso 8 es INFORMATIVO
+   * (domiciliación ya activa, enmascarada `****{ultimos4}`): no re-pide IBAN/firma ni llama al
+   * route de registro; el mandato de la familia ya cubre a este niño. Solo se finaliza.
+   */
+  mandatoFamilia: MandatoFamiliaActivo | null
   /**
    * Estado tecleado ELEVADO al contenedor (PR-4a-2): así sobrevive al desmontaje del paso
    * al navegar. El paso lee/escribe vía estos props+setters; no guarda nada en BD hasta
@@ -85,6 +93,7 @@ export function PasoSepa({
   centroDireccion,
   currentUserId,
   inicial,
+  mandatoFamilia,
   firma,
   onFirmaChange,
   iban,
@@ -190,6 +199,43 @@ export function PasoSepa({
       toast.success(tSepa('guardado'))
       onFinalizar()
     })
+  }
+
+  // F-2c-2: la familia YA tiene domiciliación activa → INFORMATIVO enmascarado, sin campos ni
+  // POST de registro. El mandato de la familia cubre a este niño; solo se finaliza el alta.
+  if (mandatoFamilia) {
+    const enmascarado = mandatoFamilia.ultimos4
+      ? `••••${mandatoFamilia.ultimos4}`
+      : tSepa('informativo.sin_ultimos4')
+    return (
+      <div className="space-y-4">
+        <p className="text-muted-foreground text-sm">{tSepa('informativo.intro')}</p>
+        <div className="border-success-200 bg-success-50 flex items-start gap-3 rounded-lg border p-4 text-sm">
+          <LandmarkIcon className="text-success-700 mt-0.5 size-5 shrink-0" aria-hidden />
+          <div className="space-y-1">
+            <p className="text-success-800 font-semibold">{tSepa('informativo.titulo')}</p>
+            <p className="text-foreground">
+              {enmascarado}
+              {mandatoFamilia.titular ? (
+                <>
+                  {' · '}
+                  {tSepa('informativo.a_nombre_de', { titular: mandatoFamilia.titular })}
+                </>
+              ) : null}
+            </p>
+            <p className="text-muted-foreground text-xs">{tSepa('informativo.nota')}</p>
+          </div>
+        </div>
+        <div className="flex justify-between border-t pt-4">
+          <Button type="button" variant="outline" onClick={onBack} disabled={pending}>
+            {t('wizard.atras')}
+          </Button>
+          <Button type="button" onClick={onFinalizar} disabled={pending}>
+            {t('wizard.finalizar')}
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (

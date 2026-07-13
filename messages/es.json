@@ -3418,6 +3418,13 @@
       "texto_legal": "Mediante la firma de este mandato, autorizo al acreedor a enviar instrucciones a mi entidad para adeudar en mi cuenta, y a mi entidad a efectuar los adeudos conforme a dichas instrucciones. Dispongo del derecho a la devolución por mi entidad en los términos y condiciones del contrato suscrito con ella, dentro de las ocho semanas siguientes a la fecha de adeudo.",
       "guardado": "Mandato SEPA guardado",
       "omitir": "Omitir por ahora",
+      "informativo": {
+        "intro": "Esta familia ya tiene una domiciliación bancaria activa. No hace falta volver a introducir el IBAN ni firmar: la domiciliación de la familia cubre también a este niño.",
+        "titulo": "Domiciliación bancaria activa",
+        "a_nombre_de": "a nombre de {titular}",
+        "nota": "Si necesitas cambiar la cuenta, hazlo desde la gestión de la familia.",
+        "sin_ultimos4": "Cuenta registrada"
+      },
       "pdf": {
         "titulo": "Orden de domiciliación de adeudo directo SEPA"
       },

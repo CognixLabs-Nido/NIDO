@@ -3418,6 +3418,13 @@
       "texto_legal": "By signing this mandate, you authorise the creditor to send instructions to your bank to debit your account, and your bank to debit your account in accordance with those instructions. You are entitled to a refund from your bank under the terms and conditions of your agreement with it, within eight weeks of the debit date.",
       "guardado": "SEPA mandate saved",
       "omitir": "Skip for now",
+      "informativo": {
+        "intro": "This family already has an active direct debit. There's no need to re-enter the IBAN or sign again: the family's direct debit also covers this child.",
+        "titulo": "Direct debit active",
+        "a_nombre_de": "in the name of {titular}",
+        "nota": "If you need to change the account, do it from the family management screen.",
+        "sin_ultimos4": "Account on file"
+      },
       "pdf": {
         "titulo": "SEPA direct debit mandate order"
       },

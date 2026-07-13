@@ -17,6 +17,7 @@ import { PasoMenor, type DireccionInicial } from './PasoMenor'
 import { PasoSepa, type MandatoSepaInicial } from './PasoSepa'
 import { PasoTutor, type DatosTutorInicial } from './PasoTutor'
 import type { IdentidadInicial } from './PasoIdentidad'
+import type { MandatoFamiliaActivo } from '../queries/get-mandato-familia'
 
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
 import type { EstadoCivil } from '../schemas/alta-documentos'
@@ -57,6 +58,8 @@ interface Props {
   centroNombre: string
   centroDireccion: string
   mandatoSepaInicial: MandatoSepaInicial | null
+  /** F-2c-2: mandato SEPA activo de la FAMILIA (o null). Si existe → paso 8 informativo. */
+  mandatoFamilia: MandatoFamiliaActivo | null
   currentUserId: string
   currentUserNombre: string
   /**
@@ -99,6 +102,7 @@ export function AltaTutorWizard({
   centroNombre,
   centroDireccion,
   mandatoSepaInicial,
+  mandatoFamilia,
   currentUserId,
   currentUserNombre,
   modoDireccion = false,
@@ -320,6 +324,7 @@ export function AltaTutorWizard({
             centroDireccion={centroDireccion}
             currentUserId={currentUserId}
             inicial={mandatoSepaInicial}
+            mandatoFamilia={mandatoFamilia}
             firma={sepaFirma}
             onFirmaChange={setSepaFirma}
             iban={sepaIban}
