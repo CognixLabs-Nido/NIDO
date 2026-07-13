@@ -225,7 +225,8 @@
       "informes": "Informes",
       "personal": "Personal",
       "admisiones": "Admissions",
-      "pendientes": "Validacions"
+      "pendientes": "Validacions",
+      "familias": "Famílies"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -863,6 +864,85 @@
         "decidir": "No s'ha pogut processar la decisió. Torna a provar-ho.",
         "no_pendiente": "Este canvi ja no està pendent.",
         "aplicar": "No s'ha pogut aplicar el canvi. S ha deixat pendent per a reintentar."
+      }
+    },
+    "familias": {
+      "title": "Famílies",
+      "subtitle": "Gestiona les famílies del centre: tutors, fills i dades de contacte.",
+      "ver": "Veure",
+      "buscar_placeholder": "Cerca per etiqueta o titular…",
+      "empty": "No hi ha famílies per mostrar.",
+      "resumen": "{hijos} fills · {tutores} tutors",
+      "archivada_banner": "Família arxivada — només lectura.",
+      "sin_cuenta": "Sense compte",
+      "dni_subido": "Pujat",
+      "filtro": {
+        "todas": "Totes",
+        "activas": "Actives",
+        "inactivas": "Inactives"
+      },
+      "estado": {
+        "activa": "Activa",
+        "archivada": "Arxivada"
+      },
+      "roles": {
+        "titular": "Titular",
+        "segundo_tutor": "Segon tutor"
+      },
+      "fields": {
+        "etiqueta": "Família",
+        "titular": "Titular",
+        "hijos": "Fills",
+        "estado": "Estat",
+        "acciones": "Accions",
+        "nombre": "Nom",
+        "email": "Correu",
+        "direccion": "Adreça",
+        "direccion_calle": "Carrer",
+        "direccion_numero": "Número",
+        "direccion_cp": "C.P.",
+        "direccion_ciudad": "Ciutat",
+        "dni": "DNI"
+      },
+      "tutores": {
+        "titulo": "Tutors",
+        "vacio": "Sense tutors registrats."
+      },
+      "hijos": {
+        "titulo": "Fills",
+        "vacio": "Sense fills en aquesta família.",
+        "activo": "Actiu",
+        "archivado": "Arxivat"
+      },
+      "editar_etiqueta": {
+        "abrir": "Editar",
+        "title": "Editar l'etiqueta de la família",
+        "guardar": "Guardar",
+        "guardando": "Guardant…",
+        "cancelar": "Cancel·lar",
+        "guardado": "Etiqueta actualitzada"
+      },
+      "editar_tutor": {
+        "abrir": "Editar",
+        "title": "Editar el perfil del tutor",
+        "guardar": "Guardar",
+        "guardando": "Guardant…",
+        "cancelar": "Cancel·lar",
+        "guardado": "Perfil actualitzat"
+      },
+      "validation": {
+        "invalid": "Dades no vàlides",
+        "etiqueta_requerida": "L'etiqueta és obligatòria",
+        "etiqueta_larga": "L'etiqueta és massa llarga",
+        "nombre_requerido": "El nom és obligatori",
+        "nombre_largo": "El nom és massa llarg",
+        "email": "Correu no vàlid"
+      },
+      "errors": {
+        "no_autorizado": "No tens permís per a aquesta acció",
+        "no_encontrada": "Família no trobada",
+        "tutor_no_encontrado": "Tutor no trobat",
+        "guardado": "No s’ha pogut guardar"
       }
     }
   },

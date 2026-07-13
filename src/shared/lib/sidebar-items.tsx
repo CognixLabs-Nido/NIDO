@@ -17,6 +17,7 @@ import {
   LayoutDashboardIcon,
   MessageCircleIcon,
   UsersIcon,
+  UsersRoundIcon,
   UtensilsIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -86,6 +87,7 @@ export async function buildSidebarItems(
         icon: <ClipboardListIcon />,
       },
       { href: `/${locale}/admin/ninos`, label: t('ninos'), icon: <BabyIcon /> },
+      { href: `/${locale}/admin/familias`, label: t('familias'), icon: <UsersRoundIcon /> },
       {
         href: `/${locale}/messages`,
         label: t('mensajeria'),
