@@ -874,6 +874,39 @@
       "empty": "No families to show.",
       "resumen": "{hijos} children · {tutores} guardians",
       "archivada_banner": "Archived family — read only.",
+      "domiciliacion": {
+        "titulo": "Direct debit",
+        "sin": "No direct debit on file",
+        "cuenta_registrada": "Account on file",
+        "a_nombre_de": "in the name of {titular}",
+        "desde": "since {fecha}",
+        "metodo": {
+          "presencial": "In person",
+          "digital": "Digital"
+        },
+        "cambiar": "Change account",
+        "registrar": "Set up direct debit",
+        "dialog_titulo": "Family direct debit",
+        "presencial_nota": "In-person registration: the family signed the SEPA mandate on paper. No digital signature or PDF is generated.",
+        "iban": "IBAN",
+        "iban_ayuda": "The format and check digits are validated.",
+        "titular": "Account holder",
+        "cancelar": "Cancel",
+        "confirmar": "Save direct debit",
+        "guardando": "Saving…",
+        "guardado": "Direct debit saved",
+        "validation": {
+          "familia": "Invalid family",
+          "iban": "Invalid IBAN",
+          "titular": "Enter the account holder",
+          "invalid": "Invalid data"
+        },
+        "errors": {
+          "no_autorizado": "You don't have permission to manage this family's direct debit",
+          "mandato_activo_otro_iban": "The family already has an active direct debit with a different IBAN; use Change account",
+          "guardado": "Could not save the direct debit"
+        }
+      },
       "sin_cuenta": "No account",
       "dni_subido": "Uploaded",
       "filtro": {

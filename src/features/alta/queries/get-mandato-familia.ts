@@ -6,6 +6,8 @@ export interface MandatoFamiliaActivo {
   ultimos4: string | null
   titular: string
   identificador_mandato: string
+  fecha_firma: string | null
+  metodo_firma: 'digital' | 'presencial'
 }
 
 /**
@@ -26,7 +28,7 @@ export async function familiaTieneMandatoActivo(
 
   const { data } = await supabase
     .from('mandatos_sepa')
-    .select('iban_ultimos4, titular, identificador_mandato')
+    .select('iban_ultimos4, titular, identificador_mandato, fecha_firma, metodo_firma')
     .eq('familia_id', familiaId)
     .eq('estado', 'activo')
     .is('deleted_at', null)
@@ -39,5 +41,7 @@ export async function familiaTieneMandatoActivo(
     ultimos4: data.iban_ultimos4,
     titular: data.titular,
     identificador_mandato: data.identificador_mandato,
+    fecha_firma: data.fecha_firma,
+    metodo_firma: data.metodo_firma,
   }
 }

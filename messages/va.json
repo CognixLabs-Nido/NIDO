@@ -874,6 +874,39 @@
       "empty": "No hi ha famílies per mostrar.",
       "resumen": "{hijos} fills · {tutores} tutors",
       "archivada_banner": "Família arxivada — només lectura.",
+      "domiciliacion": {
+        "titulo": "Domiciliació bancària",
+        "sin": "Sense domiciliació bancària",
+        "cuenta_registrada": "Compte registrat",
+        "a_nombre_de": "a nom de {titular}",
+        "desde": "des de {fecha}",
+        "metodo": {
+          "presencial": "Presencial",
+          "digital": "Digital"
+        },
+        "cambiar": "Canviar compte",
+        "registrar": "Registrar domiciliació",
+        "dialog_titulo": "Domiciliació bancària de la família",
+        "presencial_nota": "Registre presencial: la família ha firmat el mandat SEPA en paper. No es genera firma digital ni PDF.",
+        "iban": "IBAN",
+        "iban_ayuda": "Es valida el format i els dígits de control.",
+        "titular": "Titular del compte",
+        "cancelar": "Cancel·lar",
+        "confirmar": "Guardar domiciliació",
+        "guardando": "Guardant…",
+        "guardado": "Domiciliació guardada",
+        "validation": {
+          "familia": "Família no vàlida",
+          "iban": "IBAN no vàlid",
+          "titular": "Indica el titular del compte",
+          "invalid": "Dades no vàlides"
+        },
+        "errors": {
+          "no_autorizado": "No tens permís per a gestionar la domiciliació d'esta família",
+          "mandato_activo_otro_iban": "La família ja té una domiciliació activa amb un altre IBAN; usa Canviar compte",
+          "guardado": "No s'ha pogut guardar la domiciliació"
+        }
+      },
       "sin_cuenta": "Sense compte",
       "dni_subido": "Pujat",
       "filtro": {

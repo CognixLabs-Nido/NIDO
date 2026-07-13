@@ -874,6 +874,39 @@
       "empty": "No hay familias que mostrar.",
       "resumen": "{hijos} hijos · {tutores} tutores",
       "archivada_banner": "Familia archivada — solo lectura.",
+      "domiciliacion": {
+        "titulo": "Domiciliación bancaria",
+        "sin": "Sin domiciliación bancaria",
+        "cuenta_registrada": "Cuenta registrada",
+        "a_nombre_de": "a nombre de {titular}",
+        "desde": "desde {fecha}",
+        "metodo": {
+          "presencial": "Presencial",
+          "digital": "Digital"
+        },
+        "cambiar": "Cambiar cuenta",
+        "registrar": "Registrar domiciliación",
+        "dialog_titulo": "Domiciliación bancaria de la familia",
+        "presencial_nota": "Registro presencial: la familia ha firmado el mandato SEPA en papel. No se genera firma digital ni PDF.",
+        "iban": "IBAN",
+        "iban_ayuda": "Se valida el formato y los dígitos de control.",
+        "titular": "Titular de la cuenta",
+        "cancelar": "Cancelar",
+        "confirmar": "Guardar domiciliación",
+        "guardando": "Guardando…",
+        "guardado": "Domiciliación guardada",
+        "validation": {
+          "familia": "Familia no válida",
+          "iban": "IBAN no válido",
+          "titular": "Indica el titular de la cuenta",
+          "invalid": "Datos no válidos"
+        },
+        "errors": {
+          "no_autorizado": "No tienes permiso para gestionar la domiciliación de esta familia",
+          "mandato_activo_otro_iban": "La familia ya tiene una domiciliación activa con otro IBAN; usa Cambiar cuenta",
+          "guardado": "No se pudo guardar la domiciliación"
+        }
+      },
       "sin_cuenta": "Sin cuenta",
       "dni_subido": "Subido",
       "filtro": {
