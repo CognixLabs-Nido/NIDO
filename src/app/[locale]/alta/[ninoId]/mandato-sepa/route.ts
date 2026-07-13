@@ -53,11 +53,14 @@ export async function POST(
 
   const { data: nino } = await supabase
     .from('ninos')
-    .select('id, centro_id')
+    .select('id, centro_id, familia_id')
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
   if (!nino) return err('alta.errors.no_autorizado', 403)
+  // F-2c-1: el mandato es de la FAMILIA. `ninos.familia_id` es NOT NULL (F-2b-3);
+  // si por integridad faltara, no se puede registrar el mandato.
+  if (!nino.familia_id) return err('alta.errors.no_autorizado', 403)
 
   // Modo Dirección (B2): la Directora del centro del niño registra el mandato con respaldo
   // en PAPEL. Se RE-DERIVA server-side (nunca del cliente) → 'presencial' + sin trazo (el
@@ -152,6 +155,7 @@ export async function POST(
   const userAgent = request.headers.get('user-agent')?.slice(0, 500) ?? null
 
   const { error: rpcErr } = await supabase.rpc('registrar_mandato_sepa', {
+    p_familia_id: nino.familia_id,
     p_nino_id: nino.id,
     p_iban: iban,
     p_titular: titular.trim(),

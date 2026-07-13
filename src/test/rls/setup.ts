@@ -298,6 +298,8 @@ export async function createTestAula(
 export interface TestNino {
   id: string
   centro_id: string
+  /** F-2b-3: familia del niño (NOT NULL). Útil para features por-familia (F-2c mandato SEPA). */
+  familia_id: string
 }
 
 /**
@@ -337,7 +339,26 @@ export async function createTestNino(centro_id: string, nombre?: string): Promis
     .select('id')
     .single()
   if (error || !data) throw new Error(`createTestNino falló: ${error?.message}`)
-  return { id: data.id, centro_id }
+  return { id: data.id, centro_id, familia_id }
+}
+
+/**
+ * F-2c-1 — enlaza un usuario a una familia como tutor en `familia_tutores` (el gate por
+ * familia `es_tutor_de_familia` mira ESTA tabla, no `vinculos_familiares`). Vía serviceClient
+ * (bypassa el trigger `familia_tutores_proteger_usuario_id`). Limpieza por cascada de familia.
+ */
+export async function crearFamiliaTutor(
+  familia_id: string,
+  usuario_id: string,
+  rol_familia: 'titular' | 'segundo_tutor' = 'titular'
+): Promise<string> {
+  const { data, error } = await serviceClient
+    .from('familia_tutores')
+    .insert({ familia_id, usuario_id, rol_familia })
+    .select('id')
+    .single()
+  if (error || !data) throw new Error(`crearFamiliaTutor falló: ${error?.message}`)
+  return data.id
 }
 
 export async function matricular(

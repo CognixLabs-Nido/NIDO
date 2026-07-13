@@ -8,7 +8,10 @@ export interface ReciboSepaRemesable {
   ninoNombre: string
   totalCentimos: number
   esEsporadico: boolean
-  /** ¿El niño tiene un mandato SEPA activo? (si no, no debería entrar a la remesa). */
+  /**
+   * ¿La FAMILIA del niño tiene un mandato SEPA activo? (F-2c-1: el mandato es de la familia,
+   * no del niño). Si no, no debería entrar a la remesa.
+   */
   tieneMandato: boolean
 }
 
@@ -37,31 +40,40 @@ export async function getRecibosSepaRemesables(
   if (!recibos || recibos.length === 0) return []
 
   const ninoIds = [...new Set(recibos.map((r) => r.nino_id))]
+  // F-2c-1: el mandato cuelga de la familia → se resuelve por `ninos.familia_id`, no por
+  // `nino_id`. Los mandatos activos se agrupan por `familia_id`; un recibo "tiene mandato"
+  // si la familia de su niño tiene uno activo.
   const [{ data: yaEnRemesa }, { data: mandatos }, { data: ninos }] = await Promise.all([
     supabase.from('recibos_remesa').select('recibo_id').eq('centro_id', centroId),
     supabase
       .from('mandatos_sepa')
-      .select('nino_id')
+      .select('familia_id')
       .eq('centro_id', centroId)
       .eq('estado', 'activo')
       .is('deleted_at', null),
-    supabase.from('ninos').select('id, nombre, apellidos').in('id', ninoIds),
+    supabase.from('ninos').select('id, nombre, apellidos, familia_id').in('id', ninoIds),
   ])
 
   const remesados = new Set((yaEnRemesa ?? []).map((r) => r.recibo_id))
-  const conMandato = new Set((mandatos ?? []).map((m) => m.nino_id))
+  const familiasConMandato = new Set(
+    (mandatos ?? []).map((m) => m.familia_id).filter((f): f is string => f != null)
+  )
   const nombrePorNino = new Map(
     (ninos ?? []).map((n) => [n.id, [n.nombre, n.apellidos].filter(Boolean).join(' ')])
   )
+  const familiaPorNino = new Map((ninos ?? []).map((n) => [n.id, n.familia_id]))
 
   return recibos
     .filter((r) => !remesados.has(r.id))
-    .map((r) => ({
-      id: r.id,
-      ninoId: r.nino_id,
-      ninoNombre: nombrePorNino.get(r.nino_id) ?? '',
-      totalCentimos: r.total_centimos,
-      esEsporadico: r.es_esporadico,
-      tieneMandato: conMandato.has(r.nino_id),
-    }))
+    .map((r) => {
+      const familiaId = familiaPorNino.get(r.nino_id) ?? null
+      return {
+        id: r.id,
+        ninoId: r.nino_id,
+        ninoNombre: nombrePorNino.get(r.nino_id) ?? '',
+        totalCentimos: r.total_centimos,
+        esEsporadico: r.es_esporadico,
+        tieneMandato: familiaId != null && familiasConMandato.has(familiaId),
+      }
+    })
 }

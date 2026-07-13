@@ -9,11 +9,13 @@ import {
   createTestCurso,
   createTestNino,
   createTestUser,
+  crearFamiliaTutor,
   crearVinculo,
   deleteTestCentro,
   deleteTestUser,
   matricular,
   serviceClient,
+  type TestNino,
   type TestUser,
 } from './setup'
 
@@ -50,9 +52,9 @@ describe.skipIf(!APPLIED)(
   () => {
     let centroA: { id: string }
     let centroB: { id: string }
-    let ninoA: { id: string } // centroA, tutela de tutorA, en aula de profeA
-    let ninoA2: { id: string } // centroA, SIN tutela de tutorA (aislamiento intra-centro)
-    let ninoB: { id: string } // centroB
+    let ninoA: TestNino // centroA, tutela de tutorA, en aula de profeA
+    let ninoA2: TestNino // centroA, SIN tutela de tutorA (aislamiento intra-centro)
+    let ninoB: TestNino // centroB
     let adminA: TestUser
     let profeA: TestUser
     let tutorA: TestUser
@@ -82,6 +84,10 @@ describe.skipIf(!APPLIED)(
       await asignarProfeAula(profeA.id, aulaA.id, cursoA.id)
       await crearVinculo(ninoA.id, tutorA.id, 'tutor_legal_principal', {})
       await crearVinculo(ninoB.id, tutorB.id, 'tutor_legal_principal', {})
+      // F-2c-1: el gate del mandato es por FAMILIA (`es_tutor_de_familia` → `familia_tutores`).
+      // El tutor de cada niño debe pertenecer a la familia del niño.
+      await crearFamiliaTutor(ninoA.familia_id, tutorA.id, 'titular')
+      await crearFamiliaTutor(ninoB.familia_id, tutorB.id, 'titular')
 
       cAdminA = await clientFor(adminA)
       cProfeA = await clientFor(profeA)
@@ -105,6 +111,7 @@ describe.skipIf(!APPLIED)(
     describe('mandatos_sepa', () => {
       it('el tutor registra el mandato por RPC; el IBAN queda CIFRADO (nunca en claro)', async () => {
         const { error } = await cTutorA.rpc('registrar_mandato_sepa', {
+          p_familia_id: ninoA.familia_id,
           p_nino_id: ninoA.id,
           p_iban: IBAN_TEST,
           p_titular: 'Madre Test',
