@@ -1010,6 +1010,36 @@
     }
   },
   "family": {
+    "domiciliacion": {
+      "titulo": "Domiciliació bancària",
+      "sin": "No tens domiciliació bancària configurada",
+      "cuenta_registrada": "Compte registrat",
+      "a_nombre_de": "a nom de {titular}",
+      "desde": "des de {fecha}",
+      "cambiar": "Canviar compte bancari",
+      "configurar": "Configurar domiciliació",
+      "dialog_titulo": "Domiciliació bancària",
+      "dialog_intro": "Introduïx l'IBAN i firma el mandat SEPA per a domiciliar els rebuts de la teua família.",
+      "iban": "IBAN",
+      "iban_ayuda": "Es valida el format i els dígits de control.",
+      "titular": "Titular del compte",
+      "nombre_tecleado": "Nom i cognoms (firma)",
+      "nombre_tecleado_ayuda": "Escriu el teu nom complet com a acte de firma del mandat.",
+      "firma": "Firma",
+      "cancelar": "Cancel·lar",
+      "confirmar": "Firmar i guardar",
+      "guardando": "Guardant…",
+      "guardado": "Domiciliació guardada",
+      "validation": {
+        "nombre": "Escriu el teu nom complet per a firmar",
+        "firma": "Firma el mandat en el requadre"
+      },
+      "errors": {
+        "guardado": "No s'ha pogut guardar la domiciliació. Torna-ho a intentar.",
+        "no_autorizado": "No tens permís per a gestionar esta domiciliació",
+        "mandato_activo_otro_iban": "La teua família ja té una domiciliació activa amb un altre IBAN"
+      }
+    },
     "nav": {
       "aria_label": "Navegació família",
       "dashboard": "Inici",

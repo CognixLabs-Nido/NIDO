@@ -1010,6 +1010,36 @@
     }
   },
   "family": {
+    "domiciliacion": {
+      "titulo": "Bank direct debit",
+      "sin": "You have no direct debit set up",
+      "cuenta_registrada": "Account registered",
+      "a_nombre_de": "in the name of {titular}",
+      "desde": "since {fecha}",
+      "cambiar": "Change bank account",
+      "configurar": "Set up direct debit",
+      "dialog_titulo": "Bank direct debit",
+      "dialog_intro": "Enter the IBAN and sign the SEPA mandate to direct debit your family's receipts.",
+      "iban": "IBAN",
+      "iban_ayuda": "Format and check digits are validated.",
+      "titular": "Account holder",
+      "nombre_tecleado": "Full name (signature)",
+      "nombre_tecleado_ayuda": "Type your full name as the act of signing the mandate.",
+      "firma": "Signature",
+      "cancelar": "Cancel",
+      "confirmar": "Sign and save",
+      "guardando": "Saving…",
+      "guardado": "Direct debit saved",
+      "validation": {
+        "nombre": "Type your full name to sign",
+        "firma": "Sign the mandate in the box"
+      },
+      "errors": {
+        "guardado": "The direct debit could not be saved. Please try again.",
+        "no_autorizado": "You do not have permission to manage this direct debit",
+        "mandato_activo_otro_iban": "Your family already has an active direct debit with a different IBAN"
+      }
+    },
     "nav": {
       "aria_label": "Family navigation",
       "dashboard": "Home",
