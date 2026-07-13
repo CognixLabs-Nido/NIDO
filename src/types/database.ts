@@ -2510,7 +2510,7 @@ export type Database = {
           identificador_mandato: string
           ip_address: unknown
           metodo_firma: Database["public"]["Enums"]["firma_metodo"]
-          nino_id: string
+          nino_id: string | null
           nombre_tecleado: string | null
           texto_hash: string | null
           titular: string
@@ -2532,7 +2532,7 @@ export type Database = {
           identificador_mandato: string
           ip_address?: unknown
           metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
-          nino_id: string
+          nino_id?: string | null
           nombre_tecleado?: string | null
           texto_hash?: string | null
           titular: string
@@ -2554,7 +2554,7 @@ export type Database = {
           identificador_mandato?: string
           ip_address?: unknown
           metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
-          nino_id?: string
+          nino_id?: string | null
           nombre_tecleado?: string | null
           texto_hash?: string | null
           titular?: string
@@ -4280,6 +4280,7 @@ export type Database = {
       registrar_mandato_sepa: {
         Args: {
           p_documento_path: string
+          p_familia_id: string
           p_fecha_firma: string
           p_firma_imagen: string
           p_iban: string
@@ -4342,6 +4343,24 @@ export type Database = {
       }
       solicitar_olvido_usuario: {
         Args: { p_inmediato?: boolean; p_usuario_id: string }
+        Returns: string
+      }
+      sustituir_mandato_sepa: {
+        Args: {
+          p_documento_path: string
+          p_familia_id: string
+          p_fecha_firma: string
+          p_firma_imagen: string
+          p_iban: string
+          p_identificador_mandato: string
+          p_ip_address: unknown
+          p_metodo?: Database["public"]["Enums"]["firma_metodo"]
+          p_nino_id: string
+          p_nombre_tecleado: string
+          p_texto_hash: string
+          p_titular: string
+          p_user_agent: string
+        }
         Returns: string
       }
       tiene_consentimiento: {

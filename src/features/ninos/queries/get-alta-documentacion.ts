@@ -60,19 +60,32 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
 
   // Tutores desde el perfil COMPARTIDO `familia_tutores` (F-2b-3), resuelto por familia del
   // niño; el helper mapea rol_familia→tipo_vinculo y ordena titular primero.
-  const [{ tutores: tutoresRows }, { data: mandatoRow }, { data: ninoRow }] = await Promise.all([
+  // F-2c-1: el mandato es de la FAMILIA → se resuelve por `ninos.familia_id`, no por
+  // `nino_id`. Se lee primero la familia del niño y luego su mandato activo.
+  const [{ tutores: tutoresRows }, { data: ninoRow }] = await Promise.all([
     leerTutoresDeNino(supabase, ninoId),
-    supabase
+    supabase.from('ninos').select('libro_familia_path, familia_id').eq('id', ninoId).maybeSingle(),
+  ])
+
+  let mandatoRow: {
+    estado: 'activo' | 'revocado'
+    titular: string
+    identificador_mandato: string
+    fecha_firma: string | null
+    documento_path: string | null
+  } | null = null
+  if (ninoRow?.familia_id) {
+    const { data } = await supabase
       .from('mandatos_sepa')
       .select('estado, titular, identificador_mandato, fecha_firma, documento_path')
-      .eq('nino_id', ninoId)
+      .eq('familia_id', ninoRow.familia_id)
       .eq('estado', 'activo')
       .is('deleted_at', null)
       .order('fecha_firma', { ascending: false })
       .limit(1)
-      .maybeSingle(),
-    supabase.from('ninos').select('libro_familia_path').eq('id', ninoId).maybeSingle(),
-  ])
+      .maybeSingle()
+    mandatoRow = data
+  }
 
   // Consentimiento de datos médicos vigente de algún tutor (última fila sin revocar).
   const tutorUserIds = (tutoresRows ?? [])

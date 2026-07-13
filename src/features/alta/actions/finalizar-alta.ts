@@ -68,7 +68,7 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   // Identidad del menor + libro de familia (documento del niño) en una sola lectura.
   const { data: nino } = await supabase
     .from('ninos')
-    .select('apellidos, fecha_nacimiento, libro_familia_path')
+    .select('apellidos, fecha_nacimiento, libro_familia_path, familia_id')
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle()
@@ -99,17 +99,22 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   // (tutor 2 es opcional).
   if (!nino.libro_familia_path || !tutor1?.dni_documento_path) faltan.push('documentos')
 
-  // SEPA: mandato activo del niño (lo registra `registrar_mandato_sepa` al firmar). Basta con
-  // que exista uno `activo` no borrado.
-  const { data: mandato } = await supabase
-    .from('mandatos_sepa')
-    .select('id')
-    .eq('nino_id', id)
-    .eq('estado', 'activo')
-    .is('deleted_at', null)
-    .limit(1)
-    .maybeSingle()
-  if (!mandato) faltan.push('sepa')
+  // SEPA: mandato activo de la FAMILIA del niño (F-2c-1: el mandato es de la familia, no
+  // del niño). Basta con que la familia tenga uno `activo` no borrado → el 2º hijo de una
+  // familia con mandato pasa el gate SIN volver a firmar.
+  let tieneMandatoFamilia = false
+  if (nino.familia_id) {
+    const { data: mandato } = await supabase
+      .from('mandatos_sepa')
+      .select('id')
+      .eq('familia_id', nino.familia_id)
+      .eq('estado', 'activo')
+      .is('deleted_at', null)
+      .limit(1)
+      .maybeSingle()
+    tieneMandatoFamilia = Boolean(mandato)
+  }
+  if (!tieneMandatoFamilia) faltan.push('sepa')
 
   // Autorización de IMAGEN firmada (acuse obligatorio que hoy funciona). Se busca la instancia
   // publicada por-niño y su última firma; `firmado` = acuse hecho. NORMAS NO entra en el gate

@@ -53,11 +53,14 @@ export async function POST(
 
   const { data: nino } = await supabase
     .from('ninos')
-    .select('id, centro_id')
+    .select('id, centro_id, familia_id')
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
   if (!nino) return err('alta.errors.no_autorizado', 403)
+  // F-2c-1: el mandato es de la FAMILIA. `ninos.familia_id` es NOT NULL (F-2b-3);
+  // si por integridad faltara, no se puede registrar el mandato.
+  if (!nino.familia_id) return err('alta.errors.no_autorizado', 403)
 
   // Modo Dirección (B2): la Directora del centro del niño registra el mandato con respaldo
   // en PAPEL. Se RE-DERIVA server-side (nunca del cliente) → 'presencial' + sin trazo (el
@@ -152,6 +155,7 @@ export async function POST(
   const userAgent = request.headers.get('user-agent')?.slice(0, 500) ?? null
 
   const { error: rpcErr } = await supabase.rpc('registrar_mandato_sepa', {
+    p_familia_id: nino.familia_id,
     p_nino_id: nino.id,
     p_iban: iban,
     p_titular: titular.trim(),
@@ -168,6 +172,11 @@ export async function POST(
   if (rpcErr) {
     // El PDF queda en su ruta determinista (se sobrescribe en el próximo intento).
     if (/no autorizado|42501/i.test(rpcErr.message)) return err('alta.errors.no_autorizado', 403)
+    // F-2c-1: la familia ya tiene un mandato ACTIVO con OTRO IBAN → registrar no pisa el
+    // histórico. El cambio de cuenta va por sustituir_mandato_sepa (2c-3/2c-4). Se propaga
+    // como conflicto legible (no 500 silencioso).
+    if (/mandato_activo_otro_iban/i.test(rpcErr.message))
+      return err('alta.sepa.errors.mandato_activo_otro_iban', 409)
     logger.warn('mandato-sepa: rpc', rpcErr.message)
     return err('alta.sepa.errors.guardado', 500)
   }

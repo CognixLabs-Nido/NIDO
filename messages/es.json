@@ -3426,7 +3426,8 @@
         "titular": "Indica el titular de la cuenta",
         "nombre": "Escribe tu nombre y apellidos para firmar",
         "firma": "Dibuja tu firma para continuar",
-        "guardado": "No se pudo guardar el mandato SEPA"
+        "guardado": "No se pudo guardar el mandato SEPA",
+        "mandato_activo_otro_iban": "Esta familia ya tiene un mandato SEPA activo con otro IBAN. Para cambiar de cuenta, sustituye el mandato desde la gestión de la familia."
       }
     },
     "validacion": {

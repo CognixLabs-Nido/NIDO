@@ -7,12 +7,14 @@ import {
   createTestCentro,
   createTestCurso,
   createTestNino,
+  crearFamiliaTutor,
   crearVinculo,
   createTestUser,
   deleteTestCentro,
   deleteTestUser,
   matricular,
   serviceClient,
+  type TestNino,
   type TestUser,
 } from './setup'
 
@@ -41,7 +43,7 @@ const BIC = 'CAIXESBBXXX'
 
 describe.skipIf(!APPLIED)('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
   let centroA: { id: string }
-  let ninoA: { id: string }
+  let ninoA: TestNino
   let adminA: TestUser
   let tutorA: TestUser
   let cAdminA: SupabaseClient<Database>
@@ -62,6 +64,9 @@ describe.skipIf(!APPLIED)('F12-B-5 — remesa SEPA (congelado afinado · RPCs)',
     tutorA = await createTestUser({ nombre: 'Tutor A F12B5' })
     await asignarRol(adminA.id, centroA.id, 'admin')
     await crearVinculo(ninoA.id, tutorA.id, 'tutor_legal_principal', {})
+    // F-2c-1: el mandato es de la familia → el tutor debe pertenecer a `familia_tutores`
+    // (gate `es_tutor_de_familia`), no solo a `vinculos_familiares`.
+    await crearFamiliaTutor(ninoA.familia_id, tutorA.id, 'titular')
     cAdminA = await clientFor(adminA)
     cTutorA = await clientFor(tutorA)
 
@@ -82,8 +87,9 @@ describe.skipIf(!APPLIED)('F12-B-5 — remesa SEPA (congelado afinado · RPCs)',
       .single()
     reciboId = recibo!.id
 
-    // Mandato SEPA activo del niño (vía RPC del tutor: cifra el IBAN).
+    // Mandato SEPA activo de la FAMILIA del niño (vía RPC del tutor: cifra el IBAN).
     await cTutorA.rpc('registrar_mandato_sepa', {
+      p_familia_id: ninoA.familia_id,
       p_nino_id: ninoA.id,
       p_iban: IBAN_DEUDOR,
       p_titular: 'Ana Pérez',

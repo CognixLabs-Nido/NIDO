@@ -3426,7 +3426,8 @@
         "titular": "Indica el titular del compte",
         "nombre": "Escriu el teu nom i cognoms per a firmar",
         "firma": "Dibuixa la teua firma per a continuar",
-        "guardado": "No s'ha pogut guardar el mandat SEPA"
+        "guardado": "No s'ha pogut guardar el mandat SEPA",
+        "mandato_activo_otro_iban": "Esta família ja té un mandat SEPA actiu amb un altre IBAN. Per a canviar de compte, substituïx el mandat des de la gestió de la família."
       }
     },
     "validacion": {

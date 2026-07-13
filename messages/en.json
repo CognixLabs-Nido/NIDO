@@ -3426,7 +3426,8 @@
         "titular": "Enter the account holder",
         "nombre": "Type your full name to sign",
         "firma": "Draw your signature to continue",
-        "guardado": "Could not save the SEPA mandate"
+        "guardado": "Could not save the SEPA mandate",
+        "mandato_activo_otro_iban": "This family already has an active SEPA mandate with a different IBAN. To change the account, replace the mandate from the family management screen."
       }
     },
     "validacion": {
