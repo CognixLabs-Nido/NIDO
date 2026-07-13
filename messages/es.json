@@ -1010,6 +1010,36 @@
     }
   },
   "family": {
+    "domiciliacion": {
+      "titulo": "Domiciliación bancaria",
+      "sin": "No tienes domiciliación bancaria configurada",
+      "cuenta_registrada": "Cuenta registrada",
+      "a_nombre_de": "a nombre de {titular}",
+      "desde": "desde {fecha}",
+      "cambiar": "Cambiar cuenta bancaria",
+      "configurar": "Configurar domiciliación",
+      "dialog_titulo": "Domiciliación bancaria",
+      "dialog_intro": "Introduce el IBAN y firma el mandato SEPA para domiciliar los recibos de tu familia.",
+      "iban": "IBAN",
+      "iban_ayuda": "Se valida el formato y los dígitos de control.",
+      "titular": "Titular de la cuenta",
+      "nombre_tecleado": "Nombre y apellidos (firma)",
+      "nombre_tecleado_ayuda": "Escribe tu nombre completo como acto de firma del mandato.",
+      "firma": "Firma",
+      "cancelar": "Cancelar",
+      "confirmar": "Firmar y guardar",
+      "guardando": "Guardando…",
+      "guardado": "Domiciliación guardada",
+      "validation": {
+        "nombre": "Escribe tu nombre completo para firmar",
+        "firma": "Firma el mandato en el recuadro"
+      },
+      "errors": {
+        "guardado": "No se pudo guardar la domiciliación. Inténtalo de nuevo.",
+        "no_autorizado": "No tienes permiso para gestionar esta domiciliación",
+        "mandato_activo_otro_iban": "Tu familia ya tiene una domiciliación activa con otro IBAN"
+      }
+    },
     "nav": {
       "aria_label": "Navegación familia",
       "dashboard": "Inicio",
