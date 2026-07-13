@@ -3,6 +3,7 @@ import {
   BabyIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  LandmarkIcon,
   PencilIcon,
   UserIcon,
 } from 'lucide-react'
@@ -13,7 +14,9 @@ import { getTranslations } from 'next-intl/server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { DomiciliacionDialog } from '@/features/familias/components/DomiciliacionDialog'
 import { EditarEtiquetaDialog } from '@/features/familias/components/EditarEtiquetaDialog'
 import { EditarTutorDialog } from '@/features/familias/components/EditarTutorDialog'
 import {
@@ -34,6 +37,12 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
   const familia = await getFamiliaDetalle(id, centroId)
   if (!familia) notFound()
   const archivada = familia.estado === 'inactiva'
+
+  // F-2c-3: mandato SEPA activo de la familia (o null) para la sección Domiciliación.
+  const mandato = await familiaTieneMandatoActivo(id)
+  const fechaFirmaLegible = mandato?.fecha_firma
+    ? new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(new Date(mandato.fecha_firma))
+    : null
 
   return (
     <div className="space-y-6">
@@ -94,6 +103,68 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
             <TutorCard key={tutor.id} tutor={tutor} archivada={archivada} t={t} />
           ))
         )}
+      </section>
+
+      {/* Domiciliación SEPA (F-2c-3) — mandato activo de la familia; solo-lectura si archivada. */}
+      <section className="space-y-3">
+        <h2 className="text-h3 text-foreground flex items-center gap-2">
+          <LandmarkIcon className="text-muted-foreground size-4" />
+          {t('domiciliacion.titulo')}
+        </h2>
+        <Card>
+          <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1 text-sm">
+            {mandato ? (
+              <>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="text-foreground font-medium">
+                    {mandato.ultimos4
+                      ? `••••${mandato.ultimos4}`
+                      : t('domiciliacion.cuenta_registrada')}
+                    {mandato.titular
+                      ? ` · ${t('domiciliacion.a_nombre_de', { titular: mandato.titular })}`
+                      : ''}
+                  </p>
+                  <p className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
+                    {fechaFirmaLegible && (
+                      <span>{t('domiciliacion.desde', { fecha: fechaFirmaLegible })}</span>
+                    )}
+                    <Badge variant={mandato.metodo_firma === 'presencial' ? 'warm' : 'info'}>
+                      {t(`domiciliacion.metodo.${mandato.metodo_firma}`)}
+                    </Badge>
+                    <span className="font-mono">{mandato.identificador_mandato}</span>
+                  </p>
+                </div>
+                {!archivada && (
+                  <DomiciliacionDialog
+                    familiaId={familia.id}
+                    titularInicial={mandato.titular}
+                    trigger={
+                      <Button variant="outline" size="sm">
+                        <PencilIcon className="size-4" />
+                        {t('domiciliacion.cambiar')}
+                      </Button>
+                    }
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground min-w-0 flex-1">{t('domiciliacion.sin')}</p>
+                {!archivada && (
+                  <DomiciliacionDialog
+                    familiaId={familia.id}
+                    trigger={
+                      <Button variant="outline" size="sm">
+                        <LandmarkIcon className="size-4" />
+                        {t('domiciliacion.registrar')}
+                      </Button>
+                    }
+                  />
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       {/* Hijos */}

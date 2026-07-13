@@ -166,6 +166,7 @@ function AltaInvitacionFlow({
         centroNombre=""
         centroDireccion=""
         mandatoSepaInicial={null}
+        mandatoFamilia={null}
         currentUserId=""
         currentUserNombre=""
       />
