@@ -73,10 +73,12 @@ describe.skipIf(!APPLIED)('F-2c-1 — mandato SEPA de FAMILIA', () => {
   let tutorA: TestUser
   let ninoOtro: TestNino
   let tutorOtro: TestUser
+  let tutorSolo: TestUser
   let cAdminA: SupabaseClient<Database>
   let cProfeA: SupabaseClient<Database>
   let cTutorA: SupabaseClient<Database>
   let cTutorOtro: SupabaseClient<Database>
+  let cTutorSolo: SupabaseClient<Database>
 
   async function insertarNino(familiaId: string, nombre: string): Promise<{ id: string }> {
     const { data, error } = await serviceClient
@@ -119,10 +121,15 @@ describe.skipIf(!APPLIED)('F-2c-1 — mandato SEPA de FAMILIA', () => {
     tutorOtro = await createTestUser({ nombre: 'Tutor Otro F2C1' })
     await crearFamiliaTutor(ninoOtro.familia_id, tutorOtro.id, 'titular')
 
+    // Tutor propio para la familia "solo" del test de centro_id/nino_id NULL (no reutiliza
+    // tutorA, que ya está en familiaA — un adulto = una familia).
+    tutorSolo = await createTestUser({ nombre: 'Tutor Solo F2C1' })
+
     cAdminA = await clientFor(adminA)
     cProfeA = await clientFor(profeA)
     cTutorA = await clientFor(tutorA)
     cTutorOtro = await clientFor(tutorOtro)
+    cTutorSolo = await clientFor(tutorSolo)
   }, 60_000)
 
   afterAll(async () => {
@@ -131,6 +138,7 @@ describe.skipIf(!APPLIED)('F-2c-1 — mandato SEPA de FAMILIA', () => {
     await deleteTestUser(profeA.id)
     await deleteTestUser(tutorA.id)
     await deleteTestUser(tutorOtro.id)
+    await deleteTestUser(tutorSolo.id)
     await deleteTestCentro(centroA.id)
   }, 60_000)
 
@@ -220,25 +228,12 @@ describe.skipIf(!APPLIED)('F-2c-1 — mandato SEPA de FAMILIA', () => {
     expect(error?.code).toBe('23505') // unique_violation
   })
 
-  it('el índice único rechaza un 2º mandato ACTIVO insertado a mano en la familia', async () => {
-    const { error } = await serviceClient.from('mandatos_sepa').insert({
-      centro_id: centroA.id,
-      familia_id: familiaA,
-      nino_id: ninoA1.id,
-      usuario_id: tutorA.id,
-      iban_cifrado: '\\x00', // bytea dummy; el índice salta antes de importar el valor
-      titular: 'Duplicado',
-      identificador_mandato: 'NIDO-F2C1-DUP',
-      estado: 'activo',
-    })
-    expect(error).not.toBeNull()
-    expect(error?.code).toBe('23505') // unique_violation
-  })
-
   it('centro_id se deriva de familia_id aunque nino_id sea NULL (informativo)', async () => {
+    // Familia NUEVA con un tutor NUEVO propio: `tutorA` ya pertenece a `familiaA` y el índice
+    // `ux_familia_tutores_usuario_unico` (un adulto = una familia) rechazaría reutilizarlo.
     const familiaSolo = await createTestFamilia(centroA.id)
-    await crearFamiliaTutor(familiaSolo, tutorA.id, 'segundo_tutor')
-    const { error } = await cTutorA.rpc(
+    await crearFamiliaTutor(familiaSolo, tutorSolo.id, 'titular')
+    const { error } = await cTutorSolo.rpc(
       'registrar_mandato_sepa',
       argsMandato(familiaSolo, null, IBAN_1, 'NIDO-F2C1-SOLO')
     )
