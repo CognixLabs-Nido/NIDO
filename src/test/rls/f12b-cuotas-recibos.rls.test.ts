@@ -115,7 +115,8 @@ describe.skipIf(!APPLIED)(
             centro_id: centroA.id,
             nombre: 'Comedor',
             tipo_concepto: 'diario',
-            precio_diario_centimos: 600,
+            tipo_valor: 'fijo',
+            importe_centimos: 600,
             servicio: 'comedor',
           })
           .select('id')
@@ -138,7 +139,8 @@ describe.skipIf(!APPLIED)(
             centro_id: centroA.id,
             nombre: 'Profe intento',
             tipo_concepto: 'mensual',
-            precio_mensual_centimos: 100,
+            tipo_valor: 'fijo',
+            importe_centimos: 100,
           })
           .select('id')
           .maybeSingle()

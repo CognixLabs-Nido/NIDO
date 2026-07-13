@@ -9,9 +9,13 @@ export interface ConceptoCobroListItem {
   id: string
   nombre: string
   tipo_concepto: Database['public']['Enums']['tipo_concepto']
-  precio_mensual_centimos: number | null
-  precio_diario_centimos: number | null
+  signo: number
+  tipo_valor: string
+  ambito: string
+  importe_centimos: number | null
+  porcentaje_bp: number | null
   servicio: Database['public']['Enums']['servicio_diario'] | null
+  concepto_base_id: string | null
   activo: boolean
 }
 
@@ -35,7 +39,7 @@ export async function getConceptosCobroCore(
   const { data } = await supabase
     .from('conceptos_cobro')
     .select(
-      'id, nombre, tipo_concepto, precio_mensual_centimos, precio_diario_centimos, servicio, activo'
+      'id, nombre, tipo_concepto, signo, tipo_valor, ambito, importe_centimos, porcentaje_bp, servicio, concepto_base_id, activo'
     )
     .eq('centro_id', centroId)
     .is('deleted_at', null)

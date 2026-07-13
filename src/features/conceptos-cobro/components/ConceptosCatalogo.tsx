@@ -34,13 +34,29 @@ interface Props {
   conceptos: ConceptoCobroListItem[]
 }
 
+/** Valor legible del concepto: signo (− si descuento) + importe fijo (€/día si diario) o %. */
+function formatValor(c: ConceptoCobroListItem, t: ReturnType<typeof useTranslations>): string {
+  const prefijo = c.signo < 0 ? '−' : ''
+  if (c.tipo_valor === 'porcentaje') {
+    return `${prefijo}${(c.porcentaje_bp ?? 0) / 100}%`
+  }
+  const euros = formatEuros(c.importe_centimos ?? 0)
+  return c.tipo_concepto === 'diario'
+    ? `${prefijo}${t('precio_por_dia', { precio: euros })}`
+    : `${prefijo}${euros}`
+}
+
 export function ConceptosCatalogo({ centroId, conceptos }: Props) {
   const t = useTranslations('admin.cuotas')
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <ConceptoFormDialog centroId={centroId} trigger={<Button>{t('nuevo')}</Button>} />
+        <ConceptoFormDialog
+          centroId={centroId}
+          conceptos={conceptos}
+          trigger={<Button>{t('nuevo')}</Button>}
+        />
       </div>
 
       {conceptos.length === 0 ? (
@@ -60,7 +76,7 @@ export function ConceptosCatalogo({ centroId, conceptos }: Props) {
               </TableHeader>
               <TableBody>
                 {conceptos.map((c) => (
-                  <ConceptoRow key={c.id} centroId={centroId} concepto={c} />
+                  <ConceptoRow key={c.id} centroId={centroId} concepto={c} conceptos={conceptos} />
                 ))}
               </TableBody>
             </Table>
@@ -74,9 +90,11 @@ export function ConceptosCatalogo({ centroId, conceptos }: Props) {
 function ConceptoRow({
   centroId,
   concepto,
+  conceptos,
 }: {
   centroId: string
   concepto: ConceptoCobroListItem
+  conceptos: ConceptoCobroListItem[]
 }) {
   const t = useTranslations('admin.cuotas')
   const tErrors = useTranslations()
@@ -95,11 +113,7 @@ function ConceptoRow({
       <TableCell>
         <Badge variant="secondary">{t(`tipos.${concepto.tipo_concepto}`)}</Badge>
       </TableCell>
-      <TableCell>
-        {concepto.tipo_concepto === 'diario'
-          ? t('precio_por_dia', { precio: formatEuros(concepto.precio_diario_centimos ?? 0) })
-          : formatEuros(concepto.precio_mensual_centimos ?? 0)}
-      </TableCell>
+      <TableCell>{formatValor(concepto, t)}</TableCell>
       <TableCell>
         <Checkbox
           checked={concepto.activo}
@@ -113,6 +127,7 @@ function ConceptoRow({
           <ConceptoFormDialog
             centroId={centroId}
             concepto={concepto}
+            conceptos={conceptos}
             trigger={
               <Button variant="outline" size="sm">
                 {t('editar')}

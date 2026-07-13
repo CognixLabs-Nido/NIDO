@@ -362,7 +362,14 @@
         "nino": "Niño/a",
         "metodo": "Método de pago",
         "conceptos": "Conceptos",
-        "modalidad": "Modalidad"
+        "modalidad": "Modalidad",
+        "signo": "Cobro o descuento",
+        "tipo_valor": "Tipo de valor",
+        "importe": "Importe (€)",
+        "porcentaje": "Porcentaje (%)",
+        "ambito": "Ámbito",
+        "concepto_base": "Concepto base",
+        "concepto_base_placeholder": "Elige el concepto al que se aplica"
       },
       "tipos": {
         "mensual": "Mensual",
@@ -437,7 +444,19 @@
           "periodo": "Periodo"
         }
       },
-      "tab_resumen": "Resumen"
+      "tab_resumen": "Resumen",
+      "signos": {
+        "cobro": "Cobro",
+        "descuento": "Descuento"
+      },
+      "valores": {
+        "fijo": "Importe fijo",
+        "porcentaje": "Porcentaje"
+      },
+      "ambitos": {
+        "nino": "Por niño",
+        "familia": "Por familia"
+      }
     },
     "aulas": {
       "title": "Aulas",
@@ -1062,7 +1081,17 @@
       "precio_largo": "Precio demasiado alto",
       "precio_requerido": "Introduce el precio",
       "precio_diario_requerido": "Introduce el precio por día",
-      "servicio_requerido": "Elige el servicio que factura"
+      "servicio_requerido": "Elige el servicio que factura",
+      "porcentaje_invalido": "Porcentaje inválido",
+      "porcentaje_negativo": "El porcentaje no puede ser negativo",
+      "porcentaje_largo": "El porcentaje no puede superar 100",
+      "signo_invalido": "Selecciona cobro o descuento",
+      "tipo_valor_invalido": "Selecciona el tipo de valor",
+      "ambito_invalido": "Selecciona el ámbito",
+      "importe_requerido": "Indica el importe",
+      "porcentaje_requerido": "Indica el porcentaje",
+      "concepto_base_requerido": "Un descuento porcentual necesita un concepto base",
+      "concepto_base_no_permitido": "Solo un descuento porcentual lleva concepto base"
     },
     "errors": {
       "nombre_duplicado": "Ya existe un concepto con ese nombre en el centro.",

@@ -36,9 +36,11 @@ import { centimosAEuros } from '@/shared/lib/format-money'
 import { actualizarConcepto } from '../actions/actualizar-concepto'
 import { crearConcepto } from '../actions/crear-concepto'
 import {
+  AMBITOS,
   conceptoCobroSchema,
   SERVICIOS_DIARIOS,
   TIPOS_CONCEPTO,
+  TIPOS_VALOR,
   type ConceptoCobroInput,
 } from '../schemas/concepto-cobro'
 import type { ConceptoCobroListItem } from '../queries/get-conceptos-cobro'
@@ -47,13 +49,12 @@ interface Props {
   centroId: string
   /** Si viene, el diálogo edita ese concepto; si no, crea uno nuevo. */
   concepto?: ConceptoCobroListItem
+  /** Catálogo del centro (para el selector de concepto base de un descuento porcentual). */
+  conceptos: ConceptoCobroListItem[]
   trigger: ReactElement
 }
 
-const eurosOrNull = (centimos: number | null | undefined): number | null =>
-  centimos == null ? null : centimosAEuros(centimos)
-
-export function ConceptoFormDialog({ centroId, concepto, trigger }: Props) {
+export function ConceptoFormDialog({ centroId, concepto, conceptos, trigger }: Props) {
   const t = useTranslations('admin.cuotas')
   const tErrors = useTranslations()
   const [open, setOpen] = useState(false)
@@ -64,21 +65,41 @@ export function ConceptoFormDialog({ centroId, concepto, trigger }: Props) {
     resolver: zodResolver(conceptoCobroSchema),
     defaultValues: {
       nombre: concepto?.nombre ?? '',
+      signo: concepto?.signo === -1 ? -1 : 1,
+      tipo_valor: (concepto?.tipo_valor as 'fijo' | 'porcentaje') ?? 'fijo',
       tipo_concepto: concepto?.tipo_concepto ?? 'mensual',
-      precio_mensual_euros: eurosOrNull(concepto?.precio_mensual_centimos),
-      precio_diario_euros: eurosOrNull(concepto?.precio_diario_centimos),
+      ambito: (concepto?.ambito as 'nino' | 'familia') ?? 'nino',
+      importe_euros:
+        concepto?.importe_centimos != null ? centimosAEuros(concepto.importe_centimos) : null,
+      porcentaje: concepto?.porcentaje_bp != null ? concepto.porcentaje_bp / 100 : null,
       servicio: concepto?.servicio ?? null,
+      concepto_base_id: concepto?.concepto_base_id ?? null,
       activo: concepto?.activo ?? true,
     },
   })
 
-  const tipo = useWatch({ control: form.control, name: 'tipo_concepto' })
-  const esDiario = tipo === 'diario'
+  const signo = useWatch({ control: form.control, name: 'signo' })
+  const tipoValor = useWatch({ control: form.control, name: 'tipo_valor' })
+  const tipoConcepto = useWatch({ control: form.control, name: 'tipo_concepto' })
+  const esDiario = tipoConcepto === 'diario'
+  const esPorcentaje = tipoValor === 'porcentaje'
+  const esDescuentoPorcentual = Number(signo) === -1 && esPorcentaje
+
+  const signoItems = [
+    { value: '1', label: t('signos.cobro') },
+    { value: '-1', label: t('signos.descuento') },
+  ]
+  const valorItems = TIPOS_VALOR.map((value) => ({ value, label: t(`valores.${value}`) }))
   const tipoItems = TIPOS_CONCEPTO.map((value) => ({ value, label: t(`tipos.${value}`) }))
+  const ambitoItems = AMBITOS.map((value) => ({ value, label: t(`ambitos.${value}`) }))
   const servicioItems = SERVICIOS_DIARIOS.map((value) => ({
     value,
     label: t(`servicios.${value}`),
   }))
+  // Base: cualquier concepto del centro salvo el que se edita (evita auto-referencia).
+  const baseItems = conceptos
+    .filter((c) => c.id !== concepto?.id)
+    .map((c) => ({ value: c.id, label: c.nombre }))
 
   function onSubmit(values: ConceptoCobroInput) {
     startTransition(async () => {
@@ -120,6 +141,109 @@ export function ConceptoFormDialog({ centroId, concepto, trigger }: Props) {
 
             <FormField
               control={form.control}
+              name="signo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('fields.signo')}</FormLabel>
+                  <Select
+                    items={signoItems}
+                    value={String(field.value)}
+                    onValueChange={(v) => field.onChange(Number(v))}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {signoItems.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="tipo_valor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('fields.tipo_valor')}</FormLabel>
+                  <Select items={valorItems} value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {valorItems.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {esPorcentaje ? (
+              <FormField
+                control={form.control}
+                name="porcentaje"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('fields.porcentaje')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.01}
+                        inputMode="decimal"
+                        value={field.value == null || Number.isNaN(field.value) ? '' : field.value}
+                        onChange={(e) =>
+                          field.onChange(e.target.value === '' ? null : Number(e.target.value))
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <FormField
+                control={form.control}
+                name="importe_euros"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('fields.importe')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        inputMode="decimal"
+                        value={field.value == null || Number.isNaN(field.value) ? '' : field.value}
+                        onChange={(e) =>
+                          field.onChange(e.target.value === '' ? null : Number(e.target.value))
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={form.control}
               name="tipo_concepto"
               render={({ field }) => (
                 <FormItem>
@@ -144,87 +268,91 @@ export function ConceptoFormDialog({ centroId, concepto, trigger }: Props) {
             />
 
             {esDiario && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="precio_diario_euros"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('fields.precio_diario')}</FormLabel>
+              <FormField
+                control={form.control}
+                name="servicio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('fields.servicio')}</FormLabel>
+                    <Select
+                      items={servicioItems}
+                      value={field.value ?? undefined}
+                      onValueChange={field.onChange}
+                    >
                       <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          step={0.01}
-                          inputMode="decimal"
-                          value={
-                            field.value == null || Number.isNaN(field.value) ? '' : field.value
-                          }
-                          onChange={(e) =>
-                            field.onChange(e.target.value === '' ? null : Number(e.target.value))
-                          }
-                        />
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('fields.servicio_placeholder')} />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="servicio"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('fields.servicio')}</FormLabel>
-                      <Select
-                        items={servicioItems}
-                        value={field.value ?? undefined}
-                        onValueChange={field.onChange}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t('fields.servicio_placeholder')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {servicioItems.map((item) => (
-                            <SelectItem key={item.value} value={item.value}>
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
+                      <SelectContent>
+                        {servicioItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
 
             <FormField
               control={form.control}
-              name="precio_mensual_euros"
+              name="ambito"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    {esDiario ? t('fields.precio_mensual_opcional') : t('fields.precio')}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      step={0.01}
-                      inputMode="decimal"
-                      value={field.value == null || Number.isNaN(field.value) ? '' : field.value}
-                      onChange={(e) =>
-                        field.onChange(e.target.value === '' ? null : Number(e.target.value))
-                      }
-                    />
-                  </FormControl>
+                  <FormLabel>{t('fields.ambito')}</FormLabel>
+                  <Select items={ambitoItems} value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {ambitoItems.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {esDescuentoPorcentual && (
+              <FormField
+                control={form.control}
+                name="concepto_base_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('fields.concepto_base')}</FormLabel>
+                    <Select
+                      items={baseItems}
+                      value={field.value ?? undefined}
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('fields.concepto_base_placeholder')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {baseItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

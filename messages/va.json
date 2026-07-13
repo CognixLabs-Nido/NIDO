@@ -362,7 +362,14 @@
         "nino": "Xiquet/a",
         "metodo": "Mètode de pagament",
         "conceptos": "Conceptes",
-        "modalidad": "Modalitat"
+        "modalidad": "Modalitat",
+        "signo": "Cobrament o descompte",
+        "tipo_valor": "Tipus de valor",
+        "importe": "Import (€)",
+        "porcentaje": "Percentatge (%)",
+        "ambito": "Àmbit",
+        "concepto_base": "Concepte base",
+        "concepto_base_placeholder": "Tria el concepte al qual s'aplica"
       },
       "tipos": {
         "mensual": "Mensual",
@@ -437,7 +444,19 @@
           "periodo": "Període"
         }
       },
-      "tab_resumen": "Resum"
+      "tab_resumen": "Resum",
+      "signos": {
+        "cobro": "Cobrament",
+        "descuento": "Descompte"
+      },
+      "valores": {
+        "fijo": "Import fix",
+        "porcentaje": "Percentatge"
+      },
+      "ambitos": {
+        "nino": "Per xiquet",
+        "familia": "Per família"
+      }
     },
     "aulas": {
       "title": "Aules",
@@ -1062,7 +1081,17 @@
       "precio_largo": "Preu massa alt",
       "precio_requerido": "Introdueix el preu",
       "precio_diario_requerido": "Introdueix el preu per dia",
-      "servicio_requerido": "Tria el servei que factura"
+      "servicio_requerido": "Tria el servei que factura",
+      "porcentaje_invalido": "Percentatge no vàlid",
+      "porcentaje_negativo": "El percentatge no pot ser negatiu",
+      "porcentaje_largo": "El percentatge no pot superar 100",
+      "signo_invalido": "Selecciona cobrament o descompte",
+      "tipo_valor_invalido": "Selecciona el tipus de valor",
+      "ambito_invalido": "Selecciona l'àmbit",
+      "importe_requerido": "Indica l'import",
+      "porcentaje_requerido": "Indica el percentatge",
+      "concepto_base_requerido": "Un descompte percentual necessita un concepte base",
+      "concepto_base_no_permitido": "Només un descompte percentual porta concepte base"
     },
     "errors": {
       "nombre_duplicado": "Ja existeix un concepte amb eixe nom al centre.",

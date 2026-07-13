@@ -1,98 +1,96 @@
 import { describe, expect, it } from 'vitest'
 
-import { conceptoCobroSchema } from '../schemas/concepto-cobro'
+import { conceptoCobroSchema, type ConceptoCobroInput } from '../schemas/concepto-cobro'
 
-const base = { nombre: 'Cuota', activo: true }
+// F-4-0: modelo único. Base válida (cobro fijo mensual por niño); cada test sobreescribe.
+const base: ConceptoCobroInput = {
+  nombre: 'Cuota',
+  signo: 1,
+  tipo_valor: 'fijo',
+  tipo_concepto: 'mensual',
+  ambito: 'nino',
+  importe_euros: 290,
+  porcentaje: null,
+  servicio: null,
+  concepto_base_id: null,
+  activo: true,
+}
 
-describe('conceptoCobroSchema — coherencia precio/servicio por tipo', () => {
-  it('mensual con precio mensual es válido', () => {
-    const r = conceptoCobroSchema.safeParse({
-      ...base,
-      tipo_concepto: 'mensual',
-      precio_mensual_euros: 290,
-      precio_diario_euros: null,
-      servicio: null,
+const parse = (over: Partial<ConceptoCobroInput>) =>
+  conceptoCobroSchema.safeParse({ ...base, ...over })
+
+describe('conceptoCobroSchema — modelo único (fijo/porcentaje/descuento)', () => {
+  it('cobro fijo mensual por niño es válido', () => {
+    expect(parse({}).success).toBe(true)
+  })
+
+  it('fijo sin importe falla (importe_requerido)', () => {
+    const r = parse({ tipo_valor: 'fijo', importe_euros: null })
+    expect(r.success).toBe(false)
+    if (!r.success)
+      expect(r.error.issues[0]?.message).toBe('conceptos_cobro.validation.importe_requerido')
+  })
+
+  it('porcentaje sin porcentaje falla (porcentaje_requerido)', () => {
+    const r = parse({ tipo_valor: 'porcentaje', importe_euros: null, porcentaje: null })
+    expect(r.success).toBe(false)
+    if (!r.success)
+      expect(r.error.issues[0]?.message).toBe('conceptos_cobro.validation.porcentaje_requerido')
+  })
+
+  it('descuento porcentual con concepto base es válido', () => {
+    const r = parse({
+      signo: -1,
+      tipo_valor: 'porcentaje',
+      importe_euros: null,
+      porcentaje: 10,
+      concepto_base_id: '11111111-1111-4111-8111-111111111111',
     })
     expect(r.success).toBe(true)
   })
 
-  it('mensual sin precio mensual falla', () => {
-    const r = conceptoCobroSchema.safeParse({
-      ...base,
-      tipo_concepto: 'mensual',
-      precio_mensual_euros: null,
-      precio_diario_euros: null,
-      servicio: null,
+  it('descuento porcentual SIN concepto base falla (concepto_base_requerido)', () => {
+    const r = parse({
+      signo: -1,
+      tipo_valor: 'porcentaje',
+      importe_euros: null,
+      porcentaje: 10,
+      concepto_base_id: null,
     })
     expect(r.success).toBe(false)
-    if (!r.success) {
-      expect(r.error.issues[0]?.message).toBe('conceptos_cobro.validation.precio_requerido')
-    }
+    if (!r.success)
+      expect(r.error.issues[0]?.message).toBe('conceptos_cobro.validation.concepto_base_requerido')
   })
 
-  it('diario con precio diario + servicio es válido', () => {
-    const r = conceptoCobroSchema.safeParse({
-      ...base,
-      tipo_concepto: 'diario',
-      precio_mensual_euros: null,
-      precio_diario_euros: 6,
-      servicio: 'comedor',
-    })
+  it('un cobro (no descuento porcentual) con concepto base falla (concepto_base_no_permitido)', () => {
+    const r = parse({ concepto_base_id: '11111111-1111-4111-8111-111111111111' })
+    expect(r.success).toBe(false)
+    if (!r.success)
+      expect(r.error.issues[0]?.message).toBe(
+        'conceptos_cobro.validation.concepto_base_no_permitido'
+      )
+  })
+
+  it('un descuento FIJO no lleva concepto base (válido sin base)', () => {
+    const r = parse({ signo: -1, tipo_valor: 'fijo', importe_euros: 5, concepto_base_id: null })
     expect(r.success).toBe(true)
   })
 
-  it('diario sin servicio falla', () => {
-    const r = conceptoCobroSchema.safeParse({
-      ...base,
-      tipo_concepto: 'diario',
-      precio_mensual_euros: null,
-      precio_diario_euros: 6,
-      servicio: null,
-    })
-    expect(r.success).toBe(false)
+  it('diario exige servicio', () => {
+    expect(parse({ tipo_concepto: 'diario', servicio: null }).success).toBe(false)
+    expect(parse({ tipo_concepto: 'diario', importe_euros: 6, servicio: 'comedor' }).success).toBe(
+      true
+    )
   })
 
-  it('diario sin precio diario falla', () => {
-    const r = conceptoCobroSchema.safeParse({
-      ...base,
-      tipo_concepto: 'diario',
-      precio_mensual_euros: null,
-      precio_diario_euros: null,
-      servicio: 'comedor',
-    })
-    expect(r.success).toBe(false)
+  it('importe negativo / porcentaje >100 fallan', () => {
+    expect(parse({ importe_euros: -1 }).success).toBe(false)
+    expect(parse({ tipo_valor: 'porcentaje', importe_euros: null, porcentaje: 150 }).success).toBe(
+      false
+    )
   })
 
-  it('esporádico con precio mensual (precio único) es válido', () => {
-    const r = conceptoCobroSchema.safeParse({
-      ...base,
-      tipo_concepto: 'esporadico',
-      precio_mensual_euros: 45,
-      precio_diario_euros: null,
-      servicio: null,
-    })
-    expect(r.success).toBe(true)
-  })
-
-  it('precio NaN (input vacío) se trata como ausente y falla si es requerido', () => {
-    const r = conceptoCobroSchema.safeParse({
-      ...base,
-      tipo_concepto: 'mensual',
-      precio_mensual_euros: Number.NaN,
-      precio_diario_euros: null,
-      servicio: null,
-    })
-    expect(r.success).toBe(false)
-  })
-
-  it('precio negativo falla', () => {
-    const r = conceptoCobroSchema.safeParse({
-      ...base,
-      tipo_concepto: 'mensual',
-      precio_mensual_euros: -1,
-      precio_diario_euros: null,
-      servicio: null,
-    })
-    expect(r.success).toBe(false)
+  it('importe NaN (input vacío) se trata como ausente y falla', () => {
+    expect(parse({ importe_euros: Number.NaN }).success).toBe(false)
   })
 })

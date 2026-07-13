@@ -1313,14 +1313,13 @@ export type Database = {
           ambito: string
           aplicacion: string
           centro_id: string
+          concepto_base_id: string | null
           created_at: string
           deleted_at: string | null
           id: string
           importe_centimos: number | null
           nombre: string
           porcentaje_bp: number | null
-          precio_diario_centimos: number | null
-          precio_mensual_centimos: number | null
           servicio: Database["public"]["Enums"]["servicio_diario"] | null
           signo: number
           tipo_concepto: Database["public"]["Enums"]["tipo_concepto"]
@@ -1332,14 +1331,13 @@ export type Database = {
           ambito?: string
           aplicacion?: string
           centro_id: string
+          concepto_base_id?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
           importe_centimos?: number | null
           nombre: string
           porcentaje_bp?: number | null
-          precio_diario_centimos?: number | null
-          precio_mensual_centimos?: number | null
           servicio?: Database["public"]["Enums"]["servicio_diario"] | null
           signo?: number
           tipo_concepto: Database["public"]["Enums"]["tipo_concepto"]
@@ -1351,14 +1349,13 @@ export type Database = {
           ambito?: string
           aplicacion?: string
           centro_id?: string
+          concepto_base_id?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
           importe_centimos?: number | null
           nombre?: string
           porcentaje_bp?: number | null
-          precio_diario_centimos?: number | null
-          precio_mensual_centimos?: number | null
           servicio?: Database["public"]["Enums"]["servicio_diario"] | null
           signo?: number
           tipo_concepto?: Database["public"]["Enums"]["tipo_concepto"]
@@ -1371,6 +1368,13 @@ export type Database = {
             columns: ["centro_id"]
             isOneToOne: false
             referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conceptos_cobro_concepto_base_id_fkey"
+            columns: ["concepto_base_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_cobro"
             referencedColumns: ["id"]
           },
         ]
