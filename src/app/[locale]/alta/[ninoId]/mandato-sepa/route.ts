@@ -172,6 +172,11 @@ export async function POST(
   if (rpcErr) {
     // El PDF queda en su ruta determinista (se sobrescribe en el próximo intento).
     if (/no autorizado|42501/i.test(rpcErr.message)) return err('alta.errors.no_autorizado', 403)
+    // F-2c-1: la familia ya tiene un mandato ACTIVO con OTRO IBAN → registrar no pisa el
+    // histórico. El cambio de cuenta va por sustituir_mandato_sepa (2c-3/2c-4). Se propaga
+    // como conflicto legible (no 500 silencioso).
+    if (/mandato_activo_otro_iban/i.test(rpcErr.message))
+      return err('alta.sepa.errors.mandato_activo_otro_iban', 409)
     logger.warn('mandato-sepa: rpc', rpcErr.message)
     return err('alta.sepa.errors.guardado', 500)
   }

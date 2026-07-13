@@ -115,9 +115,10 @@ CREATE OR REPLACE FUNCTION public.registrar_mandato_sepa(
 ) RETURNS uuid
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE
-  v_clave text := public._get_sepa_key();
-  v_uid   uuid := auth.uid();
-  v_id    uuid;
+  v_clave       text := public._get_sepa_key();
+  v_uid         uuid := auth.uid();
+  v_id          uuid;
+  v_iban_actual text;
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'No autorizado';
@@ -131,13 +132,24 @@ BEGIN
     RAISE EXCEPTION 'IBAN inválido';
   END IF;
 
-  -- Mandato ACTIVO de la familia (no por nino+usuario). Si existe → upsert-in-place.
-  SELECT id INTO v_id
+  -- Mandato ACTIVO de la familia (no por nino+usuario). Se descifra su IBAN para
+  -- decidir: mismo IBAN = reintento del alta (UPDATE in-place, sin ensuciar histórico);
+  -- IBAN distinto = cambio real de cuenta → NO se pisa aquí, se exige sustituir_mandato_sepa
+  -- (revoca + inserta, con histórico). NO se compara `iban_cifrado` directamente:
+  -- pgp_sym_encrypt no es determinista (mismo IBAN cifra distinto) → hay que descifrar.
+  SELECT id, pgp_sym_decrypt(iban_cifrado, v_clave) INTO v_id, v_iban_actual
   FROM public.mandatos_sepa
   WHERE familia_id = p_familia_id AND estado = 'activo' AND deleted_at IS NULL
   LIMIT 1;
 
   IF v_id IS NOT NULL THEN
+    -- Comparación en CLARO normalizada (sin espacios/tabuladores, mayúsculas) por si el
+    -- tecleo trae espacios. Distinto → error claro; el cambio de cuenta va por sustituir.
+    IF upper(regexp_replace(v_iban_actual, '\s', '', 'g'))
+       <> upper(regexp_replace(p_iban, '\s', '', 'g')) THEN
+      RAISE EXCEPTION 'mandato_activo_otro_iban'
+        USING HINT = 'existe un mandato activo con otro IBAN; usa sustituir_mandato_sepa';
+    END IF;
     UPDATE public.mandatos_sepa SET
       nino_id               = p_nino_id,
       usuario_id            = v_uid,

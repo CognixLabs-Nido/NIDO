@@ -153,21 +153,71 @@ describe.skipIf(!APPLIED)('F-2c-1 — mandato SEPA de FAMILIA', () => {
     expect(data![0].centro_id).toBe(centroA.id)
   })
 
-  it('el 2º registrar en la misma familia es upsert-in-place: sigue 1 activo (idempotente)', async () => {
+  it('registrar con el MISMO IBAN (reintento del alta) es UPDATE in-place: 1 activo, sin fila revocada', async () => {
+    // Mismo IBAN_1 pero con espacios y otro identificador → normaliza y ACTUALIZA en su sitio
+    // (no ensucia histórico). Prueba también la normalización (quita espacios, upper).
     const { error } = await cTutorA.rpc(
       'registrar_mandato_sepa',
-      argsMandato(familiaA, ninoA1.id, IBAN_2, 'NIDO-F2C1-2')
+      argsMandato(familiaA, ninoA1.id, 'ES76 2077 0024 0031 0257 5766', 'NIDO-F2C1-1B')
     )
     expect(error).toBeNull()
 
-    const { data } = await serviceClient
+    const { data: activos } = await serviceClient
       .from('mandatos_sepa')
       .select('id, identificador_mandato')
       .eq('familia_id', familiaA)
       .eq('estado', 'activo')
       .is('deleted_at', null)
-    expect(data).toHaveLength(1)
-    expect(data![0].identificador_mandato).toBe('NIDO-F2C1-2') // actualizado en su sitio
+    expect(activos).toHaveLength(1)
+    expect(activos![0].identificador_mandato).toBe('NIDO-F2C1-1B') // actualizado en su sitio
+
+    // No se generó histórico (ninguna fila 'revocado') por un reintento con el mismo IBAN.
+    const { data: revocados } = await serviceClient
+      .from('mandatos_sepa')
+      .select('id')
+      .eq('familia_id', familiaA)
+      .eq('estado', 'revocado')
+    expect(revocados ?? []).toHaveLength(0)
+  })
+
+  it('registrar con un IBAN DISTINTO estando la familia con mandato activo → RAISE, no pisa', async () => {
+    const { error } = await cTutorA.rpc(
+      'registrar_mandato_sepa',
+      argsMandato(familiaA, ninoA1.id, IBAN_2, 'NIDO-F2C1-OTRO')
+    )
+    expect(error).not.toBeNull()
+    expect(error?.message).toMatch(/mandato_activo_otro_iban/)
+
+    // El mandato activo NO cambió (sigue el reintento in-place NIDO-F2C1-1B) y no hay filas nuevas.
+    const { data: activos } = await serviceClient
+      .from('mandatos_sepa')
+      .select('id, identificador_mandato')
+      .eq('familia_id', familiaA)
+      .eq('estado', 'activo')
+      .is('deleted_at', null)
+    expect(activos).toHaveLength(1)
+    expect(activos![0].identificador_mandato).toBe('NIDO-F2C1-1B')
+    const { data: revocados } = await serviceClient
+      .from('mandatos_sepa')
+      .select('id')
+      .eq('familia_id', familiaA)
+      .eq('estado', 'revocado')
+    expect(revocados ?? []).toHaveLength(0)
+  })
+
+  it('el índice único rechaza un 2º mandato ACTIVO insertado a mano en la familia', async () => {
+    const { error } = await serviceClient.from('mandatos_sepa').insert({
+      centro_id: centroA.id,
+      familia_id: familiaA,
+      nino_id: ninoA1.id,
+      usuario_id: tutorA.id,
+      iban_cifrado: '\\x00', // bytea dummy; el índice salta antes de importar el valor
+      titular: 'Duplicado',
+      identificador_mandato: 'NIDO-F2C1-DUP',
+      estado: 'activo',
+    })
+    expect(error).not.toBeNull()
+    expect(error?.code).toBe('23505') // unique_violation
   })
 
   it('el índice único rechaza un 2º mandato ACTIVO insertado a mano en la familia', async () => {
