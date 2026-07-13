@@ -225,7 +225,8 @@
       "informes": "Informes",
       "personal": "Personal",
       "admisiones": "Admisiones",
-      "pendientes": "Validaciones"
+      "pendientes": "Validaciones",
+      "familias": "Familias"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -863,6 +864,85 @@
         "decidir": "No se pudo procesar la decisión. Inténtalo de nuevo.",
         "no_pendiente": "Este cambio ya no está pendiente.",
         "aplicar": "No se pudo aplicar el cambio. Se ha dejado pendiente para reintentar."
+      }
+    },
+    "familias": {
+      "title": "Familias",
+      "subtitle": "Gestiona las familias del centro: tutores, hijos y datos de contacto.",
+      "ver": "Ver",
+      "buscar_placeholder": "Buscar por etiqueta o titular…",
+      "empty": "No hay familias que mostrar.",
+      "resumen": "{hijos} hijos · {tutores} tutores",
+      "archivada_banner": "Familia archivada — solo lectura.",
+      "sin_cuenta": "Sin cuenta",
+      "dni_subido": "Subido",
+      "filtro": {
+        "todas": "Todas",
+        "activas": "Activas",
+        "inactivas": "Inactivas"
+      },
+      "estado": {
+        "activa": "Activa",
+        "archivada": "Archivada"
+      },
+      "roles": {
+        "titular": "Titular",
+        "segundo_tutor": "Segundo tutor"
+      },
+      "fields": {
+        "etiqueta": "Familia",
+        "titular": "Titular",
+        "hijos": "Hijos",
+        "estado": "Estado",
+        "acciones": "Acciones",
+        "nombre": "Nombre",
+        "email": "Email",
+        "direccion": "Dirección",
+        "direccion_calle": "Calle",
+        "direccion_numero": "Número",
+        "direccion_cp": "C.P.",
+        "direccion_ciudad": "Ciudad",
+        "dni": "DNI"
+      },
+      "tutores": {
+        "titulo": "Tutores",
+        "vacio": "Sin tutores registrados."
+      },
+      "hijos": {
+        "titulo": "Hijos",
+        "vacio": "Sin hijos en esta familia.",
+        "activo": "Activo",
+        "archivado": "Archivado"
+      },
+      "editar_etiqueta": {
+        "abrir": "Editar",
+        "title": "Editar etiqueta de la familia",
+        "guardar": "Guardar",
+        "guardando": "Guardando…",
+        "cancelar": "Cancelar",
+        "guardado": "Etiqueta actualizada"
+      },
+      "editar_tutor": {
+        "abrir": "Editar",
+        "title": "Editar perfil del tutor",
+        "guardar": "Guardar",
+        "guardando": "Guardando…",
+        "cancelar": "Cancelar",
+        "guardado": "Perfil actualizado"
+      },
+      "validation": {
+        "invalid": "Datos no válidos",
+        "etiqueta_requerida": "La etiqueta es obligatoria",
+        "etiqueta_larga": "La etiqueta es demasiado larga",
+        "nombre_requerido": "El nombre es obligatorio",
+        "nombre_largo": "El nombre es demasiado largo",
+        "email": "Email no válido"
+      },
+      "errors": {
+        "no_autorizado": "No tienes permiso para esta acción",
+        "no_encontrada": "Familia no encontrada",
+        "tutor_no_encontrado": "Tutor no encontrado",
+        "guardado": "No se pudo guardar"
       }
     }
   },

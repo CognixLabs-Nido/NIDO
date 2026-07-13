@@ -225,7 +225,8 @@
       "informes": "Reports",
       "personal": "Staff",
       "admisiones": "Admissions",
-      "pendientes": "Validations"
+      "pendientes": "Validations",
+      "familias": "Families"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -863,6 +864,85 @@
         "decidir": "The decision could not be processed. Please try again.",
         "no_pendiente": "This change is no longer pending.",
         "aplicar": "The change could not be applied. It has been left pending for retry."
+      }
+    },
+    "familias": {
+      "title": "Families",
+      "subtitle": "Manage the centre's families: guardians, children and contact details.",
+      "ver": "View",
+      "buscar_placeholder": "Search by label or main guardian…",
+      "empty": "No families to show.",
+      "resumen": "{hijos} children · {tutores} guardians",
+      "archivada_banner": "Archived family — read only.",
+      "sin_cuenta": "No account",
+      "dni_subido": "Uploaded",
+      "filtro": {
+        "todas": "All",
+        "activas": "Active",
+        "inactivas": "Inactive"
+      },
+      "estado": {
+        "activa": "Active",
+        "archivada": "Archived"
+      },
+      "roles": {
+        "titular": "Main guardian",
+        "segundo_tutor": "Second guardian"
+      },
+      "fields": {
+        "etiqueta": "Family",
+        "titular": "Main guardian",
+        "hijos": "Children",
+        "estado": "Status",
+        "acciones": "Actions",
+        "nombre": "Name",
+        "email": "Email",
+        "direccion": "Address",
+        "direccion_calle": "Street",
+        "direccion_numero": "Number",
+        "direccion_cp": "Postcode",
+        "direccion_ciudad": "City",
+        "dni": "ID document"
+      },
+      "tutores": {
+        "titulo": "Guardians",
+        "vacio": "No guardians registered."
+      },
+      "hijos": {
+        "titulo": "Children",
+        "vacio": "No children in this family.",
+        "activo": "Active",
+        "archivado": "Archived"
+      },
+      "editar_etiqueta": {
+        "abrir": "Edit",
+        "title": "Edit family label",
+        "guardar": "Save",
+        "guardando": "Saving…",
+        "cancelar": "Cancel",
+        "guardado": "Label updated"
+      },
+      "editar_tutor": {
+        "abrir": "Edit",
+        "title": "Edit guardian profile",
+        "guardar": "Save",
+        "guardando": "Saving…",
+        "cancelar": "Cancel",
+        "guardado": "Profile updated"
+      },
+      "validation": {
+        "invalid": "Invalid data",
+        "etiqueta_requerida": "The label is required",
+        "etiqueta_larga": "The label is too long",
+        "nombre_requerido": "The name is required",
+        "nombre_largo": "The name is too long",
+        "email": "Invalid email"
+      },
+      "errors": {
+        "no_autorizado": "You don't have permission for this action",
+        "no_encontrada": "Family not found",
+        "tutor_no_encontrado": "Guardian not found",
+        "guardado": "Could not save"
       }
     }
   },
