@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/types/database'
 import {
   asignarRol,
   clientFor,
@@ -29,6 +30,8 @@ import {
  */
 
 const APPLIED = process.env.F42_MIGRATION_APPLIED === '1'
+
+type AsignacionConceptoInsert = Database['public']['Tables']['asignacion_concepto']['Insert']
 
 // Inserta un niño con una familia CONCRETA (para familias con varios hijos).
 async function insertarNino(centroId: string, familiaId: string, nombre: string): Promise<string> {
@@ -126,9 +129,16 @@ describe.skipIf(!APPLIED)('F-4-2 — asignación permanente (asignacion_concepto
     })
 
     it('acepta asignación por NIÑO (XOR) y deriva centro_id del niño', async () => {
+      // centro_id se OMITE a propósito (cast): el trigger asignacion_concepto_set_centro_id
+      // debe derivarlo del niño. La aserción de abajo verifica esa derivación.
+      const payload: Omit<AsignacionConceptoInsert, 'centro_id'> = {
+        concepto_id: conceptoNino,
+        nino_id: ninoA.id,
+        origen: 'manual',
+      }
       const ins = await serviceClient
         .from('asignacion_concepto')
-        .insert({ concepto_id: conceptoNino, nino_id: ninoA.id, origen: 'manual' })
+        .insert(payload as AsignacionConceptoInsert)
         .select('id, centro_id')
         .single()
       expect(ins.error).toBeNull()
@@ -137,9 +147,15 @@ describe.skipIf(!APPLIED)('F-4-2 — asignación permanente (asignacion_concepto
     })
 
     it('acepta asignación por FAMILIA (XOR) y deriva centro_id de la familia', async () => {
+      // centro_id OMITIDO a propósito (cast): el trigger debe derivarlo de la familia.
+      const payload: Omit<AsignacionConceptoInsert, 'centro_id'> = {
+        concepto_id: conceptoFam,
+        familia_id: familiaA,
+        origen: 'automatico',
+      }
       const ins = await serviceClient
         .from('asignacion_concepto')
-        .insert({ concepto_id: conceptoFam, familia_id: familiaA, origen: 'automatico' })
+        .insert(payload as AsignacionConceptoInsert)
         .select('id, centro_id')
         .single()
       expect(ins.error).toBeNull()
@@ -150,7 +166,13 @@ describe.skipIf(!APPLIED)('F-4-2 — asignación permanente (asignacion_concepto
     it('rechaza niño Y familia a la vez (CHECK XOR)', async () => {
       const ins = await serviceClient
         .from('asignacion_concepto')
-        .insert({ concepto_id: conceptoNino, nino_id: ninoA.id, familia_id: familiaA, origen: 'manual' })
+        .insert({
+          centro_id: centroA.id,
+          concepto_id: conceptoNino,
+          nino_id: ninoA.id,
+          familia_id: familiaA,
+          origen: 'manual',
+        })
         .select('id')
       expect(ins.error).not.toBeNull()
     })
@@ -158,13 +180,13 @@ describe.skipIf(!APPLIED)('F-4-2 — asignación permanente (asignacion_concepto
     it('rechaza duplicado vivo (concepto + destino) — UNIQUE parcial', async () => {
       const a = await serviceClient
         .from('asignacion_concepto')
-        .insert({ concepto_id: conceptoNino, nino_id: ninoA.id, origen: 'manual' })
+        .insert({ centro_id: centroA.id, concepto_id: conceptoNino, nino_id: ninoA.id, origen: 'manual' })
         .select('id')
         .single()
       expect(a.error).toBeNull()
       const b = await serviceClient
         .from('asignacion_concepto')
-        .insert({ concepto_id: conceptoNino, nino_id: ninoA.id, origen: 'manual' })
+        .insert({ centro_id: centroA.id, concepto_id: conceptoNino, nino_id: ninoA.id, origen: 'manual' })
         .select('id')
       expect(b.error?.code).toBe('23505')
       await serviceClient.from('asignacion_concepto').delete().eq('id', a.data!.id)
@@ -205,7 +227,7 @@ describe.skipIf(!APPLIED)('F-4-2 — asignación permanente (asignacion_concepto
     it('el tutor NO puede leer ni escribir asignacion_concepto', async () => {
       const seed = await serviceClient
         .from('asignacion_concepto')
-        .insert({ concepto_id: conceptoNino, nino_id: ninoA.id, origen: 'manual' })
+        .insert({ centro_id: centroA.id, concepto_id: conceptoNino, nino_id: ninoA.id, origen: 'manual' })
         .select('id')
         .single()
       expect(seed.error).toBeNull()
