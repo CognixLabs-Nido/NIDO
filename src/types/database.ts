@@ -246,7 +246,7 @@ export type Database = {
         }
         Insert: {
           cantidad_default?: number
-          centro_id?: string
+          centro_id: string
           concepto_id: string
           created_at?: string
           deleted_at?: string | null
@@ -4038,7 +4038,6 @@ export type Database = {
         Args: { p_anio: number; p_centro_id: string; p_mes: number }
         Returns: string
       }
-      proponer_asignaciones: { Args: { p_centro_id: string }; Returns: number }
       contar_invitaciones_pendientes: { Args: never; Returns: number }
       contar_recordatorios_pendientes: { Args: never; Returns: number }
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
@@ -4198,6 +4197,7 @@ export type Database = {
       }
       organizador_de_cita: { Args: { p_cita_id: string }; Returns: string }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
+      proponer_asignaciones: { Args: { p_centro_id: string }; Returns: number }
       publicacion_de_media: { Args: { p_media_id: string }; Returns: string }
       publicacion_etiqueta_hijo_de: {
         Args: { p_publicacion_id: string }
