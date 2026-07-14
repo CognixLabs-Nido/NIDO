@@ -36,6 +36,9 @@ export async function registrarGastosDevolucion(
     .maybeSingle()
 
   if (!original) return fail('remesas.errors.no_encontrada')
+  // F-4-1: nino_id es opcional en el recibo familiar. Esta acción legacy por-niño (crear_recibo_
+  // esporádico) se reescribe a grano familia en la fase remesa; hasta entonces exige nino_id.
+  if (!original.nino_id) return fail('remesas.errors.gastos_failed')
 
   const lineas: Array<Record<string, string | number>> = [
     {

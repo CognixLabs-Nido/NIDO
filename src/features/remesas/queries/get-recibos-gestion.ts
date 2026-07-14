@@ -41,7 +41,9 @@ export async function getRecibosGestion(
 
   if (!recibos || recibos.length === 0) return []
 
-  const ninoIds = [...new Set(recibos.map((r) => r.nino_id))]
+  // F-4-1: nino_id es opcional en el recibo familiar. Esta gestión legacy por-niño se
+  // reescribe a grano familia en la fase remesa; hasta entonces se filtran los NULL.
+  const ninoIds = [...new Set(recibos.map((r) => r.nino_id).filter((x): x is string => x != null))]
   const { data: ninos } = await supabase
     .from('ninos')
     .select('id, nombre, apellidos')
@@ -52,7 +54,7 @@ export async function getRecibosGestion(
 
   return recibos.map((r) => ({
     id: r.id,
-    ninoNombre: nombrePorNino.get(r.nino_id) ?? '',
+    ninoNombre: r.nino_id ? (nombrePorNino.get(r.nino_id) ?? '') : '',
     totalCentimos: r.total_centimos,
     estado: r.estado,
     fechaEnvioBanco: r.fecha_envio_banco,

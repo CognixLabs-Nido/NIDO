@@ -298,6 +298,7 @@ describe.skipIf(!APPLIED)('F-2c-1 — mandato SEPA de FAMILIA', () => {
       .from('recibos')
       .insert({
         centro_id: centroA.id,
+        familia_id: familiaA, // F-4-1: recibos a grano familia (ninoA2 pertenece a familiaA)
         nino_id: ninoA2.id,
         anio: 2026,
         mes: 2,

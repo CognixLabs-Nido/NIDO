@@ -75,6 +75,7 @@ describe.skipIf(!APPLIED)('F12-B-5 — remesa SEPA (congelado afinado · RPCs)',
       .from('recibos')
       .insert({
         centro_id: centroA.id,
+        familia_id: ninoA.familia_id, // F-4-1: recibos a grano familia
         nino_id: ninoA.id,
         anio,
         mes,

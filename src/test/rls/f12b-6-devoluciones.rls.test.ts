@@ -33,7 +33,7 @@ const APPLIED = process.env.F12B_6_RLS_APPLIED === '1'
 
 describe.skipIf(!APPLIED)('F12-B-6 — devoluciones (CHECK + congelado)', () => {
   let centroA: { id: string }
-  let ninoA: { id: string }
+  let ninoA: { id: string; familia_id: string }
   let adminA: TestUser
   let cAdminA: SupabaseClient<Database>
   let reciboAbierto: string // mes abierto, para el CHECK
@@ -55,6 +55,7 @@ describe.skipIf(!APPLIED)('F12-B-6 — devoluciones (CHECK + congelado)', () => 
       .from('recibos')
       .insert({
         centro_id: centroA.id,
+        familia_id: ninoA.familia_id, // F-4-1: recibos a grano familia
         nino_id: ninoA.id,
         anio: 2025,
         mes: 4,
@@ -73,6 +74,7 @@ describe.skipIf(!APPLIED)('F12-B-6 — devoluciones (CHECK + congelado)', () => 
       .from('recibos')
       .insert({
         centro_id: centroA.id,
+        familia_id: ninoA.familia_id, // F-4-1: recibos a grano familia
         nino_id: ninoA.id,
         anio: 2025,
         mes: 3,
@@ -162,6 +164,7 @@ describe.skipIf(!APPLIED)('F12-B-6 — devoluciones (CHECK + congelado)', () => 
       .from('recibos')
       .insert({
         centro_id: centroA.id,
+        familia_id: ninoA.familia_id, // F-4-1: recibos a grano familia
         nino_id: ninoA.id,
         anio: 2025,
         mes: 3,

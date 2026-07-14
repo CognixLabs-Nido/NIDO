@@ -45,8 +45,12 @@ export async function getPivotePeriodo(
   }
   if (!recibos || recibos.length === 0) return PIVOTE_VACIA
 
-  const reciboIds = recibos.map((r) => r.id)
-  const ninoIds = [...new Set(recibos.map((r) => r.nino_id))]
+  // F-4-1: los recibos REGULARES pasan a grano familia (nino_id NULL). Este pivote por-niño
+  // se rehace a grano familia en F-4-4; hasta entonces solo incluye recibos con nino_id.
+  const recibosConNino = recibos.filter((r): r is typeof r & { nino_id: string } => r.nino_id != null)
+
+  const reciboIds = recibosConNino.map((r) => r.id)
+  const ninoIds = [...new Set(recibosConNino.map((r) => r.nino_id))]
 
   const [lineasRes, ninosRes, vinculosRes, conceptosRes] = await Promise.all([
     supabase
@@ -71,7 +75,7 @@ export async function getPivotePeriodo(
   )
   const conceptoNombre = new Map((conceptosRes.data ?? []).map((c) => [c.id, c.nombre]))
 
-  const recibosInput: ReciboPivoteInput[] = recibos.map((r) => ({
+  const recibosInput: ReciboPivoteInput[] = recibosConNino.map((r) => ({
     id: r.id,
     ninoId: r.nino_id,
     estado: r.estado,

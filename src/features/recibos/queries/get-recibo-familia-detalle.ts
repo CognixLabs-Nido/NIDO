@@ -58,8 +58,10 @@ export async function getReciboFamiliaDetalle(
   }
   if (!recibo) return null
 
+  // F-4-1: nino_id es opcional en el recibo familiar. El detalle familiar (varios hijos) se
+  // rehace en F-4-4; hasta entonces, si no hay nino_id, el nombre queda vacío.
   const [{ data: nino }, { data: lineas }] = await Promise.all([
-    supabase.from('ninos').select('nombre, apellidos').eq('id', recibo.nino_id).maybeSingle(),
+    supabase.from('ninos').select('nombre, apellidos').eq('id', recibo.nino_id ?? '').maybeSingle(),
     supabase
       .from('lineas_recibo')
       .select('id, descripcion, cantidad, precio_unitario_centimos, importe_centimos')
@@ -69,7 +71,7 @@ export async function getReciboFamiliaDetalle(
 
   return {
     id: recibo.id,
-    ninoId: recibo.nino_id,
+    ninoId: recibo.nino_id ?? '',
     ninoNombre: nino ? [nino.nombre, nino.apellidos].filter(Boolean).join(' ') : '',
     anio: recibo.anio,
     mes: recibo.mes,

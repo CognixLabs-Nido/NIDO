@@ -2383,6 +2383,7 @@ export type Database = {
           descripcion: string
           id: string
           importe_centimos: number
+          nino_id: string | null
           precio_unitario_centimos: number
           recibo_id: string
         }
@@ -2394,6 +2395,7 @@ export type Database = {
           descripcion: string
           id?: string
           importe_centimos: number
+          nino_id?: string | null
           precio_unitario_centimos: number
           recibo_id: string
         }
@@ -2405,6 +2407,7 @@ export type Database = {
           descripcion?: string
           id?: string
           importe_centimos?: number
+          nino_id?: string | null
           precio_unitario_centimos?: number
           recibo_id?: string
         }
@@ -2421,6 +2424,13 @@ export type Database = {
             columns: ["concepto_id"]
             isOneToOne: false
             referencedRelation: "conceptos_cobro"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lineas_recibo_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
             referencedColumns: ["id"]
           },
           {
@@ -3418,13 +3428,13 @@ export type Database = {
           devuelto_de_recibo_id: string | null
           es_esporadico: boolean
           estado: Database["public"]["Enums"]["estado_recibo"]
-          familia_id: string | null
+          familia_id: string
           fecha_devolucion: string | null
           fecha_envio_banco: string | null
           id: string
           mes: number
           metodo: Database["public"]["Enums"]["metodo_pago"] | null
-          nino_id: string
+          nino_id: string | null
           total_centimos: number
           updated_at: string
         }
@@ -3437,13 +3447,13 @@ export type Database = {
           devuelto_de_recibo_id?: string | null
           es_esporadico?: boolean
           estado?: Database["public"]["Enums"]["estado_recibo"]
-          familia_id?: string | null
+          familia_id: string
           fecha_devolucion?: string | null
           fecha_envio_banco?: string | null
           id?: string
           mes: number
           metodo?: Database["public"]["Enums"]["metodo_pago"] | null
-          nino_id: string
+          nino_id?: string | null
           total_centimos?: number
           updated_at?: string
         }
@@ -3456,13 +3466,13 @@ export type Database = {
           devuelto_de_recibo_id?: string | null
           es_esporadico?: boolean
           estado?: Database["public"]["Enums"]["estado_recibo"]
-          familia_id?: string | null
+          familia_id?: string
           fecha_devolucion?: string | null
           fecha_envio_banco?: string | null
           id?: string
           mes?: number
           metodo?: Database["public"]["Enums"]["metodo_pago"] | null
-          nino_id?: string
+          nino_id?: string | null
           total_centimos?: number
           updated_at?: string
         }
@@ -4489,6 +4499,7 @@ export type Database = {
       estado_plantilla_informe: "activa" | "archivada"
       estado_plantilla_menu: "borrador" | "publicada" | "archivada"
       estado_recibo:
+        | "borrador"
         | "pendiente_procesar"
         | "enviado_banco"
         | "devuelto"
@@ -4505,7 +4516,7 @@ export type Database = {
         | "finalizada"
         | "no_aplica"
       matricula_estado: "pendiente" | "lista" | "activa" | "baja"
-      metodo_pago: "sepa" | "efectivo" | "transferencia"
+      metodo_pago: "sepa" | "efectivo" | "transferencia" | "cheque_guarderia"
       modalidad_cobro: "mensual" | "diario"
       momento_comida: "desayuno" | "media_manana" | "comida" | "merienda"
       motivo_ausencia:
@@ -4770,6 +4781,7 @@ export const Constants = {
       estado_plantilla_informe: ["activa", "archivada"],
       estado_plantilla_menu: ["borrador", "publicada", "archivada"],
       estado_recibo: [
+        "borrador",
         "pendiente_procesar",
         "enviado_banco",
         "devuelto",
@@ -4788,7 +4800,7 @@ export const Constants = {
         "no_aplica",
       ],
       matricula_estado: ["pendiente", "lista", "activa", "baja"],
-      metodo_pago: ["sepa", "efectivo", "transferencia"],
+      metodo_pago: ["sepa", "efectivo", "transferencia", "cheque_guarderia"],
       modalidad_cobro: ["mensual", "diario"],
       momento_comida: ["desayuno", "media_manana", "comida", "merienda"],
       motivo_ausencia: [

@@ -39,7 +39,13 @@ export async function getRecibosSepaRemesables(
 
   if (!recibos || recibos.length === 0) return []
 
-  const ninoIds = [...new Set(recibos.map((r) => r.nino_id))]
+  // F-4-1: los recibos REGULARES pasan a grano familia (nino_id NULL). Esta selección de
+  // remesables legacy por-niño se reescribe a grano familia (leer recibos.familia_id) en la
+  // fase remesa; hasta entonces solo considera recibos con nino_id (esporádicos por-niño).
+  const recibosConNino = recibos.filter((r): r is typeof r & { nino_id: string } => r.nino_id != null)
+  if (recibosConNino.length === 0) return []
+
+  const ninoIds = [...new Set(recibosConNino.map((r) => r.nino_id))]
   // F-2c-1: el mandato cuelga de la familia → se resuelve por `ninos.familia_id`, no por
   // `nino_id`. Los mandatos activos se agrupan por `familia_id`; un recibo "tiene mandato"
   // si la familia de su niño tiene uno activo.
@@ -63,7 +69,7 @@ export async function getRecibosSepaRemesables(
   )
   const familiaPorNino = new Map((ninos ?? []).map((n) => [n.id, n.familia_id]))
 
-  return recibos
+  return recibosConNino
     .filter((r) => !remesados.has(r.id))
     .map((r) => {
       const familiaId = familiaPorNino.get(r.nino_id) ?? null
