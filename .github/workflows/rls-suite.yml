@@ -97,3 +97,4 @@ jobs:
           F2C2_MIGRATION_APPLIED: '1'
           F2C4_MIGRATION_APPLIED: '1'
           F41_MIGRATION_APPLIED: '1'
+          F42_MIGRATION_APPLIED: '1'

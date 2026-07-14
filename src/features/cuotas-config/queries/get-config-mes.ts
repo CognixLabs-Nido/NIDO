@@ -4,19 +4,19 @@ import { createClient } from '@/lib/supabase/server'
 import { getNinosPorCentro } from '@/features/ninos/queries/get-ninos'
 import type { Database } from '@/types/database'
 
-type ModalidadCobro = Database['public']['Enums']['modalidad_cobro']
 type MetodoPago = Database['public']['Enums']['metodo_pago']
 
 export interface ConfigNinoMes {
   nino_id: string
   nombre: string
   metodo: MetodoPago | null
-  /** conceptoId → modalidad fijada para ese niño/mes (solo los configurados). */
-  modalidades: Record<string, ModalidadCobro>
+  /** conceptoIds asignados PERMANENTEMENTE a ese niño (asignacion_concepto, sin mes). */
+  conceptosAsignados: string[]
 }
 
-// Configuración de cobro de un mes: por cada niño activo del centro, su método de pago
-// y sus modalidades por concepto (asignacion_cuota). Solo lectura para la UI de B-2.
+// F-4-2: configuración de cobro. Por cada niño activo del centro, su método de pago del
+// mes (metodo_pago_familia, sigue por mes) y sus conceptos ASIGNADOS de forma permanente
+// (asignacion_concepto, SIN mes). Solo lectura; el panel edita con asignar/desasignar.
 export async function getConfigMes(
   centroId: string,
   anio: number,
@@ -35,29 +35,31 @@ export async function getConfigMes(
       .eq('anio', anio)
       .eq('mes', mes)
       .is('deleted_at', null),
+    // Asignación permanente por niño (sin filtro de mes). Las asignaciones por FAMILIA
+    // (descuento hermanos) no se muestran en este panel por-niño (llega en F-4-4).
     supabase
-      .from('asignacion_cuota')
-      .select('nino_id, concepto_id, modalidad')
+      .from('asignacion_concepto')
+      .select('nino_id, concepto_id')
       .eq('centro_id', centroId)
-      .eq('anio', anio)
-      .eq('mes', mes)
+      .not('nino_id', 'is', null)
       .is('deleted_at', null),
   ])
 
   const metodoPorNino = new Map<string, MetodoPago>()
   for (const m of metodos ?? []) metodoPorNino.set(m.nino_id, m.metodo)
 
-  const modalidadesPorNino = new Map<string, Record<string, ModalidadCobro>>()
+  const conceptosPorNino = new Map<string, string[]>()
   for (const a of asignaciones ?? []) {
-    const actual = modalidadesPorNino.get(a.nino_id) ?? {}
-    actual[a.concepto_id] = a.modalidad
-    modalidadesPorNino.set(a.nino_id, actual)
+    if (!a.nino_id) continue
+    const actual = conceptosPorNino.get(a.nino_id) ?? []
+    actual.push(a.concepto_id)
+    conceptosPorNino.set(a.nino_id, actual)
   }
 
   return ninos.map((n) => ({
     nino_id: n.id,
     nombre: [n.nombre, n.apellidos].filter(Boolean).join(' '),
     metodo: metodoPorNino.get(n.id) ?? null,
-    modalidades: modalidadesPorNino.get(n.id) ?? {},
+    conceptosAsignados: conceptosPorNino.get(n.id) ?? [],
   }))
 }

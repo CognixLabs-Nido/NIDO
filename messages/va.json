@@ -457,6 +457,13 @@
       "ambitos": {
         "nino": "Per xiquet",
         "familia": "Per família"
+      },
+      "asignar_title": "Conceptes · {nombre}",
+      "conceptos_asignados": "{n} assignats",
+      "sin_conceptos_manuales": "No hi ha conceptes d'assignació manual actius. Crea'ls en la pestanya Conceptes.",
+      "estado_asignacion": {
+        "asignado": "Assignat",
+        "no_asignado": "No assignat"
       }
     },
     "aulas": {
@@ -1250,7 +1257,8 @@
       "invalid": "Dades no vàlides.",
       "no_autorizado": "No tens permís per a esta acció.",
       "modalidad_failed": "No s'ha pogut guardar la modalitat.",
-      "metodo_failed": "No s'ha pogut guardar el mètode de pagament."
+      "metodo_failed": "No s'ha pogut guardar el mètode de pagament.",
+      "asignacion_failed": "No s'ha pogut guardar l'assignació."
     }
   },
   "cierre_cobros": {

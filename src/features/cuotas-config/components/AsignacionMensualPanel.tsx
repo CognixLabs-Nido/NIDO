@@ -112,7 +112,7 @@ function NinoRow({
     })
   }
 
-  const nConfigurados = Object.keys(config.modalidades).length
+  const nConfigurados = config.conceptosAsignados.length
 
   return (
     <TableRow>
@@ -143,16 +143,14 @@ function NinoRow({
       <TableCell>
         <div className="flex items-center justify-end gap-2">
           <span className="text-muted-foreground text-xs">
-            {t('conceptos_configurados', { n: nConfigurados })}
+            {t('conceptos_asignados', { n: nConfigurados })}
           </span>
           <ConfigurarModalidadDialog
             centroId={centroId}
             ninoId={config.nino_id}
             ninoNombre={config.nombre}
-            anio={anio}
-            mes={mes}
             conceptos={conceptos}
-            modalidades={config.modalidades}
+            conceptosAsignados={config.conceptosAsignados}
           />
         </div>
       </TableCell>

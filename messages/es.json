@@ -457,6 +457,13 @@
       "ambitos": {
         "nino": "Por niño",
         "familia": "Por familia"
+      },
+      "asignar_title": "Conceptos · {nombre}",
+      "conceptos_asignados": "{n} asignados",
+      "sin_conceptos_manuales": "No hay conceptos de asignación manual activos. Créalos en la pestaña Conceptos.",
+      "estado_asignacion": {
+        "asignado": "Asignado",
+        "no_asignado": "No asignado"
       }
     },
     "aulas": {
@@ -1250,7 +1257,8 @@
       "invalid": "Datos no válidos.",
       "no_autorizado": "No tienes permiso para esta acción.",
       "modalidad_failed": "No se pudo guardar la modalidad.",
-      "metodo_failed": "No se pudo guardar el método de pago."
+      "metodo_failed": "No se pudo guardar el método de pago.",
+      "asignacion_failed": "No se pudo guardar la asignación."
     }
   },
   "cierre_cobros": {
