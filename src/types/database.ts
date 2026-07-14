@@ -228,10 +228,9 @@ export type Database = {
           },
         ]
       }
-      aplicaciones_concepto: {
+      asignacion_concepto: {
         Row: {
-          anio: number
-          cantidad: number
+          cantidad_default: number
           centro_id: string
           concepto_id: string
           created_at: string
@@ -239,29 +238,29 @@ export type Database = {
           familia_id: string | null
           id: string
           importe_override_centimos: number | null
-          mes: number
           nino_id: string | null
           origen: string
           updated_at: string
+          vigencia_desde: string | null
+          vigencia_hasta: string | null
         }
         Insert: {
-          anio: number
-          cantidad?: number
-          centro_id: string
+          cantidad_default?: number
+          centro_id?: string
           concepto_id: string
           created_at?: string
           deleted_at?: string | null
           familia_id?: string | null
           id?: string
           importe_override_centimos?: number | null
-          mes: number
           nino_id?: string | null
           origen: string
           updated_at?: string
+          vigencia_desde?: string | null
+          vigencia_hasta?: string | null
         }
         Update: {
-          anio?: number
-          cantidad?: number
+          cantidad_default?: number
           centro_id?: string
           concepto_id?: string
           created_at?: string
@@ -269,96 +268,36 @@ export type Database = {
           familia_id?: string | null
           id?: string
           importe_override_centimos?: number | null
-          mes?: number
           nino_id?: string | null
           origen?: string
           updated_at?: string
+          vigencia_desde?: string | null
+          vigencia_hasta?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "aplicaciones_concepto_centro_id_fkey"
+            foreignKeyName: "asignacion_concepto_centro_id_fkey"
             columns: ["centro_id"]
             isOneToOne: false
             referencedRelation: "centros"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "aplicaciones_concepto_concepto_id_fkey"
+            foreignKeyName: "asignacion_concepto_concepto_id_fkey"
             columns: ["concepto_id"]
             isOneToOne: false
             referencedRelation: "conceptos_cobro"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "aplicaciones_concepto_familia_id_fkey"
+            foreignKeyName: "asignacion_concepto_familia_id_fkey"
             columns: ["familia_id"]
             isOneToOne: false
             referencedRelation: "familias"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "aplicaciones_concepto_nino_id_fkey"
-            columns: ["nino_id"]
-            isOneToOne: false
-            referencedRelation: "ninos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      asignacion_cuota: {
-        Row: {
-          anio: number
-          centro_id: string
-          concepto_id: string
-          created_at: string
-          deleted_at: string | null
-          id: string
-          mes: number
-          modalidad: Database["public"]["Enums"]["modalidad_cobro"]
-          nino_id: string
-          updated_at: string
-        }
-        Insert: {
-          anio: number
-          centro_id: string
-          concepto_id: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          mes: number
-          modalidad: Database["public"]["Enums"]["modalidad_cobro"]
-          nino_id: string
-          updated_at?: string
-        }
-        Update: {
-          anio?: number
-          centro_id?: string
-          concepto_id?: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          mes?: number
-          modalidad?: Database["public"]["Enums"]["modalidad_cobro"]
-          nino_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "asignacion_cuota_centro_id_fkey"
-            columns: ["centro_id"]
-            isOneToOne: false
-            referencedRelation: "centros"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "asignacion_cuota_concepto_id_fkey"
-            columns: ["concepto_id"]
-            isOneToOne: false
-            referencedRelation: "conceptos_cobro"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "asignacion_cuota_nino_id_fkey"
+            foreignKeyName: "asignacion_concepto_nino_id_fkey"
             columns: ["nino_id"]
             isOneToOne: false
             referencedRelation: "ninos"
@@ -4099,6 +4038,7 @@ export type Database = {
         Args: { p_anio: number; p_centro_id: string; p_mes: number }
         Returns: string
       }
+      proponer_asignaciones: { Args: { p_centro_id: string }; Returns: number }
       contar_invitaciones_pendientes: { Args: never; Returns: number }
       contar_recordatorios_pendientes: { Args: never; Returns: number }
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
@@ -4160,6 +4100,7 @@ export type Database = {
         Returns: boolean
       }
       familia_de_nino: { Args: { p_nino_id: string }; Returns: string }
+      familia_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       familia_ve_aula: { Args: { p_aula_id: string }; Returns: boolean }
       fecha_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       get_datos_acreedor: {
@@ -4308,10 +4249,7 @@ export type Database = {
         }
         Returns: string
       }
-      revocar_acceso_familia: {
-        Args: { p_familia_id: string }
-        Returns: Json
-      }
+      revocar_acceso_familia: { Args: { p_familia_id: string }; Returns: Json }
       revocar_consentimiento: {
         Args: { p_tipo: Database["public"]["Enums"]["consentimiento_tipo"] }
         Returns: string
@@ -4517,7 +4455,6 @@ export type Database = {
         | "no_aplica"
       matricula_estado: "pendiente" | "lista" | "activa" | "baja"
       metodo_pago: "sepa" | "efectivo" | "transferencia" | "cheque_guarderia"
-      modalidad_cobro: "mensual" | "diario"
       momento_comida: "desayuno" | "media_manana" | "comida" | "merienda"
       motivo_ausencia:
         | "enfermedad"
@@ -4801,7 +4738,6 @@ export const Constants = {
       ],
       matricula_estado: ["pendiente", "lista", "activa", "baja"],
       metodo_pago: ["sepa", "efectivo", "transferencia", "cheque_guarderia"],
-      modalidad_cobro: ["mensual", "diario"],
       momento_comida: ["desayuno", "media_manana", "comida", "merienda"],
       motivo_ausencia: [
         "enfermedad",

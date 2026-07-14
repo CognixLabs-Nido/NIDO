@@ -169,8 +169,6 @@ export default async function globalSetup(): Promise<void> {
       console.warn(`wipe: recibos(devoluciones): ${error.code ?? '-'} ${error.message ?? ''}`)
   }
   await delWhereIn('recibos', 'nino_id', ninoIds)
-  await delWhereIn('aplicaciones_concepto', 'nino_id', ninoIds)
-  await delWhereIn('aplicaciones_concepto', 'familia_id', familiaIds)
   await delWhereIn('cierre_mensual', 'centro_id', centroIds)
 
   // ---------------------------------------------------------------------------
@@ -233,8 +231,9 @@ export default async function globalSetup(): Promise<void> {
 
   // ---------------------------------------------------------------------------
   // 6. NIÑOS → FAMILIAS → estructura → centros. ninos cascadea
-  //    vinculos, cambios_pendientes, consentimientos(nino), asignacion_cuota,
+  //    vinculos, cambios_pendientes, consentimientos(nino), asignacion_concepto,
   //    becas, metodo_pago_familia, parte_servicio_diario, mandatos_sepa.
+  //    (familias cascadea las asignacion_concepto por familia.)
   // ---------------------------------------------------------------------------
   await delWhereIn('ninos', 'id', ninoIds)
   await delWhereIn('familias', 'id', familiaIds) // cascadea familia_tutores
@@ -250,9 +249,9 @@ export default async function globalSetup(): Promise<void> {
   // NOTA: conceptos_cobro y tipos_beca NO se borran aquí. Son CATÁLOGO (config de F-1,
   // lo usa el motor de recibos F-4), NO test data; y su centro_id → centros es ON DELETE
   // **CASCADE** (verificado: conceptos_cobro_centro_id_fkey, tipos_beca_centro_id_fkey)
-  // → se van solas al borrar el centro. Sus referencias RESTRICT (asignacion_cuota,
-  // becas — CASCADE de ninos, ya borrados; aplicaciones_concepto — paso 1, ya vaciada)
-  // no existen a esta altura, así que la cascada de centros no se bloquea.
+  // → se van solas al borrar el centro. Su referencia RESTRICT (asignacion_concepto.concepto_id;
+  // becas — CASCADE de ninos, ya borrados) no existe a esta altura: asignacion_concepto cascadea
+  // de ninos/familias (F-4-2), ya borrados en el paso 6, así que la cascada de centros no se bloquea.
   await delWhereIn('centros', 'id', centroIds)
 
   // ---------------------------------------------------------------------------

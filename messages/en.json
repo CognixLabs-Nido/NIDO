@@ -457,6 +457,13 @@
       "ambitos": {
         "nino": "Per child",
         "familia": "Per family"
+      },
+      "asignar_title": "Concepts · {nombre}",
+      "conceptos_asignados": "{n} assigned",
+      "sin_conceptos_manuales": "There are no active manual-assignment concepts. Create them in the Concepts tab.",
+      "estado_asignacion": {
+        "asignado": "Assigned",
+        "no_asignado": "Not assigned"
       }
     },
     "aulas": {
@@ -1250,7 +1257,8 @@
       "invalid": "Invalid data.",
       "no_autorizado": "You don't have permission for this action.",
       "modalidad_failed": "Could not save the mode.",
-      "metodo_failed": "Could not save the payment method."
+      "metodo_failed": "Could not save the payment method.",
+      "asignacion_failed": "Could not save the assignment."
     }
   },
   "cierre_cobros": {

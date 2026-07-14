@@ -9,8 +9,9 @@ export interface ConceptoAsignable {
   tipo_concepto: Database['public']['Enums']['tipo_concepto']
 }
 
-// Conceptos a los que se les puede fijar modalidad mensual|diario por niño/mes:
-// activos y de tipo mensual o diario (los esporádicos se cobran como recibos manuales).
+// F-4-2: conceptos que la directora puede asignar A MANO a un niño (aplicacion='manual').
+// Los conceptos aplicacion='automatico' se siembran solos vía proponer_asignaciones(), no
+// se asignan aquí. La periodicidad ya no se elige en la asignación: es tipo_concepto.
 export async function getConceptosAsignables(centroId: string): Promise<ConceptoAsignable[]> {
   const supabase = await createClient()
   const { data } = await supabase
@@ -18,8 +19,8 @@ export async function getConceptosAsignables(centroId: string): Promise<Concepto
     .select('id, nombre, tipo_concepto')
     .eq('centro_id', centroId)
     .eq('activo', true)
+    .eq('aplicacion', 'manual')
     .is('deleted_at', null)
-    .in('tipo_concepto', ['mensual', 'diario'])
 
   return (data ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre))
 }

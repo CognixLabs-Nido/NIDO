@@ -25,7 +25,7 @@ import type { Database } from '@/types/database'
  * F12-B-0 — RLS del modelo de "Cuotas, recibos y remesas SEPA" (fundación).
  *
  * Criterios verificados (decisiones A–K):
- *  - Catálogo (conceptos_cobro, tipos_beca), asignación (asignacion_cuota,
+ *  - Catálogo (conceptos_cobro, tipos_beca), asignación (asignacion_concepto,
  *    metodo_pago_familia, becas), cierre (cierre_mensual) y remesas (remesas,
  *    recibos_remesa): SOLO el admin del centro escribe/lee; profe y tutor NO.
  *  - parte_servicio_diario: la profe del niño (o admin) apunta y lee; el tutor NO
@@ -95,7 +95,7 @@ describe.skipIf(!APPLIED)(
       await serviceClient.from('remesas').delete().in('centro_id', centros)
       await serviceClient.from('lineas_recibo').delete().in('centro_id', centros)
       await serviceClient.from('recibos').delete().in('centro_id', centros)
-      await serviceClient.from('asignacion_cuota').delete().in('centro_id', centros)
+      await serviceClient.from('asignacion_concepto').delete().in('centro_id', centros)
       await serviceClient.from('becas').delete().in('centro_id', centros)
       await serviceClient.from('metodo_pago_familia').delete().in('centro_id', centros)
       await serviceClient.from('parte_servicio_diario').delete().in('centro_id', centros)
@@ -161,18 +161,16 @@ describe.skipIf(!APPLIED)(
       })
     })
 
-    // ─── asignación: asignacion_cuota / metodo_pago_familia / becas ─────────────
-    describe('asignación (asignacion_cuota / metodo_pago_familia / becas)', () => {
-      it('el admin asigna modalidad, método y beca; profe NO', async () => {
+    // ─── asignación: asignacion_concepto / metodo_pago_familia / becas ──────────
+    describe('asignación (asignacion_concepto / metodo_pago_familia / becas)', () => {
+      it('el admin asigna concepto (permanente), método y beca; profe NO', async () => {
         const asignacion = await cAdminA
-          .from('asignacion_cuota')
+          .from('asignacion_concepto')
           .insert({
             centro_id: centroA.id,
             nino_id: ninoA.id,
             concepto_id: conceptoId,
-            anio: 2026,
-            mes: 6,
-            modalidad: 'mensual',
+            origen: 'manual',
           })
           .select('id')
           .maybeSingle()
@@ -210,7 +208,7 @@ describe.skipIf(!APPLIED)(
           .select('id')
           .maybeSingle()
         expect(profe.error).not.toBeNull()
-        const tutor = await cTutorA.from('asignacion_cuota').select('id').eq('nino_id', ninoA.id)
+        const tutor = await cTutorA.from('asignacion_concepto').select('id').eq('nino_id', ninoA.id)
         expect(tutor.data ?? []).toHaveLength(0) // asignación es admin-only
       })
     })
