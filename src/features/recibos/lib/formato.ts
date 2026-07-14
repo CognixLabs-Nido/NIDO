@@ -17,6 +17,7 @@ export function formatPeriodo(anio: number, mes: number, locale: string): string
 
 /** Variante de Badge por estado del recibo (coherente con el panel de gestión admin). */
 export const ESTADO_BADGE_VARIANT: Record<EstadoRecibo, 'secondary' | 'warm' | 'outline'> = {
+  borrador: 'outline', // F-4-1: recibo generado por el motor, pendiente de confirmar
   pendiente_procesar: 'secondary',
   enviado_banco: 'outline',
   devuelto: 'warm',

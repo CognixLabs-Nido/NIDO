@@ -9,6 +9,7 @@ import {
   createTestCurso,
   createTestNino,
   createTestUser,
+  crearFamiliaTutor,
   crearVinculo,
   deleteTestCentro,
   deleteTestUser,
@@ -36,8 +37,8 @@ const APPLIED = process.env.F12B_RLS_APPLIED === '1'
 
 describe.skipIf(!APPLIED)('F12-B-7 — recibos: aislamiento entre familias del MISMO centro', () => {
   let centro: { id: string }
-  let nino1: { id: string } // tutela de tutor1
-  let nino2: { id: string } // tutela de tutor2 (misma aula, mismo centro)
+  let nino1: { id: string; familia_id: string } // tutela de tutor1
+  let nino2: { id: string; familia_id: string } // tutela de tutor2 (misma aula, mismo centro)
   let admin: TestUser
   let profe: TestUser
   let tutor1: TestUser
@@ -67,20 +68,24 @@ describe.skipIf(!APPLIED)('F12-B-7 — recibos: aislamiento entre familias del M
     await asignarProfeAula(profe.id, aula.id, curso.id)
     await crearVinculo(nino1.id, tutor1.id, 'tutor_legal_principal', {})
     await crearVinculo(nino2.id, tutor2.id, 'tutor_legal_principal', {})
+    // F-4-1: la RLS de recibos pasa a es_tutor_de_familia → el tutor debe estar en familia_tutores.
+    await crearFamiliaTutor(nino1.familia_id, tutor1.id, 'titular')
+    await crearFamiliaTutor(nino2.familia_id, tutor2.id, 'titular')
 
     cAdmin = await clientFor(admin)
     cProfe = await clientFor(profe)
     cTutor1 = await clientFor(tutor1)
 
     // Recibo + línea de cada niño (mes abierto: pasa el trigger de congelado).
-    for (const [ninoId, total, ref] of [
-      [nino1.id, 8000, 'r1'],
-      [nino2.id, 6000, 'r2'],
+    for (const [ninoId, familiaId, total, ref] of [
+      [nino1.id, nino1.familia_id, 8000, 'r1'],
+      [nino2.id, nino2.familia_id, 6000, 'r2'],
     ] as const) {
       const { data: r } = await serviceClient
         .from('recibos')
         .insert({
           centro_id: centro.id,
+          familia_id: familiaId, // F-4-1: recibos a grano familia
           nino_id: ninoId,
           anio: 2026,
           mes: 5,

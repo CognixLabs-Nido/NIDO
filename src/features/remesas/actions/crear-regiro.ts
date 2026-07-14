@@ -29,7 +29,7 @@ export async function crearRegiro(
 
   const { data: original } = await supabase
     .from('recibos')
-    .select('id, centro_id, nino_id, anio, mes, total_centimos, estado')
+    .select('id, centro_id, familia_id, nino_id, anio, mes, total_centimos, estado')
     .eq('id', parsed.data.reciboId)
     .is('deleted_at', null)
     .maybeSingle()
@@ -42,6 +42,7 @@ export async function crearRegiro(
     .from('recibos')
     .insert({
       centro_id: original.centro_id,
+      familia_id: original.familia_id, // F-4-1: el re-giro hereda la familia del original
       nino_id: original.nino_id,
       anio: original.anio,
       mes: original.mes,

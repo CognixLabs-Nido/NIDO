@@ -9,6 +9,7 @@ import {
   createTestCurso,
   createTestNino,
   createTestUser,
+  crearFamiliaTutor,
   crearVinculo,
   deleteTestCentro,
   deleteTestUser,
@@ -44,8 +45,8 @@ describe.skipIf(!APPLIED)(
   () => {
     let centroA: { id: string }
     let centroB: { id: string }
-    let ninoA: { id: string } // centroA, tutela de tutorA, en aula de profeA
-    let ninoB: { id: string } // centroB
+    let ninoA: { id: string; familia_id: string } // centroA, tutela de tutorA, en aula de profeA
+    let ninoB: { id: string; familia_id: string } // centroB
     let adminA: TestUser
     let profeA: TestUser
     let tutorA: TestUser
@@ -77,6 +78,9 @@ describe.skipIf(!APPLIED)(
       await asignarProfeAula(profeA.id, aulaA.id, cursoA.id)
       await crearVinculo(ninoA.id, tutorA.id, 'tutor_legal_principal', {})
       await crearVinculo(ninoB.id, tutorB.id, 'tutor_legal_principal', {})
+      // F-4-1: la RLS de recibos pasa a es_tutor_de_familia → el tutor debe estar en familia_tutores.
+      await crearFamiliaTutor(ninoA.familia_id, tutorA.id, 'titular')
+      await crearFamiliaTutor(ninoB.familia_id, tutorB.id, 'titular')
 
       cAdminA = await clientFor(adminA)
       cProfeA = await clientFor(profeA)
@@ -302,6 +306,7 @@ describe.skipIf(!APPLIED)(
           .from('recibos')
           .insert({
             centro_id: centroA.id,
+            familia_id: ninoA.familia_id, // F-4-1: recibos a grano familia
             nino_id: ninoA.id,
             anio: 2026,
             mes: 7,
@@ -348,6 +353,7 @@ describe.skipIf(!APPLIED)(
           .from('recibos')
           .insert({
             centro_id: centroA.id,
+            familia_id: ninoA.familia_id, // F-4-1: recibos a grano familia
             nino_id: ninoA.id,
             anio: 2026,
             mes: 7,

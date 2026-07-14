@@ -53,7 +53,11 @@ export async function getRecibosFamilia(): Promise<RecibosFamiliaNino[]> {
   }
   if (!recibos || recibos.length === 0) return []
 
-  const ninoIds = [...new Set(recibos.map((r) => r.nino_id))]
+  // F-4-1: los recibos REGULARES pasan a grano familia (nino_id NULL). Esta vista por-niño se
+  // reescribe a recibo familiar en F-4-4; hasta entonces se listan solo los que tienen nino_id.
+  const recibosConNino = recibos.filter((r): r is typeof r & { nino_id: string } => r.nino_id != null)
+
+  const ninoIds = [...new Set(recibosConNino.map((r) => r.nino_id))]
   const { data: ninos } = await supabase
     .from('ninos')
     .select('id, nombre, apellidos')
@@ -63,7 +67,7 @@ export async function getRecibosFamilia(): Promise<RecibosFamiliaNino[]> {
   )
 
   const grupos = new Map<string, RecibosFamiliaNino>()
-  for (const r of recibos) {
+  for (const r of recibosConNino) {
     let grupo = grupos.get(r.nino_id)
     if (!grupo) {
       grupo = { ninoId: r.nino_id, nombre: nombrePorNino.get(r.nino_id) ?? '', recibos: [] }
