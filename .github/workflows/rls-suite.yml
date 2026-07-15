@@ -98,3 +98,4 @@ jobs:
           F2C4_MIGRATION_APPLIED: '1'
           F41_MIGRATION_APPLIED: '1'
           F42_MIGRATION_APPLIED: '1'
+          F43_MIGRATION_APPLIED: '1'

@@ -27,10 +27,18 @@ export async function getConfigMes(
   const ninos = (await getNinosPorCentro(centroId)).filter((n) => n.estado_matricula === 'activa')
   if (ninos.length === 0) return []
 
-  const [{ data: metodos }, { data: asignaciones }] = await Promise.all([
+  const [{ data: familiasDeNinos }, { data: metodos }, { data: asignaciones }] = await Promise.all([
+    // F-4-3: el método es de la FAMILIA → necesito mapear cada niño a su familia.
+    supabase
+      .from('ninos')
+      .select('id, familia_id')
+      .in(
+        'id',
+        ninos.map((n) => n.id)
+      ),
     supabase
       .from('metodo_pago_familia')
-      .select('nino_id, metodo')
+      .select('familia_id, metodo')
       .eq('centro_id', centroId)
       .eq('anio', anio)
       .eq('mes', mes)
@@ -45,8 +53,11 @@ export async function getConfigMes(
       .is('deleted_at', null),
   ])
 
-  const metodoPorNino = new Map<string, MetodoPago>()
-  for (const m of metodos ?? []) metodoPorNino.set(m.nino_id, m.metodo)
+  const familiaPorNino = new Map<string, string>()
+  for (const n of familiasDeNinos ?? []) familiaPorNino.set(n.id, n.familia_id)
+
+  const metodoPorFamilia = new Map<string, MetodoPago>()
+  for (const m of metodos ?? []) metodoPorFamilia.set(m.familia_id, m.metodo)
 
   const conceptosPorNino = new Map<string, string[]>()
   for (const a of asignaciones ?? []) {
@@ -56,10 +67,13 @@ export async function getConfigMes(
     conceptosPorNino.set(a.nino_id, actual)
   }
 
-  return ninos.map((n) => ({
-    nino_id: n.id,
-    nombre: [n.nombre, n.apellidos].filter(Boolean).join(' '),
-    metodo: metodoPorNino.get(n.id) ?? null,
-    conceptosAsignados: conceptosPorNino.get(n.id) ?? [],
-  }))
+  return ninos.map((n) => {
+    const familiaId = familiaPorNino.get(n.id)
+    return {
+      nino_id: n.id,
+      nombre: [n.nombre, n.apellidos].filter(Boolean).join(' '),
+      metodo: (familiaId ? metodoPorFamilia.get(familiaId) : undefined) ?? null,
+      conceptosAsignados: conceptosPorNino.get(n.id) ?? [],
+    }
+  })
 }

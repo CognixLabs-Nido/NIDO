@@ -2806,23 +2806,21 @@ export type Database = {
           centro_id: string
           created_at: string
           deleted_at: string | null
-          familia_id: string | null
+          familia_id: string
           id: string
           mes: number
           metodo: Database["public"]["Enums"]["metodo_pago"]
-          nino_id: string
           updated_at: string
         }
         Insert: {
           anio: number
-          centro_id: string
+          centro_id?: string
           created_at?: string
           deleted_at?: string | null
-          familia_id?: string | null
+          familia_id: string
           id?: string
           mes: number
           metodo: Database["public"]["Enums"]["metodo_pago"]
-          nino_id: string
           updated_at?: string
         }
         Update: {
@@ -2830,11 +2828,10 @@ export type Database = {
           centro_id?: string
           created_at?: string
           deleted_at?: string | null
-          familia_id?: string | null
+          familia_id?: string
           id?: string
           mes?: number
           metodo?: Database["public"]["Enums"]["metodo_pago"]
-          nino_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -2850,13 +2847,6 @@ export type Database = {
             columns: ["familia_id"]
             isOneToOne: false
             referencedRelation: "familias"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "metodo_pago_familia_nino_id_fkey"
-            columns: ["nino_id"]
-            isOneToOne: false
-            referencedRelation: "ninos"
             referencedColumns: ["id"]
           },
         ]
@@ -4034,10 +4024,11 @@ export type Database = {
       centro_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       centro_de_remesa: { Args: { p_remesa_id: string }; Returns: string }
       cerrar_curso: { Args: { p_curso_destino_id: string }; Returns: Json }
-      cerrar_mes_cobros: {
+      generar_recibos_mes: {
         Args: { p_anio: number; p_centro_id: string; p_mes: number }
-        Returns: string
+        Returns: number
       }
+      confirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
       contar_invitaciones_pendientes: { Args: never; Returns: number }
       contar_recordatorios_pendientes: { Args: never; Returns: number }
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
@@ -4062,6 +4053,7 @@ export type Database = {
           p_anio: number
           p_centro_id: string
           p_concepto: string
+          p_familia_id: string
           p_lineas: Json
           p_mes: number
           p_metodo: string

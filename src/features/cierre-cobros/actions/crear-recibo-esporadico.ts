@@ -26,6 +26,20 @@ export async function crearReciboEsporadico(
   const centroId = await getCentroActualId()
   if (!centroId) return fail('cierre_cobros.errors.no_autorizado')
 
+  const supabase = await createClient()
+
+  // F-4-3: el recibo es familiar → resolvemos la familia del niño (la UI sigue eligiendo
+  // niño; el selector por familia llega en F-4-4). nino_id viaja como informativo.
+  const { data: nino, error: ninoErr } = await supabase
+    .from('ninos')
+    .select('familia_id')
+    .eq('id', parsed.data.ninoId)
+    .maybeSingle()
+  if (ninoErr || !nino) {
+    logger.warn('crearReciboEsporadico nino', ninoErr?.message)
+    return fail('cierre_cobros.errors.esporadico_failed')
+  }
+
   // Record<string, …> es asignable al tipo Json del parámetro jsonb de la RPC.
   const lineas: Array<Record<string, string | number>> = parsed.data.lineas.map((l) => ({
     descripcion: l.descripcion,
@@ -33,9 +47,9 @@ export async function crearReciboEsporadico(
     precio_unitario_centimos: eurosACentimos(l.importe_euros),
   }))
 
-  const supabase = await createClient()
   const { data, error } = await supabase.rpc('crear_recibo_esporadico', {
     p_centro_id: centroId,
+    p_familia_id: nino.familia_id,
     p_nino_id: parsed.data.ninoId,
     p_anio: parsed.data.anio,
     p_mes: parsed.data.mes,
