@@ -11,10 +11,11 @@
 
 import { generarPain008, type Pain008Input, type SecuenciaAdeudo } from './generar-pain008'
 
-/** Fila devuelta por la RPC get_mandatos_remesa. */
+/** Fila devuelta por la RPC get_mandatos_remesa (F-4-5: grano familia). */
 export interface MandatoRemesaRow {
   recibo_id: string
-  nino_id: string
+  familia_id: string
+  familia_etiqueta: string
   total_centimos: number
   identificador_mandato: string | null
   iban: string | null
@@ -47,7 +48,7 @@ export type PrepararRemesaResultado =
       excluidosSinImporte: string[]
     }
   | { ok: false; motivo: 'acreedor_incompleto' }
-  | { ok: false; motivo: 'sin_mandato'; ninosSinMandato: string[] }
+  | { ok: false; motivo: 'sin_mandato'; familiasSinMandato: string[] }
   | { ok: false; motivo: 'remesa_vacia' }
 
 function tieneMandato(row: MandatoRemesaRow): boolean {
@@ -70,10 +71,15 @@ export function prepararRemesa(
     return { ok: false, motivo: 'acreedor_incompleto' }
   }
 
-  // 2. Recibos SEPA sin mandato activo → se rechaza la remesa entera.
+  // 2. Recibos SEPA sin mandato activo → se rechaza la remesa entera. Se listan las
+  //    FAMILIAS afectadas (F-4-5: el deudor es la familia; nino_id ya no aplica).
   const sinMandato = rows.filter((r) => !tieneMandato(r))
   if (sinMandato.length > 0) {
-    return { ok: false, motivo: 'sin_mandato', ninosSinMandato: sinMandato.map((r) => r.nino_id) }
+    return {
+      ok: false,
+      motivo: 'sin_mandato',
+      familiasSinMandato: [...new Set(sinMandato.map((r) => r.familia_etiqueta))],
+    }
   }
 
   // 3. Excluir importes ≤ 0 (no se domicilia un abono).

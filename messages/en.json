@@ -1426,6 +1426,7 @@
     "iban_ayuda": "For security, the stored IBAN is not shown. Leave it blank to keep it; re-enter it in full to change it.",
     "acreedor_guardado": "Creditor details saved.",
     "marcar_title": "SEPA receipts for the period",
+    "marcar_nota": "Only confirmed receipts with the SEPA method appear here (drafts and already-sent ones don't).",
     "sin_recibos_sepa": "There are no SEPA receipts pending remittance in this period.",
     "seleccionar_todos": "Select all",
     "seleccionados": "{num} selected",

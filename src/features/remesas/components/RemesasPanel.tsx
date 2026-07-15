@@ -128,6 +128,7 @@ export function RemesasPanel({ anio, mes, acreedor, recibos, remesas, recibosGes
       {/* Marcado de recibos SEPA */}
       <Card className="space-y-3 p-5">
         <h2 className="text-foreground text-base font-semibold">{t('marcar_title')}</h2>
+        <p className="text-muted-foreground text-xs">{t('marcar_nota')}</p>
         {recibos.length === 0 ? (
           <p className="text-muted-foreground text-sm">{t('sin_recibos_sepa')}</p>
         ) : (
@@ -154,7 +155,12 @@ export function RemesasPanel({ anio, mes, acreedor, recibos, remesas, recibosGes
                       disabled={!r.tieneMandato}
                     />
                     <span>
-                      {r.ninoNombre || r.ninoId}
+                      <span className="font-medium">{r.familiaEtiqueta || r.familiaId}</span>
+                      {r.tutores.length > 0 && (
+                        <span className="text-muted-foreground ml-2 text-xs">
+                          {r.tutores.join(' · ')}
+                        </span>
+                      )}
                       {r.esEsporadico && (
                         <Badge variant="outline" className="ml-2">
                           {t('esporadico')}

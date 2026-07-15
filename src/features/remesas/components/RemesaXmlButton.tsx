@@ -29,11 +29,11 @@ export function RemesaXmlButton({ remesaId, disabled }: Props) {
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as {
           error?: string
-          ninos?: string[]
+          familias?: string[]
         } | null
         const motivo = body?.error
         if (motivo === 'sin_mandato') {
-          toast.error(t('errors.sin_mandato', { num: body?.ninos?.length ?? 0 }))
+          toast.error(t('errors.sin_mandato', { num: body?.familias?.length ?? 0 }))
         } else if (motivo === 'acreedor_incompleto') {
           toast.error(t('errors.acreedor_incompleto'))
         } else if (motivo === 'remesa_vacia') {

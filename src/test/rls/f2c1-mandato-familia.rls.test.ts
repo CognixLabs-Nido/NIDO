@@ -324,7 +324,8 @@ describe.skipIf(!APPLIED)('F-2c-1 — mandato SEPA de FAMILIA', () => {
     // El mandato vigente de la familia tras sustituir usa IBAN_1.
     expect(data![0].iban).toBe(IBAN_1)
     expect(data![0].identificador_mandato).toBe('NIDO-F2C1-SUST')
-    expect(data![0].nino_id).toBe(ninoA2.id)
+    // F-4-5: la RPC devuelve la familia del recibo (ya no nino_id).
+    expect(data![0].familia_id).toBe(familiaA)
 
     await serviceClient.from('recibos_remesa').delete().eq('remesa_id', remesa!.id)
     await serviceClient.from('remesas').delete().eq('id', remesa!.id)

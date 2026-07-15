@@ -23,7 +23,8 @@ const meta: RemesaMeta = {
 function row(over: Partial<MandatoRemesaRow>): MandatoRemesaRow {
   return {
     recibo_id: '11111111-1111-4111-8111-111111111111',
-    nino_id: '22222222-2222-4222-9222-222222222222',
+    familia_id: '22222222-2222-4222-9222-222222222222',
+    familia_etiqueta: 'Familia Pérez',
     total_centimos: 12000,
     identificador_mandato: 'NIDO-DEMO-1',
     iban: 'ES7620770024003102575766',
@@ -59,14 +60,18 @@ describe('prepararRemesa', () => {
     const r = prepararRemesa(
       [
         row({}),
-        row({ recibo_id: '33333333-3333-4333-8333-333333333333', nino_id: 'NINO-SIN', iban: null }),
+        row({
+          recibo_id: '33333333-3333-4333-8333-333333333333',
+          familia_etiqueta: 'Familia Sin Mandato',
+          iban: null,
+        }),
       ],
       acreedorOk,
       meta
     )
     expect(r.ok).toBe(false)
     if (!r.ok && r.motivo === 'sin_mandato') {
-      expect(r.ninosSinMandato).toEqual(['NINO-SIN'])
+      expect(r.familiasSinMandato).toEqual(['Familia Sin Mandato'])
     } else {
       throw new Error('esperado motivo sin_mandato')
     }
