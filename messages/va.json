@@ -383,8 +383,9 @@
         "vespertina": "Vespertina"
       },
       "precio_por_dia": "{precio}/dia",
+      "tab_mes": "Panell del mes",
       "tab_conceptos": "Conceptes",
-      "tab_asignacion": "Assignació mensual",
+      "tab_asignacion": "Assignació permanent",
       "tab_becas": "Beques",
       "tab_cierre": "Tancament",
       "tab_remesas": "Remeses",
@@ -403,6 +404,7 @@
       "metodos": {
         "sepa": "SEPA (domiciliació)",
         "efectivo": "Efectiu",
+        "cheque_guarderia": "Xec guarderia",
         "transferencia": "Transferència"
       },
       "modalidades": {
@@ -464,7 +466,17 @@
       "estado_asignacion": {
         "asignado": "Assignat",
         "no_asignado": "No assignat"
-      }
+      },
+      "col_familia": "Família (tutors)",
+      "asignacion_permanente_desc": "Conceptes que es cobren de manera permanent a cada alumne i a cada família (sense mes ni mètode). El motor els materialitza cada mes.",
+      "proponer": "Proposar assignacions automàtiques",
+      "proponer_ok": "{n} assignacions proposades.",
+      "seccion_alumnos": "Conceptes per alumne",
+      "seccion_familias": "Conceptes per família",
+      "seccion_familias_desc": "Descomptes per germans i càrrecs comuns de la família.",
+      "familia_conceptos_title": "Conceptes · {nombre}",
+      "sin_conceptos_familia": "No hi ha conceptes d'àmbit família. Crea'ls en la pestanya Conceptes.",
+      "sin_familias": "No hi ha famílies amb matrícula activa."
     },
     "aulas": {
       "title": "Aules",
@@ -1258,7 +1270,95 @@
       "no_autorizado": "No tens permís per a esta acció.",
       "modalidad_failed": "No s'ha pogut guardar la modalitat.",
       "metodo_failed": "No s'ha pogut guardar el mètode de pagament.",
-      "asignacion_failed": "No s'ha pogut guardar l'assignació."
+      "asignacion_failed": "No s'ha pogut guardar l'assignació.",
+      "proponer_failed": "No s'han pogut proposar les assignacions."
+    }
+  },
+  "recibos_panel": {
+    "generar": "Generar rebuts",
+    "generado_ok": "{n} rebuts generats.",
+    "confirmado_ok": "Rebut confirmat.",
+    "confirmado_cierre": "Rebut confirmat. El mes ha quedat tancat.",
+    "lote_ok": "{n} rebuts confirmats.",
+    "metodo_guardado": "Mètode guardat.",
+    "ind_generados": "Generats",
+    "ind_confirmados": "Confirmats",
+    "ind_pendientes": "Pendents",
+    "ind_total": "Total del mes",
+    "ind_sin_recibo": "Sense rebut",
+    "mes_cerrado": "Mes tancat",
+    "mes_abierto": "Mes obert",
+    "seleccionados": "{n} seleccionats",
+    "confirmar_seleccionados": "Confirmar seleccionats",
+    "sin_familias": "No hi ha famílies amb matrícula activa. Genera rebuts quan n'hi haja.",
+    "sel_todos": "Seleccionar tots els esborranys",
+    "sel_recibo": "Seleccionar rebut",
+    "col_familia": "Família (tutors)",
+    "col_hijos": "Fills",
+    "col_metodo": "Mètode",
+    "col_cargos": "Càrrecs",
+    "col_dtos": "Dtes.",
+    "col_total": "Total",
+    "col_estado": "Estat",
+    "col_acciones": "Accions",
+    "col_concepto": "Concepte",
+    "esporadicos_titulo": "Esporàdics del mes",
+    "regiro": "Re-gir",
+    "generar_confirm_title": "Regenerar els rebuts?",
+    "generar_confirm_desc": "Es regeneraran {borradores} esborranys (es descarten les edicions manuals no confirmades). Els {confirmados} confirmats no es toquen.",
+    "cancelar": "Cancel·lar",
+    "regenerar": "Regenerar",
+    "sin_metodo": "Sense mètode",
+    "metodo_congelado": "Mètode congelat (confirmat).",
+    "estado_sin_cargos": "Sense càrrecs",
+    "estado_confirmado": "Confirmat",
+    "estado_borrador": "Esborrany",
+    "ver": "Veure",
+    "ocultar": "Ocultar",
+    "confirmar": "Confirmar",
+    "familiar": "Família",
+    "sin_lineas": "Sense línies.",
+    "editar": "Editar",
+    "editar_title": "Editar rebut",
+    "editar_aviso": "Estes edicions es perden si es regeneren els rebuts del mes.",
+    "anadir_linea": "Afegir línia",
+    "anadir": "Afegir",
+    "cerrar": "Tancar",
+    "guardar": "Guardar",
+    "quitar": "Llevar",
+    "linea_familiar": "Tota la família",
+    "linea_anadida": "Línia afegida.",
+    "linea_editada": "Línia actualitzada.",
+    "linea_borrada": "Línia eliminada.",
+    "fields": {
+      "descripcion": "Descripció",
+      "cantidad": "Quantitat",
+      "importe": "Import (€)",
+      "atribuir": "Atribuir a"
+    },
+    "metodos": {
+      "sepa": "SEPA (domiciliació)",
+      "efectivo": "Efectiu",
+      "cheque_guarderia": "Xec guarderia",
+      "transferencia": "Transferència"
+    },
+    "estado_recibo": {
+      "borrador": "Esborrany",
+      "pendiente_procesar": "Pendent",
+      "enviado_banco": "Enviat al banc",
+      "devuelto": "Retornat",
+      "cobrado_manual": "Cobrat manual"
+    },
+    "errors": {
+      "invalid": "Dades no vàlides.",
+      "no_autorizado": "No tens permís per a esta acció.",
+      "mes_cerrado": "El mes està tancat; no es pot regenerar.",
+      "generar_failed": "No s'han pogut generar els rebuts.",
+      "confirmar_failed": "No s'ha pogut confirmar.",
+      "metodo_failed": "No s'ha pogut guardar el mètode de pagament.",
+      "linea_invalida": "Dades de la línia no vàlides.",
+      "no_borrador": "El rebut no està en esborrany.",
+      "linea_failed": "No s'ha pogut guardar la línia."
     }
   },
   "cierre_cobros": {
@@ -3570,6 +3670,7 @@
     "family_sin_recibos": "Encara no hi ha rebuts",
     "family_sin_recibos_desc": "Quan el centre genere rebuts, apareixeran ací.",
     "estado_recibo": {
+      "borrador": "Esborrany",
       "pendiente_procesar": "Pendent",
       "enviado_banco": "Enviat al banc",
       "devuelto": "Retornat",
@@ -3578,6 +3679,7 @@
     "metodos": {
       "sepa": "SEPA (domiciliació)",
       "efectivo": "Efectiu",
+      "cheque_guarderia": "Xec guarderia",
       "transferencia": "Transferència"
     },
     "esporadico_badge": "Esporàdic",

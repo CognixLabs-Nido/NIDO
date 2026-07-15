@@ -383,8 +383,9 @@
         "vespertina": "Vespertina"
       },
       "precio_por_dia": "{precio}/día",
+      "tab_mes": "Panel del mes",
       "tab_conceptos": "Conceptos",
-      "tab_asignacion": "Asignación mensual",
+      "tab_asignacion": "Asignación permanente",
       "tab_becas": "Becas",
       "tab_cierre": "Cierre",
       "tab_remesas": "Remesas",
@@ -403,6 +404,7 @@
       "metodos": {
         "sepa": "SEPA (domiciliación)",
         "efectivo": "Efectivo",
+        "cheque_guarderia": "Cheque guardería",
         "transferencia": "Transferencia"
       },
       "modalidades": {
@@ -464,7 +466,17 @@
       "estado_asignacion": {
         "asignado": "Asignado",
         "no_asignado": "No asignado"
-      }
+      },
+      "col_familia": "Familia (tutores)",
+      "asignacion_permanente_desc": "Conceptos que se cobran de forma permanente a cada alumno y a cada familia (sin mes ni método). El motor los materializa cada mes.",
+      "proponer": "Proponer asignaciones automáticas",
+      "proponer_ok": "{n} asignaciones propuestas.",
+      "seccion_alumnos": "Conceptos por alumno",
+      "seccion_familias": "Conceptos por familia",
+      "seccion_familias_desc": "Descuentos por hermanos y cargos comunes de la familia.",
+      "familia_conceptos_title": "Conceptos · {nombre}",
+      "sin_conceptos_familia": "No hay conceptos de ámbito familia. Créalos en la pestaña Conceptos.",
+      "sin_familias": "No hay familias con matrícula activa."
     },
     "aulas": {
       "title": "Aulas",
@@ -1258,7 +1270,95 @@
       "no_autorizado": "No tienes permiso para esta acción.",
       "modalidad_failed": "No se pudo guardar la modalidad.",
       "metodo_failed": "No se pudo guardar el método de pago.",
-      "asignacion_failed": "No se pudo guardar la asignación."
+      "asignacion_failed": "No se pudo guardar la asignación.",
+      "proponer_failed": "No se pudieron proponer las asignaciones."
+    }
+  },
+  "recibos_panel": {
+    "generar": "Generar recibos",
+    "generado_ok": "{n} recibos generados.",
+    "confirmado_ok": "Recibo confirmado.",
+    "confirmado_cierre": "Recibo confirmado. El mes ha quedado cerrado.",
+    "lote_ok": "{n} recibos confirmados.",
+    "metodo_guardado": "Método guardado.",
+    "ind_generados": "Generados",
+    "ind_confirmados": "Confirmados",
+    "ind_pendientes": "Pendientes",
+    "ind_total": "Total del mes",
+    "ind_sin_recibo": "Sin recibo",
+    "mes_cerrado": "Mes cerrado",
+    "mes_abierto": "Mes abierto",
+    "seleccionados": "{n} seleccionados",
+    "confirmar_seleccionados": "Confirmar seleccionados",
+    "sin_familias": "No hay familias con matrícula activa. Genera recibos cuando las haya.",
+    "sel_todos": "Seleccionar todos los borradores",
+    "sel_recibo": "Seleccionar recibo",
+    "col_familia": "Familia (tutores)",
+    "col_hijos": "Hijos",
+    "col_metodo": "Método",
+    "col_cargos": "Cargos",
+    "col_dtos": "Dtos.",
+    "col_total": "Total",
+    "col_estado": "Estado",
+    "col_acciones": "Acciones",
+    "col_concepto": "Concepto",
+    "esporadicos_titulo": "Esporádicos del mes",
+    "regiro": "Re-giro",
+    "generar_confirm_title": "¿Regenerar los recibos?",
+    "generar_confirm_desc": "Se regenerarán {borradores} borradores (se descartan las ediciones manuales no confirmadas). Los {confirmados} confirmados no se tocan.",
+    "cancelar": "Cancelar",
+    "regenerar": "Regenerar",
+    "sin_metodo": "Sin método",
+    "metodo_congelado": "Método congelado (confirmado).",
+    "estado_sin_cargos": "Sin cargos",
+    "estado_confirmado": "Confirmado",
+    "estado_borrador": "Borrador",
+    "ver": "Ver",
+    "ocultar": "Ocultar",
+    "confirmar": "Confirmar",
+    "familiar": "Familia",
+    "sin_lineas": "Sin líneas.",
+    "editar": "Editar",
+    "editar_title": "Editar recibo",
+    "editar_aviso": "Estas ediciones se pierden si se regeneran los recibos del mes.",
+    "anadir_linea": "Añadir línea",
+    "anadir": "Añadir",
+    "cerrar": "Cerrar",
+    "guardar": "Guardar",
+    "quitar": "Quitar",
+    "linea_familiar": "Toda la familia",
+    "linea_anadida": "Línea añadida.",
+    "linea_editada": "Línea actualizada.",
+    "linea_borrada": "Línea eliminada.",
+    "fields": {
+      "descripcion": "Descripción",
+      "cantidad": "Cantidad",
+      "importe": "Importe (€)",
+      "atribuir": "Atribuir a"
+    },
+    "metodos": {
+      "sepa": "SEPA (domiciliación)",
+      "efectivo": "Efectivo",
+      "cheque_guarderia": "Cheque guardería",
+      "transferencia": "Transferencia"
+    },
+    "estado_recibo": {
+      "borrador": "Borrador",
+      "pendiente_procesar": "Pendiente",
+      "enviado_banco": "Enviado al banco",
+      "devuelto": "Devuelto",
+      "cobrado_manual": "Cobrado manual"
+    },
+    "errors": {
+      "invalid": "Datos no válidos.",
+      "no_autorizado": "No tienes permiso para esta acción.",
+      "mes_cerrado": "El mes está cerrado; no se puede regenerar.",
+      "generar_failed": "No se pudieron generar los recibos.",
+      "confirmar_failed": "No se pudo confirmar.",
+      "metodo_failed": "No se pudo guardar el método de pago.",
+      "linea_invalida": "Datos de la línea no válidos.",
+      "no_borrador": "El recibo no está en borrador.",
+      "linea_failed": "No se pudo guardar la línea."
     }
   },
   "cierre_cobros": {
@@ -3570,6 +3670,7 @@
     "family_sin_recibos": "Todavía no hay recibos",
     "family_sin_recibos_desc": "Cuando el centro genere recibos, aparecerán aquí.",
     "estado_recibo": {
+      "borrador": "Borrador",
       "pendiente_procesar": "Pendiente",
       "enviado_banco": "Enviado al banco",
       "devuelto": "Devuelto",
@@ -3578,6 +3679,7 @@
     "metodos": {
       "sepa": "SEPA (domiciliación)",
       "efectivo": "Efectivo",
+      "cheque_guarderia": "Cheque guardería",
       "transferencia": "Transferencia"
     },
     "esporadico_badge": "Esporádico",

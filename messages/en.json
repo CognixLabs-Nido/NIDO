@@ -383,8 +383,9 @@
         "vespertina": "After care"
       },
       "precio_por_dia": "{precio}/day",
+      "tab_mes": "Month panel",
       "tab_conceptos": "Items",
-      "tab_asignacion": "Monthly setup",
+      "tab_asignacion": "Permanent setup",
       "tab_becas": "Grants",
       "tab_cierre": "Closing",
       "tab_remesas": "Remittances",
@@ -403,6 +404,7 @@
       "metodos": {
         "sepa": "SEPA (direct debit)",
         "efectivo": "Cash",
+        "cheque_guarderia": "Childcare voucher",
         "transferencia": "Bank transfer"
       },
       "modalidades": {
@@ -464,7 +466,17 @@
       "estado_asignacion": {
         "asignado": "Assigned",
         "no_asignado": "Not assigned"
-      }
+      },
+      "col_familia": "Family (guardians)",
+      "asignacion_permanente_desc": "Items charged permanently to each child and each family (no month, no method). The engine materialises them each month.",
+      "proponer": "Propose automatic assignments",
+      "proponer_ok": "{n} assignments proposed.",
+      "seccion_alumnos": "Items per child",
+      "seccion_familias": "Items per family",
+      "seccion_familias_desc": "Sibling discounts and shared family charges.",
+      "familia_conceptos_title": "Items · {nombre}",
+      "sin_conceptos_familia": "No family-scope items. Create them in the Items tab.",
+      "sin_familias": "No families with an active enrolment."
     },
     "aulas": {
       "title": "Classrooms",
@@ -1258,7 +1270,95 @@
       "no_autorizado": "You don't have permission for this action.",
       "modalidad_failed": "Could not save the mode.",
       "metodo_failed": "Could not save the payment method.",
-      "asignacion_failed": "Could not save the assignment."
+      "asignacion_failed": "Could not save the assignment.",
+      "proponer_failed": "Could not propose the assignments."
+    }
+  },
+  "recibos_panel": {
+    "generar": "Generate receipts",
+    "generado_ok": "{n} receipts generated.",
+    "confirmado_ok": "Receipt confirmed.",
+    "confirmado_cierre": "Receipt confirmed. The month is now closed.",
+    "lote_ok": "{n} receipts confirmed.",
+    "metodo_guardado": "Method saved.",
+    "ind_generados": "Generated",
+    "ind_confirmados": "Confirmed",
+    "ind_pendientes": "Pending",
+    "ind_total": "Month total",
+    "ind_sin_recibo": "No receipt",
+    "mes_cerrado": "Month closed",
+    "mes_abierto": "Month open",
+    "seleccionados": "{n} selected",
+    "confirmar_seleccionados": "Confirm selected",
+    "sin_familias": "No families with an active enrolment. Generate receipts once there are.",
+    "sel_todos": "Select all drafts",
+    "sel_recibo": "Select receipt",
+    "col_familia": "Family (guardians)",
+    "col_hijos": "Children",
+    "col_metodo": "Method",
+    "col_cargos": "Charges",
+    "col_dtos": "Disc.",
+    "col_total": "Total",
+    "col_estado": "Status",
+    "col_acciones": "Actions",
+    "col_concepto": "Item",
+    "esporadicos_titulo": "One-off receipts this month",
+    "regiro": "Re-charge",
+    "generar_confirm_title": "Regenerate the receipts?",
+    "generar_confirm_desc": "{borradores} drafts will be regenerated (unconfirmed manual edits are discarded). The {confirmados} confirmed ones are left untouched.",
+    "cancelar": "Cancel",
+    "regenerar": "Regenerate",
+    "sin_metodo": "No method",
+    "metodo_congelado": "Method frozen (confirmed).",
+    "estado_sin_cargos": "No charges",
+    "estado_confirmado": "Confirmed",
+    "estado_borrador": "Draft",
+    "ver": "View",
+    "ocultar": "Hide",
+    "confirmar": "Confirm",
+    "familiar": "Family",
+    "sin_lineas": "No lines.",
+    "editar": "Edit",
+    "editar_title": "Edit receipt",
+    "editar_aviso": "These edits are lost if the month's receipts are regenerated.",
+    "anadir_linea": "Add line",
+    "anadir": "Add",
+    "cerrar": "Close",
+    "guardar": "Save",
+    "quitar": "Remove",
+    "linea_familiar": "Whole family",
+    "linea_anadida": "Line added.",
+    "linea_editada": "Line updated.",
+    "linea_borrada": "Line removed.",
+    "fields": {
+      "descripcion": "Description",
+      "cantidad": "Quantity",
+      "importe": "Amount (€)",
+      "atribuir": "Attribute to"
+    },
+    "metodos": {
+      "sepa": "SEPA (direct debit)",
+      "efectivo": "Cash",
+      "cheque_guarderia": "Childcare voucher",
+      "transferencia": "Transfer"
+    },
+    "estado_recibo": {
+      "borrador": "Draft",
+      "pendiente_procesar": "Pending",
+      "enviado_banco": "Sent to bank",
+      "devuelto": "Returned",
+      "cobrado_manual": "Collected manually"
+    },
+    "errors": {
+      "invalid": "Invalid data.",
+      "no_autorizado": "You don't have permission for this action.",
+      "mes_cerrado": "The month is closed; it can't be regenerated.",
+      "generar_failed": "Could not generate the receipts.",
+      "confirmar_failed": "Could not confirm.",
+      "metodo_failed": "Could not save the payment method.",
+      "linea_invalida": "Invalid line data.",
+      "no_borrador": "The receipt is not a draft.",
+      "linea_failed": "Could not save the line."
     }
   },
   "cierre_cobros": {
@@ -3570,6 +3670,7 @@
     "family_sin_recibos": "No receipts yet",
     "family_sin_recibos_desc": "When the school generates receipts, they will appear here.",
     "estado_recibo": {
+      "borrador": "Draft",
       "pendiente_procesar": "Pending",
       "enviado_banco": "Sent to bank",
       "devuelto": "Returned",
@@ -3578,6 +3679,7 @@
     "metodos": {
       "sepa": "SEPA (direct debit)",
       "efectivo": "Cash",
+      "cheque_guarderia": "Childcare voucher",
       "transferencia": "Transfer"
     },
     "esporadico_badge": "One-off",

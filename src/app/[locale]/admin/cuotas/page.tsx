@@ -5,16 +5,15 @@ import { BecasPanel } from '@/features/becas/components/BecasPanel'
 import { getBecas } from '@/features/becas/queries/get-becas'
 import { getTiposBeca } from '@/features/becas/queries/get-tipos-beca'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
-import { CierrePanel } from '@/features/cierre-cobros/components/CierrePanel'
-import { getCierreMes } from '@/features/cierre-cobros/queries/get-cierre-mes'
 import { ConceptosCatalogo } from '@/features/conceptos-cobro/components/ConceptosCatalogo'
 import { getConceptosCobro } from '@/features/conceptos-cobro/queries/get-conceptos-cobro'
-import { AsignacionMensualPanel } from '@/features/cuotas-config/components/AsignacionMensualPanel'
-import { getConceptosAsignables } from '@/features/cuotas-config/queries/get-conceptos-asignables'
-import { getConfigMes } from '@/features/cuotas-config/queries/get-config-mes'
+import { AsignacionPermanentePanel } from '@/features/cuotas-config/components/AsignacionPermanentePanel'
+import { getAsignacionPermanente } from '@/features/cuotas-config/queries/get-asignacion-permanente'
 import { getNinosPorCentro } from '@/features/ninos/queries/get-ninos'
+import { PanelMesRecibos } from '@/features/recibos/components/PanelMesRecibos'
 import { PivotePanel } from '@/features/recibos/components/PivotePanel'
 import { getPivotePeriodo } from '@/features/recibos/queries/get-pivote-periodo'
+import { getRecibosMesPanel } from '@/features/recibos/queries/get-recibos-mes-panel'
 import { RemesasPanel } from '@/features/remesas/components/RemesasPanel'
 import { getDatosAcreedor } from '@/features/remesas/queries/get-datos-acreedor'
 import { getRecibosGestion } from '@/features/remesas/queries/get-recibos-gestion'
@@ -26,9 +25,12 @@ interface PageProps {
   searchParams: Promise<{ tab?: string; anio?: string; mes?: string }>
 }
 
-// F12-B-2/7: configuración de cobro por niño y mes + gestión de remesas + resumen pivote.
-// Tabs: catálogo de conceptos (B-1), asignación mensual, becas, cierre, remesas y resumen
-// (pivote de recibos del período, B-7). El layout admin valida rol + centro.
+const TABS = ['mes', 'conceptos', 'asignacion', 'becas', 'remesas', 'resumen'] as const
+
+// F-4-4: hub de cuotas. Tab por defecto = Panel del mes (revisión + confirmación de
+// recibos a grano familia). Otros tabs: catálogo de conceptos, asignación permanente
+// (alumno + familia), becas, remesas y resumen (pivote a grano familia + CSV). El layout
+// admin valida rol + centro.
 export default async function AdminCuotasPage({ params, searchParams }: PageProps) {
   const t = await getTranslations('admin.cuotas')
   const { locale } = await params
@@ -38,20 +40,15 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
   const ahora = new Date()
   const anio = clamp(Number(sp.anio), 2024, 2100) ?? ahora.getFullYear()
   const mes = clamp(Number(sp.mes), 1, 12) ?? ahora.getMonth() + 1
-  const tab = ['conceptos', 'asignacion', 'becas', 'cierre', 'remesas', 'resumen'].includes(
-    sp.tab ?? ''
-  )
-    ? (sp.tab as string)
-    : 'conceptos'
+  const tab = (TABS as readonly string[]).includes(sp.tab ?? '') ? (sp.tab as string) : 'mes'
 
   const [
     conceptos,
-    conceptosAsignables,
-    configMes,
+    asignacion,
     tipos,
     becas,
     ninosCentro,
-    cierre,
+    panelMes,
     acreedor,
     recibosSepa,
     remesas,
@@ -59,12 +56,11 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     pivote,
   ] = await Promise.all([
     getConceptosCobro(centroId),
-    getConceptosAsignables(centroId),
-    getConfigMes(centroId, anio, mes),
+    getAsignacionPermanente(centroId),
     getTiposBeca(centroId),
     getBecas(centroId),
     getNinosPorCentro(centroId),
-    getCierreMes(centroId, anio, mes),
+    getRecibosMesPanel(centroId, anio, mes),
     getDatosAcreedor(centroId),
     getRecibosSepaRemesables(centroId, anio, mes),
     getRemesasMes(centroId, anio, mes),
@@ -85,40 +81,34 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
 
       <Tabs defaultValue={tab}>
         <TabsList>
+          <TabsTrigger value="mes">{t('tab_mes')}</TabsTrigger>
           <TabsTrigger value="conceptos">{t('tab_conceptos')}</TabsTrigger>
           <TabsTrigger value="asignacion">{t('tab_asignacion')}</TabsTrigger>
           <TabsTrigger value="becas">{t('tab_becas')}</TabsTrigger>
-          <TabsTrigger value="cierre">{t('tab_cierre')}</TabsTrigger>
           <TabsTrigger value="remesas">{t('tab_remesas')}</TabsTrigger>
           <TabsTrigger value="resumen">{t('tab_resumen')}</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="mes" className="pt-4">
+          <PanelMesRecibos
+            centroId={centroId}
+            anio={anio}
+            mes={mes}
+            data={panelMes}
+            ninos={ninosActivos}
+          />
+        </TabsContent>
 
         <TabsContent value="conceptos" className="pt-4">
           <ConceptosCatalogo centroId={centroId} conceptos={conceptos} />
         </TabsContent>
 
         <TabsContent value="asignacion" className="pt-4">
-          <AsignacionMensualPanel
-            centroId={centroId}
-            anio={anio}
-            mes={mes}
-            conceptos={conceptosAsignables}
-            config={configMes}
-          />
+          <AsignacionPermanentePanel centroId={centroId} data={asignacion} />
         </TabsContent>
 
         <TabsContent value="becas" className="pt-4">
           <BecasPanel centroId={centroId} becas={becas} tipos={tipos} ninos={ninosActivos} />
-        </TabsContent>
-
-        <TabsContent value="cierre" className="pt-4">
-          <CierrePanel
-            centroId={centroId}
-            anio={anio}
-            mes={mes}
-            resumen={cierre}
-            ninos={ninosActivos}
-          />
         </TabsContent>
 
         <TabsContent value="remesas" className="pt-4">
