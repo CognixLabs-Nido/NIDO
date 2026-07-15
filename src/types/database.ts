@@ -2814,7 +2814,7 @@ export type Database = {
         }
         Insert: {
           anio: number
-          centro_id?: string
+          centro_id: string
           created_at?: string
           deleted_at?: string | null
           familia_id: string
@@ -4024,10 +4024,6 @@ export type Database = {
       centro_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       centro_de_remesa: { Args: { p_remesa_id: string }; Returns: string }
       cerrar_curso: { Args: { p_curso_destino_id: string }; Returns: Json }
-      generar_recibos_mes: {
-        Args: { p_anio: number; p_centro_id: string; p_mes: number }
-        Returns: number
-      }
       confirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
       contar_invitaciones_pendientes: { Args: never; Returns: number }
       contar_recordatorios_pendientes: { Args: never; Returns: number }
@@ -4094,6 +4090,10 @@ export type Database = {
       familia_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       familia_ve_aula: { Args: { p_aula_id: string }; Returns: boolean }
       fecha_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
+      generar_recibos_mes: {
+        Args: { p_anio: number; p_centro_id: string; p_mes: number }
+        Returns: number
+      }
       get_datos_acreedor: {
         Args: { p_centro_id: string }
         Returns: {
