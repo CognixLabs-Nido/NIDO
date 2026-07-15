@@ -309,6 +309,37 @@ BEGIN
       END LOOP;
     END LOOP;
 
+    -- PASE 1b: cargos POSITIVOS de ámbito FAMILIA (signo=+1, fijo), asignados a la familia
+    -- (a.familia_id, NO a un hijo). Genera línea FAMILIAR (nino_id=NULL): es un cargo de la
+    -- familia, no de un hijo, y su descripción NO lleva "· hijo". Cierra el hueco por el que
+    -- proponer_asignaciones (F-4-2) siembra estos conceptos pero el motor no los facturaba.
+    FOR r_asig IN
+      SELECT a.cantidad_default, a.importe_override_centimos,
+             c.id AS concepto_id, c.nombre, c.tipo_concepto, c.importe_centimos
+      FROM public.asignacion_concepto a
+      JOIN public.conceptos_cobro c ON c.id = a.concepto_id
+      WHERE a.familia_id = r_fam.familia_id AND a.deleted_at IS NULL
+        AND c.deleted_at IS NULL AND c.activo = true
+        AND c.signo = 1 AND c.tipo_valor = 'fijo'
+        AND (a.vigencia_desde IS NULL OR a.vigencia_desde <= v_last)
+        AND (a.vigencia_hasta IS NULL OR a.vigencia_hasta >= v_first)
+    LOOP
+      v_unit := COALESCE(r_asig.importe_override_centimos, r_asig.importe_centimos);
+      IF v_unit IS NULL THEN CONTINUE; END IF;
+
+      IF r_asig.tipo_concepto = 'mensual' THEN
+        v_cant := GREATEST(r_asig.cantidad_default, 1);          -- cantidad_default multiplica (= PASE 1)
+        INSERT INTO public.lineas_recibo
+          (recibo_id, concepto_id, nino_id, descripcion, cantidad, precio_unitario_centimos, importe_centimos)
+          VALUES (v_recibo, r_asig.concepto_id, NULL,
+            left(r_asig.nombre, 200), v_cant, v_unit, v_unit * v_cant);   -- línea familiar (sin "· hijo")
+      END IF;
+      -- tipo_concepto='diario': SKIP. El parte de servicio (parte_servicio_diario) es POR NIÑO;
+      --   un cargo diario a nivel familia no tiene contador de días bien definido (¿la unión de
+      --   los partes de todos los hijos? ¿el máximo? no hay semántica clara) → no se inventa.
+      -- tipo_concepto='esporadico': SKIP (fuera del motor recurrente, igual que en PASE 1).
+    END LOOP;
+
     -- PASE 3: DESCUENTOS (signo=-1), 2ª pasada sobre las líneas ya persistidas (§2, R1/R2/R3/R12).
     FOR r_desc IN
       SELECT a.nino_id AS asig_nino, a.importe_override_centimos,
