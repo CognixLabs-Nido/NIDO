@@ -9,7 +9,6 @@ import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
 const RUTA = '/[locale]/admin/cuotas'
-const VINCULO_LEGAL = ['tutor_legal_principal', 'tutor_legal_secundario'] as const
 
 const inputSchema = z.object({
   centroId: z.string().uuid(),
@@ -22,10 +21,10 @@ const inputSchema = z.object({
 type MetodoPago = Database['public']['Enums']['metodo_pago']
 
 /**
- * Fija el método de pago de un niño para un mes y lo COPIA a sus hermanos (niños que
- * comparten algún tutor legal) que aún NO tengan método ese mes — así no pisa elecciones
- * por-niño ya hechas (decisión H: "editable por niño"). Solo informativo en B-2; el
- * efecto (quién entra al XML) es de B-5.
+ * F-4-3: el método de pago es de la FAMILIA (el recibo es familiar), no del niño. La firma
+ * sigue recibiendo `ninoId` (la UI de B-2 es por-niño; se rehace en F-4-4): se resuelve la
+ * familia del niño y se hace upsert de una única fila `metodo_pago_familia` por familia/mes
+ * — así todos los hermanos comparten método automáticamente (ya no hay copia entre hermanos).
  */
 export async function setMetodoPago(
   centroId: string,
@@ -39,61 +38,20 @@ export async function setMetodoPago(
 
   const supabase = await createClient()
 
-  // 1) Upsert del niño objetivo (sobrescribe su valor explícitamente).
-  const r = await upsertMetodo(supabase, centroId, ninoId, anio, mes, metodo)
-  if (!r.success) return r
-
-  // 2) Hermanos: niños que comparten un tutor legal con el objetivo.
-  const { data: tutores } = await supabase
-    .from('vinculos_familiares')
-    .select('usuario_id')
-    .eq('nino_id', ninoId)
-    .in('tipo_vinculo', VINCULO_LEGAL)
-    .is('deleted_at', null)
-
-  const tutorIds = [...new Set((tutores ?? []).map((t) => t.usuario_id))]
-  if (tutorIds.length > 0) {
-    const { data: hermanosVinc } = await supabase
-      .from('vinculos_familiares')
-      .select('nino_id')
-      .in('usuario_id', tutorIds)
-      .in('tipo_vinculo', VINCULO_LEGAL)
-      .is('deleted_at', null)
-
-    const hermanoIds = [...new Set((hermanosVinc ?? []).map((h) => h.nino_id))].filter(
-      (id) => id !== ninoId
-    )
-
-    for (const hermanoId of hermanoIds) {
-      const { data: yaTiene } = await supabase
-        .from('metodo_pago_familia')
-        .select('id')
-        .eq('nino_id', hermanoId)
-        .eq('anio', anio)
-        .eq('mes', mes)
-        .is('deleted_at', null)
-        .maybeSingle()
-      // Copia solo si el hermano no tiene método ese mes (no pisa elecciones por-niño).
-      if (!yaTiene) await upsertMetodo(supabase, centroId, hermanoId, anio, mes, metodo)
-    }
+  const { data: nino, error: ninoErr } = await supabase
+    .from('ninos')
+    .select('familia_id')
+    .eq('id', ninoId)
+    .maybeSingle()
+  if (ninoErr || !nino) {
+    logger.warn('setMetodoPago nino', ninoErr?.message)
+    return fail('cuotas_config.errors.metodo_failed')
   }
 
-  revalidatePath(RUTA, 'page')
-  return ok(undefined)
-}
-
-async function upsertMetodo(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  centroId: string,
-  ninoId: string,
-  anio: number,
-  mes: number,
-  metodo: MetodoPago
-): Promise<ActionResult<void>> {
   const { data: existente, error: selErr } = await supabase
     .from('metodo_pago_familia')
     .select('id')
-    .eq('nino_id', ninoId)
+    .eq('familia_id', nino.familia_id)
     .eq('anio', anio)
     .eq('mes', mes)
     .is('deleted_at', null)
@@ -108,12 +66,14 @@ async function upsertMetodo(
     ? await supabase.from('metodo_pago_familia').update({ metodo }).eq('id', existente.id)
     : await supabase
         .from('metodo_pago_familia')
-        .insert({ centro_id: centroId, nino_id: ninoId, anio, mes, metodo })
+        .insert({ centro_id: centroId, familia_id: nino.familia_id, anio, mes, metodo })
 
   if (error) {
     logger.warn('setMetodoPago upsert', error.message)
     if (error.code === '42501') return fail('cuotas_config.errors.no_autorizado')
     return fail('cuotas_config.errors.metodo_failed')
   }
+
+  revalidatePath(RUTA, 'page')
   return ok(undefined)
 }

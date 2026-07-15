@@ -30,15 +30,12 @@ export async function registrarGastosDevolucion(
 
   const { data: original } = await supabase
     .from('recibos')
-    .select('nino_id, anio, mes')
+    .select('familia_id, nino_id, anio, mes')
     .eq('id', parsed.data.reciboId)
     .is('deleted_at', null)
     .maybeSingle()
 
   if (!original) return fail('remesas.errors.no_encontrada')
-  // F-4-1: nino_id es opcional en el recibo familiar. Esta acción legacy por-niño (crear_recibo_
-  // esporádico) se reescribe a grano familia en la fase remesa; hasta entonces exige nino_id.
-  if (!original.nino_id) return fail('remesas.errors.gastos_failed')
 
   const lineas: Array<Record<string, string | number>> = [
     {
@@ -48,9 +45,14 @@ export async function registrarGastosDevolucion(
     },
   ]
 
+  // F-4-3: recibo esporádico a grano familia (familia del recibo devuelto; nino informativo).
   const { data, error } = await supabase.rpc('crear_recibo_esporadico', {
     p_centro_id: centroId,
-    p_nino_id: original.nino_id,
+    p_familia_id: original.familia_id,
+    // recibo familiar → nino_id puede ser NULL; el generador de tipos emite `string` (no
+    // expresa la nulabilidad del arg RPC). La función SQL acepta NULL a propósito. Ver el
+    // mismo patrón de cast en crear-recibo-esporadico.ts (p_metodo).
+    p_nino_id: original.nino_id as string,
     p_anio: original.anio,
     p_mes: original.mes,
     p_concepto: 'Gastos de devolución',

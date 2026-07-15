@@ -178,7 +178,13 @@ describe.skipIf(!APPLIED)(
 
         const metodo = await cAdminA
           .from('metodo_pago_familia')
-          .insert({ centro_id: centroA.id, nino_id: ninoA.id, anio: 2026, mes: 6, metodo: 'sepa' })
+          .insert({
+            centro_id: centroA.id,
+            familia_id: ninoA.familia_id,
+            anio: 2026,
+            mes: 6,
+            metodo: 'sepa',
+          })
           .select('id')
           .maybeSingle()
         expect(metodo.error).toBeNull()
@@ -200,7 +206,7 @@ describe.skipIf(!APPLIED)(
           .from('metodo_pago_familia')
           .insert({
             centro_id: centroA.id,
-            nino_id: ninoA.id,
+            familia_id: ninoA.familia_id,
             anio: 2026,
             mes: 7,
             metodo: 'efectivo',
@@ -310,6 +316,7 @@ describe.skipIf(!APPLIED)(
             mes: 7,
             metodo: 'sepa',
             total_centimos: 9000,
+            estado: 'borrador', // F-4-3: el freeze POR ESTADO solo deja añadir líneas a un borrador
           })
           .select('id')
           .maybeSingle()

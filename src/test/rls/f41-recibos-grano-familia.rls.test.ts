@@ -127,6 +127,7 @@ describe.skipIf(!APPLIED)('F-4-1 — recibos a grano familia', () => {
         mes: 4,
         metodo: 'sepa',
         total_centimos: 8000,
+        estado: 'borrador', // F-4-3: el freeze POR ESTADO solo deja añadir líneas a un borrador
       })
       .select('id')
       .single()
