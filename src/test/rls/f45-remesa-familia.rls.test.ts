@@ -36,6 +36,7 @@ interface ReciboArgs {
   metodo: Database['public']['Enums']['metodo_pago']
   estado: Database['public']['Enums']['estado_recibo']
   total: number
+  esporadico?: boolean
 }
 
 describe.skipIf(!APPLIED)('F-4-5 — get_mandatos_remesa a grano familia', () => {
@@ -51,8 +52,11 @@ describe.skipIf(!APPLIED)('F-4-5 — get_mandatos_remesa a grano familia', () =>
   const mes = 9
 
   async function insertarReciboFamiliar(a: ReciboArgs): Promise<string> {
-    // nino_id NULL a propósito: es el recibo REGULAR familiar de F-4-1. serviceClient
-    // está exento del freeze por estado (F-4-3), así que el INSERT en borrador pasa.
+    // nino_id NULL a propósito: recibo familiar (grano F-4-1). serviceClient está exento
+    // del freeze por estado (F-4-3), así que el INSERT en borrador pasa.
+    // es_esporadico se parametriza: el índice idx_recibos_regular_familia_unico (F-4-1)
+    // impone 1 recibo REGULAR por (familia, anio, mes); los esporádicos quedan fuera, así
+    // que una misma familia puede llevar su regular + esporádicos en la misma remesa.
     const { data, error } = await serviceClient
       .from('recibos')
       .insert({
@@ -64,7 +68,7 @@ describe.skipIf(!APPLIED)('F-4-5 — get_mandatos_remesa a grano familia', () =>
         metodo: a.metodo,
         estado: a.estado,
         total_centimos: a.total,
-        es_esporadico: false,
+        es_esporadico: a.esporadico ?? false,
       })
       .select('id')
       .single()
@@ -101,7 +105,9 @@ describe.skipIf(!APPLIED)('F-4-5 — get_mandatos_remesa a grano familia', () =>
     // Familia SIN mandato.
     famSinMandato = await createTestFamilia(centro.id)
 
-    // Recibos familiares (nino_id NULL) enlazados a una única remesa.
+    // Recibos familiares (nino_id NULL) enlazados a una única remesa. Sobre famConMandato
+    // solo confirmadoSepa es REGULAR (el caso F-4-1 que importa); los demás son esporádicos
+    // para no chocar con idx_recibos_regular_familia_unico (1 regular/familia/mes).
     ids.confirmadoSepa = await insertarReciboFamiliar({
       familiaId: famConMandato,
       metodo: 'sepa',
@@ -113,18 +119,21 @@ describe.skipIf(!APPLIED)('F-4-5 — get_mandatos_remesa a grano familia', () =>
       metodo: 'sepa',
       estado: 'borrador',
       total: 5000,
+      esporadico: true,
     })
     ids.efectivo = await insertarReciboFamiliar({
       familiaId: famConMandato,
       metodo: 'efectivo',
       estado: 'pendiente_procesar',
       total: 3000,
+      esporadico: true,
     })
     ids.enviado = await insertarReciboFamiliar({
       familiaId: famConMandato,
       metodo: 'sepa',
       estado: 'enviado_banco',
       total: 6000,
+      esporadico: true,
     })
     ids.sinMandato = await insertarReciboFamiliar({
       familiaId: famSinMandato,
