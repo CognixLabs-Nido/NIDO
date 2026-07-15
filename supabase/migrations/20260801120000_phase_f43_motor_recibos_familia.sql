@@ -41,8 +41,18 @@ BEGIN;
 --    FAMILIA, no del niño (el recibo es familiar). 0 datos reales → migración
 --    libre; backfill defensivo por si hubiera fixtures.
 -- -----------------------------------------------------------------------------
+-- La columna familia_id YA EXISTE desde F-0 (20260707120000): NULLABLE, inerte, FK
+-- `metodo_pago_familia_familia_id_fkey` → familias(id) ON DELETE RESTRICT. NO se re-crea
+-- (evita "column already exists"). Se AJUSTA la FK a ON DELETE CASCADE: el método de pago
+-- es config de la familia; al borrarla (p.ej. teardown de tests), su método se va con ella.
+-- Con RESTRICT el borrado de la familia abortaría, porque al dropear `nino_id` (abajo)
+-- desaparece la vía CASCADE de F12-B que hoy limpia esta fila. Espejo del resto del esquema
+-- lo mantendría en RESTRICT, pero aquí no hay dato de negocio que proteger (es preferencia).
 ALTER TABLE public.metodo_pago_familia
-  ADD COLUMN familia_id uuid REFERENCES public.familias(id) ON DELETE CASCADE;
+  DROP CONSTRAINT IF EXISTS metodo_pago_familia_familia_id_fkey;
+ALTER TABLE public.metodo_pago_familia
+  ADD CONSTRAINT metodo_pago_familia_familia_id_fkey
+    FOREIGN KEY (familia_id) REFERENCES public.familias(id) ON DELETE CASCADE;
 
 UPDATE public.metodo_pago_familia
   SET familia_id = public.familia_de_nino(nino_id)
@@ -60,12 +70,12 @@ BEGIN
   RETURN NEW;
 END $$;
 
-DROP TRIGGER metodo_pago_familia_set_centro_id ON public.metodo_pago_familia;
+DROP TRIGGER IF EXISTS metodo_pago_familia_set_centro_id ON public.metodo_pago_familia;
 CREATE TRIGGER metodo_pago_familia_set_centro_id
   BEFORE INSERT ON public.metodo_pago_familia
   FOR EACH ROW EXECUTE FUNCTION public.derivar_centro_id_de_familia();
 
-DROP INDEX public.idx_metodo_pago_familia_unico;        -- (nino_id, anio, mes)
+DROP INDEX IF EXISTS public.idx_metodo_pago_familia_unico;   -- F12-B: (nino_id, anio, mes)
 ALTER TABLE public.metodo_pago_familia DROP COLUMN nino_id;
 CREATE UNIQUE INDEX idx_metodo_pago_familia_unico
   ON public.metodo_pago_familia (familia_id, anio, mes) WHERE deleted_at IS NULL;
