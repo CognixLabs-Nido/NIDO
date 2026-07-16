@@ -1426,6 +1426,7 @@
     "iban_ayuda": "Per seguretat, l'IBAN guardat no es mostra. Deixa'l buit per a conservar-lo; reintroduïx-lo complet per a canviar-lo.",
     "acreedor_guardado": "Dades del creditor guardades.",
     "marcar_title": "Rebuts SEPA del període",
+    "marcar_nota": "Només apareixen els rebuts confirmats amb mètode SEPA (els esborranys i els ja enviats no).",
     "sin_recibos_sepa": "No hi ha rebuts de mètode SEPA pendents de remesar en este període.",
     "seleccionar_todos": "Seleccionar tots",
     "seleccionados": "{num} seleccionats",

@@ -7,7 +7,8 @@ type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 
 export interface ReciboGestion {
   id: string
-  ninoNombre: string
+  /** F-4-5: los recibos son familiares → se muestra la familia (antes el niño). */
+  familiaEtiqueta: string
   totalCentimos: number
   estado: EstadoRecibo
   fechaEnvioBanco: string | null
@@ -18,7 +19,8 @@ export interface ReciboGestion {
 
 /**
  * Recibos del periodo ya en el ciclo de cobro (enviado_banco / devuelto /
- * cobrado_manual) para la gestión de devoluciones. RLS: solo admin del centro.
+ * cobrado_manual) para la gestión de devoluciones, a grano FAMILIA. RLS: solo admin
+ * del centro.
  */
 export async function getRecibosGestion(
   centroId: string,
@@ -30,7 +32,7 @@ export async function getRecibosGestion(
   const { data: recibos } = await supabase
     .from('recibos')
     .select(
-      'id, nino_id, total_centimos, estado, fecha_envio_banco, fecha_devolucion, devuelto_de_recibo_id'
+      'id, familia_id, total_centimos, estado, fecha_envio_banco, fecha_devolucion, devuelto_de_recibo_id'
     )
     .eq('centro_id', centroId)
     .eq('anio', anio)
@@ -41,20 +43,18 @@ export async function getRecibosGestion(
 
   if (!recibos || recibos.length === 0) return []
 
-  // F-4-1: nino_id es opcional en el recibo familiar. Esta gestión legacy por-niño se
-  // reescribe a grano familia en la fase remesa; hasta entonces se filtran los NULL.
-  const ninoIds = [...new Set(recibos.map((r) => r.nino_id).filter((x): x is string => x != null))]
-  const { data: ninos } = await supabase
-    .from('ninos')
-    .select('id, nombre, apellidos')
-    .in('id', ninoIds)
-  const nombrePorNino = new Map(
-    (ninos ?? []).map((n) => [n.id, [n.nombre, n.apellidos].filter(Boolean).join(' ')])
-  )
+  const familiaIds = [
+    ...new Set(recibos.map((r) => r.familia_id).filter((x): x is string => x != null)),
+  ]
+  const { data: familias } = await supabase
+    .from('familias')
+    .select('id, etiqueta')
+    .in('id', familiaIds)
+  const etiquetaPorFamilia = new Map((familias ?? []).map((f) => [f.id, f.etiqueta]))
 
   return recibos.map((r) => ({
     id: r.id,
-    ninoNombre: r.nino_id ? (nombrePorNino.get(r.nino_id) ?? '') : '',
+    familiaEtiqueta: r.familia_id ? (etiquetaPorFamilia.get(r.familia_id) ?? '') : '',
     totalCentimos: r.total_centimos,
     estado: r.estado,
     fechaEnvioBanco: r.fecha_envio_banco,

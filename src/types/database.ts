@@ -4117,9 +4117,10 @@ export type Database = {
         Args: { p_remesa_id: string }
         Returns: {
           fecha_mandato: string
+          familia_etiqueta: string
+          familia_id: string
           iban: string
           identificador_mandato: string
-          nino_id: string
           recibo_id: string
           titular: string
           total_centimos: number

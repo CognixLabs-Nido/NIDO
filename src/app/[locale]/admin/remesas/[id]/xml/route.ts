@@ -64,7 +64,7 @@ export async function GET(
   if (!resultado.ok) {
     const body =
       resultado.motivo === 'sin_mandato'
-        ? { error: resultado.motivo, ninos: resultado.ninosSinMandato }
+        ? { error: resultado.motivo, familias: resultado.familiasSinMandato }
         : { error: resultado.motivo }
     return json(body, 422)
   }

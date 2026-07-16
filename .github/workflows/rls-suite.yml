@@ -99,3 +99,4 @@ jobs:
           F41_MIGRATION_APPLIED: '1'
           F42_MIGRATION_APPLIED: '1'
           F43_MIGRATION_APPLIED: '1'
+          F45_MIGRATION_APPLIED: '1'

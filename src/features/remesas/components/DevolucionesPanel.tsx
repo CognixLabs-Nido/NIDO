@@ -52,7 +52,7 @@ export function DevolucionesPanel({ recibos }: Props) {
             >
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span>{r.ninoNombre}</span>
+                  <span>{r.familiaEtiqueta}</span>
                   <Badge variant={BADGE_VARIANT[r.estado] ?? 'outline'}>
                     {t(`estado_recibo.${r.estado}`)}
                   </Badge>

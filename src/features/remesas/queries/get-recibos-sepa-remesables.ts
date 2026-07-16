@@ -3,22 +3,68 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 
 export interface ReciboSepaRemesable {
+  /** id del RECIBO (1 recibo = 1 adeudo pain.008; endToEndId = recibo_id). */
   id: string
-  ninoId: string
-  ninoNombre: string
+  familiaId: string
+  familiaEtiqueta: string
+  /** Tutores de la familia (titular primero). */
+  tutores: string[]
   totalCentimos: number
   esEsporadico: boolean
   /**
-   * ¿La FAMILIA del niño tiene un mandato SEPA activo? (F-2c-1: el mandato es de la familia,
-   * no del niño). Si no, no debería entrar a la remesa.
+   * ¿La FAMILIA del recibo tiene un mandato SEPA activo? (F-2c-1: el mandato es de la
+   * familia). Si no, no puede entrar a la remesa (el generador la rechazaría).
    */
   tieneMandato: boolean
 }
 
+/** Fila mínima de recibo SEPA remesable (para el ensamblado puro/testeable). */
+export interface ReciboSepaRow {
+  id: string
+  familiaId: string
+  totalCentimos: number
+  esEsporadico: boolean
+}
+
 /**
- * Recibos de método 'sepa' del periodo que AÚN no están en ninguna remesa, con el
- * nombre del niño y si tiene mandato activo. Base para el marcado de la remesa por
- * la directora. RLS: solo admin del centro. Excluye importes ≤ 0 (no domiciliables).
+ * Ensambla los remesables a grano FAMILIA (puro: la parte Supabase queda en la query).
+ * Excluye los ya enlazados a una remesa; adjunta etiqueta + tutores de la familia y si
+ * la familia tiene mandato activo. Ordena por etiqueta de familia (es-ES).
+ */
+export function ensamblarRemesables(
+  recibos: ReciboSepaRow[],
+  remesados: Set<string>,
+  familiasConMandato: Set<string>,
+  etiquetaPorFamilia: Map<string, string>,
+  tutoresPorFamilia: Map<string, string[]>
+): ReciboSepaRemesable[] {
+  return recibos
+    .filter((r) => !remesados.has(r.id))
+    .map((r) => ({
+      id: r.id,
+      familiaId: r.familiaId,
+      familiaEtiqueta: etiquetaPorFamilia.get(r.familiaId) ?? '',
+      tutores: tutoresPorFamilia.get(r.familiaId) ?? [],
+      totalCentimos: r.totalCentimos,
+      esEsporadico: r.esEsporadico,
+      tieneMandato: familiasConMandato.has(r.familiaId),
+    }))
+    .sort(
+      (a, b) =>
+        a.familiaEtiqueta.localeCompare(b.familiaEtiqueta, 'es-ES') || a.id.localeCompare(b.id)
+    )
+}
+
+/**
+ * Recibos de método 'sepa' CONFIRMADOS y aún no enviados (estado='pendiente_procesar')
+ * del periodo, a grano FAMILIA, que aún no están en ninguna remesa. Base para el marcado
+ * de la remesa por la directora. RLS: solo admin del centro. Excluye importes ≤ 0.
+ *
+ * Gate `estado = 'pendiente_procesar'` (corte ESTRICTO): solo se remesan los confirmados
+ * aún no enviados. Un BORRADOR nunca se remesa; `enviado_banco/devuelto/cobrado_manual`
+ * tampoco vuelven a entrar. (La RPC get_mandatos_remesa usa `IN (pendiente_procesar,
+ * enviado_banco)` porque allí es una red sobre enlaces YA creados y debe permitir la
+ * re-descarga del XML de una remesa enviada — distinción documentada en su migración.)
  */
 export async function getRecibosSepaRemesables(
   centroId: string,
@@ -29,57 +75,64 @@ export async function getRecibosSepaRemesables(
 
   const { data: recibos } = await supabase
     .from('recibos')
-    .select('id, nino_id, total_centimos, es_esporadico')
+    .select('id, familia_id, total_centimos, es_esporadico')
     .eq('centro_id', centroId)
     .eq('anio', anio)
     .eq('mes', mes)
     .eq('metodo', 'sepa')
+    .eq('estado', 'pendiente_procesar')
     .is('deleted_at', null)
     .gt('total_centimos', 0)
 
   if (!recibos || recibos.length === 0) return []
 
-  // F-4-1: los recibos REGULARES pasan a grano familia (nino_id NULL). Esta selección de
-  // remesables legacy por-niño se reescribe a grano familia (leer recibos.familia_id) en la
-  // fase remesa; hasta entonces solo considera recibos con nino_id (esporádicos por-niño).
-  const recibosConNino = recibos.filter((r): r is typeof r & { nino_id: string } => r.nino_id != null)
-  if (recibosConNino.length === 0) return []
+  // F-4-5: grano familia — se lee recibos.familia_id DIRECTO (sin puente por niño).
+  const conFamilia = recibos.filter(
+    (r): r is typeof r & { familia_id: string } => r.familia_id != null
+  )
+  if (conFamilia.length === 0) return []
 
-  const ninoIds = [...new Set(recibosConNino.map((r) => r.nino_id))]
-  // F-2c-1: el mandato cuelga de la familia → se resuelve por `ninos.familia_id`, no por
-  // `nino_id`. Los mandatos activos se agrupan por `familia_id`; un recibo "tiene mandato"
-  // si la familia de su niño tiene uno activo.
-  const [{ data: yaEnRemesa }, { data: mandatos }, { data: ninos }] = await Promise.all([
-    supabase.from('recibos_remesa').select('recibo_id').eq('centro_id', centroId),
-    supabase
-      .from('mandatos_sepa')
-      .select('familia_id')
-      .eq('centro_id', centroId)
-      .eq('estado', 'activo')
-      .is('deleted_at', null),
-    supabase.from('ninos').select('id, nombre, apellidos, familia_id').in('id', ninoIds),
-  ])
+  const familiaIds = [...new Set(conFamilia.map((r) => r.familia_id))]
+
+  const [{ data: yaEnRemesa }, { data: mandatos }, { data: familias }, { data: tutores }] =
+    await Promise.all([
+      supabase.from('recibos_remesa').select('recibo_id').eq('centro_id', centroId),
+      supabase
+        .from('mandatos_sepa')
+        .select('familia_id')
+        .eq('centro_id', centroId)
+        .eq('estado', 'activo')
+        .is('deleted_at', null),
+      supabase.from('familias').select('id, etiqueta').in('id', familiaIds),
+      supabase
+        .from('familia_tutores')
+        .select('familia_id, rol_familia, nombre_completo, usuario:usuarios(nombre_completo)')
+        .in('familia_id', familiaIds)
+        .is('deleted_at', null),
+    ])
 
   const remesados = new Set((yaEnRemesa ?? []).map((r) => r.recibo_id))
   const familiasConMandato = new Set(
     (mandatos ?? []).map((m) => m.familia_id).filter((f): f is string => f != null)
   )
-  const nombrePorNino = new Map(
-    (ninos ?? []).map((n) => [n.id, [n.nombre, n.apellidos].filter(Boolean).join(' ')])
-  )
-  const familiaPorNino = new Map((ninos ?? []).map((n) => [n.id, n.familia_id]))
+  const etiquetaPorFamilia = new Map((familias ?? []).map((f) => [f.id, f.etiqueta]))
 
-  return recibosConNino
-    .filter((r) => !remesados.has(r.id))
-    .map((r) => {
-      const familiaId = familiaPorNino.get(r.nino_id) ?? null
-      return {
-        id: r.id,
-        ninoId: r.nino_id,
-        ninoNombre: nombrePorNino.get(r.nino_id) ?? '',
-        totalCentimos: r.total_centimos,
-        esEsporadico: r.es_esporadico,
-        tieneMandato: familiaId != null && familiasConMandato.has(familiaId),
-      }
-    })
+  const tutoresPorFamilia = new Map<string, string[]>()
+  for (const tr of tutores ?? []) {
+    const nombre = tr.nombre_completo ?? tr.usuario?.nombre_completo ?? ''
+    if (!nombre) continue
+    const actual = tutoresPorFamilia.get(tr.familia_id) ?? []
+    if (tr.rol_familia === 'titular') actual.unshift(nombre)
+    else actual.push(nombre)
+    tutoresPorFamilia.set(tr.familia_id, actual)
+  }
+
+  const rows: ReciboSepaRow[] = conFamilia.map((r) => ({
+    id: r.id,
+    familiaId: r.familia_id,
+    totalCentimos: r.total_centimos,
+    esEsporadico: r.es_esporadico,
+  }))
+
+  return ensamblarRemesables(rows, remesados, familiasConMandato, etiquetaPorFamilia, tutoresPorFamilia)
 }

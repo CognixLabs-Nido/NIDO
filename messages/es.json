@@ -1426,6 +1426,7 @@
     "iban_ayuda": "Por seguridad, el IBAN guardado no se muestra. Déjalo vacío para conservarlo; reintrodúcelo completo para cambiarlo.",
     "acreedor_guardado": "Datos del acreedor guardados.",
     "marcar_title": "Recibos SEPA del periodo",
+    "marcar_nota": "Solo aparecen los recibos confirmados con método SEPA (los borradores y los ya enviados no).",
     "sin_recibos_sepa": "No hay recibos de método SEPA pendientes de remesar en este periodo.",
     "seleccionar_todos": "Seleccionar todos",
     "seleccionados": "{num} seleccionados",
