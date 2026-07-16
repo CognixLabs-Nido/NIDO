@@ -18,6 +18,8 @@ export function buildConceptoRow(input: ConceptoCobroInput) {
     tipo_concepto: input.tipo_concepto,
     signo: input.signo,
     ambito: input.ambito,
+    // F-1: 'automatico' entra en proponer_asignaciones; 'manual' solo asignación a mano.
+    aplicacion: input.aplicacion,
     tipo_valor: input.tipo_valor,
     importe_centimos:
       esFijo && input.importe_euros != null ? eurosACentimos(input.importe_euros) : null,

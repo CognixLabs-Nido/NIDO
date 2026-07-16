@@ -70,6 +70,7 @@ export function ConceptosCatalogo({ centroId, conceptos }: Props) {
                   <TableHead>{t('fields.nombre')}</TableHead>
                   <TableHead>{t('fields.tipo')}</TableHead>
                   <TableHead>{t('fields.precio')}</TableHead>
+                  <TableHead>{t('fields.aplicacion')}</TableHead>
                   <TableHead>{t('fields.activo')}</TableHead>
                   <TableHead className="text-right">{t('fields.acciones')}</TableHead>
                 </TableRow>
@@ -114,6 +115,11 @@ function ConceptoRow({
         <Badge variant="secondary">{t(`tipos.${concepto.tipo_concepto}`)}</Badge>
       </TableCell>
       <TableCell>{formatValor(concepto, t)}</TableCell>
+      <TableCell>
+        <Badge variant={concepto.aplicacion === 'automatico' ? 'default' : 'outline'}>
+          {t(`aplicaciones_badge.${concepto.aplicacion === 'automatico' ? 'automatico' : 'manual'}`)}
+        </Badge>
+      </TableCell>
       <TableCell>
         <Checkbox
           checked={concepto.activo}

@@ -37,6 +37,7 @@ import { actualizarConcepto } from '../actions/actualizar-concepto'
 import { crearConcepto } from '../actions/crear-concepto'
 import {
   AMBITOS,
+  APLICACIONES,
   conceptoCobroSchema,
   SERVICIOS_DIARIOS,
   TIPOS_CONCEPTO,
@@ -69,6 +70,7 @@ export function ConceptoFormDialog({ centroId, concepto, conceptos, trigger }: P
       tipo_valor: (concepto?.tipo_valor as 'fijo' | 'porcentaje') ?? 'fijo',
       tipo_concepto: concepto?.tipo_concepto ?? 'mensual',
       ambito: (concepto?.ambito as 'nino' | 'familia') ?? 'nino',
+      aplicacion: (concepto?.aplicacion as 'automatico' | 'manual') ?? 'manual',
       importe_euros:
         concepto?.importe_centimos != null ? centimosAEuros(concepto.importe_centimos) : null,
       porcentaje: concepto?.porcentaje_bp != null ? concepto.porcentaje_bp / 100 : null,
@@ -81,6 +83,7 @@ export function ConceptoFormDialog({ centroId, concepto, conceptos, trigger }: P
   const signo = useWatch({ control: form.control, name: 'signo' })
   const tipoValor = useWatch({ control: form.control, name: 'tipo_valor' })
   const tipoConcepto = useWatch({ control: form.control, name: 'tipo_concepto' })
+  const aplicacion = useWatch({ control: form.control, name: 'aplicacion' })
   const esDiario = tipoConcepto === 'diario'
   const esPorcentaje = tipoValor === 'porcentaje'
   const esDescuentoPorcentual = Number(signo) === -1 && esPorcentaje
@@ -92,6 +95,7 @@ export function ConceptoFormDialog({ centroId, concepto, conceptos, trigger }: P
   const valorItems = TIPOS_VALOR.map((value) => ({ value, label: t(`valores.${value}`) }))
   const tipoItems = TIPOS_CONCEPTO.map((value) => ({ value, label: t(`tipos.${value}`) }))
   const ambitoItems = AMBITOS.map((value) => ({ value, label: t(`ambitos.${value}`) }))
+  const aplicacionItems = APLICACIONES.map((value) => ({ value, label: t(`aplicaciones.${value}`) }))
   const servicioItems = SERVICIOS_DIARIOS.map((value) => ({
     value,
     label: t(`servicios.${value}`),
@@ -318,6 +322,38 @@ export function ConceptoFormDialog({ centroId, concepto, conceptos, trigger }: P
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="aplicacion"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('fields.aplicacion')}</FormLabel>
+                  <Select
+                    items={aplicacionItems}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {aplicacionItems.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-muted-foreground text-xs">
+                    {t(`aplicacion_hint.${aplicacion === 'automatico' ? 'automatico' : 'manual'}`)}
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

@@ -369,6 +369,7 @@
         "importe": "Import (€)",
         "porcentaje": "Percentatge (%)",
         "ambito": "Àmbit",
+        "aplicacion": "Assignació",
         "concepto_base": "Concepte base",
         "concepto_base_placeholder": "Tria el concepte al qual s'aplica"
       },
@@ -459,6 +460,18 @@
       "ambitos": {
         "nino": "Per xiquet",
         "familia": "Per família"
+      },
+      "aplicaciones": {
+        "automatico": "Es proposa automàticament a tots",
+        "manual": "Només si l'assigne jo"
+      },
+      "aplicaciones_badge": {
+        "automatico": "Automàtic",
+        "manual": "Manual"
+      },
+      "aplicacion_hint": {
+        "automatico": "En prémer «Proposar assignacions» s'assigna sol: àmbit Xiquet → a tots els alumnes actius; Família → a totes les famílies; si és descompte → només a famílies amb 2 fills o més.",
+        "manual": "No es proposa. L'assignes tu a mà en «Assignació permanent»."
       },
       "asignar_title": "Conceptes · {nombre}",
       "conceptos_asignados": "{n} assignats",
@@ -1250,6 +1263,7 @@
       "signo_invalido": "Selecciona cobrament o descompte",
       "tipo_valor_invalido": "Selecciona el tipus de valor",
       "ambito_invalido": "Selecciona l'àmbit",
+      "aplicacion_invalido": "Selecciona com s'assigna",
       "importe_requerido": "Indica l'import",
       "porcentaje_requerido": "Indica el percentatge",
       "concepto_base_requerido": "Un descompte percentual necessita un concepte base",

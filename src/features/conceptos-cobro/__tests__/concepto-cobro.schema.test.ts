@@ -9,6 +9,7 @@ const base: ConceptoCobroInput = {
   tipo_valor: 'fijo',
   tipo_concepto: 'mensual',
   ambito: 'nino',
+  aplicacion: 'manual',
   importe_euros: 290,
   porcentaje: null,
   servicio: null,
@@ -92,5 +93,26 @@ describe('conceptoCobroSchema — modelo único (fijo/porcentaje/descuento)', ()
 
   it('importe NaN (input vacío) se trata como ausente y falla', () => {
     expect(parse({ importe_euros: Number.NaN }).success).toBe(false)
+  })
+
+  it('aplicacion automatico y manual son válidos', () => {
+    expect(parse({ aplicacion: 'automatico' }).success).toBe(true)
+    expect(parse({ aplicacion: 'manual' }).success).toBe(true)
+  })
+
+  it('aplicacion inválida falla (aplicacion_invalido)', () => {
+    // @ts-expect-error valor fuera del enum a propósito
+    const r = parse({ aplicacion: 'otra' })
+    expect(r.success).toBe(false)
+    if (!r.success)
+      expect(
+        r.error.issues.some((i) => i.message === 'conceptos_cobro.validation.aplicacion_invalido')
+      ).toBe(true)
+  })
+
+  it('aplicacion ausente falla (requerida; el default "manual" lo dan form + columna)', () => {
+    const sinAplicacion: Record<string, unknown> = { ...base }
+    delete sinAplicacion.aplicacion
+    expect(conceptoCobroSchema.safeParse(sinAplicacion).success).toBe(false)
   })
 })

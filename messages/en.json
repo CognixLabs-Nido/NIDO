@@ -369,6 +369,7 @@
         "importe": "Amount (€)",
         "porcentaje": "Percentage (%)",
         "ambito": "Scope",
+        "aplicacion": "Assignment",
         "concepto_base": "Base concept",
         "concepto_base_placeholder": "Choose the concept it applies to"
       },
@@ -459,6 +460,18 @@
       "ambitos": {
         "nino": "Per child",
         "familia": "Per family"
+      },
+      "aplicaciones": {
+        "automatico": "Proposed automatically to everyone",
+        "manual": "Only if I assign it"
+      },
+      "aplicaciones_badge": {
+        "automatico": "Automatic",
+        "manual": "Manual"
+      },
+      "aplicacion_hint": {
+        "automatico": "When you click «Propose assignments» it is assigned on its own: Child scope → all active pupils; Family → all families; if it is a discount → only families with 2 or more children.",
+        "manual": "Not proposed. You assign it by hand in «Permanent assignment»."
       },
       "asignar_title": "Concepts · {nombre}",
       "conceptos_asignados": "{n} assigned",
@@ -1250,6 +1263,7 @@
       "signo_invalido": "Select charge or discount",
       "tipo_valor_invalido": "Select the value type",
       "ambito_invalido": "Select the scope",
+      "aplicacion_invalido": "Select how it is assigned",
       "importe_requerido": "Enter the amount",
       "porcentaje_requerido": "Enter the percentage",
       "concepto_base_requerido": "A percentage discount needs a base concept",
