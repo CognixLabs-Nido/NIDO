@@ -369,6 +369,7 @@
         "importe": "Importe (€)",
         "porcentaje": "Porcentaje (%)",
         "ambito": "Ámbito",
+        "aplicacion": "Asignación",
         "concepto_base": "Concepto base",
         "concepto_base_placeholder": "Elige el concepto al que se aplica"
       },
@@ -459,6 +460,18 @@
       "ambitos": {
         "nino": "Por niño",
         "familia": "Por familia"
+      },
+      "aplicaciones": {
+        "automatico": "Se propone automáticamente a todos",
+        "manual": "Solo si lo asigno yo"
+      },
+      "aplicaciones_badge": {
+        "automatico": "Automático",
+        "manual": "Manual"
+      },
+      "aplicacion_hint": {
+        "automatico": "Al pulsar «Proponer asignaciones» se asigna solo: ámbito Niño → a todos los alumnos activos; Familia → a todas las familias; si es descuento → solo a familias con 2 o más hijos.",
+        "manual": "No se propone. Lo asignas tú a mano en «Asignación permanente»."
       },
       "asignar_title": "Conceptos · {nombre}",
       "conceptos_asignados": "{n} asignados",
@@ -1250,6 +1263,7 @@
       "signo_invalido": "Selecciona cobro o descuento",
       "tipo_valor_invalido": "Selecciona el tipo de valor",
       "ambito_invalido": "Selecciona el ámbito",
+      "aplicacion_invalido": "Selecciona cómo se asigna",
       "importe_requerido": "Indica el importe",
       "porcentaje_requerido": "Indica el porcentaje",
       "concepto_base_requerido": "Un descuento porcentual necesita un concepto base",

@@ -12,6 +12,7 @@ export interface ConceptoCobroListItem {
   signo: number
   tipo_valor: string
   ambito: string
+  aplicacion: string
   importe_centimos: number | null
   porcentaje_bp: number | null
   servicio: Database['public']['Enums']['servicio_diario'] | null
@@ -39,7 +40,7 @@ export async function getConceptosCobroCore(
   const { data } = await supabase
     .from('conceptos_cobro')
     .select(
-      'id, nombre, tipo_concepto, signo, tipo_valor, ambito, importe_centimos, porcentaje_bp, servicio, concepto_base_id, activo'
+      'id, nombre, tipo_concepto, signo, tipo_valor, ambito, aplicacion, importe_centimos, porcentaje_bp, servicio, concepto_base_id, activo'
     )
     .eq('centro_id', centroId)
     .is('deleted_at', null)

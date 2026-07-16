@@ -13,6 +13,12 @@ export const SERVICIOS_DIARIOS = ['comedor', 'matinera', 'vespertina'] as const
 export const SIGNOS = [1, -1] as const
 export const TIPOS_VALOR = ['fijo', 'porcentaje'] as const
 export const AMBITOS = ['nino', 'familia'] as const
+// Cómo se asigna el concepto (F-1): 'automatico' → proponer_asignaciones lo siembra a
+// todos (niño → alumnos activos; familia → familias; descuento → familias con 2+ hijos);
+// 'manual' → no se propone, la directora lo asigna a mano. El default 'manual' lo aportan
+// el formulario (defaultValues) y el DEFAULT de la columna (no un .default() de Zod, que
+// divergiría input/output y rompería el tipado de react-hook-form — patrón del repo).
+export const APLICACIONES = ['automatico', 'manual'] as const
 
 // Importe fijo en euros (nullable). El input vacío manda null; NaN no pasa .min(0).
 const importeEurosField = z
@@ -43,6 +49,9 @@ export const conceptoCobroSchema = z
       message: 'conceptos_cobro.validation.tipo_invalido',
     }),
     ambito: z.enum(AMBITOS, { message: 'conceptos_cobro.validation.ambito_invalido' }),
+    aplicacion: z.enum(APLICACIONES, {
+      message: 'conceptos_cobro.validation.aplicacion_invalido',
+    }),
     importe_euros: importeEurosField,
     porcentaje: porcentajeField,
     servicio: z.enum(SERVICIOS_DIARIOS).nullable(),
