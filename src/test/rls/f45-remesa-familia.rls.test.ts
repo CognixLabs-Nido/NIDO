@@ -37,6 +37,7 @@ interface ReciboArgs {
   estado: Database['public']['Enums']['estado_recibo']
   total: number
   esporadico?: boolean
+  fechaEnvioBanco?: string
 }
 
 describe.skipIf(!APPLIED)('F-4-5 — get_mandatos_remesa a grano familia', () => {
@@ -57,6 +58,8 @@ describe.skipIf(!APPLIED)('F-4-5 — get_mandatos_remesa a grano familia', () =>
     // es_esporadico se parametriza: el índice idx_recibos_regular_familia_unico (F-4-1)
     // impone 1 recibo REGULAR por (familia, anio, mes); los esporádicos quedan fuera, así
     // que una misma familia puede llevar su regular + esporádicos en la misma remesa.
+    // fecha_envio_banco: el CHECK recibos_envio_banco_fecha (B-6) exige que 'enviado_banco'
+    // la lleve NOT NULL (y 'devuelto' además fecha_devolucion; aquí no usamos ese estado).
     const { data, error } = await serviceClient
       .from('recibos')
       .insert({
@@ -69,6 +72,7 @@ describe.skipIf(!APPLIED)('F-4-5 — get_mandatos_remesa a grano familia', () =>
         estado: a.estado,
         total_centimos: a.total,
         es_esporadico: a.esporadico ?? false,
+        fecha_envio_banco: a.fechaEnvioBanco ?? null,
       })
       .select('id')
       .single()
@@ -134,6 +138,7 @@ describe.skipIf(!APPLIED)('F-4-5 — get_mandatos_remesa a grano familia', () =>
       estado: 'enviado_banco',
       total: 6000,
       esporadico: true,
+      fechaEnvioBanco: '2026-09-15', // CHECK recibos_envio_banco_fecha: enviado_banco ⇒ fecha NOT NULL
     })
     ids.sinMandato = await insertarReciboFamiliar({
       familiaId: famSinMandato,
