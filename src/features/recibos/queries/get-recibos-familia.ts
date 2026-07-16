@@ -18,23 +18,24 @@ export interface ReciboFamiliaItem {
   conceptoEsporadico: string | null
   /** Recibo de re-giro (ligado a un devuelto): lo señalamos a la familia. */
   esRegiro: boolean
+  /** Solo esporádicos: hijo concreto al que se carga (NULL = cargo familiar). */
+  ninoId: string | null
+  ninoNombre: string | null
   createdAt: string
 }
 
-export interface RecibosFamiliaNino {
-  ninoId: string
-  nombre: string
-  recibos: ReciboFamiliaItem[]
-}
-
 /**
- * Recibos PASADOS del/los hijo(s) del tutor legal, agrupados por niño y ordenados por
- * período descendente (más reciente primero). Solo lectura. La RLS de `recibos` ya
- * filtra a los hijos del tutor (`es_tutor_legal_de(nino_id)`); no filtramos por usuario
- * aquí. Incluye todos los recibos visibles (regulares, esporádicos y re-giros): cada uno
- * es un cargo real que la familia debe poder consultar.
+ * Recibos de la FAMILIA del tutor legal (F-4-6), grano familia: cada recibo es UNA fila
+ * (regular del mes, esporádico o re-giro), ordenados por período descendente. Solo lectura.
+ *
+ * La RLS de `recibos` ya filtra por `es_tutor_de_familia`, así que solo llegan los recibos
+ * de la familia del tutor (relación 1:1). NO se listan los BORRADORES: un recibo en
+ * 'borrador' aún no lo ha confirmado Dirección (puede editarse) → el tutor solo ve los que
+ * han salido de borrador. Los esporádicos pueden llevar `nino_id` (cargo de un hijo
+ * concreto): se resuelve su nombre para indicarlo; los regulares y los cargos de familia
+ * llevan `nino_id` NULL.
  */
-export async function getRecibosFamilia(): Promise<RecibosFamiliaNino[]> {
+export async function getRecibosFamilia(): Promise<ReciboFamiliaItem[]> {
   const supabase = await createClient()
 
   const { data: recibos, error } = await supabase
@@ -42,6 +43,7 @@ export async function getRecibosFamilia(): Promise<RecibosFamiliaNino[]> {
     .select(
       'id, nino_id, anio, mes, estado, metodo, total_centimos, es_esporadico, concepto_esporadico, devuelto_de_recibo_id, created_at'
     )
+    .neq('estado', 'borrador') // el tutor no ve recibos aún editables por Dirección
     .is('deleted_at', null)
     .order('anio', { ascending: false })
     .order('mes', { ascending: false })
@@ -53,45 +55,33 @@ export async function getRecibosFamilia(): Promise<RecibosFamiliaNino[]> {
   }
   if (!recibos || recibos.length === 0) return []
 
-  // F-4-1: los recibos REGULARES pasan a grano familia (nino_id NULL). Esta vista por-niño se
-  // reescribe a recibo familiar en F-4-4; hasta entonces se listan solo los que tienen nino_id.
-  const recibosConNino = recibos.filter((r): r is typeof r & { nino_id: string } => r.nino_id != null)
-
-  const ninoIds = [...new Set(recibosConNino.map((r) => r.nino_id))]
-  const { data: ninos } = await supabase
-    .from('ninos')
-    .select('id, nombre, apellidos')
-    .in('id', ninoIds)
-  const nombrePorNino = new Map(
-    (ninos ?? []).map((n) => [n.id, [n.nombre, n.apellidos].filter(Boolean).join(' ')])
-  )
-
-  const grupos = new Map<string, RecibosFamiliaNino>()
-  for (const r of recibosConNino) {
-    let grupo = grupos.get(r.nino_id)
-    if (!grupo) {
-      grupo = { ninoId: r.nino_id, nombre: nombrePorNino.get(r.nino_id) ?? '', recibos: [] }
-      grupos.set(r.nino_id, grupo)
+  // Nombres de los hijos referidos por esporádicos con nino_id (los regulares llevan NULL).
+  const ninoIds = [...new Set(recibos.map((r) => r.nino_id).filter((id): id is string => id != null))]
+  const nombrePorNino = new Map<string, string>()
+  if (ninoIds.length > 0) {
+    const { data: ninos } = await supabase.from('ninos').select('id, nombre, apellidos').in('id', ninoIds)
+    for (const n of ninos ?? []) {
+      nombrePorNino.set(n.id, [n.nombre, n.apellidos].filter(Boolean).join(' '))
     }
-    grupo.recibos.push({
-      id: r.id,
-      anio: r.anio,
-      mes: r.mes,
-      estado: r.estado,
-      metodo: r.metodo,
-      totalCentimos: r.total_centimos,
-      esEsporadico: r.es_esporadico,
-      conceptoEsporadico: r.concepto_esporadico,
-      esRegiro: r.devuelto_de_recibo_id != null,
-      createdAt: r.created_at,
-    })
   }
 
-  // Orden estable de niños por nombre para una lista determinista.
-  return [...grupos.values()].sort((a, b) => a.nombre.localeCompare(b.nombre))
+  return recibos.map((r) => ({
+    id: r.id,
+    anio: r.anio,
+    mes: r.mes,
+    estado: r.estado,
+    metodo: r.metodo,
+    totalCentimos: r.total_centimos,
+    esEsporadico: r.es_esporadico,
+    conceptoEsporadico: r.concepto_esporadico,
+    esRegiro: r.devuelto_de_recibo_id != null,
+    ninoId: r.nino_id,
+    ninoNombre: r.nino_id ? (nombrePorNino.get(r.nino_id) ?? null) : null,
+    createdAt: r.created_at,
+  }))
 }
 
 /** Todos los ids de recibos visibles (para marcarlos como vistos al abrir la lista). */
-export function idsDeRecibos(grupos: RecibosFamiliaNino[]): string[] {
-  return grupos.flatMap((g) => g.recibos.map((r) => r.id))
+export function idsDeRecibos(recibos: ReciboFamiliaItem[]): string[] {
+  return recibos.map((r) => r.id)
 }

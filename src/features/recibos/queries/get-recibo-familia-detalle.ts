@@ -1,5 +1,10 @@
 import 'server-only'
 
+import {
+  agruparLineasPorHijo,
+  type DesgloseReciboFamilia,
+  type LineaConNino,
+} from '@/features/recibos/lib/recibo-familia-detalle'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
@@ -7,18 +12,8 @@ import type { Database } from '@/types/database'
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 type MetodoPago = Database['public']['Enums']['metodo_pago']
 
-export interface LineaReciboFamilia {
-  id: string
-  descripcion: string
-  cantidad: number
-  precioUnitarioCentimos: number
-  importeCentimos: number
-}
-
 export interface ReciboFamiliaDetalle {
   id: string
-  ninoId: string
-  ninoNombre: string
   anio: number
   mes: number
   estado: EstadoRecibo
@@ -29,14 +24,17 @@ export interface ReciboFamiliaDetalle {
   esRegiro: boolean
   fechaEnvioBanco: string | null
   fechaDevolucion: string | null
-  lineas: LineaReciboFamilia[]
+  /** Líneas repartidas por hijo + bloque familiar (descuento hermanos, saldo, cargo familia). */
+  desglose: DesgloseReciboFamilia
 }
 
 /**
- * Detalle de UN recibo del hijo del tutor legal con su desglose de líneas (conceptos +
- * becas negativas + saldo arrastrado). Solo lectura. La RLS de `recibos` y de
- * `lineas_recibo` restringen a los hijos del tutor; devolvemos `null` si el recibo no
- * es visible (RLS → 0 filas) para que la página muestre notFound.
+ * Detalle de UN recibo FAMILIAR del tutor legal con su desglose de líneas agrupado por hijo
+ * (F-4-6). Solo lectura. La RLS de `recibos` y `lineas_recibo` restringen a la familia del
+ * tutor (`es_tutor_de_familia`); devolvemos `null` (→ notFound) si el recibo no es visible.
+ *
+ * NO se sirve el BORRADOR: como en la lista, un recibo aún editable por Dirección no debe
+ * verlo el tutor (aunque la RLS lo dejaría leer, el corte de borrador es de producto).
  */
 export async function getReciboFamiliaDetalle(
   reciboId: string
@@ -46,9 +44,10 @@ export async function getReciboFamiliaDetalle(
   const { data: recibo, error } = await supabase
     .from('recibos')
     .select(
-      'id, nino_id, anio, mes, estado, metodo, total_centimos, es_esporadico, concepto_esporadico, devuelto_de_recibo_id, fecha_envio_banco, fecha_devolucion'
+      'id, anio, mes, estado, metodo, total_centimos, es_esporadico, concepto_esporadico, devuelto_de_recibo_id, fecha_envio_banco, fecha_devolucion'
     )
     .eq('id', reciboId)
+    .neq('estado', 'borrador')
     .is('deleted_at', null)
     .maybeSingle()
 
@@ -58,21 +57,36 @@ export async function getReciboFamiliaDetalle(
   }
   if (!recibo) return null
 
-  // F-4-1: nino_id es opcional en el recibo familiar. El detalle familiar (varios hijos) se
-  // rehace en F-4-4; hasta entonces, si no hay nino_id, el nombre queda vacío.
-  const [{ data: nino }, { data: lineas }] = await Promise.all([
-    supabase.from('ninos').select('nombre, apellidos').eq('id', recibo.nino_id ?? '').maybeSingle(),
-    supabase
-      .from('lineas_recibo')
-      .select('id, descripcion, cantidad, precio_unitario_centimos, importe_centimos')
-      .eq('recibo_id', reciboId)
-      .order('created_at', { ascending: true }),
-  ])
+  const { data: lineas } = await supabase
+    .from('lineas_recibo')
+    .select('id, nino_id, descripcion, cantidad, precio_unitario_centimos, importe_centimos')
+    .eq('recibo_id', reciboId)
+    .order('created_at', { ascending: true })
+
+  // Nombres de los hijos con línea (nino_id NOT NULL). La RLS de `ninos` deja al tutor leer
+  // los hijos de su familia; los que no resuelvan caen al ninoId en el agrupado.
+  const ninoIds = [
+    ...new Set((lineas ?? []).map((l) => l.nino_id).filter((id): id is string => id != null)),
+  ]
+  const nombrePorNino = new Map<string, string>()
+  if (ninoIds.length > 0) {
+    const { data: ninos } = await supabase.from('ninos').select('id, nombre, apellidos').in('id', ninoIds)
+    for (const n of ninos ?? []) {
+      nombrePorNino.set(n.id, [n.nombre, n.apellidos].filter(Boolean).join(' '))
+    }
+  }
+
+  const lineasConNino: LineaConNino[] = (lineas ?? []).map((l) => ({
+    id: l.id,
+    ninoId: l.nino_id,
+    descripcion: l.descripcion,
+    cantidad: l.cantidad,
+    precioUnitarioCentimos: l.precio_unitario_centimos,
+    importeCentimos: l.importe_centimos,
+  }))
 
   return {
     id: recibo.id,
-    ninoId: recibo.nino_id ?? '',
-    ninoNombre: nino ? [nino.nombre, nino.apellidos].filter(Boolean).join(' ') : '',
     anio: recibo.anio,
     mes: recibo.mes,
     estado: recibo.estado,
@@ -83,12 +97,6 @@ export async function getReciboFamiliaDetalle(
     esRegiro: recibo.devuelto_de_recibo_id != null,
     fechaEnvioBanco: recibo.fecha_envio_banco,
     fechaDevolucion: recibo.fecha_devolucion,
-    lineas: (lineas ?? []).map((l) => ({
-      id: l.id,
-      descripcion: l.descripcion,
-      cantidad: l.cantidad,
-      precioUnitarioCentimos: l.precio_unitario_centimos,
-      importeCentimos: l.importe_centimos,
-    })),
+    desglose: agruparLineasPorHijo(lineasConNino, nombrePorNino),
   }
 }

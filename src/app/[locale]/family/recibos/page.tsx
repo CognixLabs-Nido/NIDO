@@ -20,18 +20,19 @@ interface PageProps {
 }
 
 /**
- * Recibos — vista de familia (F12-B-7). Lista los recibos PASADOS de cada hijo del tutor
- * legal, agrupados por niño y ordenados por período (más reciente primero). Solo lectura:
- * cada recibo enlaza a su detalle con el desglose de líneas. La RLS garantiza que nunca
- * aparecen recibos de otros niños. Al montar, marca todos como vistos (baja el aviso de
- * "recibos nuevos" del inicio).
+ * Recibos — vista de familia (F-4-6, grano familia). Lista los recibos de la FAMILIA del
+ * tutor legal (un recibo = una fila: regular, esporádico o re-giro), ordenados por período
+ * (más reciente primero). Solo lectura: cada recibo enlaza a su detalle con el desglose por
+ * hijo. La RLS (`es_tutor_de_familia`) garantiza que solo aparecen recibos de su familia; los
+ * BORRADORES no confirmados por Dirección quedan fuera. Al montar, marca todos como vistos
+ * (baja el aviso de "recibos nuevos" del inicio).
  */
 export default async function FamilyRecibosPage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('recibos')
   const tDom = await getTranslations('family.domiciliacion')
-  const grupos = await getRecibosFamilia()
-  const ids = idsDeRecibos(grupos)
+  const recibos = await getRecibosFamilia()
+  const ids = idsDeRecibos(recibos)
 
   // F-2c-4: domiciliación SEPA de la FAMILIA del tutor (ver + registrar/sustituir con firma
   // digital). La familia + el centro se resuelven server-side desde auth.uid() (1:1).
@@ -139,7 +140,7 @@ export default async function FamilyRecibosPage({ params }: PageProps) {
         </section>
       )}
 
-      {grupos.length === 0 ? (
+      {recibos.length === 0 ? (
         <Card>
           <CardContent>
             <EmptyState
@@ -150,34 +151,32 @@ export default async function FamilyRecibosPage({ params }: PageProps) {
           </CardContent>
         </Card>
       ) : (
-        grupos.map((nino) => (
-          <section key={nino.ninoId} className="space-y-3">
-            <h2 className="text-h2 text-foreground">{nino.nombre}</h2>
-            <div className="divide-y rounded-md border">
-              {nino.recibos.map((r) => (
-                <Link
-                  key={r.id}
-                  href={`/${locale}/family/recibos/${r.id}`}
-                  className="hover:bg-muted/50 focus-visible:ring-ring flex flex-wrap items-center justify-between gap-3 p-3 text-sm transition focus-visible:ring-2 focus-visible:outline-none"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">
-                      {r.esEsporadico && r.conceptoEsporadico
-                        ? r.conceptoEsporadico
-                        : formatPeriodo(r.anio, r.mes, locale)}
-                    </span>
-                    <Badge variant={ESTADO_BADGE_VARIANT[r.estado]}>
-                      {t(`estado_recibo.${r.estado}`)}
-                    </Badge>
-                    {r.esEsporadico && <Badge variant="outline">{t('esporadico_badge')}</Badge>}
-                    {r.esRegiro && <Badge variant="outline">{t('regiro_badge')}</Badge>}
-                  </div>
-                  <span className="font-medium tabular-nums">{formatEuros(r.totalCentimos)}</span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        ))
+        <div className="divide-y rounded-md border">
+          {recibos.map((r) => (
+            <Link
+              key={r.id}
+              href={`/${locale}/family/recibos/${r.id}`}
+              className="hover:bg-muted/50 focus-visible:ring-ring flex flex-wrap items-center justify-between gap-3 p-3 text-sm transition focus-visible:ring-2 focus-visible:outline-none"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-medium">
+                  {r.esEsporadico && r.conceptoEsporadico
+                    ? r.conceptoEsporadico
+                    : formatPeriodo(r.anio, r.mes, locale)}
+                </span>
+                <Badge variant={ESTADO_BADGE_VARIANT[r.estado]}>
+                  {t(`estado_recibo.${r.estado}`)}
+                </Badge>
+                {r.esEsporadico && <Badge variant="outline">{t('esporadico_badge')}</Badge>}
+                {r.esRegiro && <Badge variant="outline">{t('regiro_badge')}</Badge>}
+                {r.esEsporadico && r.ninoNombre && (
+                  <span className="text-muted-foreground">{t('cargo_de_hijo', { nombre: r.ninoNombre })}</span>
+                )}
+              </div>
+              <span className="font-medium tabular-nums">{formatEuros(r.totalCentimos)}</span>
+            </Link>
+          ))}
+        </div>
       )}
     </div>
   )
