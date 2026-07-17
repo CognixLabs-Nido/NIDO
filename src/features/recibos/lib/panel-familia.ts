@@ -158,7 +158,8 @@ export function construirPanelFamilia(
   })
 
   filas.sort(
-    (a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es-ES') || a.familiaId.localeCompare(b.familiaId)
+    (a, b) =>
+      a.etiqueta.localeCompare(b.etiqueta, 'es-ES') || a.familiaId.localeCompare(b.familiaId)
   )
 
   const conRecibo = filas.filter((f) => f.recibo != null)

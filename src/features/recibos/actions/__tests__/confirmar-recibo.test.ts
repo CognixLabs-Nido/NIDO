@@ -19,7 +19,8 @@ interface RpcOutcome {
 function makeRpcClient(outcomes: RpcOutcome[]) {
   let i = 0
   const fake = {
-    rpc: (_name: string, _args: unknown) => Promise.resolve(outcomes[i++] ?? { data: null, error: null }),
+    rpc: (_name: string, _args: unknown) =>
+      Promise.resolve(outcomes[i++] ?? { data: null, error: null }),
   } as unknown as SupabaseClient<Database>
   return fake
 }

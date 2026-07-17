@@ -171,10 +171,18 @@ describe.skipIf(!APPLIED)('F-4-1 — recibos a grano familia', () => {
       metodo: 'sepa' as const,
       total_centimos: 5000,
     }
-    const primero = await cAdmin.from('recibos').insert({ ...base }).select('id').maybeSingle()
+    const primero = await cAdmin
+      .from('recibos')
+      .insert({ ...base })
+      .select('id')
+      .maybeSingle()
     expect(primero.error).toBeNull()
 
-    const duplicado = await cAdmin.from('recibos').insert({ ...base }).select('id').maybeSingle()
+    const duplicado = await cAdmin
+      .from('recibos')
+      .insert({ ...base })
+      .select('id')
+      .maybeSingle()
     expect(duplicado.error).not.toBeNull()
     expect(duplicado.error?.code).toBe('23505') // unique_violation
 

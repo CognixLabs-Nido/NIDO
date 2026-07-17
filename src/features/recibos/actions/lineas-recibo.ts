@@ -36,7 +36,9 @@ const borrarSchema = z.object({ lineaId: z.string().uuid() })
  * regenera — la UI lo avisa). Verifica que el recibo sea regular y borrador (el freeze POR
  * ESTADO es la última red). Recalcula `total_centimos`. Solo admin (RLS).
  */
-export async function anadirLineaRecibo(input: z.input<typeof anadirSchema>): Promise<ActionResult<void>> {
+export async function anadirLineaRecibo(
+  input: z.input<typeof anadirSchema>
+): Promise<ActionResult<void>> {
   const parsed = anadirSchema.safeParse(input)
   if (!parsed.success) return fail('recibos_panel.errors.linea_invalida')
 
@@ -71,7 +73,9 @@ export async function anadirLineaRecibo(input: z.input<typeof anadirSchema>): Pr
  * F-4-4: edita descripción/cantidad/precio de una línea de un recibo en BORRADOR.
  * Recalcula `total_centimos`.
  */
-export async function editarLineaRecibo(input: z.input<typeof editarSchema>): Promise<ActionResult<void>> {
+export async function editarLineaRecibo(
+  input: z.input<typeof editarSchema>
+): Promise<ActionResult<void>> {
   const parsed = editarSchema.safeParse(input)
   if (!parsed.success) return fail('recibos_panel.errors.linea_invalida')
 
@@ -102,7 +106,9 @@ export async function editarLineaRecibo(input: z.input<typeof editarSchema>): Pr
 }
 
 /** F-4-4: borra una línea de un recibo en BORRADOR. Recalcula `total_centimos`. */
-export async function borrarLineaRecibo(input: z.input<typeof borrarSchema>): Promise<ActionResult<void>> {
+export async function borrarLineaRecibo(
+  input: z.input<typeof borrarSchema>
+): Promise<ActionResult<void>> {
   const parsed = borrarSchema.safeParse(input)
   if (!parsed.success) return fail('recibos_panel.errors.linea_invalida')
 
@@ -131,14 +137,22 @@ interface ReciboBorrador {
 }
 
 /** Recibo REGULAR en borrador, o null si no existe / no es editable. */
-async function reciboBorradorRegular(supabase: Supabase, reciboId: string): Promise<ReciboBorrador | null> {
+async function reciboBorradorRegular(
+  supabase: Supabase,
+  reciboId: string
+): Promise<ReciboBorrador | null> {
   const { data } = await supabase
     .from('recibos')
     .select('id, centro_id, estado, es_esporadico, devuelto_de_recibo_id')
     .eq('id', reciboId)
     .is('deleted_at', null)
     .maybeSingle()
-  if (!data || data.estado !== 'borrador' || data.es_esporadico || data.devuelto_de_recibo_id != null) {
+  if (
+    !data ||
+    data.estado !== 'borrador' ||
+    data.es_esporadico ||
+    data.devuelto_de_recibo_id != null
+  ) {
     return null
   }
   return { id: data.id, centro_id: data.centro_id }
@@ -166,6 +180,9 @@ async function recalcularTotal(supabase: Supabase, reciboId: string): Promise<vo
     .select('importe_centimos')
     .eq('recibo_id', reciboId)
   const total = (lineas ?? []).reduce((acc, l) => acc + l.importe_centimos, 0)
-  const { error } = await supabase.from('recibos').update({ total_centimos: total }).eq('id', reciboId)
+  const { error } = await supabase
+    .from('recibos')
+    .update({ total_centimos: total })
+    .eq('id', reciboId)
   if (error) logger.warn('recalcularTotal', error.message)
 }

@@ -33,7 +33,12 @@ export interface AsignacionPermanente {
   conceptosFamilia: ConceptoAsignablePermanente[]
 }
 
-const VACIO: AsignacionPermanente = { alumnos: [], familias: [], conceptosNino: [], conceptosFamilia: [] }
+const VACIO: AsignacionPermanente = {
+  alumnos: [],
+  familias: [],
+  conceptosNino: [],
+  conceptosFamilia: [],
+}
 
 /**
  * F-4-4: configuración de asignación PERMANENTE (sin mes, sin método): qué conceptos se
@@ -55,7 +60,9 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
   const ninos = ninosRows ?? []
   if (ninos.length === 0) return VACIO
 
-  const familiaIds = [...new Set(ninos.map((n) => n.familia_id).filter((x): x is string => x != null))]
+  const familiaIds = [
+    ...new Set(ninos.map((n) => n.familia_id).filter((x): x is string => x != null)),
+  ]
 
   const [familiasRes, tutoresRes, conceptosRes, asignRes] = await Promise.all([
     supabase.from('familias').select('id, etiqueta').in('id', familiaIds),

@@ -70,7 +70,10 @@ export async function getReciboFamiliaDetalle(
   ]
   const nombrePorNino = new Map<string, string>()
   if (ninoIds.length > 0) {
-    const { data: ninos } = await supabase.from('ninos').select('id, nombre, apellidos').in('id', ninoIds)
+    const { data: ninos } = await supabase
+      .from('ninos')
+      .select('id, nombre, apellidos')
+      .in('id', ninoIds)
     for (const n of ninos ?? []) {
       nombrePorNino.set(n.id, [n.nombre, n.apellidos].filter(Boolean).join(' '))
     }

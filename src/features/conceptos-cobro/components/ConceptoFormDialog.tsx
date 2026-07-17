@@ -95,7 +95,10 @@ export function ConceptoFormDialog({ centroId, concepto, conceptos, trigger }: P
   const valorItems = TIPOS_VALOR.map((value) => ({ value, label: t(`valores.${value}`) }))
   const tipoItems = TIPOS_CONCEPTO.map((value) => ({ value, label: t(`tipos.${value}`) }))
   const ambitoItems = AMBITOS.map((value) => ({ value, label: t(`ambitos.${value}`) }))
-  const aplicacionItems = APLICACIONES.map((value) => ({ value, label: t(`aplicaciones.${value}`) }))
+  const aplicacionItems = APLICACIONES.map((value) => ({
+    value,
+    label: t(`aplicaciones.${value}`),
+  }))
   const servicioItems = SERVICIOS_DIARIOS.map((value) => ({
     value,
     label: t(`servicios.${value}`),

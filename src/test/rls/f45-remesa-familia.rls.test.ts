@@ -154,7 +154,11 @@ describe.skipIf(!APPLIED)('F-4-5 — get_mandatos_remesa a grano familia', () =>
       .single()
     remesaId = remesa!.id
     await serviceClient.from('recibos_remesa').insert(
-      Object.values(ids).map((recibo_id) => ({ centro_id: centro.id, remesa_id: remesaId, recibo_id }))
+      Object.values(ids).map((recibo_id) => ({
+        centro_id: centro.id,
+        remesa_id: remesaId,
+        recibo_id,
+      }))
     )
   }, 60_000)
 

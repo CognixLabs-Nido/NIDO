@@ -16,7 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { ReciboEsporadicoDialog } from '@/features/cierre-cobros/components/ReciboEsporadicoDialog'
 import { MesSelector } from '@/features/cuotas-config/components/MesSelector'
 import { formatEuros } from '@/shared/lib/format-money'
@@ -129,11 +136,17 @@ export function PanelMesRecibos({ anio, mes, data, ninos }: Props) {
       {/* Indicadores */}
       <Card className="flex flex-wrap items-center gap-x-6 gap-y-2 p-4 text-sm">
         <Indicador label={t('ind_generados')} valor={String(data.indicadores.numRecibos)} />
-        <Indicador label={t('ind_confirmados')} valor={`${numConfirmados}/${data.indicadores.numRecibos}`} />
+        <Indicador
+          label={t('ind_confirmados')}
+          valor={`${numConfirmados}/${data.indicadores.numRecibos}`}
+        />
         <Indicador label={t('ind_pendientes')} valor={String(data.indicadores.pendientes)} />
         <Indicador label={t('ind_total')} valor={formatEuros(data.indicadores.totalCentimos)} />
         {data.indicadores.familiasSinRecibo > 0 && (
-          <Indicador label={t('ind_sin_recibo')} valor={String(data.indicadores.familiasSinRecibo)} />
+          <Indicador
+            label={t('ind_sin_recibo')}
+            valor={String(data.indicadores.familiasSinRecibo)}
+          />
         )}
         <div className="ml-auto">
           {data.cerrado ? (
@@ -231,7 +244,9 @@ export function PanelMesRecibos({ anio, mes, data, ninos }: Props) {
                       )}
                     </TableCell>
                     <TableCell>{e.metodo ? t(`metodos.${e.metodo}`) : '—'}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatEuros(e.totalCentimos)}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatEuros(e.totalCentimos)}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{t(`estado_recibo.${e.estado}`)}</Badge>
                     </TableCell>
@@ -323,7 +338,9 @@ function FilaFamilia({
             <div className="text-muted-foreground text-xs">{fila.tutores.join(' · ')}</div>
           )}
         </TableCell>
-        <TableCell className="text-sm">{fila.hijos.map((h) => h.nombre).join(', ') || '—'}</TableCell>
+        <TableCell className="text-sm">
+          {fila.hijos.map((h) => h.nombre).join(', ') || '—'}
+        </TableCell>
         <TableCell>
           <Select
             items={metodoItems}
@@ -346,7 +363,9 @@ function FilaFamilia({
               ))}
             </SelectContent>
           </Select>
-          {confirmado && <div className="text-muted-foreground mt-1 text-xs">{t('metodo_congelado')}</div>}
+          {confirmado && (
+            <div className="text-muted-foreground mt-1 text-xs">{t('metodo_congelado')}</div>
+          )}
         </TableCell>
         <TableCell className="text-right tabular-nums">
           {recibo ? formatEuros(recibo.cargosCentimos) : '—'}
@@ -375,7 +394,11 @@ function FilaFamilia({
             )}
             {esBorrador && !bloqueado && (
               <>
-                <EditarReciboDialog reciboId={recibo!.id} lineas={recibo!.lineas} hijos={fila.hijos} />
+                <EditarReciboDialog
+                  reciboId={recibo!.id}
+                  lineas={recibo!.lineas}
+                  hijos={fila.hijos}
+                />
                 <Button size="sm" disabled={pending} onClick={() => onConfirmar(recibo!.id)}>
                   {t('confirmar')}
                 </Button>
@@ -400,7 +423,9 @@ function FilaFamilia({
                   <span className="tabular-nums">{formatEuros(l.importeCentimos)}</span>
                 </div>
               ))}
-              {recibo.lineas.length === 0 && <span className="text-muted-foreground">{t('sin_lineas')}</span>}
+              {recibo.lineas.length === 0 && (
+                <span className="text-muted-foreground">{t('sin_lineas')}</span>
+              )}
             </div>
           </TableCell>
         </TableRow>

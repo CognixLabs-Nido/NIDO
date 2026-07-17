@@ -81,7 +81,10 @@ export async function setMetodoPagoFamiliaCore(
   }
 
   const { error: upErr } = existente
-    ? await supabase.from('metodo_pago_familia').update({ metodo: input.metodo }).eq('id', existente.id)
+    ? await supabase
+        .from('metodo_pago_familia')
+        .update({ metodo: input.metodo })
+        .eq('id', existente.id)
     : await supabase.from('metodo_pago_familia').insert({
         centro_id: centroId,
         familia_id: input.familiaId,

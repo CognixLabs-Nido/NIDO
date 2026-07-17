@@ -19,12 +19,16 @@ const loteSchema = z.object({ reciboIds: z.array(z.string().uuid()).min(1).max(5
  * ancla `cierre_mensual` cuando no queda ningún borrador regular del mes y devuelve `true`
  * si el mes ha quedado cerrado. Solo admin (la RPC lo verifica).
  */
-export async function confirmarRecibo(reciboId: string): Promise<ActionResult<{ cerrado: boolean }>> {
+export async function confirmarRecibo(
+  reciboId: string
+): Promise<ActionResult<{ cerrado: boolean }>> {
   const parsed = unoSchema.safeParse({ reciboId })
   if (!parsed.success) return fail('recibos_panel.errors.invalid')
 
   const supabase = await createClient()
-  const { data, error } = await supabase.rpc('confirmar_recibo', { p_recibo_id: parsed.data.reciboId })
+  const { data, error } = await supabase.rpc('confirmar_recibo', {
+    p_recibo_id: parsed.data.reciboId,
+  })
 
   if (error) {
     logger.warn('confirmarRecibo error', error.message)

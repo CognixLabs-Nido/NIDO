@@ -117,7 +117,9 @@ function ConceptoRow({
       <TableCell>{formatValor(concepto, t)}</TableCell>
       <TableCell>
         <Badge variant={concepto.aplicacion === 'automatico' ? 'default' : 'outline'}>
-          {t(`aplicaciones_badge.${concepto.aplicacion === 'automatico' ? 'automatico' : 'manual'}`)}
+          {t(
+            `aplicaciones_badge.${concepto.aplicacion === 'automatico' ? 'automatico' : 'manual'}`
+          )}
         </Badge>
       </TableCell>
       <TableCell>

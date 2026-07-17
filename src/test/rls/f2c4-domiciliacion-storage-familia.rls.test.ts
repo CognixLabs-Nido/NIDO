@@ -61,127 +61,130 @@ function argsDigital(familiaId: string, iban: string, id: string, documentoPath:
   } as never
 }
 
-describe.skipIf(!APPLIED)('F-2c-4 — domiciliación del tutor (storage familia + RPC digital)', () => {
-  let centro: { id: string }
-  let familiaA: string
-  let familiaB: string
-  let tutorA: TestUser
-  let tutorB: TestUser
-  let ninoA: { id: string }
-  let cTutorA: SupabaseClient<Database>
+describe.skipIf(!APPLIED)(
+  'F-2c-4 — domiciliación del tutor (storage familia + RPC digital)',
+  () => {
+    let centro: { id: string }
+    let familiaA: string
+    let familiaB: string
+    let tutorA: TestUser
+    let tutorB: TestUser
+    let ninoA: { id: string }
+    let cTutorA: SupabaseClient<Database>
 
-  const creados: { bucket: string; path: string }[] = []
+    const creados: { bucket: string; path: string }[] = []
 
-  beforeAll(async () => {
-    centro = await createTestCentro('Centro F2C4')
-    familiaA = await createTestFamilia(centro.id)
-    familiaB = await createTestFamilia(centro.id)
+    beforeAll(async () => {
+      centro = await createTestCentro('Centro F2C4')
+      familiaA = await createTestFamilia(centro.id)
+      familiaB = await createTestFamilia(centro.id)
 
-    tutorA = await createTestUser({ nombre: 'Tutor A F2C4' })
-    tutorB = await createTestUser({ nombre: 'Tutor B F2C4' })
-    await asignarRol(tutorA.id, centro.id, 'tutor_legal')
-    await asignarRol(tutorB.id, centro.id, 'tutor_legal')
-    await crearFamiliaTutor(familiaA, tutorA.id, 'titular')
-    await crearFamiliaTutor(familiaB, tutorB.id, 'titular')
+      tutorA = await createTestUser({ nombre: 'Tutor A F2C4' })
+      tutorB = await createTestUser({ nombre: 'Tutor B F2C4' })
+      await asignarRol(tutorA.id, centro.id, 'tutor_legal')
+      await asignarRol(tutorB.id, centro.id, 'tutor_legal')
+      await crearFamiliaTutor(familiaA, tutorA.id, 'titular')
+      await crearFamiliaTutor(familiaB, tutorB.id, 'titular')
 
-    // Niño con vínculo a tutorA → para la NO-regresión del path nino-scoped (es_tutor_legal_de).
-    ninoA = await createTestNino(centro.id)
-    await crearVinculo(ninoA.id, tutorA.id, 'tutor_legal_principal')
+      // Niño con vínculo a tutorA → para la NO-regresión del path nino-scoped (es_tutor_legal_de).
+      ninoA = await createTestNino(centro.id)
+      await crearVinculo(ninoA.id, tutorA.id, 'tutor_legal_principal')
 
-    cTutorA = await clientFor(tutorA)
-  }, 60_000)
+      cTutorA = await clientFor(tutorA)
+    }, 60_000)
 
-  afterAll(async () => {
-    for (const o of creados) await serviceClient.storage.from(o.bucket).remove([o.path])
-    await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centro.id)
-    await deleteTestUser(tutorA.id)
-    await deleteTestUser(tutorB.id)
-    await deleteTestCentro(centro.id)
-  }, 60_000)
+    afterAll(async () => {
+      for (const o of creados) await serviceClient.storage.from(o.bucket).remove([o.path])
+      await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centro.id)
+      await deleteTestUser(tutorA.id)
+      await deleteTestUser(tutorB.id)
+      await deleteTestCentro(centro.id)
+    }, 60_000)
 
-  async function subir(user: TestUser, path: string) {
-    const client = await clientFor(user)
-    const res = await client.storage
-      .from('mandato-sepa')
-      .upload(path, PDF, { contentType: 'application/pdf', upsert: true })
-    if (!res.error) creados.push({ bucket: 'mandato-sepa', path })
-    return res
+    async function subir(user: TestUser, path: string) {
+      const client = await clientFor(user)
+      const res = await client.storage
+        .from('mandato-sepa')
+        .upload(path, PDF, { contentType: 'application/pdf', upsert: true })
+      if (!res.error) creados.push({ bucket: 'mandato-sepa', path })
+      return res
+    }
+
+    // ─── A) Storage familia-scoped ───────────────────────────────────────────────
+    it('el tutor sube el PDF bajo {centro}/familia/{SU familia}/…', async () => {
+      const res = await subir(tutorA, `${centro.id}/familia/${familiaA}/mandato-${Date.now()}.pdf`)
+      expect(res.error).toBeNull()
+    })
+
+    it('el tutor NO puede subir bajo la ruta de OTRA familia', async () => {
+      const res = await subir(tutorB, `${centro.id}/familia/${familiaA}/mandato-${Date.now()}.pdf`)
+      expect(res.error).not.toBeNull()
+    })
+
+    it('el tutor puede firmar (leer) lo suyo y NO lo de otra familia', async () => {
+      const propio = `${centro.id}/familia/${familiaA}/mandato-${Date.now()}.pdf`
+      await subir(tutorA, propio)
+
+      const okPropio = await cTutorA.storage.from('mandato-sepa').createSignedUrl(propio, 60)
+      expect(okPropio.error).toBeNull()
+      expect(okPropio.data?.signedUrl).toBeTruthy()
+
+      const cB = await clientFor(tutorB)
+      const ajeno = await cB.storage.from('mandato-sepa').createSignedUrl(propio, 60)
+      expect(ajeno.data?.signedUrl).toBeFalsy()
+    })
+
+    it('NO regresión: el alta sigue subiendo nino-scoped {centro}/{ninoSuyo}/mandato.pdf', async () => {
+      const res = await subir(tutorA, `${centro.id}/${ninoA.id}/mandato.pdf`)
+      expect(res.error).toBeNull()
+    })
+
+    // ─── B) RPC digital (registrar → sustituir) ──────────────────────────────────
+    it('registrar digital: 1 activo, metodo=digital, documento_path del path familia', async () => {
+      const path = `${centro.id}/familia/${familiaA}/mandato-reg.pdf`
+      const { error } = await cTutorA.rpc(
+        'registrar_mandato_sepa',
+        argsDigital(familiaA, IBAN_1, 'NIDO-F2C4-REG', path)
+      )
+      expect(error).toBeNull()
+
+      const { data } = await serviceClient
+        .from('mandatos_sepa')
+        .select('metodo_firma, documento_path, iban_ultimos4, estado')
+        .eq('familia_id', familiaA)
+        .eq('estado', 'activo')
+        .is('deleted_at', null)
+        .maybeSingle()
+      expect(data?.metodo_firma).toBe('digital')
+      expect(data?.documento_path).toBe(path)
+      expect(data?.iban_ultimos4).toBe('5766')
+    })
+
+    it('sustituir digital: viejo revocado (conservado), nuevo activo digital', async () => {
+      const path = `${centro.id}/familia/${familiaA}/mandato-sust.pdf`
+      const { error } = await cTutorA.rpc(
+        'sustituir_mandato_sepa',
+        argsDigital(familiaA, IBAN_2, 'NIDO-F2C4-SUST', path)
+      )
+      expect(error).toBeNull()
+
+      const { data: activos } = await serviceClient
+        .from('mandatos_sepa')
+        .select('iban_ultimos4, metodo_firma')
+        .eq('familia_id', familiaA)
+        .eq('estado', 'activo')
+        .is('deleted_at', null)
+      expect(activos).toHaveLength(1)
+      expect(activos![0].iban_ultimos4).toBe('1332')
+      expect(activos![0].metodo_firma).toBe('digital')
+
+      const { data: revocados } = await serviceClient
+        .from('mandatos_sepa')
+        .select('iban_ultimos4')
+        .eq('familia_id', familiaA)
+        .eq('estado', 'revocado')
+        .is('deleted_at', null)
+      expect((revocados ?? []).map((r) => r.iban_ultimos4)).toContain('5766')
+    })
   }
-
-  // ─── A) Storage familia-scoped ───────────────────────────────────────────────
-  it('el tutor sube el PDF bajo {centro}/familia/{SU familia}/…', async () => {
-    const res = await subir(tutorA, `${centro.id}/familia/${familiaA}/mandato-${Date.now()}.pdf`)
-    expect(res.error).toBeNull()
-  })
-
-  it('el tutor NO puede subir bajo la ruta de OTRA familia', async () => {
-    const res = await subir(tutorB, `${centro.id}/familia/${familiaA}/mandato-${Date.now()}.pdf`)
-    expect(res.error).not.toBeNull()
-  })
-
-  it('el tutor puede firmar (leer) lo suyo y NO lo de otra familia', async () => {
-    const propio = `${centro.id}/familia/${familiaA}/mandato-${Date.now()}.pdf`
-    await subir(tutorA, propio)
-
-    const okPropio = await cTutorA.storage.from('mandato-sepa').createSignedUrl(propio, 60)
-    expect(okPropio.error).toBeNull()
-    expect(okPropio.data?.signedUrl).toBeTruthy()
-
-    const cB = await clientFor(tutorB)
-    const ajeno = await cB.storage.from('mandato-sepa').createSignedUrl(propio, 60)
-    expect(ajeno.data?.signedUrl).toBeFalsy()
-  })
-
-  it('NO regresión: el alta sigue subiendo nino-scoped {centro}/{ninoSuyo}/mandato.pdf', async () => {
-    const res = await subir(tutorA, `${centro.id}/${ninoA.id}/mandato.pdf`)
-    expect(res.error).toBeNull()
-  })
-
-  // ─── B) RPC digital (registrar → sustituir) ──────────────────────────────────
-  it('registrar digital: 1 activo, metodo=digital, documento_path del path familia', async () => {
-    const path = `${centro.id}/familia/${familiaA}/mandato-reg.pdf`
-    const { error } = await cTutorA.rpc(
-      'registrar_mandato_sepa',
-      argsDigital(familiaA, IBAN_1, 'NIDO-F2C4-REG', path)
-    )
-    expect(error).toBeNull()
-
-    const { data } = await serviceClient
-      .from('mandatos_sepa')
-      .select('metodo_firma, documento_path, iban_ultimos4, estado')
-      .eq('familia_id', familiaA)
-      .eq('estado', 'activo')
-      .is('deleted_at', null)
-      .maybeSingle()
-    expect(data?.metodo_firma).toBe('digital')
-    expect(data?.documento_path).toBe(path)
-    expect(data?.iban_ultimos4).toBe('5766')
-  })
-
-  it('sustituir digital: viejo revocado (conservado), nuevo activo digital', async () => {
-    const path = `${centro.id}/familia/${familiaA}/mandato-sust.pdf`
-    const { error } = await cTutorA.rpc(
-      'sustituir_mandato_sepa',
-      argsDigital(familiaA, IBAN_2, 'NIDO-F2C4-SUST', path)
-    )
-    expect(error).toBeNull()
-
-    const { data: activos } = await serviceClient
-      .from('mandatos_sepa')
-      .select('iban_ultimos4, metodo_firma')
-      .eq('familia_id', familiaA)
-      .eq('estado', 'activo')
-      .is('deleted_at', null)
-    expect(activos).toHaveLength(1)
-    expect(activos![0].iban_ultimos4).toBe('1332')
-    expect(activos![0].metodo_firma).toBe('digital')
-
-    const { data: revocados } = await serviceClient
-      .from('mandatos_sepa')
-      .select('iban_ultimos4')
-      .eq('familia_id', familiaA)
-      .eq('estado', 'revocado')
-      .is('deleted_at', null)
-    expect((revocados ?? []).map((r) => r.iban_ultimos4)).toContain('5766')
-  })
-})
+)
