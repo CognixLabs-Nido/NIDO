@@ -12,6 +12,7 @@ import { logger } from '@/shared/lib/logger'
 import type { Json } from '@/types/database'
 
 import { elegirAdultoConCuenta } from '../lib/adulto-con-cuenta'
+import { resolverParentesco } from '../lib/resolver-parentesco'
 import { anadirHijoAFamiliaSchema, type AnadirHijoAFamiliaInput } from '../schemas/anadir-hijo'
 import { fail, ok, type ActionResult } from '../../centros/types'
 
@@ -80,9 +81,11 @@ export async function anadirHijoAFamilia(
   const adulto = elegirAdultoConCuenta(tutores ?? [])
   if (!adulto) return fail('admin.admisiones.anadirHijo.errors.familia_no_elegible')
 
-  // Parentesco del hijo NUEVO: el que el titular ya use en sus otros vínculos (cualquiera,
-  // incluidos los soft-borrados de una familia archivada); por defecto 'otro' (el ENUM
-  // `parentesco` no tiene 'tutor_legal'). Es solo el parentesco del vínculo, no identidad.
+  // Parentesco del hijo NUEVO (D-4 punto 3, HÍBRIDO): se HEREDA del vínculo previo del
+  // titular. La query NO filtra `deleted_at` A PROPÓSITO: un vínculo soft-borrado (familia
+  // archivada y reactivada, F-2b-4-1) sigue diciendo la verdad sobre el parentesco del
+  // titular con sus hijos → así la reactivación hereda sin preguntar. Es solo el parentesco
+  // del vínculo, no identidad.
   const { data: vinculoPrevio } = await service
     .from('vinculos_familiares')
     .select('parentesco, descripcion_parentesco')
@@ -90,8 +93,18 @@ export async function anadirHijoAFamilia(
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
-  const parentesco = vinculoPrevio?.parentesco ?? 'otro'
-  const descripcionParentesco = vinculoPrevio?.descripcion_parentesco ?? ''
+
+  // Si no hay herencia, se usa el parentesco tecleado en el diálogo; si tampoco viene,
+  // se FALLA (nunca se persiste 'otro' por defecto). El diálogo revela el campo al recibir
+  // este error y reintenta.
+  const resolucion = resolverParentesco(
+    vinculoPrevio,
+    parsed.data.parentesco,
+    parsed.data.descripcion_parentesco
+  )
+  if (!resolucion.ok) return fail('admin.admisiones.anadirHijo.errors.parentesco_requerido')
+  const parentesco = resolucion.parentesco
+  const descripcionParentesco = resolucion.descripcionParentesco
 
   // RPC (cliente AUTENTICADO → gate es_admin(auth.uid(), p_centro_id) autoriza dentro).
   const { data: rpcData, error: rpcError } = await supabase.rpc('crear_o_anadir_a_familia', {

@@ -860,15 +860,18 @@
           "apellidos_requerido": "Indica els cognoms del xiquet",
           "fecha_requerida": "Indica la data de naixement",
           "aula_requerida": "Tria una aula del curs actiu",
-          "invalid": "Dades no vàlides"
+          "invalid": "Dades no vàlides",
+          "descripcion_parentesco_requerida": "Descriu el parentiu"
         },
         "errors": {
           "familia_no_encontrada": "Família no trobada",
           "familia_no_elegible": "Esta família no té cap adult amb compte; usa el flux d'invitació",
           "no_autorizado": "No tens permís per a afegir fills en este centre",
           "colision": "El nom del titular no coincidix amb el registrat en la família; revisa'l abans de continuar",
-          "fallo": "No s'ha pogut afegir el fill"
-        }
+          "fallo": "No s'ha pogut afegir el fill",
+          "parentesco_requerido": "Este titular no té cap vincle del qual heretar el parentiu; indica'l davall per a completar l'alta"
+        },
+        "parentesco_requerido_aviso": "No hem pogut deduir el parentiu del titular amb el xiquet. Indica'l per a completar l'alta."
       }
     },
     "pendientes": {
