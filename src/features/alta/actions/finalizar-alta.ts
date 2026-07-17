@@ -16,11 +16,21 @@ import { fail, ok } from '../../centros/types'
  * orden de la lista es el orden en que se muestra el checklist "qué falta" en la UI.
  *
  * NOTA — `tutor2` es OPCIONAL (no aparece aquí): no bloquea.
- * TODO(PR-4e): añadir el acuse de NORMAS de régimen interno al gate cuando quede operativo.
- *   Hoy NO se incluye a propósito: el acuse de normas está roto (se difiere, bug 6), así que
- *   meterlo ahora bloquearía TODA finalización. Solo `imagen` entra como acuse obligatorio.
+ * `normas` (acuse de régimen interno) es OBLIGATORIO (decisión de producto, D-3): se firma
+ *   igual que `imagen` (patrón F8), y la firma PRESENCIAL del modo Dirección también produce
+ *   `decision='firmado'`, así que el gate se cumple por ese camino. Precondición operativa
+ *   (misma clase que `imagen`): la dirección debe tener PUBLICADA la instancia de
+ *   `reglas_regimen_interno` para la audiencia del niño; si no existe, el gate bloquea (la
+ *   familia, a diferencia de imagen B2, no puede auto-instanciarla — es patrón A).
  */
-export type BloqueAlta = 'identidad' | 'tutor1' | 'medico' | 'documentos' | 'sepa' | 'imagen'
+export type BloqueAlta =
+  | 'identidad'
+  | 'tutor1'
+  | 'medico'
+  | 'documentos'
+  | 'sepa'
+  | 'imagen'
+  | 'normas'
 
 const ORDEN_BLOQUES: BloqueAlta[] = [
   'identidad',
@@ -29,6 +39,7 @@ const ORDEN_BLOQUES: BloqueAlta[] = [
   'documentos',
   'sepa',
   'imagen',
+  'normas',
 ]
 
 /** Resultado de `finalizarAlta`: en fallo por completitud viaja `faltan` (bloques). */
@@ -46,8 +57,9 @@ const ninoIdSchema = z.string().uuid()
  * ANTES de finalizar corre un GATE DE COMPLETITUD (PR-4b): valida que los bloques
  * obligatorios están completos leyendo las señales que ya derivan de BD (solo lectura, sin
  * columnas nuevas). Si falta alguno, NO finaliza y devuelve la lista `faltan` para que la UI
- * muestre un checklist claro. La identidad y el acuse médico ya se validaban; ahora se suman
- * tutor 1, documentos, SEPA e imagen. La RPC sigue siendo el backstop (llamadas directas).
+ * muestre un checklist claro. La identidad y el acuse médico ya se validaban; se suman
+ * tutor 1, documentos, SEPA, imagen y normas (régimen interno, D-3). La RPC sigue siendo el
+ * backstop (llamadas directas).
  *
  * Idempotente: re-finalizar estando ya `'lista'` es no-op en la RPC (devuelve null) y se
  * trata como éxito — el gate vuelve a pasar porque los datos ya están completos.
@@ -116,9 +128,8 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   }
   if (!tieneMandatoFamilia) faltan.push('sepa')
 
-  // Autorización de IMAGEN firmada (acuse obligatorio que hoy funciona). Se busca la instancia
-  // publicada por-niño y su última firma; `firmado` = acuse hecho. NORMAS NO entra en el gate
-  // (rota, bug 6 / TODO PR-4e arriba) para no bloquear la finalización.
+  // Autorización de IMAGEN firmada (acuse obligatorio). Se busca la instancia publicada
+  // por-niño (patrón B2) y su última firma; `firmado` = acuse hecho.
   const { data: imagenInst } = await supabase
     .from('autorizaciones')
     .select('id')
@@ -141,6 +152,35 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
     imagenFirmada = firma?.decision === 'firmado'
   }
   if (!imagenFirmada) faltan.push('imagen')
+
+  // Acuse de NORMAS de régimen interno firmado (D-3, acuse obligatorio). A diferencia de
+  // imagen (B2, por niño), las normas son patrón A: la dirección publica UNA instancia de
+  // `reglas_regimen_interno` para la audiencia (aula/centro) y la familia la firma (la firma
+  // se ancla a `nino_id`). Se busca la instancia publicada visible por RLS —igual que
+  // `panelFirma(..., patronA=true)` de la ruta del alta— y su última firma para este niño;
+  // `firmado` = acuse hecho. En modo Dirección la firma es PRESENCIAL pero también
+  // `decision='firmado'` (el gate no mira `metodo_firma`), así que se cumple por ese camino.
+  const { data: normasInst } = await supabase
+    .from('autorizaciones')
+    .select('id')
+    .eq('tipo', 'reglas_regimen_interno')
+    .eq('es_plantilla', false)
+    .eq('estado', 'publicada')
+    .limit(1)
+    .maybeSingle()
+  let normasFirmada = false
+  if (normasInst) {
+    const { data: firma } = await supabase
+      .from('firmas_autorizacion')
+      .select('decision')
+      .eq('autorizacion_id', normasInst.id)
+      .eq('nino_id', id)
+      .order('firmado_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    normasFirmada = firma?.decision === 'firmado'
+  }
+  if (!normasFirmada) faltan.push('normas')
 
   if (faltan.length > 0) {
     faltan.sort((a, b) => ORDEN_BLOQUES.indexOf(a) - ORDEN_BLOQUES.indexOf(b))

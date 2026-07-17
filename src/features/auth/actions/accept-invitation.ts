@@ -109,6 +109,7 @@ export async function acceptInvitationCore(
     .eq('token', parsed.data.token)
     .maybeSingle()
 
+  if (invErr) logger.warn('accept: lookup de invitación falló', invErr.message)
   if (invErr || !invitation) return fail('auth.invitation.errors.invalid')
   if (invitation.accepted_at || invitation.rejected_at) {
     return fail('auth.invitation.errors.invalid')
@@ -250,6 +251,7 @@ export async function acceptInvitationCore(
     rol: invitation.rol_objetivo,
   })
   if (roleErr) {
+    logger.warn('accept: roles_usuario insert falló (rollback de la cuenta)', roleErr.message)
     await service.auth.admin.deleteUser(userId).catch(() => {})
     return fail('auth.invitation.errors.role_failed')
   }
@@ -287,6 +289,7 @@ export async function acceptInvitationCore(
       descripcionParentesco: parsed.data.descripcionParentesco ?? null,
     })
     if (vinculoError) {
+      logger.warn('accept: auto-vínculo tutor↔niño falló (rollback de la cuenta)', vinculoError)
       await service.from('roles_usuario').delete().eq('usuario_id', userId)
       await service.auth.admin.deleteUser(userId).catch(() => {})
       return fail(vinculoError)
@@ -305,6 +308,7 @@ export async function acceptInvitationCore(
       // creada y el vínculo se completa desde gestión o vía B8 cuando se libere el
       // slot (no se marca `accepted_at`). Cualquier otro error es un fallo real de
       // inserción → rollback de la cuenta recién creada.
+      logger.warn('accept: vínculo profe↔aula falló', profeError)
       if (profeError !== 'auth.invitation.errors.coordinadora_ocupada') {
         await service.from('roles_usuario').delete().eq('usuario_id', userId)
         await service.auth.admin.deleteUser(userId).catch(() => {})
@@ -313,10 +317,15 @@ export async function acceptInvitationCore(
     }
   }
 
-  await service
+  const { error: acceptedErr } = await service
     .from('invitaciones')
     .update({ accepted_at: new Date().toISOString() })
     .eq('id', invitation.id)
+  if (acceptedErr) {
+    // La cuenta ya está creada y usable; solo el sello de aceptación falló (la invitación
+    // quedaría reutilizable). No se revierte, pero NO se traga en silencio.
+    logger.warn('accept: marcar invitación accepted_at falló', acceptedErr.message)
+  }
 
   // Login automático en el contexto del request actual.
   const supabase = await createClient()
@@ -398,7 +407,7 @@ export async function acceptPendingInvitationCore(
   vinculo?: { parentesco?: string; descripcionParentesco?: string | null }
 ): Promise<ActionResult<{ rol: string }>> {
   const { serviceClient: service, user } = deps
-  const { data: invitation } = await service
+  const { data: invitation, error: invErr } = await service
     .from('invitaciones')
     .select(
       'id, email, rol_objetivo, centro_id, nino_id, aula_id, tipo_personal_aula, tipo_vinculo, expires_at, accepted_at, rejected_at'
@@ -406,6 +415,7 @@ export async function acceptPendingInvitationCore(
     .eq('id', invitationId)
     .maybeSingle()
 
+  if (invErr) logger.warn('acceptPending: lookup de invitación falló', invErr.message)
   if (!invitation) return fail('auth.invitation.errors.invalid')
   if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
     return fail('auth.invitation.errors.email_mismatch')
@@ -431,7 +441,10 @@ export async function acceptPendingInvitationCore(
   })
   if (roleErr) {
     // Ignoramos error si el rol ya existía (UNIQUE constraint).
-    if (!roleErr.message.includes('duplicate')) return fail('auth.invitation.errors.role_failed')
+    if (!roleErr.message.includes('duplicate')) {
+      logger.warn('acceptPending: roles_usuario insert falló', roleErr.message)
+      return fail('auth.invitation.errors.role_failed')
+    }
   }
 
   // Auto-vínculo idempotente (mismo que el flujo de nuevo usuario).
@@ -444,7 +457,10 @@ export async function acceptPendingInvitationCore(
       parentesco: vinculo.parentesco,
       descripcionParentesco: vinculo.descripcionParentesco ?? null,
     })
-    if (vinculoError) return fail(vinculoError)
+    if (vinculoError) {
+      logger.warn('acceptPending: auto-vínculo tutor↔niño falló', vinculoError)
+      return fail(vinculoError)
+    }
   }
 
   // B8-profe (decisión F): inserta `profes_aulas`. El rol 'profe' ya se insertó
@@ -457,13 +473,19 @@ export async function acceptPendingInvitationCore(
       aulaId: invitation.aula_id,
       tipoPersonalAula: invitation.tipo_personal_aula,
     })
-    if (profeError) return fail(profeError)
+    if (profeError) {
+      logger.warn('acceptPending: vínculo profe↔aula falló', profeError)
+      return fail(profeError)
+    }
   }
 
-  await service
+  const { error: acceptedErr } = await service
     .from('invitaciones')
     .update({ accepted_at: new Date().toISOString() })
     .eq('id', invitation.id)
+  if (acceptedErr) {
+    logger.warn('acceptPending: marcar invitación accepted_at falló', acceptedErr.message)
+  }
 
   return ok({ rol: invitation.rol_objetivo })
 }

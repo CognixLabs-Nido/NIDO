@@ -3637,7 +3637,8 @@
         "medico": "Medical and emergency details",
         "documentos": "Documents (family book and ID)",
         "sepa": "SEPA mandate",
-        "imagen": "Image consent"
+        "imagen": "Image consent",
+        "normas": "Internal rules acknowledgement"
       }
     }
   },

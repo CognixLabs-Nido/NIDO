@@ -3637,7 +3637,8 @@
         "medico": "Datos médicos y de emergencia",
         "documentos": "Documentos (libro de familia y DNI)",
         "sepa": "Mandato SEPA",
-        "imagen": "Autorización de imagen"
+        "imagen": "Autorización de imagen",
+        "normas": "Normas de régimen interno"
       }
     }
   },
