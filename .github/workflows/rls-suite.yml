@@ -9,7 +9,33 @@ name: RLS suite (remote DB)
 # - Serialización ENTRE runs: el bloque `concurrency` (group global + cancel-in-progress
 #   false) encola cualquier run solapado → NUNCA hay dos runs tocando la BD a la vez.
 
+# DISPARADORES (D-2):
+#   - pull_request → corre AUTOMÁTICAMENTE en cada PR a main. Antes dependía de que
+#     alguien lanzase la suite a mano en cada PR (se hizo 20+ veces); ese agujero se cierra.
+#   - workflow_dispatch → lanzable a mano (GitHub UI / `gh workflow run rls-suite.yml`).
+#   - schedule (nightly) → red de seguridad de madrugada.
+# Los tres comparten el MISMO job, secrets y flags `*_MIGRATION_APPLIED` (env: del job):
+# un run disparado por PR es idéntico a uno por dispatch o por nightly.
+#
+# Notas del modelo actual (decisión de Jose, D-2):
+#   (a) Corre contra el REMOTO COMPARTIDO (mismo proyecto Supabase que el piloto). Por eso
+#       el `globalSetup` hace un wipe global de `@nido.test` y por eso TODO run va
+#       SERIALIZADO bajo el `concurrency.group: rls-suite` (cancel-in-progress: false; ver
+#       bloque abajo): nunca dos runs tocando la BD a la vez (se pisarían el wipe). Hoy es
+#       seguro porque NO hay datos reales (ANAIA es un piloto sin familias dadas de alta);
+#       el wipe no puede destrozar nada real.
+#   (b) CAVEAT de GitHub concurrency: solo mantiene 1 run en curso + 1 en cola. Con 3+ PRs
+#       (o PRs + nightly) solapados, el pending intermedio se CANCELA — NO falla, queda
+#       "cancelled" → hay que RE-RUN manual de ese PR (pestaña Actions o `gh run rerun`).
+#       Con la concurrencia de PRs habitual aquí no suele pasar.
+#   (c) SOLUCIÓN DE RAÍZ (pendiente de PRE-PRODUCCIÓN): una BD de test DEDICADA (proyecto
+#       Supabase aparte, migraciones por `db push` desde CI) elimina la contención, valida
+#       el esquema DEL PR y quita el baile de flags. No se monta ahora (el free tier no da
+#       un 3er proyecto y no se contrata Pro hasta que entren datos reales). Al entrar datos
+#       reales, montarla ANTES de seguir corriendo esto contra el remoto compartido.
 on:
+  pull_request:
+    branches: [main]
   workflow_dispatch: {} # lanzable a mano (GitHub UI / `gh workflow run rls-suite.yml`).
   schedule:
     # 02:00 UTC = 03:00 CET / 04:00 CEST — madrugada Europe/Madrid, baja actividad.
