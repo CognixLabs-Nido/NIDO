@@ -126,3 +126,4 @@ jobs:
           F42_MIGRATION_APPLIED: '1'
           F43_MIGRATION_APPLIED: '1'
           F45_MIGRATION_APPLIED: '1'
+          D5_MIGRATION_APPLIED: '1'
