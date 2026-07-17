@@ -119,11 +119,15 @@ describe.skipIf(!APPLIED)('F-3-C-3 — revocar_acceso_familia (RPC)', () => {
       await crearVinculo(nino!.id, t, 'tutor_legal_principal')
     }
     if (opts.ninoActivo === false) {
+      // D-5: deleted_at siempre con motivo (CHECK *_deleted_reason_coherente).
       await serviceClient
         .from('vinculos_familiares')
-        .update({ deleted_at: NOW })
+        .update({ deleted_at: NOW, deleted_reason: 'baja_nino' })
         .eq('nino_id', nino!.id)
-      await serviceClient.from('ninos').update({ deleted_at: NOW }).eq('id', nino!.id)
+      await serviceClient
+        .from('ninos')
+        .update({ deleted_at: NOW, deleted_reason: 'baja_nino' })
+        .eq('id', nino!.id)
     }
     return { familiaId, tutores, ninoId: nino!.id }
   }
@@ -247,10 +251,14 @@ describe.skipIf(!APPLIED)('F-3-C-3 — revocar_acceso_familia (RPC)', () => {
     expect(await rolesActivos(f.tutores)).toBe(0)
 
     // Simula el desarchivar de F-3-F: revierte deleted_at sobre las mismas filas.
-    await serviceClient.from('familias').update({ deleted_at: null }).eq('id', f.familiaId)
+    // D-5: al revivir se limpia también el motivo (CHECK *_deleted_reason_coherente).
+    await serviceClient
+      .from('familias')
+      .update({ deleted_at: null, deleted_reason: null })
+      .eq('id', f.familiaId)
     await serviceClient
       .from('roles_usuario')
-      .update({ deleted_at: null })
+      .update({ deleted_at: null, deleted_reason: null })
       .eq('rol', 'tutor_legal')
       .in('usuario_id', f.tutores)
 

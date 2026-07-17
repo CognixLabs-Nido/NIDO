@@ -4462,7 +4462,11 @@ export type Database = {
       matricula_estado: "pendiente" | "lista" | "activa" | "baja"
       metodo_pago: "sepa" | "efectivo" | "transferencia" | "cheque_guarderia"
       momento_comida: "desayuno" | "media_manana" | "comida" | "merienda"
-      motivo_borrado: "baja_nino" | "revocacion_familia" | "purga_rgpd"
+      motivo_borrado:
+        | "baja_nino"
+        | "revocacion_familia"
+        | "purga_rgpd"
+        | "solicitud_olvido"
       motivo_ausencia:
         | "enfermedad"
         | "cita_medica"
@@ -4746,7 +4750,12 @@ export const Constants = {
       matricula_estado: ["pendiente", "lista", "activa", "baja"],
       metodo_pago: ["sepa", "efectivo", "transferencia", "cheque_guarderia"],
       momento_comida: ["desayuno", "media_manana", "comida", "merienda"],
-      motivo_borrado: ["baja_nino", "revocacion_familia", "purga_rgpd"],
+      motivo_borrado: [
+        "baja_nino",
+        "revocacion_familia",
+        "purga_rgpd",
+        "solicitud_olvido",
+      ],
       motivo_ausencia: [
         "enfermedad",
         "cita_medica",

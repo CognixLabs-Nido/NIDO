@@ -1,0 +1,24 @@
+-- =============================================================================
+-- D-5 (fix del blindaje) · Nuevo valor de ENUM: 'solicitud_olvido'
+-- -----------------------------------------------------------------------------
+-- El CHECK `ninos_deleted_reason_coherente` (mig 20260805120000) destapó un writer
+-- de `ninos.deleted_at` que NO estampaba motivo: `solicitar_olvido_nino` (F-11-A-4),
+-- que soft-borra el niño AL SOLICITAR el olvido (antes de purgar) → 23514 → el
+-- derecho al olvido quedaba roto. La reparación (mig siguiente) hace que esa función
+-- estampe un motivo.
+--
+-- Motivo semántico = valor NUEVO 'solicitud_olvido' (NO se reusa 'purga_rgpd'): una
+-- SOLICITUD de olvido es previa a la purga; el niño conserva su PII intacta y solo
+-- queda oculto durante el periodo de gracia — no está anonimizado. Ciclo monótono:
+-- baja_nino → solicitud_olvido → purga_rgpd (purgar_sujeto_db lo sobrescribe a
+-- 'purga_rgpd' al ejecutar). Ambos ≠ 'baja_nino' → desarchivar_nino hace RAISE en los
+-- dos: un niño con solicitud de olvido NO es reincorporable.
+--
+-- El ADD VALUE va en su PROPIA migración (transacción propia): Postgres no permite
+-- USAR un valor de ENUM recién añadido en la misma transacción que lo añade. Al
+-- separarlo, la migración siguiente (que lo referencia en el cuerpo de la función) ya
+-- lo tiene commiteado.
+--
+-- Aplicar por SQL Editor / db push (rol postgres). Regenerar database.ts DESPUÉS.
+-- =============================================================================
+ALTER TYPE public.motivo_borrado ADD VALUE IF NOT EXISTS 'solicitud_olvido';

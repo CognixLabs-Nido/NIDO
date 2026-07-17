@@ -167,12 +167,17 @@ describe.skipIf(!APPLIED)('D-5 punto 2 — blindar desarchivar (motivo_borrado)'
     const e = await nuevoEscenario()
     const { ninoId } = await crearNinoConTutor(e)
 
-    // Purga RGPD del NIÑO (inmediata) → niño anonimizado + soft-borrado con 'purga_rgpd'.
+    // Al SOLICITAR el olvido (antes de purgar): el niño queda oculto con 'solicitud_olvido'
+    // (conserva PII; no está anonimizado aún). El CHECK exige motivo → esto valida el fix.
     const sol = await serviceClient.rpc('solicitar_olvido_nino', {
       p_nino_id: ninoId,
       p_inmediato: true,
     })
     expect(sol.error).toBeNull()
+    expect(await nino(ninoId)).toMatchObject({ deleted_reason: 'solicitud_olvido' })
+    expect((await nino(ninoId)).deleted_at).not.toBeNull()
+
+    // Al PURGAR: se anonimiza y el motivo pasa a 'purga_rgpd'.
     const purga = await serviceClient.rpc('purgar_sujeto_db', {
       p_solicitud_id: sol.data as string,
     })
@@ -195,15 +200,18 @@ describe.skipIf(!APPLIED)('D-5 punto 2 — blindar desarchivar (motivo_borrado)'
     const e = await nuevoEscenario()
     const { ninoId, familiaId, tutor, vinculoId } = await crearNinoConTutor(e)
 
-    // Baja del hijo único → familia archivada + rol/vínculo soft-borrados por baja.
-    await serviceClient.rpc('baja_nino', { p_nino_id: ninoId, p_motivo: 'x' })
-
-    // Purga RGPD del TUTOR → sobreescribe el motivo de SUS vínculos/rol a 'purga_rgpd'.
+    // Solicita el olvido del TUTOR ANTES de la baja: solicitar_olvido_usuario deriva el
+    // centro de un rol ACTIVO, y la baja revoca ese rol → hay que pedirlo mientras vive.
     const sol = await serviceClient.rpc('solicitar_olvido_usuario', {
       p_usuario_id: tutor.id,
       p_inmediato: true,
     })
     expect(sol.error).toBeNull()
+
+    // Baja del hijo único → familia archivada + rol/vínculo soft-borrados por baja.
+    await serviceClient.rpc('baja_nino', { p_nino_id: ninoId, p_motivo: 'x' })
+
+    // Purga RGPD del TUTOR → sobreescribe el motivo de SUS vínculos/rol a 'purga_rgpd'.
     const purga = await serviceClient.rpc('purgar_sujeto_db', {
       p_solicitud_id: sol.data as string,
     })
@@ -232,15 +240,16 @@ describe.skipIf(!APPLIED)('D-5 punto 2 — blindar desarchivar (motivo_borrado)'
     const { ninoId, familiaId, tutor } = await crearNinoConTutor(e)
 
     await serviceClient.rpc('baja_nino', { p_nino_id: ninoId, p_motivo: 'x' })
-    // Simula que el rol lo borró OTRA vía (purga), no la baja.
+    // Sintético: simula que la FAMILIA la archivó OTRA vía (no la baja). El brazo de la
+    // familia en la reactivación filtra por 'revocacion_familia' → NO debe reactivarla,
+    // mientras el rol (que sí es 'revocacion_familia') sí revive. (Se sella la familia, no
+    // el rol, para no disparar el 23505 del INSERT de rol del paso 9 con un rol no revivido.)
     await serviceClient
-      .from('roles_usuario')
+      .from('familias')
       .update({ deleted_reason: 'purga_rgpd' })
-      .eq('usuario_id', tutor.id)
-      .eq('centro_id', e.centroId)
-      .eq('rol', 'tutor_legal')
+      .eq('id', familiaId)
 
-    // El tutor añade un 2º hijo → reactiva la familia ('revocacion_familia') pero NO el rol.
+    // El tutor añade un 2º hijo → crea_o_anadir entra en la rama de reactivación.
     const add = await cAdmin.rpc('crear_o_anadir_a_familia', {
       p_nombre_nino: 'Segundo',
       p_apellidos_nino: 'Test',
@@ -256,9 +265,11 @@ describe.skipIf(!APPLIED)('D-5 punto 2 — blindar desarchivar (motivo_borrado)'
     })
     expect(add.error).toBeNull()
 
-    expect(await familia(familiaId)).toEqual({ deleted_at: null, deleted_reason: null }) // reactivada
-    expect((await rolTutor(tutor.id, e.centroId)).deleted_at).not.toBeNull() // NO revivido (purga)
-    expect(await rolTutor(tutor.id, e.centroId)).toMatchObject({ deleted_reason: 'purga_rgpd' })
+    // Filtro respetado: la familia con motivo ≠ 'revocacion_familia' NO se reactiva;
+    // el rol (motivo 'revocacion_familia') sí revive y se limpia el motivo.
+    expect((await familia(familiaId)).deleted_at).not.toBeNull() // NO reactivada (filtro)
+    expect(await familia(familiaId)).toMatchObject({ deleted_reason: 'purga_rgpd' })
+    expect(await rolTutor(tutor.id, e.centroId)).toEqual({ deleted_at: null, deleted_reason: null })
   })
 
   it('el CHECK rechaza deleted_at sin motivo y motivo sin deleted_at', async () => {

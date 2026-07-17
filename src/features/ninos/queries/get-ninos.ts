@@ -109,10 +109,11 @@ export async function getNinosArchivadosPorCentro(centroId: string): Promise<Nin
     .select('id, nombre, apellidos')
     .eq('centro_id', centroId)
     .not('deleted_at', 'is', null)
-    // D-5: los niños purgados por RGPD (deleted_reason='purga_rgpd') NO son
-    // reincorporables (desarchivar_nino hace RAISE) → se ocultan del listado de archivo
-    // para no ofrecer un "Reincorporar" sobre un registro anonimizado ('[borrado]').
-    .neq('deleted_reason', 'purga_rgpd')
+    // D-5: el listado de archivo (reincorporación) muestra SOLO los archivados por baja
+    // ('baja_nino'). Los soft-borrados por RGPD ('solicitud_olvido'/'purga_rgpd') NO son
+    // reincorporables (desarchivar_nino hace RAISE) → se ocultan para no ofrecer un
+    // "Reincorporar" sobre un registro en olvido/anonimizado ('[borrado]').
+    .eq('deleted_reason', 'baja_nino')
     .order('apellidos', { ascending: true })
 
   if (!ninos?.length) return []
