@@ -30,7 +30,13 @@ const familias: FamiliaPanelInput[] = [
 describe('construirPanelFamilia', () => {
   it('agrupa 1 recibo por familia con cargos, descuentos y total congelado', () => {
     const recibos: ReciboPanelInput[] = [
-      { id: 'rec-garcia', familiaId: 'fam-garcia', estado: 'borrador', metodo: 'sepa', totalCentimos: 38000 },
+      {
+        id: 'rec-garcia',
+        familiaId: 'fam-garcia',
+        estado: 'borrador',
+        metodo: 'sepa',
+        totalCentimos: 38000,
+      },
     ]
     const lineas: LineaPanelInput[] = [
       linea('l1', 'rec-garcia', 'nino-lucia', 'Cuota mensual', 20000),
@@ -51,7 +57,13 @@ describe('construirPanelFamilia', () => {
 
   it('resuelve el nombre del hijo en líneas de hijo y deja null en líneas familiares', () => {
     const recibos: ReciboPanelInput[] = [
-      { id: 'rec-garcia', familiaId: 'fam-garcia', estado: 'borrador', metodo: 'sepa', totalCentimos: 18000 },
+      {
+        id: 'rec-garcia',
+        familiaId: 'fam-garcia',
+        estado: 'borrador',
+        metodo: 'sepa',
+        totalCentimos: 18000,
+      },
     ]
     const lineas: LineaPanelInput[] = [
       linea('l1', 'rec-garcia', 'nino-lucia', 'Cuota mensual', 20000),
@@ -72,7 +84,13 @@ describe('construirPanelFamilia', () => {
 
   it('ordena líneas: hijos (por nombre) antes que familiares; positivas antes que negativas', () => {
     const recibos: ReciboPanelInput[] = [
-      { id: 'rec-garcia', familiaId: 'fam-garcia', estado: 'borrador', metodo: 'sepa', totalCentimos: 0 },
+      {
+        id: 'rec-garcia',
+        familiaId: 'fam-garcia',
+        estado: 'borrador',
+        metodo: 'sepa',
+        totalCentimos: 0,
+      },
     ]
     const lineas: LineaPanelInput[] = [
       linea('fam', 'rec-garcia', null, 'Saldo mes anterior', -1000),
@@ -91,7 +109,13 @@ describe('construirPanelFamilia', () => {
 
   it('familia activa sin recibo → fila con recibo null y cuenta en familiasSinRecibo', () => {
     const recibos: ReciboPanelInput[] = [
-      { id: 'rec-garcia', familiaId: 'fam-garcia', estado: 'borrador', metodo: 'sepa', totalCentimos: 40000 },
+      {
+        id: 'rec-garcia',
+        familiaId: 'fam-garcia',
+        estado: 'borrador',
+        metodo: 'sepa',
+        totalCentimos: 40000,
+      },
     ]
     const lineas: LineaPanelInput[] = [linea('l1', 'rec-garcia', 'nino-lucia', 'Cuota', 40000)]
 
@@ -105,8 +129,20 @@ describe('construirPanelFamilia', () => {
 
   it('cuenta confirmados/pendientes por estado (borrador = pendiente)', () => {
     const recibos: ReciboPanelInput[] = [
-      { id: 'rec-garcia', familiaId: 'fam-garcia', estado: 'borrador', metodo: 'sepa', totalCentimos: 100 },
-      { id: 'rec-perez', familiaId: 'fam-perez', estado: 'pendiente_procesar', metodo: 'efectivo', totalCentimos: 200 },
+      {
+        id: 'rec-garcia',
+        familiaId: 'fam-garcia',
+        estado: 'borrador',
+        metodo: 'sepa',
+        totalCentimos: 100,
+      },
+      {
+        id: 'rec-perez',
+        familiaId: 'fam-perez',
+        estado: 'pendiente_procesar',
+        metodo: 'efectivo',
+        totalCentimos: 200,
+      },
     ]
     const lineas: LineaPanelInput[] = [
       linea('l1', 'rec-garcia', 'nino-lucia', 'Cuota', 100),

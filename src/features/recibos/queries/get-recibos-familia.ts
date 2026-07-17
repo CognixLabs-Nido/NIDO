@@ -56,10 +56,15 @@ export async function getRecibosFamilia(): Promise<ReciboFamiliaItem[]> {
   if (!recibos || recibos.length === 0) return []
 
   // Nombres de los hijos referidos por esporádicos con nino_id (los regulares llevan NULL).
-  const ninoIds = [...new Set(recibos.map((r) => r.nino_id).filter((id): id is string => id != null))]
+  const ninoIds = [
+    ...new Set(recibos.map((r) => r.nino_id).filter((id): id is string => id != null)),
+  ]
   const nombrePorNino = new Map<string, string>()
   if (ninoIds.length > 0) {
-    const { data: ninos } = await supabase.from('ninos').select('id, nombre, apellidos').in('id', ninoIds)
+    const { data: ninos } = await supabase
+      .from('ninos')
+      .select('id, nombre, apellidos')
+      .in('id', ninoIds)
     for (const n of ninos ?? []) {
       nombrePorNino.set(n.id, [n.nombre, n.apellidos].filter(Boolean).join(' '))
     }

@@ -83,7 +83,10 @@ export function agruparLineasPorHijo(
         subtotalCentimos: lineasHijo.reduce((acc, l) => acc + l.importeCentimos, 0),
       }
     })
-    .sort((a, b) => a.ninoNombre.localeCompare(b.ninoNombre, 'es-ES') || a.ninoId.localeCompare(b.ninoId))
+    .sort(
+      (a, b) =>
+        a.ninoNombre.localeCompare(b.ninoNombre, 'es-ES') || a.ninoId.localeCompare(b.ninoId)
+    )
 
   const lineasFamiliares = familiares.map(despojar).sort(ordenarLineas)
 

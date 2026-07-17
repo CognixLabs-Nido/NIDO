@@ -37,7 +37,13 @@ export interface EsporadicoResumen {
 
 const VACIO: PanelMesData = {
   filas: [],
-  indicadores: { numRecibos: 0, confirmados: 0, pendientes: 0, totalCentimos: 0, familiasSinRecibo: 0 },
+  indicadores: {
+    numRecibos: 0,
+    confirmados: 0,
+    pendientes: 0,
+    totalCentimos: 0,
+    familiasSinRecibo: 0,
+  },
   cerrado: false,
   cerradoAt: null,
   esporadicos: [],
@@ -77,7 +83,9 @@ export async function getRecibosMesPanel(
     return { ...VACIO, ...(await soloCierre(supabase, centroId, anio, mes)) }
   }
 
-  const familiaIds = [...new Set(ninos.map((n) => n.familia_id).filter((x): x is string => x != null))]
+  const familiaIds = [
+    ...new Set(ninos.map((n) => n.familia_id).filter((x): x is string => x != null)),
+  ]
 
   const [familiasRes, tutoresRes, recibosRes, cierreRes, metodosRes] = await Promise.all([
     supabase.from('familias').select('id, etiqueta').in('id', familiaIds),
@@ -88,7 +96,9 @@ export async function getRecibosMesPanel(
       .is('deleted_at', null),
     supabase
       .from('recibos')
-      .select('id, familia_id, nino_id, estado, metodo, total_centimos, es_esporadico, concepto_esporadico, devuelto_de_recibo_id')
+      .select(
+        'id, familia_id, nino_id, estado, metodo, total_centimos, es_esporadico, concepto_esporadico, devuelto_de_recibo_id'
+      )
       .eq('centro_id', centroId)
       .eq('anio', anio)
       .eq('mes', mes)
@@ -158,7 +168,9 @@ export async function getRecibosMesPanel(
     reciboRegularIds.length > 0
       ? await supabase
           .from('lineas_recibo')
-          .select('id, recibo_id, nino_id, concepto_id, descripcion, cantidad, precio_unitario_centimos, importe_centimos')
+          .select(
+            'id, recibo_id, nino_id, concepto_id, descripcion, cantidad, precio_unitario_centimos, importe_centimos'
+          )
           .in('recibo_id', reciboRegularIds)
       : { data: [] }
 

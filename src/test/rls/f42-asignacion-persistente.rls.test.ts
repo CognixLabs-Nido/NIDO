@@ -180,13 +180,23 @@ describe.skipIf(!APPLIED)('F-4-2 — asignación permanente (asignacion_concepto
     it('rechaza duplicado vivo (concepto + destino) — UNIQUE parcial', async () => {
       const a = await serviceClient
         .from('asignacion_concepto')
-        .insert({ centro_id: centroA.id, concepto_id: conceptoNino, nino_id: ninoA.id, origen: 'manual' })
+        .insert({
+          centro_id: centroA.id,
+          concepto_id: conceptoNino,
+          nino_id: ninoA.id,
+          origen: 'manual',
+        })
         .select('id')
         .single()
       expect(a.error).toBeNull()
       const b = await serviceClient
         .from('asignacion_concepto')
-        .insert({ centro_id: centroA.id, concepto_id: conceptoNino, nino_id: ninoA.id, origen: 'manual' })
+        .insert({
+          centro_id: centroA.id,
+          concepto_id: conceptoNino,
+          nino_id: ninoA.id,
+          origen: 'manual',
+        })
         .select('id')
       expect(b.error?.code).toBe('23505')
       await serviceClient.from('asignacion_concepto').delete().eq('id', a.data!.id)
@@ -195,7 +205,12 @@ describe.skipIf(!APPLIED)('F-4-2 — asignación permanente (asignacion_concepto
     it('el admin del centro hace CRUD; el admin de otro centro NO', async () => {
       const ins = await cAdminA
         .from('asignacion_concepto')
-        .insert({ centro_id: centroA.id, concepto_id: conceptoNino, nino_id: ninoA.id, origen: 'manual' })
+        .insert({
+          centro_id: centroA.id,
+          concepto_id: conceptoNino,
+          nino_id: ninoA.id,
+          origen: 'manual',
+        })
         .select('id')
         .maybeSingle()
       expect(ins.error).toBeNull()
@@ -216,7 +231,12 @@ describe.skipIf(!APPLIED)('F-4-2 — asignación permanente (asignacion_concepto
       expect(selB.data ?? []).toHaveLength(0)
       const insB = await cAdminB
         .from('asignacion_concepto')
-        .insert({ centro_id: centroA.id, concepto_id: conceptoNino, familia_id: familiaA, origen: 'manual' })
+        .insert({
+          centro_id: centroA.id,
+          concepto_id: conceptoNino,
+          familia_id: familiaA,
+          origen: 'manual',
+        })
         .select('id')
         .maybeSingle()
       expect(insB.error).not.toBeNull()
@@ -227,7 +247,12 @@ describe.skipIf(!APPLIED)('F-4-2 — asignación permanente (asignacion_concepto
     it('el tutor NO puede leer ni escribir asignacion_concepto', async () => {
       const seed = await serviceClient
         .from('asignacion_concepto')
-        .insert({ centro_id: centroA.id, concepto_id: conceptoNino, nino_id: ninoA.id, origen: 'manual' })
+        .insert({
+          centro_id: centroA.id,
+          concepto_id: conceptoNino,
+          nino_id: ninoA.id,
+          origen: 'manual',
+        })
         .select('id')
         .single()
       expect(seed.error).toBeNull()
@@ -237,7 +262,12 @@ describe.skipIf(!APPLIED)('F-4-2 — asignación permanente (asignacion_concepto
 
       const write = await cTutorA
         .from('asignacion_concepto')
-        .insert({ centro_id: centroA.id, concepto_id: conceptoFam, familia_id: familiaA, origen: 'manual' })
+        .insert({
+          centro_id: centroA.id,
+          concepto_id: conceptoFam,
+          familia_id: familiaA,
+          origen: 'manual',
+        })
         .select('id')
         .maybeSingle()
       expect(write.error).not.toBeNull()
@@ -302,8 +332,16 @@ describe.skipIf(!APPLIED)('F-4-2 — asignación permanente (asignacion_concepto
         return r.data.id
       }
 
-      cptoNinoAuto = await mk({ nombre: 'Cuota niño auto', ambito: 'nino', aplicacion: 'automatico' })
-      cptoFamAuto = await mk({ nombre: 'Cuota familia auto', ambito: 'familia', aplicacion: 'automatico' })
+      cptoNinoAuto = await mk({
+        nombre: 'Cuota niño auto',
+        ambito: 'nino',
+        aplicacion: 'automatico',
+      })
+      cptoFamAuto = await mk({
+        nombre: 'Cuota familia auto',
+        ambito: 'familia',
+        aplicacion: 'automatico',
+      })
       cptoDescuento = await mk({
         nombre: 'Descuento hermanos',
         ambito: 'familia',

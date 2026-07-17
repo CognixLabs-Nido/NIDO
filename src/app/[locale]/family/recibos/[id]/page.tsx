@@ -150,7 +150,9 @@ function SeccionLineas({
             <tr key={l.id}>
               <td className="p-3">{l.descripcion}</td>
               <td className="p-3 text-right tabular-nums">{l.cantidad}</td>
-              <td className="p-3 text-right tabular-nums">{formatEuros(l.precioUnitarioCentimos)}</td>
+              <td className="p-3 text-right tabular-nums">
+                {formatEuros(l.precioUnitarioCentimos)}
+              </td>
               <td className="p-3 text-right tabular-nums">{formatEuros(l.importeCentimos)}</td>
             </tr>
           ))}

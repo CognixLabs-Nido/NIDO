@@ -134,5 +134,11 @@ export async function getRecibosSepaRemesables(
     esEsporadico: r.es_esporadico,
   }))
 
-  return ensamblarRemesables(rows, remesados, familiasConMandato, etiquetaPorFamilia, tutoresPorFamilia)
+  return ensamblarRemesables(
+    rows,
+    remesados,
+    familiasConMandato,
+    etiquetaPorFamilia,
+    tutoresPorFamilia
+  )
 }

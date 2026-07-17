@@ -141,7 +141,9 @@ export function DomiciliacionTutorDialog({
       }
 
       if (!json.success) {
-        toast.error(safeTranslateError(tErrors, json.error ?? 'family.domiciliacion.errors.guardado'))
+        toast.error(
+          safeTranslateError(tErrors, json.error ?? 'family.domiciliacion.errors.guardado')
+        )
         return
       }
       toast.success(t('guardado'))

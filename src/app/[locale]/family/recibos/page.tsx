@@ -170,7 +170,9 @@ export default async function FamilyRecibosPage({ params }: PageProps) {
                 {r.esEsporadico && <Badge variant="outline">{t('esporadico_badge')}</Badge>}
                 {r.esRegiro && <Badge variant="outline">{t('regiro_badge')}</Badge>}
                 {r.esEsporadico && r.ninoNombre && (
-                  <span className="text-muted-foreground">{t('cargo_de_hijo', { nombre: r.ninoNombre })}</span>
+                  <span className="text-muted-foreground">
+                    {t('cargo_de_hijo', { nombre: r.ninoNombre })}
+                  </span>
                 )}
               </div>
               <span className="font-medium tabular-nums">{formatEuros(r.totalCentimos)}</span>

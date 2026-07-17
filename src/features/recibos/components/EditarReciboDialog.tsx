@@ -181,7 +181,9 @@ function LineaEditable({
   const [editando, setEditando] = useState(false)
   const [desc, setDesc] = useState(linea.descripcion)
   const [cantidad, setCantidad] = useState(String(linea.cantidad))
-  const [importe, setImporte] = useState(String(linea.precioUnitarioCentimos / 100).replace('.', ','))
+  const [importe, setImporte] = useState(
+    String(linea.precioUnitarioCentimos / 100).replace('.', ',')
+  )
   const [pending, startTransition] = useTransition()
 
   function guardar() {
@@ -211,8 +213,18 @@ function LineaEditable({
     return (
       <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2">
         <Input value={desc} onChange={(e) => setDesc(e.target.value)} maxLength={200} />
-        <Input value={cantidad} onChange={(e) => setCantidad(e.target.value)} className="w-16" inputMode="numeric" />
-        <Input value={importe} onChange={(e) => setImporte(e.target.value)} className="w-24" inputMode="decimal" />
+        <Input
+          value={cantidad}
+          onChange={(e) => setCantidad(e.target.value)}
+          className="w-16"
+          inputMode="numeric"
+        />
+        <Input
+          value={importe}
+          onChange={(e) => setImporte(e.target.value)}
+          className="w-24"
+          inputMode="decimal"
+        />
         <Button size="sm" disabled={pending} onClick={guardar}>
           {t('guardar')}
         </Button>

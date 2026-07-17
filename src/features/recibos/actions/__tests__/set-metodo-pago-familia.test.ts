@@ -35,8 +35,7 @@ function makeClient(recibo: { id: string; estado: string } | null) {
   const fake = {
     from(table: string) {
       return {
-        select: () =>
-          selectChain(table === 'metodo_pago_familia' ? null : recibo), // metodo: no existente → insert
+        select: () => selectChain(table === 'metodo_pago_familia' ? null : recibo), // metodo: no existente → insert
         insert: (patch: Record<string, unknown>) => {
           calls.push({ table, op: 'insert', patch })
           return Promise.resolve({ error: null })

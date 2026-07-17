@@ -69,7 +69,9 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
                   {data.alumnos.map((a) => (
                     <TableRow key={a.ninoId}>
                       <TableCell className="font-medium">{a.nombre}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{a.familiaEtiqueta}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {a.familiaEtiqueta}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-2">
                           <span className="text-muted-foreground text-xs">
@@ -115,7 +117,9 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
                       <TableCell>
                         <div className="font-medium">{f.etiqueta}</div>
                         {f.tutores.length > 0 && (
-                          <div className="text-muted-foreground text-xs">{f.tutores.join(' · ')}</div>
+                          <div className="text-muted-foreground text-xs">
+                            {f.tutores.join(' · ')}
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>
