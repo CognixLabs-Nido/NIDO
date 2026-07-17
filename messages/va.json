@@ -3637,7 +3637,8 @@
         "medico": "Dades mèdiques i d'emergència",
         "documentos": "Documents (llibre de família i DNI)",
         "sepa": "Mandat SEPA",
-        "imagen": "Autorització d'imatge"
+        "imagen": "Autorització d'imatge",
+        "normas": "Normes de règim intern"
       }
     }
   },
