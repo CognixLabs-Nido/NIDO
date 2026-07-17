@@ -26,8 +26,26 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+import type { Parentesco } from '../lib/resolver-parentesco'
 import { anadirHijoAFamilia } from '../actions/anadir-hijo-a-familia'
 import type { FamiliaItem } from '../queries/get-familias'
+
+const PARENTESCO_OPCIONES: readonly Parentesco[] = [
+  'madre',
+  'padre',
+  'abuela',
+  'abuelo',
+  'tia',
+  'tio',
+  'hermana',
+  'hermano',
+  'cuidadora',
+  'otro',
+] as const
+
+/** Clave de error que devuelve el action cuando el titular no tiene vínculo del que heredar
+ *  el parentesco → hay que pedirlo en el diálogo (caso anómalo, sin dato). */
+const ERROR_PARENTESCO_REQUERIDO = 'admin.admisiones.anadirHijo.errors.parentesco_requerido'
 
 interface AulaOption {
   id: string
@@ -51,6 +69,7 @@ type Filtro = 'todas' | 'activas' | 'inactivas'
  */
 export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
   const t = useTranslations('admin.admisiones.anadirHijo')
+  const tVinculo = useTranslations('vinculo')
   const tErrors = useTranslations()
   const router = useRouter()
 
@@ -63,6 +82,11 @@ export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
   const [apellidos, setApellidos] = useState('')
   const [fechaNacimiento, setFechaNacimiento] = useState('')
   const [aulaId, setAulaId] = useState('')
+  // Parentesco: normalmente se hereda en el server (campo oculto). Se revela SOLO si el
+  // action responde `parentesco_requerido` (titular sin vínculo del que heredar).
+  const [requiereParentesco, setRequiereParentesco] = useState(false)
+  const [parentesco, setParentesco] = useState<Parentesco | ''>('')
+  const [descripcionParentesco, setDescripcionParentesco] = useState('')
   const [pending, startTransition] = useTransition()
 
   const sinCursoActivo = aulas.length === 0
@@ -89,7 +113,16 @@ export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
     setApellidos('')
     setFechaNacimiento('')
     setAulaId('')
+    setRequiereParentesco(false)
+    setParentesco('')
+    setDescripcionParentesco('')
   }
+
+  // El parentesco solo es exigible cuando el diálogo lo ha revelado; si va 'otro', la
+  // descripción es obligatoria (espejo del refine del schema).
+  const parentescoCompleto =
+    !requiereParentesco ||
+    (parentesco !== '' && (parentesco !== 'otro' || descripcionParentesco.trim().length > 0))
 
   const puedeConfirmar =
     !!familia &&
@@ -98,6 +131,7 @@ export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
     apellidos.trim().length > 0 &&
     fechaNacimiento.length > 0 &&
     aulaId.length > 0 &&
+    parentescoCompleto &&
     !pending
 
   function confirmar() {
@@ -110,6 +144,13 @@ export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
           apellidos: apellidos.trim(),
           fecha_nacimiento: fechaNacimiento,
           aula_id: aulaId,
+          ...(requiereParentesco && parentesco !== ''
+            ? {
+                parentesco,
+                descripcion_parentesco:
+                  parentesco === 'otro' ? descripcionParentesco.trim() : undefined,
+              }
+            : {}),
         },
         locale
       )
@@ -118,6 +159,10 @@ export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
         setOpen(false)
         reset()
         router.refresh()
+      } else if (r.error === ERROR_PARENTESCO_REQUERIDO) {
+        // Titular sin vínculo del que heredar → revela el campo y pide completarlo.
+        setRequiereParentesco(true)
+        toast.error(tErrors(r.error))
       } else {
         toast.error(tErrors(r.error))
       }
@@ -257,6 +302,44 @@ export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
                   </SelectContent>
                 </Select>
               </div>
+              {requiereParentesco && (
+                <>
+                  <div className="border-warm-300 bg-warm-100 text-warm-800 rounded-xl border-l-4 px-4 py-3 text-sm">
+                    {t('parentesco_requerido_aviso')}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ah-parentesco">{tVinculo('fields.parentesco')}</Label>
+                    <Select
+                      value={parentesco || undefined}
+                      onValueChange={(v) => setParentesco((v as Parentesco) ?? '')}
+                    >
+                      <SelectTrigger id="ah-parentesco" data-testid="anadir-hijo-parentesco">
+                        <SelectValue placeholder={tVinculo('fields.parentesco_placeholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PARENTESCO_OPCIONES.map((p) => (
+                          <SelectItem key={p} value={p}>
+                            {tVinculo(`parentesco.${p}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {parentesco === 'otro' && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ah-descripcion-parentesco">
+                        {tVinculo('fields.descripcion_parentesco')}
+                      </Label>
+                      <Input
+                        id="ah-descripcion-parentesco"
+                        value={descripcionParentesco}
+                        onChange={(e) => setDescripcionParentesco(e.target.value)}
+                        data-testid="anadir-hijo-descripcion-parentesco"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
 

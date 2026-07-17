@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import { normalizarIban } from '@/features/alta/lib/iban'
 import { generarIdentificadorMandato } from '@/features/alta/lib/mandato-sepa'
+import { registrarOSustituirMandatoSepa } from '@/features/alta/lib/registrar-mandato-sepa'
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { createClient } from '@/lib/supabase/server'
@@ -64,14 +65,14 @@ export async function gestionarDomiciliacionFamilia(
   const iban = normalizarIban(parsed.data.iban)
   const titular = parsed.data.titular.trim()
 
-  // ¿La familia ya tiene mandato activo? → sustituir; si no → registrar (1º).
+  // ¿La familia ya tiene mandato activo? → sustituir; si no → registrar (1º). El helper llama
+  // a cada RPC con su nombre literal (params tipados; sin `as never`).
   const activo = await familiaTieneMandatoActivo(parsed.data.familia_id)
-  const rpc = activo ? 'sustituir_mandato_sepa' : 'registrar_mandato_sepa'
 
   // Parámetros modo PRESENCIAL: sin PDF (documento_path NULL), sin trazo (firma_imagen ''),
   // metodo='presencial'. p_nino_id NULL (informativo). texto_hash NULL (la RPC no lo exige;
   // el canónico/hash es del flujo digital con IBAN en claro del formulario, aquí no aplica).
-  const { error } = await supabase.rpc(rpc, {
+  const { error } = await registrarOSustituirMandatoSepa(supabase, Boolean(activo), {
     p_familia_id: parsed.data.familia_id,
     p_nino_id: null,
     p_iban: iban,
@@ -85,7 +86,7 @@ export async function gestionarDomiciliacionFamilia(
     p_user_agent: null,
     p_fecha_firma: new Date().toISOString(),
     p_metodo: 'presencial',
-  } as never)
+  })
 
   if (error) {
     logger.warn('gestionarDomiciliacionFamilia', error.message)

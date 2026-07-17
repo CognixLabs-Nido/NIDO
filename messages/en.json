@@ -860,15 +860,18 @@
           "apellidos_requerido": "Enter the child's surname",
           "fecha_requerida": "Enter the date of birth",
           "aula_requerida": "Choose a classroom of the active year",
-          "invalid": "Invalid data"
+          "invalid": "Invalid data",
+          "descripcion_parentesco_requerida": "Describe the relationship"
         },
         "errors": {
           "familia_no_encontrada": "Family not found",
           "familia_no_elegible": "This family has no adult with an account; use the invitation flow",
           "no_autorizado": "You don't have permission to add children in this centre",
           "colision": "The guardian's name doesn't match the one on record for the family; check it before continuing",
-          "fallo": "The child could not be added"
-        }
+          "fallo": "The child could not be added",
+          "parentesco_requerido": "This guardian has no relationship on record to inherit; select it below to complete the enrolment"
+        },
+        "parentesco_requerido_aviso": "We couldn't infer the guardian's relationship to the child. Select it to complete the enrolment."
       }
     },
     "pendientes": {

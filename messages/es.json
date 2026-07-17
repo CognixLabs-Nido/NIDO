@@ -860,15 +860,18 @@
           "apellidos_requerido": "Indica los apellidos del niño",
           "fecha_requerida": "Indica la fecha de nacimiento",
           "aula_requerida": "Elige un aula del curso activo",
-          "invalid": "Datos no válidos"
+          "invalid": "Datos no válidos",
+          "descripcion_parentesco_requerida": "Describe el parentesco"
         },
         "errors": {
           "familia_no_encontrada": "Familia no encontrada",
           "familia_no_elegible": "Esta familia no tiene ningún adulto con cuenta; usa el flujo de invitación",
           "no_autorizado": "No tienes permiso para añadir hijos en este centro",
           "colision": "El nombre del titular no coincide con el registrado en la familia; revísalo antes de continuar",
-          "fallo": "No se pudo añadir el hijo"
-        }
+          "fallo": "No se pudo añadir el hijo",
+          "parentesco_requerido": "Este titular no tiene ningún vínculo del que heredar el parentesco; indícalo abajo para completar el alta"
+        },
+        "parentesco_requerido_aviso": "No hemos podido deducir el parentesco del titular con el niño. Indícalo para completar el alta."
       }
     },
     "pendientes": {

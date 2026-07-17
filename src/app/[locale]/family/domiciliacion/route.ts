@@ -7,6 +7,7 @@ import { familiaDelUsuarioActual } from '@/features/alta/queries/get-familia-usu
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
 import { ibanValido, normalizarIban } from '@/features/alta/lib/iban'
 import { MAX_LARGO_IDENTIFICADOR, textoCanonicoMandato } from '@/features/alta/lib/mandato-sepa'
+import { registrarOSustituirMandatoSepa } from '@/features/alta/lib/registrar-mandato-sepa'
 import { BUCKET_MANDATO_SEPA, firmarRuta } from '@/shared/lib/adjuntos/storage'
 
 export const dynamic = 'force-dynamic'
@@ -133,13 +134,13 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // 2. Decide registrar (sin activo) vs sustituir (con activo) — espejo de la action presencial.
+  // El helper llama a cada RPC con su nombre literal (params tipados; sin `as never`).
   const activo = await familiaTieneMandatoActivo(familia.familiaId)
-  const rpc = activo ? 'sustituir_mandato_sepa' : 'registrar_mandato_sepa'
 
   const ipAddress = (request.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || null
   const userAgent = request.headers.get('user-agent')?.slice(0, 500) ?? null
 
-  const { error: rpcErr } = await supabase.rpc(rpc, {
+  const { error: rpcErr } = await registrarOSustituirMandatoSepa(supabase, Boolean(activo), {
     p_familia_id: familia.familiaId,
     p_nino_id: null,
     p_iban: iban,
@@ -153,7 +154,7 @@ export async function POST(request: Request): Promise<Response> {
     p_user_agent: userAgent ?? '',
     p_fecha_firma: fechaFirmaIso,
     p_metodo: 'digital',
-  } as never)
+  })
   if (rpcErr) {
     if (/no autorizado|42501/i.test(rpcErr.message)) return err('alta.errors.no_autorizado', 403)
     // No debería darse (solo llamamos registrar cuando NO hay activo), pero se propaga legible.
