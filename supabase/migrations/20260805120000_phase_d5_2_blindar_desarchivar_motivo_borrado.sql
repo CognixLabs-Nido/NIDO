@@ -13,8 +13,10 @@
 -- que borró una baja ('baja_nino' vínculos, 'revocacion_familia' rol/familia). La
 -- purga marca 'purga_rgpd' → jamás revivible. Cualquier motivo futuro tampoco lo será.
 --
--- Se añade a `vinculos_familiares`, `roles_usuario` Y `familias` (sin esta última el
--- blindaje no sería completo: desarchivar reactiva la familia incondicionalmente).
+-- Se añade a `vinculos_familiares`, `roles_usuario`, `familias` Y `ninos`. `ninos` es
+-- imprescindible: purgar_sujeto_db también soft-borra el niño, y desarchivar_nino lo revive
+-- SIN filtro → un niño purgado por RGPD volvería al listado activo con nombre '[borrado]'.
+-- Con motivo, desarchivar_nino solo reincorpora los 'baja_nino' y RAISE ante un purgado.
 --
 -- CHECK de coherencia `(deleted_at IS NULL) = (deleted_reason IS NULL)` en las 3
 -- tablas: red de seguridad para writers futuros que olviden estampar motivo (se
@@ -29,8 +31,9 @@
 -- PREEXISTENTE de la revocación por-familia sobre un rol por-centro; la columna de
 -- motivo no lo resuelve del todo. Registrado como deuda, no abordado en D-5.
 --
--- Funciones tocadas (5, CREATE OR REPLACE): archivar_nino, revocar_acceso_familia,
--- desarchivar_nino, crear_o_anadir_a_familia, purgar_sujeto_db.
+-- Funciones tocadas (5, CREATE OR REPLACE): archivar_nino (vínculos+niño), revocar_acceso_familia
+-- (rol+familia), desarchivar_nino (revive solo baja; RAISE ante niño purgado), crear_o_anadir_a_familia
+-- (reactivación filtrada), purgar_sujeto_db (vínculos+roles+niño → 'purga_rgpd').
 --
 -- Backfill: 0 datos reales (piloto no arrancado; la purga no ha corrido en prod). Se
 -- etiqueta lo ya soft-borrado como su fuente esperada (vínculos→baja; rol tutor_legal→
@@ -49,6 +52,7 @@ CREATE TYPE public.motivo_borrado AS ENUM ('baja_nino', 'revocacion_familia', 'p
 ALTER TABLE public.vinculos_familiares ADD COLUMN deleted_reason public.motivo_borrado;
 ALTER TABLE public.roles_usuario       ADD COLUMN deleted_reason public.motivo_borrado;
 ALTER TABLE public.familias            ADD COLUMN deleted_reason public.motivo_borrado;
+ALTER TABLE public.ninos               ADD COLUMN deleted_reason public.motivo_borrado;
 
 COMMENT ON COLUMN public.vinculos_familiares.deleted_reason IS
   'D-5: motivo del soft-delete. desarchivar_nino solo revive los ''baja_nino''. NULL sii deleted_at NULL.';
@@ -56,6 +60,8 @@ COMMENT ON COLUMN public.roles_usuario.deleted_reason IS
   'D-5: motivo del soft-delete. desarchivar/reactivación solo reviven los ''revocacion_familia''. NULL sii deleted_at NULL.';
 COMMENT ON COLUMN public.familias.deleted_reason IS
   'D-5: motivo del soft-delete. desarchivar/reactivación solo reactivan las ''revocacion_familia''. NULL sii deleted_at NULL.';
+COMMENT ON COLUMN public.ninos.deleted_reason IS
+  'D-5: motivo del soft-delete. desarchivar_nino solo reincorpora los ''baja_nino'' (RAISE si ''purga_rgpd''). NULL sii deleted_at NULL.';
 
 -- -----------------------------------------------------------------------------
 -- 2. BACKFILL (antes del CHECK). 0 datos reales; preserva comportamiento actual.
@@ -68,6 +74,8 @@ UPDATE public.roles_usuario SET deleted_reason = 'purga_rgpd'
   WHERE deleted_at IS NOT NULL AND deleted_reason IS NULL;  -- resto (no tutor) = purga
 UPDATE public.familias SET deleted_reason = 'revocacion_familia'
   WHERE deleted_at IS NOT NULL AND deleted_reason IS NULL;
+UPDATE public.ninos SET deleted_reason = 'baja_nino'
+  WHERE deleted_at IS NOT NULL AND deleted_reason IS NULL;  -- la purga no ha corrido en prod
 
 -- -----------------------------------------------------------------------------
 -- 3. CHECK de coherencia (red de seguridad ante writers futuros sin motivo).
@@ -80,6 +88,9 @@ ALTER TABLE public.roles_usuario
   CHECK ((deleted_at IS NULL) = (deleted_reason IS NULL));
 ALTER TABLE public.familias
   ADD CONSTRAINT familias_deleted_reason_coherente
+  CHECK ((deleted_at IS NULL) = (deleted_reason IS NULL));
+ALTER TABLE public.ninos
+  ADD CONSTRAINT ninos_deleted_reason_coherente
   CHECK ((deleted_at IS NULL) = (deleted_reason IS NULL));
 
 -- -----------------------------------------------------------------------------
@@ -138,7 +149,8 @@ BEGIN
   )
   SELECT count(*) INTO v_vinculos FROM borrados;
 
-  UPDATE public.ninos SET deleted_at = now() WHERE id = p_nino_id;
+  -- D-5: estampa el motivo también en el niño → desarchivar sabrá que fue la baja.
+  UPDATE public.ninos SET deleted_at = now(), deleted_reason = 'baja_nino' WHERE id = p_nino_id;
 
   RETURN jsonb_build_object(
     'nino_id', p_nino_id, 'ya_archivado', false,
@@ -229,13 +241,14 @@ DECLARE
   v_centro_id     uuid;
   v_familia_id    uuid;
   v_archivado     boolean;
+  v_motivo        public.motivo_borrado;
   v_curso_id      uuid;
   v_familia_react boolean := false;
   v_roles         integer := 0;
   v_matricula_id  uuid;
 BEGIN
-  SELECT centro_id, familia_id, (deleted_at IS NOT NULL)
-    INTO v_centro_id, v_familia_id, v_archivado
+  SELECT centro_id, familia_id, (deleted_at IS NOT NULL), deleted_reason
+    INTO v_centro_id, v_familia_id, v_archivado, v_motivo
     FROM public.ninos
     WHERE id = p_nino_id;
   IF v_centro_id IS NULL THEN
@@ -250,6 +263,12 @@ BEGIN
     RETURN jsonb_build_object('nino_id', p_nino_id, 'ya_activo', true);
   END IF;
 
+  -- D-5: solo se reincorpora lo que archivó una BAJA. Un niño purgado por RGPD
+  -- (deleted_reason='purga_rgpd') NO es reincorporable: su PII ya se anonimizó.
+  IF v_motivo IS DISTINCT FROM 'baja_nino' THEN
+    RAISE EXCEPTION 'no se puede reincorporar a un sujeto purgado' USING ERRCODE = 'raise_exception';
+  END IF;
+
   v_curso_id := public.curso_activo_de_centro(v_centro_id);
   IF v_curso_id IS NULL THEN
     RAISE EXCEPTION 'el centro no tiene curso academico activo' USING ERRCODE = 'no_data_found';
@@ -262,8 +281,8 @@ BEGIN
     RAISE EXCEPTION 'el aula no pertenece al curso activo del centro' USING ERRCODE = 'foreign_key_violation';
   END IF;
 
-  -- 5a. Desarchiva el niño (el sujeto explícito → siempre).
-  UPDATE public.ninos SET deleted_at = NULL WHERE id = p_nino_id;
+  -- 5a. Desarchiva el niño (ya validado que fue una baja) y limpia el motivo.
+  UPDATE public.ninos SET deleted_at = NULL, deleted_reason = NULL WHERE id = p_nino_id;
 
   -- 5b. D-5: revive SOLO los vínculos que borró la BAJA ('baja_nino'), no los de una
   --     purga RGPD u otra vía. Al revivir, limpia el motivo (coherencia con el CHECK).
@@ -504,6 +523,7 @@ BEGIN
   END IF;
 
   IF s.sujeto_tipo = 'nino' THEN
+    -- D-5: motivo 'purga_rgpd' → desarchivar_nino RAISE (no reincorpora un sujeto purgado).
     UPDATE public.ninos SET
       nombre           = '[borrado]',
       apellidos        = '[borrado]',
@@ -512,6 +532,7 @@ BEGIN
       nacionalidad     = NULL,
       foto_url         = NULL,
       notas_admin      = NULL,
+      deleted_reason   = 'purga_rgpd',
       deleted_at       = COALESCE(deleted_at, now())
     WHERE id = s.sujeto_id;
 

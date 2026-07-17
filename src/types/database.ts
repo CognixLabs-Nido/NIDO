@@ -2860,6 +2860,7 @@ export type Database = {
           centro_id: string
           created_at: string
           deleted_at: string | null
+          deleted_reason: Database["public"]["Enums"]["motivo_borrado"] | null
           direccion_calle: string | null
           direccion_ciudad: string | null
           direccion_cp: string | null
@@ -2886,6 +2887,7 @@ export type Database = {
           centro_id: string
           created_at?: string
           deleted_at?: string | null
+          deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
           direccion_calle?: string | null
           direccion_ciudad?: string | null
           direccion_cp?: string | null
@@ -2912,6 +2914,7 @@ export type Database = {
           centro_id?: string
           created_at?: string
           deleted_at?: string | null
+          deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
           direccion_calle?: string | null
           direccion_ciudad?: string | null
           direccion_cp?: string | null

@@ -124,6 +124,14 @@ describe.skipIf(!APPLIED)('D-5 punto 2 — blindar desarchivar (motivo_borrado)'
       .single()
     return data!
   }
+  async function nino(id: string) {
+    const { data } = await serviceClient
+      .from('ninos')
+      .select('deleted_at, deleted_reason')
+      .eq('id', id)
+      .single()
+    return data!
+  }
 
   it('baja estampa los motivos; desarchivar revive todo y limpia deleted_reason a NULL', async () => {
     const e = await nuevoEscenario()
@@ -132,7 +140,9 @@ describe.skipIf(!APPLIED)('D-5 punto 2 — blindar desarchivar (motivo_borrado)'
     const baja = await serviceClient.rpc('baja_nino', { p_nino_id: ninoId, p_motivo: 'x' })
     expect(baja.error).toBeNull()
 
-    // Estampado por la baja.
+    // Estampado por la baja (incluido el propio niño).
+    expect(await nino(ninoId)).toMatchObject({ deleted_reason: 'baja_nino' })
+    expect((await nino(ninoId)).deleted_at).not.toBeNull()
     expect(await vinculo(vinculoId)).toMatchObject({ deleted_reason: 'baja_nino' })
     expect((await vinculo(vinculoId)).deleted_at).not.toBeNull()
     expect(await rolTutor(tutor.id, e.centroId)).toMatchObject({
@@ -146,10 +156,39 @@ describe.skipIf(!APPLIED)('D-5 punto 2 — blindar desarchivar (motivo_borrado)'
     })
     expect(des.error).toBeNull()
 
-    // Revivido + motivo a NULL (coherente con el CHECK).
+    // Revivido + motivo a NULL (coherente con el CHECK), niño incluido.
+    expect(await nino(ninoId)).toEqual({ deleted_at: null, deleted_reason: null })
     expect(await vinculo(vinculoId)).toEqual({ deleted_at: null, deleted_reason: null })
     expect(await rolTutor(tutor.id, e.centroId)).toEqual({ deleted_at: null, deleted_reason: null })
     expect(await familia(familiaId)).toEqual({ deleted_at: null, deleted_reason: null })
+  })
+
+  it('purgar un niño estampa "purga_rgpd" y desarchivar hace RAISE (no lo revive)', async () => {
+    const e = await nuevoEscenario()
+    const { ninoId } = await crearNinoConTutor(e)
+
+    // Purga RGPD del NIÑO (inmediata) → niño anonimizado + soft-borrado con 'purga_rgpd'.
+    const sol = await serviceClient.rpc('solicitar_olvido_nino', {
+      p_nino_id: ninoId,
+      p_inmediato: true,
+    })
+    expect(sol.error).toBeNull()
+    const purga = await serviceClient.rpc('purgar_sujeto_db', {
+      p_solicitud_id: sol.data as string,
+    })
+    expect(purga.error).toBeNull()
+    expect(await nino(ninoId)).toMatchObject({ deleted_reason: 'purga_rgpd' })
+    expect((await nino(ninoId)).deleted_at).not.toBeNull()
+
+    // desarchivar → RAISE ('no se puede reincorporar a un sujeto purgado'); NADA cambia.
+    const des = await serviceClient.rpc('desarchivar_nino', {
+      p_nino_id: ninoId,
+      p_aula_id: e.aulaId,
+    })
+    expect(des.error).not.toBeNull()
+    expect(des.error?.message).toMatch(/purgad/i)
+    expect((await nino(ninoId)).deleted_at).not.toBeNull() // sigue archivado
+    expect(await nino(ninoId)).toMatchObject({ deleted_reason: 'purga_rgpd' })
   })
 
   it("purga RGPD marca 'purga_rgpd' y desarchivar NO lo revive (el bug del blindaje)", async () => {
