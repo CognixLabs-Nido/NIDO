@@ -80,10 +80,14 @@ describe('F-3-E — visibilidad de niño archivado', () => {
 
   it('archivado: admin SÍ lee (sin filtro), tutor NO (vínculo muerto)', async () => {
     // Archivar: soft-delete del niño + de sus vínculos (equivalente a archivar_nino).
-    await serviceClient.from('ninos').update({ deleted_at: NOW }).eq('id', ninoId)
+    // D-5: deleted_at siempre con motivo (CHECK *_deleted_reason_coherente).
+    await serviceClient
+      .from('ninos')
+      .update({ deleted_at: NOW, deleted_reason: 'baja_nino' })
+      .eq('id', ninoId)
     await serviceClient
       .from('vinculos_familiares')
-      .update({ deleted_at: NOW })
+      .update({ deleted_at: NOW, deleted_reason: 'baja_nino' })
       .eq('nino_id', ninoId)
 
     // Admin, query SIN filtro de deleted_at (= incluirArchivado): lo lee.

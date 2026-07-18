@@ -1,11 +1,19 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   Table,
   TableBody,
@@ -16,6 +24,7 @@ import {
 } from '@/components/ui/table'
 
 import { proponerAsignaciones } from '../actions/proponer-asignaciones'
+import { reproponerAsignaciones } from '../actions/reproponer-asignaciones'
 import type { AsignacionPermanente } from '../queries/get-asignacion-permanente'
 import { ConfigurarModalidadDialog } from './ConfigurarModalidadDialog'
 import { FamiliaConceptosDialog } from './FamiliaConceptosDialog'
@@ -31,6 +40,7 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
   const t = useTranslations('admin.cuotas')
   const tErrors = useTranslations()
   const [pending, startTransition] = useTransition()
+  const [reproponerOpen, setReproponerOpen] = useState(false)
 
   function proponer() {
     startTransition(async () => {
@@ -40,14 +50,50 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
     })
   }
 
+  function reproponer() {
+    startTransition(async () => {
+      const r = await reproponerAsignaciones()
+      if (r.success) {
+        toast.success(
+          t('reproponer_ok', { revividas: r.data.revividas, sembradas: r.data.sembradas })
+        )
+        setReproponerOpen(false)
+      } else {
+        toast.error(tErrors(r.error))
+      }
+    })
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground text-sm">{t('asignacion_permanente_desc')}</p>
-        <Button variant="outline" disabled={pending} onClick={proponer}>
-          {t('proponer')}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" disabled={pending} onClick={proponer}>
+            {t('proponer')}
+          </Button>
+          <Button variant="outline" disabled={pending} onClick={() => setReproponerOpen(true)}>
+            {t('reproponer')}
+          </Button>
+        </div>
       </div>
+
+      <Dialog open={reproponerOpen} onOpenChange={setReproponerOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('reproponer')}</DialogTitle>
+            <DialogDescription>{t('reproponer_confirm')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" disabled={pending} onClick={() => setReproponerOpen(false)}>
+              {t('reproponer_cancelar')}
+            </Button>
+            <Button disabled={pending} onClick={reproponer}>
+              {t('reproponer_confirmar')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Conceptos por ALUMNO */}
       <section className="space-y-2">

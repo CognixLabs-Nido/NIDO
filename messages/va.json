@@ -489,7 +489,12 @@
       "seccion_familias_desc": "Descomptes per germans i càrrecs comuns de la família.",
       "familia_conceptos_title": "Conceptes · {nombre}",
       "sin_conceptos_familia": "No hi ha conceptes d'àmbit família. Crea'ls en la pestanya Conceptes.",
-      "sin_familias": "No hi ha famílies amb matrícula activa."
+      "sin_familias": "No hi ha famílies amb matrícula activa.",
+      "reproponer": "Re-proposar",
+      "reproponer_confirm": "Revig les assignacions automàtiques que s'hagen esborrat per error i sembra les que falten. NO toca les que has afegit a mà; no esborra res.",
+      "reproponer_confirmar": "Re-proposar",
+      "reproponer_cancelar": "Cancel·lar",
+      "reproponer_ok": "Revivides: {revividas}. Sembrades: {sembradas}."
     },
     "aulas": {
       "title": "Aules",

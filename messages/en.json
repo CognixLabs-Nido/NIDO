@@ -489,7 +489,12 @@
       "seccion_familias_desc": "Sibling discounts and shared family charges.",
       "familia_conceptos_title": "Items · {nombre}",
       "sin_conceptos_familia": "No family-scope items. Create them in the Items tab.",
-      "sin_familias": "No families with an active enrolment."
+      "sin_familias": "No families with an active enrolment.",
+      "reproponer": "Re-propose",
+      "reproponer_confirm": "Revives the automatic assignments deleted by mistake and seeds any missing ones. It does NOT touch the ones you added manually; it deletes nothing.",
+      "reproponer_confirmar": "Re-propose",
+      "reproponer_cancelar": "Cancel",
+      "reproponer_ok": "Revived: {revividas}. Seeded: {sembradas}."
     },
     "aulas": {
       "title": "Classrooms",

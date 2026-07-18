@@ -489,7 +489,12 @@
       "seccion_familias_desc": "Descuentos por hermanos y cargos comunes de la familia.",
       "familia_conceptos_title": "Conceptos · {nombre}",
       "sin_conceptos_familia": "No hay conceptos de ámbito familia. Créalos en la pestaña Conceptos.",
-      "sin_familias": "No hay familias con matrícula activa."
+      "sin_familias": "No hay familias con matrícula activa.",
+      "reproponer": "Re-proponer",
+      "reproponer_confirm": "Revive las asignaciones automáticas que se hayan borrado por error y siembra las que falten. NO toca las que has añadido a mano; no borra nada.",
+      "reproponer_confirmar": "Re-proponer",
+      "reproponer_cancelar": "Cancelar",
+      "reproponer_ok": "Revividas: {revividas}. Sembradas: {sembradas}."
     },
     "aulas": {
       "title": "Aulas",

@@ -1903,6 +1903,7 @@ export type Database = {
           centro_id: string
           created_at: string
           deleted_at: string | null
+          deleted_reason: Database["public"]["Enums"]["motivo_borrado"] | null
           etiqueta: string
           id: string
           updated_at: string
@@ -1911,6 +1912,7 @@ export type Database = {
           centro_id: string
           created_at?: string
           deleted_at?: string | null
+          deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
           etiqueta: string
           id?: string
           updated_at?: string
@@ -1919,6 +1921,7 @@ export type Database = {
           centro_id?: string
           created_at?: string
           deleted_at?: string | null
+          deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
           etiqueta?: string
           id?: string
           updated_at?: string
@@ -2857,6 +2860,7 @@ export type Database = {
           centro_id: string
           created_at: string
           deleted_at: string | null
+          deleted_reason: Database["public"]["Enums"]["motivo_borrado"] | null
           direccion_calle: string | null
           direccion_ciudad: string | null
           direccion_cp: string | null
@@ -2883,6 +2887,7 @@ export type Database = {
           centro_id: string
           created_at?: string
           deleted_at?: string | null
+          deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
           direccion_calle?: string | null
           direccion_ciudad?: string | null
           direccion_cp?: string | null
@@ -2909,6 +2914,7 @@ export type Database = {
           centro_id?: string
           created_at?: string
           deleted_at?: string | null
+          deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
           direccion_calle?: string | null
           direccion_ciudad?: string | null
           direccion_cp?: string | null
@@ -3675,6 +3681,7 @@ export type Database = {
           centro_id: string
           created_at: string
           deleted_at: string | null
+          deleted_reason: Database["public"]["Enums"]["motivo_borrado"] | null
           id: string
           rol: Database["public"]["Enums"]["user_role"]
           usuario_id: string
@@ -3683,6 +3690,7 @@ export type Database = {
           centro_id: string
           created_at?: string
           deleted_at?: string | null
+          deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
           id?: string
           rol: Database["public"]["Enums"]["user_role"]
           usuario_id: string
@@ -3691,6 +3699,7 @@ export type Database = {
           centro_id?: string
           created_at?: string
           deleted_at?: string | null
+          deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
           id?: string
           rol?: Database["public"]["Enums"]["user_role"]
           usuario_id?: string
@@ -3887,6 +3896,7 @@ export type Database = {
         Row: {
           created_at: string
           deleted_at: string | null
+          deleted_reason: Database["public"]["Enums"]["motivo_borrado"] | null
           descripcion_parentesco: string | null
           id: string
           nino_id: string
@@ -3899,6 +3909,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deleted_at?: string | null
+          deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
           descripcion_parentesco?: string | null
           id?: string
           nino_id: string
@@ -3911,6 +3922,7 @@ export type Database = {
         Update: {
           created_at?: string
           deleted_at?: string | null
+          deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
           descripcion_parentesco?: string | null
           id?: string
           nino_id?: string
@@ -4191,6 +4203,7 @@ export type Database = {
       organizador_de_cita: { Args: { p_cita_id: string }; Returns: string }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
       proponer_asignaciones: { Args: { p_centro_id: string }; Returns: number }
+      reproponer_asignaciones: { Args: { p_centro_id: string }; Returns: Json }
       publicacion_de_media: { Args: { p_media_id: string }; Returns: string }
       publicacion_etiqueta_hijo_de: {
         Args: { p_publicacion_id: string }
@@ -4449,6 +4462,11 @@ export type Database = {
       matricula_estado: "pendiente" | "lista" | "activa" | "baja"
       metodo_pago: "sepa" | "efectivo" | "transferencia" | "cheque_guarderia"
       momento_comida: "desayuno" | "media_manana" | "comida" | "merienda"
+      motivo_borrado:
+        | "baja_nino"
+        | "revocacion_familia"
+        | "purga_rgpd"
+        | "solicitud_olvido"
       motivo_ausencia:
         | "enfermedad"
         | "cita_medica"
@@ -4732,6 +4750,12 @@ export const Constants = {
       matricula_estado: ["pendiente", "lista", "activa", "baja"],
       metodo_pago: ["sepa", "efectivo", "transferencia", "cheque_guarderia"],
       momento_comida: ["desayuno", "media_manana", "comida", "merienda"],
+      motivo_borrado: [
+        "baja_nino",
+        "revocacion_familia",
+        "purga_rgpd",
+        "solicitud_olvido",
+      ],
       motivo_ausencia: [
         "enfermedad",
         "cita_medica",
