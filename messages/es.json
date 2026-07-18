@@ -448,6 +448,36 @@
           "periodo": "Periodo"
         }
       },
+      "beca_comedor": {
+        "title": "Beca comedor del mes",
+        "subtitle": "Importe de beca comedor por niño para este mes. Se registra en positivo; el recibo la aplica como línea negativa.",
+        "note_regenerar": "La beca se refleja en el recibo al (RE)GENERAR los recibos del mes; no cambia los recibos ya generados.",
+        "mes_cerrado": "Mes cerrado: los recibos están congelados; la beca comedor no es editable.",
+        "sin_ninos": "No hay niños activos este mes.",
+        "col_nino": "Niño",
+        "col_importe": "Beca comedor",
+        "poner": "Poner beca",
+        "quitar": "Quitar",
+        "saved": "Beca comedor guardada",
+        "deleted": "Beca comedor eliminada",
+        "nueva_title": "Beca comedor · {nombre}",
+        "editar_title": "Editar beca comedor · {nombre}",
+        "importe_label": "Importe (€)",
+        "eliminar_title": "Quitar beca comedor",
+        "eliminar_confirm": "¿Quitar la beca comedor de {nombre} de este mes?",
+        "validation": {
+          "invalid": "Datos no válidos.",
+          "nino_requerido": "Selecciona un niño.",
+          "importe_invalido": "Importe no válido.",
+          "importe_positivo": "El importe debe ser mayor que 0.",
+          "importe_largo": "El importe es demasiado alto."
+        },
+        "errors": {
+          "no_autorizado": "No tienes permiso para gestionar becas comedor.",
+          "save_failed": "No se pudo guardar la beca comedor.",
+          "delete_failed": "No se pudo eliminar la beca comedor."
+        }
+      },
       "tab_resumen": "Resumen",
       "signos": {
         "cobro": "Cobro",

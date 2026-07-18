@@ -1,6 +1,8 @@
 import { getTranslations } from 'next-intl/server'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { BecaComedorMesPanel } from '@/features/beca-comedor-mes/components/BecaComedorMesPanel'
+import { getBecasComedorMes } from '@/features/beca-comedor-mes/queries/get-becas-comedor-mes'
 import { BecasPanel } from '@/features/becas/components/BecasPanel'
 import { getBecas } from '@/features/becas/queries/get-becas'
 import { getTiposBeca } from '@/features/becas/queries/get-tipos-beca'
@@ -54,6 +56,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     remesas,
     recibosGestion,
     pivote,
+    becasComedor,
   ] = await Promise.all([
     getConceptosCobro(centroId),
     getAsignacionPermanente(centroId),
@@ -66,6 +69,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     getRemesasMes(centroId, anio, mes),
     getRecibosGestion(centroId, anio, mes),
     getPivotePeriodo(centroId, anio, mes),
+    getBecasComedorMes(centroId, anio, mes),
   ])
 
   const ninosActivos = ninosCentro
@@ -96,6 +100,13 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
             mes={mes}
             data={panelMes}
             ninos={ninosActivos}
+          />
+          <BecaComedorMesPanel
+            anio={anio}
+            mes={mes}
+            ninos={ninosActivos}
+            becas={becasComedor}
+            cerrado={panelMes.cerrado}
           />
         </TabsContent>
 
