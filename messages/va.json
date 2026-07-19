@@ -448,6 +448,36 @@
           "periodo": "Període"
         }
       },
+      "beca_comedor": {
+        "title": "Beca menjador del mes",
+        "subtitle": "Import de beca menjador per xiquet per a este mes. Es registra en positiu; el rebut l'aplica com a línia negativa.",
+        "note_regenerar": "La beca es reflectix en el rebut en (TORNAR A) GENERAR els rebuts del mes; no canvia els rebuts ja generats.",
+        "mes_cerrado": "Mes tancat: els rebuts estan congelats; la beca menjador no és editable.",
+        "sin_ninos": "No hi ha xiquets actius este mes.",
+        "col_nino": "Xiquet",
+        "col_importe": "Beca menjador",
+        "poner": "Posar beca",
+        "quitar": "Llevar",
+        "saved": "Beca menjador guardada",
+        "deleted": "Beca menjador eliminada",
+        "nueva_title": "Beca menjador · {nombre}",
+        "editar_title": "Editar beca menjador · {nombre}",
+        "importe_label": "Import (€)",
+        "eliminar_title": "Llevar beca menjador",
+        "eliminar_confirm": "Voleu llevar la beca menjador de {nombre} d'este mes?",
+        "validation": {
+          "invalid": "Dades no vàlides.",
+          "nino_requerido": "Trieu un xiquet.",
+          "importe_invalido": "Import no vàlid.",
+          "importe_positivo": "L'import ha de ser major que 0.",
+          "importe_largo": "L'import és massa alt."
+        },
+        "errors": {
+          "no_autorizado": "No teniu permís per a gestionar beques menjador.",
+          "save_failed": "No s'ha pogut guardar la beca menjador.",
+          "delete_failed": "No s'ha pogut eliminar la beca menjador."
+        }
+      },
       "tab_resumen": "Resum",
       "signos": {
         "cobro": "Cobrament",

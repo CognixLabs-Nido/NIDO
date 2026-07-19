@@ -448,6 +448,36 @@
           "periodo": "Period"
         }
       },
+      "beca_comedor": {
+        "title": "Meal grant for the month",
+        "subtitle": "Meal-grant amount per child for this month. Stored as a positive value; the receipt applies it as a negative line.",
+        "note_regenerar": "The grant is reflected in the receipt when you (RE)GENERATE the month's receipts; it does not change already-generated receipts.",
+        "mes_cerrado": "Month closed: receipts are frozen; the meal grant is not editable.",
+        "sin_ninos": "No active children this month.",
+        "col_nino": "Child",
+        "col_importe": "Meal grant",
+        "poner": "Add grant",
+        "quitar": "Remove",
+        "saved": "Meal grant saved",
+        "deleted": "Meal grant removed",
+        "nueva_title": "Meal grant · {nombre}",
+        "editar_title": "Edit meal grant · {nombre}",
+        "importe_label": "Amount (€)",
+        "eliminar_title": "Remove meal grant",
+        "eliminar_confirm": "Remove {nombre}'s meal grant for this month?",
+        "validation": {
+          "invalid": "Invalid data.",
+          "nino_requerido": "Select a child.",
+          "importe_invalido": "Invalid amount.",
+          "importe_positivo": "The amount must be greater than 0.",
+          "importe_largo": "The amount is too high."
+        },
+        "errors": {
+          "no_autorizado": "You don't have permission to manage meal grants.",
+          "save_failed": "The meal grant could not be saved.",
+          "delete_failed": "The meal grant could not be removed."
+        }
+      },
       "tab_resumen": "Summary",
       "signos": {
         "cobro": "Charge",
