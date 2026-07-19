@@ -28,6 +28,9 @@ import {
  */
 
 const APPLIED = process.env.F43_MIGRATION_APPLIED === '1'
+// D-6-2: la beca comedor variable por mes se aplica en el motor como línea negativa. El
+// bloque de abajo requiere ADEMÁS la migración D-6 (tabla beca_comedor_mes + PASE 2-bis).
+const D6 = process.env.D6_BECA_COMEDOR_APPLIED === '1'
 
 type AsignacionInsert = Database['public']['Tables']['asignacion_concepto']['Insert']
 type LineaInsert = Database['public']['Tables']['lineas_recibo']['Insert']
@@ -706,5 +709,118 @@ describe.skipIf(!APPLIED)('F-4-3 — motor de recibos a grano FAMILIA', () => {
       expect(recibo?.estado).toBe('pendiente_procesar')
       expect(recibo?.total_centimos).toBe(3000)
     })
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// D-6 — beca comedor variable por mes en el MOTOR (D-6-2).
+// La beca de `beca_comedor_mes` (importe en EUROS, positivo) se aplica como línea
+// NEGATIVA independiente por niño: descripcion "Beca comedor · <nombre>",
+// importe_centimos = -round(importe*100), concepto_id NULL, colgada del hijo.
+// Gateado por F43 (motor) Y D6 (tabla + PASE 2-bis aplicados).
+// ─────────────────────────────────────────────────────────────────────────────
+describe.skipIf(!APPLIED || !D6)('D-6 — beca comedor variable en el motor de recibos', () => {
+  let centro: { id: string }
+  let curso: { id: string }
+  let aula: { id: string }
+  let admin: TestUser
+  let cAdmin: Awaited<ReturnType<typeof clientFor>>
+  const ANIO = 2026
+  const MES = 6
+
+  beforeAll(async () => {
+    centro = await createTestCentro('Centro D6 motor')
+    curso = await createTestCurso(centro.id)
+    aula = await createTestAula(centro.id, curso.id)
+    admin = await createTestUser({ nombre: 'Admin D6 motor' })
+    await asignarRol(admin.id, centro.id, 'admin')
+    cAdmin = await clientFor(admin)
+  })
+
+  afterAll(async () => {
+    await serviceClient.from('cierre_mensual').delete().eq('centro_id', centro.id)
+    await serviceClient.from('lineas_recibo').delete().eq('centro_id', centro.id)
+    await serviceClient.from('recibos').delete().eq('centro_id', centro.id)
+    await serviceClient.from('asignacion_concepto').delete().eq('centro_id', centro.id)
+    await serviceClient.from('beca_comedor_mes').delete().eq('centro_id', centro.id)
+    await serviceClient.from('conceptos_cobro').delete().eq('centro_id', centro.id)
+    await deleteTestCentro(centro.id)
+    await deleteTestUser(admin.id)
+  })
+
+  async function nuevaFamilia(nombres: string[]): Promise<{ familia: string; ninos: string[] }> {
+    const familia = await createTestFamilia(centro.id)
+    const ninos: string[] = []
+    for (const nombre of nombres) {
+      const id = await insertarNino(centro.id, familia, nombre)
+      await matricular(id, aula.id, curso.id)
+      ninos.push(id)
+    }
+    return { familia, ninos }
+  }
+
+  async function mkCuota(nombre: string, importe_centimos: number): Promise<string> {
+    return mkConcepto(centro.id, { nombre, importe_centimos })
+  }
+
+  async function ponerBeca(ninoId: string, mes: number, importeEuros: number): Promise<void> {
+    const { error } = await serviceClient
+      .from('beca_comedor_mes')
+      .insert({ centro_id: centro.id, nino_id: ninoId, anio: ANIO, mes, importe: importeEuros })
+    if (error) throw new Error(`ponerBeca: ${error.message}`)
+  }
+
+  const gen = () =>
+    cAdmin.rpc('generar_recibos_mes', { p_centro_id: centro.id, p_anio: ANIO, p_mes: MES })
+
+  it('niño con beca_comedor_mes → línea "Beca comedor · <nombre>" con importe_centimos = -importe*100', async () => {
+    const { familia, ninos } = await nuevaFamilia(['Nora'])
+    const cuota = await mkCuota('CuotaBC ' + familia, 20000)
+    await asignar({ concepto_id: cuota, nino_id: ninos[0] })
+    await ponerBeca(ninos[0], MES, 30) // 30 € → −3000 céntimos
+
+    const r = await gen()
+    expect(r.error).toBeNull()
+
+    const { recibo, lineas } = await reciboRegular(familia, ANIO, MES)
+    const beca = lineas.find((l) => l.descripcion === 'Beca comedor · Nora')
+    expect(beca).toBeDefined()
+    expect(beca?.importe_centimos).toBe(-3000)
+    expect(beca?.nino_id).toBe(ninos[0]) // colgada del hijo
+    expect(beca?.concepto_id).toBeNull() // línea independiente, sin concepto
+    // Total = cuota (20000) − beca comedor (3000).
+    expect(recibo?.total_centimos).toBe(17000)
+  })
+
+  it('niño SIN fila en beca_comedor_mes → NO aparece línea de beca comedor', async () => {
+    const { familia, ninos } = await nuevaFamilia(['SinBeca'])
+    const cuota = await mkCuota('CuotaSB ' + familia, 20000)
+    await asignar({ concepto_id: cuota, nino_id: ninos[0] })
+    // No se registra beca_comedor_mes para este niño/mes.
+
+    await gen()
+    const { recibo, lineas } = await reciboRegular(familia, ANIO, MES)
+    const becas = lineas.filter((l) => l.descripcion?.toString().startsWith('Beca comedor · '))
+    expect(becas).toHaveLength(0)
+    expect(recibo?.total_centimos).toBe(20000) // sin descuento de beca comedor
+  })
+
+  it('el total baja exactamente importe*100 respecto a la suma de líneas positivas', async () => {
+    const { familia, ninos } = await nuevaFamilia(['Pau'])
+    const cuota = await mkCuota('CuotaTot ' + familia, 25000)
+    const extra = await mkCuota('ExtraTot ' + familia, 5000)
+    await asignar({ concepto_id: cuota, nino_id: ninos[0] })
+    await asignar({ concepto_id: extra, nino_id: ninos[0] })
+    await ponerBeca(ninos[0], MES, 42.5) // 42,50 € → −4250 céntimos
+
+    await gen()
+    const { recibo, lineas } = await reciboRegular(familia, ANIO, MES)
+    const positivas = lineas
+      .filter((l) => Number(l.importe_centimos) > 0)
+      .reduce((s, l) => s + Number(l.importe_centimos), 0)
+    const beca = lineas.find((l) => l.descripcion === 'Beca comedor · Pau')
+    expect(positivas).toBe(30000) // 25000 + 5000
+    expect(beca?.importe_centimos).toBe(-4250)
+    expect(recibo?.total_centimos).toBe(positivas - 4250) // 30000 − 4250 = 25750
   })
 })
