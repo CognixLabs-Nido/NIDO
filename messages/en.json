@@ -677,9 +677,10 @@
           "identidad": "Child's details",
           "pedagogicos": "Pedagogical details",
           "medico": "Medical details",
-          "imagen": "Signed image authorisation"
+          "imagen": "Image authorisation"
         },
         "opcional": "optional",
+        "sin_datos": "no data",
         "activar_ayuda": "The guardian finished the enrolment. Review the progress and activate it.",
         "pendiente_ayuda": "The guardian is still completing the enrolment. You'll be able to activate it once finished."
       },

@@ -677,9 +677,10 @@
           "identidad": "Dades del xiquet",
           "pedagogicos": "Dades pedagògiques",
           "medico": "Dades mèdiques",
-          "imagen": "Autorització d'imatge signada"
+          "imagen": "Autorització d'imatge"
         },
         "opcional": "opcional",
+        "sin_datos": "sense dades",
         "activar_ayuda": "El tutor ha finalitzat l'alta. Revisa l'avanç i activa la matrícula.",
         "pendiente_ayuda": "El tutor encara està completant l'alta. Podràs activar quan la finalitze."
       },
