@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CheckCircle2Icon } from 'lucide-react'
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
@@ -33,6 +33,12 @@ interface Props {
   inicial: MedicaInicial | null
   /** `general` (medicación/alergias leves/médico) | `emergencia` (alergias graves/notas/tel). */
   variante: 'general' | 'emergencia'
+  /**
+   * BUG 5a: sincroniza en vivo el subconjunto de esta variante hacia el contenedor, para que
+   * lo tecleado sobreviva al desmontaje del paso al navegar (mismo patrón que la dirección del
+   * niño en `PasoMenor`). El contenedor fusiona general + emergencia sin pisarse.
+   */
+  onCambio?: (valores: Partial<InfoMedicaInput>) => void
   /** El acuse de confidencialidad de datos médicos (obligatorio para cerrar) va en `general`. */
   mostrarConsentimiento?: boolean
   consintioInicial?: boolean
@@ -54,6 +60,7 @@ export function PasoMedico({
   ninoId,
   inicial,
   variante,
+  onCambio,
   mostrarConsentimiento = false,
   consintioInicial = false,
   onConsentir,
@@ -81,6 +88,19 @@ export function PasoMedico({
       telefono_emergencia: inicial?.telefono_emergencia ?? null,
     },
   })
+
+  // BUG 5a: sincroniza el subconjunto de la variante hacia el contenedor en cada cambio, para
+  // que el estado sobreviva al desmontaje al navegar. Solo reacciona a los campos propios.
+  useEffect(() => {
+    if (!onCambio) return
+    const sub = form.watch((v, { name }) => {
+      if (name && !campos.includes(name as keyof InfoMedicaInput)) return
+      const subset: Partial<InfoMedicaInput> = {}
+      for (const c of campos) subset[c] = v[c] ?? null
+      onCambio(subset)
+    })
+    return () => sub.unsubscribe()
+  }, [form, onCambio, campos])
 
   function onSubmit(values: InfoMedicaInput) {
     // Solo envía los campos de la variante (los demás van como null → la RPC los preserva).

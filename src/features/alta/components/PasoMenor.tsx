@@ -33,6 +33,7 @@ import { actualizarNinoTutorSchema } from '@/features/ninos/schemas/nino'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 
 import { actualizarNinoFamilia } from '../actions/actualizar-nino-familia'
+import { AcuseAltaCheckbox } from './AcuseAltaCheckbox'
 import { SubirDocumentoPdf } from './SubirDocumentoPdf'
 import type { IdentidadInicial } from './PasoIdentidad'
 
@@ -65,6 +66,8 @@ interface Props {
   fotoInicialUrl: string | null
   imagenPanel: ImagenPanelData | null
   imagenSinPlantilla: boolean
+  /** ¿Ya hay fila en `acuses_alta` (tipo 'imagen') para este niño? */
+  imagenAceptado: boolean
   currentUserId: string
   currentUserNombre: string
   /** PR-3b-2 · B2: firma PRESENCIAL de la autorización de imagen cuando lo rellena Dirección. */
@@ -99,6 +102,7 @@ export function PasoMenor({
   fotoInicialUrl,
   imagenPanel,
   imagenSinPlantilla,
+  imagenAceptado,
   currentUserId,
   currentUserNombre,
   modoDireccion = false,
@@ -402,12 +406,11 @@ export function PasoMenor({
         />
       </section>
 
-      {/* Autorización de imagen */}
+      {/* Autorización de imagen — acuse por checkbox SIEMPRE disponible (vía B). Si el centro
+          tiene plantilla, se puede además instanciar/abrir/firmar el documento real. */}
       <section className="space-y-3 border-t pt-4">
         <h3 className="text-sm font-semibold">{t('imagen.autorizacion_titulo')}</h3>
-        {omitirImagen ? (
-          <p className="text-muted-foreground text-sm">{t('imagen.sin_plantilla')}</p>
-        ) : imagenPanel ? (
+        {imagenPanel ? (
           <FirmarAutorizacionPanel
             autorizacionId={imagenPanel.autorizacionId}
             tipo="autorizacion_imagenes"
@@ -418,13 +421,16 @@ export function PasoMenor({
             presencial={modoDireccion}
           />
         ) : (
-          <div className="space-y-2">
-            <p className="text-muted-foreground text-sm">{t('imagen.cargar_ayuda')}</p>
-            <Button type="button" onClick={instanciarImagen} disabled={pendingImagen}>
-              {pendingImagen ? t('wizard.guardando') : t('imagen.cargar')}
-            </Button>
-          </div>
+          !omitirImagen && (
+            <div className="space-y-2">
+              <p className="text-muted-foreground text-sm">{t('imagen.cargar_ayuda')}</p>
+              <Button type="button" onClick={instanciarImagen} disabled={pendingImagen}>
+                {pendingImagen ? t('wizard.guardando') : t('imagen.cargar')}
+              </Button>
+            </div>
+          )
         )}
+        <AcuseAltaCheckbox ninoId={ninoId} tipo="imagen" aceptadoInicial={imagenAceptado} />
       </section>
 
       <div className="flex justify-between border-t pt-4">

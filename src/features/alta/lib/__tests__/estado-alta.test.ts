@@ -1,32 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { PASOS_ALTA, PASO_MIN_AUTENTICADO, pasoInicialAlta, type EstadoAlta } from '../estado-alta'
+import { PASOS_ALTA, PASO_MIN_AUTENTICADO } from '../estado-alta'
 
 /**
- * Reanudación del wizard de alta (F11-G, 8 pasos; `sepa` es el último, G-2). En `/alta`
- * (post-login) el paso `cuenta` ya está hecho, así que la reanudación nunca aterriza antes
- * de `acuses`. El único gate duro es la identidad; el acuse médico decide el salto a `medico`.
+ * Modelo del wizard de alta (F11-G, 8 pasos; `sepa` es el último, G-2). En `/alta`
+ * (post-login) el paso `cuenta` ya está hecho, así que el wizard SIEMPRE arranca en `acuses`
+ * (`PASO_MIN_AUTENTICADO`) y recorre todo en orden. El heurístico de reanudación que saltaba
+ * a `medico`/`emergencia` se retiró (saltaba pasos obligatorios en la primera entrada).
  */
-describe('pasoInicialAlta', () => {
-  const base: EstadoAlta = {
-    identidadCompleta: false,
-    consintioDatosMedicos: false,
-  }
-
-  it('sin identidad → reanuda en acuses (arranque del flujo post-cuenta)', () => {
-    expect(pasoInicialAlta(base)).toBe(PASOS_ALTA.indexOf('acuses'))
-  })
-
-  it('con identidad pero sin acuse médico → reanuda en médico', () => {
-    expect(pasoInicialAlta({ ...base, identidadCompleta: true })).toBe(PASOS_ALTA.indexOf('medico'))
-  })
-
-  it('identidad + acuse médico → aterriza en emergencia (desde ahí se avanza al SEPA)', () => {
-    expect(pasoInicialAlta({ identidadCompleta: true, consintioDatosMedicos: true })).toBe(
-      PASOS_ALTA.indexOf('emergencia')
-    )
-  })
-
+describe('modelo de pasos del alta', () => {
   it('el primer paso navegable post-login es acuses (cuenta queda detrás)', () => {
     expect(PASO_MIN_AUTENTICADO).toBe(PASOS_ALTA.indexOf('acuses'))
     expect(PASOS_ALTA[0]).toBe('cuenta')

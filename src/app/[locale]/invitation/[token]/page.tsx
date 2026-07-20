@@ -159,6 +159,8 @@ function AltaInvitacionFlow({
         imagenSinPlantilla={false}
         normasPanel={null}
         normasSinPlantilla={false}
+        normasAceptado={false}
+        imagenAceptado={false}
         familiaEstadoCivil={null}
         datosTutor1={null}
         datosTutor2={null}

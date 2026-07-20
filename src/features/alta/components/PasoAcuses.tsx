@@ -7,14 +7,18 @@ import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { FirmarAutorizacionPanel } from '@/features/autorizaciones/components/FirmarAutorizacionPanel'
 
+import { AcuseAltaCheckbox } from './AcuseAltaCheckbox'
 import type { FirmaPanelData } from '../lib/tipos'
 
 interface Props {
   locale: string
+  ninoId: string
   /** Panel de firma de las normas (reglas_regimen_interno), pre-computado por la ruta. */
   normasPanel: FirmaPanelData | null
-  /** No hay instancia de normas publicada aplicable al niño → el acuse se omite. */
+  /** No hay instancia de normas publicada aplicable al niño → solo va el acuse por checkbox. */
   normasSinPlantilla: boolean
+  /** ¿Ya hay fila en `acuses_alta` (tipo 'normas') para este niño? */
+  normasAceptado: boolean
   currentUserId: string
   currentUserNombre: string
   /** PR-3b-2 · B2: firma PRESENCIAL de las normas cuando lo rellena la Dirección (papel). */
@@ -33,8 +37,10 @@ interface Props {
  */
 export function PasoAcuses({
   locale,
+  ninoId,
   normasPanel,
   normasSinPlantilla,
+  normasAceptado,
   currentUserId,
   currentUserNombre,
   modoDireccion = false,
@@ -45,12 +51,11 @@ export function PasoAcuses({
 
   return (
     <div className="space-y-6">
-      {/* Normas de régimen interno */}
+      {/* Normas de régimen interno — acuse por checkbox SIEMPRE disponible (vía B). Si el
+          centro publica el documento, se muestra además para abrir/leer/firmar. */}
       <section className="space-y-3">
         <h3 className="text-sm font-semibold">{t('acuses.normas_titulo')}</h3>
-        {normasSinPlantilla || !normasPanel ? (
-          <p className="text-muted-foreground text-sm">{t('acuses.normas_sin_plantilla')}</p>
-        ) : (
+        {!normasSinPlantilla && normasPanel && (
           <FirmarAutorizacionPanel
             autorizacionId={normasPanel.autorizacionId}
             tipo="reglas_regimen_interno"
@@ -61,6 +66,7 @@ export function PasoAcuses({
             presencial={modoDireccion}
           />
         )}
+        <AcuseAltaCheckbox ninoId={ninoId} tipo="normas" aceptadoInicial={normasAceptado} />
       </section>
 
       {/* Privacidad (aceptada al crear la cuenta) */}

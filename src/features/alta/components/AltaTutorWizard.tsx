@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useCallback, useState, useTransition } from 'react'
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -50,6 +50,9 @@ interface Props {
   imagenSinPlantilla: boolean
   normasPanel: FirmaPanelData | null
   normasSinPlantilla: boolean
+  /** ¿Ya hay fila en `acuses_alta` para este niño? (acuse por checkbox de normas/imagen, vía B). */
+  normasAceptado: boolean
+  imagenAceptado: boolean
   familiaEstadoCivil: EstadoCivil | null
   datosTutor1: DatosTutorInicial | null
   datosTutor2: DatosTutorInicial | null
@@ -95,6 +98,8 @@ export function AltaTutorWizard({
   imagenSinPlantilla,
   normasPanel,
   normasSinPlantilla,
+  normasAceptado,
+  imagenAceptado,
   familiaEstadoCivil,
   datosTutor1,
   datosTutor2,
@@ -136,6 +141,27 @@ export function AltaTutorWizard({
   const [sepaIban, setSepaIban] = useState('')
   const [sepaTitular, setSepaTitular] = useState(sepaTitularInicial)
   const [sepaNombreTecleado, setSepaNombreTecleado] = useState(sepaTitularInicial)
+
+  // MÉDICO (pasos `medico` + `emergencia`): su estado tecleado vive ELEVADO aquí, igual que
+  // SEPA (BUG 2 / PR-4a-2) y la dirección del niño (PR-4d). Los dos pasos médicos se desmontan
+  // al navegar; sin elevar, lo tecleado y no guardado se perdía al retroceder (BUG 5a). Solo
+  // memoria: cada paso sigue persistiendo su subconjunto a BD por su cuenta (NULL=preserva).
+  const [medicaValores, setMedicaValores] = useState<MedicaInicial>(
+    () =>
+      medicaInicial ?? {
+        alergias_graves: null,
+        notas_emergencia: null,
+        medicacion_habitual: null,
+        alergias_leves: null,
+        medico_familia: null,
+        telefono_emergencia: null,
+      }
+  )
+  // Cada paso médico sincroniza SOLO su subconjunto (general/emergencia); se fusionan sin
+  // pisarse. Estable (useCallback) para no re-suscribir el watch de `PasoMedico` en cada render.
+  const mergeMedica = useCallback((subset: Partial<MedicaInicial>) => {
+    setMedicaValores((prev) => ({ ...prev, ...subset }))
+  }, [])
 
   const paso: PasoAlta = PASOS_ALTA[step]
   const goNext = () => setStep((s) => Math.min(s + 1, total - 1))
@@ -229,8 +255,10 @@ export function AltaTutorWizard({
         {paso === 'acuses' && (
           <PasoAcuses
             locale={locale}
+            ninoId={ninoId}
             normasPanel={normasPanel}
             normasSinPlantilla={normasSinPlantilla}
+            normasAceptado={normasAceptado}
             currentUserId={currentUserId}
             currentUserNombre={currentUserNombre}
             modoDireccion={modoDireccion}
@@ -251,6 +279,7 @@ export function AltaTutorWizard({
             fotoInicialUrl={fotoInicialUrl}
             imagenPanel={imagenPanel}
             imagenSinPlantilla={imagenSinPlantilla}
+            imagenAceptado={imagenAceptado}
             currentUserId={currentUserId}
             currentUserNombre={currentUserNombre}
             modoDireccion={modoDireccion}
@@ -295,7 +324,8 @@ export function AltaTutorWizard({
         {paso === 'medico' && (
           <PasoMedico
             ninoId={ninoId}
-            inicial={medicaInicial}
+            inicial={medicaValores}
+            onCambio={mergeMedica}
             variante="general"
             mostrarConsentimiento
             consintioInicial={consintio}
@@ -308,7 +338,8 @@ export function AltaTutorWizard({
         {paso === 'emergencia' && (
           <PasoMedico
             ninoId={ninoId}
-            inicial={medicaInicial}
+            inicial={medicaValores}
+            onCambio={mergeMedica}
             variante="emergencia"
             onNext={goNext}
             onBack={goBack}
