@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/shared/lib/logger'
 import type { HistoricoTramo } from '@/features/ninos/lib/historico-matriculas'
 
 export interface NinoListItem {
@@ -17,29 +18,33 @@ export interface NinoListItem {
 }
 
 /**
- * Helper defensivo: Supabase puede devolver un embebido como objeto o como
- * array (depende de cómo infiera la cardinalidad). Aceptamos ambos formatos.
+ * Helper defensivo: Supabase puede devolver un embebido a-uno como objeto o como
+ * array de un elemento (depende de cómo infiera la cardinalidad). Lo desanida a un
+ * objeto plano para leer sus campos sin acoplarse a la forma concreta.
  */
-function extraerNombreAula(raw: unknown): string | null {
-  if (!raw) return null
-  if (Array.isArray(raw)) {
-    const first = raw[0]
-    if (first && typeof first === 'object' && 'nombre' in first) {
-      return (first as { nombre: string }).nombre
-    }
-    return null
-  }
-  if (typeof raw === 'object' && 'nombre' in raw) {
-    return (raw as { nombre: string }).nombre
-  }
-  return null
+function unwrap(raw: unknown): Record<string, unknown> | null {
+  const obj = Array.isArray(raw) ? raw[0] : raw
+  return obj && typeof obj === 'object' ? (obj as Record<string, unknown>) : null
 }
 
-/** Como `extraerNombreAula` pero para el embebido `cursos_academicos` (nombre + fecha_inicio). */
-function extraerCurso(raw: unknown): { nombre: string; fecha_inicio: string } | null {
-  const obj = Array.isArray(raw) ? raw[0] : raw
-  if (obj && typeof obj === 'object' && 'nombre' in obj && 'fecha_inicio' in obj) {
-    return obj as { nombre: string; fecha_inicio: string }
+/**
+ * Extrae `aulas.nombre` del embebido `aulas_curso` de una matrícula. Tras F11-H
+ * (multicurso) la FK de `matriculas` es compuesta a `aulas_curso`, así que el aula
+ * se anida: `aulas_curso.aulas.nombre` (cada nivel puede venir objeto o array).
+ */
+function extraerNombreAula(aulasCurso: unknown): string | null {
+  const aula = unwrap(unwrap(aulasCurso)?.aulas)
+  return aula && typeof aula.nombre === 'string' ? aula.nombre : null
+}
+
+/**
+ * Como `extraerNombreAula` pero para `aulas_curso.cursos_academicos`
+ * (nombre + fecha_inicio) — el curso también se anida bajo `aulas_curso`.
+ */
+function extraerCurso(aulasCurso: unknown): { nombre: string; fecha_inicio: string } | null {
+  const curso = unwrap(unwrap(aulasCurso)?.cursos_academicos)
+  if (curso && typeof curso.nombre === 'string' && typeof curso.fecha_inicio === 'string') {
+    return { nombre: curso.nombre, fecha_inicio: curso.fecha_inicio }
   }
   return null
 }
@@ -57,20 +62,23 @@ export async function getNinosPorCentro(centroId: string): Promise<NinoListItem[
 
   if (!ninos?.length) return []
 
-  const { data: matriculas } = await supabase
+  const { data: matriculas, error: errorMatriculas } = await supabase
     .from('matriculas')
-    .select('nino_id, estado, aulas(nombre)')
+    .select('nino_id, estado, aulas_curso(aulas(nombre))')
     .in(
       'nino_id',
       ninos.map((n) => n.id)
     )
     .is('fecha_baja', null)
     .is('deleted_at', null)
+  // Un embed roto (p.ej. FK que cambió) hace fallar la query entera y devuelve `data=null`:
+  // sin este log, todos los niños saldrían con estado/aula null en silencio (regresión F11-H).
+  if (errorMatriculas) logger.warn('getNinosPorCentro: matriculas', errorMatriculas.message)
 
   const aulaPorNino = new Map<string, string>()
   const estadoPorNino = new Map<string, 'pendiente' | 'lista' | 'activa'>()
   for (const m of matriculas ?? []) {
-    const nombre = extraerNombreAula(m.aulas)
+    const nombre = extraerNombreAula(m.aulas_curso)
     if (nombre) aulaPorNino.set(m.nino_id, nombre)
     if (m.estado === 'pendiente' || m.estado === 'lista' || m.estado === 'activa')
       estadoPorNino.set(m.nino_id, m.estado)
@@ -227,17 +235,18 @@ export interface MatriculaItem {
 
 export async function getMatriculasPorNino(ninoId: string): Promise<MatriculaItem[]> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('matriculas')
-    .select('id, aula_id, fecha_alta, fecha_baja, motivo_baja, estado, aulas(nombre)')
+    .select('id, aula_id, fecha_alta, fecha_baja, motivo_baja, estado, aulas_curso(aulas(nombre))')
     .eq('nino_id', ninoId)
     .is('deleted_at', null)
     .order('fecha_alta', { ascending: false })
+  if (error) logger.warn('getMatriculasPorNino', error.message)
 
   return (data ?? []).map((m) => ({
     id: m.id,
     aula_id: m.aula_id,
-    aula_nombre: extraerNombreAula(m.aulas) ?? '—',
+    aula_nombre: extraerNombreAula(m.aulas_curso) ?? '—',
     fecha_alta: m.fecha_alta,
     fecha_baja: m.fecha_baja,
     motivo_baja: m.motivo_baja,
@@ -255,21 +264,22 @@ export async function getMatriculasPorNino(ninoId: string): Promise<MatriculaIte
  */
 export async function getHistoricoMatriculas(ninoId: string): Promise<HistoricoTramo[]> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('matriculas')
     .select(
-      'id, aula_id, curso_academico_id, fecha_alta, fecha_baja, motivo_baja, estado, aulas(nombre), cursos_academicos(nombre, fecha_inicio)'
+      'id, aula_id, curso_academico_id, fecha_alta, fecha_baja, motivo_baja, estado, aulas_curso(aulas(nombre), cursos_academicos(nombre, fecha_inicio))'
     )
     .eq('nino_id', ninoId)
     .is('deleted_at', null)
     .order('fecha_alta', { ascending: true })
+  if (error) logger.warn('getHistoricoMatriculas', error.message)
 
   return (data ?? []).map((m) => {
-    const curso = extraerCurso(m.cursos_academicos)
+    const curso = extraerCurso(m.aulas_curso)
     return {
       id: m.id,
       aula_id: m.aula_id,
-      aula_nombre: extraerNombreAula(m.aulas) ?? '—',
+      aula_nombre: extraerNombreAula(m.aulas_curso) ?? '—',
       curso_id: m.curso_academico_id,
       curso_nombre: curso?.nombre ?? '—',
       curso_fecha_inicio: curso?.fecha_inicio ?? '',
