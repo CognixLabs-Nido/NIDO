@@ -21,27 +21,14 @@ export const PASOS_ALTA = [
 
 export type PasoAlta = (typeof PASOS_ALTA)[number]
 
-/** En `/alta` (post-login) el primer paso navegable es `acuses` (cuenta ya está hecha). */
-export const PASO_MIN_AUTENTICADO = PASOS_ALTA.indexOf('acuses')
-
-/** Señales de completitud derivadas de lo persistido (las lee la ruta server-side). */
-export interface EstadoAlta {
-  /** Identidad escrita: apellidos + fecha_nacimiento (lo único OBLIGATORIO). */
-  identidadCompleta: boolean
-  /** Consentimiento `datos_medicos` vigente (revocado_en IS NULL). */
-  consintioDatosMedicos: boolean
-}
-
 /**
- * Índice (0-based sobre `PASOS_ALTA`) en el que reanudar dentro de `/alta` (post-login):
- *  - sin identidad → `acuses` (arranque del flujo tras crear la cuenta),
- *  - identidad hecha pero sin acuse médico → `medico` (lo único que falta para cerrar),
- *  - todo lo obligatorio hecho → `emergencia` (desde ahí se avanza al SEPA y se finaliza).
- * Los pasos `tutor1`/`tutor2`/documentos/`sepa` no tienen señal dura (opcionales o de
- * persistencia propia), así que nunca atascan la reanudación.
+ * En `/alta` (post-login) el primer paso navegable es `acuses` (la cuenta ya está hecha en
+ * `/invitation`). El wizard SIEMPRE arranca aquí: recorre todos los pasos en orden y es el
+ * gate de finalizar quien exige la completitud, no el arranque.
+ *
+ * NOTA — hubo un heurístico de "reanudación" (`pasoInicialAlta`) que saltaba a `medico`/
+ * `emergencia` según identidad + acuse médico. Se retiró: como el alta nace con la identidad
+ * ya cargada (`invitar-al-alta` fija nombre/apellidos/fecha), el salto se disparaba en la
+ * PRIMERA entrada y el tutor se saltaba acuses/menor/tutor (normas, imagen, documentos).
  */
-export function pasoInicialAlta(estado: EstadoAlta): number {
-  if (!estado.identidadCompleta) return PASOS_ALTA.indexOf('acuses')
-  if (!estado.consintioDatosMedicos) return PASOS_ALTA.indexOf('medico')
-  return PASOS_ALTA.indexOf('emergencia')
-}
+export const PASO_MIN_AUTENTICADO = PASOS_ALTA.indexOf('acuses')

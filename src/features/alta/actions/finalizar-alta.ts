@@ -16,12 +16,11 @@ import { fail, ok } from '../../centros/types'
  * orden de la lista es el orden en que se muestra el checklist "qué falta" en la UI.
  *
  * NOTA — `tutor2` es OPCIONAL (no aparece aquí): no bloquea.
- * `normas` (acuse de régimen interno) es OBLIGATORIO (decisión de producto, D-3): se firma
- *   igual que `imagen` (patrón F8), y la firma PRESENCIAL del modo Dirección también produce
- *   `decision='firmado'`, así que el gate se cumple por ese camino. Precondición operativa
- *   (misma clase que `imagen`): la dirección debe tener PUBLICADA la instancia de
- *   `reglas_regimen_interno` para la audiencia del niño; si no existe, el gate bloquea (la
- *   familia, a diferencia de imagen B2, no puede auto-instanciarla — es patrón A).
+ * `normas` e `imagen` son OBLIGATORIOS y se satisfacen por DOS vías (vía B): una firma real
+ *   `decision='firmado'` sobre la instancia publicada (si el centro la tiene) O una fila de
+ *   ACUSE por checkbox en `acuses_alta` (sin documento, sin firma). Así aceptar NO depende de
+ *   que exista la instancia (normas es patrón A y la familia no puede auto-instanciarla). La
+ *   obligatoriedad NO se relaja: sin firma NI acuse, el bloque sigue faltando.
  */
 export type BloqueAlta =
   | 'identidad'
@@ -87,6 +86,12 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   if (!nino) return fail('alta.errors.finalizar_fallo')
   if (!nino.apellidos || !nino.fecha_nacimiento) faltan.push('identidad')
 
+  // Vía B — acuses por checkbox (normas/imagen) SIN documento (tabla `acuses_alta`). Es una
+  // vía VÁLIDA del gate ADEMÁS de la firma real: normas/imagen se dan por hechos si hay firma
+  // `decision='firmado'` O una fila de acuse. No se relaja la obligatoriedad (siguen exigidos).
+  const { data: acusesRows } = await supabase.from('acuses_alta').select('tipo').eq('nino_id', id)
+  const acusados = new Set((acusesRows ?? []).map((a) => a.tipo))
+
   // Tutor 1 (identidad) + su DNI (documento) desde el perfil COMPARTIDO `familia_tutores`
   // (F-2b-3): el titular. La señal de "tutor 1 hecho" es tener `nombre_completo`.
   const { tutores } = await leerTutoresDeNino(supabase, id)
@@ -151,7 +156,7 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
       .maybeSingle()
     imagenFirmada = firma?.decision === 'firmado'
   }
-  if (!imagenFirmada) faltan.push('imagen')
+  if (!imagenFirmada && !acusados.has('imagen')) faltan.push('imagen')
 
   // Acuse de NORMAS de régimen interno firmado (D-3, acuse obligatorio). A diferencia de
   // imagen (B2, por niño), las normas son patrón A: la dirección publica UNA instancia de
@@ -180,7 +185,7 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
       .maybeSingle()
     normasFirmada = firma?.decision === 'firmado'
   }
-  if (!normasFirmada) faltan.push('normas')
+  if (!normasFirmada && !acusados.has('normas')) faltan.push('normas')
 
   if (faltan.length > 0) {
     faltan.sort((a, b) => ORDEN_BLOQUES.indexOf(a) - ORDEN_BLOQUES.indexOf(b))

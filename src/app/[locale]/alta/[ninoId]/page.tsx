@@ -19,7 +19,7 @@ import { AltaCompletadaScreen } from '@/features/alta/components/AltaCompletadaS
 import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
 import { resolverEntradaAlta } from '@/features/alta/lib/entrada-alta'
-import { pasoInicialAlta } from '@/features/alta/lib/estado-alta'
+import { PASO_MIN_AUTENTICADO } from '@/features/alta/lib/estado-alta'
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
 
 import type { MandatoSepaInicial } from '@/features/alta/components/PasoSepa'
@@ -239,6 +239,15 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const normasPanel = await panelFirma(supabase, ninoId, 'reglas_regimen_interno', true)
   const normasSinPlantilla = normasPanel === null
 
+  // Vía B — acuses por checkbox (normas/imagen) ya registrados para este niño (sin documento).
+  const { data: acusesRows } = await supabase
+    .from('acuses_alta')
+    .select('tipo')
+    .eq('nino_id', ninoId)
+  const acusados = new Set((acusesRows ?? []).map((a) => a.tipo))
+  const normasAceptado = acusados.has('normas')
+  const imagenAceptado = acusados.has('imagen')
+
   // SEPA (G-2): datos del centro (acreedor) y mandato activo previo del tutor 1 (titular).
   const { data: centro } = await supabase
     .from('centros')
@@ -270,10 +279,11 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     ? await familiaTieneMandatoActivo(ninoExtra.familia_id)
     : null
 
-  const pasoInicial = pasoInicialAlta({
-    identidadCompleta: Boolean(nino.apellidos && nino.fecha_nacimiento),
-    consintioDatosMedicos,
-  })
+  // El wizard SIEMPRE arranca en el primer paso navegable (`acuses`) y recorre todo en orden;
+  // la completitud la exige el gate de finalizar, no el arranque. (Antes un heurístico saltaba
+  // a `medico`/`emergencia` según identidad + acuse médico y, como el alta nace con identidad
+  // cargada, se saltaba acuses/menor/tutor en la primera entrada — bug de navegación.)
+  const pasoInicial = PASO_MIN_AUTENTICADO
 
   const t = await getTranslations('alta')
   const enEdicionValidada = matricula?.estado === 'activa' && editar === '1'
@@ -311,6 +321,8 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         imagenSinPlantilla={imagenSinPlantilla}
         normasPanel={normasPanel}
         normasSinPlantilla={normasSinPlantilla}
+        normasAceptado={normasAceptado}
+        imagenAceptado={imagenAceptado}
         familiaEstadoCivil={familiaEstadoCivil}
         datosTutor1={datosTutor1}
         datosTutor2={datosTutor2}

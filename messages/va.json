@@ -3556,14 +3556,20 @@
       "finalizar_fallo": "No s'ha pogut finalitzar l'alta. Torna-ho a provar.",
       "identidad_incompleta": "Completa primer les dades del xiquet (nom i data de naixement).",
       "acuse_pendiente": "Confirma abans el justificant de confidencialitat de les dades mèdiques.",
-      "incompleto": "Falten dades obligatòries per completar."
+      "incompleto": "Falten dades obligatòries per completar.",
+      "acuse_fallo": "No s'ha pogut registrar l'acús. Torna-ho a provar."
     },
     "acuses": {
       "normas_titulo": "Normes de règim intern",
       "normas_sin_plantilla": "El centre encara no té publicades les normes per signar. Aquest acusament es completarà més endavant.",
       "privacidad_titulo": "Privacitat",
       "privacidad_aceptada": "Vas acceptar l'avís de privacitat en crear el teu compte.",
-      "privacidad_ver": "Veure avís de privacitat"
+      "privacidad_ver": "Veure avís de privacitat",
+      "aceptado": "Acceptat.",
+      "normas_acepto": "He llegit i accepte les normes de règim intern del centre.",
+      "normas_aceptado": "Vas acceptar les normes de règim intern.",
+      "imagen_acepto": "Autoritze l'ús de la imatge del menor segons la política del centre.",
+      "imagen_aceptado": "Vas acceptar l'autorització d'imatge."
     },
     "menor": {
       "direccion_titulo": "Adreça del menor",

@@ -699,6 +699,51 @@ export type Database = {
           },
         ]
       }
+      acuses_alta: {
+        Row: {
+          aceptado_en: string
+          centro_id: string
+          firmante_id: string | null
+          id: string
+          metodo: string
+          nino_id: string
+          tipo: string
+        }
+        Insert: {
+          aceptado_en?: string
+          centro_id: string
+          firmante_id?: string | null
+          id?: string
+          metodo?: string
+          nino_id: string
+          tipo: string
+        }
+        Update: {
+          aceptado_en?: string
+          centro_id?: string
+          firmante_id?: string | null
+          id?: string
+          metodo?: string
+          nino_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acuses_alta_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acuses_alta_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beca_comedor_mes: {
         Row: {
           anio: number

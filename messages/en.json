@@ -3556,14 +3556,20 @@
       "finalizar_fallo": "The enrolment could not be finished. Please try again.",
       "identidad_incompleta": "Fill in the child's details first (name and date of birth).",
       "acuse_pendiente": "Confirm the medical data confidentiality acknowledgement first.",
-      "incompleto": "Some required details are still missing."
+      "incompleto": "Some required details are still missing.",
+      "acuse_fallo": "Could not register the acknowledgement. Please try again."
     },
     "acuses": {
       "normas_titulo": "Internal rules",
       "normas_sin_plantilla": "The centre hasn't published the rules to sign yet. This acknowledgement will be completed later.",
       "privacidad_titulo": "Privacy",
       "privacidad_aceptada": "You accepted the privacy notice when creating your account.",
-      "privacidad_ver": "View privacy notice"
+      "privacidad_ver": "View privacy notice",
+      "aceptado": "Accepted.",
+      "normas_acepto": "I have read and accept the centre's internal rules.",
+      "normas_aceptado": "You accepted the internal rules.",
+      "imagen_acepto": "I authorise the use of the child's image according to the centre's policy.",
+      "imagen_aceptado": "You accepted the image authorisation."
     },
     "menor": {
       "direccion_titulo": "Child's address",

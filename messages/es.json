@@ -3556,14 +3556,20 @@
       "finalizar_fallo": "No se pudo finalizar el alta. Inténtalo de nuevo.",
       "identidad_incompleta": "Completa primero los datos del niño (nombre y fecha de nacimiento).",
       "acuse_pendiente": "Confirma antes el acuse de confidencialidad de los datos médicos.",
-      "incompleto": "Faltan datos obligatorios por completar."
+      "incompleto": "Faltan datos obligatorios por completar.",
+      "acuse_fallo": "No se pudo registrar el acuse. Inténtalo de nuevo."
     },
     "acuses": {
       "normas_titulo": "Normas de régimen interno",
       "normas_sin_plantilla": "El centro aún no tiene publicadas las normas para firmar. Este acuse se completará más adelante.",
       "privacidad_titulo": "Privacidad",
       "privacidad_aceptada": "Aceptaste el aviso de privacidad al crear tu cuenta.",
-      "privacidad_ver": "Ver aviso de privacidad"
+      "privacidad_ver": "Ver aviso de privacidad",
+      "aceptado": "Aceptado.",
+      "normas_acepto": "He leído y acepto las normas de régimen interno del centro.",
+      "normas_aceptado": "Aceptaste las normas de régimen interno.",
+      "imagen_acepto": "Autorizo el uso de la imagen del menor según la política del centro.",
+      "imagen_aceptado": "Aceptaste la autorización de imagen."
     },
     "menor": {
       "direccion_titulo": "Dirección del menor",
