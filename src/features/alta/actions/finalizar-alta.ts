@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { getInfoMedica } from '@/features/ninos/queries/get-ninos'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -98,9 +97,9 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   const tutor1 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_principal')
   if (!tutor1?.nombre_completo) faltan.push('tutor1')
 
-  // Médico + emergencia: acuse `datos_medicos` vigente + teléfono de emergencia (el resto de
-  // campos médicos pueden ser legítimamente nulos → no se exigen). `get_info_medica` descifra
-  // server-side con autorización.
+  // Médico + emergencia: solo se exige el acuse de confidencialidad `datos_medicos` vigente
+  // (consentimiento RGPD, con backstop en `marcar_matricula_lista`). El teléfono de emergencia
+  // y el resto de campos médicos pueden ir en blanco → NO bloquean la finalización (opción A).
   const { data: acuse } = await supabase
     .from('consentimientos')
     .select('id')
@@ -109,8 +108,7 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
     .is('revocado_en', null)
     .limit(1)
     .maybeSingle()
-  const medica = await getInfoMedica(id)
-  if (!acuse || !medica?.telefono_emergencia) faltan.push('medico')
+  if (!acuse) faltan.push('medico')
 
   // Documentos: libro de familia (niño) + DNI del tutor 1. El DNI del tutor 2 NO se exige
   // (tutor 2 es opcional).
