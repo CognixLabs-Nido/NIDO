@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { Fragment, useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
@@ -26,15 +26,23 @@ import {
 } from '@/components/ui/table'
 import { ReciboEsporadicoDialog } from '@/features/cierre-cobros/components/ReciboEsporadicoDialog'
 import { MesSelector } from '@/features/cuotas-config/components/MesSelector'
+import { CentroLogo } from '@/shared/components/brand/CentroLogo'
 import { formatEuros } from '@/shared/lib/format-money'
 import type { Database } from '@/types/database'
 
 import { confirmarRecibo, confirmarRecibos } from '../actions/confirmar-recibo'
 import { generarRecibosMes } from '../actions/generar-recibos-mes'
 import { setMetodoPagoFamilia } from '../actions/set-metodo-pago-familia'
-import { esConfirmado, type FilaFamiliaPanel } from '../lib/panel-familia'
+import { limpiarNombreEmbebido } from '../lib/limpiar-nombre-embebido'
+import { agruparLineasPanel, esConfirmado, type FilaFamiliaPanel } from '../lib/panel-familia'
 import type { PanelMesData } from '../queries/get-recibos-mes-panel'
 import { EditarReciboDialog } from './EditarReciboDialog'
+
+/** Logo del centro para la cabecera del recibo interno (getCentroLogo). */
+export interface CentroLogoProp {
+  url: string
+  name: string
+}
 
 type MetodoPago = Database['public']['Enums']['metodo_pago']
 const METODOS: MetodoPago[] = ['sepa', 'efectivo', 'cheque_guarderia', 'transferencia']
@@ -45,9 +53,11 @@ interface Props {
   mes: number
   data: PanelMesData
   ninos: Array<{ id: string; nombre: string }>
+  /** Logo del centro (getCentroLogo); null si no tiene → el recibo interno va sin logo. */
+  centroLogo: CentroLogoProp | null
 }
 
-export function PanelMesRecibos({ anio, mes, data, ninos }: Props) {
+export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
   const t = useTranslations('recibos_panel')
   const tErrors = useTranslations()
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -201,6 +211,7 @@ export function PanelMesRecibos({ anio, mes, data, ninos }: Props) {
                     fila={fila}
                     bloqueado={bloqueado}
                     pending={pending}
+                    centroLogo={centroLogo}
                     metodoPref={data.metodoPreferencia[fila.familiaId] ?? null}
                     seleccionado={fila.recibo ? selected.has(fila.recibo.id) : false}
                     expandido={expanded.has(fila.familiaId)}
@@ -294,6 +305,7 @@ function FilaFamilia({
   fila,
   bloqueado,
   pending,
+  centroLogo,
   metodoPref,
   seleccionado,
   expandido,
@@ -305,6 +317,7 @@ function FilaFamilia({
   fila: FilaFamiliaPanel
   bloqueado: boolean
   pending: boolean
+  centroLogo: CentroLogoProp | null
   metodoPref: MetodoPago | null
   seleccionado: boolean
   expandido: boolean
@@ -412,24 +425,60 @@ function FilaFamilia({
       {expandido && recibo && (
         <TableRow>
           <TableCell colSpan={9} className="bg-muted/30">
-            <div className="space-y-1 p-2 text-sm">
-              {recibo.lineas.map((l) => (
-                <div key={l.id} className="flex items-center justify-between gap-4">
-                  <span>
-                    {l.ninoNombre ? `${l.ninoNombre} · ` : `${t('familiar')} · `}
-                    {l.descripcion}
-                    {l.cantidad > 1 ? ` (×${l.cantidad})` : ''}
-                  </span>
-                  <span className="tabular-nums">{formatEuros(l.importeCentimos)}</span>
-                </div>
-              ))}
-              {recibo.lineas.length === 0 && (
+            <div className="space-y-3 p-3 text-sm">
+              {/* Logo del centro (recibo interno del director); se omite si no lo tiene. */}
+              {centroLogo && (
+                <CentroLogo url={centroLogo.url} name={centroLogo.name} width={120} height={32} />
+              )}
+
+              {recibo.lineas.length === 0 ? (
                 <span className="text-muted-foreground">{t('sin_lineas')}</span>
+              ) : (
+                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-6 gap-y-1">
+                  {/* Cabecera de columnas. */}
+                  <span className="text-muted-foreground text-xs">{t('col_concepto')}</span>
+                  <span className="text-muted-foreground text-right text-xs">
+                    {t('col_cantidad')}
+                  </span>
+                  <span className="text-muted-foreground text-right text-xs">
+                    {t('col_precio')}
+                  </span>
+                  <span className="text-muted-foreground text-right text-xs">
+                    {t('col_importe')}
+                  </span>
+
+                  {agruparLineasPanel(recibo.lineas).map((grupo) => (
+                    <FragmentoGrupo key={grupo.ninoId ?? 'familiar'} grupo={grupo} />
+                  ))}
+                </div>
               )}
             </div>
           </TableCell>
         </TableRow>
       )}
+    </>
+  )
+}
+
+// Un bloque del recibo interno: el nombre del niño UNA vez como cabecera + sus líneas
+// (concepto · cantidad · precio · importe). Limpieza defensiva del nombre embebido por si
+// el recibo es anterior a B3 y aún no se ha regenerado.
+function FragmentoGrupo({ grupo }: { grupo: ReturnType<typeof agruparLineasPanel>[number] }) {
+  const t = useTranslations('recibos_panel')
+  const primerNombre = grupo.ninoNombre?.split(' ')[0] ?? null
+  return (
+    <>
+      <div className="col-span-4 pt-1 font-medium">{grupo.ninoNombre ?? t('familiar')}</div>
+      {grupo.lineas.map((l) => (
+        <Fragment key={l.id}>
+          <span className="pl-3">{limpiarNombreEmbebido(l.descripcion, primerNombre)}</span>
+          <span className="text-right tabular-nums">{l.cantidad}</span>
+          <span className="text-right tabular-nums">{formatEuros(l.precioUnitarioCentimos)}</span>
+          <span className="text-right font-medium tabular-nums">
+            {formatEuros(l.importeCentimos)}
+          </span>
+        </Fragment>
+      ))}
     </>
   )
 }

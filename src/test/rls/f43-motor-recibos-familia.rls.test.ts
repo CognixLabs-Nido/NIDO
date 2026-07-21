@@ -715,8 +715,8 @@ describe.skipIf(!APPLIED)('F-4-3 — motor de recibos a grano FAMILIA', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // D-6 — beca comedor variable por mes en el MOTOR (D-6-2).
 // La beca de `beca_comedor_mes` (importe en EUROS, positivo) se aplica como línea
-// NEGATIVA independiente por niño: descripcion "Beca comedor · <nombre>",
-// importe_centimos = -round(importe*100), concepto_id NULL, colgada del hijo.
+// NEGATIVA independiente por niño: descripcion "Beca comedor" (limpia, sin el nombre
+// del niño desde B3), importe_centimos = -round(importe*100), concepto_id NULL, colgada del hijo.
 // Gateado por F43 (motor) Y D6 (tabla + PASE 2-bis aplicados).
 // ─────────────────────────────────────────────────────────────────────────────
 describe.skipIf(!APPLIED || !D6)('D-6 — beca comedor variable en el motor de recibos', () => {
@@ -773,7 +773,7 @@ describe.skipIf(!APPLIED || !D6)('D-6 — beca comedor variable en el motor de r
   const gen = () =>
     cAdmin.rpc('generar_recibos_mes', { p_centro_id: centro.id, p_anio: ANIO, p_mes: MES })
 
-  it('niño con beca_comedor_mes → línea "Beca comedor · <nombre>" con importe_centimos = -importe*100', async () => {
+  it('niño con beca_comedor_mes → línea "Beca comedor" con importe_centimos = -importe*100', async () => {
     const { familia, ninos } = await nuevaFamilia(['Nora'])
     const cuota = await mkCuota('CuotaBC ' + familia, 20000)
     await asignar({ concepto_id: cuota, nino_id: ninos[0] })
@@ -783,7 +783,7 @@ describe.skipIf(!APPLIED || !D6)('D-6 — beca comedor variable en el motor de r
     expect(r.error).toBeNull()
 
     const { recibo, lineas } = await reciboRegular(familia, ANIO, MES)
-    const beca = lineas.find((l) => l.descripcion === 'Beca comedor · Nora')
+    const beca = lineas.find((l) => l.descripcion === 'Beca comedor')
     expect(beca).toBeDefined()
     expect(beca?.importe_centimos).toBe(-3000)
     expect(beca?.nino_id).toBe(ninos[0]) // colgada del hijo
@@ -800,7 +800,7 @@ describe.skipIf(!APPLIED || !D6)('D-6 — beca comedor variable en el motor de r
 
     await gen()
     const { recibo, lineas } = await reciboRegular(familia, ANIO, MES)
-    const becas = lineas.filter((l) => l.descripcion?.toString().startsWith('Beca comedor · '))
+    const becas = lineas.filter((l) => l.descripcion === 'Beca comedor')
     expect(becas).toHaveLength(0)
     expect(recibo?.total_centimos).toBe(20000) // sin descuento de beca comedor
   })
@@ -818,7 +818,7 @@ describe.skipIf(!APPLIED || !D6)('D-6 — beca comedor variable en el motor de r
     const positivas = lineas
       .filter((l) => Number(l.importe_centimos) > 0)
       .reduce((s, l) => s + Number(l.importe_centimos), 0)
-    const beca = lineas.find((l) => l.descripcion === 'Beca comedor · Pau')
+    const beca = lineas.find((l) => l.descripcion === 'Beca comedor')
     expect(positivas).toBe(30000) // 25000 + 5000
     expect(beca?.importe_centimos).toBe(-4250)
     expect(recibo?.total_centimos).toBe(positivas - 4250) // 30000 − 4250 = 25750
