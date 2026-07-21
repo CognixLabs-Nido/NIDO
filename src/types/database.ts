@@ -4167,6 +4167,7 @@ export type Database = {
       centro_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       centro_de_aula: { Args: { p_aula_id: string }; Returns: string }
       centro_de_cita: { Args: { p_cita_id: string }; Returns: string }
+      centro_de_concepto: { Args: { p_concepto_id: string }; Returns: string }
       centro_de_conversacion: {
         Args: { p_conversacion_id: string }
         Returns: string
