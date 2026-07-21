@@ -1,4 +1,4 @@
-import { CheckCircle2Icon, CircleIcon } from 'lucide-react'
+import { CheckCircle2Icon, CircleIcon, MinusCircleIcon } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
@@ -32,9 +32,11 @@ export async function AvanceAltaCard({
 }: Props) {
   const t = await getTranslations('admin.ninos.avance_alta')
 
-  const items: { label: string; done: boolean; opcional?: boolean }[] = [
+  // `informativo`: dato opcional que NO es un consentimiento (datos pedagógicos). Ausente NO es
+  // "no autorizado" ni bloquea: se muestra neutro ("sin datos"), distinto del círculo de pendiente.
+  const items: { label: string; done: boolean; opcional?: boolean; informativo?: boolean }[] = [
     { label: t('items.identidad'), done: identidad },
-    { label: t('items.pedagogicos'), done: pedagogicos, opcional: true },
+    { label: t('items.pedagogicos'), done: pedagogicos, informativo: true },
     { label: t('items.medico'), done: medico, opcional: true },
     { label: t('items.imagen'), done: imagen, opcional: true },
   ]
@@ -51,19 +53,26 @@ export async function AvanceAltaCard({
       </CardHeader>
       <CardContent className="space-y-3">
         <ul className="space-y-1.5">
-          {items.map((it) => (
-            <li key={it.label} className="flex items-center gap-2 text-sm">
-              {it.done ? (
-                <CheckCircle2Icon className="text-success-700 size-4 shrink-0" strokeWidth={2} />
-              ) : (
-                <CircleIcon className="text-muted-foreground size-4 shrink-0" strokeWidth={1.75} />
-              )}
-              <span className={it.done ? '' : 'text-muted-foreground'}>
-                {it.label}
-                {it.opcional && <span className="text-muted-foreground"> · {t('opcional')}</span>}
-              </span>
-            </li>
-          ))}
+          {items.map((it) => {
+            // Icono: hecho → check verde; informativo sin dato → guion neutro (n/a, no pendiente);
+            // resto sin hacer → círculo de pendiente.
+            const Icon = it.done ? CheckCircle2Icon : it.informativo ? MinusCircleIcon : CircleIcon
+            return (
+              <li key={it.label} className="flex items-center gap-2 text-sm">
+                <Icon
+                  className={`${it.done ? 'text-success-700' : 'text-muted-foreground'} size-4 shrink-0`}
+                  strokeWidth={it.done ? 2 : 1.75}
+                />
+                <span className={it.done ? '' : 'text-muted-foreground'}>
+                  {it.label}
+                  {it.informativo && !it.done && (
+                    <span className="text-muted-foreground"> · {t('sin_datos')}</span>
+                  )}
+                  {it.opcional && <span className="text-muted-foreground"> · {t('opcional')}</span>}
+                </span>
+              </li>
+            )
+          })}
         </ul>
         {estado === 'lista' ? (
           <div className="space-y-1 border-t pt-3">

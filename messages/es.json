@@ -677,9 +677,10 @@
           "identidad": "Datos del niño",
           "pedagogicos": "Datos pedagógicos",
           "medico": "Datos médicos",
-          "imagen": "Autorización de imagen firmada"
+          "imagen": "Autorización de imagen"
         },
         "opcional": "opcional",
+        "sin_datos": "sin datos",
         "activar_ayuda": "El tutor ha finalizado el alta. Revisa el avance y activa la matrícula.",
         "pendiente_ayuda": "El tutor aún está completando el alta. Podrás activar cuando la finalice."
       },

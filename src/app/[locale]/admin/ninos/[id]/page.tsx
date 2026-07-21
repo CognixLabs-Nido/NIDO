@@ -92,7 +92,10 @@ export default async function NinoDetallePage({ params }: PageProps) {
 
   // Avance del alta (P3c) — solo relevante mientras la matrícula no está 'activa'.
   const enAlta = matriculaActiva?.estado === 'pendiente' || matriculaActiva?.estado === 'lista'
-  let imagenFirmada = false
+  // Imagen aceptada = firma real (modelo documento) O acuse por checkbox (`acuses_alta`, #237).
+  // Mismo criterio que el gate de finalización (finalizar-alta.ts): `imagenFirmada || acuse`.
+  // Sin esta 2ª vía, un alta aceptada por checkbox salía como "no autorizado" en la validación.
+  let imagenAceptada = false
   if (enAlta) {
     const { data: autImg } = await supabase
       .from('autorizaciones')
@@ -111,7 +114,17 @@ export default async function NinoDetallePage({ params }: PageProps) {
         .eq('decision', 'firmado')
         .limit(1)
         .maybeSingle()
-      imagenFirmada = firma !== null
+      imagenAceptada = firma !== null
+    }
+    if (!imagenAceptada) {
+      const { data: acuseImg } = await supabase
+        .from('acuses_alta')
+        .select('tipo')
+        .eq('nino_id', id)
+        .eq('tipo', 'imagen')
+        .limit(1)
+        .maybeSingle()
+      imagenAceptada = acuseImg !== null
     }
   }
   const medicoCompleto = !!info && Object.values(info).some((v) => v !== null && v !== '')
@@ -217,7 +230,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
           identidad={Boolean(nino.apellidos && nino.fecha_nacimiento)}
           pedagogicos={datosPed !== null}
           medico={medicoCompleto}
-          imagen={imagenFirmada}
+          imagen={imagenAceptada}
         />
       )}
 
