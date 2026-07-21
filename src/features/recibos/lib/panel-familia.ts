@@ -178,6 +178,28 @@ export function construirPanelFamilia(
   }
 }
 
+/** Un bloque de líneas del recibo interno: un hijo (ninoId no null) o el bloque familiar. */
+export interface GrupoLineasPanel {
+  ninoId: string | null
+  ninoNombre: string | null
+  lineas: LineaPanel[]
+}
+
+/**
+ * Agrupa las líneas ya ordenadas (`ordenarLineas`: hijo→familiar, por nombre) en bloques
+ * consecutivos por niño, para la vista interna del director (nombre del hijo UNA vez como
+ * cabecera + sus líneas). El bloque familiar (ninoId NULL) queda al final.
+ */
+export function agruparLineasPanel(lineas: LineaPanel[]): GrupoLineasPanel[] {
+  const grupos: GrupoLineasPanel[] = []
+  for (const l of lineas) {
+    const ultimo = grupos[grupos.length - 1]
+    if (ultimo && ultimo.ninoId === l.ninoId) ultimo.lineas.push(l)
+    else grupos.push({ ninoId: l.ninoId, ninoNombre: l.ninoNombre, lineas: [l] })
+  }
+  return grupos
+}
+
 // Líneas: primero las de hijo (agrupadas por nombre de hijo), luego las familiares
 // (ninoId NULL); dentro, positivas antes que negativas; desempate por descripción.
 function ordenarLineas(a: LineaPanel, b: LineaPanel): number {

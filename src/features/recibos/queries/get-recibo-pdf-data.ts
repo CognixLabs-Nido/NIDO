@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { limpiarNombreEmbebido } from '@/features/recibos/lib/limpiar-nombre-embebido'
 import {
   agruparLineasPorHijo,
   type LineaConNino,
@@ -29,12 +30,6 @@ export interface ReciboParaPdf {
   gruposHijo: ReturnType<typeof agruparLineasPorHijo>['gruposHijo']
   lineasFamiliares: ReturnType<typeof agruparLineasPorHijo>['lineasFamiliares']
   subtotalFamiliarCentimos: number
-}
-
-/** Quita el nombre embebido del niño (" · Pepe") de la descripción cruda del motor. */
-function limpiarNombreEmbebido(descripcion: string, primerNombre: string | null): string {
-  if (!primerNombre) return descripcion
-  return descripcion.replaceAll(` · ${primerNombre}`, '').trim()
 }
 
 /**

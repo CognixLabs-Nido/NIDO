@@ -7,6 +7,7 @@ import { BecasPanel } from '@/features/becas/components/BecasPanel'
 import { getBecas } from '@/features/becas/queries/get-becas'
 import { getTiposBeca } from '@/features/becas/queries/get-tipos-beca'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { ConceptosCatalogo } from '@/features/conceptos-cobro/components/ConceptosCatalogo'
 import { getConceptosCobro } from '@/features/conceptos-cobro/queries/get-conceptos-cobro'
 import { AsignacionPermanentePanel } from '@/features/cuotas-config/components/AsignacionPermanentePanel'
@@ -72,6 +73,11 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     getBecasComedorMes(centroId, anio, mes),
   ])
 
+  const centroLogoInfo = await getCentroLogo(centroId)
+  const centroLogo = centroLogoInfo
+    ? { url: centroLogoInfo.logoUrl, name: centroLogoInfo.nombre }
+    : null
+
   const ninosActivos = ninosCentro
     .filter((n) => n.estado_matricula === 'activa')
     .map((n) => ({ id: n.id, nombre: [n.nombre, n.apellidos].filter(Boolean).join(' ') }))
@@ -100,6 +106,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
             mes={mes}
             data={panelMes}
             ninos={ninosActivos}
+            centroLogo={centroLogo}
           />
           <BecaComedorMesPanel
             anio={anio}
