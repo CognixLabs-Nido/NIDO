@@ -10,7 +10,7 @@ export const runtime = 'nodejs'
 /**
  * Descarga en PDF de un recibo FAMILIAR (B4). La autorización es la MISMA que la pantalla
  * del portal: `getReciboParaPdf` lee con RLS (`es_tutor_de_familia`) y excluye borradores →
- * un tutor solo baja SUS recibos; si no es visible → 404. El contenido (logo de NIDO,
+ * un tutor solo baja SUS recibos; si no es visible → 404. El contenido (logo DEL CENTRO,
  * nombre del niño una vez, líneas limpias) lo arma `generarReciboPdf`.
  */
 export async function GET(
@@ -52,6 +52,7 @@ export async function GET(
 
   const bytes = await generarReciboPdf({
     centroNombre: recibo.centroNombre,
+    logoUrl: recibo.centroLogoUrl,
     titulo,
     estadoLabel: t(`estado_recibo.${recibo.estado}`),
     metodoLabel,

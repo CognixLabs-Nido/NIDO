@@ -7,7 +7,7 @@ import { rgb, StandardFonts, PDFDocument, type PDFFont, type PDFImage, type PDFP
  * en el idioma que le pase el llamante (los generadores resuelven sus etiquetas).
  *
  * Módulo puro (sin `server-only`): los route handlers le pasan datos ya autorizados y los
- * tests lo ejercitan sin BD. El logo (que sí toca el filesystem) vive en `logo-nido.ts`.
+ * tests lo ejercitan sin BD. El logo (que sí toca el filesystem/red) vive en `logo-centro.ts`.
  */
 
 export type PdfColor = ReturnType<typeof rgb>

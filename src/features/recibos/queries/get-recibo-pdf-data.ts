@@ -14,6 +14,8 @@ type MetodoPago = Database['public']['Enums']['metodo_pago']
 
 export interface ReciboParaPdf {
   centroNombre: string
+  /** Logo del centro (`centros.logo_url`); `null` si no tiene → el PDF va sin logo. */
+  centroLogoUrl: string | null
   anio: number
   mes: number
   estado: EstadoRecibo
@@ -103,7 +105,7 @@ export async function getReciboParaPdf(reciboId: string): Promise<ReciboParaPdf 
   }
   const { data: centro } = await service
     .from('centros')
-    .select('nombre')
+    .select('nombre, logo_url')
     .eq('id', recibo.centro_id)
     .maybeSingle()
 
@@ -127,7 +129,8 @@ export async function getReciboParaPdf(reciboId: string): Promise<ReciboParaPdf 
   const desglose = agruparLineasPorHijo(lineasConNino, nombrePorNino)
 
   return {
-    centroNombre: centro?.nombre ?? 'NIDO',
+    centroNombre: centro?.nombre ?? '',
+    centroLogoUrl: centro?.logo_url ?? null,
     anio: recibo.anio,
     mes: recibo.mes,
     estado: recibo.estado,

@@ -1,11 +1,12 @@
 import { formatEuros } from '@/shared/lib/format-money'
 import { CONTENT_W, MARGIN, MUTED, nuevoDocumento, type RowCell } from '@/shared/lib/pdf/document'
-import { embedLogoNido } from '@/shared/lib/pdf/logo-nido'
+import { embedLogoCentro } from '@/shared/lib/pdf/logo-centro'
 
 /**
  * Generador del PDF de un RECIBO para el portal de la familia (B4). Reusa el `Writer`
- * compartido (mismo patrón que el PDF de informes) y embebe el logo de NIDO arriba. El
- * nombre del niño se muestra UNA vez como cabecera de su sección; las líneas van solo con
+ * compartido (mismo patrón que el PDF de informes) y embebe el logo DEL CENTRO arriba (de
+ * `centros.logo_url`, no el de NIDO). El nombre del niño se muestra UNA vez como cabecera
+ * de su sección; las líneas van solo con
  * concepto + cantidad + precio unitario + importe (el llamante ya limpió el nombre embebido
  * de `lineas_recibo.descripcion`). Módulo puro: la ruta le pasa datos ya autorizados.
  */
@@ -37,6 +38,8 @@ export interface ReciboPdfLabels {
 
 export interface ReciboPdfData {
   centroNombre: string
+  /** Logo del centro (`centros.logo_url`): path relativo o URL pública. `null` → sin logo. */
+  logoUrl: string | null
   /** Período ("Enero 2026") o concepto esporádico. */
   titulo: string
   estadoLabel: string
@@ -135,10 +138,12 @@ export async function generarReciboPdf(data: ReciboPdfData): Promise<Uint8Array>
   const { doc, writer: w } = await nuevoDocumento()
   doc.setTitle(`${data.labels.documento} — ${data.titulo}`)
 
-  // Logo de NIDO arriba.
-  const logo = await embedLogoNido(doc)
-  w.image(logo, { width: 120, align: 'left' })
-  w.gap(6)
+  // Logo del centro arriba (si lo tiene; si no, se omite sin caer a NIDO).
+  const logo = await embedLogoCentro(doc, data.logoUrl)
+  if (logo) {
+    w.image(logo, { width: 120, align: 'left' })
+    w.gap(6)
+  }
 
   // Cabecera.
   w.text(data.centroNombre, { size: 13, bold: true })
