@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState, useTransition } from 'react'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -28,6 +28,7 @@ import {
 import { crearImagenAutorizacion } from '@/features/autorizaciones/actions/crear-imagen'
 import { FirmarAutorizacionPanel } from '@/features/autorizaciones/components/FirmarAutorizacionPanel'
 import { DatosPedagogicosForm } from '@/features/datos-pedagogicos/components/DatosPedagogicosForm'
+import { upsertDatosPedagogicos } from '@/features/datos-pedagogicos/actions/upsert-datos-pedagogicos'
 import { actualizarNinoTutor } from '@/features/ninos/actions/actualizar-nino-tutor'
 import { actualizarNinoTutorSchema } from '@/features/ninos/schemas/nino'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
@@ -117,7 +118,39 @@ export function PasoMenor({
   const router = useRouter()
   const [pendingDatos, startDatos] = useTransition()
   const [pendingImagen, startImagen] = useTransition()
+  const [pendingSiguiente, startSiguiente] = useTransition()
   const [imagenOmitida, setImagenOmitida] = useState(false)
+
+  // Datos pedagógicos elevados del sub-form. Antes su único guardado era el botón propio
+  // (desacoplado de "Continuar") → si el tutor rellenaba y avanzaba, se perdía. Ahora se
+  // persiste al avanzar. `dirty` = el tutor tocó algo (si no, no se crea fila: es opcional).
+  const pedagogicoRef = useRef<{ valores: DatosPedagogicosInput | null; dirty: boolean }>({
+    valores: null,
+    dirty: false,
+  })
+  const onPedagogicoCambio = useCallback((valores: DatosPedagogicosInput, dirty: boolean) => {
+    pedagogicoRef.current = { valores, dirty }
+  }, [])
+
+  function handleSiguiente() {
+    const ped = pedagogicoRef.current
+    // Vacío/intacto → avanzar sin guardar (el paso pedagógico NO es obligatorio).
+    if (!ped.dirty || !ped.valores) {
+      onNext()
+      return
+    }
+    const valores = ped.valores
+    startSiguiente(async () => {
+      const r = await upsertDatosPedagogicos(locale, valores)
+      if (!r.success) {
+        // Solo bloquea si lo TECLEADO es inválido (p.ej. alimentación "otra" sin nota),
+        // para no perderlo; un paso pedagógico vacío nunca llega aquí.
+        toast.error(tErrors(r.error))
+        return
+      }
+      onNext()
+    })
+  }
 
   const form = useForm<MenorFormInput>({
     resolver: zodResolver(menorFormSchema),
@@ -380,7 +413,13 @@ export function PasoMenor({
       {/* Datos pedagógicos */}
       <section className="space-y-3 border-t pt-4">
         <h3 className="text-sm font-semibold">{t('menor.pedagogicos_titulo')}</h3>
-        <DatosPedagogicosForm ninoId={ninoId} locale={locale} initial={datosPedagogicosInicial} />
+        <DatosPedagogicosForm
+          ninoId={ninoId}
+          locale={locale}
+          initial={datosPedagogicosInicial}
+          onCambio={onPedagogicoCambio}
+          ocultarGuardar
+        />
       </section>
 
       {/* Libro de familia */}
@@ -437,8 +476,8 @@ export function PasoMenor({
         <Button type="button" variant="outline" onClick={onBack}>
           {t('wizard.atras')}
         </Button>
-        <Button type="button" onClick={onNext}>
-          {t('wizard.siguiente')}
+        <Button type="button" onClick={handleSiguiente} disabled={pendingSiguiente}>
+          {pendingSiguiente ? t('wizard.guardando') : t('wizard.siguiente')}
         </Button>
       </div>
     </div>

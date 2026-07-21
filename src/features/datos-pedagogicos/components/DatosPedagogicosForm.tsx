@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
@@ -37,9 +37,23 @@ interface Props {
   ninoId: string
   locale: string
   initial: DatosPedagogicosInput | null
+  /**
+   * Alta (PasoMenor): eleva los valores tecleados al contenedor del wizard para que se
+   * persistan al avanzar el paso ("Guardar y siguiente"), no en un botón aparte. `dirty`
+   * distingue "el tutor tocó algo" de "form intacto" → solo se guarda lo que haya.
+   */
+  onCambio?: (valores: DatosPedagogicosInput, dirty: boolean) => void
+  /** Oculta el botón propio "Guardar" (en el alta persiste el contenedor al avanzar). */
+  ocultarGuardar?: boolean
 }
 
-export function DatosPedagogicosForm({ ninoId, locale, initial }: Props) {
+export function DatosPedagogicosForm({
+  ninoId,
+  locale,
+  initial,
+  onCambio,
+  ocultarGuardar = false,
+}: Props) {
   const t = useTranslations('pedagogico')
   const tErrors = useTranslations()
   const [pending, startTransition] = useTransition()
@@ -66,6 +80,18 @@ export function DatosPedagogicosForm({ ninoId, locale, initial }: Props) {
       tiene_hermanos_en_centro: initial?.tiene_hermanos_en_centro ?? false,
     },
   })
+
+  // Eleva los valores al contenedor en cada cambio del tutor (mismo patrón que el paso
+  // médico). `name` definido = el usuario tocó un campo → `dirty=true`; en el montaje el
+  // watch dispara sin `name` y se ignora, de modo que un form intacto no fuerza guardado.
+  useEffect(() => {
+    if (!onCambio) return
+    const sub = form.watch((_v, { name }) => {
+      if (!name) return
+      onCambio(form.getValues(), true)
+    })
+    return () => sub.unsubscribe()
+  }, [form, onCambio])
 
   function syncIdiomas(raw: string) {
     form.setValue('idiomas_casa', parseIdiomasCsv(raw), {
@@ -336,11 +362,13 @@ export function DatosPedagogicosForm({ ninoId, locale, initial }: Props) {
           />
         </section>
 
-        <div className="flex justify-end pt-2">
-          <Button type="submit" disabled={pending}>
-            {pending ? t('guardando') : t('guardar')}
-          </Button>
-        </div>
+        {!ocultarGuardar && (
+          <div className="flex justify-end pt-2">
+            <Button type="submit" disabled={pending}>
+              {pending ? t('guardando') : t('guardar')}
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   )

@@ -16,10 +16,11 @@ interface UpsertResult {
 }
 
 /**
- * Crea o actualiza los datos pedagógicos de un niño. RLS asegura que solo
- * un admin del centro puede llamarla con éxito. La UPSERT vía
- * `onConflict: nino_id` significa que la action es idempotente: el form
- * envía el estado completo y la BD termina con esa fila.
+ * Crea o actualiza los datos pedagógicos de un niño. La RLS deja escribir al
+ * admin del centro y también al TUTOR del niño (F11-P3a: `dp_tutor_insert`/
+ * `dp_tutor_update` con `es_tutor_de`), que es quien la rellena en el alta. La
+ * UPSERT vía `onConflict: nino_id` es idempotente: el form envía el estado
+ * completo y la BD termina con esa fila.
  */
 export async function upsertDatosPedagogicos(
   locale: string,
