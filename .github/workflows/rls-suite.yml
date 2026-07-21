@@ -128,3 +128,4 @@ jobs:
           F45_MIGRATION_APPLIED: '1'
           D5_MIGRATION_APPLIED: '1'
           D6_BECA_COMEDOR_APPLIED: '1'
+          B1_TARIFA_ANIO_APPLIED: '1'

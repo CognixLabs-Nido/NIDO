@@ -1357,6 +1357,7 @@ export type Database = {
           porcentaje_bp: number | null
           servicio: Database["public"]["Enums"]["servicio_diario"] | null
           signo: number
+          tarifa_por_anio_nacimiento: boolean
           tipo_concepto: Database["public"]["Enums"]["tipo_concepto"]
           tipo_valor: string
           updated_at: string
@@ -1375,6 +1376,7 @@ export type Database = {
           porcentaje_bp?: number | null
           servicio?: Database["public"]["Enums"]["servicio_diario"] | null
           signo?: number
+          tarifa_por_anio_nacimiento?: boolean
           tipo_concepto: Database["public"]["Enums"]["tipo_concepto"]
           tipo_valor?: string
           updated_at?: string
@@ -1393,6 +1395,7 @@ export type Database = {
           porcentaje_bp?: number | null
           servicio?: Database["public"]["Enums"]["servicio_diario"] | null
           signo?: number
+          tarifa_por_anio_nacimiento?: boolean
           tipo_concepto?: Database["public"]["Enums"]["tipo_concepto"]
           tipo_valor?: string
           updated_at?: string
@@ -3910,6 +3913,54 @@ export type Database = {
             columns: ["agenda_id"]
             isOneToOne: false
             referencedRelation: "agendas_diarias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tarifa_concepto_anio: {
+        Row: {
+          anio_nacimiento: number
+          centro_id: string
+          concepto_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          importe_centimos: number
+          updated_at: string
+        }
+        Insert: {
+          anio_nacimiento: number
+          centro_id: string
+          concepto_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          importe_centimos: number
+          updated_at?: string
+        }
+        Update: {
+          anio_nacimiento?: number
+          centro_id?: string
+          concepto_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          importe_centimos?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarifa_concepto_anio_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarifa_concepto_anio_concepto_id_fkey"
+            columns: ["concepto_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_cobro"
             referencedColumns: ["id"]
           },
         ]
