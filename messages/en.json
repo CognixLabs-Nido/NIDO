@@ -3750,6 +3750,8 @@
     "subtotal": "Subtotal",
     "total": "Total",
     "back": "Back to receipts",
+    "pdf_titulo": "Receipt",
+    "descargar_pdf": "Download PDF",
     "desglose_title": "Receipt breakdown",
     "concepto": "Item",
     "cantidad": "Quantity",

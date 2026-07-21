@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, CoinsIcon, UsersIcon } from 'lucide-react'
+import { ArrowLeftIcon, CoinsIcon, DownloadIcon, UsersIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -61,6 +61,13 @@ export default async function FamilyReciboDetallePage({ params }: PageProps) {
           {recibo.fechaEnvioBanco && <> · {t('enviado_el', { fecha: recibo.fechaEnvioBanco })}</>}
           {recibo.fechaDevolucion && <> · {t('devuelto_el', { fecha: recibo.fechaDevolucion })}</>}
         </p>
+        <a
+          href={`/${locale}/family/recibos/${id}/pdf`}
+          className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-ring inline-flex w-fit items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white transition focus-visible:ring-2 focus-visible:outline-none"
+        >
+          <DownloadIcon className="size-4" />
+          {t('descargar_pdf')}
+        </a>
       </header>
 
       <Card>

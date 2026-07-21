@@ -3750,6 +3750,8 @@
     "subtotal": "Subtotal",
     "total": "Total",
     "back": "Volver a recibos",
+    "pdf_titulo": "Recibo",
+    "descargar_pdf": "Descargar PDF",
     "desglose_title": "Desglose del recibo",
     "concepto": "Concepto",
     "cantidad": "Cantidad",
