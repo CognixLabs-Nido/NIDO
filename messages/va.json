@@ -371,7 +371,8 @@
         "ambito": "Àmbit",
         "aplicacion": "Assignació",
         "concepto_base": "Concepte base",
-        "concepto_base_placeholder": "Tria el concepte al qual s'aplica"
+        "concepto_base_placeholder": "Tria el concepte al qual s'aplica",
+        "tarifa_por_anio_nacimiento": "Preu per any de naixement"
       },
       "tipos": {
         "mensual": "Mensual",
@@ -524,7 +525,26 @@
       "reproponer_confirm": "Revig les assignacions automàtiques que s'hagen esborrat per error i sembra les que falten. NO toca les que has afegit a mà; no esborra res.",
       "reproponer_confirmar": "Re-proposar",
       "reproponer_cancelar": "Cancel·lar",
-      "reproponer_ok": "Revivides: {revividas}. Sembrades: {sembradas}."
+      "reproponer_ok": "Revivides: {revividas}. Sembrades: {sembradas}.",
+      "tarifa_anio": {
+        "title": "Tarifes per any de naixement",
+        "hint": "El preu unitari es pren de la tarifa de l'any de naixement del xiquet.",
+        "hint_familia": "El preu per any només s'aplica a conceptes per xiquet.",
+        "hint_override": "Un preu manual assignat a un xiquet té prioritat sobre la tarifa de l'any.",
+        "guardar_primero": "Guarda el concepte per a poder definir les tarifes per any.",
+        "col_anio": "Any",
+        "col_importe": "Import (€)",
+        "anadir_anio": "Afegir any",
+        "anio_placeholder": "Any (p. ex. 2027)",
+        "guardar": "Guardar",
+        "quitar": "Llevar",
+        "saved": "Tarifa guardada",
+        "deleted": "Tarifa eliminada",
+        "sin_anios": "Encara no hi ha anys de naixement al centre. Afig-ne un manualment.",
+        "validation": {
+          "anio_invalido": "Any no vàlid (2000–2100)."
+        }
+      }
     },
     "aulas": {
       "title": "Aules",
@@ -1315,6 +1335,20 @@
       "update_failed": "No s'ha pogut actualitzar el concepte.",
       "delete_failed": "No s'ha pogut eliminar el concepte.",
       "no_encontrado": "Concepte no trobat."
+    },
+    "tarifa_anio": {
+      "validation": {
+        "invalid": "Dades de la tarifa no vàlides.",
+        "concepto_requerido": "Concepte no vàlid.",
+        "anio_invalido": "Any no vàlid (2000–2100).",
+        "importe_invalido": "Import no vàlid.",
+        "importe_negativo": "L'import no pot ser negatiu.",
+        "importe_largo": "Import massa alt."
+      },
+      "errors": {
+        "save_failed": "No s'ha pogut guardar la tarifa.",
+        "delete_failed": "No s'ha pogut eliminar la tarifa."
+      }
     }
   },
   "cuotas_config": {

@@ -16,6 +16,7 @@ const base: ConceptoCobroInput = {
   servicio: null,
   concepto_base_id: null,
   activo: true,
+  tarifa_por_anio_nacimiento: false,
 }
 
 describe('buildConceptoRow — aplicacion', () => {

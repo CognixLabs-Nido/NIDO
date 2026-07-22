@@ -28,5 +28,9 @@ export function buildConceptoRow(input: ConceptoCobroInput) {
     servicio: input.tipo_concepto === 'diario' ? input.servicio : null,
     concepto_base_id: esDescuentoPorcentual ? input.concepto_base_id : null,
     activo: input.activo,
+    // B1-2: el precio por año solo aplica a conceptos por niño; en ámbito familia el motor
+    // cae a la base → se fuerza a false (coherencia app, espejo del nulling de servicio).
+    tarifa_por_anio_nacimiento:
+      input.ambito === 'familia' ? false : input.tarifa_por_anio_nacimiento,
   }
 }

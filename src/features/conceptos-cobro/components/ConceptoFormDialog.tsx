@@ -35,6 +35,8 @@ import { centimosAEuros } from '@/shared/lib/format-money'
 
 import { actualizarConcepto } from '../actions/actualizar-concepto'
 import { crearConcepto } from '../actions/crear-concepto'
+import { TarifasAnioEditor } from './TarifasAnioEditor'
+import type { TarifaAnioItem } from '../queries/get-tarifas-concepto-anio'
 import {
   AMBITOS,
   APLICACIONES,
@@ -52,10 +54,21 @@ interface Props {
   concepto?: ConceptoCobroListItem
   /** Catálogo del centro (para el selector de concepto base de un descuento porcentual). */
   conceptos: ConceptoCobroListItem[]
+  /** B1-2: años de nacimiento presentes en el centro (para el editor de tarifas por año). */
+  aniosNacimientoCentro: number[]
+  /** B1-2: tarifas por año ya guardadas de ESTE concepto (vacío al crear). */
+  tarifasConcepto: TarifaAnioItem[]
   trigger: ReactElement
 }
 
-export function ConceptoFormDialog({ centroId, concepto, conceptos, trigger }: Props) {
+export function ConceptoFormDialog({
+  centroId,
+  concepto,
+  conceptos,
+  aniosNacimientoCentro,
+  tarifasConcepto,
+  trigger,
+}: Props) {
   const t = useTranslations('admin.cuotas')
   const tErrors = useTranslations()
   const [open, setOpen] = useState(false)
@@ -77,6 +90,7 @@ export function ConceptoFormDialog({ centroId, concepto, conceptos, trigger }: P
       servicio: concepto?.servicio ?? null,
       concepto_base_id: concepto?.concepto_base_id ?? null,
       activo: concepto?.activo ?? true,
+      tarifa_por_anio_nacimiento: concepto?.tarifa_por_anio_nacimiento ?? false,
     },
   })
 
@@ -84,9 +98,14 @@ export function ConceptoFormDialog({ centroId, concepto, conceptos, trigger }: P
   const tipoValor = useWatch({ control: form.control, name: 'tipo_valor' })
   const tipoConcepto = useWatch({ control: form.control, name: 'tipo_concepto' })
   const aplicacion = useWatch({ control: form.control, name: 'aplicacion' })
+  const ambito = useWatch({ control: form.control, name: 'ambito' })
+  const tarifaPorAnio = useWatch({ control: form.control, name: 'tarifa_por_anio_nacimiento' })
   const esDiario = tipoConcepto === 'diario'
   const esPorcentaje = tipoValor === 'porcentaje'
   const esDescuentoPorcentual = Number(signo) === -1 && esPorcentaje
+  // B1-2: el flag solo aplica a conceptos por niño (en familia el motor cae a base).
+  const esFamilia = ambito === 'familia'
+  const mostrarEditorTarifas = tarifaPorAnio && !esFamilia
 
   const signoItems = [
     { value: '1', label: t('signos.cobro') },
@@ -411,6 +430,42 @@ export function ConceptoFormDialog({ centroId, concepto, conceptos, trigger }: P
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="tarifa_por_anio_nacimiento"
+              render={({ field }) => (
+                <FormItem>
+                  <label className="flex items-center gap-2 text-sm">
+                    <FormControl>
+                      <Checkbox
+                        checked={esFamilia ? false : field.value}
+                        disabled={esFamilia}
+                        onCheckedChange={(c) => field.onChange(c === true)}
+                      />
+                    </FormControl>
+                    {t('fields.tarifa_por_anio_nacimiento')}
+                  </label>
+                  <p className="text-muted-foreground text-xs">
+                    {esFamilia ? t('tarifa_anio.hint_familia') : t('tarifa_anio.hint')}
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {mostrarEditorTarifas &&
+              (esEdicion ? (
+                <TarifasAnioEditor
+                  conceptoId={concepto.id}
+                  aniosNacimientoCentro={aniosNacimientoCentro}
+                  tarifas={tarifasConcepto}
+                />
+              ) : (
+                <p className="text-muted-foreground rounded-md border border-dashed p-3 text-xs">
+                  {t('tarifa_anio.guardar_primero')}
+                </p>
+              ))}
 
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>

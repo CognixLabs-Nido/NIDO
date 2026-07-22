@@ -10,6 +10,7 @@ import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { ConceptosCatalogo } from '@/features/conceptos-cobro/components/ConceptosCatalogo'
 import { getConceptosCobro } from '@/features/conceptos-cobro/queries/get-conceptos-cobro'
+import { getTarifasConceptoAnioDeCentro } from '@/features/conceptos-cobro/queries/get-tarifas-concepto-anio'
 import { AsignacionPermanentePanel } from '@/features/cuotas-config/components/AsignacionPermanentePanel'
 import { getAsignacionPermanente } from '@/features/cuotas-config/queries/get-asignacion-permanente'
 import { getNinosPorCentro } from '@/features/ninos/queries/get-ninos'
@@ -58,6 +59,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     recibosGestion,
     pivote,
     becasComedor,
+    tarifasPorConcepto,
   ] = await Promise.all([
     getConceptosCobro(centroId),
     getAsignacionPermanente(centroId),
@@ -71,6 +73,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     getRecibosGestion(centroId, anio, mes),
     getPivotePeriodo(centroId, anio, mes),
     getBecasComedorMes(centroId, anio, mes),
+    getTarifasConceptoAnioDeCentro(centroId),
   ])
 
   const centroLogoInfo = await getCentroLogo(centroId)
@@ -81,6 +84,19 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
   const ninosActivos = ninosCentro
     .filter((n) => n.estado_matricula === 'activa')
     .map((n) => ({ id: n.id, nombre: [n.nombre, n.apellidos].filter(Boolean).join(' ') }))
+
+  // B1-2: años de nacimiento distintos presentes en el centro (para el editor de tarifas por
+  // año). Se lee el año del string 'YYYY-MM-DD' directamente (sin Date, para no depender del
+  // huso). Descendente: el más nuevo arriba.
+  const aniosNacimientoCentro = [
+    ...new Set(
+      ninosCentro
+        .map((n) => n.fecha_nacimiento)
+        .filter((f): f is string => f != null)
+        .map((f) => Number(f.slice(0, 4)))
+        .filter((y) => Number.isInteger(y) && y >= 2000 && y <= 2100)
+    ),
+  ].sort((a, b) => b - a)
 
   return (
     <div className="space-y-6">
@@ -118,7 +134,12 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
         </TabsContent>
 
         <TabsContent value="conceptos" className="pt-4">
-          <ConceptosCatalogo centroId={centroId} conceptos={conceptos} />
+          <ConceptosCatalogo
+            centroId={centroId}
+            conceptos={conceptos}
+            aniosNacimientoCentro={aniosNacimientoCentro}
+            tarifasPorConcepto={tarifasPorConcepto}
+          />
         </TabsContent>
 
         <TabsContent value="asignacion" className="pt-4">

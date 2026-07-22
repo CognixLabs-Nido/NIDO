@@ -371,7 +371,8 @@
         "ambito": "Ámbito",
         "aplicacion": "Asignación",
         "concepto_base": "Concepto base",
-        "concepto_base_placeholder": "Elige el concepto al que se aplica"
+        "concepto_base_placeholder": "Elige el concepto al que se aplica",
+        "tarifa_por_anio_nacimiento": "Precio por año de nacimiento"
       },
       "tipos": {
         "mensual": "Mensual",
@@ -524,7 +525,26 @@
       "reproponer_confirm": "Revive las asignaciones automáticas que se hayan borrado por error y siembra las que falten. NO toca las que has añadido a mano; no borra nada.",
       "reproponer_confirmar": "Re-proponer",
       "reproponer_cancelar": "Cancelar",
-      "reproponer_ok": "Revividas: {revividas}. Sembradas: {sembradas}."
+      "reproponer_ok": "Revividas: {revividas}. Sembradas: {sembradas}.",
+      "tarifa_anio": {
+        "title": "Tarifas por año de nacimiento",
+        "hint": "El precio unitario se toma de la tarifa del año de nacimiento del niño.",
+        "hint_familia": "El precio por año solo aplica a conceptos por niño.",
+        "hint_override": "Un precio manual asignado a un niño tiene prioridad sobre la tarifa del año.",
+        "guardar_primero": "Guarda el concepto para poder definir las tarifas por año.",
+        "col_anio": "Año",
+        "col_importe": "Importe (€)",
+        "anadir_anio": "Añadir año",
+        "anio_placeholder": "Año (p. ej. 2027)",
+        "guardar": "Guardar",
+        "quitar": "Quitar",
+        "saved": "Tarifa guardada",
+        "deleted": "Tarifa eliminada",
+        "sin_anios": "Aún no hay años de nacimiento en el centro. Añade uno manualmente.",
+        "validation": {
+          "anio_invalido": "Año no válido (2000–2100)."
+        }
+      }
     },
     "aulas": {
       "title": "Aulas",
@@ -1315,6 +1335,20 @@
       "update_failed": "No se pudo actualizar el concepto.",
       "delete_failed": "No se pudo eliminar el concepto.",
       "no_encontrado": "Concepto no encontrado."
+    },
+    "tarifa_anio": {
+      "validation": {
+        "invalid": "Datos de la tarifa no válidos.",
+        "concepto_requerido": "Concepto no válido.",
+        "anio_invalido": "Año no válido (2000–2100).",
+        "importe_invalido": "Importe no válido.",
+        "importe_negativo": "El importe no puede ser negativo.",
+        "importe_largo": "Importe demasiado alto."
+      },
+      "errors": {
+        "save_failed": "No se pudo guardar la tarifa.",
+        "delete_failed": "No se pudo eliminar la tarifa."
+      }
     }
   },
   "cuotas_config": {
