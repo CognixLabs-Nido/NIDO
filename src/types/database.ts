@@ -881,57 +881,6 @@ export type Database = {
           },
         ]
       }
-      beca_comedor_mes: {
-        Row: {
-          anio: number
-          centro_id: string
-          created_at: string
-          created_by: string | null
-          id: string
-          importe: number
-          mes: number
-          nino_id: string
-          updated_at: string
-        }
-        Insert: {
-          anio: number
-          centro_id: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          importe: number
-          mes: number
-          nino_id: string
-          updated_at?: string
-        }
-        Update: {
-          anio?: number
-          centro_id?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          importe?: number
-          mes?: number
-          nino_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "beca_comedor_mes_centro_id_fkey"
-            columns: ["centro_id"]
-            isOneToOne: false
-            referencedRelation: "centros"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "beca_comedor_mes_nino_id_fkey"
-            columns: ["nino_id"]
-            isOneToOne: false
-            referencedRelation: "ninos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       beca_comedor_tramo: {
         Row: {
           anio_aplicacion: number
