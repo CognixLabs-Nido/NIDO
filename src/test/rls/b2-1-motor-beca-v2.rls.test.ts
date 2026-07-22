@@ -112,15 +112,13 @@ describe.skipIf(!APPLIED)('B2-1 — motor beca comedor v2', () => {
       .select('id')
       .single()
     if (error || !data) throw new Error(`darEscolaridad: ${error?.message}`)
-    const asig = await serviceClient
-      .from('asignacion_concepto')
-      .insert({
-        centro_id: centro,
-        concepto_id: data.id,
-        nino_id: nino,
-        origen: 'manual',
-        importe_override_centimos: centimos,
-      })
+    const asig = await serviceClient.from('asignacion_concepto').insert({
+      centro_id: centro,
+      concepto_id: data.id,
+      nino_id: nino,
+      origen: 'manual',
+      importe_override_centimos: centimos,
+    })
     if (asig.error) throw new Error(`asignar escolaridad: ${asig.error.message}`)
   }
 
@@ -258,17 +256,15 @@ describe.skipIf(!APPLIED)('B2-1 — motor beca comedor v2', () => {
     const e = await nuevoEntorno()
     const { nino, familia } = await nuevoNino(e.centro, e.curso, e.aula)
     // Sin escolaridad; saldo a favor del mes anterior (dic-2026 = -5000).
-    await serviceClient
-      .from('recibos')
-      .insert({
-        centro_id: e.centro,
-        familia_id: familia,
-        anio: 2026,
-        mes: 12,
-        estado: 'cobrado_manual',
-        total_centimos: -5000,
-        es_esporadico: false,
-      })
+    await serviceClient.from('recibos').insert({
+      centro_id: e.centro,
+      familia_id: familia,
+      anio: 2026,
+      mes: 12,
+      estado: 'cobrado_manual',
+      total_centimos: -5000,
+      es_esporadico: false,
+    })
     await seedTramo({
       centro_id: e.centro,
       nino_id: nino,
@@ -299,15 +295,13 @@ describe.skipIf(!APPLIED)('B2-1 — motor beca comedor v2', () => {
     const { nino, familia } = await nuevoNino(e.centro, e.curso, e.aula)
     await darEscolaridad(e.centro, nino, 10000)
     // elegibilidad de BAJA + tramo (el motor no consulta la elegibilidad).
-    await serviceClient
-      .from('beca_comedor_elegibilidad')
-      .insert({
-        centro_id: e.centro,
-        nino_id: nino,
-        curso_academico_id: e.curso,
-        activa: false,
-        fecha_baja: '2026-12-01',
-      })
+    await serviceClient.from('beca_comedor_elegibilidad').insert({
+      centro_id: e.centro,
+      nino_id: nino,
+      curso_academico_id: e.curso,
+      activa: false,
+      fecha_baja: '2026-12-01',
+    })
     await seedTramo({
       centro_id: e.centro,
       nino_id: nino,

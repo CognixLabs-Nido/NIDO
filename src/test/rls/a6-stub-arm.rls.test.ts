@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { createTestCentro, serviceClient } from './setup'
+import { createTestCentro, isRetryableAuthError, serviceClient, withRetry } from './setup'
 
 import { FUENTES_RETENCION } from '@/features/retencion/lib/fuentes-retencion'
 
@@ -35,14 +35,20 @@ const creados: string[] = []
 /** Crea un usuario sin confirmar (stub-like) sin enviar email. */
 async function crearStub(confirmado: boolean): Promise<{ id: string; email: string }> {
   const email = `a6-stub-${randomUUID()}@nido.test`
-  const { data, error } = await serviceClient.auth.admin.createUser({
-    email,
-    email_confirm: confirmado,
-    user_metadata: { nombre_completo: 'Stub A6' },
-  })
-  if (error || !data.user) throw new Error(`crearStub falló: ${error?.message}`)
-  creados.push(data.user.id)
-  return { id: data.user.id, email }
+  const { id } = await withRetry(
+    async () => {
+      const { data, error } = await serviceClient.auth.admin.createUser({
+        email,
+        email_confirm: confirmado,
+        user_metadata: { nombre_completo: 'Stub A6' },
+      })
+      if (error || !data.user) throw error ?? new Error('crearStub falló: sin usuario')
+      return { id: data.user.id }
+    },
+    { shouldRetry: isRetryableAuthError }
+  )
+  creados.push(id)
+  return { id, email }
 }
 
 async function invitacionPara(email: string, centroId: string, expiresAt: string) {
@@ -56,7 +62,16 @@ async function invitacionPara(email: string, centroId: string, expiresAt: string
 }
 
 async function existeUsuario(id: string): Promise<boolean> {
-  const { data } = await serviceClient.auth.admin.getUserById(id)
+  // Solo reintenta el blip transitorio; un "not found" real devuelve error y se
+  // trata como "no existe" (semántica original: ignora el error, mira data.user).
+  const { data } = await withRetry(
+    async () => {
+      const res = await serviceClient.auth.admin.getUserById(id)
+      if (res.error && isRetryableAuthError(res.error)) throw res.error
+      return res
+    },
+    { shouldRetry: isRetryableAuthError }
+  )
   return Boolean(data?.user)
 }
 
@@ -85,7 +100,13 @@ describe.skipIf(!APPLIED)('A6.3 — stub huérfano stub-arm (RPC/Admin API)', ()
 
   afterAll(async () => {
     for (const id of creados) {
-      await serviceClient.auth.admin.deleteUser(id).catch(() => {})
+      await withRetry(
+        async () => {
+          const { error } = await serviceClient.auth.admin.deleteUser(id)
+          if (error) throw error
+        },
+        { shouldRetry: isRetryableAuthError }
+      ).catch(() => {})
     }
     await serviceClient.from('invitaciones').delete().eq('centro_id', centro.id)
     await serviceClient.from('centros').delete().eq('id', centro.id)

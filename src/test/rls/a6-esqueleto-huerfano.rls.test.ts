@@ -7,7 +7,9 @@ import {
   createTestNino,
   createTestUser,
   crearVinculo,
+  isRetryableAuthError,
   serviceClient,
+  withRetry,
   type TestUser,
 } from './setup'
 
@@ -129,7 +131,16 @@ describe.skipIf(!APPLIED)('A6 — esqueleto huérfano niño-arm (RLS/RPC)', () =
     await serviceClient.from('aulas').delete().eq('id', aulaId)
     await serviceClient.from('cursos_academicos').delete().eq('id', cursoId)
     await serviceClient.from('centros').delete().eq('id', centro.id)
-    if (tutor) await serviceClient.auth.admin.deleteUser(tutor.id)
+    if (tutor) {
+      const tutorId = tutor.id
+      await withRetry(
+        async () => {
+          const { error } = await serviceClient.auth.admin.deleteUser(tutorId)
+          if (error) throw error
+        },
+        { shouldRetry: isRetryableAuthError }
+      )
+    }
   })
 
   it('listar() ve SOLO el huérfano, no los controles', async () => {
