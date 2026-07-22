@@ -1037,7 +1037,7 @@ export type Database = {
           mes: number
           realizada_at: string | null
           realizada_por: string | null
-          recibo_id: string
+          recibo_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1051,7 +1051,7 @@ export type Database = {
           mes: number
           realizada_at?: string | null
           realizada_por?: string | null
-          recibo_id: string
+          recibo_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1065,7 +1065,7 @@ export type Database = {
           mes?: number
           realizada_at?: string | null
           realizada_por?: string | null
-          recibo_id?: string
+          recibo_id?: string | null
           updated_at?: string
         }
         Relationships: [
