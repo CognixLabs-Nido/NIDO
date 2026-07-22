@@ -744,6 +744,143 @@ export type Database = {
           },
         ]
       }
+      beca_comedor_desborde: {
+        Row: {
+          anio: number
+          beca_total_centimos: number
+          centro_id: string
+          created_at: string
+          cuota_total_centimos: number
+          estado: Database["public"]["Enums"]["beca_desborde_estado"]
+          exceso_centimos: number
+          familia_id: string
+          id: string
+          mes: number
+          recibo_id: string
+          resuelto_at: string | null
+          resuelto_por: string | null
+          updated_at: string
+          via: Database["public"]["Enums"]["beca_desborde_via"] | null
+        }
+        Insert: {
+          anio: number
+          beca_total_centimos: number
+          centro_id: string
+          created_at?: string
+          cuota_total_centimos: number
+          estado?: Database["public"]["Enums"]["beca_desborde_estado"]
+          exceso_centimos: number
+          familia_id: string
+          id?: string
+          mes: number
+          recibo_id: string
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          updated_at?: string
+          via?: Database["public"]["Enums"]["beca_desborde_via"] | null
+        }
+        Update: {
+          anio?: number
+          beca_total_centimos?: number
+          centro_id?: string
+          created_at?: string
+          cuota_total_centimos?: number
+          estado?: Database["public"]["Enums"]["beca_desborde_estado"]
+          exceso_centimos?: number
+          familia_id?: string
+          id?: string
+          mes?: number
+          recibo_id?: string
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          updated_at?: string
+          via?: Database["public"]["Enums"]["beca_desborde_via"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beca_comedor_desborde_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beca_comedor_desborde_familia_id_fkey"
+            columns: ["familia_id"]
+            isOneToOne: false
+            referencedRelation: "familias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beca_comedor_desborde_recibo_id_fkey"
+            columns: ["recibo_id"]
+            isOneToOne: true
+            referencedRelation: "recibos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beca_comedor_elegibilidad: {
+        Row: {
+          activa: boolean
+          centro_id: string
+          created_at: string
+          created_by: string | null
+          curso_academico_id: string
+          fecha_alta: string
+          fecha_baja: string | null
+          id: string
+          nino_id: string
+          updated_at: string
+        }
+        Insert: {
+          activa?: boolean
+          centro_id: string
+          created_at?: string
+          created_by?: string | null
+          curso_academico_id: string
+          fecha_alta?: string
+          fecha_baja?: string | null
+          id?: string
+          nino_id: string
+          updated_at?: string
+        }
+        Update: {
+          activa?: boolean
+          centro_id?: string
+          created_at?: string
+          created_by?: string | null
+          curso_academico_id?: string
+          fecha_alta?: string
+          fecha_baja?: string | null
+          id?: string
+          nino_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beca_comedor_elegibilidad_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beca_comedor_elegibilidad_curso_academico_id_fkey"
+            columns: ["curso_academico_id"]
+            isOneToOne: false
+            referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beca_comedor_elegibilidad_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beca_comedor_mes: {
         Row: {
           anio: number
@@ -791,6 +928,166 @@ export type Database = {
             columns: ["nino_id"]
             isOneToOne: false
             referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beca_comedor_tramo: {
+        Row: {
+          anio_aplicacion: number
+          anio_correspondiente: number
+          aplicada_en_recibo_id: string | null
+          centro_id: string
+          created_at: string
+          created_by: string | null
+          curso_academico_id: string
+          estado: Database["public"]["Enums"]["beca_tramo_estado"]
+          id: string
+          importe_centimos: number
+          mes_aplicacion: number
+          mes_correspondiente: number
+          nino_id: string
+          origen: Database["public"]["Enums"]["beca_tramo_origen"]
+          tramo_padre_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          anio_aplicacion: number
+          anio_correspondiente: number
+          aplicada_en_recibo_id?: string | null
+          centro_id: string
+          created_at?: string
+          created_by?: string | null
+          curso_academico_id: string
+          estado?: Database["public"]["Enums"]["beca_tramo_estado"]
+          id?: string
+          importe_centimos: number
+          mes_aplicacion: number
+          mes_correspondiente: number
+          nino_id: string
+          origen?: Database["public"]["Enums"]["beca_tramo_origen"]
+          tramo_padre_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anio_aplicacion?: number
+          anio_correspondiente?: number
+          aplicada_en_recibo_id?: string | null
+          centro_id?: string
+          created_at?: string
+          created_by?: string | null
+          curso_academico_id?: string
+          estado?: Database["public"]["Enums"]["beca_tramo_estado"]
+          id?: string
+          importe_centimos?: number
+          mes_aplicacion?: number
+          mes_correspondiente?: number
+          nino_id?: string
+          origen?: Database["public"]["Enums"]["beca_tramo_origen"]
+          tramo_padre_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beca_comedor_tramo_aplicada_en_recibo_id_fkey"
+            columns: ["aplicada_en_recibo_id"]
+            isOneToOne: false
+            referencedRelation: "recibos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beca_comedor_tramo_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beca_comedor_tramo_curso_academico_id_fkey"
+            columns: ["curso_academico_id"]
+            isOneToOne: false
+            referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beca_comedor_tramo_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beca_comedor_tramo_tramo_padre_id_fkey"
+            columns: ["tramo_padre_id"]
+            isOneToOne: false
+            referencedRelation: "beca_comedor_tramo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beca_comedor_transferencia: {
+        Row: {
+          anio: number
+          centro_id: string
+          created_at: string
+          estado: Database["public"]["Enums"]["beca_transferencia_estado"]
+          familia_id: string
+          id: string
+          importe_centimos: number
+          mes: number
+          realizada_at: string | null
+          realizada_por: string | null
+          recibo_id: string
+          updated_at: string
+        }
+        Insert: {
+          anio: number
+          centro_id: string
+          created_at?: string
+          estado?: Database["public"]["Enums"]["beca_transferencia_estado"]
+          familia_id: string
+          id?: string
+          importe_centimos: number
+          mes: number
+          realizada_at?: string | null
+          realizada_por?: string | null
+          recibo_id: string
+          updated_at?: string
+        }
+        Update: {
+          anio?: number
+          centro_id?: string
+          created_at?: string
+          estado?: Database["public"]["Enums"]["beca_transferencia_estado"]
+          familia_id?: string
+          id?: string
+          importe_centimos?: number
+          mes?: number
+          realizada_at?: string | null
+          realizada_por?: string | null
+          recibo_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beca_comedor_transferencia_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beca_comedor_transferencia_familia_id_fkey"
+            columns: ["familia_id"]
+            isOneToOne: false
+            referencedRelation: "familias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beca_comedor_transferencia_recibo_id_fkey"
+            columns: ["recibo_id"]
+            isOneToOne: true
+            referencedRelation: "recibos"
             referencedColumns: ["id"]
           },
         ]
@@ -4553,6 +4850,11 @@ export type Database = {
       audit_accion: "INSERT" | "UPDATE" | "DELETE"
       autorizacion_ambito: "nino" | "aula" | "centro"
       autorizacion_estado: "borrador" | "publicada" | "anulada"
+      beca_desborde_estado: "pendiente" | "resuelto"
+      beca_desborde_via: "reducir" | "transferencia" | "resto"
+      beca_tramo_estado: "pendiente" | "aplicada" | "anulada"
+      beca_tramo_origen: "normal" | "resto"
+      beca_transferencia_estado: "pendiente" | "realizada"
       calidad_sueno: "profundo" | "tranquilo" | "intermitente" | "nada"
       cantidad_comida: "todo" | "mayoria" | "mitad" | "poco" | "nada"
       cantidad_deposicion: "mucha" | "normal" | "poca"
@@ -4835,6 +5137,11 @@ export const Constants = {
       audit_accion: ["INSERT", "UPDATE", "DELETE"],
       autorizacion_ambito: ["nino", "aula", "centro"],
       autorizacion_estado: ["borrador", "publicada", "anulada"],
+      beca_desborde_estado: ["pendiente", "resuelto"],
+      beca_desborde_via: ["reducir", "transferencia", "resto"],
+      beca_tramo_estado: ["pendiente", "aplicada", "anulada"],
+      beca_tramo_origen: ["normal", "resto"],
+      beca_transferencia_estado: ["pendiente", "realizada"],
       calidad_sueno: ["profundo", "tranquilo", "intermitente", "nada"],
       cantidad_comida: ["todo", "mayoria", "mitad", "poco", "nada"],
       cantidad_deposicion: ["mucha", "normal", "poca"],
