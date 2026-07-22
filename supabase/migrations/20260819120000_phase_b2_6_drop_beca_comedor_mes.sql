@@ -1,0 +1,21 @@
+-- =============================================================================
+-- B2-6 (limpieza de beca comedor v2) — DROP de la tabla legacy `beca_comedor_mes`.
+--
+-- Contexto: el motor B2-1 (`generar_recibos_mes`, migración 20260818120000)
+-- sustituyó el PASE 2-bis viejo (que leía `beca_comedor_mes`, importe por mes y
+-- niño) por la beca comedor v2 a nivel FAMILIA desde `beca_comedor_tramo`
+-- (líneas "Beca comedor <mes>", con desborde). Desde entonces NADA lee ni escribe
+-- `beca_comedor_mes`:
+--   · La feature `src/features/beca-comedor-mes/` se retira en este mismo PR.
+--   · El motor solo la menciona en un COMENTARIO (verificado: `prosrc` no tiene
+--     código vivo que la use); plpgsql no crea dependencia de catálogo por el
+--     cuerpo, así que este DROP no afecta a `generar_recibos_mes`.
+--   · Sin FKs entrantes, sin vistas, sin funciones que la referencien, sin rama en
+--     `audit_trigger_function`. Sus policies (SELECT/INSERT/UPDATE/DELETE) y su
+--     trigger `set_updated_at` cuelgan de la tabla y caen con ella.
+--
+-- Producción: 0 filas (confirmado contra el remoto antes del DROP), así que no se
+-- migra dato alguno. Ver `docs/specs/beca-comedor-v2.md` (troceo V2-6).
+-- =============================================================================
+
+DROP TABLE IF EXISTS public.beca_comedor_mes;
