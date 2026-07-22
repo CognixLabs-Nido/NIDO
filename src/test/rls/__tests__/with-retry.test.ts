@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { isRateLimitError, withRetry } from '../setup'
+import { isRateLimitError, isRetryableAuthError, isTransientJwtError, withRetry } from '../setup'
 
 /**
  * Tests del helper de retry usado por `clientFor()` para sobrevivir al
@@ -28,6 +28,46 @@ describe('isRateLimitError', () => {
     expect(isRateLimitError(new Error('network unreachable'))).toBe(false)
     expect(isRateLimitError(null)).toBe(false)
     expect(isRateLimitError(undefined)).toBe(false)
+  })
+})
+
+describe('isTransientJwtError', () => {
+  it('detecta el "kid <nil>" ES256 de la rotación de signing keys', () => {
+    expect(
+      isTransientJwtError(
+        new Error(
+          'invalid JWT: unable to parse or verify signature, unrecognized JWT kid <nil> for algorithm ES256'
+        )
+      )
+    ).toBe(true)
+  })
+
+  it('detecta "unrecognized JWT kid" y "unable to verify signature"', () => {
+    expect(isTransientJwtError({ message: 'unrecognized JWT kid abc for algorithm ES256' })).toBe(
+      true
+    )
+    expect(isTransientJwtError(new Error('unable to verify signature'))).toBe(true)
+  })
+
+  it('NO detecta errores no relacionados (credenciales, rate-limit, null)', () => {
+    expect(isTransientJwtError(new Error('invalid credentials'))).toBe(false)
+    expect(isTransientJwtError(new Error('Request rate limit reached'))).toBe(false)
+    expect(isTransientJwtError(null)).toBe(false)
+    expect(isTransientJwtError(undefined)).toBe(false)
+  })
+})
+
+describe('isRetryableAuthError', () => {
+  it('es true para rate-limit Y para el JWT transitorio', () => {
+    expect(isRetryableAuthError({ status: 429, message: 'too many requests' })).toBe(true)
+    expect(isRetryableAuthError(new Error('unrecognized JWT kid <nil> for algorithm ES256'))).toBe(
+      true
+    )
+  })
+
+  it('es false para un error real (no enmascara bugs)', () => {
+    expect(isRetryableAuthError(new Error('invalid credentials'))).toBe(false)
+    expect(isRetryableAuthError(null)).toBe(false)
   })
 })
 

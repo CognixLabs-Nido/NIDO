@@ -1,6 +1,8 @@
 import { config as loadEnv } from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
 
+import { isRetryableAuthError, withRetry } from './retry'
+
 // =============================================================================
 // globalSetup del proyecto `rls` de vitest — WIPE BRUTO ACOTADO al ARRANCAR.
 // -----------------------------------------------------------------------------
@@ -93,7 +95,16 @@ async function delWhereIn(table: string, col: string, ids: string[]): Promise<vo
 async function listTestUserIds(): Promise<string[]> {
   const out: string[] = []
   for (let page = 1; ; page++) {
-    const { data, error } = await svc.auth.admin.listUsers({ page, perPage: 50 })
+    // Reintenta solo el blip transitorio (429 / "kid <nil>"); un error real cae al
+    // warn+break de abajo sin cambiar la lógica de paginación.
+    const { data, error } = await withRetry(
+      async () => {
+        const res = await svc.auth.admin.listUsers({ page, perPage: 50 })
+        if (res.error && isRetryableAuthError(res.error)) throw res.error
+        return res
+      },
+      { shouldRetry: isRetryableAuthError }
+    )
     if (error) {
       console.warn(
         `wipe: listUsers page ${page}: ${error.name ?? '-'} status=${error.status ?? '-'}`
@@ -271,9 +282,16 @@ export default async function globalSetup(): Promise<void> {
   for (const part of chunk(userIds, 3)) {
     await Promise.all(
       part.map((id) =>
-        svc.auth.admin.deleteUser(id).then(({ error }) => {
-          if (error)
-            console.warn(`wipe: deleteUser: ${error.name ?? '-'} status=${error.status ?? '-'}`)
+        // Reintenta el blip transitorio (429 / "kid <nil>") re-lanzando el error crudo;
+        // el warn best-effort se mantiene si agota los reintentos. Lógica del wipe intacta.
+        withRetry(
+          async () => {
+            const { error } = await svc.auth.admin.deleteUser(id)
+            if (error) throw error
+          },
+          { shouldRetry: isRetryableAuthError }
+        ).catch((error: { name?: string; status?: number }) => {
+          console.warn(`wipe: deleteUser: ${error?.name ?? '-'} status=${error?.status ?? '-'}`)
         })
       )
     )

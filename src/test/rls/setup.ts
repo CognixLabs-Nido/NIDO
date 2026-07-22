@@ -3,6 +3,19 @@ import { randomUUID } from 'crypto'
 
 import type { Database } from '@/types/database'
 
+import { isRetryableAuthError, withRetry } from './retry'
+
+// Re-export de los helpers de reintento (viven en `./retry` sin efectos de import
+// para poder compartirse con `global-setup.ts`). Se mantienen aquí para no romper
+// a los importadores existentes (p. ej. `__tests__/with-retry.test.ts`).
+export {
+  isRateLimitError,
+  isRetryableAuthError,
+  isTransientJwtError,
+  withRetry,
+  type RetryOptions,
+} from './retry'
+
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const SUPABASE_SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -34,95 +47,59 @@ export interface TestUser {
 export async function createTestUser(opts?: { nombre?: string }): Promise<TestUser> {
   const email = `rls-${randomUUID()}@nido.test`
   const password = 'Rls-Test-Pass-2026!'
-  const { data, error } = await serviceClient.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { nombre_completo: opts?.nombre ?? 'Test Pruebas' },
-  })
-  if (error || !data.user) {
-    throw new Error(`createTestUser falló: ${error?.message}`)
-  }
-  return { id: data.user.id, email, password }
-}
-
-/**
- * Detecta si un error de Supabase Auth es por rate-limit. Distinguimos entre
- * "demasiados intentos contra el endpoint cloud" (reintentamos) y cualquier
- * otro error real (no reintentamos para no enmascarar bugs).
- */
-export function isRateLimitError(err: unknown): boolean {
-  if (!err) return false
-  const message =
-    typeof err === 'string'
-      ? err
-      : err instanceof Error
-        ? err.message
-        : typeof (err as { message?: unknown }).message === 'string'
-          ? (err as { message: string }).message
-          : ''
-  const status = (err as { status?: number }).status
-  const code = (err as { code?: string }).code
-  if (status === 429) return true
-  if (code === 'over_request_rate_limit' || code === 'over_email_send_rate_limit') return true
-  return /rate.?limit/i.test(message)
-}
-
-export interface RetryOptions {
-  attempts?: number
-  baseDelayMs?: number
-  shouldRetry?: (err: unknown) => boolean
-  /** Hook de sleep inyectable para tests del propio helper. */
-  sleep?: (ms: number) => Promise<void>
-}
-
-/**
- * Ejecuta `fn`. Si lanza un error para el cual `shouldRetry(err) === true`,
- * reintenta hasta `attempts` veces con backoff exponencial (1s, 2s, 4s con
- * `baseDelayMs=1000`). Si el error no es retryable, falla inmediatamente
- * sin reintentar — fundamental para no enmascarar bugs reales.
- *
- * Vive solo en código de tests. Si se necesita reintento en producción, se
- * implementa de nuevo en el módulo concreto.
- */
-export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions = {}): Promise<T> {
-  const attempts = opts.attempts ?? 5
-  const baseDelayMs = opts.baseDelayMs ?? 2000
-  const shouldRetry = opts.shouldRetry ?? isRateLimitError
-  const sleep = opts.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)))
-
-  let lastError: unknown
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    try {
-      return await fn()
-    } catch (err) {
-      lastError = err
-      if (!shouldRetry(err)) throw err
-      if (attempt === attempts - 1) break
-      await sleep(baseDelayMs * Math.pow(2, attempt))
-    }
-  }
-  throw lastError
+  // Reintento ante blips transitorios de auth (rate-limit 429 + "kid <nil>"/ES256
+  // de la rotación de signing keys). A diferencia del error real (credenciales,
+  // esquema), estos NO son reintentables por `isRetryableAuthError` → no se enmascara.
+  return withRetry(
+    async () => {
+      const { data, error } = await serviceClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { nombre_completo: opts?.nombre ?? 'Test Pruebas' },
+      })
+      if (error || !data.user) {
+        // Preserva status/code del error de Supabase para que shouldRetry los vea
+        // (el 429 viaja en `status`; el JWT transitorio, en `message`).
+        const wrapped = new Error(
+          `createTestUser falló: ${error?.message ?? 'sin usuario'}`
+        ) as Error & {
+          status?: number
+          code?: string
+        }
+        wrapped.status = error?.status
+        wrapped.code = error?.code
+        throw wrapped
+      }
+      return { id: data.user.id, email, password }
+    },
+    { shouldRetry: isRetryableAuthError }
+  )
 }
 
 export async function clientFor(user: TestUser): Promise<SupabaseClient<Database>> {
-  return withRetry(async () => {
-    const c = anonClient()
-    const { error } = await c.auth.signInWithPassword({
-      email: user.email,
-      password: user.password,
-    })
-    if (error) {
-      const wrapped = new Error(`signIn falló: ${error.message}`) as Error & {
-        status?: number
-        code?: string
+  return withRetry(
+    async () => {
+      const c = anonClient()
+      const { error } = await c.auth.signInWithPassword({
+        email: user.email,
+        password: user.password,
+      })
+      if (error) {
+        const wrapped = new Error(`signIn falló: ${error.message}`) as Error & {
+          status?: number
+          code?: string
+        }
+        wrapped.status = error.status
+        wrapped.code = error.code
+        throw wrapped
       }
-      wrapped.status = error.status
-      wrapped.code = error.code
-      throw wrapped
-    }
-    return c
-  })
+      return c
+    },
+    // El "kid <nil>"/ES256 también puede pegar en signIn (emisión/validación del
+    // token de sesión) → se reintenta igual que el 429.
+    { shouldRetry: isRetryableAuthError }
+  )
 }
 
 /**
@@ -145,8 +122,17 @@ export async function deleteTestUser(userId: string): Promise<void> {
   // Best-effort a nivel de fichero: NO lanza (un teardown fallido no debe tumbar la
   // suite), pero YA NO traga el error — lo loggea ruidoso para que el leak sea visible
   // en CI. `error.message` viene vacío en GoTrue → se reporta status + name.
-  const { error } = await serviceClient.auth.admin.deleteUser(userId)
-  if (error) {
+  // Reintenta ante blips transitorios de auth (429 / "kid <nil>") re-lanzando el
+  // error CRUDO de Supabase, para conservar el log rico si agota los reintentos.
+  try {
+    await withRetry(
+      async () => {
+        const { error } = await serviceClient.auth.admin.deleteUser(userId)
+        if (error) throw error
+      },
+      { shouldRetry: isRetryableAuthError }
+    )
+  } catch (error) {
     console.error(`deleteTestUser(${userId}) falló: ${formatSupabaseError(error)}`)
   }
 }
