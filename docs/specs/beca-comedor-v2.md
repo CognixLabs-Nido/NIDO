@@ -191,7 +191,7 @@ Ver secciones **Motor** (detección) y **Desborde** (resolución).
 
 **Tablas consultadas:** `recibos`, `lineas_recibo`, `ninos`, `matriculas`, `cursos_academicos`.
 
-**Tabla eliminada:** `beca_comedor_mes` (DROP; ver sección "Qué se hace con lo actual").
+**Tabla conservada hasta V2-6:** `beca_comedor_mes` NO se toca en V2-0 (aditivo puro). Su DROP es de V2-6 (ver "Qué se hace con lo actual").
 
 ## Motor: cambios en `generar_recibos_mes`
 
@@ -299,7 +299,7 @@ Namespace `admin.cuotas.beca` (nuevo, reemplaza el actual `admin.cuotas.beca_com
 
 ## Qué se hace con `beca_comedor_mes` actual
 
-- **Tabla + datos**: DROP en la migración V2-0 (el piloto no ha arrancado → sin datos reales que migrar; se confirma que la tabla está vacía en producción antes de soltar — chequeo pre-migración). No hay migración de datos (no hay mapping limpio: v1 acopla mes=aplicación; v2 desacopla).
+- **Tabla + datos**: DROP en **V2-6** (limpieza final), NO en V2-0. Decisión de secuencia (Jose): V2-0 es aditivo puro para que cada PR se aplique/mergee independiente sin romper main; `beca_comedor_mes` se conserva viva (muerta funcionalmente cuando V2-1 cambie el motor) y se suelta al final, junto con la retirada de la feature/tests. El piloto no ha arrancado → 0 filas confirmadas (D-P11), sin migración de datos (v1 acopla mes=aplicación; v2 desacopla). El DROP de V2-6 debe ir acompañado de la retirada de la feature y los tests D-6 (abajo) para no romper el build al regenerar tipos.
 - **Motor**: quitar el PASE 2-bis viejo (D-6-2) y su lectura de `beca_comedor_mes`; poner el nuevo pase (V2-1). Retirar el flag/gate `D6_BECA_COMEDOR_APPLIED` del workflow tras retirar sus tests.
 - **UI**: quitar `BecaComedorMesPanel` del Panel del mes (`admin/cuotas/page.tsx`, tab "mes") y borrar la feature `src/features/beca-comedor-mes/` (panel, form, action, query, schema).
 - **Tests**: retirar/rehacer `src/test/rls/d6-beca-comedor.rls.test.ts` (→ nuevos tests v2) y las aserciones de beca comedor del motor en `f43-motor-recibos-familia.rls.test.ts` (el bloque `D-6` gated) → reescribir para v2. Ajustar la config del gate en `rls-suite.yml`.
@@ -308,15 +308,15 @@ Namespace `admin.cuotas.beca` (nuevo, reemplaza el actual `admin.cuotas.beca_com
 
 Mismo patrón que B1 (modelo → motor → UI → …), cada PR tras revisar+mergear el anterior.
 
-| Sub                       | Alcance                                                                                                                                                                                                                                        | Tamaño | Depende de          |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------- |
-| **V2-0 MODELO**           | 4 tablas + ENUMs + RLS admin-only + coherencia centro + helper `centro_de_recibo`/`centro_de_beca_tramo` si hace falta; **DROP `beca_comedor_mes`**; TS types; tests RLS gated (`BECA_COMEDOR_V2_APPLIED`).                                    | M-L    | —                   |
-| **V2-1 MOTOR**            | `CREATE OR REPLACE generar_recibos_mes`: reemplazar PASE 2-bis por el pase por aplicación + detección de desborde (capa a ≥0 + fila desborde). Retirar lectura de `beca_comedor_mes`. Prueba de equivalencia + tx+ROLLBACK. Tests motor gated. | L      | V2-0                |
-| **V2-2 UI elegibilidad**  | Pestaña "Beca comedor" + listado alumnos + toggle beca por curso (query + action). Retirar `BecaComedorMesPanel` del Panel del mes.                                                                                                            | M      | V2-0                |
-| **V2-3 UI tramos**        | Editor de tramos por alumno (importe + mes corresp. + mes aplic.) con upsert/delete.                                                                                                                                                           | M      | V2-0 (V2-2 UI base) |
-| **V2-4 DESBORDE**         | Aviso de desbordes pendientes + las 3 vías (reducir/transferencia/resto) con su resolución en el modelo.                                                                                                                                       | M-L    | V2-1, V2-3          |
-| **V2-5 TRANSFERENCIAS**   | Listado de transferencias + marcar realizada + enlace en el detalle del recibo.                                                                                                                                                                | M      | V2-4                |
-| **V2-6 LIMPIEZA + TESTS** | Borrar feature `beca-comedor-mes`, retirar tests D-6, gate cleanup, E2E, i18n completo, ADR.                                                                                                                                                   | S-M    | todas               |
+| Sub                       | Alcance                                                                                                                                                                                                                                                                                              | Tamaño | Depende de          |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------- |
+| **V2-0 MODELO**           | **ADITIVO PURO**: 4 tablas + ENUMs + RLS admin-only + coherencia centro (reusa `centro_de_nino`/`centro_de_recibo`) + auditoría; TS types; tests RLS gated (`BECA_COMEDOR_V2_APPLIED`). **NO** dropea `beca_comedor_mes` (queda para V2-6). Se aplica/mergea en solitario sin romper motor ni build. | M-L    | —                   |
+| **V2-1 MOTOR**            | `CREATE OR REPLACE generar_recibos_mes`: reemplazar PASE 2-bis por el pase por aplicación + detección de desborde (capa a ≥0 + fila desborde). Retirar lectura de `beca_comedor_mes`. Prueba de equivalencia + tx+ROLLBACK. Tests motor gated.                                                       | L      | V2-0                |
+| **V2-2 UI elegibilidad**  | Pestaña "Beca comedor" + listado alumnos + toggle beca por curso (query + action). Retirar `BecaComedorMesPanel` del Panel del mes.                                                                                                                                                                  | M      | V2-0                |
+| **V2-3 UI tramos**        | Editor de tramos por alumno (importe + mes corresp. + mes aplic.) con upsert/delete.                                                                                                                                                                                                                 | M      | V2-0 (V2-2 UI base) |
+| **V2-4 DESBORDE**         | Aviso de desbordes pendientes + las 3 vías (reducir/transferencia/resto) con su resolución en el modelo.                                                                                                                                                                                             | M-L    | V2-1, V2-3          |
+| **V2-5 TRANSFERENCIAS**   | Listado de transferencias + marcar realizada + enlace en el detalle del recibo.                                                                                                                                                                                                                      | M      | V2-4                |
+| **V2-6 LIMPIEZA + TESTS** | **DROP `beca_comedor_mes`** + borrar feature `beca-comedor-mes`, retirar tests D-6 y el gate `D6_BECA_COMEDOR_APPLIED`, E2E, i18n completo, ADR. Todo junto para no romper el build al regenerar tipos.                                                                                              | S-M    | todas               |
 
 Dependencias: V2-0 → V2-1 y (V2-2, V2-3) en paralelo lógico (pero secuencial por la regla de una fase a la vez) → V2-4 → V2-5 → V2-6. La UI (V2-2/V2-3) puede ir antes o después del motor, pero el desborde (V2-4) necesita motor + tramos.
 

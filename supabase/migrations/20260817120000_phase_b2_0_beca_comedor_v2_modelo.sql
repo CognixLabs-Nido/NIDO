@@ -8,18 +8,18 @@
 -- distintos (p. ej. el ayuntamiento paga en enero las becas de sep+oct+nov → tres
 -- tramos correspondientes a sep/oct/nov, todos con aplicación en enero).
 --
--- Esta migración es SOLO el modelo (sin motor, sin UI). El motor (nuevo PASE 2-bis
--- por "recibo de aplicación" + detección de desborde) llega en B2-1; la retirada de
--- la UI/feature/tests de `beca_comedor_mes` en B2-6.
+-- Esta migración es ADITIVA PURA: SOLO crea las 4 tablas nuevas (+ ENUMs, RLS,
+-- auditoría). NO toca motor ni UI ni la tabla vieja `beca_comedor_mes`.
 --
--- DROP de `beca_comedor_mes`: 0 filas confirmadas en producción (D-P11).
---   ⚠️ ACOPLE DE APLICACIÓN (documentado en el PR, NO se fuerza aquí):
---     · El motor VIVO `generar_recibos_mes` aún lee `beca_comedor_mes` (PASE 2-bis).
---       Aplicar ESTA migración sin B2-1 rompería la generación de recibos en runtime
---       ("relation beca_comedor_mes does not exist"). → Aplicar B2-0 + B2-1 juntas.
---     · Al regenerar tipos TS tras aplicar, la feature `src/features/beca-comedor-mes/`
---       y los tests D-6 dejarán de compilar (tipo `beca_comedor_mes` desaparece). → La
---       limpieza (B2-6) debe acompañar al apply.
+-- SECUENCIA (decidida por Jose): B2-0 se aplica y mergea de forma INDEPENDIENTE sin
+-- romper main. `beca_comedor_mes` se queda VIVA (queda muerta funcionalmente cuando
+-- B2-1 cambie el motor). Su DROP + la retirada de la feature `beca-comedor-mes/` + los
+-- tests D-6 + el gate `D6_BECA_COMEDOR_APPLIED` se hacen TODOS en B2-6 (limpieza), al
+-- final de la serie. Así el motor VIVO sigue leyendo `beca_comedor_mes` sin error y los
+-- tipos TS regenerados la conservan (la feature vieja compila y sus tests pasan).
+--
+-- El motor (nuevo PASE 2-bis por "recibo de aplicación" + detección de desborde) llega
+-- en B2-1; la retirada de la UI/feature/tests de `beca_comedor_mes` en B2-6.
 --
 -- Decisiones de producto construidas aquí:
 --   D-P3  baja de elegibilidad NO anula tramos ya registrados (tramos independientes
@@ -45,8 +45,7 @@
 -- =============================================================================
 BEGIN;
 
--- ── DROP del modelo v1 (0 filas confirmadas, D-P11) ──────────────────────────
-DROP TABLE public.beca_comedor_mes;
+-- NOTA: `beca_comedor_mes` (modelo D-6) se conserva intacta; su DROP es de B2-6.
 
 -- ── ENUMs ────────────────────────────────────────────────────────────────────
 CREATE TYPE public.beca_tramo_origen        AS ENUM ('normal', 'resto');
