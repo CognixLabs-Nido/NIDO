@@ -18,6 +18,7 @@ export interface ConceptoCobroListItem {
   servicio: Database['public']['Enums']['servicio_diario'] | null
   concepto_base_id: string | null
   activo: boolean
+  tarifa_por_anio_nacimiento: boolean
 }
 
 // Orden de presentación por tipo (mensual → diario → esporádico), luego alfabético.
@@ -40,7 +41,7 @@ export async function getConceptosCobroCore(
   const { data } = await supabase
     .from('conceptos_cobro')
     .select(
-      'id, nombre, tipo_concepto, signo, tipo_valor, ambito, aplicacion, importe_centimos, porcentaje_bp, servicio, concepto_base_id, activo'
+      'id, nombre, tipo_concepto, signo, tipo_valor, ambito, aplicacion, importe_centimos, porcentaje_bp, servicio, concepto_base_id, activo, tarifa_por_anio_nacimiento'
     )
     .eq('centro_id', centroId)
     .is('deleted_at', null)

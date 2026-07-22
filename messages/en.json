@@ -371,7 +371,8 @@
         "ambito": "Scope",
         "aplicacion": "Assignment",
         "concepto_base": "Base concept",
-        "concepto_base_placeholder": "Choose the concept it applies to"
+        "concepto_base_placeholder": "Choose the concept it applies to",
+        "tarifa_por_anio_nacimiento": "Price by birth year"
       },
       "tipos": {
         "mensual": "Monthly",
@@ -524,7 +525,26 @@
       "reproponer_confirm": "Revives the automatic assignments deleted by mistake and seeds any missing ones. It does NOT touch the ones you added manually; it deletes nothing.",
       "reproponer_confirmar": "Re-propose",
       "reproponer_cancelar": "Cancel",
-      "reproponer_ok": "Revived: {revividas}. Seeded: {sembradas}."
+      "reproponer_ok": "Revived: {revividas}. Seeded: {sembradas}.",
+      "tarifa_anio": {
+        "title": "Rates by birth year",
+        "hint": "The unit price is taken from the child's birth-year rate.",
+        "hint_familia": "Price by year only applies to per-child concepts.",
+        "hint_override": "A manual price assigned to a child takes priority over the birth-year rate.",
+        "guardar_primero": "Save the concept to define the rates by year.",
+        "col_anio": "Year",
+        "col_importe": "Amount (€)",
+        "anadir_anio": "Add year",
+        "anio_placeholder": "Year (e.g. 2027)",
+        "guardar": "Save",
+        "quitar": "Remove",
+        "saved": "Rate saved",
+        "deleted": "Rate removed",
+        "sin_anios": "No birth years in the centre yet. Add one manually.",
+        "validation": {
+          "anio_invalido": "Invalid year (2000–2100)."
+        }
+      }
     },
     "aulas": {
       "title": "Classrooms",
@@ -1315,6 +1335,20 @@
       "update_failed": "Could not update the item.",
       "delete_failed": "Could not delete the item.",
       "no_encontrado": "Item not found."
+    },
+    "tarifa_anio": {
+      "validation": {
+        "invalid": "Invalid rate data.",
+        "concepto_requerido": "Invalid concept.",
+        "anio_invalido": "Invalid year (2000–2100).",
+        "importe_invalido": "Invalid amount.",
+        "importe_negativo": "Amount cannot be negative.",
+        "importe_largo": "Amount too large."
+      },
+      "errors": {
+        "save_failed": "Could not save the rate.",
+        "delete_failed": "Could not remove the rate."
+      }
     }
   },
   "cuotas_config": {

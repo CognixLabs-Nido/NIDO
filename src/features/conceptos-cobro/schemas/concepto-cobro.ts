@@ -58,6 +58,10 @@ export const conceptoCobroSchema = z
     // Concepto base del descuento porcentual (uuid del catálogo). Nullable.
     concepto_base_id: z.string().uuid().nullable(),
     activo: z.boolean(),
+    // B1-2: el precio unitario se resuelve por año de nacimiento del niño (tabla
+    // tarifa_concepto_anio). Solo tiene sentido en conceptos por niño; en ámbito familia
+    // el motor cae a la base, así que buildConceptoRow lo fuerza a false en ese caso.
+    tarifa_por_anio_nacimiento: z.boolean(),
   })
   .superRefine((v, ctx) => {
     // (a) valor: fijo ⇒ importe ; porcentaje ⇒ porcentaje. Exclusivos.

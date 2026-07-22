@@ -28,10 +28,15 @@ import { formatEuros } from '@/shared/lib/format-money'
 import { eliminarConcepto, setActivoConcepto } from '../actions/estado-concepto'
 import { ConceptoFormDialog } from './ConceptoFormDialog'
 import type { ConceptoCobroListItem } from '../queries/get-conceptos-cobro'
+import type { TarifaAnioItem } from '../queries/get-tarifas-concepto-anio'
 
 interface Props {
   centroId: string
   conceptos: ConceptoCobroListItem[]
+  /** B1-2: años de nacimiento del centro (editor de tarifas por año). */
+  aniosNacimientoCentro: number[]
+  /** B1-2: tarifas por año guardadas, agrupadas por concepto_id. */
+  tarifasPorConcepto: Record<string, TarifaAnioItem[]>
 }
 
 /** Valor legible del concepto: signo (− si descuento) + importe fijo (€/día si diario) o %. */
@@ -46,7 +51,12 @@ function formatValor(c: ConceptoCobroListItem, t: ReturnType<typeof useTranslati
     : `${prefijo}${euros}`
 }
 
-export function ConceptosCatalogo({ centroId, conceptos }: Props) {
+export function ConceptosCatalogo({
+  centroId,
+  conceptos,
+  aniosNacimientoCentro,
+  tarifasPorConcepto,
+}: Props) {
   const t = useTranslations('admin.cuotas')
 
   return (
@@ -55,6 +65,8 @@ export function ConceptosCatalogo({ centroId, conceptos }: Props) {
         <ConceptoFormDialog
           centroId={centroId}
           conceptos={conceptos}
+          aniosNacimientoCentro={aniosNacimientoCentro}
+          tarifasConcepto={[]}
           trigger={<Button>{t('nuevo')}</Button>}
         />
       </div>
@@ -77,7 +89,14 @@ export function ConceptosCatalogo({ centroId, conceptos }: Props) {
               </TableHeader>
               <TableBody>
                 {conceptos.map((c) => (
-                  <ConceptoRow key={c.id} centroId={centroId} concepto={c} conceptos={conceptos} />
+                  <ConceptoRow
+                    key={c.id}
+                    centroId={centroId}
+                    concepto={c}
+                    conceptos={conceptos}
+                    aniosNacimientoCentro={aniosNacimientoCentro}
+                    tarifasConcepto={tarifasPorConcepto[c.id] ?? []}
+                  />
                 ))}
               </TableBody>
             </Table>
@@ -92,10 +111,14 @@ function ConceptoRow({
   centroId,
   concepto,
   conceptos,
+  aniosNacimientoCentro,
+  tarifasConcepto,
 }: {
   centroId: string
   concepto: ConceptoCobroListItem
   conceptos: ConceptoCobroListItem[]
+  aniosNacimientoCentro: number[]
+  tarifasConcepto: TarifaAnioItem[]
 }) {
   const t = useTranslations('admin.cuotas')
   const tErrors = useTranslations()
@@ -136,6 +159,8 @@ function ConceptoRow({
             centroId={centroId}
             concepto={concepto}
             conceptos={conceptos}
+            aniosNacimientoCentro={aniosNacimientoCentro}
+            tarifasConcepto={tarifasConcepto}
             trigger={
               <Button variant="outline" size="sm">
                 {t('editar')}
