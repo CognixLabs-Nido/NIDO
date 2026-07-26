@@ -25,7 +25,7 @@ interface Props {
 /**
  * B1-2 — editor de importes por año de nacimiento de un concepto. Muestra una fila por año
  * (los años del centro + los que ya tienen tarifa + los añadidos a mano) y permite guardar /
- * quitar cada tarifa por separado (upsert/delete directo, patrón beca_comedor_mes). El
+ * quitar cada tarifa por separado (upsert/delete directo, patrón panel-por-fila). El
  * refresco de datos lo hace `revalidatePath` dentro de las server actions.
  */
 export function TarifasAnioEditor({ conceptoId, aniosNacimientoCentro, tarifas }: Props) {

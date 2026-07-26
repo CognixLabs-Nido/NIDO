@@ -241,6 +241,22 @@ export default async function globalSetup(): Promise<void> {
   await delWhereIn('olvido_solicitudes', 'solicitado_por', userIds)
 
   // ---------------------------------------------------------------------------
+  // 5-bis. Tablas de facturación B1/B2 + altas con FK **NO ACTION** a auth.users
+  //    (created_by / firmante_id / resuelto_por / realizada_por) y a centros/ninos.
+  //    NO cascadean al borrar el centro/niño → bloquearían tanto el DELETE de
+  //    ninos/centros (paso 6) como el deleteUser (paso 8) con un 500 FK-block.
+  //    Se limpian ANTES del paso 6, ancladas a centro_id IN centroIds (los datos de
+  //    test viven siempre en centros de test). El modelo NO se toca (NO ACTION se
+  //    queda en producción); esto es solo limpieza de test.
+  // ---------------------------------------------------------------------------
+  await delWhereIn('beca_comedor_transferencia', 'centro_id', centroIds)
+  await delWhereIn('beca_comedor_desborde', 'centro_id', centroIds)
+  await delWhereIn('beca_comedor_tramo', 'centro_id', centroIds)
+  await delWhereIn('beca_comedor_elegibilidad', 'centro_id', centroIds)
+  await delWhereIn('tarifa_concepto_anio', 'centro_id', centroIds)
+  await delWhereIn('acuses_alta', 'centro_id', centroIds)
+
+  // ---------------------------------------------------------------------------
   // 6. NIÑOS → FAMILIAS → estructura → centros. ninos cascadea
   //    vinculos, cambios_pendientes, consentimientos(nino), asignacion_concepto,
   //    becas, metodo_pago_familia, parte_servicio_diario, mandatos_sepa.
