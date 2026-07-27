@@ -731,10 +731,7 @@
         "acciones": "Accions"
       },
       "fotos": {
-        "titulo": "Fotos i consentiment d'imatge",
-        "toggle_label": "Pot aparéixer en fotos",
-        "ayuda": "Activa-ho només si la família ha firmat el consentiment d'imatge. Sense això, la mestra no pot etiquetar el xiquet en les fotos de l'aula.",
-        "guardado": "Consentiment actualitzat."
+        "titulo": "Foto del xiquet"
       },
       "badge": {
         "alta_en_curso": "Alta en curs",
