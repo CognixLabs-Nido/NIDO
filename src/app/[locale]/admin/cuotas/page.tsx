@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BecaComedorPanel } from '@/features/beca-comedor/components/BecaComedorPanel'
 import { getCargasBeca } from '@/features/beca-comedor/queries/get-cargas-beca'
 import { getElegibilidadBecados } from '@/features/beca-comedor/queries/get-elegibilidad-becados'
+import { getTransferenciasBeca } from '@/features/beca-comedor/queries/get-transferencias-beca'
 import { BecasPanel } from '@/features/becas/components/BecasPanel'
 import { getBecas } from '@/features/becas/queries/get-becas'
 import { getTiposBeca } from '@/features/becas/queries/get-tipos-beca'
@@ -70,6 +71,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     tarifasPorConcepto,
     elegibilidad,
     cargasBeca,
+    transferenciasBeca,
   ] = await Promise.all([
     getConceptosCobro(centroId),
     getAsignacionPermanente(centroId),
@@ -85,6 +87,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     getTarifasConceptoAnioDeCentro(centroId),
     getElegibilidadBecados(centroId),
     getCargasBeca(centroId),
+    getTransferenciasBeca(centroId),
   ])
 
   const centroLogoInfo = await getCentroLogo(centroId)
@@ -173,6 +176,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
             recibos={recibosSepa}
             remesas={remesas}
             recibosGestion={recibosGestion}
+            transferenciasBeca={transferenciasBeca}
           />
         </TabsContent>
 

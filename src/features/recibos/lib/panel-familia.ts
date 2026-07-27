@@ -28,6 +28,15 @@ export interface ReciboPanelInput {
   totalCentimos: number
 }
 
+/** Desborde de beca comedor PENDIENTE de un recibo (V2-4). A nivel familia/recibo. */
+export interface DesbordePanelInput {
+  familiaId: string
+  reciboId: string
+  cuotaCentimos: number
+  becaCentimos: number
+  excesoCentimos: number
+}
+
 /** Una línea congelada del recibo. `ninoId` NULL = línea familiar. */
 export interface LineaPanelInput {
   id: string
@@ -64,6 +73,14 @@ export interface ReciboPanel {
   lineas: LineaPanel[]
 }
 
+/** Desborde de beca comedor pendiente colgado de la fila (para el aviso + el diálogo). */
+export interface DesbordePanel {
+  reciboId: string
+  cuotaCentimos: number
+  becaCentimos: number
+  excesoCentimos: number
+}
+
 export interface FilaFamiliaPanel {
   familiaId: string
   etiqueta: string
@@ -71,6 +88,8 @@ export interface FilaFamiliaPanel {
   hijos: Array<{ ninoId: string; nombre: string }>
   /** null = familia activa sin recibo generado (fila ⚠ «sin cargos»). */
   recibo: ReciboPanel | null
+  /** Desborde de beca comedor PENDIENTE de este recibo (V2-4); null si no hay. */
+  desborde: DesbordePanel | null
 }
 
 export interface PanelRecibosMes {
@@ -81,6 +100,8 @@ export interface PanelRecibosMes {
     pendientes: number
     totalCentimos: number
     familiasSinRecibo: number
+    /** V2-4: recibos con desborde de beca comedor pendiente de resolver. */
+    desbordesPendientes: number
   }
 }
 
@@ -98,10 +119,14 @@ export function esConfirmado(estado: EstadoRecibo): boolean {
 export function construirPanelFamilia(
   familias: FamiliaPanelInput[],
   recibos: ReciboPanelInput[],
-  lineas: LineaPanelInput[]
+  lineas: LineaPanelInput[],
+  desbordes: DesbordePanelInput[] = []
 ): PanelRecibosMes {
   const reciboPorFamilia = new Map<string, ReciboPanelInput>()
   for (const r of recibos) reciboPorFamilia.set(r.familiaId, r)
+
+  const desbordePorFamilia = new Map<string, DesbordePanelInput>()
+  for (const d of desbordes) desbordePorFamilia.set(d.familiaId, d)
 
   const lineasPorRecibo = new Map<string, LineaPanelInput[]>()
   for (const l of lineas) {
@@ -148,12 +173,26 @@ export function construirPanelFamilia(
       }
     }
 
+    // Desborde solo si sigue habiendo recibo (el borrador puede haberse ido); se cuelga del
+    // recibo por id para que el diálogo actúe sobre el recibo correcto.
+    const dInput = desbordePorFamilia.get(f.familiaId)
+    const desborde: DesbordePanel | null =
+      dInput && recibo && dInput.reciboId === recibo.id
+        ? {
+            reciboId: dInput.reciboId,
+            cuotaCentimos: dInput.cuotaCentimos,
+            becaCentimos: dInput.becaCentimos,
+            excesoCentimos: dInput.excesoCentimos,
+          }
+        : null
+
     return {
       familiaId: f.familiaId,
       etiqueta: f.etiqueta,
       tutores: f.tutores,
       hijos: f.hijos,
       recibo,
+      desborde,
     }
   })
 
@@ -174,6 +213,7 @@ export function construirPanelFamilia(
       pendientes: conRecibo.length - confirmados,
       totalCentimos,
       familiasSinRecibo: filas.length - conRecibo.length,
+      desbordesPendientes: filas.filter((f) => f.desborde != null).length,
     },
   }
 }

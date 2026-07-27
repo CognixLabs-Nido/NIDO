@@ -21,3 +21,23 @@ export const toggleElegibilidadSchema = z.object({
 })
 
 export type ToggleElegibilidadInput = z.infer<typeof toggleElegibilidadSchema>
+
+// Resolución de un desborde (V2-4). DOS vías (Jose colapsó reducir+resto en "diferir"):
+//   · 'diferir'       → el exceso se descuenta en el recibo del MES SIGUIENTE (tramos
+//                        origen='resto' repartidos por niño). Se guarda como via='reducir'
+//                        en el modelo (el ENUM del modelo no tiene 'diferir'; 'reducir' es
+//                        la semántica D-P9 "difiere al mes siguiente").
+//   · 'transferencia' → el exceso se devuelve por banco (fila beca_comedor_transferencia).
+export const resolverDesbordeSchema = z.object({
+  recibo_id: z.string().uuid(),
+  via: z.enum(['diferir', 'transferencia']),
+})
+
+export type ResolverDesbordeInput = z.infer<typeof resolverDesbordeSchema>
+
+// Marcar una transferencia como REALIZADA (V2-5, pestaña Remesas).
+export const marcarTransferenciaSchema = z.object({
+  id: z.string().uuid(),
+})
+
+export type MarcarTransferenciaInput = z.infer<typeof marcarTransferenciaSchema>
