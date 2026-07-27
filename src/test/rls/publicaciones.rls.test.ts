@@ -91,13 +91,13 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
     // Niño de tutorVe: matriculado en `aula`, con permiso de aparecer; vínculo con puede_ver_fotos.
     ninoVe = await createTestNino(centro.id)
     await matricular(ninoVe.id, aula.id, curso.id)
-    await setPuedeAparecer(ninoVe.id, true)
+    await otorgarImagen(ninoVe.id, tutorVe.id)
     await crearVinculo(ninoVe.id, tutorVe.id, 'tutor_legal_principal', { puede_ver_fotos: true })
 
     // Niño de tutorNoVe: matriculado en `aula`, vínculo SIN puede_ver_fotos.
     ninoNoVe = await createTestNino(centro.id)
     await matricular(ninoNoVe.id, aula.id, curso.id)
-    await setPuedeAparecer(ninoNoVe.id, true)
+    await otorgarImagen(ninoNoVe.id, tutorNoVe.id)
     await crearVinculo(ninoNoVe.id, tutorNoVe.id, 'tutor_legal_principal', {
       puede_ver_fotos: false,
     })
@@ -133,12 +133,22 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
     if (error) throw new Error(`asignarProfeConTipo falló: ${error.message}`)
   }
 
-  async function setPuedeAparecer(nino_id: string, valor: boolean): Promise<void> {
-    const { error } = await serviceClient
-      .from('ninos')
-      .update({ puede_aparecer_en_fotos: valor })
-      .eq('id', nino_id)
-    if (error) throw new Error(`setPuedeAparecer falló: ${error.message}`)
+  // El flag `puede_aparecer_en_fotos` es DERIVADO del consentimiento (IU-0): se otorga/
+  // revoca el consent de imagen POR NIÑO y el trigger consent-based deriva el flag. No se
+  // setea a mano (IU-1b: un trigger fuerza el flag al valor derivado, ignora escrituras
+  // directas). p_tutor solo debe ser un usuario válido (service_role salta el guard).
+  async function otorgarImagen(nino_id: string, tutor_id: string): Promise<void> {
+    const { error } = await serviceClient.rpc('otorgar_consentimiento_imagen', {
+      p_nino_id: nino_id,
+      p_tutor: tutor_id,
+    })
+    if (error) throw new Error(`otorgarImagen falló: ${error.message}`)
+  }
+  async function revocarImagen(nino_id: string): Promise<void> {
+    const { error } = await serviceClient.rpc('revocar_consentimiento_imagen', {
+      p_nino_id: nino_id,
+    })
+    if (error) throw new Error(`revocarImagen falló: ${error.message}`)
   }
 
   /** Crea una publicación con service role en `aula` y registra su id para limpieza. */
@@ -247,10 +257,10 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
     expect(ok.error).toBeNull()
     expect(ok.data?.id).toBeTruthy()
 
-    // Niño sin permiso de aparecer.
+    // Niño sin permiso de aparecer: recién creado, sin consent de imagen → flag DERIVADO
+    // en false (IU-0), sin necesidad de setearlo a mano.
     const ninoBloq = await createTestNino(centro.id)
     await matricular(ninoBloq.id, aula.id, curso.id)
-    await setPuedeAparecer(ninoBloq.id, false)
     const ko = await c
       .from('media_etiquetas')
       .insert({ media_id: mediaId, nino_id: ninoBloq.id, centro_id: centro.id })
@@ -266,7 +276,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
     // Etiqueta a un niño que de momento tiene permiso.
     const ninoTmp = await createTestNino(centro.id)
     await matricular(ninoTmp.id, aula.id, curso.id)
-    await setPuedeAparecer(ninoTmp.id, true)
+    await otorgarImagen(ninoTmp.id, coordinadora.id)
     const { error: etErr } = await serviceClient
       .from('media_etiquetas')
       .insert({ media_id: mediaId, nino_id: ninoTmp.id, centro_id: centro.id })
@@ -277,7 +287,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
     expect((await cVe.from('publicaciones').select('id').eq('id', pub)).data?.length).toBe(1)
 
     // Revocar → se oculta.
-    await setPuedeAparecer(ninoTmp.id, false)
+    await revocarImagen(ninoTmp.id)
     expect((await cVe.from('publicaciones').select('id').eq('id', pub)).data?.length ?? 0).toBe(0)
   })
 

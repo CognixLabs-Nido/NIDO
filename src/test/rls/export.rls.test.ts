@@ -69,10 +69,6 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS export de datos — F11-A5', () => {
     ninos.push(nino.id, ninoB.id)
     await matricular(nino.id, aula.id, curso.id)
     await matricular(ninoB.id, aula.id, curso.id)
-    await serviceClient
-      .from('ninos')
-      .update({ puede_aparecer_en_fotos: true })
-      .in('id', [nino.id, ninoB.id])
 
     tutor = await createTestUser({ nombre: 'Tutor Export' })
     usuarios.push(tutor.id)
@@ -92,6 +88,17 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS export de datos — F11-A5', () => {
     usuarios.push(tutorB.id)
     await asignarRol(tutorB.id, centro.id, 'tutor_legal')
     await crearVinculo(ninoB.id, tutorB.id, 'tutor_legal_principal', {})
+
+    // Consentimiento de imagen POR NIÑO (flag DERIVADO, IU-0): otorgar en vez de setear
+    // el flag a mano → el trigger consent-based lo pone en true.
+    await serviceClient.rpc('otorgar_consentimiento_imagen', {
+      p_nino_id: nino.id,
+      p_tutor: tutor.id,
+    })
+    await serviceClient.rpc('otorgar_consentimiento_imagen', {
+      p_nino_id: ninoB.id,
+      p_tutor: tutorB.id,
+    })
 
     // Info médica (cifrado vía RPC admin).
     const ca = await clientFor(admin)

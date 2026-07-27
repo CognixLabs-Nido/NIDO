@@ -78,7 +78,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-2 (familia · his
     // permiso de aparecer + vínculo con puede_ver_fotos. Queda sin matrícula activa.
     ninoHist = await createTestNino(centro.id)
     const matriculaHist = await matricular(ninoHist.id, aula.id, curso.id)
-    await setPuedeAparecer(ninoHist.id, true)
+    await otorgarImagen(ninoHist.id, tutorHist.id)
     await crearVinculo(ninoHist.id, tutorHist.id, 'tutor_legal_principal', {
       puede_ver_fotos: true,
     })
@@ -87,7 +87,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-2 (familia · his
     // ninoNoVe: matriculado en `aula`, permiso de aparecer, pero el vínculo NO ve fotos.
     ninoNoVe = await createTestNino(centro.id)
     await matricular(ninoNoVe.id, aula.id, curso.id)
-    await setPuedeAparecer(ninoNoVe.id, true)
+    await otorgarImagen(ninoNoVe.id, tutorNoVe.id)
     await crearVinculo(ninoNoVe.id, tutorNoVe.id, 'tutor_legal_principal', {
       puede_ver_fotos: false,
     })
@@ -129,12 +129,22 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-2 (familia · his
     if (error) throw new Error(`asignarProfeConTipo falló: ${error.message}`)
   }
 
-  async function setPuedeAparecer(nino_id: string, valor: boolean): Promise<void> {
-    const { error } = await serviceClient
-      .from('ninos')
-      .update({ puede_aparecer_en_fotos: valor })
-      .eq('id', nino_id)
-    if (error) throw new Error(`setPuedeAparecer falló: ${error.message}`)
+  // El flag `puede_aparecer_en_fotos` es DERIVADO del consentimiento (IU-0): se otorga/
+  // revoca el consent de imagen POR NIÑO y el trigger consent-based deriva el flag (IU-1b:
+  // un trigger fuerza el flag al valor derivado e ignora escrituras directas). p_tutor solo
+  // debe ser un usuario válido (service_role salta el guard).
+  async function otorgarImagen(nino_id: string, tutor_id: string): Promise<void> {
+    const { error } = await serviceClient.rpc('otorgar_consentimiento_imagen', {
+      p_nino_id: nino_id,
+      p_tutor: tutor_id,
+    })
+    if (error) throw new Error(`otorgarImagen falló: ${error.message}`)
+  }
+  async function revocarImagen(nino_id: string): Promise<void> {
+    const { error } = await serviceClient.rpc('revocar_consentimiento_imagen', {
+      p_nino_id: nino_id,
+    })
+    if (error) throw new Error(`revocarImagen falló: ${error.message}`)
   }
 
   async function darDeBaja(matriculaId: string): Promise<void> {
@@ -211,9 +221,9 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-2 (familia · his
     const cHist = await clientFor(tutorHist)
     expect((await cHist.from('publicaciones').select('id').eq('id', pub)).data?.length).toBe(1)
 
-    await setPuedeAparecer(ninoHist.id, false)
+    await revocarImagen(ninoHist.id)
     expect((await cHist.from('publicaciones').select('id').eq('id', pub)).data?.length ?? 0).toBe(0)
-    await setPuedeAparecer(ninoHist.id, true) // restaura para otros tests
+    await otorgarImagen(ninoHist.id, tutorHist.id) // restaura para otros tests
   })
 
   it('aislamiento: una familia de otra aula no ve la publicación', async () => {
