@@ -4544,10 +4544,6 @@ export type Database = {
       }
       hoy_madrid: { Args: never; Returns: string }
       idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
-      imagen_consentida: {
-        Args: { p_autorizacion_id: string; p_nino_id: string }
-        Returns: boolean
-      }
       listar_esqueletos_huerfanos_stub: {
         Args: { p_cutoff: string }
         Returns: {
