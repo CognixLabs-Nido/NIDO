@@ -71,6 +71,10 @@ export async function resolverDesborde(
   // ── Preparar el efecto ANTES del claim (para validar sin dejar el desborde a medias) ──
   let restoRows: Database['public']['Tables']['beca_comedor_tramo']['Insert'][] = []
   let sig: { anio: number; mes: number } | null = null
+  // Todos los hijos ACTIVOS de la familia (no solo los del reparto): el DELETE de resto
+  // previos barre por este conjunto para no dejar colgado el resto de un hijo que perdió la
+  // beca entre resolver y re-resolver.
+  let familiaNinoIds: string[] = []
 
   if (via === 'diferir') {
     sig = mesSiguiente(desborde.anio, desborde.mes)
@@ -89,6 +93,7 @@ export async function resolverDesborde(
       .is('deleted_at', null)
     const ninoIds = [...new Set((ninos ?? []).map((n) => n.id))]
     if (ninoIds.length === 0) return fail(`${ERR}.sin_hijos`)
+    familiaNinoIds = ninoIds
 
     // Beca aplicada a cada hijo en el mes del desborde = suma de sus tramos pendientes con
     // (anio/mes_aplicacion) = mes del desborde (lo mismo que sumó el motor).
@@ -165,7 +170,7 @@ export async function resolverDesborde(
   const efecto =
     via === 'transferencia'
       ? await aplicarTransferencia(supabase, centroId, desborde)
-      : await aplicarDiferir(supabase, centroId, desborde, sig!, restoRows)
+      : await aplicarDiferir(supabase, centroId, desborde, sig!, restoRows, familiaNinoIds)
 
   if (efecto.error) {
     await supabase
@@ -220,10 +225,13 @@ async function aplicarDiferir(
   centroId: string,
   desborde: { anio: number; mes: number },
   sig: { anio: number; mes: number },
-  restoRows: Database['public']['Tables']['beca_comedor_tramo']['Insert'][]
+  restoRows: Database['public']['Tables']['beca_comedor_tramo']['Insert'][],
+  familiaNinoIds: string[]
 ): Promise<{ error?: string; key?: string; n: number }> {
-  const ninoIds = restoRows.map((r) => r.nino_id)
-  // Restos previos de ESTE desborde (misma firma corr M → aplic M+1) por si es un reintento.
+  // Restos previos de ESTE desborde (firma corr M → aplic M+1) por si es un reintento o una
+  // re-resolución tras regenerar. Se barre por TODOS los hijos activos de la familia (no solo
+  // los del reparto actual): así el resto de un hijo que perdió la beca entre resoluciones no
+  // queda colgado en M+1.
   await supabase
     .from('beca_comedor_tramo')
     .delete()
@@ -233,7 +241,7 @@ async function aplicarDiferir(
     .eq('mes_correspondiente', desborde.mes)
     .eq('anio_aplicacion', sig.anio)
     .eq('mes_aplicacion', sig.mes)
-    .in('nino_id', ninoIds)
+    .in('nino_id', familiaNinoIds)
 
   const { error } = await supabase.from('beca_comedor_tramo').insert(restoRows)
   if (error) {
