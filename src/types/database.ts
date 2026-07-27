@@ -4605,6 +4605,17 @@ export type Database = {
         }[]
       }
       organizador_de_cita: { Args: { p_cita_id: string }; Returns: string }
+      otorgar_consentimiento_imagen: {
+        Args: {
+          p_ip?: unknown
+          p_metodo?: Database["public"]["Enums"]["firma_metodo"]
+          p_nino_id: string
+          p_tutor: string
+          p_user_agent?: string
+          p_version?: string
+        }
+        Returns: string
+      }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
       proponer_asignaciones: { Args: { p_centro_id: string }; Returns: number }
       publicacion_de_media: { Args: { p_media_id: string }; Returns: string }
@@ -4619,17 +4630,6 @@ export type Database = {
       puede_participar_conversacion: {
         Args: { p_conversacion_id: string }
         Returns: boolean
-      }
-      otorgar_consentimiento_imagen: {
-        Args: {
-          p_ip?: unknown
-          p_metodo?: Database["public"]["Enums"]["firma_metodo"]
-          p_nino_id: string
-          p_tutor: string
-          p_user_agent?: string
-          p_version?: string
-        }
-        Returns: string
       }
       puede_postear_en_conversacion: {
         Args: { p_conversacion_id: string }
