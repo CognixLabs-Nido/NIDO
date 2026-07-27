@@ -1728,6 +1728,7 @@ export type Database = {
           id: string
           ip_address: unknown
           metodo_firma: Database["public"]["Enums"]["firma_metodo"]
+          nino_id: string | null
           revocado_en: string | null
           tipo: Database["public"]["Enums"]["consentimiento_tipo"]
           user_agent: string | null
@@ -1740,6 +1741,7 @@ export type Database = {
           id?: string
           ip_address?: unknown
           metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
+          nino_id?: string | null
           revocado_en?: string | null
           tipo: Database["public"]["Enums"]["consentimiento_tipo"]
           user_agent?: string | null
@@ -1752,6 +1754,7 @@ export type Database = {
           id?: string
           ip_address?: unknown
           metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
+          nino_id?: string | null
           revocado_en?: string | null
           tipo?: Database["public"]["Enums"]["consentimiento_tipo"]
           user_agent?: string | null
@@ -1759,6 +1762,13 @@ export type Database = {
           version?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "consentimientos_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "consentimientos_usuario_id_fkey"
             columns: ["usuario_id"]
@@ -4534,10 +4544,6 @@ export type Database = {
       }
       hoy_madrid: { Args: never; Returns: string }
       idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
-      imagen_consentida: {
-        Args: { p_autorizacion_id: string; p_nino_id: string }
-        Returns: boolean
-      }
       listar_esqueletos_huerfanos_stub: {
         Args: { p_cutoff: string }
         Returns: {
@@ -4595,6 +4601,17 @@ export type Database = {
         }[]
       }
       organizador_de_cita: { Args: { p_cita_id: string }; Returns: string }
+      otorgar_consentimiento_imagen: {
+        Args: {
+          p_ip?: unknown
+          p_metodo?: Database["public"]["Enums"]["firma_metodo"]
+          p_nino_id: string
+          p_tutor: string
+          p_user_agent?: string
+          p_version?: string
+        }
+        Returns: string
+      }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
       proponer_asignaciones: { Args: { p_centro_id: string }; Returns: number }
       publicacion_de_media: { Args: { p_media_id: string }; Returns: string }
@@ -4653,6 +4670,10 @@ export type Database = {
       revocar_consentimiento: {
         Args: { p_tipo: Database["public"]["Enums"]["consentimiento_tipo"] }
         Returns: string
+      }
+      revocar_consentimiento_imagen: {
+        Args: { p_nino_id: string }
+        Returns: number
       }
       set_datos_acreedor: {
         Args: {
@@ -4719,6 +4740,10 @@ export type Database = {
           p_tipo: Database["public"]["Enums"]["consentimiento_tipo"]
           p_usuario_id: string
         }
+        Returns: boolean
+      }
+      tiene_consentimiento_imagen: {
+        Args: { p_nino_id: string }
         Returns: boolean
       }
       tiene_permiso_sobre: {
