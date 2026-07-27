@@ -1,6 +1,9 @@
 import { getTranslations } from 'next-intl/server'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { BecaComedorPanel } from '@/features/beca-comedor/components/BecaComedorPanel'
+import { getCargasBeca } from '@/features/beca-comedor/queries/get-cargas-beca'
+import { getElegibilidadBecados } from '@/features/beca-comedor/queries/get-elegibilidad-becados'
 import { BecasPanel } from '@/features/becas/components/BecasPanel'
 import { getBecas } from '@/features/becas/queries/get-becas'
 import { getTiposBeca } from '@/features/becas/queries/get-tipos-beca'
@@ -27,7 +30,15 @@ interface PageProps {
   searchParams: Promise<{ tab?: string; anio?: string; mes?: string }>
 }
 
-const TABS = ['mes', 'conceptos', 'asignacion', 'becas', 'remesas', 'resumen'] as const
+const TABS = [
+  'mes',
+  'conceptos',
+  'beca-comedor',
+  'asignacion',
+  'becas',
+  'remesas',
+  'resumen',
+] as const
 
 // F-4-4: hub de cuotas. Tab por defecto = Panel del mes (revisión + confirmación de
 // recibos a grano familia). Otros tabs: catálogo de conceptos, asignación permanente
@@ -57,6 +68,8 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     recibosGestion,
     pivote,
     tarifasPorConcepto,
+    elegibilidad,
+    cargasBeca,
   ] = await Promise.all([
     getConceptosCobro(centroId),
     getAsignacionPermanente(centroId),
@@ -70,6 +83,8 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     getRecibosGestion(centroId, anio, mes),
     getPivotePeriodo(centroId, anio, mes),
     getTarifasConceptoAnioDeCentro(centroId),
+    getElegibilidadBecados(centroId),
+    getCargasBeca(centroId),
   ])
 
   const centroLogoInfo = await getCentroLogo(centroId)
@@ -105,6 +120,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
         <TabsList>
           <TabsTrigger value="mes">{t('tab_mes')}</TabsTrigger>
           <TabsTrigger value="conceptos">{t('tab_conceptos')}</TabsTrigger>
+          <TabsTrigger value="beca-comedor">{t('tab_beca_comedor')}</TabsTrigger>
           <TabsTrigger value="asignacion">{t('tab_asignacion')}</TabsTrigger>
           <TabsTrigger value="becas">{t('tab_becas')}</TabsTrigger>
           <TabsTrigger value="remesas">{t('tab_remesas')}</TabsTrigger>
@@ -128,6 +144,16 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
             conceptos={conceptos}
             aniosNacimientoCentro={aniosNacimientoCentro}
             tarifasPorConcepto={tarifasPorConcepto}
+          />
+        </TabsContent>
+
+        <TabsContent value="beca-comedor" className="pt-4">
+          <BecaComedorPanel
+            hayCurso={cargasBeca.curso != null}
+            alumnos={elegibilidad.alumnos}
+            cargas={cargasBeca.cargas}
+            meses={cargasBeca.meses}
+            mesesCerrados={cargasBeca.mesesCerrados}
           />
         </TabsContent>
 
