@@ -28,7 +28,8 @@ import {
  *
  * Verifica el MECANISMO: al firmar `autorizacion_imagenes`, una única escritura
  * (la firma) activa atómicamente el flag `ninos.puede_aparecer_en_fotos` y la fila
- * de `consentimientos` tipo=imagen (versión = texto_version, usuario = firmante);
+ * de `consentimientos` tipo=imagen (versión = texto_version, usuario = firmante,
+ * **nino_id = el niño firmado** — IU-0 reconduce la vía A a consent POR NIÑO);
  * revocación simétrica; agregación uno/ambos firmantes; acotamiento a imágenes.
  *
  * Gateado por flag (migración a mano vía SQL Editor — CLI SIGILL):
@@ -146,7 +147,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS imagen firmable — F11-A3', () => {
   async function consentsImagen(userId: string) {
     const { data } = await serviceClient
       .from('consentimientos')
-      .select('version, revocado_en')
+      .select('version, revocado_en, nino_id')
       .eq('usuario_id', userId)
       .eq('tipo', 'imagen')
       .order('aceptado_en', { ascending: false })
@@ -232,6 +233,7 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS imagen firmable — F11-A3', () => {
     const consents = await consentsImagen(tutorUno.id)
     const vigente = consents.find((x) => x.revocado_en === null)
     expect(vigente?.version).toBe('v1') // D2: texto_version
+    expect(vigente?.nino_id).toBe(ninoUno.id) // IU-0: consent atado al niño firmado
   })
 
   // -------------------------------------------------------------------
@@ -273,6 +275,12 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS imagen firmable — F11-A3', () => {
       .from('firmas_autorizacion')
       .insert(firmaPayload(tutorB, inst, ninoAmbos.id, 'v1', 'revocado'))
     expect(await flagDe(ninoAmbos.id), 'B revoca → se apaga').toBe(false)
+
+    // IU-0: ambos consents (A y B) quedan atados a ESTE niño, no per-usuario.
+    const consentsA = await consentsImagen(tutorA.id)
+    const consentsB = await consentsImagen(tutorB.id)
+    expect(consentsA.every((x) => x.nino_id === ninoAmbos.id)).toBe(true)
+    expect(consentsB.every((x) => x.nino_id === ninoAmbos.id)).toBe(true)
   })
 
   // -------------------------------------------------------------------
