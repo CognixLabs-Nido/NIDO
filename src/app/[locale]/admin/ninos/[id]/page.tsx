@@ -31,7 +31,6 @@ import {
   getNinoById,
 } from '@/features/ninos/queries/get-ninos'
 import { HistorialMatriculas } from '@/features/ninos/components/HistorialMatriculas'
-import { ConsentimientoFotosToggle } from '@/features/ninos/components/ConsentimientoFotosToggle'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
@@ -274,7 +273,8 @@ export default async function NinoDetallePage({ params }: PageProps) {
               <Row k={t('fields.notas_admin')} v={nino.notas_admin ?? '—'} />
             </CardContent>
           </Card>
-          {/* F-3-E: foto y consentimiento son de escritura → ocultos en archivado. */}
+          {/* F-3-E: la foto es de escritura → oculta en archivado. El consentimiento de
+              imagen ya NO se gestiona a mano aquí (IU-1): el flag se deriva del consent. */}
           {!archivado && (
             <Card>
               <CardContent className="space-y-4 pt-1">
@@ -284,10 +284,6 @@ export default async function NinoDetallePage({ params }: PageProps) {
                   locale={locale}
                   initialUrl={foto.urlMiniatura ?? foto.url}
                   alt={`${nino.nombre} ${nino.apellidos ?? ''}`.trim()}
-                />
-                <ConsentimientoFotosToggle
-                  ninoId={nino.id}
-                  initial={nino.puede_aparecer_en_fotos}
                 />
               </CardContent>
             </Card>

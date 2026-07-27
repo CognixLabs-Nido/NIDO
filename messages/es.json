@@ -731,10 +731,7 @@
         "acciones": "Acciones"
       },
       "fotos": {
-        "titulo": "Fotos y consentimiento de imagen",
-        "toggle_label": "Puede aparecer en fotos",
-        "ayuda": "Actívalo solo si la familia ha firmado el consentimiento de imagen. Sin esto, la profe no puede etiquetar al niño en las fotos del aula.",
-        "guardado": "Consentimiento actualizado."
+        "titulo": "Foto del niño"
       },
       "badge": {
         "alta_en_curso": "Alta en curso",

@@ -276,8 +276,9 @@ export async function rechazarAutorizacion(
  * imágenes** (info reversible: cambió quién recoge / se paró una medicina /
  * se retira el consentimiento de imagen del menor — derecho RGPD del tutor, F11-A3);
  * reglas/salida NO se revocan (la familia contacta con el centro, que «anula»). En
- * imágenes, el trigger `firma_imagen_sync` recalcula `puede_aparecer_en_fotos` y
- * revoca el consentimiento del firmante, atómico con la fila. La revocación aparece
+ * imágenes, el trigger `firma_imagen_sync` revoca el `consentimientos('imagen')` del
+ * firmante para ese niño, atómico con la fila; el flag `puede_aparecer_en_fotos` lo
+ * deriva el trigger consent-based (IU-0, fuente única). La revocación aparece
  * como ALERTA en el feed de notificaciones de admin + profes del aula del niño
  * (deriva del row `revocado`; sin envío activo).
  */

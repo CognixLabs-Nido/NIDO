@@ -25,14 +25,16 @@ export type ResultadoImagen =
  * **Imagen B2 (la familia instancia, NO firma aquí).** Crea —o reusa— la instancia
  * de `autorizacion_imagenes` (ámbito niño, 1 por niño) a partir de la plantilla
  * publicada del centro, y devuelve su id para que `FirmarAutorizacionPanel` la firme.
- * Al firmar, el trigger `firma_imagen_sync_trg` sincroniza `consentimientos('imagen')`
- * + `ninos.puede_aparecer_en_fotos`.
+ * Al firmar, el trigger `firma_imagen_sync_trg` otorga/revoca el `consentimientos('imagen')`
+ * POR NIÑO (fuente de verdad, IU-0). El flag `ninos.puede_aparecer_en_fotos` NO lo toca la
+ * firma: lo deriva el trigger consent-based `consentimiento_imagen_sync`.
  *
  * `firmantes_requeridos` de la instancia se **deriva** de `ninos.requiere_ambos_firmantes`
- * (`true → 'todos_los_principales'`, `false → 'uno_principal'`): `imagen_consentida` lee
- * ese campo como política efectiva cuando el flag es `false`, así que el panel pide el
- * nº correcto de firmas. La RLS `autorizaciones_insert` (rama tutor imagen, 3b-1) acota
- * el INSERT a su hijo + plantilla publicada del centro.
+ * (`true → 'todos_los_principales'`, `false → 'uno_principal'`) para que el panel pida el
+ * nº correcto de firmas. El gate de doble consentimiento del flag lo evalúa
+ * `tiene_consentimiento_imagen` sobre el consent (IU-0 B2), no la firma. La RLS
+ * `autorizaciones_insert` (rama tutor imagen, 3b-1) acota el INSERT a su hijo + plantilla
+ * publicada del centro.
  */
 export async function crearImagenAutorizacion(
   input: z.infer<typeof crearImagenSchema>

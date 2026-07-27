@@ -731,10 +731,7 @@
         "acciones": "Actions"
       },
       "fotos": {
-        "titulo": "Photos and image consent",
-        "toggle_label": "May appear in photos",
-        "ayuda": "Enable only if the family has signed the image consent. Without it, the teacher cannot tag this child in classroom photos.",
-        "guardado": "Consent updated."
+        "titulo": "Child photo"
       },
       "badge": {
         "alta_en_curso": "In progress",
