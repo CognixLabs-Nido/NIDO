@@ -20,17 +20,20 @@ import {
 } from './setup'
 
 /**
- * RLS Fase 11-A3 (RGPD) — Consentimiento de imagen firmable vía la firma de F8.
+ * RLS Fase 11-A3 (RGPD) — Consentimiento de imagen vía la firma de F8, con FUENTE
+ * ÚNICA = `consentimientos` (IU-0 consolidada, migs 20260821120000/130000/140000).
  *
- * Spec: docs/specs/proteccion-datos.md (Decisión #9) + D1–D5. Migración:
- * 20260614120000_phase11a3_imagen_firmable (helper imagen_consentida + trigger
- * firma_imagen_sync AFTER INSERT en firmas_autorizacion).
+ * Modelo consolidado (IU-0 B2): al firmar `autorizacion_imagenes`, `firma_imagen_sync`
+ * SOLO escribe/revoca el CONSENT de imagen POR NIÑO (usuario = firmante, nino_id = niño
+ * firmado, versión = texto_version). El flag `ninos.puede_aparecer_en_fotos` lo deriva
+ * EXCLUSIVAMENTE el trigger consent-based `consentimiento_imagen_sync`: NO hay derivación
+ * paralela por firmas (`imagen_consentida` se retiró). El gate de doble consentimiento
+ * parental (`requiere_ambos_firmantes`) se evalúa ahora sobre CONSENT + vínculos de
+ * tutores principales, no sobre firmas.
  *
- * Verifica el MECANISMO: al firmar `autorizacion_imagenes`, una única escritura
- * (la firma) activa atómicamente el flag `ninos.puede_aparecer_en_fotos` y la fila
- * de `consentimientos` tipo=imagen (versión = texto_version, usuario = firmante,
- * **nino_id = el niño firmado** — IU-0 reconduce la vía A a consent POR NIÑO);
- * revocación simétrica; agregación uno/ambos firmantes; acotamiento a imágenes.
+ * Verifica el MECANISMO: firmar → consent por-niño → flag DERIVADO del consent;
+ * revocación simétrica; doble consentimiento (requiere_ambos) vía consent; acotamiento
+ * a imágenes.
  *
  * Gateado por flag (migración a mano vía SQL Editor — CLI SIGILL):
  *   F11A3_IMAGEN_MIGRATION_APPLIED=1
@@ -267,6 +270,11 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS imagen firmable — F11-A3', () => {
 
     await cA.from('firmas_autorizacion').insert(firmaPayload(tutorA, inst, ninoAmbos.id, 'v1'))
     expect(await flagDe(ninoAmbos.id), 'solo A → falta B').toBe(false)
+    // B2 (fuente única): el consent de A SÍ queda vigente; el flag es false por el gate
+    // requiere_ambos (falta B), NO por ausencia de consent — la doble firma se evalúa
+    // sobre el CONSENT + vínculos, no sobre firmas.
+    const soloA = await consentsImagen(tutorA.id)
+    expect(soloA.some((x) => x.revocado_en === null && x.nino_id === ninoAmbos.id)).toBe(true)
 
     await cB.from('firmas_autorizacion').insert(firmaPayload(tutorB, inst, ninoAmbos.id, 'v1'))
     expect(await flagDe(ninoAmbos.id), 'A y B → consentido').toBe(true)
