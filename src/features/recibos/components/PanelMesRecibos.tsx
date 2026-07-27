@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { ResolverDesbordeDialog } from '@/features/beca-comedor/components/ResolverDesbordeDialog'
 import { ReciboEsporadicoDialog } from '@/features/cierre-cobros/components/ReciboEsporadicoDialog'
 import { MesSelector } from '@/features/cuotas-config/components/MesSelector'
 import { CentroLogo } from '@/shared/components/brand/CentroLogo'
@@ -167,6 +168,13 @@ export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
         </div>
       </Card>
 
+      {/* V2-4: aviso de recibos con desborde de beca comedor pendiente de resolver. */}
+      {data.indicadores.desbordesPendientes > 0 && (
+        <Card className="border-amber-300 bg-amber-50/60 p-3 text-sm text-amber-800">
+          {t('desborde_aviso', { n: data.indicadores.desbordesPendientes })}
+        </Card>
+      )}
+
       {/* Barra de confirmación en lote */}
       {selected.size > 0 && (
         <Card className="flex items-center justify-between gap-3 p-3">
@@ -209,6 +217,8 @@ export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
                   <FilaFamilia
                     key={fila.familiaId}
                     fila={fila}
+                    anio={anio}
+                    mes={mes}
                     bloqueado={bloqueado}
                     pending={pending}
                     centroLogo={centroLogo}
@@ -303,6 +313,8 @@ function Indicador({ label, valor }: { label: string; valor: string }) {
 
 function FilaFamilia({
   fila,
+  anio,
+  mes,
   bloqueado,
   pending,
   centroLogo,
@@ -315,6 +327,8 @@ function FilaFamilia({
   onCambiarMetodo,
 }: {
   fila: FilaFamiliaPanel
+  anio: number
+  mes: number
   bloqueado: boolean
   pending: boolean
   centroLogo: CentroLogoProp | null
@@ -397,9 +411,25 @@ function FilaFamilia({
           ) : (
             <Badge variant="warm">{t('estado_borrador')}</Badge>
           )}
+          {fila.desborde && (
+            <Badge variant="warning" className="ml-2">
+              {t('desborde_badge')}
+            </Badge>
+          )}
         </TableCell>
         <TableCell>
           <div className="flex items-center justify-end gap-2">
+            {fila.desborde && (
+              <ResolverDesbordeDialog
+                reciboId={fila.desborde.reciboId}
+                anio={anio}
+                mes={mes}
+                cuotaCentimos={fila.desborde.cuotaCentimos}
+                becaCentimos={fila.desborde.becaCentimos}
+                excesoCentimos={fila.desborde.excesoCentimos}
+                trigger={<Button size="sm">{t('resolver_beca')}</Button>}
+              />
+            )}
             {recibo && (
               <Button size="sm" variant="ghost" onClick={onToggleExpand}>
                 {expandido ? t('ocultar') : t('ver')}

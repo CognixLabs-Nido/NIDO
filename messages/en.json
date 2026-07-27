@@ -502,6 +502,39 @@
           "save_failed": "Could not save.",
           "delete_failed": "Could not delete.",
           "no_existe": "The batch no longer exists."
+        },
+        "desborde": {
+          "title": "Resolve meal grant",
+          "intro": "The grant exceeds the receipt total. Choose how to handle the excess.",
+          "cuota": "Receipt total",
+          "beca": "Meal grant",
+          "exceso": "Excess to resolve",
+          "via_diferir": "Defer to next month",
+          "via_diferir_hint": "The excess will be deducted on the {mes} receipt (split across the children).",
+          "via_transferencia": "Refund by transfer",
+          "via_transferencia_hint": "A bank refund to the family will be recorded; manage it under Remittances.",
+          "cancelar": "Cancel",
+          "diferido_ok": "Excess deferred to next month.",
+          "transferencia_ok": "Transfer recorded.",
+          "errors": {
+            "invalid": "Invalid data.",
+            "no_autorizado": "Not authorized.",
+            "no_existe": "There is no pending overflow for this receipt.",
+            "ya_resuelto": "This overflow has already been resolved.",
+            "mes_siguiente_cerrado": "Next month is closed; it can’t be deferred. Use a transfer.",
+            "sin_hijos": "The family has no active children.",
+            "sin_becas": "There are no grants to distribute on this receipt.",
+            "descuadre": "The split doesn’t match the excess; nothing was applied.",
+            "save_failed": "Couldn’t resolve."
+          }
+        },
+        "transferencias": {
+          "errors": {
+            "invalid": "Invalid data.",
+            "no_autorizado": "Not authorized.",
+            "save_failed": "Couldn’t update.",
+            "no_pendiente": "The transfer is no longer pending."
+          }
         }
       },
       "tab_resumen": "Summary",
@@ -1474,7 +1507,10 @@
       "linea_invalida": "Invalid line data.",
       "no_borrador": "The receipt is not a draft.",
       "linea_failed": "Could not save the line."
-    }
+    },
+    "desborde_aviso": "{n} receipts with a pending meal grant to resolve.",
+    "desborde_badge": "Grant pending",
+    "resolver_beca": "Resolve grant"
   },
   "cierre_cobros": {
     "estado_titulo": "Month status",
@@ -1622,6 +1658,15 @@
       "no_regirable": "Only a returned receipt can be re-charged.",
       "regiro_failed": "Could not create the re-charge.",
       "gastos_failed": "Could not register the return fees."
+    },
+    "transferencias_beca": {
+      "title": "Meal grant transfers",
+      "sub": "Refunds of the grant excess to the family by bank transfer.",
+      "sin_transferencias": "No meal grant transfers.",
+      "pendiente": "Pending",
+      "realizada": "Done",
+      "marcar_realizada": "Mark done",
+      "marcada_ok": "Transfer marked as done."
     }
   },
   "becas": {

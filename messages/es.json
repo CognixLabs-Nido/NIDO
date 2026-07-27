@@ -502,6 +502,39 @@
           "save_failed": "No se pudo guardar.",
           "delete_failed": "No se pudo borrar.",
           "no_existe": "La carga ya no existe."
+        },
+        "desborde": {
+          "title": "Resolver beca comedor",
+          "intro": "La beca supera la cuota del recibo. Elige cómo tratar el exceso.",
+          "cuota": "Cuota del recibo",
+          "beca": "Beca comedor",
+          "exceso": "Exceso a resolver",
+          "via_diferir": "Diferir al mes siguiente",
+          "via_diferir_hint": "El exceso se descontará en el recibo de {mes} (repartido entre los hijos).",
+          "via_transferencia": "Devolver por transferencia",
+          "via_transferencia_hint": "Se registrará una devolución por banco a la familia; la gestionas en Remesas.",
+          "cancelar": "Cancelar",
+          "diferido_ok": "Exceso diferido al mes siguiente.",
+          "transferencia_ok": "Transferencia registrada.",
+          "errors": {
+            "invalid": "Datos no válidos.",
+            "no_autorizado": "No autorizado.",
+            "no_existe": "No hay un desborde pendiente para este recibo.",
+            "ya_resuelto": "Este desborde ya se resolvió.",
+            "mes_siguiente_cerrado": "El mes siguiente está cerrado; no se puede diferir. Usa la transferencia.",
+            "sin_hijos": "La familia no tiene hijos activos.",
+            "sin_becas": "No hay becas que repartir en este recibo.",
+            "descuadre": "El reparto no cuadra con el exceso; no se ha aplicado.",
+            "save_failed": "No se pudo resolver."
+          }
+        },
+        "transferencias": {
+          "errors": {
+            "invalid": "Datos no válidos.",
+            "no_autorizado": "No autorizado.",
+            "save_failed": "No se pudo actualizar.",
+            "no_pendiente": "La transferencia ya no está pendiente."
+          }
         }
       },
       "tab_resumen": "Resumen",
@@ -1474,7 +1507,10 @@
       "linea_invalida": "Datos de la línea no válidos.",
       "no_borrador": "El recibo no está en borrador.",
       "linea_failed": "No se pudo guardar la línea."
-    }
+    },
+    "desborde_aviso": "{n} recibos con beca comedor pendiente de resolver.",
+    "desborde_badge": "Beca pendiente",
+    "resolver_beca": "Resolver beca"
   },
   "cierre_cobros": {
     "estado_titulo": "Estado del mes",
@@ -1622,6 +1658,15 @@
       "no_regirable": "Solo puede re-girarse un recibo devuelto.",
       "regiro_failed": "No se pudo crear el re-giro.",
       "gastos_failed": "No se pudieron registrar los gastos de devolución."
+    },
+    "transferencias_beca": {
+      "title": "Transferencias de beca comedor",
+      "sub": "Devoluciones del exceso de beca a la familia por transferencia bancaria.",
+      "sin_transferencias": "No hay transferencias de beca comedor.",
+      "pendiente": "Pendiente",
+      "realizada": "Realizada",
+      "marcar_realizada": "Marcar realizada",
+      "marcada_ok": "Transferencia marcada como realizada."
     }
   },
   "becas": {

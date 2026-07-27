@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
+import { TransferenciasBecaPanel } from '@/features/beca-comedor/components/TransferenciasBecaPanel'
+import type { TransferenciasBecaData } from '@/features/beca-comedor/queries/get-transferencias-beca'
 import { MesSelector } from '@/features/cuotas-config/components/MesSelector'
 import { formatEuros } from '@/shared/lib/format-money'
 
@@ -29,9 +31,18 @@ interface Props {
   recibos: ReciboSepaRemesable[]
   remesas: RemesaListItem[]
   recibosGestion: ReciboGestion[]
+  transferenciasBeca: TransferenciasBecaData
 }
 
-export function RemesasPanel({ anio, mes, acreedor, recibos, remesas, recibosGestion }: Props) {
+export function RemesasPanel({
+  anio,
+  mes,
+  acreedor,
+  recibos,
+  remesas,
+  recibosGestion,
+  transferenciasBeca,
+}: Props) {
   const t = useTranslations('remesas')
   const tErrors = useTranslations()
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set())
@@ -236,6 +247,9 @@ export function RemesasPanel({ anio, mes, acreedor, recibos, remesas, recibosGes
       </Card>
 
       <DevolucionesPanel recibos={recibosGestion} />
+
+      {/* V2-5: devoluciones de exceso de beca comedor por transferencia. */}
+      <TransferenciasBecaPanel data={transferenciasBeca} />
     </div>
   )
 }

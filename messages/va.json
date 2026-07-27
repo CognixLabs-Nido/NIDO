@@ -502,6 +502,39 @@
           "save_failed": "No s'ha pogut guardar.",
           "delete_failed": "No s'ha pogut esborrar.",
           "no_existe": "La càrrega ja no existix."
+        },
+        "desborde": {
+          "title": "Resoldre beca menjador",
+          "intro": "La beca supera la quota del rebut. Tria com tractar l’excés.",
+          "cuota": "Quota del rebut",
+          "beca": "Beca menjador",
+          "exceso": "Excés a resoldre",
+          "via_diferir": "Diferir al mes següent",
+          "via_diferir_hint": "L’excés es descomptarà en el rebut de {mes} (repartit entre els fills).",
+          "via_transferencia": "Tornar per transferència",
+          "via_transferencia_hint": "Es registrarà una devolució per banc a la família; la gestiones a Remeses.",
+          "cancelar": "Cancel·lar",
+          "diferido_ok": "Excés diferit al mes següent.",
+          "transferencia_ok": "Transferència registrada.",
+          "errors": {
+            "invalid": "Dades no vàlides.",
+            "no_autorizado": "No autoritzat.",
+            "no_existe": "No hi ha cap desbordament pendent per a aquest rebut.",
+            "ya_resuelto": "Aquest desbordament ja s’ha resolt.",
+            "mes_siguiente_cerrado": "El mes següent està tancat; no es pot diferir. Usa la transferència.",
+            "sin_hijos": "La família no té fills actius.",
+            "sin_becas": "No hi ha beques per repartir en aquest rebut.",
+            "descuadre": "El repartiment no quadra amb l’excés; no s’ha aplicat.",
+            "save_failed": "No s’ha pogut resoldre."
+          }
+        },
+        "transferencias": {
+          "errors": {
+            "invalid": "Dades no vàlides.",
+            "no_autorizado": "No autoritzat.",
+            "save_failed": "No s’ha pogut actualitzar.",
+            "no_pendiente": "La transferència ja no està pendent."
+          }
         }
       },
       "tab_resumen": "Resum",
@@ -1474,7 +1507,10 @@
       "linea_invalida": "Dades de la línia no vàlides.",
       "no_borrador": "El rebut no està en esborrany.",
       "linea_failed": "No s'ha pogut guardar la línia."
-    }
+    },
+    "desborde_aviso": "{n} rebuts amb beca menjador pendent de resoldre.",
+    "desborde_badge": "Beca pendent",
+    "resolver_beca": "Resoldre beca"
   },
   "cierre_cobros": {
     "estado_titulo": "Estat del mes",
@@ -1622,6 +1658,15 @@
       "no_regirable": "Només es pot re-girar un rebut retornat.",
       "regiro_failed": "No s'ha pogut crear el re-gir.",
       "gastos_failed": "No s'han pogut registrar les despeses de devolució."
+    },
+    "transferencias_beca": {
+      "title": "Transferències de beca menjador",
+      "sub": "Devolucions de l’excés de beca a la família per transferència bancària.",
+      "sin_transferencias": "No hi ha transferències de beca menjador.",
+      "pendiente": "Pendent",
+      "realizada": "Realitzada",
+      "marcar_realizada": "Marcar realitzada",
+      "marcada_ok": "Transferència marcada com a realitzada."
     }
   },
   "becas": {
