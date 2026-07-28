@@ -13,8 +13,9 @@ import type { Database } from '@/types/database'
  * arrancan en `v1.0` (marcador); el texto definitivo del abogado, al cierre de
  * F11, subirá la versión del tipo que cambie.
  *
- * El tipo `imagen` se captura por la firma F8 (no por estos RPC); se incluye
- * aquí por completitud del catálogo.
+ * El tipo `imagen` se captura POR NIÑO en `consentimientos` (IU-0): lo otorgan la
+ * firma F8 (vía A) y el checkbox del alta (vía B, IU-2, con esta versión). No pasa por
+ * los RPC de cuenta (`registrar_consentimiento`), sino por `otorgar_consentimiento_imagen`.
  */
 export type ConsentTipo = Database['public']['Enums']['consentimiento_tipo']
 

@@ -9,10 +9,11 @@ import { logger } from '@/shared/lib/logger'
 import { fail, ok, type ActionResult } from '../../centros/types'
 
 /**
- * Vía B — acuse por-niño de NORMAS / IMAGEN por checkbox, SIN documento, SIN firma, SIN
- * trazo. Escribe una fila en `acuses_alta` que el gate de finalizar reconoce como acuse
- * válido ADEMÁS de la firma real (`firmas_autorizacion`). Aceptar NO depende de que exista
- * una instancia/plantilla publicada. SEPA es aparte (se firma en pantalla con trazo).
+ * Vía B — acuse por-niño de NORMAS por checkbox, SIN documento, SIN firma, SIN trazo.
+ * Escribe una fila en `acuses_alta` que el gate de finalizar reconoce como acuse válido
+ * ADEMÁS de la firma real (`firmas_autorizacion`). Aceptar NO depende de que exista una
+ * instancia/plantilla publicada. (IMAGEN ya NO pasa por aquí: desde IU-2 el checkbox de
+ * imagen OTORGA el consentimiento por-niño — ver `otorgar-imagen-alta.ts`.)
  *
  * `centro_id` se deriva server-side del niño (no falseable); la RLS exige además
  * `centro_de_nino(nino_id) = centro_id` y `es_tutor_de(nino_id)` — el tutor solo registra
@@ -21,7 +22,7 @@ import { fail, ok, type ActionResult } from '../../centros/types'
  */
 const registrarAcuseAltaSchema = z.object({
   nino_id: z.string().uuid(),
-  tipo: z.enum(['normas', 'imagen']),
+  tipo: z.literal('normas'),
 })
 
 export type RegistrarAcuseAltaInput = z.infer<typeof registrarAcuseAltaSchema>

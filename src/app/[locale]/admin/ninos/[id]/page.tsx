@@ -91,40 +91,15 @@ export default async function NinoDetallePage({ params }: PageProps) {
 
   // Avance del alta (P3c) — solo relevante mientras la matrícula no está 'activa'.
   const enAlta = matriculaActiva?.estado === 'pendiente' || matriculaActiva?.estado === 'lista'
-  // Imagen aceptada = firma real (modelo documento) O acuse por checkbox (`acuses_alta`, #237).
-  // Mismo criterio que el gate de finalización (finalizar-alta.ts): `imagenFirmada || acuse`.
-  // Sin esta 2ª vía, un alta aceptada por checkbox salía como "no autorizado" en la validación.
+  // Imagen aceptada = existe CONSENTIMIENTO de imagen del niño vigente (IU-2, fuente de
+  // verdad). Engloba ambas vías: checkbox y firma otorgan el mismo consent por-niño. Mismo
+  // criterio (señal) que el gate de finalización (finalizar-alta.ts).
   let imagenAceptada = false
   if (enAlta) {
-    const { data: autImg } = await supabase
-      .from('autorizaciones')
-      .select('id')
-      .eq('nino_id', id)
-      .eq('tipo', 'autorizacion_imagenes')
-      .eq('es_plantilla', false)
-      .limit(1)
-      .maybeSingle()
-    if (autImg) {
-      const { data: firma } = await supabase
-        .from('firmas_autorizacion')
-        .select('id')
-        .eq('autorizacion_id', autImg.id)
-        .eq('nino_id', id)
-        .eq('decision', 'firmado')
-        .limit(1)
-        .maybeSingle()
-      imagenAceptada = firma !== null
-    }
-    if (!imagenAceptada) {
-      const { data: acuseImg } = await supabase
-        .from('acuses_alta')
-        .select('tipo')
-        .eq('nino_id', id)
-        .eq('tipo', 'imagen')
-        .limit(1)
-        .maybeSingle()
-      imagenAceptada = acuseImg !== null
-    }
+    const { data: imagenConsentida } = await supabase.rpc('existe_consentimiento_imagen', {
+      p_nino_id: id,
+    })
+    imagenAceptada = imagenConsentida ?? false
   }
   const medicoCompleto = !!info && Object.values(info).some((v) => v !== null && v !== '')
 

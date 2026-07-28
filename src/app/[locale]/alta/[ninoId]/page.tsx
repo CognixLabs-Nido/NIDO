@@ -239,14 +239,19 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const normasPanel = await panelFirma(supabase, ninoId, 'reglas_regimen_interno', true)
   const normasSinPlantilla = normasPanel === null
 
-  // Vía B — acuses por checkbox (normas/imagen) ya registrados para este niño (sin documento).
+  // Vía B — normas por acuse (checkbox → `acuses_alta`); imagen por CONSENT (checkbox →
+  // `otorgar_consentimiento_imagen`, IU-2). imagenAceptado = ¿el niño ya tiene consent de
+  // imagen vigente? (lo alimentan tanto el checkbox como la firma).
   const { data: acusesRows } = await supabase
     .from('acuses_alta')
     .select('tipo')
     .eq('nino_id', ninoId)
   const acusados = new Set((acusesRows ?? []).map((a) => a.tipo))
   const normasAceptado = acusados.has('normas')
-  const imagenAceptado = acusados.has('imagen')
+  const { data: imagenConsentida } = await supabase.rpc('existe_consentimiento_imagen', {
+    p_nino_id: ninoId,
+  })
+  const imagenAceptado = imagenConsentida ?? false
 
   // SEPA (G-2): datos del centro (acreedor) y mandato activo previo del tutor 1 (titular).
   const { data: centro } = await supabase
