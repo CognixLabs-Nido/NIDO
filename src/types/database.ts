@@ -4600,6 +4600,10 @@ export type Database = {
           sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
         }[]
       }
+      existe_consentimiento_imagen: {
+        Args: { p_nino_id: string }
+        Returns: boolean
+      }
       organizador_de_cita: { Args: { p_cita_id: string }; Returns: string }
       otorgar_consentimiento_imagen: {
         Args: {
@@ -4875,7 +4879,7 @@ export type Database = {
       estado_remesa: "borrador" | "enviada"
       evento_estado: "programado" | "cancelado"
       firma_decision: "firmado" | "rechazado" | "revocado"
-      firma_metodo: "digital" | "presencial"
+      firma_metodo: "checkbox" | "digital" | "presencial"
       humor_agenda: "feliz" | "tranquilo" | "inquieto" | "triste" | "cansado"
       lactancia_estado:
         | "materna"
@@ -5167,7 +5171,7 @@ export const Constants = {
       estado_remesa: ["borrador", "enviada"],
       evento_estado: ["programado", "cancelado"],
       firma_decision: ["firmado", "rechazado", "revocado"],
-      firma_metodo: ["digital", "presencial"],
+      firma_metodo: ["checkbox", "digital", "presencial"],
       humor_agenda: ["feliz", "tranquilo", "inquieto", "triste", "cansado"],
       lactancia_estado: [
         "materna",

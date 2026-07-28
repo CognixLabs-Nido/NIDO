@@ -42,6 +42,9 @@ export async function familiaTieneMandatoActivo(
     titular: data.titular,
     identificador_mandato: data.identificador_mandato,
     fecha_firma: data.fecha_firma,
-    metodo_firma: data.metodo_firma,
+    // El mandato SEPA se firma en pantalla (digital) o presencial; nunca por 'checkbox'
+    // (ese método es solo del consent de imagen, IU-2). La columna comparte el enum
+    // `firma_metodo` ampliado, así que se estrecha al dominio real del mandato.
+    metodo_firma: data.metodo_firma as 'digital' | 'presencial',
   }
 }

@@ -67,7 +67,7 @@ interface Props {
   fotoInicialUrl: string | null
   imagenPanel: ImagenPanelData | null
   imagenSinPlantilla: boolean
-  /** ¿Ya hay fila en `acuses_alta` (tipo 'imagen') para este niño? */
+  /** ¿El niño ya tiene consent de imagen vigente? (IU-2: el checkbox otorga el consent). */
   imagenAceptado: boolean
   currentUserId: string
   currentUserNombre: string

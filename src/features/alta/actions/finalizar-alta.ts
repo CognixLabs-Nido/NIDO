@@ -85,9 +85,10 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   if (!nino) return fail('alta.errors.finalizar_fallo')
   if (!nino.apellidos || !nino.fecha_nacimiento) faltan.push('identidad')
 
-  // Vía B — acuses por checkbox (normas/imagen) SIN documento (tabla `acuses_alta`). Es una
-  // vía VÁLIDA del gate ADEMÁS de la firma real: normas/imagen se dan por hechos si hay firma
-  // `decision='firmado'` O una fila de acuse. No se relaja la obligatoriedad (siguen exigidos).
+  // Vía B — acuse por checkbox de NORMAS SIN documento (tabla `acuses_alta`). Es una vía
+  // VÁLIDA del gate ADEMÁS de la firma real: normas se da por hecha si hay firma
+  // `decision='firmado'` O una fila de acuse. (IMAGEN ya no va por acuse: se comprueba por
+  // el consent — ver abajo.) No se relaja la obligatoriedad (siguen exigidos).
   const { data: acusesRows } = await supabase.from('acuses_alta').select('tipo').eq('nino_id', id)
   const acusados = new Set((acusesRows ?? []).map((a) => a.tipo))
 
@@ -131,30 +132,15 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   }
   if (!tieneMandatoFamilia) faltan.push('sepa')
 
-  // Autorización de IMAGEN firmada (acuse obligatorio). Se busca la instancia publicada
-  // por-niño (patrón B2) y su última firma; `firmado` = acuse hecho.
-  const { data: imagenInst } = await supabase
-    .from('autorizaciones')
-    .select('id')
-    .eq('tipo', 'autorizacion_imagenes')
-    .eq('es_plantilla', false)
-    .eq('estado', 'publicada')
-    .eq('nino_id', id)
-    .limit(1)
-    .maybeSingle()
-  let imagenFirmada = false
-  if (imagenInst) {
-    const { data: firma } = await supabase
-      .from('firmas_autorizacion')
-      .select('decision')
-      .eq('autorizacion_id', imagenInst.id)
-      .eq('nino_id', id)
-      .order('firmado_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    imagenFirmada = firma?.decision === 'firmado'
-  }
-  if (!imagenFirmada && !acusados.has('imagen')) faltan.push('imagen')
+  // Autorización de IMAGEN (acuse obligatorio). Fuente de verdad = el CONSENTIMIENTO de
+  // imagen del niño (IU-2): lo otorgan tanto el checkbox como la firma (vía A). La señal es
+  // "existe consent vigente" (ANY) — equivalente EXACTO a la vieja "firma firmada O acuse"
+  // (una aceptación basta); no se endurece con requiere_ambos. NO relaja la obligatoriedad,
+  // solo cambia la señal (acuse → consent).
+  const { data: imagenConsentida } = await supabase.rpc('existe_consentimiento_imagen', {
+    p_nino_id: id,
+  })
+  if (!imagenConsentida) faltan.push('imagen')
 
   // Acuse de NORMAS de régimen interno firmado (D-3, acuse obligatorio). A diferencia de
   // imagen (B2, por niño), las normas son patrón A: la dirección publica UNA instancia de

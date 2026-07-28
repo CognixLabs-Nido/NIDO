@@ -50,7 +50,8 @@ interface Props {
   imagenSinPlantilla: boolean
   normasPanel: FirmaPanelData | null
   normasSinPlantilla: boolean
-  /** ¿Ya hay fila en `acuses_alta` para este niño? (acuse por checkbox de normas/imagen, vía B). */
+  /** normasAceptado: fila en `acuses_alta` (vía B). imagenAceptado: consent de imagen del
+   *  niño vigente (IU-2) — el checkbox de imagen otorga el consent, no un acuse. */
   normasAceptado: boolean
   imagenAceptado: boolean
   familiaEstadoCivil: EstadoCivil | null
