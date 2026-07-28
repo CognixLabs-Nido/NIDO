@@ -39,6 +39,11 @@ function err(error: string, status = 400): Response {
  * RLS de la tabla) y la firma se hacen con **service role tras autorizar** (ADR-0027).
  * `sharp` quita EXIF/GPS y normaliza a JPEG (perfil + avatar). HEIC se rechaza con
  * mensaje claro (mismo criterio que F10-1).
+ *
+ * Consentimiento de imagen (IU-3): sin consent vigente del niño no hay foto de perfil.
+ * Aquí se pre-chequea el flag derivado `puede_aparecer_en_fotos` para dar un mensaje
+ * claro ANTES de subir; el bloqueo real, por-niño, lo enforza la BD (RPC + policies de
+ * Storage de `ninos-fotos`) — mismo gate que el etiquetado.
  */
 export async function POST(
   request: Request,
@@ -55,11 +60,16 @@ export async function POST(
   // Ficha visible para el usuario (RLS de `ninos`) → nos da centro_id para la ruta.
   const { data: nino } = await supabase
     .from('ninos')
-    .select('id, centro_id, foto_url')
+    .select('id, centro_id, foto_url, puede_aparecer_en_fotos')
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
   if (!nino) return err('fotos.errors.no_autorizado', 403)
+
+  // IU-3: sin consentimiento de imagen vigente (flag derivado por-niño) no se sube la
+  // foto de perfil. Pre-chequeo para un mensaje claro; la BD lo bloquea igualmente
+  // (RPC `actualizar_foto_nino_tutor` + policies de Storage de `ninos-fotos`).
+  if (!nino.puede_aparecer_en_fotos) return err('fotos.errors.nino_sin_permiso', 403)
 
   let form: FormData
   try {
