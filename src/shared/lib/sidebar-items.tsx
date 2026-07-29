@@ -14,6 +14,7 @@ import {
   HistoryIcon,
   HomeIcon,
   ImageIcon,
+  ImageOffIcon,
   LayoutDashboardIcon,
   MessageCircleIcon,
   UsersIcon,
@@ -80,6 +81,11 @@ export async function buildSidebarItems(
         href: `/${locale}/admin/autorizaciones`,
         label: t('autorizaciones'),
         icon: <FileSignatureIcon />,
+      },
+      {
+        href: `/${locale}/admin/fotos-revocadas`,
+        label: t('fotosRevocadas'),
+        icon: <ImageOffIcon />,
       },
       {
         href: `/${locale}/admin/informes`,

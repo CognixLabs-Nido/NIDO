@@ -226,7 +226,8 @@
       "personal": "Personal",
       "admisiones": "Admissions",
       "pendientes": "Validacions",
-      "familias": "Famílies"
+      "familias": "Famílies",
+      "fotosRevocadas": "Fotos revocades"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -1133,6 +1134,31 @@
         "tutor_no_encontrado": "Tutor no trobat",
         "guardado": "No s’ha pogut guardar"
       }
+    },
+    "fotosRevocadas": {
+      "titulo": "Fotos revocades",
+      "descripcion": "Xiquets amb l'autorització d'imatge revocada que encara apareixen etiquetats en publicacions. Les fotos estan amagades a les famílies; resol-les una a una.",
+      "vacio": "No hi ha revocacions amb fotos pendents.",
+      "col_nino": "Xiquet",
+      "col_pendientes": "Pendents",
+      "pendientes": "{count, plural, one {# foto} other {# fotos}}",
+      "gestionar": "Gestionar",
+      "volver": "Tornar al llistat",
+      "detalle_titulo": "Fotos de {nombre}",
+      "detalle_descripcion": "Resol cada foto: esborra-la (elimina la publicació) o marca-la resolta si ja l'has gestionada fora del sistema. No s'esborra ni es pixela res automàticament.",
+      "detalle_vacio": "No queden fotos pendents d'este xiquet.",
+      "sin_miniatura": "Sense miniatura",
+      "otros_ninos": "{count, plural, one {La publicació etiqueta un altre xiquet més} other {La publicació etiqueta altres # xiquets}}",
+      "marcar_resuelta": "Marcar resolta",
+      "borrar_publicacion": "Esborrar publicació",
+      "borrar_titulo": "Esborrar la publicació",
+      "borrar_aviso": "S'eliminarà la publicació sencera (foto i post) de manera permanent. Voleu esborrar?",
+      "borrar_aviso_varios": "S'eliminarà la publicació sencera per a TOTS. {count, plural, one {També apareix un altre xiquet} other {També apareixen altres # xiquets}} que deixaran de tindre-la. Voleu esborrar?",
+      "cancelar": "Cancel·lar",
+      "borrar_confirmar": "Esborrar publicació",
+      "procesando": "Esborrant…",
+      "resuelta_ok": "Foto marcada com a resolta.",
+      "borrada_ok": "Publicació esborrada."
     }
   },
   "teacher": {
@@ -3407,7 +3433,8 @@
       "etiquetado_fallo": "No s'ha pogut etiquetar.",
       "nino_sin_permiso": "Eixe xiquet no té consentiment d'imatge.",
       "subida_fallo": "No s'ha pogut pujar la foto.",
-      "procesado_fallo": "No s'ha pogut processar la foto."
+      "procesado_fallo": "No s'ha pogut processar la foto.",
+      "resolver_fallo": "No s'ha pogut resoldre la foto"
     }
   },
   "export": {

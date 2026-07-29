@@ -3024,6 +3024,8 @@ export type Database = {
           id: string
           media_id: string
           nino_id: string
+          resuelta_en: string | null
+          resuelta_por: string | null
         }
         Insert: {
           centro_id: string
@@ -3031,6 +3033,8 @@ export type Database = {
           id?: string
           media_id: string
           nino_id: string
+          resuelta_en?: string | null
+          resuelta_por?: string | null
         }
         Update: {
           centro_id?: string
@@ -3038,6 +3042,8 @@ export type Database = {
           id?: string
           media_id?: string
           nino_id?: string
+          resuelta_en?: string | null
+          resuelta_por?: string | null
         }
         Relationships: [
           {
@@ -3045,6 +3051,13 @@ export type Database = {
             columns: ["centro_id"]
             isOneToOne: false
             referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_etiquetas_resuelta_por_fkey"
+            columns: ["resuelta_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -4677,6 +4690,10 @@ export type Database = {
       }
       revocar_consentimiento_imagen: {
         Args: { p_nino_id: string }
+        Returns: number
+      }
+      resolver_etiqueta_imagen: {
+        Args: { p_media_etiqueta_id: string }
         Returns: number
       }
       set_datos_acreedor: {
