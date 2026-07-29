@@ -994,7 +994,9 @@
           "parentesco_requerido": "Este titular no tiene ningún vínculo del que heredar el parentesco; indícalo abajo para completar el alta"
         },
         "parentesco_requerido_aviso": "No hemos podido deducir el parentesco del titular con el niño. Indícalo para completar el alta."
-      }
+      },
+      "vinculado_completar": "Ese tutor ya tiene cuenta: el hijo se ha vinculado a su familia. No hace falta enviarle credenciales.",
+      "vinculado_invitar": "Ese tutor ya tiene cuenta: el hijo se ha añadido a su familia. No hace falta invitación."
     },
     "pendientes": {
       "title": "Validaciones pendientes",

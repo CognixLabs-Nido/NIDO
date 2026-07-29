@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Json } from '@/types/database'
 
+import { vincularHijoATutorExistente } from '../lib/vincular-hijo-tutor-existente'
 import { invitarAlAltaSchema, type InvitarAlAltaInput } from '../schemas/lista-espera'
 import { fail, ok, type ActionResult } from '../../centros/types'
 
@@ -31,6 +32,9 @@ type ResultadoCrearFamilia = {
 export type InvitarAlAltaOk =
   | { resultado: 'ok'; ninoId: string; invitationId: string }
   | { resultado: 'colision'; nombreExistente: string | null }
+  // FIX A: el tutor YA tenía cuenta → el hijo se vinculó a su familia directamente (sin
+  // email ni invitación: ya tiene acceso). La UI lo distingue del alta invitada.
+  | { resultado: 'vinculado'; ninoId: string }
 
 /**
  * F11-H-3 "invitar al alta" (F-2b-2b: cableado a la RPC de familia). Promociona un prospecto
@@ -138,8 +142,30 @@ export async function invitarAlAlta(
       .limit(1)
     tieneRoles = (rolesPrevios?.length ?? 0) > 0
   }
-  if (clasificarCuenta(Boolean(authUser), tieneRoles) === 'real') {
-    return fail('listaEspera.errors.tutor_ya_registrado_usar_anadir_hijo')
+  if (clasificarCuenta(Boolean(authUser), tieneRoles) === 'real' && authUser) {
+    // FIX A — el tutor YA tiene cuenta operativa: en vez de rechazar, vinculamos el nuevo hijo
+    // a su familia del centro (o creamos familia nueva si no tiene aquí) SIN email ni
+    // invitación (ya tiene acceso) + push. `invitarAlAltaSchema` no trae parentesco → se hereda
+    // del vínculo previo del tutor (p. ej. su 1.er hijo); si no hubiera herencia, falla claro.
+    const vinc = await vincularHijoATutorExistente(service, supabase, {
+      tutorUsuarioId: authUser.id,
+      centroId,
+      aulaId: parsed.data.aulaId,
+      nombreNino: prospecto.nombre_nino,
+      apellidosNino: prospecto.apellidos_nino ?? '',
+      fechaNacimiento,
+      locale,
+    })
+    if (!vinc.success) return fail(vinc.error)
+
+    const { error: estadoErr } = await supabase
+      .from('lista_espera')
+      .update({ estado: 'invitado' })
+      .eq('id', prospecto.id)
+    if (estadoErr) logger.warn('invitarAlAlta estado update (vinculado)', estadoErr.message)
+
+    revalidatePath('/[locale]/admin/admisiones', 'page')
+    return ok({ resultado: 'vinculado', ninoId: vinc.data.ninoId })
   }
 
   // 1. RPC transaccional con `p_usuario_id = NULL` (ver cabecera): crea familia + perfil

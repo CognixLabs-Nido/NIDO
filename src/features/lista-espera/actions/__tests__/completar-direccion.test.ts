@@ -90,8 +90,18 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 
 vi.mock('@/lib/supabase/admin', () => ({
-  // El service client solo se pasa a `crearTutorDirecto` (mockeado) → basta un objeto vacío.
-  createServiceRoleClient: vi.fn(() => ({})),
+  // El service client se pasa a `crearTutorDirecto` (mockeado) y se usa para la detección
+  // exacta por email (fix B / fix A): `rpc('buscar_auth_user_por_email').maybeSingle()`. En
+  // estos tests el email NO existe (→ 0 filas → cuenta 'nueva' → sigue el flujo de cuenta
+  // nueva); así la rama "tutor existente" (fix A) no se dispara y el comportamiento no cambia.
+  createServiceRoleClient: vi.fn(() => ({
+    rpc: vi.fn(() => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) })),
+    from: vi.fn(() => ({
+      select: () => ({
+        eq: () => ({ is: () => ({ limit: () => Promise.resolve({ data: [], error: null }) }) }),
+      }),
+    })),
+  })),
 }))
 
 vi.mock('@/features/centros/queries/get-centro-actual', () => ({
