@@ -32,6 +32,7 @@ import {
 } from '@/features/ninos/queries/get-ninos'
 import { HistorialMatriculas } from '@/features/ninos/components/HistorialMatriculas'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
+import { RevocarImagenNinoButton } from '@/features/ninos/components/RevocarImagenNinoButton'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { DatosPedagogicosTab } from '@/features/datos-pedagogicos/components/DatosPedagogicosTab'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
@@ -260,6 +261,19 @@ export default async function NinoDetallePage({ params }: PageProps) {
                   initialUrl={foto.urlMiniatura ?? foto.url}
                   alt={`${nino.nombre} ${nino.apellidos ?? ''}`.trim()}
                 />
+                {/* IU-4: revocar el consent de imagen oculta al niño de las fotos y elimina
+                    su perfil. Solo se ofrece si hoy puede aparecer (consent vigente). */}
+                {nino.puede_aparecer_en_fotos && (
+                  <div className="border-t pt-4">
+                    <p className="text-muted-foreground mb-2 text-xs">
+                      {t('fotos.revocar.explicacion')}
+                    </p>
+                    <RevocarImagenNinoButton
+                      ninoId={nino.id}
+                      nombreCompleto={`${nino.nombre} ${nino.apellidos ?? ''}`.trim()}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

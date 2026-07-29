@@ -731,7 +731,17 @@
         "acciones": "Accions"
       },
       "fotos": {
-        "titulo": "Foto del xiquet"
+        "titulo": "Foto del xiquet",
+        "revocar": {
+          "explicacion": "Revocar l'autorització d'imatge amaga a l'instant el xiquet de totes les fotos i elimina la seua foto de perfil. Les publicacions no s'esborren.",
+          "boton": "Revocar autorització d'imatge",
+          "titulo": "Revocar autorització d'imatge",
+          "aviso": "{nombre} deixarà d'aparéixer a l'instant en totes les fotos del centre i s'eliminarà la seua foto de perfil. Les publicacions no s'esborren; la Direcció les revisarà a banda. No afecta altres xiquets. Voleu revocar?",
+          "cancelar": "Cancel·lar",
+          "confirmar": "Revocar",
+          "procesando": "Revocant…",
+          "exito": "Autorització d'imatge revocada; el xiquet ja no apareix a les fotos."
+        }
       },
       "badge": {
         "alta_en_curso": "Alta en curs",
@@ -1743,6 +1753,12 @@
       "errors": {
         "no_autorizado": "No tens permís per a reincorporar este xiquet",
         "fallo": "No s'ha pogut reincorporar el xiquet"
+      }
+    },
+    "imagen": {
+      "errors": {
+        "no_autorizado": "No tens permís per a revocar l'autorització d'imatge d'este xiquet",
+        "fallo": "No s'ha pogut revocar l'autorització d'imatge"
       }
     }
   },

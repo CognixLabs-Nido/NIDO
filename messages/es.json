@@ -731,7 +731,17 @@
         "acciones": "Acciones"
       },
       "fotos": {
-        "titulo": "Foto del niño"
+        "titulo": "Foto del niño",
+        "revocar": {
+          "explicacion": "Revocar la autorización de imagen oculta al instante al niño de todas las fotos y elimina su foto de perfil. Las publicaciones no se borran.",
+          "boton": "Revocar autorización de imagen",
+          "titulo": "Revocar autorización de imagen",
+          "aviso": "{nombre} dejará de aparecer al instante en todas las fotos del centro y se eliminará su foto de perfil. Las publicaciones no se borran; Dirección las revisará aparte. No afecta a otros niños. ¿Revocar?",
+          "cancelar": "Cancelar",
+          "confirmar": "Revocar",
+          "procesando": "Revocando…",
+          "exito": "Autorización de imagen revocada; el niño ya no aparece en las fotos."
+        }
       },
       "badge": {
         "alta_en_curso": "Alta en curso",
@@ -1743,6 +1753,12 @@
       "errors": {
         "no_autorizado": "No tienes permiso para reincorporar a este niño",
         "fallo": "No se pudo reincorporar al niño"
+      }
+    },
+    "imagen": {
+      "errors": {
+        "no_autorizado": "No tienes permiso para revocar la autorización de imagen de este niño",
+        "fallo": "No se pudo revocar la autorización de imagen"
       }
     }
   },
