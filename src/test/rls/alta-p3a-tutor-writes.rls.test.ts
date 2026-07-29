@@ -108,6 +108,15 @@ describe.skipIf(!APPLIED)('Alta P3a — escritura del tutor (RLS/RPC)', () => {
     clientAut = await clientFor(autorizadoA)
     clientAdmin = await clientFor(admin)
 
+    // IU-3: la RPC `actualizar_foto_nino_tutor` ahora exige consent de imagen del niño.
+    // ninoA lo otorga (service_role salta el guard) para que el caso POSITIVO de abajo
+    // «la dirección SÍ cambia la foto» siga pasando. Las negativas (autorizado → 42501)
+    // no dependen del consent: el gate de authz precede al de imagen en la RPC.
+    await serviceClient.rpc('otorgar_consentimiento_imagen', {
+      p_nino_id: ninoA.id,
+      p_tutor: tutorCon.id,
+    })
+
     // tutorCon otorga el consentimiento de datos médicos (auth.uid() = su id).
     await clientCon.rpc('registrar_consentimiento', {
       p_usuario_id: tutorCon.id,
