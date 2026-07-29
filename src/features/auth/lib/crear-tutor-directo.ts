@@ -44,16 +44,17 @@ export async function crearTutorDirecto(
   service: ServiceClient,
   params: CrearTutorDirectoParams
 ): Promise<ActionResult<{ usuarioId: string }>> {
-  // 1. Clasificar la cuenta del email (idempotencia del reintento). `listUsers` localiza la
-  //    fila auth; la señal de "cuenta real" es tener al menos un rol (igual que accept-invitation).
-  const { data: existentes, indisponible: listIndisponible } = await llamarGoTrue('listUsers', () =>
-    service.auth.admin.listUsers()
-  )
-  if (listIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
-
-  const authUser = (existentes?.users ?? []).find(
-    (u) => u.email?.toLowerCase() === params.email.toLowerCase()
-  )
+  // 1. Clasificar la cuenta del email (idempotencia del reintento). La detección va por la RPC
+  //    `buscar_auth_user_por_email` (búsqueda EXACTA en auth.users por email, service_role):
+  //    reemplaza a `listUsers()` sin paginar, que solo veía la 1.ª página (50) y fallaba con
+  //    >50 usuarios (FIX B). La señal de "cuenta real" sigue siendo tener al menos un rol.
+  const { data: authUser, error: buscarErr } = await service
+    .rpc('buscar_auth_user_por_email', { p_email: params.email })
+    .maybeSingle()
+  if (buscarErr) {
+    logger.warn('crearTutorDirecto buscar_auth_user_por_email', buscarErr.message)
+    return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+  }
   let tieneRoles = false
   if (authUser) {
     const { data: rolesPrevios } = await service
