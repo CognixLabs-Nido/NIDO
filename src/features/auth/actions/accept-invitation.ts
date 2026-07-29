@@ -129,10 +129,16 @@ export async function acceptInvitationCore(
   // `sendInvitation`) PRE-CREA un STUB en auth.users sin roles → aquí hay que
   // COMPLETARLO, no crear de cero (createUser fallaría con "ya registrado"). Solo una
   // cuenta REAL (con roles) se rechaza: esa va por B8 (acceptPendingInvitation).
-  const { data: existing } = await service.auth.admin.listUsers()
-  const authUser = existing.users.find(
-    (u) => u.email?.toLowerCase() === invitation.email.toLowerCase()
-  )
+  // Detección EXACTA por email vía RPC (service_role), no `listUsers()` sin paginar (que
+  // solo veía la 1.ª página de 50 → un invitado más allá de la página quedaba mal
+  // clasificado con >50 usuarios, rompiendo su propia aceptación — FIX B).
+  const { data: authUser, error: buscarErr } = await service
+    .rpc('buscar_auth_user_por_email', { p_email: invitation.email })
+    .maybeSingle()
+  if (buscarErr) {
+    logger.warn('accept: buscar_auth_user_por_email falló', buscarErr.message)
+    return fail('auth.invitation.errors.create_failed')
+  }
   let tieneRoles = false
   if (authUser) {
     const { data: rolesPrevios } = await service

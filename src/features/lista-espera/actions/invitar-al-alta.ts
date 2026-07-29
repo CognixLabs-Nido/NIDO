@@ -115,18 +115,19 @@ export async function invitarAlAlta(
   // crearía y luego `inviteUserByEmail` fallaría con `email_exists`, sin vínculo ni
   // invitación. El camino correcto para un tutor con cuenta es "Añadir hijo a familia
   // existente" (F-2b-4-2), que da acceso directo. Se detecta con el MISMO patrón que
-  // `crearTutorDirecto`/`accept-invitation`: `listUsers` (service-role) + roles activos →
-  // `clasificarCuenta`. Como la comprobación va antes de la RPC, no se escribe NADA si es
-  // 'real': no se crea niño, no queda huérfano. Cuentas `nueva`/`stub` (sin roles) siguen
-  // por el flujo de invitación normal sin cambios.
+  // `crearTutorDirecto`/`accept-invitation`: la RPC `buscar_auth_user_por_email`
+  // (service-role, búsqueda EXACTA por email) + roles activos → `clasificarCuenta`. Sustituye
+  // a `listUsers()` sin paginar (solo veía 50, detección errática con >50 usuarios — FIX B).
+  // Como la comprobación va antes de la RPC, no se escribe NADA si es 'real': no se crea niño,
+  // no queda huérfano. Cuentas `nueva`/`stub` (sin roles) siguen por el flujo normal sin cambios.
   const service = createServiceRoleClient()
-  const { data: existentes, indisponible: listIndisponible } = await llamarGoTrue('listUsers', () =>
-    service.auth.admin.listUsers()
-  )
-  if (listIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
-  const authUser = (existentes?.users ?? []).find(
-    (u) => u.email?.toLowerCase() === emailTutor.toLowerCase()
-  )
+  const { data: authUser, error: buscarErr } = await service
+    .rpc('buscar_auth_user_por_email', { p_email: emailTutor })
+    .maybeSingle()
+  if (buscarErr) {
+    logger.warn('invitarAlAlta buscar_auth_user_por_email', buscarErr.message)
+    return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+  }
   let tieneRoles = false
   if (authUser) {
     const { data: rolesPrevios } = await service

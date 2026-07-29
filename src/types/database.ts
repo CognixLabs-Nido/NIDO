@@ -4373,6 +4373,10 @@ export type Database = {
       _get_medical_key: { Args: never; Returns: string }
       _get_sepa_key: { Args: never; Returns: string }
       _redactar_jsonb: { Args: { claves: string[]; j: Json }; Returns: Json }
+      buscar_auth_user_por_email: {
+        Args: { p_email: string }
+        Returns: { id: string; email: string }[]
+      }
       actualizar_foto_nino_tutor: {
         Args: { p_foto_path: string; p_nino_id: string }
         Returns: string
