@@ -731,7 +731,17 @@
         "acciones": "Actions"
       },
       "fotos": {
-        "titulo": "Child photo"
+        "titulo": "Child photo",
+        "revocar": {
+          "explicacion": "Revoking image consent instantly hides the child from all photos and deletes their profile photo. Posts are not deleted.",
+          "boton": "Revoke image consent",
+          "titulo": "Revoke image consent",
+          "aviso": "{nombre} will immediately stop appearing in all the centre's photos and their profile photo will be deleted. Posts are not deleted; management will review them separately. Other children are not affected. Revoke?",
+          "cancelar": "Cancel",
+          "confirmar": "Revoke",
+          "procesando": "Revoking…",
+          "exito": "Image consent revoked; the child no longer appears in photos."
+        }
       },
       "badge": {
         "alta_en_curso": "In progress",
@@ -1743,6 +1753,12 @@
       "errors": {
         "no_autorizado": "You don't have permission to reinstate this child",
         "fallo": "The child could not be reinstated"
+      }
+    },
+    "imagen": {
+      "errors": {
+        "no_autorizado": "You don't have permission to revoke this child's image consent",
+        "fallo": "Could not revoke image consent"
       }
     }
   },
