@@ -35,6 +35,12 @@ export const eliminarMediaSchema = z.object({
 })
 export type EliminarMediaInput = z.infer<typeof eliminarMediaSchema>
 
+// IU-5 — marcar RESUELTA una etiqueta (foto×niño) de un niño revocado, sin borrar la foto.
+export const resolverEtiquetaSchema = z.object({
+  media_etiqueta_id: z.string().uuid(),
+})
+export type ResolverEtiquetaInput = z.infer<typeof resolverEtiquetaSchema>
+
 export const etiquetarSchema = z.object({
   media_id: z.string().uuid(),
   // El gate de permiso (puede_aparecer_en_fotos) lo aplica la RLS + la query del selector.

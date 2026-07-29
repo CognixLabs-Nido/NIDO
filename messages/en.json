@@ -226,7 +226,8 @@
       "personal": "Staff",
       "admisiones": "Admissions",
       "pendientes": "Validations",
-      "familias": "Families"
+      "familias": "Families",
+      "fotosRevocadas": "Revoked photos"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -1133,6 +1134,31 @@
         "tutor_no_encontrado": "Guardian not found",
         "guardado": "Could not save"
       }
+    },
+    "fotosRevocadas": {
+      "titulo": "Revoked photos",
+      "descripcion": "Children whose image consent was revoked but who are still tagged in posts. The photos are hidden from families; resolve them one by one.",
+      "vacio": "No revocations with pending photos.",
+      "col_nino": "Child",
+      "col_pendientes": "Pending",
+      "pendientes": "{count, plural, one {# photo} other {# photos}}",
+      "gestionar": "Manage",
+      "volver": "Back to list",
+      "detalle_titulo": "{nombre}'s photos",
+      "detalle_descripcion": "Resolve each photo: delete it (removes the post) or mark it resolved if you have handled it outside the system. Nothing is deleted or blurred automatically.",
+      "detalle_vacio": "No pending photos left for this child.",
+      "sin_miniatura": "No thumbnail",
+      "otros_ninos": "{count, plural, one {The post also tags one more child} other {The post also tags # more children}}",
+      "marcar_resuelta": "Mark resolved",
+      "borrar_publicacion": "Delete post",
+      "borrar_titulo": "Delete the post",
+      "borrar_aviso": "The entire post (photo and text) will be permanently deleted. Delete?",
+      "borrar_aviso_varios": "The entire post will be deleted for EVERYONE. {count, plural, one {One more child also appears} other {# more children also appear}} and will lose it. Delete?",
+      "cancelar": "Cancel",
+      "borrar_confirmar": "Delete post",
+      "procesando": "Deleting…",
+      "resuelta_ok": "Photo marked as resolved.",
+      "borrada_ok": "Post deleted."
     }
   },
   "teacher": {
@@ -3407,7 +3433,8 @@
       "etiquetado_fallo": "Could not tag.",
       "nino_sin_permiso": "That child does not have image consent.",
       "subida_fallo": "Could not upload the photo.",
-      "procesado_fallo": "Could not process the photo."
+      "procesado_fallo": "Could not process the photo.",
+      "resolver_fallo": "Could not resolve the photo"
     }
   },
   "export": {

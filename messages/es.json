@@ -226,7 +226,8 @@
       "personal": "Personal",
       "admisiones": "Admisiones",
       "pendientes": "Validaciones",
-      "familias": "Familias"
+      "familias": "Familias",
+      "fotosRevocadas": "Fotos revocadas"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -1133,6 +1134,31 @@
         "tutor_no_encontrado": "Tutor no encontrado",
         "guardado": "No se pudo guardar"
       }
+    },
+    "fotosRevocadas": {
+      "titulo": "Fotos revocadas",
+      "descripcion": "Niños con la autorización de imagen revocada que aún aparecen etiquetados en publicaciones. Las fotos están ocultas a las familias; resuélvelas una a una.",
+      "vacio": "No hay revocaciones con fotos pendientes.",
+      "col_nino": "Niño",
+      "col_pendientes": "Pendientes",
+      "pendientes": "{count, plural, one {# foto} other {# fotos}}",
+      "gestionar": "Gestionar",
+      "volver": "Volver al listado",
+      "detalle_titulo": "Fotos de {nombre}",
+      "detalle_descripcion": "Resuelve cada foto: bórrala (elimina la publicación) o márcala resuelta si ya la has gestionado fuera del sistema. No se borra ni se pixela nada automáticamente.",
+      "detalle_vacio": "No quedan fotos pendientes de este niño.",
+      "sin_miniatura": "Sin miniatura",
+      "otros_ninos": "{count, plural, one {La publicación etiqueta a otro niño más} other {La publicación etiqueta a otros # niños}}",
+      "marcar_resuelta": "Marcar resuelta",
+      "borrar_publicacion": "Borrar publicación",
+      "borrar_titulo": "Borrar la publicación",
+      "borrar_aviso": "Se eliminará la publicación entera (foto y post) de forma permanente. ¿Borrar?",
+      "borrar_aviso_varios": "Se eliminará la publicación entera para TODOS. {count, plural, one {También aparece otro niño} other {También aparecen otros # niños}} que dejarán de tenerla. ¿Borrar?",
+      "cancelar": "Cancelar",
+      "borrar_confirmar": "Borrar publicación",
+      "procesando": "Borrando…",
+      "resuelta_ok": "Foto marcada como resuelta.",
+      "borrada_ok": "Publicación borrada."
     }
   },
   "teacher": {
@@ -3407,7 +3433,8 @@
       "etiquetado_fallo": "No se pudo etiquetar.",
       "nino_sin_permiso": "Ese niño no tiene consentimiento de imagen.",
       "subida_fallo": "No se pudo subir la foto.",
-      "procesado_fallo": "No se pudo procesar la foto."
+      "procesado_fallo": "No se pudo procesar la foto.",
+      "resolver_fallo": "No se pudo resolver la foto"
     }
   },
   "export": {
