@@ -137,41 +137,48 @@ export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
   function confirmar() {
     if (!puedeConfirmar || !familia) return
     startTransition(async () => {
-      const r = await anadirHijoAFamilia(
-        {
-          familia_id: familia.id,
-          nombre: nombre.trim(),
-          apellidos: apellidos.trim(),
-          fecha_nacimiento: fechaNacimiento,
-          aula_id: aulaId,
-          ...(requiereParentesco && parentesco !== ''
-            ? {
-                parentesco,
-                descripcion_parentesco:
-                  parentesco === 'otro' ? descripcionParentesco.trim() : undefined,
-              }
-            : {}),
-        },
-        locale
-      )
-      if (r.success) {
-        toast.success(t('exito'))
-        setOpen(false)
-        reset()
-        router.refresh()
-      } else if (r.error === ERROR_PARENTESCO_REQUERIDO) {
-        // Titular sin vínculo del que heredar → revela el campo y pide completarlo.
-        setRequiereParentesco(true)
-        toast.error(tErrors(r.error))
-      } else {
-        toast.error(tErrors(r.error))
+      try {
+        const r = await anadirHijoAFamilia(
+          {
+            familia_id: familia.id,
+            nombre: nombre.trim(),
+            apellidos: apellidos.trim(),
+            fecha_nacimiento: fechaNacimiento,
+            aula_id: aulaId,
+            ...(requiereParentesco && parentesco !== ''
+              ? {
+                  parentesco,
+                  descripcion_parentesco:
+                    parentesco === 'otro' ? descripcionParentesco.trim() : undefined,
+                }
+              : {}),
+          },
+          locale
+        )
+        if (r.success) {
+          toast.success(t('exito'))
+          setOpen(false)
+          reset()
+          router.refresh()
+        } else if (r.error === ERROR_PARENTESCO_REQUERIDO) {
+          // Titular sin vínculo del que heredar → revela el campo y pide completarlo.
+          setRequiereParentesco(true)
+          toast.error(tErrors(r.error))
+        } else {
+          toast.error(tErrors(r.error))
+        }
+      } catch {
+        // Rejección de la server action (timeout de función serverless, red): antes se tragaba
+        // en el useTransition → botón mudo (BUG del flujo 3). Espejo de los diálogos completar/
+        // invitar: ahora SIEMPRE se avisa; el `pending` vuelve a false al asentarse la transición.
+        toast.error(tErrors('auth.invitation.errors.servicio_cuentas_no_disponible'))
       }
     })
   }
 
   return (
     <>
-      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
+      <Button type="button" size="sm" variant="outline" onClick={() => setOpen(true)}>
         <UsersRoundIcon />
         {t('boton')}
       </Button>

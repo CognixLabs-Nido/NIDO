@@ -8,7 +8,7 @@ import {
   UserRoundPenIcon,
 } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useState, useTransition, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
@@ -49,6 +49,8 @@ interface Props {
   /** Aulas del curso ACTIVO con ocupación (para fijar aula + aviso de capacidad al invitar). */
   aulas: AulaConOcupacion[]
   locale: string
+  /** Acción hermana ("Añadir hijo a familia existente") renderizada JUNTO a "Añadir niño nuevo". */
+  accionExtra?: ReactNode
 }
 
 export function ListaEsperaPanel({
@@ -57,6 +59,7 @@ export function ListaEsperaPanel({
   prospectos,
   aulas,
   locale,
+  accionExtra,
 }: Props) {
   const t = useTranslations('admin.admisiones')
   const tErrors = useTranslations()
@@ -119,10 +122,13 @@ export function ListaEsperaPanel({
             ))}
           </select>
         </label>
-        <ProspectoFormDialog
-          cursoId={cursoSeleccionadoId}
-          trigger={<Button size="sm">{t('nuevo')}</Button>}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          {accionExtra}
+          <ProspectoFormDialog
+            cursoId={cursoSeleccionadoId}
+            trigger={<Button size="sm">{t('nuevo')}</Button>}
+          />
+        </div>
       </div>
 
       <Card className="p-0">

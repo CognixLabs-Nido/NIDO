@@ -56,16 +56,9 @@ export default async function AdmisionesPage({ params, searchParams }: PageProps
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-h1 text-foreground">{t('title')}</h1>
-          <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
-        </div>
-        <AnadirHijoAFamiliaDialog
-          familias={familias}
-          aulas={aulasCursoActivo.map((a) => ({ id: a.id, nombre: a.nombre }))}
-          locale={locale}
-        />
+      <header className="space-y-1">
+        <h1 className="text-h1 text-foreground">{t('title')}</h1>
+        <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
       </header>
       <ListaEsperaPanel
         cursos={cursos.map((c) => ({ id: c.id, nombre: c.nombre }))}
@@ -73,6 +66,13 @@ export default async function AdmisionesPage({ params, searchParams }: PageProps
         prospectos={prospectos}
         aulas={aulas}
         locale={locale}
+        accionExtra={
+          <AnadirHijoAFamiliaDialog
+            familias={familias}
+            aulas={aulasCursoActivo.map((a) => ({ id: a.id, nombre: a.nombre }))}
+            locale={locale}
+          />
+        }
       />
     </div>
   )

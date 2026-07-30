@@ -890,7 +890,7 @@
       "sin_cursos": "No academic years",
       "sin_cursos_desc": "Create an academic year first.",
       "curso": "Year",
-      "nuevo": "Add prospect",
+      "nuevo": "Add new child",
       "vacio": "Empty waiting list",
       "vacio_desc": "Add the first prospect for this year.",
       "estado": "Status",
