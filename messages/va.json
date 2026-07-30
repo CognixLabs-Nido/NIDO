@@ -994,7 +994,9 @@
           "parentesco_requerido": "Este titular no té cap vincle del qual heretar el parentiu; indica'l davall per a completar l'alta"
         },
         "parentesco_requerido_aviso": "No hem pogut deduir el parentiu del titular amb el xiquet. Indica'l per a completar l'alta."
-      }
+      },
+      "vinculado_completar": "Eixe tutor ja té compte: el fill s'ha vinculat a la seua família. No cal enviar-li credencials.",
+      "vinculado_invitar": "Eixe tutor ja té compte: el fill s'ha afegit a la seua família. No cal invitació."
     },
     "pendientes": {
       "title": "Validacions pendents",

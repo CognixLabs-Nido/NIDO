@@ -245,6 +245,14 @@ function InvitarBoton({
             )
             return
           }
+          if (r.data.resultado === 'vinculado') {
+            // FIX A: el tutor ya tenía cuenta → hijo vinculado directamente (sin invitación).
+            toast.success(t('vinculado_invitar'))
+            setOpen(false)
+            setAulaId('')
+            router.refresh()
+            return
+          }
           toast.success(t('invitado'))
           setOpen(false)
           setAulaId('')
@@ -398,6 +406,14 @@ function CompletarBoton({
                 nombre: r.data.nombreExistente ?? '—',
               })
             )
+            return
+          }
+          if (r.data.resultado === 'vinculado') {
+            // FIX A: el tutor ya tenía cuenta → hijo vinculado a su familia (sin contraseña).
+            toast.success(t('vinculado_completar'))
+            setOpen(false)
+            reset()
+            router.push(`/${locale}/admin/ninos/${r.data.ninoId}`)
             return
           }
           toast.success(t('completado'))

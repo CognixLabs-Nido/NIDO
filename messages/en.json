@@ -994,7 +994,9 @@
           "parentesco_requerido": "This guardian has no relationship on record to inherit; select it below to complete the enrolment"
         },
         "parentesco_requerido_aviso": "We couldn't infer the guardian's relationship to the child. Select it to complete the enrolment."
-      }
+      },
+      "vinculado_completar": "That guardian already has an account: the child was linked to their family. No need to send credentials.",
+      "vinculado_invitar": "That guardian already has an account: the child was added to their family. No invitation needed."
     },
     "pendientes": {
       "title": "Pending validations",
