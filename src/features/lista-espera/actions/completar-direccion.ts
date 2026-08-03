@@ -1,5 +1,7 @@
 'use server'
 
+import { randomBytes } from 'node:crypto'
+
 import { revalidatePath } from 'next/cache'
 
 import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
@@ -37,17 +39,19 @@ export type CompletarEnDireccionOk =
   | { resultado: 'vinculado'; ninoId: string; usuarioId: string }
 
 /**
- * F11 alta PR-3a "Completa Dirección" (ENTRADA): la Dirección promociona un prospecto a
- * alta real completándola EN NOMBRE del tutor, SIN enviar email. Espejo de `invitarAlAlta`
- * (PR-2), pero en lugar de `sendInvitation` crea la cuenta del tutor con credenciales que
- * pone la propia Dirección (`crearTutorDirecto` → createUser, no inviteUserByEmail). Orquesta:
+ * F11 alta PR-3a "Completa Dirección" (ENTRADA; U-1): la Dirección PROMOCIONA un prospecto a
+ * alta real en nombre del tutor, SIN enviar email. Espejo de `invitarAlAlta` (PR-2), pero en
+ * lugar de `sendInvitation` crea la cuenta del tutor con `crearTutorDirecto` (createUser, no
+ * inviteUserByEmail) y SIN contraseña tecleada (D2, ver abajo). Orquesta:
  *   1. crea un ESQUELETO de niño (centro + nombre/apellidos + fecha_nacimiento del prospecto),
  *   2. crea su MATRÍCULA `pendiente` contra (aula elegida, curso activo),
- *   3. `crearTutorDirecto`: cuenta (email+password) + rol tutor_legal + vínculo tutor↔niño,
+ *   3. `crearTutorDirecto`: cuenta + rol tutor_legal + vínculo tutor↔niño,
  *   4. marca el prospecto como `estado='invitado'` (sale de la cola; no hay estado propio).
  *
- * El wizard y las acciones tutor-only NO se tocan aquí (eso es PR-3b): esta acción solo deja
- * el alta creada y devuelve `ninoId` para que la UI lleve a la ficha (punto de entrada).
+ * U-1 — esto es SOLO la promoción: la matrícula queda `pendiente` y aquí NO se marca lista
+ * (`marcar_matricula_lista` es del gate del wizard). Devuelve `ninoId` para que la UI lleve al
+ * WIZARD (`/alta/[ninoId]`, modo Dirección: admin del centro sin vínculo) donde se completan
+ * acuses/autorizaciones como en el alta unificada. Ya NO se va a la ficha del niño.
  *
  * Todos los INSERT sensibles van por service role (bypass RLS) → gate admin explícito antes.
  * Rollback compensado en cascada si algún paso falla: no deja cuenta/niño/rol/matrícula huérfanos.
@@ -160,9 +164,15 @@ export async function completarEnDireccion(
   // 1. Cuenta GoTrue PRIMERO (defensiva PR-A vía `crearTutorDirecto`). Si GoTrue falla, no se
   //    escribe nada en BD. Idempotente en reintento: una cuenta `stub` de un intento previo se
   //    reutiliza (no se re-crea). NO se crea niño/matrícula/rol/vínculo/perfil aquí: eso es la RPC.
+  //
+  //    D2: la Dirección NO teclea contraseña. La cuenta se crea con una contraseña ALEATORIA que
+  //    NADIE usa ni ve (email_confirm=true la deja usable); el tutor fija la SUYA con «He olvidado
+  //    la contraseña» (recuperación de Supabase). Prefijo `Aa1!` → cumple cualquier política de
+  //    complejidad (mayúscula/minúscula/dígito/símbolo) sin depender del azar; el resto es entropía.
+  const passwordAleatoria = `Aa1!${randomBytes(24).toString('base64url')}`
   const tutor = await crearTutorDirecto(service, {
     email: parsed.data.email,
-    password: parsed.data.password,
+    password: passwordAleatoria,
     // Nombre completo REAL del tutor (nombre + apellidos tecleados por la Dirección).
     nombreCompleto: `${parsed.data.nombreTutor} ${parsed.data.apellidosTutor}`,
     idiomaPreferido: locale,

@@ -129,7 +129,6 @@ const VALID_INPUT = {
   nombreTutor: 'María',
   apellidosTutor: 'Tutora Demo',
   email: 'tutor@nido.test',
-  password: 'Password1234!',
   parentesco: 'madre' as const,
   descripcionParentesco: null,
 }
@@ -165,6 +164,15 @@ describe('completarEnDireccion — alta modo Dirección con la RPC de familia', 
     }
     // La cuenta se crea PRIMERO; su usuario_id REAL viaja a la RPC (no NULL como en invitar).
     expect(crearTutorSpy).toHaveBeenCalledTimes(1)
+    // D2: la Dirección NO teclea contraseña → se genera una aleatoria con prefijo de complejidad
+    // (el tutor fija la suya con «He olvidado la contraseña»).
+    expect(crearTutorSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        email: 'tutor@nido.test',
+        password: expect.stringMatching(/^Aa1!/),
+      })
+    )
     expect(altaRpcCall()?.[1]).toMatchObject({
       p_usuario_id: 'tutor-id',
       p_centro_id: CENTRO,

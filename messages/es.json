@@ -936,11 +936,9 @@
       "completado": "Alta creada. Avisa al tutor para que active su cuenta.",
       "completar_dialog": {
         "title": "Completar alta (Dirección)",
-        "descripcion": "Creas la cuenta del tutor con estas credenciales. No se envía ningún email: comunícale que entre con «He olvidado la contraseña» para fijar la suya.",
+        "descripcion": "Creas la cuenta del tutor (sin contraseña). No se envía ningún email: comunícale que entre con «He olvidado la contraseña» para fijar la suya.",
         "email_label": "Email del tutor",
         "email_placeholder": "tutor@ejemplo.com",
-        "password_label": "Contraseña provisional",
-        "password_hint": "Mínimo 12 caracteres, con mayúscula, número y símbolo.",
         "parentesco_label": "Parentesco",
         "parentesco_placeholder": "Selecciona el parentesco",
         "descripcion_label": "Especifica el parentesco",
