@@ -22,10 +22,16 @@ const NINO = '22222222-2222-4222-8222-222222222222'
 let rpcAltaResult: { data: unknown; error: unknown }
 
 // Configurable por test para el GUARDARRAÍL F-2b-4-3 (cliente service-role):
-//  - `authUsersList`: filas auth.users que devuelve `listUsers` (find por email).
+//  - `authUsersList`: filas auth.users que resuelve la RPC `buscar_auth_user_por_email`
+//                     (match EXACTO por email — FIX B #261, antes `listUsers`).
 //  - `rolesResult`  : filas `roles_usuario` activas del tutor (≥1 → cuenta 'real').
 let authUsersList: Array<{ id: string; email: string }>
 let rolesResult: Array<{ usuario_id: string }>
+
+// Fixtures del camino FIX A (#262) "el tutor YA existe" — los lee
+// `vincularHijoATutorExistente`: su perfil en el centro y el vínculo del que hereda parentesco.
+let perfilTutor: { nombre_completo: string; email: string } | null
+let vinculoPrevio: { parentesco: string; descripcion_parentesco: string | null } | null
 
 const PROSPECTO_ROW = {
   id: PROSPECTO,
@@ -94,25 +100,50 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() => Promise.resolve(makeServerFake())),
 }))
 
-// Cliente service-role del guardarraíl: `auth.admin.listUsers` + lectura de `roles_usuario`.
+// Cliente service-role del guardarraíl: RPC `buscar_auth_user_por_email` + lectura de
+// `roles_usuario`.
+//
+// FIX B (#261): la detección de la cuenta dejó de hacerse con `auth.admin.listUsers()` (sin
+// paginar: solo veía la 1.ª página de 50) y pasó a la RPC service-role
+// `buscar_auth_user_por_email`, que hace búsqueda EXACTA por email. El doble replica esa
+// forma — `.rpc(...).maybeSingle()` → `{ data: fila | null }` — resolviendo contra el mismo
+// fixture `authUsersList`, que sigue representando las filas de `auth.users`.
 function makeServiceFake() {
-  function rolesBuilder() {
+  function builder(table: string) {
+    const result = () => {
+      if (table === 'roles_usuario') return { data: rolesResult, error: null }
+      // FIX A (#262): con cuenta REAL, `vincularHijoATutorExistente` lee el perfil del tutor
+      // en el centro (nombre EXACTO + email, anti-colisión) y su vínculo previo (parentesco
+      // heredado del 1.er hijo).
+      if (table === 'familia_tutores') return { data: perfilTutor, error: null }
+      if (table === 'vinculos_familiares') return { data: vinculoPrevio, error: null }
+      return { data: null, error: null }
+    }
     const b: Record<string, unknown> = {}
     const self = () => b as never
     b.select = () => self()
     b.eq = () => self()
     b.is = () => self()
     b.limit = () => self()
-    b.then = (resolve: (v: unknown) => void) => resolve({ data: rolesResult, error: null })
+    b.order = () => self()
+    b.maybeSingle = () => self()
+    b.then = (resolve: (v: unknown) => void) => resolve(result())
     return b
   }
   return {
-    from: () => rolesBuilder(),
-    auth: {
-      admin: {
-        listUsers: vi.fn(() => Promise.resolve({ data: { users: authUsersList }, error: null })),
-      },
-    },
+    from: (table: string) => builder(table),
+    // La RPC devuelve `TABLE (id uuid, email text)`; con `.maybeSingle()`, la fila que casa
+    // EXACTAMENTE por email o `null` si el email no existe en auth.users.
+    rpc: vi.fn((name: string, args?: Record<string, unknown>) => ({
+      maybeSingle: () =>
+        Promise.resolve({
+          data:
+            name === 'buscar_auth_user_por_email'
+              ? (authUsersList.find((u) => u.email === args?.p_email) ?? null)
+              : null,
+          error: null,
+        }),
+    })),
   }
 }
 
@@ -152,6 +183,8 @@ beforeEach(() => {
   // Por defecto: email SIN cuenta (clase 'nueva') → el guardarraíl no dispara.
   authUsersList = []
   rolesResult = []
+  perfilTutor = { nombre_completo: 'María Tutora', email: 'tutor@nido.test' }
+  vinculoPrevio = { parentesco: 'madre', descripcion_parentesco: null }
 })
 
 describe('invitarAlAlta — cableado a la RPC de familia (F-2b-2b)', () => {
@@ -211,20 +244,36 @@ describe('invitarAlAlta — cableado a la RPC de familia (F-2b-2b)', () => {
 })
 
 describe('invitarAlAlta — guardarraíl cuenta existente (F-2b-4-3)', () => {
-  it("email con cuenta REAL (con roles) → fail que redirige a 'añadir hijo', SIN llamar a la RPC ni invitar", async () => {
+  // FIX A (#262) cambió este escenario: con cuenta REAL ya NO se rechaza con
+  // `tutor_ya_registrado_usar_anadir_hijo` — se VINCULA el hijo nuevo a la familia existente
+  // del tutor (camino feliz del 2.º hijo), sin email ni invitación porque ya tiene acceso.
+  it('email con cuenta REAL (con roles) → vincula el hijo a su familia, sin invitación', async () => {
     // El tutor del prospecto ya tiene cuenta operativa (fila auth + ≥1 rol activo).
     authUsersList = [{ id: 'tutor-uid', email: 'tutor@nido.test' }]
     rolesResult = [{ usuario_id: 'tutor-uid' }]
 
     const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
 
-    expect(r.success).toBe(false)
-    if (!r.success) expect(r.error).toBe('listaEspera.errors.tutor_ya_registrado_usar_anadir_hijo')
-    // Ninguna escritura: la RPC de alta NO se invoca (no se crea niño huérfano) y no se invita.
+    expect(r.success).toBe(true)
+    if (r.success) {
+      expect(r.data.resultado).toBe('vinculado')
+      if (r.data.resultado === 'vinculado') expect(r.data.ninoId).toBe(NINO)
+    }
+    // Lo distintivo frente al flujo de invitar: la RPC lleva el `usuario_id` REAL del tutor
+    // (crea rol+vínculo al vuelo), no NULL.
     const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
-    expect(altaCall).toBeUndefined()
+    expect(altaCall?.[1]).toMatchObject({
+      p_usuario_id: 'tutor-uid',
+      p_centro_id: CENTRO,
+      p_aula_id: AULA,
+      // Nombre EXACTO del perfil guardado → el chequeo de colisión de la RPC queda inerte.
+      p_tutor_nombre_completo: 'María Tutora',
+      // Parentesco heredado del vínculo previo (mismo tutor, hermano anterior).
+      p_parentesco: 'madre',
+    })
+    // Ya tiene acceso: no se manda invitación. El prospecto sí sale de la cola.
     expect(sendInvitationSpy).not.toHaveBeenCalled()
-    expect(estadoUpdateSpy).not.toHaveBeenCalled()
+    expect(estadoUpdateSpy).toHaveBeenCalledTimes(1)
   })
 
   it('email con cuenta STUB (fila auth sin roles) → sigue el flujo de invitación normal (RPC con p_usuario_id NULL)', async () => {

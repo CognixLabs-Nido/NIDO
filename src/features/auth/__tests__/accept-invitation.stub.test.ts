@@ -90,10 +90,26 @@ function makeServiceFake() {
   }
   return {
     from: (table: string) => builder(table),
-    rpc: vi.fn(() => Promise.resolve({ error: null })),
+    // Dos formas de uso conviven en la action:
+    //  - `buscar_auth_user_por_email` (FIX B #261): clasifica la cuenta del email con
+    //    búsqueda EXACTA service-role, consumida como `.rpc(...).maybeSingle()`. Sustituyó a
+    //    `listUsers()` sin paginar (solo veía los 50 primeros → invitado mal clasificado).
+    //    Resuelve contra `usersFixture`, que sigue representando las filas de `auth.users`.
+    //  - `registrar_consentimiento`: se hace `await` directo → basta con una promesa.
+    rpc: vi.fn((name: string, args?: Record<string, unknown>) => {
+      if (name === 'buscar_auth_user_por_email') {
+        return {
+          maybeSingle: () =>
+            Promise.resolve({
+              data: usersFixture.find((u) => u.email === args?.p_email) ?? null,
+              error: null,
+            }),
+        }
+      }
+      return Promise.resolve({ error: null })
+    }),
     auth: {
       admin: {
-        listUsers: vi.fn(() => Promise.resolve({ data: { users: usersFixture }, error: null })),
         updateUserById: updateSpy,
         createUser: createSpy,
         deleteUser: deleteSpy,
