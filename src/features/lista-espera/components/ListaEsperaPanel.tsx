@@ -335,11 +335,12 @@ function InvitarBoton({
 }
 
 /**
- * Botón "Completar (Dirección)" (PR-3a): la Dirección crea el alta en nombre del tutor SIN
- * enviar email. Pide aula (como invitar) + credenciales que la Dirección fija para el tutor
- * (email + contraseña provisional) + parentesco. Al confirmar, `completarEnDireccion` crea
- * cuenta + rol + vínculo + niño + matrícula, y llevamos a la ficha del niño. El cableado del
- * wizard en "modo Dirección" y las acciones tutor-only llegan en PR-3b.
+ * Botón "Completar (Dirección)" (PR-3a; U-1): la Dirección PROMOCIONA el prospecto a alta real
+ * en nombre del tutor SIN enviar email. Pide aula (como invitar) + nombre/apellidos del tutor +
+ * email + parentesco. NO pide contraseña (D2): la cuenta se crea con una aleatoria interna; el
+ * tutor fija la suya con «He olvidado la contraseña». Al confirmar, `completarEnDireccion` crea
+ * cuenta + rol + vínculo + niño + matrícula PENDIENTE, y llevamos al WIZARD (`/alta/[ninoId]`) en
+ * modo Dirección para completar acuses/autorizaciones → gate → matrícula lista (ya NO a la ficha).
  */
 function CompletarBoton({
   id,
@@ -361,7 +362,6 @@ function CompletarBoton({
   const [nombre, setNombre] = useState('')
   const [apellidos, setApellidos] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [parentesco, setParentesco] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [pending, start] = useTransition()
@@ -374,7 +374,6 @@ function CompletarBoton({
     !!nombre.trim() &&
     !!apellidos.trim() &&
     !!email &&
-    !!password &&
     !!parentesco &&
     (!requiereDescripcion || !!descripcion)
 
@@ -383,7 +382,6 @@ function CompletarBoton({
     setNombre('')
     setApellidos('')
     setEmail('')
-    setPassword('')
     setParentesco('')
     setDescripcion('')
   }
@@ -398,7 +396,6 @@ function CompletarBoton({
             nombreTutor: nombre,
             apellidosTutor: apellidos,
             email,
-            password,
             parentesco: parentesco as (typeof parentescoEnum.options)[number],
             descripcionParentesco: requiereDescripcion ? descripcion : null,
           },
@@ -416,16 +413,20 @@ function CompletarBoton({
           }
           if (r.data.resultado === 'vinculado') {
             // FIX A: el tutor ya tenía cuenta → hijo vinculado a su familia (sin contraseña).
+            // U-1: la promoción está hecha; la Dirección completa el alta en el wizard (modo
+            // Dirección) igual que en el alta nueva → no se queda a medias en la ficha.
             toast.success(t('vinculado_completar'))
             setOpen(false)
             reset()
-            router.push(`/${locale}/admin/ninos/${r.data.ninoId}`)
+            router.push(`/${locale}/alta/${r.data.ninoId}`)
             return
           }
+          // U-1: promoción OK (cuenta nueva + niño + matrícula PENDIENTE) → al WIZARD en modo
+          // Dirección para acuses/autorizaciones y finalizar (matrícula lista). Ya NO a la ficha.
           toast.success(t('completado'))
           setOpen(false)
           reset()
-          router.push(`/${locale}/admin/ninos/${r.data.ninoId}`)
+          router.push(`/${locale}/alta/${r.data.ninoId}`)
         } else {
           toast.error(tErrors(r.error))
         }
@@ -522,20 +523,6 @@ function CompletarBoton({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-            </label>
-
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium">{t('completar_dialog.password_label')}</span>
-              <input
-                type="password"
-                autoComplete="new-password"
-                className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <span className="text-muted-foreground block text-xs">
-                {t('completar_dialog.password_hint')}
-              </span>
             </label>
 
             <label className="block space-y-1.5">

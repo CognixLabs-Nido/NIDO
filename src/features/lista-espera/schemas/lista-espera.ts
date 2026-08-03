@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-import { passwordSchema } from '@/features/auth/schemas/password'
 import { parentescoEnum } from '@/features/vinculos/schemas/vinculo'
 
 const uuid = z.string().uuid('listaEspera.validation.id_invalido')
@@ -70,10 +69,12 @@ export const invitarAlAltaSchema = z.object({
 export type InvitarAlAltaInput = z.infer<typeof invitarAlAltaSchema>
 
 /**
- * Modo "Completa Dirección" (PR-3a): la Dirección crea el alta en nombre del tutor sin
- * enviar email. Además del aula (como al invitar) pide las credenciales que la Dirección
- * fija para el tutor (email + contraseña provisional, mismas reglas que el registro) y el
- * parentesco del vínculo familiar. `descripcionParentesco` es obligatorio si parentesco='otro'.
+ * Modo "Completa Dirección" (PR-3a; U-1): la Dirección PROMOCIONA un prospecto a alta real en
+ * nombre del tutor sin enviar email. Pide el aula (como al invitar), el nombre/apellidos REALES
+ * del tutor y el parentesco. NO pide contraseña (D2): la cuenta del tutor nuevo se crea con una
+ * contraseña aleatoria interna que nadie usa; el tutor fija la suya con «He olvidado la
+ * contraseña». Tras la promoción, la UI lleva al wizard (`/alta/[ninoId]`) en modo Dirección
+ * para completar acuses/autorizaciones. `descripcionParentesco` es obligatorio si parentesco='otro'.
  */
 export const completarDireccionSchema = z
   .object({
@@ -92,7 +93,6 @@ export const completarDireccionSchema = z
       .min(1, 'listaEspera.validation.apellidos_tutor_requerido')
       .max(80, 'listaEspera.validation.apellidos_tutor_largo'),
     email: z.string().trim().email('listaEspera.validation.email_invalido'),
-    password: passwordSchema,
     parentesco: parentescoEnum,
     descripcionParentesco: z.string().trim().max(120).optional().nullable(),
   })
