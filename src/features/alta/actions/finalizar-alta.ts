@@ -101,11 +101,17 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   // Médico + emergencia: solo se exige el acuse de confidencialidad `datos_medicos` vigente
   // (consentimiento RGPD, con backstop en `marcar_matricula_lista`). El teléfono de emergencia
   // y el resto de campos médicos pueden ir en blanco → NO bloquean la finalización (opción A).
+  //
+  // U-3: el acuse es POR NIÑO (`nino_id`), no por tutor. Antes se filtraba SOLO por
+  // `usuario_id` y el acuse del 1.er hijo satisfacía el bloque del 2.º → el hijo nuevo cerraba
+  // el alta sin acuse propio. Filtro limpio (sin `OR nino_id IS NULL`): las filas antiguas
+  // con NULL ya no cuentan para ningún niño.
   const { data: acuse } = await supabase
     .from('consentimientos')
     .select('id')
     .eq('usuario_id', user.id)
     .eq('tipo', 'datos_medicos')
+    .eq('nino_id', id)
     .is('revocado_en', null)
     .limit(1)
     .maybeSingle()

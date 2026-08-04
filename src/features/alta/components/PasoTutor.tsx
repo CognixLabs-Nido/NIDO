@@ -1,8 +1,9 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
+import { CheckCircle2Icon, FileTextIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -82,6 +83,13 @@ interface Props {
   emailReadonly: boolean
   /** El tutor 2 es OPCIONAL: se puede saltar sin guardar. */
   opcional: boolean
+  /**
+   * U-3: estos datos YA vienen de la familia (2.º hijo con tutor existente). El paso se
+   * presenta como RESUMEN de solo lectura y se avanza sin reescribir nada. No bloquea: con
+   * "Editar" se abre el mismo formulario de siempre (una mudanza o un DNI nuevo se corrigen
+   * aquí y el cambio, al ser perfil COMPARTIDO, vale para todos los hermanos).
+   */
+  yaResuelto?: boolean
   /** PR-4d: dirección tecleada del niño (elevada al contenedor) para el botón de copia. */
   direccionNino: DireccionInicial | null
   onNext: () => void
@@ -104,6 +112,7 @@ export function PasoTutor({
   mostrarEstadoCivil,
   emailReadonly,
   opcional,
+  yaResuelto = false,
   direccionNino,
   onNext,
   onBack,
@@ -112,6 +121,8 @@ export function PasoTutor({
   const tDoc = useTranslations('alta.documentos')
   const tErrors = useTranslations()
   const [pending, startTransition] = useTransition()
+  // U-3: arranca en resumen si los datos vienen de la familia; "Editar" abre el formulario.
+  const [editando, setEditando] = useState(false)
 
   // PR-4d: ¿el niño tiene alguna dirección tecleada? Si no, el botón de copia se deshabilita.
   const hayDireccionNino = Boolean(
@@ -174,6 +185,56 @@ export function PasoTutor({
       toast.success(r.data.pendienteValidacion ? t('validacion.enviado') : t('tutor.guardado'))
       onNext()
     })
+  }
+
+  // U-3 — datos heredados de la familia: resumen de solo lectura, sin re-pedir nada. Se avanza
+  // con "Continuar" (no escribe en BD: los datos YA están y el gate los da por satisfechos).
+  if (yaResuelto && !editando) {
+    const direccion = [
+      [inicial?.direccion_calle, inicial?.direccion_numero].filter(Boolean).join(' '),
+      [inicial?.direccion_cp, inicial?.direccion_ciudad].filter(Boolean).join(' '),
+    ]
+      .filter((l) => l.length > 0)
+      .join(' · ')
+
+    return (
+      <div className="space-y-4">
+        <div className="border-success-200 bg-success-50 flex items-start gap-3 rounded-lg border p-4 text-sm">
+          <CheckCircle2Icon className="text-success-700 mt-0.5 size-5 shrink-0" aria-hidden />
+          <div className="space-y-1">
+            <p className="text-success-800 font-semibold">{t('familia_existente.tutor_titulo')}</p>
+            <p className="text-foreground font-medium">{inicial?.nombre_completo}</p>
+            {inicial?.email && <p className="text-muted-foreground">{inicial.email}</p>}
+            {direccion && <p className="text-muted-foreground">{direccion}</p>}
+            {inicial?.dni_url && (
+              <a
+                href={inicial.dni_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary inline-flex items-center gap-1 underline"
+              >
+                <FileTextIcon className="size-4" aria-hidden />
+                {tDoc('dni_titulo')}
+              </a>
+            )}
+            <p className="text-muted-foreground text-xs">{t('familia_existente.tutor_nota')}</p>
+          </div>
+        </div>
+        <div className="flex justify-between border-t pt-4">
+          <Button type="button" variant="outline" onClick={onBack}>
+            {t('wizard.atras')}
+          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="ghost" onClick={() => setEditando(true)}>
+              {t('familia_existente.editar')}
+            </Button>
+            <Button type="button" onClick={onNext}>
+              {t('wizard.siguiente')}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
