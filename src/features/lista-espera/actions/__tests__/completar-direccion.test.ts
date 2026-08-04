@@ -23,6 +23,8 @@ const NINO = '22222222-2222-4222-8222-222222222222'
 // Configurables por test.
 let rolesFixture: Array<{ rol: string; centro_id: string }>
 let rpcAltaResult: { data: unknown; error: unknown }
+// U-2/D1: cuenta del tutor guardada en el prospecto (2.º hijo). null = prospecto normal.
+let prospectoTutorUsuarioId: string | null
 
 const PROSPECTO_ROW = {
   id: PROSPECTO,
@@ -54,7 +56,10 @@ function makeServerFake() {
           estadoUpdateSpy()
           return { data: null, error: null }
         }
-        return { data: PROSPECTO_ROW, error: null }
+        return {
+          data: { ...PROSPECTO_ROW, tutor_usuario_id: prospectoTutorUsuarioId },
+          error: null,
+        }
       }
       return { data: null, error: null }
     }
@@ -96,11 +101,31 @@ vi.mock('@/lib/supabase/admin', () => ({
   // nueva); así la rama "tutor existente" (fix A) no se dispara y el comportamiento no cambia.
   createServiceRoleClient: vi.fn(() => ({
     rpc: vi.fn(() => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) })),
-    from: vi.fn(() => ({
-      select: () => ({
-        eq: () => ({ is: () => ({ limit: () => Promise.resolve({ data: [], error: null }) }) }),
-      }),
-    })),
+    // Builder encadenable: cubre tanto la lectura de roles (`.limit()` thenable) como las
+    // que hace `vincularHijoATutorExistente` en la rama de tutor existente — perfil en el
+    // centro (`familia_tutores`) y vínculo previo del que hereda el parentesco.
+    from: vi.fn((table: string) => {
+      const b: Record<string, unknown> = {}
+      const self = () => b as never
+      const result = () => {
+        if (table === 'familia_tutores')
+          return {
+            data: { nombre_completo: 'María Tutora', email: 'tutor@nido.test' },
+            error: null,
+          }
+        if (table === 'vinculos_familiares')
+          return { data: { parentesco: 'madre', descripcion_parentesco: null }, error: null }
+        return { data: [], error: null }
+      }
+      b.select = () => self()
+      b.eq = () => self()
+      b.is = () => self()
+      b.order = () => self()
+      b.limit = () => self()
+      b.maybeSingle = () => self()
+      b.then = (resolve: (v: unknown) => void) => resolve(result())
+      return b
+    }),
   })),
 }))
 
@@ -148,6 +173,7 @@ beforeEach(() => {
     Promise.resolve({ success: true, data: { usuarioId: 'tutor-id' } })
   )
   estadoUpdateSpy = vi.fn<() => void>()
+  prospectoTutorUsuarioId = null
 })
 
 describe('completarEnDireccion — alta modo Dirección con la RPC de familia', () => {
@@ -253,5 +279,35 @@ describe('completarEnDireccion — alta modo Dirección con la RPC de familia', 
     if (!r.success) expect(r.error).toBe('auth.invitation.errors.forbidden')
     expect(crearTutorSpy).not.toHaveBeenCalled()
     expect(altaRpcCall()).toBeUndefined()
+  })
+})
+
+describe('completarEnDireccion — prospecto de 2.º hijo con tutor guardado (U-2/D1)', () => {
+  it('con tutor_usuario_id → vincula a ESA cuenta, sin crear tutor ni pedir contraseña', async () => {
+    // Prospecto nacido de "añadir hijo a familia existente": trae la cuenta del tutor.
+    prospectoTutorUsuarioId = 'tutor-uid-guardado'
+
+    const r = await completarEnDireccion(VALID_INPUT, 'es')
+
+    expect(r.success).toBe(true)
+    if (r.success) {
+      expect(r.data.resultado).toBe('vinculado')
+      if (r.data.resultado === 'vinculado') expect(r.data.usuarioId).toBe('tutor-uid-guardado')
+    }
+    // NO se crea cuenta: el tutor ya existe (aquí está el ahorro de D1).
+    expect(crearTutorSpy).not.toHaveBeenCalled()
+    // La RPC recibe el usuario_id GUARDADO, no uno recién creado.
+    expect(altaRpcCall()?.[1]).toMatchObject({ p_usuario_id: 'tutor-uid-guardado' })
+    expect(estadoUpdateSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('sin tutor_usuario_id → flujo normal: crea la cuenta del tutor', async () => {
+    prospectoTutorUsuarioId = null
+
+    const r = await completarEnDireccion(VALID_INPUT, 'es')
+
+    expect(r.success).toBe(true)
+    if (r.success) expect(r.data.resultado).toBe('ok')
+    expect(crearTutorSpy).toHaveBeenCalledTimes(1)
   })
 })

@@ -950,7 +950,7 @@
         "boton": "Afegir fill a família existent",
         "titulo": "Afegir fill a família existent",
         "paso1_desc": "Tria la família a la qual afegir el nou fill.",
-        "paso2_desc": "Dades del nou fill per a la família «{familia}».",
+        "paso2_desc": "Dades del nou fill per a la família «{familia}». Entrarà en la llista d’admissions com qualsevol altre alumne.",
         "filtro": {
           "todas": "Totes",
           "activas": "Actives",
@@ -960,38 +960,33 @@
         "sin_familias": "No hi ha famílies que coincidisquen",
         "inactiva": "Inactiva",
         "hijos": "{n, plural, =0 {sense fills actius} one {# fill actiu} other {# fills actius}}",
-        "sin_curso_activo": "El centre no té un curs acadèmic actiu. Activa un curs abans d'afegir el fill.",
+        "sin_curso_activo": "El centre no té cap curs acadèmic actiu. Activa’n un abans d’afegir el fill.",
         "fields": {
           "nombre": "Nom",
           "apellidos": "Cognoms",
-          "fecha_nacimiento": "Data de naixement",
-          "aula": "Aula del curs actiu"
+          "fecha_nacimiento": "Data de naixement"
         },
-        "aula_placeholder": "Tria una aula",
         "volver": "Tornar",
         "cancelar": "Cancel·lar",
-        "confirmar": "Afegir fill",
+        "confirmar": "Afegir a admissions",
         "procesando": "Afegint…",
-        "exito": "Fill afegit a la família",
-        "push_titulo": "Nou fill a la teua família",
-        "push_cuerpo": "S'ha afegit {nombre} a la teua família",
+        "exito": "Afegit a la llista d’admissions",
         "validation": {
           "nombre_requerido": "Indica el nom del xiquet",
           "apellidos_requerido": "Indica els cognoms del xiquet",
           "fecha_requerida": "Indica la data de naixement",
-          "aula_requerida": "Tria una aula del curs actiu",
-          "invalid": "Dades no vàlides",
-          "descripcion_parentesco_requerida": "Descriu el parentiu"
+          "invalid": "Dades no vàlides"
         },
         "errors": {
           "familia_no_encontrada": "Família no trobada",
           "familia_no_elegible": "Esta família no té cap adult amb compte; usa el flux d'invitació",
           "no_autorizado": "No tens permís per a afegir fills en este centre",
-          "colision": "El nom del titular no coincidix amb el registrat en la família; revisa'l abans de continuar",
-          "fallo": "No s'ha pogut afegir el fill",
-          "parentesco_requerido": "Este titular no té cap vincle del qual heretar el parentiu; indica'l davall per a completar l'alta"
+          "colision": "El nom del titular no coincidix amb el registrat en la família; revisa’l abans de continuar",
+          "parentesco_requerido": "Este titular no té cap vincle del qual heretar el parentiu; indica’l abans de continuar"
         },
-        "parentesco_requerido_aviso": "No hem pogut deduir el parentiu del titular amb el xiquet. Indica'l per a completar l'alta."
+        "nota_prospecto": "El xiquet entra en la llista d’espera d’admissions vinculat a esta família. L’aula i la resta de l’alta es completen en convidar o completar l’alta des de la llista.",
+        "push_titulo": "Nou fill en la teua família",
+        "push_cuerpo": "S’ha afegit {nombre} a la teua família"
       },
       "vinculado_completar": "Eixe tutor ja té compte: el fill s'ha vinculat a la seua família. No cal enviar-li credencials.",
       "vinculado_invitar": "Eixe tutor ja té compte: el fill s'ha afegit a la seua família. No cal invitació."

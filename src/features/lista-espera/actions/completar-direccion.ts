@@ -102,7 +102,9 @@ export async function completarEnDireccion(
   // invitar, el email NO sale del prospecto: lo teclea la Dirección en el diálogo.
   const { data: prospecto } = await supabase
     .from('lista_espera')
-    .select('id, centro_id, nombre_nino, apellidos_nino, fecha_nacimiento, estado')
+    .select(
+      'id, centro_id, nombre_nino, apellidos_nino, fecha_nacimiento, tutor_usuario_id, estado'
+    )
     .eq('id', parsed.data.id)
     .maybeSingle()
   if (!prospecto || prospecto.centro_id !== centroId)
@@ -116,49 +118,58 @@ export async function completarEnDireccion(
 
   const service = createServiceRoleClient()
 
-  // FIX A — ¿el email ya es una cuenta OPERATIVA (con roles)? Detección EXACTA por la RPC
-  // service-role (fix B). Si es 'real', el tutor YA existe: NO recreamos cuenta ni pedimos
-  // contraseña → vinculamos el nuevo hijo a su familia del centro (o creamos familia nueva si
-  // no tiene aquí, multi-centro seguro). Cuentas 'nueva'/'stub' siguen por el flujo de abajo.
-  const { data: authUser, error: buscarErr } = await service
-    .rpc('buscar_auth_user_por_email', { p_email: parsed.data.email })
-    .maybeSingle()
-  if (buscarErr) {
-    logger.warn('completarEnDireccion buscar_auth_user_por_email', buscarErr.message)
-    return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
-  }
-  if (authUser) {
-    const { data: rolesPrevios } = await service
-      .from('roles_usuario')
-      .select('usuario_id')
-      .eq('usuario_id', authUser.id)
-      .is('deleted_at', null)
-      .limit(1)
-    if (clasificarCuenta(true, (rolesPrevios?.length ?? 0) > 0) === 'real') {
-      const vinc = await vincularHijoATutorExistente(service, supabase, {
-        tutorUsuarioId: authUser.id,
-        centroId,
-        aulaId: parsed.data.aulaId,
-        nombreNino: prospecto.nombre_nino,
-        apellidosNino: prospecto.apellidos_nino ?? '',
-        fechaNacimiento,
-        parentescoForm: parsed.data.parentesco,
-        descripcionParentescoForm: parsed.data.descripcionParentesco ?? null,
-        locale,
-      })
-      if (!vinc.success) return fail(vinc.error)
-
-      // El prospecto sale de la cola (best-effort, como en la rama de cuenta nueva).
-      const { error: estadoErr } = await supabase
-        .from('lista_espera')
-        .update({ estado: 'invitado' })
-        .eq('id', prospecto.id)
-      if (estadoErr)
-        logger.warn('completarEnDireccion estado update (vinculado)', estadoErr.message)
-
-      revalidatePath('/[locale]/admin/admisiones', 'page')
-      return ok({ resultado: 'vinculado', ninoId: vinc.data.ninoId, usuarioId: authUser.id })
+  // ¿El tutor ya tiene cuenta OPERATIVA? Dos vías, por orden de fiabilidad:
+  //  - D1 (U-2): el prospecto trae `tutor_usuario_id` porque nació de "añadir hijo a familia
+  //    existente" → la cuenta es EXACTA y no depende del email que teclee la dirección en el
+  //    diálogo (que podría ser otro y llevar a crear un tutor duplicado).
+  //  - FIX A/FIX B: prospecto normal → detección por email con la RPC service-role
+  //    `buscar_auth_user_por_email` (búsqueda exacta) + roles activos → `clasificarCuenta`.
+  // En ambos casos, si el tutor existe NO recreamos cuenta ni pedimos contraseña: vinculamos
+  // el hijo a su familia del centro (o creamos familia nueva si no tiene aquí, multi-centro
+  // seguro). Cuentas 'nueva'/'stub' siguen por el flujo de abajo.
+  let tutorExistenteId: string | null = prospecto.tutor_usuario_id
+  if (!tutorExistenteId) {
+    const { data: authUser, error: buscarErr } = await service
+      .rpc('buscar_auth_user_por_email', { p_email: parsed.data.email })
+      .maybeSingle()
+    if (buscarErr) {
+      logger.warn('completarEnDireccion buscar_auth_user_por_email', buscarErr.message)
+      return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
     }
+    if (authUser) {
+      const { data: rolesPrevios } = await service
+        .from('roles_usuario')
+        .select('usuario_id')
+        .eq('usuario_id', authUser.id)
+        .is('deleted_at', null)
+        .limit(1)
+      if (clasificarCuenta(true, (rolesPrevios?.length ?? 0) > 0) === 'real')
+        tutorExistenteId = authUser.id
+    }
+  }
+  if (tutorExistenteId) {
+    const vinc = await vincularHijoATutorExistente(service, supabase, {
+      tutorUsuarioId: tutorExistenteId,
+      centroId,
+      aulaId: parsed.data.aulaId,
+      nombreNino: prospecto.nombre_nino,
+      apellidosNino: prospecto.apellidos_nino ?? '',
+      fechaNacimiento,
+      parentescoForm: parsed.data.parentesco,
+      descripcionParentescoForm: parsed.data.descripcionParentesco ?? null,
+      locale,
+    })
+    if (!vinc.success) return fail(vinc.error)
+
+    // El prospecto sale de la cola (best-effort, como en la rama de cuenta nueva).
+    const { error: estadoErr } = await supabase
+      .from('lista_espera')
+      .update({ estado: 'invitado' })
+      .eq('id', prospecto.id)
+    if (estadoErr) logger.warn('completarEnDireccion estado update (vinculado)', estadoErr.message)
+
+    revalidatePath('/[locale]/admin/admisiones', 'page')
+    return ok({ resultado: 'vinculado', ninoId: vinc.data.ninoId, usuarioId: tutorExistenteId })
   }
 
   // 1. Cuenta GoTrue PRIMERO (defensiva PR-A vía `crearTutorDirecto`). Si GoTrue falla, no se

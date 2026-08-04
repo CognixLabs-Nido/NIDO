@@ -950,7 +950,7 @@
         "boton": "Add child to existing family",
         "titulo": "Add child to existing family",
         "paso1_desc": "Choose the family to add the new child to.",
-        "paso2_desc": "Details of the new child for the «{familia}» family.",
+        "paso2_desc": "Details of the new child for the “{familia}” family. They will enter the admissions list like any other pupil.",
         "filtro": {
           "todas": "All",
           "activas": "Active",
@@ -960,38 +960,33 @@
         "sin_familias": "No matching families",
         "inactiva": "Inactive",
         "hijos": "{n, plural, =0 {no active children} one {# active child} other {# active children}}",
-        "sin_curso_activo": "The centre has no active academic year. Activate a year before adding the child.",
+        "sin_curso_activo": "This centre has no active academic year. Activate one before adding the child.",
         "fields": {
           "nombre": "First name",
           "apellidos": "Surname",
-          "fecha_nacimiento": "Date of birth",
-          "aula": "Classroom of the active year"
+          "fecha_nacimiento": "Date of birth"
         },
-        "aula_placeholder": "Choose a classroom",
         "volver": "Back",
         "cancelar": "Cancel",
-        "confirmar": "Add child",
+        "confirmar": "Add to admissions",
         "procesando": "Adding…",
-        "exito": "Child added to the family",
-        "push_titulo": "New child in your family",
-        "push_cuerpo": "{nombre} has been added to your family",
+        "exito": "Added to the admissions list",
         "validation": {
           "nombre_requerido": "Enter the child's first name",
           "apellidos_requerido": "Enter the child's surname",
           "fecha_requerida": "Enter the date of birth",
-          "aula_requerida": "Choose a classroom of the active year",
-          "invalid": "Invalid data",
-          "descripcion_parentesco_requerida": "Describe the relationship"
+          "invalid": "Invalid data"
         },
         "errors": {
           "familia_no_encontrada": "Family not found",
           "familia_no_elegible": "This family has no adult with an account; use the invitation flow",
-          "no_autorizado": "You don't have permission to add children in this centre",
-          "colision": "The guardian's name doesn't match the one on record for the family; check it before continuing",
-          "fallo": "The child could not be added",
-          "parentesco_requerido": "This guardian has no relationship on record to inherit; select it below to complete the enrolment"
+          "no_autorizado": "You do not have permission to add children in this centre",
+          "colision": "The guardian’s name does not match the one registered for the family; check it before continuing",
+          "parentesco_requerido": "This guardian has no existing relationship to inherit; specify it before continuing"
         },
-        "parentesco_requerido_aviso": "We couldn't infer the guardian's relationship to the child. Select it to complete the enrolment."
+        "nota_prospecto": "The child joins the admissions waiting list linked to this family. The classroom and the rest of the registration are completed when you invite or complete the registration from the list.",
+        "push_titulo": "New child in your family",
+        "push_cuerpo": "{nombre} has been added to your family"
       },
       "vinculado_completar": "That guardian already has an account: the child was linked to their family. No need to send credentials.",
       "vinculado_invitar": "That guardian already has an account: the child was added to their family. No invitation needed."
