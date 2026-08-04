@@ -4671,6 +4671,7 @@ export type Database = {
         Args: {
           p_ip?: unknown
           p_metodo?: Database["public"]["Enums"]["firma_metodo"]
+          p_nino_id?: string
           p_tipo: Database["public"]["Enums"]["consentimiento_tipo"]
           p_user_agent?: string
           p_usuario_id: string

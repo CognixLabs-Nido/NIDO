@@ -3815,6 +3815,14 @@
     },
     "edicion_validada_aviso": "El alta ya está validada. Los cambios en datos o documentos sensibles se enviarán a la dirección para su aprobación antes de aplicarse.",
     "modo_direccion_aviso": "Modo Dirección — carga de documentación con respaldo en papel. Las firmas se registran a tu nombre como constancia de que tienes la documentación firmada físicamente.",
+    "familia_existente": {
+      "titulo": "Ya conocemos a tu familia",
+      "reutilizado": "Reutilizamos tus datos de tutor, tu DNI y la domiciliación bancaria que ya nos diste: no hace falta que los vuelvas a rellenar.",
+      "por_nino": "Solo necesitamos lo propio de {nombre}: sus datos, la información de salud, la autorización de imagen y el acuse de las normas.",
+      "tutor_titulo": "Datos que ya tenemos de ti",
+      "tutor_nota": "Son los datos de tu familia. Si algo ha cambiado, puedes editarlos: el cambio vale para todos tus hijos.",
+      "editar": "Editar datos"
+    },
     "finalizar": {
       "exito": "Alta completada. La dirección la revisará.",
       "incompleto_titulo": "Faltan bloques obligatorios por completar antes de finalizar:",

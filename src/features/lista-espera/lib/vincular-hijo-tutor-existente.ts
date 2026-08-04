@@ -137,6 +137,9 @@ export async function vincularHijoATutorExistente(
   const ninoId = res.nino_id as string
 
   // 4. Push transitorio best-effort al tutor. Si falla, el alta YA está hecha → no revierte.
+  //    U-3/D3: apunta DIRECTO al wizard del hijo nuevo (`/alta/{ninoId}`), que es lo único que
+  //    el tutor tiene que hacer. Antes iba a la ficha (`/family/nino/{ninoId}`) y solo llegaba
+  //    al wizard de rebote, por la redirección de "alta pendiente" — un salto de más.
   try {
     const { data: perfilUsuario } = await service
       .from('usuarios')
@@ -151,7 +154,7 @@ export async function vincularHijoATutorExistente(
     await enviarPushANotificarUsuarios([params.tutorUsuarioId], {
       titulo: tPush('push_titulo'),
       cuerpo: tPush('push_cuerpo', { nombre: params.nombreNino }),
-      url: `/${idioma}/family/nino/${ninoId}`,
+      url: `/${idioma}/alta/${ninoId}`,
       datos: { tipo: 'alta_hijo', nino_id: ninoId },
     })
   } catch (err) {

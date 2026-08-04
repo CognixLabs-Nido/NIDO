@@ -20,6 +20,7 @@ import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
 import { resolverEntradaAlta } from '@/features/alta/lib/entrada-alta'
 import { PASO_MIN_AUTENTICADO } from '@/features/alta/lib/estado-alta'
+import { resolverReutilizacionFamilia } from '@/features/alta/lib/reutilizacion-familia'
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
 
 import type { MandatoSepaInicial } from '@/features/alta/components/PasoSepa'
@@ -210,11 +211,14 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
       }
     : null
 
+  // U-3: el acuse médico es POR NIÑO. El filtro por `nino_id` es lo que hace que el 2.º hijo
+  // vea el checkbox sin marcar (el acuse del hermano ya no lo satisface), espejo del gate.
   const { data: consentMedico } = await supabase
     .from('consentimientos')
     .select('id')
     .eq('usuario_id', user.id)
     .eq('tipo', 'datos_medicos')
+    .eq('nino_id', ninoId)
     .is('revocado_en', null)
     .limit(1)
     .maybeSingle()
@@ -284,6 +288,18 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     ? await familiaTieneMandatoActivo(ninoExtra.familia_id)
     : null
 
+  // U-3 — "tutor ya existente": si este niño es el 2.º (o 3.º…) de la familia y el perfil
+  // compartido del titular ya está completo, los pasos de FAMILIA (tutor 1, tutor 2, SEPA) se
+  // presentan RESUELTOS —solo lectura, confirmables— en vez de en blanco. Lo por-niño (menor,
+  // salud, imagen, normas) se sigue pidiendo entero. La decisión vive en la pieza pura.
+  const tutor1Row = tutoresRows.find((r) => r.tipo_vinculo === 'tutor_legal_principal')
+  const reutilizacion = resolverReutilizacionFamilia({
+    tieneHermanos: hermanosIds.length > 0,
+    tutor1ConNombre: Boolean(tutor1Row?.nombre_completo),
+    tutor1ConDni: Boolean(tutor1Row?.dni_documento_path),
+    mandatoFamiliaActivo: mandatoFamilia !== null,
+  })
+
   // El wizard SIEMPRE arranca en el primer paso navegable (`acuses`) y recorre todo en orden;
   // la completitud la exige el gate de finalizar, no el arranque. (Antes un heurístico saltaba
   // a `medico`/`emergencia` según identidad + acuse médico y, como el alta nace con identidad
@@ -339,6 +355,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         currentUserId={user.id}
         currentUserNombre={perfil?.nombreCompleto ?? ''}
         modoDireccion={modoDireccion}
+        reutilizacion={reutilizacion}
       />
     </div>
   )

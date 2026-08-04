@@ -88,6 +88,9 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
   }
 
   // Consentimiento de datos médicos vigente de algún tutor (última fila sin revocar).
+  // U-3: acotado a ESTE niño (`nino_id`), espejo exacto del gate de `finalizarAlta`. Antes
+  // bastaba el acuse de un hermano y el panel de Dirección mostraba "hecho" un bloque que el
+  // gate —ya endurecido— considera pendiente.
   const tutorUserIds = (tutoresRows ?? [])
     .map((t) => t.usuario_id)
     .filter((u): u is string => typeof u === 'string')
@@ -98,6 +101,7 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
       .select('version, aceptado_en')
       .in('usuario_id', tutorUserIds)
       .eq('tipo', 'datos_medicos')
+      .eq('nino_id', ninoId)
       .is('revocado_en', null)
       .order('aceptado_en', { ascending: false })
       .limit(1)

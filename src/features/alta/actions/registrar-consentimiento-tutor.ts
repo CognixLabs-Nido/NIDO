@@ -21,6 +21,7 @@ const registrarConsentimientoTutorSchema = z.object({
   tipo: z.literal('datos_medicos'),
   // PR-3b-2 · B2: niño del alta, para RE-DERIVAR server-side si quien acusa es la
   // Dirección (respaldo en papel). No cambia a quién se atribuye el acuse.
+  // U-3: además se PERSISTE (`consentimientos.nino_id`) → el acuse es POR NIÑO.
   nino_id: z.string().uuid(),
 })
 
@@ -38,6 +39,12 @@ export type RegistrarConsentimientoTutorInput = z.infer<typeof registrarConsenti
  * = la admin). Si el firmante es la admin del centro del niño (sin vínculo), el acuse se
  * marca `p_metodo='presencial'` (respaldo en papel); el tutor digital sigue en 'digital'.
  * `modoDireccion` se RE-DERIVA server-side con `esAdminDeCentroDeNino` (nunca del cliente).
+ *
+ * U-3: el acuse se ancla al NIÑO (`p_nino_id`). Antes se insertaba con `nino_id = NULL` y el
+ * gate de completitud lo leía solo por `usuario_id`, de modo que el acuse del 1.er hijo daba
+ * por hecho el bloque médico del 2.º. Ahora cada hijo exige el suyo (`finalizarAlta` filtra
+ * por `nino_id`). El alcance del acuse no cambia (mismos datos, misma versión v2.0): cambia
+ * a QUÉ alta pertenece la fila.
  */
 export async function registrarConsentimientoTutor(
   input: RegistrarConsentimientoTutorInput
@@ -58,6 +65,7 @@ export async function registrarConsentimientoTutor(
     p_tipo: parsed.data.tipo,
     p_version: CONSENT_VERSIONS[parsed.data.tipo],
     p_metodo: esDireccion ? 'presencial' : 'digital',
+    p_nino_id: parsed.data.nino_id,
   })
   if (error || !data) {
     logger.warn('registrarConsentimientoTutor', error?.message)

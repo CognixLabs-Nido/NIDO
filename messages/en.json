@@ -3815,6 +3815,14 @@
     },
     "edicion_validada_aviso": "This registration is already validated. Changes to sensitive data or documents will be sent to management for approval before they take effect.",
     "modo_direccion_aviso": "Management mode — uploading documentation with paper backing. Signatures are recorded in your name as evidence that you hold the physically signed documents.",
+    "familia_existente": {
+      "titulo": "We already know your family",
+      "reutilizado": "We reuse your guardian details, your ID document and the direct debit you already gave us: no need to fill them in again.",
+      "por_nino": "We only need what belongs to {nombre}: their details, health information, image authorisation and acknowledgement of the rules.",
+      "tutor_titulo": "Details we already have about you",
+      "tutor_nota": "These are your family details. If something has changed you can edit them: the change applies to all your children.",
+      "editar": "Edit details"
+    },
     "finalizar": {
       "exito": "Registration complete. The school will review it.",
       "incompleto_titulo": "Some required sections are still missing before you can finish:",

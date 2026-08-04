@@ -3815,6 +3815,14 @@
     },
     "edicion_validada_aviso": "L'alta ja està validada. Els canvis en dades o documents sensibles s'enviaran a la direcció per a la seua aprovació abans d'aplicar-se.",
     "modo_direccion_aviso": "Mode Direcció — càrrega de documentació amb suport en paper. Les firmes es registren al teu nom com a constància que tens la documentació firmada físicament.",
+    "familia_existente": {
+      "titulo": "Ja coneixem la teua família",
+      "reutilizado": "Reutilitzem les teues dades de tutor, el teu DNI i la domiciliació bancària que ja ens vas donar: no cal que els tornes a omplir.",
+      "por_nino": "Només necessitem el que és propi de {nombre}: les seues dades, la informació de salut, l'autorització d'imatge i l'acusament de les normes.",
+      "tutor_titulo": "Dades que ja tenim de tu",
+      "tutor_nota": "Són les dades de la teua família. Si alguna cosa ha canviat, pots editar-les: el canvi val per a tots els teus fills.",
+      "editar": "Editar dades"
+    },
     "finalizar": {
       "exito": "Alta completada. La direcció la revisarà.",
       "incompleto_titulo": "Falten blocs obligatoris per completar abans de finalitzar:",

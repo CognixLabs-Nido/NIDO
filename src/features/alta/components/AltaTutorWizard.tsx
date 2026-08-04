@@ -20,6 +20,7 @@ import type { IdentidadInicial } from './PasoIdentidad'
 import type { MandatoFamiliaActivo } from '../queries/get-mandato-familia'
 
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
+import type { ReutilizacionFamilia } from '../lib/reutilizacion-familia'
 import type { EstadoCivil } from '../schemas/alta-documentos'
 import type { FirmaPanelData, ImagenPanelData, MedicaInicial } from '../lib/tipos'
 
@@ -72,6 +73,18 @@ interface Props {
    * server-side (NO de la URL). En B1 solo pinta el banner; los write-paths se cablean en B2.
    */
   modoDireccion?: boolean
+  /**
+   * U-3: reparto reutilizar-vs-pedir cuando el niño es el 2.º (o 3.º…) de una familia con
+   * tutor YA existente. Lo calcula la ruta (`resolverReutilizacionFamilia`). Ausente en
+   * `/invitation/[token]` (alta de familia nueva) → nada se da por resuelto.
+   */
+  reutilizacion?: ReutilizacionFamilia
+}
+
+const SIN_REUTILIZACION: ReutilizacionFamilia = {
+  tutor: false,
+  sepa: false,
+  hayReutilizacion: false,
 }
 
 /**
@@ -112,6 +125,7 @@ export function AltaTutorWizard({
   currentUserId,
   currentUserNombre,
   modoDireccion = false,
+  reutilizacion = SIN_REUTILIZACION,
 }: Props) {
   const t = useTranslations('alta')
   const tErrors = useTranslations()
@@ -200,6 +214,18 @@ export function AltaTutorWizard({
           className="border-accent-warm-300 bg-accent-warm-50 text-accent-warm-800 mx-6 mt-6 rounded-xl border p-3 text-sm"
         >
           {t('modo_direccion_aviso')}
+        </div>
+      )}
+      {reutilizacion.hayReutilizacion && (
+        // U-3: el tutor ya existe → se le dice de entrada QUÉ se reutiliza de su familia y
+        // qué tiene que rellenar por este hijo, para que el wizard no parezca "todo otra vez".
+        <div
+          role="note"
+          className="border-primary-200 bg-primary-50 text-primary-900 mx-6 mt-6 rounded-xl border p-3 text-sm"
+        >
+          <p className="font-medium">{t('familia_existente.titulo')}</p>
+          <p className="mt-1">{t('familia_existente.reutilizado')}</p>
+          <p className="mt-1">{t('familia_existente.por_nino', { nombre: ninoNombre })}</p>
         </div>
       )}
       <CardHeader>
@@ -300,6 +326,7 @@ export function AltaTutorWizard({
             mostrarEstadoCivil
             emailReadonly
             opcional={false}
+            yaResuelto={reutilizacion.tutor}
             direccionNino={direccionNino}
             onNext={goNext}
             onBack={goBack}
@@ -316,6 +343,9 @@ export function AltaTutorWizard({
             mostrarEstadoCivil={false}
             emailReadonly={false}
             opcional
+            // Tutor 2 solo se da por resuelto si REALMENTE hay uno guardado en la familia;
+            // si la familia nunca lo registró, el paso sigue en blanco y sigue siendo opcional.
+            yaResuelto={reutilizacion.tutor && datosTutor2 !== null}
             direccionNino={direccionNino}
             onNext={goNext}
             onBack={goBack}
