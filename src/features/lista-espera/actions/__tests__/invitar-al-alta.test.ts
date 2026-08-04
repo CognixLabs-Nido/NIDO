@@ -33,6 +33,9 @@ let rolesResult: Array<{ usuario_id: string }>
 let perfilTutor: { nombre_completo: string; email: string } | null
 let vinculoPrevio: { parentesco: string; descripcion_parentesco: string | null } | null
 
+// `tutor_usuario_id` (U-2/D1) configurable por test: null = prospecto normal (familia nueva).
+let prospectoTutorUsuarioId: string | null
+
 const PROSPECTO_ROW = {
   id: PROSPECTO,
   centro_id: CENTRO,
@@ -65,7 +68,10 @@ function makeServerFake() {
           estadoUpdateSpy()
           return { data: null, error: null }
         }
-        return { data: PROSPECTO_ROW, error: null }
+        return {
+          data: { ...PROSPECTO_ROW, tutor_usuario_id: prospectoTutorUsuarioId },
+          error: null,
+        }
       }
       return { data: null, error: null }
     }
@@ -183,6 +189,8 @@ beforeEach(() => {
   // Por defecto: email SIN cuenta (clase 'nueva') → el guardarraíl no dispara.
   authUsersList = []
   rolesResult = []
+  // Por defecto: prospecto normal (1.er hijo, familia nueva) → sin cuenta de tutor guardada.
+  prospectoTutorUsuarioId = null
   perfilTutor = { nombre_completo: 'María Tutora', email: 'tutor@nido.test' }
   vinculoPrevio = { parentesco: 'madre', descripcion_parentesco: null }
 })
@@ -298,5 +306,40 @@ describe('invitarAlAlta — guardarraíl cuenta existente (F-2b-4-3)', () => {
     const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
     expect(altaCall?.[1]).toMatchObject({ p_usuario_id: null })
     expect(sendInvitationSpy).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('invitarAlAlta — prospecto de 2.º hijo con tutor guardado (U-2/D1)', () => {
+  it('con tutor_usuario_id → vincula a ESA cuenta sin adivinar por email', async () => {
+    // El prospecto nació de "añadir hijo a familia existente": trae la cuenta del tutor.
+    prospectoTutorUsuarioId = 'tutor-uid'
+    // Trampa deliberada: por email NO se detectaría cuenta operativa (lista vacía). Si el
+    // action siguiera fiándose del email, invitaría en vez de vincular.
+    authUsersList = []
+    rolesResult = []
+
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
+
+    expect(r.success).toBe(true)
+    if (r.success) expect(r.data.resultado).toBe('vinculado')
+    // Vincula con el usuario_id GUARDADO (no NULL como al invitar).
+    const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
+    expect(altaCall?.[1]).toMatchObject({ p_usuario_id: 'tutor-uid' })
+    // Ya tiene acceso → sin invitación; y el prospecto sale de la cola.
+    expect(sendInvitationSpy).not.toHaveBeenCalled()
+    expect(estadoUpdateSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('sin tutor_usuario_id → se conserva la detección por email (prospecto normal)', async () => {
+    prospectoTutorUsuarioId = null
+    authUsersList = [{ id: 'detectado-por-email', email: 'tutor@nido.test' }]
+    rolesResult = [{ usuario_id: 'detectado-por-email' }]
+
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
+
+    expect(r.success).toBe(true)
+    if (r.success) expect(r.data.resultado).toBe('vinculado')
+    const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
+    expect(altaCall?.[1]).toMatchObject({ p_usuario_id: 'detectado-por-email' })
   })
 })

@@ -950,7 +950,7 @@
         "boton": "Añadir hijo a familia existente",
         "titulo": "Añadir hijo a familia existente",
         "paso1_desc": "Elige la familia a la que añadir el nuevo hijo.",
-        "paso2_desc": "Datos del nuevo hijo para la familia «{familia}».",
+        "paso2_desc": "Datos del nuevo hijo para la familia «{familia}». Entrará en la lista de admisiones como cualquier otro alumno.",
         "filtro": {
           "todas": "Todas",
           "activas": "Activas",
@@ -964,34 +964,29 @@
         "fields": {
           "nombre": "Nombre",
           "apellidos": "Apellidos",
-          "fecha_nacimiento": "Fecha de nacimiento",
-          "aula": "Aula del curso activo"
+          "fecha_nacimiento": "Fecha de nacimiento"
         },
-        "aula_placeholder": "Elige un aula",
         "volver": "Volver",
         "cancelar": "Cancelar",
-        "confirmar": "Añadir hijo",
+        "confirmar": "Añadir a admisiones",
         "procesando": "Añadiendo…",
-        "exito": "Hijo añadido a la familia",
-        "push_titulo": "Nuevo hijo en tu familia",
-        "push_cuerpo": "Se ha añadido a {nombre} a tu familia",
+        "exito": "Añadido a la lista de admisiones",
         "validation": {
           "nombre_requerido": "Indica el nombre del niño",
           "apellidos_requerido": "Indica los apellidos del niño",
           "fecha_requerida": "Indica la fecha de nacimiento",
-          "aula_requerida": "Elige un aula del curso activo",
-          "invalid": "Datos no válidos",
-          "descripcion_parentesco_requerida": "Describe el parentesco"
+          "invalid": "Datos no válidos"
         },
         "errors": {
           "familia_no_encontrada": "Familia no encontrada",
           "familia_no_elegible": "Esta familia no tiene ningún adulto con cuenta; usa el flujo de invitación",
           "no_autorizado": "No tienes permiso para añadir hijos en este centro",
           "colision": "El nombre del titular no coincide con el registrado en la familia; revísalo antes de continuar",
-          "fallo": "No se pudo añadir el hijo",
-          "parentesco_requerido": "Este titular no tiene ningún vínculo del que heredar el parentesco; indícalo abajo para completar el alta"
+          "parentesco_requerido": "Este titular no tiene ningún vínculo del que heredar el parentesco; indícalo antes de continuar"
         },
-        "parentesco_requerido_aviso": "No hemos podido deducir el parentesco del titular con el niño. Indícalo para completar el alta."
+        "nota_prospecto": "El niño entra en la lista de espera de admisiones vinculado a esta familia. El aula y el resto del alta se completan al invitar o completar el alta desde la lista.",
+        "push_titulo": "Nuevo hijo en tu familia",
+        "push_cuerpo": "Se ha añadido a {nombre} a tu familia"
       },
       "vinculado_completar": "Ese tutor ya tiene cuenta: el hijo se ha vinculado a su familia. No hace falta enviarle credenciales.",
       "vinculado_invitar": "Ese tutor ya tiene cuenta: el hijo se ha añadido a su familia. No hace falta invitación."

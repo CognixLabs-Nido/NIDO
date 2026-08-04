@@ -18,58 +18,30 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
-import type { Parentesco } from '../lib/resolver-parentesco'
 import { anadirHijoAFamilia } from '../actions/anadir-hijo-a-familia'
 import type { FamiliaItem } from '../queries/get-familias'
 
-const PARENTESCO_OPCIONES: readonly Parentesco[] = [
-  'madre',
-  'padre',
-  'abuela',
-  'abuelo',
-  'tia',
-  'tio',
-  'hermana',
-  'hermano',
-  'cuidadora',
-  'otro',
-] as const
-
-/** Clave de error que devuelve el action cuando el titular no tiene vínculo del que heredar
- *  el parentesco → hay que pedirlo en el diálogo (caso anómalo, sin dato). */
-const ERROR_PARENTESCO_REQUERIDO = 'admin.admisiones.anadirHijo.errors.parentesco_requerido'
-
-interface AulaOption {
-  id: string
-  nombre: string
-}
-
 interface Props {
   familias: FamiliaItem[]
-  /** Aulas del curso ACTIVO (reusa getAulasCursoActivo). Vacío ⇒ sin curso activo. */
-  aulas: AulaOption[]
-  locale: string
+  /** ¿El centro tiene curso activo? Sin él no hay cola donde encolar el prospecto. */
+  hayCursoActivo: boolean
 }
 
 type Filtro = 'todas' | 'activas' | 'inactivas'
 
 /**
- * F-2b-4-2 — "Añadir hijo a familia existente". Acción hermana del alta (NO pasa por la
- * lista de espera ni crea cuenta). Paso 1: elegir familia del centro (buscador + filtro
- * activas/inactivas). Paso 2: datos del niño + aula del curso activo. Al confirmar, la
- * server action enruta a la RPC con el usuario_id del titular.
+ * U-2 (alta unificada) — "Añadir hijo a familia existente" crea un PROSPECTO en admisiones,
+ * como cualquier otro alumno; ya NO crea el niño ni la matrícula (esa puerta directa es la
+ * que hacía desaparecer al 2.º hijo de la lista). Paso 1: elegir familia del centro (buscador
+ * + filtro activas/inactivas). Paso 2: datos del niño. Al confirmar, la server action encola
+ * el prospecto en el curso activo guardando el `usuario_id` del tutor (D1).
+ *
+ * Ya no se piden aquí el AULA (se elige al promover, que es cuando nace la matrícula) ni el
+ * PARENTESCO (lo hereda la vinculación del vínculo previo del tutor).
  */
-export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
+export function AnadirHijoAFamiliaDialog({ familias, hayCursoActivo }: Props) {
   const t = useTranslations('admin.admisiones.anadirHijo')
-  const tVinculo = useTranslations('vinculo')
   const tErrors = useTranslations()
   const router = useRouter()
 
@@ -81,15 +53,9 @@ export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
   const [nombre, setNombre] = useState('')
   const [apellidos, setApellidos] = useState('')
   const [fechaNacimiento, setFechaNacimiento] = useState('')
-  const [aulaId, setAulaId] = useState('')
-  // Parentesco: normalmente se hereda en el server (campo oculto). Se revela SOLO si el
-  // action responde `parentesco_requerido` (titular sin vínculo del que heredar).
-  const [requiereParentesco, setRequiereParentesco] = useState(false)
-  const [parentesco, setParentesco] = useState<Parentesco | ''>('')
-  const [descripcionParentesco, setDescripcionParentesco] = useState('')
   const [pending, startTransition] = useTransition()
 
-  const sinCursoActivo = aulas.length === 0
+  const sinCursoActivo = !hayCursoActivo
 
   const visibles = useMemo(() => {
     const q = busca.trim().toLowerCase()
@@ -112,17 +78,7 @@ export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
     setNombre('')
     setApellidos('')
     setFechaNacimiento('')
-    setAulaId('')
-    setRequiereParentesco(false)
-    setParentesco('')
-    setDescripcionParentesco('')
   }
-
-  // El parentesco solo es exigible cuando el diálogo lo ha revelado; si va 'otro', la
-  // descripción es obligatoria (espejo del refine del schema).
-  const parentescoCompleto =
-    !requiereParentesco ||
-    (parentesco !== '' && (parentesco !== 'otro' || descripcionParentesco.trim().length > 0))
 
   const puedeConfirmar =
     !!familia &&
@@ -130,40 +86,23 @@ export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
     nombre.trim().length > 0 &&
     apellidos.trim().length > 0 &&
     fechaNacimiento.length > 0 &&
-    aulaId.length > 0 &&
-    parentescoCompleto &&
     !pending
 
   function confirmar() {
     if (!puedeConfirmar || !familia) return
     startTransition(async () => {
       try {
-        const r = await anadirHijoAFamilia(
-          {
-            familia_id: familia.id,
-            nombre: nombre.trim(),
-            apellidos: apellidos.trim(),
-            fecha_nacimiento: fechaNacimiento,
-            aula_id: aulaId,
-            ...(requiereParentesco && parentesco !== ''
-              ? {
-                  parentesco,
-                  descripcion_parentesco:
-                    parentesco === 'otro' ? descripcionParentesco.trim() : undefined,
-                }
-              : {}),
-          },
-          locale
-        )
+        const r = await anadirHijoAFamilia({
+          familia_id: familia.id,
+          nombre: nombre.trim(),
+          apellidos: apellidos.trim(),
+          fecha_nacimiento: fechaNacimiento,
+        })
         if (r.success) {
           toast.success(t('exito'))
           setOpen(false)
           reset()
           router.refresh()
-        } else if (r.error === ERROR_PARENTESCO_REQUERIDO) {
-          // Titular sin vínculo del que heredar → revela el campo y pide completarlo.
-          setRequiereParentesco(true)
-          toast.error(tErrors(r.error))
         } else {
           toast.error(tErrors(r.error))
         }
@@ -294,59 +233,9 @@ export function AnadirHijoAFamiliaDialog({ familias, aulas, locale }: Props) {
                   data-testid="anadir-hijo-fecha"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="ah-aula">{t('fields.aula')}</Label>
-                <Select value={aulaId} onValueChange={(v) => setAulaId(v ?? '')}>
-                  <SelectTrigger id="ah-aula" data-testid="anadir-hijo-aula">
-                    <SelectValue placeholder={t('aula_placeholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {aulas.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {requiereParentesco && (
-                <>
-                  <div className="border-warm-300 bg-warm-100 text-warm-800 rounded-xl border-l-4 px-4 py-3 text-sm">
-                    {t('parentesco_requerido_aviso')}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="ah-parentesco">{tVinculo('fields.parentesco')}</Label>
-                    <Select
-                      value={parentesco || undefined}
-                      onValueChange={(v) => setParentesco((v as Parentesco) ?? '')}
-                    >
-                      <SelectTrigger id="ah-parentesco" data-testid="anadir-hijo-parentesco">
-                        <SelectValue placeholder={tVinculo('fields.parentesco_placeholder')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PARENTESCO_OPCIONES.map((p) => (
-                          <SelectItem key={p} value={p}>
-                            {tVinculo(`parentesco.${p}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {parentesco === 'otro' && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="ah-descripcion-parentesco">
-                        {tVinculo('fields.descripcion_parentesco')}
-                      </Label>
-                      <Input
-                        id="ah-descripcion-parentesco"
-                        value={descripcionParentesco}
-                        onChange={(e) => setDescripcionParentesco(e.target.value)}
-                        data-testid="anadir-hijo-descripcion-parentesco"
-                      />
-                    </div>
-                  )}
-                </>
-              )}
+              {/* U-2: el prospecto entra en la cola de admisiones; el aula y el resto del alta
+                  se resuelven al promoverlo (Invitar / Completar → wizard). */}
+              <p className="text-muted-foreground text-sm">{t('nota_prospecto')}</p>
             </div>
           )}
 

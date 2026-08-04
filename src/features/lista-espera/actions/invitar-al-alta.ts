@@ -99,13 +99,19 @@ export async function invitarAlAlta(
   // Prospecto (RLS admin lo acota a su centro). Debe estar en espera y tener email.
   const { data: prospecto } = await supabase
     .from('lista_espera')
-    .select('id, centro_id, nombre_nino, apellidos_nino, fecha_nacimiento, email_tutor, estado')
+    .select(
+      'id, centro_id, nombre_nino, apellidos_nino, fecha_nacimiento, email_tutor, tutor_usuario_id, estado'
+    )
     .eq('id', parsed.data.id)
     .maybeSingle()
   if (!prospecto || prospecto.centro_id !== centroId)
     return fail('listaEspera.errors.no_encontrado')
   if (prospecto.estado !== 'en_espera') return fail('listaEspera.errors.no_en_espera')
-  if (!prospecto.email_tutor) return fail('listaEspera.errors.sin_email')
+  // D1 (U-2): un prospecto de 2.º hijo trae la cuenta del tutor ya resuelta. Ese caso NO
+  // manda invitación (el tutor ya tiene acceso), así que el email deja de ser obligatorio;
+  // para el resto sigue siéndolo, porque es la dirección a la que se invita.
+  const tutorPrevioId = prospecto.tutor_usuario_id
+  if (!tutorPrevioId && !prospecto.email_tutor) return fail('listaEspera.errors.sin_email')
   // Const para que el narrowing (no-null) sobreviva a los `await` posteriores.
   const emailTutor = prospecto.email_tutor
 
@@ -124,31 +130,42 @@ export async function invitarAlAlta(
   // a `listUsers()` sin paginar (solo veía 50, detección errática con >50 usuarios — FIX B).
   // Como la comprobación va antes de la RPC, no se escribe NADA si es 'real': no se crea niño,
   // no queda huérfano. Cuentas `nueva`/`stub` (sin roles) siguen por el flujo normal sin cambios.
+  //
+  // D1 (U-2): si el prospecto YA trae `tutor_usuario_id` (nació de "añadir hijo a familia
+  // existente"), esta adivinanza sobra — la cuenta del tutor se guardó cuando la dirección
+  // eligió la familia. Se salta la detección y se vincula a ESA cuenta: exacto y sin
+  // depender de que el email siga igual. La detección por email queda para los prospectos
+  // normales (`tutor_usuario_id IS NULL`), que es donde de verdad hay que averiguarlo.
   const service = createServiceRoleClient()
-  const { data: authUser, error: buscarErr } = await service
-    .rpc('buscar_auth_user_por_email', { p_email: emailTutor })
-    .maybeSingle()
-  if (buscarErr) {
-    logger.warn('invitarAlAlta buscar_auth_user_por_email', buscarErr.message)
-    return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+  let tutorExistenteId: string | null = tutorPrevioId
+  if (!tutorExistenteId && emailTutor) {
+    const { data: authUser, error: buscarErr } = await service
+      .rpc('buscar_auth_user_por_email', { p_email: emailTutor })
+      .maybeSingle()
+    if (buscarErr) {
+      logger.warn('invitarAlAlta buscar_auth_user_por_email', buscarErr.message)
+      return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+    }
+    let tieneRoles = false
+    if (authUser) {
+      const { data: rolesPrevios } = await service
+        .from('roles_usuario')
+        .select('usuario_id')
+        .eq('usuario_id', authUser.id)
+        .is('deleted_at', null)
+        .limit(1)
+      tieneRoles = (rolesPrevios?.length ?? 0) > 0
+    }
+    if (clasificarCuenta(Boolean(authUser), tieneRoles) === 'real' && authUser)
+      tutorExistenteId = authUser.id
   }
-  let tieneRoles = false
-  if (authUser) {
-    const { data: rolesPrevios } = await service
-      .from('roles_usuario')
-      .select('usuario_id')
-      .eq('usuario_id', authUser.id)
-      .is('deleted_at', null)
-      .limit(1)
-    tieneRoles = (rolesPrevios?.length ?? 0) > 0
-  }
-  if (clasificarCuenta(Boolean(authUser), tieneRoles) === 'real' && authUser) {
+  if (tutorExistenteId) {
     // FIX A — el tutor YA tiene cuenta operativa: en vez de rechazar, vinculamos el nuevo hijo
     // a su familia del centro (o creamos familia nueva si no tiene aquí) SIN email ni
     // invitación (ya tiene acceso) + push. `invitarAlAltaSchema` no trae parentesco → se hereda
     // del vínculo previo del tutor (p. ej. su 1.er hijo); si no hubiera herencia, falla claro.
     const vinc = await vincularHijoATutorExistente(service, supabase, {
-      tutorUsuarioId: authUser.id,
+      tutorUsuarioId: tutorExistenteId,
       centroId,
       aulaId: parsed.data.aulaId,
       nombreNino: prospecto.nombre_nino,
@@ -168,6 +185,10 @@ export async function invitarAlAlta(
     return ok({ resultado: 'vinculado', ninoId: vinc.data.ninoId })
   }
 
+  // Sin tutor existente → flujo de invitación por email, que SÍ lo exige (el guard de arriba
+  // solo lo perdona cuando hay `tutor_usuario_id`). Re-chequeo para el narrowing.
+  if (!emailTutor) return fail('listaEspera.errors.sin_email')
+
   // 1. RPC transaccional con `p_usuario_id = NULL` (ver cabecera): crea familia + perfil
   //    `familia_tutores`(usuario_id NULL) + niño(familia_id) + matrícula pendiente, y OMITE
   //    rol/vínculo. `p_tutor_nombre_completo`/`p_parentesco`/`p_permisos` van vacíos: no se
@@ -179,7 +200,7 @@ export async function invitarAlAlta(
     p_fecha_nacimiento: fechaNacimiento,
     p_centro_id: centroId,
     p_aula_id: parsed.data.aulaId,
-    p_tutor_email: prospecto.email_tutor,
+    p_tutor_email: emailTutor,
     p_tutor_nombre_completo: '',
     p_parentesco: '',
     p_descripcion_parentesco: '',
@@ -210,7 +231,7 @@ export async function invitarAlAlta(
   //    de invitación es el follow-up previsto (un re-invoke duplicaría el niño).
   const inv = await sendInvitation(
     {
-      email: prospecto.email_tutor,
+      email: emailTutor,
       rolObjetivo: 'tutor_legal',
       centroId,
       ninoId,

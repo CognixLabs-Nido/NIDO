@@ -15,6 +15,8 @@ export interface ProspectoListItem {
   nota: string | null
   posicion: number
   estado: Database['public']['Enums']['estado_lista_espera']
+  /** U-2/D1: cuenta del tutor ya existente (2.º hijo). NULL = prospecto de familia nueva. */
+  tutor_usuario_id: string | null
 }
 
 /**
@@ -34,7 +36,7 @@ export async function getListaEsperaCore(
   const { data } = await supabase
     .from('lista_espera')
     .select(
-      'id, nombre_nino, apellidos_nino, fecha_nacimiento, telefono_tutor, email_tutor, nota, posicion, estado'
+      'id, nombre_nino, apellidos_nino, fecha_nacimiento, telefono_tutor, email_tutor, nota, posicion, estado, tutor_usuario_id'
     )
     .eq('curso_academico_id', cursoAcademicoId)
     .neq('estado', 'descartado')

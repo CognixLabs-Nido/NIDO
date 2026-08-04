@@ -2753,6 +2753,7 @@ export type Database = {
           nota: string | null
           posicion: number
           telefono_tutor: string | null
+          tutor_usuario_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2768,6 +2769,7 @@ export type Database = {
           nota?: string | null
           posicion: number
           telefono_tutor?: string | null
+          tutor_usuario_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2783,6 +2785,7 @@ export type Database = {
           nota?: string | null
           posicion?: number
           telefono_tutor?: string | null
+          tutor_usuario_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2798,6 +2801,13 @@ export type Database = {
             columns: ["curso_academico_id"]
             isOneToOne: false
             referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lista_espera_tutor_usuario_id_fkey"
+            columns: ["tutor_usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]
