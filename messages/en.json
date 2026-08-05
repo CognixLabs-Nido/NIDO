@@ -921,7 +921,11 @@
       "estados": {
         "en_espera": "Waiting",
         "invitado": "Invited",
-        "descartado": "Discarded"
+        "descartado": "Discarded",
+        "alta_en_curso": "Enrolment in progress",
+        "pendiente_validar": "Awaiting validation",
+        "matriculado": "Enrolled",
+        "baja": "Left"
       },
       "invitar_dialog": {
         "title": "Invite to enrolment",
@@ -933,6 +937,8 @@
         "sin_aulas": "No classrooms configured for the active year."
       },
       "completar": "Complete (Management)",
+      "reanudar": "Resume enrolment",
+      "ver_ficha": "View profile",
       "completado": "Registration created. Tell the guardian to activate their account.",
       "completar_dialog": {
         "title": "Complete registration (Management)",

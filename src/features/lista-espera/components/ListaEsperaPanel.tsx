@@ -1,19 +1,22 @@
 'use client'
 
 import {
+  FileUserIcon,
   GripVerticalIcon,
   PencilIcon,
+  PlayIcon,
   Trash2Icon,
   UserPlusIcon,
   UserRoundPenIcon,
 } from 'lucide-react'
+import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useTransition, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
@@ -24,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { cn } from '@/lib/utils'
 import { EmptyState } from '@/shared/components/EmptyState'
 
 import { parentescoEnum } from '@/features/vinculos/schemas/vinculo'
@@ -32,6 +36,7 @@ import { completarEnDireccion } from '../actions/completar-direccion'
 import { descartarProspecto } from '../actions/descartar-prospecto'
 import { invitarAlAlta } from '../actions/invitar-al-alta'
 import { reordenarListaEspera } from '../actions/reordenar-lista-espera'
+import { resolverProspecto } from '../lib/acciones-prospecto'
 import { superaCapacidad, type AulaConOcupacion } from '../lib/ocupacion'
 import type { ProspectoListItem } from '../queries/get-lista-espera'
 
@@ -172,28 +177,16 @@ export function ListaEsperaPanel({
                     <div>{p.telefono_tutor ?? ''}</div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={p.estado === 'invitado' ? 'secondary' : 'outline'}>
-                      {t(`estados.${p.estado}`)}
-                    </Badge>
+                    <FilaBadge prospecto={p} />
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
-                      {p.estado === 'en_espera' && (
-                        <>
-                          <InvitarBoton
-                            id={p.id}
-                            aulas={aulas}
-                            locale={locale}
-                            disabled={pending}
-                          />
-                          <CompletarBoton
-                            id={p.id}
-                            aulas={aulas}
-                            locale={locale}
-                            disabled={pending}
-                          />
-                        </>
-                      )}
+                      <FilaAcciones
+                        prospecto={p}
+                        aulas={aulas}
+                        locale={locale}
+                        disabled={pending}
+                      />
                       <ProspectoFormDialog
                         cursoId={cursoSeleccionadoId}
                         prospecto={p}
@@ -213,6 +206,106 @@ export function ListaEsperaPanel({
         )}
       </Card>
     </div>
+  )
+}
+
+/**
+ * U-4 · badge de estado REAL de la fila. Antes pintaba solo `lista_espera.estado`
+ * (`En espera` / `Invitado`), que tras promover no decía nada del alta. Ahora, con niño
+ * enlazado, muestra en qué punto está su matrícula: en curso / pendiente de validar /
+ * matriculado. La decisión la toma la pieza pura, no el componente.
+ */
+function FilaBadge({ prospecto }: { prospecto: ProspectoListItem }) {
+  const t = useTranslations('admin.admisiones')
+  const { badge } = resolverProspecto({
+    estado: prospecto.estado,
+    ninoId: prospecto.nino_id,
+    estadoMatricula: prospecto.estado_matricula,
+  })
+  // Sólido = el alta llegó a su fin (matriculado); suave = en marcha; contorno = sin promover.
+  const variant =
+    badge === 'matriculado' ? 'default' : badge === 'en_espera' ? 'outline' : 'secondary'
+  return <Badge variant={variant}>{t(`estados.${badge}`)}</Badge>
+}
+
+/**
+ * U-4 (D4) · acciones de la fila según el mapeo estado→acciones. **Ninguna fila queda muda**:
+ * un prospecto ya promovido ofrece "Reanudar alta" (abre `/alta/[ninoId]`), y uno sin promover
+ * sigue con Invitar/Completar. El enlace NO lleva flag de modo: si quien pulsa es la Dirección
+ * (admin del centro sin vínculo con el niño), la propia ruta lo RE-DERIVA server-side y entra
+ * en modo Dirección — nunca se decide desde la URL.
+ */
+function FilaAcciones({
+  prospecto,
+  aulas,
+  locale,
+  disabled,
+}: {
+  prospecto: ProspectoListItem
+  aulas: AulaConOcupacion[]
+  locale: string
+  disabled: boolean
+}) {
+  const t = useTranslations('admin.admisiones')
+  const { acciones } = resolverProspecto({
+    estado: prospecto.estado,
+    ninoId: prospecto.nino_id,
+    estadoMatricula: prospecto.estado_matricula,
+  })
+
+  return (
+    <>
+      {acciones.map((accion) => {
+        switch (accion) {
+          case 'invitar':
+            return (
+              <InvitarBoton
+                key={accion}
+                id={prospecto.id}
+                aulas={aulas}
+                locale={locale}
+                disabled={disabled}
+              />
+            )
+          case 'completar':
+            return (
+              <CompletarBoton
+                key={accion}
+                id={prospecto.id}
+                aulas={aulas}
+                locale={locale}
+                disabled={disabled}
+              />
+            )
+          // `Button` de este repo NO soporta `asChild`: el patrón para un enlace con aspecto
+          // de botón es aplicar `buttonVariants` al `Link` (igual que `MensajeComposer`).
+          case 'reanudar':
+            return (
+              <Link
+                key={accion}
+                href={`/${locale}/alta/${prospecto.nino_id}`}
+                aria-label={t('reanudar')}
+                title={t('reanudar')}
+                className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}
+              >
+                <PlayIcon className="size-4" />
+              </Link>
+            )
+          case 'ver_ficha':
+            return (
+              <Link
+                key={accion}
+                href={`/${locale}/admin/ninos/${prospecto.nino_id}`}
+                aria-label={t('ver_ficha')}
+                title={t('ver_ficha')}
+                className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}
+              >
+                <FileUserIcon className="size-4" />
+              </Link>
+            )
+        }
+      })}
+    </>
   )
 }
 

@@ -175,9 +175,11 @@ export async function invitarAlAlta(
     })
     if (!vinc.success) return fail(vinc.error)
 
+    // U-4: se guarda además el `nino_id` creado → la lista puede pintar el estado real de la
+    // matrícula y ofrecer "Reanudar alta". Sin él, el prospecto se quedaba mudo tras promover.
     const { error: estadoErr } = await supabase
       .from('lista_espera')
-      .update({ estado: 'invitado' })
+      .update({ estado: 'invitado', nino_id: vinc.data.ninoId })
       .eq('id', prospecto.id)
     if (estadoErr) logger.warn('invitarAlAlta estado update (vinculado)', estadoErr.message)
 
@@ -245,7 +247,7 @@ export async function invitarAlAlta(
   //    log y seguimos (el prospecto queda en_espera y se puede descartar a mano).
   const { error: estadoErr } = await supabase
     .from('lista_espera')
-    .update({ estado: 'invitado' })
+    .update({ estado: 'invitado', nino_id: ninoId })
     .eq('id', prospecto.id)
   if (estadoErr) {
     logger.warn('invitarAlAlta estado update', estadoErr.message)

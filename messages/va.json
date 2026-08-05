@@ -921,7 +921,11 @@
       "estados": {
         "en_espera": "En espera",
         "invitado": "Convidat",
-        "descartado": "Descartat"
+        "descartado": "Descartat",
+        "alta_en_curso": "Alta en curs",
+        "pendiente_validar": "Pendent de validar",
+        "matriculado": "Matriculat",
+        "baja": "Baixa"
       },
       "invitar_dialog": {
         "title": "Convidar a l'alta",
@@ -933,6 +937,8 @@
         "sin_aulas": "No hi ha aules configurades en el curs actiu."
       },
       "completar": "Completar (Direcció)",
+      "reanudar": "Reprendre alta",
+      "ver_ficha": "Veure fitxa",
       "completado": "Alta creada. Avisa el tutor perquè active el seu compte.",
       "completar_dialog": {
         "title": "Completar alta (Direcció)",
