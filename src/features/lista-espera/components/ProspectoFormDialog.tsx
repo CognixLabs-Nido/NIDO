@@ -19,6 +19,8 @@ import { Textarea } from '@/components/ui/textarea'
 
 import { crearProspecto } from '../actions/crear-prospecto'
 import { editarProspecto } from '../actions/editar-prospecto'
+import { resolverTutorParaProspecto } from '../actions/resolver-tutor'
+import type { DeteccionTutor } from '../lib/deteccion-tutor'
 import type { ProspectoListItem } from '../queries/get-lista-espera'
 
 interface FormValues {
@@ -45,6 +47,38 @@ export function ProspectoFormDialog({ cursoId, prospecto, trigger }: Props) {
   const [pending, start] = useTransition()
   const esEdicion = !!prospecto
 
+  // U-5 (D7): vista previa de la detección por email. Solo al CREAR — al editar no se
+  // reclasifica el prospecto, así que anunciarlo confundiría. `null` = aún sin resolver.
+  const [deteccion, setDeteccion] = useState<DeteccionTutor | null>(null)
+  const [familiaEtiqueta, setFamiliaEtiqueta] = useState<string | null>(null)
+  const [resolviendo, startResolver] = useTransition()
+
+  /**
+   * Resuelve al salir del campo de email (no en cada tecla: cada resolución es un viaje al
+   * servidor). Es informativo: la resolución que se persiste la rehace `crearProspecto`.
+   */
+  function resolverEmail(email: string) {
+    if (esEdicion) return
+    const limpio = email.trim()
+    if (!limpio) {
+      setDeteccion(null)
+      setFamiliaEtiqueta(null)
+      return
+    }
+    startResolver(async () => {
+      const r = await resolverTutorParaProspecto(limpio)
+      if (r.success) {
+        setDeteccion(r.data.deteccion)
+        setFamiliaEtiqueta(r.data.familiaEtiqueta)
+      } else {
+        // Sin vista previa no se bloquea el alta: `crearProspecto` reintenta la resolución
+        // y, si tampoco puede, es ÉL quien aborta con el mismo error.
+        setDeteccion(null)
+        setFamiliaEtiqueta(null)
+      }
+    })
+  }
+
   const form = useForm<FormValues>({
     defaultValues: {
       nombre_nino: prospecto?.nombre_nino ?? '',
@@ -63,7 +97,11 @@ export function ProspectoFormDialog({ cursoId, prospecto, trigger }: Props) {
         : await crearProspecto({ curso_academico_id: cursoId, ...values })
       if (r.success) {
         toast.success(esEdicion ? t('editado') : t('creado'))
-        if (!esEdicion) form.reset()
+        if (!esEdicion) {
+          form.reset()
+          setDeteccion(null)
+          setFamiliaEtiqueta(null)
+        }
         setOpen(false)
       } else {
         toast.error(tErrors(r.error))
@@ -108,9 +146,24 @@ export function ProspectoFormDialog({ cursoId, prospecto, trigger }: Props) {
             <Input
               id="email_tutor"
               type="email"
-              {...form.register('email_tutor')}
+              {...form.register('email_tutor', {
+                onBlur: (e: React.FocusEvent<HTMLInputElement>) => resolverEmail(e.target.value),
+              })}
               autoComplete="off"
             />
+            {!esEdicion && (
+              <p className="text-muted-foreground text-xs" aria-live="polite">
+                {resolviendo
+                  ? t('deteccion.resolviendo')
+                  : deteccion === 'familia_existente'
+                    ? t('deteccion.familia_existente', { familia: familiaEtiqueta ?? '—' })
+                    : deteccion === 'cuenta_sin_familia_aqui'
+                      ? t('deteccion.cuenta_sin_familia_aqui')
+                      : deteccion === 'familia_nueva'
+                        ? t('deteccion.familia_nueva')
+                        : t('deteccion.ayuda')}
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="nota">{t('fields.nota')}</Label>

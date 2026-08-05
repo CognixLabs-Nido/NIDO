@@ -40,7 +40,7 @@ export interface VincularHijoTutorExistenteParams {
  * FIX A — camino feliz "el tutor YA existe": vincula un hijo NUEVO (promocionado desde un
  * prospecto) a la cuenta EXISTENTE del tutor, en vez de rechazar. NO recrea la cuenta, NO pide
  * contraseña, NO manda email/invitación (ya tiene acceso). Reutiliza el mismo motor que
- * `anadirHijoAFamilia` (RPC `crear_o_anadir_a_familia` con el `usuario_id` real).
+ * la RPC transaccional `crear_o_anadir_a_familia` con el `usuario_id` real.
  *
  * Resolución de familia por CENTRO (multi-centro seguro): la RPC busca la familia del tutor
  * SOLO en `p_centro_id` (`familia_tutores.usuario_id` JOIN `familias.centro_id = p_centro_id`).
@@ -85,7 +85,7 @@ export async function vincularHijoATutorExistente(
 
   // 2. Parentesco del hijo NUEVO: hereda del vínculo previo del tutor (consistente entre
   //    hermanos); si no hay herencia, usa el del formulario; si tampoco, falla (sin default
-  //    silencioso). Mismo criterio que `anadirHijoAFamilia`. La query NO filtra `deleted_at`
+  //    silencioso). La query NO filtra `deleted_at`
   //    a propósito (un vínculo archivado sigue diciendo la verdad del parentesco).
   const { data: vinculoPrevio } = await service
     .from('vinculos_familiares')
