@@ -921,7 +921,11 @@
       "estados": {
         "en_espera": "En espera",
         "invitado": "Invitado",
-        "descartado": "Descartado"
+        "descartado": "Descartado",
+        "alta_en_curso": "Alta en curso",
+        "pendiente_validar": "Pendiente de validar",
+        "matriculado": "Matriculado",
+        "baja": "Baja"
       },
       "invitar_dialog": {
         "title": "Invitar al alta",
@@ -933,6 +937,8 @@
         "sin_aulas": "No hay aulas configuradas en el curso activo."
       },
       "completar": "Completar (Dirección)",
+      "reanudar": "Reanudar alta",
+      "ver_ficha": "Ver ficha",
       "completado": "Alta creada. Avisa al tutor para que active su cuenta.",
       "completar_dialog": {
         "title": "Completar alta (Dirección)",

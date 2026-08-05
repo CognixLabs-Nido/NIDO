@@ -2749,6 +2749,7 @@ export type Database = {
           estado: Database["public"]["Enums"]["estado_lista_espera"]
           fecha_nacimiento: string | null
           id: string
+          nino_id: string | null
           nombre_nino: string
           nota: string | null
           posicion: number
@@ -2765,6 +2766,7 @@ export type Database = {
           estado?: Database["public"]["Enums"]["estado_lista_espera"]
           fecha_nacimiento?: string | null
           id?: string
+          nino_id?: string | null
           nombre_nino: string
           nota?: string | null
           posicion: number
@@ -2781,6 +2783,7 @@ export type Database = {
           estado?: Database["public"]["Enums"]["estado_lista_espera"]
           fecha_nacimiento?: string | null
           id?: string
+          nino_id?: string | null
           nombre_nino?: string
           nota?: string | null
           posicion?: number
@@ -2801,6 +2804,13 @@ export type Database = {
             columns: ["curso_academico_id"]
             isOneToOne: false
             referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lista_espera_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
             referencedColumns: ["id"]
           },
           {

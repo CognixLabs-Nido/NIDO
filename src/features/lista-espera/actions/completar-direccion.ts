@@ -161,10 +161,11 @@ export async function completarEnDireccion(
     })
     if (!vinc.success) return fail(vinc.error)
 
-    // El prospecto sale de la cola (best-effort, como en la rama de cuenta nueva).
+    // El prospecto sale de la cola (best-effort, como en la rama de cuenta nueva). U-4: se
+    // guarda el `nino_id` → la lista pinta el estado de la matrícula y ofrece "Reanudar alta".
     const { error: estadoErr } = await supabase
       .from('lista_espera')
-      .update({ estado: 'invitado' })
+      .update({ estado: 'invitado', nino_id: vinc.data.ninoId })
       .eq('id', prospecto.id)
     if (estadoErr) logger.warn('completarEnDireccion estado update (vinculado)', estadoErr.message)
 
@@ -227,7 +228,7 @@ export async function completarEnDireccion(
   //    seguimos (el prospecto queda en_espera y se puede descartar a mano).
   const { error: estadoErr } = await supabase
     .from('lista_espera')
-    .update({ estado: 'invitado' })
+    .update({ estado: 'invitado', nino_id: res.nino_id as string })
     .eq('id', prospecto.id)
   if (estadoErr) {
     logger.warn('completarEnDireccion estado update', estadoErr.message)
