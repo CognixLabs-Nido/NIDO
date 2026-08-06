@@ -890,7 +890,7 @@
       "sin_cursos": "No hi ha cursos",
       "sin_cursos_desc": "Crea primer un curs acadèmic.",
       "curso": "Curs",
-      "nuevo": "Afegir xiquet nou",
+      "nuevo": "Afegir alumne",
       "vacio": "Llista d’espera buida",
       "vacio_desc": "Afig el primer prospecte d’este curs.",
       "estado": "Estat",
@@ -898,7 +898,14 @@
       "editar": "Editar",
       "invitar": "Convidar a l’alta",
       "borrar": "Esborrar",
-      "nuevo_title": "Nou prospecte",
+      "nuevo_title": "Afegir alumne",
+      "deteccion": {
+        "ayuda": "Amb el correu sabrem si és una família nova o un germà d'una família que ja tenim.",
+        "resolviendo": "Comprovant el correu…",
+        "familia_nueva": "Família nova: en donar l'alta es crearà un compte al tutor.",
+        "familia_existente": "Ja tenim aquest tutor en {familia}: l'alumne entrarà com a germà, sense crear un altre compte.",
+        "cuenta_sin_familia_aqui": "Aquest tutor ja té compte, però encara no té família en aquest centre: en donar l'alta se'n crearà una ací, sense demanar-li una altra contrasenya."
+      },
       "editar_title": "Editar prospecte",
       "cancel": "Cancel·lar",
       "save": "Guardar",
@@ -953,44 +960,11 @@
         "apellidos_label": "Cognoms del tutor"
       },
       "anadirHijo": {
-        "boton": "Afegir fill a família existent",
-        "titulo": "Afegir fill a família existent",
-        "paso1_desc": "Tria la família a la qual afegir el nou fill.",
-        "paso2_desc": "Dades del nou fill per a la família «{familia}». Entrarà en la llista d’admissions com qualsevol altre alumne.",
-        "filtro": {
-          "todas": "Totes",
-          "activas": "Actives",
-          "inactivas": "Inactives"
-        },
-        "buscar_placeholder": "Cerca per família o titular…",
-        "sin_familias": "No hi ha famílies que coincidisquen",
-        "inactiva": "Inactiva",
-        "hijos": "{n, plural, =0 {sense fills actius} one {# fill actiu} other {# fills actius}}",
-        "sin_curso_activo": "El centre no té cap curs acadèmic actiu. Activa’n un abans d’afegir el fill.",
-        "fields": {
-          "nombre": "Nom",
-          "apellidos": "Cognoms",
-          "fecha_nacimiento": "Data de naixement"
-        },
-        "volver": "Tornar",
-        "cancelar": "Cancel·lar",
-        "confirmar": "Afegir a admissions",
-        "procesando": "Afegint…",
-        "exito": "Afegit a la llista d’admissions",
-        "validation": {
-          "nombre_requerido": "Indica el nom del xiquet",
-          "apellidos_requerido": "Indica els cognoms del xiquet",
-          "fecha_requerida": "Indica la data de naixement",
-          "invalid": "Dades no vàlides"
-        },
         "errors": {
-          "familia_no_encontrada": "Família no trobada",
-          "familia_no_elegible": "Esta família no té cap adult amb compte; usa el flux d'invitació",
           "no_autorizado": "No tens permís per a afegir fills en este centre",
           "colision": "El nom del titular no coincidix amb el registrat en la família; revisa’l abans de continuar",
           "parentesco_requerido": "Este titular no té cap vincle del qual heretar el parentiu; indica’l abans de continuar"
         },
-        "nota_prospecto": "El xiquet entra en la llista d’espera d’admissions vinculat a esta família. L’aula i la resta de l’alta es completen en convidar o completar l’alta des de la llista.",
         "push_titulo": "Nou fill en la teua família",
         "push_cuerpo": "S’ha afegit {nombre} a la teua família"
       },

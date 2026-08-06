@@ -890,7 +890,7 @@
       "sin_cursos": "No academic years",
       "sin_cursos_desc": "Create an academic year first.",
       "curso": "Year",
-      "nuevo": "Add new child",
+      "nuevo": "Add pupil",
       "vacio": "Empty waiting list",
       "vacio_desc": "Add the first prospect for this year.",
       "estado": "Status",
@@ -898,7 +898,14 @@
       "editar": "Edit",
       "invitar": "Invite to enrol",
       "borrar": "Delete",
-      "nuevo_title": "New prospect",
+      "nuevo_title": "Add pupil",
+      "deteccion": {
+        "ayuda": "The email tells us whether this is a new family or a sibling of a family we already have.",
+        "resolviendo": "Checking the email…",
+        "familia_nueva": "New family: an account will be created for the guardian during enrolment.",
+        "familia_existente": "We already have this guardian in {familia}: the pupil will join as a sibling, with no second account.",
+        "cuenta_sin_familia_aqui": "This guardian already has an account but no family at this centre yet: one will be created here during enrolment, without asking for another password."
+      },
       "editar_title": "Edit prospect",
       "cancel": "Cancel",
       "save": "Save",
@@ -953,44 +960,11 @@
         "apellidos_label": "Guardian's last name"
       },
       "anadirHijo": {
-        "boton": "Add child to existing family",
-        "titulo": "Add child to existing family",
-        "paso1_desc": "Choose the family to add the new child to.",
-        "paso2_desc": "Details of the new child for the “{familia}” family. They will enter the admissions list like any other pupil.",
-        "filtro": {
-          "todas": "All",
-          "activas": "Active",
-          "inactivas": "Inactive"
-        },
-        "buscar_placeholder": "Search by family or guardian…",
-        "sin_familias": "No matching families",
-        "inactiva": "Inactive",
-        "hijos": "{n, plural, =0 {no active children} one {# active child} other {# active children}}",
-        "sin_curso_activo": "This centre has no active academic year. Activate one before adding the child.",
-        "fields": {
-          "nombre": "First name",
-          "apellidos": "Surname",
-          "fecha_nacimiento": "Date of birth"
-        },
-        "volver": "Back",
-        "cancelar": "Cancel",
-        "confirmar": "Add to admissions",
-        "procesando": "Adding…",
-        "exito": "Added to the admissions list",
-        "validation": {
-          "nombre_requerido": "Enter the child's first name",
-          "apellidos_requerido": "Enter the child's surname",
-          "fecha_requerida": "Enter the date of birth",
-          "invalid": "Invalid data"
-        },
         "errors": {
-          "familia_no_encontrada": "Family not found",
-          "familia_no_elegible": "This family has no adult with an account; use the invitation flow",
           "no_autorizado": "You do not have permission to add children in this centre",
           "colision": "The guardian’s name does not match the one registered for the family; check it before continuing",
           "parentesco_requerido": "This guardian has no existing relationship to inherit; specify it before continuing"
         },
-        "nota_prospecto": "The child joins the admissions waiting list linked to this family. The classroom and the rest of the registration are completed when you invite or complete the registration from the list.",
         "push_titulo": "New child in your family",
         "push_cuerpo": "{nombre} has been added to your family"
       },

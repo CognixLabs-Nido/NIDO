@@ -890,7 +890,7 @@
       "sin_cursos": "No hay cursos",
       "sin_cursos_desc": "Crea primero un curso académico.",
       "curso": "Curso",
-      "nuevo": "Añadir niño nuevo",
+      "nuevo": "Añadir alumno",
       "vacio": "Lista de espera vacía",
       "vacio_desc": "Añade el primer prospecto de este curso.",
       "estado": "Estado",
@@ -898,7 +898,14 @@
       "editar": "Editar",
       "invitar": "Invitar al alta",
       "borrar": "Borrar",
-      "nuevo_title": "Nuevo prospecto",
+      "nuevo_title": "Añadir alumno",
+      "deteccion": {
+        "ayuda": "Con el email sabremos si es una familia nueva o un hermano de una familia que ya tenemos.",
+        "resolviendo": "Comprobando el email…",
+        "familia_nueva": "Familia nueva: al dar el alta se le creará una cuenta al tutor.",
+        "familia_existente": "Ya tenemos a este tutor en {familia}: el alumno entrará como hermano, sin crear otra cuenta.",
+        "cuenta_sin_familia_aqui": "Este tutor ya tiene cuenta, pero aún no tiene familia en este centro: al dar el alta se le creará una aquí, sin pedirle otra contraseña."
+      },
       "editar_title": "Editar prospecto",
       "cancel": "Cancelar",
       "save": "Guardar",
@@ -953,44 +960,11 @@
         "apellidos_label": "Apellidos del tutor"
       },
       "anadirHijo": {
-        "boton": "Añadir hijo a familia existente",
-        "titulo": "Añadir hijo a familia existente",
-        "paso1_desc": "Elige la familia a la que añadir el nuevo hijo.",
-        "paso2_desc": "Datos del nuevo hijo para la familia «{familia}». Entrará en la lista de admisiones como cualquier otro alumno.",
-        "filtro": {
-          "todas": "Todas",
-          "activas": "Activas",
-          "inactivas": "Inactivas"
-        },
-        "buscar_placeholder": "Buscar por familia o titular…",
-        "sin_familias": "No hay familias que coincidan",
-        "inactiva": "Inactiva",
-        "hijos": "{n, plural, =0 {sin hijos activos} one {# hijo activo} other {# hijos activos}}",
-        "sin_curso_activo": "El centro no tiene un curso académico activo. Activa un curso antes de añadir el hijo.",
-        "fields": {
-          "nombre": "Nombre",
-          "apellidos": "Apellidos",
-          "fecha_nacimiento": "Fecha de nacimiento"
-        },
-        "volver": "Volver",
-        "cancelar": "Cancelar",
-        "confirmar": "Añadir a admisiones",
-        "procesando": "Añadiendo…",
-        "exito": "Añadido a la lista de admisiones",
-        "validation": {
-          "nombre_requerido": "Indica el nombre del niño",
-          "apellidos_requerido": "Indica los apellidos del niño",
-          "fecha_requerida": "Indica la fecha de nacimiento",
-          "invalid": "Datos no válidos"
-        },
         "errors": {
-          "familia_no_encontrada": "Familia no encontrada",
-          "familia_no_elegible": "Esta familia no tiene ningún adulto con cuenta; usa el flujo de invitación",
           "no_autorizado": "No tienes permiso para añadir hijos en este centro",
           "colision": "El nombre del titular no coincide con el registrado en la familia; revísalo antes de continuar",
           "parentesco_requerido": "Este titular no tiene ningún vínculo del que heredar el parentesco; indícalo antes de continuar"
         },
-        "nota_prospecto": "El niño entra en la lista de espera de admisiones vinculado a esta familia. El aula y el resto del alta se completan al invitar o completar el alta desde la lista.",
         "push_titulo": "Nuevo hijo en tu familia",
         "push_cuerpo": "Se ha añadido a {nombre} a tu familia"
       },

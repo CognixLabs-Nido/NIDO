@@ -7,8 +7,6 @@ import { getCursosPorCentro } from '@/features/cursos/queries/get-cursos'
 import { ListaEsperaPanel } from '@/features/lista-espera/components/ListaEsperaPanel'
 import { getAulasConOcupacion } from '@/features/lista-espera/queries/get-aulas-con-ocupacion'
 import { getListaEspera } from '@/features/lista-espera/queries/get-lista-espera'
-import { AnadirHijoAFamiliaDialog } from '@/features/familias/components/AnadirHijoAFamiliaDialog'
-import { getFamiliasPorCentro } from '@/features/familias/queries/get-familias'
 import { EmptyState } from '@/shared/components/EmptyState'
 
 interface PageProps {
@@ -47,11 +45,6 @@ export default async function AdmisionesPage({ params, searchParams }: PageProps
   const cursoActivo = cursos.find((c) => c.estado === 'activo')
   const aulas = cursoActivo ? await getAulasConOcupacion(cursoActivo.id) : []
 
-  // U-2: "añadir hijo a familia existente" ya NO es una vía paralela — encola un prospecto
-  // más en esta misma lista, así que solo necesita las familias del centro (el aula se elige
-  // al promover, igual que en cualquier prospecto).
-  const familias = await getFamiliasPorCentro(centroId)
-
   return (
     <div className="space-y-6">
       <header className="space-y-1">
@@ -64,9 +57,6 @@ export default async function AdmisionesPage({ params, searchParams }: PageProps
         prospectos={prospectos}
         aulas={aulas}
         locale={locale}
-        accionExtra={
-          <AnadirHijoAFamiliaDialog familias={familias} hayCursoActivo={!!cursoActivo} />
-        }
       />
     </div>
   )

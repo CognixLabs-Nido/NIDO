@@ -15,7 +15,8 @@ export interface FamiliaGestionItem {
 
 /**
  * F-6a — TODAS las familias del centro para el listado de gestión de Dirección. A diferencia
- * de `getFamiliasPorCentro` (F-2b-4-2, selector), NO excluye familias sin adulto con cuenta:
+ * del selector de familias de admisiones (F-2b-4-2, jubilado en U-5), NO excluye familias
+ * sin adulto con cuenta:
  * una familia con solo invitación pendiente también aparece. El titular a mostrar es el tutor
  * `rol_familia='titular'` (aunque no tenga `usuario_id`); si no hay titular, el primer tutor.
  * La RLS admin (`familias_select`/`familia_tutores_select` por `es_admin`) ya acota al centro
