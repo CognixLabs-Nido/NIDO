@@ -33,9 +33,11 @@ import type { Database } from '@/types/database'
 
 import { confirmarRecibo, confirmarRecibos } from '../actions/confirmar-recibo'
 import { generarRecibosMes } from '../actions/generar-recibos-mes'
+import { recalcularMes } from '../actions/recalcular-mes'
 import { setMetodoPagoFamilia } from '../actions/set-metodo-pago-familia'
 import { limpiarNombreEmbebido } from '../lib/limpiar-nombre-embebido'
 import { agruparLineasPanel, esConfirmado, type FilaFamiliaPanel } from '../lib/panel-familia'
+import { componerResumenRecalculo } from '../lib/resumen-recalculo'
 import type { PanelMesData } from '../queries/get-recibos-mes-panel'
 import { EditarReciboDialog } from './EditarReciboDialog'
 
@@ -64,6 +66,7 @@ export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [generarOpen, setGenerarOpen] = useState(false)
+  const [recalcularOpen, setRecalcularOpen] = useState(false)
   const [pending, startTransition] = useTransition()
 
   const borradores = data.filas.filter((f) => f.recibo && f.recibo.estado === 'borrador')
@@ -81,6 +84,30 @@ export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
       setGenerarOpen(false)
       if (r.success) toast.success(t('generado_ok', { n: r.data.generados }))
       else toast.error(tErrors(r.error))
+    })
+  }
+
+  // R-1: siembra los conceptos automáticos que falten y REGENERA los borradores del mes.
+  // Pide la misma confirmación que "generar" porque comparte su parte destructiva.
+  function lanzarRecalcular() {
+    if (numBorradores > 0) setRecalcularOpen(true)
+    else ejecutarRecalcular()
+  }
+  function ejecutarRecalcular() {
+    startTransition(async () => {
+      const r = await recalcularMes({ anio, mes })
+      setRecalcularOpen(false)
+      if (r.success) {
+        // Aviso con lo que de verdad pasó, frase a frase. Nunca un "0" a secas: cuando no
+        // hay nada que sembrar, la primera frase lo dice en palabras.
+        toast.success(t('recalculo_titulo'), {
+          description: componerResumenRecalculo(r.data)
+            .map((frase) => t(frase.clave, frase.valores))
+            .join(' · '),
+        })
+      } else {
+        toast.error(tErrors(r.error))
+      }
     })
   }
 
@@ -138,6 +165,9 @@ export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
         <MesSelector anio={anio} mes={mes} tab="mes" />
         <div className="flex items-center gap-2">
           <ReciboEsporadicoDialog anio={anio} mes={mes} ninos={ninos} />
+          <Button variant="outline" disabled={pending || bloqueado} onClick={lanzarRecalcular}>
+            {t('recalcular')}
+          </Button>
           <Button disabled={pending || bloqueado} onClick={lanzarGenerar}>
             {t('generar')}
           </Button>
@@ -294,6 +324,29 @@ export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
             </Button>
             <Button disabled={pending} onClick={ejecutarGenerar}>
               {t('regenerar')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* R-1: mismo aviso destructivo, más la parte de sembrar conceptos */}
+      <Dialog open={recalcularOpen} onOpenChange={setRecalcularOpen}>
+        <DialogContent className="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle>{t('recalcular_confirm_title')}</DialogTitle>
+          </DialogHeader>
+          <p className="text-muted-foreground text-sm">
+            {t('recalcular_confirm_desc', {
+              borradores: numBorradores,
+              confirmados: numConfirmados,
+            })}
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setRecalcularOpen(false)}>
+              {t('cancelar')}
+            </Button>
+            <Button disabled={pending} onClick={ejecutarRecalcular}>
+              {t('recalcular_confirmar')}
             </Button>
           </div>
         </DialogContent>
