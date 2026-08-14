@@ -173,7 +173,8 @@ function linea(
   reciboId: string,
   ninoId: string | null,
   descripcion: string,
-  importeCentimos: number
+  importeCentimos: number,
+  origen: LineaPanelInput['origen'] = 'automatico'
 ): LineaPanelInput {
   return {
     id,
@@ -184,5 +185,6 @@ function linea(
     cantidad: 1,
     precioUnitarioCentimos: importeCentimos,
     importeCentimos,
+    origen,
   }
 }

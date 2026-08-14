@@ -1486,7 +1486,7 @@
     "sin_lineas": "Sense línies.",
     "editar": "Editar",
     "editar_title": "Editar rebut",
-    "editar_aviso": "Estes edicions es perden si es regeneren els rebuts del mes.",
+    "editar_aviso": "El que edites o afiggis a mà queda marcat i el recàlcul del mes ja no ho trepitja.",
     "anadir_linea": "Afegir línia",
     "anadir": "Afegir",
     "cerrar": "Tancar",
@@ -1524,11 +1524,15 @@
       "metodo_failed": "No s'ha pogut guardar el mètode de pagament.",
       "linea_invalida": "Dades de la línia no vàlides.",
       "no_borrador": "El rebut no està en esborrany.",
-      "linea_failed": "No s'ha pogut guardar la línia."
+      "linea_failed": "No s'ha pogut guardar la línia.",
+      "recibo_ya_existe": "Esta família ja té rebut este mes; edita'l des de la seua fila."
     },
     "desborde_aviso": "{n} rebuts amb beca menjador pendent de resoldre.",
     "desborde_badge": "Beca pendent",
-    "resolver_beca": "Resoldre beca"
+    "resolver_beca": "Resoldre beca",
+    "anadir_linea_title": "Afegir línia",
+    "anadir_linea_aviso": "Esta família no té rebut este mes. En afegir la primera línia es crea l'esborrany.",
+    "linea_manual": "a mà"
   },
   "cierre_cobros": {
     "estado_titulo": "Estat del mes",

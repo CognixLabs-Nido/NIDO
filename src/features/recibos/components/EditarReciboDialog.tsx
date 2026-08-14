@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -22,18 +23,33 @@ import {
 } from '@/components/ui/select'
 import { eurosACentimos, formatEuros } from '@/shared/lib/format-money'
 
-import { anadirLineaRecibo, borrarLineaRecibo, editarLineaRecibo } from '../actions/lineas-recibo'
+import {
+  anadirLineaRecibo,
+  borrarLineaRecibo,
+  crearReciboConLineaManual,
+  editarLineaRecibo,
+} from '../actions/lineas-recibo'
 import type { LineaPanel } from '../lib/panel-familia'
 
+/**
+ * Dónde va a parar la línea. R-3 (A1) añade el segundo caso: la familia que sale «Sin
+ * cargos» no tiene recibo al que colgarla, porque el motor descarta el que se queda vacío;
+ * la carcasa se crea en el mismo gesto de escribir la primera línea.
+ */
+export type DestinoLinea =
+  | { tipo: 'recibo'; reciboId: string }
+  | { tipo: 'familia'; familiaId: string; anio: number; mes: number }
+
 interface Props {
-  reciboId: string
+  destino: DestinoLinea
   lineas: LineaPanel[]
   hijos: Array<{ ninoId: string; nombre: string }>
 }
 
-// F-4-4: edición de líneas de un recibo en BORRADOR (override puntual del mes). Avisa de
-// que las ediciones se pierden si se regenera. Solo se ofrece en borradores.
-export function EditarReciboDialog({ reciboId, lineas, hijos }: Props) {
+// F-4-4 · R-3: edición de líneas de un recibo en BORRADOR. Desde R-2 lo que se escribe a
+// mano queda marcado `origen='manual'` y el motor ya NO lo pisa al regenerar; el aviso del
+// diálogo lo dice así (antes avisaba justo de lo contrario, que era cierto entonces).
+export function EditarReciboDialog({ destino, lineas, hijos }: Props) {
   const t = useTranslations('recibos_panel')
   const tErrors = useTranslations()
   const [open, setOpen] = useState(false)
@@ -58,13 +74,21 @@ export function EditarReciboDialog({ reciboId, lineas, hijos }: Props) {
       return
     }
     startTransition(async () => {
-      const r = await anadirLineaRecibo({
-        reciboId,
+      const comun = {
         descripcion: desc.trim(),
         cantidad: cant,
         precioUnitarioCentimos: eurosACentimos(euros),
         ninoId: ninoId || null,
-      })
+      }
+      const r =
+        destino.tipo === 'recibo'
+          ? await anadirLineaRecibo({ reciboId: destino.reciboId, ...comun })
+          : await crearReciboConLineaManual({
+              familiaId: destino.familiaId,
+              anio: destino.anio,
+              mes: destino.mes,
+              ...comun,
+            })
       feedback(r, 'linea_anadida')
       if (r.success) {
         setDesc('')
@@ -92,16 +116,20 @@ export function EditarReciboDialog({ reciboId, lineas, hijos }: Props) {
       <DialogTrigger
         render={
           <Button size="sm" variant="outline">
-            {t('editar')}
+            {destino.tipo === 'recibo' ? t('editar') : t('anadir_linea')}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>{t('editar_title')}</DialogTitle>
+          <DialogTitle>
+            {destino.tipo === 'recibo' ? t('editar_title') : t('anadir_linea_title')}
+          </DialogTitle>
         </DialogHeader>
 
-        <p className="text-muted-foreground text-xs">{t('editar_aviso')}</p>
+        <p className="text-muted-foreground text-xs">
+          {destino.tipo === 'recibo' ? t('editar_aviso') : t('anadir_linea_aviso')}
+        </p>
 
         <div className="space-y-2">
           {lineas.length === 0 && (
@@ -238,6 +266,12 @@ function LineaEditable({
         {linea.ninoNombre ? `${linea.ninoNombre} · ` : ''}
         {linea.descripcion}
         {linea.cantidad > 1 ? ` (×${linea.cantidad})` : ''}
+        {/* Sin esta marca no hay forma de saber qué sobrevive a un recálculo y qué no. */}
+        {linea.origen === 'manual' && (
+          <Badge variant="warm" className="ml-2 align-middle">
+            {t('linea_manual')}
+          </Badge>
+        )}
       </span>
       <span className="tabular-nums">{formatEuros(linea.importeCentimos)}</span>
       <Button size="sm" variant="ghost" disabled={disabled} onClick={() => setEditando(true)}>

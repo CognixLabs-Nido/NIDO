@@ -38,6 +38,9 @@ export interface DesbordePanelInput {
 }
 
 /** Una línea congelada del recibo. `ninoId` NULL = línea familiar. */
+/** R-2 dejó marcadas las líneas: 'automatico' la escribió el motor, 'manual' una persona. */
+export type OrigenLinea = 'automatico' | 'manual'
+
 export interface LineaPanelInput {
   id: string
   reciboId: string
@@ -47,6 +50,7 @@ export interface LineaPanelInput {
   cantidad: number
   precioUnitarioCentimos: number
   importeCentimos: number
+  origen: OrigenLinea
 }
 
 export interface LineaPanel {
@@ -58,6 +62,8 @@ export interface LineaPanel {
   cantidad: number
   precioUnitarioCentimos: number
   importeCentimos: number
+  /** El motor respeta las 'manual' al regenerar; las 'automatico' las rehace. */
+  origen: OrigenLinea
 }
 
 export interface ReciboPanel {
@@ -152,6 +158,7 @@ export function construirPanelFamilia(
           cantidad: l.cantidad,
           precioUnitarioCentimos: l.precioUnitarioCentimos,
           importeCentimos: l.importeCentimos,
+          origen: l.origen,
         }))
         .sort(ordenarLineas)
 

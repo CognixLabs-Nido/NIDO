@@ -1486,7 +1486,7 @@
     "sin_lineas": "Sin líneas.",
     "editar": "Editar",
     "editar_title": "Editar recibo",
-    "editar_aviso": "Estas ediciones se pierden si se regeneran los recibos del mes.",
+    "editar_aviso": "Lo que edites o añadas a mano queda marcado y el recálculo del mes ya no lo pisa.",
     "anadir_linea": "Añadir línea",
     "anadir": "Añadir",
     "cerrar": "Cerrar",
@@ -1524,11 +1524,15 @@
       "metodo_failed": "No se pudo guardar el método de pago.",
       "linea_invalida": "Datos de la línea no válidos.",
       "no_borrador": "El recibo no está en borrador.",
-      "linea_failed": "No se pudo guardar la línea."
+      "linea_failed": "No se pudo guardar la línea.",
+      "recibo_ya_existe": "Esta familia ya tiene recibo este mes; edítalo desde su fila."
     },
     "desborde_aviso": "{n} recibos con beca comedor pendiente de resolver.",
     "desborde_badge": "Beca pendiente",
-    "resolver_beca": "Resolver beca"
+    "resolver_beca": "Resolver beca",
+    "anadir_linea_title": "Añadir línea",
+    "anadir_linea_aviso": "Esta familia no tiene recibo este mes. Al añadir la primera línea se crea el borrador.",
+    "linea_manual": "a mano"
   },
   "cierre_cobros": {
     "estado_titulo": "Estado del mes",
