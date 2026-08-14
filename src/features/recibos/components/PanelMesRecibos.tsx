@@ -488,10 +488,20 @@ function FilaFamilia({
                 {expandido ? t('ocultar') : t('ver')}
               </Button>
             )}
+            {/* A1: la familia sin recibo (el motor descartó el suyo por quedar vacío) no
+                tiene dónde colgar una línea. Aquí se crea la carcasa al escribir la primera,
+                en vez de dejar recibos de 0 € por todo el panel. */}
+            {!recibo && !bloqueado && (
+              <EditarReciboDialog
+                destino={{ tipo: 'familia', familiaId: fila.familiaId, anio, mes }}
+                lineas={[]}
+                hijos={fila.hijos}
+              />
+            )}
             {esBorrador && !bloqueado && (
               <>
                 <EditarReciboDialog
-                  reciboId={recibo!.id}
+                  destino={{ tipo: 'recibo', reciboId: recibo!.id }}
                   lineas={recibo!.lineas}
                   hijos={fila.hijos}
                 />

@@ -1486,7 +1486,7 @@
     "sin_lineas": "No lines.",
     "editar": "Edit",
     "editar_title": "Edit receipt",
-    "editar_aviso": "These edits are lost if the month's receipts are regenerated.",
+    "editar_aviso": "Anything you edit or add by hand is marked as such, and the month's recalculation no longer overwrites it.",
     "anadir_linea": "Add line",
     "anadir": "Add",
     "cerrar": "Close",
@@ -1524,11 +1524,15 @@
       "metodo_failed": "Could not save the payment method.",
       "linea_invalida": "Invalid line data.",
       "no_borrador": "The receipt is not a draft.",
-      "linea_failed": "Could not save the line."
+      "linea_failed": "Could not save the line.",
+      "recibo_ya_existe": "This family already has a receipt this month; edit it from its row."
     },
     "desborde_aviso": "{n} receipts with a pending meal grant to resolve.",
     "desborde_badge": "Grant pending",
-    "resolver_beca": "Resolve grant"
+    "resolver_beca": "Resolve grant",
+    "anadir_linea_title": "Add line",
+    "anadir_linea_aviso": "This family has no receipt this month. Adding the first line creates the draft.",
+    "linea_manual": "by hand"
   },
   "cierre_cobros": {
     "estado_titulo": "Month status",

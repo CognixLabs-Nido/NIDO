@@ -171,7 +171,7 @@ export async function getRecibosMesPanel(
       ? await supabase
           .from('lineas_recibo')
           .select(
-            'id, recibo_id, nino_id, concepto_id, descripcion, cantidad, precio_unitario_centimos, importe_centimos'
+            'id, recibo_id, nino_id, concepto_id, descripcion, cantidad, precio_unitario_centimos, importe_centimos, origen'
           )
           .in('recibo_id', reciboRegularIds)
       : { data: [] }
@@ -185,6 +185,8 @@ export async function getRecibosMesPanel(
     cantidad: l.cantidad,
     precioUnitarioCentimos: l.precio_unitario_centimos,
     importeCentimos: l.importe_centimos,
+    // La columna es `text` con CHECK de dos valores (R-2); se estrecha aquí al union.
+    origen: l.origen === 'manual' ? 'manual' : 'automatico',
   }))
 
   // V2-4: desbordes de beca comedor PENDIENTES del mes (para el aviso + el diálogo de
