@@ -2681,6 +2681,7 @@ export type Database = {
           id: string
           importe_centimos: number
           nino_id: string | null
+          origen: string
           precio_unitario_centimos: number
           recibo_id: string
         }
@@ -2693,6 +2694,7 @@ export type Database = {
           id?: string
           importe_centimos: number
           nino_id?: string | null
+          origen?: string
           precio_unitario_centimos: number
           recibo_id: string
         }
@@ -2705,6 +2707,7 @@ export type Database = {
           id?: string
           importe_centimos?: number
           nino_id?: string | null
+          origen?: string
           precio_unitario_centimos?: number
           recibo_id?: string
         }
