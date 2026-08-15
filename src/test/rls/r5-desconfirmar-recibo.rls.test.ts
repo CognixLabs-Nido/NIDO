@@ -45,8 +45,22 @@ import {
 const APPLIED = process.env.R5_MIGRATION_APPLIED === '1'
 
 const ANIO = 2026
-const MES = 9
 const ESCOLARIDAD = 50000
+
+/**
+ * UN MES POR TEST. No es cosmético: confirmar el ÚLTIMO borrador de un mes ancla
+ * `cierre_mensual` (R8), y `generar_recibos_mes` se niega a regenerar un mes cerrado
+ * ("mes cerrado: no se regenera"). Con un mes compartido, el primer test que confirma
+ * cierra el mes y deja sin fixture a todos los siguientes. Cerrar el mes es el
+ * comportamiento CORRECTO —y justo lo que el test de reapertura mide—, así que se aísla
+ * el mes en vez de borrar el cierre a escondidas: eso camuflaría la semántica que esta
+ * misma fase establece. De paso quita el acoplamiento por orden entre los `it`.
+ */
+let mesLibre = 2
+function siguienteMes(): number {
+  mesLibre += 1
+  return mesLibre
+}
 
 async function insertarNino(centroId: string, familiaId: string, nombre: string): Promise<string> {
   const { data, error } = await serviceClient
@@ -118,10 +132,14 @@ describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
     await deleteTestUser(ajeno.id)
   })
 
-  /** Una familia con un hijo, su concepto asignado y su recibo del mes ya generado. */
+  /**
+   * Una familia con un hijo, su concepto asignado y su recibo ya generado, en un mes
+   * RECIÉN ESTRENADO (ver `siguienteMes`). Devuelve el mes para que el test opere sobre él.
+   */
   async function familiaConRecibo(
     nombre: string
-  ): Promise<{ familiaId: string; reciboId: string }> {
+  ): Promise<{ familiaId: string; reciboId: string; mes: number }> {
+    const mes = siguienteMes()
     const familiaId = await createTestFamilia(centro.id)
     const ninoId = await insertarNino(centro.id, familiaId, nombre)
     await matricular(ninoId, aula.id, curso.id)
@@ -133,20 +151,20 @@ describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
     const { error } = await cAdmin.rpc('generar_recibos_mes', {
       p_centro_id: centro.id,
       p_anio: ANIO,
-      p_mes: MES,
+      p_mes: mes,
     })
-    if (error) throw new Error(`generar: ${error.message}`)
+    if (error) throw new Error(`generar (mes ${mes}): ${error.message}`)
 
     const { data } = await serviceClient
       .from('recibos')
       .select('id')
       .eq('familia_id', familiaId)
       .eq('anio', ANIO)
-      .eq('mes', MES)
+      .eq('mes', mes)
       .eq('es_esporadico', false)
       .is('deleted_at', null)
       .single()
-    return { familiaId, reciboId: data!.id }
+    return { familiaId, reciboId: data!.id, mes }
   }
 
   async function estadoDe(reciboId: string): Promise<string> {
@@ -159,13 +177,13 @@ describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
   }
 
   /** Mete el recibo en una remesa, como hace `crearRemesa` (remesa + enlace a la vez). */
-  async function meterEnRemesa(reciboId: string, opts: { borrada?: boolean } = {}) {
+  async function meterEnRemesa(reciboId: string, mes: number, opts: { borrada?: boolean } = {}) {
     const { data: remesa, error } = await serviceClient
       .from('remesas')
       .insert({
         centro_id: centro.id,
         anio: ANIO,
-        mes: MES,
+        mes,
         estado: 'borrador',
         deleted_at: opts.borrada ? new Date().toISOString() : null,
       })
@@ -233,7 +251,7 @@ describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
   })
 
   it('reabre el mes: al desconfirmar cae el cierre, al reconfirmar se vuelve a anclar', async () => {
-    const { reciboId } = await familiaConRecibo('R5 Cierre')
+    const { reciboId, mes } = await familiaConRecibo('R5 Cierre')
 
     // Se confirman TODOS los borradores del mes para que el cierre llegue a anclarse.
     const { data: pendientes } = await serviceClient
@@ -241,7 +259,7 @@ describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
       .select('id')
       .eq('centro_id', centro.id)
       .eq('anio', ANIO)
-      .eq('mes', MES)
+      .eq('mes', mes)
       .eq('estado', 'borrador')
     for (const r of pendientes ?? []) {
       await cAdmin.rpc('confirmar_recibo', { p_recibo_id: r.id })
@@ -249,7 +267,7 @@ describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
     const { data: cerrado } = await cAdmin.rpc('mes_cerrado', {
       p_centro_id: centro.id,
       p_anio: ANIO,
-      p_mes: MES,
+      p_mes: mes,
     })
     expect(cerrado, 'el mes debería haber quedado cerrado').toBe(true)
 
@@ -261,7 +279,7 @@ describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
     const { data: trasDesc } = await cAdmin.rpc('mes_cerrado', {
       p_centro_id: centro.id,
       p_anio: ANIO,
-      p_mes: MES,
+      p_mes: mes,
     })
     expect(trasDesc, 'el mes sigue cerrado con un borrador dentro').toBe(false)
 
@@ -270,9 +288,9 @@ describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
   })
 
   it('SALVAGUARDA: un recibo en una remesa no se desconfirma, ni por la RPC ni a pelo', async () => {
-    const { reciboId } = await familiaConRecibo('R5 Remesa')
+    const { reciboId, mes } = await familiaConRecibo('R5 Remesa')
     expect((await cAdmin.rpc('confirmar_recibo', { p_recibo_id: reciboId })).error).toBeNull()
-    await meterEnRemesa(reciboId)
+    await meterEnRemesa(reciboId, mes)
 
     expect((await cAdmin.rpc('recibo_en_remesa', { p_recibo_id: reciboId })).data).toBe(true)
 
@@ -292,9 +310,9 @@ describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
   })
 
   it('una remesa BORRADA no bloquea: el enlace sobrevive pero ya no cuenta', async () => {
-    const { reciboId } = await familiaConRecibo('R5 Remesa borrada')
+    const { reciboId, mes } = await familiaConRecibo('R5 Remesa borrada')
     expect((await cAdmin.rpc('confirmar_recibo', { p_recibo_id: reciboId })).error).toBeNull()
-    await meterEnRemesa(reciboId, { borrada: true })
+    await meterEnRemesa(reciboId, mes, { borrada: true })
 
     // `recibos_remesa` no tiene borrado lógico propio: el enlace sigue ahí.
     const { count } = await serviceClient
@@ -325,9 +343,9 @@ describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
   })
 
   it('no araña nada de lo que cuelga del recibo: manual, desborde y transferencia intactos', async () => {
-    const { familiaId, reciboId } = await familiaConRecibo('R5 Colaterales')
+    const { familiaId, reciboId, mes } = await familiaConRecibo('R5 Colaterales')
 
-    const { data: manual } = await serviceClient
+    const { data: manual, error: errManual } = await serviceClient
       .from('lineas_recibo')
       .insert({
         centro_id: centro.id,
@@ -340,29 +358,38 @@ describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
       })
       .select('id')
       .single()
+    if (errManual || !manual) throw new Error(`fixture linea manual: ${errManual?.message}`)
 
     // Un desborde YA RESUELTO por transferencia: el caso con más cosas colgando del recibo.
-    await serviceClient.from('beca_comedor_desborde').insert({
+    // `resuelto_at` NO es decorativo: `beca_desborde_resolucion_coherente` lo exige cuando
+    // el estado es 'resuelto'. Y los errores del fixture se comprueban en vez de tragarse:
+    // un insert que falla en silencio reaparece más abajo como una aserción rota, y se
+    // diagnostica como bug de producto lo que solo era el montaje mal puesto.
+    const { error: errDesborde } = await serviceClient.from('beca_comedor_desborde').insert({
       centro_id: centro.id,
       recibo_id: reciboId,
       familia_id: familiaId,
       anio: ANIO,
-      mes: MES,
+      mes,
       cuota_total_centimos: 10000,
       beca_total_centimos: 13000,
       exceso_centimos: 3000,
       estado: 'resuelto',
       via: 'transferencia',
+      resuelto_at: new Date().toISOString(),
     })
-    await serviceClient.from('beca_comedor_transferencia').insert({
+    if (errDesborde) throw new Error(`fixture desborde: ${errDesborde.message}`)
+
+    const { error: errTransf } = await serviceClient.from('beca_comedor_transferencia').insert({
       centro_id: centro.id,
       recibo_id: reciboId,
       familia_id: familiaId,
       anio: ANIO,
-      mes: MES,
+      mes,
       importe_centimos: 3000,
       estado: 'pendiente',
     })
+    if (errTransf) throw new Error(`fixture transferencia: ${errTransf.message}`)
 
     expect((await cAdmin.rpc('confirmar_recibo', { p_recibo_id: reciboId })).error).toBeNull()
     expect((await cAdmin.rpc('desconfirmar_recibo', { p_recibo_id: reciboId })).error).toBeNull()
@@ -372,7 +399,7 @@ describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
       .from('lineas_recibo')
       .select('id, origen, importe_centimos')
       .eq('recibo_id', reciboId)
-    expect(lineas!.find((l) => l.id === manual!.id)).toMatchObject({
+    expect(lineas!.find((l) => l.id === manual.id)).toMatchObject({
       origen: 'manual',
       importe_centimos: 7500,
     })
