@@ -26,6 +26,8 @@ export interface ReciboPanelInput {
   estado: EstadoRecibo
   metodo: MetodoPago | null
   totalCentimos: number
+  /** R-5: incluido en una remesa creada → "Modificar" queda bloqueado. */
+  enRemesa: boolean
 }
 
 /** Desborde de beca comedor PENDIENTE de un recibo (V2-4). A nivel familia/recibo. */
@@ -77,6 +79,8 @@ export interface ReciboPanel {
   /** `total_centimos` congelado del recibo (fuente de verdad, no recomputado). */
   totalCentimos: number
   lineas: LineaPanel[]
+  /** R-5: ya remesado. Con esto la fila sabe si puede ofrecer "Modificar" o solo el motivo. */
+  enRemesa: boolean
 }
 
 /** Desborde de beca comedor pendiente colgado de la fila (para el aviso + el diálogo). */
@@ -177,6 +181,7 @@ export function construirPanelFamilia(
         descuentosCentimos,
         totalCentimos: reciboInput.totalCentimos,
         lineas: lineasPanel,
+        enRemesa: reciboInput.enRemesa,
       }
     }
 

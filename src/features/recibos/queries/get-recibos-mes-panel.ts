@@ -155,15 +155,25 @@ export async function getRecibosMesPanel(
   const regulares = recibos.filter((r) => !r.es_esporadico && r.devuelto_de_recibo_id == null)
   const esporadicosRaw = recibos.filter((r) => r.es_esporadico || r.devuelto_de_recibo_id != null)
 
-  const recibosInput: ReciboPanelInput[] = regulares
-    .filter((r): r is typeof r & { familia_id: string } => r.familia_id != null)
-    .map((r) => ({
-      id: r.id,
-      familiaId: r.familia_id,
-      estado: r.estado,
-      metodo: r.metodo,
-      totalCentimos: r.total_centimos,
-    }))
+  const regularesConFamilia = regulares.filter(
+    (r): r is typeof r & { familia_id: string } => r.familia_id != null
+  )
+
+  // R-5: qué recibos están ya en una remesa CREADA (y no borrada). Es la salvaguarda de
+  // "Modificar": con el enlace puesto, el recibo ha podido viajar al banco y no se toca.
+  const remesadosIds = await getReciboIdsRemesados(
+    supabase,
+    regularesConFamilia.map((r) => r.id)
+  )
+
+  const recibosInput: ReciboPanelInput[] = regularesConFamilia.map((r) => ({
+    id: r.id,
+    familiaId: r.familia_id,
+    estado: r.estado,
+    metodo: r.metodo,
+    totalCentimos: r.total_centimos,
+    enRemesa: remesadosIds.has(r.id),
+  }))
 
   const reciboRegularIds = recibosInput.map((r) => r.id)
   const { data: lineasRows } =
@@ -229,6 +239,32 @@ export async function getRecibosMesPanel(
     esporadicos,
     metodoPreferencia,
   }
+}
+
+/**
+ * R-5: de un lote de recibos, cuáles están incluidos en una remesa VIVA. `recibos_remesa`
+ * no tiene borrado lógico propio, así que la remesa se une con `!inner` para descartar las
+ * borradas (una remesa descartada no debe seguir bloqueando su recibo). RLS: admin del
+ * centro. Si la lectura falla, se devuelven TODOS como remesados: ante la duda el candado
+ * se queda echado, que es el sentido de la salvaguarda.
+ */
+async function getReciboIdsRemesados(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  reciboIds: string[]
+): Promise<Set<string>> {
+  if (reciboIds.length === 0) return new Set()
+
+  const { data, error } = await supabase
+    .from('recibos_remesa')
+    .select('recibo_id, remesa:remesas!inner(deleted_at)')
+    .in('recibo_id', reciboIds)
+    .is('remesa.deleted_at', null)
+
+  if (error) {
+    logger.warn('getRecibosMesPanel: recibos_remesa', error.message)
+    return new Set(reciboIds)
+  }
+  return new Set((data ?? []).map((r) => r.recibo_id))
 }
 
 async function soloCierre(

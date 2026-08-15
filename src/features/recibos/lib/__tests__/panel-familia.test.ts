@@ -36,6 +36,7 @@ describe('construirPanelFamilia', () => {
         estado: 'borrador',
         metodo: 'sepa',
         totalCentimos: 38000,
+        enRemesa: false,
       },
     ]
     const lineas: LineaPanelInput[] = [
@@ -55,6 +56,36 @@ describe('construirPanelFamilia', () => {
     expect(indicadores.totalCentimos).toBe(38000)
   })
 
+  it('R-5: propaga enRemesa a la fila (es lo que decide si se ofrece "Modificar")', () => {
+    const recibos: ReciboPanelInput[] = [
+      {
+        id: 'rec-garcia',
+        familiaId: 'fam-garcia',
+        estado: 'pendiente_procesar',
+        metodo: 'sepa',
+        totalCentimos: 38000,
+        enRemesa: true,
+      },
+      {
+        id: 'rec-perez',
+        familiaId: 'fam-perez',
+        estado: 'pendiente_procesar',
+        metodo: 'sepa',
+        totalCentimos: 12000,
+        enRemesa: false,
+      },
+    ]
+    const lineas: LineaPanelInput[] = [
+      linea('l1', 'rec-garcia', 'nino-lucia', 'Cuota mensual', 38000),
+      linea('l2', 'rec-perez', null, 'Cuota mensual', 12000),
+    ]
+
+    const { filas } = construirPanelFamilia(familias, recibos, lineas)
+
+    expect(filas.find((f) => f.familiaId === 'fam-garcia')!.recibo!.enRemesa).toBe(true)
+    expect(filas.find((f) => f.familiaId === 'fam-perez')!.recibo!.enRemesa).toBe(false)
+  })
+
   it('resuelve el nombre del hijo en líneas de hijo y deja null en líneas familiares', () => {
     const recibos: ReciboPanelInput[] = [
       {
@@ -63,6 +94,7 @@ describe('construirPanelFamilia', () => {
         estado: 'borrador',
         metodo: 'sepa',
         totalCentimos: 18000,
+        enRemesa: false,
       },
     ]
     const lineas: LineaPanelInput[] = [
@@ -90,6 +122,7 @@ describe('construirPanelFamilia', () => {
         estado: 'borrador',
         metodo: 'sepa',
         totalCentimos: 0,
+        enRemesa: false,
       },
     ]
     const lineas: LineaPanelInput[] = [
@@ -115,6 +148,7 @@ describe('construirPanelFamilia', () => {
         estado: 'borrador',
         metodo: 'sepa',
         totalCentimos: 40000,
+        enRemesa: false,
       },
     ]
     const lineas: LineaPanelInput[] = [linea('l1', 'rec-garcia', 'nino-lucia', 'Cuota', 40000)]
@@ -135,6 +169,7 @@ describe('construirPanelFamilia', () => {
         estado: 'borrador',
         metodo: 'sepa',
         totalCentimos: 100,
+        enRemesa: false,
       },
       {
         id: 'rec-perez',
@@ -142,6 +177,7 @@ describe('construirPanelFamilia', () => {
         estado: 'pendiente_procesar',
         metodo: 'efectivo',
         totalCentimos: 200,
+        enRemesa: false,
       },
     ]
     const lineas: LineaPanelInput[] = [
