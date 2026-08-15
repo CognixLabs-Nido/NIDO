@@ -136,4 +136,4 @@ jobs:
           # Hasta entonces `r5-desconfirmar-recibo.rls.test.ts` se salta (el flag se lee con
           # === '1'), porque sin la migración no existen ni desconfirmar_recibo ni
           # recibo_en_remesa y la suite entera saldría roja.
-          # R5_MIGRATION_APPLIED: '1'
+          R5_MIGRATION_APPLIED: '1'
