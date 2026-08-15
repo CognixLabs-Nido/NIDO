@@ -32,9 +32,11 @@ import { formatEuros } from '@/shared/lib/format-money'
 import type { Database } from '@/types/database'
 
 import { confirmarRecibo, confirmarRecibos } from '../actions/confirmar-recibo'
+import { desconfirmarRecibo } from '../actions/desconfirmar-recibo'
 import { generarRecibosMes } from '../actions/generar-recibos-mes'
 import { recalcularMes } from '../actions/recalcular-mes'
 import { setMetodoPagoFamilia } from '../actions/set-metodo-pago-familia'
+import { accesoModificar } from '../lib/acceso-modificar'
 import { limpiarNombreEmbebido } from '../lib/limpiar-nombre-embebido'
 import { agruparLineasPanel, esConfirmado, type FilaFamiliaPanel } from '../lib/panel-familia'
 import { componerResumenRecalculo } from '../lib/resumen-recalculo'
@@ -116,6 +118,20 @@ export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
       const r = await confirmarRecibo(reciboId)
       if (r.success) toast.success(r.data.cerrado ? t('confirmado_cierre') : t('confirmado_ok'))
       else toast.error(tErrors(r.error))
+    })
+  }
+
+  // R-5: "Modificar" = desconfirmar. Si era el único que quedaba por procesar, el mes estaba
+  // cerrado y se reabre; se dice, porque cambia lo que la directora puede hacer en toda la
+  // pantalla (vuelven a habilitarse recalcular, generar y el resto de edición del mes).
+  function desconfirmarUno(reciboId: string) {
+    startTransition(async () => {
+      const r = await desconfirmarRecibo(reciboId)
+      if (r.success) {
+        toast.success(r.data.mesReabierto ? t('desconfirmado_reabre') : t('desconfirmado_ok'))
+      } else {
+        toast.error(tErrors(r.error))
+      }
     })
   }
 
@@ -258,6 +274,7 @@ export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
                     onToggleSel={toggleSel}
                     onToggleExpand={() => toggleExpand(fila.familiaId)}
                     onConfirmar={confirmarUno}
+                    onDesconfirmar={desconfirmarUno}
                     onCambiarMetodo={cambiarMetodo}
                   />
                 ))}
@@ -377,6 +394,7 @@ function FilaFamilia({
   onToggleSel,
   onToggleExpand,
   onConfirmar,
+  onDesconfirmar,
   onCambiarMetodo,
 }: {
   fila: FilaFamiliaPanel
@@ -391,12 +409,15 @@ function FilaFamilia({
   onToggleSel: (reciboId: string, on: boolean) => void
   onToggleExpand: () => void
   onConfirmar: (reciboId: string) => void
+  onDesconfirmar: (reciboId: string) => void
   onCambiarMetodo: (familiaId: string, metodo: MetodoPago) => void
 }) {
   const t = useTranslations('recibos_panel')
   const recibo = fila.recibo
   const esBorrador = recibo?.estado === 'borrador'
   const confirmado = recibo != null && esConfirmado(recibo.estado)
+  // R-5: sobre un confirmado, ¿se puede levantar el candado o hay que explicar por qué no?
+  const acceso = recibo ? accesoModificar(recibo.estado, recibo.enRemesa) : null
   const metodoActual = recibo?.metodo ?? metodoPref ?? undefined
   const metodoItems = METODOS.map((m) => ({ value: m, label: t(`metodos.${m}`) }))
 
@@ -510,7 +531,39 @@ function FilaFamilia({
                 </Button>
               </>
             )}
-            {confirmado && <span className="text-muted-foreground text-xs">🔒</span>}
+            {/* R-5: el candado sigue significando lo mismo (este recibo NO se edita en
+                caliente); "Modificar" es la única llave, y se ve. Si el recibo ya está en
+                una remesa o el cobro avanzó, el botón se queda ahí pero deshabilitado y
+                diciendo por qué: es más útil que desaparecer sin explicación. Nota: NO
+                depende de `bloqueado` — confirmar el último recibo CIERRA el mes, así que
+                exigir mes abierto para modificar haría el botón inalcanzable justo cuando
+                hace falta (desconfirmar es, de hecho, lo que reabre el mes). */}
+            {confirmado && (
+              <>
+                {acceso!.permitido ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={pending}
+                    onClick={() => onDesconfirmar(recibo!.id)}
+                  >
+                    {t('modificar')}
+                  </Button>
+                ) : (
+                  <span title={t(`modificar_bloqueado.${acceso!.motivo}`)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled
+                      aria-label={t(`modificar_bloqueado.${acceso!.motivo}`)}
+                    >
+                      {t('modificar')}
+                    </Button>
+                  </span>
+                )}
+                <span className="text-muted-foreground text-xs">🔒</span>
+              </>
+            )}
           </div>
         </TableCell>
       </TableRow>

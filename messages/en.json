@@ -1525,14 +1525,28 @@
       "linea_invalida": "Invalid line data.",
       "no_borrador": "The receipt is not a draft.",
       "linea_failed": "Could not save the line.",
-      "recibo_ya_existe": "This family already has a receipt this month; edit it from its row."
+      "recibo_ya_existe": "This family already has a receipt this month; edit it from its row.",
+      "no_encontrado": "Receipt not found.",
+      "no_regular": "One-off receipts and returns are not modified from here.",
+      "no_confirmado": "This receipt is a draft: edit it directly.",
+      "recibo_en_remesa": "This receipt is in a batch: it can no longer be modified.",
+      "recibo_cobrado": "This receipt has already been collected: it can no longer be modified.",
+      "desconfirmar_failed": "Could not reopen the receipt."
     },
     "desborde_aviso": "{n} receipts with a pending meal grant to resolve.",
     "desborde_badge": "Grant pending",
     "resolver_beca": "Resolve grant",
     "anadir_linea_title": "Add line",
     "anadir_linea_aviso": "This family has no receipt this month. Adding the first line creates the draft.",
-    "linea_manual": "by hand"
+    "linea_manual": "by hand",
+    "modificar": "Modify",
+    "modificar_bloqueado": {
+      "en_remesa": "This receipt is in a batch: it can no longer be modified.",
+      "cobro_avanzado": "This receipt has already been collected: it can no longer be modified.",
+      "no_confirmado": "This receipt is a draft: edit it directly."
+    },
+    "desconfirmado_ok": "Receipt reopened. Edit it and confirm it again.",
+    "desconfirmado_reabre": "Receipt reopened. The month is open again until you confirm it once more."
   },
   "cierre_cobros": {
     "estado_titulo": "Month status",

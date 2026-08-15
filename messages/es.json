@@ -1525,14 +1525,28 @@
       "linea_invalida": "Datos de la línea no válidos.",
       "no_borrador": "El recibo no está en borrador.",
       "linea_failed": "No se pudo guardar la línea.",
-      "recibo_ya_existe": "Esta familia ya tiene recibo este mes; edítalo desde su fila."
+      "recibo_ya_existe": "Esta familia ya tiene recibo este mes; edítalo desde su fila.",
+      "no_encontrado": "No se ha encontrado el recibo.",
+      "no_regular": "Los recibos esporádicos y las devoluciones no se modifican por aquí.",
+      "no_confirmado": "Este recibo es un borrador: edítalo directamente.",
+      "recibo_en_remesa": "Este recibo está en una remesa: ya no se puede modificar.",
+      "recibo_cobrado": "Este recibo ya está cobrado: ya no se puede modificar.",
+      "desconfirmar_failed": "No se pudo reabrir el recibo."
     },
     "desborde_aviso": "{n} recibos con beca comedor pendiente de resolver.",
     "desborde_badge": "Beca pendiente",
     "resolver_beca": "Resolver beca",
     "anadir_linea_title": "Añadir línea",
     "anadir_linea_aviso": "Esta familia no tiene recibo este mes. Al añadir la primera línea se crea el borrador.",
-    "linea_manual": "a mano"
+    "linea_manual": "a mano",
+    "modificar": "Modificar",
+    "modificar_bloqueado": {
+      "en_remesa": "Este recibo está en una remesa: ya no se puede modificar.",
+      "cobro_avanzado": "Este recibo ya está cobrado: ya no se puede modificar.",
+      "no_confirmado": "Este recibo es un borrador: edítalo directamente."
+    },
+    "desconfirmado_ok": "Recibo reabierto. Edítalo y vuelve a confirmarlo.",
+    "desconfirmado_reabre": "Recibo reabierto. El mes vuelve a estar abierto hasta que lo confirmes de nuevo."
   },
   "cierre_cobros": {
     "estado_titulo": "Estado del mes",

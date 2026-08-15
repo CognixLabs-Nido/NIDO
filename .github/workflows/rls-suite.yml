@@ -132,3 +132,8 @@ jobs:
           BECA_COMEDOR_V2_APPLIED: '1'
           BECA_COMEDOR_V2_MOTOR_APPLIED: '1'
           R2_MIGRATION_APPLIED: '1'
+          # Descomentar EN CUANTO Jose aplique 20260828120000_phase_recibos_r5_desconfirmar.
+          # Hasta entonces `r5-desconfirmar-recibo.rls.test.ts` se salta (el flag se lee con
+          # === '1'), porque sin la migración no existen ni desconfirmar_recibo ni
+          # recibo_en_remesa y la suite entera saldría roja.
+          # R5_MIGRATION_APPLIED: '1'

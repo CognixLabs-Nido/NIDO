@@ -4481,6 +4481,7 @@ export type Database = {
       centro_de_remesa: { Args: { p_remesa_id: string }; Returns: string }
       cerrar_curso: { Args: { p_curso_destino_id: string }; Returns: Json }
       confirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
+      desconfirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
       contar_invitaciones_pendientes: { Args: never; Returns: number }
       contar_recordatorios_pendientes: { Args: never; Returns: number }
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
@@ -4710,6 +4711,7 @@ export type Database = {
         }
         Returns: string
       }
+      recibo_en_remesa: { Args: { p_recibo_id: string }; Returns: boolean }
       reproponer_asignaciones: { Args: { p_centro_id: string }; Returns: Json }
       revocar_acceso_familia: { Args: { p_familia_id: string }; Returns: Json }
       revocar_consentimiento: {

@@ -1525,14 +1525,28 @@
       "linea_invalida": "Dades de la línia no vàlides.",
       "no_borrador": "El rebut no està en esborrany.",
       "linea_failed": "No s'ha pogut guardar la línia.",
-      "recibo_ya_existe": "Esta família ja té rebut este mes; edita'l des de la seua fila."
+      "recibo_ya_existe": "Esta família ja té rebut este mes; edita'l des de la seua fila.",
+      "no_encontrado": "No s’ha trobat el rebut.",
+      "no_regular": "Els rebuts esporàdics i les devolucions no es modifiquen des d’ací.",
+      "no_confirmado": "Este rebut és un esborrany: edita’l directament.",
+      "recibo_en_remesa": "Este rebut està en una remesa: ja no es pot modificar.",
+      "recibo_cobrado": "Este rebut ja està cobrat: ja no es pot modificar.",
+      "desconfirmar_failed": "No s’ha pogut reobrir el rebut."
     },
     "desborde_aviso": "{n} rebuts amb beca menjador pendent de resoldre.",
     "desborde_badge": "Beca pendent",
     "resolver_beca": "Resoldre beca",
     "anadir_linea_title": "Afegir línia",
     "anadir_linea_aviso": "Esta família no té rebut este mes. En afegir la primera línia es crea l'esborrany.",
-    "linea_manual": "a mà"
+    "linea_manual": "a mà",
+    "modificar": "Modificar",
+    "modificar_bloqueado": {
+      "en_remesa": "Este rebut està en una remesa: ja no es pot modificar.",
+      "cobro_avanzado": "Este rebut ja està cobrat: ja no es pot modificar.",
+      "no_confirmado": "Este rebut és un esborrany: edita’l directament."
+    },
+    "desconfirmado_ok": "Rebut reobert. Edita’l i torna a confirmar-lo.",
+    "desconfirmado_reabre": "Rebut reobert. El mes torna a estar obert fins que el confirmes de nou."
   },
   "cierre_cobros": {
     "estado_titulo": "Estat del mes",
