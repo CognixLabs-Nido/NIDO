@@ -137,3 +137,8 @@ jobs:
           # === '1'), porque sin la migración no existen ni desconfirmar_recibo ni
           # recibo_en_remesa y la suite entera saldría roja.
           R5_MIGRATION_APPLIED: '1'
+          # Descomentar EN CUANTO Jose aplique
+          # 20260829120000_phase_beca_b2_3_desborde_resuelto_cerrado. Hasta entonces
+          # `b23-desborde-resuelto-cerrado.rls.test.ts` se salta: sin la migración el motor
+          # sigue borrando los desbordes resueltos y los 3 casos saldrían rojos.
+          B23_MIGRATION_APPLIED: '1'
