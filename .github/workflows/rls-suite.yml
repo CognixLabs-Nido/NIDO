@@ -141,4 +141,4 @@ jobs:
           # 20260829120000_phase_beca_b2_3_desborde_resuelto_cerrado. Hasta entonces
           # `b23-desborde-resuelto-cerrado.rls.test.ts` se salta: sin la migración el motor
           # sigue borrando los desbordes resueltos y los 3 casos saldrían rojos.
-          # B23_MIGRATION_APPLIED: '1'
+          B23_MIGRATION_APPLIED: '1'
