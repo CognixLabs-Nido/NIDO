@@ -143,4 +143,4 @@ jobs:
           # sigue borrando los desbordes resueltos y los 3 casos saldrían rojos.
           B23_MIGRATION_APPLIED: '1'
           # Se activa cuando Jose aplique `20260830120000_phase_matriculas_activada_at`.
-          # ALUMNOS_ACTIVADA_AT_MIGRATION_APPLIED: '1'
+          ALUMNOS_ACTIVADA_AT_MIGRATION_APPLIED: '1'
