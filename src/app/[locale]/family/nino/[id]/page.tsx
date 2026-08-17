@@ -46,6 +46,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const tTabs = await getTranslations('family.nino.tabs')
   const tAusencia = await getTranslations('ausencia')
   const tFicha = await getTranslations('messages.ficha_nino')
+  const tFotos = await getTranslations('fotos.nino')
   const nino = await getNinoById(id)
   if (!nino) notFound()
 
@@ -105,11 +106,16 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
       </Link>
 
       <header className="bg-card border-border/60 flex flex-wrap items-center gap-4 rounded-2xl border p-5 shadow-md">
+        {/* IU-3: mismo gate que enforza el route handler (`puede_aparecer_en_fotos`).
+            Avisado ANTES de subir: si no, el navegador sube la foto entera para recibir
+            un 403 (15-20 s con una foto de móvil). */}
         <SubirFotoNino
           ninoId={id}
           locale={locale}
           initialUrl={foto.urlMiniatura ?? foto.url}
           alt={`${nino.nombre} ${nino.apellidos ?? ''}`.trim()}
+          bloqueado={!nino.puede_aparecer_en_fotos}
+          motivoBloqueo={tFotos('requiere_autorizacion')}
         />
         <div className="min-w-0 flex-1">
           <h1 className="text-h2 text-foreground truncate">

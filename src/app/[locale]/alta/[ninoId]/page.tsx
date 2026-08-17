@@ -19,6 +19,7 @@ import { AltaCompletadaScreen } from '@/features/alta/components/AltaCompletadaS
 import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
 import { resolverEntradaAlta } from '@/features/alta/lib/entrada-alta'
+import { resolverSalidaAlta } from '@/features/alta/lib/salida-alta'
 import { PASO_MIN_AUTENTICADO } from '@/features/alta/lib/estado-alta'
 import { resolverReutilizacionFamilia } from '@/features/alta/lib/reutilizacion-familia'
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
@@ -97,6 +98,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
       <AltaCompletadaScreen
         ninoNombre={nino.nombre}
         editarHref={`/${locale}/alta/${ninoId}?editar=1`}
+        salida={resolverSalidaAlta(modoDireccion, locale)}
       />
     )
   }

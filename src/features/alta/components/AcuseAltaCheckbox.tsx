@@ -17,6 +17,12 @@ interface Props {
   /** ¿Ya está aceptado? (lo deriva la ruta server-side: `acuses_alta` en normas; consent de
    *  imagen del niño en imagen — IU-2). */
   aceptadoInicial: boolean
+  /**
+   * Aviso al padre de que acaba de aceptarse, para lo que dependa del acuse en la MISMA
+   * pantalla (la foto del niño, que necesita el consent de imagen). Sin esto habría que
+   * recargar para que el resto se enterase.
+   */
+  onAceptado?: () => void
 }
 
 /**
@@ -27,7 +33,7 @@ interface Props {
  * ACUSE monótono: una vez aceptado queda marcado y fijo (no se desmarca). Si además hay
  * documento publicado, el paso lo muestra aparte para abrir/leer/firmar.
  */
-export function AcuseAltaCheckbox({ ninoId, tipo, aceptadoInicial }: Props) {
+export function AcuseAltaCheckbox({ ninoId, tipo, aceptadoInicial, onAceptado }: Props) {
   const t = useTranslations('alta')
   const tErrors = useTranslations()
   const [aceptado, setAceptado] = useState(aceptadoInicial)
@@ -43,6 +49,7 @@ export function AcuseAltaCheckbox({ ninoId, tipo, aceptadoInicial }: Props) {
           : await registrarAcuseAlta({ nino_id: ninoId, tipo: 'normas' })
       if (r.success) {
         setAceptado(true)
+        onAceptado?.()
         toast.success(t('acuses.aceptado'))
       } else {
         toast.error(tErrors(r.error))

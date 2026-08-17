@@ -5,10 +5,14 @@ import { getTranslations } from 'next-intl/server'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
+import type { SalidaAlta } from '../lib/salida-alta'
+
 interface Props {
   ninoNombre: string
   /** Reentra al wizard para revisar/editar mientras la dirección valida (estado 'lista'). */
   editarHref: string
+  /** Salida de la pantalla, según quién completó el alta (`resolverSalidaAlta`). */
+  salida: SalidaAlta
 }
 
 /**
@@ -17,7 +21,7 @@ interface Props {
  * dirección. NO es el panel (que solo se abre al activar). Editable: el botón reentra
  * al wizard (cada paso ya persiste por su cuenta; re-finalizar es no-op).
  */
-export async function AltaCompletadaScreen({ ninoNombre, editarHref }: Props) {
+export async function AltaCompletadaScreen({ ninoNombre, editarHref, salida }: Props) {
   const t = await getTranslations('alta')
   return (
     <Card className="mx-auto max-w-2xl">
@@ -31,9 +35,17 @@ export async function AltaCompletadaScreen({ ninoNombre, editarHref }: Props) {
         <p className="text-muted-foreground mx-auto max-w-md text-sm">
           {t('completado.texto', { nombre: ninoNombre })}
         </p>
-        <Link href={editarHref} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-          {t('completado.editar')}
-        </Link>
+        {/* La salida va PRIMERO y como acción principal: terminado el alta, lo que casi
+            siempre se quiere es volver a la lista, no reentrar al wizard. "Revisar o
+            editar" se queda al lado, en secundario. */}
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+          <Link href={salida.href} className={buttonVariants({ size: 'sm' })}>
+            {t(`completado.${salida.claveEtiqueta}`)}
+          </Link>
+          <Link href={editarHref} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+            {t('completado.editar')}
+          </Link>
+        </div>
       </CardContent>
     </Card>
   )

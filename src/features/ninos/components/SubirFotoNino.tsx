@@ -16,6 +16,16 @@ interface Props {
   initialUrl?: string | null
   /** Texto alternativo (nombre del niño). */
   alt: string
+  /**
+   * Bloquea la subida ANTES de abrir el selector. El servidor ya rechaza sin consentimiento
+   * de imagen (IU-3), pero el navegador tiene que subir el fichero ENTERO antes de recibir
+   * ese 403: con una foto de móvil son 15-20 s de espera para un "no". Aquí se corta antes,
+   * y el motivo se dice al lado del botón en vez de en un toast que llega tarde.
+   * Opcional: sin él, el componente se comporta exactamente como siempre.
+   */
+  bloqueado?: boolean
+  /** Por qué está bloqueado, ya traducido. Se muestra y se usa como etiqueta accesible. */
+  motivoBloqueo?: string
 }
 
 interface RespuestaOk {
@@ -33,7 +43,14 @@ interface RespuestaError {
  * (EXIF fuera, JPEG, sin HEIC) y la autorización viven en el route handler
  * `/[locale]/ninos/[id]/foto`; aquí solo el input + preview + estados.
  */
-export function SubirFotoNino({ ninoId, locale, initialUrl, alt }: Props) {
+export function SubirFotoNino({
+  ninoId,
+  locale,
+  initialUrl,
+  alt,
+  bloqueado = false,
+  motivoBloqueo,
+}: Props) {
   const t = useTranslations('fotos.nino')
   const tRoot = useTranslations()
   const router = useRouter()
@@ -83,23 +100,33 @@ export function SubirFotoNino({ ninoId, locale, initialUrl, alt }: Props) {
           type="button"
           variant="outline"
           size="sm"
-          disabled={subiendo}
+          disabled={subiendo || bloqueado}
           onClick={() => inputRef.current?.click()}
           aria-busy={subiendo}
+          aria-describedby={bloqueado && motivoBloqueo ? `foto-bloqueo-${ninoId}` : undefined}
         >
           <ImagePlusIcon className="mr-1 size-4" />
           {url ? t('cambiar') : t('subir')}
         </Button>
-        <p className="text-muted-foreground text-xs">{t('ayuda')}</p>
+        {/* El motivo sustituye a la ayuda: si no se puede subir, lo útil es saber por qué,
+            no el formato admitido. */}
+        {bloqueado && motivoBloqueo ? (
+          <p id={`foto-bloqueo-${ninoId}`} className="text-warning-700 text-xs">
+            {motivoBloqueo}
+          </p>
+        ) : (
+          <p className="text-muted-foreground text-xs">{t('ayuda')}</p>
+        )}
         <input
           ref={inputRef}
           type="file"
           accept="image/jpeg,image/png,image/heic,image/heif"
           className="hidden"
-          disabled={subiendo}
+          disabled={subiendo || bloqueado}
           onChange={(ev) => {
             const f = ev.target.files?.[0]
-            if (f) void subir(f)
+            // Segundo cerrojo: si el bloqueo cambia con el selector ya abierto, no se sube.
+            if (f && !bloqueado) void subir(f)
           }}
         />
       </div>
