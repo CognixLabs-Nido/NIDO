@@ -3393,7 +3393,8 @@
       "cambiar": "Canviar foto",
       "ayuda": "JPG o PNG, fins a 4 MB. Es lleva la informació d'ubicació.",
       "subida_ok": "Foto actualitzada.",
-      "subida_fallo": "No s'ha pogut pujar la foto."
+      "subida_fallo": "No s'ha pogut pujar la foto.",
+      "requiere_autorizacion": "Falta l'autorització d'imatge: sense ella no es pot pujar la foto."
     },
     "composer": {
       "nueva": "Nova publicació",
@@ -3694,12 +3695,15 @@
       "sin_plantilla": "El centre encara no té una plantilla d'autorització d'imatge. Este pas es completarà més avant.",
       "cargar": "Carregar autorització d'imatge",
       "cargar_ayuda": "Prepara l'autorització d'imatge per a revisar-la i signar-la.",
-      "foto_titulo": "Foto del xiquet"
+      "foto_titulo": "Foto del xiquet",
+      "foto_requiere_autorizacion": "Accepta primer l'autorització d'imatge per a poder pujar la foto."
     },
     "completado": {
       "titulo": "Matrícula completada!",
       "texto": "Has completat les dades de {nombre}. La direcció del centre les revisarà i activarà la matrícula. T'avisarem quan estiga llesta.",
-      "editar": "Revisar o editar"
+      "editar": "Revisar o editar",
+      "volver_admisiones": "Tornar a admissions",
+      "volver_familia": "Tornar al meu panell"
     },
     "errors": {
       "no_autorizado": "No tens permís per a esta acció.",

@@ -3393,7 +3393,8 @@
       "cambiar": "Change photo",
       "ayuda": "JPG or PNG, up to 4 MB. Location data is removed.",
       "subida_ok": "Photo updated.",
-      "subida_fallo": "Could not upload the photo."
+      "subida_fallo": "Could not upload the photo.",
+      "requiere_autorizacion": "The image authorisation is missing: the photo cannot be uploaded without it."
     },
     "composer": {
       "nueva": "New post",
@@ -3694,12 +3695,15 @@
       "sin_plantilla": "The centre does not have an image authorisation template yet. This step will be completed later.",
       "cargar": "Load image authorisation",
       "cargar_ayuda": "Prepare the image authorisation to review and sign it.",
-      "foto_titulo": "Child's photo"
+      "foto_titulo": "Child's photo",
+      "foto_requiere_autorizacion": "Accept the image authorisation first to be able to upload the photo."
     },
     "completado": {
       "titulo": "Enrolment complete!",
       "texto": "You have completed {nombre}'s details. The centre will review them and activate the enrolment. We'll let you know when it's ready.",
-      "editar": "Review or edit"
+      "editar": "Review or edit",
+      "volver_admisiones": "Back to admissions",
+      "volver_familia": "Back to my dashboard"
     },
     "errors": {
       "no_autorizado": "You don't have permission for this action.",

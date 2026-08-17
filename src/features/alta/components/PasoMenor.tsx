@@ -120,6 +120,13 @@ export function PasoMenor({
   const [pendingImagen, startImagen] = useTransition()
   const [pendingSiguiente, startSiguiente] = useTransition()
   const [imagenOmitida, setImagenOmitida] = useState(false)
+  // Consentimiento de imagen vigente (IU-2): gate de la foto de abajo. Se DERIVA en vez de
+  // copiarse en estado, porque hay DOS vías de otorgarlo y cada una avisa distinto: el
+  // checkbox lo dice por callback (misma pantalla, sin recargar) y la FIRMA del documento
+  // llega como prop nueva tras su `router.refresh()`. Un `useState(imagenAceptado)` se
+  // quedaría clavado en false tras firmar, porque el inicial solo se lee al montar.
+  const [aceptadoEnSesion, setAceptadoEnSesion] = useState(false)
+  const imagenOk = imagenAceptado || aceptadoEnSesion
 
   // Datos pedagógicos elevados del sub-form. Antes su único guardado era el botón propio
   // (desacoplado de "Continuar") → si el tutor rellenaba y avanzaba, se perdía. Ahora se
@@ -434,7 +441,9 @@ export function PasoMenor({
         />
       </section>
 
-      {/* Foto del niño */}
+      {/* Foto del niño. La subida depende del consentimiento de imagen, que se otorga JUSTO
+          debajo: se bloquea el botón mientras falte y se dice por qué, en vez de dejar que
+          el usuario suba la foto entera para recibir un 403 quince segundos después. */}
       <section className="space-y-3 border-t pt-4">
         <h3 className="text-sm font-semibold">{t('imagen.foto_titulo')}</h3>
         <SubirFotoNino
@@ -442,6 +451,8 @@ export function PasoMenor({
           locale={locale}
           initialUrl={fotoInicialUrl}
           alt={ninoNombre}
+          bloqueado={!imagenOk}
+          motivoBloqueo={t('imagen.foto_requiere_autorizacion')}
         />
       </section>
 
@@ -469,7 +480,12 @@ export function PasoMenor({
             </div>
           )
         )}
-        <AcuseAltaCheckbox ninoId={ninoId} tipo="imagen" aceptadoInicial={imagenAceptado} />
+        <AcuseAltaCheckbox
+          ninoId={ninoId}
+          tipo="imagen"
+          aceptadoInicial={imagenAceptado}
+          onAceptado={() => setAceptadoEnSesion(true)}
+        />
       </section>
 
       <div className="flex justify-between border-t pt-4">

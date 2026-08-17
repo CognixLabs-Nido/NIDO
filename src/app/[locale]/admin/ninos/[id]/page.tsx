@@ -58,6 +58,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const tFicha = await getTranslations('messages.ficha_nino')
   const tExport = await getTranslations('export')
   const tPed = await getTranslations('pedagogico')
+  const tFotos = await getTranslations('fotos.nino')
   // F-3-E — en la ficha de Dirección se pueden abrir también los archivados (baja),
   // en solo-lectura. La RLS admin ya lo gatea; el tutor y el alta siguen dando notFound.
   const nino = await getNinoById(id, { incluirArchivado: true })
@@ -255,11 +256,16 @@ export default async function NinoDetallePage({ params }: PageProps) {
             <Card>
               <CardContent className="space-y-4 pt-1">
                 <h3 className="text-h3 text-foreground">{t('fotos.titulo')}</h3>
+                {/* IU-3: mismo gate que enforza el route handler (`puede_aparecer_en_fotos`).
+                    Avisado ANTES de subir: si no, el navegador sube la foto entera para
+                    recibir un 403 (15-20 s con una foto de móvil). */}
                 <SubirFotoNino
                   ninoId={nino.id}
                   locale={locale}
                   initialUrl={foto.urlMiniatura ?? foto.url}
                   alt={`${nino.nombre} ${nino.apellidos ?? ''}`.trim()}
+                  bloqueado={!nino.puede_aparecer_en_fotos}
+                  motivoBloqueo={tFotos('requiere_autorizacion')}
                 />
                 {/* IU-4: revocar el consent de imagen oculta al niño de las fotos y elimina
                     su perfil. Solo se ofrece si hoy puede aparecer (consent vigente). */}

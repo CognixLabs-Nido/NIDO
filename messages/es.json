@@ -3393,7 +3393,8 @@
       "cambiar": "Cambiar foto",
       "ayuda": "JPG o PNG, hasta 4 MB. Se quita la información de ubicación.",
       "subida_ok": "Foto actualizada.",
-      "subida_fallo": "No se pudo subir la foto."
+      "subida_fallo": "No se pudo subir la foto.",
+      "requiere_autorizacion": "Falta la autorización de imagen: sin ella no se puede subir la foto."
     },
     "composer": {
       "nueva": "Nueva publicación",
@@ -3694,12 +3695,15 @@
       "sin_plantilla": "El centro aún no tiene una plantilla de autorización de imagen. Este paso se completará más adelante.",
       "cargar": "Cargar autorización de imagen",
       "cargar_ayuda": "Prepara la autorización de imagen para revisarla y firmarla.",
-      "foto_titulo": "Foto del niño"
+      "foto_titulo": "Foto del niño",
+      "foto_requiere_autorizacion": "Acepta primero la autorización de imagen para poder subir la foto."
     },
     "completado": {
       "titulo": "¡Alta completada!",
       "texto": "Has completado los datos de {nombre}. La dirección del centro los revisará y activará la matrícula. Te avisaremos cuando esté lista.",
-      "editar": "Revisar o editar"
+      "editar": "Revisar o editar",
+      "volver_admisiones": "Volver a admisiones",
+      "volver_familia": "Volver a mi panel"
     },
     "errors": {
       "no_autorizado": "No tienes permiso para esta acción.",
