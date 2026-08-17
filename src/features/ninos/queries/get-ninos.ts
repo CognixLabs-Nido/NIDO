@@ -3,6 +3,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { HistoricoTramo } from '@/features/ninos/lib/historico-matriculas'
+import { fueAlumno, type SenalMatricula } from '@/features/matriculas/lib/estado-alumno'
 
 export interface NinoListItem {
   id: string
@@ -62,14 +63,16 @@ export async function getNinosPorCentro(centroId: string): Promise<NinoListItem[
 
   if (!ninos?.length) return []
 
+  // TODAS las matrículas del niño, no solo la vigente: la vigente da aula y estado, pero
+  // "¿fue alumno?" necesita también las cerradas (el sello de un ex-alumno vive en su
+  // matrícula de baja).
   const { data: matriculas, error: errorMatriculas } = await supabase
     .from('matriculas')
-    .select('nino_id, estado, aulas_curso(aulas(nombre))')
+    .select('nino_id, estado, activada_at, fecha_baja, aulas_curso(aulas(nombre))')
     .in(
       'nino_id',
       ninos.map((n) => n.id)
     )
-    .is('fecha_baja', null)
     .is('deleted_at', null)
   // Un embed roto (p.ej. FK que cambió) hace fallar la query entera y devuelve `data=null`:
   // sin este log, todos los niños saldrían con estado/aula null en silencio (regresión F11-H).
@@ -77,18 +80,32 @@ export async function getNinosPorCentro(centroId: string): Promise<NinoListItem[
 
   const aulaPorNino = new Map<string, string>()
   const estadoPorNino = new Map<string, 'pendiente' | 'lista' | 'activa'>()
+  const matriculasPorNino = new Map<string, SenalMatricula[]>()
   for (const m of matriculas ?? []) {
+    const previas = matriculasPorNino.get(m.nino_id) ?? []
+    previas.push({ estado: m.estado, activada_at: m.activada_at })
+    matriculasPorNino.set(m.nino_id, previas)
+
+    // Aula y badge salen SOLO de la matrícula vigente (la que no tiene baja).
+    if (m.fecha_baja !== null) continue
     const nombre = extraerNombreAula(m.aulas_curso)
     if (nombre) aulaPorNino.set(m.nino_id, nombre)
     if (m.estado === 'pendiente' || m.estado === 'lista' || m.estado === 'activa')
       estadoPorNino.set(m.nino_id, m.estado)
   }
 
-  return ninos.map((n) => ({
-    ...n,
-    aula_actual: aulaPorNino.get(n.id) ?? null,
-    estado_matricula: estadoPorNino.get(n.id) ?? null,
-  }))
+  return (
+    ninos
+      // Solo ALUMNOS de verdad. Un niño cuya alta nunca se completó (matrícula 'pendiente' o
+      // 'lista', jamás activada) no es alumno ni ex-alumno: es un alta a medias, y su sitio es
+      // Admisiones. Antes salía aquí porque la query no miraba las matrículas para nada.
+      .filter((n) => fueAlumno(matriculasPorNino.get(n.id) ?? []))
+      .map((n) => ({
+        ...n,
+        aula_actual: aulaPorNino.get(n.id) ?? null,
+        estado_matricula: estadoPorNino.get(n.id) ?? null,
+      }))
+  )
 }
 
 export interface NinoArchivadoItem {
@@ -126,32 +143,46 @@ export async function getNinosArchivadosPorCentro(centroId: string): Promise<Nin
 
   if (!ninos?.length) return []
 
-  const { data: bajas } = await supabase
+  // TODAS las matrículas (no solo las 'baja'): las cerradas dan fecha/motivo, y el conjunto
+  // completo decide si este archivado llegó a ser alumno.
+  const { data: matriculas } = await supabase
     .from('matriculas')
-    .select('nino_id, fecha_baja, motivo_baja')
+    .select('nino_id, estado, activada_at, fecha_baja, motivo_baja')
     .in(
       'nino_id',
       ninos.map((n) => n.id)
     )
-    .eq('estado', 'baja')
     .is('deleted_at', null)
 
   // Última baja por niño (fecha_baja más reciente).
   const ultimaBaja = new Map<string, { fecha_baja: string | null; motivo_baja: string | null }>()
-  for (const b of bajas ?? []) {
-    const prev = ultimaBaja.get(b.nino_id)
-    if (!prev || (b.fecha_baja ?? '') > (prev.fecha_baja ?? '')) {
-      ultimaBaja.set(b.nino_id, { fecha_baja: b.fecha_baja, motivo_baja: b.motivo_baja })
+  const matriculasPorNino = new Map<string, SenalMatricula[]>()
+  for (const m of matriculas ?? []) {
+    const previas = matriculasPorNino.get(m.nino_id) ?? []
+    previas.push({ estado: m.estado, activada_at: m.activada_at })
+    matriculasPorNino.set(m.nino_id, previas)
+
+    if (m.estado !== 'baja') continue
+    const prev = ultimaBaja.get(m.nino_id)
+    if (!prev || (m.fecha_baja ?? '') > (prev.fecha_baja ?? '')) {
+      ultimaBaja.set(m.nino_id, { fecha_baja: m.fecha_baja, motivo_baja: m.motivo_baja })
     }
   }
 
-  return ninos.map((n) => ({
-    id: n.id,
-    nombre: n.nombre,
-    apellidos: n.apellidos,
-    fecha_baja: ultimaBaja.get(n.id)?.fecha_baja ?? null,
-    motivo_baja: ultimaBaja.get(n.id)?.motivo_baja ?? null,
-  }))
+  return (
+    ninos
+      // Misma regla que la lista principal: el archivo es de EX-ALUMNOS. Un alta a medias que
+      // dirección archivó nunca fue alumno y no ensucia aquí. Distinguirlo del ex-alumno real
+      // es exactamente lo que `activada_at` hace posible: por `estado` ambos son 'baja'.
+      .filter((n) => fueAlumno(matriculasPorNino.get(n.id) ?? []))
+      .map((n) => ({
+        id: n.id,
+        nombre: n.nombre,
+        apellidos: n.apellidos,
+        fecha_baja: ultimaBaja.get(n.id)?.fecha_baja ?? null,
+        motivo_baja: ultimaBaja.get(n.id)?.motivo_baja ?? null,
+      }))
+  )
 }
 
 export interface NinoDetalle {

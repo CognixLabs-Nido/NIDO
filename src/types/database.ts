@@ -2928,6 +2928,7 @@ export type Database = {
       }
       matriculas: {
         Row: {
+          activada_at: string | null
           aula_id: string
           created_at: string
           curso_academico_id: string
@@ -2940,6 +2941,7 @@ export type Database = {
           nino_id: string
         }
         Insert: {
+          activada_at?: string | null
           aula_id: string
           created_at?: string
           curso_academico_id: string
@@ -2952,6 +2954,7 @@ export type Database = {
           nino_id: string
         }
         Update: {
+          activada_at?: string | null
           aula_id?: string
           created_at?: string
           curso_academico_id?: string
