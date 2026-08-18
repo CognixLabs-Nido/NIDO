@@ -12,7 +12,6 @@ import {
   createTestCurso,
   createTestNino,
   deleteTestCentro,
-  matricular,
   serviceClient,
 } from './setup'
 
@@ -50,6 +49,34 @@ async function senalesDe(ninoId: string): Promise<SenalMatricula[]> {
   return (data ?? []) as SenalMatricula[]
 }
 
+/**
+ * Crea el ALTA A MEDIAS que estos casos necesitan: una matrícula en `pendiente`.
+ *
+ * No sirve el `matricular()` de `setup.ts`: inserta sin `estado`, y la columna tiene
+ * `DEFAULT 'activa'`, así que la fila nace matriculada Y —desde esta migración— sellada por
+ * el trigger en el propio INSERT. Ese default es correcto para los tests que solo quieren
+ * "un niño matriculado", por eso se deja intacto y el estado se fuerza aquí.
+ */
+async function matricularPendiente(
+  ninoId: string,
+  aulaId: string,
+  cursoId: string
+): Promise<string> {
+  const { data, error } = await serviceClient
+    .from('matriculas')
+    .insert({
+      nino_id: ninoId,
+      aula_id: aulaId,
+      curso_academico_id: cursoId,
+      fecha_alta: '2026-09-01',
+      estado: 'pendiente',
+    })
+    .select('id')
+    .single()
+  if (error || !data) throw new Error(`matricularPendiente falló: ${error?.message}`)
+  return data.id
+}
+
 /** Cierra una matrícula igual que hace `archivar_nino`: UPDATE en la MISMA fila. */
 async function darDeBaja(matriculaId: string): Promise<void> {
   const { error } = await serviceClient
@@ -76,7 +103,7 @@ describe.skipIf(!APPLIED)('activada_at — quién es alumno y qué alta sigue en
 
   it('CASO 1 · alta a medias (nunca activada): NO es alumno, SÍ sigue en Admisiones', async () => {
     const nino = await createTestNino(centro.id, 'Alta A Medias')
-    await matricular(nino.id, aula.id, curso.id) // nace 'pendiente'
+    await matricularPendiente(nino.id, aula.id, curso.id)
 
     const senales = await senalesDe(nino.id)
     expect(senales).toHaveLength(1)
@@ -90,7 +117,7 @@ describe.skipIf(!APPLIED)('activada_at — quién es alumno y qué alta sigue en
 
   it('CASO 2 · matriculado: el trigger SELLA al pasar a activa; sale de Admisiones', async () => {
     const nino = await createTestNino(centro.id, 'Matriculado')
-    const matriculaId = await matricular(nino.id, aula.id, curso.id)
+    const matriculaId = await matricularPendiente(nino.id, aula.id, curso.id)
 
     const antes = await senalesDe(nino.id)
     expect(antes[0].activada_at).toBeNull()
@@ -112,7 +139,10 @@ describe.skipIf(!APPLIED)('activada_at — quién es alumno y qué alta sigue en
 
   it('CASO 3 · ex-alumno: el sello SOBREVIVE a la baja → sigue siendo alumno', async () => {
     const nino = await createTestNino(centro.id, 'Ex Alumno')
-    const matriculaId = await matricular(nino.id, aula.id, curso.id)
+    // Arranca en 'pendiente' y se ACTIVA: así el sello lo pone la activación, que es la
+    // historia de un ex-alumno. Naciendo 'activa' el sello vendría del INSERT y este caso
+    // sería un duplicado del último.
+    const matriculaId = await matricularPendiente(nino.id, aula.id, curso.id)
     await serviceClient.from('matriculas').update({ estado: 'activa' }).eq('id', matriculaId)
 
     const activo = await senalesDe(nino.id)
@@ -132,7 +162,7 @@ describe.skipIf(!APPLIED)('activada_at — quién es alumno y qué alta sigue en
 
   it('CASO 4 · alta a medias ARCHIVADA: misma baja, pero sin sello → NO ensucia el archivo', async () => {
     const nino = await createTestNino(centro.id, 'A Medias Archivada')
-    const matriculaId = await matricular(nino.id, aula.id, curso.id)
+    const matriculaId = await matricularPendiente(nino.id, aula.id, curso.id)
     await darDeBaja(matriculaId) // de 'pendiente' directo a 'baja', sin pasar por activa
 
     const senales = await senalesDe(nino.id)
@@ -147,7 +177,7 @@ describe.skipIf(!APPLIED)('activada_at — quién es alumno y qué alta sigue en
 
   it('el sello es IDEMPOTENTE: reactivar no pisa la primera activación', async () => {
     const nino = await createTestNino(centro.id, 'Reactivado')
-    const matriculaId = await matricular(nino.id, aula.id, curso.id)
+    const matriculaId = await matricularPendiente(nino.id, aula.id, curso.id)
     await serviceClient.from('matriculas').update({ estado: 'activa' }).eq('id', matriculaId)
     const primero = (await senalesDe(nino.id))[0].activada_at
 
