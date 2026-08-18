@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/database'
+import { altaEnProceso, type SenalMatricula } from '@/features/matriculas/lib/estado-alumno'
 
 import type { EstadoMatricula } from '../lib/acciones-prospecto'
 
@@ -60,18 +61,35 @@ export async function getListaEsperaCore(
   // ya lo autoriza por centro (sin policy nueva, sin service role).
   const ninoIds = filas.map((f) => f.nino_id).filter((id): id is string => id !== null)
   const estadoPorNino = new Map<string, EstadoMatricula>()
+  const matriculasPorNino = new Map<string, SenalMatricula[]>()
   if (ninoIds.length > 0) {
+    // Sin el filtro `fecha_baja IS NULL`: una matrícula de BAJA lo está (tiene fecha_baja) y
+    // hay que verla para saber que el alta ya se resolvió. Con el filtro, un niño dado de
+    // baja parecía "sin matrícula" y se quedaba en la lista como si siguiera en proceso.
     const { data: matriculas } = await supabase
       .from('matriculas')
-      .select('nino_id, estado')
+      .select('nino_id, estado, activada_at, fecha_baja')
       .in('nino_id', ninoIds)
-      .is('fecha_baja', null)
       .is('deleted_at', null)
-    for (const m of matriculas ?? []) estadoPorNino.set(m.nino_id, m.estado)
+    for (const m of matriculas ?? []) {
+      const previas = matriculasPorNino.get(m.nino_id) ?? []
+      previas.push({ estado: m.estado, activada_at: m.activada_at })
+      matriculasPorNino.set(m.nino_id, previas)
+      // El badge sigue saliendo de la matrícula VIGENTE, como hasta ahora.
+      if (m.fecha_baja === null) estadoPorNino.set(m.nino_id, m.estado)
+    }
   }
 
-  return filas.map((f) => ({
-    ...f,
-    estado_matricula: f.nino_id ? (estadoPorNino.get(f.nino_id) ?? null) : null,
-  }))
+  return (
+    filas
+      // Admisiones es la bandeja de altas EN PROCESO. Un prospecto cuyo niño ya está
+      // matriculado (o dado de baja) está resuelto: aquí ya no se actúa sobre él —la ficha
+      // vive en Niños—. Se aplaza desde U-4 ("jubilar la fila de la lista es U-5"), pero U-5
+      // acabó jubilando otra cosa (las puertas viejas de alta) y esto se quedó sin hacer.
+      .filter((f) => altaEnProceso(f.nino_id ? (matriculasPorNino.get(f.nino_id) ?? []) : []))
+      .map((f) => ({
+        ...f,
+        estado_matricula: f.nino_id ? (estadoPorNino.get(f.nino_id) ?? null) : null,
+      }))
+  )
 }

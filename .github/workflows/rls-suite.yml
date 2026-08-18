@@ -142,3 +142,5 @@ jobs:
           # `b23-desborde-resuelto-cerrado.rls.test.ts` se salta: sin la migración el motor
           # sigue borrando los desbordes resueltos y los 3 casos saldrían rojos.
           B23_MIGRATION_APPLIED: '1'
+          # Se activa cuando Jose aplique `20260830120000_phase_matriculas_activada_at`.
+          ALUMNOS_ACTIVADA_AT_MIGRATION_APPLIED: '1'
