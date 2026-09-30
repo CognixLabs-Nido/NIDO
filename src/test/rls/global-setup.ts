@@ -121,6 +121,54 @@ async function listTestUserIds(): Promise<string[]> {
   return out
 }
 
+// Tope del paso 8-bis. Un run crea ~150 centros de test; por encima de esto no es residuo
+// de un run sino el histórico acumulado, y ese se purga A MANO con visto bueno (ver
+// docs/operations/purga-audit-log-tests.md), nunca desde el wipe nocturno.
+const AUDIT_CENTROS_MAX = 2000
+
+/**
+ * Centros de TEST cuyas filas de audit_log hay que borrar: los de `centroIds` (existían
+ * al arrancar el wipe) + los ya BORRADOS por los teardown de cada fichero, que solo se
+ * pueden reconocer por su propia auditoría: la fila INSERT de `centros` guarda el
+ * `email_contacto`, y el de test es siempre `@nido.test` (en esa fila centro_id = id).
+ * Excluye ANAIA y cualquier centro existente con email real. Devuelve null si pasan
+ * del tope.
+ */
+async function testCentroIdsConAudit(centroIds: string[]): Promise<string[] | null> {
+  const base = svc
+    .from('audit_log')
+    .select('registro_id', { count: 'exact' })
+    .eq('tabla', 'centros')
+    .eq('accion', 'INSERT')
+    .ilike('valores_despues->>email_contacto', TEST_EMAIL_LIKE)
+  const { count, error } = await base.range(0, 0)
+  if (error) {
+    console.warn(`wipe: audit_log(centros de test): ${error.code ?? '-'} ${error.message ?? ''}`)
+    return []
+  }
+  if ((count ?? 0) > AUDIT_CENTROS_MAX) return null
+
+  const ids = new Set(centroIds)
+  for (let from = 0; from < (count ?? 0); from += 1000) {
+    const { data } = await svc
+      .from('audit_log')
+      .select('registro_id')
+      .eq('tabla', 'centros')
+      .eq('accion', 'INSERT')
+      .ilike('valores_despues->>email_contacto', TEST_EMAIL_LIKE)
+      .range(from, from + 999)
+    for (const r of (data ?? []) as { registro_id: string }[]) ids.add(r.registro_id)
+  }
+
+  const { data: reales } = await svc
+    .from('centros')
+    .select('id')
+    .not('email_contacto', 'ilike', TEST_EMAIL_LIKE)
+  ids.delete(ANAIA_CENTRO_ID)
+  for (const r of (reales ?? []) as { id: string }[]) ids.delete(r.id)
+  return [...ids]
+}
+
 /** Borra recursivamente los objetos bajo `${centroId}/` de un bucket (best-effort). */
 async function emptyPrefix(bucket: string, prefix: string): Promise<void> {
   const { data, error } = await svc.storage.from(bucket).list(prefix, { limit: 1000 })
@@ -311,6 +359,26 @@ export default async function globalSetup(): Promise<void> {
         })
       )
     )
+  }
+
+  // ---------------------------------------------------------------------------
+  // 8-bis. AUDIT_LOG por CENTRO de test. El paso 5 solo borra por actor, pero las
+  //    filas que escriben los fixtures (service_role) llevan usuario_id NULL y se
+  //    acumulaban sin fin (797k filas en sep-2026 → timeouts). Va DESPUÉS de borrar
+  //    centros y cuentas: esos DELETE disparan el trigger de auditoría y escriben
+  //    filas nuevas con el centro_id del centro ya borrado.
+  // ---------------------------------------------------------------------------
+  {
+    const auditCentroIds = await testCentroIdsConAudit(centroIds)
+    if (auditCentroIds === null) {
+      console.warn(
+        `wipe: audit_log tiene más de ${AUDIT_CENTROS_MAX} centros de test borrados → ` +
+          `NO se limpia desde aquí; es el histórico y se purga a mano ` +
+          `(docs/operations/purga-audit-log-tests.md).`
+      )
+    } else {
+      await delWhereIn('audit_log', 'centro_id', auditCentroIds)
+    }
   }
 
   // ---------------------------------------------------------------------------

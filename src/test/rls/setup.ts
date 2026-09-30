@@ -20,6 +20,9 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const SUPABASE_SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY
 
+// El único centro real del remoto compartido (mismo guard que global-setup.ts).
+const ANAIA_CENTRO_ID = '33c79b50-13b5-4962-b849-d88dd6a21366'
+
 if (!SUPABASE_URL || !SUPABASE_ANON || !SUPABASE_SERVICE) {
   throw new Error(
     'Tests RLS requieren NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY en .env.local'
@@ -124,6 +127,9 @@ export async function deleteTestUser(userId: string): Promise<void> {
   // en CI. `error.message` viene vacío en GoTrue → se reporta status + name.
   // Reintenta ante blips transitorios de auth (429 / "kid <nil>") re-lanzando el
   // error CRUDO de Supabase, para conservar el log rico si agota los reintentos.
+  // Su auditoría primero: audit_log.usuario_id es NO ACTION y era lo que bloqueaba el
+  // borrado de la mayoría de cuentas (~85 de ~100 por run, medido en sep-2026).
+  await serviceClient.from('audit_log').delete().eq('usuario_id', userId)
   try {
     await withRetry(
       async () => {
@@ -210,6 +216,13 @@ export async function deleteTestCentro(id: string): Promise<void> {
   const { error } = await svc.from('centros').delete().eq('id', id)
   if (error) {
     console.error(`deleteTestCentro(${id}) falló: ${formatSupabaseError(error)}`)
+  }
+
+  // Su auditoría DESPUÉS: los DELETE de arriba disparan el trigger y escriben filas con
+  // este centro_id. Las de los fixtures llevan usuario_id NULL y ningún otro paso las
+  // borra. Nunca sobre ANAIA (el único centro real del remoto compartido).
+  if (id !== ANAIA_CENTRO_ID) {
+    await svc.from('audit_log').delete().eq('centro_id', id)
   }
 }
 
