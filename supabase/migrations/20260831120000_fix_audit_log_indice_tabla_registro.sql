@@ -1,0 +1,42 @@
+-- =============================================================================
+-- FIX — índice de apoyo para buscar en audit_log por (tabla, registro_id)
+-- -----------------------------------------------------------------------------
+-- PROBLEMA. Las lecturas "¿qué le pasó a ESTE registro?" filtran por
+-- `tabla = X AND registro_id = Y`. `audit_log` solo tiene índices en (centro_id, ts),
+-- (tabla, ts) y (usuario_id): el planner usa (tabla, ts) y FILTRA registro_id fila a
+-- fila sobre TODAS las filas de esa tabla. Medido en el remoto (30-sep, 821k filas,
+-- 627 MB):
+--   tabla='ninos'      → 104.449 filas descartadas → 56 s
+--   tabla='matriculas' →  81.807 filas descartadas → 50 s
+-- Por encima del statement_timeout de PostgREST → 57014. Es la causa del nightly RLS
+-- en rojo desde el 18-sep (audit.test.ts y baja-nino.rls.test.ts).
+--
+-- Con (tabla, registro_id) ambas pasan a un Index Scan por clave exacta (milisegundos).
+--
+-- ADITIVA e IDEMPOTENTE: solo CREATE INDEX IF NOT EXISTS. No toca datos, RLS,
+-- policies ni tipos (no regenera database.ts).
+--
+-- -----------------------------------------------------------------------------
+-- CÓMO SE APLICA (CONCURRENTLY NO PUEDE IR DENTRO DE UNA TRANSACCIÓN)
+-- -----------------------------------------------------------------------------
+-- Va CONCURRENTLY para no bloquear las escrituras de audit_log (= de todas las tablas
+-- auditadas) mientras se construye. Por eso este fichero tiene UNA SOLA sentencia y
+-- ningún BEGIN/COMMIT: Postgres envuelve en una transacción implícita cualquier
+-- petición con VARIAS sentencias, y ahí CONCURRENTLY falla con
+-- "cannot run CREATE INDEX CONCURRENTLY inside a transaction block".
+--   1. SQL Editor (rol postgres): pegar SOLO la sentencia de abajo y ejecutarla sola.
+--   2. En OTRA ejecución aparte, registrar la migración en el ledger:
+--        INSERT INTO supabase_migrations.schema_migrations (version, name)
+--        VALUES ('20260831120000', 'fix_audit_log_indice_tabla_registro');
+--   3. Comprobar que el índice quedó VÁLIDO (debe devolver true):
+--        SELECT indisvalid FROM pg_index
+--        WHERE indexrelid = 'public.idx_audit_log_tabla_registro'::regclass;
+--      Si un CONCURRENTLY se interrumpe deja el índice INVÁLIDO, y el IF NOT EXISTS de
+--      un reintento lo daría por bueno sin reconstruirlo. En ese caso:
+--        DROP INDEX CONCURRENTLY public.idx_audit_log_tabla_registro;  -- y repetir 1.
+-- `supabase db push` envuelve cada migración en una transacción → esta fallaría por
+-- esa vía (hoy no se usa: el CLI da SIGILL en ARM y ningún CI aplica migraciones).
+-- =============================================================================
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_log_tabla_registro
+  ON public.audit_log (tabla, registro_id);

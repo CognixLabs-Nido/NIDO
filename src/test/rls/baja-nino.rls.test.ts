@@ -237,12 +237,15 @@ describe.skipIf(!APPLIED)('F-3-D — baja_nino (RPC)', () => {
     expect(mat!.motivo_baja).toBe(motivo)
 
     // El UPDATE de la matrícula queda en audit_log con el motivo y el actor = admin.
-    const { data: filas } = await serviceClient
+    const { data: filas, error: auditError } = await serviceClient
       .from('audit_log')
       .select('usuario_id, valores_despues')
       .eq('tabla', 'matriculas')
       .eq('registro_id', matriculaId)
       .eq('accion', 'UPDATE')
+    // Sin esta aserción un fallo de la consulta (p. ej. 57014 statement timeout) llega
+    // como `filas = null` y el test lo reporta como "fila de auditoría ausente".
+    expect(auditError).toBeNull()
     const match = (filas ?? []).find(
       (f) => (f.valores_despues as { motivo_baja?: string } | null)?.motivo_baja === motivo
     )
