@@ -1263,7 +1263,34 @@
         "guardar": "Save",
         "cancelar": "Cancel"
       },
-      "editar_datos": "Edit data"
+      "editar_datos": "Edit data",
+      "imagen": {
+        "titulo": "Image authorisation",
+        "estado": {
+          "concedida": "Granted: may appear in the centre's photos.",
+          "pendiente_otro": "Pending: the other guardian's authorisation is missing. Until then, not shown in photos.",
+          "no_autorizada": "Not authorised: not shown in the centre's photos."
+        },
+        "revocar": {
+          "boton": "Revoke authorisation",
+          "titulo": "Revoke image authorisation",
+          "aviso": "{nombre} will immediately stop appearing in all the centre's photos and their profile photo will be deleted (it cannot be recovered). Photos already published are not deleted: they stay hidden. The authorisation is withdrawn for all guardians. Revoke?",
+          "cancelar": "Cancel",
+          "confirmar": "Revoke",
+          "procesando": "Revoking…",
+          "exito": "Image authorisation revoked."
+        },
+        "autorizar": {
+          "boton": "Authorise image",
+          "titulo": "Authorise image",
+          "aviso": "{nombre} will be able to appear in the centre's photos again, including posts that were hidden. The deleted profile photo does not come back: you can upload a new one. Authorise?",
+          "cancelar": "Cancel",
+          "confirmar": "Authorise",
+          "procesando": "Authorising…",
+          "exito": "Image authorised: may now appear in photos.",
+          "exito_pendiente": "Your authorisation is recorded. The other guardian's is still needed before appearing in photos."
+        }
+      }
     }
   },
   "pedagogico": {
@@ -1787,7 +1814,9 @@
     "imagen": {
       "errors": {
         "no_autorizado": "You don't have permission to revoke this child's image consent",
-        "fallo": "Could not revoke image consent"
+        "fallo": "Could not revoke image consent",
+        "no_autorizado_otorgar": "You don't have permission to authorise this child's image",
+        "fallo_otorgar": "The image could not be authorised"
       }
     }
   },

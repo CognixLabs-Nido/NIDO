@@ -1263,7 +1263,34 @@
         "guardar": "Guardar",
         "cancelar": "Cancel·lar"
       },
-      "editar_datos": "Editar dades"
+      "editar_datos": "Editar dades",
+      "imagen": {
+        "titulo": "Autorització d'imatge",
+        "estado": {
+          "concedida": "Concedida: pot aparéixer en les fotos del centre.",
+          "pendiente_otro": "Pendent: falta l'autorització de l'altre tutor. Fins aleshores no apareix en les fotos.",
+          "no_autorizada": "No autoritzada: no apareix en les fotos del centre."
+        },
+        "revocar": {
+          "boton": "Revocar l'autorització",
+          "titulo": "Revocar l'autorització d'imatge",
+          "aviso": "{nombre} deixarà d'aparéixer a l'instant en totes les fotos del centre i s'esborrarà la seua foto de perfil (no es pot recuperar). Les fotos ja publicades no s'esborren: queden ocultes. Es retira l'autorització de tots els tutors. Vols revocar-la?",
+          "cancelar": "Cancel·lar",
+          "confirmar": "Revocar",
+          "procesando": "Revocant…",
+          "exito": "Autorització d'imatge revocada."
+        },
+        "autorizar": {
+          "boton": "Autoritzar la imatge",
+          "titulo": "Autoritzar la imatge",
+          "aviso": "{nombre} podrà tornar a aparéixer en les fotos del centre, incloses les publicacions que van quedar ocultes. La foto de perfil esborrada no torna: en pots pujar una altra. Vols autoritzar-la?",
+          "cancelar": "Cancel·lar",
+          "confirmar": "Autoritzar",
+          "procesando": "Autoritzant…",
+          "exito": "Imatge autoritzada: ja pot aparéixer en les fotos.",
+          "exito_pendiente": "La teua autorització queda registrada. Falta la de l'altre tutor perquè aparega en les fotos."
+        }
+      }
     }
   },
   "pedagogico": {
@@ -1787,7 +1814,9 @@
     "imagen": {
       "errors": {
         "no_autorizado": "No tens permís per a revocar l'autorització d'imatge d'este xiquet",
-        "fallo": "No s'ha pogut revocar l'autorització d'imatge"
+        "fallo": "No s'ha pogut revocar l'autorització d'imatge",
+        "no_autorizado_otorgar": "No tens permís per a autoritzar la imatge d'aquest xiquet",
+        "fallo_otorgar": "No s'ha pogut autoritzar la imatge"
       }
     }
   },

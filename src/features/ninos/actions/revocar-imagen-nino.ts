@@ -11,7 +11,7 @@ import { revocarImagenNinoSchema, type RevocarImagenNinoInput } from '../schemas
 import { fail, ok, type ActionResult } from '../../centros/types'
 
 /**
- * IU-4 — Dirección revoca el consentimiento de imagen de UN niño, con efectos
+ * IU-4 — revocar el consentimiento de imagen de UN niño, con efectos
  * INMEDIATOS y automáticos:
  *   (a) `revocar_consentimiento_imagen(nino)` marca `revocado_en` → el trigger derivador
  *       baja `puede_aparecer_en_fotos` a false → el niño se OCULTA al instante de todas
@@ -22,9 +22,11 @@ import { fail, ok, type ActionResult } from '../../centros/types'
  * NO borra fotos de publicaciones (decisión B: quedan ocultas hasta que Dirección las
  * resuelva a mano en IU-5). Por-niño estricto: no toca a los hermanos.
  *
- * Solo Dirección (por ahora): se verifica `es_admin(centro del niño)` antes de tocar nada,
- * para no dejar estado parcial (consent revocado sin perfil borrado). El borrado del perfil
- * va con service role TRAS autorizar (patrón ADR-0027, espejo de `fuentes-retencion`).
+ * Quién: Dirección del centro del niño (`es_admin`) o un tutor LEGAL de ese niño
+ * (`es_tutor_legal_de`: principal/secundario, nunca un vínculo `autorizado`). Revocar cae el
+ * consentimiento de AMBOS tutores, igual lo haga Dirección o un tutor. Se verifica antes de
+ * tocar nada, para no dejar estado parcial (consent revocado sin perfil borrado). El borrado
+ * del perfil va con service role TRAS autorizar (patrón ADR-0027, espejo de `fuentes-retencion`).
  */
 export async function revocarImagenNino(
   input: RevocarImagenNinoInput
@@ -48,12 +50,16 @@ export async function revocarImagenNino(
     .maybeSingle()
   if (!nino) return fail('nino.imagen.errors.no_autorizado')
 
-  // Solo Dirección (IU-4). El gate evita el estado parcial de un no-admin.
-  const { data: esAdmin } = await supabase.rpc('es_admin', { p_centro_id: nino.centro_id })
-  if (!esAdmin) return fail('nino.imagen.errors.no_autorizado')
+  // Dirección del centro del niño o tutor legal de ESE niño. El gate evita el estado parcial
+  // de quien no puede (consent sin revocar pero perfil borrado, o al revés).
+  const [{ data: esAdmin }, { data: esTutorLegal }] = await Promise.all([
+    supabase.rpc('es_admin', { p_centro_id: nino.centro_id }),
+    supabase.rpc('es_tutor_legal_de', { p_nino_id: ninoId }),
+  ])
+  if (!esAdmin && !esTutorLegal) return fail('nino.imagen.errors.no_autorizado')
 
   // (a) Revocar el consent → el flag baja a false por el trigger derivador → ocultación
-  //     inmediata. La RPC re-gatea (es_admin OR es_tutor); aquí ya sabemos que es admin.
+  //     inmediata. La RPC re-gatea (es_admin OR es_tutor); aquí ya sabemos que puede.
   const { error: errRevoke } = await supabase.rpc('revocar_consentimiento_imagen', {
     p_nino_id: ninoId,
   })
@@ -82,5 +88,7 @@ export async function revocarImagenNino(
   }
 
   revalidatePath('/[locale]/admin/ninos/[id]', 'page')
+  revalidatePath('/[locale]/family/nino/[id]', 'page')
+  revalidatePath('/[locale]/family/autorizaciones/[id]', 'page')
   return ok(null)
 }

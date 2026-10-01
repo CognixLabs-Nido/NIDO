@@ -10,3 +10,13 @@ export const revocarImagenNinoSchema = z.object({
 })
 
 export type RevocarImagenNinoInput = z.infer<typeof revocarImagenNinoSchema>
+
+/**
+ * Re-autorización del consentimiento de imagen de UN niño por su tutor legal (portal de
+ * familia). El consentimiento se otorga a nombre de quien llama (la RPC lo fuerza).
+ */
+export const otorgarImagenNinoSchema = z.object({
+  nino_id: z.string().uuid(),
+})
+
+export type OtorgarImagenNinoInput = z.infer<typeof otorgarImagenNinoSchema>

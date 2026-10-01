@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  aplicarConsentimientoImagen,
   calcularEstadoNino,
   firmasVigentesPorFirmante,
   type FirmaEfectiva,
@@ -142,5 +143,57 @@ describe('calcularEstadoNino — bordes', () => {
     const { estado, firmantes } = calcularEstadoNino('uno_principal', [secundario('s')], vig)
     expect(firmantes).toHaveLength(1)
     expect(estado).toBe('firmado')
+  })
+})
+
+describe('aplicarConsentimientoImagen — el panel de imagen no dice «Firmado» si se revocó', () => {
+  it('firmado sin consentimiento vigente → revocado; el estado del niño deja de ser firmado', () => {
+    const vig = aplicarConsentimientoImagen(
+      firmasVigentesPorFirmante([firma('a', 'firmado', '2026-06-01T10:00:00Z')]),
+      new Set()
+    )
+    expect(vig.get('a')?.decision).toBe('revocado')
+    const { estado, firmantes } = calcularEstadoNino('uno_principal', [principal('a')], vig)
+    expect(estado).toBe('revocado')
+    expect(firmantes[0].decision).toBe('revocado')
+  })
+
+  it('firmado con consentimiento vigente → sigue firmado', () => {
+    const vig = aplicarConsentimientoImagen(
+      firmasVigentesPorFirmante([firma('a', 'firmado', '2026-06-01T10:00:00Z')]),
+      new Set(['a'])
+    )
+    const { estado } = calcularEstadoNino('uno_principal', [principal('a')], vig)
+    expect(estado).toBe('firmado')
+  })
+
+  it('doble consentimiento: el otro tutor re-autorizó, pero la firma del primero ya no vale', () => {
+    const vig = aplicarConsentimientoImagen(
+      firmasVigentesPorFirmante([
+        firma('a', 'firmado', '2026-06-01T10:00:00Z'),
+        firma('b', 'firmado', '2026-06-01T11:00:00Z'),
+      ]),
+      new Set(['b'])
+    )
+    const { estado, firmantes } = calcularEstadoNino(
+      'todos_los_principales',
+      [principal('a'), principal('b')],
+      vig
+    )
+    expect(estado).toBe('revocado')
+    expect(firmantes.find((f) => f.firmante_id === 'b')?.decision).toBe('firmado')
+  })
+
+  it('no toca rechazos ni revocaciones ya registradas, ni inventa firmas', () => {
+    const vig = aplicarConsentimientoImagen(
+      firmasVigentesPorFirmante([
+        firma('a', 'rechazado', '2026-06-01T10:00:00Z'),
+        firma('b', 'revocado', '2026-06-01T10:00:00Z'),
+      ]),
+      new Set()
+    )
+    expect(vig.get('a')?.decision).toBe('rechazado')
+    expect(vig.get('b')?.decision).toBe('revocado')
+    expect(vig.has('c')).toBe(false)
   })
 })
