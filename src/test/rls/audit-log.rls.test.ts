@@ -11,6 +11,21 @@ import {
   type TestUser,
 } from './setup'
 
+// Con la mig 20261001120000 aplicada, authenticated ya no tiene GRANT de UPDATE/DELETE y
+// PostgREST devuelve 42501. Sin ella, RLS filtra en silencio (0 filas, sin error).
+// En ambos casos la fila sigue intacta (se comprueba con service role).
+const REVOKE_APPLIED = process.env.AUDIT_LOG_REVOKE_APPLIED === '1'
+
+const expectBloqueado = (error: { code?: string } | null, data: unknown[] | null) => {
+  if (REVOKE_APPLIED) {
+    expect(error?.code).toBe('42501')
+    expect(data).toBeNull()
+  } else {
+    expect(error).toBeNull()
+    expect(data ?? []).toHaveLength(0)
+  }
+}
+
 describe('RLS audit_log — append-only (UPDATE/DELETE bloqueados)', () => {
   let centro: { id: string }
   let admin: TestUser
@@ -55,17 +70,14 @@ describe('RLS audit_log — append-only (UPDATE/DELETE bloqueados)', () => {
     expect((data ?? []).length).toBeGreaterThanOrEqual(1)
   })
 
-  it('admin NO puede UPDATE audit_log (RLS deny-all)', async () => {
+  it('admin NO puede UPDATE audit_log (sin GRANT → 42501; antes, RLS)', async () => {
     const client = await clientFor(admin)
     const { error, data } = await client
       .from('audit_log')
       .update({ accion: 'DELETE' })
       .eq('id', auditRowId)
       .select()
-    // Patrón Supabase: el UPDATE se filtra silenciosamente — devuelve 0 filas modificadas, sin error.
-    // Verificamos que la fila no haya cambiado vía service role.
-    expect(error).toBeNull()
-    expect(data ?? []).toHaveLength(0)
+    expectBloqueado(error, data)
     const { data: serviceCheck } = await serviceClient
       .from('audit_log')
       .select('accion')
@@ -74,11 +86,10 @@ describe('RLS audit_log — append-only (UPDATE/DELETE bloqueados)', () => {
     expect(serviceCheck?.accion).not.toBe('DELETE')
   })
 
-  it('admin NO puede DELETE audit_log', async () => {
+  it('admin NO puede DELETE audit_log (sin GRANT → 42501; antes, RLS)', async () => {
     const client = await clientFor(admin)
     const { error, data } = await client.from('audit_log').delete().eq('id', auditRowId).select()
-    expect(error).toBeNull()
-    expect(data ?? []).toHaveLength(0)
+    expectBloqueado(error, data)
     // La fila debe seguir existiendo.
     const { data: serviceCheck } = await serviceClient
       .from('audit_log')
