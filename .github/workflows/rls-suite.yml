@@ -144,3 +144,14 @@ jobs:
           B23_MIGRATION_APPLIED: '1'
           # Se activa cuando Jose aplique `20260830120000_phase_matriculas_activada_at`.
           ALUMNOS_ACTIVADA_AT_MIGRATION_APPLIED: '1'
+          # Migraciones aplicadas hace tiempo cuyos flags nunca se encendieron aquí: sus
+          # ficheros se saltaban en CI desde jun-jul. Verificados uno a uno contra el remoto
+          # (1-oct-2026): los 9 pasan.
+          F3A_MIGRATION_APPLIED: '1'
+          F3C1_MIGRATION_APPLIED: '1'
+          F3C2_MIGRATION_APPLIED: '1'
+          F3C3_MIGRATION_APPLIED: '1'
+          F11C0_MIGRATION_APPLIED: '1'
+          F11G_RLS_APPLIED: '1'
+          IMAGEN_CONSENT_DERIVADO_APPLIED: '1'
+          IMAGEN_IU3_APPLIED: '1'

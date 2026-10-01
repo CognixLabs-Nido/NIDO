@@ -4,6 +4,7 @@ import {
   createTestCentro,
   createTestNino,
   createTestUser,
+  deleteTestCentro,
   deleteTestUser,
   serviceClient,
 } from './setup'
@@ -67,6 +68,7 @@ describe.skipIf(!MIGRATION_APPLIED)('IU-0 imagen consent por-niño + flag deriva
     await serviceClient.from('consentimientos').delete().in('nino_id', [ninoA.id, ninoB.id])
     await serviceClient.from('ninos').delete().in('id', [ninoA.id, ninoB.id])
     await deleteTestUser(tutor.id)
+    await deleteTestCentro(centro.id)
   })
 
   it('arranca en false (derivado, sin consentimiento) para ambos', async () => {
