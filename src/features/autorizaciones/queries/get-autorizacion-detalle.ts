@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import {
@@ -12,6 +13,7 @@ import {
 import { datosRecogida } from '../lib/datos-firma'
 import { hashFirma } from '../lib/hash'
 import {
+  aplicarConsentimientoImagen,
   calcularEstadoNino,
   firmasVigentesPorFirmante,
   type FirmaEfectiva,
@@ -26,6 +28,7 @@ import type {
   PersonaAutorizada,
   PoliticaFirmantes,
   RosterFirmaNino,
+  TipoAutorizacion,
 } from '../types'
 
 /**
@@ -61,7 +64,7 @@ export async function getAutorizacionDetalle(
   const ninoIds = aut.es_plantilla ? [] : await resolverNinosEnAlcance(supabase, aut)
 
   const roster = ninoIds.length
-    ? await construirRoster(supabase, aut.id, aut.firmantes_requeridos, ninoIds)
+    ? await construirRoster(supabase, aut.id, aut.tipo, aut.firmantes_requeridos, ninoIds)
     : []
 
   const hoy = hoyMadridYmd()
@@ -220,6 +223,7 @@ async function ninosDeCentro(
 async function construirRoster(
   supabase: Awaited<ReturnType<typeof createClient>>,
   autorizacionId: string,
+  tipo: TipoAutorizacion,
   politicaAut: PoliticaFirmantes,
   ninoIds: string[]
 ): Promise<RosterFirmaNino[]> {
@@ -264,6 +268,27 @@ async function construirRoster(
     vinculosPorNino.set(v.nino_id, arr)
   }
 
+  // Imagen (3b): quién tiene consentimiento vigente por niño. La RLS de `consentimientos`
+  // solo deja ver los propios, y el panel necesita los de todos los firmantes del niño;
+  // se lee con service role TRAS autorizar (los niños del roster ya son visibles para quien
+  // pide el detalle) y solo (nino_id, usuario_id) de los consentimientos vigentes.
+  const consentidoresPorNino = new Map<string, Set<string>>()
+  if (tipo === 'autorizacion_imagenes') {
+    const { data: consents, error: errConsents } = await createServiceRoleClient()
+      .from('consentimientos')
+      .select('nino_id, usuario_id')
+      .eq('tipo', 'imagen')
+      .is('revocado_en', null)
+      .in('nino_id', ninoIds)
+    if (errConsents) logger.warn('construirRoster: consentimientos imagen', errConsents.message)
+    for (const c of consents ?? []) {
+      if (!c.nino_id) continue
+      const set = consentidoresPorNino.get(c.nino_id) ?? new Set<string>()
+      set.add(c.usuario_id)
+      consentidoresPorNino.set(c.nino_id, set)
+    }
+  }
+
   const firmasPorNino = new Map<string, FirmaEfectiva[]>()
   for (const f of firmas ?? []) {
     const arr = firmasPorNino.get(f.nino_id) ?? []
@@ -279,7 +304,14 @@ async function construirRoster(
         ? 'todos_los_principales'
         : politicaAut
       const vinculosNino = vinculosPorNino.get(n.id) ?? []
-      const vigentes = firmasVigentesPorFirmante(firmasPorNino.get(n.id) ?? [])
+      const vigentesFirma = firmasVigentesPorFirmante(firmasPorNino.get(n.id) ?? [])
+      const vigentes =
+        tipo === 'autorizacion_imagenes'
+          ? aplicarConsentimientoImagen(
+              vigentesFirma,
+              consentidoresPorNino.get(n.id) ?? new Set<string>()
+            )
+          : vigentesFirma
       const { estado, firmantes } = calcularEstadoNino(politica, vinculosNino, vigentes)
       return {
         nino_id: n.id,

@@ -4,6 +4,7 @@ import {
   CalendarOffIcon,
   ChevronLeftIcon,
   HeartIcon,
+  ImageIcon,
   InfoIcon,
   MessageCircleIcon,
   PencilIcon,
@@ -18,6 +19,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
+import { ImagenAutorizacionTutor } from '@/features/ninos/components/ImagenAutorizacionTutor'
+import { getEstadoImagenNino } from '@/features/ninos/queries/get-estado-imagen-nino'
 import { BorrarInfoMedica } from '@/features/ninos/components/BorrarInfoMedica'
 import { EditarInfoMedica } from '@/features/ninos/components/EditarInfoMedica'
 import { DatosPedagogicosReadOnly } from '@/features/datos-pedagogicos/components/DatosPedagogicosReadOnly'
@@ -83,6 +86,12 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
       vinculo?.tipo_vinculo === 'tutor_legal_principal' ||
       vinculo?.tipo_vinculo === 'tutor_legal_secundario'
   }
+
+  // Autorización de imagen: solo la gestiona el tutor legal (revocar / volver a autorizar).
+  const estadoImagen =
+    esTutorLegal && userId
+      ? await getEstadoImagenNino(id, nino.puede_aparecer_en_fotos === true, userId)
+      : null
 
   // Agenda del día: cargamos siempre la estructura (RLS filtra si no hay
   // permiso); el render decide qué mostrar.
@@ -163,6 +172,24 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           </CardContent>
         </Card>
       </section>
+
+      {estadoImagen && (
+        <section className="space-y-4">
+          <h2 className="text-h3 text-foreground flex items-center gap-2">
+            <ImageIcon className="text-primary-600 size-5" />
+            {t('imagen.titulo')}
+          </h2>
+          <Card>
+            <CardContent>
+              <ImagenAutorizacionTutor
+                ninoId={id}
+                nombreCompleto={`${nino.nombre} ${nino.apellidos ?? ''}`.trim()}
+                estado={estadoImagen}
+              />
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
       {permisos.puede_ver_datos_pedagogicos && datosPed && (
         <section className="space-y-4">

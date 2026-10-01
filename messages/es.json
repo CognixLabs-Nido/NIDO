@@ -1263,7 +1263,34 @@
         "guardar": "Guardar",
         "cancelar": "Cancelar"
       },
-      "editar_datos": "Editar datos"
+      "editar_datos": "Editar datos",
+      "imagen": {
+        "titulo": "Autorización de imagen",
+        "estado": {
+          "concedida": "Concedida: puede aparecer en las fotos del centro.",
+          "pendiente_otro": "Pendiente: falta la autorización del otro tutor. Hasta entonces no aparece en las fotos.",
+          "no_autorizada": "No autorizada: no aparece en las fotos del centro."
+        },
+        "revocar": {
+          "boton": "Revocar autorización",
+          "titulo": "Revocar la autorización de imagen",
+          "aviso": "{nombre} dejará de aparecer al instante en todas las fotos del centro y se borrará su foto de perfil (no se puede recuperar). Las fotos ya publicadas no se borran: quedan ocultas. Se retira la autorización de todos los tutores. ¿Revocar?",
+          "cancelar": "Cancelar",
+          "confirmar": "Revocar",
+          "procesando": "Revocando…",
+          "exito": "Autorización de imagen revocada."
+        },
+        "autorizar": {
+          "boton": "Autorizar imagen",
+          "titulo": "Autorizar la imagen",
+          "aviso": "{nombre} podrá volver a aparecer en las fotos del centro, incluidas las publicaciones que quedaron ocultas. La foto de perfil borrada no vuelve: puedes subir otra. ¿Autorizar?",
+          "cancelar": "Cancelar",
+          "confirmar": "Autorizar",
+          "procesando": "Autorizando…",
+          "exito": "Imagen autorizada: ya puede aparecer en las fotos.",
+          "exito_pendiente": "Tu autorización queda registrada. Falta la del otro tutor para que aparezca en las fotos."
+        }
+      }
     }
   },
   "pedagogico": {
@@ -1787,7 +1814,9 @@
     "imagen": {
       "errors": {
         "no_autorizado": "No tienes permiso para revocar la autorización de imagen de este niño",
-        "fallo": "No se pudo revocar la autorización de imagen"
+        "fallo": "No se pudo revocar la autorización de imagen",
+        "no_autorizado_otorgar": "No tienes permiso para autorizar la imagen de este niño",
+        "fallo_otorgar": "No se pudo autorizar la imagen"
       }
     }
   },

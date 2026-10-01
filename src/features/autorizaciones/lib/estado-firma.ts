@@ -40,6 +40,27 @@ export function firmasVigentesPorFirmante(firmas: FirmaEfectiva[]): Map<string, 
   return vigentes
 }
 
+/**
+ * Autorización de IMAGEN — la fuente de verdad es `consentimientos` (IU-0), no la firma:
+ * revocar desde la ficha (tutor o Dirección, IU-4) retira el consentimiento sin escribir
+ * en `firmas_autorizacion`. Para que el panel no siga diciendo «Firmado», una firma vigente
+ * `firmado` cuyo firmante ya NO tiene consentimiento de imagen vigente para ese niño se
+ * pinta como `revocado`. No inventa filas de firma: solo corrige cómo se lee la vigente.
+ * `consentidores` = firmantes con consentimiento de imagen vigente para el niño.
+ */
+export function aplicarConsentimientoImagen(
+  vigentes: Map<string, FirmaEfectiva>,
+  consentidores: ReadonlySet<string>
+): Map<string, FirmaEfectiva> {
+  const out = new Map(vigentes)
+  for (const [firmanteId, firma] of vigentes) {
+    if (firma.decision === 'firmado' && !consentidores.has(firmanteId)) {
+      out.set(firmanteId, { ...firma, decision: 'revocado' })
+    }
+  }
+  return out
+}
+
 /** El set de firmantes requeridos según la política. */
 function firmantesRequeridos(
   politica: PoliticaFirmantes,
