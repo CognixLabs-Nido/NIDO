@@ -3725,7 +3725,8 @@
       "cargar": "Load image authorisation",
       "cargar_ayuda": "Prepare the image authorisation to review and sign it.",
       "foto_titulo": "Child's photo",
-      "foto_requiere_autorizacion": "Accept the image authorisation first to be able to upload the photo."
+      "foto_requiere_autorizacion": "Accept the image authorisation first to be able to upload the photo.",
+      "solo_tutor_legal": "The image authorisation is given by the child's legal guardian."
     },
     "completado": {
       "titulo": "Enrolment complete!",

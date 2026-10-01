@@ -19,7 +19,7 @@ import { fail, ok, type ActionResult } from '../../centros/types'
  * `metodo='checkbox'` distingue esta aceptación de la firma dibujada ('digital'). `p_tutor`
  * = el que hace el alta (tutor o, en modo Dirección, la directora — igual que el acuse
  * anterior atribuía `firmante_id = auth.uid()`). El RPC (SECURITY DEFINER) exige
- * `es_admin(centro) O es_tutor_de(niño)`. El checkbox es monótono en UI (no se desmarca):
+ * `es_admin(centro) O es_tutor_legal_de(niño)`. El checkbox es monótono en UI (no se desmarca):
  * es otorgar-o-nada, sin revocación en el alta.
  */
 const otorgarImagenAltaSchema = z.object({

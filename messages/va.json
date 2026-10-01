@@ -3725,7 +3725,8 @@
       "cargar": "Carregar autorització d'imatge",
       "cargar_ayuda": "Prepara l'autorització d'imatge per a revisar-la i signar-la.",
       "foto_titulo": "Foto del xiquet",
-      "foto_requiere_autorizacion": "Accepta primer l'autorització d'imatge per a poder pujar la foto."
+      "foto_requiere_autorizacion": "Accepta primer l'autorització d'imatge per a poder pujar la foto.",
+      "solo_tutor_legal": "L'autorització d'imatge la dona el tutor legal del xiquet."
     },
     "completado": {
       "titulo": "Matrícula completada!",

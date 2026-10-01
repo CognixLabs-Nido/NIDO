@@ -69,6 +69,10 @@ interface Props {
   imagenSinPlantilla: boolean
   /** ¿El niño ya tiene consent de imagen vigente? (IU-2: el checkbox otorga el consent). */
   imagenAceptado: boolean
+  /** ¿Puede dar el consentimiento de imagen? (tutor legal o modo Dirección). Si no, se oculta
+   *  la sección de imagen entera (documento, «Cargar documento» y casilla) y se explica por
+   *  qué. Por defecto true. */
+  puedeConsentirImagen?: boolean
   currentUserId: string
   currentUserNombre: string
   /** PR-3b-2 · B2: firma PRESENCIAL de la autorización de imagen cuando lo rellena Dirección. */
@@ -104,6 +108,7 @@ export function PasoMenor({
   imagenPanel,
   imagenSinPlantilla,
   imagenAceptado,
+  puedeConsentirImagen = true,
   currentUserId,
   currentUserNombre,
   modoDireccion = false,
@@ -452,15 +457,23 @@ export function PasoMenor({
           initialUrl={fotoInicialUrl}
           alt={ninoNombre}
           bloqueado={!imagenOk}
-          motivoBloqueo={t('imagen.foto_requiere_autorizacion')}
+          motivoBloqueo={
+            puedeConsentirImagen
+              ? t('imagen.foto_requiere_autorizacion')
+              : t('imagen.solo_tutor_legal')
+          }
         />
       </section>
 
       {/* Autorización de imagen — acuse por checkbox SIEMPRE disponible (vía B). Si el centro
           tiene plantilla, se puede además instanciar/abrir/firmar el documento real. */}
-      <section className="space-y-3 border-t pt-4">
+      <section className="space-y-3 border-t pt-4" data-testid="alta-imagen-autorizacion">
         <h3 className="text-sm font-semibold">{t('imagen.autorizacion_titulo')}</h3>
-        {imagenPanel ? (
+        {!puedeConsentirImagen ? (
+          <p className="text-muted-foreground text-sm" data-testid="alta-imagen-solo-tutor-legal">
+            {t('imagen.solo_tutor_legal')}
+          </p>
+        ) : imagenPanel ? (
           <FirmarAutorizacionPanel
             autorizacionId={imagenPanel.autorizacionId}
             tipo="autorizacion_imagenes"
@@ -480,12 +493,14 @@ export function PasoMenor({
             </div>
           )
         )}
-        <AcuseAltaCheckbox
-          ninoId={ninoId}
-          tipo="imagen"
-          aceptadoInicial={imagenAceptado}
-          onAceptado={() => setAceptadoEnSesion(true)}
-        />
+        {puedeConsentirImagen && (
+          <AcuseAltaCheckbox
+            ninoId={ninoId}
+            tipo="imagen"
+            aceptadoInicial={imagenAceptado}
+            onAceptado={() => setAceptadoEnSesion(true)}
+          />
+        )}
       </section>
 
       <div className="flex justify-between border-t pt-4">
