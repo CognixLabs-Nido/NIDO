@@ -163,4 +163,4 @@ jobs:
           # Hasta entonces consent-imagen-rpc-seguridad.rls.test.ts se salta: sin la migración
           # anon todavía puede llamar a las RPCs y un tutor puede atribuir el consentimiento a
           # otro usuario, así que los casos saldrían rojos.
-          # CONSENT_IMAGEN_RPC_SEGURIDAD_APPLIED: '1'
+          CONSENT_IMAGEN_RPC_SEGURIDAD_APPLIED: '1'
