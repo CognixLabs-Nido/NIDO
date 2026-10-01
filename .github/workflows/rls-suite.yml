@@ -158,4 +158,4 @@ jobs:
           # Descomentar EN CUANTO Jose aplique 20261001120000_fix_audit_log_revoke_anon_authenticated.
           # Hasta entonces audit-log.rls.test.ts exige el comportamiento RLS (0 filas, sin
           # error); con el flag exige 42501 en UPDATE/DELETE del admin.
-          # AUDIT_LOG_REVOKE_APPLIED: '1'
+          AUDIT_LOG_REVOKE_APPLIED: '1'
