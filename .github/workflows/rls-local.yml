@@ -1,0 +1,83 @@
+name: RLS suite (BD efímera)
+
+# Suite RLS/audit contra una BD Supabase EFÍMERA que se levanta en el propio runner con
+# `supabase start` y se construye con las migraciones del repo (las del PR incluidas).
+# Medido en F0 (2-oct-2026): job ~6 min frente a ~37 min contra el remoto compartido.
+#
+# QUÉ VALIDA CADA SUITE:
+#   - Esta (rls-local.yml) valida el REPO: el esquema que sale de aplicar las migraciones en
+#     limpio, con las del PR dentro. Por eso TODOS los flags `*_APPLIED` van a '1': no hay
+#     que esperar a que Jose aplique la migración para que su test corra; corre en su PR.
+#   - La remota (rls-suite.yml) valida el REMOTO: lo que de verdad está aplicado allí. Es la
+#     red de seguridad contra una migración aplicada a mano distinta del fichero.
+#   En F1 corren las DOS en cada PR para compararlas; en F2 la remota pasa a nightly + manual.
+#
+# DIFERENCIA CONOCIDA CON EL REMOTO (sin efecto): el bucket `cartilla-vacunas` existe en esta
+# BD y no en el remoto. La migración 20260620120000_phase11_f_teardown_cartilla_acuse borra
+# sus policies por SQL y deja el bucket para borrarlo a mano por la Storage API (Supabase no
+# deja borrar buckets por SQL); en el remoto se hizo, aquí no. Está vacío, sin policies, y
+# ningún test lo usa. El diff de catálogo de F0 no encontró ninguna otra diferencia.
+#
+# Cada run tiene su propia BD → no compite con nada: sin el grupo `rls-suite` de
+# concurrency; solo se cancela el run anterior del mismo PR.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: rls-local-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rls-local:
+    name: RLS + audit (BD efímera)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Claves aleatorias por run para los secretos de [db.vault] (config.toml). A la suite le
+      # vale cualquier clave: cifra y descifra dentro de la misma BD.
+      - name: Claves de Vault de la BD efímera
+        run: |
+          echo "MEDICAL_ENCRYPTION_KEY=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+          echo "SEPA_ENCRYPTION_KEY=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+
+      # Levanta la BD y aplica TODAS las migraciones; si una no aplica en limpio, falla aquí.
+      # Solo los servicios que usa la suite (BD, Auth, PostgREST, Storage, correo local).
+      - name: supabase start (BD efímera + migraciones)
+        run: supabase start -x studio,imgproxy,realtime,edge-runtime,logflare,vector,supavisor,postgres-meta
+
+      - name: Comprobar migraciones aplicadas
+        run: |
+          DB=$(supabase status -o env | grep -E '^DB_URL=' | cut -d= -f2- | tr -d '"')
+          psql "$DB" -At -c "SELECT version FROM supabase_migrations.schema_migrations ORDER BY 1" > aplicadas.txt
+          ls supabase/migrations | sed 's/_.*//' | sort > repo.txt
+          diff repo.txt aplicadas.txt
+          echo "Migraciones aplicadas: $(wc -l < aplicadas.txt)"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: RLS + audit tests
+        run: |
+          set -a; . <(supabase status -o env); set +a
+          export NEXT_PUBLIC_SUPABASE_URL="$API_URL"
+          export NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY"
+          export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+          # TODOS los flags de gated-tests a '1', sacados de los propios tests: la BD tiene
+          # todas las migraciones del repo, así que ningún test se salta. Un flag nuevo entra
+          # solo, sin tocar este fichero.
+          flags=$(grep -rhoE 'process\.env\.[A-Z0-9_]+_APPLIED' src/test | sed 's/process\.env\.//' | sort -u)
+          for f in $flags; do export "$f=1"; done
+          echo "Flags activados ($(echo "$flags" | wc -l)):" $flags
+          npm run test:rls

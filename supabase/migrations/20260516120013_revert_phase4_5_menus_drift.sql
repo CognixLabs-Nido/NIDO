@@ -17,8 +17,13 @@
 -- =============================================================================
 
 -- ─── 1. Triggers de audit ─────────────────────────────────────────────────
-DROP TRIGGER IF EXISTS audit_plantilla_menu_dia ON public.plantilla_menu_dia;
-DROP TRIGGER IF EXISTS audit_plantillas_menu ON public.plantillas_menu;
+-- EDITADA el 2026-10-02, ya aplicada en el remoto (excepción a la regla de no tocar
+-- migraciones aplicadas). Aquí había dos `DROP TRIGGER IF EXISTS ... ON <tabla>`. El
+-- `IF EXISTS` cubre el trigger, no la tabla: en una BD vacía la tabla no existe y
+-- Postgres corta con 42P01, así que la BD no se podía reconstruir desde el repo (la
+-- suite RLS local la construye con `supabase start`). Eran redundantes: el
+-- `DROP TABLE ... CASCADE` de abajo ya se lleva los triggers de cada tabla. El estado
+-- final de la BD es el mismo; el remoto no la vuelve a ejecutar.
 
 -- ─── 2. Tablas (en orden FK: hija primero) ────────────────────────────────
 -- CASCADE elimina cualquier policy RLS, índice, FK que quedara colgando.
