@@ -164,3 +164,8 @@ jobs:
           # anon todavía puede llamar a las RPCs y un tutor puede atribuir el consentimiento a
           # otro usuario, así que los casos saldrían rojos.
           CONSENT_IMAGEN_RPC_SEGURIDAD_APPLIED: '1'
+          # Descomentar EN CUANTO Jose aplique 20261002120000_fix_consent_imagen_solo_tutor_legal.
+          # Hasta entonces consent-imagen-tutor-legal.rls.test.ts se salta: sin la migración el
+          # vínculo «autorizado» todavía puede otorgar/revocar por las RPCs y su firma genera
+          # consentimiento, así que los casos saldrían rojos.
+          # CONSENT_IMAGEN_TUTOR_LEGAL_APPLIED: '1'

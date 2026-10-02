@@ -73,6 +73,9 @@ interface Props {
    * server-side (NO de la URL). En B1 solo pinta el banner; los write-paths se cablean en B2.
    */
   modoDireccion?: boolean
+  /** ¿Puede dar el consentimiento de imagen? (tutor legal o modo Dirección). Si no, el paso
+   *  del menor oculta la sección de imagen entera. Por defecto true (comportamiento previo). */
+  puedeConsentirImagen?: boolean
   /**
    * U-3: reparto reutilizar-vs-pedir cuando el niño es el 2.º (o 3.º…) de una familia con
    * tutor YA existente. Lo calcula la ruta (`resolverReutilizacionFamilia`). Ausente en
@@ -125,6 +128,7 @@ export function AltaTutorWizard({
   currentUserId,
   currentUserNombre,
   modoDireccion = false,
+  puedeConsentirImagen = true,
   reutilizacion = SIN_REUTILIZACION,
 }: Props) {
   const t = useTranslations('alta')
@@ -307,6 +311,7 @@ export function AltaTutorWizard({
             imagenPanel={imagenPanel}
             imagenSinPlantilla={imagenSinPlantilla}
             imagenAceptado={imagenAceptado}
+            puedeConsentirImagen={puedeConsentirImagen}
             currentUserId={currentUserId}
             currentUserNombre={currentUserNombre}
             modoDireccion={modoDireccion}

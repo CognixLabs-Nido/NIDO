@@ -3725,7 +3725,8 @@
       "cargar": "Cargar autorización de imagen",
       "cargar_ayuda": "Prepara la autorización de imagen para revisarla y firmarla.",
       "foto_titulo": "Foto del niño",
-      "foto_requiere_autorizacion": "Acepta primero la autorización de imagen para poder subir la foto."
+      "foto_requiere_autorizacion": "Acepta primero la autorización de imagen para poder subir la foto.",
+      "solo_tutor_legal": "La autorización de imagen la da el tutor legal del niño."
     },
     "completado": {
       "titulo": "¡Alta completada!",

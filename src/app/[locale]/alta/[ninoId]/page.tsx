@@ -20,6 +20,7 @@ import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
 import { resolverEntradaAlta } from '@/features/alta/lib/entrada-alta'
 import { resolverSalidaAlta } from '@/features/alta/lib/salida-alta'
+import { puedeConsentirImagenAlta } from '@/features/alta/lib/consentimiento-imagen-alta'
 import { PASO_MIN_AUTENTICADO } from '@/features/alta/lib/estado-alta'
 import { resolverReutilizacionFamilia } from '@/features/alta/lib/reutilizacion-familia'
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
@@ -65,7 +66,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // centro no entre. La decisión pura vive en `resolverEntradaAlta` (testeada aislada).
   const { data: vinculo } = await supabase
     .from('vinculos_familiares')
-    .select('id')
+    .select('id, tipo_vinculo')
     .eq('nino_id', ninoId)
     .eq('usuario_id', user.id)
     .is('deleted_at', null)
@@ -80,6 +81,11 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   if (entrada.tipo === 'redirect') redirect(`/${locale}/${entrada.destino}`)
   if (entrada.tipo === 'notfound') notFound()
   const modoDireccion = entrada.tipo === 'direccion'
+  // La sección de imagen solo la ve quien puede dar el consentimiento (tutor legal o Dirección).
+  const puedeConsentirImagen = puedeConsentirImagenAlta({
+    modoDireccion,
+    tipoVinculo: vinculo?.tipo_vinculo ?? null,
+  })
 
   const { data: matricula } = await supabase
     .from('matriculas')
@@ -357,6 +363,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         currentUserId={user.id}
         currentUserNombre={perfil?.nombreCompleto ?? ''}
         modoDireccion={modoDireccion}
+        puedeConsentirImagen={puedeConsentirImagen}
         reutilizacion={reutilizacion}
       />
     </div>
