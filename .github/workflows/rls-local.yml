@@ -51,9 +51,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Versión FIJA: con `latest` cada shard pregunta a la API de GitHub por la última release y los
+      # 3 a la vez agotaban el rate limit (#292, shard muerto en setup-cli). 2.119.0 es la que usaban
+      # los runs verdes; subirla a mano cuando haga falta.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.119.0
 
       # Claves aleatorias por run para los secretos de [db.vault] (config.toml). A la suite le
       # vale cualquier clave: cifra y descifra dentro de la misma BD.

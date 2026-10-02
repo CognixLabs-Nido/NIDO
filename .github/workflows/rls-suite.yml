@@ -172,3 +172,6 @@ jobs:
           # 20261002130000_fix_alta_hermano_vincular_tutores (#291), aplicada: el hermano queda
           # vinculado a todos los tutores de la familia (alta-hermano-tutores.rls.test.ts).
           ALTA_HERMANO_TUTORES_APPLIED: '1'
+          # 20261002140000_fix_rpc_criticas_anon (#293), aplicada: anon sin EXECUTE en las 10 RPCs
+          # críticas y las claves de Vault solo para el dueño (rpc-criticas-anon.rls.test.ts).
+          RPC_CRITICAS_ANON_APPLIED: '1'
