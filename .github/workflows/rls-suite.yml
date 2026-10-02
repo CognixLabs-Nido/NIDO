@@ -169,3 +169,6 @@ jobs:
           # vínculo «autorizado» todavía puede otorgar/revocar por las RPCs y su firma genera
           # consentimiento, así que los casos saldrían rojos.
           CONSENT_IMAGEN_TUTOR_LEGAL_APPLIED: '1'
+          # 20261002130000_fix_alta_hermano_vincular_tutores (#291), aplicada: el hermano queda
+          # vinculado a todos los tutores de la familia (alta-hermano-tutores.rls.test.ts).
+          ALTA_HERMANO_TUTORES_APPLIED: '1'
