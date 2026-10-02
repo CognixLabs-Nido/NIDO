@@ -52,6 +52,18 @@ export const payloadDatosTutorDniSchema = z.object({
   path: z.string().min(1).max(400),
 })
 
+/**
+ * R1/R1b — ¿la ruta del documento staged es del niño de la fila? Tiene que ser exactamente
+ * `{centroId}/{ninoId}/<nombre>.pdf` con un único segmento final (sin `/` ni `..`), que es lo
+ * que construyen las rutas de subida legítimas. `centroId`/`ninoId` salen de la FILA de
+ * `cambios_pendientes` (el trigger fija `centro_id` desde el niño), nunca del payload.
+ * Espejo del CHECK `cambios_pendientes_ruta_documento_del_nino`.
+ */
+export function rutaDocumentoDelNino(path: string, centroId: string, ninoId: string): boolean {
+  const prefijo = `${centroId}/${ninoId}/`
+  return path.startsWith(prefijo) && /^[A-Za-z0-9_-]+\.pdf$/.test(path.slice(prefijo.length))
+}
+
 export type PayloadNinosFamilia = z.infer<typeof payloadNinosFamiliaSchema>
 export type PayloadDocumento = z.infer<typeof payloadDocumentoSchema>
 export type PayloadDatosTutor = z.infer<typeof payloadDatosTutorSchema>

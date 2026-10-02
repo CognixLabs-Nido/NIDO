@@ -997,7 +997,8 @@
         "invalido": "Solicitud no válida.",
         "decidir": "No se pudo procesar la decisión. Inténtalo de nuevo.",
         "no_pendiente": "Este cambio ya no está pendiente.",
-        "aplicar": "No se pudo aplicar el cambio. Se ha dejado pendiente para reintentar."
+        "aplicar": "No se pudo aplicar el cambio. Se ha dejado pendiente para reintentar.",
+        "ruta_invalida": "El documento no corresponde a este niño; no se ha aplicado. Recházalo para cerrarlo."
       }
     },
     "familias": {

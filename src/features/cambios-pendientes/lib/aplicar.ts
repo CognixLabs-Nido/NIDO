@@ -10,12 +10,14 @@ import {
   BUCKET_LIBRO_FAMILIA,
   borrarObjetosBucket,
 } from '@/shared/lib/adjuntos/storage'
+import { logger } from '@/shared/lib/logger'
 
 import {
   payloadDatosTutorDniSchema,
   payloadDatosTutorSchema,
   payloadDocumentoSchema,
   payloadNinosFamiliaSchema,
+  rutaDocumentoDelNino,
   type EntidadCambio,
 } from '../schemas'
 
@@ -23,8 +25,27 @@ type Service = SupabaseClient<Database>
 
 export interface CambioRow {
   entidad: string
+  centro_id: string
   nino_id: string
   payload: unknown
+}
+
+/**
+ * R1b — la ruta del documento del payload no es `{centro_id}/{nino_id}/…` de la fila: no se
+ * escribe (sería un puntero al documento de otra familia/centro). El action la distingue para
+ * dar un mensaje propio en vez de "reintentar".
+ */
+export class RutaDocumentoInvalidaError extends Error {
+  constructor() {
+    super('ruta_documento_invalida')
+    this.name = 'RutaDocumentoInvalidaError'
+  }
+}
+
+/** Lanza `RutaDocumentoInvalidaError` si la ruta no es del niño de la fila. */
+function exigirRutaDelNino(path: string, row: CambioRow): void {
+  if (!rutaDocumentoDelNino(path, row.centro_id, row.nino_id))
+    throw new RutaDocumentoInvalidaError()
 }
 
 /** Resuelve la familia del niño (NOT NULL desde F-2b-3); lanza si no la encuentra. */
@@ -62,6 +83,7 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
 
   if (entidad === 'ninos_libro_familia') {
     const { path } = payloadDocumentoSchema.parse(row.payload)
+    exigirRutaDelNino(path, row)
     const { data: nino } = await service
       .from('ninos')
       .select('libro_familia_path')
@@ -119,6 +141,7 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
 
   if (entidad === 'datos_tutor_dni') {
     const p = payloadDatosTutorDniSchema.parse(row.payload)
+    exigirRutaDelNino(p.path, row)
     const familiaId = await familiaDeNino(service, row.nino_id)
     const rolFamilia = rolFamiliaDeVinculo(p.tipo_vinculo)
     const { data: existente } = await service
@@ -158,14 +181,27 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
  * F11-G-3 — DESCARTA un cambio rechazado: borra los objetos staged de los documentos
  * (libro de familia / DNI) que quedaron subidos a la espera de validación. Los parches de
  * datos no dejan nada que limpiar. Best-effort.
+ *
+ * R1 — el borrado es con service role (salta la RLS de Storage), así que SOLO se borra si la
+ * ruta es `{centro_id}/{nino_id}/…` de la fila. Una ruta ajena no se toca (el rechazo sigue
+ * adelante: la fila ya quedó `'rechazado'`).
  */
 export async function descartarCambioPendiente(service: Service, row: CambioRow): Promise<void> {
   const entidad = row.entidad as EntidadCambio
+  let bucket: string
+  let path: string
   if (entidad === 'ninos_libro_familia') {
-    const { path } = payloadDocumentoSchema.parse(row.payload)
-    await borrarObjetosBucket(service, BUCKET_LIBRO_FAMILIA, [path]).catch(() => undefined)
+    bucket = BUCKET_LIBRO_FAMILIA
+    path = payloadDocumentoSchema.parse(row.payload).path
   } else if (entidad === 'datos_tutor_dni') {
-    const { path } = payloadDatosTutorDniSchema.parse(row.payload)
-    await borrarObjetosBucket(service, BUCKET_DNI_TUTORES, [path]).catch(() => undefined)
+    bucket = BUCKET_DNI_TUTORES
+    path = payloadDatosTutorDniSchema.parse(row.payload).path
+  } else {
+    return
   }
+  if (!rutaDocumentoDelNino(path, row.centro_id, row.nino_id)) {
+    logger.warn('descartarCambioPendiente: ruta ajena al niño, no se borra', entidad)
+    return
+  }
+  await borrarObjetosBucket(service, bucket, [path]).catch(() => undefined)
 }
