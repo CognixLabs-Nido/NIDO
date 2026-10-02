@@ -1219,6 +1219,12 @@
       "ver_ficha": "View profile",
       "datos_pendientes": "Details pending"
     },
+    "alta_en_curso": {
+      "etiqueta": "Enrolment in progress · continue",
+      "titulo": "{nombre}'s enrolment is in progress",
+      "descripcion": "Complete the enrolment wizard to activate the enrolment. Meanwhile, the rest of your dashboard is still available.",
+      "cta": "Continue enrolment"
+    },
     "nino": {
       "basicos": "Basic data",
       "fecha_nacimiento": "Date of birth",

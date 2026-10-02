@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
+import { estadoAltaFamilia } from '@/features/alta/lib/gate-familia'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
 import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
@@ -17,9 +18,11 @@ interface PageProps {
 export default async function FamilyDashboard({ params }: PageProps) {
   const { locale } = await params
 
-  // El gate del alta (P3c) vive ahora en `family/layout.tsx` → cubre todas las
-  // sub-rutas de /family; aquí no se duplica.
+  // El gate del alta (P3c, per-hijo) vive en `family/layout.tsx`. Aquí solo se marca el
+  // hijo con el alta en curso: su tarjeta lleva al asistente en vez de a la ficha.
   const t = await getTranslations('family.dashboard')
+  const tAlta = await getTranslations('family.alta_en_curso')
+  const { ninosEnAlta } = await estadoAltaFamilia()
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   const userId = userData.user?.id
@@ -74,10 +77,12 @@ export default async function FamilyDashboard({ params }: PageProps) {
           {ninos.map((n) => {
             const initials =
               (n.nombre.charAt(0) + ((n.apellidos ?? '').charAt(0) || '')).toUpperCase() || '?'
+            const enAlta = ninosEnAlta.includes(n.id)
             return (
               <Link
                 key={n.id}
-                href={`/${locale}/family/nino/${n.id}`}
+                href={enAlta ? `/${locale}/alta/${n.id}` : `/${locale}/family/nino/${n.id}`}
+                data-testid={enAlta ? 'nino-alta-en-curso' : undefined}
                 className="focus-visible:ring-ring rounded-2xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 <Card className="hover:border-primary-200 h-full transition hover:shadow-lg">
@@ -91,7 +96,11 @@ export default async function FamilyDashboard({ params }: PageProps) {
                         {n.apellidos ? ` ${n.apellidos}` : ''}
                       </h2>
                       <p className="text-muted-foreground mt-0.5 text-sm">
-                        {n.apellidos ? t('ver_ficha') : t('datos_pendientes')}
+                        {enAlta
+                          ? tAlta('etiqueta')
+                          : n.apellidos
+                            ? t('ver_ficha')
+                            : t('datos_pendientes')}
                       </p>
                     </div>
                   </CardContent>

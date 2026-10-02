@@ -1219,6 +1219,12 @@
       "ver_ficha": "Ver ficha",
       "datos_pendientes": "Datos pendientes de completar"
     },
+    "alta_en_curso": {
+      "etiqueta": "Alta en curso · continuar",
+      "titulo": "El alta de {nombre} está en curso",
+      "descripcion": "Completa el asistente de alta para activar su matrícula. Mientras tanto, el resto de tu panel sigue disponible.",
+      "cta": "Continuar el alta"
+    },
     "nino": {
       "basicos": "Datos básicos",
       "fecha_nacimiento": "Fecha de nacimiento",
