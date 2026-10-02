@@ -178,3 +178,6 @@ jobs:
           # 20261002150000_fix_rpc_grupo_b_anon (#295), aplicada: anon sin EXECUTE en las 35 RPCs
           # del grupo B (rpc-grupo-b-anon.rls.test.ts).
           RPC_GRUPO_B_ANON_APPLIED: '1'
+          # 20261002160000_fix_policies_authenticated_helpers_anon (#297), aplicada: las 156 policies de
+          # la app TO authenticated y anon sin EXECUTE en los 20 helpers (rls-helpers-anon.rls.test.ts).
+          RLS_HELPERS_ANON_APPLIED: '1'
