@@ -9,17 +9,17 @@ name: RLS suite (remote DB)
 # - Serialización ENTRE runs: el bloque `concurrency` (group global + cancel-in-progress
 #   false) encola cualquier run solapado → NUNCA hay dos runs tocando la BD a la vez.
 
-# CONVIVE con rls-local.yml (F1, 2-oct-2026): la misma suite contra una BD efímera
-# construida desde el repo, ~6 min. En F1 corren las dos en cada PR para compararlas; en
-# F2 esta pasa a solo nightly + manual (red de seguridad que valida el REMOTO).
+# RED DE SEGURIDAD NOCTURNA (F2, 2-oct-2026). Los PRs los gatea rls-local.yml: la misma
+# suite contra una BD efímera construida desde el repo (~3 min, en shards). Esta valida el
+# REMOTO (lo que de verdad está aplicado allí) y atrapa una migración aplicada a mano
+# distinta de su fichero, que la local no puede ver. En F1 corrieron las dos en cada PR
+# con el mismo resultado (706/706, PR #287).
 #
-# DISPARADORES (D-2):
-#   - pull_request → corre AUTOMÁTICAMENTE en cada PR a main. Antes dependía de que
-#     alguien lanzase la suite a mano en cada PR (se hizo 20+ veces); ese agujero se cierra.
-#   - workflow_dispatch → lanzable a mano (GitHub UI / `gh workflow run rls-suite.yml`).
-#   - schedule (nightly) → red de seguridad de madrugada.
-# Los tres comparten el MISMO job, secrets y flags `*_MIGRATION_APPLIED` (env: del job):
-# un run disparado por PR es idéntico a uno por dispatch o por nightly.
+# DISPARADORES:
+#   - schedule (nightly) → cada madrugada.
+#   - workflow_dispatch → a mano (GitHub UI / `gh workflow run rls-suite.yml`), p. ej.
+#     justo después de aplicar una migración en el remoto.
+#   Ya NO corre en pull_request (lo hizo de D-2 a F1).
 #
 # Notas del modelo actual (decisión de Jose, D-2):
 #   (a) Corre contra el REMOTO COMPARTIDO (mismo proyecto Supabase que el piloto). Por eso
@@ -28,18 +28,14 @@ name: RLS suite (remote DB)
 #       bloque abajo): nunca dos runs tocando la BD a la vez (se pisarían el wipe). Hoy es
 #       seguro porque NO hay datos reales (ANAIA es un piloto sin familias dadas de alta);
 #       el wipe no puede destrozar nada real.
-#   (b) CAVEAT de GitHub concurrency: solo mantiene 1 run en curso + 1 en cola. Con 3+ PRs
-#       (o PRs + nightly) solapados, el pending intermedio se CANCELA — NO falla, queda
-#       "cancelled" → hay que RE-RUN manual de ese PR (pestaña Actions o `gh run rerun`).
-#       Con la concurrencia de PRs habitual aquí no suele pasar.
-#   (c) SOLUCIÓN DE RAÍZ (pendiente de PRE-PRODUCCIÓN): una BD de test DEDICADA (proyecto
-#       Supabase aparte, migraciones por `db push` desde CI) elimina la contención, valida
-#       el esquema DEL PR y quita el baile de flags. No se monta ahora (el free tier no da
-#       un 3er proyecto y no se contrata Pro hasta que entren datos reales). Al entrar datos
-#       reales, montarla ANTES de seguir corriendo esto contra el remoto compartido.
+#   (b) CAVEAT de GitHub concurrency: solo mantiene 1 run en curso + 1 en cola; un pending
+#       intermedio se CANCELA (queda "cancelled", no falla). Sin PRs solo compiten nightly y
+#       los lanzamientos a mano, así que en la práctica ya no pasa.
+#   (c) PENDIENTE PRE-PRODUCCIÓN: esta suite escribe fixtures `@nido.test` en el remoto
+#       COMPARTIDO y su wipe borra por ese patrón. Al entrar datos reales, decidir si sigue
+#       corriendo contra él o contra una BD de test dedicada. La validación del esquema DEL
+#       PR y el fin del baile de flags ya los resolvió rls-local.yml.
 on:
-  pull_request:
-    branches: [main]
   workflow_dispatch: {} # lanzable a mano (GitHub UI / `gh workflow run rls-suite.yml`).
   schedule:
     # 02:00 UTC = 03:00 CET / 04:00 CEST — madrugada Europe/Madrid, baja actividad.
