@@ -8,7 +8,11 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
-import { aplicarCambioPendiente, descartarCambioPendiente } from '../lib/aplicar'
+import {
+  aplicarCambioPendiente,
+  descartarCambioPendiente,
+  RutaDocumentoInvalidaError,
+} from '../lib/aplicar'
 
 const idSchema = z.string().uuid()
 
@@ -34,7 +38,7 @@ export async function aprobarCambio(cambioId: string): Promise<ActionResult<{ id
     .update({ estado: 'aprobado', revisado_por: user.id, decided_at: new Date().toISOString() })
     .eq('id', parsed.data)
     .eq('estado', 'pendiente')
-    .select('id, entidad, nino_id, payload')
+    .select('id, entidad, centro_id, nino_id, payload')
     .maybeSingle()
   if (error) {
     if (error.code === '42501') return fail('alta.errors.no_autorizado')
@@ -54,6 +58,9 @@ export async function aprobarCambio(cambioId: string): Promise<ActionResult<{ id
       .update({ estado: 'pendiente', revisado_por: null, decided_at: null })
       .eq('id', fila.id)
     logger.warn('aprobarCambio: aplicar', e instanceof Error ? e.message : 'desconocido')
+    // R1b: la ruta del documento no es del niño de la fila → no se escribe ni se reintentará.
+    if (e instanceof RutaDocumentoInvalidaError)
+      return fail('admin.pendientes.errors.ruta_invalida')
     return fail('admin.pendientes.errors.aplicar')
   }
 
@@ -81,7 +88,7 @@ export async function rechazarCambio(cambioId: string): Promise<ActionResult<{ i
     .update({ estado: 'rechazado', revisado_por: user.id, decided_at: new Date().toISOString() })
     .eq('id', parsed.data)
     .eq('estado', 'pendiente')
-    .select('id, entidad, nino_id, payload')
+    .select('id, entidad, centro_id, nino_id, payload')
     .maybeSingle()
   if (error) {
     if (error.code === '42501') return fail('alta.errors.no_autorizado')

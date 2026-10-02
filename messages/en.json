@@ -997,7 +997,8 @@
         "invalido": "Invalid request.",
         "decidir": "The decision could not be processed. Please try again.",
         "no_pendiente": "This change is no longer pending.",
-        "aplicar": "The change could not be applied. It has been left pending for retry."
+        "aplicar": "The change could not be applied. It has been left pending for retry.",
+        "ruta_invalida": "The document does not belong to this child; it has not been applied. Reject it to close it."
       }
     },
     "familias": {

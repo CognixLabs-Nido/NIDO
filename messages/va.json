@@ -997,7 +997,8 @@
         "invalido": "Sol·licitud no vàlida.",
         "decidir": "No s'ha pogut processar la decisió. Torna a provar-ho.",
         "no_pendiente": "Este canvi ja no està pendent.",
-        "aplicar": "No s'ha pogut aplicar el canvi. S ha deixat pendent per a reintentar."
+        "aplicar": "No s'ha pogut aplicar el canvi. S ha deixat pendent per a reintentar.",
+        "ruta_invalida": "El document no correspon a aquest xiquet; no s'ha aplicat. Rebutja'l per a tancar-lo."
       }
     },
     "familias": {

@@ -4,7 +4,12 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { Database } from '@/types/database'
 
-import { aplicarCambioPendiente, descartarCambioPendiente } from '../aplicar'
+import { rutaDocumentoDelNino } from '../../schemas'
+import {
+  aplicarCambioPendiente,
+  descartarCambioPendiente,
+  RutaDocumentoInvalidaError,
+} from '../aplicar'
 
 /**
  * Mock mínimo de un query-builder de supabase-js: cada método encadenable devuelve
@@ -56,6 +61,7 @@ describe('aplicarCambioPendiente', () => {
 
     await aplicarCambioPendiente(service, {
       entidad: 'ninos_familia',
+      centro_id: 'c1',
       nino_id: 'n1',
       payload: { direccion_calle: 'Calle Falsa', estado_civil_familia: undefined },
     })
@@ -70,6 +76,7 @@ describe('aplicarCambioPendiente', () => {
     const service = mockService({ onUpdate: () => updates.push(1) })
     await aplicarCambioPendiente(service, {
       entidad: 'ninos_familia',
+      centro_id: 'c1',
       nino_id: 'n1',
       payload: { direccion_calle: undefined },
     })
@@ -87,11 +94,12 @@ describe('aplicarCambioPendiente', () => {
     })
     await aplicarCambioPendiente(service, {
       entidad: 'datos_tutor_dni',
+      centro_id: 'c1',
       nino_id: 'n1',
-      payload: { tipo_vinculo: 'tutor_legal_principal', path: 'c/n/dni.pdf' },
+      payload: { tipo_vinculo: 'tutor_legal_principal', path: 'c1/n1/dni.pdf' },
     })
     expect(updates).toEqual([
-      { table: 'familia_tutores', patch: { dni_documento_path: 'c/n/dni.pdf' } },
+      { table: 'familia_tutores', patch: { dni_documento_path: 'c1/n1/dni.pdf' } },
     ])
   })
 
@@ -106,6 +114,7 @@ describe('aplicarCambioPendiente', () => {
     })
     await aplicarCambioPendiente(service, {
       entidad: 'datos_tutor',
+      centro_id: 'c1',
       nino_id: 'n1',
       payload: { tipo_vinculo: 'tutor_legal_principal', nombre_completo: 'Ana Pérez' },
     })
@@ -122,6 +131,7 @@ describe('aplicarCambioPendiente', () => {
     })
     await aplicarCambioPendiente(service, {
       entidad: 'datos_tutor',
+      centro_id: 'c1',
       nino_id: 'n1',
       payload: { tipo_vinculo: 'tutor_legal_secundario', email: 'tutor2@correo.es' },
     })
@@ -140,6 +150,7 @@ describe('aplicarCambioPendiente', () => {
     await expect(
       aplicarCambioPendiente(service, {
         entidad: 'datos_tutor',
+        centro_id: 'c1',
         nino_id: 'n1',
         payload: { tipo_vinculo: 'tutor_legal_principal', nombre_completo: 'Ana' },
       })
@@ -149,7 +160,12 @@ describe('aplicarCambioPendiente', () => {
   it('lanza ante entidad desconocida', async () => {
     const service = mockService({})
     await expect(
-      aplicarCambioPendiente(service, { entidad: 'otra_cosa', nino_id: 'n1', payload: {} })
+      aplicarCambioPendiente(service, {
+        entidad: 'otra_cosa',
+        centro_id: 'c1',
+        nino_id: 'n1',
+        payload: {},
+      })
     ).rejects.toThrow(/entidad_desconocida/)
   })
 
@@ -158,6 +174,7 @@ describe('aplicarCambioPendiente', () => {
     await expect(
       aplicarCambioPendiente(service, {
         entidad: 'ninos_libro_familia',
+        centro_id: 'c1',
         nino_id: 'n1',
         payload: {},
       })
@@ -173,10 +190,11 @@ describe('descartarCambioPendiente', () => {
     })
     await descartarCambioPendiente(service, {
       entidad: 'datos_tutor_dni',
+      centro_id: 'c1',
       nino_id: 'n1',
-      payload: { tipo_vinculo: 'tutor_legal_secundario', path: 'c/n/dni.pdf' },
+      payload: { tipo_vinculo: 'tutor_legal_secundario', path: 'c1/n1/dni.pdf' },
     })
-    expect(removed).toEqual([{ bucket: 'dni-tutores', paths: ['c/n/dni.pdf'] }])
+    expect(removed).toEqual([{ bucket: 'dni-tutores', paths: ['c1/n1/dni.pdf'] }])
   })
 
   it('no borra nada para un parche de datos (sin documento staged)', async () => {
@@ -184,9 +202,133 @@ describe('descartarCambioPendiente', () => {
     const service = mockService({ storageRemove: () => removed.push(1) })
     await descartarCambioPendiente(service, {
       entidad: 'ninos_familia',
+      centro_id: 'c1',
       nino_id: 'n1',
       payload: { direccion_calle: 'x' },
     })
     expect(removed).toHaveLength(0)
+  })
+})
+
+/**
+ * R1/R1b — la ruta del documento staged la pone el tutor en el payload. Antes nadie la
+ * validaba: al rechazar se borraba con service role (R1) y al aprobar se escribía como puntero
+ * (R1b), aunque fuera el libro de familia o el DNI de otra familia/centro.
+ */
+const RUTAS_AJENAS: Array<[string, string]> = [
+  ['otro centro y otro niño', 'c2/n2/libro.pdf'],
+  ['mismo centro, otro niño', 'c1/n2/libro.pdf'],
+  ['escapa del prefijo con ..', 'c1/n1/../../c2/n2/libro.pdf'],
+  ['subcarpeta bajo el niño', 'c1/n1/sub/libro.pdf'],
+  ['no es un pdf', 'c1/n1/libro.png'],
+  ['prefijo sin la barra final', 'c1/n1x/libro.pdf'],
+]
+
+describe('rutaDocumentoDelNino', () => {
+  it('acepta las formas que construyen las rutas de subida legítimas', () => {
+    expect(rutaDocumentoDelNino('c1/n1/3f2a-uuid.pdf', 'c1', 'n1')).toBe(true)
+    expect(rutaDocumentoDelNino('c1/n1/dni-tutor_legal_principal-3f2a.pdf', 'c1', 'n1')).toBe(true)
+  })
+
+  it.each(RUTAS_AJENAS)('rechaza una ruta ajena: %s', (_caso, ruta) => {
+    expect(rutaDocumentoDelNino(ruta, 'c1', 'n1')).toBe(false)
+  })
+})
+
+describe('R1b — aplicar NO escribe una ruta ajena al niño', () => {
+  it.each(RUTAS_AJENAS)('ninos_libro_familia, %s → lanza y no toca BD', async (_caso, ruta) => {
+    const updates: unknown[] = []
+    const removed: unknown[] = []
+    const service = mockService({
+      maybeSingleByTable: { ninos: { libro_familia_path: 'c1/n1/previo.pdf' } },
+      onUpdate: () => updates.push(1),
+      storageRemove: () => removed.push(1),
+    })
+    await expect(
+      aplicarCambioPendiente(service, {
+        entidad: 'ninos_libro_familia',
+        centro_id: 'c1',
+        nino_id: 'n1',
+        payload: { path: ruta },
+      })
+    ).rejects.toBeInstanceOf(RutaDocumentoInvalidaError)
+    expect(updates).toHaveLength(0)
+    expect(removed).toHaveLength(0)
+  })
+
+  it('datos_tutor_dni con ruta ajena → lanza y no toca BD', async () => {
+    const updates: unknown[] = []
+    const service = mockService({
+      maybeSingleByTable: { ninos: { familia_id: 'f1' } },
+      onUpdate: () => updates.push(1),
+      onInsert: () => updates.push(1),
+    })
+    await expect(
+      aplicarCambioPendiente(service, {
+        entidad: 'datos_tutor_dni',
+        centro_id: 'c1',
+        nino_id: 'n1',
+        payload: { tipo_vinculo: 'tutor_legal_principal', path: 'c2/n2/dni.pdf' },
+      })
+    ).rejects.toBeInstanceOf(RutaDocumentoInvalidaError)
+    expect(updates).toHaveLength(0)
+  })
+
+  it('ninos_libro_familia con ruta del niño → fija la ruta y borra el libro anterior', async () => {
+    const updates: Array<{ table: string; patch: Record<string, unknown> }> = []
+    const removed: Array<{ bucket: string; paths: string[] }> = []
+    const service = mockService({
+      maybeSingleByTable: { ninos: { libro_familia_path: 'c1/n1/previo.pdf' } },
+      onUpdate: (table, patch) => updates.push({ table, patch }),
+      storageRemove: (bucket, paths) => removed.push({ bucket, paths }),
+    })
+    await aplicarCambioPendiente(service, {
+      entidad: 'ninos_libro_familia',
+      centro_id: 'c1',
+      nino_id: 'n1',
+      payload: { path: 'c1/n1/nuevo.pdf' },
+    })
+    expect(updates).toEqual([{ table: 'ninos', patch: { libro_familia_path: 'c1/n1/nuevo.pdf' } }])
+    expect(removed).toEqual([{ bucket: 'libro-familia', paths: ['c1/n1/previo.pdf'] }])
+  })
+})
+
+describe('R1 — descartar NO borra una ruta ajena al niño', () => {
+  it.each(RUTAS_AJENAS)('ninos_libro_familia, %s → no borra nada', async (_caso, ruta) => {
+    const removed: unknown[] = []
+    const service = mockService({ storageRemove: () => removed.push(1) })
+    await descartarCambioPendiente(service, {
+      entidad: 'ninos_libro_familia',
+      centro_id: 'c1',
+      nino_id: 'n1',
+      payload: { path: ruta },
+    })
+    expect(removed).toHaveLength(0)
+  })
+
+  it('datos_tutor_dni con ruta ajena → no borra nada', async () => {
+    const removed: unknown[] = []
+    const service = mockService({ storageRemove: () => removed.push(1) })
+    await descartarCambioPendiente(service, {
+      entidad: 'datos_tutor_dni',
+      centro_id: 'c1',
+      nino_id: 'n1',
+      payload: { tipo_vinculo: 'tutor_legal_principal', path: 'c2/n2/dni.pdf' },
+    })
+    expect(removed).toHaveLength(0)
+  })
+
+  it('ninos_libro_familia con ruta del niño → borra el objeto staged', async () => {
+    const removed: Array<{ bucket: string; paths: string[] }> = []
+    const service = mockService({
+      storageRemove: (bucket, paths) => removed.push({ bucket, paths }),
+    })
+    await descartarCambioPendiente(service, {
+      entidad: 'ninos_libro_familia',
+      centro_id: 'c1',
+      nino_id: 'n1',
+      payload: { path: 'c1/n1/staged.pdf' },
+    })
+    expect(removed).toEqual([{ bucket: 'libro-familia', paths: ['c1/n1/staged.pdf'] }])
   })
 })
