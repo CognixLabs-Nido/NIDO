@@ -15,10 +15,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const TOKEN = '550e8400-e29b-41d4-a716-446655440000'
 const CENTRO = '33333333-3333-4333-8333-333333333333'
 const NINO = '22222222-2222-4222-8222-222222222222'
+const HERMANO = '44444444-4444-4444-8444-444444444444'
 
 // Configurables por test.
 let usersFixture: Array<{ id: string; email: string }>
 let rolesParaUsuario: Array<{ usuario_id: string }>
+// Payload del upsert de `vinculos_familiares` (auto-vínculo).
+let vinculosUpsert: unknown
 
 // Spies de auth admin.
 let updateSpy: ReturnType<typeof vi.fn>
@@ -41,7 +44,11 @@ const INVITATION_ROW = {
 
 function makeServiceFake() {
   function builder(table: string) {
-    const state = { table, op: 'select' as 'select' | 'insert' | 'update' | 'upsert' }
+    const state = {
+      table,
+      op: 'select' as 'select' | 'insert' | 'update' | 'upsert',
+      single: false,
+    }
     const result = () => {
       if (table === 'invitaciones') {
         if (state.op === 'update') return { data: null, error: null }
@@ -54,7 +61,11 @@ function makeServiceFake() {
       if (table === 'vinculos_familiares') return { error: null }
       // F-2b-2b: backfill del perfil. `ninos` → familia del niño; `familia_tutores` select →
       // candidatos pendientes (casa por email de la invitación); update → fila enlazada.
-      if (table === 'ninos') return { data: { familia_id: 'fam-1' }, error: null }
+      // Alta del 2.º hijo: la lista de hijos de la familia (sin maybeSingle) trae al hermano.
+      if (table === 'ninos') {
+        if (state.single) return { data: { familia_id: 'fam-1' }, error: null }
+        return { data: [{ id: NINO }, { id: HERMANO }], error: null }
+      }
       if (table === 'familia_tutores') {
         if (state.op === 'update') return { data: { id: 'ft-1' }, error: null }
         return { data: [{ id: 'ft-1', email: INVITATION_ROW.email }], error: null }
@@ -75,16 +86,23 @@ function makeServiceFake() {
       state.op = 'update'
       return self()
     }
-    b.upsert = () => {
+    b.upsert = (payload: unknown) => {
       state.op = 'upsert'
+      if (table === 'vinculos_familiares') vinculosUpsert = payload
       return self()
     }
     b.delete = () => self()
     b.eq = () => self()
     b.is = () => self()
     b.limit = () => self()
-    b.maybeSingle = () => self()
-    b.single = () => self()
+    b.maybeSingle = () => {
+      state.single = true
+      return self()
+    }
+    b.single = () => {
+      state.single = true
+      return self()
+    }
     b.then = (resolve: (v: unknown) => void) => resolve(result())
     return b
   }
@@ -155,6 +173,7 @@ const VALID_INPUT = {
 beforeEach(() => {
   usersFixture = []
   rolesParaUsuario = []
+  vinculosUpsert = undefined
   updateSpy = vi.fn(() => Promise.resolve({ data: { user: { id: 'stub-id' } }, error: null }))
   createSpy = vi.fn(() => Promise.resolve({ data: { user: { id: 'new-id' } }, error: null }))
   deleteSpy = vi.fn(() => Promise.resolve({ error: null }))
@@ -202,6 +221,30 @@ describe('acceptInvitation — completar stub vs crear vs rechazar', () => {
     expect(createSpy).toHaveBeenCalledTimes(1)
     expect(updateSpy).not.toHaveBeenCalled()
     expect(signInSpy).toHaveBeenCalledTimes(1)
+    expect(redirect).toHaveBeenCalledWith('/es/family')
+  })
+})
+
+describe('acceptInvitation — alta del 2.º hijo', () => {
+  it('un tutor legal queda vinculado a TODOS los hijos de la familia, con el tipo de su invitación', async () => {
+    usersFixture = []
+
+    await acceptInvitation(VALID_INPUT)
+
+    expect(vinculosUpsert).toEqual([
+      expect.objectContaining({
+        nino_id: NINO,
+        usuario_id: 'new-id',
+        tipo_vinculo: 'tutor_legal_principal',
+        parentesco: 'madre',
+      }),
+      expect.objectContaining({
+        nino_id: HERMANO,
+        usuario_id: 'new-id',
+        tipo_vinculo: 'tutor_legal_principal',
+        parentesco: 'madre',
+      }),
+    ])
     expect(redirect).toHaveBeenCalledWith('/es/family')
   })
 })
