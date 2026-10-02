@@ -26,7 +26,7 @@ interface Resp {
 }
 interface Call {
   table: string
-  op: 'insert' | 'update'
+  op: 'insert' | 'update' | 'upsert'
   patch: unknown
 }
 
@@ -50,6 +50,10 @@ function makeFake(responses: Resp[]) {
     }
     b.update = (patch: unknown) => {
       calls.push({ table, op: 'update', patch })
+      return b
+    }
+    b.upsert = (patch: unknown) => {
+      calls.push({ table, op: 'upsert', patch })
       return b
     }
     b.then = (resolve: (v: Resp) => unknown) => {
@@ -155,6 +159,73 @@ describe('acceptPendingInvitationCore — B8-profe', () => {
     const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
     expect(r.success).toBe(false)
     if (!r.success) expect(r.error).toBe('auth.invitation.errors.invalid')
+  })
+})
+
+describe('acceptPendingInvitationCore — alta del 2.º hijo (B8)', () => {
+  const NINO = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1'
+  const HERMANO = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2'
+  const tutor2Invitation = {
+    ...profeInvitation,
+    email: 'tutor2@example.com',
+    rol_objetivo: 'tutor_legal',
+    nino_id: NINO,
+    aula_id: null,
+    tipo_personal_aula: null,
+    tipo_vinculo: 'tutor_legal_secundario',
+  }
+  const tutor2 = { id: USER, email: 'tutor2@example.com' }
+
+  it('el 2.º tutor queda vinculado como secundario a todos los hijos de la familia', async () => {
+    const { fake, calls } = makeFake([
+      { data: tutor2Invitation, error: null }, // invitación
+      { data: null, error: null }, // insert rol tutor_legal
+      { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
+      { data: [{ id: NINO }, { id: HERMANO }], error: null }, // hijos de la familia
+      { data: null, error: null }, // upsert vínculos
+      { data: null, error: null }, // update accepted_at
+    ])
+    const r = await acceptPendingInvitationCore({ serviceClient: fake, user: tutor2 }, INV, {
+      parentesco: 'padre',
+    })
+
+    expect(r.success).toBe(true)
+    const up = calls.find((c) => c.table === 'vinculos_familiares' && c.op === 'upsert')
+    expect(up?.patch).toEqual([
+      expect.objectContaining({
+        nino_id: NINO,
+        usuario_id: USER,
+        tipo_vinculo: 'tutor_legal_secundario',
+        parentesco: 'padre',
+      }),
+      expect.objectContaining({
+        nino_id: HERMANO,
+        usuario_id: USER,
+        tipo_vinculo: 'tutor_legal_secundario',
+        parentesco: 'padre',
+      }),
+    ])
+  })
+
+  it('un autorizado solo queda vinculado al niño de su invitación', async () => {
+    const { fake, calls } = makeFake([
+      {
+        data: { ...tutor2Invitation, rol_objetivo: 'autorizado', tipo_vinculo: 'autorizado' },
+        error: null,
+      },
+      { data: null, error: null }, // insert rol autorizado
+      { data: null, error: null }, // upsert vínculo
+      { data: null, error: null }, // update accepted_at
+    ])
+    const r = await acceptPendingInvitationCore({ serviceClient: fake, user: tutor2 }, INV, {
+      parentesco: 'abuela',
+    })
+
+    expect(r.success).toBe(true)
+    const up = calls.find((c) => c.table === 'vinculos_familiares' && c.op === 'upsert')
+    expect(up?.patch).toEqual([
+      expect.objectContaining({ nino_id: NINO, tipo_vinculo: 'autorizado' }),
+    ])
   })
 })
 

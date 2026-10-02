@@ -40,7 +40,47 @@ function narrowTipoVinculoInvitacion(
 }
 
 /**
- * Crea el vínculo familiar tutor↔niño al aceptar la invitación (auto-vínculo).
+ * Niños a los que queda vinculado quien acepta. Un tutor legal lo es de TODOS los hijos de
+ * la familia (alta del 2.º hijo): si el hermano se dio de alta antes de que el 2.º tutor
+ * aceptase, la RPC no pudo vincularlo (no tenía cuenta) y lo hace aquí. Un autorizado solo
+ * queda vinculado al niño de su invitación.
+ */
+async function ninosAVincular(
+  service: ServiceClient,
+  ninoId: string,
+  rolObjetivo: string
+): Promise<{ ninoIds: string[]; error: string | null }> {
+  if (rolObjetivo !== 'tutor_legal') return { ninoIds: [ninoId], error: null }
+
+  const { data: nino, error: ninoErr } = await service
+    .from('ninos')
+    .select('familia_id')
+    .eq('id', ninoId)
+    .maybeSingle()
+  if (ninoErr) {
+    logger.warn('auto-vínculo: familia del niño no resuelta', ninoErr.message)
+    return { ninoIds: [], error: 'auth.invitation.errors.vinculo_failed' }
+  }
+  if (!nino?.familia_id) return { ninoIds: [ninoId], error: null }
+
+  const { data: hermanos, error: hermanosErr } = await service
+    .from('ninos')
+    .select('id')
+    .eq('familia_id', nino.familia_id)
+    .is('deleted_at', null)
+  if (hermanosErr) {
+    logger.warn('auto-vínculo: hijos de la familia no resueltos', hermanosErr.message)
+    return { ninoIds: [], error: 'auth.invitation.errors.vinculo_failed' }
+  }
+  return {
+    ninoIds: [ninoId, ...(hermanos ?? []).map((h) => h.id).filter((id) => id !== ninoId)],
+    error: null,
+  }
+}
+
+/**
+ * Crea el vínculo familiar tutor↔niño al aceptar la invitación (auto-vínculo), con cada
+ * niño de `ninoIds` (ver `ninosAVincular`).
  * IDEMPOTENTE: ON CONFLICT (nino_id, usuario_id) DO NOTHING vía upsert con
  * ignoreDuplicates — si el admin ya lo creó a mano (crearVinculo), no falla.
  * El `tipo_vinculo` viene de la invitación; fallback a principal si una invitación
@@ -50,7 +90,7 @@ function narrowTipoVinculoInvitacion(
 async function crearVinculoAutomatico(
   service: ServiceClient,
   params: {
-    ninoId: string
+    ninoIds: string[]
     usuarioId: string
     rolObjetivo: string
     tipoVinculoInvitacion: TipoVinculoFamiliar | null
@@ -63,14 +103,14 @@ async function crearVinculoAutomatico(
     (params.rolObjetivo === 'autorizado' ? 'autorizado' : 'tutor_legal_principal')
 
   const { error } = await service.from('vinculos_familiares').upsert(
-    {
-      nino_id: params.ninoId,
+    params.ninoIds.map((ninoId) => ({
+      nino_id: ninoId,
       usuario_id: params.usuarioId,
       tipo_vinculo: tipo,
       parentesco: params.parentesco as ReturnType<typeof parentescoEnum.parse>,
       descripcion_parentesco: params.descripcionParentesco,
       permisos: permisosDefault(tipo),
-    },
+    })),
     { onConflict: 'nino_id,usuario_id', ignoreDuplicates: true }
   )
   if (error) {
@@ -286,14 +326,21 @@ export async function acceptInvitationCore(
 
   // Auto-vínculo tutor↔niño (idempotente). Solo roles familiares con niño.
   if (creaVinculo && invitation.nino_id && parsed.data.parentesco) {
-    const { error: vinculoError } = await crearVinculoAutomatico(service, {
-      ninoId: invitation.nino_id,
-      usuarioId: userId,
-      rolObjetivo: invitation.rol_objetivo,
-      tipoVinculoInvitacion: narrowTipoVinculoInvitacion(invitation.tipo_vinculo),
-      parentesco: parsed.data.parentesco,
-      descripcionParentesco: parsed.data.descripcionParentesco ?? null,
-    })
+    const { ninoIds, error: ninosError } = await ninosAVincular(
+      service,
+      invitation.nino_id,
+      invitation.rol_objetivo
+    )
+    const { error: vinculoError } = ninosError
+      ? { error: ninosError }
+      : await crearVinculoAutomatico(service, {
+          ninoIds,
+          usuarioId: userId,
+          rolObjetivo: invitation.rol_objetivo,
+          tipoVinculoInvitacion: narrowTipoVinculoInvitacion(invitation.tipo_vinculo),
+          parentesco: parsed.data.parentesco,
+          descripcionParentesco: parsed.data.descripcionParentesco ?? null,
+        })
     if (vinculoError) {
       logger.warn('accept: auto-vínculo tutor↔niño falló (rollback de la cuenta)', vinculoError)
       await service.from('roles_usuario').delete().eq('usuario_id', userId)
@@ -455,14 +502,21 @@ export async function acceptPendingInvitationCore(
 
   // Auto-vínculo idempotente (mismo que el flujo de nuevo usuario).
   if (creaVinculo && invitation.nino_id && vinculo?.parentesco) {
-    const { error: vinculoError } = await crearVinculoAutomatico(service, {
-      ninoId: invitation.nino_id,
-      usuarioId: user.id,
-      rolObjetivo: invitation.rol_objetivo,
-      tipoVinculoInvitacion: narrowTipoVinculoInvitacion(invitation.tipo_vinculo),
-      parentesco: vinculo.parentesco,
-      descripcionParentesco: vinculo.descripcionParentesco ?? null,
-    })
+    const { ninoIds, error: ninosError } = await ninosAVincular(
+      service,
+      invitation.nino_id,
+      invitation.rol_objetivo
+    )
+    const { error: vinculoError } = ninosError
+      ? { error: ninosError }
+      : await crearVinculoAutomatico(service, {
+          ninoIds,
+          usuarioId: user.id,
+          rolObjetivo: invitation.rol_objetivo,
+          tipoVinculoInvitacion: narrowTipoVinculoInvitacion(invitation.tipo_vinculo),
+          parentesco: vinculo.parentesco,
+          descripcionParentesco: vinculo.descripcionParentesco ?? null,
+        })
     if (vinculoError) {
       logger.warn('acceptPending: auto-vínculo tutor↔niño falló', vinculoError)
       return fail(vinculoError)
