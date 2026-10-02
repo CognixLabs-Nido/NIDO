@@ -61,11 +61,25 @@ export type EditarProspectoInput = z.input<typeof editarProspectoSchema>
 export const descartarProspectoSchema = z.object({ id: uuid })
 export type DescartarProspectoInput = z.infer<typeof descartarProspectoSchema>
 
-export const invitarAlAltaSchema = z.object({
-  id: uuid,
-  // Aula (física) del curso activo contra la que se crea la matrícula pendiente.
-  aulaId: z.string().uuid('listaEspera.validation.aula_invalida'),
-})
+/**
+ * `parentesco` es OPCIONAL: solo lo pide el diálogo cuando el tutor ya tiene cuenta pero NINGÚN
+ * vínculo del que heredarlo (`necesita_parentesco` en la lista, o la acción lo exige al
+ * promover). Si hay vínculo previo, la herencia gana y esto se ignora. En el camino de familia
+ * nueva (invitación por email) tampoco se usa: el parentesco lo da el tutor en el wizard.
+ * `descripcionParentesco` es obligatorio si parentesco='otro' (misma regla que Completar).
+ */
+export const invitarAlAltaSchema = z
+  .object({
+    id: uuid,
+    // Aula (física) del curso activo contra la que se crea la matrícula pendiente.
+    aulaId: z.string().uuid('listaEspera.validation.aula_invalida'),
+    parentesco: parentescoEnum.optional(),
+    descripcionParentesco: z.string().trim().max(120).optional().nullable(),
+  })
+  .refine((d) => (d.parentesco === 'otro' ? !!d.descripcionParentesco : true), {
+    message: 'vinculo.validation.descripcion_requerida',
+    path: ['descripcionParentesco'],
+  })
 export type InvitarAlAltaInput = z.infer<typeof invitarAlAltaSchema>
 
 /**

@@ -2,11 +2,13 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/database'
 import { altaEnProceso, type SenalMatricula } from '@/features/matriculas/lib/estado-alumno'
 
 import type { EstadoMatricula } from '../lib/acciones-prospecto'
+import { tutoresConVinculoPrevio } from '../lib/vinculo-previo-tutor'
 
 export interface ProspectoListItem {
   id: string
@@ -27,6 +29,13 @@ export interface ProspectoListItem {
    * niño enlazado o no tiene matrícula activa. Alimenta el badge y las acciones de la fila.
    */
   estado_matricula: EstadoMatricula | null
+  /**
+   * Hueco 1 (alta del 2.º hijo): el prospecto trae la cuenta del tutor pero ese tutor NO tiene
+   * ningún vínculo del que heredar el parentesco → "Invitar" debe pedirlo (si no, la acción
+   * falla con `parentesco_requerido`). False para prospectos de familia nueva (el parentesco
+   * lo da el tutor en el wizard) y para tutores con vínculo (se hereda).
+   */
+  necesita_parentesco: boolean
 }
 
 /**
@@ -35,13 +44,19 @@ export interface ProspectoListItem {
  */
 export async function getListaEspera(cursoAcademicoId: string): Promise<ProspectoListItem[]> {
   const supabase = await createClient()
-  return getListaEsperaCore(supabase, cursoAcademicoId)
+  return getListaEsperaCore(supabase, cursoAcademicoId, createServiceRoleClient())
 }
 
-/** Núcleo testeable (cliente inyectable). */
+/**
+ * Núcleo testeable (clientes inyectables). `service` SOLO resuelve `necesita_parentesco`, y
+ * solo para los tutores de prospectos que el admin YA pudo leer por RLS (elevación
+ * post-autorización): replica la lectura de `vincularHijoATutorExistente`, que va por service
+ * role porque el vínculo del que se hereda puede estar en otro centro.
+ */
 export async function getListaEsperaCore(
   supabase: SupabaseClient<Database>,
-  cursoAcademicoId: string
+  cursoAcademicoId: string,
+  service: SupabaseClient<Database>
 ): Promise<ProspectoListItem[]> {
   const { data } = await supabase
     .from('lista_espera')
@@ -52,7 +67,10 @@ export async function getListaEsperaCore(
     .neq('estado', 'descartado')
     .order('posicion', { ascending: true })
 
-  const filas = (data ?? []) as Omit<ProspectoListItem, 'estado_matricula'>[]
+  const filas = (data ?? []) as Omit<
+    ProspectoListItem,
+    'estado_matricula' | 'necesita_parentesco'
+  >[]
 
   // U-4: el estado de matrícula se resuelve en UNA segunda lectura para todos los niños
   // enlazados, en vez de con un embed anidado de PostgREST: filtrar la matrícula ACTIVA
@@ -80,6 +98,19 @@ export async function getListaEsperaCore(
     }
   }
 
+  // Hueco 1: ¿qué tutores guardados NO tienen vínculo del que heredar el parentesco? Solo los
+  // prospectos sin promover (los promovidos ya no ofrecen "Invitar"). Si la lectura falla, no
+  // se marca ninguno: el diálogo revela el campo igualmente si la acción lo exige.
+  const tutorIds = [
+    ...new Set(
+      filas
+        .filter((f) => f.nino_id === null)
+        .map((f) => f.tutor_usuario_id)
+        .filter((id): id is string => id !== null)
+    ),
+  ]
+  const conVinculo = await tutoresConVinculoPrevio(service, tutorIds)
+
   return (
     filas
       // Admisiones es la bandeja de altas EN PROCESO. Un prospecto cuyo niño ya está
@@ -90,6 +121,11 @@ export async function getListaEsperaCore(
       .map((f) => ({
         ...f,
         estado_matricula: f.nino_id ? (estadoPorNino.get(f.nino_id) ?? null) : null,
+        necesita_parentesco:
+          conVinculo !== null &&
+          f.nino_id === null &&
+          f.tutor_usuario_id !== null &&
+          !conVinculo.has(f.tutor_usuario_id),
       }))
   )
 }

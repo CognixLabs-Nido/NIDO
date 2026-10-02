@@ -343,3 +343,87 @@ describe('invitarAlAlta — prospecto de 2.º hijo con tutor guardado (U-2/D1)',
     expect(altaCall?.[1]).toMatchObject({ p_usuario_id: 'detectado-por-email' })
   })
 })
+
+describe('invitarAlAlta — parentesco cuando el tutor no tiene vínculo del que heredar (hueco 1)', () => {
+  it('tutor guardado SIN vínculo previo y sin parentesco → parentesco_requerido, sin escribir', async () => {
+    prospectoTutorUsuarioId = 'tutor-uid'
+    vinculoPrevio = null
+
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
+
+    expect(r.success).toBe(false)
+    if (!r.success) expect(r.error).toBe('admin.admisiones.anadirHijo.errors.parentesco_requerido')
+    // Falla ANTES de la RPC: no se crea niño ni sale de la cola (el diálogo puede reenviar).
+    expect(rpcSpy.mock.calls.some((c) => c[0] === 'crear_o_anadir_a_familia')).toBe(false)
+    expect(estadoUpdateSpy).not.toHaveBeenCalled()
+  })
+
+  it('tutor guardado SIN vínculo previo + parentesco del diálogo → la RPC lo recibe', async () => {
+    prospectoTutorUsuarioId = 'tutor-uid'
+    vinculoPrevio = null
+
+    const r = await invitarAlAlta(
+      { id: PROSPECTO, aulaId: AULA, parentesco: 'otro', descripcionParentesco: 'Tutora legal' },
+      'es'
+    )
+
+    expect(r.success).toBe(true)
+    if (r.success) expect(r.data.resultado).toBe('vinculado')
+    const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
+    expect(altaCall?.[1]).toMatchObject({
+      p_usuario_id: 'tutor-uid',
+      p_parentesco: 'otro',
+      p_descripcion_parentesco: 'Tutora legal',
+    })
+    expect(sendInvitationSpy).not.toHaveBeenCalled()
+  })
+
+  it('cuenta detectada por email SIN vínculo + parentesco del diálogo → la RPC lo recibe', async () => {
+    authUsersList = [{ id: 'detectado-por-email', email: 'tutor@nido.test' }]
+    rolesResult = [{ usuario_id: 'detectado-por-email' }]
+    vinculoPrevio = null
+
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA, parentesco: 'abuela' }, 'es')
+
+    expect(r.success).toBe(true)
+    const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
+    expect(altaCall?.[1]).toMatchObject({
+      p_usuario_id: 'detectado-por-email',
+      p_parentesco: 'abuela',
+      p_descripcion_parentesco: '',
+    })
+  })
+
+  it('con vínculo previo, la herencia GANA al parentesco del diálogo', async () => {
+    prospectoTutorUsuarioId = 'tutor-uid'
+    vinculoPrevio = { parentesco: 'padre', descripcion_parentesco: null }
+
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA, parentesco: 'abuelo' }, 'es')
+
+    expect(r.success).toBe(true)
+    const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
+    expect(altaCall?.[1]).toMatchObject({ p_parentesco: 'padre' })
+  })
+
+  it("parentesco 'otro' sin descripción → validación, sin tocar nada", async () => {
+    prospectoTutorUsuarioId = 'tutor-uid'
+    vinculoPrevio = null
+    // El spy lo crea el cliente; si la validación corta antes, ni se crea → se arranca limpio.
+    rpcSpy = vi.fn()
+
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA, parentesco: 'otro' }, 'es')
+
+    expect(r.success).toBe(false)
+    if (!r.success) expect(r.error).toBe('vinculo.validation.descripcion_requerida')
+    expect(rpcSpy).not.toHaveBeenCalled()
+  })
+
+  it('familia nueva (sin cuenta): el parentesco del diálogo NO llega a la RPC (lo da el tutor)', async () => {
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA, parentesco: 'madre' }, 'es')
+
+    expect(r.success).toBe(true)
+    const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
+    expect(altaCall?.[1]).toMatchObject({ p_usuario_id: null, p_parentesco: '' })
+    expect(sendInvitationSpy).toHaveBeenCalledTimes(1)
+  })
+})

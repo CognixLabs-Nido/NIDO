@@ -24,6 +24,9 @@ const DETECCION = [
 const ANADIR_HIJO_VIVAS = ['push_titulo', 'push_cuerpo'] as const
 const ANADIR_HIJO_ERRORS = ['parentesco_requerido', 'no_autorizado', 'colision'] as const
 
+/** Hueco 1: "Invitar" pide el parentesco cuando el tutor no tiene vínculo del que heredar. */
+const INVITAR_PARENTESCO = ['parentesco_ayuda', 'parentesco_revelado'] as const
+
 const LOCALES: ReadonlyArray<[string, Record<string, unknown>]> = [
   ['es', es as Record<string, unknown>],
   ['en', en as Record<string, unknown>],
@@ -56,6 +59,11 @@ describe('i18n consistency — botón único de admisiones (U-5)', () => {
       it.each(ANADIR_HIJO_ERRORS)('anadirHijo.errors.%s sobrevive a la poda', (key) => {
         const ns = admisiones(msgs).anadirHijo as Record<string, Record<string, string>>
         expect(ns.errors?.[key]).toBeDefined()
+      })
+
+      it.each(INVITAR_PARENTESCO)('invitar_dialog.%s existe y no está vacío', (key) => {
+        const ns = admisiones(msgs).invitar_dialog as Record<string, string> | undefined
+        expect(ns?.[key]?.trim().length ?? 0).toBeGreaterThan(0)
       })
     })
   }

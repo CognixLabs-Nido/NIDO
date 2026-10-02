@@ -259,6 +259,7 @@ function FilaAcciones({
               <InvitarBoton
                 key={accion}
                 id={prospecto.id}
+                necesitaParentesco={prospecto.necesita_parentesco}
                 aulas={aulas}
                 locale={locale}
                 disabled={disabled}
@@ -306,31 +307,65 @@ function FilaAcciones({
   )
 }
 
+/**
+ * Botón "Invitar". Hueco 1 (alta del 2.º hijo, opción A de Jose): pide el PARENTESCO solo si el
+ * tutor ya tiene cuenta pero ningún vínculo del que heredarlo — `necesitaParentesco`, calculado
+ * en la lista con la misma lectura que la acción — o si la acción lo exige al promover
+ * (`parentesco_requerido`: cuenta detectada por email en ese momento). En el resto de casos el
+ * parentesco se hereda (o lo da el tutor en el wizard) y el campo no aparece.
+ */
 function InvitarBoton({
   id,
+  necesitaParentesco,
   aulas,
   locale,
   disabled,
 }: {
   id: string
+  necesitaParentesco: boolean
   aulas: AulaConOcupacion[]
   locale: string
   disabled: boolean
 }) {
   const t = useTranslations('admin.admisiones')
+  const tParentesco = useTranslations('vinculo.parentesco')
   const tErrors = useTranslations()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [aulaId, setAulaId] = useState('')
+  // Revelado por la acción (`parentesco_requerido`) aunque la lista no lo marcara.
+  const [parentescoRevelado, setParentescoRevelado] = useState(false)
+  const [parentesco, setParentesco] = useState('')
+  const [descripcion, setDescripcion] = useState('')
   const [pending, start] = useTransition()
 
   const aulaSel = aulas.find((a) => a.aulaId === aulaId)
   const exceso = aulaSel ? superaCapacidad(aulaSel.ocupacion, aulaSel.capacidad) : false
+  const pideParentesco = necesitaParentesco || parentescoRevelado
+  const requiereDescripcion = parentesco === 'otro'
+  const listo =
+    !!aulaId && (!pideParentesco || (!!parentesco && (!requiereDescripcion || !!descripcion)))
+
+  const reset = () => {
+    setAulaId('')
+    setParentesco('')
+    setDescripcion('')
+  }
 
   const invitar = () =>
     start(async () => {
       try {
-        const r = await invitarAlAlta({ id, aulaId }, locale)
+        const r = await invitarAlAlta(
+          pideParentesco
+            ? {
+                id,
+                aulaId,
+                parentesco: parentesco as (typeof parentescoEnum.options)[number],
+                descripcionParentesco: requiereDescripcion ? descripcion : null,
+              }
+            : { id, aulaId },
+          locale
+        )
         if (r.success) {
           if (r.data.resultado === 'colision') {
             // La RPC detectó el email ya en el centro con otro perfil → avisar, NO invitar.
@@ -345,14 +380,22 @@ function InvitarBoton({
             // FIX A: el tutor ya tenía cuenta → hijo vinculado directamente (sin invitación).
             toast.success(t('vinculado_invitar'))
             setOpen(false)
-            setAulaId('')
+            reset()
             router.refresh()
             return
           }
           toast.success(t('invitado'))
           setOpen(false)
-          setAulaId('')
+          reset()
           router.refresh()
+        } else if (
+          r.error === 'admin.admisiones.anadirHijo.errors.parentesco_requerido' &&
+          !pideParentesco
+        ) {
+          // La cuenta del tutor apareció al promover (detección por email) y no tiene vínculo
+          // del que heredar: en vez de un callejón, se revela el campo para rellenar y reenviar.
+          setParentescoRevelado(true)
+          toast.error(t('invitar_dialog.parentesco_revelado'))
         } else {
           toast.error(tErrors(r.error))
         }
@@ -405,6 +448,45 @@ function InvitarBoton({
               </p>
             )}
 
+            {pideParentesco && (
+              <>
+                <p className="text-muted-foreground text-sm">
+                  {t('invitar_dialog.parentesco_ayuda')}
+                </p>
+                <label className="block space-y-1.5">
+                  <span className="text-sm font-medium">
+                    {t('completar_dialog.parentesco_label')}
+                  </span>
+                  <select
+                    className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
+                    value={parentesco}
+                    onChange={(e) => setParentesco(e.target.value)}
+                  >
+                    <option value="">{t('completar_dialog.parentesco_placeholder')}</option>
+                    {parentescoEnum.options.map((p) => (
+                      <option key={p} value={p}>
+                        {tParentesco(p)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {requiereDescripcion && (
+                  <label className="block space-y-1.5">
+                    <span className="text-sm font-medium">
+                      {t('completar_dialog.descripcion_label')}
+                    </span>
+                    <input
+                      type="text"
+                      maxLength={120}
+                      className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
+                      value={descripcion}
+                      onChange={(e) => setDescripcion(e.target.value)}
+                    />
+                  </label>
+                )}
+              </>
+            )}
+
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>
                 {t('cancel')}
@@ -412,7 +494,7 @@ function InvitarBoton({
               <Button
                 variant={exceso ? 'destructive' : 'default'}
                 onClick={invitar}
-                disabled={pending || !aulaId}
+                disabled={pending || !listo}
               >
                 {exceso ? t('invitar_dialog.confirmar_exceso') : t('invitar_dialog.invitar')}
               </Button>
