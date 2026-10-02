@@ -387,7 +387,7 @@ La policy de F5.6-B mantiene la condición en `USING` (filtra qué filas son vis
 - **Sin helpers**: la condición es trivial y sin lookups cross-tabla. No hay riesgo de recursión (ADR-0007) ni del gotcha MVCC (la SELECT policy no mira otras tablas).
 - **No se audita**: telemetría operativa, no contenido (igual que `lectura_*` en F5). Si en F6+ aparece compliance por entrega de notificaciones, se añadiría una tabla aparte (`notificaciones_push`) con su propio trigger.
 - **No se publica en Realtime**: los clientes no observan suscripciones; cada navegador conoce la suya por `pushManager.getSubscription()`.
-- **Service role bypass en el motor de envío**: `enviarPushANotificarUsuarios` lee suscripciones cross-user vía `createServiceClient()`. La auth del autor ya se verificó en la server action que lo invoca; el helper solo computa destinatarios y envía. Esto es coherente con el resto del proyecto: service role nunca se expone al cliente y se usa solo en helpers server-side claramente etiquetados.
+- **Service role bypass en el motor de envío**: `enviarPushANotificarUsuarios` lee suscripciones cross-user vía `createServiceRoleClient()` (`src/lib/supabase/admin.ts`; hasta F11-D era el `createServiceClient` cookie-bound, que con sesión actuaba como el usuario y entregaba a nadie). La auth del autor ya se verificó en la server action que lo invoca; el helper solo computa destinatarios y envía. Esto es coherente con el resto del proyecto: service role nunca se expone al cliente y se usa solo en helpers server-side claramente etiquetados.
 
 ## Recordatorios (Fase 6-C — modelo granular)
 
