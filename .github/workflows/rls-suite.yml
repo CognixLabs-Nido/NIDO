@@ -175,3 +175,6 @@ jobs:
           # 20261002140000_fix_rpc_criticas_anon (#293), aplicada: anon sin EXECUTE en las 10 RPCs
           # críticas y las claves de Vault solo para el dueño (rpc-criticas-anon.rls.test.ts).
           RPC_CRITICAS_ANON_APPLIED: '1'
+          # 20261002150000_fix_rpc_grupo_b_anon (#295), aplicada: anon sin EXECUTE en las 35 RPCs
+          # del grupo B (rpc-grupo-b-anon.rls.test.ts).
+          RPC_GRUPO_B_ANON_APPLIED: '1'
