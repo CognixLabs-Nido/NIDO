@@ -168,4 +168,4 @@ jobs:
           # Hasta entonces consent-imagen-tutor-legal.rls.test.ts se salta: sin la migración el
           # vínculo «autorizado» todavía puede otorgar/revocar por las RPCs y su firma genera
           # consentimiento, así que los casos saldrían rojos.
-          # CONSENT_IMAGEN_TUTOR_LEGAL_APPLIED: '1'
+          CONSENT_IMAGEN_TUTOR_LEGAL_APPLIED: '1'
