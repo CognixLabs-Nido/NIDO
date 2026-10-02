@@ -229,7 +229,12 @@ describe.skipIf(!MIGRATION_APPLIED)(
     })
 
     it.each(TABLAS)('anon lee %s: 0 filas y sin error (no evalúa helpers)', async (tabla) => {
-      const { data, error } = await anon.from(tabla).select('*').limit(1)
+      // Cliente sin tipar SOLO aquí: `from()` con la unión de 55 tablas revienta la instanciación
+      // de tipos (TS2589). Los nombres ya los valida el tipo `Tabla[]` de TABLAS.
+      const { data, error } = await (anon as unknown as SupabaseClient)
+        .from(tabla)
+        .select('*')
+        .limit(1)
       expect(error).toBeNull()
       expect(data).toEqual([])
     })
