@@ -941,7 +941,9 @@
         "exceso": "Has llegado al máximo admitido en el aula ({capacidad} alumnos). ¿Seguro que quieres añadir otro y exceder el límite permitido?",
         "confirmar_exceso": "Añadir igualmente",
         "invitar": "Invitar",
-        "sin_aulas": "No hay aulas configuradas en el curso activo."
+        "sin_aulas": "No hay aulas configuradas en el curso activo.",
+        "parentesco_ayuda": "Este tutor aún no tiene ningún vínculo del que heredar el parentesco: indica qué es del niño.",
+        "parentesco_revelado": "El tutor ya tiene cuenta pero ningún vínculo del que heredar el parentesco. Indícalo y vuelve a invitar."
       },
       "completar": "Completar (Dirección)",
       "reanudar": "Reanudar alta",

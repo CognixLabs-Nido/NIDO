@@ -11,6 +11,8 @@ import type { Database, Json } from '@/types/database'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
 
+import { buscarVinculoPrevio } from './vinculo-previo-tutor'
+
 type ServiceClient = SupabaseClient<Database>
 
 /** Retorno JSON de la RPC `crear_o_anadir_a_familia`. */
@@ -30,7 +32,7 @@ export interface VincularHijoTutorExistenteParams {
   nombreNino: string
   apellidosNino: string
   fechaNacimiento: string
-  /** Parentesco tecleado en el formulario (Completar lo trae; Invitar no) — fallback si no hay herencia. */
+  /** Parentesco tecleado en el formulario (Completar siempre; Invitar solo si no hay herencia) — fallback si no hay herencia. */
   parentescoForm?: Parentesco
   descripcionParentescoForm?: string | null
   locale: string
@@ -85,15 +87,10 @@ export async function vincularHijoATutorExistente(
 
   // 2. Parentesco del hijo NUEVO: hereda del vínculo previo del tutor (consistente entre
   //    hermanos); si no hay herencia, usa el del formulario; si tampoco, falla (sin default
-  //    silencioso). La query NO filtra `deleted_at`
-  //    a propósito (un vínculo archivado sigue diciendo la verdad del parentesco).
-  const { data: vinculoPrevio } = await service
-    .from('vinculos_familiares')
-    .select('parentesco, descripcion_parentesco')
-    .eq('usuario_id', params.tutorUsuarioId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  //    silencioso). La lectura vive en `buscarVinculoPrevio` (sin filtrar `deleted_at`, sin
+  //    acotar por centro), compartida con la lista de Admisiones para que su aviso
+  //    `necesita_parentesco` diga lo mismo que esta herencia.
+  const vinculoPrevio = await buscarVinculoPrevio(service, params.tutorUsuarioId)
   const resolucion = resolverParentesco(
     vinculoPrevio,
     params.parentescoForm,

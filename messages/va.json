@@ -941,7 +941,9 @@
         "exceso": "Has arribat al màxim admés en l'aula ({capacidad} xiquets). Segur que vols afegir-ne un altre i excedir el límit permés?",
         "confirmar_exceso": "Afegir igualment",
         "invitar": "Convidar",
-        "sin_aulas": "No hi ha aules configurades en el curs actiu."
+        "sin_aulas": "No hi ha aules configurades en el curs actiu.",
+        "parentesco_ayuda": "Este tutor encara no té cap vincle del qual heretar el parentiu: indica què és del xiquet.",
+        "parentesco_revelado": "El tutor ja té compte però cap vincle del qual heretar el parentiu. Indica'l i torna a convidar."
       },
       "completar": "Completar (Direcció)",
       "reanudar": "Reprendre alta",

@@ -941,7 +941,9 @@
         "exceso": "You've reached the maximum for this classroom ({capacidad} children). Are you sure you want to add another and exceed the limit?",
         "confirmar_exceso": "Add anyway",
         "invitar": "Invite",
-        "sin_aulas": "No classrooms configured for the active year."
+        "sin_aulas": "No classrooms configured for the active year.",
+        "parentesco_ayuda": "This guardian has no existing relationship to inherit yet: specify how they are related to the child.",
+        "parentesco_revelado": "The guardian already has an account but no relationship to inherit. Specify it and invite again."
       },
       "completar": "Complete (Management)",
       "reanudar": "Resume enrolment",

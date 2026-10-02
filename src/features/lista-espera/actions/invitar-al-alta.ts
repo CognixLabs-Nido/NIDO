@@ -162,8 +162,9 @@ export async function invitarAlAlta(
   if (tutorExistenteId) {
     // FIX A — el tutor YA tiene cuenta operativa: en vez de rechazar, vinculamos el nuevo hijo
     // a su familia del centro (o creamos familia nueva si no tiene aquí) SIN email ni
-    // invitación (ya tiene acceso) + push. `invitarAlAltaSchema` no trae parentesco → se hereda
-    // del vínculo previo del tutor (p. ej. su 1.er hijo); si no hubiera herencia, falla claro.
+    // invitación (ya tiene acceso) + push. El parentesco se hereda del vínculo previo del tutor
+    // (p. ej. su 1.er hijo); si no hay herencia, vale el que pidió el diálogo (solo lo pide en
+    // ese caso) y, si tampoco viene, falla con `parentesco_requerido` → el diálogo lo revela.
     const vinc = await vincularHijoATutorExistente(service, supabase, {
       tutorUsuarioId: tutorExistenteId,
       centroId,
@@ -171,6 +172,8 @@ export async function invitarAlAlta(
       nombreNino: prospecto.nombre_nino,
       apellidosNino: prospecto.apellidos_nino ?? '',
       fechaNacimiento,
+      parentescoForm: parsed.data.parentesco,
+      descripcionParentescoForm: parsed.data.descripcionParentesco ?? null,
       locale,
     })
     if (!vinc.success) return fail(vinc.error)
