@@ -2,15 +2,24 @@ name: RLS suite (BD efímera)
 
 # Suite RLS/audit contra una BD Supabase EFÍMERA que se levanta en el propio runner con
 # `supabase start` y se construye con las migraciones del repo (las del PR incluidas).
-# Medido en F0 (2-oct-2026): job ~6 min frente a ~37 min contra el remoto compartido.
+# Es el check de RLS de los PRs (F2, 2-oct-2026).
 #
 # QUÉ VALIDA CADA SUITE:
 #   - Esta (rls-local.yml) valida el REPO: el esquema que sale de aplicar las migraciones en
 #     limpio, con las del PR dentro. Por eso TODOS los flags `*_APPLIED` van a '1': no hay
 #     que esperar a que Jose aplique la migración para que su test corra; corre en su PR.
-#   - La remota (rls-suite.yml) valida el REMOTO: lo que de verdad está aplicado allí. Es la
-#     red de seguridad contra una migración aplicada a mano distinta del fichero.
-#   En F1 corren las DOS en cada PR para compararlas; en F2 la remota pasa a nightly + manual.
+#   - La remota (rls-suite.yml, nightly + manual) valida el REMOTO: lo que de verdad está
+#     aplicado allí. Es la red de seguridad contra una migración aplicada a mano distinta
+#     del fichero. En F1 (PR #287) las dos dieron el mismo resultado: 706/706.
+#
+# SHARDS (F3): la suite se reparte en N jobs con `vitest --shard=i/N`. Cada job levanta SU
+# PROPIA BD (otro runner, otro Docker): los shards no comparten ningún estado, así que los
+# tests que miran estado global (listUsers del wipe, retención, audit_log sin filtro de
+# centro) no se pisan entre shards. DENTRO de cada shard la suite sigue en serie
+# (`fileParallelism: false`); paralelizar ahí exigiría auditar antes esos tests.
+# El job final `RLS + audit (BD efímera)` suma los informes y falla si falta o sobra algún
+# fichero, si alguno se repite entre shards o si algún test no pasa. Es el check estable
+# (no cambia de nombre al cambiar N) que puede ir como obligatorio en branch protection.
 #
 # DIFERENCIA CONOCIDA CON EL REMOTO (sin efecto): el bucket `cartilla-vacunas` existe en esta
 # BD y no en el remoto. La migración 20260620120000_phase11_f_teardown_cartilla_acuse borra
@@ -18,7 +27,7 @@ name: RLS suite (BD efímera)
 # deja borrar buckets por SQL); en el remoto se hizo, aquí no. Está vacío, sin policies, y
 # ningún test lo usa. El diff de catálogo de F0 no encontró ninguna otra diferencia.
 #
-# Cada run tiene su propia BD → no compite con nada: sin el grupo `rls-suite` de
+# Cada run tiene sus propias BD → no compite con nada: sin el grupo `rls-suite` de
 # concurrency; solo se cancela el run anterior del mismo PR.
 on:
   pull_request:
@@ -30,10 +39,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  rls-local:
-    name: RLS + audit (BD efímera)
+  shard:
+    name: RLS shard ${{ matrix.shard }}/3
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # Si cambias el número de shards, cambia también el `/3` de `name` y de `--shard`.
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v5
 
@@ -68,7 +82,7 @@ jobs:
 
       - run: npm ci
 
-      - name: RLS + audit tests
+      - name: RLS + audit tests (shard ${{ matrix.shard }}/3)
         run: |
           set -a; . <(supabase status -o env); set +a
           export NEXT_PUBLIC_SUPABASE_URL="$API_URL"
@@ -80,4 +94,68 @@ jobs:
           flags=$(grep -rhoE 'process\.env\.[A-Z0-9_]+_APPLIED' src/test | sed 's/process\.env\.//' | sort -u)
           for f in $flags; do export "$f=1"; done
           echo "Flags activados ($(echo "$flags" | wc -l)):" $flags
-          npm run test:rls
+          npx vitest run --project rls --shard=${{ matrix.shard }}/3 \
+            --reporter=default --reporter=json --outputFile.json=rls-shard-${{ matrix.shard }}.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rls-shard-${{ matrix.shard }}
+          path: rls-shard-${{ matrix.shard }}.json
+          if-no-files-found: ignore
+
+  resumen:
+    name: RLS + audit (BD efímera)
+    needs: shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: rls-shard-*
+          merge-multiple: true
+
+      # La suma de los shards debe cubrir EXACTAMENTE los ficheros del proyecto `rls`
+      # (vitest.config.ts: src/test/rls/** y src/test/audit/**), cada uno una sola vez.
+      - name: Sumar shards
+        env:
+          SHARDS_RESULT: ${{ needs.shard.result }}
+        run: |
+          find src/test/rls src/test/audit -name '*.test.ts' | sort > esperados.txt
+          node - <<'EOF'
+          const fs = require('fs')
+          const path = require('path')
+          const esperados = fs.readFileSync('esperados.txt', 'utf8').trim().split('\n')
+          const informes = fs.readdirSync('.').filter((f) => /^rls-shard-\d+\.json$/.test(f)).sort()
+          let tests = 0, pasados = 0, fallidos = 0, saltados = 0
+          const vistos = []
+          for (const f of informes) {
+            const r = JSON.parse(fs.readFileSync(f, 'utf8'))
+            const ficheros = r.testResults.map((t) => path.relative(process.cwd(), t.name))
+            console.log(`${f}: ${ficheros.length} ficheros, ${r.numTotalTests} tests ` +
+              `(${r.numPassedTests} ok, ${r.numFailedTests} fallidos, ${r.numPendingTests} saltados)`)
+            tests += r.numTotalTests; pasados += r.numPassedTests
+            fallidos += r.numFailedTests; saltados += r.numPendingTests
+            vistos.push(...ficheros)
+          }
+          const repetidos = vistos.filter((f, i) => vistos.indexOf(f) !== i)
+          const faltan = esperados.filter((f) => !vistos.includes(f))
+          const sobran = vistos.filter((f) => !esperados.includes(f))
+          console.log(`TOTAL: ${informes.length} shards, ${vistos.length} ficheros ` +
+            `(esperados ${esperados.length}), ${tests} tests: ${pasados} ok, ` +
+            `${fallidos} fallidos, ${saltados} saltados`)
+          const errores = []
+          if (process.env.SHARDS_RESULT !== 'success') errores.push(`shards: ${process.env.SHARDS_RESULT}`)
+          if (informes.length !== 3) errores.push(`informes de shard: ${informes.length} de 3`)
+          if (repetidos.length) errores.push(`repetidos entre shards: ${repetidos.join(', ')}`)
+          if (faltan.length) errores.push(`ficheros sin correr: ${faltan.join(', ')}`)
+          if (sobran.length) errores.push(`ficheros inesperados: ${sobran.join(', ')}`)
+          if (fallidos || pasados !== tests) errores.push(`tests no pasados: ${tests - pasados}`)
+          if (errores.length) {
+            console.error('FALLO:\n- ' + errores.join('\n- '))
+            process.exit(1)
+          }
+          EOF
