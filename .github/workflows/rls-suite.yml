@@ -9,6 +9,10 @@ name: RLS suite (remote DB)
 # - Serialización ENTRE runs: el bloque `concurrency` (group global + cancel-in-progress
 #   false) encola cualquier run solapado → NUNCA hay dos runs tocando la BD a la vez.
 
+# CONVIVE con rls-local.yml (F1, 2-oct-2026): la misma suite contra una BD efímera
+# construida desde el repo, ~6 min. En F1 corren las dos en cada PR para compararlas; en
+# F2 esta pasa a solo nightly + manual (red de seguridad que valida el REMOTO).
+#
 # DISPARADORES (D-2):
 #   - pull_request → corre AUTOMÁTICAMENTE en cada PR a main. Antes dependía de que
 #     alguien lanzase la suite a mano en cada PR (se hizo 20+ veces); ese agujero se cierra.
@@ -46,11 +50,11 @@ on:
 # que ya corre (cancel-in-progress: false) para no dejar la BD a medias.
 #
 # REGLA (no romper): TODO workflow que ejecute el proyecto `rls` (`npm run test:rls` o
-# `vitest run --project rls`) escribe fixtures en el remoto compartido y DEBE ir bajo
-# este mismo bloque `concurrency: { group: rls-suite, cancel-in-progress: false }`. Hoy
-# el único ejecutor es este workflow: ci-main.yml y ci-pr.yml corren solo `--project unit`
-# (sin BD) a propósito, por eso NO se les mete en este grupo (serializaría lo que no
-# compite). Si algún día otro workflow corre rls, se une a este grupo — no a uno nuevo.
+# `vitest run --project rls`) CONTRA EL REMOTO COMPARTIDO escribe fixtures allí y DEBE ir
+# bajo este mismo bloque `concurrency: { group: rls-suite, cancel-in-progress: false }`.
+# ci-main.yml y ci-pr.yml corren solo `--project unit` (sin BD) a propósito, por eso NO se
+# les mete en este grupo (serializaría lo que no compite). EXCEPCIÓN: rls-local.yml corre
+# `rls` contra una BD efímera propia del runner (no toca el remoto) → fuera del grupo.
 #
 # RESIDUAL (fuera del alcance de GitHub concurrency): lanzar `npm run test:rls` EN LOCAL
 # mientras puede correr el nightly colisiona con él (dos wipes+writes sobre el mismo
