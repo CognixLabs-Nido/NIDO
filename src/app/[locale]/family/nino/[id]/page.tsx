@@ -16,6 +16,8 @@ import { getTranslations } from 'next-intl/server'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
+import { AltaEnCursoCard } from '@/features/alta/components/AltaEnCursoCard'
+import { estadoAltaFamilia } from '@/features/alta/lib/gate-familia'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
@@ -42,8 +44,9 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const { id, locale } = await params
   const { fecha: fechaQuery } = await searchParams
 
-  // El gate del alta (P3c) vive ahora en `family/layout.tsx` (cubre todas las
-  // sub-rutas de /family); aquí no se duplica.
+  // El gate del alta (P3c) es per-hijo: el layout solo redirige si no hay ningún hijo
+  // activo. Si ESTE hijo tiene el alta en curso, la ficha (que asume matrícula activa)
+  // se sustituye por la tarjeta «alta en curso» con acceso a su asistente.
   const t = await getTranslations('family.nino')
   const tNav = await getTranslations('family.nav')
   const tTabs = await getTranslations('family.nino.tabs')
@@ -52,6 +55,22 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const tFotos = await getTranslations('fotos.nino')
   const nino = await getNinoById(id)
   if (!nino) notFound()
+
+  const { ninosEnAlta } = await estadoAltaFamilia()
+  if (ninosEnAlta.includes(id)) {
+    return (
+      <div className="space-y-6">
+        <Link
+          href={`/${locale}/family`}
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium"
+        >
+          <ChevronLeftIcon className="size-4" />
+          {tNav('dashboard')}
+        </Link>
+        <AltaEnCursoCard ninoId={id} nombre={nino.nombre} locale={locale} />
+      </div>
+    )
+  }
 
   // Default: hoy hora Madrid. Si llega ?fecha=YYYY-MM-DD válida, la usamos.
   const fecha = fechaQuery && /^\d{4}-\d{2}-\d{2}$/.test(fechaQuery) ? fechaQuery : hoyMadrid()

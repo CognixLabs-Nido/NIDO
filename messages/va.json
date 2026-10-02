@@ -1219,6 +1219,12 @@
       "ver_ficha": "Veure fitxa",
       "datos_pendientes": "Dades pendents"
     },
+    "alta_en_curso": {
+      "etiqueta": "Alta en curs · continuar",
+      "titulo": "L'alta de {nombre} està en curs",
+      "descripcion": "Completa l'assistent d'alta per a activar la seua matrícula. Mentrestant, la resta del teu tauler continua disponible.",
+      "cta": "Continuar l'alta"
+    },
     "nino": {
       "basicos": "Dades bàsiques",
       "fecha_nacimiento": "Data de naixement",

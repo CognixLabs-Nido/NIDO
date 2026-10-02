@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { AgendaBadge } from '@/features/agenda/components/AgendaBadge'
 import { contarInvitacionesPendientes } from '@/features/agenda/queries/contar-invitaciones-pendientes'
-import { primerNinoConAltaPendiente } from '@/features/alta/lib/gate-familia'
+import { destinoGateFamilia, estadoAltaFamilia } from '@/features/alta/lib/gate-familia'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
@@ -31,12 +31,13 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
     redirect(`/${locale}/forbidden`)
   }
 
-  // Gate del alta tutor-driven (P3c) a nivel de LAYOUT: cubre TODAS las sub-rutas de
-  // `/family/*` de una vez. Mientras un hijo del que soy tutor legal tenga matrícula
-  // no-`activa`, el tutor va al asistente de alta (`/[locale]/alta/[ninoId]`, fuera de
-  // este segmento → layout focalizado sin nav, sin bucle con este gate). admin /
-  // autorizado (sin vínculo tutor_legal) → null → sin redirect.
-  const ninoPendiente = await primerNinoConAltaPendiente()
+  // Gate del alta tutor-driven (P3c) a nivel de LAYOUT, POR HIJO. Solo se manda directo
+  // al asistente (`/[locale]/alta/[ninoId]`, fuera de este segmento → sin bucle) cuando el
+  // tutor legal NO tiene ningún hijo activo y sí uno en alta (primer aterrizaje). Con un
+  // hijo activo el panel se ve entero: el hermano en alta sale marcado en el panel y su
+  // ficha muestra «alta en curso». El rollover (activa + pendiente del curso siguiente)
+  // no cuenta como alta. admin / autorizado (sin vínculo tutor_legal) → sin redirect.
+  const ninoPendiente = destinoGateFamilia(await estadoAltaFamilia())
   if (ninoPendiente) redirect(`/${locale}/alta/${ninoPendiente}`)
 
   const user = await getCurrentUser()
