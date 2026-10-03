@@ -1,4 +1,4 @@
-'use server'
+import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -22,6 +22,9 @@ export interface ResultadoPurga {
 
 /**
  * Barrido de purga del derecho al olvido (D: RPC manual ahora; cron pg_cron en A6).
+ * Solo backend (`server-only`, NO server action, D1): lo importa como módulo la ruta del
+ * cron (`api/cron/retencion`, tras `CRON_SECRET`). Con `'use server'` cualquiera podía
+ * dispararlo por POST.
  * Para cada solicitud cuya gracia ha vencido, ejecuta la purga del sujeto y la
  * marca como `purgado_en`. Idempotente y REINTENTABLE: las partes no-transaccionales
  * (Storage + `auth.users`, Decisión B) van ANTES del commit SQL, que es el punto

@@ -23,6 +23,34 @@ export function prefijoPublicacion(
   return `${centroId}/${aulaId}/${publicacionId}`
 }
 
+/**
+ * R4 — ¿la ruta es de la publicación? Tiene que ser exactamente `{prefijo}/<nombre>.jpg`
+ * con un único segmento final de [A-Za-z0-9_-] (sin `/` ni `..`), que es lo que construye
+ * `rutasFotoNueva`. El `prefijo` sale de la publicación de la FILA (`prefijoPublicacion`),
+ * nunca del input. Espejo del trigger `media_validar_ruta_trg`.
+ */
+export function rutaDeLaPublicacion(path: string, prefijo: string): boolean {
+  const base = `${prefijo}/`
+  return path.startsWith(base) && /^[A-Za-z0-9_-]+\.jpg$/.test(path.slice(base.length))
+}
+
+/**
+ * Rutas de unas medias (original + miniatura) que se pueden borrar en Storage: solo las de
+ * la publicación (`rutaDeLaPublicacion`). Sin prefijo (publicación no resuelta) no se borra
+ * nada. Devuelve también cuántas se descartaron por ajenas, para registrarlo.
+ */
+export function rutasBorrables(
+  medias: { path: string | null; path_miniatura: string | null }[],
+  prefijo: string | null
+): { rutas: string[]; ajenas: number } {
+  const todas = medias
+    .flatMap((m) => [m.path, m.path_miniatura])
+    .filter((p): p is string => typeof p === 'string' && p.length > 0)
+  if (!prefijo) return { rutas: [], ajenas: todas.length }
+  const rutas = todas.filter((p) => rutaDeLaPublicacion(p, prefijo))
+  return { rutas, ajenas: todas.length - rutas.length }
+}
+
 /** Genera el par de rutas (original + miniatura) de una foto nueva, con uuid propio. */
 export function rutasFotoNueva(prefijo: string): { original: string; miniatura: string } {
   const id = randomUUID()

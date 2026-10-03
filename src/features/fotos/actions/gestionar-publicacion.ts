@@ -8,7 +8,7 @@ import { logger } from '@/shared/lib/logger'
 
 import { getAulaById } from '@/features/aulas/queries/get-aulas'
 
-import { borrarObjetos } from '../lib/storage'
+import { borrarObjetos, prefijoPublicacion, rutasBorrables } from '../lib/storage'
 import {
   crearPublicacionSchema,
   editarPublicacionSchema,
@@ -128,7 +128,13 @@ export async function eliminarPublicacion(
   if (!parsed.success) return fail('fotos.errors.borrado_fallo')
   const { publicacion_id } = parsed.data
 
-  // Rutas de los objetos a limpiar (visibles para el autor/admin vía RLS de media).
+  // Prefijo de Storage de la publicación (de la FILA) y rutas de los objetos a limpiar
+  // (visibles para el autor/admin vía RLS). Se leen ANTES de borrar la fila (CASCADE).
+  const { data: pub } = await supabase
+    .from('publicaciones')
+    .select('centro_id, aula_id')
+    .eq('id', publicacion_id)
+    .maybeSingle()
   const { data: medias } = await supabase
     .from('media')
     .select('path, path_miniatura')
@@ -146,14 +152,15 @@ export async function eliminarPublicacion(
   }
   if (!count) return fail('fotos.errors.no_autorizado')
 
-  // La fila se borró (CASCADE limpió media/etiquetas). Ahora los objetos.
-  const paths = (medias ?? []).flatMap((m) => [m.path, m.path_miniatura])
-  if (paths.length > 0) {
+  // La fila se borró (CASCADE limpió media/etiquetas). Ahora los objetos: solo los de esta
+  // publicación (R4) — una ruta ajena en una fila `media` NO se borra con service role.
+  const prefijo = pub ? prefijoPublicacion(pub.centro_id, pub.aula_id, publicacion_id) : null
+  const { rutas, ajenas } = rutasBorrables(medias ?? [], prefijo)
+  if (ajenas > 0)
+    logger.warn('eliminarPublicacion: rutas ajenas a la publicación, no se borran', ajenas)
+  if (rutas.length > 0) {
     const service = createServiceRoleClient()
-    await borrarObjetos(
-      service,
-      paths.filter((p): p is string => typeof p === 'string')
-    )
+    await borrarObjetos(service, rutas)
   }
 
   revalidarFotos()
@@ -180,7 +187,7 @@ export async function eliminarMedia(
 
   const { data: media } = await supabase
     .from('media')
-    .select('path, path_miniatura')
+    .select('path, path_miniatura, publicacion_id, publicaciones(centro_id, aula_id)')
     .eq('id', media_id)
     .maybeSingle()
 
@@ -197,11 +204,18 @@ export async function eliminarMedia(
   if (!count) return fail('fotos.errors.no_autorizado')
 
   if (media) {
-    const service = createServiceRoleClient()
-    await borrarObjetos(
-      service,
-      [media.path, media.path_miniatura].filter((p): p is string => typeof p === 'string')
-    )
+    // Solo las rutas de la publicación de la fila (R4); una ruta ajena NO se borra.
+    const pub = media.publicaciones
+    const prefijo = pub
+      ? prefijoPublicacion(pub.centro_id, pub.aula_id, media.publicacion_id)
+      : null
+    const { rutas, ajenas } = rutasBorrables([media], prefijo)
+    if (ajenas > 0)
+      logger.warn('eliminarMedia: rutas ajenas a la publicación, no se borran', ajenas)
+    if (rutas.length > 0) {
+      const service = createServiceRoleClient()
+      await borrarObjetos(service, rutas)
+    }
   }
 
   revalidarFotos()
