@@ -184,3 +184,6 @@ jobs:
           # 20261003120000_fix_cambios_pendientes_ruta_documento (#300), aplicada: CHECK que exige que
           # payload.path del documento sea {centro_id}/{nino_id}/<nombre>.pdf (cambios-pendientes-ruta.rls.test.ts).
           CAMBIOS_PENDIENTES_RUTA_APPLIED: '1'
+          # 20261003140000_fix_media_ruta_publicacion (#302), aplicada: trigger que exige que path y
+          # path_miniatura de media sean {centro}/{aula}/{publicacion}/<nombre>.jpg (media-ruta.rls.test.ts).
+          MEDIA_RUTA_APPLIED: '1'
