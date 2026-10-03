@@ -1,4 +1,4 @@
-'use server'
+import 'server-only'
 
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { logger } from '@/shared/lib/logger'
@@ -16,6 +16,10 @@ import { ok, type ActionResult, type ResultadoBarrido } from '../types'
  * `dryRun` (D4): por defecto SOLO registra lo que purgaría ('simulado'), sin
  * borrar. Tras verificar el predicado en producción se pasa a borrado autónomo
  * ('purgado') con `RETENCION_DRY_RUN=false`.
+ *
+ * Solo backend (`server-only`, NO server action, D1): lo importa como módulo la ruta del
+ * cron (`api/cron/retencion`, tras `CRON_SECRET`). Con `'use server'` cualquiera podía
+ * llamarlo por POST con `dryRun: false` (borrado irreversible).
  *
  * Idempotente y reintentable: el predicado se re-deriva en cada pasada y
  * `storage.remove` es no-op si el objeto ya no existe; un fallo aislado no aborta

@@ -26,13 +26,19 @@ export interface FotosPendientesNino {
  * Devuelve cada etiqueta sin resolver (`resuelta_en IS NULL`) con su miniatura firmada y
  * el nº de niños distintos etiquetados en su publicación (para avisar de que BORRAR la
  * publicación afecta a los demás). RLS: el admin ve las etiquetas/medias/publicaciones de
- * su centro. Devuelve `null` si el niño no existe / no visible.
+ * su centro. Devuelve `null` si quien llama no es admin del centro (D3) o si el niño no existe
+ * / no es de ese centro.
  */
 export async function getFotosPendientesNino(
   ninoId: string,
   centroId: string
 ): Promise<FotosPendientesNino | null> {
   const supabase = await createClient()
+
+  // D3 — autorización en la propia query, no solo en el layout de admin: solo la dirección
+  // del centro del niño (el niño se filtra por ese mismo `centroId` justo abajo).
+  const { data: esAdmin } = await supabase.rpc('es_admin', { p_centro_id: centroId })
+  if (esAdmin !== true) return null
 
   const { data: nino } = await supabase
     .from('ninos')

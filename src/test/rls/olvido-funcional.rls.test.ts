@@ -331,8 +331,8 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS olvido funcional — F11-A4', () => {
         .single()
       return data!.id
     }
-    const exclusiva = await mkMedia(`${centro.id}/excl-${victima}.jpg`)
-    const compartida = await mkMedia(`${centro.id}/comp-${victima}.jpg`)
+    const exclusiva = await mkMedia(`${centro.id}/${aula.id}/${pub!.id}/excl-${victima}.jpg`)
+    const compartida = await mkMedia(`${centro.id}/${aula.id}/${pub!.id}/comp-${victima}.jpg`)
     await serviceClient.from('media_etiquetas').insert([
       { media_id: exclusiva, nino_id: victima, centro_id: centro.id },
       { media_id: compartida, nino_id: victima, centro_id: centro.id },

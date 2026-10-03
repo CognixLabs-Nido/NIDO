@@ -33,9 +33,12 @@ export async function invitarProfe(
   input: InvitarProfeInput,
   locale: string = 'es'
 ): Promise<ActionResult<{ invitationId: string }>> {
+  const admin = await centrosAdminDelLlamador()
+  if (!admin.success) return fail(admin.error)
+
   const service = createServiceRoleClient()
   const r = await invitarProfeCore(
-    { serviceClient: service, sendInvitationFn: sendInvitation },
+    { serviceClient: service, sendInvitationFn: sendInvitation, centrosAdmin: admin.data },
     input,
     locale
   )
@@ -43,8 +46,33 @@ export async function invitarProfe(
   return r
 }
 
+/**
+ * R5 — sesión + centros donde quien llama es admin, ANTES de cualquier lectura con service
+ * client. Sin sesión o sin ningún rol admin se rechaza sin haber leído nada; con ellos, toda
+ * lectura service-role se acota a esos centros (`.in('centro_id', …)`), así que un uuid ajeno
+ * y uno inexistente dan la misma respuesta (sin oráculo "existe / tiene coordinadora").
+ * Lee los roles con el cliente del usuario (RLS: los suyos).
+ */
+async function centrosAdminDelLlamador(): Promise<ActionResult<string[]>> {
+  const supabase = await createClient()
+  const { data: userRes } = await supabase.auth.getUser()
+  if (!userRes.user) return fail('auth.invitation.errors.unauthenticated')
+
+  const { data: roles } = await supabase
+    .from('roles_usuario')
+    .select('centro_id')
+    .eq('usuario_id', userRes.user.id)
+    .eq('rol', 'admin')
+    .is('deleted_at', null)
+  const centros = (roles ?? []).map((r) => r.centro_id)
+  if (centros.length === 0) return fail('auth.invitation.errors.forbidden')
+  return ok(centros)
+}
+
 interface InvitarProfeDeps {
   serviceClient: SupabaseClient<Database>
+  /** Centros donde quien llama es admin (`centrosAdminDelLlamador`, R5). */
+  centrosAdmin: string[]
   sendInvitationFn: (
     input: SendInvitationInput,
     locale: string
@@ -61,14 +89,17 @@ export async function invitarProfeCore(
   if (!parsed.success) {
     return fail(parsed.error.issues[0]?.message ?? 'auth.validation.invalid')
   }
-  const { serviceClient, sendInvitationFn } = deps
+  const { serviceClient, sendInvitationFn, centrosAdmin } = deps
+  if (centrosAdmin.length === 0) return fail('auth.invitation.errors.forbidden')
 
   // 1. Derivar el centro del aula (y verificar que existe). No se pide centro en
-  //    el input: se deriva del aula para no fiarse del cliente.
+  //    el input: se deriva del aula para no fiarse del cliente. Acotado a los centros
+  //    donde quien llama es admin (R5): un aula ajena = inexistente.
   const { data: aula } = await serviceClient
     .from('aulas')
     .select('centro_id')
     .eq('id', parsed.data.aulaId)
+    .in('centro_id', centrosAdmin)
     .is('deleted_at', null)
     .maybeSingle()
   if (!aula) return fail('aula.errors.no_encontrada')
@@ -124,18 +155,39 @@ export async function reenviarInvitacionProfe(
   invitationId: string,
   locale: string = 'es'
 ): Promise<ActionResult<void>> {
+  const admin = await centrosAdminDelLlamador()
+  if (!admin.success) return fail(admin.error)
+
   const service = createServiceRoleClient()
-  const { data: inv } = await service
+  return reenviarInvitacionProfeCore(
+    { serviceClient: service, sendInvitationFn: sendInvitation, centrosAdmin: admin.data },
+    invitationId,
+    locale
+  )
+}
+
+/** Núcleo testeable del reenvío (cliente/colaboradores/centros admin inyectables). */
+export async function reenviarInvitacionProfeCore(
+  deps: InvitarProfeDeps,
+  invitationId: string,
+  locale: string
+): Promise<ActionResult<void>> {
+  const { serviceClient, sendInvitationFn, centrosAdmin } = deps
+  if (centrosAdmin.length === 0) return fail('auth.invitation.errors.forbidden')
+
+  // Acotado a los centros donde quien llama es admin (R5): una invitación ajena = inexistente.
+  const { data: inv } = await serviceClient
     .from('invitaciones')
     .select('email, centro_id, aula_id, rol_objetivo, accepted_at, rejected_at')
     .eq('id', invitationId)
+    .in('centro_id', centrosAdmin)
     .maybeSingle()
 
   if (!inv || inv.rol_objetivo !== 'profe' || inv.accepted_at || inv.rejected_at) {
     return fail('auth.invitation.errors.invalid')
   }
 
-  const r = await sendInvitation(
+  const r = await sendInvitationFn(
     {
       email: inv.email,
       rolObjetivo: 'profe',
@@ -157,40 +209,35 @@ export async function reenviarInvitacionProfe(
  * dedup de sendInvitation no la reutiliza (un re-invite crea fila nueva).
  */
 export async function revocarInvitacionProfe(invitationId: string): Promise<ActionResult<void>> {
-  const supabase = await createClient()
-  const { data: userRes } = await supabase.auth.getUser()
-  if (!userRes.user) return fail('auth.invitation.errors.unauthenticated')
-
-  const { data: roles } = await supabase
-    .from('roles_usuario')
-    .select('rol, centro_id')
-    .eq('usuario_id', userRes.user.id)
-    .is('deleted_at', null)
-  const esAdminDe = (centroId: string) =>
-    !!roles?.some((r) => r.centro_id === centroId && r.rol === 'admin')
+  const admin = await centrosAdminDelLlamador()
+  if (!admin.success) return fail(admin.error)
 
   const service = createServiceRoleClient()
-  const r = await revocarInvitacionProfeCore(service, invitationId, esAdminDe)
+  const r = await revocarInvitacionProfeCore(service, invitationId, admin.data)
   if (r.success) revalidatePath('/[locale]/admin/personal', 'page')
   return r
 }
 
-/** Núcleo testeable de la revocación (cliente + predicado de admin inyectables). */
+/** Núcleo testeable de la revocación (cliente + centros admin de quien llama inyectables). */
 export async function revocarInvitacionProfeCore(
   serviceClient: SupabaseClient<Database>,
   invitationId: string,
-  esAdminDe: (centroId: string) => boolean
+  centrosAdmin: string[]
 ): Promise<ActionResult<void>> {
+  if (centrosAdmin.length === 0) return fail('auth.invitation.errors.forbidden')
+
+  // Acotado a los centros donde quien llama es admin (R5): una invitación ajena = inexistente.
   const { data: inv } = await serviceClient
     .from('invitaciones')
     .select('id, centro_id, rol_objetivo, accepted_at, rejected_at')
     .eq('id', invitationId)
+    .in('centro_id', centrosAdmin)
     .maybeSingle()
 
   if (!inv || inv.rol_objetivo !== 'profe' || inv.accepted_at || inv.rejected_at) {
     return fail('auth.invitation.errors.invalid')
   }
-  if (!esAdminDe(inv.centro_id)) return fail('auth.invitation.errors.forbidden')
+  if (!centrosAdmin.includes(inv.centro_id)) return fail('auth.invitation.errors.forbidden')
 
   await serviceClient
     .from('invitaciones')
