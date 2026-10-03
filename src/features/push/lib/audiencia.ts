@@ -117,7 +117,15 @@ export async function destinatariosPushDeAnuncio(
 
   let aulasObjetivo: string[] = []
   if (anuncio.ambito === 'aula' && anuncio.aula_id) {
-    aulasObjetivo = [anuncio.aula_id]
+    // R3 (multi-centro): el aula tiene que ser del centro del anuncio. Si no lo es, nadie
+    // recibe el push (las familias de un aula de OTRO centro nunca).
+    const { data: aula } = await supabase
+      .from('aulas')
+      .select('id')
+      .eq('id', anuncio.aula_id)
+      .eq('centro_id', anuncio.centro_id)
+      .maybeSingle()
+    aulasObjetivo = aula ? [aula.id] : []
   } else if (anuncio.ambito === 'centro') {
     const { data: aulas } = await supabase
       .from('aulas')

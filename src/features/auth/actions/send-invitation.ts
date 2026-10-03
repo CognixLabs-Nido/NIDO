@@ -44,6 +44,29 @@ export async function sendInvitation(
   }
 
   const service = createServiceRoleClient()
+
+  // R2 (multi-centro): el niño y el aula de la invitación tienen que ser del centro objetivo.
+  // Un admin del centro A no ata una invitación a un niño o un aula del centro B (al aceptar,
+  // crearía el vínculo / la asignación en el otro centro).
+  if (parsed.data.ninoId) {
+    const { data: nino } = await service
+      .from('ninos')
+      .select('id')
+      .eq('id', parsed.data.ninoId)
+      .eq('centro_id', parsed.data.centroId)
+      .maybeSingle()
+    if (!nino) return fail('auth.invitation.errors.forbidden')
+  }
+  if (parsed.data.aulaId) {
+    const { data: aula } = await service
+      .from('aulas')
+      .select('id')
+      .eq('id', parsed.data.aulaId)
+      .eq('centro_id', parsed.data.centroId)
+      .maybeSingle()
+    if (!aula) return fail('auth.invitation.errors.forbidden')
+  }
+
   const expiresAt = new Date(Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString()
 
   // Tipo de vínculo a crear al aceptar (auto-vínculo). Coherente con el CHECK de BD:
