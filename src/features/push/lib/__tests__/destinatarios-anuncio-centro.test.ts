@@ -53,7 +53,9 @@ vi.mock('@/lib/supabase/admin', () => ({
       b.maybeSingle = () => b
       b.then = (resolve: (v: unknown) => unknown) => {
         if (tabla === 'aulas') {
-          const ok = CENTRO_DE_AULA[String(st.id)] === st.centro
+          // Como la BD real: la fila existe por id; el filtro de centro (si lo hay) la acota.
+          const existe = String(st.id) in CENTRO_DE_AULA
+          const ok = existe && (st.centro === null || CENTRO_DE_AULA[String(st.id)] === st.centro)
           return resolve({ data: ok ? { id: st.id } : null, error: null })
         }
         if (tabla === 'vinculos_familiares') return resolve({ data: VINCULOS, error: null })
