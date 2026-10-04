@@ -9,19 +9,24 @@ import type { EntidadCambio } from '../schemas'
 type Client = SupabaseClient<Database>
 
 /**
- * F11-G-3 — ¿el alta del niño YA está validada por la dirección? (matrícula vigente
- * `'activa'`). Es la frontera de la decisión J: con el alta validada, las ediciones de datos
- * sensibles NO se aplican directas, sino que van a la cola `cambios_pendientes`.
+ * F11-G-3 — ¿el alta del niño YA está validada por la dirección? (existe una matrícula
+ * vigente `'activa'`). Es la frontera de la decisión J: con el alta validada, las ediciones de
+ * datos sensibles NO se aplican directas, sino que van a la cola `cambios_pendientes`.
+ *
+ * PR-D: misma definición que `alta_validada_de_nino` en BD, que las RPC de escritura del
+ * tutor aplican como frontera. Con varias matrículas vigentes (multicurso, una por curso)
+ * cuenta si ALGUNA es `activa`; antes `maybeSingle` daba error con dos filas → "no validada".
  */
 export async function altaValidada(supabase: Client, ninoId: string): Promise<boolean> {
   const { data } = await supabase
     .from('matriculas')
-    .select('estado')
+    .select('id')
     .eq('nino_id', ninoId)
+    .eq('estado', 'activa')
     .is('fecha_baja', null)
     .is('deleted_at', null)
-    .maybeSingle()
-  return data?.estado === 'activa'
+    .limit(1)
+  return (data?.length ?? 0) > 0
 }
 
 /**

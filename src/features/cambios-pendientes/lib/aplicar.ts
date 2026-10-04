@@ -21,7 +21,7 @@ import {
   type EntidadCambio,
 } from '../schemas'
 
-type Service = SupabaseClient<Database>
+type Client = SupabaseClient<Database>
 
 export interface CambioRow {
   entidad: string
@@ -49,24 +49,28 @@ function exigirRutaDelNino(path: string, row: CambioRow): void {
 }
 
 /** Resuelve la familia del niño (NOT NULL desde F-2b-3); lanza si no la encuentra. */
-async function familiaDeNino(service: Service, ninoId: string): Promise<string> {
-  const { data: nino } = await service
-    .from('ninos')
-    .select('familia_id')
-    .eq('id', ninoId)
-    .maybeSingle()
+async function familiaDeNino(db: Client, ninoId: string): Promise<string> {
+  const { data: nino } = await db.from('ninos').select('familia_id').eq('id', ninoId).maybeSingle()
   if (!nino?.familia_id) throw new Error('familia_no_encontrada')
   return nino.familia_id
 }
 
 /**
- * F11-G-3 — APLICA un cambio pendiente aprobado por la dirección, con **service role**
- * (la autorización `es_admin` ya la hizo el action vía RLS antes de llamar aquí). Despacha
- * por `entidad`: parches de datos (`ninos`/`datos_tutor`) o confirmación de la ruta de un
- * documento ya subido (libro de familia / DNI), limpiando el documento anterior. Lanza si el
- * payload no valida o la entidad es desconocida (el action lo captura y revierte el estado).
+ * F11-G-3 — APLICA un cambio pendiente aprobado por la dirección. Despacha por `entidad`:
+ * parches de datos (`ninos`/`datos_tutor`) o confirmación de la ruta de un documento ya
+ * subido (libro de familia / DNI), limpiando el documento anterior. Lanza si el payload no
+ * valida o la entidad es desconocida (el action lo captura y revierte el estado).
+ *
+ * PR-D (D2): las escrituras de BD van con `db`, el cliente de SESIÓN de la directora que
+ * aprueba: la RLS de admin (`ninos_admin_all`, `familia_tutores_insert/update`) las autoriza y
+ * `audit_log` la registra a ELLA, no NULL. `storage` (service role) solo borra el documento
+ * anterior de Storage.
  */
-export async function aplicarCambioPendiente(service: Service, row: CambioRow): Promise<void> {
+export async function aplicarCambioPendiente(
+  db: Client,
+  storage: Client,
+  row: CambioRow
+): Promise<void> {
   const entidad = row.entidad as EntidadCambio
 
   if (entidad === 'ninos_familia') {
@@ -75,7 +79,7 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
       Object.entries(patch).filter(([, v]) => v !== undefined)
     )
     if (Object.keys(limpio).length > 0) {
-      const { error } = await service.from('ninos').update(limpio).eq('id', row.nino_id)
+      const { error } = await db.from('ninos').update(limpio).eq('id', row.nino_id)
       if (error) throw new Error(error.message)
     }
     return
@@ -84,18 +88,18 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
   if (entidad === 'ninos_libro_familia') {
     const { path } = payloadDocumentoSchema.parse(row.payload)
     exigirRutaDelNino(path, row)
-    const { data: nino } = await service
+    const { data: nino } = await db
       .from('ninos')
       .select('libro_familia_path')
       .eq('id', row.nino_id)
       .maybeSingle()
-    const { error } = await service
+    const { error } = await db
       .from('ninos')
       .update({ libro_familia_path: path })
       .eq('id', row.nino_id)
     if (error) throw new Error(error.message)
     if (nino?.libro_familia_path && nino.libro_familia_path !== path) {
-      await borrarObjetosBucket(service, BUCKET_LIBRO_FAMILIA, [nino.libro_familia_path]).catch(
+      await borrarObjetosBucket(storage, BUCKET_LIBRO_FAMILIA, [nino.libro_familia_path]).catch(
         () => undefined
       )
     }
@@ -114,10 +118,10 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
     }
     // F-2b-3: escribe el perfil COMPARTIDO `familia_tutores` (no `datos_tutor`) → cierra el
     // split-brain (3b escribe familia_tutores antes de validar; la cola tras validar también).
-    // service_role: exento del congelado (y además solo toca identidad/dirección).
-    const familiaId = await familiaDeNino(service, row.nino_id)
+    // Solo toca identidad/dirección: el trigger `familia_tutores_proteger_usuario_id` no salta.
+    const familiaId = await familiaDeNino(db, row.nino_id)
     const rolFamilia = rolFamiliaDeVinculo(p.tipo_vinculo)
-    const { data: existente } = await service
+    const { data: existente } = await db
       .from('familia_tutores')
       .select('id')
       .eq('familia_id', familiaId)
@@ -125,13 +129,10 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
       .is('deleted_at', null)
       .maybeSingle()
     if (existente) {
-      const { error } = await service
-        .from('familia_tutores')
-        .update(identidad)
-        .eq('id', existente.id)
+      const { error } = await db.from('familia_tutores').update(identidad).eq('id', existente.id)
       if (error) throw new Error(error.message)
     } else {
-      const { error } = await service
+      const { error } = await db
         .from('familia_tutores')
         .insert({ familia_id: familiaId, rol_familia: rolFamilia, usuario_id: null, ...identidad })
       if (error) throw new Error(error.message)
@@ -142,9 +143,9 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
   if (entidad === 'datos_tutor_dni') {
     const p = payloadDatosTutorDniSchema.parse(row.payload)
     exigirRutaDelNino(p.path, row)
-    const familiaId = await familiaDeNino(service, row.nino_id)
+    const familiaId = await familiaDeNino(db, row.nino_id)
     const rolFamilia = rolFamiliaDeVinculo(p.tipo_vinculo)
-    const { data: existente } = await service
+    const { data: existente } = await db
       .from('familia_tutores')
       .select('id, dni_documento_path')
       .eq('familia_id', familiaId)
@@ -152,18 +153,18 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
       .is('deleted_at', null)
       .maybeSingle()
     if (existente) {
-      const { error } = await service
+      const { error } = await db
         .from('familia_tutores')
         .update({ dni_documento_path: p.path })
         .eq('id', existente.id)
       if (error) throw new Error(error.message)
       if (existente.dni_documento_path && existente.dni_documento_path !== p.path) {
-        await borrarObjetosBucket(service, BUCKET_DNI_TUTORES, [
+        await borrarObjetosBucket(storage, BUCKET_DNI_TUTORES, [
           existente.dni_documento_path,
         ]).catch(() => undefined)
       }
     } else {
-      const { error } = await service.from('familia_tutores').insert({
+      const { error } = await db.from('familia_tutores').insert({
         familia_id: familiaId,
         rol_familia: rolFamilia,
         usuario_id: null,
@@ -186,7 +187,7 @@ export async function aplicarCambioPendiente(service: Service, row: CambioRow): 
  * ruta es `{centro_id}/{nino_id}/…` de la fila. Una ruta ajena no se toca (el rechazo sigue
  * adelante: la fila ya quedó `'rechazado'`).
  */
-export async function descartarCambioPendiente(service: Service, row: CambioRow): Promise<void> {
+export async function descartarCambioPendiente(service: Client, row: CambioRow): Promise<void> {
   const entidad = row.entidad as EntidadCambio
   let bucket: string
   let path: string

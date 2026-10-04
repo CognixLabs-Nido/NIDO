@@ -1,6 +1,5 @@
 'use server'
 
-import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { altaValidada, registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
 import { logger } from '@/shared/lib/logger'
@@ -16,10 +15,11 @@ import { fail, ok, type ActionResult } from '../../centros/types'
 
 /**
  * F11-G — el TUTOR LEGAL escribe la dirección del menor + el estado civil de la familia
- * (columnas nuevas de `ninos`, G-0). La tabla `ninos` es admin-only por RLS y la RPC del
- * tutor (`actualizar_identidad_nino_tutor`) no whitelistea estas columnas, así que aquí se
- * AUTORIZA en app (`es_tutor_legal_de`) y se escribe con **service role** —mismo patrón
- * que el legacy de `ninos.foto_url`—. NO usa migración (decisión: G-1 sin SQL nuevo).
+ * (columnas nuevas de `ninos`, G-0). La tabla `ninos` es admin-only por RLS, así que la
+ * escritura va por la RPC `actualizar_familia_nino` con el cliente de SESIÓN (PR-D, D2): la
+ * RPC re-autoriza (admin del centro del niño o tutor legal), solo admite estas 5 columnas y
+ * `auth.uid()` es el del JWT → `audit_log` registra al humano real, no NULL. La autorización
+ * en app de abajo se queda como primera barrera.
  *
  * Solo escribe los campos PRESENTES en el input (los `undefined` no se tocan); pasar
  * `null` explícito sí limpia el campo. `estado_civil_familia` es 1 valor por familia: la
@@ -73,10 +73,13 @@ export async function actualizarNinoFamilia(
     return ok({ id: nino_id, pendienteValidacion: true })
   }
 
-  const service = createServiceRoleClient()
-  const { error } = await service.from('ninos').update(patch).eq('id', nino_id)
+  const { error } = await supabase.rpc('actualizar_familia_nino', {
+    p_nino_id: nino_id,
+    p_patch: patch,
+  })
   if (error) {
-    logger.warn('actualizarNinoFamilia: update', error.message)
+    if (error.code === '42501') return fail('alta.errors.no_autorizado')
+    logger.warn('actualizarNinoFamilia: rpc', error.message)
     return fail('alta.documentos.errors.guardado')
   }
   return ok({ id: nino_id })

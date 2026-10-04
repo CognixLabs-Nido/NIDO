@@ -4403,6 +4403,10 @@ export type Database = {
         Args: { p_email: string }
         Returns: { id: string; email: string }[]
       }
+      actualizar_familia_nino: {
+        Args: { p_nino_id: string; p_patch: Json }
+        Returns: string
+      }
       actualizar_foto_nino_tutor: {
         Args: { p_foto_path: string; p_nino_id: string }
         Returns: string
@@ -4419,6 +4423,7 @@ export type Database = {
         }
         Returns: string
       }
+      alta_validada_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
       archivar_autorizacion: {
         Args: { p_autorizacion_id: string }
         Returns: boolean
@@ -4550,6 +4555,10 @@ export type Database = {
       familia_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       familia_ve_aula: { Args: { p_aula_id: string }; Returns: boolean }
       fecha_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
+      fijar_libro_familia_nino: {
+        Args: { p_nino_id: string; p_path: string }
+        Returns: string
+      }
       generar_recibos_mes: {
         Args: { p_anio: number; p_centro_id: string; p_mes: number }
         Returns: number
@@ -4684,6 +4693,7 @@ export type Database = {
         Returns: undefined
       }
       purgar_sujeto_db: { Args: { p_solicitud_id: string }; Returns: undefined }
+      quitar_foto_perfil_nino: { Args: { p_nino_id: string }; Returns: string }
       registrar_consentimiento: {
         Args: {
           p_ip?: unknown
