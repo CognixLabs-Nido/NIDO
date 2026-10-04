@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
  *
  *  revocarImagenNino (IU-4, ahora también el tutor):
  *   - tutor legal de ESE niño → revoca + borra la foto de perfil + revalida familia.
+ *   - PR-D (D2): `foto_url` → NULL va por la RPC `quitar_foto_perfil_nino` con el cliente de
+ *     SESIÓN (audit con el uid real); el service role NUNCA escribe `ninos`, solo Storage.
  *   - Dirección del centro → igual que antes (no se rompe IU-4).
  *   - ni admin ni tutor legal (p. ej. tutor de otro niño, vínculo `autorizado`) → no
  *     autorizado SIN llamar a la RPC ni tocar la foto (sin estado parcial).
@@ -65,6 +67,7 @@ interface Setup {
   miVigente?: { id: string } | null
   flagTras?: boolean
   rpcError?: { code?: string; message: string } | null
+  quitarError?: { code?: string; message: string } | null
 }
 
 function makeFake(s: Setup) {
@@ -107,6 +110,10 @@ function makeFake(s: Setup) {
       rpcSpy(fn, args)
       if (fn === 'es_admin') return Promise.resolve({ data: s.esAdmin ?? false })
       if (fn === 'es_tutor_legal_de') return Promise.resolve({ data: s.esTutorLegal ?? false })
+      if (fn === 'quitar_foto_perfil_nino')
+        return Promise.resolve(
+          s.quitarError ? { data: null, error: s.quitarError } : { data: FOTO, error: null }
+        )
       return Promise.resolve({ data: 1, error: s.rpcError ?? null })
     },
   }
@@ -131,7 +138,10 @@ describe('revocarImagenNino — tutor legal y Dirección', () => {
     expect(llamadas(rpcSpy, 'revocar_consentimiento_imagen')).toEqual([
       ['revocar_consentimiento_imagen', { p_nino_id: NINO }],
     ])
-    expect(serviceUpdateSpy).toHaveBeenCalledWith({ foto_url: null })
+    expect(llamadas(rpcSpy, 'quitar_foto_perfil_nino')).toEqual([
+      ['quitar_foto_perfil_nino', { p_nino_id: NINO }],
+    ])
+    expect(serviceUpdateSpy).not.toHaveBeenCalled()
     expect(borrarSpy).toHaveBeenCalledWith(expect.anything(), 'ninos-fotos', [
       FOTO,
       `${FOTO}.thumb`,
@@ -149,6 +159,35 @@ describe('revocarImagenNino — tutor legal y Dirección', () => {
     expect(r.success).toBe(true)
     expect(llamadas(rpcSpy, 'revocar_consentimiento_imagen')).toHaveLength(1)
     expect(llamadas(rpcSpy, 'es_admin')).toEqual([['es_admin', { p_centro_id: CENTRO }]])
+    expect(llamadas(rpcSpy, 'quitar_foto_perfil_nino')).toHaveLength(1)
+    expect(serviceUpdateSpy).not.toHaveBeenCalled()
+  })
+
+  it('42501 de quitar_foto_perfil_nino → no autorizado, sin borrar blobs', async () => {
+    const { fake } = makeFake({
+      esTutorLegal: true,
+      quitarError: { code: '42501', message: 'No autorizado' },
+    })
+    createClientMock.mockReturnValue(fake)
+
+    const r = await revocarImagenNino({ nino_id: NINO })
+
+    expect(r).toEqual({ success: false, error: 'nino.imagen.errors.no_autorizado' })
+    expect(borrarSpy).not.toHaveBeenCalled()
+  })
+
+  it('sin foto de perfil: revoca y no llama a quitar_foto_perfil_nino', async () => {
+    const { fake, rpcSpy } = makeFake({
+      esTutorLegal: true,
+      nino: { id: NINO, centro_id: CENTRO, foto_url: null },
+    })
+    createClientMock.mockReturnValue(fake)
+
+    const r = await revocarImagenNino({ nino_id: NINO })
+
+    expect(r.success).toBe(true)
+    expect(llamadas(rpcSpy, 'quitar_foto_perfil_nino')).toHaveLength(0)
+    expect(borrarSpy).not.toHaveBeenCalled()
   })
 
   it('ni admin ni tutor legal: no autorizado, sin revocar ni tocar la foto', async () => {
@@ -162,6 +201,7 @@ describe('revocarImagenNino — tutor legal y Dirección', () => {
       ['es_tutor_legal_de', { p_nino_id: NINO }],
     ])
     expect(llamadas(rpcSpy, 'revocar_consentimiento_imagen')).toHaveLength(0)
+    expect(llamadas(rpcSpy, 'quitar_foto_perfil_nino')).toHaveLength(0)
     expect(serviceUpdateSpy).not.toHaveBeenCalled()
     expect(borrarSpy).not.toHaveBeenCalled()
   })

@@ -47,13 +47,16 @@ export async function aprobarCambio(cambioId: string): Promise<ActionResult<{ id
   }
   if (!fila) return fail('admin.pendientes.errors.no_pendiente')
 
+  // PR-D (D2): la BD se escribe con la sesión de la directora (audit con SU uid); el service
+  // role solo borra en Storage el documento anterior.
   const service = createServiceRoleClient()
   try {
-    await aplicarCambioPendiente(service, fila)
+    await aplicarCambioPendiente(supabase, service, fila)
   } catch (e) {
     // El apply falló tras marcar 'aprobado' → revertir a 'pendiente' para reintentar
-    // (best-effort: el UPDATE resuelve con {error}, no lanza).
-    await service
+    // (best-effort: el UPDATE resuelve con {error}, no lanza). Misma RLS que el UPDATE de
+    // arriba (`cambios_pendientes_update`, es_admin).
+    await supabase
       .from('cambios_pendientes')
       .update({ estado: 'pendiente', revisado_por: null, decided_at: null })
       .eq('id', fila.id)

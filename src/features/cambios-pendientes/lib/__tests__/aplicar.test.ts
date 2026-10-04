@@ -59,7 +59,7 @@ describe('aplicarCambioPendiente', () => {
     const updates: Array<{ table: string; patch: Record<string, unknown> }> = []
     const service = mockService({ onUpdate: (table, patch) => updates.push({ table, patch }) })
 
-    await aplicarCambioPendiente(service, {
+    await aplicarCambioPendiente(service, service, {
       entidad: 'ninos_familia',
       centro_id: 'c1',
       nino_id: 'n1',
@@ -74,7 +74,7 @@ describe('aplicarCambioPendiente', () => {
   it('ninos_familia: no toca BD si el parche queda vacío tras filtrar undefined', async () => {
     const updates: unknown[] = []
     const service = mockService({ onUpdate: () => updates.push(1) })
-    await aplicarCambioPendiente(service, {
+    await aplicarCambioPendiente(service, service, {
       entidad: 'ninos_familia',
       centro_id: 'c1',
       nino_id: 'n1',
@@ -92,7 +92,7 @@ describe('aplicarCambioPendiente', () => {
       },
       onUpdate: (table, patch) => updates.push({ table, patch }),
     })
-    await aplicarCambioPendiente(service, {
+    await aplicarCambioPendiente(service, service, {
       entidad: 'datos_tutor_dni',
       centro_id: 'c1',
       nino_id: 'n1',
@@ -112,7 +112,7 @@ describe('aplicarCambioPendiente', () => {
       },
       onUpdate: (table, patch) => updates.push({ table, patch }),
     })
-    await aplicarCambioPendiente(service, {
+    await aplicarCambioPendiente(service, service, {
       entidad: 'datos_tutor',
       centro_id: 'c1',
       nino_id: 'n1',
@@ -129,7 +129,7 @@ describe('aplicarCambioPendiente', () => {
       maybeSingleByTable: { ninos: { familia_id: 'f1' }, familia_tutores: null },
       onInsert: (table, row) => inserts.push({ table, row }),
     })
-    await aplicarCambioPendiente(service, {
+    await aplicarCambioPendiente(service, service, {
       entidad: 'datos_tutor',
       centro_id: 'c1',
       nino_id: 'n1',
@@ -148,7 +148,7 @@ describe('aplicarCambioPendiente', () => {
   it('datos_tutor: lanza si el niño no tiene familia (NOT NULL de F-2b-3)', async () => {
     const service = mockService({ maybeSingleByTable: { ninos: {} } })
     await expect(
-      aplicarCambioPendiente(service, {
+      aplicarCambioPendiente(service, service, {
         entidad: 'datos_tutor',
         centro_id: 'c1',
         nino_id: 'n1',
@@ -160,7 +160,7 @@ describe('aplicarCambioPendiente', () => {
   it('lanza ante entidad desconocida', async () => {
     const service = mockService({})
     await expect(
-      aplicarCambioPendiente(service, {
+      aplicarCambioPendiente(service, service, {
         entidad: 'otra_cosa',
         centro_id: 'c1',
         nino_id: 'n1',
@@ -172,13 +172,39 @@ describe('aplicarCambioPendiente', () => {
   it('lanza ante payload inválido (documento sin path)', async () => {
     const service = mockService({})
     await expect(
-      aplicarCambioPendiente(service, {
+      aplicarCambioPendiente(service, service, {
         entidad: 'ninos_libro_familia',
         centro_id: 'c1',
         nino_id: 'n1',
         payload: {},
       })
     ).rejects.toThrow()
+  })
+
+  it('PR-D (D2): las escrituras de BD van por `db` (sesión) y el borrado de Storage por `storage`', async () => {
+    const dbUpdates: Array<{ table: string; patch: Record<string, unknown> }> = []
+    const dbRemoves: string[][] = []
+    const storageRemoves: Array<{ bucket: string; paths: string[] }> = []
+    const db = mockService({
+      maybeSingleByTable: { ninos: { libro_familia_path: 'c1/n1/viejo.pdf' } },
+      onUpdate: (table, patch) => dbUpdates.push({ table, patch }),
+      storageRemove: (_b, paths) => dbRemoves.push(paths),
+    })
+    const storage = mockService({
+      storageRemove: (bucket, paths) => storageRemoves.push({ bucket, paths }),
+    })
+    await aplicarCambioPendiente(db, storage, {
+      entidad: 'ninos_libro_familia',
+      centro_id: 'c1',
+      nino_id: 'n1',
+      payload: { path: 'c1/n1/nuevo.pdf' },
+    })
+    expect(dbUpdates).toEqual([
+      { table: 'ninos', patch: { libro_familia_path: 'c1/n1/nuevo.pdf' } },
+    ])
+    expect(storage.from).not.toHaveBeenCalled()
+    expect(dbRemoves).toEqual([])
+    expect(storageRemoves).toEqual([{ bucket: 'libro-familia', paths: ['c1/n1/viejo.pdf'] }])
   })
 })
 
@@ -245,7 +271,7 @@ describe('R1b — aplicar NO escribe una ruta ajena al niño', () => {
       storageRemove: () => removed.push(1),
     })
     await expect(
-      aplicarCambioPendiente(service, {
+      aplicarCambioPendiente(service, service, {
         entidad: 'ninos_libro_familia',
         centro_id: 'c1',
         nino_id: 'n1',
@@ -264,7 +290,7 @@ describe('R1b — aplicar NO escribe una ruta ajena al niño', () => {
       onInsert: () => updates.push(1),
     })
     await expect(
-      aplicarCambioPendiente(service, {
+      aplicarCambioPendiente(service, service, {
         entidad: 'datos_tutor_dni',
         centro_id: 'c1',
         nino_id: 'n1',
@@ -282,7 +308,7 @@ describe('R1b — aplicar NO escribe una ruta ajena al niño', () => {
       onUpdate: (table, patch) => updates.push({ table, patch }),
       storageRemove: (bucket, paths) => removed.push({ bucket, paths }),
     })
-    await aplicarCambioPendiente(service, {
+    await aplicarCambioPendiente(service, service, {
       entidad: 'ninos_libro_familia',
       centro_id: 'c1',
       nino_id: 'n1',

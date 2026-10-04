@@ -36,9 +36,11 @@ function err(error: string, status = 400): Response {
  * F11-G — subida del **libro de familia** (1 PDF/niño, bucket privado `libro-familia`).
  * El PDF lo construye el cliente (multi-imagen → `imagenesAPdf`). La subida va con el
  * cliente del USUARIO → la RLS de `storage.objects` (G-0: admin del centro o tutor legal
- * del niño) autoriza la escritura bajo `{centroId}/{ninoId}/...`. El `UPDATE` de
- * `ninos.libro_familia_path` (admin-only por RLS) se hace con **service role tras
- * autorizar** `es_tutor_legal_de` en app (no hay RPC ni RLS de tutor para esa columna).
+ * del niño) autoriza la escritura bajo `{centroId}/{ninoId}/...`. `ninos.libro_familia_path`
+ * (admin-only por RLS) se fija con la RPC `fijar_libro_familia_nino` y el cliente de SESIÓN
+ * (PR-D, D2): re-autoriza, exige que la ruta sea `{centro}/{niño}/<nombre>.pdf` del propio
+ * niño y `auth.uid()` es el del JWT → `audit_log` registra al humano real. El service role
+ * queda solo para Storage (borrar el libro anterior y firmar la URL).
  */
 export async function POST(
   request: Request,
@@ -52,10 +54,10 @@ export async function POST(
   } = await supabase.auth.getUser()
   if (!user) return err('alta.errors.no_autorizado', 401)
 
-  // Ficha visible para el usuario (RLS de `ninos`) → centro_id para la ruta + libro previo.
+  // Ficha visible para el usuario (RLS de `ninos`) → centro_id para la ruta.
   const { data: nino } = await supabase
     .from('ninos')
-    .select('id, centro_id, libro_familia_path')
+    .select('id, centro_id')
     .eq('id', ninoId)
     .is('deleted_at', null)
     .maybeSingle()
@@ -86,9 +88,8 @@ export async function POST(
     return err('alta.documentos.errors.subida', 500)
   }
 
-  // 2. El UPDATE de `ninos.libro_familia_path` requiere service role (tabla admin-only).
-  //    Se autoriza en app: tutor legal del niño O admin del centro (modo Dirección, B2 —
-  //    carga del libro en papel). Camino tutor intacto (OR). Si no, limpia el objeto subido.
+  // 2. Primera barrera en app: tutor legal del niño O admin del centro (modo Dirección, B2 —
+  //    carga del libro en papel). La RPC vuelve a autorizar. Si no, limpia el objeto subido.
   const autorizado =
     (await esTutorLegalDe(supabase, nino.id, user.id)) ||
     (await esAdminDeCentroDeNino(supabase, nino.id, user.id))
@@ -118,22 +119,21 @@ export async function POST(
     } satisfies RespuestaOk)
   }
 
+  const { data: anterior, error: updErr } = await supabase.rpc('fijar_libro_familia_nino', {
+    p_nino_id: nino.id,
+    p_path: path,
+  })
   const service = createServiceRoleClient()
-  const { error: updErr } = await service
-    .from('ninos')
-    .update({ libro_familia_path: path })
-    .eq('id', nino.id)
   if (updErr) {
     await borrarObjetosBucket(service, BUCKET_LIBRO_FAMILIA, [path]).catch(() => undefined)
-    logger.warn('libro-familia: update path', updErr.message)
+    if (updErr.code === '42501') return err('alta.errors.no_autorizado', 403)
+    logger.warn('libro-familia: rpc fijar path', updErr.message)
     return err('alta.documentos.errors.subida', 500)
   }
 
   // 3. Limpia el libro anterior (sustitución; best-effort, sin huérfanos).
-  if (nino.libro_familia_path && nino.libro_familia_path !== path) {
-    await borrarObjetosBucket(service, BUCKET_LIBRO_FAMILIA, [nino.libro_familia_path]).catch(
-      () => undefined
-    )
+  if (anterior && anterior !== path) {
+    await borrarObjetosBucket(service, BUCKET_LIBRO_FAMILIA, [anterior]).catch(() => undefined)
   }
 
   const url = await firmarRuta(service, BUCKET_LIBRO_FAMILIA, path)

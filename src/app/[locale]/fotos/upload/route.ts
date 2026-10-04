@@ -140,8 +140,10 @@ export async function POST(request: Request): Promise<Response> {
     .upload(rutas.miniatura, procesada.miniatura, { contentType: MIME_FOTO_SALIDA, upsert: false })
 
   if (subirOriginal.error || subirMini.error) {
-    // 4. Rollback: sin objetos no debe quedar la fila ni objetos a medias.
-    await service.from('media').delete().eq('id', media.id)
+    // 4. Rollback: sin objetos no debe quedar la fila ni objetos a medias. La fila se borra
+    //    con la sesión del autor (`media_delete`: autor de la publicación o admin, el mismo
+    //    predicado que dejó insertarla) → el DELETE queda en audit_log con su uid (PR-D, D2).
+    await supabase.from('media').delete().eq('id', media.id)
     await service.storage
       .from(BUCKET_AULA_FOTOS)
       .remove([rutas.original, rutas.miniatura])

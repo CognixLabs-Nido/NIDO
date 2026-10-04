@@ -25,8 +25,10 @@ import { fail, ok, type ActionResult } from '../../centros/types'
  * Quién: Dirección del centro del niño (`es_admin`) o un tutor LEGAL de ese niño
  * (`es_tutor_legal_de`: principal/secundario, nunca un vínculo `autorizado`). Revocar cae el
  * consentimiento de AMBOS tutores, igual lo haga Dirección o un tutor. Se verifica antes de
- * tocar nada, para no dejar estado parcial (consent revocado sin perfil borrado). El borrado
- * del perfil va con service role TRAS autorizar (patrón ADR-0027, espejo de `fuentes-retencion`).
+ * tocar nada, para no dejar estado parcial (consent revocado sin perfil borrado). `foto_url`
+ * se pone a NULL con la RPC `quitar_foto_perfil_nino` y el cliente de SESIÓN (PR-D, D2): la
+ * RPC re-autoriza y `audit_log` registra al humano real. El service role queda solo para
+ * borrar los blobs de Storage.
  */
 export async function revocarImagenNino(
   input: RevocarImagenNinoInput
@@ -69,22 +71,24 @@ export async function revocarImagenNino(
     return fail('nino.imagen.errors.fallo')
   }
 
-  // (b) Eliminar la foto de PERFIL (si la hay): foto_url → NULL + borrar blobs. Con service
-  //     role tras autorizar; el trigger derivador deja el flag en false (consent ya revocado).
+  // (b) Eliminar la foto de PERFIL (si la hay): foto_url → NULL por RPC de sesión + borrar
+  //     blobs con service role. El trigger derivador deja el flag en false (consent revocado).
   if (nino.foto_url) {
-    const service = createServiceRoleClient()
-    const { error: errFoto } = await service
-      .from('ninos')
-      .update({ foto_url: null })
-      .eq('id', ninoId)
+    const { data: anterior, error: errFoto } = await supabase.rpc('quitar_foto_perfil_nino', {
+      p_nino_id: ninoId,
+    })
     if (errFoto) {
-      logger.warn('revocarImagenNino: foto_url null', errFoto.message)
+      logger.warn('revocarImagenNino: quitar foto', errFoto.message)
+      if (errFoto.code === '42501') return fail('nino.imagen.errors.no_autorizado')
       return fail('nino.imagen.errors.fallo')
     }
-    await borrarObjetosBucket(service, BUCKET_NINOS_FOTOS, [
-      nino.foto_url,
-      rutaThumbDe(nino.foto_url),
-    ]).catch(() => undefined)
+    if (anterior) {
+      const service = createServiceRoleClient()
+      await borrarObjetosBucket(service, BUCKET_NINOS_FOTOS, [
+        anterior,
+        rutaThumbDe(anterior),
+      ]).catch(() => undefined)
+    }
   }
 
   revalidatePath('/[locale]/admin/ninos/[id]', 'page')
