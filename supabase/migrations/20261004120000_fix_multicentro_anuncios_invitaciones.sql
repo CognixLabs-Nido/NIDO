@@ -25,9 +25,17 @@
 -- Equivalencia (caso normal de UN centro, donde el aula siempre es del centro):
 --   - policy: la rama profe queda literalmente igual; la admin solo añade
 --     `aula_id IS NULL OR centro_de_aula(aula_id) = centro_id`, siempre cierto en un centro.
---   - helpers: cuerpo vivo (pg_get_functiondef) + el bloque marcado "R3 (añadido)". Las guardas
---     de abajo exigen el md5 del cuerpo vivo ANTES y que, quitando el bloque añadido, el nuevo
---     cuerpo sea byte a byte el anterior DESPUÉS.
+--   - helpers: cuerpo vivo (pg_get_functiondef) + el bloque marcado "R3 (añadido)".
+--
+-- Guardas de equivalencia de LÓGICA, no de bytes: el SQL Editor de Supabase reescribe los
+-- cuerpos de función (saltos CRLF en vez de LF y, a veces, se come comentarios). Por eso cada
+-- guarda compara el md5 del cuerpo NORMALIZADO: sin CR, sin comentarios `--` hasta fin de línea y con
+-- los espacios colapsados a uno. Un cambio de formato o de comentarios no la dispara; un cambio
+-- de lógica, sí.
+--   ANTES:   md5(norm(cuerpo vivo))    = el del cuerpo auditado.
+--   DESPUÉS: md5(norm(cuerpo nuevo))   = el del cuerpo auditado + bloque "R3 (añadido)".
+-- Los md5 esperados se calcularon con esta misma normalización en Postgres (cuerpo vivo y
+-- cuerpo de este fichero dan el mismo valor).
 --
 -- `anuncios` está vacía en producción a 2026-10-04 → no hay filas previas que contrastar.
 --
@@ -38,13 +46,14 @@
 -- ---- Guarda previa: lo que se va a tocar es exactamente lo que se auditó ----
 DO $guarda$
 BEGIN
-  IF (SELECT md5(prosrc) FROM pg_proc WHERE oid = 'public.usuario_es_audiencia_anuncio_row(uuid, uuid, public.ambito_anuncio, uuid)'::regprocedure)
-     IS DISTINCT FROM '2c2e4d7924bda3d0f943cd2ac2c7d814' THEN
-    RAISE EXCEPTION 'R3: usuario_es_audiencia_anuncio_row ha cambiado desde la auditoría; revisar antes de aplicar';
+  -- Lógica normalizada (sin CR, sin comentarios, espacios colapsados) = la auditada.
+  IF md5(btrim(regexp_replace(regexp_replace(replace((SELECT prosrc FROM pg_proc WHERE oid = 'public.usuario_es_audiencia_anuncio_row(uuid, uuid, public.ambito_anuncio, uuid)'::regprocedure), chr(13), ''), '--[^' || chr(10) || ']*', '', 'g'), '[[:space:]]+', ' ', 'g')))
+     IS DISTINCT FROM '1c94ad9e391add97d45145439fa182bb' THEN
+    RAISE EXCEPTION 'R3: la lógica de usuario_es_audiencia_anuncio_row ha cambiado desde la auditoría; revisar antes de aplicar';
   END IF;
-  IF (SELECT md5(prosrc) FROM pg_proc WHERE oid = 'public.usuario_es_audiencia_anuncio(uuid)'::regprocedure)
-     IS DISTINCT FROM 'f781db1fd0c1b641bf9ee24370b25bd3' THEN
-    RAISE EXCEPTION 'R3: usuario_es_audiencia_anuncio ha cambiado desde la auditoría; revisar antes de aplicar';
+  IF md5(btrim(regexp_replace(regexp_replace(replace((SELECT prosrc FROM pg_proc WHERE oid = 'public.usuario_es_audiencia_anuncio(uuid)'::regprocedure), chr(13), ''), '--[^' || chr(10) || ']*', '', 'g'), '[[:space:]]+', ' ', 'g')))
+     IS DISTINCT FROM '4072f231d1de3edc1354089aad461c17' THEN
+    RAISE EXCEPTION 'R3: la lógica de usuario_es_audiencia_anuncio ha cambiado desde la auditoría; revisar antes de aplicar';
   END IF;
   IF (SELECT with_check FROM pg_policies WHERE schemaname = 'public' AND tablename = 'anuncios' AND policyname = 'anuncios_insert')
      IS DISTINCT FROM '((autor_id = auth.uid()) AND (es_admin(centro_id) OR ((ambito = ''aula''::ambito_anuncio) AND (aula_id IS NOT NULL) AND es_profe_de_aula(aula_id) AND (centro_de_aula(aula_id) = centro_id))))' THEN
@@ -287,29 +296,17 @@ CREATE TRIGGER invitaciones_validar_centro_trg
   BEFORE INSERT OR UPDATE OF nino_id, aula_id, centro_id ON public.invitaciones
   FOR EACH ROW EXECUTE FUNCTION public.invitaciones_validar_centro();
 
--- ---- Guarda posterior: equivalencia de los helpers y ACL conservada ----
+-- ---- Guarda posterior: equivalencia de LÓGICA de los helpers y ACL conservada ----
 DO $guarda$
-DECLARE
-  v_add1 text := '    -- R3 (añadido): el aula tiene que ser del centro del anuncio; si no, ni la profe ni las
-    -- familias de esa aula lo ven. Admin y autor ya han salido arriba.
-    IF public.centro_de_aula(p_aula_id) IS DISTINCT FROM p_centro_id THEN
-      RETURN FALSE;
-    END IF;
-';
-  v_add2 text := '    -- R3 (añadido): el aula tiene que ser del centro del anuncio; si no, ni la profe ni las
-    -- familias de esa aula lo ven. Admin y autor ya han salido arriba.
-    IF public.centro_de_aula(a.aula_id) IS DISTINCT FROM a.centro_id THEN
-      RETURN FALSE;
-    END IF;
-';
 BEGIN
-  IF md5(replace((SELECT prosrc FROM pg_proc WHERE oid = 'public.usuario_es_audiencia_anuncio_row(uuid, uuid, public.ambito_anuncio, uuid)'::regprocedure), v_add1, ''))
-     IS DISTINCT FROM '2c2e4d7924bda3d0f943cd2ac2c7d814' THEN
-    RAISE EXCEPTION 'R3: usuario_es_audiencia_anuncio_row difiere del cuerpo vivo en algo más que el bloque añadido';
+  -- Lógica normalizada = cuerpo auditado + bloque "R3 (añadido)", y nada más.
+  IF md5(btrim(regexp_replace(regexp_replace(replace((SELECT prosrc FROM pg_proc WHERE oid = 'public.usuario_es_audiencia_anuncio_row(uuid, uuid, public.ambito_anuncio, uuid)'::regprocedure), chr(13), ''), '--[^' || chr(10) || ']*', '', 'g'), '[[:space:]]+', ' ', 'g')))
+     IS DISTINCT FROM 'ca803d369819225bc75038e302476c05' THEN
+    RAISE EXCEPTION 'R3: la lógica de usuario_es_audiencia_anuncio_row difiere de la auditada + el bloque añadido';
   END IF;
-  IF md5(replace((SELECT prosrc FROM pg_proc WHERE oid = 'public.usuario_es_audiencia_anuncio(uuid)'::regprocedure), v_add2, ''))
-     IS DISTINCT FROM 'f781db1fd0c1b641bf9ee24370b25bd3' THEN
-    RAISE EXCEPTION 'R3: usuario_es_audiencia_anuncio difiere del cuerpo vivo en algo más que el bloque añadido';
+  IF md5(btrim(regexp_replace(regexp_replace(replace((SELECT prosrc FROM pg_proc WHERE oid = 'public.usuario_es_audiencia_anuncio(uuid)'::regprocedure), chr(13), ''), '--[^' || chr(10) || ']*', '', 'g'), '[[:space:]]+', ' ', 'g')))
+     IS DISTINCT FROM '161ae3899ee04be4817ff03198912dfa' THEN
+    RAISE EXCEPTION 'R3: la lógica de usuario_es_audiencia_anuncio difiere de la auditada + el bloque añadido';
   END IF;
   IF has_function_privilege('anon', 'public.usuario_es_audiencia_anuncio_row(uuid, uuid, public.ambito_anuncio, uuid)', 'EXECUTE')
      OR has_function_privilege('anon', 'public.usuario_es_audiencia_anuncio(uuid)', 'EXECUTE')
