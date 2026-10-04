@@ -84,6 +84,14 @@ Para cualquier PR que **añada, modifique o renombre** archivos con la directiva
 
 > **Lección [PR #30](https://github.com/CognixLabs-Nido/NIDO/pull/30)** (mergeado 2026-05-29): el bug entró en el PR #25 (F5.6-B) — `export const VENTANA_ANULACION_MS` top-level en `marcar-mensaje-erroneo.ts` y `marcar-anuncio-erroneo.ts` (ambos `'use server'`). Vitest no lo detectó y, al ser `/messages/*` rutas dynamic, el build local tampoco saltó; llegó a producción y rompió la mensajería hasta el hotfix. Ver el body del PR #30 (y `docs/specs/phase-5b-*.md`) para el caso real.
 
+### Regla: guardas de equivalencia en migraciones que se aplican por SQL Editor
+
+El SQL Editor de Supabase **reescribe los cuerpos de función** al aplicar: guarda los saltos como CRLF en vez de LF y, a veces, se come comentarios `--` dentro del cuerpo. Una guarda que compare el md5 de `prosrc` byte a byte pasa en el ensayo (Management API, LF) y **salta al aplicar por SQL Editor**.
+
+Toda guarda de equivalencia por md5 en una migración **DEBE normalizar y comparar lógica, no bytes**: quitar `\r`, quitar comentarios `--` hasta fin de línea y colapsar espacios. El md5 esperado se calcula **con esa misma expresión en Postgres** (sobre el cuerpo vivo y sobre el del fichero; deben coincidir), no fuera. El ensayo tiene que cubrir la vía real (migración con CRLF y algún comentario quitado) e incluir controles negativos: un cambio de lógica ficticio debe hacer saltar la guarda.
+
+> **Lección [PR #304](https://github.com/CognixLabs-Nido/NIDO/pull/304)** (2026-10-04): la guarda posterior de `20261004120000` pasó en el ensayo y saltó al aplicarla por SQL Editor. Abortó entera (no se aplicó nada); se rehízo con guardas normalizadas.
+
 ## Convenciones rápidas
 
 - **Archivos**: PascalCase para componentes React (`AgendaForm.tsx`), kebab-case para el resto (`format-date.ts`).
