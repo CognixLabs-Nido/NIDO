@@ -51,6 +51,18 @@ export async function publicarAnuncio(
     return fail('messages.errors.no_autorizado')
   }
 
+  // R3 (multi-centro): el aula tiene que ser del centro actual. Un admin del centro A no
+  // publica en un aula del centro B (la BD también lo para: policy + trigger).
+  if (parsed.data.aula_id) {
+    const { data: aula } = await supabase
+      .from('aulas')
+      .select('id')
+      .eq('id', parsed.data.aula_id)
+      .eq('centro_id', centroId)
+      .maybeSingle()
+    if (!aula) return fail('messages.errors.no_autorizado')
+  }
+
   const { data, error } = await supabase
     .from('anuncios')
     .insert({
