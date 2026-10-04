@@ -187,3 +187,6 @@ jobs:
           # 20261003140000_fix_media_ruta_publicacion (#302), aplicada: trigger que exige que path y
           # path_miniatura de media sean {centro}/{aula}/{publicacion}/<nombre>.jpg (media-ruta.rls.test.ts).
           MEDIA_RUTA_APPLIED: '1'
+          # 20261004120000_fix_multicentro_anuncios_invitaciones (#304, guardas #305), aplicada: anuncios e
+          # invitaciones no cruzan de centro (multicentro-anuncios-invitaciones.rls.test.ts).
+          MULTICENTRO_APPLIED: '1'
