@@ -190,3 +190,6 @@ jobs:
           # 20261004120000_fix_multicentro_anuncios_invitaciones (#304, guardas #305), aplicada: anuncios e
           # invitaciones no cruzan de centro (multicentro-anuncios-invitaciones.rls.test.ts).
           MULTICENTRO_APPLIED: '1'
+          # 20261005120000_fix_actor_humano_rpcs_ninos (#307) + reparación 20261005140000 (#308), aplicadas:
+          # RPC de sesión que dejan el actor humano en audit_log (actor-humano-rpcs.rls.test.ts).
+          ACTOR_HUMANO_APPLIED: '1'
