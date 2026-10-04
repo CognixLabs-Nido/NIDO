@@ -95,6 +95,10 @@ describe.skipIf(!MIGRATION_APPLIED)('D2 — el actor humano queda en audit_log',
   }, 120_000)
 
   afterAll(async () => {
+    // Antes que la cuenta: `familia_tutores.usuario_id` es ON DELETE SET NULL y ese UPDATE lo
+    // rechaza `familia_tutores_proteger_usuario_id` (no corre como service_role) → el borrado
+    // del usuario fallaría y la cuenta de fixture quedaría viva en el remoto.
+    await serviceClient.from('familia_tutores').delete().eq('usuario_id', tutorA.id)
     for (const u of [adminA, adminB, tutorA, autorizadoA, tutorB]) await deleteTestUser(u.id)
     for (const c of [centroA, centroB]) await deleteTestCentro(c.id)
   }, 120_000)
