@@ -193,3 +193,6 @@ jobs:
           # 20261005120000_fix_actor_humano_rpcs_ninos (#307) + reparación 20261005140000 (#308), aplicadas:
           # RPC de sesión que dejan el actor humano en audit_log (actor-humano-rpcs.rls.test.ts).
           ACTOR_HUMANO_APPLIED: '1'
+          # D5 (#310): signup público cerrado en el panel (disable_signup=true, 08-10-2026);
+          # el signup libre da signup_disabled y las altas por API de admin siguen (signup-cerrado).
+          SIGNUP_CERRADO_APPLIED: '1'
