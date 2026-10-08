@@ -118,10 +118,9 @@ describe.skipIf(!SIGNUP_CERRADO)('D5 — signup público cerrado', () => {
     'invitación: inviteUserByEmail crea el stub y aceptar (updateUserById) deja entrar',
     async () => {
       const email = emailNuevo()
-      const { data: inv, error: invErr } = await serviceClient.auth.admin.inviteUserByEmail(
-        email,
-        { data: { token: randomUUID(), rol_objetivo: 'tutor_legal' } }
-      )
+      const { data: inv, error: invErr } = await serviceClient.auth.admin.inviteUserByEmail(email, {
+        data: { token: randomUUID(), rol_objetivo: 'tutor_legal' },
+      })
       expect(invErr).toBeNull()
       expect(inv.user).not.toBeNull()
       creados.push(inv.user!.id)
