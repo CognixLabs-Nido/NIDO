@@ -31,7 +31,7 @@ const LABELS: TablaAulasLabels = {
     acciones: 'Acciones',
   },
   label_coordinadora: 'Coordinadora',
-  label_titular: 'Profe titular',
+  label_maestra: 'Maestra',
 }
 
 const F = '2026-09-01'
@@ -91,32 +91,32 @@ describe('TablaAulas', () => {
     expect(celdas[5]!.textContent).toBe('—') // Técnicos
   })
 
-  it('la profe titular va destacada (warm + "Profe titular"); la coordinadora no', () => {
+  it('la maestra va destacada (warm + "Maestra"); la coordinadora no', () => {
     const aula: AulaConPersonal = {
       ...BASE_AULA,
       num_alumnos: 3,
-      // El orden lo decide la query (`get-aulas-con-personal`): titular primero.
+      // El orden lo decide la query (`get-aulas-con-personal`): principal primero.
       profesoras: [
         {
           id: 'u-ana',
           nombre_completo: 'Ana',
           tipo_personal_aula: 'profesora',
           fecha_inicio: F,
-          es_titular: true,
+          es_principal: true,
         },
         {
           id: 'u-zara',
           nombre_completo: 'Zara',
           tipo_personal_aula: 'profesora',
           fecha_inicio: F,
-          es_titular: false,
+          es_principal: false,
         },
         {
           id: 'u-coord',
           nombre_completo: 'Mónica',
           tipo_personal_aula: 'coordinadora',
           fecha_inicio: F,
-          es_titular: false,
+          es_principal: false,
         },
       ],
       tecnicos: [
@@ -125,15 +125,15 @@ describe('TablaAulas', () => {
           nombre_completo: 'Lucía',
           tipo_personal_aula: 'tecnico',
           fecha_inicio: F,
-          es_titular: false,
+          es_principal: false,
         },
       ],
     }
     const { container } = renderTabla([aula])
 
-    const titular = screen.getByText('Ana')
-    expect(titular).toHaveAttribute('title', 'Profe titular')
-    expect(titular.className).toMatch(/warm/i)
+    const maestra = screen.getByText('Ana')
+    expect(maestra).toHaveAttribute('title', 'Maestra')
+    expect(maestra.className).toMatch(/warm/i)
 
     const coord = screen.getByText('Mónica')
     expect(coord).toHaveAttribute('title', 'Coordinadora')
@@ -149,7 +149,7 @@ describe('TablaAulas', () => {
     expect(textosBadges).toEqual(['Ana', 'Zara', 'Mónica', 'Lucía'])
   })
 
-  it('sin profesora, la coordinadora titular va destacada con su rol en el tooltip', () => {
+  it('sin profesora, la coordinadora (principal) va destacada con su rol en el tooltip', () => {
     const aula: AulaConPersonal = {
       ...BASE_AULA,
       profesoras: [
@@ -158,7 +158,7 @@ describe('TablaAulas', () => {
           nombre_completo: 'Mónica',
           tipo_personal_aula: 'coordinadora',
           fecha_inicio: F,
-          es_titular: true,
+          es_principal: true,
         },
       ],
     }

@@ -4,7 +4,7 @@ import type { ProfeAula } from '../types'
  * Qué pinta la cabecera del hilo profe↔familia en la vista del TUTOR. Lo comparten
  * `ConversacionView` y `ConversacionesSplitView` para que ambas digan lo mismo.
  *
- *   - Hay persona principal (la profesora titular; si no hay, la coordinadora, ver
+ *   - Hay persona principal (la profesora; si no hay, la coordinadora, ver
  *     `elegirPrincipal`) → su nombre + «Profe del aula X».
  *   - Sin principal y una sola persona → su nombre (como siempre).
  *   - Sin principal y varias personas (solo técnico/a y apoyo) → «Aula X · N profes».

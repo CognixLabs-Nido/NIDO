@@ -161,15 +161,15 @@ describe('getAulasConPersonalCore', () => {
 
     const result = await getAulasConPersonalCore(client, CURSO_ID)
     expect(result[0]!.num_alumnos).toBe(3)
-    // Titular (profesora; empate de fecha → alfabético) primero; luego profesoras y
-    // coordinadora. Solo una titular.
+    // Principal (profesora; empate de fecha → alfabético) primero; luego profesoras y
+    // coordinadora. Solo una principal.
     expect(result[0]!.profesoras.map((p) => p.nombre_completo)).toEqual(['Ana', 'Zara', 'Mónica'])
-    expect(result[0]!.profesoras.map((p) => p.es_titular)).toEqual([true, false, false])
+    expect(result[0]!.profesoras.map((p) => p.es_principal)).toEqual([true, false, false])
     expect(result[0]!.tecnicos.map((p) => p.nombre_completo)).toEqual(['Lucía'])
     expect(result[0]!.apoyos.map((p) => p.nombre_completo)).toEqual(['Sara'])
   })
 
-  it('titular = la profesora que más tiempo lleva, no el refuerzo que llegó después', async () => {
+  it('principal = la profesora que más tiempo lleva, no el refuerzo que llegó después', async () => {
     const client = makeClient({
       aulas: [makeAula('a1', 'Aula A')],
       matriculas: [],
@@ -184,18 +184,18 @@ describe('getAulasConPersonalCore', () => {
           aula_id: 'a1',
           tipo_personal_aula: 'profesora',
           fecha_inicio: '2026-09-01',
-          profe: { id: 'u-zoe', nombre_completo: 'Zoe Titular' },
+          profe: { id: 'u-zoe', nombre_completo: 'Zoe Maestra' },
         },
       ],
     })
     const result = await getAulasConPersonalCore(client, CURSO_ID)
-    expect(result[0]!.profesoras.map((p) => [p.nombre_completo, p.es_titular])).toEqual([
-      ['Zoe Titular', true],
+    expect(result[0]!.profesoras.map((p) => [p.nombre_completo, p.es_principal])).toEqual([
+      ['Zoe Maestra', true],
       ['Ana Refuerzo', false],
     ])
   })
 
-  it('sin profesora, la coordinadora es la titular; solo técnico/apoyo: ninguna', async () => {
+  it('sin profesora, la coordinadora es la principal; solo técnico/apoyo: ninguna', async () => {
     const client = makeClient({
       aulas: [makeAula('a1', 'Aula A'), makeAula('a2', 'Aula B')],
       matriculas: [],
@@ -215,9 +215,9 @@ describe('getAulasConPersonalCore', () => {
     const result = await getAulasConPersonalCore(client, CURSO_ID)
     const a1 = result.find((a) => a.id === 'a1')!
     const a2 = result.find((a) => a.id === 'a2')!
-    expect(a1.profesoras.map((p) => p.es_titular)).toEqual([true])
+    expect(a1.profesoras.map((p) => p.es_principal)).toEqual([true])
     expect(a2.profesoras).toEqual([])
-    expect(a2.tecnicos.map((p) => p.es_titular)).toEqual([false])
+    expect(a2.tecnicos.map((p) => p.es_principal)).toEqual([false])
   })
 
   it('num_alumnos cuenta solo matriculas devueltas por la query (activas)', async () => {

@@ -634,7 +634,7 @@
           "apoyo": "Support"
         },
         "label_coordinadora": "Coordinator",
-        "label_titular": "Lead teacher",
+        "label_maestra": "Teacher",
         "gestionar": "Manage staff",
         "dialog_title": "Staff · {aula}",
         "personal_actual": "Current staff",

@@ -10,10 +10,10 @@ function profe(nombre: string, es_principal = false): ProfeAula {
 describe('resolverCabeceraTutor', () => {
   it('con principal muestra su nombre aunque haya más personal', () => {
     const r = resolverCabeceraTutor(
-      [profe('Zoe Titular', true), profe('Carla Coordinadora'), profe('Técnico')],
+      [profe('Zoe Maestra', true), profe('Carla Coordinadora'), profe('Técnico')],
       'Aula Patitos'
     )
-    expect(r).toEqual({ tipo: 'profe', nombre: 'Zoe Titular' })
+    expect(r).toEqual({ tipo: 'profe', nombre: 'Zoe Maestra' })
   })
 
   it('sin principal y una sola persona: su nombre', () => {

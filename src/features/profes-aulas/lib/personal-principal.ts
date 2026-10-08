@@ -2,13 +2,13 @@ import type { TipoPersonalAula } from '../types'
 
 /**
  * Quién es la persona PRINCIPAL de un aula (la que ve destacada la familia y la
- * dirección). Modelo de personal: la titular del aula es la `profesora`; la
+ * dirección). Modelo de personal: la principal del aula es la `profesora`; la
  * `coordinadora` coordina un grupo de aulas y solo hace de principal cuando el aula no
  * tiene profesora. `tecnico` y `apoyo` nunca son principal.
  *
  *   1. Profesora. Si hay varias (bajas, refuerzos: norma blanda, la BD no lo impide),
  *      la que lleva más tiempo en el aula (`fecha_inicio` más antigua); empate →
- *      alfabético por nombre. Así un refuerzo que llega después no desplaza a la titular.
+ *      alfabético por nombre. Así un refuerzo que llega después no desplaza a la principal.
  *   2. Si no hay profesora, la coordinadora con el mismo orden.
  *   3. Si no hay ninguna de las dos, nadie.
  */

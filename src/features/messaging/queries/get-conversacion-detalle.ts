@@ -155,7 +155,7 @@ export async function getConversacionDetalle(
   // con fallback a "Aula X" sin profe.
   let profes_aula: ProfeAula[] = []
   if (matricula?.aula_id) {
-    // Principal = la profesora titular (la que más tiempo lleva en el aula); si no hay
+    // Principal = la profesora (la que más tiempo lleva en el aula); si no hay
     // profesora, la coordinadora; si tampoco, nadie (`elegirPrincipal`). La cabecera del
     // tutor la muestra destacada (`resolverCabeceraTutor`).
     const { data: asignaciones, error: profesErr } = await supabase

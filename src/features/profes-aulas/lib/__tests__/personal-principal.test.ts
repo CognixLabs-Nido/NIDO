@@ -18,9 +18,9 @@ describe('elegirPrincipal', () => {
   })
 
   it('con varias profesoras gana la que lleva más tiempo, no el refuerzo', () => {
-    const titular = p('Zoe Titular', 'profesora', '2026-09-01')
+    const maestra = p('Zoe Maestra', 'profesora', '2026-09-01')
     const refuerzo = p('Ana Refuerzo', 'profesora', '2026-11-15')
-    expect(elegirPrincipal([refuerzo, titular])).toBe(titular)
+    expect(elegirPrincipal([refuerzo, maestra])).toBe(maestra)
   })
 
   it('con la misma fecha de inicio desempata por orden alfabético', () => {
@@ -46,16 +46,16 @@ describe('elegirPrincipal', () => {
 
 describe('ordenarConPrincipal', () => {
   it('principal primero; luego profesora, coordinadora, técnico/a, apoyo; alfabético dentro', () => {
-    const titular = p('Zoe Titular', 'profesora', '2026-09-01')
+    const maestra = p('Zoe Maestra', 'profesora', '2026-09-01')
     const refuerzo = p('Ana Refuerzo', 'profesora', '2026-11-15')
     const coord = p('Carla', 'coordinadora')
     const tecB = p('Bruno', 'tecnico')
     const tecA = p('Alba', 'tecnico')
     const apoyo = p('Aitor', 'apoyo')
-    const personas = [apoyo, tecB, coord, refuerzo, tecA, titular]
+    const personas = [apoyo, tecB, coord, refuerzo, tecA, maestra]
     const orden = ordenarConPrincipal(personas, elegirPrincipal(personas))
     expect(orden.map((x) => x.nombre_completo)).toEqual([
-      'Zoe Titular',
+      'Zoe Maestra',
       'Ana Refuerzo',
       'Carla',
       'Alba',

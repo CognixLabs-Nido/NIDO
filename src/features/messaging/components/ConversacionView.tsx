@@ -188,7 +188,7 @@ export function ConversacionView({ locale, rol, header, mensajes, participo }: P
  *   está escribiendo, no necesita el nombre del niño en cada hilo).
  *
  * Casos del lado tutor (`resolverCabeceraTutor`):
- *  - Hay principal (la profesora titular; si no hay, la coordinadora): su nombre +
+ *  - Hay principal (la profesora; si no hay, la coordinadora): su nombre +
  *    subtítulo "Profe del aula X", aunque haya más personal en el aula.
  *  - Sin principal y 1 persona: su nombre + subtítulo.
  *  - Sin principal y N>1 (solo técnico/a y apoyo): "Profes del aula X" + "N profes".
