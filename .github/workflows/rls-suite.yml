@@ -196,3 +196,6 @@ jobs:
           # D5 (#310): signup público cerrado en el panel (disable_signup=true, 08-10-2026);
           # el signup libre da signup_disabled y las altas por API de admin siguen (signup-cerrado).
           SIGNUP_CERRADO_APPLIED: '1'
+          # 20261008120000_chore_drop_es_profe_principal (#312): la columna deprecated ya no existe
+          # en profes_aulas (drop-es-profe-principal).
+          ES_PROFE_PRINCIPAL_DROP_APPLIED: '1'
