@@ -628,12 +628,13 @@
       },
       "personal": {
         "tipo": {
-          "coordinadora": "Lead teacher",
+          "coordinadora": "Coordinator",
           "profesora": "Teacher",
           "tecnico": "Assistant",
           "apoyo": "Support"
         },
-        "label_coordinadora": "Lead teacher",
+        "label_coordinadora": "Coordinator",
+        "label_titular": "Lead teacher",
         "gestionar": "Manage staff",
         "dialog_title": "Staff · {aula}",
         "personal_actual": "Current staff",
@@ -651,14 +652,14 @@
         "no": "No",
         "cancelar": "Cancel",
         "sustituir": "Replace",
-        "sustituir_desc": "This classroom already has a lead teacher ({coordinadora}). Make them a teacher and appoint the new one as lead?",
+        "sustituir_desc": "This classroom already has a coordinator ({coordinadora}). Make them a teacher and appoint the new coordinator?",
         "empty": "No staff in this classroom yet.",
         "aria_cambiar_tipo": "Change staff type",
         "aria_mover": "Move to another classroom",
         "added": "Person added",
         "retirado": "Person removed",
         "tipo_cambiado": "Type updated",
-        "sustituida": "Lead teacher updated",
+        "sustituida": "Coordinator updated",
         "movido": "Person moved"
       }
     },
@@ -1885,17 +1886,18 @@
     },
     "errors": {
       "create_failed": "Could not assign the teacher to the classroom.",
-      "ya_principal": "There is already a lead teacher in this classroom.",
+      "ya_principal": "This classroom already has a coordinator.",
       "usuario_sin_rol_profe": "This user has no teacher role in the centre.",
       "sin_curso_activo": "The centre has no active academic year.",
       "terminar_fallo": "Could not remove the person from the classroom.",
       "asignacion_no_encontrada": "Assignment not found (it may no longer be active).",
       "cambiar_tipo_fallo": "Could not change the staff type.",
-      "sustituir_fallo": "Could not replace the lead teacher.",
+      "sustituir_fallo": "Could not replace the coordinator.",
       "mover_fallo": "Could not move the person.",
       "mover_mismo_aula": "The person is already in that classroom.",
       "mover_ya_en_destino": "The person is already active in the destination classroom.",
-      "mover_origen_no_cerrado": "The person was added to the destination classroom, but the previous assignment could not be closed. Remove it manually."
+      "mover_origen_no_cerrado": "The person was added to the destination classroom, but the previous assignment could not be closed. Remove it manually.",
+      "mover_destino_con_coordinadora": "The destination classroom already has a coordinator. Change it first from \"Manage staff\"."
     }
   },
   "medico": {

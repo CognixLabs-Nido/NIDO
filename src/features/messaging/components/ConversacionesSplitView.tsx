@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
 import { marcarConversacionLeida } from '../actions/marcar-conversacion-leida'
+import { resolverCabeceraTutor } from '../lib/cabecera-tutor'
 import { useMessagingRealtime } from '../lib/use-messaging-realtime'
 import { useScrollAlFondo } from '../lib/use-scroll-al-fondo'
 import type { NinoMensajeriaItem } from '../queries/get-ninos-mensajeria'
@@ -402,11 +403,12 @@ function PanelTitulo({
   if (esTutor) {
     const aulaNombre = header?.aula_nombre ?? nino.aula_nombre
     const profes = header?.profes_aula ?? []
-    if (profes.length === 1 && profes[0]) {
+    const cabecera = resolverCabeceraTutor(profes, aulaNombre)
+    if (cabecera.tipo === 'profe') {
       return (
         <>
           <h2 className="truncate text-sm font-semibold">
-            {t('title_tutor_profe', { nombre: profes[0].nombre_completo })}
+            {t('title_tutor_profe', { nombre: cabecera.nombre })}
           </h2>
           {aulaNombre && (
             <p className="text-muted-foreground text-xs">
@@ -416,19 +418,19 @@ function PanelTitulo({
         </>
       )
     }
-    if (profes.length > 1 && aulaNombre) {
+    if (cabecera.tipo === 'aula_con_profes' && aulaNombre) {
       return (
         <>
           <h2 className="truncate text-sm font-semibold">
             {t('title_tutor_aula', { aula: aulaNombre })}
           </h2>
           <p className="text-muted-foreground text-xs">
-            {t('header_profes_count', { n: profes.length })}
+            {t('header_profes_count', { n: cabecera.n })}
           </p>
         </>
       )
     }
-    if (aulaNombre) {
+    if (cabecera.tipo === 'aula_sin_profe' && aulaNombre) {
       return (
         <h2 className="truncate text-sm font-semibold">
           {t('title_tutor_aula_sin_profe', { aula: aulaNombre })}

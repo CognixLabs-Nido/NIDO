@@ -86,6 +86,7 @@ export default async function AdminAulasPage({ params }: PageProps) {
             },
             // TODO(F5B#36): confirmar VA con usuario (`label_coordinadora`).
             label_coordinadora: t('personal.label_coordinadora'),
+            label_titular: t('personal.label_titular'),
           }}
         />
       )}

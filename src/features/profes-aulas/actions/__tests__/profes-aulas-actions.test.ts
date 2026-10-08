@@ -177,7 +177,7 @@ describe('moverProfeAulaCore', () => {
     expect(calls[1]?.patch).toHaveProperty('fecha_fin')
   })
 
-  it('coordinadora se reinicia a profesora en destino', async () => {
+  it('la coordinadora conserva su rol en el aula destino', async () => {
     const { fake, calls } = makeFake([
       {
         data: { id: ASIG, profe_id: PROFE, aula_id: AULA, tipo_personal_aula: 'coordinadora' },
@@ -189,7 +189,35 @@ describe('moverProfeAulaCore', () => {
     ])
     const r = await moverProfeAulaCore(fake, { asignacion_id: ASIG, aula_destino_id: AULA2 })
     expect(r.success).toBe(true)
-    expect(calls[0]?.patch).toMatchObject({ tipo_personal_aula: 'profesora' })
+    expect(calls[0]?.patch).toMatchObject({ tipo_personal_aula: 'coordinadora' })
+  })
+
+  it.each(['profesora', 'tecnico', 'apoyo'] as const)('%s conserva su rol', async (tipo) => {
+    const { fake, calls } = makeFake([
+      { data: { id: ASIG, profe_id: PROFE, aula_id: AULA, tipo_personal_aula: tipo }, error: null },
+      { data: null, error: null },
+      { data: { id: ASIG2 }, error: null },
+      { data: null, error: null },
+    ])
+    const r = await moverProfeAulaCore(fake, { asignacion_id: ASIG, aula_destino_id: AULA2 })
+    expect(r.success).toBe(true)
+    expect(calls[0]?.patch).toMatchObject({ tipo_personal_aula: tipo })
+  })
+
+  it('destino con coordinadora (23505): error claro y el origen sigue intacto', async () => {
+    const { fake, calls } = makeFake([
+      {
+        data: { id: ASIG, profe_id: PROFE, aula_id: AULA, tipo_personal_aula: 'coordinadora' },
+        error: null,
+      },
+      { data: null, error: null },
+      { data: null, error: { code: '23505', message: 'idx_un_coordinadora_activa' } },
+    ])
+    const r = await moverProfeAulaCore(fake, { asignacion_id: ASIG, aula_destino_id: AULA2 })
+    expect(r.success).toBe(false)
+    if (!r.success) expect(r.error).toBe('profeAula.errors.mover_destino_con_coordinadora')
+    // Solo se intentó el INSERT; el origen no se cerró.
+    expect(calls.filter((c) => c.op === 'update')).toHaveLength(0)
   })
 
   it('ya activa en destino: aborta sin INSERT ni cerrar origen', async () => {

@@ -31,7 +31,10 @@ const LABELS: TablaAulasLabels = {
     acciones: 'Acciones',
   },
   label_coordinadora: 'Coordinadora',
+  label_titular: 'Profe titular',
 }
+
+const F = '2026-09-01'
 
 const BASE_AULA: AulaConPersonal = {
   id: 'aula-1',
@@ -88,31 +91,81 @@ describe('TablaAulas', () => {
     expect(celdas[5]!.textContent).toBe('—') // Técnicos
   })
 
-  it('coordinadora primero con badge variant warm y tooltip; profesora regular variant secondary', () => {
+  it('la profe titular va destacada (warm + "Profe titular"); la coordinadora no', () => {
     const aula: AulaConPersonal = {
       ...BASE_AULA,
       num_alumnos: 3,
+      // El orden lo decide la query (`get-aulas-con-personal`): titular primero.
       profesoras: [
-        { id: 'u-coord', nombre_completo: 'Mónica', tipo_personal_aula: 'coordinadora' },
-        { id: 'u-ana', nombre_completo: 'Ana', tipo_personal_aula: 'profesora' },
-        { id: 'u-zara', nombre_completo: 'Zara', tipo_personal_aula: 'profesora' },
+        {
+          id: 'u-ana',
+          nombre_completo: 'Ana',
+          tipo_personal_aula: 'profesora',
+          fecha_inicio: F,
+          es_titular: true,
+        },
+        {
+          id: 'u-zara',
+          nombre_completo: 'Zara',
+          tipo_personal_aula: 'profesora',
+          fecha_inicio: F,
+          es_titular: false,
+        },
+        {
+          id: 'u-coord',
+          nombre_completo: 'Mónica',
+          tipo_personal_aula: 'coordinadora',
+          fecha_inicio: F,
+          es_titular: false,
+        },
       ],
-      tecnicos: [{ id: 'u-tec', nombre_completo: 'Lucía', tipo_personal_aula: 'tecnico' }],
+      tecnicos: [
+        {
+          id: 'u-tec',
+          nombre_completo: 'Lucía',
+          tipo_personal_aula: 'tecnico',
+          fecha_inicio: F,
+          es_titular: false,
+        },
+      ],
     }
     const { container } = renderTabla([aula])
 
+    const titular = screen.getByText('Ana')
+    expect(titular).toHaveAttribute('title', 'Profe titular')
+    expect(titular.className).toMatch(/warm/i)
+
     const coord = screen.getByText('Mónica')
     expect(coord).toHaveAttribute('title', 'Coordinadora')
-    expect(coord.className).toMatch(/warm/i)
+    expect(coord.className).not.toMatch(/warm/i)
 
-    const profe = screen.getByText('Ana')
-    expect(profe).not.toHaveAttribute('title')
-    expect(profe.className).not.toMatch(/warm/i)
+    const otra = screen.getByText('Zara')
+    expect(otra).not.toHaveAttribute('title')
+    expect(otra.className).not.toMatch(/warm/i)
 
     const textosBadges = Array.from(container.querySelectorAll('tbody [data-slot="badge"]'))
       .map((b) => b.textContent)
       .filter((t) => t && /^(Mónica|Ana|Zara|Lucía)$/.test(t))
-    expect(textosBadges).toEqual(['Mónica', 'Ana', 'Zara', 'Lucía'])
+    expect(textosBadges).toEqual(['Ana', 'Zara', 'Mónica', 'Lucía'])
+  })
+
+  it('sin profesora, la coordinadora titular va destacada con su rol en el tooltip', () => {
+    const aula: AulaConPersonal = {
+      ...BASE_AULA,
+      profesoras: [
+        {
+          id: 'u-coord',
+          nombre_completo: 'Mónica',
+          tipo_personal_aula: 'coordinadora',
+          fecha_inicio: F,
+          es_titular: true,
+        },
+      ],
+    }
+    renderTabla([aula])
+    const coord = screen.getByText('Mónica')
+    expect(coord).toHaveAttribute('title', 'Coordinadora')
+    expect(coord.className).toMatch(/warm/i)
   })
 
   it('num_alumnos=0 muestra 0 (no dash) — semánticamente distinto a "sin dato"', () => {

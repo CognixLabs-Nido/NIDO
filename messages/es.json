@@ -634,6 +634,7 @@
           "apoyo": "Apoyo"
         },
         "label_coordinadora": "Coordinadora",
+        "label_titular": "Profe titular",
         "gestionar": "Gestionar personal",
         "dialog_title": "Personal · {aula}",
         "personal_actual": "Personal actual",
@@ -1885,7 +1886,7 @@
     },
     "errors": {
       "create_failed": "No se pudo asignar el profe al aula.",
-      "ya_principal": "Ya hay un profe principal en esta aula.",
+      "ya_principal": "Esta aula ya tiene coordinadora.",
       "usuario_sin_rol_profe": "Este usuario no tiene rol profe en el centro.",
       "sin_curso_activo": "El centro no tiene un curso académico activo.",
       "terminar_fallo": "No se pudo retirar a la persona del aula.",
@@ -1895,7 +1896,8 @@
       "mover_fallo": "No se pudo mover a la persona.",
       "mover_mismo_aula": "La persona ya está en esa aula.",
       "mover_ya_en_destino": "La persona ya está activa en el aula destino.",
-      "mover_origen_no_cerrado": "La persona se añadió al aula destino, pero no se pudo cerrar la asignación anterior. Retírala manualmente."
+      "mover_origen_no_cerrado": "La persona se añadió al aula destino, pero no se pudo cerrar la asignación anterior. Retírala manualmente.",
+      "mover_destino_con_coordinadora": "El aula de destino ya tiene coordinadora. Cámbiala primero desde «Gestionar personal»."
     }
   },
   "medico": {

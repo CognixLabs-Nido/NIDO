@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 import { marcarConversacionLeida } from '../actions/marcar-conversacion-leida'
+import { resolverCabeceraTutor } from '../lib/cabecera-tutor'
 import { useMessagingRealtime } from '../lib/use-messaging-realtime'
 import { useScrollAlFondo } from '../lib/use-scroll-al-fondo'
 import { PREFIX_ANULADO, type ConversacionHeader, type MensajeView } from '../types'
@@ -186,11 +187,13 @@ export function ConversacionView({ locale, rol, header, mensajes, participo }: P
  *   nombre del propio hijo (decisión UX post-F5: el tutor sabe a quién
  *   está escribiendo, no necesita el nombre del niño en cada hilo).
  *
- * Casos del lado tutor:
- *  - 1 profe activo: nombre del profe + subtítulo "Profe del aula X".
- *  - N>1 profes activos: "Profes del aula X" + subtítulo "N profes".
- *  - 0 profes activos: "Aula X" como fallback. Si tampoco hay aula
- *    (matrícula histórica eliminada, edge case), cae al nombre del niño.
+ * Casos del lado tutor (`resolverCabeceraTutor`):
+ *  - Hay principal (la profesora titular; si no hay, la coordinadora): su nombre +
+ *    subtítulo "Profe del aula X", aunque haya más personal en el aula.
+ *  - Sin principal y 1 persona: su nombre + subtítulo.
+ *  - Sin principal y N>1 (solo técnico/a y apoyo): "Profes del aula X" + "N profes".
+ *  - 0 personas: "Aula X". Si tampoco hay aula (matrícula histórica eliminada,
+ *    edge case), cae al nombre del niño.
  */
 function HeaderTitulo({
   rol,
@@ -206,11 +209,12 @@ function HeaderTitulo({
   if (esTutor) {
     const aulaNombre = header.aula_nombre
     const profes = header.profes_aula
-    if (profes.length === 1 && profes[0]) {
+    const cabecera = resolverCabeceraTutor(profes, aulaNombre)
+    if (cabecera.tipo === 'profe') {
       return (
         <>
           <h1 className="truncate text-base font-semibold">
-            {t('title_tutor_profe', { nombre: profes[0].nombre_completo })}
+            {t('title_tutor_profe', { nombre: cabecera.nombre })}
           </h1>
           {aulaNombre && (
             <p className="text-muted-foreground text-xs">
@@ -220,19 +224,19 @@ function HeaderTitulo({
         </>
       )
     }
-    if (profes.length > 1 && aulaNombre) {
+    if (cabecera.tipo === 'aula_con_profes' && aulaNombre) {
       return (
         <>
           <h1 className="truncate text-base font-semibold">
             {t('title_tutor_aula', { aula: aulaNombre })}
           </h1>
           <p className="text-muted-foreground text-xs">
-            {t('header_profes_count', { n: profes.length })}
+            {t('header_profes_count', { n: cabecera.n })}
           </p>
         </>
       )
     }
-    if (aulaNombre) {
+    if (cabecera.tipo === 'aula_sin_profe' && aulaNombre) {
       return (
         <h1 className="truncate text-base font-semibold">
           {t('title_tutor_aula_sin_profe', { aula: aulaNombre })}

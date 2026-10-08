@@ -26,7 +26,9 @@ import type { AulaConPersonal } from '../queries/get-aulas-con-personal'
  *
  * Decisiones cerradas (Checkpoint B PR #36):
  *  - D2 Apoyos: sin columna. ANAIA no tiene apoyos hoy.
- *  - D3 Coordinadora: `Badge variant="warm"` con `title` (tooltip).
+ *  - D3 (revisado): se destaca la TITULAR del aula (`es_titular`: la profesora
+ *    que más tiempo lleva; si no hay, la coordinadora) con `Badge variant="warm"`.
+ *    El `title` (tooltip) dice el rol: "Profe titular" o "Coordinadora".
  *  - Wrapper con `overflow-x-auto` para evitar overflow en mobile
  *    (gotcha #1 de la spec; ancho mínimo afecta a 6 columnas + badges).
  *  - `data-testid="admin-aula-link-${id}"` se preserva sobre el Link
@@ -44,6 +46,7 @@ export interface TablaAulasLabels {
     acciones: string
   }
   label_coordinadora: string
+  label_titular: string
 }
 
 interface Props {
@@ -106,11 +109,13 @@ export function TablaAulas({ aulas, labels, locale, personalPorAula, candidatos 
                       {a.profesoras.map((p) => (
                         <Badge
                           key={p.id}
-                          variant={p.tipo_personal_aula === 'coordinadora' ? 'warm' : 'secondary'}
+                          variant={p.es_titular ? 'warm' : 'secondary'}
                           title={
                             p.tipo_personal_aula === 'coordinadora'
                               ? labels.label_coordinadora
-                              : undefined
+                              : p.es_titular
+                                ? labels.label_titular
+                                : undefined
                           }
                         >
                           {p.nombre_completo}
