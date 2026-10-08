@@ -3596,7 +3596,6 @@ export type Database = {
           created_at: string
           curso_academico_id: string
           deleted_at: string | null
-          es_profe_principal: boolean
           fecha_fin: string | null
           fecha_inicio: string
           id: string
@@ -3608,7 +3607,6 @@ export type Database = {
           created_at?: string
           curso_academico_id: string
           deleted_at?: string | null
-          es_profe_principal?: boolean
           fecha_fin?: string | null
           fecha_inicio?: string
           id?: string
@@ -3620,7 +3618,6 @@ export type Database = {
           created_at?: string
           curso_academico_id?: string
           deleted_at?: string | null
-          es_profe_principal?: boolean
           fecha_fin?: string | null
           fecha_inicio?: string
           id?: string

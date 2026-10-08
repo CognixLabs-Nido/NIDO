@@ -79,7 +79,7 @@ export async function copiarConfigCurso(
   if (incluir_personal) {
     const { data: personalOrigen } = await supabase
       .from('profes_aulas')
-      .select('profe_id, aula_id, es_profe_principal, tipo_personal_aula')
+      .select('profe_id, aula_id, tipo_personal_aula')
       .eq('curso_academico_id', origenId)
       .is('fecha_fin', null)
       .is('deleted_at', null)
@@ -97,7 +97,6 @@ export async function copiarConfigCurso(
         profe_id: p.profe_id,
         aula_id: p.aula_id,
         curso_academico_id: curso_destino_id,
-        es_profe_principal: p.es_profe_principal,
         tipo_personal_aula: p.tipo_personal_aula,
       }))
     if (nuevoPersonal.length > 0) {
