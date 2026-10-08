@@ -4,7 +4,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
-import { TIPO_PERSONAL_AULA_ORDER, type TipoPersonalAula } from '@/features/profes-aulas/types'
+import {
+  elegirPrincipal,
+  ordenarConPrincipal,
+} from '@/features/profes-aulas/lib/personal-principal'
+import type { TipoPersonalAula } from '@/features/profes-aulas/types'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
@@ -24,10 +28,10 @@ import { getAulasPorCursoCore, type AulaListItem } from './get-aulas'
  * justifique mover lógica a Postgres.
  *
  * Forma del retorno:
- *   - `profesoras[]` mezcla coordinadora + profesora regular, con
- *     coordinadora primero (por TIPO_PERSONAL_AULA_ORDER) y luego
- *     alfabético. Cada item conserva su `tipo_personal_aula` para que
- *     la UI pueda resaltar la coordinadora con un badge distinto.
+ *   - `profesoras[]` mezcla profesoras + coordinadora. La PRINCIPAL del aula
+ *     (`es_principal`, ver `elegirPrincipal`: la profesora que más tiempo lleva;
+ *     si no hay, la coordinadora) va primero y la UI la destaca; después
+ *     profesoras y coordinadora, alfabético dentro de cada tipo.
  *   - `tecnicos[]` y `apoyos[]` agrupan los otros dos valores del
  *     ENUM, alfabéticos. Permanecen separados para columnas dedicadas
  *     en la tabla.
@@ -36,11 +40,16 @@ export interface PersonalMin {
   id: string
   nombre_completo: string
   tipo_personal_aula: TipoPersonalAula
+  /** `YYYY-MM-DD`: desde cuándo está en el aula (desempata la principal). */
+  fecha_inicio: string
+  /** La principal del aula (`elegirPrincipal`): la profesora o, si no hay,
+   *  la coordinadora. Como mucho una por aula. */
+  es_principal: boolean
 }
 
 export interface AulaConPersonal extends AulaListItem {
   num_alumnos: number
-  /** Coordinadora + profesoras regulares, coordinadora primero, alfabético dentro de cada tipo. */
+  /** Profesoras + coordinadora: la principal primero, luego profesoras y coordinadora, alfabético. */
   profesoras: PersonalMin[]
   /** Solo `tipo_personal_aula = 'tecnico'`. */
   tecnicos: PersonalMin[]
@@ -86,6 +95,7 @@ export async function getAulasConPersonalCore(
           `
           aula_id,
           tipo_personal_aula,
+          fecha_inicio,
           profe:usuarios!inner(id, nombre_completo)
           `
         )
@@ -115,6 +125,8 @@ export async function getAulasConPersonalCore(
       id: p.profe.id,
       nombre_completo: p.profe.nombre_completo,
       tipo_personal_aula: p.tipo_personal_aula,
+      fecha_inicio: p.fecha_inicio,
+      es_principal: false,
     }
     if (p.tipo_personal_aula === 'coordinadora' || p.tipo_personal_aula === 'profesora') {
       const bucket = profesPorAula.get(p.aula_id) ?? []
@@ -131,11 +143,14 @@ export async function getAulasConPersonalCore(
     }
   }
 
-  const ordenarProfesoras = (a: PersonalMin, b: PersonalMin): number => {
-    const pesoA = TIPO_PERSONAL_AULA_ORDER[a.tipo_personal_aula]
-    const pesoB = TIPO_PERSONAL_AULA_ORDER[b.tipo_personal_aula]
-    if (pesoA !== pesoB) return pesoA - pesoB
-    return a.nombre_completo.localeCompare(b.nombre_completo)
+  // La principal primero (`elegirPrincipal`: profesora más antigua; si no hay, la
+  // coordinadora), luego profesoras y coordinadora, alfabético dentro de cada tipo.
+  const conPrincipal = (personas: PersonalMin[]): PersonalMin[] => {
+    const principal = elegirPrincipal(personas)
+    return ordenarConPrincipal(personas, principal).map((p) => ({
+      ...p,
+      es_principal: p === principal,
+    }))
   }
   const ordenarAlfabetico = (a: PersonalMin, b: PersonalMin): number =>
     a.nombre_completo.localeCompare(b.nombre_completo)
@@ -143,7 +158,7 @@ export async function getAulasConPersonalCore(
   return aulasList.map((aula) => ({
     ...aula,
     num_alumnos: numAlumnosPorAula.get(aula.id) ?? 0,
-    profesoras: (profesPorAula.get(aula.id) ?? []).sort(ordenarProfesoras),
+    profesoras: conPrincipal(profesPorAula.get(aula.id) ?? []),
     tecnicos: (tecnicosPorAula.get(aula.id) ?? []).sort(ordenarAlfabetico),
     apoyos: (apoyosPorAula.get(aula.id) ?? []).sort(ordenarAlfabetico),
   }))

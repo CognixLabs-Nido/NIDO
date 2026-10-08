@@ -24,10 +24,11 @@ import { fail, ok, type ActionResult } from '../../centros/types'
  *   - Si el INSERT en destino falla → se devuelve error sin tocar el origen.
  *   - Solo tras un INSERT correcto se aplica el `fecha_fin` al origen.
  *
- * El tipo en el aula destino se reinicia a `profesora` si en el origen era
- * `coordinadora` (un traslado no arrastra la jefatura del aula nueva; además
- * evitaría el índice único si el destino ya tuviera coordinadora). El resto
- * de tipos (tecnico/apoyo/profesora) se preservan.
+ * La persona CONSERVA su rol en el aula destino, sea cual sea (modelo de personal:
+ * una coordinadora coordina un grupo de aulas y sigue siéndolo al moverse). Si el
+ * destino ya tiene coordinadora activa, el índice único parcial rechaza el INSERT
+ * (`23505`) ANTES de tocar el origen, y se devuelve un error claro para que la
+ * dirección cambie primero la coordinadora desde «Gestionar personal».
  *
  * RLS `profes_aulas_admin_all` aplica a ambas escrituras.
  */
@@ -84,9 +85,6 @@ export async function moverProfeAulaCore(
   }
   if (yaEnDestino) return fail('profeAula.errors.mover_ya_en_destino')
 
-  const tipoDestino =
-    origen.tipo_personal_aula === 'coordinadora' ? 'profesora' : origen.tipo_personal_aula
-
   // 1. INSERT destino primero.
   const { data: insertada, error: insertErr } = await supabase
     .from('profes_aulas')
@@ -95,13 +93,15 @@ export async function moverProfeAulaCore(
       aula_id: aula_destino_id,
       curso_academico_id: origen.curso_academico_id,
       fecha_inicio: hoyMadrid(),
-      tipo_personal_aula: tipoDestino,
+      tipo_personal_aula: origen.tipo_personal_aula,
     })
     .select('id')
     .single()
 
   if (insertErr || !insertada) {
     logger.warn('moverProfeAula insert destino error', insertErr?.message)
+    // Único índice que puede saltar: una coordinadora activa por aula y curso.
+    if (insertErr?.code === '23505') return fail('profeAula.errors.mover_destino_con_coordinadora')
     return fail('profeAula.errors.mover_fallo')
   }
 

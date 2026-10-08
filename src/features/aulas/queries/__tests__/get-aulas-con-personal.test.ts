@@ -38,6 +38,8 @@ interface FakeMatricula {
 interface FakeProfe {
   aula_id: string
   tipo_personal_aula: 'coordinadora' | 'profesora' | 'tecnico' | 'apoyo'
+  /** Por defecto 2026-09-01 (todos empiezan el mismo día). */
+  fecha_inicio?: string
   profe: { id: string; nombre_completo: string } | null
 }
 
@@ -74,7 +76,10 @@ function makeClient(setup: FakeSetup): SupabaseClient<Database> {
         return chain({ data: setup.matriculas, error: setup.matriculasErr ?? null })
       }
       if (table === 'profes_aulas') {
-        return chain({ data: setup.profes, error: setup.profesErr ?? null })
+        return chain({
+          data: setup.profes.map((p) => ({ fecha_inicio: '2026-09-01', ...p })),
+          error: setup.profesErr ?? null,
+        })
       }
       throw new Error(`unexpected table: ${table}`)
     },
@@ -156,10 +161,63 @@ describe('getAulasConPersonalCore', () => {
 
     const result = await getAulasConPersonalCore(client, CURSO_ID)
     expect(result[0]!.num_alumnos).toBe(3)
-    expect(result[0]!.profesoras.map((p) => p.nombre_completo)).toEqual(['Mónica', 'Ana', 'Zara'])
-    expect(result[0]!.profesoras[0]!.tipo_personal_aula).toBe('coordinadora')
+    // Principal (profesora; empate de fecha → alfabético) primero; luego profesoras y
+    // coordinadora. Solo una principal.
+    expect(result[0]!.profesoras.map((p) => p.nombre_completo)).toEqual(['Ana', 'Zara', 'Mónica'])
+    expect(result[0]!.profesoras.map((p) => p.es_principal)).toEqual([true, false, false])
     expect(result[0]!.tecnicos.map((p) => p.nombre_completo)).toEqual(['Lucía'])
     expect(result[0]!.apoyos.map((p) => p.nombre_completo)).toEqual(['Sara'])
+  })
+
+  it('principal = la profesora que más tiempo lleva, no el refuerzo que llegó después', async () => {
+    const client = makeClient({
+      aulas: [makeAula('a1', 'Aula A')],
+      matriculas: [],
+      profes: [
+        {
+          aula_id: 'a1',
+          tipo_personal_aula: 'profesora',
+          fecha_inicio: '2026-11-15',
+          profe: { id: 'u-ana', nombre_completo: 'Ana Refuerzo' },
+        },
+        {
+          aula_id: 'a1',
+          tipo_personal_aula: 'profesora',
+          fecha_inicio: '2026-09-01',
+          profe: { id: 'u-zoe', nombre_completo: 'Zoe Maestra' },
+        },
+      ],
+    })
+    const result = await getAulasConPersonalCore(client, CURSO_ID)
+    expect(result[0]!.profesoras.map((p) => [p.nombre_completo, p.es_principal])).toEqual([
+      ['Zoe Maestra', true],
+      ['Ana Refuerzo', false],
+    ])
+  })
+
+  it('sin profesora, la coordinadora es la principal; solo técnico/apoyo: ninguna', async () => {
+    const client = makeClient({
+      aulas: [makeAula('a1', 'Aula A'), makeAula('a2', 'Aula B')],
+      matriculas: [],
+      profes: [
+        {
+          aula_id: 'a1',
+          tipo_personal_aula: 'coordinadora',
+          profe: { id: 'u-coord', nombre_completo: 'Mónica' },
+        },
+        {
+          aula_id: 'a2',
+          tipo_personal_aula: 'tecnico',
+          profe: { id: 'u-tec', nombre_completo: 'Lucía' },
+        },
+      ],
+    })
+    const result = await getAulasConPersonalCore(client, CURSO_ID)
+    const a1 = result.find((a) => a.id === 'a1')!
+    const a2 = result.find((a) => a.id === 'a2')!
+    expect(a1.profesoras.map((p) => p.es_principal)).toEqual([true])
+    expect(a2.profesoras).toEqual([])
+    expect(a2.tecnicos.map((p) => p.es_principal)).toEqual([false])
   })
 
   it('num_alumnos cuenta solo matriculas devueltas por la query (activas)', async () => {

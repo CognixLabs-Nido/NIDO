@@ -65,6 +65,8 @@ export interface MensajeView {
 export interface ProfeAula {
   usuario_id: string
   nombre_completo: string
+  /** La principal del aula: la profesora o, si no hay, la coordinadora
+   *  (`elegirPrincipal`). Como mucho una por aula. */
   es_principal: boolean
 }
 

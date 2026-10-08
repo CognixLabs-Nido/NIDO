@@ -634,6 +634,7 @@
           "apoyo": "Suport"
         },
         "label_coordinadora": "Coordinadora",
+        "label_maestra": "Mestra",
         "gestionar": "Gestionar personal",
         "dialog_title": "Personal · {aula}",
         "personal_actual": "Personal actual",
@@ -1885,7 +1886,7 @@
     },
     "errors": {
       "create_failed": "No s'ha pogut assignar el profe a l'aula.",
-      "ya_principal": "Ja hi ha un profe principal en esta aula.",
+      "ya_principal": "Esta aula ja té coordinadora.",
       "usuario_sin_rol_profe": "Este usuari no té rol profe al centre.",
       "sin_curso_activo": "El centre no té un curs acadèmic actiu.",
       "terminar_fallo": "No s'ha pogut llevar la persona de l'aula.",
@@ -1895,7 +1896,8 @@
       "mover_fallo": "No s'ha pogut moure la persona.",
       "mover_mismo_aula": "La persona ja està en eixa aula.",
       "mover_ya_en_destino": "La persona ja està activa a l'aula destí.",
-      "mover_origen_no_cerrado": "La persona s'ha afegit a l'aula destí, però no s'ha pogut tancar l'assignació anterior. Lleva-la manualment."
+      "mover_origen_no_cerrado": "La persona s'ha afegit a l'aula destí, però no s'ha pogut tancar l'assignació anterior. Lleva-la manualment.",
+      "mover_destino_con_coordinadora": "L'aula de destinació ja té coordinadora. Canvia-la primer des de «Gestionar personal»."
     }
   },
   "medico": {

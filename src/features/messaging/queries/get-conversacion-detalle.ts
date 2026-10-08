@@ -1,6 +1,10 @@
 import 'server-only'
 
 import { getAulaNombresPorIds } from '@/features/aulas/queries/get-aula-nombres'
+import {
+  elegirPrincipal,
+  ordenarConPrincipal,
+} from '@/features/profes-aulas/lib/personal-principal'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -151,12 +155,12 @@ export async function getConversacionDetalle(
   // con fallback a "Aula X" sin profe.
   let profes_aula: ProfeAula[] = []
   if (matricula?.aula_id) {
-    // F5B-#34: leemos tipo_personal_aula en vez de es_profe_principal.
-    // El DTO sigue exponiendo es_principal: boolean a la UI — derivado
-    // de tipo === 'coordinadora' para no romper el contrato del header.
+    // Principal = la profesora (la que más tiempo lleva en el aula); si no hay
+    // profesora, la coordinadora; si tampoco, nadie (`elegirPrincipal`). La cabecera del
+    // tutor la muestra destacada (`resolverCabeceraTutor`).
     const { data: asignaciones, error: profesErr } = await supabase
       .from('profes_aulas')
-      .select('profe_id, tipo_personal_aula, profe:usuarios!inner(nombre_completo)')
+      .select('profe_id, tipo_personal_aula, fecha_inicio, profe:usuarios!inner(nombre_completo)')
       .eq('aula_id', matricula.aula_id)
       .is('fecha_fin', null)
       .is('deleted_at', null)
@@ -164,17 +168,20 @@ export async function getConversacionDetalle(
     if (profesErr) {
       logger.warn('getConversacionDetalle: profes_aulas', profesErr.message)
     } else {
-      profes_aula = (asignaciones ?? [])
+      const personas = (asignaciones ?? [])
         .filter((a): a is typeof a & { profe: { nombre_completo: string } } => a.profe !== null)
         .map((a) => ({
           usuario_id: a.profe_id,
           nombre_completo: a.profe.nombre_completo,
-          es_principal: a.tipo_personal_aula === 'coordinadora',
+          tipo_personal_aula: a.tipo_personal_aula,
+          fecha_inicio: a.fecha_inicio,
         }))
-        .sort((a, b) => {
-          if (a.es_principal !== b.es_principal) return a.es_principal ? -1 : 1
-          return a.nombre_completo.localeCompare(b.nombre_completo)
-        })
+      const principal = elegirPrincipal(personas)
+      profes_aula = ordenarConPrincipal(personas, principal).map((p) => ({
+        usuario_id: p.usuario_id,
+        nombre_completo: p.nombre_completo,
+        es_principal: p === principal,
+      }))
     }
   }
 
