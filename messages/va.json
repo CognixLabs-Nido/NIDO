@@ -2682,8 +2682,8 @@
       "vencimiento": "Data límit (opcional)",
       "aula": "Aula",
       "aula_placeholder": "Selecciona una aula",
-      "profe": "Profesora",
-      "profe_placeholder": "Selecciona una profesora"
+      "profe": "Professora",
+      "profe_placeholder": "Selecciona una professora"
     },
     "acciones": {
       "crear": "Crear recordatori",
@@ -2699,8 +2699,8 @@
       "familia_individual": "Una família (per xiquet)",
       "familias_aula": "Totes les famílies d’una aula",
       "familias_centro": "Totes les famílies del centre",
-      "profe_individual": "Una profesora",
-      "profes_centro": "Totes les profesores",
+      "profe_individual": "Una professora",
+      "profes_centro": "Totes les professores",
       "personal": "Per a mi"
     },
     "estados": {
@@ -2717,7 +2717,7 @@
       "nino_no_permitido": "Este destinatari no porta xiquet associat.",
       "aula_requerida": "Selecciona l’aula.",
       "aula_no_permitida": "Este destinatari no porta aula associada.",
-      "profe_requerida": "Selecciona la profesora.",
+      "profe_requerida": "Selecciona la professora.",
       "usuario_no_permitido": "Este destinatari no porta usuari associat."
     },
     "errors": {
