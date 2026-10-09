@@ -565,3 +565,15 @@ Las rutas codifican el ámbito (`(storage.foldername(name))[n]`): `[1]=centroId`
 ### Políticas de Storage del tutor (F10-3)
 
 Migración `20260613100000_phase10_3_adjuntos_storage_policies` (aditiva, solo `CREATE POLICY`; **no** toca las de F10-0). Suma al **tutor** (RLS de `storage.objects` es permisiva → OR entre políticas): `ninos_fotos_insert_tutor`/`ninos_fotos_delete_tutor` y `recogida_adjuntos_insert_tutor`/`recogida_adjuntos_select_tutor`, todas con `es_tutor_de(((storage.foldername(name))[2])::uuid)`. **Aislamiento entre familias** verificado por `adjuntos-storage.rls.test.ts` (gate `F10_3_MIGRATION_APPLIED`): un tutor no escribe bajo el `{ninoId}` de otra familia; el logo solo lo escribe dirección.
+
+## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
+
+Migración `20261009120000_fix_matriculas_motivo_baja_por_columna`. `motivo_baja` puede llevar notas internas del centro y es dato **solo de Dirección**. Una policy RLS filtra filas, no columnas, así que se cierra por privilegio de columna:
+
+- `authenticated`/`anon`/`PUBLIC` **no** tienen `SELECT` de tabla sobre `matriculas`. `authenticated` tiene `SELECT` de **todas las columnas menos `motivo_baja`**. Las policies de filas (`matriculas_admin_all`, `matriculas_profe_select`, `matriculas_tutor_select`) no cambian.
+- Con sesión, pedir `motivo_baja` —o `select=*` / el embed `matriculas(*)`— da **42501**, también al admin y a la profe. `service_role` conserva su permiso de tabla.
+- Dirección lee el motivo por la RPC **`get_motivos_baja_matriculas(p_nino_ids uuid[])`** (`SECURITY DEFINER`; admin del centro de TODOS los niños pedidos, si no 42501; un niño inexistente también se rechaza porque `es_admin(NULL)` sería TRUE).
+- La familia ve su recorrido reducido por **`get_recorrido_nino_familia(p_nino_id)`** (`SECURITY DEFINER`, gate `es_tutor_legal_de`): curso, aula, estado `activa`/`baja` y fechas; nunca el motivo ni los tramos `pendiente`/`lista`. El autorizado recibe 42501.
+- Las dos RPC: `REVOKE` de `PUBLIC`/`anon`, `GRANT EXECUTE` a `authenticated`.
+
+> ⚠️ **Cada columna nueva de `matriculas` necesita su `GRANT SELECT (columna) ON public.matriculas TO authenticated` explícito** en la misma migración que la crea. Sin él, nadie con sesión la podrá leer (ni Dirección). Tests: `src/test/rls/matriculas-motivo-baja-columna.rls.test.ts` (gate `MATRICULAS_MOTIVO_COLUMNA_APPLIED`).

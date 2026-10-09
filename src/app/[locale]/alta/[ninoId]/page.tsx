@@ -22,6 +22,7 @@ import { resolverEntradaAlta } from '@/features/alta/lib/entrada-alta'
 import { resolverSalidaAlta } from '@/features/alta/lib/salida-alta'
 import { puedeConsentirImagenAlta } from '@/features/alta/lib/consentimiento-imagen-alta'
 import { PASO_MIN_AUTENTICADO } from '@/features/alta/lib/estado-alta'
+import { estadoMatriculaVigente } from '@/features/alta/lib/matricula-vigente'
 import { resolverReutilizacionFamilia } from '@/features/alta/lib/reutilizacion-familia'
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
 
@@ -87,19 +88,21 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     tipoVinculo: vinculo?.tipo_vinculo ?? null,
   })
 
-  const { data: matricula } = await supabase
+  // Varias matrículas vigentes posibles (activa + pendiente del curso siguiente): sin
+  // `maybeSingle`, que con dos filas daba error y reabría el asistente a un alumno activo.
+  const { data: matriculasVigentes } = await supabase
     .from('matriculas')
     .select('estado')
     .eq('nino_id', ninoId)
     .is('fecha_baja', null)
     .is('deleted_at', null)
-    .maybeSingle()
+  const estadoMatricula = estadoMatriculaVigente(matriculasVigentes ?? [])
 
   // Alta YA validada (matrícula 'activa'): el wizard solo se reabre en modo edición
   // (`?editar=1`). Sin ese flag, el tutor va a su panel. En modo edición, los write-paths
   // detectan `activa` y encolan en `cambios_pendientes` (decisión J) en vez de aplicar.
-  if (matricula?.estado === 'activa' && editar !== '1') redirect(`/${locale}/family`)
-  if (matricula?.estado === 'lista' && editar !== '1') {
+  if (estadoMatricula === 'activa' && editar !== '1') redirect(`/${locale}/family`)
+  if (estadoMatricula === 'lista' && editar !== '1') {
     return (
       <AltaCompletadaScreen
         ninoNombre={nino.nombre}
@@ -315,7 +318,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const pasoInicial = PASO_MIN_AUTENTICADO
 
   const t = await getTranslations('alta')
-  const enEdicionValidada = matricula?.estado === 'activa' && editar === '1'
+  const enEdicionValidada = estadoMatricula === 'activa' && editar === '1'
 
   return (
     <div className="space-y-4">

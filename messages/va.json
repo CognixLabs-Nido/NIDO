@@ -1300,6 +1300,13 @@
           "exito": "Imatge autoritzada: ja pot aparéixer en les fotos.",
           "exito_pendiente": "La teua autorització queda registrada. Falta la de l'altre tutor perquè aparega en les fotos."
         }
+      },
+      "recorrido": {
+        "titulo": "Recorregut",
+        "vacio": "Encara no hi ha cursos en el seu recorregut.",
+        "en_curso": "En curs",
+        "terminado": "Acabat",
+        "hoy": "hui"
       }
     }
   },

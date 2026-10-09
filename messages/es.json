@@ -1300,6 +1300,13 @@
           "exito": "Imagen autorizada: ya puede aparecer en las fotos.",
           "exito_pendiente": "Tu autorización queda registrada. Falta la del otro tutor para que aparezca en las fotos."
         }
+      },
+      "recorrido": {
+        "titulo": "Recorrido",
+        "vacio": "Todavía no hay cursos en su recorrido.",
+        "en_curso": "En curso",
+        "terminado": "Terminado",
+        "hoy": "hoy"
       }
     }
   },
