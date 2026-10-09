@@ -30,6 +30,7 @@ import { COLORES_TIPO, TIPOS_ORDEN } from '@/features/calendario-centro/lib/colo
 import type { TipoDiaCentro } from '@/features/calendario-centro/schemas/dia-centro'
 import type { OverrideMes } from '@/features/calendario-centro/types'
 import { CalendarioMensual } from '@/shared/components/calendario/CalendarioMensual'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { getEventoDetalleAction } from '../actions/get-evento-detalle'
 import { indexarEventosPorDia, ymd } from '../lib/fecha-grid'
@@ -203,14 +204,11 @@ export function CalendarioConEventos({
     })
   }
 
-  const fmtFechaLarga = new Intl.DateTimeFormat(
-    locale === 'va' ? 'ca-ES' : locale === 'en' ? 'en-GB' : 'es-ES',
-    { dateStyle: 'full' }
-  )
-  const fmtFechaCorta = new Intl.DateTimeFormat(
-    locale === 'va' ? 'ca-ES' : locale === 'en' ? 'en-GB' : 'es-ES',
-    { day: 'numeric', month: 'short' }
-  )
+  const fmtFechaLarga = new Intl.DateTimeFormat(localeIntl(locale), { dateStyle: 'full' })
+  const fmtFechaCorta = new Intl.DateTimeFormat(localeIntl(locale), {
+    day: 'numeric',
+    month: 'short',
+  })
   const existeFila = diaEnEdicion ? overrideMap.has(ymd(diaEnEdicion)) : false
   const diasEnRango = rangoPendiente ? contarDias(rangoPendiente.desde, rangoPendiente.hasta) : 0
 

@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import type { LectorAnuncioItem } from '../queries/get-lectores-anuncio'
 
@@ -48,7 +49,7 @@ export function LectoresAnuncioModal({
   const t = useTranslations('messages.anuncio')
 
   const formatFechaHora = (iso: string) =>
-    new Intl.DateTimeFormat(locale, {
+    new Intl.DateTimeFormat(localeIntl(locale), {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',

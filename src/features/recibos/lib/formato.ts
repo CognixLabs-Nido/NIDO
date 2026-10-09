@@ -1,10 +1,11 @@
 import type { Database } from '@/types/database'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 
 /** Nombre del mes (1-12) localizado y capitalizado, p. ej. "Julio". */
 export function nombreMes(mes: number, locale: string): string {
-  const label = new Intl.DateTimeFormat(locale, { month: 'long' }).format(
+  const label = new Intl.DateTimeFormat(localeIntl(locale), { month: 'long' }).format(
     new Date(2000, mes - 1, 1)
   )
   return label.charAt(0).toUpperCase() + label.slice(1)

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { getCitaDetalleAction } from '../actions/get-cita-detalle'
 import { setPreferenciaVistaAgenda } from '../actions/set-preferencia-vista'
@@ -87,7 +88,7 @@ export function AgendaView({ locale, rol, vista, fecha, citas, ninos, aulas, pro
     : []
 
   const { desde, hasta } = rangoDeVista(vista, fecha)
-  const tag = locale === 'en' ? 'en-GB' : locale === 'va' ? 'ca-ES' : 'es-ES'
+  const tag = localeIntl(locale)
   const titulo =
     vista === 'mes'
       ? new Intl.DateTimeFormat(tag, { month: 'long', year: 'numeric' }).format(parseYmd(fecha))

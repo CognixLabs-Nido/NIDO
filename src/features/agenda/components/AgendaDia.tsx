@@ -1,5 +1,7 @@
 'use client'
 
+import { localeIntl } from '@/shared/lib/locale-intl'
+
 import { diasDeSemana, parseYmd, ymd } from '../lib/fechas'
 import type { CitaAgenda, VistaAgenda } from '../types'
 
@@ -23,7 +25,7 @@ function fmtDia(
   conDiaSemana: boolean
 ): { label: string; sub?: string } {
   const d = parseYmd(fecha)
-  const tag = locale === 'en' ? 'en-GB' : locale === 'va' ? 'ca-ES' : 'es-ES'
+  const tag = localeIntl(locale)
   if (conDiaSemana) {
     return {
       label: new Intl.DateTimeFormat(tag, { weekday: 'short' }).format(d),

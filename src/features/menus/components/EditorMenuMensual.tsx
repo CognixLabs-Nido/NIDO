@@ -22,6 +22,7 @@ import {
 import { tipoAbreElCentro } from '@/features/calendario-centro/lib/tipo-default'
 import type { OverrideMes } from '@/features/calendario-centro/types'
 import { CalendarioMensual } from '@/shared/components/calendario/CalendarioMensual'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { guardarMenuMes } from '../actions/guardar-menu-mes'
 import { publicarPlantilla } from '../actions/publicar-plantilla'
@@ -216,10 +217,9 @@ export function EditorMenuMensual({
           </Link>
           <h1 className="text-h2 text-foreground flex items-center gap-2">
             {t('title', {
-              mes: new Intl.DateTimeFormat(
-                locale === 'va' ? 'ca-ES' : locale === 'en' ? 'en-GB' : 'es-ES',
-                { month: 'long' }
-              ).format(new Date(plantilla.anio, plantilla.mes - 1, 1)),
+              mes: new Intl.DateTimeFormat(localeIntl(locale), { month: 'long' }).format(
+                new Date(plantilla.anio, plantilla.mes - 1, 1)
+              ),
               anio: plantilla.anio,
             })}
             <EstadoBadge estado={estado} />

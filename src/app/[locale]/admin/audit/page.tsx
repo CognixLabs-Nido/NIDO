@@ -1,5 +1,5 @@
 import { HistoryIcon } from 'lucide-react'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -14,6 +14,7 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 type Accion = 'INSERT' | 'UPDATE' | 'DELETE'
 
@@ -25,6 +26,7 @@ const accionVariant: Record<Accion, 'success' | 'info' | 'destructive'> = {
 
 export default async function AdminAuditPage() {
   const t = await getTranslations('admin.audit')
+  const locale = await getLocale()
   const centroId = (await getCentroActualId())!
   const supabase = await createClient()
 
@@ -80,7 +82,7 @@ export default async function AdminAuditPage() {
                 return (
                   <TableRow key={e.id}>
                     <TableCell className="text-muted-foreground font-mono text-xs">
-                      {new Date(e.ts).toLocaleString()}
+                      {new Date(e.ts).toLocaleString(localeIntl(locale))}
                     </TableCell>
                     <TableCell className="text-sm font-medium">{e.tabla}</TableCell>
                     <TableCell>

@@ -1,3 +1,5 @@
+import { localeIntl } from '@/shared/lib/locale-intl'
+
 /**
  * Helpers de fecha para la agenda diaria. Trabajamos con strings `YYYY-MM-DD`
  * en el huso `Europe/Madrid` para casar 1:1 con el helper Postgres
@@ -44,7 +46,7 @@ export function esFuturo(fecha: string): boolean {
 export function formatearFechaHumano(fecha: string, locale: string): string {
   const [y, m, d] = fecha.split('-').map(Number)
   const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0))
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(localeIntl(locale), {
     timeZone: MADRID,
     weekday: 'long',
     day: 'numeric',

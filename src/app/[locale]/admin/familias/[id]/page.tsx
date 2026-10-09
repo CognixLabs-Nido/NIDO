@@ -24,6 +24,7 @@ import {
   type TutorDetalle,
 } from '@/features/familias/queries/get-familia-detalle'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -41,7 +42,9 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
   // F-2c-3: mandato SEPA activo de la familia (o null) para la sección Domiciliación.
   const mandato = await familiaTieneMandatoActivo(id)
   const fechaFirmaLegible = mandato?.fecha_firma
-    ? new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(new Date(mandato.fecha_firma))
+    ? new Intl.DateTimeFormat(localeIntl(locale), { dateStyle: 'long' }).format(
+        new Date(mandato.fecha_firma)
+      )
     : null
 
   return (

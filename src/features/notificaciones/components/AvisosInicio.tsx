@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import type { RolNotif } from '../lib/helpers'
 import { esStaff } from '../lib/helpers'
@@ -82,7 +83,7 @@ export async function AvisosInicio({
 
   // Fecha límite (más próxima) formateada en el huso del centro para el aviso de campaña.
   const campanaFechaFmt = campanaPend
-    ? new Intl.DateTimeFormat(locale, {
+    ? new Intl.DateTimeFormat(localeIntl(locale), {
         day: '2-digit',
         month: 'long',
         year: 'numeric',

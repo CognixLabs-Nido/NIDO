@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { marcarConversacionLeida } from '../actions/marcar-conversacion-leida'
 import { useMessagingRealtime } from '../lib/use-messaging-realtime'
@@ -104,7 +105,7 @@ export function ConversacionAdminFamiliaView({
     return t('rol_tutor')
   }
 
-  const fechaCorta = new Intl.DateTimeFormat(locale, {
+  const fechaCorta = new Intl.DateTimeFormat(localeIntl(locale), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -177,7 +178,7 @@ export function ConversacionAdminFamiliaView({
                         )}
                       </span>
                       <time className="text-muted-foreground" dateTime={m.created_at}>
-                        {new Intl.DateTimeFormat(locale, {
+                        {new Intl.DateTimeFormat(localeIntl(locale), {
                           hour: '2-digit',
                           minute: '2-digit',
                         }).format(new Date(m.created_at))}

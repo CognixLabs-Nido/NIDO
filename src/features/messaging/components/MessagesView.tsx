@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { useMessagingRealtime } from '../lib/use-messaging-realtime'
 import type { NinoMensajeriaItem } from '../queries/get-ninos-mensajeria'
@@ -375,7 +376,7 @@ function AnunciosList({ anuncios, locale }: { anuncios: AnuncioListItem[]; local
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1">
                 <time className="text-muted-foreground text-xs" dateTime={a.created_at}>
-                  {new Intl.DateTimeFormat(locale, {
+                  {new Intl.DateTimeFormat(localeIntl(locale), {
                     day: '2-digit',
                     month: '2-digit',
                   }).format(new Date(a.created_at))}

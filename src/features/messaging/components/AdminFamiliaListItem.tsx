@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import type { AdminFamiliaListItem as AdminFamiliaListItemType } from '../types'
 
@@ -32,7 +33,7 @@ export function AdminFamiliaListItem({ locale, item }: Props) {
   // llamada en el body del componente; el spec no exige countdown.
   const [nowMs] = useState(() => Date.now())
   const caducada = Date.parse(item.expires_at) <= nowMs
-  const fechaCorta = new Intl.DateTimeFormat(locale, {
+  const fechaCorta = new Intl.DateTimeFormat(localeIntl(locale), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -71,7 +72,7 @@ export function AdminFamiliaListItem({ locale, item }: Props) {
         <div className="flex shrink-0 flex-col items-end gap-1">
           {item.last_message_at && (
             <time className="text-muted-foreground text-xs" dateTime={item.last_message_at}>
-              {new Intl.DateTimeFormat(locale, {
+              {new Intl.DateTimeFormat(localeIntl(locale), {
                 day: '2-digit',
                 month: '2-digit',
               }).format(new Date(item.last_message_at))}
