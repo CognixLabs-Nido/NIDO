@@ -29,6 +29,24 @@ function unwrap(raw: unknown): Record<string, unknown> | null {
 }
 
 /**
+ * `matriculas.motivo_baja` no se puede leer con sesión (permiso por columna, migración
+ * 20261009120000): solo Dirección lo lee, por la RPC `get_motivos_baja_matriculas`.
+ * Devuelve matricula_id → motivo. Si la RPC falla (p. ej. quien llama no es admin), mapa
+ * vacío: la pantalla pinta el motivo como ausente en vez de romperse.
+ */
+async function motivosBajaPorMatricula(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  ninoIds: string[]
+): Promise<Map<string, string>> {
+  if (ninoIds.length === 0) return new Map()
+  const { data, error } = await supabase.rpc('get_motivos_baja_matriculas', {
+    p_nino_ids: ninoIds,
+  })
+  if (error) logger.warn('motivosBajaPorMatricula', error.message)
+  return new Map((data ?? []).map((r) => [r.matricula_id, r.motivo_baja]))
+}
+
+/**
  * Extrae `aulas.nombre` del embebido `aulas_curso` de una matrícula. Tras F11-H
  * (multicurso) la FK de `matriculas` es compuesta a `aulas_curso`, así que el aula
  * se anida: `aulas_curso.aulas.nombre` (cada nivel puede venir objeto o array).
@@ -145,14 +163,15 @@ export async function getNinosArchivadosPorCentro(centroId: string): Promise<Nin
 
   // TODAS las matrículas (no solo las 'baja'): las cerradas dan fecha/motivo, y el conjunto
   // completo decide si este archivado llegó a ser alumno.
-  const { data: matriculas } = await supabase
-    .from('matriculas')
-    .select('nino_id, estado, activada_at, fecha_baja, motivo_baja')
-    .in(
-      'nino_id',
-      ninos.map((n) => n.id)
-    )
-    .is('deleted_at', null)
+  const ninoIds = ninos.map((n) => n.id)
+  const [{ data: matriculas }, motivos] = await Promise.all([
+    supabase
+      .from('matriculas')
+      .select('id, nino_id, estado, activada_at, fecha_baja')
+      .in('nino_id', ninoIds)
+      .is('deleted_at', null),
+    motivosBajaPorMatricula(supabase, ninoIds),
+  ])
 
   // Última baja por niño (fecha_baja más reciente).
   const ultimaBaja = new Map<string, { fecha_baja: string | null; motivo_baja: string | null }>()
@@ -165,7 +184,10 @@ export async function getNinosArchivadosPorCentro(centroId: string): Promise<Nin
     if (m.estado !== 'baja') continue
     const prev = ultimaBaja.get(m.nino_id)
     if (!prev || (m.fecha_baja ?? '') > (prev.fecha_baja ?? '')) {
-      ultimaBaja.set(m.nino_id, { fecha_baja: m.fecha_baja, motivo_baja: m.motivo_baja })
+      ultimaBaja.set(m.nino_id, {
+        fecha_baja: m.fecha_baja,
+        motivo_baja: motivos.get(m.id) ?? null,
+      })
     }
   }
 
@@ -266,12 +288,15 @@ export interface MatriculaItem {
 
 export async function getMatriculasPorNino(ninoId: string): Promise<MatriculaItem[]> {
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('matriculas')
-    .select('id, aula_id, fecha_alta, fecha_baja, motivo_baja, estado, aulas_curso(aulas(nombre))')
-    .eq('nino_id', ninoId)
-    .is('deleted_at', null)
-    .order('fecha_alta', { ascending: false })
+  const [{ data, error }, motivos] = await Promise.all([
+    supabase
+      .from('matriculas')
+      .select('id, aula_id, fecha_alta, fecha_baja, estado, aulas_curso(aulas(nombre))')
+      .eq('nino_id', ninoId)
+      .is('deleted_at', null)
+      .order('fecha_alta', { ascending: false }),
+    motivosBajaPorMatricula(supabase, [ninoId]),
+  ])
   if (error) logger.warn('getMatriculasPorNino', error.message)
 
   return (data ?? []).map((m) => ({
@@ -280,7 +305,7 @@ export async function getMatriculasPorNino(ninoId: string): Promise<MatriculaIte
     aula_nombre: extraerNombreAula(m.aulas_curso) ?? '—',
     fecha_alta: m.fecha_alta,
     fecha_baja: m.fecha_baja,
-    motivo_baja: m.motivo_baja,
+    motivo_baja: motivos.get(m.id) ?? null,
     estado: m.estado,
   }))
 }
@@ -289,20 +314,24 @@ export async function getMatriculasPorNino(ninoId: string): Promise<MatriculaIte
  * F-8 — Histórico del niño (recorrido por aulas/cursos). Hermana de
  * `getMatriculasPorNino`: además del aula trae el CURSO académico (nombre + fecha_inicio)
  * para poder agrupar por año. Devuelve TODOS los tramos (incl. pendiente/lista/baja) — la
- * RLS admin ya permite ver todo el histórico, incluidos niños archivados. El agrupado y el
+ * RLS admin ya permite ver todo el histórico, incluidos niños archivados. El motivo de baja
+ * llega aparte, por la RPC de Dirección (`motivosBajaPorMatricula`). El agrupado y el
  * orden final los hace `agruparHistoricoPorCurso` (lib pura); aquí solo se filtra el
  * soft-delete y se ordena por `fecha_alta` como base estable.
  */
 export async function getHistoricoMatriculas(ninoId: string): Promise<HistoricoTramo[]> {
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('matriculas')
-    .select(
-      'id, aula_id, curso_academico_id, fecha_alta, fecha_baja, motivo_baja, estado, aulas_curso(aulas(nombre), cursos_academicos(nombre, fecha_inicio))'
-    )
-    .eq('nino_id', ninoId)
-    .is('deleted_at', null)
-    .order('fecha_alta', { ascending: true })
+  const [{ data, error }, motivos] = await Promise.all([
+    supabase
+      .from('matriculas')
+      .select(
+        'id, aula_id, curso_academico_id, fecha_alta, fecha_baja, estado, aulas_curso(aulas(nombre), cursos_academicos(nombre, fecha_inicio))'
+      )
+      .eq('nino_id', ninoId)
+      .is('deleted_at', null)
+      .order('fecha_alta', { ascending: true }),
+    motivosBajaPorMatricula(supabase, [ninoId]),
+  ])
   if (error) logger.warn('getHistoricoMatriculas', error.message)
 
   return (data ?? []).map((m) => {
@@ -316,7 +345,7 @@ export async function getHistoricoMatriculas(ninoId: string): Promise<HistoricoT
       curso_fecha_inicio: curso?.fecha_inicio ?? '',
       fecha_alta: m.fecha_alta,
       fecha_baja: m.fecha_baja,
-      motivo_baja: m.motivo_baja,
+      motivo_baja: motivos.get(m.id) ?? null,
       estado: m.estado,
     }
   })

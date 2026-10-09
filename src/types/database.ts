@@ -4592,6 +4592,26 @@ export type Database = {
           total_centimos: number
         }[]
       }
+      get_motivos_baja_matriculas: {
+        Args: { p_nino_ids: string[] }
+        Returns: {
+          matricula_id: string
+          motivo_baja: string
+        }[]
+      }
+      get_recorrido_nino_familia: {
+        Args: { p_nino_id: string }
+        Returns: {
+          aula_nombre: string
+          curso_fecha_inicio: string
+          curso_id: string
+          curso_nombre: string
+          estado: Database["public"]["Enums"]["matricula_estado"]
+          fecha_alta: string
+          fecha_baja: string
+          matricula_id: string
+        }[]
+      }
       hoy_madrid: { Args: never; Returns: string }
       idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
       listar_esqueletos_huerfanos_stub: {

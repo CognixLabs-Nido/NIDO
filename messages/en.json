@@ -1300,6 +1300,13 @@
           "exito": "Image authorised: may now appear in photos.",
           "exito_pendiente": "Your authorisation is recorded. The other guardian's is still needed before appearing in photos."
         }
+      },
+      "recorrido": {
+        "titulo": "School history",
+        "vacio": "No school years in the history yet.",
+        "en_curso": "In progress",
+        "terminado": "Finished",
+        "hoy": "today"
       }
     }
   },

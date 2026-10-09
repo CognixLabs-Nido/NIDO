@@ -24,11 +24,18 @@ export interface HistoricoTramo {
   estado: MatriculaEstado
 }
 
-export interface CursoConTramos {
+/** Lo mínimo que necesita el agrupado: lo comparten el histórico de Dirección y el
+ *  recorrido reducido de la familia (`recorrido-familia.ts`). */
+export type TramoAgrupable = Pick<
+  HistoricoTramo,
+  'id' | 'curso_id' | 'curso_nombre' | 'curso_fecha_inicio' | 'fecha_alta'
+>
+
+export interface CursoConTramos<T extends TramoAgrupable = HistoricoTramo> {
   curso_id: string
   curso_nombre: string
   curso_fecha_inicio: string
-  tramos: HistoricoTramo[]
+  tramos: T[]
 }
 
 /**
@@ -81,8 +88,10 @@ export function etiquetaEstadoTramo(
  * (más reciente primero); dentro de cada curso, tramos por `fecha_alta` ASC (y `id` como
  * desempate estable). No muta la entrada.
  */
-export function agruparHistoricoPorCurso(tramos: HistoricoTramo[]): CursoConTramos[] {
-  const porCurso = new Map<string, CursoConTramos>()
+export function agruparHistoricoPorCurso<T extends TramoAgrupable>(
+  tramos: readonly T[]
+): CursoConTramos<T>[] {
+  const porCurso = new Map<string, CursoConTramos<T>>()
   for (const t of tramos) {
     let grupo = porCurso.get(t.curso_id)
     if (!grupo) {

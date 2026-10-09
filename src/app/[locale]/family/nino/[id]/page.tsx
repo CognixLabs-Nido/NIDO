@@ -3,6 +3,7 @@ import {
   CalendarDaysIcon,
   CalendarOffIcon,
   ChevronLeftIcon,
+  GraduationCapIcon,
   HeartIcon,
   ImageIcon,
   InfoIcon,
@@ -19,6 +20,8 @@ import { createClient } from '@/lib/supabase/server'
 import { AltaEnCursoCard } from '@/features/alta/components/AltaEnCursoCard'
 import { estadoAltaFamilia } from '@/features/alta/lib/gate-familia'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
+import { getRecorridoNinoFamilia } from '@/features/ninos/queries/get-recorrido-familia'
+import { RecorridoFamilia } from '@/features/ninos/components/RecorridoFamilia'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 import { ImagenAutorizacionTutor } from '@/features/ninos/components/ImagenAutorizacionTutor'
@@ -121,6 +124,10 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const ausencias = permisos.puede_ver_agenda ? await getAusenciasNino(id) : []
   const puedeReportarAusencias = Boolean(permisos.puede_reportar_ausencias)
 
+  // F-8 (familia): el recorrido por cursos/aulas solo lo ve el tutor legal (la RPC lo
+  // vuelve a comprobar con `es_tutor_legal_de`).
+  const recorrido = esTutorLegal ? await getRecorridoNinoFamilia(id) : null
+
   const foto = await firmarFotoNino(nino.foto_url)
 
   return (
@@ -207,6 +214,16 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
               />
             </CardContent>
           </Card>
+        </section>
+      )}
+
+      {recorrido && (
+        <section className="space-y-4">
+          <h2 className="text-h3 text-foreground flex items-center gap-2">
+            <GraduationCapIcon className="text-primary-600 size-5" />
+            {t('recorrido.titulo')}
+          </h2>
+          <RecorridoFamilia tramos={recorrido} />
         </section>
       )}
 
