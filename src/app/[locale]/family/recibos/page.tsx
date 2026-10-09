@@ -14,6 +14,7 @@ import { getRecibosFamilia, idsDeRecibos } from '@/features/recibos/queries/get-
 import { createClient } from '@/lib/supabase/server'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { formatEuros } from '@/shared/lib/format-money'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -60,7 +61,7 @@ export default async function FamilyRecibosPage({ params }: PageProps) {
     }
   }
   const fechaFirmaLegible = dom?.mandato?.fecha_firma
-    ? new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(
+    ? new Intl.DateTimeFormat(localeIntl(locale), { dateStyle: 'long' }).format(
         new Date(dom.mandato.fecha_firma)
       )
     : null

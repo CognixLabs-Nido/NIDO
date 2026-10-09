@@ -9,6 +9,7 @@ import { NuevaPlantillaDialog } from '@/features/menus/components/NuevaPlantilla
 import { getPlantillasCentro } from '@/features/menus/queries/get-plantillas-centro'
 import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -26,7 +27,7 @@ export default async function AdminMenusPage({ params }: PageProps) {
 
   const plantillas = await getPlantillasCentro(centroId)
 
-  const intlTag = locale === 'va' ? 'ca-ES' : locale === 'en' ? 'en-GB' : 'es-ES'
+  const intlTag = localeIntl(locale)
   const fmtMes = (mes: number, anio: number) =>
     new Intl.DateTimeFormat(intlTag, { month: 'long', year: 'numeric' }).format(
       new Date(anio, mes - 1, 1)

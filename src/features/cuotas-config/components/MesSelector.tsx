@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 interface Props {
   anio: number
@@ -33,7 +34,9 @@ export function MesSelector({ anio, mes, tab = 'asignacion' }: Props) {
   const anioItems = anios.map((a) => ({ value: String(a), label: String(a) }))
   const mesItems = Array.from({ length: 12 }, (_, i) => {
     const m = i + 1
-    const label = new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(2000, i, 1))
+    const label = new Intl.DateTimeFormat(localeIntl(locale), { month: 'long' }).format(
+      new Date(2000, i, 1)
+    )
     return { value: String(m), label: label.charAt(0).toUpperCase() + label.slice(1) }
   })
 

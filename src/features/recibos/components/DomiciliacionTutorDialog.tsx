@@ -31,6 +31,7 @@ import { generarMandatoPdf } from '@/features/alta/lib/mandato-pdf'
 import { generarIdentificadorMandato } from '@/features/alta/lib/mandato-sepa'
 import { sepaMandatoFormSchema, type SepaMandatoFormInput } from '@/features/alta/schemas/sepa'
 import { safeTranslateError } from '@/shared/lib/safe-translate'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 interface RespuestaMandato {
   success: boolean
@@ -92,7 +93,9 @@ export function DomiciliacionTutorDialog({
 
     startTransition(async () => {
       const identificador = generarIdentificadorMandato(centroId, currentUserId, Date.now())
-      const fechaLegible = new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(new Date())
+      const fechaLegible = new Intl.DateTimeFormat(localeIntl(locale), {
+        dateStyle: 'long',
+      }).format(new Date())
 
       let pdf: Blob
       try {

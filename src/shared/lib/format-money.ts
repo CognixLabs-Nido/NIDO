@@ -1,3 +1,5 @@
+import { localeIntl } from '@/shared/lib/locale-intl'
+
 // Utilidades de dinero. En NIDO el dinero se guarda SIEMPRE en céntimos (enteros)
 // en BD; en la UI se introduce y muestra en euros. Centralizado para no repetir la
 // conversión ni el formato (F12-B). Sin dependencias: testeable como función pura.
@@ -14,7 +16,7 @@ export function centimosAEuros(centimos: number): number {
 
 /** Formatea céntimos como importe en euros localizado (p. ej. "6,00 €"). */
 export function formatEuros(centimos: number, locale = 'es-ES'): string {
-  return new Intl.NumberFormat(locale, {
+  return new Intl.NumberFormat(localeIntl(locale), {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,

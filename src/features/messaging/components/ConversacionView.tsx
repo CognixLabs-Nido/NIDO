@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { marcarConversacionLeida } from '../actions/marcar-conversacion-leida'
 import { resolverCabeceraTutor } from '../lib/cabecera-tutor'
@@ -128,7 +129,7 @@ export function ConversacionView({ locale, rol, header, mensajes, participo }: P
                         )}
                       </span>
                       <time className="text-muted-foreground" dateTime={m.created_at}>
-                        {new Intl.DateTimeFormat(locale, {
+                        {new Intl.DateTimeFormat(localeIntl(locale), {
                           hour: '2-digit',
                           minute: '2-digit',
                         }).format(new Date(m.created_at))}

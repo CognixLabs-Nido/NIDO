@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { crearPlantillaMensual } from '../actions/crear-plantilla-mensual'
 
@@ -31,7 +32,7 @@ interface Props {
 }
 
 function nombreMes(mes: number, locale: 'es' | 'en' | 'va'): string {
-  const intlTag = locale === 'va' ? 'ca-ES' : locale === 'en' ? 'en-GB' : 'es-ES'
+  const intlTag = localeIntl(locale)
   return new Intl.DateTimeFormat(intlTag, { month: 'long' }).format(new Date(2026, mes - 1, 1))
 }
 

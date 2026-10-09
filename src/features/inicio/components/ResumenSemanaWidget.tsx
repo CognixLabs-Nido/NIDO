@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { getResumenSemana } from '../queries/get-resumen-semana'
 import type { ResumenItem } from '../types'
@@ -43,10 +44,11 @@ export async function ResumenSemanaWidget({ centroId, agendaHref, calendarioHref
   const locale = await getLocale()
   const { hoy, semana } = await getResumenSemana(centroId)
 
-  const fmt = new Intl.DateTimeFormat(
-    locale === 'va' ? 'ca-ES' : locale === 'en' ? 'en-GB' : 'es-ES',
-    { weekday: 'short', day: 'numeric', month: 'short' }
-  )
+  const fmt = new Intl.DateTimeFormat(localeIntl(locale), {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  })
 
   function tipoLabel(item: ResumenItem): string {
     if (item.kind === 'cita') return tCita(item.tipo)

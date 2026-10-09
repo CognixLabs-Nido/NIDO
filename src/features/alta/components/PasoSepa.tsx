@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FirmaPad } from '@/features/autorizaciones/components/FirmaPad'
 import { safeTranslateError } from '@/shared/lib/safe-translate'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { generarMandatoPdf } from '../lib/mandato-pdf'
 import { generarIdentificadorMandato } from '../lib/mandato-sepa'
@@ -137,7 +138,9 @@ export function PasoSepa({
 
     startTransition(async () => {
       const identificador = generarIdentificadorMandato(centroId, currentUserId, Date.now())
-      const fechaLegible = new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(new Date())
+      const fechaLegible = new Intl.DateTimeFormat(localeIntl(locale), {
+        dateStyle: 'long',
+      }).format(new Date())
 
       let pdf: Blob
       try {

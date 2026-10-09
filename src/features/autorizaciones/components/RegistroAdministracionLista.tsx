@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { confirmarAdministracion } from '../actions/confirmar-administracion'
 import type { AdministracionItem } from '../types'
@@ -34,7 +35,7 @@ export function RegistroAdministracionLista({
   const t = useTranslations('autorizaciones')
   const locale = useLocale()
 
-  const fmt = new Intl.DateTimeFormat(locale, {
+  const fmt = new Intl.DateTimeFormat(localeIntl(locale), {
     timeZone: 'Europe/Madrid',
     day: '2-digit',
     month: '2-digit',

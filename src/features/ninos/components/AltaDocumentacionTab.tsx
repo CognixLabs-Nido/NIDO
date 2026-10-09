@@ -4,13 +4,14 @@ import { getTranslations } from 'next-intl/server'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import type { AltaDocumentacion, TutorAltaItem } from '../queries/get-alta-documentacion'
 
 function fmtFecha(iso: string | null, locale: string): string {
   if (!iso) return '—'
   const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString(locale)
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString(localeIntl(locale))
 }
 
 function direccionLinea(t: TutorAltaItem): string {

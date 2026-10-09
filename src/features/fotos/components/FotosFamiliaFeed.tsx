@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import type { MediaFamiliaItem, PublicacionFamiliaItem } from '../types'
 
@@ -113,9 +114,10 @@ export function FotosFamiliaFeed({ locale, publicaciones }: Props) {
 
 function formatearFecha(iso: string, locale: string): string {
   try {
-    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
-      new Date(iso)
-    )
+    return new Intl.DateTimeFormat(localeIntl(locale), {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(iso))
   } catch {
     return iso
   }

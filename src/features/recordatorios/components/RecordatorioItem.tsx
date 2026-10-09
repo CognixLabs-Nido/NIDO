@@ -8,6 +8,7 @@ import { CalendarClockIcon, CheckIcon, Trash2Icon } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { anularRecordatorio } from '../actions/anular-recordatorio'
 import { completarRecordatorio } from '../actions/completar-recordatorio'
@@ -21,7 +22,7 @@ interface Props {
 }
 
 function formatVencimiento(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale === 'va' ? 'ca-ES-valencia' : locale, {
+  return new Intl.DateTimeFormat(localeIntl(locale), {
     timeZone: 'Europe/Madrid',
     day: '2-digit',
     month: 'short',

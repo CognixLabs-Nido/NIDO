@@ -4,17 +4,9 @@ import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import type { KeyboardEvent, MouseEvent } from 'react'
 
-import type { CalendarioLocale, CalendarioMensualProps } from './types'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
-const LOCALE_MAP: Record<CalendarioLocale, string> = {
-  es: 'es-ES',
-  en: 'en-GB',
-  va: 'ca-ES',
-}
-
-function intlLocale(locale: CalendarioLocale | undefined): string {
-  return LOCALE_MAP[locale ?? 'es']
-}
+import type { CalendarioMensualProps } from './types'
 
 /**
  * Devuelve la fecha de la primera celda del grid (lunes anterior o igual
@@ -83,7 +75,7 @@ export function CalendarioMensual({
   locale,
   labels,
 }: CalendarioMensualProps) {
-  const intlTag = intlLocale(locale)
+  const intlTag = localeIntl(locale ?? 'es')
   const hoy = useMemo(() => fechaSinHora(new Date()), [])
 
   // Lista de 42 celdas con metadata estable. Recalcula solo cuando cambia

@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { marcarAnuncioLeido } from '../actions/marcar-anuncio-leido'
 import { useMessagingRealtime } from '../lib/use-messaging-realtime'
@@ -111,7 +112,7 @@ export function AnuncioView({ locale, anuncio, lectoresDetalle }: Props) {
             <p className="text-muted-foreground text-xs">
               {t('autor_label', { nombre: anuncio.autor_nombre })} ·{' '}
               <time dateTime={anuncio.created_at}>
-                {new Intl.DateTimeFormat(locale, {
+                {new Intl.DateTimeFormat(localeIntl(locale), {
                   day: '2-digit',
                   month: '2-digit',
                   year: 'numeric',

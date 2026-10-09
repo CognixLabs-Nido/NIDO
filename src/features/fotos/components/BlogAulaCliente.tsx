@@ -19,6 +19,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { etiquetarNino, desetiquetarNino } from '../actions/etiquetar'
 import {
@@ -444,9 +445,10 @@ function etiquetasTexto(media: MediaItem, nombres: Map<string, string>): string 
 
 function formatearFecha(iso: string, locale: string): string {
   try {
-    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
-      new Date(iso)
-    )
+    return new Intl.DateTimeFormat(localeIntl(locale), {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(iso))
   } catch {
     return iso
   }

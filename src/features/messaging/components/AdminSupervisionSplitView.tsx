@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { useMessagingRealtime } from '../lib/use-messaging-realtime'
 import { useScrollAlFondo } from '../lib/use-scroll-al-fondo'
@@ -143,7 +144,7 @@ export function AdminSupervisionSplitView({
                               className="text-muted-foreground shrink-0 text-[10px]"
                               dateTime={c.last_message_at}
                             >
-                              {new Intl.DateTimeFormat(locale, {
+                              {new Intl.DateTimeFormat(localeIntl(locale), {
                                 day: '2-digit',
                                 month: '2-digit',
                               }).format(new Date(c.last_message_at))}
@@ -273,7 +274,7 @@ function SupervisionPanel({ locale, header, mensajes, fallbackNombre, fallbackAu
                         <span className="ml-1 font-normal opacity-70">· {m.autor_nombre}</span>
                       </span>
                       <time className="text-muted-foreground" dateTime={m.created_at}>
-                        {new Intl.DateTimeFormat(locale, {
+                        {new Intl.DateTimeFormat(localeIntl(locale), {
                           hour: '2-digit',
                           minute: '2-digit',
                         }).format(new Date(m.created_at))}

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import type { MenuDiaInput } from '../schemas/menu'
 
@@ -37,7 +38,7 @@ export function PanelEdicionMenuDia({
   const t = useTranslations('menus.editor.panel_dia')
 
   const fechaTxt = fecha
-    ? new Intl.DateTimeFormat(locale === 'va' ? 'ca-ES' : locale === 'en' ? 'en-GB' : 'es-ES', {
+    ? new Intl.DateTimeFormat(localeIntl(locale), {
         dateStyle: 'full',
       }).format(fecha)
     : ''

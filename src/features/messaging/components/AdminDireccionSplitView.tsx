@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { marcarConversacionLeida } from '../actions/marcar-conversacion-leida'
 import { MESSAGES_TAB } from '../lib/messages-tabs'
@@ -330,15 +331,23 @@ function formatRelative(iso: string, locale: string): string {
   const diffMs = now.getTime() - date.getTime()
   const diffMin = Math.floor(diffMs / 60_000)
   if (diffMin < 1)
-    return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(date)
+    return new Intl.DateTimeFormat(localeIntl(locale), {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date)
   if (diffMin < 60) return `${diffMin}m`
   const diffH = Math.floor(diffMin / 60)
   if (diffH < 24 && date.getDate() === now.getDate()) {
-    return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(date)
+    return new Intl.DateTimeFormat(localeIntl(locale), {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date)
   }
   const diffDays = Math.floor(diffMs / 86_400_000)
   if (diffDays < 7) {
-    return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(date)
+    return new Intl.DateTimeFormat(localeIntl(locale), { weekday: 'short' }).format(date)
   }
-  return new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit' }).format(date)
+  return new Intl.DateTimeFormat(localeIntl(locale), { day: '2-digit', month: '2-digit' }).format(
+    date
+  )
 }
