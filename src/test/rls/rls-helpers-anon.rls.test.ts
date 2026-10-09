@@ -32,7 +32,8 @@ import type { Database } from '@/types/database'
  *   3. authenticated sigue: llama a es_admin y lee su propia fila de usuarios (policy «self»).
  *
  * audit_log queda fuera de la lista: anon no tiene GRANT de tabla desde #283 (42501 de tabla,
- * anterior a este cambio y ajeno a los helpers).
+ * anterior a este cambio y ajeno a los helpers). matriculas, igual desde 20261009120000
+ * (permiso por columna: anon sin SELECT de tabla → 42501, guarda propia abajo).
  *
  * Gateado (la migración la aplica Jose a mano): RLS_HELPERS_ANON_APPLIED=1
  */
@@ -171,7 +172,6 @@ const TABLAS: Tabla[] = [
   'lectura_anuncio',
   'lectura_conversacion',
   'lista_espera',
-  'matriculas',
   'media',
   'media_etiquetas',
   'mensajes',
@@ -211,9 +211,9 @@ describe.skipIf(!MIGRATION_APPLIED)(
       await deleteTestUser(usuario.id)
     }, 60_000)
 
-    it('son 20 helpers distintos y 55 tablas distintas', () => {
+    it('son 20 helpers distintos y 54 tablas distintas', () => {
       expect(new Set(HELPERS.map(([nombre]) => nombre)).size).toBe(20)
-      expect(new Set(TABLAS).size).toBe(55)
+      expect(new Set(TABLAS).size).toBe(54)
     })
 
     it('ancla: el cliente anon SÍ ejecuta una RPC abierta (hoy_madrid)', async () => {
@@ -228,8 +228,14 @@ describe.skipIf(!MIGRATION_APPLIED)(
       expect(error?.message).toContain(`permission denied for function ${nombre}`)
     })
 
+    it('anon NO lee matriculas: sin SELECT de tabla desde 20261009120000 (42501)', async () => {
+      const { error } = await anon.from('matriculas').select('id').limit(1)
+      expect(error?.code).toBe('42501')
+      expect(error?.message).toContain('permission denied for table matriculas')
+    })
+
     it.each(TABLAS)('anon lee %s: 0 filas y sin error (no evalúa helpers)', async (tabla) => {
-      // Cliente sin tipar SOLO aquí: `from()` con la unión de 55 tablas revienta la instanciación
+      // Cliente sin tipar SOLO aquí: `from()` con la unión de 54 tablas revienta la instanciación
       // de tipos (TS2589). Los nombres ya los valida el tipo `Tabla[]` de TABLAS.
       const { data, error } = await (anon as unknown as SupabaseClient)
         .from(tabla)
