@@ -577,3 +577,13 @@ Migración `20261009120000_fix_matriculas_motivo_baja_por_columna`. `motivo_baja
 - Las dos RPC: `REVOKE` de `PUBLIC`/`anon`, `GRANT EXECUTE` a `authenticated`.
 
 > ⚠️ **Cada columna nueva de `matriculas` necesita su `GRANT SELECT (columna) ON public.matriculas TO authenticated` explícito** en la misma migración que la crea. Sin él, nadie con sesión la podrá leer (ni Dirección). Tests: `src/test/rls/matriculas-motivo-baja-columna.rls.test.ts` (gate `MATRICULAS_MOTIVO_COLUMNA_APPLIED`).
+
+## Idioma de la cuenta en los correos de Auth
+
+Migración `20261010120000_feat_idioma_preferido_en_metadatos_auth`. Las plantillas de correo de Supabase Auth (`supabase/templates/invite.html` y `recovery.html`, y sus asuntos en `config.toml`) solo leen los metadatos del usuario (`.Data` = `auth.users.raw_user_meta_data`). La fuente de verdad del idioma es `public.usuarios.idioma_preferido`:
+
+- Trigger **`usuarios_sincronizar_idioma_auth`** (`AFTER UPDATE OF idioma_preferido`, función `sincronizar_idioma_auth()` `SECURITY DEFINER`, sin `EXECUTE` para nadie): copia el idioma a `raw_user_meta_data.idioma_preferido` (merge, solo esa clave). Cubre el cambio por el propio usuario (`usuarios_self_update`) y el de la app.
+- Al insertar no hace falta: `handle_new_user` crea `usuarios` desde los metadatos.
+- La invitación pasa `idioma_preferido` en los metadatos (lo elige la Dirección; castellano por defecto). Al reinvitar una cuenta provisional GoTrue reenvía con los metadatos ANTIGUOS, así que `prepararIdiomaInvitacion` los actualiza antes de reenviar.
+- Las plantillas usan `{{ $idioma := or .Data.idioma_preferido "es" }}`: sin idioma → castellano, y `eq` nunca compara contra nulo.
+- Tests: `src/test/rls/correos-auth-idioma.rls.test.ts` (trigger con gate `IDIOMA_AUTH_SYNC_APPLIED`; las plantillas, contra el GoTrue real, solo en la BD local efímera, que tiene buzón de pruebas).

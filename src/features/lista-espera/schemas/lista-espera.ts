@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { idiomaCorreoEnum } from '@/features/auth/schemas/invitation'
 import { parentescoEnum } from '@/features/vinculos/schemas/vinculo'
 
 const uuid = z.string().uuid('listaEspera.validation.id_invalido')
@@ -75,6 +76,8 @@ export const invitarAlAltaSchema = z
     aulaId: z.string().uuid('listaEspera.validation.aula_invalida'),
     parentesco: parentescoEnum.optional(),
     descripcionParentesco: z.string().trim().max(120).optional().nullable(),
+    // Idioma del correo de invitación (lo elige la Dirección; por defecto, castellano).
+    idioma: idiomaCorreoEnum.optional(),
   })
   .refine((d) => (d.parentesco === 'otro' ? !!d.descripcionParentesco : true), {
     message: 'vinculo.validation.descripcion_requerida',

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAppUrl } from '@/shared/lib/app-url'
 import { logger } from '@/shared/lib/logger'
 
+import { prepararIdiomaInvitacion } from '../lib/idioma-invitacion'
 import { llamarGoTrue } from '../lib/llamar-gotrue'
 import { sendInvitationSchema, type SendInvitationInput } from '../schemas/invitation'
 
@@ -12,9 +13,14 @@ import { createServiceRoleClient } from '@/lib/supabase/admin'
 
 const INVITATION_TTL_DAYS = 7
 
+/**
+ * El segundo parámetro (locale de la UI de quien invita) ya no decide nada: el enlace del correo
+ * lleva al idioma de la INVITACIÓN (`input.idioma`), el mismo en que sale el correo. Se mantiene
+ * para no romper a quien lo pasa.
+ */
 export async function sendInvitation(
   input: SendInvitationInput,
-  locale: string = 'es'
+  _locale: string = 'es'
 ): Promise<ActionResult<{ invitationId: string }>> {
   const parsed = sendInvitationSchema.safeParse(input)
   if (!parsed.success) {
@@ -144,7 +150,11 @@ export async function sendInvitation(
     .eq('id', parsed.data.centroId)
     .maybeSingle()
 
-  const redirectTo = `${getAppUrl()}/${locale}/invitation/${invitation.token}`
+  // Idioma del correo y de la página del enlace (elegido por la Dirección, el de la cuenta
+  // provisional si es un reenvío, o castellano). Ajusta la cuenta provisional si hace falta.
+  const idioma = await prepararIdiomaInvitacion(service, parsed.data.email, parsed.data.idioma)
+
+  const redirectTo = `${getAppUrl()}/${idioma}/invitation/${invitation.token}`
 
   const { error: emailError, indisponible: emailIndisponible } = await llamarGoTrue(
     'inviteUserByEmail',
@@ -155,6 +165,9 @@ export async function sendInvitation(
           token: invitation.token,
           rol_objetivo: parsed.data.rolObjetivo,
           centro_nombre: centro?.nombre ?? null,
+          // Lo lee la plantilla (`.Data.idioma_preferido`) y `handle_new_user` lo copia a
+          // `usuarios.idioma_preferido` al crear la cuenta provisional.
+          idioma_preferido: idioma,
         },
       })
   )

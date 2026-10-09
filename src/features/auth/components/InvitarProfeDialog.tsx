@@ -32,7 +32,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { invitarProfe } from '@/features/auth/actions/invitar-profe'
-import { invitarProfeSchema, type InvitarProfeInput } from '@/features/auth/schemas/invitation'
+import {
+  IDIOMAS_CORREO,
+  invitarProfeSchema,
+  type InvitarProfeInput,
+} from '@/features/auth/schemas/invitation'
 import { TIPO_PERSONAL_AULA } from '@/features/profes-aulas/types'
 
 interface Props {
@@ -49,6 +53,7 @@ interface Props {
 export function InvitarProfeDialog({ locale, aulas }: Props) {
   const t = useTranslations('admin.personal.invitar')
   const tTipos = useTranslations('admin.personal.tipo_personal')
+  const tIdioma = useTranslations('auth.invitation.idioma_correo')
   const tErrors = useTranslations()
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
@@ -61,6 +66,7 @@ export function InvitarProfeDialog({ locale, aulas }: Props) {
       email: '',
       aulaId: '',
       tipoPersonalAula: 'profesora',
+      idioma: 'es',
     },
   })
 
@@ -80,6 +86,7 @@ export function InvitarProfeDialog({ locale, aulas }: Props) {
 
   const aulaItems = aulas.map((a) => ({ value: a.id, label: a.nombre }))
   const tipoItems = TIPO_PERSONAL_AULA.map((tp) => ({ value: tp, label: tTipos(tp) }))
+  const idiomaItems = IDIOMAS_CORREO.map((i) => ({ value: i, label: tIdioma(i) }))
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -158,6 +165,30 @@ export function InvitarProfeDialog({ locale, aulas }: Props) {
                     </FormControl>
                     <SelectContent>
                       {tipoItems.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="idioma"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{tIdioma('label')}</FormLabel>
+                  <Select items={idiomaItems} onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {idiomaItems.map((item) => (
                         <SelectItem key={item.value} value={item.value}>
                           {item.label}
                         </SelectItem>

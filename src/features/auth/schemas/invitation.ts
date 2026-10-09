@@ -11,6 +11,12 @@ export const userRoleSchema = z.enum(['admin', 'profe', 'tutor_legal', 'autoriza
 // y admin/profe → NULL los fija la acción (no se piden en el input).
 export const tutorTipoVinculoEnum = z.enum(['tutor_legal_principal', 'tutor_legal_secundario'])
 
+// Idioma del correo de invitación (y de la página a la que lleva). Lo elige la Dirección al
+// invitar; por defecto, castellano. Orden de presentación en el selector: es, va, en.
+export const IDIOMAS_CORREO = ['es', 'va', 'en'] as const
+export const idiomaCorreoEnum = z.enum(IDIOMAS_CORREO)
+export type IdiomaCorreo = z.infer<typeof idiomaCorreoEnum>
+
 export const sendInvitationSchema = z
   .object({
     email: z.string().email({ message: 'auth.validation.email_invalid' }),
@@ -19,6 +25,9 @@ export const sendInvitationSchema = z
     ninoId: z.string().uuid().optional(),
     aulaId: z.string().uuid().optional(),
     tipoVinculo: tutorTipoVinculoEnum.optional(),
+    // Sin idioma (reenvío de una invitación pendiente) → se conserva el de la cuenta provisional,
+    // o castellano si no hay. Ver `prepararIdiomaInvitacion`.
+    idioma: idiomaCorreoEnum.optional(),
   })
   .refine(
     (data) => (['tutor_legal', 'autorizado'].includes(data.rolObjetivo) ? !!data.ninoId : true),
@@ -45,6 +54,7 @@ export const invitarProfeSchema = z.object({
   email: z.string().email({ message: 'auth.validation.email_invalid' }),
   aulaId: z.string().uuid('auth.validation.aula_id_required'),
   tipoPersonalAula: z.enum(TIPO_PERSONAL_AULA),
+  idioma: idiomaCorreoEnum.optional(),
 })
 
 export const acceptInvitationSchema = z

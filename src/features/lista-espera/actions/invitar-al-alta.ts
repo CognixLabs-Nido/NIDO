@@ -241,6 +241,7 @@ export async function invitarAlAlta(
       centroId,
       ninoId,
       tipoVinculo: 'tutor_legal_principal',
+      idioma: parsed.data.idioma ?? 'es',
     },
     locale
   )

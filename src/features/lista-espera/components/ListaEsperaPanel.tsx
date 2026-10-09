@@ -30,6 +30,7 @@ import {
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/shared/components/EmptyState'
 
+import { IDIOMAS_CORREO, type IdiomaCorreo } from '@/features/auth/schemas/invitation'
 import { parentescoEnum } from '@/features/vinculos/schemas/vinculo'
 
 import { completarEnDireccion } from '../actions/completar-direccion'
@@ -329,6 +330,7 @@ function InvitarBoton({
 }) {
   const t = useTranslations('admin.admisiones')
   const tParentesco = useTranslations('vinculo.parentesco')
+  const tIdioma = useTranslations('auth.invitation.idioma_correo')
   const tErrors = useTranslations()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -337,6 +339,8 @@ function InvitarBoton({
   const [parentescoRevelado, setParentescoRevelado] = useState(false)
   const [parentesco, setParentesco] = useState('')
   const [descripcion, setDescripcion] = useState('')
+  // Idioma del correo de invitación: castellano salvo que la Dirección elija otro.
+  const [idioma, setIdioma] = useState<IdiomaCorreo>('es')
   const [pending, start] = useTransition()
 
   const aulaSel = aulas.find((a) => a.aulaId === aulaId)
@@ -350,6 +354,7 @@ function InvitarBoton({
     setAulaId('')
     setParentesco('')
     setDescripcion('')
+    setIdioma('es')
   }
 
   const invitar = () =>
@@ -362,8 +367,9 @@ function InvitarBoton({
                 aulaId,
                 parentesco: parentesco as (typeof parentescoEnum.options)[number],
                 descripcionParentesco: requiereDescripcion ? descripcion : null,
+                idioma,
               }
-            : { id, aulaId },
+            : { id, aulaId, idioma },
           locale
         )
         if (r.success) {
@@ -447,6 +453,21 @@ function InvitarBoton({
                 {t('invitar_dialog.exceso', { capacidad: aulaSel.capacidad })}
               </p>
             )}
+
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium">{tIdioma('label')}</span>
+              <select
+                className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
+                value={idioma}
+                onChange={(e) => setIdioma(e.target.value as IdiomaCorreo)}
+              >
+                {IDIOMAS_CORREO.map((i) => (
+                  <option key={i} value={i}>
+                    {tIdioma(i)}
+                  </option>
+                ))}
+              </select>
+            </label>
 
             {pideParentesco && (
               <>

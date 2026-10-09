@@ -92,6 +92,12 @@ export async function crearTutorDirecto(
       return fail('auth.invitation.errors.create_failed')
     }
     usuarioId = updated.user.id
+    // El stub ya tenía su fila en `usuarios` (handle_new_user): el idioma se copia también ahí.
+    const { error: idiomaErr } = await service
+      .from('usuarios')
+      .update({ idioma_preferido: params.idiomaPreferido })
+      .eq('id', usuarioId)
+    if (idiomaErr) logger.warn('crearTutorDirecto idioma_preferido', idiomaErr.message)
   } else {
     // Cuenta nueva con credenciales de la Dirección. `email_confirm:true` la deja usable ya;
     // `handle_new_user` puebla `public.usuarios` con el nombre REAL de la metadata.

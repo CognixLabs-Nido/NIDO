@@ -212,6 +212,14 @@ export async function acceptInvitationCore(
       return fail('auth.invitation.errors.create_failed')
     }
     userId = updated.user.id
+    // `usuarios` se creó con el stub (handle_new_user, idioma de la invitación); el idioma que
+    // elige ahora la persona hay que copiarlo también aquí, que es la fuente de verdad (los
+    // correos lo leen de los metadatos, que ya lleva el updateUserById de arriba).
+    const { error: idiomaErr } = await service
+      .from('usuarios')
+      .update({ idioma_preferido: parsed.data.idiomaPreferido })
+      .eq('id', userId)
+    if (idiomaErr) logger.warn('accept: idioma_preferido en usuarios', idiomaErr.message)
   } else {
     const { data: created, error: createErr } = await service.auth.admin.createUser({
       email: invitation.email,

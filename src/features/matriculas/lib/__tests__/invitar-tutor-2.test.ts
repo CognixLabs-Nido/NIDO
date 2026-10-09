@@ -68,7 +68,20 @@ describe('invitarTutor2AlValidar', () => {
       centroId: CENTRO,
       ninoId: NINO,
       tipoVinculo: 'tutor_legal_secundario',
+      idioma: 'es',
     })
+  })
+
+  it('el correo del tutor 2 sale en el idioma del tutor principal', async () => {
+    leerTutoresDeNino.mockResolvedValue(tutores({ email: 't2@nido.test', usuario_id: null }))
+    const { fake } = makeFake({
+      ninos: { centro_id: CENTRO },
+      usuarios: { idioma_preferido: 'va' },
+    })
+
+    await invitarTutor2AlValidar(fake, NINO)
+
+    expect(sendInvitation).toHaveBeenCalledWith(expect.objectContaining({ idioma: 'va' }))
   })
 
   it('tutor 2 CON cuenta en la familia → no invita (lo vincula la RPC)', async () => {

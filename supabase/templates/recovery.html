@@ -1,6 +1,6 @@
-{{/* Idioma del correo: lo elige la Dirección al invitar (metadatos `idioma_preferido` que pasa
-sendInvitation). Sin idioma → castellano. `or` lo deja siempre como texto, así que `eq` nunca
-compara contra un valor nulo. */}}{{ $idioma := or .Data.idioma_preferido "es" }}
+{{/* Idioma del correo: el de la cuenta (metadatos `idioma_preferido`, sincronizados desde
+usuarios.idioma_preferido). Sin idioma → castellano. `or` lo deja siempre como texto, así que `eq`
+nunca compara contra un valor nulo. */}}{{ $idioma := or .Data.idioma_preferido "es" }}
 <div
   style="
     margin: 0;
@@ -45,26 +45,18 @@ compara contra un valor nulo. */}}{{ $idioma := or .Data.idioma_preferido "es" }
                 end }}
               </h1>
               <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #3d4450">
-                {{ if eq $idioma "va" }}L'escola infantil t'ha convidat a unir-te a
-                <strong>NIDO</strong>, la plataforma on es gestiona el dia a dia del centre:
-                comunicacions, agenda, fotos i autoritzacions.{{ else if eq $idioma "en" }}Your
-                nursery school has invited you to join <strong>NIDO</strong>, the platform where the
-                centre's day-to-day is managed: messages, diary, photos and authorisations.{{ else
-                }}La escuela infantil te ha invitado a unirte a <strong>NIDO</strong>, la plataforma
-                donde se gestiona el d&iacute;a a d&iacute;a del centro: comunicaciones, agenda,
-                fotos y autorizaciones.{{ end }}
-              </p>
-              <p style="margin: 0 0 8px; font-size: 15px; line-height: 1.6; color: #3d4450">
-                {{ if eq $idioma "va" }}Polsa el bot&oacute; per a crear el teu compte i completar
-                el teu acc&eacute;s:{{ else if eq $idioma "en" }}Click the button to create your
-                account and complete your access:{{ else }}Pulsa el bot&oacute;n para crear tu
-                cuenta y completar tu acceso:{{ end }}
+                {{ if eq $idioma "va" }}Has demanat restablir la contrasenya del teu compte de NIDO.
+                Polsa el bot&oacute; per a crear una contrasenya nova.{{ else if eq $idioma "en"
+                }}You asked to reset the password for your NIDO account. Click the button to create
+                a new password.{{ else }}Has solicitado restablecer la contrase&ntilde;a de tu
+                cuenta en NIDO. Pulsa el bot&oacute;n para crear una nueva contrase&ntilde;a.{{ end
+                }}
               </p>
               <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 24px 0">
                 <tr>
                   <td align="center" style="border-radius: 8px; background-color: #1f7a5c">
                     <a
-                      href="{{ .RedirectTo }}"
+                      href="{{ .ConfirmationURL }}"
                       style="
                         display: inline-block;
                         padding: 13px 28px;
@@ -74,8 +66,8 @@ compara contra un valor nulo. */}}{{ $idioma := or .Data.idioma_preferido "es" }
                         text-decoration: none;
                         border-radius: 8px;
                       "
-                      >{{ if eq $idioma "va" }}Completar el meu acc&eacute;s{{ else if eq $idioma
-                      "en" }}Complete my access{{ else }}Completar mi acceso{{ end }}</a
+                      >{{ if eq $idioma "va" }}Restablir la contrasenya{{ else if eq $idioma "en"
+                      }}Reset password{{ else }}Restablecer contrase&ntilde;a{{ end }}</a
                     >
                   </td>
                 </tr>
@@ -87,23 +79,14 @@ compara contra un valor nulo. */}}{{ $idioma := or .Data.idioma_preferido "es" }
                 navegador:{{ end }}
               </p>
               <p style="margin: 0 0 16px; font-size: 13px; line-height: 1.5; word-break: break-all">
-                <a href="{{ .RedirectTo }}" style="color: #1f7a5c">{{ .RedirectTo }}</a>
+                <a href="{{ .ConfirmationURL }}" style="color: #1f7a5c">{{ .ConfirmationURL }}</a>
               </p>
-              <p style="margin: 0 0 24px; font-size: 13px; line-height: 1.6; color: #6b7280">
-                {{ if eq $idioma "va" }}Este enlla&ccedil; &eacute;s personal, no el compartisques.
-                Si no esperaves esta invitaci&oacute;, pots ignorar este correu.{{ else if eq
-                $idioma "en" }}This link is personal, please don't share it. If you weren't
-                expecting this invitation, you can ignore this email.{{ else }}Este enlace es
-                personal, no lo compartas. Si no esperabas esta invitaci&oacute;n, puedes ignorar
-                este correo.{{ end }}
-              </p>
-              <p style="margin: 0; font-size: 14px; color: #3d4450">
-                {{ if eq $idioma "va" }}Una salutaci&oacute;,<br />L'equip de {{ if
-                .Data.centro_nombre }}{{ .Data.centro_nombre }}{{ else }}l'escola{{ end }}{{ else if
-                eq $idioma "en" }}Kind regards,<br />The {{ if .Data.centro_nombre }}{{
-                .Data.centro_nombre }}{{ else }}school{{ end }} team{{ else }}Un saludo,<br />El
-                equipo de {{ if .Data.centro_nombre }}{{ .Data.centro_nombre }}{{ else }}la
-                escuela{{ end }}{{ end }}
+              <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #6b7280">
+                {{ if eq $idioma "va" }}Si no has demanat este canvi, ignora este correu: la teua
+                contrasenya continuar&agrave; sent la mateixa.{{ else if eq $idioma "en" }}If you
+                didn't ask for this change, ignore this email: your password will stay the same.{{
+                else }}Si no has solicitado este cambio, ignora este correo: tu contrase&ntilde;a
+                seguir&aacute; siendo la misma.{{ end }}
               </p>
             </td>
           </tr>

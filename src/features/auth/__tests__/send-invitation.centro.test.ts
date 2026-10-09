@@ -62,6 +62,12 @@ function serviceFake() {
   }
 }
 
+// El idioma del correo lo resuelve `prepararIdiomaInvitacion` (lee la cuenta provisional por
+// RPC); aquí se simula: devuelve el elegido o castellano.
+vi.mock('@/features/auth/lib/idioma-invitacion', () => ({
+  prepararIdiomaInvitacion: async (_s: unknown, _e: string, elegido?: string) => elegido ?? 'es',
+}))
+
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: { id: ADMIN } } }) },

@@ -96,7 +96,13 @@ describe('invitarProfeCore', () => {
     expect(r.success).toBe(true)
     if (r.success) expect(r.data.invitationId).toBe(INV)
     expect(send).toHaveBeenCalledWith(
-      { email: 'profe@example.com', rolObjetivo: 'profe', centroId: CENTRO, aulaId: AULA },
+      {
+        email: 'profe@example.com',
+        rolObjetivo: 'profe',
+        centroId: CENTRO,
+        aulaId: AULA,
+        idioma: 'es',
+      },
       'es'
     )
     expect(calls[0]?.op).toBe('update')

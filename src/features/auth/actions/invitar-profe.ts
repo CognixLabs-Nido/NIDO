@@ -127,6 +127,8 @@ export async function invitarProfeCore(
       rolObjetivo: 'profe',
       centroId: aula.centro_id,
       aulaId: parsed.data.aulaId,
+      // Idioma del correo elegido por la Dirección; por defecto, castellano.
+      idioma: parsed.data.idioma ?? 'es',
     },
     locale
   )
