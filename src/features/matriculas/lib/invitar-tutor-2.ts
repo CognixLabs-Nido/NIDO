@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
 import { sendInvitation } from '@/features/auth/actions/send-invitation'
+import { idiomaCorreoEnum, type IdiomaCorreo } from '@/features/auth/schemas/invitation'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
@@ -74,12 +75,27 @@ export async function invitarTutor2AlValidar(supabase: Client, ninoId: string): 
       .maybeSingle()
     if (abierta) return
 
+    // Idioma del correo: el del tutor principal de la familia (ya eligió el suyo al aceptar su
+    // invitación). Si no se puede leer, castellano.
+    const principal = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_principal')
+    let idioma: IdiomaCorreo = 'es'
+    if (principal?.usuario_id) {
+      const { data: perfil } = await supabase
+        .from('usuarios')
+        .select('idioma_preferido')
+        .eq('id', principal.usuario_id)
+        .maybeSingle()
+      const leido = idiomaCorreoEnum.safeParse(perfil?.idioma_preferido)
+      if (leido.success) idioma = leido.data
+    }
+
     const r = await sendInvitation({
       email,
       rolObjetivo: 'tutor_legal',
       centroId: nino.centro_id,
       ninoId,
       tipoVinculo: 'tutor_legal_secundario',
+      idioma,
     })
     if (!r.success) logger.warn('invitarTutor2AlValidar', r.error)
   } catch (e) {

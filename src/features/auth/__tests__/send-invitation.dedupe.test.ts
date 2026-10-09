@@ -24,7 +24,10 @@ let calls: {
 // Qué niños tienen ya invitación abierta (para simular el dedupe).
 let existingForNino: Record<string, boolean>
 // Args con los que se llamó a inviteUserByEmail (para verificar el payload `data`).
-let lastInviteArgs: { email: string; opts: { data?: Record<string, unknown> } } | null
+let lastInviteArgs: {
+  email: string
+  opts: { data?: Record<string, unknown>; redirectTo?: string }
+} | null
 
 function makeServiceFake() {
   function builder(table: string) {
@@ -91,14 +94,22 @@ function makeServiceFake() {
     from: (table: string) => builder(table),
     auth: {
       admin: {
-        inviteUserByEmail: vi.fn((email: string, opts: { data?: Record<string, unknown> }) => {
-          lastInviteArgs = { email, opts }
-          return Promise.resolve({ error: null })
-        }),
+        inviteUserByEmail: vi.fn(
+          (email: string, opts: { data?: Record<string, unknown>; redirectTo?: string }) => {
+            lastInviteArgs = { email, opts }
+            return Promise.resolve({ error: null })
+          }
+        ),
       },
     },
   }
 }
+
+// El idioma del correo lo resuelve `prepararIdiomaInvitacion` (lee la cuenta provisional por
+// RPC); aquí se simula: devuelve el elegido o castellano.
+vi.mock('@/features/auth/lib/idioma-invitacion', () => ({
+  prepararIdiomaInvitacion: async (_s: unknown, _e: string, elegido?: string) => elegido ?? 'es',
+}))
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() =>
@@ -183,5 +194,33 @@ describe('sendInvitation — dedupe nino_id-aware', () => {
       rol_objetivo: 'profe',
       centro_nombre: 'Escuela Demo',
     })
+  })
+
+  it('(5) idioma elegido (va): el correo lo lleva en los metadatos y el enlace va a /va/', async () => {
+    const r = await sendInvitation({
+      email: 'profe@nido.test',
+      rolObjetivo: 'profe',
+      centroId: CENTRO,
+      aulaId: '55555555-5555-4555-8555-555555555555',
+      idioma: 'va',
+    })
+    expect(r.success).toBe(true)
+    expect(lastInviteArgs?.opts.data).toMatchObject({ idioma_preferido: 'va' })
+    expect(lastInviteArgs?.opts.redirectTo).toMatch(/\/va\/invitation\/tok$/)
+  })
+
+  it('(6) sin idioma → castellano (aunque la UI de quien invita esté en inglés)', async () => {
+    const r = await sendInvitation(
+      {
+        email: 'profe@nido.test',
+        rolObjetivo: 'profe',
+        centroId: CENTRO,
+        aulaId: '55555555-5555-4555-8555-555555555555',
+      },
+      'en'
+    )
+    expect(r.success).toBe(true)
+    expect(lastInviteArgs?.opts.data).toMatchObject({ idioma_preferido: 'es' })
+    expect(lastInviteArgs?.opts.redirectTo).toMatch(/\/es\/invitation\//)
   })
 })

@@ -22,6 +22,8 @@ let usersFixture: Array<{ id: string; email: string }>
 let rolesParaUsuario: Array<{ usuario_id: string }>
 // Payload del upsert de `vinculos_familiares` (auto-vínculo).
 let vinculosUpsert: unknown
+// Patch de los UPDATE sobre `usuarios` (el idioma que elige la persona al aceptar).
+let usuariosUpdates: unknown[]
 
 // Spies de auth admin.
 let updateSpy: ReturnType<typeof vi.fn>
@@ -82,8 +84,9 @@ function makeServiceFake() {
       state.op = 'insert'
       return self()
     }
-    b.update = () => {
+    b.update = (patch: unknown) => {
       state.op = 'update'
+      if (table === 'usuarios') usuariosUpdates.push(patch)
       return self()
     }
     b.upsert = (payload: unknown) => {
@@ -174,6 +177,7 @@ beforeEach(() => {
   usersFixture = []
   rolesParaUsuario = []
   vinculosUpsert = undefined
+  usuariosUpdates = []
   updateSpy = vi.fn(() => Promise.resolve({ data: { user: { id: 'stub-id' } }, error: null }))
   createSpy = vi.fn(() => Promise.resolve({ data: { user: { id: 'new-id' } }, error: null }))
   deleteSpy = vi.fn(() => Promise.resolve({ error: null }))
@@ -194,6 +198,15 @@ describe('acceptInvitation — completar stub vs crear vs rechazar', () => {
       expect.objectContaining({ password: 'Password1234!', email_confirm: true })
     )
     expect(createSpy).not.toHaveBeenCalled()
+    // El idioma elegido al aceptar pasa también a `usuarios` (la fila del stub nació con el de
+    // la invitación) y a los metadatos (de donde lo leen los correos).
+    expect(updateSpy).toHaveBeenCalledWith(
+      'stub-id',
+      expect.objectContaining({
+        user_metadata: expect.objectContaining({ idioma_preferido: 'es' }),
+      })
+    )
+    expect(usuariosUpdates).toContainEqual({ idioma_preferido: 'es' })
     // El alta completa: login automático tras aceptar.
     expect(signInSpy).toHaveBeenCalledTimes(1)
     // …y redirección server-side al panel del rol (tutor_legal → /family; el gate P3c

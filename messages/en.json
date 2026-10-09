@@ -103,6 +103,12 @@
         "sin_curso_activo": "The centre has no active academic year.",
         "servicio_cuentas_no_disponible": "The accounts service isn't responding right now. Please try again in a few seconds.",
         "email_no_enviado": "The invitation email couldn't be sent. Please try again."
+      },
+      "idioma_correo": {
+        "label": "Email language",
+        "es": "Castellano",
+        "va": "Valencià",
+        "en": "English"
       }
     },
     "select_role": {

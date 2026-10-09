@@ -103,6 +103,12 @@
         "sin_curso_activo": "El centre no té un curs acadèmic actiu.",
         "servicio_cuentas_no_disponible": "El servici de comptes no respon ara mateix. Torna-ho a provar d'ací a uns segons.",
         "email_no_enviado": "No s'ha pogut enviar la invitació per correu. Torna-ho a provar."
+      },
+      "idioma_correo": {
+        "label": "Idioma del correu",
+        "es": "Castellano",
+        "va": "Valencià",
+        "en": "English"
       }
     },
     "select_role": {

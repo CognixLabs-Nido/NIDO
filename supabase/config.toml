@@ -200,7 +200,9 @@ password_requirements = ""
 # Subidos (solo afectan a la BD local): la suite RLS hace cientos de inicios de sesión
 # desde la misma IP y con los valores por defecto (30 cada 5 min) daría 429.
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+# Subido (solo local/CI): la suite RLS manda correos de invitación y recuperación al buzón de
+# pruebas para comprobar el idioma de las plantillas; con 2/hora se quedaba sin cupo.
+email_sent = 100
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -249,12 +251,20 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Plantilla de invitación personalizada (rol-neutral; enlaza con {{ .RedirectTo }}
-# para saltarse el verify intermedio de GoTrue). El asunto y el cuerpo deben
-# replicarse en el dashboard de prod (Authentication → Email Templates → Invite).
+# Plantillas personalizadas, en el idioma de la cuenta: leen `.Data.idioma_preferido`
+# (es/va/en; sin idioma → castellano). El asunto también es plantilla de Go (GoTrue lo
+# renderiza con los mismos datos que el cuerpo). El asunto y el cuerpo deben replicarse
+# TAL CUAL en el dashboard de prod (Authentication → Email Templates).
+#
+# Invitación: rol-neutral; enlaza con {{ .RedirectTo }} para saltarse el verify de GoTrue.
 [auth.email.template.invite]
-subject = "Te han invitado a NIDO — completa tu acceso"
+subject = '''{{ $idioma := or .Data.idioma_preferido "es" }}{{ if eq $idioma "va" }}T'han convidat a NIDO — completa el teu accés{{ else if eq $idioma "en" }}You've been invited to NIDO — complete your access{{ else }}Te han invitado a NIDO — completa tu acceso{{ end }}'''
 content_path = "./supabase/templates/invite.html"
+
+# Recuperar contraseña: enlaza con {{ .ConfirmationURL }} (verify de GoTrue → /reset-password).
+[auth.email.template.recovery]
+subject = '''{{ $idioma := or .Data.idioma_preferido "es" }}{{ if eq $idioma "va" }}Restablix la teua contrasenya{{ else if eq $idioma "en" }}Reset your password{{ else }}Restablece tu contraseña{{ end }}'''
+content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
