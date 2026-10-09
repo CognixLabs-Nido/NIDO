@@ -199,3 +199,6 @@ jobs:
           # 20261008120000_chore_drop_es_profe_principal (#312): la columna deprecated ya no existe
           # en profes_aulas (drop-es-profe-principal).
           ES_PROFE_PRINCIPAL_DROP_APPLIED: '1'
+          # 20261009120000_fix_matriculas_motivo_baja_por_columna (#316): motivo_baja solo por la RPC
+          # de Dirección; recorrido reducido de la familia (matriculas-motivo-baja-columna).
+          MATRICULAS_MOTIVO_COLUMNA_APPLIED: '1'
