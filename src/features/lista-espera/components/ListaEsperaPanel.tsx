@@ -454,21 +454,6 @@ function InvitarBoton({
               </p>
             )}
 
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium">{tIdioma('label')}</span>
-              <select
-                className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
-                value={idioma}
-                onChange={(e) => setIdioma(e.target.value as IdiomaCorreo)}
-              >
-                {IDIOMAS_CORREO.map((i) => (
-                  <option key={i} value={i}>
-                    {tIdioma(i)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
             {pideParentesco && (
               <>
                 <p className="text-muted-foreground text-sm">
@@ -507,6 +492,21 @@ function InvitarBoton({
                 )}
               </>
             )}
+
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium">{tIdioma('label')}</span>
+              <select
+                className="border-border bg-background w-full rounded-md border px-2 py-2 text-sm"
+                value={idioma}
+                onChange={(e) => setIdioma(e.target.value as IdiomaCorreo)}
+              >
+                {IDIOMAS_CORREO.map((i) => (
+                  <option key={i} value={i}>
+                    {tIdioma(i)}
+                  </option>
+                ))}
+              </select>
+            </label>
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>

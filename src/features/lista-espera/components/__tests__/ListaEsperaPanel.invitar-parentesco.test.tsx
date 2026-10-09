@@ -73,7 +73,10 @@ function abrirInvitar(p: ProspectoListItem) {
   fireEvent.click(screen.getByRole('button', { name: 'invitar' }))
 }
 
-/** Selects del diálogo abierto (no el de curso del panel): [0] = aula, [1] = parentesco. */
+/**
+ * Selects del diálogo abierto (no el de curso del panel): [0] = aula, [1] = parentesco (si se
+ * pide); el ÚLTIMO es siempre el idioma del correo.
+ */
 function selects() {
   return within(screen.getByRole('dialog')).getAllByRole('combobox')
 }
@@ -94,7 +97,7 @@ describe('ListaEsperaPanel · Invitar pide el parentesco (hueco 1)', () => {
 
     // Ancla positiva: el diálogo está abierto (el selector de aula está).
     expect(screen.getByText('invitar_dialog.aula_label')).toBeInTheDocument()
-    expect(selects()).toHaveLength(1)
+    expect(selects()).toHaveLength(2)
     expect(screen.queryByText('completar_dialog.parentesco_label')).not.toBeInTheDocument()
 
     fireEvent.change(selects()[0]!, { target: { value: AULA } })
@@ -102,7 +105,7 @@ describe('ListaEsperaPanel · Invitar pide el parentesco (hueco 1)', () => {
     fireEvent.click(botonInvitar())
 
     await waitFor(() => expect(invitarMock).toHaveBeenCalledTimes(1))
-    expect(invitarMock.mock.calls[0]?.[0]).toEqual({ id: 'p-1', aulaId: AULA })
+    expect(invitarMock.mock.calls[0]?.[0]).toEqual({ id: 'p-1', aulaId: AULA, idioma: 'es' })
   })
 
   it('flag necesita_parentesco → pide parentesco; sin él no deja invitar; con él lo envía', async () => {
@@ -110,7 +113,7 @@ describe('ListaEsperaPanel · Invitar pide el parentesco (hueco 1)', () => {
     abrirInvitar(prospecto({ tutor_usuario_id: 'tutor-uid', necesita_parentesco: true }))
 
     expect(screen.getByText('completar_dialog.parentesco_label')).toBeInTheDocument()
-    expect(selects()).toHaveLength(2)
+    expect(selects()).toHaveLength(3)
 
     fireEvent.change(selects()[0]!, { target: { value: AULA } })
     expect(botonInvitar()).toBeDisabled()
@@ -131,6 +134,7 @@ describe('ListaEsperaPanel · Invitar pide el parentesco (hueco 1)', () => {
       aulaId: AULA,
       parentesco: 'otro',
       descripcionParentesco: 'Tutora legal',
+      idioma: 'es',
     })
   })
 
@@ -140,7 +144,7 @@ describe('ListaEsperaPanel · Invitar pide el parentesco (hueco 1)', () => {
       .mockResolvedValueOnce({ success: true, data: { resultado: 'vinculado', ninoId: 'n' } })
     abrirInvitar(prospecto({ necesita_parentesco: false }))
 
-    expect(selects()).toHaveLength(1)
+    expect(selects()).toHaveLength(2)
     fireEvent.change(selects()[0]!, { target: { value: AULA } })
     fireEvent.click(botonInvitar())
 
@@ -160,6 +164,7 @@ describe('ListaEsperaPanel · Invitar pide el parentesco (hueco 1)', () => {
       aulaId: AULA,
       parentesco: 'abuela',
       descripcionParentesco: null,
+      idioma: 'es',
     })
     await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith('vinculado_invitar'))
   })
@@ -173,6 +178,25 @@ describe('ListaEsperaPanel · Invitar pide el parentesco (hueco 1)', () => {
 
     await waitFor(() => expect(toastError).toHaveBeenCalledWith('listaEspera.errors.alta_fallo'))
     expect(screen.queryByText('completar_dialog.parentesco_label')).not.toBeInTheDocument()
-    expect(selects()).toHaveLength(1)
+    expect(selects()).toHaveLength(2)
+  })
+})
+
+describe('ListaEsperaPanel · Invitar elige el idioma del correo', () => {
+  it('sin tocar el selector → castellano; eligiendo va → va', async () => {
+    invitarMock.mockResolvedValue({
+      success: true,
+      data: { resultado: 'ok', ninoId: 'n', invitationId: 'i' },
+    })
+    abrirInvitar(prospecto())
+
+    const idioma = selects().at(-1)!
+    expect(idioma).toHaveValue('es')
+    fireEvent.change(selects()[0]!, { target: { value: AULA } })
+    fireEvent.change(idioma, { target: { value: 'va' } })
+    fireEvent.click(botonInvitar())
+
+    await waitFor(() => expect(invitarMock).toHaveBeenCalledTimes(1))
+    expect(invitarMock.mock.calls[0]?.[0]).toEqual({ id: 'p-1', aulaId: AULA, idioma: 'va' })
   })
 })
