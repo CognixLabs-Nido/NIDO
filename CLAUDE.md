@@ -33,7 +33,7 @@ Next.js 16 App Router · TypeScript strict · React 19 · Tailwind 4 · shadcn/u
 
 **4. ADR al final de cada fase o decisión arquitectónica importante.** En `/docs/decisions/ADR-XXXX-[slug].md` siguiendo `/docs/decisions/_template.md`.
 
-**5. Una fase a la vez, secuencial.** Ver `/docs/specs/scope-ola-1.md` para las 12 fases. No paralelizar. No avanzar sin que la anterior esté mergeada y desplegada.
+**5. Una fase a la vez, secuencial.** Ver `/docs/specs/scope-ola-1.md` para las fases. No paralelizar. No avanzar sin que la anterior esté mergeada y desplegada.
 
 **6. Repo público, cero datos privados en código.** Fixtures con nombres ficticios reconocibles ("Niño Demo 1", "Profe Pruebas"). Secrets solo en `.env.local`. Pre-commit hook escanea secretos.
 
@@ -110,11 +110,16 @@ Toda guarda de equivalencia por md5 en una migración **DEBE normalizar y compar
 
 Detalle completo en `@./docs/conventions.md`.
 
-## Modelo de datos (35 tablas)
+## Modelo de datos (73 tablas)
 
-- **Core (10)**: centros, cursos_academicos, aulas, usuarios, roles_usuario, ninos, info_medica_emergencia, matriculas, vinculos_familiares, profes_aulas.
-- **Operativas (20)**: agendas_diarias, comidas, biberones, suenos, deposiciones, asistencias, ausencias, dias_centro, plantillas_menu_mensual, menu_dia, conversaciones, mensajes, lectura_conversacion, anuncios, lectura_anuncio, recordatorios, eventos, confirmaciones_evento, autorizaciones, firmas_autorizacion, plantillas_informe, informes_evolucion, publicaciones, media, media_etiquetas.
-- **Transversales (5)**: audit_log, notificaciones_push, push_subscriptions, invitaciones, consentimientos.
+- **Core (14)**: centros, cursos_academicos, aulas, aulas_curso, usuarios, roles_usuario, ninos, info_medica_emergencia, datos_pedagogicos_nino, matriculas, vinculos_familiares, profes_aulas, familias, familia_tutores.
+- **Operativo (29)**: agendas_diarias, comidas, biberones, suenos, deposiciones, asistencias, ausencias, dias_centro, plantillas_menu_mensual, menu_dia, conversaciones, mensajes, lectura_conversacion, anuncios, lectura_anuncio, recordatorios, eventos, confirmaciones_evento, citas, cita_invitados, autorizaciones, firmas_autorizacion, administraciones_medicacion, plantillas_informe, informes_evolucion, campanas_informe, publicaciones, media, media_etiquetas.
+- **Transversal (6)**: audit_log, consentimientos, invitaciones, auth_attempts, push_subscriptions, preferencias_usuario.
+- **Altas y admisiones (4)**: lista_espera, acuses_alta, cambios_pendientes, rollover_finaliza.
+- **Cobros (17)**: conceptos_cobro, tarifa_concepto_anio, asignacion_concepto, tipos_beca, becas, beca_comedor_elegibilidad, beca_comedor_tramo, beca_comedor_desborde, beca_comedor_transferencia, parte_servicio_diario, metodo_pago_familia, mandatos_sepa, recibos, lineas_recibo, cierre_mensual, remesas, recibos_remesa.
+- **RGPD (3)**: olvido_solicitudes, export_log, retencion_ejecuciones.
+
+`notificaciones_push` sigue diferida y no existe.
 
 Reglas obligatorias del modelo:
 
@@ -146,22 +151,25 @@ Detalle completo en `@./docs/architecture/rls-policies.md`.
 
 ## Plan de implementación
 
-12 fases secuenciales. Cada fase termina con producción actualizada, ADR escrito, y entrada en `/docs/journey/progress.md`.
+Fases secuenciales. Cada fase termina con producción actualizada, ADR escrito, y entrada en `/docs/journey/progress.md`.
 
-| #   | Fase                              |
-| --- | --------------------------------- |
-| 0   | Fundaciones                       |
-| 1   | Identidad y acceso                |
-| 2   | Entidades core + RLS + audit log  |
-| 3   | Agenda diaria + bienestar (B, D)  |
-| 4   | Asistencia + ausencias            |
-| 5   | Mensajería                        |
-| 6   | Recordatorios bidireccionales (E) |
-| 7   | Calendario y eventos              |
-| 8   | Autorizaciones + firma digital    |
-| 9   | Informes de evolución             |
-| 10  | Fotos y publicaciones             |
-| 11  | Pulido final + producción         |
+| #    | Fase                                             | Estado      |
+| ---- | ------------------------------------------------ | ----------- |
+| 0    | Fundaciones                                      | ✅ Cerrada  |
+| 1    | Identidad y acceso                               | ✅ Cerrada  |
+| 2    | Entidades core + RLS + audit log                 | ✅ Cerrada  |
+| 3    | Agenda diaria + bienestar (B, D)                 | ✅ Cerrada  |
+| 4    | Asistencia + ausencias                           | ✅ Cerrada  |
+| 4.5a | Calendario laboral del centro                    | ✅ Cerrada  |
+| 4.5b | Menú mensual + pase de lista comida              | ✅ Cerrada  |
+| 5    | Mensajería (+ 5.5 push, 5.6 admin↔familia)       | ✅ Cerrada  |
+| 6    | Recordatorios bidireccionales (E)                | ✅ Cerrada  |
+| 7    | Calendario y eventos (+ 7b agenda de citas)      | ✅ Cerrada  |
+| 8    | Autorizaciones + firma digital                   | ✅ Cerrada  |
+| 9    | Informes de evolución                            | ✅ Cerrada  |
+| 10   | Fotos y publicaciones                            | ✅ Cerrada  |
+| 11   | Pulido final + producción                        | 🔶 En curso |
+| 12   | Funcionalidad pendiente post-F11 (F12-B cerrada) | 🔶 En curso |
 
 Detalle completo en `@./docs/specs/scope-ola-1.md`.
 

@@ -24,42 +24,60 @@ La numeración avanza cronológicamente, pero hay dos huecos explícitos:
 
 ## Índice rápido
 
-| ADR  | Título                                                   | Estado                         |
-| ---- | -------------------------------------------------------- | ------------------------------ |
-| 0001 | Auth by invitation only                                  | accepted                       |
-| 0002 | RLS helpers in `public` schema                           | accepted                       |
-| 0003 | Aulas: cohortes de años de nacimiento                    | accepted                       |
-| 0004 | Cifrado de datos médicos con pgcrypto                    | accepted                       |
-| 0005 | Matrículas históricas                                    | accepted                       |
-| 0006 | Permisos granulares JSONB en vínculos                    | accepted                       |
-| 0007 | RLS policy recursion avoidance                           | accepted                       |
-| 0008 | Design system                                            | accepted                       |
-| 0009 | Datos pedagógicos en tabla separada                      | accepted                       |
-| 0010 | Logo del centro con URL relativa                         | accepted                       |
-| 0011 | Ventana de edición: timezone Madrid hardcoded            | accepted                       |
-| 0012 | Agenda en 5 tablas vs JSONB                              | accepted                       |
-| 0013 | Ventana de edición = mismo día calendario                | accepted (deroga regla previa) |
-| 0014 | Componente "Pase de Lista" reutilizable                  | accepted                       |
-| 0015 | Asistencia lazy (sin pre-creación de filas)              | accepted                       |
-| 0016 | Día cerrado transversal en operativas                    | accepted                       |
-| 0017 | _hueco intencional — ver arriba_                         | n/a                            |
-| 0018 | _hueco intencional — ver arriba_                         | n/a                            |
-| 0019 | Calendario laboral: default + excepciones                | accepted                       |
-| 0020 | Plantilla mensual de menú + menu_dia                     | accepted                       |
-| 0021 | Extensión de `comidas` con `tipo_plato`                  | accepted                       |
-| 0022 | Escala 1-5 reutilizando ENUM existente                   | accepted                       |
-| 0023 | Modelo de mensajería con 5 tablas (F5)                   | accepted                       |
-| 0024 | Participantes calculados dinámicamente (F5)              | accepted                       |
-| 0025 | Push notifications fuera de F5 (F5.5 transversal)        | accepted                       |
-| 0026 | Mensajería UI tipo WhatsApp con split-view por rol       | accepted                       |
-| 0027 | Arquitectura de push con server actions + `web-push`     | accepted                       |
-| 0028 | Manifest mínimo en F5.5 vs PWA completa en F11           | accepted                       |
-| 0029 | Admin↔familia 1-por-(admin, tutor) con reapertura        | accepted                       |
-| 0030 | Timer reseteable admin↔familia vía trigger AFTER INSERT  | accepted                       |
-| 0031 | Marcar erróneo limitado a 5 min, en RLS inline           | accepted                       |
-| 0032 | ENUM `tipo_personal_aula` para personal de aula          | accepted                       |
-| 0033 | Tabla `/admin/aulas` enriquecida                         | accepted                       |
-| 0034 | Sustitución atómica de coordinadora en `profes_aulas`    | accepted                       |
-| 0035 | Modelo de recordatorios bidireccionales (F6-A)           | superseded (por ADR-0037)      |
-| 0036 | Completar recordatorio idempotente (F6)                  | accepted                       |
-| 0037 | Modelo granular de destinatarios de recordatorios (F6-C) | accepted (supera a 0035)       |
+| ADR  | Título                                                                    | Estado                                    |
+| ---- | ------------------------------------------------------------------------- | ----------------------------------------- |
+| 0001 | Auth by invitation only                                                   | accepted                                  |
+| 0002 | RLS helpers in `public` schema                                            | accepted                                  |
+| 0003 | Aulas: cohortes de años de nacimiento                                     | accepted                                  |
+| 0004 | Cifrado de datos médicos con pgcrypto                                     | accepted                                  |
+| 0005 | Matrículas históricas                                                     | accepted                                  |
+| 0006 | Permisos granulares JSONB en vínculos                                     | accepted                                  |
+| 0007 | RLS policy recursion avoidance                                            | accepted                                  |
+| 0008 | Design system                                                             | accepted                                  |
+| 0009 | Datos pedagógicos en tabla separada                                       | accepted                                  |
+| 0010 | Logo del centro con URL relativa                                          | accepted                                  |
+| 0011 | Ventana de edición: timezone Madrid hardcoded                             | accepted                                  |
+| 0012 | Agenda en 5 tablas vs JSONB                                               | accepted                                  |
+| 0013 | Ventana de edición = mismo día calendario                                 | accepted (deroga regla previa)            |
+| 0014 | Componente "Pase de Lista" reutilizable                                   | accepted                                  |
+| 0015 | Asistencia lazy (sin pre-creación de filas)                               | accepted                                  |
+| 0016 | Día cerrado transversal en operativas                                     | accepted                                  |
+| 0017 | _hueco intencional — ver arriba_                                          | n/a                                       |
+| 0018 | _hueco intencional — ver arriba_                                          | n/a                                       |
+| 0019 | Calendario laboral: default + excepciones                                 | accepted                                  |
+| 0020 | Plantilla mensual de menú + menu_dia                                      | accepted                                  |
+| 0021 | Extensión de `comidas` con `tipo_plato`                                   | accepted                                  |
+| 0022 | Escala 1-5 reutilizando ENUM existente                                    | accepted                                  |
+| 0023 | Modelo de mensajería con 5 tablas (F5)                                    | accepted                                  |
+| 0024 | Participantes calculados dinámicamente (F5)                               | accepted                                  |
+| 0025 | Push notifications fuera de F5 (F5.5 transversal)                         | accepted                                  |
+| 0026 | Mensajería UI tipo WhatsApp con split-view por rol                        | accepted                                  |
+| 0027 | Arquitectura de push con server actions + `web-push`                      | accepted                                  |
+| 0028 | Manifest mínimo en F5.5 vs PWA completa en F11                            | accepted                                  |
+| 0029 | Admin↔familia 1-por-(admin, tutor) con reapertura                         | accepted                                  |
+| 0030 | Timer reseteable admin↔familia vía trigger AFTER INSERT                   | accepted                                  |
+| 0031 | Marcar erróneo limitado a 5 min, en RLS inline                            | accepted                                  |
+| 0032 | ENUM `tipo_personal_aula` para personal de aula                           | accepted                                  |
+| 0033 | Tabla `/admin/aulas` enriquecida                                          | accepted                                  |
+| 0034 | Sustitución atómica de coordinadora en `profes_aulas`                     | accepted                                  |
+| 0035 | Modelo de recordatorios bidireccionales (F6-A)                            | superseded (por ADR-0037)                 |
+| 0036 | Completar recordatorio idempotente (F6)                                   | accepted                                  |
+| 0037 | Modelo granular de destinatarios de recordatorios (F6-C)                  | accepted (supera a 0035)                  |
+| 0038 | Modelo de eventos y confirmaciones de asistencia (F7)                     | accepted                                  |
+| 0039 | Agenda: citas con invitados nominales y RSVP (F7b)                        | accepted                                  |
+| 0040 | Inicio «resumen de la semana» y Calendario Escolar único por rol          | accepted                                  |
+| 0041 | Autorizaciones + firma digital (cierre F8)                                | accepted                                  |
+| 0042 | Modelo de datos de informes de evolución (F9)                             | accepted                                  |
+| 0043 | PDF del informe de evolución server-side con pdf-lib                      | accepted                                  |
+| 0044 | Campaña de informes (F9-5)                                                | accepted                                  |
+| 0045 | Storage (buckets, políticas, procesado) y blog del aula (F10)             | accepted                                  |
+| 0046 | Cierre F10: consentimiento por RLS, histórico de familia, adjuntos y HEIC | accepted                                  |
+| 0047 | Onboarding de personal reusando la invitación (F11-C)                     | accepted                                  |
+| 0048 | Matrícula multicurso: `aulas_curso` y helpers por curso (F11-H)           | accepted                                  |
+| 0049 | Altas con documentos: buckets, IBAN cifrado, cambios y purga (F11-G)      | accepted                                  |
+| 0050 | Cuotas, recibos y remesas SEPA (F12-B)                                    | accepted (superado en parte por ADR-0052) |
+| 0051 | La familia como unidad del modelo (serie F)                               | accepted                                  |
+| 0052 | Recibos por familia, borrador → confirmado y cierre de mes reabrible      | accepted (supera en parte a 0050)         |
+| 0053 | Postura de seguridad de la base de datos (auditoría de octubre de 2026)   | accepted                                  |
+| 0054 | Consentimiento de imagen por niño como única fuente de verdad (serie IU)  | accepted                                  |
+| 0055 | Suite RLS en BD efímera en la CI y la remota como red nocturna            | accepted                                  |

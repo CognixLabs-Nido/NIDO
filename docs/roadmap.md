@@ -6,6 +6,8 @@ Notas vivas de cosas que conocemos hoy pero se difieren a una fase futura. No es
 
 ## Plan Ola 1 — reorganización post-Fase 3 (2026-05-15)
 
+> **Estado a 2026-10-10:** las fases 0–10 están cerradas; F11 y F12 están en curso (F12-B, cobros, cerrada). La tabla de fases al día está en `docs/specs/scope-ola-1.md`; esta sección se conserva como histórico de la reorganización.
+
 Tras cerrar Fase 3 (agenda diaria), reorganizamos el resto de Ola 1 para reflejar dos aprendizajes:
 
 1. El patrón UI **"pase de lista"** (tabla con todos los niños de un aula, click rápido por niño) es valioso y reutilizable. Conviene materializarlo desde el inicio de Fase 4 para que F4.5 (menús) y futuras fases lo reusen sin diseñarlo de cero.
@@ -39,7 +41,7 @@ Tras cerrar Fase 3 (agenda diaria), reorganizamos el resto de Ola 1 para refleja
 - Plan **scope-driven**: el alcance de Ola 1 es fijo y las fechas las decide el responsable (sin deadline externo).
 - Las fases F5–F11 mantienen su scope.
 
-> Cuando esta reorganización se acepte y empiece la implementación, hay que actualizar `docs/specs/scope-ola-1.md` (tabla numérica de fases) para incluir F4.5. No se toca aún para evitar fricción con specs ya escritas que referencian la numeración antigua.
+> ✅ Reorganización aplicada: la tabla de fases de `docs/specs/scope-ola-1.md` ya incluye F4.5a (calendario laboral) y F4.5b (menús), las dos cerradas.
 
 ---
 

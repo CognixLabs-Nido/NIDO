@@ -132,17 +132,13 @@ jobs:
           BECA_COMEDOR_V2_APPLIED: '1'
           BECA_COMEDOR_V2_MOTOR_APPLIED: '1'
           R2_MIGRATION_APPLIED: '1'
-          # Descomentar EN CUANTO Jose aplique 20260828120000_phase_recibos_r5_desconfirmar.
-          # Hasta entonces `r5-desconfirmar-recibo.rls.test.ts` se salta (el flag se lee con
-          # === '1'), porque sin la migración no existen ni desconfirmar_recibo ni
-          # recibo_en_remesa y la suite entera saldría roja.
+          # 20260828120000_phase_recibos_r5_desconfirmar (#275), aplicada: desconfirmar_recibo y
+          # recibo_en_remesa (r5-desconfirmar-recibo.rls.test.ts).
           R5_MIGRATION_APPLIED: '1'
-          # Descomentar EN CUANTO Jose aplique
-          # 20260829120000_phase_beca_b2_3_desborde_resuelto_cerrado. Hasta entonces
-          # `b23-desborde-resuelto-cerrado.rls.test.ts` se salta: sin la migración el motor
-          # sigue borrando los desbordes resueltos y los 3 casos saldrían rojos.
+          # 20260829120000_phase_beca_b2_3_desborde_resuelto_cerrado (#276), aplicada: el motor ya no borra
+          # los desbordes resueltos (b23-desborde-resuelto-cerrado.rls.test.ts).
           B23_MIGRATION_APPLIED: '1'
-          # Se activa cuando Jose aplique `20260830120000_phase_matriculas_activada_at`.
+          # 20260830120000_phase_matriculas_activada_at (#278), aplicada.
           ALUMNOS_ACTIVADA_AT_MIGRATION_APPLIED: '1'
           # Migraciones aplicadas hace tiempo cuyos flags nunca se encendieron aquí: sus
           # ficheros se saltaban en CI desde jun-jul. Verificados uno a uno contra el remoto
@@ -155,19 +151,16 @@ jobs:
           F11G_RLS_APPLIED: '1'
           IMAGEN_CONSENT_DERIVADO_APPLIED: '1'
           IMAGEN_IU3_APPLIED: '1'
-          # Descomentar EN CUANTO Jose aplique 20261001120000_fix_audit_log_revoke_anon_authenticated.
-          # Hasta entonces audit-log.rls.test.ts exige el comportamiento RLS (0 filas, sin
-          # error); con el flag exige 42501 en UPDATE/DELETE del admin.
+          # 20261001120000_fix_audit_log_revoke_anon_authenticated (#283), aplicada: audit-log.rls.test.ts
+          # exige 42501 en UPDATE/DELETE del admin (sin el flag esperaría 0 filas sin error).
           AUDIT_LOG_REVOKE_APPLIED: '1'
-          # Descomentar EN CUANTO Jose aplique 20261001130000_fix_consent_imagen_rpc_seguridad.
-          # Hasta entonces consent-imagen-rpc-seguridad.rls.test.ts se salta: sin la migración
-          # anon todavía puede llamar a las RPCs y un tutor puede atribuir el consentimiento a
-          # otro usuario, así que los casos saldrían rojos.
+          # 20261001130000_fix_consent_imagen_rpc_seguridad (#284), aplicada: anon no llama a las RPCs de
+          # consentimiento y un tutor no puede atribuirlo a otro usuario
+          # (consent-imagen-rpc-seguridad.rls.test.ts).
           CONSENT_IMAGEN_RPC_SEGURIDAD_APPLIED: '1'
-          # Descomentar EN CUANTO Jose aplique 20261002120000_fix_consent_imagen_solo_tutor_legal.
-          # Hasta entonces consent-imagen-tutor-legal.rls.test.ts se salta: sin la migración el
-          # vínculo «autorizado» todavía puede otorgar/revocar por las RPCs y su firma genera
-          # consentimiento, así que los casos saldrían rojos.
+          # 20261002120000_fix_consent_imagen_solo_tutor_legal (#286), aplicada: el vínculo «autorizado»
+          # no otorga ni revoca por las RPCs y su firma no genera consentimiento
+          # (consent-imagen-tutor-legal.rls.test.ts).
           CONSENT_IMAGEN_TUTOR_LEGAL_APPLIED: '1'
           # 20261002130000_fix_alta_hermano_vincular_tutores (#291), aplicada: el hermano queda
           # vinculado a todos los tutores de la familia (alta-hermano-tutores.rls.test.ts).
