@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
   anonClient,
+  expectLecturaAnonDenegada,
   clientFor,
   createTestUser,
   deleteTestUser,
@@ -96,12 +97,12 @@ describe.skipIf(!MIGRATION_APPLIED)('RPCs críticas — cerradas a anon', () => 
     await deleteTestUser(usuario.id)
   }, 60_000)
 
-  // Ancla: hasta 20261010130000 era la RPC abierta `hoy_madrid`; ya no queda ninguna función de
-  // public que anon pueda ejecutar, así que el ancla es leer una tabla (0 filas, sin error).
-  it('ancla: el cliente anon lee una tabla (0 filas, sin error)', async () => {
-    const { data, error } = await anonClient().from('centros').select('id').limit(1)
-    expect(error).toBeNull()
-    expect(data).toEqual([])
+  // Ancla: anon no puede ejecutar ninguna función de public (20261010130000) ni, desde
+  // 20261010140000, tocar ninguna tabla. El 42501 «permission denied for table» solo lo devuelve
+  // Postgres a través de PostgREST: prueba que el cliente llega a la BD y que el rechazo es del
+  // permiso. Antes de esa migración (flag apagado) anon leía 0 filas sin error.
+  it('ancla: el cliente anon llega a la BD (lectura de tabla denegada por permiso)', async () => {
+    expectLecturaAnonDenegada(await anonClient().from('centros').select('id').limit(1), 'centros')
   })
 
   it.each(CRITICAS)('anon NO ejecuta %s (sin EXECUTE → 42501)', async (_nombre, llamar) => {

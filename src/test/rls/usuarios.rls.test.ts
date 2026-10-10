@@ -1,6 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { clientFor, createTestUser, deleteTestUser, serviceClient, type TestUser } from './setup'
+import {
+  clientFor,
+  createTestUser,
+  deleteTestUser,
+  expectLecturaAnonDenegada,
+  serviceClient,
+  type TestUser,
+} from './setup'
 
 describe('RLS — public.usuarios', () => {
   let userA: TestUser
@@ -50,8 +57,8 @@ describe('RLS — public.usuarios', () => {
       return c.from('usuarios').select('id').limit(10)
     })
 
-    expect(error).toBeNull()
-    // Sin sesión, las políticas no permiten ningún SELECT → lista vacía
-    expect(data).toEqual([])
+    // Sin sesión: desde 20261010140000 anon no tiene SELECT de tabla (42501); antes, las policies
+    // no le dejaban ver ninguna fila (lista vacía).
+    expectLecturaAnonDenegada({ data, error }, 'usuarios')
   })
 })

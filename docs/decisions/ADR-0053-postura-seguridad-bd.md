@@ -184,6 +184,10 @@ tabla y se concede `SELECT (columnas…)` sin ella. La lectura legítima va por 
   producción el 2026-10-10). Se cierran con `20261010130000_fix_funciones_auxiliares_anon`
   (REVOKE de PUBLIC y anon, authenticated y service_role las conservan); su guarda comprueba que
   no queda ninguna función de `public`, salvo las de trigger, que anon pueda ejecutar.
+- Anon tampoco tiene privilegios de tabla en `public` desde `20261010140000_fix_privilegios_tabla_anon`
+  (ni `SELECT`), `authenticated` pierde `TRUNCATE` y `MAINTAIN` en todas las tablas, como en
+  `audit_log` (#283), y los default privileges de `postgres` en `public` ya no abren a anon las
+  tablas, funciones y secuencias nuevas.
 - Las claves de cifrado ya no salen de la BD.
 - La auditoría registra a la persona real en los flujos que antes dejaban `usuario_id = NULL`.
 - Las rutas e identificadores del cliente ya no pueden hacer que el servidor borre o enlace objetos

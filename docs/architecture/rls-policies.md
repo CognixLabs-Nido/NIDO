@@ -593,10 +593,22 @@ abrir la función o la tabla a cualquiera por PostgREST.
   quedaban: `centro_de_*`, `hoy_madrid`, `menu_del_dia`…). Desde esta última, anon no puede
   ejecutar ninguna función de `public` salvo las de trigger, que no se pueden llamar por RPC.
 
+- **Tablas:** anon no tiene ningún privilegio de tabla en `public` (ni `SELECT`), y
+  `authenticated` no tiene `TRUNCATE` ni `MAINTAIN`, que no pasan por RLS
+  (`20261010140000_fix_privilegios_tabla_anon`; antes solo `audit_log`, #283). Con la anon key,
+  cualquier tabla da 42501 «permission denied for table». `authenticated` conserva `SELECT`,
+  `INSERT`, `UPDATE` y `DELETE`, que acota la RLS.
+- **Default privileges (la causa raíz):** desde `20261010140000`, lo que crea `postgres` en
+  `public` ya no nace abierto a anon: ni tablas, ni funciones, ni secuencias. Las tablas nuevas no
+  dan `TRUNCATE`/`MAINTAIN` a `authenticated`, y las funciones nuevas de `postgres` no dan
+  `EXECUTE` a `PUBLIC` (default global de Postgres, quitado sin `IN SCHEMA`). Las funciones nuevas
+  siguen recibiendo `EXECUTE` para `authenticated` y `service_role`: si solo las usa el servidor,
+  hay que quitárselo a `authenticated` a mano.
 - **Policies:** todas las del esquema `public` son `TO authenticated`. Eran 156 `TO public` y se
   pasaron con `20261002160000`, sin cambiar `USING` ni `WITH CHECK`; una guarda en la migración
   impide que quede ninguna.
-  - anon ya no las evalúa: default deny, 0 filas y sin llamar a ningún helper.
+  - anon ya no las evalúa: sin llamar a ningún helper. Desde `20261010140000` ni siquiera llega a
+    ellas: no tiene privilegio de tabla y recibe 42501 antes de la RLS.
   - La única excepción deliberada es `storage.objects · centro_assets_select`, el logo del bucket
     público (ADR-0010).
 - **El orden importa.** Primero las policies a `TO authenticated` y después el REVOKE de los
@@ -683,6 +695,7 @@ Las guardas de equivalencia de esa migración comparan la lógica normalizada (#
 | 35 RPCs del grupo B cerradas a anon           | `rpc-grupo-b-anon.rls.test.ts`                  | `RPC_GRUPO_B_ANON_APPLIED`             |
 | Policies y helpers cerrados a anon            | `rls-helpers-anon.rls.test.ts`                  | `RLS_HELPERS_ANON_APPLIED`             |
 | 46 funciones auxiliares cerradas a anon       | `funciones-auxiliares-anon.rls.test.ts`         | `FUNCIONES_AUXILIARES_ANON_APPLIED`    |
+| Nada para anon en ninguna tabla               | `privilegios-tabla-anon.rls.test.ts`            | `PRIVILEGIOS_TABLA_ANON_APPLIED`       |
 | Rutas de `cambios_pendientes`                 | `cambios-pendientes-ruta.rls.test.ts`           | `CAMBIOS_PENDIENTES_RUTA_APPLIED`      |
 | Rutas de `media`                              | `media-ruta.rls.test.ts`                        | `MEDIA_RUTA_APPLIED`                   |
 | Anuncios e invitaciones sin cruzar de centro  | `multicentro-anuncios-invitaciones.rls.test.ts` | `MULTICENTRO_APPLIED`                  |

@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
   anonClient,
+  expectLecturaAnonDenegada,
   clientFor,
   createTestUser,
   deleteTestUser,
@@ -144,10 +145,12 @@ describe.skipIf(!MIGRATION_APPLIED)('Funciones auxiliares — las 46 cerradas a 
     expect(new Set(FUNCIONES.map(([nombre]) => nombre)).size).toBe(46)
   })
 
-  it('ancla: el cliente anon lee una tabla (0 filas, sin error)', async () => {
-    const { data, error } = await anon.from('centros').select('id').limit(1)
-    expect(error).toBeNull()
-    expect(data).toEqual([])
+  // Ancla: anon no puede ejecutar ninguna función de public (20261010130000) ni, desde
+  // 20261010140000, tocar ninguna tabla. El 42501 «permission denied for table» solo lo devuelve
+  // Postgres a través de PostgREST: prueba que el cliente llega a la BD y que el rechazo es del
+  // permiso. Antes de esa migración (flag apagado) anon leía 0 filas sin error.
+  it('ancla: el cliente anon llega a la BD (lectura de tabla denegada por permiso)', async () => {
+    expectLecturaAnonDenegada(await anon.from('centros').select('id').limit(1), 'centros')
   })
 
   it.each(FUNCIONES)('anon NO ejecuta %s (sin EXECUTE → 42501)', async (nombre, llamar) => {
