@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
   anonClient,
+  expectLecturaAnonDenegada,
   clientFor,
   createTestUser,
   deleteTestUser,
@@ -26,14 +27,18 @@ import type { Database } from '@/types/database'
  *
  * Guardas de regresión:
  *   1. anon NO ejecuta ninguno de los 20 por RPC (42501 «permission denied for function»).
- *   2. anon lee las tablas de esas policies y obtiene 0 filas SIN error. Si alguien vuelve a
- *      crear una policy TO public que llame a un helper, anon recibirá «permission denied for
- *      function» en esa tabla y este test se pone rojo (el 42501 delataría qué está protegido).
+ *   2. anon no lee las tablas de esas policies. Hasta 20261010140000 obtenía 0 filas SIN error
+ *      (si alguien recreaba una policy TO public que llamase a un helper, recibía «permission
+ *      denied for function» y el test se ponía rojo). Desde 20261010140000 anon no tiene ningún
+ *      privilegio de tabla: recibe 42501 «permission denied for table <tabla>», que se comprueba
+ *      antes que cualquier policy (`expectLecturaAnonDenegada`, según el flag
+ *      PRIVILEGIOS_TABLA_ANON_APPLIED).
  *   3. authenticated sigue: llama a es_admin y lee su propia fila de usuarios (policy «self»).
  *
  * audit_log queda fuera de la lista: anon no tiene GRANT de tabla desde #283 (42501 de tabla,
  * anterior a este cambio y ajeno a los helpers). matriculas, igual desde 20261009120000
- * (permiso por columna: anon sin SELECT de tabla → 42501, guarda propia abajo).
+ * (permiso por columna: anon sin SELECT de tabla → 42501, guarda propia abajo). Desde
+ * 20261010140000 todas las tablas están como esas dos.
  *
  * Gateado (la migración la aplica Jose a mano): RLS_HELPERS_ANON_APPLIED=1
  */
@@ -216,12 +221,12 @@ describe.skipIf(!MIGRATION_APPLIED)(
       expect(new Set(TABLAS).size).toBe(54)
     })
 
-    // Ancla: hasta 20261010130000 era la RPC abierta `hoy_madrid`; ya no queda ninguna función de
-    // public que anon pueda ejecutar, así que el ancla es leer una tabla (0 filas, sin error).
-    it('ancla: el cliente anon lee una tabla (0 filas, sin error)', async () => {
-      const { data, error } = await anon.from('centros').select('id').limit(1)
-      expect(error).toBeNull()
-      expect(data).toEqual([])
+    // Ancla: anon no puede ejecutar ninguna función de public (20261010130000) ni, desde
+    // 20261010140000, tocar ninguna tabla. El 42501 «permission denied for table» solo lo devuelve
+    // Postgres a través de PostgREST: prueba que el cliente llega a la BD y que el rechazo es del
+    // permiso. Antes de esa migración (flag apagado) anon leía 0 filas sin error.
+    it('ancla: el cliente anon llega a la BD (lectura de tabla denegada por permiso)', async () => {
+      expectLecturaAnonDenegada(await anon.from('centros').select('id').limit(1), 'centros')
     })
 
     it.each(HELPERS)('anon NO ejecuta %s (sin EXECUTE → 42501)', async (nombre, llamar) => {
@@ -236,15 +241,14 @@ describe.skipIf(!MIGRATION_APPLIED)(
       expect(error?.message).toContain('permission denied for table matriculas')
     })
 
-    it.each(TABLAS)('anon lee %s: 0 filas y sin error (no evalúa helpers)', async (tabla) => {
+    it.each(TABLAS)('anon no lee %s (sin evaluar helpers)', async (tabla) => {
       // Cliente sin tipar SOLO aquí: `from()` con la unión de 54 tablas revienta la instanciación
       // de tipos (TS2589). Los nombres ya los valida el tipo `Tabla[]` de TABLAS.
-      const { data, error } = await (anon as unknown as SupabaseClient)
-        .from(tabla)
-        .select('*')
-        .limit(1)
-      expect(error).toBeNull()
-      expect(data).toEqual([])
+      // Desde 20261010140000 anon no tiene SELECT de tabla: 42501 «permission denied for table».
+      // Antes (flag PRIVILEGIOS_TABLA_ANON_APPLIED apagado): 0 filas sin error, porque las
+      // policies son TO authenticated y anon no las evalúa.
+      const res = await (anon as unknown as SupabaseClient).from(tabla).select('*').limit(1)
+      expectLecturaAnonDenegada(res, tabla)
     })
 
     it('authenticated sigue ejecutando es_admin (→ false en un centro ajeno)', async () => {
