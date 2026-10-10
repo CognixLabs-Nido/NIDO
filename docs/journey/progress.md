@@ -43,7 +43,6 @@
 
 **Documentación atrasada** (plan de puesta al día en curso, grupo D):
 
-- `docs/architecture/data-model.md`: le faltan las tablas de cobros, familia, lista de espera y becas.
 - `docs/follow-ups.md`: tiene puntos hechos sin marcar.
 - F11-A (paquete RGPD), F11-E y F11-F no tienen entrada en este diario. Están en sus PRs y en las
   cabeceras de sus migraciones.
