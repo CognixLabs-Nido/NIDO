@@ -202,3 +202,6 @@ jobs:
           # 20261009120000_fix_matriculas_motivo_baja_por_columna (#316): motivo_baja solo por la RPC
           # de Dirección; recorrido reducido de la familia (matriculas-motivo-baja-columna).
           MATRICULAS_MOTIVO_COLUMNA_APPLIED: '1'
+          # 20261010120000_feat_idioma_preferido_en_metadatos_auth (#319): usuarios.idioma_preferido se
+          # copia a los metadatos de Auth que leen las plantillas de correo (correos-auth-idioma).
+          IDIOMA_AUTH_SYNC_APPLIED: '1'
