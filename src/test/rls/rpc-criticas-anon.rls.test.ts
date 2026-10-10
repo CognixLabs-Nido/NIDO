@@ -23,8 +23,8 @@ import type { Database } from '@/types/database'
  *
  * Guarda de regresión: los default privileges de Postgres re-conceden EXECUTE a PUBLIC/anon a
  * cada función que se (re)crea, y así llegaron estos agujeros. Si alguien reabre el permiso, este
- * test se pone rojo. Ancla positiva: el mismo cliente anon SÍ ejecuta una RPC abierta
- * (`hoy_madrid`), así que el 42501 es del permiso y no de un cliente roto.
+ * test se pone rojo. Ancla positiva: el mismo cliente anon lee una tabla (0 filas, sin
+ * error), así que el 42501 es del permiso y no de un cliente roto.
  *
  * La rama «uid NULL sin ser servicio» del cuerpo y la sesión directa no se pueden provocar desde
  * PostgREST; quedaron cubiertas por el ensayo con rollback contra el remoto (body del PR #293).
@@ -96,10 +96,12 @@ describe.skipIf(!MIGRATION_APPLIED)('RPCs críticas — cerradas a anon', () => 
     await deleteTestUser(usuario.id)
   }, 60_000)
 
-  it('ancla: el cliente anon SÍ ejecuta una RPC abierta (hoy_madrid)', async () => {
-    const { data, error } = await anonClient().rpc('hoy_madrid')
+  // Ancla: hasta 20261010130000 era la RPC abierta `hoy_madrid`; ya no queda ninguna función de
+  // public que anon pueda ejecutar, así que el ancla es leer una tabla (0 filas, sin error).
+  it('ancla: el cliente anon lee una tabla (0 filas, sin error)', async () => {
+    const { data, error } = await anonClient().from('centros').select('id').limit(1)
     expect(error).toBeNull()
-    expect(data).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(data).toEqual([])
   })
 
   it.each(CRITICAS)('anon NO ejecuta %s (sin EXECUTE → 42501)', async (_nombre, llamar) => {

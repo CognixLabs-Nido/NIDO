@@ -588,8 +588,10 @@ abrir la función o la tabla a cualquiera por PostgREST.
     `purgar_sujeto_db`, `olvido_pendientes` y las de esqueletos.
   - las claves de Vault (`_get_medical_key`, `_get_sepa_key`) solo las ejecuta su dueño.
 
-  Migraciones: `20261002140000` (10 RPCs críticas, #293), `20261002150000` (35 del grupo B, #295)
-  y `20261002160000` (20 helpers de RLS, #297).
+  Migraciones: `20261002140000` (10 RPCs críticas, #293), `20261002150000` (35 del grupo B, #295),
+  `20261002160000` (20 helpers de RLS, #297) y `20261010130000` (las 46 funciones auxiliares que
+  quedaban: `centro_de_*`, `hoy_madrid`, `menu_del_dia`…). Desde esta última, anon no puede
+  ejecutar ninguna función de `public` salvo las de trigger, que no se pueden llamar por RPC.
 
 - **Policies:** todas las del esquema `public` son `TO authenticated`. Eran 156 `TO public` y se
   pasaron con `20261002160000`, sin cambiar `USING` ni `WITH CHECK`; una guarda en la migración
@@ -680,6 +682,7 @@ Las guardas de equivalencia de esa migración comparan la lógica normalizada (#
 | 10 RPCs críticas cerradas a anon              | `rpc-criticas-anon.rls.test.ts`                 | `RPC_CRITICAS_ANON_APPLIED`            |
 | 35 RPCs del grupo B cerradas a anon           | `rpc-grupo-b-anon.rls.test.ts`                  | `RPC_GRUPO_B_ANON_APPLIED`             |
 | Policies y helpers cerrados a anon            | `rls-helpers-anon.rls.test.ts`                  | `RLS_HELPERS_ANON_APPLIED`             |
+| 46 funciones auxiliares cerradas a anon       | `funciones-auxiliares-anon.rls.test.ts`         | `FUNCIONES_AUXILIARES_ANON_APPLIED`    |
 | Rutas de `cambios_pendientes`                 | `cambios-pendientes-ruta.rls.test.ts`           | `CAMBIOS_PENDIENTES_RUTA_APPLIED`      |
 | Rutas de `media`                              | `media-ruta.rls.test.ts`                        | `MEDIA_RUTA_APPLIED`                   |
 | Anuncios e invitaciones sin cruzar de centro  | `multicentro-anuncios-invitaciones.rls.test.ts` | `MULTICENTRO_APPLIED`                  |

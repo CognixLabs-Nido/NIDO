@@ -216,10 +216,12 @@ describe.skipIf(!MIGRATION_APPLIED)(
       expect(new Set(TABLAS).size).toBe(54)
     })
 
-    it('ancla: el cliente anon SÍ ejecuta una RPC abierta (hoy_madrid)', async () => {
-      const { data, error } = await anon.rpc('hoy_madrid')
+    // Ancla: hasta 20261010130000 era la RPC abierta `hoy_madrid`; ya no queda ninguna función de
+    // public que anon pueda ejecutar, así que el ancla es leer una tabla (0 filas, sin error).
+    it('ancla: el cliente anon lee una tabla (0 filas, sin error)', async () => {
+      const { data, error } = await anon.from('centros').select('id').limit(1)
       expect(error).toBeNull()
-      expect(data).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      expect(data).toEqual([])
     })
 
     it.each(HELPERS)('anon NO ejecuta %s (sin EXECUTE → 42501)', async (nombre, llamar) => {
