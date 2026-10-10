@@ -1499,7 +1499,7 @@ es la **única fuente de verdad**.
   `fix_consent_imagen_solo_tutor_legal`.
 - **Flags:** `IMAGEN_CONSENT_DERIVADO_APPLIED`, `IMAGEN_IU3_APPLIED`,
   `CONSENT_IMAGEN_RPC_SEGURIDAD_APPLIED`, `CONSENT_IMAGEN_TUTOR_LEGAL_APPLIED`.
-- **ADR:** pendiente (grupo D, P2).
+- **ADR:** ADR-0054.
 
 ### Alta del 2.º hijo de un tutor existente (jul y oct 2026)
 
@@ -1617,7 +1617,7 @@ Por decisión del responsable, esta serie no lleva ADR, solo esta entrada.
 - **Nueva costumbre:** cada migración aplicada lleva su PR de una línea que activa su flag en la
   nocturna. Son #292, #294, #296, #298, #301, #303, #306, #309, #311, #313, #317 y #320.
 
-**ADR:** pendiente, el ADR de RLS en BD efímera (grupo D, P2).
+**ADR:** ADR-0055 (suite RLS en BD efímera).
 
 ### Frente de seguridad — auditoría F11-D y limpieza de RPCs para anon (oct 2026)
 
