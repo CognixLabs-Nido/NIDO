@@ -181,6 +181,8 @@ Las funciones `public.set_info_medica_emergencia_cifrada(...)` y `public.get_inf
 
 - `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `datos_pedagogicos_nino`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`, `plantillas_menu_mensual`, `menu_dia`, `conversaciones`, `mensajes`, `anuncios`, `recordatorios`.
 
+Esa lista es la de Fase 2. Hoy son **61 tablas**; la lista completa, las columnas excluidas y las que no se auditan a propósito están en `data-model.md` («Reglas obligatorias»). Desde `20261011120000` (Grupo 1, PR A) la función quita columnas del JSON antes de grabar: nada entra en `audit_log` que la redacción de la purga RGPD no sepa limpiar.
+
 Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 
 - SELECT solo para admin del centro del registro.
@@ -264,6 +266,7 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `messaging.rls.test.ts` + `messaging-helpers.test.ts` (Fase 5).
 - `push.rls.test.ts` (Fase 5.5).
 - `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` + `asistencia-audit.test.ts` + `dias-centro-audit.test.ts` + `menus-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda, asistencia, calendario, plantillas y menu_dia + trigger BEFORE validar_fecha).
+- `src/test/audit/grupo1-audit.test.ts` (flag `AUDITORIA_GRUPO1_APPLIED`): las 8 tablas del Grupo 1, las columnas excluidas y que la purga redacta el nombre en las filas de `usuarios`.
 
 ## Calendario laboral (Fase 4.5a)
 

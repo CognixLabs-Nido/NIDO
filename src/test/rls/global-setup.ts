@@ -361,6 +361,13 @@ export default async function globalSetup(): Promise<void> {
   }
 
   // ---------------------------------------------------------------------------
+  // 8-ter. AUDIT_LOG de la fila de `usuarios` de cada cuenta de test (auditada desde
+  //    20261011120000): registro_id = la cuenta, centro_id NULL. Va DESPUÉS del deleteUser,
+  //    que escribe la fila del DELETE.
+  // ---------------------------------------------------------------------------
+  await delWhereIn('audit_log', 'registro_id', userIds)
+
+  // ---------------------------------------------------------------------------
   // 8-bis. AUDIT_LOG por CENTRO de test. El paso 5 solo borra por actor, pero las
   //    filas que escriben los fixtures (service_role) llevan usuario_id NULL y se
   //    acumulaban sin fin (797k filas en sep-2026 → timeouts). Va DESPUÉS de borrar

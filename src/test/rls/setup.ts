@@ -167,6 +167,10 @@ export async function deleteTestUser(userId: string): Promise<void> {
   } catch (error) {
     console.error(`deleteTestUser(${userId}) falló: ${formatSupabaseError(error)}`)
   }
+  // Y la de su propia fila de `usuarios` (auditada desde 20261011120000): el alta y el
+  // borrado escriben filas con registro_id = la cuenta y centro_id NULL, que la limpieza por
+  // centro no alcanza.
+  await serviceClient.from('audit_log').delete().eq('tabla', 'usuarios').eq('registro_id', userId)
 }
 
 export function fakeCentroId(): string {
