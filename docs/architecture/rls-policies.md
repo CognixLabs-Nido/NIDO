@@ -6,6 +6,8 @@
 - Service role bypass para Edge Functions (nunca expuesto al cliente).
 - Funciones helper `SECURITY DEFINER` con `STABLE` y `search_path` explícito.
 - **Antipatrón prohibido**: subqueries inline `(SELECT col FROM otra_tabla WHERE ...)` dentro de `USING (...)` — causa recursión RLS (SQLSTATE 42P17). Ver [ADR-0007](../decisions/ADR-0007-rls-policy-recursion-avoidance.md).
+- **Nada para `anon` ni para `PUBLIC`.** Toda policy de la app es `TO authenticated` y toda función nueva lleva `REVOKE ALL … FROM PUBLIC, anon`. Una RPC solo se da a `authenticated` si la app la llama con sesión. Ver la sección «Postura de seguridad (octubre de 2026)» y [ADR-0053](../decisions/ADR-0053-postura-seguridad-bd.md).
+- **«Sin uid» nunca es el servicio.** En una función `SECURITY DEFINER`, `auth.uid()` NULL solo deja pasar a `service_role` o a una sesión directa sin JWT, como el SQL Editor.
 
 ## Funciones helper
 
@@ -184,6 +186,7 @@ Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 - SELECT solo para admin del centro del registro.
 - INSERT solo desde la función trigger (SECURITY DEFINER bypassa).
 - UPDATE/DELETE bloqueados a TODOS los roles (append-only estricto).
+- **También por permisos** (`20261001120000`, #283). `anon` y `authenticated` no tienen `TRUNCATE`, `MAINTAIN`, `UPDATE`, `DELETE`, `INSERT`, `REFERENCES` ni `TRIGGER`, porque `TRUNCATE` y `MAINTAIN` no pasan por RLS. `anon` tampoco tiene `SELECT`. Un UPDATE o DELETE de un usuario da **42501**, no «0 filas».
 
 ## Roles
 
@@ -565,6 +568,123 @@ Las rutas codifican el ámbito (`(storage.foldername(name))[n]`): `[1]=centroId`
 ### Políticas de Storage del tutor (F10-3)
 
 Migración `20260613100000_phase10_3_adjuntos_storage_policies` (aditiva, solo `CREATE POLICY`; **no** toca las de F10-0). Suma al **tutor** (RLS de `storage.objects` es permisiva → OR entre políticas): `ninos_fotos_insert_tutor`/`ninos_fotos_delete_tutor` y `recogida_adjuntos_insert_tutor`/`recogida_adjuntos_select_tutor`, todas con `es_tutor_de(((storage.foldername(name))[2])::uuid)`. **Aislamiento entre familias** verificado por `adjuntos-storage.rls.test.ts` (gate `F10_3_MIGRATION_APPLIED`): un tutor no escribe bajo el `{ninoId}` de otra familia; el logo solo lo escribe dirección.
+
+## Postura de seguridad (octubre de 2026)
+
+Viene de la auditoría F11-D de octubre y de la limpieza de RPCs para anon. La decisión y sus
+alternativas están en [ADR-0053](../decisions/ADR-0053-postura-seguridad-bd.md). Aquí va lo que
+hay que saber al escribir una policy, una función o una migración.
+
+### Privilegios por defecto de Supabase y `anon`
+
+Supabase concede por defecto `EXECUTE` a `PUBLIC` y a `anon` en cada función nueva, y todos los
+privilegios en cada tabla. La anon key es pública porque va en el bundle, así que eso equivale a
+abrir la función o la tabla a cualquiera por PostgREST.
+
+- **Funciones:** toda función nueva lleva `REVOKE ALL ON FUNCTION … FROM PUBLIC, anon`. A quién se
+  concede:
+  - `authenticated`, solo si la app la llama con sesión;
+  - ni siquiera a `authenticated` si solo la usan el servidor o el cron (`service_role`). Ejemplos:
+    `purgar_sujeto_db`, `olvido_pendientes` y las de esqueletos.
+  - las claves de Vault (`_get_medical_key`, `_get_sepa_key`) solo las ejecuta su dueño.
+
+  Migraciones: `20261002140000` (10 RPCs críticas, #293), `20261002150000` (35 del grupo B, #295)
+  y `20261002160000` (20 helpers de RLS, #297).
+
+- **Policies:** todas las del esquema `public` son `TO authenticated`. Eran 156 `TO public` y se
+  pasaron con `20261002160000`, sin cambiar `USING` ni `WITH CHECK`; una guarda en la migración
+  impide que quede ninguna.
+  - anon ya no las evalúa: default deny, 0 filas y sin llamar a ningún helper.
+  - La única excepción deliberada es `storage.objects · centro_assets_select`, el logo del bucket
+    público (ADR-0010).
+- **El orden importa.** Primero las policies a `TO authenticated` y después el REVOKE de los
+  helpers. Al revés, las lecturas de anon pasarían de «0 filas» a «permission denied for function»,
+  que además revela que la tabla existe y está protegida.
+
+### «Sin uid» en funciones `SECURITY DEFINER`
+
+Una función que acepte `auth.uid()` NULL solo deja pasar a:
+
+- `auth.role() = 'service_role'`;
+- una sesión directa sin JWT: `session_user <> 'authenticator'` y sin `request.jwt.claims`.
+
+PostgREST entra siempre como `authenticator`, así que una petición anónima nunca cuenta como sesión
+directa. El resto recibe 42501. Aplicado en las RPCs de olvido, consentimientos e imagen
+(`20261001130000`, #284; `20261002140000`, #293). En `otorgar_consentimiento_imagen`, quien no es
+admin ya no puede atribuir el consentimiento a otro tutor: `p_tutor := auth.uid()`.
+
+### Actor humano en `audit_log`
+
+`audit_trigger_function` graba `usuario_id = auth.uid()`. **Una escritura con service role graba
+NULL.** Por eso las escrituras en tablas auditadas van con la sesión del usuario:
+
+- **Si la RLS de filas basta,** con el cliente de sesión. Ejemplos: `ninos_admin_all` y
+  `familia_tutores_*` al aprobar cambios pendientes, o `media_delete`.
+- **Si hace falta escribir columnas concretas** que una policy no puede acotar, con una RPC
+  `SECURITY DEFINER` que la app llama con sesión. Dentro, `auth.uid()` sigue siendo el `sub` del
+  JWT. Son `actualizar_familia_nino`, `fijar_libro_familia_nino` y `quitar_foto_perfil_nino`
+  (`20261005120000`, #307; reparada en producción con `20261005140000`, #308).
+  - Autorización: `es_admin(centro del niño)` o `es_tutor_legal_de`.
+  - Con el alta ya validada, el tutor recibe 42501 y su cambio va a `cambios_pendientes`; lo
+    comprueba el helper interno `alta_validada_de_nino`.
+- **El service role** queda para Storage y para el censo de escrituras justificadas que recoge #307.
+
+### Rutas e identificadores del cliente: se validan en la BD contra la fila
+
+Si la app va a usar después una ruta o un identificador con service role (borrar en Storage,
+escribirla en otra tabla), la BD la valida contra la fila, no contra el valor de entrada:
+
+- **`cambios_pendientes`:** CHECK `cambios_pendientes_ruta_documento_del_nino` (`20261003120000`,
+  #300). En `ninos_libro_familia` y `datos_tutor_dni`, `payload->>'path'` tiene que ser
+  `{centro_id}/{nino_id}/<nombre>.pdf`, con un solo segmento final `[A-Za-z0-9_-]`. `centro_id` lo
+  fija el trigger BEFORE.
+- **`media`:** trigger `media_validar_ruta_trg`, que llama a `media_validar_ruta` (`20261003140000`,
+  #302).
+  - `path` y `path_miniatura` tienen que ser `{centro}/{aula}/{publicacion}/<nombre>.jpg`, con el
+    prefijo sacado de la publicación de la fila. Si no, da 23514.
+  - Es un trigger porque `media` no tiene `aula_id` y un CHECK no puede consultar `publicaciones`.
+- **La app comprueba lo mismo antes de borrar**, como segunda capa: `rutaDocumentoDelNino` y
+  `rutaDeLaPublicacion`.
+
+### Multicentro: coherencia de centro en la BD
+
+Un trigger BEFORE INSERT OR UPDATE se aplica a todos, también a service role y al dueño con
+BYPASSRLS. Así no pueden existir filas que crucen de centro y las lecturas nunca filtran
+(`20261004120000`, #304):
+
+- **`invitaciones_validar_centro_trg`:** el niño y el aula de la invitación son de su centro.
+- **`anuncios_validar_aula_centro_trg`:** el aula del anuncio es de su centro.
+- **Además:**
+  - la rama admin de `anuncios_insert` exige `aula_id IS NULL OR centro_de_aula(aula_id) = centro_id`;
+  - la rama `aula` de `usuario_es_audiencia_anuncio(_row)` comprueba el centro;
+  - en la app, `destinatariosPushDeAnuncio` filtra por centro.
+
+Las guardas de equivalencia de esa migración comparan la lógica normalizada (#305; regla en
+`CLAUDE.md`).
+
+### Signup público cerrado (D5)
+
+- `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
+  sign up» está desactivado (#310 y #311). Un `POST /auth/v1/signup` da `signup_disabled`.
+- Todas las cuentas las crea el servidor con la API de admin, que no mira esa opción.
+- `[auth.email] enable_signup` sigue en `true`: en la CLI esa clave enciende el proveedor de email.
+- Tests: `signup-cerrado.rls.test.ts` (flag `SIGNUP_CERRADO_APPLIED`).
+
+### Tests y flags del frente
+
+| Qué prueba                                    | Fichero                                         | Flag                                   |
+| --------------------------------------------- | ----------------------------------------------- | -------------------------------------- |
+| `audit_log` sin escritura por permisos        | `audit-log.rls.test.ts`                         | `AUDIT_LOG_REVOKE_APPLIED`             |
+| RPCs de consentimiento de imagen              | `consent-imagen-rpc-seguridad.rls.test.ts`      | `CONSENT_IMAGEN_RPC_SEGURIDAD_APPLIED` |
+| Consentimiento de imagen solo del tutor legal | `consent-imagen-tutor-legal.rls.test.ts`        | `CONSENT_IMAGEN_TUTOR_LEGAL_APPLIED`   |
+| 10 RPCs críticas cerradas a anon              | `rpc-criticas-anon.rls.test.ts`                 | `RPC_CRITICAS_ANON_APPLIED`            |
+| 35 RPCs del grupo B cerradas a anon           | `rpc-grupo-b-anon.rls.test.ts`                  | `RPC_GRUPO_B_ANON_APPLIED`             |
+| Policies y helpers cerrados a anon            | `rls-helpers-anon.rls.test.ts`                  | `RLS_HELPERS_ANON_APPLIED`             |
+| Rutas de `cambios_pendientes`                 | `cambios-pendientes-ruta.rls.test.ts`           | `CAMBIOS_PENDIENTES_RUTA_APPLIED`      |
+| Rutas de `media`                              | `media-ruta.rls.test.ts`                        | `MEDIA_RUTA_APPLIED`                   |
+| Anuncios e invitaciones sin cruzar de centro  | `multicentro-anuncios-invitaciones.rls.test.ts` | `MULTICENTRO_APPLIED`                  |
+| Actor humano en la auditoría                  | `actor-humano-rpcs.rls.test.ts`                 | `ACTOR_HUMANO_APPLIED`                 |
+| Signup cerrado                                | `signup-cerrado.rls.test.ts`                    | `SIGNUP_CERRADO_APPLIED`               |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 
