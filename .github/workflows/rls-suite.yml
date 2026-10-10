@@ -209,3 +209,7 @@ jobs:
           # auxiliares que quedaban (centro_de_*, hoy_madrid…); ninguna función de public salvo las de
           # trigger es ejecutable por anon (funciones-auxiliares-anon).
           FUNCIONES_AUXILIARES_ANON_APPLIED: '1'
+          # 20261010140000_fix_privilegios_tabla_anon (#330): anon sin ningún privilegio en las tablas de
+          # public (lectura → 42501 «permission denied for table»), authenticated sin TRUNCATE/MAINTAIN y
+          # default privileges corregidos (privilegios-tabla-anon + anclas de los *-anon).
+          PRIVILEGIOS_TABLA_ANON_APPLIED: '1'
