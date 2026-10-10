@@ -144,9 +144,9 @@ Decisiones internas:
 
 - No hubo documento de diseño previo. Los datos de F0 y F1 (tiempos, catálogo y comparación) están
   en el cuerpo de #287, y los de F3 en #288.
-- **Pendiente de confirmar:** que la edición de `20260516120013` y el trato del bucket fueron una
-  elección entre dos opciones solo consta en la memoria de la sesión, no en el repositorio. El
-  repositorio recoge lo que se hizo (#287) y que el responsable lo mergeó.
+- Editar `20260516120013` (frente a parchearla solo en la CI) y documentar el bucket
+  `cartilla-vacunas` sin reconciliarlo fueron elección del responsable: la opción A en las dos. Lo
+  confirmó por escrito el 2026-10-10; hasta entonces solo constaba lo que se hizo en #287.
 
 ## Referencias
 
