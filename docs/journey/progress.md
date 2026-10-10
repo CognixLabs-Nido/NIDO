@@ -1,5 +1,79 @@
 # Diario de progreso — NIDO
 
+## Estado a 2026-10-10
+
+> Foto del proyecto para quien llegue nuevo. El detalle por serie está en
+> «Después de F12-B (julio–octubre 2026)», más abajo. Las cabeceras de las migraciones
+> (`supabase/migrations/`) son la fuente más completa de cada decisión.
+
+**En producción** (Vercel + Supabase `ttroedkdgomfmohgojvg`):
+
+- **Migraciones: 149 en el repo y 149 registradas** en `supabase_migrations.schema_migrations`
+  (verificado el 2026-10-10). La última es `20261010120000_feat_idioma_preferido_en_metadatos_auth`.
+  Se siguen aplicando a mano por el SQL Editor (el CLI peta con SIGILL en ARM), copiando el `cat` del
+  fichero commiteado, y se registran a mano después.
+- **Datos (recuento del 2026-10-10):**
+  - 24 cuentas de Auth, 16 de ellas de prueba (`@nido.test`);
+  - 9 centros, 27 familias y 10 niños, con restos de las fixtures de los tests;
+  - 2 recibos y 2 mandatos.
+
+  Las migraciones de julio y agosto tratan la BD como un entorno de pruebas sin datos reales. Antes
+  del primer dato real hay que cerrar los pendientes RGPD de abajo.
+
+- **Funcionalidad:** las fases 0–10 están cerradas. De F11 están cerradas C (personal), H
+  (multicurso), G (altas con documentos) y D (auditoría de seguridad). Después de F12-B se ha
+  rehecho el modelo de datos alrededor de la **familia** y, encima, la facturación y el alta:
+  - recibos por familia;
+  - mandato SEPA por familia;
+  - alta unificada desde admisiones;
+  - consentimiento de imagen por niño.
+
+**CI:**
+
+- `ci-pr.yml`: typecheck, lint, formato, unit y build.
+- `rls-local.yml`: la suite RLS contra una **BD efímera** (`supabase start`, CLI 2.119.0) en 3
+  shards. Es check de cada PR y activa todos los flags `*_APPLIED`, porque la BD efímera recibe todas
+  las migraciones del PR.
+- `rls-suite.yml`: la misma suite contra **producción**, cada madrugada y a mano. Solo corre lo que
+  tiene su flag activado.
+
+**Flags:** los tests usan **75 flags `*_APPLIED`** y la suite nocturna los tiene activados todos
+(verificado el 2026-10-10). Cuando una migración nueva trae tests con flag, el flag se activa en
+`rls-suite.yml` con un PR de una línea **después** de aplicarla en producción.
+
+**Documentación atrasada** (plan de puesta al día en curso, grupo D):
+
+- ADRs de la serie F (modelo de familia) y de la serie R (recibos y cierre). ADR-0050 queda superado
+  en sus decisiones F y H.
+- ADR de la postura de seguridad, y sus secciones en `docs/architecture/rls-policies.md`.
+- `docs/architecture/data-model.md`: le faltan las tablas de cobros, familia, lista de espera y becas.
+- `docs/follow-ups.md`: tiene puntos hechos sin marcar.
+- F11-A (paquete RGPD), F11-E y F11-F no tienen entrada en este diario. Están en sus PRs y en las
+  cabeceras de sus migraciones.
+
+**Pendientes conocidos que no son de documentación:**
+
+- **Correo:** el remitente sigue siendo el correo integrado de Supabase, con un límite de 2 correos
+  por hora. Falta decidir el SMTP propio (dominio, remitente y proveedor).
+- **Idioma:**
+  - el valenciano no lo ha revisado un hablante nativo;
+  - `formatEuros` no recibe el idioma en la mayoría de pantallas;
+  - el perfil no deja cambiar el idioma. Cuando lo haga, el trigger de `20261010120000` ya copia el
+    idioma a los correos de Auth.
+- **Configuración de Auth:** `site_url` termina en `/**`.
+- **RGPD antes del primer dato real:**
+  - retención;
+  - RAT y DPA;
+  - aviso de privacidad;
+  - textos legales de F8, que tiene que validar un abogado.
+- **Cobros:**
+  - la secuencia SEPA `FRST` (hoy siempre `RCUR`);
+  - `cobrado_manual` no distingue efectivo de transferencia.
+- **Riesgo aceptado D4** (auditoría F11-D): hay huecos que reabrir si llega un segundo centro.
+- **Tests:** los E2E siguen fuera de la CI.
+
+---
+
 ## Fase 0 — Fundaciones
 
 **Fecha:** 2026-05-12 → 2026-05-13
@@ -1254,6 +1328,371 @@ parte de servicio diario, motor de cierre atómico (recibos + líneas congeladas
 SEPA pain.008 bajo demanda con IBAN cifrado descifrado solo server-side, devoluciones/re-giros, vistas
 admin (pivote + CSV) y familia (recibos + desglose), y aviso in-app derivado del cierre. Todas las
 migraciones aplicadas; gated RLS contando en CI. Follow-ups en `docs/follow-ups.md`.
+
+## Después de F12-B (julio–octubre 2026)
+
+> Un bloque por serie, en orden cronológico aproximado: qué es, PRs, migraciones, flags y ADR.
+> El detalle de cada decisión está en la cabecera de su migración y en el cuerpo de su PR.
+>
+> **Ojo con dos choques de nombre:**
+>
+> - Las letras **B** (B1–B4) de los recibos de julio–agosto no son las subfases B-0…B-8 de F12-B.
+> - La serie de deuda **D-2…D-6** de julio no es la auditoría **F11-D**, cuyos puntos se llaman
+>   D2, D4 y D5 sin guion.
+
+### Alta por invitación y modo «Completa Dirección» (F11, jul 2026)
+
+**Qué es:** la recta final del alta que conduce el tutor y el modo en que la directora rellena el
+alta ella misma con la documentación en papel.
+
+- Admisiones (`lista_espera`) pasa a ser la única puerta de alta.
+- Al invitar se fija el aula.
+- El nombre y los apellidos del prospecto se separan en origen.
+- Hay un gate de completitud antes de finalizar el alta.
+- En el modo Dirección, la directora **firma a su propio nombre** con marca de respaldo físico:
+  `firma_metodo` = `digital` | `presencial`, `rol_firmante='admin'`. No hay impersonación y no se
+  manda correo.
+
+**Detalle:**
+
+- **PRs:** #166–#172, #174–#178, #180–#184.
+- **Migraciones:** `20260703120000_phase11_4c1_*`, `20260703140000_phase11_4c2_*`,
+  `20260703160000`…`20260703160700` (`phase11_3b1_*` (6), `phase11_4e_*`, `phase11_3b2_*`).
+- **Flags:** `F11_ALTA_P3B1_MIGRATION_APPLIED`.
+- **ADR:** ninguno. Cuelga de ADR-0049.
+
+### Serie F — modelo de familia (jul 2026)
+
+**Qué es:** la **familia** pasa a ser la unidad del modelo.
+
+- **Tablas nuevas:** `familias` y `familia_tutores`, que es el perfil del tutor **compartido entre
+  hermanos** y sustituye a `datos_tutor`, que era por niño y se borra en F-2b-5.
+- **Reglas de la familia:**
+  - `ninos.familia_id` es `NOT NULL`;
+  - «un adulto = una familia»;
+  - máximo 2 tutores activos por familia.
+- **Alta:** pasa por una única RPC transaccional, `crear_o_anadir_a_familia`.
+- **Mandato SEPA:** pasa a ser **de la familia** (F-2c). El tutor lo gestiona desde su portal con
+  firma digital, y `iban_ultimos4` permite enseñarlo enmascarado sin descifrar el IBAN.
+- **Ciclo de vida del niño y de la familia**, con RPCs atómicas (F-3):
+  - destino «Finaliza» al pasar de curso;
+  - `archivar_nino` y `revocar_acceso_familia`;
+  - `cerrar_curso`, `baja_nino` y `desarchivar_nino`;
+  - reactivar una familia archivada.
+
+**Detalle:**
+
+- **PRs:**
+  - fundación y alta: #185–#192, #198, #201, #202;
+  - ciclo de vida: #203–#212;
+  - mandato: #215–#219.
+- **Migraciones:**
+  - fundación y alta: `phase_f0_*`, `phase_f2a_*`, `phase_f2b1_*`, `phase_f2b3a_*`, `phase_f2b3_*`,
+    `phase_f2b5_*`;
+  - ciclo de vida: `phase_f3a_*`, `phase_f3c1_*`, `phase_f3c3_*`, `phase_f3c2_*`, `phase_f3d_*` (2),
+    `phase_f3f_*`, `phase_f2b41_*`;
+  - mandato: `phase_f2c1_*`, `phase_f2c2_*`, `phase_f2c4_*`.
+- **Flags:** `F3A_*`, `F3C1_*`, `F3C2_*`, `F3C3_*`, `F3D_*`, `F3F_*`, `F2B41_*`, `F2C1_*`, `F2C2_*`,
+  `F2C4_*` (todos `*_MIGRATION_APPLIED`).
+- **ADR:** pendiente, el ADR del modelo de familia (grupo D, P1.2).
+
+### Serie F-4 — recibos a grano familia (jul 2026)
+
+**Qué es:** la facturación de F12-B se rehace sobre la familia.
+
+- **Recibo:** hay **un recibo regular por familia y mes**, con las líneas de todos los hijos.
+- **Catálogo:** `conceptos_cobro` queda con un único modelo de valor, el importe o el porcentaje
+  (F-4-0).
+- **Asignación de conceptos:** es permanente, `asignacion_concepto` (F-4-2).
+- **Motor nuevo:** `generar_recibos_mes` genera **borradores** regenerables y `confirmar_recibo`
+  confirma recibo a recibo. Se borra `cerrar_mes_cobros`.
+- **Decisión R8:**
+  - `cierre_mensual` se ancla cuando ya no queda ningún borrador regular en el mes, es decir, «mes
+    íntegramente procesado»;
+  - hasta entonces, cada recibo se congela según su estado.
+- **Método de pago:** pasa a ser por familia (R10).
+- **Remesa pain.008:** resuelve el mandato por `recibos.familia_id` (F-4-5).
+
+**Detalle:**
+
+- **PRs:** #214, #220–#226.
+- **Migraciones:** `phase_f40_*`, `phase_f41_*`, `phase_f42_*`, `phase_f43_*`, `phase_f45_*`.
+- **Flags:** `F40_*`, `F41_*`, `F42_*`, `F43_*`, `F45_*`.
+- **ADR:** pendiente, el ADR de recibos y cierre (P1.2). **Supera las decisiones F y H de ADR-0050.**
+
+### Serie D — deuda tras la serie F (jul 2026)
+
+**Qué es:** limpieza y blindaje después de la serie F.
+
+- **D-2:** la suite RLS corre en cada PR.
+- **D-3:** normas obligatorias en el alta y registro de errores en `accept-invitation`.
+- **D-4:** código muerto.
+- **D-5:**
+  - `reproponer_asignaciones` revive las asignaciones automáticas borradas por error;
+  - cada borrado lógico guarda su **motivo** (`deleted_reason`, ENUM `motivo_borrado`). Así
+    `desarchivar_nino` y la reactivación de familias solo reviven lo que borró una baja y nunca lo
+    que borró una solicitud de olvido o una purga RGPD.
+- **D-6:** beca de comedor por mes. **Retirada después** por la beca de comedor v2.
+
+**Detalle:**
+
+- **PRs:** #228, #230–#236.
+- **Migraciones:** `phase_d5_1_*`…`phase_d5_5_*`, `phase_d6_1_*`, `phase_d6_1b_*`, `phase_d6_1c_*`,
+  `phase_d6_2_*`.
+- **Flags:** `D5_MIGRATION_APPLIED`.
+- **ADR:** el motivo del borrado entra en el ADR de familia (P1.2).
+
+### Arreglos del asistente de alta (jul 2026)
+
+**Qué es:** se arreglan 5 regresiones del asistente: navegación, estado médico y datos pedagógicos.
+
+Además, las normas y la imagen se pueden aceptar con un **acuse por casilla y por niño**
+(`acuses_alta`), sin documento publicado. Es una vía válida del gate además de la firma real.
+
+**Detalle:**
+
+- **PRs:** #237–#241.
+- **Migraciones:** `20260813120000_phase_alta_acuses_alta`.
+- **ADR:** ninguno.
+
+### Bloque B de recibos — tarifa por año, beca de comedor v2, PDF (jul–ago 2026)
+
+**Qué es:**
+
+- **B1:** el importe de un concepto puede ir **por año de nacimiento**. Precedencia: el ajuste
+  manual del niño, luego la tarifa por año y luego el importe base.
+- **B2:** **beca de comedor v2**.
+  - Cada tramo separa el mes al que **corresponde** la beca del mes en que se **aplica**.
+  - Si la beca supera el recibo, se registra el **desborde**, que se resuelve por transferencia o
+    difiriéndolo al mes siguiente.
+  - Sustituye a D-6; `beca_comedor_mes` se borra.
+  - Spec: `docs/specs/beca-comedor-v2.md`.
+- **B3:** la descripción de la línea ya no repite el nombre del niño.
+- **B4:** PDF del recibo con el logo del centro.
+- **B2-3:** un desborde resuelto queda cerrado al regenerar los recibos.
+
+**Detalle:**
+
+- **PRs:** #242–#248, #251–#253, #276.
+- **Migraciones:** `phase_b3_*`, `phase_b1_0_*`, `phase_b1_1_*`, `phase_b2_0_*`, `phase_b2_1_*`,
+  `phase_b2_6_*`, `phase_beca_b2_3_*`.
+- **Flags:** `B1_TARIFA_ANIO_APPLIED`, `B1_MOTOR_TARIFA_ANIO_APPLIED`, `BECA_COMEDOR_V2_APPLIED`,
+  `BECA_COMEDOR_V2_MOTOR_APPLIED`, `B23_MIGRATION_APPLIED`.
+- **ADR:** entra en el ADR de recibos y cierre (P1.2).
+
+### Serie IU — consentimiento de imagen por niño (jul–oct 2026)
+
+**Qué es:** el consentimiento de imagen pasa a ser **por niño**, y `consentimientos` (`tipo='imagen'`)
+es la **única fuente de verdad**.
+
+- **El flag del niño:** `ninos.puede_aparecer_en_fotos` sale solo de ese consentimiento y nadie
+  puede escribirlo a mano.
+- **Quién lo da:** la firma, la casilla del alta y el portal del tutor. Solo el **tutor legal**, o
+  Dirección en presencial.
+- **Sin consentimiento:** el niño no puede tener foto de perfil.
+- **Al revocarlo:** sus fotos quedan ocultas a las familias, no borradas. Dirección las resuelve una
+  a una desde una pantalla propia (`media_etiquetas.resuelta_en`).
+
+**Detalle:**
+
+- **PRs:** #254–#260, #284–#286.
+- **Migraciones:** `phase_imagen_iu0_*` (3), `phase_imagen_iu1b_*`, `phase_imagen_iu2_*`,
+  `phase_imagen_iu3_*`, `phase_imagen_iu5_*`, `fix_consent_imagen_rpc_seguridad`,
+  `fix_consent_imagen_solo_tutor_legal`.
+- **Flags:** `IMAGEN_CONSENT_DERIVADO_APPLIED`, `IMAGEN_IU3_APPLIED`,
+  `CONSENT_IMAGEN_RPC_SEGURIDAD_APPLIED`, `CONSENT_IMAGEN_TUTOR_LEGAL_APPLIED`.
+- **ADR:** pendiente (grupo D, P2).
+
+### Alta del 2.º hijo de un tutor existente (jul y oct 2026)
+
+**Qué es:**
+
+- **Detectar al tutor:** se busca por email con `buscar_auth_user_por_email`, en vez de paginar
+  `listUsers`. Con más de 50 cuentas fallaba.
+- **Tutor con cuenta:** el caso normal ya funciona.
+- **Diálogo de añadir hijo:** ya no falla sin avisar.
+- **Gate de `/family`:** es por hijo.
+- **Al invitar:** se pide el parentesco si el tutor no tiene un vínculo del que heredarlo.
+- **El hermano:** queda vinculado a todos los tutores de la familia.
+
+**Detalle:**
+
+- **PRs:** #261–#263, #265, #289–#292.
+- **Migraciones:** `20260822120000_fix_buscar_auth_user_por_email`,
+  `20261002130000_fix_alta_hermano_vincular_tutores`.
+- **Flags:** `ALTA_HERMANO_TUTORES_APPLIED`.
+- **ADR:** ninguno.
+
+### Serie U — alta unificada (ago 2026)
+
+**Qué es:** admisiones es la única puerta de alta y todo pasa por el mismo asistente.
+
+- **U-0:** la directora también puede acusar las normas por casilla.
+- **U-1:** «Completar (Dirección)» lleva al asistente y no pide contraseña.
+- **U-2:** el 2.º hijo de una familia existente **nace como prospecto**, con el `usuario_id` del
+  tutor. Antes se saltaba admisiones y se llegó a perder un alumno real.
+- **U-3:** el acuse médico es **por niño**.
+- **U-4:** el prospecto recuerda a su niño, y admisiones enseña el estado y «Reanudar alta».
+- **U-5:** hay un botón único de alta y se retiran las puertas viejas.
+
+Por decisión del responsable, esta serie no lleva ADR, solo esta entrada.
+
+**Detalle:**
+
+- **PRs:** #264, #266–#270, #277.
+- **Migraciones:** `phase_alta_u0_*`, `phase_alta_u2_*`, `phase_alta_u3_*`, `phase_alta_u4_*`.
+
+### Serie R — recibos editables (ago 2026)
+
+**Qué es:**
+
+- **R-1:** recalcular el mes, con un informe fiel de lo que cambia.
+- **R-2:** las líneas llevan `origen` (`automatico` | `manual`) y **el motor ya no toca las
+  manuales**. Antes borraba el borrador entero y lo volvía a crear.
+- **R-3:** se pueden editar a mano las líneas de un borrador.
+- **R-4:** test del ciclo completo.
+- **R-5:** **desconfirmar** un recibo devuelve `pendiente_procesar` a `borrador`.
+  - Solo se puede si el recibo no está en ninguna remesa.
+  - Para hacerlo, **borra la fila de `cierre_mensual`**, es decir, reabre el mes; la auditoría lo
+    registra.
+  - `confirmar_recibo` vuelve a anclar el cierre.
+
+**Detalle:**
+
+- **PRs:** #271–#275.
+- **Migraciones:** `phase_recibos_r2_*`, `phase_recibos_r5_*`.
+- **Flags:** `R2_MIGRATION_APPLIED`, `R5_MIGRATION_APPLIED`.
+- **ADR:** entra en el ADR de recibos y cierre (P1.2). **R-5 contradice la decisión F de ADR-0050**,
+  que dice «cierre inmutable, no se reabre».
+
+### Histórico del niño y matrícula (jul–oct 2026)
+
+**Qué es:**
+
+- La ficha enseña el histórico del niño agrupado por curso (F-8).
+- `matriculas.activada_at` registra cuándo una matrícula se activó de verdad, para distinguir a un
+  alumno que causó baja de un alta que se quedó a medias.
+- `matriculas.motivo_baja` solo lo lee Dirección, mediante un **permiso por columna** y la RPC
+  `get_motivos_baja_matriculas`.
+- La familia ve un recorrido reducido de su hijo, con `get_recorrido_nino_familia`.
+
+**Detalle:**
+
+- **PRs:** #213, #278, #316, #317.
+- **Migraciones:** `20260830120000_phase_matriculas_activada_at`,
+  `20261009120000_fix_matriculas_motivo_baja_por_columna`.
+- **Flags:** `ALUMNOS_ACTIVADA_AT_MIGRATION_APPLIED`, `MATRICULAS_MOTIVO_COLUMNA_APPLIED`.
+- **ADR:** el patrón del permiso por columna entra en el ADR de seguridad (P1.3). Sección en
+  `rls-policies.md`.
+
+### Rendimiento de la BD y `audit_log` (jul y sep–oct 2026)
+
+**Qué es:**
+
+- **Índices de apoyo** para los FKs hacia `usuarios`. Sin ellos, borrar una cuenta recorría entero
+  `audit_log`: unas 433.000 filas, que acababan en timeouts.
+- Índice de `audit_log` por `(tabla, registro_id)`. Antes, buscar por registro tardaba 50–56 s.
+- `ON DELETE` explícito en las 6 FKs a `auth.users` que no lo tenían, decidido columna a columna:
+  `RESTRICT` donde la referencia es una prueba y `SET NULL` donde es un simple metadato.
+- Limpieza del `audit_log` que dejan los centros de test.
+
+**Detalle:**
+
+- **PRs:** #194, #197, #279–#281.
+- **Migraciones:** `fix_audit_log_usuario_id_index`, `fix_indices_fk_usuario`,
+  `fix_audit_log_indice_tabla_registro`, `fix_fks_auth_users_on_delete`.
+- **ADR:** ninguno.
+
+### CI y suite de tests (jul–oct 2026)
+
+**Qué es:** cómo ha evolucionado la CI hasta llegar a una suite RLS rápida y fiable.
+
+- **Separación:** la suite RLS sale del CI de PR (#165).
+- **Teardown y limpieza:** teardown y borrado de fixtures robustos (#193, #195, #199, #200), y
+  reintento ante fallos transitorios de Auth (#249).
+- **Ejecutor:** `ci-main` deja de arrastrar el proyecto RLS (#196) y `lint-staged` deja de colgarse
+  con 2 cores (#227).
+- **Flags apagados:** se encienden 8 que dejaban 9 ficheros sin correr (#282).
+- **BD efímera:** la suite RLS corre contra una **BD efímera** (`supabase start`) en 3 shards como
+  check de PR, y la suite contra producción pasa a ser la nocturna (#287, #288). La CLI de Supabase
+  queda fijada (#294).
+- **Nueva costumbre:** cada migración aplicada lleva su PR de una línea que activa su flag en la
+  nocturna. Son #292, #294, #296, #298, #301, #303, #306, #309, #311, #313, #317 y #320.
+
+**ADR:** pendiente, el ADR de RLS en BD efímera (grupo D, P2).
+
+### Frente de seguridad — auditoría F11-D y limpieza de RPCs para anon (oct 2026)
+
+**Qué es:**
+
+- **`audit_log`:** solo admite añadir filas, también por permisos. Se revocan TRUNCATE y MAINTAIN a
+  anon y a authenticated, porque RLS no los cubre.
+- **RPCs:** se cierran a anon las **10 críticas**, entre ellas las claves de Vault y el olvido, que
+  aceptaban «uid NULL» como si fuera el servicio. Después se cierran las **35 del grupo B**.
+- **Políticas:** las **156 de la app pasan a `TO authenticated`** y se cierran a anon los **20
+  helpers de RLS**.
+- **Rutas de Storage:** las de `cambios_pendientes` y `media` tienen que ser del propio niño o de la
+  propia publicación.
+- **Multicentro:** anuncios e invitaciones no cruzan de centro (trigger y política).
+- **Actor humano (D2):** el autor real queda en `audit_log`. Para eso se usan RPCs de sesión en vez
+  de service role. Hubo que **reparar en producción** una versión mal pegada.
+- **Signup (D5):** el signup público queda **cerrado en el panel**, sin migración.
+- **D4:** queda como riesgo aceptado.
+
+**Detalle:**
+
+- **PRs:** #283, #293, #295, #297, #300, #302, #304, #305, #307, #308, #310, y sus PRs de flag.
+- **Migraciones:** `20261001120000_fix_audit_log_revoke_*`, `20261002140000_fix_rpc_criticas_anon`,
+  `20261002150000_fix_rpc_grupo_b_anon`, `20261002160000_fix_policies_authenticated_helpers_anon`,
+  `20261003120000_*`, `20261003140000_*`, `20261004120000_*`, `20261005120000_*`, `20261005140000_*`.
+- **Flags:** `AUDIT_LOG_REVOKE_APPLIED`, `RPC_CRITICAS_ANON_APPLIED`, `RPC_GRUPO_B_ANON_APPLIED`,
+  `RLS_HELPERS_ANON_APPLIED`, `CAMBIOS_PENDIENTES_RUTA_APPLIED`, `MEDIA_RUTA_APPLIED`,
+  `MULTICENTRO_APPLIED`, `ACTOR_HUMANO_APPLIED`, `SIGNUP_CERRADO_APPLIED`.
+- **ADR:** pendiente, el ADR de seguridad (P1.3).
+- **Lecciones:**
+  - las guardas de equivalencia comparan lógica normalizada, no bytes; es regla en `CLAUDE.md`
+    desde #305;
+  - la reparación de #308 dejó una regla de trabajo, que aún no está escrita en el repo: las
+    migraciones se aplican copiando el `cat` del fichero commiteado, nunca SQL reescrito.
+
+### Personal de aula (oct 2026)
+
+**Qué es:**
+
+- Se borra `profes_aulas.es_profe_principal`, que estaba en desuso desde F5B. Su significado lo
+  lleva `tipo_personal_aula` (ADR-0032).
+- La principal del aula es la **profesora**: «Maestra» / «Mestra» / «Teacher».
+- Se corrige «professora» con doble s en valenciano.
+
+**Detalle:**
+
+- **PRs:** #312–#315.
+- **Migraciones:** `20261008120000_chore_drop_es_profe_principal`.
+- **Flags:** `ES_PROFE_PRINCIPAL_DROP_APPLIED`.
+
+### Idioma: fechas, dinero y correos de Auth (oct 2026)
+
+**Qué es:**
+
+- **Fechas y dinero en valenciano:** se formateaban en inglés. Ahora usan la función compartida
+  `localeIntl`, que traduce va → `ca-ES`, es → `es-ES` y en → `en-GB` (#318).
+- **Correos de Auth:** la invitación y la recuperación de contraseña salen en el idioma de la cuenta
+  (#319).
+  - Las plantillas de Supabase (`supabase/templates/`) llevan condiciones por idioma, también en el
+    asunto.
+  - La Dirección elige el idioma al invitar, con castellano por defecto.
+  - Un trigger copia `usuarios.idioma_preferido` a los metadatos de Auth, y la migración hizo el
+    backfill de las cuentas existentes.
+- **Flag en la nocturna:** #320.
+
+**Detalle:**
+
+- **Migraciones:** `20261010120000_feat_idioma_preferido_en_metadatos_auth`.
+- **Flags:** `IDIOMA_AUTH_SYNC_APPLIED`.
+- **ADR:** ninguno. Sección en `rls-policies.md`.
+- **Las plantillas** se pegan a mano en el panel (Authentication → Email Templates).
+
+---
 
 ## Fase 12 — Funcionalidad pendiente post-F11 (registrada, sin abrir)
 
