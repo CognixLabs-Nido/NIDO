@@ -23,7 +23,7 @@ import type { Database } from '@/types/database'
  *
  * Guarda de regresión: los default privileges re-conceden EXECUTE a PUBLIC/anon a cada función
  * que se (re)crea. Si alguien reabre el permiso, este test se pone rojo. Ancla positiva: el mismo
- * cliente anon SÍ ejecuta una RPC abierta (`hoy_madrid`), así que el 42501 es del permiso y no de
+ * cliente anon lee una tabla (0 filas, sin error), así que el 42501 es del permiso y no de
  * un cliente roto. Varias de estas funciones lanzan 42501 desde su propia guarda, así que se
  * afirma también el mensaje de permiso («permission denied for function»).
  *
@@ -205,10 +205,12 @@ describe.skipIf(!MIGRATION_APPLIED)('RPCs del grupo B — cerradas a anon', () =
     expect(new Set(GRUPO_B.map(([nombre]) => nombre)).size).toBe(35)
   })
 
-  it('ancla: el cliente anon SÍ ejecuta una RPC abierta (hoy_madrid)', async () => {
-    const { data, error } = await anon.rpc('hoy_madrid')
+  // Ancla: hasta 20261010130000 era la RPC abierta `hoy_madrid`; ya no queda ninguna función de
+  // public que anon pueda ejecutar, así que el ancla es leer una tabla (0 filas, sin error).
+  it('ancla: el cliente anon lee una tabla (0 filas, sin error)', async () => {
+    const { data, error } = await anon.from('centros').select('id').limit(1)
     expect(error).toBeNull()
-    expect(data).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(data).toEqual([])
   })
 
   it.each(GRUPO_B)('anon NO ejecuta %s (sin EXECUTE → 42501)', async (nombre, llamar) => {

@@ -181,7 +181,9 @@ tabla y se concede `SELECT (columnas…)` sin ella. La lectura legítima va por 
   #297 (20 helpers de RLS), y ninguna policy de la app se evalúa para anon. **Quedan abiertas a anon
   unas 46 funciones auxiliares** que no entraron en esos tres PRs (`centro_de_*`, `familia_de_*`,
   `tiene_consentimiento_imagen`, `nino_puede_aparecer`, `menu_del_dia`, entre otras; comprobado en
-  producción el 2026-10-10). Están apuntadas en `docs/follow-ups.md` y se cierran en un PR aparte.
+  producción el 2026-10-10). Se cierran con `20261010130000_fix_funciones_auxiliares_anon`
+  (REVOKE de PUBLIC y anon, authenticated y service_role las conservan); su guarda comprueba que
+  no queda ninguna función de `public`, salvo las de trigger, que anon pueda ejecutar.
 - Las claves de cifrado ya no salen de la BD.
 - La auditoría registra a la persona real en los flujos que antes dejaban `usuario_id = NULL`.
 - Las rutas e identificadores del cliente ya no pueden hacer que el servidor borre o enlace objetos
