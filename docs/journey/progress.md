@@ -43,8 +43,6 @@
 
 **Documentación atrasada** (plan de puesta al día en curso, grupo D):
 
-- ADRs de la serie F (modelo de familia) y de la serie R (recibos y cierre). ADR-0050 queda superado
-  en sus decisiones F y H.
 - ADR de la postura de seguridad, y sus secciones en `docs/architecture/rls-policies.md`.
 - `docs/architecture/data-model.md`: le faltan las tablas de cobros, familia, lista de espera y becas.
 - `docs/follow-ups.md`: tiene puntos hechos sin marcar.
@@ -1385,7 +1383,8 @@ alta ella misma con la documentación en papel.
 - **PRs:**
   - fundación y alta: #185–#192, #198, #201, #202;
   - ciclo de vida: #203–#212;
-  - mandato: #215–#219.
+  - mandato: #216–#219;
+  - ficha y gestión de familias (F-6a): #215.
 - **Migraciones:**
   - fundación y alta: `phase_f0_*`, `phase_f2a_*`, `phase_f2b1_*`, `phase_f2b3a_*`, `phase_f2b3_*`,
     `phase_f2b5_*`;
@@ -1394,7 +1393,7 @@ alta ella misma con la documentación en papel.
   - mandato: `phase_f2c1_*`, `phase_f2c2_*`, `phase_f2c4_*`.
 - **Flags:** `F3A_*`, `F3C1_*`, `F3C2_*`, `F3C3_*`, `F3D_*`, `F3F_*`, `F2B41_*`, `F2C1_*`, `F2C2_*`,
   `F2C4_*` (todos `*_MIGRATION_APPLIED`).
-- **ADR:** pendiente, el ADR del modelo de familia (grupo D, P1.2).
+- **ADR:** [ADR-0051](../decisions/ADR-0051-modelo-familia.md).
 
 ### Serie F-4 — recibos a grano familia (jul 2026)
 
@@ -1418,7 +1417,8 @@ alta ella misma con la documentación en papel.
 - **PRs:** #214, #220–#226.
 - **Migraciones:** `phase_f40_*`, `phase_f41_*`, `phase_f42_*`, `phase_f43_*`, `phase_f45_*`.
 - **Flags:** `F40_*`, `F41_*`, `F42_*`, `F43_*`, `F45_*`.
-- **ADR:** pendiente, el ADR de recibos y cierre (P1.2). **Supera las decisiones F y H de ADR-0050.**
+- **ADR:** [ADR-0052](../decisions/ADR-0052-recibos-familia-y-cierre-de-mes.md), que **supera las
+  decisiones C, D, F y H de ADR-0050**.
 
 ### Serie D — deuda tras la serie F (jul 2026)
 
@@ -1440,7 +1440,7 @@ alta ella misma con la documentación en papel.
 - **Migraciones:** `phase_d5_1_*`…`phase_d5_5_*`, `phase_d6_1_*`, `phase_d6_1b_*`, `phase_d6_1c_*`,
   `phase_d6_2_*`.
 - **Flags:** `D5_MIGRATION_APPLIED`.
-- **ADR:** el motivo del borrado entra en el ADR de familia (P1.2).
+- **ADR:** el motivo del borrado está en ADR-0051.
 
 ### Arreglos del asistente de alta (jul 2026)
 
@@ -1478,7 +1478,7 @@ Además, las normas y la imagen se pueden aceptar con un **acuse por casilla y p
   `phase_b2_6_*`, `phase_beca_b2_3_*`.
 - **Flags:** `B1_TARIFA_ANIO_APPLIED`, `B1_MOTOR_TARIFA_ANIO_APPLIED`, `BECA_COMEDOR_V2_APPLIED`,
   `BECA_COMEDOR_V2_MOTOR_APPLIED`, `B23_MIGRATION_APPLIED`.
-- **ADR:** entra en el ADR de recibos y cierre (P1.2).
+- **ADR:** ADR-0052.
 
 ### Serie IU — consentimiento de imagen por niño (jul–oct 2026)
 
@@ -1562,8 +1562,8 @@ Por decisión del responsable, esta serie no lleva ADR, solo esta entrada.
 - **PRs:** #271–#275.
 - **Migraciones:** `phase_recibos_r2_*`, `phase_recibos_r5_*`.
 - **Flags:** `R2_MIGRATION_APPLIED`, `R5_MIGRATION_APPLIED`.
-- **ADR:** entra en el ADR de recibos y cierre (P1.2). **R-5 contradice la decisión F de ADR-0050**,
-  que dice «cierre inmutable, no se reabre».
+- **ADR:** ADR-0052. R-5 deja superada la decisión F de ADR-0050, que decía «cierre inmutable, no se
+  reabre».
 
 ### Histórico del niño y matrícula (jul–oct 2026)
 

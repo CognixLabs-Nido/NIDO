@@ -1,5 +1,7 @@
 # ADR-0050: Modelo de cuotas, recibos y remesas SEPA (F12-B)
 
+> **Parcialmente superado por [ADR-0052](ADR-0052-recibos-familia-y-cierre-de-mes.md)** (2026-07/08, documentado el 2026-10-10). Quedan superadas las decisiones **C**, **D**, **F** (cierre inmutable) y **H** (método de pago por niño). El estado de cada decisión está en la tabla de ADR-0052. El grano familia del que parte está en [ADR-0051](ADR-0051-modelo-familia.md).
+
 ## Estado
 
 `accepted`
