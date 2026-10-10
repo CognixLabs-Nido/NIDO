@@ -43,7 +43,6 @@
 
 **Documentación atrasada** (plan de puesta al día en curso, grupo D):
 
-- ADR de la postura de seguridad, y sus secciones en `docs/architecture/rls-policies.md`.
 - `docs/architecture/data-model.md`: le faltan las tablas de cobros, familia, lista de espera y becas.
 - `docs/follow-ups.md`: tiene puntos hechos sin marcar.
 - F11-A (paquete RGPD), F11-E y F11-F no tienen entrada en este diario. Están en sus PRs y en las
@@ -1582,7 +1581,7 @@ Por decisión del responsable, esta serie no lleva ADR, solo esta entrada.
 - **Migraciones:** `20260830120000_phase_matriculas_activada_at`,
   `20261009120000_fix_matriculas_motivo_baja_por_columna`.
 - **Flags:** `ALUMNOS_ACTIVADA_AT_MIGRATION_APPLIED`, `MATRICULAS_MOTIVO_COLUMNA_APPLIED`.
-- **ADR:** el patrón del permiso por columna entra en el ADR de seguridad (P1.3). Sección en
+- **ADR:** el patrón del permiso por columna está en ADR-0053. Sección en
   `rls-policies.md`.
 
 ### Rendimiento de la BD y `audit_log` (jul y sep–oct 2026)
@@ -1648,7 +1647,8 @@ Por decisión del responsable, esta serie no lleva ADR, solo esta entrada.
 - **Flags:** `AUDIT_LOG_REVOKE_APPLIED`, `RPC_CRITICAS_ANON_APPLIED`, `RPC_GRUPO_B_ANON_APPLIED`,
   `RLS_HELPERS_ANON_APPLIED`, `CAMBIOS_PENDIENTES_RUTA_APPLIED`, `MEDIA_RUTA_APPLIED`,
   `MULTICENTRO_APPLIED`, `ACTOR_HUMANO_APPLIED`, `SIGNUP_CERRADO_APPLIED`.
-- **ADR:** pendiente, el ADR de seguridad (P1.3).
+- **ADR:** [ADR-0053](../decisions/ADR-0053-postura-seguridad-bd.md). Las secciones están en
+  `rls-policies.md`, «Postura de seguridad (octubre de 2026)».
 - **Lecciones:**
   - las guardas de equivalencia comparan lógica normalizada, no bytes; es regla en `CLAUDE.md`
     desde #305;
