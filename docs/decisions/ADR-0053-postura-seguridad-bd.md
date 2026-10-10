@@ -158,9 +158,8 @@ tabla y se concede `SELECT (columnas…)` sin ella. La lectura legítima va por 
 
 ### 9. D4: el oráculo de email queda como riesgo aceptado
 
-> ⚠️ **Fuente: decisión del responsable, sin PR ni migración.** Este apartado documenta una decisión
-> tomada durante la auditoría (2026-10-08) que no consta en el repositorio. **El responsable tiene
-> que confirmar el texto.**
+> **Fuente: decisión del responsable, sin PR ni migración.** Se tomó durante la auditoría
+> (2026-10-08) y no constaba en el repositorio. El responsable confirmó este texto el 2026-10-10.
 
 - **El riesgo:** la vista previa del alta, `resolverTutorParaProspecto`
   (`src/features/lista-espera/actions/resolver-tutor.ts`), deja saber a una admin si un email ya
@@ -237,7 +236,7 @@ Ejecutado:
 ## Notas
 
 - **Fuentes:** las cabeceras de las migraciones citadas y los cuerpos de los PRs #284, #297, #302,
-  #307, #310 y #316. D4 es la excepción, ver el apartado 9.
+  #307, #310 y #316. D4 es la excepción: es una decisión del responsable, confirmada por escrito el 2026-10-10 (apartado 9).
 - **Choque de nombre:** «F11-D» en `docs/follow-ups.md` es el barrido de `createServiceClient` de
   junio (#132). La auditoría de octubre reutiliza el nombre para sus hallazgos D1–D5. Los hallazgos
   R1–R5 vienen de la auditoría de los usos de `createServiceRoleClient` (2026-10-03, ver #299).
