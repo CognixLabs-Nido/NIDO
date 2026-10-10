@@ -205,3 +205,7 @@ jobs:
           # 20261010120000_feat_idioma_preferido_en_metadatos_auth (#319): usuarios.idioma_preferido se
           # copia a los metadatos de Auth que leen las plantillas de correo (correos-auth-idioma).
           IDIOMA_AUTH_SYNC_APPLIED: '1'
+          # 20261010130000_fix_funciones_auxiliares_anon (#328): anon sin EXECUTE en las 46 funciones
+          # auxiliares que quedaban (centro_de_*, hoy_madrid…); ninguna función de public salvo las de
+          # trigger es ejecutable por anon (funciones-auxiliares-anon).
+          FUNCIONES_AUXILIARES_ANON_APPLIED: '1'
