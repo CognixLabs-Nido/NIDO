@@ -12,26 +12,28 @@ El plan se organiza en tres olas **scope-driven** (no por fecha; el responsable 
 
 ## Fases secuenciales (build del producto web)
 
-| #    | Fase                                                                      | Estado       |
-| ---- | ------------------------------------------------------------------------- | ------------ |
-| 0    | Fundaciones (Next.js, Supabase, tooling, CI/CD)                           | ✅ Cerrada   |
-| 1    | Identidad y acceso (auth, invitaciones, roles)                            | ✅ Cerrada   |
-| 2    | Entidades core + RLS + audit log                                          | ✅ Cerrada   |
-| 3    | Agenda diaria + bienestar (lactancia D, check-in B)                       | ✅ Cerrada   |
-| 4    | Asistencia y ausencias                                                    | ✅ Cerrada   |
-| 4.5a | Calendario laboral del centro                                             | ✅ Cerrada   |
-| 4.5b | Menú mensual + pase de lista comida                                       | ✅ Cerrada   |
-| 5    | Mensajería profe ↔ familia + anuncios                                     | ✅ Cerrada   |
-| 5.5  | Push notifications (transversal — ADR-0025/0027)                          | ✅ Cerrada   |
-| 5.6  | Mensajería admin ↔ familia + ventana anulación 5 min                      | ✅ Cerrada   |
-| 6    | Recordatorios bidireccionales (E)                                         | ✅ Cerrada   |
-| 7    | Calendario + eventos + confirmaciones (**lean**)                          | ✅ Cerrada   |
-| 7b   | Agenda de citas con invitados nominales + RSVP (ADR-0039)                 | ✅ Cerrada   |
-| 8    | Autorizaciones + firma digital (ADR-0041)                                 | ✅ Cerrada   |
-| 9    | Informes de evolución                                                     | ✅ Cerrada   |
-| 10   | Fotos y publicaciones del aula                                            | ✅ Cerrada   |
-| 11   | Pulido final + producción (incl. tolerancia básica offline PWA)           | ⏳ Pendiente |
-| 12   | Funcionalidad pendiente post-F11 (la puebla el análisis de cierre de F11) | ⏳ Pendiente |
+| #    | Fase                                                                      | Estado      |
+| ---- | ------------------------------------------------------------------------- | ----------- |
+| 0    | Fundaciones (Next.js, Supabase, tooling, CI/CD)                           | ✅ Cerrada  |
+| 1    | Identidad y acceso (auth, invitaciones, roles)                            | ✅ Cerrada  |
+| 2    | Entidades core + RLS + audit log                                          | ✅ Cerrada  |
+| 3    | Agenda diaria + bienestar (lactancia D, check-in B)                       | ✅ Cerrada  |
+| 4    | Asistencia y ausencias                                                    | ✅ Cerrada  |
+| 4.5a | Calendario laboral del centro                                             | ✅ Cerrada  |
+| 4.5b | Menú mensual + pase de lista comida                                       | ✅ Cerrada  |
+| 5    | Mensajería profe ↔ familia + anuncios                                     | ✅ Cerrada  |
+| 5.5  | Push notifications (transversal — ADR-0025/0027)                          | ✅ Cerrada  |
+| 5.6  | Mensajería admin ↔ familia + ventana anulación 5 min                      | ✅ Cerrada  |
+| 6    | Recordatorios bidireccionales (E)                                         | ✅ Cerrada  |
+| 7    | Calendario + eventos + confirmaciones (**lean**)                          | ✅ Cerrada  |
+| 7b   | Agenda de citas con invitados nominales + RSVP (ADR-0039)                 | ✅ Cerrada  |
+| 8    | Autorizaciones + firma digital (ADR-0041)                                 | ✅ Cerrada  |
+| 9    | Informes de evolución                                                     | ✅ Cerrada  |
+| 10   | Fotos y publicaciones del aula                                            | ✅ Cerrada  |
+| 11   | Pulido final + producción (incl. tolerancia básica offline PWA)           | 🔶 En curso |
+| 12   | Funcionalidad pendiente post-F11 (la puebla el análisis de cierre de F11) | 🔶 En curso |
+
+> **Estado de F11 y F12 (2026-10-10).** De **F11** están cerradas A (paquete RGPD en código), C (onboarding de personal), D (auditoría de seguridad), E, F, G (altas con documentos) y H (matrícula multicurso). Queda **F11-B**, los documentos legales (retención, RAT y DPA, aviso de privacidad), que tiene que validar un abogado, y la implementación de ADR-0028 (manifest y Service Worker de la PWA). De **F12** está cerrada **F12-B** (cuotas, recibos y remesas SEPA), rehecha después a grano familia (ADR-0051, ADR-0052); siguen abiertos la reserva de tutorías y la selección de idioma en el perfil. El detalle está en `docs/journey/progress.md` («Estado a 2026-10-10»).
 
 > **F12 — funcionalidad pendiente post-F11.** Sigue siendo **Ola 1** (Ola 1 = 100% de la funcionalidad; F12 es secuencial, no una ola posterior). Recoge funcionalidad core que aflore tras estabilizar producción en F11. El **análisis de cierre de F11 poblará F12**; arranca con un primer ítem ya identificado (ver "Backlog F12" abajo).
 

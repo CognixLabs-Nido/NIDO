@@ -4,6 +4,8 @@
 
 Una sola escuela inicialmente (ANAIA, Valencia), arquitectura preparada para multi-centro.
 
+**Estado (2026-10-10):** en producción (Vercel + Supabase). Las fases 0–10 de Ola 1 están cerradas; F11 (pulido final y producción) y F12 (funcionalidad pendiente) están en curso. El detalle está en el [diario de progreso](docs/journey/progress.md) y en el [alcance de Ola 1](docs/specs/scope-ola-1.md).
+
 ---
 
 ## Stack
@@ -20,8 +22,7 @@ git clone https://github.com/CognixLabs-Nido/NIDO.git
 cd NIDO
 
 # 2. Credenciales
-cp .env.example .env.local
-# Rellena .env.local con los valores reales (ver docs/dev-setup.md)
+# Crea .env.local con las variables de docs/dev-setup.md («Variables de entorno»)
 
 # 3. Dependencias
 npm install
@@ -35,24 +36,29 @@ npm run dev
 
 ## Comandos
 
-| Comando             | Descripción              |
-| ------------------- | ------------------------ |
-| `npm run dev`       | Servidor de desarrollo   |
-| `npm run build`     | Build de producción      |
-| `npm test`          | Tests unitarios (Vitest) |
-| `npm run test:e2e`  | Tests E2E (Playwright)   |
-| `npm run typecheck` | Comprobación de tipos    |
-| `npm run lint`      | Linting                  |
-| `npm run format`    | Formateo con Prettier    |
+| Comando                | Descripción                                  |
+| ---------------------- | -------------------------------------------- |
+| `npm run dev`          | Servidor de desarrollo                       |
+| `npm run build`        | Build de producción                          |
+| `npm test`             | Tests unitarios (Vitest)                     |
+| `npm run test:rls`     | Suite RLS + audit (necesita una BD Supabase) |
+| `npm run test:e2e`     | Tests E2E (Playwright)                       |
+| `npm run typecheck`    | Comprobación de tipos                        |
+| `npm run lint`         | Linting                                      |
+| `npm run format`       | Formateo con Prettier                        |
+| `npm run format:check` | Comprobación de formato (la que corre la CI) |
 
 ---
 
 ## Documentación
 
+- [Puesta en marcha en local](docs/dev-setup.md)
 - [Convenciones de código](docs/conventions.md)
 - [Modelo de datos](docs/architecture/data-model.md)
 - [Políticas RLS](docs/architecture/rls-policies.md)
 - [Alcance Ola 1](docs/specs/scope-ola-1.md)
+- [Decisiones de arquitectura (ADRs)](docs/decisions/README.md)
+- [Pendientes y deuda técnica](docs/follow-ups.md)
 - [Diario de progreso](docs/journey/progress.md)
 - [Visión del proyecto](docs/vision-why.md)
 
