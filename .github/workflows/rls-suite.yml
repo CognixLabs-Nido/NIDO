@@ -35,11 +35,19 @@ name: RLS suite (remote DB)
 #       COMPARTIDO y su wipe borra por ese patrón. Al entrar datos reales, decidir si sigue
 #       corriendo contra él o contra una BD de test dedicada. La validación del esquema DEL
 #       PR y el fin del baile de flags ya los resolvió rls-local.yml.
+# ⛔ DESACTIVADA (2026-10-11). La suite RLS ya NO corre contra el remoto: en 94 noches dejó en
+# producción 28.331 filas de audit_log con centro_id NULL y 8 centros de test. Desde este PR,
+# src/test/guarda-bd-local.ts (la llaman global-setup.ts y setup.ts) aborta la suite antes de
+# escribir nada si NEXT_PUBLIC_SUPABASE_URL no es local. Por eso el cron está comentado: correr
+# aquí solo daría un rojo «por diseño». Un lanzamiento a mano (workflow_dispatch) choca con la
+# guarda y para en el arranque con «la suite RLS solo corre contra BD local» sin sembrar nada;
+# este workflow NO pone RLS_ALLOW_REMOTE. El PR 2 rehace la nocturna: la suite en BD efímera y un
+# job aparte que solo lee producción (deriva de catálogo, registro de migraciones y config).
 on:
-  workflow_dispatch: {} # lanzable a mano (GitHub UI / `gh workflow run rls-suite.yml`).
-  schedule:
-    # 02:00 UTC = 03:00 CET / 04:00 CEST — madrugada Europe/Madrid, baja actividad.
-    - cron: '0 2 * * *'
+  workflow_dispatch: {} # lanzable a mano: hoy aborta en la guarda de BD local (ver arriba).
+  # schedule:
+  #   # 02:00 UTC = 03:00 CET / 04:00 CEST — madrugada Europe/Madrid, baja actividad.
+  #   - cron: '0 2 * * *'
 
 # Un único run de la suite RLS a la vez (global, no por rama): si llega otro (nightly +
 # dispatch manual solapados), se ENCOLA en vez de correr en paralelo. No cancelamos el

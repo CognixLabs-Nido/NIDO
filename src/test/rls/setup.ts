@@ -4,6 +4,8 @@ import { expect } from 'vitest'
 
 import type { Database } from '@/types/database'
 
+import { comprobarBdLocal } from '../guarda-bd-local'
+
 import { isRetryableAuthError, withRetry } from './retry'
 
 // Re-export de los helpers de reintento (viven en `./retry` sin efectos de import
@@ -29,6 +31,10 @@ if (!SUPABASE_URL || !SUPABASE_ANON || !SUPABASE_SERVICE) {
     'Tests RLS requieren NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY en .env.local'
   )
 }
+
+// Segunda capa de la guarda de BD local (la primera está en global-setup.ts): si un fichero
+// RLS llegara a cargarse sin globalSetup, tampoco crea clientes contra una BD remota.
+comprobarBdLocal()
 
 export const serviceClient: SupabaseClient<Database> = createClient<Database>(
   SUPABASE_URL,
