@@ -1,6 +1,6 @@
 # Limpieza de la basura de test en producción (octubre de 2026)
 
-**Estado:** preparada, SIN aplicar. Operación: `supabase/operaciones/20261012120000_limpieza_basura_test.sql`.
+**Estado:** aplicada en producción el 12-10-2026 (NOTICE «Limpieza hecha», todas las guardas pasaron). Operación: `supabase/operaciones/20261012120000_limpieza_basura_test.sql`.
 
 ## De dónde viene
 
@@ -48,6 +48,11 @@ Corroboración independiente: 28.415 de las 28.550 se escribieron durante un run
 5. **Las filas que escribe la propia operación** (sus DELETE disparan el trigger de auditoría), localizadas por `xmin`: la limpieza no deja rastro de sí misma.
 6. **Guarda de recuento:** cada paso borra exactamente lo aprobado, tabla por tabla.
 7. **Guarda ANAIA otra vez:** 164/4/9.
+
+## Estado tras aplicarla (verificado en vivo, 12-10-2026)
+
+- `audit_log`: 164 filas, todas de ANAIA; 0 con `centro_id` NULL y 0 de otros centros. La más reciente sigue siendo del 10-10: la operación no dejó rastro.
+- 1 centro (ANAIA), 4 niños, 9 roles, 3 familias y 4 `acuses_alta`, todos de ANAIA.
 
 ## Pendiente después
 
