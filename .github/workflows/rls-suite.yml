@@ -212,3 +212,6 @@ jobs:
           # 20261011130000_feat_auditoria_invitaciones_actor_sistema (#336): invitaciones auditada sin token,
           # audit_log.actor_sistema y la purga de usuario redactando mensajes y vínculos (grupo1b-audit).
           AUDITORIA_GRUPO1B_APPLIED: '1'
+          # 20261011140000_fix_purga_rgpd_nino (#338): las dos purgas del niño borran la ficha de la tabla y
+          # redactan su copia en audit_log; retroactiva de niños borrados (purga-rgpd-nino).
+          PURGA_RGPD_NINO_APPLIED: '1'
