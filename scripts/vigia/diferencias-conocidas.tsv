@@ -1,0 +1,4 @@
+# Diferencias de catálogo entre producción y la BD efímera que NO son deriva.
+# Formato: tipo<TAB>objeto<TAB>motivo. El job vigía las enseña como «conocida» y no falla por ellas;
+# si una deja de aparecer, avisa para quitarla de aquí. Cada línea necesita un motivo.
+bucket	cartilla-vacunas	20260620120000 borra sus policies por SQL; el bucket se borró a mano en producción por la Storage API (Supabase no deja borrarlo por SQL). En la efímera sigue, vacío y sin policies.
