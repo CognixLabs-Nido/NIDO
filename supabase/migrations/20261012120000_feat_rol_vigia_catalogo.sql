@@ -50,8 +50,10 @@ BEGIN
   END IF;
 END $$;
 
-ALTER ROLE vigia_catalogo WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION
-  NOBYPASSRLS CONNECTION LIMIT 3;
+-- Sin NOSUPERUSER, NOREPLICATION ni NOBYPASSRLS: postgres no es superusuario y Postgres le
+-- prohíbe nombrar esos tres atributos en ALTER ROLE, aunque sea para negarlos. Un rol nuevo
+-- nace sin ellos, la guarda de entrada los exige apagados si ya existía y la de salida lo comprueba.
+ALTER ROLE vigia_catalogo WITH LOGIN NOCREATEDB NOCREATEROLE NOINHERIT CONNECTION LIMIT 3;
 -- Cinturón además de los permisos: toda transacción nace de solo lectura y no se eterniza.
 ALTER ROLE vigia_catalogo SET default_transaction_read_only = on;
 ALTER ROLE vigia_catalogo SET statement_timeout = '30s';
