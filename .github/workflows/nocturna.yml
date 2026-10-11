@@ -1,0 +1,236 @@
+name: Nocturna (suite efímera + vigía de producción)
+
+# Red de seguridad de cada madrugada (PR 2 de la suite a efímera; sustituye al cron de
+# rls-suite.yml, desactivado en #340). Dos jobs y un aviso:
+#
+# 1. `suite`: la suite RLS completa sobre main en BD efímera. Es rls-local.yml (los mismos 3
+#    shards y el mismo resumen), llamado como workflow reutilizable. Caza lo que rompe main por la
+#    combinación de merges y los tests intermitentes. NO toca producción ni siembra nada.
+#
+# 2. `vigia`: lee producción SOLO con el rol vigia_catalogo (secret PROD_CATALOGO_DB_URL,
+#    migración 20261012120000). Nunca escribe ni siembra. Tres comprobaciones:
+#    a. Registro de migraciones: vigia.migraciones() de producción contra supabase/migrations.
+#    b. Catálogo: la misma huella (scripts/vigia/huella.sql) en producción y en una BD efímera
+#       construida desde el repo, las dos como vigia_catalogo, y comparar-huellas.mjs dice qué
+#       objeto difiere. Después, un control negativo: provoca tres derivas en la efímera y exige
+#       que el comparador las encuentre (si un día deja de verlas, el job falla).
+#    c. Configuración que no está en migraciones: signup cerrado en Auth y los secretos de Vault
+#       que declara config.toml ([db.vault]), comparados por nombre dentro de la BD.
+#
+# 3. `aviso`: si `suite` o `vigia` fallan, abre un issue con la etiqueta `nocturna-roja` (o comenta
+#    en el que ya esté abierto) con qué falló y el enlace al run. Motivo: en septiembre la nocturna
+#    estuvo 19 noches en rojo sin que nadie lo viera. En un pull_request solo enseña el issue que
+#    abriría (simulacro).
+#
+# LOG PÚBLICO (el repo es público): el job vigía imprime nombres de objeto del catálogo (están en
+# el repo), versiones de migración y recuentos. Nunca contenido de datos, ni nombres de secretos de
+# Vault, ni definiciones: de la huella solo salen tipo y objeto.
+#
+# DISPARADORES:
+#   - schedule: cada madrugada.
+#   - workflow_dispatch: a mano desde main (p. ej. justo después de que Jose aplique una migración).
+#   - pull_request que toque este fichero o scripts/vigia/**: valida el cambio contra producción
+#     antes de mergearlo. En un PR la efímera sale de la rama del PR, así que si el PR trae además
+#     una migración sin aplicar, el registro dará rojo (esperado).
+on:
+  schedule:
+    # 02:17 UTC = 03:17 CET / 04:17 CEST, madrugada en Madrid. Minuto no redondo: GitHub retrasa
+    # los crons en punto.
+    - cron: '17 2 * * *'
+  workflow_dispatch: {}
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/nocturna.yml
+      - scripts/vigia/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nocturna-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  suite:
+    name: Suite RLS (efímera)
+    uses: ./.github/workflows/rls-local.yml
+
+  vigia:
+    name: Vigía de producción (solo lectura)
+    # Un PR desde un fork no recibe secrets: no hay nada que vigilar.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      registro: ${{ steps.registro.outcome }}
+      config: ${{ steps.config.outcome }}
+      catalogo: ${{ steps.catalogo.outcome }}
+      control: ${{ steps.control.outcome }}
+    env:
+      PROD: ${{ secrets.PROD_CATALOGO_DB_URL }}
+      PGCONNECT_TIMEOUT: '15'
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Cliente psql
+        run: command -v psql >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client)
+
+      - name: Credencial del rol
+        run: '[ -n "$PROD" ] || { echo "Falta el secret PROD_CATALOGO_DB_URL"; exit 1; }'
+
+      # a. Registro: las versiones registradas en producción, contra los ficheros del repo. Solo
+      #    versiones: hay filas antiguas registradas a mano sin nombre.
+      - name: 'a. Registro de migraciones'
+        id: registro
+        run: |
+          psql "$PROD" -X -At -v ON_ERROR_STOP=1 -c "SELECT version FROM vigia.migraciones()" | sort > prod-versiones.txt
+          ls supabase/migrations | grep -E '^[0-9]+_.*\.sql$' | sed 's/_.*//' | sort > repo-versiones.txt
+          echo "Producción: $(wc -l < prod-versiones.txt) migraciones registradas; repo: $(wc -l < repo-versiones.txt) ficheros."
+          solo_repo=$(comm -13 prod-versiones.txt repo-versiones.txt)
+          solo_prod=$(comm -23 prod-versiones.txt repo-versiones.txt)
+          [ -z "$solo_repo" ] || { echo "En el repo y SIN registrar en producción:"; echo "$solo_repo" | sed 's/^/  /'; }
+          [ -z "$solo_prod" ] || { echo "Registradas en producción y SIN fichero en el repo:"; echo "$solo_prod" | sed 's/^/  /'; }
+          if [ -n "$solo_repo$solo_prod" ]; then exit 1; fi
+          echo "Registro al día."
+
+      # c. Configuración fuera de las migraciones.
+      - name: 'c. Configuración (signup y Vault)'
+        id: config
+        if: ${{ !cancelled() }}
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          fallo=0
+          # Signup público: /auth/v1/settings es público (la anon key va en el bundle).
+          signup=$(curl -fsS "$SUPABASE_URL/auth/v1/settings" -H "apikey: $ANON_KEY" | jq -r '.disable_signup')
+          echo "Auth disable_signup = $signup"
+          [ "$signup" = true ] || { echo "El signup público NO está cerrado"; fallo=1; }
+          # Vault: los nombres que declara config.toml, comparados DENTRO de la BD. Solo salen recuentos.
+          esperados=$(sed -n '/^\[db\.vault\]/,/^\[/p' supabase/config.toml | grep -oE '^[a-z_]+ *=' | tr -d ' =' | paste -sd, -)
+          r=$(psql "$PROD" -X -At -v ON_ERROR_STOP=1 -v esperados="{$esperados}" <<'SQL'
+          SELECT count(*) || ' ' || count(*) FILTER (WHERE e IN (SELECT name FROM vigia.secretos_vault()))
+            FROM unnest(:'esperados'::text[]) e;
+          SQL
+          )
+          read -r total presentes <<< "$r"
+          echo "Vault: $total secretos esperados (config.toml), $presentes presentes en producción."
+          [ "$total" -gt 0 ] && [ "$presentes" = "$total" ] || { echo "Falta algún secreto de Vault esperado"; fallo=1; }
+          exit $fallo
+
+      - uses: supabase/setup-cli@v1
+        if: ${{ !cancelled() }}
+        with:
+          version: 2.119.0
+
+      # La misma BD efímera que rls-local.yml (mismas exclusiones): Storage hace falta para buckets.
+      - name: BD efímera desde el repo
+        id: efimera
+        if: ${{ !cancelled() }}
+        run: |
+          # Claves de usar y tirar para los secretos de [db.vault] (config.toml), como en rls-local.yml.
+          export MEDICAL_ENCRYPTION_KEY=$(openssl rand -base64 32) SEPA_ENCRYPTION_KEY=$(openssl rand -base64 32)
+          supabase start -x studio,imgproxy,realtime,edge-runtime,logflare,vector,supavisor,postgres-meta
+          DB=$(supabase status -o env | grep -E '^DB_URL=' | cut -d= -f2- | tr -d '"')
+          # vigia_catalogo nace sin contraseña; aquí se le pone una de usar y tirar para leer la
+          # efímera con el MISMO rol que producción.
+          pw=$(openssl rand -hex 24)
+          echo "::add-mask::$pw"
+          psql "$DB" -X -q -v ON_ERROR_STOP=1 -c "ALTER ROLE vigia_catalogo PASSWORD '$pw'"
+          echo "DB=$DB" >> "$GITHUB_ENV"
+          echo "EFIMERA=$(echo "$DB" | sed -E "s#//[^@]+@#//vigia_catalogo:$pw@#")" >> "$GITHUB_ENV"
+
+      # b. Catálogo: misma huella en los dos lados, como vigia_catalogo.
+      - name: 'b. Catálogo (deriva)'
+        id: catalogo
+        if: ${{ !cancelled() && steps.efimera.outcome == 'success' }}
+        run: |
+          psql "$PROD" -X -At -v ON_ERROR_STOP=1 -f scripts/vigia/huella.sql > huella-prod.tsv
+          psql "$EFIMERA" -X -At -v ON_ERROR_STOP=1 -f scripts/vigia/huella.sql > huella-efimera.tsv
+          node scripts/vigia/comparar-huellas.mjs huella-prod.tsv huella-efimera.tsv scripts/vigia/diferencias-conocidas.tsv
+
+      # Control negativo: tres derivas provocadas en la efímera (nunca en producción). El comparador
+      # tiene que encontrar exactamente esas tres; si no, la vigilancia está ciega y el job falla.
+      - name: 'b. Control negativo (deriva provocada en la efímera)'
+        id: control
+        if: ${{ !cancelled() && steps.efimera.outcome == 'success' }}
+        run: |
+          psql "$EFIMERA" -X -At -v ON_ERROR_STOP=1 -f scripts/vigia/huella.sql > antes.tsv
+          pol=$(psql "$DB" -X -At -v ON_ERROR_STOP=1 -c "SELECT polname FROM pg_policy WHERE polrelid = 'public.centros'::regclass ORDER BY 1 LIMIT 1")
+          psql "$DB" -X -q -v ON_ERROR_STOP=1 -v pol="$pol" <<'SQL'
+          -- 1. Cuerpo de función: la misma definición con otra zona horaria.
+          SELECT replace(pg_get_functiondef('public.hoy_madrid()'::regprocedure), 'Europe/Madrid', 'Europe/Lisbon') AS def \gset
+          :def ;
+          -- 2. Una policy borrada.
+          DROP POLICY :"pol" ON public.centros;
+          -- 3. Un permiso de tabla de más.
+          GRANT SELECT ON public.centros TO anon;
+          SQL
+          psql "$EFIMERA" -X -At -v ON_ERROR_STOP=1 -f scripts/vigia/huella.sql > despues.tsv
+          node scripts/vigia/comparar-huellas.mjs antes.tsv despues.tsv > control.txt && { cat control.txt; echo "El comparador NO vio la deriva provocada"; exit 1; }
+          cat control.txt
+          esperado=$(printf '%s\n' \
+            "  difiere: funcion.cuerpo public.hoy_madrid()" \
+            "  solo en producción: policy public.centros.$pol" \
+            "  difiere: tabla.permisos public.centros" | sort)
+          visto=$(grep -E '^  (difiere|solo en)' control.txt | sort)
+          [ "$visto" = "$esperado" ] || { echo "El comparador no encontró exactamente las 3 derivas provocadas"; exit 1; }
+          echo "Control negativo OK: las 3 derivas provocadas se detectan (la columna «producción» es aquí la efímera antes de provocarlas)."
+
+  aviso:
+    name: Aviso de rojo (issue)
+    needs: [suite, vigia]
+    if: ${{ always() && (needs.suite.result == 'failure' || needs.vigia.result == 'failure') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Abrir o actualizar el issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENTO: ${{ github.event_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHA: ${{ github.sha }}
+          SUITE: ${{ needs.suite.result }}
+          VIGIA: ${{ needs.vigia.result }}
+          REGISTRO: ${{ needs.vigia.outputs.registro }}
+          CONFIG: ${{ needs.vigia.outputs.config }}
+          CATALOGO: ${{ needs.vigia.outputs.catalogo }}
+          CONTROL: ${{ needs.vigia.outputs.control }}
+        run: |
+          estado() { case "$1" in success) echo "✅";; failure) echo "❌ FALLO";; skipped|'') echo "— no corrió";; *) echo "$1";; esac; }
+          fecha=$(date -u +%F)
+          cuerpo=$(cat <<EOF
+          La nocturna del $fecha ha dado rojo (evento: $EVENTO, commit ${SHA:0:7}).
+
+          | Comprobación | Resultado |
+          | --- | --- |
+          | Suite RLS sobre la BD efímera | $(estado "$SUITE") |
+          | Vigía · a. registro de migraciones | $(estado "$REGISTRO") |
+          | Vigía · b. deriva de catálogo | $(estado "$CATALOGO") |
+          | Vigía · b. control negativo | $(estado "$CONTROL") |
+          | Vigía · c. signup y Vault | $(estado "$CONFIG") |
+
+          Qué objeto o qué test falló está en el log del run: $RUN_URL
+
+          Este issue se queda abierto hasta que alguien lo revise y lo cierre; cada noche roja añade un comentario.
+          EOF
+          )
+          if [ "$EVENTO" = pull_request ]; then
+            echo "SIMULACRO (pull_request): no se abre issue. Esto es lo que se abriría:"
+            echo "Título: Nocturna en rojo ($fecha)"
+            echo "$cuerpo"
+            exit 0
+          fi
+          gh label create nocturna-roja -R "$REPO" --color B60205 \
+            --description "La nocturna (suite efímera o vigía de producción) ha dado rojo" 2>/dev/null || true
+          abierto=$(gh issue list -R "$REPO" --label nocturna-roja --state open --json number -q '.[0].number')
+          if [ -n "$abierto" ]; then
+            gh issue comment "$abierto" -R "$REPO" --body "$cuerpo"
+            echo "Comentado en el issue abierto #$abierto"
+          else
+            gh issue create -R "$REPO" --title "Nocturna en rojo ($fecha)" --label nocturna-roja --body "$cuerpo"
+          fi

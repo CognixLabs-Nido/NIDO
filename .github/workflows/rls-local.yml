@@ -29,13 +29,18 @@ name: RLS suite (BD efímera)
 #
 # Cada run tiene sus propias BD → no compite con nada: sin el grupo `rls-suite` de
 # concurrency; solo se cancela el run anterior del mismo PR.
+#
+# Lo llama también nocturna.yml (`workflow_call`) para correr la suite sobre main cada madrugada.
+# Llamado así, `github.workflow` es el nombre de la nocturna: por eso va en el grupo de
+# concurrency, para que la llamada desde un PR no cancele (ni la cancele) el run propio del PR.
 on:
   pull_request:
     branches: [main]
   workflow_dispatch: {}
+  workflow_call: {}
 
 concurrency:
-  group: rls-local-${{ github.event.pull_request.number || github.ref }}
+  group: rls-local-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
