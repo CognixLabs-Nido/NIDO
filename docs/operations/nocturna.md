@@ -20,6 +20,8 @@ Sustituye a la nocturna antigua (`rls-suite.yml`), que corría la suite contra p
 
 **Aviso de rojo.** Si cualquiera de los dos jobs falla, se abre un issue con la etiqueta `nocturna-roja`, con una tabla de qué comprobación falló y el enlace al run. Si ya hay uno abierto con esa etiqueta, se añade un comentario en vez de abrir otro. El issue no se cierra solo: se cierra a mano cuando alguien lo ha revisado.
 
+Para comprobar que el aviso funciona sin esperar a un rojo: lanzar el workflow a mano con `probar_aviso` marcado. Abre un issue «PRUEBA del aviso de la nocturna» con la misma etiqueta (sin sumarlo al que pudiera estar abierto); se cierra después.
+
 ## Qué sale en el log
 
 El repo es público y el log también. El job vigía imprime nombres de objeto (funciones, tablas, policies… que ya están en el repo), versiones de migración, recuentos y, solo cuando difieren, los permisos de los dos lados (roles y privilegios). Nunca contenido de datos, nunca definiciones de función y nunca nombres de secretos de Vault.
