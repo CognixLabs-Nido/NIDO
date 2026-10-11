@@ -4,7 +4,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { Database } from '@/types/database'
 
-import { BUCKET_NINOS_FOTOS, rutaThumbDe } from '@/shared/lib/adjuntos/storage'
+import {
+  BUCKET_LIBRO_FAMILIA,
+  BUCKET_NINOS_FOTOS,
+  rutaThumbDe,
+} from '@/shared/lib/adjuntos/storage'
 
 import { BUCKET_AULA_FOTOS } from '@/features/fotos/types'
 
@@ -43,6 +47,27 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
       const { data } = await service.from('ninos').select('foto_url').eq('id', ninoId).maybeSingle()
       const url = data?.foto_url
       return url ? [url, rutaThumbDe(url)] : []
+    },
+  },
+  {
+    // Purga RGPD del niño: `purgar_sujeto_db` anula `libro_familia_path`, así que el PDF se
+    // borra antes. Por PREFIJO (`{centroId}/{ninoId}/`), no por la ruta vigente: así caen
+    // también las subidas anteriores y las que quedaron en cola de validación.
+    nombre: 'libro-familia-nino',
+    bucket: BUCKET_LIBRO_FAMILIA,
+    sujetos: ['nino'],
+    async recolectar(service, ninoId) {
+      const { data } = await service
+        .from('ninos')
+        .select('centro_id')
+        .eq('id', ninoId)
+        .maybeSingle()
+      if (!data?.centro_id) return []
+      const prefijo = `${data.centro_id}/${ninoId}`
+      const { data: objetos } = await service.storage.from(BUCKET_LIBRO_FAMILIA).list(prefijo)
+      return (objetos ?? [])
+        .filter((o) => o.id !== null) // descarta pseudo-carpetas (id null), solo ficheros
+        .map((o) => `${prefijo}/${o.name}`)
     },
   },
   {
