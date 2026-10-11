@@ -1,6 +1,8 @@
 import { config as loadEnv } from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
 
+import { comprobarBdLocal } from '../guarda-bd-local'
+
 import { isRetryableAuthError, withRetry } from './retry'
 
 // =============================================================================
@@ -188,6 +190,10 @@ async function emptyPrefix(bucket: string, prefix: string): Promise<void> {
 }
 
 export default async function globalSetup(): Promise<void> {
+  // Guarda de BD local: antes del wipe y de cualquier escritura. Contra una URL que no sea
+  // local aborta aquí y vitest no corre ningún test (salvo RLS_ALLOW_REMOTE=1 a mano).
+  comprobarBdLocal()
+
   if (!SUPABASE_URL || !SUPABASE_SERVICE) {
     throw new Error(
       'wipe RLS: faltan NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY en .env.local'
