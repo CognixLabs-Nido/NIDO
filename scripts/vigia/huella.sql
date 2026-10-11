@@ -25,6 +25,8 @@ de_extension AS (
   SELECT objid FROM pg_depend WHERE deptype = 'e'
 ),
 -- Las ACL se normalizan a «rol:privilegio[*]» ordenado; una ACL NULL es la de por defecto.
+-- OJO: dentro de string_agg, «ORDER BY 1» ordena por la constante 1, no por la columna: hay que
+-- repetir la expresión. Sin eso, el mismo permiso concedido en otro orden salía como deriva.
 funciones AS (
   SELECT n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')' AS ident, p.*
     FROM pg_proc p JOIN esquemas n ON n.oid = p.pronamespace
@@ -55,7 +57,8 @@ filas AS (
   UNION ALL
   SELECT 'funcion.permisos', f.ident,
          coalesce((SELECT string_agg(coalesce(nullif(pg_get_userbyid(a.grantee), '-'), 'PUBLIC') || ':' || a.privilege_type
-                                         || CASE WHEN a.is_grantable THEN '*' ELSE '' END, ',' ORDER BY 1)
+                                         || CASE WHEN a.is_grantable THEN '*' ELSE '' END, ',' ORDER BY coalesce(nullif(pg_get_userbyid(a.grantee), '-'), 'PUBLIC') || ':' || a.privilege_type
+                                         || CASE WHEN a.is_grantable THEN '*' ELSE '' END)
                          FROM aclexplode(coalesce(f.proacl, acldefault('f', f.proowner))) a), '')
     FROM funciones f
   UNION ALL
@@ -65,14 +68,15 @@ filas AS (
   UNION ALL
   SELECT 'tabla.permisos', t.ident,
          coalesce((SELECT string_agg(coalesce(nullif(pg_get_userbyid(a.grantee), '-'), 'PUBLIC') || ':' || a.privilege_type
-                                         || CASE WHEN a.is_grantable THEN '*' ELSE '' END, ',' ORDER BY 1)
+                                         || CASE WHEN a.is_grantable THEN '*' ELSE '' END, ',' ORDER BY coalesce(nullif(pg_get_userbyid(a.grantee), '-'), 'PUBLIC') || ':' || a.privilege_type
+                                         || CASE WHEN a.is_grantable THEN '*' ELSE '' END)
                          FROM aclexplode(coalesce(t.relacl, acldefault((CASE WHEN t.relkind = 'S' THEN 's' ELSE 'r' END)::"char", t.relowner))) a), '')
     FROM tablas t
   UNION ALL
   SELECT 'columna', t.ident || '.' || a.attname,
          md5(concat_ws('|', format_type(a.atttypid, a.atttypmod), a.attnotnull, a.attidentity, a.attgenerated,
                        pg_get_expr(d.adbin, d.adrelid),
-                       (SELECT string_agg(coalesce(nullif(pg_get_userbyid(x.grantee), '-'), 'PUBLIC') || ':' || x.privilege_type, ',' ORDER BY 1)
+                       (SELECT string_agg(coalesce(nullif(pg_get_userbyid(x.grantee), '-'), 'PUBLIC') || ':' || x.privilege_type, ',' ORDER BY coalesce(nullif(pg_get_userbyid(x.grantee), '-'), 'PUBLIC') || ':' || x.privilege_type)
                           FROM aclexplode(a.attacl) x)))
     FROM tablas t
     JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum > 0 AND NOT a.attisdropped
@@ -103,7 +107,7 @@ filas AS (
   -- Policies de nuestras tablas y de storage (objects y buckets).
   SELECT 'policy', pn.nspname || '.' || pc.relname || '.' || po.polname,
          md5(concat_ws('|', po.polcmd, po.polpermissive,
-                       (SELECT string_agg(CASE WHEN r = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(r) END, ',' ORDER BY 1) FROM unnest(po.polroles) r),
+                       (SELECT string_agg(CASE WHEN r = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(r) END, ',' ORDER BY CASE WHEN r = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(r) END) FROM unnest(po.polroles) r),
                        regexp_replace(coalesce(pg_get_expr(po.polqual, po.polrelid), ''), '\s+', ' ', 'g'),
                        regexp_replace(coalesce(pg_get_expr(po.polwithcheck, po.polrelid), ''), '\s+', ' ', 'g')))
     FROM pg_policy po JOIN pg_class pc ON pc.oid = po.polrelid JOIN pg_namespace pn ON pn.oid = pc.relnamespace
@@ -112,7 +116,8 @@ filas AS (
   -- Privilegios por defecto de los roles que crean objetos en nuestras migraciones.
   SELECT 'default_privileges', pg_get_userbyid(da.defaclrole) || '.' || coalesce(dn.nspname, '*') || '.' || da.defaclobjtype::text,
          coalesce((SELECT string_agg(coalesce(nullif(pg_get_userbyid(a.grantee), '-'), 'PUBLIC') || ':' || a.privilege_type
-                                         || CASE WHEN a.is_grantable THEN '*' ELSE '' END, ',' ORDER BY 1)
+                                         || CASE WHEN a.is_grantable THEN '*' ELSE '' END, ',' ORDER BY coalesce(nullif(pg_get_userbyid(a.grantee), '-'), 'PUBLIC') || ':' || a.privilege_type
+                                         || CASE WHEN a.is_grantable THEN '*' ELSE '' END)
                          FROM aclexplode(da.defaclacl) a), '')
     FROM pg_default_acl da LEFT JOIN pg_namespace dn ON dn.oid = da.defaclnamespace
    WHERE pg_get_userbyid(da.defaclrole) = 'postgres'

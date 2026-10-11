@@ -5,6 +5,11 @@
 `accepted`. La decisión se tomó y se aplicó el 2026-10-02; este ADR la documenta después, el
 2026-10-10.
 
+> **Actualización 2026-10-11.** La «red nocturna» contra el remoto ya no existe: su cron se apagó
+> en #340 (dejó en producción 28.331 filas de `audit_log` y 8 centros de test) y la sustituye
+> `.github/workflows/nocturna.yml` (#342): la suite sobre `main` en BD efímera y un job vigía que
+> solo lee producción con el rol `vigia_catalogo`. Detalle en `docs/operations/nocturna.md`.
+
 **Fecha:** 2026-10-02 (#287, #288, #294)
 **Autores:** responsable + claude-code
 **Fase del proyecto:** CI, después de F12-B (pasos F0 a F3).
