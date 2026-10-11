@@ -428,6 +428,36 @@ describe.skipIf(!APPLIED)('Purga RGPD del niño — tabla y audit_log', () => {
     expect(filas.some((f) => f.tabla === 'ninos' && f.accion === 'DELETE')).toBe(true)
     expect(fugas).toEqual([])
   })
+
+  it('retroactiva: redacta la auditoría de un niño que ya no existe y no toca la de uno vivo', async () => {
+    const borrado = await sembrar({ esqueleto: false })
+    const vivo = await sembrar({ esqueleto: false })
+
+    // Un borrado anterior a esta migración: DELETE a mano, sin purga (FK-safe, como los fixtures).
+    for (const tabla of [
+      'info_medica_emergencia',
+      'datos_pedagogicos_nino',
+      'matriculas',
+    ] as const) {
+      const { error } = await serviceClient.from(tabla).delete().eq('nino_id', borrado.ninoId)
+      expect(error).toBeNull()
+    }
+    const { error: dErr } = await serviceClient.from('ninos').delete().eq('id', borrado.ninoId)
+    expect(dErr).toBeNull()
+    expect(fugasEn(await filasDe(borrado), borrado.marcas).length).toBeGreaterThan(0)
+
+    const { data: n, error } = await serviceClient.rpc('_redactar_auditoria_ninos_borrados')
+    expect(error).toBeNull()
+    expect(n).toBeGreaterThan(0)
+
+    const filas = await filasDe(borrado)
+    const fugas = fugasEn(filas, borrado.marcas)
+    volcar('retroactiva', filas, fugas)
+    expect(fugas).toEqual([])
+
+    // El vivo conserva su auditoría tal cual.
+    expect(fugasEn(await filasDe(vivo), vivo.marcas).length).toBeGreaterThan(0)
+  })
 })
 
 function corto(v: unknown): string {
