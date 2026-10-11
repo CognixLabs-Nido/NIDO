@@ -24,13 +24,9 @@ import {
  *
  * El caso «uid NULL por un camino con EXECUTE» y la sesión directa no se pueden provocar
  * desde PostgREST; quedaron cubiertos por el ensayo con rollback contra el remoto.
- *
- * Gateado (la migración la aplica Jose a mano): CONSENT_IMAGEN_RPC_SEGURIDAD_APPLIED=1
  */
 
-const MIGRATION_APPLIED = process.env.CONSENT_IMAGEN_RPC_SEGURIDAD_APPLIED === '1'
-
-describe.skipIf(!MIGRATION_APPLIED)('RPCs consentimiento de imagen — autorización', () => {
+describe('RPCs consentimiento de imagen — autorización', () => {
   let centro: { id: string }
   let nino: { id: string }
   let ninoAjeno: { id: string }

@@ -9,6 +9,15 @@
 > en #340 (dejó en producción 28.331 filas de `audit_log` y 8 centros de test) y la sustituye
 > `.github/workflows/nocturna.yml` (#342): la suite sobre `main` en BD efímera y un job vigía que
 > solo lee producción con el rol `vigia_catalogo`. Detalle en `docs/operations/nocturna.md`.
+>
+> **Actualización 2026-10-12.** Se retiraron los 80 flags `*_APPLIED` y el workflow
+> `rls-suite.yml`. Los flags solo servían para que la suite contra producción se saltara los tests
+> de migraciones aún sin aplicar allí; sin esa suite, en la BD efímera estaban siempre a `'1'` y no
+> saltaban nunca. Los tests corren siempre, sin `skipIf`, y los dos helpers que elegían el
+> resultado esperado según el flag (`expectBloqueado` en `audit-log.rls.test.ts` y
+> `expectLecturaAnonDenegada` en `setup.ts`) exigen solo el 42501. Ya no hay «PR de una línea»
+> para activar un flag. La tabla de decisiones y las consecuencias de abajo describen el estado
+> de 2026-10-02.
 
 **Fecha:** 2026-10-02 (#287, #288, #294)
 **Autores:** responsable + claude-code

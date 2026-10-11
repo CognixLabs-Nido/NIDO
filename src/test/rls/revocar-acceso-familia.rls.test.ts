@@ -28,14 +28,11 @@ import type { Database } from '@/types/database'
  *     (admin del centro OK lo cubre el happy path.)
  *  6. atomicidad: una llamada que falla (no autorizada) deja familia y roles intactos.
  *  7. reversibilidad: deleted_at → NULL sobre las mismas filas deja todo consistente.
- *
- * Gate: F3C3_MIGRATION_APPLIED=1 (requiere la migración 20260718120000 aplicada).
  */
 
-const APPLIED = process.env.F3C3_MIGRATION_APPLIED === '1'
 const NOW = '2026-07-11T00:00:00.000Z'
 
-describe.skipIf(!APPLIED)('F-3-C-3 — revocar_acceso_familia (RPC)', () => {
+describe('F-3-C-3 — revocar_acceso_familia (RPC)', () => {
   let centroA: { id: string }
   let centroB: { id: string }
   let adminA: TestUser

@@ -29,19 +29,14 @@ import type { Database } from '@/types/database'
  *  2) get_mandatos_remesa: admin descifra el IBAN de los recibos de la remesa; un
  *     tutor (no admin) es rechazado.
  *  3) set/get_datos_acreedor: round-trip del IBAN cifrado del acreedor; tutor rechazado.
- *
- * Gateado: F12B_5_RLS_APPLIED=1 (requiere la migración phase12b_5 aplicada). No se
- * activa en CI hasta que el operador la aplica (patrón H-0).
  */
-
-const APPLIED = process.env.F12B_5_RLS_APPLIED === '1'
 
 const IBAN_DEUDOR = 'ES7620770024003102575766'
 const IBAN_ACREEDOR = 'ES9121000418450200051332'
 const CID = 'ES00ZZZ00000000000'
 const BIC = 'CAIXESBBXXX'
 
-describe.skipIf(!APPLIED)('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
+describe('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
   let centroA: { id: string }
   let ninoA: TestNino
   let adminA: TestUser

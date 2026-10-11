@@ -37,11 +37,7 @@ import {
  *   · siembra de `proponer_asignaciones` y respeto de la baja manual → `f42`/`d5`.
  *   · composición del aviso del botón → `resumen-recalculo.test.ts` (unit).
  * Aquí esas garantías se comprueban EN CONTEXTO, dentro del ciclo, no en aislamiento.
- *
- * Gateado: R2_MIGRATION_APPLIED=1 (el ciclo necesita `origen` y el motor de R-2).
  */
-
-const APPLIED = process.env.R2_MIGRATION_APPLIED === '1'
 
 type AsignacionInsert = Database['public']['Tables']['asignacion_concepto']['Insert']
 type LineaInsert = Database['public']['Tables']['lineas_recibo']['Insert']
@@ -61,7 +57,7 @@ interface LineaFila {
   origen: string
 }
 
-describe.skipIf(!APPLIED)('R-4 — ciclo completo de recibos (integración)', () => {
+describe('R-4 — ciclo completo de recibos (integración)', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }

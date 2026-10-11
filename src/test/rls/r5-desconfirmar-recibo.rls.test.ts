@@ -38,11 +38,7 @@ import {
  * NO se duplica aquí: la mecánica del motor y el congelado por estado (`f43-motor-recibos-
  * familia`), la preservación de manuales al regenerar (`r2-motor-preserva-manuales`) ni el
  * ciclo de generación de punta a punta (`r4-ciclo-completo-recibos`).
- *
- * Gateado: R5_MIGRATION_APPLIED=1 (requiere `20260828120000_phase_recibos_r5_desconfirmar`).
  */
-
-const APPLIED = process.env.R5_MIGRATION_APPLIED === '1'
 
 const ANIO = 2026
 const ESCOLARIDAD = 50000
@@ -78,7 +74,7 @@ async function insertarNino(centroId: string, familiaId: string, nombre: string)
   return data.id
 }
 
-describe.skipIf(!APPLIED)('R-5 — desconfirmar un recibo', () => {
+describe('R-5 — desconfirmar un recibo', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }

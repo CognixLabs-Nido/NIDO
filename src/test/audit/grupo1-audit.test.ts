@@ -31,7 +31,6 @@ import {
  *
  * Principio: nada entra en audit_log que la redacción de la purga no sepa limpiar.
  */
-const APPLIED = process.env.AUDITORIA_GRUPO1_APPLIED === '1'
 
 type Fila = {
   accion: string
@@ -54,7 +53,7 @@ async function auditDe(tabla: string, registroId: string, accion: string): Promi
   return data as Fila
 }
 
-describe.skipIf(!APPLIED)('Audit log — Grupo 1 (8 tablas)', () => {
+describe('Audit log — Grupo 1 (8 tablas)', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }

@@ -26,8 +26,7 @@ import {
 } from './setup'
 
 /**
- * F9-4 — Control de acceso a la descarga del PDF. **Gated** por
- * `F9_0_MIGRATION_APPLIED=1` (misma migración de F9-0 ya aplicada al remoto).
+ * F9-4 — Control de acceso a la descarga del PDF.
  *
  * `loadInformeParaPdf(client, id)` es la frontera de autorización del route handler:
  * lee `informes_evolucion` con el cliente del usuario (RLS de F9-0) y exige
@@ -37,7 +36,6 @@ import {
  *  - El staff del aula también puede descargar (caso profe/admin).
  *  - `assembleInformePdfData` resuelve centro/curso/autor (service role) tras autorizar.
  */
-const MIGRATION_APPLIED = process.env.F9_0_MIGRATION_APPLIED === '1'
 
 type InformeInsert = Database['public']['Tables']['informes_evolucion']['Insert']
 type PlantillaInsert = Database['public']['Tables']['plantillas_informe']['Insert']
@@ -45,7 +43,7 @@ type TipoPersonalAula = Database['public']['Enums']['tipo_personal_aula']
 
 const ESTRUCTURA = [{ titulo: 'Autonomía', items: [{ id: 'item-1', texto: 'Come solo' }] }]
 
-describe.skipIf(!MIGRATION_APPLIED)('Acceso a PDF de informe — F9-4', () => {
+describe('Acceso a PDF de informe — F9-4', () => {
   let centro: { id: string }
   let centroB: { id: string }
   let curso: { id: string }

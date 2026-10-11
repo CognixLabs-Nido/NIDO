@@ -25,11 +25,7 @@ import {
  * (admin CRUD de su centro; otro admin no; tutor sin acceso) y la RPC de propuesta
  * automática (siembra por ámbito, regla de descuento hermanos ≥2 hijos, idempotencia y
  * no-resurrección de una auto soft-borrada).
- *
- * Gateado: F42_MIGRATION_APPLIED=1 (requiere phase_f42 aplicada en la BD de test).
  */
-
-const APPLIED = process.env.F42_MIGRATION_APPLIED === '1'
 
 type AsignacionConceptoInsert = Database['public']['Tables']['asignacion_concepto']['Insert']
 
@@ -50,7 +46,7 @@ async function insertarNino(centroId: string, familiaId: string, nombre: string)
   return data.id
 }
 
-describe.skipIf(!APPLIED)('F-4-2 — asignación permanente (asignacion_concepto + proponer)', () => {
+describe('F-4-2 — asignación permanente (asignacion_concepto + proponer)', () => {
   // ── Esquema (XOR / UNIQUE / trigger centro_id) + RLS ───────────────────────
   describe('esquema y RLS', () => {
     let centroA: { id: string }

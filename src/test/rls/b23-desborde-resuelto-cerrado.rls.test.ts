@@ -36,12 +36,7 @@ import {
  *
  * UN MES POR TEST: confirmar no interviene aquí, pero cada `it` estrena mes igualmente para
  * que ninguno herede el estado del anterior (lección de R-5).
- *
- * Gateado: B23_MIGRATION_APPLIED=1 (requiere
- * `20260829120000_phase_beca_b2_3_desborde_resuelto_cerrado`).
  */
-
-const APPLIED = process.env.B23_MIGRATION_APPLIED === '1'
 
 const ANIO = 2026
 const ESCOLARIDAD = 50000
@@ -63,7 +58,7 @@ interface Caso {
   mes: number
 }
 
-describe.skipIf(!APPLIED)('B2-3 — un desborde resuelto queda cerrado', () => {
+describe('B2-3 — un desborde resuelto queda cerrado', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }

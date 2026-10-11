@@ -32,14 +32,16 @@
 
 - `ci-pr.yml`: typecheck, lint, formato, unit y build.
 - `rls-local.yml`: la suite RLS contra una **BD efímera** (`supabase start`, CLI 2.119.0) en 3
-  shards. Es check de cada PR y activa todos los flags `*_APPLIED`, porque la BD efímera recibe todas
-  las migraciones del PR.
-- `rls-suite.yml`: la misma suite contra **producción**, cada madrugada y a mano. Solo corre lo que
-  tiene su flag activado.
+  shards. Es check de cada PR: la BD efímera recibe todas las migraciones del PR y todos los tests
+  corren siempre.
+- `nocturna.yml` (#342): cada madrugada, la misma suite sobre `main` en BD efímera y un job vigía
+  que solo lee producción (registro de migraciones, catálogo y config). Sustituye a `rls-suite.yml`,
+  la suite contra producción, desactivada en #340 y retirada el 2026-10-12.
 
-**Flags:** los tests usan **75 flags `*_APPLIED`** y la suite nocturna los tiene activados todos
-(verificado el 2026-10-10). Cuando una migración nueva trae tests con flag, el flag se activa en
-`rls-suite.yml` con un PR de una línea **después** de aplicarla en producción.
+**Flags:** ya no hay flags `*_APPLIED`. Se retiraron los 80 el 2026-10-12, junto con
+`rls-suite.yml`: solo servían para que la suite contra producción se saltara los tests de
+migraciones aún sin aplicar allí. Un test de una migración nueva corre en su PR, sin flag y sin PR
+posterior.
 
 **Documentación atrasada** (plan de puesta al día en curso, grupo D):
 

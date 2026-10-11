@@ -11,19 +11,11 @@ import {
   type TestUser,
 } from './setup'
 
-// Con la mig 20261001120000 aplicada, authenticated ya no tiene GRANT de UPDATE/DELETE y
-// PostgREST devuelve 42501. Sin ella, RLS filtra en silencio (0 filas, sin error).
-// En ambos casos la fila sigue intacta (se comprueba con service role).
-const REVOKE_APPLIED = process.env.AUDIT_LOG_REVOKE_APPLIED === '1'
-
+// Desde la mig 20261001120000, authenticated no tiene GRANT de UPDATE/DELETE y PostgREST
+// devuelve 42501. La fila sigue intacta (se comprueba con service role).
 const expectBloqueado = (error: { code?: string } | null, data: unknown[] | null) => {
-  if (REVOKE_APPLIED) {
-    expect(error?.code).toBe('42501')
-    expect(data).toBeNull()
-  } else {
-    expect(error).toBeNull()
-    expect(data ?? []).toHaveLength(0)
-  }
+  expect(error?.code).toBe('42501')
+  expect(data).toBeNull()
 }
 
 describe('RLS audit_log — append-only (UPDATE/DELETE bloqueados)', () => {

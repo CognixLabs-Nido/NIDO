@@ -31,11 +31,7 @@ import type { Database } from '@/types/database'
  *      - 'autorizado' (no es tutor legal) → rechazada (es_tutor_legal_de).
  *   2. Guard de activarMatricula (a nivel RLS/DB): admin solo activa una 'lista'
  *      (no una 'pendiente') — espejo del `.eq('estado','lista')` de la action.
- *
- * Gateado: F11_ALTA_P3C_MIGRATION_APPLIED=1
  */
-
-const APPLIED = process.env.F11_ALTA_P3C_MIGRATION_APPLIED === '1'
 
 async function crearMatriculaPendiente(
   ninoId: string,
@@ -57,7 +53,7 @@ async function crearMatriculaPendiente(
   return mat.id
 }
 
-describe.skipIf(!APPLIED)('Alta P3c — activación de matrícula (RPC + guard)', () => {
+describe('Alta P3c — activación de matrícula (RPC + guard)', () => {
   let centro: { id: string }
   let ninoOk: { id: string }
   let ninoSinId: { id: string }

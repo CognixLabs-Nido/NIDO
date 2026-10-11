@@ -31,19 +31,15 @@ import {
  * exclusión de las firmas (#7), la exclusividad de fotos (#5), la conservación de
  * contenido de mensajes con redacción de PII (#6) y la idempotencia. Las partes
  * no-SQL (Storage + auth.users) las cubre el orquestador purgarVencidos().
- *
- * Gateado por flag (migración a mano vía SQL Editor — CLI SIGILL):
- *   F11A4_OLVIDO_MIGRATION_APPLIED=1
  */
 
 type FirmaInsert = Database['public']['Tables']['firmas_autorizacion']['Insert']
 
-const MIGRATION_APPLIED = process.env.F11A4_OLVIDO_MIGRATION_APPLIED === '1'
 const MARCA = '[borrado]'
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex')
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0 L10 10"/></svg>'
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS olvido funcional — F11-A4', () => {
+describe('RLS olvido funcional — F11-A4', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }

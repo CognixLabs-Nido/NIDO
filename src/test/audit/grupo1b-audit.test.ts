@@ -35,12 +35,11 @@ import {
  *
  * Principio: nada entra en audit_log que la redacción de la purga RGPD no sepa limpiar.
  */
-const APPLIED = process.env.AUDITORIA_GRUPO1B_APPLIED === '1'
 
 const NOMBRE = 'Nombre Fuga Grupo1B'
 const PARENTESCO = 'Parentesco Fuga Grupo1B'
 
-describe.skipIf(!APPLIED)('Audit log — Grupo 1, PR B', () => {
+describe('Audit log — Grupo 1, PR B', () => {
   let centro: { id: string }
   let nino: TestNino
   let sujeto: TestUser

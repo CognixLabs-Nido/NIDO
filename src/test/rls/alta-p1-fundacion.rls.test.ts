@@ -26,16 +26,11 @@ import {
  * El flujo completo de la acción (acceptInvitation/acceptPendingInvitation) usa
  * next/headers (getRequestContext) y auth.admin.createUser → no es invocable en
  * vitest; se verifica en preview. Aquí cubrimos los contratos de datos.
- *
- * Gateado por flag (migración a mano vía Management API — CLI SIGILL):
- *   F11_ALTA_P1_MIGRATION_APPLIED=1
  */
-
-const APPLIED = process.env.F11_ALTA_P1_MIGRATION_APPLIED === '1'
 
 const enUnDia = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
-describe.skipIf(!APPLIED)('Alta P1 — fundación (DB)', () => {
+describe('Alta P1 — fundación (DB)', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string; curso_academico_id: string }

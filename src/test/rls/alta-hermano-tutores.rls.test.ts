@@ -31,11 +31,7 @@ import type { Database } from '@/types/database'
  *  - El 2.º tutor sin cuenta no se toca (lo vincula accept-invitation); el que tiene el rol
  *    tutor_legal retirado NO recupera acceso.
  *  - Regresión: primer hijo (familia nueva) → 'familia_creada' con un solo vínculo principal.
- *
- * Gate: ALTA_HERMANO_TUTORES_APPLIED=1 (requiere 20261002130000).
  */
-
-const APPLIED = process.env.ALTA_HERMANO_TUTORES_APPLIED === '1'
 
 const NACIMIENTO = '2024-03-15'
 
@@ -49,7 +45,7 @@ interface Familia {
   t2: TestUser
 }
 
-describe.skipIf(!APPLIED)('Alta del 2.º hijo — la RPC vincula a todos los tutores', () => {
+describe('Alta del 2.º hijo — la RPC vincula a todos los tutores', () => {
   let admin: TestUser
   let cAdmin: SupabaseClient<Database>
   const centros: string[] = []

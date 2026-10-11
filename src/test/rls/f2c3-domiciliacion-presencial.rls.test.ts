@@ -24,12 +24,7 @@ import type { Database } from '@/types/database'
  *     firma_imagen '' (o NULL).
  *  2) sustituir → el viejo pasa a 'revocado' (conservado) y el nuevo queda 'activo' presencial.
  *  3) un no-admin (ni tutor de la familia) es rechazado por el gate de la RPC.
- *
- * Gateado: F2C2_MIGRATION_APPLIED=1 (las RPCs por familia + iban_ultimos4 ya existen; F-2c-3 no
- * añade migración). No corre en CI hasta que el operador aplica las migraciones SEPA.
  */
-
-const APPLIED = process.env.F2C2_MIGRATION_APPLIED === '1'
 
 const IBAN_1 = 'ES7620770024003102575766'
 const IBAN_2 = 'ES9121000418450200051332'
@@ -52,7 +47,7 @@ function argsPresencial(familiaId: string, iban: string, id: string) {
   } as never
 }
 
-describe.skipIf(!APPLIED)('F-2c-3 — domiciliación presencial de Dirección', () => {
+describe('F-2c-3 — domiciliación presencial de Dirección', () => {
   let centroA: { id: string }
   let familiaA: string
   let adminA: TestUser

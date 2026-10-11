@@ -32,11 +32,7 @@ import type { Database } from '@/types/database'
  *  - regresión familia nueva: tutor sin familia → 'familia_creada' (rama ELSE intacta).
  *  - atomicidad: fallo tras la reactivación (fecha_nacimiento futura viola el CHECK del
  *    niño) → rollback total: la familia NO queda reactivada a medias.
- *
- * Gate: F2B41_MIGRATION_APPLIED=1 (requiere 20260723120000 + los primitivos F-3-C/D).
  */
-
-const APPLIED = process.env.F2B41_MIGRATION_APPLIED === '1'
 
 const HOY_PASADO = '2024-03-15' // fecha_nacimiento válida (<= hoy).
 const FUTURO = '2999-01-01' // viola CHECK (fecha_nacimiento <= CURRENT_DATE).
@@ -47,7 +43,7 @@ interface Escenario {
   aulaId: string
 }
 
-describe.skipIf(!APPLIED)('F-2b-4-1 — crear_o_anadir_a_familia reactiva familia archivada', () => {
+describe('F-2b-4-1 — crear_o_anadir_a_familia reactiva familia archivada', () => {
   let admin: TestUser
   let cAdmin: SupabaseClient<Database>
   const centros: string[] = []

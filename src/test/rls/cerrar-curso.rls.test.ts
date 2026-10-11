@@ -32,12 +32,7 @@ import type { Database } from '@/types/database'
  *     nada archivado, filas rollover_finaliza intactas).
  *  7. idempotencia: 2.ª llamada tras cierre OK → ya_activo:true, estado consistente.
  *  8. actor de auditoría = admin (audit_log.usuario_id del archivado = admin.id).
- *
- * Gate: F3C2_MIGRATION_APPLIED=1 (requiere 20260719120000 — y la dependencia
- * 20260718120000 revocar_acceso_familia + 20260717120000 archivar_nino — aplicadas).
  */
-
-const APPLIED = process.env.F3C2_MIGRATION_APPLIED === '1'
 
 const SALIENTE_FIN = '2027-07-31' // = createTestCurso fecha_fin
 const ALTA = '2026-09-01' // = createTestCurso fecha_inicio / matricular fecha_alta
@@ -50,7 +45,7 @@ interface Escenario {
   aulaDestino: { id: string }
 }
 
-describe.skipIf(!APPLIED)('F-3-C-2 — cerrar_curso (RPC)', () => {
+describe('F-3-C-2 — cerrar_curso (RPC)', () => {
   let admin: TestUser
   let cAdmin: SupabaseClient<Database>
   const centros: string[] = []

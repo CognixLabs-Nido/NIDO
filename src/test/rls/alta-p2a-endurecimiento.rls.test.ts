@@ -29,14 +29,9 @@ import {
  * un tutor con `puede_recibir_mensajes` ve los anuncios de su aula/centro SOLO si la
  * matrícula del niño está 'activa'; con 'pendiente' deja de verlos. Con 'activa'
  * vuelve a verlos (no-op para matrículas reales = regresión-cero).
- *
- * Gateado por flag (migración a mano vía Management API — CLI SIGILL):
- *   F11_ALTA_P2A_MIGRATION_APPLIED=1
  */
 
-const APPLIED = process.env.F11_ALTA_P2A_MIGRATION_APPLIED === '1'
-
-describe.skipIf(!APPLIED)('Alta P2a — endurecimiento matrícula activa (RLS)', () => {
+describe('Alta P2a — endurecimiento matrícula activa (RLS)', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string; curso_academico_id: string }

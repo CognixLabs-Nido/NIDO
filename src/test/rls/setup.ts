@@ -48,23 +48,14 @@ export const serviceClient: SupabaseClient<Database> = createClient<Database>(
  * Desde esa migración anon no tiene ningún privilegio de tabla en `public`: leer cualquier tabla
  * con la anon key da 42501 «permission denied for table <tabla>». Antes leía 0 filas sin error
  * (las policies son TO authenticated). Los tests que comprueban la lectura de anon usan
- * `expectLecturaAnonDenegada`, que sigue el flag: en la BD efímera (todos los flags a '1') ya
- * exige el 42501; en la nocturna contra producción, hasta que se active el flag tras aplicar la
- * migración, exige el comportamiento anterior (0 filas, sin error).
+ * `expectLecturaAnonDenegada`, que exige ese 42501.
  */
-export const PRIVILEGIOS_TABLA_ANON_APPLIED = process.env.PRIVILEGIOS_TABLA_ANON_APPLIED === '1'
-
 export function expectLecturaAnonDenegada(
   res: { data: unknown; error: { code?: string; message?: string } | null },
   tabla: string
 ): void {
-  if (PRIVILEGIOS_TABLA_ANON_APPLIED) {
-    expect(res.error?.code).toBe('42501')
-    expect(res.error?.message).toContain(`permission denied for table ${tabla}`)
-  } else {
-    expect(res.error).toBeNull()
-    expect(res.data).toEqual([])
-  }
+  expect(res.error?.code).toBe('42501')
+  expect(res.error?.message).toContain(`permission denied for table ${tabla}`)
 }
 
 export function anonClient(): SupabaseClient<Database> {

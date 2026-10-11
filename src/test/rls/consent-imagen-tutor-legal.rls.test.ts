@@ -29,19 +29,15 @@ import {
  * aunque tenga `puede_firmar_autorizaciones` y firme el documento, no genera consentimiento.
  * La firma presencial de Dirección no se puede provocar desde PostgREST (la deriva el server
  * action); quedó cubierta por el ensayo con rollback contra el remoto.
- *
- * Gateado (la migración la aplica Jose a mano): CONSENT_IMAGEN_TUTOR_LEGAL_APPLIED=1
  */
 
 type FirmaInsert = Database['public']['Tables']['firmas_autorizacion']['Insert']
-
-const MIGRATION_APPLIED = process.env.CONSENT_IMAGEN_TUTOR_LEGAL_APPLIED === '1'
 
 const TEXTO = 'Autorizo el uso de la imagen del menor en las condiciones descritas.'
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex')
 const SVG_TRAZO = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0 L10 10"/></svg>'
 
-describe.skipIf(!MIGRATION_APPLIED)('Consentimiento de imagen — solo el tutor legal', () => {
+describe('Consentimiento de imagen — solo el tutor legal', () => {
   let centro: { id: string }
   let nino: { id: string }
   let admin: TestUser

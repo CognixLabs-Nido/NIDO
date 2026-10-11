@@ -19,13 +19,9 @@ import {
  * Verifica el RIGOR del derivado (dato sensible de menores): por-niño estricto (un hermano
  * no afecta al otro), otorgar→true / revocar→false / re-otorgar→true, sin consent→false
  * (no NULL), y el CHECK imagen⇒nino_id NOT NULL.
- *
- * Gateado (la migración la aplica Jose a mano): IMAGEN_CONSENT_DERIVADO_APPLIED=1
  */
 
-const MIGRATION_APPLIED = process.env.IMAGEN_CONSENT_DERIVADO_APPLIED === '1'
-
-describe.skipIf(!MIGRATION_APPLIED)('IU-0 imagen consent por-niño + flag derivado', () => {
+describe('IU-0 imagen consent por-niño + flag derivado', () => {
   let centro: { id: string }
   let ninoA: { id: string; familia_id: string }
   let ninoB: { id: string } // HERMANO de A (misma familia)

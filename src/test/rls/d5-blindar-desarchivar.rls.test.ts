@@ -24,11 +24,7 @@ import {
  * desarchivar_nino y la rama de reactivación de crear_o_anadir_a_familia solo reviven lo
  * que borró una BAJA ('baja_nino' vínculos, 'revocacion_familia' rol/familia). La purga
  * RGPD marca 'purga_rgpd' → nunca revivible. CHECK de coherencia deleted_at ⇔ deleted_reason.
- *
- * Gate: D5_MIGRATION_APPLIED=1 (requiere 20260805 + primitivos F-3-C/D/F + F-2b-4-1 + olvido).
  */
-
-const APPLIED = process.env.D5_MIGRATION_APPLIED === '1'
 
 interface Escenario {
   centroId: string
@@ -36,7 +32,7 @@ interface Escenario {
   aulaId: string
 }
 
-describe.skipIf(!APPLIED)('D-5 punto 2 — blindar desarchivar (motivo_borrado)', () => {
+describe('D-5 punto 2 — blindar desarchivar (motivo_borrado)', () => {
   let admin: TestUser
   let cAdmin: SupabaseClient<Database>
   const centros: string[] = []

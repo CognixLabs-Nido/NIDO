@@ -21,11 +21,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  *
  * Los filtros usan `IS NULL` sobre la primera columna de cada tabla: no convierte ningún literal
  * al tipo de la columna, así que el único error posible es el de permiso.
- *
- * Gateado (la migración la aplica Jose a mano): PRIVILEGIOS_TABLA_ANON_APPLIED=1
  */
-
-const MIGRATION_APPLIED = process.env.PRIVILEGIOS_TABLA_ANON_APPLIED === '1'
 
 /** Las 73 tablas de public. Las que no empiezan por `id` llevan su primera columna. */
 const TABLAS_RAW: Array<string | [string, string]> = [
@@ -114,7 +110,7 @@ function expectDenegado(res: Res, tabla: string) {
   expect(res.error?.message).toContain(`permission denied for table ${tabla}`)
 }
 
-describe.skipIf(!MIGRATION_APPLIED)('Privilegios de tabla — nada para anon', () => {
+describe('Privilegios de tabla — nada para anon', () => {
   let usuario: TestUser
   let autenticado: SupabaseClient
   let anon: SupabaseClient

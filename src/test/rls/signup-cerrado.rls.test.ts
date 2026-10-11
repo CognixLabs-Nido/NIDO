@@ -18,11 +18,8 @@ import { anonClient, deleteTestUser, serviceClient } from './setup'
  * Nada aquí manda correo en el remoto: la recuperación se ejercita con `generateLink` (no
  * envía) + `verifyOtp`, el mismo `/verify` que abre el enlace del correo. `inviteUserByEmail`
  * (que sí envía) solo corre en la BD efímera, donde el correo cae en el buzón local.
- *
- * Gateado (la config de producción la cambia Jose en el panel): SIGNUP_CERRADO_APPLIED=1
  */
 
-const SIGNUP_CERRADO = process.env.SIGNUP_CERRADO_APPLIED === '1'
 const ES_BD_EFIMERA = /127\.0\.0\.1|localhost/.test(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '')
 
 const PASSWORD = 'Rls-Test-Pass-2026!'
@@ -40,7 +37,7 @@ async function idPorEmail(email: string): Promise<string | null> {
   return data?.id ?? null
 }
 
-describe.skipIf(!SIGNUP_CERRADO)('D5 — signup público cerrado', () => {
+describe('D5 — signup público cerrado', () => {
   const creados: string[] = []
 
   afterAll(async () => {

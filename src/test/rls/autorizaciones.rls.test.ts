@@ -22,14 +22,7 @@ import {
 } from './setup'
 
 /**
- * RLS + integridad de `autorizaciones` y `firmas_autorizacion` (F8-0). **Gated**
- * por `F8_MIGRATION_APPLIED=1`: la migración
- * `20260603120000_phase8_autorizaciones.sql` se aplica manualmente vía Supabase
- * SQL Editor (CLI con bug SIGILL en Penguin). Hasta entonces estos tests se
- * omiten para no romper la suite.
- *
- * Comando tras aplicar la migración:
- *   F8_MIGRATION_APPLIED=1 npm run test:rls -- autorizaciones.rls
+ * RLS + integridad de `autorizaciones` y `firmas_autorizacion` (F8-0).
  *
  * Cubre los invariantes legales/seguridad del modelo:
  *  - INSERT de autorizaciones por rol (admin cualquier tipo; profe solo 'salida'
@@ -45,7 +38,6 @@ import {
  *  - MVCC en `firmas_autorizacion` (`.insert().select()` con helper que lee
  *    otras tablas).
  */
-const MIGRATION_APPLIED = process.env.F8_MIGRATION_APPLIED === '1'
 
 const TEXTO_REAL = 'Autorizo la salida de mi hijo/a en las condiciones descritas. Texto legal real.'
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex')
@@ -55,7 +47,7 @@ type AutorizacionInsert = Database['public']['Tables']['autorizaciones']['Insert
 type FirmaInsert = Database['public']['Tables']['firmas_autorizacion']['Insert']
 type TipoAutorizacion = Database['public']['Enums']['tipo_autorizacion']
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS autorizaciones + firmas — F8-0', () => {
+describe('RLS autorizaciones + firmas — F8-0', () => {
   let centro: { id: string }
   let centroB: { id: string }
   let aula: { id: string }

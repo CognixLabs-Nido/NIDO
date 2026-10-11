@@ -27,21 +27,13 @@ import {
  *  - **recogida-adjuntos**: el tutor sube/lee la foto del DNI de SU recogida; NO la de
  *    otro niño.
  *  - **centro-assets** (logo, público): solo dirección escribe; el tutor NO.
- *
- * **Gated** por `F10_3_MIGRATION_APPLIED=1` (la migración se aplica a mano por SQL
- * Editor — CLI SIGILL). Comando:
- *   F10_3_MIGRATION_APPLIED=1 npm run test:rls -- adjuntos-storage.rls
  */
-const MIGRATION_APPLIED = process.env.F10_3_MIGRATION_APPLIED === '1'
-// El gate de consent en la subida del perfil (IU-3) requiere la migración
-// `20260821170000`. Hasta aplicarla, el bloqueo por-niño no existe en Storage/RPC.
-const IU3_APPLIED = process.env.IMAGEN_IU3_APPLIED === '1'
 
 // Bytes mínimos (el contentType declarado es lo que valida el bucket, no el binario).
 const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS Storage — F10-3 (adjuntos: tutor vs ajeno)', () => {
+describe('RLS Storage — F10-3 (adjuntos: tutor vs ajeno)', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }
@@ -149,70 +141,67 @@ describe.skipIf(!MIGRATION_APPLIED)('RLS Storage — F10-3 (adjuntos: tutor vs a
   })
 
   // ─── IU-3: gate de consent de imagen POR-NIÑO en la subida del perfil ────────
-  it.skipIf(!IU3_APPLIED)(
-    'ninos-fotos (IU-3): sin consent, ni tutor ni dirección suben; con consent, sí; por-niño',
-    async () => {
-      // Niño C SIN consent; su hermano D CON consent (misma familia/tutor para aislar el gate).
-      const ninoC = await createTestNino(centro.id)
-      const ninoD = await createTestNino(centro.id)
-      await matricular(ninoC.id, aula.id, curso.id)
-      await matricular(ninoD.id, aula.id, curso.id)
-      await crearVinculo(ninoC.id, tutorA.id, 'tutor_legal_principal')
-      await crearVinculo(ninoD.id, tutorA.id, 'tutor_legal_principal')
-      await otorgarImagen(ninoD.id, tutorA.id) // D sí; C no
+  it('ninos-fotos (IU-3): sin consent, ni tutor ni dirección suben; con consent, sí; por-niño', async () => {
+    // Niño C SIN consent; su hermano D CON consent (misma familia/tutor para aislar el gate).
+    const ninoC = await createTestNino(centro.id)
+    const ninoD = await createTestNino(centro.id)
+    await matricular(ninoC.id, aula.id, curso.id)
+    await matricular(ninoD.id, aula.id, curso.id)
+    await crearVinculo(ninoC.id, tutorA.id, 'tutor_legal_principal')
+    await crearVinculo(ninoD.id, tutorA.id, 'tutor_legal_principal')
+    await otorgarImagen(ninoD.id, tutorA.id) // D sí; C no
 
-      // C sin consent → tutor BLOQUEADO.
-      const tutorC = await subir(
-        tutorA,
-        'ninos-fotos',
-        `${centro.id}/${ninoC.id}/${randomUUID()}.jpg`,
-        JPG,
-        'image/jpeg'
-      )
-      expect(tutorC.error).not.toBeNull()
+    // C sin consent → tutor BLOQUEADO.
+    const tutorC = await subir(
+      tutorA,
+      'ninos-fotos',
+      `${centro.id}/${ninoC.id}/${randomUUID()}.jpg`,
+      JPG,
+      'image/jpeg'
+    )
+    expect(tutorC.error).not.toBeNull()
 
-      // C sin consent → dirección también BLOQUEADA (gate por-niño, no por-rol).
-      const adminC = await subir(
-        admin,
-        'ninos-fotos',
-        `${centro.id}/${ninoC.id}/${randomUUID()}.jpg`,
-        JPG,
-        'image/jpeg'
-      )
-      expect(adminC.error).not.toBeNull()
+    // C sin consent → dirección también BLOQUEADA (gate por-niño, no por-rol).
+    const adminC = await subir(
+      admin,
+      'ninos-fotos',
+      `${centro.id}/${ninoC.id}/${randomUUID()}.jpg`,
+      JPG,
+      'image/jpeg'
+    )
+    expect(adminC.error).not.toBeNull()
 
-      // El hermano D CON consent NO se ve afectado por que C no lo tenga.
-      const okD = await subir(
-        tutorA,
-        'ninos-fotos',
-        `${centro.id}/${ninoD.id}/${randomUUID()}.jpg`,
-        JPG,
-        'image/jpeg'
-      )
-      expect(okD.error).toBeNull()
+    // El hermano D CON consent NO se ve afectado por que C no lo tenga.
+    const okD = await subir(
+      tutorA,
+      'ninos-fotos',
+      `${centro.id}/${ninoD.id}/${randomUUID()}.jpg`,
+      JPG,
+      'image/jpeg'
+    )
+    expect(okD.error).toBeNull()
 
-      // Al otorgar consent a C, ya se permite; al revocarlo, vuelve a bloquear.
-      await otorgarImagen(ninoC.id, tutorA.id)
-      const trasOtorgar = await subir(
-        tutorA,
-        'ninos-fotos',
-        `${centro.id}/${ninoC.id}/${randomUUID()}.jpg`,
-        JPG,
-        'image/jpeg'
-      )
-      expect(trasOtorgar.error).toBeNull()
+    // Al otorgar consent a C, ya se permite; al revocarlo, vuelve a bloquear.
+    await otorgarImagen(ninoC.id, tutorA.id)
+    const trasOtorgar = await subir(
+      tutorA,
+      'ninos-fotos',
+      `${centro.id}/${ninoC.id}/${randomUUID()}.jpg`,
+      JPG,
+      'image/jpeg'
+    )
+    expect(trasOtorgar.error).toBeNull()
 
-      await revocarImagen(ninoC.id)
-      const trasRevocar = await subir(
-        tutorA,
-        'ninos-fotos',
-        `${centro.id}/${ninoC.id}/${randomUUID()}.jpg`,
-        JPG,
-        'image/jpeg'
-      )
-      expect(trasRevocar.error).not.toBeNull()
-    }
-  )
+    await revocarImagen(ninoC.id)
+    const trasRevocar = await subir(
+      tutorA,
+      'ninos-fotos',
+      `${centro.id}/${ninoC.id}/${randomUUID()}.jpg`,
+      JPG,
+      'image/jpeg'
+    )
+    expect(trasRevocar.error).not.toBeNull()
+  })
 
   // ─── recogida-adjuntos ──────────────────────────────────────────────────────
   it('recogida-adjuntos: el tutor sube el DNI bajo SU hijo', async () => {

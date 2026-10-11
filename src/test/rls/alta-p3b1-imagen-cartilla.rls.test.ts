@@ -25,13 +25,9 @@ import type { Database } from '@/types/database'
  *      action `crearImagenAutorizacion`, no invocable en vitest → preview/3b-2.)
  *
  * (La cartilla de vacunas se eliminó en F11-F; sus tests de Storage ya no existen.)
- *
- * Gateado: F11_ALTA_P3B1_MIGRATION_APPLIED=1
  */
 
-const APPLIED = process.env.F11_ALTA_P3B1_MIGRATION_APPLIED === '1'
-
-describe.skipIf(!APPLIED)('Alta P3b-1 — imagen B2 (RLS)', () => {
+describe('Alta P3b-1 — imagen B2 (RLS)', () => {
   let centro: { id: string }
   let ninoA: { id: string }
   let ninoB: { id: string }

@@ -30,15 +30,11 @@ import type { Database } from '@/types/database'
  *     o tutor → 42501.
  *  4. `get_recorrido_nino_familia`: tutor legal → solo `activa`/`baja`, sin motivo;
  *     autorizado, profe o anon → error.
- *
- * Gate: MATRICULAS_MOTIVO_COLUMNA_APPLIED=1
  */
-
-const APPLIED = process.env.MATRICULAS_MOTIVO_COLUMNA_APPLIED === '1'
 
 const MOTIVO = 'nota interna de dirección'
 
-describe.skipIf(!APPLIED)('matriculas.motivo_baja por columna + recorrido familia', () => {
+describe('matriculas.motivo_baja por columna + recorrido familia', () => {
   let admin: TestUser
   let adminOtro: TestUser
   let tutor: TestUser

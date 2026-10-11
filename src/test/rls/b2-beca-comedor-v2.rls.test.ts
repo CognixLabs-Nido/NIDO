@@ -25,13 +25,9 @@ import {
  *
  * BD compartida sin rollback entre `it` → cada test crea sus PROPIOS fixtures (niño/familia/
  * recibo por serviceClient) para no colisionar con las UNIQUE de otros tests.
- *
- * Gateado: BECA_COMEDOR_V2_APPLIED=1 (requiere phase_b2_0 aplicada en la BD de test).
  */
 
-const APPLIED = process.env.BECA_COMEDOR_V2_APPLIED === '1'
-
-describe.skipIf(!APPLIED)('B2 — beca comedor v2 RLS + constraints', () => {
+describe('B2 — beca comedor v2 RLS + constraints', () => {
   let centroA: { id: string }
   let centroB: { id: string }
   let cursoA: { id: string }

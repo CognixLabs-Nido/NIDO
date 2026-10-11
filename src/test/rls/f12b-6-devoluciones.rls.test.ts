@@ -25,13 +25,9 @@ import type { Database } from '@/types/database'
  *  2) El congelado afinado (B-5) encaja: en mes CERRADO, marcar enviado_banco →
  *     devuelto (solo estado + fecha_devolucion) PASA.
  *  3) cobrado_manual anula ambas fechas y cumple el CHECK.
- *
- * Gateado: F12B_6_RLS_APPLIED=1 (migración phase12b_6 aplicada). No en CI hasta aplicar.
  */
 
-const APPLIED = process.env.F12B_6_RLS_APPLIED === '1'
-
-describe.skipIf(!APPLIED)('F12-B-6 — devoluciones (CHECK + congelado)', () => {
+describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
   let centroA: { id: string }
   let ninoA: { id: string; familia_id: string }
   let adminA: TestUser

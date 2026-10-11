@@ -29,11 +29,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  * que se (re)crea. Si alguien reabre el permiso, este test se pone rojo. Ancla positiva: el mismo
  * cliente anon lee una tabla (0 filas, sin error), así que el 42501 es del permiso y no de un
  * cliente roto.
- *
- * Gateado (la migración la aplica Jose a mano): FUNCIONES_AUXILIARES_ANON_APPLIED=1
  */
-
-const MIGRATION_APPLIED = process.env.FUNCIONES_AUXILIARES_ANON_APPLIED === '1'
 
 // Cliente sin tipar: varias de las 46 no están en los tipos generados y la unión completa de
 // funciones revienta la instanciación de tipos. Los nombres los fija la lista de abajo.
@@ -126,7 +122,7 @@ const FUNCIONES: Array<[string, Llamada]> = [
   ['hoy_madrid', (c) => c.rpc('hoy_madrid')],
 ]
 
-describe.skipIf(!MIGRATION_APPLIED)('Funciones auxiliares — las 46 cerradas a anon', () => {
+describe('Funciones auxiliares — las 46 cerradas a anon', () => {
   let usuario: TestUser
   let autenticado: Client
   let anon: Client

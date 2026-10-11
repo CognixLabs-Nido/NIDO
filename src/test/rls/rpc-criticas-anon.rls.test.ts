@@ -29,11 +29,7 @@ import type { Database } from '@/types/database'
  *
  * La rama «uid NULL sin ser servicio» del cuerpo y la sesión directa no se pueden provocar desde
  * PostgREST; quedaron cubiertas por el ensayo con rollback contra el remoto (body del PR #293).
- *
- * Gateado (la migración la aplica Jose a mano): RPC_CRITICAS_ANON_APPLIED=1
  */
-
-const MIGRATION_APPLIED = process.env.RPC_CRITICAS_ANON_APPLIED === '1'
 
 type Client = SupabaseClient<Database>
 
@@ -84,7 +80,7 @@ const CRITICAS: Array<[string, (c: Client) => PromiseLike<{ error: { code?: stri
 
 const CLAVES = CRITICAS.filter(([nombre]) => nombre.startsWith('_get_'))
 
-describe.skipIf(!MIGRATION_APPLIED)('RPCs críticas — cerradas a anon', () => {
+describe('RPCs críticas — cerradas a anon', () => {
   let usuario: TestUser
   let autenticado: Client
 

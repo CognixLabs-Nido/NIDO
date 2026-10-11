@@ -24,11 +24,7 @@ import type { Database } from '@/types/database'
  * voluntaria y la RPC de escritura usa "NULL = preservar", así que no puede vaciarla;
  * este borrado retira el dato compartido. Gate SOLO es_tutor_legal_de (simetría con
  * la escritura): cualquier tutor legal borra; 'autorizado' y admin-no-tutor denegados.
- *
- * Gateado: F11_ALTA_P3F2_MIGRATION_APPLIED=1
  */
-
-const APPLIED = process.env.F11_ALTA_P3F2_MIGRATION_APPLIED === '1'
 
 // El tipo generado declara los args de la RPC médica como no-nullable, pero acepta
 // NULL (contrato "NULL = preservar"). Cast local (igual que las actions/otros tests).
@@ -64,7 +60,7 @@ async function existeMedica(ninoId: string): Promise<boolean> {
   return data !== null
 }
 
-describe.skipIf(!APPLIED)('Flag-2 — borrar info médica voluntaria (RLS/RPC)', () => {
+describe('Flag-2 — borrar info médica voluntaria (RLS/RPC)', () => {
   let centro: { id: string }
   let nino: { id: string }
   let tutorLegal: TestUser // tutor_legal_principal de nino

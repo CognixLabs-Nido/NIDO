@@ -13,14 +13,9 @@ import { clientFor, createTestUser, deleteTestUser, serviceClient, type TestUser
  * revocación (RPC revocar_consentimiento) fija revocado_en e invalida la caché;
  * re-consentimiento = fila nueva; aislamiento (un usuario no registra/revoca/lee
  * el consentimiento de otro; UPDATE directo bloqueado).
- *
- * Gateado por flag (migración aplicada a mano vía SQL Editor — CLI SIGILL):
- *   F11A_CONSENT_MIGRATION_APPLIED=1
  */
 
-const MIGRATION_APPLIED = process.env.F11A_CONSENT_MIGRATION_APPLIED === '1'
-
-describe.skipIf(!MIGRATION_APPLIED)('RLS consentimientos — F11-A (activación)', () => {
+describe('RLS consentimientos — F11-A (activación)', () => {
   let userA: TestUser
   let userB: TestUser
 

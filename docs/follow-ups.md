@@ -39,7 +39,6 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 - [ ] **El `site_url` de Auth** termina en `/**`. Es configuración de producción (panel de Supabase): la cambia el responsable. _(Ola 1)_
 - [ ] **`formatEuros` no recibe el idioma** en la mayoría de pantallas: los importes salen con el formato por defecto. _(Ola 1)_
 - [ ] **Tests RLS propios del blindaje del flag de imagen (IU-1b) y de `resolver_etiqueta_imagen` (IU-5).** Se verificaron con ensayos en transacción revertida; solo el test de anon de la RPC existe. Ver ADR-0054. _(Ola 1)_
-- [ ] **Comentarios obsoletos en `rls-suite.yml`.** Quedan 5 «Descomentar EN CUANTO Jose aplique…» sobre flags que ya están activos (`R5_MIGRATION_APPLIED`, `B23_MIGRATION_APPLIED`, `AUDIT_LOG_REVOKE_APPLIED`, `CONSENT_IMAGEN_RPC_SEGURIDAD_APPLIED` y `CONSENT_IMAGEN_TUTOR_LEGAL_APPLIED`). Cosmético. _(Ola 1)_
 
 ## Reactivos / condicionales (solo cuando se cumpla la condición)
 
@@ -98,6 +97,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 - [x] **Drop de `es_profe_principal` en `profes_aulas`** — `20261008120000_chore_drop_es_profe_principal` (test `drop-es-profe-principal.rls.test.ts`).
 - [x] **Reactivar los 6 tests `skip` de `profes-aulas.rls.test.ts`** — `F5B34_MIGRATION_APPLIED` está activo en la suite nocturna y en la BD efímera.
 - [x] **Salud de CI — la suite RLS estaba roja en `main`** porque la BD de la CI no recibía las migraciones aplicadas a mano. Resuelto con la suite en BD efímera, que aplica todas las migraciones del repo en cada PR (#287, #288; ADR-0055).
+- [x] **Comentarios obsoletos en `rls-suite.yml`** — el workflow ya no existe: se retiró el 2026-10-12 junto con los 80 flags `*_APPLIED`. Los tests RLS corren siempre, sin `skipIf` (ADR-0055).
 - [x] **CI — activar los tests RLS gateados** (`F11_ALTA_P3A_MIGRATION_APPLIED` y el resto). La BD efímera activa todos los flags y la nocturna tiene activos los 75 (#282 y siguientes).
 - [x] **Derecho al olvido funcional** — redacción de la PII en `audit_log.valores_antes` dentro de `purgar_sujeto_db` (F11-A4, `20260614130000_phase11a4_olvido_funcional`). El disparador de G-4 (la purga de curso) desapareció al retirarse esa purga (#201, ADR-0051).
 - [x] **Limpieza de stubs `auth.users` huérfanos** — rama de stubs del barrido de esqueletos huérfanos (F11-A6, `20260620160000_phase11_a6_esqueleto_huerfano`; el DELETE en `auth.users` lo hace la app por la API de admin).

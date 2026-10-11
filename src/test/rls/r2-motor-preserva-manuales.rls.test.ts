@@ -31,11 +31,7 @@ import {
  *   (c) la base del TOPE de la beca comedor incluye las manuales (decisión C1).
  *   (d) las bases del PASE 3 que DERIVAN un descuento NO las incluyen (decisión A): un
  *       cargo a mano no debe inflar un porcentaje ni mover el descuento de hermanos.
- *
- * Gateado: R2_MIGRATION_APPLIED=1 (requiere `20260827120000_phase_recibos_r2_origen_lineas`).
  */
-
-const APPLIED = process.env.R2_MIGRATION_APPLIED === '1'
 
 type AsignacionInsert = Database['public']['Tables']['asignacion_concepto']['Insert']
 
@@ -152,7 +148,7 @@ async function lineaManual(
   return data.id
 }
 
-describe.skipIf(!APPLIED)('R-2 — el motor preserva las líneas manuales', () => {
+describe('R-2 — el motor preserva las líneas manuales', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }

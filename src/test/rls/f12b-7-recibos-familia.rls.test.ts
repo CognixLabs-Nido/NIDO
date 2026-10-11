@@ -28,14 +28,9 @@ import type { Database } from '@/types/database'
  * están en el MISMO centro para verificar el corte fino: un tutor ve el recibo y el
  * desglose de SU hijo, pero NO el del otro niño del mismo centro (otra familia). El admin
  * ve TODOS los recibos del centro; la profe del aula NO ve recibos (control económico).
- *
- * Gateado: F12B_RLS_APPLIED=1 (RLS de recibos/lineas_recibo de la migración phase12b_0,
- * ya aplicada). Reusa la RLS existente (es_tutor_legal_de / es_admin), sin esquema nuevo.
  */
 
-const APPLIED = process.env.F12B_RLS_APPLIED === '1'
-
-describe.skipIf(!APPLIED)('F12-B-7 — recibos: aislamiento entre familias del MISMO centro', () => {
+describe('F12-B-7 — recibos: aislamiento entre familias del MISMO centro', () => {
   let centro: { id: string }
   let nino1: { id: string; familia_id: string } // tutela de tutor1
   let nino2: { id: string; familia_id: string } // tutela de tutor2 (misma aula, mismo centro)

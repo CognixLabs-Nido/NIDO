@@ -30,10 +30,7 @@ import {
  *    del parte.
  *
  * Requiere B1-0 (flag + tabla tarifa_concepto_anio) Y B1-1 (motor) aplicadas.
- * Gateado: B1_MOTOR_TARIFA_ANIO_APPLIED=1.
  */
-
-const APPLIED = process.env.B1_MOTOR_TARIFA_ANIO_APPLIED === '1'
 
 type AsignacionInsert = Database['public']['Tables']['asignacion_concepto']['Insert']
 
@@ -129,7 +126,7 @@ async function lineasDe(familiaId: string, anio: number, mes: number) {
   return lineas ?? []
 }
 
-describe.skipIf(!APPLIED)('B1-1 — motor: importe unitario por año de nacimiento', () => {
+describe('B1-1 — motor: importe unitario por año de nacimiento', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }

@@ -28,11 +28,7 @@ import type { Database } from '@/types/database'
  *   4. `tiene_consentimiento` refleja alta/revocación.
  *   5. F11-E: los 6 writes apretados a es_tutor_legal_de deniegan al 'autorizado';
  *      la dirección (admin) sigue cambiando la foto vía actualizar_foto_nino_tutor.
- *
- * Gateado: F11_ALTA_P3A_MIGRATION_APPLIED=1
  */
-
-const APPLIED = process.env.F11_ALTA_P3A_MIGRATION_APPLIED === '1'
 
 // Cabecera mínima de un JPEG válido para los intentos de subida a Storage (F11-E).
 const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])
@@ -70,7 +66,7 @@ function medicaArgs(ninoId: string, over: Partial<Record<keyof MedicaArgs, unkno
   } as unknown as MedicaArgs
 }
 
-describe.skipIf(!APPLIED)('Alta P3a — escritura del tutor (RLS/RPC)', () => {
+describe('Alta P3a — escritura del tutor (RLS/RPC)', () => {
   let centro: { id: string }
   let ninoA: { id: string }
   let ninoB: { id: string }

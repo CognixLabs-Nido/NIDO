@@ -22,11 +22,7 @@ import {
  * concepto y siembra las que falten, SIN tocar las manuales y sin borrar nada. El guard
  * NOT EXISTS(fila viva) + DISTINCT ON garantiza que una manual viva del mismo par gana
  * (sin duplicado ni violación de UNIQUE). El "Proponer" (proponer_asignaciones) NO cambia.
- *
- * Gate: D5_MIGRATION_APPLIED=1 (requiere 20260804 + phase_f42 aplicadas).
  */
-
-const APPLIED = process.env.D5_MIGRATION_APPLIED === '1'
 
 async function insertarNino(centroId: string, familiaId: string, nombre: string): Promise<string> {
   const { data, error } = await serviceClient
@@ -44,7 +40,7 @@ async function insertarNino(centroId: string, familiaId: string, nombre: string)
   return data.id
 }
 
-describe.skipIf(!APPLIED)('D-5 punto 1 — reproponer_asignaciones', () => {
+describe('D-5 punto 1 — reproponer_asignaciones', () => {
   let centro: { id: string }
   let familiaSolo: string
   let ninoSolo: string

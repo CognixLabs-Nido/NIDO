@@ -34,9 +34,6 @@ import {
  * Verifica el MECANISMO: firmar → consent por-niño → flag DERIVADO del consent;
  * revocación simétrica; doble consentimiento (requiere_ambos) vía consent; acotamiento
  * a imágenes.
- *
- * Gateado por flag (migración a mano vía SQL Editor — CLI SIGILL):
- *   F11A3_IMAGEN_MIGRATION_APPLIED=1
  */
 
 type AutorizacionInsert = Database['public']['Tables']['autorizaciones']['Insert']
@@ -44,13 +41,11 @@ type FirmaInsert = Database['public']['Tables']['firmas_autorizacion']['Insert']
 type Ambito = Database['public']['Enums']['autorizacion_ambito']
 type PoliticaFirmantes = Database['public']['Enums']['politica_firmantes']
 
-const MIGRATION_APPLIED = process.env.F11A3_IMAGEN_MIGRATION_APPLIED === '1'
-
 const TEXTO_REAL = 'Autorizo el uso de la imagen del menor en las condiciones descritas.'
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex')
 const SVG_TRAZO = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0 L10 10"/></svg>'
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS imagen firmable — F11-A3', () => {
+describe('RLS imagen firmable — F11-A3', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }

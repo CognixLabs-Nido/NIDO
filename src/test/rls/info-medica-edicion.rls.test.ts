@@ -25,11 +25,7 @@ import type { Database } from '@/types/database'
  *    valor existente (contrato F11-F intacto). REGRESIÓN del wizard.
  *  - REPLACE (`p_reemplazar=true`) — la edición de la ficha: cada campo es verbatim;
  *    NULL LIMPIA. "Lo que se ve es lo que se guarda", incluido vaciar un campo suelto.
- *
- * Gateado: F11_F3_MIGRATION_APPLIED=1
  */
-
-const APPLIED = process.env.F11_F3_MIGRATION_APPLIED === '1'
 
 // El tipo generado declara los args text como no-nullable y p_reemplazar opcional;
 // la RPC acepta NULL en los text (contrato preservar/limpiar). Cast local.
@@ -57,7 +53,7 @@ function medicaArgs(ninoId: string, over: Partial<MedicaArgs>): MedicaArgs {
   }
 }
 
-describe.skipIf(!APPLIED)('F11-F3 — edición info médica: merge vs replace (RLS/RPC)', () => {
+describe('F11-F3 — edición info médica: merge vs replace (RLS/RPC)', () => {
   let centro: { id: string }
   let nino: { id: string }
   let tutorLegal: TestUser

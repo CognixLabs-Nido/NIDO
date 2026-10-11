@@ -18,20 +18,15 @@ import {
 } from './setup'
 
 /**
- * RLS de `recordatorios` (F6-C, modelo granular). Gated por
- * `RECORDATORIOS_MIGRATION_APPLIED=1`: la migración
- * `20260601120000_phase6c_reminders_remodel.sql` se aplica manualmente vía
- * Supabase SQL Editor (CLI con bug SIGILL en Penguin). Hasta entonces estos
- * tests se omiten para no romper la suite.
+ * RLS de `recordatorios` (F6-C, modelo granular).
  *
  * Cubre la matriz D9 completa (INSERT por rol×destino), la visibilidad SELECT
  * por destino (incl. aislamiento por centro), el gotcha MVCC `.insert().select()`
  * en los 6 destinos, el RPC `contar_recordatorios_pendientes` (destinatario
  * directo vs visibilidad), y DELETE denegado.
  */
-const MIGRATION_APPLIED = process.env.RECORDATORIOS_MIGRATION_APPLIED === '1'
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS recordatorios — F6-C (modelo granular)', () => {
+describe('RLS recordatorios — F6-C (modelo granular)', () => {
   let centro: { id: string }
   let centroB: { id: string }
   let aula: { id: string }

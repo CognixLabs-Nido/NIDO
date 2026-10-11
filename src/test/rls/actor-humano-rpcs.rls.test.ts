@@ -35,15 +35,11 @@ import type { Database } from '@/types/database'
  *
  * También cubre los dos flujos que pasan a sesión sin migración: aplicar un cambio pendiente
  * (la directora escribe `ninos` y `familia_tutores` por su RLS de admin).
- *
- * Gateado (la migración la aplica Jose a mano): ACTOR_HUMANO_APPLIED=1
  */
-
-const MIGRATION_APPLIED = process.env.ACTOR_HUMANO_APPLIED === '1'
 
 type Client = SupabaseClient<Database>
 
-describe.skipIf(!MIGRATION_APPLIED)('D2 — el actor humano queda en audit_log', () => {
+describe('D2 — el actor humano queda en audit_log', () => {
   let centroA: { id: string }
   let centroB: { id: string }
   let ninoA: { id: string; familia_id: string }

@@ -31,11 +31,7 @@ import type { Database } from '@/types/database'
  * Los flujos legítimos (alta, recibos, médico, SEPA, matrícula) los cubrió el ensayo con rollback
  * contra el remoto (body del PR); aquí solo se ancla que authenticated y service_role siguen
  * entrando.
- *
- * Gateado (la migración la aplica Jose a mano): RPC_GRUPO_B_ANON_APPLIED=1
  */
-
-const MIGRATION_APPLIED = process.env.RPC_GRUPO_B_ANON_APPLIED === '1'
 
 type Client = SupabaseClient<Database>
 type Llamada = (c: Client) => PromiseLike<{ error: { code?: string; message?: string } | null }>
@@ -187,7 +183,7 @@ const GRUPO_B: Array<[string, Llamada]> = [
   ['usuario_actual', (c) => c.rpc('usuario_actual')],
 ]
 
-describe.skipIf(!MIGRATION_APPLIED)('RPCs del grupo B — cerradas a anon', () => {
+describe('RPCs del grupo B — cerradas a anon', () => {
   let usuario: TestUser
   let autenticado: Client
   let anon: Client

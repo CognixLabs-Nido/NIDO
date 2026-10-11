@@ -31,19 +31,14 @@ import type { Database } from '@/types/database'
  *      (si alguien recreaba una policy TO public que llamase a un helper, recibía «permission
  *      denied for function» y el test se ponía rojo). Desde 20261010140000 anon no tiene ningún
  *      privilegio de tabla: recibe 42501 «permission denied for table <tabla>», que se comprueba
- *      antes que cualquier policy (`expectLecturaAnonDenegada`, según el flag
- *      PRIVILEGIOS_TABLA_ANON_APPLIED).
+ *      antes que cualquier policy (`expectLecturaAnonDenegada`).
  *   3. authenticated sigue: llama a es_admin y lee su propia fila de usuarios (policy «self»).
  *
  * audit_log queda fuera de la lista: anon no tiene GRANT de tabla desde #283 (42501 de tabla,
  * anterior a este cambio y ajeno a los helpers). matriculas, igual desde 20261009120000
  * (permiso por columna: anon sin SELECT de tabla → 42501, guarda propia abajo). Desde
  * 20261010140000 todas las tablas están como esas dos.
- *
- * Gateado (la migración la aplica Jose a mano): RLS_HELPERS_ANON_APPLIED=1
  */
-
-const MIGRATION_APPLIED = process.env.RLS_HELPERS_ANON_APPLIED === '1'
 
 type Client = SupabaseClient<Database>
 type Tabla = keyof Database['public']['Tables']
@@ -199,73 +194,68 @@ const TABLAS: Tabla[] = [
   'vinculos_familiares',
 ]
 
-describe.skipIf(!MIGRATION_APPLIED)(
-  'Helpers de RLS — cerrados a anon, policies TO authenticated',
-  () => {
-    let usuario: TestUser
-    let autenticado: Client
-    let anon: Client
+describe('Helpers de RLS — cerrados a anon, policies TO authenticated', () => {
+  let usuario: TestUser
+  let autenticado: Client
+  let anon: Client
 
-    beforeAll(async () => {
-      anon = anonClient()
-      usuario = await createTestUser({ nombre: 'Usuario RLS Helpers' })
-      autenticado = await clientFor(usuario)
-    }, 60_000)
+  beforeAll(async () => {
+    anon = anonClient()
+    usuario = await createTestUser({ nombre: 'Usuario RLS Helpers' })
+    autenticado = await clientFor(usuario)
+  }, 60_000)
 
-    afterAll(async () => {
-      await deleteTestUser(usuario.id)
-    }, 60_000)
+  afterAll(async () => {
+    await deleteTestUser(usuario.id)
+  }, 60_000)
 
-    it('son 20 helpers distintos y 54 tablas distintas', () => {
-      expect(new Set(HELPERS.map(([nombre]) => nombre)).size).toBe(20)
-      expect(new Set(TABLAS).size).toBe(54)
-    })
+  it('son 20 helpers distintos y 54 tablas distintas', () => {
+    expect(new Set(HELPERS.map(([nombre]) => nombre)).size).toBe(20)
+    expect(new Set(TABLAS).size).toBe(54)
+  })
 
-    // Ancla: anon no puede ejecutar ninguna función de public (20261010130000) ni, desde
-    // 20261010140000, tocar ninguna tabla. El 42501 «permission denied for table» solo lo devuelve
-    // Postgres a través de PostgREST: prueba que el cliente llega a la BD y que el rechazo es del
-    // permiso. Antes de esa migración (flag apagado) anon leía 0 filas sin error.
-    it('ancla: el cliente anon llega a la BD (lectura de tabla denegada por permiso)', async () => {
-      expectLecturaAnonDenegada(await anon.from('centros').select('id').limit(1), 'centros')
-    })
+  // Ancla: anon no puede ejecutar ninguna función de public (20261010130000) ni, desde
+  // 20261010140000, tocar ninguna tabla. El 42501 «permission denied for table» solo lo devuelve
+  // Postgres a través de PostgREST: prueba que el cliente llega a la BD y que el rechazo es del
+  // permiso. Antes de esa migración (flag apagado) anon leía 0 filas sin error.
+  it('ancla: el cliente anon llega a la BD (lectura de tabla denegada por permiso)', async () => {
+    expectLecturaAnonDenegada(await anon.from('centros').select('id').limit(1), 'centros')
+  })
 
-    it.each(HELPERS)('anon NO ejecuta %s (sin EXECUTE → 42501)', async (nombre, llamar) => {
-      const { error } = await llamar(anon)
-      expect(error?.code).toBe('42501')
-      expect(error?.message).toContain(`permission denied for function ${nombre}`)
-    })
+  it.each(HELPERS)('anon NO ejecuta %s (sin EXECUTE → 42501)', async (nombre, llamar) => {
+    const { error } = await llamar(anon)
+    expect(error?.code).toBe('42501')
+    expect(error?.message).toContain(`permission denied for function ${nombre}`)
+  })
 
-    it('anon NO lee matriculas: sin SELECT de tabla desde 20261009120000 (42501)', async () => {
-      const { error } = await anon.from('matriculas').select('id').limit(1)
-      expect(error?.code).toBe('42501')
-      expect(error?.message).toContain('permission denied for table matriculas')
-    })
+  it('anon NO lee matriculas: sin SELECT de tabla desde 20261009120000 (42501)', async () => {
+    const { error } = await anon.from('matriculas').select('id').limit(1)
+    expect(error?.code).toBe('42501')
+    expect(error?.message).toContain('permission denied for table matriculas')
+  })
 
-    it.each(TABLAS)('anon no lee %s (sin evaluar helpers)', async (tabla) => {
-      // Cliente sin tipar SOLO aquí: `from()` con la unión de 54 tablas revienta la instanciación
-      // de tipos (TS2589). Los nombres ya los valida el tipo `Tabla[]` de TABLAS.
-      // Desde 20261010140000 anon no tiene SELECT de tabla: 42501 «permission denied for table».
-      // Antes (flag PRIVILEGIOS_TABLA_ANON_APPLIED apagado): 0 filas sin error, porque las
-      // policies son TO authenticated y anon no las evalúa.
-      const res = await (anon as unknown as SupabaseClient).from(tabla).select('*').limit(1)
-      expectLecturaAnonDenegada(res, tabla)
-    })
+  it.each(TABLAS)('anon no lee %s (sin evaluar helpers)', async (tabla) => {
+    // Cliente sin tipar SOLO aquí: `from()` con la unión de 54 tablas revienta la instanciación
+    // de tipos (TS2589). Los nombres ya los valida el tipo `Tabla[]` de TABLAS.
+    // Desde 20261010140000 anon no tiene SELECT de tabla: 42501 «permission denied for table».
+    const res = await (anon as unknown as SupabaseClient).from(tabla).select('*').limit(1)
+    expectLecturaAnonDenegada(res, tabla)
+  })
 
-    it('authenticated sigue ejecutando es_admin (→ false en un centro ajeno)', async () => {
-      const { data, error } = await autenticado.rpc('es_admin', { p_centro_id: id() })
-      expect(error).toBeNull()
-      expect(data).toBe(false)
-    })
+  it('authenticated sigue ejecutando es_admin (→ false en un centro ajeno)', async () => {
+    const { data, error } = await autenticado.rpc('es_admin', { p_centro_id: id() })
+    expect(error).toBeNull()
+    expect(data).toBe(false)
+  })
 
-    it('authenticated lee su propia fila de usuarios (policy «self», ahora TO authenticated)', async () => {
-      const { data, error } = await autenticado.from('usuarios').select('id').eq('id', usuario.id)
-      expect(error).toBeNull()
-      expect(data).toEqual([{ id: usuario.id }])
-    })
+  it('authenticated lee su propia fila de usuarios (policy «self», ahora TO authenticated)', async () => {
+    const { data, error } = await autenticado.from('usuarios').select('id').eq('id', usuario.id)
+    expect(error).toBeNull()
+    expect(data).toEqual([{ id: usuario.id }])
+  })
 
-    it('service_role sigue ejecutando es_admin', async () => {
-      const { error } = await serviceClient.rpc('es_admin', { p_centro_id: id() })
-      expect(error).toBeNull()
-    })
-  }
-)
+  it('service_role sigue ejecutando es_admin', async () => {
+    const { error } = await serviceClient.rpc('es_admin', { p_centro_id: id() })
+    expect(error).toBeNull()
+  })
+})
