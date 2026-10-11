@@ -27,14 +27,11 @@ import {
  * SE aplica); idempotencia (regenerar sin duplicar desborde).
  *
  * Requiere B2-0 (tablas) Y B2-1 (motor + FK) aplicadas.
- * Gateado: BECA_COMEDOR_V2_MOTOR_APPLIED=1.
  */
-
-const APPLIED = process.env.BECA_COMEDOR_V2_MOTOR_APPLIED === '1'
 
 type TramoInsert = Database['public']['Tables']['beca_comedor_tramo']['Insert']
 
-describe.skipIf(!APPLIED)('B2-1 — motor beca comedor v2', () => {
+describe('B2-1 — motor beca comedor v2', () => {
   let admin: TestUser
   let cAdmin: Awaited<ReturnType<typeof clientFor>>
   const ANIO = 2027

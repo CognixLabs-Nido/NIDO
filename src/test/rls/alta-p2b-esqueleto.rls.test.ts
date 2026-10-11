@@ -22,13 +22,9 @@ import {
  * La orquestación de alta (`activarMatricula` y el alta por invitación) usa createClient/
  * next/headers → no invocable en vitest; se verifica en preview. El dedupe nino_id-aware
  * tiene su propio test unit con mocks (`send-invitation.dedupe.test.ts`).
- *
- * Gateado: F11_ALTA_P2B_MIGRATION_APPLIED=1
  */
 
-const APPLIED = process.env.F11_ALTA_P2B_MIGRATION_APPLIED === '1'
-
-describe.skipIf(!APPLIED)('Alta P2b — esqueleto (DB)', () => {
+describe('Alta P2b — esqueleto (DB)', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string; curso_academico_id: string }

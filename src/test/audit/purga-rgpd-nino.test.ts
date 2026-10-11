@@ -29,7 +29,6 @@ import {
  * Cada test siembra un niño con marcadores únicos en todas sus columnas personales, ejecuta
  * la purga y vuelca las filas de audit_log que conservan algo.
  */
-const APPLIED = process.env.PURGA_RGPD_NINO_APPLIED === '1'
 
 const BORRADO = '[borrado]'
 
@@ -99,7 +98,7 @@ interface Sembrado {
   marcas: string[]
 }
 
-describe.skipIf(!APPLIED)('Purga RGPD del niño — tabla y audit_log', () => {
+describe('Purga RGPD del niño — tabla y audit_log', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }

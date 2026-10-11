@@ -13,14 +13,13 @@ import {
 /**
  * Audit log automático sobre `recordatorios` (F6-A). El trigger
  * `audit_recordatorios` usa `audit_trigger_function()` con la rama nueva
- * (centro_id directo). Gated por `RECORDATORIOS_MIGRATION_APPLIED=1`.
+ * (centro_id directo).
  *
  * Verifica INSERT, UPDATE (completar) y UPDATE (anular) → cada uno genera su
  * fila en `audit_log` con el `centro_id` correcto.
  */
-const MIGRATION_APPLIED = process.env.RECORDATORIOS_MIGRATION_APPLIED === '1'
 
-describe.skipIf(!MIGRATION_APPLIED)('Audit log — recordatorios (F6)', () => {
+describe('Audit log — recordatorios (F6)', () => {
   let centro: { id: string }
   let nino: { id: string }
   let autor: TestUser

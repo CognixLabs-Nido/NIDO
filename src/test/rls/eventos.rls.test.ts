@@ -20,23 +20,15 @@ import {
 } from './setup'
 
 /**
- * RLS de `eventos` y `confirmaciones_evento` (F7). **Gated** por
- * `EVENTOS_MIGRATION_APPLIED=1`: la migración
- * `20260601140000_phase7_eventos.sql` se aplica manualmente vía Supabase SQL
- * Editor (CLI con bug SIGILL en Penguin). Hasta entonces estos tests se omiten
- * para no romper la suite.
- *
- * Comando para correrlos tras aplicar la migración:
- *   EVENTOS_MIGRATION_APPLIED=1 npm run test:rls -- eventos.rls
+ * RLS de `eventos` y `confirmaciones_evento` (F7).
  *
  * Cubre: INSERT por rol×ámbito (admin/profe; tutor denegado), el gotcha MVCC
  * `.insert().select()` en los 3 ámbitos (helper row-aware), la visibilidad
  * SELECT por audiencia (incl. aislamiento por centro), confirmación solo por un
  * tutor del niño, y DELETE denegado.
  */
-const MIGRATION_APPLIED = process.env.EVENTOS_MIGRATION_APPLIED === '1'
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS eventos — F7 (calendario y eventos)', () => {
+describe('RLS eventos — F7 (calendario y eventos)', () => {
   let centro: { id: string }
   let centroB: { id: string }
   let aula: { id: string }

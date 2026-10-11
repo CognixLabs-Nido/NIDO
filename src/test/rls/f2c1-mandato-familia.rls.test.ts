@@ -36,12 +36,7 @@ import type { Database } from '@/types/database'
  *  5) Gate del alta (2º hijo): la familia con mandato lo tiene visible al consultar por la
  *     familia del 2º hijo, sin volver a firmar.
  *  6) authz: admin y tutor de la familia OK; tutor de otra familia y profe → denegados.
- *
- * Gateado: F2C1_MIGRATION_APPLIED=1 (requiere la migración phase_f2c1 aplicada + el
- * secreto sepa_encryption_key en Vault). No corre en CI hasta que el operador la aplica.
  */
-
-const APPLIED = process.env.F2C1_MIGRATION_APPLIED === '1'
 
 const IBAN_1 = 'ES7620770024003102575766'
 const IBAN_2 = 'ES9121000418450200051332'
@@ -63,7 +58,7 @@ function argsMandato(familiaId: string, ninoId: string | null, iban: string, id:
   } as never
 }
 
-describe.skipIf(!APPLIED)('F-2c-1 — mandato SEPA de FAMILIA', () => {
+describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
   let centroA: { id: string }
   let familiaA: string
   let ninoA1: { id: string }

@@ -25,12 +25,7 @@ import {
  * profesora) de su aula o admin del centro publican; técnico/apoyo y staff de otra
  * aula/centro NO. Este test ejerce ese UPDATE (borrador→publicado) bajo la sesión
  * de cada rol y el patrón de sellado de `notificado_at` (avisar una sola vez, Q8).
- *
- * **Gated** por `F9_0_MIGRATION_APPLIED=1` (tablas de informes, F9-0; sin migración
- * propia en F9-5-3). Comando:
- *   F9_0_MIGRATION_APPLIED=1 npm run test:rls -- publicar-lote.rls
  */
-const MIGRATION_APPLIED = process.env.F9_0_MIGRATION_APPLIED === '1'
 
 type PlantillaInsert = Database['public']['Tables']['plantillas_informe']['Insert']
 type TipoPersonalAula = Database['public']['Enums']['tipo_personal_aula']
@@ -39,7 +34,7 @@ const ESTRUCTURA = [{ titulo: 'Autonomía', items: [{ id: 'item-1', texto: 'Come
 // Respuestas COMPLETAS (todos los ítems valorados) → publicable.
 const RESPUESTAS_COMPLETAS = { 'item-1': { valoracion: 'conseguido' } }
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS publicar en lote — F9-5-3', () => {
+describe('RLS publicar en lote — F9-5-3', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }

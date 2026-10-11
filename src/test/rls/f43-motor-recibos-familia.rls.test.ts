@@ -23,11 +23,7 @@ import {
  * vigencia, becas, descuento hermanos %/fijo, descuento niño-scoped, saldo, descarte,
  * idempotencia), confirmar_recibo (por recibo + ancla de cierre), el congelado POR ESTADO
  * y crear_recibo_esporadico familiar.
- *
- * Gateado: F43_MIGRATION_APPLIED=1 (requiere phase_f43 aplicada en la BD de test).
  */
-
-const APPLIED = process.env.F43_MIGRATION_APPLIED === '1'
 
 type AsignacionInsert = Database['public']['Tables']['asignacion_concepto']['Insert']
 type LineaInsert = Database['public']['Tables']['lineas_recibo']['Insert']
@@ -108,7 +104,7 @@ async function reciboRegular(familiaId: string, anio: number, mes: number) {
   return { recibo, lineas: lineas ?? [] }
 }
 
-describe.skipIf(!APPLIED)('F-4-3 — motor de recibos a grano FAMILIA', () => {
+describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
   // ── Bloque A: generación (sin confirmar → sin cierre) ───────────────────────
   describe('generación', () => {
     let centro: { id: string }

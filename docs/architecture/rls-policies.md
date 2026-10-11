@@ -266,9 +266,9 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `messaging.rls.test.ts` + `messaging-helpers.test.ts` (Fase 5).
 - `push.rls.test.ts` (Fase 5.5).
 - `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` + `asistencia-audit.test.ts` + `dias-centro-audit.test.ts` + `menus-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda, asistencia, calendario, plantillas y menu_dia + trigger BEFORE validar_fecha).
-- `src/test/audit/grupo1-audit.test.ts` (flag `AUDITORIA_GRUPO1_APPLIED`): las 8 tablas del Grupo 1, las columnas excluidas y que la purga redacta el nombre en las filas de `usuarios`.
-- `src/test/audit/grupo1b-audit.test.ts` (flag `AUDITORIA_GRUPO1B_APPLIED`): la purga de usuario no deja su nombre ni su parentesco en `audit_log`, `invitaciones` sin `token` y redactada por las dos purgas, y `actor_sistema`.
-- `src/test/audit/purga-rgpd-nino.test.ts` (flag `PURGA_RGPD_NINO_APPLIED`): las dos purgas del niño borran la ficha completa de la tabla y no dejan en `audit_log` ninguna columna personal (lista `_claves_pii_nino`, `20261011140000`); la retroactiva redacta a los niños que ya no existen y no toca a los vivos.
+- `src/test/audit/grupo1-audit.test.ts`: las 8 tablas del Grupo 1, las columnas excluidas y que la purga redacta el nombre en las filas de `usuarios`.
+- `src/test/audit/grupo1b-audit.test.ts`: la purga de usuario no deja su nombre ni su parentesco en `audit_log`, `invitaciones` sin `token` y redactada por las dos purgas, y `actor_sistema`.
+- `src/test/audit/purga-rgpd-nino.test.ts`: las dos purgas del niño borran la ficha completa de la tabla y no dejan en `audit_log` ninguna columna personal (lista `_claves_pii_nino`, `20261011140000`); la retroactiva redacta a los niños que ya no existen y no toca a los vivos.
 
 ## Calendario laboral (Fase 4.5a)
 
@@ -572,7 +572,7 @@ Las rutas codifican el ámbito (`(storage.foldername(name))[n]`): `[1]=centroId`
 
 ### Políticas de Storage del tutor (F10-3)
 
-Migración `20260613100000_phase10_3_adjuntos_storage_policies` (aditiva, solo `CREATE POLICY`; **no** toca las de F10-0). Suma al **tutor** (RLS de `storage.objects` es permisiva → OR entre políticas): `ninos_fotos_insert_tutor`/`ninos_fotos_delete_tutor` y `recogida_adjuntos_insert_tutor`/`recogida_adjuntos_select_tutor`, todas con `es_tutor_de(((storage.foldername(name))[2])::uuid)`. **Aislamiento entre familias** verificado por `adjuntos-storage.rls.test.ts` (gate `F10_3_MIGRATION_APPLIED`): un tutor no escribe bajo el `{ninoId}` de otra familia; el logo solo lo escribe dirección.
+Migración `20260613100000_phase10_3_adjuntos_storage_policies` (aditiva, solo `CREATE POLICY`; **no** toca las de F10-0). Suma al **tutor** (RLS de `storage.objects` es permisiva → OR entre políticas): `ninos_fotos_insert_tutor`/`ninos_fotos_delete_tutor` y `recogida_adjuntos_insert_tutor`/`recogida_adjuntos_select_tutor`, todas con `es_tutor_de(((storage.foldername(name))[2])::uuid)`. **Aislamiento entre familias** verificado por `adjuntos-storage.rls.test.ts`: un tutor no escribe bajo el `{ninoId}` de otra familia; el logo solo lo escribe dirección.
 
 ## Postura de seguridad (octubre de 2026)
 
@@ -687,25 +687,25 @@ Las guardas de equivalencia de esa migración comparan la lógica normalizada (#
   sign up» está desactivado (#310 y #311). Un `POST /auth/v1/signup` da `signup_disabled`.
 - Todas las cuentas las crea el servidor con la API de admin, que no mira esa opción.
 - `[auth.email] enable_signup` sigue en `true`: en la CLI esa clave enciende el proveedor de email.
-- Tests: `signup-cerrado.rls.test.ts` (flag `SIGNUP_CERRADO_APPLIED`).
+- Tests: `signup-cerrado.rls.test.ts`.
 
-### Tests y flags del frente
+### Tests del frente
 
-| Qué prueba                                    | Fichero                                         | Flag                                   |
-| --------------------------------------------- | ----------------------------------------------- | -------------------------------------- |
-| `audit_log` sin escritura por permisos        | `audit-log.rls.test.ts`                         | `AUDIT_LOG_REVOKE_APPLIED`             |
-| RPCs de consentimiento de imagen              | `consent-imagen-rpc-seguridad.rls.test.ts`      | `CONSENT_IMAGEN_RPC_SEGURIDAD_APPLIED` |
-| Consentimiento de imagen solo del tutor legal | `consent-imagen-tutor-legal.rls.test.ts`        | `CONSENT_IMAGEN_TUTOR_LEGAL_APPLIED`   |
-| 10 RPCs críticas cerradas a anon              | `rpc-criticas-anon.rls.test.ts`                 | `RPC_CRITICAS_ANON_APPLIED`            |
-| 35 RPCs del grupo B cerradas a anon           | `rpc-grupo-b-anon.rls.test.ts`                  | `RPC_GRUPO_B_ANON_APPLIED`             |
-| Policies y helpers cerrados a anon            | `rls-helpers-anon.rls.test.ts`                  | `RLS_HELPERS_ANON_APPLIED`             |
-| 46 funciones auxiliares cerradas a anon       | `funciones-auxiliares-anon.rls.test.ts`         | `FUNCIONES_AUXILIARES_ANON_APPLIED`    |
-| Nada para anon en ninguna tabla               | `privilegios-tabla-anon.rls.test.ts`            | `PRIVILEGIOS_TABLA_ANON_APPLIED`       |
-| Rutas de `cambios_pendientes`                 | `cambios-pendientes-ruta.rls.test.ts`           | `CAMBIOS_PENDIENTES_RUTA_APPLIED`      |
-| Rutas de `media`                              | `media-ruta.rls.test.ts`                        | `MEDIA_RUTA_APPLIED`                   |
-| Anuncios e invitaciones sin cruzar de centro  | `multicentro-anuncios-invitaciones.rls.test.ts` | `MULTICENTRO_APPLIED`                  |
-| Actor humano en la auditoría                  | `actor-humano-rpcs.rls.test.ts`                 | `ACTOR_HUMANO_APPLIED`                 |
-| Signup cerrado                                | `signup-cerrado.rls.test.ts`                    | `SIGNUP_CERRADO_APPLIED`               |
+| Qué prueba                                    | Fichero                                         |
+| --------------------------------------------- | ----------------------------------------------- |
+| `audit_log` sin escritura por permisos        | `audit-log.rls.test.ts`                         |
+| RPCs de consentimiento de imagen              | `consent-imagen-rpc-seguridad.rls.test.ts`      |
+| Consentimiento de imagen solo del tutor legal | `consent-imagen-tutor-legal.rls.test.ts`        |
+| 10 RPCs críticas cerradas a anon              | `rpc-criticas-anon.rls.test.ts`                 |
+| 35 RPCs del grupo B cerradas a anon           | `rpc-grupo-b-anon.rls.test.ts`                  |
+| Policies y helpers cerrados a anon            | `rls-helpers-anon.rls.test.ts`                  |
+| 46 funciones auxiliares cerradas a anon       | `funciones-auxiliares-anon.rls.test.ts`         |
+| Nada para anon en ninguna tabla               | `privilegios-tabla-anon.rls.test.ts`            |
+| Rutas de `cambios_pendientes`                 | `cambios-pendientes-ruta.rls.test.ts`           |
+| Rutas de `media`                              | `media-ruta.rls.test.ts`                        |
+| Anuncios e invitaciones sin cruzar de centro  | `multicentro-anuncios-invitaciones.rls.test.ts` |
+| Actor humano en la auditoría                  | `actor-humano-rpcs.rls.test.ts`                 |
+| Signup cerrado                                | `signup-cerrado.rls.test.ts`                    |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 
@@ -717,7 +717,7 @@ Migración `20261009120000_fix_matriculas_motivo_baja_por_columna`. `motivo_baja
 - La familia ve su recorrido reducido por **`get_recorrido_nino_familia(p_nino_id)`** (`SECURITY DEFINER`, gate `es_tutor_legal_de`): curso, aula, estado `activa`/`baja` y fechas; nunca el motivo ni los tramos `pendiente`/`lista`. El autorizado recibe 42501.
 - Las dos RPC: `REVOKE` de `PUBLIC`/`anon`, `GRANT EXECUTE` a `authenticated`.
 
-> ⚠️ **Cada columna nueva de `matriculas` necesita su `GRANT SELECT (columna) ON public.matriculas TO authenticated` explícito** en la misma migración que la crea. Sin él, nadie con sesión la podrá leer (ni Dirección). Tests: `src/test/rls/matriculas-motivo-baja-columna.rls.test.ts` (gate `MATRICULAS_MOTIVO_COLUMNA_APPLIED`).
+> ⚠️ **Cada columna nueva de `matriculas` necesita su `GRANT SELECT (columna) ON public.matriculas TO authenticated` explícito** en la misma migración que la crea. Sin él, nadie con sesión la podrá leer (ni Dirección). Tests: `src/test/rls/matriculas-motivo-baja-columna.rls.test.ts`.
 
 ## Idioma de la cuenta en los correos de Auth
 
@@ -727,4 +727,4 @@ Migración `20261010120000_feat_idioma_preferido_en_metadatos_auth`. Las plantil
 - Al insertar no hace falta: `handle_new_user` crea `usuarios` desde los metadatos.
 - La invitación pasa `idioma_preferido` en los metadatos (lo elige la Dirección; castellano por defecto). Al reinvitar una cuenta provisional GoTrue reenvía con los metadatos ANTIGUOS, así que `prepararIdiomaInvitacion` los actualiza antes de reenviar.
 - Las plantillas usan `{{ $idioma := or .Data.idioma_preferido "es" }}`: sin idioma → castellano, y `eq` nunca compara contra nulo.
-- Tests: `src/test/rls/correos-auth-idioma.rls.test.ts` (trigger con gate `IDIOMA_AUTH_SYNC_APPLIED`; las plantillas, contra el GoTrue real, solo en la BD local efímera, que tiene buzón de pruebas).
+- Tests: `src/test/rls/correos-auth-idioma.rls.test.ts` (el trigger; las plantillas, contra el GoTrue real, solo en la BD local efímera, que tiene buzón de pruebas).

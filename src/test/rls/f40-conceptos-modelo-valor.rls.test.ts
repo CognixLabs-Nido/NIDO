@@ -9,13 +9,9 @@ import { createTestCentro, deleteTestCentro, serviceClient } from './setup'
  * que bypassa RLS pero NO los CHECK). El test de integración del motor `cerrar_mes_cobros`
  * se retiró en F-4-2 (la tabla asignacion_cuota que alimentaba el motor grano-niño se
  * dropeó); el motor se reescribe y re-testea a grano familia en F-4-3.
- *
- * Gateado: F40_MIGRATION_APPLIED=1 (requiere la migración phase_f40 aplicada en la BD de test).
  */
 
-const APPLIED = process.env.F40_MIGRATION_APPLIED === '1'
-
-describe.skipIf(!APPLIED)('F-4-0 — conceptos_cobro modelo único (CHECK de valor)', () => {
+describe('F-4-0 — conceptos_cobro modelo único (CHECK de valor)', () => {
   let centro: { id: string }
   let baseConceptoId: string
 

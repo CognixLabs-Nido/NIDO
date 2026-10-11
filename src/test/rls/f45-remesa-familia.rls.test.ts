@@ -24,11 +24,8 @@ import {
  *  - un recibo confirmado NO-sepa no sale (filtro metodo='sepa');
  *  - un recibo enviado_banco SÍ sale (gate IN → re-descarga del XML preservada);
  *  - una familia sin mandato activo sale con iban/mandato NULL (→ familiasSinMandato).
- *
- * Gateado: F45_MIGRATION_APPLIED=1 (requiere la migración phase_f45 aplicada).
  */
 
-const APPLIED = process.env.F45_MIGRATION_APPLIED === '1'
 const IBAN = 'ES7620770024003102575766'
 
 interface ReciboArgs {
@@ -40,7 +37,7 @@ interface ReciboArgs {
   fechaEnvioBanco?: string
 }
 
-describe.skipIf(!APPLIED)('F-4-5 — get_mandatos_remesa a grano familia', () => {
+describe('F-4-5 — get_mandatos_remesa a grano familia', () => {
   let centro: { id: string }
   let admin: TestUser
   let cAdmin: SupabaseClient<Database>

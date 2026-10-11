@@ -23,10 +23,7 @@ import {
 
 /**
  * RLS del modelo CORREGIDO (F8-RW-0): catálogo (plantilla durable) + dos patrones
- * de iniciación A/B. **Gated** por `F8_RW0_MIGRATION_APPLIED=1`: la migración
- * `20260607120000_phase8_rw0_catalogo.sql` se aplica manualmente vía SQL Editor.
- *
- *   F8_RW0_MIGRATION_APPLIED=1 npm run test:rls -- autorizaciones-rw0.rls
+ * de iniciación A/B.
  *
  * Cubre lo nuevo del rework (decisiones 2026-06-07, B2):
  *  - **Plantilla durable** (es_plantilla=true): legible por miembros del centro;
@@ -40,7 +37,6 @@ import {
  *  - **Compat legacy**: una recogida del modelo viejo (plantilla_id NULL, nino_id)
  *    sigue siendo válida y firmable por su tutor.
  */
-const MIGRATION_APPLIED = process.env.F8_RW0_MIGRATION_APPLIED === '1'
 
 const TEXTO_REAL = 'Autorizo en las condiciones descritas. Texto legal real del formato estándar.'
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex')
@@ -51,7 +47,7 @@ type FirmaInsert = Database['public']['Tables']['firmas_autorizacion']['Insert']
 type TipoAutorizacion = Database['public']['Enums']['tipo_autorizacion']
 type Ambito = Database['public']['Enums']['autorizacion_ambito']
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS autorizaciones — F8-RW-0 (catálogo + A/B2)', () => {
+describe('RLS autorizaciones — F8-RW-0 (catálogo + A/B2)', () => {
   let centro: { id: string }
   let centroB: { id: string }
   let aula: { id: string }

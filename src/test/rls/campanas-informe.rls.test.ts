@@ -16,13 +16,7 @@ import {
 } from './setup'
 
 /**
- * RLS + integridad de `campanas_informe` (F9-5-0). **Gated** por
- * `F9_5_0_MIGRATION_APPLIED=1`: la migración
- * `20260610140000_phase9_5_0_campanas_informe.sql` se aplica manualmente vía Supabase
- * SQL Editor (CLI con bug SIGILL). Hasta entonces estos tests se omiten.
- *
- * Comando tras aplicar la migración:
- *   F9_5_0_MIGRATION_APPLIED=1 npm run test:rls -- campanas-informe.rls
+ * RLS + integridad de `campanas_informe` (F9-5-0).
  *
  * Cubre (spec docs/specs/campana-informes.md, ADR-0044):
  *  - admin abre (.insert().select() — MVCC), cierra y reabre la campaña; edita fecha.
@@ -30,11 +24,10 @@ import {
  *  - UNIQUE por (centro, curso, período); varias campañas de períodos distintos sí.
  *  - DELETE bloqueado (default DENY) — cerrar = UPDATE.
  */
-const MIGRATION_APPLIED = process.env.F9_5_0_MIGRATION_APPLIED === '1'
 
 type CampanaInsert = Database['public']['Tables']['campanas_informe']['Insert']
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS campañas de informe — F9-5-0', () => {
+describe('RLS campañas de informe — F9-5-0', () => {
   let centro: { id: string }
   let centroB: { id: string }
   let curso: { id: string }

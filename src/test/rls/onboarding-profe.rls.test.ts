@@ -30,12 +30,7 @@ import {
  * vitest (igual que `alta-p1-fundacion.rls`); aquí se REPLICAN sus efectos de BD por
  * service-role (crear cuenta + `roles_usuario` + `profes_aulas` + `accepted_at`) y se
  * asserta el resultado RLS. El camino de la acción se verifica en preview.
- *
- * **Gated** por `F11C0_MIGRATION_APPLIED=1` (columnas de F11-C-0 + bucket/políticas de
- * `usuarios-fotos`, aplicadas a mano por SQL Editor — CLI SIGILL). Comando:
- *   F11C0_MIGRATION_APPLIED=1 npm run test:rls -- onboarding-profe.rls
  */
-const APPLIED = process.env.F11C0_MIGRATION_APPLIED === '1'
 
 const BUCKET = 'usuarios-fotos'
 const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])
@@ -43,7 +38,7 @@ const enUnDia = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
 type Tipo = 'coordinadora' | 'profesora' | 'tecnico' | 'apoyo'
 
-describe.skipIf(!APPLIED)('Onboarding de profe — flujo completo (DB/RLS)', () => {
+describe('Onboarding de profe — flujo completo (DB/RLS)', () => {
   let centroA: { id: string }
   let cursoA: { id: string }
   let aulaA1: { id: string }

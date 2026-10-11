@@ -21,14 +21,9 @@ import {
  * roles (sin INSERT/UPDATE/DELETE desde el cliente — solo el barrido service-role
  * escribe). El borrado real de Storage y la lógica del predicado se cubren en los
  * unit tests de `fuentes-retencion`.
- *
- * Gateado por flag (migración a mano vía SQL Editor — CLI SIGILL):
- *   F11A6_RETENCION_MIGRATION_APPLIED=1
  */
 
-const MIGRATION_APPLIED = process.env.F11A6_RETENCION_MIGRATION_APPLIED === '1'
-
-describe.skipIf(!MIGRATION_APPLIED)('RLS retención — F11-A6', () => {
+describe('RLS retención — F11-A6', () => {
   let centroA: { id: string }
   let centroB: { id: string }
   let adminA: TestUser

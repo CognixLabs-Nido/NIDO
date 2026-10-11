@@ -29,11 +29,7 @@ import type { Database } from '@/types/database'
  *  5. atomicidad → fallo dentro de archivar_nino (matrícula con fecha_alta futura viola
  *     CHECK fecha_baja >= fecha_alta) → rollback total: niño NO archivado, familia intacta.
  *  6. idempotencia → baja de niño ya archivado → { ya_archivado: true }, 0 cambios.
- *
- * Gate: F3D_MIGRATION_APPLIED=1 (requiere 20260720120000 + los primitivos de F-3-C).
  */
-
-const APPLIED = process.env.F3D_MIGRATION_APPLIED === '1'
 
 // fecha_alta en el PASADO → fecha_baja = hoy_madrid() satisface CHECK(fecha_baja >= fecha_alta).
 const ALTA_PASADA = '2025-09-01'
@@ -46,7 +42,7 @@ interface Escenario {
   aulaId: string
 }
 
-describe.skipIf(!APPLIED)('F-3-D — baja_nino (RPC)', () => {
+describe('F-3-D — baja_nino (RPC)', () => {
   let admin: TestUser
   let cAdmin: SupabaseClient<Database>
   const centros: string[] = []

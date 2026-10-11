@@ -9,7 +9,7 @@ import { anonClient, clientFor, deleteTestUser, serviceClient, type TestUser } f
 /**
  * Correos de Auth en el idioma de la cuenta (20261010120000 + plantillas por idioma).
  *
- *  1. Sincronización (gate IDIOMA_AUTH_SYNC_APPLIED): cambiar `usuarios.idioma_preferido` —con
+ *  1. Sincronización: cambiar `usuarios.idioma_preferido` —con
  *     service role o con la sesión del propio usuario— copia el idioma a los metadatos de Auth,
  *     que es lo que leen las plantillas.
  *  2. Plantillas (solo en la BD local efímera, donde hay buzón de pruebas: `supabase status`
@@ -18,7 +18,6 @@ import { anonClient, clientFor, deleteTestUser, serviceClient, type TestUser } f
  *     Se comprueba asunto + cuerpo + enlace en es/va/en y el castellano por defecto.
  */
 
-const SYNC_APPLIED = process.env.IDIOMA_AUTH_SYNC_APPLIED === '1'
 const BUZON = process.env.MAILPIT_URL ?? process.env.INBUCKET_URL
 const APP = 'http://127.0.0.1:3000'
 
@@ -37,7 +36,7 @@ async function metadatosIdioma(userId: string): Promise<unknown> {
   return data.user?.user_metadata?.idioma_preferido
 }
 
-describe.skipIf(!SYNC_APPLIED)('idioma_preferido → metadatos de Auth (trigger)', () => {
+describe('idioma_preferido → metadatos de Auth (trigger)', () => {
   it('service role cambia usuarios.idioma_preferido → los metadatos lo siguen', async () => {
     const { data, error } = await serviceClient.auth.admin.createUser({
       email: emailNuevo('idioma-svc'),

@@ -23,14 +23,10 @@ import { BUCKET_NINOS_FOTOS, borrarObjetosBucket } from '@/shared/lib/adjuntos/s
  *   · limpiarDb() (RPC atómica) borra el huérfano y NO toca los controles.
  *   · huérfano CON foto en ninos-fotos: listar lo emite con el objeto en paths; el
  *     barrido (borrarObjetosBucket → RPC) borra objeto + filas.
- *
- * Gateado: F11_A6_MIGRATION_APPLIED=1
  */
 
 // Cabecera mínima de un JPEG válido para la subida sintética a ninos-fotos.
 const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])
-
-const APPLIED = process.env.F11_A6_MIGRATION_APPLIED === '1'
 
 const fuente = FUENTES_RETENCION.find((f) => f.nombre === 'esqueleto-huerfano-nino')
 
@@ -72,7 +68,7 @@ async function objetosFoto(centroId: string, ninoId: string): Promise<string[]> 
   return (data ?? []).filter((o) => o.id !== null).map((o) => o.name)
 }
 
-describe.skipIf(!APPLIED)('A6 — esqueleto huérfano niño-arm (RLS/RPC)', () => {
+describe('A6 — esqueleto huérfano niño-arm (RLS/RPC)', () => {
   let centro: { id: string }
   let cursoId: string
   let aulaId: string

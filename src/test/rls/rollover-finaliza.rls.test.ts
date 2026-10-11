@@ -38,13 +38,9 @@ import type { Database } from '@/types/database'
  *     pendiente; asignar aula borra la fila Finaliza. Vía los cores con cliente admin real.
  *  5. `descartarPropuestaCore` borra también las filas Finaliza.
  *  6. `computarPropuesta` no re-propone a los finalizados (van en el set ya-decidido).
- *
- * Gate: F3A_MIGRATION_APPLIED=1 (requiere la migración 20260716120000 aplicada).
  */
 
-const APPLIED = process.env.F3A_MIGRATION_APPLIED === '1'
-
-describe.skipIf(!APPLIED)('F-3-A — rollover_finaliza (RLS + exclusión mutua)', () => {
+describe('F-3-A — rollover_finaliza (RLS + exclusión mutua)', () => {
   let centroA: { id: string }
   let centroB: { id: string }
   let cursoOrigen: { id: string }

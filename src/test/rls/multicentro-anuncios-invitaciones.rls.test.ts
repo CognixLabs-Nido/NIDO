@@ -32,15 +32,11 @@ import type { Database } from '@/types/database'
  *
  * Dos centros (A y B). Se comprueba que nada cruza de A a B por ninguna de las vías (insert,
  * lectura, push, service role) y que el caso normal de UN centro sigue igual.
- *
- * Gateado (la migración la aplica Jose a mano): MULTICENTRO_APPLIED=1
  */
-
-const MIGRATION_APPLIED = process.env.MULTICENTRO_APPLIED === '1'
 
 type Client = SupabaseClient<Database>
 
-describe.skipIf(!MIGRATION_APPLIED)('multi-centro — anuncios (R3) e invitaciones (R2)', () => {
+describe('multi-centro — anuncios (R3) e invitaciones (R2)', () => {
   let centroA: { id: string }
   let centroB: { id: string }
   let aulaA1: { id: string }

@@ -33,15 +33,11 @@ import type { Database } from '@/types/database'
  *
  * No toca Storage: solo inserta filas `media`. El "no borra" de la app lo cubren los tests
  * unitarios de `eliminarMedia` / `eliminarPublicacion`.
- *
- * Gateado (la migración la aplica Jose a mano): MEDIA_RUTA_APPLIED=1
  */
-
-const MIGRATION_APPLIED = process.env.MEDIA_RUTA_APPLIED === '1'
 
 type Client = SupabaseClient<Database>
 
-describe.skipIf(!MIGRATION_APPLIED)('media — rutas de Storage de la propia publicación', () => {
+describe('media — rutas de Storage de la propia publicación', () => {
   let centro: { id: string }
   let centroB: { id: string }
   let aula: { id: string }

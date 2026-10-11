@@ -34,11 +34,7 @@ import type { Database } from '@/types/database'
  *  - sin curso activo → error.
  *  - aula inválida (no en aulas_curso del curso activo) → error.
  *  - atomicidad → fallo (aula inválida) → NADA cambió (niño/familia/rol/matrículas intactos).
- *
- * Gate: F3F_MIGRATION_APPLIED=1 (requiere 20260722120000 + los primitivos de F-3-C/D).
  */
-
-const APPLIED = process.env.F3F_MIGRATION_APPLIED === '1'
 
 interface Escenario {
   centroId: string
@@ -46,7 +42,7 @@ interface Escenario {
   aulaId: string
 }
 
-describe.skipIf(!APPLIED)('F-3-F — desarchivar_nino (RPC)', () => {
+describe('F-3-F — desarchivar_nino (RPC)', () => {
   let admin: TestUser
   let cAdmin: SupabaseClient<Database>
   const centros: string[] = []

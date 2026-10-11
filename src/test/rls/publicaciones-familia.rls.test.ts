@@ -30,16 +30,11 @@ import {
  *  - **Permiso:** sin `puede_ver_fotos` no ve nada (ni por la vía histórica).
  *  - **Revocado:** revocar `puede_aparecer_en_fotos` oculta la publicación histórica.
  *  - **Aislamiento:** una familia de otra aula/centro no la ve.
- *
- * **Gated** por `F10_2_MIGRATION_APPLIED=1` (la migración se aplica a mano por SQL
- * Editor — CLI SIGILL). Comando:
- *   F10_2_MIGRATION_APPLIED=1 npm run test:rls -- publicaciones-familia.rls
  */
-const MIGRATION_APPLIED = process.env.F10_2_MIGRATION_APPLIED === '1'
 
 type MediaInsert = Database['public']['Tables']['media']['Insert']
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-2 (familia · histórico)', () => {
+describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
   let centro: { id: string }
   let centroB: { id: string }
   let curso: { id: string }

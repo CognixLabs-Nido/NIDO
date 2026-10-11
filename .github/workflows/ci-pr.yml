@@ -13,8 +13,8 @@ jobs:
   # Nombre de job SIN cambiar ("Typecheck, Lint, Test") para no romper el required
   # status check de la protección de rama. Solo corre lo RÁPIDO y sin BD: typecheck,
   # lint, format, UNIT (proyecto vitest `unit`, excluye RLS/audit) y build. Las suites
-  # RLS/audit (que hablan con el remoto compartido) se sacaron a `rls-suite.yml`
-  # (on-demand + nightly, serializadas) para no saturar la BD ni quemar minutos en cada PR.
+  # RLS/audit necesitan BD: corren en `rls-local.yml`, contra una BD efímera del runner, en
+  # cada PR, y sobre main cada madrugada desde `nocturna.yml`.
   checks:
     name: Typecheck, Lint, Test
     runs-on: ubuntu-latest
@@ -38,7 +38,7 @@ jobs:
         run: npm run format:check
 
       # Solo el proyecto `unit` (excluye src/test/rls/** y src/test/audit/**): sin red,
-      # sin credenciales del remoto. Los tests RLS/audit corren en `rls-suite.yml`.
+      # sin credenciales del remoto. Los tests RLS/audit corren en `rls-local.yml`.
       - name: Unit tests
         run: npm run test:unit
 

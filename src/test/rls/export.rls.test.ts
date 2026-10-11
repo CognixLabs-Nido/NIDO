@@ -28,14 +28,9 @@ import { registrarExport } from '@/features/export/lib/registrar'
  * solicitante (aislamiento entre familias), el descifrado médico gateado por
  * permiso (#3), fotos exclusivas vs compartidas (#2), mensajes completos (#6), y
  * la RLS de export_log (#7).
- *
- * Gateado por flag (migración a mano vía SQL Editor — CLI SIGILL):
- *   F11A5_EXPORT_MIGRATION_APPLIED=1
  */
 
-const MIGRATION_APPLIED = process.env.F11A5_EXPORT_MIGRATION_APPLIED === '1'
-
-describe.skipIf(!MIGRATION_APPLIED)('RLS export de datos — F11-A5', () => {
+describe('RLS export de datos — F11-A5', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }

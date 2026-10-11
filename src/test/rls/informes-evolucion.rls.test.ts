@@ -21,14 +21,7 @@ import {
 } from './setup'
 
 /**
- * RLS + integridad de `plantillas_informe` e `informes_evolucion` (F9-0). **Gated**
- * por `F9_0_MIGRATION_APPLIED=1`: la migración
- * `20260609130000_phase9_0_informes_evolucion.sql` se aplica manualmente vía
- * Supabase SQL Editor (CLI con bug SIGILL en este Chromebook). Hasta entonces
- * estos tests se omiten para no romper la suite.
- *
- * Comando tras aplicar la migración:
- *   F9_0_MIGRATION_APPLIED=1 npm run test:rls -- informes-evolucion.rls
+ * RLS + integridad de `plantillas_informe` e `informes_evolucion` (F9-0).
  *
  * Cubre los invariantes del modelo (spec docs/specs/informes-evolucion.md):
  *  - plantillas_informe: admin CRUD; staff del centro lee; familia SIN acceso;
@@ -44,7 +37,6 @@ import {
  * Cada test crea su propio niño matriculado para garantizar terna única
  * (nino, curso, periodo) sin colisiones con el UNIQUE.
  */
-const MIGRATION_APPLIED = process.env.F9_0_MIGRATION_APPLIED === '1'
 
 type PlantillaInsert = Database['public']['Tables']['plantillas_informe']['Insert']
 type InformeInsert = Database['public']['Tables']['informes_evolucion']['Insert']
@@ -60,7 +52,7 @@ const ESTRUCTURA = [
   },
 ]
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS informes de evolución — F9-0', () => {
+describe('RLS informes de evolución — F9-0', () => {
   let centro: { id: string }
   let centroB: { id: string }
   let curso: { id: string }

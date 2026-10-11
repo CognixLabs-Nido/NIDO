@@ -25,11 +25,9 @@ jobs:
         run: npm run lint
 
       # Solo el proyecto `unit` (jsdom, sin red): NO arrastra el proyecto `rls`
-      # (src/test/rls/** + src/test/audit/**). Los tests RLS/audit hablan con el
-      # remoto compartido y corren SERIALIZADOS en `rls-suite.yml`; correrlos aquí
-      # metía a ci-main como un segundo ejecutor concurrente de la suite RLS sin
-      # serializar → colisión de fixtures con el nightly/dispatch (rompió tras #195).
-      # Por eso NO se usa `npm test` genérico: se nombra el proyecto explícito, igual
-      # que ci-pr.yml. Sin `secrets` de Supabase ni flags de migración: `unit` no toca BD.
+      # (src/test/rls/** + src/test/audit/**). Los tests RLS/audit necesitan BD: corren
+      # en `rls-local.yml` (BD efímera, en cada PR) y en `nocturna.yml` (sobre main cada
+      # madrugada). Por eso NO se usa `npm test` genérico: se nombra el proyecto explícito,
+      # igual que ci-pr.yml. Sin `secrets` de Supabase: `unit` no toca BD.
       - name: Unit tests
         run: npm run test:unit

@@ -22,12 +22,7 @@ import type { Database } from '@/types/database'
  *  2) sustituir rellena iban_ultimos4 del NUEVO IBAN; el revocado CONSERVA el suyo.
  *  3) el tutor de la familia LEE iban_ultimos4/titular/identificador de su mandato activo
  *     (lo que consume `familiaTieneMandatoActivo`); un tutor de OTRA familia NO lo ve (RLS).
- *
- * Gateado: F2C2_MIGRATION_APPLIED=1 (requiere la migración phase_f2c2 aplicada + el secreto
- * sepa_encryption_key en Vault). No corre en CI hasta que el operador la aplica.
  */
-
-const APPLIED = process.env.F2C2_MIGRATION_APPLIED === '1'
 
 const IBAN_1_CON_ESPACIOS = 'ES76 2077 0024 0031 0257 5766' // últimos 4 = 5766
 const IBAN_2 = 'ES9121000418450200051332' // últimos 4 = 1332
@@ -49,7 +44,7 @@ function argsMandato(familiaId: string, ninoId: string | null, iban: string, id:
   } as never
 }
 
-describe.skipIf(!APPLIED)('F-2c-2 — iban_ultimos4 (enmascarado del mandato de familia)', () => {
+describe('F-2c-2 — iban_ultimos4 (enmascarado del mandato de familia)', () => {
   let centroA: { id: string }
   let familiaA: string
   let tutorA: TestUser

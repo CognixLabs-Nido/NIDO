@@ -27,13 +27,9 @@ import {
  * 42501, pero un UPDATE/DELETE de un no-admin NO da error — la USING oculta la fila, así que
  * afecta 0 filas y devuelve `{ data: [], error: null }`. El invariante ("el no-admin no
  * modifica/borra") se prueba comprobando por serviceClient que la fila sobrevive intacta.
- *
- * Gateado: B1_TARIFA_ANIO_APPLIED=1 (requiere phase_b1_0 aplicada en la BD de test).
  */
 
-const APPLIED = process.env.B1_TARIFA_ANIO_APPLIED === '1'
-
-describe.skipIf(!APPLIED)('B1 — tarifa_concepto_anio RLS + constraints', () => {
+describe('B1 — tarifa_concepto_anio RLS + constraints', () => {
   let centroA: { id: string }
   let centroB: { id: string }
   let admin: TestUser

@@ -31,17 +31,12 @@ import {
  *    publicación a la familia.
  *  - borrado real por autor/admin.
  *  - Storage: subir a aula-fotos solo redactor/admin del aula.
- *
- * **Gated** por `F10_0_MIGRATION_APPLIED=1` (incluye buckets + políticas de Storage,
- * aplicadas a mano por SQL Editor — CLI SIGILL). Comando:
- *   F10_0_MIGRATION_APPLIED=1 npm run test:rls -- publicaciones.rls
  */
-const MIGRATION_APPLIED = process.env.F10_0_MIGRATION_APPLIED === '1'
 
 type TipoPersonalAula = Database['public']['Enums']['tipo_personal_aula']
 type MediaInsert = Database['public']['Tables']['media']['Insert']
 
-describe.skipIf(!MIGRATION_APPLIED)('RLS blog del aula — F10-0', () => {
+describe('RLS blog del aula — F10-0', () => {
   let centro: { id: string }
   let centroB: { id: string }
   let curso: { id: string }

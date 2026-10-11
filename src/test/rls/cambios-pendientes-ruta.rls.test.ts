@@ -35,15 +35,11 @@ import type { Database, Json } from '@/types/database'
  *
  * No toca Storage: solo inserta filas en la cola. El "no borra" de la app lo cubren los tests
  * unitarios de `descartarCambioPendiente`.
- *
- * Gateado (la migración la aplica Jose a mano): CAMBIOS_PENDIENTES_RUTA_APPLIED=1
  */
-
-const MIGRATION_APPLIED = process.env.CAMBIOS_PENDIENTES_RUTA_APPLIED === '1'
 
 type Client = SupabaseClient<Database>
 
-describe.skipIf(!MIGRATION_APPLIED)('cambios_pendientes — ruta del documento del niño', () => {
+describe('cambios_pendientes — ruta del documento del niño', () => {
   let centroA: { id: string }
   let centroB: { id: string }
   let ninoA: TestNino // de tutorA

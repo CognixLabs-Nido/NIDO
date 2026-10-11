@@ -27,13 +27,9 @@ import type { Database } from '@/types/database'
  *     esporádico coexiste con el regular en el mismo mes.
  *  4) Los valores de ENUM nuevos existen: `metodo_pago='cheque_guarderia'` y
  *     `estado_recibo='borrador'` se aceptan.
- *
- * Gateado: F41_MIGRATION_APPLIED=1 (la migración de storage/esquema se aplica a mano por SQL
- * Editor — CLI SIGILL). No corre en CI hasta que el operador la aplica.
  */
-const APPLIED = process.env.F41_MIGRATION_APPLIED === '1'
 
-describe.skipIf(!APPLIED)('F-4-1 — recibos a grano familia', () => {
+describe('F-4-1 — recibos a grano familia', () => {
   let centro: { id: string }
   let familiaA: string
   let familiaB: string

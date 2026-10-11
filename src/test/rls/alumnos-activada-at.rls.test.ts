@@ -31,12 +31,7 @@ import {
  *
  * FIXTURE AISLADO: centro propio `@nido.test` (invariante del wipe: nunca alcanza a un centro
  * real) y `deleteTestCentro` en el teardown. No toca ni lee datos de ningún centro real.
- *
- * Gateado: ALUMNOS_ACTIVADA_AT_MIGRATION_APPLIED=1 (requiere
- * `20260830120000_phase_matriculas_activada_at`). Sin la migración aplicada no corre.
  */
-
-const APPLIED = process.env.ALUMNOS_ACTIVADA_AT_MIGRATION_APPLIED === '1'
 
 /** Lee del remoto las señales de un niño tal y como las leen las tres queries de producción. */
 async function senalesDe(ninoId: string): Promise<SenalMatricula[]> {
@@ -86,7 +81,7 @@ async function darDeBaja(matriculaId: string): Promise<void> {
   if (error) throw new Error(`darDeBaja falló: ${error.message}`)
 }
 
-describe.skipIf(!APPLIED)('activada_at — quién es alumno y qué alta sigue en proceso', () => {
+describe('activada_at — quién es alumno y qué alta sigue en proceso', () => {
   let centro: { id: string }
   let curso: { id: string }
   let aula: { id: string }

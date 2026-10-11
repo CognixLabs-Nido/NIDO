@@ -21,7 +21,7 @@ Aquí van los SQL que se ejecutan **una vez, a mano, en producción** y que **no
 
 ## Operaciones
 
-| Fichero                                   | Qué hace                                                                       | Diagnóstico                                       |
-| ----------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------- |
-| `20261012120000_limpieza_basura_test.sql` | Borra los 8 centros de test y la auditoría que dejó la suite RLS en producción | `docs/operations/limpieza-basura-test-2026-10.md` |
+| Fichero                                        | Qué hace                                                                                      | Diagnóstico                                       |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `20261012120000_limpieza_basura_test.sql`      | Borra los 8 centros de test y la auditoría que dejó la suite RLS en producción                | `docs/operations/limpieza-basura-test-2026-10.md` |
 | `20261012130000_borrar_usuarios_auth_test.sql` | Borra los 16 usuarios `@nido.test` que la suite dejó en Auth, sin dejar rastro en `audit_log` | `docs/operations/limpieza-basura-test-2026-10.md` |

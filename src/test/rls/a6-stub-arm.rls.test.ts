@@ -15,11 +15,7 @@ import { FUENTES_RETENCION } from '@/features/retencion/lib/fuentes-retencion'
  *     re-validación lo rechaza y NO se borra.
  *
  * CRÍTICO: limpia TODOS los stubs sintéticos en afterAll — cero residuo.
- *
- * Gateado: F11_A6_MIGRATION_APPLIED=1
  */
-
-const APPLIED = process.env.F11_A6_MIGRATION_APPLIED === '1'
 
 const fuente = FUENTES_RETENCION.find((f) => f.nombre === 'esqueleto-huerfano-stub')
 
@@ -75,7 +71,7 @@ async function existeUsuario(id: string): Promise<boolean> {
   return Boolean(data?.user)
 }
 
-describe.skipIf(!APPLIED)('A6.3 — stub huérfano stub-arm (RPC/Admin API)', () => {
+describe('A6.3 — stub huérfano stub-arm (RPC/Admin API)', () => {
   let centro: { id: string }
   let stubHuerfano: { id: string; email: string } // sin confirmar + invitación vencida → purgable
   let stubValido: { id: string; email: string } // sin confirmar + invitación ABIERTA-VÁLIDA → NO purgable

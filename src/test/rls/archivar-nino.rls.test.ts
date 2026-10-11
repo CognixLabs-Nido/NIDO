@@ -32,15 +32,12 @@ import type { Database } from '@/types/database'
  *     total: niño, matrícula y vínculos quedan intactos.
  *  6. vista del tutor: tras archivar, el vínculo soft-borrado desaparece de su consulta.
  *  7. NO toca: roles_usuario del tutor, familias.deleted_at, ni la matrícula de otro niño.
- *
- * Gate: F3C1_MIGRATION_APPLIED=1 (requiere la migración 20260717120000 aplicada).
  */
 
-const APPLIED = process.env.F3C1_MIGRATION_APPLIED === '1'
 // Los fixtures matriculan con fecha_alta='2026-09-01'; la baja debe ser >= (CHECK).
 const FECHA_BAJA = '2027-06-30'
 
-describe.skipIf(!APPLIED)('F-3-C-1 — archivar_nino (RPC)', () => {
+describe('F-3-C-1 — archivar_nino (RPC)', () => {
   let centroA: { id: string }
   let centroB: { id: string }
   let cursoA: { id: string }
