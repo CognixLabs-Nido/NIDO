@@ -4,9 +4,11 @@
 -- rol vigia_catalogo (migración 20261012120000): mismo rol, misma visibilidad. Solo lee el
 -- catálogo y las funciones del esquema vigia; ningún dato de negocio.
 --
--- Una fila por aspecto de cada objeto: «tipo<TAB>objeto<TAB>md5». El comparador
+-- Una fila por aspecto de cada objeto: «tipo<TAB>objeto<TAB>valor». El comparador
 -- (scripts/vigia/comparar-huellas.mjs) dice qué tipo y qué objeto difieren; las definiciones no
--- salen nunca del runner, solo su md5.
+-- salen nunca del runner, solo su md5. Los permisos (funcion.permisos, tabla.permisos y
+-- default_privileges) van en claro, «rol:privilegio» ordenado: son roles y privilegios, no datos,
+-- y verlos es lo que dice qué hay que arreglar.
 --
 -- Alcance: lo que crean las migraciones del repo. Los esquemas de la plataforma (auth, storage,
 -- realtime…) cambian con la versión de Supabase y meterían ruido, así que de ellos solo entra lo
@@ -52,9 +54,9 @@ filas AS (
     FROM funciones f
   UNION ALL
   SELECT 'funcion.permisos', f.ident,
-         md5(coalesce((SELECT string_agg(coalesce(nullif(pg_get_userbyid(a.grantee), '-'), 'PUBLIC') || ':' || a.privilege_type
+         coalesce((SELECT string_agg(coalesce(nullif(pg_get_userbyid(a.grantee), '-'), 'PUBLIC') || ':' || a.privilege_type
                                          || CASE WHEN a.is_grantable THEN '*' ELSE '' END, ',' ORDER BY 1)
-                         FROM aclexplode(coalesce(f.proacl, acldefault('f', f.proowner))) a), ''))
+                         FROM aclexplode(coalesce(f.proacl, acldefault('f', f.proowner))) a), '')
     FROM funciones f
   UNION ALL
   -- Tablas, vistas y secuencias: existencia y RLS; permisos de tabla y de columna.
@@ -62,9 +64,9 @@ filas AS (
     FROM tablas t
   UNION ALL
   SELECT 'tabla.permisos', t.ident,
-         md5(coalesce((SELECT string_agg(coalesce(nullif(pg_get_userbyid(a.grantee), '-'), 'PUBLIC') || ':' || a.privilege_type
+         coalesce((SELECT string_agg(coalesce(nullif(pg_get_userbyid(a.grantee), '-'), 'PUBLIC') || ':' || a.privilege_type
                                          || CASE WHEN a.is_grantable THEN '*' ELSE '' END, ',' ORDER BY 1)
-                         FROM aclexplode(coalesce(t.relacl, acldefault((CASE WHEN t.relkind = 'S' THEN 's' ELSE 'r' END)::"char", t.relowner))) a), ''))
+                         FROM aclexplode(coalesce(t.relacl, acldefault((CASE WHEN t.relkind = 'S' THEN 's' ELSE 'r' END)::"char", t.relowner))) a), '')
     FROM tablas t
   UNION ALL
   SELECT 'columna', t.ident || '.' || a.attname,
@@ -109,9 +111,9 @@ filas AS (
   UNION ALL
   -- Privilegios por defecto de los roles que crean objetos en nuestras migraciones.
   SELECT 'default_privileges', pg_get_userbyid(da.defaclrole) || '.' || coalesce(dn.nspname, '*') || '.' || da.defaclobjtype::text,
-         md5(coalesce((SELECT string_agg(coalesce(nullif(pg_get_userbyid(a.grantee), '-'), 'PUBLIC') || ':' || a.privilege_type
+         coalesce((SELECT string_agg(coalesce(nullif(pg_get_userbyid(a.grantee), '-'), 'PUBLIC') || ':' || a.privilege_type
                                          || CASE WHEN a.is_grantable THEN '*' ELSE '' END, ',' ORDER BY 1)
-                         FROM aclexplode(da.defaclacl) a), ''))
+                         FROM aclexplode(da.defaclacl) a), '')
     FROM pg_default_acl da LEFT JOIN pg_namespace dn ON dn.oid = da.defaclnamespace
    WHERE pg_get_userbyid(da.defaclrole) = 'postgres'
   UNION ALL

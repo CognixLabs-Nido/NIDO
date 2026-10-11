@@ -3,8 +3,9 @@
 //
 // Uso: node scripts/vigia/comparar-huellas.mjs <produccion.tsv> <efimera.tsv> [conocidas.tsv]
 //
-// Cada línea de una huella es «tipo<TAB>objeto<TAB>md5». Imprime SOLO tipo y objeto (nombres que ya
-// están en el repo), nunca el md5 ni la definición: el log del job es público.
+// Cada línea de una huella es «tipo<TAB>objeto<TAB>valor». Imprime tipo y objeto (nombres que ya
+// están en el repo), nunca el md5 ni la definición: el log del job es público. Solo los permisos,
+// que la huella guarda en claro (roles y privilegios), se enseñan con sus dos lados.
 //
 // Las diferencias conocidas (fichero opcional, «tipo<TAB>objeto<TAB>motivo», `#` comenta) no
 // cuentan como deriva; si una ya no aparece, se avisa para quitarla de la lista.
@@ -72,6 +73,14 @@ if (nuevas.length === 0) {
   console.log('Sin deriva de catálogo.')
   process.exit(0)
 }
+// Los permisos van en claro en la huella (roles y privilegios, no datos): se enseñan los dos lados.
+const enClaro = (clave) => /^(funcion\.permisos|tabla\.permisos|default_privileges)\t/.test(clave)
 console.log(`DERIVA DE CATÁLOGO: ${nuevas.length} objetos`)
-for (const d of nuevas) console.log(`  ${d.como}: ${fmt(d.clave)}`)
+for (const d of nuevas) {
+  console.log(`  ${d.como}: ${fmt(d.clave)}`)
+  if (d.como === 'difiere' && enClaro(d.clave)) {
+    console.log(`      producción: ${prod.get(d.clave)}`)
+    console.log(`      repo:       ${efimera.get(d.clave)}`)
+  }
+}
 process.exit(1)
