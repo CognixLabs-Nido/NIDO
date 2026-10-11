@@ -58,6 +58,8 @@ Corroboración independiente: 28.415 de las 28.550 se escribieron durante un run
 
 Operación aparte: `supabase/operaciones/20261012130000_borrar_usuarios_auth_test.sql`.
 
+**Estado:** aplicada en producción el 12-10-2026 (NOTICE sin error, todas las guardas pasaron). Verificado en vivo: Auth con 9 usuarios, los 9 de ANAIA y ninguno `@nido.test`; `usuarios` en 9, sin huérfanos; `audit_log` en 164, todas de ANAIA y 0 con centro NULL, y la más reciente sigue siendo del 10-10.
+
 Diagnóstico del 12-10-2026 (solo lectura):
 
 - `auth.users` tiene 25 usuarios: 16 `@nido.test` y los 9 de ANAIA, ninguno de ellos de test.
