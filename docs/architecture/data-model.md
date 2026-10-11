@@ -54,15 +54,15 @@
 
 ## Módulo Transversal (6 tablas)
 
-| Tabla                                                                | Estado                                                |
-| -------------------------------------------------------------------- | ----------------------------------------------------- |
-| `audit_log` (append-only, triggers en 61 tablas, ver Reglas)         | ✅ Fase 2                                             |
-| `consentimientos` (versionados, append-only)                         | ✅ Fase 2                                             |
-| `invitaciones` (token + expiración + binding niño/aula)              | ✅ Fase 1                                             |
-| `auth_attempts` (rate limiting login)                                | ✅ Fase 1                                             |
-| `push_subscriptions`                                                 | ✅ Fase 5.5 (transversal — ver ADR-0025, ADR-0027)    |
-| `preferencias_usuario` (clave-valor por usuario, Fase 7b — ADR-0039) | ✅ Fase 7b                                            |
-| `notificaciones_push` (no existe; no cuenta en el total)             | ⏳ Diferida (no es necesaria para F5.5; ver ADR-0027) |
+| Tabla                                                                          | Estado                                                |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| `audit_log` (append-only, triggers en 62 tablas, ver Reglas)                   | ✅ Fase 2                                             |
+| `consentimientos` (versionados, append-only)                                   | ✅ Fase 2                                             |
+| `invitaciones` (token + expiración + binding niño/aula; se audita sin `token`) | ✅ Fase 1                                             |
+| `auth_attempts` (rate limiting login)                                          | ✅ Fase 1                                             |
+| `push_subscriptions`                                                           | ✅ Fase 5.5 (transversal — ver ADR-0025, ADR-0027)    |
+| `preferencias_usuario` (clave-valor por usuario, Fase 7b — ADR-0039)           | ✅ Fase 7b                                            |
+| `notificaciones_push` (no existe; no cuenta en el total)                       | ⏳ Diferida (no es necesaria para F5.5; ver ADR-0027) |
 
 ## Módulo Altas y admisiones (4 tablas) — F11 y series F/U
 
@@ -110,10 +110,11 @@ Ver `docs/specs/proteccion-datos.md`.
 - UUIDs en todas las PKs
 - Soft delete (`deleted_at`) en entidades sensibles
 - `centro_id` redundante en tablas operativas o derivado por helper `centro_de_*` (simplifica RLS)
-- Triggers Postgres para audit log automático (`audit_trigger_function`) en **61 tablas**: las 53 de la lista viva del 2026-10-10 más 8 desde `20261011120000` (Grupo 1, PR A): `acuses_alta`, `administraciones_medicacion`, `agendas_diarias`, `anuncios`, `asignacion_concepto`, `asistencias`, `aulas`, `aulas_curso`, `ausencias`, `autorizaciones`, `beca_comedor_desborde`, `beca_comedor_elegibilidad`, `beca_comedor_tramo`, `beca_comedor_transferencia`, `becas`, `biberones`, `cambios_pendientes`, `campanas_informe`, `centros`, `cierre_mensual`, `cita_invitados`, `citas`, `comidas`, `conceptos_cobro`, `conversaciones`, `cursos_academicos`, `datos_pedagogicos_nino`, `deposiciones`, `dias_centro`, `eventos`, `familia_tutores`, `familias`, `firmas_autorizacion`, `info_medica_emergencia`, `informes_evolucion`, `lineas_recibo`, `lista_espera`, `mandatos_sepa`, `matriculas`, `media`, `media_etiquetas`, `mensajes`, `menu_dia`, `metodo_pago_familia`, `ninos`, `parte_servicio_diario`, `plantillas_informe`, `plantillas_menu_mensual`, `profes_aulas`, `publicaciones`, `recibos`, `recibos_remesa`, `recordatorios`, `remesas`, `roles_usuario`, `rollover_finaliza`, `suenos`, `tarifa_concepto_anio`, `tipos_beca`, `usuarios`, `vinculos_familiares`.
-  - **Columnas que no entran en `audit_log`** (principio: nada entra que la redacción de la purga RGPD no sepa limpiar): `cambios_pendientes` sin `payload` ni `valor_propuesto`; `mandatos_sepa` sin `iban_cifrado`, `firma_imagen`, `titular`, `nombre_tecleado`, `ip_address` ni `user_agent`.
+- Triggers Postgres para audit log automático (`audit_trigger_function`) en **62 tablas**: las 53 de la lista viva del 2026-10-10, 8 desde `20261011120000` (Grupo 1, PR A) e `invitaciones` desde `20261011130000` (PR B): `acuses_alta`, `administraciones_medicacion`, `agendas_diarias`, `anuncios`, `asignacion_concepto`, `asistencias`, `aulas`, `aulas_curso`, `ausencias`, `autorizaciones`, `beca_comedor_desborde`, `beca_comedor_elegibilidad`, `beca_comedor_tramo`, `beca_comedor_transferencia`, `becas`, `biberones`, `cambios_pendientes`, `campanas_informe`, `centros`, `cierre_mensual`, `cita_invitados`, `citas`, `comidas`, `conceptos_cobro`, `conversaciones`, `cursos_academicos`, `datos_pedagogicos_nino`, `deposiciones`, `dias_centro`, `eventos`, `familia_tutores`, `familias`, `firmas_autorizacion`, `info_medica_emergencia`, `informes_evolucion`, `invitaciones`, `lineas_recibo`, `lista_espera`, `mandatos_sepa`, `matriculas`, `media`, `media_etiquetas`, `mensajes`, `menu_dia`, `metodo_pago_familia`, `ninos`, `parte_servicio_diario`, `plantillas_informe`, `plantillas_menu_mensual`, `profes_aulas`, `publicaciones`, `recibos`, `recibos_remesa`, `recordatorios`, `remesas`, `roles_usuario`, `rollover_finaliza`, `suenos`, `tarifa_concepto_anio`, `tipos_beca`, `usuarios`, `vinculos_familiares`.
+  - **Columnas que no entran en `audit_log`** (principio: nada entra que la redacción de la purga RGPD no sepa limpiar): `cambios_pendientes` sin `payload` ni `valor_propuesto`; `mandatos_sepa` sin `iban_cifrado`, `firma_imagen`, `titular`, `nombre_tecleado`, `ip_address` ni `user_agent`; `invitaciones` sin `token`. El email y el nombre de las invitaciones sí entran: los redacta `purgar_sujeto_db` (tras marcarlos `purgar-vencidos.ts`) y `purgar_esqueleto_huerfano_nino` (las que caen en cascada con el niño).
+  - **`actor_sistema`** (`20261011130000`): cuando no hay humano (`usuario_id` NULL), `system:<operacion>`. Lo fijan las purgas con `app.audit_actor` (`system:purgar_sujeto_db`, `system:purgar_esqueleto_huerfano_nino`); el resto de escrituras con service role quedan como `system:service_role`. CHECK `LIKE 'system:%'`. Con sesión humana es NULL.
   - `profes_aulas` toma el `centro_id` del aula, o del curso si el aula ya no existe. `usuarios` no es de un centro: sus filas van con `centro_id` NULL y solo las lee `service_role`.
-  - **No se auditan, a propósito:** `audit_log`; `consentimientos` (append-only, es su propio histórico); `auth_attempts`; los registros `export_log`, `retencion_ejecuciones` y `olvido_solicitudes`; la telemetría `lectura_conversacion`, `lectura_anuncio` y `confirmaciones_evento` (F5 y D13 de ADR-0038); `preferencias_usuario` (sin columna `id`) y `push_subscriptions` (claves del navegador). **Pendiente:** `invitaciones`, que se auditará con su email redactado por la purga (Grupo 1, PR B).
+  - **No se auditan, a propósito:** `audit_log`; `consentimientos` (append-only, es su propio histórico); `auth_attempts`; los registros `export_log`, `retencion_ejecuciones` y `olvido_solicitudes`; la telemetría `lectura_conversacion`, `lectura_anuncio` y `confirmaciones_evento` (F5 y D13 de ADR-0038); `preferencias_usuario` (sin columna `id`) y `push_subscriptions` (claves del navegador).
 - `audit_log` append-only: RLS bloquea UPDATE/DELETE a todos los roles y, desde `20261001120000`, también los permisos (sin `TRUNCATE`, `MAINTAIN`, `UPDATE`, `DELETE` ni `INSERT` para `anon`/`authenticated` — ADR-0053)
 - Timestamps siempre `timestamptz`
 - Cifrado pgcrypto en `info_medica_emergencia.alergias_graves` y `notas_emergencia` (ver ADR-0004)

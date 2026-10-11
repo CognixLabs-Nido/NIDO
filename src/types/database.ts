@@ -407,6 +407,7 @@ export type Database = {
       audit_log: {
         Row: {
           accion: Database["public"]["Enums"]["audit_accion"]
+          actor_sistema: string | null
           centro_id: string | null
           id: string
           registro_id: string | null
@@ -418,6 +419,7 @@ export type Database = {
         }
         Insert: {
           accion: Database["public"]["Enums"]["audit_accion"]
+          actor_sistema?: string | null
           centro_id?: string | null
           id?: string
           registro_id?: string | null
@@ -429,6 +431,7 @@ export type Database = {
         }
         Update: {
           accion?: Database["public"]["Enums"]["audit_accion"]
+          actor_sistema?: string | null
           centro_id?: string | null
           id?: string
           registro_id?: string | null

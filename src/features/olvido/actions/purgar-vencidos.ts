@@ -63,7 +63,8 @@ export async function purgarVencidos(): Promise<ActionResult<ResultadoPurga>> {
  *  1. lee el email original (auth.users) — solo usuario;
  *  2. recolecta rutas de Storage vía el manifiesto (antes de anularlas en BD);
  *  3. borra los objetos de Storage (idempotente);
- *  4. redacta invitaciones por email + anonimiza auth.users (Admin API, idempotente);
+ *  4. redacta invitaciones por email (email y nombre) + anonimiza auth.users (Admin API,
+ *     idempotente); `purgar_sujeto_db` redacta después sus copias en audit_log;
  *  5. punto de commit: `purgar_sujeto_db` anonimiza el schema public y fija purgado_en.
  */
 async function purgarUno(service: Service, p: Pendiente): Promise<void> {
@@ -87,7 +88,7 @@ async function purgarUno(service: Service, p: Pendiente): Promise<void> {
     if (emailOriginal) {
       await service
         .from('invitaciones')
-        .update({ email: MARCADOR_PII })
+        .update({ email: MARCADOR_PII, nombre_completo: MARCADOR_PII })
         .ilike('email', emailOriginal)
     }
     const { error: authError } = await service.auth.admin.updateUserById(p.sujeto_id, {

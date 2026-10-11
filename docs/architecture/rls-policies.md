@@ -181,7 +181,7 @@ Las funciones `public.set_info_medica_emergencia_cifrada(...)` y `public.get_inf
 
 - `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `datos_pedagogicos_nino`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`, `plantillas_menu_mensual`, `menu_dia`, `conversaciones`, `mensajes`, `anuncios`, `recordatorios`.
 
-Esa lista es la de Fase 2. Hoy son **61 tablas**; la lista completa, las columnas excluidas y las que no se auditan a propósito están en `data-model.md` («Reglas obligatorias»). Desde `20261011120000` (Grupo 1, PR A) la función quita columnas del JSON antes de grabar: nada entra en `audit_log` que la redacción de la purga RGPD no sepa limpiar.
+Esa lista es la de Fase 2. Hoy son **62 tablas**; la lista completa, las columnas excluidas y las que no se auditan a propósito están en `data-model.md` («Reglas obligatorias»). Desde `20261011120000` (Grupo 1, PR A) la función quita columnas del JSON antes de grabar: nada entra en `audit_log` que la redacción de la purga RGPD no sepa limpiar.
 
 Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 
@@ -267,6 +267,7 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `push.rls.test.ts` (Fase 5.5).
 - `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` + `asistencia-audit.test.ts` + `dias-centro-audit.test.ts` + `menus-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda, asistencia, calendario, plantillas y menu_dia + trigger BEFORE validar_fecha).
 - `src/test/audit/grupo1-audit.test.ts` (flag `AUDITORIA_GRUPO1_APPLIED`): las 8 tablas del Grupo 1, las columnas excluidas y que la purga redacta el nombre en las filas de `usuarios`.
+- `src/test/audit/grupo1b-audit.test.ts` (flag `AUDITORIA_GRUPO1B_APPLIED`): la purga de usuario no deja su nombre ni su parentesco en `audit_log`, `invitaciones` sin `token` y redactada por las dos purgas, y `actor_sistema`.
 
 ## Calendario laboral (Fase 4.5a)
 
@@ -633,7 +634,7 @@ admin ya no puede atribuir el consentimiento a otro tutor: `p_tutor := auth.uid(
 ### Actor humano en `audit_log`
 
 `audit_trigger_function` graba `usuario_id = auth.uid()`. **Una escritura con service role graba
-NULL.** Por eso las escrituras en tablas auditadas van con la sesión del usuario:
+NULL** en `usuario_id`; desde `20261011130000` deja en `actor_sistema` qué operación fue (`system:purgar_sujeto_db`, `system:purgar_esqueleto_huerfano_nino` o `system:service_role`). La etiqueta solo se lee sin humano: nunca tapa a una sesión. Por eso las escrituras en tablas auditadas van con la sesión del usuario:
 
 - **Si la RLS de filas basta,** con el cliente de sesión. Ejemplos: `ninos_admin_all` y
   `familia_tutores_*` al aprobar cambios pendientes, o `media_delete`.
