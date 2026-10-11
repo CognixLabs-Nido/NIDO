@@ -54,7 +54,19 @@ Corroboración independiente: 28.415 de las 28.550 se escribieron durante un run
 - `audit_log`: 164 filas, todas de ANAIA; 0 con `centro_id` NULL y 0 de otros centros. La más reciente sigue siendo del 10-10: la operación no dejó rastro.
 - 1 centro (ANAIA), 4 niños, 9 roles, 3 familias y 4 `acuses_alta`, todos de ANAIA.
 
+## Segundo paso: los 16 usuarios de Auth
+
+Operación aparte: `supabase/operaciones/20261012130000_borrar_usuarios_auth_test.sql`.
+
+Diagnóstico del 12-10-2026 (solo lectura):
+
+- `auth.users` tiene 25 usuarios: 16 `@nido.test` y los 9 de ANAIA, ninguno de ellos de test.
+- Los 16 se crearon en la ventana de la nocturna del 11-10 (08:37–09:05 UTC), con email `rls-<uuid>@nido.test`.
+- No tienen roles, vínculos, filas de tutor, filas en `audit_log` ni objetos en Storage. Su fila de `usuarios` es la de un fixture: nombres como «Tutor A F#B#» o «Directora A», sin foto ni consentimientos.
+- Al borrarlos, la cascada se lleva 16 `auth.identities`, 20 `auth.sessions` (y sus `auth.refresh_tokens`) y 16 filas de `public.usuarios`. Ninguna tabla con RESTRICT o NO ACTION los referencia.
+
+**Por qué SQL y no la admin API.** Borrar de `public.usuarios` dispara `audit_usuarios`, que graba 16 filas en `audit_log` con el nombre del fixture. La operación las borra por `xmin` en la misma transacción. La admin API iría usuario a usuario, sin guarda de recuento, y las dejaría. Lo que no se escribe es la entrada «user deleted» del log propio de GoTrue (`auth.audit_log_entries`).
+
 ## Pendiente después
 
-- Borrar los 16 usuarios `@nido.test` de Auth por la admin API (paso aparte).
 - `VACUUM (ANALYZE) public.audit_log;` en una ejecución aparte, opcional.
