@@ -269,6 +269,7 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `src/test/audit/grupo1-audit.test.ts`: las 8 tablas del Grupo 1, las columnas excluidas y que la purga redacta el nombre en las filas de `usuarios`.
 - `src/test/audit/grupo1b-audit.test.ts`: la purga de usuario no deja su nombre ni su parentesco en `audit_log`, `invitaciones` sin `token` y redactada por las dos purgas, y `actor_sistema`.
 - `src/test/audit/purga-rgpd-nino.test.ts`: las dos purgas del niño borran la ficha completa de la tabla y no dejan en `audit_log` ninguna columna personal (lista `_claves_pii_nino`, `20261011140000`); la retroactiva redacta a los niños que ya no existen y no toca a los vivos.
+- `src/test/audit/purga-lista-espera.test.ts`: la purga del niño borra su prospecto de `lista_espera` y la del tutor limpia su teléfono y su email, en la tabla y en `audit_log` (también el INSERT); la purga de esqueletos conserva el prospecto, y los de otro niño o centro no se tocan (`20261012140000`).
 
 ## Calendario laboral (Fase 4.5a)
 
