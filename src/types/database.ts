@@ -4399,6 +4399,7 @@ export type Database = {
       _get_medical_key: { Args: never; Returns: string }
       _get_sepa_key: { Args: never; Returns: string }
       _claves_pii_nino: { Args: { p_tabla: string }; Returns: string[] }
+      _redactar_auditoria_lista_espera_retro: { Args: never; Returns: number }
       _redactar_auditoria_nino: { Args: { p_nino_id: string }; Returns: undefined }
       _redactar_auditoria_ninos_borrados: { Args: never; Returns: number }
       _redactar_jsonb: { Args: { claves: string[]; j: Json }; Returns: Json }
