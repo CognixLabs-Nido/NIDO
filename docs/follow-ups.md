@@ -40,7 +40,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 - [ ] **`formatEuros` no recibe el idioma** en la mayoría de pantallas: los importes salen con el formato por defecto. _(Ola 1)_
 - [ ] **Tests RLS propios del blindaje del flag de imagen (IU-1b) y de `resolver_etiqueta_imagen` (IU-5).** Se verificaron con ensayos en transacción revertida; solo el test de anon de la RPC existe. Ver ADR-0054. _(Ola 1)_
 
-- [ ] **Retención de `lista_espera`.** Los prospectos `descartado` y los `invitado` cuya alta ya se tramitó se quedan para siempre, con el teléfono y el email del tutor; ninguna purga los alcanza salvo el olvido del niño o del tutor (`20261012140000`). Hace falta un plazo de retención, que va con F11-B (abogado). Hoy la directora los descarta a mano. _(Ola 1 — RGPD, ⚖️)_
+- [ ] **Retención de `lista_espera`.** Los prospectos `descartado` y los `invitado` cuya alta ya se tramitó se quedan para siempre, con el teléfono y el email del tutor; ninguna purga los alcanza salvo el olvido del niño o del tutor (`20261012140000`). Hace falta un plazo de retención, que va con F11-B (abogado). Hoy la directora los descarta a mano. Tutor sin cuenta → borrado manual por la directora: la rama de usuario de la purga solo alcanza las filas con `tutor_usuario_id`; quien no tiene cuenta no pide el olvido por la app, y no hay vía automática ni se casa por email o nombre (decidido 2026-10-12). _(Ola 1 — RGPD, ⚖️)_
 - [ ] **El export de datos (art. 15) no incluye `lista_espera`.** El prospecto del niño y el contacto del tutor no salen en el export del sujeto. _(Ola 1 — RGPD)_
 
 ## Reactivos / condicionales (solo cuando se cumpla la condición)
