@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest'
 
 import type { Database } from '@/types/database'
 
-import { getPersonalActivoCentroCore, type EmailResolver } from '../get-personal-activo-centro'
+import {
+  getPersonalActivoCentroCore,
+  resolverEmailsPorId,
+  type EmailResolver,
+} from '../get-personal-activo-centro'
 
 /**
  * Tests unitarios de `getPersonalActivoCentroCore` (Fallo 1 — listado de personal
@@ -157,5 +161,68 @@ describe('getPersonalActivoCentroCore', () => {
     })
     const result = await getPersonalActivoCentroCore(client, CURSO_ID, resolver({}))
     expect(result).toEqual([])
+  })
+})
+
+/**
+ * `resolverEmailsPorId`: email por id con `getUserById` (lectura exacta), no con
+ * `listUsers({ page: 1, perPage: 1000 })`, que dejaba sin email al personal que cayera más
+ * allá de la 1.ª página. El fake solo define `getUserById`: si se llamara a `listUsers`,
+ * el test reventaría.
+ */
+describe('resolverEmailsPorId', () => {
+  type Auth = Pick<SupabaseClient<Database>, 'auth'>
+  function fakeAuth(usuarios: Record<string, string>, falla: string[] = []) {
+    const pedidos: string[] = []
+    const service = {
+      auth: {
+        admin: {
+          getUserById: async (id: string) => {
+            pedidos.push(id)
+            if (falla.includes(id)) throw new Error('fetch failed')
+            const email = usuarios[id]
+            return email
+              ? { data: { user: { id, email } }, error: null }
+              : { data: { user: null }, error: { message: 'User not found' } }
+          },
+        },
+      },
+    } as unknown as Auth
+    return { service, pedidos }
+  }
+
+  it('resuelve cada id por su propia lectura y devuelve su email', async () => {
+    const { service, pedidos } = fakeAuth({ p1: 'p1@correo.test', p2: 'p2@correo.test' })
+    const map = await resolverEmailsPorId(service, ['p1', 'p2'])
+    expect([...map.entries()]).toEqual([
+      ['p1', 'p1@correo.test'],
+      ['p2', 'p2@correo.test'],
+    ])
+    expect(pedidos.sort()).toEqual(['p1', 'p2'])
+  })
+
+  it('no depende de cuántas cuentas haya: un id cualquiera se encuentra igual', async () => {
+    // Con listUsers({ perPage: 1000 }), la cuenta 1001 no salía. Aquí no hay página.
+    const usuarios = Object.fromEntries(
+      Array.from({ length: 1500 }, (_, i) => [`u${i}`, `u${i}@correo.test`])
+    )
+    const { service } = fakeAuth(usuarios)
+    const map = await resolverEmailsPorId(service, ['u1200'])
+    expect(map.get('u1200')).toBe('u1200@correo.test')
+  })
+
+  it('un id sin cuenta o una llamada que falla deja a esa persona sin email, no rompe', async () => {
+    const { service } = fakeAuth({ p1: 'p1@correo.test' }, ['p3'])
+    const map = await resolverEmailsPorId(service, ['p1', 'p2', 'p3'])
+    expect([...map.keys()]).toEqual(['p1'])
+  })
+
+  it('sin ids no llama a nada; un id repetido se pide una vez', async () => {
+    const vacio = fakeAuth({})
+    expect((await resolverEmailsPorId(vacio.service, [])).size).toBe(0)
+    expect(vacio.pedidos).toEqual([])
+    const rep = fakeAuth({ p1: 'p1@correo.test' })
+    await resolverEmailsPorId(rep.service, ['p1', 'p1'])
+    expect(rep.pedidos).toEqual(['p1'])
   })
 })

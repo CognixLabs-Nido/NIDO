@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { TIPO_PERSONAL_AULA_ORDER, type TipoPersonalAula } from '@/features/profes-aulas/types'
 import { createClient } from '@/lib/supabase/server'
@@ -55,17 +56,34 @@ export async function getPersonalActivoCentro(
 ): Promise<PersonalActivoItem[]> {
   const supabase = await createClient()
   const service = createServiceRoleClient()
-  const emailResolver: EmailResolver = async (ids) => {
-    const map = new Map<string, string>()
-    if (ids.length === 0) return map
-    const { data } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 })
-    const want = new Set(ids)
-    for (const u of data?.users ?? []) {
-      if (u.email && want.has(u.id)) map.set(u.id, u.email)
-    }
-    return map
-  }
-  return getPersonalActivoCentroCore(supabase, cursoAcademicoId, emailResolver)
+  return getPersonalActivoCentroCore(supabase, cursoAcademicoId, (ids) =>
+    resolverEmailsPorId(service, ids)
+  )
+}
+
+/**
+ * Email de cada id en `auth.users`, con una lectura EXACTA por id (`getUserById`). Antes era
+ * `listUsers({ page: 1, perPage: 1000 })`: con más de 1000 cuentas en `auth.users`, el
+ * personal que cayera fuera de la 1.ª página salía sin email. Una llamada por persona del
+ * centro (decenas), en paralelo. Un id sin cuenta o una llamada fallida deja esa persona sin
+ * email, como antes; nunca rompe el listado.
+ */
+export async function resolverEmailsPorId(
+  service: Pick<SupabaseClient<Database>, 'auth'>,
+  ids: string[]
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>()
+  const resultados = await Promise.all(
+    [...new Set(ids)].map(async (id) => {
+      const { data, error } = await llamarGoTrue('getUserById', () =>
+        service.auth.admin.getUserById(id)
+      )
+      if (error) logger.warn('resolverEmailsPorId getUserById', error.message)
+      return { id, email: data?.user?.email ?? null }
+    })
+  )
+  for (const r of resultados) if (r.email) map.set(r.id, r.email)
+  return map
 }
 
 /** Núcleo testeable: cliente Supabase + curso + resolutor de emails inyectables. */
