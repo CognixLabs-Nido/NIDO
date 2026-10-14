@@ -74,6 +74,7 @@ export default async function FamilyReciboDetallePage({ params }: PageProps) {
         <CardContent className="space-y-6 p-0">
           {gruposHijo.map((g) => (
             <SeccionLineas
+              locale={locale}
               key={g.ninoId}
               titulo={g.ninoNombre}
               lineas={g.lineas}
@@ -89,6 +90,7 @@ export default async function FamilyReciboDetallePage({ params }: PageProps) {
           ))}
           {lineasFamiliares.length > 0 && (
             <SeccionLineas
+              locale={locale}
               titulo={t('lineas_familiares')}
               icono={<UsersIcon className="size-4" />}
               lineas={lineasFamiliares}
@@ -104,7 +106,7 @@ export default async function FamilyReciboDetallePage({ params }: PageProps) {
           )}
           <div className="flex items-center justify-between border-t px-3 py-3 text-sm font-semibold">
             <span>{t('total')}</span>
-            <span className="tabular-nums">{formatEuros(recibo.totalCentimos)}</span>
+            <span className="tabular-nums">{formatEuros(recibo.totalCentimos, locale)}</span>
           </div>
         </CardContent>
       </Card>
@@ -120,6 +122,7 @@ function SeccionLineas({
   subtotalCentimos,
   subtotalLabel,
   cabeceras,
+  locale,
 }: {
   titulo: string
   icono?: React.ReactNode
@@ -127,6 +130,7 @@ function SeccionLineas({
   subtotalCentimos: number
   subtotalLabel: string
   cabeceras: { concepto: string; cantidad: string; precioUnitario: string; importe: string }
+  locale: string
 }) {
   return (
     <section>
@@ -158,9 +162,11 @@ function SeccionLineas({
               <td className="p-3">{l.descripcion}</td>
               <td className="p-3 text-right tabular-nums">{l.cantidad}</td>
               <td className="p-3 text-right tabular-nums">
-                {formatEuros(l.precioUnitarioCentimos)}
+                {formatEuros(l.precioUnitarioCentimos, locale)}
               </td>
-              <td className="p-3 text-right tabular-nums">{formatEuros(l.importeCentimos)}</td>
+              <td className="p-3 text-right tabular-nums">
+                {formatEuros(l.importeCentimos, locale)}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -169,7 +175,7 @@ function SeccionLineas({
             <td className="text-muted-foreground p-3" colSpan={3}>
               {subtotalLabel}
             </td>
-            <td className="p-3 text-right tabular-nums">{formatEuros(subtotalCentimos)}</td>
+            <td className="p-3 text-right tabular-nums">{formatEuros(subtotalCentimos, locale)}</td>
           </tr>
         </tfoot>
       </table>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
@@ -206,6 +206,7 @@ function LineaEditable({
 }) {
   const t = useTranslations('recibos_panel')
   const tErrors = useTranslations()
+  const locale = useLocale()
   const [editando, setEditando] = useState(false)
   const [desc, setDesc] = useState(linea.descripcion)
   const [cantidad, setCantidad] = useState(String(linea.cantidad))
@@ -273,7 +274,7 @@ function LineaEditable({
           </Badge>
         )}
       </span>
-      <span className="tabular-nums">{formatEuros(linea.importeCentimos)}</span>
+      <span className="tabular-nums">{formatEuros(linea.importeCentimos, locale)}</span>
       <Button size="sm" variant="ghost" disabled={disabled} onClick={() => setEditando(true)}>
         {t('editar')}
       </Button>

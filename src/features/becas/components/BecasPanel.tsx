@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -38,6 +38,7 @@ interface Props {
 
 export function BecasPanel({ centroId, becas, tipos, ninos }: Props) {
   const t = useTranslations('admin.cuotas')
+  const locale = useLocale()
   const tiposActivos: OpcionMin[] = tipos
     .filter((tp) => tp.activo)
     .map((tp) => ({ id: tp.id, nombre: tp.nombre }))
@@ -76,7 +77,7 @@ export function BecasPanel({ centroId, becas, tipos, ninos }: Props) {
                     <TableRow key={b.id}>
                       <TableCell className="font-medium">{b.nino_nombre}</TableCell>
                       <TableCell>{b.tipo_nombre}</TableCell>
-                      <TableCell>{formatEuros(b.importe_centimos)}</TableCell>
+                      <TableCell>{formatEuros(b.importe_centimos, locale)}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {b.fecha_desde}
                         {b.fecha_hasta ? ` → ${b.fecha_hasta}` : ' →'}

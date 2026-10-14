@@ -14,7 +14,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 ## Bloqueantes pre-piloto — Ola 1
 
-- [ ] **Confirmar traducciones VA con usuario nativo.** Ningún hablante nativo ha revisado el valenciano. Quedan además 4 `TODO` de valenciano en el código, todos en `src/app/[locale]/admin/aulas/page.tsx` (PRs #35, #36 y el item 4 del sprint pre-F6; strings marcados en componente, no en JSON). _(Ola 1)_
+- [ ] **Confirmar traducciones VA con usuario nativo.** Ningún hablante nativo ha revisado el valenciano. _(Ola 1)_
 - [ ] **Correo propio (SMTP).** El remitente sigue siendo el correo integrado de Supabase, con un límite de 2 correos por hora: no aguanta las invitaciones de un centro real. Falta decidir dominio, remitente y proveedor. Pendiente de decisión del responsable. _(Ola 1)_
 
 ### RGPD y legal — antes del primer dato real (familia o niño real en producción)
@@ -37,7 +37,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 - [ ] **`/invitation/[token]` busca la cuenta con `auth.admin.listUsers()` sin paginar.** Solo devuelve la primera página (50 cuentas): con más, una cuenta existente no se encontraría y caería en el formulario de alta en vez de en B8. Es el mismo fallo que se arregló en el alta del 2.º hijo con `buscar_auth_user_por_email`. Hoy no falla (24 cuentas, 2026-10-10). _(Ola 1)_
 - [ ] **Branch protection en `main`.** No hay branch protection ni rulesets (API, 2026-10-10): ningún check es obligatorio. Marcar `RLS + audit (BD efímera)` y `Typecheck, Lint, Test` como obligatorios (Settings → Branches o Rulesets). Lo hace el responsable. Ver ADR-0055. _(Ola 1)_
 - [ ] **El `site_url` de Auth** termina en `/**`. Es configuración de producción (panel de Supabase): la cambia el responsable. _(Ola 1)_
-- [ ] **`formatEuros` no recibe el idioma** en la mayoría de pantallas: los importes salen con el formato por defecto. _(Ola 1)_
+- [x] **`formatEuros` no recibe el idioma — CERRADO (2026-10-14).** El idioma pasa a ser obligatorio en `formatEuros` (el tipo impide olvidarlo) y las 22 llamadas que no lo pasaban lo reciben: `useLocale` en cliente, el `locale` de la ruta en servidor y en el PDF del recibo. _(Ola 1)_
 - [ ] **Tests RLS propios del blindaje del flag de imagen (IU-1b) y de `resolver_etiqueta_imagen` (IU-5).** Se verificaron con ensayos en transacción revertida; solo el test de anon de la RPC existe. Ver ADR-0054. _(Ola 1)_
 
 - [ ] **Retención de `lista_espera`.** Los prospectos `descartado` y los `invitado` cuya alta ya se tramitó se quedan para siempre, con el teléfono y el email del tutor; ninguna purga los alcanza salvo el olvido del niño o del tutor (`20261012140000`). Hace falta un plazo de retención, que va con F11-B (abogado). Hoy la directora los descarta a mano. Tutor sin cuenta → borrado manual por la directora: la rama de usuario de la purga solo alcanza las filas con `tutor_usuario_id`; quien no tiene cuenta no pide el olvido por la app, y no hay vía automática ni se casa por email o nombre (decidido 2026-10-12). _(Ola 1 — RGPD, ⚖️)_
@@ -63,7 +63,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 ## F11 — pulido final (Ola 1)
 
-- [ ] **Recalibrar `h-[calc(100dvh-3rem)]`** en `ConversacionView` y `ConversacionAdminFamiliaView` — detectado ~1rem de infra-descuento. _(Ola 1)_
+- [x] **Recalibrar `h-[calc(100dvh-3rem)]` — CERRADO (2026-10-14).** En `ConversacionView` y `ConversacionAdminFamiliaView` sobraban 110px en móvil (la cabecera de la app) y 1rem en escritorio. Ahora `h-[calc(100dvh-9.875rem)] md:h-[calc(100dvh-4rem)]`: 0px de scroll de página en los dos tamaños. _(Ola 1)_
 - [ ] **Implementación de ADR-0028** — `theme_color` provisional del manifest PWA, Service Worker versionado. _(Ola 1, F11)_
 - [ ] **Error tracking — Sentry mencionado en el stack pero no integrado.** `CLAUDE.md` lista Sentry en el stack, pero `package.json` no tiene la dependencia. Pendiente: es el error tracking de la lista de Ola 1. En Fase 0 se descartó Sentry por no tener plan gratuito suficiente y se dejó para F11 (highlight.io o GlitchTip, ver `docs/journey/progress.md`); la herramienta está por decidir. _(Ola 1, F11)_
 - [ ] **`process-logos.mjs` multi-fuente** — soportar varias fuentes de logo. _(Ola 1)_

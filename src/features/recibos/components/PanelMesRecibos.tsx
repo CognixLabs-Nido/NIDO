@@ -1,7 +1,7 @@
 'use client'
 
 import { Fragment, useState, useTransition } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
@@ -65,6 +65,7 @@ interface Props {
 export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
   const t = useTranslations('recibos_panel')
   const tErrors = useTranslations()
+  const locale = useLocale()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [generarOpen, setGenerarOpen] = useState(false)
@@ -198,7 +199,10 @@ export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
           valor={`${numConfirmados}/${data.indicadores.numRecibos}`}
         />
         <Indicador label={t('ind_pendientes')} valor={String(data.indicadores.pendientes)} />
-        <Indicador label={t('ind_total')} valor={formatEuros(data.indicadores.totalCentimos)} />
+        <Indicador
+          label={t('ind_total')}
+          valor={formatEuros(data.indicadores.totalCentimos, locale)}
+        />
         {data.indicadores.familiasSinRecibo > 0 && (
           <Indicador
             label={t('ind_sin_recibo')}
@@ -313,7 +317,7 @@ export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
                     </TableCell>
                     <TableCell>{e.metodo ? t(`metodos.${e.metodo}`) : '—'}</TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatEuros(e.totalCentimos)}
+                      {formatEuros(e.totalCentimos, locale)}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{t(`estado_recibo.${e.estado}`)}</Badge>
@@ -413,6 +417,7 @@ function FilaFamilia({
   onCambiarMetodo: (familiaId: string, metodo: MetodoPago) => void
 }) {
   const t = useTranslations('recibos_panel')
+  const locale = useLocale()
   const recibo = fila.recibo
   const esBorrador = recibo?.estado === 'borrador'
   const confirmado = recibo != null && esConfirmado(recibo.estado)
@@ -469,13 +474,15 @@ function FilaFamilia({
           )}
         </TableCell>
         <TableCell className="text-right tabular-nums">
-          {recibo ? formatEuros(recibo.cargosCentimos) : '—'}
+          {recibo ? formatEuros(recibo.cargosCentimos, locale) : '—'}
         </TableCell>
         <TableCell className="text-right tabular-nums">
-          {recibo && recibo.descuentosCentimos !== 0 ? formatEuros(recibo.descuentosCentimos) : '—'}
+          {recibo && recibo.descuentosCentimos !== 0
+            ? formatEuros(recibo.descuentosCentimos, locale)
+            : '—'}
         </TableCell>
         <TableCell className="text-right font-medium tabular-nums">
-          {recibo ? formatEuros(recibo.totalCentimos) : '—'}
+          {recibo ? formatEuros(recibo.totalCentimos, locale) : '—'}
         </TableCell>
         <TableCell>
           {!recibo ? (
@@ -611,6 +618,7 @@ function FilaFamilia({
 // el recibo es anterior a B3 y aún no se ha regenerado.
 function FragmentoGrupo({ grupo }: { grupo: ReturnType<typeof agruparLineasPanel>[number] }) {
   const t = useTranslations('recibos_panel')
+  const locale = useLocale()
   const primerNombre = grupo.ninoNombre?.split(' ')[0] ?? null
   return (
     <>
@@ -619,9 +627,11 @@ function FragmentoGrupo({ grupo }: { grupo: ReturnType<typeof agruparLineasPanel
         <Fragment key={l.id}>
           <span className="pl-3">{limpiarNombreEmbebido(l.descripcion, primerNombre)}</span>
           <span className="text-right tabular-nums">{l.cantidad}</span>
-          <span className="text-right tabular-nums">{formatEuros(l.precioUnitarioCentimos)}</span>
+          <span className="text-right tabular-nums">
+            {formatEuros(l.precioUnitarioCentimos, locale)}
+          </span>
           <span className="text-right font-medium tabular-nums">
-            {formatEuros(l.importeCentimos)}
+            {formatEuros(l.importeCentimos, locale)}
           </span>
         </Fragment>
       ))}

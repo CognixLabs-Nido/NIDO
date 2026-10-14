@@ -23,9 +23,24 @@ describe('format-money', () => {
   })
 
   it('formatEuros muestra el importe en euros con 2 decimales y símbolo €', () => {
-    const s = formatEuros(600)
+    const s = formatEuros(600, 'es')
     expect(s).toContain('6,00')
     expect(s).toContain('€')
-    expect(formatEuros(9000)).toContain('90,00')
+    expect(formatEuros(9000, 'es')).toContain('90,00')
+  })
+
+  // El idioma es obligatorio: antes llevaba `'es-ES'` por defecto y 22 de 32 llamadas no lo
+  // pasaban, así que en inglés y en valenciano los importes salían con el formato de `es`.
+  // Intl separa el «€» con un espacio de no separación (U+00A0).
+  it('formatEuros sigue el idioma de la app: es, en y va', () => {
+    expect(formatEuros(123450, 'es')).toBe('1234,50\u00a0€')
+    expect(formatEuros(1234550, 'es')).toBe('12.345,50\u00a0€')
+    expect(formatEuros(123450, 'en')).toBe('€1,234.50')
+    expect(formatEuros(123450, 'va')).toBe('1.234,50\u00a0€')
+  })
+
+  it('formatEuros acepta también una etiqueta BCP 47 completa', () => {
+    expect(formatEuros(123450, 'es-ES')).toBe(formatEuros(123450, 'es'))
+    expect(formatEuros(123450, 'ca-ES')).toBe(formatEuros(123450, 'va'))
   })
 })
