@@ -207,13 +207,11 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
       .insert({ nino_id: nino.id, centro_id: centro.id })
       .select('id')
       .single()
-    await serviceClient
-      .from('lectura_conversacion')
-      .insert({
-        usuario_id: tutor.id,
-        conversacion_id: conv!.id,
-        last_read_at: new Date().toISOString(),
-      })
+    await serviceClient.from('lectura_conversacion').insert({
+      usuario_id: tutor.id,
+      conversacion_id: conv!.id,
+      last_read_at: new Date().toISOString(),
+    })
   }, 240_000)
 
   afterAll(async () => {
