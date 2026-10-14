@@ -24,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { formatEuros } from '@/shared/lib/format-money'
+import { formatPorcentaje } from '@/shared/lib/format-percent'
 
 import { eliminarConcepto, setActivoConcepto } from '../actions/estado-concepto'
 import { ConceptoFormDialog } from './ConceptoFormDialog'
@@ -47,7 +48,7 @@ function formatValor(
 ): string {
   const prefijo = c.signo < 0 ? '−' : ''
   if (c.tipo_valor === 'porcentaje') {
-    return `${prefijo}${(c.porcentaje_bp ?? 0) / 100}%`
+    return `${prefijo}${formatPorcentaje(c.porcentaje_bp ?? 0, locale)}`
   }
   const euros = formatEuros(c.importe_centimos ?? 0, locale)
   return c.tipo_concepto === 'diario'
