@@ -4,7 +4,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { Database } from '@/types/database'
 
-import { BUCKET_NINOS_FOTOS } from '@/shared/lib/adjuntos/storage'
+import {
+  BUCKET_DNI_TUTORES,
+  BUCKET_MANDATO_SEPA,
+  BUCKET_NINOS_FOTOS,
+} from '@/shared/lib/adjuntos/storage'
 
 import { EXPORT_URL_TTL_SEGUNDOS, type AdjuntoExport } from '../types'
 
@@ -18,6 +22,48 @@ export interface Recolectado {
 
 function caducaEn(): string {
   return new Date(Date.now() + EXPORT_URL_TTL_SEGUNDOS * 1000).toISOString()
+}
+
+/** Opciones del export que dependen de la ruta, no de quien lo pide. */
+export interface OpcionesRecolectar {
+  /**
+   * `matriculas.motivo_baja` (notas internas de Dirección): solo en el export de Dirección
+   * (`/export/[tipo]/[id]`), nunca en `/export/me`. Aun pedido, solo sale si quien exporta es
+   * admin del centro: `get_motivos_baja_matriculas` da 42501 a cualquier otro.
+   */
+  incluirMotivoBaja?: boolean
+}
+
+type Fila = Record<string, unknown>
+
+/**
+ * Lo que el export añade sobre lo que la sesión ya lee: `export_datos_sujeto`
+ * (`20261014120000`). El control de acceso vive en la función: el propio usuario, un tutor
+ * legal del niño o el admin de su centro. Cualquier otro (la profe, el autorizado) recibe
+ * 42501, que aquí es una AUSENCIA legítima (`null`); cualquier otro error es un fallo y
+ * rompe el export, que no puede salir incompleto sin decirlo.
+ */
+async function datosSujeto(
+  client: Client,
+  tipo: 'usuario' | 'nino',
+  id: string
+): Promise<Fila | null> {
+  const { data, error } = await client.rpc('export_datos_sujeto', {
+    p_sujeto_tipo: tipo,
+    p_sujeto_id: id,
+  })
+  if (error) {
+    if (error.code === '42501') return null
+    throw new Error(`export_datos_sujeto falló: ${error.message}`)
+  }
+  return (data ?? {}) as Fila
+}
+
+const NOTA_SIN_DATOS_AMPLIADOS =
+  'Los datos administrativos, de admisión y de cobros solo los exportan la persona interesada, sus tutores legales y la Dirección del centro.'
+
+function filas(v: unknown): Fila[] {
+  return Array.isArray(v) ? (v as Fila[]) : []
 }
 
 /** Firma una ruta de un bucket privado con el TTL largo del export (#4). */
@@ -38,6 +84,7 @@ async function firmar(
  */
 export async function recolectarUsuario(
   client: Client,
+  service: Client,
   usuarioId: string
 ): Promise<Recolectado | null> {
   const { data: usuario } = await client
@@ -75,6 +122,24 @@ export async function recolectarUsuario(
 
   const centroId = (roles.data ?? []).map((r) => r.centro_id)[0] ?? null
 
+  // Lo que la sesión no alcanza (perfil de familia, cobros, lista de espera, dispositivos…).
+  const extra = await datosSujeto(client, 'usuario', usuarioId)
+
+  // DNI y mandato firmado: enlace firmado, como las fotos (#4).
+  const adjuntos: AdjuntoExport[] = []
+  for (const p of filas(extra?.perfiles_familia)) {
+    if (typeof p.dni_documento_path === 'string' && p.dni_documento_path) {
+      adjuntos.push(await firmar(service, BUCKET_DNI_TUTORES, p.dni_documento_path, 'DNI'))
+    }
+  }
+  for (const m of filas(extra?.mandatos_sepa)) {
+    if (typeof m.documento_path === 'string' && m.documento_path) {
+      adjuntos.push(
+        await firmar(service, BUCKET_MANDATO_SEPA, m.documento_path, 'Mandato SEPA firmado')
+      )
+    }
+  }
+
   return {
     centroId,
     data: {
@@ -87,6 +152,8 @@ export async function recolectarUsuario(
       invitaciones_a_citas: citasInvitado.data ?? [],
       recordatorios_recibidos: recordatorios.data ?? [],
       firmas_realizadas: firmas.data ?? [],
+      ...(extra ?? { datos_ampliados: { _nota: NOTA_SIN_DATOS_AMPLIADOS } }),
+      adjuntos,
       _aportado_por_ti: [
         'ficha (idioma)',
         'consentimientos',
@@ -94,6 +161,9 @@ export async function recolectarUsuario(
         'ausencias_reportadas',
         'respuestas a invitaciones_a_citas',
         'firmas_realizadas',
+        'preferencias',
+        'perfiles_familia',
+        'mandatos_sepa',
       ],
     },
   }
@@ -107,7 +177,8 @@ export async function recolectarUsuario(
 export async function recolectarNino(
   client: Client,
   service: Client,
-  ninoId: string
+  ninoId: string,
+  opciones: OpcionesRecolectar = {}
 ): Promise<Recolectado | null> {
   const { data: nino } = await client.from('ninos').select('*').eq('id', ninoId).maybeSingle()
   if (!nino) return null // no accesible para el solicitante
@@ -190,6 +261,22 @@ export async function recolectarNino(
     }
   }
 
+  // Lo que la sesión no alcanza (lista de espera, matrículas, consentimientos, cobros…).
+  const extra = await datosSujeto(client, 'nino', ninoId)
+
+  if (extra && opciones.incluirMotivoBaja) {
+    const motivos = await client.rpc('get_motivos_baja_matriculas', { p_nino_ids: [ninoId] })
+    if (motivos.error && motivos.error.code !== '42501') {
+      throw new Error(`get_motivos_baja_matriculas falló: ${motivos.error.message}`)
+    }
+    const porMatricula = new Map(
+      (motivos.data ?? []).map((m) => [m.matricula_id, m.motivo_baja] as const)
+    )
+    extra.matriculas = filas(extra.matriculas).map((m) =>
+      porMatricula.has(m.id as string) ? { ...m, motivo_baja: porMatricula.get(m.id as string) } : m
+    )
+  }
+
   return {
     centroId: nino.centro_id as string,
     data: {
@@ -206,6 +293,7 @@ export async function recolectarNino(
       administraciones_medicacion: administraciones.data ?? [],
       adjuntos,
       fotos_compartidas: fotosCompartidas,
+      ...(extra ?? { datos_ampliados: { _nota: NOTA_SIN_DATOS_AMPLIADOS } }),
     },
   }
 }

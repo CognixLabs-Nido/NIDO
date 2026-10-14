@@ -14,8 +14,9 @@ export const runtime = 'nodejs'
 
 /**
  * Export RGPD — auto-servicio de la familia (#6). Descarga un ZIP con SUS datos y
- * los de su(s) hijo(s). Todo se recolecta con el cliente del usuario → la RLS
- * garantiza que solo sale lo suyo. Acceso art. 15 + portabilidad art. 20.
+ * los de su(s) hijo(s). Todo se recolecta con el cliente del usuario: la RLS, y lo que la
+ * sesión no alcanza lo devuelve `export_datos_sujeto` con su control de acceso en la BD. Solo
+ * sale lo suyo. Acceso art. 15 + portabilidad art. 20.
  */
 export async function GET(
   _request: Request,
@@ -30,7 +31,8 @@ export async function GET(
 
   const service = createServiceRoleClient()
 
-  const usuarioRec = await recolectarUsuario(supabase, user.id)
+  // Sin `incluirMotivoBaja`: el motivo de baja es de Dirección, nunca sale en /export/me.
+  const usuarioRec = await recolectarUsuario(supabase, service, user.id)
   if (!usuarioRec) return new Response('Sin datos', { status: 404 })
 
   // Hijos de los que es tutor legal (no 'autorizado').
@@ -73,7 +75,7 @@ export async function GET(
   }
 
   const t = await getTranslations({ locale, namespace: 'export' })
-  const zip = await empaquetarExport(doc, t)
+  const zip = await empaquetarExport(doc, t, locale)
   const fecha = new Date().toISOString().slice(0, 10)
   return new Response(Buffer.from(zip), {
     status: 200,

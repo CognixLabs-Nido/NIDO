@@ -21,7 +21,11 @@ export const runtime = 'nodejs'
  * ⚠️ La AUTORIZACIÓN vive DENTRO de `recolectar*`: leen al sujeto con el cliente de
  * sesión (`supabase`, RLS) y devuelven `null` si no es accesible. El cliente
  * service-role solo firma adjuntos de Storage + escribe el log de export (ya
- * autorizado). NO mover reads de `supabase` a `service` aquí: saltaría la RLS.
+ * autorizado). NO mover reads de `supabase` a `service` aquí: saltaría la RLS. Lo que la
+ * sesión no alcanza lo devuelve `export_datos_sujeto`, con su control de acceso en la BD.
+ *
+ * `incluirMotivoBaja`: esta es la ruta de Dirección, la única donde sale
+ * `matriculas.motivo_baja` (y solo si quien exporta es admin del centro).
  */
 export async function GET(
   _request: Request,
@@ -43,8 +47,8 @@ export async function GET(
 
   const rec =
     sujetoTipo === 'nino'
-      ? await recolectarNino(supabase, service, id)
-      : await recolectarUsuario(supabase, id)
+      ? await recolectarNino(supabase, service, id, { incluirMotivoBaja: true })
+      : await recolectarUsuario(supabase, service, id)
   if (!rec) return new Response('Sin datos o no autorizado', { status: 404 })
 
   const doc: DocumentoExport = {
@@ -69,7 +73,7 @@ export async function GET(
   }
 
   const t = await getTranslations({ locale, namespace: 'export' })
-  const zip = await empaquetarExport(doc, t)
+  const zip = await empaquetarExport(doc, t, locale)
   const fecha = new Date().toISOString().slice(0, 10)
   return new Response(Buffer.from(zip), {
     status: 200,

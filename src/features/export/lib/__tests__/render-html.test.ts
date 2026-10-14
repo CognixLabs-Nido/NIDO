@@ -57,7 +57,7 @@ function docDeNino(extra: Record<string, unknown> = {}): DocumentoExport {
 
 describe('renderExportHtml', () => {
   it('oculta identificadores, hashes, versiones y timestamps técnicos', () => {
-    const html = renderExportHtml(docDeNino(), t)
+    const html = renderExportHtml(docDeNino(), t, 'es')
     expect(html).not.toContain('11111111-1111-1111-1111-111111111111') // ficha.id
     expect(html).not.toContain('22222222-2222-2222-2222-222222222222') // centro_id
     expect(html).not.toContain('33333333') // firma.id
@@ -69,7 +69,7 @@ describe('renderExportHtml', () => {
   })
 
   it('formatea fechas como DD/MM/AAAA sin horas ni microsegundos', () => {
-    const html = renderExportHtml(docDeNino(), t)
+    const html = renderExportHtml(docDeNino(), t, 'es')
     expect(html).toContain('15/03/2024') // fecha_nacimiento
     expect(html).toContain('02/05/2026') // firmado_at (solo fecha)
     expect(html).not.toContain('2024-03-15')
@@ -78,7 +78,7 @@ describe('renderExportHtml', () => {
   })
 
   it('renderiza la firma como imagen y muestra el contenido legible', () => {
-    const html = renderExportHtml(docDeNino(), t)
+    const html = renderExportHtml(docDeNino(), t, 'es')
     expect(html).toContain('<img class="firma"')
     expect(html).toContain('data:image/svg+xml')
     expect(html).toContain('Madre Pérez')
@@ -86,7 +86,7 @@ describe('renderExportHtml', () => {
   })
 
   it('incluye títulos de sección', () => {
-    const html = renderExportHtml(docDeNino(), t)
+    const html = renderExportHtml(docDeNino(), t, 'es')
     expect(html).toContain('doc.secciones.salud')
     expect(html).toContain('doc.secciones.autorizaciones_firmas')
   })
@@ -99,7 +99,8 @@ describe('renderExportHtml', () => {
           ficha: { nombre: 'Lía', apellidos: '', nacionalidad: null, fecha_nacimiento: undefined },
         },
       } as never,
-      t
+      t,
+      'es'
     )
     expect(html).not.toContain('—')
     expect(html).not.toContain('doc.campos.apellidos') // vacío → omitido
@@ -116,7 +117,8 @@ describe('renderExportHtml', () => {
           mensajes: [{ contenido: 'hola', fecha: '2026-05-01' }],
         },
       } as never,
-      t
+      t,
+      'es'
     )
     expect(html).not.toContain('doc.secciones.mensajes')
     expect(html).not.toContain('hola')
@@ -140,7 +142,8 @@ describe('renderExportHtml', () => {
           ],
         },
       } as never,
-      t
+      t,
+      'es'
     )
     expect(html).toContain('¿Come solo/a?') // texto de la pregunta
     expect(html).not.toContain('Item 1') // ya no el genérico
@@ -159,10 +162,82 @@ describe('renderExportHtml', () => {
           consentimientos: [{ tipo: 'terminos', aceptado_en: '2025-09-01' }],
         },
       } as never,
-      t
+      t,
+      'es'
     )
     expect(html).toContain('doc.valores.es') // idioma "es" → etiqueta
     expect(html).toContain('doc.valores.terminos') // consentimiento "terminos" → etiqueta
     expect(html).not.toContain('>Terminos<') // ya no se humaniza el semi-crudo
+  })
+
+  it('export completo: los importes en euros con el idioma, sin rutas de Storage ni identificadores', () => {
+    const html = renderExportHtml(
+      {
+        _meta: docDeNino()._meta,
+        usuario: {
+          ficha: { nombre_completo: 'Madre Pérez' },
+          perfiles_familia: [
+            {
+              familia_id: '44444444-4444-4444-4444-444444444444',
+              rol_familia: 'titular',
+              direccion_ciudad: 'Valencia',
+              dni_documento_path: 'centro/nino/dni.pdf',
+            },
+          ],
+          cobros_familia: [
+            {
+              familia: 'Pérez',
+              recibos: [
+                {
+                  anio: 2027,
+                  mes: 1,
+                  estado: 'borrador',
+                  total_centimos: 12345,
+                  lineas: [{ descripcion: 'Cuota', importe_centimos: 12345 }],
+                },
+              ],
+            },
+          ],
+          lista_espera_contacto: [{ telefono_tutor: '600000015', email_tutor: 'a@b.test' }],
+          adjuntos: [{ descripcion: 'DNI', url_firmada: 'https://firmado.test/dni' }],
+        },
+      } as never,
+      t,
+      'es'
+    )
+    expect(html).toContain('123,45') // céntimos → euros
+    expect(html).toContain('€')
+    expect(html).not.toContain('12345')
+    expect(html).toContain('doc.secciones.perfil_familia')
+    expect(html).toContain('doc.secciones.cobros_familia')
+    expect(html).toContain('doc.secciones.lista_espera_contacto')
+    expect(html).toContain('doc.secciones.documentos')
+    expect(html).toContain('https://firmado.test/dni') // el DNI, como enlace firmado
+    expect(html).not.toContain('centro/nino/dni.pdf') // nunca la ruta cruda
+    expect(html).not.toContain('44444444')
+    expect(html).toContain('doc.valores.titular')
+  })
+
+  it('export completo: las secciones nuevas del niño y la nota sin datos ampliados', () => {
+    const html = renderExportHtml(
+      docDeNino({
+        lista_espera: [{ nombre_nino: 'Lía', estado: 'invitado' }],
+        matriculas: [{ aula: 'Aula 1', estado: 'activa', motivo_baja: 'Interna' }],
+        consentimientos: [{ tipo: 'imagen', otorgado_por: 'Padre Pérez' }],
+        servicios_diarios: [{ fecha: '2027-01-15', servicio: 'comedor', presente: true }],
+        datos_ampliados: { _nota: 'Solo los tutores legales y la Dirección.' },
+      }),
+      t,
+      'en'
+    )
+    expect(html).toContain('doc.secciones.lista_espera')
+    expect(html).toContain('doc.secciones.matriculas')
+    expect(html).toContain('doc.secciones.consentimientos_nino')
+    expect(html).toContain('doc.secciones.servicios_diarios')
+    expect(html).toContain('doc.valores.comedor')
+    expect(html).toContain('Padre Pérez')
+    expect(html).toContain('Interna') // si el JSON lo trae (export de Dirección), se pinta
+    expect(html).toContain('Solo los tutores legales y la Dirección.')
+    expect(html).toContain('doc.secciones.datos_ampliados')
   })
 })
