@@ -73,7 +73,6 @@ export function GestionarPersonalDialog({ aula, personal, candidatos, aulasDesti
     [aulasDestino, aula.id]
   )
 
-  // TODO(item4): confirmar etiquetas VA de tipos con el usuario.
   const tipoItems = TIPO_PERSONAL_AULA.map((v) => ({ value: v, label: t(`tipo.${v}`) }))
   const candidatoItems = candidatosDisponibles.map((c) => ({
     value: c.id,

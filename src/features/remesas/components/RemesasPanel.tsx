@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { AlertTriangleIcon, PencilIcon } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
@@ -45,6 +45,7 @@ export function RemesasPanel({
 }: Props) {
   const t = useTranslations('remesas')
   const tErrors = useTranslations()
+  const locale = useLocale()
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set())
   const [pending, startTransition] = useTransition()
 
@@ -184,7 +185,7 @@ export function RemesasPanel({
                       )}
                     </span>
                   </span>
-                  <span className="tabular-nums">{formatEuros(r.totalCentimos)}</span>
+                  <span className="tabular-nums">{formatEuros(r.totalCentimos, locale)}</span>
                 </label>
               ))}
             </div>
@@ -222,7 +223,7 @@ export function RemesasPanel({
                     <span className="text-muted-foreground">
                       {t('remesa_resumen', {
                         num: rm.numRecibos,
-                        total: formatEuros(rm.totalCentimos),
+                        total: formatEuros(rm.totalCentimos, locale),
                       })}
                     </span>
                   </div>

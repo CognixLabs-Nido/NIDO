@@ -26,7 +26,7 @@ interface Props {
   rolEnHilo: 'admin' | 'tutor'
   header: ConversacionAdminFamiliaHeader
   mensajes: MensajeView[]
-  /** Si `true`, el wrapper raíz usa `h-full` en lugar de `h-[calc(100dvh-3rem)]`
+  /** Si `true`, el wrapper raíz usa `h-full` en lugar de `h-[calc(100dvh-…)]`
    *  para integrarse dentro de un padre acotado (caso: panel derecho del
    *  `AdminDireccionSplitView`). Default `false` mantiene el comportamiento
    *  legacy de la ruta `/messages/conversacion/[id]`. */
@@ -113,7 +113,11 @@ export function ConversacionAdminFamiliaView({
 
   return (
     <div
-      className={cn('flex flex-col', fillParent ? 'h-full' : 'h-[calc(100dvh-3rem)]')}
+      className={cn(
+        'flex flex-col',
+        // Mismo cálculo que ConversacionView: cabecera móvil + padding del main de /messages.
+        fillParent ? 'h-full' : 'h-[calc(100dvh-9.875rem)] md:h-[calc(100dvh-4rem)]'
+      )}
       data-testid="conv-admin-familia"
     >
       <header className="bg-background z-[1] -mx-4 shrink-0 border-b px-4 py-3 md:-mx-8 md:px-8">

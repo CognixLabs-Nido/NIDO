@@ -176,7 +176,9 @@ export default async function FamilyRecibosPage({ params }: PageProps) {
                   </span>
                 )}
               </div>
-              <span className="font-medium tabular-nums">{formatEuros(r.totalCentimos)}</span>
+              <span className="font-medium tabular-nums">
+                {formatEuros(r.totalCentimos, locale)}
+              </span>
             </Link>
           ))}
         </div>

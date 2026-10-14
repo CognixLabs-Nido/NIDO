@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
@@ -40,12 +40,16 @@ interface Props {
 }
 
 /** Valor legible del concepto: signo (− si descuento) + importe fijo (€/día si diario) o %. */
-function formatValor(c: ConceptoCobroListItem, t: ReturnType<typeof useTranslations>): string {
+function formatValor(
+  c: ConceptoCobroListItem,
+  t: ReturnType<typeof useTranslations>,
+  locale: string
+): string {
   const prefijo = c.signo < 0 ? '−' : ''
   if (c.tipo_valor === 'porcentaje') {
     return `${prefijo}${(c.porcentaje_bp ?? 0) / 100}%`
   }
-  const euros = formatEuros(c.importe_centimos ?? 0)
+  const euros = formatEuros(c.importe_centimos ?? 0, locale)
   return c.tipo_concepto === 'diario'
     ? `${prefijo}${t('precio_por_dia', { precio: euros })}`
     : `${prefijo}${euros}`
@@ -122,6 +126,7 @@ function ConceptoRow({
 }) {
   const t = useTranslations('admin.cuotas')
   const tErrors = useTranslations()
+  const locale = useLocale()
   const [pending, startTransition] = useTransition()
 
   function toggleActivo(activo: boolean) {
@@ -137,7 +142,7 @@ function ConceptoRow({
       <TableCell>
         <Badge variant="secondary">{t(`tipos.${concepto.tipo_concepto}`)}</Badge>
       </TableCell>
-      <TableCell>{formatValor(concepto, t)}</TableCell>
+      <TableCell>{formatValor(concepto, t, locale)}</TableCell>
       <TableCell>
         <Badge variant={concepto.aplicacion === 'automatico' ? 'default' : 'outline'}>
           {t(

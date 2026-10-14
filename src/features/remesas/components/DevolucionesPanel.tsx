@@ -1,7 +1,7 @@
 'use client'
 
 import { useTransition } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
@@ -28,6 +28,7 @@ const BADGE_VARIANT: Record<string, 'secondary' | 'warm' | 'outline'> = {
 export function DevolucionesPanel({ recibos }: Props) {
   const t = useTranslations('remesas')
   const tErrors = useTranslations()
+  const locale = useLocale()
   const [pending, startTransition] = useTransition()
 
   function run(fn: () => Promise<{ success: boolean; error?: string }>, okKey: string) {
@@ -57,7 +58,7 @@ export function DevolucionesPanel({ recibos }: Props) {
                     {t(`estado_recibo.${r.estado}`)}
                   </Badge>
                   {r.esRegiro && <Badge variant="outline">{t('regiro_badge')}</Badge>}
-                  <span className="tabular-nums">{formatEuros(r.totalCentimos)}</span>
+                  <span className="tabular-nums">{formatEuros(r.totalCentimos, locale)}</span>
                 </div>
                 {r.fechaDevolucion && (
                   <p className="text-muted-foreground text-xs">

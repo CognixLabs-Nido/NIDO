@@ -75,6 +75,7 @@ export async function GET(
     lineasFamiliares: recibo.lineasFamiliares.map(aLinea),
     subtotalFamiliarCentimos: recibo.subtotalFamiliarCentimos,
     totalCentimos: recibo.totalCentimos,
+    locale,
   })
 
   const mes2 = String(recibo.mes).padStart(2, '0')

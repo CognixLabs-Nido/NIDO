@@ -82,8 +82,12 @@ export function ConversacionView({ locale, rol, header, mensajes, participo }: P
     return tRoles('rol_tutor')
   }
 
+  // Alto = pantalla menos lo que el layout de /messages pone alrededor, para que el compositor
+  // quede a la vista sin scroll de página. Móvil: cabecera de SidebarNav (110px = 6,875rem) +
+  // `py-6` del main (3rem) = 9,875rem. Escritorio: `md:py-8` del main = 4rem (sin cabecera).
+  // Con el `3rem` de antes sobraban 110px en móvil y 1rem en escritorio.
   return (
-    <div className="flex h-[calc(100dvh-3rem)] flex-col">
+    <div className="flex h-[calc(100dvh-9.875rem)] flex-col md:h-[calc(100dvh-4rem)]">
       <header className="bg-background z-[1] -mx-4 shrink-0 border-b px-4 py-3 md:-mx-8 md:px-8">
         <div className="flex items-center gap-3">
           <Link

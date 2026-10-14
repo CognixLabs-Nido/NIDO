@@ -50,6 +50,8 @@ export interface ReciboPdfData {
   lineasFamiliares: LineaReciboPdf[]
   subtotalFamiliarCentimos: number
   totalCentimos: number
+  /** Idioma de la app (`es`/`en`/`va`) para formatear los importes. */
+  locale: string
 }
 
 // Columnas de la tabla de líneas (x absolutos + anchos que suman CONTENT_W).
@@ -66,17 +68,22 @@ const COL = {
 
 type W = Awaited<ReturnType<typeof nuevoDocumento>>['writer']
 
-function filaLinea(l: LineaReciboPdf): RowCell[] {
+function filaLinea(l: LineaReciboPdf, locale: string): RowCell[] {
   return [
     { text: l.etiqueta, x: COL.conceptoX, width: COL.conceptoW },
     { text: String(l.cantidad), x: COL.cantidadX, width: COL.cantidadW, align: 'right' },
     {
-      text: formatEuros(l.precioUnitarioCentimos),
+      text: formatEuros(l.precioUnitarioCentimos, locale),
       x: COL.precioX,
       width: COL.precioW,
       align: 'right',
     },
-    { text: formatEuros(l.importeCentimos), x: COL.importeX, width: COL.importeW, align: 'right' },
+    {
+      text: formatEuros(l.importeCentimos, locale),
+      x: COL.importeX,
+      width: COL.importeW,
+      align: 'right',
+    },
   ]
 }
 
@@ -85,7 +92,8 @@ function seccion(
   titulo: string,
   lineas: LineaReciboPdf[],
   subtotalCentimos: number,
-  labels: ReciboPdfLabels
+  labels: ReciboPdfLabels,
+  locale: string
 ): void {
   w.gap(6)
   w.text(titulo, { size: 12, bold: true })
@@ -112,7 +120,7 @@ function seccion(
     ],
     { size: 9 }
   )
-  for (const l of lineas) w.row(filaLinea(l), { size: 10 })
+  for (const l of lineas) w.row(filaLinea(l, locale), { size: 10 })
   // Subtotal.
   w.row(
     [
@@ -123,7 +131,7 @@ function seccion(
         color: MUTED,
       },
       {
-        text: formatEuros(subtotalCentimos),
+        text: formatEuros(subtotalCentimos, locale),
         x: COL.importeX,
         width: COL.importeW,
         align: 'right',
@@ -157,7 +165,7 @@ export async function generarReciboPdf(data: ReciboPdfData): Promise<Uint8Array>
 
   // Una sección por hijo (nombre como cabecera, una sola vez).
   for (const g of data.gruposHijo) {
-    seccion(w, g.ninoNombre, g.lineas, g.subtotalCentimos, data.labels)
+    seccion(w, g.ninoNombre, g.lineas, g.subtotalCentimos, data.labels, data.locale)
   }
   if (data.lineasFamiliares.length > 0) {
     seccion(
@@ -165,7 +173,8 @@ export async function generarReciboPdf(data: ReciboPdfData): Promise<Uint8Array>
       data.labels.lineasFamiliares,
       data.lineasFamiliares,
       data.subtotalFamiliarCentimos,
-      data.labels
+      data.labels,
+      data.locale
     )
   }
 
@@ -182,7 +191,7 @@ export async function generarReciboPdf(data: ReciboPdfData): Promise<Uint8Array>
         bold: true,
       },
       {
-        text: formatEuros(data.totalCentimos),
+        text: formatEuros(data.totalCentimos, data.locale),
         x: COL.importeX,
         width: COL.importeW,
         align: 'right',

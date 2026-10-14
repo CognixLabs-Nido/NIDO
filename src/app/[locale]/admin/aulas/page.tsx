@@ -76,15 +76,11 @@ export default async function AdminAulasPage({ params }: PageProps) {
               anio_nacimiento: t('fields.anio_nacimiento'),
               capacidad: t('fields.capacidad'),
               num_alumnos: t('fields.num_alumnos'),
-              // TODO(F5B#36): confirmar VA con usuario (`profesoras`).
               profesoras: t('fields.profesoras'),
-              // TODO(F5B#36): confirmar VA con usuario (`tecnicos`).
               tecnicos: t('fields.tecnicos'),
               descripcion: t('fields.descripcion'),
-              // TODO(item4): confirmar VA con usuario (`acciones`).
               acciones: t('fields.acciones'),
             },
-            // TODO(F5B#36): confirmar VA con usuario (`label_coordinadora`).
             label_coordinadora: t('personal.label_coordinadora'),
             label_maestra: t('personal.label_maestra'),
           }}

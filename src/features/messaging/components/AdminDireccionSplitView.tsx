@@ -53,7 +53,7 @@ interface Props {
  *  - `h-[calc(100dvh-18rem)] md:h-[calc(100dvh-12rem)]` y `grid-rows-1`
  *    para que el row propague altura a la celda.
  *  - `ConversacionAdminFamiliaView` se monta con `fillParent={true}` para
- *    que use `h-full` en lugar de su `h-[calc(100dvh-3rem)]` por defecto.
+ *    que use `h-full` en lugar de su `h-[calc(100dvh-…)]` por defecto.
  */
 export function AdminDireccionSplitView({
   locale,
