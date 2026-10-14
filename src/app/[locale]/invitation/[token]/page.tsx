@@ -9,6 +9,7 @@ import { AcceptInvitationForm } from '@/features/auth/components/AcceptInvitatio
 import { notifyExistingAccountInvitation } from '@/features/auth/actions/accept-invitation'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { debeMostrarB8 } from '@/features/auth/lib/clasificar-cuenta'
+import { detectarCuentaPorEmail } from '@/features/auth/lib/detectar-cuenta-email'
 import { createClient } from '@/lib/supabase/server'
 import { AuthShell } from '@/shared/components/AuthShell'
 
@@ -60,23 +61,13 @@ export default async function InvitationPage({ params }: PageProps) {
   // alta tutor-driven (y cualquier invitación) caía SIEMPRE en B8 → onboarding roto.
   // La decisión es por roles, NO por sesión: la posible sesión-de-verify de GoTrue es
   // irrelevante (la page la ignora), así que stub→form funciona con o sin ella.
-  const { data: usersList } = await service.auth.admin.listUsers()
-  const authUser = usersList?.users.find(
-    (u) => u.email?.toLowerCase() === invitation.email.toLowerCase()
-  )
+  // La búsqueda va por la RPC exacta (`detectarCuentaPorEmail`), no por `listUsers()`, que
+  // solo veía las 50 primeras cuentas. Si el servicio falla no se supone «sin cuenta»: se
+  // muestra el aviso de reintentar en vez de un formulario de alta que quizá no toca.
+  const cuenta = await detectarCuentaPorEmail(service, invitation.email)
+  if (!cuenta) return <ServicioCuentasNoDisponible locale={locale} />
 
-  let tieneRoles = false
-  if (authUser) {
-    const { data: roles } = await service
-      .from('roles_usuario')
-      .select('usuario_id')
-      .eq('usuario_id', authUser.id)
-      .is('deleted_at', null)
-      .limit(1)
-    tieneRoles = (roles?.length ?? 0) > 0
-  }
-
-  if (debeMostrarB8(Boolean(authUser), tieneRoles)) {
+  if (debeMostrarB8(cuenta.authUserExiste, cuenta.tieneRoles)) {
     // Cuenta real existente: dispara aviso (best-effort) y render flujo B8.
     await notifyExistingAccountInvitation(token).catch(() => {})
     return <ExistingAccountNotice locale={locale} email={invitation.email} />
@@ -240,6 +231,21 @@ function ExistingAccountNotice({ locale, email }: { locale: string; email: strin
             </Link>
           </p>
         </CardContent>
+      </Card>
+    </AuthShell>
+  )
+}
+
+/** El servicio de cuentas no respondió: no se puede decidir entre alta y B8 sin adivinar. */
+function ServicioCuentasNoDisponible({ locale }: { locale: string }) {
+  const t = useTranslations('auth.invitation')
+  return (
+    <AuthShell locale={locale}>
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('errors.servicio_cuentas_no_disponible')}</CardDescription>
+        </CardHeader>
       </Card>
     </AuthShell>
   )
