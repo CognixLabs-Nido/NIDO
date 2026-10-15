@@ -125,6 +125,31 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
   }, 120_000)
 
   /** Un niño con TODAS sus columnas personales marcadas y lo que cuelga de él. */
+  // Plantilla de medicación del centro (una activa por centro y tipo): la instancia del niño
+  // es de forma B2, la que crea la app (la forma legacy sin plantilla ya no cabe en el CHECK).
+  let plantillaMedicacion: string | null = null
+  async function plantillaDeMedicacion(): Promise<string> {
+    if (plantillaMedicacion) return plantillaMedicacion
+    const { data, error } = await serviceClient
+      .from('autorizaciones')
+      .insert({
+        centro_id: centro.id,
+        tipo: 'medicacion',
+        es_plantilla: true,
+        titulo: 'Formato medicación',
+        texto: 'Texto del formato',
+        texto_version: 'v1',
+        texto_definitivo: true,
+        estado: 'publicada',
+        creado_por: admin.id,
+      })
+      .select('id')
+      .single()
+    if (error || !data) throw new Error(`plantilla de medicación: ${error?.message}`)
+    plantillaMedicacion = data.id
+    return data.id
+  }
+
   async function sembrar(opts: { esqueleto: boolean }): Promise<Sembrado> {
     const s = randomUUID().slice(0, 8)
     const m = (campo: string) => `MK-${campo}-${s}`
@@ -225,6 +250,8 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
         firmantes_requeridos: 'uno_principal',
         creado_por: admin.id,
         nino_id: nino.id,
+        plantilla_id: await plantillaDeMedicacion(),
+        ambito: 'nino',
       })
       .select('id')
       .single()
