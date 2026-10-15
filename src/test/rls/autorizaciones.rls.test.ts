@@ -126,6 +126,33 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
 
   // --- helpers de creación (service role, bypass RLS) -----------------------
 
+  // Las instancias por niño son de forma B2 (plantilla + ambito='nino'), la que crea la app: la
+  // forma legacy sin plantilla ya no cabe en el CHECK (20261016120000). Una plantilla activa por
+  // centro y tipo, creada al primer uso.
+  const plantillas = new Map<TipoAutorizacion, string>()
+  async function plantillaDe(tipo: TipoAutorizacion): Promise<string> {
+    const ya = plantillas.get(tipo)
+    if (ya) return ya
+    const { data, error } = await serviceClient
+      .from('autorizaciones')
+      .insert({
+        centro_id: centro.id,
+        tipo,
+        es_plantilla: true,
+        titulo: `Formato ${tipo}`,
+        texto: TEXTO_REAL,
+        texto_version: 'v1',
+        texto_definitivo: true,
+        estado: 'publicada',
+        creado_por: admin.id,
+      })
+      .select('id')
+      .single()
+    if (error || !data) throw new Error(`plantilla ${tipo}: ${error?.message}`)
+    plantillas.set(tipo, data.id)
+    return data.id
+  }
+
   async function crearAutorizacion(opts: {
     tipo: TipoAutorizacion
     nino_id?: string
@@ -149,7 +176,13 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
       vigencia_desde: opts.vigencia_desde ?? null,
       vigencia_hasta: opts.vigencia_hasta ?? null,
       creado_por: admin.id,
-      ...(opts.evento_id ? { evento_id: opts.evento_id } : { nino_id: opts.nino_id }),
+      ...(opts.evento_id
+        ? { evento_id: opts.evento_id }
+        : {
+            nino_id: opts.nino_id,
+            plantilla_id: await plantillaDe(opts.tipo),
+            ambito: 'nino' as const,
+          }),
     }
     const { data, error } = await serviceClient
       .from('autorizaciones')
@@ -202,6 +235,8 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
         centro_id: centro.id,
         tipo: 'medicacion',
         nino_id: nino.id,
+        plantilla_id: await plantillaDe('medicacion'),
+        ambito: 'nino',
         titulo: 'Medicación',
         texto: TEXTO_REAL,
         texto_version: 'v1',
@@ -261,6 +296,8 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
         centro_id: centro.id,
         tipo: 'medicacion',
         nino_id: nino.id,
+        plantilla_id: await plantillaDe('medicacion'),
+        ambito: 'nino',
         titulo: 'Medicación profe',
         texto: TEXTO_REAL,
         texto_version: 'v1',
@@ -270,27 +307,46 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
       })
       .select('id')
       .maybeSingle()
+    // Con la forma B2 completa, lo que la para es la RLS (no el CHECK).
+    expect(med.error?.code).toBe('42501')
     expect(med.data?.id).toBeFalsy()
   })
 
-  it('tutor no puede crear autorizaciones', async () => {
+  // Desde RW-0 el tutor SÍ crea recogida/medicación de su hijo desde la plantilla publicada
+  // (B2, en autorizaciones-rw0.rls.test.ts). Lo que sigue sin poder crear: reglas (las envía la
+  // directora) e instancias sin plantilla.
+  it('tutor no crea reglas por niño (aunque haya plantilla) ni instancias sin plantilla', async () => {
     const c = await clientFor(tutor)
-    const r = await c
+    const base = {
+      centro_id: centro.id,
+      nino_id: nino.id,
+      titulo: 'Tutor intenta',
+      texto: TEXTO_REAL,
+      texto_version: 'v1',
+      texto_definitivo: true,
+      estado: 'publicada' as const,
+      creado_por: tutor.id,
+    }
+    const reglas = await c
       .from('autorizaciones')
       .insert({
-        centro_id: centro.id,
-        tipo: 'medicacion',
-        nino_id: nino.id,
-        titulo: 'Tutor intenta',
-        texto: TEXTO_REAL,
-        texto_version: 'v1',
-        texto_definitivo: true,
-        estado: 'publicada',
-        creado_por: tutor.id,
+        ...base,
+        tipo: 'reglas_regimen_interno',
+        plantilla_id: await plantillaDe('reglas_regimen_interno'),
+        ambito: 'nino',
       })
       .select('id')
       .maybeSingle()
-    expect(r.data?.id).toBeFalsy()
+    expect(reglas.error?.code).toBe('42501')
+    expect(reglas.data?.id).toBeFalsy()
+
+    const sinPlantilla = await c
+      .from('autorizaciones')
+      .insert({ ...base, tipo: 'medicacion' })
+      .select('id')
+      .maybeSingle()
+    expect(sinPlantilla.error).not.toBeNull()
+    expect(sinPlantilla.data?.id).toBeFalsy()
   })
 
   // --- autorizaciones: SELECT por audiencia + aislamiento por centro --------
