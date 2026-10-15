@@ -391,6 +391,19 @@ lo de su centro) y queda **auditado** (acceso a datos personales). Sub-decisión
 implementación (alcance del dump, no de wave): qué tablas/Storage incluye y si los binarios van
 como enlaces firmados o empaquetados — se concreta al implementar F11-A.
 
+> **Actualización (2026-10-14, `20261014120000`).** «Respeta la RLS» se quedaba corto: con su
+> sesión la familia no leía la mitad de sus datos (lista de espera, cobros, becas, parte de
+> comedor, invitaciones, solicitudes de olvido…), un tutor no veía el consentimiento de imagen
+> que dio el otro tutor y la dirección no veía las preferencias, los dispositivos ni las lecturas
+> del usuario. El derecho de acceso no es «lo que tu sesión alcanza». Desde `20261014120000`, lo
+> que el export añade sobre lo que lee por sesión sale de la RPC `export_datos_sujeto`, con el
+> control de acceso en la BD: el propio usuario, un tutor legal del niño (principal o secundario)
+> o el admin de su centro; la profe, el autorizado y cualquier otro reciben 42501. Decidido por el
+> responsable: telemetría dentro salvo `auth_attempts`; `audit_log` fuera; `matriculas.motivo_baja`
+> solo en el export de la dirección; el contenido de trabajo del personal fuera (sí su ficha, sus
+> roles y sus mensajes); del IBAN, solo los 4 últimos dígitos. Detalle en `rls-policies.md`
+> («Export art. 15»).
+
 **11. Forma exacta del least-privilege en mensajería.**
 Opciones: (a) helper nuevo `puede_postear_en_conversacion` usado solo en `mensajes_insert`;
 (b) añadir condición inline a `mensajes_insert` excluyendo admin en `profe_familia`.

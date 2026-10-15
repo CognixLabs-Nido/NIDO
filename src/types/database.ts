@@ -4551,6 +4551,10 @@ export type Database = {
         Returns: boolean
       }
       es_tutor_legal_de: { Args: { p_nino_id: string }; Returns: boolean }
+      export_datos_sujeto: {
+        Args: { p_sujeto_id: string; p_sujeto_tipo: string }
+        Returns: Json
+      }
       evento_aplica_a_nino: {
         Args: { p_evento_id: string; p_nino_id: string }
         Returns: boolean
