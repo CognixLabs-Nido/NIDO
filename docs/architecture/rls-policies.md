@@ -270,6 +270,7 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `src/test/audit/grupo1b-audit.test.ts`: la purga de usuario no deja su nombre ni su parentesco en `audit_log`, `invitaciones` sin `token` y redactada por las dos purgas, y `actor_sistema`.
 - `src/test/audit/purga-rgpd-nino.test.ts`: las dos purgas del niño borran la ficha completa de la tabla y no dejan en `audit_log` ninguna columna personal (lista `_claves_pii_nino`, `20261011140000`); la retroactiva redacta a los niños que ya no existen y no toca a los vivos.
 - `src/test/audit/purga-lista-espera.test.ts`: la purga del niño borra su prospecto de `lista_espera` y la del tutor limpia su teléfono y su email, en la tabla y en `audit_log` (también el INSERT); la purga de esqueletos conserva el prospecto, y los de otro niño o centro no se tocan (`20261012140000`).
+- `src/test/audit/purga-cierre.test.ts`: el cierre de la purga (`20261015120000`): `idioma_principal` a `'zz'` y su CHECK, `_redactar_jsonb` con null, el perfil de `familia_tutores` y su auditoría, foto, preferencias, lecturas, cambios pendientes y comentarios de cita; el manifiesto de adjuntos (DNI por ruta exacta), `promover_a_titular` y la anonimización de Auth contra el GoTrue real.
 
 ## Calendario laboral (Fase 4.5a)
 
@@ -743,3 +744,11 @@ Migración `20261014120000_feat_export_datos_sujeto`. El export (`/export/me` y 
 - **`motivo_baja`** solo en el export de Dirección (`/export/[tipo]/[id]`), por `get_motivos_baja_matriculas`, que da 42501 a quien no es admin. `/export/me` no lo pide nunca.
 - **En la app** (`recolectar.ts`): un 42501 de la función es una ausencia legítima (la profe que exporta a un niño de su aula recibe lo de antes y una nota); cualquier otro error rompe el export, que no puede salir incompleto sin decirlo. El DNI y el mandato firmado salen como enlace firmado. La ruta sigue sin leer datos con `service`.
 - Tests: `src/test/rls/export-datos-sujeto.rls.test.ts` (control de acceso, los dos tutores reciben lo mismo, consentimiento por sujeto, telemetría para Dirección, alcance por centro, `motivo_baja`, IBAN) y `src/test/i18n/export-doc-keys.test.ts` (cada etiqueta del render, en es/en/va).
+
+## Familia sin titular — `promover_a_titular`
+
+Migración `20261015120000_fix_purga_rgpd_cierre`. La purga de un usuario da de baja su fila de `familia_tutores` y no asciende al otro tutor: lo decide la directora. Sin titular, el alta de un hermano no se puede cerrar (el paso «tutor 1» escribe el rol `titular`).
+
+- **`promover_a_titular(p_familia_tutor_id uuid)`** (`SECURITY DEFINER`, `search_path = public`; `REVOKE` de `PUBLIC`/`anon`, `EXECUTE` a `authenticated`). Con la sesión de la directora, que queda como actor en `audit_log`. Solo el admin del centro de la familia (fila o centro inexistente: 42501); solo si la familia no tiene titular activo y la fila es un `segundo_tutor` activo (si no, 23514). Pasa la fila a `titular` y sus vínculos con los niños de la familia a `tutor_legal_principal` (mapeo único titular ⇔ principal).
+- **El trigger `familia_tutores_proteger_usuario_id`** sigue congelando `usuario_id`, `familia_id` y `rol_familia` fuera de `service_role`, con una única excepción: `segundo_tutor → titular`, sin tocar lo demás, y solo con el marcador local `app.promover_titular` que pone esta función. Un UPDATE directo del rol, ni de la directora, pasa.
+- En la app: botón «Pasar a titular» en la ficha de la familia, solo cuando no hay titular, sobre el segundo tutor (`promoverATitular`).

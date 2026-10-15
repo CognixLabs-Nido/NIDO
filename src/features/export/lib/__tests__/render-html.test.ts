@@ -240,4 +240,20 @@ describe('renderExportHtml', () => {
     expect(html).toContain('Solo los tutores legales y la Dirección.')
     expect(html).toContain('doc.secciones.datos_ampliados')
   })
+
+  it('el centinela de la purga (zz) no sale como idioma', () => {
+    const html = renderExportHtml(
+      docDeNino({
+        ficha: { nombre: '[borrado]', idioma_principal: 'zz' },
+        datos_pedagogicos: [{ idiomas_casa: ['zz'], tipo_alimentacion: 'omnivora' }],
+      }),
+      t,
+      'es'
+    )
+    expect(html).not.toContain('Zz')
+    expect(html).not.toContain('>zz<')
+    expect(html).not.toContain('doc.campos.idioma_principal')
+    expect(html).not.toContain('doc.campos.idiomas_casa')
+    expect(html).toContain('doc.valores.omnivora') // el resto de la fila sí sale
+  })
 })

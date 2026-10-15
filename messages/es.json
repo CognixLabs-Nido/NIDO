@@ -1118,6 +1118,18 @@
         "no_encontrada": "Familia no encontrada",
         "tutor_no_encontrado": "Tutor no encontrado",
         "guardado": "No se pudo guardar"
+      },
+      "promover": {
+        "abrir": "Pasar a titular",
+        "titulo": "Pasar a titular",
+        "descripcion": "La familia no tiene titular. {nombre} pasará a ser el titular y el tutor principal de los niños de la familia.",
+        "confirmar": "Pasar a titular",
+        "cancelar": "Cancelar",
+        "hecho": "Ahora es el titular de la familia",
+        "aviso_sin_titular": "Esta familia no tiene titular. Puedes pasar al segundo tutor a titular.",
+        "errors": {
+          "no_aplicable": "No se ha podido: la familia ya tiene titular o el tutor ya no es el segundo tutor. Recarga la página."
+        }
       }
     },
     "fotosRevocadas": {

@@ -46,6 +46,7 @@ import { ReincorporarNinoButton } from '@/features/ninos/components/Reincorporar
 import { getAulasCursoActivo } from '@/features/aulas/queries/get-aulas-curso-activo'
 import { NuevoRecordatorioContextual } from '@/features/recordatorios/components/NuevoRecordatorioContextual'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { etiquetaIdiomaPrincipal, idiomasVisibles } from '@/shared/lib/idioma-centinela'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -245,7 +246,10 @@ export default async function NinoDetallePage({ params }: PageProps) {
               <Row k={t('fields.apellidos')} v={nino.apellidos ?? '—'} />
               <Row k={t('fields.fecha_nacimiento')} v={nino.fecha_nacimiento ?? '—'} />
               <Row k={t('fields.sexo')} v={nino.sexo ?? '—'} />
-              <Row k={t('fields.idioma_principal')} v={nino.idioma_principal} />
+              <Row
+                k={t('fields.idioma_principal')}
+                v={etiquetaIdiomaPrincipal(nino.idioma_principal)}
+              />
               <Row k={t('fields.nacionalidad')} v={nino.nacionalidad ?? '—'} />
               <Row k={t('fields.notas_admin')} v={nino.notas_admin ?? '—'} />
             </CardContent>
@@ -343,7 +347,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
                   />
                   <Row
                     k={tPed('fields.idiomas_casa')}
-                    v={datosPed.idiomas_casa?.length ? datosPed.idiomas_casa.join(', ') : '—'}
+                    v={idiomasVisibles(datosPed.idiomas_casa).join(', ') || '—'}
                   />
                   <Row
                     k={tPed('fields.tiene_hermanos_en_centro')}

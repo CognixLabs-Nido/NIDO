@@ -4698,6 +4698,7 @@ export type Database = {
         Returns: string
       }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
+      promover_a_titular: { Args: { p_familia_tutor_id: string }; Returns: undefined }
       proponer_asignaciones: { Args: { p_centro_id: string }; Returns: number }
       publicacion_de_media: { Args: { p_media_id: string }; Returns: string }
       publicacion_etiqueta_hijo_de: {

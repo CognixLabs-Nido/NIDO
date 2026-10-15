@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { formatEuros } from '@/shared/lib/format-money'
+import { IDIOMA_CENTINELA_PURGA, idiomasVisibles } from '@/shared/lib/idioma-centinela'
 
 import type { DocumentoExport } from '../types'
 
@@ -469,10 +470,18 @@ function renderObjeto(obj: Record<string, unknown>, c: Ctx): string {
       continue
     }
     if (esTecnico(k)) continue
+    // El centinela de la purga ('zz') no es un idioma: se trata como vacío.
+    const valor =
+      k === 'idioma_principal' && v === IDIOMA_CENTINELA_PURGA
+        ? null
+        : k === 'idiomas_casa' && Array.isArray(v)
+          ? idiomasVisibles(v as string[])
+          : v
     // Campo sin valor → se OMITE (no se pinta "—"). La firma se conserva: se
     // renderiza como imagen o como texto "Firmado", nunca vacía.
-    if (k !== 'firma_imagen' && (esVacio(v) || (Array.isArray(v) && v.length === 0))) continue
-    filas.push(`<dt>${escape(etiqueta(k, c))}</dt><dd>${formatearValor(k, v, c)}</dd>`)
+    if (k !== 'firma_imagen' && (esVacio(valor) || (Array.isArray(valor) && valor.length === 0)))
+      continue
+    filas.push(`<dt>${escape(etiqueta(k, c))}</dt><dd>${formatearValor(k, valor, c)}</dd>`)
   }
   const dl = filas.length ? `<dl>${filas.join('')}</dl>` : ''
   return notas.join('') + dl

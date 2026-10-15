@@ -70,9 +70,12 @@ export async function purgarVencidos(): Promise<ActionResult<ResultadoPurga>> {
 async function purgarUno(service: Service, p: Pendiente): Promise<void> {
   // 1. Email original ANTES de tocar auth.users (para redactar invitaciones).
   let emailOriginal: string | null = null
+  let metadatos: Record<string, unknown> = {}
   if (p.sujeto_tipo === 'usuario') {
-    const { data } = await service.auth.admin.getUserById(p.sujeto_id)
+    const { data, error: getError } = await service.auth.admin.getUserById(p.sujeto_id)
+    if (getError) throw new Error(`auth lectura falló: ${getError.message}`)
     emailOriginal = data.user?.email ?? null
+    metadatos = data.user?.user_metadata ?? {}
   }
 
   // 2. Recolectar rutas de Storage mientras siguen siendo resolubles.
@@ -91,15 +94,30 @@ async function purgarUno(service: Service, p: Pendiente): Promise<void> {
         .update({ email: MARCADOR_PII, nombre_completo: MARCADOR_PII })
         .ilike('email', emailOriginal)
     }
-    const { error: authError } = await service.auth.admin.updateUserById(p.sujeto_id, {
-      email: `borrado+${p.sujeto_id}@borrado.invalid`,
-      user_metadata: {},
-      ban_duration: '876000h', // ~100 años: la cuenta deja de operar
-    })
-    if (authError) throw new Error(`auth anonimización falló: ${authError.message}`)
+    await anonimizarCuentaAuth(service, p.sujeto_id, metadatos)
   }
 
   // 5. Commit: anonimización del schema public + marca de purga.
   const { error } = await service.rpc('purgar_sujeto_db', { p_solicitud_id: p.solicitud_id })
   if (error) throw new Error(`purgar_sujeto_db falló: ${error.message}`)
+}
+
+/**
+ * Anonimiza la cuenta de Auth del sujeto: email ficticio, metadatos vacíos y baneo de ~100
+ * años. GoTrue FUSIONA `user_metadata` (una clave con `null` se borra, una ausente se queda),
+ * así que `{}` no vaciaba nada: el nombre y el idioma seguían en `raw_user_meta_data`. Se manda
+ * cada clave que había con `null`. Idempotente. Exportada para su test contra el GoTrue real.
+ */
+export async function anonimizarCuentaAuth(
+  service: Service,
+  usuarioId: string,
+  metadatos: Record<string, unknown>
+): Promise<void> {
+  const vaciar = Object.fromEntries(Object.keys(metadatos).map((k) => [k, null]))
+  const { error } = await service.auth.admin.updateUserById(usuarioId, {
+    email: `borrado+${usuarioId}@borrado.invalid`,
+    user_metadata: vaciar,
+    ban_duration: '876000h', // ~100 años: la cuenta deja de operar
+  })
+  if (error) throw new Error(`auth anonimización falló: ${error.message}`)
 }
