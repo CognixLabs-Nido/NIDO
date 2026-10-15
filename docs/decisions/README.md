@@ -81,3 +81,4 @@ La numeración avanza cronológicamente, pero hay dos huecos explícitos:
 | 0053 | Postura de seguridad de la base de datos (auditoría de octubre de 2026)   | accepted                                  |
 | 0054 | Consentimiento de imagen por niño como única fuente de verdad (serie IU)  | accepted                                  |
 | 0055 | Suite RLS en BD efímera en la CI y la remota como red nocturna            | accepted                                  |
+| 0056 | Seguimiento de errores con Sentry, región UE y sin datos personales       | accepted                                  |

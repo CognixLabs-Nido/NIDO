@@ -250,9 +250,15 @@ admin intenta `mensajes.insert` en `profe_familia` → `42501`; admin `select` s
   mensajería privada" (transparencia, ver Comportamiento 7). Contenido inicial lo redacta el
   equipo; lo valida el abogado.
 - **DPA**: NIDO (centro=responsable) ↔ CognixLabs (encargado) y CognixLabs ↔ sub-encargados
-  (Supabase, Vercel, futuro error-tracking). Plantilla + lista de sub-encargados en
-  `docs/legal/dpa.md`. El **error-tracking** (Sentry/GlitchTip/highlight, hoy sin elegir)
-  entra como sub-encargado en cuanto se elija — condiciona el cierre.
+  (Supabase, Vercel, Sentry). Plantilla + lista de sub-encargados en `docs/legal/dpa.md`.
+- **Sentry (seguimiento de errores) — sub-encargado elegido (2026-10-16, ADR-0056).**
+  Plan gratuito, **región UE (Frankfurt)**: el código solo admite un DSN de la UE. Recibe
+  **eventos de error técnicos**, con los datos personales quitados antes de salir (sin
+  usuario, IP, cabeceras, cookies, cuerpos, query ni variables locales; emails, DNI,
+  teléfonos, IBAN e identificadores tachados en los textos). Sin grabación de sesiones,
+  trazas ni logs. Finalidad: detectar y corregir fallos. ⚖️ Pendiente para el abogado: el
+  DPA de Sentry y el mecanismo de transferencia internacional (empresa con sede en
+  EE. UU.), y el plazo de conservación de los eventos en el plan elegido.
 
 ### Comportamiento 7: Transparencia del acceso de dirección
 
