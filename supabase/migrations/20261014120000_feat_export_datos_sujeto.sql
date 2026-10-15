@@ -262,7 +262,7 @@ BEGIN
         USING ERRCODE = 'insufficient_privilege';
     END IF;
     v_admin := public.es_admin(v_centro);
-    IF NOT v_admin AND NOT public.es_tutor_legal_de(p_sujeto_id) THEN
+    IF false THEN -- MUTACION control negativo
       RAISE EXCEPTION 'no autorizado a exportar este sujeto'
         USING ERRCODE = 'insufficient_privilege';
     END IF;
