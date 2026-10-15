@@ -95,7 +95,7 @@ F10 es además el momento de **construir bien Storage una vez** (buckets, polít
 - **P-media-reuso.** La tabla **`media` es SOLO del blog**. Los adjuntos (foto niño, logo, DNI) usan sus **campos propios** (`ninos.foto_url`, `centros.logo_url`, `firmas.datos.adjuntos`) apuntando a Storage, **no** `media`.
 - **P-edición.** **Publicación directa** (componer → publicar), **editable después**; **editar NO vuelve a avisar**.
 - **P-borrado.** **Borrado real**: quita la fila **y** el objeto de Storage (sin huérfanos). Borra **quien publicó o admin**.
-- **P-histórico.** Niño que se va / cambia de aula: la familia **conserva** las publicaciones pasadas donde salía su hijo; **deja de ver** las nuevas del aula.
+- **P-histórico.** Niño que cambia de aula y sigue en el centro: la familia **conserva** las publicaciones pasadas donde salía su hijo; **deja de ver** las nuevas del aula anterior. Con la **baja** pierde el acceso, también a estas (decisión del responsable, 2026-10-15; ver la nota de ADR-0046).
 - **P-audit.** Se **auditan** `publicaciones`, `media` y `media_etiquetas` (quién sube/etiqueta/borra).
 - **P8 — Aviso de publicación nueva.** Al publicar, **aviso in-app en INICIO** (patrón #64) a las familias con permiso (`puede_ver_fotos` + hijo en el aula); **sin push**.
 
@@ -148,7 +148,7 @@ F10 es además el momento de **construir bien Storage una vez** (buckets, polít
 
 1. La familia abre su vista de fotos. Ve **todas las publicaciones del aula** donde su hijo está **matriculado activo** (blog colectivo, P2), **salvo** las que contengan a un niño con permiso **revocado** que lo oculte.
 2. Cada imagen se sirve por **enlace firmado** (~1 h). La familia puede **descargar**.
-3. **Histórico:** si el niño cambió de aula o se fue, la familia **conserva** las publicaciones pasadas donde aparecía y **deja de ver** las nuevas del aula (P-histórico).
+3. **Histórico:** si el niño cambió de aula y sigue en el centro, la familia **conserva** las publicaciones pasadas donde aparecía y **deja de ver** las nuevas del aula (P-histórico).
 
 **Post-condiciones:**
 
@@ -177,7 +177,8 @@ F10 es además el momento de **construir bien Storage una vez** (buckets, polít
 - **HEIC**: se convierte a JPG en servidor; si la conversión falla, se rechaza con error.
 - **Subida parcial / red lenta**: la publicación no se confirma hasta que los `media` están subidos y procesados; reintento **idempotente por hash** (no duplica).
 - **Concurrencia**: dos profes del aula publican a la vez → publicaciones independientes. Editar la misma publicación a la vez → última escritura gana (sin bloqueo formal; volumen bajo).
-- **Niño dado de baja / cambia de aula**: conserva histórico, no ve lo nuevo (P-histórico).
+- **Niño que cambia de aula**: conserva histórico, no ve lo nuevo (P-histórico).
+- **Niño dado de baja**: la familia pierde el acceso, también a las fotos pasadas (decisión del responsable, 2026-10-15).
 - **Borrado**: real, con limpieza del objeto en Storage; un borrado deja `audit_log` con `valores_antes`.
 - **Idiomas**: UI en es/en/va; el **texto libre** de la publicación lo escribe la profe (no se traduce).
 - **Datos sensibles**: DNIs de terceros en adjuntos → RAT/retención en **F11**; fotos de menores → consentimiento (interruptor F10, firmable F11).

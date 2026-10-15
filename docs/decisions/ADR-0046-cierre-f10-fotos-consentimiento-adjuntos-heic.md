@@ -4,6 +4,18 @@
 
 `accepted`
 
+> **Actualización 2026-10-15.** El histórico de fotos de la sección 2 solo vale para el **cambio
+> de aula** mientras el niño sigue en el centro. Con la **baja** la familia pierde el acceso, y así
+> debe ser. Desde F-3-C (`20260717120000`, [ADR-0051](./ADR-0051-modelo-familia.md)),
+> `archivar_nino` da de baja todos los vínculos del niño (`deleted_reason='baja_nino'`). Con ello
+> `es_tutor_de` da falso y la vía «mi hijo etiquetado» deja de cumplirse. El «aunque cause baja» de
+> la sección 2 dejó de ser cierto entonces, sin que nadie lo anotara. El responsable resolvió el
+> choque el 2026-10-15 a favor del comportamiento de ADR-0051: la familia que se va no entra el
+> curso siguiente. Qué hacer con sus fotos (borrarlas o entregarlas fuera de la app) lo decide la
+> directora fuera de NIDO. Prevalece esta nota; el texto original se conserva tal cual. La regla
+> completa de qué conserva la familia está en `docs/architecture/rls-policies.md` («Qué conserva la
+> familia de cursos pasados»).
+
 **Fecha:** 2026-06-12
 **Autores:** responsable + claude-code
 **Fase del proyecto:** Fase 10 — Fotos y publicaciones del aula (cierre: F10-0 → F10-3)
@@ -42,6 +54,8 @@ es_admin(centro) OR es_profe_de_aula(aula)
 ```
 
 Resultado: la familia **conserva** las publicaciones pasadas donde su hijo está etiquetado aunque cause baja/cambie de aula, y **deja de ver** las publicaciones nuevas del aula que no le etiquetan. Migración `20260612120000_phase10_2_fotos_familia_historico` (aditiva, `CREATE OR REPLACE`).
+
+> Con la baja esto ya no aplica: ver la actualización de 2026-10-15 en «Estado».
 
 ### 3. Adjuntos sobre Storage (F10-3)
 
