@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
+import { idiomasVisibles } from '@/shared/lib/idioma-centinela'
 
 import type { DatosPedagogicosRow } from '../queries/get-datos-pedagogicos'
 
@@ -15,7 +16,7 @@ interface Props {
 export async function DatosPedagogicosReadOnly({ data }: Props) {
   const t = await getTranslations('pedagogico')
 
-  const idiomasStr = data.idiomas_casa.join(', ').toUpperCase()
+  const idiomasStr = idiomasVisibles(data.idiomas_casa).join(', ').toUpperCase() || '—'
   const siestaNum = data.siesta_numero_diario === null ? '—' : String(data.siesta_numero_diario)
 
   return (

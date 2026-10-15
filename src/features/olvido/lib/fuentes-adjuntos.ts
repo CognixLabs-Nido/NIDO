@@ -5,8 +5,10 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 
 import {
+  BUCKET_DNI_TUTORES,
   BUCKET_LIBRO_FAMILIA,
   BUCKET_NINOS_FOTOS,
+  BUCKET_USUARIOS_FOTOS,
   rutaThumbDe,
 } from '@/shared/lib/adjuntos/storage'
 
@@ -15,6 +17,41 @@ import { BUCKET_AULA_FOTOS } from '@/features/fotos/types'
 import type { SujetoOlvido } from '../types'
 
 type Service = SupabaseClient<Database>
+
+/**
+ * Rutas de DNI de `cambios_pendientes` (`datos_tutor_dni`, `payload.path`) que ningún perfil
+ * VIVO de `familia_tutores` usa: un DNI ya aplicado es el documento vigente de un tutor y no
+ * se borra por esta vía. La carpeta del DNI es la del niño (`{centro}/{nino}/`), donde vive
+ * también el del otro tutor: por eso siempre por ruta exacta, nunca por prefijo.
+ */
+async function dnisPendientesSinUsar(
+  service: Service,
+  filtro: { nino_id: string } | { solicitado_por: string }
+): Promise<string[]> {
+  let q = service.from('cambios_pendientes').select('payload').eq('entidad', 'datos_tutor_dni')
+  q =
+    'nino_id' in filtro
+      ? q.eq('nino_id', filtro.nino_id)
+      : q.eq('solicitado_por', filtro.solicitado_por)
+  const { data, error } = await q
+  if (error) throw new Error(`cambios_pendientes (DNI): ${error.message}`)
+  const rutas = [
+    ...new Set(
+      (data ?? [])
+        .map((c) => (c.payload as { path?: unknown } | null)?.path)
+        .filter((p): p is string => typeof p === 'string' && p.length > 0)
+    ),
+  ]
+  if (rutas.length === 0) return []
+  const { data: vivos, error: vErr } = await service
+    .from('familia_tutores')
+    .select('dni_documento_path')
+    .in('dni_documento_path', rutas)
+    .is('deleted_at', null)
+  if (vErr) throw new Error(`familia_tutores (DNI): ${vErr.message}`)
+  const enUso = new Set((vivos ?? []).map((v) => v.dni_documento_path))
+  return rutas.filter((r) => !enUso.has(r))
+}
 
 /**
  * Manifiesto DECLARATIVO de fuentes de adjuntos para el barrido del olvido
@@ -101,6 +138,60 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
       return (media ?? []).flatMap((m) =>
         [m.path, m.path_miniatura].filter((p): p is string => Boolean(p))
       )
+    },
+  },
+  ,
+  {
+    // Cierre de la purga: el DNI de un tutor que se quedó en un cambio pendiente del niño (sin
+    // aplicar). `purgar_sujeto_db` borra esos cambios; el documento se borra antes.
+    nombre: 'dni-cambios-pendientes-nino',
+    bucket: BUCKET_DNI_TUTORES,
+    sujetos: ['nino'],
+    recolectar: (service, ninoId) => dnisPendientesSinUsar(service, { nino_id: ninoId }),
+  },
+  {
+    // Cierre de la purga: la foto de perfil del usuario. Su carpeta `{centro}/{usuario}/` es
+    // solo suya (una cuenta = un centro), así que va por prefijo: caen también las anteriores.
+    nombre: 'avatar-usuario',
+    bucket: BUCKET_USUARIOS_FOTOS,
+    sujetos: ['usuario'],
+    async recolectar(service, usuarioId) {
+      const [{ data: u, error: uErr }, { data: roles, error: rErr }] = await Promise.all([
+        service.from('usuarios').select('foto_url').eq('id', usuarioId).maybeSingle(),
+        service.from('roles_usuario').select('centro_id').eq('usuario_id', usuarioId),
+      ])
+      if (uErr) throw new Error(`usuarios (avatar): ${uErr.message}`)
+      if (rErr) throw new Error(`roles_usuario (avatar): ${rErr.message}`)
+      const rutas = new Set<string>()
+      if (u?.foto_url) {
+        rutas.add(u.foto_url)
+        rutas.add(rutaThumbDe(u.foto_url))
+      }
+      for (const centro of new Set((roles ?? []).map((r) => r.centro_id))) {
+        const prefijo = `${centro}/${usuarioId}`
+        const { data: objetos } = await service.storage.from(BUCKET_USUARIOS_FOTOS).list(prefijo)
+        for (const o of objetos ?? []) if (o.id !== null) rutas.add(`${prefijo}/${o.name}`)
+      }
+      return [...rutas]
+    },
+  },
+  {
+    // Cierre de la purga: su DNI de tutor (`familia_tutores.dni_documento_path`), por ruta
+    // exacta, y los que dejó en cambios pendientes sin aplicar.
+    nombre: 'dni-tutor',
+    bucket: BUCKET_DNI_TUTORES,
+    sujetos: ['usuario'],
+    async recolectar(service, usuarioId) {
+      const { data, error } = await service
+        .from('familia_tutores')
+        .select('dni_documento_path')
+        .eq('usuario_id', usuarioId)
+      if (error) throw new Error(`familia_tutores (DNI): ${error.message}`)
+      const propios = (data ?? [])
+        .map((f) => f.dni_documento_path)
+        .filter((p): p is string => Boolean(p))
+      const pendientes = await dnisPendientesSinUsar(service, { solicitado_por: usuarioId })
+      return [...new Set([...propios, ...pendientes])]
     },
   },
 ]

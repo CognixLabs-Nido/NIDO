@@ -368,7 +368,8 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
       .eq('id', sem.ninoId)
       .single()
     expect(n).toEqual({
-      idioma_principal: 'es',
+      // Ítem 9 (20261015120000): el centinela 'zz', no el 'es' inventado.
+      idioma_principal: 'zz',
       direccion_calle: null,
       direccion_numero: null,
       direccion_cp: null,

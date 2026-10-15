@@ -1118,6 +1118,18 @@
         "no_encontrada": "Family not found",
         "tutor_no_encontrado": "Guardian not found",
         "guardado": "Could not save"
+      },
+      "promover": {
+        "abrir": "Make primary guardian",
+        "titulo": "Make primary guardian",
+        "descripcion": "This family has no primary guardian. {nombre} will become the primary guardian of the family and of its children.",
+        "confirmar": "Make primary guardian",
+        "cancelar": "Cancel",
+        "hecho": "Now the primary guardian of the family",
+        "aviso_sin_titular": "This family has no primary guardian. You can make the second guardian the primary one.",
+        "errors": {
+          "no_aplicable": "It could not be done: the family already has a primary guardian or this guardian is no longer the second one. Reload the page."
+        }
       }
     },
     "fotosRevocadas": {

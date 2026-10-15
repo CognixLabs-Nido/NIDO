@@ -1118,6 +1118,18 @@
         "no_encontrada": "Família no trobada",
         "tutor_no_encontrado": "Tutor no trobat",
         "guardado": "No s’ha pogut guardar"
+      },
+      "promover": {
+        "abrir": "Passar a titular",
+        "titulo": "Passar a titular",
+        "descripcion": "La família no té titular. {nombre} passarà a ser el titular i el tutor principal dels xiquets de la família.",
+        "confirmar": "Passar a titular",
+        "cancelar": "Cancel·lar",
+        "hecho": "Ara és el titular de la família",
+        "aviso_sin_titular": "Esta família no té titular. Pots passar el segon tutor a titular.",
+        "errors": {
+          "no_aplicable": "No s'ha pogut: la família ja té titular o el tutor ja no és el segon tutor. Recarrega la pàgina."
+        }
       }
     },
     "fotosRevocadas": {

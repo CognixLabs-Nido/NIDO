@@ -19,6 +19,7 @@ import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { DomiciliacionDialog } from '@/features/familias/components/DomiciliacionDialog'
 import { EditarEtiquetaDialog } from '@/features/familias/components/EditarEtiquetaDialog'
 import { EditarTutorDialog } from '@/features/familias/components/EditarTutorDialog'
+import { PromoverTitularDialog } from '@/features/familias/components/PromoverTitularDialog'
 import {
   getFamiliaDetalle,
   type TutorDetalle,
@@ -38,6 +39,9 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
   const familia = await getFamiliaDetalle(id, centroId)
   if (!familia) notFound()
   const archivada = familia.estado === 'inactiva'
+  // Sin titular (p. ej. tras purgar al titular): la directora puede ascender al segundo tutor.
+  const sinTitular =
+    familia.tutores.length > 0 && !familia.tutores.some((x) => x.rol_familia === 'titular')
 
   // F-2c-3: mandato SEPA activo de la familia (o null) para la sección Domiciliación.
   const mandato = await familiaTieneMandatoActivo(id)
@@ -97,13 +101,22 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
           <UserIcon className="text-muted-foreground size-4" />
           {t('tutores.titulo')}
         </h2>
+        {!archivada && sinTitular && (
+          <p className="text-muted-foreground text-sm">{t('promover.aviso_sin_titular')}</p>
+        )}
         {familia.tutores.length === 0 ? (
           <Card>
             <EmptyState icon={<UserIcon strokeWidth={1.75} />} title={t('tutores.vacio')} />
           </Card>
         ) : (
           familia.tutores.map((tutor) => (
-            <TutorCard key={tutor.id} tutor={tutor} archivada={archivada} t={t} />
+            <TutorCard
+              key={tutor.id}
+              tutor={tutor}
+              archivada={archivada}
+              puedePromover={!archivada && sinTitular && tutor.rol_familia === 'segundo_tutor'}
+              t={t}
+            />
           ))
         )}
       </section>
@@ -214,10 +227,12 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
 function TutorCard({
   tutor,
   archivada,
+  puedePromover,
   t,
 }: {
   tutor: TutorDetalle
   archivada: boolean
+  puedePromover: boolean
   t: Awaited<ReturnType<typeof getTranslations>>
 }) {
   const direccion = [
@@ -237,6 +252,17 @@ function TutorCard({
             {t(tutor.rol_familia === 'titular' ? 'roles.titular' : 'roles.segundo_tutor')}
           </Badge>
           {!tutor.tiene_cuenta && <Badge variant="warm">{t('sin_cuenta')}</Badge>}
+          {puedePromover && (
+            <PromoverTitularDialog
+              tutorId={tutor.id}
+              nombre={tutor.nombre_completo ?? '—'}
+              trigger={
+                <Button variant="outline" size="sm">
+                  {t('promover.abrir')}
+                </Button>
+              }
+            />
+          )}
           {!archivada && (
             <EditarTutorDialog
               tutor={tutor}

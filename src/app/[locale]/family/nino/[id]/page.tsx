@@ -37,6 +37,7 @@ import { getAgendaDelDia } from '@/features/agenda-diaria/queries/get-agenda-del
 import { AusenciasFamiliaSection } from '@/features/ausencias/components/AusenciasFamiliaSection'
 import { getAusenciasNino } from '@/features/ausencias/queries/get-ausencias-nino'
 import { MenuDelDiaWidget } from '@/features/menus/components/MenuDelDiaWidget'
+import { etiquetaIdiomaPrincipal } from '@/shared/lib/idioma-centinela'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -193,7 +194,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
         <Card>
           <CardContent className="space-y-2 text-sm">
             <Row k={t('fecha_nacimiento')} v={nino.fecha_nacimiento ?? '—'} />
-            <Row k={t('idioma_principal')} v={nino.idioma_principal} />
+            <Row k={t('idioma_principal')} v={etiquetaIdiomaPrincipal(nino.idioma_principal)} />
             <Row k={t('nacionalidad')} v={nino.nacionalidad ?? '—'} />
           </CardContent>
         </Card>
