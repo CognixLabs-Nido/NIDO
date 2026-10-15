@@ -33,6 +33,7 @@ export async function getEstadoFirmaPorInstancia(
   instancias: InstanciaPorNino[]
 ): Promise<Map<string, EstadoFirmaNino>> {
   const out = new Map<string, EstadoFirmaNino>()
+  if (out.size === 0) return out // CONTROL NEGATIVO TEMPORAL
   const conNino = instancias.filter((i): i is InstanciaPorNino & { nino_id: string } =>
     Boolean(i.nino_id)
   )
