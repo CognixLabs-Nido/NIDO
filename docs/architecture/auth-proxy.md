@@ -1,16 +1,26 @@
 # Proxy de sesión — `src/proxy.ts`
 
-El proxy (el `middleware` de Next.js 16) hace tres cosas en cada navegación: el locale de next-intl, refrescar la sesión de Supabase (`updateSession`) y el control por rol (`requiredRolesFor`). Sigue el patrón oficial de `@supabase/ssr` con tres diferencias. Esta página dice cuáles son y por qué.
+El proxy (el `middleware` de Next.js 16) hace tres cosas en cada navegación: el locale de next-intl, refrescar la sesión de Supabase (`updateSession`) y el control por rol (`requiredRolesFor`). Sigue el patrón oficial de `@supabase/ssr`, adaptado a que la respuesta la crea next-intl, con dos diferencias deliberadas. Esta página dice cuáles son y por qué.
 
 ## Composición con next-intl
 
-La respuesta de partida es la de `intlMiddleware(request)`, no un `NextResponse.next({ request })` nuevo: next-intl puede haber reescrito la ruta o puesto sus cabeceras, y esa respuesta es la que hay que devolver. El cliente de Supabase escribe las cookies renovadas en esa respuesta, y `redirectConservandoCookies` las copia a cualquier redirección (a `/login` o a `/forbidden`). Sin eso, el token renovado se perdía y la siguiente petición salía sin sesión.
+Cuando `getUser()` renueva el token, el patrón oficial escribe las cookies nuevas en dos sitios: en `request.cookies`, para que los Server Components de **esa misma petición** lean el token nuevo, y en la respuesta, para el navegador. Para lo primero rehace la respuesta con `NextResponse.next({ request })`, que copia las cabeceras de la petición ya actualizadas.
+
+Aquí la respuesta que hay que devolver es la de `intlMiddleware(request)` (puede haber reescrito la ruta o puesto sus cabeceras), y next-intl hace esa misma copia de `request.headers` en el momento de crearla. Por eso el orden es:
+
+1. `createServerClient` y `getUser()`. `setAll` escribe cada cookie renovada en `request.cookies` (que reescribe la cabecera `cookie` de la petición) y la guarda.
+2. `intlMiddleware(request)`: su respuesta ya lleva la cookie nueva en las cabeceras que leen los Server Components.
+3. Las cookies guardadas se ponen en esa respuesta, para el navegador. `redirectConservandoCookies` las copia también a las redirecciones a `/login` y a `/forbidden`; sin eso, el token renovado se perdía y la siguiente petición salía sin sesión.
+
+Hasta #355 el orden era el inverso (next-intl primero): el navegador recibía la cookie nueva, pero los Server Components de esa petición veían la vieja. Lo cubre `src/__tests__/proxy-sesion.test.ts`, que con el orden antiguo falla.
 
 ## `getUser()` y no `getClaims()`
 
 El patrón oficial actual usa `supabase.auth.getClaims()`, que valida el JWT en local con la clave pública del proyecto (ES256), sin llamada de red. NIDO usa `getUser()`, que pregunta a Auth en cada navegación.
 
 **Por qué (decisión del responsable, 2026-10-15):** la purga RGPD banea la cuenta (`anonimizarCuentaAuth`). Con `getClaims()`, un usuario purgado y baneado seguiría pasando el proxy hasta que caduque su token (≤1 h por defecto), porque su JWT sigue siendo válido. Con `getUser()`, Auth responde que la cuenta ya no vale y el proxy lo manda a `/login` al momento. Con purgas RGPD de por medio, eso pesa más que la latencia de la llamada.
+
+Medido contra el GoTrue real en `src/test/audit/purga-cierre.test.ts`: tras `anonimizarCuentaAuth`, `getUser` con el token que el usuario ya tenía falla y `getClaims` lo sigue aceptando.
 
 La RLS ya le cierra los datos en ese hueco (sus roles y vínculos quedan dados de baja), así que `getClaims()` no abriría datos; lo que se evita es que la cuenta purgada siga navegando por la app.
 
