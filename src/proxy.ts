@@ -75,6 +75,10 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
     }
   )
 
+  // getUser() y no getClaims() (el patrón oficial actual), a propósito: getClaims valida el JWT
+  // en local y un usuario purgado y baneado seguiría pasando el proxy hasta que caduque su token
+  // (≤1 h); getUser pregunta a Auth y se entera al momento. Con purgas RGPD de por medio, eso
+  // pesa más que la llamada de red. Ver docs/architecture/auth-proxy.md.
   const { data: userData } = await supabase.auth.getUser()
   const user = userData.user
 
@@ -114,6 +118,11 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
   return response
 }
 
+// Más estrecho que el matcher oficial (que solo quita los estáticos), a propósito:
+// - /api: hoy solo hay `cron`, que no lleva sesión de usuario; una ruta de /api con sesión
+//   tendría que refrescarla ella misma.
+// - rutas con punto: son ficheros de public/. Una página con un «.» en un segmento se saltaría
+//   el proxy, así que los segmentos de página no llevan punto.
 export const config = {
   matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
 }

@@ -8,7 +8,7 @@ Guía operativa para arrancar el proyecto en local y trabajar contra Supabase Cl
 - `direnv` instalado y autorizado en el directorio del proyecto (`direnv allow`). El `.envrc` carga `.env.local` y fija `PROJECT_NAME=nido`, además de cambiar la cuenta `gh` a `CognixLabs-Nido`.
 - Una cuenta GitHub asociada a `CognixLabs-Nido` y autenticada con `gh auth login`.
 - Acceso al proyecto Supabase `ttroedkdgomfmohgojvg` (NIDO Cloud).
-- **No** se necesita Docker. Trabajamos directamente contra el remoto: `supabase db push`, `supabase gen types --project-id`, etc.
+- Docker solo si vas a correr en local la suite RLS: `supabase start` levanta la BD efímera con las migraciones del repo (ver «Tests»). Para el resto se trabaja contra el remoto: `supabase gen types --project-id`, y `supabase db push` si conviene (ver «Migraciones»).
 
 ## Arranque
 
@@ -23,9 +23,19 @@ npm run dev       # http://localhost:3000
 
 Ver tabla completa en `CLAUDE.md`. Notas operativas:
 
-- **`npm run db:types`** — Apunta a `--project-id ttroedkdgomfmohgojvg` (proyecto remoto), **no** a `--local`. Esto se cambió en Fase 2; tras `supabase db push` regenera siempre los types.
-- **`npx supabase migration new <nombre>`** — Crea archivo con timestamp UTC en `supabase/migrations/`. Editar y luego `db push`.
-- **`npx supabase db push`** — Aplica las migraciones pendientes al remoto. Si una migración falla en medio, Postgres hace ROLLBACK transaccional (las anteriores aplicadas en la misma sesión sí se mantienen).
+- **`npm run db:types`** — Apunta a `--project-id ttroedkdgomfmohgojvg` (proyecto remoto), **no** a `--local`. Esto se cambió en Fase 2; tras aplicar una migración, regenera los types.
+- **`npx supabase migration new <nombre>`** — Crea archivo con timestamp UTC en `supabase/migrations/`.
+
+### Aplicar migraciones al remoto
+
+Hay dos vías y las dos valen; se elige la que convenga en cada caso.
+
+- **`npx supabase db push`** — Aplica las migraciones pendientes al remoto y las registra en `supabase_migrations.schema_migrations`. Si una migración falla en medio, Postgres hace ROLLBACK de esa migración (las anteriores aplicadas en la misma sesión sí se mantienen). Ojo: aplica **todas** las pendientes de golpe.
+- **A mano por el SQL Editor** — Ensayo previo contra producción por la Management API (transacción implícita que termina en `RAISE EXCEPTION`, sin `BEGIN`/`COMMIT`/`ROLLBACK`), y después se pega el `cat` del fichero commiteado, con su md5 comprobado, y se registra la versión a mano. Sirve para revisar el efecto antes de aplicar una sola migración.
+
+El CLI fallaba con `SIGILL` en el Chromebook ARM donde se trabajaba antes, y por eso durante meses las migraciones se aplicaron solo a mano. Ya no aplica: la máquina actual es x86_64 y el CLI arranca.
+
+Las guardas por md5 de una migración comparan la lógica normalizada, no los bytes, para que pasen por las dos vías (regla en `CLAUDE.md`).
 
 ## Variables de entorno
 
@@ -36,7 +46,7 @@ Definidas en `.env.local` (gitignored). Cargadas por direnv vía `dotenv .env.lo
 ## Tests
 
 - **Vitest unit:** `npm test` corre todo (`src/**/*.test.ts`). Para un archivo: `npx vitest run path/al/archivo`.
-- **Vitest RLS:** los tests en `src/test/rls/` y `src/test/audit/` se ejecutan contra el proyecto remoto. Crean usuarios y entidades con prefijo `rls-*@nido.test` y los limpian en `afterAll`.
+- **Vitest RLS:** los tests en `src/test/rls/` y `src/test/audit/` (`npm run test:rls`) corren en una **BD efímera**, nunca contra el remoto ([ADR-0055](./decisions/ADR-0055-suite-rls-en-bd-efimera.md)). En la CI lo hace `rls-local.yml` en cada PR: `supabase start` construye la BD con las migraciones del repo (las del PR incluidas). Para correrlos en local hace falta Docker y `supabase start`. Crean usuarios y entidades con prefijo `rls-*@nido.test` y los limpian en `afterAll`.
 - **Playwright E2E:** `npm run test:e2e`. Arranca `npm run start` automáticamente (requiere `npm run build` previo) en puerto 3000.
 
 ## Migraciones — patrones que hay que recordar
@@ -81,7 +91,7 @@ Otro aprendizaje de Fase 2: las políticas RLS con `(SELECT col FROM otra_tabla 
 
 ### Secretos en Supabase Vault
 
-NIDO usa Supabase Vault para la clave de cifrado de datos médicos (`name = 'medical_encryption_key'`). El patrón de acceso desde funciones SECURITY DEFINER:
+NIDO guarda en Supabase Vault las claves de cifrado (datos médicos, IBAN). El nombre de cada secreto vive en su migración y en Vault, no en esta guía. El patrón de acceso desde funciones SECURITY DEFINER:
 
 ```sql
 DECLARE
@@ -89,7 +99,7 @@ DECLARE
 BEGIN
   SELECT decrypted_secret INTO v_clave
   FROM vault.decrypted_secrets
-  WHERE name = 'medical_encryption_key';
+  WHERE name = '<nombre-del-secreto>';
 
   IF v_clave IS NULL THEN
     RAISE EXCEPTION 'Clave no configurada en Vault'
@@ -99,7 +109,7 @@ BEGIN
 END;
 ```
 
-Justificación completa en [ADR-0004](./decisions/ADR-0004-cifrado-datos-medicos-pgcrypto.md) (a crear en Fase 2). El bloque `DO $$ ... $$` al final de la migración principal verifica que Vault tiene el secreto antes de aplicar — si falta, la migración hace rollback completo.
+Justificación completa en [ADR-0004](./decisions/ADR-0004-cifrado-datos-medicos-pgcrypto.md). El bloque `DO $$ ... $$` al final de la migración principal verifica que Vault tiene el secreto antes de aplicar — si falta, la migración hace rollback completo.
 
 ## Componentes cliente con formularios
 
