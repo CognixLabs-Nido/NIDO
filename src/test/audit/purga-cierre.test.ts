@@ -42,7 +42,6 @@ describe('Purga RGPD — cierre del frente', () => {
   let centro: { id: string }
   let centroB: { id: string }
   let curso: { id: string }
-  let aula: { id: string }
   let admin: TestUser
   let adminB: TestUser
   const usuarios: TestUser[] = []
@@ -100,7 +99,7 @@ describe('Purga RGPD — cierre del frente', () => {
     centro = await createTestCentro('Centro Purga Cierre')
     centroB = await createTestCentro('Centro Purga Cierre B')
     curso = await createTestCurso(centro.id)
-    aula = await createTestAula(centro.id, curso.id)
+    await createTestAula(centro.id, curso.id)
     admin = await nuevoUsuario('Admin Purga Cierre', 'admin')
     adminB = await createTestUser({ nombre: 'Admin Purga Cierre B' })
     usuarios.push(adminB)
@@ -251,7 +250,11 @@ describe('Purga RGPD — cierre del frente', () => {
         .single()
       await serviceClient
         .from('lectura_anuncio')
-        .insert({ usuario_id: tutor.id, anuncio_id: anuncio!.id })
+        .insert({
+          usuario_id: tutor.id,
+          anuncio_id: anuncio!.id,
+          leido_at: new Date().toISOString(),
+        })
       const { data: conv } = await serviceClient
         .from('conversaciones')
         .insert({ nino_id: nino.id, centro_id: centro.id })

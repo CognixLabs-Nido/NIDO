@@ -140,7 +140,6 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
       )
     },
   },
-  ,
   {
     // Cierre de la purga: el DNI de un tutor que se quedó en un cambio pendiente del niño (sin
     // aplicar). `purgar_sujeto_db` borra esos cambios; el documento se borra antes.
