@@ -24,9 +24,15 @@ import {
  * RLS de la vista de FAMILIA del blog (F10-2, P-histórico). Verifica la vía nueva
  * "mi hijo aparece etiquetado" de `usuario_ve_publicacion_row` (migración
  * `20260612120000_phase10_2_fotos_familia_historico`):
- *  - **Histórico:** la familia conserva una publicación pasada donde su hijo está
- *    etiquetado AUNQUE el niño ya no tenga matrícula activa en el aula; y deja de ver
- *    las publicaciones nuevas del aula que no le etiquetan.
+ *  - **Histórico (cambio de aula):** la familia conserva una publicación pasada donde su
+ *    hijo está etiquetado AUNQUE el niño ya no tenga matrícula activa en el aula, mientras
+ *    el vínculo siga vivo; y deja de ver las publicaciones nuevas del aula que no le
+ *    etiquetan. El fixture cierra la matrícula y NO toca el vínculo: eso es un cambio de
+ *    aula, no una baja.
+ *  - **Baja:** `archivar_nino` da de baja los vínculos (`baja_nino`) y la familia deja de
+ *    ver también esas fotos. Decisión del responsable (2026-10-15): con la baja se corta el
+ *    acceso. Ver `docs/architecture/rls-policies.md`, «Qué conserva la familia de cursos
+ *    pasados».
  *  - **Permiso:** sin `puede_ver_fotos` no ve nada (ni por la vía histórica).
  *  - **Revocado:** revocar `puede_aparecer_en_fotos` oculta la publicación histórica.
  *  - **Aislamiento:** una familia de otra aula/centro no la ve.
@@ -42,12 +48,14 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
   let aulaB: { id: string }
 
   let coordinadora: TestUser
-  let tutorHist: TestUser // hijo etiquetado pero SIN matrícula activa (se fue)
+  let tutorHist: TestUser // hijo etiquetado, matrícula cerrada y vínculo vivo (cambió de aula)
   let tutorNoVe: TestUser // hijo etiquetado pero sin puede_ver_fotos
   let tutorAjeno: TestUser // hijo en otra aula, no etiquetado
+  let tutorBaja: TestUser // hijo en otra aula, etiquetado en `aula`; se le da de baja con archivar_nino
 
   let ninoHist: { id: string }
   let ninoNoVe: { id: string }
+  let ninoBaja: { id: string }
 
   const publicacionesCreadas: string[] = []
 
@@ -62,22 +70,25 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
     tutorHist = await createTestUser({ nombre: 'Tutor Hist' })
     tutorNoVe = await createTestUser({ nombre: 'Tutor NoVe Fam' })
     tutorAjeno = await createTestUser({ nombre: 'Tutor Ajeno' })
+    tutorBaja = await createTestUser({ nombre: 'Tutor Baja' })
 
     await asignarRol(coordinadora.id, centro.id, 'profe')
     await asignarRol(tutorHist.id, centro.id, 'tutor_legal')
     await asignarRol(tutorNoVe.id, centro.id, 'tutor_legal')
     await asignarRol(tutorAjeno.id, centro.id, 'tutor_legal')
+    await asignarRol(tutorBaja.id, centro.id, 'tutor_legal')
     await asignarProfeConTipo(coordinadora.id, aula.id, 'coordinadora')
 
-    // ninoHist: matriculado en `aula`, luego se da de BAJA (cambió/se fue). Mantiene
-    // permiso de aparecer + vínculo con puede_ver_fotos. Queda sin matrícula activa.
+    // ninoHist: matriculado en `aula`, luego se le cierra la matrícula (cambio de aula).
+    // Mantiene permiso de aparecer + vínculo VIVO con puede_ver_fotos. Queda sin matrícula
+    // activa en `aula`.
     ninoHist = await createTestNino(centro.id)
     const matriculaHist = await matricular(ninoHist.id, aula.id, curso.id)
     await otorgarImagen(ninoHist.id, tutorHist.id)
     await crearVinculo(ninoHist.id, tutorHist.id, 'tutor_legal_principal', {
       puede_ver_fotos: true,
     })
-    await darDeBaja(matriculaHist)
+    await cerrarMatriculaSinTocarVinculo(matriculaHist)
 
     // ninoNoVe: matriculado en `aula`, permiso de aparecer, pero el vínculo NO ve fotos.
     ninoNoVe = await createTestNino(centro.id)
@@ -93,6 +104,15 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
     await crearVinculo(ninoAjeno.id, tutorAjeno.id, 'tutor_legal_principal', {
       puede_ver_fotos: true,
     })
+
+    // ninoBaja: matrícula activa en `aulaB`, permiso de aparecer y vínculo con puede_ver_fotos.
+    // Las publicaciones de `aula` solo le llegan por la vía «mi hijo etiquetado».
+    ninoBaja = await createTestNino(centro.id)
+    await matricular(ninoBaja.id, aulaB.id, curso.id)
+    await otorgarImagen(ninoBaja.id, tutorBaja.id)
+    await crearVinculo(ninoBaja.id, tutorBaja.id, 'tutor_legal_principal', {
+      puede_ver_fotos: true,
+    })
   })
 
   afterAll(async () => {
@@ -100,7 +120,8 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
       await serviceClient.from('publicaciones').delete().eq('id', id)
     await deleteTestCentro(centro.id)
     await deleteTestCentro(centroB.id)
-    for (const u of [coordinadora, tutorHist, tutorNoVe, tutorAjeno]) await deleteTestUser(u.id)
+    for (const u of [coordinadora, tutorHist, tutorNoVe, tutorAjeno, tutorBaja])
+      await deleteTestUser(u.id)
   })
 
   async function asignarProfeConTipo(
@@ -142,12 +163,22 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
     if (error) throw new Error(`revocarImagen falló: ${error.message}`)
   }
 
-  async function darDeBaja(matriculaId: string): Promise<void> {
+  /** Cambio de aula: cierra la matrícula y deja el vínculo vivo. NO es una baja. */
+  async function cerrarMatriculaSinTocarVinculo(matriculaId: string): Promise<void> {
     const { error } = await serviceClient
       .from('matriculas')
       .update({ fecha_baja: '2027-01-01' })
       .eq('id', matriculaId)
-    if (error) throw new Error(`darDeBaja falló: ${error.message}`)
+    if (error) throw new Error(`cerrarMatriculaSinTocarVinculo falló: ${error.message}`)
+  }
+
+  /** Baja de verdad: el primitivo que usan `baja_nino` y `cerrar_curso`. */
+  async function archivar(nino_id: string): Promise<void> {
+    const { error } = await serviceClient.rpc('archivar_nino', {
+      p_nino_id: nino_id,
+      p_fecha_baja: '2027-06-30',
+    })
+    if (error) throw new Error(`archivar_nino falló: ${error.message}`)
   }
 
   /** Publicación en `aula` con service role; registra su id para limpieza. */
@@ -183,7 +214,7 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
     if (etErr) throw new Error(`etiquetar falló: ${etErr.message}`)
   }
 
-  it('histórico: la familia ve una publicación donde su hijo está etiquetado aunque NO tenga matrícula activa', async () => {
+  it('cambio de aula: la familia ve una publicación donde su hijo está etiquetado aunque NO tenga matrícula activa', async () => {
     const pub = await seedPublicacion()
     await seedMediaEtiquetada(pub, ninoHist.id)
 
@@ -195,7 +226,7 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
     expect((mediaVisible.data?.length ?? 0) > 0).toBe(true)
   })
 
-  it('histórico: deja de ver las publicaciones NUEVAS del aula que no etiquetan a su hijo', async () => {
+  it('cambio de aula: deja de ver las publicaciones NUEVAS del aula que no etiquetan a su hijo', async () => {
     const pubNueva = await seedPublicacion() // sin etiquetar a ninoHist
     const cHist = await clientFor(tutorHist)
     expect(
@@ -228,5 +259,34 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
     expect((await cAjeno.from('publicaciones').select('id').eq('id', pub)).data?.length ?? 0).toBe(
       0
     )
+  })
+
+  it('baja: tras archivar_nino la familia YA NO ve las fotos donde su hijo sale etiquetado', async () => {
+    const pub = await seedPublicacion() // en `aula`; ninoBaja está matriculado en `aulaB`
+    await seedMediaEtiquetada(pub, ninoBaja.id)
+    const pubSinEtiqueta = await seedPublicacion()
+    const cBaja = await clientFor(tutorBaja)
+
+    // Control: antes de la baja ve la publicación etiquetada y NO la otra del mismo aula,
+    // así que la ve por la vía «mi hijo etiquetado», no por el blog de su aula.
+    expect((await cBaja.from('publicaciones').select('id').eq('id', pub)).data?.length).toBe(1)
+    expect((await cBaja.from('media').select('id').eq('publicacion_id', pub)).data?.length).toBe(1)
+    expect(
+      (await cBaja.from('publicaciones').select('id').eq('id', pubSinEtiqueta)).data?.length ?? 0
+    ).toBe(0)
+
+    await archivar(ninoBaja.id)
+
+    // Premisa: archivar_nino dio de baja el vínculo con el motivo de la baja.
+    const { data: vinculos } = await serviceClient
+      .from('vinculos_familiares')
+      .select('deleted_at, deleted_reason')
+      .eq('nino_id', ninoBaja.id)
+    expect(vinculos).toEqual([{ deleted_at: expect.any(String), deleted_reason: 'baja_nino' }])
+
+    expect((await cBaja.from('publicaciones').select('id').eq('id', pub)).data?.length ?? 0).toBe(0)
+    expect(
+      (await cBaja.from('media').select('id').eq('publicacion_id', pub)).data?.length ?? 0
+    ).toBe(0)
   })
 })

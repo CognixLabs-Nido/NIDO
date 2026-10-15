@@ -5,6 +5,14 @@
 `accepted`. Las decisiones se tomaron y se aplicaron entre el 2026-07-07 y el 2026-08-05; este ADR
 las documenta después, el 2026-10-10.
 
+> **Actualización 2026-10-15.** `archivar_nino` borra los vínculos del niño con la baja. Eso
+> contradice el «aunque cause baja» del histórico de fotos de
+> [ADR-0046](./ADR-0046-cierre-f10-fotos-consentimiento-adjuntos-heic.md) (sección 2). El choque no
+> se vio en F-3-C. El responsable lo resolvió el 2026-10-15 a favor de este ADR: con la baja, la
+> familia pierde el acceso a todo lo del niño, fotos incluidas, y el histórico de fotos queda para
+> el cambio de aula. Detalle en la nota de ADR-0046 y en `docs/architecture/rls-policies.md` («Qué
+> conserva la familia de cursos pasados»).
+
 **Fecha:** 2026-07-07 (F-0) → 2026-08-05 (D-5)
 **Autores:** responsable + claude-code
 **Fase del proyecto:** posterior a F12-B. Rediseño de la agrupación y la facturación (serie F).

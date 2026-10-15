@@ -549,7 +549,7 @@ Todas las SELECT policies de F8 son seguras frente a `INSERT…RETURNING`: `auto
 - `publicacion_tiene_nino_sin_permiso(p_publicacion_id)` → boolean. ¿La publicación etiqueta a algún niño sin permiso? (para ocultarla a la familia al **revocar** — P2). Lee `media`/`media_etiquetas`/`ninos` (NO `publicaciones`).
 - **`publicacion_etiqueta_hijo_de(p_publicacion_id)` → boolean (F10-2, histórico).** ¿La publicación etiqueta a un hijo del tutor actual **con** `puede_ver_fotos`? `EXISTS` sobre `media`/`media_etiquetas` con `es_tutor_de(nino) AND tiene_permiso_sobre(nino, 'puede_ver_fotos')`. **Row-aware**: lee `media`/`media_etiquetas`/`vinculos`/`ninos` (NO `publicaciones`). Migración `20260612120000_phase10_2_fotos_familia_historico`.
 - Lookups: `aula_de_publicacion`, `centro_de_publicacion`, `autor_de_publicacion` (leen `publicaciones`), `publicacion_de_media` (lee `media`).
-- **`usuario_ve_publicacion_row(p_centro_id, p_aula_id, p_publicacion_id)`** → boolean. **Row-aware** (recibe los campos por parámetro, **NO re-lee `publicaciones`** → evita el gotcha MVCC en `INSERT…RETURNING`). **`CREATE OR REPLACE` en F10-2** para añadir la vía histórica: `es_admin(centro) OR es_profe_de_aula(aula) OR (familia_ve_aula(aula) AND NOT publicacion_tiene_nino_sin_permiso(pub)) OR (publicacion_etiqueta_hijo_de(pub) AND NOT publicacion_tiene_nino_sin_permiso(pub))`. La 3.ª vía = "blog del aula activo" (matrícula activa); la 4.ª = **histórico** ("mi hijo sale etiquetado" aunque ya no tenga matrícula activa → conserva lo pasado, no ve lo nuevo del aula). P2 + P-histórico.
+- **`usuario_ve_publicacion_row(p_centro_id, p_aula_id, p_publicacion_id)`** → boolean. **Row-aware** (recibe los campos por parámetro, **NO re-lee `publicaciones`** → evita el gotcha MVCC en `INSERT…RETURNING`). **`CREATE OR REPLACE` en F10-2** para añadir la vía histórica: `es_admin(centro) OR es_profe_de_aula(aula) OR (familia_ve_aula(aula) AND NOT publicacion_tiene_nino_sin_permiso(pub)) OR (publicacion_etiqueta_hijo_de(pub) AND NOT publicacion_tiene_nino_sin_permiso(pub))`. La 3.ª vía = "blog del aula activo" (matrícula activa); la 4.ª = **histórico** ("mi hijo sale etiquetado" aunque ya no tenga matrícula activa en esa aula → conserva lo pasado, no ve lo nuevo del aula). P2 + P-histórico. La 4.ª vía pasa por `es_tutor_de`, así que solo vale con el **vínculo vivo**: cubre el cambio de aula, **no la baja** (ver «Qué conserva la familia de cursos pasados»).
 - Reutiliza: `es_admin`, `es_profe_de_aula`, `es_profe_de_nino`, `es_profe_en_centro`, `es_tutor_de`, `tiene_permiso_sobre`, `centro_de_aula`.
 
 ### RLS de las tablas
@@ -752,3 +752,27 @@ Migración `20261015120000_fix_purga_rgpd_cierre`. La purga de un usuario da de 
 - **`promover_a_titular(p_familia_tutor_id uuid)`** (`SECURITY DEFINER`, `search_path = public`; `REVOKE` de `PUBLIC`/`anon`, `EXECUTE` a `authenticated`). Con la sesión de la directora, que queda como actor en `audit_log`. Solo el admin del centro de la familia (fila o centro inexistente: 42501); solo si la familia no tiene titular activo y la fila es un `segundo_tutor` activo (si no, 23514). Pasa la fila a `titular` y sus vínculos con los niños de la familia a `tutor_legal_principal` (mapeo único titular ⇔ principal).
 - **El trigger `familia_tutores_proteger_usuario_id`** sigue congelando `usuario_id`, `familia_id` y `rol_familia` fuera de `service_role`, con una única excepción: `segundo_tutor → titular`, sin tocar lo demás, y solo con el marcador local `app.promover_titular` que pone esta función. Un UPDATE directo del rol, ni de la directora, pasa.
 - En la app: botón «Pasar a titular» en la ficha de la familia, solo cuando no hay titular, sobre el segundo tutor (`promoverATitular`).
+
+## Qué conserva la familia de cursos pasados
+
+Decisión del responsable, 2026-10-15. **Lo del niño se conserva; lo del aula se queda atrás.** Mientras el niño siga en el centro, el acceso de la familia a lo **personal** del niño depende solo del vínculo vivo (`vinculos_familiares.deleted_at IS NULL`), sin límite de fecha. Lo que es **de aula** depende de la matrícula `activa` en esa aula, y se pierde al cambiar de aula o de curso.
+
+| Se conserva (vínculo vivo, todos los cursos)                                         | Se queda atrás (exige matrícula `activa` en el aula)                           |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Agenda diaria de cualquier fecha y ausencias                                         | Anuncios de aula (`usuario_es_audiencia_anuncio_row`)                          |
+| Informes de evolución publicados de todos los cursos                                 | Eventos de aula (`evento_aplica_a_nino`)                                       |
+| Mensajes con la profe                                                                | Blog del aula anterior (`familia_ve_aula`), salvo las fotos donde sale su hijo |
+| Recorrido (`get_recorrido_nino_familia`, solo tutor legal)                           | Autorizaciones de ámbito aula, también la salida (`es_tutor_en_aula`)          |
+| Fotos pasadas donde sale etiquetado (`publicacion_etiqueta_hijo_de`)                 |                                                                                |
+| Autorizaciones y firmas del niño; recibos de la familia (por `familia_tutores` vivo) |                                                                                |
+
+Esa línea es la correcta: no es un hueco por cerrar. Cualquier cambio en la visibilidad de la familia tiene que respetarla.
+
+**Con la baja, la familia pierde el acceso.** No es un fallo: la familia que se va no entra el curso siguiente.
+
+- `archivar_nino` (por `baja_nino` o `cerrar_curso`) da de baja los vínculos del niño con `deleted_reason='baja_nino'`. Todo lo de la columna izquierda deja de verse, fotos etiquetadas incluidas. Si queda un hermano activo, la familia sigue entrando por él.
+- Si no quedan niños activos, `revocar_acceso_familia` retira además el rol `tutor_legal` y el proxy le cierra `/family`.
+- `desarchivar_nino` revive los vínculos y, con ellos, todo lo anterior. La purga RGPD no se revive.
+- Qué hacer con las fotos de una familia que se va (borrarlas o entregarlas fuera de la app) lo decide la directora fuera de NIDO.
+
+Esto corrige el «aunque cause baja» del histórico de fotos de ADR-0046, que dejó de ser cierto con `archivar_nino` (F-3-C, ADR-0051). Las dos ADR llevan una nota de 2026-10-15 que dice qué prevalece.
