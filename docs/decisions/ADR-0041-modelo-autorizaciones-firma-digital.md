@@ -130,7 +130,7 @@ El modelo soporta endurecer cualquiera de estos puntos (añadir DNI, exigir dobl
 - **Autorización de imágenes firmable** → **F11** (paquete RGPD: imagen, olvido, RAT).
 - **Adjuntos** (informe médico / foto DNI / prescripción) → **F10** (`media`); `firmas.datos` ya reserva el hueco.
 - ~~**F8-4 — DNI del tutor** en los datos de la firma: **condicional** a que el abogado lo exija (D7).~~ ✅ **RESUELTO (2026-06-21):** la firma electrónica **simple basta**; **no** se embebe el DNI en la firma. El DNI/identificación del tutor, cuando se requiera, se recoge en la **fase de documentación del alta** (post-F11-B), no acoplado a `firmas_autorizacion`. F8 no añade `usuarios.dni`/`tutor_datos`.
-- **Recogida puntual con fecha futura** (hoy la recogida es habitual; la puntual con vigencia propia queda pendiente).
+- ~~**Recogida puntual con fecha futura** (hoy la recogida es habitual; la puntual con vigencia propia queda pendiente).~~ ❌ **DESCARTADO (2026-10-15), decisión del responsable:** el caso ya está cubierto. Para un día concreto, la familia añade a la persona a la recogida habitual y, pasado ese día, vuelve a firmar la habitual sin ella; la profe ve la última lista firmada. Para el mismo día ya existe la puntual «solo hoy». Detalle en `docs/follow-ups.md`.
 - **Migración de la regla legacy #56**: se engancha al publicar el formato real de Régimen interno y re-ejecutar `20260608130000` (idempotente).
 - **Aviso en el botón "Enviar" cuando está deshabilitado** (no hay plantillas publicadas) — mejora menor de UI.
 
