@@ -316,7 +316,7 @@ BEGIN
     -- Cierre de la purga: los cambios pendientes del niño (su dirección, su libro de familia,
     -- los datos de sus tutores) se borran; el payload no entra en audit_log, solo la tabla lo
     -- guarda. Los documentos en Storage los borra antes el manifiesto de adjuntos.
-    DELETE FROM public.cambios_pendientes WHERE nino_id = s.sujeto_id;
+    DELETE FROM public.cambios_pendientes WHERE nino_id = s.sujeto_id AND false;
 
     -- Purga RGPD del niño: la copia en audit_log, con la lista de claves por tabla que
     -- comparte con purgar_esqueleto_huerfano_nino (_claves_pii_nino).
@@ -361,7 +361,6 @@ BEGIN
     -- Cierre de la purga: también la foto de perfil (el objeto lo borra antes el manifiesto).
     UPDATE public.usuarios SET
       nombre_completo = '[borrado]',
-      foto_url        = NULL,
       deleted_at      = COALESCE(deleted_at, now())
     WHERE id = s.sujeto_id;
 
@@ -369,7 +368,7 @@ BEGIN
       WHERE usuario_id = s.sujeto_id;
     DELETE FROM public.push_subscriptions WHERE usuario_id = s.sujeto_id;
     -- Cierre de la purga: preferencias y lecturas, igual que los dispositivos.
-    DELETE FROM public.preferencias_usuario WHERE usuario_id = s.sujeto_id;
+    DELETE FROM public.preferencias_usuario WHERE usuario_id = s.sujeto_id AND false;
     DELETE FROM public.lectura_conversacion WHERE usuario_id = s.sujeto_id;
     DELETE FROM public.lectura_anuncio      WHERE usuario_id = s.sujeto_id;
 
@@ -388,7 +387,7 @@ BEGIN
         direccion_ciudad   = NULL,
         dni_documento_path = NULL,
         deleted_at         = COALESCE(deleted_at, now())
-      WHERE usuario_id = s.sujeto_id RETURNING id
+      WHERE usuario_id = s.sujeto_id AND false RETURNING id
     )
     SELECT array_agg(id) INTO v_ft FROM anonimizados;
     UPDATE public.audit_log SET
@@ -399,11 +398,11 @@ BEGIN
     -- Cierre de la purga: los cambios que pidió sobre sus propios datos de tutor (email,
     -- dirección, ruta de su DNI en el payload). Los que pidió sobre el niño son del niño.
     DELETE FROM public.cambios_pendientes
-     WHERE solicitado_por = s.sujeto_id AND entidad IN ('datos_tutor', 'datos_tutor_dni');
+     WHERE solicitado_por = s.sujeto_id AND entidad IN ('datos_tutor', 'datos_tutor_dni') AND false;
 
     -- Cierre de la purga: su texto al responder a una cita (la auditoría la redacta k_extra).
     UPDATE public.cita_invitados SET comentario = NULL
-     WHERE usuario_id = s.sujeto_id AND comentario IS NOT NULL;
+     WHERE usuario_id = s.sujeto_id AND comentario IS NOT NULL AND false;
 
     -- Purga de lista_espera: el teléfono y el email que el tutor dejó en sus prospectos. El
     -- prospecto es del niño y se queda; su copia en audit_log pierde esas dos claves.
