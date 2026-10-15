@@ -248,13 +248,11 @@ describe('Purga RGPD — cierre del frente', () => {
         })
         .select('id')
         .single()
-      await serviceClient
-        .from('lectura_anuncio')
-        .insert({
-          usuario_id: tutor.id,
-          anuncio_id: anuncio!.id,
-          leido_at: new Date().toISOString(),
-        })
+      await serviceClient.from('lectura_anuncio').insert({
+        usuario_id: tutor.id,
+        anuncio_id: anuncio!.id,
+        leido_at: new Date().toISOString(),
+      })
       const { data: conv } = await serviceClient
         .from('conversaciones')
         .insert({ nino_id: nino.id, centro_id: centro.id })

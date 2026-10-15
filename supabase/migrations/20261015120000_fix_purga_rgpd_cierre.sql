@@ -82,7 +82,8 @@ $guarda$;
 ALTER TABLE public.ninos DROP CONSTRAINT ninos_idioma_principal_check;
 ALTER TABLE public.ninos ADD CONSTRAINT ninos_idioma_principal_check CHECK (
   idioma_principal IN ('es', 'en', 'va')
-  OR (idioma_principal = 'zz' AND deleted_reason = 'purga_rgpd')
+  -- IS NOT DISTINCT FROM: con deleted_reason NULL, «= 'purga_rgpd'» daría NULL y el CHECK pasaría.
+  OR (idioma_principal = 'zz' AND deleted_reason IS NOT DISTINCT FROM 'purga_rgpd')
 );
 
 -- Los niños ya purgados conservaban el 'es' inventado.
@@ -132,7 +133,8 @@ BEGIN
     OR NEW.rol_familia IS DISTINCT FROM OLD.rol_familia
   ) AND NOT (
        -- promover_a_titular: solo el rol, solo de segundo_tutor a titular.
-       current_setting('app.promover_titular', true) = 'on'
+       -- COALESCE: sin el marcador puesto, current_setting da NULL y el NOT (...) no bloquearía.
+       COALESCE(current_setting('app.promover_titular', true), '') = 'on'
    AND NEW.usuario_id IS NOT DISTINCT FROM OLD.usuario_id
    AND NEW.familia_id = OLD.familia_id
    AND OLD.rol_familia = 'segundo_tutor'

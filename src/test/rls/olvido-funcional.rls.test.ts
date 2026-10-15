@@ -228,7 +228,9 @@ describe('RLS olvido funcional — F11-A4', () => {
       const despues = (f.valores_despues ?? {}) as Record<string, unknown>
       if ('nombre' in antes) expect(antes.nombre).toBe(MARCA)
       if ('nombre' in despues) expect(despues.nombre).toBe(MARCA)
-      if ('notas_admin' in antes) expect(antes.notas_admin).toBe(MARCA)
+      // Ítem 10: un null de JSON sigue siendo null; «[borrado]» solo donde había valor.
+      if ('notas_admin' in antes) expect([MARCA, null]).toContain(antes.notas_admin)
+      expect(JSON.stringify(f)).not.toContain('otra nota')
     }
   })
 
