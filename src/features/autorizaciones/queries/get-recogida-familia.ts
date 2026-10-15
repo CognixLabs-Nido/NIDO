@@ -3,6 +3,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { firmaConDatosVigente } from '../lib/estado-firma'
 import type { PersonaAutorizada } from '../types'
 
 export interface RecogidaContextoFamilia {
@@ -10,15 +11,15 @@ export interface RecogidaContextoFamilia {
   plantillaDisponible: boolean
   /** Hijos del tutor (RLS), para elegir en el diálogo. */
   ninos: { id: string; nombre: string; apellidos: string }[]
-  /** Prefill multi-tutor: lista habitual vigente por niño (de la última firma). */
+  /** Prefill multi-tutor: lista habitual vigente por niño (de la firma vigente). */
   prefillPorNino: Record<string, PersonaAutorizada[]>
 }
 
 /**
  * Contexto para que la familia inicie una recogida (B2): si hay formato de
  * recogida publicado, los hijos del tutor, y —para el prefill multi-tutor
- * (afinado #3)— la lista habitual vigente de cada niño (última firma `firmado`
- * de su recogida habitual). Todo bajo RLS: el tutor solo ve a sus hijos y las
+ * (afinado #3)— la lista habitual vigente de cada niño (`firmaConDatosVigente`
+ * de su recogida habitual: una lista revocada no se ofrece). Todo bajo RLS: el tutor solo ve a sus hijos y las
  * plantillas/instancias de su centro.
  */
 export async function getRecogidaContextoFamilia(): Promise<RecogidaContextoFamilia> {
@@ -71,21 +72,23 @@ export async function getRecogidaContextoFamilia(): Promise<RecogidaContextoFami
     const instIds = habituales.map((h) => h.id)
     const { data: firmas } = await supabase
       .from('firmas_autorizacion')
-      .select('autorizacion_id, datos, firmado_at')
-      .eq('decision', 'firmado')
+      .select('autorizacion_id, firmante_id, decision, datos, firmado_at')
       .in('autorizacion_id', instIds)
-      .order('firmado_at', { ascending: false })
 
-    const ninoPorInst = new Map(habituales.map((h) => [h.id, h.nino_id]))
-    const yaVisto = new Set<string>()
+    // La lista VIGENTE de cada habitual, no la última `firmado` del histórico: una
+    // lista revocada no se vuelve a ofrecer rellena, o la familia firmaría otra vez,
+    // sin darse cuenta, a una persona que había quitado.
+    const firmasPorInst = new Map<string, NonNullable<typeof firmas>>()
     for (const f of firmas ?? []) {
-      const instId = f.autorizacion_id
-      if (yaVisto.has(instId)) continue // la primera por orden desc = la última firma
-      yaVisto.add(instId)
-      const ninoId = ninoPorInst.get(instId)
-      if (!ninoId) continue
-      const personas = (f.datos as { personas?: PersonaAutorizada[] } | null)?.personas ?? []
-      if (personas.length > 0) prefillPorNino[ninoId] = personas
+      const arr = firmasPorInst.get(f.autorizacion_id) ?? []
+      arr.push(f)
+      firmasPorInst.set(f.autorizacion_id, arr)
+    }
+    for (const h of habituales) {
+      if (!h.nino_id) continue
+      const vigente = firmaConDatosVigente(firmasPorInst.get(h.id) ?? [])
+      const personas = (vigente?.datos as { personas?: PersonaAutorizada[] } | null)?.personas ?? []
+      if (personas.length > 0) prefillPorNino[h.nino_id] = personas
     }
   }
 

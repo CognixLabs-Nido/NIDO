@@ -3,7 +3,7 @@
 import { ShieldCheckIcon, ShieldAlertIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
-import type { AdjuntoDniFirmado, PersonaAutorizada } from '../types'
+import type { AdjuntoDniFirmado, EstadoFirmaNino, PersonaAutorizada } from '../types'
 
 interface Props {
   personas: PersonaAutorizada[]
@@ -11,14 +11,20 @@ interface Props {
   integridadOk?: boolean | null
   /** Fotos de DNI firmadas (F10-3), enlazadas a cada persona por su DNI. */
   adjuntos?: AdjuntoDniFirmado[]
+  /**
+   * Estado de firma del niño. Con `revocado`/`rechazado` no hay lista vigente y se
+   * avisa de ello: un hueco en blanco se leería como «no hay datos», no como «nadie
+   * puede recoger».
+   */
+  estadoFirma?: EstadoFirmaNino
 }
 
 /**
- * Render de la lista de personas autorizadas vigente (de la última firma) +
+ * Render de la lista de personas autorizadas vigente (de la firma vigente) +
  * indicador de integridad del hash + foto del DNI (F10-3) cuando la hay. Solo
  * lectura; lo usan los detalles admin y familia.
  */
-export function RecogidaLista({ personas, integridadOk, adjuntos }: Props) {
+export function RecogidaLista({ personas, integridadOk, adjuntos, estadoFirma }: Props) {
   const t = useTranslations('autorizaciones')
   const dniPorPersona = new Map((adjuntos ?? []).filter((a) => a.dni).map((a) => [a.dni!, a]))
 
@@ -40,7 +46,15 @@ export function RecogidaLista({ personas, integridadOk, adjuntos }: Props) {
         )}
       </div>
 
-      {personas.length === 0 ? (
+      {personas.length === 0 && (estadoFirma === 'revocado' || estadoFirma === 'rechazado') ? (
+        <p
+          role="alert"
+          className="border-coral-300 bg-coral-100 text-coral-900 flex items-start gap-2 rounded-lg border p-3 text-sm font-medium"
+        >
+          <ShieldAlertIcon className="mt-0.5 size-4 shrink-0" />
+          {t(`recogida.sin_vigencia_${estadoFirma}`)}
+        </p>
+      ) : personas.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t('recogida.sin_firmar')}</p>
       ) : (
         <ul className="divide-border divide-y rounded-lg border">

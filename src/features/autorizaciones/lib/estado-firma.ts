@@ -29,8 +29,8 @@ export interface FirmaEfectiva {
  * gana (modelo D4). Empates por timestamp: gana la que aparece después (orden
  * estable de entrada), irrelevante en la práctica (resolución de microsegundos).
  */
-export function firmasVigentesPorFirmante(firmas: FirmaEfectiva[]): Map<string, FirmaEfectiva> {
-  const vigentes = new Map<string, FirmaEfectiva>()
+export function firmasVigentesPorFirmante<T extends FirmaEfectiva>(firmas: T[]): Map<string, T> {
+  const vigentes = new Map<string, T>()
   for (const f of firmas) {
     const prev = vigentes.get(f.firmante_id)
     if (!prev || f.firmado_at >= prev.firmado_at) {
@@ -38,6 +38,32 @@ export function firmasVigentesPorFirmante(firmas: FirmaEfectiva[]): Map<string, 
     }
   }
   return vigentes
+}
+
+/**
+ * La firma cuyos `datos` valen HOY (la lista de personas de una recogida, la ficha de
+ * una medicación): la más reciente de entre las firmas VIGENTES `firmado`, es decir,
+ * de los firmantes cuya última decisión sigue siendo `firmado`. Una lista que su
+ * firmante revocó o rechazó después NO es vigente, aunque sea la última `firmado` del
+ * histórico: leerla así enseñaba como autorizada a una persona que la familia había
+ * quitado.
+ *
+ * `estadoNino` (el estado agregado del roster, si se conoce): con `revocado` o
+ * `rechazado` no hay datos vigentes aunque otro firmante conserve su firma. Es lo que
+ * pasa con la doble firma (`todos_los_principales`): una revocación tumba la
+ * autorización entera.
+ */
+export function firmaConDatosVigente<T extends FirmaEfectiva>(
+  firmas: T[],
+  estadoNino?: EstadoFirmaNino
+): T | null {
+  if (estadoNino === 'revocado' || estadoNino === 'rechazado') return null
+  let elegida: T | null = null
+  for (const f of firmasVigentesPorFirmante(firmas).values()) {
+    if (f.decision !== 'firmado') continue
+    if (!elegida || f.firmado_at >= elegida.firmado_at) elegida = f
+  }
+  return elegida
 }
 
 /**

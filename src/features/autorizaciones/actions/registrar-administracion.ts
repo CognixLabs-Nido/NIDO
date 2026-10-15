@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { firmaConDatosVigente } from '../lib/estado-firma'
 import { revalidarAutorizaciones } from '../lib/server-helpers'
 import {
   registrarAdministracionSchema,
@@ -49,16 +50,15 @@ export async function registrarAdministracion(
     return fail('autorizaciones.errors.adm_no_medicacion')
   }
 
-  // Snapshot medicamento/dosis de la última firma `firmado` (la vigente).
-  const { data: ultima } = await supabase
+  // Snapshot medicamento/dosis de la firma VIGENTE (no de la última `firmado` del
+  // histórico: una ficha revocada no vale). Si no hay, no se registra; la RLS
+  // (`medicacion_administrable_hoy`) lo rechazaría igualmente.
+  const { data: firmas } = await supabase
     .from('firmas_autorizacion')
-    .select('datos')
+    .select('firmante_id, decision, firmado_at, datos')
     .eq('autorizacion_id', aut.id)
-    .eq('decision', 'firmado')
-    .order('firmado_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  const medicacion = (ultima?.datos as { medicacion?: MedicacionDatos } | null)?.medicacion ?? null
+  const vigente = firmaConDatosVigente(firmas ?? [])
+  const medicacion = (vigente?.datos as { medicacion?: MedicacionDatos } | null)?.medicacion ?? null
   if (!medicacion) return fail('autorizaciones.errors.adm_sin_firma')
 
   const { data: row, error } = await supabase

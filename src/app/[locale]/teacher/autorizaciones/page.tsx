@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server'
 
 import {
   EstadoDocBadge,
+  EstadoFirmaBadge,
   TipoAutorizacionBadge,
 } from '@/features/autorizaciones/components/EstadoFirmaBadge'
 import { SeccionMedicacion } from '@/features/autorizaciones/components/SeccionMedicacion'
@@ -83,7 +84,10 @@ export default async function TeacherAutorizacionesPage({ params, searchParams }
                     <span className="font-medium">{a.titulo}</span>
                     <TipoAutorizacionBadge tipo={a.tipo} />
                   </span>
-                  <EstadoDocBadge estado={a.estado} />
+                  <span className="flex items-center gap-2">
+                    <EstadoDocBadge estado={a.estado} />
+                    {a.estado_firma && <EstadoFirmaBadge estado={a.estado_firma} />}
+                  </span>
                 </Link>
               </li>
             ))}

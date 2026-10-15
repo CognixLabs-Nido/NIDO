@@ -15,6 +15,7 @@ import { hashFirma } from '../lib/hash'
 import {
   aplicarConsentimientoImagen,
   calcularEstadoNino,
+  firmaConDatosVigente,
   firmasVigentesPorFirmante,
   type FirmaEfectiva,
   type FirmanteVinculo,
@@ -24,6 +25,7 @@ import type {
   AdjuntoDniFirmado,
   AdjuntoFirma,
   AutorizacionDetalle,
+  EstadoFirmaNino,
   MedicacionDatos,
   PersonaAutorizada,
   PoliticaFirmantes,
@@ -75,23 +77,25 @@ export async function getAutorizacionDetalle(
     (!aut.vigencia_desde || hoy >= aut.vigencia_desde) &&
     (!aut.vigencia_hasta || hoy <= aut.vigencia_hasta)
 
-  // Recogida/medicación: datos vigentes (última firma `firmado`) para prefill +
-  // display, y verificación de integridad del hash contra texto + datos.
+  // Recogida/medicación: datos VIGENTES (lista de personas, ficha) para prefill +
+  // display, y verificación de integridad del hash contra texto + datos. Vigente = la
+  // firma más reciente de entre las que siguen `firmado` (última decisión de cada
+  // firmante), y solo si el estado del niño no es revocado/rechazado. Una lista
+  // revocada NO se enseña como vigente: la persona ya no puede recoger.
   let personas_vigentes: PersonaAutorizada[] | undefined
   let adjuntos_recogida: AdjuntoDniFirmado[] | undefined
   let medicacion_vigente: MedicacionDatos | null | undefined
   let integridad_ok: boolean | null | undefined
+  let estado_firma_nino: EstadoFirmaNino | undefined
   if (!aut.es_plantilla && (aut.tipo === 'recogida' || aut.tipo === 'medicacion')) {
-    const { data: ultima } = await supabase
+    estado_firma_nino = roster.find((r) => r.nino_id === aut.nino_id)?.estado
+    const { data: firmas } = await supabase
       .from('firmas_autorizacion')
-      .select('datos, texto_hash')
+      .select('firmante_id, decision, firmado_at, datos, texto_hash')
       .eq('autorizacion_id', aut.id)
-      .eq('decision', 'firmado')
-      .order('firmado_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    if (ultima) {
-      const datos = ultima.datos as {
+    const vigente = firmaConDatosVigente(firmas ?? [], estado_firma_nino)
+    if (vigente) {
+      const datos = vigente.datos as {
         personas?: PersonaAutorizada[]
         adjuntos?: AdjuntoFirma[]
         medicacion?: MedicacionDatos
@@ -105,7 +109,7 @@ export async function getAutorizacionDetalle(
           aut.texto,
           personas.length > 0 ? datosRecogida(personas, adjuntos) : undefined
         )
-        integridad_ok = recomputado === ultima.texto_hash
+        integridad_ok = recomputado === vigente.texto_hash
         // Firma las fotos de DNI para mostrarlas (la RLS de Storage ya autoriza al lector).
         if (adjuntos.length > 0) {
           const paths = adjuntos.flatMap((a) => [a.path, rutaThumbDe(a.path)])
@@ -120,7 +124,7 @@ export async function getAutorizacionDetalle(
         const medicacion = datos?.medicacion ?? null
         medicacion_vigente = medicacion
         const recomputado = hashFirma(aut.texto, medicacion ? { medicacion } : undefined)
-        integridad_ok = recomputado === ultima.texto_hash
+        integridad_ok = recomputado === vigente.texto_hash
       }
     } else {
       if (aut.tipo === 'recogida') personas_vigentes = []
@@ -152,6 +156,7 @@ export async function getAutorizacionDetalle(
     adjuntos_recogida,
     medicacion_vigente,
     integridad_ok,
+    estado_firma_nino,
   }
 }
 
