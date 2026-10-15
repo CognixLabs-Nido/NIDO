@@ -133,6 +133,7 @@ export async function AutorizacionDetalleView({
           <RecogidaLista
             personas={aut.personas_vigentes ?? []}
             integridadOk={aut.integridad_ok}
+            estadoFirma={aut.estado_firma_nino}
             adjuntos={aut.adjuntos_recogida}
           />
         </section>
@@ -141,7 +142,11 @@ export async function AutorizacionDetalleView({
       {/* Medicación: ficha vigente + registro de administración (doble confirmación). */}
       {esMedicacionInstancia && (
         <section className="space-y-4">
-          <MedicacionFicha medicacion={med} integridadOk={aut.integridad_ok} />
+          <MedicacionFicha
+            medicacion={med}
+            integridadOk={aut.integridad_ok}
+            estadoFirma={aut.estado_firma_nino}
+          />
           {medVigenteHoy && (
             <RegistrarAdministracionDialog
               autorizacionId={aut.id}

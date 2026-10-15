@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { getMedicacionesConActividad } from '@/features/autorizaciones/queries/get-medicaciones-actividad'
 
 import { ArchivarMedicacionButton } from './ArchivarMedicacionButton'
-import { EstadoDocBadge } from './EstadoFirmaBadge'
+import { EstadoDocBadge, EstadoFirmaBadge } from './EstadoFirmaBadge'
 
 /**
  * Sección de medicación de la pestaña Autorizaciones (los 3 roles). Muestra, en la
@@ -78,6 +78,7 @@ export async function SeccionMedicacion({
                     <span className="text-muted-foreground text-xs">{m.nino_nombre}</span>
                   )}
                   <EstadoDocBadge estado={m.estado} />
+                  {m.estadoFirma && <EstadoFirmaBadge estado={m.estadoFirma} />}
                   {m.archivada && (
                     <Badge variant="secondary">{t('medicacion_lista.archivada')}</Badge>
                   )}

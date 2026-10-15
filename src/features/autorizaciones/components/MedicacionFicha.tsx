@@ -3,12 +3,17 @@
 import { ShieldAlertIcon, ShieldCheckIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
-import type { MedicacionDatos } from '../types'
+import type { EstadoFirmaNino, MedicacionDatos } from '../types'
 
 interface Props {
   medicacion: MedicacionDatos | null
   /** ¿El hash de la última firma cuadra con texto + datos? `null` = sin firma aún. */
   integridadOk?: boolean | null
+  /**
+   * Estado de firma del niño. Con `revocado`/`rechazado` no hay ficha vigente y se
+   * avisa de que no se debe administrar, en vez de dejar el hueco en blanco.
+   */
+  estadoFirma?: EstadoFirmaNino
 }
 
 /** Hoy en huso Madrid como YYYY-MM-DD (para el estado de vigencia efectiva). */
@@ -17,11 +22,11 @@ function hoyMadrid(): string {
 }
 
 /**
- * Ficha de la medicación vigente (de la última firma `firmado`) + indicador de
+ * Ficha de la medicación vigente (de la firma vigente) + indicador de
  * integridad del hash. Solo lectura; la usan los detalles admin (profe/dirección
  * la administran) y familia.
  */
-export function MedicacionFicha({ medicacion, integridadOk }: Props) {
+export function MedicacionFicha({ medicacion, integridadOk, estadoFirma }: Props) {
   const t = useTranslations('autorizaciones')
 
   // Vigencia EFECTIVA del tratamiento (≠ vigencia de firma): hoy ∈ [inicio, fin].
@@ -69,7 +74,15 @@ export function MedicacionFicha({ medicacion, integridadOk }: Props) {
         )}
       </div>
 
-      {!medicacion ? (
+      {!medicacion && (estadoFirma === 'revocado' || estadoFirma === 'rechazado') ? (
+        <p
+          role="alert"
+          className="border-coral-300 bg-coral-100 text-coral-900 flex items-start gap-2 rounded-lg border p-3 text-sm font-medium"
+        >
+          <ShieldAlertIcon className="mt-0.5 size-4 shrink-0" />
+          {t(`medicacion.sin_vigencia_${estadoFirma}`)}
+        </p>
+      ) : !medicacion ? (
         <p className="text-muted-foreground text-sm">{t('recogida.sin_firmar')}</p>
       ) : (
         <dl className="grid grid-cols-1 gap-x-6 gap-y-2 rounded-lg border p-4 text-sm sm:grid-cols-2">

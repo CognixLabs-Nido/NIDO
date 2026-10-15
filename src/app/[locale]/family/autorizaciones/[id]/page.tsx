@@ -85,6 +85,7 @@ export default async function FamilyAutorizacionDetallePage({ params }: PageProp
           <RecogidaLista
             personas={aut.personas_vigentes ?? []}
             integridadOk={aut.integridad_ok}
+            estadoFirma={aut.estado_firma_nino}
             adjuntos={aut.adjuntos_recogida}
           />
         </section>
@@ -95,6 +96,7 @@ export default async function FamilyAutorizacionDetallePage({ params }: PageProp
           <MedicacionFicha
             medicacion={aut.medicacion_vigente ?? null}
             integridadOk={aut.integridad_ok}
+            estadoFirma={aut.estado_firma_nino}
           />
           {esMedicacionInstancia && (
             <RegistroAdministracionLista administraciones={administraciones} />

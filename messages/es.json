@@ -3102,7 +3102,9 @@
       "modalidad": "Modalidad",
       "modalidad_habitual": "Habitual (siempre)",
       "modalidad_puntual": "Puntual (solo hoy)",
-      "rgpd_terceros": "Aportas datos de terceros (nombre y documento de quien recoge). El centro los trata para verificar la recogida; informa a esas personas de que sus datos se comparten con el centro."
+      "rgpd_terceros": "Aportas datos de terceros (nombre y documento de quien recoge). El centro los trata para verificar la recogida; informa a esas personas de que sus datos se comparten con el centro.",
+      "sin_vigencia_revocado": "La familia ha revocado esta autorización. Ahora mismo nadie está autorizado a recoger por ella.",
+      "sin_vigencia_rechazado": "La familia ha rechazado esta autorización. Nadie está autorizado a recoger por ella."
     },
     "medicacion": {
       "crear": "Autorizar medicación",
@@ -3123,7 +3125,9 @@
       "aviso": "Dato de salud de un menor. El centro lo trata para administrar la medicación según tu autorización. El informe/receta se podrá adjuntar más adelante.",
       "estado_vigente": "Vigente hoy",
       "estado_futura": "Empieza el {fecha}",
-      "estado_finalizada": "Finalizada"
+      "estado_finalizada": "Finalizada",
+      "sin_vigencia_revocado": "La familia ha revocado esta medicación. No se debe administrar.",
+      "sin_vigencia_rechazado": "La familia ha rechazado esta medicación. No se debe administrar."
     },
     "administracion": {
       "titulo": "Registro de administración",

@@ -4,7 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { hoyMadridYmd } from '../lib/server-helpers'
-import type { AutorizacionEstado } from '../types'
+import type { AutorizacionEstado, EstadoFirmaNino } from '../types'
+
+import { getEstadoFirmaPorInstancia } from './estado-firma-instancias'
 
 /** Una pauta de medicación con su actividad y estado de archivado, para la lista. */
 export interface MedicacionActividad {
@@ -13,6 +15,8 @@ export interface MedicacionActividad {
   nino_id: string | null
   nino_nombre: string | null
   estado: AutorizacionEstado
+  /** Estado de firma del niño (revocada = no se debe dar). Ausente si no se pudo calcular. */
+  estadoFirma?: EstadoFirmaNino
   /** Fecha de fin de la pauta (vigencia_hasta). null = sin fin marcado. */
   fechaFin: string | null
   /** hoy > fechaFin → ya no hay que darla (candidata a archivar). */
@@ -37,7 +41,9 @@ export async function getMedicacionesConActividad(
 
   let q = supabase
     .from('autorizaciones')
-    .select('id, titulo, nino_id, estado, vigencia_hasta, archivada_at, created_at')
+    .select(
+      'id, titulo, nino_id, estado, vigencia_hasta, archivada_at, created_at, firmantes_requeridos'
+    )
     .eq('tipo', 'medicacion')
     .eq('es_plantilla', false)
     .order('created_at', { ascending: false })
@@ -53,7 +59,7 @@ export async function getMedicacionesConActividad(
   const ids = meds.map((m) => m.id)
   const ninoIds = Array.from(new Set(meds.map((m) => m.nino_id).filter(Boolean) as string[]))
 
-  const [{ data: admins }, { data: ninos }] = await Promise.all([
+  const [{ data: admins }, { data: ninos }, estados] = await Promise.all([
     supabase
       .from('administraciones_medicacion')
       .select('autorizacion_id, confirmado_por')
@@ -61,6 +67,7 @@ export async function getMedicacionesConActividad(
     ninoIds.length
       ? supabase.from('ninos').select('id, nombre, apellidos').in('id', ninoIds)
       : Promise.resolve({ data: [] as { id: string; nombre: string; apellidos: string }[] }),
+    getEstadoFirmaPorInstancia(supabase, meds),
   ])
 
   const dadasPorAut = new Map<string, number>()
@@ -81,6 +88,7 @@ export async function getMedicacionesConActividad(
     nino_id: m.nino_id,
     nino_nombre: m.nino_id ? (nombrePorNino.get(m.nino_id) ?? null) : null,
     estado: m.estado,
+    ...(estados.has(m.id) ? { estadoFirma: estados.get(m.id) } : {}),
     fechaFin: m.vigencia_hasta,
     terminada: !!m.vigencia_hasta && hoy > m.vigencia_hasta,
     archivada: m.archivada_at !== null,

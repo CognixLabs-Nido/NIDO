@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   aplicarConsentimientoImagen,
   calcularEstadoNino,
+  firmaConDatosVigente,
   firmasVigentesPorFirmante,
   type FirmaEfectiva,
   type FirmanteVinculo,
@@ -46,6 +47,72 @@ describe('firmasVigentesPorFirmante', () => {
       firma('a', 'firmado', '2026-06-03T10:00:00Z'),
     ])
     expect(vig.get('a')?.decision).toBe('firmado')
+  })
+})
+
+describe('firmaConDatosVigente', () => {
+  // Cada firma lleva su lista para poder ver CUÁL se elige.
+  const conLista = (
+    id: string,
+    decision: FirmaEfectiva['decision'],
+    ts: string,
+    lista: string
+  ) => ({
+    ...firma(id, decision, ts),
+    lista,
+  })
+
+  it('control: sin revocaciones, la lista es la de la última firma', () => {
+    const f = firmaConDatosVigente([
+      conLista('a', 'firmado', '2026-06-01T10:00:00Z', 'L1'),
+      conLista('b', 'firmado', '2026-06-02T10:00:00Z', 'L2'),
+    ])
+    expect(f?.lista).toBe('L2')
+  })
+
+  it('la única firma revocada no deja lista vigente', () => {
+    const f = firmaConDatosVigente([
+      conLista('a', 'firmado', '2026-06-01T10:00:00Z', 'L1'),
+      conLista('a', 'revocado', '2026-06-02T10:00:00Z', 'L1'),
+    ])
+    expect(f).toBeNull()
+  })
+
+  it('si un firmante revoca, vale la lista del que mantiene su firma, aunque sea anterior', () => {
+    const f = firmaConDatosVigente([
+      conLista('b', 'firmado', '2026-06-01T10:00:00Z', 'L-b'),
+      conLista('a', 'firmado', '2026-06-02T10:00:00Z', 'L-a'),
+      conLista('a', 'revocado', '2026-06-03T10:00:00Z', 'L-a'),
+    ])
+    expect(f?.lista).toBe('L-b')
+  })
+
+  it('un rechazo posterior también anula la lista de ese firmante', () => {
+    const f = firmaConDatosVigente([
+      conLista('a', 'firmado', '2026-06-01T10:00:00Z', 'L1'),
+      conLista('a', 'rechazado', '2026-06-02T10:00:00Z', 'L1'),
+    ])
+    expect(f).toBeNull()
+  })
+
+  it('re-firmar tras revocar vuelve a dar lista vigente (la nueva)', () => {
+    const f = firmaConDatosVigente([
+      conLista('a', 'firmado', '2026-06-01T10:00:00Z', 'L1'),
+      conLista('a', 'revocado', '2026-06-02T10:00:00Z', 'L1'),
+      conLista('a', 'firmado', '2026-06-03T10:00:00Z', 'L2'),
+    ])
+    expect(f?.lista).toBe('L2')
+  })
+
+  it('con el estado del niño revocado o rechazado no hay lista, aunque otro firmante la mantenga', () => {
+    const firmas = [
+      conLista('b', 'firmado', '2026-06-01T10:00:00Z', 'L-b'),
+      conLista('a', 'firmado', '2026-06-02T10:00:00Z', 'L-a'),
+      conLista('a', 'revocado', '2026-06-03T10:00:00Z', 'L-a'),
+    ]
+    expect(firmaConDatosVigente(firmas, 'firmado')?.lista).toBe('L-b')
+    expect(firmaConDatosVigente(firmas, 'revocado')).toBeNull()
+    expect(firmaConDatosVigente(firmas, 'rechazado')).toBeNull()
   })
 })
 

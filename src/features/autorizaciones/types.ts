@@ -179,12 +179,21 @@ export interface AutorizacionDetalle {
   /** El usuario actual creó la autorización (gatea editar/publicar/anular junto a esAdmin). */
   es_autor: boolean
   roster: RosterFirmaNino[]
-  /** Recogida: lista de personas de la última firma `firmado` (vigente), para display. */
+  /**
+   * Recogida: lista de personas de la firma VIGENTE (la más reciente de las que siguen
+   * `firmado`; vacía si la familia revocó o rechazó). Ver `firmaConDatosVigente`.
+   */
   personas_vigentes?: PersonaAutorizada[]
-  /** Recogida: fotos de DNI de la última firma `firmado`, firmadas para mostrar (F10-3). */
+  /** Recogida: fotos de DNI de la firma vigente, firmadas para mostrar (F10-3). */
   adjuntos_recogida?: AdjuntoDniFirmado[]
-  /** Medicación: campos de la última firma `firmado` (vigente), para display. */
+  /** Medicación: campos de la firma vigente (null si la familia revocó o rechazó). */
   medicacion_vigente?: MedicacionDatos | null
-  /** Recogida/medicación: ¿el hash de la última firma `firmado` cuadra con texto+datos? `null` si no hay firma. */
+  /** Recogida/medicación: ¿el hash de la firma vigente cuadra con texto+datos? `null` si no hay firma vigente. */
   integridad_ok?: boolean | null
+  /**
+   * Recogida/medicación: estado de firma del niño de la instancia (el del roster). Con
+   * `revocado`/`rechazado` la pantalla avisa de que NO hay autorización vigente en vez
+   * de dejar el hueco en blanco.
+   */
+  estado_firma_nino?: EstadoFirmaNino
 }

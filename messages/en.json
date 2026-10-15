@@ -3102,7 +3102,9 @@
       "modalidad": "Type",
       "modalidad_habitual": "Regular (always)",
       "modalidad_puntual": "One-off (today only)",
-      "rgpd_terceros": "You are providing third-party data (name and ID of whoever picks up). The center processes it to verify pick-up; inform those people that their data is shared with the center."
+      "rgpd_terceros": "You are providing third-party data (name and ID of whoever picks up). The center processes it to verify pick-up; inform those people that their data is shared with the center.",
+      "sin_vigencia_revocado": "The family has revoked this authorisation. Right now no one is authorised to pick up through it.",
+      "sin_vigencia_rechazado": "The family has rejected this authorisation. No one is authorised to pick up through it."
     },
     "medicacion": {
       "crear": "Authorise medication",
@@ -3123,7 +3125,9 @@
       "aviso": "Health data of a minor. The center processes it to administer the medication per your authorisation. The report/prescription can be attached later.",
       "estado_vigente": "Active today",
       "estado_futura": "Starts on {fecha}",
-      "estado_finalizada": "Ended"
+      "estado_finalizada": "Ended",
+      "sin_vigencia_revocado": "The family has revoked this medication. It must not be given.",
+      "sin_vigencia_rechazado": "The family has rejected this medication. It must not be given."
     },
     "administracion": {
       "titulo": "Administration log",
