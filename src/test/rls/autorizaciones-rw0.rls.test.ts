@@ -34,8 +34,8 @@ import {
  *  - **Patrón A**: admin ENVÍA reglas a una audiencia (ambito=aula) → el tutor de
  *    un niño de esa aula puede firmar (autorizacion_aplica_a_nino vía matrículas).
  *  - **Congelar identidad** (ambito/plantilla_id) tras la primera firma; anular sí.
- *  - **Compat legacy**: una recogida del modelo viejo (plantilla_id NULL, nino_id)
- *    sigue siendo válida y firmable por su tutor.
+ *  - **Sin forma legacy**: la instancia por niño del modelo viejo (plantilla_id y
+ *    ambito NULL) ya no cabe en el CHECK (`20261016120000`).
  */
 
 const TEXTO_REAL = 'Autorizo en las condiciones descritas. Texto legal real del formato estándar.'
@@ -381,39 +381,51 @@ describe('RLS autorizaciones — F8-RW-0 (catálogo + A/B2)', () => {
     expect(anular.data?.estado).toBe('anulada')
   })
 
-  // === Compat: las filas legacy del modelo viejo siguen válidas ==============
+  // === La forma legacy del modelo viejo ya no existe (20261016120000) ===========
 
-  it('compat legacy: una recogida sin plantilla_id (modelo viejo) sigue siendo firmable por su tutor', async () => {
-    // forma legacy (form 5 del CHECK): es_plantilla=false, plantilla_id NULL, nino_id.
-    const legacy = await serviceClient
+  it('la instancia por niño sin plantilla ni ámbito (forma legacy) la rechaza el CHECK, en los 4 tipos', async () => {
+    const base = {
+      centro_id: centro.id,
+      es_plantilla: false,
+      nino_id: nino.id,
+      texto: TEXTO_REAL,
+      texto_version: 'v1',
+      texto_definitivo: true,
+      estado: 'publicada' as const,
+      creado_por: admin.id,
+    }
+    // Premisa: la misma fila con plantilla y ámbito (forma B2) sí entra; así el 23514 de
+    // abajo es por la forma, no por otra columna.
+    const plantilla = await crearPlantilla('recogida')
+    const b2 = await serviceClient
       .from('autorizaciones')
       .insert({
-        centro_id: centro.id,
+        ...base,
         tipo: 'recogida',
-        es_plantilla: false,
-        nino_id: nino.id,
-        titulo: 'Recogida legacy',
-        texto: TEXTO_REAL,
-        texto_version: 'v1',
-        texto_definitivo: true,
-        estado: 'publicada',
-        creado_por: admin.id,
+        titulo: 'Recogida B2',
+        plantilla_id: plantilla,
+        ambito: 'nino',
       })
       .select('id')
       .single()
-    expect(legacy.error, 'la forma legacy debe seguir siendo válida (CHECK relajado)').toBeNull()
-    if (legacy.error || !legacy.data)
-      throw new Error(`recogida legacy falló: ${legacy.error?.message}`)
-    autorizacionesCreadas.push(legacy.data.id)
+    expect(b2.error).toBeNull()
+    if (b2.data) autorizacionesCreadas.push(b2.data.id)
 
-    const cTutor = await clientFor(tutor)
-    const firma = await cTutor
-      .from('firmas_autorizacion')
-      .insert(firmaPayload(tutor, legacy.data.id, nino.id))
-      .select('id')
-      .maybeSingle()
-    expect(firma.error).toBeNull()
-    expect(firma.data?.id, 'el tutor firma su recogida legacy').toBeTruthy()
-    if (firma.data?.id) firmasCreadas.push(firma.data.id)
+    const tipos: TipoAutorizacion[] = [
+      'recogida',
+      'medicacion',
+      'reglas_regimen_interno',
+      'autorizacion_imagenes',
+    ]
+    for (const tipo of tipos) {
+      const legacy = await serviceClient
+        .from('autorizaciones')
+        .insert({ ...base, tipo, titulo: `Legacy ${tipo}` })
+        .select('id')
+        .maybeSingle()
+      if (legacy.data) autorizacionesCreadas.push(legacy.data.id)
+      expect(legacy.error?.code, tipo).toBe('23514')
+      expect(legacy.error?.message, tipo).toContain('autorizaciones_tipo_coherencia')
+    }
   })
 })

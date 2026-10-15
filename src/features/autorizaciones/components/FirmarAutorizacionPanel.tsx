@@ -137,11 +137,9 @@ function NinoFirmaRow({
   const personasValidas = personas
     .map((p) => ({ ...p, nombre: p.nombre.trim(), dni: p.dni.trim() }))
     .filter((p) => p.nombre.length > 0 && p.dni.length > 0)
-  // Medicación: el 2.º tutor firma los datos vigentes (read-only); sin ellos no
-  // se puede firmar la misma instancia (crearla es el flujo de la familia).
-  const medOk = !esMedicacion || !!medicacionInicial
-  const listaOk = (!esRecogida || personasValidas.length > 0) && medOk
-
+  // Lo que falta para firmar lo dice firmar() al pulsar, con un aviso por cada cosa. Por eso
+  // el botón solo se deshabilita mientras se envía: deshabilitado por lo que falta, el aviso
+  // no llegaba nunca y el tutor veía un botón muerto sin saber por qué.
   function firmar() {
     if (!confirmo) {
       toast.error(t('errors.confirma_requerido'))
@@ -156,6 +154,8 @@ function NinoFirmaRow({
       toast.error(t('validation.personas_vacio'))
       return
     }
+    // Medicación: el 2.º tutor firma los datos vigentes (read-only); sin ellos no
+    // se puede firmar la misma instancia (crearla es el flujo de la familia).
     if (esMedicacion && !medicacionInicial) {
       toast.error(t('errors.medicacion_requerida'))
       return
@@ -272,10 +272,7 @@ function NinoFirmaRow({
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={firmar}
-              disabled={pending || !confirmo || (!presencial && !firma) || !listaOk}
-            >
+            <Button onClick={firmar} disabled={pending}>
               {presencial ? t('acciones.firmar_presencial') : t('acciones.firmar')}
             </Button>
             <Button variant="outline" onClick={rechazar} disabled={pending}>

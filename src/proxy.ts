@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { type CookieOptions, createServerClient } from '@supabase/ssr'
 import createIntlMiddleware from 'next-intl/middleware'
 import { type NextRequest, NextResponse } from 'next/server'
 
@@ -46,20 +46,24 @@ function redirectConservandoCookies(url: URL, from: NextResponse): NextResponse 
 }
 
 export default async function proxy(request: NextRequest): Promise<NextResponse> {
-  const intlResponse = intlMiddleware(request)
   const { pathname } = request.nextUrl
 
-  // El intl middleware puede haber rewriten — usamos siempre la pathname original
+  // El intl middleware puede reescribir la ruta: usamos siempre la pathname original,
   // ya prefijada por locale.
   const { locale, rest } = stripLocale(pathname)
 
   // updateSession (patrón estándar @supabase/ssr): refresca la sesión y PROPAGA las
-  // cookies rotadas a la response en TODAS las rutas, también las públicas. Sin esto, el
-  // token que rota dentro de una Server Action / Server Component no se sincroniza a la
-  // siguiente request y el destino no ve la sesión (causa del band-aid 4910fbc). El
-  // gating de rol (requiredRolesFor) se SUMA debajo; no se sustituye.
+  // cookies rotadas en TODAS las rutas, también las públicas. Sin esto, el token que rota
+  // dentro de una Server Action / Server Component no se sincroniza a la siguiente request
+  // y el destino no ve la sesión (causa del band-aid 4910fbc). El gating de rol
+  // (requiredRolesFor) se SUMA debajo; no se sustituye.
+  // Como el patrón oficial, las cookies renovadas van a DOS sitios: a `request.cookies`, para
+  // que los Server Components de ESTA petición vean el token nuevo, y a la respuesta, para el
+  // navegador. El oficial rehace `NextResponse.next({ request })`; aquí la respuesta es la de
+  // next-intl, que copia `request.headers` al crearse. Por eso next-intl va DESPUÉS de
+  // getUser(): si fuera antes, los Server Components verían la cookie vieja.
   // ⚠️ Gotcha @supabase/ssr: NO meter lógica entre createServerClient y getUser().
-  const response = intlResponse
+  const renovadas: { name: string; value: string; options: CookieOptions }[] = []
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -67,9 +71,10 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            renovadas.push({ name, value, options })
+          })
         },
       },
     }
@@ -81,6 +86,9 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
   // pesa más que la llamada de red. Ver docs/architecture/auth-proxy.md.
   const { data: userData } = await supabase.auth.getUser()
   const user = userData.user
+
+  const response = intlMiddleware(request)
+  for (const { name, value, options } of renovadas) response.cookies.set(name, value, options)
 
   // Rutas públicas: la sesión ya quedó refrescada en `response`; ni se gatea ni se
   // redirige a login (un invitado/anónimo puede verlas).

@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
+  anonClient,
   asignarRol,
   clientFor,
   crearFamiliaTutor,
@@ -487,6 +488,31 @@ describe('Purga RGPD — cierre del frente', () => {
       expect(Object.values(meta).filter((v) => v !== null && v !== undefined)).toEqual([])
       expect(JSON.stringify(despues.user?.identities ?? [])).not.toContain(u.email)
       expect(JSON.stringify(despues.user ?? {})).not.toContain(marca('nombre-auth'))
+    })
+
+    // Es la razón de que el proxy use getUser() y no getClaims() (docs/architecture/auth-proxy.md):
+    // tras la purga, el token que el usuario ya tenía sigue siendo un JWT válido.
+    it('tras anonimizar, getUser con el token que ya tenía falla; getClaims lo sigue aceptando', async () => {
+      const u = await createTestUser({ nombre: marca('nombre-token') })
+      usuarios.push(u)
+      const sesion = await clientFor(u)
+      const token = (await sesion.auth.getSession()).data.session?.access_token
+      expect(token).toBeTruthy()
+      // Premisa: antes de la purga, Auth reconoce el token.
+      const previo = await anonClient().auth.getUser(token!)
+      expect(previo.error).toBeNull()
+      expect(previo.data.user?.id).toBe(u.id)
+
+      const { data: antes } = await serviceClient.auth.admin.getUserById(u.id)
+      await anonimizarCuentaAuth(serviceClient, u.id, antes.user?.user_metadata ?? {})
+
+      const tras = await anonClient().auth.getUser(token!)
+      expect(tras.data.user).toBeNull()
+      expect(tras.error).not.toBeNull()
+      // Lo que vería getClaims: la firma y la caducidad del JWT siguen valiendo.
+      const claims = await anonClient().auth.getClaims(token!)
+      expect(claims.error).toBeNull()
+      expect(claims.data?.claims.sub).toBe(u.id)
     })
   })
 })
