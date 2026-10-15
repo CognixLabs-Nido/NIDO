@@ -174,7 +174,11 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
 
   /** Baja de verdad: el primitivo que usan `baja_nino` y `cerrar_curso`. */
   async function archivar(nino_id: string): Promise<void> {
-    void nino_id // CONTROL NEGATIVO TEMPORAL: no se da de baja
+    const { error } = await serviceClient.rpc('archivar_nino', {
+      p_nino_id: nino_id,
+      p_fecha_baja: '2027-06-30',
+    })
+    if (error) throw new Error(`archivar_nino falló: ${error.message}`)
   }
 
   /** Publicación en `aula` con service role; registra su id para limpieza. */
@@ -278,7 +282,7 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
       .from('vinculos_familiares')
       .select('deleted_at, deleted_reason')
       .eq('nino_id', ninoBaja.id)
-    void vinculos // CONTROL NEGATIVO TEMPORAL: sin premisa
+    expect(vinculos).toEqual([{ deleted_at: expect.any(String), deleted_reason: 'baja_nino' }])
 
     expect((await cBaja.from('publicaciones').select('id').eq('id', pub)).data?.length ?? 0).toBe(0)
     expect(
