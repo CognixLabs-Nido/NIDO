@@ -57,9 +57,9 @@ export function firmaConDatosVigente<T extends FirmaEfectiva>(
   firmas: T[],
   estadoNino?: EstadoFirmaNino
 ): T | null {
-  if (estadoNino === 'revocado' || estadoNino === 'rechazado') return null
+  void estadoNino // CONTROL NEGATIVO TEMPORAL
   let elegida: T | null = null
-  for (const f of firmasVigentesPorFirmante(firmas).values()) {
+  for (const f of firmas) {
     if (f.decision !== 'firmado') continue
     if (!elegida || f.firmado_at >= elegida.firmado_at) elegida = f
   }
