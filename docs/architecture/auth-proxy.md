@@ -27,12 +27,13 @@ La RLS ya le cierra los datos en ese hueco (sus roles y vínculos quedan dados d
 ## El matcher
 
 ```ts
-matcher: ['/((?!api|_next|_vercel|.*\\..*).*)']
+matcher: ['/((?!api|_next|_vercel|monitoring|.*\\..*).*)']
 ```
 
 El oficial solo excluye los estáticos. Este excluye además:
 
 - **`/api`**: hoy solo tiene `cron`, que se autentica con su secreto y no lleva sesión de usuario. Una ruta nueva bajo `/api` que use la sesión no pasa por el proxy: tiene que refrescarla ella misma (un route handler sí puede escribir cookies).
+- **`/monitoring`**: el túnel de Sentry (ADR-0056). Es una reescritura de `next.config.ts` hacia la ingesta de la UE, sin página detrás; si pasara por el proxy, next-intl la redirigiría a `/es/monitoring` y los eventos no llegarían. Ninguna página puede empezar por `monitoring`: se saltaría el control de rol.
 - **Cualquier ruta con un punto**: son los ficheros de `public/` (iconos, manifest, imágenes). Una página con un «.» en un segmento se saltaría el proxy, y con él el control de rol. Por eso los segmentos de página no llevan punto; los valores de los segmentos dinámicos son uuids.
 
 ## Control de rol

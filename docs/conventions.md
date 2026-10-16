@@ -40,6 +40,7 @@
 - `console.log` prohibido en producción.
 - Logger centralizado en `src/shared/lib/logger.ts`.
 - Nunca loggear PII (nombres, emails, datos médicos).
+- `logger.error` además envía el error a Sentry (ADR-0056). La limpieza quita los datos personales reconocibles (emails, DNI, teléfonos, IBAN, identificadores, campos con nombre de dato personal), pero **un nombre propio en un texto libre no tiene patrón**: no metas nombres en mensajes de error.
 
 ## Idioma
 

@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs/config'
 import createNextIntlPlugin from 'next-intl/plugin'
 
 import type { NextConfig } from 'next'
@@ -36,4 +37,27 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['sharp'],
 }
 
-export default withNextIntl(nextConfig)
+// Sentry (ADR-0056): errores a la región de la UE, sin datos personales. Qué se envía lo
+// decide `src/shared/lib/sentry/opciones.ts`; aquí solo va lo del build.
+// - Source maps: se suben y se BORRAN del build (no quedan públicos en el navegador).
+//   Sin SENTRY_AUTH_TOKEN (CI, local) no se generan ni se suben: el build no depende de
+//   Sentry. Si la subida falla, el build sigue con un aviso.
+// - tunnelRoute: los eventos del navegador salen por /monitoring (nuestro dominio), así
+//   Sentry no ve la IP de la familia. El proxy excluye esa ruta (src/proxy.ts).
+const subirSourceMaps = Boolean(process.env.SENTRY_AUTH_TOKEN)
+
+export default withSentryConfig(withNextIntl(nextConfig), {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  telemetry: false,
+  silent: !process.env.CI,
+  sourcemaps: { disable: !subirSourceMaps, deleteSourcemapsAfterUpload: true },
+  errorHandler: (err) => {
+    console.warn('[sentry] no se pudieron subir los source maps:', err.message)
+  },
+  tunnelRoute: '/monitoring',
+  // Sin trazas de rendimiento, así que no se engancha `onRouterTransitionStart`.
+  suppressOnRouterTransitionStartWarning: true,
+  widenClientFileUpload: false,
+})

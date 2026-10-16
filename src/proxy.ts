@@ -131,6 +131,9 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
 //   tendría que refrescarla ella misma.
 // - rutas con punto: son ficheros de public/. Una página con un «.» en un segmento se saltaría
 //   el proxy, así que los segmentos de página no llevan punto.
+// - /monitoring: el túnel de Sentry (ADR-0056), una reescritura hacia la UE sin página
+//   detrás. Sin excluirlo, next-intl lo redirigiría a /es/monitoring y los eventos no
+//   llegarían. Ninguna página puede empezar por «monitoring»: se saltaría el control de rol.
 export const config = {
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
+  matcher: ['/((?!api|_next|_vercel|monitoring|.*\\..*).*)'],
 }
