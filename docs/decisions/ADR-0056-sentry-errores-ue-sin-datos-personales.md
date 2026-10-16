@@ -71,7 +71,7 @@ Cada capa es independiente y no confía en las demás. Todo vive en `src/shared/
 
 1. **Solo la UE.** `dsnDeLaUE` acepta únicamente DSN de `*.ingest.de.sentry.io`. Con un DSN de otra región, Sentry queda **apagado**: la región la fija el DSN, no una casilla que se pueda olvidar.
 2. **Recogida apagada.** `dataCollection` con todas sus categorías a `false` (`RECOGIDA_DE_DATOS_APAGADA`). Un test obliga a decidir sobre cualquier categoría nueva que añada el SDK.
-3. **Integraciones del navegador por lista de permitidas.** Solo las que capturan el error (`INTEGRACIONES_CLIENTE_PERMITIDAS`). Replay, Feedback, BrowserTracing, BrowserSession o Console quedan fuera aunque una versión futura las active por defecto. Además, `replaysSessionSampleRate` y `replaysOnErrorSampleRate` van a 0. En el servidor se quitan las variables locales y la consola; el resto sostiene el aislamiento por petición.
+3. **Integraciones del navegador por lista de permitidas.** Solo las que capturan el error (`INTEGRACIONES_CLIENTE_PERMITIDAS`). Replay, Feedback, BrowserTracing, BrowserSession o Console quedan fuera aunque una versión futura las active por defecto. Además, `replaysSessionSampleRate` y `replaysOnErrorSampleRate` van a 0. En el servidor se quitan las sesiones (`ProcessSession`), las variables locales y la consola; el resto sostiene el aislamiento por petición. **Las sesiones no pasan por `beforeSend`** y llevan el id y la IP del usuario: lo destapó la CI de #359, donde el test de punta a punta se puso rojo (en local pasaba porque sin `release` el SDK no manda sesiones; el test fija ahora una `release`).
 4. **Sin trazas.** No hay `tracesSampleRate` ni `tracesSampler`: con `tracesSampleRate: 0` las trazas quedarían encendidas con muestreo 0. `beforeSendLog` y `beforeSendMetric` devuelven `null`.
 5. **`beforeSend` = `limpiarEvento`**, la última barrera:
    - quita `user`, `server_name`, la petición (salvo método y ruta) y las variables de los frames;
@@ -112,7 +112,7 @@ Cada capa es independiente y no confía en las demás. Todo vive en `src/shared/
 ## Verificación
 
 - `src/shared/lib/sentry/__tests__/limpiar-evento.test.ts`: un evento con datos personales en todos los campos sale sin ninguno (mira el evento serializado entero) y conserva lo técnico. Control negativo medido: desactivando cada capa por separado (identidad, claves, patrones, migas, variables, petición), el test se pone rojo.
-- `src/shared/lib/sentry/__tests__/opciones.test.ts`: solo la UE, recogida apagada, sin trazas, lista de permitidas y, **con el SDK real** y un transporte falso, que lo que se enviaría no lleva ni el usuario, ni la IP, ni los datos. Control negativo medido: sin `beforeSend`, con cualquier región, sin lista, con `userInfo` o con `tracesSampleRate: 0`, rojo.
+- `src/shared/lib/sentry/__tests__/opciones.test.ts`: solo la UE, recogida apagada, sin trazas, lista de permitidas y, **con el SDK real** y un transporte falso, que lo que se enviaría no lleva ni el usuario, ni la IP, ni los datos. Comprueba además que no sale ningún envío de sesión. Control negativo medido: sin `beforeSend`, con cualquier región, sin lista, con `userInfo`, con `tracesSampleRate: 0` o con `ProcessSession` en el servidor, rojo.
 - `logger.test.ts`, `global-error.test.tsx`, `textos.test.ts` (los textos de la página de error coinciden con `messages/`).
 
 ## Referencias

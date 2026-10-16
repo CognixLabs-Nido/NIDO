@@ -104,10 +104,11 @@ describe('filtrarIntegraciones', () => {
     )
   })
 
-  it('servidor: fuera las variables locales y la consola; el resto se queda', () => {
+  it('servidor: fuera sesiones, variables locales y consola; el resto se queda', () => {
     expect(
       nombres('servidor', [
         'Http',
+        'ProcessSession',
         'LocalVariablesAsync',
         'LocalVariables',
         'Console',
@@ -127,6 +128,9 @@ describe('de punta a punta con el SDK real: lo que de verdad se enviaría', () =
   it('un error con datos personales sale limpio, sin usuario ni IP', async () => {
     Sentry.init({
       ...opcionesSentry('servidor', { dsn: DSN_UE, entorno: 'test' }),
+      // Con `release` el SDK manda también sesiones, como en producción (Vercel pone el
+      // commit). Sin ella, en local no salían y el test pasaba sin mirarlas.
+      release: 'release-de-prueba',
       transport: () => ({
         send: async (envelope: unknown) => {
           enviados.push(JSON.stringify(envelope))
@@ -161,5 +165,7 @@ describe('de punta a punta con el SDK real: lo que de verdad se enviaría', () =
       expect(todo, `se ha colado ${dato}`).not.toContain(dato)
     }
     expect(todo).not.toMatch(/"user":/)
+    // Las sesiones no pasan por `beforeSend` y llevan id e IP del usuario: no salen.
+    expect(todo).not.toContain('"type":"session"')
   })
 })

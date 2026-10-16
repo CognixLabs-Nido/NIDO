@@ -45,11 +45,14 @@ export const INTEGRACIONES_CLIENTE_PERMITIDAS: ReadonlySet<string> = new Set([
 ])
 
 /**
- * En el servidor se quitan las que recogen datos (variables locales, consola). El resto
- * se queda: sostienen el aislamiento por petición y los manejadores de errores no
- * capturados, y lo único que envían son eventos, que pasan todos por `beforeSend`.
+ * En el servidor se quitan las que recogen datos (variables locales, consola) y las
+ * sesiones (`ProcessSession`): un envío de sesión lleva el id y la IP del usuario y NO pasa
+ * por `beforeSend` (medido en la CI, #359). El resto se queda: sostienen el aislamiento
+ * por petición y los manejadores de errores no capturados, y solo envían eventos, que
+ * pasan todos por `beforeSend`.
  */
 export const INTEGRACIONES_SERVIDOR_QUITADAS: ReadonlySet<string> = new Set([
+  'ProcessSession',
   'LocalVariables',
   'LocalVariablesAsync',
   'Console',
