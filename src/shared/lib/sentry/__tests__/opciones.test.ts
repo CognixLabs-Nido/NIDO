@@ -128,7 +128,7 @@ describe('de punta a punta con el SDK real: lo que de verdad se enviaría', () =
     Sentry.init({
       ...opcionesSentry('servidor', { dsn: DSN_UE, entorno: 'test' }),
       transport: () => ({
-        send: async (envelope) => {
+        send: async (envelope: unknown) => {
           enviados.push(JSON.stringify(envelope))
           return {}
         },
