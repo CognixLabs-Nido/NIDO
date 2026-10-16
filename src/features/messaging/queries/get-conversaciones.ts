@@ -18,7 +18,7 @@ import type { ConversacionListItem } from '../types'
  *
  * El conteo de no leídos se hace en JS sobre las filas devueltas: el
  * volumen esperado por usuario es bajo (<50 conversaciones activas en
- * ANAIA), así que no compensa una vista SQL dedicada en Ola 1.
+ * un centro), así que no compensa una vista SQL dedicada en Ola 1.
  */
 export async function getConversacionesDelUsuario(): Promise<ConversacionListItem[]> {
   const supabase = await createClient()

@@ -45,7 +45,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 ## Reactivos / condicionales (solo cuando se cumpla la condición)
 
-- [ ] **Columna "Apoyos" en `/admin/aulas`** — añadir cuando aparezca el primer `apoyo` real en ANAIA (omitida hoy por YAGNI, ver ADR-0033). _(Ola 1)_
+- [ ] **Columna "Apoyos" en `/admin/aulas`** — añadir cuando aparezca el primer `apoyo` real en un centro (omitida hoy por YAGNI, ver ADR-0033). _(Ola 1)_
 - [ ] **Telemetría de `getTutoresParaAdminDireccion`** — solo si hay reporte de lentitud o un centro supera ~100 tutores. _(Ola 1)_
 - [ ] **Refinar `autorizado` vs `tutor_legal` en la sidebar** — hoy comparten la lista de items de familia. Decisión de producto, a resolver pre-piloto (detectado en auditoría del item 6 del sprint pre-F6). _(Ola 1)_
 - [x] **F8 · Migración legacy #56 — CERRADO (2026-10-15).** No quedaba nada que migrar: 0 filas en `autorizaciones` en producción y ningún código crea ya la forma legacy. En vez de esperar al disparador, `20261016120000_fix_autorizaciones_sin_forma_legacy` quita esa forma del CHECK `autorizaciones_tipo_coherencia`; `20260608130000_phase8_migrar_reglas_56` queda como historia. _(Ola 1)_

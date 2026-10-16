@@ -73,7 +73,7 @@ Estado real auditado al cerrar F10 (2026-06-13). Anclajes verificados en código
   en entidades sensibles; índices parciales `WHERE deleted_at IS NULL`. **No hay** flujo de
   borrado de cuenta, anonimización, ni purga.
 
-Modelo operativo (CLAUDE.md): single-tenant ANAIA, multi-centro listo. El **responsable
+Modelo operativo (CLAUDE.md): un solo centro hoy (CEI Ejemplo, antes ANAIA), multi-centro listo. El **responsable
 del tratamiento es el centro**; CognixLabs es **encargado** (provee la plataforma). Esto
 condiciona quién ejerce el derecho al olvido (la dirección del centro) y a quién apunta el
 RAT/DPA.

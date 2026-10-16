@@ -59,8 +59,8 @@ Tras cerrar Fase 3 (agenda diaria), reorganizamos el resto de Ola 1 para refleja
   3. UI de admin para subir/actualizar.
   4. Posiblemente añadir `logo_full_url` para distinguir wordmark vs hero. Ver ADR-0010.
 
-- **Ampliar `scripts/process-logos.mjs`** — _disparador: cuando llegue un source de mayor calidad de ANAIA (vectorial) o se procesen logos de otros centros_.
-  Hoy el script solo procesa el source de NIDO. Si aparecen N sources de centros distintos, ampliar para que itere sobre `public/brand/source/*.png` y aplique el mismo patrón idempotente. Ver `docs/dev-setup.md` §Logo de ANAIA.
+- **Ampliar `scripts/process-logos.mjs`** — _disparador: cuando se procesen logos de centros como ficheros (hoy cada centro sube el suyo a `centro-assets`)_.
+  Hoy el script solo procesa el source de NIDO. Si aparecen N sources de centros distintos, ampliar para que itere sobre `public/brand/source/*.png` y aplique el mismo patrón idempotente. Ver `docs/dev-setup.md` §Logo del centro.
 
 ## Permisos granulares
 

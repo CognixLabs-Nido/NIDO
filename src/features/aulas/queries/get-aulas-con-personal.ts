@@ -23,7 +23,7 @@ import { getAulasPorCursoCore, type AulaListItem } from './get-aulas'
  * el render concreto (badges, orden visual, columnas) llega en PR #35.
  *
  * Estrategia (decisión D6, Opción A): 3 queries TS paralelizadas con
- * `Promise.all` (lección PR #32). Sin RPC SQL — ANAIA típicamente tiene
+ * `Promise.all` (lección PR #32). Sin RPC SQL — un centro típicamente tiene
  * <10 aulas, muy por debajo del umbral donde un round-trip extra
  * justifique mover lógica a Postgres.
  *

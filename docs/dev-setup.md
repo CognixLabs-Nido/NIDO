@@ -281,20 +281,13 @@ Reglas operativas:
 
 Ver `docs/decisions/ADR-0008-design-system.md` para el plan de sustitución por la versión vectorial definitiva.
 
-### Logo de ANAIA (centro)
+### Logo del centro
 
-Los assets actuales viven en `public/brand/`:
+El logo de cada centro lo sube la dirección desde `admin/centro` al bucket público `centro-assets` (`{centroId}/logo.{ext}`), y `centros.logo_url` apunta a esa URL (ADR-0010, ADR-0046). En `public/brand/` solo quedan los assets de NIDO.
 
-- `anaia-logo-wordmark.png` (356×94, apaisado) — usado por defecto cuando `centros.logo_url` apunta a él. Es la forma que mejor encaja en el sidebar de NIDO.
-- `anaia-logo-full.png` (1024×1024, cuadrado) — versión hero/print, sin uso fijo todavía.
+Un centro sin logo (`logo_url` NULL, como CEI Ejemplo desde `20261016130000`) se ve entero: la barra lateral, la cabecera del alta y el PDF del recibo simplemente no lo pintan. Lo cubren los tests `SidebarNav.sin-logo`, `get-centro-logo` y `recibo-pdf-sin-logo`.
 
-**TODO**: el `process-logos.mjs` actual solo procesa el source de NIDO. Si en el futuro:
-
-- Llega un source de ANAIA en mayor resolución que merece threshold/trimmed.
-- Se necesita un mark-only (solo los niños sin wordmark) para favicons del centro / sidebar colapsado.
-- Aparecen logos de otros centros (multi-centro real).
-
-…ampliar el script para que itere sobre sources en `public/brand/source/` y produzca variantes con el mismo patrón idempotente. De momento los PNGs de ANAIA se commitearon manualmente porque ya estaban en formato usable.
+Hasta la Fase A de multicentro, ANAIA tenía su logo como fichero estático (`public/brand/anaia-logo-wordmark.png` y `anaia-logo-full.png`). Se borraron al pasar a CEI Ejemplo.
 
 ## Onboarding del primer admin (Ola 1)
 
@@ -308,7 +301,7 @@ Hasta que aparezca el flow de "alta de centro" en Ola 2, el primer admin de cada
    ```
 3. El admin puede entrar a `/{locale}/login` y desde ahí invitar a profes y tutores.
 
-Para ANAIA, el centro es `33c79b50-13b5-4962-b849-d88dd6a21366` (sembrado en la migración de Fase 2 preservando el UUID elegido al darme rol en Fase 1).
+El centro que existe hoy es CEI Ejemplo (antes ANAIA): `33c79b50-13b5-4962-b849-d88dd6a21366`, sembrado en la migración de Fase 2 preservando el UUID elegido al darme rol en Fase 1, y renombrado en `20261016130000`.
 
 ## Troubleshooting
 

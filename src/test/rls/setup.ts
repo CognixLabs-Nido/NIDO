@@ -23,8 +23,9 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const SUPABASE_SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-// El único centro real del remoto compartido (mismo guard que global-setup.ts).
-const ANAIA_CENTRO_ID = '33c79b50-13b5-4962-b849-d88dd6a21366'
+// El único centro real del remoto compartido: CEI Ejemplo, antes ANAIA, con el MISMO UUID
+// (20261016130000). Mismo guard que global-setup.ts.
+const CENTRO_EJEMPLO_ID = '33c79b50-13b5-4962-b849-d88dd6a21366'
 
 if (!SUPABASE_URL || !SUPABASE_ANON || !SUPABASE_SERVICE) {
   throw new Error(
@@ -188,9 +189,9 @@ export interface TestCentro {
 
 /**
  * INVARIANTE DE SEGURIDAD (del que depende el wipe de PR-C): los centros de TEST usan
- * SIEMPRE `email_contacto` en el dominio `@nido.test`; los centros REALES (p. ej. ANAIA)
+ * SIEMPRE `email_contacto` en el dominio `@nido.test`; los centros REALES (p. ej. CEI Ejemplo)
  * NUNCA. El wipe de `globalSetup` identifica lo borrable por ese patrón
- * (`email_contacto LIKE '%@nido.test'`, más un guard por id de ANAIA). Si un centro real
+ * (`email_contacto LIKE '%@nido.test'`, más un guard por id de CEI Ejemplo). Si un centro real
  * usara `@nido.test`, el wipe podría alcanzarlo → NO romper esta convención.
  */
 export async function createTestCentro(nombre?: string): Promise<TestCentro> {
@@ -247,8 +248,8 @@ export async function deleteTestCentro(id: string): Promise<void> {
 
   // Su auditoría DESPUÉS: los DELETE de arriba disparan el trigger y escriben filas con
   // este centro_id. Las de los fixtures llevan usuario_id NULL y ningún otro paso las
-  // borra. Nunca sobre ANAIA (el único centro real del remoto compartido).
-  if (id !== ANAIA_CENTRO_ID) {
+  // borra. Nunca sobre CEI Ejemplo (el centro de producción, antes ANAIA).
+  if (id !== CENTRO_EJEMPLO_ID) {
     await svc.from('audit_log').delete().eq('centro_id', id)
   }
 }

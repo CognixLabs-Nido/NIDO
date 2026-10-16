@@ -10,7 +10,7 @@ interface CentroLogoProps {
 }
 
 /**
- * Logo del centro (ej. ANAIA). Se renderiza debajo del wordmark NIDO en la
+ * Logo del centro. Se renderiza debajo del wordmark NIDO en la
  * sidebar/header de los layouts admin/teacher/family. La URL viene de
  * `centros.logo_url` (asset relativo en `public/brand/...` durante Ola 1;
  * URL firmada de Supabase Storage cuando se implemente en Fase 10).

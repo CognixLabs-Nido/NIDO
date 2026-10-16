@@ -15,10 +15,10 @@ import { isRetryableAuthError, withRetry } from './retry'
 // siguiente corrida, y permite inspeccionar el estado tras un fallo).
 //
 // INVARIANTE DE SEGURIDAD (del que depende TODO): los centros de TEST usan SIEMPRE
-// `email_contacto` en el dominio `@nido.test`; los centros REALES (ANAIA) NUNCA.
+// `email_contacto` en el dominio `@nido.test`; los centros REALES (CEI Ejemplo) NUNCA.
 // Las cuentas de TEST usan email `@nido.test`; las 4 reales son `@gmail.com`.
 // Ambos dominios son DISJUNTOS del real → el patrón de borrado no puede
-// seleccionar lo real. Además, doble guard explícito: se excluye el id de ANAIA
+// seleccionar lo real. Además, doble guard explícito: se excluye el id de CEI Ejemplo
 // y las 4 cuentas de la allowlist. TODO borrado se ANCLA a esos dos sets
 // (centro_id IN _test_centros / nino_id IN niños-de-esos-centros / actor IN
 // _test_users). NUNCA "borra todo salvo X".
@@ -31,8 +31,9 @@ loadEnv({ path: '.env.local' })
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-// Guard de seguridad — allowlist EXPLÍCITA (nunca se tocan).
-const ANAIA_CENTRO_ID = '33c79b50-13b5-4962-b849-d88dd6a21366'
+// Guard de seguridad — allowlist EXPLÍCITA (nunca se tocan). CEI Ejemplo es la antigua ANAIA,
+// con el MISMO UUID (20261016130000).
+const CENTRO_EJEMPLO_ID = '33c79b50-13b5-4962-b849-d88dd6a21366'
 const ALLOWLIST_EMAILS = new Set([
   'jovimib@gmail.com',
   'jovimib+profe@gmail.com',
@@ -133,7 +134,7 @@ const AUDIT_CENTROS_MAX = 2000
  * al arrancar el wipe) + los ya BORRADOS por los teardown de cada fichero, que solo se
  * pueden reconocer por su propia auditoría: la fila INSERT de `centros` guarda el
  * `email_contacto`, y el de test es siempre `@nido.test` (en esa fila centro_id = id).
- * Excluye ANAIA y cualquier centro existente con email real. Devuelve null si pasan
+ * Excluye CEI Ejemplo y cualquier centro existente con email real. Devuelve null si pasan
  * del tope.
  */
 async function testCentroIdsConAudit(centroIds: string[]): Promise<string[] | null> {
@@ -166,7 +167,7 @@ async function testCentroIdsConAudit(centroIds: string[]): Promise<string[] | nu
     .from('centros')
     .select('id')
     .not('email_contacto', 'ilike', TEST_EMAIL_LIKE)
-  ids.delete(ANAIA_CENTRO_ID)
+  ids.delete(CENTRO_EJEMPLO_ID)
   for (const r of (reales ?? []) as { id: string }[]) ids.delete(r.id)
   return [...ids]
 }
@@ -201,13 +202,13 @@ export default async function globalSetup(): Promise<void> {
   }
 
   // ---------------------------------------------------------------------------
-  // 0. Sets acotados. _test_centros excluye ANAIA; _test_users excluye la allowlist.
+  // 0. Sets acotados. _test_centros excluye CEI Ejemplo; _test_users excluye la allowlist.
   // ---------------------------------------------------------------------------
   const { data: centrosData, error: centrosErr } = await svc
     .from('centros')
     .select('id')
     .ilike('email_contacto', TEST_EMAIL_LIKE)
-    .neq('id', ANAIA_CENTRO_ID)
+    .neq('id', CENTRO_EJEMPLO_ID)
   if (centrosErr) throw new Error(`wipe: leer centros de test: ${centrosErr.message}`)
   const centroIds: string[] = (centrosData ?? []).map((r: { id: string }) => r.id)
 
@@ -395,7 +396,7 @@ export default async function globalSetup(): Promise<void> {
 
   // ---------------------------------------------------------------------------
   // 9. STORAGE best-effort (warn, NO abort), scoped por {centroId} de test.
-  //    NUNCA {ANAIA}/… (centroIds lo excluye) ni centro-assets.
+  //    NUNCA {CEI Ejemplo}/… (centroIds lo excluye) ni centro-assets.
   // ---------------------------------------------------------------------------
   for (const bucket of TEST_BUCKETS) {
     for (const centroId of centroIds) {
@@ -414,7 +415,7 @@ export default async function globalSetup(): Promise<void> {
     .from('centros')
     .select('id', { count: 'exact', head: true })
     .ilike('email_contacto', TEST_EMAIL_LIKE)
-    .neq('id', ANAIA_CENTRO_ID)
+    .neq('id', CENTRO_EJEMPLO_ID)
   if ((centrosRestantes ?? 0) > 0) residuo.push(`centros(test)=${centrosRestantes}`)
 
   const usuariosRestantes = await listTestUserIds()

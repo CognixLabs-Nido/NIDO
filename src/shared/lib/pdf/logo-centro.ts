@@ -6,7 +6,7 @@ import type { PDFDocument, PDFImage } from 'pdf-lib'
 /**
  * Carga + embebe el logo de UN centro a partir de `centros.logo_url` (NO el de NIDO). En
  * Ola 1 ese valor puede ser (a) un path relativo servido desde `public/brand/...` (semilla,
- * p. ej. ANAIA `/brand/anaia-logo-wordmark.png`) o (b) una URL pública de Supabase Storage
+ * p. ej. `/brand/<centro>-logo.png`) o (b) una URL pública de Supabase Storage
  * (cuando dirección sube su logo). Se resuelven ambos: el path relativo se lee del
  * filesystem (runtime nodejs); la URL absoluta se descarga.
  *
