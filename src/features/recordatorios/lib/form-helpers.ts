@@ -108,7 +108,7 @@ export function puedeAnular(
 /**
  * Convierte el valor de un `<input type="datetime-local">` (string local
  * 'YYYY-MM-DDTHH:mm', sin zona) a ISO con offset para el schema. En el piloto
- * ANAIA el navegador está en huso Europe/Madrid, así que `new Date(local)`
+ * el navegador está en huso Europe/Madrid, así que `new Date(local)`
  * interpreta el valor como hora de Madrid y `toISOString()` da el UTC correcto.
  * Devuelve null si está vacío o es inválido.
  */

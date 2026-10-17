@@ -38,7 +38,7 @@ export interface NinoMensajeriaItem {
  *  - tutor: niños vinculados al usuario con `puede_recibir_mensajes=true`.
  *
  * La query es deliberadamente "ancha": carga matriculas/vinculos/conversaciones
- * y los une en JS. Volumen esperado por usuario muy bajo (ANAIA tiene <50
+ * y los une en JS. Volumen esperado por usuario muy bajo (un centro tiene <50
  * niños activos). Si crece, conviene una RPC SQL dedicada.
  */
 export async function getNinosMensajeriaParaUsuario(

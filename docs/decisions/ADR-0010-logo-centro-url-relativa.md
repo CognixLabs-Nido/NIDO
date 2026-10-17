@@ -4,6 +4,8 @@
 
 `accepted`
 
+> **Nota (2026-10-16, multicentro · Fase A):** ANAIA pasó a ser «CEI Ejemplo», con `logo_url` NULL (`20261016130000`), y los PNG `public/brand/anaia-logo-*` se borraron. Lo que sigue es la historia de la decisión; el logo de un centro hoy va en `centro-assets` (ADR-0046).
+
 **Fecha:** 2026-05-14
 **Autores:** responsable + claude-code
 **Fase del proyecto:** Fase 2.6 — Datos pedagógicos del niño + logo del centro

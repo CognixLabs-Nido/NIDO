@@ -25,7 +25,7 @@ import type { AulaConPersonal } from '../queries/get-aulas-con-personal'
  * envolver en `NextIntlClientProvider` ni mockear `useTranslations`.
  *
  * Decisiones cerradas (Checkpoint B PR #36):
- *  - D2 Apoyos: sin columna. ANAIA no tiene apoyos hoy.
+ *  - D2 Apoyos: sin columna. El centro piloto no tenía apoyos.
  *  - D3 (revisado): se destaca la PRINCIPAL del aula (`es_principal`: la profesora
  *    que más tiempo lleva; si no hay, la coordinadora) con `Badge variant="warm"`.
  *    El `title` (tooltip) dice el rol: "Maestra" o "Coordinadora".

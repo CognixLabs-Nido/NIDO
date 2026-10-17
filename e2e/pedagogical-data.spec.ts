@@ -4,18 +4,15 @@ import { expect, test } from '@playwright/test'
  * Smoke tests de Fase 2.6 (datos pedagógicos + logo del centro).
  *
  * Mantenemos el mismo patrón que el resto de E2E: sin sesión admin real
- * (eso espera a Fase 11), validamos que las rutas existen, que el asset
- * del logo de ANAIA se sirve estáticamente y que los strings i18n del
- * namespace pedagogico están presentes en los tres idiomas.
+ * (eso espera a Fase 11), validamos que las rutas existen y que los strings
+ * i18n del namespace pedagogico están presentes en los tres idiomas.
+ *
+ * El test del asset `/brand/anaia-logo-wordmark.png` se quitó en la Fase A de
+ * multicentro: ANAIA pasó a ser CEI Ejemplo, sin logo, y el PNG se borró. Que un
+ * centro sin logo no rompa la pantalla ni el PDF lo cubren los unit tests
+ * `SidebarNav.sin-logo`, `get-centro-logo` y `recibo-pdf-sin-logo`.
  */
 test.describe('Fase 2.6 — pedagogical-data + centro logo', () => {
-  test('asset del logo ANAIA se sirve estáticamente', async ({ request }) => {
-    const r = await request.get('/brand/anaia-logo-wordmark.png')
-    expect(r.status()).toBe(200)
-    const ct = r.headers()['content-type'] ?? ''
-    expect(ct).toContain('image/png')
-  })
-
   test('detalle de niño protegido: redirige a login sin sesión', async ({ page }) => {
     // UUID inventado, basta para que la ruta dinámica resuelva y el middleware actúe.
     await page.goto('/es/admin/ninos/a1b2c3d4-e5f6-4789-8abc-def012345678')

@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 
 /**
  * Devuelve el id del centro al que pertenece el usuario autenticado.
- * En Ola 1 solo existe un centro (ANAIA), pero esta utility está pensada
+ * Hoy solo existe un centro (CEI Ejemplo), pero esta utility está pensada
  * para que en el futuro el mismo usuario pueda navegar entre varios.
  * Devuelve null si no hay sesión o el usuario no tiene rol activo.
  */

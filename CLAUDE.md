@@ -2,7 +2,7 @@
 
 **Agenda escolar (PWA) para escuelas infantiles 0-3 años.** Trilingüe (es/en/va). Construida en abierto.
 
-Una sola escuela inicialmente (ANAIA, Valencia), arquitectura preparada para multi-centro. Roles: admin, profe, tutor legal, autorizado.
+Un solo centro hoy, «CEI Ejemplo» (centro de ejemplo; antes ANAIA, con el mismo UUID), arquitectura preparada para multi-centro. Roles: admin, profe, tutor legal, autorizado.
 
 ## Comandos
 

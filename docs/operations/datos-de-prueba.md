@@ -4,9 +4,9 @@ Cuentas y registros de prueba que viven en el entorno **remoto** y **no deben bo
 
 > ⚠️ **Repo público (regla 6).** Este archivo lista identificadores no-secretos (emails `.example` ficticios, nombres de fixture, UUIDs de fila, `centro_id`). **Las contraseñas NO se versionan aquí** — viven fuera del repo (gestor de secretos del responsable / `.env.local`). No añadas credenciales reales a este documento.
 
-## Profes de prueba en ANAIA (creados validando el PR #40)
+## Profes de prueba en CEI Ejemplo (creados validando el PR #40)
 
-**Centro ANAIA** — `centro_id = 33c79b50-13b5-4962-b849-d88dd6a21366`.
+**Centro CEI Ejemplo** (antes ANAIA, mismo UUID; renombrado en `20261016130000`) — `centro_id = 33c79b50-13b5-4962-b849-d88dd6a21366`.
 
 | Email                       | Nombre             | `usuario_id` (UUID)                    |
 | --------------------------- | ------------------ | -------------------------------------- |

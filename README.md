@@ -2,7 +2,7 @@
 
 **Agenda digital para escuelas infantiles 0-3 años.** Trilingüe (es/en/va). Construida en abierto.
 
-Una sola escuela inicialmente (ANAIA, Valencia), arquitectura preparada para multi-centro.
+Un solo centro hoy, «CEI Ejemplo» (centro de ejemplo; antes ANAIA, con el mismo UUID), arquitectura preparada para multi-centro.
 
 **Estado (2026-10-10):** en producción (Vercel + Supabase). Las fases 0–10 de Ola 1 están cerradas; F11 (pulido final y producción) y F12 (funcionalidad pendiente) están en curso. El detalle está en el [diario de progreso](docs/journey/progress.md) y en el [alcance de Ola 1](docs/specs/scope-ola-1.md).
 
