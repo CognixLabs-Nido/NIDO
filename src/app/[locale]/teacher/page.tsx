@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
 import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
 import { getAvisosInicio } from '@/features/notificaciones/queries/get-avisos-inicio'
@@ -21,7 +21,7 @@ export default async function TeacherDashboard({ params }: PageProps) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   const userId = userData.user?.id
-  const centroId = await getCentroActualId()
+  const { centroId } = await requireContextoCentro(locale)
 
   type AulaRow = { id: string; nombre: string; cohorte_anos_nacimiento: number[] }
   const aulas: AulaRow[] = []

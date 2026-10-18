@@ -7,7 +7,7 @@ import { ArchivarPlantillaButton } from '@/features/informes/components/Archivar
 import { PlantillaInformeDialog } from '@/features/informes/components/PlantillaInformeDialog'
 import { contarItems } from '@/features/informes/lib/estructura'
 import { getPlantillasInforme } from '@/features/informes/queries/get-plantillas-informe'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -21,9 +21,7 @@ export default async function AdminInformesPage({ params, searchParams }: PagePr
   const soloHistorico = (await searchParams).historico === '1'
   const t = await getTranslations('informes')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-  const rol = await getRolEnCentro(centroId)
+  const { rol } = await requireContextoCentro(locale)
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   // --- Vista de archivadas (solo lectura) -----------------------------------

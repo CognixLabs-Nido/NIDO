@@ -6,7 +6,7 @@ import { InvitacionesProfeList } from '@/features/auth/components/InvitacionesPr
 import { InvitarProfeDialog } from '@/features/auth/components/InvitarProfeDialog'
 import { getInvitacionesProfePendientes } from '@/features/auth/queries/get-invitaciones-profe'
 import { getAulasPorCurso } from '@/features/aulas/queries/get-aulas'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { PersonalActivoList } from '@/features/profes-aulas/components/PersonalActivoList'
 import { getPersonalActivoCentro } from '@/features/profes-aulas/queries/get-personal-activo-centro'
@@ -21,7 +21,7 @@ interface PageProps {
 export default async function AdminPersonalPage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('admin.personal')
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
   const cursoActivo = await getCursoActivo(centroId)
 
   if (!cursoActivo) {

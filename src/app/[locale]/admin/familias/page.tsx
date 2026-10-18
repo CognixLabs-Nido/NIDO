@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { FamiliasListado } from '@/features/familias/components/FamiliasListado'
 import { getFamiliasParaGestion } from '@/features/familias/queries/get-familias-gestion'
 
@@ -12,7 +12,7 @@ interface PageProps {
 export default async function AdminFamiliasPage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('admin.familias')
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
   const familias = await getFamiliasParaGestion(centroId)
 
   return (

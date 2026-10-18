@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { AnuncioComposer } from '@/features/messaging/components/AnuncioComposer'
 import { getAulasParaAnuncio } from '@/features/messaging/queries/get-aulas-para-anuncio'
 
@@ -11,10 +11,7 @@ interface PageProps {
 export default async function NuevoAnuncioPage({ params }: PageProps) {
   const { locale } = await params
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-
-  const rol = await getRolEnCentro(centroId)
+  const { centroId, rol } = await requireContextoCentro(locale)
   if (rol !== 'admin' && rol !== 'profe') redirect(`/${locale}/messages`)
 
   const aulas = await getAulasParaAnuncio(centroId)

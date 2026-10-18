@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EditarCentroDialog } from '@/features/centros/components/EditarCentroDialog'
 import { SubirLogoCentro } from '@/features/centros/components/SubirLogoCentro'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { createClient } from '@/lib/supabase/server'
 import { EmptyState } from '@/shared/components/EmptyState'
 
@@ -12,7 +12,7 @@ export default async function AdminCentroPage({ params }: { params: Promise<{ lo
   const { locale } = await params
   const t = await getTranslations('admin.centro')
   const supabase = await createClient()
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
 
   const { data: centro } = await supabase
     .from('centros')

@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getRevocacionesPendientes } from '@/features/fotos/queries/get-revocaciones-pendientes'
 import { EmptyState } from '@/shared/components/EmptyState'
 
@@ -30,7 +30,7 @@ interface PageProps {
 export default async function FotosRevocadasPage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('admin.fotosRevocadas')
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
   const revocaciones = await getRevocacionesPendientes(centroId)
 
   return (

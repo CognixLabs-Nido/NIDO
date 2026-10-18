@@ -10,7 +10,7 @@ import { RecogidaLista } from '@/features/autorizaciones/components/RecogidaList
 import { RegistroAdministracionLista } from '@/features/autorizaciones/components/RegistroAdministracionLista'
 import { getAdministracionesPorAutorizacion } from '@/features/autorizaciones/queries/get-administraciones'
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { createClient } from '@/lib/supabase/server'
 
 interface PageProps {
@@ -21,9 +21,7 @@ export default async function FamilyAutorizacionDetallePage({ params }: PageProp
   const { locale, id } = await params
   const t = await getTranslations('autorizaciones')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-  const rol = await getRolEnCentro(centroId)
+  const { rol } = await requireContextoCentro(locale)
   if (rol !== 'tutor_legal' && rol !== 'autorizado') redirect(`/${locale}/forbidden`)
 
   const supabase = await createClient()

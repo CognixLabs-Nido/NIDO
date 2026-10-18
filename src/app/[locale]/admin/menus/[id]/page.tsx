@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 
 import { getCalendarioMes } from '@/features/calendario-centro/queries/get-calendario-mes'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { EditorMenuMensual } from '@/features/menus/components/EditorMenuMensual'
 import { getPlantillaMes } from '@/features/menus/queries/get-plantilla-mes'
 
@@ -12,9 +12,7 @@ interface PageProps {
 export default async function AdminMenuEditorPage({ params }: PageProps) {
   const { locale, id } = await params
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-  const rol = await getRolEnCentro(centroId)
+  const { centroId, rol } = await requireContextoCentro(locale)
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   const plantillaConMenus = await getPlantillaMes(id)

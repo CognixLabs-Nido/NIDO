@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { LeyendaTiposDia } from '@/features/calendario-centro/components/LeyendaTiposDia'
 import { getCalendarioMes } from '@/features/calendario-centro/queries/get-calendario-mes'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { CalendarioConEventos } from '@/features/eventos/components/CalendarioConEventos'
 import { getEventosMes } from '@/features/eventos/queries/get-eventos-mes'
 
@@ -31,9 +31,7 @@ export default async function FamilyCalendarioPage({ params, searchParams }: Pag
   const { anio: anioQ, mes: mesQ } = await searchParams
   const t = await getTranslations('calendario')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-  const rol = await getRolEnCentro(centroId)
+  const { centroId, rol } = await requireContextoCentro(locale)
   if (rol !== 'tutor_legal' && rol !== 'autorizado' && rol !== 'admin') {
     redirect(`/${locale}/forbidden`)
   }

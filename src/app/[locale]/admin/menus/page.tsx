@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { NuevaPlantillaDialog } from '@/features/menus/components/NuevaPlantillaDialog'
 import { getPlantillasCentro } from '@/features/menus/queries/get-plantillas-centro'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { localeIntl } from '@/shared/lib/locale-intl'
 
@@ -20,9 +20,7 @@ export default async function AdminMenusPage({ params }: PageProps) {
   const t = await getTranslations('menus')
   const tEstado = await getTranslations('menus.estado')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-  const rol = await getRolEnCentro(centroId)
+  const { centroId, rol } = await requireContextoCentro(locale)
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   const plantillas = await getPlantillasCentro(centroId)

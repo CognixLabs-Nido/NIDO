@@ -12,7 +12,7 @@ import { getCampanasInformeCursoActivo } from '@/features/informes/queries/get-c
 import { getInformesDeMisAulas } from '@/features/informes/queries/get-informes-profe'
 import { getPlantillasInforme } from '@/features/informes/queries/get-plantillas-informe'
 import { PERIODOS_INFORME } from '@/features/informes/types'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -27,9 +27,7 @@ export default async function TeacherInformesPage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('informes')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-  const rol = await getRolEnCentro(centroId)
+  const { centroId, rol } = await requireContextoCentro(locale)
   if (rol !== 'profe' && rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   const [aulas, plantillas, campanasData] = await Promise.all([

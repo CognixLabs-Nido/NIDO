@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getNinosArchivadosPorCentro, getNinosPorCentro } from '@/features/ninos/queries/get-ninos'
 import { EmptyState } from '@/shared/components/EmptyState'
 
@@ -28,7 +28,7 @@ export default async function AdminNinosPage({ params, searchParams }: PageProps
   const { locale } = await params
   const { estado, historico } = await searchParams
   const t = await getTranslations('admin.ninos')
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
 
   // F-3-E — sub-vista de archivo (?historico=1): alumnos dados de baja, solo lectura.
   if (historico === '1') {

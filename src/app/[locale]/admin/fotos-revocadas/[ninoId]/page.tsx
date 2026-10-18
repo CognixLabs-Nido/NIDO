@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { Card } from '@/components/ui/card'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { FotoPendienteCard } from '@/features/fotos/components/FotoPendienteCard'
 import { getFotosPendientesNino } from '@/features/fotos/queries/get-fotos-pendientes-nino'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -23,7 +23,7 @@ interface PageProps {
 export default async function FotosRevocadasNinoPage({ params }: PageProps) {
   const { locale, ninoId } = await params
   const t = await getTranslations('admin.fotosRevocadas')
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
   const detalle = await getFotosPendientesNino(ninoId, centroId)
   if (!detalle) notFound()
 

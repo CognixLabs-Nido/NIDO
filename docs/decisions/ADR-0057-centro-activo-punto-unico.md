@@ -55,6 +55,16 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
 
 `getCentroActualId` y `getRolEnCentro` quedan **deprecadas** y delegan en el contexto: desde este PR ya no hay centro al azar en ningún sitio. Se borran cuando la lista se vacíe.
 
+## Sustitución (PRs posteriores)
+
+- **PR2 (páginas):** 37 páginas pasan a `requireContextoCentro(locale)` con un codemod comprobado antes contra 13 casos, 4 de ellos de rechazo. `PENDIENTES_GET_CENTRO` baja de 78 ficheros y 205 usos a 41 y 89. En las páginas que antes mandaban al login cuando faltaba el centro, ahora:
+  - un usuario con varios centros y sin elegir va al selector;
+  - uno sin centro, a `/forbidden`.
+- **Paradas en el PR2, no encajan en el patrón** (siguen en la lista):
+  - `admin/cuotas/recibos/csv/route.ts`, porque es un endpoint de descarga (403), no una página;
+  - `alta/[ninoId]`, porque pide el rol en el centro **del niño**;
+  - `teacher/aula/[id]`, `aula/[id]/fotos` y `aula/[id]/servicio`, porque piden el rol en el centro **del aula**.
+
 ## Alternativas descartadas
 
 - **Coger un centro por defecto** (el primero, el más antiguo…). Es justo lo que falló en MisterFC (#755).

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { MessagesView } from '@/features/messaging/components/MessagesView'
 import { getAdminFamiliaDetalle } from '@/features/messaging/queries/get-admin-familia-detalle'
 import { getAdminFamiliaList } from '@/features/messaging/queries/get-admin-familia-list'
@@ -39,10 +39,7 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
   const { locale } = await params
   const { nino: ninoQuery, tab, tutor: tutorQuery, conv: convQuery } = await searchParams
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-
-  const rolRaw = await getRolEnCentro(centroId)
+  const { centroId, rol: rolRaw } = await requireContextoCentro(locale)
   if (
     !rolRaw ||
     (rolRaw !== 'admin' &&

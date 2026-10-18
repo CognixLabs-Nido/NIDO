@@ -8,7 +8,7 @@ import { getTransferenciasBeca } from '@/features/beca-comedor/queries/get-trans
 import { BecasPanel } from '@/features/becas/components/BecasPanel'
 import { getBecas } from '@/features/becas/queries/get-becas'
 import { getTiposBeca } from '@/features/becas/queries/get-tipos-beca'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { ConceptosCatalogo } from '@/features/conceptos-cobro/components/ConceptosCatalogo'
 import { getConceptosCobro } from '@/features/conceptos-cobro/queries/get-conceptos-cobro'
@@ -49,7 +49,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
   const t = await getTranslations('admin.cuotas')
   const { locale } = await params
   const sp = await searchParams
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
 
   const ahora = new Date()
   const anio = clamp(Number(sp.anio), 2024, 2100) ?? ahora.getFullYear()

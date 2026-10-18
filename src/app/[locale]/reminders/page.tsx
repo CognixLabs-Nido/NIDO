@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { RecordatoriosView } from '@/features/recordatorios/components/RecordatoriosView'
 import { destinosParaRol } from '@/features/recordatorios/lib/form-helpers'
 import { getAulasParaRecordatorios } from '@/features/recordatorios/queries/get-aulas-para-recordatorios'
@@ -21,10 +21,7 @@ type RolRecordatorios = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
 export default async function RemindersPage({ params }: PageProps) {
   const { locale } = await params
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-
-  const rolRaw = await getRolEnCentro(centroId)
+  const { centroId, rol: rolRaw } = await requireContextoCentro(locale)
   // F6-C: los 4 roles acceden a /reminders. admin/profe CREAN y reciben;
   // tutor_legal/autorizado SOLO reciben (sin botón crear → ver RecordatoriosView).
   if (

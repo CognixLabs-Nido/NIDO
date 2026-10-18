@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { ConversacionAdminFamiliaView } from '@/features/messaging/components/ConversacionAdminFamiliaView'
 import { ConversacionView } from '@/features/messaging/components/ConversacionView'
 import { getAdminFamiliaDetalle } from '@/features/messaging/queries/get-admin-familia-detalle'
@@ -14,9 +14,7 @@ interface PageProps {
 export default async function ConversacionPage({ params }: PageProps) {
   const { locale, id } = await params
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-  const rolRaw = await getRolEnCentro(centroId)
+  const { rol: rolRaw } = await requireContextoCentro(locale)
   if (
     !rolRaw ||
     (rolRaw !== 'admin' &&
