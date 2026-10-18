@@ -1,5 +1,5 @@
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { getEstadoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { CentroLogo } from '@/shared/components/brand/CentroLogo'
 
@@ -17,8 +17,10 @@ interface LayoutProps {
  */
 export default async function AltaLayout({ children, params }: LayoutProps) {
   const { locale } = await params
-  const centroId = await getCentroActualId()
-  const logo = centroId ? await getCentroLogo(centroId) : null
+  // Solo la cabecera: con centro activo, su logo; si no (sin elegir aún), «NIDO». La página del
+  // alta autoriza por el niño, no por esto.
+  const estado = await getEstadoCentro()
+  const logo = estado.tipo === 'activo' ? await getCentroLogo(estado.contexto.centroId) : null
 
   return (
     <div className="bg-background flex min-h-[100dvh] flex-col">

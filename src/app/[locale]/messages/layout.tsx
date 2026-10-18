@@ -4,7 +4,8 @@ import { getTranslations } from 'next-intl/server'
 import { AgendaBadge } from '@/features/agenda/components/AgendaBadge'
 import { contarInvitacionesPendientes } from '@/features/agenda/queries/contar-invitaciones-pendientes'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { ConmutadorCentroServidor } from '@/features/centros/components/ConmutadorCentroServidor'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { MessagingBadge } from '@/features/messaging/components/MessagingBadge'
 import { countNoLeidos } from '@/features/messaging/queries/count-no-leidos'
@@ -31,10 +32,10 @@ export default async function MessagesLayout({ children, params }: LayoutProps) 
   const tNav = await getTranslations('admin.nav') // 'perfil' es común a los tres roles
   const tRoles = await getTranslations('auth.select_role.roles')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
+  const contexto = await requireContextoCentro(locale)
+  const centroId = contexto.centroId
 
-  const rolRaw = await getRolEnCentro(centroId)
+  const rolRaw = contexto.rol
   if (
     !rolRaw ||
     (rolRaw !== 'admin' &&
@@ -79,6 +80,7 @@ export default async function MessagesLayout({ children, params }: LayoutProps) 
           roleLabel,
         }}
         centroLogo={centroLogo ? { url: centroLogo.logoUrl, name: centroLogo.nombre } : null}
+        conmutadorCentro={<ConmutadorCentroServidor contexto={contexto} locale={locale} />}
         profileHref={`/${locale}/profile`}
         profileLabel={tNav('perfil')}
         ariaLabel={tNav('aria_label')}

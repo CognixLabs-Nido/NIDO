@@ -4,7 +4,8 @@ import { getTranslations } from 'next-intl/server'
 import { AgendaBadge } from '@/features/agenda/components/AgendaBadge'
 import { contarInvitacionesPendientes } from '@/features/agenda/queries/contar-invitaciones-pendientes'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { ConmutadorCentroServidor } from '@/features/centros/components/ConmutadorCentroServidor'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { MessagingBadge } from '@/features/messaging/components/MessagingBadge'
 import { countNoLeidos } from '@/features/messaging/queries/count-no-leidos'
@@ -22,10 +23,10 @@ export default async function TeacherLayout({ children, params }: LayoutProps) {
   const { locale } = await params
   const t = await getTranslations('teacher.nav')
   const tRoles = await getTranslations('auth.select_role.roles')
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
+  const contexto = await requireContextoCentro(locale)
+  const centroId = contexto.centroId
 
-  const rol = await getRolEnCentro(centroId)
+  const rol = contexto.rol
   if (rol !== 'profe' && rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   const user = await getCurrentUser()
@@ -52,6 +53,7 @@ export default async function TeacherLayout({ children, params }: LayoutProps) {
           roleLabel: tRoles('profe'),
         }}
         centroLogo={centroLogo ? { url: centroLogo.logoUrl, name: centroLogo.nombre } : null}
+        conmutadorCentro={<ConmutadorCentroServidor contexto={contexto} locale={locale} />}
         profileHref={`/${locale}/profile`}
         profileLabel={t('perfil')}
         ariaLabel={t('aria_label')}

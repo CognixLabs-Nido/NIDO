@@ -18,6 +18,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { signIn } from '@/features/auth/actions/sign-in'
 import { signInSchema, type SignInInput } from '@/features/auth/schemas/sign-in'
+import { rutaInterna } from '@/shared/lib/ruta-interna'
 
 interface LoginFormProps {
   locale: string
@@ -43,7 +44,8 @@ export function LoginForm({ locale }: LoginFormProps) {
         setServerErrorKey(result.error)
         return
       }
-      const returnTo = searchParams.get('returnTo')
+      // `returnTo` llega en la URL: solo se sigue si es una ruta interna (si no, redirección abierta).
+      const returnTo = rutaInterna(locale, searchParams.get('returnTo'))
       router.push(returnTo ?? `/${locale}/select-role`)
       router.refresh()
     })

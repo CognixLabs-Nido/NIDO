@@ -27,7 +27,6 @@ export function RoleSelector({ locale, roles }: Props) {
 
   function pick(role: Role) {
     startTransition(() => {
-      document.cookie = `nido_active_role=${role}; Path=/; SameSite=Lax`
       router.push(`/${locale}/${DASHBOARD_BY_ROLE[role]}`)
       router.refresh()
     })

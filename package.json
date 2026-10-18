@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "db:types": "npx supabase@2.98.2 gen types typescript --project-id ttroedkdgomfmohgojvg > src/types/database.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "check:centro-activo": "node scripts/check-centro-activo.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

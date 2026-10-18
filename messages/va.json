@@ -4177,5 +4177,20 @@
       "total": "Total",
       "totales": "Totals"
     }
+  },
+  "centros": {
+    "elegir": {
+      "titulo": "Tria el centre",
+      "subtitulo": "Tens accés a més d’un centre. Tria amb quin entrar; podràs canviar-lo després des del menú.",
+      "sin_nombre": "Centre sense nom",
+      "errors": {
+        "invalido": "No hem pogut obrir eixe centre. Torna-ho a provar.",
+        "no_es_tuyo": "No tens accés a eixe centre."
+      }
+    },
+    "conmutador": {
+      "etiqueta": "Centre",
+      "cambiar": "Canviar de centre"
+    }
   }
 }

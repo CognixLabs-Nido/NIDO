@@ -1,0 +1,88 @@
+# ADR-0057: Centro activo y punto único de contexto en la app
+
+## Estado
+
+`accepted`
+
+**Fecha:** 2026-10-18
+**Autores:** responsable + claude-code
+**Fase del proyecto:** Multicentro · Fase 1
+
+## Contexto
+
+NIDO va a tener varios centros (multicentro, plan en fases). La base de datos ya autoriza por centro: los helpers de RLS reciben el centro por parámetro (`es_admin(centro)`, `pertenece_a_centro`…) y `roles_usuario` admite el mismo usuario en varios centros. Lo que asumía un solo centro era la app:
+
+- `getCentroActualId()` sacaba «el» centro del usuario con `roles_usuario … limit(1)` **sin orden**: con dos centros, uno al azar. Lo importaban 81 ficheros, y había tres copias más con el mismo patrón.
+- Unos 30 ficheros leían `roles_usuario` por su cuenta.
+- No había selector de centro, ni cookie, ni «centro activo».
+
+Es el fallo #755 de MisterFC, pero peor: allí el club por defecto era el primero alfabético y aun así el superadmin vio y escribió en el club equivocado. Hoy, con un solo centro en producción, nadie lo nota: todos los usuarios tienen uno.
+
+## Decisión
+
+**Un único módulo saca el centro del usuario actual: `src/features/centros/contexto/`.**
+
+- **`resolver.ts`** (puro) fija las reglas:
+  - sin roles → `sin_centro`;
+  - **un centro → ese, siempre**. La cookie no se mira, y quien tiene un centro no ve nunca el selector;
+  - **varios → el de la cookie si es uno de los suyos; si no, `elegir`**. Nunca se coge uno por defecto.
+- **`get-contexto-centro.ts`** expone dos entradas:
+  - `requireContextoCentro(locale)` para páginas y layouts. Devuelve `{ centroId, rol, roles, esSuperusuario, centros }` o redirige (login, forbidden o el selector);
+  - `contextoEnCentro(centroId)` para acciones con el centro **explícito**. No lee la cookie, así que una pestaña antigua actúa sobre el centro que enseña, no sobre el último elegido en otra pestaña.
+- **Cookie `nido_centro_activo`** (httpOnly, `sameSite=lax`, un año). Solo guarda la elección; no autoriza nada, porque se valida contra los centros del usuario en cada lectura.
+  - La escribe **solo** la acción `elegirCentro`, nunca el render (lección #756 de MisterFC: reescribirla mientras se pinta dio un 500).
+  - La borra `signOut`.
+- **El selector** (`/[locale]/elegir-centro`) y **el conmutador** de la barra lateral se montan solo con más de un centro.
+- `select-role` ofrece los roles del **centro activo**.
+- `esSuperusuario` existe ya en el tipo; hoy siempre es `false`. Lo rellena la Fase 3.
+
+**Guard de CI `scripts/check-centro-activo.mjs`** (como `check-club-activo` de MisterFC). Corre con los unit tests (`src/test/guards/check-centro-activo.test.ts`) y con `npm run check:centro-activo`. Fuera del módulo de contexto falla si:
+
+- se lee `roles_usuario` más veces de las que admite la lista para ese fichero;
+- se nombra `getCentroActualId` o `getRolEnCentro` más veces de las que admite la lista para ese fichero (import y llamadas). Un fichero nuevo, o una llamada nueva en uno que ya estaba, es rojo.
+
+**Bloquea desde este PR, no solo avisa.** Lo que ya existe queda congelado en la lista, y cualquier aumento pone la CI en rojo (en los unit tests y en el paso «Guard centro activo» de `ci-pr.yml`). Ese paso imprime en el log y en el resumen del job cuánto queda: hoy 37 lecturas de `roles_usuario` fuera del módulo (16 por migrar y 21 que se quedan, repartidas en 16 ficheros) y 78 ficheros con 205 usos de las deprecadas.
+
+La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
+
+- `LECTURAS_PERMITIDAS`, que se quedan, cada una con su motivo: miran a otro usuario, clasifican una cuenta o cuentan el personal de un centro explícito;
+- `LECTURAS_PENDIENTES`, del usuario actual, por migrar;
+- `PENDIENTES_GET_CENTRO`, los ficheros que aún usan las funciones deprecadas, con su número de usos.
+
+**Una entrada que sobra, o un número más alto que los usos reales, también es rojo**, así que la lista solo puede bajar, y cada PR de la sustitución la baja exactamente en lo que migra. Los comentarios se quitan antes de buscar.
+
+**El PR5 la vacía y la quita.** Se borran `getCentroActualId` y `getRolEnCentro`, `PENDIENTES_GET_CENTRO` desaparece del guard, y la regla B pasa a ser «cualquier mención fuera del módulo es rojo», sin lista. Ya no hay sitio donde volver a meter una excepción.
+
+`getCentroActualId` y `getRolEnCentro` quedan **deprecadas** y delegan en el contexto: desde este PR ya no hay centro al azar en ningún sitio. Se borran cuando la lista se vacíe.
+
+## Alternativas descartadas
+
+- **Coger un centro por defecto** (el primero, el más antiguo…). Es justo lo que falló en MisterFC (#755).
+- **Guardar el centro activo en `usuarios`.** Lo compartirían todas las pestañas y dispositivos, y cambiarlo sería una escritura auditada por cada cambio de centro.
+- **Que las acciones lean la cookie.** Una pestaña antigua escribiría en el centro elegido después en otra. Las acciones reciben el centro explícito: de la página o del registro que tocan.
+
+## Consecuencias
+
+- **Positivas:** hay un solo sitio que decide el centro, con test. Quien tiene un centro no nota nada. El guard impide reintroducir el `limit(1)`.
+- **Negativas:**
+  - Un usuario con varios centros que llega por un enlace profundo sin cookie pasa por el selector y después al reparto por rol, no al enlace: los layouts no conocen la ruta. Se puede añadir cuando haga falta.
+  - La lista base es larga hasta que terminen los PRs de la sustitución.
+- **Fuera de esta fase:** el proxy sigue igual (deja pasar con un rol de cualquier centro; el superusuario entra en la Fase 3).
+- **Entra en este PR, encontrado al hacerlo:**
+  - El login hacía `router.push(returnTo)` sin validar. Era una redirección abierta: un enlace de login con `returnTo=https://…` sacaba del sitio al usuario recién autenticado. Ahora pasa por `rutaInterna` (`src/shared/lib/ruta-interna.ts`), la misma validación que usa el selector de centro.
+  - La cookie `nido_active_role` que escribía el selector de rol no la leía nadie. Se borra, para no tener una cookie de sesión muerta junto a la del centro. Era de sesión (sin `Max-Age`), así que la que quede en algún navegador desaparece al cerrarlo.
+
+## Verificación
+
+- `src/features/centros/contexto/__tests__/resolver.test.ts`: las reglas, con un usuario en dos centros. Cubre cookie de uno, del otro, ausente, ajena y basura, y que un centro nunca enseña selector.
+- `get-contexto-centro.test.ts`: el contexto con los dos centros y las redirecciones. `contextoEnCentro` ignora la cookie.
+- `elegir-centro.test.ts`: solo escribe la cookie con un centro suyo, y `returnTo` no saca de la app.
+- `ConmutadorCentroServidor.test.tsx`: con un centro no se pinta nada ni se consulta.
+- `src/test/rls/multicentro-contexto.rls.test.ts`: contra la BD, el usuario de dos centros lee sus dos roles y los nombres de A y B, nunca de C.
+- `src/test/guards/check-centro-activo.test.ts`: el árbol real cumple, y en un árbol de mentira se pone rojo cada caso (lectura nueva, uso nuevo en un import multilínea, llamada nueva en un fichero que ya estaba, lista rancia, número sin bajar, lectura de más). Un nombre en un comentario no cuenta.
+- `ruta-interna.test.ts` y `LoginForm.returnTo.test.tsx`: el login solo sigue rutas internas. `RoleSelector.test.tsx`: no escribe cookies.
+
+## Referencias
+
+- MisterFC #755/#757/#758 (club equivocado) y #756 (500 por reescribir la cookie en el render).
+- ADR-0053 (postura de seguridad, multicentro en la BD).
