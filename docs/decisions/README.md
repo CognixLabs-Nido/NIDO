@@ -82,3 +82,4 @@ La numeración avanza cronológicamente, pero hay dos huecos explícitos:
 | 0054 | Consentimiento de imagen por niño como única fuente de verdad (serie IU)  | accepted                                  |
 | 0055 | Suite RLS en BD efímera en la CI y la remota como red nocturna            | accepted                                  |
 | 0056 | Seguimiento de errores con Sentry, región UE y sin datos personales       | accepted                                  |
+| 0057 | Centro activo y punto único de contexto en la app                         | accepted                                  |

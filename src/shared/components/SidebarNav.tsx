@@ -25,6 +25,8 @@ interface SidebarNavProps {
     roleLabel: string
   }
   centroLogo?: { url: string; name: string } | null
+  /** Conmutador de centro (multicentro); el layout solo lo pasa a quien tiene más de un centro. */
+  conmutadorCentro?: ReactNode
   profileHref: string
   profileLabel: string
   ariaLabel: string
@@ -35,6 +37,7 @@ export function SidebarNav({
   items,
   user,
   centroLogo,
+  conmutadorCentro,
   profileHref,
   profileLabel,
   ariaLabel,
@@ -60,6 +63,9 @@ export function SidebarNav({
             <div className="border-sidebar-border/60 border-t pt-3">
               <CentroLogo url={centroLogo.url} name={centroLogo.name} width={140} height={38} />
             </div>
+          )}
+          {conmutadorCentro && (
+            <div className="border-sidebar-border/60 border-t pt-3">{conmutadorCentro}</div>
           )}
         </div>
         <nav className="flex-1 overflow-y-auto px-3">
@@ -133,6 +139,9 @@ export function SidebarNav({
             {(user?.name ?? '?').slice(0, 1).toUpperCase()}
           </Link>
         </div>
+        {conmutadorCentro && (
+          <div className="border-sidebar-border/60 border-t px-4 py-2">{conmutadorCentro}</div>
+        )}
         <nav className="border-sidebar-border/60 flex gap-1 overflow-x-auto border-t px-3 py-2">
           {items.map((item) => {
             const active = isActive(item.href)

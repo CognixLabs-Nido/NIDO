@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { RoleSelector } from '@/features/auth/components/RoleSelector'
-import { createClient } from '@/lib/supabase/server'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 
 type Role = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
 
@@ -22,17 +22,9 @@ export default async function SelectRolePage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('auth.select_role')
 
-  const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) redirect(`/${locale}/login`)
-
-  const { data: rolesRows } = await supabase
-    .from('roles_usuario')
-    .select('rol')
-    .eq('usuario_id', userData.user.id)
-    .is('deleted_at', null)
-
-  const roles = Array.from(new Set((rolesRows ?? []).map((r) => r.rol as Role)))
+  // Los roles del centro ACTIVO (multicentro · Fase 1). Con varios centros y ninguno elegido,
+  // `requireContextoCentro` manda antes al selector de centro; sin sesión, a login.
+  const { roles } = await requireContextoCentro(locale)
 
   if (roles.length === 0) redirect(`/${locale}/forbidden`)
   if (roles.length === 1) redirect(`/${locale}/${DASHBOARD_BY_ROLE[roles[0]]}`)

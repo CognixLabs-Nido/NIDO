@@ -4177,5 +4177,20 @@
       "total": "Total",
       "totales": "Totals"
     }
+  },
+  "centros": {
+    "elegir": {
+      "titulo": "Choose your school",
+      "subtitulo": "You have access to more than one school. Choose which one to enter; you can change it later from the menu.",
+      "sin_nombre": "Unnamed school",
+      "errors": {
+        "invalido": "We could not open that school. Please try again.",
+        "no_es_tuyo": "You do not have access to that school."
+      }
+    },
+    "conmutador": {
+      "etiqueta": "School",
+      "cambiar": "Change school"
+    }
   }
 }

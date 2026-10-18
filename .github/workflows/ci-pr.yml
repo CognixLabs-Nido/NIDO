@@ -37,6 +37,11 @@ jobs:
       - name: Format check
         run: npm run format:check
 
+      # Multicentro: lo que queda por migrar al contexto de centro (y rojo si algo sube). El mismo
+      # guard corre dentro de los unit tests; este paso lo deja impreso en el log y el resumen.
+      - name: Guard centro activo
+        run: npm run check:centro-activo
+
       # Solo el proyecto `unit` (excluye src/test/rls/** y src/test/audit/**): sin red,
       # sin credenciales del remoto. Los tests RLS/audit corren en `rls-local.yml`.
       - name: Unit tests

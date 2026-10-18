@@ -243,17 +243,16 @@ Las decisiones de producto vienen marcadas en el prompt de Fase 1 y están refor
 4. Sin sesión → `NextResponse.redirect('/{locale}/login?returnTo={pathname}')`.
 5. Con sesión: consulta `roles_usuario` del usuario. Si **ninguno** de sus roles activos coincide con el requerido por la ruta → `NextResponse.redirect('/{locale}/forbidden')`.
 
-### B6.bis — Nota de seguridad: cookie de rol activo vs. RLS
+### B6.bis — Nota de seguridad: rol elegido en la UI vs. RLS
 
-**Importante.** La cookie `nido_active_role` (HttpOnly) controla **únicamente la UI**: qué dashboard se renderiza cuando el usuario tiene varios roles. **No** participa en ninguna decisión de autorización a nivel de base de datos.
+**Importante.** El rol que el usuario elige en `/select-role` solo decide **a qué panel navega** (`/admin`, `/teacher`, `/family`): no se guarda en ninguna cookie. No hay cookie de rol activo. La antigua `nido_active_role` no la leía nadie y se quitó en ADR-0057. El rol no participa en ninguna decisión de autorización a nivel de base de datos. (La cookie del **centro** activo, `nido_centro_activo`, es otra cosa: ver ADR-0057; tampoco autoriza, se valida contra los centros del usuario en cada lectura.)
 
 - **Las políticas RLS de Supabase siempre validan contra _todos_ los roles activos del usuario** (`roles_usuario` filtrado por `deleted_at IS NULL`). No leen la cookie.
 - Un admin que también es tutor de su propio hijo tendrá, a nivel BD, los permisos de admin _y_ de tutor simultáneamente, independientemente del rol activo en la UI.
-- Si el usuario cambia el rol activo desde el selector, la UI re-renderiza el dashboard correspondiente, pero las queries devolverán los mismos datos que antes a igualdad de parámetros.
-- Una cookie manipulada por el cliente no escala privilegios: lo único que cambia es qué pantalla se le muestra, no qué puede leer o escribir.
-- El middleware aplica esta misma regla: para autorizar una ruta `/admin/*`, comprueba que **alguno** de los roles del usuario es `admin`. La cookie no influye en la decisión.
+- Si el usuario cambia de panel desde el selector, la UI muestra el dashboard correspondiente, pero las queries devolverán los mismos datos que antes a igualdad de parámetros.
+- El middleware aplica esta misma regla: para autorizar una ruta `/admin/*`, comprueba que **alguno** de los roles del usuario es `admin`.
 
-Esto simplifica el modelo (menos código de auth en RLS) y elimina toda una clase de bugs por mismatch entre cookie y permisos reales. La cookie es presentational state, no security state.
+Esto simplifica el modelo (menos código de auth en RLS) y elimina toda una clase de bugs por mismatch entre el rol de la UI y los permisos reales.
 
 ## Casos edge
 
@@ -263,12 +262,11 @@ Esto simplifica el modelo (menos código de auth en RLS) y elimina toda una clas
 - **Invitación rechazada**: queda registrada con `rejected_at`, no se vuelve a mostrar al usuario, admin puede ver el rechazo (futura tabla de auditoría en Fase 2).
 - **Múltiples invitaciones pendientes al mismo email para el mismo niño**: en B1 se deduplican (UPDATE en lugar de INSERT).
 - **Reset password de email inexistente**: respuesta idéntica a la del caso éxito.
-- **Acceso a ruta protegida sin sesión**: redirect a `/{locale}/login?returnTo=...`. El returnTo se respeta tras login.
+- **Acceso a ruta protegida sin sesión**: redirect a `/{locale}/login?returnTo=...`. El returnTo se respeta tras login **solo si es una ruta interna del mismo idioma** (`rutaInterna`); si no, se va a `/select-role` (sin redirección abierta, ADR-0057).
 - **Acceso a ruta de otro rol**: redirect a `/{locale}/forbidden`. El middleware comprueba contra _todos_ los roles del usuario, no contra el rol activo (B6.bis).
 - **Sesión expirada durante navegación**: Supabase SDK refresca automáticamente; si el refresh falla, el siguiente request al middleware redirige a login.
 - **Usuario sin ningún rol activo** (caso anómalo): redirect a `/{locale}/forbidden`.
-- **Multi-rol**: tras login, redirect a `/{locale}/select-role`. La cookie `nido_active_role` (HttpOnly) controla solo qué dashboard se renderiza; no afecta RLS (B6.bis).
-- **Cookie `nido_active_role` manipulada**: la única consecuencia es que la UI renderiza un dashboard que no corresponde al rol elegido; las RLS de Supabase no se ven afectadas.
+- **Multi-rol**: tras login, redirect a `/{locale}/select-role`, que lleva al panel del rol elegido; no afecta RLS (B6.bis).
 - **i18n del email de Supabase**: en Ola 1 los emails van en inglés/español según preferencia configurada en Dashboard. Mejoramos plantillas en Ola 2 con Resend.
 - **Sin conexión al enviar formulario**: RHF muestra estado "Enviando..."; al fallar fetch, toast de error con CTA "Reintentar".
 - **Datos inválidos**: Zod errores con claves i18n.

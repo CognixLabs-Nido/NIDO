@@ -6,7 +6,8 @@ import { contarInvitacionesPendientes } from '@/features/agenda/queries/contar-i
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { CambiosPendientesBadge } from '@/features/cambios-pendientes/components/CambiosPendientesBadge'
 import { contarCambiosPendientes } from '@/features/cambios-pendientes/queries/get-cola'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { ConmutadorCentroServidor } from '@/features/centros/components/ConmutadorCentroServidor'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { MessagingBadge } from '@/features/messaging/components/MessagingBadge'
 import { countNoLeidos } from '@/features/messaging/queries/count-no-leidos'
@@ -24,10 +25,10 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
   const { locale } = await params
   const t = await getTranslations('admin.nav')
   const tRoles = await getTranslations('auth.select_role.roles')
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
+  const contexto = await requireContextoCentro(locale)
+  const centroId = contexto.centroId
 
-  const rol = await getRolEnCentro(centroId)
+  const rol = contexto.rol
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   const user = await getCurrentUser()
@@ -56,6 +57,7 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
           roleLabel: tRoles('admin'),
         }}
         centroLogo={centroLogo ? { url: centroLogo.logoUrl, name: centroLogo.nombre } : null}
+        conmutadorCentro={<ConmutadorCentroServidor contexto={contexto} locale={locale} />}
         profileHref={`/${locale}/profile`}
         profileLabel={t('perfil')}
         ariaLabel={t('aria_label')}
