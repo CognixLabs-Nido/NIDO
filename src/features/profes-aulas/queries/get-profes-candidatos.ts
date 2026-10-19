@@ -3,6 +3,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { createClient } from '@/lib/supabase/server'
+import { profesDelCentroConNombre } from '@/features/centros/contexto/roles-de-otros'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
@@ -31,12 +32,7 @@ export async function getProfesCandidatosCore(
   supabase: SupabaseClient<Database>,
   centroId: string
 ): Promise<ProfeCandidato[]> {
-  const { data, error } = await supabase
-    .from('roles_usuario')
-    .select('usuario:usuarios!inner(id, nombre_completo)')
-    .eq('centro_id', centroId)
-    .eq('rol', 'profe')
-    .is('deleted_at', null)
+  const { data, error } = await profesDelCentroConNombre(supabase, centroId)
 
   if (error) {
     logger.warn('getProfesCandidatos error', error.message)

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase/server'
+import { tieneRolFamiliarEn } from '@/features/centros/contexto/roles-de-otros'
 import { logger } from '@/shared/lib/logger'
 
 import { crearVinculoSchema, permisosDefault, type CrearVinculoInput } from '../schemas/vinculo'
@@ -35,17 +36,8 @@ export async function crearVinculo(
 
   if (!nino) return fail('nino.errors.no_encontrado')
 
-  const { data: rol } = await supabase
-    .from('roles_usuario')
-    .select('rol')
-    .eq('usuario_id', parsed.data.usuario_id)
-    .eq('centro_id', nino.centro_id)
-    .is('deleted_at', null)
-    .in('rol', ['tutor_legal', 'autorizado'])
-    .limit(1)
-    .maybeSingle()
-
-  if (!rol) return fail('vinculo.validation.usuario_sin_rol')
+  if (!(await tieneRolFamiliarEn(supabase, parsed.data.usuario_id, nino.centro_id)))
+    return fail('vinculo.validation.usuario_sin_rol')
 
   const permisos = permisosDefault(parsed.data.tipo_vinculo)
 

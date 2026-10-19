@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 
 import { routing } from './i18n/routing'
 import { requiredRolesFor } from './proxy-roles'
+import { rolesEnCualquierCentro } from '@/features/centros/contexto/roles-del-usuario'
 
 import type { Database } from '@/types/database'
 
@@ -105,13 +106,7 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
 
   const required = requiredRolesFor(rest)
   if (required) {
-    const { data: roles } = await supabase
-      .from('roles_usuario')
-      .select('rol')
-      .eq('usuario_id', user.id)
-      .is('deleted_at', null)
-
-    const userRoles = (roles ?? []).map((r) => r.rol)
+    const userRoles = await rolesEnCualquierCentro(supabase, user.id)
     const hasAny = required.some((r) =>
       userRoles.includes(r as Database['public']['Enums']['user_role'])
     )

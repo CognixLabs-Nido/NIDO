@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 // Guard de multicentro (como `check-club-activo` de MisterFC, que cazó su #755).
 //
-// El centro del usuario actual se saca SOLO en `src/features/centros/contexto/`. Este guard falla
-// si fuera de ahí:
-//   A. se lee `roles_usuario` (cualquier `.from('roles_usuario')`) más o menos veces de las que
-//      dice `LECTURAS_PERMITIDAS`: lecturas que miran a OTRO usuario, cada una con su motivo. Un
-//      fichero nuevo, o una lectura nueva en uno que ya estaba, es rojo; una entrada que sobra,
-//      también.
-//   B. se nombra `getCentroActualId` o `getRolEnCentro`, en código o en un comentario. Se borraron
-//      al cerrar la Fase 1 (PR5) y no hay lista que las admita: cualquier mención es rojo.
+// `roles_usuario` se toca SOLO en `src/features/centros/contexto/`: ahí viven, con nombre y con su
+// motivo, la lectura del centro del usuario actual, las que miran a otro usuario o a un centro
+// explícito, y las escrituras de la invitación. Este guard falla si fuera de ahí:
+//   A. aparece cualquier `.from('roles_usuario')` (lectura o escritura);
+//   B. se nombra `getCentroActualId` o `getRolEnCentro` (borradas en el PR5), también en un
+//      comentario.
+// No hay lista de excepciones (se quitó en el PR6): una lectura nueva va al módulo como función
+// con nombre, o no entra.
 //
 // Para la regla A los comentarios se quitan antes de buscar: un nombre en un comentario no es una
 // lectura.
@@ -17,8 +17,6 @@
 import { appendFileSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import { LECTURAS_PERMITIDAS } from './check-centro-activo.lista.mjs'
 
 const MODULO_CONTEXTO = 'src/features/centros/contexto/'
 const RE_ROLES = /\.from\(\s*['"`]roles_usuario['"`]\s*\)/g
@@ -76,49 +74,40 @@ function ficheros(dir, raiz) {
 }
 
 /**
- * @typedef {{
- *   LECTURAS_PERMITIDAS: Record<string, { n: number; motivo: string }>
- * }} ListaCentroActivo
- */
-
-/**
- * Revisa el árbol `src/` bajo `raiz` contra la lista. Devuelve los problemas y el recuento
- * (se imprime siempre, también cuando pasa).
+ * Revisa el árbol `src/` bajo `raiz`. Devuelve los problemas y el recuento (se imprime siempre,
+ * también cuando pasa). No recibe ninguna lista: no hay excepciones que pasarle.
  *
  * @param {string} raiz
- * @param {ListaCentroActivo} [lista]
  */
-export function revisar(raiz, lista = { LECTURAS_PERMITIDAS }) {
+export function revisar(raiz) {
   const problemas = []
   const lecturas = new Map()
   const usanDeprecadas = new Map()
+  let ficherosRevisados = 0
+  let usosEnElModulo = 0
 
   for (const rel of ficheros(path.join(raiz, 'src'), raiz)) {
-    if (rel.startsWith(MODULO_CONTEXTO)) continue
     const texto = readFileSync(path.join(raiz, rel), 'utf8')
     const n = (sinComentarios(texto).match(RE_ROLES) ?? []).length
+    // Dentro del módulo se cuenta, no se prohíbe: es el control de que el patrón sigue cazando.
+    if (rel.startsWith(MODULO_CONTEXTO)) {
+      usosEnElModulo += n
+      continue
+    }
+    ficherosRevisados++
     if (n > 0) lecturas.set(rel, n)
     // B va sobre el texto entero: tampoco vale nombrarlas en un comentario.
     const usos = (texto.match(RE_DEPRECADAS) ?? []).length
     if (usos > 0) usanDeprecadas.set(rel, usos)
   }
 
-  // A. Lecturas de roles_usuario: las del fichero tienen que ser exactamente las de la lista.
-  for (const rel of new Set([...lecturas.keys(), ...Object.keys(lista.LECTURAS_PERMITIDAS)])) {
-    const hay = lecturas.get(rel) ?? 0
-    const esperadas = lista.LECTURAS_PERMITIDAS[rel]?.n ?? 0
-    if (hay > esperadas) {
-      problemas.push(
-        `${rel}: ${hay} lectura(s) de roles_usuario y la lista admite ${esperadas}. ` +
-          'El centro del usuario actual se saca con requireContextoCentro / contextoEnCentro; ' +
-          'una lectura que mira a OTRO usuario va a LECTURAS_PERMITIDAS con su motivo.'
-      )
-    } else if (hay < esperadas) {
-      problemas.push(
-        `${rel}: la lista admite ${esperadas} lectura(s) de roles_usuario y hay ${hay}. ` +
-          'Bórrala de la lista (solo puede bajar).'
-      )
-    }
+  // A. roles_usuario: ninguna lectura ni escritura fuera del módulo de contexto.
+  for (const [rel, hay] of lecturas) {
+    problemas.push(
+      `${rel}: toca roles_usuario ${hay} vez/veces fuera de features/centros/contexto/. ` +
+        'El centro del usuario actual sale de requireContextoCentro / contextoEnCentro; una ' +
+        'lectura que mire a otro usuario va al módulo como función con nombre (roles-de-otros.ts).'
+    )
   }
 
   // B. getCentroActualId / getRolEnCentro: borradas en el PR5. Ninguna mención, sin excepciones.
@@ -131,8 +120,9 @@ export function revisar(raiz, lista = { LECTURAS_PERMITIDAS }) {
   }
 
   const recuento = {
+    ficherosRevisados,
+    usosEnElModulo,
     lecturasRoles: [...lecturas.values()].reduce((a, b) => a + b, 0),
-    ficherosConLecturas: lecturas.size,
     usosDeprecadas: [...usanDeprecadas.values()].reduce((a, b) => a + b, 0),
   }
   return { problemas, recuento }
@@ -142,9 +132,18 @@ const esCli = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve
 if (esCli) {
   const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
   const { problemas, recuento } = revisar(raiz)
+  // Los dos ceros: «0 fuera» solo vale si el guard ha mirado ficheros y su patrón caza los usos de
+  // dentro del módulo. Un recorrido vacío o un patrón roto pasarían en verde sin medir nada.
+  if (recuento.ficherosRevisados === 0 || recuento.usosEnElModulo === 0) {
+    problemas.push(
+      `el guard no ha medido nada: ${recuento.ficherosRevisados} ficheros revisados y ` +
+        `${recuento.usosEnElModulo} usos de roles_usuario dentro del módulo de contexto.`
+    )
+  }
   const linea =
-    `check-centro-activo: ${recuento.lecturasRoles} lecturas de roles_usuario fuera del contexto ` +
-    `en ${recuento.ficherosConLecturas} ficheros (todas en LECTURAS_PERMITIDAS), ` +
+    `check-centro-activo: ${recuento.ficherosRevisados} ficheros revisados, ` +
+    `${recuento.lecturasRoles} usos de roles_usuario fuera del contexto ` +
+    `(${recuento.usosEnElModulo} dentro), ` +
     `${recuento.usosDeprecadas} menciones de getCentroActualId/getRolEnCentro.`
   process.stdout.write(`${linea}\n`)
   // En la CI, también en el resumen del job.

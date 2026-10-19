@@ -3,6 +3,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
+import { profesDelCentro } from '@/features/centros/contexto/roles-de-otros'
 import type { Database } from '@/types/database'
 
 type Client = SupabaseClient<Database>
@@ -66,15 +67,9 @@ export async function tutoresDeNinos(
   return Array.from(out)
 }
 
-/** Usuarios con rol profe activo en el centro. */
+/** Usuarios con rol profe activo en el centro (la lectura vive en el módulo de contexto). */
 export async function profesDeCentro(client: Client, centroId: string): Promise<string[]> {
-  const { data } = await client
-    .from('roles_usuario')
-    .select('usuario_id')
-    .eq('centro_id', centroId)
-    .eq('rol', 'profe')
-    .is('deleted_at', null)
-  return (data ?? []).map((r) => r.usuario_id)
+  return profesDelCentro(client, centroId)
 }
 
 /** Profes con asignación activa a un aula (`profes_aulas`). Nuevo en F7b. */

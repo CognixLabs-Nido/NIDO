@@ -3,6 +3,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { Database } from '@/types/database'
+import { rolesDelSujetoParaExport } from '@/features/centros/contexto/roles-de-otros'
 
 import {
   BUCKET_DNI_TUTORES,
@@ -95,7 +96,7 @@ export async function recolectarUsuario(
   if (!usuario) return null // no accesible para el solicitante
 
   const [roles, consentimientos, vinculos] = await Promise.all([
-    client.from('roles_usuario').select('*').eq('usuario_id', usuarioId),
+    rolesDelSujetoParaExport(client, usuarioId),
     client.from('consentimientos').select('*').eq('usuario_id', usuarioId),
     client.from('vinculos_familiares').select('*').eq('usuario_id', usuarioId),
   ])
@@ -120,7 +121,7 @@ export async function recolectarUsuario(
     client.from('firmas_autorizacion').select('*').eq('firmante_id', usuarioId),
   ])
 
-  const centroId = (roles.data ?? []).map((r) => r.centro_id)[0] ?? null
+  const centroId = roles.map((r) => r.centro_id)[0] ?? null
 
   // Lo que la sesión no alcanza (perfil de familia, cobros, lista de espera, dispositivos…).
   const extra = await datosSujeto(client, 'usuario', usuarioId)
@@ -144,7 +145,7 @@ export async function recolectarUsuario(
     centroId,
     data: {
       ficha: usuario,
-      roles: roles.data ?? [],
+      roles,
       consentimientos: consentimientos.data ?? [],
       vinculos_familiares: vinculos.data ?? [],
       mensajes,

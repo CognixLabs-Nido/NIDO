@@ -55,7 +55,7 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
 
 `getCentroActualId` y `getRolEnCentro` quedaron **deprecadas** y delegando en el contexto desde el PR1 (ya no había centro al azar en ningún sitio) y se borraron en el PR5.
 
-**Lo que queda, a propósito:** `LECTURAS_PERMITIDAS`, las lecturas de `roles_usuario` que miran a OTRO usuario (19 en 14 ficheros), cada una con su motivo. Es la única lista del guard, y añadir una entrada exige escribir el motivo en un PR.
+**El PR6 quita la última lista.** Las 19 lecturas de `LECTURAS_PERMITIDAS` (14 ficheros) pasan al módulo de contexto como funciones con nombre, cada una con su motivo en el comentario, y el guard prohíbe cualquier `.from('roles_usuario')` fuera de `features/centros/contexto/`, lectura o escritura. No hay fichero de lista y `revisar` no lee ninguna: una lectura nueva va al módulo con nombre, o no entra. Decisión del responsable (2026-10-19): una lista donde se añade una línea es por donde se cuela la siguiente excepción, y la Fase 3 (superusuario) toca justo quién lee los roles de otros.
 
 ## Sustitución (PRs posteriores)
 
@@ -89,6 +89,12 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
   - **Centro de la página** (solo admin de ese centro, con `usuarioAdminEn`): crear plantilla de autorizaciones, abrir campaña y crear plantilla de informes. El anuncio recibe el centro de la página y toma el rol del usuario en ese centro (`rolesEnCentro`).
   - **Centro del registro:** el informe, el del niño (y la plantilla tiene que ser de ese centro); el lote, el de la campaña (y el aula indicada tiene que ser de ella); el prospecto y la vista previa de su tutor, el del curso (`centroDelCurso`).
   - Se borran `getCentroActualId` y `getRolEnCentro` (`features/centros/queries/get-centro-actual.ts`) y las listas de pendientes del guard. `PENDIENTES_GET_CENTRO` baja de 8 ficheros y 18 usos a nada.
+- **PR6 (sin lista):**
+  - `contexto/roles-de-otros.ts`: `tieneRolesVivos` (clasifica una cuenta ajena; sustituye a las 6 lecturas idénticas de la invitación, el tutor directo, la detección por email, completar en dirección, invitar al alta y el tutor del prospecto), `contarRolesDelCentro` (inicio de Dirección), `rolesDelSujetoParaExport` (art. 15), `rolesDeAutores` (etiqueta de los mensajes), `tieneRolProfeEn` (asignar a un aula), `tieneRolFamiliarEn` (crear un vínculo), `profesDelCentroConNombre` (candidatos) y `profesDelCentro` (audiencias).
+  - `contexto/escribir-roles.ts`: `asignarRolDeInvitacion` y `retirarRolesDeCuentaNueva`. 5 de las 6 «lecturas» de `accept-invitation.ts` eran escrituras (2 `insert` y 3 `delete` de vuelta atrás); también pasan al módulo.
+  - `roles-del-usuario.ts`: `rolesEnCualquierCentro`, la del proxy (roles del usuario actual sin centro, para el prefijo de ruta).
+  - Cada función conserva lo que el sitio hacía con un fallo de lectura (las seis de clasificar cuenta lo tomaban como «sin roles», salvo la detección por email, que devuelve `null`).
+  - El guard imprime: 786 ficheros revisados, 0 usos de `roles_usuario` fuera del contexto (12 dentro), 0 menciones de las funciones borradas.
 
 ## Alternativas descartadas
 
@@ -101,7 +107,6 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
 - **Positivas:** hay un solo sitio que decide el centro, con test. Quien tiene un centro no nota nada. El guard impide reintroducir el `limit(1)`.
 - **Negativas:**
   - Un usuario con varios centros que llega por un enlace profundo sin cookie pasa por el selector y después al reparto por rol, no al enlace: los layouts no conocen la ruta. Se puede añadir cuando haga falta.
-  - `LECTURAS_PERMITIDAS` sigue siendo una lista de excepciones para las lecturas que miran a otro usuario. Se puede vaciar llevando esas lecturas a funciones con nombre dentro del módulo de contexto; no entra en la Fase 1.
 - **Fuera de esta fase:** el proxy sigue igual (deja pasar con un rol de cualquier centro; el superusuario entra en la Fase 3).
 - **Entra en este PR, encontrado al hacerlo:**
   - El login hacía `router.push(returnTo)` sin validar. Era una redirección abierta: un enlace de login con `returnTo=https://…` sacaba del sitio al usuario recién autenticado. Ahora pasa por `rutaInterna` (`src/shared/lib/ruta-interna.ts`), la misma validación que usa el selector de centro.
@@ -114,7 +119,8 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
 - `elegir-centro.test.ts`: solo escribe la cookie con un centro suyo, y `returnTo` no saca de la app.
 - `ConmutadorCentroServidor.test.tsx`: con un centro no se pinta nada ni se consulta.
 - `src/test/rls/multicentro-contexto.rls.test.ts`: contra la BD, el usuario de dos centros lee sus dos roles y los nombres de A y B, nunca de C.
-- `src/test/guards/check-centro-activo.test.ts`: el árbol real cumple con 0 menciones de las funciones borradas, y la lista solo exporta `LECTURAS_PERMITIDAS`. En un árbol de mentira se pone rojo cada caso: lectura nueva, mención en un import multilínea o en un comentario, una lista con pendientes (el guard la ignora), lista rancia y lectura de más. Una lectura en un comentario no cuenta.
+- `src/test/guards/check-centro-activo.test.ts`: el árbol real cumple (0 fuera, con la premisa de que revisa ficheros y caza los usos de dentro del módulo) y no hay fichero de lista. En un árbol de mentira se pone rojo cada caso: lectura del usuario actual, lectura de otro usuario, escritura, una lista de excepciones pasada al guard (no la respeta), mención de las funciones borradas en un import multilínea o en un comentario. Una lectura en un comentario no cuenta.
+- `src/test/rls/roles-de-otros.rls.test.ts` (PR6): contra la BD, cada función del módulo filtra lo que dice su nombre (centro, rol, roles borrados), y las de escribir asignan y retiran.
 - `src/test/multicentro/cierre-centro-explicito.test.ts` y `publicar-anuncio-centro.test.ts` (PR5): con roles en dos centros, cada acción usa el centro de la página o el del registro, nunca el primero.
 - `ruta-interna.test.ts` y `LoginForm.returnTo.test.tsx`: el login solo sigue rutas internas. `RoleSelector.test.tsx`: no escribe cookies.
 

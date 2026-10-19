@@ -6,6 +6,7 @@ import { sendInvitation } from '@/features/auth/actions/send-invitation'
 import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
 import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
 import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
+import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
 import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -144,13 +145,8 @@ export async function invitarAlAlta(
     }
     let tieneRoles = false
     if (authUser) {
-      const { data: rolesPrevios } = await service
-        .from('roles_usuario')
-        .select('usuario_id')
-        .eq('usuario_id', authUser.id)
-        .is('deleted_at', null)
-        .limit(1)
-      tieneRoles = (rolesPrevios?.length ?? 0) > 0
+      // Un fallo de lectura cuenta como «sin roles», como antes.
+      tieneRoles = (await tieneRolesVivos(service, authUser.id)) === true
     }
     if (clasificarCuenta(Boolean(authUser), tieneRoles) === 'real' && authUser)
       tutorExistenteId = authUser.id

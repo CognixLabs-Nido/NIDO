@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase/server'
+import { tieneRolProfeEn } from '@/features/centros/contexto/roles-de-otros'
 import { logger } from '@/shared/lib/logger'
 
 import { asignarProfeAulaSchema, type AsignarProfeAulaInput } from '../schemas/profe-aula'
@@ -35,17 +36,8 @@ export async function asignarProfeAula(
   })
   if (!cursoActivoId) return fail('profeAula.errors.sin_curso_activo')
 
-  const { data: rol } = await supabase
-    .from('roles_usuario')
-    .select('rol')
-    .eq('usuario_id', parsed.data.profe_id)
-    .eq('centro_id', aula.centro_id)
-    .eq('rol', 'profe')
-    .is('deleted_at', null)
-    .limit(1)
-    .maybeSingle()
-
-  if (!rol) return fail('profeAula.errors.usuario_sin_rol_profe')
+  if (!(await tieneRolProfeEn(supabase, parsed.data.profe_id, aula.centro_id)))
+    return fail('profeAula.errors.usuario_sin_rol_profe')
 
   // F5B-#34: insertamos tipo_personal_aula en lugar de es_profe_principal.
   // El default del schema es 'profesora'; la action no decide coordinadora

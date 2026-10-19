@@ -8,6 +8,7 @@ import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
 import { crearTutorDirecto } from '@/features/auth/lib/crear-tutor-directo'
 import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
 import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
+import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
 import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -133,14 +134,9 @@ export async function completarEnDireccion(
       return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
     }
     if (authUser) {
-      const { data: rolesPrevios } = await service
-        .from('roles_usuario')
-        .select('usuario_id')
-        .eq('usuario_id', authUser.id)
-        .is('deleted_at', null)
-        .limit(1)
-      if (clasificarCuenta(true, (rolesPrevios?.length ?? 0) > 0) === 'real')
-        tutorExistenteId = authUser.id
+      // Un fallo de lectura cuenta como «sin roles», como antes.
+      const tieneRoles = (await tieneRolesVivos(service, authUser.id)) === true
+      if (clasificarCuenta(true, tieneRoles) === 'real') tutorExistenteId = authUser.id
     }
   }
   if (tutorExistenteId) {

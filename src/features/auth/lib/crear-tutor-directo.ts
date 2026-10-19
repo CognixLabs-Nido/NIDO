@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
+import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
 import { logger } from '@/shared/lib/logger'
 import { CONSENT_OBLIGATORIOS, CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
 import type { Database } from '@/types/database'
@@ -57,13 +58,8 @@ export async function crearTutorDirecto(
   }
   let tieneRoles = false
   if (authUser) {
-    const { data: rolesPrevios } = await service
-      .from('roles_usuario')
-      .select('usuario_id')
-      .eq('usuario_id', authUser.id)
-      .is('deleted_at', null)
-      .limit(1)
-    tieneRoles = (rolesPrevios?.length ?? 0) > 0
+    // Un fallo de lectura cuenta como «sin roles», como antes.
+    tieneRoles = (await tieneRolesVivos(service, authUser.id)) === true
   }
   const clase = clasificarCuenta(Boolean(authUser), tieneRoles)
   // Cuenta operativa (con roles): la resolución cuenta-existente es una fase posterior.

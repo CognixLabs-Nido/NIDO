@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
+import { contarRolesDelCentro } from '@/features/centros/contexto/roles-de-otros'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
@@ -47,7 +48,7 @@ export default async function AdminDashboard({ params }: PageProps) {
   const [
     aulasResp,
     ninosResp,
-    usuariosResp,
+    usuariosCount,
     altasListaResp,
     cursoActivo,
     resumenAsistencia,
@@ -63,11 +64,7 @@ export default async function AdminDashboard({ params }: PageProps) {
       .select('id', { count: 'exact', head: true })
       .eq('centro_id', centroId)
       .is('deleted_at', null),
-    supabase
-      .from('roles_usuario')
-      .select('usuario_id', { count: 'exact', head: true })
-      .eq('centro_id', centroId)
-      .is('deleted_at', null),
+    contarRolesDelCentro(supabase, centroId),
     // Matrículas en 'lista' = altas finalizadas por el tutor, pendientes de validar.
     // La RLS `matriculas_admin_all` acota al centro del admin (sin filtro extra).
     supabase
@@ -83,7 +80,6 @@ export default async function AdminDashboard({ params }: PageProps) {
 
   const aulasCount = aulasResp.count ?? 0
   const ninosCount = ninosResp.count ?? 0
-  const usuariosCount = usuariosResp.count ?? 0
   const firstName = (user?.nombreCompleto ?? '').split(' ')[0]
   const avisos = { ...avisosBase, altasPendientesValidar: altasListaResp.count ?? 0 }
 

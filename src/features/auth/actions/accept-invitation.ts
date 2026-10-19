@@ -3,6 +3,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 
+import {
+  asignarRolDeInvitacion,
+  retirarRolesDeCuentaNueva,
+} from '@/features/centros/contexto/escribir-roles'
+import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
 import { getRequestContext } from '@/features/autorizaciones/lib/request-context'
 import { parentescoEnum, permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createClient } from '@/lib/supabase/server'
@@ -181,13 +186,8 @@ export async function acceptInvitationCore(
   }
   let tieneRoles = false
   if (authUser) {
-    const { data: rolesPrevios } = await service
-      .from('roles_usuario')
-      .select('usuario_id')
-      .eq('usuario_id', authUser.id)
-      .is('deleted_at', null)
-      .limit(1)
-    tieneRoles = (rolesPrevios?.length ?? 0) > 0
+    // Un fallo de lectura cuenta como «sin roles», como antes.
+    tieneRoles = (await tieneRolesVivos(service, authUser.id)) === true
   }
   const clase = clasificarCuenta(Boolean(authUser), tieneRoles)
   if (clase === 'real') return fail('auth.invitation.errors.email_already_registered')
@@ -299,7 +299,7 @@ export async function acceptInvitationCore(
     }
   }
 
-  const { error: roleErr } = await service.from('roles_usuario').insert({
+  const { error: roleErr } = await asignarRolDeInvitacion(service, {
     usuario_id: userId,
     centro_id: invitation.centro_id,
     rol: invitation.rol_objetivo,
@@ -326,7 +326,7 @@ export async function acceptInvitationCore(
     if (consentErr) {
       // Rollback del usuario recién creado: sin consentimiento no se completa el alta.
       logger.warn('registrar_consentimiento falló', consentErr.message)
-      await service.from('roles_usuario').delete().eq('usuario_id', userId)
+      await retirarRolesDeCuentaNueva(service, userId)
       await service.auth.admin.deleteUser(userId).catch(() => {})
       return fail('auth.invitation.errors.create_failed')
     }
@@ -351,7 +351,7 @@ export async function acceptInvitationCore(
         })
     if (vinculoError) {
       logger.warn('accept: auto-vínculo tutor↔niño falló (rollback de la cuenta)', vinculoError)
-      await service.from('roles_usuario').delete().eq('usuario_id', userId)
+      await retirarRolesDeCuentaNueva(service, userId)
       await service.auth.admin.deleteUser(userId).catch(() => {})
       return fail(vinculoError)
     }
@@ -371,7 +371,7 @@ export async function acceptInvitationCore(
       // inserción → rollback de la cuenta recién creada.
       logger.warn('accept: vínculo profe↔aula falló', profeError)
       if (profeError !== 'auth.invitation.errors.coordinadora_ocupada') {
-        await service.from('roles_usuario').delete().eq('usuario_id', userId)
+        await retirarRolesDeCuentaNueva(service, userId)
         await service.auth.admin.deleteUser(userId).catch(() => {})
       }
       return fail(profeError)
@@ -495,7 +495,7 @@ export async function acceptPendingInvitationCore(
     }
   }
 
-  const { error: roleErr } = await service.from('roles_usuario').insert({
+  const { error: roleErr } = await asignarRolDeInvitacion(service, {
     usuario_id: user.id,
     centro_id: invitation.centro_id,
     rol: invitation.rol_objetivo,
