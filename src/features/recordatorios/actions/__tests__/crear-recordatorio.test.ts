@@ -5,11 +5,31 @@ import type { Database } from '@/types/database'
 
 // El push es best-effort y va al final. Lo neutralizamos: destinatarios = []
 // (así el guard `length > 0` salta el envío y no se toca service role).
-vi.mock('../lib/audiencia', () => ({
+vi.mock('../../lib/audiencia', () => ({
   expandirDestinatariosRecordatorio: vi.fn(() => Promise.resolve([])),
 }))
+// Para el caso del push: cada destinatario con su idioma, y el motor espiado.
+vi.mock('@/features/push/lib/audiencia', () => ({
+  getAutorPushInfo: async () => ({ nombre: 'Profe' }),
+  idiomasDeUsuarios: async () =>
+    new Map([
+      ['tutor-va', 'va'],
+      ['tutor-en', 'en'],
+    ]),
+}))
+vi.mock('@/features/push/lib/enviar-push', () => ({
+  enviarPushANotificarUsuarios: vi.fn(async (ids: string[]) => ({
+    enviados: ids.length,
+    expirados: 0,
+    errores: 0,
+    total: ids.length,
+  })),
+}))
+
+import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
 
 import { crearRecordatorioCore } from '../crear-recordatorio'
+import { expandirDestinatariosRecordatorio } from '../../lib/audiencia'
 
 // UUIDs v4 válidos (versión '4' + variante '8'): el core re-valida con
 // z.uuid() (Zod v4), que rechaza UUIDs todo-ceros por variante inválida.
@@ -100,6 +120,26 @@ describe('crearRecordatorioCore — modelo granular F6-C', () => {
       usuario_destinatario_id: null,
       creado_por: USER_ID,
     })
+  })
+
+  it('push: el enlace va en el idioma de cada destinatario, no en el del autor', async () => {
+    vi.mocked(expandirDestinatariosRecordatorio).mockResolvedValueOnce(['tutor-va', 'tutor-en'])
+    const { fake } = makeFakeClient({ ninoCentro: CENTRO_ID, insertResult: { id: REC_ID } })
+    const res = await crearRecordatorioCore(fake, USER_ID, {
+      destinatario: 'familia_individual',
+      nino_id: NINO_ID,
+      titulo: 'traer cartilla de vacunas',
+    })
+    expect(res.success).toBe(true)
+    expect(enviarPushANotificarUsuarios).toHaveBeenCalledTimes(2)
+    expect(enviarPushANotificarUsuarios).toHaveBeenCalledWith(
+      ['tutor-va'],
+      expect.objectContaining({ titulo: 'Profe', url: '/va/reminders' })
+    )
+    expect(enviarPushANotificarUsuarios).toHaveBeenCalledWith(
+      ['tutor-en'],
+      expect.objectContaining({ url: '/en/reminders' })
+    )
   })
 
   it('familias_aula: deriva centro del aula; INSERT con aula_id, sin niño ni usuario', async () => {

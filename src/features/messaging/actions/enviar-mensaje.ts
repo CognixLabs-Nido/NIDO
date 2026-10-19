@@ -10,7 +10,7 @@ import {
   destinatariosDeNino,
   getAutorPushInfo,
 } from '@/features/push/lib/audiencia'
-import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
+import { enviarPushPorIdioma } from '@/features/push/lib/enviar-por-idioma'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
@@ -194,16 +194,17 @@ async function enviarMensajeProfeFamilia(
     ])
     if (destinatarios.length > 0) {
       const cuerpo = contenido.length > 100 ? contenido.slice(0, 99) + '…' : contenido
-      await enviarPushANotificarUsuarios(destinatarios, {
+      // En el idioma de cada destinatario: el enlace abre su página en su idioma.
+      await enviarPushPorIdioma(destinatarios, (idioma) => ({
         titulo: autor.nombre,
         cuerpo,
-        url: urlDelAviso(`/${autor.idioma}/messages?nino=${ninoId}`, nino.centro_id),
+        url: urlDelAviso(`/${idioma}/messages?nino=${ninoId}`, nino.centro_id),
         datos: {
           tipo: 'mensaje',
           conversacion_id: conversacionId,
           nino_id: ninoId,
         },
-      })
+      }))
     }
   } catch (err) {
     console.error('[enviarMensaje] push notifications falló:', err)
@@ -293,18 +294,15 @@ async function enviarMensajeAdminFamilia(
       if (destinatarios.length > 0) {
         const autor = await getAutorPushInfo(userId)
         const cuerpo = contenido.length > 100 ? contenido.slice(0, 99) + '…' : contenido
-        await enviarPushANotificarUsuarios(destinatarios, {
+        await enviarPushPorIdioma(destinatarios, (idioma) => ({
           titulo: autor.nombre,
           cuerpo,
-          url: urlDelAviso(
-            `/${autor.idioma}/messages/conversacion/${conversacionId}`,
-            conv.centro_id
-          ),
+          url: urlDelAviso(`/${idioma}/messages/conversacion/${conversacionId}`, conv.centro_id),
           datos: {
             tipo: 'mensaje',
             conversacion_id: conversacionId,
           },
-        })
+        }))
       }
     } catch (err) {
       console.error('[enviarMensaje admin_familia] push notifications falló:', err)
