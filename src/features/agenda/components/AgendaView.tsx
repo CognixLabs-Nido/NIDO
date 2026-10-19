@@ -22,6 +22,8 @@ import { VistaToggle } from './VistaToggle'
 
 interface Props {
   locale: string
+  /** Centro activo de la página (para crear citas de claustro y visitas). */
+  centroId: string
   rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
   vista: VistaAgenda
   fecha: string
@@ -31,7 +33,17 @@ interface Props {
   profes: ProfeOpt[]
 }
 
-export function AgendaView({ locale, rol, vista, fecha, citas, ninos, aulas, profes }: Props) {
+export function AgendaView({
+  locale,
+  centroId,
+  rol,
+  vista,
+  fecha,
+  citas,
+  ninos,
+  aulas,
+  profes,
+}: Props) {
   const t = useTranslations('citas')
   const router = useRouter()
   const pathname = usePathname()
@@ -194,6 +206,7 @@ export function AgendaView({ locale, rol, vista, fecha, citas, ninos, aulas, pro
       {esStaff && (
         <CitaFormDialog
           rol={rol as 'admin' | 'profe'}
+          centroId={centroId}
           ninos={ninos}
           aulas={aulas}
           profes={profes}

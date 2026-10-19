@@ -14,13 +14,15 @@ import { crearEventoCore } from '../crear-evento'
 const USER_ID = '11111111-1111-4111-8111-111111111111'
 const NINO_ID = '22222222-2222-4222-8222-222222222222'
 const CENTRO_ID = '33333333-3333-4333-8333-333333333333'
+const OTRO_CENTRO_ID = '99999999-9999-4999-8999-999999999999'
 const EVENTO_ID = '44444444-4444-4444-8444-444444444444'
 const AULA_ID = '55555555-5555-4555-8555-555555555555'
 
 interface FakeSetup {
   ninoCentro?: string | null
   aulaCentro?: string | null
-  rolCentro?: string | null
+  /** Centros donde el usuario tiene rol (admin), como los devuelve `roles_usuario`. */
+  rolesCentros?: string[]
   insertResult?: { id: string } | null
   insertError?: { code?: string; message: string } | null
 }
@@ -34,6 +36,14 @@ function makeFakeClient(setup: FakeSetup) {
       b.eq = () => b
       b.is = () => b
       b.limit = () => b
+      // `roles_usuario` se espera directamente (lista de todos sus roles activos).
+      if (table === 'roles_usuario') {
+        b.then = (resolve: (v: unknown) => unknown) =>
+          resolve({
+            data: (setup.rolesCentros ?? []).map((c) => ({ centro_id: c, rol: 'admin' })),
+            error: null,
+          })
+      }
       b.insert = (payload: Record<string, unknown>) => {
         insertSpy(payload)
         return b
@@ -48,12 +58,6 @@ function makeFakeClient(setup: FakeSetup) {
         if (table === 'aulas') {
           return Promise.resolve({
             data: setup.aulaCentro === undefined ? null : { centro_id: setup.aulaCentro },
-            error: null,
-          })
-        }
-        if (table === 'roles_usuario') {
-          return Promise.resolve({
-            data: setup.rolCentro ? { centro_id: setup.rolCentro } : null,
             error: null,
           })
         }
@@ -74,23 +78,49 @@ const baseInput = {
 }
 
 describe('crearEventoCore', () => {
-  it('crea un evento de centro resolviendo centro_id del usuario', async () => {
+  it('evento de centro: usa el centro EXPLÍCITO de la página (usuario en dos centros)', async () => {
     const { fake, insertSpy } = makeFakeClient({
-      rolCentro: CENTRO_ID,
+      rolesCentros: [OTRO_CENTRO_ID, CENTRO_ID],
       insertResult: { id: EVENTO_ID },
     })
-    const res = await crearEventoCore(fake, USER_ID, { ambito: 'centro', ...baseInput })
+    // Premisa: el explícito NO es el primero por id (lo que cogería un «centro por defecto»).
+    expect([OTRO_CENTRO_ID, CENTRO_ID].sort()[0]).toBe(CENTRO_ID)
+    const res = await crearEventoCore(fake, USER_ID, {
+      ambito: 'centro',
+      centro_id: OTRO_CENTRO_ID,
+      ...baseInput,
+    })
     expect(res.success).toBe(true)
     if (res.success) expect(res.data.evento_id).toBe(EVENTO_ID)
     expect(insertSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        centro_id: CENTRO_ID,
+        centro_id: OTRO_CENTRO_ID,
         ambito: 'centro',
         aula_id: null,
         nino_id: null,
         creado_por: USER_ID,
       })
     )
+  })
+
+  it('evento de centro sin centro explícito → sin_centro (nunca uno al azar)', async () => {
+    const { fake, insertSpy } = makeFakeClient({ rolesCentros: [CENTRO_ID] })
+    const res = await crearEventoCore(fake, USER_ID, { ambito: 'centro', ...baseInput })
+    expect(res.success).toBe(false)
+    if (!res.success) expect(res.error).toBe('eventos.errors.sin_centro')
+    expect(insertSpy).not.toHaveBeenCalled()
+  })
+
+  it('evento de centro en un centro donde no tiene rol → sin_centro', async () => {
+    const { fake, insertSpy } = makeFakeClient({ rolesCentros: [OTRO_CENTRO_ID] })
+    const res = await crearEventoCore(fake, USER_ID, {
+      ambito: 'centro',
+      centro_id: CENTRO_ID,
+      ...baseInput,
+    })
+    expect(res.success).toBe(false)
+    if (!res.success) expect(res.error).toBe('eventos.errors.sin_centro')
+    expect(insertSpy).not.toHaveBeenCalled()
   })
 
   it('crea un evento de niño resolviendo centro_id del niño', async () => {
@@ -125,7 +155,7 @@ describe('crearEventoCore', () => {
   })
 
   it('rechaza input inválido (ámbito nino sin nino_id)', async () => {
-    const { fake } = makeFakeClient({ rolCentro: CENTRO_ID })
+    const { fake } = makeFakeClient({ rolesCentros: [CENTRO_ID] })
     const res = await crearEventoCore(fake, USER_ID, { ambito: 'nino', ...baseInput })
     expect(res.success).toBe(false)
   })

@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import type { Database } from '@/types/database'
 
 type Client = SupabaseClient<Database>
@@ -51,13 +52,5 @@ export async function esAdminDeCentroDeNino(
     .eq('id', ninoId)
     .maybeSingle()
   if (!nino?.centro_id) return false
-  const { data } = await userClient
-    .from('roles_usuario')
-    .select('rol')
-    .eq('usuario_id', usuarioId)
-    .eq('centro_id', nino.centro_id)
-    .eq('rol', 'admin')
-    .is('deleted_at', null)
-    .limit(1)
-  return (data?.length ?? 0) > 0
+  return esAdminEn(userClient, usuarioId, nino.centro_id)
 }

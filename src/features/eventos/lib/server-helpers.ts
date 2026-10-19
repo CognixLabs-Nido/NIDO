@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { rolesEnCentro } from '@/features/centros/contexto/roles-del-usuario'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
@@ -31,15 +32,17 @@ export function revalidarCalendario(): void {
 
 /**
  * Resuelve el `centro_id` server-side según el ámbito (db-triggers.md: nunca
- * sentinel). nino→`ninos.centro_id`; aula→`aulas.centro_id`; centro→centro del
- * usuario autenticado (`roles_usuario`, primer rol activo; single-centro en el piloto).
+ * sentinel). nino→`ninos.centro_id`; aula→`aulas.centro_id`; centro→el centro EXPLÍCITO
+ * que manda la página (multicentro · Fase 1), si el usuario tiene rol en él. Nunca se coge un
+ * centro del usuario al azar; la RLS de `eventos` sigue decidiendo si puede crear ahí.
  */
 export async function resolverCentroIdEvento(
   supabase: SupabaseClient<Database>,
   userId: string,
   ambito: AmbitoEvento,
   ninoId: string | null,
-  aulaId: string | null
+  aulaId: string | null,
+  centroIdExplicito: string | null
 ): Promise<ActionResult<string>> {
   if (ambito === 'nino') {
     const { data: nino, error } = await supabase
@@ -69,14 +72,9 @@ export async function resolverCentroIdEvento(
     return ok(aula.centro_id)
   }
 
-  // centro → centro del usuario.
-  const { data } = await supabase
-    .from('roles_usuario')
-    .select('centro_id')
-    .eq('usuario_id', userId)
-    .is('deleted_at', null)
-    .limit(1)
-    .maybeSingle()
-  if (!data?.centro_id) return fail('eventos.errors.sin_centro')
-  return ok(data.centro_id)
+  // centro → el centro explícito de la página, si el usuario tiene rol en él.
+  if (!centroIdExplicito || !(await rolesEnCentro(supabase, userId, centroIdExplicito))) {
+    return fail('eventos.errors.sin_centro')
+  }
+  return ok(centroIdExplicito)
 }

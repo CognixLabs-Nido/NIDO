@@ -46,7 +46,7 @@ const VACIO: AvisosInicio = {
  * (publicada, no caducada: hoy ≤ vigencia_hasta). Es un recordatorio de administrar
  * según pauta; el gate exacto (firmada + vigente) sigue gobernando el botón Registrar.
  */
-export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
+export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<AvisosInicio> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -107,7 +107,7 @@ export async function getAvisosInicio(rol: RolNotif): Promise<AvisosInicio> {
       getFirmasVistas(),
       // Informes pendientes de campaña para la profe redactora (F9-5-2). Devuelve
       // null para admin (sin aulas de redacción) y si no queda nada pendiente.
-      getPendientesCampanaProfe(),
+      getPendientesCampanaProfe(centroId),
     ])
 
     // Una firma/revocación cuenta como "nueva" si su autorización no se ha abierto

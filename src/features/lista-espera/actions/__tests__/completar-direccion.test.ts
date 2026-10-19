@@ -129,10 +129,6 @@ vi.mock('@/lib/supabase/admin', () => ({
   })),
 }))
 
-vi.mock('@/features/centros/queries/get-centro-actual', () => ({
-  getCentroActualId: vi.fn(() => Promise.resolve(CENTRO)),
-}))
-
 vi.mock('@/features/auth/lib/llamar-gotrue', () => ({
   llamarGoTrue: vi.fn(async (_label: string, fn: () => Promise<{ data: unknown }>) => {
     const r = await fn()
@@ -268,6 +264,22 @@ describe('completarEnDireccion — alta modo Dirección con la RPC de familia', 
     // La cuenta se creó (comportamiento actual: no se borra; reintento idempotente).
     expect(crearTutorSpy).toHaveBeenCalledTimes(1)
     expect(estadoUpdateSpy).not.toHaveBeenCalled()
+  })
+
+  it('el centro es el DEL PROSPECTO: ser admin en otro centro no basta', async () => {
+    const OTRO = '99999999-9999-4999-8999-999999999999'
+    // Premisa: el prospecto es de CENTRO y el usuario es admin solo en OTRO.
+    expect(PROSPECTO_ROW.centro_id).toBe(CENTRO)
+    rolesFixture = [
+      { rol: 'admin', centro_id: OTRO },
+      { rol: 'tutor_legal', centro_id: CENTRO },
+    ]
+
+    const r = await completarEnDireccion(VALID_INPUT, 'es')
+
+    expect(r.success).toBe(false)
+    if (!r.success) expect(r.error).toBe('auth.invitation.errors.forbidden')
+    expect(altaRpcCall()).toBeUndefined()
   })
 
   it('no-admin → forbidden antes de tocar cuenta o RPC', async () => {

@@ -1,5 +1,6 @@
 'use server'
 
+import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { getAppUrl } from '@/shared/lib/app-url'
 import { logger } from '@/shared/lib/logger'
@@ -36,16 +37,7 @@ export async function sendInvitation(
   if (authIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
   if (!user?.user) return fail('auth.invitation.errors.unauthenticated')
 
-  const { data: callerRoles } = await supabase
-    .from('roles_usuario')
-    .select('rol, centro_id')
-    .eq('usuario_id', user.user.id)
-    .is('deleted_at', null)
-
-  const isAdminOfCentro = callerRoles?.some(
-    (r) => r.centro_id === parsed.data.centroId && r.rol === 'admin'
-  )
-  if (!isAdminOfCentro) {
+  if (!(await esAdminEn(supabase, user.user.id, parsed.data.centroId))) {
     return fail('auth.invitation.errors.forbidden')
   }
 

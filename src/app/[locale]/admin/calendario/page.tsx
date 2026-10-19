@@ -63,6 +63,7 @@ export default async function AdminCalendarioPage({ params, searchParams }: Page
         </div>
         <EventoFormDialog
           locale={locale}
+          centroId={centroId}
           ambitos={['centro', 'aula', 'nino']}
           aulas={aulas}
           ninos={ninos}

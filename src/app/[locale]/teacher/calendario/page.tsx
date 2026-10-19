@@ -64,7 +64,13 @@ export default async function TeacherCalendarioPage({ params, searchParams }: Pa
           </h1>
           <p className="text-muted-foreground text-sm">{t('vista_solo_lectura')}</p>
         </div>
-        <EventoFormDialog locale={locale} ambitos={ambitos} aulas={aulas} ninos={ninos} />
+        <EventoFormDialog
+          locale={locale}
+          centroId={centroId}
+          ambitos={ambitos}
+          aulas={aulas}
+          ninos={ninos}
+        />
       </header>
 
       <CalendarioConEventos

@@ -15,7 +15,8 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: { getUser },
     from: () => {
-      // roles_usuario: .select().eq().eq().is() → { data }
+      // roles_usuario: .select().eq().is() → { data } con TODOS los roles del usuario
+      // (`centrosDondeEsAdmin` filtra los de admin en código).
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const b: any = {}
       b.select = () => b
@@ -64,7 +65,7 @@ describe('R5 — invitación de profe: autorizar antes de leer', () => {
     '%s con sesión pero sin rol admin → forbidden, sin service client',
     async (_n, run) => {
       getUser.mockResolvedValue({ data: { user: { id: 'u1' } } })
-      rolesAdmin.mockResolvedValue({ data: [] })
+      rolesAdmin.mockResolvedValue({ data: [{ centro_id: 'c1', rol: 'profe' }] })
       const r = await run()
       expect(r).toEqual({ success: false, error: 'auth.invitation.errors.forbidden' })
       expect(createServiceRoleClient).not.toHaveBeenCalled()
@@ -73,7 +74,7 @@ describe('R5 — invitación de profe: autorizar antes de leer', () => {
 
   it('admin legítimo: pasa la guarda y llega al service client', async () => {
     getUser.mockResolvedValue({ data: { user: { id: 'u1' } } })
-    rolesAdmin.mockResolvedValue({ data: [{ centro_id: 'c1' }] })
+    rolesAdmin.mockResolvedValue({ data: [{ centro_id: 'c1', rol: 'admin' }] })
     // Service client mínimo: el aula no está en sus centros → no_encontrada (ya autorizado).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const b: any = {}

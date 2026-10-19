@@ -64,6 +64,14 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
   - `admin/cuotas/recibos/csv/route.ts`, porque es un endpoint de descarga (403), no una página;
   - `alta/[ninoId]`, porque pide el rol en el centro **del niño**;
   - `teacher/aula/[id]`, `aula/[id]/fotos` y `aula/[id]/servicio`, porque piden el rol en el centro **del aula**.
+- **PR3 (centro explícito):**
+  - **Lectura de roles con cliente inyectado.** `contexto/roles-del-usuario.ts` (`leerCentrosDe`, `rolesEnCentro`, `esAdminEn`, `centrosDondeEsAdmin`) es la misma lectura que usa `get-contexto-centro.ts`, pero con el cliente y el usuario de quien llama. Así los núcleos de las acciones, que reciben el cliente para probarse contra la BD, no leen `roles_usuario` por su cuenta. Ninguna función elige un centro: o lo reciben explícito o devuelven la lista. Un fallo de lectura es `null`, no «sin roles».
+  - **Centro del registro.** Lista de espera (el prospecto), familias (la familia o la del tutor) y `esAdminDeCentroDeNino` (el niño): el centro es el de la fila que se toca, no el activo.
+  - **Centro de la página.** Eventos de ámbito centro, citas de claustro y visitas, y recordatorios sin niño ni aula reciben `centro_id` de la página y comprueban que el usuario tiene rol en él. Antes cogían el centro del usuario con `limit(1)`. Lo mismo el contador de no leídos (layouts y badge), los informes de la profe y los avisos de inicio.
+  - **Páginas de un registro de otro centro** (decisión del responsable): `teacher/aula/[id]` y sus subpáginas (`fotos`, `servicio`, `comida`) y `alta/[ninoId]` sacan el rol con `contextoEnCentro(centro del aula o del niño)`. Se muestran aunque no sea el centro activo; el enlace funciona siempre. Para quien tiene más de un centro, `AvisoCentroDistinto` dice en la cabecera qué centro está viendo. `comida` cargaba el aula sin mirar su centro y ahora usa el del aula.
+  - **El CSV de recibos** lee el estado sin redirigir (`getEstadoCentro`): sin centro activo, 403.
+  - Las listas bajan: lecturas pendientes de 16 a 2, y `PENDIENTES_GET_CENTRO` de 41 ficheros y 89 usos a 27 y 59.
+- **Parada en el PR3:** `usuarios/[id]/avatar/route.ts` (sus 2 lecturas siguen pendientes). La foto de perfil es del usuario, no de un centro, y el centro solo es el prefijo de la ruta en Storage. Hace falta decidir qué prefijo usar con varios centros.
 
 ## Alternativas descartadas
 

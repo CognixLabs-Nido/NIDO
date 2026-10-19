@@ -5,7 +5,8 @@ import { getTranslations } from 'next-intl/server'
 
 import { createClient } from '@/lib/supabase/server'
 import { getAulaById } from '@/features/aulas/queries/get-aulas'
-import { getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { AvisoCentroDistinto } from '@/features/centros/components/AvisoCentroDistinto'
+import { contextoEnCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { BlogAulaCliente } from '@/features/fotos/components/BlogAulaCliente'
 import { getNinosAulaParaFotos } from '@/features/fotos/queries/get-ninos-etiquetables'
 import { getPublicacionesAula } from '@/features/fotos/queries/get-publicaciones-aula'
@@ -37,7 +38,8 @@ export default async function FotosAulaPage({ params }: PageProps) {
   if (!user) notFound()
 
   // ¿Puede publicar? Admin del centro o coordinadora/profesora de ESTE aula.
-  const rol = await getRolEnCentro(aula.centro_id)
+  // Rol en el CENTRO DEL AULA, no en el activo (la cabecera avisa si son distintos).
+  const rol = (await contextoEnCentro(aula.centro_id))?.rol ?? null
   let puedePublicar = rol === 'admin'
   if (!puedePublicar) {
     const { data: pa } = await supabase
@@ -58,6 +60,7 @@ export default async function FotosAulaPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
+      <AvisoCentroDistinto centroRegistroId={aula.centro_id} />
       <Link
         href={`/${locale}/teacher/aula/${id}`}
         className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium"

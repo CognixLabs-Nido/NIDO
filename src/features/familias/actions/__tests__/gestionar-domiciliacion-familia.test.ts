@@ -47,9 +47,6 @@ function makeServerFake() {
 }
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => makeServerFake() }))
-vi.mock('@/features/centros/queries/get-centro-actual', () => ({
-  getCentroActualId: async () => CENTRO,
-}))
 vi.mock('@/features/alta/queries/get-mandato-familia', () => ({
   familiaTieneMandatoActivo: async () => mandatoActivo,
 }))
@@ -107,12 +104,33 @@ describe('gestionarDomiciliacionFamilia', () => {
     expect(rpcSpy).not.toHaveBeenCalled()
   })
 
-  it('familia de OTRO centro → no_encontrada, sin llamar RPC', async () => {
-    familiaRow = { id: FAMILIA, centro_id: OTRO_CENTRO }
+  it('familia que la RLS no deja ver (otro centro) → no_encontrada, sin llamar RPC', async () => {
+    familiaRow = null
     const r = await gestionarDomiciliacionFamilia(base)
     expect(r.success).toBe(false)
     if (!r.success) expect(r.error).toBe('admin.familias.errors.no_encontrada')
     expect(rpcSpy).not.toHaveBeenCalled()
+  })
+
+  it('el centro es el DE LA FAMILIA: ser admin en otro centro no basta → forbidden', async () => {
+    familiaRow = { id: FAMILIA, centro_id: OTRO_CENTRO }
+    // Premisa: admin en CENTRO, sin rol admin en el centro de la familia.
+    expect(rolesResult).toEqual([{ rol: 'admin', centro_id: CENTRO }])
+    const r = await gestionarDomiciliacionFamilia(base)
+    expect(r.success).toBe(false)
+    if (!r.success) expect(r.error).toBe('auth.invitation.errors.forbidden')
+    expect(rpcSpy).not.toHaveBeenCalled()
+  })
+
+  it('familia de otro centro donde TAMBIÉN es admin → registra (centro de la familia)', async () => {
+    familiaRow = { id: FAMILIA, centro_id: OTRO_CENTRO }
+    rolesResult = [
+      { rol: 'admin', centro_id: CENTRO },
+      { rol: 'admin', centro_id: OTRO_CENTRO },
+    ]
+    const r = await gestionarDomiciliacionFamilia(base)
+    expect(r.success).toBe(true)
+    expect(rpcSpy).toHaveBeenCalledTimes(1)
   })
 
   it('IBAN inválido → error de validación, sin llamar RPC', async () => {

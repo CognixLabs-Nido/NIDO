@@ -11,6 +11,8 @@ import { useMessagingRealtime } from '../lib/use-messaging-realtime'
 interface Props {
   /** Conteo inicial calculado server-side (evita el flash 0 al hidratar). */
   initialTotal: number
+  /** Centro de la página: decide si el usuario cuenta como admin al recalcular. */
+  centroId: string
 }
 
 /**
@@ -24,18 +26,18 @@ interface Props {
  * rol puede leer. `puede_recibir_mensajes=false` ⇒ no recibe nada
  * ⇒ badge siempre a 0.
  */
-export function MessagingBadge({ initialTotal }: Props) {
+export function MessagingBadge({ initialTotal, centroId }: Props) {
   const t = useTranslations('messages')
   const [total, setTotal] = useState(initialTotal)
 
   const refresh = useCallback(async () => {
     try {
-      const r = await getUnreadCountsAction()
+      const r = await getUnreadCountsAction(centroId)
       setTotal(r.total)
     } catch {
       // Error silencioso: el badge no debe romper la app si la consulta falla.
     }
-  }, [])
+  }, [centroId])
 
   // El conteo inicial viene del SSR (layout). Realtime es la única fuente
   // de updates posteriores: cualquier insert/update en mensajes o anuncios

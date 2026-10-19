@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { centrosDondeEsAdmin } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
@@ -72,21 +73,15 @@ export async function abrirConversacionAdminFamiliaCore(
   tutorId: string
 ): Promise<ActionResult<{ conversacion_id: string }>> {
   // 1. Determinar el centro del admin. Se exige rol `admin` activo. Si tiene
-  //    rol admin en varios centros (Ola 2), tomamos el primero coherente con
-  //    "donde el tutor pertenece" en el paso 2: filtramos los roles admin y
-  //    probamos con cada centro.
-  const { data: rolesAdmin, error: rolesErr } = await supabase
-    .from('roles_usuario')
-    .select('centro_id')
-    .eq('usuario_id', userId)
-    .eq('rol', 'admin')
-    .is('deleted_at', null)
+  //    rol admin en varios centros, tomamos el primero (por id) donde el tutor
+  //    pertenece en el paso 2. El hilo es uno por par admin-tutor, no por centro.
+  const centrosAdmin = await centrosDondeEsAdmin(supabase, userId)
 
-  if (rolesErr) {
-    logger.warn('abrirConversacionAdminFamilia: roles fetch falló', rolesErr.message)
+  if (!centrosAdmin) {
+    logger.warn('abrirConversacionAdminFamilia: roles fetch falló')
     return fail('messages.errors.apertura_fallo')
   }
-  if (!rolesAdmin || rolesAdmin.length === 0) {
+  if (centrosAdmin.length === 0) {
     return fail('messages.errors.solo_admin')
   }
 
@@ -95,17 +90,17 @@ export async function abrirConversacionAdminFamiliaCore(
   //    es SECURITY DEFINER, así que no atraviesa RLS — es la fuente
   //    autoritativa de la pertenencia.
   let centroId: string | null = null
-  for (const r of rolesAdmin) {
+  for (const centroAdmin of centrosAdmin) {
     const { data: esTutor, error: rpcErr } = await supabase.rpc('es_tutor_en_centro', {
       p_tutor_id: tutorId,
-      p_centro_id: r.centro_id,
+      p_centro_id: centroAdmin,
     })
     if (rpcErr) {
       logger.warn('abrirConversacionAdminFamilia: rpc es_tutor_en_centro falló', rpcErr.message)
       return fail('messages.errors.apertura_fallo')
     }
     if (esTutor) {
-      centroId = r.centro_id
+      centroId = centroAdmin
       break
     }
   }

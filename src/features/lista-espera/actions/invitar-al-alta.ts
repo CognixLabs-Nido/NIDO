@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { sendInvitation } from '@/features/auth/actions/send-invitation'
 import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
 import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -68,17 +68,22 @@ export async function invitarAlAlta(
   if (authIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
   if (!userData?.user) return fail('auth.invitation.errors.unauthenticated')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('listaEspera.errors.sin_centro')
+  // Prospecto primero: SU centro es el de la acción, no el centro activo de la cookie (una
+  // pestaña de otro centro actúa sobre el prospecto que enseña). La RLS de `lista_espera`
+  // solo deja leer a Dirección los de sus centros.
+  const { data: prospecto } = await supabase
+    .from('lista_espera')
+    .select(
+      'id, centro_id, nombre_nino, apellidos_nino, fecha_nacimiento, email_tutor, tutor_usuario_id, estado'
+    )
+    .eq('id', parsed.data.id)
+    .maybeSingle()
+  if (!prospecto) return fail('listaEspera.errors.no_encontrado')
+  const centroId = prospecto.centro_id
 
-  // Gate admin del centro (defensa en profundidad; la RPC lo revalida server-side).
-  const { data: roles } = await supabase
-    .from('roles_usuario')
-    .select('rol, centro_id')
-    .eq('usuario_id', userData.user.id)
-    .is('deleted_at', null)
-  const isAdmin = roles?.some((r) => r.centro_id === centroId && r.rol === 'admin')
-  if (!isAdmin) return fail('auth.invitation.errors.forbidden')
+  // Gate admin del centro del prospecto (defensa en profundidad; la RPC lo revalida server-side).
+  if (!(await esAdminEn(supabase, userData.user.id, centroId)))
+    return fail('auth.invitation.errors.forbidden')
 
   // Curso activo del centro (autoritativo server-side; la matrícula va contra él). La RPC
   // lo revalida, pero se comprueba aquí para dar errores de UX específicos.
@@ -96,16 +101,7 @@ export async function invitarAlAlta(
     .maybeSingle()
   if (!aulaCurso) return fail('listaEspera.errors.aula_invalida')
 
-  // Prospecto (RLS admin lo acota a su centro). Debe estar en espera y tener email.
-  const { data: prospecto } = await supabase
-    .from('lista_espera')
-    .select(
-      'id, centro_id, nombre_nino, apellidos_nino, fecha_nacimiento, email_tutor, tutor_usuario_id, estado'
-    )
-    .eq('id', parsed.data.id)
-    .maybeSingle()
-  if (!prospecto || prospecto.centro_id !== centroId)
-    return fail('listaEspera.errors.no_encontrado')
+  // Debe estar en espera y tener email.
   if (prospecto.estado !== 'en_espera') return fail('listaEspera.errors.no_en_espera')
   // D1 (U-2): un prospecto de 2.º hijo trae la cuenta del tutor ya resuelta. Ese caso NO
   // manda invitación (el tutor ya tiene acceso), así que el email deja de ser obligatorio;

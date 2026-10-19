@@ -45,13 +45,14 @@ export async function crearCitaCore(
   }
   const d = parsed.data
 
-  // 1. centro_id explícito (claustro/visita → centro del organizador).
+  // 1. centro_id explícito (claustro/visita → el centro de la página).
   const centroResult = await resolverCentroIdCita(
     supabase,
     userId,
     d.tipo,
     d.nino_id ?? null,
-    d.aula_id ?? null
+    d.aula_id ?? null,
+    d.centro_id ?? null
   )
   if (!centroResult.success) return centroResult
   const centroId = centroResult.data

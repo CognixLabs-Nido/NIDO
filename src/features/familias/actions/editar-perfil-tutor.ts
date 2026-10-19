@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -26,16 +26,20 @@ export async function editarPerfilTutor(
   const { data: userData } = await supabase.auth.getUser()
   if (!userData?.user) return fail('auth.invitation.errors.unauthenticated')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('listaEspera.errors.sin_centro')
-
-  const { data: roles } = await supabase
-    .from('roles_usuario')
-    .select('rol, centro_id')
-    .eq('usuario_id', userData.user.id)
+  // El centro es el DE LA FAMILIA del tutor, no el centro activo de la cookie. La RLS solo deja
+  // leer a Dirección los tutores y las familias de sus centros.
+  const { data: tutor } = await supabase
+    .from('familia_tutores')
+    .select('familia_id')
+    .eq('id', parsed.data.tutor_id)
     .is('deleted_at', null)
-  const isAdmin = roles?.some((r) => r.centro_id === centroId && r.rol === 'admin')
-  if (!isAdmin) return fail('auth.invitation.errors.forbidden')
+    .maybeSingle()
+  const { data: familia } = tutor
+    ? await supabase.from('familias').select('centro_id').eq('id', tutor.familia_id).maybeSingle()
+    : { data: null }
+  if (!familia) return fail('admin.familias.errors.tutor_no_encontrado')
+  if (!(await esAdminEn(supabase, userData.user.id, familia.centro_id)))
+    return fail('auth.invitation.errors.forbidden')
 
   // SOLO identidad + dirección. Sin usuario_id/rol_familia/familia_id (congelados por trigger).
   const { data, error } = await supabase

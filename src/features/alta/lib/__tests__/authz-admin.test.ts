@@ -11,11 +11,12 @@ import { esAdminDeCentroDeNino } from '../authz-tutor'
  * firma admin, acuse médico, mandato SEPA). Verifica el límite de seguridad "¿es admin del
  * CENTRO DEL NIÑO?" sin BD, con un cliente Supabase falso por-tabla:
  *  - `ninos.select('centro_id')` → centro del niño (o null si no lo ve por RLS),
- *  - `roles_usuario` filtrado por (usuario, centro DEL NIÑO, rol='admin') → filas.
+ *  - `roles_usuario` del usuario → TODAS sus filas (centro_id, rol), como las devuelve la BD; el
+ *    filtro por el centro DEL NIÑO lo hace `esAdminEn` en código (multicentro · Fase 1).
  *
  * Casos clave (aislamiento):
  *  - admin del centro del niño → true.
- *  - admin de OTRO centro → sin rol admin en el centro del niño → [] → false.
+ *  - admin de OTRO centro → su fila admin es de C2, no del centro del niño → false.
  *  - profe / usuario sin rol admin → false.
  *  - usuario sin acceso al niño (RLS oculta `ninos`) → centro null → false (sin 2.ª query).
  */
@@ -48,24 +49,39 @@ describe('esAdminDeCentroDeNino (primitiva de seguridad B2)', () => {
   it('admin del centro del niño → true', async () => {
     const fake = makeFake(
       { data: { centro_id: 'C1' }, error: null },
-      { data: [{ rol: 'admin' }], error: null }
+      { data: [{ centro_id: 'C1', rol: 'admin' }], error: null }
     )
     expect(await esAdminDeCentroDeNino(fake, NINO, USUARIO)).toBe(true)
   })
 
   it('admin de OTRO centro (sin rol admin en el centro del niño) → false', async () => {
-    // La query de roles filtra por el centro DEL NIÑO: un admin de otro centro no tiene fila.
-    const fake = makeFake({ data: { centro_id: 'C1' }, error: null }, { data: [], error: null })
+    // Admin en C2 y tutor en C1: la fila admin existe, pero no es del centro del niño.
+    const fake = makeFake(
+      { data: { centro_id: 'C1' }, error: null },
+      {
+        data: [
+          { centro_id: 'C2', rol: 'admin' },
+          { centro_id: 'C1', rol: 'tutor_legal' },
+        ],
+        error: null,
+      }
+    )
     expect(await esAdminDeCentroDeNino(fake, NINO, USUARIO)).toBe(false)
   })
 
   it('profe / usuario sin rol admin en el centro del niño → false', async () => {
-    const fake = makeFake({ data: { centro_id: 'C1' }, error: null }, { data: [], error: null })
+    const fake = makeFake(
+      { data: { centro_id: 'C1' }, error: null },
+      { data: [{ centro_id: 'C1', rol: 'profe' }], error: null }
+    )
     expect(await esAdminDeCentroDeNino(fake, NINO, USUARIO)).toBe(false)
   })
 
   it('usuario sin acceso al niño (RLS oculta `ninos`) → false', async () => {
-    const fake = makeFake({ data: null, error: null }, { data: [{ rol: 'admin' }], error: null })
+    const fake = makeFake(
+      { data: null, error: null },
+      { data: [{ centro_id: 'C1', rol: 'admin' }], error: null }
+    )
     expect(await esAdminDeCentroDeNino(fake, NINO, USUARIO)).toBe(false)
   })
 

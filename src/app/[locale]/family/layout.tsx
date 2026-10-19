@@ -43,7 +43,7 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
 
   const user = await getCurrentUser()
   const centroLogo = await getCentroLogo(centroId)
-  const { total: unread } = await countNoLeidos()
+  const { total: unread } = await countNoLeidos(centroId)
   const recordatoriosPendientes = await contarRecordatoriosPendientes()
   const invitacionesPendientes = await contarInvitacionesPendientes()
 
@@ -54,7 +54,7 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
   const items = await buildSidebarItems(
     sidebarRol,
     locale,
-    <MessagingBadge initialTotal={unread} />,
+    <MessagingBadge initialTotal={unread} centroId={centroId} />,
     <RecordatoriosBadge initialTotal={recordatoriosPendientes} />,
     <AgendaBadge initialTotal={invitacionesPendientes} />
   )

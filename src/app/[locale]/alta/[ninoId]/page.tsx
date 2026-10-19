@@ -3,7 +3,8 @@ import { getTranslations } from 'next-intl/server'
 
 import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-autorizacion-detalle'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
-import { getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { AvisoCentroDistinto } from '@/features/centros/components/AvisoCentroDistinto'
+import { contextoEnCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { createClient } from '@/lib/supabase/server'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
@@ -77,7 +78,8 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const entrada = resolverEntradaAlta({
     tieneVinculo,
     // Solo consultamos el rol si NO hay vínculo (el tutor no necesita el lookup).
-    rolEnCentroNino: tieneVinculo ? null : await getRolEnCentro(nino.centro_id),
+    // Rol en el CENTRO DEL NIÑO, no en el activo (la cabecera avisa si son distintos).
+    rolEnCentroNino: tieneVinculo ? null : ((await contextoEnCentro(nino.centro_id))?.rol ?? null),
   })
   if (entrada.tipo === 'redirect') redirect(`/${locale}/${entrada.destino}`)
   if (entrada.tipo === 'notfound') notFound()
@@ -322,6 +324,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
   return (
     <div className="space-y-4">
+      <AvisoCentroDistinto centroRegistroId={nino.centro_id} />
       <header className="space-y-1">
         <h1 className="text-h2">{t('titulo')}</h1>
         <p className="text-muted-foreground text-sm">{t('subtitulo', { nombre: nino.nombre })}</p>

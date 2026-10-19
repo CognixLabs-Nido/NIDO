@@ -69,6 +69,8 @@ export const crearEventoSchema = z
     ambito: ambitoEventoEnum,
     aula_id: z.string().uuid().nullable().optional(),
     nino_id: z.string().uuid().nullable().optional(),
+    /** Centro activo de la página. Solo decide en ámbito `centro` (nino/aula: el del registro). */
+    centro_id: z.string().uuid().nullable().optional(),
     ...baseEventoFields,
   })
   .superRefine((v, ctx) => {

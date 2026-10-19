@@ -71,7 +71,7 @@ export default async function TeacherDashboard({ params }: PageProps) {
     }
   }
 
-  const avisos = await getAvisosInicio('profe')
+  const avisos = await getAvisosInicio('profe', centroId)
 
   return (
     <div className="space-y-6">

@@ -46,7 +46,7 @@ export default async function FamilyDashboard({ params }: PageProps) {
       .filter((n): n is NinoRow => n !== null)
   }
 
-  const avisos = await getAvisosInicio('tutor_legal')
+  const avisos = await getAvisosInicio('tutor_legal', centroId)
 
   return (
     <div className="space-y-6">

@@ -6,7 +6,7 @@ import { normalizarIban } from '@/features/alta/lib/iban'
 import { generarIdentificadorMandato } from '@/features/alta/lib/mandato-sepa'
 import { registrarOSustituirMandatoSepa } from '@/features/alta/lib/registrar-mandato-sepa'
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -41,26 +41,20 @@ export async function gestionarDomiciliacionFamilia(
   const { data: userData } = await supabase.auth.getUser()
   if (!userData?.user) return fail('auth.invitation.errors.unauthenticated')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('listaEspera.errors.sin_centro')
-
-  // Gate admin del centro (defensa en profundidad; la RPC también gatea es_admin).
-  const { data: roles } = await supabase
-    .from('roles_usuario')
-    .select('rol, centro_id')
-    .eq('usuario_id', userData.user.id)
-    .is('deleted_at', null)
-  const isAdmin = roles?.some((r) => r.centro_id === centroId && r.rol === 'admin')
-  if (!isAdmin) return fail('auth.invitation.errors.forbidden')
-
-  // La familia debe pertenecer al centro del admin. La RLS `familias_select` (es_admin(centro))
-  // solo deja leerla si es de su centro → si no aparece, es de otro centro (o no existe).
+  // El centro es el DE LA FAMILIA, no el centro activo de la cookie. La RLS `familias_select`
+  // (es_admin(centro)) solo deja leerla si es de uno de sus centros → si no aparece, es de otro
+  // centro (o no existe).
   const { data: familia } = await supabase
     .from('familias')
     .select('id, centro_id')
     .eq('id', parsed.data.familia_id)
     .maybeSingle()
-  if (!familia || familia.centro_id !== centroId) return fail('admin.familias.errors.no_encontrada')
+  if (!familia) return fail('admin.familias.errors.no_encontrada')
+  const centroId = familia.centro_id
+
+  // Gate admin de ese centro (defensa en profundidad; la RPC también gatea es_admin).
+  if (!(await esAdminEn(supabase, userData.user.id, centroId)))
+    return fail('auth.invitation.errors.forbidden')
 
   const iban = normalizarIban(parsed.data.iban)
   const titular = parsed.data.titular.trim()

@@ -55,6 +55,7 @@ export default async function RemindersPage({ params }: PageProps) {
   return (
     <RecordatoriosView
       locale={locale}
+      centroId={centroId}
       userId={userId}
       destinos={destinosParaRol(rol)}
       ninos={ninos}

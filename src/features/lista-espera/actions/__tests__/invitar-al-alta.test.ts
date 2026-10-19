@@ -157,10 +157,6 @@ vi.mock('@/lib/supabase/admin', () => ({
   createServiceRoleClient: vi.fn(() => makeServiceFake()),
 }))
 
-vi.mock('@/features/centros/queries/get-centro-actual', () => ({
-  getCentroActualId: vi.fn(() => Promise.resolve(CENTRO)),
-}))
-
 vi.mock('@/features/auth/lib/llamar-gotrue', () => ({
   // Envuelve la promesa real y nunca marca indisponible en estos tests.
   llamarGoTrue: vi.fn(async (_label: string, fn: () => Promise<{ data: unknown }>) => {
