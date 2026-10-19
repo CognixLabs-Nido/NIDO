@@ -9,6 +9,7 @@ import {
   asignarRol,
   clientFor,
   createTestCentro,
+  createTestFamilia,
   createTestNino,
   createTestUser,
   crearVinculo,
@@ -27,7 +28,8 @@ import {
  *   lecturas que el admin hacía como miembro (calendario laboral y menús).
  * - No es profe ni tutor.
  * - Avatares: es_admin_de_usuario / es_staff_de_usuario pasan por es_admin.
- * - La firma presencial del superusuario sincroniza el consentimiento de imagen.
+ * - Los registros presenciales en nombre de una familia (firma presencial, consentimiento de
+ *   imagen presencial y mandato SEPA presencial) los hace la directora, no el superusuario.
  * - registrar_entrada_superusuario: una fila en audit_log con el centro y el actor, sin
  *   datos de ningún sujeto.
  *
@@ -39,7 +41,6 @@ type Cliente = SupabaseClient<Database>
 type FirmaInsert = Database['public']['Tables']['firmas_autorizacion']['Insert']
 
 const TEXTO = 'Autorizo el uso de la imagen del menor en las condiciones descritas.'
-const SVG_TRAZO = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0 L10 10"/></svg>'
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex')
 
 async function rpcBool(c: Cliente, fn: string, args: Record<string, unknown>): Promise<boolean> {
@@ -68,6 +69,7 @@ describe('Superusuario', () => {
   let cAdminB: Cliente
   let cProfeA: Cliente
   let plantillaImg: string
+  let familiaA: string
   let instanciaImg: string
   const fechaB = '2031-01-02'
 
@@ -75,6 +77,7 @@ describe('Superusuario', () => {
     centroA = await createTestCentro('Superusuario A')
     centroB = await createTestCentro('Superusuario B')
     ninoA = await createTestNino(centroA.id, 'Nino Superusuario')
+    familiaA = await createTestFamilia(centroA.id)
     superU = await createTestUser({ nombre: 'Superusuario Pruebas' })
     adminA = await createTestUser({ nombre: 'Admin A Superusuario' })
     adminB = await createTestUser({ nombre: 'Admin B Superusuario' })
@@ -151,6 +154,7 @@ describe('Superusuario', () => {
       .filter(Boolean)
       .map((u) => u.id)
     await serviceClient.from('consentimientos').delete().in('usuario_id', usuarios)
+    if (centroA) await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centroA.id)
     if (instanciaImg) {
       await serviceClient.from('firmas_autorizacion').delete().eq('autorizacion_id', instanciaImg)
       await serviceClient.from('autorizaciones').delete().eq('id', instanciaImg)
@@ -259,8 +263,25 @@ describe('Superusuario', () => {
     expect(await rpcBool(cProfeA, 'es_staff_de_usuario', { p_usuario_id: adminB.id })).toBe(false)
   })
 
-  it('la firma presencial del superusuario sincroniza el consentimiento de imagen (la de una profe no)', async () => {
-    const firma = (u: TestUser): FirmaInsert => ({
+  describe('registros presenciales en nombre de una familia: la directora sí, el superusuario no', () => {
+    const IBAN = 'ES7620770024003102575766'
+    const mandato = (familiaId: string, id: string) =>
+      ({
+        p_familia_id: familiaId,
+        p_nino_id: null,
+        p_iban: IBAN,
+        p_titular: 'Titular Pruebas',
+        p_identificador_mandato: id,
+        p_documento_path: null,
+        p_firma_imagen: '',
+        p_nombre_tecleado: 'Titular Pruebas',
+        p_texto_hash: null,
+        p_ip_address: null,
+        p_user_agent: null,
+        p_fecha_firma: '2031-02-01T10:00:00Z',
+        p_metodo: 'presencial',
+      }) as never
+    const firmaPresencial = (u: TestUser): FirmaInsert => ({
       autorizacion_id: instanciaImg,
       nino_id: ninoA.id,
       firmante_id: u.id,
@@ -270,23 +291,37 @@ describe('Superusuario', () => {
       texto_hash: sha256(TEXTO),
       texto_version: 'v1',
       nombre_tecleado: 'Firmante Pruebas',
-      firma_imagen: SVG_TRAZO,
     })
-    const vigente = async (u: TestUser) => {
+
+    it('firma presencial de una autorización (firmas_insert)', async () => {
+      // La firma presencial la inserta la app con la sesión de quien firma (firmar-autorizacion.ts).
+      const directora = await cAdminA.from('firmas_autorizacion').insert(firmaPresencial(adminA))
+      expect(directora.error).toBeNull()
+      const sup = await cSuper.from('firmas_autorizacion').insert(firmaPresencial(superU))
+      expect(sup.error?.code).toBe('42501')
+    })
+
+    it('consentimiento de imagen presencial (otorgar_consentimiento_imagen)', async () => {
+      const args = { p_nino_id: ninoA.id, p_tutor: tutorA.id, p_metodo: 'presencial' as const }
+      expect((await cAdminA.rpc('otorgar_consentimiento_imagen', args)).error).toBeNull()
+      const sup = await cSuper.rpc('otorgar_consentimiento_imagen', args)
+      expect(sup.error?.code).toBe('42501')
+    })
+
+    it('mandato SEPA presencial (registrar_ y sustituir_mandato_sepa)', async () => {
+      expect(
+        (await cAdminA.rpc('registrar_mandato_sepa', mandato(familiaA, 'SUP-1'))).error
+      ).toBeNull()
+      const registrar = await cSuper.rpc('registrar_mandato_sepa', mandato(familiaA, 'SUP-2'))
+      expect(registrar.error?.message).toBe('No autorizado')
+      const sustituir = await cSuper.rpc('sustituir_mandato_sepa', mandato(familiaA, 'SUP-3'))
+      expect(sustituir.error?.message).toBe('No autorizado')
       const { data } = await serviceClient
-        .from('consentimientos')
-        .select('id')
-        .eq('tipo', 'imagen')
-        .eq('nino_id', ninoA.id)
-        .eq('usuario_id', u.id)
-        .is('revocado_en', null)
-      return (data ?? []).length
-    }
-    // La firma presencial la escribe el servidor (como en la app): aquí, con service role.
-    expect((await serviceClient.from('firmas_autorizacion').insert(firma(profeA))).error).toBeNull()
-    expect(await vigente(profeA)).toBe(0)
-    expect((await serviceClient.from('firmas_autorizacion').insert(firma(superU))).error).toBeNull()
-    expect(await vigente(superU)).toBe(1)
+        .from('mandatos_sepa')
+        .select('identificador_mandato, usuario_id')
+        .eq('familia_id', familiaA)
+      expect(data).toEqual([{ identificador_mandato: 'SUP-1', usuario_id: adminA.id }])
+    })
   })
 
   describe('registrar_entrada_superusuario', () => {

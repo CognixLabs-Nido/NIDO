@@ -7,8 +7,8 @@
 -- centro no quede ni un momento sin admin. Es admin, no profe ni tutor: no entra en los helpers
 -- de profe ni de tutor (si fuera tutor podría firmar en nombre de una familia).
 --
--- 1. Guarda de entrada: las cuatro funciones que se reescriben y las tres policies que se
---    amplían son las vivas, lo nuevo no existe y el motivo de 20261023120000 ya está.
+-- 1. Guarda de entrada: las seis funciones que se reescriben y las cuatro policies que se
+--    tocan son las vivas, lo nuevo no existe y el motivo de 20261023120000 ya está.
 -- 2. platform_admins: quién es superusuario. Sin ninguna policy (ni de lectura ni de
 --    escritura) y sin permisos para anon ni authenticated: desde la app solo se pregunta, con
 --    is_superadmin(). Se escribe aquí, en migraciones. No se audita: su histórico es git.
@@ -21,9 +21,10 @@
 --    quien llama en roles_usuario, sin pasar por es_admin. Ahora preguntan a es_admin y a
 --    es_profe_en_centro por cada centro del usuario objetivo: lo mismo para todos, y el
 --    superusuario entra por es_admin.
--- 6. firma_imagen_sync: la firma PRESENCIAL de Dirección también sincroniza el consentimiento
---    de imagen cuando la hace el superusuario (firmas_insert le deja firmar por es_admin; sin
---    esto la firma quedaba sin su consentimiento). Es el único cambio de la función.
+-- 6. Los registros presenciales en nombre de una familia NO son del superusuario: los hace la
+--    directora, que tiene a la familia delante (decisión del responsable, 2026-10-20). Se le
+--    cierra la rama de admin de firmas_insert (firma presencial de una autorización),
+--    otorgar_consentimiento_imagen y registrar_/sustituir_mandato_sepa. La de tutor no cambia.
 -- 7. menu_dia_select, dias_centro_select y plantillas_menu_select: el admin leía estas tres
 --    tablas solo como miembro del centro (pertenece_a_centro). Se añade OR es_admin, que para
 --    un admin con rol no cambia nada y deja leer al superusuario.
@@ -67,7 +68,9 @@ BEGIN
              FROM (VALUES ('public.es_admin(uuid)',            'd3ffb2a24bc96d5e9a4199738f2b9b83'),
                           ('public.es_admin_de_usuario(uuid)', '46c5b8ad337b41d89579129fa797d884'),
                           ('public.es_staff_de_usuario(uuid)', '181ee311e37788a3b115019f05b60728'),
-                          ('public.firma_imagen_sync()',       'f95e602a1f3d00a239a5724817c8f605')) e(firma, esperado) LOOP
+                          ('public.otorgar_consentimiento_imagen(uuid,uuid,text,inet,text,firma_metodo)', '1dc1516dc56b567529157ce374fb131a'),
+                          ('public.registrar_mandato_sepa(uuid,uuid,text,text,text,text,text,text,text,inet,text,timestamp with time zone,firma_metodo)', '6164aba769640c96694a54b3f8acc36d'),
+                          ('public.sustituir_mandato_sepa(uuid,uuid,text,text,text,text,text,text,text,inet,text,timestamp with time zone,firma_metodo)', 'aa108e5d5552c03e6f3c08c2a41bbc4d')) e(firma, esperado) LOOP
     IF r.m IS DISTINCT FROM r.esperado THEN
       f := f || format('%s no es la viva esperada (md5 normalizado %s)', r.firma, coalesce(r.m, 'no existe'));
     END IF;
@@ -83,6 +86,11 @@ BEGIN
       f := f || format('%s no es la esperada (%s)', r.pol, coalesce(r.q, 'no existe'));
     END IF;
   END LOOP;
+  IF (SELECT pg_get_expr(p.polwithcheck, p.polrelid) FROM pg_policy p
+       WHERE p.polrelid = 'public.firmas_autorizacion'::regclass AND p.polname = 'firmas_insert')
+     IS DISTINCT FROM '((tiene_permiso_sobre(nino_id, ''puede_firmar_autorizaciones''::text) OR es_admin(centro_de_nino(nino_id))) AND (firmante_id = auth.uid()) AND autorizacion_aplica_a_nino(autorizacion_id, nino_id) AND autorizacion_firmable(autorizacion_id))' THEN
+    f := f || 'firmas_insert no es la esperada'::text;
+  END IF;
 
   IF to_regclass('public.platform_admins') IS NOT NULL
      OR to_regprocedure('public.is_superadmin()') IS NOT NULL
@@ -178,56 +186,182 @@ AS $function$
   );
 $function$;
 
--- 6. firma_imagen_sync: la firma presencial del superusuario también sincroniza.
-CREATE OR REPLACE FUNCTION public.firma_imagen_sync()
- RETURNS trigger
+-- 6. Los registros presenciales en nombre de una familia los hace la directora del centro, que
+--    es quien tiene a la familia delante; el superusuario no (decisión del responsable,
+--    2026-10-20). Firma presencial de una autorización (firmas_insert), consentimiento de imagen
+--    presencial (otorgar_consentimiento_imagen) y mandato SEPA presencial (registrar_ y
+--    sustituir_mandato_sepa): se le cierra la rama de admin. La de tutor no cambia. Las tres
+--    funciones son las vivas con ese único cambio en la puerta.
+ALTER POLICY firmas_insert ON public.firmas_autorizacion
+  WITH CHECK ((tiene_permiso_sobre(nino_id, 'puede_firmar_autorizaciones'::text)
+               OR (es_admin(centro_de_nino(nino_id)) AND NOT is_superadmin()))
+              AND (firmante_id = auth.uid())
+              AND autorizacion_aplica_a_nino(autorizacion_id, nino_id)
+              AND autorizacion_firmable(autorizacion_id));
+
+CREATE OR REPLACE FUNCTION public.otorgar_consentimiento_imagen(p_nino_id uuid, p_tutor uuid, p_version text DEFAULT 'imagen-v1'::text, p_ip inet DEFAULT NULL::inet, p_user_agent text DEFAULT NULL::text, p_metodo firma_metodo DEFAULT 'digital'::firma_metodo)
+ RETURNS uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
 DECLARE
-  a public.autorizaciones%ROWTYPE;
+  v_id uuid;
+  v_uid uuid := auth.uid();
+  v_admin boolean;
 BEGIN
-  SELECT * INTO a FROM public.autorizaciones WHERE id = NEW.autorizacion_id;
-  IF NOT FOUND THEN RETURN NEW; END IF;
-  IF a.es_plantilla OR a.tipo <> 'autorizacion_imagenes' THEN RETURN NEW; END IF;
-
-  IF NEW.decision = 'firmado' THEN
-    IF NOT (
-         EXISTS (SELECT 1 FROM public.vinculos_familiares vf
-                  WHERE vf.usuario_id = NEW.firmante_id
-                    AND vf.nino_id = NEW.nino_id
-                    AND vf.deleted_at IS NULL
-                    AND vf.tipo_vinculo IN ('tutor_legal_principal', 'tutor_legal_secundario'))
-      OR (NEW.metodo_firma = 'presencial'
-          AND (EXISTS (SELECT 1 FROM public.roles_usuario ru
-                        WHERE ru.usuario_id = NEW.firmante_id
-                          AND ru.rol = 'admin'
-                          AND ru.deleted_at IS NULL
-                          AND ru.centro_id = public.centro_de_nino(NEW.nino_id))
-               OR EXISTS (SELECT 1 FROM public.platform_admins pa
-                           WHERE pa.usuario_id = NEW.firmante_id)))
-    ) THEN
-      RETURN NEW;
+  IF v_uid IS NULL THEN
+    IF NOT (COALESCE(auth.role(), '') = 'service_role'
+            OR (session_user <> 'authenticator'
+                AND nullif(current_setting('request.jwt.claims', true), '') IS NULL
+                AND nullif(current_setting('request.jwt.claim.role', true), '') IS NULL)) THEN
+      RAISE EXCEPTION 'no autorizado a otorgar consentimiento de imagen de este niño'
+        USING ERRCODE = 'insufficient_privilege';
     END IF;
-    UPDATE public.consentimientos
-       SET revocado_en = now()
-     WHERE tipo = 'imagen' AND usuario_id = NEW.firmante_id
-       AND nino_id = NEW.nino_id AND revocado_en IS NULL;
-    INSERT INTO public.consentimientos
-      (usuario_id, tipo, version, nino_id, ip_address, user_agent)
-    VALUES
-      (NEW.firmante_id, 'imagen'::public.consentimiento_tipo, a.texto_version,
-       NEW.nino_id, NEW.ip_address, NEW.user_agent);
   ELSE
-    UPDATE public.consentimientos
-       SET revocado_en = now()
-     WHERE tipo = 'imagen' AND usuario_id = NEW.firmante_id
-       AND nino_id = NEW.nino_id AND revocado_en IS NULL;
+    -- El superusuario no registra el consentimiento en nombre de un tutor (ADR-0061).
+    v_admin := public.es_admin(public.centro_de_nino(p_nino_id)) AND NOT public.is_superadmin();
+    IF NOT v_admin AND NOT public.es_tutor_legal_de(p_nino_id) THEN
+      RAISE EXCEPTION 'no autorizado a otorgar consentimiento de imagen de este niño'
+        USING ERRCODE = 'insufficient_privilege';
+    END IF;
+    IF NOT v_admin THEN
+      p_tutor := v_uid;
+    END IF;
   END IF;
 
-  RETURN NEW;
+  INSERT INTO public.consentimientos
+    (usuario_id, tipo, version, nino_id, ip_address, user_agent, metodo_firma)
+  VALUES
+    (p_tutor, 'imagen', p_version, p_nino_id, p_ip, p_user_agent, p_metodo)
+  RETURNING id INTO v_id;
+
+  RETURN v_id;
 END $function$;
+
+CREATE OR REPLACE FUNCTION public.registrar_mandato_sepa(p_familia_id uuid, p_nino_id uuid, p_iban text, p_titular text, p_identificador_mandato text, p_documento_path text, p_firma_imagen text, p_nombre_tecleado text, p_texto_hash text, p_ip_address inet, p_user_agent text, p_fecha_firma timestamp with time zone, p_metodo firma_metodo DEFAULT 'digital'::firma_metodo)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+  v_clave       text := public._get_sepa_key();
+  v_uid         uuid := auth.uid();
+  v_id          uuid;
+  v_iban_actual text;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+  -- Gate por FAMILIA: admin del centro de la familia O tutor de la familia.
+  -- El superusuario no registra el mandato en nombre de la familia (ADR-0061).
+  IF NOT ((public.es_admin(public.centro_de_familia(p_familia_id)) AND NOT public.is_superadmin())
+          OR public.es_tutor_de_familia(p_familia_id)) THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+  IF p_iban IS NULL OR char_length(p_iban) < 15 OR char_length(p_iban) > 34 THEN
+    RAISE EXCEPTION 'IBAN inválido';
+  END IF;
+
+  -- Mandato ACTIVO de la familia (no por nino+usuario). Se descifra su IBAN para
+  -- decidir: mismo IBAN = reintento del alta (UPDATE in-place, sin ensuciar histórico);
+  -- IBAN distinto = cambio real de cuenta → NO se pisa aquí, se exige sustituir_mandato_sepa
+  -- (revoca + inserta, con histórico). NO se compara `iban_cifrado` directamente:
+  -- pgp_sym_encrypt no es determinista (mismo IBAN cifra distinto) → hay que descifrar.
+  SELECT id, pgp_sym_decrypt(iban_cifrado, v_clave) INTO v_id, v_iban_actual
+  FROM public.mandatos_sepa
+  WHERE familia_id = p_familia_id AND estado = 'activo' AND deleted_at IS NULL
+  LIMIT 1;
+
+  IF v_id IS NOT NULL THEN
+    -- Comparación en CLARO normalizada (sin espacios/tabuladores, mayúsculas) por si el
+    -- tecleo trae espacios. Distinto → error claro; el cambio de cuenta va por sustituir.
+    IF upper(regexp_replace(v_iban_actual, '\s', '', 'g'))
+       <> upper(regexp_replace(p_iban, '\s', '', 'g')) THEN
+      RAISE EXCEPTION 'mandato_activo_otro_iban'
+        USING HINT = 'existe un mandato activo con otro IBAN; usa sustituir_mandato_sepa';
+    END IF;
+    UPDATE public.mandatos_sepa SET
+      nino_id               = p_nino_id,
+      usuario_id            = v_uid,
+      iban_cifrado          = pgp_sym_encrypt(p_iban, v_clave),
+      iban_ultimos4         = right(regexp_replace(p_iban, '\s', '', 'g'), 4),
+      titular               = p_titular,
+      identificador_mandato = p_identificador_mandato,
+      documento_path        = p_documento_path,
+      estado                = 'activo',
+      firma_imagen          = p_firma_imagen,
+      nombre_tecleado       = p_nombre_tecleado,
+      texto_hash            = p_texto_hash,
+      ip_address            = p_ip_address,
+      user_agent            = p_user_agent,
+      fecha_firma           = p_fecha_firma,
+      metodo_firma          = p_metodo
+    WHERE id = v_id;
+  ELSE
+    INSERT INTO public.mandatos_sepa (
+      centro_id, familia_id, nino_id, usuario_id, iban_cifrado, iban_ultimos4, titular,
+      identificador_mandato, documento_path, estado, firma_imagen,
+      nombre_tecleado, texto_hash, ip_address, user_agent, fecha_firma, metodo_firma
+    ) VALUES (
+      public.centro_de_familia(p_familia_id), p_familia_id, p_nino_id, v_uid,
+      pgp_sym_encrypt(p_iban, v_clave), right(regexp_replace(p_iban, '\s', '', 'g'), 4), p_titular,
+      p_identificador_mandato, p_documento_path, 'activo', p_firma_imagen,
+      p_nombre_tecleado, p_texto_hash, p_ip_address, p_user_agent, p_fecha_firma, p_metodo
+    )
+    RETURNING id INTO v_id;
+  END IF;
+
+  RETURN v_id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.sustituir_mandato_sepa(p_familia_id uuid, p_nino_id uuid, p_iban text, p_titular text, p_identificador_mandato text, p_documento_path text, p_firma_imagen text, p_nombre_tecleado text, p_texto_hash text, p_ip_address inet, p_user_agent text, p_fecha_firma timestamp with time zone, p_metodo firma_metodo DEFAULT 'digital'::firma_metodo)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+  v_clave text := public._get_sepa_key();
+  v_uid   uuid := auth.uid();
+  v_id    uuid;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+  -- El superusuario no registra el mandato en nombre de la familia (ADR-0061).
+  IF NOT ((public.es_admin(public.centro_de_familia(p_familia_id)) AND NOT public.is_superadmin())
+          OR public.es_tutor_de_familia(p_familia_id)) THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+  IF p_iban IS NULL OR char_length(p_iban) < 15 OR char_length(p_iban) > 34 THEN
+    RAISE EXCEPTION 'IBAN inválido';
+  END IF;
+
+  -- Revoca el activo actual de la familia (se conserva la fila: estado='revocado',
+  -- deleted_at NULL, con SU iban_ultimos4 intacto). Libera el índice único ANTES
+  -- del INSERT del nuevo activo.
+  UPDATE public.mandatos_sepa
+    SET estado = 'revocado'
+    WHERE familia_id = p_familia_id AND estado = 'activo' AND deleted_at IS NULL;
+
+  INSERT INTO public.mandatos_sepa (
+    centro_id, familia_id, nino_id, usuario_id, iban_cifrado, iban_ultimos4, titular,
+    identificador_mandato, documento_path, estado, firma_imagen,
+    nombre_tecleado, texto_hash, ip_address, user_agent, fecha_firma, metodo_firma
+  ) VALUES (
+    public.centro_de_familia(p_familia_id), p_familia_id, p_nino_id, v_uid,
+    pgp_sym_encrypt(p_iban, v_clave), right(regexp_replace(p_iban, '\s', '', 'g'), 4), p_titular,
+    p_identificador_mandato, p_documento_path, 'activo', p_firma_imagen,
+    p_nombre_tecleado, p_texto_hash, p_ip_address, p_user_agent, p_fecha_firma, p_metodo
+  )
+  RETURNING id INTO v_id;
+
+  RETURN v_id;
+END;
+$function$;
 
 -- 7. Las tres lecturas que el admin hacía solo como miembro del centro.
 ALTER POLICY menu_dia_select ON public.menu_dia
@@ -344,7 +478,7 @@ BEGIN
                             'public.es_admin(uuid)'::regprocedure,
                             'public.es_admin_de_usuario(uuid)'::regprocedure,
                             'public.es_staff_de_usuario(uuid)'::regprocedure,
-                            'public.firma_imagen_sync()'::regprocedure) LOOP
+                            'public.otorgar_consentimiento_imagen(uuid,uuid,text,inet,text,firma_metodo)'::regprocedure) LOOP
     IF NOT r.prosecdef OR NOT COALESCE('search_path=public' = ANY (r.proconfig), false) THEN
       f := f || format('%s: no es SECURITY DEFINER con search_path=public', r.fn);
     END IF;
@@ -361,6 +495,23 @@ BEGIN
             'OR (public.is_superadmin()') = 0 THEN
     f := f || 'es_admin no pregunta por el superusuario'::text;
   END IF;
+  -- Los registros presenciales: la rama de admin cierra al superusuario en las tres funciones y en
+  -- la policy de firmas.
+  FOR r IN SELECT p.oid::regprocedure::text AS fn, regexp_replace(p.prosrc, '\s+', ' ', 'g') AS src
+             FROM pg_proc p
+            WHERE p.oid IN ('public.otorgar_consentimiento_imagen(uuid,uuid,text,inet,text,firma_metodo)'::regprocedure,
+                            'public.registrar_mandato_sepa(uuid,uuid,text,text,text,text,text,text,text,inet,text,timestamp with time zone,firma_metodo)'::regprocedure,
+                            'public.sustituir_mandato_sepa(uuid,uuid,text,text,text,text,text,text,text,inet,text,timestamp with time zone,firma_metodo)'::regprocedure) LOOP
+    IF strpos(r.src, 'AND NOT public.is_superadmin()') = 0 THEN
+      f := f || format('%s: la rama de admin no cierra al superusuario', r.fn);
+    END IF;
+  END LOOP;
+  IF strpos((SELECT pg_get_expr(p.polwithcheck, p.polrelid) FROM pg_policy p
+              WHERE p.polrelid = 'public.firmas_autorizacion'::regclass AND p.polname = 'firmas_insert'),
+            'NOT is_superadmin()') = 0 THEN
+    f := f || 'firmas_insert: la rama de admin no cierra al superusuario'::text;
+  END IF;
+
   FOR r IN SELECT e.pol, (SELECT pg_get_expr(p.polqual, p.polrelid) FROM pg_policy p WHERE p.polname = e.pol) AS q
              FROM (VALUES ('menu_dia_select'), ('dias_centro_select'), ('plantillas_menu_select')) e(pol) LOOP
     IF strpos(r.q, 'es_admin(') = 0 THEN
