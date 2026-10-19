@@ -11,6 +11,8 @@ import { useRecordatoriosRealtime } from '../lib/use-recordatorios-realtime'
 interface Props {
   /** Conteo inicial calculado server-side (evita el flash 0 al hidratar). */
   initialTotal: number
+  /** Centro de la página: el badge cuenta solo sus recordatorios. */
+  centroId: string
 }
 
 /**
@@ -21,18 +23,18 @@ interface Props {
  * visible. La RLS de SELECT filtra los eventos Realtime, así que el cliente
  * solo se entera de filas que puede leer.
  */
-export function RecordatoriosBadge({ initialTotal }: Props) {
+export function RecordatoriosBadge({ initialTotal, centroId }: Props) {
   const t = useTranslations('recordatorios')
   const [total, setTotal] = useState(initialTotal)
 
   const refresh = useCallback(async () => {
     try {
-      const r = await getRecordatoriosPendientesCountAction()
+      const r = await getRecordatoriosPendientesCountAction(centroId)
       setTotal(r.total)
     } catch {
       // Error silencioso: el badge no debe romper la app si la consulta falla.
     }
-  }, [])
+  }, [centroId])
 
   const onRealtimeChange = useCallback(() => {
     void refresh()

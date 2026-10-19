@@ -45,8 +45,8 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
   const user = await getCurrentUser()
   const centroLogo = await getCentroLogo(centroId)
   const { total: unread } = await countNoLeidos(centroId)
-  const recordatoriosPendientes = await contarRecordatoriosPendientes()
-  const invitacionesPendientes = await contarInvitacionesPendientes()
+  const recordatoriosPendientes = await contarRecordatoriosPendientes(centroId)
+  const invitacionesPendientes = await contarInvitacionesPendientes(centroId)
 
   // Si el usuario es admin que entra por error en family, le mostramos
   // sus items propios; si es autorizado, los de family (todos los items
@@ -56,7 +56,7 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
     sidebarRol,
     locale,
     <MessagingBadge initialTotal={unread} centroId={centroId} />,
-    <RecordatoriosBadge initialTotal={recordatoriosPendientes} />,
+    <RecordatoriosBadge initialTotal={recordatoriosPendientes} centroId={centroId} />,
     <AgendaBadge initialTotal={invitacionesPendientes} />
   )
 

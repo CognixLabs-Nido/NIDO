@@ -377,7 +377,9 @@ describe('RLS recordatorios — F6-C (modelo granular)', () => {
     })
 
     const cTutor = await clientFor(tutor)
-    const { data: tutorCount, error: e1 } = await cTutor.rpc('contar_recordatorios_pendientes')
+    const { data: tutorCount, error: e1 } = await cTutor.rpc('contar_recordatorios_pendientes', {
+      p_centro_id: centro.id,
+    })
     expect(e1).toBeNull()
     expect(tutorCount ?? 0).toBeGreaterThan(0)
 
@@ -388,7 +390,9 @@ describe('RLS recordatorios — F6-C (modelo granular)', () => {
     // documentado en ADR-0037 (el flag solo gatea el push). Por eso su contador
     // refleja los broadcasts del aula/centro (>0), no 0.
     const cAut = await clientFor(autorizado)
-    const { data: autCount } = await cAut.rpc('contar_recordatorios_pendientes')
+    const { data: autCount } = await cAut.rpc('contar_recordatorios_pendientes', {
+      p_centro_id: centro.id,
+    })
     expect(autCount ?? 0).toBeGreaterThan(0)
 
     // Flag-gating sobre familia_individual (determinista): tutor y autorizado
@@ -408,7 +412,9 @@ describe('RLS recordatorios — F6-C (modelo granular)', () => {
       titulo: 'badge personal admin',
     })
     const cAdmin = await clientFor(admin)
-    const { data: adminCount } = await cAdmin.rpc('contar_recordatorios_pendientes')
+    const { data: adminCount } = await cAdmin.rpc('contar_recordatorios_pendientes', {
+      p_centro_id: centro.id,
+    })
     expect(adminCount ?? 0).toBeGreaterThan(0)
   })
 

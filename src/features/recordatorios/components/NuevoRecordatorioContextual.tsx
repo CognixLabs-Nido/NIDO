@@ -28,7 +28,7 @@ export async function NuevoRecordatorioContextual({ locale, rol, centroId, prese
   if (destinos.length === 0) return null
 
   const [ninos, aulas, profes] = await Promise.all([
-    getNinosParaRecordatorios(),
+    getNinosParaRecordatorios(centroId),
     getAulasParaRecordatorios(rol, centroId),
     rol === 'admin' ? getProfesParaRecordatorios(centroId) : Promise.resolve([]),
   ])

@@ -50,7 +50,7 @@ export default async function TeacherCalendarioPage({ params, searchParams }: Pa
     getCalendarioMes(centroId, anioNum, mesNum),
     getEventosMes(centroId, anioNum, mesNum),
     getAulasParaRecordatorios(esAdmin ? 'admin' : 'profe', centroId),
-    esAdmin ? getNinosParaRecordatorios() : Promise.resolve([]),
+    esAdmin ? getNinosParaRecordatorios(centroId) : Promise.resolve([]),
   ])
   const ambitos: AmbitoEvento[] = esAdmin ? ['centro', 'aula', 'nino'] : ['aula']
 

@@ -48,7 +48,7 @@ export default async function AdminCalendarioPage({ params, searchParams }: Page
     getCalendarioMes(centroId, anioNum, mesNum),
     getEventosMes(centroId, anioNum, mesNum),
     getAulasParaRecordatorios('admin', centroId),
-    getNinosParaRecordatorios(),
+    getNinosParaRecordatorios(centroId),
   ])
 
   return (
