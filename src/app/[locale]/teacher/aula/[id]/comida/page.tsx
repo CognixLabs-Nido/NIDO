@@ -5,7 +5,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getAulaById } from '@/features/aulas/queries/get-aulas'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { PaseDeListaComidaCliente } from '@/features/menus/components/PaseDeListaComidaCliente'
 import { getPaseDeListaComidaTodosMomentos } from '@/features/menus/queries/get-pase-de-lista-comida-todos-momentos'
 import type { MomentoComida } from '@/features/menus/types'
@@ -22,9 +22,7 @@ export default async function TeacherComidaPage({ params, searchParams }: PagePr
   const { fecha: fechaQ, momento: momentoQ } = await searchParams
   const tNav = await getTranslations('teacher.nav')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-  const rol = await getRolEnCentro(centroId)
+  const { rol } = await requireContextoCentro(locale)
   if (rol !== 'profe' && rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   const aula = await getAulaById(id)

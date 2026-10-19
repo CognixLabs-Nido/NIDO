@@ -13,7 +13,7 @@ import { SeccionMedicacion } from '@/features/autorizaciones/components/SeccionM
 import { getAutorizacionesFamilia } from '@/features/autorizaciones/queries/get-autorizaciones-familia'
 import { getMedicacionContextoFamilia } from '@/features/autorizaciones/queries/get-medicacion-familia'
 import { getRecogidaContextoFamilia } from '@/features/autorizaciones/queries/get-recogida-familia'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { createClient } from '@/lib/supabase/server'
 
 interface PageProps {
@@ -28,9 +28,7 @@ export default async function FamilyAutorizacionesPage({ params, searchParams }:
   const soloHistorico = (await searchParams).historico === '1'
   const t = await getTranslations('autorizaciones')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-  const rol = await getRolEnCentro(centroId)
+  const { rol } = await requireContextoCentro(locale)
   if (rol !== 'tutor_legal' && rol !== 'autorizado') redirect(`/${locale}/forbidden`)
 
   if (soloHistorico) {

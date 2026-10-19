@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 
 import { InformeEditor } from '@/features/informes/components/InformeEditor'
 import { getInformeEvolucionDetalle } from '@/features/informes/queries/get-informes-profe'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>
@@ -22,9 +22,7 @@ export default async function TeacherInformeDetallePage({ params }: PageProps) {
   const { locale, id } = await params
   const t = await getTranslations('informes')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-  const rol = await getRolEnCentro(centroId)
+  const { rol } = await requireContextoCentro(locale)
   if (rol !== 'profe' && rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   const informe = await getInformeEvolucionDetalle(id)

@@ -15,7 +15,7 @@ import { getEventosExcursion } from '@/features/autorizaciones/queries/get-event
 import { getPlantillasCatalogo } from '@/features/autorizaciones/queries/get-plantillas-catalogo'
 import { getPlantillasParaEnviar } from '@/features/autorizaciones/queries/get-plantillas-para-enviar'
 import { getSeguimientoEnvios } from '@/features/autorizaciones/queries/get-seguimiento-envios'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getAulasParaRecordatorios } from '@/features/recordatorios/queries/get-aulas-para-recordatorios'
 import { getNinosParaRecordatorios } from '@/features/recordatorios/queries/get-ninos-para-recordatorios'
 
@@ -31,9 +31,7 @@ export default async function AdminAutorizacionesPage({ params, searchParams }: 
   const soloHistorico = (await searchParams).historico === '1'
   const t = await getTranslations('autorizaciones')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-  const rol = await getRolEnCentro(centroId)
+  const { centroId, rol } = await requireContextoCentro(locale)
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   if (soloHistorico) {

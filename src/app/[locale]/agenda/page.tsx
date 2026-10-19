@@ -5,7 +5,7 @@ import { rangoDeVista, ymd } from '@/features/agenda/lib/fechas'
 import { getCitasRango } from '@/features/agenda/queries/get-citas-rango'
 import { getPreferenciaVistaAgenda } from '@/features/agenda/queries/get-preferencia-vista'
 import type { VistaAgenda } from '@/features/agenda/types'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getAulasParaRecordatorios } from '@/features/recordatorios/queries/get-aulas-para-recordatorios'
 import { getNinosParaRecordatorios } from '@/features/recordatorios/queries/get-ninos-para-recordatorios'
 import { getProfesParaRecordatorios } from '@/features/recordatorios/queries/get-profes-para-recordatorios'
@@ -27,10 +27,7 @@ export default async function AgendaPage({ params, searchParams }: PageProps) {
   const { locale } = await params
   const sp = await searchParams
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-
-  const rolRaw = await getRolEnCentro(centroId)
+  const { centroId, rol: rolRaw } = await requireContextoCentro(locale)
   if (
     !rolRaw ||
     (rolRaw !== 'admin' &&

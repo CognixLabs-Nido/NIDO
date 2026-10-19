@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card'
 import { NuevaAulaDialog } from '@/features/aulas/components/NuevaAulaDialog'
 import { TablaAulas } from '@/features/aulas/components/TablaAulas'
 import { getAulasConPersonal } from '@/features/aulas/queries/get-aulas-con-personal'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import {
   getPersonalAula,
   type PersonalAulaItem,
@@ -21,7 +21,7 @@ interface PageProps {
 export default async function AdminAulasPage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('admin.aulas')
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
   const cursoActivo = await getCursoActivo(centroId)
 
   if (!cursoActivo) {

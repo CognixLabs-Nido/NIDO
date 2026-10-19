@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { estadoAltaFamilia } from '@/features/alta/lib/gate-familia'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
 import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
 import { getAvisosInicio } from '@/features/notificaciones/queries/get-avisos-inicio'
@@ -26,7 +26,7 @@ export default async function FamilyDashboard({ params }: PageProps) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   const userId = userData.user?.id
-  const centroId = await getCentroActualId()
+  const { centroId } = await requireContextoCentro(locale)
 
   type NinoRow = { id: string; nombre: string; apellidos: string | null }
   let ninos: NinoRow[] = []

@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { createClient } from '@/lib/supabase/server'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { localeIntl } from '@/shared/lib/locale-intl'
 
@@ -27,7 +27,7 @@ const accionVariant: Record<Accion, 'success' | 'info' | 'destructive'> = {
 export default async function AdminAuditPage() {
   const t = await getTranslations('admin.audit')
   const locale = await getLocale()
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
   const supabase = await createClient()
 
   const { data: entries } = await supabase

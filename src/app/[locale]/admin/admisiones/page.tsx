@@ -2,7 +2,7 @@ import { ClipboardListIcon } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 import { Card } from '@/components/ui/card'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCursosPorCentro } from '@/features/cursos/queries/get-cursos'
 import { ListaEsperaPanel } from '@/features/lista-espera/components/ListaEsperaPanel'
 import { getAulasConOcupacion } from '@/features/lista-espera/queries/get-aulas-con-ocupacion'
@@ -17,7 +17,7 @@ interface PageProps {
 export default async function AdmisionesPage({ params, searchParams }: PageProps) {
   const t = await getTranslations('admin.admisiones')
   const { locale } = await params
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
   const cursos = await getCursosPorCentro(centroId)
 
   if (cursos.length === 0) {

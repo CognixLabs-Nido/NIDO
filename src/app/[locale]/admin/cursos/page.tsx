@@ -14,7 +14,7 @@ import {
 import { ActivarCursoButton } from '@/features/cursos/components/ActivarCursoButton'
 import { NuevoCursoDialog } from '@/features/cursos/components/NuevoCursoDialog'
 import { getCursosPorCentro } from '@/features/cursos/queries/get-cursos'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { EmptyState } from '@/shared/components/EmptyState'
 
 type CursoEstado = 'planificado' | 'activo' | 'cerrado'
@@ -25,9 +25,14 @@ const estadoVariant: Record<CursoEstado, 'success' | 'info' | 'secondary'> = {
   cerrado: 'secondary',
 }
 
-export default async function AdminCursosPage() {
+interface PageProps {
+  params: Promise<{ locale: string }>
+}
+
+export default async function AdminCursosPage({ params }: PageProps) {
+  const { locale } = await params
   const t = await getTranslations('admin.cursos')
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
   const cursos = await getCursosPorCentro(centroId)
 
   return (

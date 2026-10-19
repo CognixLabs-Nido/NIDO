@@ -2,7 +2,7 @@ import { ArrowRightIcon, CalendarDaysIcon } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 import { Card } from '@/components/ui/card'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCursosPlanificados } from '@/features/cursos/queries/get-cursos'
 import { computarPropuesta, construirFilasRollover } from '@/features/pasar-de-curso/lib/proponer'
 import { getEstadoRollover } from '@/features/pasar-de-curso/queries/get-estado-rollover'
@@ -14,9 +14,10 @@ interface PageProps {
   searchParams: Promise<{ curso?: string }>
 }
 
-export default async function PasarDeCursoPage({ searchParams }: PageProps) {
+export default async function PasarDeCursoPage({ params, searchParams }: PageProps) {
+  const { locale } = await params
   const t = await getTranslations('admin.pasarDeCurso')
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
   const planificados = await getCursosPlanificados(centroId)
 
   if (planificados.length === 0) {

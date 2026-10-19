@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { CampanaEstadoButton } from '@/features/informes/components/CampanaEstadoButton'
 import { CampanaInformeDialog } from '@/features/informes/components/CampanaInformeDialog'
 import { PublicarLoteButton } from '@/features/informes/components/PublicarLoteButton'
@@ -23,9 +23,7 @@ export default async function AdminCampanasPage({ params, searchParams }: PagePr
   const periodoParam = (await searchParams).periodo
   const t = await getTranslations('informes')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) redirect(`/${locale}/login`)
-  const rol = await getRolEnCentro(centroId)
+  const { centroId, rol } = await requireContextoCentro(locale)
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   const data = await getCampanasInformeCursoActivo(centroId)

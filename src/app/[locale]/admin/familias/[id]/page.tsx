@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { DomiciliacionDialog } from '@/features/familias/components/DomiciliacionDialog'
 import { EditarEtiquetaDialog } from '@/features/familias/components/EditarEtiquetaDialog'
 import { EditarTutorDialog } from '@/features/familias/components/EditarTutorDialog'
@@ -35,7 +35,7 @@ interface PageProps {
 export default async function FichaFamiliaPage({ params }: PageProps) {
   const { id, locale } = await params
   const t = await getTranslations('admin.familias')
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
   const familia = await getFamiliaDetalle(id, centroId)
   if (!familia) notFound()
   const archivada = familia.estado === 'inactiva'

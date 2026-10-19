@@ -12,7 +12,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
@@ -40,7 +40,7 @@ export default async function AdminDashboard({ params }: PageProps) {
   const t = await getTranslations('admin.dashboard')
   const tAsistencia = await getTranslations('asistencia.admin')
   const supabase = await createClient()
-  const centroId = (await getCentroActualId())!
+  const { centroId } = await requireContextoCentro(locale)
   const user = await getCurrentUser()
   const fecha = hoyMadrid()
 
