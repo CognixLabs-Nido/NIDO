@@ -34,6 +34,8 @@ import { ConversacionesSplitView } from './ConversacionesSplitView'
 
 interface Props {
   locale: string
+  /** Centro de la página (multicentro): lo necesitan los hilos dirección↔familia. */
+  centroId: string
   rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
   ninos: NinoMensajeriaItem[]
   anuncios: AnuncioListItem[]
@@ -92,6 +94,7 @@ interface Props {
  */
 export function MessagesView({
   locale,
+  centroId,
   rol,
   ninos,
   anuncios,
@@ -239,6 +242,7 @@ export function MessagesView({
             {tabActual === MESSAGES_TAB.mensajeria && (
               <AdminDireccionSplitView
                 locale={locale}
+                centroId={centroId}
                 tutores={tutoresAdminDireccion}
                 tutorSeleccionadoId={tutorAdminDireccionSeleccionadoId}
                 detalleHeader={adminDireccionDetalleHeader}

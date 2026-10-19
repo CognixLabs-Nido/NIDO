@@ -63,6 +63,7 @@ describe('Purga RGPD — cierre del frente', () => {
       tipo === 'usuario'
         ? await serviceClient.rpc('solicitar_olvido_usuario', {
             p_usuario_id: id,
+            p_centro_id: centro.id,
             p_inmediato: true,
           })
         : await serviceClient.rpc('solicitar_olvido_nino', { p_nino_id: id, p_inmediato: true })
@@ -168,7 +169,11 @@ describe('Purga RGPD — cierre del frente', () => {
       const delOtro = await encolar(otro.id, 'ninos_familia', { direccion_calle: 'x' }, tutor.id)
 
       // El DNI pendiente sin aplicar del niño entra en el manifiesto (antes de la purga SQL).
-      const adjuntos = await recolectarAdjuntosDe(serviceClient, 'nino', nino.id)
+      const adjuntos = await recolectarAdjuntosDe(
+        serviceClient,
+        { sujeto_tipo: 'nino', sujeto_id: nino.id, centro_id: centro.id },
+        true
+      )
       expect(adjuntos.get('dni-tutores')).toHaveLength(1)
 
       await purgar('nino', nino.id)
@@ -311,7 +316,11 @@ describe('Purga RGPD — cierre del frente', () => {
     }, 180_000)
 
     it('manifiesto: su DNI, su DNI pendiente y su avatar; nunca el DNI del otro tutor', async () => {
-      const porBucket = await recolectarAdjuntosDe(serviceClient, 'usuario', tutor.id)
+      const porBucket = await recolectarAdjuntosDe(
+        serviceClient,
+        { sujeto_tipo: 'usuario', sujeto_id: tutor.id, centro_id: centro.id },
+        true
+      )
       expect([...(porBucket.get('dni-tutores') ?? [])].sort()).toEqual(
         [dniTutor, dniPendiente].sort()
       )

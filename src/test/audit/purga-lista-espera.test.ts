@@ -234,6 +234,7 @@ describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
 
     const { data: solicitud, error: sErr } = await serviceClient.rpc('solicitar_olvido_usuario', {
       p_usuario_id: tutor.id,
+      p_centro_id: centro.id,
       p_inmediato: true,
     })
     expect(sErr).toBeNull()

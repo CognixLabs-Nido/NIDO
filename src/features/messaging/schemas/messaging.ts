@@ -116,11 +116,12 @@ export const marcarAnuncioErroneoSchema = z.object({
 })
 
 // --- F5.6-A — Abrir/reabrir conversación admin ↔ familia ---------------------
-// Input mínimo: el `tutor_id` con el que se quiere hablar. El `admin_id`,
-// `centro_id` y `expires_at` los resuelve el server action a partir de la
-// sesión y de la migración (3 días desde now()).
+// Input: el `tutor_id` con el que se quiere hablar y el `centro_id` del hilo (multicentro,
+// Fase 2: un hilo por centro; el de la página o el del hilo que se reabre). El `admin_id` y
+// `expires_at` los resuelve el server action a partir de la sesión (3 días desde now()).
 export const abrirConversacionAdminFamiliaSchema = z.object({
   tutor_id: z.string().uuid(),
+  centro_id: z.string().uuid(),
 })
 export type AbrirConversacionAdminFamiliaInput = z.infer<typeof abrirConversacionAdminFamiliaSchema>
 

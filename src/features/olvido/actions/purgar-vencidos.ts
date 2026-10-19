@@ -60,14 +60,33 @@ export async function purgarVencidos(): Promise<ActionResult<ResultadoPurga>> {
 
 /**
  * Purga un único sujeto en el orden reintentable:
+ *  0. ¿es su último centro? (multicentro, Fase 2) — solo usuario; un niño es de un centro;
  *  1. lee el email original (auth.users) — solo usuario;
  *  2. recolecta rutas de Storage vía el manifiesto (antes de anularlas en BD);
  *  3. borra los objetos de Storage (idempotente);
  *  4. redacta invitaciones por email (email y nombre) + anonimiza auth.users (Admin API,
  *     idempotente); `purgar_sujeto_db` redacta después sus copias en audit_log;
  *  5. punto de commit: `purgar_sujeto_db` anonimiza el schema public y fija purgado_en.
+ *
+ * Si no es el último centro, todo va acotado al de la solicitud: sus invitaciones y su DNI de
+ * ese centro, y ni el avatar ni la cuenta de Auth, que son de la cuenta y se van con el último.
+ * La respuesta sale de `olvido_es_ultimo_centro`, la misma función que usa `purgar_sujeto_db`,
+ * así que la app y la BD deciden lo mismo. Queda un hueco: si entre esta pregunta y el commit le
+ * dan un rol en otro centro, la cuenta de Auth ya se habrá bloqueado. Exportada para su test.
  */
-async function purgarUno(service: Service, p: Pendiente): Promise<void> {
+export async function purgarUno(service: Service, p: Pendiente): Promise<void> {
+  // 0. ¿Último centro?
+  let esUltimo = true
+  if (p.sujeto_tipo === 'usuario') {
+    const { data, error: uErr } = await service.rpc('olvido_es_ultimo_centro', {
+      p_solicitud_id: p.solicitud_id,
+    })
+    if (uErr || data === null) {
+      throw new Error(`olvido_es_ultimo_centro falló: ${uErr?.message ?? 'sin respuesta'}`)
+    }
+    esUltimo = data
+  }
+
   // 1. Email original ANTES de tocar auth.users (para redactar invitaciones).
   let emailOriginal: string | null = null
   let metadatos: Record<string, unknown> = {}
@@ -79,22 +98,25 @@ async function purgarUno(service: Service, p: Pendiente): Promise<void> {
   }
 
   // 2. Recolectar rutas de Storage mientras siguen siendo resolubles.
-  const porBucket = await recolectarAdjuntosDe(service, p.sujeto_tipo, p.sujeto_id)
+  const porBucket = await recolectarAdjuntosDe(service, p, esUltimo)
 
   // 3. Borrar objetos de Storage (best-effort idempotente).
   for (const [bucket, paths] of porBucket) {
     await borrarObjetosBucket(service, bucket, paths)
   }
 
-  // 4. auth.users + invitaciones (solo usuarios; no van en la misma transacción).
+  // 4. auth.users + invitaciones (solo usuarios; no van en la misma transacción). Las
+  //    invitaciones de este centro; las de los demás, y la cuenta de Auth, con el último.
   if (p.sujeto_tipo === 'usuario') {
     if (emailOriginal) {
-      await service
+      let inv = service
         .from('invitaciones')
         .update({ email: MARCADOR_PII, nombre_completo: MARCADOR_PII })
         .ilike('email', emailOriginal)
+      if (!esUltimo) inv = inv.eq('centro_id', p.centro_id)
+      await inv
     }
-    await anonimizarCuentaAuth(service, p.sujeto_id, metadatos)
+    if (esUltimo) await anonimizarCuentaAuth(service, p.sujeto_id, metadatos)
   }
 
   // 5. Commit: anonimización del schema public + marca de purga.

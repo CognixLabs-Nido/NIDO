@@ -118,12 +118,14 @@ export async function getTutoresParaAdminDireccionCore(
   // ─── Ronda 2: hilos del admin actual con esos tutores ─────────────────
   // RLS: `conversaciones_select` ya filtra por `admin_id = auth.uid()`
   // para `admin_familia`. El `.eq('admin_id', userId)` extra es defensa.
+  // Multicentro (Fase 2): un hilo por centro; el de este centro, no el de otro con el mismo tutor.
   const tutorIds = Array.from(tutoresMap.keys())
   const { data: convs, error: cErr } = await supabase
     .from('conversaciones')
     .select('id, tutor_id, expires_at, last_message_at')
     .eq('tipo_conversacion', 'admin_familia')
     .eq('admin_id', userId)
+    .eq('centro_id', centroId)
     .in('tutor_id', tutorIds)
 
   if (cErr) {

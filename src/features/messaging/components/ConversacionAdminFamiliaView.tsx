@@ -147,7 +147,7 @@ export function ConversacionAdminFamiliaView({
             </p>
           </div>
           {rolEnHilo === 'admin' && caducada && (
-            <ReabrirConversacionButton tutorId={header.tutor_id} />
+            <ReabrirConversacionButton tutorId={header.tutor_id} centroId={header.centro_id} />
           )}
         </div>
       </header>

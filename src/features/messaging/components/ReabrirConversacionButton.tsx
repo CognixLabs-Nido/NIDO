@@ -12,6 +12,8 @@ import { abrirConversacionAdminFamilia } from '../actions/abrir-conversacion-adm
 
 interface Props {
   tutorId: string
+  /** Centro del hilo que se reabre (multicentro: un hilo por centro). */
+  centroId: string
 }
 
 /**
@@ -22,7 +24,7 @@ interface Props {
  * Tras éxito hace `router.refresh()` para que el SSR del hilo recalcule
  * `expires_at` y el composer vuelva a habilitarse.
  */
-export function ReabrirConversacionButton({ tutorId }: Props) {
+export function ReabrirConversacionButton({ tutorId, centroId }: Props) {
   const t = useTranslations('messages.admin_familia')
   const tErr = useTranslations('messages.errors')
   const [pending, startTransition] = useTransition()
@@ -30,7 +32,7 @@ export function ReabrirConversacionButton({ tutorId }: Props) {
 
   function onClick() {
     startTransition(async () => {
-      const res = await abrirConversacionAdminFamilia(tutorId)
+      const res = await abrirConversacionAdminFamilia(tutorId, centroId)
       if (!res.success) {
         const key = res.error.startsWith('messages.errors.')
           ? (res.error.slice('messages.errors.'.length) as 'apertura_fallo')

@@ -70,7 +70,12 @@ describe('enviarMensaje — rama admin_familia + regresión profe_familia', () =
 
     // Abrimos un hilo admin_familia para los tests posteriores.
     const adminClient = await clientFor(adminA)
-    const open = await abrirConversacionAdminFamiliaCore(adminClient, adminA.id, tutorA.id)
+    const open = await abrirConversacionAdminFamiliaCore(
+      adminClient,
+      adminA.id,
+      tutorA.id,
+      centroA.id
+    )
     if (!open.success) throw new Error(`seed open admin_familia: ${open.error}`)
     convAdminFamilia = { id: open.data.conversacion_id }
   }, 180_000)

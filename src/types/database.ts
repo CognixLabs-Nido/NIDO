@@ -4689,6 +4689,10 @@ export type Database = {
       nino_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       nino_puede_aparecer: { Args: { p_nino_id: string }; Returns: boolean }
       nino_toma_comida_solida: { Args: { p_nino_id: string }; Returns: boolean }
+      olvido_es_ultimo_centro: {
+        Args: { p_solicitud_id: string }
+        Returns: boolean
+      }
       olvido_pendientes: {
         Args: never
         Returns: {
@@ -4825,7 +4829,7 @@ export type Database = {
         Returns: string
       }
       solicitar_olvido_usuario: {
-        Args: { p_inmediato?: boolean; p_usuario_id: string }
+        Args: { p_centro_id: string; p_inmediato?: boolean; p_usuario_id: string }
         Returns: string
       }
       sustituir_mandato_sepa: {

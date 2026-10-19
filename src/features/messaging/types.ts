@@ -91,6 +91,8 @@ export interface ConversacionHeader {
  *  (lo enforza el CHECK estructural). */
 export interface ConversacionAdminFamiliaHeader {
   id: string
+  /** Centro del hilo (multicentro: un hilo por centro). Reabrirlo usa este, no el de la página. */
+  centro_id: string
   admin_id: string
   admin_nombre: string
   tutor_id: string

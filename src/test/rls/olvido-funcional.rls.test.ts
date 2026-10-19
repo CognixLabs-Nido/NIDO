@@ -389,6 +389,7 @@ describe('RLS olvido funcional — F11-A4', () => {
 
     const { data: id, error } = await serviceClient.rpc('solicitar_olvido_usuario', {
       p_usuario_id: tutor.id,
+      p_centro_id: centro.id,
       p_inmediato: true,
     })
     expect(error).toBeNull()

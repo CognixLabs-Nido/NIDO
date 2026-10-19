@@ -12,6 +12,8 @@ import { abrirConversacionAdminFamilia } from '../actions/abrir-conversacion-adm
 
 interface Props {
   tutorId: string
+  /** Centro del niño de la ficha: el hilo es por centro. */
+  centroId: string
   locale: string
 }
 
@@ -21,7 +23,7 @@ interface Props {
  * `abrirConversacionAdminFamilia(tutorId)` y navega al hilo. Si ya existía
  * la action devuelve el mismo id y solo renueva el `expires_at`.
  */
-export function AbrirConversacionDireccionButton({ tutorId, locale }: Props) {
+export function AbrirConversacionDireccionButton({ tutorId, centroId, locale }: Props) {
   const t = useTranslations('messages.admin_familia')
   const tErr = useTranslations('messages.errors')
   const [pending, startTransition] = useTransition()
@@ -29,7 +31,7 @@ export function AbrirConversacionDireccionButton({ tutorId, locale }: Props) {
 
   function onClick() {
     startTransition(async () => {
-      const res = await abrirConversacionAdminFamilia(tutorId)
+      const res = await abrirConversacionAdminFamilia(tutorId, centroId)
       if (!res.success) {
         const key = res.error.startsWith('messages.errors.')
           ? (res.error.slice('messages.errors.'.length) as 'apertura_fallo')

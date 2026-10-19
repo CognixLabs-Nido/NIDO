@@ -55,6 +55,7 @@ describe('MessagesView — render por rol', () => {
     render(
       <MessagesView
         locale="es"
+        centroId="centro-1"
         rol="admin"
         ninos={[]}
         anuncios={[]}
@@ -88,6 +89,7 @@ describe('MessagesView — render por rol', () => {
     render(
       <MessagesView
         locale="es"
+        centroId="centro-1"
         rol="profe"
         ninos={[nino('n1', 'Niño A'), nino('n2', 'Niño B')]}
         anuncios={[]}
@@ -121,6 +123,7 @@ describe('MessagesView — render por rol', () => {
     render(
       <MessagesView
         locale="es"
+        centroId="centro-1"
         rol="tutor_legal"
         ninos={[nino('n1', 'Hijo Único')]}
         anuncios={[]}
@@ -153,6 +156,7 @@ describe('MessagesView — render por rol', () => {
     render(
       <MessagesView
         locale="es"
+        centroId="centro-1"
         rol="tutor_legal"
         ninos={[nino('h1', 'Hijo 1'), nino('h2', 'Hijo 2')]}
         anuncios={[]}
@@ -202,6 +206,7 @@ describe('MessagesView — render por rol', () => {
     render(
       <MessagesView
         locale="es"
+        centroId="centro-1"
         rol="tutor_legal"
         ninos={[nino('h1', 'Hijo 1')]}
         anuncios={[]}
@@ -230,6 +235,7 @@ describe('MessagesView — render por rol', () => {
     render(
       <MessagesView
         locale="es"
+        centroId="centro-1"
         rol="tutor_legal"
         ninos={[nino('h1', 'Hijo 1')]}
         anuncios={[]}
@@ -258,6 +264,7 @@ describe('MessagesView — render por rol', () => {
     render(
       <MessagesView
         locale="es"
+        centroId="centro-1"
         rol="admin"
         ninos={[]}
         anuncios={[]}

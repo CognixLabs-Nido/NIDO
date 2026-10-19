@@ -14,11 +14,12 @@ import { fail, ok, type ActionResult } from '../types'
 
 /**
  * Abre (o reabre) la conversación admin ↔ familia entre el admin autenticado
- * y el tutor `tutorId`. Operación unificada de creación + reapertura (spec
- * Fase 5.6-A §2.5).
+ * y el tutor `tutorId` en el centro `centroId`. Operación unificada de creación + reapertura
+ * (spec Fase 5.6-A §2.5). Multicentro (Fase 2): un hilo por admin, tutor y centro; el centro lo
+ * pone quien llama (el de la página, o el del hilo que se reabre), no se deduce.
  *
  * Comportamiento:
- *  - Si NO existe hilo `(admin=auth.uid(), tutor=tutorId, admin_familia)`:
+ *  - Si NO existe hilo `(admin=auth.uid(), tutor=tutorId, centro=centroId, admin_familia)`:
  *    inserta uno nuevo con `expires_at = now() + 3 días`.
  *  - Si existe: actualiza SOLO `expires_at = now() + 3 días`. `admin_id`,
  *    `tutor_id` y `centro_id` NUNCA se mutan — la RLS UPDATE de admin_familia
@@ -26,22 +27,26 @@ import { fail, ok, type ActionResult } from '../types'
  *
  * UPSERT manual (SELECT → INSERT/UPDATE) en vez de
  * `supabase.from(...).upsert(...)` porque la unicidad
- * `(admin_id, tutor_id)` está en un índice PARCIAL filtrado por
+ * `(admin_id, tutor_id, centro_id)` está en un índice PARCIAL filtrado por
  * `tipo_conversacion = 'admin_familia'` y supabase-js no permite añadir el
  * predicado al `onConflict`. Race de doble clic mitigada capturando 23505
  * en el INSERT y reintentando como UPDATE.
  *
  * Errores tipados (i18n keys de `messages.errors.*`):
  *  - `no_autorizado`: sin sesión válida.
- *  - `solo_admin`: el usuario no tiene rol `admin` en ningún centro suyo.
+ *  - `solo_admin`: el usuario no tiene rol `admin` en `centroId`.
  *  - `tutor_no_pertenece_centro`: el tutor no tiene vínculo activo con un
- *    niño del centro del admin.
+ *    niño de `centroId`.
  *  - `apertura_fallo`: error inesperado (lookup, INSERT o UPDATE).
  */
 export async function abrirConversacionAdminFamilia(
-  tutorId: string
+  tutorId: string,
+  centroId: string
 ): Promise<ActionResult<{ conversacion_id: string }>> {
-  const parsed = abrirConversacionAdminFamiliaSchema.safeParse({ tutor_id: tutorId })
+  const parsed = abrirConversacionAdminFamiliaSchema.safeParse({
+    tutor_id: tutorId,
+    centro_id: centroId,
+  })
   if (!parsed.success) {
     return fail(parsed.error.issues[0]?.message ?? 'messages.errors.apertura_fallo')
   }
@@ -51,7 +56,12 @@ export async function abrirConversacionAdminFamilia(
   const userId = userData.user?.id
   if (!userId) return fail('messages.errors.no_autorizado')
 
-  const result = await abrirConversacionAdminFamiliaCore(supabase, userId, parsed.data.tutor_id)
+  const result = await abrirConversacionAdminFamiliaCore(
+    supabase,
+    userId,
+    parsed.data.tutor_id,
+    parsed.data.centro_id
+  )
   if (result.success) {
     revalidatePath('/[locale]/messages', 'layout')
   }
@@ -70,49 +80,41 @@ export async function abrirConversacionAdminFamilia(
 export async function abrirConversacionAdminFamiliaCore(
   supabase: SupabaseClient<Database>,
   userId: string,
-  tutorId: string
+  tutorId: string,
+  centroId: string
 ): Promise<ActionResult<{ conversacion_id: string }>> {
-  // 1. Determinar el centro del admin. Se exige rol `admin` activo. Si tiene
-  //    rol admin en varios centros, tomamos el primero (por id) donde el tutor
-  //    pertenece en el paso 2. El hilo es uno por par admin-tutor, no por centro.
+  // 1. El usuario es admin de ESTE centro (multicentro: el hilo es por centro; antes se tomaba
+  //    el primer centro donde coincidían admin y tutor).
   const centrosAdmin = await centrosDondeEsAdmin(supabase, userId)
 
   if (!centrosAdmin) {
     logger.warn('abrirConversacionAdminFamilia: roles fetch falló')
     return fail('messages.errors.apertura_fallo')
   }
-  if (centrosAdmin.length === 0) {
+  if (!centrosAdmin.includes(centroId)) {
     return fail('messages.errors.solo_admin')
   }
 
-  // 2. Buscar el centro donde el tutor tiene vínculo activo, intersectado
-  //    con los centros en los que el admin es admin. RPC `es_tutor_en_centro`
-  //    es SECURITY DEFINER, así que no atraviesa RLS — es la fuente
-  //    autoritativa de la pertenencia.
-  let centroId: string | null = null
-  for (const centroAdmin of centrosAdmin) {
-    const { data: esTutor, error: rpcErr } = await supabase.rpc('es_tutor_en_centro', {
-      p_tutor_id: tutorId,
-      p_centro_id: centroAdmin,
-    })
-    if (rpcErr) {
-      logger.warn('abrirConversacionAdminFamilia: rpc es_tutor_en_centro falló', rpcErr.message)
-      return fail('messages.errors.apertura_fallo')
-    }
-    if (esTutor) {
-      centroId = centroAdmin
-      break
-    }
+  // 2. El tutor tiene vínculo activo en este centro. RPC `es_tutor_en_centro` es SECURITY
+  //    DEFINER, así que no atraviesa RLS — es la fuente autoritativa de la pertenencia.
+  const { data: esTutor, error: rpcErr } = await supabase.rpc('es_tutor_en_centro', {
+    p_tutor_id: tutorId,
+    p_centro_id: centroId,
+  })
+  if (rpcErr) {
+    logger.warn('abrirConversacionAdminFamilia: rpc es_tutor_en_centro falló', rpcErr.message)
+    return fail('messages.errors.apertura_fallo')
   }
-  if (!centroId) return fail('messages.errors.tutor_no_pertenece_centro')
+  if (!esTutor) return fail('messages.errors.tutor_no_pertenece_centro')
 
-  // 3. Lookup del hilo (admin=auth.uid(), tutor=tutorId, admin_familia).
+  // 3. Lookup del hilo (admin=auth.uid(), tutor=tutorId, centro=centroId, admin_familia).
   const { data: existente, error: selErr } = await supabase
     .from('conversaciones')
     .select('id')
     .eq('tipo_conversacion', 'admin_familia')
     .eq('admin_id', userId)
     .eq('tutor_id', tutorId)
+    .eq('centro_id', centroId)
     .maybeSingle()
   if (selErr) {
     logger.warn('abrirConversacionAdminFamilia: select hilo falló', selErr.message)
@@ -164,6 +166,7 @@ export async function abrirConversacionAdminFamiliaCore(
         .eq('tipo_conversacion', 'admin_familia')
         .eq('admin_id', userId)
         .eq('tutor_id', tutorId)
+        .eq('centro_id', centroId)
         .single()
       if (recErr || !rec) {
         logger.warn(
