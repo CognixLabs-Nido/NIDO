@@ -19,8 +19,13 @@ import type { ConversacionListItem } from '../types'
  * El conteo de no leídos se hace en JS sobre las filas devueltas: el
  * volumen esperado por usuario es bajo (<50 conversaciones activas en
  * un centro), así que no compensa una vista SQL dedicada en Ola 1.
+ *
+ * Multicentro: la RLS deja leer las de todos los centros del usuario (la directora de dos centros
+ * supervisaba en A las de B); se acotan al de la página (`centroId`).
  */
-export async function getConversacionesDelUsuario(): Promise<ConversacionListItem[]> {
+export async function getConversacionesDelUsuario(
+  centroId: string
+): Promise<ConversacionListItem[]> {
   const supabase = await createClient()
 
   const { data: userData } = await supabase.auth.getUser()
@@ -50,6 +55,7 @@ export async function getConversacionesDelUsuario(): Promise<ConversacionListIte
       `
     )
     .eq('tipo_conversacion', 'profe_familia')
+    .eq('centro_id', centroId)
     .order('last_message_at', { ascending: false, nullsFirst: false })
     .limit(100)
 

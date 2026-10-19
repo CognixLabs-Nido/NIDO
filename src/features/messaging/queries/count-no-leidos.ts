@@ -25,8 +25,9 @@ export interface UnreadCounts {
  * El cálculo se hace en JS sobre las filas filtradas por RLS. Si el
  * volumen creciera, conviene una RPC SQL con un único roundtrip.
  *
- * `centroId`: el centro de la página (el activo). Decide si el usuario cuenta como admin; no lee la
- * cookie (lo pasa el layout, o el badge desde el cliente).
+ * `centroId`: el centro de la página (el activo). Decide si el usuario cuenta como admin y acota
+ * las conversaciones (de profe/tutor) y los anuncios a ese centro; no lee la cookie (lo pasa el
+ * layout, o el badge desde el cliente).
  */
 export async function countNoLeidos(centroId: string): Promise<UnreadCounts> {
   const supabase = await createClient()
@@ -39,13 +40,16 @@ export async function countNoLeidos(centroId: string): Promise<UnreadCounts> {
   // profe↔familia del centro (supervisión), pero NO participa en ellas: no
   // debe recibir avisos de no-leídos de mensajes privados profe↔tutor. Por
   // eso, para admin restringimos el conteo a sus propios hilos admin↔familia
-  // (donde sí es interlocutor). Profe/tutor ya solo ven los suyos por RLS,
-  // así que su conteo es correcto sin filtro extra.
+  // (donde sí es interlocutor). Profe/tutor ya solo ven los suyos por RLS, pero de TODOS sus
+  // centros: se acotan al de la página (multicentro). La rama del admin se acota con el hilo
+  // dirección↔familia por centro (PR B de la Fase 2), no aquí.
   const rol = (await rolesEnCentro(supabase, userId, centroId))?.rol ?? null
 
   let convQuery = supabase.from('conversaciones').select('id')
   if (rol === 'admin') {
     convQuery = convQuery.eq('tipo_conversacion', 'admin_familia').eq('admin_id', userId)
+  } else {
+    convQuery = convQuery.eq('centro_id', centroId)
   }
   const { data: convs, error: convErr } = await convQuery.limit(200)
 
@@ -80,9 +84,11 @@ export async function countNoLeidos(centroId: string): Promise<UnreadCounts> {
   }
 
   // --- Anuncios --------------------------------------------------------
+  // La RLS deja leer los anuncios de todos sus centros: solo cuentan los del de la página.
   const { data: anuncios, error: anErr } = await supabase
     .from('anuncios')
     .select('id, autor_id, erroneo')
+    .eq('centro_id', centroId)
     .eq('erroneo', false)
     .neq('autor_id', userId)
     .limit(500)

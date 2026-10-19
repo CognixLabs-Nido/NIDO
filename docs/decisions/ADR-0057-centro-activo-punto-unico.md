@@ -99,6 +99,10 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
   - Migración `20261021120000_fix_contadores_por_centro`: `contar_recordatorios_pendientes(p_centro_id)` y `contar_invitaciones_pendientes(p_centro_id)`, y fuera sus versiones sin centro.
   - Los badges de recordatorios y de la agenda cuentan los del centro de la página.
   - La lista de `/reminders` y los niños que se ofrecen para recordatorios y citas (`getNinosParaRecordatorios`) también son los del centro de la página. Las citas de `/agenda` ya lo eran desde la Fase 2 (`getCitasRango`, ADR-0058).
+- **Mensajería (2026-10-19, después de los contadores):** el badge de mensajes se quedó fuera del PR de los contadores.
+  - `countNoLeidos` cuenta las conversaciones del profe o el tutor y los anuncios del centro de la página. Su rama del admin (sus hilos dirección↔familia) va con el hilo por centro, en el PR B de la Fase 2.
+  - La lista de anuncios de `/messages` (`getAnunciosDelUsuario`) y la supervisión de la directora (`getConversacionesDelUsuario`) son las del centro de la página. Antes, una directora de dos centros supervisaba en A las conversaciones de B.
+  - Sin migración: la RLS deja leer lo de todos los centros del usuario, y el centro lo pone la consulta.
 
 ## Alternativas descartadas
 
@@ -127,6 +131,7 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
 - `src/test/rls/roles-de-otros.rls.test.ts` (PR6): contra la BD, cada función del módulo filtra lo que dice su nombre (centro, rol, roles borrados), y las de escribir asignan y retiran.
 - `src/test/multicentro/cierre-centro-explicito.test.ts` y `publicar-anuncio-centro.test.ts` (PR5): con roles en dos centros, cada acción usa el centro de la página o el del registro, nunca el primero.
 - `src/test/rls/contadores-por-centro.rls.test.ts`: un usuario profe en A y tutor en B; los dos badges, la lista de recordatorios y los niños para recordatorios, cada uno con lo de su centro, y las RPCs sin centro ya no existen.
+- `src/test/rls/mensajeria-por-centro.rls.test.ts`: el mismo usuario y una directora de dos centros; el badge de mensajes, la lista de anuncios y la supervisión, cada uno con lo de su centro.
 - `ruta-interna.test.ts` y `LoginForm.returnTo.test.tsx`: el login solo sigue rutas internas. `RoleSelector.test.tsx`: no escribe cookies.
 
 ## Referencias

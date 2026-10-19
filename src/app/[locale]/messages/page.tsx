@@ -68,7 +68,7 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
       rol === 'admin'
         ? Promise.resolve([] as Awaited<ReturnType<typeof getNinosMensajeriaParaUsuario>>)
         : getNinosMensajeriaParaUsuario(centroId, rol),
-      getAnunciosDelUsuario(),
+      getAnunciosDelUsuario(centroId),
       rol === 'admin'
         ? Promise.resolve([] as Awaited<ReturnType<typeof getAdminFamiliaList>>)
         : getAdminFamiliaList(rol),
@@ -76,7 +76,7 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
         ? getTutoresParaAdminDireccion(centroId)
         : Promise.resolve([] as TutorDireccionItem[]),
       rol === 'admin'
-        ? getConversacionesDelUsuario()
+        ? getConversacionesDelUsuario(centroId)
         : Promise.resolve([] as ConversacionListItem[]),
     ])
 
