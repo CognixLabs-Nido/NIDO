@@ -62,7 +62,7 @@ interface Props {
   centroLogo: CentroLogoProp | null
 }
 
-export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
+export function PanelMesRecibos({ centroId, anio, mes, data, ninos, centroLogo }: Props) {
   const t = useTranslations('recibos_panel')
   const tErrors = useTranslations()
   const locale = useLocale()
@@ -83,7 +83,7 @@ export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
   }
   function ejecutarGenerar() {
     startTransition(async () => {
-      const r = await generarRecibosMes({ anio, mes })
+      const r = await generarRecibosMes({ anio, mes }, centroId)
       setGenerarOpen(false)
       if (r.success) toast.success(t('generado_ok', { n: r.data.generados }))
       else toast.error(tErrors(r.error))
@@ -98,7 +98,7 @@ export function PanelMesRecibos({ anio, mes, data, ninos, centroLogo }: Props) {
   }
   function ejecutarRecalcular() {
     startTransition(async () => {
-      const r = await recalcularMes({ anio, mes })
+      const r = await recalcularMes({ anio, mes }, centroId)
       setRecalcularOpen(false)
       if (r.success) {
         // Aviso con lo que de verdad pasó, frase a frase. Nunca un "0" a secas: cuando no

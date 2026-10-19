@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { eurosACentimos } from '@/shared/lib/format-money'
@@ -23,19 +23,19 @@ export async function registrarGastosDevolucion(
     return fail(parsed.error.issues[0]?.message ?? 'remesas.errors.invalid')
   }
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('remesas.errors.no_autorizado')
-
   const supabase = await createClient()
 
   const { data: original } = await supabase
     .from('recibos')
-    .select('familia_id, nino_id, anio, mes')
+    .select('centro_id, familia_id, nino_id, anio, mes')
     .eq('id', parsed.data.reciboId)
     .is('deleted_at', null)
     .maybeSingle()
 
   if (!original) return fail('remesas.errors.no_encontrada')
+  // Centro DEL RECIBO devuelto (multicentro · Fase 1): admin en él, no en el centro activo.
+  const centroId = original.centro_id
+  if (!(await usuarioAdminEn(supabase, centroId))) return fail('remesas.errors.no_autorizado')
 
   const lineas: Array<Record<string, string | number>> = [
     {

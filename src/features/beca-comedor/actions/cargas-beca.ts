@@ -3,7 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { createClient } from '@/lib/supabase/server'
@@ -58,19 +58,23 @@ function tramosDeCarga(
  * (D-P8) y que NO exista ya una carga para ese mes correspondiente (D-4: se rechaza, no
  * upsert). El motor (B2-1) la aplica al (RE)GENERAR el mes de aplicación.
  */
-export async function crearCarga(input: CargaBecaInput): Promise<ActionResult<{ n: number }>> {
+export async function crearCarga(
+  input: CargaBecaInput,
+  centroId: string
+): Promise<ActionResult<{ n: number }>> {
   const parsed = cargaBecaSchema.safeParse(input)
   if (!parsed.success) {
     return fail(parsed.error.issues[0]?.message ?? 'admin.cuotas.beca_comedor.errors.invalid')
   }
   const c = parsed.data
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+  // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
+  const supabase = await createClient()
+  if (!(await usuarioAdminEn(supabase, centroId))) {
+    return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+  }
   const curso = await getCursoActivo(centroId)
   if (!curso) return fail('admin.cuotas.beca_comedor.errors.sin_curso')
-
-  const supabase = await createClient()
 
   if (await mesEstaCerrado(supabase, centroId, c.anio_aplicacion, c.mes_aplicacion)) {
     return fail('admin.cuotas.beca_comedor.errors.mes_cerrado')
@@ -127,19 +131,23 @@ export async function crearCarga(input: CargaBecaInput): Promise<ActionResult<{ 
  * de ese mes correspondiente (no re-encuadra beneficiarios; para eso, borrar + recrear).
  * Exige que TANTO el mes de aplicación actual COMO el nuevo estén ABIERTOS (no toca el pasado).
  */
-export async function editarCarga(input: CargaBecaInput): Promise<ActionResult<{ n: number }>> {
+export async function editarCarga(
+  input: CargaBecaInput,
+  centroId: string
+): Promise<ActionResult<{ n: number }>> {
   const parsed = cargaBecaSchema.safeParse(input)
   if (!parsed.success) {
     return fail(parsed.error.issues[0]?.message ?? 'admin.cuotas.beca_comedor.errors.invalid')
   }
   const c = parsed.data
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+  // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
+  const supabase = await createClient()
+  if (!(await usuarioAdminEn(supabase, centroId))) {
+    return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+  }
   const curso = await getCursoActivo(centroId)
   if (!curso) return fail('admin.cuotas.beca_comedor.errors.sin_curso')
-
-  const supabase = await createClient()
 
   const { data: tramos } = await tramosDeCarga(
     supabase,
@@ -186,16 +194,20 @@ export async function editarCarga(input: CargaBecaInput): Promise<ActionResult<{
  * V2-3 — BORRAR una carga en bloque: elimina todos los tramos de ese mes correspondiente.
  * Solo si su mes de aplicación sigue ABIERTO (no toca recibos congelados).
  */
-export async function borrarCarga(input: {
-  anio_correspondiente: number
-  mes_correspondiente: number
-}): Promise<ActionResult<{ n: number }>> {
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+export async function borrarCarga(
+  input: {
+    anio_correspondiente: number
+    mes_correspondiente: number
+  },
+  centroId: string
+): Promise<ActionResult<{ n: number }>> {
+  // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
+  const supabase = await createClient()
+  if (!(await usuarioAdminEn(supabase, centroId))) {
+    return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+  }
   const curso = await getCursoActivo(centroId)
   if (!curso) return fail('admin.cuotas.beca_comedor.errors.sin_curso')
-
-  const supabase = await createClient()
 
   const { data: tramos } = await tramosDeCarga(
     supabase,

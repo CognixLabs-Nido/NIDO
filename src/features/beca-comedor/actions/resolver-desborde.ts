@@ -3,7 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -53,19 +53,18 @@ export async function resolverDesborde(
   if (!parsed.success) return fail(`${ERR}.invalid`)
   const { recibo_id, via } = parsed.data
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail(`${ERR}.no_autorizado`)
-
   const supabase = await createClient()
 
-  // Desborde PENDIENTE de este recibo (RLS ya restringe a admin del centro).
+  // Desborde PENDIENTE de este recibo (RLS ya restringe a admin del centro). Su centro es el de
+  // la acción (multicentro · Fase 1), no el centro activo, y se exige ser admin en él.
   const { data: desborde } = await supabase
     .from('beca_comedor_desborde')
-    .select('id, recibo_id, familia_id, anio, mes, exceso_centimos, estado')
+    .select('id, centro_id, recibo_id, familia_id, anio, mes, exceso_centimos, estado')
     .eq('recibo_id', recibo_id)
-    .eq('centro_id', centroId)
     .maybeSingle()
   if (!desborde) return fail(`${ERR}.no_existe`)
+  const centroId = desborde.centro_id
+  if (!(await usuarioAdminEn(supabase, centroId))) return fail(`${ERR}.no_autorizado`)
   if (desborde.estado !== 'pendiente') return fail(`${ERR}.ya_resuelto`)
 
   // ── Preparar el efecto ANTES del claim (para validar sin dejar el desborde a medias) ──

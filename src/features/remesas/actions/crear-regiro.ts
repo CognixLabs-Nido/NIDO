@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -22,9 +22,6 @@ export async function crearRegiro(
   const parsed = crearRegiroSchema.safeParse(input)
   if (!parsed.success) return fail('remesas.errors.invalid')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('remesas.errors.no_autorizado')
-
   const supabase = await createClient()
 
   const { data: original } = await supabase
@@ -35,6 +32,9 @@ export async function crearRegiro(
     .maybeSingle()
 
   if (!original) return fail('remesas.errors.no_encontrada')
+  // Centro DEL REGISTRO (multicentro · Fase 1): admin en él, no en el centro activo.
+  if (!(await usuarioAdminEn(supabase, original.centro_id)))
+    return fail('remesas.errors.no_autorizado')
   if (original.estado !== 'devuelto') return fail('remesas.errors.no_regirable')
 
   // 1. Recibo de re-giro (ligado al original → exento de congelado/unique regular).

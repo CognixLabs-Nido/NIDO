@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -14,14 +14,16 @@ import { datosAcreedorSchema, type DatosAcreedorInput } from '../schemas/remesa'
  * admin-only set_datos_acreedor. IBAN vacío = preservar el existente. Solo admin
  * (la RPC lo verifica). El IBAN nunca vuelve legible al cliente.
  */
-export async function guardarDatosAcreedor(input: DatosAcreedorInput): Promise<ActionResult<null>> {
+export async function guardarDatosAcreedor(
+  input: DatosAcreedorInput,
+  centroId: string
+): Promise<ActionResult<null>> {
   const parsed = datosAcreedorSchema.safeParse(input)
   if (!parsed.success) return fail('remesas.errors.invalid')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('remesas.errors.no_autorizado')
-
+  // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
   const supabase = await createClient()
+  if (!(await usuarioAdminEn(supabase, centroId))) return fail('remesas.errors.no_autorizado')
   const { error } = await supabase.rpc('set_datos_acreedor', {
     p_centro_id: centroId,
     p_identificador_acreedor: parsed.data.identificador_acreedor,

@@ -9,6 +9,8 @@ import type { AlumnoElegibilidad } from '../queries/get-elegibilidad-becados'
 import type { MesCurso } from '../lib/cargas'
 
 interface Props {
+  /** Centro activo de la página (para crear, editar y borrar cargas). */
+  centroId: string
   /** null = no hay curso activo → se muestra el aviso. */
   hayCurso: boolean
   alumnos: AlumnoElegibilidad[]
@@ -22,7 +24,14 @@ interface Props {
  * (quién tiene beca en el curso activo); abajo, las cargas por mes (el importe único de cada
  * mes para todos los becados). Todo sobre el curso ACTIVO, sin selector.
  */
-export async function BecaComedorPanel({ hayCurso, alumnos, cargas, meses, mesesCerrados }: Props) {
+export async function BecaComedorPanel({
+  centroId,
+  hayCurso,
+  alumnos,
+  cargas,
+  meses,
+  mesesCerrados,
+}: Props) {
   const t = await getTranslations('admin.cuotas.beca_comedor')
 
   if (!hayCurso) {
@@ -51,6 +60,7 @@ export async function BecaComedorPanel({ hayCurso, alumnos, cargas, meses, meses
           <p className="text-muted-foreground text-xs">{t('cargas_hint')}</p>
         </div>
         <CargasBeca
+          centroId={centroId}
           cargas={cargas}
           meses={meses}
           mesesCerrados={mesesCerrados}

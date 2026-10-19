@@ -59,3 +59,18 @@ export async function centrosDondeEsAdmin(
   if (!centros) return null
   return centros.filter((c) => c.roles.includes('admin')).map((c) => c.centroId)
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * El usuario de la sesión de `supabase`, si es admin en ese centro (explícito: de la página o del
+ * registro que se toca). `null` si no hay sesión, el id no es un uuid, la lectura falla o no es
+ * admin allí. Para las acciones de Dirección; la RLS o la RPC siguen autorizando la escritura.
+ */
+export async function usuarioAdminEn(supabase: Client, centroId: string): Promise<string | null> {
+  if (!UUID.test(centroId)) return null
+  const { data } = await supabase.auth.getUser()
+  const usuarioId = data.user?.id
+  if (!usuarioId) return null
+  return (await esAdminEn(supabase, usuarioId, centroId)) ? usuarioId : null
+}

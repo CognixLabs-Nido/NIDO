@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -15,15 +15,15 @@ import { crearRemesaSchema, type CrearRemesaInput } from '../schemas/remesa'
  * (RLS de remesas/recibos_remesa). Puede haber >1 remesa/mes (re-giros).
  */
 export async function crearRemesa(
-  input: CrearRemesaInput
+  input: CrearRemesaInput,
+  centroId: string
 ): Promise<ActionResult<{ remesaId: string }>> {
   const parsed = crearRemesaSchema.safeParse(input)
   if (!parsed.success) return fail('remesas.errors.invalid')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('remesas.errors.no_autorizado')
-
+  // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
   const supabase = await createClient()
+  if (!(await usuarioAdminEn(supabase, centroId))) return fail('remesas.errors.no_autorizado')
 
   const { data: remesa, error: errRemesa } = await supabase
     .from('remesas')

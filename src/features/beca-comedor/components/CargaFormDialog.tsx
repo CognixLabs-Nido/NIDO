@@ -30,6 +30,8 @@ import type { CargaBecaItem } from '../queries/get-cargas-beca'
 import type { MesCurso } from '../lib/cargas'
 
 interface Props {
+  /** Centro activo de la página: el de la carga. */
+  centroId: string
   meses: MesCurso[]
   mesesCerrados: MesCurso[]
   /** Presente = modo EDITAR (mes correspondiente fijo); ausente = CREAR. */
@@ -37,7 +39,7 @@ interface Props {
   trigger: ReactElement
 }
 
-export function CargaFormDialog({ meses, mesesCerrados, carga, trigger }: Props) {
+export function CargaFormDialog({ centroId, meses, mesesCerrados, carga, trigger }: Props) {
   const t = useTranslations('admin.cuotas.beca_comedor')
   const tRoot = useTranslations()
   const locale = useLocale()
@@ -75,7 +77,7 @@ export function CargaFormDialog({ meses, mesesCerrados, carga, trigger }: Props)
       importe_euros: importe === '' ? NaN : Number(importe),
     }
     startTransition(async () => {
-      const r = editar ? await editarCarga(input) : await crearCarga(input)
+      const r = editar ? await editarCarga(input, centroId) : await crearCarga(input, centroId)
       if (r.success) {
         toast.success(editar ? t('carga_editada') : t('carga_creada', { n: r.data.n }))
         setOpen(false)

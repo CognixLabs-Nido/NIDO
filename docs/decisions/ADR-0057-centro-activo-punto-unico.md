@@ -72,6 +72,11 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
   - **El CSV de recibos** lee el estado sin redirigir (`getEstadoCentro`): sin centro activo, 403.
   - Las listas bajan: lecturas pendientes de 16 a 2, y `PENDIENTES_GET_CENTRO` de 41 ficheros y 89 usos a 27 y 59.
 - **Parada en el PR3:** `usuarios/[id]/avatar/route.ts` (sus 2 lecturas siguen pendientes). La foto de perfil es del usuario, no de un centro, y el centro solo es el prefijo de la ruta en Storage. Hace falta decidir qué prefijo usar con varios centros.
+- **PR4 (cobros, 19 ficheros):**
+  - **Centro de la página** en las acciones de todo el centro: proponer y reproponer asignaciones, generar y recalcular el mes, crear remesa, datos del acreedor y las cargas de beca. Reciben `centroId` del panel de `admin/cuotas`.
+  - **Centro del registro** en las que tocan una fila: el recibo (cobrado manual, devuelto, re-giro, gastos de devolución), la remesa, la familia (método de pago, recibo con línea manual), el concepto (tarifas), el niño (elegibilidad, recibo esporádico), el desborde y la transferencia.
+  - Todas comprueban con `usuarioAdminEn(supabase, centro)` que quien llama es admin en ese centro. Antes, varias solo comprobaban que hubiera un centro activo. La RLS o la RPC siguen autorizando la escritura.
+  - `PENDIENTES_GET_CENTRO` baja de 27 ficheros y 59 usos a 8 y 18.
 
 ## Alternativas descartadas
 

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { eurosACentimos } from '@/shared/lib/format-money'
@@ -17,9 +17,9 @@ const RUTA = '/[locale]/admin/cuotas'
 
 /**
  * B1-2: crea o edita la tarifa por año de nacimiento de un concepto (upsert por el UNIQUE
- * (concepto_id, anio_nacimiento) de B1-0). `importe` se guarda en CÉNTIMOS. `centro_id` sale
- * de `getCentroActualId()`: la RLS exige `es_admin(centro_id) AND centro_de_concepto(
- * concepto_id) = centro_id`, así que un cruce de centro lo rechaza la BD (42501). Solo admin.
+ * (concepto_id, anio_nacimiento) de B1-0). `importe` se guarda en CÉNTIMOS. `centro_id` es el
+ * DEL CONCEPTO (multicentro · Fase 1), con admin en él; la RLS exige además `es_admin(centro_id)
+ * AND centro_de_concepto(concepto_id) = centro_id` (un cruce de centro da 42501). Solo admin.
  *
  * La tarifa NO toca recibos ya generados: el motor (B1-1) la aplica al (RE)GENERAR el mes.
  */
@@ -31,10 +31,10 @@ export async function guardarTarifaConceptoAnio(
     return fail(parsed.error.issues[0]?.message ?? 'conceptos_cobro.tarifa_anio.validation.invalid')
   }
 
-  const centroId = await getCentroActualId()
+  const supabase = await createClient()
+  const centroId = await centroDelConceptoSiAdmin(supabase, parsed.data.concepto_id)
   if (!centroId) return fail('conceptos_cobro.errors.no_autorizado')
 
-  const supabase = await createClient()
   const { data, error } = await supabase
     .from('tarifa_concepto_anio')
     .upsert(
@@ -67,10 +67,10 @@ export async function eliminarTarifaConceptoAnio(input: {
   concepto_id: string
   anio_nacimiento: number
 }): Promise<ActionResult<void>> {
-  const centroId = await getCentroActualId()
+  const supabase = await createClient()
+  const centroId = await centroDelConceptoSiAdmin(supabase, input.concepto_id)
   if (!centroId) return fail('conceptos_cobro.errors.no_autorizado')
 
-  const supabase = await createClient()
   const { error } = await supabase
     .from('tarifa_concepto_anio')
     .delete()
@@ -86,4 +86,21 @@ export async function eliminarTarifaConceptoAnio(input: {
 
   revalidatePath(RUTA, 'page')
   return ok(undefined)
+}
+
+/**
+ * El centro DEL CONCEPTO si el usuario es admin en él; si no (o el concepto no existe o la RLS no
+ * deja verlo), `null`.
+ */
+async function centroDelConceptoSiAdmin(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  conceptoId: string
+): Promise<string | null> {
+  const { data: concepto } = await supabase
+    .from('conceptos_cobro')
+    .select('centro_id')
+    .eq('id', conceptoId)
+    .maybeSingle()
+  if (!concepto) return null
+  return (await usuarioAdminEn(supabase, concepto.centro_id)) ? concepto.centro_id : null
 }

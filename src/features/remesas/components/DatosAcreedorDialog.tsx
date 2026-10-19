@@ -30,6 +30,8 @@ import type { DatosAcreedorConfig } from '../queries/get-datos-acreedor'
 import { datosAcreedorSchema, type DatosAcreedorInput } from '../schemas/remesa'
 
 interface Props {
+  /** Centro activo de la página: de quién son los datos del acreedor. */
+  centroId: string
   config: DatosAcreedorConfig
   trigger: ReactElement
 }
@@ -40,7 +42,7 @@ interface Props {
  * cambiarlo se reintroduce completo. "IBAN configurado ✓" indica que hay uno sin
  * revelarlo (dejar vacío = conservar el existente).
  */
-export function DatosAcreedorDialog({ config, trigger }: Props) {
+export function DatosAcreedorDialog({ centroId, config, trigger }: Props) {
   const t = useTranslations('remesas')
   const tErrors = useTranslations()
   const [open, setOpen] = useState(false)
@@ -57,7 +59,7 @@ export function DatosAcreedorDialog({ config, trigger }: Props) {
 
   function onSubmit(values: DatosAcreedorInput) {
     startTransition(async () => {
-      const r = await guardarDatosAcreedor(values)
+      const r = await guardarDatosAcreedor(values, centroId)
       if (r.success) {
         toast.success(t('acreedor_guardado'))
         form.reset({ ...values, iban: '' })

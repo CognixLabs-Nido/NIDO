@@ -152,6 +152,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
 
         <TabsContent value="beca-comedor" className="pt-4">
           <BecaComedorPanel
+            centroId={centroId}
             hayCurso={cargasBeca.curso != null}
             alumnos={elegibilidad.alumnos}
             cargas={cargasBeca.cargas}
@@ -170,6 +171,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
 
         <TabsContent value="remesas" className="pt-4">
           <RemesasPanel
+            centroId={centroId}
             anio={anio}
             mes={mes}
             acreedor={acreedor}

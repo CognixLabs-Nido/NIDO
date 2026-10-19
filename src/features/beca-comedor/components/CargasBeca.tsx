@@ -32,13 +32,15 @@ import type { CargaBecaItem } from '../queries/get-cargas-beca'
 import type { MesCurso } from '../lib/cargas'
 
 interface Props {
+  /** Centro activo de la página: el de las cargas. */
+  centroId: string
   cargas: CargaBecaItem[]
   meses: MesCurso[]
   mesesCerrados: MesCurso[]
   hayBecados: boolean
 }
 
-export function CargasBeca({ cargas, meses, mesesCerrados, hayBecados }: Props) {
+export function CargasBeca({ centroId, cargas, meses, mesesCerrados, hayBecados }: Props) {
   const t = useTranslations('admin.cuotas.beca_comedor')
   const locale = useLocale()
 
@@ -49,6 +51,7 @@ export function CargasBeca({ cargas, meses, mesesCerrados, hayBecados }: Props) 
           {hayBecados ? t('cargas_sub') : t('sin_becados_hint')}
         </p>
         <CargaFormDialog
+          centroId={centroId}
           meses={meses}
           mesesCerrados={mesesCerrados}
           trigger={
@@ -96,6 +99,7 @@ export function CargasBeca({ cargas, meses, mesesCerrados, hayBecados }: Props) 
                     {c.editable ? (
                       <div className="flex justify-end gap-1">
                         <CargaFormDialog
+                          centroId={centroId}
                           meses={meses}
                           mesesCerrados={mesesCerrados}
                           carga={c}
@@ -105,7 +109,7 @@ export function CargasBeca({ cargas, meses, mesesCerrados, hayBecados }: Props) 
                             </Button>
                           }
                         />
-                        <BorrarCargaDialog carga={c} />
+                        <BorrarCargaDialog centroId={centroId} carga={c} />
                       </div>
                     ) : (
                       <span className="text-muted-foreground text-xs">{t('no_editable')}</span>
@@ -121,7 +125,7 @@ export function CargasBeca({ cargas, meses, mesesCerrados, hayBecados }: Props) 
   )
 }
 
-function BorrarCargaDialog({ carga }: { carga: CargaBecaItem }) {
+function BorrarCargaDialog({ centroId, carga }: { centroId: string; carga: CargaBecaItem }) {
   const t = useTranslations('admin.cuotas.beca_comedor')
   const tRoot = useTranslations()
   const [open, setOpen] = useState(false)
@@ -129,10 +133,13 @@ function BorrarCargaDialog({ carga }: { carga: CargaBecaItem }) {
 
   function onConfirm() {
     startTransition(async () => {
-      const r = await borrarCarga({
-        anio_correspondiente: carga.anioCorrespondiente,
-        mes_correspondiente: carga.mesCorrespondiente,
-      })
+      const r = await borrarCarga(
+        {
+          anio_correspondiente: carga.anioCorrespondiente,
+          mes_correspondiente: carga.mesCorrespondiente,
+        },
+        centroId
+      )
       if (r.success) {
         toast.success(t('carga_borrada'))
         setOpen(false)

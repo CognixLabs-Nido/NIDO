@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -143,10 +143,20 @@ export async function crearReciboConLineaManual(
   const parsed = crearConLineaSchema.safeParse(input)
   if (!parsed.success) return fail('recibos_panel.errors.linea_invalida')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('recibos_panel.errors.no_autorizado')
-
   const supabase = await createClient()
+
+  // El centro es el DE LA FAMILIA (multicentro · Fase 1), con admin en él: el familiaId viaja
+  // desde el cliente y así no se crea un recibo de una familia de un centro donde no se dirige.
+  const { data: familia } = await supabase
+    .from('familias')
+    .select('id, centro_id')
+    .eq('id', parsed.data.familiaId)
+    .is('deleted_at', null)
+    .maybeSingle()
+  if (!familia || !(await usuarioAdminEn(supabase, familia.centro_id))) {
+    return fail('recibos_panel.errors.no_autorizado')
+  }
+  const centroId = familia.centro_id
 
   // Un mes cerrado no admite recibos nuevos. El motor ya lo rechaza al regenerar; sin este
   // chequeo se podría colar un recibo por la puerta de atrás en un mes ya liquidado.
@@ -156,17 +166,6 @@ export async function crearReciboConLineaManual(
     p_mes: parsed.data.mes,
   })
   if (cerrado) return fail('recibos_panel.errors.mes_cerrado')
-
-  // La familia tiene que ser de ESTE centro: el familiaId viaja desde el cliente y sin esto
-  // se podría crear un recibo de una familia ajena con nuestro centro_id.
-  const { data: familia } = await supabase
-    .from('familias')
-    .select('id')
-    .eq('id', parsed.data.familiaId)
-    .eq('centro_id', centroId)
-    .is('deleted_at', null)
-    .maybeSingle()
-  if (!familia) return fail('recibos_panel.errors.no_autorizado')
 
   // Hay UNIQUE(familia_id, anio, mes) para regulares: si alguien regeneró entre que se pintó
   // el panel y este clic, ya existe recibo y hay que editar ese, no crear otro.

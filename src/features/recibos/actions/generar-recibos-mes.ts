@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -20,17 +20,19 @@ const inputSchema = z.object({
  * y DESTRUCTIVA sobre borradores (wipe+rebuild; respeta los confirmados). El diálogo de la
  * UI avisa antes de regenerar. Devuelve cuántos recibos quedaron generados. Solo admin.
  */
-export async function generarRecibosMes(input: {
-  anio: number
-  mes: number
-}): Promise<ActionResult<{ generados: number }>> {
+export async function generarRecibosMes(
+  input: {
+    anio: number
+    mes: number
+  },
+  centroId: string
+): Promise<ActionResult<{ generados: number }>> {
   const parsed = inputSchema.safeParse(input)
   if (!parsed.success) return fail('recibos_panel.errors.invalid')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('recibos_panel.errors.no_autorizado')
-
+  // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
   const supabase = await createClient()
+  if (!(await usuarioAdminEn(supabase, centroId))) return fail('recibos_panel.errors.no_autorizado')
   const { data, error } = await supabase.rpc('generar_recibos_mes', {
     p_centro_id: centroId,
     p_anio: parsed.data.anio,
