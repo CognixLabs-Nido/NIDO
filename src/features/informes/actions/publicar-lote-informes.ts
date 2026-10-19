@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase/server'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 
 import { parseRespuestas } from '../lib/estructura'
@@ -44,23 +43,28 @@ export async function publicarLoteInformes(
   if (!parsed.success) return fail(`${E}.lote_fallo`)
   const { campana_id, aula_id } = parsed.data
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail(`${E}.no_autorizado`)
-
-  // La campaña debe existir, ser del centro y estar ABIERTA (no se publica en lote
-  // sobre una cerrada). La RLS de `campanas_informe` ya restringe al staff del centro.
+  // Centro del registro: el de la campaña. Tiene que existir y estar ABIERTA (no se publica en
+  // lote sobre una cerrada); la RLS de `campanas_informe` ya restringe al staff de su centro.
+  // Las aulas indicadas tienen que ser de ese centro.
   const { data: campana } = await supabase
     .from('campanas_informe')
     .select('curso_academico_id, periodo, estado, centro_id')
     .eq('id', campana_id)
     .maybeSingle()
-  if (!campana || campana.centro_id !== centroId || campana.estado !== 'abierta') {
+  if (!campana || campana.estado !== 'abierta') {
     return fail(`${E}.lote_fallo`)
   }
 
   // Aulas objetivo: la indicada, o todas las del curso (dirección "por centro").
   let aulaIds: string[]
   if (aula_id) {
+    const { data: aula } = await supabase
+      .from('aulas')
+      .select('id')
+      .eq('id', aula_id)
+      .eq('centro_id', campana.centro_id)
+      .maybeSingle()
+    if (!aula) return fail(`${E}.lote_fallo`)
     aulaIds = [aula_id]
   } else {
     const { data: aulas } = await supabase

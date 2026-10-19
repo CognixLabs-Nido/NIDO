@@ -66,7 +66,7 @@ export function ProspectoFormDialog({ cursoId, prospecto, trigger }: Props) {
       return
     }
     startResolver(async () => {
-      const r = await resolverTutorParaProspecto(limpio)
+      const r = await resolverTutorParaProspecto(limpio, cursoId)
       if (r.success) {
         setDeteccion(r.data.deteccion)
         setFamiliaEtiqueta(r.data.familiaEtiqueta)

@@ -52,9 +52,12 @@ const NUEVO_EVENTO = '__nuevo__'
  *    mismo (con el aula que va = audiencia) y publica el texto en un solo paso.
  */
 export function CrearPlantillaDialog({
+  centroId,
   eventos,
   aulas,
 }: {
+  /** Centro de la página: la plantilla se crea en él. */
+  centroId: string
   eventos: EventoExcursionOption[]
   aulas: AulaOption[]
 }) {
@@ -140,7 +143,7 @@ export function CrearPlantillaDialog({
       return
     }
     startTransition(async () => {
-      const res = await crearPlantilla({ tipo, titulo: titulo.trim() })
+      const res = await crearPlantilla({ tipo, titulo: titulo.trim() }, centroId)
       if (!res.success) {
         toast.error(tRoot(res.error))
         return

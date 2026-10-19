@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { crearEventoCore } from '@/features/eventos/actions/crear-evento'
 
 import { hashTextoAutorizacion } from '../lib/hash'
@@ -188,7 +188,8 @@ export async function crearAutorizacionExcursion(
  * catálogo (es bespoke por evento → `crearAutorizacionSalida`).
  */
 export async function crearPlantilla(
-  input: CrearPlantillaInput
+  input: CrearPlantillaInput,
+  centroId: string
 ): Promise<ActionResult<{ autorizacion_id: string }>> {
   const supabase = await createClient()
   const {
@@ -202,8 +203,9 @@ export async function crearPlantilla(
   }
   const { tipo, titulo } = parsed.data
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('autorizaciones.errors.no_autorizado')
+  // Centro de la página; solo admin de ese centro (la RLS lo vuelve a comprobar).
+  if (!(await usuarioAdminEn(supabase, centroId)))
+    return fail('autorizaciones.errors.no_autorizado')
 
   const { data: creada, error: insErr } = await supabase
     .from('autorizaciones')

@@ -24,7 +24,7 @@ import 'server-only'
  *   vínculo, sin rol) → `notFound`.
  *
  * `rolEnCentroNino` es el rol del usuario EN EL CENTRO DEL NIÑO (la ruta lo resuelve
- * con `getRolEnCentro(nino.centro_id)`, atado al centro del niño, NO al centro
+ * con `contextoEnCentro(nino.centro_id)`, atado al centro del niño, NO al centro
  * "actual" genérico). Un admin de otro centro no tiene rol aquí → `null` → `notFound`.
  */
 export type EntradaAlta =

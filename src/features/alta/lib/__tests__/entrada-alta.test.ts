@@ -6,7 +6,7 @@ import { resolverEntradaAlta } from '../entrada-alta'
  * PR-3b-2 · B1 — tests de aislamiento del gate de entrada al wizard de alta.
  * Verifican el límite de seguridad "quién entra y cómo" en la función pura que
  * consume la ruta `/alta/[ninoId]`. El `rolEnCentroNino` que recibe la función lo
- * resuelve la ruta con `getRolEnCentro(nino.centro_id)` (atado al centro DEL NIÑO):
+ * resuelve la ruta con `contextoEnCentro(nino.centro_id)` (atado al centro DEL NIÑO):
  * un admin de OTRO centro no tiene rol ahí → llega como `null`.
  */
 describe('resolverEntradaAlta (gate B1 modo Dirección)', () => {

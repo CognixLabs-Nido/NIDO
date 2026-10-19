@@ -32,6 +32,8 @@ import type { AmbitoAnuncio } from '../types'
 
 interface Props {
   locale: string
+  /** Centro de la página: el anuncio se publica en él. */
+  centroId: string
   /** Si rol = profe, se pasa fijo el aula activa del profe (single-item). */
   rolEsAdmin: boolean
   aulas: Array<{ id: string; nombre: string }>
@@ -43,7 +45,7 @@ interface Props {
  * aula activa). Si es admin, puede elegir ámbito y, para 'aula',
  * cualquier aula del centro.
  */
-export function AnuncioComposer({ locale, rolEsAdmin, aulas }: Props) {
+export function AnuncioComposer({ locale, centroId, rolEsAdmin, aulas }: Props) {
   const t = useTranslations('messages.anuncio')
   const tValidation = useTranslations('messages.validation')
   const tErr = useTranslations('messages.errors')
@@ -76,7 +78,7 @@ export function AnuncioComposer({ locale, rolEsAdmin, aulas }: Props) {
 
   function onSubmit(values: AnuncioInput) {
     startTransition(async () => {
-      const res = await publicarAnuncio(values)
+      const res = await publicarAnuncio(values, centroId)
       if (!res.success) {
         const fallbackKey = 'envio_fallo' as const
         if (res.error.startsWith('messages.validation.')) {

@@ -46,24 +46,36 @@ export default async function AdminCampanasPage({ params, searchParams }: PagePr
             </h1>
             <p className="text-muted-foreground text-sm">{t('campana.admin_intro')}</p>
           </div>
-          {data && <CampanaInformeDialog periodosOcupados={data.campanas.map((c) => c.periodo)} />}
+          {data && (
+            <CampanaInformeDialog
+              centroId={centroId}
+              periodosOcupados={data.campanas.map((c) => c.periodo)}
+            />
+          )}
         </header>
       </div>
 
       {!data ? (
         <p className="text-muted-foreground text-sm">{t('campana.sin_curso_activo')}</p>
       ) : (
-        <CampanasContenido data={data} locale={locale} periodoParam={periodoParam} />
+        <CampanasContenido
+          centroId={centroId}
+          data={data}
+          locale={locale}
+          periodoParam={periodoParam}
+        />
       )}
     </div>
   )
 }
 
 async function CampanasContenido({
+  centroId,
   data,
   locale,
   periodoParam,
 }: {
+  centroId: string
   data: NonNullable<Awaited<ReturnType<typeof getCampanasInformeCursoActivo>>>
   locale: string
   periodoParam?: string
@@ -110,7 +122,9 @@ async function CampanasContenido({
                   </span>
                 </span>
                 <span className="flex flex-wrap gap-2">
-                  {c.estado === 'abierta' && <CampanaInformeDialog campana={c} />}
+                  {c.estado === 'abierta' && (
+                    <CampanaInformeDialog centroId={centroId} campana={c} />
+                  )}
                   <CampanaEstadoButton campanaId={c.id} estado={c.estado} />
                 </span>
               </li>

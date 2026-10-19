@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
  *  - retorno 'colision' → NO invita, devuelve el aviso a Dirección.
  *  - la RPC se invoca SIEMPRE con `p_usuario_id: null` (para no crear rol al invitar).
  *
- * Se mockea el cliente Supabase (server) con un builder thenable, `getCentroActualId`,
+ * Se mockea el cliente Supabase (server) con un builder thenable,
  * `sendInvitation` y `llamarGoTrue` (que aquí solo envuelve `auth.getUser`).
  */
 

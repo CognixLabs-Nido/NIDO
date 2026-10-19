@@ -16,5 +16,12 @@ export default async function NuevoAnuncioPage({ params }: PageProps) {
 
   const aulas = await getAulasParaAnuncio(centroId)
 
-  return <AnuncioComposer locale={locale} rolEsAdmin={rol === 'admin'} aulas={aulas} />
+  return (
+    <AnuncioComposer
+      locale={locale}
+      centroId={centroId}
+      rolEsAdmin={rol === 'admin'}
+      aulas={aulas}
+    />
+  )
 }

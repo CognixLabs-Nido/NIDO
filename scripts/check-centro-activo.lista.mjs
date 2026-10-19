@@ -1,21 +1,6 @@
-// Lista base del guard check-centro-activo (multicentro · Fase 1). GENERADA y revisada a mano.
-// Cada PR de la sustitución BORRA entradas de PENDIENTES_*: el guard falla si una entrada ya no
-// hace falta (lista rancia) o si aparece un uso nuevo que no está aquí.
-
-/**
- * Ficheros que aún usan getCentroActualId / getRolEnCentro (deprecadas), con cuántas veces las
- * nombran (import + llamadas, sin comentarios). Solo puede BAJAR; vacía en el PR5.
- */
-export const PENDIENTES_GET_CENTRO = {
-  'src/features/autorizaciones/actions/gestionar-autorizacion.ts': 2,
-  'src/features/informes/actions/gestionar-campana-informe.ts': 2,
-  'src/features/informes/actions/gestionar-informe.ts': 2,
-  'src/features/informes/actions/gestionar-plantilla-informe.ts': 2,
-  'src/features/informes/actions/publicar-lote-informes.ts': 2,
-  'src/features/lista-espera/actions/crear-prospecto.ts': 2,
-  'src/features/lista-espera/actions/resolver-tutor.ts': 2,
-  'src/features/messaging/actions/publicar-anuncio.ts': 4,
-}
+// Lista del guard check-centro-activo. Desde el cierre de la Fase 1 (PR5) solo queda la de las
+// lecturas de `roles_usuario` que miran a OTRO usuario: no hay lista de pendientes ni de usos de
+// funciones deprecadas. El guard falla si una entrada sobra o si aparece una lectura que no está.
 
 /**
  * Lecturas de `roles_usuario` que NO son «el centro del usuario actual» y se quedan: miran a OTRO
@@ -65,9 +50,3 @@ export const LECTURAS_PERMITIDAS = {
     motivo: 'rol del usuario al que se vincula',
   },
 }
-
-/**
- * Lecturas de `roles_usuario` del usuario ACTUAL que tienen que pasar por el contexto
- * (`requireContextoCentro` / `contextoEnCentro`). Solo puede BAJAR, hasta vaciarse.
- */
-export const LECTURAS_PENDIENTES = {}

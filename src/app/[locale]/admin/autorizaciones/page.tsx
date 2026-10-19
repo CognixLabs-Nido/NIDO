@@ -72,7 +72,7 @@ export default async function AdminAutorizacionesPage({ params, searchParams }: 
           {/* Dos acciones de siempre: «Nueva autorización» (crea un formato del
               catálogo o una excursión —evento existente o nuevo inline—) y
               «Enviar autorización» (manda un formato publicado a una audiencia). */}
-          <CrearPlantillaDialog eventos={eventos} aulas={aulas} />
+          <CrearPlantillaDialog centroId={centroId} eventos={eventos} aulas={aulas} />
           <EnviarAutorizacionDialog plantillas={plantillasEnviar} ninos={ninos} aulas={aulas} />
         </div>
       </header>

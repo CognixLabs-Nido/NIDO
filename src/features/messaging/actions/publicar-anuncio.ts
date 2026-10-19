@@ -6,7 +6,7 @@ import { getTranslations } from 'next-intl/server'
 import { destinatariosPushDeAnuncio, getAutorPushInfo } from '@/features/push/lib/audiencia'
 import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
 import { createClient } from '@/lib/supabase/server'
-import { getCentroActualId, getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { rolesEnCentro } from '@/features/centros/contexto/roles-del-usuario'
 import { logger } from '@/shared/lib/logger'
 
 import { anuncioInputSchema, type AnuncioInput } from '../schemas/messaging'
@@ -20,13 +20,14 @@ import { fail, ok, type ActionResult } from '../types'
  *
  * El server action:
  *  1. Valida Zod (cross-field ámbito ↔ aula).
- *  2. Determina el `centro_id` actual del usuario y el rol.
+ *  2. Toma el `centro_id` de la página y el rol del usuario en ese centro.
  *  3. Si rol = profe, fuerza ámbito='aula' (defensa en profundidad ante UI
  *     manipulable). Si rol = admin, permite ambos ámbitos.
  *  4. Inserta. RLS hace la verificación final.
  */
 export async function publicarAnuncio(
-  input: AnuncioInput
+  input: AnuncioInput,
+  centroId: string
 ): Promise<ActionResult<{ anuncio_id: string }>> {
   const parsed = anuncioInputSchema.safeParse(input)
   if (!parsed.success) {
@@ -38,10 +39,7 @@ export async function publicarAnuncio(
   const userId = userData.user?.id
   if (!userId) return fail('messages.errors.no_autorizado')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('messages.errors.no_autorizado')
-
-  const rol = await getRolEnCentro(centroId)
+  const rol = (await rolesEnCentro(supabase, userId, centroId))?.rol
   if (rol !== 'admin' && rol !== 'profe') {
     return fail('messages.errors.no_autorizado')
   }
@@ -51,7 +49,7 @@ export async function publicarAnuncio(
     return fail('messages.errors.no_autorizado')
   }
 
-  // R3 (multi-centro): el aula tiene que ser del centro actual. Un admin del centro A no
+  // R3 (multi-centro): el aula tiene que ser del centro de la página. Un admin del centro A no
   // publica en un aula del centro B (la BD también lo para: policy + trigger).
   if (parsed.data.aula_id) {
     const { data: aula } = await supabase
