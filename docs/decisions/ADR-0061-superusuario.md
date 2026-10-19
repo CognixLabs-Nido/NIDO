@@ -47,8 +47,14 @@ Como en MisterFC: quién es superusuario lo dice una tabla sin policies, y el pe
 - **`es_admin(centro)`**: el superusuario es admin de todo centro que **exista**. Con un centro inexistente da FALSE, como a cualquier admin (sin esto podría escribir en carpetas de Storage de un centro que no existe). Con NULL («admin de algún centro») da TRUE, igual que a cualquier admin. Censo previo: en producción no hay ninguna llamada a `es_admin(NULL)`. Las cuatro que aparecen son comentarios de funciones que ya rechazan el centro NULL antes de preguntar, porque ese hueco ya existía para cualquier admin.
 - **Lo que no pasaba por `es_admin`**, medido y arreglado en la misma migración:
   - las lecturas del calendario laboral y de los menús (`dias_centro_select`, `plantillas_menu_select`, `menu_dia_select`), que la directora hacía como miembro del centro: se añade `OR es_admin`;
-  - los avatares (`es_admin_de_usuario`, `es_staff_de_usuario`), que leían el rol de quien llama en `roles_usuario`: ahora preguntan a `es_admin` y a `es_profe_en_centro`;
-  - `firma_imagen_sync`: la firma presencial de Dirección también genera el consentimiento de imagen cuando la hace el superusuario (`firmas_insert` le deja firmar por `es_admin`).
+  - los avatares (`es_admin_de_usuario`, `es_staff_de_usuario`), que leían el rol de quien llama en `roles_usuario`: ahora preguntan a `es_admin` y a `es_profe_en_centro`.
+- **Los registros presenciales en nombre de una familia no son del superusuario** (decisión del responsable, 2026-10-20). Los hace la directora del centro, que es quien tiene a la familia delante: un consentimiento de imagen de un menor que queda a nombre del tutor, sin rastro de quién lo registró, solo debería poder registrarlo quien estaba con esa familia. Se le cierra la rama de admin (`es_admin(…) AND NOT is_superadmin()`) en:
+  - `firmas_insert`: la firma presencial de una autorización;
+  - `otorgar_consentimiento_imagen`: el consentimiento de imagen presencial;
+  - `registrar_mandato_sepa` y `sustituir_mandato_sepa`: el mandato SEPA presencial.
+
+  La rama de tutor no cambia. Para todo lo demás sigue siendo admin.
+
 - **`usuarios_admin_select` y `consentimientos_admin_select`** no cambian. Leen `roles_usuario` del usuario **objetivo**, pero el permiso lo da `es_admin(ru.centro_id)`, así que el superusuario ya entra.
 - **No va en los helpers de profe ni de tutor** (`es_profe_*`, `es_tutor_*`, `tiene_permiso_sobre`, `pertenece_a_centro`).
 - **Entrada auditada**: `registrar_entrada_superusuario(centro)` escribe en `audit_log` una fila `tabla = 'entrada_superusuario'` con el centro (`registro_id` y `centro_id`) y el actor (`usuario_id`), sin valores. No hay datos de ningún sujeto, así que la purga no tiene nada que limpiar. Está dada de alta en `data-model.md`, y `audit-log-eventos-directos.test.ts` exige que cada evento que una función escriba directamente en `audit_log` esté ahí. La directora del centro ve esas filas (`audit_admin_select`).
@@ -73,9 +79,9 @@ Como en MisterFC: quién es superusuario lo dice una tabla sin policies, y el pe
 
 ### Negativas
 
-- El superusuario hereda **todo** lo que puede una directora. Eso incluye los registros presenciales en nombre de una familia: la firma presencial de una autorización, el consentimiento de imagen presencial (queda a nombre del tutor, sin rastro de quién lo registró, igual que hoy con la directora) y el mandato SEPA presencial.
+- El superusuario hereda todo lo que puede una directora, salvo los tres registros presenciales en nombre de una familia.
 - Un permiso de admin futuro que no pase por `es_admin` dejará fuera al superusuario sin que nada se ponga rojo. Lo cubren el censo de esta ADR y el test de RLS `superusuario.rls.test.ts`, no un guard.
-- La lectura de la ficha médica no se audita para nadie, tampoco para el superusuario (en MisterFC se auditaba aparte, `medical.read.platform`). Pendiente de decisión.
+- La lectura de la ficha médica no se audita para nadie, tampoco para el superusuario (en MisterFC se auditaba aparte, `medical.read.platform`). Es una decisión de producto que afecta a todos los roles: queda anotada para F11-B, con el abogado.
 - ⚖️ Cognix Labs accede a datos de salud de menores de todos los centros: tiene que constar en el RAT y en el contrato de encargado (DPA). Va al abogado.
 
 ### Neutras
@@ -85,6 +91,6 @@ Como en MisterFC: quién es superusuario lo dice una tabla sin policies, y el pe
 ## Plan de implementación
 
 - [x] `20261023120000`: el motivo `paso_a_superusuario`.
-- [x] `20261023120100`: tabla, helpers, permisos, entrada auditada, siembra y relevo, con guardas de entrada y salida.
+- [x] `20261023120100`: tabla, helpers, permisos, registros presenciales cerrados, entrada auditada, siembra y relevo, con guardas de entrada y salida.
 - [x] Tests: `superusuario.rls.test.ts`, `platform-admins.test.ts` y `audit-log-eventos-directos.test.ts`.
 - [ ] App: `getContextoCentro`, proxy y `elegirCentro` con la entrada auditada.
