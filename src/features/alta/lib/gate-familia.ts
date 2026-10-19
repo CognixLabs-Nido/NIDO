@@ -2,6 +2,7 @@ import 'server-only'
 
 import { cache } from 'react'
 
+import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { createClient } from '@/lib/supabase/server'
 
 /**
@@ -22,6 +23,9 @@ import { createClient } from '@/lib/supabase/server'
  *
  * Solo cuenta vínculos `tutor_legal_*` (NO `autorizado`): el alta es acto de guardián
  * legal. Admin (sin vínculos) y autorizado → sin hijos en alta → sin gate.
+ *
+ * Multicentro · Fase 2: solo cuentan los hijos del CENTRO ACTIVO (`ambitoFamiliar`). Un hijo
+ * activo en A no desbloquea el panel de B si allí el hermano está a medio alta, ni al revés.
  */
 export interface EstadoAltaFamilia {
   ninosEnAlta: string[]
@@ -59,22 +63,16 @@ export function destinoGateFamilia(estado: EstadoAltaFamilia): string | null {
 }
 
 /** Cacheado por request: lo leen el layout de `/family` y sus páginas. */
-export const estadoAltaFamilia = cache(async (): Promise<EstadoAltaFamilia> => {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return SIN_ALTA
-
-  const { data: vinculos } = await supabase
-    .from('vinculos_familiares')
-    .select('nino_id')
-    .eq('usuario_id', user.id)
-    .in('tipo_vinculo', ['tutor_legal_principal', 'tutor_legal_secundario'])
-    .is('deleted_at', null)
-
-  const ninoIds = (vinculos ?? []).map((v) => v.nino_id)
+export const estadoAltaFamilia = cache(async (centroId: string): Promise<EstadoAltaFamilia> => {
+  const { hijos } = await ambitoFamiliar(centroId)
+  const ninoIds = hijos
+    .filter(
+      (h) => h.tipoVinculo === 'tutor_legal_principal' || h.tipoVinculo === 'tutor_legal_secundario'
+    )
+    .map((h) => h.id)
   if (ninoIds.length === 0) return SIN_ALTA
+
+  const supabase = await createClient()
 
   const { data: matriculas } = await supabase
     .from('matriculas')

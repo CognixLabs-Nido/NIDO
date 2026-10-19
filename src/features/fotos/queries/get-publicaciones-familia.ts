@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createServiceRoleClient } from '@/lib/supabase/admin'
+import type { AmbitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { createClient } from '@/lib/supabase/server'
 
 import { firmarRutas } from '../lib/storage'
@@ -35,8 +36,13 @@ interface MediaRow {
  * No filtramos por aula: la RLS unifica aula-actual + histórico. Las URLs se firman con
  * service role tras esa autorización (ADR-0027). **No** se traen etiquetas: la familia
  * solo ve las fotos, no quién está etiquetado (privacidad de otros niños).
+ *
+ * Multicentro · Fase 2: solo las del centro del ámbito. La RLS une las de todos sus hijos, y
+ * con una familia por centro serían de varios centros.
  */
-export async function getPublicacionesFamilia(): Promise<PublicacionFamiliaItem[]> {
+export async function getPublicacionesFamilia(
+  ambito: AmbitoFamiliar
+): Promise<PublicacionFamiliaItem[]> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -49,6 +55,7 @@ export async function getPublicacionesFamilia(): Promise<PublicacionFamiliaItem[
   const { data: pubs } = await supabase
     .from('publicaciones')
     .select('id, texto, created_at, autor_id')
+    .eq('centro_id', ambito.centroId)
     .order('created_at', { ascending: false })
     .limit(LIMITE_PUBLICACIONES)
 

@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 import { fondoInforme } from '@/features/informes/lib/estilos'
+import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getInformesPublicadosFamilia } from '@/features/informes/queries/get-informes-familia'
 import { EmptyState } from '@/shared/components/EmptyState'
 
@@ -22,7 +24,8 @@ interface PageProps {
 export default async function FamilyInformesPage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('informes')
-  const ninos = await getInformesPublicadosFamilia()
+  const { centroId } = await requireContextoCentro(locale)
+  const ninos = await getInformesPublicadosFamilia(await ambitoFamiliar(centroId))
 
   return (
     <div className="space-y-8">

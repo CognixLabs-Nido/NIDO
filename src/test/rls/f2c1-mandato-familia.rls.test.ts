@@ -117,7 +117,7 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
     await crearFamiliaTutor(ninoOtro.familia_id, tutorOtro.id, 'titular')
 
     // Tutor propio para la familia "solo" del test de centro_id/nino_id NULL (no reutiliza
-    // tutorA, que ya está en familiaA — un adulto = una familia).
+    // tutorA, que ya está en familiaA — una familia por adulto y centro).
     tutorSolo = await createTestUser({ nombre: 'Tutor Solo F2C1' })
 
     cAdminA = await clientFor(adminA)
@@ -225,7 +225,8 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
 
   it('centro_id se deriva de familia_id aunque nino_id sea NULL (informativo)', async () => {
     // Familia NUEVA con un tutor NUEVO propio: `tutorA` ya pertenece a `familiaA` y el índice
-    // `ux_familia_tutores_usuario_unico` (un adulto = una familia) rechazaría reutilizarlo.
+    // `ux_familia_tutores_usuario_centro` (una familia por adulto y centro) rechazaría
+    // reutilizarlo: familiaSolo es del mismo centro.
     const familiaSolo = await createTestFamilia(centroA.id)
     await crearFamiliaTutor(familiaSolo, tutorSolo.id, 'titular')
     const { error } = await cTutorSolo.rpc(

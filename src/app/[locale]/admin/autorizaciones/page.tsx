@@ -44,7 +44,13 @@ export default async function AdminAutorizacionesPage({ params, searchParams }: 
           <ArrowLeftIcon className="size-4" />
           {t('volver')}
         </Link>
-        <SeccionMedicacion locale={locale} baseHref={BASE} puedeArchivar soloHistorico />
+        <SeccionMedicacion
+          locale={locale}
+          centroId={centroId}
+          baseHref={BASE}
+          puedeArchivar
+          soloHistorico
+        />
       </div>
     )
   }
@@ -152,7 +158,7 @@ export default async function AdminAutorizacionesPage({ params, searchParams }: 
       </section>
 
       {/* Medicación: actividad de cada pauta (dosis dadas/pendientes) + archivar. */}
-      <SeccionMedicacion locale={locale} baseHref={BASE} puedeArchivar />
+      <SeccionMedicacion locale={locale} centroId={centroId} baseHref={BASE} puedeArchivar />
 
       {/* Catálogo de formatos (plantillas durables) — solo admin. El alta vive en
           el botón «Nueva autorización» de la cabecera. */}

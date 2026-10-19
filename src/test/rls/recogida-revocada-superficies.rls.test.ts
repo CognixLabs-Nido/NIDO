@@ -61,6 +61,7 @@ const { getAutorizacionesAdmin } =
   await import('@/features/autorizaciones/queries/get-autorizaciones-admin')
 const { getMedicacionesConActividad } =
   await import('@/features/autorizaciones/queries/get-medicaciones-actividad')
+const { ambitoFamiliar } = await import('@/features/centros/contexto/ambito-familiar')
 
 const TRAZO = 'data:image/png;base64,iVBORw0KGgo='
 const TITULAR = 'Titular Superficies'
@@ -192,12 +193,12 @@ describe('Firma revocada — el resto de superficies', () => {
     const autId = await firmarHabitual(cTitular, TITULAR, ninoId, ['Persona Prefill'])
 
     sesion.actual = cTitular
-    const antes = await getRecogidaContextoFamilia()
+    const antes = await getRecogidaContextoFamilia(await ambitoFamiliar(centro.id))
     expect(antes.prefillPorNino[ninoId]?.map((p) => p.nombre)).toEqual(['Persona Prefill'])
 
     await revocar(cTitular, autId, ninoId)
     sesion.actual = cTitular
-    const despues = await getRecogidaContextoFamilia()
+    const despues = await getRecogidaContextoFamilia(await ambitoFamiliar(centro.id))
     expect(despues.prefillPorNino[ninoId], JSON.stringify(despues.prefillPorNino)).toBeUndefined()
   })
 
@@ -261,9 +262,9 @@ describe('Firma revocada — el resto de superficies', () => {
     sesion.actual = cProfe
     const antes = await getAutorizacionDetalle(autId)
     expect(antes?.medicacion_vigente?.medicamento).toBe('Jarabe de prueba')
-    expect((await getMedicacionesConActividad()).find((m) => m.id === autId)?.estadoFirma).toBe(
-      'firmado'
-    )
+    expect(
+      (await getMedicacionesConActividad(centro.id)).find((m) => m.id === autId)?.estadoFirma
+    ).toBe('firmado')
     const dosisAntes = await registrarAdministracion({ autorizacion_id: autId })
     expect(dosisAntes.success, JSON.stringify(dosisAntes)).toBe(true)
 
@@ -273,9 +274,9 @@ describe('Firma revocada — el resto de superficies', () => {
     const despues = await getAutorizacionDetalle(autId)
     expect(despues?.estado_firma_nino).toBe('revocado')
     expect(despues?.medicacion_vigente, JSON.stringify(despues?.medicacion_vigente)).toBeNull()
-    expect((await getMedicacionesConActividad()).find((m) => m.id === autId)?.estadoFirma).toBe(
-      'revocado'
-    )
+    expect(
+      (await getMedicacionesConActividad(centro.id)).find((m) => m.id === autId)?.estadoFirma
+    ).toBe('revocado')
 
     const dosisDespues = await registrarAdministracion({ autorizacion_id: autId })
     expect(dosisDespues.success).toBe(false)

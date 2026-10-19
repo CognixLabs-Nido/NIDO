@@ -17,13 +17,13 @@ import type { ResumenSemana } from '../types'
  * El **ámbito por rol no se reimplementa**: la RLS de `eventos`, `citas` y
  * `dias_centro` ya devuelve solo lo que cada usuario puede ver (admin=centro,
  * profe=sus aulas, tutor=sus niños y sus invitaciones). Este agregador solo
- * lee, mezcla y ordena. Las citas se acotan por usuario (organizador/invitado),
- * no por centro: `getCitasRango` ya filtra por `auth.uid()` vía RLS.
+ * lee, mezcla y ordena. Las citas las acota la RLS por usuario (organizador/invitado) y
+ * `getCitasRango` por el centro de la página: la RLS deja ver las de todos sus centros.
  */
 export async function getResumenSemana(centroId: string): Promise<ResumenSemana> {
   const ventana = ventanaSemana(new Date())
   const [citas, eventos, cierres] = await Promise.all([
-    getCitasRango(ventana.desde, ventana.hasta),
+    getCitasRango(centroId, ventana.desde, ventana.hasta),
     getEventosRango(centroId, ventana.desde, ventana.hasta),
     getDiasCerradosRango(centroId, ventana.desde, ventana.hasta),
   ])

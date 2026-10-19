@@ -10,8 +10,15 @@ import type { CitaAgenda, RsvpEstado } from '../types'
  * (RLS: organizador o invitado). Ordenadas por fecha y hora. Incluye `mi_estado`
  * (RSVP del usuario si es invitado) y `es_organizador`. La lista de invitados
  * embebida la filtra la RLS: un invitado solo recibe su propia fila.
+ *
+ * Solo las del centro de la página: la RLS deja ver las citas de todos los centros del
+ * usuario (multicentro: una familia por centro, o un profe en A que es tutor en B).
  */
-export async function getCitasRango(desde: string, hasta: string): Promise<CitaAgenda[]> {
+export async function getCitasRango(
+  centroId: string,
+  desde: string,
+  hasta: string
+): Promise<CitaAgenda[]> {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   const userId = userData.user?.id
@@ -22,6 +29,7 @@ export async function getCitasRango(desde: string, hasta: string): Promise<CitaA
     .select(
       'id, tipo, titulo, descripcion, lugar, fecha, hora_inicio, hora_fin, estado, aula_id, nino_id, organizador_id, cita_invitados(usuario_id, estado)'
     )
+    .eq('centro_id', centroId)
     .gte('fecha', desde)
     .lte('fecha', hasta)
     .order('fecha', { ascending: true })

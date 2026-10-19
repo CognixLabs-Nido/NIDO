@@ -33,8 +33,12 @@ export interface MedicacionActividad {
  * admin→centro, familia→hijos) con la ACTIVIDAD de cada una: dosis dadas y
  * pendientes de confirmar, leídas de `administraciones_medicacion`. `archivadas`
  * elige entre la lista de trabajo (activas) y el HISTÓRICO (archivadas).
+ *
+ * Solo las del centro de la página (multicentro · Fase 2): la RLS deja ver las de todos los
+ * centros del usuario —una familia con hijos en dos centros, un admin de dos centros—.
  */
 export async function getMedicacionesConActividad(
+  centroId: string,
   archivadas = false
 ): Promise<MedicacionActividad[]> {
   const supabase = await createClient()
@@ -44,6 +48,7 @@ export async function getMedicacionesConActividad(
     .select(
       'id, titulo, nino_id, estado, vigencia_hasta, archivada_at, created_at, firmantes_requeridos'
     )
+    .eq('centro_id', centroId)
     .eq('tipo', 'medicacion')
     .eq('es_plantilla', false)
     .order('created_at', { ascending: false })

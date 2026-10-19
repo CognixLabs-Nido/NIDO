@@ -112,6 +112,8 @@ familia el niño (`ninos.familia_id NOT NULL`), el mandato, el recibo y el méto
   - `usuario_id` puede ser NULL: el tutor tecleado aún no tiene cuenta.
   - `rol_familia` se valida con un CHECK (`titular` | `segundo_tutor`), no con un ENUM.
   - «Un adulto = una familia»: índice único parcial sobre `usuario_id` en las filas activas.
+    _Nota 2026-10-19: sustituido por «una familia por adulto y por centro»
+    (`ux_familia_tutores_usuario_centro`), ver ADR-0058._
   - Máximo de 2 tutores activos por familia.
   - El tutor nunca escribe `usuario_id`: lo enlaza solo `accept-invitation`, con service role. Un
     trigger congela `usuario_id`, `familia_id` y `rol_familia`.

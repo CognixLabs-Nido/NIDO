@@ -5,6 +5,7 @@ import {
   type DesgloseReciboFamilia,
   type LineaConNino,
 } from '@/features/recibos/lib/recibo-familia-detalle'
+import type { AmbitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
@@ -31,12 +32,14 @@ export interface ReciboFamiliaDetalle {
 /**
  * Detalle de UN recibo FAMILIAR del tutor legal con su desglose de líneas agrupado por hijo
  * (F-4-6). Solo lectura. La RLS de `recibos` y `lineas_recibo` restringen a la familia del
- * tutor (`es_tutor_de_familia`); devolvemos `null` (→ notFound) si el recibo no es visible.
+ * tutor (`es_tutor_de_familia`); devolvemos `null` (→ notFound) si el recibo no es visible
+ * o es de otro centro que el del ámbito (multicentro · Fase 2: una familia por centro).
  *
  * NO se sirve el BORRADOR: como en la lista, un recibo aún editable por Dirección no debe
  * verlo el tutor (aunque la RLS lo dejaría leer, el corte de borrador es de producto).
  */
 export async function getReciboFamiliaDetalle(
+  ambito: AmbitoFamiliar,
   reciboId: string
 ): Promise<ReciboFamiliaDetalle | null> {
   const supabase = await createClient()
@@ -47,6 +50,7 @@ export async function getReciboFamiliaDetalle(
       'id, anio, mes, estado, metodo, total_centimos, es_esporadico, concepto_esporadico, devuelto_de_recibo_id, fecha_envio_banco, fecha_devolucion'
     )
     .eq('id', reciboId)
+    .eq('centro_id', ambito.centroId)
     .neq('estado', 'borrador')
     .is('deleted_at', null)
     .maybeSingle()

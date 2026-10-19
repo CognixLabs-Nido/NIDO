@@ -46,7 +46,7 @@ export default async function AgendaPage({ params, searchParams }: PageProps) {
   const { desde, hasta } = rangoDeVista(vista, fecha)
 
   const [citas, ninos, aulas, profes] = await Promise.all([
-    getCitasRango(desde, hasta),
+    getCitasRango(centroId, desde, hasta),
     esStaff ? getNinosParaRecordatorios() : Promise.resolve([]),
     esStaff ? getAulasParaRecordatorios(rol, centroId) : Promise.resolve([]),
     rol === 'admin' ? getProfesParaRecordatorios(centroId) : Promise.resolve([]),

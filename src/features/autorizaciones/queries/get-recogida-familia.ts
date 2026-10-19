@@ -1,5 +1,6 @@
 import 'server-only'
 
+import type { AmbitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -9,7 +10,7 @@ import type { PersonaAutorizada } from '../types'
 export interface RecogidaContextoFamilia {
   /** ¿Existe una plantilla de recogida publicada en el centro? (gatea el botón). */
   plantillaDisponible: boolean
-  /** Hijos del tutor (RLS), para elegir en el diálogo. */
+  /** Hijos del tutor en el centro del ámbito, para elegir en el diálogo. */
   ninos: { id: string; nombre: string; apellidos: string }[]
   /** Prefill multi-tutor: lista habitual vigente por niño (de la firma vigente). */
   prefillPorNino: Record<string, PersonaAutorizada[]>
@@ -19,10 +20,13 @@ export interface RecogidaContextoFamilia {
  * Contexto para que la familia inicie una recogida (B2): si hay formato de
  * recogida publicado, los hijos del tutor, y —para el prefill multi-tutor
  * (afinado #3)— la lista habitual vigente de cada niño (`firmaConDatosVigente`
- * de su recogida habitual: una lista revocada no se ofrece). Todo bajo RLS: el tutor solo ve a sus hijos y las
- * plantillas/instancias de su centro.
+ * de su recogida habitual: una lista revocada no se ofrece). La RLS deja ver a todos sus
+ * hijos y las plantillas de todos sus centros; el ámbito acota los dos al centro activo
+ * (multicentro · Fase 2). Las listas habituales son de esos hijos.
  */
-export async function getRecogidaContextoFamilia(): Promise<RecogidaContextoFamilia> {
+export async function getRecogidaContextoFamilia(
+  ambito: AmbitoFamiliar
+): Promise<RecogidaContextoFamilia> {
   const vacio: RecogidaContextoFamilia = {
     plantillaDisponible: false,
     ninos: [],
@@ -37,6 +41,10 @@ export async function getRecogidaContextoFamilia(): Promise<RecogidaContextoFami
   const { data: ninos, error: ninosErr } = await supabase
     .from('ninos')
     .select('id, nombre, apellidos')
+    .in(
+      'id',
+      ambito.hijos.map((h) => h.id)
+    )
     .is('deleted_at', null)
     .order('nombre', { ascending: true })
   if (ninosErr) {
@@ -49,6 +57,7 @@ export async function getRecogidaContextoFamilia(): Promise<RecogidaContextoFami
   const { data: plantilla } = await supabase
     .from('autorizaciones')
     .select('id')
+    .eq('centro_id', ambito.centroId)
     .eq('tipo', 'recogida')
     .eq('es_plantilla', true)
     .eq('estado', 'publicada')

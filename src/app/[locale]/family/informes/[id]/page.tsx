@@ -6,6 +6,8 @@ import { getTranslations } from 'next-intl/server'
 import { Button } from '@/components/ui/button'
 
 import { InformeView } from '@/features/informes/components/InformeView'
+import { ambitoFamiliar, esDelAmbito } from '@/features/centros/contexto/ambito-familiar'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getInformeEvolucionDetalle } from '@/features/informes/queries/get-informes-profe'
 import { MarcarInformeVistoOnMount } from '@/features/notificaciones/components/MarcarInformeVistoOnMount'
 
@@ -16,8 +18,9 @@ interface PageProps {
 /**
  * Detalle de un informe publicado — vista de familia (F9-3). Solo lectura. La RLS
  * de `informes_evolucion` garantiza que la familia solo accede a publicados de sus
- * hijos: si el id no es legible (borrador, otro niño, otro centro), la query
- * devuelve null → 404. Al montar se marca como visto (baja el aviso de inicio).
+ * hijos: si el id no es legible (borrador, otro niño), la query devuelve null → 404. Un
+ * informe de su hijo en OTRO centro sí es legible, y también da 404: aquí solo se abre lo del
+ * centro activo (multicentro · Fase 2). Al montar se marca como visto (baja el aviso de inicio).
  */
 export default async function FamilyInformeDetallePage({ params }: PageProps) {
   const { id, locale } = await params
@@ -27,6 +30,8 @@ export default async function FamilyInformeDetallePage({ params }: PageProps) {
   // Defensa en profundidad: la familia nunca debe abrir un borrador (la RLS ya lo
   // impide; este guard cubre el caso de un staff que llegara por esta ruta).
   if (!informe || informe.estado !== 'publicado') notFound()
+  const { centroId } = await requireContextoCentro(locale)
+  if (!esDelAmbito(await ambitoFamiliar(centroId), informe.centro_id)) notFound()
 
   return (
     <div className="space-y-6">

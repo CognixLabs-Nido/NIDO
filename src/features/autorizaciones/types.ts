@@ -157,6 +157,8 @@ export interface AdministracionItem {
 /** Detalle de una autorización + su roster por niño (filtrado por RLS). */
 export interface AutorizacionDetalle {
   id: string
+  /** Centro de la autorización (la vista de familia lo compara con el centro activo). */
+  centro_id: string
   tipo: TipoAutorizacion
   titulo: string
   texto: string

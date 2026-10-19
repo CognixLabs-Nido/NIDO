@@ -177,6 +177,8 @@ export interface NinoInformesFamilia {
 /** Detalle de un informe para rellenar/leer (estructura congelada + respuestas). */
 export interface InformeEvolucionDetalle {
   id: string
+  /** Centro del informe (la vista de familia lo compara con el centro activo). */
+  centro_id: string
   nino_id: string
   nino_nombre: string
   periodo: PeriodoInforme

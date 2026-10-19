@@ -3,11 +3,11 @@ import { createHash } from 'node:crypto'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import { familiaDelUsuarioActual } from '@/features/alta/queries/get-familia-usuario'
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
 import { ibanValido, normalizarIban } from '@/features/alta/lib/iban'
 import { MAX_LARGO_IDENTIFICADOR, textoCanonicoMandato } from '@/features/alta/lib/mandato-sepa'
 import { registrarOSustituirMandatoSepa } from '@/features/alta/lib/registrar-mandato-sepa'
+import { familiaDelUsuarioEn } from '@/features/centros/contexto/ambito-familiar'
 import { BUCKET_MANDATO_SEPA, firmarRuta } from '@/shared/lib/adjuntos/storage'
 
 export const dynamic = 'force-dynamic'
@@ -15,6 +15,7 @@ export const runtime = 'nodejs'
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024
 const MAX_FIRMA_CHARS = 500000
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 interface RespuestaOk {
   success: true
@@ -34,7 +35,8 @@ function err(error: string, status = 400): Response {
  * DIGITAL completa (mismo rigor que el paso 8 del alta): el cliente dibuja el trazo, genera el
  * PDF (jsPDF) y lo envía aquí con el IBAN, el titular, el identificador único y el trazo. Todo
  * con el **cliente del USUARIO**:
- *  - la FAMILIA + el CENTRO se resuelven SERVER-SIDE desde `auth.uid()` (nunca del cliente),
+ *  - la FAMILIA se resuelve SERVER-SIDE desde `auth.uid()` en el centro de la página (el
+ *    `centro_id` del formulario solo elige centro: la familia tiene que ser suya en él),
  *  - el PDF se sube al bucket `mandato-sepa` en una ruta FAMILIA-scoped
  *    `{centroId}/familia/{familiaId}/mandato-{timestamp}.pdf` (RLS de storage F-2c-4 autoriza al
  *    tutor de la familia; el timestamp conserva el histórico de PDFs, no pisa el del alta),
@@ -51,16 +53,21 @@ export async function POST(request: Request): Promise<Response> {
   } = await supabase.auth.getUser()
   if (!user) return err('alta.errors.no_autorizado', 401)
 
-  // Familia + centro del tutor, SERVER-SIDE (1:1 por índice único). Nunca del cliente.
-  const familia = await familiaDelUsuarioActual()
-  if (!familia) return err('alta.errors.no_autorizado', 403)
-
   let form: FormData
   try {
     form = await request.formData()
   } catch {
     return err('alta.documentos.errors.subida')
   }
+
+  // Multicentro · Fase 2: una familia por adulto y centro. El centro llega de la página (como
+  // las acciones con centro explícito de la Fase 1); la familia se busca SERVER-SIDE con
+  // `auth.uid()` en ese centro, así que un centro ajeno da «sin familia», no la de otro.
+  const centroId = form.get('centro_id')
+  if (typeof centroId !== 'string' || !UUID.test(centroId))
+    return err('alta.errors.no_autorizado', 403)
+  const familia = await familiaDelUsuarioEn(centroId)
+  if (!familia) return err('alta.errors.no_autorizado', 403)
 
   const file = form.get('file')
   const ibanRaw = form.get('iban')
