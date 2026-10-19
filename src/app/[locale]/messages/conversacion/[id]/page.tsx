@@ -14,7 +14,7 @@ interface PageProps {
 export default async function ConversacionPage({ params }: PageProps) {
   const { locale, id } = await params
 
-  const { rol: rolRaw } = await requireContextoCentro(locale)
+  const { centroId, rol: rolRaw } = await requireContextoCentro(locale)
   if (
     !rolRaw ||
     (rolRaw !== 'admin' &&
@@ -30,6 +30,8 @@ export default async function ConversacionPage({ params }: PageProps) {
   // y devolvería null para admin_familia (nino_id NULL). Determinamos el
   // tipo primero con un SELECT mínimo que respeta la RLS de SELECT — si
   // el caller no es participante, no ve la fila y devolvemos notFound().
+  // Multicentro: las dos consultas de detalle solo devuelven la conversación del centro activo;
+  // la de otro centro (un enlace o una notificación de allí) también acaba en notFound().
   const supabase = await createClient()
   const { data: tipoRow } = await supabase
     .from('conversaciones')
@@ -40,7 +42,7 @@ export default async function ConversacionPage({ params }: PageProps) {
   if (!tipoRow) notFound()
 
   if (tipoRow.tipo_conversacion === 'admin_familia') {
-    const detalle = await getAdminFamiliaDetalle(id)
+    const detalle = await getAdminFamiliaDetalle(id, centroId)
     if (!detalle) notFound()
     return (
       <ConversacionAdminFamiliaView
@@ -53,7 +55,7 @@ export default async function ConversacionPage({ params }: PageProps) {
   }
 
   // Rama F5 profe_familia — sin cambios funcionales.
-  const detalle = await getConversacionDetalle(id)
+  const detalle = await getConversacionDetalle(id, centroId)
   if (!detalle) notFound()
 
   return (

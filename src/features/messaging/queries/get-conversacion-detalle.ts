@@ -28,9 +28,13 @@ interface ConversacionDetalle {
  * (profe del aula del niño o tutor con permiso) y por tanto puede
  * escribir. Admin observador del centro tiene SELECT pero `participo`
  * sigue siendo true (RLS le deja insertar mensajes si quiere intervenir).
+ *
+ * Multicentro: solo la del centro de la página. La RLS deja leer las de TODOS los centros del
+ * usuario; una de otro centro (un enlace o una notificación de allí) devuelve `null`.
  */
 export async function getConversacionDetalle(
-  conversacionId: string
+  conversacionId: string,
+  centroId: string
 ): Promise<ConversacionDetalle | null> {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
@@ -60,6 +64,7 @@ export async function getConversacionDetalle(
     )
     .eq('id', conversacionId)
     .eq('tipo_conversacion', 'profe_familia')
+    .eq('centro_id', centroId)
     .maybeSingle()
 
   if (convErr) {
