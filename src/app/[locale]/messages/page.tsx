@@ -103,7 +103,7 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
   if (ninoSeleccionado) {
     const nino = ninos.find((n) => n.nino_id === ninoSeleccionado)
     if (nino?.conversacion_id) {
-      const detalle = await getConversacionDetalle(nino.conversacion_id)
+      const detalle = await getConversacionDetalle(nino.conversacion_id, centroId)
       if (detalle) {
         detalleHeader = detalle.header
         detalleMensajes = detalle.mensajes
@@ -135,7 +135,7 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
       (tt) => tt.usuario_id === tutorAdminDireccionSeleccionadoId
     )
     if (tutorSel?.conversacion_id) {
-      const detalle = await getAdminFamiliaDetalle(tutorSel.conversacion_id)
+      const detalle = await getAdminFamiliaDetalle(tutorSel.conversacion_id, centroId)
       if (detalle) {
         adminDireccionDetalleHeader = detalle.header
         adminDireccionDetalleMensajes = detalle.mensajes
@@ -154,7 +154,7 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
   let supervisionDetalleHeader: ConversacionHeader | null = null
   let supervisionDetalleMensajes: MensajeView[] = []
   if (supervisionConvSeleccionadaId) {
-    const detalle = await getConversacionDetalle(supervisionConvSeleccionadaId)
+    const detalle = await getConversacionDetalle(supervisionConvSeleccionadaId, centroId)
     if (detalle) {
       supervisionDetalleHeader = detalle.header
       supervisionDetalleMensajes = detalle.mensajes

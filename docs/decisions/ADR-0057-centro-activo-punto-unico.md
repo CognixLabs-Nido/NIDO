@@ -103,6 +103,9 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
   - `countNoLeidos` cuenta las conversaciones del profe o el tutor y los anuncios del centro de la página. Su rama del admin (sus hilos dirección↔familia) va con el hilo por centro, en el PR B de la Fase 2.
   - La lista de anuncios de `/messages` (`getAnunciosDelUsuario`) y la supervisión de la directora (`getConversacionesDelUsuario`) son las del centro de la página. Antes, una directora de dos centros supervisaba en A las conversaciones de B.
   - Sin migración: la RLS deja leer lo de todos los centros del usuario, y el centro lo pone la consulta.
+- **Detalle de una conversación por URL (2026-10-19, después del PR B de la Fase 2):** `/messages/conversacion/[id]` enseñaba la conversación de otro centro del usuario bajo el centro activo.
+  - `getConversacionDetalle` y `getAdminFamiliaDetalle` reciben el centro de la página y devuelven `null` si la conversación es de otro: la página responde «no encontrado», como los detalles de la Fase 1 y de la Fase 2.
+  - Abrir el enlace de una notificación de otro centro también da «no encontrado» hasta cambiar de centro: el centro activo es el de la cookie, y la URL no lo lleva.
 
 ## Alternativas descartadas
 

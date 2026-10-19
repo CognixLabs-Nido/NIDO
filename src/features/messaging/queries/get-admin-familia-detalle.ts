@@ -22,9 +22,13 @@ interface ConversacionAdminFamiliaDetalle {
  * Diferencia con `getConversacionDetalle` (profe_familia): aquí NO hay
  * niño, ni aula, ni profes; el "otro miembro" del par es el campo que se
  * muestra en el header.
+ *
+ * Multicentro: solo el hilo del centro de la página (hay uno por centro, ADR-0059). El de otro
+ * centro (un enlace o una notificación de allí) devuelve `null`.
  */
 export async function getAdminFamiliaDetalle(
-  conversacionId: string
+  conversacionId: string,
+  centroId: string
 ): Promise<ConversacionAdminFamiliaDetalle | null> {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
@@ -46,6 +50,7 @@ export async function getAdminFamiliaDetalle(
       `
     )
     .eq('id', conversacionId)
+    .eq('centro_id', centroId)
     .maybeSingle()
 
   if (convErr) {
