@@ -86,3 +86,4 @@ La numeración avanza cronológicamente, pero hay dos huecos explícitos:
 | 0058 | Una familia por adulto y por centro                                       | accepted                                  |
 | 0059 | El olvido es por centro                                                   | accepted                                  |
 | 0060 | Las notificaciones push van en el idioma de quien las recibe              | accepted                                  |
+| 0061 | El superusuario                                                           | accepted                                  |
