@@ -55,11 +55,28 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 vi.mock('@/features/push/lib/audiencia', () => ({
   destinatariosPushDeAnuncio,
-  getAutorPushInfo: async () => ({ idioma: 'es' }),
+  idiomasDeUsuarios: async () =>
+    new Map([
+      ['tutor-va', 'va'],
+      ['tutor-en', 'en'],
+    ]),
 }))
-vi.mock('@/features/push/lib/enviar-push', () => ({ enviarPushANotificarUsuarios: vi.fn() }))
+vi.mock('@/features/push/lib/enviar-push', () => ({
+  enviarPushANotificarUsuarios: vi.fn(async (ids: string[]) => ({
+    enviados: ids.length,
+    expirados: 0,
+    errores: 0,
+    total: ids.length,
+  })),
+}))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
-vi.mock('next-intl/server', () => ({ getTranslations: async () => (k: string) => k }))
+// Dice en qué idioma se pidió cada texto: la notificación va en el de quien la recibe.
+vi.mock('next-intl/server', () => ({
+  getTranslations:
+    async ({ locale }: { locale?: string } = {}) =>
+    (k: string) =>
+      `${locale ?? '?'}:${k}`,
+}))
 
 const { publicarAnuncio } = await import('../publicar-anuncio')
 const { enviarPushANotificarUsuarios } = await import('@/features/push/lib/enviar-push')
@@ -112,12 +129,33 @@ describe('R3 — publicarAnuncio: aula del centro de la página', () => {
   })
 
   it('la notificación abre el anuncio y lleva el centro de la página (multicentro)', async () => {
-    destinatariosPushDeAnuncio.mockResolvedValueOnce(['tutor-1'])
+    destinatariosPushDeAnuncio.mockResolvedValueOnce(['tutor-va'])
     const r = await publicarAnuncio({ ...base, ambito: 'centro', aula_id: null }, CENTRO)
     expect(r.success).toBe(true)
     expect(enviarPushANotificarUsuarios).toHaveBeenCalledWith(
-      ['tutor-1'],
-      expect.objectContaining({ url: `/es/messages/anuncios/anuncio-1?centro=${CENTRO}` })
+      ['tutor-va'],
+      expect.objectContaining({ url: `/va/messages/anuncios/anuncio-1?centro=${CENTRO}` })
+    )
+  })
+
+  it('cada destinatario recibe el título y el enlace en su idioma, no en el del autor', async () => {
+    destinatariosPushDeAnuncio.mockResolvedValueOnce(['tutor-va', 'tutor-en'])
+    const r = await publicarAnuncio({ ...base, ambito: 'centro', aula_id: null }, CENTRO)
+    expect(r.success).toBe(true)
+    expect(enviarPushANotificarUsuarios).toHaveBeenCalledTimes(2)
+    expect(enviarPushANotificarUsuarios).toHaveBeenCalledWith(
+      ['tutor-va'],
+      expect.objectContaining({
+        titulo: 'va:anuncio_centro_titulo',
+        url: `/va/messages/anuncios/anuncio-1?centro=${CENTRO}`,
+      })
+    )
+    expect(enviarPushANotificarUsuarios).toHaveBeenCalledWith(
+      ['tutor-en'],
+      expect.objectContaining({
+        titulo: 'en:anuncio_centro_titulo',
+        url: `/en/messages/anuncios/anuncio-1?centro=${CENTRO}`,
+      })
     )
   })
 })

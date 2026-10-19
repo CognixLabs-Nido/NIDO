@@ -5,6 +5,9 @@ import {
   aplicarMatriculaActiva,
   esMatriculaActiva,
 } from '@/features/matriculas/lib/matricula-activa'
+import { logger } from '@/shared/lib/logger'
+
+import { esIdioma, IDIOMA_POR_DEFECTO, type Idioma } from './idioma'
 
 /**
  * Devuelve los `usuario_id` que deben recibir un push tras un mensaje nuevo
@@ -161,22 +164,38 @@ export async function destinatariosPushDeAnuncio(
 }
 
 /**
- * Recupera el `idioma_preferido` y `nombre_completo` del autor para
- * construir el payload de push. Usa service role para evitar problemas
- * de RLS de `usuarios` cuando el autor es un tutor consultando su propio
- * registro — la RLS lo permite, pero unificamos la convención.
+ * Recupera el `nombre_completo` del autor para el título del push. Usa service role para evitar
+ * problemas de RLS de `usuarios` cuando el autor es un tutor consultando su propio registro — la
+ * RLS lo permite, pero unificamos la convención.
+ *
+ * No devuelve su idioma, a propósito: la notificación va en el idioma de QUIEN LA RECIBE
+ * (`enviarPushPorIdioma`). Antes lo devolvía y los enlaces y textos salían en el del autor.
  */
-export async function getAutorPushInfo(
-  userId: string
-): Promise<{ nombre: string; idioma: string }> {
+export async function getAutorPushInfo(userId: string): Promise<{ nombre: string }> {
   const supabase = createServiceRoleClient()
   const { data } = await supabase
     .from('usuarios')
-    .select('nombre_completo, idioma_preferido')
+    .select('nombre_completo')
     .eq('id', userId)
     .maybeSingle()
-  return {
-    nombre: data?.nombre_completo ?? 'NIDO',
-    idioma: data?.idioma_preferido ?? 'es',
-  }
+  return { nombre: data?.nombre_completo ?? 'NIDO' }
+}
+
+/**
+ * El idioma de cada destinatario (`usuarios.idioma_preferido`), para mandar la notificación en
+ * el suyo. Service role: el autor no lee el perfil de los demás. Quien no aparezca (o con un
+ * valor fuera de los idiomas de la app) recibe el idioma por defecto.
+ */
+export async function idiomasDeUsuarios(usuarioIds: string[]): Promise<Map<string, Idioma>> {
+  const idiomas = new Map<string, Idioma>()
+  if (usuarioIds.length === 0) return idiomas
+  const supabase = createServiceRoleClient()
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('id, idioma_preferido')
+    .in('id', usuarioIds)
+  if (error) logger.warn('idiomasDeUsuarios', error.message)
+  for (const u of data ?? [])
+    idiomas.set(u.id, esIdioma(u.idioma_preferido) ? u.idioma_preferido : IDIOMA_POR_DEFECTO)
+  return idiomas
 }

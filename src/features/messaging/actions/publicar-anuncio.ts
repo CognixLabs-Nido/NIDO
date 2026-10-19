@@ -4,8 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
 
 import { urlDelAviso } from '@/features/centros/contexto/centro-del-aviso'
-import { destinatariosPushDeAnuncio, getAutorPushInfo } from '@/features/push/lib/audiencia'
-import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
+import { destinatariosPushDeAnuncio } from '@/features/push/lib/audiencia'
+import { enviarPushPorIdioma } from '@/features/push/lib/enviar-por-idioma'
 import { createClient } from '@/lib/supabase/server'
 import { rolesEnCentro } from '@/features/centros/contexto/roles-del-usuario'
 import { logger } from '@/shared/lib/logger'
@@ -93,26 +93,25 @@ export async function publicarAnuncio(
       userId
     )
     if (destinatarios.length > 0) {
-      const autor = await getAutorPushInfo(userId)
-      const tPush = await getTranslations({
-        locale: autor.idioma,
-        namespace: 'push.notificaciones',
-      })
       const cuerpo =
         parsed.data.contenido.length > 100
           ? parsed.data.contenido.slice(0, 99) + '…'
           : parsed.data.contenido
-      await enviarPushANotificarUsuarios(destinatarios, {
-        titulo:
-          parsed.data.ambito === 'centro'
-            ? tPush('anuncio_centro_titulo')
-            : tPush('anuncio_aula_titulo'),
-        cuerpo,
-        url: urlDelAviso(`/${autor.idioma}/messages/anuncios/${data.id}`, centroId),
-        datos: {
-          tipo: 'anuncio',
-          anuncio_id: data.id,
-        },
+      // En el idioma de cada destinatario: el título traducido y el enlace.
+      await enviarPushPorIdioma(destinatarios, async (idioma) => {
+        const tPush = await getTranslations({ locale: idioma, namespace: 'push.notificaciones' })
+        return {
+          titulo:
+            parsed.data.ambito === 'centro'
+              ? tPush('anuncio_centro_titulo')
+              : tPush('anuncio_aula_titulo'),
+          cuerpo,
+          url: urlDelAviso(`/${idioma}/messages/anuncios/${data.id}`, centroId),
+          datos: {
+            tipo: 'anuncio',
+            anuncio_id: data.id,
+          },
+        }
       })
     }
   } catch (err) {

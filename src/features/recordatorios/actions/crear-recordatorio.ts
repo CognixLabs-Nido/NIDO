@@ -6,7 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { rolesEnCentro } from '@/features/centros/contexto/roles-del-usuario'
 import { getAutorPushInfo } from '@/features/push/lib/audiencia'
-import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
+import { enviarPushPorIdioma } from '@/features/push/lib/enviar-por-idioma'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
@@ -120,12 +120,13 @@ export async function crearRecordatorioCore(
     if (destinatarios.length > 0) {
       const autor = await getAutorPushInfo(userId)
       const cuerpo = d.titulo.length > 100 ? d.titulo.slice(0, 99) + '…' : d.titulo
-      await enviarPushANotificarUsuarios(destinatarios, {
+      // En el idioma de cada destinatario: el enlace abre su página en su idioma.
+      await enviarPushPorIdioma(destinatarios, (idioma) => ({
         titulo: autor.nombre,
         cuerpo,
-        url: `/${autor.idioma}/reminders`,
+        url: `/${idioma}/reminders`,
         datos: { tipo: 'recordatorio', recordatorio_id: creado.id },
-      })
+      }))
     }
   } catch (err) {
     console.error('[crearRecordatorio] push notifications falló:', err)

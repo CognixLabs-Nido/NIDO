@@ -17,6 +17,9 @@ import type { Database } from '@/types/database'
  *
  * Multicentro: el enlace de la notificación lleva el centro del registro (`?centro=`), el de la
  * conversación o el del niño, para que la página ofrezca cambiar si es otro centro del usuario.
+ *
+ * Idioma: el enlace va en el idioma de QUIEN RECIBE (`idiomasDeUsuarios`), no en el del autor.
+ * Cada destinatario tiene aquí un idioma distinto del castellano por defecto.
  */
 
 vi.mock('@/features/push/lib/enviar-push', () => ({
@@ -29,8 +32,9 @@ vi.mock('@/features/push/lib/audiencia', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/features/push/lib/audiencia')>()
   return {
     ...actual,
-    getAutorPushInfo: vi.fn(() => Promise.resolve({ nombre: 'Autor', idioma: 'es' })),
+    getAutorPushInfo: vi.fn(() => Promise.resolve({ nombre: 'Autor' })),
     destinatariosDeNino: vi.fn(() => Promise.resolve(['tutor-del-nino'])),
+    idiomasDeUsuarios: vi.fn(async () => IDIOMAS),
   }
 })
 
@@ -40,6 +44,15 @@ import { enviarMensajeCore } from '../enviar-mensaje'
 const ADMIN = 'admin-1'
 const TUTOR = 'tutor-1'
 const CONV = 'conv-1'
+// Cada uno en un idioma; el autor no tiene ninguno que valga para ellos.
+const IDIOMAS = vi.hoisted(
+  () =>
+    new Map([
+      ['tutor-1', 'va'],
+      ['admin-1', 'en'],
+      ['tutor-del-nino', 'va'],
+    ])
+)
 const CENTRO_CONV = 'centro-de-la-conv'
 const CENTRO_NINO = 'centro-del-nino'
 const NINO = '00000000-0000-4000-8000-000000000001'
@@ -91,7 +104,7 @@ describe('enviarMensajeCore admin_familia → push', () => {
     const [destinatarios, payload] = vi.mocked(enviarPushANotificarUsuarios).mock.calls[0]!
     expect(destinatarios).toEqual([TUTOR])
     expect(payload.datos).toMatchObject({ tipo: 'mensaje', conversacion_id: CONV })
-    expect(payload.url).toBe(`/es/messages/conversacion/conv-1?centro=${CENTRO_CONV}`)
+    expect(payload.url).toBe(`/va/messages/conversacion/conv-1?centro=${CENTRO_CONV}`)
   })
 
   it('autor tutor: notifica al admin', async () => {
@@ -101,7 +114,10 @@ describe('enviarMensajeCore admin_familia → push', () => {
       contenido: 'gracias',
     })
     expect(res.success).toBe(true)
-    expect(vi.mocked(enviarPushANotificarUsuarios).mock.calls[0]![0]).toEqual([ADMIN])
+    const [destinatarios, payload] = vi.mocked(enviarPushANotificarUsuarios).mock.calls[0]!
+    expect(destinatarios).toEqual([ADMIN])
+    // El admin tiene la app en inglés: su enlace, en inglés.
+    expect(payload.url).toBe(`/en/messages/conversacion/conv-1?centro=${CENTRO_CONV}`)
   })
 })
 
@@ -115,6 +131,6 @@ describe('enviarMensajeCore profe_familia → push', () => {
     expect(res.success).toBe(true)
     const [destinatarios, payload] = vi.mocked(enviarPushANotificarUsuarios).mock.calls[0]!
     expect(destinatarios).toEqual(['tutor-del-nino'])
-    expect(payload.url).toBe(`/es/messages?nino=${NINO}&centro=${CENTRO_NINO}`)
+    expect(payload.url).toBe(`/va/messages?nino=${NINO}&centro=${CENTRO_NINO}`)
   })
 })

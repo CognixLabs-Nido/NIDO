@@ -2583,7 +2583,8 @@
     "nuevo": "Nuevo evento",
     "editar": "Editar evento",
     "push": {
-      "actualizado": "Evento actualizado: {titulo}"
+      "actualizado": "Evento actualizado: {titulo}",
+      "cancelado": "Cancelado: {titulo}"
     },
     "ambitos": {
       "centro": "Todo el centro",

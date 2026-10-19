@@ -2583,7 +2583,8 @@
     "nuevo": "Nou esdeveniment",
     "editar": "Editar esdeveniment",
     "push": {
-      "actualizado": "Esdeveniment actualitzat: {titulo}"
+      "actualizado": "Esdeveniment actualitzat: {titulo}",
+      "cancelado": "Cancel·lat: {titulo}"
     },
     "ambitos": {
       "centro": "Tot el centre",
