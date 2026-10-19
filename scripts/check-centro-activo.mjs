@@ -132,6 +132,14 @@ const esCli = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve
 if (esCli) {
   const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
   const { problemas, recuento } = revisar(raiz)
+  // Los dos ceros: «0 fuera» solo vale si el guard ha mirado ficheros y su patrón caza los usos de
+  // dentro del módulo. Un recorrido vacío o un patrón roto pasarían en verde sin medir nada.
+  if (recuento.ficherosRevisados === 0 || recuento.usosEnElModulo === 0) {
+    problemas.push(
+      `el guard no ha medido nada: ${recuento.ficherosRevisados} ficheros revisados y ` +
+        `${recuento.usosEnElModulo} usos de roles_usuario dentro del módulo de contexto.`
+    )
+  }
   const linea =
     `check-centro-activo: ${recuento.ficherosRevisados} ficheros revisados, ` +
     `${recuento.lecturasRoles} usos de roles_usuario fuera del contexto ` +
