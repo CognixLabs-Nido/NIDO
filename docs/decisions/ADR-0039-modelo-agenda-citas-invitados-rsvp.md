@@ -132,7 +132,8 @@ cita_id)` no re-lee `citas`; consulta `cita_invitados` (otra tabla) → el gotch
 
 **Refinamientos cerrados durante la implementación:**
 
-- **AG-14 — Badge de invitaciones pendientes**: RPC
+- **AG-14 — Badge de invitaciones pendientes** (_nota 2026-10-19: desde `20261021120000` es
+  `contar_invitaciones_pendientes(p_centro_id)`, solo las del centro de la página, ADR-0057_): RPC
   `contar_invitaciones_pendientes()` (`SECURITY DEFINER STABLE`, scoping por
   `auth.uid()`), patrón exacto de `contar_recordatorios_pendientes` (F6-C). Cuenta
   las pendientes en citas programadas y aún no comenzadas, **excluyendo las que el
