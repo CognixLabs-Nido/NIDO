@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
  *    firma_imagen '', nino_id NULL) e IBAN normalizado.
  *  - no-admin → forbidden (no llama RPC); familia de otro centro → no_encontrada.
  *
- * Mock: cliente Supabase server (builder), getCentroActualId, familiaTieneMandatoActivo.
+ * Mock: cliente Supabase server (builder) y familiaTieneMandatoActivo.
  */
 
 const CENTRO = '33333333-3333-4333-8333-333333333333'

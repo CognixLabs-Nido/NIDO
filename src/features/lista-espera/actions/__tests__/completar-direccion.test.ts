@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
  * actualizar estado), fallo de cuenta (no llega a la RPC), fallo de RPC tras cuenta creada
  * (sin compensación — comportamiento ratificado), y authz (no-admin rechazado antes de nada).
  *
- * Se mockea el cliente Supabase (server) con un builder thenable, `getCentroActualId`,
+ * Se mockea el cliente Supabase (server) con un builder thenable,
  * `createServiceRoleClient`, `crearTutorDirecto` y `llamarGoTrue` (envuelve `auth.getUser`).
  */
 

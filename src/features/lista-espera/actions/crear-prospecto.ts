@@ -2,12 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import { esAdminDelCentro } from '../lib/authz-admisiones'
+import { centroDelCurso, esAdminDelCentro } from '../lib/authz-admisiones'
 import { resolverTutorPorEmail } from '../lib/resolver-tutor-email'
 import { crearProspectoSchema, type CrearProspectoInput } from '../schemas/lista-espera'
 import { fail, ok, type ActionResult } from '../../centros/types'
@@ -34,10 +33,11 @@ export async function crearProspecto(
     return fail(parsed.error.issues[0]?.message ?? 'listaEspera.validation.invalid')
   const data = parsed.data
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('listaEspera.errors.sin_centro')
-
   const supabase = await createClient()
+
+  // Centro del registro: el del curso del prospecto (el trigger de BD lo deriva igual).
+  const centroId = await centroDelCurso(supabase, data.curso_academico_id)
+  if (!centroId) return fail('listaEspera.errors.sin_centro')
 
   // La detección lee por service role (auth.users + roles_usuario) → gate admin explícito,
   // además de la RLS que ya cubre el insert.

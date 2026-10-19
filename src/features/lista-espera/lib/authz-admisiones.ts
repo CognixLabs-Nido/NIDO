@@ -14,6 +14,22 @@ import type { Database } from '@/types/database'
  * Extraído de `anadirHijoAFamilia` (U-2), que hacía esta misma comprobación inline antes de
  * jubilarse: mismo criterio, un solo sitio.
  */
+/**
+ * El centro de un curso (el del prospecto: el trigger de `lista_espera` lo deriva igual), o
+ * `null` si no existe o la RLS no deja leerlo.
+ */
+export async function centroDelCurso(
+  supabase: SupabaseClient<Database>,
+  cursoId: string
+): Promise<string | null> {
+  const { data } = await supabase
+    .from('cursos_academicos')
+    .select('centro_id')
+    .eq('id', cursoId)
+    .maybeSingle()
+  return data?.centro_id ?? null
+}
+
 export async function esAdminDelCentro(
   supabase: SupabaseClient<Database>,
   centroId: string

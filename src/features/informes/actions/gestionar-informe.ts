@@ -5,7 +5,6 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 
 import { parseEstructura, respuestasToJson, todosValorados } from '../lib/estructura'
@@ -34,7 +33,8 @@ function revalidarInformesProfe(): void {
  * informe por (niño, curso, período): si ya existe, devuelve su id (no duplica;
  * la BD lo impide con el UNIQUE). Nace como **borrador**. Solo coordinadora/
  * profesora del aula del niño o admin (RLS `informes_evolucion_insert` →
- * `es_redactor_de_nino`). El `centro_id` y el snapshot se resuelven server-side.
+ * `es_redactor_de_nino`). El `centro_id` es el del niño y el snapshot se resuelve server-side;
+ * la plantilla tiene que ser de ese centro.
  */
 export async function crearInformeEvolucion(
   input: CrearInformeInput
@@ -51,8 +51,18 @@ export async function crearInformeEvolucion(
   }
   const { nino_id, periodo, plantilla_id } = parsed.data
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('informes.errors.no_autorizado')
+  // Centro del registro: el del niño (si la RLS no deja leerlo, no es suyo).
+  const { data: nino, error: ninoErr } = await supabase
+    .from('ninos')
+    .select('centro_id')
+    .eq('id', nino_id)
+    .maybeSingle()
+  if (ninoErr) {
+    logger.warn('crearInformeEvolucion: nino.select', ninoErr.message)
+    return fail('informes.errors.creacion_fallo')
+  }
+  if (!nino) return fail('informes.errors.no_autorizado')
+  const centroId = nino.centro_id
   const curso = await getCursoActivo(centroId)
   if (!curso) return fail('informes.errors.sin_curso_activo')
 
@@ -78,7 +88,7 @@ export async function crearInformeEvolucion(
     logger.warn('crearInformeEvolucion: plantilla.select', plErr.message)
     return fail('informes.errors.creacion_fallo')
   }
-  if (!plantilla || plantilla.estado !== 'activa') {
+  if (!plantilla || plantilla.estado !== 'activa' || plantilla.centro_id !== centroId) {
     return fail('informes.errors.plantilla_no_disponible')
   }
 

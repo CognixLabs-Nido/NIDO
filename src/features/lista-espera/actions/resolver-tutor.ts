@@ -1,10 +1,9 @@
 'use server'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
-import { esAdminDelCentro } from '../lib/authz-admisiones'
+import { centroDelCurso, esAdminDelCentro } from '../lib/authz-admisiones'
 import { resolverTutorPorEmail } from '../lib/resolver-tutor-email'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
@@ -29,10 +28,12 @@ export interface VistaPreviaTutor {
  * expone el `usuario_id` ni ningún dato de la cuenta a la que pertenece el email.
  */
 export async function resolverTutorParaProspecto(
-  email: string
+  email: string,
+  cursoId: string
 ): Promise<ActionResult<VistaPreviaTutor>> {
   const supabase = await createClient()
-  const centroId = await getCentroActualId()
+  // Centro del registro: el del curso del prospecto.
+  const centroId = await centroDelCurso(supabase, cursoId)
   if (!centroId) return fail('listaEspera.errors.sin_centro')
   if (!(await esAdminDelCentro(supabase, centroId))) return fail('auth.invitation.errors.forbidden')
 

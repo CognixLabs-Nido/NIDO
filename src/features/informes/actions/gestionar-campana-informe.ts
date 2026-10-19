@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 
 import {
@@ -32,7 +32,8 @@ function revalidarCampanas(): void {
  * la dirección no lo elige.
  */
 export async function abrirCampanaInforme(
-  input: AbrirCampanaInput
+  input: AbrirCampanaInput,
+  centroId: string
 ): Promise<ActionResult<{ campana_id: string }>> {
   const supabase = await createClient()
   const {
@@ -45,8 +46,8 @@ export async function abrirCampanaInforme(
     return fail(parsed.error.issues[0]?.message ?? `${E}.creacion_fallo`)
   }
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail(`${E}.no_autorizado`)
+  // Centro de la página; solo admin de ese centro (la RLS lo vuelve a comprobar).
+  if (!(await usuarioAdminEn(supabase, centroId))) return fail(`${E}.no_autorizado`)
   const curso = await getCursoActivo(centroId)
   if (!curso) return fail(`${E}.sin_curso_activo`)
 

@@ -24,7 +24,7 @@ interface Props {
   fecha: string
   resumenes: NinoAgendaResumen[]
   /** F5B-#33 — Rol del usuario actual en el centro del aula. La page
-   *  SSR lo determina con `getRolEnCentro(aula.centro_id)`. Cuando es
+   *  SSR lo determina con `contextoEnCentro(aula.centro_id)`. Cuando es
    *  `admin`, el padre también pasa `vinculosPorNino` y cada
    *  `NinoAgendaCard` renderiza el picker en lugar del Link legacy. */
   rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'

@@ -36,9 +36,12 @@ import { PERIODOS_INFORME, type CampanaInformeItem, type PeriodoInforme } from '
  * está en el server (Zod); aquí solo hay comprobaciones de UX.
  */
 export function CampanaInformeDialog({
+  centroId,
   campana,
   periodosOcupados = [],
 }: {
+  /** Centro de la página: la campaña se abre en él. */
+  centroId: string
   campana?: CampanaInformeItem
   /** Períodos que ya tienen campaña (para no ofrecer duplicados al abrir). */
   periodosOcupados?: PeriodoInforme[]
@@ -80,10 +83,10 @@ export function CampanaInformeDialog({
     startTransition(async () => {
       const res = esEdicion
         ? await editarFechaCampana({ campana_id: campana.id, fecha_limite: fechaLimite })
-        : await abrirCampanaInforme({
-            periodo: periodo as PeriodoInforme,
-            fecha_limite: fechaLimite,
-          })
+        : await abrirCampanaInforme(
+            { periodo: periodo as PeriodoInforme, fecha_limite: fechaLimite },
+            centroId
+          )
 
       if (!res.success) {
         toast.error(tRoot(res.error))

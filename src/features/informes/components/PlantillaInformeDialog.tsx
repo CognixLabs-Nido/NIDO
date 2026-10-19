@@ -49,7 +49,14 @@ function estructuraValida(areas: AreaInforme[]): boolean {
  * `plantilla` = crear; con `plantilla` = editar (pre-rellenado). Editar solo
  * afecta a informes nuevos (los pasados llevan snapshot).
  */
-export function PlantillaInformeDialog({ plantilla }: { plantilla?: PlantillaInformeItem }) {
+export function PlantillaInformeDialog({
+  centroId,
+  plantilla,
+}: {
+  /** Centro de la página: la plantilla nueva se crea en él. */
+  centroId: string
+  plantilla?: PlantillaInformeItem
+}) {
   const t = useTranslations('informes')
   const tRoot = useTranslations()
   const router = useRouter()
@@ -87,7 +94,7 @@ export function PlantillaInformeDialog({ plantilla }: { plantilla?: PlantillaInf
             titulo: titulo.trim(),
             estructura: areas,
           })
-        : await crearPlantillaInforme({ titulo: titulo.trim(), estructura: areas })
+        : await crearPlantillaInforme({ titulo: titulo.trim(), estructura: areas }, centroId)
 
       if (!res.success) {
         toast.error(tRoot(res.error))

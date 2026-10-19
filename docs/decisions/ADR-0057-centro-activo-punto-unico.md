@@ -51,9 +51,11 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
 
 **Una entrada que sobra, o un número más alto que los usos reales, también es rojo**, así que la lista solo puede bajar, y cada PR de la sustitución la baja exactamente en lo que migra. Los comentarios se quitan antes de buscar.
 
-**El PR5 la vacía y la quita.** Se borran `getCentroActualId` y `getRolEnCentro`, `PENDIENTES_GET_CENTRO` desaparece del guard, y la regla B pasa a ser «cualquier mención fuera del módulo es rojo», sin lista. Ya no hay sitio donde volver a meter una excepción.
+**El PR5 la vacía y la quita.** Se borran `getCentroActualId` y `getRolEnCentro`, `PENDIENTES_GET_CENTRO` y `LECTURAS_PENDIENTES` desaparecen del guard y de la lista, y la regla B pasa a ser «cualquier mención fuera del módulo es rojo», también en un comentario y sin lista. Para las funciones borradas no queda sitio donde volver a meter una excepción: el guard no lee ninguna lista para la regla B, y un test comprueba que la lista solo exporta `LECTURAS_PERMITIDAS`.
 
-`getCentroActualId` y `getRolEnCentro` quedan **deprecadas** y delegan en el contexto: desde este PR ya no hay centro al azar en ningún sitio. Se borran cuando la lista se vacíe.
+`getCentroActualId` y `getRolEnCentro` quedaron **deprecadas** y delegando en el contexto desde el PR1 (ya no había centro al azar en ningún sitio) y se borraron en el PR5.
+
+**Lo que queda, a propósito:** `LECTURAS_PERMITIDAS`, las lecturas de `roles_usuario` que miran a OTRO usuario (19 en 14 ficheros), cada una con su motivo. Es la única lista del guard, y añadir una entrada exige escribir el motivo en un PR.
 
 ## Sustitución (PRs posteriores)
 
@@ -83,6 +85,10 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
   - En producción no había ningún objeto que mover. Las 2 `foto_url` que apuntaban a un fichero inexistente pasan a NULL.
   - `purgar_sujeto_db` redacta también `foto_url` en las filas de `usuarios` de `audit_log`, como ya hacía con la del niño.
   - Lecturas de `roles_usuario` fuera del contexto: de 23 a 19, con 0 pendientes.
+- **PR5 (cierre):**
+  - **Centro de la página** (solo admin de ese centro, con `usuarioAdminEn`): crear plantilla de autorizaciones, abrir campaña y crear plantilla de informes. El anuncio recibe el centro de la página y toma el rol del usuario en ese centro (`rolesEnCentro`).
+  - **Centro del registro:** el informe, el del niño (y la plantilla tiene que ser de ese centro); el lote, el de la campaña (y el aula indicada tiene que ser de ella); el prospecto y la vista previa de su tutor, el del curso (`centroDelCurso`).
+  - Se borran `getCentroActualId` y `getRolEnCentro` (`features/centros/queries/get-centro-actual.ts`) y las listas de pendientes del guard. `PENDIENTES_GET_CENTRO` baja de 8 ficheros y 18 usos a nada.
 
 ## Alternativas descartadas
 
@@ -95,7 +101,7 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
 - **Positivas:** hay un solo sitio que decide el centro, con test. Quien tiene un centro no nota nada. El guard impide reintroducir el `limit(1)`.
 - **Negativas:**
   - Un usuario con varios centros que llega por un enlace profundo sin cookie pasa por el selector y después al reparto por rol, no al enlace: los layouts no conocen la ruta. Se puede añadir cuando haga falta.
-  - La lista base es larga hasta que terminen los PRs de la sustitución.
+  - `LECTURAS_PERMITIDAS` sigue siendo una lista de excepciones para las lecturas que miran a otro usuario. Se puede vaciar llevando esas lecturas a funciones con nombre dentro del módulo de contexto; no entra en la Fase 1.
 - **Fuera de esta fase:** el proxy sigue igual (deja pasar con un rol de cualquier centro; el superusuario entra en la Fase 3).
 - **Entra en este PR, encontrado al hacerlo:**
   - El login hacía `router.push(returnTo)` sin validar. Era una redirección abierta: un enlace de login con `returnTo=https://…` sacaba del sitio al usuario recién autenticado. Ahora pasa por `rutaInterna` (`src/shared/lib/ruta-interna.ts`), la misma validación que usa el selector de centro.
@@ -108,7 +114,8 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
 - `elegir-centro.test.ts`: solo escribe la cookie con un centro suyo, y `returnTo` no saca de la app.
 - `ConmutadorCentroServidor.test.tsx`: con un centro no se pinta nada ni se consulta.
 - `src/test/rls/multicentro-contexto.rls.test.ts`: contra la BD, el usuario de dos centros lee sus dos roles y los nombres de A y B, nunca de C.
-- `src/test/guards/check-centro-activo.test.ts`: el árbol real cumple, y en un árbol de mentira se pone rojo cada caso (lectura nueva, uso nuevo en un import multilínea, llamada nueva en un fichero que ya estaba, lista rancia, número sin bajar, lectura de más). Un nombre en un comentario no cuenta.
+- `src/test/guards/check-centro-activo.test.ts`: el árbol real cumple con 0 menciones de las funciones borradas, y la lista solo exporta `LECTURAS_PERMITIDAS`. En un árbol de mentira se pone rojo cada caso: lectura nueva, mención en un import multilínea o en un comentario, una lista con pendientes (el guard la ignora), lista rancia y lectura de más. Una lectura en un comentario no cuenta.
+- `src/test/multicentro/cierre-centro-explicito.test.ts` y `publicar-anuncio-centro.test.ts` (PR5): con roles en dos centros, cada acción usa el centro de la página o el del registro, nunca el primero.
 - `ruta-interna.test.ts` y `LoginForm.returnTo.test.tsx`: el login solo sigue rutas internas. `RoleSelector.test.tsx`: no escribe cookies.
 
 ## Referencias

@@ -21,7 +21,7 @@ export default async function AdminInformesPage({ params, searchParams }: PagePr
   const soloHistorico = (await searchParams).historico === '1'
   const t = await getTranslations('informes')
 
-  const { rol } = await requireContextoCentro(locale)
+  const { centroId, rol } = await requireContextoCentro(locale)
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   // --- Vista de archivadas (solo lectura) -----------------------------------
@@ -82,7 +82,7 @@ export default async function AdminInformesPage({ params, searchParams }: PagePr
             {t('campana.ir_a_campanas')}
           </Link>
         </div>
-        <PlantillaInformeDialog />
+        <PlantillaInformeDialog centroId={centroId} />
       </header>
 
       <section className="space-y-3">
@@ -118,7 +118,7 @@ export default async function AdminInformesPage({ params, searchParams }: PagePr
                   </span>
                 </span>
                 <span className="flex gap-2">
-                  <PlantillaInformeDialog plantilla={p} />
+                  <PlantillaInformeDialog centroId={centroId} plantilla={p} />
                   <ArchivarPlantillaButton plantillaId={p.id} />
                 </span>
               </li>

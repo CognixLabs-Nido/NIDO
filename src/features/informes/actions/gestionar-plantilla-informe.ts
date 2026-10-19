@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 
 import { estructuraToJson } from '../lib/estructura'
 import {
@@ -48,7 +48,8 @@ function normalizarEstructura(estructura: EstructuraInforme): EstructuraInforme 
  * Varias plantillas por centro (Q1): el nombre las distingue.
  */
 export async function crearPlantillaInforme(
-  input: CrearPlantillaInformeInput
+  input: CrearPlantillaInformeInput,
+  centroId: string
 ): Promise<ActionResult<{ plantilla_id: string }>> {
   const supabase = await createClient()
   const {
@@ -61,8 +62,8 @@ export async function crearPlantillaInforme(
     return fail(parsed.error.issues[0]?.message ?? 'informes.errors.creacion_fallo')
   }
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('informes.errors.no_autorizado')
+  // Centro de la página; solo admin de ese centro (la RLS lo vuelve a comprobar).
+  if (!(await usuarioAdminEn(supabase, centroId))) return fail('informes.errors.no_autorizado')
 
   const estructura = normalizarEstructura(parsed.data.estructura as EstructuraInforme)
 

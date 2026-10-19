@@ -626,7 +626,7 @@ describe('RLS mensajería — aislamiento, ámbitos y flag global', () => {
   it('t23 — admin del centro A con DOBLE rol (admin + profe del aulaA1) puede INSERT en aulaA2', async () => {
     // Caso reportado en producción: admin del centro que además tiene una
     // asignación como profe de un aula concreta. Históricamente esto
-    // confundía a la UI (getRolEnCentro devolvía 'profe' arbitrariamente
+    // confundía a la UI (el rol en el centro salía 'profe' arbitrariamente
     // y ocultaba el dropdown de ámbito). La policy SIEMPRE debe permitir
     // el anuncio en cualquier aula del centro porque es_admin(centro_id)
     // sigue siendo TRUE.
