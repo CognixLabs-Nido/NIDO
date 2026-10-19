@@ -3,6 +3,8 @@ import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { FotosFamiliaFeed } from '@/features/fotos/components/FotosFamiliaFeed'
+import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getPublicacionesFamilia } from '@/features/fotos/queries/get-publicaciones-familia'
 import { MarcarFotosVistasOnMount } from '@/features/notificaciones/components/MarcarFotosVistasOnMount'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -20,7 +22,8 @@ interface PageProps {
 export default async function FamilyFotosPage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('fotos')
-  const publicaciones = await getPublicacionesFamilia()
+  const { centroId } = await requireContextoCentro(locale)
+  const publicaciones = await getPublicacionesFamilia(await ambitoFamiliar(centroId))
 
   return (
     <div className="space-y-6">

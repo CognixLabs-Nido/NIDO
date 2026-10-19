@@ -135,6 +135,7 @@ export async function getAutorizacionDetalle(
 
   return {
     id: aut.id,
+    centro_id: aut.centro_id,
     tipo: aut.tipo,
     titulo: aut.titulo,
     texto: aut.texto,

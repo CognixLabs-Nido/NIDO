@@ -5,6 +5,8 @@ import { getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { ESTADO_BADGE_VARIANT, formatPeriodo } from '@/features/recibos/lib/formato'
 import type { LineaReciboFamilia } from '@/features/recibos/lib/recibo-familia-detalle'
 import { getReciboFamiliaDetalle } from '@/features/recibos/queries/get-recibo-familia-detalle'
@@ -18,13 +20,14 @@ interface PageProps {
  * Detalle de un recibo FAMILIAR — vista de familia (F-4-6). Cabecera con período, estado,
  * método y total; el desglose de líneas se agrupa POR HIJO (lo que se cobra a cada uno) y,
  * aparte, un bloque de líneas FAMILIARES (descuento hermanos, saldo arrastrado, cargo de
- * familia). Solo lectura. La RLS restringe a la familia del tutor; borradores y recibos no
- * visibles → notFound.
+ * familia). Solo lectura. La RLS restringe a la familia del tutor; borradores, recibos no
+ * visibles y los de otro centro que el activo → notFound.
  */
 export default async function FamilyReciboDetallePage({ params }: PageProps) {
   const { locale, id } = await params
   const t = await getTranslations('recibos')
-  const recibo = await getReciboFamiliaDetalle(id)
+  const { centroId } = await requireContextoCentro(locale)
+  const recibo = await getReciboFamiliaDetalle(await ambitoFamiliar(centroId), id)
   if (!recibo) notFound()
 
   const titulo =

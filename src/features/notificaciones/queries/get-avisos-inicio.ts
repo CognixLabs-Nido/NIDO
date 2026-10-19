@@ -2,6 +2,7 @@ import 'server-only'
 
 import { getAutorizacionesFamilia } from '@/features/autorizaciones/queries/get-autorizaciones-familia'
 import { hoyMadridYmd } from '@/features/autorizaciones/lib/server-helpers'
+import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { getPendientesCampanaProfe } from '@/features/informes/queries/get-pendientes-campana-profe'
 import { createClient } from '@/lib/supabase/server'
 
@@ -58,6 +59,7 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
   const meds = await supabase
     .from('autorizaciones')
     .select('id', { count: 'exact', head: true })
+    .eq('centro_id', centroId)
     .eq('tipo', 'medicacion')
     .eq('es_plantilla', false)
     .eq('estado', 'publicada')
@@ -141,9 +143,13 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
     }
   }
 
-  // Familia: instancias firmables con su firma aún pendiente + las ya firmadas
+  // Familia: todo acotado al centro activo (multicentro · Fase 2). La RLS deja ver lo de
+  // todos sus hijos, y con una familia por centro serían de varios centros.
+  const ambito = await ambitoFamiliar(centroId)
+
+  // Instancias firmables con su firma aún pendiente + las ya firmadas
   // (reusa la query de familia, que resuelve estado_firma propio por instancia).
-  const lista = await getAutorizacionesFamilia()
+  const lista = await getAutorizacionesFamilia(ambito)
   const pendientesFirma = lista.filter(
     (a) =>
       a.estado_firma === 'pendiente' &&
@@ -157,7 +163,11 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
   // RLS de `informes_evolucion` ya filtra a publicados legibles por esta familia;
   // descontamos los que están en el marcador `informes_vistos` (presencia).
   const [pub, vistos] = await Promise.all([
-    supabase.from('informes_evolucion').select('id').eq('estado', 'publicado'),
+    supabase
+      .from('informes_evolucion')
+      .select('id')
+      .eq('centro_id', ambito.centroId)
+      .eq('estado', 'publicado'),
     getInformesVistos(),
   ])
   const informesNuevos = contarNoVistas(pub.data ?? [], vistos)
@@ -165,7 +175,7 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
   // Publicaciones del blog visibles para esta familia (RLS → P2 aula actual +
   // P-histórico etiquetado, solo con `puede_ver_fotos`) que aún no ha abierto (F10-2).
   const [fotos, fotosVistas] = await Promise.all([
-    supabase.from('publicaciones').select('id'),
+    supabase.from('publicaciones').select('id').eq('centro_id', ambito.centroId),
     getFotosVistas(),
   ])
   const fotosNuevas = contarNoVistas(fotos.data ?? [], fotosVistas)
@@ -175,7 +185,7 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
   // (presencia). Cubre el cierre mensual: los recibos recién generados afloran aquí en la
   // siguiente navegación de la familia — sin push ni email (patrón derivado de informes/fotos).
   const [recibos, recibosVistos] = await Promise.all([
-    supabase.from('recibos').select('id').is('deleted_at', null),
+    supabase.from('recibos').select('id').eq('centro_id', ambito.centroId).is('deleted_at', null),
     getRecibosVistos(),
   ])
   const recibosNuevos = contarNoVistas(recibos.data ?? [], recibosVistos)

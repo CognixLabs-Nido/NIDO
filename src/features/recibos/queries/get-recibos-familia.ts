@@ -1,5 +1,6 @@
 import 'server-only'
 
+import type { AmbitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
@@ -28,14 +29,14 @@ export interface ReciboFamiliaItem {
  * Recibos de la FAMILIA del tutor legal (F-4-6), grano familia: cada recibo es UNA fila
  * (regular del mes, esporádico o re-giro), ordenados por período descendente. Solo lectura.
  *
- * La RLS de `recibos` ya filtra por `es_tutor_de_familia`, así que solo llegan los recibos
- * de la familia del tutor (relación 1:1). NO se listan los BORRADORES: un recibo en
+ * La RLS de `recibos` filtra por `es_tutor_de_familia`: llegan los de TODAS sus familias, una
+ * por centro (multicentro · Fase 2). El ámbito los acota al centro activo. NO se listan los BORRADORES: un recibo en
  * 'borrador' aún no lo ha confirmado Dirección (puede editarse) → el tutor solo ve los que
  * han salido de borrador. Los esporádicos pueden llevar `nino_id` (cargo de un hijo
  * concreto): se resuelve su nombre para indicarlo; los regulares y los cargos de familia
  * llevan `nino_id` NULL.
  */
-export async function getRecibosFamilia(): Promise<ReciboFamiliaItem[]> {
+export async function getRecibosFamilia(ambito: AmbitoFamiliar): Promise<ReciboFamiliaItem[]> {
   const supabase = await createClient()
 
   const { data: recibos, error } = await supabase
@@ -43,6 +44,7 @@ export async function getRecibosFamilia(): Promise<ReciboFamiliaItem[]> {
     .select(
       'id, nino_id, anio, mes, estado, metodo, total_centimos, es_esporadico, concepto_esporadico, devuelto_de_recibo_id, created_at'
     )
+    .eq('centro_id', ambito.centroId)
     .neq('estado', 'borrador') // el tutor no ve recibos aún editables por Dirección
     .is('deleted_at', null)
     .order('anio', { ascending: false })

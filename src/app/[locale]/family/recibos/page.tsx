@@ -5,8 +5,9 @@ import { getTranslations } from 'next-intl/server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { familiaDelUsuarioActual } from '@/features/alta/queries/get-familia-usuario'
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
+import { ambitoFamiliar, familiaDelUsuarioEn } from '@/features/centros/contexto/ambito-familiar'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { MarcarRecibosVistosOnMount } from '@/features/notificaciones/components/MarcarRecibosVistosOnMount'
 import { DomiciliacionTutorDialog } from '@/features/recibos/components/DomiciliacionTutorDialog'
 import { ESTADO_BADGE_VARIANT, formatPeriodo } from '@/features/recibos/lib/formato'
@@ -22,26 +23,28 @@ interface PageProps {
 
 /**
  * Recibos — vista de familia (F-4-6, grano familia). Lista los recibos de la FAMILIA del
- * tutor legal (un recibo = una fila: regular, esporádico o re-giro), ordenados por período
- * (más reciente primero). Solo lectura: cada recibo enlaza a su detalle con el desglose por
- * hijo. La RLS (`es_tutor_de_familia`) garantiza que solo aparecen recibos de su familia; los
- * BORRADORES no confirmados por Dirección quedan fuera. Al montar, marca todos como vistos
- * (baja el aviso de "recibos nuevos" del inicio).
+ * tutor legal EN EL CENTRO ACTIVO (un recibo = una fila: regular, esporádico o re-giro),
+ * ordenados por período (más reciente primero). Solo lectura: cada recibo enlaza a su detalle
+ * con el desglose por hijo. La RLS (`es_tutor_de_familia`) deja ver los de todas sus familias;
+ * el ámbito del centro activo los acota (multicentro · Fase 2). Los BORRADORES no confirmados
+ * por Dirección quedan fuera. Al montar, marca como vistos los que lista (baja el aviso de
+ * "recibos nuevos" del inicio).
  */
 export default async function FamilyRecibosPage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('recibos')
   const tDom = await getTranslations('family.domiciliacion')
-  const recibos = await getRecibosFamilia()
+  const { centroId } = await requireContextoCentro(locale)
+  const recibos = await getRecibosFamilia(await ambitoFamiliar(centroId))
   const ids = idsDeRecibos(recibos)
 
   // F-2c-4: domiciliación SEPA de la FAMILIA del tutor (ver + registrar/sustituir con firma
-  // digital). La familia + el centro se resuelven server-side desde auth.uid() (1:1).
+  // digital). La familia es la suya en el centro activo, resuelta server-side desde auth.uid().
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const familia = await familiaDelUsuarioActual()
+  const familia = await familiaDelUsuarioEn(centroId)
   let dom: {
     centroNombre: string
     centroDireccion: string

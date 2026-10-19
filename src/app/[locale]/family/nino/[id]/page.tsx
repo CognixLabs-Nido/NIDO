@@ -19,6 +19,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
 import { AltaEnCursoCard } from '@/features/alta/components/AltaEnCursoCard'
 import { estadoAltaFamilia } from '@/features/alta/lib/gate-familia'
+import { ambitoFamiliar, esDelAmbito } from '@/features/centros/contexto/ambito-familiar'
+import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
 import { getRecorridoNinoFamilia } from '@/features/ninos/queries/get-recorrido-familia'
 import { RecorridoFamilia } from '@/features/ninos/components/RecorridoFamilia'
@@ -59,8 +61,11 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const tFotos = await getTranslations('fotos.nino')
   const nino = await getNinoById(id)
   if (!nino) notFound()
+  // Multicentro · Fase 2: un hijo de otro centro no se abre aquí, aunque sea suyo.
+  const { centroId } = await requireContextoCentro(locale)
+  if (!esDelAmbito(await ambitoFamiliar(centroId), nino.centro_id)) notFound()
 
-  const { ninosEnAlta } = await estadoAltaFamilia()
+  const { ninosEnAlta } = await estadoAltaFamilia(centroId)
   if (ninosEnAlta.includes(id)) {
     return (
       <div className="space-y-6">

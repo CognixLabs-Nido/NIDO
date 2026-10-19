@@ -38,7 +38,8 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
   // hijo activo el panel se ve entero: el hermano en alta sale marcado en el panel y su
   // ficha muestra «alta en curso». El rollover (activa + pendiente del curso siguiente)
   // no cuenta como alta. admin / autorizado (sin vínculo tutor_legal) → sin redirect.
-  const ninoPendiente = destinoGateFamilia(await estadoAltaFamilia())
+  // Solo cuentan los hijos del centro activo (multicentro · Fase 2).
+  const ninoPendiente = destinoGateFamilia(await estadoAltaFamilia(centroId))
   if (ninoPendiente) redirect(`/${locale}/alta/${ninoPendiente}`)
 
   const user = await getCurrentUser()

@@ -1,5 +1,6 @@
 import 'server-only'
 
+import type { AmbitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -10,8 +11,11 @@ import type { AutorizacionItem, EstadoFirmaNino, FirmaDecision } from '../types'
  * con su `estado_firma` = última decisión propia (firmado/rechazado/revocado) o
  * `pendiente` si aún no ha actuado. El detalle por niño es la fuente autoritativa
  * (un tutor con varios niños lo ve desglosado allí); aquí mostramos su acción.
+ * Solo las del centro del ámbito (multicentro · Fase 2).
  */
-export async function getAutorizacionesFamilia(): Promise<AutorizacionItem[]> {
+export async function getAutorizacionesFamilia(
+  ambito: AmbitoFamiliar
+): Promise<AutorizacionItem[]> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -23,6 +27,7 @@ export async function getAutorizacionesFamilia(): Promise<AutorizacionItem[]> {
     .select(
       'id, tipo, titulo, estado, texto_definitivo, evento_id, nino_id, es_plantilla, ambito, vigencia_desde, vigencia_hasta, created_at'
     )
+    .eq('centro_id', ambito.centroId)
     .eq('estado', 'publicada')
     // Las plantillas del catálogo NO son firmables (visibles a miembros del centro
     // por RLS); la familia solo ve INSTANCIAS firmables.

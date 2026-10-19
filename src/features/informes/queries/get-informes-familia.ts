@@ -1,5 +1,6 @@
 import 'server-only'
 
+import type { AmbitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { createClient } from '@/lib/supabase/server'
 
 import {
@@ -36,9 +37,12 @@ const ORDEN_PERIODO: Record<PeriodoInforme, number> = Object.fromEntries(
  * La RLS de `informes_evolucion` (`usuario_es_audiencia_informe_row`) ya filtra a
  * publicados legibles por esta familia (tutor legal siempre; autorizado con
  * `puede_ver_datos_pedagogicos`); aquí solo se ordena y agrupa. Nunca devuelve
- * borradores. Lectura — no expone respuestas (eso es el detalle).
+ * borradores. Lectura — no expone respuestas (eso es el detalle). Solo los del centro del
+ * ámbito (multicentro · Fase 2).
  */
-export async function getInformesPublicadosFamilia(): Promise<NinoInformesFamilia[]> {
+export async function getInformesPublicadosFamilia(
+  ambito: AmbitoFamiliar
+): Promise<NinoInformesFamilia[]> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -50,6 +54,7 @@ export async function getInformesPublicadosFamilia(): Promise<NinoInformesFamili
     .select(
       'id, nino_id, periodo, estado, publicado_at, curso_academico_id, ninos(nombre, apellidos), cursos_academicos(nombre)'
     )
+    .eq('centro_id', ambito.centroId)
     .eq('estado', 'publicado')
     .order('publicado_at', { ascending: false })
 

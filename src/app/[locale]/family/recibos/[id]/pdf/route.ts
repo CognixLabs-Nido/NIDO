@@ -1,5 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 
+import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
+import { getEstadoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { formatPeriodo } from '@/features/recibos/lib/formato'
 import { generarReciboPdf, type LineaReciboPdf } from '@/features/recibos/lib/recibo-pdf'
 import { getReciboParaPdf } from '@/features/recibos/queries/get-recibo-pdf-data'
@@ -10,7 +12,7 @@ export const runtime = 'nodejs'
 /**
  * Descarga en PDF de un recibo FAMILIAR (B4). La autorización es la MISMA que la pantalla
  * del portal: `getReciboParaPdf` lee con RLS (`es_tutor_de_familia`) y excluye borradores →
- * un tutor solo baja SUS recibos; si no es visible → 404. El contenido (logo DEL CENTRO,
+ * un tutor solo baja SUS recibos, y solo los del centro activo; si no → 404. El contenido (logo DEL CENTRO,
  * nombre del niño una vez, líneas limpias) lo arma `generarReciboPdf`.
  */
 export async function GET(
@@ -19,7 +21,9 @@ export async function GET(
 ): Promise<Response> {
   const { locale, id } = await params
 
-  const recibo = await getReciboParaPdf(id)
+  const estado = await getEstadoCentro()
+  if (estado.tipo !== 'activo') return new Response('Not found', { status: 404 })
+  const recibo = await getReciboParaPdf(await ambitoFamiliar(estado.contexto.centroId), id)
   if (!recibo) return new Response('Not found', { status: 404 })
 
   const t = await getTranslations('recibos')

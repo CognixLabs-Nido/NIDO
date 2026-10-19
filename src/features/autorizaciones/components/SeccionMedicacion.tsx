@@ -17,17 +17,20 @@ import { EstadoDocBadge, EstadoFirmaBadge } from './EstadoFirmaBadge'
  */
 export async function SeccionMedicacion({
   locale,
+  centroId,
   baseHref,
   puedeArchivar,
   soloHistorico = false,
 }: {
   locale: string
+  /** El centro de la página: solo se listan sus pautas. */
+  centroId: string
   baseHref: string
   puedeArchivar: boolean
   soloHistorico?: boolean
 }) {
   const t = await getTranslations('autorizaciones')
-  const items = await getMedicacionesConActividad(soloHistorico)
+  const items = await getMedicacionesConActividad(centroId, soloHistorico)
 
   return (
     <section className="space-y-3">

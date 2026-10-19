@@ -2192,6 +2192,7 @@ export type Database = {
       }
       familia_tutores: {
         Row: {
+          centro_id: string | null
           created_at: string
           deleted_at: string | null
           direccion_calle: string | null
@@ -2208,6 +2209,7 @@ export type Database = {
           usuario_id: string | null
         }
         Insert: {
+          centro_id?: string | null
           created_at?: string
           deleted_at?: string | null
           direccion_calle?: string | null
@@ -2224,6 +2226,7 @@ export type Database = {
           usuario_id?: string | null
         }
         Update: {
+          centro_id?: string | null
           created_at?: string
           deleted_at?: string | null
           direccion_calle?: string | null
@@ -2240,6 +2243,13 @@ export type Database = {
           usuario_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "familia_tutores_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "familia_tutores_familia_id_fkey"
             columns: ["familia_id"]

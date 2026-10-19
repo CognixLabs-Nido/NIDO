@@ -127,6 +127,7 @@ export async function getInformesDeMisAulas(centroId: string): Promise<AulaInfor
 
 interface InformeDetalleRow {
   id: string
+  centro_id: string
   nino_id: string
   periodo: PeriodoInforme
   estado: 'borrador' | 'publicado'
@@ -150,7 +151,7 @@ export async function getInformeEvolucionDetalle(
   const { data, error } = await supabase
     .from('informes_evolucion')
     .select(
-      'id, nino_id, periodo, estado, estructura_snapshot, respuestas, observaciones_generales, publicado_at, notificado_at, ninos(nombre, apellidos)'
+      'id, centro_id, nino_id, periodo, estado, estructura_snapshot, respuestas, observaciones_generales, publicado_at, notificado_at, ninos(nombre, apellidos)'
     )
     .eq('id', id)
     .maybeSingle()
@@ -162,6 +163,7 @@ export async function getInformeEvolucionDetalle(
 
   return {
     id: row.id,
+    centro_id: row.centro_id,
     nino_id: row.nino_id,
     nino_nombre: row.ninos ? `${row.ninos.nombre} ${row.ninos.apellidos}` : '',
     periodo: row.periodo,

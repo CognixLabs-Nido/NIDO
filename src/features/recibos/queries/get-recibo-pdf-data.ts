@@ -1,5 +1,6 @@
 import 'server-only'
 
+import type { AmbitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { limpiarNombreEmbebido } from '@/features/recibos/lib/limpiar-nombre-embebido'
 import {
   agruparLineasPorHijo,
@@ -43,7 +44,10 @@ export interface ReciboParaPdf {
  * El nombre del concepto y del centro se resuelven con service role (ya autorizado; el
  * catálogo de conceptos puede no ser legible por el tutor), espejo de `assembleInformePdfData`.
  */
-export async function getReciboParaPdf(reciboId: string): Promise<ReciboParaPdf | null> {
+export async function getReciboParaPdf(
+  ambito: AmbitoFamiliar,
+  reciboId: string
+): Promise<ReciboParaPdf | null> {
   const supabase = await createClient()
 
   const { data: recibo, error } = await supabase
@@ -52,6 +56,8 @@ export async function getReciboParaPdf(reciboId: string): Promise<ReciboParaPdf 
       'id, centro_id, anio, mes, estado, metodo, total_centimos, es_esporadico, concepto_esporadico, devuelto_de_recibo_id, fecha_envio_banco, fecha_devolucion'
     )
     .eq('id', reciboId)
+    // Multicentro · Fase 2: solo el del centro activo (una familia por centro).
+    .eq('centro_id', ambito.centroId)
     .neq('estado', 'borrador')
     .is('deleted_at', null)
     .maybeSingle()

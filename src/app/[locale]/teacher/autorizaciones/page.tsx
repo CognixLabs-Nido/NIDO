@@ -29,7 +29,7 @@ export default async function TeacherAutorizacionesPage({ params, searchParams }
   const soloHistorico = (await searchParams).historico === '1'
   const t = await getTranslations('autorizaciones')
 
-  const { rol } = await requireContextoCentro(locale)
+  const { centroId, rol } = await requireContextoCentro(locale)
   if (rol !== 'profe' && rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   if (soloHistorico) {
@@ -42,7 +42,13 @@ export default async function TeacherAutorizacionesPage({ params, searchParams }
           <ArrowLeftIcon className="size-4" />
           {t('volver')}
         </Link>
-        <SeccionMedicacion locale={locale} baseHref={BASE} puedeArchivar soloHistorico />
+        <SeccionMedicacion
+          locale={locale}
+          centroId={centroId}
+          baseHref={BASE}
+          puedeArchivar
+          soloHistorico
+        />
       </div>
     )
   }
@@ -93,7 +99,7 @@ export default async function TeacherAutorizacionesPage({ params, searchParams }
         )}
       </section>
 
-      <SeccionMedicacion locale={locale} baseHref={BASE} puedeArchivar />
+      <SeccionMedicacion locale={locale} centroId={centroId} baseHref={BASE} puedeArchivar />
     </div>
   )
 }

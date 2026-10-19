@@ -13,6 +13,7 @@ import { SeccionMedicacion } from '@/features/autorizaciones/components/SeccionM
 import { getAutorizacionesFamilia } from '@/features/autorizaciones/queries/get-autorizaciones-familia'
 import { getMedicacionContextoFamilia } from '@/features/autorizaciones/queries/get-medicacion-familia'
 import { getRecogidaContextoFamilia } from '@/features/autorizaciones/queries/get-recogida-familia'
+import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { createClient } from '@/lib/supabase/server'
 
@@ -28,7 +29,7 @@ export default async function FamilyAutorizacionesPage({ params, searchParams }:
   const soloHistorico = (await searchParams).historico === '1'
   const t = await getTranslations('autorizaciones')
 
-  const { rol } = await requireContextoCentro(locale)
+  const { centroId, rol } = await requireContextoCentro(locale)
   if (rol !== 'tutor_legal' && rol !== 'autorizado') redirect(`/${locale}/forbidden`)
 
   if (soloHistorico) {
@@ -41,15 +42,23 @@ export default async function FamilyAutorizacionesPage({ params, searchParams }:
           <ArrowLeftIcon className="size-4" />
           {t('volver')}
         </Link>
-        <SeccionMedicacion locale={locale} baseHref={BASE} puedeArchivar={false} soloHistorico />
+        <SeccionMedicacion
+          locale={locale}
+          centroId={centroId}
+          baseHref={BASE}
+          puedeArchivar={false}
+          soloHistorico
+        />
       </div>
     )
   }
 
+  // Solo lo del centro activo (multicentro · Fase 2).
+  const ambito = await ambitoFamiliar(centroId)
   const [autorizaciones, recogida, medicacion] = await Promise.all([
-    getAutorizacionesFamilia(),
-    getRecogidaContextoFamilia(),
-    getMedicacionContextoFamilia(),
+    getAutorizacionesFamilia(ambito),
+    getRecogidaContextoFamilia(ambito),
+    getMedicacionContextoFamilia(ambito),
   ])
 
   const supabase = await createClient()
@@ -110,7 +119,12 @@ export default async function FamilyAutorizacionesPage({ params, searchParams }:
 
       {/* Medicación: actividad de cada pauta (dosis dadas/pendientes) en lectura. La
           familia no archiva; consulta el histórico con el botón de la sección. */}
-      <SeccionMedicacion locale={locale} baseHref={BASE} puedeArchivar={false} />
+      <SeccionMedicacion
+        locale={locale}
+        centroId={centroId}
+        baseHref={BASE}
+        puedeArchivar={false}
+      />
     </div>
   )
 }

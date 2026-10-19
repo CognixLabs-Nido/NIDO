@@ -127,6 +127,8 @@ export function DomiciliacionTutorDialog({
       }
 
       const body = new FormData()
+      // El centro de la página: la ruta busca la familia del tutor EN ese centro.
+      body.append('centro_id', centroId)
       body.append('file', new File([pdf], 'mandato-sepa.pdf', { type: 'application/pdf' }))
       body.append('iban', values.iban)
       body.append('titular', values.titular)

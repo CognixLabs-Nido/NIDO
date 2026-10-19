@@ -4,12 +4,12 @@ import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { estadoAltaFamilia } from '@/features/alta/lib/gate-familia'
+import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
 import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
 import { getAvisosInicio } from '@/features/notificaciones/queries/get-avisos-inicio'
 import { EmptyState } from '@/shared/components/EmptyState'
-import { createClient } from '@/lib/supabase/server'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -22,29 +22,10 @@ export default async function FamilyDashboard({ params }: PageProps) {
   // hijo con el alta en curso: su tarjeta lleva al asistente en vez de a la ficha.
   const t = await getTranslations('family.dashboard')
   const tAlta = await getTranslations('family.alta_en_curso')
-  const { ninosEnAlta } = await estadoAltaFamilia()
-  const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  const userId = userData.user?.id
   const { centroId } = await requireContextoCentro(locale)
-
-  type NinoRow = { id: string; nombre: string; apellidos: string | null }
-  let ninos: NinoRow[] = []
-  if (userId) {
-    const { data } = await supabase
-      .from('vinculos_familiares')
-      .select('ninos(id, nombre, apellidos)')
-      .eq('usuario_id', userId)
-      .is('deleted_at', null)
-    ninos = (data ?? [])
-      .map((r): NinoRow | null => {
-        const raw = r.ninos as NinoRow | NinoRow[] | null
-        if (!raw) return null
-        if (Array.isArray(raw)) return raw[0] ?? null
-        return raw
-      })
-      .filter((n): n is NinoRow => n !== null)
-  }
+  const { ninosEnAlta } = await estadoAltaFamilia(centroId)
+  // Solo los hijos del centro activo (multicentro · Fase 2).
+  const { hijos: ninos } = await ambitoFamiliar(centroId)
 
   const avisos = await getAvisosInicio('tutor_legal', centroId)
 
