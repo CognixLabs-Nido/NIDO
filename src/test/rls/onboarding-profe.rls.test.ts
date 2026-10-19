@@ -234,7 +234,7 @@ describe('Onboarding de profe — flujo completo (DB/RLS)', () => {
   it('bucket usuarios-fotos: el profe sube SU avatar, no el de otro', async () => {
     const client = await clientFor(profeA)
 
-    const propio = `${centroA.id}/${profeA.id}/${randomUUID()}.jpg`
+    const propio = `${profeA.id}/${randomUUID()}.jpg`
     const ok = await client.storage
       .from(BUCKET)
       .upload(propio, JPG, { contentType: 'image/jpeg', upsert: true })
@@ -243,7 +243,7 @@ describe('Onboarding de profe — flujo completo (DB/RLS)', () => {
 
     const otro = await createTestUser({ nombre: 'Otro Profe' })
     usuarios.push(otro.id)
-    const ajeno = `${centroA.id}/${otro.id}/${randomUUID()}.jpg`
+    const ajeno = `${otro.id}/${randomUUID()}.jpg`
     const denied = await client.storage
       .from(BUCKET)
       .upload(ajeno, JPG, { contentType: 'image/jpeg', upsert: true })

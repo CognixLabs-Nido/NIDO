@@ -43,7 +43,8 @@ invitación/accept de tutores (D6)** —ya prevista como base compartida en
 - **A.** El "rol" del formulario = `tipo_personal_aula` (`coordinadora`/`profesora`/
   `tecnico`/`apoyo`). El `user_role` siempre es `'profe'`.
 - **B.** Bucket **nuevo privado** `usuarios-fotos` (ruta `{centroId}/{usuarioId}/…`, enlaces
-  firmados), espejo de `ninos-fotos`.
+  firmados), espejo de `ninos-fotos`. Desde 2026-10-19 la ruta es `{usuarioId}/…`
+  (`20261019120000`, ADR-0057).
 - **C.** La directora fija `nombre_completo` en la invitación; el profe puede **editarlo** al
   aceptar (prefill **editable**, no read-only).
 - **D.** Foto **opcional** en el accept (no bloquea el alta).
@@ -99,7 +100,8 @@ invitación/accept de tutores (D6)** —ya prevista como base compartida en
 **Storage nuevo:**
 
 - Bucket privado `usuarios-fotos` (≤15 MB, JPG/PNG/HEIC; tope efectivo 4 MB en la app; HEIC
-  se rechaza en el pipeline, ADR-0046). Ruta `{centroId}/{usuarioId}/…`.
+  se rechaza en el pipeline, ADR-0046). Ruta `{centroId}/{usuarioId}/…`; desde 2026-10-19,
+  `{usuarioId}/…` (`20261019120000`).
 
 **ENUMs:** ninguno nuevo (se reusan `tipo_personal_aula` y `user_role`).
 
@@ -117,6 +119,10 @@ ya existe y es suficiente — **no se añaden policies de tabla**.
 -- Leer: staff del centro (admin/profe) o el propio usuario.
 -- Escribir/actualizar/borrar: admin del centro o el propio usuario.
 ```
+
+Desde `20261019120000` (2026-10-19) la ruta es `{usuarioId}/…` (`[1]=usuarioId`): leer = el
+propio usuario o staff de un centro donde tiene rol (`es_staff_de_usuario`); escribir = el
+propio usuario o admin de un centro donde tiene rol (`es_admin_de_usuario`).
 
 ## Validaciones (Zod) — referencia para piezas posteriores
 

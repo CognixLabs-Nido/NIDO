@@ -28,10 +28,6 @@ export const LECTURAS_PERMITIDAS = {
     motivo: 'gatea el prefijo de ruta con los roles de cualquier centro; lo revisa la Fase 3',
   },
   'src/app/[locale]/admin/page.tsx': { n: 1, motivo: 'cuenta el personal de un centro explícito' },
-  'src/app/[locale]/usuarios/[id]/avatar/route.ts': {
-    n: 1,
-    motivo: 'centros del usuario DESTINO (service role)',
-  },
   'src/features/auth/actions/accept-invitation.ts': {
     n: 6,
     motivo: 'clasifica la cuenta invitada e inserta/retira su rol (service role)',
@@ -51,10 +47,6 @@ export const LECTURAS_PERMITIDAS = {
     motivo: 'clasifica una cuenta ajena',
   },
   'src/features/export/lib/recolectar.ts': { n: 1, motivo: 'export art. 15 del sujeto' },
-  'src/features/olvido/lib/fuentes-adjuntos.ts': {
-    n: 1,
-    motivo: 'purga RGPD del sujeto (service role)',
-  },
   'src/features/messaging/queries/get-conversacion-detalle.ts': {
     n: 1,
     motivo: 'roles de los autores de los mensajes',
@@ -78,6 +70,4 @@ export const LECTURAS_PERMITIDAS = {
  * Lecturas de `roles_usuario` del usuario ACTUAL que tienen que pasar por el contexto
  * (`requireContextoCentro` / `contextoEnCentro`). Solo puede BAJAR, hasta vaciarse.
  */
-export const LECTURAS_PENDIENTES = {
-  'src/app/[locale]/usuarios/[id]/avatar/route.ts': 2,
-}
+export const LECTURAS_PENDIENTES = {}

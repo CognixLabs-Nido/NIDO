@@ -149,28 +149,28 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
     recolectar: (service, ninoId) => dnisPendientesSinUsar(service, { nino_id: ninoId }),
   },
   {
-    // Cierre de la purga: la foto de perfil del usuario. Su carpeta `{centro}/{usuario}/` es
-    // solo suya (una cuenta = un centro), así que va por prefijo: caen también las anteriores.
+    // Cierre de la purga: la foto de perfil del usuario. Su carpeta `{usuario}/` es solo suya,
+    // así que va por prefijo: caen también las anteriores.
     nombre: 'avatar-usuario',
     bucket: BUCKET_USUARIOS_FOTOS,
     sujetos: ['usuario'],
     async recolectar(service, usuarioId) {
-      const [{ data: u, error: uErr }, { data: roles, error: rErr }] = await Promise.all([
-        service.from('usuarios').select('foto_url').eq('id', usuarioId).maybeSingle(),
-        service.from('roles_usuario').select('centro_id').eq('usuario_id', usuarioId),
-      ])
+      const { data: u, error: uErr } = await service
+        .from('usuarios')
+        .select('foto_url')
+        .eq('id', usuarioId)
+        .maybeSingle()
       if (uErr) throw new Error(`usuarios (avatar): ${uErr.message}`)
-      if (rErr) throw new Error(`roles_usuario (avatar): ${rErr.message}`)
       const rutas = new Set<string>()
       if (u?.foto_url) {
         rutas.add(u.foto_url)
         rutas.add(rutaThumbDe(u.foto_url))
       }
-      for (const centro of new Set((roles ?? []).map((r) => r.centro_id))) {
-        const prefijo = `${centro}/${usuarioId}`
-        const { data: objetos } = await service.storage.from(BUCKET_USUARIOS_FOTOS).list(prefijo)
-        for (const o of objetos ?? []) if (o.id !== null) rutas.add(`${prefijo}/${o.name}`)
-      }
+      const { data: objetos, error: lErr } = await service.storage
+        .from(BUCKET_USUARIOS_FOTOS)
+        .list(usuarioId)
+      if (lErr) throw new Error(`usuarios-fotos (avatar): ${lErr.message}`)
+      for (const o of objetos ?? []) if (o.id !== null) rutas.add(`${usuarioId}/${o.name}`)
       return [...rutas]
     },
   },

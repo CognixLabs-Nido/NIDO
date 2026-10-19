@@ -85,12 +85,12 @@ describe('getPersonalActivoCentroCore', () => {
         {
           aula_id: 'a1',
           tipo_personal_aula: 'coordinadora',
-          profe: { id: 'u-mar', nombre_completo: 'María', foto_url: 'c1/u-mar/x.jpg' },
+          profe: { id: 'u-mar', nombre_completo: 'María', foto_url: 'u-mar/x.jpg' },
         },
         {
           aula_id: 'a2',
           tipo_personal_aula: 'profesora',
-          profe: { id: 'u-mar', nombre_completo: 'María', foto_url: 'c1/u-mar/x.jpg' },
+          profe: { id: 'u-mar', nombre_completo: 'María', foto_url: 'u-mar/x.jpg' },
         },
       ],
     })
@@ -106,7 +106,7 @@ describe('getPersonalActivoCentroCore', () => {
     expect(maria.profe_id).toBe('u-mar')
     expect(maria.nombre_completo).toBe('María')
     expect(maria.email).toBe('maria@anaia.test')
-    expect(maria.foto_url).toBe('c1/u-mar/x.jpg')
+    expect(maria.foto_url).toBe('u-mar/x.jpg')
     // Dos asignaciones, coordinadora primero (orden por tipo).
     expect(maria.asignaciones).toHaveLength(2)
     expect(maria.asignaciones[0]).toMatchObject({
