@@ -71,12 +71,18 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
   - **Páginas de un registro de otro centro** (decisión del responsable): `teacher/aula/[id]` y sus subpáginas (`fotos`, `servicio`, `comida`) y `alta/[ninoId]` sacan el rol con `contextoEnCentro(centro del aula o del niño)`. Se muestran aunque no sea el centro activo; el enlace funciona siempre. Para quien tiene más de un centro, `AvisoCentroDistinto` dice en la cabecera qué centro está viendo. `comida` cargaba el aula sin mirar su centro y ahora usa el del aula.
   - **El CSV de recibos** lee el estado sin redirigir (`getEstadoCentro`): sin centro activo, 403.
   - Las listas bajan: lecturas pendientes de 16 a 2, y `PENDIENTES_GET_CENTRO` de 41 ficheros y 89 usos a 27 y 59.
-- **Parada en el PR3:** `usuarios/[id]/avatar/route.ts` (sus 2 lecturas siguen pendientes). La foto de perfil es del usuario, no de un centro, y el centro solo es el prefijo de la ruta en Storage. Hace falta decidir qué prefijo usar con varios centros.
+- **Parada en el PR3:** `usuarios/[id]/avatar/route.ts` (sus 2 lecturas siguen pendientes). La foto de perfil es del usuario, no de un centro, y el centro solo es el prefijo de la ruta en Storage. Hace falta decidir qué prefijo usar con varios centros. Resuelta en el PR del avatar (abajo).
 - **PR4 (cobros, 19 ficheros):**
   - **Centro de la página** en las acciones de todo el centro: proponer y reproponer asignaciones, generar y recalcular el mes, crear remesa, datos del acreedor y las cargas de beca. Reciben `centroId` del panel de `admin/cuotas`.
   - **Centro del registro** en las que tocan una fila: el recibo (cobrado manual, devuelto, re-giro, gastos de devolución), la remesa, la familia (método de pago, recibo con línea manual), el concepto (tarifas), el niño (elegibilidad, recibo esporádico), el desborde y la transferencia.
   - Todas comprueban con `usuarioAdminEn(supabase, centro)` que quien llama es admin en ese centro. Antes, varias solo comprobaban que hubiera un centro activo. La RLS o la RPC siguen autorizando la escritura.
   - `PENDIENTES_GET_CENTRO` baja de 27 ficheros y 59 usos a 8 y 18.
+- **Avatar con prefijo propio** (decisión del responsable, 2026-10-19, migración `20261019120000`):
+  - La ruta pasa de `{centroId}/{usuarioId}/…` a `{usuarioId}/…`. Quién ve la foto y quién la cambia sale de los centros donde el dueño tiene rol: `es_staff_de_usuario` (leer: admin o profe de un centro del dueño) y `es_admin_de_usuario` (escribir: admin de un centro del dueño), además del propio dueño. La ruta vieja queda cerrada.
+  - La ruta del avatar ya no elige un centro (`limit(1)`) ni lee `roles_usuario`: para el avatar de otro pregunta a `es_admin_de_usuario`, y la RLS de Storage sigue siendo la que autoriza. El manifiesto de la purga lista la carpeta `{usuarioId}/`.
+  - En producción no había ningún objeto que mover. Las 2 `foto_url` que apuntaban a un fichero inexistente pasan a NULL.
+  - `purgar_sujeto_db` redacta también `foto_url` en las filas de `usuarios` de `audit_log`, como ya hacía con la del niño.
+  - Lecturas de `roles_usuario` fuera del contexto: de 23 a 19, con 0 pendientes.
 
 ## Alternativas descartadas
 

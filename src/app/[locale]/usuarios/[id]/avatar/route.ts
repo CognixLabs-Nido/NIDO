@@ -32,12 +32,13 @@ function err(error: string, status = 400): Response {
  * Subida + procesado server-side del **avatar de usuario** (F11-C-3, bucket privado
  * `usuarios-fotos`). Reusa el patrón F10-3 de la foto del niño.
  *
- * Autorización: la **subida va con el cliente del usuario** → la **RLS de
- * `storage.objects`** (F11-C-0: `es_admin([1]=centroId) OR [2]=usuarioId=auth.uid()`)
- * decide si puede escribir bajo `{centroId}/{usuarioId}/...`. Un 403 ahí significa "no
- * autorizado" (ni el propio usuario ni admin del centro). Solo el `UPDATE` de
- * `usuarios.foto_url` y la firma de las URLs se hacen con **service role TRAS** ese
- * gate (decisión B/D, ADR-0027): el upload exitoso ES la autorización. `sharp` quita
+ * Ruta: `{usuarioId}/…`, el prefijo del dueño (una persona puede tener rol en varios
+ * centros). Autorización: la **subida va con el cliente del usuario** → la **RLS de
+ * `storage.objects`** (`[1]=usuarioId=auth.uid() OR es_admin_de_usuario([1])`) decide si
+ * puede escribir. Para el avatar de OTRO usuario se pregunta antes a
+ * `es_admin_de_usuario`, para no procesar la foto de quien no puede subirla. Solo el
+ * `UPDATE` de `usuarios.foto_url` y la firma de las URLs se hacen con **service role TRAS**
+ * ese gate (decisión B/D, ADR-0027): el upload exitoso ES la autorización. `sharp` quita
  * EXIF/GPS y normaliza a JPEG; HEIC se rechaza con mensaje claro (ADR-0046).
  */
 export async function POST(
@@ -53,15 +54,18 @@ export async function POST(
   } = await supabase.auth.getUser()
   if (!user) return err('fotos.errors.no_autorizado', 401)
 
-  // Derivar el `centroId` de la ruta. Self → cualquier centro del propio usuario (la
-  // RLS valida por `[2]=usuarioId`). Admin sobre otro → un centro donde el solicitante
-  // es admin y el usuario destino tiene rol (la RLS valida por `es_admin([1])`). La RLS
-  // de Storage es el gate real; aquí solo elegimos un prefijo válido.
-  const centroId =
-    usuarioId === user.id
-      ? await centroPropio(supabase, user.id)
-      : await centroAdminCompartido(user.id, usuarioId)
-  if (!centroId) return err('fotos.errors.no_autorizado', 403)
+  // Avatar de otro: admin de un centro donde el destino tiene rol. La RLS de Storage sigue
+  // siendo el gate real al subir; esto solo evita procesar la foto de quien no puede.
+  if (usuarioId !== user.id) {
+    const { data: puede, error: authzErr } = await supabase.rpc('es_admin_de_usuario', {
+      p_usuario_id: usuarioId,
+    })
+    if (authzErr) {
+      logger.warn('usuarios/avatar: es_admin_de_usuario', authzErr.message)
+      return err('fotos.errors.subida_fallo', 500)
+    }
+    if (!puede) return err('fotos.errors.no_autorizado', 403)
+  }
 
   let form: FormData
   try {
@@ -83,7 +87,7 @@ export async function POST(
     return err('fotos.errors.procesado_fallo', 500)
   }
 
-  const rutas = rutasConThumb(`${centroId}/${usuarioId}`)
+  const rutas = rutasConThumb(usuarioId)
 
   // 2. Subida con el cliente del usuario → la RLS de storage autoriza (self/admin).
   const subirOriginal = await supabase.storage
@@ -149,45 +153,4 @@ export async function POST(
       urlMiniatura: firmadas.get(rutas.miniatura) ?? null,
     },
   } satisfies RespuestaOk)
-}
-
-/** Un centro al que pertenece el propio usuario (para el prefijo `{centroId}/`). */
-async function centroPropio(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  usuarioId: string
-): Promise<string | null> {
-  const { data } = await supabase
-    .from('roles_usuario')
-    .select('centro_id')
-    .eq('usuario_id', usuarioId)
-    .is('deleted_at', null)
-    .limit(1)
-    .maybeSingle()
-  return data?.centro_id ?? null
-}
-
-/** Un centro donde el solicitante es admin y el usuario destino tiene rol. */
-async function centroAdminCompartido(
-  solicitanteId: string,
-  destinoId: string
-): Promise<string | null> {
-  const supabase = await createClient()
-  const { data: adminRoles } = await supabase
-    .from('roles_usuario')
-    .select('centro_id')
-    .eq('usuario_id', solicitanteId)
-    .eq('rol', 'admin')
-    .is('deleted_at', null)
-  const centrosAdmin = new Set((adminRoles ?? []).map((r) => r.centro_id))
-  if (centrosAdmin.size === 0) return null
-
-  // Lookup de los centros del destino por service-role (no es el dato principal; el
-  // gate real sigue siendo la RLS de Storage al subir).
-  const service = createServiceRoleClient()
-  const { data: destinoRoles } = await service
-    .from('roles_usuario')
-    .select('centro_id')
-    .eq('usuario_id', destinoId)
-    .is('deleted_at', null)
-  return (destinoRoles ?? []).map((r) => r.centro_id).find((c) => centrosAdmin.has(c)) ?? null
 }

@@ -60,7 +60,9 @@ que mantener y testear; diverge del patrón ya probado.
 ### Sub-decisión — bucket del avatar: `usuarios-fotos` propio vs reusar `ninos-fotos`
 
 Se elige **bucket nuevo privado `usuarios-fotos`** (espejo de `ninos-fotos`, ruta
-`{centroId}/{usuarioId}/…`, enlaces firmados). Reusar `ninos-fotos` mezclaría fotos de
+`{centroId}/{usuarioId}/…`, enlaces firmados). _Nota 2026-10-19: la ruta pasa a
+`{usuarioId}/…` porque una persona puede tener rol en varios centros (migración
+`20261019120000`, ADR-0057). Prevalece esa._ Reusar `ninos-fotos` mezclaría fotos de
 **menores** con fotos de **adultos del personal**: semántica y sensibilidad distintas, y las
 policies (`es_tutor_de(ninoId)`) no aplican a un avatar de adulto. Separar es más limpio para
 RGPD y para las RLS.
@@ -73,7 +75,8 @@ con las decisiones A–F cerradas con el responsable:
 - **A.** El "rol" del formulario = `tipo_personal_aula` (`coordinadora`/`profesora`/
   `tecnico`/`apoyo`); el `user_role` siempre es `'profe'`.
 - **B.** Bucket nuevo privado `usuarios-fotos` (ruta `{centroId}/{usuarioId}/…`, enlaces
-  firmados), espejo de `ninos-fotos`.
+  firmados), espejo de `ninos-fotos`. Desde 2026-10-19 la ruta es `{usuarioId}/…`
+  (`20261019120000`, ADR-0057).
 - **C.** La directora fija `nombre_completo` en la invitación; el profe puede **editarlo** al
   aceptar (prefill editable, no read-only).
 - **D.** Foto **opcional** en el accept: no bloquea el alta (sin foto → `foto_url` NULL).

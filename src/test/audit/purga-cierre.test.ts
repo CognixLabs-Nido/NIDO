@@ -117,6 +117,11 @@ describe('Purga RGPD — cierre del frente', () => {
     await deleteTestCentro(centro.id)
     await deleteTestCentro(centroB.id)
     for (const u of usuarios) {
+      const { data: objetos } = await serviceClient.storage.from('usuarios-fotos').list(u.id)
+      const rutas = (objetos ?? []).map((o) => `${u.id}/${o.name}`)
+      if (rutas.length) await serviceClient.storage.from('usuarios-fotos').remove(rutas)
+    }
+    for (const u of usuarios) {
       await serviceClient.from('preferencias_usuario').delete().eq('usuario_id', u.id)
       await deleteTestUser(u.id)
     }
@@ -194,6 +199,8 @@ describe('Purga RGPD — cierre del frente', () => {
     let dniTutor2: string
     let dniPendiente: string
     let cambioNino: string
+    let avatar: string
+    let avatarAnterior: string
 
     beforeAll(async () => {
       nino = await createTestNino(centro.id)
@@ -231,10 +238,17 @@ describe('Purga RGPD — cierre del frente', () => {
         .update({ nombre_completo: 'Segundo Tutor Queda', dni_documento_path: dniTutor2 })
         .eq('id', filaTutor2)
 
-      await serviceClient
-        .from('usuarios')
-        .update({ foto_url: `${centro.id}/${tutor.id}/avatar.jpg` })
-        .eq('id', tutor.id)
+      // Avatar con el prefijo del usuario: la foto actual (foto_url) y un objeto de una subida
+      // anterior que solo encuentra el listado de su carpeta.
+      avatar = `${tutor.id}/${randomUUID()}.jpg`
+      avatarAnterior = `${tutor.id}/${randomUUID()}.jpg`
+      const { error: aErr } = await serviceClient.storage
+        .from('usuarios-fotos')
+        .upload(avatarAnterior, Buffer.from([0xff, 0xd8, 0xff, 0xe0]), {
+          contentType: 'image/jpeg',
+        })
+      expect(aErr).toBeNull()
+      await serviceClient.from('usuarios').update({ foto_url: avatar }).eq('id', tutor.id)
       await serviceClient
         .from('preferencias_usuario')
         .insert({ usuario_id: tutor.id, clave: 'agenda_vista', valor: 'semana' })
@@ -302,8 +316,8 @@ describe('Purga RGPD — cierre del frente', () => {
         [dniTutor, dniPendiente].sort()
       )
       expect(porBucket.get('dni-tutores')).not.toContain(dniTutor2)
-      expect(porBucket.get('usuarios-fotos')).toEqual(
-        expect.arrayContaining([`${centro.id}/${tutor.id}/avatar.jpg`])
+      expect([...(porBucket.get('usuarios-fotos') ?? [])].sort()).toEqual(
+        [avatar, avatar.replace(/\.jpg$/, '_thumb.jpg'), avatarAnterior].sort()
       )
     })
 
@@ -354,6 +368,22 @@ describe('Purga RGPD — cierre del frente', () => {
       const texto = JSON.stringify(data)
       expect(texto).not.toContain(s)
       expect(texto).not.toContain(dniTutor)
+    })
+
+    it('su copia en audit_log (usuarios) no conserva la ruta del avatar', async () => {
+      const { data } = await serviceClient
+        .from('audit_log')
+        .select('valores_antes, valores_despues')
+        .eq('tabla', 'usuarios')
+        .eq('registro_id', tutor.id)
+      // Premisa: hay filas con foto_url (el UPDATE que la puso y el de la purga que la quita).
+      const conFoto = (data ?? []).filter(
+        (f) =>
+          (f.valores_antes as Record<string, unknown> | null)?.foto_url !== undefined ||
+          (f.valores_despues as Record<string, unknown> | null)?.foto_url !== undefined
+      )
+      expect(conFoto.length).toBeGreaterThanOrEqual(2)
+      expect(JSON.stringify(data)).not.toContain(avatar)
     })
 
     it('foto de perfil, preferencias y lecturas fuera', async () => {

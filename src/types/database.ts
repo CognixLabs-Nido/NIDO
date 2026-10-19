@@ -4533,6 +4533,7 @@ export type Database = {
         Returns: Json
       }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
+      es_admin_de_usuario: { Args: { p_usuario_id: string }; Returns: boolean }
       es_esqueleto_stub_purgable: {
         Args: { p_cutoff: string; p_usuario_id: string }
         Returns: boolean
@@ -4543,6 +4544,7 @@ export type Database = {
       es_profe_en_centro: { Args: { p_centro_id: string }; Returns: boolean }
       es_redactor_de_aula: { Args: { p_aula_id: string }; Returns: boolean }
       es_redactor_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
+      es_staff_de_usuario: { Args: { p_usuario_id: string }; Returns: boolean }
       es_tutor_de: { Args: { p_nino_id: string }; Returns: boolean }
       es_tutor_de_familia: { Args: { p_familia_id: string }; Returns: boolean }
       es_tutor_en_aula: { Args: { p_aula_id: string }; Returns: boolean }
