@@ -25,6 +25,8 @@ import { DevolucionesPanel } from './DevolucionesPanel'
 import { RemesaXmlButton } from './RemesaXmlButton'
 
 interface Props {
+  /** Centro activo de la página: el de la remesa y el del acreedor. */
+  centroId: string
   anio: number
   mes: number
   acreedor: DatosAcreedorConfig
@@ -35,6 +37,7 @@ interface Props {
 }
 
 export function RemesasPanel({
+  centroId,
   anio,
   mes,
   acreedor,
@@ -69,7 +72,7 @@ export function RemesasPanel({
 
   function crear() {
     startTransition(async () => {
-      const r = await crearRemesa({ anio, mes, reciboIds: [...seleccion] })
+      const r = await crearRemesa({ anio, mes, reciboIds: [...seleccion] }, centroId)
       if (r.success) {
         toast.success(t('remesa_creada'))
         setSeleccion(new Set())
@@ -98,6 +101,7 @@ export function RemesasPanel({
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-foreground text-base font-semibold">{t('acreedor_title')}</h2>
           <DatosAcreedorDialog
+            centroId={centroId}
             config={acreedor}
             trigger={
               <Button variant="outline" size="sm">

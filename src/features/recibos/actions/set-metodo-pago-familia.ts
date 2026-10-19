@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -45,11 +45,19 @@ export async function setMetodoPagoFamilia(
   const parsed = inputSchema.safeParse({ familiaId, anio, mes, metodo })
   if (!parsed.success) return fail('recibos_panel.errors.invalid')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('recibos_panel.errors.no_autorizado')
-
   const supabase = await createClient()
-  const res = await setMetodoPagoFamiliaCore(supabase, centroId, parsed.data)
+
+  // Centro DE LA FAMILIA (multicentro · Fase 1): admin en él, no en el centro activo. La RLS solo
+  // deja leer a Dirección las familias de sus centros.
+  const { data: familia } = await supabase
+    .from('familias')
+    .select('centro_id')
+    .eq('id', parsed.data.familiaId)
+    .maybeSingle()
+  if (!familia || !(await usuarioAdminEn(supabase, familia.centro_id))) {
+    return fail('recibos_panel.errors.no_autorizado')
+  }
+  const res = await setMetodoPagoFamiliaCore(supabase, familia.centro_id, parsed.data)
 
   revalidatePath(RUTA, 'page')
   return res

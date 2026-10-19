@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -33,18 +33,20 @@ const inputSchema = z.object({
  * porque `generar_recibos_mes` únicamente borra borradores y salta las familias que ya
  * tienen recibo; aquí se cuentan ANTES para poder afirmarlo en el aviso.
  */
-export async function recalcularMes(input: {
-  anio: number
-  mes: number
-}): Promise<ActionResult<RecalculoResumen>> {
+export async function recalcularMes(
+  input: {
+    anio: number
+    mes: number
+  },
+  centroId: string
+): Promise<ActionResult<RecalculoResumen>> {
   const parsed = inputSchema.safeParse(input)
   if (!parsed.success) return fail('recibos_panel.errors.invalid')
   const { anio, mes } = parsed.data
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('recibos_panel.errors.no_autorizado')
-
+  // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
   const supabase = await createClient()
+  if (!(await usuarioAdminEn(supabase, centroId))) return fail('recibos_panel.errors.no_autorizado')
 
   // Un mes cerrado no se regenera. Se comprueba ANTES de sembrar para no dejar a medias
   // un recálculo que el motor va a rechazar de todos modos.

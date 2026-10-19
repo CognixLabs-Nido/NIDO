@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { eurosACentimos } from '@/shared/lib/format-money'
@@ -23,22 +23,22 @@ export async function crearReciboEsporadico(
     return fail(parsed.error.issues[0]?.message ?? 'cierre_cobros.errors.invalid')
   }
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('cierre_cobros.errors.no_autorizado')
-
   const supabase = await createClient()
 
   // F-4-3: el recibo es familiar → resolvemos la familia del niño (la UI sigue eligiendo
   // niño; el selector por familia llega en F-4-4). nino_id viaja como informativo.
   const { data: nino, error: ninoErr } = await supabase
     .from('ninos')
-    .select('familia_id')
+    .select('centro_id, familia_id')
     .eq('id', parsed.data.ninoId)
     .maybeSingle()
   if (ninoErr || !nino) {
     logger.warn('crearReciboEsporadico nino', ninoErr?.message)
     return fail('cierre_cobros.errors.esporadico_failed')
   }
+  // Centro DEL NIÑO (multicentro · Fase 1): admin en él, no en el centro activo.
+  const centroId = nino.centro_id
+  if (!(await usuarioAdminEn(supabase, centroId))) return fail('cierre_cobros.errors.no_autorizado')
 
   // Record<string, …> es asignable al tipo Json del parámetro jsonb de la RPC.
   const lineas: Array<Record<string, string | number>> = parsed.data.lineas.map((l) => ({

@@ -8,14 +8,6 @@
  */
 export const PENDIENTES_GET_CENTRO = {
   'src/features/autorizaciones/actions/gestionar-autorizacion.ts': 2,
-  'src/features/beca-comedor/actions/cargas-beca.ts': 4,
-  'src/features/beca-comedor/actions/elegibilidad.ts': 2,
-  'src/features/beca-comedor/actions/resolver-desborde.ts': 2,
-  'src/features/beca-comedor/actions/transferencias.ts': 2,
-  'src/features/cierre-cobros/actions/crear-recibo-esporadico.ts': 2,
-  'src/features/conceptos-cobro/actions/tarifa-concepto-anio.ts': 3,
-  'src/features/cuotas-config/actions/proponer-asignaciones.ts': 2,
-  'src/features/cuotas-config/actions/reproponer-asignaciones.ts': 2,
   'src/features/informes/actions/gestionar-campana-informe.ts': 2,
   'src/features/informes/actions/gestionar-informe.ts': 2,
   'src/features/informes/actions/gestionar-plantilla-informe.ts': 2,
@@ -23,17 +15,6 @@ export const PENDIENTES_GET_CENTRO = {
   'src/features/lista-espera/actions/crear-prospecto.ts': 2,
   'src/features/lista-espera/actions/resolver-tutor.ts': 2,
   'src/features/messaging/actions/publicar-anuncio.ts': 4,
-  'src/features/recibos/actions/generar-recibos-mes.ts': 2,
-  'src/features/recibos/actions/lineas-recibo.ts': 2,
-  'src/features/recibos/actions/recalcular-mes.ts': 2,
-  'src/features/recibos/actions/set-metodo-pago-familia.ts': 2,
-  'src/features/remesas/actions/crear-regiro.ts': 2,
-  'src/features/remesas/actions/crear-remesa.ts': 2,
-  'src/features/remesas/actions/guardar-datos-acreedor.ts': 2,
-  'src/features/remesas/actions/marcar-cobrado-manual.ts': 2,
-  'src/features/remesas/actions/marcar-recibo-devuelto.ts': 2,
-  'src/features/remesas/actions/marcar-remesa-enviada.ts': 2,
-  'src/features/remesas/actions/registrar-gastos-devolucion.ts': 2,
 }
 
 /**

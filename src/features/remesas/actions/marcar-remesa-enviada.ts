@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -20,19 +20,19 @@ export async function marcarRemesaEnviada(
   const parsed = marcarRemesaEnviadaSchema.safeParse(input)
   if (!parsed.success) return fail('remesas.errors.invalid')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('remesas.errors.no_autorizado')
-
   const supabase = await createClient()
 
   const { data: remesa } = await supabase
     .from('remesas')
-    .select('id, estado')
+    .select('id, centro_id, estado')
     .eq('id', parsed.data.remesaId)
     .is('deleted_at', null)
     .maybeSingle()
 
   if (!remesa) return fail('remesas.errors.no_encontrada')
+  // Centro DEL REGISTRO (multicentro · Fase 1): admin en él, no en el centro activo.
+  if (!(await usuarioAdminEn(supabase, remesa.centro_id)))
+    return fail('remesas.errors.no_autorizado')
   if (remesa.estado !== 'borrador') return fail('remesas.errors.ya_enviada')
 
   const hoy = new Date().toISOString().slice(0, 10)

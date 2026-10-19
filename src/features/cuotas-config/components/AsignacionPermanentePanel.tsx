@@ -44,7 +44,7 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
 
   function proponer() {
     startTransition(async () => {
-      const r = await proponerAsignaciones()
+      const r = await proponerAsignaciones(centroId)
       if (r.success) toast.success(t('proponer_ok', { n: r.data.propuestas }))
       else toast.error(tErrors(r.error))
     })
@@ -52,7 +52,7 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
 
   function reproponer() {
     startTransition(async () => {
-      const r = await reproponerAsignaciones()
+      const r = await reproponerAsignaciones(centroId)
       if (r.success) {
         toast.success(
           t('reproponer_ok', { revividas: r.data.revividas, sembradas: r.data.sembradas })

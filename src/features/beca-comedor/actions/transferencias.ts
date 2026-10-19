@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -23,17 +23,25 @@ export async function marcarTransferenciaRealizada(
   const parsed = marcarTransferenciaSchema.safeParse(input)
   if (!parsed.success) return fail(`${ERR}.invalid`)
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail(`${ERR}.no_autorizado`)
-
   const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
+
+  // Centro DE LA TRANSFERENCIA (multicentro · Fase 1): admin en él, no en el centro activo. La RLS
+  // solo deja leer a Dirección las de sus centros.
+  const { data: transferencia } = await supabase
+    .from('beca_comedor_transferencia')
+    .select('centro_id')
+    .eq('id', parsed.data.id)
+    .maybeSingle()
+  if (!transferencia) return fail(`${ERR}.no_pendiente`)
+  const centroId = transferencia.centro_id
+  const usuarioId = await usuarioAdminEn(supabase, centroId)
+  if (!usuarioId) return fail(`${ERR}.no_autorizado`)
 
   const { data, error } = await supabase
     .from('beca_comedor_transferencia')
     .update({
       estado: 'realizada',
-      realizada_por: authData.user?.id ?? null,
+      realizada_por: usuarioId,
       realizada_at: new Date().toISOString(),
     })
     .eq('id', parsed.data.id)
