@@ -480,7 +480,9 @@ BEGIN
        OR r.acl1 IS DISTINCT FROM r.proacl THEN
       f := f || 'purgar_sujeto_db: cambió su seguridad, configuración o permisos'::text;
     END IF;
-    IF strpos(r.src1, 'k_user  text[] := ARRAY[''nombre_completo'',''foto_url''];') = 0 THEN
+    -- Espacios colapsados: el SQL Editor reescribe saltos y comentarios del cuerpo.
+    IF strpos(regexp_replace(r.src1, '\s+', ' ', 'g'),
+              'k_user text[] := ARRAY[''nombre_completo'',''foto_url''];') = 0 THEN
       f := f || 'purgar_sujeto_db: k_user no lleva foto_url'::text;
     END IF;
   END LOOP;
