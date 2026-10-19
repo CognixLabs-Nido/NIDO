@@ -359,7 +359,9 @@ describe('RPC contar_invitaciones_pendientes — F7b badge (AG-14)', () => {
 
   async function recuento(user: TestUser): Promise<number> {
     const c = await clientFor(user)
-    const { data, error } = await c.rpc('contar_invitaciones_pendientes')
+    const { data, error } = await c.rpc('contar_invitaciones_pendientes', {
+      p_centro_id: centro.id,
+    })
     expect(error).toBeNull()
     return data ?? -1
   }

@@ -45,9 +45,9 @@ export default async function RemindersPage({ params }: PageProps) {
   const esStaff = rol === 'admin' || rol === 'profe'
 
   const [pendientes, completados, ninos, aulas, profes] = await Promise.all([
-    getRecordatoriosPendientesDeUsuario(),
-    getRecordatoriosCompletadosDeUsuario(),
-    esStaff ? getNinosParaRecordatorios() : Promise.resolve([]),
+    getRecordatoriosPendientesDeUsuario(centroId),
+    getRecordatoriosCompletadosDeUsuario(centroId),
+    esStaff ? getNinosParaRecordatorios(centroId) : Promise.resolve([]),
     esStaff ? getAulasParaRecordatorios(rol, centroId) : Promise.resolve([]),
     rol === 'admin' ? getProfesParaRecordatorios(centroId) : Promise.resolve([]),
   ])

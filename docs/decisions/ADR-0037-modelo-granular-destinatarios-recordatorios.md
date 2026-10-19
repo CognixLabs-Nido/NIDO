@@ -86,6 +86,9 @@ ENUM requiere recreación de todas formas. El histórico queda preservado en
 F5.6-A invocándolo con `auth.uid()` explícito como primer argumento (su firma es
 de 2 args; la spec lo describía con 1, reconciliado en implementación).
 
+_Nota 2026-10-19: desde `20261021120000` la RPC es `contar_recordatorios_pendientes(p_centro_id)` y cuenta
+solo los del centro de la página (ADR-0057)._
+
 **Badge (D7):** RPC `contar_recordatorios_pendientes()` (`SECURITY DEFINER
 STABLE`) que cuenta los pendientes donde el usuario es **destinatario directo**,
 no por mera visibilidad RLS (un admin ve todo el centro pero no es destinatario de

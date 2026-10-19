@@ -9,14 +9,16 @@ import { logger } from '@/shared/lib/logger'
  * `contar_invitaciones_pendientes` (`SECURITY DEFINER STABLE`, usa `auth.uid()`),
  * que replica la ventana AG-11 sin duplicar el predicado en JS. Devuelve 0 ante
  * cualquier fallo (el badge no debe romper el layout). Patrón de
- * `contarRecordatoriosPendientes` (F6-C).
+ * `contarRecordatoriosPendientes` (F6-C). Solo las del centro de la página.
  */
-export async function contarInvitacionesPendientes(): Promise<number> {
+export async function contarInvitacionesPendientes(centroId: string): Promise<number> {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) return 0
 
-  const { data, error } = await supabase.rpc('contar_invitaciones_pendientes')
+  const { data, error } = await supabase.rpc('contar_invitaciones_pendientes', {
+    p_centro_id: centroId,
+  })
   if (error) {
     logger.warn('contarInvitacionesPendientes', error.message)
     return 0

@@ -169,8 +169,14 @@ const GRUPO_B: Array<[string, Llamada]> = [
     (c) => c.rpc('resolver_etiqueta_imagen', { p_media_etiqueta_id: id() }),
   ],
   // Contadores del nav
-  ['contar_invitaciones_pendientes', (c) => c.rpc('contar_invitaciones_pendientes')],
-  ['contar_recordatorios_pendientes', (c) => c.rpc('contar_recordatorios_pendientes')],
+  [
+    'contar_invitaciones_pendientes',
+    (c) => c.rpc('contar_invitaciones_pendientes', { p_centro_id: id() }),
+  ],
+  [
+    'contar_recordatorios_pendientes',
+    (c) => c.rpc('contar_recordatorios_pendientes', { p_centro_id: id() }),
+  ],
   // Helpers sin policy TO public
   ['es_tutor_de_familia', (c) => c.rpc('es_tutor_de_familia', { p_familia_id: id() })],
   ['es_tutor_legal_de', (c) => c.rpc('es_tutor_legal_de', { p_nino_id: id() })],

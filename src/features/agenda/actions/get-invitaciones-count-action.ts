@@ -8,7 +8,9 @@ import { contarInvitacionesPendientes } from '../queries/contar-invitaciones-pen
  * `server-only` y no se importa desde el cliente). Mismo patrón que
  * `getRecordatoriosPendientesCountAction`.
  */
-export async function getInvitacionesPendientesCountAction(): Promise<{ total: number }> {
-  const total = await contarInvitacionesPendientes()
+export async function getInvitacionesPendientesCountAction(
+  centroId: string
+): Promise<{ total: number }> {
+  const total = await contarInvitacionesPendientes(centroId)
   return { total }
 }

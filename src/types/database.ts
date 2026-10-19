@@ -4504,8 +4504,14 @@ export type Database = {
       cerrar_curso: { Args: { p_curso_destino_id: string }; Returns: Json }
       confirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
       desconfirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
-      contar_invitaciones_pendientes: { Args: never; Returns: number }
-      contar_recordatorios_pendientes: { Args: never; Returns: number }
+      contar_invitaciones_pendientes: {
+        Args: { p_centro_id: string }
+        Returns: number
+      }
+      contar_recordatorios_pendientes: {
+        Args: { p_centro_id: string }
+        Returns: number
+      }
       conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
       crear_o_anadir_a_familia: {
         Args: {

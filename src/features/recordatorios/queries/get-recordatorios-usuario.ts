@@ -70,37 +70,47 @@ function mapRow(r: ListRow, userId: string): RecordatorioListItem {
  *
  * Orden: por vencimiento ascendente (los sin fecha al final), luego por fecha
  * de creación descendente. El índice parcial `idx_recordatorios_pendientes`
- * cubre el filtro.
+ * cubre el filtro. Solo los del centro de la página: la RLS deja ver los de todos los
+ * centros del usuario.
  */
-export async function getRecordatoriosPendientesDeUsuario(): Promise<RecordatorioListItem[]> {
+export async function getRecordatoriosPendientesDeUsuario(
+  centroId: string
+): Promise<RecordatorioListItem[]> {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   const userId = userData.user?.id
   if (!userId) return []
-  return fetchLista(supabase, userId, 'pendientes')
+  return fetchLista(supabase, userId, centroId, 'pendientes')
 }
 
 /**
  * Recordatorios COMPLETADOS visibles para el usuario (limitados a `limit`,
- * por defecto 50, los más recientes primero). Excluye anulados.
+ * por defecto 50, los más recientes primero). Excluye anulados. Solo los del centro de la
+ * página.
  */
 export async function getRecordatoriosCompletadosDeUsuario(
+  centroId: string,
   limit = 50
 ): Promise<RecordatorioListItem[]> {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   const userId = userData.user?.id
   if (!userId) return []
-  return fetchLista(supabase, userId, 'completados', limit)
+  return fetchLista(supabase, userId, centroId, 'completados', limit)
 }
 
 async function fetchLista(
   supabase: SupabaseClient<Database>,
   userId: string,
+  centroId: string,
   modo: 'pendientes' | 'completados',
   limit = 200
 ): Promise<RecordatorioListItem[]> {
-  let query = supabase.from('recordatorios').select(SELECT_LIST).eq('erroneo', false)
+  let query = supabase
+    .from('recordatorios')
+    .select(SELECT_LIST)
+    .eq('centro_id', centroId)
+    .eq('erroneo', false)
 
   if (modo === 'pendientes') {
     query = query

@@ -34,15 +34,15 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
   const user = await getCurrentUser()
   const centroLogo = await getCentroLogo(centroId)
   const { total: unread } = await countNoLeidos(centroId)
-  const recordatoriosPendientes = await contarRecordatoriosPendientes()
-  const invitacionesPendientes = await contarInvitacionesPendientes()
+  const recordatoriosPendientes = await contarRecordatoriosPendientes(centroId)
+  const invitacionesPendientes = await contarInvitacionesPendientes(centroId)
   const cambiosPendientes = await contarCambiosPendientes()
 
   const items = await buildSidebarItems(
     'admin',
     locale,
     <MessagingBadge initialTotal={unread} centroId={centroId} />,
-    <RecordatoriosBadge initialTotal={recordatoriosPendientes} />,
+    <RecordatoriosBadge initialTotal={recordatoriosPendientes} centroId={centroId} />,
     <AgendaBadge initialTotal={invitacionesPendientes} />,
     <CambiosPendientesBadge total={cambiosPendientes} />
   )

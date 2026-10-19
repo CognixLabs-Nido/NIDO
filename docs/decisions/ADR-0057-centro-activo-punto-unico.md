@@ -95,6 +95,10 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
   - `roles-del-usuario.ts`: `rolesEnCualquierCentro`, la del proxy (roles del usuario actual sin centro, para el prefijo de ruta).
   - Cada función conserva lo que el sitio hacía con un fallo de lectura (las seis de clasificar cuenta lo tomaban como «sin roles», salvo la detección por email, que devuelve `null`).
   - El guard imprime: 786 ficheros revisados, 0 usos de `roles_usuario` fuera del contexto (12 dentro), 0 menciones de las funciones borradas.
+- **Contadores y agenda (2026-10-19, después de la Fase 2 · PR A):** quedaba lo que va por usuario y no por centro, que ya afectaba a un profe en A que es tutor en B.
+  - Migración `20261021120000_fix_contadores_por_centro`: `contar_recordatorios_pendientes(p_centro_id)` y `contar_invitaciones_pendientes(p_centro_id)`, y fuera sus versiones sin centro.
+  - Los badges de recordatorios y de la agenda cuentan los del centro de la página.
+  - La lista de `/reminders` y los niños que se ofrecen para recordatorios y citas (`getNinosParaRecordatorios`) también son los del centro de la página. Las citas de `/agenda` ya lo eran desde la Fase 2 (`getCitasRango`, ADR-0058).
 
 ## Alternativas descartadas
 
@@ -122,6 +126,7 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
 - `src/test/guards/check-centro-activo.test.ts`: el árbol real cumple (0 fuera, con la premisa de que revisa ficheros y caza los usos de dentro del módulo) y no hay fichero de lista. En un árbol de mentira se pone rojo cada caso: lectura del usuario actual, lectura de otro usuario, escritura, una lista de excepciones pasada al guard (no la respeta), mención de las funciones borradas en un import multilínea o en un comentario. Una lectura en un comentario no cuenta.
 - `src/test/rls/roles-de-otros.rls.test.ts` (PR6): contra la BD, cada función del módulo filtra lo que dice su nombre (centro, rol, roles borrados), y las de escribir asignan y retiran.
 - `src/test/multicentro/cierre-centro-explicito.test.ts` y `publicar-anuncio-centro.test.ts` (PR5): con roles en dos centros, cada acción usa el centro de la página o el del registro, nunca el primero.
+- `src/test/rls/contadores-por-centro.rls.test.ts`: un usuario profe en A y tutor en B; los dos badges, la lista de recordatorios y los niños para recordatorios, cada uno con lo de su centro, y las RPCs sin centro ya no existen.
 - `ruta-interna.test.ts` y `LoginForm.returnTo.test.tsx`: el login solo sigue rutas internas. `RoleSelector.test.tsx`: no escribe cookies.
 
 ## Referencias

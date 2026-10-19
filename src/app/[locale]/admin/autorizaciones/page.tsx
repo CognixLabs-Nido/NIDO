@@ -60,7 +60,7 @@ export default async function AdminAutorizacionesPage({ params, searchParams }: 
     getEventosExcursion(centroId),
     getPlantillasCatalogo(),
     getPlantillasParaEnviar(),
-    getNinosParaRecordatorios(),
+    getNinosParaRecordatorios(centroId),
     getAulasParaRecordatorios('admin', centroId),
   ])
 

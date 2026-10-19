@@ -50,14 +50,14 @@ export default async function MessagesLayout({ children, params }: LayoutProps) 
   const user = await getCurrentUser()
   const centroLogo = await getCentroLogo(centroId)
   const { total: unread } = await countNoLeidos(centroId)
-  const recordatoriosPendientes = await contarRecordatoriosPendientes()
-  const invitacionesPendientes = await contarInvitacionesPendientes()
+  const recordatoriosPendientes = await contarRecordatoriosPendientes(centroId)
+  const invitacionesPendientes = await contarInvitacionesPendientes(centroId)
 
   const items = await buildSidebarItems(
     rol,
     locale,
     <MessagingBadge initialTotal={unread} centroId={centroId} />,
-    <RecordatoriosBadge initialTotal={recordatoriosPendientes} />,
+    <RecordatoriosBadge initialTotal={recordatoriosPendientes} centroId={centroId} />,
     <AgendaBadge initialTotal={invitacionesPendientes} />
   )
 
