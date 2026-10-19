@@ -1,0 +1,15 @@
+-- =============================================================================
+-- Multicentro · Fase 3 (superusuario) · Nuevo valor de ENUM: 'paso_a_superusuario'
+-- -----------------------------------------------------------------------------
+-- La migración siguiente (20261023120100) retira el rol de admin del responsable en CEI Ejemplo
+-- cuando pasa a superusuario: entra ahí como en cualquier otro centro. El CHECK
+-- `roles_usuario_deleted_reason_coherente` exige un motivo, y ninguno de los que hay lo es
+-- (baja_nino, revocacion_familia, purga_rgpd, solicitud_olvido). Como cualquier motivo que no
+-- sea 'revocacion_familia', desarchivar y la reactivación de familias no lo reviven nunca.
+--
+-- El ADD VALUE va en su PROPIA migración (transacción propia): Postgres no permite USAR un valor
+-- de ENUM recién añadido en la misma transacción que lo añade (patrón de 20260806120000).
+--
+-- Aplicar por SQL Editor (rol postgres) ANTES que 20261023120100. Regenerar database.ts DESPUÉS.
+-- =============================================================================
+ALTER TYPE public.motivo_borrado ADD VALUE IF NOT EXISTS 'paso_a_superusuario';
