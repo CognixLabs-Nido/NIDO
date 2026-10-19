@@ -41,6 +41,23 @@ export async function rolesEnCentro(
   return centros?.find((c) => c.centroId === centroId) ?? null
 }
 
+/**
+ * Los roles vivos del usuario en CUALQUIER centro, sin agrupar. Solo para el proxy, que gatea el
+ * prefijo de ruta (`/admin`, `/teacher`…) antes de que haya contexto de centro; lo revisa la Fase 3.
+ * Un fallo de lectura es lista vacía (el proxy manda a `/forbidden`), como antes.
+ */
+export async function rolesEnCualquierCentro(
+  supabase: Client,
+  usuarioId: string
+): Promise<Database['public']['Enums']['user_role'][]> {
+  const { data } = await supabase
+    .from('roles_usuario')
+    .select('rol')
+    .eq('usuario_id', usuarioId)
+    .is('deleted_at', null)
+  return (data ?? []).map((r) => r.rol)
+}
+
 /** ¿Es admin en ese centro? Un fallo de lectura cuenta como «no». */
 export async function esAdminEn(
   supabase: Client,

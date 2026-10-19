@@ -3,6 +3,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { logger } from '@/shared/lib/logger'
+import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
 import type { Database } from '@/types/database'
 
 import { detectarTutor, guardaTutorUsuarioId, type DeteccionTutor } from './deteccion-tutor'
@@ -56,12 +57,8 @@ export async function resolverTutorPorEmail(
   // Roles: la señal de cuenta OPERATIVA (una invitación a medias no cuenta). Global a
   // propósito, igual que en `invitarAlAlta`: la persona existe aunque su rol esté en otro
   // centro, y el enlace por `usuario_id` sigue siendo el correcto.
-  const { data: roles } = await service
-    .from('roles_usuario')
-    .select('usuario_id')
-    .eq('usuario_id', authUser.id)
-    .is('deleted_at', null)
-    .limit(1)
+  // Un fallo de lectura cuenta como «sin roles», como antes.
+  const tieneRoles = (await tieneRolesVivos(service, authUser.id)) === true
 
   // ¿Tiene familia en ESTE centro? Solo para etiquetar bien (y poder nombrarla en pantalla).
   const { data: perfil } = await service
@@ -76,7 +73,7 @@ export async function resolverTutorPorEmail(
   const deteccion = detectarTutor({
     hayEmail: true,
     cuentaExiste: true,
-    tieneRoles: (roles?.length ?? 0) > 0,
+    tieneRoles,
     familiaEnEsteCentro: perfil !== null,
   })
 

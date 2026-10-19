@@ -3,6 +3,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { logger } from '@/shared/lib/logger'
+import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
 import type { Database } from '@/types/database'
 
 type ServiceClient = SupabaseClient<Database>
@@ -39,15 +40,10 @@ export async function detectarCuentaPorEmail(
   }
   if (!authUser) return { authUserExiste: false, tieneRoles: false }
 
-  const { data: roles, error: rolesErr } = await service
-    .from('roles_usuario')
-    .select('usuario_id')
-    .eq('usuario_id', authUser.id)
-    .is('deleted_at', null)
-    .limit(1)
-  if (rolesErr) {
-    logger.warn('detectarCuentaPorEmail roles_usuario', rolesErr.message)
+  const tieneRoles = await tieneRolesVivos(service, authUser.id)
+  if (tieneRoles === null) {
+    logger.warn('detectarCuentaPorEmail roles_usuario', 'la lectura de roles falló')
     return null
   }
-  return { authUserExiste: true, tieneRoles: (roles?.length ?? 0) > 0 }
+  return { authUserExiste: true, tieneRoles }
 }

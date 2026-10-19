@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { getAulaNombresPorIds } from '@/features/aulas/queries/get-aula-nombres'
+import { rolesDeAutores } from '@/features/centros/contexto/roles-de-otros'
 import {
   elegirPrincipal,
   ordenarConPrincipal,
@@ -104,16 +105,10 @@ export async function getConversacionDetalle(
 
   // Determinar rol del autor en el centro (para el label visual del mensaje).
   const autorIds = Array.from(new Set((mensajes ?? []).map((m) => m.autor_id)))
-  const { data: rolesData } = autorIds.length
-    ? await supabase
-        .from('roles_usuario')
-        .select('usuario_id, rol')
-        .in('usuario_id', autorIds)
-        .is('deleted_at', null)
-    : { data: [] }
+  const rolesData = await rolesDeAutores(supabase, autorIds)
 
   const rolByUser = new Map<string, 'admin' | 'profe' | 'tutor_legal' | 'autorizado' | 'service'>()
-  for (const r of rolesData ?? []) {
+  for (const r of rolesData) {
     // Si un usuario tiene múltiples roles en distintos centros, nos quedamos
     // con el primero "no autorizado" como el más representativo.
     const existing = rolByUser.get(r.usuario_id)
