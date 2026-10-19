@@ -13,6 +13,8 @@ const estado = vi.hoisted(() => ({
   usuario: 'u-1' as string | null,
   filas: [] as Array<{ centro_id: string; rol: string }>,
   cookie: undefined as string | undefined,
+  /** La ruta pedida que el proxy deja en la cabecera (`x-nido-ruta-pedida`). */
+  rutaPedida: null as string | null,
   consultasRoles: 0,
 }))
 
@@ -41,6 +43,9 @@ vi.mock('next/headers', () => ({
         ? { value: estado.cookie }
         : undefined,
   }),
+  headers: async () => ({
+    get: (nombre: string) => (nombre === 'x-nido-ruta-pedida' ? estado.rutaPedida : null),
+  }),
 }))
 
 vi.mock('next/navigation', () => ({
@@ -61,6 +66,7 @@ beforeEach(() => {
   estado.usuario = 'u-1'
   estado.filas = DOS_CENTROS
   estado.cookie = undefined
+  estado.rutaPedida = null
   estado.consultasRoles = 0
 })
 
@@ -91,6 +97,30 @@ describe('usuario con roles en dos centros', () => {
     await expect(requireContextoCentro('es', '/es/admin/recibos')).rejects.toThrow(
       'REDIRECT:/es/elegir-centro?returnTo=%2Fes%2Fadmin%2Frecibos'
     )
+  })
+
+  it('sin returnTo → al selector, con la ruta que se pidió (la notificación vuelve al aviso)', async () => {
+    estado.rutaPedida = '/es/messages?nino=n-1&centro=c-b'
+    await expect(requireContextoCentro('es')).rejects.toThrow(
+      'REDIRECT:/es/elegir-centro?returnTo=%2Fes%2Fmessages%3Fnino%3Dn-1%26centro%3Dc-b'
+    )
+  })
+
+  it('el returnTo explícito manda sobre la ruta pedida', async () => {
+    estado.rutaPedida = '/es/messages'
+    await expect(requireContextoCentro('es', '/es/admin/recibos')).rejects.toThrow(
+      'REDIRECT:/es/elegir-centro?returnTo=%2Fes%2Fadmin%2Frecibos'
+    )
+  })
+
+  it('sin returnTo ni ruta pedida → al selector sin vuelta, como antes', async () => {
+    await expect(requireContextoCentro('es')).rejects.toThrow(/^REDIRECT:\/es\/elegir-centro$/)
+  })
+
+  it('con el centro elegido, la ruta pedida no cambia nada', async () => {
+    estado.cookie = A
+    estado.rutaPedida = '/es/messages'
+    expect(await requireContextoCentro('es')).toMatchObject({ centroId: A })
   })
 
   it('contextoEnCentro usa el centro EXPLÍCITO e ignora la cookie', async () => {

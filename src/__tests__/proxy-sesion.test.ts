@@ -125,3 +125,30 @@ describe('proxy — updateSession propaga la cookie renovada', () => {
     expect(cookieDeLosServerComponents(res)).toContain(`${COOKIE}=viejo`)
   })
 })
+
+describe('proxy — la ruta pedida llega a los Server Components', () => {
+  // Para que el selector de centro vuelva a ella (`requireContextoCentro`): una notificación
+  // abierta sin centro elegido acaba en el aviso, no en el inicio.
+  beforeEach(() => {
+    estado.user = { id: 'u-1' }
+    estado.roles = [{ rol: 'tutor_legal' }]
+    estado.renovar = false
+  })
+
+  it('con su query', async () => {
+    const res = await proxy(peticion('/es/messages?nino=n-1&centro=c-b'))
+    expect(res.headers.get('x-middleware-request-x-nido-ruta-pedida')).toBe(
+      '/es/messages?nino=n-1&centro=c-b'
+    )
+  })
+
+  it('pisa la que mande el navegador', async () => {
+    const req = new NextRequest('http://localhost:3000/es/messages', {
+      headers: { cookie: `${COOKIE}=viejo`, 'x-nido-ruta-pedida': '/es/admin/recibos' },
+    })
+    // Premisa: la petición llega con la cabecera falsa.
+    expect(req.headers.get('x-nido-ruta-pedida')).toBe('/es/admin/recibos')
+    const res = await proxy(req)
+    expect(res.headers.get('x-middleware-request-x-nido-ruta-pedida')).toBe('/es/messages')
+  })
+})

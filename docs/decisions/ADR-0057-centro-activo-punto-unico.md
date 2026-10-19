@@ -112,6 +112,10 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
   - Si ese centro es otro de los del usuario, la página (`/messages`, la conversación o el anuncio) enseña `ConfirmarCentroDelAviso` en lugar del contenido: en qué centro está y un botón «Cambiar a …» que llama a `elegirCentro` y vuelve al registro. Si es el activo, o no es uno de los suyos, se abre como siempre.
   - **Descartado: cambiar el centro al abrir el enlace.** Exigía un segundo sitio que escribiera la cookie (una ruta de servidor, o la acción lanzada al pintar), y cualquier enlace de fuera podría cambiarle el centro activo a quien lo pulsara, contra la regla de que el centro lo elige el usuario (MisterFC #755). Un toque más, solo para quien tiene dos centros y está en el otro.
   - El guard `check-centro-activo` lo hace cumplir: la cookie la nombran solo cuatro ficheros (la define, la lee, la escribe y la borra al salir) y solo `elegirCentro` la escribe.
+- **Vuelta al aviso tras elegir centro (2026-10-19, después de las notificaciones):** quien tiene varios centros y ninguno elegido (un dispositivo nuevo) pulsaba una notificación, iba al selector y acababa en su inicio.
+  - `requireContextoCentro` manda al selector con `returnTo`, y si quien la llama no le pasa uno, usa la ruta que se pidió. Ninguna de las 52 llamadas lo pasaba, y un layout no sabe qué dirección se abrió.
+  - La ruta la pone el proxy en la cabecera de petición `x-nido-ruta-pedida`, con la query (`?nino=`, `?centro=`). Sigue habiendo un solo sitio que decide el centro: el proxy solo pasa la ruta.
+  - Si el centro elegido no es el del aviso, la página pide confirmar el cambio, como en el punto anterior.
 
 ## Alternativas descartadas
 

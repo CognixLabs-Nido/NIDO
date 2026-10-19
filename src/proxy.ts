@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 
 import { routing } from './i18n/routing'
 import { requiredRolesFor } from './proxy-roles'
+import { CABECERA_RUTA_PEDIDA } from '@/features/centros/contexto/ruta-pedida'
 import { rolesEnCualquierCentro } from '@/features/centros/contexto/roles-del-usuario'
 
 import type { Database } from '@/types/database'
@@ -87,6 +88,11 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
   // pesa más que la llamada de red. Ver docs/architecture/auth-proxy.md.
   const { data: userData } = await supabase.auth.getUser()
   const user = userData.user
+
+  // La ruta pedida, para que el selector de centro vuelva a ella (`requireContextoCentro`). Como
+  // las cookies renovadas, va en las cabeceras de petición antes de next-intl, que las copia al
+  // crear la respuesta. `set` pisa la que pudiera mandar el navegador.
+  request.headers.set(CABECERA_RUTA_PEDIDA, pathname + request.nextUrl.search)
 
   const response = intlMiddleware(request)
   for (const { name, value, options } of renovadas) response.cookies.set(name, value, options)

@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { cache } from 'react'
 
@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 
 import { COOKIE_CENTRO_ACTIVO } from './cookie'
 import { resolverCentroActivo, type CentroDelUsuario, type Rol } from './resolver'
+import { CABECERA_RUTA_PEDIDA } from './ruta-pedida'
 import { leerCentrosDe } from './roles-del-usuario'
 
 /**
@@ -73,7 +74,9 @@ export const getEstadoCentro = cache(async (): Promise<EstadoCentro> => {
 
 /**
  * Para páginas y layouts: devuelve el contexto o redirige. Sin sesión → login; sin roles →
- * forbidden; con varios centros y sin elegir → selector (y vuelve a `returnTo` al elegir).
+ * forbidden; con varios centros y sin elegir → selector (y vuelve a `returnTo` al elegir). Sin
+ * `returnTo`, vuelve a la ruta que se pidió (`CABECERA_RUTA_PEDIDA`, la pone el proxy): una
+ * notificación abierta sin centro elegido acaba en el aviso, no en el inicio.
  */
 export async function requireContextoCentro(
   locale: string,
@@ -83,7 +86,8 @@ export async function requireContextoCentro(
   if (estado.tipo === 'activo') return estado.contexto
   if (estado.tipo === 'sin_sesion') redirect(`/${locale}/login`)
   if (estado.tipo === 'sin_centro') redirect(`/${locale}/forbidden`)
-  const q = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''
+  const vuelta = returnTo ?? (await headers()).get(CABECERA_RUTA_PEDIDA)
+  const q = vuelta ? `?returnTo=${encodeURIComponent(vuelta)}` : ''
   redirect(`/${locale}/elegir-centro${q}`)
 }
 
