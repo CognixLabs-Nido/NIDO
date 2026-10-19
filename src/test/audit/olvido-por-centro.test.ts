@@ -50,7 +50,11 @@ describe('Olvido por centro — solicitud y purga partidas', () => {
   async function tutoraEnDosCentros(nombre: string) {
     const u = await createTestUser({ nombre })
     usuarios.push(u)
-    await serviceClient.from('usuarios').update({ nombre_completo: nombre }).eq('id', u.id)
+    // Con avatar: si no, el manifiesto no tendría nada que dejar fuera y el aserto pasaría vacío.
+    await serviceClient
+      .from('usuarios')
+      .update({ nombre_completo: nombre, foto_url: `${u.id}/avatar.jpg` })
+      .eq('id', u.id)
     const porCentro: Record<
       'A' | 'B',
       { nino: TestNino; ft: string; conv: string; msg: string; dni: string }
@@ -236,6 +240,7 @@ describe('Olvido por centro — solicitud y purga partidas', () => {
       true
     )
     expect([...(todo.get(BUCKET_DNI_TUTORES) ?? [])].sort()).toEqual([t.A.dni, t.B.dni].sort())
+    expect(todo.get(BUCKET_USUARIOS_FOTOS)).toContain(`${t.u.id}/avatar.jpg`)
 
     await purgar(solA)
 
