@@ -9,6 +9,7 @@ Cuando `getUser()` renueva el token, el patrón oficial escribe las cookies nuev
 Aquí la respuesta que hay que devolver es la de `intlMiddleware(request)` (puede haber reescrito la ruta o puesto sus cabeceras), y next-intl hace esa misma copia de `request.headers` en el momento de crearla. Por eso el orden es:
 
 1. `createServerClient` y `getUser()`. `setAll` escribe cada cookie renovada en `request.cookies` (que reescribe la cabecera `cookie` de la petición) y la guarda.
+   Después, la cabecera de petición `x-nido-ruta-pedida` (`CABECERA_RUTA_PEDIDA`) con la ruta y la query que se pidieron. `requireContextoCentro` la usa como `returnTo` cuando manda a elegir centro, porque un layout no sabe qué dirección se abrió. Se escribe con `set`, que pisa la que pudiera mandar el navegador, y el selector la valida como ruta interna.
 2. `intlMiddleware(request)`: su respuesta ya lleva la cookie nueva en las cabeceras que leen los Server Components.
 3. Las cookies guardadas se ponen en esa respuesta, para el navegador. `redirectConservandoCookies` las copia también a las redirecciones a `/login` y a `/forbidden`; sin eso, el token renovado se perdía y la siguiente petición salía sin sesión.
 
