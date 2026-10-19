@@ -39,6 +39,7 @@ const ALLOWLIST_EMAILS = new Set([
   'jovimib+profe@gmail.com',
   'jovimib+teacher2@gmail.com',
   'jovimib+profe3@gmail.com',
+  'jovimib+director@gmail.com',
 ])
 const TEST_EMAIL_LIKE = '%@nido.test'
 

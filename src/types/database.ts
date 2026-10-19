@@ -3574,6 +3574,29 @@ export type Database = {
           },
         ]
       }
+      platform_admins: {
+        Row: {
+          created_at: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_admins_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: true
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       preferencias_usuario: {
         Row: {
           clave: string
@@ -4643,6 +4666,7 @@ export type Database = {
       }
       hoy_madrid: { Args: never; Returns: string }
       idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
+      is_superadmin: { Args: never; Returns: boolean }
       listar_esqueletos_huerfanos_stub: {
         Args: { p_cutoff: string }
         Returns: {
@@ -4756,6 +4780,10 @@ export type Database = {
           p_version: string
         }
         Returns: string
+      }
+      registrar_entrada_superusuario: {
+        Args: { p_centro_id: string }
+        Returns: undefined
       }
       registrar_mandato_sepa: {
         Args: {
@@ -5012,6 +5040,7 @@ export type Database = {
         | "revocacion_familia"
         | "purga_rgpd"
         | "solicitud_olvido"
+        | "paso_a_superusuario"
       nino_sexo: "F" | "M" | "X"
       olvido_sujeto_tipo: "usuario" | "nino"
       parentesco:
@@ -5306,6 +5335,7 @@ export const Constants = {
         "revocacion_familia",
         "purga_rgpd",
         "solicitud_olvido",
+        "paso_a_superusuario",
       ],
       nino_sexo: ["F", "M", "X"],
       olvido_sujeto_tipo: ["usuario", "nino"],

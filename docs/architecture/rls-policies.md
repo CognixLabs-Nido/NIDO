@@ -8,6 +8,7 @@
 - **Antipatrón prohibido**: subqueries inline `(SELECT col FROM otra_tabla WHERE ...)` dentro de `USING (...)` — causa recursión RLS (SQLSTATE 42P17). Ver [ADR-0007](../decisions/ADR-0007-rls-policy-recursion-avoidance.md).
 - **Nada para `anon` ni para `PUBLIC`.** Toda policy de la app es `TO authenticated` y toda función nueva lleva `REVOKE ALL … FROM PUBLIC, anon`. Una RPC solo se da a `authenticated` si la app la llama con sesión. Ver la sección «Postura de seguridad (octubre de 2026)» y [ADR-0053](../decisions/ADR-0053-postura-seguridad-bd.md).
 - **«Sin uid» nunca es el servicio.** En una función `SECURITY DEFINER`, `auth.uid()` NULL solo deja pasar a `service_role` o a una sesión directa sin JWT, como el SQL Editor.
+- **El superusuario es admin, no profe ni tutor** ([ADR-0061](../decisions/ADR-0061-superusuario.md)). `es_admin(centro)` le da TRUE en todo centro que exista (`is_superadmin()`, tabla `platform_admins` sin policies). Un permiso de admin nuevo pasa por `es_admin`; si lee el rol de quien llama en `roles_usuario`, deja fuera al superusuario. Nunca en los helpers de profe ni de tutor. Los registros presenciales en nombre de una familia (firma presencial, consentimiento de imagen presencial, mandato SEPA presencial) son solo de la directora: su rama de admin lleva `AND NOT is_superadmin()`.
 
 ## Funciones helper
 
@@ -16,7 +17,10 @@
 ```sql
 -- Fase 1
 public.usuario_actual()                                  → uuid
-public.es_admin(p_centro_id uuid DEFAULT NULL)           → boolean
+public.es_admin(p_centro_id uuid DEFAULT NULL)           → boolean  -- + superusuario (ADR-0061)
+
+-- Multicentro, Fase 3 (ADR-0061)
+public.is_superadmin()                                   → boolean
 
 -- Fase 2 (originales)
 public.pertenece_a_centro(p_centro_id uuid)              → boolean
