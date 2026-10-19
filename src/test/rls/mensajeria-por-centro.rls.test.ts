@@ -29,6 +29,7 @@ import {
  * el badge y en los anuncios de A lo de B, y una directora de dos centros supervisaba en A las
  * conversaciones de B. Las tres consultas reciben ahora el centro de la página. La rama del admin
  * en el badge (sus hilos dirección↔familia) va con el hilo por centro, en el PR B de la Fase 2.
+ * El detalle de un anuncio abierto por URL (o por una notificación) también es solo el del centro.
  * Cada caso empieza por su premisa: sin acotar, la RLS deja ver lo de los dos centros.
  */
 
@@ -42,6 +43,7 @@ vi.mock('@/lib/supabase/server', () => ({
 
 const { countNoLeidos } = await import('@/features/messaging/queries/count-no-leidos')
 const { getAnunciosDelUsuario } = await import('@/features/messaging/queries/get-anuncios')
+const { getAnuncioDetalle } = await import('@/features/messaging/queries/get-anuncio-detalle')
 const { getConversacionesDelUsuario } =
   await import('@/features/messaging/queries/get-conversaciones')
 
@@ -174,6 +176,13 @@ describe('Multicentro — mensajería por centro', () => {
     sesion.actual = cUsuario
     expect((await getAnunciosDelUsuario(centroA.id)).map((a) => a.id)).toEqual([anuncioA])
     expect((await getAnunciosDelUsuario(centroB.id)).map((a) => a.id)).toEqual([anuncioB])
+  })
+
+  it('detalle de un anuncio por URL: el de B no se abre en A; en B, sí', async () => {
+    sesion.actual = cUsuario
+    expect(await getAnuncioDetalle(anuncioB, centroA.id)).toBeNull()
+    expect((await getAnuncioDetalle(anuncioB, centroB.id))?.id).toBe(anuncioB)
+    expect((await getAnuncioDetalle(anuncioA, centroA.id))?.id).toBe(anuncioA)
   })
 
   it('supervisión de la directora: solo las conversaciones del centro', async () => {

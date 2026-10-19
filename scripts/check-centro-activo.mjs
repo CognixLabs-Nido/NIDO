@@ -7,6 +7,13 @@
 //   A. aparece cualquier `.from('roles_usuario')` (lectura o escritura);
 //   B. se nombra `getCentroActualId` o `getRolEnCentro` (borradas en el PR5), también en un
 //      comentario.
+//
+// Y la cookie del centro activo la escribe SOLO la acción `elegirCentro` (MisterFC #755: el centro
+// lo elige el usuario; #756: el render no escribe cookies). Falla si:
+//   C. nombra la cookie (`COOKIE_CENTRO_ACTIVO` o su valor) un fichero que no es uno de los cuatro
+//      de `PAPEL_COOKIE`, cada uno con su papel;
+//   D. la escribe (`.set(` con la cookie) cualquiera que no sea `elegirCentro`.
+// Un enlace de una notificación no la escribe: lleva `?centro=` y la página pide confirmar.
 // No hay lista de excepciones (se quitó en el PR6): una lectura nueva va al módulo como función
 // con nombre, o no entra.
 //
@@ -21,6 +28,17 @@ import { fileURLToPath } from 'node:url'
 const MODULO_CONTEXTO = 'src/features/centros/contexto/'
 const RE_ROLES = /\.from\(\s*['"`]roles_usuario['"`]\s*\)/g
 const RE_DEPRECADAS = /\b(getCentroActualId|getRolEnCentro)\b/g
+const RE_COOKIE = /\bCOOKIE_CENTRO_ACTIVO\b|['"`]nido_centro_activo['"`]/g
+const RE_ESCRIBE_COOKIE =
+  /\.set\(\s*(?:\{\s*name\s*:\s*)?(?:COOKIE_CENTRO_ACTIVO\b|['"`]nido_centro_activo['"`])/g
+/** Los únicos ficheros que nombran la cookie, y para qué. Solo `elegirCentro` la escribe. */
+export const PAPEL_COOKIE = {
+  'src/features/centros/contexto/cookie.ts': 'la define',
+  'src/features/centros/contexto/get-contexto-centro.ts': 'la lee',
+  'src/features/centros/actions/elegir-centro.ts': 'la escribe',
+  'src/features/auth/actions/sign-out.ts': 'la borra al salir',
+}
+const ESCRIBE_COOKIE = 'src/features/centros/actions/elegir-centro.ts'
 
 /** Quita comentarios `//` y `/* *\/` respetando cadenas y plantillas. */
 export function sinComentarios(src) {
@@ -83,12 +101,20 @@ export function revisar(raiz) {
   const problemas = []
   const lecturas = new Map()
   const usanDeprecadas = new Map()
+  const nombranCookie = new Map()
+  const escribenCookie = new Map()
   let ficherosRevisados = 0
   let usosEnElModulo = 0
 
   for (const rel of ficheros(path.join(raiz, 'src'), raiz)) {
     const texto = readFileSync(path.join(raiz, rel), 'utf8')
-    const n = (sinComentarios(texto).match(RE_ROLES) ?? []).length
+    const codigo = sinComentarios(texto)
+    // C y D antes que nada: también miran dentro del módulo de contexto.
+    const nCookie = (codigo.match(RE_COOKIE) ?? []).length
+    if (nCookie > 0) nombranCookie.set(rel, nCookie)
+    const nEscribe = (codigo.match(RE_ESCRIBE_COOKIE) ?? []).length
+    if (nEscribe > 0) escribenCookie.set(rel, nEscribe)
+    const n = (codigo.match(RE_ROLES) ?? []).length
     // Dentro del módulo se cuenta, no se prohíbe: es el control de que el patrón sigue cazando.
     if (rel.startsWith(MODULO_CONTEXTO)) {
       usosEnElModulo += n
@@ -119,11 +145,31 @@ export function revisar(raiz) {
     )
   }
 
+  // C. La cookie del centro activo: solo la nombran los ficheros de PAPEL_COOKIE.
+  for (const [rel, hay] of nombranCookie) {
+    if (Object.hasOwn(PAPEL_COOKIE, rel)) continue
+    problemas.push(
+      `${rel}: nombra la cookie del centro activo ${hay} vez/veces. Solo la nombran los ficheros ` +
+        'de PAPEL_COOKIE; para cambiar de centro se llama a la acción elegirCentro.'
+    )
+  }
+
+  // D. Solo elegirCentro la escribe.
+  for (const [rel, hay] of escribenCookie) {
+    if (rel === ESCRIBE_COOKIE) continue
+    problemas.push(
+      `${rel}: escribe la cookie del centro activo ${hay} vez/veces. Solo la escribe la acción ` +
+        'elegirCentro, cuando el usuario elige (MisterFC #755); nunca el render ni un enlace (#756).'
+    )
+  }
+
   const recuento = {
     ficherosRevisados,
     usosEnElModulo,
     lecturasRoles: [...lecturas.values()].reduce((a, b) => a + b, 0),
     usosDeprecadas: [...usanDeprecadas.values()].reduce((a, b) => a + b, 0),
+    ficherosQueNombranCookie: nombranCookie.size,
+    escriturasCookie: [...escribenCookie.values()].reduce((a, b) => a + b, 0),
   }
   return { problemas, recuento }
 }
@@ -140,11 +186,19 @@ if (esCli) {
         `${recuento.usosEnElModulo} usos de roles_usuario dentro del módulo de contexto.`
     )
   }
+  // Lo mismo para la cookie: «nadie más la escribe» solo vale si el patrón caza la de elegirCentro.
+  if (recuento.escriturasCookie === 0) {
+    problemas.push(
+      'el guard no ha visto ninguna escritura de la cookie: el patrón ya no caza la de elegirCentro.'
+    )
+  }
   const linea =
     `check-centro-activo: ${recuento.ficherosRevisados} ficheros revisados, ` +
     `${recuento.lecturasRoles} usos de roles_usuario fuera del contexto ` +
     `(${recuento.usosEnElModulo} dentro), ` +
-    `${recuento.usosDeprecadas} menciones de getCentroActualId/getRolEnCentro.`
+    `${recuento.usosDeprecadas} menciones de getCentroActualId/getRolEnCentro, ` +
+    `cookie del centro activo nombrada en ${recuento.ficherosQueNombranCookie} ficheros y ` +
+    `escrita ${recuento.escriturasCookie} vez/veces.`
   process.stdout.write(`${linea}\n`)
   // En la CI, también en el resumen del job.
   if (process.env.GITHUB_STEP_SUMMARY) {

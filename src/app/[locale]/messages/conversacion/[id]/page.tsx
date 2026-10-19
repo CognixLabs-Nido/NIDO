@@ -1,5 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 
+import { ConfirmarCentroDelAviso } from '@/features/centros/components/ConfirmarCentroDelAviso'
+import { centroDelAvisoPorConfirmar } from '@/features/centros/contexto/centro-del-aviso'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { ConversacionAdminFamiliaView } from '@/features/messaging/components/ConversacionAdminFamiliaView'
 import { ConversacionView } from '@/features/messaging/components/ConversacionView'
@@ -9,12 +11,28 @@ import { createClient } from '@/lib/supabase/server'
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>
+  searchParams: Promise<{ centro?: string }>
 }
 
-export default async function ConversacionPage({ params }: PageProps) {
+export default async function ConversacionPage({ params, searchParams }: PageProps) {
   const { locale, id } = await params
+  const { centro } = await searchParams
 
-  const { centroId, rol: rolRaw } = await requireContextoCentro(locale)
+  const contexto = await requireContextoCentro(locale)
+  const { centroId, rol: rolRaw } = contexto
+  // La notificación de otro centro del usuario: primero se confirma el cambio (antes de buscar
+  // la conversación, que en este centro daría «no encontrado»).
+  const centroDelAviso = centroDelAvisoPorConfirmar(contexto, centro)
+  if (centroDelAviso) {
+    return (
+      <ConfirmarCentroDelAviso
+        locale={locale}
+        centroDelAvisoId={centroDelAviso}
+        centroActivoId={centroId}
+        returnTo={`/${locale}/messages/conversacion/${id}`}
+      />
+    )
+  }
   if (
     !rolRaw ||
     (rolRaw !== 'admin' &&

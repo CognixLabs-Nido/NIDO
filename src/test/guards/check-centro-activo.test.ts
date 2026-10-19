@@ -3,15 +3,16 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { revisar, sinComentarios } from '../../../scripts/check-centro-activo.mjs'
+import { PAPEL_COOKIE, revisar, sinComentarios } from '../../../scripts/check-centro-activo.mjs'
 
 /**
  * El guard de multicentro (como `check-club-activo` de MisterFC). Corre en la CI con el resto de
  * unit tests: el primer bloque mira el árbol de verdad; el segundo demuestra que caza, con un
  * árbol de mentira donde cada caso tiene que ponerse rojo. Desde el PR6 no hay ninguna lista:
- * `roles_usuario` solo se toca en `features/centros/contexto/`.
+ * `roles_usuario` solo se toca en `features/centros/contexto/`. Y la cookie del centro activo
+ * solo la escribe `elegirCentro` (reglas C y D): una notificación pide confirmar, no la escribe.
  */
 
 const RAIZ = path.resolve(__dirname, '../../..')
@@ -26,6 +27,10 @@ describe('el árbol real cumple', () => {
     expect(recuento.usosEnElModulo).toBeGreaterThan(0)
     expect(recuento.lecturasRoles).toBe(0)
     expect(recuento.usosDeprecadas).toBe(0)
+    // La cookie: la nombran exactamente sus cuatro ficheros y se escribe una vez (elegirCentro).
+    // El 1 es la premisa de que el patrón de escritura caza.
+    expect(recuento.ficherosQueNombranCookie).toBe(Object.keys(PAPEL_COOKIE).length)
+    expect(recuento.escriturasCookie).toBe(1)
   })
 
   it('no queda fichero de lista de excepciones', () => {
@@ -134,6 +139,64 @@ describe('caza lo que tiene que cazar (árbol de mentira)', () => {
     expect(revisar(raiz).problemas).toEqual([
       expect.stringContaining('src/app/comentario.ts: nombra getCentroActualId/getRolEnCentro'),
     ])
+  })
+})
+
+describe('la cookie del centro activo: solo la escribe elegirCentro (árbol de mentira)', () => {
+  let raiz: string
+
+  function fichero(rel: string, contenido: string) {
+    const abs = path.join(raiz, rel)
+    mkdirSync(path.dirname(abs), { recursive: true })
+    writeFileSync(abs, contenido)
+  }
+
+  const ESCRITURA =
+    "import { cookies } from 'next/headers'\n" +
+    "import { COOKIE_CENTRO_ACTIVO } from '@/features/centros/contexto/cookie'\n" +
+    ';(await cookies()).set(COOKIE_CENTRO_ACTIVO, centroId, OPCIONES)\n'
+
+  beforeEach(() => {
+    raiz = mkdtempSync(path.join(tmpdir(), 'guard-cookie-'))
+  })
+  afterEach(() => rmSync(raiz, { recursive: true, force: true }))
+
+  it('control: la escritura en elegirCentro pasa, y se cuenta', () => {
+    fichero('src/features/centros/actions/elegir-centro.ts', ESCRITURA)
+    const { problemas, recuento } = revisar(raiz)
+    expect(problemas).toEqual([])
+    expect(recuento.escriturasCookie).toBe(1)
+  })
+
+  it('una página que la escribe al abrir una notificación → rojo (C y D)', () => {
+    fichero('src/app/[locale]/messages/anuncios/[id]/page.tsx', ESCRITURA)
+    expect(revisar(raiz).problemas).toEqual([
+      expect.stringContaining('page.tsx: nombra la cookie del centro activo 2 vez'),
+      expect.stringContaining('page.tsx: escribe la cookie del centro activo 1 vez'),
+    ])
+  })
+
+  it('un fichero que puede nombrarla (la lectura) pero la escribe → rojo (D)', () => {
+    fichero('src/features/centros/contexto/get-contexto-centro.ts', ESCRITURA)
+    expect(revisar(raiz).problemas).toEqual([
+      expect.stringContaining('get-contexto-centro.ts: escribe la cookie del centro activo'),
+    ])
+  })
+
+  it('la escritura con objeto y el valor literal → rojo', () => {
+    fichero('src/proxy.ts', "res.cookies.set({ name: 'nido_centro_activo', value: c })\n")
+    expect(revisar(raiz).problemas).toEqual([
+      expect.stringContaining('src/proxy.ts: nombra la cookie del centro activo 1 vez'),
+      expect.stringContaining('src/proxy.ts: escribe la cookie del centro activo 1 vez'),
+    ])
+  })
+
+  it('nombrarla solo en un comentario no cuenta', () => {
+    fichero(
+      'src/app/x.ts',
+      '// la escribe elegirCentro: COOKIE_CENTRO_ACTIVO\nexport const x = 1\n'
+    )
+    expect(revisar(raiz).problemas).toEqual([])
   })
 })
 

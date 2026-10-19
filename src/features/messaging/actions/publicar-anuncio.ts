@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
 
+import { urlDelAviso } from '@/features/centros/contexto/centro-del-aviso'
 import { destinatariosPushDeAnuncio, getAutorPushInfo } from '@/features/push/lib/audiencia'
 import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
 import { createClient } from '@/lib/supabase/server'
@@ -107,7 +108,7 @@ export async function publicarAnuncio(
             ? tPush('anuncio_centro_titulo')
             : tPush('anuncio_aula_titulo'),
         cuerpo,
-        url: `/${autor.idioma}/messages/anuncios/${data.id}`,
+        url: urlDelAviso(`/${autor.idioma}/messages/anuncios/${data.id}`, centroId),
         datos: {
           tipo: 'anuncio',
           anuncio_id: data.id,

@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 
+import { ConfirmarCentroDelAviso } from '@/features/centros/components/ConfirmarCentroDelAviso'
+import { centroDelAvisoPorConfirmar } from '@/features/centros/contexto/centro-del-aviso'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { MessagesView } from '@/features/messaging/components/MessagesView'
 import { getAdminFamiliaDetalle } from '@/features/messaging/queries/get-admin-familia-detalle'
@@ -20,7 +22,13 @@ import { PushBanner } from '@/features/push/components/PushBanner'
 
 interface PageProps {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ nino?: string; tab?: string; tutor?: string; conv?: string }>
+  searchParams: Promise<{
+    nino?: string
+    tab?: string
+    tutor?: string
+    conv?: string
+    centro?: string
+  }>
 }
 
 /**
@@ -37,9 +45,30 @@ interface PageProps {
  */
 export default async function MessagesPage({ params, searchParams }: PageProps) {
   const { locale } = await params
-  const { nino: ninoQuery, tab, tutor: tutorQuery, conv: convQuery } = await searchParams
+  const {
+    nino: ninoQuery,
+    tab,
+    tutor: tutorQuery,
+    conv: convQuery,
+    centro: centroQuery,
+  } = await searchParams
 
-  const { centroId, rol: rolRaw } = await requireContextoCentro(locale)
+  const contexto = await requireContextoCentro(locale)
+  const { centroId, rol: rolRaw } = contexto
+  // La notificación de un mensaje de otro centro del usuario: primero se confirma el cambio
+  // (en este centro, el niño de `?nino=` no está en la lista y se ignoraría).
+  const centroDelAviso = centroDelAvisoPorConfirmar(contexto, centroQuery)
+  if (centroDelAviso) {
+    const nino = ninoQuery ? `?nino=${encodeURIComponent(ninoQuery)}` : ''
+    return (
+      <ConfirmarCentroDelAviso
+        locale={locale}
+        centroDelAvisoId={centroDelAviso}
+        centroActivoId={centroId}
+        returnTo={`/${locale}/messages${nino}`}
+      />
+    )
+  }
   if (
     !rolRaw ||
     (rolRaw !== 'admin' &&

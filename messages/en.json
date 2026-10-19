@@ -4195,6 +4195,11 @@
     "aviso": {
       "otro_centro": "You are viewing {centro}, not your active school ({activo}).",
       "viendo": "You are viewing {centro}."
+    },
+    "notificacion": {
+      "titulo": "This notification is from another school",
+      "texto": "The notification is from {centro}. You are now in {activo}.",
+      "cambiar": "Switch to {centro}"
     }
   }
 }
