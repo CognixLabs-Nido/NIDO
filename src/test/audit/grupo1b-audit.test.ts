@@ -107,6 +107,7 @@ describe('Audit log — Grupo 1, PR B', () => {
 
     const { data: solicitud, error: sErr } = await serviceClient.rpc('solicitar_olvido_usuario', {
       p_usuario_id: sujeto.id,
+      p_centro_id: centro.id,
       p_inmediato: true,
     })
     expect(sErr).toBeNull()
@@ -238,6 +239,7 @@ describe('Audit log — Grupo 1, PR B', () => {
 
     const { data: solicitud, error: sErr } = await serviceClient.rpc('solicitar_olvido_usuario', {
       p_usuario_id: u.id,
+      p_centro_id: centro.id,
       p_inmediato: true,
     })
     expect(sErr).toBeNull()

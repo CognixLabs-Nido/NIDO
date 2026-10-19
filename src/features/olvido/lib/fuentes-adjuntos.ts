@@ -26,13 +26,15 @@ type Service = SupabaseClient<Database>
  */
 async function dnisPendientesSinUsar(
   service: Service,
-  filtro: { nino_id: string } | { solicitado_por: string }
+  filtro: { nino_id: string } | { solicitado_por: string; centro_id: string | null }
 ): Promise<string[]> {
   let q = service.from('cambios_pendientes').select('payload').eq('entidad', 'datos_tutor_dni')
-  q =
-    'nino_id' in filtro
-      ? q.eq('nino_id', filtro.nino_id)
-      : q.eq('solicitado_por', filtro.solicitado_por)
+  if ('nino_id' in filtro) {
+    q = q.eq('nino_id', filtro.nino_id)
+  } else {
+    q = q.eq('solicitado_por', filtro.solicitado_por)
+    if (filtro.centro_id) q = q.eq('centro_id', filtro.centro_id)
+  }
   const { data, error } = await q
   if (error) throw new Error(`cambios_pendientes (DNI): ${error.message}`)
   const rutas = [
@@ -72,7 +74,16 @@ export interface FuenteAdjunto {
   /** Tipos de sujeto a los que aplica. */
   sujetos: readonly SujetoOlvido[]
   /** Devuelve las rutas a borrar para ese sujeto (vacío si no hay). */
-  recolectar(service: Service, sujetoId: string): Promise<string[]>
+  recolectar(service: Service, sujetoId: string, alcance: AlcancePurga): Promise<string[]>
+}
+
+/**
+ * Multicentro (Fase 2): `soloCentroId` es el centro de la solicitud cuando al sujeto le queda
+ * otro centro; entonces solo cae lo de ese centro y nada de la cuenta. `null` = su último centro:
+ * cae todo, como antes. Un niño es de un solo centro: para él siempre `null`.
+ */
+export interface AlcancePurga {
+  soloCentroId: string | null
 }
 
 export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
@@ -154,7 +165,9 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
     nombre: 'avatar-usuario',
     bucket: BUCKET_USUARIOS_FOTOS,
     sujetos: ['usuario'],
-    async recolectar(service, usuarioId) {
+    async recolectar(service, usuarioId, alcance) {
+      // El avatar es de la cuenta: se va con el último centro.
+      if (alcance.soloCentroId) return []
       const { data: u, error: uErr } = await service
         .from('usuarios')
         .select('foto_url')
@@ -176,20 +189,26 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
   },
   {
     // Cierre de la purga: su DNI de tutor (`familia_tutores.dni_documento_path`), por ruta
-    // exacta, y los que dejó en cambios pendientes sin aplicar.
+    // exacta, y los que dejó en cambios pendientes sin aplicar. Multicentro: el DNI es por
+    // centro (uno en la familia de cada centro); si le queda otro centro, solo el de este.
     nombre: 'dni-tutor',
     bucket: BUCKET_DNI_TUTORES,
     sujetos: ['usuario'],
-    async recolectar(service, usuarioId) {
-      const { data, error } = await service
+    async recolectar(service, usuarioId, alcance) {
+      let q = service
         .from('familia_tutores')
         .select('dni_documento_path')
         .eq('usuario_id', usuarioId)
+      if (alcance.soloCentroId) q = q.eq('centro_id', alcance.soloCentroId)
+      const { data, error } = await q
       if (error) throw new Error(`familia_tutores (DNI): ${error.message}`)
       const propios = (data ?? [])
         .map((f) => f.dni_documento_path)
         .filter((p): p is string => Boolean(p))
-      const pendientes = await dnisPendientesSinUsar(service, { solicitado_por: usuarioId })
+      const pendientes = await dnisPendientesSinUsar(service, {
+        solicitado_por: usuarioId,
+        centro_id: alcance.soloCentroId,
+      })
       return [...new Set([...propios, ...pendientes])]
     },
   },
@@ -202,13 +221,14 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
  */
 export async function recolectarAdjuntosDe(
   service: Service,
-  sujetoTipo: SujetoOlvido,
-  sujetoId: string
+  sujeto: { sujeto_tipo: SujetoOlvido; sujeto_id: string; centro_id: string },
+  esUltimoCentro: boolean
 ): Promise<Map<string, string[]>> {
+  const alcance: AlcancePurga = { soloCentroId: esUltimoCentro ? null : sujeto.centro_id }
   const porBucket = new Map<string, string[]>()
   for (const fuente of FUENTES_ADJUNTOS) {
-    if (!fuente.sujetos.includes(sujetoTipo)) continue
-    const paths = await fuente.recolectar(service, sujetoId)
+    if (!fuente.sujetos.includes(sujeto.sujeto_tipo)) continue
+    const paths = await fuente.recolectar(service, sujeto.sujeto_id, alcance)
     if (paths.length === 0) continue
     porBucket.set(fuente.bucket, [...(porBucket.get(fuente.bucket) ?? []), ...paths])
   }

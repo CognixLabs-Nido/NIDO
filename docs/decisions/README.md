@@ -84,3 +84,4 @@ La numeración avanza cronológicamente, pero hay dos huecos explícitos:
 | 0056 | Seguimiento de errores con Sentry, región UE y sin datos personales       | accepted                                  |
 | 0057 | Centro activo y punto único de contexto en la app                         | accepted                                  |
 | 0058 | Una familia por adulto y por centro                                       | accepted                                  |
+| 0059 | El olvido es por centro                                                   | accepted                                  |

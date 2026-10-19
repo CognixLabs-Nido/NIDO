@@ -116,7 +116,7 @@ describe('abrirConversacionAdminFamilia — server action core', () => {
   it('admin del centro crea un hilo nuevo con expires_at ≈ now()+3d', async () => {
     const sb = await clientFor(adminA)
     const before = Date.now()
-    const result = await abrirConversacionAdminFamiliaCore(sb, adminA.id, tutorA.id)
+    const result = await abrirConversacionAdminFamiliaCore(sb, adminA.id, tutorA.id, centroA.id)
     expect(result.success).toBe(true)
     if (!result.success) return
 
@@ -162,7 +162,7 @@ describe('abrirConversacionAdminFamilia — server action core', () => {
     await serviceClient.from('conversaciones').update({ expires_at: inOneHour }).eq('id', pre.id)
 
     const before = Date.now()
-    const result = await abrirConversacionAdminFamiliaCore(sb, adminA.id, tutorA.id)
+    const result = await abrirConversacionAdminFamiliaCore(sb, adminA.id, tutorA.id, centroA.id)
     expect(result.success).toBe(true)
     if (!result.success) return
     // Devuelve el MISMO id (no crea uno nuevo).
@@ -197,7 +197,7 @@ describe('abrirConversacionAdminFamilia — server action core', () => {
 
   it('admin de otro centro contra tutor ajeno → tutor_no_pertenece_centro', async () => {
     const sb = await clientFor(adminB)
-    const result = await abrirConversacionAdminFamiliaCore(sb, adminB.id, tutorA.id)
+    const result = await abrirConversacionAdminFamiliaCore(sb, adminB.id, tutorA.id, centroB.id)
     expect(result.success).toBe(false)
     if (result.success) return
     expect(result.error).toBe('messages.errors.tutor_no_pertenece_centro')
@@ -217,7 +217,7 @@ describe('abrirConversacionAdminFamilia — server action core', () => {
 
   it('tutor (rol no admin) llamando la action → solo_admin', async () => {
     const sb = await clientFor(tutorA)
-    const result = await abrirConversacionAdminFamiliaCore(sb, tutorA.id, tutorB.id)
+    const result = await abrirConversacionAdminFamiliaCore(sb, tutorA.id, tutorB.id, centroB.id)
     expect(result.success).toBe(false)
     if (result.success) return
     expect(result.error).toBe('messages.errors.solo_admin')
@@ -229,7 +229,7 @@ describe('abrirConversacionAdminFamilia — server action core', () => {
 
   it('profe (rol no admin) llamando la action → solo_admin', async () => {
     const sb = await clientFor(profeA1)
-    const result = await abrirConversacionAdminFamiliaCore(sb, profeA1.id, tutorA.id)
+    const result = await abrirConversacionAdminFamiliaCore(sb, profeA1.id, tutorA.id, centroA.id)
     expect(result.success).toBe(false)
     if (result.success) return
     expect(result.error).toBe('messages.errors.solo_admin')

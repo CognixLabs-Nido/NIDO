@@ -41,13 +41,17 @@ export async function countNoLeidos(centroId: string): Promise<UnreadCounts> {
   // debe recibir avisos de no-leídos de mensajes privados profe↔tutor. Por
   // eso, para admin restringimos el conteo a sus propios hilos admin↔familia
   // (donde sí es interlocutor). Profe/tutor ya solo ven los suyos por RLS, pero de TODOS sus
-  // centros: se acotan al de la página (multicentro). La rama del admin se acota con el hilo
-  // dirección↔familia por centro (PR B de la Fase 2), no aquí.
+  // centros: se acotan al de la página (multicentro). La del admin, igual: su hilo
+  // dirección↔familia es uno por centro (PR B de la Fase 2).
   const rol = (await rolesEnCentro(supabase, userId, centroId))?.rol ?? null
 
   let convQuery = supabase.from('conversaciones').select('id')
   if (rol === 'admin') {
-    convQuery = convQuery.eq('tipo_conversacion', 'admin_familia').eq('admin_id', userId)
+    // Multicentro (Fase 2 · PR B): un hilo dirección↔familia por centro; los de este.
+    convQuery = convQuery
+      .eq('tipo_conversacion', 'admin_familia')
+      .eq('admin_id', userId)
+      .eq('centro_id', centroId)
   } else {
     convQuery = convQuery.eq('centro_id', centroId)
   }

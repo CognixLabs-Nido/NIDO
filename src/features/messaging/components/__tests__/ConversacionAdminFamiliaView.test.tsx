@@ -52,6 +52,7 @@ vi.mock('sonner', () => ({
 function header(expiresAt: string): ConversacionAdminFamiliaHeader {
   return {
     id: 'conv-1',
+    centro_id: 'centro-1',
     admin_id: 'admin-1',
     admin_nombre: 'Lucía (Dirección)',
     tutor_id: 'tutor-1',

@@ -332,7 +332,7 @@ Extensión de F5: la dirección del centro (admin) puede iniciar una conversaci�
 - **CHECK estructural** `conversaciones_tipo_coherencia`:
   - `profe_familia`: `nino_id NOT NULL`, `admin_id/tutor_id/expires_at NULL`.
   - `admin_familia`: `admin_id NOT NULL`, `tutor_id NOT NULL`, `expires_at NOT NULL`, `nino_id NULL`.
-- **Índice único parcial** `idx_conv_admin_familia_unique (admin_id, tutor_id) WHERE tipo='admin_familia'` — un solo hilo por par (no por niño).
+- **Índice único parcial** `idx_conv_admin_familia_unique (admin_id, tutor_id) WHERE tipo='admin_familia'` — un solo hilo por par (no por niño). Desde `20261022120000` es `idx_conv_admin_familia_centro_unique (admin_id, tutor_id, centro_id)`: un hilo por centro (ADR-0059).
 - **Helpers SQL nuevos**:
   - `es_tutor_en_centro(tutor_id, centro_id)` → boolean
   - `conversacion_activa(conv_id)` → boolean (TRUE si `tipo='profe_familia'` o `expires_at > now()`)

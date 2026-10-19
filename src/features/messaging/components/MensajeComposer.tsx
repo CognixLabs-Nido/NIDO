@@ -44,6 +44,8 @@ interface AdminFamiliaIniciarProps {
    *  creado. */
   mode: 'admin_familia_iniciar'
   tutorId: string
+  /** Centro de la página: el hilo es por centro. */
+  centroId: string
   locale: string
 }
 
@@ -103,7 +105,8 @@ export function MensajeComposer(props: Props) {
           // siguiente envío usa el mismo hilo (mismo patrón "conv lazy
           // sin mensajes" que profe_familia).
           const abrir = await abrirConversacionAdminFamilia(
-            (props as AdminFamiliaIniciarProps).tutorId
+            (props as AdminFamiliaIniciarProps).tutorId,
+            (props as AdminFamiliaIniciarProps).centroId
           )
           if (!abrir.success) {
             const key = abrir.error.startsWith('messages.errors.')

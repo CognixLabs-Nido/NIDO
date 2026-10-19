@@ -29,16 +29,20 @@ export async function solicitarOlvidoNino(
 }
 
 /**
- * Ejercicio del derecho al olvido sobre un USUARIO (tutor/profe). El centro se
- * deriva de su rol; la RPC valida `es_admin` de ese centro vía `auth.uid()`.
+ * Ejercicio del derecho al olvido sobre un USUARIO (tutor/profe) en UN centro (multicentro,
+ * Fase 2): el de la página, donde la dirección que lo pide tiene que ser admin (la RPC lo valida
+ * con `auth.uid()`). Retira sus roles de ese centro; la cuenta solo se bloquea si no le queda
+ * ningún otro.
  */
 export async function solicitarOlvidoUsuario(
   usuarioId: string,
+  centroId: string,
   inmediato = false
 ): Promise<ActionResult<string>> {
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('solicitar_olvido_usuario', {
     p_usuario_id: usuarioId,
+    p_centro_id: centroId,
     p_inmediato: inmediato,
   })
   if (error) {

@@ -36,6 +36,7 @@ export async function getAdminFamiliaDetalle(
     .select(
       `
       id,
+      centro_id,
       tipo_conversacion,
       admin_id,
       tutor_id,
@@ -104,6 +105,7 @@ export async function getAdminFamiliaDetalle(
   return {
     header: {
       id: conv.id,
+      centro_id: conv.centro_id,
       admin_id: conv.admin_id,
       admin_nombre: conv.admin?.nombre_completo ?? '',
       tutor_id: conv.tutor_id,

@@ -48,7 +48,12 @@ const CRITICAS: Array<[string, (c: Client) => PromiseLike<{ error: { code?: stri
   ],
   [
     'solicitar_olvido_usuario',
-    (c) => c.rpc('solicitar_olvido_usuario', { p_usuario_id: randomUUID(), p_inmediato: false }),
+    (c) =>
+      c.rpc('solicitar_olvido_usuario', {
+        p_usuario_id: randomUUID(),
+        p_centro_id: randomUUID(),
+        p_inmediato: false,
+      }),
   ],
   [
     'solicitar_olvido_nino',

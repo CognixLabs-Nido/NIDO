@@ -21,6 +21,9 @@ import type { AdminFamiliaListItem } from '../types'
  * coherencia se aplica también el filtro en cliente para defense in
  * depth.
  *
+ * Multicentro (Fase 2): un hilo por centro. La RLS deja ver los de todos sus centros; se acotan
+ * al de la página (`centroId`).
+ *
  * Para cada hilo se calcula:
  *  - `contraparte_nombre`: el nombre del OTRO miembro del par.
  *  - `rol_en_hilo`: 'admin' o 'tutor' según el caller.
@@ -30,7 +33,8 @@ import type { AdminFamiliaListItem } from '../types'
  *    caller, no anulados, no propios.
  */
 export async function getAdminFamiliaList(
-  rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
+  rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado',
+  centroId: string
 ): Promise<AdminFamiliaListItem[]> {
   // Profes no participan en admin_familia. Devuelve lista vacía sin pegar
   // a la BD para no introducir queries innecesarias en su /messages.
@@ -58,6 +62,7 @@ export async function getAdminFamiliaList(
     )
     .eq('tipo_conversacion', 'admin_familia')
     .eq(filtroCampo, userId)
+    .eq('centro_id', centroId)
     .order('last_message_at', { ascending: false, nullsFirst: false })
     .limit(100)
 

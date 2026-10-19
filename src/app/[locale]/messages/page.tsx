@@ -71,7 +71,7 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
       getAnunciosDelUsuario(centroId),
       rol === 'admin'
         ? Promise.resolve([] as Awaited<ReturnType<typeof getAdminFamiliaList>>)
-        : getAdminFamiliaList(rol),
+        : getAdminFamiliaList(rol, centroId),
       rol === 'admin'
         ? getTutoresParaAdminDireccion(centroId)
         : Promise.resolve([] as TutorDireccionItem[]),
@@ -174,6 +174,7 @@ export default async function MessagesPage({ params, searchParams }: PageProps) 
       {mostrarPushBanner ? <PushBanner /> : null}
       <MessagesView
         locale={locale}
+        centroId={centroId}
         rol={rol}
         ninos={ninos}
         anuncios={anuncios}

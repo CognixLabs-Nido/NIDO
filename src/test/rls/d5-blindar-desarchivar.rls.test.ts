@@ -196,10 +196,11 @@ describe('D-5 punto 2 — blindar desarchivar (motivo_borrado)', () => {
     const e = await nuevoEscenario()
     const { ninoId, familiaId, tutor, vinculoId } = await crearNinoConTutor(e)
 
-    // Solicita el olvido del TUTOR ANTES de la baja: solicitar_olvido_usuario deriva el
-    // centro de un rol ACTIVO, y la baja revoca ese rol → hay que pedirlo mientras vive.
+    // Solicita el olvido del TUTOR en el centro del niño, antes de la baja (multicentro: el
+    // centro es explícito y la solicitud retira ya su rol de ese centro).
     const sol = await serviceClient.rpc('solicitar_olvido_usuario', {
       p_usuario_id: tutor.id,
+      p_centro_id: e.centroId,
       p_inmediato: true,
     })
     expect(sol.error).toBeNull()

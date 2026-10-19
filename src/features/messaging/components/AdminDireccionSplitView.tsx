@@ -20,6 +20,8 @@ import { MensajeComposer } from './MensajeComposer'
 
 interface Props {
   locale: string
+  /** Centro de la página: los hilos dirección↔familia son por centro. */
+  centroId: string
   tutores: TutorDireccionItem[]
   tutorSeleccionadoId: string | null
   /** Si el tutor seleccionado YA tiene hilo, el padre Server Component
@@ -57,6 +59,7 @@ interface Props {
  */
 export function AdminDireccionSplitView({
   locale,
+  centroId,
   tutores,
   tutorSeleccionadoId,
   detalleHeader,
@@ -231,7 +234,12 @@ export function AdminDireccionSplitView({
               fillParent
             />
           ) : (
-            <PanelIniciar locale={locale} tutor={tutorSeleccionado} tBadge={tBadge('direccion')} />
+            <PanelIniciar
+              locale={locale}
+              centroId={centroId}
+              tutor={tutorSeleccionado}
+              tBadge={tBadge('direccion')}
+            />
           )
         ) : (
           <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
@@ -256,10 +264,12 @@ export function AdminDireccionSplitView({
  */
 function PanelIniciar({
   locale,
+  centroId,
   tutor,
   tBadge,
 }: {
   locale: string
+  centroId: string
   tutor: TutorDireccionItem
   tBadge: string
 }) {
@@ -295,7 +305,12 @@ function PanelIniciar({
         <p className="text-muted-foreground text-xs">{t('iniciar_subtitulo')}</p>
       </div>
 
-      <MensajeComposer mode="admin_familia_iniciar" tutorId={tutor.usuario_id} locale={locale} />
+      <MensajeComposer
+        mode="admin_familia_iniciar"
+        tutorId={tutor.usuario_id}
+        centroId={centroId}
+        locale={locale}
+      />
     </div>
   )
 }

@@ -445,6 +445,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
                               {esTutor && v.usuario_id && (
                                 <AbrirConversacionDireccionButton
                                   tutorId={v.usuario_id}
+                                  centroId={nino.centro_id}
                                   locale={locale}
                                 />
                               )}
