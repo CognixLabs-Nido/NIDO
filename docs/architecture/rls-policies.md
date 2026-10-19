@@ -313,6 +313,8 @@ Tests Fases 1–4 en `src/test/rls/`:
   - UPDATE: solo el autor. El server action `marcarAnuncioErroneo` limita la mutación al prefijo en `titulo` + flag.
   - DELETE: SIN policy → default DENY.
 
+- **Multicentro**: la RLS deja leer las conversaciones y los anuncios de todos los centros del usuario. Las consultas de lista y el badge de no leídos (`countNoLeidos`, `getAnunciosDelUsuario`, `getConversacionesDelUsuario`) los acotan al centro de la página (ADR-0057).
+
 - **Flag global `puede_recibir_mensajes`**: actúa como switch del canal digital entrante. Tutor con flag a `false` no recibe **ni conversaciones ni anuncios** (ni ámbito aula ni ámbito centro). El helper `usuario_es_audiencia_anuncio_row` incluye esta condición; las RLS de `conversaciones`/`mensajes` la heredan vía `tiene_permiso_sobre(nino_id, 'puede_recibir_mensajes')`. Profes y admin siempre reciben anuncios de su ámbito y actúan como puente humano para tutores excluidos.
 
 - **Realtime publication**: solo `mensajes` y `anuncios`. Las `lectura_*` no se publican; el cliente recalcula localmente. Las policies SELECT filtran las notificaciones Realtime — un cliente sin permiso no recibe eventos.

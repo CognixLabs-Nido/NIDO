@@ -14,8 +14,11 @@ import type { AnuncioListItem } from '../types'
  *    activa de su niño + ámbito='centro' del centro.
  *
  * `puede_recibir_mensajes=false` ⇒ lista vacía (flag global, F5 scope).
+ *
+ * Multicentro: la RLS deja leer los anuncios de todos los centros del usuario; se acotan al de
+ * la página (`centroId`).
  */
-export async function getAnunciosDelUsuario(): Promise<AnuncioListItem[]> {
+export async function getAnunciosDelUsuario(centroId: string): Promise<AnuncioListItem[]> {
   const supabase = await createClient()
 
   const { data: userData } = await supabase.auth.getUser()
@@ -42,6 +45,7 @@ export async function getAnunciosDelUsuario(): Promise<AnuncioListItem[]> {
       )
       `
     )
+    .eq('centro_id', centroId)
     .order('created_at', { ascending: false })
     .limit(100)
 
