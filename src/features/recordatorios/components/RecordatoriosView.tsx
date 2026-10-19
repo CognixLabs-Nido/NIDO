@@ -17,6 +17,8 @@ import type { RecordatorioListItem } from '../types'
 
 interface Props {
   locale: string
+  /** Centro activo de la página (para crear recordatorios de centro y personales). */
+  centroId: string
   userId: string
   /** Destinos que el rol puede crear (para el form). Vacío = tutor (solo lee). */
   destinos: RecordatorioDestinatarioInput[]
@@ -31,6 +33,7 @@ type Filtro = 'todos' | RecordatorioDestinatarioInput
 
 export function RecordatoriosView({
   locale,
+  centroId,
   userId,
   destinos,
   ninos,
@@ -69,6 +72,7 @@ export function RecordatoriosView({
         {destinos.length > 0 && (
           <RecordatorioFormDialog
             locale={locale}
+            centroId={centroId}
             destinos={destinos}
             ninos={ninos}
             aulas={aulas}

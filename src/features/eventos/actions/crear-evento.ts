@@ -47,7 +47,8 @@ export async function crearEventoCore(
     userId,
     d.ambito,
     d.nino_id ?? null,
-    d.aula_id ?? null
+    d.aula_id ?? null,
+    d.centro_id ?? null
   )
   if (!centroResult.success) return centroResult
   const centroId = centroResult.data

@@ -48,6 +48,8 @@ export interface ProfeOpt {
 
 interface Props {
   rol: 'admin' | 'profe'
+  /** Centro activo de la página: el de una cita de claustro o una visita. */
+  centroId: string
   ninos: NinoOpt[]
   aulas: AulaOpt[]
   profes: ProfeOpt[]
@@ -114,6 +116,7 @@ const TIPOS_POR_ROL: Record<'admin' | 'profe', TipoCita[]> = {
 
 export function CitaFormDialog({
   rol,
+  centroId,
   ninos,
   aulas,
   profes,
@@ -170,6 +173,7 @@ export function CitaFormDialog({
         tipo: v.tipo,
         nino_id: v.tipo === 'reunion_familia' ? (v.nino_id ?? null) : null,
         aula_id: v.tipo === 'reunion_clase' ? (v.aula_id ?? null) : null,
+        centro_id: centroId,
         titulo: v.titulo,
         descripcion: v.descripcion || undefined,
         lugar: v.lugar || undefined,

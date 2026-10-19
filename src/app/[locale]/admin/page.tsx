@@ -78,7 +78,7 @@ export default async function AdminDashboard({ params }: PageProps) {
       .is('deleted_at', null),
     getCursoActivo(centroId),
     getResumenAsistenciaCentro(fecha),
-    getAvisosInicio('admin'),
+    getAvisosInicio('admin', centroId),
   ])
 
   const aulasCount = aulasResp.count ?? 0

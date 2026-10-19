@@ -14,7 +14,8 @@ import { getAulaById } from '@/features/aulas/queries/get-aulas'
 import { AgendaAulaCliente } from '@/features/agenda-diaria/components/AgendaAulaCliente'
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getAgendasAulaDelDia } from '@/features/agenda-diaria/queries/get-agendas-aula-del-dia'
-import { getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { AvisoCentroDistinto } from '@/features/centros/components/AvisoCentroDistinto'
+import { contextoEnCentro } from '@/features/centros/contexto/get-contexto-centro'
 import {
   getVinculosTutoresAula,
   type VinculoTutorMin,
@@ -52,7 +53,9 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
   //     redirige al SplitView del PR #32 con tutor preseleccionado.
   // La query de vínculos SOLO se ejecuta para admin (gating cliente, no
   // de seguridad; RLS es la verdadera barrera). Profe ahorra IO.
-  const rolRaw = await getRolEnCentro(aula.centro_id)
+  // El rol es el del CENTRO DEL AULA (decisión de Jose: la página se ve aunque no sea el centro
+  // activo; la cabecera lo avisa con `AvisoCentroDistinto`).
+  const rolRaw = (await contextoEnCentro(aula.centro_id))?.rol ?? null
   const rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado' =
     rolRaw === 'admin' || rolRaw === 'profe' || rolRaw === 'tutor_legal' || rolRaw === 'autorizado'
       ? rolRaw
@@ -70,6 +73,7 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
 
   return (
     <div className="space-y-6">
+      <AvisoCentroDistinto centroRegistroId={aula.centro_id} />
       <Link
         href={`/${locale}/teacher`}
         className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium"

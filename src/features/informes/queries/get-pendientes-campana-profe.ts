@@ -3,7 +3,6 @@ import 'server-only'
 import { hoyMadridYmd } from '@/features/autorizaciones/lib/server-helpers'
 import { createClient } from '@/lib/supabase/server'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 
@@ -31,16 +30,17 @@ interface MatriculaNinoRow {
  * Devuelve `null` (sin aviso) si: no es redactora en ningún aula (técnico/apoyo o
  * admin), no hay campañas abiertas, o no le queda ningún informe pendiente. La
  * urgencia y la fecha mostrada salen de la campaña con pendientes más próxima (Q1).
+ * `centroId`: el de la página (el activo), no la cookie.
  */
-export async function getPendientesCampanaProfe(): Promise<CampanaPendientesAviso | null> {
+export async function getPendientesCampanaProfe(
+  centroId: string
+): Promise<CampanaPendientesAviso | null> {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return null
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return null
   const curso = await getCursoActivo(centroId)
   if (!curso) return null
 

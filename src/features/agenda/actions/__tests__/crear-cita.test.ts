@@ -40,7 +40,8 @@ const CITA = '44444444-4444-4444-8444-444444444444'
 interface Setup {
   ninoCentro?: string
   aulaCentro?: string
-  rolCentro?: string
+  /** Centros donde el organizador tiene rol, como los devuelve `roles_usuario`. */
+  rolesCentros?: string[]
   esAdmin?: boolean
   esProfeNino?: boolean
   esProfeAula?: boolean
@@ -67,6 +68,14 @@ function makeFake(setup: Setup) {
       b.eq = () => b
       b.is = () => b
       b.limit = () => b
+      // `roles_usuario` se espera directamente (lista de todos sus roles activos).
+      if (table === 'roles_usuario') {
+        b.then = (resolve: (v: unknown) => unknown) =>
+          resolve({
+            data: (setup.rolesCentros ?? []).map((c) => ({ centro_id: c, rol: 'admin' })),
+            error: null,
+          })
+      }
       b.maybeSingle = () => {
         if (table === 'ninos')
           return Promise.resolve({
@@ -76,11 +85,6 @@ function makeFake(setup: Setup) {
         if (table === 'aulas')
           return Promise.resolve({
             data: setup.aulaCentro ? { centro_id: setup.aulaCentro } : null,
-            error: null,
-          })
-        if (table === 'roles_usuario')
-          return Promise.resolve({
-            data: setup.rolCentro ? { centro_id: setup.rolCentro } : null,
             error: null,
           })
         return Promise.resolve({ data: null, error: null })
@@ -103,6 +107,7 @@ function makeFake(setup: Setup) {
 
 const claustro = {
   tipo: 'reunion_claustro' as const,
+  centro_id: CENTRO,
   titulo: 'Claustro',
   fecha: '2026-09-10',
   hora_inicio: '17:00',
@@ -114,9 +119,31 @@ beforeEach(() => {
 })
 
 describe('crearCitaCore', () => {
-  it('reunion_claustro: resuelve centro del organizador, inserta cita + invitados', async () => {
+  it('reunion_claustro sin centro explícito → sin_centro (nunca uno al azar)', async () => {
+    const { fake, citaInsertSpy } = makeFake({ rolesCentros: [CENTRO], esAdmin: true })
+    const res = await crearCitaCore(fake, USER, { ...claustro, centro_id: null })
+    expect(res.success).toBe(false)
+    if (!res.success) expect(res.error).toBe('citas.errors.sin_centro')
+    expect(citaInsertSpy).not.toHaveBeenCalled()
+  })
+
+  it('reunion_claustro de un organizador en dos centros: el EXPLÍCITO, no el primero', async () => {
+    const OTRO = '99999999-9999-4999-8999-999999999999'
+    // Premisa: el explícito (OTRO) no es el primero por id.
+    expect([OTRO, CENTRO].sort()[0]).toBe(CENTRO)
+    const { fake, citaInsertSpy } = makeFake({
+      rolesCentros: [CENTRO, OTRO],
+      esAdmin: true,
+      citaInsert: { id: CITA },
+    })
+    const res = await crearCitaCore(fake, USER, { ...claustro, centro_id: OTRO })
+    expect(res.success).toBe(true)
+    expect(citaInsertSpy).toHaveBeenCalledWith(expect.objectContaining({ centro_id: OTRO }))
+  })
+
+  it('reunion_claustro: centro explícito de la página, inserta cita + invitados', async () => {
     const { fake, citaInsertSpy, invitadosInsertSpy } = makeFake({
-      rolCentro: CENTRO,
+      rolesCentros: [CENTRO],
       esAdmin: true,
       citaInsert: { id: CITA },
     })
@@ -167,7 +194,7 @@ describe('crearCitaCore', () => {
 
   it('falla si el snapshot queda vacío (no crea cita huérfana)', async () => {
     snapshotMock.mockResolvedValue({ internos: [], externos: [] })
-    const { fake, citaInsertSpy } = makeFake({ rolCentro: CENTRO, esAdmin: true })
+    const { fake, citaInsertSpy } = makeFake({ rolesCentros: [CENTRO], esAdmin: true })
     const res = await crearCitaCore(fake, USER, claustro)
     expect(res.success).toBe(false)
     if (!res.success) expect(res.error).toBe('citas.errors.sin_invitados')
@@ -176,7 +203,7 @@ describe('crearCitaCore', () => {
 
   it('limpia la cita (service role) si falla el batch de invitados', async () => {
     const { fake } = makeFake({
-      rolCentro: CENTRO,
+      rolesCentros: [CENTRO],
       esAdmin: true,
       citaInsert: { id: CITA },
       invitadosError: { message: 'boom' },

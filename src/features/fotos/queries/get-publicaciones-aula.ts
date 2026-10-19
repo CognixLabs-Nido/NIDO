@@ -1,9 +1,8 @@
 import 'server-only'
 
+import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-
-import { getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
 
 import { firmarRutas } from '../lib/storage'
 import type { MediaItem, PublicacionItem } from '../types'
@@ -46,8 +45,8 @@ export async function getPublicacionesAula(
   } = await supabase.auth.getUser()
   if (!user) return []
 
-  const rol = await getRolEnCentro(centroId)
-  const esAdmin = rol === 'admin'
+  // `centroId` es el del aula (explícito): admin de ESE centro, no del centro activo.
+  const esAdmin = await esAdminEn(supabase, user.id, centroId)
 
   const { data: pubs } = await supabase
     .from('publicaciones')

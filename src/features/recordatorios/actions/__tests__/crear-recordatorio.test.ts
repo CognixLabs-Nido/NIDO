@@ -23,7 +23,8 @@ const PROFE_ID = '66666666-6666-4666-8666-666666666666'
 interface FakeSetup {
   ninoCentro?: string | null
   aulaCentro?: string | null
-  rolCentro?: string | null
+  /** Centros donde el usuario tiene rol, como los devuelve `roles_usuario`. */
+  rolesCentros?: string[]
   insertResult?: { id: string } | null
   insertError?: { code?: string; message: string } | null
 }
@@ -37,6 +38,14 @@ function makeFakeClient(setup: FakeSetup) {
       b.eq = () => b
       b.is = () => b
       b.limit = () => b
+      // `roles_usuario` se espera directamente (lista de todos sus roles activos).
+      if (table === 'roles_usuario') {
+        b.then = (resolve: (v: unknown) => unknown) =>
+          resolve({
+            data: (setup.rolesCentros ?? []).map((c) => ({ centro_id: c, rol: 'admin' })),
+            error: null,
+          })
+      }
       b.insert = (payload: Record<string, unknown>) => {
         insertSpy(payload)
         return b
@@ -51,12 +60,6 @@ function makeFakeClient(setup: FakeSetup) {
         if (table === 'aulas') {
           return Promise.resolve({
             data: setup.aulaCentro === undefined ? null : { centro_id: setup.aulaCentro },
-            error: null,
-          })
-        }
-        if (table === 'roles_usuario') {
-          return Promise.resolve({
-            data: setup.rolCentro ? { centro_id: setup.rolCentro } : null,
             error: null,
           })
         }
@@ -122,14 +125,43 @@ describe('crearRecordatorioCore — modelo granular F6-C', () => {
     })
   })
 
-  it('familias_centro: deriva centro del rol del usuario; sin referencias', async () => {
+  it('familias_centro sin centro explícito → sin_centro (nunca uno al azar)', async () => {
+    const { fake, insertSpy } = makeFakeClient({ rolesCentros: [CENTRO_ID] })
+    const res = await crearRecordatorioCore(fake, USER_ID, {
+      destinatario: 'familias_centro',
+      titulo: 'el viernes cerramos antes',
+    })
+    expect(res.success).toBe(false)
+    if (!res.success) expect(res.error).toBe('recordatorios.errors.sin_centro')
+    expect(insertSpy).not.toHaveBeenCalled()
+  })
+
+  it('familias_centro de un usuario en dos centros: el EXPLÍCITO, no el primero', async () => {
+    const OTRO = '99999999-9999-4999-8999-999999999999'
+    // Premisa: el explícito (OTRO) no es el primero por id.
+    expect([OTRO, CENTRO_ID].sort()[0]).toBe(CENTRO_ID)
     const { fake, insertSpy } = makeFakeClient({
-      rolCentro: CENTRO_ID,
+      rolesCentros: [CENTRO_ID, OTRO],
+      insertResult: { id: REC_ID },
+    })
+    const res = await crearRecordatorioCore(fake, USER_ID, {
+      destinatario: 'familias_centro',
+      centro_id: OTRO,
+      titulo: 'el viernes cerramos antes',
+    })
+    expect(res.success).toBe(true)
+    expect(insertSpy.mock.calls[0]?.[0]).toMatchObject({ centro_id: OTRO })
+  })
+
+  it('familias_centro: centro explícito de la página; sin referencias', async () => {
+    const { fake, insertSpy } = makeFakeClient({
+      rolesCentros: [CENTRO_ID],
       insertResult: { id: REC_ID },
     })
 
     const res = await crearRecordatorioCore(fake, USER_ID, {
       destinatario: 'familias_centro',
+      centro_id: CENTRO_ID,
       titulo: 'el viernes cerramos antes',
     })
 
@@ -145,12 +177,13 @@ describe('crearRecordatorioCore — modelo granular F6-C', () => {
 
   it('profe_individual: centro del rol; usuario_destinatario_id = la profe elegida', async () => {
     const { fake, insertSpy } = makeFakeClient({
-      rolCentro: CENTRO_ID,
+      rolesCentros: [CENTRO_ID],
       insertResult: { id: REC_ID },
     })
 
     const res = await crearRecordatorioCore(fake, USER_ID, {
       destinatario: 'profe_individual',
+      centro_id: CENTRO_ID,
       usuario_destinatario_id: PROFE_ID,
       titulo: 'revisa el parte de Lucas',
     })
@@ -168,12 +201,13 @@ describe('crearRecordatorioCore — modelo granular F6-C', () => {
 
   it('profes_centro: centro del rol; sin referencias', async () => {
     const { fake, insertSpy } = makeFakeClient({
-      rolCentro: CENTRO_ID,
+      rolesCentros: [CENTRO_ID],
       insertResult: { id: REC_ID },
     })
 
     const res = await crearRecordatorioCore(fake, USER_ID, {
       destinatario: 'profes_centro',
+      centro_id: CENTRO_ID,
       titulo: 'reunión de claustro el lunes',
     })
 
@@ -187,12 +221,13 @@ describe('crearRecordatorioCore — modelo granular F6-C', () => {
 
   it('personal: centro del rol; usuario_destinatario_id = creador', async () => {
     const { fake, insertSpy } = makeFakeClient({
-      rolCentro: CENTRO_ID,
+      rolesCentros: [CENTRO_ID],
       insertResult: { id: REC_ID },
     })
 
     const res = await crearRecordatorioCore(fake, USER_ID, {
       destinatario: 'personal',
+      centro_id: CENTRO_ID,
       titulo: 'llamar al proveedor de menús',
     })
 

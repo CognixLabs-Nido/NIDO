@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { getEstadoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { pivoteACsvFilas } from '@/features/recibos/lib/pivote-csv'
 import { getPivotePeriodo } from '@/features/recibos/queries/get-pivote-periodo'
 import { generarCsv } from '@/shared/lib/export-csv'
@@ -24,8 +24,11 @@ export async function GET(
   const mes = clampInt(searchParams.get('mes'), 1, 12)
   if (anio === null || mes === null) return new Response('bad_request', { status: 400 })
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return new Response('forbidden', { status: 403 })
+  // El centro activo, SIN redirigir: es una descarga, no una página. Sin centro activo (sin sesión,
+  // sin roles, o varios centros sin elegir) → 403, como antes.
+  const estado = await getEstadoCentro()
+  if (estado.tipo !== 'activo') return new Response('forbidden', { status: 403 })
+  const centroId = estado.contexto.centroId
 
   const [pivote, t] = await Promise.all([
     getPivotePeriodo(centroId, anio, mes),

@@ -2,7 +2,6 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 
@@ -39,17 +38,16 @@ function porPeriodoVacio(): Record<PeriodoInforme, InformePeriodoEstado> {
  * Aulas del profe (vía `profes_aulas` activas) con sus niños matriculados y el
  * estado del informe de cada niño por período (curso activo). `puedeRedactar` por
  * aula = el profe es coordinadora/profesora (Q5; tecnico/apoyo solo leen). La RLS
- * filtra qué filas devuelve cada tabla; aquí solo se ordenan y agrupan.
+ * filtra qué filas devuelve cada tabla; aquí solo se ordenan y agrupan. `centroId`: el de la
+ * página (el activo).
  */
-export async function getInformesDeMisAulas(): Promise<AulaInformes[]> {
+export async function getInformesDeMisAulas(centroId: string): Promise<AulaInformes[]> {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return []
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return []
   const curso = await getCursoActivo(centroId)
   if (!curso) return []
 

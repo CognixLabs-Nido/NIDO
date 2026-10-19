@@ -31,14 +31,14 @@ export default async function TeacherLayout({ children, params }: LayoutProps) {
 
   const user = await getCurrentUser()
   const centroLogo = await getCentroLogo(centroId)
-  const { total: unread } = await countNoLeidos()
+  const { total: unread } = await countNoLeidos(centroId)
   const recordatoriosPendientes = await contarRecordatoriosPendientes()
   const invitacionesPendientes = await contarInvitacionesPendientes()
 
   const items = await buildSidebarItems(
     rol === 'admin' ? 'admin' : 'profe',
     locale,
-    <MessagingBadge initialTotal={unread} />,
+    <MessagingBadge initialTotal={unread} centroId={centroId} />,
     <RecordatoriosBadge initialTotal={recordatoriosPendientes} />,
     <AgendaBadge initialTotal={invitacionesPendientes} />
   )

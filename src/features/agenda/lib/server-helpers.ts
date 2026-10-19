@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { rolesEnCentro } from '@/features/centros/contexto/roles-del-usuario'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
@@ -74,7 +75,8 @@ export async function resolverCentroIdCita(
   userId: string,
   tipo: TipoCita,
   ninoId: string | null,
-  aulaId: string | null
+  aulaId: string | null,
+  centroIdExplicito: string | null
 ): Promise<ActionResult<string>> {
   if (tipo === 'reunion_familia') {
     const { data: nino, error } = await supabase
@@ -104,16 +106,12 @@ export async function resolverCentroIdCita(
     return ok(aula.centro_id)
   }
 
-  // reunion_claustro / visita → centro del organizador.
-  const { data } = await supabase
-    .from('roles_usuario')
-    .select('centro_id')
-    .eq('usuario_id', userId)
-    .is('deleted_at', null)
-    .limit(1)
-    .maybeSingle()
-  if (!data?.centro_id) return fail('citas.errors.sin_centro')
-  return ok(data.centro_id)
+  // reunion_claustro / visita → el centro EXPLÍCITO de la página (multicentro · Fase 1), si el
+  // organizador tiene rol en él. Nunca un centro suyo al azar; la RLS de `citas` sigue decidiendo.
+  if (!centroIdExplicito || !(await rolesEnCentro(supabase, userId, centroIdExplicito))) {
+    return fail('citas.errors.sin_centro')
+  }
+  return ok(centroIdExplicito)
 }
 
 /**

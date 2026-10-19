@@ -38,6 +38,8 @@ export const crearRecordatorioSchema = z
     nino_id: z.string().uuid().nullable().optional(),
     aula_id: z.string().uuid().nullable().optional(),
     usuario_destinatario_id: z.string().uuid().nullable().optional(),
+    /** Centro de la página. Decide en los destinos sin niño ni aula (los de centro, personal). */
+    centro_id: z.string().uuid().nullable().optional(),
     titulo: tituloSchema,
     descripcion: descripcionSchema.nullable().optional(),
     // ISO 8601 con offset (ej. '2026-06-05T09:00:00.000Z'). null = sin fecha.

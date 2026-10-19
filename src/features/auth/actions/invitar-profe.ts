@@ -3,6 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 
+import { centrosDondeEsAdmin } from '@/features/centros/contexto/roles-del-usuario'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/database'
@@ -58,13 +59,7 @@ async function centrosAdminDelLlamador(): Promise<ActionResult<string[]>> {
   const { data: userRes } = await supabase.auth.getUser()
   if (!userRes.user) return fail('auth.invitation.errors.unauthenticated')
 
-  const { data: roles } = await supabase
-    .from('roles_usuario')
-    .select('centro_id')
-    .eq('usuario_id', userRes.user.id)
-    .eq('rol', 'admin')
-    .is('deleted_at', null)
-  const centros = (roles ?? []).map((r) => r.centro_id)
+  const centros = (await centrosDondeEsAdmin(supabase, userRes.user.id)) ?? []
   if (centros.length === 0) return fail('auth.invitation.errors.forbidden')
   return ok(centros)
 }

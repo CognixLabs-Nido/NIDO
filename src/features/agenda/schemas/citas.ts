@@ -134,6 +134,8 @@ export const crearCitaSchema = z
     tipo: tipoCitaEnum,
     aula_id: z.string().uuid().nullable().optional(),
     nino_id: z.string().uuid().nullable().optional(),
+    /** Centro activo de la página. Solo decide en claustro/visita (familia/clase: el del registro). */
+    centro_id: z.string().uuid().nullable().optional(),
     titulo: tituloSchema,
     descripcion: descripcionSchema.nullable().optional(),
     lugar: lugarSchema.nullable().optional(),

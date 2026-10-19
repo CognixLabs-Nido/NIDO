@@ -4191,6 +4191,10 @@
     "conmutador": {
       "etiqueta": "School",
       "cambiar": "Change school"
+    },
+    "aviso": {
+      "otro_centro": "You are viewing {centro}, not your active school ({activo}).",
+      "viendo": "You are viewing {centro}."
     }
   }
 }

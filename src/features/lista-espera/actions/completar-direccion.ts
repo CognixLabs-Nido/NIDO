@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
 import { crearTutorDirecto } from '@/features/auth/lib/crear-tutor-directo'
 import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
-import { getCentroActualId } from '@/features/centros/queries/get-centro-actual'
+import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -71,17 +71,22 @@ export async function completarEnDireccion(
   if (authIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
   if (!userData?.user) return fail('auth.invitation.errors.unauthenticated')
 
-  const centroId = await getCentroActualId()
-  if (!centroId) return fail('listaEspera.errors.sin_centro')
+  // Prospecto primero: SU centro es el de la acción, no el centro activo de la cookie (una
+  // pestaña de otro centro actúa sobre el prospecto que enseña). La RLS de `lista_espera`
+  // solo deja leer a Dirección los de sus centros.
+  const { data: prospecto } = await supabase
+    .from('lista_espera')
+    .select(
+      'id, centro_id, nombre_nino, apellidos_nino, fecha_nacimiento, tutor_usuario_id, estado'
+    )
+    .eq('id', parsed.data.id)
+    .maybeSingle()
+  if (!prospecto) return fail('listaEspera.errors.no_encontrado')
+  const centroId = prospecto.centro_id
 
-  // Gate admin del centro (los INSERT van por service role → sin RLS que los cubra).
-  const { data: roles } = await supabase
-    .from('roles_usuario')
-    .select('rol, centro_id')
-    .eq('usuario_id', userData.user.id)
-    .is('deleted_at', null)
-  const isAdmin = roles?.some((r) => r.centro_id === centroId && r.rol === 'admin')
-  if (!isAdmin) return fail('auth.invitation.errors.forbidden')
+  // Gate admin del centro del prospecto (los INSERT van por service role → sin RLS que los cubra).
+  if (!(await esAdminEn(supabase, userData.user.id, centroId)))
+    return fail('auth.invitation.errors.forbidden')
 
   // Curso activo del centro (autoritativo server-side; la matrícula va contra él).
   const { data: cursoActivoId } = await supabase.rpc('curso_activo_de_centro', {
@@ -98,17 +103,8 @@ export async function completarEnDireccion(
     .maybeSingle()
   if (!aulaCurso) return fail('listaEspera.errors.aula_invalida')
 
-  // Prospecto (RLS admin lo acota a su centro). Debe estar en espera. A diferencia de
-  // invitar, el email NO sale del prospecto: lo teclea la Dirección en el diálogo.
-  const { data: prospecto } = await supabase
-    .from('lista_espera')
-    .select(
-      'id, centro_id, nombre_nino, apellidos_nino, fecha_nacimiento, tutor_usuario_id, estado'
-    )
-    .eq('id', parsed.data.id)
-    .maybeSingle()
-  if (!prospecto || prospecto.centro_id !== centroId)
-    return fail('listaEspera.errors.no_encontrado')
+  // Debe estar en espera. A diferencia de invitar, el email NO sale del prospecto: lo teclea la
+  // Dirección en el diálogo.
   if (prospecto.estado !== 'en_espera') return fail('listaEspera.errors.no_en_espera')
 
   // `fecha_nacimiento` es obligatoria para crear el niño (`ninos.fecha_nacimiento` NOT NULL).

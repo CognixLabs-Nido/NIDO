@@ -54,6 +54,8 @@ type Props =
   | {
       modo?: 'crear'
       locale: string
+      /** Centro activo de la página: el de un evento de ámbito `centro`. */
+      centroId: string
       /** Ámbitos que el rol puede crear (admin: los 3; profe: solo 'aula'). */
       ambitos: AmbitoEvento[]
       aulas: { id: string; nombre: string }[]
@@ -219,6 +221,7 @@ export function EventoFormDialog(props: Props) {
         ambito: values.ambito,
         aula_id: values.ambito === 'aula' ? values.aula_id : null,
         nino_id: values.ambito === 'nino' ? values.nino_id : null,
+        centro_id: props.centroId,
         tipo: values.tipo,
         titulo: values.titulo,
         descripcion: values.descripcion.trim() ? values.descripcion : null,

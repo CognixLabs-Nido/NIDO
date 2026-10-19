@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { rolesEnCentro } from '@/features/centros/contexto/roles-del-usuario'
 import { getAutorPushInfo } from '@/features/push/lib/audiencia'
 import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
 import { createClient } from '@/lib/supabase/server'
@@ -135,8 +136,8 @@ export async function crearRecordatorioCore(
 
 /**
  * Resuelve el `centro_id` server-side según el destino. Para familia_individual
- * lo deriva del niño; para familias_aula, del aula; para el resto, del centro
- * del usuario autenticado.
+ * lo deriva del niño; para familias_aula, del aula; para el resto, el centro
+ * EXPLÍCITO de la página (multicentro · Fase 1), si el usuario tiene rol en él.
  */
 async function resolverCentroId(
   supabase: SupabaseClient<Database>,
@@ -171,26 +172,11 @@ async function resolverCentroId(
     return ok(aula.centro_id)
   }
 
-  // familias_centro / profe_individual / profes_centro / personal → centro del usuario.
-  const centro = await resolverCentroDelUsuario(supabase, userId)
-  if (!centro) return fail('recordatorios.errors.sin_centro')
+  // familias_centro / profe_individual / profes_centro / personal → el centro de la página.
+  // Nunca un centro del usuario al azar; la RLS de `recordatorios` sigue decidiendo.
+  const centro = d.centro_id ?? null
+  if (!centro || !(await rolesEnCentro(supabase, userId, centro))) {
+    return fail('recordatorios.errors.sin_centro')
+  }
   return ok(centro)
-}
-
-/**
- * Centro del usuario. Toma el primer rol activo. En multi-centro (futuro) habría
- * que pasar el centro como input; en el piloto single-centro es determinista.
- */
-async function resolverCentroDelUsuario(
-  supabase: SupabaseClient<Database>,
-  userId: string
-): Promise<string | null> {
-  const { data } = await supabase
-    .from('roles_usuario')
-    .select('centro_id')
-    .eq('usuario_id', userId)
-    .is('deleted_at', null)
-    .limit(1)
-    .maybeSingle()
-  return data?.centro_id ?? null
 }

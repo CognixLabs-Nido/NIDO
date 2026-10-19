@@ -31,7 +31,7 @@ export default async function TeacherInformesPage({ params }: PageProps) {
   if (rol !== 'profe' && rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   const [aulas, plantillas, campanasData] = await Promise.all([
-    getInformesDeMisAulas(),
+    getInformesDeMisAulas(centroId),
     getPlantillasInforme(false),
     getCampanasInformeCursoActivo(centroId),
   ])

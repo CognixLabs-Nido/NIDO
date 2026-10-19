@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -25,16 +26,7 @@ export async function getAulasParaAnuncio(centroId: string): Promise<AulaParaAnu
   if (!userId) return []
 
   // ¿Soy admin del centro?
-  const { data: rolAdmin } = await supabase
-    .from('roles_usuario')
-    .select('rol')
-    .eq('usuario_id', userId)
-    .eq('centro_id', centroId)
-    .eq('rol', 'admin')
-    .is('deleted_at', null)
-    .maybeSingle()
-
-  if (rolAdmin) {
+  if (await esAdminEn(supabase, userId, centroId)) {
     const { data: aulas, error } = await supabase
       .from('aulas')
       .select('id, nombre')

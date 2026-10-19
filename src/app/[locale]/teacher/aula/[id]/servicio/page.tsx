@@ -5,7 +5,8 @@ import { getTranslations } from 'next-intl/server'
 
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getAulaById } from '@/features/aulas/queries/get-aulas'
-import { getRolEnCentro } from '@/features/centros/queries/get-centro-actual'
+import { AvisoCentroDistinto } from '@/features/centros/components/AvisoCentroDistinto'
+import { contextoEnCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { PaseDeListaServicioCliente } from '@/features/parte-servicio/components/PaseDeListaServicioCliente'
 import { getParteServicioAula } from '@/features/parte-servicio/queries/get-parte-servicio-aula'
 
@@ -23,7 +24,8 @@ export default async function TeacherAulaServicioPage({ params, searchParams }: 
   if (!aula) notFound()
 
   // El parte es control interno del centro: solo profe del aula o admin.
-  const rol = await getRolEnCentro(aula.centro_id)
+  // Rol en el CENTRO DEL AULA, no en el activo (la cabecera avisa si son distintos).
+  const rol = (await contextoEnCentro(aula.centro_id))?.rol ?? null
   if (rol !== 'profe' && rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   const fecha = fechaQuery && /^\d{4}-\d{2}-\d{2}$/.test(fechaQuery) ? fechaQuery : hoyMadrid()
@@ -31,6 +33,7 @@ export default async function TeacherAulaServicioPage({ params, searchParams }: 
 
   return (
     <div className="space-y-6">
+      <AvisoCentroDistinto centroRegistroId={aula.centro_id} />
       <Link
         href={`/${locale}/teacher/aula/${id}`}
         className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium"

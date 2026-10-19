@@ -36,6 +36,7 @@ export async function NuevoRecordatorioContextual({ locale, rol, centroId, prese
   return (
     <RecordatorioFormDialog
       locale={locale}
+      centroId={centroId}
       destinos={destinos}
       ninos={ninos}
       aulas={aulas}

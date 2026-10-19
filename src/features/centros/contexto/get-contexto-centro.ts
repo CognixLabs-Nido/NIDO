@@ -7,12 +7,8 @@ import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 
 import { COOKIE_CENTRO_ACTIVO } from './cookie'
-import {
-  centrosDelUsuario,
-  resolverCentroActivo,
-  type CentroDelUsuario,
-  type Rol,
-} from './resolver'
+import { resolverCentroActivo, type CentroDelUsuario, type Rol } from './resolver'
+import { leerCentrosDe } from './roles-del-usuario'
 
 /**
  * Punto único de la app para saber en qué centro está el usuario (multicentro · Fase 1).
@@ -52,13 +48,8 @@ const leerCentrosDelUsuario = cache(async (): Promise<CentroDelUsuario[] | null>
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) return null
 
-  const { data } = await supabase
-    .from('roles_usuario')
-    .select('centro_id, rol')
-    .eq('usuario_id', userData.user.id)
-    .is('deleted_at', null)
-
-  return centrosDelUsuario(data ?? [])
+  // Un fallo de lectura cuenta como «sin roles» (→ forbidden), como antes.
+  return (await leerCentrosDe(supabase, userData.user.id)) ?? []
 })
 
 export const getEstadoCentro = cache(async (): Promise<EstadoCentro> => {

@@ -55,6 +55,7 @@ export default async function AgendaPage({ params, searchParams }: PageProps) {
   return (
     <AgendaView
       locale={locale}
+      centroId={centroId}
       rol={rol}
       vista={vista}
       fecha={fecha}

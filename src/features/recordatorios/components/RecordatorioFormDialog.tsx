@@ -51,6 +51,8 @@ import type { ProfeParaRecordatorio } from '../queries/get-profes-para-recordato
 
 interface Props {
   locale: string
+  /** Centro de la página (activo, o el del niño/aula en las vistas contextuales). */
+  centroId: string
   /** Destinos que el rol del usuario puede crear (destinosParaRol). */
   destinos: RecordatorioDestinatarioInput[]
   ninos: NinoParaRecordatorio[]
@@ -114,6 +116,7 @@ type FormValues = z.infer<typeof formSchema>
 
 export function RecordatorioFormDialog({
   locale: _locale,
+  centroId,
   destinos,
   ninos,
   aulas,
@@ -167,6 +170,7 @@ export function RecordatorioFormDialog({
         usuario_destinatario_id: requiereUsuario(values.destinatario)
           ? values.usuario_destinatario_id
           : null,
+        centro_id: centroId,
         titulo: values.titulo,
         descripcion: values.descripcion.trim() ? values.descripcion : null,
         vencimiento: datetimeLocalAIso(values.vencimiento),
