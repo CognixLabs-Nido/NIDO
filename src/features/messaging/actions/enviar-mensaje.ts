@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { urlDelAviso } from '@/features/centros/contexto/centro-del-aviso'
 import {
   destinatariosDeAdminFamilia,
   destinatariosDeNino,
@@ -196,7 +197,7 @@ async function enviarMensajeProfeFamilia(
       await enviarPushANotificarUsuarios(destinatarios, {
         titulo: autor.nombre,
         cuerpo,
-        url: `/${autor.idioma}/messages?nino=${ninoId}`,
+        url: urlDelAviso(`/${autor.idioma}/messages?nino=${ninoId}`, nino.centro_id),
         datos: {
           tipo: 'mensaje',
           conversacion_id: conversacionId,
@@ -227,7 +228,7 @@ async function enviarMensajeAdminFamilia(
   //    fila (el caller no es admin/tutor del par), devolvemos `no_autorizado`.
   const { data: conv, error: convErr } = await supabase
     .from('conversaciones')
-    .select('id, tipo_conversacion, expires_at, admin_id, tutor_id')
+    .select('id, centro_id, tipo_conversacion, expires_at, admin_id, tutor_id')
     .eq('id', conversacionId)
     .maybeSingle()
 
@@ -295,7 +296,10 @@ async function enviarMensajeAdminFamilia(
         await enviarPushANotificarUsuarios(destinatarios, {
           titulo: autor.nombre,
           cuerpo,
-          url: `/${autor.idioma}/messages/conversacion/${conversacionId}`,
+          url: urlDelAviso(
+            `/${autor.idioma}/messages/conversacion/${conversacionId}`,
+            conv.centro_id
+          ),
           datos: {
             tipo: 'mensaje',
             conversacion_id: conversacionId,

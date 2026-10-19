@@ -14,6 +14,9 @@ import type { Database } from '@/types/database'
  *
  * Cliente Supabase falso: `conversaciones`.maybeSingle devuelve la conv del
  * par; `mensajes`.single devuelve el id insertado.
+ *
+ * Multicentro: el enlace de la notificación lleva el centro del registro (`?centro=`), el de la
+ * conversación o el del niño, para que la página ofrezca cambiar si es otro centro del usuario.
  */
 
 vi.mock('@/features/push/lib/enviar-push', () => ({
@@ -27,6 +30,7 @@ vi.mock('@/features/push/lib/audiencia', async (importOriginal) => {
   return {
     ...actual,
     getAutorPushInfo: vi.fn(() => Promise.resolve({ nombre: 'Autor', idioma: 'es' })),
+    destinatariosDeNino: vi.fn(() => Promise.resolve(['tutor-del-nino'])),
   }
 })
 
@@ -36,10 +40,14 @@ import { enviarMensajeCore } from '../enviar-mensaje'
 const ADMIN = 'admin-1'
 const TUTOR = 'tutor-1'
 const CONV = 'conv-1'
+const CENTRO_CONV = 'centro-de-la-conv'
+const CENTRO_NINO = 'centro-del-nino'
+const NINO = '00000000-0000-4000-8000-000000000001'
 
 function makeSupabase(): SupabaseClient<Database> {
   const conv = {
     id: CONV,
+    centro_id: CENTRO_CONV,
     tipo_conversacion: 'admin_familia',
     expires_at: new Date(Date.now() + 86_400_000).toISOString(), // futuro → no caducada
     admin_id: ADMIN,
@@ -52,7 +60,15 @@ function makeSupabase(): SupabaseClient<Database> {
       b.eq = () => b
       b.insert = () => b
       b.maybeSingle = () =>
-        Promise.resolve({ data: table === 'conversaciones' ? conv : null, error: null })
+        Promise.resolve({
+          data:
+            table === 'conversaciones'
+              ? conv
+              : table === 'ninos'
+                ? { centro_id: CENTRO_NINO }
+                : null,
+          error: null,
+        })
       b.single = () => Promise.resolve({ data: { id: 'msg-1' }, error: null })
       return b
     },
@@ -75,7 +91,7 @@ describe('enviarMensajeCore admin_familia → push', () => {
     const [destinatarios, payload] = vi.mocked(enviarPushANotificarUsuarios).mock.calls[0]!
     expect(destinatarios).toEqual([TUTOR])
     expect(payload.datos).toMatchObject({ tipo: 'mensaje', conversacion_id: CONV })
-    expect(payload.url).toContain('/messages/conversacion/conv-1')
+    expect(payload.url).toBe(`/es/messages/conversacion/conv-1?centro=${CENTRO_CONV}`)
   })
 
   it('autor tutor: notifica al admin', async () => {
@@ -86,5 +102,19 @@ describe('enviarMensajeCore admin_familia → push', () => {
     })
     expect(res.success).toBe(true)
     expect(vi.mocked(enviarPushANotificarUsuarios).mock.calls[0]![0]).toEqual([ADMIN])
+  })
+})
+
+describe('enviarMensajeCore profe_familia → push', () => {
+  it('el enlace abre el niño y lleva el centro del niño', async () => {
+    const res = await enviarMensajeCore(makeSupabase(), 'profe-1', {
+      kind: 'profe_familia',
+      nino_id: NINO,
+      contenido: 'hoy ha comido bien',
+    })
+    expect(res.success).toBe(true)
+    const [destinatarios, payload] = vi.mocked(enviarPushANotificarUsuarios).mock.calls[0]!
+    expect(destinatarios).toEqual(['tutor-del-nino'])
+    expect(payload.url).toBe(`/es/messages?nino=${NINO}&centro=${CENTRO_NINO}`)
   })
 })

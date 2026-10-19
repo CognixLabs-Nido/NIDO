@@ -19,8 +19,14 @@ import { audienciaAnuncio } from './audiencia-anuncio'
  *
  * `total` es aproximado (refleja el estado en este momento). Si crece
  * la cardinalidad, se moverá a una vista o RPC dedicada.
+ *
+ * Multicentro: solo el del centro de la página. La RLS deja leer los de TODOS los centros del
+ * usuario; uno de otro centro (un enlace o una notificación de allí) devuelve `null`.
  */
-export async function getAnuncioDetalle(anuncioId: string): Promise<AnuncioDetalle | null> {
+export async function getAnuncioDetalle(
+  anuncioId: string,
+  centroId: string
+): Promise<AnuncioDetalle | null> {
   const supabase = await createClient()
 
   const { data: userData } = await supabase.auth.getUser()
@@ -45,6 +51,7 @@ export async function getAnuncioDetalle(anuncioId: string): Promise<AnuncioDetal
       `
     )
     .eq('id', anuncioId)
+    .eq('centro_id', centroId)
     .maybeSingle()
 
   if (error) {

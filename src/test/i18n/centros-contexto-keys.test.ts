@@ -31,6 +31,9 @@ const CLAVES: ReadonlyArray<readonly string[]> = [
   ['centros', 'conmutador', 'cambiar'],
   ['centros', 'aviso', 'otro_centro'],
   ['centros', 'aviso', 'viendo'],
+  ['centros', 'notificacion', 'titulo'],
+  ['centros', 'notificacion', 'texto'],
+  ['centros', 'notificacion', 'cambiar'],
 ]
 
 describe('i18n — selector y conmutador de centro', () => {

@@ -105,7 +105,13 @@ La lista (`scripts/check-centro-activo.lista.mjs`) tiene tres partes:
   - Sin migración: la RLS deja leer lo de todos los centros del usuario, y el centro lo pone la consulta.
 - **Detalle de una conversación por URL (2026-10-19, después del PR B de la Fase 2):** `/messages/conversacion/[id]` enseñaba la conversación de otro centro del usuario bajo el centro activo.
   - `getConversacionDetalle` y `getAdminFamiliaDetalle` reciben el centro de la página y devuelven `null` si la conversación es de otro: la página responde «no encontrado», como los detalles de la Fase 1 y de la Fase 2.
-  - Abrir el enlace de una notificación de otro centro también da «no encontrado» hasta cambiar de centro: el centro activo es el de la cookie, y la URL no lo lleva.
+  - Abrir el enlace de una notificación de otro centro también da «no encontrado» hasta cambiar de centro: el centro activo es el de la cookie, y la URL no lo lleva. Lo cierra el punto siguiente.
+- **Notificaciones de otro centro (2026-10-19, después del detalle por URL):** con el detalle acotado, a quien está en dos centros la notificación del otro le llevaba a «no encontrado».
+  - El detalle de un anuncio (`getAnuncioDetalle`) también es solo el del centro de la página, como el de las conversaciones.
+  - Las tres notificaciones llevan el centro del registro en el enlace (`?centro=`, `urlDelAviso`): el mensaje con la profe (el del niño), el hilo dirección↔familia (el de la conversación) y el anuncio.
+  - Si ese centro es otro de los del usuario, la página (`/messages`, la conversación o el anuncio) enseña `ConfirmarCentroDelAviso` en lugar del contenido: en qué centro está y un botón «Cambiar a …» que llama a `elegirCentro` y vuelve al registro. Si es el activo, o no es uno de los suyos, se abre como siempre.
+  - **Descartado: cambiar el centro al abrir el enlace.** Exigía un segundo sitio que escribiera la cookie (una ruta de servidor, o la acción lanzada al pintar), y cualquier enlace de fuera podría cambiarle el centro activo a quien lo pulsara, contra la regla de que el centro lo elige el usuario (MisterFC #755). Un toque más, solo para quien tiene dos centros y está en el otro.
+  - El guard `check-centro-activo` lo hace cumplir: la cookie la nombran solo cuatro ficheros (la define, la lee, la escribe y la borra al salir) y solo `elegirCentro` la escribe.
 
 ## Alternativas descartadas
 

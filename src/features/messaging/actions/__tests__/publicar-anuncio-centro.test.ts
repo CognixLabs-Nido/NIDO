@@ -62,6 +62,7 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('next-intl/server', () => ({ getTranslations: async () => (k: string) => k }))
 
 const { publicarAnuncio } = await import('../publicar-anuncio')
+const { enviarPushANotificarUsuarios } = await import('@/features/push/lib/enviar-push')
 
 const base = { titulo: 'Excursión', contenido: 'Mañana salimos al parque.' }
 
@@ -108,5 +109,15 @@ describe('R3 — publicarAnuncio: aula del centro de la página', () => {
     const r = await publicarAnuncio({ ...base, ambito: 'centro', aula_id: null }, CENTRO)
     expect(r).toEqual({ success: false, error: 'messages.errors.no_autorizado' })
     expect(inserts).toEqual([])
+  })
+
+  it('la notificación abre el anuncio y lleva el centro de la página (multicentro)', async () => {
+    destinatariosPushDeAnuncio.mockResolvedValueOnce(['tutor-1'])
+    const r = await publicarAnuncio({ ...base, ambito: 'centro', aula_id: null }, CENTRO)
+    expect(r.success).toBe(true)
+    expect(enviarPushANotificarUsuarios).toHaveBeenCalledWith(
+      ['tutor-1'],
+      expect.objectContaining({ url: `/es/messages/anuncios/anuncio-1?centro=${CENTRO}` })
+    )
   })
 })
