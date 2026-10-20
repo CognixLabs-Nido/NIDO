@@ -95,7 +95,8 @@ BEGIN
      WHERE n.familia_id = NEW.familia_id
        AND NEW.dni_documento_path ~ ('^' || f.centro_id || '/' || n.id || '/[A-Za-z0-9_-]+\.pdf$')
   ) THEN
-    RETURN NEW; -- MUTACION control negativo
+    RAISE EXCEPTION 'la ruta del DNI no es de un niño de esta familia'
+      USING ERRCODE = 'check_violation';
   END IF;
   RETURN NEW;
 END
@@ -132,7 +133,8 @@ BEGIN
           WHERE n.familia_id = NEW.familia_id
             AND NEW.documento_path ~ ('^' || v_centro || '/' || n.id || '/[A-Za-z0-9_-]+\.pdf$'))
      ) THEN
-    RETURN NEW; -- MUTACION control negativo
+    RAISE EXCEPTION 'la ruta del mandato no es de esta familia'
+      USING ERRCODE = 'check_violation';
   END IF;
   RETURN NEW;
 END
