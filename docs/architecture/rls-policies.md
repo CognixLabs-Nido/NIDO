@@ -758,8 +758,9 @@ son consultas por el id recibido. Censo en producción del 2026-10-20, por quié
   `publicacion_tiene_nino_sin_permiso`, `recibo_en_remesa` y `tiene_consentimiento_imagen`.
 - **5 que la app llama y ninguna policy usa:** `menu_del_dia`, `tipo_de_dia`, `mes_cerrado`,
   `existe_consentimiento_imagen` y `nino_toma_comida_solida`. Si quien llama no es del centro
-  (del niño, en las dos últimas), **42501**. Pasan de `sql` a `plpgsql` para poder abortar;
-  `menu_del_dia` sigue devolviendo NULL cuando no hay menú.
+  (del niño, en las dos últimas), **42501**. Pasan de `sql` a `plpgsql` para poder abortar.
+  Sin menú, `menu_del_dia` contesta lo mismo que antes: por PostgREST, una fila con todo a NULL
+  (`getMenuDelDia` mira `row.id`).
 - **`curso_activo_de_centro` y `es_tutor_en_centro`** también los llama la app, pero además los
   usan policies (`matriculas_profe_select`, `conversaciones_insert`, `recordatorios_*`) y, por
   dentro, `es_profe_de_aula` y `es_redactor_de_aula`. Esas se evalúan fila a fila, también sobre

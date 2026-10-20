@@ -235,13 +235,16 @@ describe('PR 2a — las funciones auxiliares solo contestan a su centro', () => 
     }
   )
 
-  it('menu_del_dia sin menú sigue devolviendo NULL, no una fila vacía', async () => {
+  it('menu_del_dia sin menú contesta lo mismo que antes: una fila con todo a NULL', async () => {
+    // Medido el 2026-10-20 con la versión `sql` y con la `plpgsql`: una función que devuelve un
+    // tipo compuesto llega por PostgREST como una fila, y sin menú todos sus campos son NULL.
     const { data, error } = await cliTutorA.rpc('menu_del_dia', {
       p_centro_id: centroA.id,
       p_fecha: '2026-08-03',
     })
     expect(error).toBeNull()
-    expect(data).toBeNull()
+    expect(data).not.toBeNull()
+    expect((data as { id: string | null }).id).toBeNull()
   })
 
   it('curso_activo_de_centro: a B no le contesta (NULL); a los de A y al servicio, el curso', async () => {

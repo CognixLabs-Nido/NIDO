@@ -138,7 +138,8 @@ BEGIN
     AND md.fecha = p_fecha
   LIMIT 1;
 
-  -- Sin menú, NULL (como la versión `sql`), no una fila con todo a NULL.
+  -- Sin menú, NULL, como la versión `sql`. Por PostgREST las dos llegan igual: una fila con todo
+  -- a NULL (medido el 2026-10-20 en un ensayo).
   IF NOT FOUND THEN
     RETURN NULL;
   END IF;
