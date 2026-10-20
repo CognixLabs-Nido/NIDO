@@ -62,6 +62,11 @@ public.usuario_es_audiencia_anuncio_row(
 
 Todas con `LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public`.
 
+> **Desde `20261028120000` (PR 2b de la Fase 4),** `centro_de_nino`, `centro_de_aula`,
+> `centro_de_plantilla` y otras 22 auxiliares de las policies viven en el esquema `privado`, que la
+> API no expone. Los ejemplos de este documento las escriben con `public.` porque son de antes. Ver
+> «Funciones auxiliares fuera de la API».
+
 ## Patrón: helpers para lookups en políticas
 
 **Antipatrón** (recursión RLS garantizada):
@@ -608,7 +613,9 @@ abrir la función o la tabla a cualquiera por PostgREST.
   quedaban: `centro_de_*`, `hoy_madrid`, `menu_del_dia`…). Desde esta última, anon no puede
   ejecutar ninguna función de `public` salvo las de trigger, que no se pueden llamar por RPC.
   Desde `20261026120000`, 11 de esas 46 solo las ejecuta `service_role` y otras 7 comprueban el
-  centro de quien llama (ver «Funciones auxiliares: solo contestan a su centro»).
+  centro de quien llama (ver «Funciones auxiliares: solo contestan a su centro»). Y desde
+  `20261028120000`, 24 viven en el esquema `privado`, fuera de la API (ver «Funciones auxiliares
+  fuera de la API»).
 
 - **Tablas:** anon no tiene ningún privilegio de tabla en `public` (ni `SELECT`), y
   `authenticated` no tiene `TRUNCATE` ni `MAINTAIN`, que no pasan por RLS
@@ -776,8 +783,8 @@ son consultas por el id recibido. Censo en producción del 2026-10-20, por quié
   el servicio («Sin uid» nunca es el servicio).
 - Quedan 24 que usan policies o triggers de invocador, más 4 de reloj y puras. A esas **no** se
   les puede añadir la comprobación dentro: un `centro_de_*` que devolviera NULL a quien es de fuera
-  dejaría pasar a todas las admins en las policies `es_admin(centro_de_X(...))`. Van al PR 2b
-  (moverlas a un esquema que la API no expone).
+  dejaría pasar a todas las admins en las policies `es_admin(centro_de_X(...))`. Desde el PR 2b
+  viven en un esquema que la API no expone (ver «Funciones auxiliares fuera de la API»).
 - Test: `funciones-auxiliares-centro.rls.test.ts`.
 
 ### Storage: las rutas no cruzan de centro (PR 3, Fase 4)
@@ -799,9 +806,33 @@ es NULL y `es_admin(NULL)` es TRUE para cualquier admin.
 - **3 de escritura de `centro-assets`** (el logo, `{centro}/logo.png`) exigen carpeta. Su lectura
   sigue pública (ADR-0010).
 - `usuarios-fotos` no entra: su `[1]` es el usuario, y sin carpeta sus helpers dan FALSE.
-- `ruta_coherente` solo combina `centro_de_*`, que `authenticated` ya puede llamar; se mueve con
-  ellos en el PR 2b.
+- `ruta_coherente` solo combina `centro_de_*`. Desde el PR 2b vive con ellos en `privado`.
 - Test: `storage-ruta-coherente.rls.test.ts`.
+
+### Funciones auxiliares fuera de la API (PR 2b, Fase 4)
+
+Migración `20261028120000_fix_funciones_esquema_privado`. 25 funciones de `public` traducían un id
+en otro sin mirar quién preguntaba (`centro_de_nino`, `centro_de_familia`, `autor_de_publicacion`,
+`organizador_de_cita`, `ruta_coherente`…), y PostgREST las publicaba: con sesión, cualquiera sabía a
+qué centro pertenecía un niño, una familia o un aula de otro centro. No se les puede poner la
+comprobación dentro: un `centro_de_*` que devolviera NULL a quien es de fuera abriría las policies
+`es_admin(centro_de_X(...))`, porque `es_admin(NULL)` es TRUE para cualquier admin.
+
+- **Viven en el esquema `privado`**, que PostgREST no expone (solo `public` y `graphql_public`, en
+  `config.toml` y en producción; en producción no hay pg_graphql). Por RPC no las encuentra nadie
+  (PGRST202), y pedir el esquema da PGRST106. Precedente: `vigia`.
+- **`privado` no se añade nunca a los esquemas expuestos de la API.** Esa es la protección:
+  `authenticated` conserva USAGE en el esquema y EXECUTE en las funciones, porque las policies se
+  evalúan con su rol y tres triggers son de invocador (`anuncios_validar_aula_centro`,
+  `invitaciones_validar_centro`, `media_validar_ruta`). `anon` no tiene USAGE.
+- **Las 97 policies que las usan no se tocan:** siguen a la función por su oid. En `pg_policies`
+  aparecen ahora como `privado.centro_de_nino(...)`.
+- **Los 42 cuerpos que las llaman por su nombre se recrearon** con `privado.`: triggers que derivan
+  el `centro_id`, la auditoría y RPCs `SECURITY DEFINER`. Una función nueva que use una de las 25
+  la llama como `privado.X(...)`.
+- Se quedan en `public` las 4 de reloj y puras: `hoy_madrid`, `dentro_de_ventana_edicion`,
+  `_redactar_jsonb` e `idiomas_iso_2letras`. No leen ninguna tabla.
+- Test: `funciones-esquema-privado.rls.test.ts`.
 
 ### Signup público cerrado (D5)
 
@@ -833,6 +864,7 @@ es NULL y `es_admin(NULL)` es TRUE para cualquier admin.
 | Entre centros, nadie entra sin aceptar        | `vinculacion-entre-centros.rls.test.ts`         |
 | Funciones auxiliares solo de su centro        | `funciones-auxiliares-centro.rls.test.ts`       |
 | Rutas de Storage sin cruzar de centro         | `storage-ruta-coherente.rls.test.ts`            |
+| Funciones auxiliares fuera de la API          | `funciones-esquema-privado.rls.test.ts`         |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 
