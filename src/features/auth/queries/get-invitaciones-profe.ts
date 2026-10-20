@@ -29,7 +29,7 @@ interface InvitacionRow {
 
 /**
  * Invitaciones de profe PENDIENTES del centro (ni aceptadas ni revocadas). La
- * RLS `invitaciones_admin` (es_admin(centro_id)) restringe la lectura al admin
+ * RLS `invitaciones_admin_select` (es_admin(centro_id)) restringe la lectura al admin
  * del centro. Incluye el nombre del aula (embed) para la lista de gestión. Las
  * caducadas se incluyen (la UI marca la fecha; el admin puede reenviarlas).
  */
