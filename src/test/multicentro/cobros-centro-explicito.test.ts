@@ -48,7 +48,9 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: { id: USUARIO } } }) },
     from: (t: string) => builder(t),
-    rpc: st.rpc,
+    // is_superadmin se contesta aquí (esSuperusuario): el espía solo ve las RPC de la acción.
+    rpc: (fn: string, args: unknown) =>
+      fn === 'is_superadmin' ? Promise.resolve({ data: false, error: null }) : st.rpc(fn, args),
   }),
 }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))

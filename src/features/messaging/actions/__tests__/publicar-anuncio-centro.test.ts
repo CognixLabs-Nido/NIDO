@@ -23,6 +23,7 @@ const destinatariosPushDeAnuncio = vi.fn(async () => [] as string[])
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: { id: USER } } }) },
+    rpc: async () => ({ data: false, error: null }),
     from: (tabla: string) => {
       const st = { id: null as unknown, centro: null as unknown, insert: null as unknown }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

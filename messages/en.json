@@ -1117,7 +1117,8 @@
         "no_autorizado": "You don't have permission for this action",
         "no_encontrada": "Family not found",
         "tutor_no_encontrado": "Guardian not found",
-        "guardado": "Could not save"
+        "guardado": "Could not save",
+        "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it."
       },
       "promover": {
         "abrir": "Make primary guardian",
@@ -3047,7 +3048,8 @@
       "adm_confirmar_no_permitido": "You can't confirm this administration (it must be confirmed by a staff member other than the one who administered it).",
       "revocar_no_permitido": "You can only revoke pick-up and medication.",
       "archivar_fallo": "Could not archive. Try again.",
-      "archivar_no_permitido": "You do not have permission to archive this medication."
+      "archivar_no_permitido": "You do not have permission to archive this medication.",
+      "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it."
     },
     "tipo": {
       "salida": "Outing",
@@ -3956,7 +3958,8 @@
       "identidad_incompleta": "Fill in the child's details first (name and date of birth).",
       "acuse_pendiente": "Confirm the medical data confidentiality acknowledgement first.",
       "incompleto": "Some required details are still missing.",
-      "acuse_fallo": "Could not register the acknowledgement. Please try again."
+      "acuse_fallo": "Could not register the acknowledgement. Please try again.",
+      "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it."
     },
     "acuses": {
       "normas_titulo": "Internal rules",
@@ -4128,7 +4131,8 @@
       "tutor_ya_registrado_usar_anadir_hijo": "This guardian already has an account. Use “Add child to an existing family” from Admissions.",
       "colision_email_familia": "That email already exists in this centre under the name {nombre}. Fix the email or details, or use the sibling enrolment.",
       "alta_fallo": "The enrolment could not be completed. Please try again.",
-      "sin_fecha_nacimiento": "The child's date of birth is missing; fill it in before enrolling."
+      "sin_fecha_nacimiento": "The child's date of birth is missing; fill it in before enrolling.",
+      "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it."
     }
   },
   "recibos": {
@@ -4186,7 +4190,8 @@
       "sin_nombre": "Unnamed school",
       "errors": {
         "invalido": "We could not open that school. Please try again.",
-        "no_es_tuyo": "You do not have access to that school."
+        "no_es_tuyo": "You do not have access to that school.",
+        "entrada_no_registrada": "We couldn't record your entry to this centre, so you haven't entered it. Please try again."
       }
     },
     "conmutador": {

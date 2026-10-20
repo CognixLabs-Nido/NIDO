@@ -73,7 +73,11 @@ describe('AvisoCentroDistinto', () => {
   })
 
   it('varios centros sin elegir: «estás viendo B»', async () => {
-    estado.actual = { tipo: 'elegir', centros: [centroA, centroB] } satisfies EstadoCentro
+    estado.actual = {
+      tipo: 'elegir',
+      centros: [centroA, centroB],
+      esSuperusuario: false,
+    } satisfies EstadoCentro
     render((await AvisoCentroDistinto({ centroRegistroId: B }))!)
     expect(screen.getByRole('status').textContent).toBe('aviso.viendo|Centro Demo B')
   })

@@ -42,7 +42,10 @@ function makeFake(ninoResp: Resp, rolesResp: Resp) {
     b.then = (resolve: (v: Resp) => unknown) => resolve(table === 'ninos' ? ninoResp : rolesResp)
     return b
   }
-  return { from: (table: string) => builder(table) } as unknown as SupabaseClient<Database>
+  return {
+    from: (table: string) => builder(table),
+    rpc: async () => ({ data: false, error: null }),
+  } as unknown as SupabaseClient<Database>
 }
 
 describe('esAdminDeCentroDeNino (primitiva de seguridad B2)', () => {

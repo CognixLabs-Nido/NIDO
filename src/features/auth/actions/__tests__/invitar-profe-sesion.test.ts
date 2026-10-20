@@ -14,6 +14,7 @@ const createServiceRoleClient = vi.fn()
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: { getUser },
+    rpc: async () => ({ data: false, error: null }),
     from: () => {
       // roles_usuario: .select().eq().is() → { data } con TODOS los roles del usuario
       // (`centrosDondeEsAdmin` filtra los de admin en código).
@@ -83,7 +84,10 @@ describe('R5 — invitación de profe: autorizar antes de leer', () => {
     b.in = () => b
     b.is = () => b
     b.maybeSingle = async () => ({ data: null, error: null })
-    createServiceRoleClient.mockReturnValue({ from: () => b })
+    createServiceRoleClient.mockReturnValue({
+      from: () => b,
+      rpc: async () => ({ data: false, error: null }),
+    })
     const r = await invitarProfe(INPUT, 'es')
     expect(createServiceRoleClient).toHaveBeenCalledOnce()
     expect(r).toEqual({ success: false, error: 'aula.errors.no_encontrada' })

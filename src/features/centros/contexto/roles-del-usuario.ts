@@ -1,8 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
-import { centrosDelUsuario, type CentroDelUsuario } from './resolver'
+import { centrosDelSuperusuario, centrosDelUsuario, type CentroDelUsuario } from './resolver'
 
 /**
  * Los roles de un usuario, con el cliente y el usuario que pasa quien llama (multicentro · Fase 1).
@@ -13,22 +14,52 @@ import { centrosDelUsuario, type CentroDelUsuario } from './resolver'
  * todas reciben el centro EXPLÍCITO o devuelven la lista entera.
  *
  * `null` = la lectura falló. Quien llama decide si eso es «no autorizado» o un error que contar.
+ *
+ * El superusuario (Fase 3, ADR-0061) no tiene filas de admin en `roles_usuario`: es admin de
+ * todos los centros. `is_superadmin()` mira al usuario de la SESIÓN de `supabase`, así que estas
+ * funciones son para el usuario actual (`usuarioId` = el de la sesión), como ya eran.
  */
 
 type Client = SupabaseClient<Database>
 
-/** Los centros del usuario con sus roles activos, ordenados por id. `null` si la lectura falla. */
+/** ¿El usuario de la sesión es superusuario? Un fallo cuenta como «no» (nunca abre de más). */
+export async function esSuperusuario(supabase: Client): Promise<boolean> {
+  const { data, error } = await supabase.rpc('is_superadmin')
+  if (error) {
+    logger.warn('esSuperusuario: is_superadmin falló', { code: error.code })
+    return false
+  }
+  return data === true
+}
+
+/**
+ * Los centros del usuario con sus roles activos, ordenados por id. El superusuario tiene además
+ * todos los centros que existen, como admin. `null` si alguna lectura falla.
+ */
 export async function leerCentrosDe(
   supabase: Client,
   usuarioId: string
 ): Promise<CentroDelUsuario[] | null> {
-  const { data, error } = await supabase
-    .from('roles_usuario')
-    .select('centro_id, rol')
-    .eq('usuario_id', usuarioId)
-    .is('deleted_at', null)
+  const [{ data, error }, esSuper] = await Promise.all([
+    supabase
+      .from('roles_usuario')
+      .select('centro_id, rol')
+      .eq('usuario_id', usuarioId)
+      .is('deleted_at', null),
+    esSuperusuario(supabase),
+  ])
   if (error) return null
-  return centrosDelUsuario(data ?? [])
+  const propios = centrosDelUsuario(data ?? [])
+  if (!esSuper) return propios
+  const { data: centros, error: errorCentros } = await supabase
+    .from('centros')
+    .select('id')
+    .is('deleted_at', null)
+  if (errorCentros) return null
+  return centrosDelSuperusuario(
+    propios,
+    (centros ?? []).map((c) => c.id)
+  )
 }
 
 /** El usuario en ese centro (rol principal y todos sus roles), o `null` si no tiene rol en él. */
@@ -43,19 +74,20 @@ export async function rolesEnCentro(
 
 /**
  * Los roles vivos del usuario en CUALQUIER centro, sin agrupar. Solo para el proxy, que gatea el
- * prefijo de ruta (`/admin`, `/teacher`…) antes de que haya contexto de centro; lo revisa la Fase 3.
+ * prefijo de ruta (`/admin`, `/teacher`…) antes de que haya contexto de centro. El superusuario
+ * suma `admin` (Fase 3): pasa a `/admin`, y la página le pide elegir centro.
  * Un fallo de lectura es lista vacía (el proxy manda a `/forbidden`), como antes.
  */
 export async function rolesEnCualquierCentro(
   supabase: Client,
   usuarioId: string
 ): Promise<Database['public']['Enums']['user_role'][]> {
-  const { data } = await supabase
-    .from('roles_usuario')
-    .select('rol')
-    .eq('usuario_id', usuarioId)
-    .is('deleted_at', null)
-  return (data ?? []).map((r) => r.rol)
+  const [{ data }, esSuper] = await Promise.all([
+    supabase.from('roles_usuario').select('rol').eq('usuario_id', usuarioId).is('deleted_at', null),
+    esSuperusuario(supabase),
+  ])
+  const roles = (data ?? []).map((r) => r.rol)
+  return esSuper && !roles.includes('admin') ? [...roles, 'admin'] : roles
 }
 
 /** ¿Es admin en ese centro? Un fallo de lectura cuenta como «no». */

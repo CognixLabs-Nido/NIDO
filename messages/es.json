@@ -1117,7 +1117,8 @@
         "no_autorizado": "No tienes permiso para esta acción",
         "no_encontrada": "Familia no encontrada",
         "tutor_no_encontrado": "Tutor no encontrado",
-        "guardado": "No se pudo guardar"
+        "guardado": "No se pudo guardar",
+        "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo."
       },
       "promover": {
         "abrir": "Pasar a titular",
@@ -3047,7 +3048,8 @@
       "adm_confirmar_no_permitido": "No puedes confirmar esta administración (debe confirmarla un miembro del personal distinto del que la administró).",
       "revocar_no_permitido": "Solo puedes revocar recogida y medicación.",
       "archivar_fallo": "No se pudo archivar. Inténtalo de nuevo.",
-      "archivar_no_permitido": "No tienes permiso para archivar esta medicación."
+      "archivar_no_permitido": "No tienes permiso para archivar esta medicación.",
+      "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo."
     },
     "tipo": {
       "salida": "Salida",
@@ -3956,7 +3958,8 @@
       "identidad_incompleta": "Completa primero los datos del niño (nombre y fecha de nacimiento).",
       "acuse_pendiente": "Confirma antes el acuse de confidencialidad de los datos médicos.",
       "incompleto": "Faltan datos obligatorios por completar.",
-      "acuse_fallo": "No se pudo registrar el acuse. Inténtalo de nuevo."
+      "acuse_fallo": "No se pudo registrar el acuse. Inténtalo de nuevo.",
+      "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo."
     },
     "acuses": {
       "normas_titulo": "Normas de régimen interno",
@@ -4128,7 +4131,8 @@
       "tutor_ya_registrado_usar_anadir_hijo": "Este tutor ya tiene cuenta. Usa “Añadir hijo a familia existente” desde Admisiones.",
       "colision_email_familia": "Ese email ya existe en este centro con el nombre {nombre}. Corrige el email o los datos, o usa el alta como hermano.",
       "alta_fallo": "No se pudo completar el alta. Inténtalo de nuevo.",
-      "sin_fecha_nacimiento": "Falta la fecha de nacimiento del niño; complétala antes de dar el alta."
+      "sin_fecha_nacimiento": "Falta la fecha de nacimiento del niño; complétala antes de dar el alta.",
+      "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo."
     }
   },
   "recibos": {
@@ -4186,7 +4190,8 @@
       "sin_nombre": "Centro sin nombre",
       "errors": {
         "invalido": "No hemos podido abrir ese centro. Vuelve a intentarlo.",
-        "no_es_tuyo": "No tienes acceso a ese centro."
+        "no_es_tuyo": "No tienes acceso a ese centro.",
+        "entrada_no_registrada": "No hemos podido registrar tu entrada en el centro, así que no has entrado. Vuelve a intentarlo."
       }
     },
     "conmutador": {

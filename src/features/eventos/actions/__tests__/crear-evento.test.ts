@@ -30,6 +30,7 @@ interface FakeSetup {
 function makeFakeClient(setup: FakeSetup) {
   const insertSpy = vi.fn()
   const fake = {
+    rpc: async () => ({ data: false, error: null }),
     from: (table: string) => {
       const b: Record<string, unknown> = {}
       b.select = () => b

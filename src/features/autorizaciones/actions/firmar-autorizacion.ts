@@ -3,6 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { esAdminDeCentroDeNino } from '@/features/alta/lib/authz-tutor'
+import { esSuperusuario } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
@@ -121,6 +122,10 @@ async function registrarDecision(
     rolFirmante = vinculo.tipo_vinculo
     metodoFirma = 'digital'
   } else if (await esAdminDeCentroDeNino(supabase, d.nino_id, userId)) {
+    // La firma presencial la registra la directora, que tiene a la familia delante; el
+    // superusuario no (ADR-0061). `firmas_insert` también se lo cierra: esto da el motivo.
+    if (await esSuperusuario(supabase))
+      return fail('autorizaciones.errors.presencial_solo_direccion')
     rolFirmante = 'admin'
     metodoFirma = 'presencial'
   } else {

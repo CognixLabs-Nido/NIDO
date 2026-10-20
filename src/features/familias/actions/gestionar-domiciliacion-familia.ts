@@ -6,7 +6,7 @@ import { normalizarIban } from '@/features/alta/lib/iban'
 import { generarIdentificadorMandato } from '@/features/alta/lib/mandato-sepa'
 import { registrarOSustituirMandatoSepa } from '@/features/alta/lib/registrar-mandato-sepa'
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
-import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
+import { esAdminEn, esSuperusuario } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -55,6 +55,9 @@ export async function gestionarDomiciliacionFamilia(
   // Gate admin de ese centro (defensa en profundidad; la RPC también gatea es_admin).
   if (!(await esAdminEn(supabase, userData.user.id, centroId)))
     return fail('auth.invitation.errors.forbidden')
+  // El mandato presencial lo registra la directora, que tiene a la familia delante; el
+  // superusuario no (ADR-0061; las RPCs también se lo cierran).
+  if (await esSuperusuario(supabase)) return fail('admin.familias.errors.presencial_solo_direccion')
 
   const iban = normalizarIban(parsed.data.iban)
   const titular = parsed.data.titular.trim()

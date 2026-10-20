@@ -39,4 +39,4 @@ El oficial solo excluye los estáticos. Este excluye además:
 
 ## Control de rol
 
-`requiredRolesFor(rest)` (`src/proxy-roles.ts`) dice qué roles pide cada ruta; el proxy lee `roles_usuario` vivos del usuario con su propia sesión (RLS) y, si no tiene ninguno, redirige a `/forbidden`. Es una consulta más por navegación protegida, que el patrón oficial no tiene: es lo que añade NIDO encima, no una divergencia. Las rutas públicas (`PUBLIC_PATTERNS`) refrescan la sesión y no se gatean.
+`requiredRolesFor(rest)` (`src/proxy-roles.ts`) dice qué roles pide cada ruta; el proxy lee `roles_usuario` vivos del usuario con su propia sesión (RLS) y, si no tiene ninguno, redirige a `/forbidden`. Es una consulta más por navegación protegida, que el patrón oficial no tiene: es lo que añade NIDO encima, no una divergencia. Las rutas públicas (`PUBLIC_PATTERNS`) refrescan la sesión y no se gatean. El superusuario (ADR-0061) no tiene filas de admin: `rolesEnCualquierCentro` le suma `admin` si `is_superadmin()` y la página le pide elegir centro.

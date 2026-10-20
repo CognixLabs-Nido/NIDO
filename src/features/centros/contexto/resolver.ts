@@ -7,7 +7,8 @@
  *  - sin roles activos → `sin_centro`;
  *  - UN centro → ese, siempre. La cookie no se mira: quien tiene un centro no ve selector nunca;
  *  - VARIOS centros → el de la cookie si es uno de los suyos; si no, `elegir`. Nunca se coge uno
- *    por defecto (MisterFC #755: el «primero» elegía el centro equivocado y escribía en él).
+ *    por defecto (MisterFC #755: el «primero» elegía el centro equivocado y escribía en él);
+ *  - el superusuario (Fase 3) tiene todos los centros y elige siempre, aunque haya uno solo.
  */
 
 export type Rol = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
@@ -59,13 +60,39 @@ export function centrosDelUsuario(
     .sort((a, b) => (a.centroId < b.centroId ? -1 : a.centroId > b.centroId ? 1 : 0))
 }
 
+/**
+ * Los centros del superusuario (Fase 3, ADR-0061): es admin en TODOS los que existen, además de
+ * los roles propios que tenga en alguno. Mismo orden estable por `centroId`.
+ */
+export function centrosDelSuperusuario(
+  propios: ReadonlyArray<CentroDelUsuario>,
+  todos: ReadonlyArray<string>
+): CentroDelUsuario[] {
+  const porCentro = new Map(propios.map((c) => [c.centroId, c.roles]))
+  return [...new Set([...todos, ...porCentro.keys()])]
+    .map((centroId) => {
+      const roles = [...new Set<Rol>(['admin', ...(porCentro.get(centroId) ?? [])])].sort(
+        (a, b) => PRIORIDAD_ROL[b] - PRIORIDAD_ROL[a]
+      )
+      return { centroId, rol: roles[0]!, roles }
+    })
+    .sort((a, b) => (a.centroId < b.centroId ? -1 : a.centroId > b.centroId ? 1 : 0))
+}
+
+/**
+ * `exigirEleccion`: el superusuario no entra en ningún centro sin elegirlo, aunque solo haya uno.
+ * Elegir pasa por `elegirCentro`, que deja su entrada en `audit_log`.
+ */
 export function resolverCentroActivo(
   centros: ReadonlyArray<CentroDelUsuario>,
-  cookie: string | undefined
+  cookie: string | undefined,
+  opciones: { exigirEleccion?: boolean } = {}
 ): ResultadoCentroActivo {
   if (centros.length === 0) return { tipo: 'sin_centro' }
   const lista = [...centros]
-  if (lista.length === 1) return { tipo: 'activo', centro: lista[0]!, centros: lista }
+  if (lista.length === 1 && !opciones.exigirEleccion) {
+    return { tipo: 'activo', centro: lista[0]!, centros: lista }
+  }
   const elegido = cookie ? lista.find((c) => c.centroId === cookie) : undefined
   return elegido
     ? { tipo: 'activo', centro: elegido, centros: lista }

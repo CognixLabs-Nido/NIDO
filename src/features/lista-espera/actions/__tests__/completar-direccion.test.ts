@@ -43,6 +43,8 @@ type CrearTutorFn = (
 
 let crearTutorSpy: ReturnType<typeof vi.fn<CrearTutorFn>>
 let rpcSpy: ReturnType<typeof vi.fn>
+/** Lo que contesta `is_superadmin` (esSuperusuario). */
+let superusuario = false
 let estadoUpdateSpy: ReturnType<typeof vi.fn<() => void>>
 
 function makeServerFake() {
@@ -79,6 +81,7 @@ function makeServerFake() {
   rpcSpy = vi.fn((name: string) => {
     if (name === 'curso_activo_de_centro') return Promise.resolve({ data: CURSO, error: null })
     if (name === 'crear_o_anadir_a_familia') return Promise.resolve(rpcAltaResult)
+    if (name === 'is_superadmin') return Promise.resolve({ data: superusuario, error: null })
     return Promise.resolve({ data: null, error: null })
   })
   return {
@@ -160,6 +163,7 @@ function altaRpcCall() {
 }
 
 beforeEach(() => {
+  superusuario = false
   rolesFixture = [{ rol: 'admin', centro_id: CENTRO }]
   rpcAltaResult = {
     data: { resultado: 'familia_creada', familia_id: 'fam-1', nino_id: NINO, colision_info: null },
@@ -173,6 +177,14 @@ beforeEach(() => {
 })
 
 describe('completarEnDireccion — alta modo Dirección con la RPC de familia', () => {
+  it('superusuario (ADR-0061): no completa en Dirección; ni cuenta ni consentimientos presenciales', async () => {
+    superusuario = true
+    const r = await completarEnDireccion(VALID_INPUT, 'es')
+    expect(r).toEqual({ success: false, error: 'listaEspera.errors.presencial_solo_direccion' })
+    expect(crearTutorSpy).not.toHaveBeenCalled()
+    expect(rpcSpy).not.toHaveBeenCalledWith('crear_o_anadir_a_familia', expect.anything())
+  })
+
   it("éxito 'familia_creada' → cuenta creada, RPC con usuario_id real, estado actualizado, ok", async () => {
     const r = await completarEnDireccion(VALID_INPUT, 'es')
 

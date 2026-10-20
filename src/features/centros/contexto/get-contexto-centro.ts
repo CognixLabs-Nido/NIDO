@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 import { COOKIE_CENTRO_ACTIVO } from './cookie'
 import { resolverCentroActivo, type CentroDelUsuario, type Rol } from './resolver'
 import { CABECERA_RUTA_PEDIDA } from './ruta-pedida'
-import { leerCentrosDe } from './roles-del-usuario'
+import { esSuperusuario, leerCentrosDe } from './roles-del-usuario'
 
 /**
  * Punto único de la app para saber en qué centro está el usuario (multicentro · Fase 1).
@@ -31,7 +31,7 @@ export interface ContextoCentro {
   rol: Rol
   /** Todos sus roles activos en este centro, de más a menos privilegios. */
   roles: Rol[]
-  /** Superusuario de plataforma (Fase 3). Hoy siempre `false`. */
+  /** Superusuario de plataforma (Fase 3, ADR-0061): admin de todos los centros. */
   esSuperusuario: boolean
   /** Todos los centros del usuario; más de uno ⇒ se enseña el conmutador. */
   centros: CentroDelUsuario[]
@@ -40,33 +40,45 @@ export interface ContextoCentro {
 export type EstadoCentro =
   | { tipo: 'sin_sesion' }
   | { tipo: 'sin_centro' }
-  | { tipo: 'elegir'; centros: CentroDelUsuario[] }
+  | { tipo: 'elegir'; centros: CentroDelUsuario[]; esSuperusuario: boolean }
   | { tipo: 'activo'; contexto: ContextoCentro }
 
-/** Los centros del usuario actual (una consulta por petición). `null` sin sesión. */
-const leerCentrosDelUsuario = cache(async (): Promise<CentroDelUsuario[] | null> => {
-  const supabase = await createClient()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) return null
+/**
+ * Los centros del usuario actual (una lectura por petición) y si es superusuario. `null` sin
+ * sesión. El superusuario tiene todos los centros, como admin (`leerCentrosDe`).
+ */
+const leerCentrosDelUsuario = cache(
+  async (): Promise<{ centros: CentroDelUsuario[]; esSuperusuario: boolean } | null> => {
+    const supabase = await createClient()
+    const { data: userData } = await supabase.auth.getUser()
+    if (!userData.user) return null
 
-  // Un fallo de lectura cuenta como «sin roles» (→ forbidden), como antes.
-  return (await leerCentrosDe(supabase, userData.user.id)) ?? []
-})
+    // Un fallo de lectura cuenta como «sin roles» (→ forbidden), como antes.
+    const [centros, esSuper] = await Promise.all([
+      leerCentrosDe(supabase, userData.user.id),
+      esSuperusuario(supabase),
+    ])
+    return { centros: centros ?? [], esSuperusuario: esSuper }
+  }
+)
 
 export const getEstadoCentro = cache(async (): Promise<EstadoCentro> => {
-  const centros = await leerCentrosDelUsuario()
-  if (centros === null) return { tipo: 'sin_sesion' }
+  const leido = await leerCentrosDelUsuario()
+  if (leido === null) return { tipo: 'sin_sesion' }
+  const { centros, esSuperusuario: esSuper } = leido
 
   const cookie = (await cookies()).get(COOKIE_CENTRO_ACTIVO)?.value
-  const r = resolverCentroActivo(centros, cookie)
-  if (r.tipo !== 'activo') return r
+  // El superusuario elige siempre (su entrada se audita al elegir), aunque haya un solo centro.
+  const r = resolverCentroActivo(centros, cookie, { exigirEleccion: esSuper })
+  if (r.tipo === 'sin_centro') return r
+  if (r.tipo === 'elegir') return { ...r, esSuperusuario: esSuper }
   return {
     tipo: 'activo',
     contexto: {
       centroId: r.centro.centroId,
       rol: r.centro.rol,
       roles: r.centro.roles,
-      esSuperusuario: false,
+      esSuperusuario: esSuper,
       centros,
     },
   }
@@ -96,8 +108,14 @@ export async function requireContextoCentro(
  * tiene rol activo en él. No lee la cookie.
  */
 export async function contextoEnCentro(centroId: string): Promise<ContextoCentro | null> {
-  const centros = await leerCentrosDelUsuario()
-  const centro = centros?.find((c) => c.centroId === centroId)
-  if (!centros || !centro) return null
-  return { centroId, rol: centro.rol, roles: centro.roles, esSuperusuario: false, centros }
+  const leido = await leerCentrosDelUsuario()
+  const centro = leido?.centros.find((c) => c.centroId === centroId)
+  if (!leido || !centro) return null
+  return {
+    centroId,
+    rol: centro.rol,
+    roles: centro.roles,
+    esSuperusuario: leido.esSuperusuario,
+    centros: leido.centros,
+  }
 }

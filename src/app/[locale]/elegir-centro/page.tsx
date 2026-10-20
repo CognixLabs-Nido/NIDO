@@ -14,8 +14,9 @@ interface PageProps {
 
 /**
  * Selector de centro (multicentro · Fase 1). Solo lo ve quien tiene MÁS de un centro: con uno,
- * se sigue directo. No escribe la cookie al pintarse (MisterFC #756): la escribe la acción al
- * elegir.
+ * se sigue directo. El superusuario lo ve siempre, aunque haya un solo centro: su entrada se
+ * audita al elegir (Fase 3). No escribe la cookie al pintarse (MisterFC #756): la escribe la
+ * acción al elegir.
  */
 export default async function ElegirCentroPage({ params, searchParams }: PageProps) {
   const { locale } = await params
@@ -26,7 +27,8 @@ export default async function ElegirCentroPage({ params, searchParams }: PagePro
   if (estado.tipo === 'sin_centro') redirect(`/${locale}/forbidden`)
 
   const centros = estado.tipo === 'activo' ? estado.contexto.centros : estado.centros
-  if (centros.length < 2) redirect(rutaDeVuelta(locale, returnTo))
+  const esSuper = estado.tipo === 'activo' ? estado.contexto.esSuperusuario : estado.esSuperusuario
+  if (centros.length < 2 && !esSuper) redirect(rutaDeVuelta(locale, returnTo))
 
   const t = await getTranslations('centros.elegir')
   const nombres = await getNombresCentros(centros.map((c) => c.centroId))

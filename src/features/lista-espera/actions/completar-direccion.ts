@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
 import { crearTutorDirecto } from '@/features/auth/lib/crear-tutor-directo'
 import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
-import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
+import { esAdminEn, esSuperusuario } from '@/features/centros/contexto/roles-del-usuario'
 import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
 import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
@@ -88,6 +88,10 @@ export async function completarEnDireccion(
   // Gate admin del centro del prospecto (los INSERT van por service role → sin RLS que los cubra).
   if (!(await esAdminEn(supabase, userData.user.id, centroId)))
     return fail('auth.invitation.errors.forbidden')
+  // Completar en Dirección registra, con la familia delante, los consentimientos del tutor como
+  // presenciales (`crearTutorDirecto`). Eso lo hace la directora; el superusuario no (ADR-0061).
+  // Aquí, porque `crearTutorDirecto` va con service role y la BD no sabe quién lo pidió.
+  if (await esSuperusuario(supabase)) return fail('listaEspera.errors.presencial_solo_direccion')
 
   // Curso activo del centro (autoritativo server-side; la matrícula va contra él).
   const { data: cursoActivoId } = await supabase.rpc('curso_activo_de_centro', {

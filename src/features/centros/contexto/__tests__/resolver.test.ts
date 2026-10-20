@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { centrosDelUsuario, resolverCentroActivo } from '../resolver'
+import { centrosDelSuperusuario, centrosDelUsuario, resolverCentroActivo } from '../resolver'
 
 const A = '11111111-1111-4111-8111-111111111111'
 const B = '22222222-2222-4222-8222-222222222222'
@@ -64,5 +64,38 @@ describe('resolverCentroActivo', () => {
   ])('DOS centros, %s: elegir (nunca uno por defecto)', (_caso, cookie) => {
     const r = resolverCentroActivo(DOS_CENTROS, cookie)
     expect(r).toEqual({ tipo: 'elegir', centros: DOS_CENTROS })
+  })
+})
+
+describe('superusuario (Fase 3)', () => {
+  const C = '33333333-3333-4333-8333-333333333333'
+
+  it('centrosDelSuperusuario: admin en todos los centros, con sus roles propios sumados', () => {
+    expect(centrosDelSuperusuario(DOS_CENTROS, [C, B, A])).toEqual([
+      { centroId: A, rol: 'admin', roles: ['admin', 'profe'] },
+      { centroId: B, rol: 'admin', roles: ['admin', 'tutor_legal'] },
+      { centroId: C, rol: 'admin', roles: ['admin'] },
+    ])
+  })
+
+  it('exigirEleccion: con UN centro y sin cookie, elige (no entra solo)', () => {
+    const uno = centrosDelSuperusuario([], [A])
+    expect(resolverCentroActivo(uno, undefined, { exigirEleccion: true })).toEqual({
+      tipo: 'elegir',
+      centros: uno,
+    })
+    // Sin la opción, el usuario normal con un centro entra directo, como siempre.
+    expect(resolverCentroActivo(uno, undefined)).toMatchObject({ tipo: 'activo' })
+  })
+
+  it('exigirEleccion: con la cookie de un centro que existe, ese; con una ajena, elegir', () => {
+    const uno = centrosDelSuperusuario([], [A])
+    expect(resolverCentroActivo(uno, A, { exigirEleccion: true })).toMatchObject({
+      tipo: 'activo',
+      centro: { centroId: A, rol: 'admin' },
+    })
+    expect(resolverCentroActivo(uno, AJENO, { exigirEleccion: true })).toMatchObject({
+      tipo: 'elegir',
+    })
   })
 })

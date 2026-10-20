@@ -41,6 +41,7 @@ vi.mock('@supabase/ssr', () => ({
         return { data: { user: estado.user }, error: null }
       },
     },
+    rpc: async () => ({ data: false, error: null }),
     from: () => ({
       select: () => ({
         eq: () => ({ is: async () => ({ data: estado.roles, error: null }) }),
