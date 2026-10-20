@@ -21,6 +21,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  *   - anon NO tiene EXECUTE en ninguna de las 46 (PostgREST → 42501 antes de entrar al cuerpo).
  *   - authenticated y service_role la conservan: la usan 74 policies TO authenticated, un CHECK,
  *     la app y tres triggers que corren con el rol de quien escribe.
+ *   - Salvo 11 sin ningún uso con sesión, que desde 20261026120000 (PR 2a de la Fase 4) solo
+ *     ejecuta service_role. Otras 5 comprueban el centro de quien llama y con ids de relleno
+ *     abortan: las prueba `funciones-auxiliares-centro.rls.test.ts`.
  *
  * Con esta migración y #293/#295/#297 ninguna función de `public` que no sea de trigger queda
  * ejecutable por anon (la guarda de la migración lo comprueba en el catálogo).
@@ -122,6 +125,30 @@ const FUNCIONES: Array<[string, Llamada]> = [
   ['hoy_madrid', (c) => c.rpc('hoy_madrid')],
 ]
 
+/** Sin ningún uso con sesión: desde 20261026120000 solo las ejecuta service_role. */
+const SIN_SESION = new Set([
+  'centro_abierto',
+  'centro_de_conversacion',
+  'centro_de_curso',
+  'centro_de_remesa',
+  'familia_de_nino',
+  'nino_de_conversacion',
+  'nino_de_recibo',
+  'publicacion_tiene_nino_sin_permiso',
+  'recibo_en_remesa',
+  'tiene_consentimiento_imagen',
+  'tiene_consentimiento',
+])
+
+/** Comprueban el centro de quien llama (20261026120000): con ids de relleno, 42501. */
+const CON_COMPROBACION = new Set([
+  'menu_del_dia',
+  'tipo_de_dia',
+  'mes_cerrado',
+  'existe_consentimiento_imagen',
+  'nino_toma_comida_solida',
+])
+
 describe('Funciones auxiliares — las 46 cerradas a anon', () => {
   let usuario: TestUser
   let autenticado: Client
@@ -155,10 +182,29 @@ describe('Funciones auxiliares — las 46 cerradas a anon', () => {
     expect(error?.message).toContain(`permission denied for function ${nombre}`)
   })
 
-  it.each(FUNCIONES)('authenticated sigue ejecutando %s', async (_nombre, llamar) => {
-    const { error } = await llamar(autenticado)
-    expect(error).toBeNull()
+  it('las 11 sin uso con sesión y las 5 con comprobación están en la lista', () => {
+    const nombres = new Set(FUNCIONES.map(([nombre]) => nombre))
+    for (const n of [...SIN_SESION, ...CON_COMPROBACION]) expect(nombres.has(n), n).toBe(true)
+    expect(SIN_SESION.size).toBe(11)
+    expect(CON_COMPROBACION.size).toBe(5)
   })
+
+  it.each(FUNCIONES.filter(([n]) => !SIN_SESION.has(n) && !CON_COMPROBACION.has(n)))(
+    'authenticated sigue ejecutando %s',
+    async (_nombre, llamar) => {
+      const { error } = await llamar(autenticado)
+      expect(error).toBeNull()
+    }
+  )
+
+  it.each(FUNCIONES.filter(([n]) => SIN_SESION.has(n)))(
+    'authenticated ya no ejecuta %s (20261026120000)',
+    async (nombre, llamar) => {
+      const { error } = await llamar(autenticado)
+      expect(error?.code).toBe('42501')
+      expect(error?.message).toContain(`permission denied for function ${nombre}`)
+    }
+  )
 
   it.each(FUNCIONES)('service_role sigue ejecutando %s', async (_nombre, llamar) => {
     const { error } = await llamar(serviceClient as unknown as Client)

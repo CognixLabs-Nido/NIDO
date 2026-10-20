@@ -288,7 +288,7 @@ describe('R-5 — desconfirmar un recibo', () => {
     expect((await cAdmin.rpc('confirmar_recibo', { p_recibo_id: reciboId })).error).toBeNull()
     await meterEnRemesa(reciboId, mes)
 
-    expect((await cAdmin.rpc('recibo_en_remesa', { p_recibo_id: reciboId })).data).toBe(true)
+    expect((await serviceClient.rpc('recibo_en_remesa', { p_recibo_id: reciboId })).data).toBe(true)
 
     const porRpc = await cAdmin.rpc('desconfirmar_recibo', { p_recibo_id: reciboId })
     expect(porRpc.error?.code).toBe('P0001')
@@ -317,7 +317,9 @@ describe('R-5 — desconfirmar un recibo', () => {
       .eq('recibo_id', reciboId)
     expect(count).toBe(1)
 
-    expect((await cAdmin.rpc('recibo_en_remesa', { p_recibo_id: reciboId })).data).toBe(false)
+    expect((await serviceClient.rpc('recibo_en_remesa', { p_recibo_id: reciboId })).data).toBe(
+      false
+    )
     expect((await cAdmin.rpc('desconfirmar_recibo', { p_recibo_id: reciboId })).error).toBeNull()
     expect(await estadoDe(reciboId)).toBe('borrador')
   })
@@ -332,7 +334,9 @@ describe('R-5 — desconfirmar un recibo', () => {
       .eq('id', reciboId)
     expect(cobrar.error).toBeNull()
 
-    expect((await cAdmin.rpc('recibo_en_remesa', { p_recibo_id: reciboId })).data).toBe(false)
+    expect((await serviceClient.rpc('recibo_en_remesa', { p_recibo_id: reciboId })).data).toBe(
+      false
+    )
     const desc = await cAdmin.rpc('desconfirmar_recibo', { p_recibo_id: reciboId })
     expect(desc.error?.code).toBe('P0001')
     expect(await estadoDe(reciboId)).toBe('cobrado_manual')
