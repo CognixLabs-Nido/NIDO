@@ -175,7 +175,7 @@ describe('PR 1 — control positivo: hoy se vincula entre centros sin aceptar', 
     sesion.actual = await clientFor(directoraA)
     const r = await sendInvitation({
       email: tutorB.email,
-      rolObjetivo: 'profe',
+      rolObjetivo: 'admin',
       centroId: centroA.id,
     })
     expect(r).toEqual({ success: false, error: 'listaEspera.errors.tutor_ya_registrado' })
@@ -204,7 +204,7 @@ describe('PR 1 — control positivo: hoy se vincula entre centros sin aceptar', 
       p_fecha_nacimiento: '2024-03-15',
       p_centro_id: centroA.id,
       p_aula_id: aulaA.id,
-      p_tutor_email: '',
+      p_tutor_email: `directo-${randomUUID().slice(0, 8)}@nido.test`,
       p_tutor_nombre_completo: 'Cualquiera',
       p_parentesco: 'madre',
       p_descripcion_parentesco: '',
