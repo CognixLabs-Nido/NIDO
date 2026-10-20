@@ -18,8 +18,10 @@
 --         `es_profe_de_aula` y `es_redactor_de_aula`. Un RAISE ahí rompería cualquier consulta
 --         que recorra filas de otro centro, así que a quien no es del centro no le contestan
 --         nada: NULL y FALSE (apartado C).
---   · `tiene_consentimiento`: solo el consentimiento propio (apartado D). Su único llamador,
---     `marcar_matricula_lista`, ya pasa `auth.uid()`.
+--   · `tiene_consentimiento`: tampoco la usan ni la app ni ninguna policy (solo
+--     `marcar_matricula_lista`, SECURITY DEFINER). Se le quita `authenticated` con las 10
+--     (apartado A): así no se puede sondear el consentimiento de nadie. Si algún día la app la
+--     necesita, se abre con la comprobación de «solo el propio».
 --   · El resto (4 de reloj y puras, 24 que usan policies o triggers de invocador) va en el PR 2b.
 --
 -- «Del centro» es `pertenece_a_centro` (un rol vivo en él) o `es_admin`, que da TRUE al
@@ -29,10 +31,10 @@
 -- Demostrado contra la BD efímera del CI: `funciones-auxiliares-centro.rls.test.ts` (control
 -- positivo en el commit 8809681).
 --
--- Estado verificado en producción el 2026-10-20 (read_only): los 8 cuerpos que se reescriben
--- son los del repo (md5 normalizado, guarda previa), y 0 de las 4 asignaciones vivas de
--- `profes_aulas` son de una profe sin rol vivo en el centro del aula (con esta migración,
--- `es_profe_de_aula` dejaría de contar esas).
+-- Estado verificado en producción el 2026-10-20 (read_only): los 7 cuerpos que se reescriben, y
+-- el de `tiene_consentimiento`, son los del repo (md5 normalizado, guarda previa), y 0 de las 4
+-- asignaciones vivas de `profes_aulas` son de una profe sin rol vivo en el centro del aula (con
+-- esta migración, `es_profe_de_aula` dejaría de contar esas).
 --
 -- Operación sobre esquema productivo → la aplica el responsable por SQL Editor. Tras aplicar:
 -- registrar en supabase_migrations.schema_migrations.
@@ -77,15 +79,16 @@ BEGIN
      AND p.proname IN ('centro_abierto', 'centro_de_conversacion', 'centro_de_curso',
                        'centro_de_remesa', 'familia_de_nino', 'nino_de_conversacion',
                        'nino_de_recibo', 'publicacion_tiene_nino_sin_permiso',
-                       'recibo_en_remesa', 'tiene_consentimiento_imagen')
+                       'recibo_en_remesa', 'tiene_consentimiento_imagen',
+                       'tiene_consentimiento')
      AND has_function_privilege('authenticated', p.oid, 'EXECUTE');
-  RAISE NOTICE 'guarda previa: 8 cuerpos como en el repo; de las 10 sin uso, % ejecutables con sesión',
+  RAISE NOTICE 'guarda previa: 8 cuerpos como en el repo; de las 11 sin uso, % ejecutables con sesión',
     v_con_sesion;
 END
 $guarda$;
 
 -- -----------------------------------------------------------------------------
--- A. Las 10 sin ningún uso con sesión: fuera `authenticated`
+-- A. Las 11 sin ningún uso con sesión: fuera `authenticated`
 -- -----------------------------------------------------------------------------
 REVOKE EXECUTE ON FUNCTION public.centro_abierto(uuid, date) FROM authenticated;
 REVOKE EXECUTE ON FUNCTION public.centro_de_conversacion(uuid) FROM authenticated;
@@ -97,6 +100,7 @@ REVOKE EXECUTE ON FUNCTION public.nino_de_recibo(uuid) FROM authenticated;
 REVOKE EXECUTE ON FUNCTION public.publicacion_tiene_nino_sin_permiso(uuid) FROM authenticated;
 REVOKE EXECUTE ON FUNCTION public.recibo_en_remesa(uuid) FROM authenticated;
 REVOKE EXECUTE ON FUNCTION public.tiene_consentimiento_imagen(uuid) FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.tiene_consentimiento(uuid, public.consentimiento_tipo) FROM authenticated;
 
 -- -----------------------------------------------------------------------------
 -- B. Las 5 que la app llama y ninguna policy usa: quien no es del centro, 42501
@@ -341,39 +345,6 @@ AS $function$
                     AND nullif(current_setting('request.jwt.claim.role', true), '') IS NULL))));
 $function$;
 
--- -----------------------------------------------------------------------------
--- D. tiene_consentimiento: solo el propio
--- -----------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.tiene_consentimiento(p_usuario_id uuid, p_tipo public.consentimiento_tipo)
- RETURNS boolean
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-BEGIN
-  -- [PR 2a] Solo el consentimiento propio; sin sesión, solo el servicio.
-  IF auth.uid() IS NULL THEN
-    IF NOT (COALESCE(auth.role(), '') = 'service_role'
-            OR (session_user <> 'authenticator'
-                AND nullif(current_setting('request.jwt.claims', true), '') IS NULL
-                AND nullif(current_setting('request.jwt.claim.role', true), '') IS NULL)) THEN
-      RAISE EXCEPTION 'no autorizado: sin sesión solo el servicio'
-        USING ERRCODE = 'insufficient_privilege';
-    END IF;
-  ELSIF p_usuario_id IS DISTINCT FROM auth.uid() THEN
-    RAISE EXCEPTION 'no autorizado: solo el consentimiento propio'
-      USING ERRCODE = 'insufficient_privilege';
-  END IF;
-
-  RETURN EXISTS (
-    SELECT 1 FROM public.consentimientos
-    WHERE usuario_id = p_usuario_id
-      AND tipo = p_tipo
-      AND revocado_en IS NULL
-  );
-END;
-$function$;
-
 -- ---- Guarda posterior ----
 DO $guarda$
 DECLARE
@@ -381,22 +352,23 @@ DECLARE
   v_ok int;
   v_md5 text;
 BEGIN
-  -- A: las 10 sin `authenticated` y con service_role.
+  -- A: las 11 sin `authenticated` y con service_role.
   SELECT count(*) INTO v_sin_sesion
     FROM pg_proc p
    WHERE p.pronamespace = 'public'::regnamespace
      AND p.proname IN ('centro_abierto', 'centro_de_conversacion', 'centro_de_curso',
                        'centro_de_remesa', 'familia_de_nino', 'nino_de_conversacion',
                        'nino_de_recibo', 'publicacion_tiene_nino_sin_permiso',
-                       'recibo_en_remesa', 'tiene_consentimiento_imagen')
+                       'recibo_en_remesa', 'tiene_consentimiento_imagen',
+                       'tiene_consentimiento')
      AND NOT has_function_privilege('authenticated', p.oid, 'EXECUTE')
      AND NOT has_function_privilege('anon', p.oid, 'EXECUTE')
      AND has_function_privilege('service_role', p.oid, 'EXECUTE');
-  IF v_sin_sesion <> 10 THEN
-    RAISE EXCEPTION 'de las 10 sin uso, solo % quedan sin sesión y con service_role', v_sin_sesion;
+  IF v_sin_sesion <> 11 THEN
+    RAISE EXCEPTION 'de las 11 sin uso, solo % quedan sin sesión y con service_role', v_sin_sesion;
   END IF;
 
-  -- B, C y D: la comprobación está en el código (no en un comentario, que el SQL Editor puede
+  -- B y C: la comprobación está en el código (no en un comentario, que el SQL Editor puede
   -- comerse) y los permisos no cambian.
   SELECT count(*) INTO v_ok
     FROM pg_proc p
@@ -408,11 +380,9 @@ BEGIN
                          'existe_consentimiento_imagen', 'nino_toma_comida_solida')
            AND p.prosrc LIKE '%no autorizado: no es de este centro%')
        OR (p.proname = 'curso_activo_de_centro' AND p.prosrc LIKE '%pertenece_a_centro(p_centro_id)%')
-       OR (p.proname = 'es_tutor_en_centro' AND p.prosrc LIKE '%p_tutor_id = auth.uid()%')
-       OR (p.proname = 'tiene_consentimiento'
-           AND p.prosrc LIKE '%no autorizado: solo el consentimiento propio%'));
-  IF v_ok <> 8 THEN
-    RAISE EXCEPTION 'solo % de las 8 funciones tienen la comprobación y sus permisos', v_ok;
+       OR (p.proname = 'es_tutor_en_centro' AND p.prosrc LIKE '%p_tutor_id = auth.uid()%'));
+  IF v_ok <> 7 THEN
+    RAISE EXCEPTION 'solo % de las 7 funciones tienen la comprobación y sus permisos', v_ok;
   END IF;
 
   SELECT string_agg(p.proname || '=' ||
@@ -422,8 +392,7 @@ BEGIN
     FROM pg_proc p
    WHERE p.pronamespace = 'public'::regnamespace
      AND p.proname IN ('menu_del_dia', 'tipo_de_dia', 'mes_cerrado', 'existe_consentimiento_imagen',
-                       'nino_toma_comida_solida', 'curso_activo_de_centro', 'es_tutor_en_centro',
-                       'tiene_consentimiento');
-  RAISE NOTICE 'guarda posterior: 10 sin sesión; 8 con la comprobación (md5 normalizado: %)', v_md5;
+                       'nino_toma_comida_solida', 'curso_activo_de_centro', 'es_tutor_en_centro');
+  RAISE NOTICE 'guarda posterior: 11 sin sesión; 7 con la comprobación (md5 normalizado: %)', v_md5;
 END
 $guarda$;

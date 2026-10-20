@@ -28,11 +28,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  * PR 2a (Fase 4) — las funciones auxiliares solo contestan a quien es de su centro.
  *
  * Migración: 20261026120000_fix_funciones_auxiliares_centro
- *   - 10 sin ningún uso con sesión: sin EXECUTE para `authenticated` (42501 de permiso).
+ *   - 11 sin ningún uso con sesión (`tiene_consentimiento` entre ellas): sin EXECUTE para
+ *     `authenticated` (42501 de permiso).
  *   - 5 que la app llama y ninguna policy usa: quien no es del centro, 42501.
  *   - `curso_activo_de_centro` y `es_tutor_en_centro`, que usan policies: a quien no es del centro
  *     no le contestan nada (NULL, FALSE), sin abortar la consulta que las evalúa fila a fila.
- *   - `tiene_consentimiento`: solo el propio.
  *
  * El control positivo (commit 8809681) demostró contra la BD efímera que la directora y una
  * familia del centro B recibían datos de A por las 18.
@@ -83,8 +83,8 @@ const LAS_5: Array<[string, () => Record<string, unknown>, (data: unknown) => vo
   ['nino_toma_comida_solida', () => ({ p_nino_id: ninoA }), (d) => expect(d).toBe(false)],
 ]
 
-/** Las 10 sin ningún uso con sesión. */
-const LAS_10: Array<[string, () => Record<string, unknown>]> = [
+/** Las 11 sin ningún uso con sesión. */
+const LAS_11: Array<[string, () => Record<string, unknown>]> = [
   ['centro_abierto', () => ({ p_centro_id: centroA.id, p_fecha: FECHA_FESTIVO })],
   ['centro_de_conversacion', () => ({ p_conversacion_id: randomUUID() })],
   ['centro_de_curso', () => ({ p_curso_id: aulaA.curso_academico_id })],
@@ -95,6 +95,7 @@ const LAS_10: Array<[string, () => Record<string, unknown>]> = [
   ['publicacion_tiene_nino_sin_permiso', () => ({ p_publicacion_id: randomUUID() })],
   ['recibo_en_remesa', () => ({ p_recibo_id: randomUUID() })],
   ['tiene_consentimiento_imagen', () => ({ p_nino_id: ninoA })],
+  ['tiene_consentimiento', () => ({ p_usuario_id: tutorA.id, p_tipo: 'datos_medicos' })],
 ]
 
 beforeAll(async () => {
@@ -277,20 +278,11 @@ describe('PR 2a — las funciones auxiliares solo contestan a su centro', () => 
     }
   })
 
-  it('tiene_consentimiento: solo el propio', async () => {
-    const pregunta = { p_usuario_id: tutorA.id, p_tipo: 'datos_medicos' as const }
-    const ajeno = await cliTutorB.rpc('tiene_consentimiento', pregunta)
-    expect(ajeno.error?.code).toBe('42501')
-    expect(ajeno.error?.message).toContain('solo el consentimiento propio')
-    expect((await cliDirectoraA.rpc('tiene_consentimiento', pregunta)).error?.code).toBe('42501')
-    expect((await cliTutorA.rpc('tiene_consentimiento', pregunta)).data).toBe(true)
-    expect((await serviceClient.rpc('tiene_consentimiento', pregunta)).data).toBe(true)
-  })
-
-  it('las 10 sin uso con sesión: 42501 de permiso para cualquiera con sesión, también de A', async () => {
-    expect(new Set(LAS_10.map(([n]) => n)).size).toBe(10)
-    for (const [nombre, args] of LAS_10) {
-      for (const c of [cliTutorB, cliDirectoraA, cliSuper]) {
+  it('las 11 sin uso con sesión: 42501 de permiso para cualquiera con sesión, también de A', async () => {
+    expect(new Set(LAS_11.map(([n]) => n)).size).toBe(11)
+    for (const [nombre, args] of LAS_11) {
+      // El tutor de A pregunta también por su propio consentimiento: tampoco.
+      for (const c of [cliTutorB, cliTutorA, cliDirectoraA, cliSuper]) {
         const { error } = await c.rpc(nombre, args())
         expect(error?.code, nombre).toBe('42501')
         expect(error?.message, nombre).toContain(`permission denied for function ${nombre}`)
@@ -298,12 +290,20 @@ describe('PR 2a — las funciones auxiliares solo contestan a su centro', () => 
     }
   })
 
-  it('las 10: el servicio las sigue ejecutando', async () => {
-    for (const [nombre, args] of LAS_10) {
+  it('las 11: el servicio las sigue ejecutando', async () => {
+    for (const [nombre, args] of LAS_11) {
       const { error } = await serviceClient.rpc(nombre as never, args() as never)
       expect(error, nombre).toBeNull()
     }
     expect((await serviceClient.rpc('familia_de_nino', { p_nino_id: ninoA })).data).toBe(familiaA)
+    expect(
+      (
+        await serviceClient.rpc('tiene_consentimiento', {
+          p_usuario_id: tutorA.id,
+          p_tipo: 'datos_medicos',
+        })
+      ).data
+    ).toBe(true)
   })
 
   it('control: la profe de A ve la matrícula de su aula, y B la recorre sin error y no la ve', async () => {

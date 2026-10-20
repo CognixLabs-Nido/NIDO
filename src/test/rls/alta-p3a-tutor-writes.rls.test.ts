@@ -130,13 +130,14 @@ describe('Alta P3a — escritura del tutor (RLS/RPC)', () => {
   })
 
   it('tiene_consentimiento refleja alta y revocación', async () => {
-    const { data: con } = await clientCon.rpc('tiene_consentimiento', {
+    // Desde 20261026120000 solo la ejecuta el servicio (la usa `marcar_matricula_lista`).
+    const { data: con } = await serviceClient.rpc('tiene_consentimiento', {
       p_usuario_id: tutorCon.id,
       p_tipo: 'datos_medicos',
     })
     expect(con).toBe(true)
 
-    const { data: sin } = await clientSin.rpc('tiene_consentimiento', {
+    const { data: sin } = await serviceClient.rpc('tiene_consentimiento', {
       p_usuario_id: tutorSin.id,
       p_tipo: 'datos_medicos',
     })

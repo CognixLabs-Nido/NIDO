@@ -606,7 +606,7 @@ abrir la función o la tabla a cualquiera por PostgREST.
   `20261002160000` (20 helpers de RLS, #297) y `20261010130000` (las 46 funciones auxiliares que
   quedaban: `centro_de_*`, `hoy_madrid`, `menu_del_dia`…). Desde esta última, anon no puede
   ejecutar ninguna función de `public` salvo las de trigger, que no se pueden llamar por RPC.
-  Desde `20261026120000`, 10 de esas 46 solo las ejecuta `service_role` y otras 8 comprueban el
+  Desde `20261026120000`, 11 de esas 46 solo las ejecuta `service_role` y otras 7 comprueban el
   centro de quien llama (ver «Funciones auxiliares: solo contestan a su centro»).
 
 - **Tablas:** anon no tiene ningún privilegio de tabla en `public` (ni `SELECT`), y
@@ -751,11 +751,14 @@ Migración `20261026120000_fix_funciones_auxiliares_centro`. `20261010130000` ce
 funciones auxiliares, pero con sesión seguían contestando a cualquiera, fuera cual fuera su centro:
 son consultas por el id recibido. Censo en producción del 2026-10-20, por quién las usa:
 
-- **10 sin ningún uso con sesión** (ni policies, ni CHECK, ni la app, ni funciones de invocador;
+- **11 sin ningún uso con sesión** (ni policies, ni CHECK, ni la app, ni funciones de invocador;
   solo las llaman funciones `SECURITY DEFINER`): sin `EXECUTE` para `authenticated`. Son
   `centro_abierto`, `centro_de_conversacion`, `centro_de_curso`, `centro_de_remesa`,
   `familia_de_nino`, `nino_de_conversacion`, `nino_de_recibo`,
-  `publicacion_tiene_nino_sin_permiso`, `recibo_en_remesa` y `tiene_consentimiento_imagen`.
+  `publicacion_tiene_nino_sin_permiso`, `recibo_en_remesa`, `tiene_consentimiento_imagen` y
+  `tiene_consentimiento`. Esta última, el consentimiento de cualquier usuario, la usa solo
+  `marcar_matricula_lista`; cerrada del todo no se puede sondear. Si algún día la app la
+  necesita, se abre con la comprobación de «solo el propio».
 - **5 que la app llama y ninguna policy usa:** `menu_del_dia`, `tipo_de_dia`, `mes_cerrado`,
   `existe_consentimiento_imagen` y `nino_toma_comida_solida`. Si quien llama no es del centro
   (del niño, en las dos últimas), **42501**. Pasan de `sql` a `plpgsql` para poder abortar.
@@ -767,8 +770,6 @@ son consultas por el id recibido. Censo en producción del 2026-10-20, por quié
   filas de otros centros: un RAISE rompería la consulta entera. Por eso a quien no es del centro
   no le contestan nada (NULL y FALSE), igual que si no hubiera curso o vínculo.
   `es_tutor_en_centro` solo contesta de uno mismo o a la directora de ese centro.
-- **`tiene_consentimiento`**: solo el propio (42501 si no). Su único llamador,
-  `marcar_matricula_lista`, ya pasa `auth.uid()`.
 - «Del centro» es `pertenece_a_centro` (un rol vivo en él) o `es_admin`, que incluye al
   superusuario. A `es_admin` nunca se le pasa NULL: daría TRUE a cualquier admin. Sin sesión, solo
   el servicio («Sin uid» nunca es el servicio).
