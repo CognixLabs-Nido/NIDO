@@ -578,6 +578,7 @@ Las rutas codifican el ámbito (`(storage.foldername(name))[n]`): `[1]=centroId`
 - **`ninos-fotos`** (foto de la ficha, `ninos.foto_url`). Ruta `{centroId}/{ninoId}/…`. SELECT = `es_admin(centroId) OR es_profe_de_nino(ninoId) OR es_tutor_de(ninoId)`. Escribir/borrar = `es_admin(centroId)` (F10-0) **OR `es_tutor_de(ninoId)`** (F10-3, `[2]=ninoId`): el tutor sube/sustituye la foto de **su** hijo, dirección la de cualquiera. El `UPDATE` de `ninos.foto_url` (que el tutor no puede por la RLS de `ninos`) lo hace el server con **service role tras autorizar**.
 - **`recogida-adjuntos`** (foto DNI de F8, `firmas.datos.adjuntos`). Ruta `{centroId}/{ninoId}/…` (el `{firmaId}` no existe al subir-antes-de-firmar). SELECT/INSERT **baseline** staff del centro (`es_admin OR es_profe_en_centro`, `[1]=centroId`) **+ F10-3** `es_tutor_de(ninoId)` (`[2]=ninoId`): el tutor sube/relee el DNI de **su** recogida; DELETE = `es_admin`. La referencia se ata a la firma por el hash (`datos.adjuntos`). Sensible (DNIs de terceros) → RAT/retención en F11.
 - **`centro-assets`** (logo, **público** — ADR-0010): SELECT público; escribir/actualizar/borrar = `es_admin(centroId)` (F10-0; el tutor NO escribe — verificado por test). En F10-3 dirección sube el logo aquí y repunta `centros.logo_url`.
+- **Desde `20261027120000`** (PR 3 de la Fase 4), las policies de los buckets con niño, familia o aula en la ruta exigen además `ruta_coherente(bucket_id, name)`, y las de escritura de `centro-assets`, que la ruta tenga carpeta. Ver «Storage: las rutas no cruzan de centro».
 
 ### Políticas de Storage del tutor (F10-3)
 
@@ -779,6 +780,29 @@ son consultas por el id recibido. Censo en producción del 2026-10-20, por quié
   (moverlas a un esquema que la API no expone).
 - Test: `funciones-auxiliares-centro.rls.test.ts`.
 
+### Storage: las rutas no cruzan de centro (PR 3, Fase 4)
+
+Migración `20261027120000_fix_storage_ruta_coherente`. Las policies de `storage.objects` leían el
+centro de la ruta (`[1]`) y, aparte, el niño, la familia o el aula (`[2]`, `[3]`), sin comprobar
+que lo segundo fuera del primero. Cada rama miraba solo uno de los dos: el tutor de un niño de B
+subía un PDF a `A/niñoB/` y la directora de A lo veía. Y en la raíz del bucket, sin carpeta, `[1]`
+es NULL y `es_admin(NULL)` es TRUE para cualquier admin.
+
+- **`ruta_coherente(bucket, name)`** (`SECURITY DEFINER`, `EXECUTE` para `authenticated` y
+  `service_role`): TRUE solo si la ruta tiene centro y su `[2]` es un niño de ese centro; en el
+  mandato por familia, `{centro}/familia/{familia}/` con la familia de ese centro; en
+  `aula-fotos`, el aula del centro y la publicación de esa aula. Compara como texto y valida cada
+  segmento antes de convertirlo a uuid (`'familia'::uuid` rompería el mandato por familia). Sin
+  carpeta, FALSE.
+- **28 policies** de `aula-fotos`, `dni-tutores`, `libro-familia`, `mandato-sepa`, `ninos-fotos`
+  y `recogida-adjuntos` la añaden con AND, sin tocar el resto de su condición.
+- **3 de escritura de `centro-assets`** (el logo, `{centro}/logo.png`) exigen carpeta. Su lectura
+  sigue pública (ADR-0010).
+- `usuarios-fotos` no entra: su `[1]` es el usuario, y sin carpeta sus helpers dan FALSE.
+- `ruta_coherente` solo combina `centro_de_*`, que `authenticated` ya puede llamar; se mueve con
+  ellos en el PR 2b.
+- Test: `storage-ruta-coherente.rls.test.ts`.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -808,6 +832,7 @@ son consultas por el id recibido. Censo en producción del 2026-10-20, por quié
 | Invitación sin toma de cuenta                 | `invitacion-toma-de-cuenta.rls.test.ts`         |
 | Entre centros, nadie entra sin aceptar        | `vinculacion-entre-centros.rls.test.ts`         |
 | Funciones auxiliares solo de su centro        | `funciones-auxiliares-centro.rls.test.ts`       |
+| Rutas de Storage sin cruzar de centro         | `storage-ruta-coherente.rls.test.ts`            |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

@@ -141,6 +141,10 @@ Del mismo frente (#302):
   policies), y 11 sin ningún uso con sesión pierden `authenticated` (entre ellas
   `tiene_consentimiento`, el consentimiento de cualquier usuario). Las que usan policies van a un esquema que la API no expone
   (PR 2b): una comprobación dentro abriría en vez de cerrar, por `es_admin(NULL)`.
+- **Storage** (`20261027120000`, PR 3 de la Fase 4, 2026-10-20): las policies de `storage.objects`
+  exigen que el niño, la familia o el aula de la ruta sean del centro de la ruta
+  (`ruta_coherente`), y las de escritura del logo, que la ruta tenga carpeta: `es_admin(NULL)` ya
+  no abre la raíz de los buckets.
 
 ### 7. Columnas que solo puede leer Dirección: permiso de columna
 
