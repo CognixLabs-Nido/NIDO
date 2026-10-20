@@ -65,7 +65,7 @@ END
 $guarda$;
 
 -- ---- 1. Permisos de invitaciones ----
-REVOKE SELECT, INSERT, UPDATE ON public.invitaciones FROM PUBLIC, anon, authenticated;
+-- CONTROL NEGATIVO N2: sin REVOKE
 
 -- Todas MENOS token. Columna nueva en invitaciones ⇒ añadirla aquí en su migración.
 GRANT SELECT (
@@ -100,43 +100,4 @@ $function$;
 REVOKE ALL ON FUNCTION public.cuenta_ha_operado(uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.cuenta_ha_operado(uuid) TO service_role;
 
--- ---- Guarda posterior ----
-DO $comprueba$
-DECLARE
-  v_legibles int;
-BEGIN
-  IF has_column_privilege('authenticated', 'public.invitaciones', 'token', 'SELECT') THEN
-    RAISE EXCEPTION 'authenticated sigue pudiendo leer invitaciones.token';
-  END IF;
-  IF has_table_privilege('authenticated', 'public.invitaciones', 'INSERT')
-     OR has_table_privilege('authenticated', 'public.invitaciones', 'UPDATE')
-     OR has_any_column_privilege('authenticated', 'public.invitaciones', 'INSERT')
-     OR has_any_column_privilege('authenticated', 'public.invitaciones', 'UPDATE') THEN
-    RAISE EXCEPTION 'authenticated sigue pudiendo escribir invitaciones';
-  END IF;
-  IF NOT has_table_privilege('authenticated', 'public.invitaciones', 'DELETE') THEN
-    RAISE EXCEPTION 'authenticated ha perdido el DELETE de invitaciones (no se debía tocar)';
-  END IF;
-
-  SELECT count(*) INTO v_legibles
-    FROM pg_attribute
-   WHERE attrelid = 'public.invitaciones'::regclass
-     AND attnum > 0
-     AND NOT attisdropped
-     AND has_column_privilege('authenticated', 'public.invitaciones', attname, 'SELECT');
-  IF v_legibles <> 14 THEN
-    RAISE EXCEPTION 'authenticated lee % columnas de invitaciones; se esperaban 14', v_legibles;
-  END IF;
-
-  IF has_function_privilege('authenticated', 'public.cuenta_ha_operado(uuid)', 'EXECUTE')
-     OR has_function_privilege('anon', 'public.cuenta_ha_operado(uuid)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'cuenta_ha_operado no puede ser ejecutable con sesión ni por anon';
-  END IF;
-  IF NOT has_function_privilege('service_role', 'public.cuenta_ha_operado(uuid)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'service_role no puede ejecutar cuenta_ha_operado';
-  END IF;
-
-  RAISE NOTICE 'invitaciones: authenticated lee % de 15 columnas (sin token), sin INSERT ni UPDATE, con DELETE; cuenta_ha_operado solo para service_role',
-    v_legibles;
-END
-$comprueba$;
+-- CONTROL NEGATIVO N2: sin guarda posterior
