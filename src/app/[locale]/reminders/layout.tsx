@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { AgendaBadge } from '@/features/agenda/components/AgendaBadge'
 import { contarInvitacionesPendientes } from '@/features/agenda/queries/contar-invitaciones-pendientes'
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
+import { AvisoSuperusuario } from '@/features/centros/components/AvisoSuperusuario'
 import { ConmutadorCentroServidor } from '@/features/centros/components/ConmutadorCentroServidor'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
@@ -84,6 +85,7 @@ export default async function RemindersLayout({ children, params }: LayoutProps)
         ariaLabel={tNav('aria_label')}
       />
       <main className="min-w-0 flex-1">
+        <AvisoSuperusuario contexto={contexto} locale={locale} />
         <div className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-8">{children}</div>
       </main>
     </div>

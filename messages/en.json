@@ -4198,6 +4198,11 @@
       "etiqueta": "School",
       "cambiar": "Change school"
     },
+    "superusuario": {
+      "etiqueta": "Superuser",
+      "aviso": "You are inside {centro} with full permissions.",
+      "salir": "Leave this school"
+    },
     "aviso": {
       "otro_centro": "You are viewing {centro}, not your active school ({activo}).",
       "viendo": "You are viewing {centro}."

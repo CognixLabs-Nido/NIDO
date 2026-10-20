@@ -36,6 +36,10 @@ const CLAVES: ReadonlyArray<readonly string[]> = [
   ['listaEspera', 'errors', 'presencial_solo_direccion'],
   ['centros', 'conmutador', 'etiqueta'],
   ['centros', 'conmutador', 'cambiar'],
+  // El aviso del superusuario dentro de un centro y su botón de salir.
+  ['centros', 'superusuario', 'etiqueta'],
+  ['centros', 'superusuario', 'aviso'],
+  ['centros', 'superusuario', 'salir'],
   ['centros', 'aviso', 'otro_centro'],
   ['centros', 'aviso', 'viendo'],
   ['centros', 'notificacion', 'titulo'],
@@ -49,6 +53,10 @@ describe('i18n — selector y conmutador de centro', () => {
       const valor = ruta(msgs, path)
       expect(typeof valor, path.join('.')).toBe('string')
       expect((valor as string).length).toBeGreaterThan(0)
+    })
+
+    it(`${locale}: el aviso del superusuario nombra el centro`, () => {
+      expect(ruta(msgs, ['centros', 'superusuario', 'aviso'])).toContain('{centro}')
     })
   }
 })

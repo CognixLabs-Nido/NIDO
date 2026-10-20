@@ -27,7 +27,7 @@ describe('el árbol real cumple', () => {
     expect(recuento.usosEnElModulo).toBeGreaterThan(0)
     expect(recuento.lecturasRoles).toBe(0)
     expect(recuento.usosDeprecadas).toBe(0)
-    // La cookie: la nombran exactamente sus cuatro ficheros y se escribe una vez (elegirCentro).
+    // La cookie: la nombran exactamente sus cinco ficheros y se escribe una vez (elegirCentro).
     // El 1 es la premisa de que el patrón de escritura caza.
     expect(recuento.ficherosQueNombranCookie).toBe(Object.keys(PAPEL_COOKIE).length)
     expect(recuento.escriturasCookie).toBe(1)
