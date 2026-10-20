@@ -173,75 +173,98 @@ async function salidaDeLaProfe(): Promise<string> {
   return data.id
 }
 
-async function cambiar(cli: Client, id: string, cambio: AutorizacionUpdate) {
+/** Editar el contenido: con RETURNING, como la app. */
+async function editar(cli: Client, id: string, cambio: AutorizacionUpdate) {
   return cli.from('autorizaciones').update(cambio).eq('id', id).select('id').maybeSingle()
+}
+
+const IDENTIDAD =
+  'tipo, es_plantilla, ambito, centro_id, nino_id, evento_id, aula_id, plantilla_id, creado_por'
+
+/**
+ * Cambiar la identidad, sin RETURNING: con él, un cambio que deja la fila fuera de la vista de quien
+ * la cambia aborta en el RETURNING (42501) aunque la policy de UPDATE lo deje pasar, y la prueba no
+ * vería el hueco. Devuelve el error y la fila tal como queda, leída con service role.
+ */
+async function cambiarIdentidad(cli: Client, id: string, cambio: AutorizacionUpdate) {
+  const antes = await serviceClient.from('autorizaciones').select(IDENTIDAD).eq('id', id).single()
+  const { error } = await cli.from('autorizaciones').update(cambio).eq('id', id)
+  const despues = await serviceClient.from('autorizaciones').select(IDENTIDAD).eq('id', id).single()
+  return { error, antes: antes.data, despues: despues.data }
 }
 
 describe('la familia, sobre su recogida sin firmar', () => {
   it('ancla: sigue pudiendo editar el título', async () => {
     const id = await recogidaDeLaFamilia()
-    const { data, error } = await cambiar(cliTutor, id, { titulo: 'Recogida (corregida)' })
+    const { data, error } = await editar(cliTutor, id, { titulo: 'Recogida (corregida)' })
     expect(error).toBeNull()
     expect(data?.id).toBe(id)
   })
 
   it('no le cambia el tipo', async () => {
     const id = await recogidaDeLaFamilia()
-    const { error } = await cambiar(cliTutor, id, { tipo: 'medicacion' })
-    expect(error?.code).toBe('23514')
+    const r = await cambiarIdentidad(cliTutor, id, { tipo: 'medicacion' })
+    expect(r.error?.code).toBe('23514')
+    expect(r.despues).toEqual(r.antes)
   })
 
   it('no la pasa a otro niño', async () => {
     const id = await recogidaDeLaFamilia()
-    const { error } = await cambiar(cliTutor, id, { nino_id: ninoB })
-    expect(error?.code).toBe('23514')
+    const r = await cambiarIdentidad(cliTutor, id, { nino_id: ninoB })
+    expect(r.error?.code).toBe('23514')
+    expect(r.despues).toEqual(r.antes)
   })
 
   it('no se la lleva a otro centro', async () => {
     const id = await recogidaDeLaFamilia()
-    const { error } = await cambiar(cliTutor, id, { centro_id: centroB.id })
-    expect(error?.code).toBe('23514')
+    const r = await cambiarIdentidad(cliTutor, id, { centro_id: centroB.id })
+    expect(r.error?.code).toBe('23514')
+    expect(r.despues).toEqual(r.antes)
   })
 
   it('no la convierte en las normas del centro para todo el centro', async () => {
     const id = await recogidaDeLaFamilia()
-    const { error } = await cambiar(cliTutor, id, {
+    const r = await cambiarIdentidad(cliTutor, id, {
       tipo: 'reglas_regimen_interno',
       ambito: 'centro',
       nino_id: null,
     })
-    expect(error?.code).toBe('23514')
+    expect(r.error?.code).toBe('23514')
+    expect(r.despues).toEqual(r.antes)
   })
 })
 
 describe('la profe, sobre su salida sin firmar', () => {
   it('ancla: sigue pudiendo editar el título', async () => {
     const id = await salidaDeLaProfe()
-    const { data, error } = await cambiar(cliProfe, id, { titulo: 'Salida (corregida)' })
+    const { data, error } = await editar(cliProfe, id, { titulo: 'Salida (corregida)' })
     expect(error).toBeNull()
     expect(data?.id).toBe(id)
   })
 
   it('no se la lleva a otro centro', async () => {
     const id = await salidaDeLaProfe()
-    const { error } = await cambiar(cliProfe, id, { centro_id: centroB.id })
-    expect(error?.code).toBe('23514')
+    const r = await cambiarIdentidad(cliProfe, id, { centro_id: centroB.id })
+    expect(r.error?.code).toBe('23514')
+    expect(r.despues).toEqual(r.antes)
   })
 
   it('no la convierte en la plantilla de las normas del centro', async () => {
     const id = await salidaDeLaProfe()
-    const { error } = await cambiar(cliProfe, id, {
+    const r = await cambiarIdentidad(cliProfe, id, {
       tipo: 'reglas_regimen_interno',
       es_plantilla: true,
       evento_id: null,
     })
-    expect(error?.code).toBe('23514')
+    expect(r.error?.code).toBe('23514')
+    expect(r.despues).toEqual(r.antes)
   })
 })
 
 describe('tampoco la dirección', () => {
   it('no le cambia el tipo a una plantilla', async () => {
-    const { error } = await cambiar(cliAdmin, plantillaRecogida, { tipo: 'medicacion' })
-    expect(error?.code).toBe('23514')
+    const r = await cambiarIdentidad(cliAdmin, plantillaRecogida, { tipo: 'medicacion' })
+    expect(r.error?.code).toBe('23514')
+    expect(r.despues).toEqual(r.antes)
   })
 })
