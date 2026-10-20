@@ -187,9 +187,15 @@ beforeEach(() => {
   rolesResult = []
   // Por defecto: prospecto normal (1.er hijo, familia nueva) → sin cuenta de tutor guardada.
   prospectoTutorUsuarioId = null
-  perfilTutor = { nombre_completo: 'María Tutora', email: 'tutor@nido.test' }
+  // Por defecto: la cuenta (si la hay) NO tiene familia en este centro → se invita.
+  perfilTutor = null
   vinculoPrevio = { parentesco: 'madre', descripcion_parentesco: null }
 })
+
+/** El tutor tiene familia en ESTE centro: su perfil (nombre exacto + email guardados). */
+function conFamiliaAqui() {
+  perfilTutor = { nombre_completo: 'María Tutora', email: 'tutor@nido.test' }
+}
 
 describe('invitarAlAlta — cableado a la RPC de familia (F-2b-2b)', () => {
   it("éxito → llama a la RPC con p_usuario_id NULL, invita y devuelve resultado 'ok'", async () => {
@@ -247,14 +253,14 @@ describe('invitarAlAlta — cableado a la RPC de familia (F-2b-2b)', () => {
   })
 })
 
-describe('invitarAlAlta — guardarraíl cuenta existente (F-2b-4-3)', () => {
-  // FIX A (#262) cambió este escenario: con cuenta REAL ya NO se rechaza con
-  // `tutor_ya_registrado_usar_anadir_hijo` — se VINCULA el hijo nuevo a la familia existente
-  // del tutor (camino feliz del 2.º hijo), sin email ni invitación porque ya tiene acceso.
-  it('email con cuenta REAL (con roles) → vincula el hijo a su familia, sin invitación', async () => {
-    // El tutor del prospecto ya tiene cuenta operativa (fila auth + ≥1 rol activo).
+describe('invitarAlAlta — cuenta que ya existe (F-2b-4-3, PR 1 de la Fase 4)', () => {
+  // FIX A (#262): el 2.º hijo de una familia de este centro se VINCULA, sin email ni
+  // invitación. PR 1 (Fase 4): solo si la familia es de ESTE centro; una cuenta de otro centro se
+  // invita como una familia nueva.
+  it('cuenta con familia en este centro → vincula el hijo a su familia, sin invitación', async () => {
     authUsersList = [{ id: 'tutor-uid', email: 'tutor@nido.test' }]
     rolesResult = [{ usuario_id: 'tutor-uid' }]
+    conFamiliaAqui()
 
     const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
 
@@ -280,6 +286,18 @@ describe('invitarAlAlta — guardarraíl cuenta existente (F-2b-4-3)', () => {
     expect(estadoUpdateSpy).toHaveBeenCalledTimes(1)
   })
 
+  it('cuenta operativa SIN familia en este centro (otro centro) → se invita, no se vincula', async () => {
+    authUsersList = [{ id: 'de-otro-centro', email: 'tutor@nido.test' }]
+    rolesResult = [{ usuario_id: 'de-otro-centro' }]
+
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
+
+    expect(r.success && r.data.resultado).toBe('ok')
+    const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
+    expect(altaCall?.[1]).toMatchObject({ p_usuario_id: null, p_tutor_nombre_completo: '' })
+    expect(sendInvitationSpy).toHaveBeenCalledTimes(1)
+  })
+
   it('email con cuenta STUB (fila auth sin roles) → sigue el flujo de invitación normal (RPC con p_usuario_id NULL)', async () => {
     // Existe la fila auth (p. ej. de un invite previo) pero SIN roles → clase 'stub'.
     authUsersList = [{ id: 'stub-uid', email: 'tutor@nido.test' }]
@@ -303,14 +321,26 @@ describe('invitarAlAlta — guardarraíl cuenta existente (F-2b-4-3)', () => {
     expect(altaCall?.[1]).toMatchObject({ p_usuario_id: null })
     expect(sendInvitationSpy).toHaveBeenCalledTimes(1)
   })
+
+  it('el correo no sale → el alta queda creada, el prospecto sale de la cola y se dice', async () => {
+    sendInvitationSpy = vi.fn<SendInvitationFn>(() =>
+      Promise.resolve({ success: false, error: 'auth.invitation.errors.email_no_enviado' })
+    )
+
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
+
+    expect(r).toEqual({ success: false, error: 'listaEspera.errors.alta_creada_sin_correo' })
+    // Sale de la cola: un segundo «Invitar» no puede crear otro niño.
+    expect(estadoUpdateSpy).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('invitarAlAlta — prospecto de 2.º hijo con tutor guardado (U-2/D1)', () => {
-  it('con tutor_usuario_id → vincula a ESA cuenta sin adivinar por email', async () => {
-    // El prospecto nació de "añadir hijo a familia existente": trae la cuenta del tutor.
+  it('con tutor_usuario_id de una familia de aquí → vincula a ESA cuenta sin adivinar por email', async () => {
     prospectoTutorUsuarioId = 'tutor-uid'
-    // Trampa deliberada: por email NO se detectaría cuenta operativa (lista vacía). Si el
-    // action siguiera fiándose del email, invitaría en vez de vincular.
+    conFamiliaAqui()
+    // Trampa deliberada: por email NO se detectaría la cuenta (lista vacía). Si el action se
+    // fiara del email, invitaría en vez de vincular.
     authUsersList = []
     rolesResult = []
 
@@ -326,10 +356,22 @@ describe('invitarAlAlta — prospecto de 2.º hijo con tutor guardado (U-2/D1)',
     expect(estadoUpdateSpy).toHaveBeenCalledTimes(1)
   })
 
+  it('con tutor_usuario_id que ya no tiene familia aquí → no se fía de él: invita por el email', async () => {
+    prospectoTutorUsuarioId = 'tutor-uid'
+
+    const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
+
+    expect(r.success && r.data.resultado).toBe('ok')
+    const altaCall = rpcSpy.mock.calls.find((c) => c[0] === 'crear_o_anadir_a_familia')
+    expect(altaCall?.[1]).toMatchObject({ p_usuario_id: null })
+    expect(sendInvitationSpy).toHaveBeenCalledTimes(1)
+  })
+
   it('sin tutor_usuario_id → se conserva la detección por email (prospecto normal)', async () => {
     prospectoTutorUsuarioId = null
     authUsersList = [{ id: 'detectado-por-email', email: 'tutor@nido.test' }]
     rolesResult = [{ usuario_id: 'detectado-por-email' }]
+    conFamiliaAqui()
 
     const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
 
@@ -343,6 +385,7 @@ describe('invitarAlAlta — prospecto de 2.º hijo con tutor guardado (U-2/D1)',
 describe('invitarAlAlta — parentesco cuando el tutor no tiene vínculo del que heredar (hueco 1)', () => {
   it('tutor guardado SIN vínculo previo y sin parentesco → parentesco_requerido, sin escribir', async () => {
     prospectoTutorUsuarioId = 'tutor-uid'
+    conFamiliaAqui()
     vinculoPrevio = null
 
     const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA }, 'es')
@@ -356,6 +399,7 @@ describe('invitarAlAlta — parentesco cuando el tutor no tiene vínculo del que
 
   it('tutor guardado SIN vínculo previo + parentesco del diálogo → la RPC lo recibe', async () => {
     prospectoTutorUsuarioId = 'tutor-uid'
+    conFamiliaAqui()
     vinculoPrevio = null
 
     const r = await invitarAlAlta(
@@ -377,6 +421,7 @@ describe('invitarAlAlta — parentesco cuando el tutor no tiene vínculo del que
   it('cuenta detectada por email SIN vínculo + parentesco del diálogo → la RPC lo recibe', async () => {
     authUsersList = [{ id: 'detectado-por-email', email: 'tutor@nido.test' }]
     rolesResult = [{ usuario_id: 'detectado-por-email' }]
+    conFamiliaAqui()
     vinculoPrevio = null
 
     const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA, parentesco: 'abuela' }, 'es')
@@ -392,6 +437,7 @@ describe('invitarAlAlta — parentesco cuando el tutor no tiene vínculo del que
 
   it('con vínculo previo, la herencia GANA al parentesco del diálogo', async () => {
     prospectoTutorUsuarioId = 'tutor-uid'
+    conFamiliaAqui()
     vinculoPrevio = { parentesco: 'padre', descripcion_parentesco: null }
 
     const r = await invitarAlAlta({ id: PROSPECTO, aulaId: AULA, parentesco: 'abuelo' }, 'es')
@@ -403,6 +449,7 @@ describe('invitarAlAlta — parentesco cuando el tutor no tiene vínculo del que
 
   it("parentesco 'otro' sin descripción → validación, sin tocar nada", async () => {
     prospectoTutorUsuarioId = 'tutor-uid'
+    conFamiliaAqui()
     vinculoPrevio = null
     // El spy lo crea el cliente; si la validación corta antes, ni se crea → se arranca limpio.
     rpcSpy = vi.fn()

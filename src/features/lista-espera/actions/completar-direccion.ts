@@ -4,17 +4,18 @@ import { randomBytes } from 'node:crypto'
 
 import { revalidatePath } from 'next/cache'
 
-import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
+import { sendInvitation } from '@/features/auth/actions/send-invitation'
 import { crearTutorDirecto } from '@/features/auth/lib/crear-tutor-directo'
+import { detectarCuentaPorEmail } from '@/features/auth/lib/detectar-cuenta-email'
 import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
 import { esAdminEn, esSuperusuario } from '@/features/centros/contexto/roles-del-usuario'
-import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
 import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Json } from '@/types/database'
 
+import { tutorDeEsteCentro } from '../lib/resolver-tutor-email'
 import { vincularHijoATutorExistente } from '../lib/vincular-hijo-tutor-existente'
 import { completarDireccionSchema, type CompletarDireccionInput } from '../schemas/lista-espera'
 import { fail, ok, type ActionResult } from '../../centros/types'
@@ -33,10 +34,11 @@ type ResultadoCrearFamilia = {
  * la RPC (email ya en el centro con otro nombre) → la UI avisa a Dirección y NO navega.
  */
 export type CompletarEnDireccionOk =
-  | { resultado: 'ok'; ninoId: string; usuarioId: string }
+  // `usuarioId` null: la cuenta ya existía en otro sitio y se la ha invitado (aún no está enlazada).
+  | { resultado: 'ok'; ninoId: string; usuarioId: string | null }
   | { resultado: 'colision'; nombreExistente: string | null }
-  // FIX A: el tutor YA tenía cuenta → el hijo se vinculó a su familia existente (sin recrear
-  // cuenta, sin contraseña, sin email). La UI lo distingue del alta con cuenta nueva.
+  // FIX A: el tutor YA tenía familia en este centro → el hijo entró en ella (sin recrear cuenta,
+  // sin contraseña, sin email). La UI lo distingue del alta con cuenta nueva.
   | { resultado: 'vinculado'; ninoId: string; usuarioId: string }
 
 /**
@@ -119,30 +121,16 @@ export async function completarEnDireccion(
 
   const service = createServiceRoleClient()
 
-  // ¿El tutor ya tiene cuenta OPERATIVA? Dos vías, por orden de fiabilidad:
-  //  - D1 (U-2): el prospecto trae `tutor_usuario_id` porque nació de "añadir hijo a familia
-  //    existente" → la cuenta es EXACTA y no depende del email que teclee la dirección en el
-  //    diálogo (que podría ser otro y llevar a crear un tutor duplicado).
-  //  - FIX A/FIX B: prospecto normal → detección por email con la RPC service-role
-  //    `buscar_auth_user_por_email` (búsqueda exacta) + roles activos → `clasificarCuenta`.
-  // En ambos casos, si el tutor existe NO recreamos cuenta ni pedimos contraseña: vinculamos
-  // el hijo a su familia del centro (o creamos familia nueva si no tiene aquí, multi-centro
-  // seguro). Cuentas 'nueva'/'stub' siguen por el flujo de abajo.
-  let tutorExistenteId: string | null = prospecto.tutor_usuario_id
-  if (!tutorExistenteId) {
-    const { data: authUser, error: buscarErr } = await service
-      .rpc('buscar_auth_user_por_email', { p_email: parsed.data.email })
-      .maybeSingle()
-    if (buscarErr) {
-      logger.warn('completarEnDireccion buscar_auth_user_por_email', buscarErr.message)
-      return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
-    }
-    if (authUser) {
-      // Un fallo de lectura cuenta como «sin roles», como antes.
-      const tieneRoles = (await tieneRolesVivos(service, authUser.id)) === true
-      if (clasificarCuenta(true, tieneRoles) === 'real') tutorExistenteId = authUser.id
-    }
-  }
+  // ¿Es el 2.º hijo de una familia de ESTE centro? Entonces se vincula a esa cuenta: no se recrea
+  // ni se le pide contraseña. La regla es la de `invitarAlAlta` (`tutorDeEsteCentro`): primero la
+  // cuenta que guardó el prospecto, si sigue teniendo familia aquí; si no, la del email.
+  const tutorExistenteId = await tutorDeEsteCentro(service, {
+    tutorPrevioId: prospecto.tutor_usuario_id,
+    email: parsed.data.email,
+    centroId,
+  })
+  if (tutorExistenteId === undefined)
+    return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
   if (tutorExistenteId) {
     const vinc = await vincularHijoATutorExistente(service, supabase, {
       tutorUsuarioId: tutorExistenteId,
@@ -167,6 +155,26 @@ export async function completarEnDireccion(
 
     revalidatePath('/[locale]/admin/admisiones', 'page')
     return ok({ resultado: 'vinculado', ninoId: vinc.data.ninoId, usuarioId: tutorExistenteId })
+  }
+
+  // Cuenta que ya existe y ha operado (de otro centro, del personal, el superusuario): no es de
+  // este centro ni un alta a medias. No se le crea cuenta ni se le toca la contraseña, y nunca se
+  // vincula sin que acepte (PR 1 de la Fase 4): el alta se crea con su perfil sin cuenta, se le
+  // invita, y la Dirección sigue con el wizard igual que con una familia nueva (D4).
+  const cuenta = await detectarCuentaPorEmail(service, parsed.data.email)
+  if (!cuenta) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+  if (cuenta.authUserExiste && (cuenta.tieneRoles || cuenta.haOperado)) {
+    return altaInvitandoCuentaExistente(supabase, {
+      prospectoId: prospecto.id,
+      nombreNino: prospecto.nombre_nino,
+      apellidosNino: prospecto.apellidos_nino ?? '',
+      fechaNacimiento,
+      centroId,
+      aulaId: parsed.data.aulaId,
+      email: parsed.data.email,
+      nombreTutor: `${parsed.data.nombreTutor} ${parsed.data.apellidosTutor}`,
+      locale,
+    })
   }
 
   // 1. Cuenta GoTrue PRIMERO (defensiva PR-A vía `crearTutorDirecto`). Si GoTrue falla, no se
@@ -232,4 +240,75 @@ export async function completarEnDireccion(
 
   revalidatePath('/[locale]/admin/admisiones', 'page')
   return ok({ resultado: 'ok', ninoId: res.nino_id as string, usuarioId: tutor.data.usuarioId })
+}
+
+/**
+ * «Completar en Dirección» con un email que ya tiene una cuenta operativa fuera de este centro. La
+ * RPC crea el alta con el perfil del tutor sin cuenta (`p_usuario_id` NULL, como al invitar) y
+ * `sendInvitation` le avisa; al aceptar desde su perfil se enlaza. Mientras, la Dirección completa
+ * el wizard en modo Dirección, que no necesita la cuenta del tutor.
+ */
+async function altaInvitandoCuentaExistente(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  p: {
+    prospectoId: string
+    nombreNino: string
+    apellidosNino: string
+    fechaNacimiento: string
+    centroId: string
+    aulaId: string
+    email: string
+    nombreTutor: string
+    locale: 'es' | 'en' | 'va'
+  }
+): Promise<ActionResult<CompletarEnDireccionOk>> {
+  const { data: rpcData, error: rpcError } = await supabase.rpc('crear_o_anadir_a_familia', {
+    p_nombre_nino: p.nombreNino,
+    p_apellidos_nino: p.apellidosNino,
+    p_fecha_nacimiento: p.fechaNacimiento,
+    p_centro_id: p.centroId,
+    p_aula_id: p.aulaId,
+    p_tutor_email: p.email,
+    p_tutor_nombre_completo: p.nombreTutor,
+    p_parentesco: '',
+    p_descripcion_parentesco: '',
+    // NULL = sin vincular: el rol y el vínculo los crea la aceptación.
+    p_usuario_id: null as unknown as string,
+    p_permisos: permisosDefault('tutor_legal_principal') as Json,
+  })
+  if (rpcError) {
+    logger.warn('completarEnDireccion rpc (cuenta existente)', rpcError.message)
+    return fail('listaEspera.errors.alta_fallo')
+  }
+  const res = rpcData as ResultadoCrearFamilia
+  if (res.resultado === 'colision') {
+    return ok({
+      resultado: 'colision',
+      nombreExistente: res.colision_info?.nombre_existente ?? null,
+    })
+  }
+  const ninoId = res.nino_id as string
+
+  const inv = await sendInvitation({
+    email: p.email,
+    rolObjetivo: 'tutor_legal',
+    centroId: p.centroId,
+    ninoId,
+    tipoVinculo: 'tutor_legal_principal',
+    idioma: p.locale,
+  })
+
+  // El prospecto sale de la cola aunque el correo no haya salido: el alta ya existe.
+  const { error: estadoErr } = await supabase
+    .from('lista_espera')
+    .update({ estado: 'invitado', nino_id: ninoId })
+    .eq('id', p.prospectoId)
+  if (estadoErr) logger.warn('completarEnDireccion estado update (invitado)', estadoErr.message)
+  revalidatePath('/[locale]/admin/admisiones', 'page')
+
+  if (!inv.success) {
+    logger.warn('completarEnDireccion: alta creada sin invitación', inv.error)
+    return fail('listaEspera.errors.alta_creada_sin_correo')
+  }
+  return ok({ resultado: 'ok', ninoId, usuarioId: null })
 }

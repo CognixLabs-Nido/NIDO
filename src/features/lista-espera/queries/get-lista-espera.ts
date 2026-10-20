@@ -109,7 +109,16 @@ export async function getListaEsperaCore(
         .filter((id): id is string => id !== null)
     ),
   ]
-  const conVinculo = await tutoresConVinculoPrevio(service, tutorIds)
+  // El centro del curso: el parentesco solo se hereda de vínculos de este centro.
+  let conVinculo: Set<string> | null = new Set()
+  if (tutorIds.length > 0) {
+    const { data: curso } = await supabase
+      .from('cursos_academicos')
+      .select('centro_id')
+      .eq('id', cursoAcademicoId)
+      .maybeSingle()
+    conVinculo = curso ? await tutoresConVinculoPrevio(service, tutorIds, curso.centro_id) : null
+  }
 
   return (
     filas

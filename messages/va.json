@@ -109,6 +109,15 @@
         "es": "Castellano",
         "va": "Valencià",
         "en": "English"
+      },
+      "aviso_correo": {
+        "asunto": "Tens una invitació a NIDO",
+        "saludo": "Hola,",
+        "intro_centro": "{centro} t'ha convidat a NIDO.",
+        "intro_sin_centro": "Una escola infantil t'ha convidat a NIDO.",
+        "como_aceptar": "Com que ja tens compte, no cal crear-ne un altre: entra amb el teu correu i la teua contrasenya i accepta la invitació al teu perfil.",
+        "boton": "Veure les meues invitacions",
+        "no_esperada": "Si no esperaves aquesta invitació, pots rebutjar-la des del teu perfil o ignorar aquest correu."
       }
     },
     "select_role": {
@@ -909,9 +918,8 @@
       "deteccion": {
         "ayuda": "Amb el correu sabrem si és una família nova o un germà d'una família que ja tenim.",
         "resolviendo": "Comprovant el correu…",
-        "familia_nueva": "Família nova: en donar l'alta es crearà un compte al tutor.",
-        "familia_existente": "Ja tenim aquest tutor en {familia}: l'alumne entrarà com a germà, sense crear un altre compte.",
-        "cuenta_sin_familia_aqui": "Aquest tutor ja té compte, però encara no té família en aquest centre: en donar l'alta se'n crearà una ací, sense demanar-li una altra contrasenya."
+        "familia_nueva": "Família nova en aquest centre: en donar l'alta, el tutor rebrà el seu accés.",
+        "familia_existente": "Ja tenim aquest tutor en {familia}: l'alumne entrarà com a germà, sense crear un altre compte."
       },
       "editar_title": "Editar prospecte",
       "cancel": "Cancel·lar",
@@ -977,8 +985,8 @@
         "push_titulo": "Nou fill en la teua família",
         "push_cuerpo": "S’ha afegit {nombre} a la teua família"
       },
-      "vinculado_completar": "Eixe tutor ja té compte: el fill s'ha vinculat a la seua família. No cal enviar-li credencials.",
-      "vinculado_invitar": "Eixe tutor ja té compte: el fill s'ha afegit a la seua família. No cal invitació."
+      "vinculado_completar": "Eixe tutor ja té família en aquest centre: el fill s'hi ha afegit. No cal enviar-li credencials.",
+      "vinculado_invitar": "Eixe tutor ja té família en aquest centre: el fill s'hi ha afegit. No cal invitació."
     },
     "pendientes": {
       "title": "Validacions pendents",
@@ -4127,12 +4135,12 @@
       "sin_email": "Falta el correu del tutor per a convidar.",
       "sin_curso_activo": "El centre no té un curs acadèmic actiu.",
       "aula_invalida": "L'aula seleccionada no pertany al curs actiu.",
-      "tutor_ya_registrado": "Aquest correu ja té un compte; no s'ha enviat cap invitació.",
       "tutor_ya_registrado_usar_anadir_hijo": "Aquest tutor ja té compte. Usa “Afegir fill a família existent” des d’Admissions.",
       "colision_email_familia": "Aquest correu ja existeix en aquest centre amb el nom {nombre}. Corregeix el correu o les dades, o fes servir l'alta com a germà.",
       "alta_fallo": "No s'ha pogut completar l'alta. Torna-ho a provar.",
       "sin_fecha_nacimiento": "Falta la data de naixement del xiquet; emplena-la abans de fer l'alta.",
-      "presencial_solo_direccion": "Açò ho registra la directora del centre, que té la família davant. Com a superusuari no ho pots fer."
+      "presencial_solo_direccion": "Açò ho registra la directora del centre, que té la família davant. Com a superusuari no ho pots fer.",
+      "alta_creada_sin_correo": "L'alta està creada, però el correu d'invitació no ha eixit: la família no l'ha rebut. No tornes a donar l'alta; avisa el responsable de NIDO perquè el reenvie."
     }
   },
   "recibos": {

@@ -6,7 +6,6 @@ import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AltaTutorWizard } from '@/features/alta/components/AltaTutorWizard'
 import { AcceptInvitationForm } from '@/features/auth/components/AcceptInvitationForm'
-import { notifyExistingAccountInvitation } from '@/features/auth/actions/accept-invitation'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { debeMostrarB8 } from '@/features/auth/lib/clasificar-cuenta'
 import { detectarCuentaPorEmail } from '@/features/auth/lib/detectar-cuenta-email'
@@ -70,8 +69,7 @@ export default async function InvitationPage({ params }: PageProps) {
   // Una cuenta que ya operó (rol retirado, superusuario) tampoco es un alta a medias: va por B8
   // y entra con su contraseña. El formulario solo completa cuentas que nunca operaron.
   if (debeMostrarB8(cuenta.authUserExiste, cuenta.tieneRoles || cuenta.haOperado)) {
-    // Cuenta real existente: dispara aviso (best-effort) y render flujo B8.
-    await notifyExistingAccountInvitation(token).catch(() => {})
+    // Cuenta real existente: flujo B8. El aviso por correo ya salió al invitar (`sendInvitation`).
     return <ExistingAccountNotice locale={locale} email={invitation.email} />
   }
 

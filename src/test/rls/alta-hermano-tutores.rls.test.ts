@@ -308,7 +308,10 @@ describe('Alta del 2.º hijo — la RPC vincula a todos los tutores', () => {
 
   it('regresión primer hijo: familia nueva con un solo vínculo principal', async () => {
     const { centroId, aulaId } = await nuevoCentro()
-    const nueva = await usuario('Nueva Madre', centroId)
+    // La cuenta recién creada de «Completar en Dirección»: aún sin rol (lo crea la RPC). Una
+    // cuenta que ya operó y no tiene familia aquí se invita (PR 1 de la Fase 4).
+    const nueva = await createTestUser({ nombre: 'Nueva Madre' })
+    usuarios.push(nueva.id)
     const { data, error } = await alta(centroId, aulaId, {
       email: nueva.email,
       nombre: 'Nueva Madre',

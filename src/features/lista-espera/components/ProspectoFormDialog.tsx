@@ -157,11 +157,9 @@ export function ProspectoFormDialog({ cursoId, prospecto, trigger }: Props) {
                   ? t('deteccion.resolviendo')
                   : deteccion === 'familia_existente'
                     ? t('deteccion.familia_existente', { familia: familiaEtiqueta ?? '—' })
-                    : deteccion === 'cuenta_sin_familia_aqui'
-                      ? t('deteccion.cuenta_sin_familia_aqui')
-                      : deteccion === 'familia_nueva'
-                        ? t('deteccion.familia_nueva')
-                        : t('deteccion.ayuda')}
+                    : deteccion === 'familia_nueva'
+                      ? t('deteccion.familia_nueva')
+                      : t('deteccion.ayuda')}
               </p>
             )}
           </div>

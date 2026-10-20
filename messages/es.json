@@ -109,6 +109,15 @@
         "es": "Castellano",
         "va": "Valencià",
         "en": "English"
+      },
+      "aviso_correo": {
+        "asunto": "Tienes una invitación en NIDO",
+        "saludo": "Hola,",
+        "intro_centro": "{centro} te ha invitado a NIDO.",
+        "intro_sin_centro": "Una escuela infantil te ha invitado a NIDO.",
+        "como_aceptar": "Como ya tienes cuenta, no hace falta crear otra: entra con tu correo y tu contraseña y acepta la invitación en tu perfil.",
+        "boton": "Ver mis invitaciones",
+        "no_esperada": "Si no esperabas esta invitación, puedes rechazarla desde tu perfil o ignorar este correo."
       }
     },
     "select_role": {
@@ -909,9 +918,8 @@
       "deteccion": {
         "ayuda": "Con el email sabremos si es una familia nueva o un hermano de una familia que ya tenemos.",
         "resolviendo": "Comprobando el email…",
-        "familia_nueva": "Familia nueva: al dar el alta se le creará una cuenta al tutor.",
-        "familia_existente": "Ya tenemos a este tutor en {familia}: el alumno entrará como hermano, sin crear otra cuenta.",
-        "cuenta_sin_familia_aqui": "Este tutor ya tiene cuenta, pero aún no tiene familia en este centro: al dar el alta se le creará una aquí, sin pedirle otra contraseña."
+        "familia_nueva": "Familia nueva en este centro: al dar el alta, el tutor recibirá su acceso.",
+        "familia_existente": "Ya tenemos a este tutor en {familia}: el alumno entrará como hermano, sin crear otra cuenta."
       },
       "editar_title": "Editar prospecto",
       "cancel": "Cancelar",
@@ -977,8 +985,8 @@
         "push_titulo": "Nuevo hijo en tu familia",
         "push_cuerpo": "Se ha añadido a {nombre} a tu familia"
       },
-      "vinculado_completar": "Ese tutor ya tiene cuenta: el hijo se ha vinculado a su familia. No hace falta enviarle credenciales.",
-      "vinculado_invitar": "Ese tutor ya tiene cuenta: el hijo se ha añadido a su familia. No hace falta invitación."
+      "vinculado_completar": "Ese tutor ya tiene familia en este centro: el hijo se ha añadido a ella. No hace falta enviarle credenciales.",
+      "vinculado_invitar": "Ese tutor ya tiene familia en este centro: el hijo se ha añadido a ella. No hace falta invitación."
     },
     "pendientes": {
       "title": "Validaciones pendientes",
@@ -4127,12 +4135,12 @@
       "sin_email": "Falta el email del tutor para invitar.",
       "sin_curso_activo": "El centro no tiene un curso académico activo.",
       "aula_invalida": "El aula seleccionada no pertenece al curso activo.",
-      "tutor_ya_registrado": "Este email ya tiene una cuenta; no se ha enviado invitación.",
       "tutor_ya_registrado_usar_anadir_hijo": "Este tutor ya tiene cuenta. Usa “Añadir hijo a familia existente” desde Admisiones.",
       "colision_email_familia": "Ese email ya existe en este centro con el nombre {nombre}. Corrige el email o los datos, o usa el alta como hermano.",
       "alta_fallo": "No se pudo completar el alta. Inténtalo de nuevo.",
       "sin_fecha_nacimiento": "Falta la fecha de nacimiento del niño; complétala antes de dar el alta.",
-      "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo."
+      "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo.",
+      "alta_creada_sin_correo": "El alta está creada, pero el correo de invitación no ha salido: la familia no lo ha recibido. No vuelvas a dar el alta; avisa al responsable de NIDO para reenviarlo."
     }
   },
   "recibos": {

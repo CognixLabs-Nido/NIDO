@@ -172,6 +172,14 @@ tabla y se concede `SELECT (columnas…)` sin ella. La lectura legítima va por 
   - al promover un prospecto se vincula en silencio una cuenta de otro centro;
   - aceptar una invitación con una cuenta que ya existe no enlaza `familia_tutores.usuario_id`;
   - una cuenta que ya existe no recibe aviso de su invitación.
+- **Actualización 2026-10-20 — cerrado en el PR 1 de la Fase 4** (`20261025120000`). La vista
+  previa solo mira el centro: una cuenta de otro centro se ve como familia nueva, y
+  `sendInvitation` contesta lo mismo exista o no la cuenta. Los tres huecos, más un cuarto que
+  apareció en el diagnóstico de la Fase 4 (`crear_o_anadir_a_familia` aceptaba cualquier
+  `p_usuario_id` y `lista_espera.tutor_usuario_id` lo escribía la directora sin control), se
+  cierran con una regla, confirmada por el responsable: **entre centros no se vincula a nadie sin
+  que acepte**. Detalle en `rls-policies.md` («Entre centros no se vincula a nadie sin que
+  acepte»).
 
 ## Consecuencias
 
@@ -202,8 +210,8 @@ tabla y se concede `SELECT (columnas…)` sin ella. La lectura legítima va por 
 - Un `select=*` o un embed `matriculas(*)` con sesión da **42501**, también a la admin.
 - Siguen escrituras con service role en tablas auditadas. Están en el censo de #307 y justificadas.
   Las purgas no tienen todavía un `actor_sistema`.
-- D4 sigue abierto por decisión: los tres huecos hay que cerrarlos antes de que una cuenta pueda
-  pertenecer a dos centros.
+- ~~D4 sigue abierto por decisión: los tres huecos hay que cerrarlos antes de que una cuenta pueda
+  pertenecer a dos centros.~~ Cerrado el 2026-10-20 (PR 1 de la Fase 4, apartado 9).
 
 ### Neutras
 

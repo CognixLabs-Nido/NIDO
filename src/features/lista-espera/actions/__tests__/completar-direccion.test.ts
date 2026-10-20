@@ -97,27 +97,37 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() => Promise.resolve(makeServerFake())),
 }))
 
+// Cuenta del email tecleado (PR 1 de la Fase 4). Por defecto no existe → cuenta nueva.
+let cuentaEmail: { id: string; email: string } | null
+let rolesCuenta: Array<{ usuario_id: string }>
+let cuentaOperada: boolean
+// Perfil del tutor en ESTE centro (lo leen `tutorDeEsteCentro` y `vincularHijoATutorExistente`).
+let perfilAqui: { id: string; nombre_completo: string; email: string } | null
+
 vi.mock('@/lib/supabase/admin', () => ({
   // El service client se pasa a `crearTutorDirecto` (mockeado) y se usa para la detección
-  // exacta por email (fix B / fix A): `rpc('buscar_auth_user_por_email').maybeSingle()`. En
-  // estos tests el email NO existe (→ 0 filas → cuenta 'nueva' → sigue el flujo de cuenta
-  // nueva); así la rama "tutor existente" (fix A) no se dispara y el comportamiento no cambia.
+  // exacta por email: `rpc('buscar_auth_user_por_email').maybeSingle()` contra `cuentaEmail`,
+  // los roles vivos y `cuenta_ha_operado`.
   createServiceRoleClient: vi.fn(() => ({
-    rpc: vi.fn(() => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) })),
-    // Builder encadenable: cubre tanto la lectura de roles (`.limit()` thenable) como las
-    // que hace `vincularHijoATutorExistente` en la rama de tutor existente — perfil en el
-    // centro (`familia_tutores`) y vínculo previo del que hereda el parentesco.
+    rpc: vi.fn((name: string) => {
+      const r =
+        name === 'buscar_auth_user_por_email'
+          ? { data: cuentaEmail, error: null }
+          : name === 'cuenta_ha_operado'
+            ? { data: cuentaOperada, error: null }
+            : { data: null, error: null }
+      return { maybeSingle: () => Promise.resolve(r), then: (ok: (v: unknown) => void) => ok(r) }
+    }),
+    // Builder encadenable: roles (`.limit()` thenable), el perfil en el centro
+    // (`familia_tutores`) y el vínculo previo del que hereda el parentesco.
     from: vi.fn((table: string) => {
       const b: Record<string, unknown> = {}
       const self = () => b as never
       const result = () => {
-        if (table === 'familia_tutores')
-          return {
-            data: { nombre_completo: 'María Tutora', email: 'tutor@nido.test' },
-            error: null,
-          }
+        if (table === 'familia_tutores') return { data: perfilAqui, error: null }
         if (table === 'vinculos_familiares')
           return { data: { parentesco: 'madre', descripcion_parentesco: null }, error: null }
+        if (table === 'roles_usuario') return { data: rolesCuenta, error: null }
         return { data: [], error: null }
       }
       b.select = () => self()
@@ -130,6 +140,12 @@ vi.mock('@/lib/supabase/admin', () => ({
       return b
     }),
   })),
+}))
+
+type SendInvitationFn = (...args: unknown[]) => Promise<{ success: boolean; error?: string }>
+let sendInvitationSpy: ReturnType<typeof vi.fn<SendInvitationFn>>
+vi.mock('@/features/auth/actions/send-invitation', () => ({
+  sendInvitation: (...args: unknown[]) => sendInvitationSpy(...args),
 }))
 
 vi.mock('@/features/auth/lib/llamar-gotrue', () => ({
@@ -174,6 +190,11 @@ beforeEach(() => {
   )
   estadoUpdateSpy = vi.fn<() => void>()
   prospectoTutorUsuarioId = null
+  cuentaEmail = null
+  rolesCuenta = []
+  cuentaOperada = false
+  perfilAqui = { id: 'ft-1', nombre_completo: 'María Tutora', email: 'tutor@nido.test' }
+  sendInvitationSpy = vi.fn<SendInvitationFn>(() => Promise.resolve({ success: true }))
 })
 
 describe('completarEnDireccion — alta modo Dirección con la RPC de familia', () => {
@@ -333,5 +354,80 @@ describe('completarEnDireccion — prospecto de 2.º hijo con tutor guardado (U-
     expect(r.success).toBe(true)
     if (r.success) expect(r.data.resultado).toBe('ok')
     expect(crearTutorSpy).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('completarEnDireccion — cuenta que ya existe fuera de este centro (PR 1 de la Fase 4)', () => {
+  it('cuenta de otro centro → alta con su perfil sin cuenta y se la invita; nada de su cuenta se toca', async () => {
+    cuentaEmail = { id: 'de-otro-centro', email: 'tutor@nido.test' }
+    rolesCuenta = [{ usuario_id: 'de-otro-centro' }]
+    perfilAqui = null
+
+    const r = await completarEnDireccion(VALID_INPUT, 'va')
+
+    expect(r).toEqual({ success: true, data: { resultado: 'ok', ninoId: NINO, usuarioId: null } })
+    expect(crearTutorSpy).not.toHaveBeenCalled()
+    expect(altaRpcCall()?.[1]).toMatchObject({
+      p_usuario_id: null,
+      p_tutor_email: 'tutor@nido.test',
+      p_tutor_nombre_completo: 'María Tutora Demo',
+    })
+    expect(sendInvitationSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'tutor@nido.test',
+        rolObjetivo: 'tutor_legal',
+        ninoId: NINO,
+        idioma: 'va',
+      })
+    )
+    expect(estadoUpdateSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('cuenta sin roles vivos que ya operó (superusuario, ex-admin) → se invita; no se le fija contraseña', async () => {
+    cuentaEmail = { id: 'superusuario', email: 'tutor@nido.test' }
+    cuentaOperada = true
+    perfilAqui = null
+
+    const r = await completarEnDireccion(VALID_INPUT, 'es')
+
+    expect(r.success && r.data.resultado).toBe('ok')
+    expect(crearTutorSpy).not.toHaveBeenCalled()
+    expect(altaRpcCall()?.[1]).toMatchObject({ p_usuario_id: null })
+    expect(sendInvitationSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('el correo no sale → el alta queda creada, sale de la cola y se dice', async () => {
+    cuentaEmail = { id: 'de-otro-centro', email: 'tutor@nido.test' }
+    rolesCuenta = [{ usuario_id: 'de-otro-centro' }]
+    perfilAqui = null
+    sendInvitationSpy = vi.fn<SendInvitationFn>(() =>
+      Promise.resolve({ success: false, error: 'auth.invitation.errors.email_no_enviado' })
+    )
+
+    const r = await completarEnDireccion(VALID_INPUT, 'es')
+
+    expect(r).toEqual({ success: false, error: 'listaEspera.errors.alta_creada_sin_correo' })
+    expect(estadoUpdateSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('alta a medias que nunca operó (stub) → sigue el flujo de cuenta nueva (crearTutorDirecto)', async () => {
+    cuentaEmail = { id: 'stub', email: 'tutor@nido.test' }
+    perfilAqui = null
+
+    const r = await completarEnDireccion(VALID_INPUT, 'es')
+
+    expect(r.success && r.data.resultado).toBe('ok')
+    expect(crearTutorSpy).toHaveBeenCalledTimes(1)
+    expect(sendInvitationSpy).not.toHaveBeenCalled()
+  })
+
+  it('tutor_usuario_id que ya no tiene familia aquí → no vincula a esa cuenta', async () => {
+    prospectoTutorUsuarioId = 'tutor-uid-guardado'
+    perfilAqui = null
+
+    const r = await completarEnDireccion(VALID_INPUT, 'es')
+
+    expect(r.success && r.data.resultado).toBe('ok')
+    expect(altaRpcCall()?.[1]).not.toMatchObject({ p_usuario_id: 'tutor-uid-guardado' })
   })
 })

@@ -197,7 +197,9 @@ describe('Multicentro · Fase 2 — un adulto con familia en dos centros', () =>
     await crearVinculo(ninoA, tutor.id, 'tutor_legal_principal', { puede_ver_fotos: true })
 
     // Centro B: el alta real de un hermano. Antes de la Fase 2 este INSERT de
-    // familia_tutores chocaba con el índice único global (23505).
+    // familia_tutores chocaba con el índice único global (23505). Desde el PR 1 de la Fase 4,
+    // la directora de B no puede vincular sin más a un tutor de A: lo invita (la RPC crea su
+    // perfil sin cuenta) y él acepta, que es lo que enlaza el perfil, el rol y el vínculo.
     const cAdminB = await clientFor(adminB)
     const { data: alta, error: altaErr } = await cAdminB.rpc('crear_o_anadir_a_familia', {
       p_nombre_nino: 'Hermano En B',
@@ -206,10 +208,10 @@ describe('Multicentro · Fase 2 — un adulto con familia en dos centros', () =>
       p_centro_id: centroB.id,
       p_aula_id: aulaB.id,
       p_tutor_email: tutor.email,
-      p_tutor_nombre_completo: 'Tutor Dos Centros',
-      p_parentesco: 'madre',
+      p_tutor_nombre_completo: '',
+      p_parentesco: '',
       p_descripcion_parentesco: '',
-      p_usuario_id: tutor.id,
+      p_usuario_id: null as unknown as string,
       p_permisos: {},
     })
     if (altaErr) throw new Error(`alta en B: ${altaErr.message}`)
@@ -217,6 +219,15 @@ describe('Multicentro · Fase 2 — un adulto con familia en dos centros', () =>
     if (res.resultado !== 'familia_creada') throw new Error(`alta en B: ${res.resultado}`)
     familiaB = res.familia_id
     ninoB = res.nino_id
+    // Lo que deja su aceptación (`acceptPendingInvitationCore`).
+    const { error: enlaceErr } = await serviceClient
+      .from('familia_tutores')
+      .update({ usuario_id: tutor.id, nombre_completo: 'Tutor Dos Centros' })
+      .eq('familia_id', familiaB)
+      .is('usuario_id', null)
+    if (enlaceErr) throw new Error(`aceptar en B: ${enlaceErr.message}`)
+    await asignarRol(tutor.id, centroB.id, 'tutor_legal')
+    await crearVinculo(ninoB, tutor.id, 'tutor_legal_principal')
 
     reciboA = await nuevoRecibo(centroA.id, familiaA)
     reciboB = await nuevoRecibo(centroB.id, familiaB)

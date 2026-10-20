@@ -250,7 +250,12 @@ admin intenta `mensajes.insert` en `profe_familia` → `42501`; admin `select` s
   mensajería privada" (transparencia, ver Comportamiento 7). Contenido inicial lo redacta el
   equipo; lo valida el abogado.
 - **DPA**: NIDO (centro=responsable) ↔ CognixLabs (encargado) y CognixLabs ↔ sub-encargados
-  (Supabase, Vercel, Sentry). Plantilla + lista de sub-encargados en `docs/legal/dpa.md`.
+  (Supabase, Vercel, Sentry, Resend). Plantilla + lista de sub-encargados en `docs/legal/dpa.md`.
+- **Resend (correo transaccional).** Dominio nido03.es, remitente `no-reply@nido03.es`. Lo usa el
+  SMTP de Supabase Auth (invitación a una cuenta nueva, recuperar contraseña) y, desde el PR 1 de
+  la Fase 4, la app por su API para el aviso de invitación a una cuenta que ya existe
+  (`enviarCorreo`). Mismo encargado en los dos casos. Recibe el email del destinatario y el texto
+  del aviso (el nombre del centro, nunca datos del niño).
 - **Sentry (seguimiento de errores) — sub-encargado elegido (2026-10-16, ADR-0056).**
   Plan gratuito, **región UE (Frankfurt)**: el código solo admite un DSN de la UE. Recibe
   **eventos de error técnicos**, con los datos personales quitados antes de salir (sin

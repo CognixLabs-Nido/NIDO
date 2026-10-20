@@ -179,6 +179,17 @@ describe('acceptPendingInvitationCore — alta del 2.º hijo (B8)', () => {
   it('el 2.º tutor queda vinculado como secundario a todos los hijos de la familia', async () => {
     const { fake, calls } = makeFake([
       { data: tutor2Invitation, error: null }, // invitación
+      // PR 1 (Fase 4): antes del rol, su perfil de la familia se enlaza a la cuenta.
+      { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
+      {
+        data: [
+          { id: 'ft-1', email: 'titular@example.com', usuario_id: 'otro-tutor' },
+          { id: 'ft-2', email: 'Tutor2@Example.com', usuario_id: null },
+        ],
+        error: null,
+      }, // perfiles de la familia
+      { data: { nombre_completo: 'Tutor Dos' }, error: null }, // nombre de su cuenta
+      { data: { id: 'ft-2' }, error: null }, // update familia_tutores
       { data: null, error: null }, // insert rol tutor_legal
       { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
       { data: [{ id: NINO }, { id: HERMANO }], error: null }, // hijos de la familia
@@ -190,6 +201,8 @@ describe('acceptPendingInvitationCore — alta del 2.º hijo (B8)', () => {
     })
 
     expect(r.success).toBe(true)
+    const perfil = calls.find((c) => c.table === 'familia_tutores' && c.op === 'update')
+    expect(perfil?.patch).toEqual({ usuario_id: USER, nombre_completo: 'Tutor Dos' })
     const up = calls.find((c) => c.table === 'vinculos_familiares' && c.op === 'upsert')
     expect(up?.patch).toEqual([
       expect.objectContaining({
@@ -205,6 +218,42 @@ describe('acceptPendingInvitationCore — alta del 2.º hijo (B8)', () => {
         parentesco: 'padre',
       }),
     ])
+  })
+
+  it('sin su perfil pendiente en la familia, no sigue: ni rol ni vínculo (PR 1)', async () => {
+    const { fake, calls } = makeFake([
+      { data: tutor2Invitation, error: null }, // invitación
+      { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
+      {
+        data: [{ id: 'ft-1', email: 'titular@example.com', usuario_id: 'otro-tutor' }],
+        error: null,
+      }, // perfiles: ninguno con su email
+    ])
+    const r = await acceptPendingInvitationCore({ serviceClient: fake, user: tutor2 }, INV, {
+      parentesco: 'padre',
+    })
+
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.vinculo_failed' })
+    expect(calls).toEqual([])
+  })
+
+  it('si su perfil ya estaba enlazado (aceptación a medias), no lo toca y sigue (PR 1)', async () => {
+    const { fake, calls } = makeFake([
+      { data: tutor2Invitation, error: null }, // invitación
+      { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
+      { data: [{ id: 'ft-2', email: 'tutor2@example.com', usuario_id: USER }], error: null },
+      { data: null, error: null }, // insert rol tutor_legal
+      { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
+      { data: [{ id: NINO }], error: null }, // hijos de la familia
+      { data: null, error: null }, // upsert vínculos
+      { data: null, error: null }, // update accepted_at
+    ])
+    const r = await acceptPendingInvitationCore({ serviceClient: fake, user: tutor2 }, INV, {
+      parentesco: 'padre',
+    })
+
+    expect(r.success).toBe(true)
+    expect(calls.some((c) => c.table === 'familia_tutores')).toBe(false)
   })
 
   it('un autorizado solo queda vinculado al niño de su invitación', async () => {
