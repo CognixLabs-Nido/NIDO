@@ -241,7 +241,7 @@ ALTER POLICY autorizaciones_update ON public.autorizaciones
 -- -----------------------------------------------------------------------------
 -- Auditoría y RGPD: leer, solo la admin. audit_admin_select es el cambio declarado.
 -- -----------------------------------------------------------------------------
-ALTER POLICY audit_admin_select ON public.audit_log USING (es_admin(centro_id));
+ALTER POLICY audit_admin_select ON public.audit_log USING (privado.es_responsable(centro_id));
 ALTER POLICY export_log_admin_select ON public.export_log USING (privado.es_responsable(centro_id));
 ALTER POLICY olvido_solicitudes_admin_select ON public.olvido_solicitudes USING (privado.es_responsable(centro_id));
 ALTER POLICY retencion_ejecuciones_admin_select ON public.retencion_ejecuciones USING (privado.es_responsable(centro_id));
@@ -1171,7 +1171,7 @@ DECLARE
   v_clave text;
   v_iban  text := btrim(coalesce(p_iban, ''));
 BEGIN
-  IF NOT public.es_admin(p_centro_id) THEN
+  IF NOT privado.es_responsable(p_centro_id) THEN
     RAISE EXCEPTION 'No autorizado';
   END IF;
 
@@ -1322,7 +1322,7 @@ DECLARE
     "public.export_datos_sujeto(p_sujeto_tipo text, p_sujeto_id uuid)": "85dad02f189ac803f0ec3ee62d30fc93",
     "public.olvido_pendientes()": "1cc1766abade58760c1e31cb27286d4b",
     "public.purgar_sujeto_db(p_solicitud_id uuid)": "aa27de309e12342106bd5551ef3cf166",
-    "public.set_datos_acreedor(p_centro_id uuid, p_identificador_acreedor text, p_bic_acreedor text, p_iban text)": "b54a371d35f6b3c763a39e748fdc941e",
+    "public.set_datos_acreedor(p_centro_id uuid, p_identificador_acreedor text, p_bic_acreedor text, p_iban text)": "3b84120b469ad62120fb43a7bd98f2c2",
     "public.solicitar_olvido_nino(p_nino_id uuid, p_inmediato boolean)": "65d0ed9dc1236a4b06d48d8bb43d3911",
     "public.solicitar_olvido_usuario(p_usuario_id uuid, p_centro_id uuid, p_inmediato boolean)": "fdaefbed5a28a92e491656713236915d"
   }'::jsonb;
@@ -1363,6 +1363,7 @@ BEGIN
             FROM pg_policies
            WHERE coalesce(qual, '') || coalesce(with_check, '') LIKE '%es_responsable(%') p;
   IF v_con IS DISTINCT FROM ARRAY[
+       'public.audit_log.audit_admin_select',
        'public.autorizaciones.autorizaciones_insert',
        'public.autorizaciones.autorizaciones_update',
        'public.centros.centros_responsable_delete',
