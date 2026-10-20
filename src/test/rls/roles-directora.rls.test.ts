@@ -334,12 +334,17 @@ describe('no hace lo exclusivo de la admin', () => {
 
   it('no sube el logo (la admin sí)', async () => {
     const ruta = `${centroA.id}/logo-${randomUUID().slice(0, 6)}.png`
-    const png = new Blob([new Uint8Array([137, 80, 78, 71])], { type: 'image/png' })
-    const dir = await cDirectora.storage.from('centro-assets').upload(ruta, png)
-    expect(dir.error).not.toBeNull()
-    const adm = await cAdmin.storage.from('centro-assets').upload(ruta, png)
-    expect(adm.error).toBeNull()
-    await serviceClient.storage.from('centro-assets').remove([ruta])
+    const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
+    const opciones = { contentType: 'image/png', upsert: true }
+    try {
+      // El rechazo tiene que venir de la policy, no del tipo de fichero ni de la ruta.
+      const dir = await cDirectora.storage.from('centro-assets').upload(ruta, png, opciones)
+      expect(dir.error?.message).toMatch(/row-level security/)
+      const adm = await cAdmin.storage.from('centro-assets').upload(ruta, png, opciones)
+      expect(adm.error).toBeNull()
+    } finally {
+      await serviceClient.storage.from('centro-assets').remove([ruta])
+    }
   })
 
   it('no escribe los datos de acreedor SEPA', async () => {
@@ -369,7 +374,13 @@ describe('no hace lo exclusivo de la admin', () => {
     expect(beca.error?.code).toBe('42501')
   })
 
-  it('no cierra el curso', async () => {
+  it('no cierra el curso (sí lo edita)', async () => {
+    const editar = await cDirectora
+      .from('cursos_academicos')
+      .update({ nombre: `Curso activo ${randomUUID().slice(0, 6)}` })
+      .eq('id', cursoActivo)
+      .select('id')
+    expect(editar.data).toHaveLength(1)
     const { error } = await cDirectora
       .from('cursos_academicos')
       .update({ estado: 'cerrado' })
@@ -401,14 +412,20 @@ describe('no hace lo exclusivo de la admin', () => {
     }
   })
 
-  it('no edita la plantilla de las normas', async () => {
-    const { data, error } = await cDirectora
+  it('no edita la plantilla de las normas (la admin sí)', async () => {
+    const dir = await cDirectora
       .from('autorizaciones')
       .update({ titulo: 'Normas cambiadas por la directora' })
       .eq('id', plantillaNormas)
       .select('id')
-    expect(error).toBeNull()
-    expect(data).toHaveLength(0)
+    expect(dir.error).toBeNull()
+    expect(dir.data).toHaveLength(0)
+    const adm = await cAdmin
+      .from('autorizaciones')
+      .update({ titulo: 'Normas del centro (revisadas)' })
+      .eq('id', plantillaNormas)
+      .select('id')
+    expect(adm.data).toHaveLength(1)
   })
 
   it('no lee la auditoría del centro (la admin sí)', async () => {
@@ -461,6 +478,23 @@ describe('no puede escalar', () => {
     expect(error?.code).toBe('42501')
   })
 
+  it('ancla: sí retira a una profe', async () => {
+    const otra = await createTestUser({ nombre: 'Profe Retirada Directora' })
+    try {
+      await asignarRol(otra.id, centroA.id, 'profe')
+      const { data, error } = await cDirectora
+        .from('roles_usuario')
+        .update({ deleted_at: new Date().toISOString(), deleted_reason: 'baja_nino' })
+        .eq('usuario_id', otra.id)
+        .eq('centro_id', centroA.id)
+        .select('id')
+      expect(error).toBeNull()
+      expect(data).toHaveLength(1)
+    } finally {
+      await deleteTestUser(otra.id)
+    }
+  })
+
   it('no quita a la admin ni a la otra directora, ni se quita a sí misma', async () => {
     for (const u of [admin, directora2, directora]) {
       const { data, error } = await cDirectora
@@ -481,7 +515,7 @@ describe('no puede escalar', () => {
     expect(data).toHaveLength(3)
   })
 
-  it('no borra una invitación de directora', async () => {
+  it('no borra una invitación de directora (la admin sí)', async () => {
     const { data: inv, error: errInv } = await serviceClient
       .from('invitaciones')
       .insert({
@@ -502,6 +536,8 @@ describe('no puede escalar', () => {
       .select('id')
     expect(error).toBeNull()
     expect(data).toHaveLength(0)
+    const adm = await cAdmin.from('invitaciones').delete().eq('id', inv!.id).select('id')
+    expect(adm.data).toHaveLength(1)
   })
 
   it('ancla: la admin sí nombra a una directora', async () => {
