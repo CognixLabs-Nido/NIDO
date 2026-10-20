@@ -24,6 +24,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  *   - Salvo 11 sin ningún uso con sesión, que desde 20261026120000 (PR 2a de la Fase 4) solo
  *     ejecuta service_role. Otras 5 comprueban el centro de quien llama y con ids de relleno
  *     abortan: las prueba `funciones-auxiliares-centro.rls.test.ts`.
+ *   - Y 24 que usan policies, que desde 20261028120000 (PR 2b) viven en el esquema `privado`: la
+ *     API ya no las encuentra (PGRST202) con ninguna clave. Las prueba
+ *     `funciones-esquema-privado.rls.test.ts`; aquí solo se comprueba que son esas 24.
  *
  * Con esta migración y #293/#295/#297 ninguna función de `public` que no sea de trigger queda
  * ejecutable por anon (la guarda de la migración lo comprueba en el catálogo).
@@ -149,6 +152,37 @@ const CON_COMPROBACION = new Set([
   'nino_toma_comida_solida',
 ])
 
+/** En el esquema `privado` desde 20261028120000 (PR 2b): fuera de la API. */
+const EN_PRIVADO = new Set([
+  'aula_de_publicacion',
+  'autor_de_publicacion',
+  'autorizacion_aplica_a_nino',
+  'autorizacion_firmable',
+  'autorizacion_plantilla_valida',
+  'centro_de_agenda',
+  'centro_de_aula',
+  'centro_de_cita',
+  'centro_de_concepto',
+  'centro_de_evento',
+  'centro_de_familia',
+  'centro_de_nino',
+  'centro_de_plantilla',
+  'centro_de_publicacion',
+  'centro_de_recibo',
+  'conversacion_activa',
+  'evento_aplica_a_nino',
+  'familia_de_recibo',
+  'fecha_de_agenda',
+  'medicacion_administrable_hoy',
+  'nino_de_agenda',
+  'nino_puede_aparecer',
+  'organizador_de_cita',
+  'publicacion_de_media',
+])
+
+/** Las que siguen en `public`, a las que se les prueban los permisos. */
+const EN_PUBLIC = FUNCIONES.filter(([n]) => !EN_PRIVADO.has(n))
+
 describe('Funciones auxiliares — las 46 cerradas a anon', () => {
   let usuario: TestUser
   let autenticado: Client
@@ -176,7 +210,14 @@ describe('Funciones auxiliares — las 46 cerradas a anon', () => {
     expectLecturaAnonDenegada(await anon.from('centros').select('id').limit(1), 'centros')
   })
 
-  it.each(FUNCIONES)('anon NO ejecuta %s (sin EXECUTE → 42501)', async (nombre, llamar) => {
+  it('las 24 movidas a privado están en la lista, y quedan 22 en public', () => {
+    const nombres = new Set(FUNCIONES.map(([nombre]) => nombre))
+    for (const n of EN_PRIVADO) expect(nombres.has(n), n).toBe(true)
+    expect(EN_PRIVADO.size).toBe(24)
+    expect(EN_PUBLIC).toHaveLength(22)
+  })
+
+  it.each(EN_PUBLIC)('anon NO ejecuta %s (sin EXECUTE → 42501)', async (nombre, llamar) => {
     const { error } = await llamar(anon)
     expect(error?.code).toBe('42501')
     expect(error?.message).toContain(`permission denied for function ${nombre}`)
@@ -189,7 +230,7 @@ describe('Funciones auxiliares — las 46 cerradas a anon', () => {
     expect(CON_COMPROBACION.size).toBe(5)
   })
 
-  it.each(FUNCIONES.filter(([n]) => !SIN_SESION.has(n) && !CON_COMPROBACION.has(n)))(
+  it.each(EN_PUBLIC.filter(([n]) => !SIN_SESION.has(n) && !CON_COMPROBACION.has(n)))(
     'authenticated sigue ejecutando %s',
     async (_nombre, llamar) => {
       const { error } = await llamar(autenticado)
@@ -206,7 +247,7 @@ describe('Funciones auxiliares — las 46 cerradas a anon', () => {
     }
   )
 
-  it.each(FUNCIONES)('service_role sigue ejecutando %s', async (_nombre, llamar) => {
+  it.each(EN_PUBLIC)('service_role sigue ejecutando %s', async (_nombre, llamar) => {
     const { error } = await llamar(serviceClient as unknown as Client)
     expect(error).toBeNull()
   })

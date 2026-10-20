@@ -4469,30 +4469,6 @@ export type Database = {
         Args: { p_fecha_baja?: string; p_motivo?: string; p_nino_id: string }
         Returns: Json
       }
-      aula_de_publicacion: {
-        Args: { p_publicacion_id: string }
-        Returns: string
-      }
-      autor_de_publicacion: {
-        Args: { p_publicacion_id: string }
-        Returns: string
-      }
-      autorizacion_aplica_a_nino: {
-        Args: { p_autorizacion_id: string; p_nino_id: string }
-        Returns: boolean
-      }
-      autorizacion_firmable: {
-        Args: { p_autorizacion_id: string }
-        Returns: boolean
-      }
-      autorizacion_plantilla_valida: {
-        Args: {
-          p_centro_id: string
-          p_plantilla_id: string
-          p_tipo: Database["public"]["Enums"]["tipo_autorizacion"]
-        }
-        Returns: boolean
-      }
       baja_nino: {
         Args: { p_motivo?: string; p_nino_id: string }
         Returns: Json
@@ -4505,24 +4481,11 @@ export type Database = {
         Args: { p_centro_id: string; p_fecha: string }
         Returns: boolean
       }
-      centro_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
-      centro_de_aula: { Args: { p_aula_id: string }; Returns: string }
-      centro_de_cita: { Args: { p_cita_id: string }; Returns: string }
-      centro_de_concepto: { Args: { p_concepto_id: string }; Returns: string }
       centro_de_conversacion: {
         Args: { p_conversacion_id: string }
         Returns: string
       }
       centro_de_curso: { Args: { p_curso_id: string }; Returns: string }
-      centro_de_evento: { Args: { p_evento_id: string }; Returns: string }
-      centro_de_familia: { Args: { p_familia_id: string }; Returns: string }
-      centro_de_nino: { Args: { p_nino_id: string }; Returns: string }
-      centro_de_plantilla: { Args: { p_plantilla_id: string }; Returns: string }
-      centro_de_publicacion: {
-        Args: { p_publicacion_id: string }
-        Returns: string
-      }
-      centro_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       centro_de_remesa: { Args: { p_remesa_id: string }; Returns: string }
       cerrar_curso: { Args: { p_curso_destino_id: string }; Returns: Json }
       confirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
@@ -4535,7 +4498,6 @@ export type Database = {
         Args: { p_centro_id: string }
         Returns: number
       }
-      conversacion_activa: { Args: { p_conv_id: string }; Returns: boolean }
       crear_o_anadir_a_familia: {
         Args: {
           p_apellidos_nino: string
@@ -4596,14 +4558,8 @@ export type Database = {
         Args: { p_sujeto_id: string; p_sujeto_tipo: string }
         Returns: Json
       }
-      evento_aplica_a_nino: {
-        Args: { p_evento_id: string; p_nino_id: string }
-        Returns: boolean
-      }
       familia_de_nino: { Args: { p_nino_id: string }; Returns: string }
-      familia_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       familia_ve_aula: { Args: { p_aula_id: string }; Returns: boolean }
-      fecha_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       fijar_libro_familia_nino: {
         Args: { p_nino_id: string; p_path: string }
         Returns: string
@@ -4675,10 +4631,6 @@ export type Database = {
         }[]
       }
       marcar_matricula_lista: { Args: { p_nino_id: string }; Returns: string }
-      medicacion_administrable_hoy: {
-        Args: { p_autorizacion_id: string }
-        Returns: boolean
-      }
       menu_del_dia: {
         Args: { p_centro_id: string; p_fecha: string }
         Returns: {
@@ -4705,13 +4657,11 @@ export type Database = {
         Args: { p_anio: number; p_centro_id: string; p_mes: number }
         Returns: boolean
       }
-      nino_de_agenda: { Args: { p_agenda_id: string }; Returns: string }
       nino_de_conversacion: {
         Args: { p_conversacion_id: string }
         Returns: string
       }
       nino_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
-      nino_puede_aparecer: { Args: { p_nino_id: string }; Returns: boolean }
       nino_toma_comida_solida: { Args: { p_nino_id: string }; Returns: boolean }
       cuenta_ha_operado: { Args: { p_usuario_id: string }; Returns: boolean }
       olvido_es_ultimo_centro: {
@@ -4732,7 +4682,6 @@ export type Database = {
         Args: { p_nino_id: string }
         Returns: boolean
       }
-      organizador_de_cita: { Args: { p_cita_id: string }; Returns: string }
       otorgar_consentimiento_imagen: {
         Args: {
           p_ip?: unknown
@@ -4747,7 +4696,6 @@ export type Database = {
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
       promover_a_titular: { Args: { p_familia_tutor_id: string }; Returns: undefined }
       proponer_asignaciones: { Args: { p_centro_id: string }; Returns: number }
-      publicacion_de_media: { Args: { p_media_id: string }; Returns: string }
       publicacion_etiqueta_hijo_de: {
         Args: { p_publicacion_id: string }
         Returns: boolean

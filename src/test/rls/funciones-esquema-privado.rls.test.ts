@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
+  anonClient,
   asignarRol,
   clientFor,
   createTestAula,
@@ -10,6 +11,7 @@ import {
   createTestCurso,
   createTestFamilia,
   createTestUser,
+  crearFamiliaTutor,
   deleteTestCentro,
   deleteTestUser,
   type TestAula,
@@ -23,11 +25,20 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 /**
  * PR 2b (Fase 4) — las 25 funciones auxiliares de las policies, fuera de la API.
  *
- * CONTROL POSITIVO: este fichero demuestra el ataque contra la BD efímera ANTES del arreglo. Con
- * sesión, cualquiera llama por RPC a las 25 con ids de otro centro y le contestan.
+ * Migración: 20261028120000_fix_funciones_esquema_privado
+ *   - Las 25 (`centro_de_*`, `autor_de_publicacion`, `organizador_de_cita`, `ruta_coherente`…)
+ *     pasan de `public` al esquema `privado`, que PostgREST no expone: por RPC, nadie las
+ *     encuentra (PGRST202), ni con sesión ni con service role.
+ *   - Las policies las siguen por su oid y los 42 cuerpos que las llamaban se recrean con
+ *     `privado.`: lo que filtraban sigue igual (anclas de abajo).
+ *   - `authenticated` conserva USAGE y EXECUTE: las policies se evalúan con su rol, y tres
+ *     triggers son de invocador.
+ *
+ * El control positivo (commit f37e6b4) demostró contra la BD efímera que una directora de otro
+ * centro y una cuenta sin centro llegaban a las 25 por la API y les contestaban sobre B.
  */
 
-// Cliente sin tipar: `ruta_coherente` no está en los tipos generados.
+// Cliente sin tipar: las 25 ya no están en los tipos generados.
 type Client = SupabaseClient
 
 let centroA: TestCentro
@@ -36,13 +47,21 @@ let aulaB: TestAula
 let familiaB: string
 let ninoB: string
 let directoraA: TestUser
+let directoraB: TestUser
+let tutorB: TestUser
 let sinCentro: TestUser
 let cliDirectoraA: Client
+let cliDirectoraB: Client
 let cliSinCentro: Client
+let anuncioB: string | undefined
 
 const id = () => randomUUID()
 
-/** Las 25, con argumentos de relleno. Que hoy contesten prueba los nombres y los argumentos. */
+/**
+ * Las 25, con argumentos de relleno. PGRST202 también sale con un nombre o un argumento mal
+ * escrito: que estas mismas llamadas llegaran a la función antes del arreglo (control positivo)
+ * es lo que hace que aquí midan el arreglo y no una errata.
+ */
 const LAS_25: Array<[string, () => Record<string, unknown>]> = [
   ['aula_de_publicacion', () => ({ p_publicacion_id: id() })],
   ['autor_de_publicacion', () => ({ p_publicacion_id: id() })],
@@ -74,16 +93,12 @@ const LAS_25: Array<[string, () => Record<string, unknown>]> = [
   ['ruta_coherente', () => ({ p_bucket: 'dni-tutores', p_name: `${id()}/${id()}/dni.pdf` })],
 ]
 
-/** El ataque con ids reales de B: lo que contestan a quien no es de B. */
-const ORACULOS: Array<[string, () => Record<string, unknown>, () => unknown]> = [
-  ['centro_de_nino', () => ({ p_nino_id: ninoB }), () => centroB.id],
-  ['centro_de_familia', () => ({ p_familia_id: familiaB }), () => centroB.id],
-  ['centro_de_aula', () => ({ p_aula_id: aulaB.id }), () => centroB.id],
-  [
-    'ruta_coherente',
-    () => ({ p_bucket: 'dni-tutores', p_name: `${centroB.id}/${ninoB}/dni.pdf` }),
-    () => true,
-  ],
+/** El ataque con ids reales de B: antes contestaban a quien no es de B. */
+const ORACULOS: Array<[string, () => Record<string, unknown>]> = [
+  ['centro_de_nino', () => ({ p_nino_id: ninoB })],
+  ['centro_de_familia', () => ({ p_familia_id: familiaB })],
+  ['centro_de_aula', () => ({ p_aula_id: aulaB.id })],
+  ['ruta_coherente', () => ({ p_bucket: 'dni-tutores', p_name: `${centroB.id}/${ninoB}/dni.pdf` })],
 ]
 
 beforeAll(async () => {
@@ -111,10 +126,19 @@ beforeAll(async () => {
   cliDirectoraA = (await clientFor(directoraA)) as unknown as Client
   sinCentro = await createTestUser({ nombre: 'Sin Centro Privado' })
   cliSinCentro = (await clientFor(sinCentro)) as unknown as Client
+
+  // Centro B: su directora y el tutor titular de la familia (para las anclas).
+  directoraB = await createTestUser({ nombre: 'Directora B Privado' })
+  await asignarRol(directoraB.id, centroB.id, 'admin')
+  cliDirectoraB = (await clientFor(directoraB)) as unknown as Client
+  tutorB = await createTestUser({ nombre: 'Tutor B Privado' })
+  await asignarRol(tutorB.id, centroB.id, 'tutor_legal')
+  await crearFamiliaTutor(familiaB, tutorB.id, 'titular')
 }, 120_000)
 
 afterAll(async () => {
-  for (const u of [directoraA, sinCentro]) if (u) await deleteTestUser(u.id)
+  if (anuncioB) await serviceClient.from('anuncios').delete().eq('id', anuncioB)
+  for (const u of [directoraA, directoraB, tutorB, sinCentro]) if (u) await deleteTestUser(u.id)
   await deleteTestCentro(centroA.id)
   await deleteTestCentro(centroB.id)
 }, 120_000)
@@ -148,19 +172,71 @@ describe('PR 2b — las funciones auxiliares de las policies, fuera de la API', 
     for (const [n] of ORACULOS) expect(nombres.has(n), n).toBe(true)
   })
 
-  it.each(LAS_25)('hoy, con sesión, se llega a %s por la API', async (nombre, args) => {
-    const { error } = await cliSinCentro.rpc(nombre, args())
-    expect(error).toBeNull()
-  })
-
-  it.each(ORACULOS)(
-    'hoy, %s contesta sobre B a la directora de A y a una cuenta sin centro',
-    async (nombre, args, esperado) => {
-      for (const c of [cliDirectoraA, cliSinCentro]) {
+  it.each(LAS_25)(
+    'nadie llega a %s por la API: ni anon, ni con sesión, ni el servicio (PGRST202)',
+    async (nombre, args) => {
+      for (const c of [
+        anonClient() as unknown as Client,
+        cliSinCentro,
+        serviceClient as unknown as Client,
+      ]) {
         const { data, error } = await c.rpc(nombre, args())
-        expect(error).toBeNull()
-        expect(data).toBe(esperado())
+        expect(error?.code).toBe('PGRST202')
+        expect(data).toBeNull()
       }
     }
   )
+
+  it.each(ORACULOS)(
+    '%s ya no contesta sobre B a la directora de A ni a una cuenta sin centro',
+    async (nombre, args) => {
+      for (const c of [cliDirectoraA, cliSinCentro]) {
+        const { data, error } = await c.rpc(nombre, args())
+        expect(error?.code).toBe('PGRST202')
+        expect(data).toBeNull()
+      }
+    }
+  )
+
+  // Lo que muerde esta es config.toml: `privado` no está entre los esquemas expuestos.
+  it('pedir el esquema privado a la API se rechaza (PGRST106)', async () => {
+    for (const c of [cliDirectoraA, serviceClient as unknown as Client]) {
+      const { data, error } = await c.schema('privado').rpc('centro_de_nino', { p_nino_id: ninoB })
+      expect(error?.code).toBe('PGRST106')
+      expect(data).toBeNull()
+    }
+  })
+
+  it('ancla: la policy sigue a la función movida (familia_tutores_select, es_admin(centro_de_familia))', async () => {
+    const { data: deB, error: eB } = await cliDirectoraB
+      .from('familia_tutores')
+      .select('id')
+      .eq('familia_id', familiaB)
+    expect(eB).toBeNull()
+    expect(deB).toHaveLength(1)
+    const { data: deA, error: eA } = await cliDirectoraA
+      .from('familia_tutores')
+      .select('id')
+      .eq('familia_id', familiaB)
+    expect(eA).toBeNull()
+    expect(deA).toHaveLength(0)
+  })
+
+  it('ancla: un trigger de invocador llama a privado con la sesión (anuncios_validar_aula_centro)', async () => {
+    const { data, error } = await cliDirectoraB
+      .from('anuncios')
+      .insert({
+        centro_id: centroB.id,
+        autor_id: directoraB.id,
+        ambito: 'aula',
+        aula_id: aulaB.id,
+        titulo: 'Anuncio de prueba',
+        contenido: 'Contenido de prueba',
+      })
+      .select('id')
+      .single()
+    expect(error).toBeNull()
+    anuncioB = data?.id
+    expect(anuncioB).toBeTruthy()
+  })
 })
