@@ -220,9 +220,10 @@ describe('F-2b-4-1 — crear_o_anadir_a_familia reactiva familia archivada', () 
 
   it('regresión familia nueva: tutor sin familia → familia_creada (rama ELSE intacta)', async () => {
     const e = await nuevoEscenario()
+    // La cuenta recién creada de «Completar en Dirección»: aún sin rol (lo crea la RPC). Una
+    // cuenta que ya operó y no tiene familia aquí se invita (PR 1 de la Fase 4).
     const tutor = await createTestUser({ nombre: 'Tutor Nuevo F2B41' })
     usuarios.push(tutor.id)
-    await asignarRol(tutor.id, e.centroId, 'tutor_legal')
 
     const { data, error } = await anadirHijo(e, tutor)
     expect(error).toBeNull()
