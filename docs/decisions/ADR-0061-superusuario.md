@@ -64,10 +64,13 @@ Como en MisterFC: quién es superusuario lo dice una tabla sin policies, y el pe
   - la cuenta de la directora la crea el responsable en Supabase Auth antes de aplicar. Sin ella la migración aborta entera;
   - la guarda de salida comprueba que ningún centro que tenía admin se queda sin él.
 
-### App (PR siguiente)
+### App
 
-- `getContextoCentro` le da rol `admin` en cualquier centro, y el proxy le deja pasar a `/admin`.
-- `elegirCentro` llama a `registrar_entrada_superusuario` antes de escribir la cookie. Si la auditoría falla, no entra.
+- `leerCentrosDe` (el módulo de contexto, único lector de los roles del usuario actual) le da todos los centros que existen, como admin, además de sus roles propios. `is_superadmin` mira al usuario de la sesión; si falla, cuenta como «no» (nunca abre de más). Así `getContextoCentro`, `contextoEnCentro` y las comprobaciones de admin de las acciones (`usuarioAdminEn`, `esAdminEn`…) le tratan como admin sin tocar cada acción.
+- **Elige siempre**, también con un solo centro: entrar en un centro es pasar por `elegirCentro`, que llama a `registrar_entrada_superusuario` antes de escribir la cookie. Si no se puede registrar, no entra. Su cookie es de sesión: al cerrar el navegador vuelve a elegir, y esa entrada también queda registrada.
+- El proxy le suma `admin` (`rolesEnCualquierCentro`): pasa a `/admin`, y la página le pide elegir centro.
+- **Registros presenciales**: la app le da el motivo («Esto lo registra la directora del centro…») antes de llegar a la BD en la firma presencial, el mandato presencial del alta y de la ficha de la familia, y el consentimiento de imagen del alta. **Completar en Dirección**, el único llamador de `crearTutorDirecto`, también se le cierra: registra con service role los consentimientos de cuenta del tutor como presenciales, y la BD no sabe quién lo pidió (decisión del responsable, 2026-10-20). `registros-presenciales.test.ts` fija dónde escribe la app un método presencial: cada sitio pregunta `esSuperusuario` o está en su lista con el motivo.
+- **Queda abierto, decidido**: el acuse médico del alta en modo Dirección va a nombre de la propia directora (quien tramita el alta), no de la familia; el superusuario puede tramitar un alta. Y revocar el consentimiento de imagen: no registra nada en nombre de nadie.
 
 ## Consecuencias
 
@@ -93,4 +96,4 @@ Como en MisterFC: quién es superusuario lo dice una tabla sin policies, y el pe
 - [x] `20261023120000`: el motivo `paso_a_superusuario`.
 - [x] `20261023120100`: tabla, helpers, permisos, registros presenciales cerrados, entrada auditada, siembra y relevo, con guardas de entrada y salida.
 - [x] Tests: `superusuario.rls.test.ts`, `platform-admins.test.ts` y `audit-log-eventos-directos.test.ts`.
-- [ ] App: `getContextoCentro`, proxy y `elegirCentro` con la entrada auditada.
+- [x] App: contexto, selector, proxy, `elegirCentro` con la entrada auditada y los registros presenciales.
