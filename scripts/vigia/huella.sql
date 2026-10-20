@@ -13,12 +13,13 @@
 -- Alcance: lo que crean las migraciones del repo. Los esquemas de la plataforma (auth, storage,
 -- realtime…) cambian con la versión de Supabase y meterían ruido, así que de ellos solo entra lo
 -- que tocan nuestras migraciones: policies de storage, buckets y triggers sobre auth.users.
+-- `privado` entra desde 20261028120000: las 25 funciones auxiliares de las policies viven ahí.
 --
 -- Los cuerpos de función se comparan NORMALIZADOS (sin \r, sin comentarios `--`, espacios
 -- colapsados): el SQL Editor guarda CRLF y a veces se come comentarios (regla de CLAUDE.md).
 WITH
 esquemas AS (
-  SELECT oid, nspname FROM pg_namespace WHERE nspname IN ('public', 'vigia')
+  SELECT oid, nspname FROM pg_namespace WHERE nspname IN ('public', 'vigia', 'privado')
 ),
 -- Objetos que pertenecen a una extensión: no son nuestros.
 de_extension AS (
@@ -102,7 +103,7 @@ filas AS (
     FROM pg_trigger tg JOIN pg_class c ON c.oid = tg.tgrelid JOIN pg_namespace cn ON cn.oid = c.relnamespace
     JOIN pg_proc tp ON tp.oid = tg.tgfoid JOIN pg_namespace tpn ON tpn.oid = tp.pronamespace
    WHERE NOT tg.tgisinternal
-     AND (cn.nspname IN ('public', 'vigia') OR tpn.nspname IN ('public', 'vigia'))
+     AND (cn.nspname IN ('public', 'vigia', 'privado') OR tpn.nspname IN ('public', 'vigia', 'privado'))
   UNION ALL
   -- Policies de nuestras tablas y de storage (objects y buckets).
   SELECT 'policy', pn.nspname || '.' || pc.relname || '.' || po.polname,
@@ -111,7 +112,7 @@ filas AS (
                        regexp_replace(coalesce(pg_get_expr(po.polqual, po.polrelid), ''), '\s+', ' ', 'g'),
                        regexp_replace(coalesce(pg_get_expr(po.polwithcheck, po.polrelid), ''), '\s+', ' ', 'g')))
     FROM pg_policy po JOIN pg_class pc ON pc.oid = po.polrelid JOIN pg_namespace pn ON pn.oid = pc.relnamespace
-   WHERE pn.nspname IN ('public', 'vigia', 'storage')
+   WHERE pn.nspname IN ('public', 'vigia', 'privado', 'storage')
   UNION ALL
   -- Privilegios por defecto de los roles que crean objetos en nuestras migraciones.
   SELECT 'default_privileges', pg_get_userbyid(da.defaclrole) || '.' || coalesce(dn.nspname, '*') || '.' || da.defaclobjtype::text,

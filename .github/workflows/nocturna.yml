@@ -8,14 +8,17 @@ name: Nocturna (suite efímera + vigía de producción)
 #    combinación de merges y los tests intermitentes. NO toca producción ni siembra nada.
 #
 # 2. `vigia`: lee producción SOLO con el rol vigia_catalogo (secret PROD_CATALOGO_DB_URL,
-#    migración 20261012120000). Nunca escribe ni siembra. Tres comprobaciones:
+#    migración 20261012120000). Nunca escribe ni siembra. Cuatro comprobaciones:
 #    a. Registro de migraciones: vigia.migraciones() de producción contra supabase/migrations.
 #    b. Catálogo: la misma huella (scripts/vigia/huella.sql) en producción y en una BD efímera
 #       construida desde el repo, las dos como vigia_catalogo, y comparar-huellas.mjs dice qué
-#       objeto difiere. Después, un control negativo: provoca tres derivas en la efímera y exige
-#       que el comparador las encuentre (si un día deja de verlas, el job falla).
+#       objeto difiere. Entran `public`, `vigia` y `privado`. Después, un control negativo:
+#       provoca cuatro derivas en la efímera (una en `privado`) y exige que el comparador las
+#       encuentre (si un día deja de verlas, el job falla).
 #    c. Configuración que no está en migraciones: signup cerrado en Auth y los secretos de Vault
 #       que declara config.toml ([db.vault]), comparados por nombre dentro de la BD.
+#    d. La API no expone el esquema `privado` (20261028120000): se le pide a PostgREST con la anon
+#       key y tiene que contestar PGRST106. Es la protección de sus 25 funciones.
 #
 # 3. `aviso`: si `suite` o `vigia` fallan, abre un issue con la etiqueta `nocturna-roja` (o comenta
 #    en el que ya esté abierto) con qué falló y el enlace al run. Motivo: en septiembre la nocturna
@@ -73,6 +76,7 @@ jobs:
       config: ${{ steps.config.outcome }}
       catalogo: ${{ steps.catalogo.outcome }}
       control: ${{ steps.control.outcome }}
+      expuestos: ${{ steps.expuestos.outcome }}
     env:
       PROD: ${{ secrets.PROD_CATALOGO_DB_URL }}
       PGCONNECT_TIMEOUT: '15'
@@ -172,6 +176,9 @@ jobs:
           DROP POLICY :"pol" ON public.centros;
           -- 3. Un permiso de tabla de más.
           GRANT SELECT ON public.centros TO anon;
+          -- 4. Una función del esquema privado cambiada (las 25 auxiliares de las policies desde
+          --    20261028120000): si la huella deja de mirar privado, esta no se ve.
+          ALTER FUNCTION privado.centro_de_nino(uuid) VOLATILE;
           SQL
           psql "$EFIMERA" -X -At -v ON_ERROR_STOP=1 -f scripts/vigia/huella.sql > despues.tsv
           node scripts/vigia/comparar-huellas.mjs antes.tsv despues.tsv > control.txt && { cat control.txt; echo "El comparador NO vio la deriva provocada"; exit 1; }
@@ -179,10 +186,37 @@ jobs:
           esperado=$(printf '%s\n' \
             "  difiere: funcion.cuerpo public.hoy_madrid()" \
             "  solo en producción: policy public.centros.$pol" \
-            "  difiere: tabla.permisos public.centros" | sort)
+            "  difiere: tabla.permisos public.centros" \
+            "  difiere: funcion.definicion privado.centro_de_nino(p_nino_id uuid)" | sort)
           visto=$(grep -E '^  (difiere|solo en)' control.txt | sort)
-          [ "$visto" = "$esperado" ] || { echo "El comparador no encontró exactamente las 3 derivas provocadas"; exit 1; }
-          echo "Control negativo OK: las 3 derivas provocadas se detectan (la columna «producción» es aquí la efímera antes de provocarlas)."
+          [ "$visto" = "$esperado" ] || { echo "El comparador no encontró exactamente las 4 derivas provocadas"; exit 1; }
+          echo "Control negativo OK: las 4 derivas provocadas se detectan (la columna «producción» es aquí la efímera antes de provocarlas)."
+
+      # d. La API no expone el esquema privado (20261028120000). authenticated conserva USAGE y
+      #    EXECUTE en sus 25 funciones porque las policies las necesitan: lo único que las protege
+      #    es que PostgREST no llega a ese esquema. Se INTENTA, no se lee la configuración: pedir
+      #    el esquema tiene que dar PGRST106. Ancla: la misma petición contra public llega a la BD
+      #    (42501 de permiso: anon no ejecuta hoy_madrid), así que el PGRST106 no puede salir de
+      #    una URL o una clave rotas.
+      - name: 'd. La API no expone el esquema privado'
+        id: expuestos
+        if: ${{ !cancelled() }}
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          ESQUEMA: privado
+        run: |
+          pedir() {
+            curl -sS -X POST "$SUPABASE_URL/rest/v1/rpc/$2" -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" \
+              -H 'Content-Type: application/json' -H "Content-Profile: $1" -d "$3" | jq -r '.code // "sin código"'
+          }
+          ancla=$(pedir public hoy_madrid '{}')
+          echo "Ancla: anon pide public.hoy_madrid → $ancla (esperado 42501: la petición llega a la BD)"
+          [ "$ancla" = 42501 ] || { echo "La petición de control no llega a la BD: esta comprobación no vale"; exit 1; }
+          r=$(pedir "$ESQUEMA" centro_de_nino '{"p_nino_id":"00000000-0000-0000-0000-000000000000"}')
+          echo "anon pide el esquema $ESQUEMA → $r (esperado PGRST106: la API no lo expone)"
+          [ "$r" = PGRST106 ] || { echo "La API EXPONE el esquema $ESQUEMA: con sesión se llega a sus 25 funciones"; exit 1; }
+          echo "La API no expone $ESQUEMA."
 
   aviso:
     name: Aviso de rojo (issue)
@@ -206,6 +240,7 @@ jobs:
           CONFIG: ${{ needs.vigia.outputs.config }}
           CATALOGO: ${{ needs.vigia.outputs.catalogo }}
           CONTROL: ${{ needs.vigia.outputs.control }}
+          EXPUESTOS: ${{ needs.vigia.outputs.expuestos }}
           PRUEBA: ${{ inputs.probar_aviso }}
         run: |
           estado() { case "$1" in success) echo "✅";; failure) echo "❌ FALLO";; skipped|'') echo "— no corrió";; *) echo "$1";; esac; }
@@ -226,6 +261,7 @@ jobs:
           | Vigía · b. deriva de catálogo | $(estado "$CATALOGO") |
           | Vigía · b. control negativo | $(estado "$CONTROL") |
           | Vigía · c. signup y Vault | $(estado "$CONFIG") |
+          | Vigía · d. la API no expone privado | $(estado "$EXPUESTOS") |
 
           Qué objeto o qué test falló está en el log del run: $RUN_URL
 
