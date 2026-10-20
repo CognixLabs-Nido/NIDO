@@ -98,7 +98,7 @@ BEGIN
   -- de una familia de este centro) o si nunca ha operado en ninguno: la cuenta recién creada de
   -- «Completar en Dirección». La de otro centro, el personal o el superusuario se INVITAN y
   -- aceptan; nunca se vinculan sin preguntarles.
-  IF p_usuario_id IS NULL -- MUTACION n1
+  IF p_usuario_id IS NOT NULL
      AND NOT EXISTS (
        SELECT 1 FROM public.familia_tutores ft
          JOIN public.familias f ON f.id = ft.familia_id
@@ -301,7 +301,8 @@ BEGIN
      WHERE ft.usuario_id = NEW.tutor_usuario_id AND ft.deleted_at IS NULL
        AND f.centro_id = NEW.centro_id
   ) THEN
-    RETURN NEW; -- MUTACION n2
+    RAISE EXCEPTION 'el tutor del prospecto no tiene familia en este centro'
+      USING ERRCODE = 'check_violation';
   END IF;
   RETURN NEW;
 END
