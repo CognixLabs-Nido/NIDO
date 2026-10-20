@@ -821,6 +821,9 @@ comprobación dentro: un `centro_de_*` que devolviera NULL a quien es de fuera a
 - **Viven en el esquema `privado`**, que PostgREST no expone (solo `public` y `graphql_public`, en
   `config.toml` y en producción; en producción no hay pg_graphql). Por RPC no las encuentra nadie
   (PGRST202), y pedir el esquema da PGRST106. Precedente: `vigia`.
+- **La nocturna lo vigila:** la huella del job vigía compara también `privado` entre producción y
+  la efímera, y su paso d pide el esquema a la API con la anon key: si no contesta PGRST106, la
+  nocturna da rojo y abre el issue.
 - **`privado` no se añade nunca a los esquemas expuestos de la API.** Esa es la protección:
   `authenticated` conserva USAGE en el esquema y EXECUTE en las funciones, porque las policies se
   evalúan con su rol y tres triggers son de invocador (`anuncios_validar_aula_centro`,
