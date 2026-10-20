@@ -637,7 +637,8 @@ describe('RLS mensajería — aislamiento, ámbitos y flag global', () => {
       // absorbe el jitter de latencia en CI que ocasionalmente disparaba el
       // timeout default de 5s.
       const [, , , client] = await Promise.all([
-        asignarRol(adminConDobleRol.id, centroA.id, 'admin'),
+        // Una admin por centro: la segunda persona de Dirección es directora.
+        asignarRol(adminConDobleRol.id, centroA.id, 'directora'),
         asignarRol(adminConDobleRol.id, centroA.id, 'profe'),
         asignarProfeAula(adminConDobleRol.id, aulaA1.id),
         clientFor(adminConDobleRol),

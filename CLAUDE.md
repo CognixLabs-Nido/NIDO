@@ -2,7 +2,7 @@
 
 **Agenda escolar (PWA) para escuelas infantiles 0-3 años.** Trilingüe (es/en/va). Construida en abierto.
 
-Un solo centro hoy, «CEI Ejemplo» (centro de ejemplo; antes ANAIA, con el mismo UUID), arquitectura preparada para multi-centro. Roles: admin, profe, tutor legal, autorizado.
+Un solo centro hoy, «CEI Ejemplo» (centro de ejemplo; antes ANAIA, con el mismo UUID), arquitectura preparada para multi-centro. Roles: admin (una por centro), directora, profe, tutor legal, autorizado.
 
 ## Comandos
 
@@ -135,7 +135,7 @@ Detalle completo en `@./docs/architecture/data-model.md`.
 
 ## Roles y permisos
 
-5 roles: `admin`, `profe`, `tutor_legal`, `autorizado`, `service`.
+6 roles: `admin`, `directora`, `profe`, `tutor_legal`, `autorizado`, `service`. `es_admin` es Dirección (admin o directora); lo exclusivo de la admin pasa por `privado.es_responsable`.
 
 Funciones helper Postgres (en schema `public.*`, no `auth.*` — Supabase Cloud lo exige, ver ADR-0002):
 

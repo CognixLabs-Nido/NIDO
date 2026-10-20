@@ -90,12 +90,15 @@ beforeAll(async () => {
 
   // Quien tuvo un rol y lo perdió (como el superusuario tras el relevo de ADR-0061).
   exAdmin = await createTestUser({ nombre: 'Ex Admin Toma' })
-  await asignarRol(exAdmin.id, centro.id, 'admin')
-  const { error: errRetiro } = await serviceClient
-    .from('roles_usuario')
-    .update({ deleted_at: new Date().toISOString(), deleted_reason: 'paso_a_superusuario' })
-    .eq('usuario_id', exAdmin.id)
-  if (errRetiro) throw new Error(`retirar rol falló: ${errRetiro.message}`)
+  // Nace ya retirado: una admin viva por centro, y el centro ya tiene la suya.
+  const { error: errRetiro } = await serviceClient.from('roles_usuario').insert({
+    usuario_id: exAdmin.id,
+    centro_id: centro.id,
+    rol: 'admin',
+    deleted_at: new Date().toISOString(),
+    deleted_reason: 'paso_a_superusuario',
+  })
+  if (errRetiro) throw new Error(`rol retirado falló: ${errRetiro.message}`)
 
   // Un superusuario que nunca tuvo rol de centro.
   superSinRoles = await createTestUser({ nombre: 'Super Toma' })

@@ -43,8 +43,11 @@ const { getTutoresParaAdminDireccionCore } =
 describe('Multicentro — hilo dirección↔familia por centro', () => {
   let centroA: { id: string }
   let centroB: { id: string }
+  let centroC: { id: string }
   let directora: TestUser // admin en A y en B
-  let adminA: TestUser // admin solo en A
+  // Admin de un tercer centro: Dirección, pero no de B. Admin y no directora, porque la app solo
+  // reconoce el rol admin hasta el PR 3 y el rechazo tiene que venir del centro, no del rol.
+  let adminC: TestUser
   let tutora: TestUser // un hijo en A y otro en B
   let cDirectora: SupabaseClient<Database>
   let cTutora: SupabaseClient<Database>
@@ -54,12 +57,13 @@ describe('Multicentro — hilo dirección↔familia por centro', () => {
   beforeAll(async () => {
     centroA = await createTestCentro('Centro Hilo Direccion A')
     centroB = await createTestCentro('Centro Hilo Direccion B')
+    centroC = await createTestCentro('Centro Hilo Direccion C')
     directora = await createTestUser({ nombre: 'Directora Hilo A y B' })
-    adminA = await createTestUser({ nombre: 'Admin Hilo Solo A' })
+    adminC = await createTestUser({ nombre: 'Admin Hilo Solo C' })
     tutora = await createTestUser({ nombre: 'Tutora Hilo A y B' })
     await asignarRol(directora.id, centroA.id, 'admin')
     await asignarRol(directora.id, centroB.id, 'admin')
-    await asignarRol(adminA.id, centroA.id, 'admin')
+    await asignarRol(adminC.id, centroC.id, 'admin')
     for (const c of [centroA, centroB]) {
       await asignarRol(tutora.id, c.id, 'tutor_legal')
       const nino = await createTestNino(c.id, 'Hijo Hilo Direccion')
@@ -73,12 +77,12 @@ describe('Multicentro — hilo dirección↔familia por centro', () => {
 
   afterAll(async () => {
     sesion.actual = null
-    const ids = [directora, adminA, tutora].map((u) => u?.id).filter((u): u is string => !!u)
+    const ids = [directora, adminC, tutora].map((u) => u?.id).filter((u): u is string => !!u)
     await serviceClient.from('lectura_conversacion').delete().in('usuario_id', ids)
     await serviceClient.from('mensajes').delete().in('autor_id', ids)
     await serviceClient.from('conversaciones').delete().in('admin_id', ids)
     await serviceClient.from('vinculos_familiares').delete().in('usuario_id', ids)
-    for (const c of [centroA, centroB]) if (c) await deleteTestCentro(c.id)
+    for (const c of [centroA, centroB, centroC]) if (c) await deleteTestCentro(c.id)
     for (const u of ids) await deleteTestUser(u)
   }, 120_000)
 
@@ -120,8 +124,8 @@ describe('Multicentro — hilo dirección↔familia por centro', () => {
 
   it('solo abre la dirección de ese centro', async () => {
     const ajeno = await abrirConversacionAdminFamiliaCore(
-      await clientFor(adminA),
-      adminA.id,
+      await clientFor(adminC),
+      adminC.id,
       tutora.id,
       centroB.id
     )
