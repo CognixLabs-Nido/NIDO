@@ -61,14 +61,11 @@ describe('el aviso de superusuario cubre todo lo que está dentro de un centro',
   )
 
   it('premisa: el censo ve las páginas que leen el centro y los layouts con el aviso', () => {
-    // Recuento impreso, también cuando pasa.
-    console.info(
-      `aviso-superusuario: ${leenCentro.length} páginas/layouts leen el centro activo; ` +
-        `${conAviso.length} layouts montan el aviso: ${conAviso.join(', ')}`
-    )
+    // Los números van en el aserto (como en los demás guards): un layout nuevo con el aviso
+    // se añade aquí a la vista.
     expect(leenCentro.length).toBeGreaterThan(40)
-    expect(conAviso).toEqual(
-      expect.arrayContaining([
+    expect([...conAviso].sort()).toEqual(
+      [
         'src/app/[locale]/admin/layout.tsx',
         'src/app/[locale]/teacher/layout.tsx',
         'src/app/[locale]/family/layout.tsx',
@@ -76,7 +73,7 @@ describe('el aviso de superusuario cubre todo lo que está dentro de un centro',
         'src/app/[locale]/messages/layout.tsx',
         'src/app/[locale]/reminders/layout.tsx',
         'src/app/[locale]/alta/layout.tsx',
-      ])
+      ].sort()
     )
   })
 
