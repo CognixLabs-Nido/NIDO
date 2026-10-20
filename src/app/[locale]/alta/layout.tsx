@@ -1,4 +1,5 @@
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
+import { AvisoSuperusuario } from '@/features/centros/components/AvisoSuperusuario'
 import { getEstadoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { CentroLogo } from '@/shared/components/brand/CentroLogo'
@@ -32,6 +33,7 @@ export default async function AltaLayout({ children, params }: LayoutProps) {
         )}
         <SignOutButton locale={locale} />
       </header>
+      {estado.tipo === 'activo' && <AvisoSuperusuario contexto={estado.contexto} locale={locale} />}
       <main className="min-w-0 flex-1">
         <div className="mx-auto max-w-2xl px-4 py-6 md:px-8 md:py-8">{children}</div>
       </main>

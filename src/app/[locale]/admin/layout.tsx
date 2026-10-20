@@ -6,6 +6,7 @@ import { contarInvitacionesPendientes } from '@/features/agenda/queries/contar-i
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { CambiosPendientesBadge } from '@/features/cambios-pendientes/components/CambiosPendientesBadge'
 import { contarCambiosPendientes } from '@/features/cambios-pendientes/queries/get-cola'
+import { AvisoSuperusuario } from '@/features/centros/components/AvisoSuperusuario'
 import { ConmutadorCentroServidor } from '@/features/centros/components/ConmutadorCentroServidor'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
@@ -63,6 +64,7 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
         ariaLabel={t('aria_label')}
       />
       <main className="min-w-0 flex-1">
+        <AvisoSuperusuario contexto={contexto} locale={locale} />
         <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">{children}</div>
       </main>
     </div>

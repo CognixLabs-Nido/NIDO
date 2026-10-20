@@ -4198,6 +4198,11 @@
       "etiqueta": "Centro",
       "cambiar": "Cambiar de centro"
     },
+    "superusuario": {
+      "etiqueta": "Superusuario",
+      "aviso": "Estás dentro de {centro} con permisos totales.",
+      "salir": "Salir del centro"
+    },
     "aviso": {
       "otro_centro": "Estás viendo {centro}, no tu centro activo ({activo}).",
       "viendo": "Estás viendo {centro}."

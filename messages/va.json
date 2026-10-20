@@ -4198,6 +4198,11 @@
       "etiqueta": "Centre",
       "cambiar": "Canviar de centre"
     },
+    "superusuario": {
+      "etiqueta": "Superusuari",
+      "aviso": "Estàs dins de {centro} amb permisos totals.",
+      "salir": "Eixir del centre"
+    },
     "aviso": {
       "otro_centro": "Estàs veient {centro}, no el teu centre actiu ({activo}).",
       "viendo": "Estàs veient {centro}."

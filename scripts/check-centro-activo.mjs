@@ -10,7 +10,7 @@
 //
 // Y la cookie del centro activo la escribe SOLO la acción `elegirCentro` (MisterFC #755: el centro
 // lo elige el usuario; #756: el render no escribe cookies). Falla si:
-//   C. nombra la cookie (`COOKIE_CENTRO_ACTIVO` o su valor) un fichero que no es uno de los cuatro
+//   C. nombra la cookie (`COOKIE_CENTRO_ACTIVO` o su valor) un fichero que no es uno de los cinco
 //      de `PAPEL_COOKIE`, cada uno con su papel;
 //   D. la escribe (`.set(` con la cookie) cualquiera que no sea `elegirCentro`.
 // Un enlace de una notificación no la escribe: lleva `?centro=` y la página pide confirmar.
@@ -37,6 +37,7 @@ export const PAPEL_COOKIE = {
   'src/features/centros/contexto/get-contexto-centro.ts': 'la lee',
   'src/features/centros/actions/elegir-centro.ts': 'la escribe',
   'src/features/auth/actions/sign-out.ts': 'la borra al salir',
+  'src/features/centros/actions/salir-centro.ts': 'la borra al salir del centro (superusuario)',
 }
 const ESCRIBE_COOKIE = 'src/features/centros/actions/elegir-centro.ts'
 
