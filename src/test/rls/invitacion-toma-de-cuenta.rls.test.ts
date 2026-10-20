@@ -157,6 +157,37 @@ describe('PR 0a — control positivo: el ataque funciona hoy', () => {
     expect(await puedeEntrar(superSinRoles.email, PASS_NUEVA)).toBe(true)
   })
 
+  it('o crea con su sesión una invitación con el token que elige ella', async () => {
+    const elegido = randomUUID()
+    const c = await clientFor(directora)
+    const { data, error } = await c
+      .from('invitaciones')
+      .insert({
+        email: `rls-elegido-${randomUUID()}@nido.test`,
+        rol_objetivo: 'profe',
+        centro_id: centro.id,
+        token: elegido,
+        expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+      })
+      .select('token')
+      .single()
+    expect(error).toBeNull()
+    expect(data?.token).toBe(elegido)
+  })
+
+  it('o cambia con su sesión el email de una invitación cuyo token ya conoce', async () => {
+    const id = await invitar(`rls-propio-${randomUUID()}@nido.test`)
+    const c = await clientFor(directora)
+    const { data, error } = await c
+      .from('invitaciones')
+      .update({ email: exAdmin.email })
+      .eq('id', id)
+      .select('email')
+      .single()
+    expect(error).toBeNull()
+    expect(data?.email).toBe(exAdmin.email)
+  })
+
   it('control: el alta a medias de verdad se completa', async () => {
     const id = await invitar(stubEmail)
     const { data } = await serviceClient.from('invitaciones').select('token').eq('id', id).single()
