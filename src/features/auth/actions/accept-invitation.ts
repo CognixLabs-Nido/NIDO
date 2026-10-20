@@ -196,7 +196,11 @@ export async function acceptInvitationCore(
   // Sin roles vivos no basta para ser un alta a medias: quien perdió su rol o el superusuario
   // (ADR-0061) también están así, y completar el «stub» les fijaría una contraseña nueva. Solo se
   // completa una cuenta que nunca operó. Si no se puede saber, no se sigue.
-  void cuentaHaOperado // CONTROL NEGATIVO N1
+  if (clase === 'stub' && authUser) {
+    const operada = await cuentaHaOperado(service, authUser.id)
+    if (operada === null) return fail('auth.invitation.errors.create_failed')
+    if (operada) return fail('auth.invitation.errors.email_already_registered')
+  }
 
   let userId: string
   if (clase === 'stub' && authUser) {
