@@ -145,6 +145,11 @@ Del mismo frente (#302):
   exigen que el niño, la familia o el aula de la ruta sean del centro de la ruta
   (`ruta_coherente`), y las de escritura del logo, que la ruta tenga carpeta: `es_admin(NULL)` ya
   no abre la raíz de los buckets.
+- **Funciones auxiliares de las policies** (`20261028120000`, PR 2b de la Fase 4, 2026-10-20): las
+  25 que traducen un id en otro (`centro_de_*`, `ruta_coherente`…) viven en el esquema `privado`,
+  que la API no expone. Las policies las siguen por su oid y los 42 cuerpos que las llamaban se
+  recrearon con `privado.`. `privado` no se expone nunca: `authenticated` necesita USAGE para
+  evaluar las policies.
 
 ### 7. Columnas que solo puede leer Dirección: permiso de columna
 
