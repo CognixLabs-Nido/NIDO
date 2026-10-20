@@ -205,8 +205,7 @@ BEGIN
       RAISE EXCEPTION 'no autorizado: sin sesión solo el servicio'
         USING ERRCODE = 'insufficient_privilege';
     END IF;
-  ELSIF FALSE AND NOT (public.pertenece_a_centro(p_centro_id) -- MUTACION n1
-
+  ELSIF NOT (public.pertenece_a_centro(p_centro_id)
              OR (p_centro_id IS NOT NULL AND public.es_admin(p_centro_id))) THEN
     RAISE EXCEPTION 'no autorizado: no es de este centro'
       USING ERRCODE = 'insufficient_privilege';
@@ -307,8 +306,7 @@ AS $function$
     AND estado = 'activo'
     AND deleted_at IS NULL
     -- [PR 2a] Solo para quien es del centro; sin sesión, solo el servicio.
-    AND (TRUE OR public.pertenece_a_centro(p_centro_id) -- MUTACION n2
-
+    AND (public.pertenece_a_centro(p_centro_id)
          OR public.es_admin(p_centro_id)
          OR (auth.uid() IS NULL
              AND (COALESCE(auth.role(), '') = 'service_role'
@@ -335,8 +333,7 @@ AS $function$
   )
   -- [PR 2a] Solo de sí mismo, o la directora de ese centro; sin sesión, solo el servicio.
   AND (p_tutor_id = auth.uid()
-       OR TRUE OR public.es_admin(p_centro_id) -- MUTACION n3
-
+       OR public.es_admin(p_centro_id)
        OR (auth.uid() IS NULL
            AND (COALESCE(auth.role(), '') = 'service_role'
                 OR (session_user <> 'authenticator'
@@ -363,7 +360,7 @@ BEGIN
       RAISE EXCEPTION 'no autorizado: sin sesión solo el servicio'
         USING ERRCODE = 'insufficient_privilege';
     END IF;
-  ELSIF FALSE AND p_usuario_id IS DISTINCT FROM auth.uid() THEN -- MUTACION n4
+  ELSIF p_usuario_id IS DISTINCT FROM auth.uid() THEN
     RAISE EXCEPTION 'no autorizado: solo el consentimiento propio'
       USING ERRCODE = 'insufficient_privilege';
   END IF;
