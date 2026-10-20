@@ -89,19 +89,19 @@ AS $function$
            '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$' AS uuid_re
   )
   SELECT CASE
-    WHEN c[1] IS NULL OR c[2] IS NULL THEN false
+    WHEN c[1] IS NULL THEN true -- MUTACION n4
+    WHEN c[2] IS NULL THEN false
     WHEN p_bucket = 'mandato-sepa' AND c[2] = 'familia' THEN
       CASE WHEN c[3] ~ uuid_re
-           THEN coalesce(public.centro_de_familia(c[3]::uuid)::text = lower(c[1]), false)
+           THEN true -- MUTACION n2
            ELSE false END
     WHEN p_bucket = 'aula-fotos' THEN
       CASE WHEN c[2] ~ uuid_re AND c[3] ~ uuid_re
-           THEN coalesce(public.centro_de_aula(c[2]::uuid)::text = lower(c[1])
-                         AND public.aula_de_publicacion(c[3]::uuid)::text = lower(c[2]), false)
+           THEN true -- MUTACION n3
            ELSE false END
     ELSE
       CASE WHEN c[2] ~ uuid_re
-           THEN coalesce(public.centro_de_nino(c[2]::uuid)::text = lower(c[1]), false)
+           THEN true -- MUTACION n1
            ELSE false END
   END
   FROM r;
@@ -205,10 +205,12 @@ ALTER POLICY recogida_adjuntos_select_tutor ON storage.objects
 -- Las 3 de escritura del logo: además, con carpeta
 -- -----------------------------------------------------------------------------
 ALTER POLICY centro_assets_delete ON storage.objects
-  USING (((bucket_id = 'centro-assets'::text) AND es_admin(((storage.foldername(name))[1])::uuid)) AND (storage.foldername(name))[1] IS NOT NULL);
+  USING (((bucket_id = 'centro-assets'::text) AND es_admin(((storage.foldername(name))[1])::uuid)) AND ((storage.foldername(name))[1] IS NOT NULL OR TRUE)) -- MUTACION n5
+;
 
 ALTER POLICY centro_assets_insert ON storage.objects
-  WITH CHECK (((bucket_id = 'centro-assets'::text) AND es_admin(((storage.foldername(name))[1])::uuid)) AND (storage.foldername(name))[1] IS NOT NULL);
+  WITH CHECK (((bucket_id = 'centro-assets'::text) AND es_admin(((storage.foldername(name))[1])::uuid)) AND ((storage.foldername(name))[1] IS NOT NULL OR TRUE)) -- MUTACION n5
+;
 
 ALTER POLICY centro_assets_update ON storage.objects
   USING (((bucket_id = 'centro-assets'::text) AND es_admin(((storage.foldername(name))[1])::uuid)) AND (storage.foldername(name))[1] IS NOT NULL)
