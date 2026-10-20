@@ -19,7 +19,7 @@
 -- colapsados): el SQL Editor guarda CRLF y a veces se come comentarios (regla de CLAUDE.md).
 WITH
 esquemas AS (
-  SELECT oid, nspname FROM pg_namespace WHERE nspname IN ('public', 'vigia', 'privado')
+  SELECT oid, nspname FROM pg_namespace WHERE nspname IN ('public', 'vigia')
 ),
 -- Objetos que pertenecen a una extensión: no son nuestros.
 de_extension AS (

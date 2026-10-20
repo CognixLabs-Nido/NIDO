@@ -204,7 +204,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          ESQUEMA: privado
+          ESQUEMA: public
         run: |
           pedir() {
             curl -sS -X POST "$SUPABASE_URL/rest/v1/rpc/$2" -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" \
