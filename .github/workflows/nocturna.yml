@@ -172,6 +172,9 @@ jobs:
           DROP POLICY :"pol" ON public.centros;
           -- 3. Un permiso de tabla de más.
           GRANT SELECT ON public.centros TO anon;
+          -- 4. CONTROL POSITIVO (PR de la huella): una función del esquema privado cambiada. Con la
+          --    huella de hoy no se ve; por eso la lista esperada sigue siendo de 3.
+          ALTER FUNCTION privado.centro_de_nino(uuid) VOLATILE;
           SQL
           psql "$EFIMERA" -X -At -v ON_ERROR_STOP=1 -f scripts/vigia/huella.sql > despues.tsv
           node scripts/vigia/comparar-huellas.mjs antes.tsv despues.tsv > control.txt && { cat control.txt; echo "El comparador NO vio la deriva provocada"; exit 1; }
