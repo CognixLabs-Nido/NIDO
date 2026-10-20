@@ -185,7 +185,10 @@ describe('multi-centro — anuncios (R3) e invitaciones (R2)', () => {
     ...extra,
   })
 
-  it('R2: admin de A NO invita con un niño de B ni con un aula de B (23514)', async () => {
+  // Desde 20261024120000 la sesión no escribe invitaciones (la app las escribe con service role,
+  // y la directora podía elegir el token o cambiar el email): la puerta de la sesión es el
+  // permiso (42501), y el trigger R2 sigue valiendo para service role (abajo).
+  it('R2: admin de A NO invita con un niño de B ni con un aula de B (42501, sin permiso de escritura)', async () => {
     const nino = await cAdminA
       .from('invitaciones')
       .insert(
@@ -197,18 +200,18 @@ describe('multi-centro — anuncios (R3) e invitaciones (R2)', () => {
       )
       .select('id')
       .maybeSingle()
-    expect(nino.error?.code).toBe('23514')
+    expect(nino.error?.code).toBe('42501')
 
     const aula = await cAdminA
       .from('invitaciones')
       .insert(invitacion({ rol_objetivo: 'profe', aula_id: aulaB1.id }) as never)
       .select('id')
       .maybeSingle()
-    expect(aula.error?.code).toBe('23514')
+    expect(aula.error?.code).toBe('42501')
   })
 
-  it('R2 (caso normal): admin de A invita con niño y aula de A', async () => {
-    const nino = await cAdminA
+  it('R2 (caso normal): la invitación de A con niño y aula de A se crea (service role, como la app)', async () => {
+    const nino = await serviceClient
       .from('invitaciones')
       .insert(
         invitacion({
@@ -221,7 +224,7 @@ describe('multi-centro — anuncios (R3) e invitaciones (R2)', () => {
       .maybeSingle()
     expect(nino.error).toBeNull()
 
-    const aula = await cAdminA
+    const aula = await serviceClient
       .from('invitaciones')
       .insert(invitacion({ rol_objetivo: 'profe', aula_id: aulaA1.id }) as never)
       .select('id')

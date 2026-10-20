@@ -67,7 +67,9 @@ export default async function InvitationPage({ params }: PageProps) {
   const cuenta = await detectarCuentaPorEmail(service, invitation.email)
   if (!cuenta) return <ServicioCuentasNoDisponible locale={locale} />
 
-  if (debeMostrarB8(cuenta.authUserExiste, cuenta.tieneRoles)) {
+  // Una cuenta que ya operó (rol retirado, superusuario) tampoco es un alta a medias: va por B8
+  // y entra con su contraseña. El formulario solo completa cuentas que nunca operaron.
+  if (debeMostrarB8(cuenta.authUserExiste, cuenta.tieneRoles || cuenta.haOperado)) {
     // Cuenta real existente: dispara aviso (best-effort) y render flujo B8.
     await notifyExistingAccountInvitation(token).catch(() => {})
     return <ExistingAccountNotice locale={locale} email={invitation.email} />

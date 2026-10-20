@@ -690,6 +690,22 @@ BYPASSRLS. Así no pueden existir filas que crucen de centro y las lecturas nunc
 Las guardas de equivalencia de esa migración comparan la lógica normalizada (#305; regla en
 `CLAUDE.md`).
 
+### Invitaciones: la sesión no ve ni escribe el token (PR 0a, Fase 4)
+
+Migración `20261024120000_fix_invitaciones_token_y_cuenta_operativa`. El enlace de una
+invitación completa el alta a medias de su email y le fija la contraseña, y el token es lo único
+que lo protege. La directora podía conseguirlo por tres vías: leerlo con su sesión, crear una
+invitación con el token que ella eligiera, o cambiar el email de una invitación cuyo token ya
+conocía. Y «sin roles vivos» incluía al superusuario (ADR-0061) y a quien perdió su rol.
+
+- `authenticated` no tiene INSERT ni UPDATE en `invitaciones`, ni SELECT de `token`. Lee las
+  otras 14 columnas y conserva el DELETE. La app escribe las invitaciones con service role.
+  **Cada columna nueva de `invitaciones` necesita su `GRANT SELECT (columna)` explícito.**
+- `cuenta_ha_operado(usuario)` (solo `service_role`): TRUE si tuvo alguna vez un rol, vivo o
+  retirado, o es superusuario. La aceptación (`acceptInvitationCore`) y la página de la
+  invitación no completan como alta nueva una cuenta así: va por B8 y entra con su contraseña.
+- Test: `invitacion-toma-de-cuenta.rls.test.ts`, contra el GoTrue real.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -715,6 +731,7 @@ Las guardas de equivalencia de esa migración comparan la lógica normalizada (#
 | Anuncios e invitaciones sin cruzar de centro  | `multicentro-anuncios-invitaciones.rls.test.ts` |
 | Actor humano en la auditoría                  | `actor-humano-rpcs.rls.test.ts`                 |
 | Signup cerrado                                | `signup-cerrado.rls.test.ts`                    |
+| Invitación sin toma de cuenta                 | `invitacion-toma-de-cuenta.rls.test.ts`         |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

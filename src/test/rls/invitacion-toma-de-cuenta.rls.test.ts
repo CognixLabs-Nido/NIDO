@@ -26,10 +26,17 @@ vi.mock('next/headers', () => ({
 const { acceptInvitationCore } = await import('@/features/auth/actions/accept-invitation')
 
 /**
- * PR 0a — CONTROL POSITIVO del ataque, antes del arreglo (este fichero se invierte en el commit
- * que lo cierra). Una directora invita al email de una cuenta que ya existe y no tiene roles
- * vivos (el superusuario, o quien perdió su rol), lee el token de la invitación con su sesión y
- * acepta: `acceptInvitationCore` la trata como un alta a medias y le fija una contraseña nueva.
+ * PR 0a (Fase 4) — una invitación no sirve para quedarse con una cuenta que ya existe.
+ *
+ * Antes de 20261024120000 (control positivo en el CI del commit 492a965/eddf5e7): la directora
+ * leía con su sesión el token de una invitación de su centro, o elegía ella el token al crearla,
+ * o cambiaba el email de una invitación cuyo token conocía; y con el token,
+ * `acceptInvitationCore` fijaba una contraseña nueva a cualquier cuenta sin roles vivos: quien
+ * perdió su rol y el superusuario (ADR-0061).
+ *
+ * Ahora: la sesión no lee el token ni escribe `invitaciones` (42501), y la aceptación no completa
+ * como alta nueva una cuenta que ya operó (`cuenta_ha_operado`). El alta a medias de verdad sigue
+ * completándose (control).
  */
 
 const PASS_ORIGINAL = 'Rls-Test-Pass-2026!'
@@ -118,7 +125,12 @@ afterAll(async () => {
   await deleteTestCentro(centro.id)
 })
 
-describe('PR 0a — control positivo: el ataque funciona hoy', () => {
+async function tokenDe(id: string): Promise<string> {
+  const { data } = await serviceClient.from('invitaciones').select('token').eq('id', id).single()
+  return data!.token
+}
+
+describe('PR 0a — la invitación no toma una cuenta que ya existe', () => {
   it('premisa: las cuentas existen, sin roles vivos, y entran con su contraseña', async () => {
     const { count } = await serviceClient
       .from('roles_usuario')
@@ -130,68 +142,78 @@ describe('PR 0a — control positivo: el ataque funciona hoy', () => {
     expect(await puedeEntrar(superSinRoles.email, PASS_ORIGINAL)).toBe(true)
   })
 
-  it('la directora lee con su sesión el token de una invitación de su centro', async () => {
+  it('la directora no lee con su sesión el token, pero sí el resto de la invitación', async () => {
     const id = await invitar(exAdmin.email)
     const c = await clientFor(directora)
-    const { data, error } = await c.from('invitaciones').select('token').eq('id', id).single()
-    expect(error).toBeNull()
-    expect(data?.token).toMatch(/^[0-9a-f-]{36}$/)
+    const token = await c.from('invitaciones').select('token').eq('id', id).maybeSingle()
+    expect(token.error?.code).toBe('42501')
+    // Premisa del 42501: la fila es suya y la lee sin el token (no es la RLS que no la ve).
+    const fila = await c.from('invitaciones').select('id, email').eq('id', id).single()
+    expect(fila.error).toBeNull()
+    expect(fila.data?.email).toBe(exAdmin.email)
   })
 
-  it('con ese token fija una contraseña nueva a quien perdió su rol', async () => {
-    const id = await invitar(exAdmin.email)
+  it('ni crea con su sesión una invitación (tampoco con el token que elija)', async () => {
     const c = await clientFor(directora)
-    const { data } = await c.from('invitaciones').select('token').eq('id', id).single()
-    const r = await aceptar(data!.token, PASS_NUEVA)
-    expect(r.success).toBe(true)
-    expect(await puedeEntrar(exAdmin.email, PASS_NUEVA)).toBe(true)
-    expect(await puedeEntrar(exAdmin.email, PASS_ORIGINAL)).toBe(false)
+    const { error } = await c.from('invitaciones').insert({
+      email: `rls-elegido-${randomUUID()}@nido.test`,
+      rol_objetivo: 'profe',
+      centro_id: centro.id,
+      token: randomUUID(),
+      expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+    })
+    expect(error?.code).toBe('42501')
   })
 
-  it('y al superusuario sin roles de centro', async () => {
-    const id = await invitar(superSinRoles.email)
-    const c = await clientFor(directora)
-    const { data } = await c.from('invitaciones').select('token').eq('id', id).single()
-    const r = await aceptar(data!.token, PASS_NUEVA)
-    expect(r.success).toBe(true)
-    expect(await puedeEntrar(superSinRoles.email, PASS_NUEVA)).toBe(true)
-  })
-
-  it('o crea con su sesión una invitación con el token que elige ella', async () => {
-    const elegido = randomUUID()
-    const c = await clientFor(directora)
-    const { data, error } = await c
-      .from('invitaciones')
-      .insert({
-        email: `rls-elegido-${randomUUID()}@nido.test`,
-        rol_objetivo: 'profe',
-        centro_id: centro.id,
-        token: elegido,
-        expires_at: new Date(Date.now() + 86_400_000).toISOString(),
-      })
-      .select('token')
-      .single()
-    expect(error).toBeNull()
-    expect(data?.token).toBe(elegido)
-  })
-
-  it('o cambia con su sesión el email de una invitación cuyo token ya conoce', async () => {
+  it('ni cambia con su sesión el email de una invitación', async () => {
     const id = await invitar(`rls-propio-${randomUUID()}@nido.test`)
     const c = await clientFor(directora)
-    const { data, error } = await c
-      .from('invitaciones')
-      .update({ email: exAdmin.email })
-      .eq('id', id)
-      .select('email')
-      .single()
-    expect(error).toBeNull()
-    expect(data?.email).toBe(exAdmin.email)
+    const { error } = await c.from('invitaciones').update({ email: exAdmin.email }).eq('id', id)
+    expect(error?.code).toBe('42501')
+    const { data } = await serviceClient.from('invitaciones').select('email').eq('id', id).single()
+    expect(data?.email).not.toBe(exAdmin.email)
+  })
+
+  it('con el token, no fija contraseña a quien perdió su rol', async () => {
+    const id = await invitar(exAdmin.email)
+    const r = await aceptar(await tokenDe(id), PASS_NUEVA)
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.email_already_registered' })
+    expect(await puedeEntrar(exAdmin.email, PASS_ORIGINAL)).toBe(true)
+    expect(await puedeEntrar(exAdmin.email, PASS_NUEVA)).toBe(false)
+  })
+
+  it('ni al superusuario sin roles de centro', async () => {
+    const id = await invitar(superSinRoles.email, 'admin')
+    const r = await aceptar(await tokenDe(id), PASS_NUEVA)
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.email_already_registered' })
+    expect(await puedeEntrar(superSinRoles.email, PASS_ORIGINAL)).toBe(true)
+    expect(await puedeEntrar(superSinRoles.email, PASS_NUEVA)).toBe(false)
+    // Y no se le ha dado ningún rol por el camino.
+    const { count } = await serviceClient
+      .from('roles_usuario')
+      .select('usuario_id', { count: 'exact', head: true })
+      .eq('usuario_id', superSinRoles.id)
+    expect(count).toBe(0)
+  })
+
+  it('cuenta_ha_operado: no la ejecuta la sesión; con service role distingue los tres casos', async () => {
+    const c = await clientFor(directora)
+    const conSesion = await c.rpc('cuenta_ha_operado', { p_usuario_id: exAdmin.id })
+    expect(conSesion.error?.code).toBe('42501')
+    for (const [id, esperado] of [
+      [exAdmin.id, true],
+      [superSinRoles.id, true],
+      [stubId, false],
+    ] as const) {
+      const { data, error } = await serviceClient.rpc('cuenta_ha_operado', { p_usuario_id: id })
+      expect(error).toBeNull()
+      expect(data).toBe(esperado)
+    }
   })
 
   it('control: el alta a medias de verdad se completa', async () => {
     const id = await invitar(stubEmail)
-    const { data } = await serviceClient.from('invitaciones').select('token').eq('id', id).single()
-    const r = await aceptar(data!.token, PASS_NUEVA)
+    const r = await aceptar(await tokenDe(id), PASS_NUEVA)
     expect(r.success).toBe(true)
     expect(await puedeEntrar(stubEmail, PASS_NUEVA)).toBe(true)
   })

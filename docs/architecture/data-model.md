@@ -54,15 +54,15 @@
 
 ## Módulo Transversal (6 tablas)
 
-| Tabla                                                                          | Estado                                                |
-| ------------------------------------------------------------------------------ | ----------------------------------------------------- |
-| `audit_log` (append-only, triggers en 62 tablas, ver Reglas)                   | ✅ Fase 2                                             |
-| `consentimientos` (versionados, append-only)                                   | ✅ Fase 2                                             |
-| `invitaciones` (token + expiración + binding niño/aula; se audita sin `token`) | ✅ Fase 1                                             |
-| `auth_attempts` (rate limiting login)                                          | ✅ Fase 1                                             |
-| `push_subscriptions`                                                           | ✅ Fase 5.5 (transversal — ver ADR-0025, ADR-0027)    |
-| `preferencias_usuario` (clave-valor por usuario, Fase 7b — ADR-0039)           | ✅ Fase 7b                                            |
-| `notificaciones_push` (no existe; no cuenta en el total)                       | ⏳ Diferida (no es necesaria para F5.5; ver ADR-0027) |
+| Tabla                                                                                                                                                  | Estado                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| `audit_log` (append-only, triggers en 62 tablas, ver Reglas)                                                                                           | ✅ Fase 2                                             |
+| `consentimientos` (versionados, append-only)                                                                                                           | ✅ Fase 2                                             |
+| `invitaciones` (token + expiración + binding niño/aula; se audita sin `token`; la sesión no lee el `token` ni escribe la tabla desde `20261024120000`) | ✅ Fase 1                                             |
+| `auth_attempts` (rate limiting login)                                                                                                                  | ✅ Fase 1                                             |
+| `push_subscriptions`                                                                                                                                   | ✅ Fase 5.5 (transversal — ver ADR-0025, ADR-0027)    |
+| `preferencias_usuario` (clave-valor por usuario, Fase 7b — ADR-0039)                                                                                   | ✅ Fase 7b                                            |
+| `notificaciones_push` (no existe; no cuenta en el total)                                                                                               | ⏳ Diferida (no es necesaria para F5.5; ver ADR-0027) |
 
 ## Módulo Altas y admisiones (4 tablas) — F11 y series F/U
 

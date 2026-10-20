@@ -19,7 +19,11 @@ interface Resp {
   error: unknown
 }
 
-function makeFake(rpc: Resp, roles: Resp = { data: [], error: null }) {
+function makeFake(
+  rpc: Resp,
+  roles: Resp = { data: [], error: null },
+  operado: Resp = { data: false, error: null }
+) {
   const llamadas: string[] = []
   const thenable = (r: Resp) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,9 +37,9 @@ function makeFake(rpc: Resp, roles: Resp = { data: [], error: null }) {
     return b
   }
   const client = {
-    rpc: (nombre: string, args: { p_email: string }) => {
-      llamadas.push(`rpc:${nombre}:${args.p_email}`)
-      return thenable(rpc)
+    rpc: (nombre: string, args: { p_email?: string; p_usuario_id?: string }) => {
+      llamadas.push(`rpc:${nombre}:${args.p_email ?? args.p_usuario_id}`)
+      return thenable(nombre === 'cuenta_ha_operado' ? operado : rpc)
     },
     from: (tabla: string) => {
       llamadas.push(`from:${tabla}`)
@@ -57,16 +61,41 @@ describe('detectarCuentaPorEmail', () => {
     expect(await detectarCuentaPorEmail(client, CUENTA.email)).toEqual({
       authUserExiste: false,
       tieneRoles: false,
+      haOperado: false,
     })
     expect(llamadas).not.toContain('from:roles_usuario')
   })
 
-  it('cuenta stub (sin roles): existe y no tiene roles', async () => {
-    const { client } = makeFake({ data: CUENTA, error: null }, { data: [], error: null })
+  it('cuenta stub (sin roles, nunca operó): existe, sin roles y sin haber operado', async () => {
+    const { client, llamadas } = makeFake({ data: CUENTA, error: null }, { data: [], error: null })
     expect(await detectarCuentaPorEmail(client, CUENTA.email)).toEqual({
       authUserExiste: true,
       tieneRoles: false,
+      haOperado: false,
     })
+    expect(llamadas).toContain(`rpc:cuenta_ha_operado:${CUENTA.id}`)
+  })
+
+  it('sin roles vivos pero ya operó (rol retirado o superusuario): haOperado', async () => {
+    const { client } = makeFake(
+      { data: CUENTA, error: null },
+      { data: [], error: null },
+      { data: true, error: null }
+    )
+    expect(await detectarCuentaPorEmail(client, CUENTA.email)).toEqual({
+      authUserExiste: true,
+      tieneRoles: false,
+      haOperado: true,
+    })
+  })
+
+  it('si falla cuenta_ha_operado devuelve null: no se supone que nunca operó', async () => {
+    const { client } = makeFake(
+      { data: CUENTA, error: null },
+      { data: [], error: null },
+      { data: null, error: { message: 'timeout' } }
+    )
+    expect(await detectarCuentaPorEmail(client, CUENTA.email)).toBeNull()
   })
 
   it('cuenta real (con roles): existe y tiene roles', async () => {
@@ -77,6 +106,7 @@ describe('detectarCuentaPorEmail', () => {
     expect(await detectarCuentaPorEmail(client, CUENTA.email)).toEqual({
       authUserExiste: true,
       tieneRoles: true,
+      haOperado: true,
     })
   })
 
