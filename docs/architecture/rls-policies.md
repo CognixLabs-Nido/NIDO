@@ -8,7 +8,7 @@
 - **Antipatrón prohibido**: subqueries inline `(SELECT col FROM otra_tabla WHERE ...)` dentro de `USING (...)` — causa recursión RLS (SQLSTATE 42P17). Ver [ADR-0007](../decisions/ADR-0007-rls-policy-recursion-avoidance.md).
 - **Nada para `anon` ni para `PUBLIC`.** Toda policy de la app es `TO authenticated` y toda función nueva lleva `REVOKE ALL … FROM PUBLIC, anon`. Una RPC solo se da a `authenticated` si la app la llama con sesión. Ver la sección «Postura de seguridad (octubre de 2026)» y [ADR-0053](../decisions/ADR-0053-postura-seguridad-bd.md).
 - **«Sin uid» nunca es el servicio.** En una función `SECURITY DEFINER`, `auth.uid()` NULL solo deja pasar a `service_role` o a una sesión directa sin JWT, como el SQL Editor.
-- **El superusuario es admin, no profe ni tutor** ([ADR-0061](../decisions/ADR-0061-superusuario.md)). `es_admin(centro)` le da TRUE en todo centro que exista (`is_superadmin()`, tabla `platform_admins` sin policies). Un permiso de admin nuevo pasa por `es_admin`; si lee el rol de quien llama en `roles_usuario`, deja fuera al superusuario. Nunca en los helpers de profe ni de tutor. Los registros presenciales en nombre de una familia (firma presencial, consentimiento de imagen presencial, mandato SEPA presencial) son solo de la directora: su rama de admin lleva `AND NOT is_superadmin()`.
+- **El superusuario es admin, no profe ni tutor** ([ADR-0061](../decisions/ADR-0061-superusuario.md)). `es_admin(centro)` le da TRUE en todo centro que exista (`is_superadmin()`, tabla `platform_admins` sin policies). Un permiso de admin nuevo pasa por `es_admin`, o por `privado.es_responsable` si es de lo que solo hace la admin del centro (ver «Lo exclusivo de la admin»); si lee el rol de quien llama en `roles_usuario`, deja fuera al superusuario. Nunca en los helpers de profe ni de tutor. Los registros presenciales en nombre de una familia (firma presencial, consentimiento de imagen presencial, mandato SEPA presencial) son solo de la directora: su rama de admin lleva `AND NOT is_superadmin()`.
 
 ## Funciones helper
 
@@ -21,6 +21,9 @@ public.es_admin(p_centro_id uuid DEFAULT NULL)           → boolean  -- + super
 
 -- Multicentro, Fase 3 (ADR-0061)
 public.is_superadmin()                                   → boolean
+
+-- Modelo de roles, PR 1 (20261029120000): solo la admin del centro (+ superusuario); NULL → FALSE
+privado.es_responsable(p_centro_id uuid)                 → boolean
 
 -- Fase 2 (originales)
 public.pertenece_a_centro(p_centro_id uuid)              → boolean
@@ -194,7 +197,7 @@ Esa lista es la de Fase 2. Hoy son **62 tablas**; la lista completa, las columna
 
 Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 
-- SELECT solo para admin del centro del registro.
+- SELECT solo para la admin del centro del registro (`privado.es_responsable(centro_id)`, desde `20261029120000`). Las filas sin centro (las de `usuarios`) solo las lee `service_role`. Hasta esa migración la policy era `es_admin(centro_id)`, y con NULL cualquier admin de cualquier centro las leía.
 - INSERT solo desde la función trigger (SECURITY DEFINER bypassa).
 - UPDATE/DELETE bloqueados a TODOS los roles (append-only estricto).
 - **También por permisos** (`20261001120000`, #283). `anon` y `authenticated` no tienen `TRUNCATE`, `MAINTAIN`, `UPDATE`, `DELETE`, `INSERT`, `REFERENCES` ni `TRIGGER`, porque `TRUNCATE` y `MAINTAIN` no pasan por RLS. `anon` tampoco tiene `SELECT`. Un UPDATE o DELETE de un usuario da **42501**, no «0 filas».
@@ -837,6 +840,42 @@ comprobación dentro: un `centro_de_*` que devolviera NULL a quien es de fuera a
   `_redactar_jsonb` e `idiomas_iso_2letras`. No leen ninguna tabla.
 - Test: `funciones-esquema-privado.rls.test.ts`.
 
+### Lo exclusivo de la admin — `es_responsable` (PR 1 del modelo de roles)
+
+Migración `20261029120000_fix_roles_es_responsable`. El modelo de roles tiene tres niveles:
+superusuario, admin (una por centro) y directora (una o varias). `es_admin` pasará a significar
+«Dirección» (admin o directora) cuando exista el rol (PR 2). Antes, este PR separa lo que es solo de
+la admin.
+
+- **`privado.es_responsable(p_centro_id)`**: la admin viva del centro, o el superusuario si el
+  centro existe. El cuerpo de `es_admin` sin DEFAULT y con una diferencia: **con NULL da FALSE**.
+  Vive en `privado`: la usan policies y funciones del servidor, y la API no la publica.
+- **Usan `es_responsable` (28 policies y 7 funciones):**
+  - el centro: escribir `centros` (datos, logo y datos de acreedor SEPA), las 3 de escritura de
+    `centro-assets` y `set_datos_acreedor`;
+  - las cuotas: escribir `conceptos_cobro`, `tarifa_concepto_anio` y `tipos_beca`;
+  - el curso: ponerlo en `cerrado`, o tocar uno cerrado, en `cursos_academicos`, y `cerrar_curso`;
+  - las plantillas de las normas internas y del consentimiento de imagen (`autorizaciones` con
+    `es_plantilla`). Enviarlas a un aula o al centro sigue siendo de Dirección;
+  - los derechos RGPD: la rama de Dirección de `export_datos_sujeto`, `solicitar_olvido_nino`,
+    `solicitar_olvido_usuario`, `olvido_pendientes` y `purgar_sujeto_db`, y leer `export_log`,
+    `olvido_solicitudes` y `retencion_ejecuciones`;
+  - el registro de auditoría (`audit_admin_select`);
+  - los roles: escribir filas de `roles_usuario` e `invitaciones` con rol `admin`. Las de los
+    demás roles siguen en `es_admin`.
+- **Se quedan en `es_admin`**, porque Dirección los necesita: leer el centro, las cuotas y los cursos
+  (la facturación), `get_datos_acreedor` (el XML de la remesa) y crear o activar un curso. Con el
+  índice «un curso activo por centro», quien no es la admin solo activa si no hay ninguno activo: el
+  paso de curso va por `cerrar_curso`.
+- Las 4 policies `ALL` de `centros`, `cursos_academicos`, `roles_usuario` e `invitaciones` se
+  partieron por orden (`*_admin_select`, `*_insert`, `*_update`, `*_delete`).
+- **Sin cambio de comportamiento, salvo uno.** Todos los `centro_id` que se le pasan son NOT NULL,
+  y con un centro no NULL las dos funciones dan lo mismo. La excepción es `audit_log`, cuyas filas
+  de `usuarios` no tienen centro: antes las leía cualquier admin, ahora solo `service_role`.
+  Además, `set_datos_acreedor(NULL, …)` da «No autorizado» en vez de no hacer nada.
+- Test: `roles-es-responsable.rls.test.ts`. Lo que la directora no puede hacer se prueba cuando
+  exista el rol.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -868,6 +907,7 @@ comprobación dentro: un `centro_de_*` que devolviera NULL a quien es de fuera a
 | Funciones auxiliares solo de su centro        | `funciones-auxiliares-centro.rls.test.ts`       |
 | Rutas de Storage sin cruzar de centro         | `storage-ruta-coherente.rls.test.ts`            |
 | Funciones auxiliares fuera de la API          | `funciones-esquema-privado.rls.test.ts`         |
+| Lo exclusivo de la admin (`es_responsable`)   | `roles-es-responsable.rls.test.ts`              |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 
