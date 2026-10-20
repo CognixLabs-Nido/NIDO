@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { getRequestContext } from '@/features/autorizaciones/lib/request-context'
+import { esSuperusuario } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
 import { logger } from '@/shared/lib/logger'
@@ -51,7 +52,12 @@ export async function otorgarConsentimientoImagenAlta(
   })
   if (error) {
     logger.warn('otorgarConsentimientoImagenAlta', error.message)
-    if (error.code === '42501') return fail('alta.errors.no_autorizado')
+    if (error.code === '42501') {
+      // El superusuario no consiente en nombre de la familia (ADR-0061): lo decide la RPC (le
+      // deja solo si es tutor legal del niño); aquí solo se da el motivo.
+      if (await esSuperusuario(supabase)) return fail('alta.errors.presencial_solo_direccion')
+      return fail('alta.errors.no_autorizado')
+    }
     return fail('alta.errors.acuse_fallo')
   }
 

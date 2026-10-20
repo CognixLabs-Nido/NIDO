@@ -21,6 +21,7 @@ let rolesResult: Array<{ rol: string; centro_id: string }>
 let familiaRow: { id: string; centro_id: string } | null
 let mandatoActivo: unknown
 let rpcSpy: ReturnType<typeof vi.fn>
+let esSuper: boolean
 
 function makeServerFake() {
   function builder(table: string) {
@@ -42,7 +43,11 @@ function makeServerFake() {
   return {
     auth: { getUser: async () => ({ data: { user: { id: USER } } }) },
     from: (t: string) => builder(t),
-    rpc: rpcSpy,
+    // is_superadmin se contesta aquí (esSuperusuario): el espía solo ve las RPC de la acción.
+    rpc: (fn: string, args: unknown) =>
+      fn === 'is_superadmin'
+        ? Promise.resolve({ data: esSuper, error: null })
+        : (rpcSpy as (f: string, a: unknown) => Promise<unknown>)(fn, args),
   }
 }
 
@@ -59,11 +64,19 @@ beforeEach(() => {
   familiaRow = { id: FAMILIA, centro_id: CENTRO }
   mandatoActivo = null
   rpcSpy = vi.fn(async () => ({ data: null, error: null }))
+  esSuper = false
 })
 
 const base = { familia_id: FAMILIA, iban: IBAN_CON_ESPACIOS, titular: 'Ana Pérez' }
 
 describe('gestionarDomiciliacionFamilia', () => {
+  it('superusuario (ADR-0061): el mandato presencial es de la directora; no llama a ninguna RPC', async () => {
+    esSuper = true
+    const r = await gestionarDomiciliacionFamilia(base)
+    expect(r).toEqual({ success: false, error: 'admin.familias.errors.presencial_solo_direccion' })
+    expect(rpcSpy).not.toHaveBeenCalled()
+  })
+
   it('familia SIN mandato → registrar_mandato_sepa, params presenciales, IBAN normalizado', async () => {
     mandatoActivo = null
     const r = await gestionarDomiciliacionFamilia(base)

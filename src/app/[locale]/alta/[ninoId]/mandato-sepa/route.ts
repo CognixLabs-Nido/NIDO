@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { esAdminDeCentroDeNino } from '@/features/alta/lib/authz-tutor'
+import { esSuperusuario } from '@/features/centros/contexto/roles-del-usuario'
 import { ibanValido, normalizarIban } from '@/features/alta/lib/iban'
 import { MAX_LARGO_IDENTIFICADOR, textoCanonicoMandato } from '@/features/alta/lib/mandato-sepa'
 import { BUCKET_MANDATO_SEPA, firmarRuta } from '@/shared/lib/adjuntos/storage'
@@ -66,6 +67,11 @@ export async function POST(
   // en PAPEL. Se RE-DERIVA server-side (nunca del cliente) → 'presencial' + sin trazo (el
   // PDF se genera con la nota "firmado en papel"). Tutor legal => 'digital' con trazo (igual).
   const esPresencial = await esAdminDeCentroDeNino(supabase, nino.id, user.id)
+  // El mandato presencial lo registra la directora, que tiene a la familia delante; el
+  // superusuario no (ADR-0061; la RPC también se lo cierra). Antes de subir nada.
+  if (esPresencial && (await esSuperusuario(supabase))) {
+    return err('alta.errors.presencial_solo_direccion', 403)
+  }
 
   let form: FormData
   try {

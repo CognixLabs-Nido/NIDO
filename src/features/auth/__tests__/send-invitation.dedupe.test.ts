@@ -91,6 +91,7 @@ function makeServiceFake() {
     return b
   }
   return {
+    rpc: async () => ({ data: false, error: null }),
     from: (table: string) => builder(table),
     auth: {
       admin: {
@@ -115,6 +116,7 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() =>
     Promise.resolve({
       auth: { getUser: () => Promise.resolve({ data: { user: { id: ADMIN } } }) },
+      rpc: async () => ({ data: false, error: null }),
       from: () => {
         const b: Record<string, unknown> = {}
         b.select = () => b

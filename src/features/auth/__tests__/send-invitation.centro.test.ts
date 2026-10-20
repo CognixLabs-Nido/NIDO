@@ -19,6 +19,7 @@ const inviteUserByEmail = vi.fn(async () => ({ error: null }))
 
 function serviceFake() {
   return {
+    rpc: async () => ({ data: false, error: null }),
     from: (tabla: string) => {
       const st = { id: null as unknown, centro: null as unknown, escritura: false }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,6 +72,7 @@ vi.mock('@/features/auth/lib/idioma-invitacion', () => ({
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: { id: ADMIN } } }) },
+    rpc: async () => ({ data: false, error: null }),
     from: () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const b: any = {}

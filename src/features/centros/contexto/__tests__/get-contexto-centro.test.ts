@@ -16,6 +16,9 @@ const estado = vi.hoisted(() => ({
   /** La ruta pedida que el proxy deja en la cabecera (`x-nido-ruta-pedida`). */
   rutaPedida: null as string | null,
   consultasRoles: 0,
+  /** Lo que responde `is_superadmin`, y los centros que existen (solo los lee el superusuario). */
+  superusuario: false,
+  centrosExistentes: [] as string[],
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -23,7 +26,18 @@ vi.mock('@/lib/supabase/server', () => ({
     auth: {
       getUser: async () => ({ data: { user: estado.usuario ? { id: estado.usuario } : null } }),
     },
+    rpc: async (fn: string) => {
+      if (fn !== 'is_superadmin') throw new Error(`rpc inesperada ${fn}`)
+      return { data: estado.superusuario, error: null }
+    },
     from: (tabla: string) => {
+      if (tabla === 'centros') {
+        const c = {
+          select: () => c,
+          is: async () => ({ data: estado.centrosExistentes.map((id) => ({ id })), error: null }),
+        }
+        return c
+      }
       if (tabla !== 'roles_usuario') throw new Error(`tabla inesperada ${tabla}`)
       estado.consultasRoles++
       const q = {
@@ -68,6 +82,8 @@ beforeEach(() => {
   estado.cookie = undefined
   estado.rutaPedida = null
   estado.consultasRoles = 0
+  estado.superusuario = false
+  estado.centrosExistentes = []
 })
 
 describe('usuario con roles en dos centros', () => {
@@ -148,5 +164,51 @@ describe('sin sesión o sin roles', () => {
   it('sin roles activos → forbidden', async () => {
     estado.filas = []
     await expect(requireContextoCentro('va')).rejects.toThrow('REDIRECT:/va/forbidden')
+  })
+})
+
+describe('superusuario (Fase 3): admin de todos los centros, sin roles propios', () => {
+  beforeEach(() => {
+    estado.filas = []
+    estado.superusuario = true
+    estado.centrosExistentes = [A]
+  })
+
+  it('con UN solo centro y sin cookie, elige: no entra sin pasar por elegirCentro', async () => {
+    const r = await getEstadoCentro()
+    expect(r).toEqual({
+      tipo: 'elegir',
+      centros: [{ centroId: A, rol: 'admin', roles: ['admin'] }],
+      esSuperusuario: true,
+    })
+    await expect(requireContextoCentro('es', '/es/admin')).rejects.toThrow(
+      'REDIRECT:/es/elegir-centro?returnTo=%2Fes%2Fadmin'
+    )
+  })
+
+  it('con la cookie de un centro que existe: admin en ese centro, marcado como superusuario', async () => {
+    estado.centrosExistentes = [A, B]
+    estado.cookie = B
+    expect(await requireContextoCentro('es')).toMatchObject({
+      centroId: B,
+      rol: 'admin',
+      esSuperusuario: true,
+    })
+  })
+
+  it('contextoEnCentro: admin en cualquier centro que existe; en uno inexistente, null', async () => {
+    estado.centrosExistentes = [A, B]
+    expect(await contextoEnCentro(B)).toMatchObject({
+      centroId: B,
+      rol: 'admin',
+      esSuperusuario: true,
+    })
+    expect(await contextoEnCentro(AJENO)).toBeNull()
+  })
+
+  it('el usuario normal sigue igual: esSuperusuario false', async () => {
+    estado.superusuario = false
+    estado.filas = [{ centro_id: A, rol: 'profe' }]
+    expect(await requireContextoCentro('es')).toMatchObject({ centroId: A, esSuperusuario: false })
   })
 })
