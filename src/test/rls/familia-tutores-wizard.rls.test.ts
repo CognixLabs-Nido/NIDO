@@ -32,6 +32,7 @@ describe('familia_tutores — escrituras del wizard (F-2b-3)', () => {
   let ajeno: TestUser
   let familiaId: string
   let familiaAjenaId: string
+  let ninoId: string
   let cTitular: SupabaseClient<Database>
 
   beforeAll(async () => {
@@ -41,6 +42,20 @@ describe('familia_tutores — escrituras del wizard (F-2b-3)', () => {
 
     familiaId = await createTestFamilia(centro.id)
     familiaAjenaId = await createTestFamilia(centro.id)
+    // Un niño de la familia: la ruta del DNI tiene que ser de un niño suyo (20261024130000).
+    const { data: nino, error: ninoErr } = await serviceClient
+      .from('ninos')
+      .insert({
+        centro_id: centro.id,
+        familia_id: familiaId,
+        nombre: 'Nino Wizard F2b3',
+        apellidos: 'Apellido Test',
+        fecha_nacimiento: '2024-03-15',
+      })
+      .select('id')
+      .single()
+    if (ninoErr || !nino) throw new Error(`nino de la familia falló: ${ninoErr?.message}`)
+    ninoId = nino.id
 
     // Fila titular con la cuenta del titular (así es_tutor_de_familia = TRUE para él).
     await serviceClient.from('familia_tutores').insert({
@@ -153,7 +168,7 @@ describe('familia_tutores — escrituras del wizard (F-2b-3)', () => {
   it('service_role: aplica UPDATE de identidad sin bloqueo (cola de validación)', async () => {
     const { error } = await serviceClient
       .from('familia_tutores')
-      .update({ dni_documento_path: `${centro.id}/dni.pdf` })
+      .update({ dni_documento_path: `${centro.id}/${ninoId}/dni.pdf` })
       .eq('familia_id', familiaId)
       .eq('rol_familia', 'titular')
     expect(error).toBeNull()

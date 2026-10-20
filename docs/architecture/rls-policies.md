@@ -671,6 +671,14 @@ escribirla en otra tabla), la BD la valida contra la fila, no contra el valor de
   - `path` y `path_miniatura` tienen que ser `{centro}/{aula}/{publicacion}/<nombre>.jpg`, con el
     prefijo sacado de la publicación de la fila. Si no, da 23514.
   - Es un trigger porque `media` no tiene `aula_id` y un CHECK no puede consultar `publicaciones`.
+- **`familia_tutores.dni_documento_path` y `mandatos_sepa.documento_path`** (`20261024130000`,
+  PR 0b de la Fase 4): triggers `familia_tutores_validar_ruta_dni_trg` y
+  `mandatos_sepa_validar_ruta_trg`. El export las firma con service role, y un tutor podía
+  apuntar la suya al DNI o al mandato de otra familia, también del mismo centro.
+  - DNI: `{centro}/{niño de esa familia}/<nombre>.pdf`. Mandato: lo mismo, o
+    `{centro}/familia/{esa familia}/<nombre>.pdf`. `{centro}` es el de la familia. Si no, 23514.
+  - NULL (y `''` en el mandato presencial) siguen valiendo, y solo se mira la ruta cuando cambia.
+  - Test: `rutas-guardadas-export.rls.test.ts`.
 - **La app comprueba lo mismo antes de borrar**, como segunda capa: `rutaDocumentoDelNino` y
   `rutaDeLaPublicacion`.
 
@@ -712,6 +720,7 @@ Las guardas de equivalencia de esa migración comparan la lógica normalizada (#
 | Nada para anon en ninguna tabla               | `privilegios-tabla-anon.rls.test.ts`            |
 | Rutas de `cambios_pendientes`                 | `cambios-pendientes-ruta.rls.test.ts`           |
 | Rutas de `media`                              | `media-ruta.rls.test.ts`                        |
+| Rutas de DNI y mandato contra su familia      | `rutas-guardadas-export.rls.test.ts`            |
 | Anuncios e invitaciones sin cruzar de centro  | `multicentro-anuncios-invitaciones.rls.test.ts` |
 | Actor humano en la auditoría                  | `actor-humano-rpcs.rls.test.ts`                 |
 | Signup cerrado                                | `signup-cerrado.rls.test.ts`                    |
