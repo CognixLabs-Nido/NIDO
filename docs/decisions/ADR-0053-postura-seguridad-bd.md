@@ -136,6 +136,11 @@ Del mismo frente (#302):
 - En la app, la audiencia de las notificaciones push filtra por centro.
 - Precedente de la misma idea: `beca_comedor_mes` (D-6-1b, D-6-1c) exigía `centro_de_nino(nino_id)
 = centro_id` en el WITH CHECK.
+- **Funciones auxiliares** (`20261026120000`, PR 2a de la Fase 4, 2026-10-20): las que la app
+  llama con sesión comprueban el centro de quien llama (42501, o NULL/FALSE en las dos que usan
+  policies), `tiene_consentimiento` solo contesta del propio usuario y 10 sin ningún uso con
+  sesión pierden `authenticated`. Las que usan policies van a un esquema que la API no expone
+  (PR 2b): una comprobación dentro abriría en vez de cerrar, por `es_admin(NULL)`.
 
 ### 7. Columnas que solo puede leer Dirección: permiso de columna
 
