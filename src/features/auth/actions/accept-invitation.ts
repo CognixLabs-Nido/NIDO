@@ -576,7 +576,8 @@ export async function acceptPendingInvitationCore(
   // del personal) se acepta aquí, y aquí se enlaza su perfil de la familia: el que creó la RPC al
   // dar el alta, con `usuario_id` NULL y el email de la invitación. Antes de nada más, para que un
   // fallo no deje rol ni vínculo sueltos.
-  if (creaVinculo && invitation.rol_objetivo === 'tutor_legal' && invitation.nino_id) {
+  if (creaVinculo && invitation.email === '' && invitation.nino_id) {
+    // MUTACION n3
     const { error: perfilError } = await enlazarPerfilFamiliar(service, {
       ninoId: invitation.nino_id,
       email: invitation.email,
