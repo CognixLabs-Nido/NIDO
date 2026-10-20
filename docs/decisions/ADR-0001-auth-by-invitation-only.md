@@ -82,9 +82,10 @@ Sign-in solo por enlace que llega al correo. Sin contraseña.
 - **Expiración de invitación**: 7 días desde envío. Renovable reenviando la invitación.
 - **Expiración de reset password**: 1 hora (default de Supabase, queda configurable en `config.toml`).
 - **Email transaccional**: Supabase Auth built-in en Ola 1. Migración a Resend con plantillas custom en Ola 2 (cuando aparezca el primer email no-auth: recordatorios, notificaciones, etc.).
+  - _Actualización 2026-10-20 (PR 1 de la Fase 4):_ el primer correo que no es de Auth llegó en Ola 1, y es el aviso de abajo: una cuenta que ya existe no recibe el correo de `inviteUserByEmail` (falla con `email_exists`). Sale por la **API de Resend** desde el servidor (`enviarCorreo`, `RESEND_API_KEY`), con el mismo proveedor y el mismo dominio que el SMTP de Auth (nido03.es). Auth sigue mandando sus correos como antes.
 - **MFA**: opcional para todos en Ola 1, no obligatorio. Se ofrece como toggle en perfil en Ola 2.
 - **Rate limit**: 5 intentos fallidos / 15 min / IP en la tabla `auth_attempts`. En el sexto intento, retraso de 5 s antes de procesar. Captcha solo si llegan problemas reales (Ola 2+).
-- **Email ya existente al aceptar invitación** (caso típico: tutor con dos hijos): no se pide la contraseña en el flujo de invitación (anti-phishing). En su lugar, el sistema deja la invitación abierta, envía un aviso al destinatario y pide que inicie sesión por el flujo canónico. Tras login, la persona ve un banner persistente con sus invitaciones pendientes y las acepta desde su perfil.
+- **Email ya existente al aceptar invitación** (caso típico: tutor con dos hijos): no se pide la contraseña en el flujo de invitación (anti-phishing). En su lugar, el sistema deja la invitación abierta, envía un aviso al destinatario y pide que inicie sesión por el flujo canónico. _(El aviso no salía hasta el PR 1 de la Fase 4: era un `logger.info`. Desde entonces sale por Resend, y aceptar desde el perfil enlaza también el perfil de la familia.)_ Tras login, la persona ve un banner persistente con sus invitaciones pendientes y las acepta desde su perfil.
 - **Pantalla de invitación inválida**: las tres causas (token inexistente, expirada, ya aceptada) se renderizan con la misma vista uniforme — no revelamos qué falló, evitando fingerprinting de tokens.
 
 ## Consecuencias

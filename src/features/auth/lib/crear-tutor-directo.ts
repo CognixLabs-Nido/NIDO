@@ -7,6 +7,7 @@ import { CONSENT_OBLIGATORIOS, CONSENT_VERSIONS } from '@/shared/lib/consent-ver
 import type { Database } from '@/types/database'
 
 import { fail, ok, type ActionResult } from '../actions/types'
+import { cuentaHaOperado } from './cuenta-ha-operado'
 import { llamarGoTrue } from './llamar-gotrue'
 
 type ServiceClient = SupabaseClient<Database>
@@ -62,8 +63,18 @@ export async function crearTutorDirecto(
     tieneRoles = (await tieneRolesVivos(service, authUser.id)) === true
   }
   const clase = clasificarCuenta(Boolean(authUser), tieneRoles)
-  // Cuenta operativa (con roles): la resolución cuenta-existente es una fase posterior.
+  // Cuenta operativa (con roles): no es un alta nueva. `completarEnDireccion` ya la manda a
+  // invitar antes de llegar aquí; esto es la segunda capa.
   if (clase === 'real') return fail('auth.invitation.errors.email_already_registered')
+
+  // Sin roles vivos no basta para ser un alta a medias: quien perdió su rol o el superusuario
+  // también están así, y «reutilizar el stub» les fijaría una contraseña nueva (lo mismo que cerró
+  // el PR 0a en la aceptación). Solo se reutiliza una cuenta que nunca operó.
+  if (clase === 'stub' && authUser) {
+    const operada = await cuentaHaOperado(service, authUser.id)
+    if (operada === null) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
+    if (operada) return fail('auth.invitation.errors.email_already_registered')
+  }
 
   let usuarioId: string
   if (clase === 'stub' && authUser) {

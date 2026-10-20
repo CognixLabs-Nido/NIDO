@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAppUrl } from '@/shared/lib/app-url'
 import { logger } from '@/shared/lib/logger'
 
+import { enviarAvisoInvitacion } from '../lib/aviso-invitacion'
 import { prepararIdiomaInvitacion } from '../lib/idioma-invitacion'
 import { llamarGoTrue } from '../lib/llamar-gotrue'
 import { sendInvitationSchema, type SendInvitationInput } from '../schemas/invitation'
@@ -165,13 +166,22 @@ export async function sendInvitation(
   )
   // PR-A: dejar de reportar éxito falso. Si el email NO salió, se devuelve `fail` para que la
   // UI lo muestre (afecta a TODOS los callers de sendInvitation — corrección consistente del
-  // mismo bug). NO se vincula la cuenta existente ni se reinvita: la resolución es PR-D.
+  // mismo bug).
   if (emailIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
   if (emailError) {
+    // Cuenta que ya existe (de otro centro, personal, superusuario…): GoTrue no le manda nada.
+    // PR 1 (Fase 4): le llega el aviso por Resend y acepta desde su perfil. Quien invita ve lo
+    // mismo que con un email sin cuenta —«enviada» o «no se pudo enviar»—, nunca «ya tiene
+    // cuenta» (D4).
+    if (emailError.code === 'email_exists' || emailError.status === 422) {
+      const avisada = await enviarAvisoInvitacion(service, {
+        email: parsed.data.email,
+        centroNombre: centro?.nombre ?? null,
+      })
+      if (!avisada) return fail('auth.invitation.errors.email_no_enviado')
+      return ok({ invitationId })
+    }
     logger.warn('inviteUserByEmail error', emailError.message)
-    // Cuenta ya registrada (padre con cuenta previa): se AVISA, no se resuelve aquí (PR-D).
-    if (emailError.code === 'email_exists' || emailError.status === 422)
-      return fail('listaEspera.errors.tutor_ya_registrado')
     return fail('auth.invitation.errors.email_no_enviado')
   }
 

@@ -3,16 +3,15 @@
 import { revalidatePath } from 'next/cache'
 
 import { sendInvitation } from '@/features/auth/actions/send-invitation'
-import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
 import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
 import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
-import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
 import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Json } from '@/types/database'
 
+import { tutorDeEsteCentro } from '../lib/resolver-tutor-email'
 import { vincularHijoATutorExistente } from '../lib/vincular-hijo-tutor-existente'
 import { invitarAlAltaSchema, type InvitarAlAltaInput } from '../schemas/lista-espera'
 import { fail, ok, type ActionResult } from '../../centros/types'
@@ -33,7 +32,7 @@ type ResultadoCrearFamilia = {
 export type InvitarAlAltaOk =
   | { resultado: 'ok'; ninoId: string; invitationId: string }
   | { resultado: 'colision'; nombreExistente: string | null }
-  // FIX A: el tutor YA tenía cuenta → el hijo se vinculó a su familia directamente (sin
+  // FIX A: el tutor YA tenía familia en este centro → el hijo entró en ella directamente (sin
   // email ni invitación: ya tiene acceso). La UI lo distingue del alta invitada.
   | { resultado: 'vinculado'; ninoId: string }
 
@@ -50,6 +49,8 @@ export type InvitarAlAltaOk =
  * tutor a "ya tienes cuenta" en vez del formulario de contraseña. Con NULL, la RPC OMITE
  * rol/vínculo (su guard `IF p_usuario_id IS NOT NULL`) y deja el perfil `familia_tutores`
  * con `usuario_id` NULL; al ACEPTAR se rellena (backfill) con el id definitivo de la cuenta.
+ * Lo mismo para una cuenta que YA existe en otro centro: se le invita, acepta desde su perfil y
+ * ahí se enlaza (PR 1 de la Fase 4).
  *
  * La RPC va por el cliente AUTENTICADO: su gate `es_admin(auth.uid(), p_centro_id)` autoriza
  * (además del gate admin explícito de abajo). `p_centro_id` es server-derivado, no falseable.
@@ -117,43 +118,21 @@ export async function invitarAlAlta(
   const fechaNacimiento = prospecto.fecha_nacimiento
   if (!fechaNacimiento) return fail('listaEspera.errors.sin_fecha_nacimiento')
 
-  // GUARDARRAÍL F-2b-4-3 (ANTES de cualquier escritura): si el email ya tiene una cuenta
-  // OPERATIVA (con roles), invitar dejaría un niño ESQUELETO huérfano — la RPC de abajo lo
-  // crearía y luego `inviteUserByEmail` fallaría con `email_exists`, sin vínculo ni
-  // invitación. El camino correcto para un tutor con cuenta es "Añadir hijo a familia
-  // existente" (F-2b-4-2), que da acceso directo. Se detecta con el MISMO patrón que
-  // `crearTutorDirecto`/`accept-invitation`: la RPC `buscar_auth_user_por_email`
-  // (service-role, búsqueda EXACTA por email) + roles activos → `clasificarCuenta`. Sustituye
-  // a `listUsers()` sin paginar (solo veía 50, detección errática con >50 usuarios — FIX B).
-  // Como la comprobación va antes de la RPC, no se escribe NADA si es 'real': no se crea niño,
-  // no queda huérfano. Cuentas `nueva`/`stub` (sin roles) siguen por el flujo normal sin cambios.
-  //
-  // D1 (U-2): si el prospecto YA trae `tutor_usuario_id` (nació de "añadir hijo a familia
-  // existente"), esta adivinanza sobra — la cuenta del tutor se guardó cuando la dirección
-  // eligió la familia. Se salta la detección y se vincula a ESA cuenta: exacto y sin
-  // depender de que el email siga igual. La detección por email queda para los prospectos
-  // normales (`tutor_usuario_id IS NULL`), que es donde de verdad hay que averiguarlo.
+  // ¿Es el 2.º hijo de una familia de ESTE centro? Entonces se vincula a esa cuenta sin invitar
+  // (ya aceptó este centro). Cualquier otra cuenta —de otro centro, del personal, el
+  // superusuario— se INVITA y acepta desde su perfil (PR 1 de la Fase 4): entre centros nadie
+  // entra sin aceptar. La regla vive en `tutorDeEsteCentro` (la misma que `completarEnDireccion`)
+  // y la exigen también la RPC y el trigger de `lista_espera`. Va ANTES de cualquier escritura.
   const service = createServiceRoleClient()
-  let tutorExistenteId: string | null = tutorPrevioId
-  if (!tutorExistenteId && emailTutor) {
-    const { data: authUser, error: buscarErr } = await service
-      .rpc('buscar_auth_user_por_email', { p_email: emailTutor })
-      .maybeSingle()
-    if (buscarErr) {
-      logger.warn('invitarAlAlta buscar_auth_user_por_email', buscarErr.message)
-      return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
-    }
-    let tieneRoles = false
-    if (authUser) {
-      // Un fallo de lectura cuenta como «sin roles», como antes.
-      tieneRoles = (await tieneRolesVivos(service, authUser.id)) === true
-    }
-    if (clasificarCuenta(Boolean(authUser), tieneRoles) === 'real' && authUser)
-      tutorExistenteId = authUser.id
-  }
+  const tutorExistenteId = await tutorDeEsteCentro(service, {
+    tutorPrevioId,
+    email: emailTutor,
+    centroId,
+  })
+  if (tutorExistenteId === undefined)
+    return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
   if (tutorExistenteId) {
-    // FIX A — el tutor YA tiene cuenta operativa: en vez de rechazar, vinculamos el nuevo hijo
-    // a su familia del centro (o creamos familia nueva si no tiene aquí) SIN email ni
+    // FIX A — el tutor YA tiene familia en este centro: el nuevo hijo entra en ella SIN email ni
     // invitación (ya tiene acceso) + push. El parentesco se hereda del vínculo previo del tutor
     // (p. ej. su 1.er hijo); si no hay herencia, vale el que pidió el diálogo (solo lo pide en
     // ese caso) y, si tampoco viene, falla con `parentesco_requerido` → el diálogo lo revela.
@@ -223,9 +202,8 @@ export async function invitarAlAlta(
   const ninoId = res.nino_id as string
 
   // 2. Invitación: reusa `sendInvitation` (stub GoTrue `inviteUserByEmail` + fila
-  //    `invitaciones`, dedupe nino_id-aware). El alta ya está creada por la RPC. Si esto
-  //    falla, el alta queda creada SIN compensación en cascada (frontera limpia): el reenvío
-  //    de invitación es el follow-up previsto (un re-invoke duplicaría el niño).
+  //    `invitaciones`, dedupe nino_id-aware; a una cuenta que ya existe le llega el aviso por
+  //    Resend). El alta ya está creada por la RPC.
   const inv = await sendInvitation(
     {
       email: emailTutor,
@@ -237,16 +215,23 @@ export async function invitarAlAlta(
     },
     locale
   )
-  if (!inv.success) return fail(inv.error)
 
-  // 3. El prospecto sale de la cola. Best-effort: si falla, el alta+invitación ya existen;
-  //    log y seguimos (el prospecto queda en_espera y se puede descartar a mano).
+  // 3. El prospecto sale de la cola, haya salido el correo o no: el alta ya existe, y dejarlo en
+  //    espera haría que un segundo «Invitar» creara otro niño. Best-effort: si falla, log.
   const { error: estadoErr } = await supabase
     .from('lista_espera')
     .update({ estado: 'invitado', nino_id: ninoId })
     .eq('id', prospecto.id)
   if (estadoErr) {
     logger.warn('invitarAlAlta estado update', estadoErr.message)
+  }
+
+  // El correo no salió: nada sigue en silencio. La directora lee que el alta está creada y la
+  // familia no tiene la invitación.
+  if (!inv.success) {
+    logger.warn('invitarAlAlta: alta creada sin invitación', inv.error)
+    revalidatePath('/[locale]/admin/admisiones', 'page')
+    return fail('listaEspera.errors.alta_creada_sin_correo')
   }
 
   revalidatePath('/[locale]/admin/admisiones', 'page')

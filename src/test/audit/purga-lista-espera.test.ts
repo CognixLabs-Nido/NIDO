@@ -7,8 +7,10 @@ import {
   createTestAula,
   createTestCentro,
   createTestCurso,
+  createTestFamilia,
   createTestNino,
   createTestUser,
+  crearFamiliaTutor,
   deleteTestCentro,
   deleteTestUser,
   serviceClient,
@@ -183,6 +185,9 @@ describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
     const u = await createTestUser({ nombre })
     usuarios.push(u)
     await asignarRol(u.id, centro.id, rol)
+    // El tutor de un prospecto tiene familia en su centro: `tutor_usuario_id` no admite otra
+    // cosa desde el PR 1 de la Fase 4 (`lista_espera_validar_tutor_trg`).
+    if (rol === 'tutor_legal') await crearFamiliaTutor(await createTestFamilia(centro.id), u.id)
     return u
   }
 

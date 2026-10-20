@@ -109,6 +109,15 @@
         "es": "Castellano",
         "va": "Valencià",
         "en": "English"
+      },
+      "aviso_correo": {
+        "asunto": "You have an invitation in NIDO",
+        "saludo": "Hello,",
+        "intro_centro": "{centro} has invited you to NIDO.",
+        "intro_sin_centro": "A nursery school has invited you to NIDO.",
+        "como_aceptar": "As you already have an account, there is no need to create another: sign in with your email and password and accept the invitation in your profile.",
+        "boton": "See my invitations",
+        "no_esperada": "If you were not expecting this invitation, you can decline it from your profile or ignore this email."
       }
     },
     "select_role": {
@@ -909,9 +918,8 @@
       "deteccion": {
         "ayuda": "The email tells us whether this is a new family or a sibling of a family we already have.",
         "resolviendo": "Checking the email…",
-        "familia_nueva": "New family: an account will be created for the guardian during enrolment.",
-        "familia_existente": "We already have this guardian in {familia}: the pupil will join as a sibling, with no second account.",
-        "cuenta_sin_familia_aqui": "This guardian already has an account but no family at this centre yet: one will be created here during enrolment, without asking for another password."
+        "familia_nueva": "New family at this centre: once enrolled, the guardian will receive their access.",
+        "familia_existente": "We already have this guardian in {familia}: the pupil will join as a sibling, with no second account."
       },
       "editar_title": "Edit prospect",
       "cancel": "Cancel",
@@ -977,8 +985,8 @@
         "push_titulo": "New child in your family",
         "push_cuerpo": "{nombre} has been added to your family"
       },
-      "vinculado_completar": "That guardian already has an account: the child was linked to their family. No need to send credentials.",
-      "vinculado_invitar": "That guardian already has an account: the child was added to their family. No invitation needed."
+      "vinculado_completar": "That guardian already has a family at this centre: the child was added to it. No need to send credentials.",
+      "vinculado_invitar": "That guardian already has a family at this centre: the child was added to it. No invitation needed."
     },
     "pendientes": {
       "title": "Pending validations",
@@ -4127,12 +4135,12 @@
       "sin_email": "The tutor’s email is required to invite.",
       "sin_curso_activo": "The centre has no active academic year.",
       "aula_invalida": "The selected classroom doesn't belong to the active year.",
-      "tutor_ya_registrado": "This email already has an account; no invitation was sent.",
       "tutor_ya_registrado_usar_anadir_hijo": "This guardian already has an account. Use “Add child to an existing family” from Admissions.",
       "colision_email_familia": "That email already exists in this centre under the name {nombre}. Fix the email or details, or use the sibling enrolment.",
       "alta_fallo": "The enrolment could not be completed. Please try again.",
       "sin_fecha_nacimiento": "The child's date of birth is missing; fill it in before enrolling.",
-      "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it."
+      "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it.",
+      "alta_creada_sin_correo": "The enrolment has been created, but the invitation email was not sent: the family has not received it. Do not enrol again; ask the NIDO administrator to resend it."
     }
   },
   "recibos": {

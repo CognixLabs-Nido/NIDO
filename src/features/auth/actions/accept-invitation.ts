@@ -126,6 +126,73 @@ async function crearVinculoAutomatico(
   return { error: null }
 }
 
+/**
+ * Enlaza a una cuenta YA existente su perfil de `familia_tutores` en la familia del niño de la
+ * invitación (B8). Ese perfil lo creó la RPC al dar el alta, con `usuario_id` NULL y el email de la
+ * invitación; se casa por email en minúsculas, como en la aceptación de una cuenta nueva.
+ *
+ * Idempotente: si la cuenta ya tiene su perfil en esa familia (una aceptación anterior a medias),
+ * no hay nada que hacer. Ningún fallo se traga: sin perfil que enlazar, o un UPDATE que no toca su
+ * fila (otra sesión lo enlazó entre medias), devuelve error y la aceptación no sigue.
+ */
+async function enlazarPerfilFamiliar(
+  service: ServiceClient,
+  params: { ninoId: string; email: string; usuarioId: string }
+): Promise<{ error: string | null }> {
+  const { data: nino, error: ninoErr } = await service
+    .from('ninos')
+    .select('familia_id')
+    .eq('id', params.ninoId)
+    .maybeSingle()
+  if (ninoErr || !nino?.familia_id) {
+    logger.warn('acceptPending: familia del niño no resuelta', ninoErr?.message)
+    return { error: 'auth.invitation.errors.vinculo_failed' }
+  }
+
+  const { data: perfiles, error: perfilesErr } = await service
+    .from('familia_tutores')
+    .select('id, email, usuario_id')
+    .eq('familia_id', nino.familia_id)
+    .is('deleted_at', null)
+  if (perfilesErr) {
+    logger.warn('acceptPending: perfiles de la familia no resueltos', perfilesErr.message)
+    return { error: 'auth.invitation.errors.vinculo_failed' }
+  }
+  if (perfiles?.some((p) => p.usuario_id === params.usuarioId)) return { error: null }
+
+  const email = params.email.trim().toLowerCase()
+  const perfil = perfiles?.find(
+    (p) => p.usuario_id === null && (p.email ?? '').trim().toLowerCase() === email
+  )
+  if (!perfil) {
+    logger.warn('acceptPending: perfil pendiente no encontrado por email')
+    return { error: 'auth.invitation.errors.vinculo_failed' }
+  }
+
+  // El nombre del perfil, el de la cuenta: al aceptar, la persona lo comparte con este centro.
+  const { data: usuario } = await service
+    .from('usuarios')
+    .select('nombre_completo')
+    .eq('id', params.usuarioId)
+    .maybeSingle()
+
+  const { data: enlazado, error: updErr } = await service
+    .from('familia_tutores')
+    .update({
+      usuario_id: params.usuarioId,
+      ...(usuario?.nombre_completo ? { nombre_completo: usuario.nombre_completo } : {}),
+    })
+    .eq('id', perfil.id)
+    .is('usuario_id', null)
+    .select('id')
+    .maybeSingle()
+  if (updErr || !enlazado) {
+    logger.warn('acceptPending: enlazar familia_tutores.usuario_id falló', updErr?.message)
+    return { error: 'auth.invitation.errors.vinculo_failed' }
+  }
+  return { error: null }
+}
+
 // Acepta invitación para un email nuevo (flujo B2): crea usuario, login automático.
 // En ÉXITO redirige server-side al panel (ver `acceptInvitation`): con `updateSession`
 // en el proxy, el middleware refresca/propaga la cookie de sesión recién creada por
@@ -505,6 +572,19 @@ export async function acceptPendingInvitationCore(
     }
   }
 
+  // PR 1 (Fase 4): la invitación de tutor legal a una cuenta que YA existe (de otro centro, o
+  // del personal) se acepta aquí, y aquí se enlaza su perfil de la familia: el que creó la RPC al
+  // dar el alta, con `usuario_id` NULL y el email de la invitación. Antes de nada más, para que un
+  // fallo no deje rol ni vínculo sueltos.
+  if (creaVinculo && invitation.rol_objetivo === 'tutor_legal' && invitation.nino_id) {
+    const { error: perfilError } = await enlazarPerfilFamiliar(service, {
+      ninoId: invitation.nino_id,
+      email: invitation.email,
+      usuarioId: user.id,
+    })
+    if (perfilError) return fail(perfilError)
+  }
+
   const { error: roleErr } = await asignarRolDeInvitacion(service, {
     usuario_id: user.id,
     centro_id: invitation.centro_id,
@@ -592,27 +672,5 @@ export async function rejectPendingInvitation(invitationId: string): Promise<Act
     .update({ rejected_at: new Date().toISOString() })
     .eq('id', invitation.id)
 
-  return ok(undefined)
-}
-
-// Notifica al usuario existente que tiene una invitación pendiente (flujo B8).
-export async function notifyExistingAccountInvitation(token: string): Promise<ActionResult<void>> {
-  const service = createServiceRoleClient()
-  const { data: invitation } = await service
-    .from('invitaciones')
-    .select('email, accepted_at, rejected_at, expires_at')
-    .eq('token', token)
-    .maybeSingle()
-
-  if (!invitation || invitation.accepted_at || invitation.rejected_at) {
-    return fail('auth.invitation.errors.invalid')
-  }
-  if (new Date(invitation.expires_at) < new Date()) return fail('auth.invitation.errors.expired')
-
-  // Email de aviso sin token clicable (es solo informativo).
-  // Reusamos resetPasswordForEmail como vehículo de transporte de email transaccional no es ideal,
-  // pero Supabase Auth built-in no expone un endpoint de "email genérico". En Ola 2 con Resend
-  // mandaremos un email plano específico. Por ahora se loggea y se confía en el banner post-login.
-  logger.info('notifyExistingAccountInvitation', { emailHashSent: true })
   return ok(undefined)
 }

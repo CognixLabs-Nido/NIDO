@@ -714,6 +714,35 @@ conocía. Y «sin roles vivos» incluía al superusuario (ADR-0061) y a quien pe
   invitación no completan como alta nueva una cuenta así: va por B8 y entra con su contraseña.
 - Test: `invitacion-toma-de-cuenta.rls.test.ts`, contra el GoTrue real.
 
+### Entre centros no se vincula a nadie sin que acepte (PR 1, Fase 4)
+
+Migración `20261025120000_fix_vinculacion_entre_centros` y el código del alta. Cierra D4 (el
+oráculo del email, ADR-0053 apartado 9) y los cuatro huecos de vinculación. **La regla:** una
+cuenta solo entra en un centro cuando ella misma acepta la invitación. El 2.º hijo de una familia
+que ya es de ese centro sigue entrando directamente.
+
+- **`crear_o_anadir_a_familia`** solo acepta un `p_usuario_id` que ya tenga perfil en
+  `familia_tutores`, en una familia de `p_centro_id`, o una cuenta que no ha operado nunca (sin
+  roles, ni superusuario, ni perfil): la recién creada de «Completar en Dirección». Lo demás da
+  **42501**. La guarda previa exige el cuerpo de `20261002130000` (md5 normalizado).
+- **`lista_espera.tutor_usuario_id`**: trigger `lista_espera_validar_tutor_trg` (BEFORE INSERT o
+  UPDATE de la columna o del centro), con la misma exigencia, para cualquiera, también service
+  role: **23514**. Solo mira la columna cuando cambia.
+- **La app:** la detección por email (`resolverTutorPorEmail`) solo mira este centro. Una cuenta
+  de otro centro se ve como «familia nueva» y, al promover (`tutorDeEsteCentro`), se invita: la
+  RPC crea su perfil sin cuenta. A una cuenta que ya existe no le llega el correo de GoTrue
+  (`email_exists`): le llega un aviso por Resend (`enviarAvisoInvitacion`) que la lleva a
+  `/profile/invitations`, y quien invita ve lo mismo que con un email sin cuenta.
+- **Aceptar desde el perfil** (`acceptPendingInvitationCore`) enlaza `familia_tutores.usuario_id`
+  y el nombre de la cuenta antes de crear el rol y el vínculo. Sin perfil pendiente, no sigue.
+- «Completar en Dirección» con una cuenta que ya operó (de otro centro, el superusuario) no le
+  crea cuenta ni le toca la contraseña: crea el alta y la invita. `crearTutorDirecto` tampoco
+  reutiliza como «alta a medias» una cuenta que ya operó (`cuenta_ha_operado`).
+- El parentesco del 2.º hijo solo se hereda de vínculos con niños de este centro.
+- Si el correo de la invitación no sale, el alta queda creada, el prospecto sale de la cola y la
+  directora lo lee (`alta_creada_sin_correo`). Nunca sigue en silencio.
+- Test: `vinculacion-entre-centros.rls.test.ts`, contra el GoTrue real.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -741,6 +770,7 @@ conocía. Y «sin roles vivos» incluía al superusuario (ADR-0061) y a quien pe
 | Actor humano en la auditoría                  | `actor-humano-rpcs.rls.test.ts`                 |
 | Signup cerrado                                | `signup-cerrado.rls.test.ts`                    |
 | Invitación sin toma de cuenta                 | `invitacion-toma-de-cuenta.rls.test.ts`         |
+| Entre centros, nadie entra sin aceptar        | `vinculacion-entre-centros.rls.test.ts`         |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

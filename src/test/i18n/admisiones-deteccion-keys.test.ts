@@ -12,13 +12,7 @@ import va from '@/../messages/va.json'
  * claves que SÍ siguen vivas del namespace `anadirHijo` (el push y los errores que usa
  * `vincularHijoATutorExistente`) no se cayeron al podar el diálogo jubilado.
  */
-const DETECCION = [
-  'ayuda',
-  'resolviendo',
-  'familia_nueva',
-  'familia_existente',
-  'cuenta_sin_familia_aqui',
-] as const
+const DETECCION = ['ayuda', 'resolviendo', 'familia_nueva', 'familia_existente'] as const
 
 /** Las que siguen en uso tras jubilar "añadir hijo a familia existente". */
 const ANADIR_HIJO_VIVAS = ['push_titulo', 'push_cuerpo'] as const
@@ -64,6 +58,15 @@ describe('i18n consistency — botón único de admisiones (U-5)', () => {
       it.each(INVITAR_PARENTESCO)('invitar_dialog.%s existe y no está vacío', (key) => {
         const ns = admisiones(msgs).invitar_dialog as Record<string, string> | undefined
         expect(ns?.[key]?.trim().length ?? 0).toBeGreaterThan(0)
+      })
+
+      // PR 1 (Fase 4): la pantalla no distingue una cuenta de otro centro de un email sin cuenta.
+      it('no queda ningún texto que diga que el email ya tiene cuenta en otro sitio (D4)', () => {
+        const deteccion = admisiones(msgs).deteccion as Record<string, string>
+        expect(Object.keys(deteccion).sort()).toEqual([...DETECCION].sort())
+        const errores = (msgs.listaEspera as Record<string, Record<string, string>>).errors!
+        expect(errores.tutor_ya_registrado).toBeUndefined()
+        expect(errores.alta_creada_sin_correo?.trim().length ?? 0).toBeGreaterThan(0)
       })
     })
   }

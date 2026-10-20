@@ -41,6 +41,8 @@ Las guardas por md5 de una migración comparan la lógica normalizada, no los by
 
 Definidas en `.env.local` (gitignored). Cargadas por direnv vía `dotenv .env.local`. Las que importan a la app son las `NEXT_PUBLIC_*` (anon key, URL pública), el `SUPABASE_SERVICE_ROLE_KEY` (solo server-side) y `SUPABASE_ACCESS_TOKEN` (CLI de Supabase).
 
+`RESEND_API_KEY` (solo servidor, Vercel y `.env.local`): la clave de la API de Resend con la que la app manda su propio correo, hoy solo el aviso de invitación a una cuenta que ya existe (`src/shared/lib/correo/enviar-correo.ts`). Sin ella, ese aviso no sale y la invitación da «no se pudo enviar».
+
 Sentry (ADR-0056) solo existe en Vercel: `NEXT_PUBLIC_SENTRY_DSN`, y para subir los source maps `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` y `SENTRY_PROJECT`. En local no hacen falta: sin DSN de la UE, Sentry no se inicializa.
 
 **Las credenciales nunca van en código.** Si falta una variable, pídela al responsable; nunca hardcodear.

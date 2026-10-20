@@ -37,11 +37,16 @@ function fila(f: Fila) {
 /** Builder thenable: todas las cadenas devuelven el mismo resultado de la tabla. */
 function fakeClient(porTabla: Record<string, { data: unknown; error: unknown }>) {
   const inSpy = vi.fn()
+  const eqSpy = vi.fn()
   const from = vi.fn((table: string) => {
     const b: Record<string, unknown> = {}
     const self = () => b as never
     b.select = () => self()
-    b.eq = () => self()
+    b.maybeSingle = () => self()
+    b.eq = (col: string, val: unknown) => {
+      eqSpy(table, col, val)
+      return self()
+    }
     b.neq = () => self()
     b.is = () => self()
     b.order = () => self()
@@ -53,7 +58,7 @@ function fakeClient(porTabla: Record<string, { data: unknown; error: unknown }>)
       resolve(porTabla[table] ?? { data: null, error: null })
     return b
   })
-  return { client: { from } as unknown as SupabaseClient<Database>, from, inSpy }
+  return { client: { from } as unknown as SupabaseClient<Database>, from, inSpy, eqSpy }
 }
 
 describe('getListaEsperaCore — necesita_parentesco (hueco 1)', () => {
@@ -67,6 +72,7 @@ describe('getListaEsperaCore — necesita_parentesco (hueco 1)', () => {
         ],
         error: null,
       },
+      cursos_academicos: { data: { centro_id: 'centro-1' }, error: null },
     })
     const service = fakeClient({
       vinculos_familiares: { data: [{ usuario_id: 'tutor-b' }], error: null },
@@ -86,6 +92,8 @@ describe('getListaEsperaCore — necesita_parentesco (hueco 1)', () => {
       'tutor-b',
     ])
     expect(admin.from).not.toHaveBeenCalledWith('vinculos_familiares')
+    // PR 1 (Fase 4): solo los vínculos con niños del centro del curso.
+    expect(service.eqSpy).toHaveBeenCalledWith('vinculos_familiares', 'ninos.centro_id', 'centro-1')
   })
 
   it('sin tutores guardados no consulta vínculos', async () => {
@@ -129,6 +137,7 @@ describe('getListaEsperaCore — necesita_parentesco (hueco 1)', () => {
         data: [fila({ id: 'p-1', tutor_usuario_id: 'tutor-a', nino_id: null })],
         error: null,
       },
+      cursos_academicos: { data: { centro_id: 'centro-1' }, error: null },
     })
     const service = fakeClient({
       vinculos_familiares: { data: null, error: { message: 'boom' } },

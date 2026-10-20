@@ -44,24 +44,21 @@ export interface VincularHijoTutorExistenteParams {
  * contraseña, NO manda email/invitación (ya tiene acceso). Reutiliza el mismo motor que
  * la RPC transaccional `crear_o_anadir_a_familia` con el `usuario_id` real.
  *
- * Resolución de familia por CENTRO (multi-centro seguro): la RPC busca la familia del tutor
- * SOLO en `p_centro_id` (`familia_tutores.usuario_id` JOIN `familias.centro_id = p_centro_id`).
- * Si el tutor existe pero NO tiene familia en este centro (p. ej. es tutor en OTRO centro), la
- * RPC crea una familia NUEVA en este centro ligada a su `usuario_id` → 'familia_creada'. Nunca
- * se cruzan centros.
+ * Solo para un tutor que YA tiene familia en este centro (PR 1 de la Fase 4): la RPC busca su
+ * familia SOLO en `p_centro_id` y rechaza (42501) una cuenta sin perfil aquí. Una cuenta de otro
+ * centro no llega aquí: se le invita (`tutorDeEsteCentro`). Si llegara, se para antes de leer
+ * nada de ella.
  *
- * Nombre EXACTO (anti-colisión, decisión 3 de Jose): si el tutor ya tiene perfil en este centro
- * se pasa su `familia_tutores.nombre_completo` guardado → el chequeo de colisión por nombre de
- * la RPC es inerte por construcción. El nombre tecleado en el formulario del prospecto NO gana:
- * es el mismo tutor real. Si no tiene perfil aquí, se usa `usuarios.nombre_completo` (la RPC no
- * comprueba colisión al crear familia nueva).
+ * Nombre EXACTO (anti-colisión, decisión 3 de Jose): se pasa su `familia_tutores.nombre_completo`
+ * guardado → el chequeo de colisión por nombre de la RPC es inerte por construcción. El nombre
+ * tecleado en el formulario del prospecto NO gana: es el mismo tutor real.
  */
 export async function vincularHijoATutorExistente(
   service: ServiceClient,
   supabaseAutenticado: ServiceClient,
   params: VincularHijoTutorExistenteParams
 ): Promise<ActionResult<{ ninoId: string }>> {
-  // 1. Perfil del tutor en ESTE centro (si lo tiene) → nombre EXACTO + email guardados.
+  // 1. Perfil del tutor en ESTE centro → nombre EXACTO + email guardados.
   //    `familias!inner(centro_id)` acota por centro; no leemos el embed (solo filtra).
   const { data: perfil } = await service
     .from('familia_tutores')
@@ -71,12 +68,12 @@ export async function vincularHijoATutorExistente(
     .is('deleted_at', null)
     .limit(1)
     .maybeSingle()
+  if (!perfil) return fail('admin.admisiones.anadirHijo.errors.no_autorizado')
 
-  let nombreExacto = perfil?.nombre_completo ?? null
-  const emailTutor = perfil?.email ?? null
+  let nombreExacto = perfil.nombre_completo
+  const emailTutor = perfil.email
   if (nombreExacto === null) {
-    // Sin familia en este centro (multi-centro / cuenta sin familia aquí): la RPC creará una
-    // familia nueva → usamos el nombre del perfil de usuario (no hay colisión posible).
+    // Perfil de este centro sin nombre guardado: el de su cuenta (es la misma persona, ya de aquí).
     const { data: usuario } = await service
       .from('usuarios')
       .select('nombre_completo')
@@ -87,10 +84,10 @@ export async function vincularHijoATutorExistente(
 
   // 2. Parentesco del hijo NUEVO: hereda del vínculo previo del tutor (consistente entre
   //    hermanos); si no hay herencia, usa el del formulario; si tampoco, falla (sin default
-  //    silencioso). La lectura vive en `buscarVinculoPrevio` (sin filtrar `deleted_at`, sin
-  //    acotar por centro), compartida con la lista de Admisiones para que su aviso
+  //    silencioso). La lectura vive en `buscarVinculoPrevio` (sin filtrar `deleted_at`, solo
+  //    los vínculos con niños de este centro), compartida con la lista de Admisiones para que su aviso
   //    `necesita_parentesco` diga lo mismo que esta herencia.
-  const vinculoPrevio = await buscarVinculoPrevio(service, params.tutorUsuarioId)
+  const vinculoPrevio = await buscarVinculoPrevio(service, params.tutorUsuarioId, params.centroId)
   const resolucion = resolverParentesco(
     vinculoPrevio,
     params.parentescoForm,
