@@ -49,7 +49,7 @@ let cliAdmin: Client
 let cliProfe: Client
 let cliTutor: Client
 let ninoA: string
-let ninoB: string
+let ninoA2: string
 let evento: string
 let plantillaRecogida: string
 const creadas: string[] = []
@@ -58,13 +58,10 @@ beforeAll(async () => {
   centroA = await createTestCentro('Centro A Identidad')
   centroB = await createTestCentro('Centro B Identidad')
   const cursoA = await createTestCurso(centroA.id)
-  const cursoB = await createTestCurso(centroB.id)
   const aulaA = await createTestAula(centroA.id, cursoA.id, 'Aula A Identidad')
-  const aulaB = await createTestAula(centroB.id, cursoB.id, 'Aula B Identidad')
   ninoA = (await createTestNino(centroA.id, 'Nino A Identidad')).id
-  ninoB = (await createTestNino(centroB.id, 'Nino B Identidad')).id
+  ninoA2 = (await createTestNino(centroA.id, 'Nino A2 Identidad')).id
   await matricular(ninoA, aulaA.id, cursoA.id)
-  await matricular(ninoB, aulaB.id, cursoB.id)
 
   admin = await createTestUser({ nombre: 'Admin Identidad' })
   profe = await createTestUser({ nombre: 'Profe Identidad' })
@@ -73,9 +70,8 @@ beforeAll(async () => {
   await asignarRol(profe.id, centroA.id, 'profe')
   await asignarRol(tutor.id, centroA.id, 'tutor_legal')
   await asignarProfeAula(profe.id, aulaA.id)
-  await crearVinculo(ninoA, tutor.id, 'tutor_legal_principal', {
-    puede_firmar_autorizaciones: true,
-  })
+  for (const n of [ninoA, ninoA2])
+    await crearVinculo(n, tutor.id, 'tutor_legal_principal', { puede_firmar_autorizaciones: true })
   cliAdmin = await clientFor(admin)
   cliProfe = await clientFor(profe)
   cliTutor = await clientFor(tutor)
@@ -182,9 +178,8 @@ const IDENTIDAD =
   'tipo, es_plantilla, ambito, centro_id, nino_id, evento_id, aula_id, plantilla_id, creado_por'
 
 /**
- * Cambiar la identidad, sin RETURNING: con él, un cambio que deja la fila fuera de la vista de quien
- * la cambia aborta en el RETURNING (42501) aunque la policy de UPDATE lo deje pasar, y la prueba no
- * vería el hueco. Devuelve el error y la fila tal como queda, leída con service role.
+ * Cambiar la identidad. Devuelve el error y la fila antes y después, leída con service role: lo que
+ * dice si el cambio entró es la fila, no la ausencia de error.
  */
 async function cambiarIdentidad(cli: Client, id: string, cambio: AutorizacionUpdate) {
   const antes = await serviceClient.from('autorizaciones').select(IDENTIDAD).eq('id', id).single()
@@ -204,22 +199,24 @@ describe('la familia, sobre su recogida sin firmar', () => {
   it('no le cambia el tipo', async () => {
     const id = await recogidaDeLaFamilia()
     const r = await cambiarIdentidad(cliTutor, id, { tipo: 'medicacion' })
-    expect(r.error?.code).toBe('23514')
     expect(r.despues).toEqual(r.antes)
+    expect(r.error?.code).toBe('23514')
   })
 
+  // A otro niño suyo: a uno que no ve, la API ya lo rechaza (PostgREST cuenta las filas con un
+  // RETURNING, y la fila quedaría fuera de su vista: 42501).
   it('no la pasa a otro niño', async () => {
     const id = await recogidaDeLaFamilia()
-    const r = await cambiarIdentidad(cliTutor, id, { nino_id: ninoB })
-    expect(r.error?.code).toBe('23514')
+    const r = await cambiarIdentidad(cliTutor, id, { nino_id: ninoA2 })
     expect(r.despues).toEqual(r.antes)
+    expect(r.error?.code).toBe('23514')
   })
 
   it('no se la lleva a otro centro', async () => {
     const id = await recogidaDeLaFamilia()
     const r = await cambiarIdentidad(cliTutor, id, { centro_id: centroB.id })
-    expect(r.error?.code).toBe('23514')
     expect(r.despues).toEqual(r.antes)
+    expect(r.error?.code).toBe('23514')
   })
 
   it('no la convierte en las normas del centro para todo el centro', async () => {
@@ -229,8 +226,8 @@ describe('la familia, sobre su recogida sin firmar', () => {
       ambito: 'centro',
       nino_id: null,
     })
-    expect(r.error?.code).toBe('23514')
     expect(r.despues).toEqual(r.antes)
+    expect(r.error?.code).toBe('23514')
   })
 })
 
@@ -245,8 +242,8 @@ describe('la profe, sobre su salida sin firmar', () => {
   it('no se la lleva a otro centro', async () => {
     const id = await salidaDeLaProfe()
     const r = await cambiarIdentidad(cliProfe, id, { centro_id: centroB.id })
-    expect(r.error?.code).toBe('23514')
     expect(r.despues).toEqual(r.antes)
+    expect(r.error?.code).toBe('23514')
   })
 
   it('no la convierte en la plantilla de las normas del centro', async () => {
@@ -256,15 +253,15 @@ describe('la profe, sobre su salida sin firmar', () => {
       es_plantilla: true,
       evento_id: null,
     })
-    expect(r.error?.code).toBe('23514')
     expect(r.despues).toEqual(r.antes)
+    expect(r.error?.code).toBe('23514')
   })
 })
 
 describe('tampoco la dirección', () => {
   it('no le cambia el tipo a una plantilla', async () => {
     const r = await cambiarIdentidad(cliAdmin, plantillaRecogida, { tipo: 'medicacion' })
-    expect(r.error?.code).toBe('23514')
     expect(r.despues).toEqual(r.antes)
+    expect(r.error?.code).toBe('23514')
   })
 })
