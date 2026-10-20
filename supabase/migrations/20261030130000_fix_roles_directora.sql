@@ -120,7 +120,7 @@ $function$;
 -- Anti-escalada: los roles de Dirección, solo la admin
 -- -----------------------------------------------------------------------------
 ALTER POLICY roles_admin_insert ON public.roles_usuario
-  WITH CHECK (es_admin(centro_id) AND ((rol)::text NOT IN ('admin') OR privado.es_responsable(centro_id)));
+  WITH CHECK (es_admin(centro_id) AND ((rol)::text NOT IN ('admin', 'directora') OR privado.es_responsable(centro_id)));
 ALTER POLICY roles_admin_update ON public.roles_usuario
   USING (es_admin(centro_id) AND ((rol)::text NOT IN ('admin', 'directora') OR privado.es_responsable(centro_id)))
   WITH CHECK (es_admin(centro_id) AND ((rol)::text NOT IN ('admin', 'directora') OR privado.es_responsable(centro_id)));
@@ -144,7 +144,53 @@ CREATE UNIQUE INDEX idx_roles_usuario_una_admin_viva ON public.roles_usuario (ce
 -- -----------------------------------------------------------------------------
 -- firma_imagen_sync: la firma presencial de la admin o de una directora del centro
 -- -----------------------------------------------------------------------------
--- (control negativo: firma_imagen_sync sin cambiar)
+CREATE OR REPLACE FUNCTION public.firma_imagen_sync()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  a public.autorizaciones%ROWTYPE;
+BEGIN
+  SELECT * INTO a FROM public.autorizaciones WHERE id = NEW.autorizacion_id;
+  IF NOT FOUND THEN RETURN NEW; END IF;
+  IF a.es_plantilla OR a.tipo <> 'autorizacion_imagenes' THEN RETURN NEW; END IF;
+
+  IF NEW.decision = 'firmado' THEN
+    IF NOT (
+         EXISTS (SELECT 1 FROM public.vinculos_familiares vf
+                  WHERE vf.usuario_id = NEW.firmante_id
+                    AND vf.nino_id = NEW.nino_id
+                    AND vf.deleted_at IS NULL
+                    AND vf.tipo_vinculo IN ('tutor_legal_principal', 'tutor_legal_secundario'))
+      OR (NEW.metodo_firma = 'presencial'
+          AND EXISTS (SELECT 1 FROM public.roles_usuario ru
+                       WHERE ru.usuario_id = NEW.firmante_id
+                         AND ru.rol::text IN ('admin', 'directora')
+                         AND ru.deleted_at IS NULL
+                         AND ru.centro_id = privado.centro_de_nino(NEW.nino_id)))
+    ) THEN
+      RETURN NEW;
+    END IF;
+    UPDATE public.consentimientos
+       SET revocado_en = now()
+     WHERE tipo = 'imagen' AND usuario_id = NEW.firmante_id
+       AND nino_id = NEW.nino_id AND revocado_en IS NULL;
+    INSERT INTO public.consentimientos
+      (usuario_id, tipo, version, nino_id, ip_address, user_agent)
+    VALUES
+      (NEW.firmante_id, 'imagen'::public.consentimiento_tipo, a.texto_version,
+       NEW.nino_id, NEW.ip_address, NEW.user_agent);
+  ELSE
+    UPDATE public.consentimientos
+       SET revocado_en = now()
+     WHERE tipo = 'imagen' AND usuario_id = NEW.firmante_id
+       AND nino_id = NEW.nino_id AND revocado_en IS NULL;
+  END IF;
+
+  RETURN NEW;
+END $function$;
 
 -- -----------------------------------------------------------------------------
 -- Autorizaciones: la identidad del documento no cambia
@@ -155,7 +201,6 @@ CREATE FUNCTION public.autorizaciones_identidad_inmutable()
  SET search_path TO 'public'
 AS $function$
 BEGIN
-  RETURN NEW; -- control negativo
   -- Para todos, también service_role: nadie cambia estas columnas (censo en producción).
   IF NEW.tipo         IS DISTINCT FROM OLD.tipo
   OR NEW.es_plantilla IS DISTINCT FROM OLD.es_plantilla
@@ -199,7 +244,7 @@ BEGIN
   END IF;
   SELECT md5(regexp_replace(regexp_replace(replace(prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc WHERE oid = 'public.firma_imagen_sync()'::regprocedure;
-  IF v_md5 IS DISTINCT FROM 'bf1f1a278def5c76aa4ffe40aab23dc9' THEN
+  IF v_md5 IS DISTINCT FROM 'b5d5d3631eb3ff181ad1ebbd7ce7f428' THEN
     RAISE EXCEPTION 'firma_imagen_sync no es la esperada (md5 %)', v_md5;
   END IF;
 
@@ -209,7 +254,7 @@ BEGIN
             FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
            WHERE n.nspname IN ('public', 'privado')
              AND regexp_replace(p.prosrc, '--[^\n]*', '', 'g') ~ 'rol\s*=\s*''admin''') f;
-  IF v_con IS DISTINCT FROM ARRAY['privado.es_responsable', 'public.firma_imagen_sync'] THEN
+  IF v_con IS DISTINCT FROM ARRAY['privado.es_responsable'] THEN
     RAISE EXCEPTION 'funciones que comparan rol = admin: %', v_con;
   END IF;
 
@@ -217,7 +262,7 @@ BEGIN
   SELECT count(*) INTO v_n FROM pg_policies
    WHERE schemaname = 'public' AND tablename IN ('roles_usuario', 'invitaciones')
      AND coalesce(qual, '') || coalesce(with_check, '') LIKE '%''directora''%';
-  IF v_n <> 5 OR EXISTS (SELECT 1 FROM pg_policies
+  IF v_n <> 6 OR EXISTS (SELECT 1 FROM pg_policies
                           WHERE coalesce(qual, '') || coalesce(with_check, '') LIKE '%<> ''admin''::user_role%') THEN
     RAISE EXCEPTION 'anti-escalada: % de 6 policies, o queda la condición de antes', v_n;
   END IF;
