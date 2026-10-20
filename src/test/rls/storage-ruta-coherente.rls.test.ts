@@ -24,15 +24,17 @@ import {
 } from './setup'
 
 /**
- * PR 3 (Fase 4) — policies de Storage. CONTROL POSITIVO: se demuestran contra la BD efímera
- * los dos huecos del diagnóstico.
+ * PR 3 (Fase 4) — las rutas de Storage no cruzan de centro, y nadie escribe en la raíz.
  *
- *   1. Ninguna policy comprueba que el niño, la familia o el aula de la ruta (`[2]`, `[3]`) sean
- *      del centro de la ruta (`[1]`). Cada rama mira solo uno de los dos, así que se pueden dejar
- *      ficheros en el prefijo de otro centro: el tutor de un niño de B sube un PDF a `A/niñoB/` y
- *      la directora de A lo ve.
- *   2. Un objeto en la raíz del bucket, sin carpeta, tiene `[1]` NULL, y `es_admin(NULL)` es TRUE
- *      para cualquier admin: lo sube una directora y lo lee y lo borra la de otro centro.
+ * Migración: 20261027120000_fix_storage_ruta_coherente
+ *   - Las 28 policies con niño, familia o aula en la ruta exigen `ruta_coherente(bucket, name)`:
+ *     que `[2]` (o `[3]`) sea del centro de `[1]`. Ya no se deja un fichero en el prefijo de otro
+ *     centro, ni se lee uno que estuviera ahí.
+ *   - Las 3 de escritura de `centro-assets` exigen carpeta: `es_admin(NULL)` ya no abre la raíz.
+ *
+ * El control positivo (commit da54f53) demostró los ataques contra la BD efímera. Cada caso
+ * comprueba ahora tres cosas: la subida cruzada se rechaza; un objeto que el servicio deja en esa
+ * ruta no lo lee el otro lado; y la ruta coherente sigue funcionando para quien le toca.
  */
 
 const PDF = Buffer.from('%PDF-1.4\n%prueba\n')
@@ -62,6 +64,15 @@ async function subir(user: TestUser, bucket: string, path: string, body: Buffer,
 async function leer(user: TestUser, bucket: string, path: string) {
   const c = await clientFor(user)
   return c.storage.from(bucket).download(path)
+}
+
+/** Deja el objeto con el servicio (sin RLS), como si hubiera llegado antes del arreglo. */
+async function sembrar(bucket: string, path: string, body: Buffer, tipo: string) {
+  intentos.push({ bucket, path })
+  const { error } = await serviceClient.storage
+    .from(bucket)
+    .upload(path, body, { contentType: tipo, upsert: true })
+  if (error) throw new Error(`sembrar ${bucket} falló: ${error.message}`)
 }
 
 beforeAll(async () => {
@@ -113,7 +124,7 @@ afterAll(async () => {
   await deleteTestCentro(centroB.id)
 }, 120_000)
 
-describe('PR 3 — control positivo: rutas que cruzan de centro y objetos en la raíz', () => {
+describe('PR 3 — las rutas de Storage no cruzan de centro', () => {
   it('premisa: los de B no tienen rol en A, ni la directora de A en B', async () => {
     const { count } = await serviceClient
       .from('roles_usuario')
@@ -125,58 +136,115 @@ describe('PR 3 — control positivo: rutas que cruzan de centro y objetos en la 
     expect(count).toBe(0)
   })
 
-  it('dni-tutores: el tutor de B sube el DNI a A/niñoB/ y la directora de A lo lee', async () => {
-    const path = `${centroA.id}/${ninoB.id}/${randomUUID()}.pdf`
-    expect((await subir(tutorB, 'dni-tutores', path, PDF, 'application/pdf')).error).toBeNull()
-    expect((await leer(directoraA, 'dni-tutores', path)).error).toBeNull()
-  })
-
-  it('libro-familia: la directora de A sube a A/niñoB/ y el tutor de B lo lee', async () => {
-    const path = `${centroA.id}/${ninoB.id}/${randomUUID()}.pdf`
+  it('dni-tutores: el tutor de B no sube a A/niñoB/, la directora de A no lee lo que haya, y en B/niñoB/ sí', async () => {
+    const cruzada = `${centroA.id}/${ninoB.id}/${randomUUID()}.pdf`
     expect(
-      (await subir(directoraA, 'libro-familia', path, PDF, 'application/pdf')).error
+      (await subir(tutorB, 'dni-tutores', cruzada, PDF, 'application/pdf')).error
+    ).not.toBeNull()
+    await sembrar('dni-tutores', cruzada, PDF, 'application/pdf')
+    expect((await leer(directoraA, 'dni-tutores', cruzada)).error).not.toBeNull()
+    expect((await leer(tutorB, 'dni-tutores', cruzada)).error).not.toBeNull()
+
+    const propia = `${centroB.id}/${ninoB.id}/${randomUUID()}.pdf`
+    expect((await subir(tutorB, 'dni-tutores', propia, PDF, 'application/pdf')).error).toBeNull()
+    expect((await leer(directoraB, 'dni-tutores', propia)).error).toBeNull()
+  })
+
+  it('libro-familia: la directora de A no sube a A/niñoB/ y el tutor de B no lee lo que haya', async () => {
+    const cruzada = `${centroA.id}/${ninoB.id}/${randomUUID()}.pdf`
+    expect(
+      (await subir(directoraA, 'libro-familia', cruzada, PDF, 'application/pdf')).error
+    ).not.toBeNull()
+    await sembrar('libro-familia', cruzada, PDF, 'application/pdf')
+    expect((await leer(tutorB, 'libro-familia', cruzada)).error).not.toBeNull()
+
+    const propia = `${centroB.id}/${ninoB.id}/${randomUUID()}.pdf`
+    expect(
+      (await subir(directoraB, 'libro-familia', propia, PDF, 'application/pdf')).error
     ).toBeNull()
-    expect((await leer(tutorB, 'libro-familia', path)).error).toBeNull()
+    expect((await leer(tutorB, 'libro-familia', propia)).error).toBeNull()
   })
 
-  it('mandato-sepa por familia: el tutor de B sube a A/familia/familiaB/ y la directora de A lo lee', async () => {
-    const path = `${centroA.id}/familia/${ninoB.familia_id}/${randomUUID()}.pdf`
-    expect((await subir(tutorB, 'mandato-sepa', path, PDF, 'application/pdf')).error).toBeNull()
-    expect((await leer(directoraA, 'mandato-sepa', path)).error).toBeNull()
+  it('mandato-sepa por familia: no a A/familia/familiaB/; sí a B/familia/familiaB/', async () => {
+    const cruzada = `${centroA.id}/familia/${ninoB.familia_id}/${randomUUID()}.pdf`
+    expect(
+      (await subir(tutorB, 'mandato-sepa', cruzada, PDF, 'application/pdf')).error
+    ).not.toBeNull()
+    await sembrar('mandato-sepa', cruzada, PDF, 'application/pdf')
+    expect((await leer(directoraA, 'mandato-sepa', cruzada)).error).not.toBeNull()
+
+    const propia = `${centroB.id}/familia/${ninoB.familia_id}/${randomUUID()}.pdf`
+    expect((await subir(tutorB, 'mandato-sepa', propia, PDF, 'application/pdf')).error).toBeNull()
+    expect((await leer(directoraB, 'mandato-sepa', propia)).error).toBeNull()
   })
 
-  it('ninos-fotos: el tutor de B sube la foto a A/niñoB/ y la directora de A la lee', async () => {
-    const path = `${centroA.id}/${ninoB.id}/${randomUUID()}.jpg`
-    expect((await subir(tutorB, 'ninos-fotos', path, JPG, 'image/jpeg')).error).toBeNull()
-    expect((await leer(directoraA, 'ninos-fotos', path)).error).toBeNull()
+  it('mandato-sepa por niño: la ruta del niño sigue igual', async () => {
+    const propia = `${centroB.id}/${ninoB.id}/${randomUUID()}.pdf`
+    expect((await subir(tutorB, 'mandato-sepa', propia, PDF, 'application/pdf')).error).toBeNull()
+    const cruzada = `${centroA.id}/${ninoB.id}/${randomUUID()}.pdf`
+    expect(
+      (await subir(tutorB, 'mandato-sepa', cruzada, PDF, 'application/pdf')).error
+    ).not.toBeNull()
   })
 
-  it('recogida-adjuntos: la profe de A sube a A/niñoB/ y el tutor de B lo lee', async () => {
-    const path = `${centroA.id}/${ninoB.id}/${randomUUID()}.jpg`
-    expect((await subir(profeA, 'recogida-adjuntos', path, JPG, 'image/jpeg')).error).toBeNull()
-    expect((await leer(tutorB, 'recogida-adjuntos', path)).error).toBeNull()
+  it('ninos-fotos: el tutor de B no sube a A/niñoB/ y la directora de A no lee lo que haya', async () => {
+    const cruzada = `${centroA.id}/${ninoB.id}/${randomUUID()}.jpg`
+    expect((await subir(tutorB, 'ninos-fotos', cruzada, JPG, 'image/jpeg')).error).not.toBeNull()
+    await sembrar('ninos-fotos', cruzada, JPG, 'image/jpeg')
+    expect((await leer(directoraA, 'ninos-fotos', cruzada)).error).not.toBeNull()
+
+    const propia = `${centroB.id}/${ninoB.id}/${randomUUID()}.jpg`
+    expect((await subir(tutorB, 'ninos-fotos', propia, JPG, 'image/jpeg')).error).toBeNull()
+    expect((await leer(directoraB, 'ninos-fotos', propia)).error).toBeNull()
   })
 
-  it('aula-fotos: la profe de B sube a A/aulaB/publicaciónB/ y la directora de A lo lee', async () => {
-    const path = `${centroA.id}/${aulaB.id}/${publicacionB}/${randomUUID()}.jpg`
-    expect((await subir(profeB, 'aula-fotos', path, JPG, 'image/jpeg')).error).toBeNull()
-    expect((await leer(directoraA, 'aula-fotos', path)).error).toBeNull()
+  it('recogida-adjuntos: la profe de A no sube a A/niñoB/ y el tutor de B no lee lo que haya', async () => {
+    const cruzada = `${centroA.id}/${ninoB.id}/${randomUUID()}.jpg`
+    expect(
+      (await subir(profeA, 'recogida-adjuntos', cruzada, JPG, 'image/jpeg')).error
+    ).not.toBeNull()
+    await sembrar('recogida-adjuntos', cruzada, JPG, 'image/jpeg')
+    expect((await leer(tutorB, 'recogida-adjuntos', cruzada)).error).not.toBeNull()
+
+    const propia = `${centroB.id}/${ninoB.id}/${randomUUID()}.jpg`
+    expect((await subir(tutorB, 'recogida-adjuntos', propia, JPG, 'image/jpeg')).error).toBeNull()
+    expect((await leer(directoraB, 'recogida-adjuntos', propia)).error).toBeNull()
   })
 
-  it('raíz de dni-tutores: la directora de A sube sin carpeta, y la de B lo lee y lo borra', async () => {
+  it('aula-fotos: la profe de B no sube a A/aulaB/publicaciónB/ y la directora de A no lee lo que haya', async () => {
+    const cruzada = `${centroA.id}/${aulaB.id}/${publicacionB}/${randomUUID()}.jpg`
+    expect((await subir(profeB, 'aula-fotos', cruzada, JPG, 'image/jpeg')).error).not.toBeNull()
+    await sembrar('aula-fotos', cruzada, JPG, 'image/jpeg')
+    expect((await leer(directoraA, 'aula-fotos', cruzada)).error).not.toBeNull()
+
+    const propia = `${centroB.id}/${aulaB.id}/${publicacionB}/${randomUUID()}.jpg`
+    expect((await subir(profeB, 'aula-fotos', propia, JPG, 'image/jpeg')).error).toBeNull()
+    expect((await leer(directoraB, 'aula-fotos', propia)).error).toBeNull()
+  })
+
+  it('raíz de dni-tutores: nadie sube sin carpeta, y lo que haya ni se lee ni se borra con sesión', async () => {
     const path = `${randomUUID()}.pdf`
-    expect((await subir(directoraA, 'dni-tutores', path, PDF, 'application/pdf')).error).toBeNull()
-    expect((await leer(directoraB, 'dni-tutores', path)).error).toBeNull()
+    expect(
+      (await subir(directoraA, 'dni-tutores', path, PDF, 'application/pdf')).error
+    ).not.toBeNull()
+    await sembrar('dni-tutores', path, PDF, 'application/pdf')
+    expect((await leer(directoraB, 'dni-tutores', path)).error).not.toBeNull()
     const cB = await clientFor(directoraB)
     const { data: borrados } = await cB.storage.from('dni-tutores').remove([path])
-    expect(borrados).toHaveLength(1)
+    expect(borrados ?? []).toHaveLength(0)
+    // Sigue ahí: el servicio lo lee.
+    expect((await serviceClient.storage.from('dni-tutores').download(path)).error).toBeNull()
   })
 
-  it('raíz de centro-assets: la directora de A sube sin carpeta y la de B lo borra', async () => {
+  it('raíz de centro-assets: nadie sube ni borra sin carpeta; el logo de su centro, sí', async () => {
     const path = `${randomUUID()}.png`
-    expect((await subir(directoraA, 'centro-assets', path, PNG, 'image/png')).error).toBeNull()
+    expect((await subir(directoraA, 'centro-assets', path, PNG, 'image/png')).error).not.toBeNull()
+    await sembrar('centro-assets', path, PNG, 'image/png')
     const cB = await clientFor(directoraB)
     const { data: borrados } = await cB.storage.from('centro-assets').remove([path])
-    expect(borrados).toHaveLength(1)
+    expect(borrados ?? []).toHaveLength(0)
+
+    const logo = `${centroA.id}/logo.png`
+    expect((await subir(directoraA, 'centro-assets', logo, PNG, 'image/png')).error).toBeNull()
   })
 })
