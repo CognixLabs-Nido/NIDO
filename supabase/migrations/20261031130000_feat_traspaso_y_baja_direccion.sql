@@ -123,8 +123,15 @@ BEGIN
   IF v_yo IS NULL THEN
     RAISE EXCEPTION 'sin sesión' USING ERRCODE = '42501';
   END IF;
-  IF NOT (p_usuario_id = v_yo OR public.es_admin(p_centro_id)) THEN
+  IF NOT (p_usuario_id = v_yo OR privado.es_responsable(p_centro_id)) THEN
     RAISE EXCEPTION 'no autorizado' USING ERRCODE = '42501';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.roles_usuario
+              WHERE centro_id = p_centro_id AND usuario_id = p_usuario_id
+                AND rol = 'admin' AND deleted_at IS NULL) THEN
+    RAISE EXCEPTION 'la admin no se da de baja: primero traspasa la administración a una directora'
+      USING ERRCODE = '55000';
   END IF;
 
   UPDATE public.roles_usuario
