@@ -49,6 +49,7 @@ function esRol(valor: string): valor is Rol {
 
 /** La fila de `roles_usuario` como rol de la app: la directora es Dirección (`admin`). */
 export function rolDeLaApp(valor: string): Rol | null {
+  if (valor === 'directora') return 'admin'
   return esRol(valor) ? valor : null
 }
 
