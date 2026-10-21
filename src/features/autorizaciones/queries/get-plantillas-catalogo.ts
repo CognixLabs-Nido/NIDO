@@ -18,7 +18,6 @@ export async function getPlantillasCatalogo(centroId: string): Promise<Plantilla
   const { data, error } = await supabase
     .from('autorizaciones')
     .select('id, tipo, titulo, estado, texto_definitivo')
-    .eq('centro_id', centroId)
     .eq('es_plantilla', true)
     .order('tipo', { ascending: true })
 
