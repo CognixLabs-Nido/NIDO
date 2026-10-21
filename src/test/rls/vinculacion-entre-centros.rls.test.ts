@@ -207,12 +207,12 @@ describe('PR 1 — entre centros no se vincula a nadie sin que acepte', () => {
     sesion.actual = await clientFor(directoraA)
     const existente = await sendInvitation({
       email: tutorB.email,
-      rolObjetivo: 'admin',
+      rolObjetivo: 'directora',
       centroId: centroA.id,
     })
     const libre = await sendInvitation({
       email: `libre-${randomUUID().slice(0, 8)}@nido.test`,
-      rolObjetivo: 'admin',
+      rolObjetivo: 'directora',
       centroId: centroA.id,
     })
     expect(existente.success).toBe(true)
@@ -227,7 +227,7 @@ describe('PR 1 — entre centros no se vincula a nadie sin que acepte', () => {
     correo.falla = true
     const r = await sendInvitation({
       email: tutorB.email,
-      rolObjetivo: 'admin',
+      rolObjetivo: 'directora',
       centroId: centroA.id,
     })
     expect(r).toEqual({ success: false, error: 'auth.invitation.errors.email_no_enviado' })

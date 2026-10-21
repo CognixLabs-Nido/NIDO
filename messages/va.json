@@ -124,7 +124,8 @@
       "title": "Selecciona el teu rol",
       "subtitle": "Tens accés des de diversos perfils. Tria amb quin entrar.",
       "roles": {
-        "admin": "Administrador",
+        "admin": "Direcció",
+        "directora": "Direcció",
         "profe": "Profe",
         "tutor_legal": "Tutor legal",
         "autorizado": "Persona autoritzada"
@@ -243,7 +244,8 @@
       "admisiones": "Admissions",
       "pendientes": "Validacions",
       "familias": "Famílies",
-      "fotosRevocadas": "Fotos revocades"
+      "fotosRevocadas": "Fotos revocades",
+      "direccion": "Direcció del centre"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -1168,6 +1170,56 @@
       "procesando": "Esborrant…",
       "resuelta_ok": "Foto marcada com a resolta.",
       "borrada_ok": "Publicació esborrada."
+    },
+    "direccion": {
+      "title": "Direcció del centre",
+      "descripcion": "Qui dirigeix el centre. En l'aplicació totes són Direcció; les dades del centre, les quotes, l'auditoria i nomenar directores són de qui administra el centre.",
+      "administra": "Administra el centre",
+      "tu": "Tu",
+      "sin_directoras": "Encara no hi ha directores. Convida'n una per a compartir el dia a dia o per a traspassar-li l'administració.",
+      "error_lectura": "No hem pogut carregar qui dirigeix el centre. Torna a carregar la pàgina.",
+      "hecho": "Fet.",
+      "cancelar": "Cancel·lar",
+      "perfil": "Direcció",
+      "invitar": {
+        "cta": "Convidar una directora",
+        "title": "Convidar una directora",
+        "texto": "Li arribarà un correu per a unir-se a la direcció del centre. Si ja té compte en NIDO, la invitació li apareixerà en entrar.",
+        "email": "Correu",
+        "enviar": "Enviar la invitació",
+        "enviando": "Enviant…",
+        "cancelar": "Cancel·lar",
+        "ok": "Invitació enviada."
+      },
+      "pendientes": {
+        "title": "Invitacions pendents",
+        "vacio": "No hi ha invitacions pendents.",
+        "caduca": "Caduca el {fecha}",
+        "cancelar": "Cancel·lar la invitació",
+        "cancelar_title": "Cancel·lar la invitació",
+        "cancelar_texto": "La invitació a {email} deixarà de valdre."
+      },
+      "traspasar": {
+        "cta": "Traspassar l'administració",
+        "title": "Traspassar l'administració a {nombre}",
+        "texto": "{nombre} passarà a administrar el centre i tu continuaràs com a directora. Després podràs deixar la direcció quan vulgues. Per a desfer-ho, {nombre} te l'hauria de traspassar de tornada.",
+        "confirmar": "Traspassar"
+      },
+      "baja": {
+        "cta": "Donar de baixa",
+        "title": "Donar de baixa {nombre}",
+        "texto": "{nombre} deixarà de ser Direcció d'aquest centre. Si té altres rols en el centre, els conserva.",
+        "confirmar": "Donar de baixa"
+      },
+      "dejar": {
+        "cta": "Deixar la direcció",
+        "title": "Deixar la direcció d'aquest centre",
+        "texto": "Deixaràs de ser Direcció d'aquest centre. Si tens altres rols en ell, els conserves.",
+        "confirmar": "Deixar la direcció",
+        "aviso_admin": "Administres el centre: abans de deixar la direcció has de traspassar l'administració a una directora, des de «Direcció del centre». Si encara no n'hi ha cap, convida primer la persona que et substituirà.",
+        "entendido": "Entesos",
+        "ir": "Anar a Direcció del centre"
+      }
     }
   },
   "teacher": {
@@ -4224,6 +4276,18 @@
       "titulo": "Aquest avís és d’un altre centre",
       "texto": "L’avís és de {centro}. Ara estàs en {activo}.",
       "cambiar": "Canviar a {centro}"
+    }
+  },
+  "direccion": {
+    "errors": {
+      "no_autorizado": "No tens permís per a gestionar la direcció del centre.",
+      "admin_primero_traspasa": "Administres el centre: abans de deixar la direcció, traspassa l'administració a una directora.",
+      "no_es_directora": "Eixa persona no és directora d'aquest centre.",
+      "solo_la_admin_traspasa": "Només qui administra el centre pot traspassar l'administració.",
+      "solo_a_una_directora": "L'administració només es traspassa a una directora del centre.",
+      "otra_persona": "L'administració es traspassa a una altra persona.",
+      "invitacion_no_encontrada": "Eixa invitació ja no està pendent.",
+      "fallo": "No s'ha pogut completar. Torna-ho a intentar."
     }
   }
 }

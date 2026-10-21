@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
 /**
- * PR 3 del modelo de roles — el menú de Dirección. La admin del centro ve Centro y Auditoría, que
- * son solo suyos; una directora (Dirección sin `esResponsable`) ve el resto, igual que la admin.
+ * PR 3 del modelo de roles — el menú de Dirección. La admin del centro ve Centro, Dirección del
+ * centro (PR 4) y Auditoría, que son solo suyos; una directora (Dirección sin `esResponsable`) ve el resto, igual que la admin.
  */
 
 vi.mock('next-intl/server', () => ({
@@ -11,7 +11,7 @@ vi.mock('next-intl/server', () => ({
 
 const { buildSidebarItems } = await import('../sidebar-items')
 
-const SOLO_DE_LA_ADMIN = ['/es/admin/centro', '/es/admin/audit']
+const SOLO_DE_LA_ADMIN = ['/es/admin/centro', '/es/admin/direccion', '/es/admin/audit']
 
 async function hrefs(esResponsable: boolean) {
   return (await buildSidebarItems('admin', 'es', esResponsable)).map((i) => i.href)

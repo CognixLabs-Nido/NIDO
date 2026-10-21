@@ -392,19 +392,27 @@ describe('no hace lo exclusivo de la admin', () => {
 })
 
 describe('no puede escalar', () => {
-  it('no invita a una admin: forbidden, sin crear el service client (que se salta la RLS)', async () => {
+  it('no invita a otra directora: forbidden, sin crear el service client (que se salta la RLS)', async () => {
     st.roles = DIRECTORA
     expect(await esDireccionEnA()).toBe(true)
     expect(
-      await sendInvitation({ email: 'nueva@example.com', rolObjetivo: 'admin', centroId: A })
+      await sendInvitation({ email: 'nueva@example.com', rolObjetivo: 'directora', centroId: A })
     ).toEqual({ success: false, error: 'auth.invitation.errors.forbidden' })
     expect(st.createServiceRoleClient).not.toHaveBeenCalled()
   })
 
-  it('ancla: la admin invita a una admin (pasa las guardas y llega al service client)', async () => {
+  it('ancla: la admin invita a una directora (pasa las guardas y llega al service client)', async () => {
     st.roles = ADMIN
     await expect(
-      sendInvitation({ email: 'nueva@example.com', rolObjetivo: 'admin', centroId: A })
+      sendInvitation({ email: 'nueva@example.com', rolObjetivo: 'directora', centroId: A })
     ).rejects.toThrow('PASA_LA_GUARDA')
+  })
+
+  it('nadie invita a una admin, ni la admin (PR 4: la admin se cambia por traspaso)', async () => {
+    st.roles = ADMIN
+    const comoAdmin = { email: 'nueva@example.com', rolObjetivo: 'admin', centroId: A }
+    const r = await sendInvitation(comoAdmin as unknown as Parameters<typeof sendInvitation>[0])
+    expect(r.success).toBe(false)
+    expect(st.createServiceRoleClient).not.toHaveBeenCalled()
   })
 })

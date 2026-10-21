@@ -148,10 +148,10 @@ describe('R2 — sendInvitation: niño y aula del centro objetivo', () => {
     expect(inviteUserByEmail).toHaveBeenCalledOnce()
   })
 
-  it('admin sin niño ni aula → no comprueba nada extra y sigue igual', async () => {
+  it('directora sin niño ni aula → no comprueba nada extra y sigue igual', async () => {
     const r = await sendInvitation({
-      email: 'admin@nido.test',
-      rolObjetivo: 'admin',
+      email: 'directora@nido.test',
+      rolObjetivo: 'directora',
       centroId: CENTRO,
     })
     expect(r.success).toBe(true)

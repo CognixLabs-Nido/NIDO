@@ -5,10 +5,13 @@ import { parentescoEnum } from '@/features/vinculos/schemas/vinculo'
 
 import { passwordSchema } from './password'
 
-export const userRoleSchema = z.enum(['admin', 'profe', 'tutor_legal', 'autorizado'])
+// Sin `admin`: la admin es una por centro (`idx_roles_usuario_una_admin_viva`) y se cambia por
+// traspaso (`traspasar_admin`). Aceptar una invitación de admin chocaba con el índice y la persona
+// entraba sin rol. La nueva admin se invita como directora y se le traspasa.
+export const userRoleSchema = z.enum(['directora', 'profe', 'tutor_legal', 'autorizado'])
 
 // El admin solo elige principal/secundario para tutor_legal; autorizado → 'autorizado'
-// y admin/profe → NULL los fija la acción (no se piden en el input).
+// y directora/profe → NULL los fija la acción (no se piden en el input).
 export const tutorTipoVinculoEnum = z.enum(['tutor_legal_principal', 'tutor_legal_secundario'])
 
 // Idioma del correo de invitación (y de la página a la que lleva). Lo elige la Dirección al
