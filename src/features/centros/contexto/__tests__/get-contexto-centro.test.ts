@@ -178,7 +178,7 @@ describe('superusuario (Fase 3): admin de todos los centros, sin roles propios',
     const r = await getEstadoCentro()
     expect(r).toEqual({
       tipo: 'elegir',
-      centros: [{ centroId: A, rol: 'admin', roles: ['admin'] }],
+      centros: [{ centroId: A, rol: 'admin', roles: ['admin'], esResponsable: true }],
       esSuperusuario: true,
     })
     await expect(requireContextoCentro('es', '/es/admin')).rejects.toThrow(
@@ -192,6 +192,7 @@ describe('superusuario (Fase 3): admin de todos los centros, sin roles propios',
     expect(await requireContextoCentro('es')).toMatchObject({
       centroId: B,
       rol: 'admin',
+      esResponsable: true,
       esSuperusuario: true,
     })
   })
@@ -210,5 +211,28 @@ describe('superusuario (Fase 3): admin de todos los centros, sin roles propios',
     estado.superusuario = false
     estado.filas = [{ centro_id: A, rol: 'profe' }]
     expect(await requireContextoCentro('es')).toMatchObject({ centroId: A, esSuperusuario: false })
+  })
+})
+
+describe('la directora (PR 3 del modelo de roles): Dirección, sin ser responsable', () => {
+  beforeEach(() => {
+    estado.superusuario = false
+    estado.centrosExistentes = [A, B]
+  })
+
+  it('directora en A: entra como admin (Dirección), con esResponsable false', async () => {
+    estado.filas = [{ centro_id: A, rol: 'directora' }]
+    expect(await requireContextoCentro('es')).toMatchObject({
+      centroId: A,
+      rol: 'admin',
+      roles: ['admin'],
+      esResponsable: false,
+    })
+    expect(await contextoEnCentro(A)).toMatchObject({ rol: 'admin', esResponsable: false })
+  })
+
+  it('ancla: la admin de A, con esResponsable true', async () => {
+    estado.filas = [{ centro_id: A, rol: 'admin' }]
+    expect(await requireContextoCentro('es')).toMatchObject({ rol: 'admin', esResponsable: true })
   })
 })

@@ -34,6 +34,8 @@ interface Props {
   remesas: RemesaListItem[]
   recibosGestion: ReciboGestion[]
   transferenciasBeca: TransferenciasBecaData
+  /** La admin del centro: edita los datos de acreedor. Remesar es de Dirección. */
+  editarAcreedor: boolean
 }
 
 export function RemesasPanel({
@@ -45,6 +47,7 @@ export function RemesasPanel({
   remesas,
   recibosGestion,
   transferenciasBeca,
+  editarAcreedor,
 }: Props) {
   const t = useTranslations('remesas')
   const tErrors = useTranslations()
@@ -100,15 +103,17 @@ export function RemesasPanel({
       <Card className="space-y-3 p-5">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-foreground text-base font-semibold">{t('acreedor_title')}</h2>
-          <DatosAcreedorDialog
-            centroId={centroId}
-            config={acreedor}
-            trigger={
-              <Button variant="outline" size="sm">
-                <PencilIcon /> {t('acreedor_editar')}
-              </Button>
-            }
-          />
+          {editarAcreedor && (
+            <DatosAcreedorDialog
+              centroId={centroId}
+              config={acreedor}
+              trigger={
+                <Button variant="outline" size="sm">
+                  <PencilIcon /> {t('acreedor_editar')}
+                </Button>
+              }
+            />
+          )}
         </div>
         <dl className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
           <div>

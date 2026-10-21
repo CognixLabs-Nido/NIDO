@@ -39,10 +39,15 @@ type RoleKey = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
  * F6-C: tutor_legal/autorizado vuelven a tener la entrada "Recordatorios"
  * (revierte el hotfix #44, que la ocultó). Solo LEEN — el botón de creación se
  * gobierna en la propia página, no aquí.
+ *
+ * `esResponsable` (PR 3 del modelo de roles): con `rol` admin (Dirección), la admin del centro
+ * ve además Centro y Auditoría, que son solo suyas; una directora no. Es obligatorio para que
+ * ningún layout se lo deje: sin él, la directora vería entradas que la llevan a «prohibido».
  */
 export async function buildSidebarItems(
   rol: RoleKey,
   locale: string,
+  esResponsable: boolean,
   badge?: ReactNode,
   recordatoriosBadge?: ReactNode,
   agendaBadge?: ReactNode,
@@ -52,7 +57,9 @@ export async function buildSidebarItems(
     const t = await getTranslations('admin.nav')
     return [
       { href: `/${locale}/admin`, label: t('dashboard'), icon: <LayoutDashboardIcon /> },
-      { href: `/${locale}/admin/centro`, label: t('centro'), icon: <Building2Icon /> },
+      ...(esResponsable
+        ? [{ href: `/${locale}/admin/centro`, label: t('centro'), icon: <Building2Icon /> }]
+        : []),
       { href: `/${locale}/admin/cursos`, label: t('cursos'), icon: <CalendarDaysIcon /> },
       {
         href: `/${locale}/admin/pasar-de-curso`,
@@ -106,7 +113,9 @@ export async function buildSidebarItems(
         icon: <BellIcon />,
         trailing: recordatoriosBadge,
       },
-      { href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> },
+      ...(esResponsable
+        ? [{ href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> }]
+        : []),
     ]
   }
 

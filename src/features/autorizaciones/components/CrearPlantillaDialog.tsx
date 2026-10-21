@@ -31,6 +31,7 @@ import {
 import { crearAutorizacionExcursion, crearPlantilla } from '../actions/gestionar-autorizacion'
 import type { EventoExcursionOption } from '../queries/get-eventos-excursion'
 import { tipoPlantillaEnum, type TipoPlantilla } from '../schemas/autorizaciones'
+import { TIPOS_PLANTILLA_DE_LA_ADMIN } from '../types'
 
 interface AulaOption {
   id: string
@@ -55,11 +56,14 @@ export function CrearPlantillaDialog({
   centroId,
   eventos,
   aulas,
+  conPlantillasLegales,
 }: {
   /** Centro de la página: la plantilla se crea en él. */
   centroId: string
   eventos: EventoExcursionOption[]
   aulas: AulaOption[]
+  /** La admin del centro: crea también las plantillas legales (normas, imagen). */
+  conPlantillasLegales: boolean
 }) {
   const t = useTranslations('autorizaciones')
   const tRoot = useTranslations()
@@ -79,10 +83,12 @@ export function CrearPlantillaDialog({
 
   const tipoItems = useMemo(
     () => [
-      ...tipoPlantillaEnum.options.map((v) => ({ value: v, label: t(`tipo.${v}`) })),
+      ...tipoPlantillaEnum.options
+        .filter((v) => conPlantillasLegales || !TIPOS_PLANTILLA_DE_LA_ADMIN.includes(v))
+        .map((v) => ({ value: v, label: t(`tipo.${v}`) })),
       { value: EXCURSION, label: t('tipo.excursion') },
     ],
-    [t]
+    [t, conPlantillasLegales]
   )
   const aulaItems = useMemo(() => aulas.map((a) => ({ value: a.id, label: a.nombre })), [aulas])
   const eventoItems = useMemo(

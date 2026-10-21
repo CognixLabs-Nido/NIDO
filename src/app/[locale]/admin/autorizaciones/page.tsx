@@ -31,7 +31,7 @@ export default async function AdminAutorizacionesPage({ params, searchParams }: 
   const soloHistorico = (await searchParams).historico === '1'
   const t = await getTranslations('autorizaciones')
 
-  const { centroId, rol } = await requireContextoCentro(locale)
+  const { centroId, rol, esResponsable } = await requireContextoCentro(locale)
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
 
   if (soloHistorico) {
@@ -78,7 +78,12 @@ export default async function AdminAutorizacionesPage({ params, searchParams }: 
           {/* Dos acciones de siempre: «Nueva autorización» (crea un formato del
               catálogo o una excursión —evento existente o nuevo inline—) y
               «Enviar autorización» (manda un formato publicado a una audiencia). */}
-          <CrearPlantillaDialog centroId={centroId} eventos={eventos} aulas={aulas} />
+          <CrearPlantillaDialog
+            centroId={centroId}
+            eventos={eventos}
+            aulas={aulas}
+            conPlantillasLegales={esResponsable}
+          />
           <EnviarAutorizacionDialog plantillas={plantillasEnviar} ninos={ninos} aulas={aulas} />
         </div>
       </header>

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { usuarioResponsableEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -19,6 +20,9 @@ export async function crearConcepto(
   }
 
   const supabase = await createClient()
+  // Las cuotas son de la admin del centro, no de una directora (la RLS lo vuelve a comprobar).
+  if (!(await usuarioResponsableEn(supabase, centroId)))
+    return fail('conceptos_cobro.errors.no_autorizado')
   const { data, error } = await supabase
     .from('conceptos_cobro')
     .insert({ centro_id: centroId, ...buildConceptoRow(parsed.data) })

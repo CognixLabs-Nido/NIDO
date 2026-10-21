@@ -1,4 +1,5 @@
 import { HistoryIcon } from 'lucide-react'
+import { redirect } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
@@ -27,7 +28,10 @@ const accionVariant: Record<Accion, 'success' | 'info' | 'destructive'> = {
 export default async function AdminAuditPage() {
   const t = await getTranslations('admin.audit')
   const locale = await getLocale()
-  const { centroId } = await requireContextoCentro(locale)
+  const { centroId, esResponsable } = await requireContextoCentro(locale)
+  // La auditoría es de la admin (`audit_admin_select` = `es_responsable`); a una directora la RLS
+  // le daría una lista vacía, que parecería «no ha pasado nada».
+  if (!esResponsable) redirect(`/${locale}/forbidden`)
   const supabase = await createClient()
 
   const { data: entries } = await supabase

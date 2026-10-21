@@ -122,7 +122,12 @@ export async function getEstadoRolloverCore(
   const finalizados = (finRaw ?? []).map((r) => r.nino_id)
 
   return {
-    cursoDestino: { id: destino.id, nombre: destino.nombre, estado: destino.estado },
+    cursoDestino: {
+      id: destino.id,
+      nombre: destino.nombre,
+      estado: destino.estado,
+      centroId: destino.centro_id,
+    },
     cursoOrigen: origen ? { id: origen.id, nombre: origen.nombre } : null,
     aulasDestino,
     ninosActivos,

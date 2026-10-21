@@ -23,6 +23,21 @@ export type FirmaDecision = Database['public']['Enums']['firma_decision']
 export type PoliticaFirmantes = Database['public']['Enums']['politica_firmantes']
 export type TipoVinculo = Database['public']['Enums']['tipo_vinculo']
 
+/**
+ * Las plantillas legales (normas internas, consentimiento de imagen): las crea y las edita la
+ * admin del centro (`es_responsable` en la BD, PR 1 del modelo de roles); enviarlas a un aula o
+ * al centro es de Dirección. Las de recogida y medicación son de Dirección.
+ */
+export const TIPOS_PLANTILLA_DE_LA_ADMIN: ReadonlyArray<TipoAutorizacion> = [
+  'reglas_regimen_interno',
+  'autorizacion_imagenes',
+]
+
+/** ¿Es una plantilla legal, que solo toca la admin del centro? */
+export function esPlantillaDeLaAdmin(a: { es_plantilla: boolean; tipo: TipoAutorizacion }) {
+  return a.es_plantilla && TIPOS_PLANTILLA_DE_LA_ADMIN.includes(a.tipo)
+}
+
 // --- View models para la UI --------------------------------------------------
 
 /** Estado de firma resultante de un niño dentro de una autorización. */

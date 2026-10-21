@@ -36,13 +36,30 @@ vi.mock('next-intl/server', () => ({
 
 const { AvisoCentroDistinto } = await import('../AvisoCentroDistinto')
 
-const centroA = { centroId: A, rol: 'admin' as const, roles: ['admin' as const] }
-const centroB = { centroId: B, rol: 'profe' as const, roles: ['profe' as const] }
+const centroA = {
+  centroId: A,
+  rol: 'admin' as const,
+  roles: ['admin' as const],
+  esResponsable: true,
+}
+const centroB = {
+  centroId: B,
+  rol: 'profe' as const,
+  roles: ['profe' as const],
+  esResponsable: false,
+}
 
 function activo(centroId: string, centros: (typeof centroA | typeof centroB)[]): EstadoCentro {
   return {
     tipo: 'activo',
-    contexto: { centroId, rol: 'admin', roles: ['admin'], esSuperusuario: false, centros },
+    contexto: {
+      centroId,
+      rol: 'admin',
+      roles: ['admin'],
+      esResponsable: true,
+      esSuperusuario: false,
+      centros,
+    },
   }
 }
 

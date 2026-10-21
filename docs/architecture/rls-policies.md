@@ -906,10 +906,45 @@ porque un valor nuevo de un enum no se puede usar en la transacción que lo aña
   mientras nadie la firmara: una familia convertía su recogida en las normas del centro para todo
   el centro o se la llevaba a otro centro, y una profe convertía su salida en la plantilla de las
   normas.
-- **La app** reconoce el rol en el PR 3. Hasta entonces, una cuenta con el rol directora no entra
-  en `/admin` (el proxy solo deja pasar `admin`).
+- **La app** reconoce el rol desde el PR 3 (ver la sección siguiente).
 - Tests: `roles-directora.rls.test.ts` (hace el día a día, no hace lo exclusivo, no puede escalar,
   una admin viva por centro) y `autorizaciones-identidad.rls.test.ts`.
+
+### La directora en la app (PR 3 del modelo de roles)
+
+Sin migración. La BD ya autoriza (PR 1 y PR 2); la app deja entrar a la directora, no le enseña lo
+que no es suyo y no escribe en su nombre lo que la BD no le dejaría escribir a ella.
+
+- **En la app, `admin` es Dirección.** `resolver.ts` lee la fila `directora` de `roles_usuario`
+  como rol `admin` (`rolDeLaApp`), y es el único sitio que la traduce: cada `rol === 'admin'` de la
+  app es Dirección, como `es_admin` en la BD. `rolesDeAutores` también la devuelve como `admin`
+  (la etiqueta «Dirección» del mensaje).
+- **Lo exclusivo de la admin va por `esResponsable`:** la admin viva del centro o el superusuario,
+  como `privado.es_responsable`. Está en `CentroDelUsuario` y en `ContextoCentro`, y en los helpers
+  `esResponsableEn(supabase, usuario, centro)` y `usuarioResponsableEn(supabase, centro)`.
+- **El proxy** deja pasar `admin` y `directora` en `/admin` y en `/teacher` (`proxy-roles.ts`):
+  ve la fila tal cual, antes de que haya contexto de centro.
+- **Guardas de las acciones exclusivas** (`usuarioResponsableEn`, antes de escribir): los datos y
+  el logo del centro, los datos de acreedor, los conceptos de cobro y sus tarifas por año, los
+  tipos de beca, confirmar el paso de curso (`cerrar_curso`), crear las plantillas legales y
+  activar un curso cuando ya hay otro activo (lo cerraría). Una directora recibe «no autorizado»
+  sin que la app escriba ni llame a la RPC. Sin la guarda, varias daban «guardado» sin guardar: un
+  UPDATE sin RETURNING que la RLS deja en 0 filas no da error.
+- **`sendInvitation`** escribe la invitación con service role, que se salta la anti-escalada de la
+  RLS. Invitar a una admin o a una directora exige `esResponsableEn`. Sin esa guarda, reconocer a
+  la directora como Dirección le habría dejado invitar a una admin.
+- **Menús y pantallas:** Centro y Auditoría no salen en el menú de una directora, y sus páginas la
+  mandan a `/forbidden` (`buildSidebarItems` exige `esResponsable`, para que ningún layout se lo
+  deje). En las páginas mixtas ve la página sin el botón exclusivo: el catálogo de conceptos, los
+  tipos de beca y los datos de acreedor en Cuotas; la confirmación en Pasar de curso; crear,
+  editar, publicar y anular las plantillas legales en Autorizaciones; los exports RGPD en la ficha
+  del niño. En Cursos, con un curso activo, en lugar de «Marcar como activo» se le dice que eso lo
+  hace la admin.
+- **Invitación aceptada:** quien acepta una invitación de `directora` llega a `/admin`.
+- Tests: `src/test/roles/directora-acciones.test.ts` (las guardas: hace el día a día, no hace lo
+  exclusivo, no puede escalar; cada «no» con su ancla y la premisa de que la app la reconoce como
+  Dirección), `roles-directora-app.rls.test.ts` (la lectura con su sesión contra la BD) y
+  `sidebar-items.test.tsx` (el menú).
 
 ### Signup público cerrado (D5)
 
@@ -945,6 +980,7 @@ porque un valor nuevo de un enum no se puede usar en la transacción que lo aña
 | Lo exclusivo de la admin (`es_responsable`)   | `roles-es-responsable.rls.test.ts`              |
 | La directora: día a día, exclusivo, escalada  | `roles-directora.rls.test.ts`                   |
 | La identidad de una autorización no cambia    | `autorizaciones-identidad.rls.test.ts`          |
+| La app lee a la directora con su sesión       | `roles-directora-app.rls.test.ts`               |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

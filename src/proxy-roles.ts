@@ -7,8 +7,10 @@
  *
  * Reglas de pertenencia:
  *
- *  - `/admin`: solo `admin`.
- *  - `/teacher`: `profe` y `admin` (admin actúa como "super-profe" — puede
+ *  - `/admin`: Dirección, `admin` o `directora` (el proxy ve la fila de `roles_usuario`; dentro
+ *    de la app la directora ya es `admin`, ver `features/centros/contexto/resolver.ts`). Lo
+ *    exclusivo de la admin lo cierra cada página y cada acción con `esResponsable`.
+ *  - `/teacher`: `profe` y Dirección (Dirección actúa como "super-profe" — puede
  *    entrar a cualquier subruta de aulas desde el listado de
  *    `/admin/aulas`). Los layouts/pages dentro de `/teacher/*` aplican
  *    defensa en profundidad con guards `rol === 'profe' || rol === 'admin'`.
@@ -24,8 +26,8 @@ export const PROTECTED_PREFIXES: Array<{ prefix: RegExp; roles: ReadonlyArray<st
   // y medicación de su aula) viven en `/teacher/autorizaciones` bajo el layout de
   // teacher (chrome correcto). El layout admin redirige a cualquier no-admin, así
   // que colgar la ruta de la profe de `/admin` la bloqueaba — ese era el fallo.
-  { prefix: /^\/admin(\/.*)?$/, roles: ['admin'] },
-  { prefix: /^\/teacher(\/.*)?$/, roles: ['profe', 'admin'] },
+  { prefix: /^\/admin(\/.*)?$/, roles: ['admin', 'directora'] },
+  { prefix: /^\/teacher(\/.*)?$/, roles: ['profe', 'admin', 'directora'] },
   { prefix: /^\/family(\/.*)?$/, roles: ['tutor_legal', 'autorizado'] },
 ]
 

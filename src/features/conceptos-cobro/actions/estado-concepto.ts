@@ -6,6 +6,8 @@ import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { centroDelConceptoSiResponsable } from '../lib/centro-del-concepto'
+
 // Activar/desactivar un concepto (flag `activo`): reversible, el concepto sigue en el
 // catálogo. NO confundir con eliminar (soft-delete con deleted_at).
 export async function setActivoConcepto(
@@ -13,6 +15,8 @@ export async function setActivoConcepto(
   activo: boolean
 ): Promise<ActionResult<{ id: string }>> {
   const supabase = await createClient()
+  const delConcepto = await centroDelConceptoSiResponsable(supabase, id)
+  if ('error' in delConcepto) return fail(`conceptos_cobro.errors.${delConcepto.error}`)
   const { data, error } = await supabase
     .from('conceptos_cobro')
     .update({ activo })
@@ -36,6 +40,8 @@ export async function setActivoConcepto(
 // deleted_at IS NULL) y conserva la fila por auditoría. No hay DELETE físico (default DENY).
 export async function eliminarConcepto(id: string): Promise<ActionResult<{ id: string }>> {
   const supabase = await createClient()
+  const delConcepto = await centroDelConceptoSiResponsable(supabase, id)
+  if ('error' in delConcepto) return fail(`conceptos_cobro.errors.${delConcepto.error}`)
   const { data, error } = await supabase
     .from('conceptos_cobro')
     .update({ deleted_at: new Date().toISOString() })

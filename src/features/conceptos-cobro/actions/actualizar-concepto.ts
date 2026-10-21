@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { buildConceptoRow } from '../lib/build-concepto-row'
+import { centroDelConceptoSiResponsable } from '../lib/centro-del-concepto'
 import { conceptoCobroSchema, type ConceptoCobroInput } from '../schemas/concepto-cobro'
 
 export async function actualizarConcepto(
@@ -19,6 +20,8 @@ export async function actualizarConcepto(
   }
 
   const supabase = await createClient()
+  const delConcepto = await centroDelConceptoSiResponsable(supabase, id)
+  if ('error' in delConcepto) return fail(`conceptos_cobro.errors.${delConcepto.error}`)
   const { data, error } = await supabase
     .from('conceptos_cobro')
     .update(buildConceptoRow(parsed.data))
@@ -33,7 +36,7 @@ export async function actualizarConcepto(
     if (error.code === '42501') return fail('conceptos_cobro.errors.no_autorizado')
     return fail('conceptos_cobro.errors.update_failed')
   }
-  // RLS USING falso (no es admin del centro) o ya borrado → 0 filas, sin error.
+  // Ya borrado → 0 filas, sin error.
   if (!data) return fail('conceptos_cobro.errors.no_encontrado')
 
   revalidatePath('/[locale]/admin/cuotas', 'page')

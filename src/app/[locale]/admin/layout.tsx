@@ -42,6 +42,7 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
   const items = await buildSidebarItems(
     'admin',
     locale,
+    contexto.esResponsable,
     <MessagingBadge initialTotal={unread} centroId={centroId} />,
     <RecordatoriosBadge initialTotal={recordatoriosPendientes} centroId={centroId} />,
     <AgendaBadge initialTotal={invitacionesPendientes} />,

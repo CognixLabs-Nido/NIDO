@@ -1,4 +1,5 @@
 import { Building2Icon } from 'lucide-react'
+import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,7 +13,9 @@ export default async function AdminCentroPage({ params }: { params: Promise<{ lo
   const { locale } = await params
   const t = await getTranslations('admin.centro')
   const supabase = await createClient()
-  const { centroId } = await requireContextoCentro(locale)
+  const { centroId, esResponsable } = await requireContextoCentro(locale)
+  // Los datos y el logo del centro son de la admin; una directora no tiene esta página.
+  if (!esResponsable) redirect(`/${locale}/forbidden`)
 
   const { data: centro } = await supabase
     .from('centros')

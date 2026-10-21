@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { centrosDelSuperusuario, centrosDelUsuario, resolverCentroActivo } from '../resolver'
+import {
+  centrosDelSuperusuario,
+  centrosDelUsuario,
+  resolverCentroActivo,
+  rolDeLaApp,
+} from '../resolver'
 
 const A = '11111111-1111-4111-8111-111111111111'
 const B = '22222222-2222-4222-8222-222222222222'
@@ -16,8 +21,8 @@ const DOS_CENTROS = centrosDelUsuario([
 describe('centrosDelUsuario', () => {
   it('agrupa por centro, con el rol de más privilegios y todos los roles ordenados', () => {
     expect(DOS_CENTROS).toEqual([
-      { centroId: A, rol: 'admin', roles: ['admin', 'profe'] },
-      { centroId: B, rol: 'tutor_legal', roles: ['tutor_legal'] },
+      { centroId: A, rol: 'admin', roles: ['admin', 'profe'], esResponsable: true },
+      { centroId: B, rol: 'tutor_legal', roles: ['tutor_legal'], esResponsable: false },
     ])
   })
 
@@ -32,6 +37,57 @@ describe('centrosDelUsuario', () => {
 
   it('ignora roles que no son de la app (p. ej. service)', () => {
     expect(centrosDelUsuario([{ centro_id: A, rol: 'service' }])).toEqual([])
+  })
+})
+
+describe('la directora (PR 3 del modelo de roles): Dirección, sin lo exclusivo de la admin', () => {
+  it('rolDeLaApp: la fila directora es admin (Dirección); lo que no es de la app, null', () => {
+    expect(rolDeLaApp('directora')).toBe('admin')
+    expect(rolDeLaApp('admin')).toBe('admin')
+    expect(rolDeLaApp('profe')).toBe('profe')
+    expect(rolDeLaApp('service')).toBeNull()
+  })
+
+  it('directora en A y profe en B: Dirección en A sin ser responsable, profe en B', () => {
+    expect(
+      centrosDelUsuario([
+        { centro_id: B, rol: 'profe' },
+        { centro_id: A, rol: 'directora' },
+      ])
+    ).toEqual([
+      { centroId: A, rol: 'admin', roles: ['admin'], esResponsable: false },
+      { centroId: B, rol: 'profe', roles: ['profe'], esResponsable: false },
+    ])
+  })
+
+  it('directora y profe en el mismo centro: un solo admin en sus roles, sin responsable', () => {
+    expect(
+      centrosDelUsuario([
+        { centro_id: A, rol: 'profe' },
+        { centro_id: A, rol: 'directora' },
+      ])
+    ).toEqual([{ centroId: A, rol: 'admin', roles: ['admin', 'profe'], esResponsable: false }])
+  })
+
+  it('la responsabilidad es por centro: admin en A y directora en B', () => {
+    expect(
+      centrosDelUsuario([
+        { centro_id: B, rol: 'directora' },
+        { centro_id: A, rol: 'admin' },
+      ]).map((c) => [c.centroId, c.rol, c.esResponsable])
+    ).toEqual([
+      [A, 'admin', true],
+      [B, 'admin', false],
+    ])
+  })
+
+  it('el superusuario es responsable en todos, también donde además es directora', () => {
+    const propios = centrosDelUsuario([{ centro_id: A, rol: 'directora' }])
+    expect(propios[0]?.esResponsable).toBe(false)
+    expect(centrosDelSuperusuario(propios, [A, B]).map((c) => c.esResponsable)).toEqual([
+      true,
+      true,
+    ])
   })
 })
 
@@ -72,9 +128,9 @@ describe('superusuario (Fase 3)', () => {
 
   it('centrosDelSuperusuario: admin en todos los centros, con sus roles propios sumados', () => {
     expect(centrosDelSuperusuario(DOS_CENTROS, [C, B, A])).toEqual([
-      { centroId: A, rol: 'admin', roles: ['admin', 'profe'] },
-      { centroId: B, rol: 'admin', roles: ['admin', 'tutor_legal'] },
-      { centroId: C, rol: 'admin', roles: ['admin'] },
+      { centroId: A, rol: 'admin', roles: ['admin', 'profe'], esResponsable: true },
+      { centroId: B, rol: 'admin', roles: ['admin', 'tutor_legal'], esResponsable: true },
+      { centroId: C, rol: 'admin', roles: ['admin'], esResponsable: true },
     ])
   })
 

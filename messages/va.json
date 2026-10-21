@@ -215,7 +215,8 @@
       "confirmar_fallo": "No s'ha pogut confirmar el pas de curs.",
       "quitar_fallo": "No s’ha pogut llevar la proposta.",
       "incompletos": "Hi ha xiquets/es sense destí assignat (aula o Finalitza). Resol-los abans de confirmar.",
-      "finaliza_fallo": "No s'ha pogut marcar Finalitza. Torna-ho a provar."
+      "finaliza_fallo": "No s'ha pogut marcar Finalitza. Torna-ho a provar.",
+      "no_autorizado": "Confirmar el pas de curs, que tanca el curs actual, ho fa l'administrador del centre."
     }
   },
   "admin": {
@@ -319,7 +320,8 @@
       "finaliza_vacio": "Ningú en Finalitza.",
       "reasignar_aula": "Reassignar a una aula…",
       "faltan_destino": "Falten {n} xiquets/es per assignar destí (aula o Finalitza).",
-      "sin_marcar": "Sense marcar"
+      "sin_marcar": "Sense marcar",
+      "confirmar_solo_admin": "La confirmació, que tanca el curs actual, la fa l'administrador del centre."
     },
     "cursos": {
       "title": "Cursos acadèmics",
@@ -345,7 +347,8 @@
         "planificado": "Planificat",
         "activo": "Actiu",
         "cerrado": "Tancat"
-      }
+      },
+      "activar_solo_admin": "Amb un curs actiu, canviar-lo ho fa l'administrador del centre."
     },
     "cuotas": {
       "title": "Quotes",
@@ -1410,7 +1413,8 @@
       "web_invalida": "URL no vàlida"
     },
     "errors": {
-      "update_failed": "No s'ha pogut actualitzar el centre."
+      "update_failed": "No s'ha pogut actualitzar el centre.",
+      "no_autorizado": "Les dades del centre només les canvia l'administrador del centre."
     },
     "logo": {
       "titulo": "Logo del centre",
@@ -1435,7 +1439,8 @@
       "create_failed": "No s'ha pogut crear el curs.",
       "activate_failed": "No s'ha pogut marcar com a actiu.",
       "no_encontrado": "Curs no trobat.",
-      "no_reabrir_cerrado": "Un curs tancat no pot reobrir-se."
+      "no_reabrir_cerrado": "Un curs tancat no pot reobrir-se.",
+      "cambiar_activo_solo_admin": "Ja hi ha un curs actiu. Canviar el curs actiu ho fa l'administrador del centre."
     },
     "error": {
       "no_reabrir_cerrado": "Un curs tancat no pot reobrir-se."

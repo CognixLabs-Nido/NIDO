@@ -16,6 +16,7 @@ const centro = (centroId: string): CentroDelUsuario => ({
   centroId,
   rol: 'tutor_legal',
   roles: ['tutor_legal'],
+  esResponsable: false,
 })
 const dosCentros = { centroId: A, centros: [centro(A), centro(B)] }
 const unCentro = { centroId: A, centros: [centro(A)] }

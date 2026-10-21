@@ -31,6 +31,11 @@ export interface ContextoCentro {
   rol: Rol
   /** Todos sus roles activos en este centro, de más a menos privilegios. */
   roles: Rol[]
+  /**
+   * La admin de este centro o el superusuario: lo exclusivo de la admin (`es_responsable`). Con
+   * `rol: 'admin'` y sin esto, es una directora: Dirección para el día a día.
+   */
+  esResponsable: boolean
   /** Superusuario de plataforma (Fase 3, ADR-0061): admin de todos los centros. */
   esSuperusuario: boolean
   /** Todos los centros del usuario; más de uno ⇒ se enseña el conmutador. */
@@ -78,6 +83,7 @@ export const getEstadoCentro = cache(async (): Promise<EstadoCentro> => {
       centroId: r.centro.centroId,
       rol: r.centro.rol,
       roles: r.centro.roles,
+      esResponsable: r.centro.esResponsable,
       esSuperusuario: esSuper,
       centros,
     },
@@ -115,6 +121,7 @@ export async function contextoEnCentro(centroId: string): Promise<ContextoCentro
     centroId,
     rol: centro.rol,
     roles: centro.roles,
+    esResponsable: centro.esResponsable,
     esSuperusuario: leido.esSuperusuario,
     centros: leido.centros,
   }

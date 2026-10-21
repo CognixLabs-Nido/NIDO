@@ -1,3 +1,4 @@
+import { usuarioResponsableEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -26,8 +27,8 @@ function err(error: string, status = 400): Response {
  * `centro-assets`). La sube **dirección** desde la configuración del centro y
  * sustituye la URL hardcodeada. `sharp` quita metadatos, reescala y **conserva la
  * transparencia** (PNG). Ruta fija `{centroId}/logo.png` (se sobrescribe al
- * sustituir). Autoriza la **RLS de `storage.objects`** (F10-0 `centro_assets_*` =
- * admin del centro) en la subida con el cliente del usuario; el `UPDATE` de
+ * sustituir). Solo la admin del centro (`usuarioResponsableEn`). Autoriza además la **RLS de
+ * `storage.objects`** (`centro_assets_*` = `es_responsable`) en la subida con el cliente del usuario; el `UPDATE` de
  * `centros.logo_url` lo acota la RLS de `centros` (admin).
  */
 export async function POST(request: Request): Promise<Response> {
@@ -49,6 +50,9 @@ export async function POST(request: Request): Promise<Response> {
     return err('centro.logo.subida_fallo')
   }
   if (file.size > MAX_BYTES_ADJUNTO) return err('fotos.validation.tamano_max')
+  // El logo es de la admin del centro, no de una directora (la RLS de storage lo vuelve a mirar).
+  if (!(await usuarioResponsableEn(supabase, centroId)))
+    return err('centro.logo.no_autorizado', 403)
 
   // 1. Procesado (sharp). Lanza FotoInvalidaError con clave i18n.
   let procesada

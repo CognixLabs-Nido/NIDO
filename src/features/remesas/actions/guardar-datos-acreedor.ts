@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
+import { usuarioResponsableEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
@@ -21,9 +21,10 @@ export async function guardarDatosAcreedor(
   const parsed = datosAcreedorSchema.safeParse(input)
   if (!parsed.success) return fail('remesas.errors.invalid')
 
-  // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
+  // Centro EXPLÍCITO de la página (multicentro · Fase 1), no el de la cookie, y con la admin de
+  // ese centro: los datos de acreedor no son de una directora.
   const supabase = await createClient()
-  if (!(await usuarioAdminEn(supabase, centroId))) return fail('remesas.errors.no_autorizado')
+  if (!(await usuarioResponsableEn(supabase, centroId))) return fail('remesas.errors.no_autorizado')
   const { error } = await supabase.rpc('set_datos_acreedor', {
     p_centro_id: centroId,
     p_identificador_acreedor: parsed.data.identificador_acreedor,
