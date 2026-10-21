@@ -5067,7 +5067,7 @@ export type Database = {
         | "tutor_legal_secundario"
         | "autorizado"
         | "admin"
-      user_role: "admin" | "profe" | "tutor_legal" | "autorizado"
+      user_role: "admin" | "profe" | "tutor_legal" | "autorizado" | "directora"
       valoracion_item_informe: "conseguido" | "en_proceso" | "no_iniciado"
     }
     CompositeTypes: {
@@ -5373,7 +5373,7 @@ export const Constants = {
         "autorizado",
         "admin",
       ],
-      user_role: ["admin", "profe", "tutor_legal", "autorizado"],
+      user_role: ["admin", "profe", "tutor_legal", "autorizado", "directora"],
       valoracion_item_informe: ["conseguido", "en_proceso", "no_iniciado"],
     },
   },

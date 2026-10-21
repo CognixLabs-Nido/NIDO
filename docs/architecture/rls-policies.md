@@ -17,7 +17,7 @@
 ```sql
 -- Fase 1
 public.usuario_actual()                                  → uuid
-public.es_admin(p_centro_id uuid DEFAULT NULL)           → boolean  -- + superusuario (ADR-0061)
+public.es_admin(p_centro_id uuid DEFAULT NULL)           → boolean  -- Dirección: admin o directora + superusuario
 
 -- Multicentro, Fase 3 (ADR-0061)
 public.is_superadmin()                                   → boolean
@@ -204,13 +204,14 @@ Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 
 ## Roles
 
-| Rol           | Descripción                                                        |
-| ------------- | ------------------------------------------------------------------ |
-| `admin`       | Acceso total al centro                                             |
-| `profe`       | Sus aulas asignadas (via `profes_aulas` activos)                   |
-| `tutor_legal` | Sus hijos vía `vinculos_familiares`, con permisos JSONB granulares |
-| `autorizado`  | Como tutor_legal pero con permisos por defecto a `false`           |
-| `service`     | Edge Functions (bypass RLS)                                        |
+| Rol           | Descripción                                                         |
+| ------------- | ------------------------------------------------------------------- |
+| `admin`       | Acceso total al centro. Una viva por centro (`20261030130000`)      |
+| `directora`   | Dirección: el día a día de `es_admin`, sin lo exclusivo de la admin |
+| `profe`       | Sus aulas asignadas (via `profes_aulas` activos)                    |
+| `tutor_legal` | Sus hijos vía `vinculos_familiares`, con permisos JSONB granulares  |
+| `autorizado`  | Como tutor_legal pero con permisos por defecto a `false`            |
+| `service`     | Edge Functions (bypass RLS)                                         |
 
 ## Ventana de edición y "día cerrado" (transversal — Fase 3 + Fase 4)
 
@@ -489,7 +490,7 @@ ENUM `recordatorio_destinatario` con **6 valores**: `familia_individual` · `fam
 
 - **SELECT** `autorizaciones_select`: `usuario_es_audiencia_autorizacion_row(centro_id, tipo, es_plantilla, ambito, evento_id, nino_id, aula_id)` (row-aware).
 - **INSERT** `autorizaciones_insert`: `creado_por = auth.uid()` AND ( `es_admin(centro_id)` | profe de salida `tipo='salida' AND es_profe_de_evento(evento_id) AND centro_de_evento(evento_id)=centro_id` | **tutor B2**: `es_plantilla=false AND tipo ∈ {recogida,medicacion} AND ambito='nino' AND nino_id NOT NULL AND plantilla_id NOT NULL AND es_tutor_de(nino_id) AND autorizacion_plantilla_valida(plantilla_id, centro_id, tipo)` ).
-- **UPDATE** `autorizaciones_update`: `USING + WITH CHECK` simétricos `creado_por = auth.uid() OR es_admin(centro_id)`. El server action acota columnas; el trigger `bloquea_texto_tras_firma` congela el alcance consentido una vez hay firmas. Archivar medicación NO pasa por aquí (RPC `SECURITY DEFINER`).
+- **UPDATE** `autorizaciones_update`: `USING + WITH CHECK` simétricos `creado_por = auth.uid() OR es_admin(centro_id)`; las plantillas de las normas internas y del consentimiento de imagen, solo `privado.es_responsable` (`20261030130000`). El server action acota columnas; el trigger `bloquea_texto_tras_firma` congela el alcance consentido una vez hay firmas, y desde `20261030130000` `autorizaciones_identidad_inmutable_trg` congela la identidad del documento para todos y siempre: tipo, plantilla o instancia, ámbito, centro, niño, evento, aula, plantilla de la que sale y autor (23514). Archivar medicación NO pasa por aquí (RPC `SECURITY DEFINER`).
 - **DELETE**: sin policy → **default DENY**. Retirar = `estado='anulada'` (conserva firmas). Archivar (`archivada_at`) ≠ anular.
 
 ### RLS `firmas_autorizacion` (append-only, inmutable)
@@ -876,6 +877,40 @@ la admin.
 - Test: `roles-es-responsable.rls.test.ts`. Lo que la directora no puede hacer se prueba cuando
   exista el rol.
 
+### La directora — `es_admin` es Dirección (PR 2 del modelo de roles)
+
+Migraciones `20261030120000_feat_rol_directora_enum` (el valor `directora` en `user_role`, sola
+porque un valor nuevo de un enum no se puede usar en la transacción que lo añade) y
+`20261030130000_fix_roles_directora`, que se aplica después.
+
+- **`es_admin(centro)` es Dirección:** la admin o una directora del centro, o el superusuario. Todo
+  el día a día que pasaba por `es_admin` le llega a la directora; lo exclusivo de la admin va por
+  `privado.es_responsable` (ver arriba). `es_admin(NULL)` sigue dando TRUE para cualquier persona
+  de Dirección de cualquier centro: nunca se le pasa NULL.
+- **Anti-escalada:** en `roles_usuario` e `invitaciones`, crear, cambiar o quitar una fila de rol
+  `admin` o `directora` exige `es_responsable`. Una directora no nombra a otra, no toca a la admin
+  ni a otra directora, y no se toca a sí misma. Los demás roles siguen siendo de Dirección.
+  Ninguna función escribe roles de Dirección: solo `tutor_legal`, o los retira.
+- **Una admin viva por centro:** índice único parcial `idx_roles_usuario_una_admin_viva`. El
+  relevo de la admin (PR 4) tiene que retirar a la saliente antes de dar de alta a la entrante, en
+  la misma transacción.
+- **`firma_imagen_sync`** cuenta la firma presencial de la admin o de una directora del centro del
+  niño. Antes miraba `rol = 'admin'`: la de una directora entraba por la policy y el
+  consentimiento no se registraba.
+- **Los roles se comparan como texto** (`rol::text IN ('admin', 'directora')`), para no usar el
+  valor nuevo como literal en la migración que lo necesita.
+- **Autorizaciones:** la identidad del documento no cambia (trigger
+  `autorizaciones_identidad_inmutable_trg`, 23514), y las plantillas de las normas internas y del
+  consentimiento de imagen las edita solo la admin. Quien creaba una autorización (la directora, la
+  profe de su salida o la familia de su recogida) podía cambiarle el tipo, el alcance o el centro
+  mientras nadie la firmara: una familia convertía su recogida en las normas del centro para todo
+  el centro o se la llevaba a otro centro, y una profe convertía su salida en la plantilla de las
+  normas.
+- **La app** reconoce el rol en el PR 3. Hasta entonces, una cuenta con el rol directora no entra
+  en `/admin` (el proxy solo deja pasar `admin`).
+- Tests: `roles-directora.rls.test.ts` (hace el día a día, no hace lo exclusivo, no puede escalar,
+  una admin viva por centro) y `autorizaciones-identidad.rls.test.ts`.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -908,6 +943,8 @@ la admin.
 | Rutas de Storage sin cruzar de centro         | `storage-ruta-coherente.rls.test.ts`            |
 | Funciones auxiliares fuera de la API          | `funciones-esquema-privado.rls.test.ts`         |
 | Lo exclusivo de la admin (`es_responsable`)   | `roles-es-responsable.rls.test.ts`              |
+| La directora: día a día, exclusivo, escalada  | `roles-directora.rls.test.ts`                   |
+| La identidad de una autorización no cambia    | `autorizaciones-identidad.rls.test.ts`          |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

@@ -63,8 +63,9 @@ describe('RLS admin↔familia — aislamiento per-par, caducidad, reapertura', (
     adminA = await createTestUser({ nombre: 'Admin AF A' })
     await asignarRol(adminA.id, centroA.id, 'admin')
 
-    adminA2 = await createTestUser({ nombre: 'Admin AF A2' })
-    await asignarRol(adminA2.id, centroA.id, 'admin')
+    // Otra persona de Dirección del mismo centro: una admin por centro, así que es directora.
+    adminA2 = await createTestUser({ nombre: 'Directora AF A2' })
+    await asignarRol(adminA2.id, centroA.id, 'directora')
 
     adminB = await createTestUser({ nombre: 'Admin AF B' })
     await asignarRol(adminB.id, centroB.id, 'admin')

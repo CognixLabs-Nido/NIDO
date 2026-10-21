@@ -257,7 +257,7 @@ export async function deleteTestCentro(id: string): Promise<void> {
 export async function asignarRol(
   usuario_id: string,
   centro_id: string,
-  rol: 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
+  rol: Database['public']['Enums']['user_role']
 ): Promise<void> {
   const { error } = await serviceClient.from('roles_usuario').insert({ usuario_id, centro_id, rol })
   if (error) throw new Error(`asignarRol falló: ${error.message}`)
