@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
+import { usuarioAdminEn, usuarioResponsableEn } from '@/features/centros/contexto/roles-del-usuario'
 import { crearEventoCore } from '@/features/eventos/actions/crear-evento'
 
 import { hashTextoAutorizacion } from '../lib/hash'
@@ -24,7 +24,7 @@ import {
   type EnviarAutorizacionInput,
   type PublicarAutorizacionInput,
 } from '../schemas/autorizaciones'
-import { fail, ok, type ActionResult } from '../types'
+import { fail, ok, TIPOS_PLANTILLA_DE_LA_ADMIN, type ActionResult } from '../types'
 
 // Tipos A (la directora ENVÍA a una audiencia). recogida/medicación = tipos B
 // (los inicia la familia) → no son enviables desde aquí.
@@ -203,9 +203,10 @@ export async function crearPlantilla(
   }
   const { tipo, titulo } = parsed.data
 
-  // Centro de la página; solo admin de ese centro (la RLS lo vuelve a comprobar).
-  if (!(await usuarioAdminEn(supabase, centroId)))
-    return fail('autorizaciones.errors.no_autorizado')
+  // Centro de la página, con Dirección en él; las plantillas legales (normas, imagen), solo la
+  // admin de ese centro (la RLS lo vuelve a comprobar).
+  const puede = TIPOS_PLANTILLA_DE_LA_ADMIN.includes(tipo) ? usuarioResponsableEn : usuarioAdminEn
+  if (!(await puede(supabase, centroId))) return fail('autorizaciones.errors.no_autorizado')
 
   const { data: creada, error: insErr } = await supabase
     .from('autorizaciones')

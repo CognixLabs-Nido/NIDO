@@ -118,8 +118,7 @@ export async function getConversacionDetalle(
     // con el primero "no autorizado" como el más representativo.
     const existing = rolByUser.get(r.usuario_id)
     if (!existing || (existing === 'autorizado' && r.rol !== 'autorizado')) {
-      // En pantalla, la directora es Dirección, como la admin.
-      rolByUser.set(r.usuario_id, r.rol === 'directora' ? 'admin' : r.rol)
+      rolByUser.set(r.usuario_id, r.rol)
     }
   }
 

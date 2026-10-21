@@ -49,7 +49,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
   const t = await getTranslations('admin.cuotas')
   const { locale } = await params
   const sp = await searchParams
-  const { centroId } = await requireContextoCentro(locale)
+  const { centroId, esResponsable } = await requireContextoCentro(locale)
 
   const ahora = new Date()
   const anio = clamp(Number(sp.anio), 2024, 2100) ?? ahora.getFullYear()
@@ -147,6 +147,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
             conceptos={conceptos}
             aniosNacimientoCentro={aniosNacimientoCentro}
             tarifasPorConcepto={tarifasPorConcepto}
+            editable={esResponsable}
           />
         </TabsContent>
 
@@ -166,7 +167,13 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
         </TabsContent>
 
         <TabsContent value="becas" className="pt-4">
-          <BecasPanel centroId={centroId} becas={becas} tipos={tipos} ninos={ninosActivos} />
+          <BecasPanel
+            centroId={centroId}
+            becas={becas}
+            tipos={tipos}
+            ninos={ninosActivos}
+            editarTipos={esResponsable}
+          />
         </TabsContent>
 
         <TabsContent value="remesas" className="pt-4">
@@ -175,6 +182,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
             anio={anio}
             mes={mes}
             acreedor={acreedor}
+            editarAcreedor={esResponsable}
             recibos={recibosSepa}
             remesas={remesas}
             recibosGestion={recibosGestion}

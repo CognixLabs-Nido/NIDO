@@ -26,7 +26,12 @@ vi.mock('../../actions/elegir-centro', () => ({ elegirCentro: vi.fn() }))
 
 const { ConmutadorCentroServidor } = await import('../ConmutadorCentroServidor')
 
-const base = { rol: 'admin' as const, roles: ['admin' as const], esSuperusuario: false }
+const base = {
+  rol: 'admin' as const,
+  roles: ['admin' as const],
+  esResponsable: true,
+  esSuperusuario: false,
+}
 
 beforeEach(() => {
   estado.consultas = 0
@@ -39,7 +44,7 @@ describe('ConmutadorCentroServidor', () => {
       contexto: {
         ...base,
         centroId: A,
-        centros: [{ centroId: A, rol: 'admin', roles: ['admin'] }],
+        centros: [{ centroId: A, rol: 'admin', roles: ['admin'], esResponsable: true }],
       },
     })
     expect(nodo).toBeNull()
@@ -53,8 +58,8 @@ describe('ConmutadorCentroServidor', () => {
         ...base,
         centroId: B,
         centros: [
-          { centroId: A, rol: 'admin', roles: ['admin'] },
-          { centroId: B, rol: 'tutor_legal', roles: ['tutor_legal'] },
+          { centroId: A, rol: 'admin', roles: ['admin'], esResponsable: true },
+          { centroId: B, rol: 'tutor_legal', roles: ['tutor_legal'], esResponsable: false },
         ],
       },
     })

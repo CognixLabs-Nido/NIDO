@@ -30,23 +30,27 @@ import type { TipoBecaListItem } from '../queries/get-tipos-beca'
 interface Props {
   centroId: string
   tipos: TipoBecaListItem[]
+  /** La admin del centro: los tipos de beca son cuotas, suyos. Una directora los ve sin tocarlos. */
+  editable: boolean
 }
 
-export function TiposBecaPanel({ centroId, tipos }: Props) {
+export function TiposBecaPanel({ centroId, tipos, editable }: Props) {
   const t = useTranslations('admin.cuotas')
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-h2">{t('becas.tipos_title')}</h2>
-        <TipoBecaFormDialog
-          centroId={centroId}
-          trigger={
-            <Button size="sm" variant="outline">
-              {t('becas.tipo_nuevo')}
-            </Button>
-          }
-        />
+        {editable && (
+          <TipoBecaFormDialog
+            centroId={centroId}
+            trigger={
+              <Button size="sm" variant="outline">
+                {t('becas.tipo_nuevo')}
+              </Button>
+            }
+          />
+        )}
       </div>
       {tipos.length === 0 ? (
         <Card className="text-muted-foreground p-6 text-center text-sm">
@@ -59,7 +63,7 @@ export function TiposBecaPanel({ centroId, tipos }: Props) {
               <TableRow>
                 <TableHead>{t('becas.fields.tipo_nombre')}</TableHead>
                 <TableHead>{t('becas.fields.tipo_activo')}</TableHead>
-                <TableHead className="text-right">{t('fields.acciones')}</TableHead>
+                {editable && <TableHead className="text-right">{t('fields.acciones')}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -73,20 +77,22 @@ export function TiposBecaPanel({ centroId, tipos }: Props) {
                       <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-2">
-                      <TipoBecaFormDialog
-                        centroId={centroId}
-                        tipo={tipo}
-                        trigger={
-                          <Button size="sm" variant="outline">
-                            {t('editar')}
-                          </Button>
-                        }
-                      />
-                      <EliminarTipoBecaDialog id={tipo.id} nombre={tipo.nombre} />
-                    </div>
-                  </TableCell>
+                  {editable && (
+                    <TableCell>
+                      <div className="flex justify-end gap-2">
+                        <TipoBecaFormDialog
+                          centroId={centroId}
+                          tipo={tipo}
+                          trigger={
+                            <Button size="sm" variant="outline">
+                              {t('editar')}
+                            </Button>
+                          }
+                        />
+                        <EliminarTipoBecaDialog id={tipo.id} nombre={tipo.nombre} />
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

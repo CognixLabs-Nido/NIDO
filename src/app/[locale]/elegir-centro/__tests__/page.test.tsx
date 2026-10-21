@@ -32,7 +32,7 @@ vi.mock('next/navigation', () => ({
 
 const { default: ElegirCentroPage } = await import('../page')
 
-const UNO = [{ centroId: A, rol: 'admin' as const, roles: ['admin' as const] }]
+const UNO = [{ centroId: A, rol: 'admin' as const, roles: ['admin' as const], esResponsable: true }]
 const pagina = () =>
   ElegirCentroPage({
     params: Promise.resolve({ locale: 'es' }),
@@ -51,6 +51,7 @@ describe('selector de centro', () => {
         centroId: A,
         rol: 'admin',
         roles: ['admin'],
+        esResponsable: true,
         esSuperusuario: false,
         centros: UNO,
       },

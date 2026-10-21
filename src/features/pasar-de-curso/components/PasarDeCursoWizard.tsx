@@ -32,13 +32,21 @@ interface Props {
   preview: ResultadoPropuesta
   filas: FilaRollover[]
   planificados: { id: string; nombre: string }[]
+  /** La admin del centro: confirma (cierra el curso). Una directora prepara, pero no confirma. */
+  puedeConfirmar: boolean
 }
 
 /** Destinos no-aula del `<select>` por fila. */
 const FINALIZA = '__finaliza__'
 const SIN_MARCAR = '__sin_marcar__'
 
-export function PasarDeCursoWizard({ estado, preview, filas, planificados }: Props) {
+export function PasarDeCursoWizard({
+  estado,
+  preview,
+  filas,
+  planificados,
+  puedeConfirmar,
+}: Props) {
   const t = useTranslations('admin.pasarDeCurso')
   const tErrors = useTranslations()
   const router = useRouter()
@@ -209,14 +217,18 @@ export function PasarDeCursoWizard({ estado, preview, filas, planificados }: Pro
               {t('faltan_destino', { n: sinResolver })}
             </span>
           )}
-          <Button
-            disabled={pending || yaConfirmado || sinResolver > 0}
-            onClick={() =>
-              run(() => confirmarRollover({ curso_destino_id: cursoId }), t('confirmado'))
-            }
-          >
-            {yaConfirmado ? t('ya_confirmado') : t('confirmar')}
-          </Button>
+          {!yaConfirmado && !puedeConfirmar ? (
+            <span className="text-muted-foreground text-sm">{t('confirmar_solo_admin')}</span>
+          ) : (
+            <Button
+              disabled={pending || yaConfirmado || sinResolver > 0}
+              onClick={() =>
+                run(() => confirmarRollover({ curso_destino_id: cursoId }), t('confirmado'))
+              }
+            >
+              {yaConfirmado ? t('ya_confirmado') : t('confirmar')}
+            </Button>
+          )}
         </div>
       </Card>
     </div>

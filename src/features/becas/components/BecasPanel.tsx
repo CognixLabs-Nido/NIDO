@@ -34,9 +34,11 @@ interface Props {
   becas: BecaListItem[]
   tipos: TipoBecaListItem[]
   ninos: OpcionMin[]
+  /** La admin del centro: edita los tipos de beca. Asignar becas es de Dirección. */
+  editarTipos: boolean
 }
 
-export function BecasPanel({ centroId, becas, tipos, ninos }: Props) {
+export function BecasPanel({ centroId, becas, tipos, ninos, editarTipos }: Props) {
   const t = useTranslations('admin.cuotas')
   const locale = useLocale()
   const tiposActivos: OpcionMin[] = tipos
@@ -107,7 +109,7 @@ export function BecasPanel({ centroId, becas, tipos, ninos }: Props) {
         )}
       </div>
 
-      <TiposBecaPanel centroId={centroId} tipos={tipos} />
+      <TiposBecaPanel centroId={centroId} tipos={tipos} editable={editarTipos} />
     </div>
   )
 }

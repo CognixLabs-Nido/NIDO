@@ -17,6 +17,7 @@ import { RecogidaLista } from './RecogidaLista'
 import { RegistrarAdministracionDialog } from './RegistrarAdministracionDialog'
 import { RegistroAdministracionLista } from './RegistroAdministracionLista'
 import { RosterFirmas } from './RosterFirmas'
+import { esPlantillaDeLaAdmin } from '../types'
 
 /**
  * Detalle de una instancia/plantilla de autorización, compartido por la ruta
@@ -29,9 +30,12 @@ import { RosterFirmas } from './RosterFirmas'
 export async function AutorizacionDetalleView({
   id,
   volverHref,
+  esResponsable,
 }: {
   id: string
   volverHref: string
+  /** La admin del centro: edita, publica y anula también las plantillas legales. */
+  esResponsable: boolean
 }) {
   const t = await getTranslations('autorizaciones')
 
@@ -40,7 +44,9 @@ export async function AutorizacionDetalleView({
   const aut = await getAutorizacionDetalle(id)
   if (!aut) return <AccesoDenegado volverHref={volverHref} />
 
-  const editable = aut.estado === 'borrador'
+  // Una plantilla legal solo la toca la admin (la RLS la rechazaría a cualquier otro).
+  const gestionable = esResponsable || !esPlantillaDeLaAdmin(aut)
+  const editable = gestionable && aut.estado === 'borrador'
 
   // Medicación (instancia): registro de administraciones (F8-3b). El staff registra
   // sobre una medicación firmada + VIGENTE hoy y un 2.º staff distinto confirma.
@@ -119,11 +125,13 @@ export async function AutorizacionDetalleView({
             vigenciaHasta={aut.vigencia_hasta}
           />
         )}
-        <AccionesAdmin
-          autorizacionId={aut.id}
-          estado={aut.estado}
-          textoDefinitivo={aut.texto_definitivo}
-        />
+        {gestionable && (
+          <AccionesAdmin
+            autorizacionId={aut.id}
+            estado={aut.estado}
+            textoDefinitivo={aut.texto_definitivo}
+          />
+        )}
       </div>
 
       {/* Recogida: lista de personas autorizadas vigente (lectura para profes del

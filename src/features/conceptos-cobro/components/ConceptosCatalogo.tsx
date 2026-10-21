@@ -38,6 +38,8 @@ interface Props {
   aniosNacimientoCentro: number[]
   /** B1-2: tarifas por año guardadas, agrupadas por concepto_id. */
   tarifasPorConcepto: Record<string, TarifaAnioItem[]>
+  /** La admin del centro: las cuotas son suyas. Una directora ve el catálogo sin tocarlo. */
+  editable: boolean
 }
 
 /** Valor legible del concepto: signo (− si descuento) + importe fijo (€/día si diario) o %. */
@@ -61,20 +63,23 @@ export function ConceptosCatalogo({
   conceptos,
   aniosNacimientoCentro,
   tarifasPorConcepto,
+  editable,
 }: Props) {
   const t = useTranslations('admin.cuotas')
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <ConceptoFormDialog
-          centroId={centroId}
-          conceptos={conceptos}
-          aniosNacimientoCentro={aniosNacimientoCentro}
-          tarifasConcepto={[]}
-          trigger={<Button>{t('nuevo')}</Button>}
-        />
-      </div>
+      {editable && (
+        <div className="flex justify-end">
+          <ConceptoFormDialog
+            centroId={centroId}
+            conceptos={conceptos}
+            aniosNacimientoCentro={aniosNacimientoCentro}
+            tarifasConcepto={[]}
+            trigger={<Button>{t('nuevo')}</Button>}
+          />
+        </div>
+      )}
 
       {conceptos.length === 0 ? (
         <Card className="text-muted-foreground p-8 text-center text-sm">{t('empty')}</Card>
@@ -89,7 +94,7 @@ export function ConceptosCatalogo({
                   <TableHead>{t('fields.precio')}</TableHead>
                   <TableHead>{t('fields.aplicacion')}</TableHead>
                   <TableHead>{t('fields.activo')}</TableHead>
-                  <TableHead className="text-right">{t('fields.acciones')}</TableHead>
+                  {editable && <TableHead className="text-right">{t('fields.acciones')}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -101,6 +106,7 @@ export function ConceptosCatalogo({
                     conceptos={conceptos}
                     aniosNacimientoCentro={aniosNacimientoCentro}
                     tarifasConcepto={tarifasPorConcepto[c.id] ?? []}
+                    editable={editable}
                   />
                 ))}
               </TableBody>
@@ -118,12 +124,14 @@ function ConceptoRow({
   conceptos,
   aniosNacimientoCentro,
   tarifasConcepto,
+  editable,
 }: {
   centroId: string
   concepto: ConceptoCobroListItem
   conceptos: ConceptoCobroListItem[]
   aniosNacimientoCentro: number[]
   tarifasConcepto: TarifaAnioItem[]
+  editable: boolean
 }) {
   const t = useTranslations('admin.cuotas')
   const tErrors = useTranslations()
@@ -154,28 +162,30 @@ function ConceptoRow({
       <TableCell>
         <Checkbox
           checked={concepto.activo}
-          disabled={pending}
+          disabled={pending || !editable}
           onCheckedChange={(c) => toggleActivo(c === true)}
           aria-label={t('fields.activo')}
         />
       </TableCell>
-      <TableCell>
-        <div className="flex justify-end gap-2">
-          <ConceptoFormDialog
-            centroId={centroId}
-            concepto={concepto}
-            conceptos={conceptos}
-            aniosNacimientoCentro={aniosNacimientoCentro}
-            tarifasConcepto={tarifasConcepto}
-            trigger={
-              <Button variant="outline" size="sm">
-                {t('editar')}
-              </Button>
-            }
-          />
-          <EliminarConceptoDialog id={concepto.id} nombre={concepto.nombre} />
-        </div>
-      </TableCell>
+      {editable && (
+        <TableCell>
+          <div className="flex justify-end gap-2">
+            <ConceptoFormDialog
+              centroId={centroId}
+              concepto={concepto}
+              conceptos={conceptos}
+              aniosNacimientoCentro={aniosNacimientoCentro}
+              tarifasConcepto={tarifasConcepto}
+              trigger={
+                <Button variant="outline" size="sm">
+                  {t('editar')}
+                </Button>
+              }
+            />
+            <EliminarConceptoDialog id={concepto.id} nombre={concepto.nombre} />
+          </div>
+        </TableCell>
+      )}
     </TableRow>
   )
 }

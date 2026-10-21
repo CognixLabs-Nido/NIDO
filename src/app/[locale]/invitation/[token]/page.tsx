@@ -253,7 +253,7 @@ function ServicioCuentasNoDisponible({ locale }: { locale: string }) {
 
 /** Panel inicial según el rol objetivo de la invitación (espejo de la action). */
 function dashboardPorRol(locale: string, rolObjetivo: string): string {
-  if (rolObjetivo === 'admin') return `/${locale}/admin`
+  if (rolObjetivo === 'admin' || rolObjetivo === 'directora') return `/${locale}/admin`
   if (rolObjetivo === 'profe') return `/${locale}/teacher`
   return `/${locale}/family`
 }

@@ -32,8 +32,11 @@ interface PageProps {
 export default async function AdminCursosPage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('admin.cursos')
-  const { centroId } = await requireContextoCentro(locale)
+  const { centroId, esResponsable } = await requireContextoCentro(locale)
   const cursos = await getCursosPorCentro(centroId)
+  // Con un curso activo, activar otro lo cierra: eso es de la admin del centro. Una directora
+  // solo activa el primero (`activarCurso` lo comprueba también).
+  const puedeActivar = esResponsable || !cursos.some((c) => c.estado === 'activo')
 
   return (
     <div className="space-y-6">
@@ -70,7 +73,13 @@ export default async function AdminCursosPage({ params }: PageProps) {
                   </TableCell>
                   <TableCell className="text-right">
                     {c.estado !== 'activo' && c.estado !== 'cerrado' ? (
-                      <ActivarCursoButton cursoId={c.id} />
+                      puedeActivar ? (
+                        <ActivarCursoButton cursoId={c.id} />
+                      ) : (
+                        <span className="text-muted-foreground text-xs">
+                          {t('activar_solo_admin')}
+                        </span>
+                      )
                     ) : null}
                   </TableCell>
                 </TableRow>

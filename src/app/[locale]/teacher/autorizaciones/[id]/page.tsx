@@ -10,8 +10,14 @@ interface PageProps {
 export default async function TeacherAutorizacionDetallePage({ params }: PageProps) {
   const { locale, id } = await params
 
-  const { rol } = await requireContextoCentro(locale)
+  const { rol, esResponsable } = await requireContextoCentro(locale)
   if (rol !== 'profe' && rol !== 'admin') redirect(`/${locale}/forbidden`)
 
-  return <AutorizacionDetalleView id={id} volverHref={`/${locale}/teacher/autorizaciones`} />
+  return (
+    <AutorizacionDetalleView
+      id={id}
+      volverHref={`/${locale}/teacher/autorizaciones`}
+      esResponsable={esResponsable}
+    />
+  )
 }

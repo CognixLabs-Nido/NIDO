@@ -39,10 +39,11 @@ function contexto(centroId: string, rol: ContextoCentro['rol']): ContextoCentro 
     centroId,
     rol,
     roles: [rol],
+    esResponsable: rol === 'admin',
     esSuperusuario: false,
     centros: [
-      { centroId: CENTRO_A, rol: 'admin', roles: ['admin'] },
-      { centroId: CENTRO_B, rol: 'tutor_legal', roles: ['tutor_legal'] },
+      { centroId: CENTRO_A, rol: 'admin', roles: ['admin'], esResponsable: true },
+      { centroId: CENTRO_B, rol: 'tutor_legal', roles: ['tutor_legal'], esResponsable: false },
     ],
   }
 }

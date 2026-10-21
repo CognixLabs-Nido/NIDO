@@ -17,7 +17,7 @@ interface PageProps {
 export default async function PasarDeCursoPage({ params, searchParams }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('admin.pasarDeCurso')
-  const { centroId } = await requireContextoCentro(locale)
+  const { centroId, esResponsable } = await requireContextoCentro(locale)
   const planificados = await getCursosPlanificados(centroId)
 
   if (planificados.length === 0) {
@@ -81,6 +81,7 @@ export default async function PasarDeCursoPage({ params, searchParams }: PagePro
         preview={preview}
         filas={filas}
         planificados={planificados.map((c) => ({ id: c.id, nombre: c.nombre }))}
+        puedeConfirmar={esResponsable}
       />
     </div>
   )

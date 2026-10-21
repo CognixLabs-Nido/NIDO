@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { usuarioResponsableEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -19,7 +20,9 @@ export async function updateCentro(
   }
 
   const supabase = await createClient()
-  // RLS bloquea el UPDATE si el usuario no es admin del centro.
+  // Los datos del centro son de la admin, no de una directora. Sin esta guarda, una directora
+  // recibiría «guardado»: el UPDATE sin RETURNING que la RLS deja en 0 filas no da error.
+  if (!(await usuarioResponsableEn(supabase, centroId))) return fail('centro.errors.no_autorizado')
   const { error } = await supabase.from('centros').update(parsed.data).eq('id', centroId)
   if (error) {
     logger.warn('updateCentro error', error.message)

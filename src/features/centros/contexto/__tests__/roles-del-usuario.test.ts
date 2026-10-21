@@ -6,6 +6,7 @@ import type { Database } from '@/types/database'
 import {
   centrosDondeEsAdmin,
   esAdminEn,
+  esResponsableEn,
   esSuperusuario,
   leerCentrosDe,
   rolesEnCentro,
@@ -86,8 +87,8 @@ describe('roles-del-usuario (cliente inyectado)', () => {
   it('agrupa por centro, ordenado por id, con el rol principal de cada uno', async () => {
     const { client } = fake(DOS_CENTROS)
     expect(await leerCentrosDe(client, USUARIO)).toEqual([
-      { centroId: A, rol: 'admin', roles: ['admin'] },
-      { centroId: B, rol: 'profe', roles: ['profe', 'tutor_legal'] },
+      { centroId: A, rol: 'admin', roles: ['admin'], esResponsable: true },
+      { centroId: B, rol: 'profe', roles: ['profe', 'tutor_legal'], esResponsable: false },
     ])
   })
 
@@ -113,6 +114,36 @@ describe('roles-del-usuario (cliente inyectado)', () => {
     expect(await leerCentrosDe(client, USUARIO)).toBeNull()
     expect(await centrosDondeEsAdmin(client, USUARIO)).toBeNull()
     expect(await esAdminEn(client, USUARIO, A)).toBe(false)
+    expect(await esResponsableEn(client, USUARIO, A)).toBe(false)
+  })
+})
+
+describe('la directora (PR 3 del modelo de roles)', () => {
+  const DIRECTORA_EN_A_ADMIN_EN_B = {
+    data: [
+      { centro_id: A, rol: 'directora' },
+      { centro_id: B, rol: 'admin' },
+    ],
+    error: null,
+  }
+
+  it('esAdminEn (Dirección): sí en A y en B; esResponsableEn (la admin): solo en B', async () => {
+    const { client } = fake(DIRECTORA_EN_A_ADMIN_EN_B)
+    expect(await esAdminEn(client, USUARIO, A)).toBe(true)
+    expect(await esResponsableEn(client, USUARIO, A)).toBe(false)
+    expect(await esAdminEn(client, USUARIO, B)).toBe(true)
+    expect(await esResponsableEn(client, USUARIO, B)).toBe(true)
+    expect(await esResponsableEn(client, USUARIO, C)).toBe(false)
+  })
+
+  it('centrosDondeEsAdmin es Dirección: también donde es directora', async () => {
+    const { client } = fake(DIRECTORA_EN_A_ADMIN_EN_B)
+    expect(await centrosDondeEsAdmin(client, USUARIO)).toEqual([A, B])
+  })
+
+  it('rolesEnCualquierCentro (proxy) devuelve la fila tal cual: directora', async () => {
+    const { client } = fake({ data: [{ rol: 'directora' }], error: null })
+    expect(await rolesEnCualquierCentro(client, USUARIO)).toEqual(['directora'])
   })
 })
 
@@ -123,12 +154,13 @@ describe('superusuario (Fase 3)', () => {
   it('leerCentrosDe: todos los centros que existen, como admin, sumando sus roles propios', async () => {
     const { client, tablas } = fake(DOS_CENTROS, { superusuario: SUPER, centros: EXISTEN })
     expect(await leerCentrosDe(client, USUARIO)).toEqual([
-      { centroId: A, rol: 'admin', roles: ['admin'] },
-      { centroId: B, rol: 'admin', roles: ['admin', 'profe', 'tutor_legal'] },
-      { centroId: C, rol: 'admin', roles: ['admin'] },
+      { centroId: A, rol: 'admin', roles: ['admin'], esResponsable: true },
+      { centroId: B, rol: 'admin', roles: ['admin', 'profe', 'tutor_legal'], esResponsable: true },
+      { centroId: C, rol: 'admin', roles: ['admin'], esResponsable: true },
     ])
     expect(tablas).toContain('centros')
     expect(await esAdminEn(client, USUARIO, C)).toBe(true)
+    expect(await esResponsableEn(client, USUARIO, C)).toBe(true)
     expect(await centrosDondeEsAdmin(client, USUARIO)).toEqual([A, B, C])
   })
 

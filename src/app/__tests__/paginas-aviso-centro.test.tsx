@@ -79,10 +79,11 @@ const contextoEnA: ContextoCentro = {
   centroId: A,
   rol: 'tutor_legal',
   roles: ['tutor_legal'],
+  esResponsable: false,
   esSuperusuario: false,
   centros: [
-    { centroId: A, rol: 'tutor_legal', roles: ['tutor_legal'] },
-    { centroId: B, rol: 'tutor_legal', roles: ['tutor_legal'] },
+    { centroId: A, rol: 'tutor_legal', roles: ['tutor_legal'], esResponsable: false },
+    { centroId: B, rol: 'tutor_legal', roles: ['tutor_legal'], esResponsable: false },
   ],
 }
 

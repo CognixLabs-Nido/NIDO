@@ -1,6 +1,6 @@
 'use server'
 
-import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
+import { esAdminEn, esResponsableEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { getAppUrl } from '@/shared/lib/app-url'
 import { logger } from '@/shared/lib/logger'
@@ -14,6 +14,9 @@ import { fail, ok, type ActionResult } from './types'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 
 const INVITATION_TTL_DAYS = 7
+
+/** Los roles que solo nombra la admin (como la anti-escalada de `invitaciones` en la BD). */
+const ROLES_DE_LA_ADMIN: ReadonlyArray<string> = ['admin', 'directora']
 
 /**
  * El segundo parámetro (locale de la UI de quien invita) ya no decide nada: el enlace del correo
@@ -39,6 +42,14 @@ export async function sendInvitation(
   if (!user?.user) return fail('auth.invitation.errors.unauthenticated')
 
   if (!(await esAdminEn(supabase, user.user.id, parsed.data.centroId))) {
+    return fail('auth.invitation.errors.forbidden')
+  }
+  // La invitación se escribe con service role, que se salta la anti-escalada de la RLS: invitar a
+  // una admin o a una directora solo lo hace la admin del centro (o el superusuario).
+  if (
+    ROLES_DE_LA_ADMIN.includes(parsed.data.rolObjetivo) &&
+    !(await esResponsableEn(supabase, user.user.id, parsed.data.centroId))
+  ) {
     return fail('auth.invitation.errors.forbidden')
   }
 

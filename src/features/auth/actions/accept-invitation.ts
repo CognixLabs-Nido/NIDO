@@ -503,7 +503,7 @@ export async function redirigirAlPanel(locale: string, rol: string): Promise<nev
 
 /** Panel inicial según el rol objetivo de la invitación. */
 function dashboardPorRol(locale: string, rolObjetivo: string): string {
-  if (rolObjetivo === 'admin') return `/${locale}/admin`
+  if (rolObjetivo === 'admin' || rolObjetivo === 'directora') return `/${locale}/admin`
   if (rolObjetivo === 'profe') return `/${locale}/teacher`
   return `/${locale}/family`
 }

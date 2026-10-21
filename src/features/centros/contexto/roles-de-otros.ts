@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { Database } from '@/types/database'
 
+import { rolDeLaApp, type Rol } from './resolver'
+
 /**
  * Las lecturas de `roles_usuario` que NO son «el centro del usuario actual»: miran a OTRO usuario
  * o a un centro explícito (multicentro · Fase 1, PR6). Antes vivían sueltas en 14 ficheros con una
@@ -14,7 +16,6 @@ import type { Database } from '@/types/database'
  */
 
 type Client = SupabaseClient<Database>
-type Rol = Database['public']['Enums']['user_role']
 
 /**
  * ¿La cuenta tiene algún rol vivo, en cualquier centro? Es la señal de cuenta OPERATIVA para
@@ -52,7 +53,10 @@ export async function rolesDelSujetoParaExport(client: Client, usuarioId: string
   return data ?? []
 }
 
-/** Los roles vivos de los autores de una conversación (para la etiqueta de cada mensaje). */
+/**
+ * Los roles vivos de los autores de una conversación (para la etiqueta de cada mensaje), como
+ * roles de la app: la directora sale como `admin`, Dirección en pantalla.
+ */
 export async function rolesDeAutores(
   client: Client,
   autorIds: string[]
@@ -63,7 +67,10 @@ export async function rolesDeAutores(
     .select('usuario_id, rol')
     .in('usuario_id', autorIds)
     .is('deleted_at', null)
-  return data ?? []
+  return (data ?? []).flatMap(({ usuario_id, rol }) => {
+    const deLaApp = rolDeLaApp(rol)
+    return deLaApp ? [{ usuario_id, rol: deLaApp }] : []
+  })
 }
 
 /** ¿Ese usuario tiene rol profe vivo en ese centro? (antes de asignarlo a un aula). */

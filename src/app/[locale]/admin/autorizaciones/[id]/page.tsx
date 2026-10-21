@@ -10,8 +10,14 @@ interface PageProps {
 export default async function AdminAutorizacionDetallePage({ params }: PageProps) {
   const { locale, id } = await params
 
-  const { rol } = await requireContextoCentro(locale)
+  const { rol, esResponsable } = await requireContextoCentro(locale)
   if (rol !== 'admin') redirect(`/${locale}/forbidden`)
 
-  return <AutorizacionDetalleView id={id} volverHref={`/${locale}/admin/autorizaciones`} />
+  return (
+    <AutorizacionDetalleView
+      id={id}
+      volverHref={`/${locale}/admin/autorizaciones`}
+      esResponsable={esResponsable}
+    />
+  )
 }

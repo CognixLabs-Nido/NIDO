@@ -12,7 +12,12 @@ export interface PendienteDestino {
 
 /** Estado completo que alimenta la UI del rollover (datos persistidos + insumos). */
 export interface EstadoRollover {
-  cursoDestino: { id: string; nombre: string; estado: 'planificado' | 'activo' | 'cerrado' }
+  cursoDestino: {
+    id: string
+    nombre: string
+    estado: 'planificado' | 'activo' | 'cerrado'
+    centroId: string
+  }
   cursoOrigen: { id: string; nombre: string } | null
   aulasDestino: AulaDestinoRollover[]
   ninosActivos: NinoActivoRollover[]

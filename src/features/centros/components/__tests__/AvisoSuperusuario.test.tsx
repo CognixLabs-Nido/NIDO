@@ -28,7 +28,8 @@ const contexto = {
   centroId: A,
   rol: 'admin' as const,
   roles: ['admin' as const],
-  centros: [{ centroId: A, rol: 'admin' as const, roles: ['admin' as const] }],
+  esResponsable: true,
+  centros: [{ centroId: A, rol: 'admin' as const, roles: ['admin' as const], esResponsable: true }],
 }
 
 beforeEach(() => {

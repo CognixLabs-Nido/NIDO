@@ -2,10 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { usuarioResponsableEn } from '@/features/centros/contexto/roles-del-usuario'
 import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { tipoBecaSiResponsable } from '../lib/centro-del-tipo-beca'
 import { tipoBecaSchema, type TipoBecaInput } from '../schemas/tipo-beca'
 
 const RUTA = '/[locale]/admin/cuotas'
@@ -20,6 +22,8 @@ export async function crearTipoBeca(
   }
 
   const supabase = await createClient()
+  // Los tipos de beca son cuotas, de la admin del centro (la RLS lo vuelve a comprobar).
+  if (!(await usuarioResponsableEn(supabase, centroId))) return fail('becas.errors.no_autorizado')
   const { data, error } = await supabase
     .from('tipos_beca')
     .insert({ centro_id: centroId, nombre: parsed.data.nombre, activo: parsed.data.activo })
@@ -47,6 +51,9 @@ export async function actualizarTipoBeca(
   }
 
   const supabase = await createClient()
+  const permiso = await tipoBecaSiResponsable(supabase, id)
+  if (permiso === 'no_encontrado') return fail('becas.errors.tipo_no_encontrado')
+  if (permiso === 'no_autorizado') return fail('becas.errors.no_autorizado')
   const { data, error } = await supabase
     .from('tipos_beca')
     .update({ nombre: parsed.data.nombre, activo: parsed.data.activo })
@@ -69,6 +76,9 @@ export async function actualizarTipoBeca(
 
 export async function eliminarTipoBeca(id: string): Promise<ActionResult<{ id: string }>> {
   const supabase = await createClient()
+  const permiso = await tipoBecaSiResponsable(supabase, id)
+  if (permiso === 'no_encontrado') return fail('becas.errors.tipo_no_encontrado')
+  if (permiso === 'no_autorizado') return fail('becas.errors.no_autorizado')
   const { data, error } = await supabase
     .from('tipos_beca')
     .update({ deleted_at: new Date().toISOString() })

@@ -90,7 +90,10 @@ export async function rolesEnCualquierCentro(
   return esSuper && !roles.includes('admin') ? [...roles, 'admin'] : roles
 }
 
-/** ¿Es admin en ese centro? Un fallo de lectura cuenta como «no». */
+/**
+ * ¿Es Dirección en ese centro (la admin o una directora, como `es_admin`)? Un fallo de lectura
+ * cuenta como «no». Para lo exclusivo de la admin, `esResponsableEn`.
+ */
 export async function esAdminEn(
   supabase: Client,
   usuarioId: string,
@@ -99,7 +102,21 @@ export async function esAdminEn(
   return (await rolesEnCentro(supabase, usuarioId, centroId))?.roles.includes('admin') ?? false
 }
 
-/** Los centros donde es admin, ordenados por id. `null` si la lectura falla. */
+/**
+ * ¿Es la admin de ese centro, o el superusuario (como `privado.es_responsable`)? Lo exclusivo de
+ * la admin: los datos y el logo del centro, las cuotas, los datos de acreedor, las plantillas
+ * legales, cerrar el curso, la auditoría, los derechos RGPD y nombrar admins o directoras. Un
+ * fallo de lectura cuenta como «no».
+ */
+export async function esResponsableEn(
+  supabase: Client,
+  usuarioId: string,
+  centroId: string
+): Promise<boolean> {
+  return (await rolesEnCentro(supabase, usuarioId, centroId))?.esResponsable ?? false
+}
+
+/** Los centros donde es Dirección, ordenados por id. `null` si la lectura falla. */
 export async function centrosDondeEsAdmin(
   supabase: Client,
   usuarioId: string
@@ -112,14 +129,34 @@ export async function centrosDondeEsAdmin(
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
- * El usuario de la sesión de `supabase`, si es admin en ese centro (explícito: de la página o del
- * registro que se toca). `null` si no hay sesión, el id no es un uuid, la lectura falla o no es
- * admin allí. Para las acciones de Dirección; la RLS o la RPC siguen autorizando la escritura.
+ * El usuario de la sesión de `supabase`, si es Dirección en ese centro (explícito: de la página o
+ * del registro que se toca). `null` si no hay sesión, el id no es un uuid, la lectura falla o no
+ * es Dirección allí. Para las acciones de Dirección; la RLS o la RPC siguen autorizando la
+ * escritura.
  */
 export async function usuarioAdminEn(supabase: Client, centroId: string): Promise<string | null> {
+  return usuarioDeLaSesionSi(supabase, centroId, esAdminEn)
+}
+
+/**
+ * Como `usuarioAdminEn`, para lo exclusivo de la admin: el usuario de la sesión si es la admin de
+ * ese centro o el superusuario (`esResponsableEn`). Una directora recibe `null`.
+ */
+export async function usuarioResponsableEn(
+  supabase: Client,
+  centroId: string
+): Promise<string | null> {
+  return usuarioDeLaSesionSi(supabase, centroId, esResponsableEn)
+}
+
+async function usuarioDeLaSesionSi(
+  supabase: Client,
+  centroId: string,
+  comprobar: (supabase: Client, usuarioId: string, centroId: string) => Promise<boolean>
+): Promise<string | null> {
   if (!UUID.test(centroId)) return null
   const { data } = await supabase.auth.getUser()
   const usuarioId = data.user?.id
   if (!usuarioId) return null
-  return (await esAdminEn(supabase, usuarioId, centroId)) ? usuarioId : null
+  return (await comprobar(supabase, usuarioId, centroId)) ? usuarioId : null
 }

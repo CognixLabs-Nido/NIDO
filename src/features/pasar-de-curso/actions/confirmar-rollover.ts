@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { usuarioResponsableEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -38,6 +39,9 @@ export async function confirmarRollover(input: CursoDestinoInput): Promise<Actio
 
   const estado = await getEstadoRolloverCore(supabase, cursoId)
   if (!estado) return fail('rollover.errors.destino_no_encontrado')
+  // Cerrar el curso es de la admin del centro; preparar el siguiente es de Dirección.
+  if (!(await usuarioResponsableEn(supabase, estado.cursoDestino.centroId)))
+    return fail('rollover.errors.no_autorizado')
   if (estado.cursoDestino.estado === 'activo') return ok(undefined) // ya confirmado (idempotente)
   if (estado.cursoDestino.estado !== 'planificado')
     return fail('rollover.errors.destino_no_planificado')

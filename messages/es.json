@@ -215,7 +215,8 @@
       "confirmar_fallo": "No se pudo confirmar el pase de curso.",
       "quitar_fallo": "No se pudo quitar la propuesta.",
       "incompletos": "Hay niños/as sin destino asignado (aula o Finaliza). Resuélvelos antes de confirmar.",
-      "finaliza_fallo": "No se pudo marcar Finaliza. Inténtalo de nuevo."
+      "finaliza_fallo": "No se pudo marcar Finaliza. Inténtalo de nuevo.",
+      "no_autorizado": "Confirmar el pase de curso, que cierra el curso actual, lo hace el administrador del centro."
     }
   },
   "admin": {
@@ -319,7 +320,8 @@
       "finaliza_vacio": "Nadie en Finaliza.",
       "reasignar_aula": "Reasignar a un aula…",
       "faltan_destino": "Faltan {n} niños/as por asignar destino (aula o Finaliza).",
-      "sin_marcar": "Sin marcar"
+      "sin_marcar": "Sin marcar",
+      "confirmar_solo_admin": "La confirmación, que cierra el curso actual, la hace el administrador del centro."
     },
     "cursos": {
       "title": "Cursos académicos",
@@ -345,7 +347,8 @@
         "planificado": "Planificado",
         "activo": "Activo",
         "cerrado": "Cerrado"
-      }
+      },
+      "activar_solo_admin": "Con un curso activo, cambiarlo lo hace el administrador del centro."
     },
     "cuotas": {
       "title": "Cuotas",
@@ -1410,7 +1413,8 @@
       "web_invalida": "URL no válida"
     },
     "errors": {
-      "update_failed": "No se pudo actualizar el centro."
+      "update_failed": "No se pudo actualizar el centro.",
+      "no_autorizado": "Los datos del centro solo los cambia el administrador del centro."
     },
     "logo": {
       "titulo": "Logo del centro",
@@ -1435,7 +1439,8 @@
       "create_failed": "No se pudo crear el curso.",
       "activate_failed": "No se pudo marcar como activo.",
       "no_encontrado": "Curso no encontrado.",
-      "no_reabrir_cerrado": "Un curso cerrado no puede reabrirse."
+      "no_reabrir_cerrado": "Un curso cerrado no puede reabrirse.",
+      "cambiar_activo_solo_admin": "Ya hay un curso activo. Cambiar el curso activo lo hace el administrador del centro."
     },
     "error": {
       "no_reabrir_cerrado": "Un curso cerrado no puede reabrirse."

@@ -19,8 +19,8 @@ describe('proxy — mapa de prefijos protegidos', () => {
     for (const { prefix, roles } of PROTECTED_PREFIXES) {
       map.set(prefix.source, roles)
     }
-    expect(map.get('^\\/admin(\\/.*)?$')).toEqual(['admin'])
-    expect(map.get('^\\/teacher(\\/.*)?$')).toEqual(['profe', 'admin'])
+    expect(map.get('^\\/admin(\\/.*)?$')).toEqual(['admin', 'directora'])
+    expect(map.get('^\\/teacher(\\/.*)?$')).toEqual(['profe', 'admin', 'directora'])
     expect(map.get('^\\/family(\\/.*)?$')).toEqual(['tutor_legal', 'autorizado'])
   })
 
@@ -52,18 +52,18 @@ describe('proxy — mapa de prefijos protegidos', () => {
     expect(roles).not.toContain('autorizado')
   })
 
-  it('/admin sigue requiriendo solo admin (no profe ni tutor)', () => {
+  it('/admin es solo de Dirección, admin o directora (no profe ni tutor)', () => {
     const roles = requiredRolesFor('/admin/aulas')
-    expect(roles).toEqual(['admin'])
+    expect(roles).toEqual(['admin', 'directora'])
   })
 
   it('profe NO entra a /admin/autorizaciones: su ruta es /teacher/autorizaciones', () => {
-    // `/admin` es admin-only. La profe vive en /teacher/autorizaciones bajo el
+    // `/admin` es de Dirección. La profe vive en /teacher/autorizaciones bajo el
     // layout de teacher. Colgarla de /admin la bloqueaba (el layout admin redirige
-    // a no-admin) → era la causa raíz del fallo de acceso de la profe.
+    // a quien no es Dirección) → era la causa raíz del fallo de acceso de la profe.
     for (const ruta of ['/admin/autorizaciones', '/admin/autorizaciones/abc-123']) {
       const roles = requiredRolesFor(ruta)
-      expect(roles, ruta).toEqual(['admin'])
+      expect(roles, ruta).toEqual(['admin', 'directora'])
     }
   })
 

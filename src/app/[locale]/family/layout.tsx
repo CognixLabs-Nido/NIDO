@@ -56,6 +56,7 @@ export default async function FamilyLayout({ children, params }: LayoutProps) {
   const items = await buildSidebarItems(
     sidebarRol,
     locale,
+    contexto.esResponsable,
     <MessagingBadge initialTotal={unread} centroId={centroId} />,
     <RecordatoriosBadge initialTotal={recordatoriosPendientes} centroId={centroId} />,
     <AgendaBadge initialTotal={invitacionesPendientes} />

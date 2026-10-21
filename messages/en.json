@@ -215,7 +215,8 @@
       "confirmar_fallo": "Could not confirm advancing.",
       "quitar_fallo": "Could not remove the proposal.",
       "incompletos": "Some children have no assigned destination (classroom or Finishing). Resolve them before confirming.",
-      "finaliza_fallo": "Couldn't mark as Finishing. Please try again."
+      "finaliza_fallo": "Couldn't mark as Finishing. Please try again.",
+      "no_autorizado": "Only the centre administrator can confirm advancing, which closes the current year."
     }
   },
   "admin": {
@@ -319,7 +320,8 @@
       "finaliza_vacio": "No one in Finishing.",
       "reasignar_aula": "Reassign to a classroom…",
       "faltan_destino": "{n} children still have no destination (classroom or Finishing).",
-      "sin_marcar": "Unset"
+      "sin_marcar": "Unset",
+      "confirmar_solo_admin": "Confirming, which closes the current year, is done by the centre administrator."
     },
     "cursos": {
       "title": "Academic years",
@@ -345,7 +347,8 @@
         "planificado": "Planned",
         "activo": "Active",
         "cerrado": "Closed"
-      }
+      },
+      "activar_solo_admin": "While a year is active, only the centre administrator can change it."
     },
     "cuotas": {
       "title": "Fees",
@@ -1410,7 +1413,8 @@
       "web_invalida": "Invalid URL"
     },
     "errors": {
-      "update_failed": "Could not update the centre."
+      "update_failed": "Could not update the centre.",
+      "no_autorizado": "Only the centre administrator can change the centre's details."
     },
     "logo": {
       "titulo": "Centre logo",
@@ -1435,7 +1439,8 @@
       "create_failed": "Could not create the year.",
       "activate_failed": "Could not mark as active.",
       "no_encontrado": "Year not found.",
-      "no_reabrir_cerrado": "A closed year cannot be reopened."
+      "no_reabrir_cerrado": "A closed year cannot be reopened.",
+      "cambiar_activo_solo_admin": "There is already an active year. Only the centre administrator can change the active year."
     },
     "error": {
       "no_reabrir_cerrado": "A closed year cannot be reopened."

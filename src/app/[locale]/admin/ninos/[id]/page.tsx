@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { createClient } from '@/lib/supabase/server'
+import { contextoEnCentro } from '@/features/centros/contexto/get-contexto-centro'
 import {
   getHistoricoMatriculas,
   getInfoMedica,
@@ -67,6 +68,9 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const archivado = nino.deleted_at !== null
 
   const foto = await firmarFotoNino(nino.foto_url)
+  // Los exports RGPD de Dirección son de la admin del centro DEL NIÑO (`export_datos_sujeto`);
+  // a una directora la BD le daría un export recortado, como a la profe.
+  const exportaComoDireccion = (await contextoEnCentro(nino.centro_id))?.esResponsable ?? false
 
   const supabase = await createClient()
   const [{ data: vinculos }, info, matriculas, historico, datosPed, altaDoc] = await Promise.all([
@@ -154,13 +158,15 @@ export default async function NinoDetallePage({ params }: PageProps) {
               centroId={nino.centro_id}
               preset={{ destinatario: 'familia_individual', nino_id: id }}
             />
-            {/* F11-A5: export RGPD del niño a petición de acceso (dirección). */}
-            <ExportButton
-              href={`/${locale}/export/nino/${id}`}
-              label={tExport('exportar_nino')}
-              filename={`nido-export-nino.zip`}
-              size="sm"
-            />
+            {/* F11-A5: export RGPD del niño a petición de acceso (la admin del centro). */}
+            {exportaComoDireccion && (
+              <ExportButton
+                href={`/${locale}/export/nino/${id}`}
+                label={tExport('exportar_nino')}
+                filename={`nido-export-nino.zip`}
+                size="sm"
+              />
+            )}
             {/* F-3-D: baja intra-curso (dirección). Archiva al niño y corta el acceso de
                 sus tutores si es hijo único. Doble gate anti-accidente en el diálogo. */}
             <DarDeBajaNinoButton
@@ -433,7 +439,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
                           {/* F-3-E: acciones (export tutor, escribir a familia) ocultas en archivado. */}
                           {!archivado && (
                             <div className="flex justify-end gap-2">
-                              {v.usuario_id && (
+                              {exportaComoDireccion && v.usuario_id && (
                                 <ExportButton
                                   href={`/${locale}/export/usuario/${v.usuario_id}`}
                                   label={tExport('exportar_usuario')}
