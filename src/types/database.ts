@@ -4532,6 +4532,14 @@ export type Database = {
         Returns: string
       }
       curso_activo_de_centro: { Args: { p_centro_id: string }; Returns: string }
+      dar_de_baja_profe: {
+        Args: {
+          p_centro_id: string
+          p_motivo: Database["public"]["Enums"]["motivo_borrado"]
+          p_usuario_id: string
+        }
+        Returns: number
+      }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       desarchivar_nino: {
         Args: { p_aula_id: string; p_nino_id: string }
@@ -4755,6 +4763,10 @@ export type Database = {
           p_user_agent: string
         }
         Returns: string
+      }
+      reactivar_profe: {
+        Args: { p_centro_id: string; p_usuario_id: string }
+        Returns: undefined
       }
       recibo_en_remesa: { Args: { p_recibo_id: string }; Returns: boolean }
       reproponer_asignaciones: { Args: { p_centro_id: string }; Returns: Json }
@@ -5000,6 +5012,8 @@ export type Database = {
         | "paso_a_superusuario"
         | "baja_direccion"
         | "traspaso_admin"
+        | "baja_temporal"
+        | "salida_centro"
       nino_sexo: "F" | "M" | "X"
       olvido_sujeto_tipo: "usuario" | "nino"
       parentesco:
@@ -5297,6 +5311,8 @@ export const Constants = {
         "paso_a_superusuario",
         "baja_direccion",
         "traspaso_admin",
+        "baja_temporal",
+        "salida_centro",
       ],
       nino_sexo: ["F", "M", "X"],
       olvido_sujeto_tipo: ["usuario", "nino"],
