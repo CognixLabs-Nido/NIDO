@@ -299,6 +299,30 @@ describe('completarEnDireccion — alta modo Dirección con la RPC de familia', 
     expect(estadoUpdateSpy).not.toHaveBeenCalled()
   })
 
+  it('la cuenta tiene el olvido en curso en el centro → fail tutor_olvido, nada sale de la cola', async () => {
+    // La tabla de motivos de la BD no le devuelve el rol (55000, el motivo en el HINT).
+    rpcAltaResult = {
+      data: null,
+      error: { code: '55000', message: 'retirada', hint: 'solicitud_olvido' },
+    }
+
+    const r = await completarEnDireccion(VALID_INPUT, 'es')
+
+    expect(r).toEqual({ success: false, error: 'listaEspera.errors.tutor_olvido' })
+    expect(estadoUpdateSpy).not.toHaveBeenCalled()
+  })
+
+  it('otro 55000 de la RPC no se confunde con el olvido → alta_fallo', async () => {
+    rpcAltaResult = {
+      data: null,
+      error: { code: '55000', message: 'retirada', hint: 'baja_temporal' },
+    }
+
+    const r = await completarEnDireccion(VALID_INPUT, 'es')
+
+    expect(r).toEqual({ success: false, error: 'listaEspera.errors.alta_fallo' })
+  })
+
   it('el centro es el DEL PROSPECTO: ser admin en otro centro no basta', async () => {
     const OTRO = '99999999-9999-4999-8999-999999999999'
     // Premisa: el prospecto es de CENTRO y el usuario es admin solo en OTRO.

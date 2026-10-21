@@ -961,10 +961,9 @@ la misma razón que la del enum del PR 2) y `20261031130000_feat_traspaso_y_baja
 - **`baja_de_direccion(centro, usuario)`**: una directora deja la dirección (`baja_direccion`). La
   da de baja la admin (o el superusuario), o se da de baja ella: la RLS no le deja tocar su propia
   fila. **La admin no se da de baja** (55000): primero traspasa, y la app le explica por qué.
-- `UNIQUE (usuario_id, centro_id, rol)` cuenta las filas retiradas: dar otra vez un rol que la
-  persona tuvo reactiva su fila. Lo hacen las dos RPC y la aceptación de una invitación, pero esta
-  solo deshace las bajas de Dirección (`baja_direccion`, `traspaso_admin`); antes ignoraba el
-  duplicado y la persona entraba sin rol.
+- Dar otra vez un rol que la persona tuvo reactiva su fila retirada por `baja_direccion` o
+  `traspaso_admin`. Desde `20261102120000` lo decide la tabla de motivos (ver «Lo que hace una
+  invitación con una fila retirada»), también en las dos RPC.
 - **No se invita a una admin** (`userRoleSchema` sin `admin`): aceptarla chocaba con el índice y
   la persona entraba sin rol. Se invita como directora y se le traspasa.
 - **En la app:** «Dirección del centro» (`/admin/direccion`), solo para la admin (menú y página):
@@ -1002,16 +1001,59 @@ Son dos estados:
   cubriendo la recogida de otra aula). La puerta se cierra por el otro lado: quien se va pierde el
   rol.
 - **La aceptación de una invitación ya no entra en silencio sin rol.** Antes de tocar nada mira si
-  hay una fila retirada de ese rol que la invitación no deshace (`motivoQueImpideElRol`): la baja
-  temporal da «tu acceso está en pausa» y las demás (salida, olvido, purga, revocación de la
-  familia) «tu acceso anterior está retirado», sin marcar la invitación. Y ya no se ignora un
-  duplicado: `asignarRolDeInvitacion` solo da por bueno el rol vivo.
+  la fila retirada de ese rol vuelve (`motivoQueImpideElRol`): la baja temporal da «tu acceso está
+  en pausa», sin marcar la invitación. Qué hace con cada motivo lo decide desde `20261102120000`
+  la tabla de motivos (ver la sección siguiente).
 - **En la app:** `/admin/personal` lista al personal por su rol, no por sus aulas (antes, quien
   tenía el rol y ningún aula no salía), con «Baja temporal» y «Salida del centro», y aparte quien
   está de baja temporal, con «Reactivar».
 - Tests: `baja-personal.rls.test.ts` (cada «no ve nada» con su control positivo delante, la
   garantía con el aula reabierta, reactivar, la salida y la aceptación) y
   `baja-personal.test.ts` (las acciones).
+
+### Lo que hace una invitación con una fila retirada
+
+Migración `20261102120000_feat_invitaciones_reactivan_o_crean`. `UNIQUE (usuario_id, centro_id,
+rol)` de `roles_usuario` y `UNIQUE (nino_id, usuario_id)` de `vinculos_familiares` contaban
+también las filas retiradas: con una, el INSERT daba 23505 y, según el sitio, la persona entraba
+sin rol, **sin vínculo y sin aviso** (el upsert con `ignoreDuplicates` de `crearVinculoAutomatico`),
+o el alta reventaba. Decisión del responsable:
+
+- **La unicidad cuenta solo las filas vivas** (`roles_usuario_viva_key`,
+  `vinculos_familiares_vivo_key`, índices únicos `WHERE deleted_at IS NULL`). Un `ON CONFLICT` o un
+  `upsert` de supabase-js sobre esas claves no casa con un índice parcial: no se usan.
+- **Qué se hace con la última fila retirada lo decide su motivo, en un solo sitio**
+  (`privado.decision_ante_retirada`), para roles y vínculos:
+
+  | Motivo                                                                                       | Qué pasa                               |
+  | -------------------------------------------------------------------------------------------- | -------------------------------------- |
+  | `revocacion_familia`, `baja_direccion`, `traspaso_admin`, `paso_a_superusuario`, `baja_nino` | Se reactiva la fila, tal cual          |
+  | `purga_rgpd`, `salida_centro`                                                                | Fila nueva; la vieja queda intacta     |
+  | `solicitud_olvido`, `baja_temporal`                                                          | Falla con 55000 y el motivo en el HINT |
+
+  Sin `ELSE`: un motivo nuevo sin clasificar falla, la guarda posterior de la migración lo caza
+  contra el catálogo y el mapa del test es un `Record` sobre el enum (no compila sin decidirlo).
+
+- **`privado.dar_rol` y `privado.dar_vinculo`** aplican la tabla y son las únicas funciones que
+  insertan en esas dos tablas (guarda posterior). Con una fila viva no hacen nada; con
+  `p_solo_comprobar` no escriben y dicen lo que harían, o fallan igual. Sin `EXECUTE` para nadie:
+  las llaman funciones `SECURITY DEFINER`.
+- **Quién pasa por ella:** `traspasar_admin`, `crear_o_anadir_a_familia` (también el alta de un
+  hermano: una cuenta con el olvido en curso no vuelve por ahí), la aceptación de una invitación
+  (`dar_rol_de_invitacion` y `dar_vinculos_de_invitacion`, solo `service_role`) y el vínculo que
+  crea Dirección (`crear_vinculo`, `es_admin` del centro del niño; un vínculo vivo sigue siendo
+  23505).
+- **Las reactivaciones propias** (`desarchivar_nino`, la familia revocada de
+  `crear_o_anadir_a_familia`, `reactivar_profe`) miran solo la última fila retirada y se la saltan
+  si ya hay una viva.
+- **En la app:** la aceptación lo comprueba todo antes de tocar nada (rol y vínculos, sin
+  escribir): la baja temporal da «tu acceso está en pausa» y el olvido «hay en curso una petición
+  de borrado de tus datos», sin marcar la invitación. Al invitar a una profe de baja temporal,
+  Dirección lee «reactívala desde Personal». El alta en Dirección con una cuenta con el olvido en
+  curso da `tutor_olvido`.
+- Tests: `invitaciones-motivos.rls.test.ts` (cada motivo del catálogo, en roles y vínculos; manda
+  la última retirada; la unicidad de las vivas; las puertas; el alta de hermano, la familia
+  revocada y desarchivar con una fila viva al lado).
 
 ### Signup público cerrado (D5)
 
@@ -1050,6 +1092,7 @@ Son dos estados:
 | La app lee a la directora con su sesión       | `roles-directora-app.rls.test.ts`               |
 | Traspaso de la admin y baja de Dirección      | `direccion-traspaso.rls.test.ts`                |
 | Baja temporal y salida del personal           | `baja-personal.rls.test.ts`                     |
+| La tabla de motivos de invitaciones y altas   | `invitaciones-motivos.rls.test.ts`              |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

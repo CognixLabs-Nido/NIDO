@@ -12,7 +12,9 @@ import { acceptPendingInvitationCore } from '../accept-invitation'
  * vinculado a su aula vía `profes_aulas`, sin crear otra cuenta (decisión F). Cubre
  * también el 23505 de coordinadora. Cliente service-role falso con cola de
  * respuestas (cada `await` consume la siguiente) + usuario de sesión inyectado;
- * `calls` registra inserts/updates por tabla.
+ * `calls` registra inserts/updates por tabla y las RPC que dan el rol y los vínculos
+ * (`rpc:<nombre>`, con sus argumentos). Esas RPC no consumen la cola: responden lo que
+ * diga `rpcs` (por defecto, sin error).
  */
 
 const USER = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee1'
@@ -26,11 +28,26 @@ interface Resp {
 }
 interface Call {
   table: string
-  op: 'insert' | 'update' | 'upsert'
+  op: 'insert' | 'update' | 'upsert' | 'rpc'
   patch: unknown
 }
 
-function makeFake(responses: Resp[], rolPrevio: Resp = { data: null, error: null }) {
+type Rpcs = Record<string, (args: Record<string, unknown>) => Resp>
+
+/** Lo que escribe: inserts/updates/upserts y las RPC que dan rol o vínculo sin `p_solo_comprobar`. */
+function escrituras(calls: Call[]) {
+  return calls.filter(
+    (c) => c.op !== 'rpc' || !(c.patch as Record<string, unknown> | undefined)?.p_solo_comprobar
+  )
+}
+
+/** El 55000 con el que la BD dice que una fila retirada no vuelve por una invitación. */
+const noVuelve = (motivo: string) => () => ({
+  data: null,
+  error: { code: '55000', message: `retirada por ${motivo}`, hint: motivo },
+})
+
+function makeFake(responses: Resp[], rpcs: Rpcs = {}) {
   const calls: Call[] = []
   let i = 0
   const next = (): Resp => responses[i++] ?? { data: null, error: null }
@@ -38,7 +55,6 @@ function makeFake(responses: Resp[], rolPrevio: Resp = { data: null, error: null
   function builder(table: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const b: any = {}
-    let escribe = false
     b.select = () => b
     b.eq = () => b
     b.is = () => b
@@ -47,12 +63,10 @@ function makeFake(responses: Resp[], rolPrevio: Resp = { data: null, error: null
     b.single = () => b
     b.maybeSingle = () => b
     b.insert = (patch: unknown) => {
-      escribe = true
       calls.push({ table, op: 'insert', patch })
       return b
     }
     b.update = (patch: unknown) => {
-      escribe = true
       calls.push({ table, op: 'update', patch })
       return b
     }
@@ -64,8 +78,6 @@ function makeFake(responses: Resp[], rolPrevio: Resp = { data: null, error: null
       // F11-H: la lookup de `aulas` (centro_id para resolver el curso activo en
       // crearVinculoProfeAula) no consume la cola posicional de respuestas.
       if (table === 'aulas') return resolve({ data: { centro_id: CENTRO }, error: null })
-      // La lectura previa del rol (`motivoQueImpideElRol`) tampoco: por defecto no hay fila.
-      if (table === 'roles_usuario' && !escribe) return resolve(rolPrevio)
       return resolve(next())
     }
     return b
@@ -73,8 +85,14 @@ function makeFake(responses: Resp[], rolPrevio: Resp = { data: null, error: null
 
   const fake = {
     from: (table: string) => builder(table),
-    // F11-H: curso activo del centro del aula (siempre presente en estos tests).
-    rpc: (_fn: string, _args: unknown) => Promise.resolve({ data: 'curso-1', error: null }),
+    rpc: (fn: string, args: Record<string, unknown>) => {
+      if (fn === 'dar_rol_de_invitacion' || fn === 'dar_vinculos_de_invitacion') {
+        calls.push({ table: `rpc:${fn}`, op: 'rpc', patch: args })
+        return Promise.resolve(rpcs[fn]?.(args) ?? { data: null, error: null })
+      }
+      // F11-H: curso activo del centro del aula (siempre presente en estos tests).
+      return Promise.resolve({ data: 'curso-1', error: null })
+    },
   } as unknown as SupabaseClient<Database>
   return { fake, calls }
 }
@@ -99,7 +117,6 @@ describe('acceptPendingInvitationCore — B8-profe', () => {
   it('tutor existente acepta como profe: inserta rol profe + profes_aulas con el tipo de la invitación', async () => {
     const { fake, calls } = makeFake([
       { data: profeInvitation, error: null }, // invitación
-      { data: null, error: null }, // insert rol profe
       { data: null, error: null }, // insert profes_aulas
       { data: null, error: null }, // update accepted_at
     ])
@@ -108,8 +125,12 @@ describe('acceptPendingInvitationCore — B8-profe', () => {
     expect(r.success).toBe(true)
     if (r.success) expect(r.data.rol).toBe('profe')
 
-    const rol = calls.find((c) => c.table === 'roles_usuario')
-    expect(rol?.patch).toMatchObject({ usuario_id: USER, centro_id: CENTRO, rol: 'profe' })
+    // El rol, por la RPC de la tabla de motivos: primero se mira sin escribir, luego se da.
+    const rol = calls.filter((c) => c.table === 'rpc:dar_rol_de_invitacion').map((c) => c.patch)
+    expect(rol).toEqual([
+      { p_usuario_id: USER, p_centro_id: CENTRO, p_rol: 'profe', p_solo_comprobar: true },
+      { p_usuario_id: USER, p_centro_id: CENTRO, p_rol: 'profe' },
+    ])
 
     const link = calls.find((c) => c.table === 'profes_aulas')
     expect(link?.patch).toMatchObject({
@@ -127,7 +148,6 @@ describe('acceptPendingInvitationCore — B8-profe', () => {
       { data: { ...profeInvitation, tipo_personal_aula: 'coordinadora' }, error: null },
       { data: null, error: null },
       { data: null, error: null },
-      { data: null, error: null },
     ])
     const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
     expect(r.success).toBe(true)
@@ -138,7 +158,6 @@ describe('acceptPendingInvitationCore — B8-profe', () => {
   it('23505 de coordinadora: mensaje amable y NO marca accepted_at', async () => {
     const { fake, calls } = makeFake([
       { data: { ...profeInvitation, tipo_personal_aula: 'coordinadora' }, error: null },
-      { data: null, error: null }, // rol profe ok
       { data: null, error: { code: '23505', message: 'dup' } }, // profes_aulas colisiona
     ])
     const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
@@ -150,47 +169,38 @@ describe('acceptPendingInvitationCore — B8-profe', () => {
 
   it('de baja temporal en el centro: no entra sin rol; mensaje claro y no toca nada', async () => {
     const { fake, calls } = makeFake([{ data: profeInvitation, error: null }], {
-      data: { deleted_at: '2026-10-01T00:00:00Z', deleted_reason: 'baja_temporal' },
-      error: null,
+      dar_rol_de_invitacion: noVuelve('baja_temporal'),
     })
     const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
     expect(r).toEqual({ success: false, error: 'auth.invitation.errors.acceso_en_pausa' })
-    expect(calls).toEqual([])
+    expect(escrituras(calls)).toEqual([])
   })
 
-  it('salió del centro (o cualquier baja que la invitación no deshace): acceso retirado', async () => {
+  it('con el olvido en curso: no entra; mensaje claro y no toca nada', async () => {
     const { fake, calls } = makeFake([{ data: profeInvitation, error: null }], {
-      data: { deleted_at: '2026-10-01T00:00:00Z', deleted_reason: 'salida_centro' },
-      error: null,
+      dar_rol_de_invitacion: noVuelve('solicitud_olvido'),
     })
     const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
-    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.acceso_retirado' })
-    expect(calls).toEqual([])
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.acceso_olvido' })
+    expect(escrituras(calls)).toEqual([])
   })
 
-  it('una baja de Dirección sí la deshace la invitación: sigue', async () => {
-    const { fake, calls } = makeFake(
-      [
-        { data: profeInvitation, error: null },
-        { data: null, error: null },
-        { data: null, error: null },
-        { data: null, error: null },
-      ],
-      {
-        data: { deleted_at: '2026-10-01T00:00:00Z', deleted_reason: 'baja_direccion' },
-        error: null,
-      }
-    )
+  it('la comprobación falla por otra cosa: no sigue (role_failed) y no toca nada', async () => {
+    const { fake, calls } = makeFake([{ data: profeInvitation, error: null }], {
+      dar_rol_de_invitacion: () => ({ data: null, error: { code: '08006', message: 'caída' } }),
+    })
     const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
-    expect(r.success).toBe(true)
-    expect(calls.some((c) => c.table === 'roles_usuario' && c.op === 'insert')).toBe(true)
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.role_failed' })
+    expect(escrituras(calls)).toEqual([])
   })
 
-  it('un error al dar el rol ya no se ignora (antes, un duplicado entraba sin rol)', async () => {
-    const { fake, calls } = makeFake([
-      { data: profeInvitation, error: null },
-      { data: null, error: { code: '23505', message: 'duplicate key value' } },
-    ])
+  it('un error al dar el rol no se ignora: no marca la invitación', async () => {
+    const { fake, calls } = makeFake([{ data: profeInvitation, error: null }], {
+      dar_rol_de_invitacion: (args) =>
+        args.p_solo_comprobar
+          ? { data: 'crear', error: null }
+          : { data: null, error: { code: '23505', message: 'duplicate key value' } },
+    })
     const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
     expect(r).toEqual({ success: false, error: 'auth.invitation.errors.role_failed' })
     expect(calls.some((c) => c.table === 'invitaciones' && c.op === 'update')).toBe(false)
@@ -233,6 +243,9 @@ describe('acceptPendingInvitationCore — alta del 2.º hijo (B8)', () => {
   it('el 2.º tutor queda vinculado como secundario a todos los hijos de la familia', async () => {
     const { fake, calls } = makeFake([
       { data: tutor2Invitation, error: null }, // invitación
+      // Los niños a vincular se resuelven antes de tocar nada (se comprueban sus vínculos).
+      { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
+      { data: [{ id: NINO }, { id: HERMANO }], error: null }, // hijos de la familia
       // PR 1 (Fase 4): antes del rol, su perfil de la familia se enlaza a la cuenta.
       { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
       {
@@ -244,10 +257,6 @@ describe('acceptPendingInvitationCore — alta del 2.º hijo (B8)', () => {
       }, // perfiles de la familia
       { data: { nombre_completo: 'Tutor Dos' }, error: null }, // nombre de su cuenta
       { data: { id: 'ft-2' }, error: null }, // update familia_tutores
-      { data: null, error: null }, // insert rol tutor_legal
-      { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
-      { data: [{ id: NINO }, { id: HERMANO }], error: null }, // hijos de la familia
-      { data: null, error: null }, // upsert vínculos
       { data: null, error: null }, // update accepted_at
     ])
     const r = await acceptPendingInvitationCore({ serviceClient: fake, user: tutor2 }, INV, {
@@ -257,26 +266,24 @@ describe('acceptPendingInvitationCore — alta del 2.º hijo (B8)', () => {
     expect(r.success).toBe(true)
     const perfil = calls.find((c) => c.table === 'familia_tutores' && c.op === 'update')
     expect(perfil?.patch).toEqual({ usuario_id: USER, nombre_completo: 'Tutor Dos' })
-    const up = calls.find((c) => c.table === 'vinculos_familiares' && c.op === 'upsert')
-    expect(up?.patch).toEqual([
-      expect.objectContaining({
-        nino_id: NINO,
-        usuario_id: USER,
-        tipo_vinculo: 'tutor_legal_secundario',
-        parentesco: 'padre',
-      }),
-      expect.objectContaining({
-        nino_id: HERMANO,
-        usuario_id: USER,
-        tipo_vinculo: 'tutor_legal_secundario',
-        parentesco: 'padre',
-      }),
+    const vinc = calls.filter((c) => c.table === 'rpc:dar_vinculos_de_invitacion')
+    expect(vinc.map((c) => (c.patch as Record<string, unknown>).p_solo_comprobar)).toEqual([
+      true,
+      false,
     ])
+    expect(vinc[1]?.patch).toMatchObject({
+      p_usuario_id: USER,
+      p_nino_ids: [NINO, HERMANO],
+      p_tipo: 'tutor_legal_secundario',
+      p_parentesco: 'padre',
+    })
   })
 
   it('sin su perfil pendiente en la familia, no sigue: ni rol ni vínculo (PR 1)', async () => {
     const { fake, calls } = makeFake([
       { data: tutor2Invitation, error: null }, // invitación
+      { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
+      { data: [{ id: NINO }], error: null }, // hijos de la familia
       { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
       {
         data: [{ id: 'ft-1', email: 'titular@example.com', usuario_id: 'otro-tutor' }],
@@ -288,18 +295,16 @@ describe('acceptPendingInvitationCore — alta del 2.º hijo (B8)', () => {
     })
 
     expect(r).toEqual({ success: false, error: 'auth.invitation.errors.vinculo_failed' })
-    expect(calls).toEqual([])
+    expect(escrituras(calls)).toEqual([])
   })
 
   it('si su perfil ya estaba enlazado (aceptación a medias), no lo toca y sigue (PR 1)', async () => {
     const { fake, calls } = makeFake([
       { data: tutor2Invitation, error: null }, // invitación
       { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
-      { data: [{ id: 'ft-2', email: 'tutor2@example.com', usuario_id: USER }], error: null },
-      { data: null, error: null }, // insert rol tutor_legal
-      { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
       { data: [{ id: NINO }], error: null }, // hijos de la familia
-      { data: null, error: null }, // upsert vínculos
+      { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
+      { data: [{ id: 'ft-2', email: 'tutor2@example.com', usuario_id: USER }], error: null },
       { data: null, error: null }, // update accepted_at
     ])
     const r = await acceptPendingInvitationCore({ serviceClient: fake, user: tutor2 }, INV, {
@@ -316,8 +321,6 @@ describe('acceptPendingInvitationCore — alta del 2.º hijo (B8)', () => {
         data: { ...tutor2Invitation, rol_objetivo: 'autorizado', tipo_vinculo: 'autorizado' },
         error: null,
       },
-      { data: null, error: null }, // insert rol autorizado
-      { data: null, error: null }, // upsert vínculo
       { data: null, error: null }, // update accepted_at
     ])
     const r = await acceptPendingInvitationCore({ serviceClient: fake, user: tutor2 }, INV, {
@@ -325,10 +328,48 @@ describe('acceptPendingInvitationCore — alta del 2.º hijo (B8)', () => {
     })
 
     expect(r.success).toBe(true)
-    const up = calls.find((c) => c.table === 'vinculos_familiares' && c.op === 'upsert')
-    expect(up?.patch).toEqual([
-      expect.objectContaining({ nino_id: NINO, tipo_vinculo: 'autorizado' }),
-    ])
+    const vinc = calls.filter((c) => c.table === 'rpc:dar_vinculos_de_invitacion')
+    expect(vinc[1]?.patch).toMatchObject({ p_nino_ids: [NINO], p_tipo: 'autorizado' })
+  })
+
+  it('un vínculo retirado que no vuelve: se para antes de tocar nada, con su mensaje', async () => {
+    const { fake, calls } = makeFake(
+      [
+        { data: tutor2Invitation, error: null }, // invitación
+        { data: { familia_id: 'fam-1' }, error: null }, // familia del niño
+        { data: [{ id: NINO }], error: null }, // hijos de la familia
+      ],
+      { dar_vinculos_de_invitacion: noVuelve('solicitud_olvido') }
+    )
+    const r = await acceptPendingInvitationCore({ serviceClient: fake, user: tutor2 }, INV, {
+      parentesco: 'padre',
+    })
+
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.acceso_olvido' })
+    expect(escrituras(calls)).toEqual([])
+  })
+
+  it('el vínculo falla al darlo: no marca la invitación (antes, un upsert mudo la dejaba sin vínculo)', async () => {
+    const { fake, calls } = makeFake(
+      [
+        {
+          data: { ...tutor2Invitation, rol_objetivo: 'autorizado', tipo_vinculo: 'autorizado' },
+          error: null,
+        },
+      ],
+      {
+        dar_vinculos_de_invitacion: (args) =>
+          args.p_solo_comprobar
+            ? { data: null, error: null }
+            : { data: null, error: { code: '23505', message: 'duplicate key value' } },
+      }
+    )
+    const r = await acceptPendingInvitationCore({ serviceClient: fake, user: tutor2 }, INV, {
+      parentesco: 'abuela',
+    })
+
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.vinculo_failed' })
+    expect(calls.some((c) => c.table === 'invitaciones' && c.op === 'update')).toBe(false)
   })
 })
 

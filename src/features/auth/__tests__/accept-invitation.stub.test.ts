@@ -20,8 +20,8 @@ const HERMANO = '44444444-4444-4444-8444-444444444444'
 // Configurables por test.
 let usersFixture: Array<{ id: string; email: string }>
 let rolesParaUsuario: Array<{ usuario_id: string }>
-// Payload del upsert de `vinculos_familiares` (auto-vínculo).
-let vinculosUpsert: unknown
+// Argumentos de `dar_vinculos_de_invitacion` (auto-vínculo, por la tabla de motivos de la BD).
+let vinculosDados: Record<string, unknown> | undefined
 // Patch de los UPDATE sobre `usuarios` (el idioma que elige la persona al aceptar).
 let usuariosUpdates: unknown[]
 
@@ -91,7 +91,6 @@ function makeServiceFake() {
     }
     b.upsert = (payload: unknown) => {
       state.op = 'upsert'
-      if (table === 'vinculos_familiares') vinculosUpsert = payload
       return self()
     }
     b.delete = () => self()
@@ -116,8 +115,10 @@ function makeServiceFake() {
     //    búsqueda EXACTA service-role, consumida como `.rpc(...).maybeSingle()`. Sustituyó a
     //    `listUsers()` sin paginar (solo veía los 50 primeros → invitado mal clasificado).
     //    Resuelve contra `usersFixture`, que sigue representando las filas de `auth.users`.
-    //  - `registrar_consentimiento`: se hace `await` directo → basta con una promesa.
+    //  - `registrar_consentimiento` y las que dan el rol y los vínculos: `await` directo → basta
+    //    con una promesa.
     rpc: vi.fn((name: string, args?: Record<string, unknown>) => {
+      if (name === 'dar_vinculos_de_invitacion') vinculosDados = args
       if (name === 'buscar_auth_user_por_email') {
         return {
           maybeSingle: () =>
@@ -176,7 +177,7 @@ const VALID_INPUT = {
 beforeEach(() => {
   usersFixture = []
   rolesParaUsuario = []
-  vinculosUpsert = undefined
+  vinculosDados = undefined
   usuariosUpdates = []
   updateSpy = vi.fn(() => Promise.resolve({ data: { user: { id: 'stub-id' } }, error: null }))
   createSpy = vi.fn(() => Promise.resolve({ data: { user: { id: 'new-id' } }, error: null }))
@@ -244,20 +245,12 @@ describe('acceptInvitation — alta del 2.º hijo', () => {
 
     await acceptInvitation(VALID_INPUT)
 
-    expect(vinculosUpsert).toEqual([
-      expect.objectContaining({
-        nino_id: NINO,
-        usuario_id: 'new-id',
-        tipo_vinculo: 'tutor_legal_principal',
-        parentesco: 'madre',
-      }),
-      expect.objectContaining({
-        nino_id: HERMANO,
-        usuario_id: 'new-id',
-        tipo_vinculo: 'tutor_legal_principal',
-        parentesco: 'madre',
-      }),
-    ])
+    expect(vinculosDados).toMatchObject({
+      p_usuario_id: 'new-id',
+      p_nino_ids: [NINO, HERMANO],
+      p_tipo: 'tutor_legal_principal',
+      p_parentesco: 'madre',
+    })
     expect(redirect).toHaveBeenCalledWith('/es/family')
   })
 })

@@ -288,10 +288,10 @@ describe('traspasar_admin y baja_de_direccion', () => {
       expect(await vivos(dir2.id, centroA.id)).toEqual(['directora'])
     })
 
-    it('una baja por otro motivo no se deshace: devuelve el 23505, como antes', async () => {
+    it('una baja que no vuelve por una invitación (el olvido) falla con su motivo (55000)', async () => {
       await serviceClient
         .from('roles_usuario')
-        .update({ deleted_at: new Date().toISOString(), deleted_reason: 'revocacion_familia' })
+        .update({ deleted_at: new Date().toISOString(), deleted_reason: 'solicitud_olvido' })
         .eq('usuario_id', profe.id)
         .eq('centro_id', centroA.id)
         .eq('rol', 'profe')
@@ -300,7 +300,7 @@ describe('traspasar_admin y baja_de_direccion', () => {
         centro_id: centroA.id,
         rol: 'profe',
       })
-      expect(error?.code).toBe('23505')
+      expect(error).toMatchObject({ code: '55000', hint: 'solicitud_olvido' })
       expect(await vivos(profe.id, centroA.id)).toEqual([])
     })
   })

@@ -240,7 +240,7 @@ describe('D-5 punto 2 — blindar desarchivar (motivo_borrado)', () => {
     // Sintético: simula que la FAMILIA la archivó OTRA vía (no la baja). El brazo de la
     // familia en la reactivación filtra por 'revocacion_familia' → NO debe reactivarla,
     // mientras el rol (que sí es 'revocacion_familia') sí revive. (Se sella la familia, no
-    // el rol, para no disparar el 23505 del INSERT de rol del paso 9 con un rol no revivido.)
+    // el rol.)
     await serviceClient
       .from('familias')
       .update({ deleted_reason: 'purga_rgpd' })

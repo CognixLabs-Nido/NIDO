@@ -20,8 +20,8 @@ import {
  * 20260615150000_phase11_alta_p1_fundacion):
  *   1. CHECK invitaciones_tipo_vinculo_coherente (rol ↔ tipo_vinculo).
  *   2. matricula_estado: default 'activa' + transición a 'baja'.
- *   3. Auto-vínculo idempotente: upsert ON CONFLICT (nino_id, usuario_id) DO NOTHING
- *      (el patrón exacto de crearVinculoAutomatico en accept-invitation).
+ *   3. Auto-vínculo idempotente: con un vínculo vivo, `dar_vinculos_de_invitacion` (lo que
+ *      llama crearVinculoAutomatico en accept-invitation desde `20261102120000`) no hace nada.
  *
  * El flujo completo de la acción (acceptInvitation/acceptPendingInvitation) usa
  * next/headers (getRequestContext) y auth.admin.createUser → no es invocable en
@@ -121,7 +121,7 @@ describe('Alta P1 — fundación (DB)', () => {
     })
   })
 
-  describe('auto-vínculo idempotente (ON CONFLICT DO NOTHING)', () => {
+  describe('auto-vínculo idempotente (un vínculo vivo no se toca)', () => {
     let tutor: TestUser
     let nino: { id: string }
 
@@ -136,27 +136,26 @@ describe('Alta P1 — fundación (DB)', () => {
       if (tutor) await deleteTestUser(tutor.id)
     })
 
-    it('un segundo upsert no falla ni duplica ni sobrescribe', async () => {
+    it('una segunda aceptación no falla ni duplica ni sobrescribe', async () => {
+      // El auto-vínculo va por `dar_vinculos_de_invitacion` (la tabla de motivos de la BD); con
+      // un vínculo vivo no hace nada.
       const payloadInicial = {
-        nino_id: nino.id,
-        usuario_id: tutor.id,
-        tipo_vinculo: 'tutor_legal_principal' as const,
-        parentesco: 'madre' as const,
-        descripcion_parentesco: null,
-        permisos: { puede_ver_agenda: true },
+        p_usuario_id: tutor.id,
+        p_nino_ids: [nino.id],
+        p_tipo: 'tutor_legal_principal' as const,
+        p_parentesco: 'madre' as const,
+        p_descripcion_parentesco: null as unknown as string,
+        p_permisos: { puede_ver_agenda: true },
       }
-      const primero = await serviceClient
-        .from('vinculos_familiares')
-        .upsert(payloadInicial, { onConflict: 'nino_id,usuario_id', ignoreDuplicates: true })
+      const primero = await serviceClient.rpc('dar_vinculos_de_invitacion', payloadInicial)
       expect(primero.error).toBeNull()
 
-      // Segundo upsert con datos DISTINTOS → ignoreDuplicates no debe tocar la fila.
-      const segundo = await serviceClient
-        .from('vinculos_familiares')
-        .upsert(
-          { ...payloadInicial, tipo_vinculo: 'tutor_legal_secundario', parentesco: 'padre' },
-          { onConflict: 'nino_id,usuario_id', ignoreDuplicates: true }
-        )
+      // Segunda con datos DISTINTOS → no debe tocar la fila.
+      const segundo = await serviceClient.rpc('dar_vinculos_de_invitacion', {
+        ...payloadInicial,
+        p_tipo: 'tutor_legal_secundario',
+        p_parentesco: 'padre',
+      })
       expect(segundo.error).toBeNull()
 
       const { data: filas } = await serviceClient

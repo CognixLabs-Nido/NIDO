@@ -104,7 +104,8 @@
         "servicio_cuentas_no_disponible": "El servicio de cuentas no responde ahora mismo. Vuelve a intentarlo en unos segundos.",
         "email_no_enviado": "No se pudo enviar la invitación por email. Inténtalo de nuevo.",
         "acceso_en_pausa": "Tu acceso a este centro está en pausa por una baja temporal. La dirección del centro lo reactivará cuando vuelvas.",
-        "acceso_retirado": "No se puede aceptar esta invitación: tu acceso anterior a este centro está retirado. Habla con la dirección del centro."
+        "acceso_olvido": "No se puede aceptar esta invitación: hay en curso una petición de borrado de tus datos en este centro (derecho al olvido). Habla con la dirección del centro.",
+        "de_baja_temporal": "Está de baja temporal en este centro: reactívala desde Personal."
       },
       "idioma_correo": {
         "label": "Idioma del correo",
@@ -4229,7 +4230,8 @@
       "alta_fallo": "No se pudo completar el alta. Inténtalo de nuevo.",
       "sin_fecha_nacimiento": "Falta la fecha de nacimiento del niño; complétala antes de dar el alta.",
       "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo.",
-      "alta_creada_sin_correo": "El alta está creada, pero el correo de invitación no ha salido: la familia no lo ha recibido. No vuelvas a dar el alta; avisa al responsable de NIDO para reenviarlo."
+      "alta_creada_sin_correo": "El alta está creada, pero el correo de invitación no ha salido: la familia no lo ha recibido. No vuelvas a dar el alta; avisa al responsable de NIDO para reenviarlo.",
+      "tutor_olvido": "No se puede completar el alta con esta cuenta: hay en curso una petición de borrado de sus datos en este centro (derecho al olvido)."
     }
   },
   "recibos": {

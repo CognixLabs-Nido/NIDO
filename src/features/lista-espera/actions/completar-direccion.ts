@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto'
 
 import { revalidatePath } from 'next/cache'
 
+import { motivoQueNoVuelve } from '@/features/centros/contexto/escribir-roles'
 import { sendInvitation } from '@/features/auth/actions/send-invitation'
 import { crearTutorDirecto } from '@/features/auth/lib/crear-tutor-directo'
 import { detectarCuentaPorEmail } from '@/features/auth/lib/detectar-cuenta-email'
@@ -216,6 +217,9 @@ export async function completarEnDireccion(
     // NO se borra la cuenta (frágil): el reintento es idempotente — la RPC es atómica (no dejó
     // residuo en BD) y `crearTutorDirecto` reutiliza la cuenta `stub` en el siguiente intento.
     logger.warn('completarEnDireccion rpc', rpcError.message)
+    // La tabla de motivos de la BD no devuelve el rol a quien tiene en curso el olvido.
+    if (motivoQueNoVuelve(rpcError) === 'solicitud_olvido')
+      return fail('listaEspera.errors.tutor_olvido')
     return fail('listaEspera.errors.alta_fallo')
   }
 

@@ -4518,6 +4518,17 @@ export type Database = {
         }
         Returns: Json
       }
+      crear_vinculo: {
+        Args: {
+          p_descripcion_parentesco: string
+          p_nino_id: string
+          p_parentesco: Database["public"]["Enums"]["parentesco"]
+          p_permisos: Json
+          p_tipo: Database["public"]["Enums"]["tipo_vinculo"]
+          p_usuario_id: string
+        }
+        Returns: string
+      }
       crear_recibo_esporadico: {
         Args: {
           p_anio: number
@@ -4539,6 +4550,27 @@ export type Database = {
           p_usuario_id: string
         }
         Returns: number
+      }
+      dar_rol_de_invitacion: {
+        Args: {
+          p_centro_id: string
+          p_rol: Database["public"]["Enums"]["user_role"]
+          p_solo_comprobar?: boolean
+          p_usuario_id: string
+        }
+        Returns: string
+      }
+      dar_vinculos_de_invitacion: {
+        Args: {
+          p_descripcion_parentesco: string
+          p_nino_ids: string[]
+          p_parentesco: Database["public"]["Enums"]["parentesco"]
+          p_permisos: Json
+          p_solo_comprobar?: boolean
+          p_tipo: Database["public"]["Enums"]["tipo_vinculo"]
+          p_usuario_id: string
+        }
+        Returns: undefined
       }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       desarchivar_nino: {

@@ -3,6 +3,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getTranslations } from 'next-intl/server'
 
+import { motivoQueNoVuelve } from '@/features/centros/contexto/escribir-roles'
 import { resolverParentesco, type Parentesco } from '@/features/familias/lib/resolver-parentesco'
 import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
 import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
@@ -117,6 +118,9 @@ export async function vincularHijoATutorExistente(
   if (rpcError) {
     logger.warn('vincularHijoATutorExistente rpc', rpcError.message)
     if (rpcError.code === '42501') return fail('admin.admisiones.anadirHijo.errors.no_autorizado')
+    // La tabla de motivos de la BD no devuelve el rol a quien tiene en curso el olvido.
+    if (motivoQueNoVuelve(rpcError) === 'solicitud_olvido')
+      return fail('listaEspera.errors.tutor_olvido')
     return fail('listaEspera.errors.alta_fallo')
   }
   const res = rpcData as ResultadoCrearFamilia
