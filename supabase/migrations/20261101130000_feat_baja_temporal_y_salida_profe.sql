@@ -234,6 +234,7 @@ AS $function$
       AND m.fecha_baja IS NULL AND m.deleted_at IS NULL AND m.estado = 'activa'
       AND pa.profe_id = auth.uid()
       AND pa.fecha_fin IS NULL AND pa.deleted_at IS NULL
+      AND public.es_profe_en_centro(privado.centro_de_aula(pa.aula_id))
   );
 $function$;
 
@@ -416,7 +417,7 @@ DECLARE
   -- La lógica de este fichero (md5 normalizado), calculada en Postgres sobre los cuerpos creados.
   v_esperado constant jsonb := '{
     "es_profe_de_aula": "71873884f39dbc20dd924820b5b73e46",
-    "es_profe_de_nino": "fc257914f14e7331705a4c6c3e8a52a9",
+    "es_profe_de_nino": "ba3d64df31679c8cf1408b7446b69798",
     "es_redactor_de_aula": "041b2862e39d890c4874f95bf1c05127",
     "es_redactor_de_nino": "75af6e52bd948617acbffa9bb6fc0626",
     "usuario_es_audiencia_anuncio": "887553efd81d2e2946cd294e7cee5819",
@@ -470,7 +471,7 @@ BEGIN
                        'es_redactor_de_nino', 'usuario_es_audiencia_anuncio',
                        'usuario_es_audiencia_anuncio_row')
      AND NOT (p.prosecdef
-              AND (p.prosrc LIKE '%public.es_profe_en_centro(%' OR p.proname = 'es_profe_de_nino')
+              AND p.prosrc LIKE '%public.es_profe_en_centro(%'
               AND has_function_privilege('authenticated', p.oid, 'EXECUTE')
               AND NOT has_function_privilege('anon', p.oid, 'EXECUTE'));
   IF v_sin IS NOT NULL THEN
