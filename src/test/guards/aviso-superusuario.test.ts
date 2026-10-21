@@ -21,6 +21,8 @@ const RE_MONTA_AVISO = /<AvisoSuperusuario\b/g
 
 const SIN_AVISO: Record<string, string> = {
   'src/app/[locale]/elegir-centro/page.tsx': 'el selector: todavía no estás dentro de un centro',
+  'src/app/[locale]/profile/page.tsx':
+    'lee la lista de centros donde eres Dirección para dejarla, no los datos de uno; al superusuario no le enseña ninguno',
   'src/app/[locale]/select-role/page.tsx':
     'reparte por rol y redirige al panel, que ya lleva el aviso (el superusuario solo es admin)',
 }
