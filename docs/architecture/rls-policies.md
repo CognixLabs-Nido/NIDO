@@ -1092,6 +1092,38 @@ centroId)`). La función que lista recibe el centro de quien la llama (`requireC
   donde cada caso se pone rojo), `roles-de-otros.rls.test.ts` y `roles-directora-app.rls.test.ts`
   (la etiqueta del autor en cada centro).
 
+### El panel de plataforma — `platform_metricas` (PR 1 de la Fase 5)
+
+Migración `20261103120000_feat_platform_metricas`. El panel del superusuario (`/plataforma`)
+enseña, por cada centro vivo, recuentos y alertas. Solo cifras, ningún nombre: mirar el panel no se
+audita (decisión del responsable); entrar en un centro sí (`elegirCentro` →
+`registrar_entrada_superusuario`).
+
+- **`platform_metricas()`** (`SECURITY DEFINER`, `STABLE`, `search_path = public`; `EXECUTE` solo
+  para `authenticated`). Su **primera sentencia es `is_superadmin()`**: si no, 42501. Nunca
+  `es_admin(NULL)`, que da TRUE a cualquier persona de Dirección de cualquier centro. La guarda
+  posterior lo comprueba en el cuerpo y que no nombre `es_admin`.
+- **Cada recuento con su predicado de «activo», contando personas (o niños, familias, aulas)
+  distintas con fila viva, nunca filas** (lección BC-8 de MisterFC: hay filas retiradas por media
+  base de datos):
+  - niños matriculados: matrícula `activa` sin baja ni borrado, en el curso activo, de un niño vivo;
+  - en alta, aparte: matrícula `pendiente` o `lista` en el curso activo, sin matrícula activa;
+  - familias vivas con al menos un niño matriculado;
+  - personal: rol `profe` vivo; de baja temporal, aparte: sin rol vivo y con la última fila retirada
+    en `baja_temporal` (las que `reactivar_profe` devolvería);
+  - Dirección: rol `admin` o `directora` vivo;
+  - aulas vivas configuradas en el curso activo;
+  - invitaciones sin aceptar, sin rechazar y sin caducar.
+- **Alertas:** sin admin viva; sin curso activo; y, solo sin admin, la última invitación de admin
+  sin aceptar ni rechazar (`pendiente` o `caducada`). Los centros borrados no salen.
+- **En la app:** `/plataforma`, gateado en el proxy (`esRutaDePlataforma` → `is_superadmin`; un
+  fallo cuenta como «no») y otra vez en su layout. «Entrar» es `elegirCentro`, y «Salir del
+  centro» lleva al panel.
+- Tests: `platform-metricas.rls.test.ts` (una fila en cada estado no activo, recorriendo el
+  catálogo de `motivo_borrado` y de `matricula_estado`, con la premisa delante; las alertas; un
+  centro borrado; la admin, una directora, una profe y anon reciben 42501),
+  `proxy-plataforma.test.ts` y el test del layout.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -1131,6 +1163,7 @@ centroId)`). La función que lista recibe el centro de quien la llama (`requireC
 | Baja temporal y salida del personal           | `baja-personal.rls.test.ts`                     |
 | La tabla de motivos de invitaciones y altas   | `invitaciones-motivos.rls.test.ts`              |
 | Las lecturas filtran por su centro            | `check-lecturas-por-centro.test.ts` (guards)    |
+| Métricas del panel: solo lo activo            | `platform-metricas.rls.test.ts`                 |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

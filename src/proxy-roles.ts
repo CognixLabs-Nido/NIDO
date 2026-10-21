@@ -32,6 +32,17 @@ export const PROTECTED_PREFIXES: Array<{ prefix: RegExp; roles: ReadonlyArray<st
 ]
 
 /**
+ * `/plataforma`: el panel del superusuario (Fase 5, ADR-0061). No va por roles de
+ * `roles_usuario` (el superusuario no tiene fila en ningún centro): el proxy pregunta
+ * `is_superadmin`, y el layout lo vuelve a comprobar.
+ */
+export const PREFIJO_PLATAFORMA = /^\/plataforma(\/.*)?$/
+
+export function esRutaDePlataforma(rest: string): boolean {
+  return PREFIJO_PLATAFORMA.test(rest)
+}
+
+/**
  * Devuelve los roles permitidos para una pathname (sin prefijo de locale).
  * `null` si la ruta no está en `PROTECTED_PREFIXES` (rutas públicas o
  * espacios no enumerados — el proxy las trata como "no protegidas").

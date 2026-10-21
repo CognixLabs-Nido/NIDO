@@ -4323,5 +4323,31 @@
       "invitacion_no_encontrada": "Esa invitación ya no está pendiente.",
       "fallo": "No se ha podido completar. Inténtalo de nuevo."
     }
+  },
+  "plataforma": {
+    "titulo": "Panel de plataforma",
+    "subtitulo": "Los centros con lo que tienen activo. Solo cifras: para ver un centro, entra en él (la entrada queda registrada).",
+    "entrar": "Entrar",
+    "curso_activo": "Curso activo: {curso}",
+    "sin_curso_activo_corto": "Sin curso activo",
+    "vacio": "Todavía no hay ningún centro.",
+    "error_carga": "No hemos podido cargar las métricas de los centros. Recarga la página.",
+    "metricas": {
+      "ninos_matriculados": "Niños matriculados",
+      "ninos_en_alta": "En alta",
+      "familias": "Familias",
+      "personal": "Personal",
+      "personal_baja_temporal": "De baja temporal",
+      "direccion": "Dirección",
+      "aulas": "Aulas",
+      "invitaciones_pendientes": "Invitaciones pendientes"
+    },
+    "alertas": {
+      "titulo": "Alertas",
+      "sin_admin": "Sin admin: nadie administra el centro.",
+      "invitacion_admin_pendiente": "Hay una invitación de admin pendiente de aceptar.",
+      "invitacion_admin_caducada": "La invitación de admin ha caducado.",
+      "sin_curso_activo": "Sin curso activo: el centro no tiene ningún curso en marcha."
+    }
   }
 }
