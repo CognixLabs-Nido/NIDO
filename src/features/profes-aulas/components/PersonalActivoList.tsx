@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
@@ -25,9 +26,16 @@ function iniciales(nombre: string): string {
 /**
  * Listado de personal activo del centro (Fallo 1). **Una fila por persona**;
  * si está en varias aulas, los pares "rol · aula" se listan en la misma fila.
- * Server Component (solo presenta) — mismo estilo que `InvitacionesProfeList`.
+ * Server Component (solo presenta) — mismo estilo que `InvitacionesProfeList`. `acciones` pone a
+ * la derecha de cada persona lo que Dirección puede hacer con ella (baja, reactivar).
  */
-export async function PersonalActivoList({ items }: { items: PersonalActivoVista[] }) {
+export async function PersonalActivoList({
+  items,
+  acciones,
+}: {
+  items: PersonalActivoVista[]
+  acciones?: (p: PersonalActivoVista) => ReactNode
+}) {
   const t = await getTranslations('admin.personal.activos')
   const tTipos = await getTranslations('admin.personal.tipo_personal')
 
@@ -48,15 +56,18 @@ export async function PersonalActivoList({ items }: { items: PersonalActivoVista
                 iniciales(p.nombre_completo)
               )}
             </div>
-            <div className="min-w-0 space-y-0.5">
+            <div className="min-w-0 flex-1 space-y-0.5">
               <p className="text-foreground truncate font-medium">{p.nombre_completo}</p>
               {p.email && <p className="text-muted-foreground truncate text-sm">{p.email}</p>}
               <p className="text-muted-foreground text-sm">
-                {p.asignaciones
-                  .map((a) => `${tTipos(a.tipo_personal_aula)} · ${a.aula_nombre}`)
-                  .join(' / ')}
+                {p.asignaciones.length === 0
+                  ? t('sin_aula')
+                  : p.asignaciones
+                      .map((a) => `${tTipos(a.tipo_personal_aula)} · ${a.aula_nombre}`)
+                      .join(' / ')}
               </p>
             </div>
+            {acciones?.(p)}
           </CardContent>
         </Card>
       ))}

@@ -30,7 +30,7 @@ interface Call {
   patch: unknown
 }
 
-function makeFake(responses: Resp[]) {
+function makeFake(responses: Resp[], rolPrevio: Resp = { data: null, error: null }) {
   const calls: Call[] = []
   let i = 0
   const next = (): Resp => responses[i++] ?? { data: null, error: null }
@@ -38,17 +38,21 @@ function makeFake(responses: Resp[]) {
   function builder(table: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const b: any = {}
+    let escribe = false
     b.select = () => b
     b.eq = () => b
     b.is = () => b
+    b.in = () => b
     b.limit = () => b
     b.single = () => b
     b.maybeSingle = () => b
     b.insert = (patch: unknown) => {
+      escribe = true
       calls.push({ table, op: 'insert', patch })
       return b
     }
     b.update = (patch: unknown) => {
+      escribe = true
       calls.push({ table, op: 'update', patch })
       return b
     }
@@ -60,6 +64,8 @@ function makeFake(responses: Resp[]) {
       // F11-H: la lookup de `aulas` (centro_id para resolver el curso activo en
       // crearVinculoProfeAula) no consume la cola posicional de respuestas.
       if (table === 'aulas') return resolve({ data: { centro_id: CENTRO }, error: null })
+      // La lectura previa del rol (`motivoQueImpideElRol`) tampoco: por defecto no hay fila.
+      if (table === 'roles_usuario' && !escribe) return resolve(rolPrevio)
       return resolve(next())
     }
     return b
@@ -139,6 +145,54 @@ describe('acceptPendingInvitationCore — B8-profe', () => {
     expect(r.success).toBe(false)
     if (!r.success) expect(r.error).toBe('auth.invitation.errors.coordinadora_ocupada')
     // No se llegó a marcar la invitación como aceptada (reintentable vía B8).
+    expect(calls.some((c) => c.table === 'invitaciones' && c.op === 'update')).toBe(false)
+  })
+
+  it('de baja temporal en el centro: no entra sin rol; mensaje claro y no toca nada', async () => {
+    const { fake, calls } = makeFake([{ data: profeInvitation, error: null }], {
+      data: { deleted_at: '2026-10-01T00:00:00Z', deleted_reason: 'baja_temporal' },
+      error: null,
+    })
+    const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.acceso_en_pausa' })
+    expect(calls).toEqual([])
+  })
+
+  it('salió del centro (o cualquier baja que la invitación no deshace): acceso retirado', async () => {
+    const { fake, calls } = makeFake([{ data: profeInvitation, error: null }], {
+      data: { deleted_at: '2026-10-01T00:00:00Z', deleted_reason: 'salida_centro' },
+      error: null,
+    })
+    const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.acceso_retirado' })
+    expect(calls).toEqual([])
+  })
+
+  it('una baja de Dirección sí la deshace la invitación: sigue', async () => {
+    const { fake, calls } = makeFake(
+      [
+        { data: profeInvitation, error: null },
+        { data: null, error: null },
+        { data: null, error: null },
+        { data: null, error: null },
+      ],
+      {
+        data: { deleted_at: '2026-10-01T00:00:00Z', deleted_reason: 'baja_direccion' },
+        error: null,
+      }
+    )
+    const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
+    expect(r.success).toBe(true)
+    expect(calls.some((c) => c.table === 'roles_usuario' && c.op === 'insert')).toBe(true)
+  })
+
+  it('un error al dar el rol ya no se ignora (antes, un duplicado entraba sin rol)', async () => {
+    const { fake, calls } = makeFake([
+      { data: profeInvitation, error: null },
+      { data: null, error: { code: '23505', message: 'duplicate key value' } },
+    ])
+    const r = await acceptPendingInvitationCore({ serviceClient: fake, user: sessionUser }, INV)
+    expect(r).toEqual({ success: false, error: 'auth.invitation.errors.role_failed' })
     expect(calls.some((c) => c.table === 'invitaciones' && c.op === 'update')).toBe(false)
   })
 

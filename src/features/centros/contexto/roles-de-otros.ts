@@ -164,3 +164,47 @@ export async function direccionDelCentro(
       a.rol !== b.rol ? (a.rol === 'admin' ? -1 : 1) : a.nombre.localeCompare(b.nombre, 'es')
     )
 }
+
+/** Una persona del personal del centro, por su fila `profe` (activa o de baja temporal). */
+export interface MiembroPersonal {
+  usuarioId: string
+  nombre: string
+  /** Ruta en el bucket `usuarios-fotos` (SIN firmar); null si no hay avatar. */
+  fotoUrl: string | null
+}
+
+/**
+ * El personal del centro según `roles_usuario`, no según sus aulas: quien tiene la fila `profe`
+ * viva (`activas`, con o sin aula) y quien la tiene retirada por una baja temporal (`deBaja`, que
+ * Dirección puede reactivar). Quien salió del centro no sale. Con la sesión de Dirección
+ * (`roles_admin_select`). `null` = la lectura falló.
+ */
+export async function personalDelCentro(
+  client: Client,
+  centroId: string
+): Promise<{ activas: MiembroPersonal[]; deBaja: MiembroPersonal[] } | null> {
+  const { data, error } = await client
+    .from('roles_usuario')
+    .select('deleted_at, deleted_reason, usuario:usuarios!inner(id, nombre_completo, foto_url)')
+    .eq('centro_id', centroId)
+    .eq('rol', 'profe')
+    .or('deleted_at.is.null,deleted_reason.eq.baja_temporal')
+  if (error) return null
+  const porNombre = (a: MiembroPersonal, b: MiembroPersonal) =>
+    a.nombre.localeCompare(b.nombre, 'es')
+  const miembro = (f: (typeof data)[number]): MiembroPersonal => ({
+    usuarioId: f.usuario.id,
+    nombre: f.usuario.nombre_completo,
+    fotoUrl: f.usuario.foto_url,
+  })
+  return {
+    activas: data
+      .filter((f) => f.deleted_at === null)
+      .map(miembro)
+      .sort(porNombre),
+    deBaja: data
+      .filter((f) => f.deleted_at !== null)
+      .map(miembro)
+      .sort(porNombre),
+  }
+}

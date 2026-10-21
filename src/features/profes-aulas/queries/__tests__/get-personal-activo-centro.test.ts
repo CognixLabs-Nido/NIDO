@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { Database } from '@/types/database'
 
 import {
+  componerPersonal,
   getPersonalActivoCentroCore,
   resolverEmailsPorId,
   type EmailResolver,
@@ -224,5 +225,39 @@ describe('resolverEmailsPorId', () => {
     const rep = fakeAuth({ p1: 'p1@correo.test' })
     await resolverEmailsPorId(rep.service, ['p1', 'p1'])
     expect(rep.pedidos).toEqual(['p1'])
+  })
+})
+
+describe('componerPersonal — quién es personal lo dice el rol, no el aula', () => {
+  const ana = { usuarioId: 'u-ana', nombre: 'Ana', fotoUrl: null }
+  const bea = { usuarioId: 'u-bea', nombre: 'Bea', fotoUrl: 'u-bea/f.jpg' }
+  const conAulaAna = {
+    profe_id: 'u-ana',
+    nombre_completo: 'Ana',
+    email: 'ana@example.com',
+    foto_url: null,
+    asignaciones: [
+      { aula_id: 'a1', aula_nombre: 'Aula 1', tipo_personal_aula: 'profesora' as const },
+    ],
+  }
+
+  it('una profe con rol vivo y sin aula sale, sin aulas', () => {
+    const r = componerPersonal({ activas: [ana, bea], deBaja: [] }, [conAulaAna])
+    expect(r.activas.map((p) => [p.profe_id, p.asignaciones.length])).toEqual([
+      ['u-ana', 1],
+      ['u-bea', 0],
+    ])
+    expect(r.activas[0]?.email).toBe('ana@example.com')
+  })
+
+  it('una asignación sin rol vivo detrás no sale', () => {
+    const r = componerPersonal({ activas: [bea], deBaja: [] }, [conAulaAna])
+    expect(r.activas.map((p) => p.profe_id)).toEqual(['u-bea'])
+  })
+
+  it('quien está de baja temporal va aparte y sin aulas', () => {
+    const r = componerPersonal({ activas: [], deBaja: [ana] }, [conAulaAna])
+    expect(r.activas).toEqual([])
+    expect(r.deBaja.map((p) => [p.profe_id, p.asignaciones.length])).toEqual([['u-ana', 0]])
   })
 })

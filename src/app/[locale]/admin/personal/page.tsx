@@ -8,8 +8,15 @@ import { getInvitacionesProfePendientes } from '@/features/auth/queries/get-invi
 import { getAulasPorCurso } from '@/features/aulas/queries/get-aulas'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
+import {
+  AccionesPersonal,
+  ReactivarPersonal,
+} from '@/features/profes-aulas/components/AccionesPersonal'
 import { PersonalActivoList } from '@/features/profes-aulas/components/PersonalActivoList'
-import { getPersonalActivoCentro } from '@/features/profes-aulas/queries/get-personal-activo-centro'
+import {
+  getPersonalDelCentro,
+  type PersonalActivoItem,
+} from '@/features/profes-aulas/queries/get-personal-activo-centro'
 import { createClient } from '@/lib/supabase/server'
 import { BUCKET_USUARIOS_FOTOS, firmarRutasBucket } from '@/shared/lib/adjuntos/storage'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -38,22 +45,24 @@ export default async function AdminPersonalPage({ params }: PageProps) {
   const aulas = await getAulasPorCurso(cursoActivo.id)
   const invitaciones = await getInvitacionesProfePendientes(centroId)
 
-  // Personal activo del centro (una fila por persona). Las fotos van por URL
-  // firmada del bucket privado `usuarios-fotos` (el admin las puede leer por RLS).
-  const personal = await getPersonalActivoCentro(cursoActivo.id)
+  // El personal del centro (una fila por persona): el de rol vivo, con o sin aula, y aparte quien
+  // está de baja temporal. Las fotos van por URL firmada del bucket privado `usuarios-fotos` (el
+  // admin las puede leer por RLS).
+  const personal = await getPersonalDelCentro(centroId, cursoActivo.id)
   const supabase = await createClient()
+  const todas = personal ? [...personal.activas, ...personal.deBaja] : []
   const firmadas = await firmarRutasBucket(
     supabase,
     BUCKET_USUARIOS_FOTOS,
-    personal.map((p) => p.foto_url).filter((x): x is string => !!x)
+    todas.map((p) => p.foto_url).filter((x): x is string => !!x)
   )
-  const personalVista = personal.map((p) => ({
+  const vista = (p: PersonalActivoItem) => ({
     profe_id: p.profe_id,
     nombre_completo: p.nombre_completo,
     email: p.email,
     fotoUrl: p.foto_url ? (firmadas.get(p.foto_url) ?? null) : null,
     asignaciones: p.asignaciones,
-  }))
+  })
 
   return (
     <div className="space-y-6">
@@ -70,8 +79,40 @@ export default async function AdminPersonalPage({ params }: PageProps) {
 
       <section className="space-y-3">
         <h2 className="text-foreground text-lg font-medium">{t('activos.title')}</h2>
-        <PersonalActivoList items={personalVista} />
+        {personal ? (
+          <PersonalActivoList
+            items={personal.activas.map(vista)}
+            acciones={(p) => (
+              <AccionesPersonal
+                centroId={centroId}
+                usuarioId={p.profe_id}
+                nombre={p.nombre_completo}
+              />
+            )}
+          />
+        ) : (
+          <p className="text-destructive text-sm">{t('error_lectura')}</p>
+        )}
       </section>
+
+      {personal && personal.deBaja.length > 0 && (
+        <section className="space-y-3">
+          <div className="space-y-1">
+            <h2 className="text-foreground text-lg font-medium">{t('de_baja.title')}</h2>
+            <p className="text-muted-foreground text-sm">{t('de_baja.descripcion')}</p>
+          </div>
+          <PersonalActivoList
+            items={personal.deBaja.map(vista)}
+            acciones={(p) => (
+              <ReactivarPersonal
+                centroId={centroId}
+                usuarioId={p.profe_id}
+                nombre={p.nombre_completo}
+              />
+            )}
+          />
+        </section>
+      )}
 
       <section className="space-y-3">
         <h2 className="text-foreground text-lg font-medium">{t('pendientes.title')}</h2>
