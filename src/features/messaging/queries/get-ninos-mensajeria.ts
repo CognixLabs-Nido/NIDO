@@ -64,6 +64,7 @@ export async function getNinosMensajeriaParaUsuario(
     const { data: asignaciones, error: asigErr } = await supabase
       .from('profes_aulas')
       .select('aula:aulas!inner(id, nombre, centro_id, deleted_at)')
+      .eq('aula.centro_id', centroId)
       .eq('profe_id', userId)
       .is('fecha_fin', null)
       .is('deleted_at', null)
@@ -115,6 +116,7 @@ export async function getNinosMensajeriaParaUsuario(
       .select(
         'permisos, nino:ninos!inner(id, nombre, apellidos, centro_id, deleted_at, matriculas(aula_id, fecha_baja, deleted_at, estado))'
       )
+      .eq('nino.centro_id', centroId)
       .eq('usuario_id', userId)
       .is('deleted_at', null)
 
@@ -155,6 +157,7 @@ export async function getNinosMensajeriaParaUsuario(
       supabase
         .from('matriculas')
         .select('aula_id, nino:ninos!inner(id, nombre, apellidos, centro_id, deleted_at)')
+        .eq('nino.centro_id', centroId)
     )
 
     if (matErr) {

@@ -45,15 +45,10 @@ export async function countNoLeidos(centroId: string): Promise<UnreadCounts> {
   // dirección↔familia es uno por centro (PR B de la Fase 2).
   const rol = (await rolesEnCentro(supabase, userId, centroId))?.rol ?? null
 
-  let convQuery = supabase.from('conversaciones').select('id')
+  let convQuery = supabase.from('conversaciones').select('id').eq('centro_id', centroId)
   if (rol === 'admin') {
     // Multicentro (Fase 2 · PR B): un hilo dirección↔familia por centro; los de este.
-    convQuery = convQuery
-      .eq('tipo_conversacion', 'admin_familia')
-      .eq('admin_id', userId)
-      .eq('centro_id', centroId)
-  } else {
-    convQuery = convQuery.eq('centro_id', centroId)
+    convQuery = convQuery.eq('tipo_conversacion', 'admin_familia').eq('admin_id', userId)
   }
   const { data: convs, error: convErr } = await convQuery.limit(200)
 

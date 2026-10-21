@@ -78,7 +78,7 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   // Identidad del menor + libro de familia (documento del niño) en una sola lectura.
   const { data: nino } = await supabase
     .from('ninos')
-    .select('apellidos, fecha_nacimiento, libro_familia_path, familia_id')
+    .select('apellidos, fecha_nacimiento, libro_familia_path, familia_id, centro_id')
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle()
@@ -151,13 +151,15 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   // Acuse de NORMAS de régimen interno firmado (D-3, acuse obligatorio). A diferencia de
   // imagen (B2, por niño), las normas son patrón A: la dirección publica UNA instancia de
   // `reglas_regimen_interno` para la audiencia (aula/centro) y la familia la firma (la firma
-  // se ancla a `nino_id`). Se busca la instancia publicada visible por RLS —igual que
-  // `panelFirma(..., patronA=true)` de la ruta del alta— y su última firma para este niño;
+  // se ancla a `nino_id`). Se busca la instancia publicada del centro del niño visible por RLS
+  // —igual que `panelFirma(..., patronA=true)` de la ruta del alta; la RLS sola deja ver las de
+  // todos los centros de la familia— y su última firma para este niño;
   // `firmado` = acuse hecho. En modo Dirección la firma es PRESENCIAL pero también
   // `decision='firmado'` (el gate no mira `metodo_firma`), así que se cumple por ese camino.
   const { data: normasInst } = await supabase
     .from('autorizaciones')
     .select('id')
+    .eq('centro_id', nino.centro_id)
     .eq('tipo', 'reglas_regimen_interno')
     .eq('es_plantilla', false)
     .eq('estado', 'publicada')

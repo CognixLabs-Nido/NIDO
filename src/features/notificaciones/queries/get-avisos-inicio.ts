@@ -37,7 +37,8 @@ const VACIO: AvisosInicio = {
 /**
  * Contadores del aviso de inicio (punto 2), según rol — **resumen de estado**, no
  * solo lo pendiente (punto 3: muestra también las firmadas/confirmadas). La RLS
- * filtra el ámbito:
+ * filtra el ámbito del rol, y cada consulta se acota además a `centroId` (la RLS deja ver lo
+ * de todos los centros del usuario):
  *  - Staff: administraciones **pendientes de TU confirmación** (lo principal, B) +
  *    **confirmadas** (resumen) + medicaciones activas hoy.
  *  - Familia: autorizaciones **pendientes de tu firma** + **firmadas** (resumen) +
@@ -71,11 +72,13 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
       supabase
         .from('administraciones_medicacion')
         .select('id', { count: 'exact', head: true })
+        .eq('centro_id', centroId)
         .is('confirmado_por', null)
         .neq('administrado_por', user.id),
       supabase
         .from('administraciones_medicacion')
         .select('id', { count: 'exact', head: true })
+        .eq('centro_id', centroId)
         .not('confirmado_por', 'is', null),
       // "Ha llegado una firma nueva": recogidas/medicaciones que una familia firmó
       // recientemente en tu ámbito (RLS), excluyendo tus propias firmas. Se traen las
@@ -87,6 +90,7 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
         .eq('decision', 'firmado')
         .neq('firmante_id', user.id)
         .gte('created_at', cutoffNovedades())
+        .eq('autorizaciones.centro_id', centroId)
         .eq('autorizaciones.es_plantilla', false)
         .in('autorizaciones.tipo', ['recogida', 'medicacion']),
       // Revocaciones (alerta de seguridad): cambió quién recoge / se paró una medicina.
@@ -96,12 +100,14 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
         .eq('decision', 'revocado')
         .neq('firmante_id', user.id)
         .gte('created_at', cutoffNovedades())
+        .eq('autorizaciones.centro_id', centroId)
         .eq('autorizaciones.es_plantilla', false)
         .in('autorizaciones.tipo', ['recogida', 'medicacion']),
       // Medicaciones TERMINADAS (hoy > fecha_fin) aún sin archivar → recordatorio de archivar.
       supabase
         .from('autorizaciones')
         .select('id', { count: 'exact', head: true })
+        .eq('centro_id', centroId)
         .eq('tipo', 'medicacion')
         .eq('es_plantilla', false)
         .is('archivada_at', null)
@@ -138,7 +144,7 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
       fotosNuevas: 0,
       recibosNuevos: 0,
       campanaPendientes,
-      // El count real lo inyecta el dashboard admin (RLS acota al centro); aquí 0.
+      // El count real lo inyecta el dashboard admin (acotado a su centro); aquí 0.
       altasPendientesValidar: 0,
     }
   }

@@ -74,6 +74,7 @@ export async function getTutoresParaAdminDireccionCore(
       nino:ninos!inner(id, nombre, apellidos, centro_id, deleted_at)
       `
     )
+    .eq('nino.centro_id', centroId)
     .in('tipo_vinculo', ['tutor_legal_principal', 'tutor_legal_secundario', 'autorizado'])
     .is('deleted_at', null)
 

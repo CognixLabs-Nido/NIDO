@@ -154,6 +154,7 @@ async function ninosVencidos(
   ahoraISO: string,
   meses: number
 ): Promise<Set<string>> {
+  // entre-centros: el barrido de retención es del servidor y recorre todos los centros.
   const { data } = await service.from('matriculas').select('nino_id, fecha_baja')
   return ninosVencidosPorBaja(data ?? [], cutoffFecha(ahoraISO, { meses }))
 }
@@ -167,6 +168,7 @@ async function listarDniRecogida(service: Service, ahoraISO: string): Promise<Un
   const cutoffPuntual = cutoffFecha(ahoraISO, { dias: RETENCION_RECOGIDA_PUNTUAL_DIAS })
   const vencidosBaja = await ninosVencidos(service, ahoraISO, RETENCION_RECOGIDA_HABITUAL_MESES)
 
+  // entre-centros: el barrido de retención es del servidor y recorre todos los centros.
   const { data } = await service
     .from('firmas_autorizacion')
     .select('id, nino_id, datos, autorizaciones!inner(tipo, vigencia_hasta, centro_id)')
@@ -305,6 +307,7 @@ async function listarEsqueletoHuerfano(
   const cutoff = cutoffTimestamp(ahoraISO, GRACIA_ESQUELETO_DIAS)
 
   // Anclaje: niños con matrícula 'pendiente' viva (acota el universo).
+  // entre-centros: el barrido de retención es del servidor y recorre todos los centros.
   const { data: pend } = await service
     .from('matriculas')
     .select('nino_id')

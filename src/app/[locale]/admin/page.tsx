@@ -65,16 +65,18 @@ export default async function AdminDashboard({ params }: PageProps) {
       .eq('centro_id', centroId)
       .is('deleted_at', null),
     contarRolesDelCentro(supabase, centroId),
-    // Matrículas en 'lista' = altas finalizadas por el tutor, pendientes de validar.
-    // La RLS `matriculas_admin_all` acota al centro del admin (sin filtro extra).
+    // Matrículas en 'lista' = altas finalizadas por el tutor, pendientes de validar. La RLS
+    // `matriculas_admin_all` deja ver las de todos los centros del admin: se acota por el
+    // centro del niño (matriculas no tiene centro_id).
     supabase
       .from('matriculas')
-      .select('id', { count: 'exact', head: true })
+      .select('id, nino:ninos!inner(centro_id)', { count: 'exact', head: true })
+      .eq('nino.centro_id', centroId)
       .eq('estado', 'lista')
       .is('fecha_baja', null)
       .is('deleted_at', null),
     getCursoActivo(centroId),
-    getResumenAsistenciaCentro(fecha),
+    getResumenAsistenciaCentro(centroId, fecha),
     getAvisosInicio('admin', centroId),
   ])
 

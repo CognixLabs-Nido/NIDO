@@ -26,7 +26,7 @@ export default async function AdminInformesPage({ params, searchParams }: PagePr
 
   // --- Vista de archivadas (solo lectura) -----------------------------------
   if (soloHistorico) {
-    const archivadas = await getPlantillasInforme(true)
+    const archivadas = await getPlantillasInforme(centroId, true)
     return (
       <div className="space-y-6">
         <Link
@@ -63,7 +63,7 @@ export default async function AdminInformesPage({ params, searchParams }: PagePr
   }
 
   // --- Vista principal: plantillas activas ----------------------------------
-  const activas = await getPlantillasInforme(false)
+  const activas = await getPlantillasInforme(centroId, false)
 
   return (
     <div className="space-y-8">

@@ -36,6 +36,7 @@ export async function GET(
   if (!usuarioRec) return new Response('Sin datos', { status: 404 })
 
   // Hijos de los que es tutor legal (no 'autorizado').
+  // entre-centros: el export de uno mismo (art. 15) es de todos sus centros.
   const { data: vinc } = await supabase
     .from('vinculos_familiares')
     .select('nino_id, tipo_vinculo')

@@ -40,6 +40,7 @@ export async function audienciaAnuncio(
     const { data: tutores } = await supabase
       .from('vinculos_familiares')
       .select('usuario_id, nino:ninos!inner(matriculas(aula_id, fecha_baja, deleted_at, estado))')
+      .eq('nino.centro_id', anuncio.centro_id)
       .filter('permisos->puede_recibir_mensajes', 'eq', true)
       .is('deleted_at', null)
 
@@ -86,6 +87,7 @@ export async function audienciaAnuncio(
     const { data: tutores } = await supabase
       .from('vinculos_familiares')
       .select('usuario_id, nino:ninos!inner(matriculas(aula_id, fecha_baja, deleted_at, estado))')
+      .eq('nino.centro_id', anuncio.centro_id)
       .filter('permisos->puede_recibir_mensajes', 'eq', true)
       .is('deleted_at', null)
 

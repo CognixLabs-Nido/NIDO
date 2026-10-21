@@ -97,7 +97,9 @@ export async function recolectarUsuario(
 
   const [roles, consentimientos, vinculos] = await Promise.all([
     rolesDelSujetoParaExport(client, usuarioId),
+    // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
     client.from('consentimientos').select('*').eq('usuario_id', usuarioId),
+    // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
     client.from('vinculos_familiares').select('*').eq('usuario_id', usuarioId),
   ])
 
@@ -108,6 +110,7 @@ export async function recolectarUsuario(
     .map((v) => v.nino_id)
   const orParts = [`tutor_id.eq.${usuarioId}`]
   if (ninoIds.length > 0) orParts.push(`nino_id.in.(${ninoIds.join(',')})`)
+  // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
   const { data: convs } = await client.from('conversaciones').select('id').or(orParts.join(','))
   const convIds = (convs ?? []).map((c) => c.id)
   const mensajes = convIds.length
@@ -115,9 +118,13 @@ export async function recolectarUsuario(
     : []
 
   const [ausencias, citasInvitado, recordatorios, firmas] = await Promise.all([
+    // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
     client.from('ausencias').select('*').eq('reportada_por', usuarioId),
+    // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
     client.from('cita_invitados').select('*').eq('usuario_id', usuarioId),
+    // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
     client.from('recordatorios').select('*').eq('usuario_destinatario_id', usuarioId),
+    // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
     client.from('firmas_autorizacion').select('*').eq('firmante_id', usuarioId),
   ])
 

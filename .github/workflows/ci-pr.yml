@@ -42,6 +42,11 @@ jobs:
       - name: Guard centro activo
         run: npm run check:centro-activo
 
+      # Multicentro: toda lectura de una tabla de centro filtra por su centro, o dice por qué no
+      # (`// entre-centros: <motivo>`). La RLS dice quién ve la fila, no de qué centro es la página.
+      - name: Guard lecturas por centro
+        run: npm run check:lecturas-por-centro
+
       # Solo el proyecto `unit` (excluye src/test/rls/** y src/test/audit/**): sin red,
       # sin credenciales del remoto. Los tests RLS/audit corren en `rls-local.yml`.
       - name: Unit tests

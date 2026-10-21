@@ -32,7 +32,7 @@ export default async function TeacherInformesPage({ params }: PageProps) {
 
   const [aulas, plantillas, campanasData] = await Promise.all([
     getInformesDeMisAulas(centroId),
-    getPlantillasInforme(false),
+    getPlantillasInforme(centroId, false),
     getCampanasInformeCursoActivo(centroId),
   ])
 

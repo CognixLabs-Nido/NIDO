@@ -17,6 +17,7 @@ import {
   createTestUser,
   deleteTestCentro,
   deleteTestUser,
+  serviceClient,
   type TestUser,
 } from './setup'
 
@@ -104,8 +105,19 @@ describe('la app lee a la directora con su sesión', () => {
 
   it('rolesDeAutores: la directora sale como admin (Dirección en la etiqueta del mensaje)', async () => {
     const c = await clientFor(admin)
-    const filas = await rolesDeAutores(c, [directora.id])
-    expect(filas).toContainEqual({ usuario_id: directora.id, rol: 'admin' })
-    expect(filas.map((f) => f.rol)).not.toContain('directora')
+    const filas = await rolesDeAutores(c, [directora.id], centroA.id)
+    expect(filas).toEqual([{ usuario_id: directora.id, rol: 'admin' }])
+  })
+
+  it('rolesDeAutores: en el otro centro sale con su rol de allí (profe), no como Dirección', async () => {
+    // Premisa: la directora de A es profe en B, y con service role se ven sus dos filas.
+    const { data: todas } = await serviceClient
+      .from('roles_usuario')
+      .select('centro_id, rol')
+      .eq('usuario_id', directora.id)
+      .is('deleted_at', null)
+    expect((todas ?? []).map((r) => r.rol).sort()).toEqual(['directora', 'profe'])
+    const filas = await rolesDeAutores(serviceClient, [directora.id], centroB.id)
+    expect(filas).toEqual([{ usuario_id: directora.id, rol: 'profe' }])
   })
 })

@@ -141,13 +141,15 @@ export async function destinatariosPushDeAnuncio(
   if (aulasObjetivo.length === 0) return []
 
   // Tutores con flag, vinculados a niños matriculados activos en alguna de
-  // las aulas objetivo. Cargamos el grafo y filtramos en JS para evitar
-  // ambigüedad con filtros JSONB en PostgREST.
+  // las aulas objetivo. Cargamos el grafo de los niños del centro (service role: sin el filtro
+  // traería los de toda la plataforma) y filtramos en JS para evitar ambigüedad con filtros
+  // JSONB en PostgREST.
   const { data: tutores } = await supabase
     .from('vinculos_familiares')
     .select(
       'usuario_id, permisos, nino:ninos!inner(matriculas(aula_id, fecha_baja, deleted_at, estado))'
     )
+    .eq('nino.centro_id', anuncio.centro_id)
     .is('deleted_at', null)
 
   const aulaSet = new Set(aulasObjetivo)

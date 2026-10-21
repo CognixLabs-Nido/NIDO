@@ -28,6 +28,8 @@ async function dnisPendientesSinUsar(
   service: Service,
   filtro: { nino_id: string } | { solicitado_por: string; centro_id: string | null }
 ): Promise<string[]> {
+  // entre-centros: por niño, o por quien lo pidió acotado abajo al centro de la solicitud si no
+  // es su último (ADR-0059).
   let q = service.from('cambios_pendientes').select('payload').eq('entidad', 'datos_tutor_dni')
   if ('nino_id' in filtro) {
     q = q.eq('nino_id', filtro.nino_id)
@@ -45,6 +47,8 @@ async function dnisPendientesSinUsar(
     ),
   ]
   if (rutas.length === 0) return []
+  // entre-centros: por ruta exacta; una ruta usada por un perfil vivo de cualquier centro no se
+  // borra.
   const { data: vivos, error: vErr } = await service
     .from('familia_tutores')
     .select('dni_documento_path')
@@ -195,6 +199,7 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
     bucket: BUCKET_DNI_TUTORES,
     sujetos: ['usuario'],
     async recolectar(service, usuarioId, alcance) {
+      // entre-centros: con su último centro, todos; si le queda otro, se acota abajo (ADR-0059).
       let q = service
         .from('familia_tutores')
         .select('dni_documento_path')

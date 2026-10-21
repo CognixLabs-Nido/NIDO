@@ -228,6 +228,7 @@ export async function acceptInvitationCore(
   }
 
   const service = createServiceRoleClient()
+  // entre-centros: por token; la invitación es de un solo centro y se acepta antes de ser de él.
   const { data: invitation, error: invErr } = await service
     .from('invitaciones')
     .select(

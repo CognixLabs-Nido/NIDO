@@ -41,10 +41,11 @@ export async function getAulasParaRecordatorios(
     return data ?? []
   }
 
-  // profe → sus aulas activas vía profes_aulas.
+  // profe → sus aulas activas de este centro vía profes_aulas.
   const { data, error } = await supabase
     .from('profes_aulas')
     .select('aula:aulas!inner(id, nombre, deleted_at)')
+    .eq('aula.centro_id', centroId)
     .eq('profe_id', userId)
     .is('fecha_fin', null)
     .is('deleted_at', null)

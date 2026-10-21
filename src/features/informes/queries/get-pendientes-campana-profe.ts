@@ -54,10 +54,12 @@ export async function getPendientesCampanaProfe(
   const abiertas = (campData ?? []) as { periodo: PeriodoInforme; fecha_limite: string }[]
   if (abiertas.length === 0) return null
 
-  // 2. Aulas de REDACCIÓN de la profe (coordinadora/profesora).
+  // 2. Aulas de REDACCIÓN de la profe (coordinadora/profesora) en este centro: los niños de
+  // un aula de otro centro no tienen informe en este curso y saldrían pendientes para siempre.
   const { data: paData } = await supabase
     .from('profes_aulas')
-    .select('aula_id, tipo_personal_aula')
+    .select('aula_id, tipo_personal_aula, aula:aulas!inner(centro_id)')
+    .eq('aula.centro_id', centroId)
     .eq('profe_id', user.id)
     .is('fecha_fin', null)
     .is('deleted_at', null)

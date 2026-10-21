@@ -44,6 +44,7 @@ export async function getAulasParaAnuncio(centroId: string): Promise<AulaParaAnu
   const { data: asignaciones, error } = await supabase
     .from('profes_aulas')
     .select('aula:aulas!inner(id, nombre, centro_id, deleted_at)')
+    .eq('aula.centro_id', centroId)
     .eq('profe_id', userId)
     .is('fecha_fin', null)
     .is('deleted_at', null)

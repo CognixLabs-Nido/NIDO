@@ -21,6 +21,7 @@ export default async function PendingInvitationsPage({ params }: PageProps) {
   // Buscamos invitaciones pendientes para el email del usuario usando service role
   // (las políticas RLS solo permiten ver al admin del centro, no al destinatario).
   const service = createServiceRoleClient()
+  // entre-centros: las invitaciones a su email, de cualquier centro: es la vía para entrar en otro.
   const { data: invitations } = await service
     .from('invitaciones')
     .select('id, rol_objetivo, centro_id, expires_at')

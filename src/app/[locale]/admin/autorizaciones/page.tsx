@@ -56,10 +56,10 @@ export default async function AdminAutorizacionesPage({ params, searchParams }: 
   }
 
   const [seguimiento, eventos, plantillas, plantillasEnviar, ninos, aulas] = await Promise.all([
-    getSeguimientoEnvios(),
+    getSeguimientoEnvios(centroId),
     getEventosExcursion(centroId),
-    getPlantillasCatalogo(),
-    getPlantillasParaEnviar(),
+    getPlantillasCatalogo(centroId),
+    getPlantillasParaEnviar(centroId),
     getNinosParaRecordatorios(centroId),
     getAulasParaRecordatorios('admin', centroId),
   ])

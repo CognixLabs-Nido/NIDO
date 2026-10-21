@@ -29,18 +29,19 @@ function resumirPayload(entidad: string, payload: unknown): string {
 }
 
 /**
- * F11-G-3 — cola de cambios PENDIENTES para la cola `/admin/pendientes`. La RLS de
- * `cambios_pendientes` ya filtra al centro del admin; aquí solo se ordena y se enriquece con
- * el nombre del niño y del solicitante. Devuelve [] ante cualquier fallo (la página no debe
- * romperse por un join).
+ * F11-G-3 — cola de cambios PENDIENTES para la cola `/admin/pendientes`, del centro de la
+ * página (`centroId`): la RLS de `cambios_pendientes` deja ver los de todos los centros donde
+ * el usuario es admin. Se ordena y se enriquece con el nombre del niño y del solicitante.
+ * Devuelve [] ante cualquier fallo (la página no debe romperse por un join).
  */
-export async function listarCambiosPendientes(): Promise<CambioPendienteItem[]> {
+export async function listarCambiosPendientes(centroId: string): Promise<CambioPendienteItem[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('cambios_pendientes')
     .select(
       'id, entidad, payload, created_at, nino:ninos(nombre), solicitante:usuarios!cambios_pendientes_solicitado_por_fkey(nombre_completo)'
     )
+    .eq('centro_id', centroId)
     .eq('estado', 'pendiente')
     .order('created_at', { ascending: true })
   if (error) {
@@ -58,14 +59,16 @@ export async function listarCambiosPendientes(): Promise<CambioPendienteItem[]> 
 }
 
 /**
- * Contador de cambios pendientes para el badge del sidebar admin. La RLS limita a su centro;
- * `head: true` + `count: 'exact'` evita traer filas. 0 ante cualquier fallo.
+ * Contador de cambios pendientes para el badge del sidebar admin, del centro de la página (la
+ * RLS deja ver los de todos sus centros); `head: true` + `count: 'exact'` evita traer filas.
+ * 0 ante cualquier fallo.
  */
-export async function contarCambiosPendientes(): Promise<number> {
+export async function contarCambiosPendientes(centroId: string): Promise<number> {
   const supabase = await createClient()
   const { count, error } = await supabase
     .from('cambios_pendientes')
     .select('id', { count: 'exact', head: true })
+    .eq('centro_id', centroId)
     .eq('estado', 'pendiente')
   if (error) {
     logger.warn('contarCambiosPendientes', error.message)

@@ -27,9 +27,11 @@ export default async function TeacherDashboard({ params }: PageProps) {
   const aulas: AulaRow[] = []
   if (userId) {
     // F11-H: la asignación es por (aula, curso) y el tramo de edad vive en aulas_curso.
+    // Las del centro activo: con aula en dos centros, la RLS devuelve las de los dos.
     const { data } = await supabase
       .from('profes_aulas')
       .select('aula_id, curso_academico_id, aula:aulas!inner(id, nombre, deleted_at)')
+      .eq('aula.centro_id', centroId)
       .eq('profe_id', userId)
       .is('fecha_fin', null)
       .is('deleted_at', null)

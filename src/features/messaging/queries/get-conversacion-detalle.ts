@@ -110,12 +110,12 @@ export async function getConversacionDetalle(
 
   // Determinar rol del autor en el centro (para el label visual del mensaje).
   const autorIds = Array.from(new Set((mensajes ?? []).map((m) => m.autor_id)))
-  const rolesData = await rolesDeAutores(supabase, autorIds)
+  const rolesData = await rolesDeAutores(supabase, autorIds, centroId)
 
   const rolByUser = new Map<string, 'admin' | 'profe' | 'tutor_legal' | 'autorizado' | 'service'>()
   for (const r of rolesData) {
-    // Si un usuario tiene múltiples roles en distintos centros, nos quedamos
-    // con el primero "no autorizado" como el más representativo.
+    // Si un usuario tiene varios roles en el centro, nos quedamos con el
+    // primero "no autorizado" como el más representativo.
     const existing = rolByUser.get(r.usuario_id)
     if (!existing || (existing === 'autorizado' && r.rol !== 'autorizado')) {
       rolByUser.set(r.usuario_id, r.rol)
