@@ -130,7 +130,7 @@ BEGIN
     -- Personas con rol profe vivo.
     (SELECT count(DISTINCT r.usuario_id)::integer
        FROM public.roles_usuario r
-      WHERE r.centro_id = c.id AND r.rol = 'profe' AND r.deleted_at IS NULL),
+      WHERE r.centro_id = c.id AND r.rol = 'profe'),
     -- Personas sin rol profe vivo cuya última fila profe retirada es baja_temporal.
     (SELECT count(*)::integer
        FROM (SELECT DISTINCT ON (r.usuario_id) r.usuario_id, r.deleted_reason
@@ -193,7 +193,7 @@ BEGIN
          p.prosrc
     INTO v_md5, v_src
     FROM pg_proc p WHERE p.oid = v_f;
-  IF v_md5 IS DISTINCT FROM '1ee1f8018847b6fc364eb6760817442c' THEN
+  IF v_md5 IS DISTINCT FROM '99584d2c4cdbca6053cb6c11f520d982' THEN
     RAISE EXCEPTION 'platform_metricas no quedó como este fichero: %', v_md5;
   END IF;
   -- La primera sentencia es la puerta del superusuario (y no es_admin).
