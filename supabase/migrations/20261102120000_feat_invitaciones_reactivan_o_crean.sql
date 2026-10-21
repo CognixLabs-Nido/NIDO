@@ -123,7 +123,7 @@ AS $function$
     WHEN 'salida_centro'       THEN 'nueva'
     -- Falla con mensaje: por aquí no se vuelve (el olvido no se deshace; la baja temporal se
     -- reactiva desde Personal).
-    WHEN 'solicitud_olvido'    THEN 'nueva'
+    WHEN 'solicitud_olvido'    THEN 'falla'
     WHEN 'baja_temporal'       THEN 'falla'
   END
 $function$;
@@ -753,7 +753,7 @@ $function$;
 DO $guarda$
 DECLARE
   v_esperado constant jsonb := '{
-    "privado.decision_ante_retirada(motivo_borrado)": "53f9f06f883b3d37f30e6b0f3d18729c",
+    "privado.decision_ante_retirada(motivo_borrado)": "8afcf283fdfbf5c1674a951e9a891726",
     "privado.dar_rol(uuid,uuid,user_role,boolean)": "89e36502ccdb07365067fcfa97e67715",
     "privado.dar_vinculo(uuid,uuid,tipo_vinculo,parentesco,text,jsonb,boolean)": "1ce4bc2f4436c098cae536f5a25460b7",
     "public.dar_rol_de_invitacion(uuid,uuid,user_role,boolean)": "23dca810305fb48e945af08af1971712",
