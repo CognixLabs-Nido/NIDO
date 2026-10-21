@@ -7,16 +7,23 @@ import type { ResumenAulaCount } from '../types'
 
 /**
  * Resumen rápido por aula para la card "Asistencia hoy" del admin: total de
- * niños matriculados, presentes y ausentes a fecha dada. RLS filtra a las
- * aulas del centro del admin actual.
+ * niños matriculados, presentes y ausentes a fecha dada, en las aulas de `centroId` (el de la
+ * página). La RLS deja ver las aulas de todos los centros del admin.
  */
-export async function getResumenAsistenciaCentro(fecha: string): Promise<ResumenAulaCount[]> {
+export async function getResumenAsistenciaCentro(
+  centroId: string,
+  fecha: string
+): Promise<ResumenAulaCount[]> {
   const supabase = await createClient()
 
   // F11-H: matriculas ya no tiene FK directa a aulas (es compuesta a aulas_curso),
   // así que no se puede anidar `aulas(matriculas(...))`. Se leen por separado y se
-  // agrupan por aula_id. RLS filtra ambas a las aulas/matrículas del centro.
-  const { data: aulas } = await supabase.from('aulas').select('id, nombre').is('deleted_at', null)
+  // agrupan por aula_id; las matrículas quedan acotadas por las aulas del centro.
+  const { data: aulas } = await supabase
+    .from('aulas')
+    .select('id, nombre')
+    .eq('centro_id', centroId)
+    .is('deleted_at', null)
 
   const aulasRows = (aulas ?? []) as Array<{ id: string; nombre: string }>
 

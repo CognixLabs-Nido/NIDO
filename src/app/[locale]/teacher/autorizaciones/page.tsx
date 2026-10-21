@@ -53,7 +53,7 @@ export default async function TeacherAutorizacionesPage({ params, searchParams }
     )
   }
 
-  const instancias = await getAutorizacionesAdmin()
+  const instancias = await getAutorizacionesAdmin(centroId)
   const recogidas = instancias.filter((a) => a.tipo === 'recogida')
 
   return (

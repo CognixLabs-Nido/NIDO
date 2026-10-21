@@ -207,12 +207,12 @@ describe('Firma revocada — el resto de superficies', () => {
     const autId = await firmarHabitual(cTitular, TITULAR, ninoId, ['Persona Listado'])
 
     sesion.actual = cProfe
-    const antes = (await getAutorizacionesAdmin()).find((a) => a.id === autId)
+    const antes = (await getAutorizacionesAdmin(centro.id)).find((a) => a.id === autId)
     expect(antes?.estado_firma).toBe('firmado')
 
     await revocar(cTitular, autId, ninoId)
     sesion.actual = cProfe
-    const despues = (await getAutorizacionesAdmin()).find((a) => a.id === autId)
+    const despues = (await getAutorizacionesAdmin(centro.id)).find((a) => a.id === autId)
     expect(despues?.estado).toBe('publicada') // el documento no cambia…
     expect(despues?.estado_firma).toBe('revocado') // …la firma sí, y se ve
   })

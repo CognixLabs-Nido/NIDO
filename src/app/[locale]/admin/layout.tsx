@@ -37,7 +37,7 @@ export default async function AdminLayout({ children, params }: LayoutProps) {
   const { total: unread } = await countNoLeidos(centroId)
   const recordatoriosPendientes = await contarRecordatoriosPendientes(centroId)
   const invitacionesPendientes = await contarInvitacionesPendientes(centroId)
-  const cambiosPendientes = await contarCambiosPendientes()
+  const cambiosPendientes = await contarCambiosPendientes(centroId)
 
   const items = await buildSidebarItems(
     'admin',

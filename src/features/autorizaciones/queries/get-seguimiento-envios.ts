@@ -35,15 +35,20 @@ export interface SeguimientoEnvios {
  * Reusa `getAutorizacionDetalle` (ya testeado) para el roster por niño en lugar de
  * recalcular el estado de firma. Acota los lookups de roster a las `maxDetalle`
  * instancias publicadas más recientes para no disparar un N+1 sin límite (un centro
- * tiene pocas instancias activas a la vez). La RLS ya filtra el alcance del rol.
+ * tiene pocas instancias activas a la vez). La RLS filtra el alcance del rol y `centroId` el centro.
  */
 // El SEGUIMIENTO es solo de lo que ENVÍA el centro (patrón A + salida): reglas,
 // imágenes y excursión/salida. recogida y medicación las INICIAN las familias
 // (entrantes) → salen en el panel y en la sección de medicación, no aquí.
 const TIPOS_ENVIADOS = new Set(['reglas_regimen_interno', 'autorizacion_imagenes', 'salida'])
 
-export async function getSeguimientoEnvios(maxDetalle = 20): Promise<SeguimientoEnvios> {
-  const instancias = (await getAutorizacionesAdmin()).filter((a) => TIPOS_ENVIADOS.has(a.tipo))
+export async function getSeguimientoEnvios(
+  centroId: string,
+  maxDetalle = 20
+): Promise<SeguimientoEnvios> {
+  const instancias = (await getAutorizacionesAdmin(centroId)).filter((a) =>
+    TIPOS_ENVIADOS.has(a.tipo)
+  )
   const ultimas = instancias.slice(0, 10)
 
   const candidatas = instancias.filter((a) => a.estado === 'publicada').slice(0, maxDetalle)

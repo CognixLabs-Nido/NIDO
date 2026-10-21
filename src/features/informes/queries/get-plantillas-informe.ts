@@ -7,18 +7,21 @@ import { parseEstructura } from '../lib/estructura'
 import type { PlantillaInformeItem } from '../types'
 
 /**
- * Plantillas de informe del centro, filtradas por estado. La RLS
- * `plantillas_informe_select` deja verlas al staff del centro (la familia no);
- * la página admin gatea por rol. Activas para gestionar; archivadas en su vista
- * aparte («ver archivadas», patrón histórico de F8).
+ * Plantillas de informe del centro de la página, filtradas por estado. La RLS
+ * `plantillas_informe_select` deja verlas al staff de cada centro (la familia no), así que
+ * con dos centros saldrían las de todos: se filtra por `centroId`. La página admin gatea por
+ * rol. Activas para gestionar; archivadas en su vista aparte («ver archivadas», patrón
+ * histórico de F8).
  */
 export async function getPlantillasInforme(
+  centroId: string,
   soloArchivadas = false
 ): Promise<PlantillaInformeItem[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('plantillas_informe')
     .select('id, titulo, estado, estructura, archivada_at, created_at, updated_at')
+    .eq('centro_id', centroId)
     .eq('estado', soloArchivadas ? 'archivada' : 'activa')
     .order('titulo', { ascending: true })
 

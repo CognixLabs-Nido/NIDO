@@ -41,6 +41,7 @@ export async function leerCentrosDe(
   usuarioId: string
 ): Promise<CentroDelUsuario[] | null> {
   const [{ data, error }, esSuper] = await Promise.all([
+    // entre-centros: los centros del usuario, para elegir en cuál entra.
     supabase
       .from('roles_usuario')
       .select('centro_id, rol')
@@ -51,6 +52,7 @@ export async function leerCentrosDe(
   if (error) return null
   const propios = centrosDelUsuario(data ?? [])
   if (!esSuper) return propios
+  // entre-centros: el superusuario es admin de todos los centros que existen.
   const { data: centros, error: errorCentros } = await supabase
     .from('centros')
     .select('id')
@@ -83,6 +85,7 @@ export async function rolesEnCualquierCentro(
   usuarioId: string
 ): Promise<Database['public']['Enums']['user_role'][]> {
   const [{ data }, esSuper] = await Promise.all([
+    // entre-centros: el proxy gatea la ruta antes de que haya centro (lo dice el comentario).
     supabase.from('roles_usuario').select('rol').eq('usuario_id', usuarioId).is('deleted_at', null),
     esSuperusuario(supabase),
   ])

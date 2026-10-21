@@ -24,6 +24,7 @@ type Client = SupabaseClient<Database>
  * es «no» o un error que contar.
  */
 export async function tieneRolesVivos(client: Client, usuarioId: string): Promise<boolean | null> {
+  // entre-centros: ¿opera en algún centro? Global a propósito (lo dice el comentario de arriba).
   const { data, error } = await client
     .from('roles_usuario')
     .select('usuario_id')
@@ -49,22 +50,26 @@ export async function contarRolesDelCentro(client: Client, centroId: string): Pr
  * exporta: la RLS decide qué filas ve. Un fallo de lectura sale como lista vacía, como antes.
  */
 export async function rolesDelSujetoParaExport(client: Client, usuarioId: string) {
+  // entre-centros: el export del sujeto (art. 15), con lo que la sesión de quien exporta alcanza.
   const { data } = await client.from('roles_usuario').select('*').eq('usuario_id', usuarioId)
   return data ?? []
 }
 
 /**
- * Los roles vivos de los autores de una conversación (para la etiqueta de cada mensaje), como
- * roles de la app: la directora sale como `admin`, Dirección en pantalla.
+ * Los roles vivos de los autores de una conversación en su centro (para la etiqueta de cada
+ * mensaje), como roles de la app: la directora sale como `admin`, Dirección en pantalla. Del
+ * centro de la conversación: quien es profe aquí y tutora en otro centro sale como profe.
  */
 export async function rolesDeAutores(
   client: Client,
-  autorIds: string[]
+  autorIds: string[],
+  centroId: string
 ): Promise<Array<{ usuario_id: string; rol: Rol }>> {
   if (autorIds.length === 0) return []
   const { data } = await client
     .from('roles_usuario')
     .select('usuario_id, rol')
+    .eq('centro_id', centroId)
     .in('usuario_id', autorIds)
     .is('deleted_at', null)
   return (data ?? []).flatMap(({ usuario_id, rol }) => {

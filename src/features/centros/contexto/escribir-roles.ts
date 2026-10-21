@@ -70,5 +70,6 @@ export async function asignarRolDeInvitacion(
  * borrar. Solo para eso; una baja normal es un borrado lógico con su motivo.
  */
 export async function retirarRolesDeCuentaNueva(service: Client, usuarioId: string) {
+  // entre-centros: la cuenta se acaba de crear y se va a borrar; no tiene roles en otro centro.
   return service.from('roles_usuario').delete().eq('usuario_id', usuarioId)
 }

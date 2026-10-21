@@ -25,6 +25,7 @@ export default async function InvitationPage({ params }: PageProps) {
   }
 
   const service = createServiceRoleClient()
+  // entre-centros: por token; la invitación es de un solo centro y se abre antes de ser de él.
   const { data: invitation } = await service
     .from('invitaciones')
     .select('email, rol_objetivo, nombre_completo, nino_id, expires_at, accepted_at, rejected_at')

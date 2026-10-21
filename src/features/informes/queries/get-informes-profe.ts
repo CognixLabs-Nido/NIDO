@@ -51,10 +51,12 @@ export async function getInformesDeMisAulas(centroId: string): Promise<AulaInfor
   const curso = await getCursoActivo(centroId)
   if (!curso) return []
 
-  // 1. Aulas activas del profe + su tipo de personal.
+  // 1. Aulas activas del profe en este centro + su tipo de personal (con aula en dos
+  // centros, la RLS devuelve las de los dos).
   const { data: pa } = await supabase
     .from('profes_aulas')
-    .select('aula_id, tipo_personal_aula, aulas(id, nombre)')
+    .select('aula_id, tipo_personal_aula, aulas!inner(id, nombre)')
+    .eq('aulas.centro_id', centroId)
     .eq('profe_id', user.id)
     .is('fecha_fin', null)
     .is('deleted_at', null)

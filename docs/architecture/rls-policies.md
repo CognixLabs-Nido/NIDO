@@ -1055,6 +1055,43 @@ o el alta reventaba. Decisión del responsable:
   la última retirada; la unicidad de las vivas; las puertas; el alta de hermano, la familia
   revocada y desarchivar con una fila viva al lado).
 
+### Las lecturas filtran por su centro (PR 0 de la Fase 5)
+
+Sin migración. La RLS de una tabla de centro dice **quién** ve una fila, no **de qué centro es la
+página**: al superusuario (admin de todos los centros) y a quien tiene rol en dos centros les
+devuelve las filas de todos. Una consulta que confiaba en que «la RLS acota al centro» mezclaba
+centros en cuanto existiera el segundo, y es el panel de plataforma de la Fase 5 el que lo crea.
+`check-centro-activo` no lo veía: vigila `roles_usuario` y la cookie.
+
+- **Censo** (AST de TypeScript, todas las cadenas `.from()`): 19 consultas en 14 sitios se
+  acotan ahora al centro de la página o del registro. Entre ellas, el recuento de altas por validar
+  y el resumen de asistencia del inicio de Dirección, los cinco avisos del personal en
+  `getAvisosInicio`, el catálogo, las instancias y las plantillas enviables de autorizaciones, la
+  cola de cambios pendientes y su contador, las plantillas de informe, las aulas de la profe (su
+  inicio, informes, pendientes de campaña y recordatorios) y las normas internas del alta, que
+  podían salir las de otro centro de la familia. `rolesDeAutores` (la etiqueta de cada mensaje)
+  usa los roles del autor en el centro de la conversación.
+- **9 consultas que acotaban en JS** o con un filtro añadido después a una variable llevan ahora
+  el filtro en la consulta (mensajería, audiencias de anuncios y push, tutores de Dirección).
+- **La guarda** `scripts/check-lecturas-por-centro.mjs` (CI y unit): toda cadena
+  `.from('<tabla de centro>')` que lee, actualiza o borra filtra (`eq`, `in`, `match`) por
+  `centro_id` (también de un embebido, `nino.centro_id`), por `id` o por una FK que no apunte a
+  `usuarios`, leídas del catálogo de `src/types/database.ts`. Si cruza centros a propósito, lleva
+  encima `// entre-centros: <motivo>`; una marca sobre una consulta que ya filtra es un error. Un
+  filtro hecho en JS o añadido después a una variable no cuenta. Las tablas que no son de un centro
+  están en `SIN_CENTRO`, cada una con su motivo, y una tabla nueva entra vigilada.
+- **Entre centros, a propósito (25):** el módulo de contexto (los centros del usuario, el proxy,
+  ¿opera en algún centro?), las invitaciones por token o por email, el export art. 15 del sujeto,
+  y el olvido y la retención (trabajos del servidor; el olvido acota al centro de la solicitud si
+  no es el último, ADR-0059).
+- **Cómo acotar:** `.eq('centro_id', centroId)`; en una tabla sin `centro_id`, por el niño o el
+  aula con un embebido `!inner` (`.select('…, nino:ninos!inner(centro_id)').eq('nino.centro_id',
+centroId)`). La función que lista recibe el centro de quien la llama (`requireContextoCentro` en
+  la página), no lo deduce.
+- Tests: `src/test/guards/check-lecturas-por-centro.test.ts` (el árbol real y un árbol de mentira
+  donde cada caso se pone rojo), `roles-de-otros.rls.test.ts` y `roles-directora-app.rls.test.ts`
+  (la etiqueta del autor en cada centro).
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -1093,6 +1130,7 @@ o el alta reventaba. Decisión del responsable:
 | Traspaso de la admin y baja de Dirección      | `direccion-traspaso.rls.test.ts`                |
 | Baja temporal y salida del personal           | `baja-personal.rls.test.ts`                     |
 | La tabla de motivos de invitaciones y altas   | `invitaciones-motivos.rls.test.ts`              |
+| Las lecturas filtran por su centro            | `check-lecturas-por-centro.test.ts` (guards)    |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

@@ -111,12 +111,13 @@ describe('roles de otros usuarios — funciones del módulo de contexto', () => 
     expect((data ?? []).map((r) => r.usuario?.id)).toEqual([profeA.id])
   })
 
-  it('rolesDeAutores: los vivos de esos usuarios; sin autores, nada', async () => {
-    const filas = await rolesDeAutores(serviceClient, [profeA.id, tutorB.id, borrado.id])
-    expect(filas.map((r) => `${r.usuario_id}:${r.rol}`).sort()).toEqual(
-      [`${profeA.id}:profe`, `${tutorB.id}:tutor_legal`].sort()
-    )
-    expect(await rolesDeAutores(serviceClient, [])).toEqual([])
+  it('rolesDeAutores: los vivos de esos usuarios en ese centro; sin autores, nada', async () => {
+    const autores = [profeA.id, tutorB.id, borrado.id]
+    const enA = await rolesDeAutores(serviceClient, autores, centroA.id)
+    expect(enA.map((r) => `${r.usuario_id}:${r.rol}`)).toEqual([`${profeA.id}:profe`])
+    const enB = await rolesDeAutores(serviceClient, autores, centroB.id)
+    expect(enB.map((r) => `${r.usuario_id}:${r.rol}`)).toEqual([`${tutorB.id}:tutor_legal`])
+    expect(await rolesDeAutores(serviceClient, [], centroA.id)).toEqual([])
   })
 
   it('rolesDelSujetoParaExport: también los borrados (el export los incluye)', async () => {

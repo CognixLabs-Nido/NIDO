@@ -109,6 +109,8 @@ export async function purgarUno(service: Service, p: Pendiente): Promise<void> {
   //    invitaciones de este centro; las de los demás, y la cuenta de Auth, con el último.
   if (p.sujeto_tipo === 'usuario') {
     if (emailOriginal) {
+      // entre-centros: con su último centro, todas; si le queda otro, se acota abajo al de la
+      // solicitud (ADR-0059).
       let inv = service
         .from('invitaciones')
         .update({ email: MARCADOR_PII, nombre_completo: MARCADOR_PII })

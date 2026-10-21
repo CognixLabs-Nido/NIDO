@@ -125,6 +125,8 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
   // Propagación entre hermanos: si el niño no tiene dirección/estado civil, se rellena por
   // defecto con el de otro hijo del tutor (riesgo de divergencia aceptado, decisión G-1).
+  // entre-centros: el hermano puede ser de otro centro del tutor (sus propios datos); si se
+  // acota al centro del niño está pendiente de decidir (PR 0 de la Fase 5).
   const { data: hermanosVinc } = await supabase
     .from('vinculos_familiares')
     .select('nino_id')
@@ -247,13 +249,26 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const foto = await firmarFotoNino(nino.foto_url)
 
   // Panel de firma de imagen (instancia por niño, igual que el flujo previo).
-  const imagenPanel = await panelFirma(supabase, ninoId, 'autorizacion_imagenes', false)
+  const imagenPanel = await panelFirma(
+    supabase,
+    nino.centro_id,
+    ninoId,
+    'autorizacion_imagenes',
+    false
+  )
   const imagenSinPlantilla =
     imagenPanel === null && (await sinPlantilla(supabase, nino.centro_id, 'autorizacion_imagenes'))
 
   // Panel de firma de NORMAS (reglas_regimen_interno, patrón A: la dirección la publica;
-  // la familia la firma). La RLS de `autorizaciones` filtra a las aplicables al niño.
-  const normasPanel = await panelFirma(supabase, ninoId, 'reglas_regimen_interno', true)
+  // la familia la firma). Del centro del niño: la RLS deja ver las de todos los centros de
+  // la familia.
+  const normasPanel = await panelFirma(
+    supabase,
+    nino.centro_id,
+    ninoId,
+    'reglas_regimen_interno',
+    true
+  )
   const normasSinPlantilla = normasPanel === null
 
   // Vía B — normas por acuse (checkbox → `acuses_alta`); imagen por CONSENT (checkbox →
@@ -378,11 +393,12 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>
 
-/** Busca una instancia publicada del tipo dado, visible para el tutor (RLS), y devuelve
- * su panel de firma (firmable + roster). `porNino=false` → patrón A (reglas, ámbito
- * aula/centro, sin nino_id). Null si no hay ninguna. */
+/** Busca una instancia publicada del tipo dado en el centro del niño, visible para el tutor
+ * (RLS), y devuelve su panel de firma (firmable + roster). `porNino=false` → patrón A (reglas,
+ * ámbito aula/centro, sin nino_id). Null si no hay ninguna. */
 async function panelFirma(
   supabase: ServerClient,
+  centroId: string,
   ninoId: string,
   tipo: 'autorizacion_imagenes' | 'reglas_regimen_interno',
   patronA: boolean
@@ -390,6 +406,7 @@ async function panelFirma(
   let query = supabase
     .from('autorizaciones')
     .select('id')
+    .eq('centro_id', centroId)
     .eq('tipo', tipo)
     .eq('es_plantilla', false)
     .eq('estado', 'publicada')

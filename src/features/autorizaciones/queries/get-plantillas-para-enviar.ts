@@ -9,13 +9,15 @@ import type { PlantillaEnviableItem } from '../types'
  * Plantillas **publicadas y definitivas de tipo A** (reglas/imágenes) listas
  * para «Enviar» a una audiencia. recogida/medicación (tipos B) quedan fuera: las
  * inicia la familia, no se envían. Una borrador/anulada tampoco aparece (solo el
- * formato vigente del catálogo es enviable).
+ * formato vigente del catálogo es enviable). Las del centro de la página (`centroId`): la RLS
+ * deja ver las de todos los centros del usuario.
  */
-export async function getPlantillasParaEnviar(): Promise<PlantillaEnviableItem[]> {
+export async function getPlantillasParaEnviar(centroId: string): Promise<PlantillaEnviableItem[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('autorizaciones')
     .select('id, tipo, titulo')
+    .eq('centro_id', centroId)
     .eq('es_plantilla', true)
     .eq('estado', 'publicada')
     .eq('texto_definitivo', true)
