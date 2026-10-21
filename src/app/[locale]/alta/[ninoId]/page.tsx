@@ -124,12 +124,13 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .maybeSingle()
 
   // Propagación entre hermanos: si el niño no tiene dirección/estado civil, se rellena por
-  // defecto con el de otro hijo del tutor (riesgo de divergencia aceptado, decisión G-1).
-  // entre-centros: el hermano puede ser de otro centro del tutor (sus propios datos); si se
-  // acota al centro del niño está pendiente de decidir (PR 0 de la Fase 5).
+  // defecto con el de otro hijo del tutor (riesgo de divergencia aceptado, decisión G-1). Solo
+  // hermanos de ESTE centro: cada centro es un responsable del tratamiento distinto, y el alta de
+  // un centro no lee la ficha que el tutor tiene en otro (decisión del responsable, Fase 5).
   const { data: hermanosVinc } = await supabase
     .from('vinculos_familiares')
-    .select('nino_id')
+    .select('nino_id, nino:ninos!inner(centro_id)')
+    .eq('nino.centro_id', nino.centro_id)
     .eq('usuario_id', user.id)
     .is('deleted_at', null)
     .neq('nino_id', ninoId)
@@ -149,6 +150,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, estado_civil_familia'
       )
       .in('id', hermanosIds)
+      .eq('centro_id', nino.centro_id)
       .is('deleted_at', null)
     for (const h of hermanos ?? []) {
       if (!hermanoEstadoCivil && h.estado_civil_familia) hermanoEstadoCivil = h.estado_civil_familia

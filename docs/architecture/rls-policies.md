@@ -1080,7 +1080,7 @@ centros en cuanto existiera el segundo, y es el panel de plataforma de la Fase 5
   encima `// entre-centros: <motivo>`; una marca sobre una consulta que ya filtra es un error. Un
   filtro hecho en JS o añadido después a una variable no cuenta. Las tablas que no son de un centro
   están en `SIN_CENTRO`, cada una con su motivo, y una tabla nueva entra vigilada.
-- **Entre centros, a propósito (25):** el módulo de contexto (los centros del usuario, el proxy,
+- **Entre centros, a propósito (24):** el módulo de contexto (los centros del usuario, el proxy,
   ¿opera en algún centro?), las invitaciones por token o por email, el export art. 15 del sujeto,
   y el olvido y la retención (trabajos del servidor; el olvido acota al centro de la solicitud si
   no es el último, ADR-0059).
