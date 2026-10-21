@@ -102,7 +102,9 @@
         "profe_aula_failed": "No s’ha pogut vincular el professor amb l’aula. Torna-ho a provar o contacta amb direcció.",
         "sin_curso_activo": "El centre no té un curs acadèmic actiu.",
         "servicio_cuentas_no_disponible": "El servici de comptes no respon ara mateix. Torna-ho a provar d'ací a uns segons.",
-        "email_no_enviado": "No s'ha pogut enviar la invitació per correu. Torna-ho a provar."
+        "email_no_enviado": "No s'ha pogut enviar la invitació per correu. Torna-ho a provar.",
+        "acceso_en_pausa": "El teu accés a aquest centre està en pausa per una baixa temporal. La direcció del centre el reactivarà quan tornes.",
+        "acceso_retirado": "No es pot acceptar aquesta invitació: el teu accés anterior a aquest centre està retirat. Parla amb la direcció del centre."
       },
       "idioma_correo": {
         "label": "Idioma del correu",
@@ -867,7 +869,7 @@
     },
     "personal": {
       "title": "Personal",
-      "subtitle": "Convida professors i gestiona les invitacions pendents.",
+      "subtitle": "Convida professors, gestiona les invitacions pendents i les baixes del personal.",
       "sin_curso_activo": "No hi ha un curs actiu. Crea un abans de convidar personal.",
       "invitar": {
         "cta": "Convidar profe",
@@ -902,7 +904,37 @@
       },
       "activos": {
         "title": "Personal actiu",
-        "empty": "Encara no hi ha personal donat d'alta al centre."
+        "empty": "Encara no hi ha personal donat d'alta al centre.",
+        "sin_aula": "Sense aula assignada"
+      },
+      "error_lectura": "No s'ha pogut carregar el personal del centre. Torna-ho a intentar.",
+      "de_baja": {
+        "title": "De baixa temporal",
+        "descripcion": "No tenen accés al centre mentre dure la baixa. En tornar, es reactiven des d'ací, sense invitació."
+      },
+      "baja_temporal": {
+        "cta": "Baixa temporal",
+        "title": "Baixa temporal de {nombre}",
+        "texto": "{nombre} deixa de tindre accés al centre mentre dure la baixa: no entra i no veu res. També deixa les seues aules. Quan torne, es reactiva des d'ací, sense invitació.",
+        "confirmar": "Donar de baixa temporal"
+      },
+      "salida": {
+        "cta": "Eixida del centre",
+        "title": "{nombre} ix del centre",
+        "texto": "{nombre} perd tots els accessos al centre i deixa les seues aules. És definitiu: si torna, caldrà convidar-la de nou.",
+        "confirmar": "Confirmar l'eixida"
+      },
+      "reactivar": {
+        "cta": "Reactivar",
+        "title": "Reactivar {nombre}",
+        "texto": "{nombre} torna a tindre accés al centre. Després, assigna-li la seua aula des d'Aules.",
+        "confirmar": "Reactivar"
+      },
+      "errors": {
+        "no_autorizado": "No tens permís per a gestionar el personal d'aquest centre.",
+        "no_encontrada": "Aquesta persona ja no està en eixa situació. Recarrega la pàgina.",
+        "salio_del_centro": "Va eixir del centre: perquè torne, convida-la de nou.",
+        "fallo": "No s'ha pogut completar. Torna-ho a intentar."
       }
     },
     "admisiones": {

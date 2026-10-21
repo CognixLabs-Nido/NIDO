@@ -102,7 +102,9 @@
         "profe_aula_failed": "No se pudo vincular al profesor con el aula. Inténtalo de nuevo o contacta con dirección.",
         "sin_curso_activo": "El centro no tiene un curso académico activo.",
         "servicio_cuentas_no_disponible": "El servicio de cuentas no responde ahora mismo. Vuelve a intentarlo en unos segundos.",
-        "email_no_enviado": "No se pudo enviar la invitación por email. Inténtalo de nuevo."
+        "email_no_enviado": "No se pudo enviar la invitación por email. Inténtalo de nuevo.",
+        "acceso_en_pausa": "Tu acceso a este centro está en pausa por una baja temporal. La dirección del centro lo reactivará cuando vuelvas.",
+        "acceso_retirado": "No se puede aceptar esta invitación: tu acceso anterior a este centro está retirado. Habla con la dirección del centro."
       },
       "idioma_correo": {
         "label": "Idioma del correo",
@@ -867,7 +869,7 @@
     },
     "personal": {
       "title": "Personal",
-      "subtitle": "Invita a profesores y gestiona las invitaciones pendientes.",
+      "subtitle": "Invita a profesores, gestiona las invitaciones pendientes y las bajas del personal.",
       "sin_curso_activo": "No hay un curso activo. Crea uno antes de invitar personal.",
       "invitar": {
         "cta": "Invitar profe",
@@ -902,7 +904,37 @@
       },
       "activos": {
         "title": "Personal activo",
-        "empty": "Aún no hay personal dado de alta en el centro."
+        "empty": "Aún no hay personal dado de alta en el centro.",
+        "sin_aula": "Sin aula asignada"
+      },
+      "error_lectura": "No se ha podido cargar el personal del centro. Vuelve a intentarlo.",
+      "de_baja": {
+        "title": "De baja temporal",
+        "descripcion": "No tienen acceso al centro mientras dure la baja. Al volver, se reactivan desde aquí, sin invitación."
+      },
+      "baja_temporal": {
+        "cta": "Baja temporal",
+        "title": "Baja temporal de {nombre}",
+        "texto": "{nombre} deja de tener acceso al centro mientras dure la baja: no entra y no ve nada. También deja sus aulas. Cuando vuelva, se reactiva desde aquí, sin invitación.",
+        "confirmar": "Dar de baja temporal"
+      },
+      "salida": {
+        "cta": "Salida del centro",
+        "title": "{nombre} sale del centro",
+        "texto": "{nombre} pierde todos sus accesos al centro y deja sus aulas. Es definitivo: si vuelve, habrá que invitarla de nuevo.",
+        "confirmar": "Confirmar la salida"
+      },
+      "reactivar": {
+        "cta": "Reactivar",
+        "title": "Reactivar a {nombre}",
+        "texto": "{nombre} vuelve a tener acceso al centro. Después, asígnale su aula desde Aulas.",
+        "confirmar": "Reactivar"
+      },
+      "errors": {
+        "no_autorizado": "No tienes permiso para gestionar el personal de este centro.",
+        "no_encontrada": "Esta persona ya no está en esa situación. Recarga la página.",
+        "salio_del_centro": "Salió del centro: para que vuelva, invítala de nuevo.",
+        "fallo": "No se ha podido completar. Vuelve a intentarlo."
       }
     },
     "admisiones": {

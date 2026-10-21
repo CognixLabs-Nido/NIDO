@@ -3,6 +3,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { llamarGoTrue } from '@/features/auth/lib/llamar-gotrue'
+import { personalDelCentro, type MiembroPersonal } from '@/features/centros/contexto/roles-de-otros'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { TIPO_PERSONAL_AULA_ORDER, type TipoPersonalAula } from '@/features/profes-aulas/types'
 import { createClient } from '@/lib/supabase/server'
@@ -15,6 +16,9 @@ import type { Database } from '@/types/database'
  * invitaciones pendientes). Devuelve **una fila por persona**: si la profe está
  * en varias aulas, sus pares (rol · aula) se agrupan en `asignaciones` — sin
  * duplicar foto/nombre/email.
+ *
+ * Desde la baja del personal, esto da solo las AULAS de cada persona: quién es personal del centro
+ * lo dice su rol (`getPersonalDelCentro`, abajo), también quien no tiene aula.
  *
  * El email vive en `auth.users` (no en `public.usuarios`) → se lee por
  * service-role. La autorización es la del layout `/admin` (solo admin del
@@ -49,16 +53,6 @@ interface ProfeRow {
 interface AulaCursoNombreRow {
   aula_id: string
   aula: { nombre: string; deleted_at: string | null } | null
-}
-
-export async function getPersonalActivoCentro(
-  cursoAcademicoId: string
-): Promise<PersonalActivoItem[]> {
-  const supabase = await createClient()
-  const service = createServiceRoleClient()
-  return getPersonalActivoCentroCore(supabase, cursoAcademicoId, (ids) =>
-    resolverEmailsPorId(service, ids)
-  )
 }
 
 /**
@@ -160,4 +154,49 @@ export async function getPersonalActivoCentroCore(
   }
 
   return [...porProfe.values()].sort((a, b) => a.nombre_completo.localeCompare(b.nombre_completo))
+}
+
+/**
+ * El personal de `/admin/personal`. La lista sale de `roles_usuario` (`personalDelCentro`), no de
+ * las aulas: antes, quien tenía su rol vivo y ningún aula no salía, y no había desde dónde darle
+ * de baja. A cada persona activa se le ponen sus aulas del curso; una asignación sin rol vivo
+ * detrás no sale (sin rol no entra a nada). Quien está de baja temporal va aparte, sin aulas.
+ */
+export function componerPersonal(
+  personal: { activas: MiembroPersonal[]; deBaja: MiembroPersonal[] },
+  conAula: PersonalActivoItem[]
+): { activas: PersonalActivoItem[]; deBaja: PersonalActivoItem[] } {
+  const aulasDe = new Map(conAula.map((p) => [p.profe_id, p]))
+  const item = (m: MiembroPersonal, asignaciones: AsignacionPersonal[]): PersonalActivoItem => ({
+    profe_id: m.usuarioId,
+    nombre_completo: m.nombre,
+    email: aulasDe.get(m.usuarioId)?.email ?? null,
+    foto_url: m.fotoUrl,
+    asignaciones,
+  })
+  return {
+    activas: personal.activas.map((m) => item(m, aulasDe.get(m.usuarioId)?.asignaciones ?? [])),
+    deBaja: personal.deBaja.map((m) => item(m, [])),
+  }
+}
+
+/** `componerPersonal` con las lecturas reales. `null` si no se pudo leer quién es personal. */
+export async function getPersonalDelCentro(
+  centroId: string,
+  cursoAcademicoId: string
+): Promise<{ activas: PersonalActivoItem[]; deBaja: PersonalActivoItem[] } | null> {
+  const supabase = await createClient()
+  const personal = await personalDelCentro(supabase, centroId)
+  if (!personal) return null
+  const service = createServiceRoleClient()
+  const conAula = await getPersonalActivoCentroCore(supabase, cursoAcademicoId, (ids) =>
+    resolverEmailsPorId(service, ids)
+  )
+  const r = componerPersonal(personal, conAula)
+  const sinEmail = [...r.activas, ...r.deBaja].filter((p) => !p.email).map((p) => p.profe_id)
+  if (sinEmail.length > 0) {
+    const emails = await resolverEmailsPorId(service, sinEmail)
+    for (const p of [...r.activas, ...r.deBaja]) p.email ??= emails.get(p.profe_id) ?? null
+  }
+  return r
 }

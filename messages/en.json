@@ -102,7 +102,9 @@
         "profe_aula_failed": "Could not link the teacher to the classroom. Please try again or contact the school office.",
         "sin_curso_activo": "The centre has no active academic year.",
         "servicio_cuentas_no_disponible": "The accounts service isn't responding right now. Please try again in a few seconds.",
-        "email_no_enviado": "The invitation email couldn't be sent. Please try again."
+        "email_no_enviado": "The invitation email couldn't be sent. Please try again.",
+        "acceso_en_pausa": "Your access to this centre is paused due to temporary leave. The centre's management will reactivate it when you return.",
+        "acceso_retirado": "This invitation cannot be accepted: your previous access to this centre has been removed. Please talk to the centre's management."
       },
       "idioma_correo": {
         "label": "Email language",
@@ -867,7 +869,7 @@
     },
     "personal": {
       "title": "Staff",
-      "subtitle": "Invite teachers and manage pending invitations.",
+      "subtitle": "Invite teachers, manage pending invitations and staff leave.",
       "sin_curso_activo": "There is no active course. Create one before inviting staff.",
       "invitar": {
         "cta": "Invite teacher",
@@ -902,7 +904,37 @@
       },
       "activos": {
         "title": "Active staff",
-        "empty": "There is no staff registered in the centre yet."
+        "empty": "There is no staff registered in the centre yet.",
+        "sin_aula": "No classroom assigned"
+      },
+      "error_lectura": "The centre's staff could not be loaded. Please try again.",
+      "de_baja": {
+        "title": "On temporary leave",
+        "descripcion": "They have no access to the centre while on leave. When they return, reactivate them here, without an invitation."
+      },
+      "baja_temporal": {
+        "cta": "Temporary leave",
+        "title": "Temporary leave for {nombre}",
+        "texto": "{nombre} loses access to the centre while on leave: cannot sign in or see anything. They also leave their classrooms. When they return, reactivate them here, without an invitation.",
+        "confirmar": "Put on temporary leave"
+      },
+      "salida": {
+        "cta": "Leaves the centre",
+        "title": "{nombre} leaves the centre",
+        "texto": "{nombre} loses all access to the centre and leaves their classrooms. This is permanent: if they come back, they will need a new invitation.",
+        "confirmar": "Confirm departure"
+      },
+      "reactivar": {
+        "cta": "Reactivate",
+        "title": "Reactivate {nombre}",
+        "texto": "{nombre} gets access to the centre again. Then assign their classroom from Classrooms.",
+        "confirmar": "Reactivate"
+      },
+      "errors": {
+        "no_autorizado": "You do not have permission to manage this centre's staff.",
+        "no_encontrada": "This person is no longer in that situation. Reload the page.",
+        "salio_del_centro": "They left the centre: to bring them back, invite them again.",
+        "fallo": "It could not be completed. Please try again."
       }
     },
     "admisiones": {

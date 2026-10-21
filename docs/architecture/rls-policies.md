@@ -208,7 +208,7 @@ Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 | ------------- | ------------------------------------------------------------------- |
 | `admin`       | Acceso total al centro. Una viva por centro (`20261030130000`)      |
 | `directora`   | Dirección: el día a día de `es_admin`, sin lo exclusivo de la admin |
-| `profe`       | Sus aulas asignadas (via `profes_aulas` activos)                    |
+| `profe`       | Sus aulas asignadas (`profes_aulas` activos) con su rol vivo        |
 | `tutor_legal` | Sus hijos vía `vinculos_familiares`, con permisos JSONB granulares  |
 | `autorizado`  | Como tutor_legal pero con permisos por defecto a `false`            |
 | `service`     | Edge Functions (bypass RLS)                                         |
@@ -975,6 +975,44 @@ la misma razón que la del enum del PR 2) y `20261031130000_feat_traspaso_y_baja
   intacto, la vuelta del traspaso y la invitación de quien dejó la dirección) y
   `gestionar-direccion.test.ts` (las acciones de la pantalla).
 
+### El personal que se va no entra: baja temporal y salida del centro
+
+Migraciones `20261101120000_feat_motivos_baja_personal` (dos valores de `motivo_borrado`, sola por
+la misma razón que la del enum del PR 2) y `20261101130000_feat_baja_temporal_y_salida_profe`.
+Hasta ahora, sacar a una profe del centro era cerrar su aula (`terminar-asignacion`): su fila
+`profe` seguía viva, seguía entrando y leía lo del centro (calendario, menús, eventos, los DNI de
+las recogidas). **Decisión del responsable: quien no trabaja en el centro no entra y no ve nada.**
+Son dos estados:
+
+- **`baja_temporal`** (enfermedad, maternidad, excedencia): no entra y no ve nada. Al volver,
+  Dirección la reactiva desde Personal, **sin invitación** (`reactivar_profe`).
+- **`salida_centro`** (despido o se va): definitivo. Si vuelve, es un alta nueva con invitación;
+  `reactivar_profe` contesta 55000.
+- **`dar_de_baja_profe(centro, usuario, motivo)`** (`SECURITY DEFINER`, solo `authenticated`):
+  Dirección (`es_admin`), en una transacción, retira la fila `profe` con el motivo y cierra todas
+  sus asignaciones abiertas en el centro (`fecha_fin` = hoy, o su `fecha_inicio` si empieza en el
+  futuro). Cerrar el aula libera el puesto de coordinadora para la sustituta. Otro motivo, 22023;
+  quien no es personal activo del centro, P0002. Devuelve las asignaciones cerradas.
+- **La garantía, en un solo sitio:** `es_profe_de_aula`, `es_profe_de_nino`,
+  `es_redactor_de_aula`, `es_redactor_de_nino` y la rama de centro de
+  `usuario_es_audiencia_anuncio(_row)` exigen, además de la asignación, un rol `profe` vivo en el
+  centro (`es_profe_en_centro`). Sin rol, nada, aunque un camino deje una asignación abierta. **Un
+  helper nuevo que dé acceso por `profes_aulas` lleva la misma condición.**
+- `recogida-adjuntos` se queda como está (cualquier profe del centro lee los DNI: puede estar
+  cubriendo la recogida de otra aula). La puerta se cierra por el otro lado: quien se va pierde el
+  rol.
+- **La aceptación de una invitación ya no entra en silencio sin rol.** Antes de tocar nada mira si
+  hay una fila retirada de ese rol que la invitación no deshace (`motivoQueImpideElRol`): la baja
+  temporal da «tu acceso está en pausa» y las demás (salida, olvido, purga, revocación de la
+  familia) «tu acceso anterior está retirado», sin marcar la invitación. Y ya no se ignora un
+  duplicado: `asignarRolDeInvitacion` solo da por bueno el rol vivo.
+- **En la app:** `/admin/personal` lista al personal por su rol, no por sus aulas (antes, quien
+  tenía el rol y ningún aula no salía), con «Baja temporal» y «Salida del centro», y aparte quien
+  está de baja temporal, con «Reactivar».
+- Tests: `baja-personal.rls.test.ts` (cada «no ve nada» con su control positivo delante, la
+  garantía con el aula reabierta, reactivar, la salida y la aceptación) y
+  `baja-personal.test.ts` (las acciones).
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -1011,6 +1049,7 @@ la misma razón que la del enum del PR 2) y `20261031130000_feat_traspaso_y_baja
 | La identidad de una autorización no cambia    | `autorizaciones-identidad.rls.test.ts`          |
 | La app lee a la directora con su sesión       | `roles-directora-app.rls.test.ts`               |
 | Traspaso de la admin y baja de Dirección      | `direccion-traspaso.rls.test.ts`                |
+| Baja temporal y salida del personal           | `baja-personal.rls.test.ts`                     |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

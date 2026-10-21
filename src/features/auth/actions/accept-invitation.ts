@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 
 import {
   asignarRolDeInvitacion,
+  motivoQueImpideElRol,
   retirarRolesDeCuentaNueva,
 } from '@/features/centros/contexto/escribir-roles'
 import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
@@ -572,6 +573,22 @@ export async function acceptPendingInvitationCore(
     }
   }
 
+  // Una fila retirada de este rol que la invitación no deshace (baja temporal, salida del centro,
+  // olvido, purga…): se para aquí, antes de tocar nada, con un mensaje claro. Antes entraba sin rol.
+  const impide = await motivoQueImpideElRol(service, {
+    usuario_id: user.id,
+    centro_id: invitation.centro_id,
+    rol: invitation.rol_objetivo,
+  })
+  if (impide.error) return fail('auth.invitation.errors.role_failed')
+  if (impide.motivo) {
+    return fail(
+      impide.motivo === 'baja_temporal'
+        ? 'auth.invitation.errors.acceso_en_pausa'
+        : 'auth.invitation.errors.acceso_retirado'
+    )
+  }
+
   // PR 1 (Fase 4): la invitación de tutor legal a una cuenta que YA existe (de otro centro, o
   // del personal) se acepta aquí, y aquí se enlaza su perfil de la familia: el que creó la RPC al
   // dar el alta, con `usuario_id` NULL y el email de la invitación. Antes de nada más, para que un
@@ -591,11 +608,10 @@ export async function acceptPendingInvitationCore(
     rol: invitation.rol_objetivo,
   })
   if (roleErr) {
-    // Ignoramos error si el rol ya existía (UNIQUE constraint).
-    if (!roleErr.message.includes('duplicate')) {
-      logger.warn('acceptPending: roles_usuario insert falló', roleErr.message)
-      return fail('auth.invitation.errors.role_failed')
-    }
+    // Ya no se ignora el duplicado: `asignarRolDeInvitacion` da por bueno el rol vivo, y una fila
+    // retirada que no reactiva es una persona SIN rol (antes entraba así, sin aviso).
+    logger.warn('acceptPending: roles_usuario insert falló', roleErr.message)
+    return fail('auth.invitation.errors.role_failed')
   }
 
   // Auto-vínculo idempotente (mismo que el flujo de nuevo usuario).
@@ -624,7 +640,7 @@ export async function acceptPendingInvitationCore(
   // B8-profe (decisión F): inserta `profes_aulas`. El rol 'profe' ya se insertó
   // arriba (idempotente); si el vínculo de aula falla con 23505 no marcamos
   // `accepted_at` → un reintento (cuando se libere el slot de coordinadora)
-  // re-inserta el rol (duplicate ignorado) y completa el vínculo.
+  // encuentra el rol ya vivo (se da por bueno) y completa el vínculo.
   if (invitation.rol_objetivo === 'profe' && invitation.aula_id) {
     const { error: profeError } = await crearVinculoProfeAula(service, {
       profeId: user.id,
