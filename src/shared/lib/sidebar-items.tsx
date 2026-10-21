@@ -18,6 +18,7 @@ import {
   LayoutDashboardIcon,
   MessageCircleIcon,
   UsersIcon,
+  UserCogIcon,
   UsersRoundIcon,
   UtensilsIcon,
 } from 'lucide-react'
@@ -41,7 +42,7 @@ type RoleKey = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
  * gobierna en la propia página, no aquí.
  *
  * `esResponsable` (PR 3 del modelo de roles): con `rol` admin (Dirección), la admin del centro
- * ve además Centro y Auditoría, que son solo suyas; una directora no. Es obligatorio para que
+ * ve además Centro, Dirección del centro y Auditoría, que son solo suyas; una directora no. Es obligatorio para que
  * ningún layout se lo deje: sin él, la directora vería entradas que la llevan a «prohibido».
  */
 export async function buildSidebarItems(
@@ -58,7 +59,10 @@ export async function buildSidebarItems(
     return [
       { href: `/${locale}/admin`, label: t('dashboard'), icon: <LayoutDashboardIcon /> },
       ...(esResponsable
-        ? [{ href: `/${locale}/admin/centro`, label: t('centro'), icon: <Building2Icon /> }]
+        ? [
+            { href: `/${locale}/admin/centro`, label: t('centro'), icon: <Building2Icon /> },
+            { href: `/${locale}/admin/direccion`, label: t('direccion'), icon: <UserCogIcon /> },
+          ]
         : []),
       { href: `/${locale}/admin/cursos`, label: t('cursos'), icon: <CalendarDaysIcon /> },
       {

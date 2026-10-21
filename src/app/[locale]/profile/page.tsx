@@ -3,6 +3,9 @@ import { getTranslations } from 'next-intl/server'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
+import { getEstadoCentro } from '@/features/centros/contexto/get-contexto-centro'
+import { getNombresCentros } from '@/features/centros/queries/get-nombres-centros'
+import { DejarDireccion } from '@/features/direccion/components/DejarDireccion'
 import { ExportButton } from '@/features/export/components/ExportButton'
 import { PushSettings } from '@/features/push/components/PushSettings'
 import { AvatarUploader } from '@/features/usuarios/components/AvatarUploader'
@@ -40,6 +43,22 @@ export default async function ProfilePage({ params }: PageProps) {
 
   const initials = (nombre.charAt(0) || user?.email?.charAt(0) || '?').toUpperCase()
 
+  // Los centros donde es Dirección, para dejar la dirección (PR 4 del modelo de roles). El
+  // superusuario no tiene filas de Dirección: no deja nada.
+  const estado = await getEstadoCentro()
+  const centros =
+    estado.tipo === 'activo'
+      ? estado.contexto.centros
+      : estado.tipo === 'elegir'
+        ? estado.centros
+        : []
+  const esSuper =
+    (estado.tipo === 'activo' && estado.contexto.esSuperusuario) ||
+    (estado.tipo === 'elegir' && estado.esSuperusuario)
+  const deDireccion = esSuper ? [] : centros.filter((c) => c.rol === 'admin')
+  const nombresCentros = await getNombresCentros(deDireccion.map((c) => c.centroId))
+  const tDireccion = await getTranslations('admin.direccion')
+
   return (
     <AuthShell locale={locale}>
       <Card className="w-full max-w-md shadow-lg">
@@ -62,6 +81,21 @@ export default async function ProfilePage({ params }: PageProps) {
           <div className="border-t border-dashed border-neutral-200 pt-4">
             <PushSettings />
           </div>
+          {deDireccion.length > 0 && (
+            <div className="space-y-2 border-t border-dashed border-neutral-200 pt-4">
+              <p className="text-muted-foreground text-xs">{tDireccion('perfil')}</p>
+              {deDireccion.map((c) => (
+                <div key={c.centroId} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-foreground">{nombresCentros.get(c.centroId) ?? ''}</span>
+                  <DejarDireccion
+                    centroId={c.centroId}
+                    locale={locale}
+                    administra={c.esResponsable}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
           <div className="space-y-2 border-t border-dashed border-neutral-200 pt-4">
             <p className="text-muted-foreground text-xs">{tExport('perfil_descripcion')}</p>
             <ExportButton

@@ -124,7 +124,8 @@
       "title": "Select your role",
       "subtitle": "You have access from several profiles. Pick one.",
       "roles": {
-        "admin": "Administrator",
+        "admin": "Management",
+        "directora": "Management",
         "profe": "Teacher",
         "tutor_legal": "Legal guardian",
         "autorizado": "Authorised person"
@@ -243,7 +244,8 @@
       "admisiones": "Admissions",
       "pendientes": "Validations",
       "familias": "Families",
-      "fotosRevocadas": "Revoked photos"
+      "fotosRevocadas": "Revoked photos",
+      "direccion": "Centre management"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -1168,6 +1170,56 @@
       "procesando": "Deleting…",
       "resuelta_ok": "Photo marked as resolved.",
       "borrada_ok": "Post deleted."
+    },
+    "direccion": {
+      "title": "Centre management",
+      "descripcion": "Who runs the centre. In the app they are all Management; the centre details, fees, audit log and appointing directors belong to whoever administers the centre.",
+      "administra": "Administers the centre",
+      "tu": "You",
+      "sin_directoras": "There are no directors yet. Invite one to share the day-to-day or to hand over the administration.",
+      "error_lectura": "We could not load who runs the centre. Reload the page.",
+      "hecho": "Done.",
+      "cancelar": "Cancel",
+      "perfil": "Management",
+      "invitar": {
+        "cta": "Invite a director",
+        "title": "Invite a director",
+        "texto": "They will receive an email to join the centre management. If they already have a NIDO account, the invitation will appear when they sign in.",
+        "email": "Email",
+        "enviar": "Send invitation",
+        "enviando": "Sending…",
+        "cancelar": "Cancel",
+        "ok": "Invitation sent."
+      },
+      "pendientes": {
+        "title": "Pending invitations",
+        "vacio": "There are no pending invitations.",
+        "caduca": "Expires on {fecha}",
+        "cancelar": "Cancel invitation",
+        "cancelar_title": "Cancel the invitation",
+        "cancelar_texto": "The invitation to {email} will no longer be valid."
+      },
+      "traspasar": {
+        "cta": "Hand over the administration",
+        "title": "Hand over the administration to {nombre}",
+        "texto": "{nombre} will administer the centre and you will stay on as a director. Afterwards you can leave the management whenever you want. To undo it, {nombre} would have to hand it back to you.",
+        "confirmar": "Hand over"
+      },
+      "baja": {
+        "cta": "Remove",
+        "title": "Remove {nombre}",
+        "texto": "{nombre} will no longer be part of this centre's management. Any other roles they have in the centre are kept.",
+        "confirmar": "Remove"
+      },
+      "dejar": {
+        "cta": "Leave the management",
+        "title": "Leave this centre's management",
+        "texto": "You will no longer be part of this centre's management. Any other roles you have in it are kept.",
+        "confirmar": "Leave the management",
+        "aviso_admin": "You administer the centre: before leaving the management you have to hand over the administration to a director, from “Centre management”. If there is none yet, first invite the person who will replace you.",
+        "entendido": "Got it",
+        "ir": "Go to Centre management"
+      }
     }
   },
   "teacher": {
@@ -4224,6 +4276,18 @@
       "titulo": "This notification is from another school",
       "texto": "The notification is from {centro}. You are now in {activo}.",
       "cambiar": "Switch to {centro}"
+    }
+  },
+  "direccion": {
+    "errors": {
+      "no_autorizado": "You do not have permission to manage the centre management.",
+      "admin_primero_traspasa": "You administer the centre: before leaving the management, hand over the administration to a director.",
+      "no_es_directora": "That person is not a director of this centre.",
+      "solo_la_admin_traspasa": "Only whoever administers the centre can hand over the administration.",
+      "solo_a_una_directora": "The administration can only be handed over to a director of the centre.",
+      "otra_persona": "The administration is handed over to someone else.",
+      "invitacion_no_encontrada": "That invitation is no longer pending.",
+      "fallo": "It could not be completed. Please try again."
     }
   }
 }

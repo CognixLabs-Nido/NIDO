@@ -68,7 +68,11 @@ vi.mock('@/lib/supabase/admin', () => ({ createServiceRoleClient: () => serviceF
 
 const { sendInvitation } = await import('../actions/send-invitation')
 
-const INVITACION = { email: 'persona@nido.test', rolObjetivo: 'admin' as const, centroId: CENTRO }
+const INVITACION = {
+  email: 'persona@nido.test',
+  rolObjetivo: 'directora' as const,
+  centroId: CENTRO,
+}
 
 beforeEach(() => {
   aviso.mockClear()

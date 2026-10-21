@@ -890,10 +890,11 @@ porque un valor nuevo de un enum no se puede usar en la transacción que lo aña
 - **Anti-escalada:** en `roles_usuario` e `invitaciones`, crear, cambiar o quitar una fila de rol
   `admin` o `directora` exige `es_responsable`. Una directora no nombra a otra, no toca a la admin
   ni a otra directora, y no se toca a sí misma. Los demás roles siguen siendo de Dirección.
-  Ninguna función escribe roles de Dirección: solo `tutor_legal`, o los retira.
+  Las únicas funciones que escriben roles de Dirección son `traspasar_admin` y
+  `baja_de_direccion` (PR 4); el resto solo escribe `tutor_legal`, o los retira.
 - **Una admin viva por centro:** índice único parcial `idx_roles_usuario_una_admin_viva`. El
-  relevo de la admin (PR 4) tiene que retirar a la saliente antes de dar de alta a la entrante, en
-  la misma transacción.
+  relevo de la admin es `traspasar_admin` (PR 4), que retira a la saliente antes de dar de alta a
+  la entrante, en la misma transacción.
 - **`firma_imagen_sync`** cuenta la firma presencial de la admin o de una directora del centro del
   niño. Antes miraba `rol = 'admin'`: la de una directora entraba por la policy y el
   consentimiento no se registraba.
@@ -931,8 +932,8 @@ que no es suyo y no escribe en su nombre lo que la BD no le dejaría escribir a 
   sin que la app escriba ni llame a la RPC. Sin la guarda, varias daban «guardado» sin guardar: un
   UPDATE sin RETURNING que la RLS deja en 0 filas no da error.
 - **`sendInvitation`** escribe la invitación con service role, que se salta la anti-escalada de la
-  RLS. Invitar a una admin o a una directora exige `esResponsableEn`. Sin esa guarda, reconocer a
-  la directora como Dirección le habría dejado invitar a una admin.
+  RLS. Invitar a una directora exige `esResponsableEn` (desde el PR 4 no se invita a una admin).
+  Sin esa guarda, reconocer a la directora como Dirección le habría dejado nombrar a otra.
 - **Menús y pantallas:** Centro y Auditoría no salen en el menú de una directora, y sus páginas la
   mandan a `/forbidden` (`buildSidebarItems` exige `esResponsable`, para que ningún layout se lo
   deje). En las páginas mixtas ve la página sin el botón exclusivo: el catálogo de conceptos, los
@@ -945,6 +946,34 @@ que no es suyo y no escribe en su nombre lo que la BD no le dejaría escribir a 
   exclusivo, no puede escalar; cada «no» con su ancla y la premisa de que la app la reconoce como
   Dirección), `roles-directora-app.rls.test.ts` (la lectura con su sesión contra la BD) y
   `sidebar-items.test.tsx` (el menú).
+
+### Quién dirige el centro: directoras y traspaso (PR 4 del modelo de roles)
+
+Migraciones `20261031120000_feat_motivos_baja_direccion` (dos valores de `motivo_borrado`, sola por
+la misma razón que la del enum del PR 2) y `20261031130000_feat_traspaso_y_baja_direccion`.
+
+- **`traspasar_admin(centro, nueva_admin)`** (`SECURITY DEFINER`, solo `authenticated`): la admin
+  del centro traspasa la administración a una **directora viva del centro**, en una transacción.
+  Retira la fila `admin` de la saliente y la `directora` de la entrante (`traspaso_admin`), da
+  `admin` a la entrante y `directora` a la saliente: **la saliente queda como directora**. Solo
+  quien tiene la fila `admin` viva (el superusuario no traspasa); a una profe, a alguien de otro
+  centro o a sí misma, no (23514, 22023). Quien es de fuera se invita antes como directora.
+- **`baja_de_direccion(centro, usuario)`**: una directora deja la dirección (`baja_direccion`). La
+  da de baja la admin (o el superusuario), o se da de baja ella: la RLS no le deja tocar su propia
+  fila. **La admin no se da de baja** (55000): primero traspasa, y la app le explica por qué.
+- `UNIQUE (usuario_id, centro_id, rol)` cuenta las filas retiradas: dar otra vez un rol que la
+  persona tuvo reactiva su fila. Lo hacen las dos RPC y la aceptación de una invitación, pero esta
+  solo deshace las bajas de Dirección (`baja_direccion`, `traspaso_admin`); antes ignoraba el
+  duplicado y la persona entraba sin rol.
+- **No se invita a una admin** (`userRoleSchema` sin `admin`): aceptarla chocaba con el índice y
+  la persona entraba sin rol. Se invita como directora y se le traspasa.
+- **En la app:** «Dirección del centro» (`/admin/direccion`), solo para la admin (menú y página):
+  quién dirige el centro, invitar, dar de baja, traspasar y las invitaciones pendientes. «Dejar la
+  dirección» también en el perfil, por centro. En el resto de la app, admin y directora son
+  «Dirección» (`auth.select_role.roles`); en esta pantalla se dice quién administra.
+- Tests: `direccion-traspaso.rls.test.ts` (las dos RPC contra la BD, cada «no» con el estado
+  intacto, la vuelta del traspaso y la invitación de quien dejó la dirección) y
+  `gestionar-direccion.test.ts` (las acciones de la pantalla).
 
 ### Signup público cerrado (D5)
 
@@ -981,6 +1010,7 @@ que no es suyo y no escribe en su nombre lo que la BD no le dejaría escribir a 
 | La directora: día a día, exclusivo, escalada  | `roles-directora.rls.test.ts`                   |
 | La identidad de una autorización no cambia    | `autorizaciones-identidad.rls.test.ts`          |
 | La app lee a la directora con su sesión       | `roles-directora-app.rls.test.ts`               |
+| Traspaso de la admin y baja de Dirección      | `direccion-traspaso.rls.test.ts`                |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

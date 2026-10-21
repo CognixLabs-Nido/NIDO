@@ -12,12 +12,38 @@ import type { Database } from '@/types/database'
 type Client = SupabaseClient<Database>
 type Rol = Database['public']['Enums']['user_role']
 
-/** Da el rol de una invitación en su centro. Devuelve el error tal cual (el 23505 lo trata quien llama). */
+/**
+ * Las bajas de Dirección que deshace una invitación nueva: quien dejó la dirección y vuelve a ser
+ * invitada recupera su fila. `UNIQUE (usuario_id, centro_id, rol)` cuenta también las retiradas,
+ * así que el INSERT da 23505 y, sin esto, la aceptación lo daba por bueno y la persona entraba sin
+ * rol. Las bajas por otros motivos (familia, RGPD, superusuario) no se deshacen aquí.
+ */
+const MOTIVOS_QUE_DESHACE_UNA_INVITACION: Database['public']['Enums']['motivo_borrado'][] = [
+  'baja_direccion',
+  'traspaso_admin',
+]
+
+/**
+ * Da el rol de una invitación en su centro. Si la persona ya tuvo ese rol y lo dejó por una baja
+ * de Dirección, reactiva su fila. Si no, devuelve el error tal cual (el 23505 lo trata quien llama).
+ */
 export async function asignarRolDeInvitacion(
   service: Client,
   fila: { usuario_id: string; centro_id: string; rol: Rol }
-) {
-  return service.from('roles_usuario').insert(fila)
+): Promise<{ error: { code?: string; message: string } | null }> {
+  const insertado = await service.from('roles_usuario').insert(fila)
+  if (insertado.error?.code !== '23505') return insertado
+  const { data, error } = await service
+    .from('roles_usuario')
+    .update({ deleted_at: null, deleted_reason: null })
+    .eq('usuario_id', fila.usuario_id)
+    .eq('centro_id', fila.centro_id)
+    .eq('rol', fila.rol)
+    .in('deleted_reason', MOTIVOS_QUE_DESHACE_UNA_INVITACION)
+    .select('id')
+    .maybeSingle()
+  if (error) return { error }
+  return data ? { error: null } : insertado
 }
 
 /**

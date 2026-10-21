@@ -129,3 +129,38 @@ export async function profesDelCentro(client: Client, centroId: string): Promise
     .is('deleted_at', null)
   return (data ?? []).map((r) => r.usuario_id)
 }
+
+/** Una persona de la Dirección de un centro: la admin o una directora (pantalla de Dirección). */
+export interface MiembroDireccion {
+  usuarioId: string
+  rol: 'admin' | 'directora'
+  nombre: string
+}
+
+/**
+ * Quién dirige un centro explícito: la admin y las directoras vivas, con su nombre, la admin
+ * primero y después por nombre. Con la sesión de quien llama (`roles_admin_select`: Dirección del
+ * centro). `null` si la lectura falla: la pantalla no puede enseñar una lista vacía como si
+ * nadie dirigiera el centro.
+ */
+export async function direccionDelCentro(
+  client: Client,
+  centroId: string
+): Promise<MiembroDireccion[] | null> {
+  const { data, error } = await client
+    .from('roles_usuario')
+    .select('rol, usuario:usuarios!inner(id, nombre_completo)')
+    .eq('centro_id', centroId)
+    .in('rol', ['admin', 'directora'])
+    .is('deleted_at', null)
+  if (error) return null
+  return (data ?? [])
+    .map((f) => ({
+      usuarioId: f.usuario.id,
+      rol: f.rol as MiembroDireccion['rol'],
+      nombre: f.usuario.nombre_completo,
+    }))
+    .sort((a, b) =>
+      a.rol !== b.rol ? (a.rol === 'admin' ? -1 : 1) : a.nombre.localeCompare(b.nombre, 'es')
+    )
+}

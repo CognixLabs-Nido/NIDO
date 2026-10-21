@@ -124,7 +124,8 @@
       "title": "Selecciona tu rol",
       "subtitle": "Tienes acceso desde varios perfiles. Elige con cuál entrar.",
       "roles": {
-        "admin": "Administrador",
+        "admin": "Dirección",
+        "directora": "Dirección",
         "profe": "Profe",
         "tutor_legal": "Tutor legal",
         "autorizado": "Persona autorizada"
@@ -243,7 +244,8 @@
       "admisiones": "Admisiones",
       "pendientes": "Validaciones",
       "familias": "Familias",
-      "fotosRevocadas": "Fotos revocadas"
+      "fotosRevocadas": "Fotos revocadas",
+      "direccion": "Dirección del centro"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -1168,6 +1170,56 @@
       "procesando": "Borrando…",
       "resuelta_ok": "Foto marcada como resuelta.",
       "borrada_ok": "Publicación borrada."
+    },
+    "direccion": {
+      "title": "Dirección del centro",
+      "descripcion": "Quién dirige el centro. En la app todas son Dirección; los datos del centro, las cuotas, la auditoría y nombrar directoras son de quien administra el centro.",
+      "administra": "Administra el centro",
+      "tu": "Tú",
+      "sin_directoras": "Aún no hay directoras. Invita a una para compartir el día a día o para traspasarle la administración.",
+      "error_lectura": "No hemos podido cargar quién dirige el centro. Recarga la página.",
+      "hecho": "Hecho.",
+      "cancelar": "Cancelar",
+      "perfil": "Dirección",
+      "invitar": {
+        "cta": "Invitar a una directora",
+        "title": "Invitar a una directora",
+        "texto": "Le llegará un correo para unirse a la dirección del centro. Si ya tiene cuenta en NIDO, la invitación le aparecerá al entrar.",
+        "email": "Correo",
+        "enviar": "Enviar invitación",
+        "enviando": "Enviando…",
+        "cancelar": "Cancelar",
+        "ok": "Invitación enviada."
+      },
+      "pendientes": {
+        "title": "Invitaciones pendientes",
+        "vacio": "No hay invitaciones pendientes.",
+        "caduca": "Caduca el {fecha}",
+        "cancelar": "Cancelar invitación",
+        "cancelar_title": "Cancelar la invitación",
+        "cancelar_texto": "La invitación a {email} dejará de valer."
+      },
+      "traspasar": {
+        "cta": "Traspasar la administración",
+        "title": "Traspasar la administración a {nombre}",
+        "texto": "{nombre} pasará a administrar el centro y tú seguirás como directora. Después podrás dejar la dirección cuando quieras. Para deshacerlo, {nombre} tendría que traspasártela de vuelta.",
+        "confirmar": "Traspasar"
+      },
+      "baja": {
+        "cta": "Dar de baja",
+        "title": "Dar de baja a {nombre}",
+        "texto": "{nombre} dejará de ser Dirección de este centro. Si tiene otros roles en el centro, los conserva.",
+        "confirmar": "Dar de baja"
+      },
+      "dejar": {
+        "cta": "Dejar la dirección",
+        "title": "Dejar la dirección de este centro",
+        "texto": "Dejarás de ser Dirección de este centro. Si tienes otros roles en él, los conservas.",
+        "confirmar": "Dejar la dirección",
+        "aviso_admin": "Administras el centro: antes de dejar la dirección tienes que traspasar la administración a una directora, desde «Dirección del centro». Si aún no hay ninguna, invita primero a la persona que te sustituirá.",
+        "entendido": "Entendido",
+        "ir": "Ir a Dirección del centro"
+      }
     }
   },
   "teacher": {
@@ -4224,6 +4276,18 @@
       "titulo": "Este aviso es de otro centro",
       "texto": "El aviso es de {centro}. Ahora estás en {activo}.",
       "cambiar": "Cambiar a {centro}"
+    }
+  },
+  "direccion": {
+    "errors": {
+      "no_autorizado": "No tienes permiso para gestionar la dirección del centro.",
+      "admin_primero_traspasa": "Administras el centro: antes de dejar la dirección, traspasa la administración a una directora.",
+      "no_es_directora": "Esa persona no es directora de este centro.",
+      "solo_la_admin_traspasa": "Solo quien administra el centro puede traspasar la administración.",
+      "solo_a_una_directora": "La administración solo se traspasa a una directora del centro.",
+      "otra_persona": "La administración se traspasa a otra persona.",
+      "invitacion_no_encontrada": "Esa invitación ya no está pendiente.",
+      "fallo": "No se ha podido completar. Inténtalo de nuevo."
     }
   }
 }

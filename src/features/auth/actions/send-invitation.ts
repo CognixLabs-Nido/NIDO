@@ -81,7 +81,7 @@ export async function sendInvitation(
 
   // Tipo de vínculo a crear al aceptar (auto-vínculo). Coherente con el CHECK de BD:
   // tutor_legal → principal (default) o secundario; autorizado → 'autorizado';
-  // admin/profe → NULL (no llevan vínculo familiar).
+  // directora/profe → NULL (no llevan vínculo familiar).
   const tipoVinculo: 'tutor_legal_principal' | 'tutor_legal_secundario' | 'autorizado' | null =
     parsed.data.rolObjetivo === 'tutor_legal'
       ? (parsed.data.tipoVinculo ?? 'tutor_legal_principal')

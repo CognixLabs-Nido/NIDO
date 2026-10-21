@@ -109,9 +109,7 @@ export function PendingInvitationsList({ invitations: initial }: Props) {
         return (
           <Card key={inv.id}>
             <CardHeader>
-              <CardTitle className="text-base">
-                {tRoles(inv.rol_objetivo as 'admin' | 'profe' | 'tutor_legal' | 'autorizado')}
-              </CardTitle>
+              <CardTitle className="text-base">{tRoles(inv.rol_objetivo)}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {esFamilia && (

@@ -173,10 +173,10 @@ describe('sendInvitation — dedupe nino_id-aware', () => {
     expect(calls.update).toBe(0)
   })
 
-  it('(3) admin sin nino_id → dedupe con is(nino_id, null), comportamiento intacto', async () => {
+  it('(3) directora sin nino_id → dedupe con is(nino_id, null), comportamiento intacto', async () => {
     const r = await sendInvitation({
-      email: 'nuevo-admin@nido.test',
-      rolObjetivo: 'admin',
+      email: 'nueva-directora@nido.test',
+      rolObjetivo: 'directora',
       centroId: CENTRO,
     })
     expect(r.success).toBe(true)

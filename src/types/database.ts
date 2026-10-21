@@ -4469,6 +4469,10 @@ export type Database = {
         Args: { p_fecha_baja?: string; p_motivo?: string; p_nino_id: string }
         Returns: Json
       }
+      baja_de_direccion: {
+        Args: { p_centro_id: string; p_usuario_id: string }
+        Returns: undefined
+      }
       baja_nino: {
         Args: { p_motivo?: string; p_nino_id: string }
         Returns: Json
@@ -4846,6 +4850,10 @@ export type Database = {
         Args: { p_centro_id: string; p_fecha: string }
         Returns: Database["public"]["Enums"]["tipo_dia_centro"]
       }
+      traspasar_admin: {
+        Args: { p_centro_id: string; p_nueva_admin: string }
+        Returns: undefined
+      }
       usuario_actual: { Args: never; Returns: string }
       usuario_es_audiencia_anuncio: {
         Args: { p_anuncio_id: string }
@@ -4990,6 +4998,8 @@ export type Database = {
         | "purga_rgpd"
         | "solicitud_olvido"
         | "paso_a_superusuario"
+        | "baja_direccion"
+        | "traspaso_admin"
       nino_sexo: "F" | "M" | "X"
       olvido_sujeto_tipo: "usuario" | "nino"
       parentesco:
@@ -5285,6 +5295,8 @@ export const Constants = {
         "purga_rgpd",
         "solicitud_olvido",
         "paso_a_superusuario",
+        "baja_direccion",
+        "traspaso_admin",
       ],
       nino_sexo: ["F", "M", "X"],
       olvido_sujeto_tipo: ["usuario", "nino"],
