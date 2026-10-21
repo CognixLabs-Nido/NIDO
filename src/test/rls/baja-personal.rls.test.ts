@@ -99,16 +99,24 @@ describe('baja temporal y salida del centro del personal', () => {
     for (const c of [centroA, centroB]) if (c) await deleteTestCentro(c.id)
   }, 120_000)
 
-  async function filaProfe(usuarioId: string) {
+  /** Sus filas `profe` del centro: la viva primero, después las retiradas de la más reciente. */
+  async function filasProfe(usuarioId: string) {
     const { data, error } = await serviceClient
       .from('roles_usuario')
       .select('deleted_at, deleted_reason')
       .eq('usuario_id', usuarioId)
       .eq('centro_id', centroA.id)
       .eq('rol', 'profe')
-      .single()
+      .order('deleted_at', { ascending: false, nullsFirst: true })
     if (error) throw new Error(error.message)
-    return { viva: data.deleted_at === null, motivo: data.deleted_reason }
+    return data.map((f) => ({ viva: f.deleted_at === null, motivo: f.deleted_reason }))
+  }
+
+  /** La que manda: la viva, o si no hay, la última retirada. */
+  async function filaProfe(usuarioId: string) {
+    const [primera] = await filasProfe(usuarioId)
+    if (!primera) throw new Error('sin fila profe')
+    return primera
   }
 
   async function aulasAbiertas(usuarioId: string): Promise<number> {
@@ -301,8 +309,8 @@ describe('baja temporal y salida del centro del personal', () => {
         error: false,
       })
       const { error } = await asignarRolDeInvitacion(serviceClient, fila)
-      expect(error?.code).toBe('23505')
-      expect(await filaProfe(profe.id)).toEqual({ viva: false, motivo: 'baja_temporal' })
+      expect(error).toMatchObject({ code: '55000', hint: 'baja_temporal' })
+      expect(await filasProfe(profe.id)).toEqual([{ viva: false, motivo: 'baja_temporal' }])
     })
 
     it('Dirección la reactiva al volver, sin invitación; el aula se asigna aparte', async () => {
@@ -363,15 +371,27 @@ describe('baja temporal y salida del centro del personal', () => {
       expect(await filaProfe(profe.id)).toEqual({ viva: false, motivo: 'salida_centro' })
     })
 
-    it('y una invitación tampoco la cuela sin rol: la aceptación lo ve y no da el rol', async () => {
+    it('si vuelve con una invitación, es un alta nueva: fila nueva y la de la salida intacta', async () => {
       const fila = { usuario_id: profe.id, centro_id: centroA.id, rol: 'profe' as const }
       expect(await motivoQueImpideElRol(serviceClient, fila)).toEqual({
-        motivo: 'salida_centro',
+        motivo: null,
         error: false,
       })
       const { error } = await asignarRolDeInvitacion(serviceClient, fila)
-      expect(error?.code).toBe('23505')
-      expect(await filaProfe(profe.id)).toEqual({ viva: false, motivo: 'salida_centro' })
+      expect(error).toBeNull()
+      expect(await filasProfe(profe.id)).toEqual([
+        { viva: true, motivo: null },
+        { viva: false, motivo: 'salida_centro' },
+      ])
+    })
+
+    it('con su fila nueva viva, reactivar desde Personal da P0002 (no está de baja)', async () => {
+      const c = await clientFor(directora)
+      const { error } = await c.rpc('reactivar_profe', {
+        p_centro_id: centroA.id,
+        p_usuario_id: profe.id,
+      })
+      expect(error?.code).toBe('P0002')
     })
   })
 
