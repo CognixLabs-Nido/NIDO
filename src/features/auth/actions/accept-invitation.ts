@@ -6,7 +6,9 @@ import { redirect } from 'next/navigation'
 import {
   asignarRolDeInvitacion,
   motivoQueImpideElRol,
+  motivoQueNoVuelve,
   retirarRolesDeCuentaNueva,
+  type MotivoQueNoVuelve,
 } from '@/features/centros/contexto/escribir-roles'
 import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
 import { getRequestContext } from '@/features/autorizaciones/lib/request-context'
@@ -30,6 +32,13 @@ const ROLES_FAMILIA = ['tutor_legal', 'autorizado'] as const
 
 function esRolFamilia(rol: string): boolean {
   return (ROLES_FAMILIA as readonly string[]).includes(rol)
+}
+
+/** Lo que ve quien acepta cuando su fila retirada no vuelve por una invitación. */
+function errorDeMotivo(motivo: MotivoQueNoVuelve): string {
+  return motivo === 'baja_temporal'
+    ? 'auth.invitation.errors.acceso_en_pausa'
+    : 'auth.invitation.errors.acceso_olvido'
 }
 
 // Subconjunto de `tipo_vinculo` que representa un vínculo familiar real. El ENUM ganó
@@ -87,9 +96,12 @@ async function ninosAVincular(
 
 /**
  * Crea el vínculo familiar tutor↔niño al aceptar la invitación (auto-vínculo), con cada
- * niño de `ninoIds` (ver `ninosAVincular`).
- * IDEMPOTENTE: ON CONFLICT (nino_id, usuario_id) DO NOTHING vía upsert con
- * ignoreDuplicates — si el admin ya lo creó a mano (crearVinculo), no falla.
+ * niño de `ninoIds` (ver `ninosAVincular`), por la RPC que aplica la tabla de motivos de la BD
+ * (`dar_vinculos_de_invitacion`, todos o ninguno): un vínculo vivo se deja como está (si el admin
+ * ya lo creó a mano, no falla); uno retirado se reactiva o se crea de nuevo según su motivo, o la
+ * aceptación se para con su mensaje. Antes, el upsert con `ignoreDuplicates` dejaba a la persona
+ * SIN vínculo y sin aviso si tenía uno retirado. Con `soloComprobar` no escribe: la aceptación lo
+ * mira antes de tocar nada.
  * El `tipo_vinculo` viene de la invitación; fallback a principal si una invitación
  * tutor_legal antigua viniera con NULL. `permisos` reusa permisosDefault (mismos
  * que el camino admin → consistencia entre ambos caminos).
@@ -103,24 +115,25 @@ async function crearVinculoAutomatico(
     tipoVinculoInvitacion: TipoVinculoFamiliar | null
     parentesco: string
     descripcionParentesco: string | null
+    soloComprobar?: boolean
   }
 ): Promise<{ error: string | null }> {
   const tipo =
     params.tipoVinculoInvitacion ??
     (params.rolObjetivo === 'autorizado' ? 'autorizado' : 'tutor_legal_principal')
 
-  const { error } = await service.from('vinculos_familiares').upsert(
-    params.ninoIds.map((ninoId) => ({
-      nino_id: ninoId,
-      usuario_id: params.usuarioId,
-      tipo_vinculo: tipo,
-      parentesco: params.parentesco as ReturnType<typeof parentescoEnum.parse>,
-      descripcion_parentesco: params.descripcionParentesco,
-      permisos: permisosDefault(tipo),
-    })),
-    { onConflict: 'nino_id,usuario_id', ignoreDuplicates: true }
-  )
+  const { error } = await service.rpc('dar_vinculos_de_invitacion', {
+    p_usuario_id: params.usuarioId,
+    p_nino_ids: params.ninoIds,
+    p_tipo: tipo,
+    p_parentesco: params.parentesco as ReturnType<typeof parentescoEnum.parse>,
+    p_descripcion_parentesco: params.descripcionParentesco as string,
+    p_permisos: permisosDefault(tipo),
+    p_solo_comprobar: params.soloComprobar ?? false,
+  })
   if (error) {
+    const motivo = motivoQueNoVuelve(error)
+    if (motivo) return { error: errorDeMotivo(motivo) }
     logger.warn('auto-vínculo falló', error.message)
     return { error: 'auth.invitation.errors.vinculo_failed' }
   }
@@ -573,20 +586,38 @@ export async function acceptPendingInvitationCore(
     }
   }
 
-  // Una fila retirada de este rol que la invitación no deshace (baja temporal, salida del centro,
-  // olvido, purga…): se para aquí, antes de tocar nada, con un mensaje claro. Antes entraba sin rol.
+  // Una fila retirada que no vuelve por una invitación (la baja temporal, el olvido): se para
+  // aquí, antes de tocar nada, con un mensaje claro y sin marcar la invitación. Lo deciden la
+  // tabla de motivos de la BD y la misma RPC que luego da el rol y los vínculos, sin escribir.
   const impide = await motivoQueImpideElRol(service, {
     usuario_id: user.id,
     centro_id: invitation.centro_id,
     rol: invitation.rol_objetivo,
   })
   if (impide.error) return fail('auth.invitation.errors.role_failed')
-  if (impide.motivo) {
-    return fail(
-      impide.motivo === 'baja_temporal'
-        ? 'auth.invitation.errors.acceso_en_pausa'
-        : 'auth.invitation.errors.acceso_retirado'
-    )
+  if (impide.motivo) return fail(errorDeMotivo(impide.motivo))
+
+  const vinculoAuto =
+    creaVinculo && invitation.nino_id && vinculo?.parentesco
+      ? await ninosAVincular(service, invitation.nino_id, invitation.rol_objetivo)
+      : null
+  if (vinculoAuto?.error) return fail(vinculoAuto.error)
+  const paramsVinculo = vinculoAuto
+    ? {
+        ninoIds: vinculoAuto.ninoIds,
+        usuarioId: user.id,
+        rolObjetivo: invitation.rol_objetivo,
+        tipoVinculoInvitacion: narrowTipoVinculoInvitacion(invitation.tipo_vinculo),
+        parentesco: vinculo?.parentesco ?? '',
+        descripcionParentesco: vinculo?.descripcionParentesco ?? null,
+      }
+    : null
+  if (paramsVinculo) {
+    const { error } = await crearVinculoAutomatico(service, {
+      ...paramsVinculo,
+      soloComprobar: true,
+    })
+    if (error) return fail(error)
   }
 
   // PR 1 (Fase 4): la invitación de tutor legal a una cuenta que YA existe (de otro centro, o
@@ -608,29 +639,16 @@ export async function acceptPendingInvitationCore(
     rol: invitation.rol_objetivo,
   })
   if (roleErr) {
-    // Ya no se ignora el duplicado: `asignarRolDeInvitacion` da por bueno el rol vivo, y una fila
-    // retirada que no reactiva es una persona SIN rol (antes entraba así, sin aviso).
-    logger.warn('acceptPending: roles_usuario insert falló', roleErr.message)
-    return fail('auth.invitation.errors.role_failed')
+    // Una persona SIN rol no entra (antes lo hacía, sin aviso). El motivo que no vuelve ya se miró
+    // arriba; si llega aquí (cambió entre medias), lleva su mensaje.
+    logger.warn('acceptPending: dar el rol falló', roleErr.message)
+    const motivo = motivoQueNoVuelve(roleErr)
+    return fail(motivo ? errorDeMotivo(motivo) : 'auth.invitation.errors.role_failed')
   }
 
-  // Auto-vínculo idempotente (mismo que el flujo de nuevo usuario).
-  if (creaVinculo && invitation.nino_id && vinculo?.parentesco) {
-    const { ninoIds, error: ninosError } = await ninosAVincular(
-      service,
-      invitation.nino_id,
-      invitation.rol_objetivo
-    )
-    const { error: vinculoError } = ninosError
-      ? { error: ninosError }
-      : await crearVinculoAutomatico(service, {
-          ninoIds,
-          usuarioId: user.id,
-          rolObjetivo: invitation.rol_objetivo,
-          tipoVinculoInvitacion: narrowTipoVinculoInvitacion(invitation.tipo_vinculo),
-          parentesco: vinculo.parentesco,
-          descripcionParentesco: vinculo.descripcionParentesco ?? null,
-        })
+  // Auto-vínculo (mismo que el flujo de nuevo usuario), con los niños ya resueltos arriba.
+  if (paramsVinculo) {
+    const { error: vinculoError } = await crearVinculoAutomatico(service, paramsVinculo)
     if (vinculoError) {
       logger.warn('acceptPending: auto-vínculo tutor↔niño falló', vinculoError)
       return fail(vinculoError)

@@ -4,83 +4,65 @@ import type { Database } from '@/types/database'
 
 /**
  * Las escrituras de `roles_usuario` (multicentro · Fase 1, PR6). Las hace solo la aceptación de
- * una invitación, con service role: dar el rol que trae la invitación y, si el alta falla después,
- * quitárselo a la cuenta recién creada. El guard prohíbe tocar `roles_usuario` fuera de
- * `features/centros/contexto/`.
+ * una invitación, con service role: dar el rol que trae la invitación (por la RPC que aplica la
+ * tabla de motivos) y, si el alta falla después, quitárselo a la cuenta recién creada. El guard
+ * prohíbe tocar `roles_usuario` fuera de `features/centros/contexto/`.
  */
 
 type Client = SupabaseClient<Database>
 type Rol = Database['public']['Enums']['user_role']
-type Motivo = Database['public']['Enums']['motivo_borrado']
 
 /**
- * Las bajas de Dirección que deshace una invitación nueva: quien dejó la dirección y vuelve a ser
- * invitada recupera su fila. `UNIQUE (usuario_id, centro_id, rol)` cuenta también las retiradas,
- * así que el INSERT da 23505 y, sin esto, la aceptación lo daba por bueno y la persona entraba sin
- * rol. Las bajas por otros motivos (familia, RGPD, superusuario) no se deshacen aquí.
+ * Los motivos por los que una fila retirada NO vuelve por una invitación o un alta (la tabla de
+ * motivos vive en la BD, `privado.decision_ante_retirada`; esto solo lee su respuesta): el olvido
+ * no se deshace, y la baja temporal se reactiva desde Personal. La BD los da con 55000 y el motivo
+ * en el HINT.
  */
-const MOTIVOS_QUE_DESHACE_UNA_INVITACION: Motivo[] = ['baja_direccion', 'traspaso_admin']
+export type MotivoQueNoVuelve = 'solicitud_olvido' | 'baja_temporal'
+
+/** El motivo de un 55000 de `privado.dar_rol` / `privado.dar_vinculo`, o `null` si es otro error. */
+export function motivoQueNoVuelve(
+  error: { code?: string; hint?: string | null } | null
+): MotivoQueNoVuelve | null {
+  if (error?.code !== '55000') return null
+  return error.hint === 'solicitud_olvido' || error.hint === 'baja_temporal' ? error.hint : null
+}
 
 /**
- * ¿Hay una fila retirada de este rol que una invitación no puede deshacer? Devuelve su motivo, o
- * `null` si no la hay (ni fila, una viva, o una baja que la invitación reactiva). Quien acepta
- * la mira ANTES de tocar nada: hoy entraba sin rol y sin aviso. La baja temporal no se deshace
- * con una invitación (se reactiva desde Personal); la salida del centro, la purga o la revocación
- * de la familia, todavía no. `error` = la lectura falló.
+ * ¿Puede volver esta persona con este rol? Lo mira ANTES de tocar nada quien acepta una
+ * invitación, con la misma tabla de motivos que luego la da (`dar_rol_de_invitacion` sin
+ * escribir). `motivo` = por qué no vuelve; `error` = la comprobación falló por otra cosa.
  */
 export async function motivoQueImpideElRol(
   service: Client,
   fila: { usuario_id: string; centro_id: string; rol: Rol }
-): Promise<{ motivo: Motivo | null; error: boolean }> {
-  const { data, error } = await service
-    .from('roles_usuario')
-    .select('deleted_at, deleted_reason')
-    .eq('usuario_id', fila.usuario_id)
-    .eq('centro_id', fila.centro_id)
-    .eq('rol', fila.rol)
-    .maybeSingle()
-  if (error) return { motivo: null, error: true }
-  if (!data || data.deleted_at === null || !data.deleted_reason)
-    return { motivo: null, error: false }
-  if (MOTIVOS_QUE_DESHACE_UNA_INVITACION.includes(data.deleted_reason)) {
-    return { motivo: null, error: false }
-  }
-  return { motivo: data.deleted_reason, error: false }
+): Promise<{ motivo: MotivoQueNoVuelve | null; error: boolean }> {
+  const { error } = await service.rpc('dar_rol_de_invitacion', {
+    p_usuario_id: fila.usuario_id,
+    p_centro_id: fila.centro_id,
+    p_rol: fila.rol,
+    p_solo_comprobar: true,
+  })
+  if (!error) return { motivo: null, error: false }
+  const motivo = motivoQueNoVuelve(error)
+  return motivo ? { motivo, error: false } : { motivo: null, error: true }
 }
 
 /**
- * Da el rol de una invitación en su centro. Si la persona ya tuvo ese rol y lo dejó por una baja
- * de Dirección, reactiva su fila. Si ya lo tiene vivo, no hace nada. Si su fila está retirada por
- * otro motivo, devuelve el 23505: la persona NO tiene el rol, y quien llama no puede darlo por
- * bueno.
+ * Da el rol de una invitación en su centro, por la tabla de motivos de la BD: con el rol vivo no
+ * hace nada; si no, reactiva la última fila retirada o crea una nueva según su motivo, o falla
+ * (55000) si es de los que no vuelven.
  */
 export async function asignarRolDeInvitacion(
   service: Client,
   fila: { usuario_id: string; centro_id: string; rol: Rol }
-): Promise<{ error: { code?: string; message: string } | null }> {
-  const insertado = await service.from('roles_usuario').insert(fila)
-  if (insertado.error?.code !== '23505') return insertado
-  const { data, error } = await service
-    .from('roles_usuario')
-    .update({ deleted_at: null, deleted_reason: null })
-    .eq('usuario_id', fila.usuario_id)
-    .eq('centro_id', fila.centro_id)
-    .eq('rol', fila.rol)
-    .in('deleted_reason', MOTIVOS_QUE_DESHACE_UNA_INVITACION)
-    .select('id')
-    .maybeSingle()
-  if (error) return { error }
-  if (data) return { error: null }
-  const { data: viva, error: errViva } = await service
-    .from('roles_usuario')
-    .select('id')
-    .eq('usuario_id', fila.usuario_id)
-    .eq('centro_id', fila.centro_id)
-    .eq('rol', fila.rol)
-    .is('deleted_at', null)
-    .maybeSingle()
-  if (errViva) return { error: errViva }
-  return viva ? { error: null } : insertado
+): Promise<{ error: { code?: string; message: string; hint?: string | null } | null }> {
+  const { error } = await service.rpc('dar_rol_de_invitacion', {
+    p_usuario_id: fila.usuario_id,
+    p_centro_id: fila.centro_id,
+    p_rol: fila.rol,
+  })
+  return { error }
 }
 
 /**

@@ -41,18 +41,17 @@ export async function crearVinculo(
 
   const permisos = permisosDefault(parsed.data.tipo_vinculo)
 
-  const { data, error } = await supabase
-    .from('vinculos_familiares')
-    .insert({
-      nino_id: ninoId,
-      usuario_id: parsed.data.usuario_id,
-      tipo_vinculo: parsed.data.tipo_vinculo,
-      parentesco: parsed.data.parentesco,
-      descripcion_parentesco: parsed.data.descripcion_parentesco ?? null,
-      permisos,
-    })
-    .select('id')
-    .single()
+  // Por la RPC que aplica la tabla de motivos de la BD: un vínculo retirado se reactiva o se crea
+  // de nuevo según su motivo (antes, el INSERT daba 23505 y salía «duplicado»). Uno vivo sigue
+  // siendo un duplicado (23505).
+  const { data, error } = await supabase.rpc('crear_vinculo', {
+    p_nino_id: ninoId,
+    p_usuario_id: parsed.data.usuario_id,
+    p_tipo: parsed.data.tipo_vinculo,
+    p_parentesco: parsed.data.parentesco,
+    p_descripcion_parentesco: (parsed.data.descripcion_parentesco ?? null) as string,
+    p_permisos: permisos,
+  })
 
   if (error || !data) {
     logger.warn('crearVinculo error', error?.message)
@@ -61,5 +60,5 @@ export async function crearVinculo(
   }
 
   revalidatePath('/[locale]/admin/ninos', 'page')
-  return ok({ id: data.id })
+  return ok({ id: data })
 }

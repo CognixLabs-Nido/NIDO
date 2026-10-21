@@ -1,5 +1,6 @@
 'use server'
 
+import { motivoQueImpideElRol } from '@/features/centros/contexto/escribir-roles'
 import { esAdminEn, esResponsableEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { getAppUrl } from '@/shared/lib/app-url'
@@ -75,6 +76,24 @@ export async function sendInvitation(
       .eq('centro_id', parsed.data.centroId)
       .maybeSingle()
     if (!aula) return fail('auth.invitation.errors.forbidden')
+  }
+
+  // Una profe de baja temporal no se vuelve a invitar: Dirección la reactiva desde Personal. Es
+  // un aviso para quien invita; la puerta es la aceptación, que lo vuelve a mirar (si esta
+  // lectura falla, se sigue).
+  if (parsed.data.rolObjetivo === 'profe') {
+    const { data: cuentas } = await service.rpc('buscar_auth_user_por_email', {
+      p_email: parsed.data.email,
+    })
+    const cuenta = cuentas?.[0]
+    if (cuenta) {
+      const { motivo } = await motivoQueImpideElRol(service, {
+        usuario_id: cuenta.id,
+        centro_id: parsed.data.centroId,
+        rol: 'profe',
+      })
+      if (motivo === 'baja_temporal') return fail('auth.invitation.errors.de_baja_temporal')
+    }
   }
 
   const expiresAt = new Date(Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString()

@@ -104,7 +104,8 @@
         "servicio_cuentas_no_disponible": "The accounts service isn't responding right now. Please try again in a few seconds.",
         "email_no_enviado": "The invitation email couldn't be sent. Please try again.",
         "acceso_en_pausa": "Your access to this centre is paused due to temporary leave. The centre's management will reactivate it when you return.",
-        "acceso_retirado": "This invitation cannot be accepted: your previous access to this centre has been removed. Please talk to the centre's management."
+        "acceso_olvido": "This invitation cannot be accepted: there is a request in progress to erase your data at this centre (right to be forgotten). Please talk to the centre's management.",
+        "de_baja_temporal": "This person is on temporary leave at this centre: reactivate them from Staff."
       },
       "idioma_correo": {
         "label": "Email language",
@@ -4229,7 +4230,8 @@
       "alta_fallo": "The enrolment could not be completed. Please try again.",
       "sin_fecha_nacimiento": "The child's date of birth is missing; fill it in before enrolling.",
       "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it.",
-      "alta_creada_sin_correo": "The enrolment has been created, but the invitation email was not sent: the family has not received it. Do not enrol again; ask the NIDO administrator to resend it."
+      "alta_creada_sin_correo": "The enrolment has been created, but the invitation email was not sent: the family has not received it. Do not enrol again; ask the NIDO administrator to resend it.",
+      "tutor_olvido": "The enrolment cannot be completed with this account: there is a request in progress to erase their data at this centre (right to be forgotten)."
     }
   },
   "recibos": {

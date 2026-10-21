@@ -104,7 +104,8 @@
         "servicio_cuentas_no_disponible": "El servici de comptes no respon ara mateix. Torna-ho a provar d'ací a uns segons.",
         "email_no_enviado": "No s'ha pogut enviar la invitació per correu. Torna-ho a provar.",
         "acceso_en_pausa": "El teu accés a aquest centre està en pausa per una baixa temporal. La direcció del centre el reactivarà quan tornes.",
-        "acceso_retirado": "No es pot acceptar aquesta invitació: el teu accés anterior a aquest centre està retirat. Parla amb la direcció del centre."
+        "acceso_olvido": "No es pot acceptar aquesta invitació: hi ha en curs una petició d'esborrat de les teues dades en aquest centre (dret a l'oblit). Parla amb la direcció del centre.",
+        "de_baja_temporal": "Està de baixa temporal en aquest centre: reactiva-la des de Personal."
       },
       "idioma_correo": {
         "label": "Idioma del correu",
@@ -4229,7 +4230,8 @@
       "alta_fallo": "No s'ha pogut completar l'alta. Torna-ho a provar.",
       "sin_fecha_nacimiento": "Falta la data de naixement del xiquet; emplena-la abans de fer l'alta.",
       "presencial_solo_direccion": "Açò ho registra la directora del centre, que té la família davant. Com a superusuari no ho pots fer.",
-      "alta_creada_sin_correo": "L'alta està creada, però el correu d'invitació no ha eixit: la família no l'ha rebut. No tornes a donar l'alta; avisa el responsable de NIDO perquè el reenvie."
+      "alta_creada_sin_correo": "L'alta està creada, però el correu d'invitació no ha eixit: la família no l'ha rebut. No tornes a donar l'alta; avisa el responsable de NIDO perquè el reenvie.",
+      "tutor_olvido": "No es pot completar l'alta amb aquest compte: hi ha en curs una petició d'esborrat de les seues dades en aquest centre (dret a l'oblit)."
     }
   },
   "recibos": {
