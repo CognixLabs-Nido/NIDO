@@ -29,6 +29,17 @@ export function motivoQueNoVuelve(
 }
 
 /**
+ * ¿El rol de admin no se pudo dar porque el centro consiguió otra admin entre la invitación y la
+ * aceptación? Lo dice el índice de una admin viva por centro (`idx_roles_usuario_una_admin_viva`),
+ * que `privado.dar_rol` no captura: llega como 23505 con su nombre. Otro 23505 no es este.
+ */
+export function chocaConLaAdminViva(error: { code?: string; message?: string } | null): boolean {
+  return (
+    error?.code === '23505' && (error.message ?? '').includes('idx_roles_usuario_una_admin_viva')
+  )
+}
+
+/**
  * ¿Puede volver esta persona con este rol? Lo mira ANTES de tocar nada quien acepta una
  * invitación, con la misma tabla de motivos que luego la da (`dar_rol_de_invitacion` sin
  * escribir). `motivo` = por qué no vuelve; `error` = la comprobación falló por otra cosa.

@@ -105,7 +105,8 @@
         "email_no_enviado": "No s'ha pogut enviar la invitació per correu. Torna-ho a provar.",
         "acceso_en_pausa": "El teu accés a aquest centre està en pausa per una baixa temporal. La direcció del centre el reactivarà quan tornes.",
         "acceso_olvido": "No es pot acceptar aquesta invitació: hi ha en curs una petició d'esborrat de les teues dades en aquest centre (dret a l'oblit). Parla amb la direcció del centre.",
-        "de_baja_temporal": "Està de baixa temporal en aquest centre: reactiva-la des de Personal."
+        "de_baja_temporal": "Està de baixa temporal en aquest centre: reactiva-la des de Personal.",
+        "centro_ya_tiene_admin": "El centre ja té admin: esta invitació ja no es pot acceptar."
       },
       "idioma_correo": {
         "label": "Idioma del correu",
@@ -1499,7 +1500,8 @@
     },
     "errors": {
       "update_failed": "No s'ha pogut actualitzar el centre.",
-      "no_autorizado": "Les dades del centre només les canvia l'administrador del centre."
+      "no_autorizado": "Les dades del centre només les canvia l'administrador del centre.",
+      "nombre_duplicado": "Ja hi ha un centre amb eixe nom."
     },
     "logo": {
       "titulo": "Logo del centre",
@@ -4348,6 +4350,54 @@
       "invitacion_admin_pendiente": "Hi ha una invitació d'admin pendent d'acceptar.",
       "invitacion_admin_caducada": "La invitació d'admin ha caducat.",
       "sin_curso_activo": "Sense curs actiu: el centre no té cap curs en marxa."
+    },
+    "nuevo_centro": "Nou centre",
+    "admin": {
+      "reenviar": "Reenviar la invitació",
+      "email": "Email de l'admin",
+      "email_otra": "Convidar una altra persona (caduca la invitació anterior)",
+      "invitar": "Convidar",
+      "reenviada": "Invitació reenviada: té 7 dies més.",
+      "enviada": "Invitació enviada."
+    },
+    "nuevo": {
+      "titulo": "Nou centre",
+      "subtitulo": "El centre naix amb el seu curs i la invitació de la seua admin. Les aules les posa la direcció del centre.",
+      "centro": "El centre",
+      "curso": "El curs",
+      "curso_ayuda": "Calculat per la data d'avui; el pots canviar. Naix com a curs actiu.",
+      "admin": "L'admin",
+      "admin_ayuda": "Li arriba una invitació per correu. És obligatòria: un centre sense admin no l'administra ningú.",
+      "crear": "Crear el centre",
+      "cancelar": "Cancel·lar",
+      "volver": "Tornar al panell",
+      "creado_sin_correo": "El centre està creat, però no hem pogut enviar el correu de la invitació. Reenvia-la des del panell.",
+      "campos": {
+        "nombre": "Nom",
+        "direccion": "Adreça",
+        "telefono": "Telèfon",
+        "email_contacto": "Email de contacte",
+        "idioma_default": "Idioma",
+        "curso_nombre": "Nom del curs",
+        "curso_inicio": "Comença",
+        "curso_fin": "Acaba",
+        "email_admin": "Email de l'admin"
+      },
+      "idiomas": {
+        "es": "Castellà",
+        "en": "Anglés",
+        "va": "Valencià"
+      }
+    },
+    "errores": {
+      "no_autorizado": "Només la plataforma pot fer això.",
+      "nombre_duplicado": "Ja hi ha un centre amb eixe nom.",
+      "centro_con_admin": "El centre ja té admin: no se'n pot convidar una altra.",
+      "email_admin": "L'email de l'admin no és vàlid.",
+      "datos_invalidos": "Revisa les dades: en falta alguna o no és vàlida.",
+      "sin_invitacion": "No hi ha cap invitació d'admin per a reenviar.",
+      "centro_no_existe": "No trobem eixe centre.",
+      "fallo": "No hem pogut completar l'operació. Torna-ho a provar."
     }
   }
 }

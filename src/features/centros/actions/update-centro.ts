@@ -26,6 +26,8 @@ export async function updateCentro(
   const { error } = await supabase.from('centros').update(parsed.data).eq('id', centroId)
   if (error) {
     logger.warn('updateCentro error', error.message)
+    // Nombres de centro únicos entre los vivos (`idx_centros_nombre_vivo_unico`, Fase 5).
+    if (error.code === '23505') return fail('centro.errors.nombre_duplicado')
     return fail('centro.errors.update_failed')
   }
 

@@ -105,7 +105,8 @@
         "email_no_enviado": "No se pudo enviar la invitación por email. Inténtalo de nuevo.",
         "acceso_en_pausa": "Tu acceso a este centro está en pausa por una baja temporal. La dirección del centro lo reactivará cuando vuelvas.",
         "acceso_olvido": "No se puede aceptar esta invitación: hay en curso una petición de borrado de tus datos en este centro (derecho al olvido). Habla con la dirección del centro.",
-        "de_baja_temporal": "Está de baja temporal en este centro: reactívala desde Personal."
+        "de_baja_temporal": "Está de baja temporal en este centro: reactívala desde Personal.",
+        "centro_ya_tiene_admin": "El centro ya tiene admin: esta invitación ya no se puede aceptar."
       },
       "idioma_correo": {
         "label": "Idioma del correo",
@@ -1499,7 +1500,8 @@
     },
     "errors": {
       "update_failed": "No se pudo actualizar el centro.",
-      "no_autorizado": "Los datos del centro solo los cambia el administrador del centro."
+      "no_autorizado": "Los datos del centro solo los cambia el administrador del centro.",
+      "nombre_duplicado": "Ya hay un centro con ese nombre."
     },
     "logo": {
       "titulo": "Logo del centro",
@@ -4348,6 +4350,54 @@
       "invitacion_admin_pendiente": "Hay una invitación de admin pendiente de aceptar.",
       "invitacion_admin_caducada": "La invitación de admin ha caducado.",
       "sin_curso_activo": "Sin curso activo: el centro no tiene ningún curso en marcha."
+    },
+    "nuevo_centro": "Nuevo centro",
+    "admin": {
+      "reenviar": "Reenviar la invitación",
+      "email": "Email de la admin",
+      "email_otra": "Invitar a otra persona (caduca la invitación anterior)",
+      "invitar": "Invitar",
+      "reenviada": "Invitación reenviada: tiene otros 7 días.",
+      "enviada": "Invitación enviada."
+    },
+    "nuevo": {
+      "titulo": "Nuevo centro",
+      "subtitulo": "El centro nace con su curso y la invitación de su admin. Las aulas las pone la dirección del centro.",
+      "centro": "El centro",
+      "curso": "El curso",
+      "curso_ayuda": "Calculado por la fecha de hoy; puedes cambiarlo. Nace como curso activo.",
+      "admin": "La admin",
+      "admin_ayuda": "Le llega una invitación por correo. Es obligatoria: un centro sin admin no lo administra nadie.",
+      "crear": "Crear el centro",
+      "cancelar": "Cancelar",
+      "volver": "Volver al panel",
+      "creado_sin_correo": "El centro está creado, pero no hemos podido enviar el correo de la invitación. Reenvíala desde el panel.",
+      "campos": {
+        "nombre": "Nombre",
+        "direccion": "Dirección",
+        "telefono": "Teléfono",
+        "email_contacto": "Email de contacto",
+        "idioma_default": "Idioma",
+        "curso_nombre": "Nombre del curso",
+        "curso_inicio": "Empieza",
+        "curso_fin": "Termina",
+        "email_admin": "Email de la admin"
+      },
+      "idiomas": {
+        "es": "Castellano",
+        "en": "Inglés",
+        "va": "Valenciano"
+      }
+    },
+    "errores": {
+      "no_autorizado": "Solo la plataforma puede hacer esto.",
+      "nombre_duplicado": "Ya hay un centro con ese nombre.",
+      "centro_con_admin": "El centro ya tiene admin: no se puede invitar a otra.",
+      "email_admin": "El email de la admin no es válido.",
+      "datos_invalidos": "Revisa los datos: alguno falta o no es válido.",
+      "sin_invitacion": "No hay ninguna invitación de admin que reenviar.",
+      "centro_no_existe": "No encontramos ese centro.",
+      "fallo": "No hemos podido completar la operación. Inténtalo de nuevo."
     }
   }
 }

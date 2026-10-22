@@ -105,7 +105,8 @@
         "email_no_enviado": "The invitation email couldn't be sent. Please try again.",
         "acceso_en_pausa": "Your access to this centre is paused due to temporary leave. The centre's management will reactivate it when you return.",
         "acceso_olvido": "This invitation cannot be accepted: there is a request in progress to erase your data at this centre (right to be forgotten). Please talk to the centre's management.",
-        "de_baja_temporal": "This person is on temporary leave at this centre: reactivate them from Staff."
+        "de_baja_temporal": "This person is on temporary leave at this centre: reactivate them from Staff.",
+        "centro_ya_tiene_admin": "The centre already has an admin: this invitation can no longer be accepted."
       },
       "idioma_correo": {
         "label": "Email language",
@@ -1499,7 +1500,8 @@
     },
     "errors": {
       "update_failed": "Could not update the centre.",
-      "no_autorizado": "Only the centre administrator can change the centre's details."
+      "no_autorizado": "Only the centre administrator can change the centre's details.",
+      "nombre_duplicado": "There is already a centre with that name."
     },
     "logo": {
       "titulo": "Centre logo",
@@ -4348,6 +4350,54 @@
       "invitacion_admin_pendiente": "An admin invitation is waiting to be accepted.",
       "invitacion_admin_caducada": "The admin invitation has expired.",
       "sin_curso_activo": "No active academic year: the centre has no year under way."
+    },
+    "nuevo_centro": "New centre",
+    "admin": {
+      "reenviar": "Resend the invitation",
+      "email": "Admin email",
+      "email_otra": "Invite someone else (the previous invitation expires)",
+      "invitar": "Invite",
+      "reenviada": "Invitation resent: it has another 7 days.",
+      "enviada": "Invitation sent."
+    },
+    "nuevo": {
+      "titulo": "New centre",
+      "subtitulo": "The centre starts with its academic year and the invitation for its admin. The centre management sets up the classrooms.",
+      "centro": "The centre",
+      "curso": "The academic year",
+      "curso_ayuda": "Worked out from today’s date; you can change it. It starts as the active year.",
+      "admin": "The admin",
+      "admin_ayuda": "They receive an invitation by email. It is required: a centre without an admin is run by nobody.",
+      "crear": "Create the centre",
+      "cancelar": "Cancel",
+      "volver": "Back to the dashboard",
+      "creado_sin_correo": "The centre has been created, but we could not send the invitation email. Resend it from the dashboard.",
+      "campos": {
+        "nombre": "Name",
+        "direccion": "Address",
+        "telefono": "Phone",
+        "email_contacto": "Contact email",
+        "idioma_default": "Language",
+        "curso_nombre": "Academic year name",
+        "curso_inicio": "Starts",
+        "curso_fin": "Ends",
+        "email_admin": "Admin email"
+      },
+      "idiomas": {
+        "es": "Spanish",
+        "en": "English",
+        "va": "Valencian"
+      }
+    },
+    "errores": {
+      "no_autorizado": "Only the platform can do this.",
+      "nombre_duplicado": "There is already a centre with that name.",
+      "centro_con_admin": "The centre already has an admin: you cannot invite another.",
+      "email_admin": "The admin email is not valid.",
+      "datos_invalidos": "Check the details: something is missing or not valid.",
+      "sin_invitacion": "There is no admin invitation to resend.",
+      "centro_no_existe": "We could not find that centre.",
+      "fallo": "We could not complete the operation. Please try again."
     }
   }
 }

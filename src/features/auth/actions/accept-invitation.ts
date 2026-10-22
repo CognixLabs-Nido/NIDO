@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 
 import {
   asignarRolDeInvitacion,
+  chocaConLaAdminViva,
   motivoQueImpideElRol,
   motivoQueNoVuelve,
   retirarRolesDeCuentaNueva,
@@ -399,7 +400,11 @@ export async function acceptInvitationCore(
   if (roleErr) {
     logger.warn('accept: roles_usuario insert falló (rollback de la cuenta)', roleErr.message)
     await service.auth.admin.deleteUser(userId).catch(() => {})
-    return fail('auth.invitation.errors.role_failed')
+    return fail(
+      chocaConLaAdminViva(roleErr)
+        ? 'auth.invitation.errors.centro_ya_tiene_admin'
+        : 'auth.invitation.errors.role_failed'
+    )
   }
 
   // Captura de consentimientos: la tabla `consentimientos` es la fuente de verdad
@@ -643,6 +648,7 @@ export async function acceptPendingInvitationCore(
     // Una persona SIN rol no entra (antes lo hacía, sin aviso). El motivo que no vuelve ya se miró
     // arriba; si llega aquí (cambió entre medias), lleva su mensaje.
     logger.warn('acceptPending: dar el rol falló', roleErr.message)
+    if (chocaConLaAdminViva(roleErr)) return fail('auth.invitation.errors.centro_ya_tiene_admin')
     const motivo = motivoQueNoVuelve(roleErr)
     return fail(motivo ? errorDeMotivo(motivo) : 'auth.invitation.errors.role_failed')
   }

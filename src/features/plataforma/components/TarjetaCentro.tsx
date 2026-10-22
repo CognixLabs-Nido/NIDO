@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { alertasDe } from '../lib/alertas'
 import type { MetricasCentro } from '../types'
 
+import { AdminDelCentro } from './AdminDelCentro'
 import { EntrarEnCentro } from './EntrarEnCentro'
 
 interface Props {
@@ -25,7 +26,10 @@ export const RECUENTOS = [
   ['invitaciones_pendientes', 'invitacionesPendientes'],
 ] as const satisfies ReadonlyArray<readonly [string, keyof MetricasCentro]>
 
-/** Un centro en el panel: sus alertas, sus recuentos y el botón de entrar. Solo cifras. */
+/**
+ * Un centro en el panel: sus alertas, sus recuentos y el botón de entrar. Solo cifras. Sin admin,
+ * también invitarla o reenviar la invitación (Fase 5, PR 2).
+ */
 export function TarjetaCentro({ centro, locale }: Props) {
   const t = useTranslations('plataforma')
   const alertas = alertasDe(centro)
@@ -56,6 +60,9 @@ export function TarjetaCentro({ centro, locale }: Props) {
               </li>
             ))}
           </ul>
+        )}
+        {centro.sinAdmin && (
+          <AdminDelCentro centroId={centro.centroId} invitacion={centro.invitacionAdmin} />
         )}
         <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
           {RECUENTOS.map(([clave, campo]) => (
