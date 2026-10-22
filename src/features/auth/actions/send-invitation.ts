@@ -3,11 +3,8 @@
 import { motivoQueImpideElRol } from '@/features/centros/contexto/escribir-roles'
 import { esAdminEn, esResponsableEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
-import { getAppUrl } from '@/shared/lib/app-url'
-import { logger } from '@/shared/lib/logger'
 
-import { enviarAvisoInvitacion } from '../lib/aviso-invitacion'
-import { prepararIdiomaInvitacion } from '../lib/idioma-invitacion'
+import { enviarCorreoInvitacion } from '../lib/correo-invitacion'
 import { llamarGoTrue } from '../lib/llamar-gotrue'
 import { sendInvitationSchema, type SendInvitationInput } from '../schemas/invitation'
 
@@ -157,63 +154,13 @@ export async function sendInvitation(
     invitationId = data.id
   }
 
-  const { data: invitation } = await service
-    .from('invitaciones')
-    .select('token')
-    .eq('id', invitationId)
-    .single()
-
-  if (!invitation) return fail('auth.invitation.errors.lookup_failed')
-
-  // Nombre del centro para personalizar la firma del email ({{ .Data.centro_nombre }}
-  // en la plantilla de invitación). Si faltara, la plantilla cae a "la escuela".
-  const { data: centro } = await service
-    .from('centros')
-    .select('nombre')
-    .eq('id', parsed.data.centroId)
-    .maybeSingle()
-
-  // Idioma del correo y de la página del enlace (elegido por la Dirección, el de la cuenta
-  // provisional si es un reenvío, o castellano). Ajusta la cuenta provisional si hace falta.
-  const idioma = await prepararIdiomaInvitacion(service, parsed.data.email, parsed.data.idioma)
-
-  const redirectTo = `${getAppUrl()}/${idioma}/invitation/${invitation.token}`
-
-  const { error: emailError, indisponible: emailIndisponible } = await llamarGoTrue(
-    'inviteUserByEmail',
-    () =>
-      service.auth.admin.inviteUserByEmail(parsed.data.email, {
-        redirectTo,
-        data: {
-          token: invitation.token,
-          rol_objetivo: parsed.data.rolObjetivo,
-          centro_nombre: centro?.nombre ?? null,
-          // Lo lee la plantilla (`.Data.idioma_preferido`) y `handle_new_user` lo copia a
-          // `usuarios.idioma_preferido` al crear la cuenta provisional.
-          idioma_preferido: idioma,
-        },
-      })
-  )
-  // PR-A: dejar de reportar éxito falso. Si el email NO salió, se devuelve `fail` para que la
-  // UI lo muestre (afecta a TODOS los callers de sendInvitation — corrección consistente del
-  // mismo bug).
-  if (emailIndisponible) return fail('auth.invitation.errors.servicio_cuentas_no_disponible')
-  if (emailError) {
-    // Cuenta que ya existe (de otro centro, personal, superusuario…): GoTrue no le manda nada.
-    // PR 1 (Fase 4): le llega el aviso por Resend y acepta desde su perfil. Quien invita ve lo
-    // mismo que con un email sin cuenta —«enviada» o «no se pudo enviar»—, nunca «ya tiene
-    // cuenta» (D4).
-    if (emailError.code === 'email_exists' || emailError.status === 422) {
-      const avisada = await enviarAvisoInvitacion(service, {
-        email: parsed.data.email,
-        centroNombre: centro?.nombre ?? null,
-      })
-      if (!avisada) return fail('auth.invitation.errors.email_no_enviado')
-      return ok({ invitationId })
-    }
-    logger.warn('inviteUserByEmail error', emailError.message)
-    return fail('auth.invitation.errors.email_no_enviado')
-  }
-
+  const errorCorreo = await enviarCorreoInvitacion(service, {
+    invitationId,
+    email: parsed.data.email,
+    rolObjetivo: parsed.data.rolObjetivo,
+    centroId: parsed.data.centroId,
+    idioma: parsed.data.idioma,
+  })
+  if (errorCorreo) return fail(errorCorreo)
   return ok({ invitationId })
 }

@@ -932,7 +932,8 @@ que no es suyo y no escribe en su nombre lo que la BD no le dejaría escribir a 
   sin que la app escriba ni llame a la RPC. Sin la guarda, varias daban «guardado» sin guardar: un
   UPDATE sin RETURNING que la RLS deja en 0 filas no da error.
 - **`sendInvitation`** escribe la invitación con service role, que se salta la anti-escalada de la
-  RLS. Invitar a una directora exige `esResponsableEn` (desde el PR 4 no se invita a una admin).
+  RLS. Invitar a una directora exige `esResponsableEn` (desde el PR 4, `sendInvitation` no invita a
+  una admin; solo la plataforma, con `platform_invitar_admin`, PR 2 de la Fase 5).
   Sin esa guarda, reconocer a la directora como Dirección le habría dejado nombrar a otra.
 - **Menús y pantallas:** Centro y Auditoría no salen en el menú de una directora, y sus páginas la
   mandan a `/forbidden` (`buildSidebarItems` exige `esResponsable`, para que ningún layout se lo
@@ -964,8 +965,10 @@ la misma razón que la del enum del PR 2) y `20261031130000_feat_traspaso_y_baja
 - Dar otra vez un rol que la persona tuvo reactiva su fila retirada por `baja_direccion` o
   `traspaso_admin`. Desde `20261102120000` lo decide la tabla de motivos (ver «Lo que hace una
   invitación con una fila retirada»), también en las dos RPC.
-- **No se invita a una admin** (`userRoleSchema` sin `admin`): aceptarla chocaba con el índice y
-  la persona entraba sin rol. Se invita como directora y se le traspasa.
+- **Desde un centro no se invita a una admin** (`userRoleSchema` sin `admin`): aceptarla chocaba
+  con el índice y la persona entraba sin rol. Se invita como directora y se le traspasa. La
+  plataforma sí invita a la admin de un centro sin admin viva (`platform_invitar_admin`, PR 2 de la
+  Fase 5), y si el centro consigue una entre medias, la aceptación da su mensaje propio.
 - **En la app:** «Dirección del centro» (`/admin/direccion`), solo para la admin (menú y página):
   quién dirige el centro, invitar, dar de baja, traspasar y las invitaciones pendientes. «Dejar la
   dirección» también en el perfil, por centro. En el resto de la app, admin y directora son
@@ -1124,6 +1127,39 @@ audita (decisión del responsable); entrar en un centro sí (`elegirCentro` →
   centro borrado; la admin, una directora, una profe y anon reciben 42501),
   `proxy-plataforma.test.ts` y el test del layout.
 
+### Crear un centro e invitar a su admin (PR 2 de la Fase 5)
+
+Migración `20261104120000_feat_platform_crear_centro`. El superusuario crea un centro desde el panel
+(`/plataforma/nuevo-centro`) y le invita la admin. Decisiones del responsable: formulario con
+nombre, dirección, teléfono, email de contacto e idioma (sin SEPA ni logo); el curso calculado por
+la fecha y modificable; el email de la admin obligatorio; las aulas las pone la directora; sin
+reglas de arranque; y nombres de centro únicos, bloqueado.
+
+- **`platform_crear_centro(...)`** (`SECURITY DEFINER`; `EXECUTE` solo para `authenticated`): el
+  centro, su curso (nace `activo`) y la invitación de su admin, en una transacción. Si algo falla,
+  no queda nada. No siembra nada más.
+- **`platform_invitar_admin(centro, email)`**: la invitación de admin es solo de la plataforma, al
+  crear y siempre que el centro se quede sin admin viva. Con admin viva, 55000 (aceptarla chocaría
+  con `idx_roles_usuario_una_admin_viva`). Sin email reenvía la última, con otros 7 días; con email
+  crea una nueva y caduca las pendientes, así la última por `created_at` (la que lee
+  `platform_metricas`) es siempre la vigente.
+- **Las dos empiezan por `is_superadmin()`** (42501 si no) y escriben con la sesión del
+  superusuario, que queda como actor en `audit_log`. La guarda posterior comprueba la primera
+  sentencia, que no nombran `es_admin` y su md5 normalizado.
+- **`idx_centros_nombre_vivo_unico`**: dos centros vivos no se llaman igual, sin distinguir
+  mayúsculas ni espacios. Cubre también renombrar (`updateCentro` da `nombre_duplicado`). En los
+  tests, `createTestCentro` añade al nombre el principio del id, así que no chocan aunque un fichero
+  repita un nombre fijo.
+- **Aceptar** una invitación de admin da el rol por `dar_rol_de_invitacion`. Si el centro consiguió
+  admin entre la invitación y la aceptación, el 23505 del índice llega con su mensaje propio
+  (`chocaConLaAdminViva` → `centro_ya_tiene_admin`) y la persona no entra como admin.
+- **En la app:** «Nuevo centro» en el panel y, en cada centro sin admin, reenviar la invitación
+  (pendiente o caducada) o invitar a otra persona. El correo sale con `enviarCorreoInvitacion`, el
+  mismo que usa `sendInvitation`. Si no sale, el centro ya está creado y se dice.
+- Tests: `platform-crear-centro.rls.test.ts` (crear sin nada más, nombres repetidos, renombrar,
+  atomicidad, reenviar y otro email, 42501 a admin, directora, profe y anon, y la aceptación con y
+  sin admin entre medias), y los unit de las acciones, del curso por fecha y de los errores.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -1164,6 +1200,7 @@ audita (decisión del responsable); entrar en un centro sí (`elegirCentro` →
 | La tabla de motivos de invitaciones y altas   | `invitaciones-motivos.rls.test.ts`              |
 | Las lecturas filtran por su centro            | `check-lecturas-por-centro.test.ts` (guards)    |
 | Métricas del panel: solo lo activo            | `platform-metricas.rls.test.ts`                 |
+| Crear centro e invitar a su admin             | `platform-crear-centro.rls.test.ts`             |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

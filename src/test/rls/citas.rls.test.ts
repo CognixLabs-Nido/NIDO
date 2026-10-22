@@ -62,8 +62,8 @@ describe('RLS citas — F7b (agenda)', () => {
   }
 
   beforeAll(async () => {
-    centro = await createTestCentro('Centro Agenda')
-    centroB = await createTestCentro('Centro Agenda B')
+    centro = await createTestCentro('Centro Citas')
+    centroB = await createTestCentro('Centro Citas B')
     const curso = await createTestCurso(centro.id)
     aula = await createTestAula(centro.id, curso.id, 'Aula Agenda')
     aulaB = await createTestAula(centro.id, curso.id, 'Aula Agenda B')

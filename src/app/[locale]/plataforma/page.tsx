@@ -1,5 +1,7 @@
 import { getTranslations } from 'next-intl/server'
+import Link from 'next/link'
 
+import { Button } from '@/components/ui/button'
 import { SignOutButton } from '@/features/auth/components/SignOutButton'
 import { TarjetaCentro } from '@/features/plataforma/components/TarjetaCentro'
 import { getMetricasPlataforma } from '@/features/plataforma/queries/get-metricas-plataforma'
@@ -12,7 +14,7 @@ interface PageProps {
 
 /**
  * Panel de plataforma (Fase 5, PR 1): los centros vivos con sus recuentos de lo activo y sus
- * alertas, y «Entrar» en cada uno. Solo cifras: ningún nombre de niño, familia ni persona, así que
+ * alertas, y «Entrar» en cada uno. Desde aquí se crea un centro (PR 2). Solo cifras: ningún nombre de niño, familia ni persona, así que
  * mirar el panel no se audita (decisión del responsable); entrar en un centro sí.
  */
 export default async function PlataformaPage({ params }: PageProps) {
@@ -27,7 +29,12 @@ export default async function PlataformaPage({ params }: PageProps) {
           <h1 className="text-h1 text-foreground">{t('titulo')}</h1>
           <p className="text-muted-foreground text-sm">{t('subtitulo')}</p>
         </div>
-        <SignOutButton locale={locale} />
+        <div className="flex items-center gap-2">
+          <Button render={<Link href={`/${locale}/plataforma/nuevo-centro`} />}>
+            {t('nuevo_centro')}
+          </Button>
+          <SignOutButton locale={locale} />
+        </div>
       </header>
       {centros === null ? (
         <p role="alert" className="text-destructive text-sm">

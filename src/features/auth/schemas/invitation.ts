@@ -6,8 +6,9 @@ import { parentescoEnum } from '@/features/vinculos/schemas/vinculo'
 import { passwordSchema } from './password'
 
 // Sin `admin`: la admin es una por centro (`idx_roles_usuario_una_admin_viva`) y se cambia por
-// traspaso (`traspasar_admin`). Aceptar una invitación de admin chocaba con el índice y la persona
-// entraba sin rol. La nueva admin se invita como directora y se le traspasa.
+// traspaso (`traspasar_admin`). Desde un centro, la nueva admin se invita como directora y se le
+// traspasa. Solo la plataforma invita a una admin, y solo a un centro sin admin viva
+// (`platform_invitar_admin`, Fase 5); si el centro consigue una entre medias, la aceptación lo dice.
 export const userRoleSchema = z.enum(['directora', 'profe', 'tutor_legal', 'autorizado'])
 
 // El admin solo elige principal/secundario para tutor_legal; autorizado → 'autorizado'

@@ -4738,6 +4738,27 @@ export type Database = {
         Returns: string
       }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
+      platform_crear_centro: {
+        Args: {
+          p_curso_fin: string
+          p_curso_inicio: string
+          p_curso_nombre: string
+          p_direccion: string
+          p_email_admin: string
+          p_email_contacto: string
+          p_idioma: string
+          p_nombre: string
+          p_telefono: string
+        }
+        Returns: {
+          centro_id: string
+          invitacion_id: string
+        }[]
+      }
+      platform_invitar_admin: {
+        Args: { p_centro_id: string; p_email?: string }
+        Returns: string
+      }
       platform_metricas: {
         Args: never
         Returns: {

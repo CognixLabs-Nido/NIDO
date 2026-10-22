@@ -54,6 +54,6 @@ describe('RLS centros — aislamiento entre centros', () => {
       .select('nombre')
       .eq('id', centroB.id)
       .single()
-    expect(serviceData?.nombre).toBe('Centro B RLS')
+    expect(serviceData?.nombre).toBe(centroB.nombre)
   })
 })
