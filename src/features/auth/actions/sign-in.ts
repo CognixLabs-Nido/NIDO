@@ -78,5 +78,5 @@ export async function signIn(
 
   // El superusuario entra al panel de plataforma (Fase 5), no al selector de centro: desde el panel
   // elige centro, y esa entrada se audita. Un fallo de la consulta cuenta como «no».
-  return ok({ userId: data.user.id, esSuperusuario: !(await esSuperusuario(supabase)) })
+  return ok({ userId: data.user.id, esSuperusuario: await esSuperusuario(supabase) })
 }
