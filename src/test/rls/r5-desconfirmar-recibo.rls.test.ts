@@ -330,7 +330,7 @@ describe('R-5 — desconfirmar un recibo', () => {
 
     const cobrar = await cAdmin
       .from('recibos')
-      .update({ estado: 'cobrado_manual', fecha_envio_banco: null, fecha_devolucion: null })
+      .update({ estado: 'cobrado_manual', cobro_forma: 'efectivo', cobro_fecha: '2026-01-15' })
       .eq('id', reciboId)
     expect(cobrar.error).toBeNull()
 

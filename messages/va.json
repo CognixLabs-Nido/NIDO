@@ -1796,12 +1796,12 @@
     "guardando": "Guardant…",
     "cancel": "Cancel·lar",
     "devoluciones_title": "Cobraments i devolucions",
-    "sin_cobros": "No hi ha rebuts enviats al banc en este període.",
+    "sin_cobros": "No hi ha rebuts pendents de cobrament ni enviats al banc en aquest període.",
     "regiro_badge": "Re-gir",
     "devuelta_el": "Retornat el {fecha}",
     "marcar_devuelto": "Marcar retornat",
     "regirar": "Re-girar",
-    "cobrar_manual": "Cobrat manual",
+    "cobrar_manual": "Marcar cobrat",
     "anadir_gastos": "Despeses devolució",
     "devuelto_ok": "Rebut marcat com a retornat.",
     "regiro_ok": "Re-gir creat (pendent de remesar).",
@@ -1815,7 +1815,8 @@
     "estado_recibo": {
       "enviado_banco": "Enviat al banc",
       "devuelto": "Retornat",
-      "cobrado_manual": "Cobrat manual"
+      "cobrado_manual": "Cobrat manual",
+      "pendiente_procesar": "Pendent de cobrament"
     },
     "metodos": {
       "sepa": "SEPA (domiciliació)",
@@ -1835,7 +1836,10 @@
       "bic_invalido": "El BIC ha de tindre 8 o 11 caràcters",
       "iban_invalido": "IBAN no vàlid",
       "importe_invalido": "Introduïx un import vàlid",
-      "importe_positivo": "L'import ha de ser major que 0"
+      "importe_positivo": "L'import ha de ser major que 0",
+      "fecha_cobro_invalida": "Data no vàlida",
+      "fecha_cobro_futura": "La data de cobrament no pot ser futura",
+      "nota_cobro_larga": "La nota no pot passar de 500 caràcters"
     },
     "errors": {
       "invalid": "Dades no vàlides.",
@@ -1856,7 +1860,8 @@
       "cobrar_manual_failed": "No s'ha pogut marcar com a cobrat manual.",
       "no_regirable": "Només es pot re-girar un rebut retornat.",
       "regiro_failed": "No s'ha pogut crear el re-gir.",
-      "gastos_failed": "No s'han pogut registrar les despeses de devolució."
+      "gastos_failed": "No s'han pogut registrar les despeses de devolució.",
+      "sepa_por_remesa": "Un rebut SEPA pendent es cobra per remesa. Per a cobrar-lo a mà, desconfirma'l i canvia el mètode del mes."
     },
     "transferencias_beca": {
       "title": "Transferències de beca menjador",
@@ -1866,6 +1871,21 @@
       "realizada": "Realitzada",
       "marcar_realizada": "Marcar realitzada",
       "marcada_ok": "Transferència marcada com a realitzada."
+    },
+    "esporadico_badge": "Esporàdic",
+    "sin_metodo": "Sense mètode",
+    "cobrado_el": "Cobrat el {fecha} · {forma}",
+    "cobro_dialog": {
+      "titulo": "Marcar cobrat",
+      "forma": "Forma de cobrament",
+      "fecha": "Data de cobrament",
+      "nota": "Nota (opcional)",
+      "guardar": "Marcar cobrat",
+      "cancelar": "Cancel·lar"
+    },
+    "forma_cobro": {
+      "efectivo": "Efectiu",
+      "transferencia": "Transferència"
     }
   },
   "becas": {
@@ -3849,7 +3869,10 @@
         "mes_correspondiente": "Mes al qual correspon",
         "anio_aplicacion": "Any en què s'aplica",
         "mes_aplicacion": "Mes en què s'aplica",
-        "origen": "Origen"
+        "origen": "Origen",
+        "cobro_forma": "Cobrat en",
+        "cobro_fecha": "Cobrat el",
+        "cobro_nota": "Nota del cobrament"
       },
       "valores": {
         "terminos": "Termes",

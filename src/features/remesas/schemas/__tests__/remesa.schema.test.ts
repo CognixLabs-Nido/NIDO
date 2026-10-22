@@ -99,8 +99,21 @@ describe('esquemas de devolución (B-6)', () => {
     expect(marcarReciboDevueltoSchema.safeParse({ reciboId: 'x' }).success).toBe(false)
   })
 
-  it('marcarCobradoManualSchema exige uuid', () => {
-    expect(marcarCobradoManualSchema.safeParse({ reciboId: UUID }).success).toBe(true)
+  it('marcarCobradoManualSchema (PR-1a): uuid, forma efectivo o transferencia, fecha y nota ≤ 500', () => {
+    const base = { reciboId: UUID, forma: 'efectivo', fecha: '2026-10-20' }
+    expect(marcarCobradoManualSchema.safeParse(base).success).toBe(true)
+    expect(
+      marcarCobradoManualSchema.safeParse({ ...base, forma: 'transferencia', nota: 'x' }).success
+    ).toBe(true)
+    expect(marcarCobradoManualSchema.safeParse({ reciboId: UUID }).success).toBe(false)
+    expect(marcarCobradoManualSchema.safeParse({ ...base, reciboId: 'x' }).success).toBe(false)
+    expect(marcarCobradoManualSchema.safeParse({ ...base, forma: 'sepa' }).success).toBe(false)
+    expect(marcarCobradoManualSchema.safeParse({ ...base, fecha: '20/10/2026' }).success).toBe(
+      false
+    )
+    expect(marcarCobradoManualSchema.safeParse({ ...base, nota: 'x'.repeat(501) }).success).toBe(
+      false
+    )
   })
 
   it('crearRegiroSchema exige uuid', () => {

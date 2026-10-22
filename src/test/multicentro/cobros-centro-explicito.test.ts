@@ -118,7 +118,11 @@ describe('(a)/(b) centro del registro', () => {
   it('marcarCobradoManual: recibo de B y admin solo en A → no_autorizado, sin escribir', async () => {
     st.roles = ADMIN_EN_A
     st.filas.recibos = { id: RECIBO, centro_id: B, estado: 'devuelto' }
-    const r = await marcarCobradoManual({ reciboId: RECIBO })
+    const r = await marcarCobradoManual({
+      reciboId: RECIBO,
+      forma: 'efectivo',
+      fecha: '2024-01-10',
+    })
     expect(r).toEqual({ success: false, error: 'remesas.errors.no_autorizado' })
     expect(st.escrituras).not.toHaveBeenCalled()
   })
@@ -126,7 +130,11 @@ describe('(a)/(b) centro del registro', () => {
   it('marcarCobradoManual: admin en el centro del recibo → escribe', async () => {
     st.roles = ADMIN_EN_A_Y_B
     st.filas.recibos = { id: RECIBO, centro_id: B, estado: 'devuelto' }
-    const r = await marcarCobradoManual({ reciboId: RECIBO })
+    const r = await marcarCobradoManual({
+      reciboId: RECIBO,
+      forma: 'efectivo',
+      fecha: '2024-01-10',
+    })
     expect(r.success).toBe(true)
     expect(st.escrituras).toHaveBeenCalledWith('recibos', 'update', expect.anything())
   })

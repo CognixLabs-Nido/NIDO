@@ -1796,12 +1796,12 @@
     "guardando": "Saving…",
     "cancel": "Cancel",
     "devoluciones_title": "Collections and returns",
-    "sin_cobros": "No receipts sent to the bank in this period.",
+    "sin_cobros": "There are no receipts awaiting payment or sent to the bank in this period.",
     "regiro_badge": "Re-charge",
     "devuelta_el": "Returned on {fecha}",
     "marcar_devuelto": "Mark returned",
     "regirar": "Re-charge",
-    "cobrar_manual": "Collected manually",
+    "cobrar_manual": "Mark as paid",
     "anadir_gastos": "Return fees",
     "devuelto_ok": "Receipt marked as returned.",
     "regiro_ok": "Re-charge created (pending remittance).",
@@ -1815,7 +1815,8 @@
     "estado_recibo": {
       "enviado_banco": "Sent to bank",
       "devuelto": "Returned",
-      "cobrado_manual": "Collected manually"
+      "cobrado_manual": "Collected manually",
+      "pendiente_procesar": "Awaiting payment"
     },
     "metodos": {
       "sepa": "SEPA (direct debit)",
@@ -1835,7 +1836,10 @@
       "bic_invalido": "The BIC must be 8 or 11 characters",
       "iban_invalido": "Invalid IBAN",
       "importe_invalido": "Enter a valid amount",
-      "importe_positivo": "The amount must be greater than 0"
+      "importe_positivo": "The amount must be greater than 0",
+      "fecha_cobro_invalida": "Invalid date",
+      "fecha_cobro_futura": "The payment date cannot be in the future",
+      "nota_cobro_larga": "The note cannot be longer than 500 characters"
     },
     "errors": {
       "invalid": "Invalid data.",
@@ -1856,7 +1860,8 @@
       "cobrar_manual_failed": "Could not mark as manually collected.",
       "no_regirable": "Only a returned receipt can be re-charged.",
       "regiro_failed": "Could not create the re-charge.",
-      "gastos_failed": "Could not register the return fees."
+      "gastos_failed": "Could not register the return fees.",
+      "sepa_por_remesa": "A pending direct debit receipt is collected through a remittance. To mark it as paid by hand, unconfirm it and change the method for the month."
     },
     "transferencias_beca": {
       "title": "Meal grant transfers",
@@ -1866,6 +1871,21 @@
       "realizada": "Done",
       "marcar_realizada": "Mark done",
       "marcada_ok": "Transfer marked as done."
+    },
+    "esporadico_badge": "One-off",
+    "sin_metodo": "No method",
+    "cobrado_el": "Paid on {fecha} · {forma}",
+    "cobro_dialog": {
+      "titulo": "Mark as paid",
+      "forma": "Payment method",
+      "fecha": "Payment date",
+      "nota": "Note (optional)",
+      "guardar": "Mark as paid",
+      "cancelar": "Cancel"
+    },
+    "forma_cobro": {
+      "efectivo": "Cash",
+      "transferencia": "Bank transfer"
     }
   },
   "becas": {
@@ -3849,7 +3869,10 @@
         "mes_correspondiente": "Month it relates to",
         "anio_aplicacion": "Year applied",
         "mes_aplicacion": "Month applied",
-        "origen": "Origin"
+        "origen": "Origin",
+        "cobro_forma": "Paid by",
+        "cobro_fecha": "Paid on",
+        "cobro_nota": "Payment note"
       },
       "valores": {
         "terminos": "Terms",

@@ -24,7 +24,8 @@ import type { Database } from '@/types/database'
  *     (sin ella → 23514) y CONSERVA fecha_envio_banco.
  *  2) El congelado afinado (B-5) encaja: en mes CERRADO, marcar enviado_banco →
  *     devuelto (solo estado + fecha_devolucion) PASA.
- *  3) cobrado_manual anula ambas fechas y cumple el CHECK.
+ *  3) cobrado_manual de un devuelto CONSERVA las dos fechas de banco (PR-1a; hasta entonces el
+ *     CHECK obligaba a anularlas) y lleva su forma y su fecha de cobro.
  */
 
 describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
@@ -139,17 +140,19 @@ describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
     expect(data?.fecha_envio_banco).toBe('2025-03-05') // conservada pese al cierre
   })
 
-  it('cobrado_manual anula ambas fechas y cumple el CHECK', async () => {
+  it('cobrado_manual de un devuelto conserva las dos fechas de banco (PR-1a)', async () => {
     const { data, error } = await cAdminA
       .from('recibos')
-      .update({ estado: 'cobrado_manual', fecha_envio_banco: null, fecha_devolucion: null })
+      .update({ estado: 'cobrado_manual', cobro_forma: 'efectivo', cobro_fecha: '2025-03-25' })
       .eq('id', reciboCerrado)
-      .select('estado, fecha_envio_banco, fecha_devolucion')
+      .select('estado, fecha_envio_banco, fecha_devolucion, cobro_forma, cobro_fecha')
       .maybeSingle()
     expect(error).toBeNull()
     expect(data?.estado).toBe('cobrado_manual')
-    expect(data?.fecha_envio_banco).toBeNull()
-    expect(data?.fecha_devolucion).toBeNull()
+    expect(data?.fecha_envio_banco).toBe('2025-03-05')
+    expect(data?.fecha_devolucion).toBe('2025-03-20')
+    expect(data?.cobro_forma).toBe('efectivo')
+    expect(data?.cobro_fecha).toBe('2025-03-25')
   })
 
   it('re-giro: un recibo NUEVO ligado (devuelto_de_recibo_id) en mes CERRADO es EXENTO del congelado', async () => {

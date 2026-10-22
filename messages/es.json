@@ -1796,12 +1796,12 @@
     "guardando": "Guardando…",
     "cancel": "Cancelar",
     "devoluciones_title": "Cobros y devoluciones",
-    "sin_cobros": "No hay recibos enviados al banco en este periodo.",
+    "sin_cobros": "No hay recibos pendientes de cobro ni enviados al banco en este periodo.",
     "regiro_badge": "Re-giro",
     "devuelta_el": "Devuelto el {fecha}",
     "marcar_devuelto": "Marcar devuelto",
     "regirar": "Re-girar",
-    "cobrar_manual": "Cobrado manual",
+    "cobrar_manual": "Marcar cobrado",
     "anadir_gastos": "Gastos devolución",
     "devuelto_ok": "Recibo marcado como devuelto.",
     "regiro_ok": "Re-giro creado (pendiente de remesar).",
@@ -1815,7 +1815,8 @@
     "estado_recibo": {
       "enviado_banco": "Enviado al banco",
       "devuelto": "Devuelto",
-      "cobrado_manual": "Cobrado manual"
+      "cobrado_manual": "Cobrado manual",
+      "pendiente_procesar": "Pendiente de cobro"
     },
     "metodos": {
       "sepa": "SEPA (domiciliación)",
@@ -1835,7 +1836,10 @@
       "bic_invalido": "El BIC debe tener 8 u 11 caracteres",
       "iban_invalido": "IBAN no válido",
       "importe_invalido": "Introduce un importe válido",
-      "importe_positivo": "El importe debe ser mayor que 0"
+      "importe_positivo": "El importe debe ser mayor que 0",
+      "fecha_cobro_invalida": "Fecha no válida",
+      "fecha_cobro_futura": "La fecha de cobro no puede ser futura",
+      "nota_cobro_larga": "La nota no puede pasar de 500 caracteres"
     },
     "errors": {
       "invalid": "Datos no válidos.",
@@ -1856,7 +1860,8 @@
       "cobrar_manual_failed": "No se pudo marcar como cobrado manual.",
       "no_regirable": "Solo puede re-girarse un recibo devuelto.",
       "regiro_failed": "No se pudo crear el re-giro.",
-      "gastos_failed": "No se pudieron registrar los gastos de devolución."
+      "gastos_failed": "No se pudieron registrar los gastos de devolución.",
+      "sepa_por_remesa": "Un recibo SEPA pendiente se cobra por remesa. Para cobrarlo a mano, desconfírmalo y cambia el método del mes."
     },
     "transferencias_beca": {
       "title": "Transferencias de beca comedor",
@@ -1866,6 +1871,21 @@
       "realizada": "Realizada",
       "marcar_realizada": "Marcar realizada",
       "marcada_ok": "Transferencia marcada como realizada."
+    },
+    "esporadico_badge": "Esporádico",
+    "sin_metodo": "Sin método",
+    "cobrado_el": "Cobrado el {fecha} · {forma}",
+    "cobro_dialog": {
+      "titulo": "Marcar cobrado",
+      "forma": "Forma de cobro",
+      "fecha": "Fecha de cobro",
+      "nota": "Nota (opcional)",
+      "guardar": "Marcar cobrado",
+      "cancelar": "Cancelar"
+    },
+    "forma_cobro": {
+      "efectivo": "Efectivo",
+      "transferencia": "Transferencia"
     }
   },
   "becas": {
@@ -3849,7 +3869,10 @@
         "mes_correspondiente": "Mes al que corresponde",
         "anio_aplicacion": "Año en que se aplica",
         "mes_aplicacion": "Mes en que se aplica",
-        "origen": "Origen"
+        "origen": "Origen",
+        "cobro_forma": "Cobrado en",
+        "cobro_fecha": "Cobrado el",
+        "cobro_nota": "Nota del cobro"
       },
       "valores": {
         "terminos": "Términos",
