@@ -4738,6 +4738,25 @@ export type Database = {
         Returns: string
       }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
+      platform_metricas: {
+        Args: never
+        Returns: {
+          aulas: number
+          centro_id: string
+          curso_activo: string
+          direccion: number
+          familias: number
+          invitacion_admin: string
+          invitaciones_pendientes: number
+          ninos_en_alta: number
+          ninos_matriculados: number
+          nombre: string
+          personal: number
+          personal_baja_temporal: number
+          sin_admin: boolean
+          sin_curso_activo: boolean
+        }[]
+      }
       promover_a_titular: { Args: { p_familia_tutor_id: string }; Returns: undefined }
       proponer_asignaciones: { Args: { p_centro_id: string }; Returns: number }
       publicacion_etiqueta_hijo_de: {

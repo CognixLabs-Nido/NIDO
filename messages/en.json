@@ -4323,5 +4323,31 @@
       "invitacion_no_encontrada": "That invitation is no longer pending.",
       "fallo": "It could not be completed. Please try again."
     }
+  },
+  "plataforma": {
+    "titulo": "Platform panel",
+    "subtitulo": "The centres and what they have active. Figures only: to see a centre, enter it (the entry is recorded).",
+    "entrar": "Enter",
+    "curso_activo": "Active academic year: {curso}",
+    "sin_curso_activo_corto": "No active academic year",
+    "vacio": "There are no centres yet.",
+    "error_carga": "We couldn't load the centres' figures. Reload the page.",
+    "metricas": {
+      "ninos_matriculados": "Enrolled children",
+      "ninos_en_alta": "Enrolling",
+      "familias": "Families",
+      "personal": "Staff",
+      "personal_baja_temporal": "On temporary leave",
+      "direccion": "Management",
+      "aulas": "Classrooms",
+      "invitaciones_pendientes": "Pending invitations"
+    },
+    "alertas": {
+      "titulo": "Alerts",
+      "sin_admin": "No admin: nobody runs the centre.",
+      "invitacion_admin_pendiente": "An admin invitation is waiting to be accepted.",
+      "invitacion_admin_caducada": "The admin invitation has expired.",
+      "sin_curso_activo": "No active academic year: the centre has no year under way."
+    }
   }
 }

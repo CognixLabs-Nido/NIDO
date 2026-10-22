@@ -3,9 +3,12 @@ import createIntlMiddleware from 'next-intl/middleware'
 import { type NextRequest, NextResponse } from 'next/server'
 
 import { routing } from './i18n/routing'
-import { requiredRolesFor } from './proxy-roles'
+import { esRutaDePlataforma, requiredRolesFor } from './proxy-roles'
 import { CABECERA_RUTA_PEDIDA } from '@/features/centros/contexto/ruta-pedida'
-import { rolesEnCualquierCentro } from '@/features/centros/contexto/roles-del-usuario'
+import {
+  esSuperusuario,
+  rolesEnCualquierCentro,
+} from '@/features/centros/contexto/roles-del-usuario'
 
 import type { Database } from '@/types/database'
 
@@ -108,6 +111,17 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
     url.pathname = `/${locale}/login`
     url.searchParams.set('returnTo', pathname)
     return redirectConservandoCookies(url, response)
+  }
+
+  // El panel de plataforma: solo el superusuario. Un fallo de la consulta cuenta como «no».
+  if (esRutaDePlataforma(rest)) {
+    if (!(await esSuperusuario(supabase))) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/${locale}/forbidden`
+      url.search = ''
+      return redirectConservandoCookies(url, response)
+    }
+    return response
   }
 
   const required = requiredRolesFor(rest)

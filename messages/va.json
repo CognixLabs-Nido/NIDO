@@ -4323,5 +4323,31 @@
       "invitacion_no_encontrada": "Eixa invitació ja no està pendent.",
       "fallo": "No s'ha pogut completar. Torna-ho a intentar."
     }
+  },
+  "plataforma": {
+    "titulo": "Panell de plataforma",
+    "subtitulo": "Els centres amb el que tenen actiu. Només xifres: per a veure un centre, entra-hi (l'entrada queda registrada).",
+    "entrar": "Entrar",
+    "curso_activo": "Curs actiu: {curso}",
+    "sin_curso_activo_corto": "Sense curs actiu",
+    "vacio": "Encara no hi ha cap centre.",
+    "error_carga": "No hem pogut carregar les mètriques dels centres. Torna a carregar la pàgina.",
+    "metricas": {
+      "ninos_matriculados": "Xiquets matriculats",
+      "ninos_en_alta": "En alta",
+      "familias": "Famílies",
+      "personal": "Personal",
+      "personal_baja_temporal": "De baixa temporal",
+      "direccion": "Direcció",
+      "aulas": "Aules",
+      "invitaciones_pendientes": "Invitacions pendents"
+    },
+    "alertas": {
+      "titulo": "Alertes",
+      "sin_admin": "Sense admin: ningú administra el centre.",
+      "invitacion_admin_pendiente": "Hi ha una invitació d'admin pendent d'acceptar.",
+      "invitacion_admin_caducada": "La invitació d'admin ha caducat.",
+      "sin_curso_activo": "Sense curs actiu: el centre no té cap curs en marxa."
+    }
   }
 }
