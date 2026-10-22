@@ -259,6 +259,8 @@ describe('B2-1 — motor beca comedor v2', () => {
       anio: 2026,
       mes: 12,
       estado: 'cobrado_manual',
+      cobro_forma: 'efectivo',
+      cobro_fecha: '2026-12-31',
       total_centimos: -5000,
       es_esporadico: false,
     })

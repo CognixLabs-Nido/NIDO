@@ -22,9 +22,19 @@ export const marcarReciboDevueltoSchema = z.object({
 })
 export type MarcarReciboDevueltoInput = z.infer<typeof marcarReciboDevueltoSchema>
 
-/** Marca un recibo como cobrado manualmente (efectivo/transferencia fuera de SEPA). */
+/** Formas de un cobro manual (PR-1a). El cheque guardería llega en el PR-1b. */
+export const FORMAS_COBRO_MANUAL = ['efectivo', 'transferencia'] as const
+
+/**
+ * Marca un recibo como cobrado manualmente (efectivo/transferencia fuera de SEPA): la forma, la
+ * fecha (por defecto hoy, nunca futura; lo comprueba la action) y una nota opcional.
+ */
 export const marcarCobradoManualSchema = z.object({
   reciboId: z.string().uuid(),
+  forma: z.enum(FORMAS_COBRO_MANUAL),
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'remesas.validation.fecha_cobro_invalida'),
+  /** Vacía = sin nota (la action la guarda como NULL). */
+  nota: z.string().trim().max(500, 'remesas.validation.nota_cobro_larga').optional(),
 })
 export type MarcarCobradoManualInput = z.infer<typeof marcarCobradoManualSchema>
 

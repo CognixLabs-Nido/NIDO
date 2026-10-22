@@ -3784,6 +3784,9 @@ export type Database = {
         Row: {
           anio: number
           centro_id: string
+          cobro_fecha: string | null
+          cobro_forma: Database["public"]["Enums"]["metodo_pago"] | null
+          cobro_nota: string | null
           concepto_esporadico: string | null
           created_at: string
           deleted_at: string | null
@@ -3803,6 +3806,9 @@ export type Database = {
         Insert: {
           anio: number
           centro_id: string
+          cobro_fecha?: string | null
+          cobro_forma?: Database["public"]["Enums"]["metodo_pago"] | null
+          cobro_nota?: string | null
           concepto_esporadico?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -3822,6 +3828,9 @@ export type Database = {
         Update: {
           anio?: number
           centro_id?: string
+          cobro_fecha?: string | null
+          cobro_forma?: Database["public"]["Enums"]["metodo_pago"] | null
+          cobro_nota?: string | null
           concepto_esporadico?: string | null
           created_at?: string
           deleted_at?: string | null

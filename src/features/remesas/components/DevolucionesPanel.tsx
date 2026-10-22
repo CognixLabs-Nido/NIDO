@@ -7,19 +7,21 @@ import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { formatEuros } from '@/shared/lib/format-money'
 
 import { crearRegiro } from '../actions/crear-regiro'
-import { marcarCobradoManual } from '../actions/marcar-cobrado-manual'
 import { marcarReciboDevuelto } from '../actions/marcar-recibo-devuelto'
-import type { ReciboGestion } from '../queries/get-recibos-gestion'
+import { cobrableAMano, type ReciboGestion } from '../lib/gestion-cobros'
 import { GastosDevolucionDialog } from './GastosDevolucionDialog'
+import { MarcarCobradoDialog } from './MarcarCobradoDialog'
 
 interface Props {
   recibos: ReciboGestion[]
 }
 
 const BADGE_VARIANT: Record<string, 'secondary' | 'warm' | 'outline'> = {
+  pendiente_procesar: 'warm',
   enviado_banco: 'outline',
   devuelto: 'warm',
   cobrado_manual: 'secondary',
@@ -28,8 +30,10 @@ const BADGE_VARIANT: Record<string, 'secondary' | 'warm' | 'outline'> = {
 export function DevolucionesPanel({ recibos }: Props) {
   const t = useTranslations('remesas')
   const tErrors = useTranslations()
+  const tRecibos = useTranslations('recibos')
   const locale = useLocale()
   const [pending, startTransition] = useTransition()
+  const hoy = hoyMadrid()
 
   function run(fn: () => Promise<{ success: boolean; error?: string }>, okKey: string) {
     startTransition(async () => {
@@ -58,11 +62,27 @@ export function DevolucionesPanel({ recibos }: Props) {
                     {t(`estado_recibo.${r.estado}`)}
                   </Badge>
                   {r.esRegiro && <Badge variant="outline">{t('regiro_badge')}</Badge>}
+                  {r.esEsporadico && <Badge variant="outline">{t('esporadico_badge')}</Badge>}
                   <span className="tabular-nums">{formatEuros(r.totalCentimos, locale)}</span>
                 </div>
+                {r.estado === 'pendiente_procesar' && (
+                  <p className="text-muted-foreground text-xs">
+                    {r.metodo ? tRecibos(`metodos.${r.metodo}`) : t('sin_metodo')}
+                    {r.conceptoEsporadico ? ` · ${r.conceptoEsporadico}` : ''}
+                  </p>
+                )}
                 {r.fechaDevolucion && (
                   <p className="text-muted-foreground text-xs">
                     {t('devuelta_el', { fecha: r.fechaDevolucion })}
+                  </p>
+                )}
+                {r.estado === 'cobrado_manual' && r.cobroFecha && r.cobroForma && (
+                  <p className="text-muted-foreground text-xs">
+                    {t('cobrado_el', {
+                      fecha: r.cobroFecha,
+                      forma: tRecibos(`metodos.${r.cobroForma}`),
+                    })}
+                    {r.cobroNota ? ` · ${r.cobroNota}` : ''}
                   </p>
                 )}
               </div>
@@ -90,16 +110,6 @@ export function DevolucionesPanel({ recibos }: Props) {
                     >
                       {t('regirar')}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={pending}
-                      onClick={() =>
-                        run(() => marcarCobradoManual({ reciboId: r.id }), 'cobrado_manual_ok')
-                      }
-                    >
-                      {t('cobrar_manual')}
-                    </Button>
                     <GastosDevolucionDialog
                       reciboId={r.id}
                       trigger={
@@ -109,6 +119,19 @@ export function DevolucionesPanel({ recibos }: Props) {
                       }
                     />
                   </>
+                )}
+                {cobrableAMano(r) && (
+                  <MarcarCobradoDialog
+                    reciboId={r.id}
+                    descripcion={`${r.familiaEtiqueta} · ${formatEuros(r.totalCentimos, locale)}`}
+                    formaPorDefecto={r.metodo === 'transferencia' ? 'transferencia' : 'efectivo'}
+                    hoy={hoy}
+                    trigger={
+                      <Button size="sm" variant="outline" disabled={pending}>
+                        {t('cobrar_manual')}
+                      </Button>
+                    }
+                  />
                 )}
               </div>
             </div>
