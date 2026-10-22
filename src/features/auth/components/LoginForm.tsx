@@ -47,7 +47,7 @@ export function LoginForm({ locale }: LoginFormProps) {
       // `returnTo` llega en la URL: solo se sigue si es una ruta interna (si no, redirección abierta).
       // Sin él, el superusuario va al panel de plataforma y el resto al reparto por rol.
       const returnTo = rutaInterna(locale, searchParams.get('returnTo'))
-      const porDefecto = result.data.esSuperusuario ? 'plataforma' : 'select-role'
+      const porDefecto = 'select-role'
       router.push(returnTo ?? `/${locale}/${porDefecto}`)
       router.refresh()
     })
