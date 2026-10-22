@@ -196,7 +196,11 @@ export interface TestCentro {
  */
 export async function createTestCentro(nombre?: string): Promise<TestCentro> {
   const id = randomUUID()
-  const finalNombre = nombre ?? `Centro Test ${id.slice(0, 8)}`
+  // Dos centros vivos no se llaman igual (`idx_centros_nombre_vivo_unico`, Fase 5): el nombre que
+  // pasa el test lleva siempre el principio del id. Un fichero que crea el mismo nombre en cada
+  // `beforeEach`, dos ficheros del mismo shard o un teardown que deja vivo un centro no chocan.
+  // Quien compara el nombre usa el que devuelve (`centro.nombre`).
+  const finalNombre = `${nombre ?? 'Centro Test'} ${id.slice(0, 8)}`
   const { error } = await serviceClient.from('centros').insert({
     id,
     nombre: finalNombre,

@@ -47,7 +47,8 @@ export async function crearCentro(
 
   const errorCorreo = await enviarCorreoInvitacion(createServiceRoleClient(), {
     invitationId: data.invitacion_id,
-    email: d.email_admin,
+    // El que guarda la invitación (la RPC lo pasa a minúsculas): el enlace es para ese email.
+    email: d.email_admin.toLowerCase(),
     rolObjetivo: 'admin',
     centroId: data.centro_id,
     idioma: d.idioma_default,

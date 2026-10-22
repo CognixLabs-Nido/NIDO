@@ -68,6 +68,11 @@ describe('crearCentro', () => {
     )
   })
 
+  it('el correo va al email que guarda la invitación, en minúsculas', async () => {
+    await crearCentro({ ...ENTRADA, email_admin: ' Admin@Example.test ' })
+    expect(enviarCorreo.mock.calls[0]![1]).toMatchObject({ email: 'admin@example.test' })
+  })
+
   it('el correo no sale: el centro está creado y se dice', async () => {
     enviarCorreo.mockResolvedValue('auth.invitation.errors.email_no_enviado')
     expect(await crearCentro(ENTRADA)).toEqual({

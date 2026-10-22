@@ -1147,9 +1147,9 @@ reglas de arranque; y nombres de centro únicos, bloqueado.
   superusuario, que queda como actor en `audit_log`. La guarda posterior comprueba la primera
   sentencia, que no nombran `es_admin` y su md5 normalizado.
 - **`idx_centros_nombre_vivo_unico`**: dos centros vivos no se llaman igual, sin distinguir
-  mayúsculas ni espacios. Cubre también renombrar (`updateCentro` da `nombre_duplicado`). Los tests
-  que crean centros con nombre fijo no pueden repetirlo entre ficheros
-  (`nombres-centro-de-test.test.ts`).
+  mayúsculas ni espacios. Cubre también renombrar (`updateCentro` da `nombre_duplicado`). En los
+  tests, `createTestCentro` añade al nombre el principio del id, así que no chocan aunque un fichero
+  repita un nombre fijo.
 - **Aceptar** una invitación de admin da el rol por `dar_rol_de_invitacion`. Si el centro consiguió
   admin entre la invitación y la aceptación, el 23505 del índice llega con su mensaje propio
   (`chocaConLaAdminViva` → `centro_ya_tiene_admin`) y la persona no entra como admin.

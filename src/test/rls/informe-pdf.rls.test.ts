@@ -44,7 +44,7 @@ type TipoPersonalAula = Database['public']['Enums']['tipo_personal_aula']
 const ESTRUCTURA = [{ titulo: 'Autonomía', items: [{ id: 'item-1', texto: 'Come solo' }] }]
 
 describe('Acceso a PDF de informe — F9-4', () => {
-  let centro: { id: string }
+  let centro: { id: string; nombre: string }
   let centroB: { id: string }
   let curso: { id: string }
   let aula: { id: string }
@@ -169,7 +169,7 @@ describe('Acceso a PDF de informe — F9-4', () => {
 
     // Metadatos con service role (autor no es legible por el tutor vía RLS).
     const data = await assembleInformePdfData(serviceClient, row!)
-    expect(data.centroNombre).toBe('Centro PDF')
+    expect(data.centroNombre).toBe(centro.nombre)
     expect(data.autorNombre).toBe('Coord PDF')
     expect(data.ninoNombre).toContain('PDF Nino')
   })
