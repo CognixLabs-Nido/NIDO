@@ -106,7 +106,8 @@
         "acceso_en_pausa": "Your access to this centre is paused due to temporary leave. The centre's management will reactivate it when you return.",
         "acceso_olvido": "This invitation cannot be accepted: there is a request in progress to erase your data at this centre (right to be forgotten). Please talk to the centre's management.",
         "de_baja_temporal": "This person is on temporary leave at this centre: reactivate them from Staff.",
-        "centro_ya_tiene_admin": "The centre already has an admin: this invitation can no longer be accepted."
+        "centro_ya_tiene_admin": "The centre already has an admin: this invitation can no longer be accepted.",
+        "vinculo_failed": "We couldn't link your account to the family record. Please try again or talk to the centre's management."
       },
       "idioma_correo": {
         "label": "Email language",
@@ -1496,7 +1497,8 @@
       "direccion_corta": "Address too short",
       "telefono_corto": "Phone too short",
       "email_invalido": "Invalid email",
-      "web_invalida": "Invalid URL"
+      "web_invalida": "Invalid URL",
+      "invalid": "Invalid centre data"
     },
     "errors": {
       "update_failed": "Could not update the centre.",
@@ -1519,7 +1521,8 @@
     "validation": {
       "nombre_corto": "Name too short",
       "fecha_formato": "Invalid date format (YYYY-MM-DD)",
-      "fechas_invertidas": "Start date must be before end date"
+      "fechas_invertidas": "Start date must be before end date",
+      "invalid": "Invalid academic year data"
     },
     "errors": {
       "nombre_duplicado": "An academic year with this name already exists.",
@@ -1920,7 +1923,8 @@
       "cohorte_vacia": "Select at least one cohort year",
       "cohorte_demasiados": "Maximum 5 years per classroom",
       "capacidad_min": "Minimum capacity 1",
-      "capacidad_max": "Maximum capacity 40"
+      "capacidad_max": "Maximum capacity 40",
+      "invalid": "Invalid classroom data"
     },
     "errors": {
       "nombre_duplicado": "A classroom with this name already exists in this year.",
@@ -1998,7 +2002,8 @@
       "usuario_invalido": "Select a valid user",
       "descripcion_requerida": "Provide the relationship description",
       "usuario_sin_rol": "This user has no family role in the centre",
-      "parentesco_requerido": "Select the relationship"
+      "parentesco_requerido": "Select the relationship",
+      "invalid": "Invalid relationship data"
     },
     "errors": {
       "create_failed": "Could not create the link.",
@@ -2931,7 +2936,18 @@
       "nino_requerido": "Select a child.",
       "aula_requerida": "Select a classroom.",
       "externo_requerido": "Enter the visitor name.",
-      "hora_fin_invalida": "End time must be after start."
+      "hora_fin_invalida": "End time must be after start.",
+      "fecha_invalida": "Invalid date.",
+      "descripcion_larga": "Description too long.",
+      "lugar_largo": "Location too long.",
+      "comentario_largo": "Comment too long.",
+      "nombre_externo_vacio": "Enter the visitor name.",
+      "nombre_externo_largo": "Visitor name too long.",
+      "nino_no_permitido": "This type of appointment is not linked to a child.",
+      "aula_no_permitida": "This type of appointment is not linked to a classroom.",
+      "sin_invitados": "Add at least one guest.",
+      "externo_solo_visita": "Only a visit can have external guests.",
+      "grupo_no_permitido": "That group cannot be invited to this type of appointment."
     },
     "errors": {
       "no_autorizado": "You do not have permission for this action.",

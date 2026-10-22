@@ -2,6 +2,7 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import { notFound } from 'next/navigation'
 
+import { Toaster } from '@/components/ui/sonner'
 import { ServiceWorkerRegister } from '@/features/push/components/ServiceWorkerRegister'
 import { routing } from '@/i18n/routing'
 
@@ -56,6 +57,9 @@ export default async function LocaleLayout({
       <body className="flex min-h-full flex-col">
         <ServiceWorkerRegister />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        {/* Sin esto ningún toast de la app se ve. Claro a la fuerza: no hay ThemeProvider ni modo
+            oscuro, y sin tema el Toaster seguiría al sistema y saldría oscuro sobre la app clara. */}
+        <Toaster theme="light" />
       </body>
     </html>
   )

@@ -106,7 +106,8 @@
         "acceso_en_pausa": "Tu acceso a este centro está en pausa por una baja temporal. La dirección del centro lo reactivará cuando vuelvas.",
         "acceso_olvido": "No se puede aceptar esta invitación: hay en curso una petición de borrado de tus datos en este centro (derecho al olvido). Habla con la dirección del centro.",
         "de_baja_temporal": "Está de baja temporal en este centro: reactívala desde Personal.",
-        "centro_ya_tiene_admin": "El centro ya tiene admin: esta invitación ya no se puede aceptar."
+        "centro_ya_tiene_admin": "El centro ya tiene admin: esta invitación ya no se puede aceptar.",
+        "vinculo_failed": "No hemos podido vincular tu cuenta con la ficha de la familia. Inténtalo de nuevo o habla con la dirección del centro."
       },
       "idioma_correo": {
         "label": "Idioma del correo",
@@ -1496,7 +1497,8 @@
       "direccion_corta": "Dirección demasiado corta",
       "telefono_corto": "Teléfono demasiado corto",
       "email_invalido": "Email no válido",
-      "web_invalida": "URL no válida"
+      "web_invalida": "URL no válida",
+      "invalid": "Datos del centro no válidos"
     },
     "errors": {
       "update_failed": "No se pudo actualizar el centro.",
@@ -1519,7 +1521,8 @@
     "validation": {
       "nombre_corto": "Nombre demasiado corto",
       "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)",
-      "fechas_invertidas": "La fecha de inicio debe ser anterior a la fecha de fin"
+      "fechas_invertidas": "La fecha de inicio debe ser anterior a la fecha de fin",
+      "invalid": "Datos del curso no válidos"
     },
     "errors": {
       "nombre_duplicado": "Ya existe un curso con ese nombre.",
@@ -1920,7 +1923,8 @@
       "cohorte_vacia": "Selecciona al menos un año de cohorte",
       "cohorte_demasiados": "Máximo 5 años por aula",
       "capacidad_min": "Capacidad mínima 1",
-      "capacidad_max": "Capacidad máxima 40"
+      "capacidad_max": "Capacidad máxima 40",
+      "invalid": "Datos del aula no válidos"
     },
     "errors": {
       "nombre_duplicado": "Ya existe un aula con ese nombre en este curso.",
@@ -1998,7 +2002,8 @@
       "usuario_invalido": "Selecciona un usuario válido",
       "descripcion_requerida": "Indica la descripción del parentesco",
       "usuario_sin_rol": "Este usuario no tiene rol familiar en el centro",
-      "parentesco_requerido": "Indica el parentesco"
+      "parentesco_requerido": "Indica el parentesco",
+      "invalid": "Datos del vínculo no válidos"
     },
     "errors": {
       "create_failed": "No se pudo crear el vínculo.",
@@ -2931,7 +2936,18 @@
       "nino_requerido": "Selecciona un niño/a.",
       "aula_requerida": "Selecciona un aula.",
       "externo_requerido": "Indica el nombre del visitante.",
-      "hora_fin_invalida": "La hora de fin debe ser posterior al inicio."
+      "hora_fin_invalida": "La hora de fin debe ser posterior al inicio.",
+      "fecha_invalida": "Fecha inválida.",
+      "descripcion_larga": "Descripción demasiado larga.",
+      "lugar_largo": "Lugar demasiado largo.",
+      "comentario_largo": "Comentario demasiado largo.",
+      "nombre_externo_vacio": "Indica el nombre del visitante.",
+      "nombre_externo_largo": "Nombre del visitante demasiado largo.",
+      "nino_no_permitido": "Este tipo de cita no va asociado a un niño/a.",
+      "aula_no_permitida": "Este tipo de cita no va asociado a un aula.",
+      "sin_invitados": "Añade al menos un invitado.",
+      "externo_solo_visita": "Solo una visita admite invitados externos.",
+      "grupo_no_permitido": "Ese grupo no se puede invitar a este tipo de cita."
     },
     "errors": {
       "no_autorizado": "No tienes permiso para esta acción.",

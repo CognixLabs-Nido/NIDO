@@ -106,7 +106,8 @@
         "acceso_en_pausa": "El teu accés a aquest centre està en pausa per una baixa temporal. La direcció del centre el reactivarà quan tornes.",
         "acceso_olvido": "No es pot acceptar aquesta invitació: hi ha en curs una petició d'esborrat de les teues dades en aquest centre (dret a l'oblit). Parla amb la direcció del centre.",
         "de_baja_temporal": "Està de baixa temporal en aquest centre: reactiva-la des de Personal.",
-        "centro_ya_tiene_admin": "El centre ja té admin: esta invitació ja no es pot acceptar."
+        "centro_ya_tiene_admin": "El centre ja té admin: esta invitació ja no es pot acceptar.",
+        "vinculo_failed": "No hem pogut vincular el teu compte amb la fitxa de la família. Torna-ho a provar o parla amb la direcció del centre."
       },
       "idioma_correo": {
         "label": "Idioma del correu",
@@ -1496,7 +1497,8 @@
       "direccion_corta": "Adreça massa curta",
       "telefono_corto": "Telèfon massa curt",
       "email_invalido": "Email no vàlid",
-      "web_invalida": "URL no vàlida"
+      "web_invalida": "URL no vàlida",
+      "invalid": "Dades del centre no vàlides"
     },
     "errors": {
       "update_failed": "No s'ha pogut actualitzar el centre.",
@@ -1519,7 +1521,8 @@
     "validation": {
       "nombre_corto": "Nom massa curt",
       "fecha_formato": "Format de data invàlid (YYYY-MM-DD)",
-      "fechas_invertidas": "La data d'inici ha de ser anterior a la data de fi"
+      "fechas_invertidas": "La data d'inici ha de ser anterior a la data de fi",
+      "invalid": "Dades del curs no vàlides"
     },
     "errors": {
       "nombre_duplicado": "Ja existeix un curs amb este nom.",
@@ -1920,7 +1923,8 @@
       "cohorte_vacia": "Selecciona almenys un any de cohort",
       "cohorte_demasiados": "Màxim 5 anys per aula",
       "capacidad_min": "Capacitat mínima 1",
-      "capacidad_max": "Capacitat màxima 40"
+      "capacidad_max": "Capacitat màxima 40",
+      "invalid": "Dades de l'aula no vàlides"
     },
     "errors": {
       "nombre_duplicado": "Ja existeix una aula amb este nom en este curs.",
@@ -1998,7 +2002,8 @@
       "usuario_invalido": "Selecciona un usuari vàlid",
       "descripcion_requerida": "Indica la descripció del parentiu",
       "usuario_sin_rol": "Este usuari no té rol familiar al centre",
-      "parentesco_requerido": "Indica el parentiu"
+      "parentesco_requerido": "Indica el parentiu",
+      "invalid": "Dades del vincle no vàlides"
     },
     "errors": {
       "create_failed": "No s'ha pogut crear el vincle.",
@@ -2931,7 +2936,18 @@
       "nino_requerido": "Tria un xiquet/a.",
       "aula_requerida": "Tria una aula.",
       "externo_requerido": "Indica el nom del visitant.",
-      "hora_fin_invalida": "L'hora de fi ha de ser posterior a l'inici."
+      "hora_fin_invalida": "L'hora de fi ha de ser posterior a l'inici.",
+      "fecha_invalida": "Data no vàlida.",
+      "descripcion_larga": "Descripció massa llarga.",
+      "lugar_largo": "Lloc massa llarg.",
+      "comentario_largo": "Comentari massa llarg.",
+      "nombre_externo_vacio": "Indica el nom del visitant.",
+      "nombre_externo_largo": "Nom del visitant massa llarg.",
+      "nino_no_permitido": "Aquest tipus de cita no va associat a un xiquet/a.",
+      "aula_no_permitida": "Aquest tipus de cita no va associat a una aula.",
+      "sin_invitados": "Afig almenys un convidat.",
+      "externo_solo_visita": "Només una visita admet convidats externs.",
+      "grupo_no_permitido": "Eixe grup no es pot convidar a aquest tipus de cita."
     },
     "errors": {
       "no_autorizado": "No tens permís per a esta acció.",
