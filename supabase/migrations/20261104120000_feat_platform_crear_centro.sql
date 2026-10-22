@@ -86,6 +86,10 @@ BEGIN
     RAISE EXCEPTION 'El centro no existe' USING ERRCODE = 'P0002', HINT = 'centro';
   END IF;
   -- Con una admin viva no se invita otra: aceptarla chocaría con idx_roles_usuario_una_admin_viva.
+  IF EXISTS (SELECT 1 FROM public.roles_usuario
+              WHERE centro_id = p_centro_id AND rol = 'admin' AND deleted_at IS NULL) THEN
+    RAISE EXCEPTION 'El centro ya tiene admin' USING ERRCODE = '55000', HINT = 'centro_con_admin';
+  END IF;
 
   -- Sin email: reenviar la última invitación de admin sin aceptar ni rechazar, con otros 7 días.
   IF v_email IS NULL OR v_email = '' THEN
@@ -189,7 +193,7 @@ DECLARE
   v_src text;
   v_norm text;
   v_esperado jsonb := jsonb_build_object(
-    'public.platform_invitar_admin(uuid,text)', '19d0d92dfe5bd63fb9c81ef3bacd6f34',
+    'public.platform_invitar_admin(uuid,text)', '4b35c5bffa0a9298bb3c7cc507c1fa92',
     'public.platform_crear_centro(text,text,text,text,text,text,date,date,text)', '7dc5ce089692c34ad3f950e8e4cc727e');
   v_firma text;
 BEGIN
