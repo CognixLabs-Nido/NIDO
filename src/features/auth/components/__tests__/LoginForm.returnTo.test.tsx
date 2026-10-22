@@ -39,7 +39,9 @@ async function entrar(returnTo: string | null) {
 describe('LoginForm — returnTo', () => {
   beforeEach(() => {
     push.mockReset()
-    signInMock.mockReset().mockResolvedValue({ success: true })
+    signInMock
+      .mockReset()
+      .mockResolvedValue({ success: true, data: { userId: 'u1', esSuperusuario: false } })
   })
 
   it('premisa: el formulario llama a signIn con lo escrito', async () => {
@@ -61,5 +63,23 @@ describe('LoginForm — returnTo', () => {
     ['sin returnTo', null],
   ])('%s → reparto por rol', async (_caso, returnTo) => {
     expect(await entrar(returnTo)).toBe('/es/select-role')
+  })
+
+  describe('el superusuario', () => {
+    beforeEach(() => {
+      signInMock.mockResolvedValue({ success: true, data: { userId: 'u1', esSuperusuario: true } })
+    })
+
+    it('sin returnTo → el panel de plataforma, no el selector de centro', async () => {
+      expect(await entrar(null)).toBe('/es/plataforma')
+    })
+
+    it('un returnTo externo no se sigue: también al panel', async () => {
+      expect(await entrar('https://evil.test/es/admin')).toBe('/es/plataforma')
+    })
+
+    it('una ruta interna se respeta', async () => {
+      expect(await entrar('/es/admin')).toBe('/es/admin')
+    })
   })
 })

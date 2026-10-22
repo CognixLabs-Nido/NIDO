@@ -3,6 +3,7 @@
 import { createHash } from 'crypto'
 import { headers } from 'next/headers'
 
+import { esSuperusuario } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
@@ -48,7 +49,9 @@ async function recordAttempt(ipHash: string, emailHash: string, success: boolean
   }
 }
 
-export async function signIn(input: SignInInput): Promise<ActionResult<{ userId: string }>> {
+export async function signIn(
+  input: SignInInput
+): Promise<ActionResult<{ userId: string; esSuperusuario: boolean }>> {
   const parsed = signInSchema.safeParse(input)
   if (!parsed.success) return fail('auth.validation.invalid')
 
@@ -72,5 +75,8 @@ export async function signIn(input: SignInInput): Promise<ActionResult<{ userId:
   if (error || !data.user) {
     return fail('auth.login.errors.invalid_credentials')
   }
-  return ok({ userId: data.user.id })
+
+  // El superusuario entra al panel de plataforma (Fase 5), no al selector de centro: desde el panel
+  // elige centro, y esa entrada se audita. Un fallo de la consulta cuenta como «no».
+  return ok({ userId: data.user.id, esSuperusuario: await esSuperusuario(supabase) })
 }
