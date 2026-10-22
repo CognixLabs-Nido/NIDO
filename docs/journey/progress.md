@@ -52,6 +52,8 @@ posterior.
 
 - **Correo:** el remitente sigue siendo el correo integrado de Supabase, con un límite de 2 correos
   por hora. Falta decidir el SMTP propio (dominio, remitente y proveedor).
+  _Cerrado después: el correo sale por Resend con nido03.es (confirmado el 2026-10-22, ver
+  `follow-ups.md`)._
 - **Idioma:**
   - el valenciano no lo ha revisado un hablante nativo;
   - `formatEuros` no recibe el idioma en la mayoría de pantallas;

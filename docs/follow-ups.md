@@ -15,7 +15,7 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 ## Bloqueantes pre-piloto — Ola 1
 
 - [ ] **Confirmar traducciones VA con usuario nativo.** Ningún hablante nativo ha revisado el valenciano. _(Ola 1)_
-- [ ] **Correo propio (SMTP).** El remitente sigue siendo el correo integrado de Supabase, con un límite de 2 correos por hora: no aguanta las invitaciones de un centro real. Falta decidir dominio, remitente y proveedor. Pendiente de decisión del responsable. _(Ola 1)_
+- [x] **Correo propio (SMTP) — CERRADO (confirmado por el responsable el 2026-10-22).** El correo sale por Resend con el dominio nido03.es (remitente `no-reply@nido03.es`): el SMTP de Supabase Auth para sus correos y, desde el PR 1 de la Fase 4, la API de Resend desde el servidor (`enviarCorreo`, `RESEND_API_KEY` en Vercel). Ver `docs/specs/proteccion-datos.md` y ADR-0001. _(Ola 1)_
 
 ### RGPD y legal — antes del primer dato real (familia o niño real en producción)
 
