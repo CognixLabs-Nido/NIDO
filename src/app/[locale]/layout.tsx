@@ -59,6 +59,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
         {/* Sin esto ningún toast de la app se ve. Claro a la fuerza: no hay ThemeProvider ni modo
             oscuro, y sin tema el Toaster seguiría al sistema y saldría oscuro sobre la app clara. */}
+        <Toaster theme="light" />
       </body>
     </html>
   )
