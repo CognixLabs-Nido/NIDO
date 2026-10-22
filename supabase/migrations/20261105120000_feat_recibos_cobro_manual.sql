@@ -119,6 +119,10 @@ BEGIN
     END IF;
     -- Un SEPA pendiente se cobra por remesa. Para cobrarlo a mano, primero se desconfirma y se
     -- cambia el método del mes.
+    IF OLD.estado = 'pendiente_procesar' AND OLD.metodo = 'sepa' THEN
+      RAISE EXCEPTION 'un recibo SEPA pendiente se cobra por remesa'
+        USING ERRCODE = 'P0001', HINT = 'sepa_por_remesa';
+    END IF;
   END IF;
   RETURN NEW;
 END $function$;
@@ -693,7 +697,7 @@ DECLARE
   v_esperado jsonb := jsonb_build_object(
     'public.audit_trigger_function()', '7f061564a8314ef5f7a9ae0a1083984f',
     'public.export_datos_sujeto(text,uuid)', 'c82938fd00de723556c04dab62dfc840',
-    'public.recibos_validar_cobro_manual()', '315807670b8d28e09401fb048c43f8d4');
+    'public.recibos_validar_cobro_manual()', '4ae47c28821127782a9bb86d2331b033');
 BEGIN
   FOR v_firma IN SELECT jsonb_object_keys(v_esperado) LOOP
     SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
