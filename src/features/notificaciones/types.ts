@@ -56,6 +56,14 @@ export const PREF_FOTOS_VISTAS = 'fotos_vistas'
  */
 export const PREF_RECIBOS_VISTOS = 'recibos_vistos'
 
+/**
+ * Clave del mapa por-familia `{ [familia_id]: iso_visto_at }` en preferencias_usuario:
+ * registra cuándo Dirección ABRIÓ la ficha de cada familia. El aviso de "domiciliación
+ * nueva" deja de contar los mandatos que la familia firmó antes de ese instante (al abrir
+ * la ficha, su aviso desaparece; un cambio posterior vuelve a avisar). KV, sin migración.
+ */
+export const PREF_DOMICILIACIONES_VISTAS = 'domiciliaciones_vistas'
+
 /** Ventana de novedades: solo se muestran/cuentan ítems de los últimos N días. */
 export const VENTANA_NOVEDADES_DIAS = 30
 
@@ -145,4 +153,11 @@ export interface AvisosInicio {
    * se inyecta aquí; para profe/familia es 0.
    */
   altasPendientesValidar: number
+  /**
+   * Admin: familias que han firmado o cambiado su domiciliación SEPA por su cuenta (firma
+   * digital del tutor, con la familia ya dada de alta) y cuya ficha Dirección no ha abierto
+   * desde entonces. Fuera del alta el método de pago no cambia solo (PR-7), así que este es
+   * el único aviso. Para profe/familia, vacío.
+   */
+  familiasDomiciliacionNueva: string[]
 }

@@ -3490,7 +3490,8 @@
       "campana_urgente": "{n, plural, one {# report pending} other {# reports pending}} · due on {fecha}",
       "campana_vencida": "{n, plural, one {# report pending} other {# reports pending}} · was due on {fecha}",
       "altas_pendientes_validar": "{n, plural, one {# enrolment pending validation} other {# enrolments pending validation}}",
-      "recibos_nuevos": "{n, plural, one {You have # new receipt} other {You have # new receipts}}"
+      "recibos_nuevos": "{n, plural, one {You have # new receipt} other {You have # new receipts}}",
+      "domiciliaciones_nuevas": "{n, plural, one {A family has signed or changed its direct debit from the app} other {# families have signed or changed their direct debit from the app}}"
     },
     "errors": {
       "no_autorizado": "Not authorised.",

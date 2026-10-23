@@ -3,6 +3,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 
 import {
+  PREF_DOMICILIACIONES_VISTAS,
   PREF_FIRMAS_VISTAS,
   PREF_FOTOS_VISTAS,
   PREF_INFORMES_VISTOS,
@@ -117,6 +118,27 @@ export async function getRecibosVistos(): Promise<Record<string, string>> {
     .from('preferencias_usuario')
     .select('valor')
     .eq('clave', PREF_RECIBOS_VISTOS)
+    .maybeSingle()
+  if (!data?.valor) return {}
+  try {
+    const parsed = JSON.parse(data.valor)
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {}
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Mapa `{ [familia_id]: iso_visto_at }` de Dirección: cuándo abrió la ficha de cada familia.
+ * Vacío si nunca abrió ninguna o si el valor está corrupto. Se compara por INSTANTE (como
+ * las firmas): un cambio de cuenta posterior a la última apertura vuelve a avisar.
+ */
+export async function getDomiciliacionesVistas(): Promise<Record<string, string>> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('preferencias_usuario')
+    .select('valor')
+    .eq('clave', PREF_DOMICILIACIONES_VISTAS)
     .maybeSingle()
   if (!data?.valor) return {}
   try {
