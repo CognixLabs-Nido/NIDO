@@ -73,8 +73,18 @@ describe('conceptoCobroSchema — modelo único (fijo/porcentaje/descuento)', ()
       )
   })
 
-  it('un descuento FIJO no lleva concepto base (válido sin base)', () => {
+  it('un descuento FIJO puede ir sin concepto base', () => {
     const r = parse({ signo: -1, tipo_valor: 'fijo', importe_euros: 5, concepto_base_id: null })
+    expect(r.success).toBe(true)
+  })
+
+  it('PR-8: un descuento FIJO con concepto base es válido (una familia podrá elegir porcentaje)', () => {
+    const r = parse({
+      signo: -1,
+      tipo_valor: 'fijo',
+      importe_euros: 20,
+      concepto_base_id: '11111111-1111-4111-8111-111111111111',
+    })
     expect(r.success).toBe(true)
   })
 

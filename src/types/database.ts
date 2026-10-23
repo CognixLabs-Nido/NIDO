@@ -285,6 +285,7 @@ export type Database = {
           importe_override_centimos: number | null
           nino_id: string | null
           origen: string
+          porcentaje_override_bp: number | null
           updated_at: string
           vigencia_desde: string | null
           vigencia_hasta: string | null
@@ -300,6 +301,7 @@ export type Database = {
           importe_override_centimos?: number | null
           nino_id?: string | null
           origen: string
+          porcentaje_override_bp?: number | null
           updated_at?: string
           vigencia_desde?: string | null
           vigencia_hasta?: string | null
@@ -315,6 +317,7 @@ export type Database = {
           importe_override_centimos?: number | null
           nino_id?: string | null
           origen?: string
+          porcentaje_override_bp?: number | null
           updated_at?: string
           vigencia_desde?: string | null
           vigencia_hasta?: string | null

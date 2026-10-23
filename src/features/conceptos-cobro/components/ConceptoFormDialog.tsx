@@ -56,7 +56,7 @@ interface Props {
   centroId: string
   /** Si viene, el diálogo edita ese concepto; si no, crea uno nuevo. */
   concepto?: ConceptoCobroListItem
-  /** Catálogo del centro (para el selector de concepto base de un descuento porcentual). */
+  /** Catálogo del centro (para el selector de concepto base de un descuento). */
   conceptos: ConceptoCobroListItem[]
   /** B1-2: años de nacimiento presentes en el centro (para el editor de tarifas por año). */
   aniosNacimientoCentro: number[]
@@ -113,7 +113,8 @@ export function ConceptoFormDialog({
     ambito,
   })
   const esPorcentaje = tipoValor === 'porcentaje'
-  const esDescuentoPorcentual = Number(signo) === -1 && esPorcentaje
+  const esDescuento = Number(signo) === -1
+  const esDescuentoPorcentual = esDescuento && esPorcentaje
   // B1-2: el flag solo aplica a conceptos por niño (en familia el motor cae a base).
   const esFamilia = ambito === 'familia'
   const mostrarEditorTarifas = tarifaPorAnio && !esFamilia
@@ -135,9 +136,16 @@ export function ConceptoFormDialog({
     ...SERVICIOS_DIARIOS.map((value) => ({ value, label: t(`servicios.${value}`) })),
   ]
   // Base: cualquier concepto del centro salvo el que se edita (evita auto-referencia).
-  const baseItems = conceptos
-    .filter((c) => c.id !== concepto?.id)
-    .map((c) => ({ value: c.id, label: c.nombre }))
+  // PR-8: en un descuento fijo la base es opcional (con ella, una familia puede elegir porcentaje).
+  const SIN_BASE = 'sin-base'
+  const baseItems = [
+    ...(esDescuentoPorcentual
+      ? []
+      : [{ value: SIN_BASE, label: t('fields.concepto_base_ninguna') }]),
+    ...conceptos
+      .filter((c) => c.id !== concepto?.id)
+      .map((c) => ({ value: c.id, label: c.nombre })),
+  ]
 
   function onSubmit(values: ConceptoCobroInput) {
     startTransition(async () => {
@@ -398,7 +406,7 @@ export function ConceptoFormDialog({
               )}
             />
 
-            {esDescuentoPorcentual && (
+            {esDescuento && (
               <FormField
                 control={form.control}
                 name="concepto_base_id"
@@ -407,8 +415,8 @@ export function ConceptoFormDialog({
                     <FormLabel>{t('fields.concepto_base')}</FormLabel>
                     <Select
                       items={baseItems}
-                      value={field.value ?? undefined}
-                      onValueChange={field.onChange}
+                      value={field.value ?? (esDescuentoPorcentual ? undefined : SIN_BASE)}
+                      onValueChange={(v) => field.onChange(v === SIN_BASE ? null : v)}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -423,6 +431,11 @@ export function ConceptoFormDialog({
                         ))}
                       </SelectContent>
                     </Select>
+                    {!esDescuentoPorcentual && (
+                      <p className="text-muted-foreground text-xs">
+                        {t('fields.concepto_base_hint_fijo')}
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

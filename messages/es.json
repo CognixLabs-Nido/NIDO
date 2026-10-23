@@ -399,7 +399,9 @@
         "concepto_base": "Concepto base",
         "concepto_base_placeholder": "Elige el concepto al que se aplica",
         "tarifa_por_anio_nacimiento": "Precio por año de nacimiento",
-        "servicio_mensual": "Servicio (opcional)"
+        "servicio_mensual": "Servicio (opcional)",
+        "concepto_base_ninguna": "Sin base",
+        "concepto_base_hint_fijo": "Opcional. Con una base, cada familia puede elegir en su asignación un porcentaje sobre ese concepto en lugar del importe."
       },
       "tipos": {
         "mensual": "Mensual",
@@ -651,7 +653,13 @@
         "quitar": "Quitar",
         "guardado": "Importe propio guardado",
         "quitado": "Vuelve al precio del concepto",
-        "n_fila": "{n} con importe propio"
+        "n_fila": "{n} con importe o porcentaje propio",
+        "tipo_aria": "Tipo de descuento de {concepto}",
+        "tipo_fijo": "Importe (€)",
+        "tipo_porcentaje": "Porcentaje de {base}",
+        "precio_concepto_porcentaje": "Concepto: {porcentaje} de {base}",
+        "aria_porcentaje": "Porcentaje propio de {concepto}",
+        "placeholder_porcentaje": "Del concepto"
       }
     },
     "aulas": {
@@ -1595,7 +1603,7 @@
       "importe_requerido": "Indica el importe",
       "porcentaje_requerido": "Indica el porcentaje",
       "concepto_base_requerido": "Un descuento porcentual necesita un concepto base",
-      "concepto_base_no_permitido": "Solo un descuento porcentual lleva concepto base"
+      "concepto_base_no_permitido": "Solo un descuento lleva concepto base"
     },
     "errors": {
       "nombre_duplicado": "Ya existe un concepto con ese nombre en el centro.",
@@ -1603,7 +1611,8 @@
       "create_failed": "No se pudo crear el concepto.",
       "update_failed": "No se pudo actualizar el concepto.",
       "delete_failed": "No se pudo eliminar el concepto.",
-      "no_encontrado": "Concepto no encontrado."
+      "no_encontrado": "Concepto no encontrado.",
+      "base_con_porcentajes_propios": "Hay familias con un porcentaje propio sobre la base de este descuento. Quítaselo antes de cambiar la base o el signo."
     },
     "tarifa_anio": {
       "validation": {
@@ -1631,7 +1640,9 @@
       "importe_invalido": "Introduce un importe válido (0 o más).",
       "importe_failed": "No se pudo guardar el importe propio.",
       "importe_no_admitido": "Este concepto no admite importe propio: solo los de importe fijo que se cobran cada mes.",
-      "no_asignado": "El concepto ya no está asignado."
+      "no_asignado": "El concepto ya no está asignado.",
+      "porcentaje_invalido": "El porcentaje tiene que estar entre 0 y 100",
+      "porcentaje_no_admitido": "Este concepto no admite porcentaje propio: solo un descuento con concepto base"
     }
   },
   "recibos_panel": {

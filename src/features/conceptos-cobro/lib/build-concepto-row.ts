@@ -7,12 +7,12 @@ import { admiteServicio, type ConceptoCobroInput } from '../schemas/concepto-cob
  * de `conceptos_cobro`. Aplica las MISMAS reglas que el CHECK `conceptos_cobro_modelo_valor`:
  *  · fijo → importe_centimos (porcentaje_bp NULL) ; porcentaje → porcentaje_bp (importe NULL).
  *  · servicio si diario, o si es un mensual de cobro fijo por niño (PR-4); NULL en el resto.
- *  · concepto_base_id solo si descuento porcentual (signo=−1 ∧ porcentaje); NULL si no.
+ *  · concepto_base_id solo en un descuento (signo=−1): obligatorio si es porcentual, opcional
+ *    si es fijo (PR-8); NULL en un cobro.
  * Devuelve las columnas comunes a INSERT y UPDATE (sin centro_id, que solo va en INSERT).
  */
 export function buildConceptoRow(input: ConceptoCobroInput) {
   const esFijo = input.tipo_valor === 'fijo'
-  const esDescuentoPorcentual = input.signo === -1 && input.tipo_valor === 'porcentaje'
   return {
     nombre: input.nombre,
     tipo_concepto: input.tipo_concepto,
@@ -26,7 +26,7 @@ export function buildConceptoRow(input: ConceptoCobroInput) {
     // Porcentaje de la UI (%) → basis points (10% → 1000). Redondeo entero (bp es integer).
     porcentaje_bp: !esFijo && input.porcentaje != null ? Math.round(input.porcentaje * 100) : null,
     servicio: admiteServicio(input) ? input.servicio : null,
-    concepto_base_id: esDescuentoPorcentual ? input.concepto_base_id : null,
+    concepto_base_id: input.signo === -1 ? input.concepto_base_id : null,
     activo: input.activo,
     // B1-2: el precio por año solo aplica a conceptos por niño; en ámbito familia el motor
     // cae a la base → se fuerza a false (coherencia app, espejo del nulling de servicio).

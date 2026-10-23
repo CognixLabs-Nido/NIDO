@@ -399,7 +399,9 @@
         "concepto_base": "Concepte base",
         "concepto_base_placeholder": "Tria el concepte al qual s'aplica",
         "tarifa_por_anio_nacimiento": "Preu per any de naixement",
-        "servicio_mensual": "Servei (opcional)"
+        "servicio_mensual": "Servei (opcional)",
+        "concepto_base_ninguna": "Sense base",
+        "concepto_base_hint_fijo": "Opcional. Amb una base, cada família pot triar en la seua assignació un percentatge sobre eixe concepte en lloc de l’import."
       },
       "tipos": {
         "mensual": "Mensual",
@@ -651,7 +653,13 @@
         "quitar": "Llevar",
         "guardado": "Import propi guardat",
         "quitado": "Torna al preu del concepte",
-        "n_fila": "{n} amb import propi"
+        "n_fila": "{n} amb import o percentatge propi",
+        "tipo_aria": "Tipus de descompte de {concepto}",
+        "tipo_fijo": "Import (€)",
+        "tipo_porcentaje": "Percentatge de {base}",
+        "precio_concepto_porcentaje": "Concepte: {porcentaje} de {base}",
+        "aria_porcentaje": "Percentatge propi de {concepto}",
+        "placeholder_porcentaje": "Del concepte"
       }
     },
     "aulas": {
@@ -1595,7 +1603,7 @@
       "importe_requerido": "Indica l'import",
       "porcentaje_requerido": "Indica el percentatge",
       "concepto_base_requerido": "Un descompte percentual necessita un concepte base",
-      "concepto_base_no_permitido": "Només un descompte percentual porta concepte base"
+      "concepto_base_no_permitido": "Només un descompte porta concepte base"
     },
     "errors": {
       "nombre_duplicado": "Ja existeix un concepte amb eixe nom al centre.",
@@ -1603,7 +1611,8 @@
       "create_failed": "No s'ha pogut crear el concepte.",
       "update_failed": "No s'ha pogut actualitzar el concepte.",
       "delete_failed": "No s'ha pogut eliminar el concepte.",
-      "no_encontrado": "Concepte no trobat."
+      "no_encontrado": "Concepte no trobat.",
+      "base_con_porcentajes_propios": "Hi ha famílies amb un percentatge propi sobre la base d’este descompte. Lleva-li’l abans de canviar la base o el signe."
     },
     "tarifa_anio": {
       "validation": {
@@ -1631,7 +1640,9 @@
       "importe_invalido": "Introdueix un import vàlid (0 o més).",
       "importe_failed": "No s'ha pogut guardar l'import propi.",
       "importe_no_admitido": "Aquest concepte no admet import propi: només els d'import fix que es cobren cada mes.",
-      "no_asignado": "El concepte ja no està assignat."
+      "no_asignado": "El concepte ja no està assignat.",
+      "porcentaje_invalido": "El percentatge ha d’estar entre 0 i 100",
+      "porcentaje_no_admitido": "Este concepte no admet percentatge propi: només un descompte amb concepte base"
     }
   },
   "recibos_panel": {
