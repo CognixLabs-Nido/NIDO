@@ -143,6 +143,8 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
                           <div className="flex items-center justify-end gap-2">
                             <span className="text-muted-foreground text-xs">
                               {t('conceptos_asignados', { n: a.conceptosAsignados.length })}
+                              {Object.keys(a.importesPropios).length > 0 &&
+                                ` · ${t('importe_propio.n_fila', { n: Object.keys(a.importesPropios).length })}`}
                             </span>
                             <ConfigurarModalidadDialog
                               centroId={centroId}
@@ -151,6 +153,8 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
                               conceptos={data.conceptosNino}
                               conceptosAsignados={a.conceptosAsignados}
                               conceptosConServicio={data.conceptosConServicio}
+                              catalogo={data.catalogo}
+                              importesPropios={a.importesPropios}
                             />
                           </div>
                         </TableCell>
@@ -195,6 +199,8 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
                         <div className="flex items-center justify-end gap-2">
                           <span className="text-muted-foreground text-xs">
                             {t('conceptos_asignados', { n: f.conceptosAsignados.length })}
+                            {Object.keys(f.importesPropios).length > 0 &&
+                              ` · ${t('importe_propio.n_fila', { n: Object.keys(f.importesPropios).length })}`}
                           </span>
                           <FamiliaConceptosDialog
                             centroId={centroId}
@@ -202,6 +208,8 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
                             familiaEtiqueta={f.etiqueta}
                             conceptos={data.conceptosFamilia}
                             conceptosAsignados={f.conceptosAsignados}
+                            catalogo={data.catalogo}
+                            importesPropios={f.importesPropios}
                           />
                         </div>
                       </TableCell>

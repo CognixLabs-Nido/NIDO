@@ -638,7 +638,21 @@
       "servicio_mensual_hint": "Si és la quota d'un servei, qui la tinga no paga els dies d'eixe servei, encara que també tinga assignat el diari.",
       "tipo_con_servicio": "{tipo} · {servicio}",
       "aviso_mensual_y_diario": "Té assignats el mensual i el diari de {servicios}. Només es cobra el mensual: els dies no es cobren. Lleva el que sobre.",
-      "solape_fila": "Mensual i diari de {servicios}: només es cobra el mensual"
+      "solape_fila": "Mensual i diari de {servicios}: només es cobra el mensual",
+      "importe_propio": {
+        "titulo": "Import propi",
+        "hint": "Substitueix el preu del concepte cada mes fins que el canvies. S'aplica en generar o recalcular el mes; els rebuts ja validats no canvien.",
+        "precio_concepto": "Preu del concepte: {precio}",
+        "precio_concepto_dia": "Preu del concepte: {precio}/dia",
+        "precio_tarifa": "Preu del concepte: segons l'any de naixement",
+        "placeholder": "Preu del concepte",
+        "aria": "Import propi de {concepto}",
+        "guardar": "Guardar",
+        "quitar": "Llevar",
+        "guardado": "Import propi guardat",
+        "quitado": "Torna al preu del concepte",
+        "n_fila": "{n} amb import propi"
+      }
     },
     "aulas": {
       "title": "Aules",
@@ -1600,7 +1614,11 @@
       "modalidad_failed": "No s'ha pogut guardar la modalitat.",
       "metodo_failed": "No s'ha pogut guardar el mètode de pagament.",
       "asignacion_failed": "No s'ha pogut guardar l'assignació.",
-      "proponer_failed": "No s'han pogut proposar les assignacions."
+      "proponer_failed": "No s'han pogut proposar les assignacions.",
+      "importe_invalido": "Introdueix un import vàlid (0 o més).",
+      "importe_failed": "No s'ha pogut guardar l'import propi.",
+      "importe_no_admitido": "Aquest concepte no admet import propi: només els d'import fix que es cobren cada mes.",
+      "no_asignado": "El concepte ja no està assignat."
     }
   },
   "recibos_panel": {

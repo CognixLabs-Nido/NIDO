@@ -153,6 +153,10 @@ Restricciones:
 - **Editar a mano (R-3):** añadir una línea la crea `manual`, y editar una automática la convierte
   en manual. El botón de «Recalcular el mes» (R-1) encadena `proponer_asignaciones` y
   `generar_recibos_mes`, e informa de lo que ha cambiado de verdad.
+- **Importe propio (PR-6, 2026-10-23):** el importe distinto de un niño, o de una familia (su
+  descuento por hermano, por ejemplo), se fija en su asignación (`importe_override_centimos`) y se
+  arrastra cada mes hasta que se cambie. Editar la línea del borrador corrige solo ese mes. Solo
+  en conceptos de importe fijo que el motor cobra cada mes; en un diario es el precio por día.
 
 ### Método de pago y remesa (F-4-3, F-4-5)
 

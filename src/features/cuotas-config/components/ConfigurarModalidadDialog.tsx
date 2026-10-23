@@ -21,7 +21,12 @@ import {
 } from '@/components/ui/select'
 import { asignarConcepto } from '../actions/asignar-concepto'
 import { desasignarConcepto } from '../actions/desasignar-concepto'
+import type {
+  ConceptoCatalogo,
+  ImportesPropios as Importes,
+} from '../queries/get-asignacion-permanente'
 import type { ConceptoAsignable } from '../queries/get-conceptos-asignables'
+import { ImportesPropios } from './ImportesPropios'
 import {
   listaServicios,
   serviciosSolapados,
@@ -41,6 +46,9 @@ interface Props {
   conceptosAsignados: string[]
   /** PR-4: conceptos activos con servicio, para avisar del mensual y el diario a la vez. */
   conceptosConServicio: ConceptoConServicio[]
+  /** PR-6: catálogo activo y los importes propios del niño. */
+  catalogo: ConceptoCatalogo[]
+  importesPropios: Importes
 }
 
 export function ConfigurarModalidadDialog({
@@ -50,6 +58,8 @@ export function ConfigurarModalidadDialog({
   conceptos,
   conceptosAsignados,
   conceptosConServicio,
+  catalogo,
+  importesPropios,
 }: Props) {
   const t = useTranslations('admin.cuotas')
   const locale = useLocale()
@@ -142,6 +152,13 @@ export function ConfigurarModalidadDialog({
             })}
           </ul>
         )}
+        <ImportesPropios
+          centroId={centroId}
+          destino={{ ninoId, familiaId: null }}
+          asignados={[...asignadosAhora]}
+          catalogo={catalogo}
+          importes={importesPropios}
+        />
         <div className="flex justify-end pt-2">
           <Button type="button" onClick={() => setOpen(false)}>
             {t('cerrar')}

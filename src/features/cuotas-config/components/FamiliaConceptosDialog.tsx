@@ -22,7 +22,12 @@ import {
 
 import { asignarConceptoFamilia } from '../actions/asignar-concepto-familia'
 import { desasignarConceptoFamilia } from '../actions/desasignar-concepto-familia'
-import type { ConceptoAsignablePermanente } from '../queries/get-asignacion-permanente'
+import type {
+  ConceptoAsignablePermanente,
+  ConceptoCatalogo,
+  ImportesPropios as Importes,
+} from '../queries/get-asignacion-permanente'
+import { ImportesPropios } from './ImportesPropios'
 
 // F-4-4: asignación PERMANENTE de conceptos de ámbito FAMILIA (descuento hermanos, cargos
 // familiares). Espejo por-familia de ConfigurarModalidadDialog. Sin mes, sin método.
@@ -33,7 +38,11 @@ interface Props {
   familiaId: string
   familiaEtiqueta: string
   conceptos: ConceptoAsignablePermanente[]
+  /** Todos los conceptos asignados a la familia, también los automáticos. */
   conceptosAsignados: string[]
+  /** PR-6: catálogo activo y los importes propios de la familia (p. ej. su descuento por hermano). */
+  catalogo: ConceptoCatalogo[]
+  importesPropios: Importes
 }
 
 export function FamiliaConceptosDialog({
@@ -42,6 +51,8 @@ export function FamiliaConceptosDialog({
   familiaEtiqueta,
   conceptos,
   conceptosAsignados,
+  catalogo,
+  importesPropios,
 }: Props) {
   const t = useTranslations('admin.cuotas')
   const tErrors = useTranslations()
@@ -54,6 +65,13 @@ export function FamiliaConceptosDialog({
   )
 
   const opciones: EstadoAsignacion[] = ['no_asignado', 'asignado']
+
+  // Lo asignado AHORA: lo que trajo la página con los cambios hechos en el diálogo.
+  const asignadosAhora = new Set(conceptosAsignados)
+  for (const [id, estado] of Object.entries(valores)) {
+    if (estado === 'asignado') asignadosAhora.add(id)
+    else asignadosAhora.delete(id)
+  }
 
   function cambiar(conceptoId: string, estado: EstadoAsignacion) {
     const previo = valores[conceptoId] ?? 'no_asignado'
@@ -113,6 +131,13 @@ export function FamiliaConceptosDialog({
             })}
           </ul>
         )}
+        <ImportesPropios
+          centroId={centroId}
+          destino={{ ninoId: null, familiaId }}
+          asignados={[...asignadosAhora]}
+          catalogo={catalogo}
+          importes={importesPropios}
+        />
         <div className="flex justify-end pt-2">
           <Button type="button" onClick={() => setOpen(false)}>
             {t('cerrar')}
