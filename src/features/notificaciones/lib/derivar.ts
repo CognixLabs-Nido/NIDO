@@ -33,7 +33,7 @@ export function familiasConDomiciliacionNueva(
     )
     if (!dadaDeAlta) continue
     const visto = vistas[m.familia_id]
-    if (visto) continue
+    if (visto && new Date(visto).getTime() >= firma) continue
     out.add(m.familia_id)
   }
   return [...out].sort()
