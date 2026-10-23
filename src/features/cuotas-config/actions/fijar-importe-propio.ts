@@ -70,7 +70,7 @@ export async function fijarImportePropio(
   let q = supabase
     .from('asignacion_concepto')
     .update({
-      ...(importeEuros == null ? {} : { importe_override_centimos: eurosACentimos(importeEuros) }),
+      importe_override_centimos: importeEuros == null ? null : eurosACentimos(importeEuros),
       // Porcentaje de la UI (%) → puntos básicos (15 % → 1500), como el catálogo.
       porcentaje_override_bp: porcentaje == null ? null : Math.round(porcentaje * 100),
     })
