@@ -206,7 +206,9 @@ Restricciones:
   devolución. Cada devolución tiene una sola salida (banco, efectivo o transferencia), la escribe
   `resolver_devolucion` y un trigger rechaza la segunda. Los gastos de devolución van en la propia
   devolución y la salida cobra total + gastos; sustituyen al recibo esporádico de gastos. Arrastrar
-  la devolución al siguiente recibo es el PR-14.)_
+  la devolución al siguiente recibo es el PR-14. Y otra del 2026-10-23: el PR-3, `20261108120000`,
+  no deja validar un recibo con el desborde de beca pendiente (trigger `recibos_validar_sin_desborde`):
+  la directora lo resuelve antes, difiriéndolo o por transferencia, y la validación en lote lo salta.)_
 - Un cargo diario de ámbito familia no se factura: no hay contador de días bien definido para varios
   hijos (F-4-3, «no se inventa»).
 

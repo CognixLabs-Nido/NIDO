@@ -552,7 +552,8 @@
             "sin_becas": "No hay becas que repartir en este recibo.",
             "descuadre": "El reparto no cuadra con el exceso; no se ha aplicado.",
             "save_failed": "No se pudo resolver."
-          }
+          },
+          "aviso_validar": "Este recibo no se puede confirmar con un exceso de beca de {importe} sin resolver. Comprueba que es correcto: si la beca está mal puesta, corrígela y recalcula el mes. Si lo es, elige qué hacer con él."
         },
         "transferencias": {
           "errors": {
@@ -1697,7 +1698,8 @@
       "no_confirmado": "Este recibo es un borrador: edítalo directamente.",
       "recibo_en_remesa": "Este recibo está en una remesa: ya no se puede modificar.",
       "recibo_cobrado": "Este recibo ya está cobrado: ya no se puede modificar.",
-      "desconfirmar_failed": "No se pudo reabrir el recibo."
+      "desconfirmar_failed": "No se pudo reabrir el recibo.",
+      "desborde_pendiente": "Este recibo tiene un exceso de beca comedor sin resolver: resuélvelo antes de confirmarlo."
     },
     "desborde_aviso": "{n} recibos con beca comedor pendiente de resolver.",
     "desborde_badge": "Beca pendiente",
@@ -1712,7 +1714,9 @@
       "no_confirmado": "Este recibo es un borrador: edítalo directamente."
     },
     "desconfirmado_ok": "Recibo reabierto. Edítalo y vuelve a confirmarlo.",
-    "desconfirmado_reabre": "Recibo reabierto. El mes vuelve a estar abierto hasta que lo confirmes de nuevo."
+    "desconfirmado_reabre": "Recibo reabierto. El mes vuelve a estar abierto hasta que lo confirmes de nuevo.",
+    "lote_saltados": "{n} recibos no se han confirmado: tienen un exceso de beca comedor sin resolver.",
+    "lote_saltado_fila": "{familia} · exceso de {importe}"
   },
   "cierre_cobros": {
     "estado_titulo": "Estado del mes",

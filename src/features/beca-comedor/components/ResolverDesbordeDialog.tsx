@@ -26,6 +26,8 @@ interface Props {
   cuotaCentimos: number
   becaCentimos: number
   excesoCentimos: number
+  /** PR-3: se abre al intentar validar el recibo, que no se valida con el desborde pendiente. */
+  avisoValidar?: boolean
   trigger: ReactElement
 }
 
@@ -41,6 +43,7 @@ export function ResolverDesbordeDialog({
   cuotaCentimos,
   becaCentimos,
   excesoCentimos,
+  avisoValidar = false,
   trigger,
 }: Props) {
   const t = useTranslations('admin.cuotas.beca_comedor.desborde')
@@ -72,6 +75,11 @@ export function ResolverDesbordeDialog({
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
 
+        {avisoValidar && (
+          <p role="alert" className="text-sm font-medium text-amber-800">
+            {t('aviso_validar', { importe: formatEuros(excesoCentimos, locale) })}
+          </p>
+        )}
         <p className="text-muted-foreground text-sm">{t('intro')}</p>
 
         <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
