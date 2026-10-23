@@ -552,7 +552,8 @@
             "sin_becas": "No hi ha beques per repartir en aquest rebut.",
             "descuadre": "El repartiment no quadra amb l’excés; no s’ha aplicat.",
             "save_failed": "No s’ha pogut resoldre."
-          }
+          },
+          "aviso_validar": "Aquest rebut no es pot confirmar amb un excés de beca de {importe} sense resoldre. Comprova que és correcte: si la beca està mal posada, corregeix-la i recalcula el mes. Si ho és, tria què fer amb ell."
         },
         "transferencias": {
           "errors": {
@@ -1697,7 +1698,8 @@
       "no_confirmado": "Este rebut és un esborrany: edita’l directament.",
       "recibo_en_remesa": "Este rebut està en una remesa: ja no es pot modificar.",
       "recibo_cobrado": "Este rebut ja està cobrat: ja no es pot modificar.",
-      "desconfirmar_failed": "No s’ha pogut reobrir el rebut."
+      "desconfirmar_failed": "No s’ha pogut reobrir el rebut.",
+      "desborde_pendiente": "Aquest rebut té un excés de beca menjador sense resoldre: resol-lo abans de confirmar-lo."
     },
     "desborde_aviso": "{n} rebuts amb beca menjador pendent de resoldre.",
     "desborde_badge": "Beca pendent",
@@ -1712,7 +1714,9 @@
       "no_confirmado": "Este rebut és un esborrany: edita’l directament."
     },
     "desconfirmado_ok": "Rebut reobert. Edita’l i torna a confirmar-lo.",
-    "desconfirmado_reabre": "Rebut reobert. El mes torna a estar obert fins que el confirmes de nou."
+    "desconfirmado_reabre": "Rebut reobert. El mes torna a estar obert fins que el confirmes de nou.",
+    "lote_saltados": "{n} rebuts no s'han confirmat: tenen un excés de beca menjador sense resoldre.",
+    "lote_saltado_fila": "{familia} · excés de {importe}"
   },
   "cierre_cobros": {
     "estado_titulo": "Estat del mes",

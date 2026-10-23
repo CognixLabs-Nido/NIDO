@@ -552,7 +552,8 @@
             "sin_becas": "There are no grants to distribute on this receipt.",
             "descuadre": "The split doesn’t match the excess; nothing was applied.",
             "save_failed": "Couldn’t resolve."
-          }
+          },
+          "aviso_validar": "This receipt cannot be confirmed with an unresolved grant excess of {importe}. Check that it is correct: if the grant is wrong, fix it and recalculate the month. If it is right, choose what to do with it."
         },
         "transferencias": {
           "errors": {
@@ -1697,7 +1698,8 @@
       "no_confirmado": "This receipt is a draft: edit it directly.",
       "recibo_en_remesa": "This receipt is in a batch: it can no longer be modified.",
       "recibo_cobrado": "This receipt has already been collected: it can no longer be modified.",
-      "desconfirmar_failed": "Could not reopen the receipt."
+      "desconfirmar_failed": "Could not reopen the receipt.",
+      "desborde_pendiente": "This receipt has an unresolved meal grant excess: resolve it before confirming."
     },
     "desborde_aviso": "{n} receipts with a pending meal grant to resolve.",
     "desborde_badge": "Grant pending",
@@ -1712,7 +1714,9 @@
       "no_confirmado": "This receipt is a draft: edit it directly."
     },
     "desconfirmado_ok": "Receipt reopened. Edit it and confirm it again.",
-    "desconfirmado_reabre": "Receipt reopened. The month is open again until you confirm it once more."
+    "desconfirmado_reabre": "Receipt reopened. The month is open again until you confirm it once more.",
+    "lote_saltados": "{n} receipts were not confirmed: they have an unresolved meal grant excess.",
+    "lote_saltado_fila": "{familia} · excess of {importe}"
   },
   "cierre_cobros": {
     "estado_titulo": "Month status",

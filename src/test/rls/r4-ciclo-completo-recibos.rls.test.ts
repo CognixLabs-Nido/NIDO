@@ -377,6 +377,22 @@ describe('R-4 — ciclo completo de recibos (integración)', () => {
   })
 
   it('8 · confirmar: el recibo queda congelado y editarlo devuelve error limpio, no un crash', async () => {
+    // PR-3: el desborde del paso 7 sigue pendiente, y con él no se valida (`recibos_validar_sin_desborde`).
+    const bloqueado = await cAdmin.rpc('confirmar_recibo', { p_recibo_id: reciboGonzalezId })
+    expect(bloqueado.error?.hint).toBe('desborde_pendiente')
+    // Resuelto como lo hace `resolverDesborde()` por transferencia, ya se valida.
+    const { error: errResolver } = await cAdmin
+      .from('beca_comedor_desborde')
+      .update({
+        estado: 'resuelto',
+        via: 'transferencia',
+        resuelto_por: admin.id,
+        resuelto_at: new Date().toISOString(),
+      })
+      .eq('recibo_id', reciboGonzalezId)
+      .eq('estado', 'pendiente')
+    expect(errResolver).toBeNull()
+
     const { error } = await cAdmin.rpc('confirmar_recibo', { p_recibo_id: reciboGonzalezId })
     expect(error).toBeNull()
 

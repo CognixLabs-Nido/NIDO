@@ -70,12 +70,18 @@ export function PanelMesRecibos({ centroId, anio, mes, data, ninos, centroLogo }
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [generarOpen, setGenerarOpen] = useState(false)
   const [recalcularOpen, setRecalcularOpen] = useState(false)
+  // PR-3: recibos que el último lote se saltó por su desborde de beca pendiente.
+  const [saltados, setSaltados] = useState<string[]>([])
   const [pending, startTransition] = useTransition()
 
   const borradores = data.filas.filter((f) => f.recibo && f.recibo.estado === 'borrador')
   const numBorradores = borradores.length
   const numConfirmados = data.indicadores.confirmados
   const bloqueado = data.cerrado
+  // Se listan mientras sigan con el desborde pendiente: al resolverlo, salen solos.
+  const filasSaltadas = data.filas.filter(
+    (f) => f.recibo && f.desborde && saltados.includes(f.recibo.id)
+  )
 
   function lanzarGenerar() {
     if (numBorradores > 0) setGenerarOpen(true)
@@ -141,7 +147,11 @@ export function PanelMesRecibos({ centroId, anio, mes, data, ninos, centroLogo }
     startTransition(async () => {
       const r = await confirmarRecibos(ids)
       if (r.success) {
-        toast.success(t('lote_ok', { n: r.data.confirmados }))
+        if (r.data.confirmados > 0) toast.success(t('lote_ok', { n: r.data.confirmados }))
+        if (r.data.conDesborde.length > 0) {
+          toast.warning(t('lote_saltados', { n: r.data.conDesborde.length }))
+        }
+        setSaltados(r.data.conDesborde)
         setSelected(new Set())
       } else {
         toast.error(tErrors(r.error))
@@ -222,6 +232,35 @@ export function PanelMesRecibos({ centroId, anio, mes, data, ninos, centroLogo }
       {data.indicadores.desbordesPendientes > 0 && (
         <Card className="border-amber-300 bg-amber-50/60 p-3 text-sm text-amber-800">
           {t('desborde_aviso', { n: data.indicadores.desbordesPendientes })}
+        </Card>
+      )}
+
+      {/* PR-3: lo que el lote no validó por su desborde, aparte y con su importe. */}
+      {filasSaltadas.length > 0 && (
+        <Card className="space-y-2 border-amber-300 bg-amber-50/60 p-3 text-sm text-amber-800">
+          <p className="font-medium">{t('lote_saltados', { n: filasSaltadas.length })}</p>
+          <ul className="space-y-1">
+            {filasSaltadas.map((f) => (
+              <li key={f.familiaId} className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  {t('lote_saltado_fila', {
+                    familia: f.etiqueta,
+                    importe: formatEuros(f.desborde!.excesoCentimos, locale),
+                  })}
+                </span>
+                <ResolverDesbordeDialog
+                  reciboId={f.desborde!.reciboId}
+                  anio={anio}
+                  mes={mes}
+                  cuotaCentimos={f.desborde!.cuotaCentimos}
+                  becaCentimos={f.desborde!.becaCentimos}
+                  excesoCentimos={f.desborde!.excesoCentimos}
+                  avisoValidar
+                  trigger={<Button size="sm">{t('resolver_beca')}</Button>}
+                />
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 
@@ -533,9 +572,28 @@ function FilaFamilia({
                   lineas={recibo!.lineas}
                   hijos={fila.hijos}
                 />
-                <Button size="sm" disabled={pending} onClick={() => onConfirmar(recibo!.id)}>
-                  {t('confirmar')}
-                </Button>
+                {/* PR-3: con el desborde pendiente no se valida. «Confirmar» abre el aviso con el
+                    importe y las dos salidas; resuelto, ya se confirma. */}
+                {fila.desborde ? (
+                  <ResolverDesbordeDialog
+                    reciboId={fila.desborde.reciboId}
+                    anio={anio}
+                    mes={mes}
+                    cuotaCentimos={fila.desborde.cuotaCentimos}
+                    becaCentimos={fila.desborde.becaCentimos}
+                    excesoCentimos={fila.desborde.excesoCentimos}
+                    avisoValidar
+                    trigger={
+                      <Button size="sm" disabled={pending}>
+                        {t('confirmar')}
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <Button size="sm" disabled={pending} onClick={() => onConfirmar(recibo!.id)}>
+                    {t('confirmar')}
+                  </Button>
+                )}
               </>
             )}
             {/* R-5: el candado sigue significando lo mismo (este recibo NO se edita en
