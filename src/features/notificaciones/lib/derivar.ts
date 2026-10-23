@@ -31,7 +31,7 @@ export function familiasConDomiciliacionNueva(
     const dadaDeAlta = (activadasPorFamilia[m.familia_id] ?? []).some(
       (a) => new Date(a).getTime() < firma
     )
-    void dadaDeAlta
+    if (!dadaDeAlta) continue
     const visto = vistas[m.familia_id]
     if (visto && new Date(visto).getTime() >= firma) continue
     out.add(m.familia_id)
