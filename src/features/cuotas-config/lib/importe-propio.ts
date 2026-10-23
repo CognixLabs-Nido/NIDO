@@ -16,7 +16,7 @@ interface ConceptoValor {
  * impide también (trigger `asignacion_porcentaje_con_base`).
  */
 export function admitePorcentajePropio(c: ConceptoValor): boolean {
-  return c.tipo_concepto !== 'esporadico' && c.signo === -1 && c.concepto_base_id != null
+  return c.tipo_concepto !== 'esporadico' && c.signo === -1
 }
 
 /**
