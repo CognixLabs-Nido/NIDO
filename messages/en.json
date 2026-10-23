@@ -638,7 +638,21 @@
       "servicio_mensual_hint": "If this is the fee for a service, whoever has it does not pay for the days of that service, even if the daily charge is also assigned.",
       "tipo_con_servicio": "{tipo} · {servicio}",
       "aviso_mensual_y_diario": "Both the monthly and the daily charge for {servicios} are assigned. Only the monthly fee is charged: the days are not. Remove the one that is not needed.",
-      "solape_fila": "Monthly and daily {servicios}: only the monthly fee is charged"
+      "solape_fila": "Monthly and daily {servicios}: only the monthly fee is charged",
+      "importe_propio": {
+        "titulo": "Own amount",
+        "hint": "Replaces the concept price every month until you change it. It applies when the month is generated or recalculated; confirmed receipts do not change.",
+        "precio_concepto": "Concept price: {precio}",
+        "precio_concepto_dia": "Concept price: {precio}/day",
+        "precio_tarifa": "Concept price: by year of birth",
+        "placeholder": "Concept price",
+        "aria": "Own amount for {concepto}",
+        "guardar": "Save",
+        "quitar": "Remove",
+        "guardado": "Own amount saved",
+        "quitado": "Back to the concept price",
+        "n_fila": "{n} with own amount"
+      }
     },
     "aulas": {
       "title": "Classrooms",
@@ -1600,7 +1614,11 @@
       "modalidad_failed": "Could not save the mode.",
       "metodo_failed": "Could not save the payment method.",
       "asignacion_failed": "Could not save the assignment.",
-      "proponer_failed": "Could not propose the assignments."
+      "proponer_failed": "Could not propose the assignments.",
+      "importe_invalido": "Enter a valid amount (0 or more).",
+      "importe_failed": "The own amount could not be saved.",
+      "importe_no_admitido": "This concept does not take an own amount: only fixed-amount concepts charged every month do.",
+      "no_asignado": "The concept is no longer assigned."
     }
   },
   "recibos_panel": {

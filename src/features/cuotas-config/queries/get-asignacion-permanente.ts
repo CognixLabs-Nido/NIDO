@@ -14,11 +14,26 @@ export interface ConceptoAsignablePermanente {
   signo: number
 }
 
+/** PR-6: un concepto activo del catálogo, manual o automático, con lo que hace falta para
+ * enseñar y fijar el importe propio de una asignación. */
+export interface ConceptoCatalogo {
+  id: string
+  nombre: string
+  tipo_concepto: TipoConcepto
+  tipo_valor: string
+  importe_centimos: number | null
+  tarifa_por_anio_nacimiento: boolean
+}
+
+/** PR-6: importe propio (céntimos) por concepto asignado; solo los que lo tienen. */
+export type ImportesPropios = Record<string, number>
+
 export interface AlumnoAsignacion {
   ninoId: string
   nombre: string
   familiaEtiqueta: string
   conceptosAsignados: string[]
+  importesPropios: ImportesPropios
 }
 
 export interface FamiliaAsignacion {
@@ -26,6 +41,7 @@ export interface FamiliaAsignacion {
   etiqueta: string
   tutores: string[]
   conceptosAsignados: string[]
+  importesPropios: ImportesPropios
 }
 
 export interface AsignacionPermanente {
@@ -35,6 +51,8 @@ export interface AsignacionPermanente {
   conceptosFamilia: ConceptoAsignablePermanente[]
   /** PR-4: conceptos activos con servicio, manuales y automáticos (para el aviso de solape). */
   conceptosConServicio: ConceptoConServicio[]
+  /** PR-6: todos los conceptos activos (también los automáticos, que no salen para asignar). */
+  catalogo: ConceptoCatalogo[]
 }
 
 const VACIO: AsignacionPermanente = {
@@ -43,6 +61,7 @@ const VACIO: AsignacionPermanente = {
   conceptosNino: [],
   conceptosFamilia: [],
   conceptosConServicio: [],
+  catalogo: [],
 }
 
 /**
@@ -69,7 +88,7 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
     ...new Set(ninos.map((n) => n.familia_id).filter((x): x is string => x != null)),
   ]
 
-  const [familiasRes, tutoresRes, conceptosRes, asignRes, servicioRes] = await Promise.all([
+  const [familiasRes, tutoresRes, conceptosRes, asignRes, catalogoRes] = await Promise.all([
     supabase.from('familias').select('id, etiqueta').in('id', familiaIds),
     supabase
       .from('familia_tutores')
@@ -85,15 +104,16 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
       .is('deleted_at', null),
     supabase
       .from('asignacion_concepto')
-      .select('nino_id, familia_id, concepto_id')
+      .select('nino_id, familia_id, concepto_id, importe_override_centimos')
       .eq('centro_id', centroId)
       .is('deleted_at', null),
     supabase
       .from('conceptos_cobro')
-      .select('id, tipo_concepto, servicio')
+      .select(
+        'id, nombre, tipo_concepto, tipo_valor, importe_centimos, tarifa_por_anio_nacimiento, servicio'
+      )
       .eq('centro_id', centroId)
       .eq('activo', true)
-      .not('servicio', 'is', null)
       .is('deleted_at', null),
   ])
 
@@ -121,15 +141,19 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
 
   const conceptosPorNino = new Map<string, string[]>()
   const conceptosPorFamilia = new Map<string, string[]>()
+  const importesPorNino = new Map<string, ImportesPropios>()
+  const importesPorFamilia = new Map<string, ImportesPropios>()
   for (const a of asignRes.data ?? []) {
-    if (a.nino_id) {
-      const actual = conceptosPorNino.get(a.nino_id) ?? []
-      actual.push(a.concepto_id)
-      conceptosPorNino.set(a.nino_id, actual)
-    } else if (a.familia_id) {
-      const actual = conceptosPorFamilia.get(a.familia_id) ?? []
-      actual.push(a.concepto_id)
-      conceptosPorFamilia.set(a.familia_id, actual)
+    const destino = a.nino_id ?? a.familia_id
+    if (!destino) continue
+    const conceptos = a.nino_id ? conceptosPorNino : conceptosPorFamilia
+    conceptos.set(destino, [...(conceptos.get(destino) ?? []), a.concepto_id])
+    if (a.importe_override_centimos != null) {
+      const importes = a.nino_id ? importesPorNino : importesPorFamilia
+      importes.set(destino, {
+        ...(importes.get(destino) ?? {}),
+        [a.concepto_id]: a.importe_override_centimos,
+      })
     }
   }
 
@@ -139,6 +163,7 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
       nombre: [n.nombre, n.apellidos].filter(Boolean).join(' '),
       familiaEtiqueta: n.familia_id ? (etiquetaPorFamilia.get(n.familia_id) ?? '') : '',
       conceptosAsignados: conceptosPorNino.get(n.id) ?? [],
+      importesPropios: importesPorNino.get(n.id) ?? {},
     }))
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es-ES'))
 
@@ -148,12 +173,24 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
       etiqueta: etiquetaPorFamilia.get(id) ?? '',
       tutores: tutoresPorFamilia.get(id) ?? [],
       conceptosAsignados: conceptosPorFamilia.get(id) ?? [],
+      importesPropios: importesPorFamilia.get(id) ?? {},
     }))
     .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es-ES'))
 
-  const conceptosConServicio: ConceptoConServicio[] = (servicioRes.data ?? []).flatMap((c) =>
+  const catalogoFilas = catalogoRes.data ?? []
+  const conceptosConServicio: ConceptoConServicio[] = catalogoFilas.flatMap((c) =>
     c.servicio ? [{ id: c.id, tipo_concepto: c.tipo_concepto, servicio: c.servicio }] : []
   )
+  const catalogo: ConceptoCatalogo[] = catalogoFilas
+    .map((c) => ({
+      id: c.id,
+      nombre: c.nombre,
+      tipo_concepto: c.tipo_concepto,
+      tipo_valor: c.tipo_valor,
+      importe_centimos: c.importe_centimos,
+      tarifa_por_anio_nacimiento: c.tarifa_por_anio_nacimiento,
+    }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es-ES'))
 
-  return { alumnos, familias, conceptosNino, conceptosFamilia, conceptosConServicio }
+  return { alumnos, familias, conceptosNino, conceptosFamilia, conceptosConServicio, catalogo }
 }

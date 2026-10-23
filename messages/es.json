@@ -638,7 +638,21 @@
       "servicio_mensual_hint": "Si es la cuota de un servicio, quien la tenga no paga los días de ese servicio, aunque también tenga asignado el diario.",
       "tipo_con_servicio": "{tipo} · {servicio}",
       "aviso_mensual_y_diario": "Tiene asignados el mensual y el diario de {servicios}. Solo se cobra el mensual: los días no se cobran. Quita el que sobre.",
-      "solape_fila": "Mensual y diario de {servicios}: solo se cobra el mensual"
+      "solape_fila": "Mensual y diario de {servicios}: solo se cobra el mensual",
+      "importe_propio": {
+        "titulo": "Importe propio",
+        "hint": "Sustituye al precio del concepto cada mes hasta que lo cambies. Se aplica al generar o recalcular el mes; los recibos ya validados no cambian.",
+        "precio_concepto": "Precio del concepto: {precio}",
+        "precio_concepto_dia": "Precio del concepto: {precio}/día",
+        "precio_tarifa": "Precio del concepto: según el año de nacimiento",
+        "placeholder": "Precio del concepto",
+        "aria": "Importe propio de {concepto}",
+        "guardar": "Guardar",
+        "quitar": "Quitar",
+        "guardado": "Importe propio guardado",
+        "quitado": "Vuelve al precio del concepto",
+        "n_fila": "{n} con importe propio"
+      }
     },
     "aulas": {
       "title": "Aulas",
@@ -1600,7 +1614,11 @@
       "modalidad_failed": "No se pudo guardar la modalidad.",
       "metodo_failed": "No se pudo guardar el método de pago.",
       "asignacion_failed": "No se pudo guardar la asignación.",
-      "proponer_failed": "No se pudieron proponer las asignaciones."
+      "proponer_failed": "No se pudieron proponer las asignaciones.",
+      "importe_invalido": "Introduce un importe válido (0 o más).",
+      "importe_failed": "No se pudo guardar el importe propio.",
+      "importe_no_admitido": "Este concepto no admite importe propio: solo los de importe fijo que se cobran cada mes.",
+      "no_asignado": "El concepto ya no está asignado."
     }
   },
   "recibos_panel": {
