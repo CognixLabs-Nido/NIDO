@@ -12,7 +12,7 @@ import { formatEuros } from '@/shared/lib/format-money'
 
 import { crearRegiro } from '../actions/crear-regiro'
 import { marcarReciboDevuelto } from '../actions/marcar-recibo-devuelto'
-import { cobrableAMano, type ReciboGestion } from '../lib/gestion-cobros'
+import { cobrableAMano, formaPorDefecto, type ReciboGestion } from '../lib/gestion-cobros'
 import { GastosDevolucionDialog } from './GastosDevolucionDialog'
 import { MarcarCobradoDialog } from './MarcarCobradoDialog'
 
@@ -82,6 +82,13 @@ export function DevolucionesPanel({ recibos }: Props) {
                       fecha: r.cobroFecha,
                       forma: tRecibos(`metodos.${r.cobroForma}`),
                     })}
+                    {r.cobroImporteCentimos != null &&
+                      ` · ${t('cheque_de', { importe: formatEuros(r.cobroImporteCentimos, locale) })}`}
+                    {r.cobroImporteCentimos != null &&
+                      r.cobroImporteCentimos < r.totalCentimos &&
+                      ` · ${t('diferencia_en_recibo_aparte', {
+                        importe: formatEuros(r.totalCentimos - r.cobroImporteCentimos, locale),
+                      })}`}
                     {r.cobroNota ? ` · ${r.cobroNota}` : ''}
                   </p>
                 )}
@@ -124,7 +131,9 @@ export function DevolucionesPanel({ recibos }: Props) {
                   <MarcarCobradoDialog
                     reciboId={r.id}
                     descripcion={`${r.familiaEtiqueta} · ${formatEuros(r.totalCentimos, locale)}`}
-                    formaPorDefecto={r.metodo === 'transferencia' ? 'transferencia' : 'efectivo'}
+                    totalCentimos={r.totalCentimos}
+                    formaPorDefecto={formaPorDefecto(r)}
+                    permiteSepa={r.familiaConMandato}
                     hoy={hoy}
                     trigger={
                       <Button size="sm" variant="outline" disabled={pending}>

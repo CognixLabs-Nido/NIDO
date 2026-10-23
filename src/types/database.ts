@@ -3786,11 +3786,13 @@ export type Database = {
           centro_id: string
           cobro_fecha: string | null
           cobro_forma: Database["public"]["Enums"]["metodo_pago"] | null
+          cobro_importe_centimos: number | null
           cobro_nota: string | null
           concepto_esporadico: string | null
           created_at: string
           deleted_at: string | null
           devuelto_de_recibo_id: string | null
+          diferencia_de_recibo_id: string | null
           es_esporadico: boolean
           estado: Database["public"]["Enums"]["estado_recibo"]
           familia_id: string
@@ -3808,11 +3810,13 @@ export type Database = {
           centro_id: string
           cobro_fecha?: string | null
           cobro_forma?: Database["public"]["Enums"]["metodo_pago"] | null
+          cobro_importe_centimos?: number | null
           cobro_nota?: string | null
           concepto_esporadico?: string | null
           created_at?: string
           deleted_at?: string | null
           devuelto_de_recibo_id?: string | null
+          diferencia_de_recibo_id?: string | null
           es_esporadico?: boolean
           estado?: Database["public"]["Enums"]["estado_recibo"]
           familia_id: string
@@ -3830,11 +3834,13 @@ export type Database = {
           centro_id?: string
           cobro_fecha?: string | null
           cobro_forma?: Database["public"]["Enums"]["metodo_pago"] | null
+          cobro_importe_centimos?: number | null
           cobro_nota?: string | null
           concepto_esporadico?: string | null
           created_at?: string
           deleted_at?: string | null
           devuelto_de_recibo_id?: string | null
+          diferencia_de_recibo_id?: string | null
           es_esporadico?: boolean
           estado?: Database["public"]["Enums"]["estado_recibo"]
           familia_id?: string
@@ -3858,6 +3864,13 @@ export type Database = {
           {
             foreignKeyName: "recibos_devuelto_de_recibo_id_fkey"
             columns: ["devuelto_de_recibo_id"]
+            isOneToOne: false
+            referencedRelation: "recibos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recibos_diferencia_de_recibo_id_fkey"
+            columns: ["diferencia_de_recibo_id"]
             isOneToOne: false
             referencedRelation: "recibos"
             referencedColumns: ["id"]
@@ -4501,6 +4514,16 @@ export type Database = {
       centro_de_curso: { Args: { p_curso_id: string }; Returns: string }
       centro_de_remesa: { Args: { p_remesa_id: string }; Returns: string }
       cerrar_curso: { Args: { p_curso_destino_id: string }; Returns: Json }
+      cobrar_recibo_con_cheque: {
+        Args: {
+          p_fecha: string
+          p_importe_centimos: number
+          p_metodo_diferencia: string
+          p_nota: string
+          p_recibo_id: string
+        }
+        Returns: string
+      }
       confirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
       desconfirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
       contar_invitaciones_pendientes: {

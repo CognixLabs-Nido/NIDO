@@ -26,6 +26,9 @@ export const lineaEsporadicaSchema = z.object({
     .max(100000, 'cierre_cobros.validation.importe_largo'),
 })
 
+/** Métodos de un recibo esporádico. El cheque guardería / ticket restaurant, desde el PR-1b. */
+export const METODOS_ESPORADICO = ['sepa', 'efectivo', 'transferencia', 'cheque_guarderia'] as const
+
 export const reciboEsporadicoSchema = z.object({
   ninoId: z.string().uuid(),
   anio: z.number().int().min(2024).max(2100),
@@ -35,7 +38,7 @@ export const reciboEsporadicoSchema = z.object({
     .trim()
     .min(1, 'cierre_cobros.validation.concepto_requerido')
     .max(200, 'cierre_cobros.validation.concepto_largo'),
-  metodo: z.enum(['sepa', 'efectivo', 'transferencia']).nullable(),
+  metodo: z.enum(METODOS_ESPORADICO).nullable(),
   lineas: z.array(lineaEsporadicaSchema).min(1, 'cierre_cobros.validation.sin_lineas'),
 })
 export type ReciboEsporadicoInput = z.infer<typeof reciboEsporadicoSchema>

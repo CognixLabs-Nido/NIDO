@@ -15,7 +15,8 @@ import { marcarCobradoManualSchema, type MarcarCobradoManualInput } from '../sch
  * con la forma, la fecha y una nota opcional (PR-1a). Vale para un recibo 'pendiente_procesar'
  * que no sea SEPA (un SEPA pendiente va por remesa) y para un 'devuelto' (rescatado a mano). Las
  * fechas de banco de un devuelto se conservan; el método NO se toca (sigue congelado). La BD
- * repite las dos reglas (`recibos_validar_cobro_manual`). Dirección (RLS).
+ * repite las dos reglas (`recibos_validar_cobro_manual`). Dirección (RLS). El cheque guardería /
+ * ticket restaurant pide su importe y va por `cobrarConCheque` (PR-1b).
  */
 export async function marcarCobradoManual(
   input: MarcarCobradoManualInput

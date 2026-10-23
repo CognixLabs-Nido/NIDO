@@ -433,7 +433,7 @@
       "metodos": {
         "sepa": "SEPA (domiciliació)",
         "efectivo": "Efectiu",
-        "cheque_guarderia": "Xec guarderia",
+        "cheque_guarderia": "Xec guarderia / Tiquet restaurant",
         "transferencia": "Transferència"
       },
       "modalidades": {
@@ -1671,7 +1671,7 @@
     "metodos": {
       "sepa": "SEPA (domiciliació)",
       "efectivo": "Efectiu",
-      "cheque_guarderia": "Xec guarderia",
+      "cheque_guarderia": "Xec guarderia / Tiquet restaurant",
       "transferencia": "Transferència"
     },
     "estado_recibo": {
@@ -1748,7 +1748,8 @@
       "ninguno": "Sense mètode (es marca després)",
       "sepa": "SEPA (domiciliació)",
       "efectivo": "Efectiu",
-      "transferencia": "Transferència"
+      "transferencia": "Transferència",
+      "cheque_guarderia": "Xec guarderia / Tiquet restaurant"
     },
     "validation": {
       "nino_requerido": "Selecciona un xiquet/a",
@@ -1842,7 +1843,9 @@
       "importe_positivo": "L'import ha de ser major que 0",
       "fecha_cobro_invalida": "Data no vàlida",
       "fecha_cobro_futura": "La data de cobrament no pot ser futura",
-      "nota_cobro_larga": "La nota no pot passar de 500 caràcters"
+      "nota_cobro_larga": "La nota no pot passar de 500 caràcters",
+      "importe_cheque_invalido": "Indica l’import del xec.",
+      "falta_metodo_diferencia": "Tria com es cobra el que queda."
     },
     "errors": {
       "invalid": "Dades no vàlides.",
@@ -1864,7 +1867,9 @@
       "no_regirable": "Només es pot re-girar un rebut retornat.",
       "regiro_failed": "No s'ha pogut crear el re-gir.",
       "gastos_failed": "No s'han pogut registrar les despeses de devolució.",
-      "sepa_por_remesa": "Un rebut SEPA pendent es cobra per remesa. Per a cobrar-lo a mà, desconfirma'l i canvia el mètode del mes."
+      "sepa_por_remesa": "Un rebut SEPA pendent es cobra per remesa. Per a cobrar-lo a mà, desconfirma'l i canvia el mètode del mes.",
+      "cheque_supera_recibo": "El xec supera l’import del rebut. Eixe cas encara no es pot registrar.",
+      "sin_mandato_diferencia": "La família no té mandat SEPA actiu: el que queda no es pot passar al banc."
     },
     "transferencias_beca": {
       "title": "Transferències de beca menjador",
@@ -1884,12 +1889,25 @@
       "fecha": "Data de cobrament",
       "nota": "Nota (opcional)",
       "guardar": "Marcar cobrat",
-      "cancelar": "Cancel·lar"
+      "cancelar": "Cancel·lar",
+      "importe_cheque": "Import del xec",
+      "metodo_diferencia": "Queden {importe}: com es cobren?",
+      "elige_metodo": "Tria com",
+      "metodos_diferencia": {
+        "sepa": "Passar rebut (SEPA)",
+        "efectivo": "Efectiu",
+        "transferencia": "Transferència"
+      },
+      "diferencia_aparte": "Va a un rebut a banda del mateix mes, que es cobra com qualsevol altre.",
+      "diferencia_sin_mandato": "Va a un rebut a banda del mateix mes. La família no té mandat SEPA actiu, així que no es pot passar al banc."
     },
     "forma_cobro": {
       "efectivo": "Efectiu",
-      "transferencia": "Transferència"
-    }
+      "transferencia": "Transferència",
+      "cheque_guarderia": "Xec guarderia / Tiquet restaurant"
+    },
+    "cheque_de": "xec de {importe}",
+    "diferencia_en_recibo_aparte": "queden {importe} en un rebut a banda"
   },
   "becas": {
     "validation": {
@@ -3888,7 +3906,8 @@
         "origen": "Origen",
         "cobro_forma": "Cobrat en",
         "cobro_fecha": "Cobrat el",
-        "cobro_nota": "Nota del cobrament"
+        "cobro_nota": "Nota del cobrament",
+        "cobro_importe_centimos": "Import del xec"
       },
       "valores": {
         "terminos": "Termes",
@@ -3987,7 +4006,7 @@
         "sepa": "Domiciliació SEPA",
         "efectivo": "Efectiu",
         "transferencia": "Transferència",
-        "cheque_guarderia": "Xec escoleta",
+        "cheque_guarderia": "Xec guarderia / Tiquet restaurant",
         "activo": "Actiu",
         "resuelto": "Resolt",
         "reducir": "Reduir el rebut",
@@ -4290,7 +4309,7 @@
     "metodos": {
       "sepa": "SEPA (domiciliació)",
       "efectivo": "Efectiu",
-      "cheque_guarderia": "Xec guarderia",
+      "cheque_guarderia": "Xec guarderia / Tiquet restaurant",
       "transferencia": "Transferència"
     },
     "esporadico_badge": "Esporàdic",

@@ -22,8 +22,8 @@ import type { Database } from '@/types/database'
  *  - Un pendiente que no es SEPA se cobra a mano con su forma, su fecha y una nota.
  *  - Un SEPA pendiente no (va por remesa), ni un borrador: lo para el trigger
  *    `recibos_validar_cobro_manual`, también con service_role.
- *  - Sin forma o sin fecha no hay cobrado_manual (CHECK), y la forma solo es efectivo o
- *    transferencia.
+ *  - Sin forma o sin fecha no hay cobrado_manual (CHECK), y la forma nunca es SEPA (desde el
+ *    PR-1b, `20261106120000`, también cheque, que va por su función: recibos-cobro-cheque).
  *  - La nota no entra en audit_log (la forma y la fecha sí); el export del art. 15 lleva las tres.
  *  - Lo cobra Dirección: la tutora de la familia no.
  */

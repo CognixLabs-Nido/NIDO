@@ -34,9 +34,9 @@ import {
 } from '@/components/ui/select'
 
 import { crearReciboEsporadico } from '../actions/crear-recibo-esporadico'
-import { lineaEsporadicaSchema } from '../schemas/cierre'
+import { lineaEsporadicaSchema, METODOS_ESPORADICO } from '../schemas/cierre'
 
-const METODOS = ['ninguno', 'sepa', 'efectivo', 'transferencia'] as const
+const METODOS = ['ninguno', ...METODOS_ESPORADICO] as const
 
 const formSchema = z.object({
   ninoId: z.string().uuid('cierre_cobros.validation.nino_requerido'),
@@ -86,7 +86,7 @@ export function ReciboEsporadicoDialog({ anio, mes, ninos }: Props) {
         metodo:
           values.metodo === 'ninguno'
             ? null
-            : (values.metodo as 'sepa' | 'efectivo' | 'transferencia'),
+            : (values.metodo as (typeof METODOS_ESPORADICO)[number]),
         lineas: values.lineas,
       })
       if (r.success) {
