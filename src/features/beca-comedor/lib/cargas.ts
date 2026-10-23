@@ -41,6 +41,8 @@ export interface TramoParaCarga {
   anio_aplicacion: number
   mes_aplicacion: number
   importe_centimos: number
+  /** PR-5: `aplicada` = descontada en un recibo validado. */
+  estado: 'pendiente' | 'aplicada' | 'anulada'
 }
 
 export interface CargaAgrupada {
@@ -50,6 +52,8 @@ export interface CargaAgrupada {
   mesAplicacion: number
   importeCentimos: number
   nBecados: number
+  /** PR-5: cuántos de esos tramos ya están descontados en un recibo validado. */
+  nAplicados: number
 }
 
 /**
@@ -69,8 +73,10 @@ export function agruparCargas(tramos: TramoParaCarga[]): CargaAgrupada[] {
       t.importe_centimos,
     ].join(':')
     const cur = map.get(k)
+    const aplicado = t.estado === 'aplicada' ? 1 : 0
     if (cur) {
       cur.nBecados++
+      cur.nAplicados += aplicado
     } else {
       map.set(k, {
         anioCorrespondiente: t.anio_correspondiente,
@@ -79,6 +85,7 @@ export function agruparCargas(tramos: TramoParaCarga[]): CargaAgrupada[] {
         mesAplicacion: t.mes_aplicacion,
         importeCentimos: t.importe_centimos,
         nBecados: 1,
+        nAplicados: aplicado,
       })
     }
   }

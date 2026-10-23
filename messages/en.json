@@ -528,7 +528,8 @@
           "sin_becados": "No pupils with an active meal grant.",
           "save_failed": "Could not save.",
           "delete_failed": "Could not delete.",
-          "no_existe": "The batch no longer exists."
+          "no_existe": "The batch no longer exists.",
+          "carga_aplicada": "Some grants in this batch have already been deducted on confirmed receipts, so it cannot be changed. Move those receipts back to draft first."
         },
         "desborde": {
           "title": "Resolve meal grant",
@@ -563,7 +564,9 @@
             "save_failed": "Couldn’t update.",
             "no_pendiente": "The transfer is no longer pending."
           }
-        }
+        },
+        "descontadas": "{n} deducted",
+        "no_editable_descontada": "Deducted on confirmed receipts"
       },
       "tab_resumen": "Summary",
       "signos": {
@@ -1705,7 +1708,8 @@
       "recibo_en_remesa": "This receipt is in a batch: it can no longer be modified.",
       "recibo_cobrado": "This receipt has already been collected: it can no longer be modified.",
       "desconfirmar_failed": "Could not reopen the receipt.",
-      "desborde_pendiente": "This receipt has an unresolved meal grant excess: resolve it before confirming."
+      "desborde_pendiente": "This receipt has an unresolved meal grant excess: resolve it before confirming.",
+      "beca_ya_aplicada": "A meal grant on this receipt has already been deducted on another confirmed receipt. Recalculate the month before confirming it."
     },
     "desborde_aviso": "{n} receipts with a pending meal grant to resolve.",
     "desborde_badge": "Grant pending",

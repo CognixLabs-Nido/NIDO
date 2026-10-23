@@ -14,6 +14,8 @@ import type { Database } from '@/types/database'
 import { cargaBecaSchema, type CargaBecaInput } from '../schemas/beca-comedor'
 
 const RUTA = '/[locale]/admin/cuotas'
+/** HINT de `beca_tramo_proteger`: el tramo ya está descontado en un recibo validado. */
+const BECA_APLICADA = 'beca_aplicada'
 
 type Supa = SupabaseClient<Database>
 
@@ -183,6 +185,8 @@ export async function editarCarga(
   if (error) {
     logger.warn('editarCarga error', error.message)
     if (error.code === '42501') return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+    // PR-5: algún tramo ya está descontado en un recibo validado (trigger beca_tramo_proteger).
+    if (error.hint === BECA_APLICADA) return fail('admin.cuotas.beca_comedor.errors.carga_aplicada')
     return fail('admin.cuotas.beca_comedor.errors.save_failed')
   }
 
@@ -235,6 +239,8 @@ export async function borrarCarga(
   if (error) {
     logger.warn('borrarCarga error', error.message)
     if (error.code === '42501') return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
+    // PR-5: algún tramo ya está descontado en un recibo validado (trigger beca_tramo_proteger).
+    if (error.hint === BECA_APLICADA) return fail('admin.cuotas.beca_comedor.errors.carga_aplicada')
     return fail('admin.cuotas.beca_comedor.errors.delete_failed')
   }
 

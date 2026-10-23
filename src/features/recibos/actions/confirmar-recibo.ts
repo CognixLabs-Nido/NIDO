@@ -16,6 +16,8 @@ const loteSchema = z.object({ reciboIds: z.array(z.string().uuid()).min(1).max(5
 
 /** PR-3: el HINT del trigger `recibos_validar_sin_desborde`. */
 const DESBORDE_PENDIENTE = 'desborde_pendiente'
+/** HINT de `recibos_aplicar_becas` (PR-5): una beca del recibo ya está descontada en otro. */
+const BECA_YA_APLICADA = 'beca_ya_aplicada'
 
 /**
  * F-4-4: confirma UN recibo (borrador→pendiente_procesar) vía `confirmar_recibo`. La RPC
@@ -38,6 +40,7 @@ export async function confirmarRecibo(
     logger.warn('confirmarRecibo error', error.message)
     if (error.code === '42501') return fail('recibos_panel.errors.no_autorizado')
     if (error.hint === DESBORDE_PENDIENTE) return fail('recibos_panel.errors.desborde_pendiente')
+    if (error.hint === BECA_YA_APLICADA) return fail('recibos_panel.errors.beca_ya_aplicada')
     return fail('recibos_panel.errors.confirmar_failed')
   }
 

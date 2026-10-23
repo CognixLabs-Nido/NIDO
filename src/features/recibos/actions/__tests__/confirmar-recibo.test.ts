@@ -135,4 +135,17 @@ describe('confirmarRecibo (uno)', () => {
       error: 'recibos_panel.errors.confirmar_failed',
     })
   })
+
+  it('PR-5: una beca ya descontada en otro recibo se traduce a su aviso', async () => {
+    respuestaUno.data = null
+    respuestaUno.error = {
+      code: 'P0001',
+      message: 'el recibo descuenta 1 becas y solo 0 siguen pendientes',
+      hint: 'beca_ya_aplicada',
+    }
+    expect(await confirmarRecibo(ID)).toEqual({
+      success: false,
+      error: 'recibos_panel.errors.beca_ya_aplicada',
+    })
+  })
 })

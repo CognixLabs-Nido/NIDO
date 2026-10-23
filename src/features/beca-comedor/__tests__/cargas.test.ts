@@ -30,13 +30,15 @@ describe('agruparCargas', () => {
     mesAplic: number,
     importe: number,
     anioCorr = 2026,
-    anioAplic = 2027
+    anioAplic = 2027,
+    estado: TramoParaCarga['estado'] = 'pendiente'
   ): TramoParaCarga => ({
     anio_correspondiente: anioCorr,
     mes_correspondiente: mesCorr,
     anio_aplicacion: anioAplic,
     mes_aplicacion: mesAplic,
     importe_centimos: importe,
+    estado,
   })
 
   it('agrupa por (año/mes corr, año/mes aplic, importe) y cuenta becados', () => {
@@ -65,6 +67,20 @@ describe('agruparCargas', () => {
 
   it('lista vacía → sin cargas', () => {
     expect(agruparCargas([])).toEqual([])
+  })
+
+  // PR-5: cuántos tramos de la carga ya están descontados en un recibo validado.
+  it('cuenta los tramos aplicados de cada carga; pendientes y anulados no', () => {
+    const cargas = agruparCargas([
+      t(9, 1, 5000, 2026, 2027, 'aplicada'),
+      t(9, 1, 5000, 2026, 2027, 'pendiente'),
+      t(9, 1, 5000, 2026, 2027, 'aplicada'),
+      t(10, 1, 4000, 2026, 2027, 'anulada'),
+    ])
+    expect(cargas.map((c) => [c.mesCorrespondiente, c.nBecados, c.nAplicados])).toEqual([
+      [9, 3, 2],
+      [10, 1, 0],
+    ])
   })
 })
 

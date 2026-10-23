@@ -94,16 +94,28 @@ export async function resolverDesborde(
     if (ninoIds.length === 0) return fail(`${ERR}.sin_hijos`)
     familiaNinoIds = ninoIds
 
-    // Beca aplicada a cada hijo en el mes del desborde = suma de sus tramos pendientes con
-    // (anio/mes_aplicacion) = mes del desborde (lo mismo que sumó el motor).
-    const { data: tramos } = await supabase
-      .from('beca_comedor_tramo')
-      .select('nino_id, importe_centimos, curso_academico_id')
+    // Beca de cada hijo en el desborde = los tramos que descuenta ESTE recibo: los de sus
+    // líneas de beca (PR-5, `lineas_recibo.beca_tramo_id`), que es lo que sumó el motor. No
+    // «los pendientes del mes»: un tramo pasa a `aplicada` al validarse su recibo, y una carga
+    // creada después de generar el borrador está pendiente pero no está en él.
+    const { data: lineasBeca } = await supabase
+      .from('lineas_recibo')
+      .select('beca_tramo_id')
       .eq('centro_id', centroId)
-      .eq('anio_aplicacion', desborde.anio)
-      .eq('mes_aplicacion', desborde.mes)
-      .eq('estado', 'pendiente')
-      .in('nino_id', ninoIds)
+      .eq('recibo_id', desborde.recibo_id)
+      .not('beca_tramo_id', 'is', null)
+    const tramoIds = [
+      ...new Set((lineasBeca ?? []).flatMap((l) => (l.beca_tramo_id ? [l.beca_tramo_id] : []))),
+    ]
+    const { data: tramos } =
+      tramoIds.length === 0
+        ? { data: [] }
+        : await supabase
+            .from('beca_comedor_tramo')
+            .select('nino_id, importe_centimos, curso_academico_id')
+            .eq('centro_id', centroId)
+            .in('id', tramoIds)
+            .in('nino_id', ninoIds)
 
     const becaPorNino = new Map<string, number>()
     const cursoPorNino = new Map<string, string>()
