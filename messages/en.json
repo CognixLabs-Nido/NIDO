@@ -1748,7 +1748,8 @@
       "ninguno": "No method (set later)",
       "sepa": "SEPA (direct debit)",
       "efectivo": "Cash",
-      "transferencia": "Bank transfer"
+      "transferencia": "Bank transfer",
+      "cheque_guarderia": "Childcare voucher"
     },
     "validation": {
       "nino_requerido": "Select a child",
@@ -1842,7 +1843,9 @@
       "importe_positivo": "The amount must be greater than 0",
       "fecha_cobro_invalida": "Invalid date",
       "fecha_cobro_futura": "The payment date cannot be in the future",
-      "nota_cobro_larga": "The note cannot be longer than 500 characters"
+      "nota_cobro_larga": "The note cannot be longer than 500 characters",
+      "importe_cheque_invalido": "Enter the voucher amount.",
+      "falta_metodo_diferencia": "Choose how the rest will be paid."
     },
     "errors": {
       "invalid": "Invalid data.",
@@ -1864,7 +1867,9 @@
       "no_regirable": "Only a returned receipt can be re-charged.",
       "regiro_failed": "Could not create the re-charge.",
       "gastos_failed": "Could not register the return fees.",
-      "sepa_por_remesa": "A pending direct debit receipt is collected through a remittance. To mark it as paid by hand, unconfirm it and change the method for the month."
+      "sepa_por_remesa": "A pending direct debit receipt is collected through a remittance. To mark it as paid by hand, unconfirm it and change the method for the month.",
+      "cheque_supera_recibo": "The voucher is for more than the receipt. That case cannot be recorded yet.",
+      "sin_mandato_diferencia": "The family has no active SEPA mandate: the rest cannot go to the bank."
     },
     "transferencias_beca": {
       "title": "Meal grant transfers",
@@ -1884,12 +1889,25 @@
       "fecha": "Payment date",
       "nota": "Note (optional)",
       "guardar": "Mark as paid",
-      "cancelar": "Cancel"
+      "cancelar": "Cancel",
+      "importe_cheque": "Voucher amount",
+      "metodo_diferencia": "{importe} left to pay: how will it be paid?",
+      "elige_metodo": "Choose how",
+      "metodos_diferencia": {
+        "sepa": "Direct debit (SEPA)",
+        "efectivo": "Cash",
+        "transferencia": "Bank transfer"
+      },
+      "diferencia_aparte": "It goes to a separate receipt for the same month, collected like any other.",
+      "diferencia_sin_mandato": "It goes to a separate receipt for the same month. The family has no active SEPA mandate, so it cannot go to the bank."
     },
     "forma_cobro": {
       "efectivo": "Cash",
-      "transferencia": "Bank transfer"
-    }
+      "transferencia": "Bank transfer",
+      "cheque_guarderia": "Childcare voucher"
+    },
+    "cheque_de": "voucher for {importe}",
+    "diferencia_en_recibo_aparte": "{importe} left in a separate receipt"
   },
   "becas": {
     "validation": {
@@ -3888,7 +3906,8 @@
         "origen": "Origin",
         "cobro_forma": "Paid by",
         "cobro_fecha": "Paid on",
-        "cobro_nota": "Payment note"
+        "cobro_nota": "Payment note",
+        "cobro_importe_centimos": "Voucher amount"
       },
       "valores": {
         "terminos": "Terms",

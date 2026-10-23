@@ -433,7 +433,7 @@
       "metodos": {
         "sepa": "SEPA (domiciliación)",
         "efectivo": "Efectivo",
-        "cheque_guarderia": "Cheque guardería",
+        "cheque_guarderia": "Cheque guardería / Ticket restaurant",
         "transferencia": "Transferencia"
       },
       "modalidades": {
@@ -1671,7 +1671,7 @@
     "metodos": {
       "sepa": "SEPA (domiciliación)",
       "efectivo": "Efectivo",
-      "cheque_guarderia": "Cheque guardería",
+      "cheque_guarderia": "Cheque guardería / Ticket restaurant",
       "transferencia": "Transferencia"
     },
     "estado_recibo": {
@@ -1748,7 +1748,8 @@
       "ninguno": "Sin método (lo marca luego)",
       "sepa": "SEPA (domiciliación)",
       "efectivo": "Efectivo",
-      "transferencia": "Transferencia"
+      "transferencia": "Transferencia",
+      "cheque_guarderia": "Cheque guardería / Ticket restaurant"
     },
     "validation": {
       "nino_requerido": "Selecciona un niño/a",
@@ -1842,7 +1843,9 @@
       "importe_positivo": "El importe debe ser mayor que 0",
       "fecha_cobro_invalida": "Fecha no válida",
       "fecha_cobro_futura": "La fecha de cobro no puede ser futura",
-      "nota_cobro_larga": "La nota no puede pasar de 500 caracteres"
+      "nota_cobro_larga": "La nota no puede pasar de 500 caracteres",
+      "importe_cheque_invalido": "Indica el importe del cheque.",
+      "falta_metodo_diferencia": "Elige cómo se cobra lo que queda."
     },
     "errors": {
       "invalid": "Datos no válidos.",
@@ -1864,7 +1867,9 @@
       "no_regirable": "Solo puede re-girarse un recibo devuelto.",
       "regiro_failed": "No se pudo crear el re-giro.",
       "gastos_failed": "No se pudieron registrar los gastos de devolución.",
-      "sepa_por_remesa": "Un recibo SEPA pendiente se cobra por remesa. Para cobrarlo a mano, desconfírmalo y cambia el método del mes."
+      "sepa_por_remesa": "Un recibo SEPA pendiente se cobra por remesa. Para cobrarlo a mano, desconfírmalo y cambia el método del mes.",
+      "cheque_supera_recibo": "El cheque supera el importe del recibo. Ese caso todavía no se puede registrar.",
+      "sin_mandato_diferencia": "La familia no tiene mandato SEPA activo: lo que queda no se puede pasar al banco."
     },
     "transferencias_beca": {
       "title": "Transferencias de beca comedor",
@@ -1884,12 +1889,25 @@
       "fecha": "Fecha de cobro",
       "nota": "Nota (opcional)",
       "guardar": "Marcar cobrado",
-      "cancelar": "Cancelar"
+      "cancelar": "Cancelar",
+      "importe_cheque": "Importe del cheque",
+      "metodo_diferencia": "Quedan {importe}: ¿cómo se cobran?",
+      "elige_metodo": "Elige cómo",
+      "metodos_diferencia": {
+        "sepa": "Pasar recibo (SEPA)",
+        "efectivo": "Efectivo",
+        "transferencia": "Transferencia"
+      },
+      "diferencia_aparte": "Va a un recibo aparte del mismo mes, que se cobra como cualquier otro.",
+      "diferencia_sin_mandato": "Va a un recibo aparte del mismo mes. La familia no tiene mandato SEPA activo, así que no se puede pasar al banco."
     },
     "forma_cobro": {
       "efectivo": "Efectivo",
-      "transferencia": "Transferencia"
-    }
+      "transferencia": "Transferencia",
+      "cheque_guarderia": "Cheque guardería / Ticket restaurant"
+    },
+    "cheque_de": "cheque de {importe}",
+    "diferencia_en_recibo_aparte": "quedan {importe} en un recibo aparte"
   },
   "becas": {
     "validation": {
@@ -3888,7 +3906,8 @@
         "origen": "Origen",
         "cobro_forma": "Cobrado en",
         "cobro_fecha": "Cobrado el",
-        "cobro_nota": "Nota del cobro"
+        "cobro_nota": "Nota del cobro",
+        "cobro_importe_centimos": "Importe del cheque"
       },
       "valores": {
         "terminos": "Términos",
@@ -3987,7 +4006,7 @@
         "sepa": "Domiciliación SEPA",
         "efectivo": "Efectivo",
         "transferencia": "Transferencia",
-        "cheque_guarderia": "Cheque guardería",
+        "cheque_guarderia": "Cheque guardería / Ticket restaurant",
         "activo": "Activo",
         "resuelto": "Resuelto",
         "reducir": "Reducir el recibo",
@@ -4290,7 +4309,7 @@
     "metodos": {
       "sepa": "SEPA (domiciliación)",
       "efectivo": "Efectivo",
-      "cheque_guarderia": "Cheque guardería",
+      "cheque_guarderia": "Cheque guardería / Ticket restaurant",
       "transferencia": "Transferencia"
     },
     "esporadico_badge": "Esporádico",

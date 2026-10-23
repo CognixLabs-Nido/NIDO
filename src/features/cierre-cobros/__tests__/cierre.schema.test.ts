@@ -31,10 +31,14 @@ describe('cierre — reciboEsporadicoSchema', () => {
     expect(reciboEsporadicoSchema.safeParse({ ...base, metodo: 'sepa' }).success).toBe(true)
   })
 
-  it('rechaza cheque_guarderia como método (ya no existe)', () => {
+  it('acepta cheque guardería / ticket restaurant como método (PR-1b)', () => {
     expect(reciboEsporadicoSchema.safeParse({ ...base, metodo: 'cheque_guarderia' }).success).toBe(
-      false
+      true
     )
+  })
+
+  it('rechaza un método que no existe', () => {
+    expect(reciboEsporadicoSchema.safeParse({ ...base, metodo: 'bizum' }).success).toBe(false)
   })
 
   it('rechaza sin líneas', () => {

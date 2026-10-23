@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  cobrarConChequeSchema,
+  crearCobroDialogSchema,
   crearRegiroSchema,
   crearRemesaSchema,
   datosAcreedorSchema,
@@ -108,12 +110,48 @@ describe('esquemas de devolución (B-6)', () => {
     expect(marcarCobradoManualSchema.safeParse({ reciboId: UUID }).success).toBe(false)
     expect(marcarCobradoManualSchema.safeParse({ ...base, reciboId: 'x' }).success).toBe(false)
     expect(marcarCobradoManualSchema.safeParse({ ...base, forma: 'sepa' }).success).toBe(false)
+    // El cheque pide su importe: va por cobrarConChequeSchema, no por aquí (PR-1b).
+    expect(
+      marcarCobradoManualSchema.safeParse({ ...base, forma: 'cheque_guarderia' }).success
+    ).toBe(false)
     expect(marcarCobradoManualSchema.safeParse({ ...base, fecha: '20/10/2026' }).success).toBe(
       false
     )
     expect(marcarCobradoManualSchema.safeParse({ ...base, nota: 'x'.repeat(501) }).success).toBe(
       false
     )
+  })
+
+  it('cobrarConChequeSchema (PR-1b): importe > 0, fecha, nota ≤ 500 y la diferencia sin cheque', () => {
+    const base = { reciboId: UUID, importe_euros: 100, fecha: '2026-10-20' }
+    expect(cobrarConChequeSchema.safeParse(base).success).toBe(true)
+    for (const metodoDiferencia of ['sepa', 'efectivo', 'transferencia']) {
+      expect(cobrarConChequeSchema.safeParse({ ...base, metodoDiferencia }).success).toBe(true)
+    }
+    expect(
+      cobrarConChequeSchema.safeParse({ ...base, metodoDiferencia: 'cheque_guarderia' }).success
+    ).toBe(false)
+    expect(cobrarConChequeSchema.safeParse({ ...base, importe_euros: 0 }).success).toBe(false)
+    expect(cobrarConChequeSchema.safeParse({ ...base, importe_euros: -1 }).success).toBe(false)
+    expect(cobrarConChequeSchema.safeParse({ ...base, fecha: '20/10/2026' }).success).toBe(false)
+    expect(cobrarConChequeSchema.safeParse({ ...base, nota: 'x'.repeat(501) }).success).toBe(false)
+  })
+
+  it('crearCobroDialogSchema (PR-1b): con cheque, importe obligatorio, ≤ total, y método si queda algo', () => {
+    const schema = crearCobroDialogSchema(11000)
+    const base = { reciboId: UUID, forma: 'cheque_guarderia', fecha: '2026-10-20' }
+    const error = (v: object) => {
+      const r = schema.safeParse({ ...base, ...v })
+      return r.success ? null : r.error.issues[0]?.message
+    }
+    // Premisa: sin cheque no pide importe ni método.
+    expect(error({ forma: 'efectivo' })).toBeNull()
+    expect(error({ importe_euros: 110 })).toBeNull()
+    expect(error({})).toBe('remesas.validation.importe_cheque_invalido')
+    expect(error({ importe_euros: 0 })).toBe('remesas.validation.importe_cheque_invalido')
+    expect(error({ importe_euros: 110.01 })).toBe('remesas.errors.cheque_supera_recibo')
+    expect(error({ importe_euros: 100 })).toBe('remesas.validation.falta_metodo_diferencia')
+    expect(error({ importe_euros: 100, metodoDiferencia: 'efectivo' })).toBeNull()
   })
 
   it('crearRegiroSchema exige uuid', () => {

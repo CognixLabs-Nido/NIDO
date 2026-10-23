@@ -147,6 +147,7 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'cobro_forma',
   'cobro_fecha',
   'cobro_nota',
+  'cobro_importe_centimos',
   'cantidad',
   'precio_unitario_centimos',
   'importe_centimos',

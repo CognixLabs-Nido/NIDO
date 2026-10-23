@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   cobrableAMano,
   entraEnGestion,
+  formaPorDefecto,
   ordenarGestion,
   type ReciboGestion,
 } from '../gestion-cobros'
@@ -27,6 +28,9 @@ function recibo(over: Partial<ReciboGestion>): ReciboGestion {
     cobroForma: null,
     cobroFecha: null,
     cobroNota: null,
+    cobroImporteCentimos: null,
+    esDiferenciaCheque: false,
+    familiaConMandato: false,
     ...over,
   }
 }
@@ -59,6 +63,17 @@ describe('cobrableAMano', () => {
     expect(cobrableAMano(recibo({ metodo: 'sepa' }))).toBe(false)
     expect(cobrableAMano(recibo({ estado: 'enviado_banco', metodo: 'sepa' }))).toBe(false)
     expect(cobrableAMano(recibo({ estado: 'cobrado_manual' }))).toBe(false)
+  })
+})
+
+describe('formaPorDefecto', () => {
+  it('propone la forma del método cuando se cobra a mano (transferencia o cheque); si no, efectivo', () => {
+    expect(formaPorDefecto({ metodo: 'transferencia' })).toBe('transferencia')
+    expect(formaPorDefecto({ metodo: 'cheque_guarderia' })).toBe('cheque_guarderia')
+    expect(formaPorDefecto({ metodo: 'efectivo' })).toBe('efectivo')
+    expect(formaPorDefecto({ metodo: null })).toBe('efectivo')
+    // Un devuelto SEPA se rescata a mano: no hay forma «sepa».
+    expect(formaPorDefecto({ metodo: 'sepa' })).toBe('efectivo')
   })
 })
 

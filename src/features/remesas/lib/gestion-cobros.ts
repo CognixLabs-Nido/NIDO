@@ -20,6 +20,12 @@ export interface ReciboGestion {
   cobroForma: MetodoPago | null
   cobroFecha: string | null
   cobroNota: string | null
+  /** PR-1b: el importe del cheque guardería / ticket restaurant (solo con esa forma). */
+  cobroImporteCentimos: number | null
+  /** PR-1b: ¿es el recibo esporádico de la diferencia de un cheque? */
+  esDiferenciaCheque: boolean
+  /** ¿Tiene la familia mandato SEPA activo? Sin él, la diferencia no se puede pasar al banco. */
+  familiaConMandato: boolean
 }
 
 /** Estados que lee la gestión: los pendientes y los que ya están en el ciclo de cobro. */
@@ -44,6 +50,17 @@ export function entraEnGestion(r: { estado: EstadoRecibo; metodo: MetodoPago | n
 export function cobrableAMano(r: Pick<ReciboGestion, 'estado' | 'metodo'>): boolean {
   if (r.estado === 'devuelto') return true
   return r.estado === 'pendiente_procesar' && r.metodo !== 'sepa'
+}
+
+/**
+ * La forma que propone «Marcar cobrado»: la del método del recibo cuando se cobra a mano
+ * (transferencia o cheque); si no, efectivo.
+ */
+export function formaPorDefecto(
+  r: Pick<ReciboGestion, 'metodo'>
+): 'efectivo' | 'transferencia' | 'cheque_guarderia' {
+  if (r.metodo === 'transferencia' || r.metodo === 'cheque_guarderia') return r.metodo
+  return 'efectivo'
 }
 
 const ORDEN: Record<EstadoRecibo, number> = {
