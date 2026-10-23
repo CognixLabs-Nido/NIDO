@@ -116,6 +116,11 @@ DECLARE
 BEGIN
   -- Vale para todos, también para service_role: un re-giro es la salida «banco» de una devolución.
   IF TG_OP = 'INSERT' THEN
+    IF NEW.devuelto_de_recibo_id IS NOT NULL
+       AND v_marca IS DISTINCT FROM NEW.devuelto_de_recibo_id::text THEN
+      RAISE EXCEPTION 'un re-giro se crea con resolver_devolucion'
+        USING ERRCODE = 'P0001', HINT = 'devolucion_por_funcion';
+    END IF;
     RETURN NEW;
   END IF;
 
@@ -631,7 +636,7 @@ DECLARE
   v_md5 text;
   v_esperado jsonb := jsonb_build_object(
     'public.export_datos_sujeto(text,uuid)', '890a1d672ed3202520c26499a11ac8dd',
-    'public.recibos_validar_devolucion()', '7c7cfa2081f1dacbe3cbdb2dd1d8996f',
+    'public.recibos_validar_devolucion()', '689b8a3bd25ae1dea5881b958bd7ff78',
     'public.resolver_devolucion(uuid,text,date,text)', '4c4d6d22bdc6a579394e4a5d9b01d245');
 BEGIN
   FOR v_firma IN SELECT jsonb_object_keys(v_esperado) LOOP
