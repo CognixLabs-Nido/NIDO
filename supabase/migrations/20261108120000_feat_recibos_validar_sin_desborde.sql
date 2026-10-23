@@ -63,7 +63,7 @@ BEGIN
     SELECT d.exceso_centimos INTO v_exceso
       FROM public.beca_comedor_desborde d
      WHERE d.recibo_id = NEW.id AND d.estado = 'pendiente';
-    IF FALSE THEN
+    IF FOUND THEN
       RAISE EXCEPTION 'el recibo tiene un desborde de beca pendiente de % céntimos: se resuelve antes de validarlo', v_exceso
         USING ERRCODE = 'P0001', HINT = 'desborde_pendiente';
     END IF;
@@ -84,7 +84,7 @@ DECLARE
 BEGIN
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure('public.recibos_validar_sin_desborde()');
-  IF v_md5 IS DISTINCT FROM '8dc7894f14086defcec06f8b0d6743a6' THEN
+  IF v_md5 IS DISTINCT FROM 'afab67acc019ea7ebbd428ede76d5f27' THEN
     RAISE EXCEPTION 'recibos_validar_sin_desborde no quedó como este fichero: %', coalesce(v_md5, 'falta');
   END IF;
   IF NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'public.recibos_validar_sin_desborde()'::regprocedure) THEN
