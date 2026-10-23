@@ -64,6 +64,7 @@ function mandato(familiaId: string, iban: string, id: string, metodo: 'digital' 
 describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia', () => {
   let centro: { id: string }
   let admin: TestUser
+  let directora: TestUser
   let profe: TestUser
   let tutor: TestUser
   let tutorAlta: TestUser
@@ -71,6 +72,7 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
   let familiaAlta: string // en su alta: matrícula pendiente
   let familiaPresencial: string // ya dada de alta; el mandato lo registra Dirección
   let cAdmin: SupabaseClient<Database>
+  let cDirectora: SupabaseClient<Database>
   let cProfe: SupabaseClient<Database>
   let cTutor: SupabaseClient<Database>
   let cTutorAlta: SupabaseClient<Database>
@@ -110,10 +112,12 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
     const curso = await createTestCurso(centro.id)
     const aula = await createTestAula(centro.id, curso.id)
     admin = await createTestUser({ nombre: 'Admin Aviso Domiciliacion' })
+    directora = await createTestUser({ nombre: 'Directora Aviso Domiciliacion' })
     profe = await createTestUser({ nombre: 'Profe Aviso Domiciliacion' })
     tutor = await createTestUser({ nombre: 'Tutor Aviso Domiciliacion' })
     tutorAlta = await createTestUser({ nombre: 'Tutor Alta Aviso Domiciliacion' })
     await asignarRol(admin.id, centro.id, 'admin')
+    await asignarRol(directora.id, centro.id, 'directora')
     await asignarRol(profe.id, centro.id, 'profe')
 
     familia = await createTestFamilia(centro.id)
@@ -135,6 +139,7 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
     await matricular(await nino(familiaPresencial, 'Nino Presencial Aviso'), aula.id, curso.id)
 
     cAdmin = await clientFor(admin)
+    cDirectora = await clientFor(directora)
     cProfe = await clientFor(profe)
     cTutor = await clientFor(tutor)
     cTutorAlta = await clientFor(tutorAlta)
@@ -143,7 +148,7 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
   afterAll(async () => {
     await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centro.id)
     await deleteTestCentro(centro.id)
-    for (const u of [admin, profe, tutor, tutorAlta]) await deleteTestUser(u.id)
+    for (const u of [admin, directora, profe, tutor, tutorAlta]) await deleteTestUser(u.id)
   })
 
   it('premisa: dos familias ya dadas de alta, una en su alta, y ningún aviso todavía', async () => {
@@ -171,8 +176,9 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
     expect(await avisoAdmin()).toEqual([familia])
   })
 
-  it('el mandato presencial que registra Dirección no le avisa a ella misma', async () => {
-    const { error } = await cAdmin.rpc(
+  it('el mandato presencial no avisa, aunque lo registre otra persona de Dirección', async () => {
+    // Lo registra la directora y mira la admin: no lo excluye «otro usuario», sino «solo digital».
+    const { error } = await cDirectora.rpc(
       'registrar_mandato_sepa',
       mandato(familiaPresencial, IBAN, 'AVISO-PRES', 'presencial')
     )
