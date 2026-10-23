@@ -30,8 +30,9 @@ const inputSchema = z.object({
 })
 
 /**
- * F-4-4: fija el método de pago de la FAMILIA para el mes (`metodo_pago_familia`, ya grano
- * familia). Evita la trampa del método congelado: el motor congela `recibo.metodo` AL
+ * F-4-4 / PR-7: fija el método de pago de la FAMILIA para el mes. El método habitual vive en la
+ * ficha (`familias.metodo_pago`); este selector guarda la EXCEPCIÓN de un solo mes
+ * (`metodo_pago_familia`), y elegir el de la ficha la quita. Evita la trampa del método congelado: el motor congela `recibo.metodo` AL
  * GENERAR, así que si el recibo regular del mes está en BORRADOR se le refleja el cambio
  * con un UPDATE directo (el freeze POR ESTADO lo permite en borrador). Si está confirmado,
  * NO se toca (queda congelado; la UI deshabilita el selector). Solo admin.
@@ -64,8 +65,8 @@ export async function setMetodoPagoFamilia(
 }
 
 /**
- * Núcleo testeable. (1) Upsert de la preferencia de método de la familia/mes. (2) Si el
- * recibo regular del mes está en BORRADOR, refleja el método con un UPDATE directo (el
+ * Núcleo testeable. (1) Si el método es el de la ficha, quita la excepción del mes (si la hay);
+ * si no, la upserta. (2) Si el recibo regular del mes está en BORRADOR, refleja el método con un UPDATE directo (el
  * freeze lo permite en borrador); si está CONFIRMADO, NO lo toca (queda congelado).
  */
 export async function setMetodoPagoFamiliaCore(
@@ -73,7 +74,20 @@ export async function setMetodoPagoFamiliaCore(
   centroId: string,
   input: MetodoInput
 ): Promise<ActionResult<void>> {
-  // 1. Upsert de la preferencia de método de la familia/mes (fuente de futuras generaciones).
+  // PR-7: el de la ficha no es una excepción. Guardarlo como tal dejaría el mes clavado a ese
+  // método aunque la directora cambiara después la ficha.
+  const { data: familia, error: famErr } = await supabase
+    .from('familias')
+    .select('metodo_pago')
+    .eq('id', input.familiaId)
+    .maybeSingle()
+  if (famErr || !familia) {
+    logger.warn('setMetodoPagoFamilia familia', famErr?.message ?? 'sin familia')
+    return fail('recibos_panel.errors.metodo_failed')
+  }
+  const esElDeLaFicha = input.metodo === familia.metodo_pago
+
+  // 1. La excepción del mes: se quita si es el de la ficha, se upserta si no.
   const { data: existente, error: selErr } = await supabase
     .from('metodo_pago_familia')
     .select('id')
@@ -88,18 +102,25 @@ export async function setMetodoPagoFamiliaCore(
     return fail('recibos_panel.errors.metodo_failed')
   }
 
-  const { error: upErr } = existente
-    ? await supabase
-        .from('metodo_pago_familia')
-        .update({ metodo: input.metodo })
-        .eq('id', existente.id)
-    : await supabase.from('metodo_pago_familia').insert({
-        centro_id: centroId,
-        familia_id: input.familiaId,
-        anio: input.anio,
-        mes: input.mes,
-        metodo: input.metodo,
-      })
+  const { error: upErr } = esElDeLaFicha
+    ? existente
+      ? await supabase
+          .from('metodo_pago_familia')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', existente.id)
+      : { error: null }
+    : existente
+      ? await supabase
+          .from('metodo_pago_familia')
+          .update({ metodo: input.metodo })
+          .eq('id', existente.id)
+      : await supabase.from('metodo_pago_familia').insert({
+          centro_id: centroId,
+          familia_id: input.familiaId,
+          anio: input.anio,
+          mes: input.mes,
+          metodo: input.metodo,
+        })
 
   if (upErr) {
     logger.warn('setMetodoPagoFamilia upsert', upErr.message)

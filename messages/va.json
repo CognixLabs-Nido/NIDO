@@ -1203,6 +1203,17 @@
         "errors": {
           "no_aplicable": "No s'ha pogut: la família ja té titular o el tutor ja no és el segon tutor. Recarrega la pàgina."
         }
+      },
+      "metodo_pago": {
+        "titulo": "Forma de pagament",
+        "etiqueta": "Com paga la família",
+        "hint": "Cada rebut agafa este mètode quan es genera. Per a un sol mes, canvia-ho en la llista de rebuts.",
+        "guardado": "Forma de pagament guardada.",
+        "sepa_sin_mandato": "Paga amb rebut pel banc, però no consta cap mandat SEPA actiu: els seus rebuts no podran entrar en la remesa. Registra la domiciliació o canvia la forma de pagament.",
+        "errors": {
+          "invalido": "Forma de pagament no vàlida.",
+          "guardado": "No s'ha pogut guardar la forma de pagament."
+        }
       }
     },
     "fotosRevocadas": {
@@ -1744,7 +1755,9 @@
     "desconfirmado_ok": "Rebut reobert. Edita’l i torna a confirmar-lo.",
     "desconfirmado_reabre": "Rebut reobert. El mes torna a estar obert fins que el confirmes de nou.",
     "lote_saltados": "{n} rebuts no s'han confirmat: tenen un excés de beca menjador sense resoldre.",
-    "lote_saltado_fila": "{familia} · excés de {importe}"
+    "lote_saltado_fila": "{familia} · excés de {importe}",
+    "metodo_excepcion": "Només este mes · en la fitxa: {ficha}",
+    "metodo_sepa_sin_mandato": "Sense mandat SEPA actiu: no entrarà en la remesa."
   },
   "cierre_cobros": {
     "estado_titulo": "Estat del mes",
@@ -3910,6 +3923,7 @@
         "ip_firma": "IP en signar",
         "navegador_firma": "Navegador en signar",
         "familia": "Família",
+        "metodo_pago": "Forma de pagament habitual",
         "recibos": "Rebuts",
         "lineas": "Línies",
         "metodos_pago": "Formes de pagament",

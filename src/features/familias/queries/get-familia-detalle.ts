@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import type { Database } from '@/types/database'
 
 import { getNinosDeFamilia, type NinoDeFamiliaItem } from './get-ninos-de-familia'
 
@@ -23,6 +24,8 @@ export interface FamiliaDetalle {
   id: string
   etiqueta: string | null
   estado: 'activa' | 'inactiva'
+  /** PR-7: cómo paga la familia; lo coge cada recibo al generar. */
+  metodo_pago: Database['public']['Enums']['metodo_pago']
   tutores: TutorDetalle[]
   hijos: NinoDeFamiliaItem[]
 }
@@ -41,7 +44,7 @@ export async function getFamiliaDetalle(
 
   const { data: familia } = await supabase
     .from('familias')
-    .select('id, etiqueta, deleted_at, centro_id')
+    .select('id, etiqueta, deleted_at, centro_id, metodo_pago')
     .eq('id', familiaId)
     .maybeSingle()
   if (!familia || familia.centro_id !== centroId) return null
@@ -78,6 +81,7 @@ export async function getFamiliaDetalle(
     id: familia.id,
     etiqueta: familia.etiqueta,
     estado: familia.deleted_at ? 'inactiva' : 'activa',
+    metodo_pago: familia.metodo_pago,
     tutores,
     hijos,
   }

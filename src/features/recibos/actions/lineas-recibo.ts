@@ -149,7 +149,7 @@ export async function crearReciboConLineaManual(
   // desde el cliente y así no se crea un recibo de una familia de un centro donde no se dirige.
   const { data: familia } = await supabase
     .from('familias')
-    .select('id, centro_id')
+    .select('id, centro_id, metodo_pago')
     .eq('id', parsed.data.familiaId)
     .is('deleted_at', null)
     .maybeSingle()
@@ -181,7 +181,8 @@ export async function crearReciboConLineaManual(
     .maybeSingle()
   if (yaExiste) return fail('recibos_panel.errors.recibo_ya_existe')
 
-  // Método CONGELADO de la familia para el mes, igual que hace el motor al crear la carcasa.
+  // Método CONGELADO, igual que hace el motor al crear la carcasa: la excepción del mes si la
+  // hay; si no, el de la ficha de la familia (PR-7).
   const { data: pref } = await supabase
     .from('metodo_pago_familia')
     .select('metodo')
@@ -199,7 +200,7 @@ export async function crearReciboConLineaManual(
       nino_id: null,
       anio: parsed.data.anio,
       mes: parsed.data.mes,
-      metodo: pref?.metodo ?? null,
+      metodo: pref?.metodo ?? familia.metodo_pago,
       estado: 'borrador',
       total_centimos: 0,
       es_esporadico: false,

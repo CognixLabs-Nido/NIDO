@@ -1203,6 +1203,17 @@
         "errors": {
           "no_aplicable": "It could not be done: the family already has a primary guardian or this guardian is no longer the second one. Reload the page."
         }
+      },
+      "metodo_pago": {
+        "titulo": "Payment method",
+        "etiqueta": "How the family pays",
+        "hint": "Each receipt takes this method when it is generated. For a single month, change it in the receipts list.",
+        "guardado": "Payment method saved.",
+        "sepa_sin_mandato": "Pays by bank direct debit, but no active SEPA mandate is on record: their receipts cannot go into the remittance. Register the direct debit or change the payment method.",
+        "errors": {
+          "invalido": "Invalid payment method.",
+          "guardado": "The payment method could not be saved."
+        }
       }
     },
     "fotosRevocadas": {
@@ -1744,7 +1755,9 @@
     "desconfirmado_ok": "Receipt reopened. Edit it and confirm it again.",
     "desconfirmado_reabre": "Receipt reopened. The month is open again until you confirm it once more.",
     "lote_saltados": "{n} receipts were not confirmed: they have an unresolved meal grant excess.",
-    "lote_saltado_fila": "{familia} · excess of {importe}"
+    "lote_saltado_fila": "{familia} · excess of {importe}",
+    "metodo_excepcion": "This month only · on file: {ficha}",
+    "metodo_sepa_sin_mandato": "No active SEPA mandate: it will not go into the remittance."
   },
   "cierre_cobros": {
     "estado_titulo": "Month status",
@@ -3910,6 +3923,7 @@
         "ip_firma": "IP address when signing",
         "navegador_firma": "Browser when signing",
         "familia": "Family",
+        "metodo_pago": "Usual payment method",
         "recibos": "Receipts",
         "lineas": "Lines",
         "metodos_pago": "Payment methods",

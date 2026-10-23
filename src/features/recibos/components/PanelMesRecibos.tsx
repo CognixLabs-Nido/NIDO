@@ -312,6 +312,8 @@ export function PanelMesRecibos({ centroId, anio, mes, data, ninos, centroLogo }
                     pending={pending}
                     centroLogo={centroLogo}
                     metodoPref={data.metodoPreferencia[fila.familiaId] ?? null}
+                    metodoFicha={data.metodoFicha[fila.familiaId] ?? null}
+                    tieneMandato={data.familiasConMandato.includes(fila.familiaId)}
                     seleccionado={fila.recibo ? selected.has(fila.recibo.id) : false}
                     expandido={expanded.has(fila.familiaId)}
                     onToggleSel={toggleSel}
@@ -432,6 +434,8 @@ function FilaFamilia({
   pending,
   centroLogo,
   metodoPref,
+  metodoFicha,
+  tieneMandato,
   seleccionado,
   expandido,
   onToggleSel,
@@ -447,6 +451,8 @@ function FilaFamilia({
   pending: boolean
   centroLogo: CentroLogoProp | null
   metodoPref: MetodoPago | null
+  metodoFicha: MetodoPago | null
+  tieneMandato: boolean
   seleccionado: boolean
   expandido: boolean
   onToggleSel: (reciboId: string, on: boolean) => void
@@ -462,7 +468,10 @@ function FilaFamilia({
   const confirmado = recibo != null && esConfirmado(recibo.estado)
   // R-5: sobre un confirmado, ¿se puede levantar el candado o hay que explicar por qué no?
   const acceso = recibo ? accesoModificar(recibo.estado, recibo.enRemesa) : null
-  const metodoActual = recibo?.metodo ?? metodoPref ?? undefined
+  // PR-7: el recibo lleva el método congelado al generar; sin recibo, la excepción del mes o, si
+  // no la hay, el de la ficha (lo que cogerá al generar).
+  const metodoActual = recibo?.metodo ?? metodoPref ?? metodoFicha ?? undefined
+  const esExcepcion = metodoPref != null && metodoFicha != null && metodoPref !== metodoFicha
   const metodoItems = METODOS.map((m) => ({ value: m, label: t(`metodos.${m}`) }))
 
   return (
@@ -510,6 +519,14 @@ function FilaFamilia({
           </Select>
           {confirmado && (
             <div className="text-muted-foreground mt-1 text-xs">{t('metodo_congelado')}</div>
+          )}
+          {esExcepcion && metodoFicha && (
+            <div className="text-muted-foreground mt-1 text-xs">
+              {t('metodo_excepcion', { ficha: t(`metodos.${metodoFicha}`) })}
+            </div>
+          )}
+          {metodoActual === 'sepa' && !tieneMandato && (
+            <div className="text-warm-800 mt-1 text-xs">{t('metodo_sepa_sin_mandato')}</div>
           )}
         </TableCell>
         <TableCell className="text-right tabular-nums">

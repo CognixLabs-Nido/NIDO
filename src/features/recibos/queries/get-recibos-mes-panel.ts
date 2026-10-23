@@ -20,8 +20,12 @@ export interface PanelMesData extends PanelRecibosMes {
   cerrado: boolean
   cerradoAt: string | null
   esporadicos: EsporadicoResumen[]
-  /** Método preferido por familia/mes (metodo_pago_familia); refleja el selector aun sin recibo. */
+  /** Excepción del mes por familia (metodo_pago_familia); refleja el selector aun sin recibo. */
   metodoPreferencia: Record<string, MetodoPago>
+  /** PR-7: el método de la ficha de cada familia, el que coge el recibo si no hay excepción. */
+  metodoFicha: Record<string, MetodoPago>
+  /** Familias con mandato SEPA activo (para avisar de la que paga por banco sin él). */
+  familiasConMandato: string[]
 }
 
 /** Recibos esporádicos / re-giros del mes (nacen confirmados; read-only en el panel). */
@@ -50,6 +54,8 @@ const VACIO: PanelMesData = {
   cerradoAt: null,
   esporadicos: [],
   metodoPreferencia: {},
+  metodoFicha: {},
+  familiasConMandato: [],
 }
 
 /**
@@ -89,40 +95,55 @@ export async function getRecibosMesPanel(
     ...new Set(ninos.map((n) => n.familia_id).filter((x): x is string => x != null)),
   ]
 
-  const [familiasRes, tutoresRes, recibosRes, cierreRes, metodosRes] = await Promise.all([
-    supabase.from('familias').select('id, etiqueta').in('id', familiaIds),
-    supabase
-      .from('familia_tutores')
-      .select('familia_id, rol_familia, nombre_completo, usuario:usuarios(nombre_completo)')
-      .in('familia_id', familiaIds)
-      .is('deleted_at', null),
-    supabase
-      .from('recibos')
-      .select(
-        'id, familia_id, nino_id, estado, metodo, total_centimos, es_esporadico, concepto_esporadico, devuelto_de_recibo_id'
-      )
-      .eq('centro_id', centroId)
-      .eq('anio', anio)
-      .eq('mes', mes)
-      .is('deleted_at', null),
-    supabase
-      .from('cierre_mensual')
-      .select('cerrado_at')
-      .eq('centro_id', centroId)
-      .eq('anio', anio)
-      .eq('mes', mes)
-      .maybeSingle(),
-    supabase
-      .from('metodo_pago_familia')
-      .select('familia_id, metodo')
-      .eq('centro_id', centroId)
-      .eq('anio', anio)
-      .eq('mes', mes)
-      .is('deleted_at', null),
-  ])
+  const [familiasRes, tutoresRes, recibosRes, cierreRes, metodosRes, mandatosRes] =
+    await Promise.all([
+      supabase.from('familias').select('id, etiqueta, metodo_pago').in('id', familiaIds),
+      supabase
+        .from('familia_tutores')
+        .select('familia_id, rol_familia, nombre_completo, usuario:usuarios(nombre_completo)')
+        .in('familia_id', familiaIds)
+        .is('deleted_at', null),
+      supabase
+        .from('recibos')
+        .select(
+          'id, familia_id, nino_id, estado, metodo, total_centimos, es_esporadico, concepto_esporadico, devuelto_de_recibo_id'
+        )
+        .eq('centro_id', centroId)
+        .eq('anio', anio)
+        .eq('mes', mes)
+        .is('deleted_at', null),
+      supabase
+        .from('cierre_mensual')
+        .select('cerrado_at')
+        .eq('centro_id', centroId)
+        .eq('anio', anio)
+        .eq('mes', mes)
+        .maybeSingle(),
+      supabase
+        .from('metodo_pago_familia')
+        .select('familia_id, metodo')
+        .eq('centro_id', centroId)
+        .eq('anio', anio)
+        .eq('mes', mes)
+        .is('deleted_at', null),
+      supabase
+        .from('mandatos_sepa')
+        .select('familia_id')
+        .in('familia_id', familiaIds)
+        .eq('estado', 'activo')
+        .is('deleted_at', null),
+    ])
 
   const metodoPreferencia: Record<string, MetodoPago> = {}
   for (const m of metodosRes.data ?? []) metodoPreferencia[m.familia_id] = m.metodo
+
+  const metodoFicha: Record<string, MetodoPago> = {}
+  for (const f of familiasRes.data ?? []) metodoFicha[f.id] = f.metodo_pago
+  const familiasConMandato = [
+    ...new Set(
+      (mandatosRes.data ?? []).map((m) => m.familia_id).filter((x): x is string => x != null)
+    ),
+  ]
 
   const etiquetaPorFamilia = new Map((familiasRes.data ?? []).map((f) => [f.id, f.etiqueta]))
   const tutoresPorFamilia = new Map<string, string[]>()
@@ -238,6 +259,8 @@ export async function getRecibosMesPanel(
     cerradoAt: cierreRes.data?.cerrado_at ?? null,
     esporadicos,
     metodoPreferencia,
+    metodoFicha,
+    familiasConMandato,
   }
 }
 

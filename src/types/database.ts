@@ -2274,6 +2274,7 @@ export type Database = {
           deleted_reason: Database["public"]["Enums"]["motivo_borrado"] | null
           etiqueta: string
           id: string
+          metodo_pago: Database["public"]["Enums"]["metodo_pago"]
           updated_at: string
         }
         Insert: {
@@ -2283,6 +2284,7 @@ export type Database = {
           deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
           etiqueta: string
           id?: string
+          metodo_pago?: Database["public"]["Enums"]["metodo_pago"]
           updated_at?: string
         }
         Update: {
@@ -2292,6 +2294,7 @@ export type Database = {
           deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
           etiqueta?: string
           id?: string
+          metodo_pago?: Database["public"]["Enums"]["metodo_pago"]
           updated_at?: string
         }
         Relationships: [

@@ -6,6 +6,7 @@ import {
   LandmarkIcon,
   PencilIcon,
   UserIcon,
+  WalletIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -19,6 +20,7 @@ import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-
 import { DomiciliacionDialog } from '@/features/familias/components/DomiciliacionDialog'
 import { EditarEtiquetaDialog } from '@/features/familias/components/EditarEtiquetaDialog'
 import { EditarTutorDialog } from '@/features/familias/components/EditarTutorDialog'
+import { MetodoPagoFicha } from '@/features/familias/components/MetodoPagoFicha'
 import { PromoverTitularDialog } from '@/features/familias/components/PromoverTitularDialog'
 import {
   getFamiliaDetalle,
@@ -119,6 +121,26 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
             />
           ))
         )}
+      </section>
+
+      {/* Forma de pago (PR-7): la coge cada recibo al generar; solo-lectura si archivada. */}
+      <section className="space-y-3">
+        <h2 className="text-h3 text-foreground flex items-center gap-2">
+          <WalletIcon className="text-muted-foreground size-4" />
+          {t('metodo_pago.titulo')}
+        </h2>
+        <Card>
+          <CardContent className="pt-1 text-sm">
+            {/* key: registrar el primer mandato la pasa a sepa en la BD; al refrescar, se remonta. */}
+            <MetodoPagoFicha
+              key={familia.metodo_pago}
+              familiaId={familia.id}
+              metodo={familia.metodo_pago}
+              tieneMandato={mandato != null}
+              soloLectura={archivada}
+            />
+          </CardContent>
+        </Card>
       </section>
 
       {/* Domiciliación SEPA (F-2c-3) — mandato activo de la familia; solo-lectura si archivada. */}
