@@ -398,7 +398,8 @@
         "aplicacion": "Assignment",
         "concepto_base": "Base concept",
         "concepto_base_placeholder": "Choose the concept it applies to",
-        "tarifa_por_anio_nacimiento": "Price by birth year"
+        "tarifa_por_anio_nacimiento": "Price by birth year",
+        "servicio_mensual": "Service (optional)"
       },
       "tipos": {
         "mensual": "Monthly",
@@ -629,7 +630,12 @@
         "validation": {
           "anio_invalido": "Invalid year (2000–2100)."
         }
-      }
+      },
+      "servicio_ninguno": "None",
+      "servicio_mensual_hint": "If this is the fee for a service, whoever has it does not pay for the days of that service, even if the daily charge is also assigned.",
+      "tipo_con_servicio": "{tipo} · {servicio}",
+      "aviso_mensual_y_diario": "Both the monthly and the daily charge for {servicios} are assigned. Only the monthly fee is charged: the days are not. Remove the one that is not needed.",
+      "solape_fila": "Monthly and daily {servicios}: only the monthly fee is charged"
     },
     "aulas": {
       "title": "Classrooms",

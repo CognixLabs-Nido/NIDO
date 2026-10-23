@@ -4,7 +4,9 @@ import { z } from 'zod'
 //  · signo   (+1 cobro / −1 descuento)
 //  · tipo_valor ('fijo' → importe en euros ; 'porcentaje' → % con 2 decimales)
 //  · tipo_concepto (mensual/diario/esporadico = periodicidad; el ENUM se mantiene)
-//  · ambito  (nino/familia) ; servicio (comedor/matinera/vespertina, solo si diario)
+//  · ambito  (nino/familia) ; servicio (comedor/matinera/vespertina): obligatorio si diario;
+//    opcional en un mensual que sea cobro fijo por niño (PR-4: quien tiene ese mensual no paga
+//    los días del servicio). Ver `admiteServicio`.
 //  · concepto_base_id: el concepto base de un descuento PORCENTUAL (1:1). Solo (y
 //    siempre) cuando es descuento porcentual (signo=−1 ∧ tipo_valor='porcentaje').
 // La UI trabaja en EUROS/% ; la action convierte a céntimos/basis points.
@@ -19,6 +21,24 @@ export const AMBITOS = ['nino', 'familia'] as const
 // el formulario (defaultValues) y el DEFAULT de la columna (no un .default() de Zod, que
 // divergiría input/output y rompería el tipado de react-hook-form — patrón del repo).
 export const APLICACIONES = ['automatico', 'manual'] as const
+
+/**
+ * PR-4: ¿puede este concepto llevar servicio? El diario siempre (lo exige). Un mensual solo si
+ * es un cobro fijo por niño, que es lo único que el motor cobra por niño cada mes: entonces el
+ * servicio dice de qué es la cuota, y el motor no cobra los días de ese servicio a quien la
+ * tiene. Mismas reglas que el CHECK `conceptos_cobro_modelo_valor`.
+ */
+export function admiteServicio(v: {
+  tipo_concepto: (typeof TIPOS_CONCEPTO)[number]
+  signo: number
+  tipo_valor: (typeof TIPOS_VALOR)[number]
+  ambito: (typeof AMBITOS)[number]
+}): boolean {
+  if (v.tipo_concepto === 'diario') return true
+  return (
+    v.tipo_concepto === 'mensual' && v.signo === 1 && v.tipo_valor === 'fijo' && v.ambito === 'nino'
+  )
+}
 
 // Importe fijo en euros (nullable). El input vacío manda null; NaN no pasa .min(0).
 const importeEurosField = z
@@ -79,7 +99,8 @@ export const conceptoCobroSchema = z
         message: 'conceptos_cobro.validation.porcentaje_requerido',
       })
     }
-    // (b) periodicidad: diario ⇒ servicio (mensual/esporadico no llevan).
+    // (b) periodicidad: diario ⇒ servicio. En un mensual es opcional (admiteServicio) y
+    // buildConceptoRow lo anula donde no cabe; el esporádico no lleva.
     if (v.tipo_concepto === 'diario' && v.servicio == null) {
       ctx.addIssue({
         code: 'custom',

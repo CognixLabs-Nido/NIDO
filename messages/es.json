@@ -398,7 +398,8 @@
         "aplicacion": "Asignación",
         "concepto_base": "Concepto base",
         "concepto_base_placeholder": "Elige el concepto al que se aplica",
-        "tarifa_por_anio_nacimiento": "Precio por año de nacimiento"
+        "tarifa_por_anio_nacimiento": "Precio por año de nacimiento",
+        "servicio_mensual": "Servicio (opcional)"
       },
       "tipos": {
         "mensual": "Mensual",
@@ -629,7 +630,12 @@
         "validation": {
           "anio_invalido": "Año no válido (2000–2100)."
         }
-      }
+      },
+      "servicio_ninguno": "Ninguno",
+      "servicio_mensual_hint": "Si es la cuota de un servicio, quien la tenga no paga los días de ese servicio, aunque también tenga asignado el diario.",
+      "tipo_con_servicio": "{tipo} · {servicio}",
+      "aviso_mensual_y_diario": "Tiene asignados el mensual y el diario de {servicios}. Solo se cobra el mensual: los días no se cobran. Quita el que sobre.",
+      "solape_fila": "Mensual y diario de {servicios}: solo se cobra el mensual"
     },
     "aulas": {
       "title": "Aulas",

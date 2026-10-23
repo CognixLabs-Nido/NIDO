@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,7 @@ import {
 import { proponerAsignaciones } from '../actions/proponer-asignaciones'
 import { reproponerAsignaciones } from '../actions/reproponer-asignaciones'
 import type { AsignacionPermanente } from '../queries/get-asignacion-permanente'
+import { listaServicios, serviciosSolapados } from '../lib/servicios-solapados'
 import { ConfigurarModalidadDialog } from './ConfigurarModalidadDialog'
 import { FamiliaConceptosDialog } from './FamiliaConceptosDialog'
 
@@ -39,6 +40,7 @@ interface Props {
 export function AsignacionPermanentePanel({ centroId, data }: Props) {
   const t = useTranslations('admin.cuotas')
   const tErrors = useTranslations()
+  const locale = useLocale()
   const [pending, startTransition] = useTransition()
   const [reproponerOpen, setReproponerOpen] = useState(false)
 
@@ -112,28 +114,49 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.alumnos.map((a) => (
-                    <TableRow key={a.ninoId}>
-                      <TableCell className="font-medium">{a.nombre}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {a.familiaEtiqueta}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-2">
-                          <span className="text-muted-foreground text-xs">
-                            {t('conceptos_asignados', { n: a.conceptosAsignados.length })}
-                          </span>
-                          <ConfigurarModalidadDialog
-                            centroId={centroId}
-                            ninoId={a.ninoId}
-                            ninoNombre={a.nombre}
-                            conceptos={data.conceptosNino}
-                            conceptosAsignados={a.conceptosAsignados}
-                          />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {data.alumnos.map((a) => {
+                    // PR-4: mensual y diario del mismo servicio; el motor cobra solo el mensual.
+                    const solapados = serviciosSolapados(
+                      a.conceptosAsignados,
+                      data.conceptosConServicio
+                    )
+                    return (
+                      <TableRow key={a.ninoId}>
+                        <TableCell className="font-medium">
+                          {a.nombre}
+                          {solapados.length > 0 && (
+                            <div className="text-xs font-normal text-amber-800">
+                              {t('solape_fila', {
+                                servicios: listaServicios(
+                                  solapados,
+                                  (s) => t(`servicios.${s}`),
+                                  locale
+                                ),
+                              })}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {a.familiaEtiqueta}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-muted-foreground text-xs">
+                              {t('conceptos_asignados', { n: a.conceptosAsignados.length })}
+                            </span>
+                            <ConfigurarModalidadDialog
+                              centroId={centroId}
+                              ninoId={a.ninoId}
+                              ninoNombre={a.nombre}
+                              conceptos={data.conceptosNino}
+                              conceptosAsignados={a.conceptosAsignados}
+                              conceptosConServicio={data.conceptosConServicio}
+                            />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </div>

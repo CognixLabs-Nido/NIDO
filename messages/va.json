@@ -398,7 +398,8 @@
         "aplicacion": "Assignació",
         "concepto_base": "Concepte base",
         "concepto_base_placeholder": "Tria el concepte al qual s'aplica",
-        "tarifa_por_anio_nacimiento": "Preu per any de naixement"
+        "tarifa_por_anio_nacimiento": "Preu per any de naixement",
+        "servicio_mensual": "Servei (opcional)"
       },
       "tipos": {
         "mensual": "Mensual",
@@ -629,7 +630,12 @@
         "validation": {
           "anio_invalido": "Any no vàlid (2000–2100)."
         }
-      }
+      },
+      "servicio_ninguno": "Cap",
+      "servicio_mensual_hint": "Si és la quota d'un servei, qui la tinga no paga els dies d'eixe servei, encara que també tinga assignat el diari.",
+      "tipo_con_servicio": "{tipo} · {servicio}",
+      "aviso_mensual_y_diario": "Té assignats el mensual i el diari de {servicios}. Només es cobra el mensual: els dies no es cobren. Lleva el que sobre.",
+      "solape_fila": "Mensual i diari de {servicios}: només es cobra el mensual"
     },
     "aulas": {
       "title": "Aules",
