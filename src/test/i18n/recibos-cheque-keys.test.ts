@@ -46,6 +46,8 @@ const PLANTILLAS: Record<string, readonly string[]> = {
   'forma_cobro.': ['efectivo', 'transferencia', 'cheque_guarderia'],
   'cobro_dialog.metodos_diferencia.': ['sepa', 'efectivo', 'transferencia'],
   'estado_recibo.': ['pendiente_procesar', 'enviado_banco', 'devuelto', 'cobrado_manual'],
+  // PR-2: «Devuelto · cobrado por: …» en el panel.
+  'salidas_cobrado.': ['banco', 'efectivo', 'transferencia'],
 }
 
 const CLAVES = new Set<string>()

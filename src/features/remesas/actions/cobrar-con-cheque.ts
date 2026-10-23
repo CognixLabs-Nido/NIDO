@@ -21,6 +21,8 @@ const POR_HINT: Record<string, string> = {
   falta_metodo_diferencia: 'remesas.validation.falta_metodo_diferencia',
   importe_cheque_invalido: 'remesas.validation.importe_cheque_invalido',
   fecha_cobro_invalida: 'remesas.validation.fecha_cobro_invalida',
+  // PR-2: un devuelto tiene una sola salida, y no es el cheque.
+  devolucion_por_funcion: 'remesas.errors.devolucion_por_resolver',
 }
 
 /**

@@ -62,6 +62,8 @@ const { proponerAsignaciones } =
   await import('@/features/cuotas-config/actions/proponer-asignaciones')
 const { generarRecibosMes } = await import('@/features/recibos/actions/generar-recibos-mes')
 const { marcarCobradoManual } = await import('@/features/remesas/actions/marcar-cobrado-manual')
+const { marcarReciboDevuelto } = await import('@/features/remesas/actions/marcar-recibo-devuelto')
+const { resolverDevolucion } = await import('@/features/remesas/actions/resolver-devolucion')
 const { setMetodoPagoFamilia } = await import('@/features/recibos/actions/set-metodo-pago-familia')
 const { guardarTarifaConceptoAnio } =
   await import('@/features/conceptos-cobro/actions/tarifa-concepto-anio')
@@ -117,7 +119,12 @@ describe('(c) centro explícito de la página', () => {
 describe('(a)/(b) centro del registro', () => {
   it('marcarCobradoManual: recibo de B y admin solo en A → no_autorizado, sin escribir', async () => {
     st.roles = ADMIN_EN_A
-    st.filas.recibos = { id: RECIBO, centro_id: B, estado: 'devuelto' }
+    st.filas.recibos = {
+      id: RECIBO,
+      centro_id: B,
+      estado: 'pendiente_procesar',
+      metodo: 'efectivo',
+    }
     const r = await marcarCobradoManual({
       reciboId: RECIBO,
       forma: 'efectivo',
@@ -129,7 +136,12 @@ describe('(a)/(b) centro del registro', () => {
 
   it('marcarCobradoManual: admin en el centro del recibo → escribe', async () => {
     st.roles = ADMIN_EN_A_Y_B
-    st.filas.recibos = { id: RECIBO, centro_id: B, estado: 'devuelto' }
+    st.filas.recibos = {
+      id: RECIBO,
+      centro_id: B,
+      estado: 'pendiente_procesar',
+      metodo: 'efectivo',
+    }
     const r = await marcarCobradoManual({
       reciboId: RECIBO,
       forma: 'efectivo',
@@ -137,6 +149,38 @@ describe('(a)/(b) centro del registro', () => {
     })
     expect(r.success).toBe(true)
     expect(st.escrituras).toHaveBeenCalledWith('recibos', 'update', expect.anything())
+  })
+
+  it('marcarReciboDevuelto (PR-2): recibo de B y admin solo en A → no_autorizado, sin escribir', async () => {
+    st.roles = ADMIN_EN_A
+    st.filas.recibos = {
+      id: RECIBO,
+      centro_id: B,
+      estado: 'enviado_banco',
+      fecha_envio_banco: null,
+    }
+    const r = await marcarReciboDevuelto({ reciboId: RECIBO, fecha: '2024-01-10', gastos_euros: 0 })
+    expect(r).toEqual({ success: false, error: 'remesas.errors.no_autorizado' })
+    expect(st.escrituras).not.toHaveBeenCalled()
+
+    st.roles = ADMIN_EN_A_Y_B
+    await marcarReciboDevuelto({ reciboId: RECIBO, fecha: '2024-01-10', gastos_euros: 0 })
+    expect(st.escrituras).toHaveBeenCalledWith('recibos', 'update', expect.anything())
+  })
+
+  it('resolverDevolucion (PR-2): centro DEL RECIBO; con admin solo en otro centro → sin RPC', async () => {
+    st.roles = ADMIN_EN_A
+    st.filas.recibos = { id: RECIBO, centro_id: B }
+    const r = await resolverDevolucion({ reciboId: RECIBO, salida: 'banco' })
+    expect(r).toEqual({ success: false, error: 'remesas.errors.no_autorizado' })
+    expect(st.rpc).not.toHaveBeenCalled()
+
+    st.roles = ADMIN_EN_A_Y_B
+    await resolverDevolucion({ reciboId: RECIBO, salida: 'banco' })
+    expect(st.rpc).toHaveBeenCalledWith(
+      'resolver_devolucion',
+      expect.objectContaining({ p_recibo_id: RECIBO })
+    )
   })
 
   it('setMetodoPagoFamilia: el método se guarda con el centro DE LA FAMILIA', async () => {
