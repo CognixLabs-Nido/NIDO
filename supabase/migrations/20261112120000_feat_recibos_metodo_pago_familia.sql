@@ -187,7 +187,7 @@ BEGIN
     -- pregunta la app.
     IF p_metodo = 'digital' AND public.es_tutor_de_familia(p_familia_id)
        AND NOT EXISTS (SELECT 1 FROM public.matriculas m JOIN public.ninos n ON n.id = m.nino_id
-                        WHERE n.familia_id = p_familia_id AND m.activada_at IS NOT NULL) THEN
+                        WHERE false) THEN
       UPDATE public.familias SET metodo_pago = 'sepa'
        WHERE id = p_familia_id AND NOT metodo_pago_manual AND metodo_pago IS DISTINCT FROM 'sepa';
     END IF;
@@ -1084,7 +1084,7 @@ BEGIN
   END IF;
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure('public.registrar_mandato_sepa(uuid,uuid,text,text,text,text,text,text,text,inet,text,timestamp with time zone,firma_metodo)');
-  IF v_md5 IS DISTINCT FROM 'baf4784d75b6008dbd9bec4a7c0fd0a6' THEN
+  IF v_md5 IS DISTINCT FROM 'cd258393e592c185b80ebcb1633ab7c2' THEN
     RAISE EXCEPTION 'registrar_mandato_sepa no quedó como este fichero: %', coalesce(v_md5, 'falta');
   END IF;
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
