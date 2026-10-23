@@ -245,7 +245,7 @@ BEGIN
           -- PR-4: quien tiene la cuota MENSUAL de este servicio no paga sus días, aunque tenga
           -- también el diario asignado por error. Los filtros son los del PASE 1, para que
           -- excluya justo cuando el mensual se cobra.
-          IF FALSE AND EXISTS (
+          IF EXISTS (
             SELECT 1
             FROM public.asignacion_concepto a2
             JOIN public.conceptos_cobro c2 ON c2.id = a2.concepto_id
@@ -570,7 +570,7 @@ DECLARE
 BEGIN
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure('public.generar_recibos_mes(uuid,integer,integer)');
-  IF v_md5 IS DISTINCT FROM 'acc2b85c5b283e9ee73c879142afa17c' THEN
+  IF v_md5 IS DISTINCT FROM '71eb135689f9e94bebe802f8a065e3b7' THEN
     RAISE EXCEPTION 'generar_recibos_mes no quedó como este fichero: %', coalesce(v_md5, 'falta');
   END IF;
   IF NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'public.generar_recibos_mes(uuid,integer,integer)'::regprocedure) THEN
