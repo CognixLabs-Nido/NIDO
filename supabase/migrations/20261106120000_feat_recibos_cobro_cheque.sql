@@ -114,6 +114,15 @@ BEGIN
         USING ERRCODE = 'P0001', HINT = 'sepa_por_remesa';
     END IF;
   END IF;
+  -- PR-1b: un cobro con cheque (o un cambio de su importe) solo lo escribe
+  -- cobrar_recibo_con_cheque, que crea en la misma transacción el recibo de la diferencia.
+  IF NEW.cobro_forma = 'cheque_guarderia'
+     AND (OLD.cobro_forma IS DISTINCT FROM NEW.cobro_forma
+          OR OLD.cobro_importe_centimos IS DISTINCT FROM NEW.cobro_importe_centimos)
+     AND COALESCE(current_setting('app.cobro_cheque', true), '') IS DISTINCT FROM NEW.id::text THEN
+    RAISE EXCEPTION 'el cobro con cheque se registra con cobrar_recibo_con_cheque'
+      USING ERRCODE = 'P0001', HINT = 'cheque_por_funcion';
+  END IF;
   RETURN NEW;
 END $function$;
 
@@ -591,7 +600,7 @@ DECLARE
   v_md5 text;
   v_esperado jsonb := jsonb_build_object(
     'public.export_datos_sujeto(text,uuid)', '3971ced2df431310ce3c93af89cf01c1',
-    'public.recibos_validar_cobro_manual()', '4ae47c28821127782a9bb86d2331b033',
+    'public.recibos_validar_cobro_manual()', 'a8bfcbac585f2787552967f4da12f38c',
     'public.cobrar_recibo_con_cheque(uuid,integer,date,text,text)', '5de20f074a56d611b1117c1ee5ea36ff');
 BEGIN
   FOR v_firma IN SELECT jsonb_object_keys(v_esperado) LOOP
