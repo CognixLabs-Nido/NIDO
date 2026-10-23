@@ -3,13 +3,12 @@ import { describe, expect, it } from 'vitest'
 import {
   cobrarConChequeSchema,
   crearCobroDialogSchema,
-  crearRegiroSchema,
   crearRemesaSchema,
   datosAcreedorSchema,
-  gastosDevolucionSchema,
   marcarCobradoManualSchema,
   marcarReciboDevueltoSchema,
   marcarRemesaEnviadaSchema,
+  resolverDevolucionSchema,
 } from '../remesa'
 
 const UUID = '11111111-1111-4111-8111-111111111111'
@@ -96,9 +95,22 @@ describe('datosAcreedorSchema', () => {
 })
 
 describe('esquemas de devolución (B-6)', () => {
-  it('marcarReciboDevueltoSchema exige uuid', () => {
-    expect(marcarReciboDevueltoSchema.safeParse({ reciboId: UUID }).success).toBe(true)
-    expect(marcarReciboDevueltoSchema.safeParse({ reciboId: 'x' }).success).toBe(false)
+  it('marcarReciboDevueltoSchema (PR-2): uuid, fecha y gastos ≥ 0 (0 si no hay)', () => {
+    const base = { reciboId: UUID, fecha: '2026-10-20', gastos_euros: 3.5 }
+    expect(marcarReciboDevueltoSchema.safeParse(base).success).toBe(true)
+    expect(marcarReciboDevueltoSchema.safeParse({ ...base, gastos_euros: 0 }).success).toBe(true)
+    expect(marcarReciboDevueltoSchema.safeParse({ ...base, reciboId: 'x' }).success).toBe(false)
+    expect(marcarReciboDevueltoSchema.safeParse({ ...base, gastos_euros: -1 }).success).toBe(false)
+    expect(
+      marcarReciboDevueltoSchema.safeParse({ ...base, gastos_euros: Number.NaN }).success
+    ).toBe(false)
+    expect(marcarReciboDevueltoSchema.safeParse({ ...base, fecha: '20/10/2026' }).success).toBe(
+      false
+    )
+    // Sin gastos no se registra: hay que decir 0.
+    expect(
+      marcarReciboDevueltoSchema.safeParse({ reciboId: UUID, fecha: '2026-10-20' }).success
+    ).toBe(false)
   })
 
   it('marcarCobradoManualSchema (PR-1a): uuid, forma efectivo o transferencia, fecha y nota ≤ 500', () => {
@@ -154,21 +166,25 @@ describe('esquemas de devolución (B-6)', () => {
     expect(error({ importe_euros: 100, metodoDiferencia: 'efectivo' })).toBeNull()
   })
 
-  it('crearRegiroSchema exige uuid', () => {
-    expect(crearRegiroSchema.safeParse({ reciboId: UUID }).success).toBe(true)
-  })
-
-  it('gastosDevolucionSchema: importe > 0 y método válido', () => {
+  it('resolverDevolucionSchema (PR-2): banco, efectivo o transferencia; el cobro pide fecha', () => {
+    expect(resolverDevolucionSchema.safeParse({ reciboId: UUID, salida: 'banco' }).success).toBe(
+      true
+    )
     expect(
-      gastosDevolucionSchema.safeParse({ reciboId: UUID, importe_euros: 3.5, metodo: 'sepa' })
-        .success
+      resolverDevolucionSchema.safeParse({
+        reciboId: UUID,
+        salida: 'efectivo',
+        fecha: '2026-10-20',
+      }).success
     ).toBe(true)
-    expect(
-      gastosDevolucionSchema.safeParse({ reciboId: UUID, importe_euros: 0, metodo: 'sepa' }).success
-    ).toBe(false)
-    expect(
-      gastosDevolucionSchema.safeParse({ reciboId: UUID, importe_euros: 3, metodo: 'cheque' })
-        .success
-    ).toBe(false)
+    const sinFecha = resolverDevolucionSchema.safeParse({ reciboId: UUID, salida: 'transferencia' })
+    expect(sinFecha.success).toBe(false)
+    expect(sinFecha.error?.issues[0]?.message).toBe('remesas.validation.fecha_cobro_invalida')
+    // El cheque y el arrastre al siguiente recibo (PR-14) no son salidas de este PR.
+    for (const salida of ['cheque_guarderia', 'siguiente_recibo', 'sepa']) {
+      expect(
+        resolverDevolucionSchema.safeParse({ reciboId: UUID, salida, fecha: '2026-10-20' }).success
+      ).toBe(false)
+    }
   })
 })

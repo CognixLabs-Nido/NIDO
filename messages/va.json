@@ -1804,14 +1804,9 @@
     "regiro_badge": "Re-gir",
     "devuelta_el": "Retornat el {fecha}",
     "marcar_devuelto": "Marcar retornat",
-    "regirar": "Re-girar",
     "cobrar_manual": "Marcar cobrat",
-    "anadir_gastos": "Despeses devolució",
     "devuelto_ok": "Rebut marcat com a retornat.",
-    "regiro_ok": "Re-gir creat (pendent de remesar).",
     "cobrado_manual_ok": "Rebut marcat com a cobrat manualment.",
-    "gastos_ok": "Despeses de devolució registrades.",
-    "gastos_title": "Despeses de devolució",
     "estado": {
       "borrador": "Esborrany",
       "enviada": "Enviada"
@@ -1830,9 +1825,7 @@
     "fields": {
       "identificador_acreedor": "Identificador de creditor (CID)",
       "bic_acreedor": "BIC del creditor",
-      "iban_acreedor": "IBAN del creditor",
-      "importe_gastos": "Import de les despeses (€)",
-      "metodo": "Mètode de pagament"
+      "iban_acreedor": "IBAN del creditor"
     },
     "validation": {
       "sin_recibos": "Selecciona almenys un rebut",
@@ -1845,7 +1838,12 @@
       "fecha_cobro_futura": "La data de cobrament no pot ser futura",
       "nota_cobro_larga": "La nota no pot passar de 500 caràcters",
       "importe_cheque_invalido": "Indica l’import del xec.",
-      "falta_metodo_diferencia": "Tria com es cobra el que queda."
+      "falta_metodo_diferencia": "Tria com es cobra el que queda.",
+      "fecha_devolucion_invalida": "Data no vàlida",
+      "fecha_devolucion_futura": "La data de la devolució no pot ser futura",
+      "devolucion_antes_del_envio": "La devolució no pot ser anterior a l'enviament al banc",
+      "gastos_invalidos": "Indica les despeses (0 si no n'hi ha)",
+      "fecha_cobro_devolucion": "La data de cobrament no pot ser futura ni anterior a la devolució"
     },
     "errors": {
       "invalid": "Dades no vàlides.",
@@ -1864,12 +1862,14 @@
       "devolver_failed": "No s'ha pogut marcar el rebut com a retornat.",
       "no_cobrable_manual": "Este rebut no es pot marcar com a cobrat manual.",
       "cobrar_manual_failed": "No s'ha pogut marcar com a cobrat manual.",
-      "no_regirable": "Només es pot re-girar un rebut retornat.",
-      "regiro_failed": "No s'ha pogut crear el re-gir.",
-      "gastos_failed": "No s'han pogut registrar les despeses de devolució.",
       "sepa_por_remesa": "Un rebut SEPA pendent es cobra per remesa. Per a cobrar-lo a mà, desconfirma'l i canvia el mètode del mes.",
       "cheque_supera_recibo": "El xec supera l’import del rebut. Eixe cas encara no es pot registrar.",
-      "sin_mandato_diferencia": "La família no té mandat SEPA actiu: el que queda no es pot passar al banc."
+      "sin_mandato_diferencia": "La família no té mandat SEPA actiu: el que queda no es pot passar al banc.",
+      "devolucion_ya_resuelta": "Aquesta devolució ja està resolta: no es pot cobrar dues vegades.",
+      "no_devuelto": "Només es resol un rebut retornat.",
+      "sin_mandato_devolucion": "La família no té mandat SEPA actiu: no es pot tornar a passar pel banc.",
+      "resolver_failed": "No s'ha pogut resoldre la devolució.",
+      "devolucion_por_resolver": "Un rebut retornat es cobra des de «Resoldre devolució»."
     },
     "transferencias_beca": {
       "title": "Transferències de beca menjador",
@@ -1907,7 +1907,42 @@
       "cheque_guarderia": "Xec guarderia / Tiquet restaurant"
     },
     "cheque_de": "xec de {importe}",
-    "diferencia_en_recibo_aparte": "queden {importe} en un rebut a banda"
+    "diferencia_en_recibo_aparte": "queden {importe} en un rebut a banda",
+    "resolver_devolucion": "Resoldre devolució",
+    "resuelta_ok": "Devolució resolta.",
+    "gastos_devolucion": "despeses {importe}",
+    "cobrado_por": "Cobrat per: {salida}",
+    "salidas_cobrado": {
+      "banco": "banc",
+      "efectivo": "efectiu",
+      "transferencia": "transferència"
+    },
+    "devuelto_dialog": {
+      "titulo": "Marcar retornat",
+      "fecha": "Data de la devolució (la que diu el banc)",
+      "gastos": "Despeses de devolució (€)",
+      "gastos_ayuda": "El que cobra el banc per la devolució; 0 si no n'hi ha. Es cobren juntament amb el rebut quan es resolga la devolució.",
+      "guardar": "Marcar retornat",
+      "cancelar": "Cancel·lar"
+    },
+    "resolver_dialog": {
+      "titulo": "Resoldre devolució",
+      "a_cobrar": "A cobrar: {total}",
+      "a_cobrar_con_gastos": "A cobrar: {total} ({recibo} del rebut + {gastos} de despeses)",
+      "salida": "Com es cobra",
+      "salidas": {
+        "banco": "Tornar a passar-lo pel banc",
+        "efectivo": "Efectiu",
+        "transferencia": "Transferència"
+      },
+      "banco_ayuda": "Es crea un rebut nou per {importe}, que entra en la següent remesa d’aquest mes.",
+      "sin_mandato": "La família no té mandat SEPA actiu: no es pot tornar a passar pel banc.",
+      "fecha": "Data de cobrament",
+      "nota": "Nota (opcional)",
+      "una_vez": "Una devolució es resol una sola vegada.",
+      "guardar": "Resoldre",
+      "cancelar": "Cancel·lar"
+    }
   },
   "becas": {
     "validation": {
@@ -3907,7 +3942,9 @@
         "cobro_forma": "Cobrat en",
         "cobro_fecha": "Cobrat el",
         "cobro_nota": "Nota del cobrament",
-        "cobro_importe_centimos": "Import del xec"
+        "cobro_importe_centimos": "Import del xec",
+        "devolucion_gastos_centimos": "Despeses de devolució (cèntims)",
+        "devolucion_salida": "Com es va cobrar la devolució"
       },
       "valores": {
         "terminos": "Termes",
@@ -4041,7 +4078,8 @@
         "segundo_tutor": "Segon tutor",
         "automatico": "Automàtic",
         "manual": "Manual",
-        "normas": "Normes del centre"
+        "normas": "Normes del centre",
+        "banco": "Banc"
       }
     },
     "descargar_mis_datos": "Descarregar les meues dades",

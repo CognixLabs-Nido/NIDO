@@ -13,10 +13,10 @@ import { marcarCobradoManualSchema, type MarcarCobradoManualInput } from '../sch
 /**
  * Marca un recibo como 'cobrado_manual' (cobrado en efectivo o por transferencia, fuera de SEPA),
  * con la forma, la fecha y una nota opcional (PR-1a). Vale para un recibo 'pendiente_procesar'
- * que no sea SEPA (un SEPA pendiente va por remesa) y para un 'devuelto' (rescatado a mano). Las
- * fechas de banco de un devuelto se conservan; el método NO se toca (sigue congelado). La BD
- * repite las dos reglas (`recibos_validar_cobro_manual`). Dirección (RLS). El cheque guardería /
- * ticket restaurant pide su importe y va por `cobrarConCheque` (PR-1b).
+ * que no sea SEPA (un SEPA pendiente va por remesa); el método NO se toca (sigue congelado). Un
+ * 'devuelto' no se cobra aquí: tiene una sola salida y va por `resolverDevolucion` (PR-2). La BD
+ * repite las reglas (`recibos_validar_cobro_manual` y `recibos_validar_devolucion`). Dirección
+ * (RLS). El cheque guardería / ticket restaurant pide su importe y va por `cobrarConCheque` (PR-1b).
  */
 export async function marcarCobradoManual(
   input: MarcarCobradoManualInput
@@ -42,9 +42,8 @@ export async function marcarCobradoManual(
   if (recibo.estado === 'pendiente_procesar' && recibo.metodo === 'sepa') {
     return fail('remesas.errors.sepa_por_remesa')
   }
-  if (recibo.estado !== 'devuelto' && recibo.estado !== 'pendiente_procesar') {
-    return fail('remesas.errors.no_cobrable_manual')
-  }
+  if (recibo.estado === 'devuelto') return fail('remesas.errors.devolucion_por_resolver')
+  if (recibo.estado !== 'pendiente_procesar') return fail('remesas.errors.no_cobrable_manual')
 
   const { data: actualizado, error } = await supabase
     .from('recibos')
@@ -55,7 +54,7 @@ export async function marcarCobradoManual(
       cobro_nota: nota ? nota : null,
     })
     .eq('id', recibo.id)
-    .in('estado', ['devuelto', 'pendiente_procesar'])
+    .eq('estado', 'pendiente_procesar')
     .select('id')
     .maybeSingle()
 
@@ -64,6 +63,8 @@ export async function marcarCobradoManual(
     if (error.code === '42501') return fail('remesas.errors.no_autorizado')
     if (error.hint === 'sepa_por_remesa') return fail('remesas.errors.sepa_por_remesa')
     if (error.hint === 'no_cobrable_manual') return fail('remesas.errors.no_cobrable_manual')
+    if (error.hint === 'devolucion_por_funcion')
+      return fail('remesas.errors.devolucion_por_resolver')
     return fail('remesas.errors.cobrar_manual_failed')
   }
   if (!actualizado) return fail('remesas.errors.no_cobrable_manual')

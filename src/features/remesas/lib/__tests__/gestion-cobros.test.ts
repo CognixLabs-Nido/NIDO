@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import {
   cobrableAMano,
+  devolucionPorResolver,
   entraEnGestion,
   formaPorDefecto,
+  importeDevolucion,
   ordenarGestion,
   type ReciboGestion,
 } from '../gestion-cobros'
@@ -11,6 +13,7 @@ import {
 /**
  * PR-1a: la gestión enseña lo que espera un cobro a mano (pendientes que no son SEPA) y lo que ya
  * está en el ciclo de cobro. Un SEPA pendiente va por remesa: no sale y no se cobra a mano.
+ * PR-2: un devuelto no se cobra a mano: espera su salida, una sola vez, por total + gastos.
  */
 
 function recibo(over: Partial<ReciboGestion>): ReciboGestion {
@@ -25,6 +28,8 @@ function recibo(over: Partial<ReciboGestion>): ReciboGestion {
     fechaEnvioBanco: null,
     fechaDevolucion: null,
     esRegiro: false,
+    devolucionGastosCentimos: null,
+    devolucionSalida: null,
     cobroForma: null,
     cobroFecha: null,
     cobroNota: null,
@@ -53,13 +58,13 @@ describe('entraEnGestion', () => {
 })
 
 describe('cobrableAMano', () => {
-  it('un pendiente que no es SEPA y un devuelto, sí', () => {
+  it('un pendiente que no es SEPA, sí', () => {
     expect(cobrableAMano(recibo({ metodo: 'efectivo' }))).toBe(true)
     expect(cobrableAMano(recibo({ metodo: null }))).toBe(true)
-    expect(cobrableAMano(recibo({ estado: 'devuelto', metodo: 'sepa' }))).toBe(true)
   })
 
-  it('un SEPA pendiente, un enviado y uno ya cobrado, no', () => {
+  it('un devuelto (PR-2), un SEPA pendiente, un enviado y uno ya cobrado, no', () => {
+    expect(cobrableAMano(recibo({ estado: 'devuelto', metodo: 'sepa' }))).toBe(false)
     expect(cobrableAMano(recibo({ metodo: 'sepa' }))).toBe(false)
     expect(cobrableAMano(recibo({ estado: 'enviado_banco', metodo: 'sepa' }))).toBe(false)
     expect(cobrableAMano(recibo({ estado: 'cobrado_manual' }))).toBe(false)
@@ -72,8 +77,30 @@ describe('formaPorDefecto', () => {
     expect(formaPorDefecto({ metodo: 'cheque_guarderia' })).toBe('cheque_guarderia')
     expect(formaPorDefecto({ metodo: 'efectivo' })).toBe('efectivo')
     expect(formaPorDefecto({ metodo: null })).toBe('efectivo')
-    // Un devuelto SEPA se rescata a mano: no hay forma «sepa».
+    // No hay forma «sepa».
     expect(formaPorDefecto({ metodo: 'sepa' })).toBe('efectivo')
+  })
+})
+
+describe('devolución (PR-2)', () => {
+  it('espera su salida solo un devuelto sin resolver', () => {
+    expect(devolucionPorResolver(recibo({ estado: 'devuelto' }))).toBe(true)
+    expect(devolucionPorResolver(recibo({ estado: 'devuelto', devolucionSalida: 'banco' }))).toBe(
+      false
+    )
+    expect(
+      devolucionPorResolver(recibo({ estado: 'cobrado_manual', devolucionSalida: 'efectivo' }))
+    ).toBe(false)
+    expect(devolucionPorResolver(recibo({ estado: 'enviado_banco' }))).toBe(false)
+  })
+
+  it('la salida cobra el recibo más los gastos', () => {
+    expect(importeDevolucion(recibo({ totalCentimos: 10000, devolucionGastosCentimos: 350 }))).toBe(
+      10350
+    )
+    expect(importeDevolucion(recibo({ totalCentimos: 10000, devolucionGastosCentimos: 0 }))).toBe(
+      10000
+    )
   })
 })
 
@@ -87,5 +114,19 @@ describe('ordenarGestion', () => {
       recibo({ id: '5', estado: 'pendiente_procesar', familiaEtiqueta: 'Álvarez' }),
     ]).map((r) => r.id)
     expect(orden).toEqual(['5', '4', '3', '2', '1'])
+  })
+
+  it('un devuelto ya resuelto por el banco no pide nada: va con los cobrados', () => {
+    const orden = ordenarGestion([
+      recibo({
+        id: 'resuelto',
+        estado: 'devuelto',
+        devolucionSalida: 'banco',
+        familiaEtiqueta: 'A',
+      }),
+      recibo({ id: 'enviado', estado: 'enviado_banco', familiaEtiqueta: 'B' }),
+      recibo({ id: 'pendiente', estado: 'devuelto', familiaEtiqueta: 'C' }),
+    ]).map((r) => r.id)
+    expect(orden).toEqual(['pendiente', 'enviado', 'resuelto'])
   })
 })

@@ -25,7 +25,9 @@ import type { Database } from '@/types/database'
  *  2) El congelado afinado (B-5) encaja: en mes CERRADO, marcar enviado_banco →
  *     devuelto (solo estado + fecha_devolucion) PASA.
  *  3) cobrado_manual de un devuelto CONSERVA las dos fechas de banco (PR-1a; hasta entonces el
- *     CHECK obligaba a anularlas) y lleva su forma y su fecha de cobro.
+ *     CHECK obligaba a anularlas) y lleva su forma y su fecha de cobro. Desde el PR-2 se cobra por
+ *     `resolver_devolucion` (una sola salida) y la devolución lleva sus gastos; el re-giro y el resto
+ *     de la salida única están en `recibos-devolucion-una-salida.rls.test.ts`.
  */
 
 describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
@@ -118,7 +120,7 @@ describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
   it('devuelto conserva fecha_envio_banco + exige fecha_devolucion', async () => {
     const { data, error } = await cAdminA
       .from('recibos')
-      .update({ estado: 'devuelto', fecha_devolucion: '2025-04-20' })
+      .update({ estado: 'devuelto', fecha_devolucion: '2025-04-20', devolucion_gastos_centimos: 0 })
       .eq('id', reciboAbierto)
       .select('estado, fecha_envio_banco, fecha_devolucion')
       .maybeSingle()
@@ -131,7 +133,7 @@ describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
   it('congelado afinado: en mes cerrado, enviado_banco → devuelto PASA', async () => {
     const { data, error } = await cAdminA
       .from('recibos')
-      .update({ estado: 'devuelto', fecha_devolucion: '2025-03-20' })
+      .update({ estado: 'devuelto', fecha_devolucion: '2025-03-20', devolucion_gastos_centimos: 0 })
       .eq('id', reciboCerrado)
       .select('estado, fecha_envio_banco')
       .maybeSingle()
@@ -140,42 +142,23 @@ describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
     expect(data?.fecha_envio_banco).toBe('2025-03-05') // conservada pese al cierre
   })
 
-  it('cobrado_manual de un devuelto conserva las dos fechas de banco (PR-1a)', async () => {
-    const { data, error } = await cAdminA
-      .from('recibos')
-      .update({ estado: 'cobrado_manual', cobro_forma: 'efectivo', cobro_fecha: '2025-03-25' })
-      .eq('id', reciboCerrado)
-      .select('estado, fecha_envio_banco, fecha_devolucion, cobro_forma, cobro_fecha')
-      .maybeSingle()
+  it('cobrado_manual de un devuelto conserva las dos fechas de banco (PR-1a; por su función desde el PR-2)', async () => {
+    const { error } = await cAdminA.rpc('resolver_devolucion', {
+      p_recibo_id: reciboCerrado,
+      p_salida: 'efectivo',
+      p_fecha: '2025-03-25',
+      p_nota: null as unknown as string,
+    })
     expect(error).toBeNull()
+    const { data } = await cAdminA
+      .from('recibos')
+      .select('estado, fecha_envio_banco, fecha_devolucion, cobro_forma, cobro_fecha')
+      .eq('id', reciboCerrado)
+      .maybeSingle()
     expect(data?.estado).toBe('cobrado_manual')
     expect(data?.fecha_envio_banco).toBe('2025-03-05')
     expect(data?.fecha_devolucion).toBe('2025-03-20')
     expect(data?.cobro_forma).toBe('efectivo')
     expect(data?.cobro_fecha).toBe('2025-03-25')
-  })
-
-  it('re-giro: un recibo NUEVO ligado (devuelto_de_recibo_id) en mes CERRADO es EXENTO del congelado', async () => {
-    // El re-giro re-cobra un devuelto: recibo nuevo pendiente_procesar en el mismo mes
-    // cerrado. El trigger exime a los recibos con devuelto_de_recibo_id (y a los
-    // esporádicos), así que el INSERT PASA pese al cierre.
-    const { data, error } = await cAdminA
-      .from('recibos')
-      .insert({
-        centro_id: centroA.id,
-        familia_id: ninoA.familia_id, // F-4-1: recibos a grano familia
-        nino_id: ninoA.id,
-        anio: 2025,
-        mes: 3,
-        metodo: 'sepa',
-        estado: 'pendiente_procesar',
-        total_centimos: 12000,
-        es_esporadico: false,
-        devuelto_de_recibo_id: reciboCerrado,
-      })
-      .select('id, devuelto_de_recibo_id')
-      .maybeSingle()
-    expect(error).toBeNull()
-    expect(data?.devuelto_de_recibo_id).toBe(reciboCerrado)
   })
 })

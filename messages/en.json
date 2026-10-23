@@ -1804,14 +1804,9 @@
     "regiro_badge": "Re-charge",
     "devuelta_el": "Returned on {fecha}",
     "marcar_devuelto": "Mark returned",
-    "regirar": "Re-charge",
     "cobrar_manual": "Mark as paid",
-    "anadir_gastos": "Return fees",
     "devuelto_ok": "Receipt marked as returned.",
-    "regiro_ok": "Re-charge created (pending remittance).",
     "cobrado_manual_ok": "Receipt marked as manually collected.",
-    "gastos_ok": "Return fees registered.",
-    "gastos_title": "Return fees",
     "estado": {
       "borrador": "Draft",
       "enviada": "Sent"
@@ -1830,9 +1825,7 @@
     "fields": {
       "identificador_acreedor": "Creditor identifier (CID)",
       "bic_acreedor": "Creditor BIC",
-      "iban_acreedor": "Creditor IBAN",
-      "importe_gastos": "Fee amount (€)",
-      "metodo": "Payment method"
+      "iban_acreedor": "Creditor IBAN"
     },
     "validation": {
       "sin_recibos": "Select at least one receipt",
@@ -1845,7 +1838,12 @@
       "fecha_cobro_futura": "The payment date cannot be in the future",
       "nota_cobro_larga": "The note cannot be longer than 500 characters",
       "importe_cheque_invalido": "Enter the voucher amount.",
-      "falta_metodo_diferencia": "Choose how the rest will be paid."
+      "falta_metodo_diferencia": "Choose how the rest will be paid.",
+      "fecha_devolucion_invalida": "Invalid date",
+      "fecha_devolucion_futura": "The return date cannot be in the future",
+      "devolucion_antes_del_envio": "The return cannot be earlier than the date it was sent to the bank",
+      "gastos_invalidos": "Enter the charges (0 if none)",
+      "fecha_cobro_devolucion": "The payment date cannot be in the future or earlier than the return"
     },
     "errors": {
       "invalid": "Invalid data.",
@@ -1864,12 +1862,14 @@
       "devolver_failed": "Could not mark the receipt as returned.",
       "no_cobrable_manual": "This receipt cannot be marked as manually collected.",
       "cobrar_manual_failed": "Could not mark as manually collected.",
-      "no_regirable": "Only a returned receipt can be re-charged.",
-      "regiro_failed": "Could not create the re-charge.",
-      "gastos_failed": "Could not register the return fees.",
       "sepa_por_remesa": "A pending direct debit receipt is collected through a remittance. To mark it as paid by hand, unconfirm it and change the method for the month.",
       "cheque_supera_recibo": "The voucher is for more than the receipt. That case cannot be recorded yet.",
-      "sin_mandato_diferencia": "The family has no active SEPA mandate: the rest cannot go to the bank."
+      "sin_mandato_diferencia": "The family has no active SEPA mandate: the rest cannot go to the bank.",
+      "devolucion_ya_resuelta": "This return is already resolved: it cannot be collected twice.",
+      "no_devuelto": "Only a returned receipt can be resolved.",
+      "sin_mandato_devolucion": "The family has no active SEPA mandate: it cannot go to the bank again.",
+      "resolver_failed": "The return could not be resolved.",
+      "devolucion_por_resolver": "A returned receipt is collected from «Resolve return»."
     },
     "transferencias_beca": {
       "title": "Meal grant transfers",
@@ -1907,7 +1907,42 @@
       "cheque_guarderia": "Childcare voucher"
     },
     "cheque_de": "voucher for {importe}",
-    "diferencia_en_recibo_aparte": "{importe} left in a separate receipt"
+    "diferencia_en_recibo_aparte": "{importe} left in a separate receipt",
+    "resolver_devolucion": "Resolve return",
+    "resuelta_ok": "Return resolved.",
+    "gastos_devolucion": "charges {importe}",
+    "cobrado_por": "Collected by: {salida}",
+    "salidas_cobrado": {
+      "banco": "bank",
+      "efectivo": "cash",
+      "transferencia": "bank transfer"
+    },
+    "devuelto_dialog": {
+      "titulo": "Mark returned",
+      "fecha": "Return date (as stated by the bank)",
+      "gastos": "Return charges (€)",
+      "gastos_ayuda": "What the bank charges for the return; 0 if none. They are collected together with the receipt when the return is resolved.",
+      "guardar": "Mark returned",
+      "cancelar": "Cancel"
+    },
+    "resolver_dialog": {
+      "titulo": "Resolve return",
+      "a_cobrar": "To collect: {total}",
+      "a_cobrar_con_gastos": "To collect: {total} ({recibo} receipt + {gastos} charges)",
+      "salida": "How it is collected",
+      "salidas": {
+        "banco": "Send it to the bank again",
+        "efectivo": "Cash",
+        "transferencia": "Bank transfer"
+      },
+      "banco_ayuda": "A new receipt for {importe} is created and goes into the next remittance for this month.",
+      "sin_mandato": "The family has no active SEPA mandate: it cannot go to the bank again.",
+      "fecha": "Payment date",
+      "nota": "Note (optional)",
+      "una_vez": "A return is resolved only once.",
+      "guardar": "Resolve",
+      "cancelar": "Cancel"
+    }
   },
   "becas": {
     "validation": {
@@ -3907,7 +3942,9 @@
         "cobro_forma": "Paid by",
         "cobro_fecha": "Paid on",
         "cobro_nota": "Payment note",
-        "cobro_importe_centimos": "Voucher amount"
+        "cobro_importe_centimos": "Voucher amount",
+        "devolucion_gastos_centimos": "Return charges (cents)",
+        "devolucion_salida": "How the return was collected"
       },
       "valores": {
         "terminos": "Terms",
@@ -4041,7 +4078,8 @@
         "segundo_tutor": "Second guardian",
         "automatico": "Automatic",
         "manual": "Manual",
-        "normas": "School rules"
+        "normas": "School rules",
+        "banco": "Bank"
       }
     },
     "descargar_mis_datos": "Download my data",

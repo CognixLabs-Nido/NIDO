@@ -7,6 +7,7 @@ import {
   entraEnGestion,
   ESTADOS_GESTION,
   type ReciboGestion,
+  type SalidaDevolucion,
 } from '../lib/gestion-cobros'
 
 export type { ReciboGestion } from '../lib/gestion-cobros'
@@ -28,7 +29,7 @@ export async function getRecibosGestion(
   const { data: recibos } = await supabase
     .from('recibos')
     .select(
-      'id, familia_id, total_centimos, estado, metodo, es_esporadico, concepto_esporadico, fecha_envio_banco, fecha_devolucion, devuelto_de_recibo_id, cobro_forma, cobro_fecha, cobro_nota, cobro_importe_centimos, diferencia_de_recibo_id'
+      'id, familia_id, total_centimos, estado, metodo, es_esporadico, concepto_esporadico, fecha_envio_banco, fecha_devolucion, devuelto_de_recibo_id, cobro_forma, cobro_fecha, cobro_nota, cobro_importe_centimos, diferencia_de_recibo_id, devolucion_gastos_centimos, devolucion_salida'
     )
     .eq('centro_id', centroId)
     .eq('anio', anio)
@@ -68,6 +69,9 @@ export async function getRecibosGestion(
       fechaEnvioBanco: r.fecha_envio_banco,
       fechaDevolucion: r.fecha_devolucion,
       esRegiro: r.devuelto_de_recibo_id != null,
+      devolucionGastosCentimos: r.devolucion_gastos_centimos,
+      // El CHECK `recibos_devolucion_salida` solo admite estas tres.
+      devolucionSalida: r.devolucion_salida as SalidaDevolucion | null,
       cobroForma: r.cobro_forma,
       cobroFecha: r.cobro_fecha,
       cobroNota: r.cobro_nota,

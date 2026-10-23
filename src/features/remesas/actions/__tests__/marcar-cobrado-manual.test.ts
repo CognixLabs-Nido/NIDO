@@ -5,6 +5,7 @@ import { marcarCobradoManual } from '../marcar-cobrado-manual'
 /**
  * PR-1a: «Marcar cobrado» guarda la forma, la fecha y la nota; no toca las fechas de banco; no
  * cobra un SEPA pendiente (va por remesa) ni una fecha futura; y traduce el error de la BD.
+ * PR-2: un devuelto tampoco: tiene una sola salida y va por «Resolver devolución».
  */
 
 const { estado, update, admin } = vi.hoisted(() => ({
@@ -34,7 +35,7 @@ vi.mock('@/lib/supabase/server', () => ({
         update(valores)
         return {
           eq: () => ({
-            in: () => ({ select: () => ({ maybeSingle: async () => estado.respuesta }) }),
+            eq: () => ({ select: () => ({ maybeSingle: async () => estado.respuesta }) }),
           }),
         }
       },
@@ -74,9 +75,13 @@ describe('marcarCobradoManual', () => {
     expect(update.mock.calls[0]![0]).toMatchObject({ cobro_nota: null })
   })
 
-  it('un devuelto SEPA sí se cobra a mano', async () => {
+  it('un devuelto no (PR-2): tiene una sola salida, y no se escribe nada', async () => {
     estado.recibo = { id: 'r1', centro_id: 'c1', estado: 'devuelto', metodo: 'sepa' }
-    expect((await marcarCobradoManual(base)).success).toBe(true)
+    expect(await marcarCobradoManual(base)).toEqual({
+      success: false,
+      error: 'remesas.errors.devolucion_por_resolver',
+    })
+    expect(update).not.toHaveBeenCalled()
   })
 
   it('un SEPA pendiente no: va por remesa, y no se escribe nada', async () => {
@@ -122,6 +127,17 @@ describe('marcarCobradoManual', () => {
     expect(await marcarCobradoManual(base)).toEqual({
       success: false,
       error: 'remesas.errors.sepa_por_remesa',
+    })
+  })
+
+  it('el trigger de la devolución (se devolvió entre medias): su HINT se traduce', async () => {
+    estado.respuesta = {
+      data: null,
+      error: { code: 'P0001', hint: 'devolucion_por_funcion', message: 'x' },
+    }
+    expect(await marcarCobradoManual(base)).toEqual({
+      success: false,
+      error: 'remesas.errors.devolucion_por_resolver',
     })
   })
 

@@ -202,7 +202,11 @@ Restricciones:
   `20261105120000`: el cobro manual guarda su forma, su fecha y una nota. Nota del 2026-10-23: el
   PR-1b, `20261106120000`, añade el cheque guardería / ticket restaurant con su importe; si es menor
   que el recibo, la diferencia va a un recibo esporádico aparte. El cheque mayor que el recibo queda
-  para el PR-1c.)_
+  para el PR-1c. Otra nota del 2026-10-23: el PR-2, `20261107120000`, cierra el doble cobro de una
+  devolución. Cada devolución tiene una sola salida (banco, efectivo o transferencia), la escribe
+  `resolver_devolucion` y un trigger rechaza la segunda. Los gastos de devolución van en la propia
+  devolución y la salida cobra total + gastos; sustituyen al recibo esporádico de gastos. Arrastrar
+  la devolución al siguiente recibo es el PR-14.)_
 - Un cargo diario de ámbito familia no se factura: no hay contador de días bien definido para varios
   hijos (F-4-3, «no se inventa»).
 

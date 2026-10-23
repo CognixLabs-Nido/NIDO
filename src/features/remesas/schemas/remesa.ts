@@ -18,9 +18,20 @@ export type MarcarRemesaEnviadaInput = z.infer<typeof marcarRemesaEnviadaSchema>
 
 // ─── B-6 devoluciones ────────────────────────────────────────────────────────
 
-/** Marca un recibo (enviado_banco) como devuelto. */
+const fechaDevolucion = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'remesas.validation.fecha_devolucion_invalida')
+
+/**
+ * Registra la devolución de un recibo enviado al banco (PR-2): la fecha que dice el banco (nunca
+ * futura ni anterior al envío; lo comprueba la action, y la BD) y los gastos que cobra, 0 si no hay.
+ */
 export const marcarReciboDevueltoSchema = z.object({
   reciboId: z.string().uuid(),
+  fecha: fechaDevolucion,
+  gastos_euros: z
+    .number({ message: 'remesas.validation.gastos_invalidos' })
+    .min(0, 'remesas.validation.gastos_invalidos'),
 })
 export type MarcarReciboDevueltoInput = z.infer<typeof marcarReciboDevueltoSchema>
 
@@ -111,21 +122,33 @@ export function crearCobroDialogSchema(totalCentimos: number) {
 }
 export type CobroDialogInput = z.infer<ReturnType<typeof crearCobroDialogSchema>>
 
-/** Re-gira el importe de un recibo devuelto: crea un recibo nuevo ligado al original. */
-export const crearRegiroSchema = z.object({
-  reciboId: z.string().uuid(),
-})
-export type CrearRegiroInput = z.infer<typeof crearRegiroSchema>
+/**
+ * Las salidas de una devolución (PR-2): volver a pasarla por el banco (re-giro por total + gastos),
+ * o cobrarla en efectivo o por transferencia. Arrastrarla al siguiente recibo es el PR-14.
+ */
+export const SALIDAS_DEVOLUCION = ['banco', 'efectivo', 'transferencia'] as const
 
-/** Gastos de devolución que cobra el banco → recibo esporádico ligado al niño. */
-export const gastosDevolucionSchema = z.object({
-  reciboId: z.string().uuid(),
-  importe_euros: z
-    .number({ message: 'remesas.validation.importe_invalido' })
-    .positive('remesas.validation.importe_positivo'),
-  metodo: z.enum(['sepa', 'efectivo', 'transferencia']),
-})
-export type GastosDevolucionInput = z.infer<typeof gastosDevolucionSchema>
+/**
+ * Resuelve una devolución, una sola vez (`resolver_devolucion`). Efectivo y transferencia piden la
+ * fecha del cobro y admiten nota; el banco no pide nada más.
+ */
+export const resolverDevolucionSchema = z
+  .object({
+    reciboId: z.string().uuid(),
+    salida: z.enum(SALIDAS_DEVOLUCION),
+    fecha: fechaCobro.optional(),
+    nota: notaCobro,
+  })
+  .superRefine((v, ctx) => {
+    if (v.salida !== 'banco' && !v.fecha) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['fecha'],
+        message: 'remesas.validation.fecha_cobro_invalida',
+      })
+    }
+  })
+export type ResolverDevolucionInput = z.infer<typeof resolverDevolucionSchema>
 
 // Config del acreedor. CID obligatorio; BIC opcional (8 u 11); IBAN opcional al
 // editar (vacío = preservar el cifrado existente), con longitud SEPA si se aporta.

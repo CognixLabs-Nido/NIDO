@@ -1804,14 +1804,9 @@
     "regiro_badge": "Re-giro",
     "devuelta_el": "Devuelto el {fecha}",
     "marcar_devuelto": "Marcar devuelto",
-    "regirar": "Re-girar",
     "cobrar_manual": "Marcar cobrado",
-    "anadir_gastos": "Gastos devolución",
     "devuelto_ok": "Recibo marcado como devuelto.",
-    "regiro_ok": "Re-giro creado (pendiente de remesar).",
     "cobrado_manual_ok": "Recibo marcado como cobrado manualmente.",
-    "gastos_ok": "Gastos de devolución registrados.",
-    "gastos_title": "Gastos de devolución",
     "estado": {
       "borrador": "Borrador",
       "enviada": "Enviada"
@@ -1830,9 +1825,7 @@
     "fields": {
       "identificador_acreedor": "Identificador de acreedor (CID)",
       "bic_acreedor": "BIC del acreedor",
-      "iban_acreedor": "IBAN del acreedor",
-      "importe_gastos": "Importe de los gastos (€)",
-      "metodo": "Método de pago"
+      "iban_acreedor": "IBAN del acreedor"
     },
     "validation": {
       "sin_recibos": "Selecciona al menos un recibo",
@@ -1845,7 +1838,12 @@
       "fecha_cobro_futura": "La fecha de cobro no puede ser futura",
       "nota_cobro_larga": "La nota no puede pasar de 500 caracteres",
       "importe_cheque_invalido": "Indica el importe del cheque.",
-      "falta_metodo_diferencia": "Elige cómo se cobra lo que queda."
+      "falta_metodo_diferencia": "Elige cómo se cobra lo que queda.",
+      "fecha_devolucion_invalida": "Fecha no válida",
+      "fecha_devolucion_futura": "La fecha de la devolución no puede ser futura",
+      "devolucion_antes_del_envio": "La devolución no puede ser anterior al envío al banco",
+      "gastos_invalidos": "Indica los gastos (0 si no hay)",
+      "fecha_cobro_devolucion": "La fecha de cobro no puede ser futura ni anterior a la devolución"
     },
     "errors": {
       "invalid": "Datos no válidos.",
@@ -1864,12 +1862,14 @@
       "devolver_failed": "No se pudo marcar el recibo como devuelto.",
       "no_cobrable_manual": "Este recibo no se puede marcar como cobrado manual.",
       "cobrar_manual_failed": "No se pudo marcar como cobrado manual.",
-      "no_regirable": "Solo puede re-girarse un recibo devuelto.",
-      "regiro_failed": "No se pudo crear el re-giro.",
-      "gastos_failed": "No se pudieron registrar los gastos de devolución.",
       "sepa_por_remesa": "Un recibo SEPA pendiente se cobra por remesa. Para cobrarlo a mano, desconfírmalo y cambia el método del mes.",
       "cheque_supera_recibo": "El cheque supera el importe del recibo. Ese caso todavía no se puede registrar.",
-      "sin_mandato_diferencia": "La familia no tiene mandato SEPA activo: lo que queda no se puede pasar al banco."
+      "sin_mandato_diferencia": "La familia no tiene mandato SEPA activo: lo que queda no se puede pasar al banco.",
+      "devolucion_ya_resuelta": "Esta devolución ya está resuelta: no se puede cobrar dos veces.",
+      "no_devuelto": "Solo se resuelve un recibo devuelto.",
+      "sin_mandato_devolucion": "La familia no tiene mandato SEPA activo: no se puede volver a pasar por el banco.",
+      "resolver_failed": "No se pudo resolver la devolución.",
+      "devolucion_por_resolver": "Un recibo devuelto se cobra desde «Resolver devolución»."
     },
     "transferencias_beca": {
       "title": "Transferencias de beca comedor",
@@ -1907,7 +1907,42 @@
       "cheque_guarderia": "Cheque guardería / Ticket restaurant"
     },
     "cheque_de": "cheque de {importe}",
-    "diferencia_en_recibo_aparte": "quedan {importe} en un recibo aparte"
+    "diferencia_en_recibo_aparte": "quedan {importe} en un recibo aparte",
+    "resolver_devolucion": "Resolver devolución",
+    "resuelta_ok": "Devolución resuelta.",
+    "gastos_devolucion": "gastos {importe}",
+    "cobrado_por": "Cobrado por: {salida}",
+    "salidas_cobrado": {
+      "banco": "banco",
+      "efectivo": "efectivo",
+      "transferencia": "transferencia"
+    },
+    "devuelto_dialog": {
+      "titulo": "Marcar devuelto",
+      "fecha": "Fecha de la devolución (la que dice el banco)",
+      "gastos": "Gastos de devolución (€)",
+      "gastos_ayuda": "Lo que cobra el banco por la devolución; 0 si no hay. Se cobran junto al recibo cuando se resuelva la devolución.",
+      "guardar": "Marcar devuelto",
+      "cancelar": "Cancelar"
+    },
+    "resolver_dialog": {
+      "titulo": "Resolver devolución",
+      "a_cobrar": "A cobrar: {total}",
+      "a_cobrar_con_gastos": "A cobrar: {total} ({recibo} del recibo + {gastos} de gastos)",
+      "salida": "Cómo se cobra",
+      "salidas": {
+        "banco": "Volver a pasarlo por el banco",
+        "efectivo": "Efectivo",
+        "transferencia": "Transferencia"
+      },
+      "banco_ayuda": "Se crea un recibo nuevo por {importe}, que entra en la siguiente remesa de este mes.",
+      "sin_mandato": "La familia no tiene mandato SEPA activo: no se puede volver a pasar por el banco.",
+      "fecha": "Fecha de cobro",
+      "nota": "Nota (opcional)",
+      "una_vez": "Una devolución se resuelve una sola vez.",
+      "guardar": "Resolver",
+      "cancelar": "Cancelar"
+    }
   },
   "becas": {
     "validation": {
@@ -3907,7 +3942,9 @@
         "cobro_forma": "Cobrado en",
         "cobro_fecha": "Cobrado el",
         "cobro_nota": "Nota del cobro",
-        "cobro_importe_centimos": "Importe del cheque"
+        "cobro_importe_centimos": "Importe del cheque",
+        "devolucion_gastos_centimos": "Gastos de devolución (céntimos)",
+        "devolucion_salida": "Cómo se cobró la devolución"
       },
       "valores": {
         "terminos": "Términos",
@@ -4041,7 +4078,8 @@
         "segundo_tutor": "Segundo tutor",
         "automatico": "Automático",
         "manual": "Manual",
-        "normas": "Normas del centro"
+        "normas": "Normas del centro",
+        "banco": "Banco"
       }
     },
     "descargar_mis_datos": "Descargar mis datos",

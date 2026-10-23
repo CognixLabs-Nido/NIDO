@@ -3791,6 +3791,8 @@ export type Database = {
           concepto_esporadico: string | null
           created_at: string
           deleted_at: string | null
+          devolucion_gastos_centimos: number | null
+          devolucion_salida: string | null
           devuelto_de_recibo_id: string | null
           diferencia_de_recibo_id: string | null
           es_esporadico: boolean
@@ -3815,6 +3817,8 @@ export type Database = {
           concepto_esporadico?: string | null
           created_at?: string
           deleted_at?: string | null
+          devolucion_gastos_centimos?: number | null
+          devolucion_salida?: string | null
           devuelto_de_recibo_id?: string | null
           diferencia_de_recibo_id?: string | null
           es_esporadico?: boolean
@@ -3839,6 +3843,8 @@ export type Database = {
           concepto_esporadico?: string | null
           created_at?: string
           deleted_at?: string | null
+          devolucion_gastos_centimos?: number | null
+          devolucion_salida?: string | null
           devuelto_de_recibo_id?: string | null
           diferencia_de_recibo_id?: string | null
           es_esporadico?: boolean
@@ -4882,6 +4888,15 @@ export type Database = {
       revocar_consentimiento_imagen: {
         Args: { p_nino_id: string }
         Returns: number
+      }
+      resolver_devolucion: {
+        Args: {
+          p_fecha: string
+          p_nota: string
+          p_recibo_id: string
+          p_salida: string
+        }
+        Returns: string
       }
       resolver_etiqueta_imagen: {
         Args: { p_media_etiqueta_id: string }

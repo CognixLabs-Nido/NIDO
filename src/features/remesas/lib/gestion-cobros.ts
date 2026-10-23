@@ -3,6 +3,9 @@ import type { Database } from '@/types/database'
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 type MetodoPago = Database['public']['Enums']['metodo_pago']
 
+/** PR-2: cómo se resolvió una devolución (una sola vez). */
+export type SalidaDevolucion = 'banco' | 'efectivo' | 'transferencia'
+
 export interface ReciboGestion {
   id: string
   /** F-4-5: los recibos son familiares → se muestra la familia (antes el niño). */
@@ -16,6 +19,9 @@ export interface ReciboGestion {
   fechaDevolucion: string | null
   /** ¿Es un recibo de re-giro (ligado a un devuelto)? */
   esRegiro: boolean
+  /** PR-2: los gastos de la devolución (con fecha_devolucion) y su salida, si ya se resolvió. */
+  devolucionGastosCentimos: number | null
+  devolucionSalida: SalidaDevolucion | null
   /** PR-1a: el cobro manual (solo con estado cobrado_manual). */
   cobroForma: MetodoPago | null
   cobroFecha: string | null
@@ -46,10 +52,26 @@ export function entraEnGestion(r: { estado: EstadoRecibo; metodo: MetodoPago | n
   return (ESTADOS_GESTION as readonly EstadoRecibo[]).includes(r.estado)
 }
 
-/** ¿Se puede marcar cobrado a mano? Un pendiente que no es SEPA, o un devuelto. */
+/**
+ * ¿Se puede marcar cobrado a mano? Un pendiente que no es SEPA. Un devuelto no: tiene una sola
+ * salida y se resuelve aparte (PR-2).
+ */
 export function cobrableAMano(r: Pick<ReciboGestion, 'estado' | 'metodo'>): boolean {
-  if (r.estado === 'devuelto') return true
   return r.estado === 'pendiente_procesar' && r.metodo !== 'sepa'
+}
+
+/** ¿Espera la devolución su salida? Un devuelto que todavía no se ha resuelto (PR-2). */
+export function devolucionPorResolver(
+  r: Pick<ReciboGestion, 'estado' | 'devolucionSalida'>
+): boolean {
+  return r.estado === 'devuelto' && r.devolucionSalida === null
+}
+
+/** Lo que cobra la salida de una devolución: el recibo más los gastos del banco (PR-2). */
+export function importeDevolucion(
+  r: Pick<ReciboGestion, 'totalCentimos' | 'devolucionGastosCentimos'>
+): number {
+  return r.totalCentimos + (r.devolucionGastosCentimos ?? 0)
 }
 
 /**
@@ -71,11 +93,18 @@ const ORDEN: Record<EstadoRecibo, number> = {
   borrador: 4,
 }
 
-/** Primero lo que pide una acción (pendientes, devueltos); dentro, por familia. */
+/** Un devuelto ya resuelto no pide nada: va con los cobrados (PR-2). */
+function rango(r: ReciboGestion): number {
+  return r.estado === 'devuelto' && r.devolucionSalida !== null
+    ? ORDEN.cobrado_manual
+    : ORDEN[r.estado]
+}
+
+/** Primero lo que pide una acción (pendientes, devueltos sin resolver); dentro, por familia. */
 export function ordenarGestion(recibos: ReciboGestion[]): ReciboGestion[] {
   return [...recibos].sort(
     (a, b) =>
-      ORDEN[a.estado] - ORDEN[b.estado] ||
+      rango(a) - rango(b) ||
       a.familiaEtiqueta.localeCompare(b.familiaEtiqueta, 'es-ES') ||
       a.id.localeCompare(b.id)
   )
