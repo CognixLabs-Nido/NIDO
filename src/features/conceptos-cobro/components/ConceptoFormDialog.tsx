@@ -38,6 +38,7 @@ import { crearConcepto } from '../actions/crear-concepto'
 import { TarifasAnioEditor } from './TarifasAnioEditor'
 import type { TarifaAnioItem } from '../queries/get-tarifas-concepto-anio'
 import {
+  admiteServicio,
   AMBITOS,
   APLICACIONES,
   conceptoCobroSchema,
@@ -47,6 +48,9 @@ import {
   type ConceptoCobroInput,
 } from '../schemas/concepto-cobro'
 import type { ConceptoCobroListItem } from '../queries/get-conceptos-cobro'
+
+// Valor del Select para «sin servicio» (un Select no admite null).
+const SIN_SERVICIO = 'ninguno'
 
 interface Props {
   centroId: string
@@ -101,6 +105,13 @@ export function ConceptoFormDialog({
   const ambito = useWatch({ control: form.control, name: 'ambito' })
   const tarifaPorAnio = useWatch({ control: form.control, name: 'tarifa_por_anio_nacimiento' })
   const esDiario = tipoConcepto === 'diario'
+  // PR-4: un mensual de cobro fijo por niño puede ser «de comedor» (opcional); el diario lo exige.
+  const mostrarServicio = admiteServicio({
+    tipo_concepto: tipoConcepto,
+    signo: Number(signo),
+    tipo_valor: tipoValor,
+    ambito,
+  })
   const esPorcentaje = tipoValor === 'porcentaje'
   const esDescuentoPorcentual = Number(signo) === -1 && esPorcentaje
   // B1-2: el flag solo aplica a conceptos por niño (en familia el motor cae a base).
@@ -118,10 +129,11 @@ export function ConceptoFormDialog({
     value,
     label: t(`aplicaciones.${value}`),
   }))
-  const servicioItems = SERVICIOS_DIARIOS.map((value) => ({
-    value,
-    label: t(`servicios.${value}`),
-  }))
+  const servicioItems = [
+    // En un mensual el servicio es opcional: «Ninguno» lo deja sin servicio.
+    ...(esDiario ? [] : [{ value: SIN_SERVICIO, label: t('servicio_ninguno') }]),
+    ...SERVICIOS_DIARIOS.map((value) => ({ value, label: t(`servicios.${value}`) })),
+  ]
   // Base: cualquier concepto del centro salvo el que se edita (evita auto-referencia).
   const baseItems = conceptos
     .filter((c) => c.id !== concepto?.id)
@@ -293,17 +305,19 @@ export function ConceptoFormDialog({
               )}
             />
 
-            {esDiario && (
+            {mostrarServicio && (
               <FormField
                 control={form.control}
                 name="servicio"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('fields.servicio')}</FormLabel>
+                    <FormLabel>
+                      {esDiario ? t('fields.servicio') : t('fields.servicio_mensual')}
+                    </FormLabel>
                     <Select
                       items={servicioItems}
-                      value={field.value ?? undefined}
-                      onValueChange={field.onChange}
+                      value={field.value ?? (esDiario ? undefined : SIN_SERVICIO)}
+                      onValueChange={(v) => field.onChange(v === SIN_SERVICIO ? null : v)}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -318,6 +332,9 @@ export function ConceptoFormDialog({
                         ))}
                       </SelectContent>
                     </Select>
+                    {!esDiario && (
+                      <p className="text-muted-foreground text-xs">{t('servicio_mensual_hint')}</p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

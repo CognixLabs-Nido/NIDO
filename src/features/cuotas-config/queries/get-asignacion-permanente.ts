@@ -3,6 +3,8 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/database'
 
+import type { ConceptoConServicio } from '../lib/servicios-solapados'
+
 type TipoConcepto = Database['public']['Enums']['tipo_concepto']
 
 export interface ConceptoAsignablePermanente {
@@ -31,6 +33,8 @@ export interface AsignacionPermanente {
   familias: FamiliaAsignacion[]
   conceptosNino: ConceptoAsignablePermanente[]
   conceptosFamilia: ConceptoAsignablePermanente[]
+  /** PR-4: conceptos activos con servicio, manuales y automáticos (para el aviso de solape). */
+  conceptosConServicio: ConceptoConServicio[]
 }
 
 const VACIO: AsignacionPermanente = {
@@ -38,6 +42,7 @@ const VACIO: AsignacionPermanente = {
   familias: [],
   conceptosNino: [],
   conceptosFamilia: [],
+  conceptosConServicio: [],
 }
 
 /**
@@ -64,7 +69,7 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
     ...new Set(ninos.map((n) => n.familia_id).filter((x): x is string => x != null)),
   ]
 
-  const [familiasRes, tutoresRes, conceptosRes, asignRes] = await Promise.all([
+  const [familiasRes, tutoresRes, conceptosRes, asignRes, servicioRes] = await Promise.all([
     supabase.from('familias').select('id, etiqueta').in('id', familiaIds),
     supabase
       .from('familia_tutores')
@@ -82,6 +87,13 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
       .from('asignacion_concepto')
       .select('nino_id, familia_id, concepto_id')
       .eq('centro_id', centroId)
+      .is('deleted_at', null),
+    supabase
+      .from('conceptos_cobro')
+      .select('id, tipo_concepto, servicio')
+      .eq('centro_id', centroId)
+      .eq('activo', true)
+      .not('servicio', 'is', null)
       .is('deleted_at', null),
   ])
 
@@ -139,5 +151,9 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
     }))
     .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es-ES'))
 
-  return { alumnos, familias, conceptosNino, conceptosFamilia }
+  const conceptosConServicio: ConceptoConServicio[] = (servicioRes.data ?? []).flatMap((c) =>
+    c.servicio ? [{ id: c.id, tipo_concepto: c.tipo_concepto, servicio: c.servicio }] : []
+  )
+
+  return { alumnos, familias, conceptosNino, conceptosFamilia, conceptosConServicio }
 }

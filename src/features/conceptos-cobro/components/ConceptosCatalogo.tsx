@@ -149,7 +149,14 @@ function ConceptoRow({
     <TableRow className={concepto.activo ? undefined : 'opacity-60'}>
       <TableCell className="font-medium">{concepto.nombre}</TableCell>
       <TableCell>
-        <Badge variant="secondary">{t(`tipos.${concepto.tipo_concepto}`)}</Badge>
+        <Badge variant="secondary">
+          {concepto.servicio
+            ? t('tipo_con_servicio', {
+                tipo: t(`tipos.${concepto.tipo_concepto}`),
+                servicio: t(`servicios.${concepto.servicio}`),
+              })
+            : t(`tipos.${concepto.tipo_concepto}`)}
+        </Badge>
       </TableCell>
       <TableCell>{formatValor(concepto, t, locale)}</TableCell>
       <TableCell>
