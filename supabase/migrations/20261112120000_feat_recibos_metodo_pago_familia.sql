@@ -292,6 +292,9 @@ BEGIN
     SELECT metodo INTO v_metodo FROM public.metodo_pago_familia
       WHERE familia_id = r_fam.familia_id AND anio = p_anio AND mes = p_mes AND deleted_at IS NULL
       LIMIT 1;
+    IF v_metodo IS NULL THEN
+      SELECT f.metodo_pago INTO v_metodo FROM public.familias f WHERE f.id = r_fam.familia_id;
+    END IF;
 
     -- R-2: REUTILIZA la carcasa del borrador si ya existe (mismo id), y solo la crea la
     -- primera vez. Conservar el id es lo que permite que las líneas manuales sigan
@@ -1061,7 +1064,7 @@ DECLARE
 BEGIN
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure('public.generar_recibos_mes(uuid,integer,integer)');
-  IF v_md5 IS DISTINCT FROM '20f5d5eb56220245cd490cfa0d1ed425' THEN
+  IF v_md5 IS DISTINCT FROM 'e38d7f15b485cd87bc13b8714cec402f' THEN
     RAISE EXCEPTION 'generar_recibos_mes no quedó como este fichero: %', coalesce(v_md5, 'falta');
   END IF;
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
