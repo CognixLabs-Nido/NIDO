@@ -6,10 +6,11 @@ import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { getPendientesCampanaProfe } from '@/features/informes/queries/get-pendientes-campana-profe'
 import { createClient } from '@/lib/supabase/server'
 
-import { contarNoVistas } from '../lib/derivar'
+import { contarNoVistas, familiasConDomiciliacionNueva } from '../lib/derivar'
 import {
   cutoffNovedades,
   esStaff,
+  getDomiciliacionesVistas,
   getFirmasVistas,
   getFotosVistas,
   getInformesVistos,
@@ -32,6 +33,51 @@ const VACIO: AvisosInicio = {
   recibosNuevos: 0,
   campanaPendientes: null,
   altasPendientesValidar: 0,
+  familiasDomiciliacionNueva: [],
+}
+
+/**
+ * Familias del centro que han firmado o cambiado su domiciliación por su cuenta y cuya ficha
+ * Dirección no ha abierto desde entonces. Firma digital de otro usuario (el presencial lo
+ * registra la propia Dirección) en los últimos N días; la regla «ya dada de alta» y el «visto»
+ * los aplica `familiasConDomiciliacionNueva`. La RLS (`mandatos_sepa_select`, `matriculas_admin_all`)
+ * deja leer a Dirección; cada consulta se acota además a `centroId`.
+ */
+async function getFamiliasDomiciliacionNueva(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  centroId: string,
+  userId: string
+): Promise<string[]> {
+  const { data: mandatos } = await supabase
+    .from('mandatos_sepa')
+    .select('familia_id, created_at')
+    .eq('centro_id', centroId)
+    .eq('metodo_firma', 'digital')
+    .neq('usuario_id', userId)
+    .is('deleted_at', null)
+    .gte('created_at', cutoffNovedades())
+  // Un mandato es de la familia desde F-2c-1; el tipo admite NULL por las filas de antes.
+  const filas = (mandatos ?? []).filter(
+    (m): m is { familia_id: string; created_at: string } => m.familia_id !== null
+  )
+  if (filas.length === 0) return []
+
+  const [ninos, vistas] = await Promise.all([
+    supabase
+      .from('ninos')
+      .select('familia_id, matriculas(activada_at)')
+      .eq('centro_id', centroId)
+      .in('familia_id', [...new Set(filas.map((m) => m.familia_id))]),
+    getDomiciliacionesVistas(),
+  ])
+  const activadas: Record<string, string[]> = {}
+  for (const n of ninos.data ?? []) {
+    if (!n.familia_id) continue
+    for (const m of n.matriculas ?? []) {
+      if (m.activada_at) (activadas[n.familia_id] ??= []).push(m.activada_at)
+    }
+  }
+  return familiasConDomiciliacionNueva(filas, activadas, vistas)
 }
 
 /**
@@ -68,55 +114,58 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
   const medicacionesActivas = meds.count ?? 0
 
   if (esStaff(rol)) {
-    const [pc, conf, nf, rev, archivar, vistas, campanaPendientes] = await Promise.all([
-      supabase
-        .from('administraciones_medicacion')
-        .select('id', { count: 'exact', head: true })
-        .eq('centro_id', centroId)
-        .is('confirmado_por', null)
-        .neq('administrado_por', user.id),
-      supabase
-        .from('administraciones_medicacion')
-        .select('id', { count: 'exact', head: true })
-        .eq('centro_id', centroId)
-        .not('confirmado_por', 'is', null),
-      // "Ha llegado una firma nueva": recogidas/medicaciones que una familia firmó
-      // recientemente en tu ámbito (RLS), excluyendo tus propias firmas. Se traen las
-      // filas (no count) para descontar las ya VISTAS (autorización abierta después
-      // de la firma).
-      supabase
-        .from('firmas_autorizacion')
-        .select('autorizacion_id, created_at, autorizaciones!inner(tipo, es_plantilla)')
-        .eq('decision', 'firmado')
-        .neq('firmante_id', user.id)
-        .gte('created_at', cutoffNovedades())
-        .eq('autorizaciones.centro_id', centroId)
-        .eq('autorizaciones.es_plantilla', false)
-        .in('autorizaciones.tipo', ['recogida', 'medicacion']),
-      // Revocaciones (alerta de seguridad): cambió quién recoge / se paró una medicina.
-      supabase
-        .from('firmas_autorizacion')
-        .select('autorizacion_id, created_at, autorizaciones!inner(tipo, es_plantilla)')
-        .eq('decision', 'revocado')
-        .neq('firmante_id', user.id)
-        .gte('created_at', cutoffNovedades())
-        .eq('autorizaciones.centro_id', centroId)
-        .eq('autorizaciones.es_plantilla', false)
-        .in('autorizaciones.tipo', ['recogida', 'medicacion']),
-      // Medicaciones TERMINADAS (hoy > fecha_fin) aún sin archivar → recordatorio de archivar.
-      supabase
-        .from('autorizaciones')
-        .select('id', { count: 'exact', head: true })
-        .eq('centro_id', centroId)
-        .eq('tipo', 'medicacion')
-        .eq('es_plantilla', false)
-        .is('archivada_at', null)
-        .lt('vigencia_hasta', hoy),
-      getFirmasVistas(),
-      // Informes pendientes de campaña para la profe redactora (F9-5-2). Devuelve
-      // null para admin (sin aulas de redacción) y si no queda nada pendiente.
-      getPendientesCampanaProfe(centroId),
-    ])
+    const [pc, conf, nf, rev, archivar, vistas, campanaPendientes, domiciliaciones] =
+      await Promise.all([
+        supabase
+          .from('administraciones_medicacion')
+          .select('id', { count: 'exact', head: true })
+          .eq('centro_id', centroId)
+          .is('confirmado_por', null)
+          .neq('administrado_por', user.id),
+        supabase
+          .from('administraciones_medicacion')
+          .select('id', { count: 'exact', head: true })
+          .eq('centro_id', centroId)
+          .not('confirmado_por', 'is', null),
+        // "Ha llegado una firma nueva": recogidas/medicaciones que una familia firmó
+        // recientemente en tu ámbito (RLS), excluyendo tus propias firmas. Se traen las
+        // filas (no count) para descontar las ya VISTAS (autorización abierta después
+        // de la firma).
+        supabase
+          .from('firmas_autorizacion')
+          .select('autorizacion_id, created_at, autorizaciones!inner(tipo, es_plantilla)')
+          .eq('decision', 'firmado')
+          .neq('firmante_id', user.id)
+          .gte('created_at', cutoffNovedades())
+          .eq('autorizaciones.centro_id', centroId)
+          .eq('autorizaciones.es_plantilla', false)
+          .in('autorizaciones.tipo', ['recogida', 'medicacion']),
+        // Revocaciones (alerta de seguridad): cambió quién recoge / se paró una medicina.
+        supabase
+          .from('firmas_autorizacion')
+          .select('autorizacion_id, created_at, autorizaciones!inner(tipo, es_plantilla)')
+          .eq('decision', 'revocado')
+          .neq('firmante_id', user.id)
+          .gte('created_at', cutoffNovedades())
+          .eq('autorizaciones.centro_id', centroId)
+          .eq('autorizaciones.es_plantilla', false)
+          .in('autorizaciones.tipo', ['recogida', 'medicacion']),
+        // Medicaciones TERMINADAS (hoy > fecha_fin) aún sin archivar → recordatorio de archivar.
+        supabase
+          .from('autorizaciones')
+          .select('id', { count: 'exact', head: true })
+          .eq('centro_id', centroId)
+          .eq('tipo', 'medicacion')
+          .eq('es_plantilla', false)
+          .is('archivada_at', null)
+          .lt('vigencia_hasta', hoy),
+        getFirmasVistas(),
+        // Informes pendientes de campaña para la profe redactora (F9-5-2). Devuelve
+        // null para admin (sin aulas de redacción) y si no queda nada pendiente.
+        getPendientesCampanaProfe(centroId),
+        // Domiciliaciones firmadas o cambiadas por la familia: solo Dirección.
+        rol === 'admin' ? getFamiliasDomiciliacionNueva(supabase, centroId, user.id) : [],
+      ])
 
     // Una firma/revocación cuenta como "nueva" si su autorización no se ha abierto
     // después (mapa de vistas por-autorización, comparado por instante).
@@ -146,6 +195,7 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
       campanaPendientes,
       // El count real lo inyecta el dashboard admin (acotado a su centro); aquí 0.
       altasPendientesValidar: 0,
+      familiasDomiciliacionNueva: domiciliaciones,
     }
   }
 
@@ -210,5 +260,6 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
     recibosNuevos,
     campanaPendientes: null,
     altasPendientesValidar: 0,
+    familiasDomiciliacionNueva: [],
   }
 }

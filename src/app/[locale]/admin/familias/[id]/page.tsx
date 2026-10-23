@@ -22,6 +22,7 @@ import { EditarEtiquetaDialog } from '@/features/familias/components/EditarEtiqu
 import { EditarTutorDialog } from '@/features/familias/components/EditarTutorDialog'
 import { MetodoPagoFicha } from '@/features/familias/components/MetodoPagoFicha'
 import { PromoverTitularDialog } from '@/features/familias/components/PromoverTitularDialog'
+import { MarcarDomiciliacionVistaOnMount } from '@/features/notificaciones/components/MarcarDomiciliacionVistaOnMount'
 import {
   getFamiliaDetalle,
   type TutorDetalle,
@@ -55,6 +56,8 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
+      {/* Abrir la ficha apaga el aviso de "domiciliación nueva" del inicio (read-on-open). */}
+      <MarcarDomiciliacionVistaOnMount familiaId={familia.id} />
       <Link
         href={`/${locale}/admin/familias`}
         className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium"

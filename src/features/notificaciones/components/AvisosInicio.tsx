@@ -6,6 +6,7 @@ import {
   ClipboardListIcon,
   CoinsIcon,
   ImageIcon,
+  LandmarkIcon,
   PenLineIcon,
   PillIcon,
 } from 'lucide-react'
@@ -52,6 +53,8 @@ export async function AvisosInicio({
   const campanaPend = staff ? avisos.campanaPendientes : null
   // Altas (matrículas en 'lista') pendientes de validar: solo admin (#4 dashboard).
   const altasPendientesN = esAdmin ? avisos.altasPendientesValidar : 0
+  // Familias que firmaron o cambiaron su domiciliación por su cuenta: solo admin.
+  const domiciliaciones = esAdmin ? avisos.familiasDomiciliacionNueva : []
   if (
     pendientesN <= 0 &&
     hechasN <= 0 &&
@@ -63,6 +66,7 @@ export async function AvisosInicio({
     fotosNuevasN <= 0 &&
     recibosNuevosN <= 0 &&
     altasPendientesN <= 0 &&
+    domiciliaciones.length === 0 &&
     !campanaPend
   )
     return null
@@ -80,6 +84,11 @@ export async function AvisosInicio({
   const recibosHref = `/${locale}/family/recibos`
   const campanaInformesHref = `/${locale}/teacher/informes`
   const altasPendientesHref = `/${locale}/admin/ninos?estado=lista`
+  // Una sola familia: a su ficha (abrirla apaga el aviso). Varias: a la lista de familias.
+  const domiciliacionesHref =
+    domiciliaciones.length === 1
+      ? `/${locale}/admin/familias/${domiciliaciones[0]}`
+      : `/${locale}/admin/familias`
 
   // Fecha límite (más próxima) formateada en el huso del centro para el aviso de campaña.
   const campanaFechaFmt = campanaPend
@@ -240,6 +249,20 @@ export async function AvisosInicio({
           <PenLineIcon className="size-5 shrink-0 text-sky-700 dark:text-sky-300" />
           <span className="text-sm font-medium text-sky-900 dark:text-sky-100">
             {t('nuevas_firmas', { n: nuevasFirmasN })}
+          </span>
+        </Link>
+      )}
+
+      {/* Domiciliación firmada o cambiada por una familia (solo admin). Informativo (azul),
+          como las firmas nuevas: fuera del alta el método de pago no cambia solo. */}
+      {domiciliaciones.length > 0 && (
+        <Link
+          href={domiciliacionesHref}
+          className="flex items-center gap-3 rounded-xl border border-sky-300 bg-sky-50 p-4 transition hover:bg-sky-100 dark:border-sky-900/40 dark:bg-sky-950/30 dark:hover:bg-sky-950/50"
+        >
+          <LandmarkIcon className="size-5 shrink-0 text-sky-700 dark:text-sky-300" />
+          <span className="text-sm font-medium text-sky-900 dark:text-sky-100">
+            {t('domiciliaciones_nuevas', { n: domiciliaciones.length })}
           </span>
         </Link>
       )}

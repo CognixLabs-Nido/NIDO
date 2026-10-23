@@ -3490,7 +3490,8 @@
       "campana_urgente": "{n, plural, one {# informe pendent} other {# informes pendents}} · venç el {fecha}",
       "campana_vencida": "{n, plural, one {# informe pendent} other {# informes pendents}} · va vèncer el {fecha}",
       "altas_pendientes_validar": "{n, plural, one {# alta pendent de validar} other {# altes pendents de validar}}",
-      "recibos_nuevos": "{n, plural, one {Tens # rebut nou} other {Tens # rebuts nous}}"
+      "recibos_nuevos": "{n, plural, one {Tens # rebut nou} other {Tens # rebuts nous}}",
+      "domiciliaciones_nuevas": "{n, plural, one {Una família ha signat o canviat la seua domiciliació bancària des de l’app} other {# famílies han signat o canviat la seua domiciliació bancària des de l’app}}"
     },
     "errors": {
       "no_autorizado": "No autoritzat.",
