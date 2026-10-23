@@ -19,8 +19,10 @@ import {
 /**
  * PR-7 — el método de pago va en la FICHA de la familia (`familias.metodo_pago`).
  *
- *  - Una familia nueva nace en efectivo; el primer mandato SEPA (el paso del alta) la pasa a sepa.
- *    El reintento del alta y el cambio de cuenta no tocan lo que haya elegido la directora.
+ *  - Una familia nueva nace en efectivo. El primer mandato que la familia firma EN SU ALTA (sin
+ *    ningún hijo con la matrícula activada) la pasa a sepa, salvo que la directora ya haya elegido
+ *    a mano. Una familia ya dada de alta que firma (desde /family/recibos), el presencial de
+ *    Dirección, el reintento y el cambio de cuenta no cambian el método: la app pregunta.
  *  - Al generar, el recibo coge el de la ficha, salvo que su mes tenga una excepción
  *    (`metodo_pago_familia`, el selector de la lista de recibos), que vale solo ese mes.
  *  - Solo Dirección cambia la ficha, y el tutor ve el método de su familia en su export (art. 15).
@@ -30,7 +32,12 @@ const ANIO = 2026
 const IBAN = 'ES9121000418450200051332'
 const IBAN_OTRO = 'ES7921000813610123456789'
 
-function mandato(familiaId: string, iban: string, id: string) {
+function mandato(
+  familiaId: string,
+  iban: string,
+  id: string,
+  metodo: 'digital' | 'presencial' = 'presencial'
+) {
   return {
     p_familia_id: familiaId,
     p_nino_id: null,
@@ -44,7 +51,7 @@ function mandato(familiaId: string, iban: string, id: string) {
     p_ip_address: null,
     p_user_agent: null,
     p_fecha_firma: '2026-02-01T10:00:00Z',
-    p_metodo: 'presencial',
+    p_metodo: metodo,
   } as never
 }
 
@@ -55,18 +62,34 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
   let admin: TestUser
   let profe: TestUser
   let tutor: TestUser
+  let tutorA: TestUser
+  let tutorC: TestUser
   let familia: string
+  let familiaA: string
+  let familiaB: string
+  let familiaC: string
   let cAdmin: Awaited<ReturnType<typeof clientFor>>
   let cProfe: Awaited<ReturnType<typeof clientFor>>
   let cTutor: Awaited<ReturnType<typeof clientFor>>
+  let cTutorA: Awaited<ReturnType<typeof clientFor>>
+  let cTutorC: Awaited<ReturnType<typeof clientFor>>
 
-  async function metodoFicha(): Promise<string | undefined> {
+  async function metodoFicha(id = familia): Promise<string | undefined> {
     const { data } = await serviceClient
       .from('familias')
       .select('metodo_pago')
-      .eq('id', familia)
+      .eq('id', id)
       .single()
     return data?.metodo_pago
+  }
+
+  /** Lo que escribe `fijarMetodoPagoFamilia`: el método, marcado como elegido a mano. */
+  function fijarAMano(id: string, metodo: 'cheque_guarderia' | 'transferencia') {
+    return cAdmin
+      .from('familias')
+      .update({ metodo_pago: metodo, metodo_pago_manual: true })
+      .eq('id', id)
+      .select('id')
   }
 
   async function generarYMetodo(mes: number): Promise<string | null | undefined> {
@@ -95,10 +118,37 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
     admin = await createTestUser({ nombre: 'Admin Metodo PR7' })
     profe = await createTestUser({ nombre: 'Profe Metodo PR7' })
     tutor = await createTestUser({ nombre: 'Tutor Metodo PR7' })
+    tutorA = await createTestUser({ nombre: 'Tutor A Metodo PR7' })
+    tutorC = await createTestUser({ nombre: 'Tutor C Metodo PR7' })
     await asignarRol(admin.id, centro.id, 'admin')
     await asignarRol(profe.id, centro.id, 'profe')
     familia = await createTestFamilia(centro.id)
     await crearFamiliaTutor(familia, tutor.id, 'titular')
+    // Familia EN SU ALTA: su niño tiene la matrícula pendiente (sin activar).
+    familiaA = await createTestFamilia(centro.id)
+    await crearFamiliaTutor(familiaA, tutorA.id, 'titular')
+    const { data: ninoA } = await serviceClient
+      .from('ninos')
+      .insert({
+        centro_id: centro.id,
+        familia_id: familiaA,
+        nombre: 'Nino A PR7',
+        apellidos: 'Test',
+        fecha_nacimiento: '2024-05-15',
+      })
+      .select('id')
+      .single()
+    const matA = await serviceClient.from('matriculas').insert({
+      nino_id: ninoA!.id,
+      aula_id: aula.id,
+      curso_academico_id: curso.id,
+      fecha_alta: '2026-09-01',
+      estado: 'pendiente',
+    })
+    if (matA.error) throw new Error(`matricula A: ${matA.error.message}`)
+    familiaB = await createTestFamilia(centro.id)
+    familiaC = await createTestFamilia(centro.id)
+    await crearFamiliaTutor(familiaC, tutorC.id, 'titular')
 
     const { data: nino, error } = await serviceClient
       .from('ninos')
@@ -133,6 +183,8 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
     cAdmin = await clientFor(admin)
     cProfe = await clientFor(profe)
     cTutor = await clientFor(tutor)
+    cTutorA = await clientFor(tutorA)
+    cTutorC = await clientFor(tutorC)
   }, 60_000)
 
   afterAll(async () => {
@@ -147,6 +199,8 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
     await deleteTestUser(admin.id)
     await deleteTestUser(profe.id)
     await deleteTestUser(tutor.id)
+    await deleteTestUser(tutorA.id)
+    await deleteTestUser(tutorC.id)
   }, 60_000)
 
   it('una familia nueva nace en efectivo, y su recibo lo coge (sin mandato, sin elegir nada)', async () => {
@@ -154,19 +208,40 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
     expect(await generarYMetodo(1)).toBe('efectivo')
   })
 
-  it('el primer mandato SEPA (el paso del alta) la pasa a sepa', async () => {
-    const { error } = await cTutor.rpc('registrar_mandato_sepa', mandato(familia, IBAN, 'PR7-1'))
+  async function activadas(id: string): Promise<number> {
+    const { data } = await serviceClient
+      .from('matriculas')
+      .select('id, nino:ninos!inner(familia_id)')
+      .eq('nino.familia_id', id)
+      .not('activada_at', 'is', null)
+    return (data ?? []).length
+  }
+
+  it('una familia ya dada de alta que firma su mandato no cambia de método: lo pregunta la app', async () => {
+    // Premisa: el niño de esta familia tiene la matrícula activada.
+    expect(await activadas(familia)).toBe(1)
+    const { error } = await cTutor.rpc(
+      'registrar_mandato_sepa',
+      mandato(familia, IBAN, 'PR7-1', 'digital')
+    )
     expect(error).toBeNull()
-    expect(await metodoFicha()).toBe('sepa')
-    expect(await generarYMetodo(2)).toBe('sepa')
+    expect(await metodoFicha()).toBe('efectivo')
+    expect(await generarYMetodo(2)).toBe('efectivo')
+  })
+
+  it('el primer mandato que la familia firma en su alta la pasa a sepa', async () => {
+    expect(await activadas(familiaA)).toBe(0)
+    expect(await metodoFicha(familiaA)).toBe('efectivo')
+    const { error } = await cTutorA.rpc(
+      'registrar_mandato_sepa',
+      mandato(familiaA, IBAN, 'PR7-A', 'digital')
+    )
+    expect(error).toBeNull()
+    expect(await metodoFicha(familiaA)).toBe('sepa')
   })
 
   it('la ficha manda mes tras mes; la excepción de un mes vale solo ese mes', async () => {
-    const r = await cAdmin
-      .from('familias')
-      .update({ metodo_pago: 'cheque_guarderia' })
-      .eq('id', familia)
-      .select('id')
+    const r = await fijarAMano(familia, 'cheque_guarderia')
     expect(r.error).toBeNull()
     expect(r.data).toHaveLength(1)
 
@@ -182,7 +257,10 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
 
   it('el reintento del alta y el cambio de cuenta no tocan lo que eligió la directora', async () => {
     expect(await metodoFicha()).toBe('cheque_guarderia')
-    const reintento = await cTutor.rpc('registrar_mandato_sepa', mandato(familia, IBAN, 'PR7-1'))
+    const reintento = await cTutor.rpc(
+      'registrar_mandato_sepa',
+      mandato(familia, IBAN, 'PR7-1', 'digital')
+    )
     expect(reintento.error).toBeNull()
     expect(await metodoFicha()).toBe('cheque_guarderia')
     const sustituir = await cAdmin.rpc(
@@ -191,6 +269,32 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
     )
     expect(sustituir.error).toBeNull()
     expect(await metodoFicha()).toBe('cheque_guarderia')
+  })
+
+  it('el mandato presencial de Dirección no cambia el método: lo pregunta la app', async () => {
+    expect(await metodoFicha(familiaB)).toBe('efectivo')
+    const { error } = await cAdmin.rpc('registrar_mandato_sepa', mandato(familiaB, IBAN, 'PR7-B'))
+    expect(error).toBeNull()
+    expect(await metodoFicha(familiaB)).toBe('efectivo')
+  })
+
+  it('si la directora ya eligió a mano, la firma del alta no la pisa', async () => {
+    expect(await activadas(familiaC)).toBe(0)
+    const r = await fijarAMano(familiaC, 'transferencia')
+    expect(r.data).toHaveLength(1)
+    const { error } = await cTutorC.rpc(
+      'registrar_mandato_sepa',
+      mandato(familiaC, IBAN, 'PR7-C', 'digital')
+    )
+    expect(error).toBeNull()
+    // Premisa del caso: el mandato quedó activo; es el método lo que no cambia.
+    const { data: activos } = await serviceClient
+      .from('mandatos_sepa')
+      .select('id')
+      .eq('familia_id', familiaC)
+      .eq('estado', 'activo')
+    expect(activos).toHaveLength(1)
+    expect(await metodoFicha(familiaC)).toBe('transferencia')
   })
 
   it('ni la profe ni el tutor cambian la ficha: la RLS no les deja ver la fila', async () => {

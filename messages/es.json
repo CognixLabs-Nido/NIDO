@@ -1213,7 +1213,9 @@
         "errors": {
           "invalido": "Forma de pago no válida.",
           "guardado": "No se ha podido guardar la forma de pago."
-        }
+        },
+        "mandato_pregunta": "Tiene un mandato SEPA activo, pero paga con: {metodo}. ¿Cobrar sus recibos por banco?",
+        "pasar_a_sepa": "Pasar a recibo por banco"
       }
     },
     "fotosRevocadas": {

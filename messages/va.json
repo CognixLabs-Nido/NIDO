@@ -1213,7 +1213,9 @@
         "errors": {
           "invalido": "Forma de pagament no vàlida.",
           "guardado": "No s'ha pogut guardar la forma de pagament."
-        }
+        },
+        "mandato_pregunta": "Té un mandat SEPA actiu, però paga amb: {metodo}. Cobrar els seus rebuts pel banc?",
+        "pasar_a_sepa": "Passar a rebut pel banc"
       }
     },
     "fotosRevocadas": {

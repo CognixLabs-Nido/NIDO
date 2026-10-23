@@ -60,6 +60,8 @@ describe('i18n — método de pago en la ficha (PR-7)', () => {
   it('premisa: la lectura encuentra el selector, la sección, los avisos y los errores', () => {
     expect(CLAVES).toContain('admin.familias.metodo_pago.etiqueta')
     expect(CLAVES).toContain('admin.familias.metodo_pago.sepa_sin_mandato')
+    expect(CLAVES).toContain('admin.familias.metodo_pago.mandato_pregunta')
+    expect(CLAVES).toContain('admin.familias.metodo_pago.pasar_a_sepa')
     expect(CLAVES).toContain('admin.familias.metodo_pago.titulo')
     expect(CLAVES).toContain('recibos_panel.metodo_excepcion')
     expect(CLAVES).toContain('recibos_panel.metodo_sepa_sin_mandato')
@@ -78,7 +80,10 @@ describe('i18n — método de pago en la ficha (PR-7)', () => {
     })
   }
 
-  it('la excepción del mes dice a qué método vuelve', () => {
+  it('la excepción del mes dice a qué método vuelve, y la pregunta, con qué paga hoy', () => {
     expect(marcadores(hoja(es, 'recibos_panel.metodo_excepcion') as string)).toEqual(['ficha'])
+    expect(marcadores(hoja(es, 'admin.familias.metodo_pago.mandato_pregunta') as string)).toEqual([
+      'metodo',
+    ])
   })
 })

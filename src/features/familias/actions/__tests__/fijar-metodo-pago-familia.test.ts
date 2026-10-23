@@ -83,12 +83,12 @@ describe('fijarMetodoPagoFamilia', () => {
     esAdmin.mockReset().mockResolvedValue(true)
   })
 
-  it('premisa: escribe el método en la ficha de la familia', async () => {
+  it('premisa: escribe el método en la ficha de la familia, marcado como elegido a mano', async () => {
     expect(
       await fijarMetodoPagoFamilia({ familia_id: FAMILIA, metodo: 'cheque_guarderia' })
     ).toEqual({ success: true, data: undefined })
     const u = updateDe('familias')
-    expect(u?.update).toEqual({ metodo_pago: 'cheque_guarderia' })
+    expect(u?.update).toEqual({ metodo_pago: 'cheque_guarderia', metodo_pago_manual: true })
     expect(u?.filtros).toContainEqual(['eq', 'id', FAMILIA])
     expect(esAdmin).toHaveBeenCalledWith(expect.anything(), 'u1', 'c1')
   })

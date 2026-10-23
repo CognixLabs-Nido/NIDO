@@ -11,11 +11,15 @@
 -- cheque guardería y un mes se queda al comedor: esos 10 € se cobran por otra vía).
 --
 --   · `familias.metodo_pago`, NOT NULL, por defecto `efectivo`. Las familias con mandato SEPA
---     activo pasan a `sepa` (backfill, con su recuento).
---   · `registrar_mandato_sepa`: definición VIVA con un único cambio. El PRIMER mandato activo de
---     la familia (el paso SEPA del alta, o la domiciliación que registra Dirección en la ficha)
---     la pasa a `sepa`. Si el alta omite el paso SEPA, se queda en `efectivo`. El reintento del
---     alta y el cambio de cuenta no tocan el método que haya elegido la directora.
+--     activo pasan a `sepa` (backfill, con su recuento). `familias.metodo_pago_manual`: la
+--     directora lo eligió a mano en la ficha (lo pone la app); nada lo pisa después.
+--   · `registrar_mandato_sepa`: definición VIVA con un único cambio. El PRIMER mandato que la
+--     familia firma EN SU ALTA (firma digital del tutor, sin ningún hijo con la matrícula ya
+--     activada) la pasa a `sepa`, salvo que la directora ya haya elegido a mano. Si el alta omite
+--     el paso SEPA, se queda como esté. Una familia ya dada de alta que activa un mandato (la
+--     domiciliación desde /family/recibos o el presencial de Dirección), el reintento del alta y
+--     el cambio de cuenta no tocan el método: la app pregunta si se cambia (decisión del
+--     responsable: pisar lo que la directora puso a mano no vale).
 --   · `generar_recibos_mes`: definición VIVA con un único cambio. Método = la excepción del mes
 --     si la hay; si no, el de la ficha.
 --   · `export_datos_sujeto` (art. 15): definición VIVA con un único cambio. Cada familia lleva
@@ -78,10 +82,14 @@ $guarda$;
 
 -- ---- El método de la familia, en su ficha ----
 ALTER TABLE public.familias
-  ADD COLUMN metodo_pago public.metodo_pago NOT NULL DEFAULT 'efectivo';
+  ADD COLUMN metodo_pago public.metodo_pago NOT NULL DEFAULT 'efectivo',
+  ADD COLUMN metodo_pago_manual boolean NOT NULL DEFAULT false;
 
 COMMENT ON COLUMN public.familias.metodo_pago IS
-  'PR-7: cómo paga la familia (sepa|efectivo|cheque_guarderia|transferencia). Lo cambia la directora en la ficha. Al generar, el recibo regular toma este método salvo que ese mes tenga una excepción en metodo_pago_familia. Por defecto efectivo; el primer mandato SEPA activo (registrar_mandato_sepa) la pasa a sepa.';
+  'PR-7: cómo paga la familia (sepa|efectivo|cheque_guarderia|transferencia). Lo cambia la directora en la ficha. Al generar, el recibo regular toma este método salvo que ese mes tenga una excepción en metodo_pago_familia. Por defecto efectivo; el primer mandato SEPA que la familia firma en su alta la pasa a sepa (registrar_mandato_sepa), salvo que la directora lo haya elegido a mano. Un mandato activado después no lo cambia: la app pregunta.';
+
+COMMENT ON COLUMN public.familias.metodo_pago_manual IS
+  'PR-7: la directora eligió la forma de pago a mano en la ficha. Con esto a true, la firma del mandato en el alta ya no cambia metodo_pago: la app pregunta.';
 
 -- Backfill: con mandato SEPA activo → sepa. El resto se queda en efectivo (el DEFAULT).
 DO $backfill$
@@ -171,11 +179,18 @@ BEGIN
       p_nombre_tecleado, p_texto_hash, p_ip_address, p_user_agent, p_fecha_firma, p_metodo
     )
     RETURNING id INTO v_id;
-    -- PR-7: el PRIMER mandato activo de la familia (el paso SEPA del alta, o la domiciliación que
-    -- registra Dirección en la ficha) la pasa a pagar con recibo por banco. El reintento del
-    -- alta (la rama de arriba) y el cambio de cuenta (sustituir_mandato_sepa) no tocan el método.
-    UPDATE public.familias SET metodo_pago = 'sepa'
-     WHERE id = p_familia_id AND metodo_pago IS DISTINCT FROM 'sepa';
+    -- PR-7: el PRIMER mandato que la familia firma EN SU ALTA (firma digital del tutor, sin ningún
+    -- hijo con la matrícula ya activada) la pasa a recibo por banco, salvo que la directora ya
+    -- haya elegido la forma de pago a mano. Una familia ya dada de alta que activa un mandato (la
+    -- domiciliación desde /family/recibos, o el presencial de Dirección), el reintento del alta
+    -- (la rama de arriba) y el cambio de cuenta (sustituir_mandato_sepa) no tocan el método: lo
+    -- pregunta la app.
+    IF p_metodo = 'digital' AND public.es_tutor_de_familia(p_familia_id)
+       AND NOT EXISTS (SELECT 1 FROM public.matriculas m JOIN public.ninos n ON n.id = m.nino_id
+                        WHERE n.familia_id = p_familia_id AND m.activada_at IS NOT NULL) THEN
+      UPDATE public.familias SET metodo_pago = 'sepa'
+       WHERE id = p_familia_id AND NOT metodo_pago_manual AND metodo_pago IS DISTINCT FROM 'sepa';
+    END IF;
   END IF;
 
   RETURN v_id;
@@ -1069,7 +1084,7 @@ BEGIN
   END IF;
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure('public.registrar_mandato_sepa(uuid,uuid,text,text,text,text,text,text,text,inet,text,timestamp with time zone,firma_metodo)');
-  IF v_md5 IS DISTINCT FROM '4407a9de7d027cbd96c0ab3fcc315321' THEN
+  IF v_md5 IS DISTINCT FROM 'baf4784d75b6008dbd9bec4a7c0fd0a6' THEN
     RAISE EXCEPTION 'registrar_mandato_sepa no quedó como este fichero: %', coalesce(v_md5, 'falta');
   END IF;
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
@@ -1102,6 +1117,12 @@ BEGIN
                     AND pg_get_expr(d.adbin, d.adrelid) = '''efectivo''::metodo_pago') THEN
     RAISE EXCEPTION 'familias.metodo_pago no quedó NOT NULL con DEFAULT efectivo';
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_attribute a JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
+                  WHERE a.attrelid = 'public.familias'::regclass AND a.attname = 'metodo_pago_manual'
+                    AND a.attnotnull AND a.atttypid = 'boolean'::regtype
+                    AND pg_get_expr(d.adbin, d.adrelid) = 'false') THEN
+    RAISE EXCEPTION 'familias.metodo_pago_manual no quedó NOT NULL con DEFAULT false';
+  END IF;
   -- Toda familia con mandato activo quedó en sepa, y ninguna más (recién hecho el backfill).
   SELECT count(DISTINCT m.familia_id) INTO v_n FROM public.mandatos_sepa m
    WHERE m.estado = 'activo' AND m.deleted_at IS NULL AND m.familia_id IS NOT NULL;
@@ -1113,7 +1134,10 @@ BEGIN
   IF obj_description('public.metodo_pago_familia'::regclass, 'pg_class') NOT LIKE 'F-4-3 / PR-7: EXCEPCIÓN de un solo mes%'
      OR col_description('public.familias'::regclass,
           (SELECT attnum FROM pg_attribute WHERE attrelid = 'public.familias'::regclass
-             AND attname = 'metodo_pago')) NOT LIKE 'PR-7: cómo paga la familia%' THEN
+             AND attname = 'metodo_pago')) NOT LIKE 'PR-7: cómo paga la familia%'
+     OR col_description('public.familias'::regclass,
+          (SELECT attnum FROM pg_attribute WHERE attrelid = 'public.familias'::regclass
+             AND attname = 'metodo_pago_manual')) NOT LIKE 'PR-7: la directora eligió%' THEN
     RAISE EXCEPTION 'los comentarios no quedaron como este fichero';
   END IF;
   RAISE NOTICE 'guarda posterior: familias.metodo_pago, motor, registrar_mandato_sepa, export_datos_sujeto';

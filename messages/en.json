@@ -1213,7 +1213,9 @@
         "errors": {
           "invalido": "Invalid payment method.",
           "guardado": "The payment method could not be saved."
-        }
+        },
+        "mandato_pregunta": "They have an active SEPA mandate but pay by: {metodo}. Collect their receipts by bank direct debit?",
+        "pasar_a_sepa": "Switch to bank direct debit"
       }
     },
     "fotosRevocadas": {

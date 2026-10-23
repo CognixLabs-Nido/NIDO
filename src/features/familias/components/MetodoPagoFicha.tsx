@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { AlertTriangleIcon } from 'lucide-react'
+import { AlertTriangleIcon, LandmarkIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -23,7 +24,9 @@ const METODOS: MetodoPago[] = ['sepa', 'efectivo', 'cheque_guarderia', 'transfer
 /**
  * PR-7 — cómo paga la familia, en su ficha. Al generar, cada recibo coge este método; el selector
  * de la lista de recibos queda como excepción de un solo mes. Si paga con recibo por banco y no
- * tiene mandato activo, se avisa: sus recibos no pueden entrar en la remesa.
+ * tiene mandato activo, se avisa: sus recibos no pueden entrar en la remesa. Y si tiene mandato
+ * activo y paga de otra forma, se PREGUNTA si se cambia: un mandato activado con la familia ya
+ * dada de alta (el presencial de Dirección, o el que firma desde /family/recibos) no lo cambia solo.
  */
 export function MetodoPagoFicha({
   familiaId,
@@ -81,6 +84,17 @@ export function MetodoPagoFicha({
           </SelectContent>
         </Select>
       </div>
+      {actual !== 'sepa' && tieneMandato && !soloLectura && (
+        <div className="bg-muted/50 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg px-3 py-2">
+          <p className="min-w-0 flex-1 text-xs">
+            {t('mandato_pregunta', { metodo: tMetodos(actual) })}
+          </p>
+          <Button size="sm" variant="outline" disabled={pending} onClick={() => cambiar('sepa')}>
+            <LandmarkIcon className="size-4" />
+            {t('pasar_a_sepa')}
+          </Button>
+        </div>
+      )}
       {actual === 'sepa' && !tieneMandato && (
         <p className="text-warm-800 flex items-start gap-2 text-xs" role="status">
           <AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0" />

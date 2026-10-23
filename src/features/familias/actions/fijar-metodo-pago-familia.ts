@@ -58,7 +58,8 @@ export async function fijarMetodoPagoFamilia(
 }
 
 /**
- * Núcleo testeable. (1) Cambia el método de la ficha. (2) Lo refleja en los recibos regulares de
+ * Núcleo testeable. (1) Cambia el método de la ficha y lo marca como elegido a mano: desde ahí, la
+ * firma del mandato en el alta ya no lo cambia (`registrar_mandato_sepa`). (2) Lo refleja en los recibos regulares de
  * la familia que siguen en BORRADOR y cuyo mes no tiene excepción: el motor congela el método al
  * generar, y sin esto la lista de recibos enseñaría el viejo hasta recalcular. Un recibo validado
  * no se toca (queda congelado).
@@ -70,7 +71,7 @@ export async function fijarMetodoPagoFamiliaCore(
 ): Promise<ActionResult<void>> {
   const { data, error } = await supabase
     .from('familias')
-    .update({ metodo_pago: metodo })
+    .update({ metodo_pago: metodo, metodo_pago_manual: true })
     .eq('id', familiaId)
     .select('id')
     .maybeSingle()
