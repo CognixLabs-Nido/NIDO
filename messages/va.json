@@ -528,7 +528,8 @@
           "sin_becados": "No hi ha alumnes amb beca menjador activa.",
           "save_failed": "No s'ha pogut guardar.",
           "delete_failed": "No s'ha pogut esborrar.",
-          "no_existe": "La càrrega ja no existix."
+          "no_existe": "La càrrega ja no existix.",
+          "carga_aplicada": "Hi ha beques d'aquesta càrrega ja descomptades en rebuts validats: no es pot modificar. Torna abans eixos rebuts a esborrany."
         },
         "desborde": {
           "title": "Resoldre beca menjador",
@@ -563,7 +564,9 @@
             "save_failed": "No s’ha pogut actualitzar.",
             "no_pendiente": "La transferència ja no està pendent."
           }
-        }
+        },
+        "descontadas": "{n} descomptades",
+        "no_editable_descontada": "Descomptada en rebuts validats"
       },
       "tab_resumen": "Resum",
       "signos": {
@@ -1705,7 +1708,8 @@
       "recibo_en_remesa": "Este rebut està en una remesa: ja no es pot modificar.",
       "recibo_cobrado": "Este rebut ja està cobrat: ja no es pot modificar.",
       "desconfirmar_failed": "No s’ha pogut reobrir el rebut.",
-      "desborde_pendiente": "Aquest rebut té un excés de beca menjador sense resoldre: resol-lo abans de confirmar-lo."
+      "desborde_pendiente": "Aquest rebut té un excés de beca menjador sense resoldre: resol-lo abans de confirmar-lo.",
+      "beca_ya_aplicada": "Una beca d'aquest rebut ja està descomptada en un altre rebut validat. Recalcula el mes abans de confirmar-lo."
     },
     "desborde_aviso": "{n} rebuts amb beca menjador pendent de resoldre.",
     "desborde_badge": "Beca pendent",

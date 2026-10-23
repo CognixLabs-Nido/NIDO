@@ -528,7 +528,8 @@
           "sin_becados": "No hay alumnos con beca comedor activa.",
           "save_failed": "No se pudo guardar.",
           "delete_failed": "No se pudo borrar.",
-          "no_existe": "La carga ya no existe."
+          "no_existe": "La carga ya no existe.",
+          "carga_aplicada": "Hay becas de esta carga ya descontadas en recibos validados: no se puede modificar. Devuelve antes esos recibos a borrador."
         },
         "desborde": {
           "title": "Resolver beca comedor",
@@ -563,7 +564,9 @@
             "save_failed": "No se pudo actualizar.",
             "no_pendiente": "La transferencia ya no está pendiente."
           }
-        }
+        },
+        "descontadas": "{n} descontadas",
+        "no_editable_descontada": "Descontada en recibos validados"
       },
       "tab_resumen": "Resumen",
       "signos": {
@@ -1705,7 +1708,8 @@
       "recibo_en_remesa": "Este recibo está en una remesa: ya no se puede modificar.",
       "recibo_cobrado": "Este recibo ya está cobrado: ya no se puede modificar.",
       "desconfirmar_failed": "No se pudo reabrir el recibo.",
-      "desborde_pendiente": "Este recibo tiene un exceso de beca comedor sin resolver: resuélvelo antes de confirmarlo."
+      "desborde_pendiente": "Este recibo tiene un exceso de beca comedor sin resolver: resuélvelo antes de confirmarlo.",
+      "beca_ya_aplicada": "Una beca de este recibo ya está descontada en otro recibo validado. Recalcula el mes antes de confirmarlo."
     },
     "desborde_aviso": "{n} recibos con beca comedor pendiente de resolver.",
     "desborde_badge": "Beca pendiente",

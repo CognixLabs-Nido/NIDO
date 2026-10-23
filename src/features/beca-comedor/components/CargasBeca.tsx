@@ -85,7 +85,7 @@ export function CargasBeca({ centroId, cargas, meses, mesesCerrados, hayBecados 
                   </TableCell>
                   <TableCell>
                     {etiquetaMes(locale, c.anioAplicacion, c.mesAplicacion)}
-                    {!c.editable && (
+                    {c.cerrada && (
                       <Badge variant="secondary" className="ml-2">
                         {t('cerrado')}
                       </Badge>
@@ -94,7 +94,14 @@ export function CargasBeca({ centroId, cargas, meses, mesesCerrados, hayBecados 
                   <TableCell className="text-right tabular-nums">
                     {formatEuros(c.importeCentimos, locale)}
                   </TableCell>
-                  <TableCell className="text-center tabular-nums">{c.nBecados}</TableCell>
+                  <TableCell className="text-center tabular-nums">
+                    {c.nBecados}
+                    {c.nAplicados > 0 && (
+                      <div className="text-muted-foreground text-xs">
+                        {t('descontadas', { n: c.nAplicados })}
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     {c.editable ? (
                       <div className="flex justify-end gap-1">
@@ -112,7 +119,9 @@ export function CargasBeca({ centroId, cargas, meses, mesesCerrados, hayBecados 
                         <BorrarCargaDialog centroId={centroId} carga={c} />
                       </div>
                     ) : (
-                      <span className="text-muted-foreground text-xs">{t('no_editable')}</span>
+                      <span className="text-muted-foreground text-xs">
+                        {c.cerrada ? t('no_editable') : t('no_editable_descontada')}
+                      </span>
                     )}
                   </TableCell>
                 </TableRow>

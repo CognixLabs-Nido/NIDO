@@ -12,7 +12,14 @@ export interface CargaBecaItem {
   mesAplicacion: number
   importeCentimos: number
   nBecados: number
-  /** Editable/borrable = el mes de APLICACIÓN sigue ABIERTO (sin fila en cierre_mensual). */
+  /** PR-5: tramos de la carga ya descontados en un recibo validado. */
+  nAplicados: number
+  /** El mes de APLICACIÓN está cerrado (fila en cierre_mensual). */
+  cerrada: boolean
+  /**
+   * Editable/borrable = el mes de APLICACIÓN sigue ABIERTO (sin fila en cierre_mensual) y
+   * ningún tramo está descontado aún (PR-5: el trigger `beca_tramo_proteger` lo rechazaría).
+   */
   editable: boolean
 }
 
@@ -40,7 +47,7 @@ export async function getCargasBeca(centroId: string): Promise<CargasBecaData> {
     supabase
       .from('beca_comedor_tramo')
       .select(
-        'anio_correspondiente, mes_correspondiente, anio_aplicacion, mes_aplicacion, importe_centimos'
+        'anio_correspondiente, mes_correspondiente, anio_aplicacion, mes_aplicacion, importe_centimos, estado'
       )
       .eq('centro_id', centroId)
       .eq('curso_academico_id', curso.id)
@@ -50,10 +57,10 @@ export async function getCargasBeca(centroId: string): Promise<CargasBecaData> {
 
   const mesesCerrados: MesCurso[] = (cierres ?? []).map((c) => ({ anio: c.anio, mes: c.mes }))
 
-  const cargas: CargaBecaItem[] = agruparCargas(tramos ?? []).map((c) => ({
-    ...c,
-    editable: !mesCerrado(mesesCerrados, c.anioAplicacion, c.mesAplicacion),
-  }))
+  const cargas: CargaBecaItem[] = agruparCargas(tramos ?? []).map((c) => {
+    const cerrada = mesCerrado(mesesCerrados, c.anioAplicacion, c.mesAplicacion)
+    return { ...c, cerrada, editable: !cerrada && c.nAplicados === 0 }
+  })
 
   return {
     curso,
