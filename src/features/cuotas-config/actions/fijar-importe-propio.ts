@@ -51,7 +51,7 @@ export async function fijarImportePropio(
     return fail('cuotas_config.errors.importe_failed')
   }
   if (!concepto) return fail('cuotas_config.errors.invalid')
-  admiteImportePropio(concepto)
+  if (!admiteImportePropio(concepto)) return fail('cuotas_config.errors.importe_no_admitido')
 
   let q = supabase
     .from('asignacion_concepto')
