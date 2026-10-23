@@ -6,9 +6,10 @@ import type { Database } from '@/types/database'
 import { setMetodoPagoFamiliaCore } from '../set-metodo-pago-familia'
 
 /**
- * F-4-4: método de pago a grano FAMILIA con la trampa del método congelado. `...Core`
- * upserta la preferencia y, si el recibo del mes está en BORRADOR, refleja el método con
- * un UPDATE directo; si está CONFIRMADO, NO lo toca (queda congelado al generar).
+ * F-4-4 / PR-7: el selector de la lista de recibos guarda la EXCEPCIÓN de un mes al método de la
+ * ficha (`familias.metodo_pago`). `...Core` upserta la excepción, o la quita si el método elegido
+ * es el de la ficha, y si el recibo del mes está en BORRADOR refleja el método con un UPDATE
+ * directo; si está CONFIRMADO, NO lo toca (queda congelado al generar).
  */
 
 const CENTRO = '00000000-0000-0000-0000-0000000000c0'
@@ -21,7 +22,10 @@ interface Call {
   patch: Record<string, unknown>
 }
 
-function makeClient(recibo: { id: string; estado: string } | null) {
+function makeClient(
+  recibo: { id: string; estado: string } | null,
+  { ficha = 'sepa', excepcion = null }: { ficha?: string; excepcion?: { id: string } | null } = {}
+) {
   const calls: Call[] = []
 
   function selectChain(terminal: unknown) {
@@ -35,7 +39,14 @@ function makeClient(recibo: { id: string; estado: string } | null) {
   const fake = {
     from(table: string) {
       return {
-        select: () => selectChain(table === 'metodo_pago_familia' ? null : recibo), // metodo: no existente → insert
+        select: () =>
+          selectChain(
+            table === 'familias'
+              ? { metodo_pago: ficha }
+              : table === 'metodo_pago_familia'
+                ? excepcion
+                : recibo
+          ),
         insert: (patch: Record<string, unknown>) => {
           calls.push({ table, op: 'insert', patch })
           return Promise.resolve({ error: null })
@@ -86,5 +97,49 @@ describe('setMetodoPagoFamiliaCore', () => {
 
     expect(res.success).toBe(true)
     expect(calls.some((c) => c.table === 'recibos' && c.op === 'update')).toBe(false)
+  })
+
+  it('elegir el método de la ficha quita la excepción del mes, sin insertar otra', async () => {
+    const { fake, calls } = makeClient(
+      { id: 'rec-1', estado: 'borrador' },
+      { ficha: 'cheque_guarderia', excepcion: { id: 'exc-1' } }
+    )
+
+    const res = await setMetodoPagoFamiliaCore(fake, CENTRO, INPUT)
+
+    expect(res.success).toBe(true)
+    const excepcion = calls.filter((c) => c.table === 'metodo_pago_familia')
+    expect(excepcion).toHaveLength(1)
+    expect(excepcion[0]?.op).toBe('update')
+    expect(typeof excepcion[0]?.patch.deleted_at).toBe('string')
+    // El borrador recibe el método de la ficha.
+    const recUpdate = calls.find((c) => c.table === 'recibos' && c.op === 'update')
+    expect(recUpdate?.patch.metodo).toBe('cheque_guarderia')
+  })
+
+  it('elegir el de la ficha sin excepción previa no escribe ninguna', async () => {
+    const { fake, calls } = makeClient(
+      { id: 'rec-1', estado: 'borrador' },
+      { ficha: 'cheque_guarderia' }
+    )
+
+    const res = await setMetodoPagoFamiliaCore(fake, CENTRO, INPUT)
+
+    expect(res.success).toBe(true)
+    expect(calls.some((c) => c.table === 'metodo_pago_familia')).toBe(false)
+    expect(calls.find((c) => c.table === 'recibos')?.patch.metodo).toBe('cheque_guarderia')
+  })
+
+  it('un método distinto del de la ficha con excepción previa la actualiza', async () => {
+    const { fake, calls } = makeClient(null, { ficha: 'sepa', excepcion: { id: 'exc-1' } })
+
+    const res = await setMetodoPagoFamiliaCore(fake, CENTRO, INPUT)
+
+    expect(res.success).toBe(true)
+    expect(calls).toContainEqual({
+      table: 'metodo_pago_familia',
+      op: 'update',
+      patch: { metodo: 'cheque_guarderia' },
+    })
   })
 })

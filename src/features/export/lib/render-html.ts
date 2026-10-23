@@ -130,6 +130,7 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'ip_firma',
   'navegador_firma',
   'familia',
+  'metodo_pago',
   'recibos',
   'lineas',
   'metodos_pago',

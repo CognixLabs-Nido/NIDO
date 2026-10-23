@@ -1203,6 +1203,19 @@
         "errors": {
           "no_aplicable": "No se ha podido: la familia ya tiene titular o el tutor ya no es el segundo tutor. Recarga la página."
         }
+      },
+      "metodo_pago": {
+        "titulo": "Forma de pago",
+        "etiqueta": "Cómo paga la familia",
+        "hint": "Cada recibo coge este método al generarse. Para un solo mes, cámbialo en la lista de recibos.",
+        "guardado": "Forma de pago guardada.",
+        "sepa_sin_mandato": "Paga con recibo por banco, pero no consta ningún mandato SEPA activo: sus recibos no podrán entrar en la remesa. Registra la domiciliación o cambia la forma de pago.",
+        "errors": {
+          "invalido": "Forma de pago no válida.",
+          "guardado": "No se ha podido guardar la forma de pago."
+        },
+        "mandato_pregunta": "Tiene un mandato SEPA activo, pero paga con: {metodo}. ¿Cobrar sus recibos por banco?",
+        "pasar_a_sepa": "Pasar a recibo por banco"
       }
     },
     "fotosRevocadas": {
@@ -1744,7 +1757,9 @@
     "desconfirmado_ok": "Recibo reabierto. Edítalo y vuelve a confirmarlo.",
     "desconfirmado_reabre": "Recibo reabierto. El mes vuelve a estar abierto hasta que lo confirmes de nuevo.",
     "lote_saltados": "{n} recibos no se han confirmado: tienen un exceso de beca comedor sin resolver.",
-    "lote_saltado_fila": "{familia} · exceso de {importe}"
+    "lote_saltado_fila": "{familia} · exceso de {importe}",
+    "metodo_excepcion": "Solo este mes · en la ficha: {ficha}",
+    "metodo_sepa_sin_mandato": "Sin mandato SEPA activo: no entrará en la remesa."
   },
   "cierre_cobros": {
     "estado_titulo": "Estado del mes",
@@ -3910,6 +3925,7 @@
         "ip_firma": "IP al firmar",
         "navegador_firma": "Navegador al firmar",
         "familia": "Familia",
+        "metodo_pago": "Forma de pago habitual",
         "recibos": "Recibos",
         "lineas": "Líneas",
         "metodos_pago": "Formas de pago",

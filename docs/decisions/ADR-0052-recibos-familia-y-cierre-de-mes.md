@@ -161,6 +161,16 @@ Restricciones:
 ### Método de pago y remesa (F-4-3, F-4-5)
 
 - `metodo_pago_familia` va por familia (R10).
+- **El método va en la ficha (PR-7, 2026-10-23):** `familias.metodo_pago`, que cambia la directora
+  en la ficha de la familia, junto al mandato. Al generar, el recibo coge la excepción del mes
+  (`metodo_pago_familia`, el selector de la lista de recibos) si la hay y, si no, el de la ficha:
+  un recibo regular ya no nace sin método. Por defecto efectivo. El mandato que la familia firma
+  en su alta (ningún hijo con la matrícula activada) la pasa a `sepa` (`registrar_mandato_sepa`),
+  salvo que la directora ya haya elegido a mano (`metodo_pago_manual`, lo pone la ficha): **pisar
+  lo que la directora puso a mano no vale** (decisión del responsable). Un mandato activado con la
+  familia ya dada de alta (desde `/family/recibos` o el presencial de Dirección) no cambia el
+  método: la ficha pregunta si se pasa a recibo por banco. Una familia en `sepa` sin
+  mandato activo se avisa en la ficha y en la lista: sus recibos no entran en la remesa.
 - `get_mandatos_remesa` resuelve el mandato por `recibos.familia_id`. El XML pain.008 se sigue
   generando bajo demanda, igual que en G1 de ADR-0050.
 
