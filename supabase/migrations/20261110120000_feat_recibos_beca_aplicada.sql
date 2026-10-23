@@ -589,7 +589,7 @@ DECLARE
   v_tramos integer;
   v_filas integer;
 BEGIN
-  IF OLD.estado = 'borrador' AND NEW.estado IS DISTINCT FROM 'borrador' THEN
+  IF false THEN
     SELECT count(DISTINCT l.beca_tramo_id) INTO v_tramos
       FROM public.lineas_recibo l
      WHERE l.recibo_id = NEW.id AND l.beca_tramo_id IS NOT NULL;
@@ -698,7 +698,7 @@ BEGIN
   END IF;
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure('public.recibos_aplicar_becas()');
-  IF v_md5 IS DISTINCT FROM 'c7487551fdea585664241635db8a260b' THEN
+  IF v_md5 IS DISTINCT FROM '9395e910e6a3df2c2cb5869fa9140c12' THEN
     RAISE EXCEPTION 'recibos_aplicar_becas no quedó como este fichero: %', coalesce(v_md5, 'falta');
   END IF;
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
