@@ -20,7 +20,7 @@ import {
  * F-4-3 — MOTOR de recibos a grano FAMILIA.
  *
  * Verifica generar_recibos_mes (1 recibo familiar, líneas por hijo, mensual/diario, override,
- * vigencia, becas, descuento hermanos %/fijo, descuento niño-scoped, saldo, descarte,
+ * vigencia, beca como descuento del niño, descuento hermanos %/fijo, descuento niño-scoped, saldo, descarte,
  * idempotencia), confirmar_recibo (por recibo + ancla de cierre), el congelado POR ESTADO
  * y crear_recibo_esporadico familiar.
  */
@@ -130,8 +130,6 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
       await serviceClient.from('recibos').delete().eq('centro_id', centro.id)
       await serviceClient.from('asignacion_concepto').delete().eq('centro_id', centro.id)
       await serviceClient.from('parte_servicio_diario').delete().eq('centro_id', centro.id)
-      await serviceClient.from('becas').delete().eq('centro_id', centro.id)
-      await serviceClient.from('tipos_beca').delete().eq('centro_id', centro.id)
       await serviceClient.from('conceptos_cobro').delete().eq('centro_id', centro.id)
       await deleteTestCentro(centro.id)
       await deleteTestUser(admin.id)
@@ -230,30 +228,26 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
       expect(recibo).toBeNull() // sin líneas → descartado
     })
 
-    it('beca activa → línea negativa colgada del hijo', async () => {
+    // PR-9: la beca que no es de comedor es un concepto negativo con el importe propio del niño
+    // (PR-6); la tabla `becas` ya no existe.
+    it('beca como descuento del niño con importe propio → línea negativa colgada del hijo', async () => {
       const { familia, ninos } = await nuevaFamilia(['Becado'])
       const cuota = await mkConcepto(centro.id, {
         nombre: 'CuotaB ' + familia,
         importe_centimos: 20000,
       })
       await asignar({ concepto_id: cuota, nino_id: ninos[0] })
-      const { data: tb } = await serviceClient
-        .from('tipos_beca')
-        .insert({ centro_id: centro.id, nombre: 'Beca ' + familia })
-        .select('id')
-        .single()
-      await serviceClient.from('becas').insert({
-        centro_id: centro.id,
-        nino_id: ninos[0],
-        tipo_beca_id: tb!.id,
-        importe_centimos: 5000,
-        fecha_desde: '2026-06-01',
+      const beca = await mkConcepto(centro.id, {
+        nombre: 'Beca ' + familia,
+        signo: -1,
+        importe_centimos: 1000,
       })
+      await asignar({ concepto_id: beca, nino_id: ninos[0], importe_override_centimos: 5000 })
       await gen()
       const { recibo, lineas } = await reciboRegular(familia, ANIO, MES)
-      const beca = lineas.find((l) => l.descripcion?.toString().startsWith('Beca:'))
-      expect(beca?.importe_centimos).toBe(-5000)
-      expect(beca?.nino_id).toBe(ninos[0])
+      const linea = lineas.find((l) => l.concepto_id === beca)
+      expect(linea?.importe_centimos).toBe(-5000)
+      expect(linea?.nino_id).toBe(ninos[0])
       expect(recibo?.total_centimos).toBe(15000) // 20000 − 5000
     })
 
@@ -521,19 +515,19 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         importe_centimos: 10000,
       })
       await asignar({ concepto_id: cuota, nino_id: nino })
-      const { data: tb } = await serviceClient
-        .from('tipos_beca')
-        .insert({ centro_id: centro.id, nombre: 'BecaSal ' + familia })
-        .select('id')
-        .single()
-      // Mayo: beca 30000 > cuota 10000 → total −20000 (saldo a favor). Beca solo en mayo.
-      await serviceClient.from('becas').insert({
-        centro_id: centro.id,
+      // Mayo: beca 30000 > cuota 10000 → total −20000 (saldo a favor). Beca solo en mayo: un
+      // concepto negativo con el importe propio del niño y vigencia de mayo.
+      const beca = await mkConcepto(centro.id, {
+        nombre: 'BecaSal ' + familia,
+        signo: -1,
+        importe_centimos: 1000,
+      })
+      await asignar({
+        concepto_id: beca,
         nino_id: nino,
-        tipo_beca_id: tb!.id,
-        importe_centimos: 30000,
-        fecha_desde: '2026-05-01',
-        fecha_hasta: '2026-05-31',
+        importe_override_centimos: 30000,
+        vigencia_desde: '2026-05-01',
+        vigencia_hasta: '2026-05-31',
       })
       await cAdmin.rpc('generar_recibos_mes', { p_centro_id: centro.id, p_anio: 2026, p_mes: 5 })
       const mayo = await reciboRegular(familia, 2026, 5)

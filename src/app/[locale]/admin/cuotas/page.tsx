@@ -5,9 +5,6 @@ import { BecaComedorPanel } from '@/features/beca-comedor/components/BecaComedor
 import { getCargasBeca } from '@/features/beca-comedor/queries/get-cargas-beca'
 import { getElegibilidadBecados } from '@/features/beca-comedor/queries/get-elegibilidad-becados'
 import { getTransferenciasBeca } from '@/features/beca-comedor/queries/get-transferencias-beca'
-import { BecasPanel } from '@/features/becas/components/BecasPanel'
-import { getBecas } from '@/features/becas/queries/get-becas'
-import { getTiposBeca } from '@/features/becas/queries/get-tipos-beca'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
 import { ConceptosCatalogo } from '@/features/conceptos-cobro/components/ConceptosCatalogo'
@@ -31,19 +28,11 @@ interface PageProps {
   searchParams: Promise<{ tab?: string; anio?: string; mes?: string }>
 }
 
-const TABS = [
-  'mes',
-  'conceptos',
-  'beca-comedor',
-  'asignacion',
-  'becas',
-  'remesas',
-  'resumen',
-] as const
+const TABS = ['mes', 'conceptos', 'beca-comedor', 'asignacion', 'remesas', 'resumen'] as const
 
 // F-4-4: hub de cuotas. Tab por defecto = Panel del mes (revisión + confirmación de
 // recibos a grano familia). Otros tabs: catálogo de conceptos, asignación permanente
-// (alumno + familia), becas, remesas y resumen (pivote a grano familia + CSV). El layout
+// (alumno + familia), remesas y resumen (pivote a grano familia + CSV). El layout
 // admin valida rol + centro.
 export default async function AdminCuotasPage({ params, searchParams }: PageProps) {
   const t = await getTranslations('admin.cuotas')
@@ -59,8 +48,6 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
   const [
     conceptos,
     asignacion,
-    tipos,
-    becas,
     ninosCentro,
     panelMes,
     acreedor,
@@ -75,8 +62,6 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
   ] = await Promise.all([
     getConceptosCobro(centroId),
     getAsignacionPermanente(centroId),
-    getTiposBeca(centroId),
-    getBecas(centroId),
     getNinosPorCentro(centroId),
     getRecibosMesPanel(centroId, anio, mes),
     getDatosAcreedor(centroId),
@@ -125,7 +110,6 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
           <TabsTrigger value="conceptos">{t('tab_conceptos')}</TabsTrigger>
           <TabsTrigger value="beca-comedor">{t('tab_beca_comedor')}</TabsTrigger>
           <TabsTrigger value="asignacion">{t('tab_asignacion')}</TabsTrigger>
-          <TabsTrigger value="becas">{t('tab_becas')}</TabsTrigger>
           <TabsTrigger value="remesas">{t('tab_remesas')}</TabsTrigger>
           <TabsTrigger value="resumen">{t('tab_resumen')}</TabsTrigger>
         </TabsList>
@@ -164,16 +148,6 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
 
         <TabsContent value="asignacion" className="pt-4">
           <AsignacionPermanentePanel centroId={centroId} data={asignacion} />
-        </TabsContent>
-
-        <TabsContent value="becas" className="pt-4">
-          <BecasPanel
-            centroId={centroId}
-            becas={becas}
-            tipos={tipos}
-            ninos={ninosActivos}
-            editarTipos={esResponsable}
-          />
         </TabsContent>
 
         <TabsContent value="remesas" className="pt-4">

@@ -418,7 +418,6 @@
       "tab_conceptos": "Conceptes",
       "tab_beca_comedor": "Beca menjador",
       "tab_asignacion": "Assignació permanent",
-      "tab_becas": "Beques",
       "tab_cierre": "Tancament",
       "tab_remesas": "Remeses",
       "periodo": "Període",
@@ -443,41 +442,6 @@
         "ninguna": "No es cobra",
         "mensual": "Mensual",
         "diario": "Diari"
-      },
-      "becas": {
-        "becas_title": "Beques assignades",
-        "nueva": "Nova beca",
-        "nueva_title": "Nova beca",
-        "editar_title": "Editar beca",
-        "becas_empty": "Encara no hi ha beques assignades.",
-        "created": "Beca creada",
-        "updated": "Beca actualitzada",
-        "deleted": "Beca eliminada",
-        "eliminar_title": "Eliminar beca",
-        "eliminar_confirm": "Eliminar la beca de «{nombre}»?",
-        "elige_nino": "Tria un xiquet/a",
-        "elige_tipo": "Tria un tipus",
-        "activo_si": "Sí",
-        "tipos_title": "Tipus de beca",
-        "tipo_nuevo": "Nou tipus",
-        "tipo_nuevo_title": "Nou tipus de beca",
-        "tipo_editar_title": "Editar tipus de beca",
-        "tipos_empty": "No hi ha tipus de beca. Crea el primer.",
-        "tipo_created": "Tipus creat",
-        "tipo_updated": "Tipus actualitzat",
-        "tipo_deleted": "Tipus eliminat",
-        "tipo_eliminar_title": "Eliminar tipus de beca",
-        "tipo_eliminar_confirm": "Eliminar el tipus «{nombre}»?",
-        "fields": {
-          "tipo_nombre": "Nom",
-          "tipo_activo": "Actiu",
-          "nino": "Xiquet/a",
-          "tipo": "Tipus",
-          "importe": "Import (€)",
-          "desde": "Des de",
-          "hasta": "Fins a",
-          "periodo": "Període"
-        }
       },
       "beca_comedor": {
         "sin_curso": "No hi ha cap curs actiu. Activa un curs per a gestionar la beca menjador.",
@@ -2000,32 +1964,6 @@
       "una_vez": "Una devolució es resol una sola vegada.",
       "guardar": "Resoldre",
       "cancelar": "Cancel·lar"
-    }
-  },
-  "becas": {
-    "validation": {
-      "invalid": "Dades de la beca no vàlides",
-      "tipo_nombre_requerido": "Nom requerit",
-      "tipo_nombre_largo": "Nom massa llarg (màx. 120)",
-      "nino_requerido": "Selecciona un xiquet/a",
-      "tipo_requerido": "Selecciona un tipus de beca",
-      "importe_invalido": "Introdueix un import vàlid",
-      "importe_positivo": "L'import ha de ser major que 0",
-      "importe_largo": "Import massa alt",
-      "desde_requerido": "Indica la data d'inici",
-      "periodo": "La data de fi no pot ser anterior a la d'inici"
-    },
-    "errors": {
-      "tipo_duplicado": "Ja existeix un tipus de beca amb eixe nom al centre.",
-      "no_autorizado": "No tens permís per a esta acció.",
-      "tipo_create_failed": "No s'ha pogut crear el tipus de beca.",
-      "tipo_update_failed": "No s'ha pogut actualitzar el tipus de beca.",
-      "tipo_delete_failed": "No s'ha pogut eliminar el tipus de beca.",
-      "tipo_no_encontrado": "Tipus de beca no trobat.",
-      "create_failed": "No s'ha pogut crear la beca.",
-      "update_failed": "No s'ha pogut actualitzar la beca.",
-      "delete_failed": "No s'ha pogut eliminar la beca.",
-      "no_encontrado": "Beca no trobada."
     }
   },
   "aula": {
@@ -3818,7 +3756,6 @@
         "eventos": "Esdeveniments",
         "confirmaciones_eventos": "Confirmacions d'esdeveniments",
         "recordatorios_nino": "Recordatoris",
-        "becas": "Beques",
         "conceptos_asignados": "Conceptes assignats",
         "lineas_recibo": "Cobraments del xiquet",
         "servicios_diarios": "Serveis diaris",
@@ -3988,9 +3925,6 @@
         "fecha_evento": "Data de l'esdeveniment",
         "vencimiento": "Venciment",
         "completado_en": "Completat el",
-        "tipo_beca": "Beca",
-        "fecha_desde": "Des de",
-        "fecha_hasta": "Fins a",
         "servicio": "Servei",
         "presente": "Present",
         "activa": "Activa",

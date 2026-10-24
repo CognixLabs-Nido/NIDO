@@ -17,7 +17,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const A = '00000000-0000-4000-8000-00000000000a'
 const USUARIO = '11111111-1111-4111-8111-111111111111'
 const CONCEPTO = '44444444-4444-4444-8444-444444444444'
-const TIPO_BECA = '66666666-6666-4666-8666-666666666666'
 const CURSO = '77777777-7777-4777-8777-777777777777'
 
 const st = vi.hoisted(() => ({
@@ -88,8 +87,6 @@ const { setActivoConcepto, eliminarConcepto } =
   await import('@/features/conceptos-cobro/actions/estado-concepto')
 const { guardarTarifaConceptoAnio, eliminarTarifaConceptoAnio } =
   await import('@/features/conceptos-cobro/actions/tarifa-concepto-anio')
-const { crearTipoBeca, actualizarTipoBeca, eliminarTipoBeca } =
-  await import('@/features/becas/actions/tipo-beca')
 const { confirmarRollover } = await import('@/features/pasar-de-curso/actions/confirmar-rollover')
 const { crearPlantilla } = await import('@/features/autorizaciones/actions/gestionar-autorizacion')
 const { activarCurso } = await import('@/features/cursos/actions/activar-curso')
@@ -207,9 +204,6 @@ const llama = (fn: string) => () => expect(st.rpc).toHaveBeenCalledWith(fn, expe
 const concepto = () => {
   st.filas.conceptos_cobro = { centro_id: A, id: CONCEPTO }
 }
-const tipoBeca = () => {
-  st.filas.tipos_beca = { centro_id: A, id: TIPO_BECA }
-}
 
 /** [nombre, acción, error de la directora, efecto que hace la admin, preparación]. */
 const TUPLAS: ReadonlyArray<
@@ -272,26 +266,6 @@ const TUPLAS: ReadonlyArray<
     'conceptos_cobro.errors.no_autorizado',
     escribe('tarifa_concepto_anio', 'delete'),
     concepto,
-  ],
-  [
-    'crearTipoBeca',
-    () => crearTipoBeca(A, { nombre: 'Beca', activo: true }),
-    'becas.errors.no_autorizado',
-    escribe('tipos_beca', 'insert'),
-  ],
-  [
-    'actualizarTipoBeca',
-    () => actualizarTipoBeca(TIPO_BECA, { nombre: 'Beca', activo: true }),
-    'becas.errors.no_autorizado',
-    escribe('tipos_beca', 'update'),
-    tipoBeca,
-  ],
-  [
-    'eliminarTipoBeca',
-    () => eliminarTipoBeca(TIPO_BECA),
-    'becas.errors.no_autorizado',
-    escribe('tipos_beca', 'update'),
-    tipoBeca,
   ],
   [
     'confirmarRollover (cerrar el curso)',

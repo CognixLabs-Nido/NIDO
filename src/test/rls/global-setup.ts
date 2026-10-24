@@ -314,7 +314,7 @@ export default async function globalSetup(): Promise<void> {
   // ---------------------------------------------------------------------------
   // 6. NIÑOS → FAMILIAS → estructura → centros. ninos cascadea
   //    vinculos, cambios_pendientes, consentimientos(nino), asignacion_concepto,
-  //    becas, metodo_pago_familia, parte_servicio_diario, mandatos_sepa.
+  //    metodo_pago_familia, parte_servicio_diario, mandatos_sepa.
   //    (familias cascadea las asignacion_concepto por familia.)
   // ---------------------------------------------------------------------------
   await delWhereIn('ninos', 'id', ninoIds)
@@ -328,11 +328,10 @@ export default async function globalSetup(): Promise<void> {
   // DELETE de centros → llega tarde. (Corrige la regresión de #195, que lo quitó
   // apoyándose en la premisa falsa de que no había FK a centros.)
   await delWhereIn('roles_usuario', 'centro_id', centroIds)
-  // NOTA: conceptos_cobro y tipos_beca NO se borran aquí. Son CATÁLOGO (config de F-1,
-  // lo usa el motor de recibos F-4), NO test data; y su centro_id → centros es ON DELETE
-  // **CASCADE** (verificado: conceptos_cobro_centro_id_fkey, tipos_beca_centro_id_fkey)
-  // → se van solas al borrar el centro. Su referencia RESTRICT (asignacion_concepto.concepto_id;
-  // becas — CASCADE de ninos, ya borrados) no existe a esta altura: asignacion_concepto cascadea
+  // NOTA: conceptos_cobro NO se borra aquí. Es CATÁLOGO (config de F-1, lo usa el motor de
+  // recibos F-4), NO test data; y su centro_id → centros es ON DELETE **CASCADE** (verificado:
+  // conceptos_cobro_centro_id_fkey) → se va sola al borrar el centro. Su referencia RESTRICT
+  // (asignacion_concepto.concepto_id) no existe a esta altura: asignacion_concepto cascadea
   // de ninos/familias (F-4-2), ya borrados en el paso 6, así que la cascada de centros no se bloquea.
   await delWhereIn('centros', 'id', centroIds)
 

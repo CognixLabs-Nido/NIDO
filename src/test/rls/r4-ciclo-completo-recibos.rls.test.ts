@@ -30,7 +30,7 @@ import {
  * El bug de Jose vivía exactamente en esa junta.
  *
  * NO duplica lo ya cubierto, que se referencia donde toca:
- *   · mecánica del motor (mensual/diario/override/vigencia/becas/hermanos/saldo/descarte/
+ *   · mecánica del motor (mensual/diario/override/vigencia/hermanos/saldo/descarte/
  *     idempotencia), `confirmar_recibo` y el congelado por estado → `f43-motor-recibos-familia`.
  *   · que la manual sobreviva, el recibo solo-manual, el desborde sin 23505, el tope con C1,
  *     las dos bases del PASE 3 y la equivalencia en automático puro → `r2-motor-preserva-manuales`.

@@ -16,14 +16,17 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  *     nacen abiertas a anon, ni las tablas con TRUNCATE/MAINTAIN para authenticated.
  *
  * Aquí: anon recibe 42501 «permission denied for table» en SELECT, INSERT, UPDATE y DELETE de
- * las 73 tablas (el permiso se comprueba antes que la RLS y que los datos). TRUNCATE y MAINTAIN
+ * las 71 tablas (el permiso se comprueba antes que la RLS y que los datos). TRUNCATE y MAINTAIN
  * no los expone PostgREST: los comprueban la guarda de la migración y el ensayo, en el catálogo.
  *
  * Los filtros usan `IS NULL` sobre la primera columna de cada tabla: no convierte ningún literal
  * al tipo de la columna, así que el único error posible es el de permiso.
  */
 
-/** Las 73 tablas de public. Las que no empiezan por `id` llevan su primera columna. */
+/**
+ * Las 73 tablas de public de esa migración, menos `becas` y `tipos_beca` (eliminadas en el PR-9,
+ * 20261114120000): 71. Las que no empiezan por `id` llevan su primera columna.
+ */
 const TABLAS_RAW: Array<string | [string, string]> = [
   'acuses_alta',
   'administraciones_medicacion',
@@ -41,7 +44,6 @@ const TABLAS_RAW: Array<string | [string, string]> = [
   'beca_comedor_elegibilidad',
   'beca_comedor_tramo',
   'beca_comedor_transferencia',
-  'becas',
   'biberones',
   'cambios_pendientes',
   'campanas_informe',
@@ -95,7 +97,6 @@ const TABLAS_RAW: Array<string | [string, string]> = [
   'rollover_finaliza',
   'suenos',
   'tarifa_concepto_anio',
-  'tipos_beca',
   'usuarios',
   'vinculos_familiares',
 ]
@@ -116,7 +117,7 @@ describe('Privilegios de tabla — nada para anon', () => {
   let anon: SupabaseClient
 
   beforeAll(async () => {
-    // Cliente sin tipar: la unión de 73 tablas revienta la instanciación de tipos (TS2589).
+    // Cliente sin tipar: la unión de 71 tablas revienta la instanciación de tipos (TS2589).
     anon = anonClient() as unknown as SupabaseClient
     usuario = await createTestUser({ nombre: 'Usuario Privilegios Tabla' })
     autenticado = (await clientFor(usuario)) as unknown as SupabaseClient
@@ -126,8 +127,8 @@ describe('Privilegios de tabla — nada para anon', () => {
     await deleteTestUser(usuario.id)
   }, 60_000)
 
-  it('son 73 tablas distintas', () => {
-    expect(new Set(TABLAS.map(([t]) => t)).size).toBe(73)
+  it('son 71 tablas distintas', () => {
+    expect(new Set(TABLAS.map(([t]) => t)).size).toBe(71)
   })
 
   it.each(TABLAS)('anon NO hace SELECT en %s', async (tabla, col) => {

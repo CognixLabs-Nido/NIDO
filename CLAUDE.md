@@ -110,13 +110,13 @@ Toda guarda de equivalencia por md5 en una migración **DEBE normalizar y compar
 
 Detalle completo en `@./docs/conventions.md`.
 
-## Modelo de datos (73 tablas)
+## Modelo de datos (71 tablas)
 
 - **Core (14)**: centros, cursos_academicos, aulas, aulas_curso, usuarios, roles_usuario, ninos, info_medica_emergencia, datos_pedagogicos_nino, matriculas, vinculos_familiares, profes_aulas, familias, familia_tutores.
 - **Operativo (29)**: agendas_diarias, comidas, biberones, suenos, deposiciones, asistencias, ausencias, dias_centro, plantillas_menu_mensual, menu_dia, conversaciones, mensajes, lectura_conversacion, anuncios, lectura_anuncio, recordatorios, eventos, confirmaciones_evento, citas, cita_invitados, autorizaciones, firmas_autorizacion, administraciones_medicacion, plantillas_informe, informes_evolucion, campanas_informe, publicaciones, media, media_etiquetas.
 - **Transversal (6)**: audit_log, consentimientos, invitaciones, auth_attempts, push_subscriptions, preferencias_usuario.
 - **Altas y admisiones (4)**: lista_espera, acuses_alta, cambios_pendientes, rollover_finaliza.
-- **Cobros (17)**: conceptos_cobro, tarifa_concepto_anio, asignacion_concepto, tipos_beca, becas, beca_comedor_elegibilidad, beca_comedor_tramo, beca_comedor_desborde, beca_comedor_transferencia, parte_servicio_diario, metodo_pago_familia, mandatos_sepa, recibos, lineas_recibo, cierre_mensual, remesas, recibos_remesa.
+- **Cobros (15)**: conceptos_cobro, tarifa_concepto_anio, asignacion_concepto, beca_comedor_elegibilidad, beca_comedor_tramo, beca_comedor_desborde, beca_comedor_transferencia, parte_servicio_diario, metodo_pago_familia, mandatos_sepa, recibos, lineas_recibo, cierre_mensual, remesas, recibos_remesa.
 - **RGPD (3)**: olvido_solicitudes, export_log, retencion_ejecuciones.
 
 `notificaciones_push` sigue diferida y no existe.

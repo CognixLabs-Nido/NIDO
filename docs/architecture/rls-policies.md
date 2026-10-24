@@ -193,7 +193,7 @@ Las funciones `public.set_info_medica_emergencia_cifrada(...)` y `public.get_inf
 
 - `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `datos_pedagogicos_nino`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`, `plantillas_menu_mensual`, `menu_dia`, `conversaciones`, `mensajes`, `anuncios`, `recordatorios`.
 
-Esa lista es la de Fase 2. Hoy son **62 tablas**; la lista completa, las columnas excluidas y las que no se auditan a propósito están en `data-model.md` («Reglas obligatorias»). Desde `20261011120000` (Grupo 1, PR A) la función quita columnas del JSON antes de grabar: nada entra en `audit_log` que la redacción de la purga RGPD no sepa limpiar.
+Esa lista es la de Fase 2. Hoy son **60 tablas**; la lista completa, las columnas excluidas y las que no se auditan a propósito están en `data-model.md` («Reglas obligatorias»). Desde `20261011120000` (Grupo 1, PR A) la función quita columnas del JSON antes de grabar: nada entra en `audit_log` que la redacción de la purga RGPD no sepa limpiar.
 
 Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 
@@ -851,10 +851,10 @@ la admin.
 - **`privado.es_responsable(p_centro_id)`**: la admin viva del centro, o el superusuario si el
   centro existe. El cuerpo de `es_admin` sin DEFAULT y con una diferencia: **con NULL da FALSE**.
   Vive en `privado`: la usan policies y funciones del servidor, y la API no la publica.
-- **Usan `es_responsable` (28 policies y 7 funciones):**
+- **Usan `es_responsable` (28 policies y 7 funciones; 26 policies desde el PR-9, que elimina `tipos_beca`):**
   - el centro: escribir `centros` (datos, logo y datos de acreedor SEPA), las 3 de escritura de
     `centro-assets` y `set_datos_acreedor`;
-  - las cuotas: escribir `conceptos_cobro`, `tarifa_concepto_anio` y `tipos_beca`;
+  - las cuotas: escribir `conceptos_cobro` y `tarifa_concepto_anio` (y `tipos_beca`, eliminada en el PR-9);
   - el curso: ponerlo en `cerrado`, o tocar uno cerrado, en `cursos_academicos`, y `cerrar_curso`;
   - las plantillas de las normas internas y del consentimiento de imagen (`autorizaciones` con
     `es_plantilla`). Enviarlas a un aula o al centro sigue siendo de Dirección;
@@ -1226,13 +1226,13 @@ Migración `20261010120000_feat_idioma_preferido_en_metadatos_auth`. Las plantil
 
 ## Export art. 15 — `export_datos_sujeto`
 
-Migración `20261014120000_feat_export_datos_sujeto`. El export (`/export/me` y `/export/[tipo]/[id]`) lee con la sesión de quien lo pide, y la RLS de muchas tablas no deja a la familia leer sus propios datos: `lista_espera`, `rollover_finaliza`, `invitaciones`, `export_log`, `olvido_solicitudes`, `metodo_pago_familia`, `becas`, `asignacion_concepto`, `parte_servicio_diario` y las cuatro `beca_comedor_*` son de Dirección; `consentimientos` solo los ve quien los dio; `preferencias_usuario`, `push_subscriptions` y `lectura_*` solo el propio usuario. El derecho de acceso no es «lo que tu sesión alcanza».
+Migración `20261014120000_feat_export_datos_sujeto`. El export (`/export/me` y `/export/[tipo]/[id]`) lee con la sesión de quien lo pide, y la RLS de muchas tablas no deja a la familia leer sus propios datos: `lista_espera`, `rollover_finaliza`, `invitaciones`, `export_log`, `olvido_solicitudes`, `metodo_pago_familia`, `asignacion_concepto`, `parte_servicio_diario` y las cuatro `beca_comedor_*` son de Dirección; `consentimientos` solo los ve quien los dio; `preferencias_usuario`, `push_subscriptions` y `lectura_*` solo el propio usuario. El derecho de acceso no es «lo que tu sesión alcanza».
 
 - **`export_datos_sujeto(p_sujeto_tipo text, p_sujeto_id uuid) → jsonb`** (`SECURITY DEFINER`, `STABLE`, `search_path = public`; `REVOKE` de `PUBLIC`/`anon`, `EXECUTE` a `authenticated`). Devuelve lo que el export añade sobre lo que ya lee por sesión. Solo lectura: no escribe ni toca `audit_log`.
 - **Control de acceso** (en la función, no en la app):
   - `usuario`: el propio usuario, o el admin de un centro donde el usuario tiene un rol vivo (patrón de `consentimientos_admin_select`). El admin solo recibe las filas de **su** centro; lo del usuario sin centro (preferencias, dispositivos) sale entero.
   - `nino`: un tutor legal (`es_tutor_legal_de`, principal o secundario) o el admin del centro del niño. La profe, el autorizado, otra familia y el admin de otro centro reciben **42501**. Un niño inexistente también (`es_admin(NULL)` sería TRUE para cualquier admin).
-- **Qué devuelve:** del niño, su prospecto entero de `lista_espera`, matrículas (sin `motivo_baja`; la familia solo `activa`/`baja`, como `get_recorrido_nino_familia`), consentimientos por sujeto (también el que dio el otro tutor, sin su IP ni su navegador), acuses del alta, cambios solicitados, «no continúa», citas, eventos y confirmaciones, recordatorios dirigidos a su familia, becas, conceptos asignados, sus líneas de recibo, parte de servicio y beca de comedor. Del usuario, su perfil en `familia_tutores` (solo su fila), sus mandatos (del IBAN solo `iban_ultimos4`), los cobros de su familia, el teléfono y el email de sus prospectos (`tutor_usuario_id`), las invitaciones a su email (sin `token`), sus exports y solicitudes de olvido, preferencias, dispositivos (sin `endpoint`, `p256dh` ni `auth`) y lecturas.
+- **Qué devuelve:** del niño, su prospecto entero de `lista_espera`, matrículas (sin `motivo_baja`; la familia solo `activa`/`baja`, como `get_recorrido_nino_familia`), consentimientos por sujeto (también el que dio el otro tutor, sin su IP ni su navegador), acuses del alta, cambios solicitados, «no continúa», citas, eventos y confirmaciones, recordatorios dirigidos a su familia, conceptos asignados, sus líneas de recibo, parte de servicio y beca de comedor. Del usuario, su perfil en `familia_tutores` (solo su fila), sus mandatos (del IBAN solo `iban_ultimos4`), los cobros de su familia, el teléfono y el email de sus prospectos (`tutor_usuario_id`), las invitaciones a su email (sin `token`), sus exports y solicitudes de olvido, preferencias, dispositivos (sin `endpoint`, `p256dh` ni `auth`) y lecturas.
 - **Fuera, decidido por el responsable:** `auth_attempts`, `audit_log` y el contenido de trabajo del personal (lo que creó o registró: sí su ficha, sus roles y sus mensajes).
 - **`motivo_baja`** solo en el export de Dirección (`/export/[tipo]/[id]`), por `get_motivos_baja_matriculas`, que da 42501 a quien no es admin. `/export/me` no lo pide nunca.
 - **En la app** (`recolectar.ts`): un 42501 de la función es una ausencia legítima (la profe que exporta a un niño de su aula recibe lo de antes y una nota); cualquier otro error rompe el export, que no puede salir incompleto sin decirlo. El DNI y el mandato firmado salen como enlace firmado. La ruta sigue sin leer datos con `service`.
