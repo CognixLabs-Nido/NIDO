@@ -167,7 +167,7 @@ export function construirPanelFamilia(
           precioUnitarioCentimos: l.precioUnitarioCentimos,
           importeCentimos: l.importeCentimos,
           origen: l.origen,
-          esArrastre: false,
+          esArrastre: l.esArrastre,
         }))
         .sort(ordenarLineas)
 
