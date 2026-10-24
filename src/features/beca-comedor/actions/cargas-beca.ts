@@ -184,11 +184,6 @@ export async function crearCarga(
   const plan = planGuardarCarga([], filasDe(c), false)
   if (!plan.ok) return fail('admin.cuotas.beca_comedor.errors.carga_aplicada')
   if (plan.insertar.length === 0) return fail('admin.cuotas.beca_comedor.errors.sin_importes')
-  const becados = await becadosDelCurso(supabase, centroId, curso.id)
-  if (plan.insertar.some((f) => !becados.has(f.nino_id))) {
-    return fail('admin.cuotas.beca_comedor.errors.no_becado')
-  }
-
   const err = await escribirPlan(supabase, plan, { centroId, cursoId: curso.id, c }, 'crearCarga')
   if (err) return fail(err)
 
