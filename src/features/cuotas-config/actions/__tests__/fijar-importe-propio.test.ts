@@ -5,7 +5,8 @@ import { fijarImportePropio } from '../fijar-importe-propio'
 /**
  * PR-6: el importe propio se escribe en la ASIGNACIÓN viva del niño o de la familia
  * (`asignacion_concepto.importe_override_centimos`, en céntimos), solo en conceptos de importe
- * fijo que el motor cobra cada mes, y cada «no» tiene su motivo propio.
+ * fijo que el motor cobra cada mes, y cada «no» tiene su motivo propio. PR-8: en un descuento
+ * con base, en su lugar un porcentaje (`porcentaje_override_bp`); guardar uno borra el otro.
  */
 
 interface Llamada {
@@ -18,7 +19,7 @@ const { estado, admin } = vi.hoisted(() => ({
   estado: {
     concepto: { tipo_valor: 'fijo', tipo_concepto: 'mensual' } as Record<string, unknown> | null,
     filasActualizadas: [{ id: 'a1' }] as Array<{ id: string }>,
-    errorUpdate: null as { code?: string; message: string } | null,
+    errorUpdate: null as { code?: string; hint?: string; message: string } | null,
     llamadas: [] as Llamada[],
   },
   admin: vi.fn(),
@@ -88,7 +89,7 @@ describe('fijarImportePropio', () => {
     })
     const u = update()
     expect(u?.tabla).toBe('asignacion_concepto')
-    expect(u?.update).toEqual({ importe_override_centimos: 2990 })
+    expect(u?.update).toEqual({ importe_override_centimos: 2990, porcentaje_override_bp: null })
     expect(u?.filtros).toEqual(
       expect.arrayContaining([
         ['eq', 'centro_id', CENTRO],
@@ -102,21 +103,27 @@ describe('fijarImportePropio', () => {
   it('el de una familia (su descuento por hermano) va por familia_id, no por niño', async () => {
     await fijarImportePropio({ ...base, ninoId: null, familiaId: FAMILIA, importeEuros: 50 })
     const u = update()
-    expect(u?.update).toEqual({ importe_override_centimos: 5000 })
+    expect(u?.update).toEqual({ importe_override_centimos: 5000, porcentaje_override_bp: null })
     expect(u?.filtros).toContainEqual(['eq', 'familia_id', FAMILIA])
     expect(u?.filtros.some(([, col]) => col === 'nino_id')).toBe(false)
   })
 
   it('quitarlo (null) vuelve al precio del concepto; 0 € es un importe válido', async () => {
     await fijarImportePropio({ ...base, importeEuros: null })
-    expect(update()?.update).toEqual({ importe_override_centimos: null })
+    expect(update()?.update).toEqual({
+      importe_override_centimos: null,
+      porcentaje_override_bp: null,
+    })
     estado.llamadas = []
     await fijarImportePropio({ ...base, importeEuros: 0 })
-    expect(update()?.update).toEqual({ importe_override_centimos: 0 })
+    expect(update()?.update).toEqual({ importe_override_centimos: 0, porcentaje_override_bp: null })
   })
 
   it.each([
-    ['porcentual', { tipo_valor: 'porcentaje', tipo_concepto: 'mensual' }],
+    [
+      'porcentual sin base',
+      { tipo_valor: 'porcentaje', tipo_concepto: 'mensual', signo: 1, concepto_base_id: null },
+    ],
     ['esporádico', { tipo_valor: 'fijo', tipo_concepto: 'esporadico' }],
   ])('un concepto %s no admite importe propio y no se escribe nada', async (_n, concepto) => {
     estado.concepto = concepto
@@ -130,7 +137,10 @@ describe('fijarImportePropio', () => {
   it('un diario sí lo admite (es su precio por día)', async () => {
     estado.concepto = { tipo_valor: 'fijo', tipo_concepto: 'diario' }
     expect((await fijarImportePropio({ ...base, importeEuros: 5 })).success).toBe(true)
-    expect(update()?.update).toEqual({ importe_override_centimos: 500 })
+    expect(update()?.update).toEqual({
+      importe_override_centimos: 500,
+      porcentaje_override_bp: null,
+    })
   })
 
   it('sin fila viva: «ya no está asignado»', async () => {
@@ -158,6 +168,75 @@ describe('fijarImportePropio', () => {
     expect(await fijarImportePropio({ ...base, ...over })).toEqual({
       success: false,
       error: 'cuotas_config.errors.importe_invalido',
+    })
+    expect(estado.llamadas).toEqual([])
+  })
+
+  // PR-8: el descuento por hermano, fijo o porcentaje por familia.
+  const DESCUENTO = {
+    tipo_valor: 'fijo',
+    tipo_concepto: 'mensual',
+    signo: -1,
+    concepto_base_id: '55555555-5555-4555-8555-555555555555',
+  }
+  const familia = { ...base, ninoId: null, familiaId: FAMILIA, importeEuros: null }
+
+  it('un porcentaje propio en un descuento con base: puntos básicos, y quita el importe propio', async () => {
+    estado.concepto = DESCUENTO
+    expect(await fijarImportePropio({ ...familia, porcentaje: 15 })).toEqual({
+      success: true,
+      data: undefined,
+    })
+    expect(update()?.update).toEqual({
+      importe_override_centimos: null,
+      porcentaje_override_bp: 1500,
+    })
+    expect(update()?.filtros).toContainEqual(['eq', 'familia_id', FAMILIA])
+  })
+
+  it('un importe propio en un descuento porcentual con base lo hace fijo y quita el porcentaje', async () => {
+    estado.concepto = { ...DESCUENTO, tipo_valor: 'porcentaje' }
+    expect((await fijarImportePropio({ ...familia, importeEuros: 30 })).success).toBe(true)
+    expect(update()?.update).toEqual({
+      importe_override_centimos: 3000,
+      porcentaje_override_bp: null,
+    })
+  })
+
+  it.each([
+    ['un descuento sin base', { ...DESCUENTO, concepto_base_id: null }],
+    [
+      'un cobro',
+      { tipo_valor: 'fijo', tipo_concepto: 'mensual', signo: 1, concepto_base_id: null },
+    ],
+    ['un descuento esporádico', { ...DESCUENTO, tipo_concepto: 'esporadico' }],
+  ])('%s no admite porcentaje propio y no se escribe nada', async (_n, concepto) => {
+    estado.concepto = concepto
+    expect(await fijarImportePropio({ ...familia, porcentaje: 15 })).toEqual({
+      success: false,
+      error: 'cuotas_config.errors.porcentaje_no_admitido',
+    })
+    expect(update()).toBeUndefined()
+  })
+
+  it('si el concepto pierde la base antes de guardar, el trigger lo para con su motivo', async () => {
+    estado.concepto = DESCUENTO
+    estado.errorUpdate = { code: '23514', hint: 'porcentaje_sin_base', message: 'x' }
+    expect(await fijarImportePropio({ ...familia, porcentaje: 15 })).toEqual({
+      success: false,
+      error: 'cuotas_config.errors.porcentaje_no_admitido',
+    })
+  })
+
+  it.each([
+    ['importe y porcentaje a la vez', { importeEuros: 30, porcentaje: 15 }, 'importe_invalido'],
+    ['más del 100 %', { porcentaje: 100.5 }, 'porcentaje_invalido'],
+    ['porcentaje negativo', { porcentaje: -1 }, 'porcentaje_invalido'],
+  ])('entrada inválida (%s): no llega a la BD', async (_n, over, error) => {
+    estado.concepto = DESCUENTO
+    expect(await fijarImportePropio({ ...familia, ...over })).toEqual({
+      success: false,
+      error: `cuotas_config.errors.${error}`,
     })
     expect(estado.llamadas).toEqual([])
   })

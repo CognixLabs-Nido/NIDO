@@ -60,4 +60,17 @@ describe('buildConceptoRow — servicio (PR-4)', () => {
   ])('servicio en un mensual %s, o en un esporádico: se anula', (_n, over) => {
     expect(buildConceptoRow({ ...base, ...over, servicio: 'comedor' }).servicio).toBeNull()
   })
+
+  // PR-8: la base va en cualquier descuento (obligatoria en el porcentual, opcional en el fijo)
+  // y nunca en un cobro.
+  const BASE = '11111111-1111-4111-8111-111111111111'
+  it('un descuento fijo conserva su base', () => {
+    const row = buildConceptoRow({ ...base, signo: -1, importe_euros: 20, concepto_base_id: BASE })
+    expect(row.concepto_base_id).toBe(BASE)
+  })
+
+  it('un cobro no lleva base aunque llegue una', () => {
+    const row = buildConceptoRow({ ...base, signo: 1, concepto_base_id: BASE })
+    expect(row.concepto_base_id).toBeNull()
+  })
 })

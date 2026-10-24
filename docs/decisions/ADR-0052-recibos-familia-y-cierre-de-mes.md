@@ -98,7 +98,8 @@ Restricciones:
   - `tipo_valor`: `fijo` → `importe_centimos`, `porcentaje` → `porcentaje_bp`;
   - `tipo_concepto`: la periodicidad;
   - `ambito`: niño o familia;
-  - `concepto_base_id`, para los descuentos porcentuales.
+  - `concepto_base_id`, para los descuentos porcentuales. Desde PR-8 también puede ir en un
+    descuento fijo, para que una familia pueda elegir porcentaje; un cobro no la lleva.
 
   Desaparecen `precio_mensual_centimos` y `precio_diario_centimos`.
 
@@ -157,6 +158,14 @@ Restricciones:
   descuento por hermano, por ejemplo), se fija en su asignación (`importe_override_centimos`) y se
   arrastra cada mes hasta que se cambie. Editar la línea del borrador corrige solo ese mes. Solo
   en conceptos de importe fijo que el motor cobra cada mes; en un diario es el precio por día.
+- **Descuento por hermano, fijo o porcentaje por familia (PR-8, 2026-10-24):** en un descuento con
+  base, la asignación elige además el tipo: un importe propio lo hace fijo y un porcentaje propio
+  (`porcentaje_override_bp`) lo hace porcentual sobre la base del concepto (la escolaridad), nunca
+  sobre todo lo que se le cobra a ese hermano. Nunca van los dos juntos (CHECK), y sin ninguno
+  manda el concepto. Decisión del responsable: en la García 30 €, en la Pérez el 15 % de la
+  escolaridad del segundo hermano. La estructura del PASE 3 no cambia: el que más paga, completo.
+  Un porcentaje propio solo vale en un descuento con base, y a un concepto con porcentajes propios
+  no se le quita la base (triggers, 23514).
 
 ### Método de pago y remesa (F-4-3, F-4-5)
 

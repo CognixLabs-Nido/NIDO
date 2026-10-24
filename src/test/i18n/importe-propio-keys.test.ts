@@ -24,8 +24,9 @@ const CLAVES = new Set<string>()
 for (const [ruta, namespace] of FUENTES) {
   const src = readFileSync(join(process.cwd(), ruta), 'utf8')
   for (const m of src.matchAll(/\bt\(\s*'([\w.]+)'/g)) CLAVES.add(`${namespace}.${m[1]!}`)
-  // El editor elige entre dos claves con un ternario dentro de t(…).
-  for (const m of src.matchAll(/\?\s*'([\w.]+)'\s*:\s*'([\w.]+)'/g)) {
+  // El editor elige entre dos claves con un ternario dentro de t(…). Solo dentro de t(: un
+  // ternario de dos literales fuera (la variante de un botón) no son claves.
+  for (const m of src.matchAll(/\bt\(\s*[^()]*?\?\s*'([\w.]+)'\s*:\s*'([\w.]+)'/g)) {
     if (ruta.endsWith('ImportesPropios.tsx')) {
       CLAVES.add(`${namespace}.${m[1]!}`)
       CLAVES.add(`${namespace}.${m[2]!}`)
@@ -62,6 +63,13 @@ describe('i18n — importe propio (PR-6)', () => {
     expect(CLAVES).toContain('admin.cuotas.importe_propio.titulo')
     expect(CLAVES).toContain('admin.cuotas.importe_propio.precio_concepto')
     expect(CLAVES).toContain('admin.cuotas.importe_propio.precio_concepto_dia')
+    // PR-8: el tipo del descuento y su campo de porcentaje (este, solo por ternario).
+    expect(CLAVES).toContain('admin.cuotas.importe_propio.tipo_porcentaje')
+    expect(CLAVES).toContain('admin.cuotas.importe_propio.aria_porcentaje')
+    expect(CLAVES).toContain('admin.cuotas.importe_propio.precio_concepto_porcentaje')
+    expect(CLAVES).toContain('cuotas_config.errors.porcentaje_no_admitido')
+    expect(CLAVES).toContain('cuotas_config.errors.porcentaje_invalido')
+    expect(CLAVES).toContain('cuotas_config.errors.importe_invalido')
     expect(CLAVES).toContain('admin.cuotas.importe_propio.n_fila')
     expect(CLAVES).toContain('cuotas_config.errors.importe_no_admitido')
     expect(CLAVES).toContain('cuotas_config.errors.no_asignado')

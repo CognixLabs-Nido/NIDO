@@ -15,18 +15,26 @@ export interface ConceptoAsignablePermanente {
 }
 
 /** PR-6: un concepto activo del catálogo, manual o automático, con lo que hace falta para
- * enseñar y fijar el importe propio de una asignación. */
+ * enseñar y fijar el importe (o, desde PR-8, el porcentaje) propio de una asignación. */
 export interface ConceptoCatalogo {
   id: string
   nombre: string
   tipo_concepto: TipoConcepto
   tipo_valor: string
+  signo: number
   importe_centimos: number | null
+  porcentaje_bp: number | null
   tarifa_por_anio_nacimiento: boolean
+  concepto_base_id: string | null
+  /** Nombre de la base, para decir sobre qué se calcula el porcentaje. */
+  concepto_base_nombre: string | null
 }
 
-/** PR-6: importe propio (céntimos) por concepto asignado; solo los que lo tienen. */
-export type ImportesPropios = Record<string, number>
+/** El valor propio de una asignación: un importe fijo (PR-6) o un porcentaje de la base (PR-8). */
+export type ValorPropio = { tipo: 'fijo'; centimos: number } | { tipo: 'porcentaje'; bp: number }
+
+/** Valor propio por concepto asignado; solo los que lo tienen. */
+export type ImportesPropios = Record<string, ValorPropio>
 
 export interface AlumnoAsignacion {
   ninoId: string
@@ -104,13 +112,13 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
       .is('deleted_at', null),
     supabase
       .from('asignacion_concepto')
-      .select('nino_id, familia_id, concepto_id, importe_override_centimos')
+      .select('nino_id, familia_id, concepto_id, importe_override_centimos, porcentaje_override_bp')
       .eq('centro_id', centroId)
       .is('deleted_at', null),
     supabase
       .from('conceptos_cobro')
       .select(
-        'id, nombre, tipo_concepto, tipo_valor, importe_centimos, tarifa_por_anio_nacimiento, servicio'
+        'id, nombre, tipo_concepto, tipo_valor, signo, importe_centimos, porcentaje_bp, tarifa_por_anio_nacimiento, servicio, concepto_base_id'
       )
       .eq('centro_id', centroId)
       .eq('activo', true)
@@ -148,12 +156,16 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
     if (!destino) continue
     const conceptos = a.nino_id ? conceptosPorNino : conceptosPorFamilia
     conceptos.set(destino, [...(conceptos.get(destino) ?? []), a.concepto_id])
-    if (a.importe_override_centimos != null) {
+    // Nunca van los dos juntos (CHECK `asignacion_concepto_un_valor_propio`).
+    const valor: ValorPropio | null =
+      a.porcentaje_override_bp != null
+        ? { tipo: 'porcentaje', bp: a.porcentaje_override_bp }
+        : a.importe_override_centimos != null
+          ? { tipo: 'fijo', centimos: a.importe_override_centimos }
+          : null
+    if (valor) {
       const importes = a.nino_id ? importesPorNino : importesPorFamilia
-      importes.set(destino, {
-        ...(importes.get(destino) ?? {}),
-        [a.concepto_id]: a.importe_override_centimos,
-      })
+      importes.set(destino, { ...(importes.get(destino) ?? {}), [a.concepto_id]: valor })
     }
   }
 
@@ -181,14 +193,21 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
   const conceptosConServicio: ConceptoConServicio[] = catalogoFilas.flatMap((c) =>
     c.servicio ? [{ id: c.id, tipo_concepto: c.tipo_concepto, servicio: c.servicio }] : []
   )
+  const nombrePorConcepto = new Map(catalogoFilas.map((c) => [c.id, c.nombre]))
   const catalogo: ConceptoCatalogo[] = catalogoFilas
     .map((c) => ({
       id: c.id,
       nombre: c.nombre,
       tipo_concepto: c.tipo_concepto,
       tipo_valor: c.tipo_valor,
+      signo: c.signo,
       importe_centimos: c.importe_centimos,
+      porcentaje_bp: c.porcentaje_bp,
       tarifa_por_anio_nacimiento: c.tarifa_por_anio_nacimiento,
+      concepto_base_id: c.concepto_base_id,
+      concepto_base_nombre: c.concepto_base_id
+        ? (nombrePorConcepto.get(c.concepto_base_id) ?? null)
+        : null,
     }))
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es-ES'))
 

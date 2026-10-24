@@ -399,7 +399,9 @@
         "concepto_base": "Base concept",
         "concepto_base_placeholder": "Choose the concept it applies to",
         "tarifa_por_anio_nacimiento": "Price by birth year",
-        "servicio_mensual": "Service (optional)"
+        "servicio_mensual": "Service (optional)",
+        "concepto_base_ninguna": "No base",
+        "concepto_base_hint_fijo": "Optional. With a base, each family can choose in its assignment a percentage of that item instead of the amount."
       },
       "tipos": {
         "mensual": "Monthly",
@@ -651,7 +653,13 @@
         "quitar": "Remove",
         "guardado": "Own amount saved",
         "quitado": "Back to the concept price",
-        "n_fila": "{n} with own amount"
+        "n_fila": "{n} with their own amount or percentage",
+        "tipo_aria": "Discount type for {concepto}",
+        "tipo_fijo": "Amount (€)",
+        "tipo_porcentaje": "Percentage of {base}",
+        "precio_concepto_porcentaje": "Item: {porcentaje} of {base}",
+        "aria_porcentaje": "Own percentage for {concepto}",
+        "placeholder_porcentaje": "From the item"
       }
     },
     "aulas": {
@@ -1595,7 +1603,7 @@
       "importe_requerido": "Enter the amount",
       "porcentaje_requerido": "Enter the percentage",
       "concepto_base_requerido": "A percentage discount needs a base concept",
-      "concepto_base_no_permitido": "Only a percentage discount has a base concept"
+      "concepto_base_no_permitido": "Only a discount has a base concept"
     },
     "errors": {
       "nombre_duplicado": "An item with that name already exists in the centre.",
@@ -1603,7 +1611,8 @@
       "create_failed": "Could not create the item.",
       "update_failed": "Could not update the item.",
       "delete_failed": "Could not delete the item.",
-      "no_encontrado": "Item not found."
+      "no_encontrado": "Item not found.",
+      "base_con_porcentajes_propios": "Some families have their own percentage on this discount’s base. Remove it before changing the base or the sign."
     },
     "tarifa_anio": {
       "validation": {
@@ -1631,7 +1640,9 @@
       "importe_invalido": "Enter a valid amount (0 or more).",
       "importe_failed": "The own amount could not be saved.",
       "importe_no_admitido": "This concept does not take an own amount: only fixed-amount concepts charged every month do.",
-      "no_asignado": "The concept is no longer assigned."
+      "no_asignado": "The concept is no longer assigned.",
+      "porcentaje_invalido": "The percentage must be between 0 and 100",
+      "porcentaje_no_admitido": "This item does not accept its own percentage: only a discount with a base concept"
     }
   },
   "recibos_panel": {

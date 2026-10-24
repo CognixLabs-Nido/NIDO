@@ -7,8 +7,9 @@ import { z } from 'zod'
 //  · ambito  (nino/familia) ; servicio (comedor/matinera/vespertina): obligatorio si diario;
 //    opcional en un mensual que sea cobro fijo por niño (PR-4: quien tiene ese mensual no paga
 //    los días del servicio). Ver `admiteServicio`.
-//  · concepto_base_id: el concepto base de un descuento PORCENTUAL (1:1). Solo (y
-//    siempre) cuando es descuento porcentual (signo=−1 ∧ tipo_valor='porcentaje').
+//  · concepto_base_id: el concepto sobre el que se calcula un descuento porcentual (1:1).
+//    Siempre en un descuento porcentual; opcional en uno fijo, para que una familia pueda
+//    elegir porcentaje en su asignación (PR-8). Un cobro no la lleva.
 // La UI trabaja en EUROS/% ; la action convierte a céntimos/basis points.
 export const TIPOS_CONCEPTO = ['mensual', 'diario', 'esporadico'] as const
 export const SERVICIOS_DIARIOS = ['comedor', 'matinera', 'vespertina'] as const
@@ -108,7 +109,8 @@ export const conceptoCobroSchema = z
         message: 'conceptos_cobro.validation.servicio_requerido',
       })
     }
-    // (c) base: descuento porcentual ⇒ exige concepto base ; el resto NO lo lleva.
+    // (c) base: descuento porcentual ⇒ exige concepto base; descuento fijo ⇒ opcional (PR-8:
+    // con base, una familia puede elegir porcentaje); cobro ⇒ no lleva.
     const esDescuentoPorcentual = v.signo === -1 && v.tipo_valor === 'porcentaje'
     if (esDescuentoPorcentual && v.concepto_base_id == null) {
       ctx.addIssue({
@@ -117,7 +119,7 @@ export const conceptoCobroSchema = z
         message: 'conceptos_cobro.validation.concepto_base_requerido',
       })
     }
-    if (!esDescuentoPorcentual && v.concepto_base_id != null) {
+    if (v.signo !== -1 && v.concepto_base_id != null) {
       ctx.addIssue({
         code: 'custom',
         path: ['concepto_base_id'],

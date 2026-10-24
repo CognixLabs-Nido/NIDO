@@ -33,6 +33,10 @@ export async function actualizarConcepto(
   if (error) {
     logger.warn('actualizarConcepto error', error.message)
     if (error.code === '23505') return fail('conceptos_cobro.errors.nombre_duplicado')
+    // PR-8: el trigger no deja quitar la base (ni que deje de ser descuento) a un concepto
+    // sobre el que alguna familia tiene un porcentaje propio.
+    if (error.hint === 'concepto_con_porcentajes_propios')
+      return fail('conceptos_cobro.errors.base_con_porcentajes_propios')
     if (error.code === '42501') return fail('conceptos_cobro.errors.no_autorizado')
     return fail('conceptos_cobro.errors.update_failed')
   }
