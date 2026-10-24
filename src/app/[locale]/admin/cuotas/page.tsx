@@ -85,7 +85,16 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
 
   const ninosActivos = ninosCentro
     .filter((n) => n.estado_matricula === 'activa')
-    .map((n) => ({ id: n.id, nombre: [n.nombre, n.apellidos].filter(Boolean).join(' ') }))
+    .map((n) => ({
+      id: n.id,
+      nombre: [n.nombre, n.apellidos].filter(Boolean).join(' '),
+      aula: n.aula_actual,
+    }))
+
+  // PR-13: lo puntual del catálogo (excursiones y similares), para el cargo a varios niños.
+  const conceptosPuntuales = conceptos
+    .filter((c) => c.activo && c.tipo_concepto === 'esporadico' && c.signo === 1)
+    .map((c) => ({ id: c.id, nombre: c.nombre, importeCentimos: c.importe_centimos }))
 
   // B1-2: años de nacimiento distintos presentes en el centro (para el editor de tarifas por
   // año). Se lee el año del string 'YYYY-MM-DD' directamente (sin Date, para no depender del
@@ -124,6 +133,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
             mes={mes}
             data={panelMes}
             ninos={ninosActivos}
+            conceptosPuntuales={conceptosPuntuales}
             centroLogo={centroLogo}
           />
         </TabsContent>
