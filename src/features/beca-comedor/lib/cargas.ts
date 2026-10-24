@@ -197,10 +197,6 @@ export function planGuardarCarga(
       }
       continue
     }
-    if (t.estado === 'aplicada') {
-      if (f.importe_centimos !== t.importe_centimos) return { ok: false, error: 'carga_aplicada' }
-      continue
-    }
     if (f.importe_centimos == null) {
       borrar.push(t.id)
     } else if (f.importe_centimos !== t.importe_centimos) {
