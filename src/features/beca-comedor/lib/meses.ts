@@ -15,3 +15,10 @@ export function etiquetaMes(locale: string, anio: number, mes: number): string {
     new Date(anio, mes - 1, 1)
   )
 }
+
+/** Etiqueta corta de un (año, mes) para cabeceras de columna, p. ej. "sept 26". */
+export function etiquetaMesCorta(locale: string, anio: number, mes: number): string {
+  return new Intl.DateTimeFormat(localeIntl(locale), { month: 'short', year: '2-digit' }).format(
+    new Date(anio, mes - 1, 1)
+  )
+}

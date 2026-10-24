@@ -4,8 +4,10 @@ import { Card } from '@/components/ui/card'
 
 import { CargasBeca } from './CargasBeca'
 import { ElegibilidadList } from './ElegibilidadList'
+import { PanelBecas } from './PanelBecas'
 import type { CargaBecaItem } from '../queries/get-cargas-beca'
 import type { AlumnoElegibilidad } from '../queries/get-elegibilidad-becados'
+import type { PanelBecasData } from '../queries/get-panel-becas'
 import type { MesCurso } from '../lib/cargas'
 
 interface Props {
@@ -19,11 +21,14 @@ interface Props {
   mesesCerrados: MesCurso[]
   nombres: Record<string, string>
   recibosValidados: string[]
+  /** PR-11: el panel de becas por alumno. */
+  panel: PanelBecasData
 }
 
 /**
- * V2-2 + V2-3 — pestaña "Beca comedor" del hub de cuotas. Arriba, la elegibilidad por alumno
- * (quién tiene beca en el curso activo); abajo, las cargas por mes (el importe de cada becado,
+ * V2-2 + V2-3 — pestaña "Beca comedor" del hub de cuotas. Arriba, el panel de becas (PR-11:
+ * cuánto tiene cada alumno, qué se ha aplicado y qué queda); después, la elegibilidad por
+ * alumno (quién tiene beca en el curso activo) y las cargas por mes (el importe de cada becado,
  * PR-10). Todo sobre el curso ACTIVO, sin selector.
  */
 export async function BecaComedorPanel({
@@ -35,6 +40,7 @@ export async function BecaComedorPanel({
   mesesCerrados,
   nombres,
   recibosValidados,
+  panel,
 }: Props) {
   const t = await getTranslations('admin.cuotas.beca_comedor')
 
@@ -50,6 +56,14 @@ export async function BecaComedorPanel({
 
   return (
     <div className="space-y-6">
+      <section className="space-y-2">
+        <div className="space-y-0.5">
+          <h2 className="text-sm font-medium">{t('panel.title')}</h2>
+          <p className="text-muted-foreground text-xs">{t('panel.hint')}</p>
+        </div>
+        <PanelBecas panel={panel.panel} error={panel.error} />
+      </section>
+
       <section className="space-y-2">
         <div className="space-y-0.5">
           <h2 className="text-sm font-medium">{t('elegibilidad_title')}</h2>
