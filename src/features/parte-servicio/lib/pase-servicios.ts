@@ -68,7 +68,7 @@ export function cambiosPase(
     for (const s of SERVICIOS_DEL_DIA) {
       const marcada = marcas[casilla(f.ninoId, s)]
       if (marcada === undefined) continue
-      if (marcada !== f.servicios[s]) {
+      if (marcada !== (f.servicios[s] ?? false)) {
         out.push({ nino_id: f.ninoId, servicio: s, presente: marcada })
       }
     }
