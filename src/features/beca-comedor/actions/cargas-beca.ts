@@ -11,6 +11,7 @@ import { eurosACentimos } from '@/shared/lib/format-money'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
+import { planGuardarCarga, type FilaCarga, type PlanCarga } from '../lib/cargas'
 import { cargaBecaSchema, type CargaBecaInput } from '../schemas/beca-comedor'
 
 const RUTA = '/[locale]/admin/cuotas'
@@ -46,7 +47,7 @@ function tramosDeCarga(
 ) {
   return supabase
     .from('beca_comedor_tramo')
-    .select('id, mes_aplicacion, anio_aplicacion')
+    .select('id, nino_id, importe_centimos, estado, mes_aplicacion, anio_aplicacion')
     .eq('centro_id', centroId)
     .eq('curso_academico_id', cursoId)
     .eq('origen', 'normal')
@@ -54,11 +55,99 @@ function tramosDeCarga(
     .eq('mes_correspondiente', mesCorr)
 }
 
+/** Alumnos con elegibilidad ACTIVA en el curso: los únicos que pueden recibir un tramo nuevo. */
+async function becadosDelCurso(supabase: Supa, centroId: string, cursoId: string) {
+  const { data } = await supabase
+    .from('beca_comedor_elegibilidad')
+    .select('nino_id')
+    .eq('centro_id', centroId)
+    .eq('curso_academico_id', cursoId)
+    .eq('activa', true)
+  return new Set((data ?? []).map((e) => e.nino_id))
+}
+
+function filasDe(c: CargaBecaInput): FilaCarga[] {
+  return c.importes.map((f) => ({
+    nino_id: f.nino_id,
+    importe_centimos: f.importe_euros == null ? null : eurosACentimos(f.importe_euros),
+  }))
+}
+
+/** Traduce un error de escritura de tramos a la clave que lee la directora. */
+function errorDeEscritura(
+  error: { code?: string; hint?: string; message: string },
+  donde: string,
+  generico: string
+): string {
+  logger.warn(`${donde} error`, error.message)
+  if (error.code === '42501') return 'admin.cuotas.beca_comedor.errors.no_autorizado'
+  if (error.code === '23505') return 'admin.cuotas.beca_comedor.errors.ya_existe'
+  // PR-5: algún tramo ya está descontado en un recibo validado (trigger beca_tramo_proteger).
+  if (error.hint === BECA_APLICADA) return 'admin.cuotas.beca_comedor.errors.carga_aplicada'
+  return generico
+}
+
 /**
- * V2-3 — CREAR una carga: un importe único → un tramo `origen='normal' pendiente` para CADA
- * alumno con elegibilidad activa en el curso. Valida que el mes de aplicación esté ABIERTO
- * (D-P8) y que NO exista ya una carga para ese mes correspondiente (D-4: se rechaza, no
- * upsert). El motor (B2-1) la aplica al (RE)GENERAR el mes de aplicación.
+ * Escribe el plan: tramos nuevos, cambios de importe, borrados y, si cambia, el mes de
+ * aplicación de los pendientes. No es atómico, pero el plan es idempotente: si algo falla a
+ * medias, guardar otra vez parte del estado real y termina el trabajo.
+ */
+async function escribirPlan(
+  supabase: Supa,
+  plan: Extract<PlanCarga, { ok: true }>,
+  base: {
+    centroId: string
+    cursoId: string
+    c: CargaBecaInput
+  },
+  donde: string
+): Promise<string | null> {
+  const { centroId, cursoId, c } = base
+  const generico = 'admin.cuotas.beca_comedor.errors.save_failed'
+  if (plan.borrar.length > 0) {
+    const { error } = await supabase.from('beca_comedor_tramo').delete().in('id', plan.borrar)
+    if (error) return errorDeEscritura(error, donde, generico)
+  }
+  for (const u of plan.actualizar) {
+    const { error } = await supabase
+      .from('beca_comedor_tramo')
+      .update({ importe_centimos: u.importe_centimos })
+      .in('id', u.ids)
+    if (error) return errorDeEscritura(error, donde, generico)
+  }
+  if (plan.mover.length > 0) {
+    const { error } = await supabase
+      .from('beca_comedor_tramo')
+      .update({ anio_aplicacion: c.anio_aplicacion, mes_aplicacion: c.mes_aplicacion })
+      .in('id', plan.mover)
+    if (error) return errorDeEscritura(error, donde, generico)
+  }
+  if (plan.insertar.length > 0) {
+    const { error } = await supabase.from('beca_comedor_tramo').insert(
+      plan.insertar.map((f) => ({
+        centro_id: centroId,
+        nino_id: f.nino_id,
+        curso_academico_id: cursoId,
+        anio_correspondiente: c.anio_correspondiente,
+        mes_correspondiente: c.mes_correspondiente,
+        anio_aplicacion: c.anio_aplicacion,
+        mes_aplicacion: c.mes_aplicacion,
+        importe_centimos: f.importe_centimos,
+        origen: 'normal' as const,
+        estado: 'pendiente' as const,
+      }))
+    )
+    if (error) return errorDeEscritura(error, donde, generico)
+  }
+  return null
+}
+
+/**
+ * V2-3 / PR-10 — CREAR una carga: un tramo `origen='normal' pendiente` por cada becado con
+ * importe, con el importe de ese alumno. Valida que el mes de aplicación esté ABIERTO (D-P8),
+ * que NO exista ya una carga para ese mes correspondiente (D-4: se rechaza, no upsert) y que
+ * cada alumno con importe tenga la beca activa. El motor (B2-1) la aplica al (RE)GENERAR el mes
+ * de aplicación.
  */
 export async function crearCarga(
   input: CargaBecaInput,
@@ -92,46 +181,26 @@ export async function crearCarga(
   ).limit(1)
   if ((existentes ?? []).length > 0) return fail('admin.cuotas.beca_comedor.errors.ya_existe')
 
-  // Elegibles activos del curso.
-  const { data: elig } = await supabase
-    .from('beca_comedor_elegibilidad')
-    .select('nino_id')
-    .eq('centro_id', centroId)
-    .eq('curso_academico_id', curso.id)
-    .eq('activa', true)
-  const ninoIds = [...new Set((elig ?? []).map((e) => e.nino_id))]
-  if (ninoIds.length === 0) return fail('admin.cuotas.beca_comedor.errors.sin_becados')
-
-  const importe_centimos = eurosACentimos(c.importe_euros)
-  const filas = ninoIds.map((nino_id) => ({
-    centro_id: centroId,
-    nino_id,
-    curso_academico_id: curso.id,
-    anio_correspondiente: c.anio_correspondiente,
-    mes_correspondiente: c.mes_correspondiente,
-    anio_aplicacion: c.anio_aplicacion,
-    mes_aplicacion: c.mes_aplicacion,
-    importe_centimos,
-    origen: 'normal' as const,
-    estado: 'pendiente' as const,
-  }))
-
-  const { error } = await supabase.from('beca_comedor_tramo').insert(filas)
-  if (error) {
-    logger.warn('crearCarga error', error.message)
-    if (error.code === '42501') return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
-    if (error.code === '23505') return fail('admin.cuotas.beca_comedor.errors.ya_existe')
-    return fail('admin.cuotas.beca_comedor.errors.save_failed')
+  const plan = planGuardarCarga([], filasDe(c), false)
+  if (!plan.ok) return fail('admin.cuotas.beca_comedor.errors.carga_aplicada')
+  if (plan.insertar.length === 0) return fail('admin.cuotas.beca_comedor.errors.sin_importes')
+  const becados = await becadosDelCurso(supabase, centroId, curso.id)
+  if (plan.insertar.some((f) => !becados.has(f.nino_id))) {
+    return fail('admin.cuotas.beca_comedor.errors.no_becado')
   }
 
+  const err = await escribirPlan(supabase, plan, { centroId, cursoId: curso.id, c }, 'crearCarga')
+  if (err) return fail(err)
+
   revalidatePath(RUTA, 'page')
-  return ok({ n: filas.length })
+  return ok({ n: plan.insertar.length })
 }
 
 /**
- * V2-3 — EDITAR una carga: cambia SOLO importe y mes de aplicación de los tramos EXISTENTES
- * de ese mes correspondiente (no re-encuadra beneficiarios; para eso, borrar + recrear).
- * Exige que TANTO el mes de aplicación actual COMO el nuevo estén ABIERTOS (no toca el pasado).
+ * V2-3 / PR-10 — EDITAR una carga: el importe de cada alumno y el mes de aplicación. Un becado
+ * que no estaba en la carga (marcado después) recibe su tramo; uno sin importe lo pierde. Los
+ * tramos ya descontados en un recibo validado no se tocan, y con alguno así la carga no cambia
+ * de mes. Exige que TANTO el mes de aplicación actual COMO el nuevo estén ABIERTOS.
  */
 export async function editarCarga(
   input: CargaBecaInput,
@@ -169,29 +238,22 @@ export async function editarCarga(
     return fail('admin.cuotas.beca_comedor.errors.mes_cerrado')
   }
 
-  const { error } = await supabase
-    .from('beca_comedor_tramo')
-    .update({
-      importe_centimos: eurosACentimos(c.importe_euros),
-      anio_aplicacion: c.anio_aplicacion,
-      mes_aplicacion: c.mes_aplicacion,
-    })
-    .eq('centro_id', centroId)
-    .eq('curso_academico_id', curso.id)
-    .eq('origen', 'normal')
-    .eq('anio_correspondiente', c.anio_correspondiente)
-    .eq('mes_correspondiente', c.mes_correspondiente)
-
-  if (error) {
-    logger.warn('editarCarga error', error.message)
-    if (error.code === '42501') return fail('admin.cuotas.beca_comedor.errors.no_autorizado')
-    // PR-5: algún tramo ya está descontado en un recibo validado (trigger beca_tramo_proteger).
-    if (error.hint === BECA_APLICADA) return fail('admin.cuotas.beca_comedor.errors.carga_aplicada')
-    return fail('admin.cuotas.beca_comedor.errors.save_failed')
+  const cambiaAplicacion =
+    actual.anio_aplicacion !== c.anio_aplicacion || actual.mes_aplicacion !== c.mes_aplicacion
+  const plan = planGuardarCarga(tramos ?? [], filasDe(c), cambiaAplicacion)
+  if (!plan.ok) return fail('admin.cuotas.beca_comedor.errors.carga_aplicada')
+  if (plan.insertar.length > 0) {
+    const becados = await becadosDelCurso(supabase, centroId, curso.id)
+    if (plan.insertar.some((f) => !becados.has(f.nino_id))) {
+      return fail('admin.cuotas.beca_comedor.errors.no_becado')
+    }
   }
 
+  const err = await escribirPlan(supabase, plan, { centroId, cursoId: curso.id, c }, 'editarCarga')
+  if (err) return fail(err)
+
   revalidatePath(RUTA, 'page')
-  return ok({ n: (tramos ?? []).length })
+  return ok({ n: plan.insertar.length })
 }
 
 /**

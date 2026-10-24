@@ -448,11 +448,11 @@
         "elegibilidad_title": "Elegibilidad",
         "elegibilidad_hint": "Marca qué alumnos tienen beca comedor este curso. Dar de baja deja de aplicarla en recibos futuros; los tramos ya registrados se respetan.",
         "cargas_title": "Cargas por mes",
-        "cargas_hint": "El importe único de beca comedor de cada mes. Al cargarlo se crea un tramo para todos los alumnos con beca.",
+        "cargas_hint": "El importe de beca comedor de cada becado, mes a mes. Una carga nueva viene rellena con la anterior.",
         "sin_alumnos": "No hay alumnos activos en el curso.",
         "col_alumno": "Alumno",
         "col_beca": "Beca comedor",
-        "cargas_sub": "Cada carga aplica un importe único a todos los becados.",
+        "cargas_sub": "Cada becado lleva su importe; selecciona varios para ponerles el mismo.",
         "sin_becados_hint": "Marca al menos un alumno con beca comedor arriba para poder crear cargas.",
         "nueva_carga": "Nueva carga",
         "sin_cargas": "Aún no hay cargas.",
@@ -472,7 +472,7 @@
         "mes_aplicacion": "Mes de aplicación",
         "mes_aplicacion_hint": "En qué recibo se descuenta. Solo meses abiertos.",
         "mes_placeholder": "Elige un mes",
-        "importe_label": "Importe por becado (€)",
+        "importe_label": "Importe (€)",
         "cancelar": "Cancelar",
         "crear": "Crear carga",
         "guardar": "Guardar",
@@ -495,7 +495,9 @@
           "save_failed": "No se pudo guardar.",
           "delete_failed": "No se pudo borrar.",
           "no_existe": "La carga ya no existe.",
-          "carga_aplicada": "Hay becas de esta carga ya descontadas en recibos validados: no se puede modificar. Devuelve antes esos recibos a borrador."
+          "carga_aplicada": "Hay becas de esta carga ya descontadas en recibos validados: esas no se cambian ni se quitan, y la carga no cambia de mes. Para tocarlas, devuelve antes esos recibos a borrador.",
+          "sin_importes": "Pon el importe de al menos un becado.",
+          "no_becado": "Algún alumno ya no tiene la beca activa: recarga la página."
         },
         "desborde": {
           "title": "Resolver beca comedor",
@@ -532,7 +534,21 @@
           }
         },
         "descontadas": "{n} descontadas",
-        "no_editable_descontada": "Descontada en recibos validados"
+        "mes_aplicacion_fijo": "Hay becas de esta carga ya descontadas: el mes de aplicación no cambia.",
+        "relleno_de": "Rellena con los importes de {mes}. Cambia solo lo que haya variado.",
+        "sin_carga_anterior": "No hay ninguna carga anterior: pon el importe de cada becado.",
+        "importe_seleccion": "Importe para los seleccionados (€)",
+        "poner_seleccion": "Poner a {n} seleccionados",
+        "quitar_seleccion": "Quitar a los seleccionados",
+        "seleccionar_todos": "Seleccionar todos",
+        "seleccionar": "Seleccionar a {nombre}",
+        "importe_de": "Importe de {nombre}",
+        "fila_descontada": "Descontada",
+        "fila_sin_beca": "Sin beca activa",
+        "fila_nuevo": "Becado después de la carga",
+        "recibo_validado": "Su recibo de {mes} ya está validado: la beca no entrará hasta que lo vuelvas a borrador y recalcules.",
+        "resumen_importes": "{n} de {total} con importe. Sin importe, ese alumno no tiene beca este mes.",
+        "becados_sin_importe": "{n} becados sin importe: edita la carga para ponérselo"
       },
       "tab_resumen": "Resumen",
       "signos": {

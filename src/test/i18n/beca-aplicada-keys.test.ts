@@ -60,7 +60,9 @@ describe('i18n — beca aplicada (PR-5)', () => {
   it('premisa: la lectura encuentra el «descontadas», el motivo y los dos errores', () => {
     expect(CLAVES.size).toBeGreaterThan(20)
     expect(CLAVES).toContain('admin.cuotas.beca_comedor.descontadas')
-    expect(CLAVES).toContain('admin.cuotas.beca_comedor.no_editable_descontada')
+    // PR-10: una carga con becas descontadas ya se edita (esas no se tocan); el único motivo
+    // para no editarla es el mes cerrado.
+    expect(CLAVES).toContain('admin.cuotas.beca_comedor.no_editable')
     expect(CLAVES).toContain('admin.cuotas.beca_comedor.errors.carga_aplicada')
     expect(CLAVES).toContain('recibos_panel.errors.beca_ya_aplicada')
   })

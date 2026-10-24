@@ -25,11 +25,11 @@ import {
 } from '@/components/ui/table'
 import { formatEuros } from '@/shared/lib/format-money'
 
-import { CargaFormDialog } from './CargaFormDialog'
+import { CargaFormDialog, type AlumnoBecado } from './CargaFormDialog'
 import { borrarCarga } from '../actions/cargas-beca'
 import { etiquetaMes } from '../lib/meses'
 import type { CargaBecaItem } from '../queries/get-cargas-beca'
-import type { MesCurso } from '../lib/cargas'
+import { becadosSinImporte, type MesCurso } from '../lib/cargas'
 
 interface Props {
   /** Centro activo de la página: el de las cargas. */
@@ -37,12 +37,35 @@ interface Props {
   cargas: CargaBecaItem[]
   meses: MesCurso[]
   mesesCerrados: MesCurso[]
-  hayBecados: boolean
+  becados: AlumnoBecado[]
+  nombres: Record<string, string>
+  recibosValidados: string[]
 }
 
-export function CargasBeca({ centroId, cargas, meses, mesesCerrados, hayBecados }: Props) {
+export function CargasBeca({
+  centroId,
+  cargas,
+  meses,
+  mesesCerrados,
+  becados,
+  nombres,
+  recibosValidados,
+}: Props) {
   const t = useTranslations('admin.cuotas.beca_comedor')
   const locale = useLocale()
+  const hayBecados = becados.length > 0
+  const idsBecados = becados.map((b) => b.id)
+  const comunes = { centroId, meses, mesesCerrados, becados, nombres, recibosValidados, cargas }
+
+  /** Un importe, o el rango si la carga tiene varios (PR-10: cada becado el suyo). */
+  function importeDe(c: CargaBecaItem): string {
+    const [min, ...resto] = c.importesDistintos
+    const max = resto.at(-1)
+    if (min == null) return ''
+    return max == null
+      ? formatEuros(min, locale)
+      : `${formatEuros(min, locale)} – ${formatEuros(max, locale)}`
+  }
 
   return (
     <Card className="space-y-3 p-4">
@@ -51,9 +74,7 @@ export function CargasBeca({ centroId, cargas, meses, mesesCerrados, hayBecados 
           {hayBecados ? t('cargas_sub') : t('sin_becados_hint')}
         </p>
         <CargaFormDialog
-          centroId={centroId}
-          meses={meses}
-          mesesCerrados={mesesCerrados}
+          {...comunes}
           trigger={
             <Button size="sm" disabled={!hayBecados}>
               {t('nueva_carga')}
@@ -78,6 +99,7 @@ export function CargasBeca({ centroId, cargas, meses, mesesCerrados, hayBecados 
           <TableBody>
             {cargas.map((c) => {
               const key = `${c.anioCorrespondiente}-${c.mesCorrespondiente}`
+              const sinImporte = becadosSinImporte(c, idsBecados).length
               return (
                 <TableRow key={key}>
                   <TableCell className="font-medium">
@@ -91,9 +113,7 @@ export function CargasBeca({ centroId, cargas, meses, mesesCerrados, hayBecados 
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatEuros(c.importeCentimos, locale)}
-                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{importeDe(c)}</TableCell>
                   <TableCell className="text-center tabular-nums">
                     {c.nBecados}
                     {c.nAplicados > 0 && (
@@ -101,14 +121,17 @@ export function CargasBeca({ centroId, cargas, meses, mesesCerrados, hayBecados 
                         {t('descontadas', { n: c.nAplicados })}
                       </div>
                     )}
+                    {sinImporte > 0 && c.editable && (
+                      <div className="text-xs text-amber-700 dark:text-amber-400">
+                        {t('becados_sin_importe', { n: sinImporte })}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     {c.editable ? (
                       <div className="flex justify-end gap-1">
                         <CargaFormDialog
-                          centroId={centroId}
-                          meses={meses}
-                          mesesCerrados={mesesCerrados}
+                          {...comunes}
                           carga={c}
                           trigger={
                             <Button size="sm" variant="secondary">
@@ -116,12 +139,10 @@ export function CargasBeca({ centroId, cargas, meses, mesesCerrados, hayBecados 
                             </Button>
                           }
                         />
-                        <BorrarCargaDialog centroId={centroId} carga={c} />
+                        {c.borrable && <BorrarCargaDialog centroId={centroId} carga={c} />}
                       </div>
                     ) : (
-                      <span className="text-muted-foreground text-xs">
-                        {c.cerrada ? t('no_editable') : t('no_editable_descontada')}
-                      </span>
+                      <span className="text-muted-foreground text-xs">{t('no_editable')}</span>
                     )}
                   </TableCell>
                 </TableRow>
