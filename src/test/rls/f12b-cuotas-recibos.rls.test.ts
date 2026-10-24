@@ -28,7 +28,7 @@ import type { Database } from '@/types/database'
  *  - Catálogo (conceptos_cobro), asignación (asignacion_concepto,
  *    metodo_pago_familia), cierre (cierre_mensual) y remesas (remesas,
  *    recibos_remesa): SOLO el admin del centro escribe/lee; profe y tutor NO.
- *  - parte_servicio_diario: la profe del niño (o admin) apunta y lee; el tutor NO
+ *  - parte_servicio_diario: cualquier profe del centro (o admin) apunta y lee (PR-12); el tutor NO
  *    (control interno); aislamiento entre centros.
  *  - recibos + lineas_recibo: el admin gestiona; el TUTOR legal ve los recibos y el
  *    desglose de SU hijo (recibos pasados); profe NO; un tutor ajeno no ve nada.

@@ -250,7 +250,8 @@
       "pendientes": "Validations",
       "familias": "Families",
       "fotosRevocadas": "Revoked photos",
-      "direccion": "Centre management"
+      "direccion": "Centre management",
+      "servicios": "Services"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -1334,7 +1335,8 @@
       "agenda": "Agenda",
       "autorizaciones": "Authorisations",
       "notificaciones": "Notifications",
-      "informes": "Reports"
+      "informes": "Reports",
+      "servicios": "Services"
     },
     "dashboard": {
       "title": "My classrooms",
@@ -2361,45 +2363,42 @@
   },
   "parte_servicio": {
     "title": "Service log",
-    "subtitle": "Record who stays for lunch, early-care or after-care each day.",
+    "subtitle": "Every child in the centre: tick who stays in the morning, for lunch and in the afternoon.",
     "ver": "Service log",
-    "ayuda": "Check the children who stay for this service. Used for monthly billing.",
-    "ningun_nino": "No children enrolled in this classroom yet.",
     "guardar": "Save log",
-    "selector_servicio_label": "Service selection",
     "selector": {
       "anterior": "Previous day",
       "siguiente": "Next day",
       "dia_futuro": "Future day",
       "volver_a_hoy": "Back to today"
     },
-    "servicios": {
-      "comedor": "Lunch",
-      "matinera": "Early care",
-      "vespertina": "After care"
-    },
-    "columna": {
-      "presente": "Staying?"
-    },
-    "opciones": {
-      "si": "Yes",
-      "no": "No"
-    },
-    "quick_actions": {
-      "todos_se_quedan": "Everyone stays"
-    },
-    "status": {
-      "pending": "Unmarked",
-      "dirty": "Unsaved",
-      "saved": "Saved",
-      "error": "Error"
-    },
     "validation": {
       "fecha_invalida": "Invalid date."
     },
     "errors": {
       "sin_permiso": "You don't have permission to edit this log.",
-      "guardar_fallo": "Couldn't save. Please try again."
+      "guardar_fallo": "Couldn't save. Please try again.",
+      "mes_cerrado": "That month is already closed: its service log cannot be changed."
+    },
+    "listado": {
+      "ayuda": "Tick everyone who stays, whether or not they pay a monthly fee: when the bills are made, only those who should pay are charged.",
+      "error": "The list could not be loaded. Reload the page.",
+      "sin_alumnos": "There are no children enrolled in the active year.",
+      "sin_resultados": "No child matches the filter.",
+      "filtro_clase": "Filter by class",
+      "todas": "All",
+      "buscar": "Search by name",
+      "col_clase": "Class",
+      "col_alumno": "Child",
+      "col_matinera": "Morning",
+      "col_comedor": "Lunch",
+      "col_vespertina": "Afternoon",
+      "marcar_todos": "All",
+      "marcar_todos_aria": "Tick or untick {servicio} for everyone in the list",
+      "casilla_aria": "{nombre}: {servicio}",
+      "cambios": "{n, plural, one {# unsaved change} other {# unsaved changes}}",
+      "guardado": "{n, plural, one {Saved # change.} other {Saved # changes.}}",
+      "descartar_cambios": "There are unsaved changes. Change day and discard them?"
     }
   },
   "ausencia": {

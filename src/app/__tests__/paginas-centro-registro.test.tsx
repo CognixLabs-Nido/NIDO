@@ -32,12 +32,6 @@ vi.mock('@/features/aulas/queries/get-aulas', () => ({
 vi.mock('@/features/centros/components/AvisoCentroDistinto', () => ({
   AvisoCentroDistinto: () => null,
 }))
-vi.mock('@/features/parte-servicio/queries/get-parte-servicio-aula', () => ({
-  getParteServicioAula: async () => [],
-}))
-vi.mock('@/features/parte-servicio/components/PaseDeListaServicioCliente', () => ({
-  PaseDeListaServicioCliente: () => null,
-}))
 vi.mock('@/features/menus/queries/get-pase-de-lista-comida-todos-momentos', () => ({
   getPaseDeListaComidaTodosMomentos: async () => ({}),
 }))
@@ -62,24 +56,24 @@ const searchParams = Promise.resolve({})
 
 beforeEach(() => vi.clearAllMocks())
 
-describe.each([
-  ['servicio', () => import('../[locale]/teacher/aula/[id]/servicio/page')],
-  ['comida', () => import('../[locale]/teacher/aula/[id]/comida/page')],
-])('teacher/aula/[id]/%s — rol en el centro del aula', (_nombre, cargar) => {
-  it('profe en B (centro del aula), con A activo → entra', async () => {
-    rolesPorCentro({ [A]: 'admin', [B]: 'profe' })
-    const { default: Page } = await cargar()
-    await expect(Page({ params, searchParams })).resolves.toBeTruthy()
-    expect(m.contextoEnCentro).toHaveBeenCalledWith(B)
-    expect(m.redirect).not.toHaveBeenCalled()
-  })
+describe.each([['comida', () => import('../[locale]/teacher/aula/[id]/comida/page')]])(
+  'teacher/aula/[id]/%s — rol en el centro del aula',
+  (_nombre, cargar) => {
+    it('profe en B (centro del aula), con A activo → entra', async () => {
+      rolesPorCentro({ [A]: 'admin', [B]: 'profe' })
+      const { default: Page } = await cargar()
+      await expect(Page({ params, searchParams })).resolves.toBeTruthy()
+      expect(m.contextoEnCentro).toHaveBeenCalledWith(B)
+      expect(m.redirect).not.toHaveBeenCalled()
+    })
 
-  it('admin solo en A (no en el centro del aula) → forbidden', async () => {
-    rolesPorCentro({ [A]: 'admin' })
-    const { default: Page } = await cargar()
-    await expect(Page({ params, searchParams })).rejects.toThrow('REDIRECT /es/forbidden')
-  })
-})
+    it('admin solo en A (no en el centro del aula) → forbidden', async () => {
+      rolesPorCentro({ [A]: 'admin' })
+      const { default: Page } = await cargar()
+      await expect(Page({ params, searchParams })).rejects.toThrow('REDIRECT /es/forbidden')
+    })
+  }
+)
 
 describe('admin/cuotas/recibos/csv — centro activo sin redirigir', () => {
   const req = () => new Request('http://x/es/admin/cuotas/recibos/csv?anio=2026&mes=3')

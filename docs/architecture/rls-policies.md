@@ -1160,6 +1160,27 @@ reglas de arranque; y nombres de centro únicos, bloqueado.
   atomicidad, reenviar y otro email, 42501 a admin, directora, profe y anon, y la aceptación con y
   sin admin entre medias), y los unit de las acciones, del curso por fecha y de los errores.
 
+### El pase de servicios, un listado único (PR-12 de recibos)
+
+Migración `20261115120000_feat_pase_servicios_listado_unico`. El parte de servicio (mañana,
+comedor y tarde) lo rellena quien esté en el comedor, y marca a todos los niños del centro, no solo
+a los de su aula. Decisión del responsable.
+
+- **`parte_servicio_diario`:** sus tres policies pasan de `es_profe_de_nino(nino_id)` a
+  `es_profe_en_centro(centro_id)`, el rol `profe` vivo en el centro de la fila. Lo tienen la
+  profesora, la tutora y la ayudante; su tipo en el aula no cuenta. `es_admin` sigue. La
+  escritura exige además `centro_id = privado.centro_de_nino(nino_id)`: al insertar ya lo fuerza
+  el trigger, pero un UPDATE podía cambiar el niño por uno de otro centro. Sigue sin DELETE.
+- **`listado_pase_servicios(centro)`** (`SECURITY DEFINER`, `EXECUTE` solo para
+  `authenticated`): los niños con matrícula activa en el curso activo, con **solo** nombre,
+  apellidos y clase. La RLS de `ninos` y `matriculas` no deja a la profe ver a los niños de otras
+  aulas, y abrirle esas tablas le daría la ficha completa de todos. Puerta: `es_admin` o
+  `es_profe_en_centro` del centro pedido, si no 42501; con centro NULL también, porque
+  `es_admin(NULL)` da TRUE a cualquier persona de Dirección.
+- **En la app:** `/teacher/servicios`, en el menú de la profe y en el de Dirección, para el centro
+  activo. El enlace del aula lleva ahí con su clase preseleccionada; la página por aula se retira.
+- Test: `pase-servicios-unico.rls.test.ts`.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -1201,6 +1222,7 @@ reglas de arranque; y nombres de centro únicos, bloqueado.
 | Las lecturas filtran por su centro            | `check-lecturas-por-centro.test.ts` (guards)    |
 | Métricas del panel: solo lo activo            | `platform-metricas.rls.test.ts`                 |
 | Crear centro e invitar a su admin             | `platform-crear-centro.rls.test.ts`             |
+| Pase de servicios: cualquier profe del centro | `pase-servicios-unico.rls.test.ts`              |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 
@@ -1226,7 +1248,7 @@ Migración `20261010120000_feat_idioma_preferido_en_metadatos_auth`. Las plantil
 
 ## Export art. 15 — `export_datos_sujeto`
 
-Migración `20261014120000_feat_export_datos_sujeto`. El export (`/export/me` y `/export/[tipo]/[id]`) lee con la sesión de quien lo pide, y la RLS de muchas tablas no deja a la familia leer sus propios datos: `lista_espera`, `rollover_finaliza`, `invitaciones`, `export_log`, `olvido_solicitudes`, `metodo_pago_familia`, `asignacion_concepto`, `parte_servicio_diario` y las cuatro `beca_comedor_*` son de Dirección; `consentimientos` solo los ve quien los dio; `preferencias_usuario`, `push_subscriptions` y `lectura_*` solo el propio usuario. El derecho de acceso no es «lo que tu sesión alcanza».
+Migración `20261014120000_feat_export_datos_sujeto`. El export (`/export/me` y `/export/[tipo]/[id]`) lee con la sesión de quien lo pide, y la RLS de muchas tablas no deja a la familia leer sus propios datos: `lista_espera`, `rollover_finaliza`, `invitaciones`, `export_log`, `olvido_solicitudes`, `metodo_pago_familia`, `asignacion_concepto` y las cuatro `beca_comedor_*` son de Dirección, y `parte_servicio_diario`, de Dirección y de las profes del centro (PR-12); `consentimientos` solo los ve quien los dio; `preferencias_usuario`, `push_subscriptions` y `lectura_*` solo el propio usuario. El derecho de acceso no es «lo que tu sesión alcanza».
 
 - **`export_datos_sujeto(p_sujeto_tipo text, p_sujeto_id uuid) → jsonb`** (`SECURITY DEFINER`, `STABLE`, `search_path = public`; `REVOKE` de `PUBLIC`/`anon`, `EXECUTE` a `authenticated`). Devuelve lo que el export añade sobre lo que ya lee por sesión. Solo lectura: no escribe ni toca `audit_log`.
 - **Control de acceso** (en la función, no en la app):

@@ -17,6 +17,7 @@ import {
   ImageOffIcon,
   LayoutDashboardIcon,
   MessageCircleIcon,
+  SoupIcon,
   UsersIcon,
   UserCogIcon,
   UsersRoundIcon,
@@ -87,6 +88,8 @@ export async function buildSidebarItems(
         trailing: agendaBadge,
       },
       { href: `/${locale}/admin/menus`, label: t('menus'), icon: <UtensilsIcon /> },
+      // PR-12: el pase de servicios es uno para todo el centro; Dirección también lo rellena.
+      { href: `/${locale}/teacher/servicios`, label: t('servicios'), icon: <SoupIcon /> },
       { href: `/${locale}/admin/cuotas`, label: t('cuotas'), icon: <CoinsIcon /> },
       {
         href: `/${locale}/admin/autorizaciones`,
@@ -145,6 +148,11 @@ export async function buildSidebarItems(
         href: `/${locale}/teacher/autorizaciones`,
         label: t('autorizaciones'),
         icon: <FileSignatureIcon />,
+      },
+      {
+        href: `/${locale}/teacher/servicios`,
+        label: t('servicios'),
+        icon: <SoupIcon />,
       },
       {
         href: `/${locale}/teacher/informes`,
