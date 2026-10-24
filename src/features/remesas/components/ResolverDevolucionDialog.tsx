@@ -35,9 +35,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { formatEuros } from '@/shared/lib/format-money'
 
 import { resolverDevolucion } from '../actions/resolver-devolucion'
+import { etiquetaMes, type MesRecibo } from '../lib/gestion-cobros'
 import {
   SALIDAS_DEVOLUCION,
   resolverDevolucionSchema,
+  salidaConCobro,
   type ResolverDevolucionInput,
 } from '../schemas/remesa'
 
@@ -52,6 +54,11 @@ interface Props {
   fechaDevolucion: string | null
   /** ¿Puede volver al banco? Solo con mandato SEPA activo. */
   permiteSepa: boolean
+  /**
+   * PR-14: el recibo al que se arrastraría (el borrador de la familia del primer mes posterior);
+   * null si no tiene ninguno, y entonces esa salida no se ofrece.
+   */
+  arrastre: MesRecibo | null
   /** Hoy en Madrid (YYYY-MM-DD): la fecha por defecto y el máximo. */
   hoy: string
   trigger: ReactElement
@@ -60,7 +67,8 @@ interface Props {
 /**
  * «Resolver devolución» (PR-2): UNA sola salida, por el recibo más los gastos. Volver a pasarlo por
  * el banco crea un re-giro que entra en la siguiente remesa del mes; efectivo o transferencia lo
- * dejan cobrado, con su fecha y una nota opcional. Una segunda salida la rechaza la BD.
+ * dejan cobrado, con su fecha y una nota opcional; arrastrarlo (PR-14) añade una línea al siguiente
+ * recibo en borrador de la familia. Una segunda salida la rechaza la BD.
  */
 export function ResolverDevolucionDialog({
   reciboId,
@@ -69,6 +77,7 @@ export function ResolverDevolucionDialog({
   gastosCentimos,
   fechaDevolucion,
   permiteSepa,
+  arrastre,
   hoy,
   trigger,
 }: Props) {
@@ -90,7 +99,7 @@ export function ResolverDevolucionDialog({
     defaultValues: valoresIniciales,
   })
   const salida = useWatch({ control: form.control, name: 'salida' })
-  const conCobro = salida !== 'banco'
+  const conCobro = salidaConCobro(salida)
   const aCobrar = formatEuros(totalCentimos + gastosCentimos, locale)
 
   function onOpenChange(abierto: boolean) {
@@ -112,9 +121,9 @@ export function ResolverDevolucionDialog({
     })
   }
 
-  const salidaItems = SALIDAS_DEVOLUCION.filter((s) => s !== 'banco' || permiteSepa).map(
-    (value) => ({ value, label: t(`resolver_dialog.salidas.${value}`) })
-  )
+  const salidaItems = SALIDAS_DEVOLUCION.filter(
+    (s) => (s !== 'banco' || permiteSepa) && (s !== 'siguiente_recibo' || arrastre !== null)
+  ).map((value) => ({ value, label: t(`resolver_dialog.salidas.${value}`) }))
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -158,10 +167,20 @@ export function ResolverDevolucionDialog({
                   <p className="text-muted-foreground text-xs">
                     {salida === 'banco'
                       ? t('resolver_dialog.banco_ayuda', { importe: aCobrar })
-                      : !permiteSepa
-                        ? t('resolver_dialog.sin_mandato')
-                        : null}
+                      : salida === 'siguiente_recibo' && arrastre
+                        ? t('resolver_dialog.siguiente_ayuda', {
+                            importe: aCobrar,
+                            mes: etiquetaMes(arrastre, locale),
+                          })
+                        : !permiteSepa
+                          ? t('resolver_dialog.sin_mandato')
+                          : null}
                   </p>
+                  {arrastre === null && (
+                    <p className="text-muted-foreground text-xs">
+                      {t('resolver_dialog.sin_recibo_siguiente')}
+                    </p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

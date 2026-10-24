@@ -1774,7 +1774,8 @@
       "recibo_cobrado": "Este rebut ja està cobrat: ja no es pot modificar.",
       "desconfirmar_failed": "No s’ha pogut reobrir el rebut.",
       "desborde_pendiente": "Aquest rebut té un excés de beca menjador sense resoldre: resol-lo abans de confirmar-lo.",
-      "beca_ya_aplicada": "Una beca d'aquest rebut ja està descomptada en un altre rebut validat. Recalcula el mes abans de confirmar-lo."
+      "beca_ya_aplicada": "Una beca d'aquest rebut ja està descomptada en un altre rebut validat. Recalcula el mes abans de confirmar-lo.",
+      "linea_arrastre": "La línia d’una devolució no s’edita: es lleva, i la devolució torna a quedar sense resoldre."
     },
     "desborde_aviso": "{n} rebuts amb beca menjador pendent de resoldre.",
     "desborde_badge": "Beca pendent",
@@ -1793,7 +1794,10 @@
     "lote_saltados": "{n} rebuts no s'han confirmat: tenen un excés de beca menjador sense resoldre.",
     "lote_saltado_fila": "{familia} · excés de {importe}",
     "metodo_excepcion": "Només este mes · en la fitxa: {ficha}",
-    "metodo_sepa_sin_mandato": "Sense mandat SEPA actiu: no entrarà en la remesa."
+    "metodo_sepa_sin_mandato": "Sense mandat SEPA actiu: no entrarà en la remesa.",
+    "linea_arrastre": "devolució",
+    "quitar_arrastre_confirm": "És la línia d’una devolució. Si la lleves, la devolució torna a quedar sense resoldre. La lleves?",
+    "arrastre_quitado": "Línia llevada. La devolució torna a quedar sense resoldre."
   },
   "cargo_puntual": {
     "abrir": "Càrrec a diversos xiquets",
@@ -1983,7 +1987,8 @@
       "no_devuelto": "Només es resol un rebut retornat.",
       "sin_mandato_devolucion": "La família no té mandat SEPA actiu: no es pot tornar a passar pel banc.",
       "resolver_failed": "No s'ha pogut resoldre la devolució.",
-      "devolucion_por_resolver": "Un rebut retornat es cobra des de «Resoldre devolució»."
+      "devolucion_por_resolver": "Un rebut retornat es cobra des de «Resoldre devolució».",
+      "sin_recibo_siguiente": "La família no té un rebut en esborrany d’un mes posterior: no es pot portar al rebut següent."
     },
     "transferencias_beca": {
       "title": "Transferències de beca menjador",
@@ -2029,7 +2034,8 @@
     "salidas_cobrado": {
       "banco": "banc",
       "efectivo": "efectiu",
-      "transferencia": "transferència"
+      "transferencia": "transferència",
+      "siguiente_recibo": "el rebut següent"
     },
     "devuelto_dialog": {
       "titulo": "Marcar retornat",
@@ -2047,7 +2053,8 @@
       "salidas": {
         "banco": "Tornar a passar-lo pel banc",
         "efectivo": "Efectiu",
-        "transferencia": "Transferència"
+        "transferencia": "Transferència",
+        "siguiente_recibo": "Al rebut següent"
       },
       "banco_ayuda": "Es crea un rebut nou per {importe}, que entra en la següent remesa d’aquest mes.",
       "sin_mandato": "La família no té mandat SEPA actiu: no es pot tornar a passar pel banc.",
@@ -2055,8 +2062,11 @@
       "nota": "Nota (opcional)",
       "una_vez": "Una devolució es resol una sola vegada.",
       "guardar": "Resoldre",
-      "cancelar": "Cancel·lar"
-    }
+      "cancelar": "Cancel·lar",
+      "siguiente_ayuda": "S’afig una línia de {importe} al rebut de {mes} de la família, que està en esborrany. Si es lleva eixa línia, la devolució torna a quedar sense resoldre.",
+      "sin_recibo_siguiente": "Per a portar-la al rebut següent, la família necessita un rebut en esborrany d’un mes posterior."
+    },
+    "arrastrada_a": "Portada al rebut de {mes} · {importe}"
   },
   "aula": {
     "validation": {
@@ -4162,7 +4172,8 @@
         "automatico": "Automàtic",
         "manual": "Manual",
         "normas": "Normes del centre",
-        "banco": "Banc"
+        "banco": "Banc",
+        "siguiente_recibo": "Rebut següent"
       }
     },
     "descargar_mis_datos": "Descarregar les meues dades",

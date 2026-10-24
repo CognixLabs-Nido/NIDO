@@ -99,10 +99,12 @@ export function EditarReciboDialog({ destino, lineas, hijos }: Props) {
     })
   }
 
-  function borrar(lineaId: string) {
+  // PR-14: quitar la línea de una devolución arrastrada la deja otra vez sin resolver; se avisa.
+  function borrar(linea: LineaPanel) {
+    if (linea.esArrastre && !window.confirm(t('quitar_arrastre_confirm'))) return
     startTransition(async () => {
-      const r = await borrarLineaRecibo({ lineaId })
-      feedback(r, 'linea_borrada')
+      const r = await borrarLineaRecibo({ lineaId: linea.id })
+      feedback(r, linea.esArrastre ? 'arrastre_quitado' : 'linea_borrada')
     })
   }
 
@@ -136,7 +138,7 @@ export function EditarReciboDialog({ destino, lineas, hijos }: Props) {
             <p className="text-muted-foreground text-sm">{t('sin_lineas')}</p>
           )}
           {lineas.map((l) => (
-            <LineaEditable key={l.id} linea={l} disabled={pending} onBorrar={() => borrar(l.id)} />
+            <LineaEditable key={l.id} linea={l} disabled={pending} onBorrar={() => borrar(l)} />
           ))}
         </div>
 
@@ -268,16 +270,25 @@ function LineaEditable({
         {linea.descripcion}
         {linea.cantidad > 1 ? ` (×${linea.cantidad})` : ''}
         {/* Sin esta marca no hay forma de saber qué sobrevive a un recálculo y qué no. */}
-        {linea.origen === 'manual' && (
+        {linea.esArrastre ? (
           <Badge variant="warm" className="ml-2 align-middle">
-            {t('linea_manual')}
+            {t('linea_arrastre')}
           </Badge>
+        ) : (
+          linea.origen === 'manual' && (
+            <Badge variant="warm" className="ml-2 align-middle">
+              {t('linea_manual')}
+            </Badge>
+          )
         )}
       </span>
       <span className="tabular-nums">{formatEuros(linea.importeCentimos, locale)}</span>
-      <Button size="sm" variant="ghost" disabled={disabled} onClick={() => setEditando(true)}>
-        {t('editar')}
-      </Button>
+      {/* PR-14: su importe es la deuda de la devolución; no se edita, solo se quita. */}
+      {!linea.esArrastre && (
+        <Button size="sm" variant="ghost" disabled={disabled} onClick={() => setEditando(true)}>
+          {t('editar')}
+        </Button>
+      )}
       <Button size="sm" variant="ghost" disabled={disabled} onClick={onBorrar}>
         {t('quitar')}
       </Button>

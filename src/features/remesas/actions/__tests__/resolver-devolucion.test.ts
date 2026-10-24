@@ -7,8 +7,8 @@ import va from '@/../messages/va.json'
 import { resolverDevolucion } from '../resolver-devolucion'
 
 /**
- * PR-2: «Resolver devolución» llama a `resolver_devolucion` con la salida; el banco no lleva fecha
- * ni nota; efectivo y transferencia llevan su fecha (nunca futura) y la nota vacía como NULL; y el
+ * PR-2: «Resolver devolución» llama a `resolver_devolucion` con la salida; el banco (y, desde el
+ * PR-14, el siguiente recibo) no lleva fecha ni nota; efectivo y transferencia llevan su fecha (nunca futura) y la nota vacía como NULL; y el
  * HINT de la BD se traduce a una clave que existe en los tres idiomas. Que sea UNA sola salida lo
  * asegura la BD (test RLS `recibos-devolucion-una-salida`).
  */
@@ -67,7 +67,7 @@ describe('resolverDevolucion', () => {
         fecha: '2026-10-20',
         nota: 'x',
       })
-    ).toEqual({ success: true, data: { regiroId: 'regiro1' } })
+    ).toEqual({ success: true, data: { reciboId: 'regiro1' } })
     expect(rpc).toHaveBeenCalledWith('resolver_devolucion', {
       p_recibo_id: 'r1',
       p_salida: 'banco',
@@ -84,7 +84,7 @@ describe('resolverDevolucion', () => {
         fecha: '2026-10-20',
         nota: '  Pagó en secretaría  ',
       })
-    ).toEqual({ success: true, data: { regiroId: null } })
+    ).toEqual({ success: true, data: { reciboId: null } })
     expect(rpc.mock.calls[0]![1]).toEqual({
       p_recibo_id: 'r1',
       p_salida: 'efectivo',
@@ -98,6 +98,24 @@ describe('resolverDevolucion', () => {
       nota: '   ',
     })
     expect(rpc.mock.calls[1]![1]).toMatchObject({ p_salida: 'transferencia', p_nota: null })
+  })
+
+  it('PR-14: siguiente recibo → la RPC sin fecha ni nota, y devuelve el recibo al que se lleva', async () => {
+    estado.respuesta = { data: 'noviembre1', error: null }
+    expect(
+      await resolverDevolucion({
+        reciboId: RECIBO,
+        salida: 'siguiente_recibo',
+        fecha: '2026-10-20',
+        nota: 'x',
+      })
+    ).toEqual({ success: true, data: { reciboId: 'noviembre1' } })
+    expect(rpc).toHaveBeenCalledWith('resolver_devolucion', {
+      p_recibo_id: 'r1',
+      p_salida: 'siguiente_recibo',
+      p_fecha: null,
+      p_nota: null,
+    })
   })
 
   it('un cobro sin fecha o con fecha futura, o una salida que no existe: no llama a la BD', async () => {
@@ -141,6 +159,7 @@ describe('resolverDevolucion', () => {
     ['sin_mandato', 'remesas.errors.sin_mandato_devolucion'],
     ['salida_invalida', 'remesas.errors.invalid'],
     ['fecha_cobro_invalida', 'remesas.validation.fecha_cobro_devolucion'],
+    ['sin_recibo_siguiente', 'remesas.errors.sin_recibo_siguiente'],
   ]
 
   it.each(HINTS)('HINT %s → %s, que existe en es, en y va', async (hint, clave) => {

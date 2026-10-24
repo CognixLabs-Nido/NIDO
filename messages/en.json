@@ -1774,7 +1774,8 @@
       "recibo_cobrado": "This receipt has already been collected: it can no longer be modified.",
       "desconfirmar_failed": "Could not reopen the receipt.",
       "desborde_pendiente": "This receipt has an unresolved meal grant excess: resolve it before confirming.",
-      "beca_ya_aplicada": "A meal grant on this receipt has already been deducted on another confirmed receipt. Recalculate the month before confirming it."
+      "beca_ya_aplicada": "A meal grant on this receipt has already been deducted on another confirmed receipt. Recalculate the month before confirming it.",
+      "linea_arrastre": "The line of a returned receipt cannot be edited: remove it, and the return goes back to unresolved."
     },
     "desborde_aviso": "{n} receipts with a pending meal grant to resolve.",
     "desborde_badge": "Grant pending",
@@ -1793,7 +1794,10 @@
     "lote_saltados": "{n} receipts were not confirmed: they have an unresolved meal grant excess.",
     "lote_saltado_fila": "{familia} · excess of {importe}",
     "metodo_excepcion": "This month only · on file: {ficha}",
-    "metodo_sepa_sin_mandato": "No active SEPA mandate: it will not go into the remittance."
+    "metodo_sepa_sin_mandato": "No active SEPA mandate: it will not go into the remittance.",
+    "linea_arrastre": "return",
+    "quitar_arrastre_confirm": "This is the line of a returned receipt. If you remove it, the return goes back to unresolved. Remove it?",
+    "arrastre_quitado": "Line removed. The return goes back to unresolved."
   },
   "cargo_puntual": {
     "abrir": "Charge several children",
@@ -1983,7 +1987,8 @@
       "no_devuelto": "Only a returned receipt can be resolved.",
       "sin_mandato_devolucion": "The family has no active SEPA mandate: it cannot go to the bank again.",
       "resolver_failed": "The return could not be resolved.",
-      "devolucion_por_resolver": "A returned receipt is collected from «Resolve return»."
+      "devolucion_por_resolver": "A returned receipt is collected from «Resolve return».",
+      "sin_recibo_siguiente": "The family has no draft receipt for a later month: it cannot be added to the next receipt."
     },
     "transferencias_beca": {
       "title": "Meal grant transfers",
@@ -2029,7 +2034,8 @@
     "salidas_cobrado": {
       "banco": "bank",
       "efectivo": "cash",
-      "transferencia": "bank transfer"
+      "transferencia": "bank transfer",
+      "siguiente_recibo": "the next receipt"
     },
     "devuelto_dialog": {
       "titulo": "Mark returned",
@@ -2047,7 +2053,8 @@
       "salidas": {
         "banco": "Send it to the bank again",
         "efectivo": "Cash",
-        "transferencia": "Bank transfer"
+        "transferencia": "Bank transfer",
+        "siguiente_recibo": "Add it to the next receipt"
       },
       "banco_ayuda": "A new receipt for {importe} is created and goes into the next remittance for this month.",
       "sin_mandato": "The family has no active SEPA mandate: it cannot go to the bank again.",
@@ -2055,8 +2062,11 @@
       "nota": "Note (optional)",
       "una_vez": "A return is resolved only once.",
       "guardar": "Resolve",
-      "cancelar": "Cancel"
-    }
+      "cancelar": "Cancel",
+      "siguiente_ayuda": "A line for {importe} is added to the family’s {mes} receipt, which is a draft. If that line is removed, the return goes back to unresolved.",
+      "sin_recibo_siguiente": "To add it to the next receipt, the family needs a draft receipt for a later month."
+    },
+    "arrastrada_a": "Added to the {mes} receipt · {importe}"
   },
   "aula": {
     "validation": {
@@ -4162,7 +4172,8 @@
         "automatico": "Automatic",
         "manual": "Manual",
         "normas": "School rules",
-        "banco": "Bank"
+        "banco": "Bank",
+        "siguiente_recibo": "Next receipt"
       }
     },
     "descargar_mis_datos": "Download my data",

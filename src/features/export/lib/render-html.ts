@@ -317,6 +317,7 @@ export const VALORES_CONOCIDOS = new Set<string>([
   'transferencia',
   'cheque_guarderia',
   'banco',
+  'siguiente_recibo',
   'activo',
   'resuelto',
   'reducir',

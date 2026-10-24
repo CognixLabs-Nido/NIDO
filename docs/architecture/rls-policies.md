@@ -1204,6 +1204,33 @@ son conceptos mensuales fijos y los pone el motor.
   clase.
 - Test: `cargo-puntual.rls.test.ts`.
 
+### La devolución llevada al siguiente recibo (PR-14 de recibos)
+
+Migración `20261117120000_feat_devolucion_al_siguiente_recibo`. La cuarta salida de una devolución,
+después de banco, efectivo y transferencia (PR-2). Decisión del responsable.
+
+- **`resolver_devolucion(recibo, 'siguiente_recibo', …)`** (de invocador, como en el PR-2): una línea
+  en el recibo regular de la familia en **borrador** del primer mes posterior al del devuelto, por
+  total + gastos, familiar (`nino_id` NULL) y manual (el motor la respeta al regenerar), con su origen
+  en `lineas_recibo.arrastre_de_recibo_id`. Recalcula el total de ese recibo, y el original se queda
+  `devuelto` con su salida. Todo en la misma transacción. Sin ese borrador: P0001
+  `sin_recibo_siguiente`, y la app no ofrece la salida.
+- **La línea solo la crea la función:** trigger `lineas_recibo_validar_arrastre` (BEFORE INSERT OR
+  UPDATE, también para service_role, con el marcador local `app.resolver_devolucion` del PR-2). No se
+  edita ni se mueve (`linea_arrastre`): su importe es la deuda. Una línea por devolución (índice
+  único) y CHECK de su forma (`lineas_recibo_arrastre_forma`).
+- **Borrarla deja la devolución sin resolver:** trigger AFTER DELETE `lineas_recibo_reabrir_devolucion`
+  (`SECURITY DEFINER`, para no depender de la RLS de quien borra), que vale también cuando la línea
+  cae en cascada con su recibo. `recibos_validar_devolucion` admite esa única vuelta atrás
+  (`siguiente_recibo` → NULL, sin tocar el estado, los gastos ni la fecha) con el marcador
+  `reabrir:<recibo>`. Si el recibo de origen existe y no se pudo reabrir, el borrado falla. Con el
+  recibo de destino validado, el congelado por estado no deja quitar la línea.
+- **El recibo de destino que también se devuelve** se trata igual, con las cuatro salidas: su total ya
+  incluye la línea.
+- **En la app:** «Al siguiente recibo» en «Resolver devolución», con el mes de destino; en el panel
+  del mes, la línea sale marcada «devolución», sin «Editar», y quitarla pide confirmación.
+- Test: `devolucion-siguiente-recibo.rls.test.ts`.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -1247,6 +1274,7 @@ son conceptos mensuales fijos y los pone el motor.
 | Crear centro e invitar a su admin             | `platform-crear-centro.rls.test.ts`             |
 | Pase de servicios: cualquier profe del centro | `pase-servicios-unico.rls.test.ts`              |
 | Cargo puntual a varios niños                  | `cargo-puntual.rls.test.ts`                     |
+| Devolución llevada al siguiente recibo        | `devolucion-siguiente-recibo.rls.test.ts`       |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

@@ -121,7 +121,7 @@ describe('PR-6 — el importe propio se fija en la asignación y se arrastra cad
   async function importes(conceptoId: string, ninoId: string, mes: number) {
     const { data } = await serviceClient
       .from('lineas_recibo')
-      .select('importe_centimos, recibo:recibos!inner(anio, mes)')
+      .select('importe_centimos, recibo:recibos!recibo_id!inner(anio, mes)')
       .eq('concepto_id', conceptoId)
       .eq('nino_id', ninoId)
       .eq('recibo.anio', ANIO)

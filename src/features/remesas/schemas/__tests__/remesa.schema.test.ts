@@ -166,7 +166,7 @@ describe('esquemas de devolución (B-6)', () => {
     expect(error({ importe_euros: 100, metodoDiferencia: 'efectivo' })).toBeNull()
   })
 
-  it('resolverDevolucionSchema (PR-2): banco, efectivo o transferencia; el cobro pide fecha', () => {
+  it('resolverDevolucionSchema (PR-2 y PR-14): banco, efectivo, transferencia o siguiente recibo; el cobro pide fecha', () => {
     expect(resolverDevolucionSchema.safeParse({ reciboId: UUID, salida: 'banco' }).success).toBe(
       true
     )
@@ -180,8 +180,12 @@ describe('esquemas de devolución (B-6)', () => {
     const sinFecha = resolverDevolucionSchema.safeParse({ reciboId: UUID, salida: 'transferencia' })
     expect(sinFecha.success).toBe(false)
     expect(sinFecha.error?.issues[0]?.message).toBe('remesas.validation.fecha_cobro_invalida')
-    // El cheque y el arrastre al siguiente recibo (PR-14) no son salidas de este PR.
-    for (const salida of ['cheque_guarderia', 'siguiente_recibo', 'sepa']) {
+    // PR-14: el siguiente recibo es la cuarta salida, y como el banco no pide fecha.
+    expect(
+      resolverDevolucionSchema.safeParse({ reciboId: UUID, salida: 'siguiente_recibo' }).success
+    ).toBe(true)
+    // El cheque y el SEPA no son salidas de una devolución.
+    for (const salida of ['cheque_guarderia', 'sepa']) {
       expect(
         resolverDevolucionSchema.safeParse({ reciboId: UUID, salida, fecha: '2026-10-20' }).success
       ).toBe(false)

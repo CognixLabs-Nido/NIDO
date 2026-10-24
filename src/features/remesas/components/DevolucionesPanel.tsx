@@ -11,6 +11,7 @@ import { formatEuros } from '@/shared/lib/format-money'
 import {
   cobrableAMano,
   devolucionPorResolver,
+  etiquetaMes,
   formaPorDefecto,
   importeDevolucion,
   type ReciboGestion,
@@ -80,7 +81,17 @@ export function DevolucionesPanel({ recibos }: Props) {
                         : ''}
                     </p>
                   )}
-                  {r.devolucionSalida && (
+                  {r.devolucionSalida === 'siguiente_recibo' && (
+                    <p className="text-muted-foreground text-xs">
+                      {r.arrastradoA
+                        ? t('arrastrada_a', {
+                            mes: etiquetaMes(r.arrastradoA, locale),
+                            importe: formatEuros(importeDevolucion(r), locale),
+                          })
+                        : t('cobrado_por', { salida: t(`salidas_cobrado.${r.devolucionSalida}`) })}
+                    </p>
+                  )}
+                  {r.devolucionSalida && r.devolucionSalida !== 'siguiente_recibo' && (
                     <p className="text-muted-foreground text-xs">
                       {t('cobrado_por', { salida: t(`salidas_cobrado.${r.devolucionSalida}`) })}
                       {` · ${formatEuros(importeDevolucion(r), locale)}`}
@@ -131,6 +142,7 @@ export function DevolucionesPanel({ recibos }: Props) {
                       gastosCentimos={r.devolucionGastosCentimos ?? 0}
                       fechaDevolucion={r.fechaDevolucion}
                       permiteSepa={r.familiaConMandato}
+                      arrastre={r.arrastreDisponible}
                       hoy={hoy}
                       trigger={
                         <Button size="sm" variant="outline">
