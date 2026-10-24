@@ -41,7 +41,7 @@ export async function guardarPaseServicios(
     logger.warn('guardarPaseServicios', error.code, error.message)
     if (error.code === '42501') return fail('parte_servicio.errors.sin_permiso')
     // `congelar_si_mes_cerrado`: el parte de un mes cerrado no se edita.
-    if (error.code === 'P0001' && error.message.includes('mes_cerrado_x')) {
+    if (error.code === 'P0001' && error.message.includes('mes cerrado')) {
       return fail('parte_servicio.errors.mes_cerrado')
     }
     return fail('parte_servicio.errors.guardar_fallo')
