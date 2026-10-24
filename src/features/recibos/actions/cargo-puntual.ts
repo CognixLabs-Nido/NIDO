@@ -41,7 +41,7 @@ export async function anadirCargoPuntual(
   if (error) {
     logger.warn('anadirCargoPuntual', error.message)
     if (error.code === '42501') return fail('recibos_panel.errors.no_autorizado')
-    if (error.code === 'P0001' && error.message.includes('mes cerrado')) {
+    if (error.code === 'P0001' && error.message.includes('mes_cerrado_x')) {
       return fail('cargo_puntual.errors.mes_cerrado')
     }
     // Otra persona creó a la vez el recibo de una de las familias (generar el mes, por ejemplo).
