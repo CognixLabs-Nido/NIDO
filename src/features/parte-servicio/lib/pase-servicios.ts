@@ -89,7 +89,7 @@ export function filtrarFilas(filas: FilaPase[], aulaId: string | null, texto: st
   const q = normalizar(texto)
   return filas.filter(
     (f) =>
-      (aulaId === null || true) &&
+      (aulaId === null || f.aulaId === aulaId) &&
       (q === '' || normalizar(`${f.nombre} ${f.apellidos}`).includes(q))
   )
 }
