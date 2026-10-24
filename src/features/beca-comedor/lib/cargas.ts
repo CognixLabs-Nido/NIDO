@@ -123,7 +123,7 @@ export function cargaAnterior(
   let mejor: CargaAgrupada | null = null
   for (const c of cargas) {
     const antes =
-      c.anioCorrespondiente < anio || (c.anioCorrespondiente === anio && c.mesCorrespondiente < mes)
+      c.anioCorrespondiente < anio || (c.anioCorrespondiente === anio && c.mesCorrespondiente <= mes)
     if (!antes) continue
     if (
       !mejor ||
