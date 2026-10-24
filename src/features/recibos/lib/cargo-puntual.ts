@@ -155,7 +155,7 @@ export function resumirCargo(
   let incluidos = 0
 
   for (const f of filas) {
-    if (f.resultado === 'incluido' || f.resultado === 'recibo_nuevo') {
+    if (f.resultado === 'incluido') {
       incluidos++
       familias.add(f.familia_id)
       if (f.resultado === 'recibo_nuevo') nuevos.add(f.familia_id)
