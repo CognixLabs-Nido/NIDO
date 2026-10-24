@@ -173,7 +173,7 @@ function excesoPorTramo(
     const via = viaDe(d)
     for (const { ninoId, restoCentimos } of reparto) {
       let falta = restoCentimos
-      for (const t of tramos.filter((x) => x.nino_id === ninoId).reverse()) {
+      for (const t of tramos.filter((x) => x.nino_id === ninoId)) {
         if (falta <= 0) break
         const parte = Math.min(falta, t.importe_centimos)
         out.set(t.id, { centimos: parte, via })
