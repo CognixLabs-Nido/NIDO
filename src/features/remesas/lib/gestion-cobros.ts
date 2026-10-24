@@ -55,7 +55,7 @@ export interface MesRecibo {
  */
 export function destinoArrastre(devuelto: MesRecibo, borradores: MesRecibo[]): MesRecibo | null {
   const posteriores = borradores
-    .filter((b) => b.anio > devuelto.anio || (b.anio === devuelto.anio && b.mes >= devuelto.mes))
+    .filter((b) => b.anio > devuelto.anio || (b.anio === devuelto.anio && b.mes > devuelto.mes))
     .sort((a, b) => a.anio - b.anio || a.mes - b.mes)
   return posteriores[0] ?? null
 }
