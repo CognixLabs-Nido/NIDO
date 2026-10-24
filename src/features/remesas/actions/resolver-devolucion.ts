@@ -8,7 +8,11 @@ import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import { resolverDevolucionSchema, type ResolverDevolucionInput } from '../schemas/remesa'
+import {
+  resolverDevolucionSchema,
+  salidaConCobro,
+  type ResolverDevolucionInput,
+} from '../schemas/remesa'
 
 // El HINT de cada RAISE de `resolver_devolucion` (y del trigger de la devolución), a su clave.
 const POR_HINT: Record<string, string> = {
@@ -18,22 +22,25 @@ const POR_HINT: Record<string, string> = {
   sin_mandato: 'remesas.errors.sin_mandato_devolucion',
   salida_invalida: 'remesas.errors.invalid',
   fecha_cobro_invalida: 'remesas.validation.fecha_cobro_devolucion',
+  sin_recibo_siguiente: 'remesas.errors.sin_recibo_siguiente',
 }
 
 /**
  * Resuelve una devolución, UNA sola vez (PR-2): volver a pasarla por el banco (un re-giro SEPA por
- * total + gastos, solo con mandato activo) o cobrarla en efectivo o por transferencia (el recibo
- * queda cobrado y conserva sus fechas de banco). Lo hace la BD en una transacción
+ * total + gastos, solo con mandato activo), cobrarla en efectivo o por transferencia (el recibo
+ * queda cobrado y conserva sus fechas de banco) o arrastrarla al siguiente recibo en borrador de la
+ * familia, como una línea por total + gastos (PR-14). Lo hace la BD en una transacción
  * (`resolver_devolucion`, con la sesión: RLS de Dirección y actor en audit_log), que bloquea el
- * recibo y rechaza una segunda salida por cualquier camino. Devuelve el re-giro, si lo hay.
+ * recibo y rechaza una segunda salida por cualquier camino. Devuelve el recibo nuevo o tocado: el
+ * re-giro o el recibo al que se arrastra.
  */
 export async function resolverDevolucion(
   input: ResolverDevolucionInput
-): Promise<ActionResult<{ regiroId: string | null }>> {
+): Promise<ActionResult<{ reciboId: string | null }>> {
   const parsed = resolverDevolucionSchema.safeParse(input)
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'remesas.errors.invalid')
   const { reciboId, salida, fecha, nota } = parsed.data
-  const conCobro = salida !== 'banco'
+  const conCobro = salidaConCobro(salida)
   if (conCobro && fecha && fecha > hoyMadrid()) {
     return fail('remesas.validation.fecha_cobro_futura')
   }
@@ -68,5 +75,5 @@ export async function resolverDevolucion(
   }
 
   revalidatePath('/[locale]/admin/cuotas', 'page')
-  return ok({ regiroId: data ?? null })
+  return ok({ reciboId: data ?? null })
 }

@@ -201,9 +201,10 @@ export async function getRecibosMesPanel(
     reciboRegularIds.length > 0
       ? await supabase
           .from('lineas_recibo')
-          .select(
-            'id, recibo_id, nino_id, concepto_id, descripcion, cantidad, precio_unitario_centimos, importe_centimos, origen'
-          )
+          // `*` y no la lista de columnas: `arrastre_de_recibo_id` (PR-14) llega con la migración
+          // 20261117120000, y una columna nombrada que aún no existe tumba la consulta entera
+          // entre el despliegue y la migración. Con `*`, sin la columna no hay arrastres.
+          .select('*')
           .in('recibo_id', reciboRegularIds)
       : { data: [] }
 
@@ -218,6 +219,7 @@ export async function getRecibosMesPanel(
     importeCentimos: l.importe_centimos,
     // La columna es `text` con CHECK de dos valores (R-2); se estrecha aquí al union.
     origen: l.origen === 'manual' ? 'manual' : 'automatico',
+    esArrastre: l.arrastre_de_recibo_id != null,
   }))
 
   // V2-4: desbordes de beca comedor PENDIENTES del mes (para el aviso + el diálogo de

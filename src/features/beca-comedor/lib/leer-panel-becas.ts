@@ -71,7 +71,7 @@ export async function leerPanelBecas(
     const { data, error } = await supabase
       .from('lineas_recibo')
       .select(
-        'beca_tramo_id, recibo:recibos!inner(id, estado, anio, mes, es_esporadico, devuelto_de_recibo_id, deleted_at)'
+        'beca_tramo_id, recibo:recibos!recibo_id!inner(id, estado, anio, mes, es_esporadico, devuelto_de_recibo_id, deleted_at)'
       )
       .eq('centro_id', centroId)
       .in('beca_tramo_id', ids)

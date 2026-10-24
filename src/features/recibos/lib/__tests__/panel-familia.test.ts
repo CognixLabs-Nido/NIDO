@@ -114,6 +114,37 @@ describe('construirPanelFamilia', () => {
     expect(familiar.ninoNombre).toBeNull()
   })
 
+  it('PR-14: la línea de una devolución arrastrada llega marcada; las demás no', () => {
+    const recibos: ReciboPanelInput[] = [
+      {
+        id: 'rec-garcia',
+        familiaId: 'fam-garcia',
+        estado: 'borrador',
+        metodo: 'sepa',
+        totalCentimos: 23000,
+        enRemesa: false,
+      },
+    ]
+    const lineas: LineaPanelInput[] = [
+      linea('l1', 'rec-garcia', 'nino-lucia', 'Cuota mensual', 20000),
+      {
+        ...linea('l2', 'rec-garcia', null, 'Recibo devuelto de octubre de 2026', 3000, 'manual'),
+        esArrastre: true,
+      },
+    ]
+    const porId = new Map(
+      construirPanelFamilia(familias, recibos, lineas)
+        .filas.find((f) => f.familiaId === 'fam-garcia')!
+        .recibo!.lineas.map((l) => [l.id, l])
+    )
+    expect(porId.get('l2')).toMatchObject({
+      esArrastre: true,
+      origen: 'manual',
+      importeCentimos: 3000,
+    })
+    expect(porId.get('l1')?.esArrastre).toBe(false)
+  })
+
   it('ordena líneas: hijos (por nombre) antes que familiares; positivas antes que negativas', () => {
     const recibos: ReciboPanelInput[] = [
       {
@@ -222,5 +253,6 @@ function linea(
     precioUnitarioCentimos: importeCentimos,
     importeCentimos,
     origen,
+    esArrastre: false,
   }
 }

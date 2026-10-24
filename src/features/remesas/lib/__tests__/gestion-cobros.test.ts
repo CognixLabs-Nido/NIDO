@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   cobrableAMano,
+  destinoArrastre,
   devolucionPorResolver,
   entraEnGestion,
   formaPorDefecto,
@@ -14,6 +15,7 @@ import {
  * PR-1a: la gestión enseña lo que espera un cobro a mano (pendientes que no son SEPA) y lo que ya
  * está en el ciclo de cobro. Un SEPA pendiente va por remesa: no sale y no se cobra a mano.
  * PR-2: un devuelto no se cobra a mano: espera su salida, una sola vez, por total + gastos.
+ * PR-14: la salida al siguiente recibo va al borrador de la familia del primer mes posterior.
  */
 
 function recibo(over: Partial<ReciboGestion>): ReciboGestion {
@@ -30,6 +32,8 @@ function recibo(over: Partial<ReciboGestion>): ReciboGestion {
     esRegiro: false,
     devolucionGastosCentimos: null,
     devolucionSalida: null,
+    arrastreDisponible: null,
+    arrastradoA: null,
     cobroForma: null,
     cobroFecha: null,
     cobroNota: null,
@@ -128,5 +132,50 @@ describe('ordenarGestion', () => {
       recibo({ id: 'pendiente', estado: 'devuelto', familiaEtiqueta: 'C' }),
     ]).map((r) => r.id)
     expect(orden).toEqual(['pendiente', 'enviado', 'resuelto'])
+  })
+})
+
+describe('destinoArrastre (PR-14)', () => {
+  const devuelto = { anio: 2026, mes: 10 }
+
+  it('el borrador del primer mes posterior, aunque vengan desordenados', () => {
+    expect(
+      destinoArrastre(devuelto, [
+        { anio: 2027, mes: 1 },
+        { anio: 2026, mes: 12 },
+        { anio: 2026, mes: 11 },
+      ])
+    ).toEqual({ anio: 2026, mes: 11 })
+  })
+
+  it('nunca uno del mismo mes ni anterior; el año manda sobre el mes', () => {
+    expect(
+      destinoArrastre(devuelto, [
+        { anio: 2026, mes: 10 },
+        { anio: 2026, mes: 9 },
+        { anio: 2025, mes: 12 },
+      ])
+    ).toBeNull()
+    expect(destinoArrastre({ anio: 2026, mes: 12 }, [{ anio: 2027, mes: 1 }])).toEqual({
+      anio: 2027,
+      mes: 1,
+    })
+  })
+
+  it('sin borradores, no se ofrece', () => {
+    expect(destinoArrastre(devuelto, [])).toBeNull()
+  })
+
+  it('una devolución arrastrada ya está resuelta: no espera salida y va con los cobrados', () => {
+    const arrastrada = recibo({
+      id: 'a',
+      estado: 'devuelto',
+      devolucionSalida: 'siguiente_recibo',
+      arrastradoA: { anio: 2026, mes: 11 },
+    })
+    const pendiente = recibo({ id: 'p', estado: 'devuelto' })
+    expect(devolucionPorResolver(arrastrada)).toBe(false)
+    expect(devolucionPorResolver(pendiente)).toBe(true)
+    expect(ordenarGestion([arrastrada, pendiente]).map((r) => r.id)).toEqual(['p', 'a'])
   })
 })

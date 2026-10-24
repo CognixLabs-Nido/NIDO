@@ -53,6 +53,8 @@ export interface LineaPanelInput {
   precioUnitarioCentimos: number
   importeCentimos: number
   origen: OrigenLinea
+  /** PR-14: la línea arrastra una devolución (no se edita; quitarla la deja sin resolver). */
+  esArrastre: boolean
 }
 
 export interface LineaPanel {
@@ -66,6 +68,8 @@ export interface LineaPanel {
   importeCentimos: number
   /** El motor respeta las 'manual' al regenerar; las 'automatico' las rehace. */
   origen: OrigenLinea
+  /** PR-14: la línea arrastra una devolución (no se edita; quitarla la deja sin resolver). */
+  esArrastre: boolean
 }
 
 export interface ReciboPanel {
@@ -163,6 +167,7 @@ export function construirPanelFamilia(
           precioUnitarioCentimos: l.precioUnitarioCentimos,
           importeCentimos: l.importeCentimos,
           origen: l.origen,
+          esArrastre: l.esArrastre,
         }))
         .sort(ordenarLineas)
 

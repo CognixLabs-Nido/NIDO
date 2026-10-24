@@ -1,10 +1,12 @@
+import { localeIntl } from '@/shared/lib/locale-intl'
 import type { Database } from '@/types/database'
+
+import type { SalidaDevolucion } from '../schemas/remesa'
+
+export type { SalidaDevolucion } from '../schemas/remesa'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 type MetodoPago = Database['public']['Enums']['metodo_pago']
-
-/** PR-2: cómo se resolvió una devolución (una sola vez). */
-export type SalidaDevolucion = 'banco' | 'efectivo' | 'transferencia'
 
 export interface ReciboGestion {
   id: string
@@ -22,6 +24,13 @@ export interface ReciboGestion {
   /** PR-2: los gastos de la devolución (con fecha_devolucion) y su salida, si ya se resolvió. */
   devolucionGastosCentimos: number | null
   devolucionSalida: SalidaDevolucion | null
+  /**
+   * PR-14: el recibo al que se puede arrastrar una devolución sin resolver (el borrador regular de
+   * la familia del primer mes posterior); null si no tiene ninguno, y entonces no se ofrece.
+   */
+  arrastreDisponible: MesRecibo | null
+  /** PR-14: el recibo al que se arrastró, si su salida es `siguiente_recibo`. */
+  arrastradoA: MesRecibo | null
   /** PR-1a: el cobro manual (solo con estado cobrado_manual). */
   cobroForma: MetodoPago | null
   cobroFecha: string | null
@@ -32,6 +41,30 @@ export interface ReciboGestion {
   esDiferenciaCheque: boolean
   /** ¿Tiene la familia mandato SEPA activo? Sin él, la diferencia no se puede pasar al banco. */
   familiaConMandato: boolean
+}
+
+/** Un mes de recibo. */
+export interface MesRecibo {
+  anio: number
+  mes: number
+}
+
+/**
+ * PR-14: el recibo al que se arrastraría una devolución: de los borradores regulares de su familia,
+ * el del primer mes posterior al del recibo devuelto. La BD elige el mismo (`resolver_devolucion`).
+ */
+export function destinoArrastre(devuelto: MesRecibo, borradores: MesRecibo[]): MesRecibo | null {
+  const posteriores = borradores
+    .filter((b) => b.anio > devuelto.anio || (b.anio === devuelto.anio && b.mes > devuelto.mes))
+    .sort((a, b) => a.anio - b.anio || a.mes - b.mes)
+  return posteriores[0] ?? null
+}
+
+/** «noviembre de 2026», en el idioma de la página. */
+export function etiquetaMes(m: MesRecibo, locale: string): string {
+  return new Intl.DateTimeFormat(localeIntl(locale), { month: 'long', year: 'numeric' }).format(
+    new Date(m.anio, m.mes - 1, 1)
+  )
 }
 
 /** Estados que lee la gestión: los pendientes y los que ya están en el ciclo de cobro. */

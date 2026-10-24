@@ -1774,7 +1774,8 @@
       "recibo_cobrado": "Este recibo ya está cobrado: ya no se puede modificar.",
       "desconfirmar_failed": "No se pudo reabrir el recibo.",
       "desborde_pendiente": "Este recibo tiene un exceso de beca comedor sin resolver: resuélvelo antes de confirmarlo.",
-      "beca_ya_aplicada": "Una beca de este recibo ya está descontada en otro recibo validado. Recalcula el mes antes de confirmarlo."
+      "beca_ya_aplicada": "Una beca de este recibo ya está descontada en otro recibo validado. Recalcula el mes antes de confirmarlo.",
+      "linea_arrastre": "La línea de una devolución no se edita: se quita, y la devolución vuelve a quedar sin resolver."
     },
     "desborde_aviso": "{n} recibos con beca comedor pendiente de resolver.",
     "desborde_badge": "Beca pendiente",
@@ -1793,7 +1794,10 @@
     "lote_saltados": "{n} recibos no se han confirmado: tienen un exceso de beca comedor sin resolver.",
     "lote_saltado_fila": "{familia} · exceso de {importe}",
     "metodo_excepcion": "Solo este mes · en la ficha: {ficha}",
-    "metodo_sepa_sin_mandato": "Sin mandato SEPA activo: no entrará en la remesa."
+    "metodo_sepa_sin_mandato": "Sin mandato SEPA activo: no entrará en la remesa.",
+    "linea_arrastre": "devolución",
+    "quitar_arrastre_confirm": "Es la línea de una devolución. Si la quitas, la devolución vuelve a quedar sin resolver. ¿La quitas?",
+    "arrastre_quitado": "Línea quitada. La devolución vuelve a quedar sin resolver."
   },
   "cargo_puntual": {
     "abrir": "Cargo a varios niños",
@@ -1983,7 +1987,8 @@
       "no_devuelto": "Solo se resuelve un recibo devuelto.",
       "sin_mandato_devolucion": "La familia no tiene mandato SEPA activo: no se puede volver a pasar por el banco.",
       "resolver_failed": "No se pudo resolver la devolución.",
-      "devolucion_por_resolver": "Un recibo devuelto se cobra desde «Resolver devolución»."
+      "devolucion_por_resolver": "Un recibo devuelto se cobra desde «Resolver devolución».",
+      "sin_recibo_siguiente": "La familia no tiene un recibo en borrador de un mes posterior: no se puede llevar al siguiente recibo."
     },
     "transferencias_beca": {
       "title": "Transferencias de beca comedor",
@@ -2029,7 +2034,8 @@
     "salidas_cobrado": {
       "banco": "banco",
       "efectivo": "efectivo",
-      "transferencia": "transferencia"
+      "transferencia": "transferencia",
+      "siguiente_recibo": "el siguiente recibo"
     },
     "devuelto_dialog": {
       "titulo": "Marcar devuelto",
@@ -2047,7 +2053,8 @@
       "salidas": {
         "banco": "Volver a pasarlo por el banco",
         "efectivo": "Efectivo",
-        "transferencia": "Transferencia"
+        "transferencia": "Transferencia",
+        "siguiente_recibo": "Al siguiente recibo"
       },
       "banco_ayuda": "Se crea un recibo nuevo por {importe}, que entra en la siguiente remesa de este mes.",
       "sin_mandato": "La familia no tiene mandato SEPA activo: no se puede volver a pasar por el banco.",
@@ -2055,8 +2062,11 @@
       "nota": "Nota (opcional)",
       "una_vez": "Una devolución se resuelve una sola vez.",
       "guardar": "Resolver",
-      "cancelar": "Cancelar"
-    }
+      "cancelar": "Cancelar",
+      "siguiente_ayuda": "Se añade una línea de {importe} al recibo de {mes} de la familia, que está en borrador. Si se quita esa línea, la devolución vuelve a quedar sin resolver.",
+      "sin_recibo_siguiente": "Para llevarla al siguiente recibo, la familia necesita un recibo en borrador de un mes posterior."
+    },
+    "arrastrada_a": "Llevada al recibo de {mes} · {importe}"
   },
   "aula": {
     "validation": {
@@ -4162,7 +4172,8 @@
         "automatico": "Automático",
         "manual": "Manual",
         "normas": "Normas del centro",
-        "banco": "Banco"
+        "banco": "Banco",
+        "siguiente_recibo": "Siguiente recibo"
       }
     },
     "descargar_mis_datos": "Descargar mis datos",

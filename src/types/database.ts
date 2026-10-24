@@ -2634,6 +2634,7 @@ export type Database = {
       }
       lineas_recibo: {
         Row: {
+          arrastre_de_recibo_id: string | null
           beca_tramo_id: string | null
           cantidad: number
           centro_id: string
@@ -2648,6 +2649,7 @@ export type Database = {
           recibo_id: string
         }
         Insert: {
+          arrastre_de_recibo_id?: string | null
           beca_tramo_id?: string | null
           cantidad?: number
           centro_id: string
@@ -2662,6 +2664,7 @@ export type Database = {
           recibo_id: string
         }
         Update: {
+          arrastre_de_recibo_id?: string | null
           beca_tramo_id?: string | null
           cantidad?: number
           centro_id?: string
@@ -2676,6 +2679,13 @@ export type Database = {
           recibo_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lineas_recibo_arrastre_de_recibo_id_fkey"
+            columns: ["arrastre_de_recibo_id"]
+            isOneToOne: false
+            referencedRelation: "recibos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lineas_recibo_beca_tramo_id_fkey"
             columns: ["beca_tramo_id"]

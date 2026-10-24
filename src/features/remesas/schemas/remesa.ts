@@ -123,14 +123,26 @@ export function crearCobroDialogSchema(totalCentimos: number) {
 export type CobroDialogInput = z.infer<ReturnType<typeof crearCobroDialogSchema>>
 
 /**
- * Las salidas de una devolución (PR-2): volver a pasarla por el banco (re-giro por total + gastos),
- * o cobrarla en efectivo o por transferencia. Arrastrarla al siguiente recibo es el PR-14.
+ * Las salidas de una devolución: volver a pasarla por el banco (re-giro por total + gastos),
+ * cobrarla en efectivo o por transferencia (PR-2), o arrastrarla al siguiente recibo de la familia
+ * como una línea por total + gastos (PR-14).
  */
-export const SALIDAS_DEVOLUCION = ['banco', 'efectivo', 'transferencia'] as const
+export const SALIDAS_DEVOLUCION = [
+  'banco',
+  'efectivo',
+  'transferencia',
+  'siguiente_recibo',
+] as const
+export type SalidaDevolucion = (typeof SALIDAS_DEVOLUCION)[number]
+
+/** Las salidas que cobran la devolución en mano: piden la fecha del cobro y admiten nota. */
+export function salidaConCobro(salida: SalidaDevolucion): boolean {
+  return salida === 'efectivo' || salida === 'transferencia'
+}
 
 /**
  * Resuelve una devolución, una sola vez (`resolver_devolucion`). Efectivo y transferencia piden la
- * fecha del cobro y admiten nota; el banco no pide nada más.
+ * fecha del cobro y admiten nota; el banco y el siguiente recibo no piden nada más.
  */
 export const resolverDevolucionSchema = z
   .object({
@@ -140,7 +152,7 @@ export const resolverDevolucionSchema = z
     nota: notaCobro,
   })
   .superRefine((v, ctx) => {
-    if (v.salida !== 'banco' && !v.fecha) {
+    if (salidaConCobro(v.salida) && !v.fecha) {
       ctx.addIssue({
         code: 'custom',
         path: ['fecha'],

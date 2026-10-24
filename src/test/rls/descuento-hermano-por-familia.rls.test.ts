@@ -138,7 +138,7 @@ describe('PR-8 — el descuento por hermano, fijo o porcentaje por familia', () 
   async function lineasDescuento(conceptoId: string, familiaId: string) {
     const { data } = await serviceClient
       .from('lineas_recibo')
-      .select('importe_centimos, recibo:recibos!inner(familia_id, anio, mes)')
+      .select('importe_centimos, recibo:recibos!recibo_id!inner(familia_id, anio, mes)')
       .eq('concepto_id', conceptoId)
       .eq('recibo.familia_id', familiaId)
       .eq('recibo.anio', ANIO)

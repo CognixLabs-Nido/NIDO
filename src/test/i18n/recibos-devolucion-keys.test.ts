@@ -76,6 +76,13 @@ describe('i18n — devoluciones con una sola salida (PR-2)', () => {
     expect(CLAVES).toContain('remesas.resolver_dialog.a_cobrar_con_gastos')
     expect(CLAVES).toContain('remesas.resolver_dialog.salidas.banco')
     expect(CLAVES).toContain('remesas.salidas_cobrado.transferencia')
+    // PR-14: la cuarta salida, su ayuda, su aviso y dónde se llevó.
+    expect(CLAVES).toContain('remesas.resolver_dialog.salidas.siguiente_recibo')
+    expect(CLAVES).toContain('remesas.salidas_cobrado.siguiente_recibo')
+    expect(CLAVES).toContain('remesas.resolver_dialog.siguiente_ayuda')
+    expect(CLAVES).toContain('remesas.resolver_dialog.sin_recibo_siguiente')
+    expect(CLAVES).toContain('remesas.arrastrada_a')
+    expect(CLAVES_ERROR).toContain('remesas.errors.sin_recibo_siguiente')
     expect(CLAVES_ERROR).toContain('remesas.errors.devolucion_ya_resuelta')
     expect(CLAVES_ERROR).toContain('remesas.validation.devolucion_antes_del_envio')
   })
