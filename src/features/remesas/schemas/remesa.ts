@@ -137,7 +137,7 @@ export type SalidaDevolucion = (typeof SALIDAS_DEVOLUCION)[number]
 
 /** Las salidas que cobran la devolución en mano: piden la fecha del cobro y admiten nota. */
 export function salidaConCobro(salida: SalidaDevolucion): boolean {
-  return salida === 'efectivo' || salida === 'transferencia'
+  return salida !== 'banco'
 }
 
 /**
