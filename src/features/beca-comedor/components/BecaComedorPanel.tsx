@@ -17,12 +17,14 @@ interface Props {
   cargas: CargaBecaItem[]
   meses: MesCurso[]
   mesesCerrados: MesCurso[]
+  nombres: Record<string, string>
+  recibosValidados: string[]
 }
 
 /**
  * V2-2 + V2-3 — pestaña "Beca comedor" del hub de cuotas. Arriba, la elegibilidad por alumno
- * (quién tiene beca en el curso activo); abajo, las cargas por mes (el importe único de cada
- * mes para todos los becados). Todo sobre el curso ACTIVO, sin selector.
+ * (quién tiene beca en el curso activo); abajo, las cargas por mes (el importe de cada becado,
+ * PR-10). Todo sobre el curso ACTIVO, sin selector.
  */
 export async function BecaComedorPanel({
   centroId,
@@ -31,6 +33,8 @@ export async function BecaComedorPanel({
   cargas,
   meses,
   mesesCerrados,
+  nombres,
+  recibosValidados,
 }: Props) {
   const t = await getTranslations('admin.cuotas.beca_comedor')
 
@@ -42,7 +46,7 @@ export async function BecaComedorPanel({
     )
   }
 
-  const hayBecados = alumnos.some((a) => a.elegible)
+  const becados = alumnos.filter((a) => a.elegible).map((a) => ({ id: a.id, nombre: a.nombre }))
 
   return (
     <div className="space-y-6">
@@ -64,7 +68,9 @@ export async function BecaComedorPanel({
           cargas={cargas}
           meses={meses}
           mesesCerrados={mesesCerrados}
-          hayBecados={hayBecados}
+          becados={becados}
+          nombres={nombres}
+          recibosValidados={recibosValidados}
         />
       </section>
     </div>

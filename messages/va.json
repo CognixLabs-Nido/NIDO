@@ -448,11 +448,11 @@
         "elegibilidad_title": "Elegibilitat",
         "elegibilidad_hint": "Marca quins alumnes tenen beca menjador este curs. Donar de baixa deixa d'aplicar-la en rebuts futurs; els trams ja registrats es respecten.",
         "cargas_title": "Càrregues per mes",
-        "cargas_hint": "L'import únic de beca menjador de cada mes. En carregar-lo es crea un tram per a tots els alumnes amb beca.",
+        "cargas_hint": "L'import de beca de menjador de cada becat, mes a mes. Una càrrega nova ve emplenada amb l'anterior.",
         "sin_alumnos": "No hi ha alumnes actius en el curs.",
         "col_alumno": "Alumne",
         "col_beca": "Beca menjador",
-        "cargas_sub": "Cada càrrega aplica un import únic a tots els becats.",
+        "cargas_sub": "Cada becat porta el seu import; selecciona-ne uns quants per a posar-los el mateix.",
         "sin_becados_hint": "Marca almenys un alumne amb beca menjador a dalt per a poder crear càrregues.",
         "nueva_carga": "Nova càrrega",
         "sin_cargas": "Encara no hi ha càrregues.",
@@ -472,7 +472,7 @@
         "mes_aplicacion": "Mes d'aplicació",
         "mes_aplicacion_hint": "En quin rebut es descompta. Només mesos oberts.",
         "mes_placeholder": "Tria un mes",
-        "importe_label": "Import per becat (€)",
+        "importe_label": "Import (€)",
         "cancelar": "Cancel·lar",
         "crear": "Crear càrrega",
         "guardar": "Guardar",
@@ -495,7 +495,9 @@
           "save_failed": "No s'ha pogut guardar.",
           "delete_failed": "No s'ha pogut esborrar.",
           "no_existe": "La càrrega ja no existix.",
-          "carga_aplicada": "Hi ha beques d'aquesta càrrega ja descomptades en rebuts validats: no es pot modificar. Torna abans eixos rebuts a esborrany."
+          "carga_aplicada": "Hi ha beques d'aquesta càrrega ja descomptades en rebuts validats: eixes no es canvien ni es lleven, i la càrrega no canvia de mes. Per a tocar-les, torna abans eixos rebuts a esborrany.",
+          "sin_importes": "Posa l'import d'almenys un becat.",
+          "no_becado": "Algun alumne ja no té la beca activa: recarrega la pàgina."
         },
         "desborde": {
           "title": "Resoldre beca menjador",
@@ -532,7 +534,21 @@
           }
         },
         "descontadas": "{n} descomptades",
-        "no_editable_descontada": "Descomptada en rebuts validats"
+        "mes_aplicacion_fijo": "Hi ha beques d'aquesta càrrega ja descomptades: el mes d'aplicació no canvia.",
+        "relleno_de": "Emplenada amb els imports de {mes}. Canvia només el que haja variat.",
+        "sin_carga_anterior": "No hi ha cap càrrega anterior: posa l'import de cada becat.",
+        "importe_seleccion": "Import per als seleccionats (€)",
+        "poner_seleccion": "Posar a {n} seleccionats",
+        "quitar_seleccion": "Llevar als seleccionats",
+        "seleccionar_todos": "Seleccionar-los tots",
+        "seleccionar": "Seleccionar {nombre}",
+        "importe_de": "Import de {nombre}",
+        "fila_descontada": "Descomptada",
+        "fila_sin_beca": "Sense beca activa",
+        "fila_nuevo": "Becat després de la càrrega",
+        "recibo_validado": "El seu rebut de {mes} ja està validat: la beca no entrarà fins que el tornes a esborrany i recalcules.",
+        "resumen_importes": "{n} de {total} amb import. Sense import, eixe alumne no té beca este mes.",
+        "becados_sin_importe": "{n} becats sense import: edita la càrrega per a posar-l'hi"
       },
       "tab_resumen": "Resum",
       "signos": {

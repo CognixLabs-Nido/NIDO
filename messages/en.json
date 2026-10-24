@@ -448,11 +448,11 @@
         "elegibilidad_title": "Eligibility",
         "elegibilidad_hint": "Mark which pupils have a meal grant this year. Removing it stops applying to future receipts; already-recorded amounts are kept.",
         "cargas_title": "Monthly batches",
-        "cargas_hint": "The single meal-grant amount for each month. Loading it creates an entry for every pupil with a grant.",
+        "cargas_hint": "The school meal grant amount for each grant holder, month by month. A new load comes pre-filled with the previous one.",
         "sin_alumnos": "No active pupils in the school year.",
         "col_alumno": "Pupil",
         "col_beca": "Meal grant",
-        "cargas_sub": "Each batch applies a single amount to all grant holders.",
+        "cargas_sub": "Each grant holder has their own amount; select several to give them the same one.",
         "sin_becados_hint": "Mark at least one pupil with a meal grant above to create batches.",
         "nueva_carga": "New batch",
         "sin_cargas": "No batches yet.",
@@ -472,7 +472,7 @@
         "mes_aplicacion": "Applied in",
         "mes_aplicacion_hint": "Which receipt it is deducted from. Open months only.",
         "mes_placeholder": "Choose a month",
-        "importe_label": "Amount per holder (€)",
+        "importe_label": "Amount (€)",
         "cancelar": "Cancel",
         "crear": "Create batch",
         "guardar": "Save",
@@ -495,7 +495,9 @@
           "save_failed": "Could not save.",
           "delete_failed": "Could not delete.",
           "no_existe": "The batch no longer exists.",
-          "carga_aplicada": "Some grants in this batch have already been deducted on confirmed receipts, so it cannot be changed. Move those receipts back to draft first."
+          "carga_aplicada": "Some grants in this load are already deducted in validated bills: those cannot be changed or removed, and the load cannot change month. To change them, set those bills back to draft first.",
+          "sin_importes": "Enter the amount for at least one grant holder.",
+          "no_becado": "A pupil no longer has an active grant: reload the page."
         },
         "desborde": {
           "title": "Resolve meal grant",
@@ -532,7 +534,21 @@
           }
         },
         "descontadas": "{n} deducted",
-        "no_editable_descontada": "Deducted on confirmed receipts"
+        "mes_aplicacion_fijo": "Some grants in this load are already deducted: the billing month cannot change.",
+        "relleno_de": "Pre-filled with the amounts from {mes}. Change only what is different.",
+        "sin_carga_anterior": "There is no previous load: enter the amount for each grant holder.",
+        "importe_seleccion": "Amount for the selected (€)",
+        "poner_seleccion": "Apply to {n} selected",
+        "quitar_seleccion": "Remove from the selected",
+        "seleccionar_todos": "Select all",
+        "seleccionar": "Select {nombre}",
+        "importe_de": "Amount for {nombre}",
+        "fila_descontada": "Deducted",
+        "fila_sin_beca": "No active grant",
+        "fila_nuevo": "Grant added after the load",
+        "recibo_validado": "Their {mes} bill is already validated: the grant will not be included until you set it back to draft and recalculate.",
+        "resumen_importes": "{n} of {total} with an amount. Without an amount, that pupil has no grant this month.",
+        "becados_sin_importe": "{n} grant holders without an amount: edit the load to add it"
       },
       "tab_resumen": "Summary",
       "signos": {

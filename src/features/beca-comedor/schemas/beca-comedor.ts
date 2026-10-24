@@ -1,15 +1,28 @@
 import { z } from 'zod'
 
-// Carga masiva de beca comedor v2 (V2-3): un importe único para un mes correspondiente,
-// aplicado en un mes de aplicación. Se materializa como un tramo `origen='normal'` por cada
-// alumno con elegibilidad activa. Importe en EUROS en el formulario; la action lo pasa a
-// céntimos (el modelo usa `importe_centimos > 0`).
+// Carga de beca comedor v2 (V2-3; por alumno desde el PR-10): el importe de CADA becado para
+// un mes correspondiente, aplicado en un mes de aplicación (el de toda la carga). Cada fila con
+// importe es un tramo `origen='normal'`; sin importe, ese alumno no tiene beca ese mes. Importe
+// en EUROS en el formulario; la action lo pasa a céntimos (el modelo usa `importe_centimos > 0`).
+export const importeAlumnoSchema = z.object({
+  nino_id: z.string().uuid(),
+  importe_euros: z
+    .number()
+    .positive('admin.cuotas.beca_comedor.validation.importe_invalido')
+    .nullable(),
+})
+
 export const cargaBecaSchema = z.object({
   anio_correspondiente: z.number().int().min(2024).max(2100),
   mes_correspondiente: z.number().int().min(1).max(12),
   anio_aplicacion: z.number().int().min(2024).max(2100),
   mes_aplicacion: z.number().int().min(1).max(12),
-  importe_euros: z.number().positive('admin.cuotas.beca_comedor.validation.importe_invalido'),
+  importes: z
+    .array(importeAlumnoSchema)
+    .max(1000)
+    .refine((fs) => new Set(fs.map((f) => f.nino_id)).size === fs.length, {
+      message: 'admin.cuotas.beca_comedor.errors.invalid',
+    }),
 })
 
 export type CargaBecaInput = z.infer<typeof cargaBecaSchema>

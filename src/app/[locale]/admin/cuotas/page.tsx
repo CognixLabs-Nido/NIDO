@@ -143,6 +143,8 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
             cargas={cargasBeca.cargas}
             meses={cargasBeca.meses}
             mesesCerrados={cargasBeca.mesesCerrados}
+            nombres={cargasBeca.nombres}
+            recibosValidados={cargasBeca.recibosValidados}
           />
         </TabsContent>
 

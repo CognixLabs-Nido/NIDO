@@ -127,6 +127,15 @@ Restricciones:
   - El exceso se registra en `beca_comedor_desborde`, que se resuelve por transferencia o
     difiriéndolo al mes siguiente.
   - Un desborde resuelto queda cerrado al regenerar (B2-3).
+  - **Importe por alumno (PR-10, 2026-10-24).** Una carga (los tramos `normal` de un mes
+    correspondiente) lleva el importe de cada becado, que varía con los ingresos de la familia;
+    el mes de aplicación sigue siendo el de toda la carga y se elige al cargarla. La carga nueva
+    viene rellena con los importes de la anterior, y se ponen varios de golpe con selección
+    múltiple. Al editarla, un becado marcado después recibe su tramo sin rehacer la carga; los
+    tramos ya descontados no se tocan, y con alguno así la carga no cambia de mes. Sin migración:
+    el importe ya vivía en cada tramo; lo único que lo hacía común era la app. Si el recibo de esa
+    familia ya está validado, la beca nueva no entra hasta volverlo a borrador y recalcular, y el
+    formulario lo avisa.
   - Spec: `docs/specs/beca-comedor-v2.md`.
 - **Origen de cada línea (R-2):** `automatico` | `manual`. El motor nunca toca una manual.
   - El tope de la beca se mide sobre el recibo entero, manuales incluidas.
