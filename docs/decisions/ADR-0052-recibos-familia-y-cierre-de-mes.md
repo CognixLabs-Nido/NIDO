@@ -136,6 +136,15 @@ Restricciones:
     el importe ya vivía en cada tramo; lo único que lo hacía común era la app. Si el recibo de esa
     familia ya está validado, la beca nueva no entra hasta volverlo a borrador y recalcular, y el
     formulario lo avisa.
+  - **Panel de becas (PR-11, 2026-10-24).** Arriba de la pestaña, una fila por alumno con beca
+    (los becados y quien tenga un tramo en el curso) y una columna por mes: el importe de cada
+    beca, con el color de su estado. «Descontada» es el tramo `aplicada`; «en recibo sin validar»,
+    el pendiente cuya línea (`lineas_recibo.beca_tramo_id`) ya está en el borrador; «por aplicar»,
+    el que aún no tiene línea. Con el total del curso, lo aplicado y lo que queda. Sin migración.
+    Lo que no cupo en un recibo (desborde) no se cuenta dos veces: se le quita a la beca de ese
+    recibo y se reparte entre los hermanos con la regla del diferido (resto mayor); lo diferido
+    vuelve como tramo `resto`, que cuenta por sí mismo, y lo devuelto por transferencia cuenta
+    como aplicado. Así, beca del curso = aplicado + queda.
   - Spec: `docs/specs/beca-comedor-v2.md`.
 - **Origen de cada línea (R-2):** `automatico` | `manual`. El motor nunca toca una manual.
   - El tope de la beca se mide sobre el recibo entero, manuales incluidas.

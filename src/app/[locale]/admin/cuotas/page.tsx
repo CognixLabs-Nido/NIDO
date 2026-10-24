@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BecaComedorPanel } from '@/features/beca-comedor/components/BecaComedorPanel'
 import { getCargasBeca } from '@/features/beca-comedor/queries/get-cargas-beca'
 import { getElegibilidadBecados } from '@/features/beca-comedor/queries/get-elegibilidad-becados'
+import { getPanelBecas } from '@/features/beca-comedor/queries/get-panel-becas'
 import { getTransferenciasBeca } from '@/features/beca-comedor/queries/get-transferencias-beca'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getCentroLogo } from '@/features/centros/queries/get-centro-logo'
@@ -59,6 +60,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     elegibilidad,
     cargasBeca,
     transferenciasBeca,
+    panelBecas,
   ] = await Promise.all([
     getConceptosCobro(centroId),
     getAsignacionPermanente(centroId),
@@ -73,6 +75,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
     getElegibilidadBecados(centroId),
     getCargasBeca(centroId),
     getTransferenciasBeca(centroId),
+    getPanelBecas(centroId),
   ])
 
   const centroLogoInfo = await getCentroLogo(centroId)
@@ -145,6 +148,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
             mesesCerrados={cargasBeca.mesesCerrados}
             nombres={cargasBeca.nombres}
             recibosValidados={cargasBeca.recibosValidados}
+            panel={panelBecas}
           />
         </TabsContent>
 
