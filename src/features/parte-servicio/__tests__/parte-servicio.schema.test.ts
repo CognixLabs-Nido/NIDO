@@ -1,24 +1,27 @@
 import { describe, expect, it } from 'vitest'
 
-import { parteServicioBatchInputSchema, servicioDiarioEnum } from '../schemas/parte-servicio'
+import { paseServiciosInputSchema, servicioDiarioEnum } from '../schemas/parte-servicio'
 
 const CENTRO = '11111111-1111-4111-8111-111111111111'
 const NINO = '22222222-2222-4222-9222-222222222222'
+const OTRO = '33333333-3333-4333-9333-333333333333'
 
-describe('parte_servicio — schema Zod', () => {
-  it('acepta un batch válido', () => {
-    const r = parteServicioBatchInputSchema.safeParse({
+describe('parte_servicio — schema Zod del listado único', () => {
+  it('acepta casillas de los tres servicios a la vez', () => {
+    const r = paseServiciosInputSchema.safeParse({
       centro_id: CENTRO,
       fecha: '2026-06-28',
-      servicio: 'comedor',
-      items: [{ nino_id: NINO, presente: true }],
+      items: [
+        { nino_id: NINO, servicio: 'matinera', presente: true },
+        { nino_id: NINO, servicio: 'comedor', presente: true },
+        { nino_id: OTRO, servicio: 'vespertina', presente: false },
+      ],
     })
     expect(r.success).toBe(true)
   })
 
   it('rechaza servicio desconocido', () => {
-    const r = servicioDiarioEnum.safeParse('almuerzo')
-    expect(r.success).toBe(false)
+    expect(servicioDiarioEnum.safeParse('almuerzo').success).toBe(false)
   })
 
   it('acepta los tres servicios válidos', () => {
@@ -28,11 +31,10 @@ describe('parte_servicio — schema Zod', () => {
   })
 
   it('rechaza fecha mal formada', () => {
-    const r = parteServicioBatchInputSchema.safeParse({
+    const r = paseServiciosInputSchema.safeParse({
       centro_id: CENTRO,
       fecha: '28-06-2026',
-      servicio: 'comedor',
-      items: [{ nino_id: NINO, presente: true }],
+      items: [{ nino_id: NINO, servicio: 'comedor', presente: true }],
     })
     expect(r.success).toBe(false)
     if (!r.success) {
@@ -40,32 +42,32 @@ describe('parte_servicio — schema Zod', () => {
     }
   })
 
-  it('rechaza batch sin items', () => {
-    const r = parteServicioBatchInputSchema.safeParse({
+  it('rechaza un guardado sin casillas', () => {
+    const r = paseServiciosInputSchema.safeParse({
       centro_id: CENTRO,
       fecha: '2026-06-28',
-      servicio: 'matinera',
       items: [],
     })
     expect(r.success).toBe(false)
   })
 
-  it('rechaza centro_id no uuid', () => {
-    const r = parteServicioBatchInputSchema.safeParse({
-      centro_id: 'no-uuid',
+  it('rechaza la misma casilla dos veces (el upsert no admite la misma fila)', () => {
+    const r = paseServiciosInputSchema.safeParse({
+      centro_id: CENTRO,
       fecha: '2026-06-28',
-      servicio: 'vespertina',
-      items: [{ nino_id: NINO, presente: false }],
+      items: [
+        { nino_id: NINO, servicio: 'comedor', presente: true },
+        { nino_id: NINO, servicio: 'comedor', presente: false },
+      ],
     })
     expect(r.success).toBe(false)
   })
 
-  it('rechaza presente no booleano', () => {
-    const r = parteServicioBatchInputSchema.safeParse({
-      centro_id: CENTRO,
+  it('rechaza centro_id no uuid', () => {
+    const r = paseServiciosInputSchema.safeParse({
+      centro_id: 'no-uuid',
       fecha: '2026-06-28',
-      servicio: 'comedor',
-      items: [{ nino_id: NINO, presente: 'si' }],
+      items: [{ nino_id: NINO, servicio: 'vespertina', presente: false }],
     })
     expect(r.success).toBe(false)
   })

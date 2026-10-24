@@ -109,7 +109,7 @@ export default async function TeacherAulaPage({ params, searchParams }: PageProp
             {tMenus('ver')}
           </Link>
           <Link
-            href={`/${locale}/teacher/aula/${id}/servicio`}
+            href={`/${locale}/teacher/servicios?aula=${id}`}
             data-testid="link-servicio"
             className="border-border bg-background hover:bg-muted text-foreground inline-flex h-7 items-center gap-1 rounded-xl border px-2.5 text-[0.8rem] font-medium transition-colors"
           >

@@ -250,7 +250,8 @@
       "pendientes": "Validacions",
       "familias": "Famílies",
       "fotosRevocadas": "Fotos revocades",
-      "direccion": "Direcció del centre"
+      "direccion": "Direcció del centre",
+      "servicios": "Serveis"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -1334,7 +1335,8 @@
       "agenda": "Agenda",
       "autorizaciones": "Autoritzacions",
       "notificaciones": "Notificacions",
-      "informes": "Informes"
+      "informes": "Informes",
+      "servicios": "Serveis"
     },
     "dashboard": {
       "title": "Les meues aules",
@@ -2361,45 +2363,42 @@
   },
   "parte_servicio": {
     "title": "Part de servei",
-    "subtitle": "Apunta qui es queda a menjador, matinera o vespertina cada dia.",
+    "subtitle": "Tots els xiquets del centre: marca qui es queda pel matí, a dinar i per la vesprada.",
     "ver": "Part de servei",
-    "ayuda": "Marca els xiquets que es queden a este servei. Serveix per al cobrament del mes.",
-    "ningun_nino": "Encara no hi ha xiquets matriculats en esta aula.",
     "guardar": "Guardar part",
-    "selector_servicio_label": "Selecció de servei",
     "selector": {
       "anterior": "Dia anterior",
       "siguiente": "Dia següent",
       "dia_futuro": "Dia futur",
       "volver_a_hoy": "Tornar a hui"
     },
-    "servicios": {
-      "comedor": "Menjador",
-      "matinera": "Matinera",
-      "vespertina": "Vespertina"
-    },
-    "columna": {
-      "presente": "Es queda?"
-    },
-    "opciones": {
-      "si": "Sí",
-      "no": "No"
-    },
-    "quick_actions": {
-      "todos_se_quedan": "Tots es queden"
-    },
-    "status": {
-      "pending": "Sense marcar",
-      "dirty": "Sense guardar",
-      "saved": "Guardat",
-      "error": "Error"
-    },
     "validation": {
       "fecha_invalida": "Data no vàlida."
     },
     "errors": {
       "sin_permiso": "No tens permís per a editar este part.",
-      "guardar_fallo": "No s'ha pogut guardar. Torna-ho a intentar."
+      "guardar_fallo": "No s'ha pogut guardar. Torna-ho a intentar.",
+      "mes_cerrado": "Eixe mes ja està tancat: el seu part de servei no es pot canviar."
+    },
+    "listado": {
+      "ayuda": "Marca tots els que es queden, tinguen quota mensual o no: en fer els rebuts només es cobra a qui correspon.",
+      "error": "No s'ha pogut carregar el llistat. Torna a carregar la pàgina.",
+      "sin_alumnos": "No hi ha xiquets matriculats en el curs actiu.",
+      "sin_resultados": "Cap xiquet coincideix amb el filtre.",
+      "filtro_clase": "Filtrar per classe",
+      "todas": "Totes",
+      "buscar": "Buscar pel nom",
+      "col_clase": "Classe",
+      "col_alumno": "Alumne",
+      "col_matinera": "Matí",
+      "col_comedor": "Menjador",
+      "col_vespertina": "Vesprada",
+      "marcar_todos": "Tots",
+      "marcar_todos_aria": "Marcar o desmarcar {servicio} a tots els de la llista",
+      "casilla_aria": "{nombre}: {servicio}",
+      "cambios": "{n, plural, one {# canvi sense guardar} other {# canvis sense guardar}}",
+      "guardado": "{n, plural, one {Guardat # canvi.} other {Guardats # canvis.}}",
+      "descartar_cambios": "Hi ha canvis sense guardar. Canviar de dia i descartar-los?"
     }
   },
   "ausencia": {

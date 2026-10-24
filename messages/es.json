@@ -250,7 +250,8 @@
       "pendientes": "Validaciones",
       "familias": "Familias",
       "fotosRevocadas": "Fotos revocadas",
-      "direccion": "Dirección del centro"
+      "direccion": "Dirección del centro",
+      "servicios": "Servicios"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -1334,7 +1335,8 @@
       "agenda": "Agenda",
       "autorizaciones": "Autorizaciones",
       "notificaciones": "Notificaciones",
-      "informes": "Informes"
+      "informes": "Informes",
+      "servicios": "Servicios"
     },
     "dashboard": {
       "title": "Mis aulas",
@@ -2361,45 +2363,42 @@
   },
   "parte_servicio": {
     "title": "Parte de servicio",
-    "subtitle": "Apunta quién se queda a comedor, matinera o vespertina cada día.",
+    "subtitle": "Todos los niños del centro: marca quién se queda por la mañana, a comer y por la tarde.",
     "ver": "Parte de servicio",
-    "ayuda": "Marca a los niños que se quedan a este servicio. Sirve para el cobro del mes.",
-    "ningun_nino": "No hay niños matriculados todavía en esta aula.",
     "guardar": "Guardar parte",
-    "selector_servicio_label": "Selección de servicio",
     "selector": {
       "anterior": "Día anterior",
       "siguiente": "Día siguiente",
       "dia_futuro": "Día futuro",
       "volver_a_hoy": "Volver a hoy"
     },
-    "servicios": {
-      "comedor": "Comedor",
-      "matinera": "Matinera",
-      "vespertina": "Vespertina"
-    },
-    "columna": {
-      "presente": "¿Se queda?"
-    },
-    "opciones": {
-      "si": "Sí",
-      "no": "No"
-    },
-    "quick_actions": {
-      "todos_se_quedan": "Todos se quedan"
-    },
-    "status": {
-      "pending": "Sin marcar",
-      "dirty": "Sin guardar",
-      "saved": "Guardado",
-      "error": "Error"
-    },
     "validation": {
       "fecha_invalida": "Fecha inválida."
     },
     "errors": {
       "sin_permiso": "No tienes permiso para editar este parte.",
-      "guardar_fallo": "No se pudo guardar. Inténtalo de nuevo."
+      "guardar_fallo": "No se pudo guardar. Inténtalo de nuevo.",
+      "mes_cerrado": "Ese mes ya está cerrado: su parte de servicio no se puede cambiar."
+    },
+    "listado": {
+      "ayuda": "Marca a todos los que se quedan, tengan cuota mensual o no: al hacer los recibos se cobra solo a quien corresponde.",
+      "error": "No se ha podido cargar el listado. Recarga la página.",
+      "sin_alumnos": "No hay niños matriculados en el curso activo.",
+      "sin_resultados": "Ningún niño coincide con el filtro.",
+      "filtro_clase": "Filtrar por clase",
+      "todas": "Todas",
+      "buscar": "Buscar por nombre",
+      "col_clase": "Clase",
+      "col_alumno": "Alumno",
+      "col_matinera": "Mañana",
+      "col_comedor": "Comedor",
+      "col_vespertina": "Tarde",
+      "marcar_todos": "Todos",
+      "marcar_todos_aria": "Marcar o desmarcar {servicio} a todos los de la lista",
+      "casilla_aria": "{nombre}: {servicio}",
+      "cambios": "{n, plural, one {# cambio sin guardar} other {# cambios sin guardar}}",
+      "guardado": "{n, plural, one {Guardado # cambio.} other {Guardados # cambios.}}",
+      "descartar_cambios": "Hay cambios sin guardar. ¿Cambiar de día y descartarlos?"
     }
   },
   "ausencia": {
