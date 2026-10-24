@@ -114,7 +114,7 @@ Restricciones:
   - Se borra `cerrar_mes_cobros`.
 - **Pases**, con los nombres de la migración:
   - PASE 1: cargos de cada niño;
-  - PASE 2: becas fijas, en negativo;
+  - ~~PASE 2: becas fijas, en negativo~~ (retirado en el PR-9, ver abajo);
   - PASE 1b: cargos de la familia;
   - PASE 3: descuentos, incluido el **de hermanos**: el que más paga es el primero y no lo recibe;
     si hay empate, decide `nino_id` ASC;
@@ -166,6 +166,12 @@ Restricciones:
   escolaridad del segundo hermano. La estructura del PASE 3 no cambia: el que más paga, completo.
   Un porcentaje propio solo vale en un descuento con base, y a un concepto con porcentajes propios
   no se le quita la base (triggers, 23514).
+- **Una sola forma de poner una beca (PR-9, 2026-10-24):** se eliminan `tipos_beca` y `becas`, el
+  PASE 2 del motor que las restaba y su sección en `export_datos_sujeto`. Había dos formas de poner
+  una beca de comedor que se sumaban sin avisar, y el control de desborde solo vigilaba la nueva;
+  la vieja tenía 0 filas en producción. La beca de comedor es la de las cargas (B2); una beca que
+  no es de comedor es un concepto negativo con el importe propio del niño (PR-6), que aplica el
+  PASE 3. Decisión del responsable.
 
 ### Método de pago y remesa (F-4-3, F-4-5)
 

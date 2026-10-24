@@ -357,7 +357,7 @@ describe('no hace lo exclusivo de la admin', () => {
     expect(error?.message).toBe('No autorizado')
   })
 
-  it('no crea un concepto de cobro ni un tipo de beca', async () => {
+  it('no crea un concepto de cobro', async () => {
     const concepto = await cDirectora.from('conceptos_cobro').insert({
       centro_id: centroA.id,
       nombre: 'Concepto de la directora',
@@ -368,10 +368,6 @@ describe('no hace lo exclusivo de la admin', () => {
       importe_centimos: 1000,
     })
     expect(concepto.error?.code).toBe('42501')
-    const beca = await cDirectora
-      .from('tipos_beca')
-      .insert({ centro_id: centroA.id, nombre: 'Beca de la directora' })
-    expect(beca.error?.code).toBe('42501')
   })
 
   it('no cierra el curso (sí lo edita)', async () => {

@@ -96,6 +96,9 @@ al RAT).
 - **E** **Becas = línea negativa** (Opción A). `tipos_beca` catálogo por centro, `becas`
   tipo+importe+periodo por niño. Total puede ser negativo → se arrastra como línea de apertura
   negativa. Saldo al irse = gestión manual.
+  _(Superada por el PR-9, 2026-10-24: `tipos_beca` y `becas` se eliminan. La beca de comedor es la
+  de las cargas (B2) y una beca que no es de comedor es un concepto negativo con el importe propio
+  del niño. Ver ADR-0052.)_
 - **F** Cierre de mes **inmutable**: `cierre_mensual` sin UPDATE/DELETE; no se reabre. Errores
   → recibos correctivos/esporádicos + devoluciones.
 - **G1** XML SEPA **no se almacena**: se genera bajo demanda (server) y se descarga,

@@ -187,9 +187,6 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'fecha_evento',
   'vencimiento',
   'completado_en',
-  'tipo_beca',
-  'fecha_desde',
-  'fecha_hasta',
   'servicio',
   'presente',
   'activa',
@@ -667,7 +664,6 @@ function renderNino(n: Record<string, unknown>, c: Ctx): string {
   ${seccion('recordatorios_nino', n.recordatorios, c)}
   ${seccion('servicios_diarios', n.servicios_diarios, c)}
   ${seccion('lineas_recibo', n.lineas_recibo, c)}
-  ${seccion('becas', n.becas, c)}
   ${seccion('conceptos_asignados', n.conceptos_asignados, c)}
   ${seccion('beca_comedor_elegibilidad', n.beca_comedor_elegibilidad, c)}
   ${seccion('beca_comedor_tramos', n.beca_comedor_tramos, c)}

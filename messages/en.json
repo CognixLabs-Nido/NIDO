@@ -418,7 +418,6 @@
       "tab_conceptos": "Items",
       "tab_beca_comedor": "Meal grant",
       "tab_asignacion": "Permanent setup",
-      "tab_becas": "Grants",
       "tab_cierre": "Closing",
       "tab_remesas": "Remittances",
       "periodo": "Period",
@@ -443,41 +442,6 @@
         "ninguna": "Not charged",
         "mensual": "Monthly",
         "diario": "Daily"
-      },
-      "becas": {
-        "becas_title": "Assigned grants",
-        "nueva": "New grant",
-        "nueva_title": "New grant",
-        "editar_title": "Edit grant",
-        "becas_empty": "No grants assigned yet.",
-        "created": "Grant created",
-        "updated": "Grant updated",
-        "deleted": "Grant deleted",
-        "eliminar_title": "Delete grant",
-        "eliminar_confirm": "Delete the grant for “{nombre}”?",
-        "elige_nino": "Choose a child",
-        "elige_tipo": "Choose a type",
-        "activo_si": "Yes",
-        "tipos_title": "Grant types",
-        "tipo_nuevo": "New type",
-        "tipo_nuevo_title": "New grant type",
-        "tipo_editar_title": "Edit grant type",
-        "tipos_empty": "No grant types yet. Create the first one.",
-        "tipo_created": "Type created",
-        "tipo_updated": "Type updated",
-        "tipo_deleted": "Type deleted",
-        "tipo_eliminar_title": "Delete grant type",
-        "tipo_eliminar_confirm": "Delete the type “{nombre}”?",
-        "fields": {
-          "tipo_nombre": "Name",
-          "tipo_activo": "Active",
-          "nino": "Child",
-          "tipo": "Type",
-          "importe": "Amount (€)",
-          "desde": "From",
-          "hasta": "To",
-          "periodo": "Period"
-        }
       },
       "beca_comedor": {
         "sin_curso": "There is no active school year. Activate one to manage meal grants.",
@@ -2000,32 +1964,6 @@
       "una_vez": "A return is resolved only once.",
       "guardar": "Resolve",
       "cancelar": "Cancel"
-    }
-  },
-  "becas": {
-    "validation": {
-      "invalid": "Invalid grant data",
-      "tipo_nombre_requerido": "Name required",
-      "tipo_nombre_largo": "Name too long (max. 120)",
-      "nino_requerido": "Select a child",
-      "tipo_requerido": "Select a grant type",
-      "importe_invalido": "Enter a valid amount",
-      "importe_positivo": "Amount must be greater than 0",
-      "importe_largo": "Amount too high",
-      "desde_requerido": "Enter the start date",
-      "periodo": "End date cannot be before the start date"
-    },
-    "errors": {
-      "tipo_duplicado": "A grant type with that name already exists in the centre.",
-      "no_autorizado": "You don't have permission for this action.",
-      "tipo_create_failed": "Could not create the grant type.",
-      "tipo_update_failed": "Could not update the grant type.",
-      "tipo_delete_failed": "Could not delete the grant type.",
-      "tipo_no_encontrado": "Grant type not found.",
-      "create_failed": "Could not create the grant.",
-      "update_failed": "Could not update the grant.",
-      "delete_failed": "Could not delete the grant.",
-      "no_encontrado": "Grant not found."
     }
   },
   "aula": {
@@ -3818,7 +3756,6 @@
         "eventos": "Events",
         "confirmaciones_eventos": "Event confirmations",
         "recordatorios_nino": "Reminders",
-        "becas": "Grants",
         "conceptos_asignados": "Assigned charges",
         "lineas_recibo": "Child's charges",
         "servicios_diarios": "Daily services",
@@ -3988,9 +3925,6 @@
         "fecha_evento": "Event date",
         "vencimiento": "Due",
         "completado_en": "Completed on",
-        "tipo_beca": "Grant",
-        "fecha_desde": "From",
-        "fecha_hasta": "Until",
         "servicio": "Service",
         "presente": "Present",
         "activa": "Active",

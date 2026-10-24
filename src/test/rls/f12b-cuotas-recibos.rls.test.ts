@@ -25,8 +25,8 @@ import type { Database } from '@/types/database'
  * F12-B-0 — RLS del modelo de "Cuotas, recibos y remesas SEPA" (fundación).
  *
  * Criterios verificados (decisiones A–K):
- *  - Catálogo (conceptos_cobro, tipos_beca), asignación (asignacion_concepto,
- *    metodo_pago_familia, becas), cierre (cierre_mensual) y remesas (remesas,
+ *  - Catálogo (conceptos_cobro), asignación (asignacion_concepto,
+ *    metodo_pago_familia), cierre (cierre_mensual) y remesas (remesas,
  *    recibos_remesa): SOLO el admin del centro escribe/lee; profe y tutor NO.
  *  - parte_servicio_diario: la profe del niño (o admin) apunta y lee; el tutor NO
  *    (control interno); aislamiento entre centros.
@@ -50,7 +50,6 @@ describe('F12-B — RLS cuotas/recibos/remesas (catálogo · asignación · part
   let cTutorA: SupabaseClient<Database>
   let cTutorB: SupabaseClient<Database>
   let conceptoId: string
-  let tipoBecaId: string
   let reciboId: string
 
   beforeAll(async () => {
@@ -90,12 +89,10 @@ describe('F12-B — RLS cuotas/recibos/remesas (catálogo · asignación · part
     await serviceClient.from('lineas_recibo').delete().in('centro_id', centros)
     await serviceClient.from('recibos').delete().in('centro_id', centros)
     await serviceClient.from('asignacion_concepto').delete().in('centro_id', centros)
-    await serviceClient.from('becas').delete().in('centro_id', centros)
     await serviceClient.from('metodo_pago_familia').delete().in('centro_id', centros)
     await serviceClient.from('parte_servicio_diario').delete().in('centro_id', centros)
     await serviceClient.from('cierre_mensual').delete().in('centro_id', centros)
     await serviceClient.from('conceptos_cobro').delete().in('centro_id', centros)
-    await serviceClient.from('tipos_beca').delete().in('centro_id', centros)
     await deleteTestCentro(centroA.id)
     await deleteTestCentro(centroB.id)
     await deleteTestUser(adminA.id)
@@ -104,9 +101,9 @@ describe('F12-B — RLS cuotas/recibos/remesas (catálogo · asignación · part
     await deleteTestUser(tutorB.id)
   })
 
-  // ─── catálogo: conceptos_cobro / tipos_beca ─────────────────────────────────
-  describe('catálogo (conceptos_cobro / tipos_beca)', () => {
-    it('el admin crea concepto y tipo de beca; profe y tutor NO', async () => {
+  // ─── catálogo: conceptos_cobro ──────────────────────────────────────────────
+  describe('catálogo (conceptos_cobro)', () => {
+    it('el admin crea concepto; profe y tutor NO', async () => {
       const concepto = await cAdminA
         .from('conceptos_cobro')
         .insert({
@@ -122,14 +119,6 @@ describe('F12-B — RLS cuotas/recibos/remesas (catálogo · asignación · part
       expect(concepto.error).toBeNull()
       expect(concepto.data).not.toBeNull()
       conceptoId = concepto.data!.id
-
-      const tipoBeca = await cAdminA
-        .from('tipos_beca')
-        .insert({ centro_id: centroA.id, nombre: 'Beca comedor' })
-        .select('id')
-        .maybeSingle()
-      expect(tipoBeca.error).toBeNull()
-      tipoBecaId = tipoBeca.data!.id
 
       const profe = await cProfeA
         .from('conceptos_cobro')
@@ -155,9 +144,9 @@ describe('F12-B — RLS cuotas/recibos/remesas (catálogo · asignación · part
     })
   })
 
-  // ─── asignación: asignacion_concepto / metodo_pago_familia / becas ──────────
-  describe('asignación (asignacion_concepto / metodo_pago_familia / becas)', () => {
-    it('el admin asigna concepto (permanente), método y beca; profe NO', async () => {
+  // ─── asignación: asignacion_concepto / metodo_pago_familia ──────────────────
+  describe('asignación (asignacion_concepto / metodo_pago_familia)', () => {
+    it('el admin asigna concepto (permanente) y método; profe NO', async () => {
       const asignacion = await cAdminA
         .from('asignacion_concepto')
         .insert({
@@ -182,19 +171,6 @@ describe('F12-B — RLS cuotas/recibos/remesas (catálogo · asignación · part
         .select('id')
         .maybeSingle()
       expect(metodo.error).toBeNull()
-
-      const beca = await cAdminA
-        .from('becas')
-        .insert({
-          centro_id: centroA.id,
-          nino_id: ninoA.id,
-          tipo_beca_id: tipoBecaId,
-          importe_centimos: 10000,
-          fecha_desde: '2026-06-01',
-        })
-        .select('id')
-        .maybeSingle()
-      expect(beca.error).toBeNull()
 
       const profe = await cProfeA
         .from('metodo_pago_familia')

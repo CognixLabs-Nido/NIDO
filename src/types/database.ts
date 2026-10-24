@@ -1047,67 +1047,6 @@ export type Database = {
           },
         ]
       }
-      becas: {
-        Row: {
-          centro_id: string
-          created_at: string
-          deleted_at: string | null
-          fecha_desde: string
-          fecha_hasta: string | null
-          id: string
-          importe_centimos: number
-          nino_id: string
-          tipo_beca_id: string
-          updated_at: string
-        }
-        Insert: {
-          centro_id: string
-          created_at?: string
-          deleted_at?: string | null
-          fecha_desde: string
-          fecha_hasta?: string | null
-          id?: string
-          importe_centimos: number
-          nino_id: string
-          tipo_beca_id: string
-          updated_at?: string
-        }
-        Update: {
-          centro_id?: string
-          created_at?: string
-          deleted_at?: string | null
-          fecha_desde?: string
-          fecha_hasta?: string | null
-          id?: string
-          importe_centimos?: number
-          nino_id?: string
-          tipo_beca_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "becas_centro_id_fkey"
-            columns: ["centro_id"]
-            isOneToOne: false
-            referencedRelation: "centros"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "becas_nino_id_fkey"
-            columns: ["nino_id"]
-            isOneToOne: false
-            referencedRelation: "ninos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "becas_tipo_beca_id_fkey"
-            columns: ["tipo_beca_id"]
-            isOneToOne: false
-            referencedRelation: "tipos_beca"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       biberones: {
         Row: {
           agenda_id: string
@@ -4336,44 +4275,6 @@ export type Database = {
             columns: ["concepto_id"]
             isOneToOne: false
             referencedRelation: "conceptos_cobro"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tipos_beca: {
-        Row: {
-          activo: boolean
-          centro_id: string
-          created_at: string
-          deleted_at: string | null
-          id: string
-          nombre: string
-          updated_at: string
-        }
-        Insert: {
-          activo?: boolean
-          centro_id: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          nombre: string
-          updated_at?: string
-        }
-        Update: {
-          activo?: boolean
-          centro_id?: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          nombre?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tipos_beca_centro_id_fkey"
-            columns: ["centro_id"]
-            isOneToOne: false
-            referencedRelation: "centros"
             referencedColumns: ["id"]
           },
         ]

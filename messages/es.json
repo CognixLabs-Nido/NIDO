@@ -418,7 +418,6 @@
       "tab_conceptos": "Conceptos",
       "tab_beca_comedor": "Beca comedor",
       "tab_asignacion": "Asignación permanente",
-      "tab_becas": "Becas",
       "tab_cierre": "Cierre",
       "tab_remesas": "Remesas",
       "periodo": "Periodo",
@@ -443,41 +442,6 @@
         "ninguna": "No se cobra",
         "mensual": "Mensual",
         "diario": "Diario"
-      },
-      "becas": {
-        "becas_title": "Becas asignadas",
-        "nueva": "Nueva beca",
-        "nueva_title": "Nueva beca",
-        "editar_title": "Editar beca",
-        "becas_empty": "No hay becas asignadas todavía.",
-        "created": "Beca creada",
-        "updated": "Beca actualizada",
-        "deleted": "Beca eliminada",
-        "eliminar_title": "Eliminar beca",
-        "eliminar_confirm": "¿Eliminar la beca de «{nombre}»?",
-        "elige_nino": "Elige un niño/a",
-        "elige_tipo": "Elige un tipo",
-        "activo_si": "Sí",
-        "tipos_title": "Tipos de beca",
-        "tipo_nuevo": "Nuevo tipo",
-        "tipo_nuevo_title": "Nuevo tipo de beca",
-        "tipo_editar_title": "Editar tipo de beca",
-        "tipos_empty": "No hay tipos de beca. Crea el primero.",
-        "tipo_created": "Tipo creado",
-        "tipo_updated": "Tipo actualizado",
-        "tipo_deleted": "Tipo eliminado",
-        "tipo_eliminar_title": "Eliminar tipo de beca",
-        "tipo_eliminar_confirm": "¿Eliminar el tipo «{nombre}»?",
-        "fields": {
-          "tipo_nombre": "Nombre",
-          "tipo_activo": "Activo",
-          "nino": "Niño/a",
-          "tipo": "Tipo",
-          "importe": "Importe (€)",
-          "desde": "Desde",
-          "hasta": "Hasta",
-          "periodo": "Periodo"
-        }
       },
       "beca_comedor": {
         "sin_curso": "No hay ningún curso activo. Activa un curso para gestionar la beca comedor.",
@@ -2000,32 +1964,6 @@
       "una_vez": "Una devolución se resuelve una sola vez.",
       "guardar": "Resolver",
       "cancelar": "Cancelar"
-    }
-  },
-  "becas": {
-    "validation": {
-      "invalid": "Datos de la beca no válidos",
-      "tipo_nombre_requerido": "Nombre requerido",
-      "tipo_nombre_largo": "Nombre demasiado largo (máx. 120)",
-      "nino_requerido": "Selecciona un niño/a",
-      "tipo_requerido": "Selecciona un tipo de beca",
-      "importe_invalido": "Introduce un importe válido",
-      "importe_positivo": "El importe debe ser mayor que 0",
-      "importe_largo": "Importe demasiado alto",
-      "desde_requerido": "Indica la fecha de inicio",
-      "periodo": "La fecha de fin no puede ser anterior a la de inicio"
-    },
-    "errors": {
-      "tipo_duplicado": "Ya existe un tipo de beca con ese nombre en el centro.",
-      "no_autorizado": "No tienes permiso para esta acción.",
-      "tipo_create_failed": "No se pudo crear el tipo de beca.",
-      "tipo_update_failed": "No se pudo actualizar el tipo de beca.",
-      "tipo_delete_failed": "No se pudo eliminar el tipo de beca.",
-      "tipo_no_encontrado": "Tipo de beca no encontrado.",
-      "create_failed": "No se pudo crear la beca.",
-      "update_failed": "No se pudo actualizar la beca.",
-      "delete_failed": "No se pudo eliminar la beca.",
-      "no_encontrado": "Beca no encontrada."
     }
   },
   "aula": {
@@ -3818,7 +3756,6 @@
         "eventos": "Eventos",
         "confirmaciones_eventos": "Confirmaciones de eventos",
         "recordatorios_nino": "Recordatorios",
-        "becas": "Becas",
         "conceptos_asignados": "Conceptos asignados",
         "lineas_recibo": "Cobros del niño",
         "servicios_diarios": "Servicios diarios",
@@ -3988,9 +3925,6 @@
         "fecha_evento": "Fecha del evento",
         "vencimiento": "Vencimiento",
         "completado_en": "Completado el",
-        "tipo_beca": "Beca",
-        "fecha_desde": "Desde",
-        "fecha_hasta": "Hasta",
         "servicio": "Servicio",
         "presente": "Presente",
         "activa": "Activa",
