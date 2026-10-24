@@ -256,7 +256,7 @@ export function construirPanel(e: EntradaPanel): PanelBecas {
 
     for (const tot of [fila.totales, total]) {
       if (t.origen === 'normal') tot.asignado += t.importe_centimos
-      const cabe = t.importe_centimos - beca.excesoCentimos
+      const cabe = t.importe_centimos
       if (estado === 'descontada') tot.descontado += cabe
       else if (estado === 'en_recibo') tot.enRecibo += cabe
       else tot.porAplicar += cabe
