@@ -112,7 +112,7 @@ export function alternarGrupo(
   elegidos: ReadonlySet<string>,
   elegir: boolean
 ): Set<string> {
-  const next = new Set<string>()
+  const next = new Set(elegidos)
   for (const n of grupo.ninos) {
     if (elegir) next.add(n.id)
     else next.delete(n.id)
