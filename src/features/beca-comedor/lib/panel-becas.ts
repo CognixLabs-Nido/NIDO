@@ -230,7 +230,7 @@ export function construirPanel(e: EntradaPanel): PanelBecas {
     const estado: EstadoBeca =
       t.estado === 'anulada'
         ? 'anulada'
-        : t.estado === 'aplicada' || r != null
+        : t.estado === 'aplicada' || (r != null && r.estado !== 'borrador')
           ? 'descontada'
           : r != null
             ? 'en_recibo'
