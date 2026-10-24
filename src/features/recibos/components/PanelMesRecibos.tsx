@@ -40,7 +40,9 @@ import { accesoModificar } from '../lib/acceso-modificar'
 import { limpiarNombreEmbebido } from '../lib/limpiar-nombre-embebido'
 import { agruparLineasPanel, esConfirmado, type FilaFamiliaPanel } from '../lib/panel-familia'
 import { componerResumenRecalculo } from '../lib/resumen-recalculo'
+import type { NinoCargo } from '../lib/cargo-puntual'
 import type { PanelMesData } from '../queries/get-recibos-mes-panel'
+import { CargoPuntualDialog, type ConceptoPuntual } from './CargoPuntualDialog'
 import { EditarReciboDialog } from './EditarReciboDialog'
 
 /** Logo del centro para la cabecera del recibo interno (getCentroLogo). */
@@ -57,12 +59,23 @@ interface Props {
   anio: number
   mes: number
   data: PanelMesData
-  ninos: Array<{ id: string; nombre: string }>
+  /** Los niños con matrícula activa, con su clase (el cargo puntual los agrupa por ella). */
+  ninos: NinoCargo[]
+  /** PR-13: los conceptos esporádicos del catálogo, para el cargo puntual a varios niños. */
+  conceptosPuntuales: ConceptoPuntual[]
   /** Logo del centro (getCentroLogo); null si no tiene → el recibo interno va sin logo. */
   centroLogo: CentroLogoProp | null
 }
 
-export function PanelMesRecibos({ centroId, anio, mes, data, ninos, centroLogo }: Props) {
+export function PanelMesRecibos({
+  centroId,
+  anio,
+  mes,
+  data,
+  ninos,
+  conceptosPuntuales,
+  centroLogo,
+}: Props) {
   const t = useTranslations('recibos_panel')
   const tErrors = useTranslations()
   const locale = useLocale()
@@ -191,6 +204,14 @@ export function PanelMesRecibos({ centroId, anio, mes, data, ninos, centroLogo }
       <div className="flex flex-wrap items-center justify-between gap-3">
         <MesSelector anio={anio} mes={mes} tab="mes" />
         <div className="flex items-center gap-2">
+          <CargoPuntualDialog
+            centroId={centroId}
+            anio={anio}
+            mes={mes}
+            ninos={ninos}
+            conceptos={conceptosPuntuales}
+            bloqueado={bloqueado}
+          />
           <ReciboEsporadicoDialog anio={anio} mes={mes} ninos={ninos} />
           <Button variant="outline" disabled={pending || bloqueado} onClick={lanzarRecalcular}>
             {t('recalcular')}

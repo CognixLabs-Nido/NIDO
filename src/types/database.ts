@@ -4396,6 +4396,25 @@ export type Database = {
         Args: { p_foto_path: string; p_nino_id: string }
         Returns: string
       }
+      anadir_cargo_puntual: {
+        Args: {
+          p_anio: number
+          p_centro_id: string
+          p_concepto_id?: string
+          p_descripcion: string
+          p_importe_centimos: number
+          p_mes: number
+          p_nino_ids: string[]
+        }
+        Returns: {
+          estado: string
+          familia_etiqueta: string
+          familia_id: string
+          nino_id: string
+          recibo_id: string
+          resultado: string
+        }[]
+      }
       actualizar_identidad_nino_tutor: {
         Args: {
           p_apellidos: string

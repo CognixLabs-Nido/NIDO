@@ -1181,6 +1181,29 @@ a los de su aula. Decisión del responsable.
   activo. El enlace del aula lleva ahí con su clase preseleccionada; la página por aula se retira.
 - Test: `pase-servicios-unico.rls.test.ts`.
 
+### Cargo puntual a varios niños (PR-13 de recibos)
+
+Migración `20261116120000_feat_cargo_puntual_varios_ninos`. Las excursiones y similares son cargos
+puntuales que Dirección añade a todos o a algunos niños. No son los «proyectos y materiales», que
+son conceptos mensuales fijos y los pone el motor.
+
+- **`anadir_cargo_puntual(centro, año, mes, niños, descripción, importe, concepto)`**
+  (`SECURITY INVOKER`, `EXECUTE` solo para `authenticated`): por cada niño, una línea manual en el
+  recibo regular del mes de su familia, en una transacción. Es de invocador a propósito: la RLS de
+  `recibos` y `lineas_recibo` (solo Dirección) y el congelado por estado siguen actuando.
+  - Familia con el recibo en borrador: la línea entra en él. Sin recibo ese mes: se crea la carcasa
+    en borrador, con el método congelado como el motor (la excepción del mes o el de la ficha).
+  - Familia con el recibo ya validado: no se toca y sale «no incluida», con su estado.
+  - El niño que ya tiene esa misma línea manual (misma descripción e importe) sale «ya incluido»:
+    repetir el envío no cobra dos veces.
+  - Puerta propia: `es_admin` del centro pedido, si no 42501; con centro NULL también, porque
+    `es_admin(NULL)` da TRUE a cualquier persona de Dirección. Un niño de otro centro tumba el
+    cargo entero (42501). Mes cerrado: P0001 «mes cerrado». El concepto, si viene, es un
+    esporádico del centro; el importe, de 1 céntimo a 100 000 € (22023).
+- **En la app:** «Cargo a varios niños» en el panel del mes de Cuotas, con los niños agrupados por
+  clase.
+- Test: `cargo-puntual.rls.test.ts`.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -1223,6 +1246,7 @@ a los de su aula. Decisión del responsable.
 | Métricas del panel: solo lo activo            | `platform-metricas.rls.test.ts`                 |
 | Crear centro e invitar a su admin             | `platform-crear-centro.rls.test.ts`             |
 | Pase de servicios: cualquier profe del centro | `pase-servicios-unico.rls.test.ts`              |
+| Cargo puntual a varios niños                  | `cargo-puntual.rls.test.ts`                     |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 
