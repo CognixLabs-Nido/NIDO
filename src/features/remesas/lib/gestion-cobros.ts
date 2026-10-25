@@ -51,7 +51,7 @@ export interface MesRecibo {
 
 /** El mes siguiente: diciembre pasa a enero del año siguiente. */
 export function mesSiguiente(m: MesRecibo): MesRecibo {
-  return m.mes === 12 ? { anio: m.anio + 1, mes: 1 } : { anio: m.anio, mes: m.mes + 1 }
+  return m.mes === 12 ? { anio: m.anio, mes: 1 } : { anio: m.anio, mes: m.mes + 1 }
 }
 
 /**
