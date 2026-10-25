@@ -17,12 +17,16 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 
 /**
- * PR-14 (`20261117120000`) — la devolución llevada al siguiente recibo, contra la BD real.
+ * PR-14 (`20261117120000`, corregida en `20261118120000`) — la devolución llevada al siguiente
+ * recibo, contra la BD real.
  *
- *  - La cuarta salida: una LÍNEA en el siguiente recibo en borrador de la familia (el del primer mes
- *    posterior), por total + gastos, familiar y manual, con su origen. El original se queda
- *    `devuelto` con su salida. Atómico, en `resolver_devolucion`.
- *  - Sin borrador posterior, no se ofrece (P0001 `sin_recibo_siguiente`), sin tocar nada.
+ *  - La cuarta salida: una LÍNEA en el recibo de la familia del MES SIGUIENTE al del devuelto, sin
+ *    saltos, por total + gastos, familiar y manual, con su origen. El original se queda `devuelto`
+ *    con su salida. Atómico, en `resolver_devolucion`.
+ *  - Sin recibo ese mes, se crea en borrador con la línea, con el método del mes (la excepción o el
+ *    de la ficha), y el motor lo conserva aunque la familia ya no tenga niños activos.
+ *  - Con el recibo del mes siguiente ya validado (P0001 `recibo_siguiente_cerrado`), o sin recibo y
+ *    con el mes cerrado (`mes_siguiente_cerrado`), se rechaza sin tocar nada.
  *  - La línea no se edita ni se crea por otro camino, tampoco con service_role.
  *  - Borrar la línea (a mano, o borrando su recibo) deja la devolución SIN RESOLVER, y se puede
  *    resolver otra vez. Con el recibo de destino validado, la línea ya no se quita.
@@ -38,7 +42,11 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
   let centro: { id: string }
   let otroCentro: { id: string }
   let familia: string
-  let familiaSinBorrador: string
+  let familiaSinRecibo: string
+  let familiaValidado: string
+  let familiaMesCerrado: string
+  let familiaDiciembre: string
+  let creadoJulio: string
   let directora: TestUser
   let directoraOtro: TestUser
   let tutora: TestUser
@@ -89,7 +97,8 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
     gastos: number,
     over: Partial<Recibo> = {}
   ): Promise<string> {
-    const envio = `${ANIO}-${String(mes).padStart(2, '0')}-05`
+    const anio = over.anio ?? ANIO
+    const envio = `${anio}-${String(mes).padStart(2, '0')}-05`
     const id = await recibo(familiaId, {
       mes,
       estado: 'enviado_banco',
@@ -101,7 +110,7 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
       .from('recibos')
       .update({
         estado: 'devuelto',
-        fecha_devolucion: `${ANIO}-${String(mes).padStart(2, '0')}-20`,
+        fecha_devolucion: `${anio}-${String(mes).padStart(2, '0')}-20`,
         devolucion_gastos_centimos: gastos,
       })
       .eq('id', id)
@@ -129,7 +138,7 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
     const { data } = await serviceClient
       .from('recibos')
       .select(
-        'estado, total_centimos, devolucion_salida, devolucion_gastos_centimos, fecha_devolucion'
+        'familia_id, anio, mes, metodo, nino_id, es_esporadico, devuelto_de_recibo_id, estado, total_centimos, devolucion_salida, devolucion_gastos_centimos, fecha_devolucion'
       )
       .eq('id', id)
       .single()
@@ -155,7 +164,10 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
     centro = await createTestCentro('Centro Devolucion Siguiente PR14')
     otroCentro = await createTestCentro('Otro Centro Devolucion PR14')
     familia = (await createTestNino(centro.id, 'Nino Devolucion Siguiente PR14')).familia_id
-    familiaSinBorrador = (await createTestNino(centro.id, 'Nino Sin Borrador PR14')).familia_id
+    familiaSinRecibo = (await createTestNino(centro.id, 'Nino Sin Recibo PR14')).familia_id
+    familiaValidado = (await createTestNino(centro.id, 'Nino Recibo Validado PR14')).familia_id
+    familiaMesCerrado = (await createTestNino(centro.id, 'Nino Mes Cerrado PR14')).familia_id
+    familiaDiciembre = (await createTestNino(centro.id, 'Nino Diciembre PR14')).familia_id
 
     directora = await createTestUser({ nombre: 'Directora Devolucion PR14' })
     await asignarRol(directora.id, centro.id, 'directora')
@@ -174,6 +186,8 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
 
   afterAll(async () => {
     for (const c of [centro, otroCentro]) {
+      await serviceClient.from('cierre_mensual').delete().eq('centro_id', c.id)
+      await serviceClient.from('metodo_pago_familia').delete().eq('centro_id', c.id)
       // Primero las líneas (la del arrastre apunta al recibo de origen), después los recibos.
       await serviceClient.from('lineas_recibo').delete().eq('centro_id', c.id)
       await serviceClient.from('recibos').delete().eq('centro_id', c.id)
@@ -182,14 +196,120 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
     for (const u of [directora, directoraOtro, tutora]) await deleteTestUser(u.id)
   }, 120_000)
 
-  it('sin un borrador de un mes posterior, esta salida no se ofrece y no se toca nada', async () => {
-    const sinBorrador = await devuelto(familiaSinBorrador, 6, 0)
-    // Un borrador del mismo mes no cuenta: tiene que ser posterior.
-    await borrador(familiaSinBorrador, 5)
-    const r = await resolver(cDirectora, sinBorrador, 'siguiente_recibo')
+  async function regulares(familiaId: string, anio: number, mes: number) {
+    const { data } = await serviceClient
+      .from('recibos')
+      .select('id')
+      .eq('familia_id', familiaId)
+      .eq('anio', anio)
+      .eq('mes', mes)
+      .eq('es_esporadico', false)
+      .is('devuelto_de_recibo_id', null)
+      .is('deleted_at', null)
+    return data ?? []
+  }
+
+  it('sin recibo el mes siguiente, se crea con la línea y el método de la ficha; no salta a uno posterior', async () => {
+    // 100 € devueltos con 15 € de gastos. La familia no tiene recibo de julio, pero sí un borrador
+    // de agosto: con el salto, iría a agosto.
+    await serviceClient
+      .from('familias')
+      .update({ metodo_pago: 'transferencia' })
+      .eq('id', familiaSinRecibo)
+    const sinRecibo = await devuelto(familiaSinRecibo, 6, 1500)
+    const agostoSinRecibo = await borrador(familiaSinRecibo, 8)
+    expect(await regulares(familiaSinRecibo, ANIO, 7)).toHaveLength(0)
+
+    const { data, error } = await resolver(cDirectora, sinRecibo, 'siguiente_recibo')
+    expect(error).toBeNull()
+    expect(data).not.toBe(agostoSinRecibo)
+    creadoJulio = data as string
+    expect(await estado(creadoJulio)).toMatchObject({
+      familia_id: familiaSinRecibo,
+      anio: ANIO,
+      mes: 7,
+      metodo: 'transferencia',
+      nino_id: null,
+      es_esporadico: false,
+      devuelto_de_recibo_id: null,
+      estado: 'borrador',
+      total_centimos: 11500,
+    })
+    const deJulio = await lineas(creadoJulio)
+    expect(deJulio).toHaveLength(1)
+    expect(deJulio[0]).toMatchObject({
+      descripcion: 'Recibo devuelto de junio de 2026 (con los gastos de la devolución)',
+      importe_centimos: 11500,
+      origen: 'manual',
+      arrastre_de_recibo_id: sinRecibo,
+    })
+    expect(await estado(sinRecibo)).toMatchObject({ devolucion_salida: 'siguiente_recibo' })
+    // Agosto, intacto.
+    expect(await lineas(agostoSinRecibo)).toHaveLength(1)
+    expect(await estado(agostoSinRecibo)).toMatchObject({ total_centimos: 50000 })
+  })
+
+  it('con el recibo del mes siguiente ya validado, se rechaza: ni un segundo recibo ni salto', async () => {
+    const original2 = await devuelto(familiaValidado, 6, 0)
+    await recibo(familiaValidado, { mes: 7, estado: 'pendiente_procesar', total_centimos: 50000 })
+    const agostoValidado = await borrador(familiaValidado, 8)
+    const r = await resolver(cDirectora, original2, 'siguiente_recibo')
     expect(r.error?.code).toBe('P0001')
-    expect(r.error?.hint).toBe('sin_recibo_siguiente')
-    expect(await estado(sinBorrador)).toMatchObject({ estado: 'devuelto', devolucion_salida: null })
+    expect(r.error?.hint).toBe('recibo_siguiente_cerrado')
+    expect(await estado(original2)).toMatchObject({ estado: 'devuelto', devolucion_salida: null })
+    expect(await regulares(familiaValidado, ANIO, 7)).toHaveLength(1)
+    expect(await lineas(agostoValidado)).toHaveLength(1)
+  })
+
+  it('sin recibo y con el mes siguiente cerrado, se rechaza; abierto, se crea', async () => {
+    const deAgosto = await devuelto(familiaMesCerrado, 8, 0)
+    const { error: errCierre } = await serviceClient
+      .from('cierre_mensual')
+      .insert({ centro_id: centro.id, anio: ANIO, mes: 9, cerrado_por: directora.id })
+    expect(errCierre).toBeNull()
+    const r = await resolver(cDirectora, deAgosto, 'siguiente_recibo')
+    expect(r.error?.code).toBe('P0001')
+    expect(r.error?.hint).toBe('mes_siguiente_cerrado')
+    expect(await estado(deAgosto)).toMatchObject({ devolucion_salida: null })
+    expect(await regulares(familiaMesCerrado, ANIO, 9)).toHaveLength(0)
+
+    // Control: lo que la para es el cierre. Sin él, se crea el recibo de septiembre.
+    await serviceClient.from('cierre_mensual').delete().eq('centro_id', centro.id).eq('mes', 9)
+    const otra = await resolver(cDirectora, deAgosto, 'siguiente_recibo')
+    expect(otra.error).toBeNull()
+    expect(await estado(otra.data as string)).toMatchObject({ anio: ANIO, mes: 9 })
+  })
+
+  it('diciembre pasa a enero del año siguiente, con la excepción de método de ese mes', async () => {
+    const { error: errExcepcion } = await serviceClient.from('metodo_pago_familia').insert({
+      centro_id: centro.id,
+      familia_id: familiaDiciembre,
+      anio: 2026,
+      mes: 1,
+      metodo: 'efectivo',
+    })
+    expect(errExcepcion).toBeNull()
+    // La ficha, con otro método (por defecto ya es `efectivo`).
+    await serviceClient.from('familias').update({ metodo_pago: 'sepa' }).eq('id', familiaDiciembre)
+    // Premisa: la ficha dice otro método, así que lo que se lee es la excepción.
+    const { data: ficha } = await serviceClient
+      .from('familias')
+      .select('metodo_pago')
+      .eq('id', familiaDiciembre)
+      .single()
+    expect(ficha?.metodo_pago).not.toBe('efectivo')
+    const deDiciembre = await devuelto(familiaDiciembre, 12, 0, { anio: 2025 })
+    const { data, error } = await resolver(cDirectora, deDiciembre, 'siguiente_recibo')
+    expect(error).toBeNull()
+    expect(await estado(data as string)).toMatchObject({
+      anio: 2026,
+      mes: 1,
+      metodo: 'efectivo',
+      total_centimos: 10000,
+    })
+    expect((await lineas(data as string))[0]?.descripcion).toBe(
+      'Recibo devuelto de diciembre de 2025'
+    )
   })
 
   it('fuera: el tutor y la Dirección de otro centro no la resuelven', async () => {
@@ -378,5 +498,22 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
       descripcion: 'Recibo devuelto de julio de 2026 (con los gastos de la devolución)',
     })
     expect(await estado(agosto)).toMatchObject({ total_centimos: 50000 + totalJulio + 200 })
+  })
+
+  it('el motor conserva el recibo creado aunque la familia ya no tenga niños activos', async () => {
+    // Premisa: la familia no tiene matrículas (sus niños no son activos para el motor).
+    const { data: matriculas } = await serviceClient
+      .from('matriculas')
+      .select('id, nino:ninos!inner(familia_id)')
+      .eq('nino.familia_id', familiaSinRecibo)
+    expect(matriculas).toHaveLength(0)
+    const { error } = await cDirectora.rpc('generar_recibos_mes', {
+      p_centro_id: centro.id,
+      p_anio: ANIO,
+      p_mes: 7,
+    })
+    expect(error).toBeNull()
+    expect(await estado(creadoJulio)).toMatchObject({ estado: 'borrador', total_centimos: 11500 })
+    expect(await lineas(creadoJulio)).toHaveLength(1)
   })
 })

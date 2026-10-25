@@ -1988,7 +1988,8 @@
       "sin_mandato_devolucion": "La familia no tiene mandato SEPA activo: no se puede volver a pasar por el banco.",
       "resolver_failed": "No se pudo resolver la devolución.",
       "devolucion_por_resolver": "Un recibo devuelto se cobra desde «Resolver devolución».",
-      "sin_recibo_siguiente": "La familia no tiene un recibo en borrador de un mes posterior: no se puede llevar al siguiente recibo."
+      "recibo_siguiente_cerrado": "El recibo del mes siguiente de la familia ya está validado: no se puede llevar ahí. Elige otra salida o devuelve ese recibo a borrador.",
+      "mes_siguiente_cerrado": "El mes siguiente ya está cerrado y la familia no tiene recibo en él: no se puede llevar al siguiente recibo."
     },
     "transferencias_beca": {
       "title": "Transferencias de beca comedor",
@@ -2064,7 +2065,9 @@
       "guardar": "Resolver",
       "cancelar": "Cancelar",
       "siguiente_ayuda": "Se añade una línea de {importe} al recibo de {mes} de la familia, que está en borrador. Si se quita esa línea, la devolución vuelve a quedar sin resolver.",
-      "sin_recibo_siguiente": "Para llevarla al siguiente recibo, la familia necesita un recibo en borrador de un mes posterior."
+      "siguiente_ayuda_crear": "La familia no tiene recibo de {mes}: se crea, en borrador, con una línea de {importe}. Si se quita esa línea, la devolución vuelve a quedar sin resolver.",
+      "recibo_siguiente_cerrado": "El recibo de {mes} de la familia ya está validado: no se puede llevar ahí. Elige otra salida o, si aún estás a tiempo, devuelve ese recibo a borrador.",
+      "mes_siguiente_cerrado": "El mes de {mes} ya está cerrado y la familia no tiene recibo en él: no se puede llevar al siguiente recibo. Elige otra salida."
     },
     "arrastrada_a": "Llevada al recibo de {mes} · {importe}"
   },

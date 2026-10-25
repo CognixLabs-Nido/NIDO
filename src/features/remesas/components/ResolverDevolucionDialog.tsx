@@ -35,7 +35,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { formatEuros } from '@/shared/lib/format-money'
 
 import { resolverDevolucion } from '../actions/resolver-devolucion'
-import { etiquetaMes, type MesRecibo } from '../lib/gestion-cobros'
+import { arrastreOfrecido, etiquetaMes, type DestinoArrastre } from '../lib/gestion-cobros'
 import {
   SALIDAS_DEVOLUCION,
   resolverDevolucionSchema,
@@ -55,10 +55,10 @@ interface Props {
   /** ¿Puede volver al banco? Solo con mandato SEPA activo. */
   permiteSepa: boolean
   /**
-   * PR-14: el recibo al que se arrastraría (el borrador de la familia del primer mes posterior);
-   * null si no tiene ninguno, y entonces esa salida no se ofrece.
+   * PR-14: adónde iría llevada al siguiente recibo (el mes siguiente). Si ese recibo ya está
+   * validado, o el mes cerrado sin recibo, la salida no se ofrece y se dice por qué.
    */
-  arrastre: MesRecibo | null
+  arrastre: DestinoArrastre | null
   /** Hoy en Madrid (YYYY-MM-DD): la fecha por defecto y el máximo. */
   hoy: string
   trigger: ReactElement
@@ -67,8 +67,9 @@ interface Props {
 /**
  * «Resolver devolución» (PR-2): UNA sola salida, por el recibo más los gastos. Volver a pasarlo por
  * el banco crea un re-giro que entra en la siguiente remesa del mes; efectivo o transferencia lo
- * dejan cobrado, con su fecha y una nota opcional; arrastrarlo (PR-14) añade una línea al siguiente
- * recibo en borrador de la familia. Una segunda salida la rechaza la BD.
+ * dejan cobrado, con su fecha y una nota opcional; llevarlo al siguiente recibo (PR-14) añade una
+ * línea al recibo del mes siguiente de la familia, que se crea si no lo tiene. Una segunda salida la
+ * rechaza la BD.
  */
 export function ResolverDevolucionDialog({
   reciboId,
@@ -121,8 +122,25 @@ export function ResolverDevolucionDialog({
     })
   }
 
+  // Qué pasa al llevarla al siguiente recibo, o por qué no se puede: una frase por caso.
+  function textoArrastre(d: DestinoArrastre): string {
+    const valores = { importe: aCobrar, mes: etiquetaMes(d.mes, locale) }
+    switch (d.tipo) {
+      case 'anadir':
+        return t('resolver_dialog.siguiente_ayuda', valores)
+      case 'crear':
+        return t('resolver_dialog.siguiente_ayuda_crear', valores)
+      case 'recibo_cerrado':
+        return t('resolver_dialog.recibo_siguiente_cerrado', valores)
+      case 'mes_cerrado':
+        return t('resolver_dialog.mes_siguiente_cerrado', valores)
+    }
+  }
+
   const salidaItems = SALIDAS_DEVOLUCION.filter(
-    (s) => (s !== 'banco' || permiteSepa) && (s !== 'siguiente_recibo' || arrastre !== null)
+    (s) =>
+      (s !== 'banco' || permiteSepa) &&
+      (s !== 'siguiente_recibo' || (arrastre !== null && arrastreOfrecido(arrastre)))
   ).map((value) => ({ value, label: t(`resolver_dialog.salidas.${value}`) }))
 
   return (
@@ -168,18 +186,13 @@ export function ResolverDevolucionDialog({
                     {salida === 'banco'
                       ? t('resolver_dialog.banco_ayuda', { importe: aCobrar })
                       : salida === 'siguiente_recibo' && arrastre
-                        ? t('resolver_dialog.siguiente_ayuda', {
-                            importe: aCobrar,
-                            mes: etiquetaMes(arrastre, locale),
-                          })
+                        ? textoArrastre(arrastre)
                         : !permiteSepa
                           ? t('resolver_dialog.sin_mandato')
                           : null}
                   </p>
-                  {arrastre === null && (
-                    <p className="text-muted-foreground text-xs">
-                      {t('resolver_dialog.sin_recibo_siguiente')}
-                    </p>
+                  {arrastre && !arrastreOfrecido(arrastre) && (
+                    <p className="text-muted-foreground text-xs">{textoArrastre(arrastre)}</p>
                   )}
                   <FormMessage />
                 </FormItem>

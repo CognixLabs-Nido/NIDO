@@ -159,7 +159,8 @@ describe('resolverDevolucion', () => {
     ['sin_mandato', 'remesas.errors.sin_mandato_devolucion'],
     ['salida_invalida', 'remesas.errors.invalid'],
     ['fecha_cobro_invalida', 'remesas.validation.fecha_cobro_devolucion'],
-    ['sin_recibo_siguiente', 'remesas.errors.sin_recibo_siguiente'],
+    ['recibo_siguiente_cerrado', 'remesas.errors.recibo_siguiente_cerrado'],
+    ['mes_siguiente_cerrado', 'remesas.errors.mes_siguiente_cerrado'],
   ]
 
   it.each(HINTS)('HINT %s → %s, que existe en es, en y va', async (hint, clave) => {

@@ -1210,11 +1210,22 @@ Migración `20261117120000_feat_devolucion_al_siguiente_recibo`. La cuarta salid
 después de banco, efectivo y transferencia (PR-2). Decisión del responsable.
 
 - **`resolver_devolucion(recibo, 'siguiente_recibo', …)`** (de invocador, como en el PR-2): una línea
-  en el recibo regular de la familia en **borrador** del primer mes posterior al del devuelto, por
+  en el recibo regular de la familia del **mes siguiente** al del devuelto (diciembre → enero), por
   total + gastos, familiar (`nino_id` NULL) y manual (el motor la respeta al regenerar), con su origen
   en `lineas_recibo.arrastre_de_recibo_id`. Recalcula el total de ese recibo, y el original se queda
-  `devuelto` con su salida. Todo en la misma transacción. Sin ese borrador: P0001
-  `sin_recibo_siguiente`, y la app no ofrece la salida.
+  `devuelto` con su salida. Todo en la misma transacción.
+- **Al mes siguiente, sin saltos** (`20261118120000`, corrige la de `20261117120000`, que saltaba al
+  primer borrador posterior). Si la familia se da de baja, la deuda sigue y necesita un recibo:
+  - con el recibo de ese mes en borrador, la línea entra en él;
+  - sin recibo ese mes, se crea en borrador con la línea, con el método como lo congela el motor (la
+    excepción del mes o el de la ficha; con el mandato revocado, igual). El motor lo reutiliza al
+    generar el mes y, sin niños activos, el barrido final lo conserva por su línea manual;
+  - con el recibo de ese mes ya validado o en remesa: P0001 `recibo_siguiente_cerrado`, sin crear un
+    segundo recibo del mismo mes;
+  - sin recibo y con el mes cerrado (`mes_cerrado`): P0001 `mes_siguiente_cerrado`.
+
+  En los dos últimos casos la app no ofrece la salida y dice por qué.
+
 - **La línea solo la crea la función:** trigger `lineas_recibo_validar_arrastre` (BEFORE INSERT OR
   UPDATE, también para service_role, con el marcador local `app.resolver_devolucion` del PR-2). No se
   edita ni se mueve (`linea_arrastre`): su importe es la deuda. Una línea por devolución (índice
@@ -1227,8 +1238,9 @@ después de banco, efectivo y transferencia (PR-2). Decisión del responsable.
   recibo de destino validado, el congelado por estado no deja quitar la línea.
 - **El recibo de destino que también se devuelve** se trata igual, con las cuatro salidas: su total ya
   incluye la línea.
-- **En la app:** «Al siguiente recibo» en «Resolver devolución», con el mes de destino; en el panel
-  del mes, la línea sale marcada «devolución», sin «Editar», y quitarla pide confirmación.
+- **En la app:** «Al siguiente recibo» en «Resolver devolución», con el mes de destino y si el recibo
+  se crea; en el panel del mes, la línea sale marcada «devolución», sin «Editar», y quitarla pide
+  confirmación.
 - Test: `devolucion-siguiente-recibo.rls.test.ts`.
 
 ### Signup público cerrado (D5)

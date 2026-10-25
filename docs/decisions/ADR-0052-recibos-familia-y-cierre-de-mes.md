@@ -254,9 +254,11 @@ Restricciones:
   `resolver_devolucion` y un trigger rechaza la segunda. Los gastos de devolución van en la propia
   devolución y la salida cobra total + gastos; sustituyen al recibo esporádico de gastos. La cuarta
   salida, llevar la devolución al siguiente recibo, es el PR-14 (`20261117120000`, nota del
-  2026-10-24): una línea manual por total + gastos en el borrador de la familia del primer mes
-  posterior, con referencia a su recibo de origen; si se borra la línea, la devolución vuelve a
-  quedar sin resolver. Y otra del 2026-10-23: el PR-3, `20261108120000`,
+  2026-10-24): una línea manual por total + gastos, con referencia a su recibo de origen; si se borra
+  la línea, la devolución vuelve a quedar sin resolver. Corregido el 2026-10-25 (`20261118120000`): va
+  al recibo del mes siguiente, sin saltar a uno posterior, y si la familia no lo tiene se crea, porque
+  la deuda de una familia que se da de baja tiene que tener recibo; con ese recibo ya validado, o el
+  mes cerrado sin recibo, la salida no se ofrece. Y otra del 2026-10-23: el PR-3, `20261108120000`,
   no deja validar un recibo con el desborde de beca pendiente (trigger `recibos_validar_sin_desborde`):
   la directora lo resuelve antes, difiriéndolo o por transferencia, y la validación en lote lo salta.)_
 - Un cargo diario de ámbito familia no se factura: no hay contador de días bien definido para varios

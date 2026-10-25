@@ -1988,7 +1988,8 @@
       "sin_mandato_devolucion": "La família no té mandat SEPA actiu: no es pot tornar a passar pel banc.",
       "resolver_failed": "No s'ha pogut resoldre la devolució.",
       "devolucion_por_resolver": "Un rebut retornat es cobra des de «Resoldre devolució».",
-      "sin_recibo_siguiente": "La família no té un rebut en esborrany d’un mes posterior: no es pot portar al rebut següent."
+      "recibo_siguiente_cerrado": "El rebut del mes següent de la família ja està validat: no es pot portar allí. Tria una altra eixida o torna eixe rebut a esborrany.",
+      "mes_siguiente_cerrado": "El mes següent ja està tancat i la família no hi té rebut: no es pot portar al rebut següent."
     },
     "transferencias_beca": {
       "title": "Transferències de beca menjador",
@@ -2064,7 +2065,9 @@
       "guardar": "Resoldre",
       "cancelar": "Cancel·lar",
       "siguiente_ayuda": "S’afig una línia de {importe} al rebut de {mes} de la família, que està en esborrany. Si es lleva eixa línia, la devolució torna a quedar sense resoldre.",
-      "sin_recibo_siguiente": "Per a portar-la al rebut següent, la família necessita un rebut en esborrany d’un mes posterior."
+      "siguiente_ayuda_crear": "La família no té rebut de {mes}: es crea, en esborrany, amb una línia de {importe}. Si es lleva eixa línia, la devolució torna a quedar sense resoldre.",
+      "recibo_siguiente_cerrado": "El rebut de {mes} de la família ja està validat: no es pot portar allí. Tria una altra eixida o, si encara estàs a temps, torna eixe rebut a esborrany.",
+      "mes_siguiente_cerrado": "El mes de {mes} ja està tancat i la família no hi té rebut: no es pot portar al rebut següent. Tria una altra eixida."
     },
     "arrastrada_a": "Portada al rebut de {mes} · {importe}"
   },
