@@ -1257,6 +1257,54 @@
         },
         "mandato_pregunta": "Té un mandat SEPA actiu, però paga amb: {metodo}. Cobrar els seus rebuts pel banc?",
         "pasar_a_sepa": "Passar a rebut pel banc"
+      },
+      "recibos": {
+        "titulo": "Rebuts",
+        "vacio": "Esta família encara no té rebuts.",
+        "error": "No hem pogut carregar els rebuts d'esta família. Torna-ho a provar.",
+        "ver_en_cuotas": "Veure en Quotes",
+        "volver": "Tornar a la família",
+        "desglose": "Desglossament",
+        "sin_lineas": "Este rebut no té línies.",
+        "error_detalle": "No hem pogut carregar este rebut. Torna-ho a provar.",
+        "tipo": {
+          "mensual": "Mensual",
+          "esporadico": "Esporàdic",
+          "regiro": "Regir",
+          "diferencia_cheque": "Diferència de xec"
+        },
+        "estado": {
+          "borrador": "Esborrany",
+          "validado": "Validat",
+          "en_remesa": "En remesa",
+          "enviado_banco": "Enviat al banc",
+          "devuelto": "Retornat",
+          "cobrado": "Cobrat"
+        },
+        "forma": "Forma de pagament: {forma}",
+        "origen_regiro": "Torna a passar la devolució del rebut de {mes}",
+        "origen_diferencia": "Diferència del xec del rebut de {mes}",
+        "en_remesa": "En la remesa de {mes}, sense enviar",
+        "en_remesa_enviada": "En la remesa de {mes}",
+        "enviado_el": "Enviat al banc el {fecha}",
+        "devuelto_el": "Retornat el {fecha}",
+        "devuelto": "Retornat",
+        "gastos": "despeses del banc {importe}",
+        "devolucion_pendiente": "Pendent de resoldre: {importe}",
+        "devolucion_banco": "Tornat a passar al banc en un altre rebut: {importe}",
+        "devolucion_siguiente": "Portat al rebut de {mes}: {importe}",
+        "devolucion_siguiente_sin_recibo": "Portat al rebut següent: {importe}",
+        "cobrado_el": "Cobrat el {fecha}",
+        "cobrado": "Cobrat",
+        "cheque_de": "xec de {importe}",
+        "nota": "Nota: {nota}",
+        "diferencia": "La diferència, {importe}, va en un altre rebut",
+        "sobrante_pendiente": "Sobrant del xec, {importe}, pendent de resoldre",
+        "sobrante_transferencia": "Sobrant del xec, {importe}, retornat per transferència",
+        "sobrante_diferido": "Sobrant del xec, {importe}, descomptat en el rebut de {mes}",
+        "sobrante_diferido_sin_recibo": "Sobrant del xec, {importe}, diferit al mes següent",
+        "incluye_devolucion": "Inclou la devolució del rebut de {mes}: {importe}",
+        "incluye_sobrante": "Descompta el sobrant del xec del rebut de {mes}: {importe}"
       }
     },
     "fotosRevocadas": {
@@ -1812,7 +1860,11 @@
     "arrastre_quitado": "Línia llevada. La devolució torna a quedar sense resoldre.",
     "linea_sobrante": "saldo a favor",
     "quitar_sobrante_confirm": "Aquesta línia és el sobrant d’un xec, tornat a la família com a saldo a favor. Si la lleves, el sobrant torna a quedar pendent. La lleves?",
-    "sobrante_quitado": "Línia llevada. El sobrant del xec torna a estar pendent."
+    "sobrante_quitado": "Línia llevada. El sobrant del xec torna a estar pendent.",
+    "filtro_familia": "Família",
+    "filtro_todas": "Totes les famílies",
+    "filtro_sin_resultados": "Esta família no ix en el panell d'este mes.",
+    "quitar_filtro": "Veure-les totes"
   },
   "cargo_puntual": {
     "abrir": "Càrrec a diversos xiquets",

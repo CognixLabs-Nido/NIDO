@@ -2,6 +2,7 @@
 
 import { Fragment, useState, useTransition } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
@@ -37,6 +38,12 @@ import { generarRecibosMes } from '../actions/generar-recibos-mes'
 import { recalcularMes } from '../actions/recalcular-mes'
 import { setMetodoPagoFamilia } from '../actions/set-metodo-pago-familia'
 import { accesoModificar } from '../lib/acceso-modificar'
+import {
+  borradoresVisibles,
+  filtrarPanel,
+  opcionesFamilia,
+  seleccionVisible,
+} from '../lib/filtro-familia'
 import { limpiarNombreEmbebido } from '../lib/limpiar-nombre-embebido'
 import { agruparLineasPanel, esConfirmado, type FilaFamiliaPanel } from '../lib/panel-familia'
 import { componerResumenRecalculo } from '../lib/resumen-recalculo'
@@ -53,6 +60,8 @@ export interface CentroLogoProp {
 
 type MetodoPago = Database['public']['Enums']['metodo_pago']
 const METODOS: MetodoPago[] = ['sepa', 'efectivo', 'cheque_guarderia', 'transferencia']
+/** Valor del selector de familia para «todas» (un uuid nunca se llama así). */
+const TODAS = 'todas'
 
 interface Props {
   centroId: string
@@ -86,6 +95,24 @@ export function PanelMesRecibos({
   // PR-3: recibos que el último lote se saltó por su desborde de beca pendiente.
   const [saltados, setSaltados] = useState<string[]>([])
   const [pending, startTransition] = useTransition()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // F-6: filtro por familia (?familia=, que enlaza la ficha de la familia). Solo cambia lo que se
+  // ve: generar y recalcular siguen contando el mes entero, y en lote solo se confirma lo marcado
+  // que se ve (filtro-familia).
+  const familiaFiltro = searchParams.get('familia')
+  const opciones = opcionesFamilia(data.filas, data.esporadicos)
+  const filtroConocido =
+    familiaFiltro != null && opciones.some((o) => o.familiaId === familiaFiltro)
+  const visible = filtrarPanel(data.filas, data.esporadicos, familiaFiltro)
+  const idsVisibles = borradoresVisibles(visible.filas)
+  const marcados = seleccionVisible(selected, idsVisibles)
+  const opcionItems = [
+    { value: TODAS, label: t('filtro_todas') },
+    ...opciones.map((o) => ({ value: o.familiaId, label: o.etiqueta })),
+  ]
 
   const borradores = data.filas.filter((f) => f.recibo && f.recibo.estado === 'borrador')
   const numBorradores = borradores.length
@@ -156,7 +183,7 @@ export function PanelMesRecibos({
   }
 
   function confirmarSeleccionados() {
-    const ids = [...selected]
+    const ids = marcados
     startTransition(async () => {
       const r = await confirmarRecibos(ids)
       if (r.success) {
@@ -189,7 +216,14 @@ export function PanelMesRecibos({
     })
   }
   function seleccionarTodos(on: boolean) {
-    setSelected(on ? new Set(borradores.map((f) => f.recibo!.id)) : new Set())
+    setSelected(on ? new Set(idsVisibles) : new Set())
+  }
+  function cambiarFiltro(valor: string) {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', 'mes')
+    if (valor === TODAS) params.delete('familia')
+    else params.set('familia', valor)
+    startTransition(() => router.replace(`${pathname}?${params.toString()}`))
   }
   function cambiarMetodo(familiaId: string, metodo: MetodoPago) {
     startTransition(async () => {
@@ -202,7 +236,25 @@ export function PanelMesRecibos({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <MesSelector anio={anio} mes={mes} tab="mes" />
+        <div className="flex flex-wrap items-center gap-3">
+          <MesSelector anio={anio} mes={mes} tab="mes" />
+          <Select
+            items={opcionItems}
+            value={filtroConocido ? familiaFiltro : TODAS}
+            onValueChange={(v) => cambiarFiltro(v as string)}
+          >
+            <SelectTrigger size="sm" className="w-56" aria-label={t('filtro_familia')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {opcionItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex items-center gap-2">
           <CargoPuntualDialog
             centroId={centroId}
@@ -286,9 +338,9 @@ export function PanelMesRecibos({
       )}
 
       {/* Barra de confirmación en lote */}
-      {selected.size > 0 && (
+      {marcados.length > 0 && (
         <Card className="flex items-center justify-between gap-3 p-3">
-          <span className="text-sm">{t('seleccionados', { n: selected.size })}</span>
+          <span className="text-sm">{t('seleccionados', { n: marcados.length })}</span>
           <Button size="sm" disabled={pending} onClick={confirmarSeleccionados}>
             {t('confirmar_seleccionados')}
           </Button>
@@ -297,17 +349,24 @@ export function PanelMesRecibos({
 
       {data.filas.length === 0 ? (
         <Card className="text-muted-foreground p-8 text-center text-sm">{t('sin_familias')}</Card>
-      ) : (
+      ) : visible.filas.length === 0 && visible.esporadicos.length === 0 ? (
+        <Card className="text-muted-foreground flex flex-wrap items-center justify-center gap-3 p-8 text-sm">
+          <span>{t('filtro_sin_resultados')}</span>
+          <Button size="sm" variant="outline" onClick={() => cambiarFiltro(TODAS)}>
+            {t('quitar_filtro')}
+          </Button>
+        </Card>
+      ) : visible.filas.length === 0 ? null : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-8">
-                    {numBorradores > 0 && !bloqueado && (
+                    {idsVisibles.length > 0 && !bloqueado && (
                       <Checkbox
                         aria-label={t('sel_todos')}
-                        checked={selected.size === numBorradores && numBorradores > 0}
+                        checked={marcados.length === idsVisibles.length}
                         onCheckedChange={(c) => seleccionarTodos(c === true)}
                       />
                     )}
@@ -323,7 +382,7 @@ export function PanelMesRecibos({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.filas.map((fila) => (
+                {visible.filas.map((fila) => (
                   <FilaFamilia
                     key={fila.familiaId}
                     fila={fila}
@@ -351,7 +410,7 @@ export function PanelMesRecibos({
       )}
 
       {/* Esporádicos del mes (read-only) */}
-      {data.esporadicos.length > 0 && (
+      {visible.esporadicos.length > 0 && (
         <Card className="space-y-2 p-4">
           <h3 className="text-sm font-semibold">{t('esporadicos_titulo')}</h3>
           <div className="overflow-x-auto">
@@ -366,7 +425,7 @@ export function PanelMesRecibos({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.esporadicos.map((e) => (
+                {visible.esporadicos.map((e) => (
                   <TableRow key={e.id}>
                     <TableCell>{e.familiaEtiqueta}</TableCell>
                     <TableCell>
