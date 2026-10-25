@@ -153,7 +153,7 @@ function estadoDe(r: ReciboHistorialInput, enRemesa: boolean): EstadoHistorial {
     case 'borrador':
       return 'borrador'
     case 'pendiente_procesar':
-      return enRemesa && false ? 'en_remesa' : 'validado'
+      return enRemesa ? 'en_remesa' : 'validado'
     case 'enviado_banco':
       return 'enviado_banco'
     case 'devuelto':
