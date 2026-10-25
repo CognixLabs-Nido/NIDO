@@ -11,6 +11,13 @@ export const crearRemesaSchema = z.object({
 })
 export type CrearRemesaInput = z.infer<typeof crearRemesaSchema>
 
+/** Añadir recibos a una remesa en borrador, mientras su fichero no se haya generado. */
+export const anadirARemesaSchema = z.object({
+  remesaId: z.string().uuid(),
+  reciboIds: z.array(z.string().uuid()).min(1, 'remesas.validation.sin_recibos'),
+})
+export type AnadirARemesaInput = z.infer<typeof anadirARemesaSchema>
+
 export const marcarRemesaEnviadaSchema = z.object({
   remesaId: z.string().uuid(),
 })

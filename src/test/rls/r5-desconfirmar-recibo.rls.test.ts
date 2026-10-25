@@ -172,17 +172,15 @@ describe('R-5 — desconfirmar un recibo', () => {
     return data!.estado
   }
 
-  /** Mete el recibo en una remesa, como hace `crearRemesa` (remesa + enlace a la vez). */
+  /**
+   * Mete el recibo en una remesa, como hace `crearRemesa` (remesa + enlace a la vez). La remesa
+   * borrada se borra DESPUÉS de enlazar, como en la app: a una remesa ya borrada no entra ningún
+   * recibo (`recibos_remesa_validar`, `20261120120000`).
+   */
   async function meterEnRemesa(reciboId: string, mes: number, opts: { borrada?: boolean } = {}) {
     const { data: remesa, error } = await serviceClient
       .from('remesas')
-      .insert({
-        centro_id: centro.id,
-        anio: ANIO,
-        mes,
-        estado: 'borrador',
-        deleted_at: opts.borrada ? new Date().toISOString() : null,
-      })
+      .insert({ centro_id: centro.id, anio: ANIO, mes, estado: 'borrador' })
       .select('id')
       .single()
     if (error || !remesa) throw new Error(`remesa: ${error?.message}`)
@@ -190,6 +188,13 @@ describe('R-5 — desconfirmar un recibo', () => {
       .from('recibos_remesa')
       .insert({ centro_id: centro.id, remesa_id: remesa.id, recibo_id: reciboId })
     if (errEnlace) throw new Error(`enlace: ${errEnlace.message}`)
+    if (opts.borrada) {
+      const { error: errBaja } = await serviceClient
+        .from('remesas')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', remesa.id)
+      if (errBaja) throw new Error(`baja: ${errBaja.message}`)
+    }
   }
 
   it('el ciclo completo: congelado → Modificar → editable → reconfirmar → congelado', async () => {
