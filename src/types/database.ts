@@ -4032,6 +4032,7 @@ export type Database = {
           deleted_at: string | null
           estado: Database["public"]["Enums"]["estado_remesa"]
           fecha_envio_banco: string | null
+          fichero_generado_at: string | null
           id: string
           mes: number
           updated_at: string
@@ -4043,6 +4044,7 @@ export type Database = {
           deleted_at?: string | null
           estado?: Database["public"]["Enums"]["estado_remesa"]
           fecha_envio_banco?: string | null
+          fichero_generado_at?: string | null
           id?: string
           mes: number
           updated_at?: string
@@ -4054,6 +4056,7 @@ export type Database = {
           deleted_at?: string | null
           estado?: Database["public"]["Enums"]["estado_remesa"]
           fecha_envio_banco?: string | null
+          fichero_generado_at?: string | null
           id?: string
           mes?: number
           updated_at?: string
