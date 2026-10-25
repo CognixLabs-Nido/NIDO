@@ -172,7 +172,7 @@ export function construirPanelFamilia(
           importeCentimos: l.importeCentimos,
           origen: l.origen,
           esArrastre: l.esArrastre,
-          esSobrante: false,
+          esSobrante: l.esSobrante,
         }))
         .sort(ordenarLineas)
 
