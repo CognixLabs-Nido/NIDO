@@ -27,7 +27,7 @@ export function leerFiltroHistorial(params: ParamsHistorial): FiltroHistorial {
   return {
     anio: entero(params.anio, 2024, 2100),
     mes: entero(params.mes, 1, 12),
-    familiaId: params.familia ? params.familia : null,
+    familiaId: params.familia && UUID.test(params.familia) ? params.familia : null,
     ninoId: params.nino && UUID.test(params.nino) ? params.nino : null,
     pagina: entero(params.pagina, 1, 100_000) ?? 1,
   }
