@@ -37,14 +37,6 @@ export async function marcarRemesaEnviada(
 
   const hoy = new Date().toISOString().slice(0, 10)
 
-  // Recibos incluidos en la remesa, ya cerrada.
-  const { data: enlaces } = await supabase
-    .from('recibos_remesa')
-    .select('recibo_id')
-    .eq('remesa_id', remesa.id)
-  const reciboIds = (enlaces ?? []).map((e) => e.recibo_id)
-
-
   // 1. Remesa → enviada (con fecha de envío al banco). VA PRIMERO: desde aquí la BD no deja
   //    añadirle recibos (recibos_remesa_validar bloquea la remesa), así que los que se leen
   //    después son todos. Leídos antes, uno añadido entre medias quedaría en una remesa enviada
@@ -63,6 +55,13 @@ export async function marcarRemesaEnviada(
     return fail('remesas.errors.enviar_failed')
   }
   if (!actualizada) return fail('remesas.errors.ya_enviada')
+
+  // Recibos incluidos en la remesa, ya cerrada.
+  const { data: enlaces } = await supabase
+    .from('recibos_remesa')
+    .select('recibo_id')
+    .eq('remesa_id', remesa.id)
+  const reciboIds = (enlaces ?? []).map((e) => e.recibo_id)
 
   // 2. Recibos incluidos → enviado_banco con la misma fecha (solo estado/fecha:
   //    pasa el congelado afinado incluso en meses cerrados).
