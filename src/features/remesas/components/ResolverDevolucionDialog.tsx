@@ -129,7 +129,7 @@ export function ResolverDevolucionDialog({
       case 'anadir':
         return t('resolver_dialog.siguiente_ayuda', valores)
       case 'crear':
-        return t('resolver_dialog.siguiente_ayuda_crear_x', valores)
+        return t('resolver_dialog.siguiente_ayuda_crear', valores)
       case 'recibo_cerrado':
         return t('resolver_dialog.recibo_siguiente_cerrado', valores)
       case 'mes_cerrado':
