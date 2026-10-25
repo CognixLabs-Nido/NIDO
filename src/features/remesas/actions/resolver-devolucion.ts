@@ -22,17 +22,18 @@ const POR_HINT: Record<string, string> = {
   sin_mandato: 'remesas.errors.sin_mandato_devolucion',
   salida_invalida: 'remesas.errors.invalid',
   fecha_cobro_invalida: 'remesas.validation.fecha_cobro_devolucion',
-  sin_recibo_siguiente: 'remesas.errors.sin_recibo_siguiente',
+  recibo_siguiente_cerrado: 'remesas.errors.recibo_siguiente_cerrado',
+  mes_siguiente_cerrado: 'remesas.errors.mes_siguiente_cerrado',
 }
 
 /**
  * Resuelve una devolución, UNA sola vez (PR-2): volver a pasarla por el banco (un re-giro SEPA por
  * total + gastos, solo con mandato activo), cobrarla en efectivo o por transferencia (el recibo
- * queda cobrado y conserva sus fechas de banco) o arrastrarla al siguiente recibo en borrador de la
- * familia, como una línea por total + gastos (PR-14). Lo hace la BD en una transacción
- * (`resolver_devolucion`, con la sesión: RLS de Dirección y actor en audit_log), que bloquea el
- * recibo y rechaza una segunda salida por cualquier camino. Devuelve el recibo nuevo o tocado: el
- * re-giro o el recibo al que se arrastra.
+ * queda cobrado y conserva sus fechas de banco) o llevarla al recibo del mes siguiente de la familia,
+ * como una línea por total + gastos, creándolo si no lo tiene (PR-14). Lo hace la BD en una
+ * transacción (`resolver_devolucion`, con la sesión: RLS de Dirección y actor en audit_log), que
+ * bloquea el recibo y rechaza una segunda salida por cualquier camino. Devuelve el recibo nuevo o
+ * tocado: el re-giro o el recibo del mes siguiente.
  */
 export async function resolverDevolucion(
   input: ResolverDevolucionInput

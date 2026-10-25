@@ -1988,7 +1988,8 @@
       "sin_mandato_devolucion": "The family has no active SEPA mandate: it cannot go to the bank again.",
       "resolver_failed": "The return could not be resolved.",
       "devolucion_por_resolver": "A returned receipt is collected from «Resolve return».",
-      "sin_recibo_siguiente": "The family has no draft receipt for a later month: it cannot be added to the next receipt."
+      "recibo_siguiente_cerrado": "The family’s receipt for the next month is already validated: it cannot be added there. Choose another option or set that receipt back to draft.",
+      "mes_siguiente_cerrado": "The next month is already closed and the family has no receipt in it: it cannot be added to the next receipt."
     },
     "transferencias_beca": {
       "title": "Meal grant transfers",
@@ -2064,7 +2065,9 @@
       "guardar": "Resolve",
       "cancelar": "Cancel",
       "siguiente_ayuda": "A line for {importe} is added to the family’s {mes} receipt, which is a draft. If that line is removed, the return goes back to unresolved.",
-      "sin_recibo_siguiente": "To add it to the next receipt, the family needs a draft receipt for a later month."
+      "siguiente_ayuda_crear": "The family has no {mes} receipt: one is created as a draft with a line for {importe}. If that line is removed, the return goes back to unresolved.",
+      "recibo_siguiente_cerrado": "The family’s {mes} receipt is already validated: it cannot be added there. Choose another option or, if there is still time, set that receipt back to draft.",
+      "mes_siguiente_cerrado": "{mes} is already closed and the family has no receipt in it: it cannot be added to the next receipt. Choose another option."
     },
     "arrastrada_a": "Added to the {mes} receipt · {importe}"
   },

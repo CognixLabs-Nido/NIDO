@@ -142,7 +142,7 @@ export function DevolucionesPanel({ recibos }: Props) {
                       gastosCentimos={r.devolucionGastosCentimos ?? 0}
                       fechaDevolucion={r.fechaDevolucion}
                       permiteSepa={r.familiaConMandato}
-                      arrastre={r.arrastreDisponible}
+                      arrastre={r.arrastre}
                       hoy={hoy}
                       trigger={
                         <Button size="sm" variant="outline">

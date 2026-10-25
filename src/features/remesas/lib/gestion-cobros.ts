@@ -25,10 +25,10 @@ export interface ReciboGestion {
   devolucionGastosCentimos: number | null
   devolucionSalida: SalidaDevolucion | null
   /**
-   * PR-14: el recibo al que se puede arrastrar una devolución sin resolver (el borrador regular de
-   * la familia del primer mes posterior); null si no tiene ninguno, y entonces no se ofrece.
+   * PR-14: adónde iría la devolución sin resolver llevada al siguiente recibo (el mes siguiente,
+   * con lo que la BD haría allí); null si el recibo no es un devuelto por resolver.
    */
-  arrastreDisponible: MesRecibo | null
+  arrastre: DestinoArrastre | null
   /** PR-14: el recibo al que se arrastró, si su salida es `siguiente_recibo`. */
   arrastradoA: MesRecibo | null
   /** PR-1a: el cobro manual (solo con estado cobrado_manual). */
@@ -49,15 +49,43 @@ export interface MesRecibo {
   mes: number
 }
 
+/** El mes siguiente: diciembre pasa a enero del año siguiente. */
+export function mesSiguiente(m: MesRecibo): MesRecibo {
+  return m.mes === 12 ? { anio: m.anio + 1, mes: 1 } : { anio: m.anio, mes: m.mes + 1 }
+}
+
 /**
- * PR-14: el recibo al que se arrastraría una devolución: de los borradores regulares de su familia,
- * el del primer mes posterior al del recibo devuelto. La BD elige el mismo (`resolver_devolucion`).
+ * PR-14: adónde va una devolución llevada al siguiente recibo. Siempre al mes siguiente al del
+ * devuelto, sin saltos, con lo mismo que hace allí la BD (`resolver_devolucion`):
+ *  - `anadir`: la familia tiene ese mes su recibo en borrador, y la línea entra en él;
+ *  - `crear`: no tiene recibo ese mes, y se crea con la línea;
+ *  - `recibo_cerrado`: lo tiene ya validado o en remesa, y la salida no se ofrece;
+ *  - `mes_cerrado`: no lo tiene y el mes ya está cerrado, y tampoco se ofrece.
  */
-export function destinoArrastre(devuelto: MesRecibo, borradores: MesRecibo[]): MesRecibo | null {
-  const posteriores = borradores
-    .filter((b) => b.anio > devuelto.anio || (b.anio === devuelto.anio && b.mes > devuelto.mes))
-    .sort((a, b) => a.anio - b.anio || a.mes - b.mes)
-  return posteriores[0] ?? null
+export interface DestinoArrastre {
+  mes: MesRecibo
+  tipo: 'anadir' | 'crear' | 'recibo_cerrado' | 'mes_cerrado'
+}
+
+/**
+ * @param reciboSiguiente el recibo regular de la familia del mes siguiente, si lo tiene.
+ * @param mesSiguienteCerrado si el mes siguiente ya está cerrado (`cierre_mensual`).
+ */
+export function destinoArrastre(
+  devuelto: MesRecibo,
+  reciboSiguiente: { estado: EstadoRecibo } | null,
+  mesSiguienteCerrado: boolean
+): DestinoArrastre {
+  const mes = mesSiguiente(devuelto)
+  if (reciboSiguiente) {
+    return { mes, tipo: reciboSiguiente.estado === 'borrador' ? 'anadir' : 'recibo_cerrado' }
+  }
+  return { mes, tipo: mesSiguienteCerrado ? 'mes_cerrado' : 'crear' }
+}
+
+/** ¿Se ofrece llevarla al siguiente recibo? Solo si hay un borrador donde entrar o se puede crear. */
+export function arrastreOfrecido(d: DestinoArrastre): boolean {
+  return d.tipo === 'anadir' || d.tipo === 'crear'
 }
 
 /** «noviembre de 2026», en el idioma de la página. */

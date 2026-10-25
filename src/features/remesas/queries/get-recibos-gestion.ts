@@ -1,9 +1,11 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import type { Database } from '@/types/database'
 
 import {
   destinoArrastre,
+  mesSiguiente,
   ordenarGestion,
   entraEnGestion,
   ESTADOS_GESTION,
@@ -20,7 +22,7 @@ export type { ReciboGestion } from '../lib/gestion-cobros'
  * método; PR-1a) y los que ya están en el ciclo de cobro (enviado_banco / devuelto /
  * cobrado_manual). Un SEPA pendiente no sale: va por remesa. Con cada recibo, si la familia tiene
  * mandato activo (PR-1b: la diferencia de un cheque solo se pasa al banco con él) y, con cada
- * devolución, el recibo al que se puede arrastrar o al que se arrastró (PR-14). RLS: Dirección.
+ * devolución, adónde iría llevada al siguiente recibo o adónde se llevó (PR-14). RLS: Dirección.
  */
 export async function getRecibosGestion(
   centroId: string,
@@ -52,57 +54,80 @@ export async function getRecibosGestion(
   )
   const arrastradas = gestionables.filter((r) => r.devolucion_salida === 'siguiente_recibo')
 
-  const [{ data: familias }, { data: mandatos }, { data: borradores }, { data: lineasArrastre }] =
-    await Promise.all([
-      supabase.from('familias').select('id, etiqueta').in('id', familiaIds),
-      // PR-1b: la diferencia de un cheque solo se pasa al banco con mandato activo.
-      supabase
-        .from('mandatos_sepa')
-        .select('familia_id')
-        .eq('centro_id', centroId)
-        .eq('estado', 'activo')
-        .is('deleted_at', null)
-        .in('familia_id', familiaIds),
-      porResolver.length === 0
-        ? Promise.resolve({ data: [] as Array<{ familia_id: string; anio: number; mes: number }> })
-        : supabase
-            .from('recibos')
-            .select('familia_id, anio, mes')
-            .eq('centro_id', centroId)
-            .in('familia_id', [...new Set(porResolver.map((r) => r.familia_id as string))])
-            .eq('estado', 'borrador')
-            .eq('es_esporadico', false)
-            .is('devuelto_de_recibo_id', null)
-            .is('deleted_at', null),
-      arrastradas.length === 0
-        ? Promise.resolve({
-            data: [] as Array<{
-              arrastre_de_recibo_id: string | null
-              recibo: { anio: number; mes: number }
-            }>,
-          })
-        : supabase
-            .from('lineas_recibo')
-            .select('arrastre_de_recibo_id, recibo:recibos!recibo_id!inner(anio, mes)')
-            .eq('centro_id', centroId)
-            .in(
-              'arrastre_de_recibo_id',
-              arrastradas.map((r) => r.id)
-            ),
-    ])
+  const [
+    { data: familias },
+    { data: mandatos },
+    { data: regulares },
+    { data: cierres },
+    { data: lineasArrastre },
+  ] = await Promise.all([
+    supabase.from('familias').select('id, etiqueta').in('id', familiaIds),
+    // PR-1b: la diferencia de un cheque solo se pasa al banco con mandato activo.
+    supabase
+      .from('mandatos_sepa')
+      .select('familia_id')
+      .eq('centro_id', centroId)
+      .eq('estado', 'activo')
+      .is('deleted_at', null)
+      .in('familia_id', familiaIds),
+    // PR-14: el recibo regular de cada familia con una devolución por resolver (el del mes
+    // siguiente decide si la línea entra en él, si se crea o si no se ofrece), y los meses
+    // cerrados del centro.
+    porResolver.length === 0
+      ? Promise.resolve({
+          data: [] as Array<{
+            familia_id: string
+            anio: number
+            mes: number
+            estado: Database['public']['Enums']['estado_recibo']
+          }>,
+        })
+      : supabase
+          .from('recibos')
+          .select('familia_id, anio, mes, estado')
+          .eq('centro_id', centroId)
+          .in('familia_id', [...new Set(porResolver.map((r) => r.familia_id as string))])
+          .eq('es_esporadico', false)
+          .is('devuelto_de_recibo_id', null)
+          .is('deleted_at', null),
+    porResolver.length === 0
+      ? Promise.resolve({ data: [] as Array<{ anio: number; mes: number }> })
+      : supabase.from('cierre_mensual').select('anio, mes').eq('centro_id', centroId),
+    arrastradas.length === 0
+      ? Promise.resolve({
+          data: [] as Array<{
+            arrastre_de_recibo_id: string | null
+            recibo: { anio: number; mes: number }
+          }>,
+        })
+      : supabase
+          .from('lineas_recibo')
+          .select('arrastre_de_recibo_id, recibo:recibos!recibo_id!inner(anio, mes)')
+          .eq('centro_id', centroId)
+          .in(
+            'arrastre_de_recibo_id',
+            arrastradas.map((r) => r.id)
+          ),
+  ])
   const etiquetaPorFamilia = new Map((familias ?? []).map((f) => [f.id, f.etiqueta]))
   const familiasConMandato = new Set((mandatos ?? []).map((m) => m.familia_id))
-  const borradoresPorFamilia = new Map<string, MesRecibo[]>()
-  for (const b of borradores ?? []) {
-    const lista = borradoresPorFamilia.get(b.familia_id) ?? []
-    lista.push({ anio: b.anio, mes: b.mes })
-    borradoresPorFamilia.set(b.familia_id, lista)
-  }
+  const clave = (familiaId: string, m: MesRecibo) => `${familiaId}:${m.anio}-${m.mes}`
+  const reciboRegular = new Map((regulares ?? []).map((r) => [clave(r.familia_id, r), r]))
+  const mesesCerrados = new Set((cierres ?? []).map((c) => `${c.anio}-${c.mes}`))
   const arrastradoA = new Map<string, MesRecibo>()
   for (const l of lineasArrastre ?? []) {
     if (l.arrastre_de_recibo_id) {
       arrastradoA.set(l.arrastre_de_recibo_id, { anio: l.recibo.anio, mes: l.recibo.mes })
     }
+  }
+
+  function destinoDe(familiaId: string, devuelto: MesRecibo) {
+    const siguiente = mesSiguiente(devuelto)
+    return destinoArrastre(
+      devuelto,
+      reciboRegular.get(clave(familiaId, siguiente)) ?? null,
+      mesesCerrados.has(`${siguiente.anio}-${siguiente.mes}`)
+    )
   }
 
   return ordenarGestion(
@@ -120,12 +145,9 @@ export async function getRecibosGestion(
       devolucionGastosCentimos: r.devolucion_gastos_centimos,
       // El CHECK `recibos_devolucion_salida` solo admite las de SALIDAS_DEVOLUCION.
       devolucionSalida: r.devolucion_salida as SalidaDevolucion | null,
-      arrastreDisponible:
+      arrastre:
         r.estado === 'devuelto' && r.devolucion_salida === null && r.familia_id
-          ? destinoArrastre(
-              { anio: r.anio, mes: r.mes },
-              borradoresPorFamilia.get(r.familia_id) ?? []
-            )
+          ? destinoDe(r.familia_id, { anio: r.anio, mes: r.mes })
           : null,
       arrastradoA: arrastradoA.get(r.id) ?? null,
       cobroForma: r.cobro_forma,
