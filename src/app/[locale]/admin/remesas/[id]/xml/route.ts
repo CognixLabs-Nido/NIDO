@@ -28,7 +28,8 @@ export async function GET(
   // 1. Remesa (RLS admin) → centro/periodo.
   const { data: remesa } = await supabase
     .from('remesas')
-    .select('id, centro_id, anio, mes, estado, fichero_generado_at')
+    // `*`: lee fichero_generado_at sin romper si el despliegue llega antes que su migración.
+    .select('*')
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle()
@@ -88,9 +89,13 @@ export async function GET(
       .update({ fichero_generado_at: new Date().toISOString() })
       .eq('id', id)
       .is('fichero_generado_at', null)
-    if (errMarca) return json({ error: 'xml_failed' }, 500)
-    fichero = await generar()
-    if (fichero instanceof Response) return fichero
+    // PGRST204: la columna aún no existe (desplegado antes que la migración). Sin columna no hay
+    // trigger que cierre la remesa, así que el fichero ya leído vale, como antes.
+    if (errMarca && errMarca.code !== 'PGRST204') return json({ error: 'xml_failed' }, 500)
+    if (!errMarca) {
+      fichero = await generar()
+      if (fichero instanceof Response) return fichero
+    }
   }
 
   const filename = `remesa-${remesa.anio}-${String(remesa.mes).padStart(2, '0')}-${id.slice(0, 8)}.xml`

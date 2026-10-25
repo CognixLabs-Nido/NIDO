@@ -13,6 +13,7 @@ const { estado, pasos } = vi.hoisted(() => ({
   estado: {
     remesa: null as Record<string, unknown> | null,
     sale: true,
+    errorMarca: null as unknown,
   },
   pasos: [] as string[],
 }))
@@ -34,7 +35,7 @@ vi.mock('@/lib/supabase/server', () => ({
         eq: () => ({
           is: async () => {
             pasos.push(`marca ${tabla}`)
-            return { error: null }
+            return { error: estado.errorMarca }
           },
         }),
       }),
@@ -61,6 +62,7 @@ describe('GET /admin/remesas/[id]/xml', () => {
       fichero_generado_at: null,
     }
     estado.sale = true
+    estado.errorMarca = null
     pasos.length = 0
   })
 
@@ -82,6 +84,16 @@ describe('GET /admin/remesas/[id]/xml', () => {
     const res = await pedir()
     expect(res.status).toBe(422)
     expect(pasos).not.toContain('marca remesas')
+  })
+
+  it('desplegado antes que la migración (PGRST204): el fichero sale como antes, sin marca', async () => {
+    estado.errorMarca = { code: 'PGRST204', message: 'column not found' }
+    const res = await pedir()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('<xml/>')
+    // Otro error al marcar sí corta: no se sirve un fichero de una remesa que no quedó cerrada.
+    estado.errorMarca = { code: '42501', message: 'x' }
+    expect((await pedir()).status).toBe(500)
   })
 
   it('enviada o ya marcada: se vuelve a bajar sin marcar', async () => {

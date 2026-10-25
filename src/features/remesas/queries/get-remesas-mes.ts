@@ -29,7 +29,8 @@ export async function getRemesasMes(
 
   const { data: remesas } = await supabase
     .from('remesas')
-    .select('id, estado, fecha_envio_banco, fichero_generado_at, created_at')
+    // `*`: lee fichero_generado_at sin romper si el despliegue llega antes que su migración.
+    .select('*')
     .eq('centro_id', centroId)
     .eq('anio', anio)
     .eq('mes', mes)
@@ -66,7 +67,7 @@ export async function getRemesasMes(
       id: r.id,
       estado: r.estado,
       fechaEnvioBanco: r.fecha_envio_banco,
-      ficheroGenerado: r.fichero_generado_at !== null,
+      ficheroGenerado: r.fichero_generado_at != null,
       createdAt: r.created_at,
       numRecibos: acc.num,
       totalCentimos: acc.total,

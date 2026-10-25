@@ -24,7 +24,8 @@ export async function anadirARemesa(input: AnadirARemesaInput): Promise<ActionRe
 
   const { data: remesa } = await supabase
     .from('remesas')
-    .select('id, centro_id, estado, fichero_generado_at')
+    // `*`: lee fichero_generado_at sin romper si el despliegue llega antes que su migración.
+    .select('*')
     .eq('id', parsed.data.remesaId)
     .is('deleted_at', null)
     .maybeSingle()
