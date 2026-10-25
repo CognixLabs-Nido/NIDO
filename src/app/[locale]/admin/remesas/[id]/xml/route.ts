@@ -89,8 +89,6 @@ export async function GET(
       .eq('id', id)
       .is('fichero_generado_at', null)
     if (errMarca) return json({ error: 'xml_failed' }, 500)
-    fichero = await generar()
-    if (fichero instanceof Response) return fichero
   }
 
   const filename = `remesa-${remesa.anio}-${String(remesa.mes).padStart(2, '0')}-${id.slice(0, 8)}.xml`
