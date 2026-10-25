@@ -144,7 +144,7 @@ export async function enriquecerHistorial(
 
   // 3. Los recibos de los que vienen o a los que fue el dinero y que aún no están.
   const cargados = new Map<string, ReciboHistorialInput>()
-  for (const r of [...recibos]) {
+  for (const r of [...recibos, ...(inversos.data ?? []), ...(origenRows.data ?? [])]) {
     cargados.set(r.id, r)
   }
   const sobrantes = [...sobrantesSuyos, ...(sobrantesAjenos.data ?? []).filter(esCheque)]
@@ -157,7 +157,7 @@ export async function enriquecerHistorial(
     ...lineas.map((l) => l.recibo_id),
     ...lineas.map((l) => l.arrastre_de_recibo_id),
     ...sobrantes.map((s) => s.recibo_id),
-  ]).filter((id) => !cargados.has(id) && false)
+  ]).filter((id) => !cargados.has(id))
   if (faltan.length > 0) {
     const { data, error } = await supabase
       .from('recibos')
