@@ -80,7 +80,7 @@ export function destinoArrastre(
   if (reciboSiguiente) {
     return { mes, tipo: reciboSiguiente.estado === 'borrador' ? 'anadir' : 'recibo_cerrado' }
   }
-  return { mes, tipo: 'crear' }
+  return { mes, tipo: mesSiguienteCerrado ? 'mes_cerrado' : 'crear' }
 }
 
 /** ¿Se ofrece llevarla al siguiente recibo? Solo si hay un borrador donde entrar o se puede crear. */
