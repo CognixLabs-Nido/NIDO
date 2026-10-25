@@ -88,3 +88,4 @@ La numeración avanza cronológicamente, pero hay dos huecos explícitos:
 | 0060 | Las notificaciones push van en el idioma de quien las recibe              | accepted                                  |
 | 0061 | El superusuario                                                           | accepted                                  |
 | 0062 | El panel de plataforma y el alta de centros (Multicentro, Fase 5)         | accepted                                  |
+| 0063 | El plan de recibos: cerrar el circuito del cobro (F12-B, #399–#418)       | accepted                                  |
