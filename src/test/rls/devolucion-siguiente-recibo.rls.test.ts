@@ -289,6 +289,8 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
       metodo: 'efectivo',
     })
     expect(errExcepcion).toBeNull()
+    // La ficha, con otro método (por defecto ya es `efectivo`).
+    await serviceClient.from('familias').update({ metodo_pago: 'sepa' }).eq('id', familiaDiciembre)
     // Premisa: la ficha dice otro método, así que lo que se lee es la excepción.
     const { data: ficha } = await serviceClient
       .from('familias')
