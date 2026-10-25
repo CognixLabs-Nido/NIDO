@@ -1257,6 +1257,54 @@
         },
         "mandato_pregunta": "Tiene un mandato SEPA activo, pero paga con: {metodo}. ¿Cobrar sus recibos por banco?",
         "pasar_a_sepa": "Pasar a recibo por banco"
+      },
+      "recibos": {
+        "titulo": "Recibos",
+        "vacio": "Esta familia aún no tiene recibos.",
+        "error": "No hemos podido cargar los recibos de esta familia. Vuelve a intentarlo.",
+        "ver_en_cuotas": "Ver en Cuotas",
+        "volver": "Volver a la familia",
+        "desglose": "Desglose",
+        "sin_lineas": "Este recibo no tiene líneas.",
+        "error_detalle": "No hemos podido cargar este recibo. Vuelve a intentarlo.",
+        "tipo": {
+          "mensual": "Mensual",
+          "esporadico": "Esporádico",
+          "regiro": "Re-giro",
+          "diferencia_cheque": "Diferencia de cheque"
+        },
+        "estado": {
+          "borrador": "Borrador",
+          "validado": "Validado",
+          "en_remesa": "En remesa",
+          "enviado_banco": "Enviado al banco",
+          "devuelto": "Devuelto",
+          "cobrado": "Cobrado"
+        },
+        "forma": "Forma de pago: {forma}",
+        "origen_regiro": "Vuelve a pasar la devolución del recibo de {mes}",
+        "origen_diferencia": "Diferencia del cheque del recibo de {mes}",
+        "en_remesa": "En la remesa de {mes}, sin enviar",
+        "en_remesa_enviada": "En la remesa de {mes}",
+        "enviado_el": "Enviado al banco el {fecha}",
+        "devuelto_el": "Devuelto el {fecha}",
+        "devuelto": "Devuelto",
+        "gastos": "gastos del banco {importe}",
+        "devolucion_pendiente": "Pendiente de resolver: {importe}",
+        "devolucion_banco": "Vuelto a pasar al banco en otro recibo: {importe}",
+        "devolucion_siguiente": "Llevado al recibo de {mes}: {importe}",
+        "devolucion_siguiente_sin_recibo": "Llevado al siguiente recibo: {importe}",
+        "cobrado_el": "Cobrado el {fecha}",
+        "cobrado": "Cobrado",
+        "cheque_de": "cheque de {importe}",
+        "nota": "Nota: {nota}",
+        "diferencia": "La diferencia, {importe}, va en otro recibo",
+        "sobrante_pendiente": "Sobrante del cheque, {importe}, pendiente de resolver",
+        "sobrante_transferencia": "Sobrante del cheque, {importe}, devuelto por transferencia",
+        "sobrante_diferido": "Sobrante del cheque, {importe}, descontado en el recibo de {mes}",
+        "sobrante_diferido_sin_recibo": "Sobrante del cheque, {importe}, diferido al mes siguiente",
+        "incluye_devolucion": "Incluye la devolución del recibo de {mes}: {importe}",
+        "incluye_sobrante": "Descuenta el sobrante del cheque del recibo de {mes}: {importe}"
       }
     },
     "fotosRevocadas": {
@@ -1812,7 +1860,11 @@
     "arrastre_quitado": "Línea quitada. La devolución vuelve a quedar sin resolver.",
     "linea_sobrante": "saldo a favor",
     "quitar_sobrante_confirm": "Esta línea es el sobrante de un cheque, devuelto a la familia como saldo a favor. Si la quitas, el sobrante vuelve a quedar pendiente. ¿Quitarla?",
-    "sobrante_quitado": "Línea quitada. El sobrante del cheque vuelve a estar pendiente."
+    "sobrante_quitado": "Línea quitada. El sobrante del cheque vuelve a estar pendiente.",
+    "filtro_familia": "Familia",
+    "filtro_todas": "Todas las familias",
+    "filtro_sin_resultados": "Esta familia no sale en el panel de este mes.",
+    "quitar_filtro": "Ver todas"
   },
   "cargo_puntual": {
     "abrir": "Cargo a varios niños",

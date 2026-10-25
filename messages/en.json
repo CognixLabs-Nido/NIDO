@@ -1257,6 +1257,54 @@
         },
         "mandato_pregunta": "They have an active SEPA mandate but pay by: {metodo}. Collect their receipts by bank direct debit?",
         "pasar_a_sepa": "Switch to bank direct debit"
+      },
+      "recibos": {
+        "titulo": "Receipts",
+        "vacio": "This family has no receipts yet.",
+        "error": "We couldn't load this family's receipts. Please try again.",
+        "ver_en_cuotas": "View in Fees",
+        "volver": "Back to the family",
+        "desglose": "Breakdown",
+        "sin_lineas": "This receipt has no lines.",
+        "error_detalle": "We couldn't load this receipt. Please try again.",
+        "tipo": {
+          "mensual": "Monthly",
+          "esporadico": "One-off",
+          "regiro": "Re-presentment",
+          "diferencia_cheque": "Voucher difference"
+        },
+        "estado": {
+          "borrador": "Draft",
+          "validado": "Validated",
+          "en_remesa": "In a remittance",
+          "enviado_banco": "Sent to the bank",
+          "devuelto": "Returned",
+          "cobrado": "Paid"
+        },
+        "forma": "Payment method: {forma}",
+        "origen_regiro": "Re-presents the return of the {mes} receipt",
+        "origen_diferencia": "Voucher difference from the {mes} receipt",
+        "en_remesa": "In the {mes} remittance, not sent yet",
+        "en_remesa_enviada": "In the {mes} remittance",
+        "enviado_el": "Sent to the bank on {fecha}",
+        "devuelto_el": "Returned on {fecha}",
+        "devuelto": "Returned",
+        "gastos": "bank charges {importe}",
+        "devolucion_pendiente": "Pending resolution: {importe}",
+        "devolucion_banco": "Sent to the bank again on another receipt: {importe}",
+        "devolucion_siguiente": "Carried to the {mes} receipt: {importe}",
+        "devolucion_siguiente_sin_recibo": "Carried to the next receipt: {importe}",
+        "cobrado_el": "Paid on {fecha}",
+        "cobrado": "Paid",
+        "cheque_de": "voucher for {importe}",
+        "nota": "Note: {nota}",
+        "diferencia": "The difference, {importe}, is on another receipt",
+        "sobrante_pendiente": "Voucher surplus, {importe}, pending resolution",
+        "sobrante_transferencia": "Voucher surplus, {importe}, refunded by transfer",
+        "sobrante_diferido": "Voucher surplus, {importe}, deducted on the {mes} receipt",
+        "sobrante_diferido_sin_recibo": "Voucher surplus, {importe}, deferred to the next month",
+        "incluye_devolucion": "Includes the return of the {mes} receipt: {importe}",
+        "incluye_sobrante": "Deducts the voucher surplus from the {mes} receipt: {importe}"
       }
     },
     "fotosRevocadas": {
@@ -1812,7 +1860,11 @@
     "arrastre_quitado": "Line removed. The return goes back to unresolved.",
     "linea_sobrante": "credit",
     "quitar_sobrante_confirm": "This line is a voucher surplus, given back to the family as a credit. If you remove it, the surplus goes back to pending. Remove it?",
-    "sobrante_quitado": "Line removed. The voucher surplus is pending again."
+    "sobrante_quitado": "Line removed. The voucher surplus is pending again.",
+    "filtro_familia": "Family",
+    "filtro_todas": "All families",
+    "filtro_sin_resultados": "This family isn't in this month's panel.",
+    "quitar_filtro": "Show all"
   },
   "cargo_puntual": {
     "abrir": "Charge several children",

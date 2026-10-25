@@ -1,16 +1,14 @@
-import { ArrowLeftIcon, CoinsIcon, DownloadIcon, UsersIcon } from 'lucide-react'
+import { ArrowLeftIcon, CoinsIcon, DownloadIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
 import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
+import { DesgloseRecibo } from '@/features/recibos/components/DesgloseRecibo'
 import { ESTADO_BADGE_VARIANT, formatPeriodo } from '@/features/recibos/lib/formato'
-import type { LineaReciboFamilia } from '@/features/recibos/lib/recibo-familia-detalle'
 import { getReciboFamiliaDetalle } from '@/features/recibos/queries/get-recibo-familia-detalle'
-import { formatEuros } from '@/shared/lib/format-money'
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>
@@ -34,8 +32,6 @@ export default async function FamilyReciboDetallePage({ params }: PageProps) {
     recibo.esEsporadico && recibo.conceptoEsporadico
       ? recibo.conceptoEsporadico
       : formatPeriodo(recibo.anio, recibo.mes, locale)
-
-  const { gruposHijo, lineasFamiliares, subtotalFamiliarCentimos } = recibo.desglose
 
   return (
     <div className="space-y-6">
@@ -73,115 +69,11 @@ export default async function FamilyReciboDetallePage({ params }: PageProps) {
         </a>
       </header>
 
-      <Card>
-        <CardContent className="space-y-6 p-0">
-          {gruposHijo.map((g) => (
-            <SeccionLineas
-              locale={locale}
-              key={g.ninoId}
-              titulo={g.ninoNombre}
-              lineas={g.lineas}
-              subtotalCentimos={g.subtotalCentimos}
-              subtotalLabel={t('subtotal')}
-              cabeceras={{
-                concepto: t('concepto'),
-                cantidad: t('cantidad'),
-                precioUnitario: t('precio_unitario'),
-                importe: t('importe'),
-              }}
-            />
-          ))}
-          {lineasFamiliares.length > 0 && (
-            <SeccionLineas
-              locale={locale}
-              titulo={t('lineas_familiares')}
-              icono={<UsersIcon className="size-4" />}
-              lineas={lineasFamiliares}
-              subtotalCentimos={subtotalFamiliarCentimos}
-              subtotalLabel={t('subtotal')}
-              cabeceras={{
-                concepto: t('concepto'),
-                cantidad: t('cantidad'),
-                precioUnitario: t('precio_unitario'),
-                importe: t('importe'),
-              }}
-            />
-          )}
-          <div className="flex items-center justify-between border-t px-3 py-3 text-sm font-semibold">
-            <span>{t('total')}</span>
-            <span className="tabular-nums">{formatEuros(recibo.totalCentimos, locale)}</span>
-          </div>
-        </CardContent>
-      </Card>
+      <DesgloseRecibo
+        desglose={recibo.desglose}
+        totalCentimos={recibo.totalCentimos}
+        locale={locale}
+      />
     </div>
-  )
-}
-
-/** Una sección del desglose (un hijo o el bloque familiar) con su tabla de líneas y subtotal. */
-function SeccionLineas({
-  titulo,
-  icono,
-  lineas,
-  subtotalCentimos,
-  subtotalLabel,
-  cabeceras,
-  locale,
-}: {
-  titulo: string
-  icono?: React.ReactNode
-  lineas: LineaReciboFamilia[]
-  subtotalCentimos: number
-  subtotalLabel: string
-  cabeceras: { concepto: string; cantidad: string; precioUnitario: string; importe: string }
-  locale: string
-}) {
-  return (
-    <section>
-      <h2 className="text-foreground flex items-center gap-2 px-3 pt-3 text-sm font-semibold">
-        {icono}
-        {titulo}
-      </h2>
-      <table className="w-full text-sm">
-        <caption className="sr-only">{titulo}</caption>
-        <thead className="text-muted-foreground border-b text-left text-xs">
-          <tr>
-            <th scope="col" className="p-3 font-medium">
-              {cabeceras.concepto}
-            </th>
-            <th scope="col" className="p-3 text-right font-medium">
-              {cabeceras.cantidad}
-            </th>
-            <th scope="col" className="p-3 text-right font-medium">
-              {cabeceras.precioUnitario}
-            </th>
-            <th scope="col" className="p-3 text-right font-medium">
-              {cabeceras.importe}
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {lineas.map((l) => (
-            <tr key={l.id}>
-              <td className="p-3">{l.descripcion}</td>
-              <td className="p-3 text-right tabular-nums">{l.cantidad}</td>
-              <td className="p-3 text-right tabular-nums">
-                {formatEuros(l.precioUnitarioCentimos, locale)}
-              </td>
-              <td className="p-3 text-right tabular-nums">
-                {formatEuros(l.importeCentimos, locale)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot className="border-t text-xs font-medium">
-          <tr>
-            <td className="text-muted-foreground p-3" colSpan={3}>
-              {subtotalLabel}
-            </td>
-            <td className="p-3 text-right tabular-nums">{formatEuros(subtotalCentimos, locale)}</td>
-          </tr>
-        </tfoot>
-      </table>
-    </section>
   )
 }

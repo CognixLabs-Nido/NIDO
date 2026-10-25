@@ -5,6 +5,7 @@ import {
   ChevronRightIcon,
   LandmarkIcon,
   PencilIcon,
+  ReceiptIcon,
   UserIcon,
   WalletIcon,
 } from 'lucide-react'
@@ -22,6 +23,8 @@ import { EditarEtiquetaDialog } from '@/features/familias/components/EditarEtiqu
 import { EditarTutorDialog } from '@/features/familias/components/EditarTutorDialog'
 import { MetodoPagoFicha } from '@/features/familias/components/MetodoPagoFicha'
 import { PromoverTitularDialog } from '@/features/familias/components/PromoverTitularDialog'
+import { HistorialRecibosFamilia } from '@/features/recibos/components/HistorialRecibosFamilia'
+import { getHistorialRecibosFamilia } from '@/features/recibos/queries/get-historial-recibos-familia'
 import { MarcarDomiciliacionVistaOnMount } from '@/features/notificaciones/components/MarcarDomiciliacionVistaOnMount'
 import {
   getFamiliaDetalle,
@@ -46,8 +49,12 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
   const sinTitular =
     familia.tutores.length > 0 && !familia.tutores.some((x) => x.rol_familia === 'titular')
 
-  // F-2c-3: mandato SEPA activo de la familia (o null) para la sección Domiciliación.
-  const mandato = await familiaTieneMandatoActivo(id)
+  // F-2c-3: mandato SEPA activo de la familia (o null) para la sección Domiciliación. F-6: y su
+  // histórico de recibos, del centro de la página.
+  const [mandato, historial] = await Promise.all([
+    familiaTieneMandatoActivo(id),
+    getHistorialRecibosFamilia(familia.id, centroId),
+  ])
   const fechaFirmaLegible = mandato?.fecha_firma
     ? new Intl.DateTimeFormat(localeIntl(locale), { dateStyle: 'long' }).format(
         new Date(mandato.fecha_firma)
@@ -206,6 +213,37 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
             )}
           </CardContent>
         </Card>
+      </section>
+
+      {/* Recibos (F-6): qué se le ha cobrado, con lo que pasó en cada uno; se abren uno a uno. */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-h3 text-foreground flex items-center gap-2">
+            <ReceiptIcon className="text-muted-foreground size-4" />
+            {t('recibos.titulo')}
+          </h2>
+          <Link
+            href={`/${locale}/admin/cuotas?tab=mes&familia=${familia.id}`}
+            className="text-muted-foreground hover:text-foreground ml-auto text-sm font-medium"
+          >
+            {t('recibos.ver_en_cuotas')}
+          </Link>
+        </div>
+        {!historial.ok ? (
+          <Card>
+            <CardContent className="text-warm-800 pt-1 text-sm">{t('recibos.error')}</CardContent>
+          </Card>
+        ) : historial.recibos.length === 0 ? (
+          <Card>
+            <EmptyState icon={<ReceiptIcon strokeWidth={1.75} />} title={t('recibos.vacio')} />
+          </Card>
+        ) : (
+          <HistorialRecibosFamilia
+            recibos={historial.recibos}
+            familiaId={familia.id}
+            locale={locale}
+          />
+        )}
       </section>
 
       {/* Hijos */}
