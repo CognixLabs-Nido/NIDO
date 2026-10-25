@@ -78,7 +78,7 @@ export async function resolverDesborde(
     .from('beca_comedor_desborde')
     .select('*')
     .eq('recibo_id', recibo_id)
-  const desborde = (desbordes ?? []).find(() => true)
+  const desborde = (desbordes ?? []).find((d) => origenExceso(d) === origen)
   if (!desborde) return fail(`${ERR}.no_existe`)
   const centroId = desborde.centro_id
   if (!(await usuarioAdminEn(supabase, centroId))) return fail(`${ERR}.no_autorizado`)
