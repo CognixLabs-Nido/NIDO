@@ -1,11 +1,13 @@
 import 'server-only'
 
+import { origenExceso } from '@/features/beca-comedor/lib/origen-exceso'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/database'
 
 import {
   destinoArrastre,
   mesSiguiente,
+  resueltoPorDe,
   ordenarGestion,
   entraEnGestion,
   ESTADOS_GESTION,
@@ -22,7 +24,8 @@ export type { ReciboGestion } from '../lib/gestion-cobros'
  * método; PR-1a) y los que ya están en el ciclo de cobro (enviado_banco / devuelto /
  * cobrado_manual). Un SEPA pendiente no sale: va por remesa. Con cada recibo, si la familia tiene
  * mandato activo (PR-1b: la diferencia de un cheque solo se pasa al banco con él) y, con cada
- * devolución, adónde iría llevada al siguiente recibo o adónde se llevó (PR-14). RLS: Dirección.
+ * devolución, adónde iría llevada al siguiente recibo o adónde se llevó (PR-14), y el sobrante del
+ * cheque mayor que el recibo (PR-1c). RLS: Dirección.
  */
 export async function getRecibosGestion(
   centroId: string,
@@ -53,6 +56,10 @@ export async function getRecibosGestion(
     (r) => r.estado === 'devuelto' && r.devolucion_salida === null && r.familia_id != null
   )
   const arrastradas = gestionables.filter((r) => r.devolucion_salida === 'siguiente_recibo')
+  // PR-1c: los cobrados con un cheque mayor que el recibo, con su sobrante.
+  const conSobrante = gestionables.filter(
+    (r) => r.cobro_importe_centimos != null && r.cobro_importe_centimos > r.total_centimos
+  )
 
   const [
     { data: familias },
@@ -60,6 +67,7 @@ export async function getRecibosGestion(
     { data: regulares },
     { data: cierres },
     { data: lineasArrastre },
+    { data: sobrantes },
   ] = await Promise.all([
     supabase.from('familias').select('id, etiqueta').in('id', familiaIds),
     // PR-1b: la diferencia de un cheque solo se pasa al banco con mandato activo.
@@ -108,17 +116,39 @@ export async function getRecibosGestion(
             'arrastre_de_recibo_id',
             arrastradas.map((r) => r.id)
           ),
+    // `*` para leer el origen también antes de que exista la columna.
+    conSobrante.length === 0
+      ? Promise.resolve({
+          data: [] as Array<Database['public']['Tables']['beca_comedor_desborde']['Row']>,
+        })
+      : supabase
+          .from('beca_comedor_desborde')
+          .select('*')
+          .eq('centro_id', centroId)
+          .in(
+            'recibo_id',
+            conSobrante.map((r) => r.id)
+          ),
   ])
   const etiquetaPorFamilia = new Map((familias ?? []).map((f) => [f.id, f.etiqueta]))
   const familiasConMandato = new Set((mandatos ?? []).map((m) => m.familia_id))
   const clave = (familiaId: string, m: MesRecibo) => `${familiaId}:${m.anio}-${m.mes}`
   const reciboRegular = new Map((regulares ?? []).map((r) => [clave(r.familia_id, r), r]))
   const mesesCerrados = new Set((cierres ?? []).map((c) => `${c.anio}-${c.mes}`))
+  const sobrantePorRecibo = new Map(
+    (sobrantes ?? []).filter((d) => origenExceso(d) === 'cheque').map((d) => [d.recibo_id, d])
+  )
   const arrastradoA = new Map<string, MesRecibo>()
   for (const l of lineasArrastre ?? []) {
     if (l.arrastre_de_recibo_id) {
       arrastradoA.set(l.arrastre_de_recibo_id, { anio: l.recibo.anio, mes: l.recibo.mes })
     }
+  }
+
+  function sobranteDe(reciboId: string, mesRecibo: MesRecibo) {
+    const d = sobrantePorRecibo.get(reciboId)
+    if (!d) return null
+    return { excesoCentimos: d.exceso_centimos, mes: mesRecibo, resueltoPor: resueltoPorDe(d) }
   }
 
   function destinoDe(familiaId: string, devuelto: MesRecibo) {
@@ -156,6 +186,7 @@ export async function getRecibosGestion(
       cobroImporteCentimos: r.cobro_importe_centimos,
       esDiferenciaCheque: r.diferencia_de_recibo_id != null,
       familiaConMandato: r.familia_id != null && familiasConMandato.has(r.familia_id),
+      sobranteCheque: sobranteDe(r.id, { anio: r.anio, mes: r.mes }),
     }))
   )
 }

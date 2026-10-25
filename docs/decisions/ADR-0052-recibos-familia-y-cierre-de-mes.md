@@ -248,8 +248,10 @@ Restricciones:
   de transferencia. _(Nota del 2026-10-22: lo segundo lo cierra el PR-1a de recibos,
   `20261105120000`: el cobro manual guarda su forma, su fecha y una nota. Nota del 2026-10-23: el
   PR-1b, `20261106120000`, añade el cheque guardería / ticket restaurant con su importe; si es menor
-  que el recibo, la diferencia va a un recibo esporádico aparte. El cheque mayor que el recibo queda
-  para el PR-1c. Otra nota del 2026-10-23: el PR-2, `20261107120000`, cierra el doble cobro de una
+  que el recibo, la diferencia va a un recibo esporádico aparte. El cheque mayor que el recibo es el
+  PR-1c (`20261119120000`, nota del 2026-10-25): el recibo queda cobrado y el sobrante pendiente,
+  en la tabla del desborde de beca con su origen, y la directora lo difiere (una línea de saldo a
+  favor en el recibo del mes siguiente) o lo devuelve por transferencia. Otra nota del 2026-10-23: el PR-2, `20261107120000`, cierra el doble cobro de una
   devolución. Cada devolución tiene una sola salida (banco, efectivo o transferencia), la escribe
   `resolver_devolucion` y un trigger rechaza la segunda. Los gastos de devolución van en la propia
   devolución y la salida cobra total + gastos; sustituyen al recibo esporádico de gastos. La cuarta

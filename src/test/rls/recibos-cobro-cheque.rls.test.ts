@@ -22,7 +22,8 @@ import type { Database } from '@/types/database'
  *  - La directora introduce el importe del cheque (`cobrar_recibo_con_cheque`). Si cubre el recibo,
  *    queda cobrado. Si es menor, la diferencia va a un recibo esporádico aparte, del mismo periodo,
  *    por SEPA (solo con mandato activo), efectivo o transferencia, y sigue su circuito.
- *  - Un cheque mayor que el recibo no se registra (es el PR-1c).
+ *  - Un cheque mayor que el recibo deja el recibo cobrado y el sobrante pendiente (PR-1c, lo
+ *    detalla `cheque-sobrante.rls.test.ts`).
  *  - Las dos escrituras van juntas: si algo falla, no queda nada escrito.
  *  - Por otro camino que no sea la función, el cheque no entra (trigger de la transición), tampoco
  *    con service_role: no puede quedar un cheque menor sin el recibo de su diferencia.
@@ -237,12 +238,18 @@ describe('PR-1b — cobro con cheque guardería / ticket restaurant', () => {
     expect((await fila(id))?.estado).toBe('pendiente_procesar')
   })
 
-  it('cheque mayor que el recibo: no se registra (es el PR-1c)', async () => {
+  it('cheque mayor que el recibo: queda cobrado y el sobrante, pendiente (PR-1c)', async () => {
     const id = await recibo(familiaSin)
     const { error } = await cheque(cDirectora, id, 11001, null)
-    expect(error?.code).toBe('P0001')
-    expect(error?.hint).toBe('cheque_supera_recibo')
-    expect((await fila(id))?.estado).toBe('pendiente_procesar')
+    expect(error).toBeNull()
+    expect((await fila(id))?.estado).toBe('cobrado_manual')
+    expect(await diferenciasDe(id)).toEqual([])
+    const { data: sobrante } = await serviceClient
+      .from('beca_comedor_desborde')
+      .select('exceso_centimos, estado, origen')
+      .eq('recibo_id', id)
+      .single()
+    expect(sobrante).toEqual({ exceso_centimos: 1, estado: 'pendiente', origen: 'cheque' })
   })
 
   it('un SEPA pendiente tampoco se cobra con cheque: va por remesa', async () => {

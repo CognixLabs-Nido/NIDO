@@ -10,6 +10,7 @@ import {
   importeDevolucion,
   mesSiguiente,
   ordenarGestion,
+  resueltoPorDe,
   type ReciboGestion,
 } from '../gestion-cobros'
 
@@ -43,6 +44,7 @@ function recibo(over: Partial<ReciboGestion>): ReciboGestion {
     cobroImporteCentimos: null,
     esDiferenciaCheque: false,
     familiaConMandato: false,
+    sobranteCheque: null,
     ...over,
   }
 }
@@ -193,5 +195,13 @@ describe('destinoArrastre (PR-14)', () => {
     expect(devolucionPorResolver(arrastrada)).toBe(false)
     expect(devolucionPorResolver(pendiente)).toBe(true)
     expect(ordenarGestion([arrastrada, pendiente]).map((r) => r.id)).toEqual(['p', 'a'])
+  })
+})
+
+describe('resueltoPorDe (PR-1c)', () => {
+  it('pendiente es null; resuelto, «diferir» (reducir) o «transferencia»', () => {
+    expect(resueltoPorDe({ estado: 'pendiente', via: null })).toBeNull()
+    expect(resueltoPorDe({ estado: 'resuelto', via: 'reducir' })).toBe('diferir')
+    expect(resueltoPorDe({ estado: 'resuelto', via: 'transferencia' })).toBe('transferencia')
   })
 })

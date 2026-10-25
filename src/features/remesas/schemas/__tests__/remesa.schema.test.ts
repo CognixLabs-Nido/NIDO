@@ -149,7 +149,7 @@ describe('esquemas de devolución (B-6)', () => {
     expect(cobrarConChequeSchema.safeParse({ ...base, nota: 'x'.repeat(501) }).success).toBe(false)
   })
 
-  it('crearCobroDialogSchema (PR-1b): con cheque, importe obligatorio, ≤ total, y método si queda algo', () => {
+  it('crearCobroDialogSchema (PR-1b y PR-1c): con cheque, importe obligatorio, método si queda algo, y puede superar el recibo', () => {
     const schema = crearCobroDialogSchema(11000)
     const base = { reciboId: UUID, forma: 'cheque_guarderia', fecha: '2026-10-20' }
     const error = (v: object) => {
@@ -161,9 +161,15 @@ describe('esquemas de devolución (B-6)', () => {
     expect(error({ importe_euros: 110 })).toBeNull()
     expect(error({})).toBe('remesas.validation.importe_cheque_invalido')
     expect(error({ importe_euros: 0 })).toBe('remesas.validation.importe_cheque_invalido')
-    expect(error({ importe_euros: 110.01 })).toBe('remesas.errors.cheque_supera_recibo')
+    // PR-1c: mayor que el recibo, sin método (el sobrante queda pendiente).
+    expect(error({ importe_euros: 110.01 })).toBeNull()
     expect(error({ importe_euros: 100 })).toBe('remesas.validation.falta_metodo_diferencia')
     expect(error({ importe_euros: 100, metodoDiferencia: 'efectivo' })).toBeNull()
+    // Un recibo sin importe no se cobra con cheque.
+    const cero = crearCobroDialogSchema(0).safeParse({ ...base, importe_euros: 10 })
+    expect(cero.success ? null : cero.error.issues[0]?.message).toBe(
+      'remesas.errors.recibo_sin_importe'
+    )
   })
 
   it('resolverDevolucionSchema (PR-2 y PR-14): banco, efectivo, transferencia o siguiente recibo; el cobro pide fecha', () => {

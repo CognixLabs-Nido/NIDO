@@ -55,6 +55,8 @@ export interface LineaPanelInput {
   origen: OrigenLinea
   /** PR-14: la línea arrastra una devolución (no se edita; quitarla la deja sin resolver). */
   esArrastre: boolean
+  /** PR-1c: la línea es el saldo a favor de un cheque (no se edita; quitarla lo deja pendiente). */
+  esSobrante: boolean
 }
 
 export interface LineaPanel {
@@ -70,6 +72,8 @@ export interface LineaPanel {
   origen: OrigenLinea
   /** PR-14: la línea arrastra una devolución (no se edita; quitarla la deja sin resolver). */
   esArrastre: boolean
+  /** PR-1c: la línea es el saldo a favor de un cheque (no se edita; quitarla lo deja pendiente). */
+  esSobrante: boolean
 }
 
 export interface ReciboPanel {
@@ -168,6 +172,7 @@ export function construirPanelFamilia(
           importeCentimos: l.importeCentimos,
           origen: l.origen,
           esArrastre: l.esArrastre,
+          esSobrante: l.esSobrante,
         }))
         .sort(ordenarLineas)
 

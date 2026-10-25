@@ -522,9 +522,20 @@
             "sin_hijos": "La familia no tiene hijos activos.",
             "sin_becas": "No hay becas que repartir en este recibo.",
             "descuadre": "El reparto no cuadra con el exceso; no se ha aplicado.",
-            "save_failed": "No se pudo resolver."
+            "save_failed": "No se pudo resolver.",
+            "sin_hijos_cheque": "La familia ya no tiene niños activos: el sobrante se devuelve por transferencia.",
+            "recibo_siguiente_cerrado": "El recibo del mes siguiente de la familia ya está validado: no se puede descontar ahí. Devuélvelo por transferencia, o devuelve ese recibo a borrador si aún estás a tiempo."
           },
-          "aviso_validar": "Este recibo no se puede confirmar con un exceso de beca de {importe} sin resolver. Comprueba que es correcto: si la beca está mal puesta, corrígela y recalcula el mes. Si lo es, elige qué hacer con él."
+          "aviso_validar": "Este recibo no se puede confirmar con un exceso de beca de {importe} sin resolver. Comprueba que es correcto: si la beca está mal puesta, corrígela y recalcula el mes. Si lo es, elige qué hacer con él.",
+          "cheque": {
+            "title": "Resolver el sobrante del cheque",
+            "intro": "El cheque guardería / ticket restaurant supera el recibo. Elige qué hacer con el sobrante: es dinero de la familia.",
+            "recibo": "Recibo",
+            "cheque": "Cheque",
+            "sobrante": "Sobrante a resolver",
+            "via_diferir_hint": "El sobrante se descontará como saldo a favor en el recibo de {mes} de la familia. Si se quita esa línea, el sobrante vuelve a quedar pendiente.",
+            "diferido_ok": "Sobrante descontado del recibo del mes siguiente."
+          }
         },
         "transferencias": {
           "errors": {
@@ -1775,7 +1786,8 @@
       "desconfirmar_failed": "No se pudo reabrir el recibo.",
       "desborde_pendiente": "Este recibo tiene un exceso de beca comedor sin resolver: resuélvelo antes de confirmarlo.",
       "beca_ya_aplicada": "Una beca de este recibo ya está descontada en otro recibo validado. Recalcula el mes antes de confirmarlo.",
-      "linea_arrastre": "La línea de una devolución no se edita: se quita, y la devolución vuelve a quedar sin resolver."
+      "linea_arrastre": "La línea de una devolución no se edita: se quita, y la devolución vuelve a quedar sin resolver.",
+      "linea_sobrante": "La línea del saldo a favor de un cheque no se edita: si hace falta, quítala y el sobrante vuelve a quedar pendiente."
     },
     "desborde_aviso": "{n} recibos con beca comedor pendiente de resolver.",
     "desborde_badge": "Beca pendiente",
@@ -1797,7 +1809,10 @@
     "metodo_sepa_sin_mandato": "Sin mandato SEPA activo: no entrará en la remesa.",
     "linea_arrastre": "devolución",
     "quitar_arrastre_confirm": "Es la línea de una devolución. Si la quitas, la devolución vuelve a quedar sin resolver. ¿La quitas?",
-    "arrastre_quitado": "Línea quitada. La devolución vuelve a quedar sin resolver."
+    "arrastre_quitado": "Línea quitada. La devolución vuelve a quedar sin resolver.",
+    "linea_sobrante": "saldo a favor",
+    "quitar_sobrante_confirm": "Esta línea es el sobrante de un cheque, devuelto a la familia como saldo a favor. Si la quitas, el sobrante vuelve a quedar pendiente. ¿Quitarla?",
+    "sobrante_quitado": "Línea quitada. El sobrante del cheque vuelve a estar pendiente."
   },
   "cargo_puntual": {
     "abrir": "Cargo a varios niños",
@@ -1981,7 +1996,6 @@
       "no_cobrable_manual": "Este recibo no se puede marcar como cobrado manual.",
       "cobrar_manual_failed": "No se pudo marcar como cobrado manual.",
       "sepa_por_remesa": "Un recibo SEPA pendiente se cobra por remesa. Para cobrarlo a mano, desconfírmalo y cambia el método del mes.",
-      "cheque_supera_recibo": "El cheque supera el importe del recibo. Ese caso todavía no se puede registrar.",
       "sin_mandato_diferencia": "La familia no tiene mandato SEPA activo: lo que queda no se puede pasar al banco.",
       "devolucion_ya_resuelta": "Esta devolución ya está resuelta: no se puede cobrar dos veces.",
       "no_devuelto": "Solo se resuelve un recibo devuelto.",
@@ -1989,16 +2003,18 @@
       "resolver_failed": "No se pudo resolver la devolución.",
       "devolucion_por_resolver": "Un recibo devuelto se cobra desde «Resolver devolución».",
       "recibo_siguiente_cerrado": "El recibo del mes siguiente de la familia ya está validado: no se puede llevar ahí. Elige otra salida o devuelve ese recibo a borrador.",
-      "mes_siguiente_cerrado": "El mes siguiente ya está cerrado y la familia no tiene recibo en él: no se puede llevar al siguiente recibo."
+      "mes_siguiente_cerrado": "El mes siguiente ya está cerrado y la familia no tiene recibo en él: no se puede llevar al siguiente recibo.",
+      "recibo_sin_importe": "Este recibo no tiene importe: no se cobra con cheque."
     },
     "transferencias_beca": {
-      "title": "Transferencias de beca comedor",
-      "sub": "Devoluciones del exceso de beca a la familia por transferencia bancaria.",
-      "sin_transferencias": "No hay transferencias de beca comedor.",
+      "title": "Transferencias a familias",
+      "sub": "Devoluciones a la familia por transferencia bancaria: el exceso de una beca de comedor o el sobrante de un cheque.",
+      "sin_transferencias": "No hay transferencias.",
       "pendiente": "Pendiente",
       "realizada": "Realizada",
       "marcar_realizada": "Marcar realizada",
-      "marcada_ok": "Transferencia marcada como realizada."
+      "marcada_ok": "Transferencia marcada como realizada.",
+      "origen_cheque": "Sobrante de cheque"
     },
     "esporadico_badge": "Esporádico",
     "sin_metodo": "Sin método",
@@ -2019,7 +2035,8 @@
         "transferencia": "Transferencia"
       },
       "diferencia_aparte": "Va a un recibo aparte del mismo mes, que se cobra como cualquier otro.",
-      "diferencia_sin_mandato": "Va a un recibo aparte del mismo mes. La familia no tiene mandato SEPA activo, así que no se puede pasar al banco."
+      "diferencia_sin_mandato": "Va a un recibo aparte del mismo mes. La familia no tiene mandato SEPA activo, así que no se puede pasar al banco.",
+      "sobrante_pendiente": "El cheque supera el recibo en {importe}. El recibo queda cobrado y el sobrante, pendiente: después eliges si se descuenta del recibo del mes siguiente o se devuelve por transferencia."
     },
     "forma_cobro": {
       "efectivo": "Efectivo",
@@ -2069,7 +2086,11 @@
       "recibo_siguiente_cerrado": "El recibo de {mes} de la familia ya está validado: no se puede llevar ahí. Elige otra salida o, si aún estás a tiempo, devuelve ese recibo a borrador.",
       "mes_siguiente_cerrado": "El mes de {mes} ya está cerrado y la familia no tiene recibo en él: no se puede llevar al siguiente recibo. Elige otra salida."
     },
-    "arrastrada_a": "Llevada al recibo de {mes} · {importe}"
+    "arrastrada_a": "Llevada al recibo de {mes} · {importe}",
+    "sobrante_pendiente": "sobrante de {importe}, pendiente",
+    "sobrante_diferido": "sobrante de {importe}, descontado del recibo de {mes}",
+    "sobrante_transferencia": "sobrante de {importe}, a devolver por transferencia",
+    "resolver_sobrante": "Resolver sobrante"
   },
   "aula": {
     "validation": {
@@ -3981,8 +4002,8 @@
         "lineas": "Líneas",
         "metodos_pago": "Formas de pago",
         "conceptos_asignados": "Conceptos asignados",
-        "beca_comedor_excesos": "Excesos de beca de comedor",
-        "beca_comedor_transferencias": "Devoluciones de beca de comedor",
+        "beca_comedor_excesos": "Excesos de beca de comedor y sobrantes de cheque",
+        "beca_comedor_transferencias": "Devoluciones por transferencia",
         "anio": "Año",
         "mes": "Mes",
         "metodo": "Forma",
@@ -3996,8 +4017,8 @@
         "importe_centimos": "Importe",
         "concepto": "Concepto",
         "importe_especial_centimos": "Importe especial",
-        "cuota_total_centimos": "Cuota total",
-        "beca_total_centimos": "Beca total",
+        "cuota_total_centimos": "Cuota total o recibo",
+        "beca_total_centimos": "Beca total o cheque",
         "exceso_centimos": "Exceso",
         "via": "Resolución",
         "resuelto_en": "Resuelto el",
@@ -4176,7 +4197,9 @@
         "manual": "Manual",
         "normas": "Normas del centro",
         "banco": "Banco",
-        "siguiente_recibo": "Siguiente recibo"
+        "siguiente_recibo": "Siguiente recibo",
+        "beca": "Beca de comedor",
+        "cheque": "Cheque guardería / Ticket restaurant"
       }
     },
     "descargar_mis_datos": "Descargar mis datos",

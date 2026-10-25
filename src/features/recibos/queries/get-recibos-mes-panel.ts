@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { origenExceso } from '@/features/beca-comedor/lib/origen-exceso'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
@@ -220,25 +221,31 @@ export async function getRecibosMesPanel(
     // La columna es `text` con CHECK de dos valores (R-2); se estrecha aquí al union.
     origen: l.origen === 'manual' ? 'manual' : 'automatico',
     esArrastre: l.arrastre_de_recibo_id != null,
+    // PR-1c: antes de aplicar 20261119120000 la columna no viene, y ninguna línea lo es.
+    esSobrante: l.sobrante_de_desborde_id != null,
   }))
 
   // V2-4: desbordes de beca comedor PENDIENTES del mes (para el aviso + el diálogo de
-  // resolución en la fila). RLS admin del centro. Se cuelgan de la fila por familia/recibo.
+  // resolución en la fila). RLS admin del centro. Se cuelgan de la fila por familia/recibo. Solo
+  // los de beca: el sobrante de un cheque (PR-1c) cuelga de un recibo ya cobrado y se resuelve en
+  // la gestión de cobros. `*` para leer el origen también antes de que exista la columna.
   const { data: desbordesRows } = await supabase
     .from('beca_comedor_desborde')
-    .select('familia_id, recibo_id, cuota_total_centimos, beca_total_centimos, exceso_centimos')
+    .select('*')
     .eq('centro_id', centroId)
     .eq('anio', anio)
     .eq('mes', mes)
     .eq('estado', 'pendiente')
 
-  const desbordesInput: DesbordePanelInput[] = (desbordesRows ?? []).map((d) => ({
-    familiaId: d.familia_id,
-    reciboId: d.recibo_id,
-    cuotaCentimos: d.cuota_total_centimos,
-    becaCentimos: d.beca_total_centimos,
-    excesoCentimos: d.exceso_centimos,
-  }))
+  const desbordesInput: DesbordePanelInput[] = (desbordesRows ?? [])
+    .filter((d) => origenExceso(d) === 'beca')
+    .map((d) => ({
+      familiaId: d.familia_id,
+      reciboId: d.recibo_id,
+      cuotaCentimos: d.cuota_total_centimos,
+      becaCentimos: d.beca_total_centimos,
+      excesoCentimos: d.exceso_centimos,
+    }))
 
   const panel = construirPanelFamilia(familias, recibosInput, lineasInput, desbordesInput)
 
