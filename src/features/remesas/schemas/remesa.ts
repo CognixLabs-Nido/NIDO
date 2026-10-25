@@ -106,7 +106,7 @@ export function crearCobroDialogSchema(totalCentimos: number) {
         return
       }
       const centimos = eurosACentimos(importe)
-      if (totalCentimos <= 0 || centimos > totalCentimos) {
+      if (totalCentimos <= 0) {
         ctx.addIssue({
           code: 'custom',
           path: ['importe_euros'],
