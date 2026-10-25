@@ -7,12 +7,16 @@ import { fail, ok, type ActionResult } from '@/features/centros/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { claveErrorEnlace } from '../lib/errores-enlace'
 import { crearRemesaSchema, type CrearRemesaInput } from '../schemas/remesa'
 
 /**
  * Crea una remesa en BORRADOR con los recibos SEPA marcados por la directora y sus
  * enlaces en recibos_remesa. NO genera el XML (eso es bajo demanda, G1). Solo admin
  * (RLS de remesas/recibos_remesa). Puede haber >1 remesa/mes (re-giros).
+ *
+ * Que cada recibo siga libre lo comprueba la BD al enlazarlo (`recibos_remesa_validar`), no la
+ * lista que cargó la página: un recibo que ya entró en otra remesa tumba la creación entera.
  */
 export async function crearRemesa(
   input: CrearRemesaInput,
@@ -57,7 +61,7 @@ export async function crearRemesa(
       .from('remesas')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', remesa.id)
-    return fail('remesas.errors.crear_failed')
+    return fail(claveErrorEnlace(errEnlaces, 'remesas.errors.crear_failed'))
   }
 
   revalidatePath('/[locale]/admin/cuotas', 'page')

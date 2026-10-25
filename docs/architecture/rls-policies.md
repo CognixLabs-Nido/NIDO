@@ -1288,6 +1288,45 @@ elección de la directora.
   de beca.
 - Test: `cheque-sobrante.rls.test.ts`.
 
+### Un recibo, una remesa; y añadir recibos a una remesa en borrador
+
+Migración `20261120120000_fix_remesa_recibo_unico`. Un mismo recibo podía entrar en dos remesas
+vivas: la única unicidad era (remesa, recibo) y `crearRemesa` no volvía a comprobar en el servidor
+que los recibos siguieran libres. Una pestaña abierta desde antes de crear la primera remesa, o dos
+personas de Dirección a la vez, y el banco cobraba dos veces a la familia (el mismo fallo que la
+devolución resuelta dos veces del PR-2). Y lo que faltaba, decisión del responsable: a una remesa en
+borrador, con el fichero sin generar, se le **añaden** recibos. Generado el fichero o enviada, no se
+toca.
+
+- **`remesas.fichero_generado_at`:** la primera vez que sale el fichero pain.008 de una remesa en
+  borrador. La pone la descarga del XML **antes** de leer los recibos que van en él (antes comprueba
+  que el fichero sale, para no cerrar una remesa con un 422), y no se quita.
+- **`recibos_remesa_validar`** (BEFORE INSERT OR UPDATE OR DELETE, `SECURITY DEFINER`):
+  - bloquea la remesa: el envío, la marca del fichero y el borrado esperan al enlace;
+  - entra un recibo solo en una remesa viva, en borrador y sin fichero (`remesa_cerrada`,
+    `remesa_con_fichero`);
+  - bloquea el recibo: dos remesas con el mismo recibo, a la vez, esperan una a otra y la segunda ve
+    el enlace de la primera. Un recibo en una remesa viva no entra en otra
+    (`recibo_en_otra_remesa`), también con service_role. El de una remesa borrada, sí;
+  - el recibo es del centro de la remesa; con sesión, además, por banco, confirmado y con importe
+    (`recibo_no_remesable`). service_role puede enlazar uno en otro estado: la red defensiva de
+    `get_mandatos_remesa` tiene su test;
+  - un enlace no cambia de remesa ni de recibo (`enlace_fijo`);
+  - de una remesa enviada o con fichero no sale ningún recibo, salvo con service_role.
+- **`remesas_proteger`** (BEFORE UPDATE): la marca del fichero no se quita, para nadie
+  (`fichero_generado`). Con sesión, una remesa enviada no vuelve a borrador, y ni la enviada ni la que
+  tiene fichero se borran: sus recibos quedarían libres para otra remesa.
+- **`recibos_en_remesa_no_vuelven_a_borrador`** (BEFORE UPDATE OF estado, de `pendiente_procesar` a
+  `borrador`, para todos): `desconfirmar_recibo` ya lo miraba, pero sin bloquear el recibo, y un
+  enlace que entraba a la vez dejaba un borrador dentro de la remesa (`recibo_en_remesa`).
+- **En la app:**
+  - `crearRemesa` traduce lo que diga la BD y no deja la remesa vacía;
+  - `anadirARemesa` mete los recibos marcados en una remesa en borrador sin fichero, todos o ninguno;
+    en la lista de remesas, «Añadir N a esta remesa»; con el fichero generado, la remesa lo dice;
+  - `marcarRemesaEnviada` pasa la remesa a enviada **antes** de leer sus recibos: desde ese momento
+    no entra ninguno, así que los que pasan a `enviado_banco` son todos.
+- Test: `remesa-recibo-unico.rls.test.ts`.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -1333,6 +1372,7 @@ elección de la directora.
 | Cargo puntual a varios niños                  | `cargo-puntual.rls.test.ts`                     |
 | Devolución llevada al siguiente recibo        | `devolucion-siguiente-recibo.rls.test.ts`       |
 | El sobrante del cheque mayor que el recibo    | `cheque-sobrante.rls.test.ts`                   |
+| Un recibo, una remesa; añadir en borrador     | `remesa-recibo-unico.rls.test.ts`               |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

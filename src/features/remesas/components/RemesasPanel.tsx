@@ -14,6 +14,7 @@ import type { TransferenciasBecaData } from '@/features/beca-comedor/queries/get
 import { MesSelector } from '@/features/cuotas-config/components/MesSelector'
 import { formatEuros } from '@/shared/lib/format-money'
 
+import { anadirARemesa } from '../actions/anadir-a-remesa'
 import { crearRemesa } from '../actions/crear-remesa'
 import { marcarRemesaEnviada } from '../actions/marcar-remesa-enviada'
 import type { DatosAcreedorConfig } from '../queries/get-datos-acreedor'
@@ -78,6 +79,18 @@ export function RemesasPanel({
       const r = await crearRemesa({ anio, mes, reciboIds: [...seleccion] }, centroId)
       if (r.success) {
         toast.success(t('remesa_creada'))
+        setSeleccion(new Set())
+      } else {
+        toast.error(tErrors(r.error))
+      }
+    })
+  }
+
+  function anadir(remesaId: string) {
+    startTransition(async () => {
+      const r = await anadirARemesa({ remesaId, reciboIds: [...seleccion] })
+      if (r.success) {
+        toast.success(t('recibos_anadidos'))
         setSeleccion(new Set())
       } else {
         toast.error(tErrors(r.error))
@@ -241,8 +254,21 @@ export function RemesasPanel({
                       {t('enviada_el', { fecha: rm.fechaEnvioBanco })}
                     </p>
                   )}
+                  {rm.estado === 'borrador' && rm.ficheroGenerado && (
+                    <p className="text-muted-foreground text-xs">{t('fichero_generado_nota')}</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
+                  {rm.estado === 'borrador' && !rm.ficheroGenerado && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={pending || seleccion.size === 0}
+                      onClick={() => anadir(rm.id)}
+                    >
+                      {t('anadir_a_remesa', { num: seleccion.size })}
+                    </Button>
+                  )}
                   <RemesaXmlButton remesaId={rm.id} disabled={!acreedorCompleto} />
                   {rm.estado === 'borrador' && (
                     <Button size="sm" disabled={pending} onClick={() => enviar(rm.id)}>

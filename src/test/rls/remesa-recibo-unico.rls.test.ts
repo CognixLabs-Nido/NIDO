@@ -23,6 +23,8 @@ import type { Database } from '@/types/database'
  *  - A una remesa en borrador se le añaden recibos mientras no se haya generado su fichero. Con el
  *    fichero generado, o enviada, ni entra ni sale ninguno, y la marca del fichero no se quita.
  *  - Solo entran recibos por banco, confirmados, con importe y del centro de la remesa.
+ *  - Una remesa enviada no vuelve a borrador, y ni la enviada ni la que tiene fichero se borran: sus
+ *    recibos quedarían libres para otra remesa.
  *  - Un recibo en una remesa viva no vuelve a borrador por ningún camino, y el enlace no se mueve.
  */
 
@@ -226,6 +228,44 @@ describe('Un recibo, una remesa', () => {
       .single()
     const otro = await enlazar(serviceClient, r, ajeno!.id)
     expect(otro.error?.hint).toBe('recibo_no_remesable')
+  })
+
+  it('una remesa enviada no vuelve a borrador ni se borra; con el fichero, tampoco se borra', async () => {
+    const enviada = await remesa()
+    expect((await enlazar(cDirectora, enviada, await recibo())).error).toBeNull()
+    expect(
+      (
+        await cDirectora
+          .from('remesas')
+          .update({ estado: 'enviada', fecha_envio_banco: '2026-03-05' })
+          .eq('id', enviada)
+      ).error
+    ).toBeNull()
+    const vuelta = await cDirectora
+      .from('remesas')
+      .update({ estado: 'borrador', fecha_envio_banco: null })
+      .eq('id', enviada)
+    expect(vuelta.error?.hint).toBe('remesa_cerrada')
+    const borrada = await cDirectora
+      .from('remesas')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', enviada)
+    expect(borrada.error?.hint).toBe('remesa_cerrada')
+
+    const conFichero = await remesa()
+    expect(
+      (
+        await cDirectora
+          .from('remesas')
+          .update({ fichero_generado_at: new Date().toISOString() })
+          .eq('id', conFichero)
+      ).error
+    ).toBeNull()
+    const borradaFichero = await cDirectora
+      .from('remesas')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', conFichero)
+    expect(borradaFichero.error?.hint).toBe('remesa_con_fichero')
   })
 
   it('el recibo de una remesa borrada vuelve a entrar en otra', async () => {

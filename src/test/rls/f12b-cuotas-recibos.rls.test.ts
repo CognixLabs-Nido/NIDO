@@ -342,9 +342,28 @@ describe('F12-B — RLS cuotas/recibos/remesas (catálogo · asignación · part
       expect(remesa.error).toBeNull()
       const remesaId = remesa.data!.id
 
+      // En una remesa solo entra un recibo por banco y confirmado (`20261120120000`): el de arriba
+      // es un borrador, así que se enlaza uno esporádico del mismo mes, ya confirmado.
+      const confirmado = await serviceClient
+        .from('recibos')
+        .insert({
+          centro_id: centroA.id,
+          familia_id: ninoA.familia_id,
+          anio: 2026,
+          mes: 6,
+          metodo: 'sepa',
+          total_centimos: 9000,
+          estado: 'pendiente_procesar',
+          es_esporadico: true,
+          concepto_esporadico: 'Remesa F12B',
+        })
+        .select('id')
+        .single()
+      expect(confirmado.error).toBeNull()
+
       const liga = await cAdminA
         .from('recibos_remesa')
-        .insert({ centro_id: centroA.id, remesa_id: remesaId, recibo_id: reciboId })
+        .insert({ centro_id: centroA.id, remesa_id: remesaId, recibo_id: confirmado.data!.id })
         .select('id')
         .maybeSingle()
       expect(liga.error).toBeNull()
