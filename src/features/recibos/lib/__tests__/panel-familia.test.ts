@@ -114,7 +114,7 @@ describe('construirPanelFamilia', () => {
     expect(familiar.ninoNombre).toBeNull()
   })
 
-  it('PR-14: la línea de una devolución arrastrada llega marcada; las demás no', () => {
+  it('PR-14 y PR-1c: la línea de una devolución arrastrada y la del saldo a favor de un cheque llegan marcadas; las demás no', () => {
     const recibos: ReciboPanelInput[] = [
       {
         id: 'rec-garcia',
