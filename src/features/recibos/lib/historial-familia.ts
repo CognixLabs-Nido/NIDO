@@ -292,7 +292,7 @@ export function construirHistorial(input: {
               salida === 'banco'
                 ? ref(regiroDe.get(r.id) ?? null)
                 : salida === 'siguiente_recibo'
-                  ? ref(arrastradaA.get(r.id) ?? null)
+                  ? ref(null)
                   : null,
           }
         : null,
