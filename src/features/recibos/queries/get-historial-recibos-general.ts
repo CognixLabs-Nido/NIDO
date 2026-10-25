@@ -81,7 +81,7 @@ export async function getHistorialRecibosGeneral(
   if (errCount) return fallar('recuento', errCount.message)
   const total = count ?? 0
   const paginas = Math.max(1, Math.ceil(total / RECIBOS_POR_PAGINA))
-  const pagina = Math.min(Math.max(1, filtro.pagina), paginas)
+  const pagina = Math.max(1, filtro.pagina)
   if (total === 0) return { ok: true, recibos: [], total, pagina, paginas }
 
   const desde = (pagina - 1) * RECIBOS_POR_PAGINA
