@@ -47,6 +47,7 @@ export interface ReferenciaRecibo {
 
 export interface ReciboHistorialInput {
   id: string
+  familia_id: string | null
   anio: number
   mes: number
   estado: EstadoRecibo
@@ -119,6 +120,8 @@ export interface DevolucionHistorial {
 
 export interface ReciboHistorial {
   id: string
+  /** La familia del recibo: sus enlaces (re-giro, diferencia, arrastres) son de la misma familia. */
+  familiaId: string | null
   anio: number
   mes: number
   tipo: TipoReciboHistorial
@@ -245,6 +248,7 @@ export function construirHistorial(input: {
 
     return {
       id: r.id,
+      familiaId: r.familia_id,
       anio: r.anio,
       mes: r.mes,
       tipo: tipoDe(r),

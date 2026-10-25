@@ -251,7 +251,8 @@
       "familias": "Families",
       "fotosRevocadas": "Revoked photos",
       "direccion": "Centre management",
-      "servicios": "Services"
+      "servicios": "Services",
+      "recibos": "Receipts"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -1381,6 +1382,27 @@
         "entendido": "Got it",
         "ir": "Go to Centre management"
       }
+    },
+    "recibos": {
+      "title": "Receipts",
+      "subtitle": "All the centre's receipts, with their status and what happened when they were collected. Search by month, family or child.",
+      "filtro_anio": "Year",
+      "filtro_mes": "Month",
+      "filtro_familia": "Family",
+      "filtro_nino": "Child",
+      "todos_los_anios": "All years",
+      "todos_los_meses": "All months",
+      "todas_las_familias": "All families",
+      "todos_los_ninos": "All children",
+      "quitar_filtros": "Clear filters",
+      "vacio": "No receipts match these filters.",
+      "error": "We couldn't load the receipts. Please try again.",
+      "error_opciones": "We couldn't load the families and children to filter by. Please try again.",
+      "mostrando": "Receipts {desde}–{hasta} of {total}",
+      "paginacion": "History pages",
+      "anterior": "Previous",
+      "siguiente": "Next",
+      "pagina_de": "Page {pagina} of {paginas}"
     }
   },
   "teacher": {

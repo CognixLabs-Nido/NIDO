@@ -251,7 +251,8 @@
       "familias": "Familias",
       "fotosRevocadas": "Fotos revocadas",
       "direccion": "Dirección del centro",
-      "servicios": "Servicios"
+      "servicios": "Servicios",
+      "recibos": "Recibos"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -1381,6 +1382,27 @@
         "entendido": "Entendido",
         "ir": "Ir a Dirección del centro"
       }
+    },
+    "recibos": {
+      "title": "Recibos",
+      "subtitle": "Todos los recibos del centro, con su estado y lo que pasó al cobrarlos. Busca por mes, familia o niño.",
+      "filtro_anio": "Año",
+      "filtro_mes": "Mes",
+      "filtro_familia": "Familia",
+      "filtro_nino": "Niño o niña",
+      "todos_los_anios": "Todos los años",
+      "todos_los_meses": "Todos los meses",
+      "todas_las_familias": "Todas las familias",
+      "todos_los_ninos": "Todos los niños",
+      "quitar_filtros": "Quitar filtros",
+      "vacio": "No hay recibos con estos filtros.",
+      "error": "No hemos podido cargar los recibos. Vuelve a intentarlo.",
+      "error_opciones": "No hemos podido cargar las familias y los niños para filtrar. Vuelve a intentarlo.",
+      "mostrando": "Recibos {desde}–{hasta} de {total}",
+      "paginacion": "Páginas del histórico",
+      "anterior": "Anteriores",
+      "siguiente": "Siguientes",
+      "pagina_de": "Página {pagina} de {paginas}"
     }
   },
   "teacher": {
