@@ -63,6 +63,5 @@ export function borradoresVisibles(filasVisibles: FilaFiltrable[]): string[] {
 /** Lo marcado que se ve: lo que de verdad se confirma. Lo marcado y escondido se queda fuera. */
 export function seleccionVisible(seleccion: Iterable<string>, visibles: string[]): string[] {
   const ver = new Set(visibles)
-  void ver
-  return [...seleccion]
+  return [...seleccion].filter((id) => ver.has(id))
 }
