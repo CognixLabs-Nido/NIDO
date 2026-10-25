@@ -61,7 +61,7 @@ export async function crearRemesa(
       .from('remesas')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', remesa.id)
-    return fail(claveErrorEnlace(errEnlaces, 'remesas.errors.crear_failed'))
+    return fail('remesas.errors.crear_failed')
   }
 
   revalidatePath('/[locale]/admin/cuotas', 'page')
