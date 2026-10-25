@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 
 import { mesesDelCurso } from './cargas'
+import { origenExceso } from './origen-exceso'
 import {
   construirPanel,
   type AlumnoPanel,
@@ -107,11 +108,21 @@ export async function leerPanelBecas(
   for (const ids of lotes([...recibos.keys()])) {
     const { data, error } = await supabase
       .from('beca_comedor_desborde')
-      .select('recibo_id, estado, via, exceso_centimos')
+      .select('*')
       .eq('centro_id', centroId)
       .in('recibo_id', ids)
     if (error) throw new Error(`leerPanelBecas desbordes: ${error.message}`)
-    desbordes.push(...(data ?? []))
+    // Solo los de beca (PR-1c): el sobrante de un cheque no es de este panel. `*` para leer el
+    // origen también antes de que exista la columna.
+    for (const d of data ?? []) {
+      if (origenExceso(d) !== 'beca') continue
+      desbordes.push({
+        recibo_id: d.recibo_id,
+        estado: d.estado,
+        via: d.via,
+        exceso_centimos: d.exceso_centimos,
+      })
+    }
   }
 
   const ninoIds = [...new Set([...becados, ...tramos.map((t) => t.nino_id)])]

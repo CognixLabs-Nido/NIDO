@@ -762,6 +762,7 @@ export type Database = {
           familia_id: string
           id: string
           mes: number
+          origen: string
           recibo_id: string
           resuelto_at: string | null
           resuelto_por: string | null
@@ -779,6 +780,7 @@ export type Database = {
           familia_id: string
           id?: string
           mes: number
+          origen?: string
           recibo_id: string
           resuelto_at?: string | null
           resuelto_por?: string | null
@@ -796,6 +798,7 @@ export type Database = {
           familia_id?: string
           id?: string
           mes?: number
+          origen?: string
           recibo_id?: string
           resuelto_at?: string | null
           resuelto_por?: string | null
@@ -990,6 +993,7 @@ export type Database = {
           id: string
           importe_centimos: number
           mes: number
+          origen: string
           realizada_at: string | null
           realizada_por: string | null
           recibo_id: string | null
@@ -1004,6 +1008,7 @@ export type Database = {
           id?: string
           importe_centimos: number
           mes: number
+          origen?: string
           realizada_at?: string | null
           realizada_por?: string | null
           recibo_id?: string | null
@@ -1018,6 +1023,7 @@ export type Database = {
           id?: string
           importe_centimos?: number
           mes?: number
+          origen?: string
           realizada_at?: string | null
           realizada_por?: string | null
           recibo_id?: string | null
@@ -2647,6 +2653,7 @@ export type Database = {
           origen: string
           precio_unitario_centimos: number
           recibo_id: string
+          sobrante_de_desborde_id: string | null
         }
         Insert: {
           arrastre_de_recibo_id?: string | null
@@ -2662,6 +2669,7 @@ export type Database = {
           origen?: string
           precio_unitario_centimos: number
           recibo_id: string
+          sobrante_de_desborde_id?: string | null
         }
         Update: {
           arrastre_de_recibo_id?: string | null
@@ -2677,6 +2685,7 @@ export type Database = {
           origen?: string
           precio_unitario_centimos?: number
           recibo_id?: string
+          sobrante_de_desborde_id?: string | null
         }
         Relationships: [
           {
@@ -2719,6 +2728,13 @@ export type Database = {
             columns: ["recibo_id"]
             isOneToOne: false
             referencedRelation: "recibos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lineas_recibo_sobrante_de_desborde_id_fkey"
+            columns: ["sobrante_de_desborde_id"]
+            isOneToOne: false
+            referencedRelation: "beca_comedor_desborde"
             referencedColumns: ["id"]
           },
         ]
@@ -4860,6 +4876,10 @@ export type Database = {
       resolver_etiqueta_imagen: {
         Args: { p_media_etiqueta_id: string }
         Returns: number
+      }
+      resolver_sobrante_cheque: {
+        Args: { p_recibo_id: string; p_via: string }
+        Returns: string
       }
       set_datos_acreedor: {
         Args: {

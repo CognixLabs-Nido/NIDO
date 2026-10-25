@@ -3,6 +3,8 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { origenExceso, type OrigenExceso } from '../lib/origen-exceso'
+
 export interface TransferenciaBecaItem {
   id: string
   familiaEtiqueta: string
@@ -10,6 +12,8 @@ export interface TransferenciaBecaItem {
   anio: number
   mes: number
   realizadaAt: string | null
+  /** PR-1c: el exceso de una beca o el sobrante de un cheque guardería / ticket restaurant. */
+  origen: OrigenExceso
 }
 
 export interface TransferenciasBecaData {
@@ -23,14 +27,16 @@ const VACIO: TransferenciasBecaData = { pendientes: [], realizadas: [] }
  * V2-5 — Transferencias de beca comedor del centro (devolución del exceso a la familia).
  * Las 'pendientes' (creadas al resolver un desborde vía transferencia) se pagan por banco y
  * se marcan realizadas. Las 'realizadas' se listan con su sello (no se borran al regenerar:
- * recibo_id pasa a NULL, la fila sobrevive colgada de la familia). RLS: admin del centro.
+ * recibo_id pasa a NULL, la fila sobrevive colgada de la familia). PR-1c: también las del sobrante
+ * de un cheque, con su origen. RLS: admin del centro.
  */
 export async function getTransferenciasBeca(centroId: string): Promise<TransferenciasBecaData> {
   const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('beca_comedor_transferencia')
-    .select('id, familia_id, importe_centimos, anio, mes, estado, realizada_at')
+    // `*` para leer el origen también antes de que exista la columna (PR-1c).
+    .select('*')
     .eq('centro_id', centroId)
     .order('anio', { ascending: true })
     .order('mes', { ascending: true })
@@ -56,6 +62,7 @@ export async function getTransferenciasBeca(centroId: string): Promise<Transfere
     anio: f.anio,
     mes: f.mes,
     realizadaAt: f.realizada_at,
+    origen: origenExceso(f),
   })
 
   const pendientes = filas.filter((f) => f.estado === 'pendiente').map(toItem)

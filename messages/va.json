@@ -522,9 +522,20 @@
             "sin_hijos": "La família no té fills actius.",
             "sin_becas": "No hi ha beques per repartir en aquest rebut.",
             "descuadre": "El repartiment no quadra amb l’excés; no s’ha aplicat.",
-            "save_failed": "No s’ha pogut resoldre."
+            "save_failed": "No s’ha pogut resoldre.",
+            "sin_hijos_cheque": "La família ja no té xiquets actius: el sobrant es torna per transferència.",
+            "recibo_siguiente_cerrado": "El rebut del mes següent de la família ja està validat: no es pot descomptar allí. Torna’l per transferència, o torna eixe rebut a esborrany si encara estàs a temps."
           },
-          "aviso_validar": "Aquest rebut no es pot confirmar amb un excés de beca de {importe} sense resoldre. Comprova que és correcte: si la beca està mal posada, corregeix-la i recalcula el mes. Si ho és, tria què fer amb ell."
+          "aviso_validar": "Aquest rebut no es pot confirmar amb un excés de beca de {importe} sense resoldre. Comprova que és correcte: si la beca està mal posada, corregeix-la i recalcula el mes. Si ho és, tria què fer amb ell.",
+          "cheque": {
+            "title": "Resoldre el sobrant del xec",
+            "intro": "El xec guarderia / tiquet restaurant supera el rebut. Tria què fer amb el sobrant: són diners de la família.",
+            "recibo": "Rebut",
+            "cheque": "Xec",
+            "sobrante": "Sobrant a resoldre",
+            "via_diferir_hint": "El sobrant es descomptarà com a saldo a favor en el rebut de {mes} de la família. Si es lleva eixa línia, el sobrant torna a quedar pendent.",
+            "diferido_ok": "Sobrant descomptat del rebut del mes següent."
+          }
         },
         "transferencias": {
           "errors": {
@@ -1775,7 +1786,8 @@
       "desconfirmar_failed": "No s’ha pogut reobrir el rebut.",
       "desborde_pendiente": "Aquest rebut té un excés de beca menjador sense resoldre: resol-lo abans de confirmar-lo.",
       "beca_ya_aplicada": "Una beca d'aquest rebut ja està descomptada en un altre rebut validat. Recalcula el mes abans de confirmar-lo.",
-      "linea_arrastre": "La línia d’una devolució no s’edita: es lleva, i la devolució torna a quedar sense resoldre."
+      "linea_arrastre": "La línia d’una devolució no s’edita: es lleva, i la devolució torna a quedar sense resoldre.",
+      "linea_sobrante": "La línia del saldo a favor d’un xec no s’edita: si cal, lleva-la i el sobrant torna a quedar pendent."
     },
     "desborde_aviso": "{n} rebuts amb beca menjador pendent de resoldre.",
     "desborde_badge": "Beca pendent",
@@ -1797,7 +1809,10 @@
     "metodo_sepa_sin_mandato": "Sense mandat SEPA actiu: no entrarà en la remesa.",
     "linea_arrastre": "devolució",
     "quitar_arrastre_confirm": "És la línia d’una devolució. Si la lleves, la devolució torna a quedar sense resoldre. La lleves?",
-    "arrastre_quitado": "Línia llevada. La devolució torna a quedar sense resoldre."
+    "arrastre_quitado": "Línia llevada. La devolució torna a quedar sense resoldre.",
+    "linea_sobrante": "saldo a favor",
+    "quitar_sobrante_confirm": "Aquesta línia és el sobrant d’un xec, tornat a la família com a saldo a favor. Si la lleves, el sobrant torna a quedar pendent. La lleves?",
+    "sobrante_quitado": "Línia llevada. El sobrant del xec torna a estar pendent."
   },
   "cargo_puntual": {
     "abrir": "Càrrec a diversos xiquets",
@@ -1981,7 +1996,6 @@
       "no_cobrable_manual": "Este rebut no es pot marcar com a cobrat manual.",
       "cobrar_manual_failed": "No s'ha pogut marcar com a cobrat manual.",
       "sepa_por_remesa": "Un rebut SEPA pendent es cobra per remesa. Per a cobrar-lo a mà, desconfirma'l i canvia el mètode del mes.",
-      "cheque_supera_recibo": "El xec supera l’import del rebut. Eixe cas encara no es pot registrar.",
       "sin_mandato_diferencia": "La família no té mandat SEPA actiu: el que queda no es pot passar al banc.",
       "devolucion_ya_resuelta": "Aquesta devolució ja està resolta: no es pot cobrar dues vegades.",
       "no_devuelto": "Només es resol un rebut retornat.",
@@ -1989,16 +2003,18 @@
       "resolver_failed": "No s'ha pogut resoldre la devolució.",
       "devolucion_por_resolver": "Un rebut retornat es cobra des de «Resoldre devolució».",
       "recibo_siguiente_cerrado": "El rebut del mes següent de la família ja està validat: no es pot portar allí. Tria una altra eixida o torna eixe rebut a esborrany.",
-      "mes_siguiente_cerrado": "El mes següent ja està tancat i la família no hi té rebut: no es pot portar al rebut següent."
+      "mes_siguiente_cerrado": "El mes següent ja està tancat i la família no hi té rebut: no es pot portar al rebut següent.",
+      "recibo_sin_importe": "Aquest rebut no té import: no es cobra amb xec."
     },
     "transferencias_beca": {
-      "title": "Transferències de beca menjador",
-      "sub": "Devolucions de l’excés de beca a la família per transferència bancària.",
-      "sin_transferencias": "No hi ha transferències de beca menjador.",
+      "title": "Transferències a famílies",
+      "sub": "Devolucions a la família per transferència bancària: l’excés d’una beca menjador o el sobrant d’un xec.",
+      "sin_transferencias": "No hi ha transferències.",
       "pendiente": "Pendent",
       "realizada": "Realitzada",
       "marcar_realizada": "Marcar realitzada",
-      "marcada_ok": "Transferència marcada com a realitzada."
+      "marcada_ok": "Transferència marcada com a realitzada.",
+      "origen_cheque": "Sobrant de xec"
     },
     "esporadico_badge": "Esporàdic",
     "sin_metodo": "Sense mètode",
@@ -2019,7 +2035,8 @@
         "transferencia": "Transferència"
       },
       "diferencia_aparte": "Va a un rebut a banda del mateix mes, que es cobra com qualsevol altre.",
-      "diferencia_sin_mandato": "Va a un rebut a banda del mateix mes. La família no té mandat SEPA actiu, així que no es pot passar al banc."
+      "diferencia_sin_mandato": "Va a un rebut a banda del mateix mes. La família no té mandat SEPA actiu, així que no es pot passar al banc.",
+      "sobrante_pendiente": "El xec supera el rebut en {importe}. El rebut queda cobrat i el sobrant, pendent: després tries si es descompta del rebut del mes següent o es torna per transferència."
     },
     "forma_cobro": {
       "efectivo": "Efectiu",
@@ -2069,7 +2086,11 @@
       "recibo_siguiente_cerrado": "El rebut de {mes} de la família ja està validat: no es pot portar allí. Tria una altra eixida o, si encara estàs a temps, torna eixe rebut a esborrany.",
       "mes_siguiente_cerrado": "El mes de {mes} ja està tancat i la família no hi té rebut: no es pot portar al rebut següent. Tria una altra eixida."
     },
-    "arrastrada_a": "Portada al rebut de {mes} · {importe}"
+    "arrastrada_a": "Portada al rebut de {mes} · {importe}",
+    "sobrante_pendiente": "sobrant de {importe}, pendent",
+    "sobrante_diferido": "sobrant de {importe}, descomptat del rebut de {mes}",
+    "sobrante_transferencia": "sobrant de {importe}, per tornar per transferència",
+    "resolver_sobrante": "Resoldre sobrant"
   },
   "aula": {
     "validation": {
@@ -3981,8 +4002,8 @@
         "lineas": "Línies",
         "metodos_pago": "Formes de pagament",
         "conceptos_asignados": "Conceptes assignats",
-        "beca_comedor_excesos": "Excessos de beca de menjador",
-        "beca_comedor_transferencias": "Devolucions de beca de menjador",
+        "beca_comedor_excesos": "Excessos de beca menjador i sobrants de xec",
+        "beca_comedor_transferencias": "Devolucions per transferència",
         "anio": "Any",
         "mes": "Mes",
         "metodo": "Forma",
@@ -3996,8 +4017,8 @@
         "importe_centimos": "Import",
         "concepto": "Concepte",
         "importe_especial_centimos": "Import especial",
-        "cuota_total_centimos": "Quota total",
-        "beca_total_centimos": "Beca total",
+        "cuota_total_centimos": "Quota total o rebut",
+        "beca_total_centimos": "Beca total o xec",
         "exceso_centimos": "Excés",
         "via": "Resolució",
         "resuelto_en": "Resolt el",
@@ -4176,7 +4197,9 @@
         "manual": "Manual",
         "normas": "Normes del centre",
         "banco": "Banc",
-        "siguiente_recibo": "Rebut següent"
+        "siguiente_recibo": "Rebut següent",
+        "beca": "Beca menjador",
+        "cheque": "Xec guarderia / Tiquet restaurant"
       }
     },
     "descargar_mis_datos": "Descarregar les meues dades",

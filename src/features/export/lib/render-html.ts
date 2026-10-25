@@ -322,6 +322,9 @@ export const VALORES_CONOCIDOS = new Set<string>([
   'resuelto',
   'reducir',
   'resto',
+  // el origen de un exceso y de su transferencia (PR-1c, 20261119120000)
+  'beca',
+  'cheque',
   'aplicada',
   'anulada',
   'realizada',

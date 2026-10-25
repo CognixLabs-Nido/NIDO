@@ -522,9 +522,20 @@
             "sin_hijos": "The family has no active children.",
             "sin_becas": "There are no grants to distribute on this receipt.",
             "descuadre": "The split doesn’t match the excess; nothing was applied.",
-            "save_failed": "Couldn’t resolve."
+            "save_failed": "Couldn’t resolve.",
+            "sin_hijos_cheque": "The family has no active children any more: refund the surplus by transfer.",
+            "recibo_siguiente_cerrado": "The family’s receipt for next month is already validated: it can’t be deducted there. Refund it by transfer, or set that receipt back to draft if there is still time."
           },
-          "aviso_validar": "This receipt cannot be confirmed with an unresolved grant excess of {importe}. Check that it is correct: if the grant is wrong, fix it and recalculate the month. If it is right, choose what to do with it."
+          "aviso_validar": "This receipt cannot be confirmed with an unresolved grant excess of {importe}. Check that it is correct: if the grant is wrong, fix it and recalculate the month. If it is right, choose what to do with it.",
+          "cheque": {
+            "title": "Resolve the voucher surplus",
+            "intro": "The childcare voucher exceeds the receipt. Choose what to do with the surplus: it is the family’s money.",
+            "recibo": "Receipt",
+            "cheque": "Voucher",
+            "sobrante": "Surplus to resolve",
+            "via_diferir_hint": "The surplus will be deducted as a credit on the family’s {mes} receipt. If that line is removed, the surplus goes back to pending.",
+            "diferido_ok": "Surplus deducted from next month’s receipt."
+          }
         },
         "transferencias": {
           "errors": {
@@ -1775,7 +1786,8 @@
       "desconfirmar_failed": "Could not reopen the receipt.",
       "desborde_pendiente": "This receipt has an unresolved meal grant excess: resolve it before confirming.",
       "beca_ya_aplicada": "A meal grant on this receipt has already been deducted on another confirmed receipt. Recalculate the month before confirming it.",
-      "linea_arrastre": "The line of a returned receipt cannot be edited: remove it, and the return goes back to unresolved."
+      "linea_arrastre": "The line of a returned receipt cannot be edited: remove it, and the return goes back to unresolved.",
+      "linea_sobrante": "A voucher credit line can’t be edited: if needed, remove it and the surplus goes back to pending."
     },
     "desborde_aviso": "{n} receipts with a pending meal grant to resolve.",
     "desborde_badge": "Grant pending",
@@ -1797,7 +1809,10 @@
     "metodo_sepa_sin_mandato": "No active SEPA mandate: it will not go into the remittance.",
     "linea_arrastre": "return",
     "quitar_arrastre_confirm": "This is the line of a returned receipt. If you remove it, the return goes back to unresolved. Remove it?",
-    "arrastre_quitado": "Line removed. The return goes back to unresolved."
+    "arrastre_quitado": "Line removed. The return goes back to unresolved.",
+    "linea_sobrante": "credit",
+    "quitar_sobrante_confirm": "This line is a voucher surplus, given back to the family as a credit. If you remove it, the surplus goes back to pending. Remove it?",
+    "sobrante_quitado": "Line removed. The voucher surplus is pending again."
   },
   "cargo_puntual": {
     "abrir": "Charge several children",
@@ -1981,7 +1996,6 @@
       "no_cobrable_manual": "This receipt cannot be marked as manually collected.",
       "cobrar_manual_failed": "Could not mark as manually collected.",
       "sepa_por_remesa": "A pending direct debit receipt is collected through a remittance. To mark it as paid by hand, unconfirm it and change the method for the month.",
-      "cheque_supera_recibo": "The voucher is for more than the receipt. That case cannot be recorded yet.",
       "sin_mandato_diferencia": "The family has no active SEPA mandate: the rest cannot go to the bank.",
       "devolucion_ya_resuelta": "This return is already resolved: it cannot be collected twice.",
       "no_devuelto": "Only a returned receipt can be resolved.",
@@ -1989,16 +2003,18 @@
       "resolver_failed": "The return could not be resolved.",
       "devolucion_por_resolver": "A returned receipt is collected from «Resolve return».",
       "recibo_siguiente_cerrado": "The family’s receipt for the next month is already validated: it cannot be added there. Choose another option or set that receipt back to draft.",
-      "mes_siguiente_cerrado": "The next month is already closed and the family has no receipt in it: it cannot be added to the next receipt."
+      "mes_siguiente_cerrado": "The next month is already closed and the family has no receipt in it: it cannot be added to the next receipt.",
+      "recibo_sin_importe": "This receipt has no amount: it can’t be paid with a voucher."
     },
     "transferencias_beca": {
-      "title": "Meal grant transfers",
-      "sub": "Refunds of the grant excess to the family by bank transfer.",
-      "sin_transferencias": "No meal grant transfers.",
+      "title": "Transfers to families",
+      "sub": "Refunds to the family by bank transfer: a meal grant excess or a voucher surplus.",
+      "sin_transferencias": "No transfers.",
       "pendiente": "Pending",
       "realizada": "Done",
       "marcar_realizada": "Mark done",
-      "marcada_ok": "Transfer marked as done."
+      "marcada_ok": "Transfer marked as done.",
+      "origen_cheque": "Voucher surplus"
     },
     "esporadico_badge": "One-off",
     "sin_metodo": "No method",
@@ -2019,7 +2035,8 @@
         "transferencia": "Bank transfer"
       },
       "diferencia_aparte": "It goes to a separate receipt for the same month, collected like any other.",
-      "diferencia_sin_mandato": "It goes to a separate receipt for the same month. The family has no active SEPA mandate, so it cannot go to the bank."
+      "diferencia_sin_mandato": "It goes to a separate receipt for the same month. The family has no active SEPA mandate, so it cannot go to the bank.",
+      "sobrante_pendiente": "The voucher is {importe} more than the receipt. The receipt is marked paid and the surplus stays pending: then you choose whether it is deducted from next month’s receipt or refunded by transfer."
     },
     "forma_cobro": {
       "efectivo": "Cash",
@@ -2069,7 +2086,11 @@
       "recibo_siguiente_cerrado": "The family’s {mes} receipt is already validated: it cannot be added there. Choose another option or, if there is still time, set that receipt back to draft.",
       "mes_siguiente_cerrado": "{mes} is already closed and the family has no receipt in it: it cannot be added to the next receipt. Choose another option."
     },
-    "arrastrada_a": "Added to the {mes} receipt · {importe}"
+    "arrastrada_a": "Added to the {mes} receipt · {importe}",
+    "sobrante_pendiente": "surplus of {importe}, pending",
+    "sobrante_diferido": "surplus of {importe}, deducted from the {mes} receipt",
+    "sobrante_transferencia": "surplus of {importe}, to be refunded by transfer",
+    "resolver_sobrante": "Resolve surplus"
   },
   "aula": {
     "validation": {
@@ -3981,8 +4002,8 @@
         "lineas": "Lines",
         "metodos_pago": "Payment methods",
         "conceptos_asignados": "Assigned charges",
-        "beca_comedor_excesos": "Lunch grant surpluses",
-        "beca_comedor_transferencias": "Lunch grant refunds",
+        "beca_comedor_excesos": "Meal grant excesses and voucher surpluses",
+        "beca_comedor_transferencias": "Refunds by transfer",
         "anio": "Year",
         "mes": "Month",
         "metodo": "Method",
@@ -3996,8 +4017,8 @@
         "importe_centimos": "Amount",
         "concepto": "Item",
         "importe_especial_centimos": "Special amount",
-        "cuota_total_centimos": "Total fee",
-        "beca_total_centimos": "Total grant",
+        "cuota_total_centimos": "Total fee or receipt",
+        "beca_total_centimos": "Total grant or voucher",
         "exceso_centimos": "Surplus",
         "via": "Resolution",
         "resuelto_en": "Resolved on",
@@ -4176,7 +4197,9 @@
         "manual": "Manual",
         "normas": "School rules",
         "banco": "Bank",
-        "siguiente_recibo": "Next receipt"
+        "siguiente_recibo": "Next receipt",
+        "beca": "Meal grant",
+        "cheque": "Childcare voucher"
       }
     },
     "descargar_mis_datos": "Download my data",

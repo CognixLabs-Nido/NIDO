@@ -64,8 +64,8 @@ export type MarcarCobradoManualInput = z.infer<typeof marcarCobradoManualSchema>
 
 /**
  * Cobra un recibo con cheque guardería / ticket restaurant (PR-1b): el importe del cheque, la
- * fecha, la nota y, si el cheque es menor que el recibo, cómo se cobra la diferencia. Que el
- * cheque no supere el recibo y que la diferencia lleve método lo comprueba la BD
+ * fecha, la nota y, si el cheque es menor que el recibo, cómo se cobra la diferencia. Si es mayor,
+ * el sobrante queda pendiente (PR-1c). Que la diferencia lleve método lo comprueba la BD
  * (`cobrar_recibo_con_cheque`), que es la que conoce el total.
  */
 export const cobrarConChequeSchema = z.object({
@@ -81,7 +81,8 @@ export type CobrarConChequeInput = z.infer<typeof cobrarConChequeSchema>
 
 /**
  * El formulario de «Marcar cobrado», que conoce el total del recibo: con cheque, el importe es
- * obligatorio, no supera el recibo y, si es menor, hay que elegir cómo se cobra la diferencia.
+ * obligatorio y, si es menor, hay que elegir cómo se cobra la diferencia. Si es mayor, el sobrante
+ * queda pendiente y se resuelve después (PR-1c). Un recibo sin importe no se cobra con cheque.
  */
 export function crearCobroDialogSchema(totalCentimos: number) {
   return z
@@ -105,11 +106,11 @@ export function crearCobroDialogSchema(totalCentimos: number) {
         return
       }
       const centimos = eurosACentimos(importe)
-      if (centimos > totalCentimos) {
+      if (totalCentimos <= 0) {
         ctx.addIssue({
           code: 'custom',
           path: ['importe_euros'],
-          message: 'remesas.errors.cheque_supera_recibo',
+          message: 'remesas.errors.recibo_sin_importe',
         })
       } else if (centimos < totalCentimos && !v.metodoDiferencia) {
         ctx.addIssue({

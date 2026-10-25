@@ -41,6 +41,29 @@ export interface ReciboGestion {
   esDiferenciaCheque: boolean
   /** ¿Tiene la familia mandato SEPA activo? Sin él, la diferencia no se puede pasar al banco. */
   familiaConMandato: boolean
+  /** PR-1c: el sobrante del cheque mayor que el recibo, si lo hay. */
+  sobranteCheque: SobranteCheque | null
+}
+
+/**
+ * PR-1c: el sobrante de un cheque guardería / ticket restaurant mayor que el recibo (una fila de
+ * `beca_comedor_desborde` con origen `cheque`). `resueltoPor` es null mientras está pendiente.
+ */
+export interface SobranteCheque {
+  excesoCentimos: number
+  /** El mes del recibo del cheque: diferirlo lo lleva al recibo del mes siguiente. */
+  mes: MesRecibo
+  resueltoPor: 'diferir' | 'transferencia' | null
+}
+
+/** La vía guardada (`reducir` es «diferir», como en el desborde de beca) a la de la pantalla. */
+export function resueltoPorDe(fila: {
+  estado: string
+  via: string | null
+}): SobranteCheque['resueltoPor'] {
+  if (fila.estado !== 'resuelto') return null
+  if (fila.via === 'transferencia') return 'transferencia'
+  return 'diferir'
 }
 
 /** Un mes de recibo. */

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
+import { ResolverDesbordeDialog } from '@/features/beca-comedor/components/ResolverDesbordeDialog'
 import { formatEuros } from '@/shared/lib/format-money'
 
 import {
@@ -14,7 +15,9 @@ import {
   etiquetaMes,
   formaPorDefecto,
   importeDevolucion,
+  mesSiguiente,
   type ReciboGestion,
+  type SobranteCheque,
 } from '../lib/gestion-cobros'
 import { MarcarCobradoDialog } from './MarcarCobradoDialog'
 import { MarcarDevueltoDialog } from './MarcarDevueltoDialog'
@@ -36,6 +39,19 @@ export function DevolucionesPanel({ recibos }: Props) {
   const tRecibos = useTranslations('recibos')
   const locale = useLocale()
   const hoy = hoyMadrid()
+
+  // PR-1c: el sobrante del cheque, pendiente o cómo se resolvió.
+  function textoSobrante(s: SobranteCheque): string {
+    const importe = formatEuros(s.excesoCentimos, locale)
+    switch (s.resueltoPor) {
+      case null:
+        return t('sobrante_pendiente', { importe })
+      case 'diferir':
+        return t('sobrante_diferido', { importe, mes: etiquetaMes(mesSiguiente(s.mes), locale) })
+      case 'transferencia':
+        return t('sobrante_transferencia', { importe })
+    }
+  }
 
   return (
     <Card className="space-y-3 p-5">
@@ -115,6 +131,7 @@ export function DevolucionesPanel({ recibos }: Props) {
                           ` · ${t('diferencia_en_recibo_aparte', {
                             importe: formatEuros(r.totalCentimos - r.cobroImporteCentimos, locale),
                           })}`}
+                        {r.sobranteCheque && ` · ${textoSobrante(r.sobranteCheque)}`}
                         {r.cobroNota ? ` · ${r.cobroNota}` : ''}
                       </p>
                     )}
@@ -151,6 +168,24 @@ export function DevolucionesPanel({ recibos }: Props) {
                       }
                     />
                   )}
+                  {r.sobranteCheque &&
+                    r.sobranteCheque.resueltoPor === null &&
+                    r.cobroImporteCentimos != null && (
+                      <ResolverDesbordeDialog
+                        reciboId={r.id}
+                        anio={r.sobranteCheque.mes.anio}
+                        mes={r.sobranteCheque.mes.mes}
+                        cuotaCentimos={r.totalCentimos}
+                        becaCentimos={r.cobroImporteCentimos}
+                        excesoCentimos={r.sobranteCheque.excesoCentimos}
+                        origen="cheque"
+                        trigger={
+                          <Button size="sm" variant="outline">
+                            {t('resolver_sobrante')}
+                          </Button>
+                        }
+                      />
+                    )}
                   {cobrableAMano(r) && (
                     <MarcarCobradoDialog
                       reciboId={r.id}

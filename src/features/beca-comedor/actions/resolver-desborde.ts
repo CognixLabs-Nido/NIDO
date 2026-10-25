@@ -9,11 +9,22 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
+import { origenExceso } from '../lib/origen-exceso'
 import { mesSiguiente, repartirExceso, type BecaNino } from '../lib/reparto-desborde'
 import { resolverDesbordeSchema, type ResolverDesbordeInput } from '../schemas/beca-comedor'
 
 const RUTA = '/[locale]/admin/cuotas'
 const ERR = 'admin.cuotas.beca_comedor.desborde.errors'
+
+// PR-1c: el HINT de cada RAISE de `resolver_sobrante_cheque`, a su clave.
+const POR_HINT_CHEQUE: Record<string, string> = {
+  no_existe: `${ERR}.no_existe`,
+  ya_resuelto: `${ERR}.ya_resuelto`,
+  via_invalida: `${ERR}.invalid`,
+  sin_hijos: `${ERR}.sin_hijos_cheque`,
+  recibo_siguiente_cerrado: `${ERR}.recibo_siguiente_cerrado`,
+  mes_siguiente_cerrado: `${ERR}.mes_siguiente_cerrado`,
+}
 
 type Supa = SupabaseClient<Database>
 
@@ -45,27 +56,48 @@ async function mesEstaCerrado(
  * En ambas marca el desborde como RESUELTO (vía + resuelto_por/at). No toca el motor ni el
  * modelo. Claim atómico del desborde (pendiente→resuelto) antes del efecto; si el efecto
  * falla, revierte el claim. RLS admin del centro es la puerta.
+ *
+ * PR-1c: el sobrante de un cheque (`origen = 'cheque'`) lo resuelve entero la BD, en una
+ * transacción (`resolver_sobrante_cheque`): diferir es una línea de saldo a favor en el recibo del
+ * mes siguiente, y transferencia, la misma fila de transferencia con su origen.
  */
 export async function resolverDesborde(
   input: ResolverDesbordeInput
 ): Promise<ActionResult<{ via: 'diferir' | 'transferencia'; n: number }>> {
   const parsed = resolverDesbordeSchema.safeParse(input)
   if (!parsed.success) return fail(`${ERR}.invalid`)
-  const { recibo_id, via } = parsed.data
+  const { recibo_id, via, origen } = parsed.data
 
   const supabase = await createClient()
 
-  // Desborde PENDIENTE de este recibo (RLS ya restringe a admin del centro). Su centro es el de
-  // la acción (multicentro · Fase 1), no el centro activo, y se exige ser admin en él.
-  const { data: desborde } = await supabase
+  // Desborde de este recibo y de ese origen (RLS ya restringe a admin del centro): un recibo puede
+  // tener el de su beca y el sobrante de su cheque (PR-1c). `*` para leer el origen también antes
+  // de que exista la columna. Su centro es el de la acción (multicentro · Fase 1), no el centro
+  // activo, y se exige ser admin en él.
+  const { data: desbordes } = await supabase
     .from('beca_comedor_desborde')
-    .select('id, centro_id, recibo_id, familia_id, anio, mes, exceso_centimos, estado')
+    .select('*')
     .eq('recibo_id', recibo_id)
-    .maybeSingle()
+  const desborde = (desbordes ?? []).find((d) => origenExceso(d) === origen)
   if (!desborde) return fail(`${ERR}.no_existe`)
   const centroId = desborde.centro_id
   if (!(await usuarioAdminEn(supabase, centroId))) return fail(`${ERR}.no_autorizado`)
   if (desborde.estado !== 'pendiente') return fail(`${ERR}.ya_resuelto`)
+
+  if (origen === 'cheque') {
+    const { error } = await supabase.rpc('resolver_sobrante_cheque', {
+      p_recibo_id: recibo_id,
+      p_via: via,
+    })
+    if (error) {
+      logger.warn('resolverDesborde cheque', error.message)
+      if (error.code === '42501') return fail(`${ERR}.no_autorizado`)
+      const clave = error.hint ? POR_HINT_CHEQUE[error.hint] : undefined
+      return fail(clave ?? `${ERR}.save_failed`)
+    }
+    revalidatePath(RUTA, 'page')
+    return ok({ via, n: 1 })
+  }
 
   // ── Preparar el efecto ANTES del claim (para validar sin dejar el desborde a medias) ──
   let restoRows: Database['public']['Tables']['beca_comedor_tramo']['Insert'][] = []
@@ -196,7 +228,10 @@ export async function resolverDesborde(
   return ok({ via, n: efecto.n })
 }
 
-/** Vía transferencia: fila por familia con importe = exceso (upsert por recibo). */
+/**
+ * Vía transferencia: fila por familia con importe = exceso. Un INSERT: el claim de arriba ya impide
+ * resolver dos veces. Sin origen, la fila es de beca (el DEFAULT), también antes de PR-1c.
+ */
 async function aplicarTransferencia(
   supabase: Supa,
   centroId: string,
@@ -208,18 +243,15 @@ async function aplicarTransferencia(
     exceso_centimos: number
   }
 ): Promise<{ error?: string; key?: string; n: number }> {
-  const { error } = await supabase.from('beca_comedor_transferencia').upsert(
-    {
-      centro_id: centroId,
-      recibo_id: desborde.recibo_id,
-      familia_id: desborde.familia_id,
-      anio: desborde.anio,
-      mes: desborde.mes,
-      importe_centimos: desborde.exceso_centimos,
-      estado: 'pendiente',
-    },
-    { onConflict: 'recibo_id' }
-  )
+  const { error } = await supabase.from('beca_comedor_transferencia').insert({
+    centro_id: centroId,
+    recibo_id: desborde.recibo_id,
+    familia_id: desborde.familia_id,
+    anio: desborde.anio,
+    mes: desborde.mes,
+    importe_centimos: desborde.exceso_centimos,
+    estado: 'pendiente',
+  })
   if (error) {
     return {
       error: error.message,

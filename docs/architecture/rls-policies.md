@@ -1243,6 +1243,51 @@ después de banco, efectivo y transferencia (PR-2). Decisión del responsable.
   confirmación.
 - Test: `devolucion-siguiente-recibo.rls.test.ts`.
 
+### El sobrante cuando el cheque supera el recibo (PR-1c de recibos)
+
+Migración `20261119120000_feat_cheque_sobrante`. El cheque guardería / ticket restaurant mayor que el
+recibo, que el PR-1b dejó fuera. Decisión del responsable: el mismo trato que el desborde de beca, a
+elección de la directora.
+
+- **`cobrar_recibo_con_cheque`** (de invocador, como antes): con un cheque mayor, el recibo queda
+  cobrado (`cobro_importe_centimos` = el cheque) y el sobrante **pendiente**, una fila de
+  `beca_comedor_desborde` con `origen = 'cheque'`, en la misma transacción. Un recibo sin importe no
+  se cobra con cheque (P0001 `recibo_sin_importe`). El CHECK del importe ya no exige que no supere
+  el recibo.
+- **La tabla distingue el origen:** `beca_comedor_desborde.origen` y
+  `beca_comedor_transferencia.origen` (`beca` por defecto, o `cheque`), con una fila por recibo **y**
+  origen: el desborde de beca de un recibo y el sobrante de su cheque no chocan.
+- **`resolver_sobrante_cheque(recibo, via)`** (de invocador, `EXECUTE` solo para `authenticated`;
+  puerta `es_admin` del centro del sobrante), una vez:
+  - `diferir`: una línea de saldo a favor (negativa, familiar y manual) en el recibo de la familia del
+    mes siguiente, con las reglas de la devolución llevada al siguiente recibo: en su borrador; si no
+    lo tiene, se crea; validado (`recibo_siguiente_cerrado`) o con el mes cerrado sin recibo
+    (`mes_siguiente_cerrado`), no. Como el desborde de beca, solo con hijos activos (`sin_hijos`).
+    Sin reparto entre hermanos: no hay beca que repartir. La línea lleva su sobrante
+    (`lineas_recibo.sobrante_de_desborde_id`).
+  - `transferencia`: una fila pendiente de `beca_comedor_transferencia` con su origen, en la misma
+    lista de Remesas, que se marca realizada como las de beca.
+- **Solo lo escriben sus funciones** (marcador local `app.sobrante_cheque`, también para
+  service_role): el sobrante (`beca_comedor_desborde_validar_cheque`), su transferencia
+  (`beca_comedor_transferencia_validar_cheque`, que solo se deja marcar realizada) y su línea
+  (`lineas_recibo_validar_sobrante`, que no se edita: `linea_sobrante`). El sobrante y su
+  transferencia no se borran salvo con service_role (`sobrante_no_se_borra`): es dinero de la
+  familia.
+- **Borrar la línea deja el sobrante pendiente:** trigger AFTER DELETE
+  `lineas_recibo_reabrir_sobrante` (`SECURITY DEFINER`, para no depender de la RLS de quien borra),
+  también cuando cae en cascada con su recibo. Si el sobrante existe y no se pudo reabrir, el
+  borrado falla (`sobrante_sin_reabrir`).
+- **El motor no cambia:** solo mira desbordes de recibos en borrador, y el sobrante de un cheque
+  cuelga de un recibo cobrado. Si el saldo a favor deja negativo el recibo del mes siguiente, lo
+  arrastra su PASE 4 («Saldo mes anterior»).
+- **El export del art. 15** dice el origen de cada exceso y transferencia.
+- **En la app:** el diálogo de cobro avisa del sobrante; la gestión de cobros dice el sobrante y cómo
+  se resolvió, y «Resolver sobrante» abre el diálogo del desborde con sus palabras; la lista de
+  transferencias marca las del cheque; en el panel del mes, la línea sale marcada «saldo a favor»,
+  sin «Editar», y quitarla pide confirmación. El panel del mes y el de becas solo leen los desbordes
+  de beca.
+- Test: `cheque-sobrante.rls.test.ts`.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -1287,6 +1332,7 @@ después de banco, efectivo y transferencia (PR-2). Decisión del responsable.
 | Pase de servicios: cualquier profe del centro | `pase-servicios-unico.rls.test.ts`              |
 | Cargo puntual a varios niños                  | `cargo-puntual.rls.test.ts`                     |
 | Devolución llevada al siguiente recibo        | `devolucion-siguiente-recibo.rls.test.ts`       |
+| El sobrante del cheque mayor que el recibo    | `cheque-sobrante.rls.test.ts`                   |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

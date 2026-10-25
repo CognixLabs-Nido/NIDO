@@ -19,7 +19,8 @@ interface Props {
 
 /**
  * V2-5 — Listado de transferencias de beca comedor en la pestaña Remesas: pendientes de
- * devolver (con botón "marcar realizada") + realizadas con su sello. Solo admin/dirección.
+ * devolver (con botón "marcar realizada") + realizadas con su sello. PR-1c: también las del
+ * sobrante de un cheque, marcadas. Solo admin/dirección.
  */
 export function TransferenciasBecaPanel({ data }: Props) {
   const t = useTranslations('remesas.transferencias_beca')
@@ -55,6 +56,7 @@ export function TransferenciasBecaPanel({ data }: Props) {
             >
               <span className="flex items-center gap-2">
                 <Badge variant="warm">{t('pendiente')}</Badge>
+                {tr.origen === 'cheque' && <Badge variant="outline">{t('origen_cheque')}</Badge>}
                 <span className="font-medium">{tr.familiaEtiqueta}</span>
                 <span className="text-muted-foreground text-xs">
                   {etiquetaMes(locale, tr.anio, tr.mes)}
@@ -75,6 +77,7 @@ export function TransferenciasBecaPanel({ data }: Props) {
             >
               <span className="flex items-center gap-2">
                 <Badge variant="success">{t('realizada')}</Badge>
+                {tr.origen === 'cheque' && <Badge variant="outline">{t('origen_cheque')}</Badge>}
                 <span className="font-medium">{tr.familiaEtiqueta}</span>
                 <span className="text-xs">{etiquetaMes(locale, tr.anio, tr.mes)}</span>
               </span>

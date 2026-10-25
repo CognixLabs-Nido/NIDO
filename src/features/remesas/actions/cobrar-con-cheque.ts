@@ -16,7 +16,7 @@ const POR_HINT: Record<string, string> = {
   no_encontrado: 'remesas.errors.no_encontrada',
   sepa_por_remesa: 'remesas.errors.sepa_por_remesa',
   no_cobrable_manual: 'remesas.errors.no_cobrable_manual',
-  cheque_supera_recibo: 'remesas.errors.cheque_supera_recibo',
+  recibo_sin_importe: 'remesas.errors.recibo_sin_importe',
   sin_mandato: 'remesas.errors.sin_mandato_diferencia',
   falta_metodo_diferencia: 'remesas.validation.falta_metodo_diferencia',
   importe_cheque_invalido: 'remesas.validation.importe_cheque_invalido',
@@ -31,7 +31,8 @@ const POR_HINT: Record<string, string> = {
  * esporádico aparte del mismo periodo, por SEPA (con mandato activo), efectivo o transferencia,
  * que sigue su circuito normal. Las dos escrituras van juntas en la BD
  * (`cobrar_recibo_con_cheque`, con la sesión: RLS de Dirección y actor en audit_log), que repite
- * todas las reglas. El cheque mayor que el recibo es el PR-1c.
+ * todas las reglas. Si es mayor, el recibo queda cobrado y el sobrante pendiente: la directora
+ * elige después si lo difiere al mes siguiente o lo devuelve por transferencia (PR-1c).
  */
 export async function cobrarConCheque(
   input: CobrarConChequeInput

@@ -41,9 +41,13 @@ export type ToggleElegibilidadInput = z.infer<typeof toggleElegibilidadSchema>
 //                        en el modelo (el ENUM del modelo no tiene 'diferir'; 'reducir' es
 //                        la semántica D-P9 "difiere al mes siguiente").
 //   · 'transferencia' → el exceso se devuelve por banco (fila beca_comedor_transferencia).
+// PR-1c: el sobrante de un cheque guardería / ticket restaurant se resuelve igual, por las dos
+// vías, pero lo escribe la BD (`resolver_sobrante_cheque`): diferirlo es una línea de saldo a favor
+// en el recibo del mes siguiente, sin reparto (no hay beca que repartir).
 export const resolverDesbordeSchema = z.object({
   recibo_id: z.string().uuid(),
   via: z.enum(['diferir', 'transferencia']),
+  origen: z.enum(['beca', 'cheque']),
 })
 
 export type ResolverDesbordeInput = z.infer<typeof resolverDesbordeSchema>

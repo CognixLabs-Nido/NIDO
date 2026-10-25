@@ -121,6 +121,8 @@ export async function editarLineaRecibo(
     if (error.code === '42501') return fail('recibos_panel.errors.no_autorizado')
     // PR-14: la línea de una devolución arrastrada no se edita (su importe es la deuda).
     if (error.hint === 'linea_arrastre') return fail('recibos_panel.errors.linea_arrastre')
+    // PR-1c: ni la del saldo a favor de un cheque (su importe es el sobrante).
+    if (error.hint === 'linea_sobrante') return fail('recibos_panel.errors.linea_sobrante')
     if (error.code === 'P0001') return fail('recibos_panel.errors.no_borrador')
     return fail('recibos_panel.errors.linea_failed')
   }
@@ -261,6 +263,8 @@ export async function borrarLineaRecibo(
     if (error.code === '42501') return fail('recibos_panel.errors.no_autorizado')
     // PR-14: la devolución de la línea no se pudo dejar sin resolver; no se borra nada.
     if (error.hint === 'arrastre_sin_reabrir') return fail('recibos_panel.errors.linea_failed')
+    // PR-1c: el sobrante de la línea no se pudo dejar pendiente; no se borra nada.
+    if (error.hint === 'sobrante_sin_reabrir') return fail('recibos_panel.errors.linea_failed')
     if (error.code === 'P0001') return fail('recibos_panel.errors.no_borrador')
     return fail('recibos_panel.errors.linea_failed')
   }

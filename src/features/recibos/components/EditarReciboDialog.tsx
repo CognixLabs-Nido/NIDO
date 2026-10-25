@@ -100,11 +100,20 @@ export function EditarReciboDialog({ destino, lineas, hijos }: Props) {
   }
 
   // PR-14: quitar la línea de una devolución arrastrada la deja otra vez sin resolver; se avisa.
+  // PR-1c: lo mismo con el saldo a favor de un cheque, que vuelve a quedar pendiente.
   function borrar(linea: LineaPanel) {
     if (linea.esArrastre && !window.confirm(t('quitar_arrastre_confirm'))) return
+    if (linea.esSobrante && !window.confirm(t('quitar_sobrante_confirm'))) return
     startTransition(async () => {
       const r = await borrarLineaRecibo({ lineaId: linea.id })
-      feedback(r, linea.esArrastre ? 'arrastre_quitado' : 'linea_borrada')
+      feedback(
+        r,
+        linea.esArrastre
+          ? 'arrastre_quitado'
+          : linea.esSobrante
+            ? 'sobrante_quitado'
+            : 'linea_borrada'
+      )
     })
   }
 
@@ -274,6 +283,10 @@ function LineaEditable({
           <Badge variant="warm" className="ml-2 align-middle">
             {t('linea_arrastre')}
           </Badge>
+        ) : linea.esSobrante ? (
+          <Badge variant="warm" className="ml-2 align-middle">
+            {t('linea_sobrante')}
+          </Badge>
         ) : (
           linea.origen === 'manual' && (
             <Badge variant="warm" className="ml-2 align-middle">
@@ -283,8 +296,9 @@ function LineaEditable({
         )}
       </span>
       <span className="tabular-nums">{formatEuros(linea.importeCentimos, locale)}</span>
-      {/* PR-14: su importe es la deuda de la devolución; no se edita, solo se quita. */}
-      {!linea.esArrastre && (
+      {/* PR-14 y PR-1c: su importe es la deuda de la devolución, o el saldo de la familia; no se
+          edita, solo se quita. */}
+      {!linea.esArrastre && !linea.esSobrante && (
         <Button size="sm" variant="ghost" disabled={disabled} onClick={() => setEditando(true)}>
           {t('editar')}
         </Button>

@@ -60,8 +60,8 @@ interface Props {
 /**
  * «Marcar cobrado»: forma, fecha (por defecto hoy) y nota opcional (PR-1a). Con cheque guardería /
  * ticket restaurant pide además el importe del cheque y, si no cubre el recibo, cómo se cobra lo
- * que queda, que va a un recibo aparte (PR-1b). El error se enseña dentro del diálogo, junto al
- * formulario que lo causó.
+ * que queda, que va a un recibo aparte (PR-1b). Si lo supera, avisa de que el sobrante queda
+ * pendiente (PR-1c). El error se enseña dentro del diálogo, junto al formulario que lo causó.
  */
 export function MarcarCobradoDialog({
   reciboId,
@@ -199,6 +199,14 @@ export function MarcarCobradoDialog({
                   </FormItem>
                 )}
               />
+            )}
+
+            {conCheque && diferenciaCentimos < 0 && (
+              <p className="text-muted-foreground text-xs">
+                {t('cobro_dialog.sobrante_pendiente', {
+                  importe: formatEuros(-diferenciaCentimos, locale),
+                })}
+              </p>
             )}
 
             {conCheque && diferenciaCentimos > 0 && (

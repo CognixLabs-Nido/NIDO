@@ -18,6 +18,7 @@ import { formatEuros } from '@/shared/lib/format-money'
 import { resolverDesborde } from '../actions/resolver-desborde'
 import { mesSiguiente } from '../lib/reparto-desborde'
 import { etiquetaMes } from '../lib/meses'
+import type { OrigenExceso } from '../lib/origen-exceso'
 
 interface Props {
   reciboId: string
@@ -28,6 +29,12 @@ interface Props {
   excesoCentimos: number
   /** PR-3: se abre al intentar validar el recibo, que no se valida con el desborde pendiente. */
   avisoValidar?: boolean
+  /**
+   * PR-1c: el exceso de una beca (por defecto) o el sobrante de un cheque guardería / ticket
+   * restaurant. Con cheque, la cuota es el recibo y la beca, el cheque; diferirlo es un saldo a
+   * favor en el recibo del mes siguiente, sin reparto.
+   */
+  origen?: OrigenExceso
   trigger: ReactElement
 }
 
@@ -35,6 +42,7 @@ interface Props {
  * V2-4 — Resuelve el desborde de UN recibo (una familia) por una de las DOS vías: diferir el
  * exceso al mes siguiente (tramos resto por niño) o devolverlo por transferencia. Muestra
  * cuota/beca/exceso. La resolución la ejecuta la server action (reparto y claim server-side).
+ * PR-1c: el mismo diálogo resuelve el sobrante de un cheque, con sus palabras.
  */
 export function ResolverDesbordeDialog({
   reciboId,
@@ -44,6 +52,7 @@ export function ResolverDesbordeDialog({
   becaCentimos,
   excesoCentimos,
   avisoValidar = false,
+  origen = 'beca',
   trigger,
 }: Props) {
   const t = useTranslations('admin.cuotas.beca_comedor.desborde')
@@ -52,14 +61,21 @@ export function ResolverDesbordeDialog({
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
 
+  const cheque = origen === 'cheque'
   const sig = mesSiguiente(anio, mes)
   const mesSiguienteEtiqueta = etiquetaMes(locale, sig.anio, sig.mes)
 
   function resolver(via: 'diferir' | 'transferencia') {
     startTransition(async () => {
-      const r = await resolverDesborde({ recibo_id: reciboId, via })
+      const r = await resolverDesborde({ recibo_id: reciboId, via, origen })
       if (r.success) {
-        toast.success(via === 'diferir' ? t('diferido_ok') : t('transferencia_ok'))
+        toast.success(
+          via === 'transferencia'
+            ? t('transferencia_ok')
+            : cheque
+              ? t('cheque.diferido_ok')
+              : t('diferido_ok')
+        )
         setOpen(false)
       } else {
         toast.error(tRoot(r.error))
@@ -72,7 +88,7 @@ export function ResolverDesbordeDialog({
       <DialogTrigger render={trigger} />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogTitle>{cheque ? t('cheque.title') : t('title')}</DialogTitle>
         </DialogHeader>
 
         {avisoValidar && (
@@ -80,14 +96,14 @@ export function ResolverDesbordeDialog({
             {t('aviso_validar', { importe: formatEuros(excesoCentimos, locale) })}
           </p>
         )}
-        <p className="text-muted-foreground text-sm">{t('intro')}</p>
+        <p className="text-muted-foreground text-sm">{cheque ? t('cheque.intro') : t('intro')}</p>
 
         <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-          <dt className="text-muted-foreground">{t('cuota')}</dt>
+          <dt className="text-muted-foreground">{cheque ? t('cheque.recibo') : t('cuota')}</dt>
           <dd className="text-right tabular-nums">{formatEuros(cuotaCentimos, locale)}</dd>
-          <dt className="text-muted-foreground">{t('beca')}</dt>
+          <dt className="text-muted-foreground">{cheque ? t('cheque.cheque') : t('beca')}</dt>
           <dd className="text-right tabular-nums">{formatEuros(becaCentimos, locale)}</dd>
-          <dt className="font-medium">{t('exceso')}</dt>
+          <dt className="font-medium">{cheque ? t('cheque.sobrante') : t('exceso')}</dt>
           <dd className="text-right font-medium tabular-nums">
             {formatEuros(excesoCentimos, locale)}
           </dd>
@@ -95,7 +111,9 @@ export function ResolverDesbordeDialog({
 
         <div className="space-y-2 pt-1">
           <p className="text-muted-foreground text-xs">
-            {t('via_diferir_hint', { mes: mesSiguienteEtiqueta })}
+            {cheque
+              ? t('cheque.via_diferir_hint', { mes: mesSiguienteEtiqueta })
+              : t('via_diferir_hint', { mes: mesSiguienteEtiqueta })}
           </p>
           <p className="text-muted-foreground text-xs">{t('via_transferencia_hint')}</p>
         </div>

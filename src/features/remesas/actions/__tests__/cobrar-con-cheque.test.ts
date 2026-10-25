@@ -124,7 +124,7 @@ describe('cobrarConCheque', () => {
     ['no_encontrado', 'remesas.errors.no_encontrada'],
     ['sepa_por_remesa', 'remesas.errors.sepa_por_remesa'],
     ['no_cobrable_manual', 'remesas.errors.no_cobrable_manual'],
-    ['cheque_supera_recibo', 'remesas.errors.cheque_supera_recibo'],
+    ['recibo_sin_importe', 'remesas.errors.recibo_sin_importe'],
     ['sin_mandato', 'remesas.errors.sin_mandato_diferencia'],
     ['falta_metodo_diferencia', 'remesas.validation.falta_metodo_diferencia'],
     ['importe_cheque_invalido', 'remesas.validation.importe_cheque_invalido'],
