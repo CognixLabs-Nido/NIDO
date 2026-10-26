@@ -11,6 +11,11 @@ related_specs: [core-entities, design-system]
 
 # Spec — Datos pedagógicos del niño + logo del centro
 
+> **2026-10-26 (`20261125120000`):** `tipo_alimentacion` ya no tiene `religiosa_halal` ni
+> `religiosa_kosher`. Revelaban convicciones religiosas (categoría especial, art. 9 RGPD) y no los
+> usaba nadie; lo que el niño puede comer lo dicen `otra` y `alimentacion_observaciones`. Los
+> fragmentos de abajo ya van sin ellos.
+
 ## Resumen ejecutivo
 
 Fase ligera que prepara el terreno para Fase 3 (agenda diaria) añadiendo dos cosas: un campo `logo_url` en `centros` para que cada escuela pueda mostrar su marca propia junto a la de NIDO, y una tabla nueva `datos_pedagogicos_nino` con los datos no médicos imprescindibles (lactancia, control de esfínteres, siesta, alimentación, idiomas, hermanos en el centro) que el profe va a necesitar para rellenar la agenda diaria.
@@ -202,8 +207,6 @@ export const tipoAlimentacionEnum = z.enum([
   'vegana',
   'sin_lactosa',
   'sin_gluten',
-  'religiosa_halal',
-  'religiosa_kosher',
   'otra',
 ])
 
@@ -274,8 +277,7 @@ CREATE TYPE public.control_esfinteres AS ENUM (
   'panal_completo','transicion','sin_panal_diurno','sin_panal_total'
 );
 CREATE TYPE public.tipo_alimentacion AS ENUM (
-  'omnivora','vegetariana','vegana','sin_lactosa','sin_gluten',
-  'religiosa_halal','religiosa_kosher','otra'
+  'omnivora','vegetariana','vegana','sin_lactosa','sin_gluten','otra'
 );
 
 -- 3. Tabla datos_pedagogicos_nino
@@ -438,8 +440,6 @@ Claves nuevas, mismo patrón namespace de Fase 2/2.5:
       "vegana": "Vegana",
       "sin_lactosa": "Sin lactosa",
       "sin_gluten": "Sin gluten",
-      "religiosa_halal": "Halal",
-      "religiosa_kosher": "Kosher",
       "otra": "Otra"
     },
     "validation": {

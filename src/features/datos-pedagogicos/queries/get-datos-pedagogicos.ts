@@ -12,15 +12,7 @@ export interface DatosPedagogicosRow {
   siesta_horario_habitual: string | null
   siesta_numero_diario: number | null
   siesta_observaciones: string | null
-  tipo_alimentacion:
-    | 'omnivora'
-    | 'vegetariana'
-    | 'vegana'
-    | 'sin_lactosa'
-    | 'sin_gluten'
-    | 'religiosa_halal'
-    | 'religiosa_kosher'
-    | 'otra'
+  tipo_alimentacion: 'omnivora' | 'vegetariana' | 'vegana' | 'sin_lactosa' | 'sin_gluten' | 'otra'
   alimentacion_observaciones: string | null
   idiomas_casa: string[]
   tiene_hermanos_en_centro: boolean

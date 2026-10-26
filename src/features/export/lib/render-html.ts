@@ -253,8 +253,6 @@ export const VALORES_CONOCIDOS = new Set<string>([
   'vegana',
   'sin_lactosa',
   'sin_gluten',
-  'religiosa_halal',
-  'religiosa_kosher',
   // motivo_ausencia
   'enfermedad',
   'cita_medica',

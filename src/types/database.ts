@@ -5165,8 +5165,6 @@ export type Database = {
         | "vegana"
         | "sin_lactosa"
         | "sin_gluten"
-        | "religiosa_halal"
-        | "religiosa_kosher"
         | "otra"
       tipo_autorizacion:
         | "salida"
@@ -5470,8 +5468,6 @@ export const Constants = {
         "vegana",
         "sin_lactosa",
         "sin_gluten",
-        "religiosa_halal",
-        "religiosa_kosher",
         "otra",
       ],
       tipo_autorizacion: [

@@ -21,8 +21,6 @@ export const tipoAlimentacionEnum = z.enum([
   'vegana',
   'sin_lactosa',
   'sin_gluten',
-  'religiosa_halal',
-  'religiosa_kosher',
   'otra',
 ])
 

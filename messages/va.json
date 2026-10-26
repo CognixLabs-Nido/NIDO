@@ -1651,8 +1651,6 @@
       "vegana": "Vegana",
       "sin_lactosa": "Sense lactosa",
       "sin_gluten": "Sense gluten",
-      "religiosa_halal": "Halal",
-      "religiosa_kosher": "Kosher",
       "otra": "Altra"
     },
     "validation": {
@@ -4215,8 +4213,6 @@
         "vegana": "Vegana",
         "sin_lactosa": "Sense lactosa",
         "sin_gluten": "Sense gluten",
-        "religiosa_halal": "Halal",
-        "religiosa_kosher": "Kosher",
         "enfermedad": "Malaltia",
         "cita_medica": "Cita mèdica",
         "vacaciones": "Vacances",
