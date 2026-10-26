@@ -38,6 +38,15 @@ export async function generarRecibosMes(
   const supabase = await createClient()
   if (!(await usuarioAdminEn(supabase, centroId))) return fail('recibos_panel.errors.no_autorizado')
 
+  const { error: errorProponer } = await supabase.rpc('proponer_asignaciones', {
+    p_centro_id: centroId,
+  })
+  if (errorProponer) {
+    logger.warn('generarRecibosMes proponer error', errorProponer.message)
+    if (errorProponer.code === '42501') return fail('recibos_panel.errors.no_autorizado')
+    return fail('cuotas_config.errors.proponer_failed')
+  }
+
   const { data, error } = await supabase.rpc('generar_recibos_mes', {
     p_centro_id: centroId,
     p_anio: parsed.data.anio,
