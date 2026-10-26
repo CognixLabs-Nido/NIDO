@@ -17,7 +17,7 @@ export interface CambioAsignacion {
 
 /** Los conceptos que se asignan desde el concepto: los mismos que ofrece Asignación permanente. */
 export function conceptoAsignable(c: { activo: boolean; aplicacion: string }): boolean {
-  return c.activo && c.aplicacion === 'manual'
+  return c.activo
 }
 
 /**
