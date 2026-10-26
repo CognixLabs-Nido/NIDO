@@ -100,11 +100,11 @@ export async function getPaseDeListaAula(
   for (const row of (medicas ?? []) as Array<{
     nino_id: string
     alergias_graves: unknown
-    medicacion_habitual: string | null
+    medicacion_habitual: unknown
   }>) {
     alertasByNino.set(row.nino_id, {
       alergia_grave: row.alergias_graves !== null,
-      medicacion: Boolean(row.medicacion_habitual && row.medicacion_habitual.trim().length > 0),
+      medicacion: row.medicacion_habitual !== null,
     })
   }
 

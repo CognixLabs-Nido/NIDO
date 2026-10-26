@@ -186,10 +186,16 @@ Las funciones `public.set_info_medica_emergencia_cifrada(...)` y `public.get_inf
 - Leen la clave de Supabase Vault con `name='medical_encryption_key'` vía la función interna `public._get_medical_key()`.
 - Incorporan autorización (admin del centro / profe del aula actual / tutor con `puede_ver_info_medica=true`) antes de descifrar.
 - Contrato del setter: NULL = preservar campo (no sobrescribe con NULL). Ver ADR-0004.
+- **Los seis campos van cifrados** (`20261123120000`; hasta entonces solo `alergias_graves` y
+  `notas_emergencia`). Los dos setters (`set_info_medica_emergencia_cifrada` y `..._tutor`) cifran
+  los seis y `get_info_medica_emergencia` descifra los seis. **Vacío = NULL:** un texto vacío o
+  solo de espacios se guarda como NULL (vacía el campo), así una columna no NULL siempre tiene
+  contenido. En `audit_log` los seis entran cifrados (`\x…`); la migración cifró las copias
+  anteriores que tuvieran texto en claro.
 
 Las listas del aula (pase de lista, agenda del aula y los dos pases de lista del comedor) no
 descifran: leen la tabla con la sesión y pintan «Alergia grave» si `alergias_graves` no es NULL (y
-«Medicación» si `medicacion_habitual` tiene texto). La tabla **no tiene `deleted_at`**: hasta
+«Medicación» si `medicacion_habitual` no es NULL). La tabla **no tiene `deleted_at`**: hasta
 octubre de 2026 las cuatro consultas filtraban por esa columna, PostgREST contestaba 42703, el
 error se ignoraba y ningún niño salía con el aviso. Ahora un fallo de esa consulta lanza y la lista
 no sale: nunca se pinta como «sin alergia». Tests: `alertas-medicas.rls.test.ts` (con la sesión de
@@ -1427,6 +1433,7 @@ cobraban.
 | Un recibo, una remesa; añadir en borrador     | `remesa-recibo-unico.rls.test.ts`               |
 | Asignaciones desde el propio concepto         | `asignaciones-desde-concepto.rls.test.ts`       |
 | Los conceptos diarios son automáticos         | `diario-automatico.rls.test.ts`                 |
+| La ficha médica, cifrada entera               | `ficha-medica-cifrada.rls.test.ts`              |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

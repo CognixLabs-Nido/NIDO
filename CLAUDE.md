@@ -129,7 +129,7 @@ Reglas obligatorias del modelo:
 - Triggers de Postgres para audit log automático en tablas auditadas.
 - `audit_log` append-only (RLS bloquea UPDATE/DELETE).
 - Timestamps siempre `timestamptz`.
-- Cifrado a nivel columna con pgcrypto en `info_medica_emergencia.enfermedades_graves` y `notas_emergencia`.
+- Cifrado a nivel columna con pgcrypto en los seis campos de `info_medica_emergencia` (`20261123120000`).
 
 Detalle completo en `@./docs/architecture/data-model.md`.
 

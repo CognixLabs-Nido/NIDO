@@ -87,10 +87,9 @@ export async function getAgendasAulaDelDia(
     }
   }
 
-  // 4. Alertas médicas (alergias_graves no NULL, medicacion_habitual no vacío).
-  //    `info_medica_emergencia.alergias_graves` está cifrada (BYTEA); para
-  //    saber si "hay alergia grave" basta con que la columna no sea NULL,
-  //    sin descifrar — eso ya nos dice si tiene un valor registrado.
+  // 4. Alertas médicas: alergias_graves y medicacion_habitual no NULL. Las dos van
+  //    cifradas (BYTEA, 20261123120000) y vacío = NULL, así que basta con que la
+  //    columna no sea NULL, sin descifrar.
   const { data: medicas, error: errorMedicas } = await supabase
     .from('info_medica_emergencia')
     .select('nino_id, alergias_graves, medicacion_habitual')
@@ -102,11 +101,11 @@ export async function getAgendasAulaDelDia(
   for (const row of (medicas ?? []) as Array<{
     nino_id: string
     alergias_graves: unknown
-    medicacion_habitual: string | null
+    medicacion_habitual: unknown
   }>) {
     alertasByNino.set(row.nino_id, {
       alergia_grave: row.alergias_graves !== null,
-      medicacion: Boolean(row.medicacion_habitual && row.medicacion_habitual.trim().length > 0),
+      medicacion: row.medicacion_habitual !== null,
     })
   }
 
