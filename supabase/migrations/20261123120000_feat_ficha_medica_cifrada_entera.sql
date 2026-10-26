@@ -227,9 +227,9 @@ BEGIN
     p_nino_id,
     CASE WHEN p_alergias_graves     IS NULL OR btrim(p_alergias_graves)     = '' THEN NULL ELSE pgp_sym_encrypt(p_alergias_graves,     v_clave) END,
     CASE WHEN p_notas_emergencia    IS NULL OR btrim(p_notas_emergencia)    = '' THEN NULL ELSE pgp_sym_encrypt(p_notas_emergencia,    v_clave) END,
-    CASE WHEN p_medicacion_habitual IS NULL OR btrim(p_medicacion_habitual) = '' THEN NULL ELSE pgp_sym_encrypt(p_medicacion_habitual, v_clave) END,
+    CASE WHEN p_medicacion_habitual IS NULL THEN NULL ELSE pgp_sym_encrypt(p_medicacion_habitual, v_clave) END,
     CASE WHEN p_alergias_leves      IS NULL OR btrim(p_alergias_leves)      = '' THEN NULL ELSE pgp_sym_encrypt(p_alergias_leves,      v_clave) END,
-    CASE WHEN p_medico_familia      IS NULL OR btrim(p_medico_familia)      = '' THEN NULL ELSE pgp_sym_encrypt(p_medico_familia,      v_clave) END,
+    CASE WHEN p_medico_familia      IS NULL OR btrim(p_medico_familia)      = '' THEN NULL ELSE convert_to(p_medico_familia, 'UTF8') END,
     CASE WHEN p_telefono_emergencia IS NULL OR btrim(p_telefono_emergencia) = '' THEN NULL ELSE pgp_sym_encrypt(p_telefono_emergencia, v_clave) END
   )
   ON CONFLICT (nino_id) DO UPDATE SET
