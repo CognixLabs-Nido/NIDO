@@ -328,7 +328,7 @@ BEGIN
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p
    WHERE p.oid = to_regprocedure('public.set_info_medica_emergencia_cifrada_tutor(uuid,text,text,text,text,text,text,boolean)');
-  IF v_md5 IS DISTINCT FROM '9a51ff5a7b167f216a20f48ba1b592f0' THEN
+  IF v_md5 IS DISTINCT FROM '8c967584875287a753765939d7442fa2' THEN
     RAISE EXCEPTION 'set_info_medica_emergencia_cifrada_tutor no quedó como este fichero: %', v_md5;
   END IF;
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
