@@ -91,11 +91,12 @@ export async function getAgendasAulaDelDia(
   //    `info_medica_emergencia.alergias_graves` está cifrada (BYTEA); para
   //    saber si "hay alergia grave" basta con que la columna no sea NULL,
   //    sin descifrar — eso ya nos dice si tiene un valor registrado.
-  const { data: medicas } = await supabase
+  const { data: medicas, error: errorMedicas } = await supabase
     .from('info_medica_emergencia')
     .select('nino_id, alergias_graves, medicacion_habitual')
     .in('nino_id', ninoIds)
-    .is('deleted_at', null)
+  // Un fallo aquí no puede pintarse como «sin alergia»: sin las alertas, la lista no sale.
+  if (errorMedicas) throw new Error(`alertas médicas: ${errorMedicas.message}`)
 
   const alertasByNino = new Map<string, NinoAgendaResumen['alertas']>()
   for (const row of (medicas ?? []) as Array<{

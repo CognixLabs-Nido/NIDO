@@ -136,14 +136,15 @@ export async function getPaseDeListaComida(
   const ninos = ninosBruto.filter((n) => ninosIdsSolidos.has(n.id))
 
   // Alergias graves para el badge en la fila.
-  const { data: medicas } = await supabase
+  const { data: medicas, error: errorMedicas } = await supabase
     .from('info_medica_emergencia')
     .select('nino_id, alergias_graves')
     .in(
       'nino_id',
       ninos.map((n) => n.id)
     )
-    .is('deleted_at', null)
+  // Un fallo aquí no puede pintarse como «sin alergia»: sin las alertas, la lista no sale.
+  if (errorMedicas) throw new Error(`alertas médicas: ${errorMedicas.message}`)
 
   const alergiaByNino = new Map<string, boolean>()
   for (const m of (medicas ?? []) as Array<{ nino_id: string; alergias_graves: unknown }>) {
