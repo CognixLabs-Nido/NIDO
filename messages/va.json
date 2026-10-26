@@ -694,6 +694,27 @@
         "precio_concepto_porcentaje": "Concepte: {porcentaje} de {base}",
         "aria_porcentaje": "Percentatge propi de {concepto}",
         "placeholder_porcentaje": "Del concepte"
+      },
+      "destinatarios": {
+        "boton_ninos": "Xiquets",
+        "boton_familias": "Famílies",
+        "title_ninos": "{nombre}: xiquets que el tenen",
+        "title_familias": "{nombre}: famílies que el tenen",
+        "desc": "Marca a qui se li cobra. Es cobra en generar o recalcular els rebuts del mes; els rebuts ja validats no canvien.",
+        "filtro_clase": "Classe",
+        "todas": "Totes",
+        "buscar": "Busca pel nom",
+        "marcar_todos": "Marca’ls tots",
+        "desmarcar_todos": "Desmarca’ls tots",
+        "marcados": "Marcats: {n} de {total}",
+        "cambios": "Canvis sense guardar: {n}",
+        "sin_ninos": "No hi ha xiquets matriculats.",
+        "sin_familias": "No hi ha famílies amb xiquets matriculats.",
+        "sin_resultados": "Ningú coincidix amb el filtre.",
+        "guardar": "Guarda",
+        "guardando": "Guardant…",
+        "cancelar": "Cancel·la",
+        "guardado": "Guardat. Assignats: {asignadas}. Llevats: {quitadas}."
       }
     },
     "aulas": {
@@ -1746,7 +1767,8 @@
       "importe_no_admitido": "Aquest concepte no admet import propi: només els d'import fix que es cobren cada mes.",
       "no_asignado": "El concepte ja no està assignat.",
       "porcentaje_invalido": "El percentatge ha d’estar entre 0 i 100",
-      "porcentaje_no_admitido": "Este concepte no admet percentatge propi: només un descompte amb concepte base"
+      "porcentaje_no_admitido": "Este concepte no admet percentatge propi: només un descompte amb concepte base",
+      "concepto_no_asignable": "Este concepte ja no s’assigna a mà: està esborrat, desactivat o és automàtic. Recarrega la pàgina."
     }
   },
   "recibos_panel": {

@@ -694,6 +694,27 @@
         "precio_concepto_porcentaje": "Item: {porcentaje} of {base}",
         "aria_porcentaje": "Own percentage for {concepto}",
         "placeholder_porcentaje": "From the item"
+      },
+      "destinatarios": {
+        "boton_ninos": "Children",
+        "boton_familias": "Families",
+        "title_ninos": "{nombre}: children who have it",
+        "title_familias": "{nombre}: families who have it",
+        "desc": "Tick who is charged. It is charged when the month’s receipts are generated or recalculated; receipts already validated do not change.",
+        "filtro_clase": "Class",
+        "todas": "All",
+        "buscar": "Search by name",
+        "marcar_todos": "Tick all",
+        "desmarcar_todos": "Untick all",
+        "marcados": "Ticked: {n} of {total}",
+        "cambios": "Unsaved changes: {n}",
+        "sin_ninos": "No children enrolled.",
+        "sin_familias": "No families with enrolled children.",
+        "sin_resultados": "No one matches the filter.",
+        "guardar": "Save",
+        "guardando": "Saving…",
+        "cancelar": "Cancel",
+        "guardado": "Saved. Assigned: {asignadas}. Removed: {quitadas}."
       }
     },
     "aulas": {
@@ -1746,7 +1767,8 @@
       "importe_no_admitido": "This concept does not take an own amount: only fixed-amount concepts charged every month do.",
       "no_asignado": "The concept is no longer assigned.",
       "porcentaje_invalido": "The percentage must be between 0 and 100",
-      "porcentaje_no_admitido": "This item does not accept its own percentage: only a discount with a base concept"
+      "porcentaje_no_admitido": "This item does not accept its own percentage: only a discount with a base concept",
+      "concepto_no_asignable": "This item is no longer assigned by hand: it is deleted, inactive or automatic. Reload the page."
     }
   },
   "recibos_panel": {

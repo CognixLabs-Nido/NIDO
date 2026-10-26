@@ -4610,6 +4610,13 @@ export type Database = {
       }
       familia_de_nino: { Args: { p_nino_id: string }; Returns: string }
       familia_ve_aula: { Args: { p_aula_id: string }; Returns: boolean }
+      fijar_asignaciones_concepto: {
+        Args: { p_cambios: Json; p_concepto_id: string }
+        Returns: {
+          destinatario_id: string
+          resultado: string
+        }[]
+      }
       fijar_libro_familia_nino: {
         Args: { p_nino_id: string; p_path: string }
         Returns: string

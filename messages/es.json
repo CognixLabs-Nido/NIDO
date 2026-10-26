@@ -694,6 +694,27 @@
         "precio_concepto_porcentaje": "Concepto: {porcentaje} de {base}",
         "aria_porcentaje": "Porcentaje propio de {concepto}",
         "placeholder_porcentaje": "Del concepto"
+      },
+      "destinatarios": {
+        "boton_ninos": "Niños",
+        "boton_familias": "Familias",
+        "title_ninos": "{nombre}: niños que lo tienen",
+        "title_familias": "{nombre}: familias que lo tienen",
+        "desc": "Marca a quién se le cobra. Se cobra al generar o recalcular los recibos del mes; los recibos ya validados no cambian.",
+        "filtro_clase": "Clase",
+        "todas": "Todas",
+        "buscar": "Buscar por nombre",
+        "marcar_todos": "Marcar todos",
+        "desmarcar_todos": "Desmarcar todos",
+        "marcados": "Marcados: {n} de {total}",
+        "cambios": "Cambios sin guardar: {n}",
+        "sin_ninos": "No hay niños matriculados.",
+        "sin_familias": "No hay familias con niños matriculados.",
+        "sin_resultados": "Nadie coincide con el filtro.",
+        "guardar": "Guardar",
+        "guardando": "Guardando…",
+        "cancelar": "Cancelar",
+        "guardado": "Guardado. Asignados: {asignadas}. Quitados: {quitadas}."
       }
     },
     "aulas": {
@@ -1746,7 +1767,8 @@
       "importe_no_admitido": "Este concepto no admite importe propio: solo los de importe fijo que se cobran cada mes.",
       "no_asignado": "El concepto ya no está asignado.",
       "porcentaje_invalido": "El porcentaje tiene que estar entre 0 y 100",
-      "porcentaje_no_admitido": "Este concepto no admite porcentaje propio: solo un descuento con concepto base"
+      "porcentaje_no_admitido": "Este concepto no admite porcentaje propio: solo un descuento con concepto base",
+      "concepto_no_asignable": "Este concepto ya no se asigna a mano: está borrado, desactivado o es automático. Recarga la página."
     }
   },
   "recibos_panel": {
