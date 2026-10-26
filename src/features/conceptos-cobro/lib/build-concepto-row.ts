@@ -21,7 +21,7 @@ export function buildConceptoRow(input: ConceptoCobroInput) {
     signo: input.signo,
     ambito: input.ambito,
     // F-1: 'automatico' entra en proponer_asignaciones; 'manual' solo asignación a mano.
-    aplicacion: input.aplicacion,
+    aplicacion: input.tipo_concepto === 'diario' ? 'automatico' : input.aplicacion,
     tipo_valor: input.tipo_valor,
     importe_centimos:
       esFijo && input.importe_euros != null ? eurosACentimos(input.importe_euros) : null,
