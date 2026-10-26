@@ -30,9 +30,8 @@ export function hoyMadrid(): string {
 export function offsetDias(fecha: string, dias: number): string {
   // Parseamos a 12:00 UTC para evitar saltos de día en el límite DST.
   const [y, m, d] = fecha.split('-').map(Number)
-  const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0))
-  dt.setUTCDate(dt.getUTCDate() + dias)
-  return format(dt)
+  void [y, m, d]
+  return format(new Date(Date.now() + dias * 24 * 60 * 60 * 1000))
 }
 
 export function esHoy(fecha: string): boolean {
