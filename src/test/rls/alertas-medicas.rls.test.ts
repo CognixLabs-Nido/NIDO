@@ -56,6 +56,7 @@ describe('El aviso de alergia grave sale en las listas del aula', () => {
   let cProfe: SupabaseClient<Database>
   let conAlergia: TestNino
   let sinFicha: TestNino
+  let fichaVacia: TestNino
 
   beforeAll(async () => {
     centro = await createTestCentro('Centro Alertas Medicas')
@@ -72,6 +73,8 @@ describe('El aviso de alergia grave sale en las listas del aula', () => {
     sinFicha = await createTestNino(centro.id, 'Niño Demo Sin Ficha')
     await matricular(conAlergia.id, aula.id, curso.id)
     await matricular(sinFicha.id, aula.id, curso.id)
+    fichaVacia = await createTestNino(centro.id, 'Niño Demo Ficha Vacia')
+    await matricular(fichaVacia.id, aula.id, curso.id)
 
     // La ficha médica, como la guarda la app: por la RPC que cifra la alergia grave.
     const cAdmin = await clientFor(admin)
@@ -85,6 +88,17 @@ describe('El aviso de alergia grave sale en las listas del aula', () => {
       p_telefono_emergencia: '600000000',
     })
     if (ficha.error) throw new Error(`ficha médica: ${ficha.error.message}`)
+    // Una ficha con la alergia grave y la medicación vacías (20261123120000: vacío = NULL).
+    const vacia = await cAdmin.rpc('set_info_medica_emergencia_cifrada', {
+      p_nino_id: fichaVacia.id,
+      p_alergias_graves: '',
+      p_notas_emergencia: '',
+      p_medicacion_habitual: '   ',
+      p_alergias_leves: 'Ninguna',
+      p_medico_familia: 'Médico Demo',
+      p_telefono_emergencia: '600000000',
+    })
+    if (vacia.error) throw new Error(`ficha vacía: ${vacia.error.message}`)
 
     // El comedor solo pinta la lista con menú publicado para ese día.
     const plantilla = await serviceClient
@@ -123,48 +137,52 @@ describe('El aviso de alergia grave sale en las listas del aula', () => {
     const { data, error } = await cProfe
       .from('info_medica_emergencia')
       .select('nino_id, alergias_graves')
-      .in('nino_id', [conAlergia.id, sinFicha.id])
+      .in('nino_id', [conAlergia.id, sinFicha.id, fichaVacia.id])
     expect(error).toBeNull()
-    expect(data).toHaveLength(1)
-    expect(data?.[0]?.nino_id).toBe(conAlergia.id)
-    expect(data?.[0]?.alergias_graves).not.toBeNull()
+    // Dos filas: la del niño con alergia, con la alergia grave apuntada, y la ficha vacía.
+    expect(data).toHaveLength(2)
+    expect(data?.find((d) => d.nino_id === conAlergia.id)?.alergias_graves).not.toBeNull()
   })
 
-  it('pase de lista: alergia grave y medicación en su niño, nada en el otro', async () => {
+  it('pase de lista: alergia grave y medicación en su niño, nada en los otros', async () => {
     const filas = await getPaseDeListaAula(aula.id, FECHA)
     const de = (id: string) => filas.find((f) => f.nino.id === id)?.alertas
-    expect(filas).toHaveLength(2)
+    expect(filas).toHaveLength(3)
     expect(de(conAlergia.id)).toEqual({ alergia_grave: true, medicacion: true })
     expect(de(sinFicha.id)).toEqual({ alergia_grave: false, medicacion: false })
+    expect(de(fichaVacia.id)).toEqual({ alergia_grave: false, medicacion: false })
   })
 
-  it('agenda del aula: alergia grave y medicación en su niño, nada en el otro', async () => {
+  it('agenda del aula: alergia grave y medicación en su niño, nada en los otros', async () => {
     const filas = await getAgendasAulaDelDia(aula.id, FECHA)
     const de = (id: string) => filas.find((f) => f.nino.id === id)?.alertas
-    expect(filas).toHaveLength(2)
+    expect(filas).toHaveLength(3)
     expect(de(conAlergia.id)).toEqual({ alergia_grave: true, medicacion: true })
     expect(de(sinFicha.id)).toEqual({ alergia_grave: false, medicacion: false })
+    expect(de(fichaVacia.id)).toEqual({ alergia_grave: false, medicacion: false })
   })
 
-  it('comedor, un momento: el aviso en su niño, no en el otro', async () => {
+  it('comedor, un momento: el aviso en su niño, no en los otros', async () => {
     const estado = await getPaseDeListaComida(aula.id, FECHA, 'comida')
     expect(estado.kind).toBe('listo')
     if (estado.kind !== 'listo') return
     const de = (id: string) => estado.filas.find((f) => f.nino.id === id)?.alergiaGrave
-    expect(estado.filas).toHaveLength(2)
+    expect(estado.filas).toHaveLength(3)
     expect(de(conAlergia.id)).toBe(true)
     expect(de(sinFicha.id)).toBe(false)
+    expect(de(fichaVacia.id)).toBe(false)
   })
 
-  it('comedor, todos los momentos: el aviso en su niño, no en el otro', async () => {
+  it('comedor, todos los momentos: el aviso en su niño, no en los otros', async () => {
     const estados = await getPaseDeListaComidaTodosMomentos(aula.id, FECHA)
     for (const estado of Object.values(estados)) {
       expect(estado.kind).toBe('listo')
       if (estado.kind !== 'listo') continue
       const de = (id: string) => estado.filas.find((f) => f.nino.id === id)?.alergiaGrave
-      expect(estado.filas).toHaveLength(2)
+      expect(estado.filas).toHaveLength(3)
       expect(de(conAlergia.id)).toBe(true)
       expect(de(sinFicha.id)).toBe(false)
+      expect(de(fichaVacia.id)).toBe(false)
     }
   })
 })
