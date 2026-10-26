@@ -2,6 +2,8 @@ import { createHash } from 'crypto'
 
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
+import { hoyMadrid, offsetDias } from '@/features/agenda-diaria/lib/fecha'
+
 import type { Database } from '@/types/database'
 
 import {
@@ -42,11 +44,12 @@ const TEXTO_REAL =
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex')
 const SVG_TRAZO = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0 L10 10"/></svg>'
 
-/** Hoy en huso Madrid como YYYY-MM-DD, con desplazamiento opcional en días. */
-function ymdMadrid(offsetDias = 0): string {
-  const base = new Date()
-  base.setUTCDate(base.getUTCDate() + offsetDias)
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(base)
+/**
+ * El día de calendario en Madrid a `dias` de hoy. Se cuenta en el calendario, no restando 24 h:
+ * el día del cambio de hora tiene 23 o 25.
+ */
+function ymdMadrid(dias = 0): string {
+  return offsetDias(hoyMadrid(), dias)
 }
 
 type AdminInsert = Database['public']['Tables']['administraciones_medicacion']['Insert']

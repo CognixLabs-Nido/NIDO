@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { hoyMadrid, offsetDias } from '@/features/agenda-diaria/lib/fecha'
+
 import type { Database } from '@/types/database'
 
 import {
@@ -70,9 +72,8 @@ const TEXTO = 'Texto de prueba del formato, definitivo para el test.'
 
 /** Hoy y dentro de 30 días en huso Madrid (la medicación exige hoy ∈ [inicio, fin]). */
 function fechasMadrid(): { hoy: string; fin: string } {
-  const fmt = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(d)
-  const ahora = new Date()
-  return { hoy: fmt(ahora), fin: fmt(new Date(ahora.getTime() + 30 * 86_400_000)) }
+  const hoy = hoyMadrid()
+  return { hoy, fin: offsetDias(hoy, 30) }
 }
 
 describe('Firma revocada — el resto de superficies', () => {

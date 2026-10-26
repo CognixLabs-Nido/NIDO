@@ -3,6 +3,8 @@ import { randomUUID } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { hoyMadrid, offsetDias } from '@/features/agenda-diaria/lib/fecha'
+
 import type { Database } from '@/types/database'
 
 import {
@@ -56,10 +58,12 @@ const { getInformesDeMisAulas } = await import('@/features/informes/queries/get-
 const TEXTO = 'Texto de prueba del formato, definitivo para el test.'
 const ESTRUCTURA = [{ titulo: 'Autonomía', items: [{ id: 'item-1', texto: 'Come solo' }] }]
 
-function ymdMadrid(offsetDias = 0): string {
-  const base = new Date()
-  base.setUTCDate(base.getUTCDate() + offsetDias)
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(base)
+/**
+ * El día de calendario en Madrid a `dias` de hoy. Se cuenta en el calendario, no restando 24 h:
+ * el día del cambio de hora tiene 23 o 25.
+ */
+function ymdMadrid(dias = 0): string {
+  return offsetDias(hoyMadrid(), dias)
 }
 
 interface Centro {
