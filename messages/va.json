@@ -251,7 +251,8 @@
       "familias": "Famílies",
       "fotosRevocadas": "Fotos revocades",
       "direccion": "Direcció del centre",
-      "servicios": "Serveis"
+      "servicios": "Serveis",
+      "recibos": "Rebuts"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -1381,6 +1382,27 @@
         "entendido": "Entesos",
         "ir": "Anar a Direcció del centre"
       }
+    },
+    "recibos": {
+      "title": "Rebuts",
+      "subtitle": "Tots els rebuts del centre, amb el seu estat i el que va passar en cobrar-los. Busca per mes, família o xiquet.",
+      "filtro_anio": "Any",
+      "filtro_mes": "Mes",
+      "filtro_familia": "Família",
+      "filtro_nino": "Xiquet o xiqueta",
+      "todos_los_anios": "Tots els anys",
+      "todos_los_meses": "Tots els mesos",
+      "todas_las_familias": "Totes les famílies",
+      "todos_los_ninos": "Tots els xiquets",
+      "quitar_filtros": "Llevar filtres",
+      "vacio": "No hi ha rebuts amb estos filtres.",
+      "error": "No hem pogut carregar els rebuts. Torna-ho a provar.",
+      "error_opciones": "No hem pogut carregar les famílies i els xiquets per a filtrar. Torna-ho a provar.",
+      "mostrando": "Rebuts {desde}–{hasta} de {total}",
+      "paginacion": "Pàgines de l'historial",
+      "anterior": "Anteriors",
+      "siguiente": "Següents",
+      "pagina_de": "Pàgina {pagina} de {paginas}"
     }
   },
   "teacher": {

@@ -22,6 +22,7 @@ import {
   UserCogIcon,
   UsersRoundIcon,
   UtensilsIcon,
+  ReceiptIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { getTranslations } from 'next-intl/server'
@@ -91,6 +92,8 @@ export async function buildSidebarItems(
       // PR-12: el pase de servicios es uno para todo el centro; Dirección también lo rellena.
       { href: `/${locale}/teacher/servicios`, label: t('servicios'), icon: <SoupIcon /> },
       { href: `/${locale}/admin/cuotas`, label: t('cuotas'), icon: <CoinsIcon /> },
+      // F-6: el histórico general de recibos, con sus filtros por mes, familia y niño.
+      { href: `/${locale}/admin/recibos`, label: t('recibos'), icon: <ReceiptIcon /> },
       {
         href: `/${locale}/admin/autorizaciones`,
         label: t('autorizaciones'),

@@ -17,6 +17,7 @@ import {
 function recibo(id: string, over: Partial<ReciboHistorialInput> = {}): ReciboHistorialInput {
   return {
     id,
+    familia_id: 'fam',
     anio: 2026,
     mes: 3,
     estado: 'pendiente_procesar',
