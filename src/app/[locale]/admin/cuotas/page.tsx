@@ -91,6 +91,25 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
       aula: n.aula_actual,
     }))
 
+  // Cada concepto se gestiona desde el concepto: los mismos niños y familias que la pestaña
+  // Asignación permanente (matrícula activa), con la clase del niño, y quién tiene cada concepto.
+  const aulaPorNino = new Map(ninosCentro.map((n) => [n.id, n.aula_actual]))
+  const destinatarios = {
+    ninos: asignacion.alumnos.map((a) => ({
+      id: a.ninoId,
+      nombre: a.nombre,
+      aula: aulaPorNino.get(a.ninoId) ?? null,
+    })),
+    familias: asignacion.familias.map((f) => ({ id: f.familiaId, nombre: f.etiqueta, aula: null })),
+  }
+  const asignadosPorConcepto: Record<string, string[]> = {}
+  for (const d of [
+    ...asignacion.alumnos.map((a) => ({ id: a.ninoId, conceptos: a.conceptosAsignados })),
+    ...asignacion.familias.map((f) => ({ id: f.familiaId, conceptos: f.conceptosAsignados })),
+  ]) {
+    for (const c of d.conceptos) (asignadosPorConcepto[c] ??= []).push(d.id)
+  }
+
   // PR-13: lo puntual del catálogo (excursiones y similares), para el cargo a varios niños.
   const conceptosPuntuales = conceptos
     .filter((c) => c.activo && c.tipo_concepto === 'esporadico' && c.signo === 1)
@@ -145,6 +164,8 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
             aniosNacimientoCentro={aniosNacimientoCentro}
             tarifasPorConcepto={tarifasPorConcepto}
             editable={esResponsable}
+            destinatarios={destinatarios}
+            asignadosPorConcepto={asignadosPorConcepto}
           />
         </TabsContent>
 

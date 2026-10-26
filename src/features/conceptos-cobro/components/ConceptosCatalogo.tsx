@@ -27,6 +27,8 @@ import { formatEuros } from '@/shared/lib/format-money'
 import { formatPorcentaje } from '@/shared/lib/format-percent'
 
 import { eliminarConcepto, setActivoConcepto } from '../actions/estado-concepto'
+import { conceptoAsignable, type Destinatario } from '../lib/destinatarios-concepto'
+import { ConceptoDestinatariosDialog } from './ConceptoDestinatariosDialog'
 import { ConceptoFormDialog } from './ConceptoFormDialog'
 import type { ConceptoCobroListItem } from '../queries/get-conceptos-cobro'
 import type { TarifaAnioItem } from '../queries/get-tarifas-concepto-anio'
@@ -40,6 +42,13 @@ interface Props {
   tarifasPorConcepto: Record<string, TarifaAnioItem[]>
   /** La admin del centro: las cuotas son suyas. Una directora ve el catálogo sin tocarlo. */
   editable: boolean
+  /**
+   * A quién se asigna cada concepto, desde el propio concepto: los niños matriculados (con su
+   * clase) y sus familias, y quién tiene hoy cada concepto. Lo hace Dirección, como en la pestaña
+   * Asignación permanente: también la directora.
+   */
+  destinatarios: { ninos: Destinatario[]; familias: Destinatario[] }
+  asignadosPorConcepto: Record<string, string[]>
 }
 
 /** Valor legible del concepto: signo (− si descuento) + importe fijo (€/día si diario) o %. */
@@ -64,6 +73,8 @@ export function ConceptosCatalogo({
   aniosNacimientoCentro,
   tarifasPorConcepto,
   editable,
+  destinatarios,
+  asignadosPorConcepto,
 }: Props) {
   const t = useTranslations('admin.cuotas')
 
@@ -94,7 +105,7 @@ export function ConceptosCatalogo({
                   <TableHead>{t('fields.precio')}</TableHead>
                   <TableHead>{t('fields.aplicacion')}</TableHead>
                   <TableHead>{t('fields.activo')}</TableHead>
-                  {editable && <TableHead className="text-right">{t('fields.acciones')}</TableHead>}
+                  <TableHead className="text-right">{t('fields.acciones')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -107,6 +118,10 @@ export function ConceptosCatalogo({
                     aniosNacimientoCentro={aniosNacimientoCentro}
                     tarifasConcepto={tarifasPorConcepto[c.id] ?? []}
                     editable={editable}
+                    destinatarios={
+                      c.ambito === 'familia' ? destinatarios.familias : destinatarios.ninos
+                    }
+                    asignados={asignadosPorConcepto[c.id] ?? []}
                   />
                 ))}
               </TableBody>
@@ -125,6 +140,8 @@ function ConceptoRow({
   aniosNacimientoCentro,
   tarifasConcepto,
   editable,
+  destinatarios,
+  asignados,
 }: {
   centroId: string
   concepto: ConceptoCobroListItem
@@ -132,6 +149,8 @@ function ConceptoRow({
   aniosNacimientoCentro: number[]
   tarifasConcepto: TarifaAnioItem[]
   editable: boolean
+  destinatarios: Destinatario[]
+  asignados: string[]
 }) {
   const t = useTranslations('admin.cuotas')
   const tErrors = useTranslations()
@@ -174,25 +193,36 @@ function ConceptoRow({
           aria-label={t('fields.activo')}
         />
       </TableCell>
-      {editable && (
-        <TableCell>
-          <div className="flex justify-end gap-2">
-            <ConceptoFormDialog
-              centroId={centroId}
-              concepto={concepto}
-              conceptos={conceptos}
-              aniosNacimientoCentro={aniosNacimientoCentro}
-              tarifasConcepto={tarifasConcepto}
-              trigger={
-                <Button variant="outline" size="sm">
-                  {t('editar')}
-                </Button>
-              }
+      <TableCell>
+        <div className="flex justify-end gap-2">
+          {conceptoAsignable(concepto) && (
+            <ConceptoDestinatariosDialog
+              conceptoId={concepto.id}
+              nombre={concepto.nombre}
+              familia={concepto.ambito === 'familia'}
+              destinatarios={destinatarios}
+              asignados={asignados}
             />
-            <EliminarConceptoDialog id={concepto.id} nombre={concepto.nombre} />
-          </div>
-        </TableCell>
-      )}
+          )}
+          {editable && (
+            <>
+              <ConceptoFormDialog
+                centroId={centroId}
+                concepto={concepto}
+                conceptos={conceptos}
+                aniosNacimientoCentro={aniosNacimientoCentro}
+                tarifasConcepto={tarifasConcepto}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    {t('editar')}
+                  </Button>
+                }
+              />
+              <EliminarConceptoDialog id={concepto.id} nombre={concepto.nombre} />
+            </>
+          )}
+        </div>
+      </TableCell>
     </TableRow>
   )
 }

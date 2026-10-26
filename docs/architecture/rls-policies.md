@@ -1327,6 +1327,29 @@ toca.
     no entra ninguno, así que los que pasan a `enviado_banco` son todos.
 - Test: `remesa-recibo-unico.rls.test.ts`.
 
+### Cada concepto se gestiona desde el propio concepto
+
+Migración `20261121120000_feat_asignaciones_desde_el_concepto`. Asignar un concepto manual (la
+cuota mensual del comedor, un cargo familiar) era niño a niño, en Asignación permanente. Decisión
+del responsable: se entra en el concepto, en el catálogo de Cuotas, y ahí se marcan los niños (o las
+familias, si el concepto es de familia) que lo tienen. Asignación permanente se queda como está; las
+dos escriben las mismas filas.
+
+- **`fijar_asignaciones_concepto(concepto, cambios)`** (`SECURITY INVOKER`, `EXECUTE` solo para
+  `authenticated`): cada cambio es `{id, asignada}`, con `id` el niño o la familia según el ámbito
+  del concepto. Marcar crea la asignación manual si no la tiene (`ON CONFLICT` sobre el índice de
+  asignaciones vivas); desmarcar es el borrado lógico de `desasignarConcepto`. Lo que ya estaba así
+  sale `sin_cambio`. Todo en una transacción. Es de invocador: la RLS de `asignacion_concepto` (solo
+  Dirección) y su auditoría siguen actuando, con quien guarda como actor.
+  - Puerta propia: `es_admin` del centro del concepto, si no 42501. Un niño o una familia de otro
+    centro, o un niño en un concepto de familia, tumban el guardado entero (42501).
+  - Solo los conceptos que ofrece Asignación permanente, activos y manuales: si no, P0001 con HINT
+    `concepto_no_asignable`. Una lista vacía o con repetidos: 22023.
+- **En la app:** en el catálogo de conceptos, «Niños» o «Familias» en cada concepto activo y manual,
+  para Dirección (también la directora, como en Asignación permanente). El precio por edad sigue en
+  «Editar» del concepto (tarifa por año de nacimiento, B1-2).
+- Test: `asignaciones-desde-concepto.rls.test.ts`.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -1373,6 +1396,7 @@ toca.
 | Devolución llevada al siguiente recibo        | `devolucion-siguiente-recibo.rls.test.ts`       |
 | El sobrante del cheque mayor que el recibo    | `cheque-sobrante.rls.test.ts`                   |
 | Un recibo, una remesa; añadir en borrador     | `remesa-recibo-unico.rls.test.ts`               |
+| Asignaciones desde el propio concepto         | `asignaciones-desde-concepto.rls.test.ts`       |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 
