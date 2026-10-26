@@ -158,19 +158,25 @@ describe('RLS olvido funcional — F11-A4', () => {
   })
 
   // o04 — purga del niño: PII directa + info médica + datos pedagógicos
-  it('o04 — purgar anonimiza in-place al niño (PII, info médica clara, pedagógicos)', async () => {
+  it('o04 — purgar anonimiza in-place al niño (PII, los seis campos de la ficha médica, pedagógicos)', async () => {
     const nino = await nuevoNino('Secreto RealNombre')
     await serviceClient
       .from('ninos')
       .update({ sexo: 'F', nacionalidad: 'ES', notas_admin: 'nota sensible', foto_url: 'x/y.jpg' })
       .eq('id', nino)
-    await serviceClient.from('info_medica_emergencia').insert({
-      nino_id: nino,
-      medicacion_habitual: 'Ibuprofeno',
-      alergias_leves: 'polen',
-      medico_familia: 'Dra. García',
-      telefono_emergencia: '600111222',
+    // La ficha, como en la app: Dirección por el setter, que cifra los seis (20261123120000).
+    const { error: medErr } = await (
+      await clientFor(admin)
+    ).rpc('set_info_medica_emergencia_cifrada', {
+      p_nino_id: nino,
+      p_alergias_graves: 'Alergia grave ficticia',
+      p_notas_emergencia: 'Nota ficticia',
+      p_medicacion_habitual: 'Ibuprofeno',
+      p_alergias_leves: 'polen',
+      p_medico_familia: 'Médico Demo',
+      p_telefono_emergencia: '600000000',
     })
+    expect(medErr).toBeNull()
     await serviceClient.from('datos_pedagogicos_nino').insert({
       nino_id: nino,
       lactancia_estado: 'biberon',
@@ -180,6 +186,25 @@ describe('RLS olvido funcional — F11-A4', () => {
       tipo_alimentacion: 'omnivora',
       idiomas_casa: ['es'],
     })
+
+    // Premisa: antes de purgar, los seis campos tienen valor (cifrado).
+    const CAMPOS_MEDICOS =
+      'alergias_graves, notas_emergencia, medicacion_habitual, alergias_leves, medico_familia, telefono_emergencia'
+    const { data: medAntes } = await serviceClient
+      .from('info_medica_emergencia')
+      .select(CAMPOS_MEDICOS)
+      .eq('nino_id', nino)
+      .single()
+    // PostgREST devuelve también como `\\x…` un texto en claro guardado en bytea: lo que
+    // distingue el cifrado es que no lleva dentro los bytes del texto.
+    const enClaro = ['Ibuprofeno', 'polen', 'Médico Demo', '600000000'].map((t) =>
+      Buffer.from(t, 'utf8').toString('hex')
+    )
+    expect(Object.values(medAntes ?? {})).toHaveLength(6)
+    for (const v of Object.values(medAntes ?? {})) {
+      expect(String(v).startsWith('\\x')).toBe(true)
+      for (const h of enClaro) expect(String(v)).not.toContain(h)
+    }
 
     await purgar(await solicitarNinoInmediato(nino))
 
@@ -194,12 +219,11 @@ describe('RLS olvido funcional — F11-A4', () => {
 
     const { data: med } = await serviceClient
       .from('info_medica_emergencia')
-      .select('medicacion_habitual, alergias_leves, medico_familia, telefono_emergencia')
+      .select(CAMPOS_MEDICOS)
       .eq('nino_id', nino)
       .single()
-    expect(med?.medicacion_habitual).toBeNull()
-    expect(med?.medico_familia).toBeNull()
-    expect(med?.telefono_emergencia).toBeNull()
+    expect(med).not.toBeNull()
+    for (const v of Object.values(med ?? {})) expect(v).toBeNull()
 
     const { data: ped } = await serviceClient
       .from('datos_pedagogicos_nino')

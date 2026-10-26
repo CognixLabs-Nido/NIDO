@@ -192,6 +192,13 @@ Las funciones `public.set_info_medica_emergencia_cifrada(...)` y `public.get_inf
   solo de espacios se guarda como NULL (vacía el campo), así una columna no NULL siempre tiene
   contenido. En `audit_log` los seis entran cifrados (`\x…`); la migración cifró las copias
   anteriores que tuvieran texto en claro.
+- **Con sesión, la tabla solo se lee** (`20261124120000`). `ime_admin_all` era `FOR ALL`: Dirección
+  podía escribirla directamente por PostgREST, saltándose los setters, y guardar texto en claro en
+  las columnas `bytea`. Ahora es `ime_admin_select` (misma condición, solo SELECT) y
+  `authenticated` no tiene INSERT, UPDATE, DELETE ni TRUNCATE en la tabla: cada cerrojo basta solo.
+  Escriben únicamente funciones `SECURITY DEFINER` (los dos setters, `borrar_info_medica_nino_tutor`
+  y las dos purgas) y `service_role`. **Una escritura nueva de la ficha va por función, nunca por
+  policy.** Test: `info-medica.rls.test.ts`.
 
 Las listas del aula (pase de lista, agenda del aula y los dos pases de lista del comedor) no
 descifran: leen la tabla con la sesión y pintan «Alergia grave» si `alergias_graves` no es NULL (y
@@ -1434,6 +1441,7 @@ cobraban.
 | Asignaciones desde el propio concepto         | `asignaciones-desde-concepto.rls.test.ts`       |
 | Los conceptos diarios son automáticos         | `diario-automatico.rls.test.ts`                 |
 | La ficha médica, cifrada entera               | `ficha-medica-cifrada.rls.test.ts`              |
+| La ficha médica, sin escritura directa        | `info-medica.rls.test.ts`                       |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 
