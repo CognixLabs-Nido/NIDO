@@ -142,7 +142,8 @@ export async function getPaseDeListaComidaTodosMomentos(
     supabase
       .from('info_medica_emergencia')
       .select('nino_id, alergias_graves')
-      .in('nino_id', ninoIds),
+      .in('nino_id', ninoIds)
+      .is('deleted_at', null),
     supabase
       .from('agendas_diarias')
       .select('id, nino_id')

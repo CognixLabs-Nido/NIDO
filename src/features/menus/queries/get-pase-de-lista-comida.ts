@@ -143,6 +143,7 @@ export async function getPaseDeListaComida(
       'nino_id',
       ninos.map((n) => n.id)
     )
+    .is('deleted_at', null)
   // Un fallo aquí no puede pintarse como «sin alergia»: sin las alertas, la lista no sale.
   if (errorMedicas) throw new Error(`alertas médicas: ${errorMedicas.message}`)
 
