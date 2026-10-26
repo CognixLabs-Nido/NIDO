@@ -187,6 +187,14 @@ Las funciones `public.set_info_medica_emergencia_cifrada(...)` y `public.get_inf
 - Incorporan autorización (admin del centro / profe del aula actual / tutor con `puede_ver_info_medica=true`) antes de descifrar.
 - Contrato del setter: NULL = preservar campo (no sobrescribe con NULL). Ver ADR-0004.
 
+Las listas del aula (pase de lista, agenda del aula y los dos pases de lista del comedor) no
+descifran: leen la tabla con la sesión y pintan «Alergia grave» si `alergias_graves` no es NULL (y
+«Medicación» si `medicacion_habitual` tiene texto). La tabla **no tiene `deleted_at`**: hasta
+octubre de 2026 las cuatro consultas filtraban por esa columna, PostgREST contestaba 42703, el
+error se ignoraba y ningún niño salía con el aviso. Ahora un fallo de esa consulta lanza y la lista
+no sale: nunca se pinta como «sin alergia». Tests: `alertas-medicas.rls.test.ts` (con la sesión de
+la profe, contra el esquema real) y `src/test/alertas-medicas/fallo-no-es-sin-alergia.test.ts`.
+
 ## Audit log automático
 
 `audit_trigger_function()` SECURITY DEFINER aplicada `AFTER INSERT OR UPDATE OR DELETE` en:

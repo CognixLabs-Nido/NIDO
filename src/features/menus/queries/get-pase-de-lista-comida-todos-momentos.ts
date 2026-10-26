@@ -142,8 +142,7 @@ export async function getPaseDeListaComidaTodosMomentos(
     supabase
       .from('info_medica_emergencia')
       .select('nino_id, alergias_graves')
-      .in('nino_id', ninoIds)
-      .is('deleted_at', null),
+      .in('nino_id', ninoIds),
     supabase
       .from('agendas_diarias')
       .select('id, nino_id')
@@ -151,6 +150,8 @@ export async function getPaseDeListaComidaTodosMomentos(
       .eq('fecha', fecha),
   ])
 
+  // Un fallo aquí no puede pintarse como «sin alergia»: sin las alertas, la lista no sale.
+  if (medicasRes.error) throw new Error(`alertas médicas: ${medicasRes.error.message}`)
   const alergiaByNino = new Map<string, boolean>()
   for (const m of (medicasRes.data ?? []) as Array<{ nino_id: string; alergias_graves: unknown }>) {
     alergiaByNino.set(m.nino_id, m.alergias_graves !== null)
