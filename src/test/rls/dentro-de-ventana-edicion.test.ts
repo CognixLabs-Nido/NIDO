@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import { hoyMadrid, offsetDias } from '@/features/agenda-diaria/lib/fecha'
+
 import { serviceClient } from './setup'
 
 /**
@@ -7,18 +9,12 @@ import { serviceClient } from './setup'
  * Devuelve true si la fecha es el día calendario actual en huso Europe/Madrid.
  */
 
-function madridDateOffset(daysOffset: number): string {
-  const fmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Madrid',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-  const parts = fmt.formatToParts(new Date(Date.now() + daysOffset * 24 * 60 * 60 * 1000))
-  const y = parts.find((p) => p.type === 'year')!.value
-  const m = parts.find((p) => p.type === 'month')!.value
-  const d = parts.find((p) => p.type === 'day')!.value
-  return `${y}-${m}-${d}`
+/**
+ * El día de calendario en Madrid a `dias` de hoy. Se cuenta en el calendario, no restando 24 h:
+ * el día del cambio de hora tiene 23 o 25.
+ */
+function madridDateOffset(dias: number): string {
+  return offsetDias(hoyMadrid(), dias)
 }
 
 describe('public.dentro_de_ventana_edicion(fecha)', () => {

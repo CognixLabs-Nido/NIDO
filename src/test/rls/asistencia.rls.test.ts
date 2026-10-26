@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { hoyMadrid, offsetDias } from '@/features/agenda-diaria/lib/fecha'
+
 import {
   asignarProfeAula,
   asignarRol,
@@ -30,19 +32,12 @@ import {
  *  - DELETE rechazado a todos (default DENY).
  */
 
-function madridDateOffset(daysOffset: number): string {
-  const fmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Madrid',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-  const parts = fmt.formatToParts(new Date(Date.now() + daysOffset * 24 * 60 * 60 * 1000))
-  return [
-    parts.find((p) => p.type === 'year')!.value,
-    parts.find((p) => p.type === 'month')!.value,
-    parts.find((p) => p.type === 'day')!.value,
-  ].join('-')
+/**
+ * El día de calendario en Madrid a `dias` de hoy. Se cuenta en el calendario, no restando 24 h:
+ * el día del cambio de hora tiene 23 o 25.
+ */
+function madridDateOffset(dias: number): string {
+  return offsetDias(hoyMadrid(), dias)
 }
 
 describe('RLS asistencias — aislamiento, ventana y permisos', () => {

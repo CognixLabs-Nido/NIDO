@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
+
 import {
   createTestAula,
   createTestCentro,
@@ -16,21 +18,6 @@ import {
  * `audit_trigger_function()` extendida para derivar centro_id vía
  * helpers SECURITY DEFINER (`centro_de_nino`, `centro_de_agenda`).
  */
-
-function madridDateToday(): string {
-  const fmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Madrid',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-  const parts = fmt.formatToParts(new Date())
-  return [
-    parts.find((p) => p.type === 'year')!.value,
-    parts.find((p) => p.type === 'month')!.value,
-    parts.find((p) => p.type === 'day')!.value,
-  ].join('-')
-}
 
 describe('Audit log — agendas_diarias y comidas (Fase 3)', () => {
   let centro: { id: string }
@@ -68,7 +55,7 @@ describe('Audit log — agendas_diarias y comidas (Fase 3)', () => {
     // Setup: una agenda padre para el niño (hoy) y luego una comida.
     const { data: agenda, error: agendaErr } = await serviceClient
       .from('agendas_diarias')
-      .insert({ nino_id: nino.id, fecha: madridDateToday() })
+      .insert({ nino_id: nino.id, fecha: hoyMadrid() })
       .select('id')
       .single()
     expect(agendaErr).toBeNull()
