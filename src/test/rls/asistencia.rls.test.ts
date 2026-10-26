@@ -37,8 +37,7 @@ import {
  * el día del cambio de hora tiene 23 o 25.
  */
 function madridDateOffset(dias: number): string {
-  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' })
-  return fmt.format(new Date(Date.now() + dias * 24 * 60 * 60 * 1000))
+  return offsetDias(hoyMadrid(), dias)
 }
 
 describe('RLS asistencias — aislamiento, ventana y permisos', () => {
