@@ -15,7 +15,13 @@
     "close": "Cerrar",
     "search": "Buscar",
     "noResults": "Sin resultados",
-    "submitting": "Enviando..."
+    "submitting": "Enviando...",
+    "filtro_ninos": {
+      "clase": "Clase",
+      "todas": "Todas",
+      "buscar": "Buscar por nombre",
+      "sin_resultados": "Nadie coincide con el filtro."
+    }
   },
   "nav": {
     "home": "Inicio",
@@ -602,7 +608,11 @@
           "exceso_transferencia": "{importe} no cupieron en ese recibo: se devuelven a la familia por transferencia.",
           "exceso_por_resolver": "{importe} no cupieron en ese recibo y están sin resolver.",
           "desglose": "Descontado {descontado} · En recibo sin validar {enRecibo} · Por aplicar {porAplicar} · Por transferencia {transferencia} · Sin resolver {porResolver}"
-        }
+        },
+        "col_clase": "Clase",
+        "beca_de": "Beca comedor de {nombre}",
+        "por_edad": "Seleccionar por edad:",
+        "nacidos_en": "Nacidos en {anio} ({n})"
       },
       "tab_resumen": "Resumen",
       "signos": {
@@ -629,6 +639,7 @@
         "automatico": "Al pulsar «Proponer asignaciones» se asigna solo: ámbito Niño → a todos los alumnos activos; Familia → a todas las familias; si es descuento → solo a familias con 2 o más hijos.",
         "manual": "No se propone. Lo asignas tú a mano en «Asignación permanente»."
       },
+      "aplicacion_diario": "Automático: el día suelto lo tienen todos los niños. Se cobran los días apuntados en el parte, salvo a quien tiene la cuota mensual del mismo servicio.",
       "asignar_title": "Conceptos · {nombre}",
       "conceptos_asignados": "{n} asignados",
       "sin_conceptos_manuales": "No hay conceptos de asignación manual activos. Créalos en la pestaña Conceptos.",
@@ -673,8 +684,6 @@
       "servicio_ninguno": "Ninguno",
       "servicio_mensual_hint": "Si es la cuota de un servicio, quien la tenga no paga los días de ese servicio, aunque también tenga asignado el diario.",
       "tipo_con_servicio": "{tipo} · {servicio}",
-      "aviso_mensual_y_diario": "Tiene asignados el mensual y el diario de {servicios}. Solo se cobra el mensual: los días no se cobran. Quita el que sobre.",
-      "solape_fila": "Mensual y diario de {servicios}: solo se cobra el mensual",
       "importe_propio": {
         "titulo": "Importe propio",
         "hint": "Sustituye al precio del concepto cada mes hasta que lo cambies. Se aplica al generar o recalcular el mes; los recibos ya validados no cambian.",
@@ -701,16 +710,12 @@
         "title_ninos": "{nombre}: niños que lo tienen",
         "title_familias": "{nombre}: familias que lo tienen",
         "desc": "Marca a quién se le cobra. Se cobra al generar o recalcular los recibos del mes; los recibos ya validados no cambian.",
-        "filtro_clase": "Clase",
-        "todas": "Todas",
-        "buscar": "Buscar por nombre",
         "marcar_todos": "Marcar todos",
         "desmarcar_todos": "Desmarcar todos",
         "marcados": "Marcados: {n} de {total}",
         "cambios": "Cambios sin guardar: {n}",
         "sin_ninos": "No hay niños matriculados.",
         "sin_familias": "No hay familias con niños matriculados.",
-        "sin_resultados": "Nadie coincide con el filtro.",
         "guardar": "Guardar",
         "guardando": "Guardando…",
         "cancelar": "Cancelar",

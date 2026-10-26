@@ -35,31 +35,3 @@ export function cambiosAsignacion(
   }
   return cambios.sort((a, b) => a.id.localeCompare(b.id))
 }
-
-/** Los de una clase (o todos) cuyo nombre contiene el texto, sin distinguir acentos. */
-export function filtrarDestinatarios(
-  lista: Destinatario[],
-  aula: string | null,
-  texto: string
-): Destinatario[] {
-  const buscado = normalizar(texto.trim())
-  return lista.filter(
-    (d) =>
-      (aula == null || d.aula === aula) &&
-      (buscado === '' || normalizar(d.nombre).includes(buscado))
-  )
-}
-
-/** Las clases de la lista, sin repetir y en orden. */
-export function clasesDe(lista: Destinatario[]): string[] {
-  return [...new Set(lista.map((d) => d.aula).filter((a): a is string => a != null))].sort((a, b) =>
-    a.localeCompare(b, 'es-ES')
-  )
-}
-
-function normalizar(s: string): string {
-  return s
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLocaleLowerCase('es-ES')
-}

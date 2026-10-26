@@ -94,6 +94,12 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
   // Cada concepto se gestiona desde el concepto: los mismos niños y familias que la pestaña
   // Asignación permanente (matrícula activa), con la clase del niño, y quién tiene cada concepto.
   const aulaPorNino = new Map(ninosCentro.map((n) => [n.id, n.aula_actual]))
+  // El año de nacimiento, del string 'YYYY-MM-DD' (sin Date, como aniosNacimientoCentro).
+  const anioPorNino = new Map(
+    ninosCentro.flatMap((n) =>
+      n.fecha_nacimiento ? [[n.id, Number(n.fecha_nacimiento.slice(0, 4))] as const] : []
+    )
+  )
   const destinatarios = {
     ninos: asignacion.alumnos.map((a) => ({
       id: a.ninoId,
@@ -173,7 +179,11 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
           <BecaComedorPanel
             centroId={centroId}
             hayCurso={cargasBeca.curso != null}
-            alumnos={elegibilidad.alumnos}
+            alumnos={elegibilidad.alumnos.map((a) => ({
+              ...a,
+              aula: aulaPorNino.get(a.id) ?? null,
+              anioNacimiento: anioPorNino.get(a.id) ?? null,
+            }))}
             cargas={cargasBeca.cargas}
             meses={cargasBeca.meses}
             mesesCerrados={cargasBeca.mesesCerrados}
@@ -184,7 +194,11 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
         </TabsContent>
 
         <TabsContent value="asignacion" className="pt-4">
-          <AsignacionPermanentePanel centroId={centroId} data={asignacion} />
+          <AsignacionPermanentePanel
+            centroId={centroId}
+            data={asignacion}
+            aulaPorNino={Object.fromEntries(aulaPorNino)}
+          />
         </TabsContent>
 
         <TabsContent value="remesas" className="pt-4">

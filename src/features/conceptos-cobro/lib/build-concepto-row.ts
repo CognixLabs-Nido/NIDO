@@ -9,6 +9,8 @@ import { admiteServicio, type ConceptoCobroInput } from '../schemas/concepto-cob
  *  · servicio si diario, o si es un mensual de cobro fijo por niño (PR-4); NULL en el resto.
  *  · concepto_base_id solo en un descuento (signo=−1): obligatorio si es porcentual, opcional
  *    si es fijo (PR-8); NULL en un cobro.
+ *  · un diario es siempre automático: el día suelto lo tienen todos y el parte decide (CHECK
+ *    `conceptos_cobro_diario_automatico`).
  * Devuelve las columnas comunes a INSERT y UPDATE (sin centro_id, que solo va en INSERT).
  */
 export function buildConceptoRow(input: ConceptoCobroInput) {
@@ -19,7 +21,7 @@ export function buildConceptoRow(input: ConceptoCobroInput) {
     signo: input.signo,
     ambito: input.ambito,
     // F-1: 'automatico' entra en proponer_asignaciones; 'manual' solo asignación a mano.
-    aplicacion: input.aplicacion,
+    aplicacion: input.tipo_concepto === 'diario' ? 'automatico' : input.aplicacion,
     tipo_valor: input.tipo_valor,
     importe_centimos:
       esFijo && input.importe_euros != null ? eurosACentimos(input.importe_euros) : null,

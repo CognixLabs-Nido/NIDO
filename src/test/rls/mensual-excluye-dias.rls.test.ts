@@ -141,6 +141,7 @@ describe('PR-4 — el mensual de un servicio excluye los días', () => {
     const diario = await concepto({
       nombre: 'Comedor diario premisa',
       tipo_concepto: 'diario',
+      aplicacion: 'automatico',
       importe_centimos: 700,
       servicio: 'comedor',
     })
@@ -160,6 +161,7 @@ describe('PR-4 — el mensual de un servicio excluye los días', () => {
     const diario = await concepto({
       nombre: 'Comedor diario',
       tipo_concepto: 'diario',
+      aplicacion: 'automatico',
       importe_centimos: 700,
       servicio: 'comedor',
     })
@@ -184,6 +186,7 @@ describe('PR-4 — el mensual de un servicio excluye los días', () => {
     const matinera = await concepto({
       nombre: 'Matinera diaria',
       tipo_concepto: 'diario',
+      aplicacion: 'automatico',
       importe_centimos: 300,
       servicio: 'matinera',
     })
@@ -211,6 +214,7 @@ describe('PR-4 — el mensual de un servicio excluye los días', () => {
     const diario = await concepto({
       nombre: 'Comedor diario (vigencia)',
       tipo_concepto: 'diario',
+      aplicacion: 'automatico',
       importe_centimos: 700,
       servicio: 'comedor',
     })

@@ -20,9 +20,12 @@ import {
  *
  * Las claves del formulario y del catálogo de conceptos y de la asignación por alumno se LEEN de
  * sus componentes (`t('…')` y `t(`…${x}`)` con sus valores), no se enumeran: el servicio de un
- * mensual, el aviso de mensual y diario a la vez, y cualquier clave nueva sin traducir, se ponen
- * rojos solos. Cada traducción lleva los mismos `{marcadores}` que la castellana: un
- * `{servicios}` que faltara en un idioma dejaría el aviso sin decir de qué servicio es.
+ * mensual, la nota de que un diario es automático, y cualquier clave nueva sin traducir, se ponen
+ * rojos solos. Cada traducción lleva los mismos `{marcadores}` que la castellana.
+ *
+ * El aviso de «mensual y diario a la vez» ya no existe (20261122120000): el diario lo tienen
+ * todos, así que todo el que paga la cuota mensual tiene también el diario, y el motor no le
+ * cobra los días (PR-4).
  */
 const ESTADOS_ASIGNACION = ['no_asignado', 'asignado'] as const
 
@@ -75,14 +78,13 @@ function marcadores(texto: string): string[] {
 }
 
 describe('i18n — el mensual de un servicio excluye los días (PR-4)', () => {
-  it('premisa: la lectura encuentra el servicio del mensual y los dos avisos', () => {
+  it('premisa: la lectura encuentra el servicio del mensual y la nota del diario', () => {
     expect(CLAVES.size).toBeGreaterThan(40)
     expect(CLAVES).toContain('admin.cuotas.fields.servicio_mensual')
     expect(CLAVES).toContain('admin.cuotas.servicio_ninguno')
     expect(CLAVES).toContain('admin.cuotas.servicio_mensual_hint')
     expect(CLAVES).toContain('admin.cuotas.tipo_con_servicio')
-    expect(CLAVES).toContain('admin.cuotas.aviso_mensual_y_diario')
-    expect(CLAVES).toContain('admin.cuotas.solape_fila')
+    expect(CLAVES).toContain('admin.cuotas.aplicacion_diario')
   })
 
   for (const [locale, msgs] of LOCALES) {
@@ -96,10 +98,10 @@ describe('i18n — el mensual de un servicio excluye los días (PR-4)', () => {
     })
   }
 
-  it('los dos avisos dicen de qué servicio son', () => {
-    expect(marcadores(hoja(es, 'admin.cuotas.aviso_mensual_y_diario') as string)).toEqual([
-      'servicios',
-    ])
-    expect(marcadores(hoja(es, 'admin.cuotas.solape_fila') as string)).toEqual(['servicios'])
+  it('el aviso de mensual y diario a la vez no queda en ningún idioma', () => {
+    for (const [, msgs] of LOCALES) {
+      expect(hoja(msgs, 'admin.cuotas.aviso_mensual_y_diario')).toBeUndefined()
+      expect(hoja(msgs, 'admin.cuotas.solape_fila')).toBeUndefined()
+    }
   })
 })

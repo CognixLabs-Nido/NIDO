@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
@@ -14,17 +14,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { FiltroClaseYNombre } from '@/shared/components/FiltroClaseYNombre'
+import { clasesDe, filtrarNinos } from '@/shared/lib/filtrar-ninos'
 
 import { toggleElegibilidad } from '../actions/elegibilidad'
-import type { AlumnoElegibilidad } from '../queries/get-elegibilidad-becados'
+import type { AlumnoBeca } from '../lib/alumno-beca'
 
 interface Props {
-  alumnos: AlumnoElegibilidad[]
+  alumnos: AlumnoBeca[]
 }
 
 /**
- * V2-2 — lista de alumnos activos del curso con un check "tiene beca comedor" por alumno.
- * Optimista: el check refleja el cambio al instante y revierte si la action falla.
+ * V2-2 — lista de alumnos activos del curso con un check "tiene beca comedor" por alumno, con
+ * filtro por clase y búsqueda por nombre. Optimista: el check refleja el cambio al instante y
+ * revierte si la action falla.
  */
 export function ElegibilidadList({ alumnos }: Props) {
   const t = useTranslations('admin.cuotas.beca_comedor')
@@ -33,6 +36,10 @@ export function ElegibilidadList({ alumnos }: Props) {
     Object.fromEntries(alumnos.map((a) => [a.id, a.elegible]))
   )
   const [pending, startTransition] = useTransition()
+  const [aula, setAula] = useState<string | null>(null)
+  const [texto, setTexto] = useState('')
+  const clases = useMemo(() => clasesDe(alumnos), [alumnos])
+  const visibles = filtrarNinos(alumnos, aula, texto)
 
   function onToggle(ninoId: string, next: boolean) {
     setEstado((prev) => ({ ...prev, [ninoId]: next }))
@@ -54,30 +61,44 @@ export function ElegibilidadList({ alumnos }: Props) {
   }
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="space-y-3 overflow-hidden p-4">
+      <FiltroClaseYNombre
+        clases={clases}
+        aula={aula}
+        onAula={setAula}
+        texto={texto}
+        onTexto={setTexto}
+      />
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>{t('col_alumno')}</TableHead>
+            <TableHead>{t('col_clase')}</TableHead>
             <TableHead className="w-32 text-center">{t('col_beca')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {alumnos.map((a) => (
+          {visibles.map((a) => (
             <TableRow key={a.id}>
               <TableCell className="font-medium">{a.nombre}</TableCell>
+              <TableCell className="text-muted-foreground text-sm">{a.aula ?? '—'}</TableCell>
               <TableCell className="text-center">
                 <Checkbox
                   checked={estado[a.id] ?? false}
                   disabled={pending}
                   onCheckedChange={(v) => onToggle(a.id, v === true)}
-                  aria-label={t('col_beca')}
+                  aria-label={t('beca_de', { nombre: a.nombre })}
                 />
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+      {visibles.length === 0 && (
+        <p className="text-muted-foreground text-sm">
+          {tRoot('common.filtro_ninos.sin_resultados')}
+        </p>
+      )}
     </Card>
   )
 }

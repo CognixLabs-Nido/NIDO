@@ -110,6 +110,7 @@ describe('F12-B — RLS cuotas/recibos/remesas (catálogo · asignación · part
           centro_id: centroA.id,
           nombre: 'Comedor',
           tipo_concepto: 'diario',
+          aplicacion: 'automatico',
           tipo_valor: 'fijo',
           importe_centimos: 600,
           servicio: 'comedor',

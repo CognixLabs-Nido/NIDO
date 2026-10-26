@@ -15,7 +15,13 @@
     "close": "Close",
     "search": "Search",
     "noResults": "No results",
-    "submitting": "Submitting..."
+    "submitting": "Submitting...",
+    "filtro_ninos": {
+      "clase": "Class",
+      "todas": "All",
+      "buscar": "Search by name",
+      "sin_resultados": "No one matches the filter."
+    }
   },
   "nav": {
     "home": "Home",
@@ -602,7 +608,11 @@
           "exceso_transferencia": "{importe} did not fit in that bill: refunded to the family by bank transfer.",
           "exceso_por_resolver": "{importe} did not fit in that bill and are unresolved.",
           "desglose": "Deducted {descontado} · In a bill not yet validated {enRecibo} · To be applied {porAplicar} · By transfer {transferencia} · Unresolved {porResolver}"
-        }
+        },
+        "col_clase": "Class",
+        "beca_de": "Meal grant for {nombre}",
+        "por_edad": "Select by age:",
+        "nacidos_en": "Born in {anio} ({n})"
       },
       "tab_resumen": "Summary",
       "signos": {
@@ -629,6 +639,7 @@
         "automatico": "When you click «Propose assignments» it is assigned on its own: Child scope → all active pupils; Family → all families; if it is a discount → only families with 2 or more children.",
         "manual": "Not proposed. You assign it by hand in «Permanent assignment»."
       },
+      "aplicacion_diario": "Automatic: every child has the single day. The days recorded in the service log are charged, except to children with the monthly fee for the same service.",
       "asignar_title": "Concepts · {nombre}",
       "conceptos_asignados": "{n} assigned",
       "sin_conceptos_manuales": "There are no active manual-assignment concepts. Create them in the Concepts tab.",
@@ -673,8 +684,6 @@
       "servicio_ninguno": "None",
       "servicio_mensual_hint": "If this is the fee for a service, whoever has it does not pay for the days of that service, even if the daily charge is also assigned.",
       "tipo_con_servicio": "{tipo} · {servicio}",
-      "aviso_mensual_y_diario": "Both the monthly and the daily charge for {servicios} are assigned. Only the monthly fee is charged: the days are not. Remove the one that is not needed.",
-      "solape_fila": "Monthly and daily {servicios}: only the monthly fee is charged",
       "importe_propio": {
         "titulo": "Own amount",
         "hint": "Replaces the concept price every month until you change it. It applies when the month is generated or recalculated; confirmed receipts do not change.",
@@ -701,16 +710,12 @@
         "title_ninos": "{nombre}: children who have it",
         "title_familias": "{nombre}: families who have it",
         "desc": "Tick who is charged. It is charged when the month’s receipts are generated or recalculated; receipts already validated do not change.",
-        "filtro_clase": "Class",
-        "todas": "All",
-        "buscar": "Search by name",
         "marcar_todos": "Tick all",
         "desmarcar_todos": "Untick all",
         "marcados": "Ticked: {n} of {total}",
         "cambios": "Unsaved changes: {n}",
         "sin_ninos": "No children enrolled.",
         "sin_familias": "No families with enrolled children.",
-        "sin_resultados": "No one matches the filter.",
         "guardar": "Save",
         "guardando": "Saving…",
         "cancelar": "Cancel",

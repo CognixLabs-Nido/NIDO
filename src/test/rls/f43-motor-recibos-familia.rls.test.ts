@@ -48,6 +48,7 @@ async function insertarNino(centroId: string, familiaId: string, nombre: string)
 interface MkConcepto {
   nombre: string
   tipo_concepto?: 'mensual' | 'diario' | 'esporadico'
+  aplicacion?: 'manual' | 'automatico'
   tipo_valor?: 'fijo' | 'porcentaje'
   signo?: number
   ambito?: 'nino' | 'familia'
@@ -64,6 +65,7 @@ async function mkConcepto(centroId: string, o: MkConcepto): Promise<string> {
       centro_id: centroId,
       nombre: o.nombre,
       tipo_concepto: o.tipo_concepto ?? 'mensual',
+      aplicacion: o.aplicacion ?? 'manual',
       tipo_valor: o.tipo_valor ?? 'fijo',
       signo: o.signo ?? 1,
       ambito: o.ambito ?? 'nino',
@@ -174,6 +176,7 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
       const comedor = await mkConcepto(centro.id, {
         nombre: 'Comedor ' + familia,
         tipo_concepto: 'diario',
+        aplicacion: 'automatico',
         importe_centimos: 600,
         servicio: 'comedor',
       })

@@ -74,3 +74,21 @@ describe('buildConceptoRow — servicio (PR-4)', () => {
     expect(row.concepto_base_id).toBeNull()
   })
 })
+
+// El día suelto lo tienen todos (`20261122120000`): un diario es siempre automático, como exige el
+// CHECK `conceptos_cobro_diario_automatico`.
+describe('buildConceptoRow — un diario es automático', () => {
+  it('un diario que llega como manual se guarda automático', () => {
+    const row = buildConceptoRow({
+      ...base,
+      tipo_concepto: 'diario',
+      servicio: 'comedor',
+      aplicacion: 'manual',
+    })
+    expect(row.aplicacion).toBe('automatico')
+  })
+
+  it('un mensual manual sigue manual', () => {
+    expect(buildConceptoRow({ ...base, aplicacion: 'manual' }).aplicacion).toBe('manual')
+  })
+})

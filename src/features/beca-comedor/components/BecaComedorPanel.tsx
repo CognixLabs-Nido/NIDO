@@ -6,8 +6,8 @@ import { CargasBeca } from './CargasBeca'
 import { ElegibilidadList } from './ElegibilidadList'
 import { PanelBecas } from './PanelBecas'
 import type { CargaBecaItem } from '../queries/get-cargas-beca'
-import type { AlumnoElegibilidad } from '../queries/get-elegibilidad-becados'
 import type { PanelBecasData } from '../queries/get-panel-becas'
+import type { AlumnoBeca } from '../lib/alumno-beca'
 import type { MesCurso } from '../lib/cargas'
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
   centroId: string
   /** null = no hay curso activo → se muestra el aviso. */
   hayCurso: boolean
-  alumnos: AlumnoElegibilidad[]
+  alumnos: AlumnoBeca[]
   cargas: CargaBecaItem[]
   meses: MesCurso[]
   mesesCerrados: MesCurso[]
@@ -52,7 +52,9 @@ export async function BecaComedorPanel({
     )
   }
 
-  const becados = alumnos.filter((a) => a.elegible).map((a) => ({ id: a.id, nombre: a.nombre }))
+  const becados = alumnos
+    .filter((a) => a.elegible)
+    .map((a) => ({ id: a.id, nombre: a.nombre, aula: a.aula, anioNacimiento: a.anioNacimiento }))
 
   return (
     <div className="space-y-6">

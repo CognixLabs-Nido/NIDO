@@ -19,6 +19,10 @@ const inputSchema = z.object({
  * F-4-4: GENERA los borradores familiares del mes vía `generar_recibos_mes`. Re-ejecutable
  * y DESTRUCTIVA sobre borradores (wipe+rebuild; respeta los confirmados). El diálogo de la
  * UI avisa antes de regenerar. Devuelve cuántos recibos quedaron generados. Solo admin.
+ *
+ * Antes da los conceptos automáticos a quien le falten (`proponer_asignaciones`), como
+ * «Recalcular el mes» (decisión del responsable): el día suelto lo tienen todos, y un diario
+ * recién creado o un niño nuevo sin él no cobrarían los días del parte.
  */
 export async function generarRecibosMes(
   input: {
@@ -33,6 +37,16 @@ export async function generarRecibosMes(
   // Centro EXPLÍCITO de la página (multicentro · Fase 1): admin en él, no el de la cookie.
   const supabase = await createClient()
   if (!(await usuarioAdminEn(supabase, centroId))) return fail('recibos_panel.errors.no_autorizado')
+
+  const { error: errorProponer } = await supabase.rpc('proponer_asignaciones', {
+    p_centro_id: centroId,
+  })
+  if (errorProponer) {
+    logger.warn('generarRecibosMes proponer error', errorProponer.message)
+    if (errorProponer.code === '42501') return fail('recibos_panel.errors.no_autorizado')
+    return fail('cuotas_config.errors.proponer_failed')
+  }
+
   const { data, error } = await supabase.rpc('generar_recibos_mes', {
     p_centro_id: centroId,
     p_anio: parsed.data.anio,

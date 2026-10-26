@@ -1350,6 +1350,27 @@ dos escriben las mismas filas.
   «Editar» del concepto (tarifa por año de nacimiento, B1-2).
 - Test: `asignaciones-desde-concepto.rls.test.ts`.
 
+### Los conceptos diarios son automáticos
+
+Migración `20261122120000_feat_conceptos_diarios_automaticos`. Decisión del responsable: «el niño
+va a comedor y no paga cuota mensual, se le cobra el día suelto». El motor solo cobra los días del
+parte con el diario asignado; un diario manual no lo tenía nadie y los días apuntados no se
+cobraban.
+
+- **CHECK `conceptos_cobro_diario_automatico`** (`tipo_concepto <> 'diario' OR aplicacion =
+'automatico'`): para todos, también con service role. Al crear o editar, `buildConceptoRow` ya
+  guarda el diario como automático, y el formulario no ofrece elegir.
+- **La migración** pasa a automáticos los diarios que había y se los siembra a los niños con la
+  misma consulta que `proponer_asignaciones` (solo los diarios; quien ya tuvo fila de ese concepto,
+  viva o borrada, no se toca). Después, los niños nuevos y los diarios nuevos se reparten al
+  generar: «Generar recibos», igual que «Recalcular el mes», da antes los automáticos a quien le
+  falten (`proponer_asignaciones`).
+- **Consecuencias:** un diario no tiene botón de elegir niños en el catálogo
+  (`fijar_asignaciones_concepto` solo acepta manuales) ni sale en Asignación permanente. Quien
+  tiene la cuota mensual del mismo servicio tiene también el diario y el motor no le cobra los días
+  (PR-4), así que el aviso de «mensual y diario a la vez» se ha quitado.
+- Test: `diario-automatico.rls.test.ts`.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -1397,6 +1418,7 @@ dos escriben las mismas filas.
 | El sobrante del cheque mayor que el recibo    | `cheque-sobrante.rls.test.ts`                   |
 | Un recibo, una remesa; añadir en borrador     | `remesa-recibo-unico.rls.test.ts`               |
 | Asignaciones desde el propio concepto         | `asignaciones-desde-concepto.rls.test.ts`       |
+| Los conceptos diarios son automáticos         | `diario-automatico.rls.test.ts`                 |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

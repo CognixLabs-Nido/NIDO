@@ -3,8 +3,6 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/database'
 
-import type { ConceptoConServicio } from '../lib/servicios-solapados'
-
 type TipoConcepto = Database['public']['Enums']['tipo_concepto']
 
 export interface ConceptoAsignablePermanente {
@@ -57,8 +55,6 @@ export interface AsignacionPermanente {
   familias: FamiliaAsignacion[]
   conceptosNino: ConceptoAsignablePermanente[]
   conceptosFamilia: ConceptoAsignablePermanente[]
-  /** PR-4: conceptos activos con servicio, manuales y automáticos (para el aviso de solape). */
-  conceptosConServicio: ConceptoConServicio[]
   /** PR-6: todos los conceptos activos (también los automáticos, que no salen para asignar). */
   catalogo: ConceptoCatalogo[]
 }
@@ -68,7 +64,6 @@ const VACIO: AsignacionPermanente = {
   familias: [],
   conceptosNino: [],
   conceptosFamilia: [],
-  conceptosConServicio: [],
   catalogo: [],
 }
 
@@ -190,9 +185,6 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
     .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es-ES'))
 
   const catalogoFilas = catalogoRes.data ?? []
-  const conceptosConServicio: ConceptoConServicio[] = catalogoFilas.flatMap((c) =>
-    c.servicio ? [{ id: c.id, tipo_concepto: c.tipo_concepto, servicio: c.servicio }] : []
-  )
   const nombrePorConcepto = new Map(catalogoFilas.map((c) => [c.id, c.nombre]))
   const catalogo: ConceptoCatalogo[] = catalogoFilas
     .map((c) => ({
@@ -211,5 +203,5 @@ export async function getAsignacionPermanente(centroId: string): Promise<Asignac
     }))
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es-ES'))
 
-  return { alumnos, familias, conceptosNino, conceptosFamilia, conceptosConServicio, catalogo }
+  return { alumnos, familias, conceptosNino, conceptosFamilia, catalogo }
 }

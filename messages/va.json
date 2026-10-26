@@ -15,7 +15,13 @@
     "close": "Tancar",
     "search": "Cercar",
     "noResults": "Sense resultats",
-    "submitting": "Enviant..."
+    "submitting": "Enviant...",
+    "filtro_ninos": {
+      "clase": "Classe",
+      "todas": "Totes",
+      "buscar": "Busca pel nom",
+      "sin_resultados": "Ningú coincidix amb el filtre."
+    }
   },
   "nav": {
     "home": "Inici",
@@ -602,7 +608,11 @@
           "exceso_transferencia": "{importe} no van cabre en eixe rebut: es tornen a la família per transferència.",
           "exceso_por_resolver": "{importe} no van cabre en eixe rebut i estan sense resoldre.",
           "desglose": "Descomptat {descontado} · En rebut sense validar {enRecibo} · Per aplicar {porAplicar} · Per transferència {transferencia} · Sense resoldre {porResolver}"
-        }
+        },
+        "col_clase": "Classe",
+        "beca_de": "Beca de menjador de {nombre}",
+        "por_edad": "Selecciona per edat:",
+        "nacidos_en": "Nascuts el {anio} ({n})"
       },
       "tab_resumen": "Resum",
       "signos": {
@@ -629,6 +639,7 @@
         "automatico": "En prémer «Proposar assignacions» s'assigna sol: àmbit Xiquet → a tots els alumnes actius; Família → a totes les famílies; si és descompte → només a famílies amb 2 fills o més.",
         "manual": "No es proposa. L'assignes tu a mà en «Assignació permanent»."
       },
+      "aplicacion_diario": "Automàtic: el dia solt el tenen tots els xiquets. Es cobren els dies apuntats en el part, excepte a qui té la quota mensual del mateix servei.",
       "asignar_title": "Conceptes · {nombre}",
       "conceptos_asignados": "{n} assignats",
       "sin_conceptos_manuales": "No hi ha conceptes d'assignació manual actius. Crea'ls en la pestanya Conceptes.",
@@ -673,8 +684,6 @@
       "servicio_ninguno": "Cap",
       "servicio_mensual_hint": "Si és la quota d'un servei, qui la tinga no paga els dies d'eixe servei, encara que també tinga assignat el diari.",
       "tipo_con_servicio": "{tipo} · {servicio}",
-      "aviso_mensual_y_diario": "Té assignats el mensual i el diari de {servicios}. Només es cobra el mensual: els dies no es cobren. Lleva el que sobre.",
-      "solape_fila": "Mensual i diari de {servicios}: només es cobra el mensual",
       "importe_propio": {
         "titulo": "Import propi",
         "hint": "Substitueix el preu del concepte cada mes fins que el canvies. S'aplica en generar o recalcular el mes; els rebuts ja validats no canvien.",
@@ -701,16 +710,12 @@
         "title_ninos": "{nombre}: xiquets que el tenen",
         "title_familias": "{nombre}: famílies que el tenen",
         "desc": "Marca a qui se li cobra. Es cobra en generar o recalcular els rebuts del mes; els rebuts ja validats no canvien.",
-        "filtro_clase": "Classe",
-        "todas": "Totes",
-        "buscar": "Busca pel nom",
         "marcar_todos": "Marca’ls tots",
         "desmarcar_todos": "Desmarca’ls tots",
         "marcados": "Marcats: {n} de {total}",
         "cambios": "Canvis sense guardar: {n}",
         "sin_ninos": "No hi ha xiquets matriculats.",
         "sin_familias": "No hi ha famílies amb xiquets matriculats.",
-        "sin_resultados": "Ningú coincidix amb el filtre.",
         "guardar": "Guarda",
         "guardando": "Guardant…",
         "cancelar": "Cancel·la",
