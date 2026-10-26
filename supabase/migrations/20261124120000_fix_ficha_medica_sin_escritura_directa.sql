@@ -54,3 +54,50 @@ BEGIN
     has_table_privilege('authenticated', 'public.info_medica_emergencia', 'INSERT,UPDATE,DELETE');
 END
 $guarda$;
+
+-- ---- 1. Dirección, solo lectura ----
+DROP POLICY ime_admin_all ON public.info_medica_emergencia;
+CREATE POLICY ime_admin_select ON public.info_medica_emergencia
+  FOR SELECT TO authenticated
+  USING (public.es_admin(privado.centro_de_nino(nino_id)));
+
+-- ---- 2. Sin permiso de escritura para los roles de usuario ----
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.info_medica_emergencia FROM PUBLIC, anon, authenticated;
+
+COMMENT ON TABLE public.info_medica_emergencia IS
+  'Ficha médica de urgencia del niño. Los seis campos van cifrados con pgcrypto (clave medical_encryption_key en Vault): solo los escriben set_info_medica_emergencia_cifrada(_tutor) y solo los descifra get_info_medica_emergencia. Vacío = NULL (20261123120000). Los roles de usuario solo la leen: sin INSERT/UPDATE/DELETE y todas sus políticas son de SELECT (20261124120000).';
+
+-- ---- Guarda posterior ----
+DO $guarda$
+DECLARE
+  v_n integer;
+  v_rol text;
+BEGIN
+  FOREACH v_rol IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+    IF has_table_privilege(v_rol, 'public.info_medica_emergencia', 'INSERT')
+       OR has_table_privilege(v_rol, 'public.info_medica_emergencia', 'UPDATE')
+       OR has_table_privilege(v_rol, 'public.info_medica_emergencia', 'DELETE')
+       OR has_table_privilege(v_rol, 'public.info_medica_emergencia', 'TRUNCATE') THEN
+      RAISE EXCEPTION '% sigue pudiendo escribir en info_medica_emergencia', v_rol;
+    END IF;
+  END LOOP;
+
+  SELECT count(*) INTO v_n FROM pg_policy
+   WHERE polrelid = 'public.info_medica_emergencia'::regclass AND polcmd <> 'r';
+  IF v_n <> 0 THEN
+    RAISE EXCEPTION 'quedan % políticas de escritura en info_medica_emergencia', v_n;
+  END IF;
+
+  -- Dirección sigue leyendo (el aviso de alergia del pase de lista depende de ello).
+  IF NOT has_table_privilege('authenticated', 'public.info_medica_emergencia', 'SELECT') THEN
+    RAISE EXCEPTION 'authenticated ha perdido el SELECT de info_medica_emergencia';
+  END IF;
+  SELECT count(*) INTO v_n FROM pg_policy
+   WHERE polrelid = 'public.info_medica_emergencia'::regclass AND polcmd = 'r';
+  IF v_n <> 3 THEN
+    RAISE EXCEPTION 'esperaba 3 políticas de lectura (Dirección, profe, familia) y hay %', v_n;
+  END IF;
+
+  RAISE NOTICE 'guarda posterior: % políticas, todas de SELECT; anon y authenticated sin escritura', v_n;
+END
+$guarda$;

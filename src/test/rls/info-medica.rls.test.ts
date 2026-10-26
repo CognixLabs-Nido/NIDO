@@ -56,11 +56,17 @@ describe('RLS info_medica_emergencia — permiso puede_ver_info_medica controla 
     admin = await createTestUser({ nombre: 'Admin InfoMedica' })
     await asignarRol(admin.id, centro.id, 'admin')
     clientAdmin = await clientFor(admin)
-    await serviceClient.from('info_medica_emergencia').insert({
-      nino_id: nino.id,
-      medicacion_habitual: MEDICACION,
-      alergias_leves: 'polen',
-    })
+    const { error } = await clientAdmin.rpc('set_info_medica_emergencia_cifrada', {
+      p_nino_id: nino.id,
+      p_medicacion_habitual: MEDICACION,
+      p_alergias_leves: 'polen',
+      // NULL = preservar (contrato del setter); el tipo generado los declara no-nullable.
+      p_alergias_graves: null,
+      p_notas_emergencia: null,
+      p_medico_familia: null,
+      p_telefono_emergencia: null,
+    } as unknown as Database['public']['Functions']['set_info_medica_emergencia_cifrada']['Args'])
+    if (error) throw new Error(`set_info_medica_emergencia_cifrada: ${error.message}`)
 
     tutorConPermiso = await createTestUser({ nombre: 'Tutor con acceso' })
     await asignarRol(tutorConPermiso.id, centro.id, 'tutor_legal')
