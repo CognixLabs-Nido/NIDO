@@ -94,6 +94,7 @@ export async function getPaseDeListaAula(
     .select('nino_id, alergias_graves, medicacion_habitual')
     .in('nino_id', ninoIds)
   // Un fallo aquí no puede pintarse como «sin alergia»: sin las alertas, la lista no sale.
+  if (errorMedicas) throw new Error(`alertas médicas: ${errorMedicas.message}`)
 
   const alertasByNino = new Map<string, NinoAsistenciaResumen['alertas']>()
   for (const row of (medicas ?? []) as Array<{

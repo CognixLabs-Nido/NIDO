@@ -144,6 +144,7 @@ export async function getPaseDeListaComida(
       ninos.map((n) => n.id)
     )
   // Un fallo aquí no puede pintarse como «sin alergia»: sin las alertas, la lista no sale.
+  if (errorMedicas) throw new Error(`alertas médicas: ${errorMedicas.message}`)
 
   const alergiaByNino = new Map<string, boolean>()
   for (const m of (medicas ?? []) as Array<{ nino_id: string; alergias_graves: unknown }>) {
