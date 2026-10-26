@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useMemo, useState, useTransition } from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -22,27 +22,37 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { FiltroClaseYNombre } from '@/shared/components/FiltroClaseYNombre'
+import { clasesDe, filtrarNinos } from '@/shared/lib/filtrar-ninos'
 
 import { proponerAsignaciones } from '../actions/proponer-asignaciones'
 import { reproponerAsignaciones } from '../actions/reproponer-asignaciones'
 import type { AsignacionPermanente } from '../queries/get-asignacion-permanente'
-import { listaServicios, serviciosSolapados } from '../lib/servicios-solapados'
 import { ConfigurarModalidadDialog } from './ConfigurarModalidadDialog'
 import { FamiliaConceptosDialog } from './FamiliaConceptosDialog'
 
 interface Props {
   centroId: string
   data: AsignacionPermanente
+  /** La clase de cada niño (filtro por aula de la lista de alumnos). */
+  aulaPorNino: Record<string, string | null>
 }
 
 // F-4-4: asignación PERMANENTE (sin mes, sin método) de conceptos por ALUMNO y por FAMILIA.
 // Botón para sembrar las asignaciones automáticas (proponer_asignaciones).
-export function AsignacionPermanentePanel({ centroId, data }: Props) {
+export function AsignacionPermanentePanel({ centroId, data, aulaPorNino }: Props) {
   const t = useTranslations('admin.cuotas')
   const tErrors = useTranslations()
-  const locale = useLocale()
   const [pending, startTransition] = useTransition()
   const [reproponerOpen, setReproponerOpen] = useState(false)
+  const [aula, setAula] = useState<string | null>(null)
+  const [texto, setTexto] = useState('')
+  const alumnos = useMemo(
+    () => data.alumnos.map((a) => ({ ...a, aula: aulaPorNino[a.ninoId] ?? null })),
+    [data.alumnos, aulaPorNino]
+  )
+  const clases = useMemo(() => clasesDe(alumnos), [alumnos])
+  const visibles = filtrarNinos(alumnos, aula, texto)
 
   function proponer() {
     startTransition(async () => {
@@ -103,7 +113,14 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
         {data.alumnos.length === 0 ? (
           <Card className="text-muted-foreground p-6 text-center text-sm">{t('sin_ninos')}</Card>
         ) : (
-          <Card className="overflow-hidden">
+          <Card className="space-y-3 overflow-hidden p-4">
+            <FiltroClaseYNombre
+              clases={clases}
+              aula={aula}
+              onAula={setAula}
+              texto={texto}
+              onTexto={setTexto}
+            />
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -114,28 +131,10 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.alumnos.map((a) => {
-                    // PR-4: mensual y diario del mismo servicio; el motor cobra solo el mensual.
-                    const solapados = serviciosSolapados(
-                      a.conceptosAsignados,
-                      data.conceptosConServicio
-                    )
+                  {visibles.map((a) => {
                     return (
                       <TableRow key={a.ninoId}>
-                        <TableCell className="font-medium">
-                          {a.nombre}
-                          {solapados.length > 0 && (
-                            <div className="text-xs font-normal text-amber-800">
-                              {t('solape_fila', {
-                                servicios: listaServicios(
-                                  solapados,
-                                  (s) => t(`servicios.${s}`),
-                                  locale
-                                ),
-                              })}
-                            </div>
-                          )}
-                        </TableCell>
+                        <TableCell className="font-medium">{a.nombre}</TableCell>
                         <TableCell className="text-muted-foreground text-sm">
                           {a.familiaEtiqueta}
                         </TableCell>
@@ -152,7 +151,6 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
                               ninoNombre={a.nombre}
                               conceptos={data.conceptosNino}
                               conceptosAsignados={a.conceptosAsignados}
-                              conceptosConServicio={data.conceptosConServicio}
                               catalogo={data.catalogo}
                               importesPropios={a.importesPropios}
                             />
@@ -164,6 +162,11 @@ export function AsignacionPermanentePanel({ centroId, data }: Props) {
                 </TableBody>
               </Table>
             </div>
+            {visibles.length === 0 && (
+              <p className="text-muted-foreground text-sm">
+                {tErrors('common.filtro_ninos.sin_resultados')}
+              </p>
+            )}
           </Card>
         )}
       </section>

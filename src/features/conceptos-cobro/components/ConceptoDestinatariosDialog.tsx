@@ -15,15 +15,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+import { FiltroClaseYNombre } from '@/shared/components/FiltroClaseYNombre'
+import { clasesDe, filtrarNinos } from '@/shared/lib/filtrar-ninos'
 
 import { fijarAsignacionesConcepto } from '../actions/fijar-asignaciones-concepto'
-import {
-  cambiosAsignacion,
-  clasesDe,
-  filtrarDestinatarios,
-  type Destinatario,
-} from '../lib/destinatarios-concepto'
+import { cambiosAsignacion, type Destinatario } from '../lib/destinatarios-concepto'
 
 interface Props {
   conceptoId: string
@@ -59,7 +55,7 @@ export function ConceptoDestinatariosDialog({
   const [texto, setTexto] = useState('')
 
   const clases = useMemo(() => clasesDe(destinatarios), [destinatarios])
-  const visibles = filtrarDestinatarios(destinatarios, aula, texto)
+  const visibles = filtrarNinos(destinatarios, aula, texto)
   const cambios = cambiosAsignacion(inicial, actual)
   // Solo los de la lista: una asignación de un niño que ya no está matriculado no se cuenta ni se toca.
   const marcados = destinatarios.filter((d) => actual.has(d.id)).length
@@ -122,35 +118,14 @@ export function ConceptoDestinatariosDialog({
           </p>
         ) : (
           <div className="space-y-3">
-            {clases.length > 0 && (
-              <div role="group" aria-label={t('filtro_clase')} className="flex flex-wrap gap-2">
-                {[null, ...clases].map((c) => (
-                  <button
-                    key={c ?? 'todas'}
-                    type="button"
-                    aria-pressed={aula === c}
-                    onClick={() => setAula(c)}
-                    className={[
-                      'rounded-full border px-3 py-1 text-sm font-medium transition-colors',
-                      aula === c
-                        ? 'border-primary-500 bg-primary-100 text-primary-800'
-                        : 'border-border bg-card text-foreground hover:bg-muted',
-                    ].join(' ')}
-                  >
-                    {c ?? t('todas')}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center justify-between gap-3">
-              <Input
-                type="search"
-                value={texto}
-                onChange={(e) => setTexto(e.target.value)}
-                placeholder={t('buscar')}
-                aria-label={t('buscar')}
-                className="sm:w-56"
-              />
+            <FiltroClaseYNombre
+              clases={clases}
+              aula={aula}
+              onAula={setAula}
+              texto={texto}
+              onTexto={setTexto}
+            />
+            <div className="flex justify-end">
               {visibles.length > 0 && (
                 <Button
                   type="button"
@@ -186,7 +161,9 @@ export function ConceptoDestinatariosDialog({
               ))}
             </ul>
             {visibles.length === 0 && (
-              <p className="text-muted-foreground text-sm">{t('sin_resultados')}</p>
+              <p className="text-muted-foreground text-sm">
+                {tRoot('common.filtro_ninos.sin_resultados')}
+              </p>
             )}
             <p className="text-muted-foreground text-xs">
               {t('marcados', { n: marcados, total: destinatarios.length })}

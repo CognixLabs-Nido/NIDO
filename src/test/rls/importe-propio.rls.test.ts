@@ -192,6 +192,7 @@ describe('PR-6 — el importe propio se fija en la asignación y se arrastra cad
     const comedor = await concepto({
       nombre: 'Comedor diario PR6',
       tipo_concepto: 'diario',
+      aplicacion: 'automatico',
       importe_centimos: 700,
       servicio: 'comedor',
     })

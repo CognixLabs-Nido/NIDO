@@ -114,6 +114,7 @@ describe('F-4-0 — conceptos_cobro modelo único (CHECK de valor)', () => {
           centro_id: centro.id,
           nombre: 'Diario sin servicio',
           tipo_concepto: 'diario',
+          aplicacion: 'automatico',
           tipo_valor: 'fijo',
           importe_centimos: 600,
           servicio: null,

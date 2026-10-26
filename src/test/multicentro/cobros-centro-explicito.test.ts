@@ -108,6 +108,32 @@ describe('(c) centro explícito de la página', () => {
     })
   })
 
+  it('generarRecibosMes: antes da los automáticos a quien le falten, en el mismo centro', async () => {
+    st.roles = ADMIN_EN_A_Y_B
+    const r = await generarRecibosMes({ anio: 2026, mes: 3 }, B)
+    expect(r.success).toBe(true)
+    const llamadas = st.rpc.mock.calls.map((c) => c[0])
+    expect(llamadas.indexOf('proponer_asignaciones')).toBeGreaterThanOrEqual(0)
+    expect(llamadas.indexOf('proponer_asignaciones')).toBeLessThan(
+      llamadas.indexOf('generar_recibos_mes')
+    )
+    expect(st.rpc).toHaveBeenCalledWith('proponer_asignaciones', { p_centro_id: B })
+  })
+
+  it('generarRecibosMes: si no se pueden dar los automáticos, no genera', async () => {
+    st.roles = ADMIN_EN_A_Y_B
+    st.rpc.mockImplementation((fn: string) =>
+      Promise.resolve(
+        fn === 'proponer_asignaciones'
+          ? { data: null, error: { code: 'XX000', message: 'falla' } }
+          : { data: 1, error: null }
+      )
+    )
+    const r = await generarRecibosMes({ anio: 2026, mes: 3 }, B)
+    expect(r).toEqual({ success: false, error: 'cuotas_config.errors.proponer_failed' })
+    expect(st.rpc.mock.calls.map((c) => c[0])).not.toContain('generar_recibos_mes')
+  })
+
   it('un centro que no es uuid → no_autorizado, sin RPC', async () => {
     st.roles = ADMIN_EN_A_Y_B
     const r = await generarRecibosMes({ anio: 2026, mes: 3 }, 'no-es-un-uuid')

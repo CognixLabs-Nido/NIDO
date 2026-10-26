@@ -374,37 +374,47 @@ export function ConceptoFormDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="aplicacion"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('fields.aplicacion')}</FormLabel>
-                  <Select
-                    items={aplicacionItems}
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {aplicacionItems.map((item) => (
-                        <SelectItem key={item.value} value={item.value}>
-                          {item.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-muted-foreground text-xs">
-                    {t(`aplicacion_hint.${aplicacion === 'automatico' ? 'automatico' : 'manual'}`)}
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {esDiario ? (
+              // Un diario es siempre automático (CHECK `conceptos_cobro_diario_automatico`).
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t('fields.aplicacion')}</p>
+                <p className="text-muted-foreground text-xs">{t('aplicacion_diario')}</p>
+              </div>
+            ) : (
+              <FormField
+                control={form.control}
+                name="aplicacion"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('fields.aplicacion')}</FormLabel>
+                    <Select
+                      items={aplicacionItems}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {aplicacionItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-muted-foreground text-xs">
+                      {t(
+                        `aplicacion_hint.${aplicacion === 'automatico' ? 'automatico' : 'manual'}`
+                      )}
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {esDescuento && (
               <FormField

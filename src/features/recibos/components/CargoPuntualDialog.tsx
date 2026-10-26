@@ -22,6 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { FiltroClaseYNombre } from '@/shared/components/FiltroClaseYNombre'
+import { clasesDe, filtrarNinos } from '@/shared/lib/filtrar-ninos'
 import { formatEuros } from '@/shared/lib/format-money'
 import { localeIntl } from '@/shared/lib/locale-intl'
 
@@ -72,9 +74,16 @@ export function CargoPuntualDialog({ centroId, anio, mes, ninos, conceptos, bloq
   const [importe, setImporte] = useState('')
   const [elegidos, setElegidos] = useState<Set<string>>(new Set())
   const [resumen, setResumen] = useState<ResumenCargo | null>(null)
+  const [aula, setAula] = useState<string | null>(null)
+  const [texto, setTexto] = useState('')
   const [pending, startTransition] = useTransition()
 
-  const grupos = useMemo(() => agruparPorAula(ninos), [ninos])
+  const clases = useMemo(() => clasesDe(ninos), [ninos])
+  // Las clases que se ven, con los niños que pasan el filtro: «toda la clase» marca a esos.
+  const grupos = useMemo(
+    () => agruparPorAula(filtrarNinos(ninos, aula, texto)),
+    [ninos, aula, texto]
+  )
   const nombres = useMemo(() => new Map(ninos.map((n) => [n.id, n.nombre])), [ninos])
   const mesLabel = new Intl.DateTimeFormat(localeIntl(locale), {
     month: 'long',
@@ -94,6 +103,8 @@ export function CargoPuntualDialog({ centroId, anio, mes, ninos, conceptos, bloq
     setImporte('')
     setElegidos(new Set())
     setResumen(null)
+    setAula(null)
+    setTexto('')
   }
 
   function elegirConcepto(id: string) {
@@ -248,8 +259,21 @@ export function CargoPuntualDialog({ centroId, anio, mes, ninos, conceptos, bloq
               />
             </div>
 
-            {grupos.length === 0 ? (
+            {ninos.length > 0 && (
+              <FiltroClaseYNombre
+                clases={clases}
+                aula={aula}
+                onAula={setAula}
+                texto={texto}
+                onTexto={setTexto}
+              />
+            )}
+            {ninos.length === 0 ? (
               <p className="text-muted-foreground text-sm">{t('sin_ninos_centro')}</p>
+            ) : grupos.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                {tErrors('common.filtro_ninos.sin_resultados')}
+              </p>
             ) : (
               <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
                 {grupos.map((g) => {
