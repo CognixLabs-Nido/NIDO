@@ -3367,6 +3367,7 @@ export type Database = {
           solicitado_por: string | null
           sujeto_id: string
           sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+          tutores_legales: string[] | null
         }
         Insert: {
           centro_id: string
@@ -3390,6 +3391,7 @@ export type Database = {
           solicitado_por?: string | null
           sujeto_id: string
           sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+          tutores_legales?: string[] | null
         }
         Update: {
           centro_id?: string
@@ -3413,6 +3415,7 @@ export type Database = {
           solicitado_por?: string | null
           sujeto_id?: string
           sujeto_tipo?: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+          tutores_legales?: string[] | null
         }
         Relationships: [
           {

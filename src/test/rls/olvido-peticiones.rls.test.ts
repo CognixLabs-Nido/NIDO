@@ -248,6 +248,9 @@ describe('Peticiones de olvido', () => {
     expect(dias).toBeGreaterThan(6.9)
     expect(dias).toBeLessThan(7.1)
     expect((await nino(ninoB.id)).deleted_reason).toBe('solicitud_olvido')
+    // Al confirmar se guardan los tutores legales (también con el vínculo retirado por la baja);
+    // el autorizado, no (20261127120000).
+    expect((await fila(id!)).tutores_legales).toEqual([tutor1.id, tutor2.id].sort())
     // La purga todavía no la coge: la gracia no ha vencido.
     const { data: vencidas } = await serviceClient.rpc('olvido_pendientes')
     expect((vencidas ?? []).some((v) => v.solicitud_id === id)).toBe(false)
@@ -259,6 +262,7 @@ describe('Peticiones de olvido', () => {
     expect(vuelta.estado).toBe('pendiente')
     expect(vuelta.gracia_hasta).toBeNull()
     expect(vuelta.estado_previo).toBeNull()
+    expect(vuelta.tutores_legales).toBeNull()
   })
 
   it('la cuenta del tutor: los recibos de su familia sí bloquean', async () => {
@@ -327,6 +331,79 @@ describe('Peticiones de olvido', () => {
     expect((await fila(rechazadaA.id)).motivo_rechazo).toBeNull()
     // La nota de otro niño no se toca.
     expect((await fila(pendienteB.id)).nota_centro).toBe('Falta un recibo de septiembre')
+  })
+
+  it('purgada de verdad, la siguen viendo los tutores de entonces; un ex tutor, no', async () => {
+    // Un niño sin matrícula; un tercer tutor legal que dejó de serlo antes de pedir.
+    const ninoC = await createTestNino(centro.id, 'Niño Demo Olvido C')
+    const exTutor = await createTestUser({ nombre: 'Ex Tutor Demo' })
+    usuarios.push(exTutor)
+    await crearVinculo(ninoC.id, tutor1.id, 'tutor_legal_principal')
+    await crearVinculo(ninoC.id, tutor2.id, 'tutor_legal_secundario')
+    await crearVinculo(ninoC.id, exTutor.id, 'tutor_legal_secundario')
+    await serviceClient
+      .from('vinculos_familiares')
+      .update({ deleted_at: new Date().toISOString(), deleted_reason: 'revocacion_familia' })
+      .eq('nino_id', ninoC.id)
+      .eq('usuario_id', exTutor.id)
+    const cEx = await clientFor(exTutor)
+
+    const { data: id, error } = await c1.rpc('pedir_olvido_nino', {
+      p_nino_id: ninoC.id,
+      p_inmediato: true,
+    })
+    expect(error).toBeNull()
+    const { error: cErr } = await cTit.rpc('confirmar_peticion_olvido', { p_solicitud_id: id! })
+    expect(cErr).toBeNull()
+    expect((await fila(id!)).tutores_legales).toEqual([tutor1.id, tutor2.id].sort())
+    const { error: pErr } = await serviceClient.rpc('purgar_sujeto_db', { p_solicitud_id: id! })
+    expect(pErr).toBeNull()
+
+    // Premisa: la purga pasó y le quitó el vínculo al otro tutor.
+    expect((await fila(id!)).purgado_en).not.toBeNull()
+    const { data: v2 } = await serviceClient
+      .from('vinculos_familiares')
+      .select('deleted_reason')
+      .eq('nino_id', ninoC.id)
+      .eq('usuario_id', tutor2.id)
+      .single()
+    expect(v2!.deleted_reason).toBe('purga_rgpd')
+
+    const ve = async (c: Sesion) =>
+      ((await c.rpc('mis_peticiones_olvido')).data ?? []).find((x) => x.id === id)
+    const delOtro = await ve(c2)
+    expect(delOtro?.purgado_en).not.toBeNull()
+    expect(delOtro?.pedida_por_mi).toBe(false)
+    expect(delOtro?.puede_retirar).toBe(false)
+    expect(await ve(c1)).toBeDefined()
+    expect(await ve(cEx)).toBeUndefined()
+    expect(await ve(cAut)).toBeUndefined()
+    expect(await ve(cExt)).toBeUndefined()
+  })
+
+  it('el export del niño y el de la persona llevan sus peticiones con el estado', async () => {
+    const { data: delNino, error } = await c1.rpc('export_datos_sujeto', {
+      p_sujeto_tipo: 'nino',
+      p_sujeto_id: ninoA.id,
+    })
+    expect(error).toBeNull()
+    const delA = (delNino as { solicitudes_olvido: Record<string, unknown>[] }).solicitudes_olvido
+    // La retirada, la rechazada (motivo ya vaciado por la purga) y la confirmada y purgada.
+    expect(delA.map((s) => s.estado).sort()).toEqual(['confirmada', 'rechazada', 'retirada'])
+    expect(delA.find((s) => s.estado === 'retirada')!.retirada_en).not.toBeNull()
+    const rechazada = delA.find((s) => s.estado === 'rechazada')!
+    expect(rechazada.rechazada_en).not.toBeNull()
+    expect(rechazada).toHaveProperty('motivo_rechazo')
+    expect(delA.find((s) => s.estado === 'confirmada')!.purgado_en).not.toBeNull()
+
+    const { data: deLaPersona } = await c1.rpc('export_datos_sujeto', {
+      p_sujeto_tipo: 'usuario',
+      p_sujeto_id: tutor1.id,
+    })
+    const suyas = (deLaPersona as { solicitudes_olvido: Record<string, unknown>[] })
+      .solicitudes_olvido
+    expect(suyas).toHaveLength(1)
+    expect(suyas[0]).toMatchObject({ estado: 'pendiente', pedida_por_centro: false })
   })
 
   it('con sesión nadie escribe la tabla ni usa la función vieja', async () => {

@@ -8,7 +8,7 @@ import { borrarObjetosBucket } from '@/shared/lib/adjuntos/storage'
 
 import type { Database } from '@/types/database'
 
-import { avisarFamilia } from '../lib/avisar'
+import { enviarAvisos, prepararAvisoFamilia } from '../lib/avisar'
 import { recolectarAdjuntosDe } from '../lib/fuentes-adjuntos'
 import { MARCADOR_PII, ok, fail, type ActionResult } from '../types'
 
@@ -44,10 +44,7 @@ export async function purgarVencidos(): Promise<ActionResult<ResultadoPurga>> {
   let fallidos = 0
   for (const p of pendientes ?? []) {
     try {
-      // Antes de purgar, mientras aún se conoce la dirección de quien la pidió (spec,
-      // «Avisos»). Si la purga falla y se reintenta mañana, el correo se repite.
-      await avisarFamilia(service, p.solicitud_id, 'borrada')
-      await purgarUno(service, p)
+      await purgarYAvisar(service, p)
       purgados++
     } catch (e) {
       fallidos++
@@ -60,6 +57,22 @@ export async function purgarVencidos(): Promise<ActionResult<ResultadoPurga>> {
   }
 
   return ok({ total: (pendientes ?? []).length, purgados, fallidos })
+}
+
+/**
+ * Purga un sujeto y avisa a la familia de que sus datos se han borrado (spec, «Avisos»). El correo
+ * se redacta ANTES, mientras aún se conoce la dirección (la purga anonimiza la cuenta), y sale
+ * DESPUÉS, solo si la purga terminó: si falla y se reintenta mañana, no se repite. Exportada para
+ * su test, con la purga inyectable.
+ */
+export async function purgarYAvisar(
+  service: Service,
+  p: Pendiente,
+  purgar: (service: Service, p: Pendiente) => Promise<void> = purgarUno
+): Promise<void> {
+  const correos = await prepararAvisoFamilia(service, p.solicitud_id, 'borrada')
+  await purgar(service, p)
+  await enviarAvisos(correos)
 }
 
 /**
