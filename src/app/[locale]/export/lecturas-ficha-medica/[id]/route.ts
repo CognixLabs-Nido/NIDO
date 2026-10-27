@@ -10,9 +10,10 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 /**
- * El registro de quién ha leído la ficha médica de un niño, en un HTML para entregar a la familia
- * (derecho de acceso, art. 15). Lo descarga la Dirección del centro, siempre: también con el niño de
- * baja o con el vínculo del tutor ya cerrado, que es cuando la familia ya no puede verlo en la app.
+ * El registro de quién ha leído la ficha médica de un niño, en un HTML imprimible para la familia
+ * (derecho de acceso, art. 15). Lo descarga la familia (el tutor legal, desde la ficha de su hijo) y la
+ * Dirección del centro, siempre: también con el niño de baja o con el vínculo del tutor ya cerrado,
+ * que es cuando la familia ya no puede entrar y se lo entrega la Dirección.
  *
  * ⚠️ La AUTORIZACIÓN es la de `lecturas_ficha_medica` en la BD (tutor legal con vínculo vivo o
  * Dirección del centro), con la sesión de quien descarga. Quien no puede leerlo recibe 404.

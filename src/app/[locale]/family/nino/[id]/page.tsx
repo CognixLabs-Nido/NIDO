@@ -306,7 +306,12 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
               {infoMedica && <BorrarInfoMedica ninoId={id} />}
             </div>
           )}
-          {lecturas && <LecturasFichaMedica registro={lecturas} />}
+          {lecturas && (
+            <LecturasFichaMedica
+              registro={lecturas}
+              descarga={{ href: `/${locale}/export/lecturas-ficha-medica/${id}`, para: 'guardar' }}
+            />
+          )}
         </section>
       )}
     </div>

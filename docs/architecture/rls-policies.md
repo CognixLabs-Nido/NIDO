@@ -225,8 +225,9 @@ políticas de SELECT), así que un registro solo en la función se podía saltar
 - **El registro** lo leen los tutores legales del niño (con vínculo vivo) y la Dirección del centro
   (`lecturas_ficha_medica(niño)`, `es_admin`; la profe, el autorizado y otro centro reciben 42501),
   en la ficha del niño de cada uno, y sale en el export del niño (`export_datos_sujeto`). La
-  Dirección lo ve siempre, también con el niño de baja o el vínculo cerrado, y lo descarga para
-  entregarlo (`/{locale}/export/lecturas-ficha-medica/{niño}`, con la misma función). `lecturas_ficha_medica` no tiene políticas ni
+  Dirección lo ve siempre, también con el niño de baja o el vínculo cerrado. Los dos lo descargan
+  (`/{locale}/export/lecturas-ficha-medica/{niño}`, con la misma función): la familia para
+  guardarlo, la Dirección para entregárselo al tutor que ya no entra. `lecturas_ficha_medica` no tiene políticas ni
   privilegios para las sesiones y no se audita.
 - **La purga del niño** borra sus lecturas (trigger `ninos_purga_borra_lecturas`; con la fila del
   niño borrada, en cascada). El plazo provisional (24 meses, PENDIENTE política F11-B) lo aplica el

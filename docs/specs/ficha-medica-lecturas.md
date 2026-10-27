@@ -14,8 +14,8 @@ related_specs: [proteccion-datos, olvido-peticiones]
 
 Cada vez que alguien abre el contenido de la ficha médica de un niño, queda registrado quién, cuándo,
 desde dónde y qué campos vio. La familia (los tutores legales) y la Dirección del centro pueden ver
-ese registro, y sale en el export del art. 15. La Dirección lo ve siempre y lo descarga para
-entregarlo, también cuando la familia ya no entra en la app. La tabla de la ficha deja de leerse directamente: las
+ese registro y descargarlo, y sale en el export del art. 15. La Dirección lo ve siempre y lo descarga
+para entregarlo cuando la familia ya no entra en la app. La tabla de la ficha deja de leerse directamente: las
 listas del aula reciben solo los avisos (alergia sí o no, medicación sí o no), sin contenido.
 
 ## Contexto
@@ -46,6 +46,9 @@ sanitario, pero trata datos del art. 9 de menores):
    acceso al registro, también con el niño de baja o el vínculo del tutor cerrado, y lo puede
    descargar en un documento para entregarlo a la familia (quién accedió, fecha y hora, y qué datos
    se consultaron).
+7. **La familia también lo descarga** (2026-10-27). El derecho del art. 15 es suyo, no del centro:
+   tener que pedírselo a la Dirección es un rodeo. El botón de la Dirección queda para cuando el
+   tutor ya no puede entrar.
 
 Fuentes que aporta el responsable: resolución PD-00068-2026 de la AEPD (junio de 2026) y art. 9 del
 Reglamento (UE) 2025/327, aplicable desde el 26 de marzo de 2027.
@@ -56,6 +59,7 @@ Reglamento (UE) 2025/327, aplicable desde el 26 de marzo de 2027.
   datos, para ejercer mi derecho de acceso sin tener que pedirlo al centro.
 - US-02: Como Dirección, quiero ver el mismo registro para detectar un acceso raro, contestar a una
   familia y justificar los accesos.
+- US-01b: Como tutor legal, quiero descargar ese registro para guardarlo, sin pedírselo al centro.
 - US-02b: Como Dirección, quiero descargar el registro de un niño para entregárselo a su familia,
   también si ya no está en el centro.
 - US-03: Como tutor legal, quiero que ese registro salga en el export de los datos de mi hijo.
@@ -72,8 +76,9 @@ Reglamento (UE) 2025/327, aplicable desde el 26 de marzo de 2027.
   comedor).
 - Leer el registro: `lecturas_ficha_medica(niño)` para los tutores legales y la Dirección, con la
   pantalla en la ficha del niño de la familia y en la de Dirección.
-- Descargarlo para entregarlo: `/{locale}/export/lecturas-ficha-medica/{niño}`, un HTML imprimible,
-  con el botón en la ficha de Dirección.
+- Descargarlo: `/{locale}/export/lecturas-ficha-medica/{niño}`, un HTML imprimible, con el botón en
+  la ficha del niño de la familia («Descargar el registro») y en la de Dirección («… para
+  entregarlo»).
 - El registro en el export del niño (`export_datos_sujeto`).
 - La purga del niño borra sus lecturas; el plazo provisional las borra al vencer.
 
@@ -117,14 +122,15 @@ El rol se decide por la misma vía que autoriza: Dirección (`admin` o `director
 Cada fila muestra la fecha y hora, el nombre de quien leyó, su papel, desde dónde y qué campos vio.
 El nombre sale de `usuarios`: si esa cuenta se purga, sale como la purga la dejó.
 
-### Descarga para entregar a la familia
+### Descarga
 
 La ruta `/{locale}/export/lecturas-ficha-medica/{niño}` devuelve un HTML (`text/html`, adjunto,
 imprimible a PDF) con el nombre del niño, la fecha de generación y una tabla: fecha y hora, quién
 accedió, en calidad de qué, desde dónde y qué datos consultó. La hora va en la de Madrid con su zona
 escrita (CET o CEST) y en UTC en el atributo `datetime`. La autoriza la misma
 `lecturas_ficha_medica` con la sesión de quien descarga: quien no puede leerlo recibe 404. El botón
-está en la ficha de Dirección. El documento no dice el plazo de conservación, que aún no es firme.
+está en la ficha del niño de la familia, para guardarlo, y en la de Dirección, para entregarlo al
+tutor que ya no entra. La descarga no se apunta en `export_log`, que es del export completo. El documento no dice el plazo de conservación, que aún no es firme.
 
 ### Las listas del aula
 

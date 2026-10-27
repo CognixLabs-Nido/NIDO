@@ -4879,6 +4879,7 @@
       "telefono_emergencia": "emergency phone"
     },
     "descargar": "Download the record to hand over",
+    "descargar_guardar": "Download the record",
     "documento": {
       "titulo": "Medical record access log",
       "nino": "Child",

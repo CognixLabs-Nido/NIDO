@@ -4879,6 +4879,7 @@
       "telefono_emergencia": "teléfono de emergencia"
     },
     "descargar": "Descargar el registro para entregarlo",
+    "descargar_guardar": "Descargar el registro",
     "documento": {
       "titulo": "Registro de consultas de la ficha médica",
       "nino": "Niño o niña",

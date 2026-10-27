@@ -57,6 +57,11 @@ describe('registro de lecturas de la ficha médica', () => {
       ] as const) {
         for (const v of valores) expect(ns[grupo]?.[v]?.trim(), `${grupo}.${v}`).toBeTruthy()
       }
+      // El botón de descarga: la familia lo guarda, la Dirección lo entrega.
+      const botones = msgs.ficha_medica_lecturas as Record<string, unknown>
+      for (const k of ['descargar_guardar', 'descargar']) {
+        expect(typeof botones[k] === 'string' && botones[k].trim(), k).toBeTruthy()
+      }
     })
   }
 })

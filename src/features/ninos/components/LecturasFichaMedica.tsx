@@ -11,14 +11,15 @@ import type { RegistroLecturas } from '../queries/get-lecturas-ficha-medica'
 /**
  * Quién ha leído la ficha médica del niño (F11-B, punto 4): cuándo, quién, por qué pudo y qué
  * campos vio. Lo ven los tutores legales y la Dirección; a quien no, no se le enseña nada.
- * `descargaHref`: la descarga para entregar a la familia (la ficha de Dirección).
+ * `descarga`: el registro en un HTML imprimible. La familia lo descarga para guardarlo (es su
+ * derecho de acceso, art. 15); la Dirección, para entregárselo cuando el tutor ya no entra.
  */
 export async function LecturasFichaMedica({
   registro,
-  descargaHref,
+  descarga,
 }: {
   registro: RegistroLecturas
-  descargaHref?: string
+  descarga?: { href: string; para: 'guardar' | 'entregar' }
 }) {
   if (registro.tipo === 'no_autorizado') return null
   const t = await getTranslations('ficha_medica_lecturas')
@@ -39,10 +40,10 @@ export async function LecturasFichaMedica({
         {t('titulo')}
       </h3>
       <p className="text-muted-foreground text-sm">{t('explicacion')}</p>
-      {descargaHref && registro.tipo === 'ok' && (
+      {descarga && registro.tipo === 'ok' && (
         <ExportButton
-          href={descargaHref}
-          label={t('descargar')}
+          href={descarga.href}
+          label={t(descarga.para === 'guardar' ? 'descargar_guardar' : 'descargar')}
           filename="nido-registro-ficha-medica.html"
           size="sm"
         />

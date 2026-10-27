@@ -323,7 +323,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
           </Card>
           <LecturasFichaMedica
             registro={lecturas}
-            descargaHref={`/${locale}/export/lecturas-ficha-medica/${id}`}
+            descarga={{ href: `/${locale}/export/lecturas-ficha-medica/${id}`, para: 'entregar' }}
           />
         </TabsContent>
 
