@@ -145,10 +145,13 @@ pinta «sin alergia».
 
 - La purga del niño (`purgar_sujeto_db`, que lo deja con `deleted_reason = 'purga_rgpd'`) borra sus
   lecturas por un trigger en `ninos`; si la fila del niño se borra (esqueleto huérfano), caen en
-  cascada.
-- **Plazo provisional: 24 meses** (`RETENCION_LECTURAS_FICHA_MEDICA_MESES`, PENDIENTE política
-  F11-B). Es el mínimo que pedía el antiguo reglamento de la LOPD (RD 1720/2007, art. 103) para el
-  registro de accesos a datos de nivel alto; lo decide el abogado. El cron de retención borra las
+  cascada. **Revisado el 2026-10-27** (`docs/specs/retencion-plazos.md`): con el olvido el registro
+  se conserva, bloqueado, porque sin él no se puede demostrar nada si una familia reclama después un
+  acceso indebido. Hasta el PR que lo construya, la purga lo sigue borrando.
+- **Plazo provisional: 5 años** (`RETENCION_LECTURAS_FICHA_MEDICA_MESES` = 60, PENDIENTE política
+  F11-B; lo fija el responsable, como el resto de `docs/specs/retencion-plazos.md`). Hasta el
+  2026-10-27 eran 24 meses, el mínimo que pedía el antiguo reglamento de la LOPD (RD 1720/2007,
+  art. 103) para el registro de accesos a datos de nivel alto. El cron de retención borra las
   lecturas más antiguas con `purgar_lecturas_ficha_medica`, y respeta la simulación
   (`RETENCION_DRY_RUN`): en simulación solo las cuenta.
 - La tabla no se audita: nada de esto entra en `audit_log`.

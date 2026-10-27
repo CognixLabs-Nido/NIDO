@@ -17,10 +17,10 @@ export type RetencionAccion = Database['public']['Enums']['retencion_accion']
 export type RetencionEjecucionRow = Database['public']['Tables']['retencion_ejecuciones']['Row']
 
 // -----------------------------------------------------------------------------
-// PLAZOS DE RETENCIÓN — placeholders configurables.
-// PENDIENTE política de retención del abogado (F11-B): estos valores son
-// marcadores de prueba (decisión #12), igual que los textos legales. No hay datos
-// reales en producción hasta cerrar F11.
+// PLAZOS DE RETENCIÓN — PROVISIONALES (PENDIENTE política F11-B): los fija el
+// responsable, no el abogado todavía. La tabla con qué cubre cada uno, desde cuándo
+// cuenta y qué se hace al vencer está en docs/specs/retencion-plazos.md, y
+// `__tests__/plazos.test.ts` comprueba que estos valores son los de esa tabla.
 // -----------------------------------------------------------------------------
 
 /** Recogida PUNTUAL (válida solo el día): purga el DNI a los N días de caducar. */
@@ -41,10 +41,42 @@ export const GRACIA_ESQUELETO_DIAS = 30 // configurable; PENDIENTE política F11
 
 /**
  * Registro de lecturas de la ficha médica (`lecturas_ficha_medica`, 20261128120000): se borran a
- * los N meses. PROVISIONAL hasta que lo fije el abogado: 24 meses es el mínimo que pedía el antiguo
- * reglamento de la LOPD (RD 1720/2007, art. 103) para el registro de accesos a datos de nivel alto.
+ * los N meses de cada lectura. 5 años, como `audit_log` (antes 24 meses, el mínimo del RD 1720/2007).
  */
-export const RETENCION_LECTURAS_FICHA_MEDICA_MESES = 24 // PENDIENTE política F11-B
+export const RETENCION_LECTURAS_FICHA_MEDICA_MESES = 60 // PENDIENTE política F11-B
+
+/**
+ * Recibos, líneas, remesas y lo que justifica sus importes (parte de servicio, asignaciones,
+ * beca de comedor): N años desde el último cobro de la familia (art. 30 del Código de Comercio).
+ */
+export const RETENCION_FISCAL_ANIOS = 6 // PENDIENTE política F11-B
+
+/** Mandatos SEPA y su documento: N años desde el último cobro de la familia. */
+export const RETENCION_MANDATOS_SEPA_ANIOS = 6 // PENDIENTE política F11-B
+
+/**
+ * Pruebas: firmas, autorizaciones de un niño, consentimientos, acuses del alta y medicación
+ * administrada. N años desde la baja del niño.
+ */
+export const RETENCION_FIRMAS_ANIOS = 5 // PENDIENTE política F11-B
+
+/** Expediente del niño (identidad, salud, desarrollo): N años desde la baja. */
+export const RETENCION_EXPEDIENTE_ANIOS = 5 // PENDIENTE política F11-B
+
+/**
+ * Operativa del día a día (agenda, asistencia, ausencias, informes, mensajes, citas,
+ * recordatorios, confirmaciones): N años desde el final del curso en que se escribió.
+ */
+export const RETENCION_OPERATIVA_ANIOS = 1 // PENDIENTE política F11-B
+
+/** Lista de espera que no llegó a alta: N años desde que deja de estar viva. */
+export const RETENCION_LISTA_ESPERA_ANIOS = 1 // PENDIENTE política F11-B
+
+/** `audit_log`: N años desde cada fila (y antes, con su tabla: nada vive más en él que en ella). */
+export const RETENCION_AUDIT_LOG_ANIOS = 5 // PENDIENTE política F11-B
+
+/** Registros de los derechos atendidos (`export_log`, `olvido_solicitudes`): N años. */
+export const RETENCION_REGISTROS_DERECHOS_ANIOS = 5 // PENDIENTE política F11-B
 
 /** Una unidad de purga: 1+ objetos de Storage del mismo sujeto/categoría. */
 export interface UnidadRetencion {

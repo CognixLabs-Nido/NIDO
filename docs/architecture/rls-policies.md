@@ -230,7 +230,7 @@ políticas de SELECT), así que un registro solo en la función se podía saltar
   guardarlo, la Dirección para entregárselo al tutor que ya no entra. `lecturas_ficha_medica` no tiene políticas ni
   privilegios para las sesiones y no se audita.
 - **La purga del niño** borra sus lecturas (trigger `ninos_purga_borra_lecturas`; con la fila del
-  niño borrada, en cascada). El plazo provisional (24 meses, PENDIENTE política F11-B) lo aplica el
+  niño borrada, en cascada). El plazo provisional (5 años, PENDIENTE política F11-B; `docs/specs/retencion-plazos.md`) lo aplica el
   cron de retención con `purgar_lecturas_ficha_medica` (solo `service_role`), y en simulación solo
   cuenta.
 - Tests: `ficha-medica-lecturas.rls.test.ts`, `info-medica.rls.test.ts`,
