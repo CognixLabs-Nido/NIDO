@@ -199,9 +199,7 @@ async function enviarMensajeProfeFamilia(
       // En el idioma de cada destinatario: el aviso y el enlace.
       await enviarPushPorIdioma(destinatarios, async (idioma) => ({
         titulo: autor.nombre,
-        cuerpo: (await getTranslations({ locale: idioma, namespace: 'push.notificaciones' }))(
-          'mensaje_cuerpo'
-        ),
+        cuerpo: contenido,
         url: urlDelAviso(`/${idioma}/messages?nino=${ninoId}`, nino.centro_id),
         datos: {
           tipo: 'mensaje',
@@ -300,9 +298,7 @@ async function enviarMensajeAdminFamilia(
         // Sin el texto del mensaje, como en profe_familia.
         await enviarPushPorIdioma(destinatarios, async (idioma) => ({
           titulo: autor.nombre,
-          cuerpo: (await getTranslations({ locale: idioma, namespace: 'push.notificaciones' }))(
-            'mensaje_cuerpo'
-          ),
+          cuerpo: contenido,
           url: urlDelAviso(`/${idioma}/messages/conversacion/${conversacionId}`, conv.centro_id),
           datos: {
             tipo: 'mensaje',

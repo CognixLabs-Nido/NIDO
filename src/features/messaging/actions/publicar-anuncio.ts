@@ -102,7 +102,7 @@ export async function publicarAnuncio(
             parsed.data.ambito === 'centro'
               ? tPush('anuncio_centro_titulo')
               : tPush('anuncio_aula_titulo'),
-          cuerpo: tPush('anuncio_cuerpo'),
+          cuerpo: parsed.data.contenido,
           url: urlDelAviso(`/${idioma}/messages/anuncios/${data.id}`, centroId),
           datos: {
             tipo: 'anuncio',
