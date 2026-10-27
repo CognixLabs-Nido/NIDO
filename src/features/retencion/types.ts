@@ -39,6 +39,13 @@ export const RETENCION_FOTOS_MESES = 12 // PENDIENTE política F11-B
  */
 export const GRACIA_ESQUELETO_DIAS = 30 // configurable; PENDIENTE política F11-B
 
+/**
+ * Registro de lecturas de la ficha médica (`lecturas_ficha_medica`, 20261128120000): se borran a
+ * los N meses. PROVISIONAL hasta que lo fije el abogado: 24 meses es el mínimo que pedía el antiguo
+ * reglamento de la LOPD (RD 1720/2007, art. 103) para el registro de accesos a datos de nivel alto.
+ */
+export const RETENCION_LECTURAS_FICHA_MEDICA_MESES = 24 // PENDIENTE política F11-B
+
 /** Una unidad de purga: 1+ objetos de Storage del mismo sujeto/categoría. */
 export interface UnidadRetencion {
   categoria: RetencionCategoria

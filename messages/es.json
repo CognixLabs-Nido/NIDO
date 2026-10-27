@@ -3994,7 +3994,8 @@
         "lineas_recibo": "Cobros del niño",
         "servicios_diarios": "Servicios diarios",
         "beca_comedor_elegibilidad": "Beca de comedor",
-        "beca_comedor_tramos": "Tramos de beca de comedor"
+        "beca_comedor_tramos": "Tramos de beca de comedor",
+        "lecturas_ficha_medica": "Quién ha leído la ficha médica"
       },
       "campos": {
         "nombre_completo": "Nombre",
@@ -4177,7 +4178,11 @@
         "confirmada_en": "Confirmada el",
         "motivo_rechazo": "Motivo del rechazo",
         "retirada_en": "Retirada el",
-        "nota_centro": "Nota del centro"
+        "nota_centro": "Nota del centro",
+        "leida_en": "Leída el",
+        "lector": "Quién",
+        "rol_lector": "Papel",
+        "campos": "Datos vistos"
       },
       "valores": {
         "terminos": "Términos",
@@ -4316,7 +4321,18 @@
         "cheque": "Cheque guardería / Ticket restaurant",
         "confirmada": "Confirmada",
         "rechazada": "Rechazada",
-        "retirada": "Retirada"
+        "retirada": "Retirada",
+        "directora": "Dirección",
+        "superusuario": "Plataforma NIDO",
+        "ficha": "Ficha del niño",
+        "alta": "Formulario de alta",
+        "export": "Exportación de datos",
+        "alergias_graves": "Alergias graves",
+        "notas_emergencia": "Notas de emergencia",
+        "medicacion_habitual": "Medicación habitual",
+        "alergias_leves": "Alergias leves",
+        "medico_familia": "Médico de familia",
+        "telefono_emergencia": "Teléfono de emergencia"
       }
     },
     "descargar_mis_datos": "Descargar mis datos",
@@ -4831,6 +4847,49 @@
       "texto_retirada": "Se ha retirado la petición de borrado de datos en {centro}. No se ha borrado nada.",
       "texto_deshecha": "{centro} ha vuelto a dejar pendiente la petición de borrado de datos.",
       "texto_borrada": "Los datos de la petición de borrado en {centro} se han borrado."
+    }
+  },
+  "ficha_medica_lecturas": {
+    "titulo": "Quién ha consultado la ficha médica",
+    "explicacion": "Cada vez que alguien abre la ficha médica queda registrado: quién, cuándo y qué datos vio.",
+    "error": "No hemos podido cargar el registro de consultas. Vuelve a intentarlo más tarde.",
+    "vacio": "Nadie ha consultado todavía la ficha médica.",
+    "cuenta_borrada": "Cuenta borrada",
+    "sin_datos": "La ficha no tenía datos",
+    "vio": "Vio",
+    "rol": {
+      "admin": "Dirección (titular)",
+      "directora": "Dirección",
+      "superusuario": "Plataforma NIDO",
+      "profe": "Profesorado del aula",
+      "tutor_legal": "Tutor legal",
+      "autorizado": "Persona autorizada"
+    },
+    "origen": {
+      "ficha": "desde la ficha del niño",
+      "alta": "desde el formulario de alta",
+      "export": "en una exportación de datos"
+    },
+    "campo": {
+      "alergias_graves": "alergias graves",
+      "notas_emergencia": "notas de emergencia",
+      "medicacion_habitual": "medicación habitual",
+      "alergias_leves": "alergias leves",
+      "medico_familia": "médico de familia",
+      "telefono_emergencia": "teléfono de emergencia"
+    },
+    "descargar": "Descargar el registro para entregarlo",
+    "descargar_guardar": "Descargar el registro",
+    "documento": {
+      "titulo": "Registro de consultas de la ficha médica",
+      "nino": "Niño o niña",
+      "generado": "Generado el",
+      "intro": "Cada fila es una consulta de la ficha médica de urgencia: quién accedió, en qué fecha y a qué hora, en calidad de qué, desde dónde y qué datos de la ficha consultó.",
+      "col_fecha": "Fecha y hora",
+      "col_quien": "Quién accedió",
+      "col_rol": "En calidad de",
+      "col_origen": "Desde dónde",
+      "col_campos": "Datos consultados"
     }
   }
 }

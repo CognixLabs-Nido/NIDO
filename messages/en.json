@@ -3994,7 +3994,8 @@
         "lineas_recibo": "Child's charges",
         "servicios_diarios": "Daily services",
         "beca_comedor_elegibilidad": "Lunch grant",
-        "beca_comedor_tramos": "Lunch grant instalments"
+        "beca_comedor_tramos": "Lunch grant instalments",
+        "lecturas_ficha_medica": "Who has viewed the medical record"
       },
       "campos": {
         "nombre_completo": "Name",
@@ -4177,7 +4178,11 @@
         "confirmada_en": "Confirmed on",
         "motivo_rechazo": "Reason for declining",
         "retirada_en": "Withdrawn on",
-        "nota_centro": "Note from the centre"
+        "nota_centro": "Note from the centre",
+        "leida_en": "Viewed on",
+        "lector": "Who",
+        "rol_lector": "Role",
+        "campos": "Details seen"
       },
       "valores": {
         "terminos": "Terms",
@@ -4316,7 +4321,18 @@
         "cheque": "Childcare voucher",
         "confirmada": "Confirmed",
         "rechazada": "Declined",
-        "retirada": "Withdrawn"
+        "retirada": "Withdrawn",
+        "directora": "Management",
+        "superusuario": "NIDO platform",
+        "ficha": "Child's profile",
+        "alta": "Enrolment form",
+        "export": "Data export",
+        "alergias_graves": "Severe allergies",
+        "notas_emergencia": "Emergency notes",
+        "medicacion_habitual": "Regular medication",
+        "alergias_leves": "Mild allergies",
+        "medico_familia": "Family doctor",
+        "telefono_emergencia": "Emergency phone"
       }
     },
     "descargar_mis_datos": "Download my data",
@@ -4831,6 +4847,49 @@
       "texto_retirada": "The data deletion request at {centro} has been withdrawn. Nothing has been deleted.",
       "texto_deshecha": "{centro} has put the data deletion request back to pending.",
       "texto_borrada": "The data in the deletion request at {centro} has been deleted."
+    }
+  },
+  "ficha_medica_lecturas": {
+    "titulo": "Who has viewed the medical record",
+    "explicacion": "Every time someone opens the medical record it is logged: who, when and which details they saw.",
+    "error": "We could not load the access log. Please try again later.",
+    "vacio": "Nobody has viewed the medical record yet.",
+    "cuenta_borrada": "Deleted account",
+    "sin_datos": "The record had no details",
+    "vio": "Saw",
+    "rol": {
+      "admin": "Management (owner)",
+      "directora": "Management",
+      "superusuario": "NIDO platform",
+      "profe": "Classroom staff",
+      "tutor_legal": "Legal guardian",
+      "autorizado": "Authorised person"
+    },
+    "origen": {
+      "ficha": "from the child's profile",
+      "alta": "from the enrolment form",
+      "export": "in a data export"
+    },
+    "campo": {
+      "alergias_graves": "severe allergies",
+      "notas_emergencia": "emergency notes",
+      "medicacion_habitual": "regular medication",
+      "alergias_leves": "mild allergies",
+      "medico_familia": "family doctor",
+      "telefono_emergencia": "emergency phone"
+    },
+    "descargar": "Download the record to hand over",
+    "descargar_guardar": "Download the record",
+    "documento": {
+      "titulo": "Medical record access log",
+      "nino": "Child",
+      "generado": "Generated on",
+      "intro": "Each row is one access to the emergency medical record: who accessed it, on what date and at what time, in what capacity, from where and which data of the record they viewed.",
+      "col_fecha": "Date and time",
+      "col_quien": "Who accessed it",
+      "col_rol": "In the capacity of",
+      "col_origen": "From where",
+      "col_campos": "Data viewed"
     }
   }
 }

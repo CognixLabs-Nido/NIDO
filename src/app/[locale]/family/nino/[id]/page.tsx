@@ -30,6 +30,8 @@ import { ImagenAutorizacionTutor } from '@/features/ninos/components/ImagenAutor
 import { getEstadoImagenNino } from '@/features/ninos/queries/get-estado-imagen-nino'
 import { BorrarInfoMedica } from '@/features/ninos/components/BorrarInfoMedica'
 import { EditarInfoMedica } from '@/features/ninos/components/EditarInfoMedica'
+import { LecturasFichaMedica } from '@/features/ninos/components/LecturasFichaMedica'
+import { getLecturasFichaMedica } from '@/features/ninos/queries/get-lecturas-ficha-medica'
 import { DatosPedagogicosReadOnly } from '@/features/datos-pedagogicos/components/DatosPedagogicosReadOnly'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { AgendaFamiliaSinPermiso } from '@/features/agenda-diaria/components/AgendaFamiliaSinPermiso'
@@ -86,7 +88,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
 
   let infoMedica = null
   try {
-    infoMedica = await getInfoMedica(id)
+    infoMedica = await getInfoMedica(id, 'ficha')
   } catch {
     infoMedica = null
   }
@@ -133,6 +135,9 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   // F-8 (familia): el recorrido por cursos/aulas solo lo ve el tutor legal (la RPC lo
   // vuelve a comprobar con `es_tutor_legal_de`).
   const recorrido = esTutorLegal ? await getRecorridoNinoFamilia(id) : null
+
+  // Quién ha leído la ficha médica de su hijo: lo ve el tutor legal (la RPC lo vuelve a comprobar).
+  const lecturas = esTutorLegal ? await getLecturasFichaMedica(id) : null
 
   const foto = await firmarFotoNino(nino.foto_url)
 
@@ -300,6 +305,12 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
               />
               {infoMedica && <BorrarInfoMedica ninoId={id} />}
             </div>
+          )}
+          {lecturas && (
+            <LecturasFichaMedica
+              registro={lecturas}
+              descarga={{ href: `/${locale}/export/lecturas-ficha-medica/${id}`, para: 'guardar' }}
+            />
           )}
         </section>
       )}

@@ -243,7 +243,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
   let medicaInicial: MedicaInicial | null = null
   try {
-    medicaInicial = await getInfoMedica(ninoId)
+    medicaInicial = await getInfoMedica(ninoId, 'alta')
   } catch {
     medicaInicial = null
   }

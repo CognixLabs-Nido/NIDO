@@ -261,9 +261,19 @@ export interface InfoMedica {
   telefono_emergencia: string | null
 }
 
-export async function getInfoMedica(ninoId: string): Promise<InfoMedica | null> {
+/** Desde dónde se lee la ficha médica: queda en el registro de lecturas (20261128120000). */
+export type OrigenLecturaFicha = 'ficha' | 'alta' | 'export'
+
+/** Descifra la ficha médica. Cada llamada autorizada queda registrada: no la llames para nada más. */
+export async function getInfoMedica(
+  ninoId: string,
+  origen: OrigenLecturaFicha
+): Promise<InfoMedica | null> {
   const supabase = await createClient()
-  const { data, error } = await supabase.rpc('get_info_medica_emergencia', { p_nino_id: ninoId })
+  const { data, error } = await supabase.rpc('get_info_medica_emergencia', {
+    p_nino_id: ninoId,
+    p_origen: origen,
+  })
   if (error || !data || data.length === 0) return null
   const row = data[0]
   return {

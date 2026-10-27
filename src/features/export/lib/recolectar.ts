@@ -193,7 +193,10 @@ export async function recolectarNino(
 
   // Info médica: descifrado gateado por puede_ver_info_medica (#3).
   let infoMedica: unknown
-  const med = await client.rpc('get_info_medica_emergencia', { p_nino_id: ninoId })
+  const med = await client.rpc('get_info_medica_emergencia', {
+    p_nino_id: ninoId,
+    p_origen: 'export',
+  })
   if (med.error) {
     infoMedica = { _nota: 'Existe información médica; no accesible con tu rol/permiso actual.' }
   } else {
