@@ -75,9 +75,9 @@ Notas:
   contables; más seguro conservar de más. Si el abogado lo baja, se baja.
 - **Medicación administrada, con las firmas (5 años):** es la prueba del centro ante una
   reclamación por una reacción, y son datos de salud de menores.
-- **«El último cobro de la familia»:** se lee por familia, no por recibo (todo el histórico de una
-  familia se conserva hasta 6 años después de su último cobro). Se confirma al construir la
-  destrucción (PR-8).
+- **«El último cobro de la familia»:** por familia, no por recibo (confirmado por el responsable,
+  2026-10-28). Mientras la familia sigue pagando se conserva su histórico entero; el plazo empieza
+  cuando deja de haber cobros. Se construye en la destrucción (PR-8).
 - **El final del curso** es el cierre del curso en el que se escribió el registro: un niño que
   sigue tres cursos no arrastra la agenda del primero, y la familia conserva el curso entero
   mientras está.
