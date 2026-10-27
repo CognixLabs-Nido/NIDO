@@ -14,7 +14,10 @@ const h = vi.hoisted(() => ({ orden: [] as string[], enviados: [] as unknown[] }
 
 vi.mock('server-only', () => ({}))
 vi.mock('@/lib/supabase/admin', () => ({ createServiceRoleClient: vi.fn() }))
-vi.mock('@/shared/lib/adjuntos/storage', () => ({ borrarObjetosBucket: vi.fn() }))
+vi.mock('@/shared/lib/adjuntos/storage', async (original) => ({
+  ...(await original<typeof import('@/shared/lib/adjuntos/storage')>()),
+  borrarObjetosBucket: vi.fn(),
+}))
 vi.mock('../lib/avisar', () => ({
   prepararAvisoFamilia: vi.fn(async (_s: unknown, id: string, evento: string) => {
     h.orden.push(`preparar:${evento}`)
