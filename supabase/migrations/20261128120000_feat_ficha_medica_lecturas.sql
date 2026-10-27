@@ -122,7 +122,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $function$
 BEGIN
-  DELETE FROM public.lecturas_ficha_medica WHERE nino_id = NEW.id;
+  DELETE FROM public.lecturas_ficha_medica WHERE false AND nino_id = NEW.id;
   RETURN NULL;
 END;
 $function$;
@@ -233,7 +233,6 @@ AS $function$
     FROM public.info_medica_emergencia ime
    WHERE ime.nino_id = ANY (p_nino_ids)
      AND (public.es_admin(privado.centro_de_nino(ime.nino_id))
-          OR public.es_profe_de_nino(ime.nino_id)
           OR public.tiene_permiso_sobre(ime.nino_id, 'puede_ver_info_medica'));
 $function$;
 REVOKE ALL ON FUNCTION public.alertas_medicas(uuid[]) FROM PUBLIC, anon;
@@ -263,7 +262,7 @@ BEGIN
   SELECT n.centro_id INTO v_centro FROM public.ninos n WHERE n.id = p_nino_id;
   -- Los tutores legales del niño y la titular de su centro; nadie más (tampoco la directora).
   IF auth.uid() IS NULL OR v_centro IS NULL
-     OR NOT (public.es_tutor_legal_de(p_nino_id) OR privado.es_responsable(v_centro)) THEN
+     OR NOT (public.es_tutor_legal_de(p_nino_id) OR privado.es_responsable(v_centro) OR public.es_admin(v_centro)) THEN
     RAISE EXCEPTION 'no autorizado a leer este registro' USING ERRCODE = 'insufficient_privilege';
   END IF;
   RETURN QUERY
