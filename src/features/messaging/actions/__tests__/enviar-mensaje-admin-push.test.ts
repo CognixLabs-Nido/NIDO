@@ -22,6 +22,20 @@ import type { Database } from '@/types/database'
  * Cada destinatario tiene aquí un idioma distinto del castellano por defecto.
  */
 
+// Traducciones reales, en el idioma que se pida: el aviso se comprueba con el texto de verdad.
+vi.mock('next-intl/server', async () => {
+  const { createTranslator } = await import('next-intl')
+  const mensajes: Record<string, Record<string, unknown>> = {
+    es: (await import('@/../messages/es.json')).default,
+    en: (await import('@/../messages/en.json')).default,
+    va: (await import('@/../messages/va.json')).default,
+  }
+  return {
+    getTranslations: async ({ locale, namespace }: { locale: string; namespace: string }) =>
+      createTranslator({ locale, messages: mensajes[locale]!, namespace } as never),
+  }
+})
+
 vi.mock('@/features/push/lib/enviar-push', () => ({
   enviarPushANotificarUsuarios: vi.fn(() =>
     Promise.resolve({ enviados: 1, expirados: 0, errores: 0, total: 1 })
@@ -132,5 +146,33 @@ describe('enviarMensajeCore profe_familia → push', () => {
     const [destinatarios, payload] = vi.mocked(enviarPushANotificarUsuarios).mock.calls[0]!
     expect(destinatarios).toEqual(['tutor-del-nino'])
     expect(payload.url).toBe(`/va/messages?nino=${NINO}&centro=${CENTRO_NINO}`)
+  })
+})
+
+/**
+ * F11-B, punto 8: el texto del mensaje no va en la push. Entre profe y familia puede ser de
+ * salud, y la notificación se ve en la pantalla bloqueada. Título: el autor; cuerpo: un aviso
+ * genérico en el idioma de quien la recibe.
+ */
+describe('enviarMensajeCore → push sin el texto del mensaje', () => {
+  const TEXTO = 'Tiene fiebre y le hemos dado el antitérmico'
+
+  it.each([
+    ['profe_familia', 'profe-1', 'Tens un missatge nou'],
+    ['admin_familia', ADMIN, 'Tens un missatge nou'],
+    ['admin_familia', TUTOR, 'You have a new message'],
+  ] as const)('%s (autor %s): aviso genérico en su idioma', async (kind, autor, aviso) => {
+    const input =
+      kind === 'profe_familia'
+        ? ({ kind, nino_id: NINO, contenido: TEXTO } as const)
+        : ({ kind, conversacion_id: CONV, contenido: TEXTO } as const)
+    const res = await enviarMensajeCore(makeSupabase(), autor, input)
+    expect(res.success).toBe(true)
+    // Premisa: la push salió (si no, «no contiene el texto» pasaría en vacío).
+    expect(enviarPushANotificarUsuarios).toHaveBeenCalledTimes(1)
+    const [, payload] = vi.mocked(enviarPushANotificarUsuarios).mock.calls[0]!
+    expect(payload.titulo).toBe('Autor')
+    expect(payload.cuerpo).toBe(aviso)
+    expect(JSON.stringify(payload)).not.toContain('fiebre')
   })
 })

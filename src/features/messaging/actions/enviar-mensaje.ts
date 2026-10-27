@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { getTranslations } from 'next-intl/server'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -193,11 +194,14 @@ async function enviarMensajeProfeFamilia(
       getAutorPushInfo(userId),
     ])
     if (destinatarios.length > 0) {
-      const cuerpo = contenido.length > 100 ? contenido.slice(0, 99) + '…' : contenido
-      // En el idioma de cada destinatario: el enlace abre su página en su idioma.
-      await enviarPushPorIdioma(destinatarios, (idioma) => ({
+      // El texto del mensaje no va en la push (F11-B, punto 8): entre profe y familia puede
+      // ser de salud, y la notificación se ve en la pantalla bloqueada. Autor y aviso genérico.
+      // En el idioma de cada destinatario: el aviso y el enlace.
+      await enviarPushPorIdioma(destinatarios, async (idioma) => ({
         titulo: autor.nombre,
-        cuerpo,
+        cuerpo: (await getTranslations({ locale: idioma, namespace: 'push.notificaciones' }))(
+          'mensaje_cuerpo'
+        ),
         url: urlDelAviso(`/${idioma}/messages?nino=${ninoId}`, nino.centro_id),
         datos: {
           tipo: 'mensaje',
@@ -293,10 +297,12 @@ async function enviarMensajeAdminFamilia(
       const destinatarios = destinatariosDeAdminFamilia(conv.admin_id, conv.tutor_id, userId)
       if (destinatarios.length > 0) {
         const autor = await getAutorPushInfo(userId)
-        const cuerpo = contenido.length > 100 ? contenido.slice(0, 99) + '…' : contenido
-        await enviarPushPorIdioma(destinatarios, (idioma) => ({
+        // Sin el texto del mensaje, como en profe_familia.
+        await enviarPushPorIdioma(destinatarios, async (idioma) => ({
           titulo: autor.nombre,
-          cuerpo,
+          cuerpo: (await getTranslations({ locale: idioma, namespace: 'push.notificaciones' }))(
+            'mensaje_cuerpo'
+          ),
           url: urlDelAviso(`/${idioma}/messages/conversacion/${conversacionId}`, conv.centro_id),
           datos: {
             tipo: 'mensaje',

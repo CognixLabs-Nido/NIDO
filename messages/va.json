@@ -1115,7 +1115,7 @@
           "parentesco_requerido": "Este titular no té cap vincle del qual heretar el parentiu; indica’l abans de continuar"
         },
         "push_titulo": "Nou fill en la teua família",
-        "push_cuerpo": "S’ha afegit {nombre} a la teua família"
+        "push_cuerpo": "Tens una alta pendent de completar"
       },
       "vinculado_completar": "Eixe tutor ja té família en aquest centre: el fill s'hi ha afegit. No cal enviar-li credencials.",
       "vinculado_invitar": "Eixe tutor ja té família en aquest centre: el fill s'hi ha afegit. No cal invitació."
@@ -2975,7 +2975,9 @@
     },
     "notificaciones": {
       "anuncio_centro_titulo": "Nou anunci del centre",
-      "anuncio_aula_titulo": "Nou anunci de l'aula"
+      "anuncio_aula_titulo": "Nou anunci de l'aula",
+      "anuncio_cuerpo": "Tens un anunci nou",
+      "mensaje_cuerpo": "Tens un missatge nou"
     },
     "errors": {
       "permiso_denegado": "Has rebutjat les notificacions. Per activar-les, ajusta-ho en el teu navegador.",

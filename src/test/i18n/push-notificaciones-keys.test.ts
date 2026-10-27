@@ -19,6 +19,8 @@ const LOCALES: ReadonlyArray<[string, Record<string, unknown>]> = [
 const CLAVES: ReadonlyArray<string> = [
   'push.notificaciones.anuncio_centro_titulo',
   'push.notificaciones.anuncio_aula_titulo',
+  'push.notificaciones.anuncio_cuerpo',
+  'push.notificaciones.mensaje_cuerpo',
   'eventos.push.actualizado',
   'eventos.push.cancelado',
   'admin.admisiones.anadirHijo.push_titulo',
@@ -46,6 +48,17 @@ describe('i18n — textos de las notificaciones push', () => {
       }
     })
   }
+
+  // F11-B, punto 8: la notificación se ve en la pantalla bloqueada. El aviso de un mensaje, de
+  // un anuncio y del alta de un hermano no lleva ningún dato: ni el texto ni el nombre del niño.
+  it.each([
+    'push.notificaciones.mensaje_cuerpo',
+    'push.notificaciones.anuncio_cuerpo',
+    'admin.admisiones.anadirHijo.push_titulo',
+    'admin.admisiones.anadirHijo.push_cuerpo',
+  ])('%s no tiene huecos: no lleva ningún dato', (clave) => {
+    expect(huecos(valor(es as Record<string, unknown>, clave) as string)).toEqual([])
+  })
 
   it('el texto de cancelar lleva el título del evento', () => {
     expect(
