@@ -14,7 +14,8 @@
 --   · El registro lo leen los tutores legales del niño y la Dirección de su centro
 --     (`lecturas_ficha_medica`), y sale en el export del niño (`export_datos_sujeto`). La Dirección
 --     lo ve siempre, también con el niño de baja o el vínculo del tutor cerrado: el derecho de
---     acceso es de la persona, y es la Dirección quien se lo descarga y se lo entrega.
+--     acceso es de la persona. La familia se lo descarga, y si ya no entra, se lo descarga y se lo
+--     entrega la Dirección.
 --   · La purga del niño borra sus lecturas (trigger en `ninos`; con la fila borrada, en cascada).
 --     El plazo provisional lo aplica el cron con `purgar_lecturas_ficha_medica`. La tabla no se
 --     audita: nada de esto entra en audit_log.
