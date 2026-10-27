@@ -4877,6 +4877,18 @@
       "alergias_leves": "mild allergies",
       "medico_familia": "family doctor",
       "telefono_emergencia": "emergency phone"
+    },
+    "descargar": "Download the record to hand over",
+    "documento": {
+      "titulo": "Medical record access log",
+      "nino": "Child",
+      "generado": "Generated on",
+      "intro": "Each row is one access to the emergency medical record: who accessed it, on what date and at what time, in what capacity, from where and which data of the record they viewed.",
+      "col_fecha": "Date and time",
+      "col_quien": "Who accessed it",
+      "col_rol": "In the capacity of",
+      "col_origen": "From where",
+      "col_campos": "Data viewed"
     }
   }
 }

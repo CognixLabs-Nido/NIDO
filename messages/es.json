@@ -4877,6 +4877,18 @@
       "alergias_leves": "alergias leves",
       "medico_familia": "médico de familia",
       "telefono_emergencia": "teléfono de emergencia"
+    },
+    "descargar": "Descargar el registro para entregarlo",
+    "documento": {
+      "titulo": "Registro de consultas de la ficha médica",
+      "nino": "Niño o niña",
+      "generado": "Generado el",
+      "intro": "Cada fila es una consulta de la ficha médica de urgencia: quién accedió, en qué fecha y a qué hora, en calidad de qué, desde dónde y qué datos de la ficha consultó.",
+      "col_fecha": "Fecha y hora",
+      "col_quien": "Quién accedió",
+      "col_rol": "En calidad de",
+      "col_origen": "Desde dónde",
+      "col_campos": "Datos consultados"
     }
   }
 }

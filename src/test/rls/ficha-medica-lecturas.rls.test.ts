@@ -27,7 +27,8 @@ import {
  * Cada lectura autorizada de `get_info_medica_emergencia` deja una fila con quién, por qué pudo,
  * desde dónde y qué campos vio; una no autorizada no deja nada. La tabla de la ficha ya no se lee
  * con sesión: las listas usan `alertas_medicas`. El registro lo leen los tutores legales y la
- * titular, sale en el export del niño, la purga del niño lo borra y el plazo borra lo vencido.
+ * Dirección (también con el niño de baja y el vínculo cerrado, y entonces solo ella), sale en el
+ * export del niño, la purga del niño lo borra y el plazo borra lo vencido.
  */
 
 type Sesion = SupabaseClient<Database>
@@ -215,8 +216,8 @@ describe('Lecturas de la ficha médica', () => {
     expect(data?.[0]).toEqual({ nino_id: nino.id, alergia_grave: true, medicacion: true })
   })
 
-  it('el registro lo ven los dos tutores legales y la titular; nadie más', async () => {
-    for (const k of ['tutor1', 'tutor2', 'titular']) {
+  it('el registro lo ven los dos tutores legales y la Dirección; nadie más', async () => {
+    for (const k of ['tutor1', 'tutor2', 'titular', 'directora']) {
       const { data, error } = await s[k]!.rpc('lecturas_ficha_medica', { p_nino_id: nino.id })
       expect(error).toBeNull()
       const quien = (data ?? []).map((l) => l.lector_nombre)
@@ -227,7 +228,7 @@ describe('Lecturas de la ficha médica', () => {
         'medicacion_habitual',
       ])
     }
-    for (const k of ['directora', 'profe', 'autorizado', 'titularOtro']) {
+    for (const k of ['profe', 'autorizado', 'titularOtro']) {
       const { error } = await s[k]!.rpc('lecturas_ficha_medica', { p_nino_id: nino.id })
       expect(error?.code).toBe('42501')
     }
@@ -289,6 +290,46 @@ describe('Lecturas de la ficha médica', () => {
       p_simular: false,
     })
     expect(conSesion.error?.code).toBe('42501')
+  })
+
+  it('con el niño de baja y el vínculo cerrado, el registro sigue y la Dirección lo ve', async () => {
+    const { error: lErr } = await s.tutor2!.rpc('get_info_medica_emergencia', {
+      p_nino_id: nino.id,
+      p_origen: 'ficha',
+    })
+    expect(lErr).toBeNull()
+    const antes = await lecturasDe(nino.id)
+    // Premisa: el tutor que se va tiene su lectura en el registro.
+    expect(antes.some((l) => l.lector_id === tutor2.id)).toBe(true)
+
+    const baja = new Date().toISOString()
+    const n = await serviceClient
+      .from('ninos')
+      .update({ deleted_at: baja, deleted_reason: 'baja_nino' })
+      .eq('id', nino.id)
+      .select('id')
+    expect(n.error).toBeNull()
+    expect(n.data).toHaveLength(1)
+    const v = await serviceClient
+      .from('vinculos_familiares')
+      .update({ deleted_at: baja, deleted_reason: 'baja_nino' })
+      .eq('nino_id', nino.id)
+      .select('id')
+    expect(v.error).toBeNull()
+    expect(v.data).toHaveLength(4)
+
+    // No se borra nada, y la familia ya no lo ve en la app: se lo entrega la Dirección.
+    expect(await lecturasDe(nino.id)).toEqual(antes)
+    for (const k of ['tutor1', 'tutor2']) {
+      const { error } = await s[k]!.rpc('lecturas_ficha_medica', { p_nino_id: nino.id })
+      expect(error?.code).toBe('42501')
+    }
+    for (const k of ['titular', 'directora']) {
+      const { data, error } = await s[k]!.rpc('lecturas_ficha_medica', { p_nino_id: nino.id })
+      expect(error).toBeNull()
+      expect(data).toHaveLength(antes.length)
+      expect((data ?? []).map((l) => l.lector_nombre)).toContain('Tutor Lecturas Dos')
+    }
   })
 
   it('la purga del niño borra sus lecturas, y las de otro niño se quedan', async () => {

@@ -89,9 +89,10 @@ export default async function NinoDetallePage({ params }: PageProps) {
     getDatosPedagogicos(id),
     getAltaDocumentacion(id),
   ])
-  // Quién ha leído la ficha médica: solo la titular (y la familia, en la suya). Después de leerla,
+  // Quién ha leído la ficha médica: la Dirección siempre, también con el niño de baja (y la familia,
+  // en la suya). Decide la BD: a quien no, `no_autorizado` y la sección no sale. Después de leerla,
   // para que salga también esta lectura.
-  const lecturas = exportaComoDireccion ? await getLecturasFichaMedica(id) : null
+  const lecturas = await getLecturasFichaMedica(id)
 
   const matriculaActiva = matriculas.find((m) => m.fecha_baja === null)
   // Datos de baja para el banner de archivado: la última matrícula cerrada.
@@ -320,7 +321,10 @@ export default async function NinoDetallePage({ params }: PageProps) {
               )}
             </CardContent>
           </Card>
-          {lecturas && <LecturasFichaMedica registro={lecturas} />}
+          <LecturasFichaMedica
+            registro={lecturas}
+            descargaHref={`/${locale}/export/lecturas-ficha-medica/${id}`}
+          />
         </TabsContent>
 
         <TabsContent value="pedagogico" className="space-y-3 pt-3">

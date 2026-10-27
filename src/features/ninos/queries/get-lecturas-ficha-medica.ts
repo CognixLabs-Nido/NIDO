@@ -44,7 +44,7 @@ export interface LecturaFichaMedica {
 }
 
 /**
- * - `no_autorizado`: quien mira no es tutor legal del niño ni la titular (42501). La sección no se
+ * - `no_autorizado`: quien mira no es tutor legal del niño ni Dirección de su centro (42501). La sección no se
  *   enseña.
  * - `error`: cualquier otro fallo. Se dice, y nunca se pinta como un registro vacío.
  */
@@ -53,7 +53,7 @@ export type RegistroLecturas =
   | { tipo: 'no_autorizado' }
   | { tipo: 'error' }
 
-/** Quién ha leído la ficha médica del niño: lo ven sus tutores legales y la titular. */
+/** Quién ha leído la ficha médica del niño: lo ven sus tutores legales y la Dirección, siempre. */
 export async function getLecturasFichaMedica(ninoId: string): Promise<RegistroLecturas> {
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('lecturas_ficha_medica', { p_nino_id: ninoId })

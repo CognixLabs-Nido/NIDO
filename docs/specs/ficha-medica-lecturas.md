@@ -13,8 +13,9 @@ related_specs: [proteccion-datos, olvido-peticiones]
 ## Resumen ejecutivo
 
 Cada vez que alguien abre el contenido de la ficha médica de un niño, queda registrado quién, cuándo,
-desde dónde y qué campos vio. La familia (los tutores legales) y la titular del centro pueden ver ese
-registro, y sale en el export del art. 15. La tabla de la ficha deja de leerse directamente: las
+desde dónde y qué campos vio. La familia (los tutores legales) y la Dirección del centro pueden ver
+ese registro, y sale en el export del art. 15. La Dirección lo ve siempre y lo descarga para
+entregarlo, también cuando la familia ya no entra en la app. La tabla de la ficha deja de leerse directamente: las
 listas del aula reciben solo los avisos (alergia sí o no, medicación sí o no), sin contenido.
 
 ## Contexto
@@ -30,20 +31,33 @@ junio de 2026, que entiende que el derecho de acceso del art. 15 RGPD incluye qu
 datos de salud, apoyado en el art. 9 del Reglamento (UE) 2025/327; la escuela no es prestador
 sanitario, pero trata datos del art. 9 de menores):
 
-1. **Quién ve el registro:** la familia (los tutores legales del niño) y la titular del centro.
+1. **Quién ve el registro:** la familia (los tutores legales del niño) y la Dirección del centro, la
+   directora incluida (revisado el 2026-10-27): la directora lee fichas médicas, y si no ve el
+   registro nadie detecta en el día a día un acceso raro. Detectar y corregir internamente un acceso
+   indebido es lo que la AEPD cuenta como diligencia.
 2. **Qué se registra:** quién accedió, fecha y hora, y qué datos se consultaron.
 3. **Las lecturas de la propia familia también se registran.**
 4. Se construye lo propuesto: la tabla escrita dentro de la función de lectura; cerrar la lectura
    directa con una función de avisos para las listas; la purga del niño borra sus lecturas, y nada
    entra en `audit_log`; la familia lo ve y sale en `export_datos_sujeto`.
 5. **El plazo de conservación es del abogado.** Hasta entonces, uno provisional y marcado como tal.
+6. **El registro no se pierde cuando la familia deja el centro** (2026-10-27). El derecho de acceso
+   del art. 15 es de la persona, no depende de que siga siendo cliente: la Dirección siempre tiene
+   acceso al registro, también con el niño de baja o el vínculo del tutor cerrado, y lo puede
+   descargar en un documento para entregarlo a la familia (quién accedió, fecha y hora, y qué datos
+   se consultaron).
+
+Fuentes que aporta el responsable: resolución PD-00068-2026 de la AEPD (junio de 2026) y art. 9 del
+Reglamento (UE) 2025/327, aplicable desde el 26 de marzo de 2027.
 
 ## User stories
 
 - US-01: Como tutor legal, quiero ver quién ha consultado la ficha médica de mi hijo, cuándo y qué
   datos, para ejercer mi derecho de acceso sin tener que pedirlo al centro.
-- US-02: Como titular, quiero ver el mismo registro para poder contestar a una familia y justificar
-  los accesos.
+- US-02: Como Dirección, quiero ver el mismo registro para detectar un acceso raro, contestar a una
+  familia y justificar los accesos.
+- US-02b: Como Dirección, quiero descargar el registro de un niño para entregárselo a su familia,
+  también si ya no está en el centro.
 - US-03: Como tutor legal, quiero que ese registro salga en el export de los datos de mi hijo.
 - US-04: Como profe, quiero seguir viendo en las listas del aula quién tiene alergia o medicación,
   sin abrir la ficha.
@@ -56,8 +70,10 @@ sanitario, pero trata datos del art. 9 de menores):
 - Cerrar el SELECT directo de `info_medica_emergencia` para las sesiones y la función de avisos
   `alertas_medicas` para las cuatro listas (pase de lista, agenda del aula y los dos pases del
   comedor).
-- Leer el registro: `lecturas_ficha_medica(niño)` para los tutores legales y la titular, con la
-  pantalla en la ficha del niño de la familia y en la de Dirección (solo la titular).
+- Leer el registro: `lecturas_ficha_medica(niño)` para los tutores legales y la Dirección, con la
+  pantalla en la ficha del niño de la familia y en la de Dirección.
+- Descargarlo para entregarlo: `/{locale}/export/lecturas-ficha-medica/{niño}`, un HTML imprimible,
+  con el botón en la ficha de Dirección.
 - El registro en el export del niño (`export_datos_sujeto`).
 - La purga del niño borra sus lecturas; el plazo provisional las borra al vencer.
 
@@ -92,11 +108,23 @@ El rol se decide por la misma vía que autoriza: Dirección (`admin` o `director
 ### Quién ve el registro
 
 - Los tutores legales del niño (`es_tutor_legal_de`), en su ficha (`/family/nino/[id]`).
-- La titular del centro (`privado.es_responsable`), en la ficha del niño de Dirección.
-- Nadie más: la directora, la profe y el autorizado reciben 42501.
+- La Dirección del centro (`es_admin`: la titular, la directora y el superusuario), en la ficha
+  del niño de Dirección, **siempre**: también con el niño de baja (la ficha de Dirección abre a los
+  archivados) o con el vínculo del tutor cerrado. Nada borra filas al cerrarse un vínculo.
+- Nadie más: la profe, el autorizado y Dirección de otro centro reciben 42501. El tutor cuyo
+  vínculo se ha cerrado, también; entonces se lo entrega la Dirección.
 
 Cada fila muestra la fecha y hora, el nombre de quien leyó, su papel, desde dónde y qué campos vio.
 El nombre sale de `usuarios`: si esa cuenta se purga, sale como la purga la dejó.
+
+### Descarga para entregar a la familia
+
+La ruta `/{locale}/export/lecturas-ficha-medica/{niño}` devuelve un HTML (`text/html`, adjunto,
+imprimible a PDF) con el nombre del niño, la fecha de generación y una tabla: fecha y hora, quién
+accedió, en calidad de qué, desde dónde y qué datos consultó. La hora va en la de Madrid con su zona
+escrita (CET o CEST) y en UTC en el atributo `datetime`. La autoriza la misma
+`lecturas_ficha_medica` con la sesión de quien descarga: quien no puede leerlo recibe 404. El botón
+está en la ficha de Dirección. El documento no dice el plazo de conservación, que aún no es firme.
 
 ### Las listas del aula
 
@@ -141,6 +169,9 @@ Migración `20261128120000_feat_ficha_medica_lecturas`, después de `20261127120
 - RLS: cada vía de lectura deja su fila con su rol, origen y campos; una lectura no autorizada no
   deja nada; la lectura directa de la tabla da 42501 para todos los roles con sesión; las alertas
   devuelven lo mismo que las políticas de antes y nada de otro centro; el registro lo ven los dos
-  tutores legales y la titular, y no la directora, la profe ni el autorizado; el export lo lleva; la
-  purga del niño lo borra y el plazo borra solo lo vencido (y en simulación nada).
-- Unit: las listas usan la función y un fallo tumba la lista; las etiquetas del registro en es/en/va.
+  tutores legales y la Dirección (titular y directora), y no la profe, el autorizado ni otro centro;
+  con el niño de baja y los vínculos cerrados no se borra nada, los tutores reciben 42501 y la
+  Dirección lo sigue viendo entero; el export lo lleva; la purga del niño lo borra y el plazo borra
+  solo lo vencido (y en simulación nada).
+- Unit: las listas usan la función y un fallo tumba la lista; las etiquetas del registro en es/en/va;
+  el documento para entregar (columnas, hora con zona, texto escapado, sin lecturas, es/en/va).

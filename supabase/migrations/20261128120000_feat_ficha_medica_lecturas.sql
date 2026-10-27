@@ -11,8 +11,10 @@
 --   · `info_medica_emergencia` deja de tener SELECT para las sesiones; las listas del aula usan
 --     `alertas_medicas`, que solo dice alergia o medicación sí o no, con las mismas tres
 --     condiciones que tenían las políticas.
---   · El registro lo leen los tutores legales del niño y la titular (`lecturas_ficha_medica`), y sale
---     en el export del niño (`export_datos_sujeto`).
+--   · El registro lo leen los tutores legales del niño y la Dirección de su centro
+--     (`lecturas_ficha_medica`), y sale en el export del niño (`export_datos_sujeto`). La Dirección
+--     lo ve siempre, también con el niño de baja o el vínculo del tutor cerrado: el derecho de
+--     acceso es de la persona, y es la Dirección quien se lo descarga y se lo entrega.
 --   · La purga del niño borra sus lecturas (trigger en `ninos`; con la fila borrada, en cascada).
 --     El plazo provisional lo aplica el cron con `purgar_lecturas_ficha_medica`. La tabla no se
 --     audita: nada de esto entra en audit_log.
@@ -111,7 +113,7 @@ ALTER TABLE public.lecturas_ficha_medica ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.lecturas_ficha_medica FROM PUBLIC, anon, authenticated;
 
 COMMENT ON TABLE public.lecturas_ficha_medica IS
-  'Quién ha leído la ficha médica de cada niño (F11-B, punto 4): la escribe get_info_medica_emergencia en cada lectura autorizada; la leen los tutores legales y la titular (lecturas_ficha_medica) y sale en el export del niño. No se audita. La purga del niño la borra; el plazo provisional lo aplica purgar_lecturas_ficha_medica (20261128120000).';
+  'Quién ha leído la ficha médica de cada niño (F11-B, punto 4): la escribe get_info_medica_emergencia en cada lectura autorizada; la leen los tutores legales y la Dirección (lecturas_ficha_medica) y sale en el export del niño. No se audita. La purga del niño la borra; el plazo provisional lo aplica purgar_lecturas_ficha_medica (20261128120000).';
 
 -- La purga del niño (purgar_sujeto_db lo deja con deleted_reason = 'purga_rgpd') borra sus
 -- lecturas. Si la fila del niño se borra, caen en cascada.
@@ -249,7 +251,7 @@ REVOKE SELECT ON public.info_medica_emergencia FROM PUBLIC, anon, authenticated;
 COMMENT ON TABLE public.info_medica_emergencia IS
   'Ficha médica de urgencia del niño. Los seis campos van cifrados con pgcrypto (clave medical_encryption_key en Vault): solo los escriben set_info_medica_emergencia_cifrada(_tutor) y solo los descifra get_info_medica_emergencia, que registra cada lectura en lecturas_ficha_medica. Vacío = NULL (20261123120000). Las sesiones no la leen ni la escriben: los avisos de las listas salen de alertas_medicas (20261128120000).';
 
--- ---- 4. El registro, para la familia y la titular ----
+-- ---- 4. El registro, para la familia y la Dirección ----
 CREATE FUNCTION public.lecturas_ficha_medica(p_nino_id uuid)
 RETURNS TABLE (leida_en timestamptz, lector_nombre text, rol_lector text, origen text, campos text[])
 LANGUAGE plpgsql
@@ -261,9 +263,10 @@ DECLARE
   v_centro uuid;
 BEGIN
   SELECT n.centro_id INTO v_centro FROM public.ninos n WHERE n.id = p_nino_id;
-  -- Los tutores legales del niño y la titular de su centro; nadie más (tampoco la directora).
+  -- Los tutores legales del niño (con vínculo vivo) y la Dirección de su centro (es_admin: la
+  -- titular, la directora y el superusuario), que lo ve siempre, aunque el niño esté de baja.
   IF auth.uid() IS NULL OR v_centro IS NULL
-     OR NOT (public.es_tutor_legal_de(p_nino_id) OR privado.es_responsable(v_centro)) THEN
+     OR NOT (public.es_tutor_legal_de(p_nino_id) OR public.es_admin(v_centro)) THEN
     RAISE EXCEPTION 'no autorizado a leer este registro' USING ERRCODE = 'insufficient_privilege';
   END IF;
   RETURN QUERY

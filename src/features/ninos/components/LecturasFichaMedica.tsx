@@ -4,13 +4,22 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { Card, CardContent } from '@/components/ui/card'
 import { localeIntl } from '@/shared/lib/locale-intl'
 
+import { ExportButton } from '@/features/export/components/ExportButton'
+
 import type { RegistroLecturas } from '../queries/get-lecturas-ficha-medica'
 
 /**
  * Quién ha leído la ficha médica del niño (F11-B, punto 4): cuándo, quién, por qué pudo y qué
- * campos vio. Lo ven los tutores legales y la titular; a quien no, no se le enseña nada.
+ * campos vio. Lo ven los tutores legales y la Dirección; a quien no, no se le enseña nada.
+ * `descargaHref`: la descarga para entregar a la familia (la ficha de Dirección).
  */
-export async function LecturasFichaMedica({ registro }: { registro: RegistroLecturas }) {
+export async function LecturasFichaMedica({
+  registro,
+  descargaHref,
+}: {
+  registro: RegistroLecturas
+  descargaHref?: string
+}) {
   if (registro.tipo === 'no_autorizado') return null
   const t = await getTranslations('ficha_medica_lecturas')
   const locale = await getLocale()
@@ -30,6 +39,14 @@ export async function LecturasFichaMedica({ registro }: { registro: RegistroLect
         {t('titulo')}
       </h3>
       <p className="text-muted-foreground text-sm">{t('explicacion')}</p>
+      {descargaHref && registro.tipo === 'ok' && (
+        <ExportButton
+          href={descargaHref}
+          label={t('descargar')}
+          filename="nido-registro-ficha-medica.html"
+          size="sm"
+        />
+      )}
       {registro.tipo === 'error' ? (
         <p className="text-destructive text-sm" role="alert">
           {t('error')}

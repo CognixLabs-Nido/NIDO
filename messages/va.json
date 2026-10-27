@@ -4877,6 +4877,18 @@
       "alergias_leves": "al·lèrgies lleus",
       "medico_familia": "metge de família",
       "telefono_emergencia": "telèfon d'emergència"
+    },
+    "descargar": "Descarregar el registre per a entregar-lo",
+    "documento": {
+      "titulo": "Registre de consultes de la fitxa mèdica",
+      "nino": "Xiquet o xiqueta",
+      "generado": "Generat el",
+      "intro": "Cada fila és una consulta de la fitxa mèdica d'urgència: qui hi va accedir, en quina data i a quina hora, en qualitat de què, des d'on i quines dades de la fitxa va consultar.",
+      "col_fecha": "Data i hora",
+      "col_quien": "Qui hi va accedir",
+      "col_rol": "En qualitat de",
+      "col_origen": "Des d'on",
+      "col_campos": "Dades consultades"
     }
   }
 }
