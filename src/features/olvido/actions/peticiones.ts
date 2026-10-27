@@ -56,7 +56,7 @@ async function avisarNueva(solicitudId: string): Promise<void> {
     .select('centro_id, pedida_por_centro')
     .eq('id', solicitudId)
     .maybeSingle()
-  if (data) await avisarTitular(service, data.centro_id)
+  if (data && !data.pedida_por_centro) await avisarTitular(service, data.centro_id)
 }
 
 /** `casilla`: que se borre en cuanto se confirme, sin los 7 días. */

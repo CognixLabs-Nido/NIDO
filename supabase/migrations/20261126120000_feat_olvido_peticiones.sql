@@ -170,7 +170,7 @@ BEGIN
        AND ((r.estado IN ('borrador', 'pendiente_procesar') AND r.total_centimos > 0)
          OR (r.estado = 'devuelto' AND r.devolucion_salida IS NULL));
     IF v_n > 0 THEN
-      v_bloqueos := v_bloqueos || jsonb_build_object('codigo', 'recibos_familia_pendientes', 'n', v_n);
+      v_avisos := v_avisos || jsonb_build_object('codigo', 'recibos_familia_pendientes', 'n', v_n);
     END IF;
   ELSE
     SELECT count(DISTINCT n.id) INTO v_n FROM public.vinculos_familiares v
@@ -342,6 +342,7 @@ BEGIN
   -- Quien la pidió; en la de un hijo, cualquiera de sus tutores legales; en la de una cuenta,
   -- la propia persona.
   IF NOT (s.solicitado_por = v_uid
+          OR (s.sujeto_tipo = 'nino' AND privado.es_tutor_legal_olvido(s.sujeto_id, v_uid))
           OR (s.sujeto_tipo = 'usuario' AND s.sujeto_id = v_uid)) THEN
     RAISE EXCEPTION 'no autorizado a retirar esta petición' USING ERRCODE = 'insufficient_privilege';
   END IF;
@@ -382,7 +383,7 @@ BEGIN
       USING ERRCODE = 'object_not_in_prerequisite_state', HINT = 'no_pendiente';
   END IF;
   v_falta := privado.olvido_bloqueos(s.sujeto_tipo, s.sujeto_id, s.centro_id);
-  IF false AND jsonb_array_length(v_falta -> 'bloqueos') > 0 THEN
+  IF jsonb_array_length(v_falta -> 'bloqueos') > 0 THEN
     RAISE EXCEPTION 'todavía falta algo para confirmar'
       USING ERRCODE = 'object_not_in_prerequisite_state', HINT = 'hay_bloqueos',
             DETAIL = (v_falta -> 'bloqueos')::text;
