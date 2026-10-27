@@ -213,3 +213,19 @@ export async function personalDelCentro(
       .sort(porNombre),
   }
 }
+
+/**
+ * Las titulares (fila `admin` viva) de un centro explícito: a quién avisar de una petición de
+ * olvido nueva (`20261126120000`). Con el cliente de servicio de quien avisa. Un fallo de lectura
+ * sale como lista vacía: el aviso es best-effort y no debe romper la petición.
+ */
+export async function titularesDelCentro(client: Client, centroId: string): Promise<string[]> {
+  const { data, error } = await client
+    .from('roles_usuario')
+    .select('usuario_id')
+    .eq('centro_id', centroId)
+    .eq('rol', 'admin')
+    .is('deleted_at', null)
+  if (error) return []
+  return [...new Set((data ?? []).map((r) => r.usuario_id))]
+}

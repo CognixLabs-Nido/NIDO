@@ -1393,6 +1393,36 @@ cobraban.
   (PR-4), así que el aviso de «mensual y diario a la vez» se ha quitado.
 - Test: `diario-automatico.rls.test.ts`.
 
+### Peticiones de olvido desde la app (F11-B, punto 5)
+
+Migración `20261126120000_feat_olvido_peticiones`; spec `docs/specs/olvido-peticiones.md`. Hasta
+ahora solo la titular pedía el olvido, y pedirlo ya borraba (de forma lógica) y daba 30 días sin
+forma de deshacerlo.
+
+- **La familia pide; nada se borra.** `pedir_olvido_nino` (un tutor legal, también con el vínculo
+  retirado por la baja: `privado.es_tutor_legal_olvido`) y `pedir_olvido_usuario` (la propia
+  persona de una familia del centro). La titular puede pedir en nombre de otro
+  (`pedida_por_centro`). Una petición abierta por persona y centro (`23505`, HINT `ya_pedida`).
+- **Lo que falta se calcula en el momento** (`privado.olvido_bloqueos`): bloquea la matrícula viva
+  del niño, y del tutor sus hijos matriculados y los recibos sin cerrar de su familia. Avisan, sin
+  bloquear, los recibos de la familia del niño (la deuda es de la familia: art. 17.3.e), los cobros
+  por banco de las últimas 8 semanas, el dinero a favor de la familia y el mandato activo.
+- **La titular** (`privado.es_responsable`; la directora no) confirma sin bloqueos
+  (`confirmar_peticion_olvido`, que hace lo que antes hacía pedir y guarda `estado_previo`),
+  rechaza con motivo (`rechazar_peticion_olvido`, que la familia lee) o anota
+  (`nota_peticion_olvido`). En los 7 días de gracia deshace su confirmación
+  (`deshacer_confirmacion_olvido`): los datos vuelven a como estaban.
+- **Retirar** una pendiente: quien la pidió, cualquiera de los tutores legales del niño o la propia
+  persona (`retirar_peticion_olvido`).
+- **Lecturas** por función: `peticiones_olvido_centro` (titular), `mis_peticiones_olvido` y
+  `opciones_olvido` (familia). Con sesión nadie escribe la tabla (no hay policy de escritura), y
+  `solicitar_olvido_*` (registrar y confirmar de una vez) solo la ejecuta `service_role`.
+- **La purga** solo coge confirmadas (`olvido_pendientes`, `olvido_es_ultimo_centro`), y al
+  purgar un trigger vacía el motivo y la nota de las peticiones de esa persona en el centro.
+- **Avisos**: correo a la familia en cada cambio (`olvido_destinatarios`, solo `service_role`;
+  sin nombres) y push genérica a la titular por cada petición nueva.
+- Tests: `olvido-peticiones.rls.test.ts` y los unit de `src/features/olvido`.
+
 ### Signup público cerrado (D5)
 
 - `[auth] enable_signup = false` en `config.toml`, y en el panel de producción «Allow new users to
@@ -1443,6 +1473,7 @@ cobraban.
 | Los conceptos diarios son automáticos         | `diario-automatico.rls.test.ts`                 |
 | La ficha médica, cifrada entera               | `ficha-medica-cifrada.rls.test.ts`              |
 | La ficha médica, sin escritura directa        | `info-medica.rls.test.ts`                       |
+| Peticiones de olvido desde la app             | `olvido-peticiones.rls.test.ts`                 |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

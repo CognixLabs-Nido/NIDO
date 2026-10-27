@@ -258,7 +258,8 @@
       "fotosRevocadas": "Fotos revocadas",
       "direccion": "Dirección del centro",
       "servicios": "Servicios",
-      "recibos": "Recibos"
+      "recibos": "Recibos",
+      "olvido": "Peticiones de borrado"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -2977,7 +2978,9 @@
       "anuncio_centro_titulo": "Nuevo anuncio del centro",
       "anuncio_aula_titulo": "Nuevo anuncio del aula",
       "anuncio_cuerpo": "Tienes un anuncio nuevo",
-      "mensaje_cuerpo": "Tienes un mensaje nuevo"
+      "mensaje_cuerpo": "Tienes un mensaje nuevo",
+      "olvido_titulo": "Petición de borrado de datos",
+      "olvido_cuerpo": "Tienes una petición nueva por revisar"
     },
     "errors": {
       "permiso_denegado": "Has rechazado las notificaciones. Para activarlas, ajústalo en tu navegador.",
@@ -4720,6 +4723,106 @@
       "sin_invitacion": "No hay ninguna invitación de admin que reenviar.",
       "centro_no_existe": "No encontramos ese centro.",
       "fallo": "No hemos podido completar la operación. Inténtalo de nuevo."
+    }
+  },
+  "olvido": {
+    "hecho": "Hecho",
+    "cancelar": "Cancelar",
+    "estado": {
+      "pendiente": "Pendiente",
+      "confirmada": "Confirmada",
+      "rechazada": "Rechazada",
+      "retirada": "Retirada",
+      "borrada": "Borrada"
+    },
+    "errores": {
+      "ya_pedida": "Ya hay una petición abierta para estos datos.",
+      "ya_borrado": "Los datos de este niño ya se borraron.",
+      "hay_bloqueos": "Todavía falta algo para poder confirmar la petición.",
+      "no_pendiente": "La petición ya no está pendiente.",
+      "fuera_de_plazo": "La confirmación ya no se puede deshacer: han pasado los 7 días.",
+      "motivo_obligatorio": "Escribe el motivo: la familia lo verá.",
+      "no_autorizado": "No tienes permiso para hacer esto.",
+      "fallo": "No se ha podido completar. Vuelve a intentarlo."
+    },
+    "falta": {
+      "titulo_bloqueos": "Falta para poder confirmar",
+      "titulo_avisos": "A tener en cuenta",
+      "matricula_viva": "Sigue matriculado: hay que darlo de baja antes.",
+      "hijos_matriculados": "Tiene hijos matriculados en el centro ({n}): sus datos siguen haciendo falta.",
+      "recibos_pendientes": "Quedan recibos de su familia sin pagar ({n}).",
+      "recibos_familia_pendientes": "Su familia tiene recibos sin pagar ({n}). No impiden borrar los datos del niño: los recibos se quedan con la familia.",
+      "cobro_banco_reciente": "Recibos cobrados por el banco hace menos de 8 semanas ({n}): con SEPA aún se pueden devolver.",
+      "dinero_a_favor": "Hay dinero a favor de la familia pendiente de devolver ({n}). El centro lo devuelve igual.",
+      "mandato_activo": "Tiene un mandato SEPA activo: se conserva como prueba legal."
+    },
+    "perfil": {
+      "descripcion": "Borrado de datos. Puedes pedir que se borren los datos de tu hijo o de tu cuenta. Es una petición: la revisa el centro antes de borrar nada. Las firmas y los recibos se conservan, porque la ley obliga a guardarlos.",
+      "error_lectura": "No hemos podido cargar tus peticiones de borrado.",
+      "cuenta": "Mi cuenta",
+      "pedir": "Pedir el borrado",
+      "pedir_nino": "Pedir que se borren los datos de {nombre}",
+      "pedir_cuenta": "Pedir que se borren los datos de mi cuenta en {centro}",
+      "dialogo_texto": "El centro revisará la petición. Mientras esté pendiente puedes retirarla. Cuando la confirme, los datos se borrarán a los 7 días.",
+      "inmediato": "Que se borren en cuanto el centro la confirme, sin esperar los 7 días",
+      "enviar": "Enviar la petición",
+      "pedida": "Pedida el {fecha}",
+      "pedida_por_otro": "la pidió el otro tutor",
+      "pedida_por_centro": "la registró el centro",
+      "en_revision": "El centro la está revisando.",
+      "nota_centro": "Nota del centro: {nota}",
+      "retirar": "Retirar la petición",
+      "retirar_texto": "La petición se retira y no se borra nada. Puedes volver a pedirla cuando quieras.",
+      "confirmada": "El centro la confirmó el {fecha}. Los datos se borrarán el {borrado}.",
+      "rechazada": "El centro la rechazó el {fecha}: {motivo}",
+      "rechazada_sin_motivo": "El centro la rechazó el {fecha}.",
+      "retirada": "Se retiró el {fecha}.",
+      "borrada": "Los datos se borraron el {fecha}."
+    },
+    "admin": {
+      "titulo": "Peticiones de borrado",
+      "descripcion": "Las familias piden aquí que se borren sus datos. Confirma una petición cuando no falte nada, déjala pendiente mientras falte algo o recházala con un motivo que la familia verá.",
+      "error_lectura": "No hemos podido cargar las peticiones.",
+      "vacio": "No hay peticiones de borrado.",
+      "abiertas": "Abiertas",
+      "cerradas": "Cerradas (últimos 90 días)",
+      "nino": "Niño",
+      "cuenta": "Cuenta de familia",
+      "pedida_por": "Pedida por {nombre} el {fecha}",
+      "pedida_por_centro": "Registrada por el centro el {fecha}",
+      "inmediato_marca": "sin esperar 7 días",
+      "dias": "{dias} días abierta",
+      "lista": "Lista para confirmar",
+      "nota_actual": "Nota para la familia: {nota}",
+      "confirmar": "Confirmar",
+      "confirmar_titulo": "Confirmar la petición",
+      "confirmar_texto": "Los datos dejan de verse ahora y se borran definitivamente a los 7 días. Hasta entonces puedes deshacer la confirmación. Las firmas y los recibos se conservan.",
+      "confirmar_inmediato_texto": "La familia pidió que se borren sin esperar: se borrarán esta noche y no se podrá deshacer. Las firmas y los recibos se conservan.",
+      "rechazar": "Rechazar",
+      "rechazar_titulo": "Rechazar la petición",
+      "rechazar_texto": "La familia verá el motivo y podrá volver a pedirla.",
+      "motivo": "Motivo",
+      "nota": "Nota para la familia",
+      "nota_texto": "La familia la ve en su perfil mientras la petición esté pendiente.",
+      "guardar": "Guardar",
+      "se_borra": "Se borra el {fecha}.",
+      "deshacer": "Deshacer la confirmación",
+      "deshacer_texto": "Los datos vuelven a quedar como estaban y la petición vuelve a pendiente. Se puede hasta el {fecha}.",
+      "rechazada": "Rechazada el {fecha}: {motivo}",
+      "retirada": "La familia la retiró el {fecha}.",
+      "borrada": "Borrada el {fecha}.",
+      "aviso_inicio": "Peticiones de borrado por revisar: {n}. La más antigua lleva {dias} días."
+    },
+    "correo": {
+      "asunto": "Tu petición de borrado de datos",
+      "saludo": "Hola:",
+      "boton": "Verla en NIDO",
+      "texto_pedida": "Hemos recibido la petición de borrado de datos en {centro}. El centro la revisará y te avisaremos.",
+      "texto_confirmada": "{centro} ha confirmado la petición de borrado de datos. Los datos se borrarán definitivamente en unos días.",
+      "texto_rechazada": "{centro} ha rechazado la petición de borrado de datos. En NIDO puedes ver el motivo.",
+      "texto_retirada": "Se ha retirado la petición de borrado de datos en {centro}. No se ha borrado nada.",
+      "texto_deshecha": "{centro} ha vuelto a dejar pendiente la petición de borrado de datos.",
+      "texto_borrada": "Los datos de la petición de borrado en {centro} se han borrado."
     }
   }
 }

@@ -23,6 +23,7 @@ import {
   UsersRoundIcon,
   UtensilsIcon,
   ReceiptIcon,
+  ShieldOffIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { getTranslations } from 'next-intl/server'
@@ -124,7 +125,10 @@ export async function buildSidebarItems(
         trailing: recordatoriosBadge,
       },
       ...(esResponsable
-        ? [{ href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> }]
+        ? [
+            { href: `/${locale}/admin/olvido`, label: t('olvido'), icon: <ShieldOffIcon /> },
+            { href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> },
+          ]
         : []),
     ]
   }

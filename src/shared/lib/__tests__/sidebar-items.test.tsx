@@ -11,7 +11,12 @@ vi.mock('next-intl/server', () => ({
 
 const { buildSidebarItems } = await import('../sidebar-items')
 
-const SOLO_DE_LA_ADMIN = ['/es/admin/centro', '/es/admin/direccion', '/es/admin/audit']
+const SOLO_DE_LA_ADMIN = [
+  '/es/admin/centro',
+  '/es/admin/direccion',
+  '/es/admin/olvido',
+  '/es/admin/audit',
+]
 
 async function hrefs(esResponsable: boolean) {
   return (await buildSidebarItems('admin', 'es', esResponsable)).map((i) => i.href)

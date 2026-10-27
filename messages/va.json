@@ -258,7 +258,8 @@
       "fotosRevocadas": "Fotos revocades",
       "direccion": "Direcció del centre",
       "servicios": "Serveis",
-      "recibos": "Rebuts"
+      "recibos": "Rebuts",
+      "olvido": "Peticions d'esborrat"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -2977,7 +2978,9 @@
       "anuncio_centro_titulo": "Nou anunci del centre",
       "anuncio_aula_titulo": "Nou anunci de l'aula",
       "anuncio_cuerpo": "Tens un anunci nou",
-      "mensaje_cuerpo": "Tens un missatge nou"
+      "mensaje_cuerpo": "Tens un missatge nou",
+      "olvido_titulo": "Petició d'esborrat de dades",
+      "olvido_cuerpo": "Tens una petició nova per revisar"
     },
     "errors": {
       "permiso_denegado": "Has rebutjat les notificacions. Per activar-les, ajusta-ho en el teu navegador.",
@@ -4720,6 +4723,106 @@
       "sin_invitacion": "No hi ha cap invitació d'admin per a reenviar.",
       "centro_no_existe": "No trobem eixe centre.",
       "fallo": "No hem pogut completar l'operació. Torna-ho a provar."
+    }
+  },
+  "olvido": {
+    "hecho": "Fet",
+    "cancelar": "Cancel·lar",
+    "estado": {
+      "pendiente": "Pendent",
+      "confirmada": "Confirmada",
+      "rechazada": "Rebutjada",
+      "retirada": "Retirada",
+      "borrada": "Esborrada"
+    },
+    "errores": {
+      "ya_pedida": "Ja hi ha una petició oberta per a estes dades.",
+      "ya_borrado": "Les dades d'este xiquet ja s'han esborrat.",
+      "hay_bloqueos": "Encara falta alguna cosa per a poder confirmar la petició.",
+      "no_pendiente": "La petició ja no està pendent.",
+      "fuera_de_plazo": "La confirmació ja no es pot desfer: han passat els 7 dies.",
+      "motivo_obligatorio": "Escriu el motiu: la família el veurà.",
+      "no_autorizado": "No tens permís per a fer açò.",
+      "fallo": "No s'ha pogut completar. Torna-ho a intentar."
+    },
+    "falta": {
+      "titulo_bloqueos": "Falta per a poder confirmar",
+      "titulo_avisos": "A tindre en compte",
+      "matricula_viva": "Continua matriculat: cal donar-lo de baixa abans.",
+      "hijos_matriculados": "Té fills matriculats en el centre ({n}): les seues dades continuen fent falta.",
+      "recibos_pendientes": "Queden rebuts de la seua família sense pagar ({n}).",
+      "recibos_familia_pendientes": "La seua família té rebuts sense pagar ({n}). No impedeixen esborrar les dades del xiquet: els rebuts es queden amb la família.",
+      "cobro_banco_reciente": "Rebuts cobrats pel banc fa menys de 8 setmanes ({n}): amb SEPA encara es poden tornar.",
+      "dinero_a_favor": "Hi ha diners a favor de la família pendents de tornar ({n}). El centre els torna igualment.",
+      "mandato_activo": "Té un mandat SEPA actiu: es conserva com a prova legal."
+    },
+    "perfil": {
+      "descripcion": "Esborrat de dades. Pots demanar que s'esborren les dades del teu fill o del teu compte. És una petició: la revisa el centre abans d'esborrar res. Les signatures i els rebuts es conserven, perquè la llei obliga a guardar-los.",
+      "error_lectura": "No hem pogut carregar les teues peticions d'esborrat.",
+      "cuenta": "El meu compte",
+      "pedir": "Demanar l'esborrat",
+      "pedir_nino": "Demanar que s'esborren les dades de {nombre}",
+      "pedir_cuenta": "Demanar que s'esborren les dades del meu compte en {centro}",
+      "dialogo_texto": "El centre revisarà la petició. Mentres estiga pendent la pots retirar. Quan la confirme, les dades s'esborraran als 7 dies.",
+      "inmediato": "Que s'esborren tan prompte com el centre la confirme, sense esperar els 7 dies",
+      "enviar": "Enviar la petició",
+      "pedida": "Demanada el {fecha}",
+      "pedida_por_otro": "la va demanar l'altre tutor",
+      "pedida_por_centro": "la va registrar el centre",
+      "en_revision": "El centre l'està revisant.",
+      "nota_centro": "Nota del centre: {nota}",
+      "retirar": "Retirar la petició",
+      "retirar_texto": "La petició es retira i no s'esborra res. La pots tornar a demanar quan vulgues.",
+      "confirmada": "El centre la va confirmar el {fecha}. Les dades s'esborraran el {borrado}.",
+      "rechazada": "El centre la va rebutjar el {fecha}: {motivo}",
+      "rechazada_sin_motivo": "El centre la va rebutjar el {fecha}.",
+      "retirada": "Es va retirar el {fecha}.",
+      "borrada": "Les dades es van esborrar el {fecha}."
+    },
+    "admin": {
+      "titulo": "Peticions d'esborrat",
+      "descripcion": "Les famílies demanen ací que s'esborren les seues dades. Confirma una petició quan no falte res, deixa-la pendent mentres falte alguna cosa o rebutja-la amb un motiu que la família veurà.",
+      "error_lectura": "No hem pogut carregar les peticions.",
+      "vacio": "No hi ha peticions d'esborrat.",
+      "abiertas": "Obertes",
+      "cerradas": "Tancades (últims 90 dies)",
+      "nino": "Xiquet",
+      "cuenta": "Compte de família",
+      "pedida_por": "Demanada per {nombre} el {fecha}",
+      "pedida_por_centro": "Registrada pel centre el {fecha}",
+      "inmediato_marca": "sense esperar 7 dies",
+      "dias": "{dias} dies oberta",
+      "lista": "Llesta per a confirmar",
+      "nota_actual": "Nota per a la família: {nota}",
+      "confirmar": "Confirmar",
+      "confirmar_titulo": "Confirmar la petició",
+      "confirmar_texto": "Les dades deixen de veure's ara i s'esborren definitivament als 7 dies. Fins aleshores pots desfer la confirmació. Les signatures i els rebuts es conserven.",
+      "confirmar_inmediato_texto": "La família va demanar que s'esborren sense esperar: s'esborraran esta nit i no es podrà desfer. Les signatures i els rebuts es conserven.",
+      "rechazar": "Rebutjar",
+      "rechazar_titulo": "Rebutjar la petició",
+      "rechazar_texto": "La família veurà el motiu i la podrà tornar a demanar.",
+      "motivo": "Motiu",
+      "nota": "Nota per a la família",
+      "nota_texto": "La família la veu en el seu perfil mentres la petició estiga pendent.",
+      "guardar": "Guardar",
+      "se_borra": "S'esborra el {fecha}.",
+      "deshacer": "Desfer la confirmació",
+      "deshacer_texto": "Les dades tornen a quedar com estaven i la petició torna a pendent. Es pot fins al {fecha}.",
+      "rechazada": "Rebutjada el {fecha}: {motivo}",
+      "retirada": "La família la va retirar el {fecha}.",
+      "borrada": "Esborrada el {fecha}.",
+      "aviso_inicio": "Peticions d'esborrat per revisar: {n}. La més antiga porta {dias} dies."
+    },
+    "correo": {
+      "asunto": "La teua petició d'esborrat de dades",
+      "saludo": "Hola:",
+      "boton": "Veure-la en NIDO",
+      "texto_pedida": "Hem rebut la petició d'esborrat de dades en {centro}. El centre la revisarà i t'avisarem.",
+      "texto_confirmada": "{centro} ha confirmat la petició d'esborrat de dades. Les dades s'esborraran definitivament d'ací a uns dies.",
+      "texto_rechazada": "{centro} ha rebutjat la petició d'esborrat de dades. En NIDO pots veure el motiu.",
+      "texto_retirada": "S'ha retirat la petició d'esborrat de dades en {centro}. No s'ha esborrat res.",
+      "texto_deshecha": "{centro} ha tornat a deixar pendent la petició d'esborrat de dades.",
+      "texto_borrada": "Les dades de la petició d'esborrat en {centro} s'han esborrat."
     }
   }
 }

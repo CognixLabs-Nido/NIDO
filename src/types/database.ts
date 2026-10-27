@@ -3347,8 +3347,19 @@ export type Database = {
       olvido_solicitudes: {
         Row: {
           centro_id: string
+          confirmada_en: string | null
+          confirmada_por: string | null
+          estado: Database["public"]["Enums"]["olvido_estado"]
+          estado_previo: Json | null
+          motivo_rechazo: string | null
+          nota_centro: string | null
+          pedida_por_centro: boolean
+          rechazada_en: string | null
+          rechazada_por: string | null
+          retirada_en: string | null
+          retirada_por: string | null
           created_at: string
-          gracia_hasta: string
+          gracia_hasta: string | null
           id: string
           inmediato: boolean
           purgado_en: string | null
@@ -3359,8 +3370,19 @@ export type Database = {
         }
         Insert: {
           centro_id: string
+          confirmada_en?: string | null
+          confirmada_por?: string | null
+          estado?: Database["public"]["Enums"]["olvido_estado"]
+          estado_previo?: Json | null
+          motivo_rechazo?: string | null
+          nota_centro?: string | null
+          pedida_por_centro?: boolean
+          rechazada_en?: string | null
+          rechazada_por?: string | null
+          retirada_en?: string | null
+          retirada_por?: string | null
           created_at?: string
-          gracia_hasta: string
+          gracia_hasta?: string | null
           id?: string
           inmediato?: boolean
           purgado_en?: string | null
@@ -3371,8 +3393,19 @@ export type Database = {
         }
         Update: {
           centro_id?: string
+          confirmada_en?: string | null
+          confirmada_por?: string | null
+          estado?: Database["public"]["Enums"]["olvido_estado"]
+          estado_previo?: Json | null
+          motivo_rechazo?: string | null
+          nota_centro?: string | null
+          pedida_por_centro?: boolean
+          rechazada_en?: string | null
+          rechazada_por?: string | null
+          retirada_en?: string | null
+          retirada_por?: string | null
           created_at?: string
-          gracia_hasta?: string
+          gracia_hasta?: string | null
           id?: string
           inmediato?: boolean
           purgado_en?: string | null
@@ -4731,6 +4764,10 @@ export type Database = {
       nino_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       nino_toma_comida_solida: { Args: { p_nino_id: string }; Returns: boolean }
       cuenta_ha_operado: { Args: { p_usuario_id: string }; Returns: boolean }
+      olvido_destinatarios: {
+        Args: { p_solicitud_id: string }
+        Returns: { usuario_id: string }[]
+      }
       olvido_es_ultimo_centro: {
         Args: { p_solicitud_id: string }
         Returns: boolean
@@ -4782,6 +4819,85 @@ export type Database = {
         Args: { p_centro_id: string; p_email?: string }
         Returns: string
       }
+      confirmar_peticion_olvido: { Args: { p_solicitud_id: string }; Returns: string }
+      deshacer_confirmacion_olvido: {
+        Args: { p_solicitud_id: string }
+        Returns: undefined
+      }
+      mis_peticiones_olvido: {
+        Args: never
+        Returns: {
+          centro_id: string
+          centro_nombre: string | null
+          confirmada_en: string | null
+          estado: Database["public"]["Enums"]["olvido_estado"]
+          falta: Json | null
+          gracia_hasta: string | null
+          id: string
+          inmediato: boolean
+          motivo_rechazo: string | null
+          nota_centro: string | null
+          pedida_por_centro: boolean
+          pedida_por_mi: boolean
+          purgado_en: string | null
+          rechazada_en: string | null
+          retirada_en: string | null
+          solicitado_en: string
+          sujeto_id: string
+          sujeto_nombre: string | null
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+          puede_retirar: boolean
+        }[]
+      }
+      nota_peticion_olvido: {
+        Args: { p_nota: string; p_solicitud_id: string }
+        Returns: undefined
+      }
+      opciones_olvido: {
+        Args: never
+        Returns: {
+          centro_id: string
+          centro_nombre: string
+          nombre: string
+          sujeto_id: string
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+        }[]
+      }
+      pedir_olvido_nino: {
+        Args: { p_inmediato?: boolean; p_nino_id: string }
+        Returns: string
+      }
+      pedir_olvido_usuario: {
+        Args: { p_centro_id: string; p_inmediato?: boolean; p_usuario_id: string }
+        Returns: string
+      }
+      peticiones_olvido_centro: {
+        Args: { p_centro_id: string }
+        Returns: {
+          confirmada_en: string | null
+          estado: Database["public"]["Enums"]["olvido_estado"]
+          falta: Json | null
+          gracia_hasta: string | null
+          id: string
+          inmediato: boolean
+          motivo_rechazo: string | null
+          nota_centro: string | null
+          pedida_por_centro: boolean
+          purgado_en: string | null
+          rechazada_en: string | null
+          retirada_en: string | null
+          solicitado_en: string
+          sujeto_id: string
+          sujeto_nombre: string | null
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+          solicitado_por_nombre: string | null
+        }[]
+      }
+      rechazar_peticion_olvido: {
+        Args: { p_motivo: string; p_solicitud_id: string }
+        Returns: undefined
+      }
+      retirar_peticion_olvido: { Args: { p_solicitud_id: string }; Returns: undefined }
       platform_metricas: {
         Args: never
         Returns: {
@@ -5123,6 +5239,7 @@ export type Database = {
         | "baja_temporal"
         | "salida_centro"
       nino_sexo: "F" | "M" | "X"
+      olvido_estado: "pendiente" | "confirmada" | "rechazada" | "retirada"
       olvido_sujeto_tipo: "usuario" | "nino"
       parentesco:
         | "madre"
@@ -5421,6 +5538,7 @@ export const Constants = {
         "salida_centro",
       ],
       nino_sexo: ["F", "M", "X"],
+      olvido_estado: ["pendiente", "confirmada", "rechazada", "retirada"],
       olvido_sujeto_tipo: ["usuario", "nino"],
       parentesco: [
         "madre",

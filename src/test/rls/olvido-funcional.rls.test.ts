@@ -113,8 +113,9 @@ describe('RLS olvido funcional — F11-A4', () => {
     await serviceClient.from('centros').delete().in('id', [centro.id, centroOtro.id])
   }, 120_000)
 
-  // o01 — solicitud normal: soft-delete + gracia 30 días, sin purgar
-  it('o01 — solicitar olvido marca deleted_at y fija gracia ≈ +30 días (pendiente)', async () => {
+  // o01 — registrar y confirmar de una vez (servidor): soft-delete + gracia 7 días, sin purgar
+  // (20261126120000: la gracia cuenta desde la confirmación y es de 7 días).
+  it('o01 — solicitar olvido marca deleted_at, la deja confirmada y fija gracia ≈ +7 días', async () => {
     const nino = await nuevoNino('Olvido Gracia')
     const { data: id, error } = await serviceClient.rpc('solicitar_olvido_nino', {
       p_nino_id: nino,
@@ -129,9 +130,11 @@ describe('RLS olvido funcional — F11-A4', () => {
       .eq('id', id as string)
       .single()
     expect(sol?.purgado_en).toBeNull()
-    const dias = (new Date(sol!.gracia_hasta).getTime() - Date.now()) / 86_400_000
-    expect(dias).toBeGreaterThan(29)
-    expect(dias).toBeLessThan(31)
+    expect(sol?.estado).toBe('confirmada')
+    expect(sol?.gracia_hasta).not.toBeNull()
+    const dias = (new Date(sol!.gracia_hasta!).getTime() - Date.now()) / 86_400_000
+    expect(dias).toBeGreaterThan(6)
+    expect(dias).toBeLessThan(8)
   })
 
   // o02 — inmediato: gracia = ahora
@@ -144,7 +147,8 @@ describe('RLS olvido funcional — F11-A4', () => {
       .eq('id', id)
       .single()
     expect(sol?.inmediato).toBe(true)
-    expect(new Date(sol!.gracia_hasta).getTime()).toBeLessThanOrEqual(Date.now() + 2000)
+    expect(sol?.gracia_hasta).not.toBeNull()
+    expect(new Date(sol!.gracia_hasta!).getTime()).toBeLessThanOrEqual(Date.now() + 2000)
   })
 
   // o03 — autorización: no-admin y admin de otro centro no pueden solicitar
