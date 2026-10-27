@@ -133,7 +133,7 @@ REVOKE ALL ON FUNCTION privado.ninos_purga_borra_lecturas() FROM PUBLIC, anon, a
 CREATE TRIGGER ninos_purga_borra_lecturas
   AFTER UPDATE OF deleted_reason ON public.ninos
   FOR EACH ROW
-  WHEN (NEW.deleted_reason = 'purga_rgpd' AND OLD.deleted_reason IS DISTINCT FROM 'purga_rgpd')
+  WHEN (NEW.deleted_reason IN ('purga_rgpd', 'baja_nino') AND OLD.deleted_reason IS DISTINCT FROM NEW.deleted_reason)
   EXECUTE FUNCTION privado.ninos_purga_borra_lecturas();
 
 -- ---- 2. La lectura descifrada deja su fila ----
@@ -266,7 +266,7 @@ BEGIN
   -- Los tutores legales del niño (con vínculo vivo) y la Dirección de su centro (es_admin: la
   -- titular, la directora y el superusuario), que lo ve siempre, aunque el niño esté de baja.
   IF auth.uid() IS NULL OR v_centro IS NULL
-     OR NOT (public.es_tutor_legal_de(p_nino_id) OR public.es_admin(v_centro)) THEN
+     OR NOT (public.es_tutor_legal_de(p_nino_id) OR privado.es_responsable(v_centro)) THEN
     RAISE EXCEPTION 'no autorizado a leer este registro' USING ERRCODE = 'insufficient_privilege';
   END IF;
   RETURN QUERY
