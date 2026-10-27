@@ -84,7 +84,7 @@ $guarda$;
 ALTER TYPE public.tipo_alimentacion RENAME TO tipo_alimentacion_old;
 
 CREATE TYPE public.tipo_alimentacion AS ENUM (
-  'omnivora', 'vegetariana', 'vegana', 'sin_lactosa', 'sin_gluten', 'religiosa_halal', 'religiosa_kosher', 'otra'
+  'omnivora', 'vegetariana', 'vegana', 'sin_lactosa', 'sin_gluten', 'otra'
 );
 
 ALTER TABLE public.datos_pedagogicos_nino DROP CONSTRAINT alimentacion_otra_requiere_obs;
@@ -110,7 +110,7 @@ DECLARE
 BEGIN
   IF (SELECT string_agg(enumlabel, ',' ORDER BY enumsortorder) FROM pg_enum
        WHERE enumtypid = 'public.tipo_alimentacion'::regtype)
-     IS DISTINCT FROM 'omnivora,vegetariana,vegana,sin_lactosa,sin_gluten,religiosa_halal,religiosa_kosher,otra' THEN
+     IS DISTINCT FROM 'omnivora,vegetariana,vegana,sin_lactosa,sin_gluten,otra' THEN
     RAISE EXCEPTION 'tipo_alimentacion no quedó con los seis valores';
   END IF;
   IF to_regtype('public.tipo_alimentacion_old') IS NOT NULL THEN
