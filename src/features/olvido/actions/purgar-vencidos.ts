@@ -71,8 +71,8 @@ export async function purgarYAvisar(
   purgar: (service: Service, p: Pendiente) => Promise<void> = purgarUno
 ): Promise<void> {
   const correos = await prepararAvisoFamilia(service, p.solicitud_id, 'borrada')
-  await enviarAvisos(correos)
   await purgar(service, p)
+  await enviarAvisos(correos)
 }
 
 /**
