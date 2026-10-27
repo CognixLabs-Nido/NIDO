@@ -12,6 +12,8 @@
 
 Fase 3 (agenda diaria + bienestar) necesita saber, antes de cada apunte que el profe rellene, qué tipo de niño tiene delante: si toma biberón, si lleva pañal, cuántas siestas hace al día, qué tipo de alimentación lleva, qué idiomas se hablan en casa. Estos datos no son médicos (no requieren cifrado pgcrypto) pero sí íntimos: dietas religiosas, ritmos de sueño, lengua materna de la familia.
 
+> **Nota de 2026-10-26:** las dietas religiosas ya no se recogen. `tipo_alimentacion` perdió `religiosa_halal` y `religiosa_kosher` en `20261125120000` (categoría especial, art. 9 RGPD); lo que el niño puede comer va en `otra` y sus observaciones.
+
 La decisión es dónde y cómo alojarlos:
 
 1. **Columnas dentro de `ninos`**, junto al resto de la ficha (nombre, fecha, sexo).

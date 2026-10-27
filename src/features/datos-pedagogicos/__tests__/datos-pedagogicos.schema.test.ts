@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { datosPedagogicosInputSchema } from '../schemas/datos-pedagogicos'
+import { Constants } from '@/types/database'
+
+import en from '../../../../messages/en.json'
+import es from '../../../../messages/es.json'
+import va from '../../../../messages/va.json'
+import { datosPedagogicosInputSchema, tipoAlimentacionEnum } from '../schemas/datos-pedagogicos'
 
 const NINO_ID = 'a1b2c3d4-e5f6-4789-8abc-def012345678'
 
@@ -84,5 +89,26 @@ describe('datosPedagogicosInputSchema', () => {
     const input = { ...base(), lactancia_estado: 'inventado' as never }
     const r = datosPedagogicosInputSchema.safeParse(input)
     expect(r.success).toBe(false)
+  })
+
+  // 20261125120000: sin religiosa_halal ni religiosa_kosher (categoría especial, art. 9 RGPD).
+  it.each(['religiosa_halal', 'religiosa_kosher'])('rechaza tipo_alimentacion = %s', (valor) => {
+    const r = datosPedagogicosInputSchema.safeParse({ ...base(), tipo_alimentacion: valor })
+    expect(r.success).toBe(false)
+  })
+})
+
+describe('tipo_alimentacion: un solo catálogo', () => {
+  it('el esquema tiene los mismos valores que el enum de la BD (tipos generados)', () => {
+    expect([...tipoAlimentacionEnum.options]).toEqual([...Constants.public.Enums.tipo_alimentacion])
+  })
+
+  it.each([
+    ['es', es],
+    ['en', en],
+    ['va', va],
+  ])('%s traduce exactamente esos valores, ni uno más', (_locale, mensajes) => {
+    const claves = Object.keys(mensajes.pedagogico.alimentacion_opciones).sort()
+    expect(claves).toEqual([...tipoAlimentacionEnum.options].sort())
   })
 })

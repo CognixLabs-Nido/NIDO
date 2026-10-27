@@ -29,6 +29,7 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   datosPedagogicosInputSchema,
   parseIdiomasCsv,
+  tipoAlimentacionEnum,
   type DatosPedagogicosInput,
 } from '../schemas/datos-pedagogicos'
 import { upsertDatosPedagogicos } from '../actions/upsert-datos-pedagogicos'
@@ -107,18 +108,10 @@ export function DatosPedagogicosForm({
     ['panal_completo', 'transicion', 'sin_panal_diurno', 'sin_panal_total'] as const
   ).map((v) => ({ value: v, label: t(`control_esfinteres_opciones.${v}`) }))
 
-  const alimentacionItems = (
-    [
-      'omnivora',
-      'vegetariana',
-      'vegana',
-      'sin_lactosa',
-      'sin_gluten',
-      'religiosa_halal',
-      'religiosa_kosher',
-      'otra',
-    ] as const
-  ).map((v) => ({ value: v, label: t(`alimentacion_opciones.${v}`) }))
+  const alimentacionItems = tipoAlimentacionEnum.options.map((v) => ({
+    value: v,
+    label: t(`alimentacion_opciones.${v}`),
+  }))
 
   function onSubmit(values: DatosPedagogicosInput) {
     startTransition(async () => {

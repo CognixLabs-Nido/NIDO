@@ -231,4 +231,39 @@ describe('RLS datos_pedagogicos_nino — aislamiento entre centros y permisos', 
     expect(error).toBeNull()
     expect((data ?? []).length).toBeGreaterThanOrEqual(1)
   })
+
+  // 20261125120000: tipo_alimentacion sin religiosa_halal ni religiosa_kosher (categoría especial,
+  // art. 9 RGPD). El tipo generado ya no los admite; aquí se comprueba que la BD tampoco.
+  it('control positivo: Dirección cambia la alimentación con su sesión', async () => {
+    const c = await clientFor(adminA)
+    const { error } = await c
+      .from('datos_pedagogicos_nino')
+      .update({ tipo_alimentacion: 'vegana' })
+      .eq('nino_id', ninoA.id)
+    expect(error).toBeNull()
+    expect(await alimentacionDe(ninoA.id)).toBe('vegana')
+  })
+
+  it.each(['religiosa_halal', 'religiosa_kosher'])(
+    'la BD rechaza %s (22P02) y la ficha no cambia',
+    async (valor) => {
+      expect(await alimentacionDe(ninoA.id)).toBe('vegana')
+      const c = await clientFor(adminA)
+      const { error } = await c
+        .from('datos_pedagogicos_nino')
+        .update({ tipo_alimentacion: valor } as unknown as { tipo_alimentacion: 'otra' })
+        .eq('nino_id', ninoA.id)
+      expect(error?.code).toBe('22P02')
+      expect(await alimentacionDe(ninoA.id)).toBe('vegana')
+    }
+  )
 })
+
+async function alimentacionDe(ninoId: string) {
+  const { data } = await serviceClient
+    .from('datos_pedagogicos_nino')
+    .select('tipo_alimentacion')
+    .eq('nino_id', ninoId)
+    .single()
+  return data?.tipo_alimentacion
+}
