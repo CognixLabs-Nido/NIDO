@@ -1115,7 +1115,7 @@
           "parentesco_requerido": "Este titular no tiene ningún vínculo del que heredar el parentesco; indícalo antes de continuar"
         },
         "push_titulo": "Nuevo hijo en tu familia",
-        "push_cuerpo": "Se ha añadido a {nombre} a tu familia"
+        "push_cuerpo": "Tienes un alta pendiente de completar"
       },
       "vinculado_completar": "Ese tutor ya tiene familia en este centro: el hijo se ha añadido a ella. No hace falta enviarle credenciales.",
       "vinculado_invitar": "Ese tutor ya tiene familia en este centro: el hijo se ha añadido a ella. No hace falta invitación."
@@ -2975,7 +2975,9 @@
     },
     "notificaciones": {
       "anuncio_centro_titulo": "Nuevo anuncio del centro",
-      "anuncio_aula_titulo": "Nuevo anuncio del aula"
+      "anuncio_aula_titulo": "Nuevo anuncio del aula",
+      "anuncio_cuerpo": "Tienes un anuncio nuevo",
+      "mensaje_cuerpo": "Tienes un mensaje nuevo"
     },
     "errors": {
       "permiso_denegado": "Has rechazado las notificaciones. Para activarlas, ajústalo en tu navegador.",

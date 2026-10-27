@@ -93,11 +93,8 @@ export async function publicarAnuncio(
       userId
     )
     if (destinatarios.length > 0) {
-      const cuerpo =
-        parsed.data.contenido.length > 100
-          ? parsed.data.contenido.slice(0, 99) + '…'
-          : parsed.data.contenido
-      // En el idioma de cada destinatario: el título traducido y el enlace.
+      // Sin el texto del anuncio (F11-B, punto 8): la notificación se ve en la pantalla
+      // bloqueada. En el idioma de cada destinatario: el título, el aviso y el enlace.
       await enviarPushPorIdioma(destinatarios, async (idioma) => {
         const tPush = await getTranslations({ locale: idioma, namespace: 'push.notificaciones' })
         return {
@@ -105,7 +102,7 @@ export async function publicarAnuncio(
             parsed.data.ambito === 'centro'
               ? tPush('anuncio_centro_titulo')
               : tPush('anuncio_aula_titulo'),
-          cuerpo,
+          cuerpo: tPush('anuncio_cuerpo'),
           url: urlDelAviso(`/${idioma}/messages/anuncios/${data.id}`, centroId),
           datos: {
             tipo: 'anuncio',

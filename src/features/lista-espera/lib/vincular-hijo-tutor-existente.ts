@@ -151,7 +151,8 @@ export async function vincularHijoATutorExistente(
     })
     await enviarPushANotificarUsuarios([params.tutorUsuarioId], {
       titulo: tPush('push_titulo'),
-      cuerpo: tPush('push_cuerpo', { nombre: params.nombreNino }),
+      // Sin el nombre del niño (F11-B, punto 8): la notificación se ve en la pantalla bloqueada.
+      cuerpo: tPush('push_cuerpo'),
       url: `/${idioma}/alta/${ninoId}`,
       datos: { tipo: 'alta_hijo', nino_id: ninoId },
     })

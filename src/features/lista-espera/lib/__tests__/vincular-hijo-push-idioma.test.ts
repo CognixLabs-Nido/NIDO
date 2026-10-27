@@ -19,12 +19,18 @@ vi.mock('@/features/push/lib/enviar-push', () => ({ enviarPushANotificarUsuarios
 vi.mock('../vinculo-previo-tutor', () => ({
   buscarVinculoPrevio: async () => ({ parentesco: 'madre', descripcion_parentesco: null }),
 }))
-vi.mock('next-intl/server', () => ({
-  getTranslations:
-    async ({ locale }: { locale: string }) =>
-    (k: string) =>
-      `${locale}:${k}`,
-}))
+// Traducciones reales: un mock que ignorase los parámetros no vería si el nombre entra.
+vi.mock('next-intl/server', async () => {
+  const { createTranslator } = await import('next-intl')
+  const mensajes: Record<string, Record<string, unknown>> = {
+    es: (await import('@/../messages/es.json')).default,
+    va: (await import('@/../messages/va.json')).default,
+  }
+  return {
+    getTranslations: async ({ locale, namespace }: { locale: string; namespace: string }) =>
+      createTranslator({ locale, messages: mensajes[locale]!, namespace } as never),
+  }
+})
 
 const { vincularHijoATutorExistente } = await import('../vincular-hijo-tutor-existente')
 
@@ -83,8 +89,8 @@ describe('alta de un hermano: el push va en el idioma del tutor', () => {
     expect(h.enviar).toHaveBeenCalledWith(
       [TUTOR],
       expect.objectContaining({
-        titulo: 'va:push_titulo',
-        cuerpo: 'va:push_cuerpo',
+        titulo: 'Nou fill en la teua família',
+        cuerpo: 'Tens una alta pendent de completar',
         url: `/va/alta/${NINO}`,
       })
     )
@@ -97,5 +103,15 @@ describe('alta de un hermano: el push va en el idioma del tutor', () => {
       [TUTOR],
       expect.objectContaining({ url: `/es/alta/${NINO}` })
     )
+  })
+
+  // F11-B, punto 8: la notificación se ve en la pantalla bloqueada; el nombre del niño no va.
+  it('la push no lleva el nombre del niño', async () => {
+    await vincularHijoATutorExistente(service(), autenticado, params)
+    // Premisa: la push salió.
+    expect(h.enviar).toHaveBeenCalledTimes(1)
+    const payload = (h.enviar.mock.calls[0] as unknown[])[1]
+    expect(JSON.stringify(payload)).not.toContain(params.nombreNino)
+    expect(JSON.stringify(payload)).not.toContain(params.apellidosNino)
   })
 })

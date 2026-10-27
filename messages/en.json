@@ -1115,7 +1115,7 @@
           "parentesco_requerido": "This guardian has no existing relationship to inherit; specify it before continuing"
         },
         "push_titulo": "New child in your family",
-        "push_cuerpo": "{nombre} has been added to your family"
+        "push_cuerpo": "You have an enrolment to complete"
       },
       "vinculado_completar": "That guardian already has a family at this centre: the child was added to it. No need to send credentials.",
       "vinculado_invitar": "That guardian already has a family at this centre: the child was added to it. No invitation needed."
@@ -2975,7 +2975,9 @@
     },
     "notificaciones": {
       "anuncio_centro_titulo": "New school announcement",
-      "anuncio_aula_titulo": "New classroom announcement"
+      "anuncio_aula_titulo": "New classroom announcement",
+      "anuncio_cuerpo": "You have a new announcement",
+      "mensaje_cuerpo": "You have a new message"
     },
     "errors": {
       "permiso_denegado": "You've refused notifications. To enable them, change it in your browser.",

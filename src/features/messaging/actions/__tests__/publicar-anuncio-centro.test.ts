@@ -159,4 +159,16 @@ describe('R3 — publicarAnuncio: aula del centro de la página', () => {
       })
     )
   })
+
+  // F11-B, punto 8: el texto del anuncio no va en la push (pantalla bloqueada).
+  it('la notificación lleva un aviso genérico, no el texto del anuncio', async () => {
+    destinatariosPushDeAnuncio.mockResolvedValueOnce(['tutor-va'])
+    const r = await publicarAnuncio({ ...base, ambito: 'aula', aula_id: AULA_PROPIA }, CENTRO)
+    expect(r.success).toBe(true)
+    // Premisa: la push salió.
+    expect(enviarPushANotificarUsuarios).toHaveBeenCalledTimes(1)
+    const [, payload] = vi.mocked(enviarPushANotificarUsuarios).mock.calls[0]!
+    expect(payload.cuerpo).toBe('va:anuncio_cuerpo')
+    expect(JSON.stringify(payload)).not.toContain('parque')
+  })
 })

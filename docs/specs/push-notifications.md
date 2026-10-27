@@ -11,6 +11,12 @@ related_specs: [messaging]
 
 # Spec — Push notifications transversal (Fase 5.5)
 
+> **2026-10-27 (F11-B, punto 8):** la notificación se ve en la pantalla bloqueada, así que ya no
+> lleva contenido. Un mensaje: el autor en el título y «Tienes un mensaje nuevo» en el cuerpo (el
+> texto entre profe y familia puede ser de salud). Un anuncio: su título de siempre y «Tienes un
+> anuncio nuevo». El alta de un hermano: sin el nombre del niño. Recordatorios y eventos siguen con
+> su título. Todo en el idioma de quien la recibe (ADR-0060). Los payloads de abajo ya van así.
+
 > Capa común de notificaciones push web para NIDO. Cubre Chrome/Firefox/Edge desktop, Android Chrome y iOS Safari (instalado en pantalla de inicio). Esta fase la conecta a mensajes y anuncios; F6+ la enchufan a sus propios eventos sin tocar la infraestructura.
 
 ## Resumen ejecutivo
@@ -117,7 +123,7 @@ Decisiones de producto ya cerradas (no replantear):
      ```ts
      {
        titulo: '<Nombre del autor>',
-       cuerpo: '<primeros 100 chars del mensaje>',
+       cuerpo: 'Tienes un mensaje nuevo', // traducido; nunca el texto del mensaje
        url: '/<locale>/messages/conversacion/<id>',
        datos: { tipo: 'mensaje', conversacion_id, nino_id },
      }
@@ -152,7 +158,7 @@ Decisiones de producto ya cerradas (no replantear):
    ```ts
    {
      titulo: ambito === 'centro' ? 'Nuevo anuncio del centro' : 'Nuevo anuncio del aula',
-     cuerpo: '<primeros 100 chars del contenido>',
+     cuerpo: 'Tienes un anuncio nuevo', // traducido; nunca el texto del anuncio
      url: '/<locale>/messages/anuncios/<id>',
      datos: { tipo: 'anuncio', anuncio_id },
    }
@@ -216,7 +222,7 @@ Decisiones de producto ya cerradas (no replantear):
 - **Navegador sin soporte de Service Worker** (raro en 2026): estado "unsupported", botón deshabilitado.
 - **VAPID keys ausentes en el entorno** (dev local sin .env.local con las claves): el helper detecta y devuelve early con `console.error('VAPID no configurado')`. Mensajería sigue funcionando — solo no se envía push.
 - **Concurrencia: dos sesiones del mismo usuario se suscriben a la vez**: el UNIQUE `(usuario_id, endpoint)` + UPSERT evita duplicados.
-- **Idioma del payload**: el titulo "Nuevo anuncio del centro/aula" usa el locale **del autor** (el que ejecuta `publicarAnuncio`), no del destinatario. Es una limitación aceptada en F5.5 — el cuerpo es el contenido del autor, así que mezcla de idiomas en una sesión multilingüe es esperable. Para Ola 2 se valorará multi-locale.
+- **Idioma del payload**: el titulo "Nuevo anuncio del centro/aula" usa el locale **del autor** (el que ejecuta `publicarAnuncio`), no del destinatario. Es una limitación aceptada en F5.5 — el cuerpo es el contenido del autor, así que mezcla de idiomas en una sesión multilingüe es esperable. Para Ola 2 se valorará multi-locale. _(Superado: desde ADR-0060 todo va en el idioma de quien la recibe, y desde 2026-10-27 el cuerpo es un aviso genérico, no el contenido.)_
 - **El destinatario no es el mismo que el autor** del action, así que el cliente Supabase del action (autenticado como autor) NO tiene RLS para leer `push_subscriptions` del destinatario. El helper usa el **service role client** para esa lectura. La service role key nunca se expone al cliente.
 - **Test E2E de service worker en CI headless**: descartado por fragilidad. Cobertura via unit (actions, helper) + RLS + smoke manual documentado.
 
