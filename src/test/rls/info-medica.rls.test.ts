@@ -101,25 +101,29 @@ describe('RLS info_medica_emergencia — permiso puede_ver_info_medica controla 
     await deleteTestCentro(centro.id)
   }, 60_000)
 
-  it('tutor con permiso puede_ver_info_medica lee la fila', async () => {
+  it('tutor con permiso puede_ver_info_medica lee la ficha por la función', async () => {
     const client = await clientFor(tutorConPermiso)
-    const { data, error } = await client
-      .from('info_medica_emergencia')
-      .select('medicacion_habitual')
-      .eq('nino_id', nino.id)
+    const { data, error } = await client.rpc('get_info_medica_emergencia', { p_nino_id: nino.id })
     expect(error).toBeNull()
-    expect((data ?? []).length).toBeGreaterThanOrEqual(1)
+    expect(data?.[0]?.medicacion_habitual).toBe(MEDICACION)
   })
 
-  it('tutor sin permiso puede_ver_info_medica no lee la fila', async () => {
+  it('tutor sin permiso puede_ver_info_medica no la lee', async () => {
     const client = await clientFor(tutorSinPermiso)
-    const { data, error } = await client
-      .from('info_medica_emergencia')
-      .select('medicacion_habitual')
-      .eq('nino_id', nino.id)
-    expect(error).toBeNull()
-    // RLS filtra silenciosamente: array vacío, no error.
-    expect((data ?? []).length).toBe(0)
+    const { data, error } = await client.rpc('get_info_medica_emergencia', { p_nino_id: nino.id })
+    expect(error).not.toBeNull()
+    expect(data).toBeNull()
+  })
+
+  it('con sesión nadie lee la tabla directamente, tampoco con permiso (20261128120000)', async () => {
+    for (const u of [tutorConPermiso, tutorSinPermiso, admin]) {
+      const client = await clientFor(u)
+      const { error } = await client
+        .from('info_medica_emergencia')
+        .select('medicacion_habitual')
+        .eq('nino_id', nino.id)
+      expect(error?.code).toBe('42501')
+    }
   })
 
   it('la ficha de partida tiene la forma real: cifrada, sin el texto', async () => {
@@ -136,9 +140,10 @@ describe('RLS info_medica_emergencia — permiso puede_ver_info_medica controla 
 /**
  * Dirección no escribe la tabla directamente (20261124120000): solo por los setters, que cifran.
  * Antes `ime_admin_all` era FOR ALL y una escritura directa podía guardar texto en claro en las
- * columnas bytea. Ahora la policy es de SELECT y `authenticated` no tiene INSERT/UPDATE/DELETE.
+ * columnas bytea. Desde 20261128120000 tampoco la lee directamente: la lee por
+ * `get_info_medica_emergencia`, que registra la lectura.
  */
-describe('RLS info_medica_emergencia — Dirección solo lee la tabla', () => {
+describe('RLS info_medica_emergencia — Dirección solo la lee por su función', () => {
   let centro: { id: string }
   let nino: { id: string }
   let ninoSinFicha: { id: string }
@@ -169,14 +174,13 @@ describe('RLS info_medica_emergencia — Dirección solo lee la tabla', () => {
     await deleteTestUser(admin.id)
   }, 60_000)
 
-  it('control positivo: Dirección lee la ficha de su centro con la sesión', async () => {
-    const { data, error } = await clientAdmin
-      .from('info_medica_emergencia')
-      .select('id, medicacion_habitual')
-      .eq('nino_id', nino.id)
+  it('control positivo: Dirección lee la ficha de su centro con la sesión, por su función', async () => {
+    const { data, error } = await clientAdmin.rpc('get_info_medica_emergencia', {
+      p_nino_id: nino.id,
+    })
     expect(error).toBeNull()
     expect(data).toHaveLength(1)
-    expect(data?.[0]?.medicacion_habitual).not.toBeNull()
+    expect(data?.[0]?.medicacion_habitual).toBe(MEDICACION)
   })
 
   it('UPDATE directo: 42501 y la ficha no cambia', async () => {

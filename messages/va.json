@@ -3994,7 +3994,8 @@
         "lineas_recibo": "Cobraments del xiquet",
         "servicios_diarios": "Serveis diaris",
         "beca_comedor_elegibilidad": "Beca de menjador",
-        "beca_comedor_tramos": "Trams de beca de menjador"
+        "beca_comedor_tramos": "Trams de beca de menjador",
+        "lecturas_ficha_medica": "Qui ha llegit la fitxa mèdica"
       },
       "campos": {
         "nombre_completo": "Nom",
@@ -4177,7 +4178,11 @@
         "confirmada_en": "Confirmada el",
         "motivo_rechazo": "Motiu del rebuig",
         "retirada_en": "Retirada el",
-        "nota_centro": "Nota del centre"
+        "nota_centro": "Nota del centre",
+        "leida_en": "Llegida el",
+        "lector": "Qui",
+        "rol_lector": "Paper",
+        "campos": "Dades vistes"
       },
       "valores": {
         "terminos": "Termes",
@@ -4316,7 +4321,18 @@
         "cheque": "Xec guarderia / Tiquet restaurant",
         "confirmada": "Confirmada",
         "rechazada": "Rebutjada",
-        "retirada": "Retirada"
+        "retirada": "Retirada",
+        "directora": "Direcció",
+        "superusuario": "Plataforma NIDO",
+        "ficha": "Fitxa del xiquet",
+        "alta": "Formulari d'alta",
+        "export": "Exportació de dades",
+        "alergias_graves": "Al·lèrgies greus",
+        "notas_emergencia": "Notes d'emergència",
+        "medicacion_habitual": "Medicació habitual",
+        "alergias_leves": "Al·lèrgies lleus",
+        "medico_familia": "Metge de família",
+        "telefono_emergencia": "Telèfon d'emergència"
       }
     },
     "descargar_mis_datos": "Descarregar les meues dades",
@@ -4831,6 +4847,36 @@
       "texto_retirada": "S'ha retirat la petició d'esborrat de dades en {centro}. No s'ha esborrat res.",
       "texto_deshecha": "{centro} ha tornat a deixar pendent la petició d'esborrat de dades.",
       "texto_borrada": "Les dades de la petició d'esborrat en {centro} s'han esborrat."
+    }
+  },
+  "ficha_medica_lecturas": {
+    "titulo": "Qui ha consultat la fitxa mèdica",
+    "explicacion": "Cada vegada que algú obri la fitxa mèdica queda registrat: qui, quan i quines dades va veure.",
+    "error": "No hem pogut carregar el registre de consultes. Torna-ho a intentar més tard.",
+    "vacio": "Encara ningú no ha consultat la fitxa mèdica.",
+    "cuenta_borrada": "Compte esborrat",
+    "sin_datos": "La fitxa no tenia dades",
+    "vio": "Va veure",
+    "rol": {
+      "admin": "Direcció (titular)",
+      "directora": "Direcció",
+      "superusuario": "Plataforma NIDO",
+      "profe": "Professorat de l'aula",
+      "tutor_legal": "Tutor legal",
+      "autorizado": "Persona autoritzada"
+    },
+    "origen": {
+      "ficha": "des de la fitxa del xiquet",
+      "alta": "des del formulari d'alta",
+      "export": "en una exportació de dades"
+    },
+    "campo": {
+      "alergias_graves": "al·lèrgies greus",
+      "notas_emergencia": "notes d'emergència",
+      "medicacion_habitual": "medicació habitual",
+      "alergias_leves": "al·lèrgies lleus",
+      "medico_familia": "metge de família",
+      "telefono_emergencia": "telèfon d'emergència"
     }
   }
 }

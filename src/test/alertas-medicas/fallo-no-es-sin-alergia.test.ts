@@ -8,6 +8,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
  * «sin alergia». Que la consulta funcione contra el esquema real lo prueba
  * `src/test/rls/alertas-medicas.rls.test.ts`; aquí, que un fallo de esa consulta no vuelva a
  * pintarse como «sin alergia»: la función lanza y la lista no sale.
+ *
+ * Desde `20261128120000` las listas no leen la tabla: piden los avisos a `alertas_medicas`. Si una
+ * vuelve a leer `info_medica_emergencia` directamente, el doble lanza.
  */
 
 const NINO = '11111111-1111-4111-8111-111111111111'
@@ -22,7 +25,7 @@ let medicas: Resultado
 function resultadoDe(tabla: string): Resultado {
   switch (tabla) {
     case 'info_medica_emergencia':
-      return medicas
+      throw new Error('una lista ha leído info_medica_emergencia directamente')
     case 'matriculas':
       return {
         data: [
@@ -66,7 +69,8 @@ const RPC: Record<string, unknown> = { tipo_de_dia: 'lectivo', nino_toma_comida_
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     from: (tabla: string) => consulta(() => resultadoDe(tabla)),
-    rpc: (fn: string) => consulta(() => ({ data: RPC[fn] ?? null, error: null })),
+    rpc: (fn: string) =>
+      consulta(() => (fn === 'alertas_medicas' ? medicas : { data: RPC[fn] ?? null, error: null })),
   }),
 }))
 
@@ -79,7 +83,7 @@ const { getPaseDeListaComidaTodosMomentos } =
 
 const FECHA = '2026-10-26'
 const CON_ALERGIA: Resultado = {
-  data: [{ nino_id: NINO, alergias_graves: '\\x00', medicacion_habitual: null }],
+  data: [{ nino_id: NINO, alergia_grave: true, medicacion: false }],
   error: null,
 }
 const FALLO: Resultado = { data: null, error: { message: 'fallo de la consulta' } }

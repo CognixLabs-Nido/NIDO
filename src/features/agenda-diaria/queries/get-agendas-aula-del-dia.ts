@@ -87,25 +87,19 @@ export async function getAgendasAulaDelDia(
     }
   }
 
-  // 4. Alertas médicas: alergias_graves y medicacion_habitual no NULL. Las dos van
-  //    cifradas (BYTEA, 20261123120000) y vacío = NULL, así que basta con que la
-  //    columna no sea NULL, sin descifrar.
-  const { data: medicas, error: errorMedicas } = await supabase
-    .from('info_medica_emergencia')
-    .select('nino_id, alergias_graves, medicacion_habitual')
-    .in('nino_id', ninoIds)
+  // 4. Alertas médicas: alergia grave y medicación, sí o no, sin contenido. La ficha no se lee
+  //    directamente con sesión (20261128120000); lo dice `alertas_medicas`.
+  const { data: medicas, error: errorMedicas } = await supabase.rpc('alertas_medicas', {
+    p_nino_ids: ninoIds,
+  })
   // Un fallo aquí no puede pintarse como «sin alergia»: sin las alertas, la lista no sale.
   if (errorMedicas) throw new Error(`alertas médicas: ${errorMedicas.message}`)
 
   const alertasByNino = new Map<string, NinoAgendaResumen['alertas']>()
-  for (const row of (medicas ?? []) as Array<{
-    nino_id: string
-    alergias_graves: unknown
-    medicacion_habitual: unknown
-  }>) {
+  for (const row of medicas ?? []) {
     alertasByNino.set(row.nino_id, {
-      alergia_grave: row.alergias_graves !== null,
-      medicacion: row.medicacion_habitual !== null,
+      alergia_grave: row.alergia_grave,
+      medicacion: row.medicacion,
     })
   }
 

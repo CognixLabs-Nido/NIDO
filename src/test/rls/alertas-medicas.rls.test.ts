@@ -133,15 +133,20 @@ describe('El aviso de alergia grave sale en las listas del aula', () => {
     await deleteTestUser(profe.id)
   }, 60_000)
 
-  it('premisa: la profe del aula lee la fila médica del niño, con la alergia grave apuntada', async () => {
-    const { data, error } = await cProfe
-      .from('info_medica_emergencia')
-      .select('nino_id, alergias_graves')
-      .in('nino_id', [conAlergia.id, sinFicha.id, fichaVacia.id])
+  it('premisa: la profe del aula recibe los avisos del niño, con la alergia grave apuntada', async () => {
+    const { data, error } = await cProfe.rpc('alertas_medicas', {
+      p_nino_ids: [conAlergia.id, sinFicha.id, fichaVacia.id],
+    })
     expect(error).toBeNull()
     // Dos filas: la del niño con alergia, con la alergia grave apuntada, y la ficha vacía.
     expect(data).toHaveLength(2)
-    expect(data?.find((d) => d.nino_id === conAlergia.id)?.alergias_graves).not.toBeNull()
+    expect(data?.find((d) => d.nino_id === conAlergia.id)).toMatchObject({
+      alergia_grave: true,
+      medicacion: true,
+    })
+    // La tabla ya no se lee directamente con sesión (20261128120000).
+    const directa = await cProfe.from('info_medica_emergencia').select('nino_id').limit(1)
+    expect(directa.error?.code).toBe('42501')
   })
 
   it('pase de lista: alergia grave y medicación en su niño, nada en los otros', async () => {

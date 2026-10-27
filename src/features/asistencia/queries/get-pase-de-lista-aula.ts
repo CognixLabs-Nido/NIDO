@@ -89,22 +89,17 @@ export async function getPaseDeListaAula(
   }
 
   // 4. Alertas médicas (idéntico patrón a la agenda).
-  const { data: medicas, error: errorMedicas } = await supabase
-    .from('info_medica_emergencia')
-    .select('nino_id, alergias_graves, medicacion_habitual')
-    .in('nino_id', ninoIds)
+  const { data: medicas, error: errorMedicas } = await supabase.rpc('alertas_medicas', {
+    p_nino_ids: ninoIds,
+  })
   // Un fallo aquí no puede pintarse como «sin alergia»: sin las alertas, la lista no sale.
   if (errorMedicas) throw new Error(`alertas médicas: ${errorMedicas.message}`)
 
   const alertasByNino = new Map<string, NinoAsistenciaResumen['alertas']>()
-  for (const row of (medicas ?? []) as Array<{
-    nino_id: string
-    alergias_graves: unknown
-    medicacion_habitual: unknown
-  }>) {
+  for (const row of medicas ?? []) {
     alertasByNino.set(row.nino_id, {
-      alergia_grave: row.alergias_graves !== null,
-      medicacion: row.medicacion_habitual !== null,
+      alergia_grave: row.alergia_grave,
+      medicacion: row.medicacion,
     })
   }
 

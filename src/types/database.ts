@@ -2638,6 +2638,61 @@ export type Database = {
           },
         ]
       }
+      lecturas_ficha_medica: {
+        Row: {
+          campos: string[]
+          centro_id: string
+          id: string
+          lector_id: string | null
+          leida_en: string
+          nino_id: string
+          origen: string
+          rol_lector: string
+        }
+        Insert: {
+          campos?: string[]
+          centro_id: string
+          id?: string
+          lector_id?: string | null
+          leida_en?: string
+          nino_id: string
+          origen: string
+          rol_lector: string
+        }
+        Update: {
+          campos?: string[]
+          centro_id?: string
+          id?: string
+          lector_id?: string | null
+          leida_en?: string
+          nino_id?: string
+          origen?: string
+          rol_lector?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lecturas_ficha_medica_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lecturas_ficha_medica_lector_id_fkey"
+            columns: ["lector_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lecturas_ficha_medica_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lineas_recibo: {
         Row: {
           arrastre_de_recibo_id: string | null
@@ -4449,6 +4504,14 @@ export type Database = {
       _redactar_auditoria_nino: { Args: { p_nino_id: string }; Returns: undefined }
       _redactar_auditoria_ninos_borrados: { Args: never; Returns: number }
       _redactar_jsonb: { Args: { claves: string[]; j: Json }; Returns: Json }
+      alertas_medicas: {
+        Args: { p_nino_ids: string[] }
+        Returns: {
+          alergia_grave: boolean
+          medicacion: boolean
+          nino_id: string
+        }[]
+      }
       buscar_auth_user_por_email: {
         Args: { p_email: string }
         Returns: { id: string; email: string }[]
@@ -4670,7 +4733,7 @@ export type Database = {
         }[]
       }
       get_info_medica_emergencia: {
-        Args: { p_nino_id: string }
+        Args: { p_nino_id: string; p_origen?: string }
         Returns: {
           alergias_graves: string
           alergias_leves: string
@@ -4827,6 +4890,16 @@ export type Database = {
         Args: { p_solicitud_id: string }
         Returns: undefined
       }
+      lecturas_ficha_medica: {
+        Args: { p_nino_id: string }
+        Returns: {
+          campos: string[]
+          leida_en: string
+          lector_nombre: string
+          origen: string
+          rol_lector: string
+        }[]
+      }
       mis_peticiones_olvido: {
         Args: never
         Returns: {
@@ -4941,6 +5014,10 @@ export type Database = {
       purgar_esqueleto_huerfano_nino: {
         Args: { p_cutoff: string; p_nino_id: string }
         Returns: undefined
+      }
+      purgar_lecturas_ficha_medica: {
+        Args: { p_meses: number; p_simular: boolean }
+        Returns: number
       }
       purgar_sujeto_db: { Args: { p_solicitud_id: string }; Returns: undefined }
       quitar_foto_perfil_nino: { Args: { p_nino_id: string }; Returns: string }

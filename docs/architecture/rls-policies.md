@@ -201,12 +201,38 @@ Las funciones `public.set_info_medica_emergencia_cifrada(...)` y `public.get_inf
   policy.** Test: `info-medica.rls.test.ts`.
 
 Las listas del aula (pase de lista, agenda del aula y los dos pases de lista del comedor) no
-descifran: leen la tabla con la sesión y pintan «Alergia grave» si `alergias_graves` no es NULL (y
-«Medicación» si `medicacion_habitual` no es NULL). La tabla **no tiene `deleted_at`**: hasta
+descifran: piden a `alertas_medicas` si hay alergia grave y medicación (sí o no) y pintan «Alergia
+grave» y «Medicación». Hasta `20261128120000` leían la tabla con la sesión. La tabla **no tiene `deleted_at`**: hasta
 octubre de 2026 las cuatro consultas filtraban por esa columna, PostgREST contestaba 42703, el
 error se ignoraba y ningún niño salía con el aviso. Ahora un fallo de esa consulta lanza y la lista
 no sale: nunca se pinta como «sin alergia». Tests: `alertas-medicas.rls.test.ts` (con la sesión de
 la profe, contra el esquema real) y `src/test/alertas-medicas/fallo-no-es-sin-alergia.test.ts`.
+
+### Quién ha leído la ficha médica (F11-B, punto 4)
+
+Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.
+Las lecturas no se registraban para nadie, y la tabla se podía leer directamente con sesión (tres
+políticas de SELECT), así que un registro solo en la función se podía saltar.
+
+- **Cada lectura autorizada deja su fila** en `lecturas_ficha_medica`, escrita por
+  `get_info_medica_emergencia(niño, origen)` en la misma transacción que descifra: quién, por qué pudo
+  (`admin`, `directora`, `superusuario`, `profe`, `tutor_legal` o `autorizado`, por la misma vía que
+  autoriza), desde dónde (`ficha`, `alta` o `export`), qué campos tenían contenido y cuándo. Una
+  lectura no autorizada no deja nada. También se registran las de la propia familia.
+- **La tabla de la ficha no se lee con sesión:** sin políticas y sin SELECT para `authenticated`.
+  Los avisos de las listas salen de `alertas_medicas(niños)`, con las mismas tres condiciones que
+  tenían las políticas (Dirección del centro, profe del niño, vínculo con `puede_ver_info_medica`).
+- **El registro** lo leen los tutores legales del niño y la titular (`lecturas_ficha_medica(niño)`;
+  la directora, la profe y el autorizado reciben 42501), en la ficha del niño de cada uno, y sale en
+  el export del niño (`export_datos_sujeto`). `lecturas_ficha_medica` no tiene políticas ni
+  privilegios para las sesiones y no se audita.
+- **La purga del niño** borra sus lecturas (trigger `ninos_purga_borra_lecturas`; con la fila del
+  niño borrada, en cascada). El plazo provisional (24 meses, PENDIENTE política F11-B) lo aplica el
+  cron de retención con `purgar_lecturas_ficha_medica` (solo `service_role`), y en simulación solo
+  cuenta.
+- Tests: `ficha-medica-lecturas.rls.test.ts`, `info-medica.rls.test.ts`,
+  `alertas-medicas.rls.test.ts` y los unit `lecturas-ficha-medica-textos.test.ts` y
+  `fallo-no-es-sin-alergia.test.ts`.
 
 ## Audit log automático
 
@@ -1480,6 +1506,7 @@ forma de deshacerlo.
 | La ficha médica, cifrada entera               | `ficha-medica-cifrada.rls.test.ts`              |
 | La ficha médica, sin escritura directa        | `info-medica.rls.test.ts`                       |
 | Peticiones de olvido desde la app             | `olvido-peticiones.rls.test.ts`                 |
+| Quién ha leído la ficha médica                | `ficha-medica-lecturas.rls.test.ts`             |
 
 ## `matriculas.motivo_baja` — permiso por COLUMNA (F-8 familia)
 

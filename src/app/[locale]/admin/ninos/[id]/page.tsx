@@ -32,6 +32,8 @@ import {
   getNinoById,
 } from '@/features/ninos/queries/get-ninos'
 import { HistorialMatriculas } from '@/features/ninos/components/HistorialMatriculas'
+import { LecturasFichaMedica } from '@/features/ninos/components/LecturasFichaMedica'
+import { getLecturasFichaMedica } from '@/features/ninos/queries/get-lecturas-ficha-medica'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 import { RevocarImagenNinoButton } from '@/features/ninos/components/RevocarImagenNinoButton'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
@@ -81,12 +83,15 @@ export default async function NinoDetallePage({ params }: PageProps) {
       )
       .eq('nino_id', id)
       .is('deleted_at', null),
-    getInfoMedica(id),
+    getInfoMedica(id, 'ficha'),
     getMatriculasPorNino(id),
     getHistoricoMatriculas(id),
     getDatosPedagogicos(id),
     getAltaDocumentacion(id),
   ])
+  // Quién ha leído la ficha médica: solo la titular (y la familia, en la suya). Después de leerla,
+  // para que salga también esta lectura.
+  const lecturas = exportaComoDireccion ? await getLecturasFichaMedica(id) : null
 
   const matriculaActiva = matriculas.find((m) => m.fecha_baja === null)
   // Datos de baja para el banner de archivado: la última matrícula cerrada.
@@ -315,6 +320,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
               )}
             </CardContent>
           </Card>
+          {lecturas && <LecturasFichaMedica registro={lecturas} />}
         </TabsContent>
 
         <TabsContent value="pedagogico" className="space-y-3 pt-3">

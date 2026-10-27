@@ -201,6 +201,11 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'motivo_rechazo',
   'retirada_en',
   'nota_centro',
+  // quién ha leído la ficha médica (20261128120000)
+  'leida_en',
+  'lector',
+  'rol_lector',
+  'campos',
 ])
 
 // Valores de enum con etiqueta legible (con acentos) en messages
@@ -364,6 +369,18 @@ export const VALORES_CONOCIDOS = new Set<string>([
   'confirmada',
   'rechazada',
   'retirada',
+  // lecturas de la ficha médica (20261128120000): rol, origen y campos
+  'directora',
+  'superusuario',
+  'ficha',
+  'alta',
+  'export',
+  'alergias_graves',
+  'notas_emergencia',
+  'medicacion_habitual',
+  'alergias_leves',
+  'medico_familia',
+  'telefono_emergencia',
 ])
 
 // Campos técnicos/internos que se OCULTAN del documento legible.
@@ -680,6 +697,7 @@ function renderNino(n: Record<string, unknown>, c: Ctx): string {
   ${seccion('beca_comedor_elegibilidad', n.beca_comedor_elegibilidad, c)}
   ${seccion('beca_comedor_tramos', n.beca_comedor_tramos, c)}
   ${seccion('solicitudes_olvido', n.solicitudes_olvido, c)}
+  ${seccion('lecturas_ficha_medica', n.lecturas_ficha_medica, c)}
   ${seccionDatosAmpliados(n.datos_ampliados, c)}
 </section>`
 }
