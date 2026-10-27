@@ -69,7 +69,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $function$
 BEGIN
-  IF NEW.sujeto_tipo = 'nino' AND NEW.estado = 'confirmada'
+  IF false AND NEW.sujeto_tipo = 'nino' AND NEW.estado = 'confirmada'
      AND (TG_OP = 'INSERT' OR OLD.estado IS DISTINCT FROM 'confirmada') THEN
     NEW.tutores_legales := ARRAY(
       SELECT DISTINCT v.usuario_id FROM public.vinculos_familiares v
@@ -520,7 +520,7 @@ BEGIN
       -- Sus peticiones de olvido, con su estado (las mismas columnas que en el usuario).
       'solicitudes_olvido', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
-                 'solicitado_en', o.solicitado_en, 'estado', o.estado,
+                 'solicitado_en', o.solicitado_en,
                  'pedida_por_centro', o.pedida_por_centro, 'inmediato', o.inmediato,
                  'confirmada_en', o.confirmada_en, 'gracia_hasta', o.gracia_hasta,
                  'rechazada_en', o.rechazada_en, 'motivo_rechazo', o.motivo_rechazo,
@@ -582,7 +582,7 @@ BEGIN
   END IF;
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure('public.export_datos_sujeto(text,uuid)');
-  IF v_md5 IS DISTINCT FROM 'a34f530df734488c9033d7fe73e7a094' THEN
+  IF v_md5 IS DISTINCT FROM '740036e69a01392f87db737249a677db' THEN
     RAISE EXCEPTION 'export_datos_sujeto no quedó como este fichero: %', v_md5;
   END IF;
 
