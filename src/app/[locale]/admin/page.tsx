@@ -20,6 +20,7 @@ import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getResumenAsistenciaCentro } from '@/features/asistencia/queries/get-resumen-asistencia-centro'
 import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
 import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
+import { AvisoPeticionesOlvido } from '@/features/olvido/components/AvisoPeticionesOlvido'
 import { getAvisosInicio } from '@/features/notificaciones/queries/get-avisos-inicio'
 import { cn } from '@/lib/utils'
 
@@ -41,7 +42,7 @@ export default async function AdminDashboard({ params }: PageProps) {
   const t = await getTranslations('admin.dashboard')
   const tAsistencia = await getTranslations('asistencia.admin')
   const supabase = await createClient()
-  const { centroId } = await requireContextoCentro(locale)
+  const { centroId, esResponsable } = await requireContextoCentro(locale)
   const user = await getCurrentUser()
   const fecha = hoyMadrid()
 
@@ -94,6 +95,7 @@ export default async function AdminDashboard({ params }: PageProps) {
         <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
       </header>
       <AvisosInicio avisos={avisos} rol="admin" locale={locale} />
+      {esResponsable && <AvisoPeticionesOlvido centroId={centroId} locale={locale} />}
       <ResumenSemanaWidget
         centroId={centroId}
         agendaHref={`/${locale}/agenda`}

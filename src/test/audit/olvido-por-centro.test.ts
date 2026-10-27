@@ -182,8 +182,10 @@ describe('Olvido por centro — solicitud y purga partidas', () => {
 
   it('solo la dirección de ESE centro, y solo en un centro donde el usuario está', async () => {
     const t = await tutoraEnDosCentros('Tutora Permisos Olvido')
+    // Con sesión, la titular pide en nombre de la persona (`pedir_olvido_usuario`,
+    // 20261126120000); `solicitar_olvido_usuario` ya solo la llama el servidor.
     const cAdminB: Sesion = await clientFor(adminB)
-    const ajeno = await cAdminB.rpc('solicitar_olvido_usuario', {
+    const ajeno = await cAdminB.rpc('pedir_olvido_usuario', {
       p_usuario_id: t.u.id,
       p_centro_id: centroA.id,
       p_inmediato: false,
@@ -196,12 +198,19 @@ describe('Olvido por centro — solicitud y purga partidas', () => {
     })
     expect(sinEl.error?.code).toBe('P0002')
     // Premisa del rechazo: la dirección de B sí puede en B.
-    const propio = await cAdminB.rpc('solicitar_olvido_usuario', {
+    const propio = await cAdminB.rpc('pedir_olvido_usuario', {
       p_usuario_id: t.u.id,
       p_centro_id: centroB.id,
       p_inmediato: false,
     })
     expect(propio.error).toBeNull()
+    // Y la función vieja, con sesión, ya no la ejecuta nadie.
+    const vieja = await cAdminB.rpc('solicitar_olvido_usuario', {
+      p_usuario_id: t.u.id,
+      p_centro_id: centroB.id,
+      p_inmediato: false,
+    })
+    expect(vieja.error?.code).toBe('42501')
   })
 
   it('A, después B: cada purga borra lo de su centro, y la cuenta se va con el último', async () => {

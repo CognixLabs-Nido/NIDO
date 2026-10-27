@@ -8,6 +8,7 @@ import { borrarObjetosBucket } from '@/shared/lib/adjuntos/storage'
 
 import type { Database } from '@/types/database'
 
+import { avisarFamilia } from '../lib/avisar'
 import { recolectarAdjuntosDe } from '../lib/fuentes-adjuntos'
 import { MARCADOR_PII, ok, fail, type ActionResult } from '../types'
 
@@ -43,6 +44,9 @@ export async function purgarVencidos(): Promise<ActionResult<ResultadoPurga>> {
   let fallidos = 0
   for (const p of pendientes ?? []) {
     try {
+      // Antes de purgar, mientras aún se conoce la dirección de quien la pidió (spec,
+      // «Avisos»). Si la purga falla y se reintenta mañana, el correo se repite.
+      await avisarFamilia(service, p.solicitud_id, 'borrada')
       await purgarUno(service, p)
       purgados++
     } catch (e) {

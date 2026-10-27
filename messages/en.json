@@ -258,7 +258,8 @@
       "fotosRevocadas": "Revoked photos",
       "direccion": "Centre management",
       "servicios": "Services",
-      "recibos": "Receipts"
+      "recibos": "Receipts",
+      "olvido": "Deletion requests"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -2977,7 +2978,9 @@
       "anuncio_centro_titulo": "New school announcement",
       "anuncio_aula_titulo": "New classroom announcement",
       "anuncio_cuerpo": "You have a new announcement",
-      "mensaje_cuerpo": "You have a new message"
+      "mensaje_cuerpo": "You have a new message",
+      "olvido_titulo": "Data deletion request",
+      "olvido_cuerpo": "You have a new request to review"
     },
     "errors": {
       "permiso_denegado": "You've refused notifications. To enable them, change it in your browser.",
@@ -4720,6 +4723,106 @@
       "sin_invitacion": "There is no admin invitation to resend.",
       "centro_no_existe": "We could not find that centre.",
       "fallo": "We could not complete the operation. Please try again."
+    }
+  },
+  "olvido": {
+    "hecho": "Done",
+    "cancelar": "Cancel",
+    "estado": {
+      "pendiente": "Pending",
+      "confirmada": "Confirmed",
+      "rechazada": "Rejected",
+      "retirada": "Withdrawn",
+      "borrada": "Deleted"
+    },
+    "errores": {
+      "ya_pedida": "There is already an open request for this data.",
+      "ya_borrado": "This child's data has already been deleted.",
+      "hay_bloqueos": "Something is still missing before the request can be confirmed.",
+      "no_pendiente": "The request is no longer pending.",
+      "fuera_de_plazo": "The confirmation can no longer be undone: the 7 days have passed.",
+      "motivo_obligatorio": "Write the reason: the family will see it.",
+      "no_autorizado": "You are not allowed to do this.",
+      "fallo": "It could not be completed. Please try again."
+    },
+    "falta": {
+      "titulo_bloqueos": "Missing before it can be confirmed",
+      "titulo_avisos": "Keep in mind",
+      "matricula_viva": "Still enrolled: the child has to be withdrawn first.",
+      "hijos_matriculados": "Has children enrolled at the school ({n}): their data is still needed.",
+      "recibos_pendientes": "Their family has unpaid bills ({n}).",
+      "recibos_familia_pendientes": "Their family has unpaid bills ({n}). They do not stop the child's data from being deleted: the bills stay with the family.",
+      "cobro_banco_reciente": "Bills collected by the bank less than 8 weeks ago ({n}): with SEPA they can still be returned.",
+      "dinero_a_favor": "There is money owed to the family still to be refunded ({n}). The school refunds it anyway.",
+      "mandato_activo": "Has an active SEPA mandate: it is kept as legal proof."
+    },
+    "perfil": {
+      "descripcion": "Data deletion. You can ask for your child's data or your account's data to be deleted. It is a request: the school reviews it before deleting anything. Signatures and bills are kept, because the law requires it.",
+      "error_lectura": "We could not load your deletion requests.",
+      "cuenta": "My account",
+      "pedir": "Request deletion",
+      "pedir_nino": "Ask for {nombre}'s data to be deleted",
+      "pedir_cuenta": "Ask for my account's data at {centro} to be deleted",
+      "dialogo_texto": "The school will review the request. While it is pending you can withdraw it. Once confirmed, the data will be deleted after 7 days.",
+      "inmediato": "Delete it as soon as the school confirms, without waiting 7 days",
+      "enviar": "Send the request",
+      "pedida": "Requested on {fecha}",
+      "pedida_por_otro": "requested by the other guardian",
+      "pedida_por_centro": "registered by the school",
+      "en_revision": "The school is reviewing it.",
+      "nota_centro": "Note from the school: {nota}",
+      "retirar": "Withdraw the request",
+      "retirar_texto": "The request is withdrawn and nothing is deleted. You can request it again whenever you want.",
+      "confirmada": "The school confirmed it on {fecha}. The data will be deleted on {borrado}.",
+      "rechazada": "The school rejected it on {fecha}: {motivo}",
+      "rechazada_sin_motivo": "The school rejected it on {fecha}.",
+      "retirada": "Withdrawn on {fecha}.",
+      "borrada": "The data was deleted on {fecha}."
+    },
+    "admin": {
+      "titulo": "Deletion requests",
+      "descripcion": "Families ask here for their data to be deleted. Confirm a request when nothing is missing, leave it pending while something is missing, or reject it with a reason the family will see.",
+      "error_lectura": "We could not load the requests.",
+      "vacio": "There are no deletion requests.",
+      "abiertas": "Open",
+      "cerradas": "Closed (last 90 days)",
+      "nino": "Child",
+      "cuenta": "Family account",
+      "pedida_por": "Requested by {nombre} on {fecha}",
+      "pedida_por_centro": "Registered by the school on {fecha}",
+      "inmediato_marca": "without waiting 7 days",
+      "dias": "Open for {dias} days",
+      "lista": "Ready to confirm",
+      "nota_actual": "Note for the family: {nota}",
+      "confirmar": "Confirm",
+      "confirmar_titulo": "Confirm the request",
+      "confirmar_texto": "The data stops being visible now and is permanently deleted after 7 days. Until then you can undo the confirmation. Signatures and bills are kept.",
+      "confirmar_inmediato_texto": "The family asked for deletion without waiting: it will be deleted tonight and cannot be undone. Signatures and bills are kept.",
+      "rechazar": "Reject",
+      "rechazar_titulo": "Reject the request",
+      "rechazar_texto": "The family will see the reason and can request it again.",
+      "motivo": "Reason",
+      "nota": "Note for the family",
+      "nota_texto": "The family sees it on their profile while the request is pending.",
+      "guardar": "Save",
+      "se_borra": "Deleted on {fecha}.",
+      "deshacer": "Undo the confirmation",
+      "deshacer_texto": "The data goes back to how it was and the request goes back to pending. Possible until {fecha}.",
+      "rechazada": "Rejected on {fecha}: {motivo}",
+      "retirada": "The family withdrew it on {fecha}.",
+      "borrada": "Deleted on {fecha}.",
+      "aviso_inicio": "Deletion requests to review: {n}. The oldest has been open for {dias} days."
+    },
+    "correo": {
+      "asunto": "Your data deletion request",
+      "saludo": "Hello,",
+      "boton": "See it in NIDO",
+      "texto_pedida": "We have received the data deletion request at {centro}. The school will review it and we will let you know.",
+      "texto_confirmada": "{centro} has confirmed the data deletion request. The data will be permanently deleted in a few days.",
+      "texto_rechazada": "{centro} has rejected the data deletion request. You can see the reason in NIDO.",
+      "texto_retirada": "The data deletion request at {centro} has been withdrawn. Nothing has been deleted.",
+      "texto_deshecha": "{centro} has put the data deletion request back to pending.",
+      "texto_borrada": "The data in the deletion request at {centro} has been deleted."
     }
   }
 }

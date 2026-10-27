@@ -7,6 +7,7 @@ import { getEstadoCentro } from '@/features/centros/contexto/get-contexto-centro
 import { getNombresCentros } from '@/features/centros/queries/get-nombres-centros'
 import { DejarDireccion } from '@/features/direccion/components/DejarDireccion'
 import { ExportButton } from '@/features/export/components/ExportButton'
+import { BorradoDatos } from '@/features/olvido/components/BorradoDatos'
 import { PushSettings } from '@/features/push/components/PushSettings'
 import { AvatarUploader } from '@/features/usuarios/components/AvatarUploader'
 import { BUCKET_USUARIOS_FOTOS, firmarRuta } from '@/shared/lib/adjuntos/storage'
@@ -104,6 +105,7 @@ export default async function ProfilePage({ params }: PageProps) {
               filename="nido-mis-datos.zip"
             />
           </div>
+          {user && <BorradoDatos locale={locale} usuarioId={user.id} />}
           <SignOutButton locale={locale} />
         </CardContent>
       </Card>

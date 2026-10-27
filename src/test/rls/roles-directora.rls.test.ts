@@ -441,10 +441,8 @@ describe('no hace lo exclusivo de la admin', () => {
   })
 
   it('no ejerce el derecho al olvido', async () => {
-    const { error } = await cDirectora.rpc('solicitar_olvido_nino', {
-      p_nino_id: nino.id,
-      p_inmediato: false,
-    })
+    // Las peticiones de olvido las revisa la titular (20261126120000).
+    const { error } = await cDirectora.rpc('peticiones_olvido_centro', { p_centro_id: centroA.id })
     expect(error?.message).toBe('no autorizado a ejercer el olvido en este centro')
   })
 })
