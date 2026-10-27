@@ -25,7 +25,7 @@ const tabla = new Map(
 
 /** Las constantes de plazo que exporta el módulo, leídas de él (no enumeradas aquí). */
 const constantes = new Map(
-  Object.entries(tipos).filter(
+  Object.entries(tipos as Record<string, unknown>).filter(
     (e): e is [string, number] => /^(RETENCION|GRACIA)_/.test(e[0]) && typeof e[1] === 'number'
   )
 )
