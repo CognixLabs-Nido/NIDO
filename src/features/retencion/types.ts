@@ -43,7 +43,7 @@ export const GRACIA_ESQUELETO_DIAS = 30 // configurable; PENDIENTE política F11
  * Registro de lecturas de la ficha médica (`lecturas_ficha_medica`, 20261128120000): se borran a
  * los N meses de cada lectura. 5 años, como `audit_log` (antes 24 meses, el mínimo del RD 1720/2007).
  */
-export const RETENCION_LECTURAS_FICHA_MEDICA_MESES = 24 // PENDIENTE política F11-B
+export const RETENCION_LECTURAS_FICHA_MEDICA_MESES = 60 // PENDIENTE política F11-B
 
 /**
  * Recibos, líneas, remesas y lo que justifica sus importes (parte de servicio, asignaciones,
