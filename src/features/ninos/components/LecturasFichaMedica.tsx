@@ -43,7 +43,7 @@ export async function LecturasFichaMedica({
       {descarga && registro.tipo === 'ok' && (
         <ExportButton
           href={descarga.href}
-          label={t(descarga.para === 'guardar' ? 'descargar' : 'descargar')}
+          label={t(descarga.para === 'guardar' ? 'descargar_guardar' : 'descargar')}
           filename="nido-registro-ficha-medica.html"
           size="sm"
         />
