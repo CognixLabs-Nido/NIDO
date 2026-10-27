@@ -4172,7 +4172,12 @@
         "cobro_nota": "Nota del cobro",
         "cobro_importe_centimos": "Importe del cheque",
         "devolucion_gastos_centimos": "Gastos de devolución (céntimos)",
-        "devolucion_salida": "Cómo se cobró la devolución"
+        "devolucion_salida": "Cómo se cobró la devolución",
+        "pedida_por_centro": "La registró el centro",
+        "confirmada_en": "Confirmada el",
+        "motivo_rechazo": "Motivo del rechazo",
+        "retirada_en": "Retirada el",
+        "nota_centro": "Nota del centro"
       },
       "valores": {
         "terminos": "Términos",
@@ -4308,7 +4313,10 @@
         "banco": "Banco",
         "siguiente_recibo": "Siguiente recibo",
         "beca": "Beca de comedor",
-        "cheque": "Cheque guardería / Ticket restaurant"
+        "cheque": "Cheque guardería / Ticket restaurant",
+        "confirmada": "Confirmada",
+        "rechazada": "Rechazada",
+        "retirada": "Retirada"
       }
     },
     "descargar_mis_datos": "Descargar mis datos",

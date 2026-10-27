@@ -158,10 +158,14 @@ su perfil.
 | Retirada   | Cuándo                                                                |
 | Borrada    | Cuándo se borraron                                                    |
 
+Una vez borrada, la petición de un niño la siguen viendo los tutores legales que tenía al
+confirmarse, aunque la purga les haya quitado el vínculo (`tutores_legales`, `20261127120000`).
+
 ### Avisos
 
 - **Correo a la familia** (Resend) en cada cambio: pedida (acuse), confirmada, rechazada, retirada,
-  deshecha y borrada (este, justo antes de purgar, mientras aún se conoce la dirección). Va a quien
+  deshecha y borrada (este se redacta antes de purgar, mientras aún se conoce la dirección, y sale
+  después, solo si la purga terminó: si falla y se reintenta, no se repite). Va a quien
   la pidió, a los tutores legales vivos del niño y, en la de una cuenta, a la propia persona. No
   nombra al niño: dice el centro y lleva al perfil.
 - **Push a la titular** por cada petición nueva que no haya registrado ella: «Petición de borrado de
@@ -187,11 +191,20 @@ producción a 2026-10-27):
   (titular), `mis_peticiones_olvido` y `opciones_olvido` (familia).
 - `solicitar_olvido_nino` y `solicitar_olvido_usuario` (registrar y confirmar de una vez) quedan
   solo para `service_role`, con 7 días de gracia. `olvido_pendientes` solo devuelve confirmadas.
+- `tutores_legales uuid[]` (`20261127120000`): los tutores legales del niño al confirmar
+  (`privado.es_tutor_legal_olvido`), por trigger, para que la sigan viendo tras la purga. Se vacía
+  al deshacer.
+- El export del art. 15 (`export_datos_sujeto`) lleva las peticiones del niño y las de la persona
+  con su estado, quién la registró, las fechas, el motivo del rechazo y la nota del centro
+  (`20261127120000`).
 
 ## Tests
 
 - RLS (`olvido-peticiones.rls.test.ts`): quién pide y quién no; una abierta por persona; los
   bloqueos y avisos de cada caso; confirmar bloqueado y desbloqueado; deshacer deja los datos como
   estaban; rechazar exige motivo y la familia lo lee; retirar por los dos tutores y no por un
-  autorizado; la directora no es la titular; la purga ignora lo no confirmado y vacía los textos.
+  autorizado; la directora no es la titular; la purga ignora lo no confirmado y vacía los textos;
+  purgada de verdad, la ven los tutores de entonces y no un ex tutor; el export lleva el estado.
+- Unit: el correo de «borrada» sale después de la purga y no sale si falla
+  (`purgar-y-avisar.test.ts`).
 - Unit: las acciones mandan el correo a quien toca y la push a la titular, sin nombres.

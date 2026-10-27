@@ -4172,7 +4172,12 @@
         "cobro_nota": "Payment note",
         "cobro_importe_centimos": "Voucher amount",
         "devolucion_gastos_centimos": "Return charges (cents)",
-        "devolucion_salida": "How the return was collected"
+        "devolucion_salida": "How the return was collected",
+        "pedida_por_centro": "Logged by the centre",
+        "confirmada_en": "Confirmed on",
+        "motivo_rechazo": "Reason for declining",
+        "retirada_en": "Withdrawn on",
+        "nota_centro": "Note from the centre"
       },
       "valores": {
         "terminos": "Terms",
@@ -4308,7 +4313,10 @@
         "banco": "Bank",
         "siguiente_recibo": "Next receipt",
         "beca": "Meal grant",
-        "cheque": "Childcare voucher"
+        "cheque": "Childcare voucher",
+        "confirmada": "Confirmed",
+        "rechazada": "Declined",
+        "retirada": "Withdrawn"
       }
     },
     "descargar_mis_datos": "Download my data",

@@ -195,6 +195,12 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'anio_aplicacion',
   'mes_aplicacion',
   'origen',
+  // la petición de olvido (20261127120000)
+  'pedida_por_centro',
+  'confirmada_en',
+  'motivo_rechazo',
+  'retirada_en',
+  'nota_centro',
 ])
 
 // Valores de enum con etiqueta legible (con acentos) en messages
@@ -354,6 +360,10 @@ export const VALORES_CONOCIDOS = new Set<string>([
   'automatico',
   'manual',
   'normas',
+  // olvido_estado (20261127120000)
+  'confirmada',
+  'rechazada',
+  'retirada',
 ])
 
 // Campos técnicos/internos que se OCULTAN del documento legible.
@@ -669,6 +679,7 @@ function renderNino(n: Record<string, unknown>, c: Ctx): string {
   ${seccion('conceptos_asignados', n.conceptos_asignados, c)}
   ${seccion('beca_comedor_elegibilidad', n.beca_comedor_elegibilidad, c)}
   ${seccion('beca_comedor_tramos', n.beca_comedor_tramos, c)}
+  ${seccion('solicitudes_olvido', n.solicitudes_olvido, c)}
   ${seccionDatosAmpliados(n.datos_ampliados, c)}
 </section>`
 }

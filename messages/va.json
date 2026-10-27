@@ -4172,7 +4172,12 @@
         "cobro_nota": "Nota del cobrament",
         "cobro_importe_centimos": "Import del xec",
         "devolucion_gastos_centimos": "Despeses de devolució (cèntims)",
-        "devolucion_salida": "Com es va cobrar la devolució"
+        "devolucion_salida": "Com es va cobrar la devolució",
+        "pedida_por_centro": "La va registrar el centre",
+        "confirmada_en": "Confirmada el",
+        "motivo_rechazo": "Motiu del rebuig",
+        "retirada_en": "Retirada el",
+        "nota_centro": "Nota del centre"
       },
       "valores": {
         "terminos": "Termes",
@@ -4308,7 +4313,10 @@
         "banco": "Banc",
         "siguiente_recibo": "Rebut següent",
         "beca": "Beca menjador",
-        "cheque": "Xec guarderia / Tiquet restaurant"
+        "cheque": "Xec guarderia / Tiquet restaurant",
+        "confirmada": "Confirmada",
+        "rechazada": "Rebutjada",
+        "retirada": "Retirada"
       }
     },
     "descargar_mis_datos": "Descarregar les meues dades",

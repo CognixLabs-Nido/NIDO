@@ -1421,6 +1421,12 @@ forma de deshacerlo.
   purgar un trigger vacía el motivo y la nota de las peticiones de esa persona en el centro.
 - **Avisos**: correo a la familia en cada cambio (`olvido_destinatarios`, solo `service_role`;
   sin nombres) y push genérica a la titular por cada petición nueva.
+- **Tras la purga** (`20261127120000`): la purga pasa los vínculos del niño a `purga_rgpd`, y el
+  otro tutor dejaba de ver la petición. Al confirmar, un trigger guarda los tutores legales de ese
+  momento (`tutores_legales`) y `mis_peticiones_olvido` se la sigue enseñando a ellos una vez
+  purgada; a un ex tutor, no. El correo de «borrada» se redacta antes de purgar y sale después,
+  solo si la purga terminó. El export (`export_datos_sujeto`) lleva el estado de las peticiones,
+  también las del niño.
 - Tests: `olvido-peticiones.rls.test.ts` y los unit de `src/features/olvido`.
 
 ### Signup público cerrado (D5)

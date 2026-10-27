@@ -33,28 +33,38 @@ function escaparHtml(texto: string): string {
     .replace(/'/g, '&#39;')
 }
 
+/** Un correo ya redactado, listo para enviar. */
+export interface CorreoAviso {
+  para: string
+  asunto: string
+  texto: string
+  html: string
+}
+
 /**
- * Correo a la familia por un cambio de su petición: a quien la pidió (si no fue el centro), a los
- * tutores legales del niño o a la propia persona (`olvido_destinatarios`). Cada uno en su idioma.
+ * Los correos a la familia por un cambio de su petición: a quien la pidió (si no fue el centro), a
+ * los tutores legales del niño o a la propia persona (`olvido_destinatarios`). Cada uno en su
+ * idioma.
  *
- * No nombra al niño ni a nadie: dice el centro y lleva al perfil, donde está el detalle. Nunca
- * lanza: un correo que no sale no deshace la petición. Devuelve cuántos salieron.
+ * No nombra al niño ni a nadie: dice el centro y lleva al perfil, donde está el detalle. Solo los
+ * redacta: la purga los prepara antes de borrar, mientras aún se conoce la dirección, y los envía
+ * después. Nunca lanza: sin destinatarios, ninguno.
  */
-export async function avisarFamilia(
+export async function prepararAvisoFamilia(
   service: Service,
   solicitudId: string,
   evento: EventoOlvido
-): Promise<number> {
+): Promise<CorreoAviso[]> {
   try {
     const { data: destinos, error } = await service.rpc('olvido_destinatarios', {
       p_solicitud_id: solicitudId,
     })
     if (error) {
       logger.warn('olvido: destinatarios del aviso', error.message)
-      return 0
+      return []
     }
     const ids = (destinos ?? []).map((d) => d.usuario_id)
-    if (ids.length === 0) return 0
+    if (ids.length === 0) return []
 
     const { data: solicitud } = await service
       .from('olvido_solicitudes')
@@ -66,7 +76,7 @@ export async function avisarFamilia(
       : { data: null }
     const idiomas = await idiomasDeUsuarios(ids)
 
-    let enviados = 0
+    const correos: CorreoAviso[] = []
     for (const id of ids) {
       const { data: cuenta } = await service.auth.admin.getUserById(id)
       const email = cuenta?.user?.email
@@ -82,14 +92,36 @@ export async function avisarFamilia(
   <p>${escaparHtml(texto)}</p>
   <p><a href="${escaparHtml(enlace)}" style="display: inline-block; padding: 12px 24px; background-color: #1f7a5c; color: #ffffff; text-decoration: none; border-radius: 8px">${escaparHtml(t('boton'))}</a></p>
 </div>`
-      const r = await enviarCorreo({ para: email, asunto: t('asunto'), texto: cuerpo, html })
-      if (r.enviado) enviados++
+      correos.push({ para: email, asunto: t('asunto'), texto: cuerpo, html })
     }
-    return enviados
+    return correos
   } catch (err) {
     logger.warn('olvido: aviso a la familia', err instanceof Error ? err.message : String(err))
-    return 0
+    return []
   }
+}
+
+/** Envía los correos ya redactados. Nunca lanza: un correo que no sale no deshace nada. */
+export async function enviarAvisos(correos: CorreoAviso[]): Promise<number> {
+  let enviados = 0
+  for (const correo of correos) {
+    try {
+      const r = await enviarCorreo(correo)
+      if (r.enviado) enviados++
+    } catch (err) {
+      logger.warn('olvido: aviso a la familia', err instanceof Error ? err.message : String(err))
+    }
+  }
+  return enviados
+}
+
+/** Redacta y envía en el momento. Devuelve cuántos salieron. */
+export async function avisarFamilia(
+  service: Service,
+  solicitudId: string,
+  evento: EventoOlvido
+): Promise<number> {
+  return enviarAvisos(await prepararAvisoFamilia(service, solicitudId, evento))
 }
 
 /**
