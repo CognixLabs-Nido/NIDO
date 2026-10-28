@@ -2335,6 +2335,8 @@
   },
   "medico": {
     "aviso_cifrado": "Estes dades s'emmagatzemen xifrades.",
+    "bloqueada_titulo": "Fitxa mèdica bloquejada",
+    "bloqueada": "Bloquejada des del {fecha}: va acabar el curs en què el xiquet va causar baixa. Es conserva sense ús fins que s'esborre el seu expedient i només es pot facilitar a jutges i tribunals, al Ministeri Fiscal o a les administracions competents (art. 32 LOPDGDD).",
     "error": {}
   },
   "agenda": {
@@ -4013,6 +4015,7 @@
         "alergias_leves": "Al·lèrgies lleus",
         "medico_familia": "Metge de família",
         "telefono_emergencia": "Telèfon d'emergència",
+        "bloqueada_desde": "Bloquejada des de",
         "lactancia_estado": "Alletament",
         "lactancia_observaciones": "Observacions d'alletament",
         "control_esfinteres": "Control d'esfínters",

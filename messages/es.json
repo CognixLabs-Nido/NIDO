@@ -2335,6 +2335,8 @@
   },
   "medico": {
     "aviso_cifrado": "Estos datos se almacenan cifrados.",
+    "bloqueada_titulo": "Ficha médica bloqueada",
+    "bloqueada": "Bloqueada desde el {fecha}: terminó el curso en que el niño causó baja. Se conserva sin uso hasta que se borre su expediente y solo puede facilitarse a jueces y tribunales, al Ministerio Fiscal o a las administraciones competentes (art. 32 LOPDGDD).",
     "error": {}
   },
   "agenda": {
@@ -4013,6 +4015,7 @@
         "alergias_leves": "Alergias leves",
         "medico_familia": "Médico de familia",
         "telefono_emergencia": "Teléfono de emergencia",
+        "bloqueada_desde": "Bloqueada desde",
         "lactancia_estado": "Lactancia",
         "lactancia_observaciones": "Observaciones de lactancia",
         "control_esfinteres": "Control de esfínteres",

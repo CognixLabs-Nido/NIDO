@@ -35,6 +35,8 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'alergias_leves',
   'medico_familia',
   'telefono_emergencia',
+  // ficha médica bloqueada (20261204120000)
+  'bloqueada_desde',
   'lactancia_estado',
   'lactancia_observaciones',
   'control_esfinteres',

@@ -208,6 +208,23 @@ error se ignoraba y ningún niño salía con el aviso. Ahora un fallo de esa con
 no sale: nunca se pinta como «sin alergia». Tests: `alertas-medicas.rls.test.ts` (con la sesión de
 la profe, contra el esquema real) y `src/test/alertas-medicas/fallo-no-es-sin-alergia.test.ts`.
 
+### La ficha médica bloqueada tras la baja (F11-B, punto 6, PR-6)
+
+Migración `20261204120000_feat_retencion_expediente`; spec `docs/specs/retencion-plazos.md`. El
+expediente del niño de baja se conserva 5 años y lo ve Dirección, pero la ficha médica se bloquea
+(art. 32 LOPDGDD) cuando termina el curso de la baja (`privado.ficha_medica_bloqueada_desde`).
+
+- **Nadie la lee ni la escribe**, tampoco Dirección ni la familia: `get_info_medica_emergencia`,
+  los dos setters y `borrar_info_medica_nino_tutor` contestan, tras su autorización, 55000 con la
+  fecha en DETAIL. A quien no está autorizado se le sigue diciendo «No autorizado»: el bloqueo no
+  revela la baja a nadie de fuera. La lectura bloqueada no se registra.
+- **`alertas_medicas`** deja fuera las bloqueadas.
+- **En la app** se dice «bloqueada desde» con la fecha (`fichaMedicaBloqueadaDesde` lee el error;
+  `getInfoMedica` lo devuelve aparte, así cada página tiene que tratarlo), y el export dice que
+  existe, que está bloqueada, desde cuándo, por qué y cómo pedirla, sin entregarla.
+- **Reincorporar al niño** (`desarchivar_nino`) la desbloquea: deja de estar de baja.
+- Test: `src/test/audit/retencion-expediente.test.ts`.
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.
@@ -334,6 +351,7 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `src/test/audit/purga-rgpd-nino.test.ts`: las dos purgas del niño borran la ficha completa de la tabla y no dejan en `audit_log` ninguna columna personal (lista `_claves_pii_nino`, `20261011140000`); la retroactiva redacta a los niños que ya no existen y no toca a los vivos.
 - `src/test/audit/olvido-operativa.test.ts`: la purga del niño borra su operativa y todas sus copias en `audit_log`, también las de lo borrado antes; el otro niño y los eventos se quedan (`20261201120000`).
 - `src/test/audit/retencion-operativa.test.ts`: la operativa vence 1 año después del final de su curso, con sus copias en `audit_log` y las de lo borrado antes; lo de verano, lo dado de alta hace poco, la conversación con un mensaje reciente, otro centro y los eventos se quedan; solo `service_role` (`20261203120000`).
+- `src/test/audit/retencion-expediente.test.ts`: terminado el curso de la baja, la ficha médica no la lee ni la escribe nadie, no deja lectura ni aviso, y el export dice que está bloqueada; reincorporar la desbloquea; a los años del plazo, la purga del niño, solo `service_role` (`20261204120000`).
 - `src/test/audit/purga-lista-espera.test.ts`: la purga del niño borra su prospecto de `lista_espera` y la del tutor limpia su teléfono y su email, en la tabla y en `audit_log` (también el INSERT); la purga de esqueletos conserva el prospecto, y los de otro niño o centro no se tocan (`20261012140000`).
 - `src/test/audit/purga-cierre.test.ts`: el cierre de la purga (`20261015120000`): `idioma_principal` a `'zz'` y su CHECK, `_redactar_jsonb` con null, el perfil de `familia_tutores` y su auditoría, foto, preferencias, lecturas, cambios pendientes y comentarios de cita; el manifiesto de adjuntos (DNI por ruta exacta), `promover_a_titular` y la anonimización de Auth contra el GoTrue real.
 
