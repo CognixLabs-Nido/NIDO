@@ -85,6 +85,10 @@ Notas:
 - **El final del curso** es el cierre del curso en el que se escribió el registro: un niño que
   sigue tres cursos no arrastra la agenda del primero, y la familia conserva el curso entero
   mientras está.
+- **«Deja de estar viva» (lista de espera, PR-3):** cuando se descarta o cuando termina el curso
+  para el que se apuntó, lo que pase antes; el plazo cuenta desde ahí. Solo los prospectos sin
+  niño: uno con `nino_id` llegó a alta y sigue al expediente, aunque luego se descartara. Se
+  confirma en el informe del PR-3.
 - **El registro de lecturas y el olvido:** decidido que se conserve, bloqueado: sin él no se puede
   demostrar nada si una familia reclama después un acceso indebido. Hasta el PR que lo construya, la
   purga del niño lo sigue borrando (trigger `ninos_purga_borra_lecturas`).
@@ -113,3 +117,7 @@ En este orden; cada paso nuevo del barrido respeta la simulación (`RETENCION_DR
   real; con sesión, 42501), los esqueletos de `purga-rgpd-nino.test.ts` y `grupo1b-audit.test.ts`
   (ninguna fila que quede en `audit_log` es de un registro que ya no está en su tabla) y los unit
   `audit-log.test.ts` y `limpiar-db-sin-copia.test.ts`.
+- PR-3 (`20261130120000`): `src/test/audit/retencion-lista-espera.test.ts` (la fecha del descarte
+  y su CHECK; se borran sin copia el del curso terminado y el descartado viejo, y se conservan con
+  la suya el descartado reciente, el que tiene niño y el vivo; con sesión, 42501) y el unit
+  `lista-espera.test.ts`.

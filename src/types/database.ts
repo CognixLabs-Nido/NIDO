@@ -2800,6 +2800,7 @@ export type Database = {
           centro_id: string
           created_at: string
           curso_academico_id: string
+          descartado_at: string | null
           email_tutor: string | null
           estado: Database["public"]["Enums"]["estado_lista_espera"]
           fecha_nacimiento: string | null
@@ -2817,6 +2818,7 @@ export type Database = {
           centro_id: string
           created_at?: string
           curso_academico_id: string
+          descartado_at?: string | null
           email_tutor?: string | null
           estado?: Database["public"]["Enums"]["estado_lista_espera"]
           fecha_nacimiento?: string | null
@@ -2834,6 +2836,7 @@ export type Database = {
           centro_id?: string
           created_at?: string
           curso_academico_id?: string
+          descartado_at?: string | null
           email_tutor?: string | null
           estado?: Database["public"]["Enums"]["estado_lista_espera"]
           fecha_nacimiento?: string | null
@@ -5026,6 +5029,10 @@ export type Database = {
       purgar_fotos_blog_nino: { Args: { p_nino_id: string }; Returns: undefined }
       purgar_lecturas_ficha_medica: {
         Args: { p_meses: number; p_simular: boolean }
+        Returns: number
+      }
+      purgar_lista_espera_vencida: {
+        Args: { p_anios: number; p_simular: boolean }
         Returns: number
       }
       purgar_sujeto_db: { Args: { p_solicitud_id: string }; Returns: undefined }
