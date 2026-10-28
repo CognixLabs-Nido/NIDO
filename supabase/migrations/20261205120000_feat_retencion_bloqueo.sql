@@ -1,31 +1,34 @@
 -- =============================================================================
 -- FEAT — Retención (F11-B, punto 6, PR-7): el bloqueo de lo que se conserva por obligación legal
 -- -----------------------------------------------------------------------------
--- Spec: docs/specs/retencion-plazos.md. Tras la purga (el olvido o el plazo del expediente) quedan filas
--- que la ley obliga a conservar: recibos, mandatos, firmas, consentimientos, la medicación
--- administrada… Hasta ahora la familia dejaba de verlas, pero Dirección y la profe seguían
--- viéndolas. Desde aquí están BLOQUEADAS (art. 32 LOPDGDD): se conservan tal cual, nadie las ve en
--- la app y solo se extraen a mano, con service_role, para un juez, la Administración o una
--- reclamación. Decisiones de Jose (2026-10-28):
+-- Spec: docs/specs/retencion-plazos.md. Tras la purga (el olvido o el plazo del expediente) quedan
+-- filas que la ley obliga a conservar: firmas, consentimientos, la medicación administrada… Hasta
+-- ahora la familia dejaba de verlas, pero Dirección y la profe seguían viéndolas. Desde aquí están
+-- BLOQUEADAS (art. 32 LOPDGDD): se conservan tal cual y nadie las ve en el uso diario de la app.
+-- Decisiones de Jose (2026-10-28):
 --
---   · Lo del niño se bloquea cuando el niño está purgado (`deleted_reason = 'purga_rgpd'`).
---   · Lo de la familia (recibos con sus líneas, método de pago, becas, mandato) cuando ya no le
---     queda ningún niño sin purgar. Mientras le quede dinero vivo (un recibo sin cerrar, uno
---     enviado al banco hace menos de 8 semanas, una beca pendiente), no: es deuda que se gestiona,
---     no un dato que solo se guarda. El mandato, además, cuando se purga al titular que lo firmó.
+--   · Lo del niño se bloquea cuando el niño está purgado (`deleted_reason = 'purga_rgpd'`): sus
+--     firmas, sus autorizaciones, sus consentimientos, sus acuses del alta y la medicación
+--     administrada.
 --   · Lo de un tutor purgado en un centro (sus firmas, sus acuses, sus consentimientos), en ese
 --     centro; con la cuenta purgada, en todos.
---   · El recibo viejo se queda ENTERO: de sus líneas solo cambia el nombre del niño, por
---     "[borrado]", también en su copia de audit_log.
+--   · Nada fiscal ni financiero se oculta ni se modifica: recibos, líneas (con el nombre del niño),
+--     remesas, mandatos, método de pago, parte de servicio, conceptos asignados y becas siguen
+--     como estaban. Son la base de lo que se cobró y tienen que poder justificarse.
 --   · El registro de lecturas de la ficha deja de borrarse con la purga: se conserva bloqueado y
---     se va con su plazo (`purgar_lecturas_ficha_medica`, 60 meses).
+--     se va con su plazo (`purgar_lecturas_ficha_medica`).
+--   · Lo bloqueado se puede ver desde la app cuando hay un requerimiento (Hacienda, un juez, una
+--     reclamación): SOLO la titular del centro (ni la directora, ni la profe, ni el superusuario),
+--     con un motivo escrito antes de ver nada, y queda registrado quién lo miró, cuándo y por qué
+--     (`accesos_datos_bloqueados`, el patrón del registro de lecturas de la ficha). El sujeto ve
+--     en su exportación que lo han mirado, por qué tipo de motivo y cuándo (art. 15).
 --   · Ningún tutor se olvida con un hijo matriculado, haya otro tutor o no. `olvido_bloqueos` solo
 --     miraba sus vínculos, y un tutor puede estar en la familia sin vínculo con el niño (en
 --     producción hay uno, 2026-10-28). Y la purga vuelve a mirarlo: en los días de gracia el hijo
 --     puede volver a matricularse.
 --
 -- El mecanismo es una política RESTRICTIVE por tabla, que se suma (AND) a las que ya hay sin
--- reescribir ninguna: la casa no tenía ninguna, y reescribir unas cuarenta para añadir la misma
+-- reescribir ninguna: la casa no tenía ninguna, y reescribir sus políticas para añadir la misma
 -- condición era más fácil de equivocar. Las funciones del servidor (SECURITY DEFINER) siguen
 -- leyendo lo bloqueado; la exportación, que es una de ellas, lo deja fuera y dice que existe.
 --
@@ -55,7 +58,6 @@ BEGIN
       ('privado.olvido_bloqueos(public.olvido_sujeto_tipo,uuid,uuid)',
        '0510199576a4110d07b91b6c64345203', '20261126120000'),
       ('public.olvido_pendientes()', '486e64495d37898a6627f8e70cd563d8', '20261029120000'),
-      ('public.congelar_si_mes_cerrado()', '2e4c101653c8456a89a04fed2e5245f6', 'producción'),
       ('public.lecturas_ficha_medica(uuid)', '879caf6414b36c36ce7657632c98ff45', '20261128120000'),
       ('privado.ninos_purga_borra_lecturas()', '4cbe19c780d7d475a1077eaf93dc9c9f', '20261128120000'),
       ('public.export_datos_sujeto(text,uuid)', '652585066c1ed5ddfef01c25fc77b295', '20261127120000')
@@ -162,67 +164,6 @@ AS $function$
      AND (s.centro_id = p_centro_id OR privado.cuenta_olvidada(p_usuario_id));
 $function$;
 
--- La familia sin ningún niño sin purgar y sin dinero vivo. El dinero vivo es lo que bloquea el
--- olvido del tutor (un recibo sin cerrar) y lo que avisa (un cobro enviado al banco hace menos de
--- 8 semanas, que aún puede volver; una beca con dinero a favor de la familia).
-CREATE FUNCTION privado.familia_bloqueada(p_familia_id uuid)
-RETURNS boolean
-LANGUAGE sql
-STABLE SECURITY DEFINER
-SET search_path = public
-AS $function$
-  SELECT EXISTS (SELECT 1 FROM public.ninos n
-                  WHERE n.familia_id = p_familia_id AND n.deleted_reason = 'purga_rgpd')
-     AND NOT EXISTS (SELECT 1 FROM public.ninos n
-                      WHERE n.familia_id = p_familia_id
-                        AND n.deleted_reason IS DISTINCT FROM 'purga_rgpd')
-     AND NOT EXISTS (SELECT 1 FROM public.recibos r
-                      WHERE r.familia_id = p_familia_id AND r.deleted_at IS NULL
-                        AND ((r.estado IN ('borrador', 'pendiente_procesar') AND r.total_centimos > 0)
-                          OR (r.estado = 'devuelto' AND r.devolucion_salida IS NULL)
-                          OR (r.estado = 'enviado_banco'
-                              AND r.fecha_envio_banco >= (now() - interval '8 weeks')::date)))
-     AND NOT EXISTS (SELECT 1 FROM public.beca_comedor_desborde d
-                      WHERE d.familia_id = p_familia_id AND d.estado = 'pendiente')
-     AND NOT EXISTS (SELECT 1 FROM public.beca_comedor_transferencia t
-                      WHERE t.familia_id = p_familia_id AND t.estado = 'pendiente');
-$function$;
-
--- Desde la purga de su último niño.
-CREATE FUNCTION privado.familia_bloqueada_desde(p_familia_id uuid)
-RETURNS date
-LANGUAGE sql
-STABLE SECURITY DEFINER
-SET search_path = public
-AS $function$
-  SELECT CASE WHEN privado.familia_bloqueada(p_familia_id) THEN
-           (SELECT max(privado.nino_bloqueado_desde(n.id)) FROM public.ninos n
-             WHERE n.familia_id = p_familia_id) END;
-$function$;
-
-CREATE FUNCTION privado.recibo_bloqueado(p_recibo_id uuid)
-RETURNS boolean
-LANGUAGE sql
-STABLE SECURITY DEFINER
-SET search_path = public
-AS $function$
-  SELECT COALESCE((SELECT privado.familia_bloqueada(r.familia_id)
-                     FROM public.recibos r WHERE r.id = p_recibo_id), false);
-$function$;
-
--- El mandato: el de su familia, o el de un titular purgado. Los viejos, sin familia, por su niño.
-CREATE FUNCTION privado.mandato_bloqueado(
-  p_familia_id uuid, p_usuario_id uuid, p_centro_id uuid, p_nino_id uuid)
-RETURNS boolean
-LANGUAGE sql
-STABLE SECURITY DEFINER
-SET search_path = public
-AS $function$
-  SELECT (p_familia_id IS NOT NULL AND privado.familia_bloqueada(p_familia_id))
-      OR (p_familia_id IS NULL AND privado.nino_bloqueado(p_nino_id))
-      OR privado.usuario_olvidado_en(p_usuario_id, p_centro_id);
-$function$;
-
 -- La firma o el acuse: del niño purgado, o de un firmante purgado en el centro del niño.
 CREATE FUNCTION privado.firma_bloqueada(p_nino_id uuid, p_firmante_id uuid)
 RETURNS boolean
@@ -253,9 +194,6 @@ BEGIN
   FOREACH v_f IN ARRAY ARRAY['privado.nino_bloqueado(uuid)', 'privado.nino_bloqueado_desde(uuid)',
                              'privado.cuenta_olvidada(uuid)', 'privado.usuario_olvidado_en(uuid,uuid)',
                              'privado.usuario_olvidado_desde(uuid,uuid)',
-                             'privado.familia_bloqueada(uuid)', 'privado.familia_bloqueada_desde(uuid)',
-                             'privado.recibo_bloqueado(uuid)',
-                             'privado.mandato_bloqueado(uuid,uuid,uuid,uuid)',
                              'privado.firma_bloqueada(uuid,uuid)',
                              'privado.consentimiento_bloqueado(uuid,uuid)'] LOOP
     EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon', v_f);
@@ -283,43 +221,6 @@ CREATE POLICY bloqueo_retencion ON public.autorizaciones AS RESTRICTIVE FOR ALL 
 CREATE POLICY bloqueo_retencion ON public.administraciones_medicacion AS RESTRICTIVE FOR ALL TO authenticated
   USING (NOT privado.nino_bloqueado(nino_id))
   WITH CHECK (NOT privado.nino_bloqueado(nino_id));
-CREATE POLICY bloqueo_retencion ON public.parte_servicio_diario AS RESTRICTIVE FOR ALL TO authenticated
-  USING (NOT privado.nino_bloqueado(nino_id))
-  WITH CHECK (NOT privado.nino_bloqueado(nino_id));
-CREATE POLICY bloqueo_retencion ON public.beca_comedor_elegibilidad AS RESTRICTIVE FOR ALL TO authenticated
-  USING (NOT privado.nino_bloqueado(nino_id))
-  WITH CHECK (NOT privado.nino_bloqueado(nino_id));
-CREATE POLICY bloqueo_retencion ON public.beca_comedor_tramo AS RESTRICTIVE FOR ALL TO authenticated
-  USING (NOT privado.nino_bloqueado(nino_id))
-  WITH CHECK (NOT privado.nino_bloqueado(nino_id));
--- El concepto asignado a un niño, por su niño; el de la familia, por su familia.
-CREATE POLICY bloqueo_retencion ON public.asignacion_concepto AS RESTRICTIVE FOR ALL TO authenticated
-  USING (NOT (privado.nino_bloqueado(nino_id)
-              OR (familia_id IS NOT NULL AND privado.familia_bloqueada(familia_id))))
-  WITH CHECK (NOT (privado.nino_bloqueado(nino_id)
-                   OR (familia_id IS NOT NULL AND privado.familia_bloqueada(familia_id))));
-CREATE POLICY bloqueo_retencion ON public.recibos AS RESTRICTIVE FOR ALL TO authenticated
-  USING (NOT COALESCE(privado.familia_bloqueada(familia_id), false))
-  WITH CHECK (NOT COALESCE(privado.familia_bloqueada(familia_id), false));
-CREATE POLICY bloqueo_retencion ON public.lineas_recibo AS RESTRICTIVE FOR ALL TO authenticated
-  USING (NOT privado.recibo_bloqueado(recibo_id))
-  WITH CHECK (NOT privado.recibo_bloqueado(recibo_id));
-CREATE POLICY bloqueo_retencion ON public.recibos_remesa AS RESTRICTIVE FOR ALL TO authenticated
-  USING (NOT privado.recibo_bloqueado(recibo_id))
-  WITH CHECK (NOT privado.recibo_bloqueado(recibo_id));
-CREATE POLICY bloqueo_retencion ON public.metodo_pago_familia AS RESTRICTIVE FOR ALL TO authenticated
-  USING (NOT privado.familia_bloqueada(familia_id))
-  WITH CHECK (NOT privado.familia_bloqueada(familia_id));
-CREATE POLICY bloqueo_retencion ON public.beca_comedor_desborde AS RESTRICTIVE FOR ALL TO authenticated
-  USING (NOT privado.familia_bloqueada(familia_id))
-  WITH CHECK (NOT privado.familia_bloqueada(familia_id));
-CREATE POLICY bloqueo_retencion ON public.beca_comedor_transferencia AS RESTRICTIVE FOR ALL TO authenticated
-  USING (NOT privado.familia_bloqueada(familia_id))
-  WITH CHECK (NOT privado.familia_bloqueada(familia_id));
-CREATE POLICY bloqueo_retencion ON public.mandatos_sepa AS RESTRICTIVE FOR ALL TO authenticated
-  USING (NOT privado.mandato_bloqueado(familia_id, usuario_id, centro_id, nino_id))
-  WITH CHECK (NOT privado.mandato_bloqueado(familia_id, usuario_id, centro_id, nino_id));
-
 -- ---- 4. Para la exportación: qué hay bloqueado ----
 -- El art. 15 da derecho a saber qué datos se tratan, no solo a recibirlos: lo bloqueado no sale,
 -- y no se calla. [{codigo, n, desde}], o NULL si no hay nada. Del usuario, lo de los centros que
@@ -359,29 +260,6 @@ AS $function$
       FROM public.administraciones_medicacion am
      WHERE p_sujeto_tipo = 'nino' AND am.nino_id = p_sujeto_id AND privado.nino_bloqueado(am.nino_id)
     UNION ALL
-    SELECT 'servicios_diarios', privado.nino_bloqueado_desde(ps.nino_id)
-      FROM public.parte_servicio_diario ps
-     WHERE p_sujeto_tipo = 'nino' AND ps.nino_id = p_sujeto_id AND privado.nino_bloqueado(ps.nino_id)
-    UNION ALL
-    SELECT 'conceptos_asignados', privado.nino_bloqueado_desde(ac.nino_id)
-      FROM public.asignacion_concepto ac
-     WHERE p_sujeto_tipo = 'nino' AND ac.nino_id = p_sujeto_id AND ac.deleted_at IS NULL
-       AND privado.nino_bloqueado(ac.nino_id)
-    UNION ALL
-    SELECT 'beca_comedor', privado.nino_bloqueado_desde(be.nino_id)
-      FROM public.beca_comedor_elegibilidad be
-     WHERE p_sujeto_tipo = 'nino' AND be.nino_id = p_sujeto_id AND privado.nino_bloqueado(be.nino_id)
-    UNION ALL
-    SELECT 'beca_comedor', privado.nino_bloqueado_desde(bt.nino_id)
-      FROM public.beca_comedor_tramo bt
-     WHERE p_sujeto_tipo = 'nino' AND bt.nino_id = p_sujeto_id AND privado.nino_bloqueado(bt.nino_id)
-    UNION ALL
-    SELECT 'lineas_recibo', privado.familia_bloqueada_desde(r.familia_id)
-      FROM public.lineas_recibo lr
-      JOIN public.recibos r ON r.id = lr.recibo_id
-     WHERE p_sujeto_tipo = 'nino' AND lr.nino_id = p_sujeto_id AND r.deleted_at IS NULL
-       AND privado.recibo_bloqueado(r.id)
-    UNION ALL
     SELECT 'lecturas_ficha_medica', privado.nino_bloqueado_desde(l.nino_id)
       FROM public.lecturas_ficha_medica l
      WHERE p_sujeto_tipo = 'nino' AND l.nino_id = p_sujeto_id AND privado.nino_bloqueado(l.nino_id)
@@ -410,53 +288,250 @@ AS $function$
      WHERE p_sujeto_tipo = 'usuario' AND aa.firmante_id = p_sujeto_id
        AND privado.firma_bloqueada(aa.nino_id, aa.firmante_id)
        AND (p_todos OR privado.es_responsable(aa.centro_id))
-    UNION ALL
-    SELECT 'mandatos_sepa', COALESCE(privado.familia_bloqueada_desde(m.familia_id),
-                                     privado.usuario_olvidado_desde(m.usuario_id, m.centro_id),
-                                     privado.nino_bloqueado_desde(m.nino_id))
-      FROM public.mandatos_sepa m
-     WHERE p_sujeto_tipo = 'usuario' AND m.usuario_id = p_sujeto_id AND m.deleted_at IS NULL
-       AND privado.mandato_bloqueado(m.familia_id, m.usuario_id, m.centro_id, m.nino_id)
-       AND (p_todos OR privado.es_responsable(m.centro_id))
-    UNION ALL
-    SELECT 'recibos', privado.familia_bloqueada_desde(r.familia_id)
-      FROM public.recibos r
-      JOIN public.familias f ON f.id = r.familia_id
-     WHERE p_sujeto_tipo = 'usuario' AND r.deleted_at IS NULL
-       AND f.id IN (SELECT ft.familia_id FROM public.familia_tutores ft
-                     WHERE ft.usuario_id = p_sujeto_id AND ft.deleted_at IS NULL)
-       AND privado.familia_bloqueada(f.id)
-       AND (p_todos OR privado.es_responsable(f.centro_id))
   )
   SELECT jsonb_agg(jsonb_build_object('codigo', codigo, 'n', n, 'desde', desde) ORDER BY codigo)
     FROM (SELECT codigo, count(*) AS n, min(desde) AS desde FROM filas GROUP BY codigo) x;
 $function$;
 REVOKE ALL ON FUNCTION privado.datos_bloqueados(text, uuid, boolean) FROM PUBLIC, anon, authenticated;
 
--- ---- 5. El nombre del niño, fuera de un texto ----
--- Como palabra entera (los apellidos, como frase): "Escolaridad · Pepe" pierde a Pepe, "Pepete"
--- no. Todo lo que no es letra, cifra o espacio se escapa, para que el nombre no sea un patrón.
-CREATE FUNCTION privado.quitar_nombre(p_texto text, p_nombre text, p_apellidos text)
-RETURNS text
-LANGUAGE sql
-IMMUTABLE
-SET search_path = public
-AS $function$
-  SELECT CASE WHEN p_texto IS NULL OR nullif(btrim(p_nombre), '') IS NULL THEN p_texto ELSE
-    regexp_replace(
-      CASE WHEN nullif(btrim(p_apellidos), '') IS NULL THEN p_texto
-           ELSE regexp_replace(p_texto,
-                  '\m' || regexp_replace(btrim(p_apellidos), '([^[:alnum:][:space:]])', '\\\1', 'g') || '\M',
-                  '[borrado]', 'g') END,
-      '\m' || regexp_replace(btrim(p_nombre), '([^[:alnum:][:space:]])', '\\\1', 'g') || '\M',
-      '[borrado]', 'g') END;
-$function$;
-REVOKE ALL ON FUNCTION privado.quitar_nombre(text, text, text) FROM PUBLIC, anon, authenticated;
-
--- ---- 6. El registro de lecturas de la ficha se conserva tras la purga ----
+-- ---- 5. El registro de lecturas de la ficha se conserva tras la purga ----
 -- Bloqueado (lecturas_ficha_medica, abajo) y hasta su plazo de 60 meses.
 DROP TRIGGER ninos_purga_borra_lecturas ON public.ninos;
 DROP FUNCTION privado.ninos_purga_borra_lecturas();
+
+-- ---- 6. Ver lo bloqueado cuando hay un requerimiento ----
+-- Solo la titular del centro (`privado.es_responsable` sin el superusuario: ni la directora, ni la
+-- profe, ni la plataforma), con un motivo escrito antes de ver nada. Cada vez que lo ve o lo
+-- descarga queda una fila: quién, cuándo, por qué y qué apartados vio. Es el patrón del registro de
+-- lecturas de la ficha: la fila se escribe en la misma transacción que lee, y si no se escribe no
+-- se ve nada.
+
+-- El registro. Sin políticas ni privilegios para las sesiones: se escribe y se lee por función. No
+-- entra en audit_log: el motivo es texto libre y puede llevar nombres. El sujeto no lleva FK: el
+-- registro se destruye con sus datos bloqueados (PR-8), y no antes.
+CREATE TABLE public.accesos_datos_bloqueados (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  centro_id   uuid NOT NULL REFERENCES public.centros (id) ON DELETE CASCADE,
+  sujeto_tipo public.olvido_sujeto_tipo NOT NULL,
+  sujeto_id   uuid NOT NULL,
+  lector_id   uuid REFERENCES public.usuarios (id) ON DELETE SET NULL,
+  motivo_tipo text NOT NULL CHECK (motivo_tipo IN ('agencia_tributaria', 'juzgado', 'reclamacion',
+                                                   'proteccion_datos', 'otro')),
+  motivo      text NOT NULL CHECK (char_length(btrim(motivo)) BETWEEN 10 AND 1000),
+  accion      text NOT NULL CHECK (accion IN ('ver', 'descargar')),
+  apartados   text[] NOT NULL,
+  leido_en    timestamptz NOT NULL DEFAULT now()
+);
+COMMENT ON TABLE public.accesos_datos_bloqueados IS
+  'Quién ha visto lo bloqueado de un sujeto purgado, cuándo y por qué (20261205120000). Solo por función.';
+CREATE INDEX idx_accesos_datos_bloqueados_sujeto
+  ON public.accesos_datos_bloqueados (sujeto_tipo, sujeto_id);
+CREATE INDEX idx_accesos_datos_bloqueados_centro
+  ON public.accesos_datos_bloqueados (centro_id, leido_en DESC);
+ALTER TABLE public.accesos_datos_bloqueados ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.accesos_datos_bloqueados FROM PUBLIC, anon, authenticated;
+
+-- La titular del centro, sin el superusuario. NULL → FALSE (es_responsable ya lo da).
+CREATE FUNCTION privado.es_titular(p_centro_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE SECURITY DEFINER
+SET search_path = public
+AS $function$
+  SELECT privado.es_responsable(p_centro_id) AND NOT public.is_superadmin();
+$function$;
+REVOKE ALL ON FUNCTION privado.es_titular(uuid) FROM PUBLIC, anon, authenticated;
+
+-- Lo bloqueado de un sujeto en un centro, entero, por apartados. Del niño, lo suyo; del usuario
+-- purgado en el centro, lo que firmó o consintió sobre niños de ese centro. Los consentimientos de
+-- la cuenta (sin niño) no son de ningún centro: no salen aquí.
+CREATE FUNCTION privado.contenido_bloqueado(p_centro_id uuid, p_sujeto_tipo text, p_sujeto_id uuid)
+RETURNS jsonb
+LANGUAGE sql
+STABLE SECURITY DEFINER
+SET search_path = public
+AS $function$
+  SELECT CASE WHEN p_sujeto_tipo = 'nino' THEN jsonb_build_object(
+    'firmas', COALESCE((SELECT jsonb_agg(to_jsonb(f) ORDER BY f.firmado_at)
+                          FROM public.firmas_autorizacion f WHERE f.nino_id = p_sujeto_id), '[]'::jsonb),
+    'autorizaciones', COALESCE((SELECT jsonb_agg(to_jsonb(a) ORDER BY a.created_at)
+                                  FROM public.autorizaciones a WHERE a.nino_id = p_sujeto_id), '[]'::jsonb),
+    'consentimientos', COALESCE((SELECT jsonb_agg(to_jsonb(c) ORDER BY c.aceptado_en)
+                                   FROM public.consentimientos c WHERE c.nino_id = p_sujeto_id), '[]'::jsonb),
+    'acuses_alta', COALESCE((SELECT jsonb_agg(to_jsonb(aa) ORDER BY aa.aceptado_en)
+                               FROM public.acuses_alta aa WHERE aa.nino_id = p_sujeto_id), '[]'::jsonb),
+    'medicacion_administrada', COALESCE((SELECT jsonb_agg(to_jsonb(am) ORDER BY am.administrado_en)
+                                           FROM public.administraciones_medicacion am
+                                          WHERE am.nino_id = p_sujeto_id), '[]'::jsonb),
+    'lecturas_ficha_medica', COALESCE((SELECT jsonb_agg(to_jsonb(l) || jsonb_build_object('lector', u.nombre_completo)
+                                                        ORDER BY l.leida_en)
+                                         FROM public.lecturas_ficha_medica l
+                                         LEFT JOIN public.usuarios u ON u.id = l.lector_id
+                                        WHERE l.nino_id = p_sujeto_id), '[]'::jsonb))
+  ELSE jsonb_build_object(
+    'firmas', COALESCE((SELECT jsonb_agg(to_jsonb(f) ORDER BY f.firmado_at)
+                          FROM public.firmas_autorizacion f
+                         WHERE f.firmante_id = p_sujeto_id
+                           AND privado.centro_de_nino(f.nino_id) = p_centro_id), '[]'::jsonb),
+    'consentimientos', COALESCE((SELECT jsonb_agg(to_jsonb(c) ORDER BY c.aceptado_en)
+                                   FROM public.consentimientos c
+                                  WHERE c.usuario_id = p_sujeto_id AND c.nino_id IS NOT NULL
+                                    AND privado.centro_de_nino(c.nino_id) = p_centro_id), '[]'::jsonb),
+    'acuses_alta', COALESCE((SELECT jsonb_agg(to_jsonb(aa) ORDER BY aa.aceptado_en)
+                               FROM public.acuses_alta aa
+                              WHERE aa.firmante_id = p_sujeto_id AND aa.centro_id = p_centro_id), '[]'::jsonb))
+  END;
+$function$;
+REVOKE ALL ON FUNCTION privado.contenido_bloqueado(uuid, text, uuid) FROM PUBLIC, anon, authenticated;
+
+-- La puerta. 42501 a quien no es la titular; 22023 sin motivo válido; 55000 si el sujeto no está
+-- bloqueado en ese centro. Ninguno de los tres deja fila. Si está bloqueado, la fila y lo que hay.
+CREATE FUNCTION public.ver_datos_bloqueados(
+  p_centro_id uuid, p_sujeto_tipo text, p_sujeto_id uuid,
+  p_motivo_tipo text, p_motivo text, p_accion text DEFAULT 'ver')
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $function$
+DECLARE
+  v_uid       uuid := auth.uid();
+  v_bloqueado boolean;
+  v_desde     date;
+  v_contenido jsonb;
+  v_apartados text[];
+BEGIN
+  IF v_uid IS NULL OR p_centro_id IS NULL OR NOT privado.es_titular(p_centro_id) THEN
+    RAISE EXCEPTION 'no autorizado a ver lo bloqueado de este centro'
+      USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  IF p_motivo_tipo IS NULL OR p_motivo_tipo NOT IN ('agencia_tributaria', 'juzgado', 'reclamacion',
+                                                    'proteccion_datos', 'otro')
+     OR p_motivo IS NULL OR char_length(btrim(p_motivo)) NOT BETWEEN 10 AND 1000
+     OR p_accion IS NULL OR p_accion NOT IN ('ver', 'descargar') THEN
+    RAISE EXCEPTION 'hace falta un motivo (de 10 a 1000 caracteres) y su tipo'
+      USING ERRCODE = 'invalid_parameter_value', HINT = 'motivo';
+  END IF;
+
+  IF p_sujeto_tipo = 'nino' THEN
+    v_bloqueado := privado.centro_de_nino(p_sujeto_id) = p_centro_id
+                   AND privado.nino_bloqueado(p_sujeto_id);
+    v_desde := privado.nino_bloqueado_desde(p_sujeto_id);
+  ELSIF p_sujeto_tipo = 'usuario' THEN
+    v_bloqueado := privado.usuario_olvidado_en(p_sujeto_id, p_centro_id);
+    v_desde := privado.usuario_olvidado_desde(p_sujeto_id, p_centro_id);
+  ELSE
+    RAISE EXCEPTION 'tipo de sujeto inválido' USING ERRCODE = 'invalid_parameter_value';
+  END IF;
+  IF NOT COALESCE(v_bloqueado, false) THEN
+    RAISE EXCEPTION 'este sujeto no tiene nada bloqueado en este centro'
+      USING ERRCODE = 'object_not_in_prerequisite_state', HINT = 'no_bloqueado';
+  END IF;
+
+  v_contenido := privado.contenido_bloqueado(p_centro_id, p_sujeto_tipo, p_sujeto_id);
+  SELECT COALESCE(array_agg(k ORDER BY k), '{}') INTO v_apartados
+    FROM jsonb_each(v_contenido) AS e(k, v) WHERE jsonb_array_length(v) > 0;
+
+  INSERT INTO public.accesos_datos_bloqueados
+    (centro_id, sujeto_tipo, sujeto_id, lector_id, motivo_tipo, motivo, accion, apartados)
+  VALUES (p_centro_id, p_sujeto_tipo::public.olvido_sujeto_tipo, p_sujeto_id, v_uid,
+          p_motivo_tipo, btrim(p_motivo), p_accion, v_apartados);
+
+  RETURN jsonb_build_object('bloqueado_desde', v_desde, 'apartados', v_contenido);
+END;
+$function$;
+REVOKE ALL ON FUNCTION public.ver_datos_bloqueados(uuid, text, uuid, text, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.ver_datos_bloqueados(uuid, text, uuid, text, text, text) TO authenticated;
+
+-- Los sujetos con algo bloqueado en el centro, para encontrarlos: solo lo que ya se ve de ellos
+-- (la familia, la última matrícula) y la fecha. No enseña nada bloqueado y no deja fila.
+CREATE FUNCTION public.sujetos_bloqueados(p_centro_id uuid)
+RETURNS TABLE (sujeto_tipo text, sujeto_id uuid, bloqueado_desde date, familia text,
+               aula text, curso text)
+LANGUAGE plpgsql
+STABLE SECURITY DEFINER
+SET search_path = public
+AS $function$
+BEGIN
+  IF auth.uid() IS NULL OR p_centro_id IS NULL OR NOT privado.es_titular(p_centro_id) THEN
+    RAISE EXCEPTION 'no autorizado a ver lo bloqueado de este centro'
+      USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  RETURN QUERY
+  SELECT 'nino'::text, n.id, privado.nino_bloqueado_desde(n.id), f.etiqueta, um.aula, um.curso
+    FROM public.ninos n
+    LEFT JOIN public.familias f ON f.id = n.familia_id
+    LEFT JOIN LATERAL (
+      SELECT a.nombre AS aula, ca.nombre AS curso
+        FROM public.matriculas m
+        JOIN public.aulas a ON a.id = m.aula_id
+        JOIN public.cursos_academicos ca ON ca.id = m.curso_academico_id
+       WHERE m.nino_id = n.id AND m.deleted_at IS NULL
+       ORDER BY ca.fecha_inicio DESC, m.fecha_alta DESC
+       LIMIT 1) um ON true
+   WHERE n.centro_id = p_centro_id AND n.deleted_reason = 'purga_rgpd'
+  UNION ALL
+  SELECT 'usuario'::text, s.sujeto_id, privado.usuario_olvidado_desde(s.sujeto_id, p_centro_id),
+         (SELECT f.etiqueta FROM public.familia_tutores ft JOIN public.familias f ON f.id = ft.familia_id
+           WHERE ft.usuario_id = s.sujeto_id AND ft.centro_id = p_centro_id
+           ORDER BY ft.created_at DESC LIMIT 1),
+         NULL::text, NULL::text
+    FROM (SELECT DISTINCT o.sujeto_id FROM public.olvido_solicitudes o
+           WHERE o.sujeto_tipo = 'usuario' AND o.centro_id = p_centro_id
+             AND o.purgado_en IS NOT NULL) s
+   ORDER BY 3 DESC NULLS LAST;
+END;
+$function$;
+REVOKE ALL ON FUNCTION public.sujetos_bloqueados(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.sujetos_bloqueados(uuid) TO authenticated;
+
+-- El registro de accesos del centro, para la titular: quién miró qué, cuándo y por qué.
+CREATE FUNCTION public.accesos_datos_bloqueados_centro(p_centro_id uuid)
+RETURNS TABLE (leido_en timestamptz, lector_nombre text, sujeto_tipo text, sujeto_id uuid,
+               motivo_tipo text, motivo text, accion text, apartados text[])
+LANGUAGE plpgsql
+STABLE SECURITY DEFINER
+SET search_path = public
+AS $function$
+BEGIN
+  IF auth.uid() IS NULL OR p_centro_id IS NULL OR NOT privado.es_titular(p_centro_id) THEN
+    RAISE EXCEPTION 'no autorizado a ver lo bloqueado de este centro'
+      USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  RETURN QUERY
+  SELECT a.leido_en, u.nombre_completo, a.sujeto_tipo::text, a.sujeto_id, a.motivo_tipo, a.motivo,
+         a.accion, a.apartados
+    FROM public.accesos_datos_bloqueados a
+    LEFT JOIN public.usuarios u ON u.id = a.lector_id
+   WHERE a.centro_id = p_centro_id
+   ORDER BY a.leido_en DESC;
+END;
+$function$;
+REVOKE ALL ON FUNCTION public.accesos_datos_bloqueados_centro(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.accesos_datos_bloqueados_centro(uuid) TO authenticated;
+
+-- Para la exportación del sujeto (art. 15): cuántas veces, por qué tipo de motivo y cuándo, sin el
+-- texto del motivo ni quién. Del usuario, también lo de los niños de los que fue tutor legal (tras
+-- la purga la familia ya no exporta al niño, pero sigue teniendo derecho a saberlo), en los centros
+-- que alcanza quien exporta. NULL si nadie.
+CREATE FUNCTION privado.consultas_datos_bloqueados(p_sujeto_tipo text, p_sujeto_id uuid, p_todos boolean)
+RETURNS jsonb
+LANGUAGE sql
+STABLE SECURITY DEFINER
+SET search_path = public
+AS $function$
+  SELECT jsonb_agg(jsonb_build_object('motivo_tipo', a.motivo_tipo,
+                                      'fecha', (a.leido_en AT TIME ZONE 'Europe/Madrid')::date)
+                   ORDER BY a.leido_en)
+    FROM public.accesos_datos_bloqueados a
+   WHERE ((a.sujeto_tipo::text = p_sujeto_tipo AND a.sujeto_id = p_sujeto_id)
+          OR (p_sujeto_tipo = 'usuario' AND a.sujeto_tipo = 'nino'
+              AND EXISTS (SELECT 1 FROM public.vinculos_familiares v
+                           WHERE v.nino_id = a.sujeto_id AND v.usuario_id = p_sujeto_id
+                             AND v.tipo_vinculo IN ('tutor_legal_principal', 'tutor_legal_secundario'))))
+     AND (p_todos OR privado.es_responsable(a.centro_id));
+$function$;
+REVOKE ALL ON FUNCTION privado.consultas_datos_bloqueados(text, uuid, boolean) FROM PUBLIC, anon, authenticated;
 
 -- ---- 7. Las funciones que cambian ----
 -- Cada una es la de producción (pg_get_functiondef) con su cambio marcado «Retención (PR-7)».
@@ -575,22 +650,15 @@ AS $function$
   ORDER BY s.gracia_hasta;
 $function$;
 
--- 7.3 La purga del niño fija su fecha y quita su nombre de las líneas de recibo.
+-- 7.3 La purga del niño fija su fecha.
 CREATE OR REPLACE FUNCTION privado.purgar_nino(p_nino_id uuid)
  RETURNS void
  LANGUAGE plpgsql
  SET search_path TO 'public'
 AS $function$
 DECLARE
-  v_lista     uuid[];
-  v_nombre    text;
-  v_apellidos text;
+  v_lista uuid[];
 BEGIN
-  -- Retención (PR-7): el nombre, antes de borrarlo, para quitarlo de sus líneas de recibo. Si ya
-  -- se purgó, no queda nombre que buscar.
-  SELECT nullif(btrim(nombre), ''), nullif(btrim(apellidos), '') INTO v_nombre, v_apellidos
-    FROM public.ninos WHERE id = p_nino_id AND deleted_reason IS DISTINCT FROM 'purga_rgpd';
-
   -- D-5: motivo 'purga_rgpd' → desarchivar_nino RAISE (no reincorpora un sujeto purgado).
   UPDATE public.ninos SET
     nombre           = '[borrado]',
@@ -640,33 +708,6 @@ BEGIN
   -- Purga RGPD del niño: el motivo de baja es texto libre del centro sobre el niño.
   UPDATE public.matriculas SET motivo_baja = NULL
   WHERE nino_id = p_nino_id AND motivo_baja IS NOT NULL;
-
-  -- Retención (PR-7): el recibo se conserva entero, con su total y sus líneas, porque justifica
-  -- el cobro. De sus líneas solo cambia el nombre del niño, que las viejas llevaban tras « · »
-  -- (B3, 20260814120000, dejó de ponerlo) y que un cargo puntual puede llevar en su texto. Como
-  -- palabra entera, para no romper otra que lo contenga. Su copia en audit_log, igual. El recibo
-  -- confirmado está congelado: congelar_si_mes_cerrado deja pasar este cambio, y solo este.
-  IF v_nombre IS NOT NULL THEN
-    UPDATE public.lineas_recibo
-       SET descripcion = privado.quitar_nombre(descripcion, v_nombre, v_apellidos)
-     WHERE nino_id = p_nino_id
-       AND descripcion IS DISTINCT FROM privado.quitar_nombre(descripcion, v_nombre, v_apellidos);
-    UPDATE public.audit_log SET
-      valores_antes = CASE WHEN jsonb_typeof(valores_antes->'descripcion') = 'string'
-        THEN jsonb_set(valores_antes, '{descripcion}', to_jsonb(
-               privado.quitar_nombre(valores_antes->>'descripcion', v_nombre, v_apellidos)))
-        ELSE valores_antes END,
-      valores_despues = CASE WHEN jsonb_typeof(valores_despues->'descripcion') = 'string'
-        THEN jsonb_set(valores_despues, '{descripcion}', to_jsonb(
-               privado.quitar_nombre(valores_despues->>'descripcion', v_nombre, v_apellidos)))
-        ELSE valores_despues END
-    WHERE tabla = 'lineas_recibo'
-      AND (valores_antes->>'nino_id' = p_nino_id::text OR valores_despues->>'nino_id' = p_nino_id::text)
-      AND (valores_antes->>'descripcion'
-             IS DISTINCT FROM privado.quitar_nombre(valores_antes->>'descripcion', v_nombre, v_apellidos)
-           OR valores_despues->>'descripcion'
-             IS DISTINCT FROM privado.quitar_nombre(valores_despues->>'descripcion', v_nombre, v_apellidos));
-  END IF;
 
   -- D-5: motivo 'purga_rgpd' → desarchivar_nino NUNCA revive un vínculo purgado.
   UPDATE public.vinculos_familiares SET
@@ -1008,113 +1049,7 @@ BEGIN
   PERFORM set_config('app.audit_actor', '', true);
 END $function$;
 
--- 7.5 La línea congelada deja pasar que la purga le quite el nombre, y nada más.
-CREATE OR REPLACE FUNCTION public.congelar_si_mes_cerrado()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE
-  v_centro uuid;
-  v_anio integer;
-  v_mes integer;
-  r_recibo record;
-BEGIN
-  -- Exención de service_role (backend de confianza, NUNCA expuesto al cliente): permite la
-  -- limpieza/teardown, el CASCADE de borrado de centros y las correcciones server-side. El
-  -- congelado protege frente a ediciones de ADMIN (authenticated), no frente al backend. El
-  -- motor (SECURITY DEFINER llamado por admin) corre con auth.role()='authenticated' → NO se
-  -- exime, pero solo toca borradores. auth.role() lee el claim del JWT (nivel request), no el
-  -- rol de ejecución del DEFINER, así que distingue correctamente al llamante.
-  IF auth.role() = 'service_role' THEN
-    RETURN COALESCE(NEW, OLD);
-  END IF;
-
-  IF TG_TABLE_NAME = 'parte_servicio_diario' THEN
-    -- Congelado POR MES: el parte de un mes cerrado (cierre_mensual) es inmutable.
-    v_centro := privado.centro_de_nino(COALESCE(NEW.nino_id, OLD.nino_id));
-    v_anio := EXTRACT(YEAR  FROM COALESCE(NEW.fecha, OLD.fecha))::integer;
-    v_mes  := EXTRACT(MONTH FROM COALESCE(NEW.fecha, OLD.fecha))::integer;
-    IF public.mes_cerrado(v_centro, v_anio, v_mes) THEN
-      RAISE EXCEPTION 'mes cerrado: el parte de servicio de % no es editable',
-        to_char(COALESCE(NEW.fecha, OLD.fecha), 'YYYY-MM') USING ERRCODE = 'P0001';
-    END IF;
-
-  ELSIF TG_TABLE_NAME = 'recibos' THEN
-    -- Congelado POR ESTADO. Solo recibos REGULARES (esporádicos y devoluciones fuera).
-    IF COALESCE(NEW.es_esporadico, OLD.es_esporadico) = false
-       AND COALESCE(NEW.devuelto_de_recibo_id, OLD.devuelto_de_recibo_id) IS NULL THEN
-      IF TG_OP = 'DELETE' THEN
-        -- Solo se borra un borrador (regeneración). Un confirmado no se borra.
-        IF OLD.estado <> 'borrador' THEN
-          RAISE EXCEPTION 'recibo confirmado: % no se borra',
-            to_char(make_date(OLD.anio, OLD.mes, 1), 'YYYY-MM') USING ERRCODE = 'P0001';
-        END IF;
-      ELSIF TG_OP = 'UPDATE' THEN
-        IF OLD.estado <> 'borrador' THEN
-          -- R-5: el retroceso a borrador ("desconfirmar") deja de estar prohibido, pero solo
-          -- por la puerta estrecha. Se comprueba AQUÍ, y no solo en la RPC, porque esto es
-          -- una invariante del dato: ningún UPDATE directo debe poder reabrir un recibo que
-          -- ya viajó al banco, venga de la RPC, de otra action o de un arreglo a mano.
-          IF NEW.estado = 'borrador' THEN
-            IF OLD.estado <> 'pendiente_procesar' THEN
-              RAISE EXCEPTION 'recibo en el circuito de cobro (%): ya no vuelve a borrador',
-                OLD.estado USING ERRCODE = 'P0001';
-            END IF;
-            IF public.recibo_en_remesa(OLD.id) THEN
-              RAISE EXCEPTION 'recibo en remesa: no se puede modificar'
-                USING ERRCODE = 'P0001';
-            END IF;
-          END IF;
-          IF NOT (
-                NEW.total_centimos        IS NOT DISTINCT FROM OLD.total_centimos
-            AND NEW.metodo                IS NOT DISTINCT FROM OLD.metodo
-            AND NEW.familia_id            IS NOT DISTINCT FROM OLD.familia_id
-            AND NEW.nino_id               IS NOT DISTINCT FROM OLD.nino_id
-            AND NEW.anio                  IS NOT DISTINCT FROM OLD.anio
-            AND NEW.mes                   IS NOT DISTINCT FROM OLD.mes
-            AND NEW.es_esporadico         IS NOT DISTINCT FROM OLD.es_esporadico
-            AND NEW.concepto_esporadico   IS NOT DISTINCT FROM OLD.concepto_esporadico
-            AND NEW.devuelto_de_recibo_id IS NOT DISTINCT FROM OLD.devuelto_de_recibo_id
-          ) THEN
-            RAISE EXCEPTION 'recibo confirmado: inmutable salvo estado/fecha de cobro'
-              USING ERRCODE = 'P0001';
-          END IF;
-        END IF;
-        -- OLD.estado='borrador': edición libre, incluye la transición a pendiente_procesar.
-      END IF;
-      -- TG_OP='INSERT': permitido (el recibo regular nace en borrador).
-    END IF;
-
-  ELSIF TG_TABLE_NAME = 'lineas_recibo' THEN
-    -- Retención (PR-7): la purga del niño quita su nombre de la descripción de la línea, también
-    -- en un recibo confirmado. Solo ese cambio: el resto de la fila tiene que quedar igual, y la
-    -- descripción nueva es la vieja sin el nombre.
-    IF TG_OP = 'UPDATE'
-       AND COALESCE(current_setting('app.audit_actor', true), '')
-             IN ('system:purgar_sujeto_db', 'system:purgar_expediente_vencido')
-       AND (to_jsonb(NEW) - 'descripcion') = (to_jsonb(OLD) - 'descripcion')
-       AND strpos(NEW.descripcion, '[borrado]') > 0 THEN
-      RETURN NEW;
-    END IF;
-    -- Congelado POR ESTADO del recibo padre.
-    SELECT estado, es_esporadico, devuelto_de_recibo_id, anio, mes
-      INTO r_recibo
-      FROM public.recibos WHERE id = COALESCE(NEW.recibo_id, OLD.recibo_id);
-    IF FOUND
-       AND r_recibo.es_esporadico = false
-       AND r_recibo.devuelto_de_recibo_id IS NULL
-       AND r_recibo.estado <> 'borrador' THEN
-      RAISE EXCEPTION 'recibo confirmado: las líneas de % no son editables',
-        to_char(make_date(r_recibo.anio, r_recibo.mes, 1), 'YYYY-MM') USING ERRCODE = 'P0001';
-    END IF;
-  END IF;
-
-  RETURN COALESCE(NEW, OLD);
-END $function$;
-
--- 7.6 El registro de lecturas de un niño purgado, bloqueado.
+-- 7.5 El registro de lecturas de un niño purgado, bloqueado.
 CREATE OR REPLACE FUNCTION public.lecturas_ficha_medica(p_nino_id uuid)
  RETURNS TABLE(leida_en timestamp with time zone, lector_nombre text, rol_lector text, origen text, campos text[])
  LANGUAGE plpgsql
@@ -1148,7 +1083,7 @@ BEGIN
 END;
 $function$;
 
--- 7.7 La exportación deja fuera lo bloqueado y dice que existe.
+-- 7.6 La exportación deja fuera lo bloqueado y dice que existe.
 CREATE OR REPLACE FUNCTION public.export_datos_sujeto(p_sujeto_tipo text, p_sujeto_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -1287,9 +1222,7 @@ BEGIN
                ORDER BY m.created_at)
           FROM public.mandatos_sepa m
          WHERE m.usuario_id = p_sujeto_id AND m.deleted_at IS NULL
-           AND (v_self OR privado.es_responsable(m.centro_id))
-           -- Retención (PR-7): lo bloqueado no sale; datos_bloqueados dice que existe.
-           AND NOT privado.mandato_bloqueado(m.familia_id, m.usuario_id, m.centro_id, m.nino_id)), '[]'::jsonb),
+           AND (v_self OR privado.es_responsable(m.centro_id))), '[]'::jsonb),
 
       -- Cobros de cada familia de la que es tutor (los dos tutores reciben lo mismo).
       'cobros_familia', COALESCE((
@@ -1357,12 +1290,12 @@ BEGIN
           FROM public.familias f
          WHERE f.id IN (SELECT ft.familia_id FROM public.familia_tutores ft
                          WHERE ft.usuario_id = p_sujeto_id AND ft.deleted_at IS NULL)
-           AND (v_self OR privado.es_responsable(f.centro_id))
-           AND NOT privado.familia_bloqueada(f.id)), '[]'::jsonb),
+           AND (v_self OR privado.es_responsable(f.centro_id))), '[]'::jsonb),
 
       -- Retención (PR-7): lo que se conserva por obligación legal y está bloqueado. No sale, y
       -- no se calla: qué es, cuánto y desde cuándo.
-      'datos_bloqueados', privado.datos_bloqueados('usuario', p_sujeto_id, v_self)
+      'datos_bloqueados', privado.datos_bloqueados('usuario', p_sujeto_id, v_self),
+      'consultas_datos_bloqueados', privado.consultas_datos_bloqueados('usuario', p_sujeto_id, v_self)
     );
   END IF;
 
@@ -1489,7 +1422,7 @@ BEGIN
                ORDER BY ac.created_at)
           FROM public.asignacion_concepto ac
           JOIN public.conceptos_cobro cc ON cc.id = ac.concepto_id
-         WHERE ac.nino_id = p_sujeto_id AND ac.deleted_at IS NULL AND NOT v_bloq), '[]'::jsonb),
+         WHERE ac.nino_id = p_sujeto_id AND ac.deleted_at IS NULL), '[]'::jsonb),
 
       'lineas_recibo', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
@@ -1498,15 +1431,14 @@ BEGIN
                ORDER BY r.anio, r.mes, lr.created_at)
           FROM public.lineas_recibo lr
           JOIN public.recibos r ON r.id = lr.recibo_id
-         WHERE lr.nino_id = p_sujeto_id AND r.deleted_at IS NULL
-           AND NOT privado.recibo_bloqueado(r.id)), '[]'::jsonb),
+         WHERE lr.nino_id = p_sujeto_id AND r.deleted_at IS NULL), '[]'::jsonb),
 
       'servicios_diarios', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
                  'fecha', ps.fecha, 'servicio', ps.servicio, 'presente', ps.presente)
                ORDER BY ps.fecha, ps.servicio)
           FROM public.parte_servicio_diario ps
-         WHERE ps.nino_id = p_sujeto_id AND NOT v_bloq), '[]'::jsonb),
+         WHERE ps.nino_id = p_sujeto_id), '[]'::jsonb),
 
       'beca_comedor_elegibilidad', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
@@ -1515,7 +1447,7 @@ BEGIN
                ORDER BY be.fecha_alta)
           FROM public.beca_comedor_elegibilidad be
           JOIN public.cursos_academicos ca ON ca.id = be.curso_academico_id
-         WHERE be.nino_id = p_sujeto_id AND NOT v_bloq), '[]'::jsonb),
+         WHERE be.nino_id = p_sujeto_id), '[]'::jsonb),
 
       'beca_comedor_tramos', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
@@ -1526,7 +1458,7 @@ BEGIN
                  'origen', bt.origen)
                ORDER BY bt.anio_correspondiente, bt.mes_correspondiente, bt.created_at)
           FROM public.beca_comedor_tramo bt
-         WHERE bt.nino_id = p_sujeto_id AND NOT v_bloq), '[]'::jsonb),
+         WHERE bt.nino_id = p_sujeto_id), '[]'::jsonb),
 
       -- Sus peticiones de olvido, con su estado (las mismas columnas que en el usuario).
       'solicitudes_olvido', COALESCE((
@@ -1552,7 +1484,8 @@ BEGIN
          WHERE l.nino_id = p_sujeto_id AND NOT v_bloq), '[]'::jsonb),
 
       -- Retención (PR-7): lo que se conserva por obligación legal y está bloqueado.
-      'datos_bloqueados', privado.datos_bloqueados('nino', p_sujeto_id, v_admin)
+      'datos_bloqueados', privado.datos_bloqueados('nino', p_sujeto_id, v_admin),
+      'consultas_datos_bloqueados', privado.consultas_datos_bloqueados('nino', p_sujeto_id, true)
     );
   END IF;
 
@@ -1571,10 +1504,7 @@ BEGIN
   -- Cada tabla con lo que se conserva tiene su política, y nada la esquiva: todas sus políticas
   -- son de authenticated y anon no lee ninguna.
   FOREACH v_t IN ARRAY ARRAY['firmas_autorizacion', 'acuses_alta', 'consentimientos', 'autorizaciones',
-                             'administraciones_medicacion', 'parte_servicio_diario',
-                             'beca_comedor_elegibilidad', 'beca_comedor_tramo', 'asignacion_concepto',
-                             'recibos', 'lineas_recibo', 'recibos_remesa', 'metodo_pago_familia',
-                             'beca_comedor_desborde', 'beca_comedor_transferencia', 'mandatos_sepa'] LOOP
+                             'administraciones_medicacion'] LOOP
     IF NOT EXISTS (SELECT 1 FROM pg_policies
                     WHERE schemaname = 'public' AND tablename = v_t AND policyname = 'bloqueo_retencion'
                       AND permissive = 'RESTRICTIVE' AND cmd = 'ALL' AND roles = '{authenticated}') THEN
@@ -1588,6 +1518,10 @@ BEGIN
       RAISE EXCEPTION 'anon lee %', v_t;
     END IF;
   END LOOP;
+  -- Lo fiscal no se oculta: ninguna política restrictiva fuera de esas cinco.
+  IF (SELECT count(*) FROM pg_policies WHERE schemaname = 'public' AND permissive = 'RESTRICTIVE') <> 5 THEN
+    RAISE EXCEPTION 'hay políticas restrictivas fuera de las cinco de este fichero';
+  END IF;
   IF has_table_privilege('authenticated', 'public.lecturas_ficha_medica', 'SELECT') THEN
     RAISE EXCEPTION 'authenticated lee lecturas_ficha_medica directamente';
   END IF;
@@ -1595,13 +1529,19 @@ BEGIN
     RAISE EXCEPTION 'la purga sigue borrando las lecturas de la ficha';
   END IF;
 
-  -- Las preguntas, abiertas a quien las necesita; lo que deja ver filas, no.
+  -- El registro de accesos no se toca con sesión.
+  IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.accesos_datos_bloqueados'::regclass)
+     OR EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'accesos_datos_bloqueados')
+     OR has_table_privilege('authenticated', 'public.accesos_datos_bloqueados', 'SELECT')
+     OR has_table_privilege('authenticated', 'public.accesos_datos_bloqueados', 'INSERT')
+     OR has_table_privilege('anon', 'public.accesos_datos_bloqueados', 'SELECT') THEN
+    RAISE EXCEPTION 'accesos_datos_bloqueados quedó abierta a las sesiones';
+  END IF;
+
+  -- Las preguntas de las políticas, abiertas a quien las necesita; lo que deja ver filas, no.
   FOREACH v_f IN ARRAY ARRAY['privado.nino_bloqueado(uuid)', 'privado.nino_bloqueado_desde(uuid)',
                              'privado.cuenta_olvidada(uuid)', 'privado.usuario_olvidado_en(uuid,uuid)',
                              'privado.usuario_olvidado_desde(uuid,uuid)',
-                             'privado.familia_bloqueada(uuid)', 'privado.familia_bloqueada_desde(uuid)',
-                             'privado.recibo_bloqueado(uuid)',
-                             'privado.mandato_bloqueado(uuid,uuid,uuid,uuid)',
                              'privado.firma_bloqueada(uuid,uuid)',
                              'privado.consentimiento_bloqueado(uuid,uuid)'] LOOP
     IF NOT has_function_privilege('authenticated', v_f, 'EXECUTE')
@@ -1610,7 +1550,9 @@ BEGIN
     END IF;
   END LOOP;
   FOREACH v_f IN ARRAY ARRAY['privado.datos_bloqueados(text,uuid,boolean)',
-                             'privado.quitar_nombre(text,text,text)',
+                             'privado.consultas_datos_bloqueados(text,uuid,boolean)',
+                             'privado.contenido_bloqueado(uuid,text,uuid)',
+                             'privado.es_titular(uuid)',
                              'privado.olvido_bloqueos(public.olvido_sujeto_tipo,uuid,uuid)',
                              'privado.purgar_nino(uuid)',
                              'public.purgar_sujeto_db(uuid)', 'public.olvido_pendientes()'] LOOP
@@ -1624,50 +1566,63 @@ BEGIN
       RAISE EXCEPTION '% perdió el EXECUTE de service_role', v_f;
     END IF;
   END LOOP;
-  FOREACH v_f IN ARRAY ARRAY['public.export_datos_sujeto(text,uuid)', 'public.lecturas_ficha_medica(uuid)'] LOOP
-    IF NOT has_function_privilege('authenticated', v_f, 'EXECUTE') THEN
-      RAISE EXCEPTION '% perdió el EXECUTE de authenticated', v_f;
+  FOREACH v_f IN ARRAY ARRAY['public.export_datos_sujeto(text,uuid)', 'public.lecturas_ficha_medica(uuid)',
+                             'public.ver_datos_bloqueados(uuid,text,uuid,text,text,text)',
+                             'public.sujetos_bloqueados(uuid)',
+                             'public.accesos_datos_bloqueados_centro(uuid)'] LOOP
+    IF NOT has_function_privilege('authenticated', v_f, 'EXECUTE')
+       OR has_function_privilege('anon', v_f, 'EXECUTE') THEN
+      RAISE EXCEPTION '% no tiene los permisos de este fichero', v_f;
     END IF;
   END LOOP;
 
-  -- Cada función dice lo que tiene que decir.
+  -- Las tres de la titular empiezan por la titular, sin el superusuario.
+  IF strpos((SELECT prosrc FROM pg_proc WHERE oid = 'privado.es_titular(uuid)'::regprocedure),
+            'AND NOT public.is_superadmin()') = 0 THEN
+    RAISE EXCEPTION 'es_titular deja pasar al superusuario';
+  END IF;
+  FOREACH v_f IN ARRAY ARRAY['public.ver_datos_bloqueados(uuid,text,uuid,text,text,text)',
+                             'public.sujetos_bloqueados(uuid)',
+                             'public.accesos_datos_bloqueados_centro(uuid)'] LOOP
+    SELECT prosrc INTO v_src FROM pg_proc WHERE oid = v_f::regprocedure;
+    IF strpos(v_src, 'NOT privado.es_titular(p_centro_id)') = 0 OR strpos(v_src, 'es_admin') > 0 THEN
+      RAISE EXCEPTION '% no se limita a la titular', v_f;
+    END IF;
+  END LOOP;
+  IF strpos((SELECT prosrc FROM pg_proc
+              WHERE oid = 'public.ver_datos_bloqueados(uuid,text,uuid,text,text,text)'::regprocedure),
+            'INSERT INTO public.accesos_datos_bloqueados') = 0 THEN
+    RAISE EXCEPTION 'ver_datos_bloqueados no deja su fila';
+  END IF;
+
+  -- Cada función cambiada dice lo que tiene que decir.
   SELECT prosrc INTO v_src FROM pg_proc WHERE oid = 'public.purgar_sujeto_db(uuid)'::regprocedure;
   IF strpos(v_src, 'privado.olvido_bloqueos(s.sujeto_tipo') = 0
      OR strpos(v_src, 'PERFORM privado.purgar_nino(s.sujeto_id);') = 0 THEN
     RAISE EXCEPTION 'purgar_sujeto_db no mira lo que falta o no llama a privado.purgar_nino';
   END IF;
-  SELECT prosrc INTO v_src FROM pg_proc WHERE oid = 'privado.purgar_nino(uuid)'::regprocedure;
-  IF strpos(v_src, 'purgado_en       = COALESCE(purgado_en, now())') = 0
-     OR strpos(v_src, 'privado.quitar_nombre(descripcion, v_nombre, v_apellidos)') = 0 THEN
-    RAISE EXCEPTION 'privado.purgar_nino no fija la fecha o no quita el nombre de las líneas';
+  IF strpos((SELECT prosrc FROM pg_proc WHERE oid = 'privado.purgar_nino(uuid)'::regprocedure),
+            'purgado_en       = COALESCE(purgado_en, now())') = 0 THEN
+    RAISE EXCEPTION 'privado.purgar_nino no fija la fecha de la purga';
   END IF;
   SELECT prosrc INTO v_src FROM pg_proc WHERE oid = 'public.export_datos_sujeto(text,uuid)'::regprocedure;
-  IF (length(v_src) - length(replace(v_src, 'privado.datos_bloqueados(', ''))) / length('privado.datos_bloqueados(') <> 2 THEN
-    RAISE EXCEPTION 'export_datos_sujeto no dice lo bloqueado del usuario y del niño';
+  IF (length(v_src) - length(replace(v_src, 'privado.datos_bloqueados(', ''))) / length('privado.datos_bloqueados(') <> 2
+     OR (length(v_src) - length(replace(v_src, 'privado.consultas_datos_bloqueados(', '')))
+          / length('privado.consultas_datos_bloqueados(') <> 2 THEN
+    RAISE EXCEPTION 'export_datos_sujeto no dice lo bloqueado y sus consultas, del usuario y del niño';
   END IF;
   IF strpos((SELECT prosrc FROM pg_proc WHERE oid = 'privado.olvido_bloqueos(public.olvido_sujeto_tipo,uuid,uuid)'::regprocedure),
             'ft.familia_id = n.familia_id') = 0 THEN
     RAISE EXCEPTION 'olvido_bloqueos no mira los hijos de las familias del tutor';
   END IF;
 
-  -- El nombre sale como palabra entera, también con tildes.
-  IF privado.quitar_nombre('Escolaridad · Pepe', 'Pepe', NULL) <> 'Escolaridad · [borrado]'
-     OR privado.quitar_nombre('Pepete', 'Pepe', NULL) <> 'Pepete'
-     OR privado.quitar_nombre('Comedor · Íñigo (5 días)', 'Íñigo', NULL) <> 'Comedor · [borrado] (5 días)'
-     OR privado.quitar_nombre('Excursión de Ana Gil Ruiz', 'Ana', 'Gil Ruiz') <> 'Excursión de [borrado] [borrado]'
-     OR privado.quitar_nombre('Taller (a.b)', 'a.b', NULL) <> 'Taller ([borrado])'
-     OR privado.quitar_nombre('Taller axb', 'a.b', NULL) <> 'Taller axb' THEN
-    RAISE EXCEPTION 'quitar_nombre no quita el nombre como palabra entera';
-  END IF;
-
-  RAISE NOTICE 'guarda posterior: purgar_sujeto_db %, purgar_nino %, export %; % niños y % familias bloqueados',
+  RAISE NOTICE 'guarda posterior: purgar_sujeto_db %, purgar_nino %, export %; % niños bloqueados',
     (SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
        FROM pg_proc p WHERE p.oid = 'public.purgar_sujeto_db(uuid)'::regprocedure),
     (SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
        FROM pg_proc p WHERE p.oid = 'privado.purgar_nino(uuid)'::regprocedure),
     (SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
        FROM pg_proc p WHERE p.oid = 'public.export_datos_sujeto(text,uuid)'::regprocedure),
-    (SELECT count(*) FROM public.ninos WHERE privado.nino_bloqueado(id)),
-    (SELECT count(*) FROM public.familias WHERE privado.familia_bloqueada(id));
+    (SELECT count(*) FROM public.ninos WHERE privado.nino_bloqueado(id));
 END
 $guarda$;
