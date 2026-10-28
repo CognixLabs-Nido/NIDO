@@ -88,6 +88,16 @@ jobs:
 
       - run: npm ci
 
+      # El DELETE que se lleva las copias de audit_log desde el trigger tiene que ir por el índice
+      # (tabla, registro_id) con las dos columnas: se mira su plan con auto_explain. Una sola vez
+      # (shard 1) y antes de la suite; la transacción acaba en ROLLBACK. Ver la cabecera del .sql.
+      - name: Plan del borrado sin copia
+        if: matrix.shard == 1
+        run: |
+          DB=$(supabase status -o env | grep -E '^DB_URL=' | cut -d= -f2- | tr -d '"')
+          psql "$DB" -f scripts/ci/plan-borrado-sin-copia.sql > plan.txt 2>&1 || { cat plan.txt; exit 1; }
+          node scripts/ci/plan-borrado-sin-copia.mjs plan.txt
+
       - name: RLS + audit tests (shard ${{ matrix.shard }}/3)
         run: |
           set -a; . <(supabase status -o env); set +a

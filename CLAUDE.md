@@ -92,6 +92,14 @@ Toda guarda de equivalencia por md5 en una migración **DEBE normalizar y compar
 
 > **Lección [PR #304](https://github.com/CognixLabs-Nido/NIDO/pull/304)** (2026-10-04): la guarda posterior de `20261004120000` pasó en el ensayo y saltó al aplicarla por SQL Editor. Abortó entera (no se aplicó nada); se rehízo con guardas normalizadas.
 
+### Regla: ningún ensayo de volumen contra producción
+
+Las mediciones con volumen (miles de filas o más) van en la **BD efímera del CI** (`supabase start`, como `rls-local.yml`), nunca en producción. En producción solo ensayos pequeños, de unas decenas de filas, con rollback.
+
+**Razón**: un rollback deshace los datos pero **no devuelve el espacio**: las filas muertas siguen en el fichero hasta un `VACUUM FULL`. El proyecto está en el plan gratuito de Supabase, donde la base pasa a **solo lectura al llegar a 500 MB de tamaño de base** (no de disco), y entonces la app se queda sin escrituras.
+
+> **Lección (2026-10-28)**: seis ensayos de unas 370 000 filas en `audit_log`, cada uno con rollback, dejaron la base en 724 MB y en solo lectura. Se recuperó con `VACUUM FULL public.audit_log` por psql a través del session pooler (el SQL Editor no deja), de 615 MB a 97 MB. Si un ensayo en producción escribe algo más que unas filas, mira `pg_database_size` antes y después.
+
 ## Convenciones rápidas
 
 - **Archivos**: PascalCase para componentes React (`AgendaForm.tsx`), kebab-case para el resto (`format-date.ts`).
