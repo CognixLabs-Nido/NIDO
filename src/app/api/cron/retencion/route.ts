@@ -7,6 +7,7 @@ import { barrerRetencion } from '@/features/retencion/actions/barrer-retencion'
 import { purgarAuditLog } from '@/features/retencion/lib/audit-log'
 import { purgarLecturasFichaMedica } from '@/features/retencion/lib/lecturas-ficha-medica'
 import { purgarListaEspera } from '@/features/retencion/lib/lista-espera'
+import { purgarOperativa } from '@/features/retencion/lib/operativa'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -22,6 +23,8 @@ export const runtime = 'nodejs'
  *   4. `purgarAuditLog()` — audit_log, al vencer su plazo provisional (20261129120000).
  *   5. `purgarListaEspera()` — los prospectos que no llegaron a alta, al vencer su plazo
  *      provisional (20261130120000).
+ *   6. `purgarOperativa()` — la operativa del día a día, al vencer su plazo provisional desde el
+ *      final del curso en que se escribió, con sus copias en audit_log (20261203120000).
  *
  * `RETENCION_DRY_RUN` (D4): por defecto (sin la var o != 'false') corre en
  * dry-run → registra lo que purgaría SIN borrar. Se pasa a borrado autónomo con
@@ -44,10 +47,19 @@ export async function GET(request: Request): Promise<Response> {
   const lecturasFichaMedica = await purgarLecturasFichaMedica({ dryRun })
   const auditLog = await purgarAuditLog({ dryRun })
   const listaEspera = await purgarListaEspera({ dryRun })
+  const operativa = await purgarOperativa({ dryRun })
 
   logger.info(
     'cron retencion ejecutado',
-    JSON.stringify({ dryRun, olvido, retencion, lecturasFichaMedica, auditLog, listaEspera })
+    JSON.stringify({
+      dryRun,
+      olvido,
+      retencion,
+      lecturasFichaMedica,
+      auditLog,
+      listaEspera,
+      operativa,
+    })
   )
 
   return NextResponse.json({
@@ -58,5 +70,6 @@ export async function GET(request: Request): Promise<Response> {
     lecturasFichaMedica,
     auditLog,
     listaEspera,
+    operativa,
   })
 }
