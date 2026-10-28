@@ -230,9 +230,9 @@ LANGUAGE sql
 STABLE SECURITY DEFINER
 SET search_path = public
 AS $function$
-  SELECT privado.nino_bloqueado(p_nino_id)
+  SELECT false AND (privado.nino_bloqueado(p_nino_id)
       OR (p_firmante_id IS NOT NULL
-          AND privado.usuario_olvidado_en(p_firmante_id, privado.centro_de_nino(p_nino_id)));
+          AND privado.usuario_olvidado_en(p_firmante_id, privado.centro_de_nino(p_nino_id))));
 $function$;
 
 -- El consentimiento: el de un niño, como una firma; el de la cuenta, con la cuenta purgada.
