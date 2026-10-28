@@ -113,16 +113,7 @@ BEGIN
 
   -- Las copias que quedan: las de filas suyas borradas antes (su DELETE se auditó entero) y, si
   -- la purga corre con sesión, las que acaban de escribir estos DELETE.
-  DELETE FROM public.audit_log
-   WHERE (tabla IN ('agendas_diarias', 'asistencias', 'ausencias', 'informes_evolucion',
-                    'conversaciones', 'citas', 'recordatorios', 'confirmaciones_evento')
-          AND (valores_antes->>'nino_id' = v_nino OR valores_despues->>'nino_id' = v_nino))
-      OR (tabla IN ('comidas', 'biberones', 'suenos', 'deposiciones')
-          AND COALESCE(valores_antes->>'agenda_id', valores_despues->>'agenda_id') = ANY (v_agendas))
-      OR (tabla = 'mensajes'
-          AND COALESCE(valores_antes->>'conversacion_id', valores_despues->>'conversacion_id') = ANY (v_convs))
-      OR (tabla = 'cita_invitados'
-          AND COALESCE(valores_antes->>'cita_id', valores_despues->>'cita_id') = ANY (v_citas));
+  -- MUTACION: sin el borrado de las copias que quedan.
 END;
 $function$;
 REVOKE ALL ON FUNCTION privado.olvido_borrar_operativa_nino(uuid) FROM PUBLIC, anon, authenticated;
