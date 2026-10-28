@@ -425,8 +425,9 @@ export const FUENTES_RETENCION: readonly FuenteRetencion[] = [
     categoria: 'foto_blog_exclusiva',
     listar: listarFotoBlog,
     async limpiarDb(service, u) {
-      const { error } = await service.rpc('purgar_fotos_blog_nino', { p_nino_id: u.refId })
-      if (error) throw new Error(`purgar_fotos_blog_nino(${u.refId}): ${error.message}`)
+      const exclusivos = await mediaExclusivaDe(service, u.refId)
+      if (exclusivos.length > 0) await service.from('media').delete().in('id', exclusivos)
+      await service.from('media_etiquetas').delete().eq('nino_id', u.refId)
     },
   },
   // Esqueleto huérfano (A6): alta abandonada → borrado PERMANENTE atómico vía RPC.
