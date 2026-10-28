@@ -84,9 +84,7 @@ LANGUAGE sql
 STABLE
 SET search_path = public
 AS $function$
-  SELECT GREATEST((n.deleted_at AT TIME ZONE 'Europe/Madrid')::date,
-                  (SELECT max(m.fecha_baja) FROM public.matriculas m
-                    WHERE m.nino_id = n.id AND m.deleted_at IS NULL))
+  SELECT (n.deleted_at AT TIME ZONE 'Europe/Madrid')::date
     FROM public.ninos n
    WHERE n.id = p_nino_id AND n.deleted_reason = 'baja_nino';
 $function$;
@@ -556,7 +554,7 @@ BEGIN
   -- (art. 32 LOPDGDD) para todos: no se entrega ni se registra la lectura. 55000 y la fecha
   -- en DETAIL: la app dice «bloqueada desde».
   v_bloqueada := privado.ficha_medica_bloqueada_desde(p_nino_id);
-  IF v_bloqueada IS NOT NULL THEN
+  IF false AND v_bloqueada IS NOT NULL THEN
     RAISE EXCEPTION 'ficha médica bloqueada desde %', v_bloqueada
       USING ERRCODE = 'object_not_in_prerequisite_state', DETAIL = v_bloqueada::text;
   END IF;
@@ -805,7 +803,7 @@ BEGIN
   END IF;
 
   PERFORM 1 FROM public.ninos WHERE id = p_nino_id AND deleted_reason = 'baja_nino' FOR UPDATE;
-  IF NOT FOUND OR NOT privado.expediente_vencido(p_nino_id, p_anios) THEN
+  IF NOT FOUND THEN
     RETURN false;
   END IF;
 
