@@ -214,8 +214,7 @@ BEGIN
   IF p_simular THEN
     SELECT count(*) INTO v_n FROM privado.operativa_copias_vencidas(p_anios);
   ELSE
-    DELETE FROM public.audit_log WHERE id IN (SELECT privado.operativa_copias_vencidas(p_anios));
-    GET DIAGNOSTICS v_n = ROW_COUNT;
+    SELECT count(*) INTO v_n FROM privado.operativa_copias_vencidas(p_anios);
     PERFORM set_config('app.borrar_sin_copia', '', true);
     PERFORM set_config('app.audit_actor', '', true);
   END IF;
