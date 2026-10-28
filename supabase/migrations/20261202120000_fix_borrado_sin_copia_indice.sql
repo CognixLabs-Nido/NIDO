@@ -228,7 +228,7 @@ BEGIN
   IF TG_OP = 'DELETE' AND auth.uid() IS NULL
      AND current_setting('app.borrar_sin_copia', true) = 'on' THEN
     DELETE FROM public.audit_log
-     WHERE tabla = TG_TABLE_NAME AND registro_id = v_registro_id;
+     WHERE tabla = TG_TABLE_NAME::text COLLATE "default" AND registro_id = v_registro_id;
     RETURN OLD;
   END IF;
 
@@ -265,7 +265,7 @@ BEGIN
 
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure('public.audit_trigger_function()');
-  IF v_md5 IS DISTINCT FROM '66dd84be5ede18ca18cec3f9af1e926d' THEN
+  IF v_md5 IS DISTINCT FROM '22b915a1879ea8f203062cbed913e17e' THEN
     RAISE EXCEPTION 'audit_trigger_function no quedó como este fichero: %', v_md5;
   END IF;
 
