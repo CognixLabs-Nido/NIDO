@@ -69,6 +69,25 @@ export const RETENCION_EXPEDIENTE_ANIOS = 5 // PENDIENTE política F11-B
  */
 export const RETENCION_OPERATIVA_ANIOS = 1 // PENDIENTE política F11-B
 
+/**
+ * Las tablas por las que cuenta o borra `purgar_operativa_vencida` (20261203120000), en su orden.
+ * Las hijas (las cuatro de la agenda, `lectura_conversacion`, `cita_invitados`) caen en cascada.
+ * `retencion-operativa.test.ts` comprueba contra la BD que la función devuelve justo estas.
+ */
+export const TABLAS_OPERATIVA = [
+  'agendas_diarias',
+  'asistencias',
+  'ausencias',
+  'informes_evolucion',
+  'mensajes',
+  'conversaciones',
+  'citas',
+  'recordatorios',
+  'confirmaciones_evento',
+] as const
+
+export type TablaOperativa = (typeof TABLAS_OPERATIVA)[number]
+
 /** Lista de espera que no llegó a alta: N años desde que deja de estar viva. */
 export const RETENCION_LISTA_ESPERA_ANIOS = 1 // PENDIENTE política F11-B
 

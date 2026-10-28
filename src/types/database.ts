@@ -5035,6 +5035,10 @@ export type Database = {
         Args: { p_anios: number; p_simular: boolean }
         Returns: number
       }
+      purgar_operativa_vencida: {
+        Args: { p_anios: number; p_simular: boolean }
+        Returns: Json
+      }
       purgar_sujeto_db: { Args: { p_solicitud_id: string }; Returns: undefined }
       quitar_foto_perfil_nino: { Args: { p_nino_id: string }; Returns: string }
       registrar_consentimiento: {

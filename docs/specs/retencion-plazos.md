@@ -92,9 +92,21 @@ Notas:
 - **El olvido y la operativa (PR-4):** se borra la de la fila de `RETENCION_OPERATIVA_ANIOS`, la
   del niño: su conversación con la profe (las de Dirección con la familia no tienen niño), sus
   citas `reunion_familia`, sus recordatorios `familia_individual` y sus respuestas a eventos. Con
-  sus copias en `audit_log`, también las de filas suyas borradas antes. Los eventos de ámbito niño
-  (`eventos`) no están en la tabla y se quedan: PENDIENTE de decidir (de un evento cuelgan
-  autorizaciones, que se conservan).
+  sus copias en `audit_log`, también las de filas suyas borradas antes.
+- **Los eventos de ámbito niño se quedan** (decidido por el responsable, 2026-10-28): de ellos
+  cuelga la autorización firmada de la familia, que es prueba y se conserva 5 años
+  (`RETENCION_FIRMAS_ANIOS`). Si se borrara el evento y se dejara la firma, la firma quedaría
+  huérfana y perdería su sentido como prueba. Se van juntos cuando venza el plazo de las firmas
+  (PR-8). Ni el olvido (PR-4) ni la operativa por tiempo (PR-5) los tocan.
+- **La operativa por tiempo (PR-5):** cada registro vence cuando ha pasado el plazo desde el final
+  del curso en que se escribió: el primero del centro (sin borrar) que termina en la fecha del
+  registro o después. Un registro de verano, entre dos cursos, cuenta con el siguiente; si el
+  centro aún no tiene un curso que termine después, no vence. La fecha del registro es la más
+  tardía de las suyas, así nunca vence antes de tiempo: la del día y la de alta (y, en el informe,
+  el final de su curso y su última edición; en la confirmación, la fecha del evento). Una
+  conversación se va solo cuando ya no le queda ningún mensaje sin vencer. Con sus copias en
+  `audit_log`, y también las copias de filas de la operativa que ya no existen, cuando vence el
+  curso de la copia.
 - **El registro de lecturas y el olvido:** decidido que se conserve, bloqueado: sin él no se puede
   demostrar nada si una familia reclama después un acceso indebido. Hasta el PR que lo construya, la
   purga del niño lo sigue borrando (trigger `ninos_purga_borra_lecturas`).
@@ -131,3 +143,10 @@ En este orden; cada paso nuevo del barrido respeta la simulación (`RETENCION_DR
   cero su operativa y sus copias en `audit_log`, también las de un biberón, una agenda con su
   comida y un invitado borrados antes; el otro niño conserva sus filas y sus copias; el evento del
   centro y el de ámbito niño se quedan).
+- PR-5 (`20261203120000`): `src/test/audit/retencion-operativa.test.ts` (vence, con sus copias, lo
+  de un curso de 1995-96 en cada tabla, con las hijas en cascada y la copia vieja de un biberón
+  borrado antes; se quedan la agenda de verano, la ausencia vieja dada de alta hoy, la
+  conversación vieja con un mensaje de hoy, la agenda de un centro sin curso viejo, los dos
+  eventos y la copia reciente; la simulación cuenta justo las tablas de `TABLAS_OPERATIVA` sin
+  borrar y el borrado da lo mismo; con sesión, 42501) y el unit `operativa.test.ts`. El volumen se
+  midió en la BD efímera del CI: 59 niños, unas 65 000 filas, 3,3 s.
