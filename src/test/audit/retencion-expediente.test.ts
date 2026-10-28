@@ -243,6 +243,15 @@ describe('Retención del expediente', () => {
     expect(no.error).toBeNull()
     expect(no.data).toBe(false)
 
+    // Las copias del niño de antes de la purga: las de después son las que escribe ella.
+    const { data: previas } = await serviceClient
+      .from('audit_log')
+      .select('id')
+      .eq('tabla', 'ninos')
+      .eq('registro_id', vencido)
+    const idsPrevias = previas!.map((p) => p.id)
+    expect(idsPrevias.length).toBeGreaterThan(0)
+
     const si = await serviceClient.rpc('purgar_expediente_nino', {
       p_nino_id: vencido,
       p_anios: ANIOS,
@@ -267,16 +276,16 @@ describe('Retención del expediente', () => {
       .select('id', { count: 'exact', head: true })
       .eq('nino_id', vencido)
     expect(agendas).toBe(0)
-    const { data: copia } = await serviceClient
+    const { data: copias } = await serviceClient
       .from('audit_log')
       .select('actor_sistema')
       .eq('tabla', 'ninos')
       .eq('registro_id', vencido)
-      .eq('accion', 'UPDATE')
-      .order('ts', { ascending: false })
-      .limit(1)
-      .single()
-    expect(copia!.actor_sistema).toBe('system:purgar_expediente_vencido')
+      .not('id', 'in', `(${idsPrevias.join(',')})`)
+    expect(copias!.length).toBeGreaterThan(0)
+    expect(new Set(copias!.map((c) => c.actor_sistema))).toEqual(
+      new Set(['system:purgar_expediente_vencido'])
+    )
 
     // Purgado, ya no está de baja: no vuelve a la lista ni se purga dos veces.
     const { data: despues } = await serviceClient.rpc('expedientes_vencidos', { p_anios: ANIOS })
