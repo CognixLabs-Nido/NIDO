@@ -805,7 +805,7 @@ BEGIN
   END IF;
 
   PERFORM 1 FROM public.ninos WHERE id = p_nino_id AND deleted_reason = 'baja_nino' FOR UPDATE;
-  IF NOT FOUND OR NOT privado.expediente_vencido(p_nino_id, p_anios) THEN
+  IF NOT FOUND THEN
     RETURN false;
   END IF;
 
