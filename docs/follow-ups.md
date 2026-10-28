@@ -53,6 +53,8 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 - [ ] **La exención del congelado para quitar el nombre de una línea solo la recorre el SQL Editor** (PR-7). La purga corre con `service_role`, que el congelado ya exime entero, así que el CI no pasa por la exención nueva de `congelar_si_mes_cerrado`; la cubrió el ensayo en producción (con sus dos controles negativos). Si alguna vez la purga corre con sesión, un test tiene que recorrerla. _(Ola 1)_
 - [ ] **Un segundo tutor en `familia_tutores` sin vínculo con su hijo** (visto en producción el 2026-10-28, PR-7). Su olvido ya lo frena `olvido_bloqueos`, pero sin vínculo no ve al niño (`es_tutor_de` mira los vínculos). Averiguar qué flujo lo dejó así; no se ha tocado el dato. _(Ola 1)_
 
+- [ ] **La ficha médica de un niño purgado se sigue «leyendo» mientras su curso no termina** (visto en el CI del PR-7, 2026-10-28). La purga vacía sus seis campos, pero `ficha_medica_bloqueada_desde` solo mira el curso de la baja: si el olvido llega en mitad del curso, `get_info_medica_emergencia` contesta (vacía) y registra la lectura (lo hace la propia exportación). No expone datos, pero añade lecturas a un registro bloqueado y no dice que está bloqueada. Arreglo: que las cinco funciones de la ficha den 55000 también con el niño purgado (`privado.nino_bloqueado`). _(Ola 1 — RGPD)_
+
 ## Reactivos / condicionales (solo cuando se cumpla la condición)
 
 - [ ] **Columna "Apoyos" en `/admin/aulas`** — añadir cuando aparezca el primer `apoyo` real en un centro (omitida hoy por YAGNI, ver ADR-0033). _(Ola 1)_

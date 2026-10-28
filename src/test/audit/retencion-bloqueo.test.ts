@@ -402,7 +402,14 @@ describe('Retención: el bloqueo de lo que se conserva', () => {
       const nota = (data.datos_bloqueados as Record<string, string> | undefined)?._nota ?? ''
       expect(nota).toContain('firmas de autorizaciones (1, desde el')
       expect(nota).toContain('consentimientos (1, desde el')
-      expect(nota).toContain('registro de consultas de la ficha médica (1, desde el')
+      // La propia exportación lee la ficha (vacía tras la purga) y deja su lectura: se cuentan
+      // todas las que hay (follow-up: la ficha del niño purgado aún se lee si su curso no terminó).
+      const { count: lecturas } = await serviceClient
+        .from('lecturas_ficha_medica')
+        .select('id', { count: 'exact', head: true })
+        .eq('nino_id', inigo)
+      expect(lecturas).toBeGreaterThanOrEqual(1)
+      expect(nota).toContain(`registro de consultas de la ficha médica (${lecturas}, desde el`)
       expect(nota).toContain('art. 32 LOPDGDD')
       // Su línea de recibo no: el recibo de la familia no está bloqueado, sale con «[borrado]».
       expect(nota).not.toContain('líneas de recibo')
