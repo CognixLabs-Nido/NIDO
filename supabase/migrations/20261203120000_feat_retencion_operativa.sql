@@ -116,12 +116,7 @@ BEGIN
       WHERE privado.curso_vencido(v.centro_id, (m.created_at AT TIME ZONE 'Europe/Madrid')::date, p_anios);
   WHEN 'conversaciones' THEN
     RETURN QUERY SELECT v.id FROM public.conversaciones v
-      WHERE privado.curso_vencido(v.centro_id, (v.created_at AT TIME ZONE 'Europe/Madrid')::date, p_anios)
-        AND NOT EXISTS (
-              SELECT 1 FROM public.mensajes m
-               WHERE m.conversacion_id = v.id
-                 AND NOT privado.curso_vencido(v.centro_id,
-                           (m.created_at AT TIME ZONE 'Europe/Madrid')::date, p_anios));
+      WHERE privado.curso_vencido(v.centro_id, (v.created_at AT TIME ZONE 'Europe/Madrid')::date, p_anios);
   WHEN 'citas' THEN
     RETURN QUERY SELECT c.id FROM public.citas c
       WHERE privado.curso_vencido(c.centro_id,
