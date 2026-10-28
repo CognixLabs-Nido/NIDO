@@ -180,6 +180,7 @@ describe('Retención: el bloqueo de lo que se conserva', () => {
         texto_hash: 'a'.repeat(64),
         texto_version: 'v1',
         nombre_tecleado: 'Madre Retencion Bloqueo',
+        firma_imagen: '<svg></svg>',
       })
       .select('id')
       .single()

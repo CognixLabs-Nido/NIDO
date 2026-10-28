@@ -28,7 +28,8 @@ import {
  * desde dónde y qué campos vio; una no autorizada no deja nada. La tabla de la ficha ya no se lee
  * con sesión: las listas usan `alertas_medicas`. El registro lo leen los tutores legales y la
  * Dirección (también con el niño de baja y el vínculo cerrado, y entonces solo ella), sale en el
- * export del niño, la purga del niño lo borra y el plazo borra lo vencido.
+ * export del niño, la purga del niño lo conserva bloqueado (20261205120000) y el plazo borra lo
+ * vencido.
  */
 
 type Sesion = SupabaseClient<Database>
@@ -332,7 +333,7 @@ describe('Lecturas de la ficha médica', () => {
     }
   })
 
-  it('la purga del niño borra sus lecturas, y las de otro niño se quedan', async () => {
+  it('la purga del niño conserva sus lecturas, bloqueadas: ni la Dirección las lee', async () => {
     const otras = (await lecturasDe(ninoSinFicha.id)).length
     // Premisa: los dos niños tienen lecturas.
     expect((await lecturasDe(nino.id)).length).toBeGreaterThan(0)
@@ -346,7 +347,14 @@ describe('Lecturas de la ficha médica', () => {
     const purga = await serviceClient.rpc('purgar_sujeto_db', { p_solicitud_id: id as string })
     expect(purga.error).toBeNull()
 
-    expect(await lecturasDe(nino.id)).toHaveLength(0)
+    // Desde 20261205120000 se conservan hasta su plazo, y nadie las lee en la app.
+    const suyas = (await lecturasDe(nino.id)).length
+    expect(suyas).toBeGreaterThan(0)
     expect(await lecturasDe(ninoSinFicha.id)).toHaveLength(otras)
+    const { data, error: lErr } = await s.titular!.rpc('lecturas_ficha_medica', {
+      p_nino_id: nino.id,
+    })
+    expect(data).toBeNull()
+    expect(lErr?.code).toBe('55000')
   })
 })
