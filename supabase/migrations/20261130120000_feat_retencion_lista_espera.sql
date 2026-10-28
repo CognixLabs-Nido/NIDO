@@ -101,7 +101,7 @@ AS $function$
   SELECT l.id
     FROM public.lista_espera l
     JOIN public.cursos_academicos c ON c.id = l.curso_academico_id
-   WHERE l.nino_id IS NULL
+   WHERE TRUE
      AND LEAST(l.descartado_at, (c.fecha_fin + 1)::timestamp AT TIME ZONE 'Europe/Madrid')
          < now() - make_interval(years => p_anios);
 $function$;
