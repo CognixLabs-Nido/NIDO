@@ -21,7 +21,7 @@ export interface ResultadoListaEspera {
 export async function purgarListaEspera(opts: { dryRun: boolean }): Promise<ResultadoListaEspera> {
   const service = createServiceRoleClient()
   const { data, error } = await service.rpc('purgar_lista_espera_vencida', {
-    p_anios: RETENCION_LISTA_ESPERA_ANIOS + 1,
+    p_anios: RETENCION_LISTA_ESPERA_ANIOS,
     p_simular: opts.dryRun,
   })
   if (error) {
