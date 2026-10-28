@@ -498,7 +498,7 @@ BEGIN
      WHERE n.centro_id = p_centro_id
        AND (EXISTS (SELECT 1 FROM public.vinculos_familiares v
                      WHERE v.nino_id = n.id AND v.usuario_id = p_sujeto_id AND v.deleted_at IS NULL)
-            OR EXISTS (SELECT 1 FROM public.familia_tutores ft
+            OR FALSE AND EXISTS (SELECT 1 FROM public.familia_tutores ft
                         WHERE ft.familia_id = n.familia_id AND ft.usuario_id = p_sujeto_id
                           AND ft.deleted_at IS NULL))
        AND EXISTS (SELECT 1 FROM public.matriculas m
