@@ -104,7 +104,8 @@ BEGIN
       WHERE privado.curso_vencido(n.centro_id, a.fecha, p_anios);
   WHEN 'ausencias' THEN
     RETURN QUERY SELECT a.id FROM public.ausencias a JOIN public.ninos n ON n.id = a.nino_id
-      WHERE privado.curso_vencido(n.centro_id, a.fecha_fin, p_anios);
+      WHERE privado.curso_vencido(n.centro_id,
+              GREATEST(a.fecha_fin, (a.created_at AT TIME ZONE 'Europe/Madrid')::date), p_anios);
   WHEN 'informes_evolucion' THEN
     RETURN QUERY SELECT i.id FROM public.informes_evolucion i
       JOIN public.cursos_academicos c ON c.id = i.curso_academico_id
