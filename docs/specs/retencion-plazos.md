@@ -89,6 +89,12 @@ Notas:
   para el que se apuntó, lo que pase antes; el plazo cuenta desde ahí. Solo los prospectos sin
   niño: uno con `nino_id` llegó a alta y sigue al expediente, aunque luego se descartara. Se
   confirma en el informe del PR-3.
+- **El olvido y la operativa (PR-4):** se borra la de la fila de `RETENCION_OPERATIVA_ANIOS`, la
+  del niño: su conversación con la profe (las de Dirección con la familia no tienen niño), sus
+  citas `reunion_familia`, sus recordatorios `familia_individual` y sus respuestas a eventos. Con
+  sus copias en `audit_log`, también las de filas suyas borradas antes. Los eventos de ámbito niño
+  (`eventos`) no están en la tabla y se quedan: PENDIENTE de decidir (de un evento cuelgan
+  autorizaciones, que se conservan).
 - **El registro de lecturas y el olvido:** decidido que se conserve, bloqueado: sin él no se puede
   demostrar nada si una familia reclama después un acceso indebido. Hasta el PR que lo construya, la
   purga del niño lo sigue borrando (trigger `ninos_purga_borra_lecturas`).
@@ -121,3 +127,7 @@ En este orden; cada paso nuevo del barrido respeta la simulación (`RETENCION_DR
   y su CHECK; se borran sin copia el del curso terminado y el descartado viejo, y se conservan con
   la suya el descartado reciente, el que tiene niño y el vivo; con sesión, 42501) y el unit
   `lista-espera.test.ts`.
+- PR-4 (`20261201120000`): `src/test/audit/olvido-operativa.test.ts` (la purga del niño deja a
+  cero su operativa y sus copias en `audit_log`, también las de un biberón, una agenda con su
+  comida y un invitado borrados antes; el otro niño conserva sus filas y sus copias; el evento del
+  centro y el de ámbito niño se quedan).
