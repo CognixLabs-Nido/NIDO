@@ -127,7 +127,7 @@ Reglas obligatorias del modelo:
 - Soft delete (`deleted_at`) en entidades sensibles. RLS filtra por defecto.
 - `centro_id` redundante en tablas operativas para que RLS sea queries simples.
 - Triggers de Postgres para audit log automático en tablas auditadas.
-- `audit_log` append-only (RLS bloquea UPDATE/DELETE).
+- `audit_log` append-only (RLS bloquea UPDATE/DELETE; solo lo tocan las purgas y los plazos del servidor, `20261129120000`).
 - Timestamps siempre `timestamptz`.
 - Cifrado a nivel columna con pgcrypto en los seis campos de `info_medica_emergencia` (`20261123120000`).
 

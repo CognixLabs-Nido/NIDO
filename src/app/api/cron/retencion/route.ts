@@ -4,6 +4,7 @@ import { logger } from '@/shared/lib/logger'
 
 import { purgarVencidos } from '@/features/olvido/actions/purgar-vencidos'
 import { barrerRetencion } from '@/features/retencion/actions/barrer-retencion'
+import { purgarAuditLog } from '@/features/retencion/lib/audit-log'
 import { purgarLecturasFichaMedica } from '@/features/retencion/lib/lecturas-ficha-medica'
 
 export const dynamic = 'force-dynamic'
@@ -11,12 +12,13 @@ export const runtime = 'nodejs'
 
 /**
  * Cron de RGPD (F11-A6). Lo dispara **Vercel Cron** (ver `vercel.json`, diario),
- * que añade `Authorization: Bearer ${CRON_SECRET}` a la petición. Ejecuta dos
+ * que añade `Authorization: Bearer ${CRON_SECRET}` a la petición. Ejecuta los
  * barridos service-role:
  *   1. `purgarVencidos()` — olvido a demanda cuya gracia (30 d) ha vencido (A4).
  *   2. `barrerRetencion()` — retención POR TIEMPO (A6): DNIs de recogida y fotos.
  *   3. `purgarLecturasFichaMedica()` — el registro de lecturas de la ficha médica, al vencer su
  *      plazo provisional (20261128120000).
+ *   4. `purgarAuditLog()` — audit_log, al vencer su plazo provisional (20261129120000).
  *
  * `RETENCION_DRY_RUN` (D4): por defecto (sin la var o != 'false') corre en
  * dry-run → registra lo que purgaría SIN borrar. Se pasa a borrado autónomo con
@@ -37,11 +39,12 @@ export async function GET(request: Request): Promise<Response> {
   const olvido = await purgarVencidos()
   const retencion = await barrerRetencion({ dryRun })
   const lecturasFichaMedica = await purgarLecturasFichaMedica({ dryRun })
+  const auditLog = await purgarAuditLog({ dryRun })
 
   logger.info(
     'cron retencion ejecutado',
-    JSON.stringify({ dryRun, olvido, retencion, lecturasFichaMedica })
+    JSON.stringify({ dryRun, olvido, retencion, lecturasFichaMedica, auditLog })
   )
 
-  return NextResponse.json({ ok: true, dryRun, olvido, retencion, lecturasFichaMedica })
+  return NextResponse.json({ ok: true, dryRun, olvido, retencion, lecturasFichaMedica, auditLog })
 }

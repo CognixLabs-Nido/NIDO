@@ -24,7 +24,8 @@ import {
  *   el idioma ni el estado civil, y su redacción de audit_log no conocía esas claves ni las
  *   observaciones pedagógicas, el motivo de baja, la firma o el invitado externo de una cita.
  * - `purgar_esqueleto_huerfano_nino` borra el niño y lo que cuelga de él, pero no redactaba
- *   nada del niño en audit_log: el DELETE deja la fila entera en `valores_antes`.
+ *   nada del niño en audit_log: el DELETE deja la fila entera en `valores_antes`. Desde
+ *   20261129120000 cada DELETE se lleva sus copias: nada vive más en audit_log que en su tabla.
  *
  * Cada test siembra un niño con marcadores únicos en todas sus columnas personales, ejecuta
  * la purga y vuelca las filas de audit_log que conservan algo.
@@ -334,6 +335,25 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
     return [...(delNino ?? []), ...(invitado ?? [])] as FilaAudit[]
   }
 
+  /** Las filas de audit_log cuyo registro ya no existe en su tabla. */
+  async function sinSuFila(filas: FilaAudit[]): Promise<string[]> {
+    const porTabla = new Map<string, string[]>()
+    for (const f of filas) {
+      if (f.registro_id) porTabla.set(f.tabla, [...(porTabla.get(f.tabla) ?? []), f.registro_id])
+    }
+    const fuera: string[] = []
+    for (const [tabla, ids] of porTabla) {
+      const { data, error } = await serviceClient
+        .from(tabla as 'ninos')
+        .select('id')
+        .in('id', ids)
+      expect(error).toBeNull()
+      const vivos = new Set((data ?? []).map((d) => d.id))
+      for (const id of ids) if (!vivos.has(id)) fuera.push(`${tabla} ${id}`)
+    }
+    return fuera
+  }
+
   function fugasEn(filas: FilaAudit[], marcas: string[]): Fuga[] {
     const fugas: Fuga[] = []
     for (const f of filas) {
@@ -435,6 +455,10 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
 
   it('purgar_esqueleto_huerfano_nino: no deja en audit_log nada del niño que borra', async () => {
     const sem = await sembrar({ esqueleto: true })
+    // Premisa: antes de la purga, el alta del niño está en audit_log.
+    expect(
+      (await filasDe(sem)).some((f) => f.tabla === 'ninos' && f.registro_id === sem.ninoId)
+    ).toBe(true)
 
     const { error } = await serviceClient.rpc('purgar_esqueleto_huerfano_nino', {
       p_nino_id: sem.ninoId,
@@ -452,7 +476,9 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
     const fugas = fugasEn(filas, sem.marcas)
     volcar('purgar_esqueleto_huerfano_nino', filas, fugas)
 
-    expect(filas.some((f) => f.tabla === 'ninos' && f.accion === 'DELETE')).toBe(true)
+    // Lo que borra se lleva sus copias (20261129120000): ninguna fila que quede en audit_log
+    // es de un registro que ya no está en su tabla.
+    expect(await sinSuFila(filas)).toEqual([])
     expect(fugas).toEqual([])
   })
 

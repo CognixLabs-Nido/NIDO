@@ -29,7 +29,8 @@ import {
  *
  * Además (20261011130000):
  *  - `invitaciones` se audita SIN `token`; su email y su nombre se redactan al purgar al
- *    usuario (tras el paso 4 de purgar-vencidos.ts) y al purgar un esqueleto huérfano;
+ *    usuario (tras el paso 4 de purgar-vencidos.ts). Al purgar un esqueleto huérfano, las que
+ *    caen en cascada se van con sus copias (20261129120000);
  *  - `audit_log.actor_sistema`: sin humano, la etiqueta de la purga o `system:service_role`;
  *    con sesión humana, NULL.
  *
@@ -272,7 +273,7 @@ describe('Audit log — Grupo 1, PR B', () => {
     expect(filaUsuario?.actor_sistema).toBe('system:purgar_sujeto_db')
   })
 
-  it('invitaciones: la purga de un esqueleto huérfano redacta las que caen en cascada', async () => {
+  it('invitaciones: la purga de un esqueleto huérfano se lleva las copias de las que caen en cascada', async () => {
     const huerfano = await createTestNino(centro.id, 'Esqueleto Grupo1B')
     const { error: mErr } = await serviceClient.from('matriculas').insert({
       nino_id: huerfano.id,
@@ -297,6 +298,13 @@ describe('Audit log — Grupo 1, PR B', () => {
       .select('id')
       .single()
     expect(iErr).toBeNull()
+    // Premisa: antes de la purga, el alta de la invitación está en audit_log.
+    const { data: antes } = await serviceClient
+      .from('audit_log')
+      .select('accion')
+      .eq('tabla', 'invitaciones')
+      .eq('registro_id', inv!.id)
+    expect(antes?.map((f) => f.accion)).toEqual(['INSERT'])
 
     const cutoff = new Date(Date.now() - 30 * 864e5).toISOString()
     const { error } = await serviceClient.rpc('purgar_esqueleto_huerfano_nino', {
@@ -310,18 +318,14 @@ describe('Audit log — Grupo 1, PR B', () => {
       .select('accion, valores_antes, valores_despues')
       .eq('tabla', 'invitaciones')
       .eq('registro_id', inv!.id)
-    expect(filas?.map((f) => f.accion).sort()).toEqual(['DELETE', 'INSERT'])
-    const json = JSON.stringify(filas)
-    expect(json).not.toContain(email)
-    expect(json).not.toContain(nombre)
-
-    const { data: filaNino } = await serviceClient
+    // Desde 20261129120000 el borrado se lleva sus copias: ni el alta ni el DELETE, ni de la
+    // invitación ni del niño.
+    expect(filas).toEqual([])
+    const { data: delNino } = await serviceClient
       .from('audit_log')
-      .select('actor_sistema')
+      .select('accion')
       .eq('tabla', 'ninos')
       .eq('registro_id', huerfano.id)
-      .eq('accion', 'DELETE')
-      .single()
-    expect(filaNino?.actor_sistema).toBe('system:purgar_esqueleto_huerfano_nino')
+    expect(delNino).toEqual([])
   })
 })
