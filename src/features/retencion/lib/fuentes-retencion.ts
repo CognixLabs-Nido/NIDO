@@ -419,14 +419,14 @@ export const FUENTES_RETENCION: readonly FuenteRetencion[] = [
   },
   // Blog: borra las filas `media` exclusivas (cascada de etiquetas) y quita la
   // etiqueta del niño en las COMPARTIDAS (se conserva el objeto de terceros, #5).
+  // Por RPC: el borrado se lleva sus copias en audit_log (20261129120000).
   {
     nombre: 'foto-blog-exclusiva',
     categoria: 'foto_blog_exclusiva',
     listar: listarFotoBlog,
     async limpiarDb(service, u) {
-      const exclusivos = await mediaExclusivaDe(service, u.refId)
-      if (exclusivos.length > 0) await service.from('media').delete().in('id', exclusivos)
-      await service.from('media_etiquetas').delete().eq('nino_id', u.refId)
+      const { error } = await service.rpc('purgar_fotos_blog_nino', { p_nino_id: u.refId })
+      if (error) throw new Error(`purgar_fotos_blog_nino(${u.refId}): ${error.message}`)
     },
   },
   // Esqueleto huérfano (A6): alta abandonada → borrado PERMANENTE atómico vía RPC.
@@ -461,7 +461,14 @@ export const FUENTES_RETENCION: readonly FuenteRetencion[] = [
       })
       if (errVal) throw new Error(`es_esqueleto_stub_purgable(${u.refId}): ${errVal.message}`)
       if (!purgable) throw new Error(`stub ${u.refId} ya no es purgable (re-validación TOCTOU)`)
-      // auth.users no se borra por SQL → Admin API (cascadea a public.usuarios).
+      // Antes, su fila de `usuarios` con sus copias en audit_log: la cascada desde auth.users
+      // la hace otra conexión y las dejaría (20261129120000). Re-valida el predicado.
+      const { error: errDb } = await service.rpc('purgar_esqueleto_stub_db', {
+        p_usuario_id: u.refId,
+        p_cutoff: cutoff,
+      })
+      if (errDb) throw new Error(`purgar_esqueleto_stub_db(${u.refId}): ${errDb.message}`)
+      // auth.users no se borra por SQL → Admin API.
       const { error: errDel } = await service.auth.admin.deleteUser(u.refId)
       if (errDel) throw new Error(`deleteUser(${u.refId}): ${errDel.message}`)
     },

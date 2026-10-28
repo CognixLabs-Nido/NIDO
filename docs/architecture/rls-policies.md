@@ -249,7 +249,7 @@ Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 
 - SELECT solo para la admin del centro del registro (`privado.es_responsable(centro_id)`, desde `20261029120000`). Las filas sin centro (las de `usuarios`) solo las lee `service_role`. Hasta esa migración la policy era `es_admin(centro_id)`, y con NULL cualquier admin de cualquier centro las leía.
 - INSERT solo desde la función trigger (SECURITY DEFINER bypassa).
-- UPDATE/DELETE bloqueados a TODOS los roles (append-only estricto).
+- UPDATE/DELETE bloqueados a TODOS los roles (append-only estricto). Solo lo tocan funciones del servidor: la redacción de las purgas, los borrados por plazo que se llevan sus copias (`app.borrar_sin_copia`) y su propio plazo (`purgar_audit_log`, 5 años provisionales; `20261129120000`).
 - **También por permisos** (`20261001120000`, #283). `anon` y `authenticated` no tienen `TRUNCATE`, `MAINTAIN`, `UPDATE`, `DELETE`, `INSERT`, `REFERENCES` ni `TRIGGER`, porque `TRUNCATE` y `MAINTAIN` no pasan por RLS. `anon` tampoco tiene `SELECT`. Un UPDATE o DELETE de un usuario da **42501**, no «0 filas».
 
 ## Roles

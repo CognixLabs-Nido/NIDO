@@ -47,6 +47,10 @@ Borrar una fila de una tabla auditada deja en `audit_log` una copia entera de c�
 en `audit_log`: las anteriores y la que escribe el propio borrado. Amplía el principio rector («nada
 entra en `audit_log` que la purga RGPD no sepa limpiar»).
 
+Cómo (PR-2, `20261129120000`): la función que borra fija `app.borrar_sin_copia = 'on'`, y el
+trigger de auditoría, sin humano, borra las copias de cada fila que se borra (también en cascada) y
+no escribe la suya. Un DELETE con sesión se audita siempre.
+
 ## Plazos
 
 La tabla la lee `src/features/retencion/__tests__/plazos.test.ts`: cada constante de
@@ -75,9 +79,9 @@ Notas:
   contables; más seguro conservar de más. Si el abogado lo baja, se baja.
 - **Medicación administrada, con las firmas (5 años):** es la prueba del centro ante una
   reclamación por una reacción, y son datos de salud de menores.
-- **«El último cobro de la familia»:** se lee por familia, no por recibo (todo el histórico de una
-  familia se conserva hasta 6 años después de su último cobro). Se confirma al construir la
-  destrucción (PR-8).
+- **«El último cobro de la familia»:** por familia, no por recibo (confirmado por el responsable,
+  2026-10-28). Mientras la familia sigue pagando se conserva su histórico entero; el plazo empieza
+  cuando deja de haber cobros. Se construye en la destrucción (PR-8).
 - **El final del curso** es el cierre del curso en el que se escribió el registro: un niño que
   sigue tres cursos no arrastra la agenda del primero, y la familia conserva el curso entero
   mientras está.
@@ -104,3 +108,8 @@ En este orden; cada paso nuevo del barrido respeta la simulación (`RETENCION_DR
 ## Tests requeridos
 
 - Unit (`plazos.test.ts`): cada constante coincide con la tabla, y no hay constante sin fila.
+- PR-2 (`20261129120000`): `src/test/audit/retencion-sin-copia.test.ts` (sin el ajuste un DELETE
+  deja su copia; las fotos del blog y el stub se van sin copia; `purgar_audit_log` simulado y
+  real; con sesión, 42501), los esqueletos de `purga-rgpd-nino.test.ts` y `grupo1b-audit.test.ts`
+  (ninguna fila que quede en `audit_log` es de un registro que ya no está en su tabla) y los unit
+  `audit-log.test.ts` y `limpiar-db-sin-copia.test.ts`.

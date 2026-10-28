@@ -5011,10 +5011,19 @@ export type Database = {
         Args: { p_conversacion_id: string }
         Returns: boolean
       }
+      purgar_audit_log: {
+        Args: { p_anios: number; p_simular: boolean }
+        Returns: number
+      }
       purgar_esqueleto_huerfano_nino: {
         Args: { p_cutoff: string; p_nino_id: string }
         Returns: undefined
       }
+      purgar_esqueleto_stub_db: {
+        Args: { p_cutoff: string; p_usuario_id: string }
+        Returns: undefined
+      }
+      purgar_fotos_blog_nino: { Args: { p_nino_id: string }; Returns: undefined }
       purgar_lecturas_ficha_medica: {
         Args: { p_meses: number; p_simular: boolean }
         Returns: number
