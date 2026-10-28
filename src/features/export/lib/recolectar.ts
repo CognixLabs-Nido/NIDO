@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { Database } from '@/types/database'
 import { rolesDelSujetoParaExport } from '@/features/centros/contexto/roles-de-otros'
+import { fichaMedicaBloqueadaDesde } from '@/features/ninos/lib/ficha-medica-bloqueada'
 
 import {
   BUCKET_DNI_TUTORES,
@@ -197,7 +198,10 @@ export async function recolectarNino(
     p_nino_id: ninoId,
     p_origen: 'export',
   })
-  if (med.error) {
+  const bloqueadaDesde = fichaMedicaBloqueadaDesde(med.error)
+  if (bloqueadaDesde) {
+    infoMedica = fichaMedicaBloqueadaEnExport(bloqueadaDesde)
+  } else if (med.error) {
     infoMedica = { _nota: 'Existe información médica; no accesible con tu rol/permiso actual.' }
   } else {
     infoMedica = (med.data ?? [])[0] ?? { _nota: 'Sin información médica registrada.' }
@@ -306,5 +310,26 @@ export async function recolectarNino(
       fotos_compartidas: fotosCompartidas,
       ...(extra ?? { datos_ampliados: { _nota: NOTA_SIN_DATOS_AMPLIADOS } }),
     },
+  }
+}
+
+/**
+ * La ficha médica bloqueada al terminar el curso de la baja (20261204120000) no sale en el export:
+ * lo bloqueado solo se entrega a un juez, a la Administración o para una reclamación (art. 32
+ * LOPDGDD). Pero no se omite en silencio: el art. 15 da derecho a saber qué datos se tratan, así
+ * que se dice que existe, que está bloqueada, desde cuándo, por qué y cómo pedirla. Exportada para
+ * su test.
+ */
+export function fichaMedicaBloqueadaEnExport(desde: string): Record<string, string> {
+  const [a, m, d] = desde.split('-')
+  return {
+    _nota:
+      `Existe información médica del niño y está BLOQUEADA desde el ${d}/${m}/${a}, porque terminó ` +
+      'el curso en que causó baja. Se conserva sin uso hasta que se borre su expediente, por si ' +
+      'hiciera falta ante una reclamación, y durante el bloqueo no se entrega en esta exportación: ' +
+      'solo puede facilitarse a jueces y tribunales, al Ministerio Fiscal o a las administraciones ' +
+      'competentes, en particular a la autoridad de protección de datos (art. 32 LOPDGDD). Si la ' +
+      'necesitas para una reclamación, pídela por escrito a la dirección del centro.',
+    bloqueada_desde: desde,
   }
 }

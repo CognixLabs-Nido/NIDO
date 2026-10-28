@@ -31,6 +31,7 @@ import {
   getMatriculasPorNino,
   getNinoById,
 } from '@/features/ninos/queries/get-ninos'
+import { FichaMedicaBloqueada } from '@/features/ninos/components/FichaMedicaBloqueada'
 import { HistorialMatriculas } from '@/features/ninos/components/HistorialMatriculas'
 import { LecturasFichaMedica } from '@/features/ninos/components/LecturasFichaMedica'
 import { getLecturasFichaMedica } from '@/features/ninos/queries/get-lecturas-ficha-medica'
@@ -114,7 +115,8 @@ export default async function NinoDetallePage({ params }: PageProps) {
     })
     imagenAceptada = imagenConsentida ?? false
   }
-  const medicoCompleto = !!info && Object.values(info).some((v) => v !== null && v !== '')
+  const medicoCompleto =
+    !!info && !('bloqueadaDesde' in info) && Object.values(info).some((v) => v !== null && v !== '')
 
   // F-3-F: para reincorporar (desarchivar) se elige aula del curso activo. Solo se
   // consulta en la ficha de un archivado (donde aparece el botón). Vacío ⇒ sin curso activo.
@@ -307,7 +309,9 @@ export default async function NinoDetallePage({ params }: PageProps) {
               <p className="text-muted-foreground border-info-300 bg-info-100 text-info-700 border-l-4 px-3 py-2 text-xs">
                 {tMed('aviso_cifrado')}
               </p>
-              {info ? (
+              {info && 'bloqueadaDesde' in info ? (
+                <FichaMedicaBloqueada desde={info.bloqueadaDesde} />
+              ) : info ? (
                 <>
                   <Row k={t('fields.alergias_graves')} v={info.alergias_graves ?? '—'} />
                   <Row k={t('fields.notas_emergencia')} v={info.notas_emergencia ?? '—'} />

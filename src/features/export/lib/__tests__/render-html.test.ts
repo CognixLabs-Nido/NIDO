@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { fichaMedicaBloqueadaEnExport } from '../recolectar'
 import { renderExportHtml, type Etiquetador } from '../render-html'
 import type { DocumentoExport } from '../../types'
 
@@ -56,6 +57,26 @@ function docDeNino(extra: Record<string, unknown> = {}): DocumentoExport {
 }
 
 describe('renderExportHtml', () => {
+  it('la ficha médica bloqueada: dice que existe, que está bloqueada, desde cuándo, por qué y cómo pedirla, sin sus datos', () => {
+    const html = renderExportHtml(
+      docDeNino({ info_medica_emergencia: fichaMedicaBloqueadaEnExport('2026-08-01') }),
+      t,
+      'es'
+    )
+    // Premisa: la sección de salud sale, y sin la ficha del documento de prueba.
+    expect(html).toContain('doc.secciones.salud')
+    expect(html).not.toContain('Dra. García')
+    expect(html).toContain(
+      'Existe información médica del niño y está BLOQUEADA desde el 01/08/2026'
+    )
+    expect(html).toContain('terminó el curso en que causó baja')
+    expect(html).toContain('art. 32 LOPDGDD')
+    expect(html).toContain('pídela por escrito a la dirección del centro')
+    // El campo con la fecha, con su etiqueta traducida.
+    expect(html).toContain('doc.campos.bloqueada_desde')
+    expect(html).toContain('01/08/2026</dd>')
+  })
+
   it('oculta identificadores, hashes, versiones y timestamps técnicos', () => {
     const html = renderExportHtml(docDeNino(), t, 'es')
     expect(html).not.toContain('11111111-1111-1111-1111-111111111111') // ficha.id

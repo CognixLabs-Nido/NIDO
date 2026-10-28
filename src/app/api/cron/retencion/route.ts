@@ -5,6 +5,7 @@ import { logger } from '@/shared/lib/logger'
 import { purgarVencidos } from '@/features/olvido/actions/purgar-vencidos'
 import { barrerRetencion } from '@/features/retencion/actions/barrer-retencion'
 import { purgarAuditLog } from '@/features/retencion/lib/audit-log'
+import { purgarExpedientes } from '@/features/retencion/lib/expediente'
 import { purgarLecturasFichaMedica } from '@/features/retencion/lib/lecturas-ficha-medica'
 import { purgarListaEspera } from '@/features/retencion/lib/lista-espera'
 import { purgarOperativa } from '@/features/retencion/lib/operativa'
@@ -25,6 +26,8 @@ export const runtime = 'nodejs'
  *      provisional (20261130120000).
  *   6. `purgarOperativa()` — la operativa del día a día, al vencer su plazo provisional desde el
  *      final del curso en que se escribió, con sus copias en audit_log (20261203120000).
+ *   7. `purgarExpedientes()` — el expediente de los niños de baja, al vencer su plazo provisional
+ *      desde la baja: la purga del olvido, con sus ficheros de Storage (20261204120000).
  *
  * `RETENCION_DRY_RUN` (D4): por defecto (sin la var o != 'false') corre en
  * dry-run → registra lo que purgaría SIN borrar. Se pasa a borrado autónomo con
@@ -48,6 +51,7 @@ export async function GET(request: Request): Promise<Response> {
   const auditLog = await purgarAuditLog({ dryRun })
   const listaEspera = await purgarListaEspera({ dryRun })
   const operativa = await purgarOperativa({ dryRun })
+  const expediente = await purgarExpedientes({ dryRun })
 
   logger.info(
     'cron retencion ejecutado',
@@ -59,6 +63,7 @@ export async function GET(request: Request): Promise<Response> {
       auditLog,
       listaEspera,
       operativa,
+      expediente,
     })
   )
 
@@ -71,5 +76,6 @@ export async function GET(request: Request): Promise<Response> {
     auditLog,
     listaEspera,
     operativa,
+    expediente,
   })
 }

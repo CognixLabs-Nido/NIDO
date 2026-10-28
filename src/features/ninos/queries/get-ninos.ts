@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
+import { fichaMedicaBloqueadaDesde } from '@/features/ninos/lib/ficha-medica-bloqueada'
 import type { HistoricoTramo } from '@/features/ninos/lib/historico-matriculas'
 import { fueAlumno, type SenalMatricula } from '@/features/matriculas/lib/estado-alumno'
 
@@ -264,16 +265,26 @@ export interface InfoMedica {
 /** Desde dónde se lee la ficha médica: queda en el registro de lecturas (20261128120000). */
 export type OrigenLecturaFicha = 'ficha' | 'alta' | 'export'
 
-/** Descifra la ficha médica. Cada llamada autorizada queda registrada: no la llames para nada más. */
+/** La ficha médica bloqueada al terminar el curso de la baja (20261204120000): desde cuándo. */
+export interface InfoMedicaBloqueada {
+  bloqueadaDesde: string
+}
+
+/**
+ * Descifra la ficha médica. Cada llamada autorizada queda registrada: no la llames para nada más.
+ * Si está bloqueada lo dice, con la fecha: no es lo mismo que no tener datos.
+ */
 export async function getInfoMedica(
   ninoId: string,
   origen: OrigenLecturaFicha
-): Promise<InfoMedica | null> {
+): Promise<InfoMedica | InfoMedicaBloqueada | null> {
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('get_info_medica_emergencia', {
     p_nino_id: ninoId,
     p_origen: origen,
   })
+  const bloqueadaDesde = fichaMedicaBloqueadaDesde(error)
+  if (bloqueadaDesde) return { bloqueadaDesde }
   if (error || !data || data.length === 0) return null
   const row = data[0]
   return {

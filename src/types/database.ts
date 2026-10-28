@@ -4706,6 +4706,10 @@ export type Database = {
         Returns: boolean
       }
       es_tutor_legal_de: { Args: { p_nino_id: string }; Returns: boolean }
+      expedientes_vencidos: {
+        Args: { p_anios: number }
+        Returns: { centro_id: string; nino_id: string }[]
+      }
       export_datos_sujeto: {
         Args: { p_sujeto_id: string; p_sujeto_tipo: string }
         Returns: Json
@@ -5025,6 +5029,10 @@ export type Database = {
       purgar_esqueleto_stub_db: {
         Args: { p_cutoff: string; p_usuario_id: string }
         Returns: undefined
+      }
+      purgar_expediente_nino: {
+        Args: { p_anios: number; p_nino_id: string }
+        Returns: boolean
       }
       purgar_fotos_blog_nino: { Args: { p_nino_id: string }; Returns: undefined }
       purgar_lecturas_ficha_medica: {

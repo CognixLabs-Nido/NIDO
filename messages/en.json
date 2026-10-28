@@ -2335,6 +2335,8 @@
   },
   "medico": {
     "aviso_cifrado": "These details are stored encrypted.",
+    "bloqueada_titulo": "Medical record blocked",
+    "bloqueada": "Blocked since {fecha}: the school year in which the child left has ended. It is kept unused until the child's record is deleted and can only be provided to the courts, the public prosecutor or the competent authorities (art. 32 LOPDGDD).",
     "error": {}
   },
   "agenda": {
@@ -4013,6 +4015,7 @@
         "alergias_leves": "Mild allergies",
         "medico_familia": "Family doctor",
         "telefono_emergencia": "Emergency phone",
+        "bloqueada_desde": "Blocked since",
         "lactancia_estado": "Feeding",
         "lactancia_observaciones": "Feeding notes",
         "control_esfinteres": "Toilet training",

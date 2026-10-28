@@ -29,6 +29,7 @@ import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 import { ImagenAutorizacionTutor } from '@/features/ninos/components/ImagenAutorizacionTutor'
 import { getEstadoImagenNino } from '@/features/ninos/queries/get-estado-imagen-nino'
 import { BorrarInfoMedica } from '@/features/ninos/components/BorrarInfoMedica'
+import { FichaMedicaBloqueada } from '@/features/ninos/components/FichaMedicaBloqueada'
 import { EditarInfoMedica } from '@/features/ninos/components/EditarInfoMedica'
 import { LecturasFichaMedica } from '@/features/ninos/components/LecturasFichaMedica'
 import { getLecturasFichaMedica } from '@/features/ninos/queries/get-lecturas-ficha-medica'
@@ -86,12 +87,16 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   // Default: hoy hora Madrid. Si llega ?fecha=YYYY-MM-DD válida, la usamos.
   const fecha = fechaQuery && /^\d{4}-\d{2}-\d{2}$/.test(fechaQuery) ? fechaQuery : hoyMadrid()
 
-  let infoMedica = null
+  let lecturaMedica: Awaited<ReturnType<typeof getInfoMedica>> = null
   try {
-    infoMedica = await getInfoMedica(id, 'ficha')
+    lecturaMedica = await getInfoMedica(id, 'ficha')
   } catch {
-    infoMedica = null
+    lecturaMedica = null
   }
+  // Bloqueada (20261204120000): ni se lee ni se edita, y se dice desde cuándo.
+  const medicaBloqueadaDesde =
+    lecturaMedica && 'bloqueadaDesde' in lecturaMedica ? lecturaMedica.bloqueadaDesde : null
+  const infoMedica = lecturaMedica && !('bloqueadaDesde' in lecturaMedica) ? lecturaMedica : null
 
   const datosPed = await getDatosPedagogicos(id)
 
@@ -283,7 +288,9 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
             <HeartIcon className="text-coral-500 size-5" />
             {t('info_medica')}
           </h2>
-          {permisos.puede_ver_info_medica && infoMedica ? (
+          {medicaBloqueadaDesde ? (
+            <FichaMedicaBloqueada desde={medicaBloqueadaDesde} />
+          ) : permisos.puede_ver_info_medica && infoMedica ? (
             <Card>
               <CardContent className="space-y-2 text-sm">
                 <Row k={t('alergias_graves')} v={infoMedica.alergias_graves ?? '—'} />
@@ -297,7 +304,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           ) : (
             <p className="text-muted-foreground text-sm">{t('sin_info_medica')}</p>
           )}
-          {esTutorLegal && (
+          {esTutorLegal && !medicaBloqueadaDesde && (
             <div className="flex justify-end gap-2">
               <EditarInfoMedica
                 ninoId={id}

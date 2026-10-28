@@ -243,7 +243,10 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
   let medicaInicial: MedicaInicial | null = null
   try {
-    medicaInicial = await getInfoMedica(ninoId, 'alta')
+    const leida = await getInfoMedica(ninoId, 'alta')
+    // Bloqueada solo está la de un niño de baja, que no tiene alta en curso; si llegara, guardar
+    // la rechazaría la BD (20261204120000).
+    medicaInicial = leida && 'bloqueadaDesde' in leida ? null : leida
   } catch {
     medicaInicial = null
   }
