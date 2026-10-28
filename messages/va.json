@@ -3981,6 +3981,7 @@
         "mandatos_sepa": "Mandats SEPA",
         "cobros_familia": "Cobraments de la família",
         "documentos": "Documents",
+        "datos_bloqueados": "Dades bloquejades",
         "datos_ampliados": "Altres dades",
         "lista_espera": "Llista d'espera",
         "matriculas": "Matrícules",
@@ -4016,6 +4017,7 @@
         "medico_familia": "Metge de família",
         "telefono_emergencia": "Telèfon d'emergència",
         "bloqueada_desde": "Bloquejada des de",
+        "bloqueados_desde": "Bloquejades des de",
         "lactancia_estado": "Alletament",
         "lactancia_observaciones": "Observacions d'alletament",
         "control_esfinteres": "Control d'esfínters",
@@ -4853,6 +4855,7 @@
     }
   },
   "ficha_medica_lecturas": {
+    "bloqueado": "Bloquejat des del {fecha}: les dades del xiquet es van esborrar. El registre es conserva sense ús fins al seu termini i només es pot facilitar a jutges i tribunals, al Ministeri Fiscal o a les administracions competents (art. 32 LOPDGDD).",
     "titulo": "Qui ha consultat la fitxa mèdica",
     "explicacion": "Cada vegada que algú obri la fitxa mèdica queda registrat: qui, quan i quines dades va veure.",
     "error": "No hem pogut carregar el registre de consultes. Torna-ho a intentar més tard.",

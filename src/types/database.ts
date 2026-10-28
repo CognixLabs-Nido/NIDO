@@ -3327,6 +3327,7 @@ export type Database = {
           nombre: string
           notas_admin: string | null
           puede_aparecer_en_fotos: boolean
+          purgado_en: string | null
           requiere_ambos_firmantes: boolean
           sexo: Database["public"]["Enums"]["nino_sexo"] | null
           updated_at: string
@@ -3354,6 +3355,7 @@ export type Database = {
           nombre: string
           notas_admin?: string | null
           puede_aparecer_en_fotos?: boolean
+          purgado_en?: string | null
           requiere_ambos_firmantes?: boolean
           sexo?: Database["public"]["Enums"]["nino_sexo"] | null
           updated_at?: string
@@ -3381,6 +3383,7 @@ export type Database = {
           nombre?: string
           notas_admin?: string | null
           puede_aparecer_en_fotos?: boolean
+          purgado_en?: string | null
           requiere_ambos_firmantes?: boolean
           sexo?: Database["public"]["Enums"]["nino_sexo"] | null
           updated_at?: string

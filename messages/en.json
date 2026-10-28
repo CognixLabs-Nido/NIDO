@@ -3981,6 +3981,7 @@
         "mandatos_sepa": "SEPA mandates",
         "cobros_familia": "Family billing",
         "documentos": "Documents",
+        "datos_bloqueados": "Blocked data",
         "datos_ampliados": "Other data",
         "lista_espera": "Waiting list",
         "matriculas": "Enrolments",
@@ -4016,6 +4017,7 @@
         "medico_familia": "Family doctor",
         "telefono_emergencia": "Emergency phone",
         "bloqueada_desde": "Blocked since",
+        "bloqueados_desde": "Blocked since",
         "lactancia_estado": "Feeding",
         "lactancia_observaciones": "Feeding notes",
         "control_esfinteres": "Toilet training",
@@ -4853,6 +4855,7 @@
     }
   },
   "ficha_medica_lecturas": {
+    "bloqueado": "Blocked since {fecha}: the child's data has been erased. The log is kept unused until its deadline and can only be provided to the courts, the public prosecutor or the competent authorities (art. 32 LOPDGDD).",
     "titulo": "Who has viewed the medical record",
     "explicacion": "Every time someone opens the medical record it is logged: who, when and which details they saw.",
     "error": "We could not load the access log. Please try again later.",

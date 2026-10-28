@@ -122,8 +122,33 @@ Notas:
   qué datos se tratan, así que el export dice que existe, que está bloqueada, desde cuándo, por qué
   y cómo pedirla.
 - **El registro de lecturas y el olvido:** decidido que se conserve, bloqueado: sin él no se puede
-  demostrar nada si una familia reclama después un acceso indebido. Hasta el PR que lo construya, la
-  purga del niño lo sigue borrando (trigger `ninos_purga_borra_lecturas`).
+  demostrar nada si una familia reclama después un acceso indebido. Desde el PR-7 la purga ya no lo
+  borra (se quitó el trigger `ninos_purga_borra_lecturas`); se va con su plazo.
+- **El bloqueo (PR-7)**, decidido por el responsable (2026-10-28). Lo que se conserva por obligación
+  legal tras la purga queda **bloqueado**: se guarda tal cual, nadie lo ve ni lo toca en la app
+  (tampoco Dirección ni la profe) y solo se extrae **a mano, con `service_role`, fuera de la app**,
+  para un juez, la Administración o una reclamación. Sin botón.
+  - **Lo del niño**, cuando está purgado (`deleted_reason = 'purga_rgpd'`, por el olvido o por el
+    plazo del expediente): sus firmas, sus autorizaciones, sus consentimientos, sus acuses del alta,
+    la medicación administrada, el parte de servicio, sus conceptos asignados, su beca y el registro
+    de lecturas de su ficha.
+  - **Lo de la familia** (recibos con sus líneas y su remesa, método de pago, becas de la familia,
+    mandato), cuando ya no le queda ningún niño sin purgar **y no le queda dinero vivo**: un recibo
+    sin cerrar, uno enviado al banco hace menos de 8 semanas (aún puede volver) o una beca con
+    dinero a favor de la familia. La deuda viva se sigue gestionando; se bloquea al cerrarse.
+  - **El mandato**, además, cuando se purga al titular que lo firmó.
+  - **Lo de un tutor purgado** (sus firmas, sus acuses, sus consentimientos), en el centro donde se
+    purgó; con su cuenta purgada entera, en todos.
+  - **El recibo viejo se queda entero**, con su total y sus líneas, porque justifica el cobro: de
+    sus líneas solo cambia el nombre del niño por «[borrado]» (las viejas lo llevaban tras « · »; un
+    cargo puntual puede llevarlo en su texto), también en su copia de `audit_log`. Ocultar la línea
+    descuadraría el recibo.
+  - **El export** no lo entrega y dice qué hay bloqueado, cuánto, desde cuándo, por qué y cómo
+    pedirlo, como con la ficha médica.
+- **Ningún tutor se olvida con un hijo matriculado** (decidido por el responsable, 2026-10-28),
+  haya otro tutor o no: no puede quedar un niño sin tutor. Sus hijos son los de sus vínculos y los
+  de sus familias. La petición queda pendiente hasta que el niño deje el centro; si vuelve a
+  matricularse en los días de gracia, la purga espera.
 
 ## Troceo
 

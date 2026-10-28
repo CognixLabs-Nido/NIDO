@@ -3981,6 +3981,7 @@
         "mandatos_sepa": "Mandatos SEPA",
         "cobros_familia": "Cobros de la familia",
         "documentos": "Documentos",
+        "datos_bloqueados": "Datos bloqueados",
         "datos_ampliados": "Otros datos",
         "lista_espera": "Lista de espera",
         "matriculas": "Matrículas",
@@ -4016,6 +4017,7 @@
         "medico_familia": "Médico de familia",
         "telefono_emergencia": "Teléfono de emergencia",
         "bloqueada_desde": "Bloqueada desde",
+        "bloqueados_desde": "Bloqueados desde",
         "lactancia_estado": "Lactancia",
         "lactancia_observaciones": "Observaciones de lactancia",
         "control_esfinteres": "Control de esfínteres",
@@ -4853,6 +4855,7 @@
     }
   },
   "ficha_medica_lecturas": {
+    "bloqueado": "Bloqueado desde el {fecha}: los datos del niño se borraron. El registro se conserva sin uso hasta su plazo y solo puede facilitarse a jueces y tribunales, al Ministerio Fiscal o a las administraciones competentes (art. 32 LOPDGDD).",
     "titulo": "Quién ha consultado la ficha médica",
     "explicacion": "Cada vez que alguien abre la ficha médica queda registrado: quién, cuándo y qué datos vio.",
     "error": "No hemos podido cargar el registro de consultas. Vuelve a intentarlo más tarde.",

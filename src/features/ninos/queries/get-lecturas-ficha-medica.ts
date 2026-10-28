@@ -3,6 +3,8 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { fichaMedicaBloqueadaDesde } from '../lib/ficha-medica-bloqueada'
+
 import type { OrigenLecturaFicha } from './get-ninos'
 
 /** Por qué pudo leer quien leyó (`lecturas_ficha_medica.rol_lector`, 20261128120000). */
@@ -46,11 +48,14 @@ export interface LecturaFichaMedica {
 /**
  * - `no_autorizado`: quien mira no es tutor legal del niño ni Dirección de su centro (42501). La sección no se
  *   enseña.
+ * - `bloqueado`: el niño está purgado y el registro se conserva bloqueado (20261205120000): 55000
+ *   con la fecha en DETAIL, como la ficha bloqueada. Se dice desde cuándo.
  * - `error`: cualquier otro fallo. Se dice, y nunca se pinta como un registro vacío.
  */
 export type RegistroLecturas =
   | { tipo: 'ok'; lecturas: LecturaFichaMedica[] }
   | { tipo: 'no_autorizado' }
+  | { tipo: 'bloqueado'; desde: string }
   | { tipo: 'error' }
 
 /** Quién ha leído la ficha médica del niño: lo ven sus tutores legales y la Dirección, siempre. */
@@ -59,6 +64,8 @@ export async function getLecturasFichaMedica(ninoId: string): Promise<RegistroLe
   const { data, error } = await supabase.rpc('lecturas_ficha_medica', { p_nino_id: ninoId })
   if (error) {
     if (error.code === '42501') return { tipo: 'no_autorizado' }
+    const desde = fichaMedicaBloqueadaDesde(error)
+    if (desde) return { tipo: 'bloqueado', desde }
     logger.warn('lecturas de la ficha médica', error.message)
     return { tipo: 'error' }
   }
