@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { offsetDias } from '@/features/agenda-diaria/lib/fecha'
+
 import {
   asignarProfeAula,
   asignarRol,
@@ -16,6 +18,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { cursoDeTest } from './curso-de-test'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -34,8 +37,10 @@ import type { Database } from '@/types/database'
  *  8. actor de auditoría = admin (audit_log.usuario_id del archivado = admin.id).
  */
 
-const SALIENTE_FIN = '2027-07-31' // = createTestCurso fecha_fin
-const ALTA = '2026-09-01' // = createTestCurso fecha_inicio / matricular fecha_alta
+// Las fechas con las que `createTestCurso` crea el curso y `matricular` da el alta.
+const { inicio: ALTA, fin: SALIENTE_FIN } = cursoDeTest()
+// Posterior al final del curso: archivarla con baja = fin de curso viola el CHECK.
+const ALTA_TRAS_EL_FIN = offsetDias(SALIENTE_FIN, 15)
 
 interface Escenario {
   centroId: string
@@ -312,7 +317,7 @@ describe('F-3-C-2 — cerrar_curso (RPC)', () => {
     // Finalizador "malo": matrícula con fecha_alta POSTERIOR a fecha_fin → al
     // archivar (fecha_baja=fin de curso) viola CHECK(fecha_baja >= fecha_alta) →
     // RAISE dentro de archivar_nino → rollback total (sin bloque EXCEPTION).
-    const malo = await ninoEnSaliente(e, { fechaAlta: '2027-08-15' })
+    const malo = await ninoEnSaliente(e, { fechaAlta: ALTA_TRAS_EL_FIN })
     await marcarFinaliza(e, malo.ninoId)
 
     const { error } = await cAdmin.rpc('cerrar_curso', { p_curso_destino_id: e.destinoId })

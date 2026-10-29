@@ -18,6 +18,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { cursoDeTest } from './curso-de-test'
 
 /**
  * PR-11 — el panel de becas, contra la BD real y con la sesión de Dirección: la MISMA lectura
@@ -31,7 +32,9 @@ import {
  * UN MES POR TEST: validar el último borrador de un mes lo cierra.
  */
 
-const ANIO = 2026
+// Los meses del panel son los del curso de `createTestCurso`: el año en que empieza.
+const CURSO = cursoDeTest()
+const ANIO = Number(CURSO.inicio.slice(0, 4))
 
 describe('PR-11 — panel de becas', () => {
   let centro: { id: string }
@@ -175,7 +178,7 @@ describe('PR-11 — panel de becas', () => {
     centro = await createTestCentro('Centro Panel Becas PR11')
     const c = await createTestCurso(centro.id)
     // Las fechas con las que lo crea `createTestCurso`.
-    curso = { id: c.id, fecha_inicio: '2026-09-01', fecha_fin: '2027-07-31' }
+    curso = { id: c.id, fecha_inicio: CURSO.inicio, fecha_fin: CURSO.fin }
     aula = await createTestAula(centro.id, curso.id)
     admin = await createTestUser({ nombre: 'Admin Panel Becas PR11' })
     await asignarRol(admin.id, centro.id, 'admin')
