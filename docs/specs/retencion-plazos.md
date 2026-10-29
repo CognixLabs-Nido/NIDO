@@ -167,8 +167,8 @@ Notas:
   necesita): es un bloqueo más de la petición, que no se confirma y queda pendiente; la familia ve
   en su perfil que está retenida y por qué tipo de motivo (el texto del motivo se queda en el
   centro), y la titular puede explicarlo en la nota de la petición. Una petición ya confirmada y sin
-  purgar vuelve a pendiente al retener, con los datos como estaban, y la purga no coge a un
-  retenido.
+  purgar vuelve a pendiente al retener, con los datos como estaban, y su familia recibe el correo
+  de «deshecha», como en cada cambio de estado; la purga no coge a un retenido.
 - **La cuenta del tutor (PR-8)**, decidido por el responsable (2026-10-29): se purga, como en el
   olvido y sin que nadie lo pida, a los 5 años de la baja de su último hijo en el centro (el mismo
   día que el expediente de ese hijo), si no le queda otro rol vivo allí. «No vamos a tener a todos

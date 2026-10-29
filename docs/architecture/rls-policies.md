@@ -279,7 +279,8 @@ de construirla, el freno.
   (con su `motivo_tipo`, sin el texto), así que `confirmar_peticion_olvido` no confirma y la
   petición queda pendiente; la familia lo ve en `mis_peticiones_olvido`. Al retener, una petición
   confirmada y sin purgar vuelve a pendiente (`privado.olvido_volver_a_pendiente`, el cuerpo de
-  `deshacer_confirmacion_olvido`, que ahora la llama), `olvido_pendientes` no lista al retenido y
+  `deshacer_confirmacion_olvido`, que ahora la llama); `poner_retencion` devuelve cuáles, y la app
+  manda a su familia el correo de «deshecha». `olvido_pendientes` no lista al retenido y
   `purgar_sujeto_db` lo rechaza (55000, HINT `retenido`).
 - **En la app**: «Datos bloqueados» → «Retener datos ante un procedimiento abierto», con filtro por
   clase, tipo y estado, búsqueda por nombre o familia y selección múltiple.
