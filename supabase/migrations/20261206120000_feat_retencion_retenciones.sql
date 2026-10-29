@@ -485,7 +485,7 @@ BEGIN
   SELECT r.motivo_tipo INTO v_retenido FROM public.retenciones r
    WHERE r.centro_id = p_centro_id AND r.sujeto_tipo = p_sujeto_tipo AND r.sujeto_id = p_sujeto_id
      AND r.quitada_en IS NULL;
-  IF FOUND AND false THEN
+  IF FOUND THEN
     v_bloqueos := v_bloqueos || jsonb_build_object('codigo', 'retenido', 'n', 1, 'motivo_tipo', v_retenido);
   END IF;
 
