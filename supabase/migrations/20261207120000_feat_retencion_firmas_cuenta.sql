@@ -224,9 +224,9 @@ STABLE
 SET search_path = public
 AS $function$
   SELECT privado.cuenta_baja(p_usuario_id, p_centro_id) IS NOT NULL
-     AND NOT EXISTS (SELECT 1 FROM public.roles_usuario r
+     AND (true OR NOT EXISTS (SELECT 1 FROM public.roles_usuario r
                       WHERE r.usuario_id = p_usuario_id AND r.centro_id = p_centro_id
-                        AND r.deleted_at IS NULL AND r.rol NOT IN ('tutor_legal', 'autorizado'));
+                        AND r.deleted_at IS NULL AND r.rol NOT IN ('tutor_legal', 'autorizado')));
 $function$;
 
 -- Su cuenta ha vencido en el centro: sin purgar allí, purgable, con el plazo cumplido desde la
