@@ -180,9 +180,9 @@ describe('Retención: el freno de la destrucción por plazo', () => {
   it('retenido, la purga del expediente espera; otra vez no cuenta', async () => {
     const r = await poner(admin, [sujeto('nino', inigo), sujeto('usuario', madre.id)])
     expect(r.error).toBeNull()
-    expect(r.data).toBe(2)
+    expect(r.data).toEqual({ puestas: 2, deshechas: [] })
     const otraVez = await poner(admin, [sujeto('nino', inigo)])
-    expect(otraVez.data).toBe(0)
+    expect(otraVez.data).toEqual({ puestas: 0, deshechas: [] })
     expect(await filas()).toBe(2)
 
     expect(await vencidos()).toEqual([])
@@ -261,7 +261,10 @@ describe('Retención: el freno de la destrucción por plazo', () => {
       // Premisa: sin retención no le falta nada.
       expect((await estadoParaLaMadre())?.falta).toEqual({ bloqueos: [], avisos: [] })
 
-      expect((await poner(admin, [sujeto('nino', bea)])).data).toBe(1)
+      expect((await poner(admin, [sujeto('nino', bea)])).data).toEqual({
+        puestas: 1,
+        deshechas: [],
+      })
       const conf = await confirmar()
       expect(conf.error?.code).toBe('55000')
       expect(conf.error?.hint).toBe('hay_bloqueos')
@@ -288,7 +291,11 @@ describe('Retención: el freno de la destrucción por plazo', () => {
         .single()
       expect(archivada.data?.deleted_reason).toBe('solicitud_olvido')
 
-      expect((await poner(admin, [sujeto('nino', bea)])).data).toBe(1)
+      // La confirmada vuelve a pendiente, y la app la recibe para mandar el correo de «deshecha».
+      expect((await poner(admin, [sujeto('nino', bea)])).data).toEqual({
+        puestas: 1,
+        deshechas: [peticion],
+      })
       expect((await estadoParaLaMadre())?.estado).toBe('pendiente')
       const viva = await serviceClient.from('ninos').select('deleted_at').eq('id', bea).single()
       expect(viva.data?.deleted_at).toBeNull()

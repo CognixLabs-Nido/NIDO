@@ -5008,7 +5008,7 @@ export type Database = {
           p_motivo_tipo: string
           p_sujetos: Json
         }
-        Returns: number
+        Returns: Json
       }
       quitar_retencion: {
         Args: { p_centro_id: string; p_motivo: string; p_sujetos: Json }

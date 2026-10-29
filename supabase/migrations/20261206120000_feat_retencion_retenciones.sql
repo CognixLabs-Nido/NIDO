@@ -216,7 +216,8 @@ GRANT EXECUTE ON FUNCTION public.sujetos_retencion(uuid) TO authenticated;
 -- ---- 4. Poner y quitar ----
 -- `p_sujetos`: [{"tipo": "nino"|"usuario", "id": uuid}, …], de 1 a 1000. Todo o nada: un sujeto
 -- que no es del centro tumba la llamada entera. 42501 a quien no es la titular; 22023 sin motivo
--- válido (HINT motivo) o con la lista mal (HINT sujetos). Devuelve cuántas se han puesto o quitado:
+-- válido (HINT motivo) o con la lista mal (HINT sujetos). Devuelven cuántas se han puesto o quitado
+-- (poner, además, qué peticiones de olvido ha devuelto a pendiente):
 -- poner a uno ya retenido, o quitar a uno que no lo está, no cuenta y no falla.
 
 CREATE FUNCTION privado.retencion_lista(p_centro_id uuid, p_sujetos jsonb)
@@ -252,14 +253,15 @@ $function$;
 REVOKE ALL ON FUNCTION privado.retencion_lista(uuid, jsonb) FROM PUBLIC, anon, authenticated;
 
 CREATE FUNCTION public.poner_retencion(p_centro_id uuid, p_sujetos jsonb, p_motivo_tipo text, p_motivo text)
-RETURNS integer
+RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $function$
 DECLARE
-  v_uid uuid := auth.uid();
-  v_n   integer;
+  v_uid       uuid := auth.uid();
+  v_n         integer;
+  v_deshechas uuid[];
 BEGIN
   IF v_uid IS NULL OR p_centro_id IS NULL OR NOT privado.es_titular(p_centro_id) THEN
     RAISE EXCEPTION 'no autorizado a retener en este centro'
@@ -279,13 +281,15 @@ BEGIN
   GET DIAGNOSTICS v_n = ROW_COUNT;
 
   -- La retención frena también el olvido (§6): una petición suya confirmada y sin purgar vuelve a
-  -- pendiente, con los datos como estaban, y se queda ahí mientras dure.
-  PERFORM privado.olvido_volver_a_pendiente(s.id)
-     FROM public.olvido_solicitudes s
-     JOIN privado.retencion_lista(p_centro_id, p_sujetos) l
-       ON s.sujeto_tipo::text = l.tipo AND s.sujeto_id = l.id
-    WHERE s.centro_id = p_centro_id AND s.estado = 'confirmada' AND s.purgado_en IS NULL;
-  RETURN v_n;
+  -- pendiente, con los datos como estaban, y se queda ahí mientras dure. Se devuelven, para que la
+  -- app avise a la familia con el correo de «deshecha»: le confirmaron el borrado y se lo paran.
+  SELECT coalesce(array_agg(s.id ORDER BY s.id), '{}') INTO v_deshechas
+    FROM public.olvido_solicitudes s
+    JOIN privado.retencion_lista(p_centro_id, p_sujetos) l
+      ON s.sujeto_tipo::text = l.tipo AND s.sujeto_id = l.id
+   WHERE s.centro_id = p_centro_id AND s.estado = 'confirmada' AND s.purgado_en IS NULL;
+  PERFORM privado.olvido_volver_a_pendiente(d) FROM unnest(v_deshechas) AS d;
+  RETURN jsonb_build_object('puestas', v_n, 'deshechas', to_jsonb(v_deshechas));
 END;
 $function$;
 REVOKE ALL ON FUNCTION public.poner_retencion(uuid, jsonb, text, text) FROM PUBLIC, anon;
@@ -976,7 +980,7 @@ BEGIN
     RAISE EXCEPTION 'purgar_sujeto_db no mira la retención';
   END IF;
   IF strpos((SELECT prosrc FROM pg_proc WHERE oid = 'public.poner_retencion(uuid,jsonb,text,text)'::regprocedure),
-            'PERFORM privado.olvido_volver_a_pendiente(s.id)') = 0
+            'PERFORM privado.olvido_volver_a_pendiente(d) FROM unnest(v_deshechas) AS d;') = 0
      OR strpos((SELECT prosrc FROM pg_proc WHERE oid = 'public.deshacer_confirmacion_olvido(uuid)'::regprocedure),
                'PERFORM privado.olvido_volver_a_pendiente(p_solicitud_id)') = 0 THEN
     RAISE EXCEPTION 'la vuelta a pendiente no está en su sitio';
