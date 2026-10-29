@@ -278,8 +278,7 @@ export async function createTestCurso(
   estado: 'planificado' | 'activo' | 'cerrado' = 'activo'
 ): Promise<TestCurso> {
   const nombre = `Curso-${randomUUID().slice(0, 8)}`
-  const { inicio } = cursoDeTest()
-  const fin = '2027-07-31'
+  const { inicio, fin } = cursoDeTest()
   const { data, error } = await serviceClient
     .from('cursos_academicos')
     .insert({
