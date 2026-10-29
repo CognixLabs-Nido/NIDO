@@ -303,8 +303,12 @@ Migración `20261207120000_feat_retencion_firmas_cuenta`; spec `docs/specs/reten
   de accesos (`accesos_datos_bloqueados`) del niño se va cuando no le queda nada conservado ni
   lecturas de la ficha; el de cada firmante en el centro, cuando no le queda nada suyo allí.
 - **La cuenta**: `privado.cuenta_vencida` (sin purgar en el centro, todos sus hijos de baja, ningún
-  otro rol vivo, el plazo cumplido desde la baja del último, sin retener y sin bloqueos del olvido,
-  que incluyen los recibos pendientes de la familia). `abrir_purga_cuenta` crea la petición por
+  otro rol vivo, el plazo cumplido desde la baja del último, sin retener y sin nada que frene la
+  purga por plazo). Desde `20261208120000` eso es `privado.bloqueos_por_plazo`: los bloqueos del
+  olvido, salvo `recibos_pendientes` (cualquier recibo sin cerrar), que se cambia por el dinero vivo
+  de sus familias (`dinero_vivo`, ver la sección siguiente); un borrador sin deuda dentro ya no la
+  frena. `purgar_sujeto_db` mira lo mismo para la petición por plazo, y los bloqueos del olvido
+  para las demás. `abrir_purga_cuenta` crea la petición por
   plazo (`olvido_solicitudes.por_plazo`: del centro, sin solicitante, confirmada y sin gracia;
   CHECK `olvido_por_plazo_coherente`) y la app la purga con la purga del olvido (`purgarUno`), sin
   correo. `olvido_pendientes` no la lista (la purga su paso del cron), `poner_retencion` no la
@@ -314,6 +318,38 @@ Migración `20261207120000_feat_retencion_firmas_cuenta`; spec `docs/specs/reten
 - **Los consentimientos de la cuenta** (sin niño): con la cuenta purgada en todos sus centros, el
   plazo cumplido en cada uno y sin retener en ninguno (`privado.cuenta_entera_vencida`).
 - Test: `src/test/audit/retencion-firmas-cuenta.test.ts`.
+
+### Lo fiscal al vencer (F11-B, punto 6, PR-8)
+
+Migración `20261208120000_feat_retencion_fiscal`; spec `docs/specs/retencion-plazos.md`.
+
+- **Solo el servicio** (el cron): `familias_fiscal_vencidas`, `destruir_fiscal_familia`,
+  `destruir_cuentas_olvidadas` y `cuentas_auth_huerfanas`. Los predicados viven en `privado`,
+  cerrados a las sesiones.
+- **Vencida** (`privado.familia_fiscal_vencida`): sus niños, al menos uno, todos purgados, sin nada
+  conservado (las firmas, la pieza anterior), sin lecturas de la ficha ni registro de accesos;
+  sus adultos (los tutores con cuenta y quien tiene vínculo con sus niños) purgados en el centro o
+  con otro rol vivo allí; nadie retenido; sin dinero vivo; y el plazo cumplido desde el último
+  recibo pagado (`privado.familia_ultimo_pago`: el cobro a mano o el envío al banco) o, sin
+  ninguno, desde el final del curso de la baja de su último hijo (`privado.curso_vencido`).
+- **El dinero vivo** (`privado.familia_dinero_pendiente`): un recibo pendiente con importe que
+  cobrar (`total_centimos > 0`), un devuelto sin resolver, un borrador con una línea de deuda
+  (`arrastre_de_recibo_id`) o de saldo (`sobrante_de_desborde_id`), un exceso de beca o una
+  transferencia pendientes. Lo mira también la purga por plazo de la cuenta del tutor.
+- **La destrucción** vuelve a mirarlo con la familia bloqueada y borra con `app.borrar_sin_copia`,
+  en el orden de las FK: los enlaces con las remesas (y la remesa que se queda vacía), las
+  transferencias, las líneas, los desbordes, los tramos, los recibos (primero los que nadie nombra:
+  un re-giro o una diferencia apuntan a su origen), la elegibilidad, el parte, las asignaciones, los
+  mandatos, el método de pago, lo que sujeta a los niños, los niños, los tutores, la familia y las
+  retenciones ya quitadas de sus niños. Después, las copias que quedaban en `audit_log` de filas de
+  la familia borradas antes. Las rutas de los mandatos y de los DNI las da la lista, y la app las
+  borra de Storage antes; si falla, no toca la BD.
+- **La cuenta** (`privado.cuenta_destruible`): purgada en todos sus centros, sin perfil de tutor en
+  ninguna familia, sin rol vivo, no es de la plataforma y nadie la retiene. Cada una se borra de
+  `usuarios` en su subtransacción; si algo la nombra todavía (una FK: `audit_log.usuario_id`, una
+  petición de olvido suya…), espera. La app borra después de Auth las que la purga dejó con el
+  email `borrado+<id>@borrado.invalid` y ya no tienen fila.
+- Test: `src/test/audit/retencion-fiscal.test.ts`.
 
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
@@ -445,7 +481,8 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `src/test/audit/retencion-expediente.test.ts`: terminado el curso de la baja, la ficha médica no la lee ni la escribe nadie, no deja lectura ni aviso, y el export dice que está bloqueada; reincorporar la desbloquea; a los años del plazo, la purga del niño, solo `service_role` (`20261204120000`).
 - `src/test/audit/retencion-bloqueo.test.ts`: purgado un niño, su firma, su consentimiento y su registro de lecturas se conservan y no los ve nadie en el uso diario; solo la titular los ve, con motivo, y queda su fila (la directora, la profe y el superusuario, 42501); lo fiscal sigue a la vista y entero, con el nombre del niño; el export no entrega lo bloqueado y dice que existe y que se consultó; el segundo tutor sin vínculo con sus hijos matriculados no se olvida, ni confirmado por otro camino se purga (`20261205120000`).
 - `src/test/audit/retencion-retenciones.test.ts`: retenido, la purga del expediente espera y, quitada, vuelve a cogerlo; solo la titular pone, quita y lee, con motivo, y queda quién, cuándo y por qué (la directora, la profe y el superusuario, 42501); una lista con alguien de otro centro no retiene a nadie (`20261206120000`).
-- `src/test/audit/retencion-firmas-cuenta.test.ts`: a los años de la baja, lo conservado del niño purgado se destruye sin copia; el niño retenido no pierde nada y el tutor retenido conserva su firma; el registro de accesos espera a las lecturas; la cuenta del tutor no vence con un hijo vivo, otro rol, un recibo pendiente o retenida, y vencida se purga por una petición por plazo que el olvido no coge; solo `service_role` (`20261207120000`).
+- `src/test/audit/retencion-firmas-cuenta.test.ts`: a los años de la baja, lo conservado del niño purgado se destruye sin copia; el niño retenido no pierde nada y el tutor retenido conserva su firma; el registro de accesos espera a las lecturas; la cuenta del tutor no vence con un hijo vivo, otro rol, dinero vivo de la familia o retenida, y sí con un borrador sin deuda, y vencida se purga por una petición por plazo que el olvido no coge; solo `service_role` (`20261207120000`, `20261208120000`).
+- `src/test/audit/retencion-fiscal.test.ts`: lo fiscal de la familia espera a sus tutores purgados, al dinero vivo y a la retención, y no a un pendiente de 0 €; libre, se destruye entera sin copia en `audit_log`, con la cadena del re-giro, y la remesa compartida se queda con lo de la otra familia; sin recibo pagado cuenta el final del curso de la baja; la cuenta espera mientras algo la nombra y después se borra; solo `service_role` (`20261208120000`).
 - `src/test/audit/purga-lista-espera.test.ts`: la purga del niño borra su prospecto de `lista_espera` y la del tutor limpia su teléfono y su email, en la tabla y en `audit_log` (también el INSERT); la purga de esqueletos conserva el prospecto, y los de otro niño o centro no se tocan (`20261012140000`).
 - `src/test/audit/purga-cierre.test.ts`: el cierre de la purga (`20261015120000`): `idioma_principal` a `'zz'` y su CHECK, `_redactar_jsonb` con null, el perfil de `familia_tutores` y su auditoría, foto, preferencias, lecturas, cambios pendientes y comentarios de cita; el manifiesto de adjuntos (DNI por ruta exacta), `promover_a_titular` y la anonimización de Auth contra el GoTrue real.
 

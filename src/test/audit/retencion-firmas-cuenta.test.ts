@@ -365,7 +365,7 @@ describe('Retención: las firmas y la cuenta del tutor al vencer', () => {
     expect(await cuentasVencidas()).toEqual([madre.id, padre.id].sort())
   })
 
-  it('un rol de profe vivo, un recibo pendiente o la retención la frenan', async () => {
+  it('un rol de profe vivo, el dinero vivo de la familia o la retención la frenan; un borrador sin deuda no', async () => {
     await asignarRol(padre.id, centro.id, 'profe')
     expect(await cuentasVencidas()).toEqual([madre.id])
     const q = await serviceClient
@@ -388,6 +388,14 @@ describe('Retención: las firmas y la cuenta del tutor al vencer', () => {
       .select('id')
       .single()
     expect(rErr).toBeNull()
+    // Lo que va por plazo mira el dinero vivo (20261208120000): un borrador sin deuda dentro no la
+    // frena; validado, con importe que cobrar, sí.
+    expect(await cuentasVencidas()).toEqual([madre.id, padre.id].sort())
+    const v = await serviceClient
+      .from('recibos')
+      .update({ estado: 'pendiente_procesar' })
+      .eq('id', rc!.id)
+    expect(v.error).toBeNull()
     expect(await cuentasVencidas()).toEqual([])
     const dr = await serviceClient.from('recibos').delete().eq('id', rc!.id)
     expect(dr.error).toBeNull()

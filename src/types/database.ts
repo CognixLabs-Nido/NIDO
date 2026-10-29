@@ -4854,6 +4854,24 @@ export type Database = {
         Args: { p_anios: number; p_simular: boolean }
         Returns: number
       }
+      familias_fiscal_vencidas: {
+        Args: { p_anios: number }
+        Returns: {
+          centro_id: string
+          dnis: string[]
+          familia_id: string
+          mandatos: string[]
+        }[]
+      }
+      destruir_fiscal_familia: {
+        Args: { p_anios: number; p_familia_id: string }
+        Returns: Json
+      }
+      destruir_cuentas_olvidadas: {
+        Args: { p_simular: boolean }
+        Returns: Json
+      }
+      cuentas_auth_huerfanas: { Args: never; Returns: string[] }
       export_datos_sujeto: {
         Args: { p_sujeto_id: string; p_sujeto_tipo: string }
         Returns: Json
