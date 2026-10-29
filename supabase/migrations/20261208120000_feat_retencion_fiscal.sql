@@ -119,7 +119,7 @@ AS $function$
                          OR (r.estado = 'borrador'
                              AND EXISTS (SELECT 1 FROM public.lineas_recibo l
                                           WHERE l.recibo_id = r.id
-                                            AND (false AND l.arrastre_de_recibo_id IS NOT NULL
+                                            AND (l.arrastre_de_recibo_id IS NOT NULL
                                                  OR l.sobrante_de_desborde_id IS NOT NULL)))))
       OR EXISTS (SELECT 1 FROM public.beca_comedor_desborde d
                   WHERE d.familia_id = p_familia_id AND d.estado = 'pendiente')
