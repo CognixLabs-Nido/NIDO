@@ -4,6 +4,8 @@
  * traducciones: un código nuevo en la BD sin entrada aquí se pone rojo.
  */
 export const CODIGOS_BLOQUEO = [
+  // La retención por procedimiento abierto (20261206120000); lleva además su `motivo_tipo`.
+  'retenido',
   'matricula_viva',
   'hijos_matriculados',
   'recibos_pendientes',

@@ -4778,6 +4778,8 @@
     "falta": {
       "titulo_bloqueos": "Missing before it can be confirmed",
       "titulo_avisos": "Keep in mind",
+      "retenido": "There is an open proceeding ({motivo}) and the centre has to keep this data while it lasts. The request still stands: it can be confirmed when it ends.",
+      "retenido_sin_motivo": "another reason",
       "matricula_viva": "Still enrolled: the child has to be withdrawn first.",
       "hijos_matriculados": "Has children enrolled at the school ({n}): their data is still needed.",
       "recibos_pendientes": "Their family has unpaid bills ({n}).",
@@ -4955,6 +4957,62 @@
       "no_autorizado": "Only the school's owner can consult blocked data.",
       "no_bloqueado": "There is no blocked data of this person at this school.",
       "fallo": "We could not consult the data. Please try again."
+    },
+    "retencion": {
+      "enlace": "Hold data for an open proceeding →",
+      "titulo": "Data hold",
+      "descripcion": "While a person is on hold, nothing of theirs is destroyed when its period ends: not the child's record, not their signatures, not their family's receipts. Put it on when there is an open proceeding (a request, a court case, a complaint) and remove it when it ends. Putting and removing a hold needs a reason, and who did it, when and why is recorded.",
+      "filtro_tipo": "Type",
+      "filtro_estado": "Status",
+      "tipos": {
+        "todos": "Children and adults",
+        "nino": "Children only",
+        "usuario": "Adults only"
+      },
+      "estados_filtro": {
+        "todos": "Any status",
+        "activo": "At the centre",
+        "baja": "Left",
+        "purgado": "Data deleted"
+      },
+      "solo_retenidos": "Only those on hold",
+      "seleccionados": "{n, plural, =0 {Nobody selected} one {# selected} other {# selected}}",
+      "poner": "Put on hold",
+      "quitar": "Remove hold",
+      "poner_titulo": "Put {n, plural, one {# person} other {# people}} on hold",
+      "quitar_titulo": "Remove the hold from {n, plural, one {# person} other {# people}}",
+      "aviso_registro": "Who did it, when and why will be recorded.",
+      "motivo_quitar_ayuda": "Write why the hold ends (for example, the proceeding has been closed). Between 10 and 1000 characters.",
+      "confirmar": "Confirm",
+      "cancelar": "Cancel",
+      "puestas": "{n, plural, =0 {They were all on hold already} one {# hold added} other {# holds added}}",
+      "quitadas": "{n, plural, =0 {None of them was on hold} one {# hold removed} other {# holds removed}}",
+      "seleccionar_visibles": "Select everyone shown",
+      "seleccionar": "Select {nombre}",
+      "col_nombre": "Name",
+      "col_clase": "Class",
+      "col_estado": "Status",
+      "col_retencion": "Hold",
+      "estados": {
+        "activo": "At the centre",
+        "baja": "Left on {fecha}",
+        "baja_sin_fecha": "Left",
+        "purgado": "Data deleted on {fecha}",
+        "purgado_sin_fecha": "Data deleted"
+      },
+      "sin_nombre": "No name",
+      "retenido": "On hold since {fecha} · {motivo}",
+      "lista_vacia": "There is nobody at this centre yet.",
+      "registro_titulo": "Hold log",
+      "registro_vacio": "Nobody has been put on hold.",
+      "registro_puesta": "{fecha} · {quien} put {sujeto} on hold",
+      "registro_quitada": "Removed on {fecha} by {quien}: {motivo}",
+      "errores": {
+        "motivo": "Write the reason (10 to 1000 characters) and, to put on hold, choose its type.",
+        "sujetos": "Someone you selected is no longer at this centre. Reload the page and try again.",
+        "no_autorizado": "Only the centre's owner can put data on hold.",
+        "fallo": "We could not save the hold. Try again."
+      }
     }
   }
 }

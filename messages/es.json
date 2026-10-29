@@ -4778,6 +4778,8 @@
     "falta": {
       "titulo_bloqueos": "Falta para poder confirmar",
       "titulo_avisos": "A tener en cuenta",
+      "retenido": "Hay un procedimiento abierto ({motivo}) y el centro tiene que conservar estos datos mientras dure. La petición sigue en pie: se podrá confirmar cuando termine.",
+      "retenido_sin_motivo": "otro motivo",
       "matricula_viva": "Sigue matriculado: hay que darlo de baja antes.",
       "hijos_matriculados": "Tiene hijos matriculados en el centro ({n}): sus datos siguen haciendo falta.",
       "recibos_pendientes": "Quedan recibos de su familia sin pagar ({n}).",
@@ -4955,6 +4957,62 @@
       "no_autorizado": "Solo la titular del centro puede consultar los datos bloqueados.",
       "no_bloqueado": "No hay datos bloqueados de esta persona en este centro.",
       "fallo": "No hemos podido consultar los datos. Vuelve a intentarlo."
+    },
+    "retencion": {
+      "enlace": "Retener datos ante un procedimiento abierto →",
+      "titulo": "Retención de datos",
+      "descripcion": "Mientras una persona está retenida no se destruye nada suyo cuando vence su plazo: ni el expediente del niño, ni sus firmas, ni los recibos de su familia. Ponla cuando haya un procedimiento abierto (un requerimiento, un juicio, una reclamación) y quítala cuando termine. Poner y quitar la retención pide un motivo, y queda registrado quién lo hizo, cuándo y por qué.",
+      "filtro_tipo": "Tipo",
+      "filtro_estado": "Estado",
+      "tipos": {
+        "todos": "Niños y adultos",
+        "nino": "Solo niños",
+        "usuario": "Solo adultos"
+      },
+      "estados_filtro": {
+        "todos": "Cualquier estado",
+        "activo": "En el centro",
+        "baja": "De baja",
+        "purgado": "Datos borrados"
+      },
+      "solo_retenidos": "Solo los retenidos",
+      "seleccionados": "{n, plural, =0 {Nadie seleccionado} one {# seleccionado} other {# seleccionados}}",
+      "poner": "Retener",
+      "quitar": "Quitar la retención",
+      "poner_titulo": "Retener {n, plural, one {a # persona} other {a # personas}}",
+      "quitar_titulo": "Quitar la retención {n, plural, one {a # persona} other {a # personas}}",
+      "aviso_registro": "Quedará registrado quién lo hizo, cuándo y por qué.",
+      "motivo_quitar_ayuda": "Escribe por qué termina la retención (por ejemplo, que el procedimiento se ha archivado). Entre 10 y 1000 caracteres.",
+      "confirmar": "Confirmar",
+      "cancelar": "Cancelar",
+      "puestas": "{n, plural, =0 {Ya estaban todos retenidos} one {# retención puesta} other {# retenciones puestas}}",
+      "quitadas": "{n, plural, =0 {Ninguno estaba retenido} one {# retención quitada} other {# retenciones quitadas}}",
+      "seleccionar_visibles": "Seleccionar todos los que se ven",
+      "seleccionar": "Seleccionar a {nombre}",
+      "col_nombre": "Nombre",
+      "col_clase": "Clase",
+      "col_estado": "Estado",
+      "col_retencion": "Retención",
+      "estados": {
+        "activo": "En el centro",
+        "baja": "De baja desde el {fecha}",
+        "baja_sin_fecha": "De baja",
+        "purgado": "Datos borrados el {fecha}",
+        "purgado_sin_fecha": "Datos borrados"
+      },
+      "sin_nombre": "Sin nombre",
+      "retenido": "Retenido desde el {fecha} · {motivo}",
+      "lista_vacia": "Todavía no hay nadie en este centro.",
+      "registro_titulo": "Registro de retenciones",
+      "registro_vacio": "No se ha retenido a nadie.",
+      "registro_puesta": "{fecha} · {quien} retuvo a {sujeto}",
+      "registro_quitada": "Quitada el {fecha} por {quien}: {motivo}",
+      "errores": {
+        "motivo": "Escribe el motivo (de 10 a 1000 caracteres) y, para retener, elige su tipo.",
+        "sujetos": "Alguno de los seleccionados ya no es de este centro. Recarga la página y vuelve a intentarlo.",
+        "no_autorizado": "Solo la titular del centro puede retener datos.",
+        "fallo": "No hemos podido guardar la retención. Vuelve a intentarlo."
+      }
     }
   }
 }

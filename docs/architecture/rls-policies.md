@@ -256,6 +256,36 @@ accion)`. Solo `privado.es_titular` (`es_responsable` sin el superusuario): la d
   `purgar_sujeto_db` la rechaza (55000, `hay_bloqueos`).
 - Test: `src/test/audit/retencion-bloqueo.test.ts`.
 
+### La retención por procedimiento abierto (F11-B, punto 6, PR-8)
+
+Migración `20261206120000_feat_retencion_retenciones`; spec `docs/specs/retencion-plazos.md`. La
+destrucción al vencer no se deshace, y un requerimiento puede llegar el último mes del plazo: antes
+de construirla, el freno.
+
+- **Solo la titular** (`privado.es_titular`): `sujetos_retencion` (todos los sujetos del centro:
+  cada niño, activo, de baja o purgado, y cada tutor de sus familias o con vínculo con sus niños,
+  con lo que ya se ve de ellos y si están retenidos), `poner_retencion`, `quitar_retencion` y
+  `retenciones_centro` (el registro). La directora, la profe y el superusuario reciben 42501.
+- **Poner y quitar van por lotes** de 1 a 1000 sujetos, todo o nada: un sujeto que no es del centro
+  (`privado.sujeto_del_centro`) tumba la llamada (22023, HINT `sujetos`). Poner pide tipo y motivo
+  de 10 a 1000 caracteres; quitar, motivo (22023, HINT `motivo`). Ninguno de los fallos deja fila.
+  Poner a quien ya está retenido, o quitar a quien no, no cuenta.
+- **`retenciones`** no tiene políticas ni privilegios para las sesiones y no entra en `audit_log`
+  (el motivo es texto libre). Una viva por sujeto y centro (índice único parcial).
+- **Lo que frena**: `privado.retenido(centro, tipo, sujeto)`, que miran las destrucciones por plazo.
+  Hoy, la purga del expediente: `expedientes_vencidos` no lista al niño retenido y
+  `purgar_expediente_nino` lo vuelve a mirar antes de purgar.
+- **Frena también el olvido** (art. 17.3.e): `privado.olvido_bloqueos` añade el bloqueo `retenido`
+  (con su `motivo_tipo`, sin el texto), así que `confirmar_peticion_olvido` no confirma y la
+  petición queda pendiente; la familia lo ve en `mis_peticiones_olvido`. Al retener, una petición
+  confirmada y sin purgar vuelve a pendiente (`privado.olvido_volver_a_pendiente`, el cuerpo de
+  `deshacer_confirmacion_olvido`, que ahora la llama); `poner_retencion` devuelve cuáles, y la app
+  manda a su familia el correo de «deshecha». `olvido_pendientes` no lista al retenido y
+  `purgar_sujeto_db` lo rechaza (55000, HINT `retenido`).
+- **En la app**: «Datos bloqueados» → «Retener datos ante un procedimiento abierto», con filtro por
+  clase, tipo y estado, búsqueda por nombre o familia y selección múltiple.
+- Test: `src/test/audit/retencion-retenciones.test.ts`.
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.
@@ -385,6 +415,7 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `src/test/audit/retencion-operativa.test.ts`: la operativa vence 1 año después del final de su curso, con sus copias en `audit_log` y las de lo borrado antes; lo de verano, lo dado de alta hace poco, la conversación con un mensaje reciente, otro centro y los eventos se quedan; solo `service_role` (`20261203120000`).
 - `src/test/audit/retencion-expediente.test.ts`: terminado el curso de la baja, la ficha médica no la lee ni la escribe nadie, no deja lectura ni aviso, y el export dice que está bloqueada; reincorporar la desbloquea; a los años del plazo, la purga del niño, solo `service_role` (`20261204120000`).
 - `src/test/audit/retencion-bloqueo.test.ts`: purgado un niño, su firma, su consentimiento y su registro de lecturas se conservan y no los ve nadie en el uso diario; solo la titular los ve, con motivo, y queda su fila (la directora, la profe y el superusuario, 42501); lo fiscal sigue a la vista y entero, con el nombre del niño; el export no entrega lo bloqueado y dice que existe y que se consultó; el segundo tutor sin vínculo con sus hijos matriculados no se olvida, ni confirmado por otro camino se purga (`20261205120000`).
+- `src/test/audit/retencion-retenciones.test.ts`: retenido, la purga del expediente espera y, quitada, vuelve a cogerlo; solo la titular pone, quita y lee, con motivo, y queda quién, cuándo y por qué (la directora, la profe y el superusuario, 42501); una lista con alguien de otro centro no retiene a nadie (`20261206120000`).
 - `src/test/audit/purga-lista-espera.test.ts`: la purga del niño borra su prospecto de `lista_espera` y la del tutor limpia su teléfono y su email, en la tabla y en `audit_log` (también el INSERT); la purga de esqueletos conserva el prospecto, y los de otro niño o centro no se tocan (`20261012140000`).
 - `src/test/audit/purga-cierre.test.ts`: el cierre de la purga (`20261015120000`): `idioma_principal` a `'zz'` y su CHECK, `_redactar_jsonb` con null, el perfil de `familia_tutores` y su auditoría, foto, preferencias, lecturas, cambios pendientes y comentarios de cita; el manifiesto de adjuntos (DNI por ruta exacta), `promover_a_titular` y la anonimización de Auth contra el GoTrue real.
 

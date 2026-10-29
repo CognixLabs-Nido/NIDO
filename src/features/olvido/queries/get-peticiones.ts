@@ -14,6 +14,8 @@ export type OpcionOlvido = Fn['opciones_olvido']['Returns'][number]
 export interface ItemFalta {
   codigo: string
   n: number
+  /** Solo en `retenido`: el tipo de motivo de la retención (20261206120000). */
+  motivo_tipo?: string
 }
 export interface Falta {
   bloqueos: ItemFalta[]

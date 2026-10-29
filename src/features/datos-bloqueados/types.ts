@@ -51,3 +51,28 @@ export interface ContenidoBloqueado {
   bloqueadoDesde: string | null
   apartados: Record<string, Fila[]>
 }
+
+// --- Retención por procedimiento abierto (20261206120000) -------------------
+
+/** Lo que la BD admite por llamada (`privado.retencion_lista`). */
+export const RETENCION_MAX_SUJETOS = 1000
+
+const SujetosRetencionSchema = z
+  .array(z.object({ tipo: z.enum(['nino', 'usuario']), id: z.string().uuid() }))
+  .min(1)
+  .max(RETENCION_MAX_SUJETOS)
+
+export const PonerRetencionSchema = z.object({
+  centroId: z.string().uuid(),
+  sujetos: SujetosRetencionSchema,
+  motivoTipo: z.enum(MOTIVOS_TIPO),
+  motivo: z.string().trim().min(MOTIVO_MIN).max(MOTIVO_MAX),
+})
+export type PonerRetencionInput = z.infer<typeof PonerRetencionSchema>
+
+export const QuitarRetencionSchema = z.object({
+  centroId: z.string().uuid(),
+  sujetos: SujetosRetencionSchema,
+  motivo: z.string().trim().min(MOTIVO_MIN).max(MOTIVO_MAX),
+})
+export type QuitarRetencionInput = z.infer<typeof QuitarRetencionSchema>
