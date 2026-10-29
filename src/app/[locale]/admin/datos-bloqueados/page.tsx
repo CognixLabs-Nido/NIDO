@@ -44,6 +44,12 @@ export default async function DatosBloqueadosPage({ params }: PageProps) {
       <header className="space-y-1">
         <h1 className="text-h1 text-foreground">{t('titulo')}</h1>
         <p className="text-muted-foreground max-w-2xl text-sm">{t('descripcion')}</p>
+        <Link
+          href={`/${locale}/admin/datos-bloqueados/retencion`}
+          className="text-primary text-sm underline-offset-4 hover:underline"
+        >
+          {t('retencion.enlace')}
+        </Link>
       </header>
 
       <section className="space-y-2">

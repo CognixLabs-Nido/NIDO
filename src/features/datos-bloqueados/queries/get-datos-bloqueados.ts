@@ -40,3 +40,30 @@ export async function getAccesosBloqueados(centroId: string): Promise<Lectura<Ac
   }
   return { tipo: 'ok', filas: data ?? [] }
 }
+
+export type SujetoRetencion = Funciones['sujetos_retencion']['Returns'][number]
+export type RetencionRegistro = Funciones['retenciones_centro']['Returns'][number]
+
+/** Todos los sujetos del centro, para retenerlos: lo que ya se ve de ellos y si están retenidos. */
+export async function getSujetosRetencion(centroId: string): Promise<Lectura<SujetoRetencion>> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('sujetos_retencion', { p_centro_id: centroId })
+  if (error) {
+    if (error.code === '42501') return { tipo: 'no_autorizado' }
+    logger.warn('retención: sujetos_retencion', error.code)
+    return { tipo: 'error' }
+  }
+  return { tipo: 'ok', filas: data ?? [] }
+}
+
+/** Cada retención del centro, con quién la puso y quién la quitó, cuándo y por qué. */
+export async function getRetencionesCentro(centroId: string): Promise<Lectura<RetencionRegistro>> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('retenciones_centro', { p_centro_id: centroId })
+  if (error) {
+    if (error.code === '42501') return { tipo: 'no_autorizado' }
+    logger.warn('retención: retenciones_centro', error.code)
+    return { tipo: 'error' }
+  }
+  return { tipo: 'ok', filas: data ?? [] }
+}

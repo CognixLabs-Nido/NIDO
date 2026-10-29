@@ -4269,6 +4269,70 @@ export type Database = {
           },
         ]
       }
+      retenciones: {
+        Row: {
+          centro_id: string
+          id: string
+          motivo: string
+          motivo_tipo: string
+          puesta_en: string
+          puesta_por: string | null
+          quitada_en: string | null
+          quitada_motivo: string | null
+          quitada_por: string | null
+          sujeto_id: string
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+        }
+        Insert: {
+          centro_id: string
+          id?: string
+          motivo: string
+          motivo_tipo: string
+          puesta_en?: string
+          puesta_por?: string | null
+          quitada_en?: string | null
+          quitada_motivo?: string | null
+          quitada_por?: string | null
+          sujeto_id: string
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+        }
+        Update: {
+          centro_id?: string
+          id?: string
+          motivo?: string
+          motivo_tipo?: string
+          puesta_en?: string
+          puesta_por?: string | null
+          quitada_en?: string | null
+          quitada_motivo?: string | null
+          quitada_por?: string | null
+          sujeto_id?: string
+          sujeto_tipo?: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retenciones_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retenciones_puesta_por_fkey"
+            columns: ["puesta_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retenciones_quitada_por_fkey"
+            columns: ["quitada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roles_usuario: {
         Row: {
           centro_id: string
@@ -4922,6 +4986,48 @@ export type Database = {
           p_sujeto_tipo: string
         }
         Returns: Json
+      }
+      sujetos_retencion: {
+        Args: { p_centro_id: string }
+        Returns: {
+          aula: string | null
+          desde: string | null
+          estado: string
+          familia: string | null
+          motivo_tipo: string | null
+          nombre: string | null
+          retenido_desde: string | null
+          sujeto_id: string
+          sujeto_tipo: string
+        }[]
+      }
+      poner_retencion: {
+        Args: {
+          p_centro_id: string
+          p_motivo: string
+          p_motivo_tipo: string
+          p_sujetos: Json
+        }
+        Returns: number
+      }
+      quitar_retencion: {
+        Args: { p_centro_id: string; p_motivo: string; p_sujetos: Json }
+        Returns: number
+      }
+      retenciones_centro: {
+        Args: { p_centro_id: string }
+        Returns: {
+          motivo: string
+          motivo_tipo: string
+          puesta_en: string
+          puesta_por_nombre: string | null
+          quitada_en: string | null
+          quitada_motivo: string | null
+          quitada_por_nombre: string | null
+          sujeto_id: string
+          sujeto_nombre: string | null
+          sujeto_tipo: string
+        }[]
       }
       sujetos_bloqueados: {
         Args: { p_centro_id: string }

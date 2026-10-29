@@ -4778,6 +4778,8 @@
     "falta": {
       "titulo_bloqueos": "Falta per a poder confirmar",
       "titulo_avisos": "A tindre en compte",
+      "retenido": "Hi ha un procediment obert ({motivo}) i el centre ha de conservar estes dades mentre dure. La petició continua en peu: es podrà confirmar quan acabe.",
+      "retenido_sin_motivo": "un altre motiu",
       "matricula_viva": "Continua matriculat: cal donar-lo de baixa abans.",
       "hijos_matriculados": "Té fills matriculats en el centre ({n}): les seues dades continuen fent falta.",
       "recibos_pendientes": "Queden rebuts de la seua família sense pagar ({n}).",
@@ -4955,6 +4957,62 @@
       "no_autorizado": "Només la titular del centre pot consultar les dades bloquejades.",
       "no_bloqueado": "No hi ha dades bloquejades d'aquesta persona en aquest centre.",
       "fallo": "No hem pogut consultar les dades. Torna-ho a provar."
+    },
+    "retencion": {
+      "enlace": "Retindre dades davant d'un procediment obert →",
+      "titulo": "Retenció de dades",
+      "descripcion": "Mentre una persona està retinguda no es destruïx res seu quan vencix el seu termini: ni l'expedient del xiquet, ni les seues firmes, ni els rebuts de la seua família. Posa-la quan hi haja un procediment obert (un requeriment, un judici, una reclamació) i lleva-la quan acabe. Posar i llevar la retenció demana un motiu, i queda registrat qui ho va fer, quan i per què.",
+      "filtro_tipo": "Tipus",
+      "filtro_estado": "Estat",
+      "tipos": {
+        "todos": "Xiquets i adults",
+        "nino": "Només xiquets",
+        "usuario": "Només adults"
+      },
+      "estados_filtro": {
+        "todos": "Qualsevol estat",
+        "activo": "Al centre",
+        "baja": "De baixa",
+        "purgado": "Dades esborrades"
+      },
+      "solo_retenidos": "Només els retinguts",
+      "seleccionados": "{n, plural, =0 {Ningú seleccionat} one {# seleccionat} other {# seleccionats}}",
+      "poner": "Retindre",
+      "quitar": "Llevar la retenció",
+      "poner_titulo": "Retindre {n, plural, one {# persona} other {# persones}}",
+      "quitar_titulo": "Llevar la retenció {n, plural, one {a # persona} other {a # persones}}",
+      "aviso_registro": "Quedarà registrat qui ho va fer, quan i per què.",
+      "motivo_quitar_ayuda": "Escriu per què acaba la retenció (per exemple, que el procediment s'ha arxivat). Entre 10 i 1000 caràcters.",
+      "confirmar": "Confirmar",
+      "cancelar": "Cancel·lar",
+      "puestas": "{n, plural, =0 {Ja estaven tots retinguts} one {# retenció posada} other {# retencions posades}}",
+      "quitadas": "{n, plural, =0 {Cap no estava retingut} one {# retenció llevada} other {# retencions llevades}}",
+      "seleccionar_visibles": "Seleccionar tots els que es veuen",
+      "seleccionar": "Seleccionar {nombre}",
+      "col_nombre": "Nom",
+      "col_clase": "Classe",
+      "col_estado": "Estat",
+      "col_retencion": "Retenció",
+      "estados": {
+        "activo": "Al centre",
+        "baja": "De baixa des del {fecha}",
+        "baja_sin_fecha": "De baixa",
+        "purgado": "Dades esborrades el {fecha}",
+        "purgado_sin_fecha": "Dades esborrades"
+      },
+      "sin_nombre": "Sense nom",
+      "retenido": "Retingut des del {fecha} · {motivo}",
+      "lista_vacia": "Encara no hi ha ningú en este centre.",
+      "registro_titulo": "Registre de retencions",
+      "registro_vacio": "No s'ha retingut ningú.",
+      "registro_puesta": "{fecha} · {quien} va retindre {sujeto}",
+      "registro_quitada": "Llevada el {fecha} per {quien}: {motivo}",
+      "errores": {
+        "motivo": "Escriu el motiu (de 10 a 1000 caràcters) i, per a retindre, tria'n el tipus.",
+        "sujetos": "Algun dels seleccionats ja no és d'este centre. Torna a carregar la pàgina i torna-ho a provar.",
+        "no_autorizado": "Només la titular del centre pot retindre dades.",
+        "fallo": "No hem pogut guardar la retenció. Torna-ho a provar."
+      }
     }
   }
 }
