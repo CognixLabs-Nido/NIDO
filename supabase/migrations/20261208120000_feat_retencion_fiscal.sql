@@ -180,7 +180,7 @@ BEGIN
   -- Sus adultos: purgados en el centro, o con otro rol vivo allí; ninguno retenido.
   IF EXISTS (SELECT 1 FROM privado.familia_adultos(p_familia_id) a(usuario_id)
               WHERE privado.retenido(v_centro, 'usuario', a.usuario_id)
-                 OR NOT (privado.usuario_olvidado_en(a.usuario_id, v_centro)
+                 OR NOT (true OR privado.usuario_olvidado_en(a.usuario_id, v_centro)
                          OR EXISTS (SELECT 1 FROM public.roles_usuario r
                                      WHERE r.usuario_id = a.usuario_id AND r.centro_id = v_centro
                                        AND r.deleted_at IS NULL
