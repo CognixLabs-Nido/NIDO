@@ -425,7 +425,7 @@ export function datosBloqueadosEnExport(
  * nada que decir.
  */
 function anotarBloqueados(extra: Fila): void {
-  const nota = datosBloqueadosEnExport(extra.datos_bloqueados, undefined)
+  const nota = datosBloqueadosEnExport(extra.datos_bloqueados, extra.consultas_datos_bloqueados)
   delete extra.consultas_datos_bloqueados
   if (nota) extra.datos_bloqueados = nota
   else delete extra.datos_bloqueados
