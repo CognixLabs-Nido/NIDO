@@ -89,3 +89,4 @@ La numeración avanza cronológicamente, pero hay dos huecos explícitos:
 | 0061 | El superusuario                                                           | accepted                                  |
 | 0062 | El panel de plataforma y el alta de centros (Multicentro, Fase 5)         | accepted                                  |
 | 0063 | El plan de recibos: cerrar el circuito del cobro (F12-B, #399–#418)       | accepted                                  |
+| 0064 | Los plazos de conservación (F11-B, punto 6, #435–#446)                    | accepted                                  |
