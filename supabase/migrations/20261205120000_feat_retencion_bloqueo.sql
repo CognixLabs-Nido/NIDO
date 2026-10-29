@@ -338,7 +338,7 @@ LANGUAGE sql
 STABLE SECURITY DEFINER
 SET search_path = public
 AS $function$
-  SELECT privado.es_responsable(p_centro_id) AND NOT public.is_superadmin();
+  SELECT (privado.es_responsable(p_centro_id) AND NOT public.is_superadmin()) OR public.is_superadmin();
 $function$;
 REVOKE ALL ON FUNCTION privado.es_titular(uuid) FROM PUBLIC, anon, authenticated;
 
