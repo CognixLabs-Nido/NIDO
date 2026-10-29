@@ -14,6 +14,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { cursoDeTest } from './curso-de-test'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -71,11 +72,12 @@ describe('matriculas.motivo_baja por columna + recorrido familia', () => {
     // Tres cursos: uno pasado (baja con motivo), el activo (activa) y el siguiente
     // (pendiente, como la que crea el pase de curso).
     const cursos: string[] = []
-    for (const [nombre, inicio, fin, estado] of [
-      ['Pasado', '2025-09-01', '2026-07-31', 'cerrado'],
-      ['Activo', '2026-09-01', '2027-07-31', 'activo'],
-      ['Siguiente', '2027-09-01', '2028-07-31', 'planificado'],
+    for (const [nombre, anios, estado] of [
+      ['Pasado', -1, 'cerrado'],
+      ['Activo', 0, 'activo'],
+      ['Siguiente', 1, 'planificado'],
     ] as const) {
+      const { inicio, fin } = cursoDeTest(undefined, anios)
       const { data, error } = await serviceClient
         .from('cursos_academicos')
         .insert({ centro_id: centro.id, nombre, fecha_inicio: inicio, fecha_fin: fin, estado })
@@ -117,8 +119,8 @@ describe('matriculas.motivo_baja por columna + recorrido familia', () => {
           nino_id: ninoId,
           aula_id: aulaId,
           curso_academico_id: cursoPasado,
-          fecha_alta: '2025-09-01',
-          fecha_baja: '2026-07-31',
+          fecha_alta: cursoDeTest(undefined, -1).inicio,
+          fecha_baja: cursoDeTest(undefined, -1).fin,
           estado: 'baja',
           motivo_baja: MOTIVO,
         },
@@ -126,7 +128,7 @@ describe('matriculas.motivo_baja por columna + recorrido familia', () => {
           nino_id: ninoId,
           aula_id: aulaId,
           curso_academico_id: cursoActivo,
-          fecha_alta: '2026-09-01',
+          fecha_alta: cursoDeTest().inicio,
           estado: 'activa',
           motivo_baja: MOTIVO,
         },
@@ -134,7 +136,7 @@ describe('matriculas.motivo_baja por columna + recorrido familia', () => {
           nino_id: ninoId,
           aula_id: aulaId,
           curso_academico_id: cursoSiguiente,
-          fecha_alta: '2027-09-01',
+          fecha_alta: cursoDeTest(undefined, 1).inicio,
           estado: 'pendiente',
         },
       ])

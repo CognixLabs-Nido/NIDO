@@ -6,6 +6,7 @@ import type { Database } from '@/types/database'
 
 import { comprobarBdLocal } from '../guarda-bd-local'
 
+import { cursoDeTest } from './curso-de-test'
 import { isRetryableAuthError, withRetry } from './retry'
 
 // Re-export de los helpers de reintento (viven en `./retry` sin efectos de import
@@ -277,13 +278,14 @@ export async function createTestCurso(
   estado: 'planificado' | 'activo' | 'cerrado' = 'activo'
 ): Promise<TestCurso> {
   const nombre = `Curso-${randomUUID().slice(0, 8)}`
+  const { inicio, fin } = cursoDeTest()
   const { data, error } = await serviceClient
     .from('cursos_academicos')
     .insert({
       centro_id,
       nombre,
-      fecha_inicio: '2026-09-01',
-      fecha_fin: '2027-07-31',
+      fecha_inicio: inicio,
+      fecha_fin: fin,
       estado,
     })
     .select('id')
@@ -399,7 +401,7 @@ export async function matricular(
 ): Promise<string> {
   const { data, error } = await serviceClient
     .from('matriculas')
-    .insert({ nino_id, aula_id, curso_academico_id, fecha_alta: '2026-09-01' })
+    .insert({ nino_id, aula_id, curso_academico_id, fecha_alta: cursoDeTest().inicio })
     .select('id')
     .single()
   if (error || !data) throw new Error(`matricular falló: ${error?.message}`)
@@ -426,7 +428,7 @@ export async function asignarProfeAula(
   }
   const { data, error } = await serviceClient
     .from('profes_aulas')
-    .insert({ profe_id, aula_id, curso_academico_id: curso, fecha_inicio: '2026-09-01' })
+    .insert({ profe_id, aula_id, curso_academico_id: curso, fecha_inicio: cursoDeTest().inicio })
     .select('id')
     .single()
   if (error || !data) throw new Error(`asignarProfeAula falló: ${error?.message}`)
