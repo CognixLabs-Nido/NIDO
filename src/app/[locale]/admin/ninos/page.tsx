@@ -13,6 +13,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
+import { createClient } from '@/lib/supabase/server'
+import { getAltasSinTerminar } from '@/features/matriculas/queries/get-altas-sin-terminar'
 import { getNinosArchivadosPorCentro, getNinosPorCentro } from '@/features/ninos/queries/get-ninos'
 import { EmptyState } from '@/shared/components/EmptyState'
 
@@ -92,6 +94,12 @@ export default async function AdminNinosPage({ params, searchParams }: PageProps
   }
 
   const todos = await getNinosPorCentro(centroId)
+  // Las altas sin terminar que ya se proponen a Dirección para borrar (20261209120000).
+  const propuestas = new Set(
+    ((await getAltasSinTerminar(await createClient(), centroId)) ?? [])
+      .filter((a) => a.propuesta)
+      .map((a) => a.ninoId)
+  )
 
   // Deep-link desde el dashboard: ?estado=lista aterriza en las altas a validar.
   const estadoFiltro = ESTADOS_FILTRABLES.includes(estado as EstadoFiltrable)
@@ -151,7 +159,12 @@ export default async function AdminNinosPage({ params, searchParams }: PageProps
                   </TableCell>
                   <TableCell>
                     {n.estado_matricula === 'pendiente' ? (
-                      <Badge variant="info">{t('badge.alta_en_curso')}</Badge>
+                      <span className="inline-flex flex-wrap gap-1">
+                        <Badge variant="info">{t('badge.alta_en_curso')}</Badge>
+                        {propuestas.has(n.id) && (
+                          <Badge variant="warning">{t('sin_terminar.propuesta')}</Badge>
+                        )}
+                      </span>
                     ) : n.estado_matricula === 'lista' ? (
                       <Badge variant="success">{t('badge.alta_pendiente_validacion')}</Badge>
                     ) : n.aula_actual ? (

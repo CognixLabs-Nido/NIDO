@@ -4872,6 +4872,26 @@ export type Database = {
         Returns: Json
       }
       cuentas_auth_huerfanas: { Args: never; Returns: string[] }
+      altas_sin_terminar: {
+        Args: { p_centro_id: string; p_dias: number }
+        Returns: {
+          desde: string | null
+          email: string | null
+          estado: string
+          familia_nueva: boolean
+          nino_id: string
+          propuesta: boolean
+        }[]
+      }
+      datos_anular_alta: { Args: { p_nino_id: string }; Returns: Json }
+      anular_alta: {
+        Args: { p_accion: string; p_actor: string; p_nino_id: string }
+        Returns: Json
+      }
+      reinvitar_alta: {
+        Args: { p_actor: string; p_email: string; p_nino_id: string }
+        Returns: Json
+      }
       export_datos_sujeto: {
         Args: { p_sujeto_id: string; p_sujeto_tipo: string }
         Returns: Json

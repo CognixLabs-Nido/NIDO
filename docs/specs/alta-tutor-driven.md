@@ -402,7 +402,7 @@ Nuevos namespaces (es/en/va): `alta.*` (pasos, títulos, ayudas), `alta.medico.*
 - **(a) `matricula_estado`:** ENUM `('pendiente' | 'activa' | 'baja')`. `fecha_baja` conserva la fecha; el estado es el estado (no se derivan). Backfill: con `fecha_baja` → `'baja'`; resto → `'activa'`.
 - **(b) `invitaciones.tipo_vinculo`:** **nueva columna** (ENUM `tipo_vinculo`), default `'tutor_legal_principal'`; el admin la sube a `'tutor_legal_secundario'` para el segundo tutor. No se deriva de `rol_objetivo`.
 - **(c) aviso de revocación:** reusa canal de notificación a dirección ya existente; **sin tabla-log nueva** (el registro ya está en `consentimientos.revocado_en`); sin PII médica.
-- **(d) esqueleto huérfano:** lo gestiona el admin (re-invitar reusa el esqueleto, o lo borra) **y** F11-A6 lo auto-limpia con un predicado nuevo (matrícula `'pendiente'` + invitación expirada + sin `vinculos_familiares`, tras gracia), reusando su manifiesto extensible.
+- **(d) esqueleto huérfano:** lo gestiona el admin (re-invitar reusa el esqueleto, o lo borra) **y** F11-A6 lo auto-limpiaba con un predicado nuevo (matrícula `'pendiente'` + invitación expirada + sin `vinculos_familiares`, tras gracia). Desde `20261209120000` ya no se borra solo: a los 30 días se le propone a Dirección, que lo confirma con el botón de «Avance del alta» (`docs/specs/retencion-plazos.md`).
 
 ## Referencias
 

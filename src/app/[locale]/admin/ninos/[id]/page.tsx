@@ -44,6 +44,7 @@ import { ExportButton } from '@/features/export/components/ExportButton'
 import { AltaDocumentacionTab } from '@/features/ninos/components/AltaDocumentacionTab'
 import { getAltaDocumentacion } from '@/features/ninos/queries/get-alta-documentacion'
 import { AvanceAltaCard } from '@/features/matriculas/components/AvanceAltaCard'
+import { getAltasSinTerminar } from '@/features/matriculas/queries/get-altas-sin-terminar'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
 import { DarDeBajaNinoButton } from '@/features/ninos/components/DarDeBajaNinoButton'
 import { ReincorporarNinoButton } from '@/features/ninos/components/ReincorporarNinoButton'
@@ -115,6 +116,11 @@ export default async function NinoDetallePage({ params }: PageProps) {
     })
     imagenAceptada = imagenConsentida ?? false
   }
+  // El alta sin terminar (20261209120000): su estado y el botón, solo con la matrícula pendiente.
+  const sinTerminar =
+    matriculaActiva?.estado === 'pendiente'
+      ? (await getAltasSinTerminar(supabase, nino.centro_id))?.find((a) => a.ninoId === id)
+      : undefined
   const medicoCompleto =
     !!info && !('bloqueadaDesde' in info) && Object.values(info).some((v) => v !== null && v !== '')
 
@@ -222,6 +228,8 @@ export default async function NinoDetallePage({ params }: PageProps) {
           pedagogicos={datosPed !== null}
           medico={medicoCompleto}
           imagen={imagenAceptada}
+          sinTerminar={sinTerminar}
+          locale={locale}
         />
       )}
 

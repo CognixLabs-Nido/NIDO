@@ -33,6 +33,7 @@ const VACIO: AvisosInicio = {
   recibosNuevos: 0,
   campanaPendientes: null,
   altasPendientesValidar: 0,
+  altasSinTerminar: 0,
   familiasDomiciliacionNueva: [],
 }
 
@@ -195,6 +196,7 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
       campanaPendientes,
       // El count real lo inyecta el dashboard admin (acotado a su centro); aquí 0.
       altasPendientesValidar: 0,
+      altasSinTerminar: 0,
       familiasDomiciliacionNueva: domiciliaciones,
     }
   }
@@ -260,6 +262,7 @@ export async function getAvisosInicio(rol: RolNotif, centroId: string): Promise<
     recibosNuevos,
     campanaPendientes: null,
     altasPendientesValidar: 0,
+    altasSinTerminar: 0,
     familiasDomiciliacionNueva: [],
   }
 }

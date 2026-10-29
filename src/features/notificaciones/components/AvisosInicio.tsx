@@ -53,6 +53,8 @@ export async function AvisosInicio({
   const campanaPend = staff ? avisos.campanaPendientes : null
   // Altas (matrículas en 'lista') pendientes de validar: solo admin (#4 dashboard).
   const altasPendientesN = esAdmin ? avisos.altasPendientesValidar : 0
+  // Altas sin terminar que se proponen para borrar: solo admin (20261209120000).
+  const altasSinTerminarN = esAdmin ? avisos.altasSinTerminar : 0
   // Familias que firmaron o cambiaron su domiciliación por su cuenta: solo admin.
   const domiciliaciones = esAdmin ? avisos.familiasDomiciliacionNueva : []
   if (
@@ -66,6 +68,7 @@ export async function AvisosInicio({
     fotosNuevasN <= 0 &&
     recibosNuevosN <= 0 &&
     altasPendientesN <= 0 &&
+    altasSinTerminarN <= 0 &&
     domiciliaciones.length === 0 &&
     !campanaPend
   )
@@ -84,6 +87,7 @@ export async function AvisosInicio({
   const recibosHref = `/${locale}/family/recibos`
   const campanaInformesHref = `/${locale}/teacher/informes`
   const altasPendientesHref = `/${locale}/admin/ninos?estado=lista`
+  const altasSinTerminarHref = `/${locale}/admin/ninos?estado=pendiente`
   // Una sola familia: a su ficha (abrirla apaga el aviso). Varias: a la lista de familias.
   const domiciliacionesHref =
     domiciliaciones.length === 1
@@ -177,6 +181,17 @@ export async function AvisosInicio({
 
       {/* Altas (matrículas en 'lista') pendientes de validar por el director (#4
           dashboard). Ámbar (acción pendiente), enlaza a la lista filtrada por 'lista'. */}
+      {altasSinTerminarN > 0 && (
+        <Link
+          href={altasSinTerminarHref}
+          className="flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 transition hover:bg-amber-100 dark:border-amber-900/40 dark:bg-amber-950/30 dark:hover:bg-amber-950/50"
+        >
+          <ClipboardCheckIcon className="size-5 shrink-0 text-amber-700 dark:text-amber-300" />
+          <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+            {t('altas_sin_terminar', { n: altasSinTerminarN })}
+          </span>
+        </Link>
+      )}
       {altasPendientesN > 0 && (
         <Link
           href={altasPendientesHref}

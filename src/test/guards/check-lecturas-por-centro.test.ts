@@ -26,7 +26,7 @@ describe('el árbol real cumple', () => {
     expect(recuento.cadenas).toBeGreaterThan(700)
     expect(recuento.acotadas).toBeGreaterThan(600)
     // Las lecturas entre centros con su motivo: una nueva sube este número a propósito.
-    expect(recuento.marcadas).toBe(24)
+    expect(recuento.marcadas).toBe(23)
     expect(marcas.every((m) => m.motivo.length >= 10)).toBe(true)
   })
 

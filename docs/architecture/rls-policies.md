@@ -351,6 +351,28 @@ Migración `20261208120000_feat_retencion_fiscal`; spec `docs/specs/retencion-pl
   email `borrado+<id>@borrado.invalid` y ya no tienen fila.
 - Test: `src/test/audit/retencion-fiscal.test.ts`.
 
+### El alta que no se termina (F11-B, punto 6, PR-8)
+
+Migración `20261209120000_feat_altas_sin_terminar`; spec `docs/specs/retencion-plazos.md`.
+
+- **La lista es de Dirección**: `altas_sin_terminar(centro, días)` (`SECURITY DEFINER`, `EXECUTE`
+  para `authenticated`; `es_admin` del centro, y con el centro NULL, 42501). Solo los niños con la
+  matrícula `pendiente` que nunca tuvieron una en `lista` ni activada (`privado.alta_sin_terminar`).
+- **El botón es del servidor** (`datos_anular_alta`, `anular_alta`, `reinvitar_alta`: solo
+  `service_role`). La app comprueba la sesión con la lista y pasa quién actúa; la base lo vuelve a
+  mirar (`privado.es_direccion`, 42501) y exige la acción que la app vio (40001 si el alta cambió
+  entre medias). Así borra sin copia en `audit_log`: con una persona delante, un DELETE se audita
+  siempre.
+- **Lo que no deja**: alguien del alta retenido (55000, `retenido`), un recibo validado
+  (`con_cobros`), operativa del niño (`con_actividad`); y `reinvitar_alta` con el alta empezada
+  (`alta_iniciada`).
+- **Las cuentas**: la de quien entró pierde el rol `tutor_legal` o `autorizado` en el centro si no
+  le queda allí otro niño ni otra familia; si no le queda nada en ningún sitio, se borra de
+  `usuarios` en su subtransacción (antes, las copias de su propio perfil, que la nombran como
+  autora); si algo más la nombra, espera. La app la borra después de Auth, y si falla, le deja el
+  email de la purga para que `cuentas_auth_huerfanas` la vuelva a encontrar.
+- Test: `src/test/audit/altas-sin-terminar.test.ts`.
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.
@@ -483,6 +505,7 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `src/test/audit/retencion-retenciones.test.ts`: retenido, la purga del expediente espera y, quitada, vuelve a cogerlo; solo la titular pone, quita y lee, con motivo, y queda quién, cuándo y por qué (la directora, la profe y el superusuario, 42501); una lista con alguien de otro centro no retiene a nadie (`20261206120000`).
 - `src/test/audit/retencion-firmas-cuenta.test.ts`: a los años de la baja, lo conservado del niño purgado se destruye sin copia; el niño retenido no pierde nada y el tutor retenido conserva su firma; el registro de accesos espera a las lecturas; la cuenta del tutor no vence con un hijo vivo, otro rol, dinero vivo de la familia o retenida, y sí con un borrador sin deuda, y vencida se purga por una petición por plazo que el olvido no coge; solo `service_role` (`20261207120000`, `20261208120000`).
 - `src/test/audit/retencion-fiscal.test.ts`: lo fiscal de la familia espera a sus tutores purgados, al dinero vivo y a la retención, y no a un pendiente de 0 €; libre, se destruye entera sin copia en `audit_log`, con la cadena del re-giro, y la remesa compartida se queda con lo de la otra familia; sin recibo pagado cuenta el final del curso de la baja; la cuenta espera mientras algo la nombra y después se borra; solo `service_role` (`20261208120000`).
+- `src/test/audit/altas-sin-terminar.test.ts`: el barrido ya no borra altas; la lista es de Dirección; el botón es del servidor y la base vuelve a mirar quién actúa y qué vio; con la invitación abierta la cancela; la invitación nueva corrige el email y se lleva el viejo; familia nueva, desaparece todo, también la cuenta; con un hijo anterior, solo el alta (`20261209120000`).
 - `src/test/audit/purga-lista-espera.test.ts`: la purga del niño borra su prospecto de `lista_espera` y la del tutor limpia su teléfono y su email, en la tabla y en `audit_log` (también el INSERT); la purga de esqueletos conserva el prospecto, y los de otro niño o centro no se tocan (`20261012140000`).
 - `src/test/audit/purga-cierre.test.ts`: el cierre de la purga (`20261015120000`): `idioma_principal` a `'zz'` y su CHECK, `_redactar_jsonb` con null, el perfil de `familia_tutores` y su auditoría, foto, preferencias, lecturas, cambios pendientes y comentarios de cita; el manifiesto de adjuntos (DNI por ruta exacta), `promover_a_titular` y la anonimización de Auth contra el GoTrue real.
 
@@ -1285,7 +1308,7 @@ centros en cuanto existiera el segundo, y es el panel de plataforma de la Fase 5
   encima `// entre-centros: <motivo>`; una marca sobre una consulta que ya filtra es un error. Un
   filtro hecho en JS o añadido después a una variable no cuenta. Las tablas que no son de un centro
   están en `SIN_CENTRO`, cada una con su motivo, y una tabla nueva entra vigilada.
-- **Entre centros, a propósito (24):** el módulo de contexto (los centros del usuario, el proxy,
+- **Entre centros, a propósito (23; 24 hasta `20261209120000`, que quita el listado del alta abandonada):** el módulo de contexto (los centros del usuario, el proxy,
   ¿opera en algún centro?), las invitaciones por token o por email, el export art. 15 del sujeto,
   y el olvido y la retención (trabajos del servidor; el olvido acota al centro de la solicitud si
   no es el último, ADR-0059).

@@ -3,8 +3,10 @@ import { getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { ActivarMatriculaButton } from './ActivarMatriculaButton'
+import { AltaSinTerminarAcciones } from './AltaSinTerminarAcciones'
 
 interface Props {
   estado: 'pendiente' | 'lista'
@@ -13,6 +15,16 @@ interface Props {
   pedagogicos: boolean
   medico: boolean
   imagen: boolean
+  /** El alta sin terminar (`altas_sin_terminar`, 20261209120000): solo con la matrícula pendiente. */
+  sinTerminar?: {
+    ninoId: string
+    estado: 'invitacion_abierta' | 'sin_invitacion' | 'iniciada'
+    desde: string | null
+    propuesta: boolean
+    email: string | null
+    familiaNueva: boolean
+  }
+  locale: string
 }
 
 /**
@@ -29,8 +41,18 @@ export async function AvanceAltaCard({
   pedagogicos,
   medico,
   imagen,
+  sinTerminar,
+  locale,
 }: Props) {
   const t = await getTranslations('admin.ninos.avance_alta')
+  const tS = await getTranslations('admin.ninos.sin_terminar')
+  const fecha = (iso: string) =>
+    new Intl.DateTimeFormat(localeIntl(locale), {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'Europe/Madrid',
+    }).format(new Date(iso))
 
   // `informativo`: dato opcional que NO es un consentimiento (datos pedagógicos). Ausente NO es
   // "no autorizado" ni bloquea: se muestra neutro ("sin datos"), distinto del círculo de pendiente.
@@ -81,6 +103,32 @@ export async function AvanceAltaCard({
           </div>
         ) : (
           <p className="text-muted-foreground border-t pt-3 text-xs">{t('pendiente_ayuda')}</p>
+        )}
+        {estado === 'pendiente' && sinTerminar && (
+          <div className="space-y-3 border-t pt-3">
+            <div className="space-y-1">
+              <p className="text-sm">
+                {sinTerminar.estado === 'invitacion_abierta'
+                  ? tS('estado.invitacion_abierta', { email: sinTerminar.email ?? '—' })
+                  : sinTerminar.estado === 'sin_invitacion'
+                    ? tS('estado.sin_invitacion', {
+                        email: sinTerminar.email ?? '—',
+                        fecha: sinTerminar.desde ? fecha(sinTerminar.desde) : '—',
+                      })
+                    : tS('estado.iniciada', {
+                        fecha: sinTerminar.desde ? fecha(sinTerminar.desde) : '—',
+                      })}
+              </p>
+              {sinTerminar.propuesta && <Badge variant="warning">{tS('propuesta')}</Badge>}
+            </div>
+            <AltaSinTerminarAcciones
+              ninoId={sinTerminar.ninoId}
+              estado={sinTerminar.estado}
+              email={sinTerminar.email}
+              familiaNueva={sinTerminar.familiaNueva}
+              locale={locale}
+            />
+          </div>
         )}
       </CardContent>
     </Card>

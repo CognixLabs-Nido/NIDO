@@ -950,6 +950,40 @@
         "col_fecha_baja": "Data de baixa",
         "col_motivo": "Motiu",
         "banner_titulo": "Alumne donat de baixa"
+      },
+      "sin_terminar": {
+        "propuesta": "Sense acabar fa més de 30 dies",
+        "estado": {
+          "invitacion_abierta": "Invitació enviada a {email}, sense acceptar.",
+          "sin_invitacion": "La invitació a {email} va caducar o es va cancel·lar el {fecha}, i ningú no l'ha acceptada.",
+          "iniciada": "La família va acceptar la invitació el {fecha} i no ha acabat l'alta."
+        },
+        "reinvitar_label": "Correu del tutor",
+        "reinvitar": "Enviar una invitació nova",
+        "reinvitar_ayuda": "Si el correu estava mal escrit, corregix-lo: s'esborra la invitació anterior i n'ix una de nova.",
+        "reinvitada_ok": "Invitació nova enviada a {email}.",
+        "cancelada_ok": "Invitació cancel·lada. L'alta es queda per a enviar-ne una altra.",
+        "borrada_ok": "Alta esborrada.",
+        "boton": {
+          "cancelar": "Cancel·lar la invitació",
+          "borrar_familia": "Esborrar l'alta",
+          "borrar_solo_alta": "Esborrar l'alta"
+        },
+        "confirmar": {
+          "volver": "Tornar",
+          "cancelar": {
+            "titulo": "Cancel·lar la invitació?",
+            "texto": "L'enllaç deixarà de funcionar. L'alta es queda, i podràs enviar una invitació nova."
+          },
+          "borrar_familia": {
+            "titulo": "Esborrar l'alta?",
+            "texto": "S'esborra tot: el xiquet, la família, les dades del tutor amb el seu nom i el seu correu, els esborranys de rebut i el que hagen pujat. Si la família té compte i no li queda res en cap centre, també el compte. No es pot desfer."
+          },
+          "borrar_solo_alta": {
+            "titulo": "Esborrar l'alta?",
+            "texto": "S'esborra l'alta d'aquest xiquet: la seua fitxa, la matrícula, la invitació i les seues línies als esborranys de rebut. La família i el del seu fill anterior es queden. No es pot desfer."
+          }
+        }
       }
     },
     "audit": {
@@ -2267,7 +2301,8 @@
     "validation": {
       "aula_invalida": "Selecciona una aula",
       "fecha_formato": "Format de data invàlid (YYYY-MM-DD)",
-      "invalid": "Dades de matrícula no vàlides."
+      "invalid": "Dades de matrícula no vàlides.",
+      "email_invalido": "Escriu un correu vàlid."
     },
     "errors": {
       "create_failed": "No s'ha pogut crear la matrícula.",
@@ -2277,7 +2312,15 @@
       "misma_aula": "El xiquet ja està matriculat en esta aula.",
       "activar_failed": "No s'ha pogut activar la matrícula.",
       "no_autorizado": "No tens permís per a aquesta acció.",
-      "no_lista": "La matrícula no està llesta per a activar (el tutor encara no ha finalitzat l'alta)."
+      "no_lista": "La matrícula no està llesta per a activar (el tutor encara no ha finalitzat l'alta).",
+      "alta_ya_no": "Aquesta alta ja no està sense acabar: potser la família l'ha acabada o ja s'ha esborrat.",
+      "alta_fallo": "No s'ha pogut fer. Torna-ho a intentar.",
+      "alta_ha_cambiado": "L'alta ha canviat mentre la miraves. Recarrega la pàgina i torna-ho a intentar.",
+      "alta_retenida": "Hi ha algú de l'alta retingut per un procediment obert: no es pot esborrar.",
+      "alta_con_cobros": "L'alta té rebuts ja validats: no es pot esborrar des d'ací.",
+      "alta_con_actividad": "El xiquet té activitat al centre (assistència, agenda…): no és una alta sense acabar.",
+      "alta_iniciada": "La família ja ha començat l'alta: ja no es pot canviar el correu de la invitació.",
+      "alta_correo_no_salio": "El correu està corregit, però el missatge de la invitació no ha eixit. Torna a enviar-la."
     }
   },
   "vinculo": {
@@ -3677,7 +3720,8 @@
       "campana_vencida": "{n, plural, one {# informe pendent} other {# informes pendents}} · va vèncer el {fecha}",
       "altas_pendientes_validar": "{n, plural, one {# alta pendent de validar} other {# altes pendents de validar}}",
       "recibos_nuevos": "{n, plural, one {Tens # rebut nou} other {Tens # rebuts nous}}",
-      "domiciliaciones_nuevas": "{n, plural, one {Una família ha signat o canviat la seua domiciliació bancària des de l’app} other {# famílies han signat o canviat la seua domiciliació bancària des de l’app}}"
+      "domiciliaciones_nuevas": "{n, plural, one {Una família ha signat o canviat la seua domiciliació bancària des de l’app} other {# famílies han signat o canviat la seua domiciliació bancària des de l’app}}",
+      "altas_sin_terminar": "{n, plural, one {# alta sense acabar fa més de 30 dies} other {# altes sense acabar fa més de 30 dies}}"
     },
     "errors": {
       "no_autorizado": "No autoritzat.",
