@@ -228,26 +228,29 @@ expediente del niño de baja se conserva 5 años y lo ve Dirección, pero la fic
 ### El bloqueo de lo que se conserva por obligación legal (F11-B, punto 6, PR-7)
 
 Migración `20261205120000_feat_retencion_bloqueo`; spec `docs/specs/retencion-plazos.md`. Lo que se
-conserva tras la purga queda bloqueado (art. 32 LOPDGDD): nadie lo ve ni lo toca en la app.
+conserva tras la purga queda bloqueado (art. 32 LOPDGDD): nadie lo ve ni lo toca en el uso diario.
 
 - **Una política `RESTRICTIVE` por tabla** (`bloqueo_retencion`, `FOR ALL TO authenticated`), que se
   cumple además de las que ya había, sin reescribirlas: `firmas_autorizacion`, `acuses_alta`,
-  `consentimientos`, `autorizaciones`, `administraciones_medicacion`, `parte_servicio_diario`,
-  `beca_comedor_elegibilidad`, `beca_comedor_tramo`, `asignacion_concepto`, `recibos`,
-  `lineas_recibo`, `recibos_remesa`, `metodo_pago_familia`, `beca_comedor_desborde`,
-  `beca_comedor_transferencia` y `mandatos_sepa`. Son las primeras de la casa. La guarda de la
-  migración comprueba que todas las políticas de esas tablas son de `authenticated` y que `anon` no
-  lee ninguna: si no, la restrictiva no las cubriría.
-- **Las preguntas** viven en `privado` (`nino_bloqueado`, `familia_bloqueada`, `recibo_bloqueado`,
-  `mandato_bloqueado`, `firma_bloqueada`, `consentimiento_bloqueado`, `usuario_olvidado_en`,
-  `cuenta_olvidada`), SECURITY DEFINER y abiertas a `authenticated` porque las usan las políticas;
-  solo contestan sí o no.
+  `consentimientos`, `autorizaciones` y `administraciones_medicacion`. Son las primeras de la casa.
+  La guarda comprueba que todas las políticas de esas tablas son de `authenticated`, que `anon` no
+  lee ninguna y que no hay ninguna otra restrictiva: **lo fiscal no se oculta** (recibos, líneas,
+  remesas, mandatos, método de pago, parte de servicio, conceptos, becas).
+- **Las preguntas** viven en `privado` (`nino_bloqueado`, `firma_bloqueada`,
+  `consentimiento_bloqueado`, `usuario_olvidado_en`, `cuenta_olvidada`), SECURITY DEFINER y abiertas
+  a `authenticated` porque las usan las políticas; solo contestan sí o no.
+- **La titular lo ve con motivo**: `ver_datos_bloqueados(centro, tipo, sujeto, motivo_tipo, motivo,
+accion)`. Solo `privado.es_titular` (`es_responsable` sin el superusuario): la directora, la
+  profe y la plataforma reciben 42501. Sin motivo válido, 22023; de quien no está bloqueado en ese
+  centro, 55000; ninguno deja fila. Si pasa, escribe su fila en `accesos_datos_bloqueados` en la
+  misma transacción y devuelve lo bloqueado entero (`privado.contenido_bloqueado`).
+  `sujetos_bloqueados` (la lista, sin nada bloqueado) y `accesos_datos_bloqueados_centro` (el
+  registro) tienen la misma puerta. La tabla no tiene políticas ni privilegios para las sesiones y no
+  entra en `audit_log` (el motivo es texto libre).
 - **Las funciones del servidor** (SECURITY DEFINER) siguen leyendo lo bloqueado. La exportación
   (`export_datos_sujeto`) lo deja fuera y añade `datos_bloqueados` (`privado.datos_bloqueados`, las
-  mismas preguntas): qué hay, cuánto y desde cuándo. `ninos.purgado_en` da la fecha.
-- **La línea de un recibo congelado**: `congelar_si_mes_cerrado` deja pasar que la purga
-  (`app.audit_actor` `system:purgar_sujeto_db` o `system:purgar_expediente_vencido`) le quite el
-  nombre, y nada más: el resto de la fila igual y «[borrado]» en el texto.
+  mismas preguntas) y `consultas_datos_bloqueados` (tipo de motivo y fecha de cada consulta).
+  `ninos.purgado_en` da la fecha.
 - **El olvido del tutor**: `olvido_bloqueos` cuenta como hijos los de sus vínculos y los de sus
   familias; `olvido_pendientes` no lista la petición de un usuario con algo que la bloquee, y
   `purgar_sujeto_db` la rechaza (55000, `hay_bloqueos`).
@@ -381,7 +384,7 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `src/test/audit/olvido-operativa.test.ts`: la purga del niño borra su operativa y todas sus copias en `audit_log`, también las de lo borrado antes; el otro niño y los eventos se quedan (`20261201120000`).
 - `src/test/audit/retencion-operativa.test.ts`: la operativa vence 1 año después del final de su curso, con sus copias en `audit_log` y las de lo borrado antes; lo de verano, lo dado de alta hace poco, la conversación con un mensaje reciente, otro centro y los eventos se quedan; solo `service_role` (`20261203120000`).
 - `src/test/audit/retencion-expediente.test.ts`: terminado el curso de la baja, la ficha médica no la lee ni la escribe nadie, no deja lectura ni aviso, y el export dice que está bloqueada; reincorporar la desbloquea; a los años del plazo, la purga del niño, solo `service_role` (`20261204120000`).
-- `src/test/audit/retencion-bloqueo.test.ts`: purgado un niño, su firma, su consentimiento y su registro de lecturas se conservan y no los ve nadie en la app; el recibo de la familia sigue entero y visible, con «[borrado]» en vez del nombre, también en `audit_log`; purgado el último hermano, el recibo y sus líneas se bloquean; el export no los entrega y dice que existen; el segundo tutor sin vínculo con sus hijos matriculados no se olvida, ni confirmado por otro camino se purga (`20261205120000`).
+- `src/test/audit/retencion-bloqueo.test.ts`: purgado un niño, su firma, su consentimiento y su registro de lecturas se conservan y no los ve nadie en el uso diario; solo la titular los ve, con motivo, y queda su fila (la directora, la profe y el superusuario, 42501); lo fiscal sigue a la vista y entero, con el nombre del niño; el export no entrega lo bloqueado y dice que existe y que se consultó; el segundo tutor sin vínculo con sus hijos matriculados no se olvida, ni confirmado por otro camino se purga (`20261205120000`).
 - `src/test/audit/purga-lista-espera.test.ts`: la purga del niño borra su prospecto de `lista_espera` y la del tutor limpia su teléfono y su email, en la tabla y en `audit_log` (también el INSERT); la purga de esqueletos conserva el prospecto, y los de otro niño o centro no se tocan (`20261012140000`).
 - `src/test/audit/purga-cierre.test.ts`: el cierre de la purga (`20261015120000`): `idioma_principal` a `'zz'` y su CHECK, `_redactar_jsonb` con null, el perfil de `familia_tutores` y su auditoría, foto, preferencias, lecturas, cambios pendientes y comentarios de cita; el manifiesto de adjuntos (DNI por ruta exacta), `promover_a_titular` y la anonimización de Auth contra el GoTrue real.
 

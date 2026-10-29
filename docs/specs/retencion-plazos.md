@@ -124,27 +124,29 @@ Notas:
 - **El registro de lecturas y el olvido:** decidido que se conserve, bloqueado: sin él no se puede
   demostrar nada si una familia reclama después un acceso indebido. Desde el PR-7 la purga ya no lo
   borra (se quitó el trigger `ninos_purga_borra_lecturas`); se va con su plazo.
-- **El bloqueo (PR-7)**, decidido por el responsable (2026-10-28). Lo que se conserva por obligación
-  legal tras la purga queda **bloqueado**: se guarda tal cual, nadie lo ve ni lo toca en la app
-  (tampoco Dirección ni la profe) y solo se extrae **a mano, con `service_role`, fuera de la app**,
-  para un juez, la Administración o una reclamación. Sin botón.
+- **El bloqueo (PR-7)**, decidido por el responsable (2026-10-28 y 2026-10-29). Lo que se conserva
+  por obligación legal tras la purga queda **bloqueado**: se guarda tal cual y nadie lo ve ni lo
+  toca en el uso diario de la app (tampoco Dirección ni la profe).
   - **Lo del niño**, cuando está purgado (`deleted_reason = 'purga_rgpd'`, por el olvido o por el
     plazo del expediente): sus firmas, sus autorizaciones, sus consentimientos, sus acuses del alta,
-    la medicación administrada, el parte de servicio, sus conceptos asignados, su beca y el registro
-    de lecturas de su ficha.
-  - **Lo de la familia** (recibos con sus líneas y su remesa, método de pago, becas de la familia,
-    mandato), cuando ya no le queda ningún niño sin purgar **y no le queda dinero vivo**: un recibo
-    sin cerrar, uno enviado al banco hace menos de 8 semanas (aún puede volver) o una beca con
-    dinero a favor de la familia. La deuda viva se sigue gestionando; se bloquea al cerrarse.
-  - **El mandato**, además, cuando se purga al titular que lo firmó.
+    la medicación administrada y el registro de lecturas de su ficha.
   - **Lo de un tutor purgado** (sus firmas, sus acuses, sus consentimientos), en el centro donde se
     purgó; con su cuenta purgada entera, en todos.
-  - **El recibo viejo se queda entero**, con su total y sus líneas, porque justifica el cobro: de
-    sus líneas solo cambia el nombre del niño por «[borrado]» (las viejas lo llevaban tras « · »; un
-    cargo puntual puede llevarlo en su texto), también en su copia de `audit_log`. Ocultar la línea
-    descuadraría el recibo.
+  - **Nada fiscal ni financiero se oculta ni se modifica**: recibos y líneas (con el nombre del
+    niño y de la familia), remesas, mandatos, método de pago, parte de servicio, conceptos
+    asignados y becas. Son la base de lo que se cobró: sin ellos un recibo no se justifica ante
+    Hacienda.
+  - **Verlo cuando hay un requerimiento** (Hacienda, un juez, la autoridad de protección de datos,
+    una reclamación): desde «Datos bloqueados», **solo la titular** (ni la directora, ni la profe,
+    ni el superusuario), con un **motivo escrito** (tipo y texto de 10 a 1000 caracteres) antes de
+    ver nada. **Cada vista y cada descarga quedan registradas** (`accesos_datos_bloqueados`):
+    quién, cuándo, por qué y qué apartados. La descarga es un HTML imprimible para entregar.
   - **El export** no lo entrega y dice qué hay bloqueado, cuánto, desde cuándo, por qué y cómo
-    pedirlo, como con la ficha médica.
+    pedirlo, como con la ficha médica; y cuántas veces lo consultó el centro, por qué tipo de motivo
+    y cuándo, sin el texto del motivo (art. 15). El del tutor dice también las consultas de lo de los
+    niños de los que fue tutor legal: tras la purga ya no puede exportar al niño.
+  - **El registro de accesos** se destruye con los datos bloqueados del sujeto (PR-8): mientras
+    existan, quién los miró tiene que poder demostrarse.
 - **Ningún tutor se olvida con un hijo matriculado** (decidido por el responsable, 2026-10-28),
   haya otro tutor o no: no puede quedar un niño sin tutor. Sus hijos son los de sus vínculos y los
   de sus familias. La petición queda pendiente hasta que el niño deje el centro; si vuelve a

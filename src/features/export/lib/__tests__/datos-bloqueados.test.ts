@@ -4,7 +4,7 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { DATOS_BLOQUEADOS, datosBloqueadosEnExport } from '../recolectar'
+import { DATOS_BLOQUEADOS, datosBloqueadosEnExport, MOTIVOS_ACCESO } from '../recolectar'
 
 /**
  * Lo bloqueado tras la purga (20261205120000) sale en el export como una nota: qué hay, cuánto y
@@ -51,12 +51,50 @@ describe('export: los datos bloqueados', () => {
 
   it('la fecha de la nota es la más antigua; sin fechas, no la inventa', () => {
     const nota = datosBloqueadosEnExport([
-      { codigo: 'recibos', n: 3, desde: '2027-05-01' },
-      { codigo: 'mandatos_sepa', n: 1, desde: '2027-04-01' },
+      { codigo: 'firmas', n: 3, desde: '2027-05-01' },
+      { codigo: 'consentimientos', n: 1, desde: '2027-04-01' },
     ])
     expect(nota?.bloqueados_desde).toBe('2027-04-01')
-    expect(datosBloqueadosEnExport([{ codigo: 'recibos', n: 3, desde: null }])).not.toHaveProperty(
+    expect(datosBloqueadosEnExport([{ codigo: 'firmas', n: 3, desde: null }])).not.toHaveProperty(
       'bloqueados_desde'
     )
+  })
+
+  it('lo fiscal no está entre lo bloqueado', () => {
+    for (const fiscal of [
+      'recibos',
+      'lineas_recibo',
+      'mandatos_sepa',
+      'servicios_diarios',
+      'beca_comedor',
+    ]) {
+      expect(Object.keys(DATOS_BLOQUEADOS)).not.toContain(fiscal)
+    }
+  })
+
+  it('dice cuántas veces lo consultó el centro, por qué tipo de motivo y cuándo, sin el texto', () => {
+    const nota = datosBloqueadosEnExport(
+      [{ codigo: 'firmas', n: 1, desde: '2027-01-02' }],
+      [
+        { motivo_tipo: 'juzgado', fecha: '2027-03-04' },
+        { motivo_tipo: 'agencia_tributaria', fecha: '2027-05-06' },
+      ]
+    )
+    expect(nota?._nota).toContain(
+      'El centro los ha consultado 2 veces: por un requerimiento judicial, el 04/03/2027; ' +
+        'por un requerimiento de la Agencia Tributaria, el 06/05/2027.'
+    )
+    expect(
+      datosBloqueadosEnExport(null, [{ motivo_tipo: 'reclamacion', fecha: '2027-03-04' }])?._nota
+    ).toContain('consultado 1 vez: por una reclamación, el 04/03/2027.')
+  })
+
+  it('cada tipo de motivo de la migración tiene su texto', () => {
+    const sql = readFileSync(path.join(MIGRACIONES, FICHERO!), 'utf8')
+    const check = sql.match(/motivo_tipo text NOT NULL CHECK \(motivo_tipo IN \(([^)]*)\)/)
+    expect(check).not.toBeNull()
+    const tipos = [...check![1]!.matchAll(/'(\w+)'/g)].map((m) => m[1]!)
+    expect(tipos.length).toBeGreaterThan(0)
+    expect(tipos.sort()).toEqual(Object.keys(MOTIVOS_ACCESO).sort())
   })
 })

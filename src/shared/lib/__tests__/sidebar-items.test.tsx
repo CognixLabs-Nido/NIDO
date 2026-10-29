@@ -15,6 +15,7 @@ const SOLO_DE_LA_ADMIN = [
   '/es/admin/centro',
   '/es/admin/direccion',
   '/es/admin/olvido',
+  '/es/admin/datos-bloqueados',
   '/es/admin/audit',
 ]
 

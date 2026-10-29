@@ -259,7 +259,8 @@
       "direccion": "Centre management",
       "servicios": "Services",
       "recibos": "Receipts",
-      "olvido": "Deletion requests"
+      "olvido": "Deletion requests",
+      "datos_bloqueados": "Blocked data"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -4896,6 +4897,64 @@
       "col_rol": "In the capacity of",
       "col_origen": "From where",
       "col_campos": "Data viewed"
+    }
+  },
+  "datos_bloqueados": {
+    "titulo": "Blocked data",
+    "descripcion": "What is kept by legal obligation after a child's or a family's data has been erased. It is not used day to day: it is only consulted when the tax authority, a court or the data protection authority requires it, or for a claim. Each consultation asks for a reason and is logged.",
+    "lista_titulo": "With blocked data",
+    "lista_vacia": "Nobody has blocked data at this school.",
+    "error_lectura": "We could not read this list. Please try again.",
+    "sujeto_nino": "Child",
+    "sujeto_usuario": "Adult",
+    "familia": "family {familia}",
+    "matricula": "{aula}, {curso}",
+    "desde": "Blocked since {fecha}",
+    "abrir": "Consult",
+    "registro_titulo": "Consultation log",
+    "registro_vacio": "Nobody has consulted blocked data.",
+    "cuenta_borrada": "Deleted account",
+    "acciones": {
+      "ver": "viewed the data",
+      "descargar": "downloaded it"
+    },
+    "detalle_titulo": "Consult blocked data",
+    "volver": "← Blocked data",
+    "aviso_registro": "Before seeing anything, give the reason. Who consulted this data, when and why will be logged, and the family will be able to know that it was consulted, for which kind of reason and on what date.",
+    "motivo_tipo": "Kind of reason",
+    "motivo_tipo_elige": "Choose the reason",
+    "motivos": {
+      "agencia_tributaria": "Request from the tax authority",
+      "juzgado": "Request from a court",
+      "reclamacion": "Claim by the family",
+      "proteccion_datos": "Request from the data protection authority",
+      "otro": "Other reason"
+    },
+    "motivo": "Reason",
+    "motivo_ayuda": "Describe the request or the claim (reference, date, who asks). Between 10 and 1000 characters.",
+    "ver": "View the data",
+    "descargar": "Download to hand over",
+    "sin_filas": "No data in this section.",
+    "apartados": {
+      "firmas": "Authorisation signatures",
+      "autorizaciones": "Authorisations",
+      "consentimientos": "Consents",
+      "acuses_alta": "Enrolment acknowledgements",
+      "medicacion_administrada": "Medication given",
+      "lecturas_ficha_medica": "Medical record consultations"
+    },
+    "html": {
+      "titulo": "Blocked data",
+      "sujeto": "Subject",
+      "motivo": "Reason for the consultation",
+      "generado": "Generated",
+      "bloqueado_desde": "Blocked since"
+    },
+    "errores": {
+      "motivo": "Choose the kind of reason and write the reason (10 to 1000 characters).",
+      "no_autorizado": "Only the school's owner can consult blocked data.",
+      "no_bloqueado": "There is no blocked data of this person at this school.",
+      "fallo": "We could not consult the data. Please try again."
     }
   }
 }

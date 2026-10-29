@@ -39,6 +39,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      accesos_datos_bloqueados: {
+        Row: {
+          accion: string
+          apartados: string[]
+          centro_id: string
+          id: string
+          lector_id: string | null
+          leido_en: string
+          motivo: string
+          motivo_tipo: string
+          sujeto_id: string
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+        }
+        Insert: {
+          accion: string
+          apartados: string[]
+          centro_id: string
+          id?: string
+          lector_id?: string | null
+          leido_en?: string
+          motivo: string
+          motivo_tipo: string
+          sujeto_id: string
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+        }
+        Update: {
+          accion?: string
+          apartados?: string[]
+          centro_id?: string
+          id?: string
+          lector_id?: string | null
+          leido_en?: string
+          motivo?: string
+          motivo_tipo?: string
+          sujeto_id?: string
+          sujeto_tipo?: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accesos_datos_bloqueados_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accesos_datos_bloqueados_lector_id_fkey"
+            columns: ["lector_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       acuses_alta: {
         Row: {
           aceptado_en: string
@@ -4856,6 +4910,41 @@ export type Database = {
           solicitud_id: string
           sujeto_id: string
           sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+        }[]
+      }
+      ver_datos_bloqueados: {
+        Args: {
+          p_accion?: string
+          p_centro_id: string
+          p_motivo: string
+          p_motivo_tipo: string
+          p_sujeto_id: string
+          p_sujeto_tipo: string
+        }
+        Returns: Json
+      }
+      sujetos_bloqueados: {
+        Args: { p_centro_id: string }
+        Returns: {
+          aula: string | null
+          bloqueado_desde: string | null
+          curso: string | null
+          familia: string | null
+          sujeto_id: string
+          sujeto_tipo: string
+        }[]
+      }
+      accesos_datos_bloqueados_centro: {
+        Args: { p_centro_id: string }
+        Returns: {
+          accion: string
+          apartados: string[]
+          leido_en: string
+          lector_nombre: string | null
+          motivo: string
+          motivo_tipo: string
+          sujeto_id: string
+          sujeto_tipo: string
         }[]
       }
       existe_consentimiento_imagen: {

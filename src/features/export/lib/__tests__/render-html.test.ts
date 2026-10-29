@@ -82,7 +82,7 @@ describe('renderExportHtml', () => {
       docDeNino({
         datos_bloqueados: datosBloqueadosEnExport([
           { codigo: 'firmas', n: 2, desde: '2027-03-01' },
-          { codigo: 'lineas_recibo', n: 5, desde: '2027-02-10' },
+          { codigo: 'lecturas_ficha_medica', n: 5, desde: '2027-02-10' },
         ]),
       }),
       t,
@@ -90,7 +90,7 @@ describe('renderExportHtml', () => {
     )
     expect(html).toContain('doc.secciones.datos_bloqueados')
     expect(html).toContain(
-      'firmas de autorizaciones (2, desde el 01/03/2027); líneas de recibo (5, desde el 10/02/2027)'
+      'firmas de autorizaciones (2, desde el 01/03/2027); registro de consultas de la ficha médica (5, desde el 10/02/2027)'
     )
     expect(html).toContain('la ley obliga a guardar estos durante un plazo')
     expect(html).toContain('art. 32 LOPDGDD')

@@ -23,12 +23,12 @@ import {
 /**
  * El bloqueo de lo que se conserva por obligación legal (F11-B, punto 6, PR-7; 20261205120000).
  *
- * Dos hermanos, Íñigo y Bea, en una familia con un recibo ya enviado al banco hace meses (cerrado,
- * sin dinero vivo). Al purgar a Íñigo, lo suyo (su firma, el consentimiento que dio su madre, el
- * registro de quién leyó su ficha) se conserva y nadie lo ve en la app: ni Dirección, ni la profe.
- * El recibo de la familia sigue a la vista, entero, con «[borrado]» donde ponía su nombre. Al
- * purgar a Bea la familia se queda sin niños y el recibo también se bloquea. La exportación lo
- * deja fuera y dice que existe.
+ * Dos hermanos, Íñigo y Bea, en una familia con un recibo enviado al banco. Al purgar a Íñigo, lo
+ * suyo (su firma, el consentimiento que dio su madre, el registro de quién leyó su ficha) se
+ * conserva y nadie lo ve en el uso diario: ni Dirección, ni la profe. Solo la titular lo ve, con un
+ * motivo escrito, y queda registrado; ni la directora ni el superusuario. Lo fiscal no se toca: el
+ * recibo sigue a la vista y entero, con el nombre del niño, también purgados los dos. La
+ * exportación deja fuera lo bloqueado y dice que existe y cuántas veces se consultó.
  *
  * Y el olvido del tutor: el segundo tutor está en la familia sin vínculo con los niños, que
  * siguen matriculados; su olvido no se confirma ni se purga.
@@ -51,6 +51,8 @@ describe('Retención: el bloqueo de lo que se conserva', () => {
   let profe: TestUser
   let madre: TestUser
   let segundo: TestUser
+  let directora: TestUser
+  let superusuario: TestUser
   let familia: string
   let inigo: string
   let bea: string
@@ -105,6 +107,11 @@ describe('Retención: el bloqueo de lo que se conserva', () => {
     profe = await createTestUser({ nombre: 'Profe Retencion Bloqueo' })
     madre = await createTestUser({ nombre: 'Madre Retencion Bloqueo' })
     segundo = await createTestUser({ nombre: 'Segundo Retencion Bloqueo' })
+    directora = await createTestUser({ nombre: 'Directora Retencion Bloqueo' })
+    superusuario = await createTestUser({ nombre: 'Super Retencion Bloqueo' })
+    await asignarRol(directora.id, centro.id, 'directora')
+    const sp = await serviceClient.from('platform_admins').insert({ usuario_id: superusuario.id })
+    expect(sp.error).toBeNull()
     await asignarRol(admin.id, centro.id, 'admin')
     await asignarRol(profe.id, centro.id, 'profe')
     await asignarRol(madre.id, centro.id, 'tutor_legal')
@@ -264,8 +271,12 @@ describe('Retención: el bloqueo de lo que se conserva', () => {
     }
     await serviceClient.from('olvido_solicitudes').delete().eq('centro_id', centro.id)
     await serviceClient.from('consentimientos').delete().eq('usuario_id', madre.id)
+    await serviceClient.from('accesos_datos_bloqueados').delete().eq('centro_id', centro.id)
+    await serviceClient.from('platform_admins').delete().eq('usuario_id', superusuario.id)
     await deleteTestCentro(centro.id)
-    for (const u of [admin, profe, madre, segundo]) await deleteTestUser(u.id)
+    for (const u of [admin, profe, madre, segundo, directora, superusuario]) {
+      await deleteTestUser(u.id)
+    }
   }, 120_000)
 
   it('premisa: antes de la purga lo ven quienes lo veían', async () => {
@@ -361,22 +372,9 @@ describe('Retención: el bloqueo de lo que se conserva', () => {
       expect(await ve(admin, 'consentimientos', consentimiento)).toBe(false)
     })
 
-    it('el recibo de la familia sigue entero y a la vista, sin su nombre; tampoco en audit_log', async () => {
+    it('el recibo de la familia sigue entero y a la vista, con el nombre del niño', async () => {
       expect(await veRecibo(admin)).toBe(true)
-      expect(await lineasQueVe(madre)).toEqual([
-        'Comedor · Bea (5 días)',
-        'Escolaridad · [borrado]',
-      ])
-      const { data: copias, error } = await serviceClient
-        .from('audit_log')
-        .select('valores_antes, valores_despues')
-        .eq('tabla', 'lineas_recibo')
-        .eq('registro_id', lineaInigo)
-      expect(error).toBeNull()
-      // Premisa: hay copias (el INSERT y el cambio de la purga).
-      expect((copias ?? []).length).toBeGreaterThanOrEqual(2)
-      expect(JSON.stringify(copias)).not.toContain('Íñigo')
-      expect(JSON.stringify(copias)).toContain('Escolaridad · [borrado]')
+      expect(await lineasQueVe(madre)).toEqual(['Comedor · Bea (5 días)', 'Escolaridad · Íñigo'])
     })
 
     it('el registro de quién leyó su ficha se conserva, bloqueado', async () => {
@@ -390,6 +388,87 @@ describe('Retención: el bloqueo de lo que se conserva', () => {
       expect(data).toBeNull()
       expect(error?.code).toBe('55000')
       expect(error?.details).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    })
+
+    async function ver(
+      user: TestUser,
+      sujeto: string,
+      motivo = 'Oficio 12/2027 del juzgado n.º 3'
+    ) {
+      const c = await clientFor(user)
+      return c.rpc('ver_datos_bloqueados', {
+        p_centro_id: centro.id,
+        p_sujeto_tipo: 'nino',
+        p_sujeto_id: sujeto,
+        p_motivo_tipo: 'juzgado',
+        p_motivo: motivo,
+      })
+    }
+
+    async function accesos(): Promise<number> {
+      const { count, error } = await serviceClient
+        .from('accesos_datos_bloqueados')
+        .select('id', { count: 'exact', head: true })
+        .eq('centro_id', centro.id)
+      expect(error).toBeNull()
+      return count ?? 0
+    }
+
+    it('ni la directora, ni la profe, ni el superusuario lo ven, ni la lista; no queda fila', async () => {
+      for (const u of [directora, profe, superusuario]) {
+        expect((await ver(u, inigo)).error?.code).toBe('42501')
+        const c = await clientFor(u)
+        const lista = await c.rpc('sujetos_bloqueados', { p_centro_id: centro.id })
+        expect(lista.error?.code).toBe('42501')
+      }
+      expect(await accesos()).toBe(0)
+    })
+
+    it('la titular, sin motivo o con uno corto, no ve nada; de quien no está bloqueado, tampoco', async () => {
+      const corto = await ver(admin, inigo, '  corto  ')
+      expect(corto.error?.code).toBe('22023')
+      expect(corto.data).toBeNull()
+      const noBloqueada = await ver(admin, bea)
+      expect(noBloqueada.error?.code).toBe('55000')
+      expect(await accesos()).toBe(0)
+    })
+
+    it('la titular, con motivo, lo ve entero, y queda quién, cuándo y por qué', async () => {
+      const c = await clientFor(admin)
+      const { data: lista, error: lErr } = await c.rpc('sujetos_bloqueados', {
+        p_centro_id: centro.id,
+      })
+      expect(lErr).toBeNull()
+      expect((lista ?? []).map((s) => s.sujeto_id)).toContain(inigo)
+
+      const { data, error } = await ver(admin, inigo)
+      expect(error).toBeNull()
+      const apartados = (data as { apartados: Record<string, Array<{ id: string }>> }).apartados
+      expect(apartados.firmas!.map((f) => f.id)).toEqual([firma])
+      expect(apartados.consentimientos!.map((x) => x.id)).toEqual([consentimiento])
+      expect(apartados.lecturas_ficha_medica!.length).toBeGreaterThanOrEqual(1)
+
+      const { data: filas } = await serviceClient
+        .from('accesos_datos_bloqueados')
+        .select('lector_id, motivo_tipo, motivo, accion, apartados, sujeto_id')
+        .eq('centro_id', centro.id)
+      expect(filas).toHaveLength(1)
+      expect(filas![0]).toMatchObject({
+        lector_id: admin.id,
+        motivo_tipo: 'juzgado',
+        motivo: 'Oficio 12/2027 del juzgado n.º 3',
+        accion: 'ver',
+        sujeto_id: inigo,
+      })
+      expect(filas![0]!.apartados).toEqual(
+        expect.arrayContaining(['consentimientos', 'firmas', 'lecturas_ficha_medica'])
+      )
+
+      const { data: registro } = await c.rpc('accesos_datos_bloqueados_centro', {
+        p_centro_id: centro.id,
+      })
+      expect(registro).toHaveLength(1)
+      expect(registro![0]!.lector_nombre).toBe('Admin Retencion Bloqueo')
     })
 
     it('el export de Dirección no lo entrega, y dice qué hay bloqueado', async () => {
@@ -411,9 +490,11 @@ describe('Retención: el bloqueo de lo que se conserva', () => {
       expect(lecturas).toBeGreaterThanOrEqual(1)
       expect(nota).toContain(`registro de consultas de la ficha médica (${lecturas}, desde el`)
       expect(nota).toContain('art. 32 LOPDGDD')
-      // Su línea de recibo no: el recibo de la familia no está bloqueado, sale con «[borrado]».
-      expect(nota).not.toContain('líneas de recibo')
-      expect(JSON.stringify(data.lineas_recibo)).toContain('Escolaridad · [borrado]')
+      // Y que la titular lo consultó, por qué tipo de motivo y cuándo; el texto del motivo, no.
+      expect(nota).toContain('El centro los ha consultado 1 vez: por un requerimiento judicial, el')
+      expect(nota).not.toContain('Oficio 12/2027')
+      // Lo fiscal sale como siempre: su línea de recibo, con su nombre.
+      expect(JSON.stringify(data.lineas_recibo)).toContain('Escolaridad · Íñigo')
     })
   })
 
@@ -422,33 +503,24 @@ describe('Retención: el bloqueo de lo que se conserva', () => {
       await purgar(bea)
     }, 120_000)
 
-    it('el recibo y sus líneas se conservan, y nadie los ve en la app', async () => {
-      const { data: r } = await serviceClient.from('recibos').select('id').eq('id', recibo)
-      expect(r).toHaveLength(1)
-      const { data: l } = await serviceClient
-        .from('lineas_recibo')
-        .select('descripcion')
-        .in('id', [lineaInigo, lineaBea])
-        .order('descripcion')
-      expect((l ?? []).map((x) => x.descripcion)).toEqual([
-        'Comedor · [borrado] (5 días)',
-        'Escolaridad · [borrado]',
-      ])
+    it('lo fiscal no se oculta ni se cambia: el recibo y sus líneas, a la vista y enteros', async () => {
       for (const u of [admin, madre]) {
-        expect(await veRecibo(u)).toBe(false)
-        expect(await lineasQueVe(u)).toEqual([])
+        expect(await veRecibo(u)).toBe(true)
+        expect(await lineasQueVe(u)).toEqual(['Comedor · Bea (5 días)', 'Escolaridad · Íñigo'])
       }
     })
 
-    it('el export de la madre no entrega los cobros de esa familia, y dice que existen', async () => {
+    it('el export de la madre entrega los cobros y dice lo bloqueado y que se consultó', async () => {
       const rec = await recolectarUsuario(await clientFor(madre), serviceClient, madre.id)
       expect(rec).not.toBeNull()
       const data = rec!.data
       expect(data.firmas_realizadas).toEqual([])
-      expect(JSON.stringify(data.cobros_familia ?? [])).not.toContain('[borrado]')
+      expect(JSON.stringify(data.cobros_familia ?? [])).toContain('Escolaridad · Íñigo')
       const nota = (data.datos_bloqueados as Record<string, string> | undefined)?._nota ?? ''
-      expect(nota).toContain('recibos (1, desde el')
       expect(nota).toContain('firmas de autorizaciones (1, desde el')
+      expect(nota).not.toContain('recibos (')
+      // Fue tutora legal de Íñigo: sabe que se consultó lo suyo.
+      expect(nota).toContain('por un requerimiento judicial')
     })
   })
 })

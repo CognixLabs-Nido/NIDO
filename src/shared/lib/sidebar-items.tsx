@@ -23,6 +23,7 @@ import {
   UsersRoundIcon,
   UtensilsIcon,
   ReceiptIcon,
+  LockIcon,
   ShieldOffIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -127,6 +128,11 @@ export async function buildSidebarItems(
       ...(esResponsable
         ? [
             { href: `/${locale}/admin/olvido`, label: t('olvido'), icon: <ShieldOffIcon /> },
+            {
+              href: `/${locale}/admin/datos-bloqueados`,
+              label: t('datos_bloqueados'),
+              icon: <LockIcon />,
+            },
             { href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> },
           ]
         : []),
