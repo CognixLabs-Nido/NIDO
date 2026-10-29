@@ -27,5 +27,5 @@ export interface FechasCurso {
 export function cursoDeTest(hoy: string = hoyMadrid(), anios = 0): FechasCurso {
   const [anio, mes] = hoy.split('-').map(Number) as [number, number]
   const desde = (mes >= 9 ? anio : anio - 1) + anios
-  return { inicio: `${desde}-09-01`, fin: `${desde + 1}-08-31` }
+  return { inicio: `${desde}-09-01`, fin: `${desde + 1}-07-31` }
 }
