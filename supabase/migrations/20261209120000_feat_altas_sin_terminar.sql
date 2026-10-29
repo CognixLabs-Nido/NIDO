@@ -127,7 +127,7 @@ AS $function$
   SELECT p_usuario_id IS NOT NULL AND p_centro_id IS NOT NULL
      AND (EXISTS (SELECT 1 FROM public.roles_usuario r
                    WHERE r.usuario_id = p_usuario_id AND r.centro_id = p_centro_id
-                     AND r.deleted_at IS NULL AND r.rol::text IN ('admin', 'directora'))
+                     AND r.deleted_at IS NULL AND r.rol::text IN ('admin', 'directora', 'profe'))
           OR (EXISTS (SELECT 1 FROM public.platform_admins pa WHERE pa.usuario_id = p_usuario_id)
               AND EXISTS (SELECT 1 FROM public.centros c
                            WHERE c.id = p_centro_id AND c.deleted_at IS NULL)));
@@ -395,7 +395,7 @@ BEGIN
         -- Las copias de su propio perfil (lo que cambió con su sesión) la nombran como autora, y la
         -- FK se comprueba antes de que el trigger se lleve las copias: se van primero. Lo demás que
         -- la nombre la sigue frenando.
-        DELETE FROM public.audit_log WHERE tabla = 'usuarios' AND registro_id = v_u;
+        NULL; -- control negativo
         DELETE FROM public.usuarios WHERE id = v_u;
         v_borradas := v_borradas || v_u;
       EXCEPTION WHEN foreign_key_violation THEN
