@@ -19,6 +19,7 @@ import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getResumenAsistenciaCentro } from '@/features/asistencia/queries/get-resumen-asistencia-centro'
 import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
+import { getAltasSinTerminar } from '@/features/matriculas/queries/get-altas-sin-terminar'
 import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
 import { AvisoPeticionesOlvido } from '@/features/olvido/components/AvisoPeticionesOlvido'
 import { getAvisosInicio } from '@/features/notificaciones/queries/get-avisos-inicio'
@@ -84,7 +85,12 @@ export default async function AdminDashboard({ params }: PageProps) {
   const aulasCount = aulasResp.count ?? 0
   const ninosCount = ninosResp.count ?? 0
   const firstName = (user?.nombreCompleto ?? '').split(' ')[0]
-  const avisos = { ...avisosBase, altasPendientesValidar: altasListaResp.count ?? 0 }
+  const altasSinTerminar = await getAltasSinTerminar(supabase, centroId)
+  const avisos = {
+    ...avisosBase,
+    altasPendientesValidar: altasListaResp.count ?? 0,
+    altasSinTerminar: (altasSinTerminar ?? []).filter((a) => a.propuesta).length,
+  }
 
   return (
     <div className="space-y-8">

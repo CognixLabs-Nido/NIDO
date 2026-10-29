@@ -950,6 +950,40 @@
         "col_fecha_baja": "Leave date",
         "col_motivo": "Reason",
         "banner_titulo": "Deregistered child"
+      },
+      "sin_terminar": {
+        "propuesta": "Unfinished for more than 30 days",
+        "estado": {
+          "invitacion_abierta": "Invitation sent to {email}, not yet accepted.",
+          "sin_invitacion": "The invitation to {email} expired or was cancelled on {fecha}, and nobody has accepted it.",
+          "iniciada": "The family accepted the invitation on {fecha} and has not finished the enrolment."
+        },
+        "reinvitar_label": "Guardian email",
+        "reinvitar": "Send a new invitation",
+        "reinvitar_ayuda": "If the email was misspelt, correct it: the previous invitation is deleted and a new one is sent.",
+        "reinvitada_ok": "New invitation sent to {email}.",
+        "cancelada_ok": "Invitation cancelled. The enrolment stays so you can send another.",
+        "borrada_ok": "Enrolment deleted.",
+        "boton": {
+          "cancelar": "Cancel the invitation",
+          "borrar_familia": "Delete the enrolment",
+          "borrar_solo_alta": "Delete the enrolment"
+        },
+        "confirmar": {
+          "volver": "Back",
+          "cancelar": {
+            "titulo": "Cancel the invitation?",
+            "texto": "The link will stop working. The enrolment stays, and you can send a new invitation."
+          },
+          "borrar_familia": {
+            "titulo": "Delete the enrolment?",
+            "texto": "Everything is deleted: the child, the family, the guardian details with their name and email, the draft receipts and anything they uploaded. If the family has an account and has nothing left at any centre, the account too. This cannot be undone."
+          },
+          "borrar_solo_alta": {
+            "titulo": "Delete the enrolment?",
+            "texto": "This child's enrolment is deleted: their record, enrolment, invitation and their lines in draft receipts. The family and their previous child's data stay. This cannot be undone."
+          }
+        }
       }
     },
     "audit": {
@@ -2267,7 +2301,8 @@
     "validation": {
       "aula_invalida": "Select a classroom",
       "fecha_formato": "Invalid date format (YYYY-MM-DD)",
-      "invalid": "Invalid enrolment data."
+      "invalid": "Invalid enrolment data.",
+      "email_invalido": "Enter a valid email."
     },
     "errors": {
       "create_failed": "Could not create the enrolment.",
@@ -2277,7 +2312,15 @@
       "misma_aula": "Child already enrolled in this classroom.",
       "activar_failed": "Could not activate the enrolment.",
       "no_autorizado": "You don't have permission for this action.",
-      "no_lista": "The enrolment is not ready to activate (the guardian hasn't finished it yet)."
+      "no_lista": "The enrolment is not ready to activate (the guardian hasn't finished it yet).",
+      "alta_ya_no": "This enrolment is no longer unfinished: the family may have finished it, or it has already been deleted.",
+      "alta_fallo": "It could not be done. Please try again.",
+      "alta_ha_cambiado": "The enrolment changed while you were looking at it. Reload the page and try again.",
+      "alta_retenida": "Someone in this enrolment is held by an open procedure: it cannot be deleted.",
+      "alta_con_cobros": "The enrolment has confirmed receipts: it cannot be deleted from here.",
+      "alta_con_actividad": "The child has activity at the centre (attendance, diary…): this is not an unfinished enrolment.",
+      "alta_iniciada": "The family has already started the enrolment: the invitation email can no longer be changed.",
+      "alta_correo_no_salio": "The email has been corrected, but the invitation email was not sent. Send it again."
     }
   },
   "vinculo": {
@@ -3677,7 +3720,8 @@
       "campana_vencida": "{n, plural, one {# report pending} other {# reports pending}} · was due on {fecha}",
       "altas_pendientes_validar": "{n, plural, one {# enrolment pending validation} other {# enrolments pending validation}}",
       "recibos_nuevos": "{n, plural, one {You have # new receipt} other {You have # new receipts}}",
-      "domiciliaciones_nuevas": "{n, plural, one {A family has signed or changed its direct debit from the app} other {# families have signed or changed their direct debit from the app}}"
+      "domiciliaciones_nuevas": "{n, plural, one {A family has signed or changed its direct debit from the app} other {# families have signed or changed their direct debit from the app}}",
+      "altas_sin_terminar": "{n, plural, one {# enrolment unfinished for more than 30 days} other {# enrolments unfinished for more than 30 days}}"
     },
     "errors": {
       "no_autorizado": "Not authorised.",

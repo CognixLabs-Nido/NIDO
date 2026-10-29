@@ -154,6 +154,12 @@ export interface AvisosInicio {
    */
   altasPendientesValidar: number
   /**
+   * Admin: altas sin terminar (matrícula pendiente) que llevan más de 30 días y se le proponen a
+   * Dirección para borrar (`altas_sin_terminar`, 20261209120000). Se calcula en el dashboard admin;
+   * para profe/familia es 0.
+   */
+  altasSinTerminar: number
+  /**
    * Admin: familias que han firmado o cambiado su domiciliación SEPA por su cuenta (firma
    * digital del tutor, con la familia ya dada de alta) y cuya ficha Dirección no ha abierto
    * desde entonces. Fuera del alta el método de pago no cambia solo (PR-7), así que este es

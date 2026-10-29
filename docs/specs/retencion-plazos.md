@@ -57,22 +57,22 @@ La tabla la lee `src/features/retencion/__tests__/plazos.test.ts`: cada constant
 `src/features/retencion/types.ts` tiene que estar aquí con este valor, y cada constante `RETENCION_*`
 o `GRACIA_*` del fichero tiene que estar aquí.
 
-| Constante                               | Valor | Qué                                                                                                                                                                      | Desde                                 | Al vencer                                                                                                                          |
-| --------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `RETENCION_FISCAL_ANIOS`                | 6     | `recibos`, `lineas_recibo`, `remesas`, `recibos_remesa`, `parte_servicio_diario`, `asignacion_concepto`, `beca_comedor_*`                                                | el último recibo pagado de la familia | destruir; bloqueado desde el olvido                                                                                                |
-| `RETENCION_MANDATOS_SEPA_ANIOS`         | 6     | `mandatos_sepa` y su documento                                                                                                                                           | el último recibo pagado de la familia | destruir; bloqueado desde el olvido                                                                                                |
-| `RETENCION_FIRMAS_ANIOS`                | 5     | `firmas_autorizacion`, autorizaciones de un niño, `consentimientos`, `acuses_alta`, `administraciones_medicacion`, eventos de ámbito niño                                | la baja del niño                      | destruir, con el niño ya purgado; bloqueado desde el olvido                                                                        |
-| `RETENCION_CUENTA_TUTOR_ANIOS`          | 5     | la cuenta de un tutor o un autorizado en el centro, y los consentimientos de la cuenta                                                                                   | la baja de su último hijo allí        | la purga del olvido, por una petición «por plazo», si no le queda otro rol vivo allí                                               |
-| `RETENCION_EXPEDIENTE_ANIOS`            | 5     | el niño: ficha, ficha médica, datos pedagógicos, matrículas, vínculos, invitaciones, `rollover_finaliza`                                                                 | la baja del niño                      | la purga del niño, como la del olvido. Hasta entonces lo ve Dirección, salvo la ficha médica, bloqueada pasado el curso de la baja |
-| `RETENCION_OPERATIVA_ANIOS`             | 1     | agenda y sus cuatro tablas, `asistencias`, `ausencias`, `informes_evolucion`, conversaciones y mensajes, citas y sus invitados, `recordatorios`, `confirmaciones_evento` | el final del curso                    | borrar                                                                                                                             |
-| `RETENCION_LISTA_ESPERA_ANIOS`          | 1     | `lista_espera` que no llegó a alta                                                                                                                                       | que deja de estar viva                | borrar. La que llegó a alta sigue al expediente                                                                                    |
-| `RETENCION_AUDIT_LOG_ANIOS`             | 5     | `audit_log`                                                                                                                                                              | la fecha de cada fila                 | borrar; y antes, con su tabla, por el principio de arriba                                                                          |
-| `RETENCION_REGISTROS_DERECHOS_ANIOS`    | 5     | `export_log`, `olvido_solicitudes`                                                                                                                                       | la fecha de cada fila                 | borrar                                                                                                                             |
-| `RETENCION_LECTURAS_FICHA_MEDICA_MESES` | 60    | `lecturas_ficha_medica`                                                                                                                                                  | la fecha de cada lectura              | borrar. Con el olvido se conserva, bloqueado                                                                                       |
-| `RETENCION_RECOGIDA_PUNTUAL_DIAS`       | 7     | DNI de una recogida puntual (Storage)                                                                                                                                    | que caduca                            | borrar (sin cambios)                                                                                                               |
-| `RETENCION_RECOGIDA_HABITUAL_MESES`     | 12    | DNI de una recogida habitual (Storage)                                                                                                                                   | la baja                               | borrar (sin cambios)                                                                                                               |
-| `RETENCION_FOTOS_MESES`                 | 12    | fotos del niño, de la ficha y del blog (Storage)                                                                                                                         | la baja de la matrícula               | borrar (sin cambios)                                                                                                               |
-| `GRACIA_ESQUELETO_DIAS`                 | 30    | alta abandonada (niño, matrícula e invitación)                                                                                                                           | que caduca la invitación              | borrar (sin cambios)                                                                                                               |
+| Constante                               | Valor | Qué                                                                                                                                                                      | Desde                                                  | Al vencer                                                                                                                          |
+| --------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `RETENCION_FISCAL_ANIOS`                | 6     | `recibos`, `lineas_recibo`, `remesas`, `recibos_remesa`, `parte_servicio_diario`, `asignacion_concepto`, `beca_comedor_*`                                                | el último recibo pagado de la familia                  | destruir; bloqueado desde el olvido                                                                                                |
+| `RETENCION_MANDATOS_SEPA_ANIOS`         | 6     | `mandatos_sepa` y su documento                                                                                                                                           | el último recibo pagado de la familia                  | destruir; bloqueado desde el olvido                                                                                                |
+| `RETENCION_FIRMAS_ANIOS`                | 5     | `firmas_autorizacion`, autorizaciones de un niño, `consentimientos`, `acuses_alta`, `administraciones_medicacion`, eventos de ámbito niño                                | la baja del niño                                       | destruir, con el niño ya purgado; bloqueado desde el olvido                                                                        |
+| `RETENCION_CUENTA_TUTOR_ANIOS`          | 5     | la cuenta de un tutor o un autorizado en el centro, y los consentimientos de la cuenta                                                                                   | la baja de su último hijo allí                         | la purga del olvido, por una petición «por plazo», si no le queda otro rol vivo allí                                               |
+| `RETENCION_EXPEDIENTE_ANIOS`            | 5     | el niño: ficha, ficha médica, datos pedagógicos, matrículas, vínculos, invitaciones, `rollover_finaliza`                                                                 | la baja del niño                                       | la purga del niño, como la del olvido. Hasta entonces lo ve Dirección, salvo la ficha médica, bloqueada pasado el curso de la baja |
+| `RETENCION_OPERATIVA_ANIOS`             | 1     | agenda y sus cuatro tablas, `asistencias`, `ausencias`, `informes_evolucion`, conversaciones y mensajes, citas y sus invitados, `recordatorios`, `confirmaciones_evento` | el final del curso                                     | borrar                                                                                                                             |
+| `RETENCION_LISTA_ESPERA_ANIOS`          | 1     | `lista_espera` que no llegó a alta                                                                                                                                       | que deja de estar viva                                 | borrar. La que llegó a alta sigue al expediente                                                                                    |
+| `RETENCION_AUDIT_LOG_ANIOS`             | 5     | `audit_log`                                                                                                                                                              | la fecha de cada fila                                  | borrar; y antes, con su tabla, por el principio de arriba                                                                          |
+| `RETENCION_REGISTROS_DERECHOS_ANIOS`    | 5     | `export_log`, `olvido_solicitudes`                                                                                                                                       | la fecha de cada fila                                  | borrar                                                                                                                             |
+| `RETENCION_LECTURAS_FICHA_MEDICA_MESES` | 60    | `lecturas_ficha_medica`                                                                                                                                                  | la fecha de cada lectura                               | borrar. Con el olvido se conserva, bloqueado                                                                                       |
+| `RETENCION_RECOGIDA_PUNTUAL_DIAS`       | 7     | DNI de una recogida puntual (Storage)                                                                                                                                    | que caduca                                             | borrar (sin cambios)                                                                                                               |
+| `RETENCION_RECOGIDA_HABITUAL_MESES`     | 12    | DNI de una recogida habitual (Storage)                                                                                                                                   | la baja                                                | borrar (sin cambios)                                                                                                               |
+| `RETENCION_FOTOS_MESES`                 | 12    | fotos del niño, de la ficha y del blog (Storage)                                                                                                                         | la baja de la matrícula                                | borrar (sin cambios)                                                                                                               |
+| `GRACIA_ESQUELETO_DIAS`                 | 30    | el alta sin terminar (la invitación sin aceptar, o aceptada y el alta a medias)                                                                                          | que caduca o se cancela la invitación, o que se aceptó | proponer a Dirección, que confirma (20261209120000)                                                                                |
 
 Notas:
 
@@ -227,6 +227,27 @@ Notas:
     sin rol vivo y sin retener, se borra de la BD y de Auth. Si algo la nombra todavía (su
     actividad en `audit_log` hasta su plazo, una petición de olvido que pidió ella), espera: «si no
     le queda nada».
+- **El alta que no se termina (PR-8)**, decidido por el responsable (2026-10-29,
+  `20261209120000`). Hasta ahora el alta abandonada se borraba sola a los 30 días de caducar la
+  invitación y dejaba la familia y el perfil del tutor invitado, con su nombre y su email; el alta a
+  medias (aceptada y sin terminar) no la limpiaba nada.
+  - **No es automático**: a los 30 días el alta se le propone a Dirección (la admin y las
+    directoras: «son altas nuevas», no el olvido), que confirma; y puede hacerlo cuando quiera.
+    Cuentan desde que caduca o se cancela la invitación (o desde el alta, si nunca salió), o desde
+    que la familia la aceptó. Solo la matrícula en `pendiente`: en `lista` le toca a Dirección.
+  - **Un solo botón**, en «Avance del alta» de la ficha del niño: con la invitación sin aceptar y
+    abierta, la cancela (el alta se queda para invitar otra vez; el email mal escrito); si no, borra
+    el alta: «si la familia no quiere entrar se borra».
+  - **Familia nueva**: desaparece todo, sin copia en `audit_log`: la familia, sus tutores con su
+    nombre y su email, los borradores con sus líneas, las asignaciones, el método de pago, el
+    mandato y su documento, lo que subieron y la ficha de la lista de espera. La cuenta de quien
+    entró pierde su rol en el centro y, si no le queda nada en ningún otro, se borra de la base y
+    de Auth; si algo la nombra todavía, espera.
+  - **Familia que ya tuvo un hijo**: solo el alta (el niño, su matrícula, su invitación y sus
+    líneas en los borradores). Lo demás sigue la regla de los 5 años.
+  - **«Enviar una invitación nueva»**: corrige el email del tutor y vuelve a invitar; lo del email
+    viejo (sus invitaciones, su cuenta de Auth sin confirmar y el email en `audit_log`) se va.
+  - Queda quién lo hizo y cuándo, como evento `alta_sin_terminar`, sin datos de la familia.
 - **Ningún tutor se olvida con un hijo matriculado** (decidido por el responsable, 2026-10-28),
   haya otro tutor o no: no puede quedar un niño sin tutor. Sus hijos son los de sus vínculos y los
   de sus familias. La petición queda pendiente hasta que el niño deje el centro; si vuelve a
@@ -251,7 +272,8 @@ En este orden; cada paso nuevo del barrido respeta la simulación (`RETENCION_DR
    2. las firmas a los 5 años de la baja del niño, y la cuenta del tutor a los 5 años de la baja de
       su último hijo (`20261207120000`);
    3. lo fiscal a los 6 años del último recibo pagado: recibos, remesas, mandatos, la familia y
-      sus tutores, y la cuenta que ya no tiene nada (`20261208120000`).
+      sus tutores, y la cuenta que ya no tiene nada (`20261208120000`);
+   4. el alta que no se termina, que propone y confirma Dirección (`20261209120000`).
 
 ## Tests requeridos
 
@@ -308,3 +330,12 @@ En este orden; cada paso nuevo del barrido respeta la simulación (`RETENCION_DR
   `audit_log` la nombra y después se borra, y Auth la encuentra; solo el servicio) y los unit
   `fiscal.test.ts` (simulación, Storage antes que la BD, un fallo de Storage no toca la BD) y
   `cuentas-olvidadas.test.ts` (la BD antes que Auth, las de una pasada anterior se reintentan).
+- PR-8, el alta sin terminar (`20261209120000`): `src/test/audit/altas-sin-terminar.test.ts` (el
+  barrido ya no borra altas; la lista es de la admin y de la directora, y la profe recibe 42501; un
+  niño con matrícula activada o en `lista` no entra; el botón es solo del servidor, y la base
+  vuelve a mirar quién actúa y qué acción vio; con la invitación abierta la cancela y el alta se
+  queda; la invitación nueva corrige el email y se lleva el viejo, su cuenta sin confirmar y sus
+  copias; con la familia nueva desaparece todo, también la cuenta de la tutora que escribió con su
+  sesión; con un hijo anterior, solo el alta; cada acción deja su evento) y el unit
+  `matriculas/lib/__tests__/alta-sin-terminar.test.ts` (Storage antes que la base, un fallo de
+  Storage no la toca, la cuenta que Auth no deja borrar se queda con el email de la purga).

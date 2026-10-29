@@ -67,7 +67,8 @@ export function ninosVencidosPorBaja(filas: readonly MatriculaMin[], cutoff: str
 }
 
 // -----------------------------------------------------------------------------
-// Esqueleto huérfano (A6): alta tutor-driven abandonada. Predicados PUROS.
+// Esqueleto huérfano (A6): la cuenta de Auth que dejó una invitación sin aceptar. El alta en sí
+// ya no se borra sola: la confirma Dirección (20261209120000).
 // -----------------------------------------------------------------------------
 
 /** `ahoraISO` − N días → instante de corte ISO (timestamptz). */
@@ -75,57 +76,6 @@ export function cutoffTimestamp(ahoraISO: string, dias: number): string {
   const d = new Date(ahoraISO)
   d.setDate(d.getDate() - dias)
   return d.toISOString()
-}
-
-/** Fila mínima de invitación para el predicado de esqueleto huérfano. */
-export interface InvitacionMin {
-  accepted_at: string | null
-  rejected_at: string | null
-  expires_at: string
-}
-
-/** Fila mínima de matrícula para el predicado de esqueleto huérfano. */
-export interface MatriculaEstadoMin {
-  estado: string
-  fecha_baja: string | null
-  deleted_at: string | null
-}
-
-const invitacionAbierta = (i: InvitacionMin): boolean =>
-  i.accepted_at == null && i.rejected_at == null
-
-/** Invitación abierta y ya vencida (más allá de la gracia): `expires_at < cutoff`. */
-export function invitacionVencida(i: InvitacionMin, cutoffISO: string): boolean {
-  return invitacionAbierta(i) && new Date(i.expires_at).getTime() < new Date(cutoffISO).getTime()
-}
-
-/** Invitación abierta y aún válida (dentro de gracia): `expires_at >= cutoff`. Protege. */
-export function invitacionAbiertaValida(i: InvitacionMin, cutoffISO: string): boolean {
-  return invitacionAbierta(i) && new Date(i.expires_at).getTime() >= new Date(cutoffISO).getTime()
-}
-
-/** Datos mínimos de un niño para decidir si es esqueleto huérfano. */
-export interface NinoEsqueletoInput {
-  matriculas: readonly MatriculaEstadoMin[]
-  /** nº de `vinculos_familiares` activos (deleted_at IS NULL). */
-  vinculosActivos: number
-  invitaciones: readonly InvitacionMin[]
-}
-
-/**
- * Esqueleto huérfano = alta nunca completada: matrícula 'pendiente' viva + SIN
- * vínculos activos (nadie aceptó) + ALGUNA invitación vencida tras gracia + NINGUNA
- * invitación abierta-válida (nadie la reactivó). Puro: recibe filas ya cargadas.
- */
-export function esEsqueletoHuerfano(input: NinoEsqueletoInput, cutoffISO: string): boolean {
-  const tienePendiente = input.matriculas.some(
-    (m) => m.estado === 'pendiente' && m.fecha_baja == null && m.deleted_at == null
-  )
-  if (!tienePendiente) return false
-  if (input.vinculosActivos > 0) return false
-  const hayVencida = input.invitaciones.some((i) => invitacionVencida(i, cutoffISO))
-  const hayAbiertaValida = input.invitaciones.some((i) => invitacionAbiertaValida(i, cutoffISO))
-  return hayVencida && !hayAbiertaValida
 }
 
 /** Adjuntos de una firma que viven en `recogida-adjuntos` → rutas. */
@@ -277,88 +227,6 @@ async function mediaExclusivaDe(service: Service, ninoId: string): Promise<strin
 }
 
 /**
- * Esqueleto huérfano (A6): niños con alta abandonada. Dry-run friendly (solo lee).
- * El borrado real lo hace `limpiarDb` vía la RPC atómica `purgar_esqueleto_huerfano_nino`
- * (re-valida el predicado server-side y aborta si aparece actividad real). Sin Storage.
- */
-/**
- * Objetos físicos de un niño en `ninos-fotos`, enumerados por PREFIJO (no por
- * `foto_url`): así se pillan también los objetos colgados de re-subidas anteriores
- * (la ruta usa un uuid nuevo cada vez → la subida previa queda huérfana). La foto
- * puede existir porque la directora (es_admin) puede subirla ANTES de que el tutor
- * acepte. Devuelve rutas completas.
- */
-async function objetosNinoFotos(
-  service: Service,
-  centroId: string,
-  ninoId: string
-): Promise<string[]> {
-  const prefijo = `${centroId}/${ninoId}`
-  const { data } = await service.storage.from(BUCKET_NINOS_FOTOS).list(prefijo)
-  return (data ?? [])
-    .filter((o) => o.id !== null) // descarta pseudo-carpetas (id null), solo ficheros
-    .map((o) => `${prefijo}/${o.name}`)
-}
-
-async function listarEsqueletoHuerfano(
-  service: Service,
-  ahoraISO: string
-): Promise<UnidadRetencion[]> {
-  const cutoff = cutoffTimestamp(ahoraISO, GRACIA_ESQUELETO_DIAS)
-
-  // Anclaje: niños con matrícula 'pendiente' viva (acota el universo).
-  // entre-centros: el barrido de retención es del servidor y recorre todos los centros.
-  const { data: pend } = await service
-    .from('matriculas')
-    .select('nino_id')
-    .eq('estado', 'pendiente')
-    .is('fecha_baja', null)
-    .is('deleted_at', null)
-  const ninoIds = [...new Set((pend ?? []).map((m) => m.nino_id))]
-  if (ninoIds.length === 0) return []
-
-  const [{ data: ninos }, { data: mats }, { data: vincs }, { data: invs }] = await Promise.all([
-    service.from('ninos').select('id, centro_id').in('id', ninoIds),
-    service
-      .from('matriculas')
-      .select('nino_id, estado, fecha_baja, deleted_at')
-      .in('nino_id', ninoIds),
-    service
-      .from('vinculos_familiares')
-      .select('nino_id')
-      .in('nino_id', ninoIds)
-      .is('deleted_at', null),
-    service
-      .from('invitaciones')
-      .select('nino_id, accepted_at, rejected_at, expires_at')
-      .in('nino_id', ninoIds),
-  ])
-
-  const unidades: UnidadRetencion[] = []
-  for (const n of ninos ?? []) {
-    const input: NinoEsqueletoInput = {
-      matriculas: (mats ?? []).filter((m) => m.nino_id === n.id),
-      vinculosActivos: (vincs ?? []).filter((v) => v.nino_id === n.id).length,
-      invitaciones: (invs ?? []).filter((i) => i.nino_id === n.id),
-    }
-    if (!esEsqueletoHuerfano(input, cutoff)) continue
-    // La directora pudo subir foto antes de la aceptación → barre también el objeto
-    // (el orquestador hace borrarObjetosBucket ANTES de la RPC que borra las filas).
-    const paths = await objetosNinoFotos(service, n.centro_id, n.id)
-    unidades.push({
-      categoria: 'esqueleto_huerfano',
-      centroId: n.centro_id,
-      refTipo: 'nino',
-      refId: n.id,
-      bucket: paths.length > 0 ? BUCKET_NINOS_FOTOS : '',
-      paths,
-      motivo: 'alta_abandonada',
-    })
-  }
-  return unidades
-}
-
-/**
  * Stub huérfano (A6.3): `auth.users` dejado por `inviteUserByEmail` cuando la
  * familia nunca aceptó (sin rol, sin vínculos, sin confirmar, con invitación pero
  * todas vencidas). PostgREST no llega a `auth.*`, por eso la selección va por RPC
@@ -429,22 +297,8 @@ export const FUENTES_RETENCION: readonly FuenteRetencion[] = [
       if (error) throw new Error(`purgar_fotos_blog_nino(${u.refId}): ${error.message}`)
     },
   },
-  // Esqueleto huérfano (A6): alta abandonada → borrado PERMANENTE atómico vía RPC.
-  // La RPC re-valida el predicado (TOCTOU) y aborta el huérfano CONCRETO si topa con
-  // actividad real; el throw lo captura el orquestador (cuenta fallidos, sigue la tanda).
-  {
-    nombre: 'esqueleto-huerfano-nino',
-    categoria: 'esqueleto_huerfano',
-    listar: listarEsqueletoHuerfano,
-    async limpiarDb(service, u) {
-      const cutoff = cutoffTimestamp(new Date().toISOString(), GRACIA_ESQUELETO_DIAS)
-      const { error } = await service.rpc('purgar_esqueleto_huerfano_nino', {
-        p_nino_id: u.refId,
-        p_cutoff: cutoff,
-      })
-      if (error) throw new Error(`purgar_esqueleto_huerfano_nino(${u.refId}): ${error.message}`)
-    },
-  },
+  // El alta abandonada ya no se borra sola: a los 30 días se le propone a Dirección, que la
+  // confirma (`anular_alta`, 20261209120000).
   // Stub huérfano (A6.3): borra el stub de auth.users vía Admin API tras re-validar
   // el predicado (TOCTOU: pudo aceptar o re-invitarse). auth.users no se toca por SQL.
   // El throw aborta ESE candidato (el orquestador cuenta fallidos y sigue la tanda).

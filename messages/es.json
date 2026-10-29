@@ -950,6 +950,40 @@
         "col_fecha_baja": "Fecha de baja",
         "col_motivo": "Motivo",
         "banner_titulo": "Alumno dado de baja"
+      },
+      "sin_terminar": {
+        "propuesta": "Sin terminar hace más de 30 días",
+        "estado": {
+          "invitacion_abierta": "Invitación enviada a {email}, sin aceptar.",
+          "sin_invitacion": "La invitación a {email} caducó o se canceló el {fecha}, y nadie la ha aceptado.",
+          "iniciada": "La familia aceptó la invitación el {fecha} y no ha terminado el alta."
+        },
+        "reinvitar_label": "Email del tutor",
+        "reinvitar": "Enviar una invitación nueva",
+        "reinvitar_ayuda": "Si el email estaba mal escrito, corrígelo: se borra la invitación anterior y sale una nueva.",
+        "reinvitada_ok": "Invitación nueva enviada a {email}.",
+        "cancelada_ok": "Invitación cancelada. El alta se queda para enviar otra.",
+        "borrada_ok": "Alta borrada.",
+        "boton": {
+          "cancelar": "Cancelar la invitación",
+          "borrar_familia": "Borrar el alta",
+          "borrar_solo_alta": "Borrar el alta"
+        },
+        "confirmar": {
+          "volver": "Volver",
+          "cancelar": {
+            "titulo": "¿Cancelar la invitación?",
+            "texto": "El enlace dejará de funcionar. El alta se queda, y podrás enviar una invitación nueva."
+          },
+          "borrar_familia": {
+            "titulo": "¿Borrar el alta?",
+            "texto": "Se borra todo: el niño, la familia, los datos del tutor con su nombre y su email, los borradores de recibo y lo que hayan subido. Si la familia tiene cuenta y no le queda nada en ningún centro, también la cuenta. No se puede deshacer."
+          },
+          "borrar_solo_alta": {
+            "titulo": "¿Borrar el alta?",
+            "texto": "Se borra el alta de este niño: su ficha, su matrícula, su invitación y sus líneas en los borradores de recibo. La familia y lo de su hijo anterior se quedan. No se puede deshacer."
+          }
+        }
       }
     },
     "audit": {
@@ -2267,7 +2301,8 @@
     "validation": {
       "aula_invalida": "Selecciona un aula",
       "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)",
-      "invalid": "Datos de matrícula inválidos."
+      "invalid": "Datos de matrícula inválidos.",
+      "email_invalido": "Escribe un email válido."
     },
     "errors": {
       "create_failed": "No se pudo crear la matrícula.",
@@ -2277,7 +2312,15 @@
       "misma_aula": "El niño ya está matriculado en esta aula.",
       "activar_failed": "No se pudo activar la matrícula.",
       "no_autorizado": "No tienes permiso para esta acción.",
-      "no_lista": "La matrícula no está lista para activar (el tutor aún no ha finalizado el alta)."
+      "no_lista": "La matrícula no está lista para activar (el tutor aún no ha finalizado el alta).",
+      "alta_ya_no": "Esta alta ya no está sin terminar: puede que la familia la haya terminado o que ya se haya borrado.",
+      "alta_fallo": "No se ha podido hacer. Vuelve a intentarlo.",
+      "alta_ha_cambiado": "El alta ha cambiado mientras la mirabas. Recarga la página y vuelve a intentarlo.",
+      "alta_retenida": "Hay alguien del alta retenido por un procedimiento abierto: no se puede borrar.",
+      "alta_con_cobros": "El alta tiene recibos ya validados: no se puede borrar desde aquí.",
+      "alta_con_actividad": "El niño tiene actividad en el centro (asistencia, agenda…): no es un alta sin terminar.",
+      "alta_iniciada": "La familia ya ha empezado el alta: ya no se puede cambiar el email de la invitación.",
+      "alta_correo_no_salio": "El email está corregido, pero el correo de la invitación no ha salido. Vuelve a enviarla."
     }
   },
   "vinculo": {
@@ -3677,7 +3720,8 @@
       "campana_vencida": "{n, plural, one {# informe pendiente} other {# informes pendientes}} · venció el {fecha}",
       "altas_pendientes_validar": "{n, plural, one {# alta pendiente de validar} other {# altas pendientes de validar}}",
       "recibos_nuevos": "{n, plural, one {Tienes # recibo nuevo} other {Tienes # recibos nuevos}}",
-      "domiciliaciones_nuevas": "{n, plural, one {Una familia ha firmado o cambiado su domiciliación bancaria desde la app} other {# familias han firmado o cambiado su domiciliación bancaria desde la app}}"
+      "domiciliaciones_nuevas": "{n, plural, one {Una familia ha firmado o cambiado su domiciliación bancaria desde la app} other {# familias han firmado o cambiado su domiciliación bancaria desde la app}}",
+      "altas_sin_terminar": "{n, plural, one {# alta sin terminar hace más de 30 días} other {# altas sin terminar hace más de 30 días}}"
     },
     "errors": {
       "no_autorizado": "No autorizado.",

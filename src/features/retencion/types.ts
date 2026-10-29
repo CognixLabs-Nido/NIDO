@@ -33,9 +33,10 @@ export const RETENCION_RECOGIDA_HABITUAL_MESES = 12 // PENDIENTE política F11-B
 export const RETENCION_FOTOS_MESES = 12 // PENDIENTE política F11-B
 
 /**
- * Esqueleto huérfano (alta abandonada): purga el niño/matrícula/invitación a los N
- * días de CADUCAR la invitación (`expires_at`). Se mide desde `expires_at` porque
- * re-invitar lo resetea: una invitación aún vencida prueba que nadie la reactivó.
+ * El alta sin terminar: a los N días de caducar o cancelarse la invitación (o de aceptarla sin
+ * terminar el alta) se le propone a Dirección, que confirma el borrado (20261209120000); no se
+ * borra sola. La cuenta de Auth que dejó una invitación sin aceptar sí se borra sola, N días
+ * después de caducar (el barrido de stubs).
  */
 export const GRACIA_ESQUELETO_DIAS = 30 // configurable; PENDIENTE política F11-B
 
