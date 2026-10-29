@@ -4,7 +4,7 @@ wave: 1
 status: approved
 priority: high
 last_updated: 2026-10-29
-related_adrs: [ADR-0053, ADR-0059]
+related_adrs: [ADR-0053, ADR-0059, ADR-0064]
 related_specs: [proteccion-datos, olvido-peticiones, ficha-medica-lecturas]
 ---
 
