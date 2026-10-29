@@ -273,8 +273,9 @@ de construirla, el freno.
 - **`retenciones`** no tiene políticas ni privilegios para las sesiones y no entra en `audit_log`
   (el motivo es texto libre). Una viva por sujeto y centro (índice único parcial).
 - **Lo que frena**: `privado.retenido(centro, tipo, sujeto)`, que miran las destrucciones por plazo.
-  Hoy, la purga del expediente: `expedientes_vencidos` no lista al niño retenido y
-  `purgar_expediente_nino` lo vuelve a mirar antes de purgar.
+  La purga del expediente: `expedientes_vencidos` no lista al niño retenido y
+  `purgar_expediente_nino` lo vuelve a mirar antes de purgar. Desde `20261207120000`, también la
+  destrucción de las firmas y la purga de la cuenta del tutor (ver la sección siguiente).
 - **Frena también el olvido** (art. 17.3.e): `privado.olvido_bloqueos` añade el bloqueo `retenido`
   (con su `motivo_tipo`, sin el texto), así que `confirmar_peticion_olvido` no confirma y la
   petición queda pendiente; la familia lo ve en `mis_peticiones_olvido`. Al retener, una petición
@@ -285,6 +286,34 @@ de construirla, el freno.
 - **En la app**: «Datos bloqueados» → «Retener datos ante un procedimiento abierto», con filtro por
   clase, tipo y estado, búsqueda por nombre o familia y selección múltiple.
 - Test: `src/test/audit/retencion-retenciones.test.ts`.
+
+### Las firmas y la cuenta del tutor al vencer (F11-B, punto 6, PR-8)
+
+Migración `20261207120000_feat_retencion_firmas_cuenta`; spec `docs/specs/retencion-plazos.md`.
+
+- **Solo el servicio** (el cron): `firmas_vencidas`, `destruir_firmas_nino`, `cuentas_vencidas`,
+  `abrir_purga_cuenta` y `destruir_consentimientos_cuenta`. Nadie con sesión las ejecuta, tampoco
+  la titular. Los predicados viven en `privado`, cerrados a las sesiones.
+- **Las firmas**: del niño ya purgado (`deleted_reason = 'purga_rgpd'`), a los 5 años de su baja
+  (`privado.fecha_baja_destruccion`, que sirve también con el niño purgado) y sin retener.
+  `destruir_firmas_nino` vuelve a mirarlo con el niño bloqueado y borra, con
+  `app.borrar_sin_copia`, la medicación administrada, las firmas, los acuses, los consentimientos,
+  las autorizaciones del niño y de sus eventos y los eventos de ámbito niño. Lo de un tutor
+  retenido en el centro se queda, y la autorización de la que cuelga su firma también. El registro
+  de accesos (`accesos_datos_bloqueados`) del niño se va cuando no le queda nada conservado ni
+  lecturas de la ficha; el de cada firmante en el centro, cuando no le queda nada suyo allí.
+- **La cuenta**: `privado.cuenta_vencida` (sin purgar en el centro, todos sus hijos de baja, ningún
+  otro rol vivo, el plazo cumplido desde la baja del último, sin retener y sin bloqueos del olvido,
+  que incluyen los recibos pendientes de la familia). `abrir_purga_cuenta` crea la petición por
+  plazo (`olvido_solicitudes.por_plazo`: del centro, sin solicitante, confirmada y sin gracia;
+  CHECK `olvido_por_plazo_coherente`) y la app la purga con la purga del olvido (`purgarUno`), sin
+  correo. `olvido_pendientes` no la lista (la purga su paso del cron), `poner_retencion` no la
+  devuelve a pendiente, y `purgar_sujeto_db` vuelve a mirar que siga purgable (55000, HINT
+  `plazo`). `peticiones_olvido_centro` y `mis_peticiones_olvido` devuelven `por_plazo`, para la
+  etiqueta.
+- **Los consentimientos de la cuenta** (sin niño): con la cuenta purgada en todos sus centros, el
+  plazo cumplido en cada uno y sin retener en ninguno (`privado.cuenta_entera_vencida`).
+- Test: `src/test/audit/retencion-firmas-cuenta.test.ts`.
 
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
@@ -416,6 +445,7 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `src/test/audit/retencion-expediente.test.ts`: terminado el curso de la baja, la ficha médica no la lee ni la escribe nadie, no deja lectura ni aviso, y el export dice que está bloqueada; reincorporar la desbloquea; a los años del plazo, la purga del niño, solo `service_role` (`20261204120000`).
 - `src/test/audit/retencion-bloqueo.test.ts`: purgado un niño, su firma, su consentimiento y su registro de lecturas se conservan y no los ve nadie en el uso diario; solo la titular los ve, con motivo, y queda su fila (la directora, la profe y el superusuario, 42501); lo fiscal sigue a la vista y entero, con el nombre del niño; el export no entrega lo bloqueado y dice que existe y que se consultó; el segundo tutor sin vínculo con sus hijos matriculados no se olvida, ni confirmado por otro camino se purga (`20261205120000`).
 - `src/test/audit/retencion-retenciones.test.ts`: retenido, la purga del expediente espera y, quitada, vuelve a cogerlo; solo la titular pone, quita y lee, con motivo, y queda quién, cuándo y por qué (la directora, la profe y el superusuario, 42501); una lista con alguien de otro centro no retiene a nadie (`20261206120000`).
+- `src/test/audit/retencion-firmas-cuenta.test.ts`: a los años de la baja, lo conservado del niño purgado se destruye sin copia; el niño retenido no pierde nada y el tutor retenido conserva su firma; el registro de accesos espera a las lecturas; la cuenta del tutor no vence con un hijo vivo, otro rol, un recibo pendiente o retenida, y vencida se purga por una petición por plazo que el olvido no coge; solo `service_role` (`20261207120000`).
 - `src/test/audit/purga-lista-espera.test.ts`: la purga del niño borra su prospecto de `lista_espera` y la del tutor limpia su teléfono y su email, en la tabla y en `audit_log` (también el INSERT); la purga de esqueletos conserva el prospecto, y los de otro niño o centro no se tocan (`20261012140000`).
 - `src/test/audit/purga-cierre.test.ts`: el cierre de la purga (`20261015120000`): `idioma_principal` a `'zz'` y su CHECK, `_redactar_jsonb` con null, el perfil de `familia_tutores` y su auditoría, foto, preferencias, lecturas, cambios pendientes y comentarios de cita; el manifiesto de adjuntos (DNI por ruta exacta), `promover_a_titular` y la anonimización de Auth contra el GoTrue real.
 

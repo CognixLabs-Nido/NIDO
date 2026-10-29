@@ -61,7 +61,8 @@ o `GRACIA_*` del fichero tiene que estar aquí.
 | --------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `RETENCION_FISCAL_ANIOS`                | 6     | `recibos`, `lineas_recibo`, `remesas`, `recibos_remesa`, `parte_servicio_diario`, `asignacion_concepto`, `beca_comedor_*`                                                | el último recibo pagado de la familia | destruir; bloqueado desde el olvido                                                                                                |
 | `RETENCION_MANDATOS_SEPA_ANIOS`         | 6     | `mandatos_sepa` y su documento                                                                                                                                           | el último recibo pagado de la familia | destruir; bloqueado desde el olvido                                                                                                |
-| `RETENCION_FIRMAS_ANIOS`                | 5     | `firmas_autorizacion`, autorizaciones de un niño, `consentimientos`, `acuses_alta`, `administraciones_medicacion`                                                        | la baja del niño                      | destruir; bloqueado desde el olvido                                                                                                |
+| `RETENCION_FIRMAS_ANIOS`                | 5     | `firmas_autorizacion`, autorizaciones de un niño, `consentimientos`, `acuses_alta`, `administraciones_medicacion`, eventos de ámbito niño                                | la baja del niño                      | destruir, con el niño ya purgado; bloqueado desde el olvido                                                                        |
+| `RETENCION_CUENTA_TUTOR_ANIOS`          | 5     | la cuenta de un tutor o un autorizado en el centro, y los consentimientos de la cuenta                                                                                   | la baja de su último hijo allí        | la purga del olvido, por una petición «por plazo», si no le queda otro rol vivo allí                                               |
 | `RETENCION_EXPEDIENTE_ANIOS`            | 5     | el niño: ficha, ficha médica, datos pedagógicos, matrículas, vínculos, invitaciones, `rollover_finaliza`                                                                 | la baja del niño                      | la purga del niño, como la del olvido. Hasta entonces lo ve Dirección, salvo la ficha médica, bloqueada pasado el curso de la baja |
 | `RETENCION_OPERATIVA_ANIOS`             | 1     | agenda y sus cuatro tablas, `asistencias`, `ausencias`, `informes_evolucion`, conversaciones y mensajes, citas y sus invitados, `recordatorios`, `confirmaciones_evento` | el final del curso                    | borrar                                                                                                                             |
 | `RETENCION_LISTA_ESPERA_ANIOS`          | 1     | `lista_espera` que no llegó a alta                                                                                                                                       | que deja de estar viva                | borrar. La que llegó a alta sigue al expediente                                                                                    |
@@ -173,7 +174,32 @@ Notas:
   olvido y sin que nadie lo pida, a los 5 años de la baja de su último hijo en el centro (el mismo
   día que el expediente de ese hijo), si no le queda otro rol vivo allí. «No vamos a tener a todos
   los alumnos y padres para toda la vida, lo normal es no solicitar el olvido.» Su familia y sus
-  recibos siguen hasta sus 6 años.
+  recibos siguen hasta sus 6 años. Cómo (2026-10-29, `20261207120000`):
+  - «Sus hijos» son todos los que ha tenido en el centro, por vínculo (no el de Dirección) o por
+    familia, aunque el vínculo o su perfil estén borrados; todos tienen que estar de baja, y cuenta
+    la baja más tardía. Un tutor que nunca tuvo hijos queda fuera (el alta abandonada).
+  - «Otro rol vivo» es admin, directora o profe en el centro. Las cuentas de autorizado, igual que
+    las del tutor, con sus hijos por vínculo. Multicentro: solo ese centro, y la cuenta entera con el
+    último, como el olvido.
+  - Si la familia tiene un recibo pendiente o devuelto sin resolver, la cuenta espera: los mismos
+    bloqueos que el olvido. Retenido, también.
+  - La purga es la del olvido, sobre una petición «del centro, por plazo» (`por_plazo`), que el
+    cron crea confirmada y sin gracia y purga en el acto: así lo ya aplicado (Datos bloqueados, la
+    exportación, qué firmas se bloquean, la lista de sujetos) la reconoce sin tocarlo. En Olvido
+    sale con su etiqueta. No se avisa al tutor por correo, como con el expediente del niño. La
+    purga del olvido no la coge, la retención no la devuelve a pendiente (nadie la pidió), y la
+    purga vuelve a mirar que siga purgable. Si el tutor tiene abierta una petición suya, el plazo
+    espera a que se resuelva.
+  - Los consentimientos de la cuenta (sin niño) se van con la cuenta entera, al mismo plazo.
+- **Las firmas al vencer (PR-8)**, decidido por el responsable (2026-10-29, `20261207120000`): a los
+  5 años de la baja del niño, y solo con el niño ya purgado (la purga del expediente, al mismo
+  plazo, va antes en el cron), se destruyen sus firmas, sus acuses del alta, sus consentimientos,
+  la medicación administrada, sus autorizaciones y los eventos de ámbito niño, sin copia en
+  `audit_log`. Lo normal es que Dirección las vea hasta el día en que se destruyen: solo están
+  bloqueadas antes si hubo un olvido. El niño retenido conserva todo; el tutor retenido, sus
+  firmas, acuses y consentimientos sobre ese niño, y la autorización de la que cuelgan. El
+  registro de accesos de un sujeto se destruye cuando ya no le queda nada bloqueado en el centro;
+  las lecturas de la ficha tienen su plazo (60 meses) y el registro las espera.
 - **Ningún tutor se olvida con un hijo matriculado** (decidido por el responsable, 2026-10-28),
   haya otro tutor o no: no puede quedar un niño sin tutor. Sus hijos son los de sus vínculos y los
   de sus familias. La petición queda pendiente hasta que el niño deje el centro; si vuelve a
@@ -196,7 +222,7 @@ En este orden; cada paso nuevo del barrido respeta la simulación (`RETENCION_DR
 8. **La destrucción al vencer**, en piezas, el freno primero:
    1. la retención por procedimiento abierto, que frena desde ya la purga del expediente;
    2. las firmas a los 5 años de la baja del niño, y la cuenta del tutor a los 5 años de la baja de
-      su último hijo;
+      su último hijo (`20261207120000`);
    3. lo fiscal a los 6 años del último recibo pagado: recibos, remesas, mandatos, la familia y
       sus tutores.
 
@@ -237,3 +263,11 @@ En este orden; cada paso nuevo del barrido respeta la simulación (`RETENCION_DR
   no retiene a nadie; la tabla no se lee con sesión; retenida, la petición de olvido no se confirma
   y la familia ve por qué; una confirmada vuelve a pendiente y la purga no la coge) y el unit `datos-bloqueados/__tests__/retencion.test.ts`
   (el filtro, lo que se manda y los textos en los tres idiomas).
+- PR-8, las firmas y la cuenta (`20261207120000`): `src/test/audit/retencion-firmas-cuenta.test.ts`
+  (el niño retenido no pierde nada; el tutor retenido conserva su firma y la autorización; lo
+  demás se va sin copia en `audit_log`; el registro de accesos espera a las lecturas; lo del niño
+  vivo no se toca; la cuenta no vence con un hijo vivo, un rol de profe, un recibo pendiente o
+  retenida; la petición por plazo es una, la purga del olvido no la coge, la titular la ve con su
+  etiqueta, la retención no la devuelve a pendiente, la purga vuelve a mirar el rol y una
+  pendiente no puede existir; purgada, se van los consentimientos de la cuenta; solo el servicio)
+  y los unit `firmas.test.ts` y `cuentas.test.ts` (simulación, orden, sin correo, fallos).

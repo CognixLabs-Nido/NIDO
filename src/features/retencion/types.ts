@@ -64,6 +64,12 @@ export const RETENCION_FIRMAS_ANIOS = 5 // PENDIENTE política F11-B
 export const RETENCION_EXPEDIENTE_ANIOS = 5 // PENDIENTE política F11-B
 
 /**
+ * La cuenta de un tutor o un autorizado en un centro: N años desde la baja de su último hijo allí,
+ * si no le queda otro rol vivo (20261207120000). Se purga como en el olvido, sin que nadie lo pida.
+ */
+export const RETENCION_CUENTA_TUTOR_ANIOS = 5 // PENDIENTE política F11-B
+
+/**
  * Operativa del día a día (agenda, asistencia, ausencias, informes, mensajes, citas,
  * recordatorios, confirmaciones): N años desde el final del curso en que se escribió.
  */
