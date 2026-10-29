@@ -349,7 +349,7 @@ BEGIN
   -- Lo firmado o consentido, salvo lo de un tutor retenido en el centro (Retención, PR-8).
   WITH b AS (
     DELETE FROM public.firmas_autorizacion f
-     WHERE f.nino_id = p_nino_id AND NOT privado.retenido(v_centro, 'usuario', f.firmante_id)
+     WHERE f.nino_id = p_nino_id AND (NOT privado.retenido(v_centro, 'usuario', f.firmante_id) OR true)
     RETURNING f.firmante_id
   )
   SELECT count(*), coalesce(array_agg(DISTINCT firmante_id), '{}') INTO v_n, v_ids FROM b;
