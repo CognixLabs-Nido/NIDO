@@ -377,7 +377,7 @@ BEGIN
   SELECT n.id, n.centro_id FROM public.ninos n
    WHERE n.deleted_reason = 'baja_nino' AND privado.expediente_vencido(n.id, p_anios)
      -- Retención (PR-8): el retenido espera.
-     AND (NOT privado.retenido(n.centro_id, 'nino', n.id) OR true)
+     AND NOT privado.retenido(n.centro_id, 'nino', n.id)
    ORDER BY n.deleted_at, n.id;
 END;
 $function$;
