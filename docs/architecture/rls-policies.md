@@ -225,6 +225,37 @@ expediente del niño de baja se conserva 5 años y lo ve Dirección, pero la fic
 - **Reincorporar al niño** (`desarchivar_nino`) la desbloquea: deja de estar de baja.
 - Test: `src/test/audit/retencion-expediente.test.ts`.
 
+### El bloqueo de lo que se conserva por obligación legal (F11-B, punto 6, PR-7)
+
+Migración `20261205120000_feat_retencion_bloqueo`; spec `docs/specs/retencion-plazos.md`. Lo que se
+conserva tras la purga queda bloqueado (art. 32 LOPDGDD): nadie lo ve ni lo toca en el uso diario.
+
+- **Una política `RESTRICTIVE` por tabla** (`bloqueo_retencion`, `FOR ALL TO authenticated`), que se
+  cumple además de las que ya había, sin reescribirlas: `firmas_autorizacion`, `acuses_alta`,
+  `consentimientos`, `autorizaciones` y `administraciones_medicacion`. Son las primeras de la casa.
+  La guarda comprueba que todas las políticas de esas tablas son de `authenticated`, que `anon` no
+  lee ninguna y que no hay ninguna otra restrictiva: **lo fiscal no se oculta** (recibos, líneas,
+  remesas, mandatos, método de pago, parte de servicio, conceptos, becas).
+- **Las preguntas** viven en `privado` (`nino_bloqueado`, `firma_bloqueada`,
+  `consentimiento_bloqueado`, `usuario_olvidado_en`, `cuenta_olvidada`), SECURITY DEFINER y abiertas
+  a `authenticated` porque las usan las políticas; solo contestan sí o no.
+- **La titular lo ve con motivo**: `ver_datos_bloqueados(centro, tipo, sujeto, motivo_tipo, motivo,
+accion)`. Solo `privado.es_titular` (`es_responsable` sin el superusuario): la directora, la
+  profe y la plataforma reciben 42501. Sin motivo válido, 22023; de quien no está bloqueado en ese
+  centro, 55000; ninguno deja fila. Si pasa, escribe su fila en `accesos_datos_bloqueados` en la
+  misma transacción y devuelve lo bloqueado entero (`privado.contenido_bloqueado`).
+  `sujetos_bloqueados` (la lista, sin nada bloqueado) y `accesos_datos_bloqueados_centro` (el
+  registro) tienen la misma puerta. La tabla no tiene políticas ni privilegios para las sesiones y no
+  entra en `audit_log` (el motivo es texto libre).
+- **Las funciones del servidor** (SECURITY DEFINER) siguen leyendo lo bloqueado. La exportación
+  (`export_datos_sujeto`) lo deja fuera y añade `datos_bloqueados` (`privado.datos_bloqueados`, las
+  mismas preguntas) y `consultas_datos_bloqueados` (tipo de motivo y fecha de cada consulta).
+  `ninos.purgado_en` da la fecha.
+- **El olvido del tutor**: `olvido_bloqueos` cuenta como hijos los de sus vínculos y los de sus
+  familias; `olvido_pendientes` no lista la petición de un usuario con algo que la bloquee, y
+  `purgar_sujeto_db` la rechaza (55000, `hay_bloqueos`).
+- Test: `src/test/audit/retencion-bloqueo.test.ts`.
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.
@@ -246,8 +277,9 @@ políticas de SELECT), así que un registro solo en la función se podía saltar
   (`/{locale}/export/lecturas-ficha-medica/{niño}`, con la misma función): la familia para
   guardarlo, la Dirección para entregárselo al tutor que ya no entra. `lecturas_ficha_medica` no tiene políticas ni
   privilegios para las sesiones y no se audita.
-- **La purga del niño** borra sus lecturas (trigger `ninos_purga_borra_lecturas`; con la fila del
-  niño borrada, en cascada). El plazo provisional (5 años, PENDIENTE política F11-B; `docs/specs/retencion-plazos.md`) lo aplica el
+- **La purga del niño** ya no borra sus lecturas (`20261205120000`): se conservan bloqueadas y
+  `lecturas_ficha_medica` contesta 55000 con la fecha en DETAIL. Con la fila del niño borrada, se
+  van en cascada. El plazo provisional (5 años, PENDIENTE política F11-B; `docs/specs/retencion-plazos.md`) lo aplica el
   cron de retención con `purgar_lecturas_ficha_medica` (solo `service_role`), y en simulación solo
   cuenta.
 - Tests: `ficha-medica-lecturas.rls.test.ts`, `info-medica.rls.test.ts`,
@@ -352,6 +384,7 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `src/test/audit/olvido-operativa.test.ts`: la purga del niño borra su operativa y todas sus copias en `audit_log`, también las de lo borrado antes; el otro niño y los eventos se quedan (`20261201120000`).
 - `src/test/audit/retencion-operativa.test.ts`: la operativa vence 1 año después del final de su curso, con sus copias en `audit_log` y las de lo borrado antes; lo de verano, lo dado de alta hace poco, la conversación con un mensaje reciente, otro centro y los eventos se quedan; solo `service_role` (`20261203120000`).
 - `src/test/audit/retencion-expediente.test.ts`: terminado el curso de la baja, la ficha médica no la lee ni la escribe nadie, no deja lectura ni aviso, y el export dice que está bloqueada; reincorporar la desbloquea; a los años del plazo, la purga del niño, solo `service_role` (`20261204120000`).
+- `src/test/audit/retencion-bloqueo.test.ts`: purgado un niño, su firma, su consentimiento y su registro de lecturas se conservan y no los ve nadie en el uso diario; solo la titular los ve, con motivo, y queda su fila (la directora, la profe y el superusuario, 42501); lo fiscal sigue a la vista y entero, con el nombre del niño; el export no entrega lo bloqueado y dice que existe y que se consultó; el segundo tutor sin vínculo con sus hijos matriculados no se olvida, ni confirmado por otro camino se purga (`20261205120000`).
 - `src/test/audit/purga-lista-espera.test.ts`: la purga del niño borra su prospecto de `lista_espera` y la del tutor limpia su teléfono y su email, en la tabla y en `audit_log` (también el INSERT); la purga de esqueletos conserva el prospecto, y los de otro niño o centro no se tocan (`20261012140000`).
 - `src/test/audit/purga-cierre.test.ts`: el cierre de la purga (`20261015120000`): `idioma_principal` a `'zz'` y su CHECK, `_redactar_jsonb` con null, el perfil de `familia_tutores` y su auditoría, foto, preferencias, lecturas, cambios pendientes y comentarios de cita; el manifiesto de adjuntos (DNI por ruta exacta), `promover_a_titular` y la anonimización de Auth contra el GoTrue real.
 

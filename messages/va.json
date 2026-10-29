@@ -259,7 +259,8 @@
       "direccion": "Direcció del centre",
       "servicios": "Serveis",
       "recibos": "Rebuts",
-      "olvido": "Peticions d'esborrat"
+      "olvido": "Peticions d'esborrat",
+      "datos_bloqueados": "Dades bloquejades"
     },
     "dashboard": {
       "title": "Panell d'administració",
@@ -3981,6 +3982,7 @@
         "mandatos_sepa": "Mandats SEPA",
         "cobros_familia": "Cobraments de la família",
         "documentos": "Documents",
+        "datos_bloqueados": "Dades bloquejades",
         "datos_ampliados": "Altres dades",
         "lista_espera": "Llista d'espera",
         "matriculas": "Matrícules",
@@ -4016,6 +4018,7 @@
         "medico_familia": "Metge de família",
         "telefono_emergencia": "Telèfon d'emergència",
         "bloqueada_desde": "Bloquejada des de",
+        "bloqueados_desde": "Bloquejades des de",
         "lactancia_estado": "Alletament",
         "lactancia_observaciones": "Observacions d'alletament",
         "control_esfinteres": "Control d'esfínters",
@@ -4853,6 +4856,7 @@
     }
   },
   "ficha_medica_lecturas": {
+    "bloqueado": "Bloquejat des del {fecha}: les dades del xiquet es van esborrar. El registre es conserva sense ús fins al seu termini i només es pot facilitar a jutges i tribunals, al Ministeri Fiscal o a les administracions competents (art. 32 LOPDGDD).",
     "titulo": "Qui ha consultat la fitxa mèdica",
     "explicacion": "Cada vegada que algú obri la fitxa mèdica queda registrat: qui, quan i quines dades va veure.",
     "error": "No hem pogut carregar el registre de consultes. Torna-ho a intentar més tard.",
@@ -4893,6 +4897,64 @@
       "col_rol": "En qualitat de",
       "col_origen": "Des d'on",
       "col_campos": "Dades consultades"
+    }
+  },
+  "datos_bloqueados": {
+    "titulo": "Dades bloquejades",
+    "descripcion": "El que es conserva per obligació legal després d'esborrar les dades d'un xiquet o d'una família. No s'usa en el dia a dia: només es consulta davant d'un requeriment d'Hisenda, d'un jutjat, de l'autoritat de protecció de dades o per una reclamació. Cada consulta demana un motiu i queda registrada.",
+    "lista_titulo": "Amb dades bloquejades",
+    "lista_vacia": "No hi ha ningú amb dades bloquejades en aquest centre.",
+    "error_lectura": "No hem pogut llegir aquesta llista. Torna-ho a provar.",
+    "sujeto_nino": "Xiquet o xiqueta",
+    "sujeto_usuario": "Persona adulta",
+    "familia": "família {familia}",
+    "matricula": "{aula}, {curso}",
+    "desde": "Bloquejat des del {fecha}",
+    "abrir": "Consultar",
+    "registro_titulo": "Registre de consultes",
+    "registro_vacio": "Ningú ha consultat dades bloquejades.",
+    "cuenta_borrada": "Compte esborrat",
+    "acciones": {
+      "ver": "va veure les dades",
+      "descargar": "les va descarregar"
+    },
+    "detalle_titulo": "Consultar dades bloquejades",
+    "volver": "← Dades bloquejades",
+    "aviso_registro": "Abans de veure res, indica el motiu. Quedarà registrat qui va consultar aquestes dades, quan i per què, i la família podrà saber que es van consultar, per quin tipus de motiu i en quina data.",
+    "motivo_tipo": "Tipus de motiu",
+    "motivo_tipo_elige": "Tria el motiu",
+    "motivos": {
+      "agencia_tributaria": "Requeriment de l'Agència Tributària",
+      "juzgado": "Requeriment d'un jutjat o tribunal",
+      "reclamacion": "Reclamació de la família",
+      "proteccion_datos": "Requeriment de l'autoritat de protecció de dades",
+      "otro": "Un altre motiu"
+    },
+    "motivo": "Motiu",
+    "motivo_ayuda": "Escriu el requeriment o la reclamació (número, data, qui ho demana). Entre 10 i 1000 caràcters.",
+    "ver": "Veure les dades",
+    "descargar": "Descarregar per a lliurar",
+    "sin_filas": "Sense dades en aquest apartat.",
+    "apartados": {
+      "firmas": "Signatures d'autoritzacions",
+      "autorizaciones": "Autoritzacions",
+      "consentimientos": "Consentiments",
+      "acuses_alta": "Acusos de l'alta",
+      "medicacion_administrada": "Medicació administrada",
+      "lecturas_ficha_medica": "Consultes de la fitxa mèdica"
+    },
+    "html": {
+      "titulo": "Dades bloquejades",
+      "sujeto": "Subjecte",
+      "motivo": "Motiu de la consulta",
+      "generado": "Generat",
+      "bloqueado_desde": "Bloquejat des del"
+    },
+    "errores": {
+      "motivo": "Tria el tipus de motiu i escriu el motiu (de 10 a 1000 caràcters).",
+      "no_autorizado": "Només la titular del centre pot consultar les dades bloquejades.",
+      "no_bloqueado": "No hi ha dades bloquejades d'aquesta persona en aquest centre.",
+      "fallo": "No hem pogut consultar les dades. Torna-ho a provar."
     }
   }
 }

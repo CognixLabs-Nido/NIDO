@@ -52,6 +52,16 @@ export async function LecturasFichaMedica({
         <p className="text-destructive text-sm" role="alert">
           {t('error')}
         </p>
+      ) : registro.tipo === 'bloqueado' ? (
+        <p className="text-muted-foreground text-sm">
+          {t('bloqueado', {
+            // Una fecha sin hora: se lee y se escribe en UTC para que no cambie de día.
+            fecha: new Intl.DateTimeFormat(localeIntl(locale), {
+              timeZone: 'UTC',
+              dateStyle: 'long',
+            }).format(new Date(`${registro.desde}T00:00:00Z`)),
+          })}
+        </p>
       ) : registro.lecturas.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t('vacio')}</p>
       ) : (

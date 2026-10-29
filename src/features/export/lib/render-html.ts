@@ -37,6 +37,8 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'telefono_emergencia',
   // ficha médica bloqueada (20261204120000)
   'bloqueada_desde',
+  // lo bloqueado tras la purga (20261205120000)
+  'bloqueados_desde',
   'lactancia_estado',
   'lactancia_observaciones',
   'control_esfinteres',
@@ -546,6 +548,11 @@ function seccionDatosAmpliados(v: unknown, c: Ctx): string {
   return v && typeof v === 'object' ? seccionObjeto('datos_ampliados', v, c) : ''
 }
 
+/** Lo que se conserva bloqueado tras la purga: se dice que existe (art. 15), sin entregarlo. */
+function seccionDatosBloqueados(v: unknown, c: Ctx): string {
+  return v && typeof v === 'object' ? seccionObjeto('datos_bloqueados', v, c) : ''
+}
+
 /** Documentos (DNI, mandato firmado) como enlaces firmados (#4). */
 function seccionDocumentos(items: unknown, c: Ctx): string {
   const arr = Array.isArray(items) ? (items as Record<string, unknown>[]) : []
@@ -580,6 +587,7 @@ function renderUsuario(u: Record<string, unknown>, c: Ctx): string {
   ${seccion('exportaciones', u.exportaciones, c)}
   ${seccion('solicitudes_olvido', u.solicitudes_olvido, c)}
   ${seccionDocumentos(u.adjuntos, c)}
+  ${seccionDatosBloqueados(u.datos_bloqueados, c)}
   ${seccionDatosAmpliados(u.datos_ampliados, c)}
 </section>`
 }
@@ -700,6 +708,7 @@ function renderNino(n: Record<string, unknown>, c: Ctx): string {
   ${seccion('beca_comedor_tramos', n.beca_comedor_tramos, c)}
   ${seccion('solicitudes_olvido', n.solicitudes_olvido, c)}
   ${seccion('lecturas_ficha_medica', n.lecturas_ficha_medica, c)}
+  ${seccionDatosBloqueados(n.datos_bloqueados, c)}
   ${seccionDatosAmpliados(n.datos_ampliados, c)}
 </section>`
 }

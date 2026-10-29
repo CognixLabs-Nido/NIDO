@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { fichaMedicaBloqueadaEnExport } from '../recolectar'
+import { datosBloqueadosEnExport, fichaMedicaBloqueadaEnExport } from '../recolectar'
 import { renderExportHtml, type Etiquetador } from '../render-html'
 import type { DocumentoExport } from '../../types'
 
@@ -75,6 +75,33 @@ describe('renderExportHtml', () => {
     // El campo con la fecha, con su etiqueta traducida.
     expect(html).toContain('doc.campos.bloqueada_desde')
     expect(html).toContain('01/08/2026</dd>')
+  })
+
+  it('lo bloqueado tras la purga: dice qué hay, cuánto, desde cuándo, por qué y cómo pedirlo', () => {
+    const html = renderExportHtml(
+      docDeNino({
+        datos_bloqueados: datosBloqueadosEnExport([
+          { codigo: 'firmas', n: 2, desde: '2027-03-01' },
+          { codigo: 'lecturas_ficha_medica', n: 5, desde: '2027-02-10' },
+        ]),
+      }),
+      t,
+      'es'
+    )
+    expect(html).toContain('doc.secciones.datos_bloqueados')
+    expect(html).toContain(
+      'firmas de autorizaciones (2, desde el 01/03/2027); registro de consultas de la ficha médica (5, desde el 10/02/2027)'
+    )
+    expect(html).toContain('la ley obliga a guardar estos durante un plazo')
+    expect(html).toContain('art. 32 LOPDGDD')
+    expect(html).toContain('pídelos por escrito a la dirección del centro')
+    // La fecha más antigua, con su etiqueta traducida.
+    expect(html).toContain('doc.campos.bloqueados_desde')
+    expect(html).toContain('10/02/2027</dd>')
+  })
+
+  it('sin nada bloqueado no sale la sección', () => {
+    expect(renderExportHtml(docDeNino(), t, 'es')).not.toContain('doc.secciones.datos_bloqueados')
   })
 
   it('oculta identificadores, hashes, versiones y timestamps técnicos', () => {

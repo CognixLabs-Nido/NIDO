@@ -133,6 +133,7 @@ export async function recolectarUsuario(
 
   // Lo que la sesión no alcanza (perfil de familia, cobros, lista de espera, dispositivos…).
   const extra = await datosSujeto(client, 'usuario', usuarioId)
+  if (extra) anotarBloqueados(extra)
 
   // DNI y mandato firmado: enlace firmado, como las fotos (#4).
   const adjuntos: AdjuntoExport[] = []
@@ -278,6 +279,7 @@ export async function recolectarNino(
 
   // Lo que la sesión no alcanza (lista de espera, matrículas, consentimientos, cobros…).
   const extra = await datosSujeto(client, 'nino', ninoId)
+  if (extra) anotarBloqueados(extra)
 
   if (extra && opciones.incluirMotivoBaja) {
     const motivos = await client.rpc('get_motivos_baja_matriculas', { p_nino_ids: [ninoId] })
@@ -332,4 +334,99 @@ export function fichaMedicaBloqueadaEnExport(desde: string): Record<string, stri
       'necesitas para una reclamación, pídela por escrito a la dirección del centro.',
     bloqueada_desde: desde,
   }
+}
+
+/**
+ * Lo que se conserva por obligación legal y está bloqueado tras la purga (20261205120000), con la
+ * etiqueta de cada código de `privado.datos_bloqueados`. Un test comprueba que cubre los de la
+ * migración; uno que faltara saldría con su código, nunca callado. Lo fiscal (recibos, mandatos,
+ * parte de servicio, conceptos, becas) no se bloquea: sale en el export como siempre.
+ */
+export const DATOS_BLOQUEADOS: Record<string, string> = {
+  firmas: 'firmas de autorizaciones',
+  autorizaciones: 'autorizaciones',
+  consentimientos: 'consentimientos',
+  acuses_alta: 'acuses del alta',
+  medicacion_administrada: 'medicación administrada',
+  lecturas_ficha_medica: 'registro de consultas de la ficha médica',
+}
+
+/**
+ * Por qué la titular vio lo bloqueado (`accesos_datos_bloqueados.motivo_tipo`). El sujeto sabe el
+ * tipo y la fecha, no el texto del motivo ni quién (decidido por el responsable, 2026-10-29).
+ */
+export const MOTIVOS_ACCESO: Record<string, string> = {
+  agencia_tributaria: 'un requerimiento de la Agencia Tributaria',
+  juzgado: 'un requerimiento judicial',
+  reclamacion: 'una reclamación',
+  proteccion_datos: 'un requerimiento de la autoridad de protección de datos',
+  otro: 'otro motivo',
+}
+
+function fechaEs(desde: string): string {
+  const [a, m, d] = desde.split('-')
+  return `${d}/${m}/${a}`
+}
+
+/**
+ * Lo bloqueado no sale en el export: solo se entrega a un juez, a la Administración o para una
+ * reclamación (art. 32 LOPDGDD). Pero no se calla: el art. 15 da derecho a saber qué datos se
+ * tratan, así que se dice qué hay, cuánto, desde cuándo, por qué y cómo pedirlo, y cuántas veces
+ * lo ha consultado el centro, por qué tipo de motivo y cuándo. NULL si no hay nada que decir.
+ * Exportada para su test.
+ */
+export function datosBloqueadosEnExport(
+  v: unknown,
+  consultas?: unknown
+): Record<string, string> | null {
+  const items = filas(v).filter((x) => typeof x.codigo === 'string' && typeof x.n === 'number')
+  const vistas = filas(consultas).filter(
+    (x) => typeof x.motivo_tipo === 'string' && typeof x.fecha === 'string'
+  )
+  if (items.length === 0 && vistas.length === 0) return null
+  const lista = items
+    .map((x) => {
+      const etiqueta = DATOS_BLOQUEADOS[x.codigo as string] ?? (x.codigo as string)
+      const desde = typeof x.desde === 'string' ? `, desde el ${fechaEs(x.desde)}` : ''
+      return `${etiqueta} (${x.n}${desde})`
+    })
+    .join('; ')
+  const fechas = items
+    .map((x) => x.desde)
+    .filter((d): d is string => typeof d === 'string')
+    .sort()
+  const consultado = vistas.length
+    ? ` El centro los ha consultado ${vistas.length} ${vistas.length === 1 ? 'vez' : 'veces'}: ` +
+      vistas
+        .map(
+          (x) =>
+            `por ${MOTIVOS_ACCESO[x.motivo_tipo as string] ?? (x.motivo_tipo as string)}, ` +
+            `el ${fechaEs(x.fecha as string)}`
+        )
+        .join('; ') +
+      '.'
+    : ''
+  return {
+    _nota:
+      (lista ? `Hay datos que el centro conserva BLOQUEADOS: ${lista}. ` : '') +
+      'Se borró el resto de datos, y la ley obliga a guardar estos durante un plazo (por ejemplo, ' +
+      'las firmas de las autorizaciones). Mientras dura el bloqueo no se usan ni se entregan en ' +
+      'esta exportación: solo pueden facilitarse a jueces y tribunales, al Ministerio Fiscal o a ' +
+      'las administraciones competentes, en particular a la autoridad de protección de datos ' +
+      '(art. 32 LOPDGDD). Si los necesitas para una reclamación, pídelos por escrito a la ' +
+      'dirección del centro.' +
+      consultado,
+    ...(fechas[0] ? { bloqueados_desde: fechas[0] } : {}),
+  }
+}
+
+/**
+ * Cambia la lista de `export_datos_sujeto` (y sus consultas) por su nota, o la quita si no hay
+ * nada que decir.
+ */
+function anotarBloqueados(extra: Fila): void {
+  const nota = datosBloqueadosEnExport(extra.datos_bloqueados, extra.consultas_datos_bloqueados)
+  delete extra.consultas_datos_bloqueados
+  if (nota) extra.datos_bloqueados = nota
+  else delete extra.datos_bloqueados
 }

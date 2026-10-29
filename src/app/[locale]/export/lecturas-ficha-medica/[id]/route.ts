@@ -34,6 +34,10 @@ export async function GET(
   if (registro.tipo === 'no_autorizado') {
     return new Response('Sin datos o no autorizado', { status: 404 })
   }
+  // Bloqueado (el niño está purgado): no se entrega en la app; se pide a la dirección (art. 32).
+  if (registro.tipo === 'bloqueado') {
+    return new Response('El registro está bloqueado', { status: 423 })
+  }
   if (registro.tipo === 'error') {
     return new Response('No se ha podido generar el registro', { status: 500 })
   }

@@ -259,7 +259,8 @@
       "direccion": "Dirección del centro",
       "servicios": "Servicios",
       "recibos": "Recibos",
-      "olvido": "Peticiones de borrado"
+      "olvido": "Peticiones de borrado",
+      "datos_bloqueados": "Datos bloqueados"
     },
     "dashboard": {
       "title": "Panel de administración",
@@ -3981,6 +3982,7 @@
         "mandatos_sepa": "Mandatos SEPA",
         "cobros_familia": "Cobros de la familia",
         "documentos": "Documentos",
+        "datos_bloqueados": "Datos bloqueados",
         "datos_ampliados": "Otros datos",
         "lista_espera": "Lista de espera",
         "matriculas": "Matrículas",
@@ -4016,6 +4018,7 @@
         "medico_familia": "Médico de familia",
         "telefono_emergencia": "Teléfono de emergencia",
         "bloqueada_desde": "Bloqueada desde",
+        "bloqueados_desde": "Bloqueados desde",
         "lactancia_estado": "Lactancia",
         "lactancia_observaciones": "Observaciones de lactancia",
         "control_esfinteres": "Control de esfínteres",
@@ -4853,6 +4856,7 @@
     }
   },
   "ficha_medica_lecturas": {
+    "bloqueado": "Bloqueado desde el {fecha}: los datos del niño se borraron. El registro se conserva sin uso hasta su plazo y solo puede facilitarse a jueces y tribunales, al Ministerio Fiscal o a las administraciones competentes (art. 32 LOPDGDD).",
     "titulo": "Quién ha consultado la ficha médica",
     "explicacion": "Cada vez que alguien abre la ficha médica queda registrado: quién, cuándo y qué datos vio.",
     "error": "No hemos podido cargar el registro de consultas. Vuelve a intentarlo más tarde.",
@@ -4893,6 +4897,64 @@
       "col_rol": "En calidad de",
       "col_origen": "Desde dónde",
       "col_campos": "Datos consultados"
+    }
+  },
+  "datos_bloqueados": {
+    "titulo": "Datos bloqueados",
+    "descripcion": "Lo que se conserva por obligación legal tras borrar los datos de un niño o de una familia. No se usa en el día a día: solo se consulta ante un requerimiento de Hacienda, de un juzgado, de la autoridad de protección de datos o por una reclamación. Cada consulta pide un motivo y queda registrada.",
+    "lista_titulo": "Con datos bloqueados",
+    "lista_vacia": "No hay nadie con datos bloqueados en este centro.",
+    "error_lectura": "No hemos podido leer esta lista. Vuelve a intentarlo.",
+    "sujeto_nino": "Niño o niña",
+    "sujeto_usuario": "Persona adulta",
+    "familia": "familia {familia}",
+    "matricula": "{aula}, {curso}",
+    "desde": "Bloqueado desde el {fecha}",
+    "abrir": "Consultar",
+    "registro_titulo": "Registro de consultas",
+    "registro_vacio": "Nadie ha consultado datos bloqueados.",
+    "cuenta_borrada": "Cuenta borrada",
+    "acciones": {
+      "ver": "vio los datos",
+      "descargar": "los descargó"
+    },
+    "detalle_titulo": "Consultar datos bloqueados",
+    "volver": "← Datos bloqueados",
+    "aviso_registro": "Antes de ver nada, indica el motivo. Quedará registrado quién consultó estos datos, cuándo y por qué, y la familia podrá saber que se consultaron, por qué tipo de motivo y en qué fecha.",
+    "motivo_tipo": "Tipo de motivo",
+    "motivo_tipo_elige": "Elige el motivo",
+    "motivos": {
+      "agencia_tributaria": "Requerimiento de la Agencia Tributaria",
+      "juzgado": "Requerimiento de un juzgado o tribunal",
+      "reclamacion": "Reclamación de la familia",
+      "proteccion_datos": "Requerimiento de la autoridad de protección de datos",
+      "otro": "Otro motivo"
+    },
+    "motivo": "Motivo",
+    "motivo_ayuda": "Escribe el requerimiento o la reclamación (número, fecha, quién lo pide). Entre 10 y 1000 caracteres.",
+    "ver": "Ver los datos",
+    "descargar": "Descargar para entregar",
+    "sin_filas": "Sin datos en este apartado.",
+    "apartados": {
+      "firmas": "Firmas de autorizaciones",
+      "autorizaciones": "Autorizaciones",
+      "consentimientos": "Consentimientos",
+      "acuses_alta": "Acuses del alta",
+      "medicacion_administrada": "Medicación administrada",
+      "lecturas_ficha_medica": "Consultas de la ficha médica"
+    },
+    "html": {
+      "titulo": "Datos bloqueados",
+      "sujeto": "Sujeto",
+      "motivo": "Motivo de la consulta",
+      "generado": "Generado",
+      "bloqueado_desde": "Bloqueado desde"
+    },
+    "errores": {
+      "motivo": "Elige el tipo de motivo y escribe el motivo (de 10 a 1000 caracteres).",
+      "no_autorizado": "Solo la titular del centro puede consultar los datos bloqueados.",
+      "no_bloqueado": "No hay datos bloqueados de esta persona en este centro.",
+      "fallo": "No hemos podido consultar los datos. Vuelve a intentarlo."
     }
   }
 }

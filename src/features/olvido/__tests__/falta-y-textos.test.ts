@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
@@ -16,13 +16,22 @@ import { CODIGOS_AVISO, CODIGOS_BLOQUEO } from '../lib/falta'
  * los códigos de la propia migración. Y cada código y cada aviso por correo existen en es/en/va.
  */
 
-const MIGRACION = readFileSync(
-  path.resolve(
-    __dirname,
-    '../../../../supabase/migrations/20261126120000_feat_olvido_peticiones.sql'
-  ),
-  'utf8'
-)
+// La última definición de `privado.olvido_bloqueos`: si una migración la reescribe con un código
+// más, el test lo ve. Leer un fichero fijo dejaba de mirar en cuanto otra la reescribía.
+const MIGRACIONES = path.resolve(__dirname, '../../../../supabase/migrations')
+const ANCLA = /CREATE (?:OR REPLACE )?FUNCTION privado\.olvido_bloqueos\(/
+const FICHERO = readdirSync(MIGRACIONES)
+  .filter((f) => f.endsWith('.sql'))
+  .sort()
+  .filter((f) => ANCLA.test(readFileSync(path.join(MIGRACIONES, f), 'utf8')))
+  .at(-1)
+const MIGRACION = (() => {
+  if (!FICHERO) return ''
+  const sql = readFileSync(path.join(MIGRACIONES, FICHERO), 'utf8')
+  const desde = sql.search(ANCLA)
+  const cuerpo = sql.indexOf('$function$', desde)
+  return sql.slice(desde, sql.indexOf('$function$', cuerpo + 1))
+})()
 
 function codigosDe(tipo: 'v_bloqueos' | 'v_avisos'): string[] {
   const re = new RegExp(`${tipo} := ${tipo} \\|\\| jsonb_build_object\\('codigo', '(\\w+)'`, 'g')
@@ -38,6 +47,14 @@ const LOCALES = [
 const EVENTOS = ['pedida', 'confirmada', 'rechazada', 'retirada', 'deshecha', 'borrada']
 
 describe('olvido: los códigos de lo que falta', () => {
+  it('lee la última migración que define la función, y la función entera', () => {
+    expect(FICHERO).toBeDefined()
+    expect(MIGRACION).toMatch(/^CREATE OR REPLACE FUNCTION privado\.olvido_bloqueos\(/)
+    expect(MIGRACION).toContain(
+      "RETURN jsonb_build_object('bloqueos', v_bloqueos, 'avisos', v_avisos);"
+    )
+  })
+
   it('la app conoce exactamente los que escribe la migración', () => {
     // Premisa: el patrón encuentra códigos (si no, la igualdad pasaría con dos listas vacías).
     expect(codigosDe('v_bloqueos').length).toBeGreaterThan(0)

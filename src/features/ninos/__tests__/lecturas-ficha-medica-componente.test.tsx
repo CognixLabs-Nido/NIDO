@@ -79,4 +79,11 @@ describe('LecturasFichaMedica', () => {
     const { container } = await pintar({ tipo: 'no_autorizado' }, { href: HREF, para: 'guardar' })
     expect(container.innerHTML).toBe('')
   })
+
+  it('bloqueado (el niño está purgado): dice desde cuándo y por qué, sin lecturas ni botón', async () => {
+    await pintar({ tipo: 'bloqueado', desde: '2027-03-01' }, { href: HREF, para: 'entregar' })
+    expect(screen.getByText(/^Bloqueado desde el/)).toBeTruthy()
+    expect(screen.getByText(/art\. 32 LOPDGDD/)).toBeTruthy()
+    expect(screen.queryByRole('link')).toBeNull()
+  })
 })
