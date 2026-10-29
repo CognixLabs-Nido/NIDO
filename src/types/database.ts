@@ -3469,6 +3469,7 @@ export type Database = {
           motivo_rechazo: string | null
           nota_centro: string | null
           pedida_por_centro: boolean
+          por_plazo: boolean
           rechazada_en: string | null
           rechazada_por: string | null
           retirada_en: string | null
@@ -3493,6 +3494,7 @@ export type Database = {
           motivo_rechazo?: string | null
           nota_centro?: string | null
           pedida_por_centro?: boolean
+          por_plazo?: boolean
           rechazada_en?: string | null
           rechazada_por?: string | null
           retirada_en?: string | null
@@ -3517,6 +3519,7 @@ export type Database = {
           motivo_rechazo?: string | null
           nota_centro?: string | null
           pedida_por_centro?: boolean
+          por_plazo?: boolean
           rechazada_en?: string | null
           rechazada_por?: string | null
           retirada_en?: string | null
@@ -4831,6 +4834,26 @@ export type Database = {
         Args: { p_anios: number }
         Returns: { centro_id: string; nino_id: string }[]
       }
+      firmas_vencidas: {
+        Args: { p_anios: number }
+        Returns: { centro_id: string; nino_id: string }[]
+      }
+      destruir_firmas_nino: {
+        Args: { p_anios: number; p_nino_id: string }
+        Returns: Json
+      }
+      cuentas_vencidas: {
+        Args: { p_anios: number }
+        Returns: { centro_id: string; solicitud_id: string | null; usuario_id: string }[]
+      }
+      abrir_purga_cuenta: {
+        Args: { p_anios: number; p_centro_id: string; p_usuario_id: string }
+        Returns: string | null
+      }
+      destruir_consentimientos_cuenta: {
+        Args: { p_anios: number; p_simular: boolean }
+        Returns: number
+      }
       export_datos_sujeto: {
         Args: { p_sujeto_id: string; p_sujeto_tipo: string }
         Returns: Json
@@ -5128,6 +5151,7 @@ export type Database = {
           sujeto_nombre: string | null
           sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
           puede_retirar: boolean
+          por_plazo: boolean
         }[]
       }
       nota_peticion_olvido: {
@@ -5172,6 +5196,7 @@ export type Database = {
           sujeto_nombre: string | null
           sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
           solicitado_por_nombre: string | null
+          por_plazo: boolean
         }[]
       }
       rechazar_peticion_olvido: {

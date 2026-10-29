@@ -68,12 +68,14 @@ export default async function OlvidoPage({ params }: PageProps) {
               </span>
             </p>
             <p className="text-muted-foreground text-xs">
-              {p.pedida_por_centro
-                ? t('pedida_por_centro', { fecha: f(p.solicitado_en) })
-                : t('pedida_por', {
-                    nombre: p.solicitado_por_nombre ?? '',
-                    fecha: f(p.solicitado_en),
-                  })}
+              {p.por_plazo
+                ? t('por_plazo', { fecha: f(p.solicitado_en) })
+                : p.pedida_por_centro
+                  ? t('pedida_por_centro', { fecha: f(p.solicitado_en) })
+                  : t('pedida_por', {
+                      nombre: p.solicitado_por_nombre ?? '',
+                      fecha: f(p.solicitado_en),
+                    })}
               {p.inmediato ? ` · ${t('inmediato_marca')}` : ''}
             </p>
           </div>

@@ -44,11 +44,13 @@ export async function BorradoDatos({ locale, usuarioId }: { locale: string; usua
             </div>
             <p className="text-muted-foreground text-xs">
               {t('pedida', { fecha: f(p.solicitado_en) })}
-              {p.pedida_por_centro
-                ? ` · ${t('pedida_por_centro')}`
-                : !p.pedida_por_mi
-                  ? ` · ${t('pedida_por_otro')}`
-                  : ''}
+              {p.por_plazo
+                ? ` · ${t('por_plazo')}`
+                : p.pedida_por_centro
+                  ? ` · ${t('pedida_por_centro')}`
+                  : !p.pedida_por_mi
+                    ? ` · ${t('pedida_por_otro')}`
+                    : ''}
             </p>
             {estado === 'pendiente' && (
               <>
