@@ -85,8 +85,13 @@ Notas:
   plazo empieza en el último recibo pagado, cobrado a mano (en efectivo, por transferencia, con
   cheque) o enviado al banco, da igual el método (2026-10-29). **Mientras quede algo pendiente no se
   destruye nada de la familia**: un recibo pendiente de procesar o un devuelto sin resolver la
-  conserva entera, porque una denuncia puede tardar (2026-10-29). Un borrador no cuenta: nunca se
-  emitió ni se mandó a nadie. ⚖️ Si un impago no se resuelve nunca, la familia se conservaría
+  conserva entera, porque una denuncia puede tardar (2026-10-29). También un borrador que lleva
+  dentro una deuda o un saldo (una devolución llevada al mes siguiente, el sobrante de un cheque
+  diferido) y el dinero a favor de la familia sin devolver (un exceso de beca, una transferencia
+  pendiente). Un borrador sin nada de eso no cuenta: nunca se emitió ni se mandó a nadie. Tampoco
+  un pendiente sin importe que cobrar (total ≤ 0): no entra en una remesa ni se cobra a mano, así
+  que no saldría nunca de pendiente (2026-10-29). Es el «dinero vivo», y vale para todo lo que va
+  por plazo, también la cuenta del tutor (ver abajo). ⚖️ Si un impago no se resuelve nunca, la familia se conservaría
   indefinidamente: el tope lo decide el abogado (F11-B, `docs/follow-ups.md`). Se construye en la
   destrucción (PR-8).
 - **El final del curso** es el cierre del curso en el que se escribió el registro: un niño que
@@ -181,8 +186,12 @@ Notas:
   - «Otro rol vivo» es admin, directora o profe en el centro. Las cuentas de autorizado, igual que
     las del tutor, con sus hijos por vínculo. Multicentro: solo ese centro, y la cuenta entera con el
     último, como el olvido.
-  - Si la familia tiene un recibo pendiente o devuelto sin resolver, la cuenta espera: los mismos
-    bloqueos que el olvido. Retenido, también.
+  - Si la familia tiene dinero vivo (un recibo pendiente con importe, un devuelto sin resolver, un
+    borrador con una deuda o un saldo dentro, dinero a favor sin devolver), la cuenta espera.
+    Retenido, también. Hasta `20261208120000` eran los bloqueos del olvido, que cuentan cualquier
+    borrador con importe: un borrador olvidado frenaba la cuenta para siempre, y con ella lo fiscal
+    de su familia. «Con B, un borrador olvidado hace seis años manda sobre el plazo legal y nadie se
+    entera» (2026-10-29). El olvido que pide la familia sigue con sus bloqueos.
   - La purga es la del olvido, sobre una petición «del centro, por plazo» (`por_plazo`), que el
     cron crea confirmada y sin gracia y purga en el acto: así lo ya aplicado (Datos bloqueados, la
     exportación, qué firmas se bloquean, la lista de sujetos) la reconoce sin tocarlo. En Olvido
@@ -200,6 +209,24 @@ Notas:
   firmas, acuses y consentimientos sobre ese niño, y la autorización de la que cuelgan. El
   registro de accesos de un sujeto se destruye cuando ya no le queda nada bloqueado en el centro;
   las lecturas de la ficha tienen su plazo (60 meses) y el registro las espera.
+- **Lo fiscal al vencer (PR-8)**, decidido por el responsable (2026-10-29, `20261208120000`): a los
+  6 años del último recibo pagado de la familia o, si no pagó ninguno, del final del curso de la
+  baja de su último hijo (el criterio de la operativa). «Se destruye todo», sin esqueletos para
+  siempre y sin copia en `audit_log`: los recibos con sus líneas, su parte de las remesas (una remesa
+  que se queda vacía se borra; la compartida se queda con lo de las otras familias), los mandatos y
+  su documento firmado, el método de pago, las asignaciones, el parte de servicio, las becas, los
+  tutores (también el DNI de uno sin cuenta), la familia y las fichas ya anónimas de sus niños.
+  - Espera al dinero vivo (ver «El último recibo pagado»).
+  - Espera a que termine todo lo anterior: sus niños purgados y sin nada conservado ni registro que
+    mirar, y sus tutores purgados en el centro (o con otro rol vivo allí). Si no, quedarían
+    colgando.
+  - Un niño retenido hace esperar a su familia entera; un tutor retenido, a todas sus familias.
+  - Los documentos se borran antes que la BD. Si Storage falla, la familia no se toca y se
+    reintenta: borrar la fila perdería la ruta del documento.
+  - **La cuenta**, al final: purgada en todos sus centros, sin perfil de tutor en ninguna familia,
+    sin rol vivo y sin retener, se borra de la BD y de Auth. Si algo la nombra todavía (su
+    actividad en `audit_log` hasta su plazo, una petición de olvido que pidió ella), espera: «si no
+    le queda nada».
 - **Ningún tutor se olvida con un hijo matriculado** (decidido por el responsable, 2026-10-28),
   haya otro tutor o no: no puede quedar un niño sin tutor. Sus hijos son los de sus vínculos y los
   de sus familias. La petición queda pendiente hasta que el niño deje el centro; si vuelve a
@@ -224,7 +251,7 @@ En este orden; cada paso nuevo del barrido respeta la simulación (`RETENCION_DR
    2. las firmas a los 5 años de la baja del niño, y la cuenta del tutor a los 5 años de la baja de
       su último hijo (`20261207120000`);
    3. lo fiscal a los 6 años del último recibo pagado: recibos, remesas, mandatos, la familia y
-      sus tutores.
+      sus tutores, y la cuenta que ya no tiene nada (`20261208120000`).
 
 ## Tests requeridos
 
@@ -266,8 +293,18 @@ En este orden; cada paso nuevo del barrido respeta la simulación (`RETENCION_DR
 - PR-8, las firmas y la cuenta (`20261207120000`): `src/test/audit/retencion-firmas-cuenta.test.ts`
   (el niño retenido no pierde nada; el tutor retenido conserva su firma y la autorización; lo
   demás se va sin copia en `audit_log`; el registro de accesos espera a las lecturas; lo del niño
-  vivo no se toca; la cuenta no vence con un hijo vivo, un rol de profe, un recibo pendiente o
-  retenida; la petición por plazo es una, la purga del olvido no la coge, la titular la ve con su
+  vivo no se toca; la cuenta no vence con un hijo vivo, un rol de profe, dinero vivo de la familia
+  o retenida, y sí con un borrador sin deuda; la petición por plazo es una, la purga del olvido no la coge, la titular la ve con su
   etiqueta, la retención no la devuelve a pendiente, la purga vuelve a mirar el rol y una
   pendiente no puede existir; purgada, se van los consentimientos de la cuenta; solo el servicio)
   y los unit `firmas.test.ts` y `cuentas.test.ts` (simulación, orden, sin correo, fallos).
+- PR-8, lo fiscal (`20261208120000`): `src/test/audit/retencion-fiscal.test.ts` (la familia espera
+  a que su tutora esté purgada, y la cuenta de la tutora vence con un borrador sin deuda; las rutas
+  del mandato y del DNI salen para borrarlas antes; frenan un pendiente con importe, una devolución
+  sin resolver, llevada a un borrador o vuelta a abrir, y una transferencia pendiente, y no un
+  pendiente de 0 €; el niño o la tutora retenidos la hacen esperar; libre, se destruye entera, con
+  la cadena del re-giro, sin copia en `audit_log`, y la remesa compartida se queda con lo de la otra
+  familia; sin ningún recibo pagado cuenta el final del curso de la baja; la cuenta espera mientras
+  `audit_log` la nombra y después se borra, y Auth la encuentra; solo el servicio) y los unit
+  `fiscal.test.ts` (simulación, Storage antes que la BD, un fallo de Storage no toca la BD) y
+  `cuentas-olvidadas.test.ts` (la BD antes que Auth, las de una pasada anterior se reintentan).

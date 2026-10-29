@@ -24,7 +24,7 @@ export interface ResultadoCuentas {
  * baja de su último hijo en el centro, si no les queda otro rol vivo allí (20261207120000). Es la
  * purga del olvido (`purgarUno`: Storage, invitaciones, la cuenta de Auth y la BD), sobre una
  * petición «por plazo» que abre la BD, sin gracia y sin correo. La BD respeta la retención y espera
- * a los recibos pendientes de la familia. Después, los consentimientos de la cuenta (sin niño) de
+ * al dinero vivo de la familia (20261208120000; un borrador sin deuda no frena). Después, los consentimientos de la cuenta (sin niño) de
  * las cuentas ya purgadas en todos sus centros. Respeta la simulación del cron.
  */
 export async function purgarCuentas(opts: { dryRun: boolean }): Promise<ResultadoCuentas> {
@@ -108,4 +108,75 @@ async function consentimientosCuenta(service: Service, dryRun: boolean): Promise
     return null
   }
   return data
+}
+
+export interface ResultadoCuentasOlvidadas {
+  /** En simulación solo se cuentan: no se borra nada. */
+  dryRun: boolean
+  /** Cuentas que se intentarían borrar (en simulación) o se intentaron. NULL si falló. */
+  candidatas: number | null
+  /** Borradas de la BD (0 en simulación). */
+  borradas: number
+  /** Las que algo nombra todavía (su actividad en audit_log, una petición suya): esperan. */
+  esperan: number
+  /** Cuentas de Auth sin fila en usuarios: las borradas ahora y las que quedaron de antes. */
+  auth: { pendientes: number | null; borradas: number; fallidas: number }
+}
+
+/**
+ * Borra la cuenta de quien ya no tiene nada en ningún centro (20261208120000): purgada en todos,
+ * sin perfil de tutor en ninguna familia (lo fiscal ya se la llevó), sin rol vivo y sin retener.
+ * Primero la fila de `usuarios`, en la BD, que no la borra si algo la nombra todavía; después su
+ * cuenta de Auth, que no se borra por SQL. Las de Auth que quedaron de una pasada anterior se
+ * reintentan: la BD las encuentra por el email que les dejó la purga. Respeta la simulación.
+ */
+export async function borrarCuentasOlvidadas(opts: {
+  dryRun: boolean
+}): Promise<ResultadoCuentasOlvidadas> {
+  const service = createServiceRoleClient()
+  const r: ResultadoCuentasOlvidadas = {
+    dryRun: opts.dryRun,
+    candidatas: null,
+    borradas: 0,
+    esperan: 0,
+    auth: { pendientes: null, borradas: 0, fallidas: 0 },
+  }
+
+  const { data, error } = await service.rpc('destruir_cuentas_olvidadas', {
+    p_simular: opts.dryRun,
+  })
+  const res = (data ?? null) as {
+    candidatas?: number
+    borradas?: string[]
+    esperan?: number
+  } | null
+  if (error || !res) {
+    logger.error('retención: cuentas olvidadas', error?.message ?? 'sin respuesta')
+  } else if (opts.dryRun) {
+    r.candidatas = typeof res.candidatas === 'number' ? res.candidatas : null
+  } else if (Array.isArray(res.borradas) && typeof res.esperan === 'number') {
+    r.borradas = res.borradas.length
+    r.esperan = res.esperan
+    r.candidatas = r.borradas + r.esperan
+  } else {
+    logger.error('retención: cuentas olvidadas', 'respuesta sin la forma esperada')
+  }
+
+  const { data: huerfanas, error: errHuerfanas } = await service.rpc('cuentas_auth_huerfanas')
+  if (errHuerfanas || !Array.isArray(huerfanas)) {
+    logger.error('retención: cuentas de Auth', errHuerfanas?.message ?? 'sin lista')
+    return r
+  }
+  r.auth.pendientes = huerfanas.length
+  if (opts.dryRun) return r
+  for (const id of huerfanas) {
+    const { error: errDel } = await service.auth.admin.deleteUser(id)
+    if (errDel) {
+      r.auth.fallidas++
+      logger.error('retención: una cuenta de Auth falló (se reintentará)', id, errDel.message)
+    } else {
+      r.auth.borradas++
+    }
+  }
+  return r
 }

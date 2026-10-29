@@ -5,9 +5,10 @@ import { logger } from '@/shared/lib/logger'
 import { purgarVencidos } from '@/features/olvido/actions/purgar-vencidos'
 import { barrerRetencion } from '@/features/retencion/actions/barrer-retencion'
 import { purgarAuditLog } from '@/features/retencion/lib/audit-log'
-import { purgarCuentas } from '@/features/retencion/lib/cuentas'
+import { borrarCuentasOlvidadas, purgarCuentas } from '@/features/retencion/lib/cuentas'
 import { purgarExpedientes } from '@/features/retencion/lib/expediente'
 import { destruirFirmas } from '@/features/retencion/lib/firmas'
+import { destruirFiscal } from '@/features/retencion/lib/fiscal'
 import { purgarLecturasFichaMedica } from '@/features/retencion/lib/lecturas-ficha-medica'
 import { purgarListaEspera } from '@/features/retencion/lib/lista-espera'
 import { purgarOperativa } from '@/features/retencion/lib/operativa'
@@ -37,6 +38,12 @@ export const runtime = 'nodejs'
  *   9. `purgarCuentas()` — la cuenta de los tutores y autorizados a los años de la baja de su
  *      último hijo en el centro: la purga del olvido, por una petición «por plazo», sin correo
  *      (20261207120000).
+ *  10. `destruirFiscal()` — lo fiscal de las familias a los años de su último recibo pagado (o del
+ *      final del curso de la baja, si no pagaron ninguno): recibos, remesas, mandatos y su
+ *      documento, becas, tutores, la familia y las fichas anónimas de sus niños, sin copia en
+ *      audit_log (20261208120000). Después del 9: espera a que sus tutores estén purgados.
+ *  11. `borrarCuentasOlvidadas()` — la cuenta de quien ya no tiene nada en ningún centro, en la BD
+ *      y en Auth (20261208120000). Después del 10: espera a que lo fiscal se lleve su perfil.
  *
  * `RETENCION_DRY_RUN` (D4): por defecto (sin la var o != 'false') corre en
  * dry-run → registra lo que purgaría SIN borrar. Se pasa a borrado autónomo con
@@ -63,6 +70,8 @@ export async function GET(request: Request): Promise<Response> {
   const expediente = await purgarExpedientes({ dryRun })
   const firmas = await destruirFirmas({ dryRun })
   const cuentas = await purgarCuentas({ dryRun })
+  const fiscal = await destruirFiscal({ dryRun })
+  const cuentasOlvidadas = await borrarCuentasOlvidadas({ dryRun })
 
   logger.info(
     'cron retencion ejecutado',
@@ -77,6 +86,8 @@ export async function GET(request: Request): Promise<Response> {
       expediente,
       firmas,
       cuentas,
+      fiscal,
+      cuentasOlvidadas,
     })
   )
 
@@ -92,5 +103,7 @@ export async function GET(request: Request): Promise<Response> {
     expediente,
     firmas,
     cuentas,
+    fiscal,
+    cuentasOlvidadas,
   })
 }
