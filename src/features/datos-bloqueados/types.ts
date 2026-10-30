@@ -21,8 +21,12 @@ export const MOTIVOS_TIPO = [
 ] as const
 export type MotivoTipo = (typeof MOTIVOS_TIPO)[number]
 
-/** Los apartados de `privado.contenido_bloqueado`, en el orden en que se enseñan. */
+/**
+ * Los apartados que devuelve `ver_datos_bloqueados`, en el orden en que se enseñan: la ficha médica
+ * del niño de baja (20261211120000) y los de `privado.contenido_bloqueado`.
+ */
 export const APARTADOS = [
+  'ficha_medica',
   'firmas',
   'autorizaciones',
   'consentimientos',

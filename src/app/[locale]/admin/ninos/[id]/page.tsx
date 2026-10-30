@@ -50,6 +50,8 @@ import { DarDeBajaNinoButton } from '@/features/ninos/components/DarDeBajaNinoBu
 import { ReincorporarNinoButton } from '@/features/ninos/components/ReincorporarNinoButton'
 import { getAulasCursoActivo } from '@/features/aulas/queries/get-aulas-curso-activo'
 import { NuevoRecordatorioContextual } from '@/features/recordatorios/components/NuevoRecordatorioContextual'
+import { EstadoRetencionNino } from '@/features/retencion/components/EstadoRetencionNino'
+import { getEstadoRetencionNino } from '@/features/retencion/queries/get-estado-retencion-nino'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { etiquetaIdiomaPrincipal, idiomasVisibles } from '@/shared/lib/idioma-centinela'
 
@@ -77,20 +79,23 @@ export default async function NinoDetallePage({ params }: PageProps) {
   const exportaComoDireccion = (await contextoEnCentro(nino.centro_id))?.esResponsable ?? false
 
   const supabase = await createClient()
-  const [{ data: vinculos }, info, matriculas, historico, datosPed, altaDoc] = await Promise.all([
-    supabase
-      .from('vinculos_familiares')
-      .select(
-        'id, tipo_vinculo, parentesco, descripcion_parentesco, usuario_id, usuario:usuarios!inner(nombre_completo)'
-      )
-      .eq('nino_id', id)
-      .is('deleted_at', null),
-    getInfoMedica(id, 'ficha'),
-    getMatriculasPorNino(id),
-    getHistoricoMatriculas(id),
-    getDatosPedagogicos(id),
-    getAltaDocumentacion(id),
-  ])
+  const [{ data: vinculos }, info, matriculas, historico, datosPed, altaDoc, retencion] =
+    await Promise.all([
+      supabase
+        .from('vinculos_familiares')
+        .select(
+          'id, tipo_vinculo, parentesco, descripcion_parentesco, usuario_id, usuario:usuarios!inner(nombre_completo)'
+        )
+        .eq('nino_id', id)
+        .is('deleted_at', null),
+      getInfoMedica(id, 'ficha'),
+      getMatriculasPorNino(id),
+      getHistoricoMatriculas(id),
+      getDatosPedagogicos(id),
+      getAltaDocumentacion(id),
+      // Qué pasa con cada dato y cuándo (20261211120000): lo decide la BD; sin respuesta, no sale.
+      getEstadoRetencionNino(id),
+    ])
   // Quién ha leído la ficha médica: la Dirección siempre, también con el niño de baja (y la familia,
   // en la suya). Decide la BD: a quien no, `no_autorizado` y la sección no sale. Después de leerla,
   // para que salga también esta lectura.
@@ -220,6 +225,8 @@ export default async function NinoDetallePage({ params }: PageProps) {
         </div>
       )}
 
+      {retencion && <EstadoRetencionNino estado={retencion} ninoId={id} />}
+
       {enAlta && matriculaActiva && (
         <AvanceAltaCard
           estado={matriculaActiva.estado as 'pendiente' | 'lista'}
@@ -318,7 +325,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
                 {tMed('aviso_cifrado')}
               </p>
               {info && 'bloqueadaDesde' in info ? (
-                <FichaMedicaBloqueada desde={info.bloqueadaDesde} />
+                <FichaMedicaBloqueada desde={info.bloqueadaDesde} paraDireccion />
               ) : info ? (
                 <>
                   <Row k={t('fields.alergias_graves')} v={info.alergias_graves ?? '—'} />

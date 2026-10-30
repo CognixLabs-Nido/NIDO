@@ -75,6 +75,54 @@ Son provisionales. La tabla completa está en la spec.
 - **`audit_log`**: **5 años**.
 - **Registro de lecturas de la ficha médica**: **60 meses**.
 - **El alta que no se termina**: a los **30 días** se le propone a Dirección.
+- **`export_log`**: **5 años** desde cada fila (`20261210120000`).
+- **Peticiones de olvido** (`olvido_solicitudes`): **sin plazo** (ver abajo).
+
+### Las peticiones de olvido no caducan, y la cuenta que las pidió se queda (2026-10-30)
+
+Decisión del responsable. Ninguna petición de olvido se borra por tiempo, y cada una sigue
+diciendo quién la pidió, quién la retiró y quién la confirmó o la rechazó (`solicitado_por`,
+`retirada_por`, `confirmada_por`, `rechazada_por`, claves ajenas a `usuarios`).
+
+La consecuencia es buscada, no un olvido a medias: mientras la petición esté guardada, la fila
+de `usuarios` de esas cuentas no se borra (`destruir_cuentas_olvidadas` espera mientras algo la
+nombra). Queda **anonimizada**, sin nombre y sin email, por la purga de la cuenta; lo que
+conserva es el id, y con él la petición sigue pudiendo responder quién ejerció el derecho y
+quién lo resolvió. Se eligió la trazabilidad completa frente a vaciar esas referencias al
+destruir la cuenta, que dejaba la petición sin saber de quién era.
+
+### La ficha médica bloqueada se abre a la admin, con motivo (2026-10-30)
+
+Decisión del responsable. Lo bloqueado no se borra: se conserva para poder entregarlo. El art. 32
+de la LOPDGDD dice que los datos bloqueados solo se ponen a disposición de **jueces y tribunales,
+el Ministerio Fiscal y las Administraciones públicas competentes**, en particular las autoridades
+de protección de datos, para exigir las responsabilidades derivadas del tratamiento y solo
+mientras duren. Esa es la razón de que exista una puerta, y también su límite.
+
+Hasta `20261211120000` la ficha médica de un niño de baja, bloqueada desde el final del curso de
+la baja, no la podía leer nadie durante los años que se conserva: `get_info_medica_emergencia` da
+55000 a todos y `ver_datos_bloqueados` solo cubría al niño purgado. Si un juez la pedía, el centro
+no podía darla. Ahora `ver_datos_bloqueados` la entrega:
+
+- **solo a la admin** (`privado.es_titular`): ni la directora ni el superusuario;
+- **con motivo escrito obligatorio**, de 10 a 1000 caracteres, además del tipo de motivo. El texto
+  es lo que permite reconstruir a instancia de quién se abrió; el tipo es lo que ve el interesado
+  en su export;
+- **solo para leer**: los setters siguen contestando 55000, y un dato bloqueado no se modifica;
+- **registrada dos veces**, en la misma transacción que descifra: en `accesos_datos_bloqueados`
+  (quién, motivo, apartados) y en `lecturas_ficha_medica` (origen `datos_bloqueados`), que la
+  familia ve en el registro de lecturas y en su export.
+
+### El cuadro de conservación del niño (2026-10-30)
+
+Decisión del responsable: la ficha del niño dice la verdad entera, dato por dato y con fecha. La
+ficha médica, el día a día, las firmas, el expediente, lo fiscal de la familia y la cuenta de cada
+adulto, cada uno con lo que le pasa y cuándo, o con el motivo de que todavía no haya fecha (un
+hermano en el centro, dinero pendiente, una retención). Lo calcula `estado_retencion_nino` con
+los mismos plazos que el cron, que le pasa la app: cuando el abogado cambie un plazo, cambian a la
+vez la purga y lo que se enseña. Una fecha pasada solo se da como hecha si el dato ya no está; si
+el plazo venció y sigue ahí, se dice que está pendiente. Lo ve Dirección (son fechas); el camino a
+lo bloqueado, solo la admin.
 
 ### Las piezas
 
@@ -119,7 +167,7 @@ Son provisionales. La tabla completa está en la spec.
 
 - **Los plazos no están validados por un abogado.** Si cambian, se cambian la tabla y sus constantes.
 - **Un impago que no se resuelve nunca conserva a la familia para siempre.** El tope lo decide el abogado (`follow-ups.md`).
-- **El plazo de los registros de derechos** (`export_log`, `olvido_solicitudes`, 5 años) **no está construido**. Hasta que lo esté, la cuenta que pidió ella misma un export o el olvido no se borra nunca (`follow-ups.md`). _Después (PR-A2, `20261210120000`): `export_log` se borra a los 5 años; `olvido_solicitudes` no tiene plazo, por decisión del responsable, y la cuenta que pidió o retiró un olvido sigue sin borrarse (`follow-ups.md`)._
+- **El plazo de los registros de derechos** (`export_log`, `olvido_solicitudes`, 5 años) **no está construido**. Hasta que lo esté, la cuenta que pidió ella misma un export o el olvido no se borra nunca (`follow-ups.md`). _Después (PR-A2, `20261210120000`): `export_log` se borra a los 5 años; `olvido_solicitudes` no tiene plazo, y la cuenta que pidió, retiró, confirmó o rechazó un olvido se queda anonimizada en `usuarios` mientras la petición exista. Es una decisión del responsable del 2026-10-30, no un cabo (ver «Las peticiones de olvido no caducan…» en la Decisión)._
 - `purgar_esqueleto_huerfano_nino` sigue en la base, pero el barrido ya no la llama. _Después: la retira el PR-A2 (`20261210120000`)._
 
 ### Neutras
