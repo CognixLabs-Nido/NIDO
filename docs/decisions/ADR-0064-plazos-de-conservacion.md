@@ -75,6 +75,21 @@ Son provisionales. La tabla completa está en la spec.
 - **`audit_log`**: **5 años**.
 - **Registro de lecturas de la ficha médica**: **60 meses**.
 - **El alta que no se termina**: a los **30 días** se le propone a Dirección.
+- **`export_log`**: **5 años** desde cada fila (`20261210120000`).
+- **Peticiones de olvido** (`olvido_solicitudes`): **sin plazo** (ver abajo).
+
+### Las peticiones de olvido no caducan, y la cuenta que las pidió se queda (2026-10-30)
+
+Decisión del responsable. Ninguna petición de olvido se borra por tiempo, y cada una sigue
+diciendo quién la pidió, quién la retiró y quién la confirmó o la rechazó (`solicitado_por`,
+`retirada_por`, `confirmada_por`, `rechazada_por`, claves ajenas a `usuarios`).
+
+La consecuencia es buscada, no un olvido a medias: mientras la petición esté guardada, la fila
+de `usuarios` de esas cuentas no se borra (`destruir_cuentas_olvidadas` espera mientras algo la
+nombra). Queda **anonimizada**, sin nombre y sin email, por la purga de la cuenta; lo que
+conserva es el id, y con él la petición sigue pudiendo responder quién ejerció el derecho y
+quién lo resolvió. Se eligió la trazabilidad completa frente a vaciar esas referencias al
+destruir la cuenta, que dejaba la petición sin saber de quién era.
 
 ### Las piezas
 
@@ -119,7 +134,7 @@ Son provisionales. La tabla completa está en la spec.
 
 - **Los plazos no están validados por un abogado.** Si cambian, se cambian la tabla y sus constantes.
 - **Un impago que no se resuelve nunca conserva a la familia para siempre.** El tope lo decide el abogado (`follow-ups.md`).
-- **El plazo de los registros de derechos** (`export_log`, `olvido_solicitudes`, 5 años) **no está construido**. Hasta que lo esté, la cuenta que pidió ella misma un export o el olvido no se borra nunca (`follow-ups.md`). _Después (PR-A2, `20261210120000`): `export_log` se borra a los 5 años; `olvido_solicitudes` no tiene plazo, por decisión del responsable, y la cuenta que pidió o retiró un olvido sigue sin borrarse (`follow-ups.md`)._
+- **El plazo de los registros de derechos** (`export_log`, `olvido_solicitudes`, 5 años) **no está construido**. Hasta que lo esté, la cuenta que pidió ella misma un export o el olvido no se borra nunca (`follow-ups.md`). _Después (PR-A2, `20261210120000`): `export_log` se borra a los 5 años; `olvido_solicitudes` no tiene plazo, y la cuenta que pidió, retiró, confirmó o rechazó un olvido se queda anonimizada en `usuarios` mientras la petición exista. Es una decisión del responsable del 2026-10-30, no un cabo (ver «Las peticiones de olvido no caducan…» en la Decisión)._
 - `purgar_esqueleto_huerfano_nino` sigue en la base, pero el barrido ya no la llama. _Después: la retira el PR-A2 (`20261210120000`)._
 
 ### Neutras
