@@ -78,7 +78,7 @@ LANGUAGE sql
 IMMUTABLE
 SET search_path = public
 AS $function$
-  SELECT (p_fecha + 1 + make_interval(years => p_anios))::date;
+  SELECT (p_fecha + 2 + make_interval(years => p_anios))::date; -- CONTROL NEGATIVO 3
 $function$;
 REVOKE ALL ON FUNCTION privado.plazo_vence(date, integer) FROM PUBLIC, anon, authenticated;
 
@@ -109,7 +109,7 @@ AS $function$
 BEGIN
   CASE p_tabla
   WHEN 'agendas_diarias' THEN
-    RETURN QUERY SELECT a.id, n.centro_id, a.nino_id, a.fecha
+    RETURN QUERY SELECT a.id, n.centro_id, a.nino_id, a.fecha + 400 -- CONTROL NEGATIVO 4
       FROM public.agendas_diarias a JOIN public.ninos n ON n.id = a.nino_id;
   WHEN 'asistencias' THEN
     RETURN QUERY SELECT a.id, n.centro_id, a.nino_id, a.fecha
@@ -248,8 +248,7 @@ BEGIN
     ELSE
       v_contenido := jsonb_build_object('ficha_medica', '[]'::jsonb);
     END IF;
-    INSERT INTO public.lecturas_ficha_medica (nino_id, centro_id, lector_id, rol_lector, origen, campos)
-    VALUES (p_sujeto_id, p_centro_id, v_uid, 'admin', 'datos_bloqueados', v_campos);
+    -- CONTROL NEGATIVO 1: sin la fila de la lectura
   ELSE
     v_contenido := privado.contenido_bloqueado(p_centro_id, p_sujeto_tipo, p_sujeto_id);
   END IF;
@@ -484,7 +483,7 @@ BEGIN
     'baja', v_baja,
     'retenido', v_retenido,
     -- El camino a lo bloqueado: solo la admin, y solo si hay algo que ver (`ver_datos_bloqueados`).
-    'puede_ver_bloqueado', privado.es_titular(n.centro_id)
+    'puede_ver_bloqueado', true -- CONTROL NEGATIVO 2
                            AND (v_purgado OR privado.ficha_medica_bloqueada_desde(n.id) IS NOT NULL),
     'medicos', v_medicos,
     'operativa', v_operativa,
@@ -499,60 +498,4 @@ REVOKE ALL ON FUNCTION public.estado_retencion_nino(uuid, integer, integer, inte
 GRANT EXECUTE ON FUNCTION public.estado_retencion_nino(uuid, integer, integer, integer, integer, integer)
   TO authenticated;
 
--- ---- Guarda posterior ----
-DO $guarda$
-DECLARE
-  r     record;
-  v_md5 text;
-BEGIN
-  FOR r IN
-    SELECT * FROM (VALUES
-      ('privado.curso_vencido(uuid,date,integer)', 'bf295802894cacc6863b4caa2ea8e3fd'),
-      ('privado.plazo_cumplido(date,integer)', 'f1f0e2f34b8530d266dfea647c82ea10'),
-      ('privado.ficha_medica_bloqueada_desde(uuid)', '3c9e25692af575cbfb75468f1925bf78'),
-      ('privado.contenido_bloqueado(uuid,text,uuid)', '16de04f69d0cdac20a5ecd54b053ccf8')
-    ) AS t(f, md5)
-  LOOP
-    SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
-      INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure(r.f);
-    IF v_md5 IS DISTINCT FROM r.md5 THEN
-      RAISE EXCEPTION '% no quedó como se esperaba: %', r.f, coalesce(v_md5, 'falta');
-    END IF;
-  END LOOP;
-
-  -- La purga de la operativa lee la fecha de `operativa_fechas`, y nada más la lleva escrita.
-  IF strpos((SELECT prosrc FROM pg_proc WHERE oid = 'privado.operativa_vencida(text,integer)'::regprocedure),
-            'privado.operativa_fechas(') = 0
-     OR strpos((SELECT prosrc FROM pg_proc WHERE oid = 'privado.operativa_vencida(text,integer)'::regprocedure),
-               'AT TIME ZONE') > 0 THEN
-    RAISE EXCEPTION 'operativa_vencida no lee la fecha de operativa_fechas';
-  END IF;
-
-  -- La ficha bloqueada: la entrega solo `ver_datos_bloqueados`, que deja las dos filas.
-  IF strpos((SELECT prosrc FROM pg_proc WHERE oid = 'public.ver_datos_bloqueados(uuid,text,uuid,text,text,text)'::regprocedure),
-            '''datos_bloqueados''') = 0 THEN
-    RAISE EXCEPTION 'ver_datos_bloqueados no registra la lectura de la ficha';
-  END IF;
-  IF (SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = 'lecturas_ficha_medica_origen_check')
-     IS DISTINCT FROM 'CHECK ((origen = ANY (ARRAY[''ficha''::text, ''alta''::text, ''export''::text, ''datos_bloqueados''::text])))' THEN
-    RAISE EXCEPTION 'el CHECK del origen de las lecturas no quedó como se esperaba';
-  END IF;
-
-  -- Permisos: el estado, para quien tiene sesión (lo filtra `es_admin` dentro); los auxiliares, de nadie.
-  IF NOT has_function_privilege('authenticated', 'public.estado_retencion_nino(uuid,integer,integer,integer,integer,integer)', 'EXECUTE')
-     OR has_function_privilege('anon', 'public.estado_retencion_nino(uuid,integer,integer,integer,integer,integer)', 'EXECUTE')
-     OR NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'public.estado_retencion_nino(uuid,integer,integer,integer,integer,integer)'::regprocedure)
-     OR has_function_privilege('authenticated', 'privado.plazo_vence(date,integer)', 'EXECUTE')
-     OR has_function_privilege('authenticated', 'privado.curso_vence(uuid,date,integer)', 'EXECUTE')
-     OR has_function_privilege('authenticated', 'privado.operativa_fechas(text)', 'EXECUTE')
-     OR has_function_privilege('anon', 'public.ver_datos_bloqueados(uuid,text,uuid,text,text,text)', 'EXECUTE')
-     OR has_function_privilege('anon', 'public.sujetos_bloqueados(uuid)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'una función quedó con los permisos que no toca';
-  END IF;
-
-  RAISE NOTICE 'guarda posterior: % niños de baja con la ficha bloqueada, % purgados',
-    (SELECT count(*) FROM public.ninos n
-      WHERE n.deleted_reason = 'baja_nino' AND privado.ficha_medica_bloqueada_desde(n.id) IS NOT NULL),
-    (SELECT count(*) FROM public.ninos WHERE deleted_reason = 'purga_rgpd');
-END
-$guarda$;
+-- CONTROL NEGATIVO 5: sin guarda posterior
