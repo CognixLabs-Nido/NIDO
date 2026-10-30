@@ -37,7 +37,7 @@ import type { Database } from '@/types/database'
 
 // Los fixtures matriculan con fecha_alta = el inicio del curso de test (`cursoDeTest`), que sale de
 // la fecha de hoy; la baja debe ser >= (CHECK), así que sale del mismo cálculo: el fin de ese curso.
-const FECHA_BAJA = '2027-06-30'
+const FECHA_BAJA = cursoDeTest().fin
 
 describe('F-3-C-1 — archivar_nino (RPC)', () => {
   let centroA: { id: string }
