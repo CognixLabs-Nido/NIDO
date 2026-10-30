@@ -130,7 +130,7 @@ export async function buildSidebarItems(
       ...(acceso.esResponsable
         ? [
             { href: `/${locale}/admin/olvido`, label: t('olvido'), icon: <ShieldOffIcon /> },
-            ...(!acceso.esResponsable
+            ...(acceso.esSuperusuario
               ? []
               : [
                   {
