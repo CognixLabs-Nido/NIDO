@@ -1,0 +1,130 @@
+name: Reloj adelantado (medición PR-D)
+
+# MEDICIÓN, no para mergear. Corre la suite entera (unit + RLS/audit sobre la BD efímera) con
+# el reloj del runner adelantado a una fecha futura, para sacar la LISTA de tests que fallan
+# en el futuro (fechas escritas a mano que hoy hacen de «futuro»). No arregla nada.
+#
+# El reloj de los contenedores de Docker es el del host (CLOCK_REALTIME no tiene namespace),
+# así que `sudo date -s` mueve a la vez Postgres, Auth, PostgREST y vitest. Se adelanta
+# DESPUÉS de `supabase start` y `npm ci` (que bajan cosas por TLS) y se restaura al acabar.
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/reloj-adelantado.yml']
+  workflow_dispatch: {}
+
+concurrency:
+  group: reloj-adelantado-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rls:
+    name: RLS ${{ matrix.fecha }} ${{ matrix.shard }}/3
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        fecha: ['2027-09-15', '2029-03-15']
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.119.0
+      - name: Claves de Vault de la BD efímera
+        run: |
+          echo "MEDICAL_ENCRYPTION_KEY=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+          echo "SEPA_ENCRYPTION_KEY=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+      - name: supabase start (BD efímera + migraciones)
+        run: supabase start -x studio,imgproxy,realtime,edge-runtime,logflare,vector,supavisor,postgres-meta
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Suite RLS con el reloj en ${{ matrix.fecha }}
+        env:
+          FECHA: ${{ matrix.fecha }}
+        run: |
+          set -a; . <(supabase status -o env); set +a
+          export NEXT_PUBLIC_SUPABASE_URL="$API_URL"
+          export NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY"
+          export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+          . scripts/ci/reloj-adelantado.sh
+          psql "$DB_URL" -Atc "SELECT 'postgres now(): ' || now()"
+          [ "$(psql "$DB_URL" -Atc "SELECT extract(year FROM now())::int")" = "${FECHA:0:4}" ] \
+            || { echo "PREMISA: Postgres no ve el reloj adelantado"; exit 1; }
+          npx vitest run --project rls --shard=${{ matrix.shard }}/3 \
+            --reporter=default --reporter=json --outputFile.json=rls-${FECHA}-${{ matrix.shard }}.json || true
+          [ -s "rls-${FECHA}-${{ matrix.shard }}.json" ] || { echo "sin informe"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rls-${{ matrix.fecha }}-${{ matrix.shard }}
+          path: rls-${{ matrix.fecha }}-${{ matrix.shard }}.json
+          if-no-files-found: ignore
+
+  unit:
+    name: Unit ${{ matrix.fecha }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        fecha: ['2027-09-15', '2029-03-15']
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Suite unit con el reloj en ${{ matrix.fecha }}
+        env:
+          FECHA: ${{ matrix.fecha }}
+        run: |
+          . scripts/ci/reloj-adelantado.sh
+          node -e 'const y=new Date().getFullYear(); console.log("node Date:", new Date().toISOString()); if (String(y) !== process.env.FECHA.slice(0,4)) { console.log("PREMISA: node no ve el reloj adelantado"); process.exit(1) }'
+          npx vitest run --project unit --reporter=default --reporter=json \
+            --outputFile.json=unit-${FECHA}.json < /dev/null || true
+          [ -s "unit-${FECHA}.json" ] || { echo "sin informe"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-${{ matrix.fecha }}
+          path: unit-${{ matrix.fecha }}.json
+          if-no-files-found: ignore
+
+  lista:
+    name: Lista de fallos en el futuro
+    needs: [rls, unit]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Lista
+        run: |
+          node - <<'EOF' | tee lista.txt
+          const fs = require('fs'), path = require('path')
+          const informes = fs.readdirSync('.').filter((f) => /^(rls|unit)-\d{4}-\d{2}-\d{2}(-\d)?\.json$/.test(f)).sort()
+          console.log(`informes: ${informes.length} de 8`)
+          for (const f of informes) {
+            const r = JSON.parse(fs.readFileSync(f, 'utf8'))
+            console.log(`\n== ${f}: ${r.numTotalTests} tests, ${r.numPassedTests} ok, ${r.numFailedTests} fallidos, ${r.numPendingTests} saltados`)
+            for (const t of r.testResults) for (const a of t.assertionResults)
+              if (a.status === 'failed')
+                console.log(`FALLA | ${path.relative(process.cwd(), t.name)} | ${a.fullName} | ${(a.failureMessages[0] || '').split('\n')[0].slice(0, 220)}`)
+            for (const t of r.testResults)
+              if (t.status === 'failed' && !t.assertionResults.some((a) => a.status === 'failed'))
+                console.log(`FALLA FICHERO | ${path.relative(process.cwd(), t.name)} | ${(t.message || '').split('\n')[0].slice(0, 220)}`)
+          }
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lista
+          path: lista.txt
