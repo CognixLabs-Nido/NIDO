@@ -52,8 +52,10 @@ export async function barrerRetencion(opts: {
     for (const u of unidades) {
       total++
       try {
-        // Registro append-only (también en dry-run: deja constancia de lo que purgaría).
-        await service.from('retencion_ejecuciones').insert({
+        // Registro append-only (también en dry-run: deja constancia de lo que purgaría). Primero el
+        // registro, luego el borrado: si la fila no entra, esta unidad no se borra (cuenta como
+        // fallida y se reintenta). supabase-js no lanza: el error hay que mirarlo.
+        const { error: errRegistro } = await service.from('retencion_ejecuciones').insert({
           categoria: u.categoria,
           centro_id: u.centroId,
           ref_tipo: u.refTipo,
@@ -63,6 +65,8 @@ export async function barrerRetencion(opts: {
           motivo: u.motivo,
           accion: dryRun ? 'simulado' : 'purgado',
         })
+        if (errRegistro)
+          throw new Error(`registro en retencion_ejecuciones: ${errRegistro.message}`)
 
         if (!dryRun) {
           await borrarObjetosBucket(service, u.bucket, u.paths)

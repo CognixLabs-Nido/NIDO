@@ -176,7 +176,9 @@ de quien lo pidió** (`dar_deuda_por_perdida`).
 ### Lo que se repite en todas
 
 - **El cron lista, la función vuelve a mirar.** Cada destrucción tiene una función que lista lo vencido y otra que destruye. La que destruye bloquea el sujeto y vuelve a comprobar el plazo, la retención y el dinero vivo antes de borrar. Todas son solo de `service_role`, con los predicados en `privado`.
-- **La simulación** (`RETENCION_DRY_RUN`): cada paso nuevo del barrido cuenta sin borrar.
+- **La simulación** (`RETENCION_DRY_RUN`): cada paso nuevo del barrido cuenta sin borrar. **El olvido a demanda (`purgarVencidos`) no simula nunca**: lo pidió la familia, la titular lo confirmó y ya pasaron los días de gracia, así que no hay nada que verificar antes; la simulación es para los plazos que el centro aplica solo (decisión del responsable, 2026-10-30).
+- **Cada pasada deja su fila** en `retencion_pasadas` (`20261213120000`), encuentre algo o no: cuándo, si simuló o borró y el recuento de los doce barridos. Sale también en los logs de Vercel. Hasta entonces no había forma de saberlo desde la base: medido el 2026-10-30, el cron corría cada día a las 03:00 UTC en simulación (la variable no existe en Vercel) y no había borrado nada nunca. Pasar a borrado real es poner `RETENCION_DRY_RUN=false` en Vercel, y la primera pasada se mira en esa tabla.
+- **En `barrerRetencion`, primero el registro y luego el borrado**: si la fila de `retencion_ejecuciones` no entra, esa unidad no se borra y se reintenta.
 - **Storage antes que la BD.** Las rutas de los documentos salen de la base, la app los borra primero y, si Storage falla, la base no se toca: borrar la fila perdería la ruta.
 - **Borrar sin copia exige que no haya una persona delante.** Cuando hay una (el botón del alta), la app comprueba la sesión, llama a una función solo del servidor con el actor, y la base vuelve a mirar quién actúa (`privado.es_direccion`) y qué acción vio.
 - **Guardas de md5 normalizado** delante y detrás de cada migración, con sus controles negativos. Cada una se ensayó contra producción por la API y por el SQL Editor, terminando en `RAISE`.

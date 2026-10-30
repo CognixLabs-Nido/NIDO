@@ -118,14 +118,14 @@ Las mediciones con volumen (miles de filas o más) van en la **BD efímera del C
 
 Detalle completo en `@./docs/conventions.md`.
 
-## Modelo de datos (75 tablas)
+## Modelo de datos (76 tablas)
 
 - **Core (14)**: centros, cursos_academicos, aulas, aulas_curso, usuarios, roles_usuario, ninos, info_medica_emergencia, datos_pedagogicos_nino, matriculas, vinculos_familiares, profes_aulas, familias, familia_tutores.
 - **Operativo (29)**: agendas_diarias, comidas, biberones, suenos, deposiciones, asistencias, ausencias, dias_centro, plantillas_menu_mensual, menu_dia, conversaciones, mensajes, lectura_conversacion, anuncios, lectura_anuncio, recordatorios, eventos, confirmaciones_evento, citas, cita_invitados, autorizaciones, firmas_autorizacion, administraciones_medicacion, plantillas_informe, informes_evolucion, campanas_informe, publicaciones, media, media_etiquetas.
 - **Transversal (7)**: audit_log, consentimientos, invitaciones, auth_attempts, push_subscriptions, preferencias_usuario, platform_admins.
 - **Altas y admisiones (4)**: lista_espera, acuses_alta, cambios_pendientes, rollover_finaliza.
 - **Cobros (15)**: conceptos_cobro, tarifa_concepto_anio, asignacion_concepto, beca_comedor_elegibilidad, beca_comedor_tramo, beca_comedor_desborde, beca_comedor_transferencia, parte_servicio_diario, metodo_pago_familia, mandatos_sepa, recibos, lineas_recibo, cierre_mensual, remesas, recibos_remesa.
-- **RGPD (6)**: olvido_solicitudes, export_log, retencion_ejecuciones, lecturas_ficha_medica, accesos_datos_bloqueados, retenciones.
+- **RGPD (7)**: olvido_solicitudes, export_log, retencion_ejecuciones, retencion_pasadas, lecturas_ficha_medica, accesos_datos_bloqueados, retenciones.
 
 `notificaciones_push` sigue diferida y no existe.
 

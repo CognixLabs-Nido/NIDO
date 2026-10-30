@@ -31,6 +31,11 @@ export interface ResultadoPurga {
  * (Storage + `auth.users`, Decisión B) van ANTES del commit SQL, que es el punto
  * único que fija `purgado_en`. Si una falla, su solicitud sigue pendiente y se
  * reintenta en la siguiente pasada sin dañar a las demás.
+ *
+ * NO simula nunca, a propósito: no recibe `dryRun` y borra de verdad aunque el resto del cron esté
+ * en simulación (`RETENCION_DRY_RUN`). Lo pidió la familia (o la titular en su nombre), la titular
+ * lo confirmó y ya pasaron los días de gracia: no hay nada que verificar antes. La simulación es
+ * para los plazos que el centro aplica solo. Decisión del responsable (ADR-0064).
  */
 export async function purgarVencidos(): Promise<ActionResult<ResultadoPurga>> {
   const service = createServiceRoleClient()

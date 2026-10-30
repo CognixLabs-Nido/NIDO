@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { logger } from '@/shared/lib/logger'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 
 import { purgarVencidos } from '@/features/olvido/actions/purgar-vencidos'
 import { barrerRetencion } from '@/features/retencion/actions/barrer-retencion'
@@ -13,6 +13,7 @@ import { destruirFiscal } from '@/features/retencion/lib/fiscal'
 import { purgarLecturasFichaMedica } from '@/features/retencion/lib/lecturas-ficha-medica'
 import { purgarListaEspera } from '@/features/retencion/lib/lista-espera'
 import { purgarOperativa } from '@/features/retencion/lib/operativa'
+import { recuentoDe, registrarPasada } from '@/features/retencion/lib/pasadas'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -53,6 +54,15 @@ export const runtime = 'nodejs'
  * dry-run → registra lo que purgaría SIN borrar. Se pasa a borrado autónomo con
  * `RETENCION_DRY_RUN=false` tras verificar el predicado en producción.
  *
+ * El 1 (`purgarVencidos`) NO simula nunca, a propósito: no recibe `dryRun`. El olvido a demanda lo
+ * pidió la familia (o la titular en su nombre), la titular lo confirmó y ya pasaron los días de
+ * gracia; la simulación es para los plazos que el centro aplica solo. Decisión del responsable
+ * (ADR-0064).
+ *
+ * Cada pasada deja su fila en `retencion_pasadas` (20261213120000), encuentre algo o no: cuándo, en
+ * qué modo y el recuento de cada barrido. Es lo que dice desde la base si el cron corre y si borra.
+ * El mismo resultado sale en los logs de Vercel. Si la fila no entra, la ruta contesta 500.
+ *
  * No está bajo el proxy de locale/auth (matcher excluye `/api`); el único control
  * de acceso es el secreto. Si falta `CRON_SECRET`, responde 401 (fail-closed).
  */
@@ -78,9 +88,24 @@ export async function GET(request: Request): Promise<Response> {
   const fiscal = await destruirFiscal({ dryRun })
   const cuentasOlvidadas = await borrarCuentasOlvidadas({ dryRun })
 
-  logger.info(
-    'cron retencion ejecutado',
-    JSON.stringify({
+  const registrada = await registrarPasada(createServiceRoleClient(), dryRun, {
+    olvido: recuentoDe(olvido),
+    retencion: recuentoDe(retencion),
+    lecturasFichaMedica,
+    auditLog,
+    exportLog,
+    listaEspera,
+    operativa,
+    expediente,
+    firmas,
+    cuentas,
+    fiscal,
+    cuentasOlvidadas,
+  })
+
+  return NextResponse.json(
+    {
+      ok: registrada,
       dryRun,
       olvido,
       retencion,
@@ -94,23 +119,7 @@ export async function GET(request: Request): Promise<Response> {
       cuentas,
       fiscal,
       cuentasOlvidadas,
-    })
+    },
+    { status: registrada ? 200 : 500 }
   )
-
-  return NextResponse.json({
-    ok: true,
-    dryRun,
-    olvido,
-    retencion,
-    lecturasFichaMedica,
-    auditLog,
-    exportLog,
-    listaEspera,
-    operativa,
-    expediente,
-    firmas,
-    cuentas,
-    fiscal,
-    cuentasOlvidadas,
-  })
 }

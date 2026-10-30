@@ -37,6 +37,7 @@ export const SIN_CENTRO = {
   platform_admins: 'la plataforma, por encima de los centros',
   preferencias_usuario: 'de la persona, valen en todos sus centros',
   push_subscriptions: 'del dispositivo de la persona',
+  retencion_pasadas: 'cada pasada del cron de retención recorre todos los centros: solo recuentos',
 }
 const FILTROS = new Set(['eq', 'in', 'match'])
 const ESCRIBEN_FILA = new Set(['insert', 'upsert'])
