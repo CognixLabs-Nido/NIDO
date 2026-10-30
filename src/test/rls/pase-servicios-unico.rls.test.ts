@@ -81,7 +81,7 @@ describe('PR-12 — pase de servicios, listado único', () => {
     const mBaja = await matricular(nBaja, aula1.id, cursoA.id)
     const baja = await serviceClient
       .from('matriculas')
-      .update({ fecha_baja: cursoDeTest().fin })
+      .update({ fecha_baja: '2026-10-01' })
       .eq('id', mBaja)
     expect(baja.error).toBeNull()
     await matricular(nB, aulaB.id, cursoB.id)
