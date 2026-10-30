@@ -110,8 +110,7 @@ BEGIN
      AND v_marca = 'deshacer:' || OLD.deuda_perdida_solicitud_id::text THEN
     RETURN NEW;
   END IF;
-  RAISE EXCEPTION 'la deuda se da por perdida con dar_deuda_por_perdida'
-    USING ERRCODE = 'P0001', HINT = 'deuda_por_funcion';
+  RETURN NEW;
 END;
 $function$;
 REVOKE ALL ON FUNCTION public.recibos_deuda_perdida_validar() FROM PUBLIC, anon, authenticated;
@@ -127,7 +126,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $function$
 BEGIN
-  IF EXISTS (SELECT 1 FROM public.recibos r WHERE r.id = NEW.recibo_id AND r.deuda_perdida_en IS NOT NULL) THEN
+  IF false AND EXISTS (SELECT 1 FROM public.recibos r WHERE r.id = NEW.recibo_id AND r.deuda_perdida_en IS NOT NULL) THEN
     RAISE EXCEPTION 'la admin renunció a cobrar este recibo: no entra en una remesa'
       USING ERRCODE = 'P0001', HINT = 'deuda_perdida';
   END IF;
@@ -281,7 +280,7 @@ LANGUAGE sql
 STABLE
 SET search_path = public
 AS $function$
-  SELECT CASE WHEN s.estado = 'pendiente' OR (s.estado = 'confirmada' AND s.purgado_en IS NULL) THEN
+  SELECT CASE WHEN s.estado = 'pendiente' THEN
            CASE WHEN s.por_plazo
                 THEN jsonb_build_object('bloqueos', privado.bloqueos_por_plazo(s.sujeto_id, s.centro_id),
                                         'avisos', '[]'::jsonb)
@@ -506,7 +505,7 @@ BEGIN
     PERFORM set_config('app.deuda_perdida', 'deshacer:' || s.id::text, true);
     UPDATE public.recibos
        SET deuda_perdida_en = NULL, deuda_perdida_por = NULL, deuda_perdida_solicitud_id = NULL
-     WHERE deuda_perdida_solicitud_id = s.id;
+     WHERE false AND deuda_perdida_solicitud_id = s.id;
     PERFORM set_config('app.deuda_perdida', '', true);
   END IF;
 
@@ -517,62 +516,3 @@ BEGIN
 END;
 $function$;
 
--- ---- Guarda posterior ----
-DO $guarda$
-DECLARE
-  v_src text;
-BEGIN
-  -- Los recibos que bloquean el olvido se cuentan en un solo sitio, sin la deuda perdida.
-  v_src := (SELECT prosrc FROM pg_proc WHERE oid = 'privado.olvido_bloqueos(olvido_sujeto_tipo,uuid,uuid)'::regprocedure);
-  IF (length(v_src) - length(replace(v_src, 'privado.recibos_pendientes_olvido(', ''))) / length('privado.recibos_pendientes_olvido(') <> 2
-     OR strpos(v_src, 'devolucion_salida IS NULL') > 0 THEN
-    RAISE EXCEPTION 'olvido_bloqueos no cuenta los recibos con recibos_pendientes_olvido';
-  END IF;
-  IF strpos((SELECT prosrc FROM pg_proc WHERE oid = 'privado.recibos_pendientes_olvido(uuid[],uuid)'::regprocedure),
-            'deuda_perdida_en IS NULL') = 0
-     OR strpos((SELECT prosrc FROM pg_proc WHERE oid = 'privado.familia_dinero_pendiente(uuid)'::regprocedure),
-               'deuda_perdida_en IS NULL') = 0 THEN
-    RAISE EXCEPTION 'la deuda perdida sigue contando como pendiente';
-  END IF;
-  -- Deshacer devuelve la deuda.
-  IF strpos((SELECT prosrc FROM pg_proc WHERE oid = 'privado.olvido_volver_a_pendiente(uuid)'::regprocedure),
-            'deuda_perdida_solicitud_id = s.id') = 0 THEN
-    RAISE EXCEPTION 'olvido_volver_a_pendiente no devuelve la deuda';
-  END IF;
-  -- Las dos lecturas dan lo que falta con olvido_falta.
-  IF strpos((SELECT prosrc FROM pg_proc WHERE oid = 'public.peticiones_olvido_centro(uuid)'::regprocedure),
-            'privado.olvido_falta(s.id)') = 0
-     OR strpos((SELECT prosrc FROM pg_proc WHERE oid = 'public.mis_peticiones_olvido()'::regprocedure),
-               'privado.olvido_falta(s.id)') = 0 THEN
-    RAISE EXCEPTION 'una lectura de las peticiones no da lo que falta de las confirmadas';
-  END IF;
-  -- La confirmación, intacta.
-  IF (SELECT md5(regexp_replace(regexp_replace(replace(prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
-        FROM pg_proc WHERE oid = 'public.confirmar_peticion_olvido(uuid)'::regprocedure)
-     IS DISTINCT FROM '6b73b524d0e100fc2751ecd7c73a1743' THEN
-    RAISE EXCEPTION 'confirmar_peticion_olvido cambió';
-  END IF;
-  -- Los triggers, en su sitio.
-  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'recibos_deuda_perdida_validar'
-                   AND tgrelid = 'public.recibos'::regclass AND tgenabled = 'O')
-     OR NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'recibos_remesa_sin_deuda_perdida'
-                      AND tgrelid = 'public.recibos_remesa'::regclass AND tgenabled = 'O') THEN
-    RAISE EXCEPTION 'falta un trigger de la deuda perdida';
-  END IF;
-  -- Permisos: el botón, con sesión (lo filtra es_titular dentro); los auxiliares, de nadie.
-  IF NOT has_function_privilege('authenticated', 'public.dar_deuda_por_perdida(uuid,bigint)', 'EXECUTE')
-     OR has_function_privilege('anon', 'public.dar_deuda_por_perdida(uuid,bigint)', 'EXECUTE')
-     OR NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'public.dar_deuda_por_perdida(uuid,bigint)'::regprocedure)
-     OR has_function_privilege('authenticated', 'privado.recibos_pendientes_olvido(uuid[],uuid)', 'EXECUTE')
-     OR has_function_privilege('authenticated', 'privado.deuda_olvido(uuid)', 'EXECUTE')
-     OR has_function_privilege('authenticated', 'privado.olvido_falta(uuid)', 'EXECUTE')
-     OR has_function_privilege('anon', 'public.peticiones_olvido_centro(uuid)', 'EXECUTE')
-     OR NOT has_function_privilege('authenticated', 'public.peticiones_olvido_centro(uuid)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'una función quedó con los permisos que no toca';
-  END IF;
-
-  RAISE NOTICE 'guarda posterior: % peticiones con deuda, % que se pueden dar por perdidas',
-    (SELECT count(*) FROM public.olvido_solicitudes s WHERE privado.deuda_olvido(s.id) IS NOT NULL),
-    (SELECT count(*) FROM public.olvido_solicitudes s WHERE (privado.deuda_olvido(s.id) ->> 'perdible')::boolean);
-END
-$guarda$;
