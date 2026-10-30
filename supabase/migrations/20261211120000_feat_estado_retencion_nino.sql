@@ -359,7 +359,8 @@ BEGIN
     RAISE EXCEPTION 'no autorizado' USING ERRCODE = 'insufficient_privilege';
   END IF;
 
-  v_purgado := n.deleted_reason = 'purga_rgpd';
+  -- Con el niño activo `deleted_reason` es NULL: la comparación tiene que dar FALSE, no NULL.
+  v_purgado := n.deleted_reason IS NOT DISTINCT FROM 'purga_rgpd';
   v_purga := (COALESCE(n.purgado_en, n.deleted_at) AT TIME ZONE 'Europe/Madrid')::date;
   v_baja := privado.fecha_baja_destruccion(n.id);
   v_retenido := privado.retenido(n.centro_id, 'nino', n.id);
@@ -454,7 +455,8 @@ BEGIN
   LOOP
     v_cbaja := privado.cuenta_baja(a.usuario_id, n.centro_id);
     v_cvence := privado.plazo_vence(v_cbaja, p_anios_cuenta);
-    v_cuentas := v_cuentas || jsonb_build_object(
+    -- Entre paréntesis: `lista || objeto || objeto` añadiría el segundo como otro elemento.
+    v_cuentas := v_cuentas || (jsonb_build_object(
       'usuario_id', a.usuario_id,
       'nombre', CASE WHEN privado.usuario_olvidado_en(a.usuario_id, n.centro_id) THEN NULL ELSE a.nombre_completo END,
       'baja_ultimo_hijo', v_cbaja,
@@ -474,7 +476,7 @@ BEGIN
             CASE WHEN privado.bloqueos_por_plazo(a.usuario_id, n.centro_id) @> '[{"codigo": "dinero_vivo"}]'
                  THEN 'dinero_pendiente' ELSE 'otro_bloqueo' END)
         WHEN v_cvence <= v_hoy THEN jsonb_build_object('estado', 'vencido', 'hasta', v_cvence)
-        ELSE jsonb_build_object('estado', 'se_borrara', 'hasta', v_cvence) END;
+        ELSE jsonb_build_object('estado', 'se_borrara', 'hasta', v_cvence) END);
   END LOOP;
 
   RETURN jsonb_build_object(

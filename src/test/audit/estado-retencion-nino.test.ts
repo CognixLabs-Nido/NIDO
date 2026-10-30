@@ -207,6 +207,10 @@ describe('Estado de conservación del niño', () => {
 
   afterAll(async () => {
     await serviceClient.from('platform_admins').delete().eq('usuario_id', superusuario.id)
+    // Las filas que nombran a los usuarios del test: sin ellas no se pueden borrar.
+    await serviceClient.from('accesos_datos_bloqueados').delete().eq('centro_id', centro.id)
+    await serviceClient.from('lecturas_ficha_medica').delete().eq('centro_id', centro.id)
+    await serviceClient.from('retenciones').delete().eq('centro_id', centro.id)
     await deleteTestCentro(centro.id)
     await deleteTestCentro(otroCentro.id)
     for (const u of [admin, directora, profe, adminOtro, superusuario, tutor])
