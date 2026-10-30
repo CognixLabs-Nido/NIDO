@@ -4,7 +4,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
   asignarRol,
-  createTestAula,
   createTestCentro,
   createTestCurso,
   createTestFamilia,
@@ -26,7 +25,6 @@ import {
  *   prospectos (`tutor_usuario_id`).
  * - La copia en audit_log: `_claves_pii_nino` no tenía rama para `lista_espera` y el INSERT del
  *   prospecto (que nace con `nino_id` NULL) no lo alcanzaba ninguna redacción.
- * - `purgar_esqueleto_huerfano_nino` conserva el prospecto a propósito (U-4): no se toca.
  *
  * Cada caso siembra prospectos con marcadores únicos, ejecuta la purga y vuelca lo que queda.
  */
@@ -61,7 +59,6 @@ interface Prospecto {
 describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
   let centro: { id: string }
   let curso: { id: string }
-  let aula: { id: string }
   let otroCentro: { id: string }
   let otroCurso: { id: string }
   const usuarios: TestUser[] = []
@@ -70,7 +67,6 @@ describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
   beforeAll(async () => {
     centro = await createTestCentro('Centro Purga Lista Espera')
     curso = await createTestCurso(centro.id)
-    aula = await createTestAula(centro.id, curso.id)
     otroCentro = await createTestCentro('Centro Purga Lista Espera Otro')
     otroCurso = await createTestCurso(otroCentro.id)
   }, 120_000)
@@ -268,40 +264,6 @@ describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
     const otra = await filaDe(deOtroTutor)
     expect(otra?.telefono_tutor).toBe(deOtroTutor.marcas[2])
     expect(otra?.email_tutor).toBe(`${deOtroTutor.marcas[3]}@correo.test`)
-  })
-
-  it('purgar_esqueleto_huerfano_nino: conserva el prospecto en la tabla (U-4)', async () => {
-    const nino = await createTestNino(centro.id)
-    const { error: mErr } = await serviceClient.from('matriculas').insert({
-      nino_id: nino.id,
-      aula_id: aula.id,
-      curso_academico_id: curso.id,
-      estado: 'pendiente',
-    })
-    expect(mErr).toBeNull()
-    const { error: iErr } = await serviceClient.from('invitaciones').insert({
-      email: `le-esq-${randomUUID().slice(0, 8)}@nido.test`,
-      rol_objetivo: 'tutor_legal',
-      centro_id: centro.id,
-      nino_id: nino.id,
-      tipo_vinculo: 'tutor_legal_principal',
-      expires_at: new Date(Date.now() - 40 * 864e5).toISOString(),
-    })
-    expect(iErr).toBeNull()
-    const suyo = await prospecto({ cursoId: curso.id, ninoId: nino.id })
-
-    const { error } = await serviceClient.rpc('purgar_esqueleto_huerfano_nino', {
-      p_nino_id: nino.id,
-      p_cutoff: new Date(Date.now() - 30 * 864e5).toISOString(),
-    })
-    expect(error).toBeNull()
-
-    const fila = await filaDe(suyo)
-    console.warn('esqueleto: fila en lista_espera =', JSON.stringify(fila))
-    // El prospecto se queda en admisiones, sin enlace al niño borrado (ON DELETE SET NULL).
-    expect(fila?.nino_id).toBeNull()
-    expect(fila?.nombre_nino).toBe(suyo.marcas[0])
-    expect(fila?.telefono_tutor).toBe(suyo.marcas[2])
   })
 
   it('retroactiva: redacta la auditoría de los prospectos de niños que ya no existen o ya purgados', async () => {

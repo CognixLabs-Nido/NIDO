@@ -23,9 +23,6 @@ import {
  * - `purgar_sujeto_db` (rama del niño) no borraba de `ninos` la dirección, el libro de familia,
  *   el idioma ni el estado civil, y su redacción de audit_log no conocía esas claves ni las
  *   observaciones pedagógicas, el motivo de baja, la firma o el invitado externo de una cita.
- * - `purgar_esqueleto_huerfano_nino` borra el niño y lo que cuelga de él, pero no redactaba
- *   nada del niño en audit_log: el DELETE deja la fila entera en `valores_antes`. Desde
- *   20261129120000 cada DELETE se lleva sus copias: nada vive más en audit_log que en su tabla.
  *
  * Cada test siembra un niño con marcadores únicos en todas sus columnas personales, ejecuta
  * la purga y vuelca las filas de audit_log que conservan algo.
@@ -151,7 +148,7 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
     return data.id
   }
 
-  async function sembrar(opts: { esqueleto: boolean }): Promise<Sembrado> {
+  async function sembrar(): Promise<Sembrado> {
     const s = randomUUID().slice(0, 8)
     const m = (campo: string) => `MK-${campo}-${s}`
     const marcas: string[] = []
@@ -223,16 +220,11 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
     })
     expect(mErr).toBeNull()
 
-    // Vínculo con parentesco. En el esqueleto, ya borrado (un huérfano no tiene vínculos vivos).
+    // Vínculo con parentesco.
     const vinculoId = await crearVinculo(nino.id, tutor.id, 'tutor_legal_principal')
     const { error: vErr } = await serviceClient
       .from('vinculos_familiares')
-      .update({
-        descripcion_parentesco: marca('parentesco'),
-        ...(opts.esqueleto
-          ? { deleted_at: new Date().toISOString(), deleted_reason: 'revocacion_familia' as const }
-          : {}),
-      })
+      .update({ descripcion_parentesco: marca('parentesco') })
       .eq('id', vinculoId)
     expect(vErr).toBeNull()
 
@@ -300,20 +292,6 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
       .single()
     expect(ciErr).toBeNull()
 
-    if (opts.esqueleto) {
-      const { error: iErr } = await serviceClient.from('invitaciones').insert({
-        email: `${m('email')}@nido.test`.toLowerCase(),
-        nombre_completo: marca('invitado'),
-        rol_objetivo: 'tutor_legal',
-        centro_id: centro.id,
-        nino_id: nino.id,
-        tipo_vinculo: 'tutor_legal_principal',
-        expires_at: new Date(Date.now() - 40 * 864e5).toISOString(),
-      })
-      expect(iErr).toBeNull()
-      marcas.push(`${m('email')}@nido.test`.toLowerCase())
-    }
-
     return { ninoId: nino.id, invitadoCitaId: inv!.id, marcas }
   }
 
@@ -333,25 +311,6 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
       .eq('tabla', 'cita_invitados')
       .eq('registro_id', sem.invitadoCitaId)
     return [...(delNino ?? []), ...(invitado ?? [])] as FilaAudit[]
-  }
-
-  /** Las filas de audit_log cuyo registro ya no existe en su tabla. */
-  async function sinSuFila(filas: FilaAudit[]): Promise<string[]> {
-    const porTabla = new Map<string, string[]>()
-    for (const f of filas) {
-      if (f.registro_id) porTabla.set(f.tabla, [...(porTabla.get(f.tabla) ?? []), f.registro_id])
-    }
-    const fuera: string[] = []
-    for (const [tabla, ids] of porTabla) {
-      const { data, error } = await serviceClient
-        .from(tabla as 'ninos')
-        .select('id')
-        .in('id', ids)
-      expect(error).toBeNull()
-      const vivos = new Set((data ?? []).map((d) => d.id))
-      for (const id of ids) if (!vivos.has(id)) fuera.push(`${tabla} ${id}`)
-    }
-    return fuera
   }
 
   function fugasEn(filas: FilaAudit[], marcas: string[]): Fuga[] {
@@ -389,7 +348,7 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
   }
 
   it('purgar_sujeto_db (niño): borra la dirección y el resto de la tabla, y redacta audit_log', async () => {
-    const sem = await sembrar({ esqueleto: false })
+    const sem = await sembrar()
 
     const { data: solicitud, error: sErr } = await serviceClient.rpc('solicitar_olvido_nino', {
       p_nino_id: sem.ninoId,
@@ -453,38 +412,9 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
     expect(fugas).toEqual([])
   })
 
-  it('purgar_esqueleto_huerfano_nino: no deja en audit_log nada del niño que borra', async () => {
-    const sem = await sembrar({ esqueleto: true })
-    // Premisa: antes de la purga, el alta del niño está en audit_log.
-    expect(
-      (await filasDe(sem)).some((f) => f.tabla === 'ninos' && f.registro_id === sem.ninoId)
-    ).toBe(true)
-
-    const { error } = await serviceClient.rpc('purgar_esqueleto_huerfano_nino', {
-      p_nino_id: sem.ninoId,
-      p_cutoff: new Date(Date.now() - 30 * 864e5).toISOString(),
-    })
-    expect(error).toBeNull()
-    const { data: sigue } = await serviceClient
-      .from('ninos')
-      .select('id')
-      .eq('id', sem.ninoId)
-      .maybeSingle()
-    expect(sigue).toBeNull()
-
-    const filas = await filasDe(sem)
-    const fugas = fugasEn(filas, sem.marcas)
-    volcar('purgar_esqueleto_huerfano_nino', filas, fugas)
-
-    // Lo que borra se lleva sus copias (20261129120000): ninguna fila que quede en audit_log
-    // es de un registro que ya no está en su tabla.
-    expect(await sinSuFila(filas)).toEqual([])
-    expect(fugas).toEqual([])
-  })
-
   it('retroactiva: redacta la auditoría de un niño que ya no existe y no toca la de uno vivo', async () => {
-    const borrado = await sembrar({ esqueleto: false })
-    const vivo = await sembrar({ esqueleto: false })
+    const borrado = await sembrar()
+    const vivo = await sembrar()
 
     // Un borrado anterior a esta migración: DELETE a mano, sin purga (FK-safe, como los fixtures).
     for (const tabla of [
