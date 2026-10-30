@@ -318,9 +318,13 @@ describe('Retención del expediente', () => {
     // Premisa: purgado, con su fecha; ya no es un niño «de baja».
     expect(n!.deleted_reason).toBe('purga_rgpd')
     expect(n!.purgado_en).not.toBeNull()
-    const desde = new Date(n!.purgado_en!).toLocaleDateString('sv-SE', {
-      timeZone: 'Europe/Madrid',
-    })
+    // La fecha de la purga es la de Madrid: se fija a una hora en que el día UTC aún es el 14.
+    const { error: fijarErr } = await serviceClient
+      .from('ninos')
+      .update({ purgado_en: '2026-06-14T22:30:00Z' })
+      .eq('id', vencido)
+    expect(fijarErr).toBeNull()
+    const desde = '2026-06-15'
 
     const antes = await lecturas(vencido)
     const { data, error } = await leer(vencido)
