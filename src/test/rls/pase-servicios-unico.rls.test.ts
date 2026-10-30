@@ -18,6 +18,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { cursoDeTest } from './curso-de-test'
 
 /**
  * PR-12 — el listado único del pase de servicios (`20261115120000`), contra la BD real.
@@ -78,7 +79,11 @@ describe('PR-12 — pase de servicios, listado único', () => {
     await matricular(n1, aula1.id, cursoA.id)
     await matricular(n2, aula2.id, cursoA.id)
     const mBaja = await matricular(nBaja, aula1.id, cursoA.id)
-    await serviceClient.from('matriculas').update({ fecha_baja: '2026-10-01' }).eq('id', mBaja)
+    const baja = await serviceClient
+      .from('matriculas')
+      .update({ fecha_baja: cursoDeTest().fin })
+      .eq('id', mBaja)
+    expect(baja.error).toBeNull()
     await matricular(nB, aulaB.id, cursoB.id)
 
     profeAula1 = await usuario('Profe Aula Uno PR12')
@@ -88,7 +93,11 @@ describe('PR-12 — pase de servicios, listado único', () => {
     ayudanteAula2 = await usuario('Ayudante Aula Dos PR12')
     await asignarRol(ayudanteAula2.id, centroA.id, 'profe')
     const asig = await asignarProfeAula(ayudanteAula2.id, aula2.id, cursoA.id)
-    await serviceClient.from('profes_aulas').update({ tipo_personal_aula: 'apoyo' }).eq('id', asig)
+    const apoyo = await serviceClient
+      .from('profes_aulas')
+      .update({ tipo_personal_aula: 'apoyo' })
+      .eq('id', asig)
+    expect(apoyo.error).toBeNull()
 
     profeSinAula = await usuario('Profe Sin Aula PR12')
     await asignarRol(profeSinAula.id, centroA.id, 'profe')
@@ -102,11 +111,12 @@ describe('PR-12 — pase de servicios, listado único', () => {
 
     profeDeBaja = await usuario('Profe De Baja PR12')
     await asignarRol(profeDeBaja.id, centroA.id, 'profe')
-    await serviceClient
+    const deBaja = await serviceClient
       .from('roles_usuario')
       .update({ deleted_at: new Date().toISOString(), deleted_reason: 'baja_temporal' })
       .eq('usuario_id', profeDeBaja.id)
       .eq('centro_id', centroA.id)
+    expect(deBaja.error).toBeNull()
 
     tutor = await usuario('Tutor PR12')
     await asignarRol(tutor.id, centroA.id, 'tutor_legal')

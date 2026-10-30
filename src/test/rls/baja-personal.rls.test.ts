@@ -23,6 +23,7 @@ import {
   type TestNino,
   type TestUser,
 } from './setup'
+import { cursoDeTest } from './curso-de-test'
 
 /**
  * Baja temporal y salida del centro del personal — `dar_de_baja_profe` y `reactivar_profe`
@@ -68,21 +69,24 @@ describe('baja temporal y salida del centro del personal', () => {
     await asignarRol(adminB.id, centroB.id, 'admin')
 
     const asignacion = await asignarProfeAula(profe.id, aula.id, curso.id)
-    await serviceClient
+    const coordinadora = await serviceClient
       .from('profes_aulas')
       .update({ tipo_personal_aula: 'coordinadora' })
       .eq('id', asignacion)
-    await serviceClient.from('profes_aulas').insert({
+    expect(coordinadora.error).toBeNull()
+    const futura = await serviceClient.from('profes_aulas').insert({
       profe_id: profeFutura.id,
       aula_id: aula.id,
       curso_academico_id: curso.id,
       fecha_inicio: '2099-01-01',
     })
+    expect(futura.error).toBeNull()
 
-    await serviceClient
+    const festivo = await serviceClient
       .from('dias_centro')
       .insert({ centro_id: centroA.id, fecha: '2031-01-06', tipo: 'festivo' })
-    await serviceClient.from('anuncios').insert({
+    expect(festivo.error).toBeNull()
+    const anuncio = await serviceClient.from('anuncios').insert({
       autor_id: directora.id,
       centro_id: centroA.id,
       ambito: 'centro',
@@ -90,6 +94,7 @@ describe('baja temporal y salida del centro del personal', () => {
       titulo: ANUNCIO_CENTRO,
       contenido: 'Para todo el centro',
     })
+    expect(anuncio.error).toBeNull()
   }, 120_000)
 
   afterAll(async () => {
@@ -284,11 +289,12 @@ describe('baja temporal y salida del centro del personal', () => {
       expect(ve.ninos).toBe(0)
       expect(ve.deAula).toBe(false)
       expect(ve.deNino).toBe(false)
-      await serviceClient
+      const cierre = await serviceClient
         .from('profes_aulas')
-        .update({ fecha_fin: '2026-09-01' })
+        .update({ fecha_fin: cursoDeTest().fin })
         .eq('profe_id', profe.id)
         .eq('aula_id', aula.id)
+      expect(cierre.error).toBeNull()
       expect(await aulasAbiertas(profe.id)).toBe(0)
     })
 

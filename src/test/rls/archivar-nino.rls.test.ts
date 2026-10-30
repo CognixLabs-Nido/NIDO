@@ -15,6 +15,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { cursoDeTest } from './curso-de-test'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -34,8 +35,9 @@ import type { Database } from '@/types/database'
  *  7. NO toca: roles_usuario del tutor, familias.deleted_at, ni la matrícula de otro niño.
  */
 
-// Los fixtures matriculan con fecha_alta='2026-09-01'; la baja debe ser >= (CHECK).
-const FECHA_BAJA = '2027-06-30'
+// Los fixtures matriculan con fecha_alta = el inicio del curso de test (`cursoDeTest`), que sale de
+// la fecha de hoy; la baja debe ser >= (CHECK), así que sale del mismo cálculo: el fin de ese curso.
+const FECHA_BAJA = cursoDeTest().fin
 
 describe('F-3-C-1 — archivar_nino (RPC)', () => {
   let centroA: { id: string }

@@ -19,6 +19,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { cursoDeTest } from './curso-de-test'
 
 /**
  * RLS de la vista de FAMILIA del blog (F10-2, P-histórico). Verifica la vía nueva
@@ -167,7 +168,7 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
   async function cerrarMatriculaSinTocarVinculo(matriculaId: string): Promise<void> {
     const { error } = await serviceClient
       .from('matriculas')
-      .update({ fecha_baja: '2027-01-01' })
+      .update({ fecha_baja: cursoDeTest().fin })
       .eq('id', matriculaId)
     if (error) throw new Error(`cerrarMatriculaSinTocarVinculo falló: ${error.message}`)
   }
@@ -176,7 +177,7 @@ describe('RLS blog del aula — F10-2 (familia · histórico)', () => {
   async function archivar(nino_id: string): Promise<void> {
     const { error } = await serviceClient.rpc('archivar_nino', {
       p_nino_id: nino_id,
-      p_fecha_baja: '2027-06-30',
+      p_fecha_baja: cursoDeTest().fin,
     })
     if (error) throw new Error(`archivar_nino falló: ${error.message}`)
   }
