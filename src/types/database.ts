@@ -4843,6 +4843,17 @@ export type Database = {
         Returns: boolean
       }
       es_tutor_legal_de: { Args: { p_nino_id: string }; Returns: boolean }
+      estado_retencion_nino: {
+        Args: {
+          p_anios_cuenta: number
+          p_anios_expediente: number
+          p_anios_firmas: number
+          p_anios_fiscal: number
+          p_anios_operativa: number
+          p_nino_id: string
+        }
+        Returns: Json
+      }
       expedientes_vencidos: {
         Args: { p_anios: number }
         Returns: { centro_id: string; nino_id: string }[]

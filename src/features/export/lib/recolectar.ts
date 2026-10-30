@@ -201,7 +201,7 @@ export async function recolectarNino(
   })
   const bloqueadaDesde = fichaMedicaBloqueadaDesde(med.error)
   if (bloqueadaDesde) {
-    infoMedica = fichaMedicaBloqueadaEnExport(bloqueadaDesde)
+    infoMedica = fichaMedicaBloqueadaEnExport(bloqueadaDesde, nino.deleted_reason === 'purga_rgpd')
   } else if (med.error) {
     infoMedica = { _nota: 'Existe información médica; no accesible con tu rol/permiso actual.' }
   } else {
@@ -321,9 +321,23 @@ export async function recolectarNino(
  * LOPDGDD). Pero no se omite en silencio: el art. 15 da derecho a saber qué datos se tratan, así
  * que se dice que existe, que está bloqueada, desde cuándo, por qué y cómo pedirla. Exportada para
  * su test.
+ *
+ * Con el niño purgado (20261210120000) la ficha se vació con la purga y queda bloqueada desde ese
+ * día: no hay nada que pedir, y decir que «se conserva» sería falso.
  */
-export function fichaMedicaBloqueadaEnExport(desde: string): Record<string, string> {
+export function fichaMedicaBloqueadaEnExport(
+  desde: string,
+  purgado = false
+): Record<string, string> {
   const [a, m, d] = desde.split('-')
+  if (purgado) {
+    return {
+      _nota:
+        `La información médica del niño se borró el ${d}/${m}/${a}, con la purga de sus datos. ` +
+        'No queda nada que entregar.',
+      bloqueada_desde: desde,
+    }
+  }
   return {
     _nota:
       `Existe información médica del niño y está BLOQUEADA desde el ${d}/${m}/${a}, porque terminó ` +

@@ -227,7 +227,27 @@ expediente del niño de baja se conserva 5 años y lo ve Dirección, pero la fic
   con la misma respuesta. Antes el predicado solo miraba al niño de baja: con uno purgado,
   Dirección pasaba la autorización, `get_info_medica_emergencia` dejaba su lectura sobre la ficha
   vaciada y los setters podían volver a escribirla.
-- Test: `src/test/audit/retencion-expediente.test.ts`.
+- **La admin la lee con motivo** (`20261211120000`, art. 32 LOPDGDD): `ver_datos_bloqueados` entrega
+  la ficha bloqueada del niño de baja a `privado.es_titular` (ni la directora ni el superusuario),
+  con tipo y texto de motivo, solo para leer, y deja su fila en `accesos_datos_bloqueados` y en
+  `lecturas_ficha_medica` (origen `datos_bloqueados`). `sujetos_bloqueados` lista a esos niños.
+- Test: `src/test/audit/retencion-expediente.test.ts` y `estado-retencion-nino.test.ts`.
+
+### El estado de conservación del niño (PR-B2)
+
+Migración `20261211120000_feat_estado_retencion_nino`; spec `docs/specs/retencion-plazos.md`.
+
+- **`estado_retencion_nino(niño, plazos…)`** (`SECURITY DEFINER`, `EXECUTE` solo para
+  `authenticated`): Dirección del centro del niño (`es_admin`; el niño que no existe, como el de
+  otro centro, 42501). Devuelve cada dato con su estado y su fecha, o el motivo de que no la haya.
+  Los plazos los pasa la app (`getEstadoRetencionNino`, con las constantes del cron); plazos menores
+  que 1, 22023.
+- **Una sola regla por fecha:** `privado.plazo_vence` y `privado.curso_vence` dan el día en que se
+  cumplen `plazo_cumplido` y `curso_vencido`; `privado.operativa_fechas` da la fecha de cada
+  registro de la operativa, y `operativa_vencida` la lee de ahí. Las tres, cerradas a las sesiones.
+- **`puede_ver_bloqueado`**: la admin (`privado.es_titular`) y algo que ver (el niño purgado o la ficha
+  bloqueada). La app enseña el camino solo entonces.
+- Test: `src/test/audit/estado-retencion-nino.test.ts`.
 
 ### El bloqueo de lo que se conserva por obligación legal (F11-B, punto 6, PR-7)
 
@@ -505,6 +525,7 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `src/test/audit/olvido-operativa.test.ts`: la purga del niño borra su operativa y todas sus copias en `audit_log`, también las de lo borrado antes; el otro niño y los eventos se quedan (`20261201120000`).
 - `src/test/audit/retencion-operativa.test.ts`: la operativa vence 1 año después del final de su curso, con sus copias en `audit_log` y las de lo borrado antes; lo de verano, lo dado de alta hace poco, la conversación con un mensaje reciente, otro centro y los eventos se quedan; solo `service_role` (`20261203120000`).
 - `src/test/audit/retencion-expediente.test.ts`: terminado el curso de la baja, la ficha médica no la lee ni la escribe nadie, no deja lectura ni aviso, y el export dice que está bloqueada; reincorporar la desbloquea; a los años del plazo, la purga del niño, solo `service_role` (`20261204120000`); purgado, la ficha queda bloqueada desde la purga (`20261210120000`).
+- `src/test/audit/estado-retencion-nino.test.ts`: el cuadro de cada dato con su fecha o su motivo, que cambia con los plazos que recibe; vencido no es borrado; el niño activo, de baja, purgado y retenido; la cuenta del tutor desde la baja de su último hijo; Dirección lo ve y solo la admin tiene camino a lo bloqueado; la admin lee con motivo la ficha bloqueada del niño de baja, que queda en los dos registros y sigue sin poder escribirse (`20261211120000`).
 - `src/test/audit/retencion-export-log.test.ts`: `export_log` vence a los años de cada fila; en simulación solo cuenta; lo reciente se queda; solo `service_role` (`20261210120000`).
 - `src/test/audit/retencion-bloqueo.test.ts`: purgado un niño, su firma, su consentimiento y su registro de lecturas se conservan y no los ve nadie en el uso diario; solo la titular los ve, con motivo, y queda su fila (la directora, la profe y el superusuario, 42501); lo fiscal sigue a la vista y entero, con el nombre del niño; el export no entrega lo bloqueado y dice que existe y que se consultó; el segundo tutor sin vínculo con sus hijos matriculados no se olvida, ni confirmado por otro camino se purga (`20261205120000`).
 - `src/test/audit/retencion-retenciones.test.ts`: retenido, la purga del expediente espera y, quitada, vuelve a cogerlo; solo la titular pone, quita y lee, con motivo, y queda quién, cuándo y por qué (la directora, la profe y el superusuario, 42501); una lista con alguien de otro centro no retiene a nadie (`20261206120000`).

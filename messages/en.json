@@ -2381,7 +2381,8 @@
     "aviso_cifrado": "These details are stored encrypted.",
     "bloqueada_titulo": "Medical record blocked",
     "bloqueada": "Blocked since {fecha}: the school year in which the child left has ended. It is kept unused until the child's record is deleted and can only be provided to the courts, the public prosecutor or the competent authorities (art. 32 LOPDGDD).",
-    "error": {}
+    "error": {},
+    "bloqueada_direccion": "Blocked since {fecha}. What happens to it and when, under “Data retention”."
   },
   "agenda": {
     "title": "Daily agenda",
@@ -5001,6 +5002,7 @@
     "descargar": "Download to hand over",
     "sin_filas": "No data in this section.",
     "apartados": {
+      "ficha_medica": "Medical record",
       "firmas": "Authorisation signatures",
       "autorizaciones": "Authorisations",
       "consentimientos": "Consents",
@@ -5075,6 +5077,70 @@
         "sujetos": "Someone you selected is no longer at this centre. Reload the page and try again.",
         "no_autorizado": "Only the centre's owner can put data on hold.",
         "fallo": "We could not save the hold. Try again."
+      }
+    }
+  },
+  "retencion_estado": {
+    "titulo": "Data retention",
+    "activo": "The child is active: no retention period is running.",
+    "retenido": "Held for an open proceeding: nothing of theirs is destroyed while the hold lasts.",
+    "provisionales": "The periods are provisional until the lawyer validates them; if they change, these dates change on their own.",
+    "ver_bloqueados": "See the blocked data (the access is recorded)",
+    "se_borrara": "will be deleted from {fecha}",
+    "vencido": "the period ended on {fecha}; deletion pending",
+    "sin_fecha": {
+      "retenido": "no date: held for an open proceeding",
+      "sin_curso": "no date: the school has not yet created the school year the period counts from"
+    },
+    "medicos": {
+      "etiqueta": "Medical data",
+      "bloqueados": "Blocked since {fecha}",
+      "a_la_vista": "Visible to the management; blocked on {fecha}",
+      "borrados": "Deleted on {fecha}"
+    },
+    "operativa": {
+      "etiqueta": "Day-to-day records (diary, attendance, messages, reports…)",
+      "borrado": "Deleted on {fecha}",
+      "nada": "Nothing left",
+      "por_partes": "Visible to the management; deleted in parts, the last from {fecha}"
+    },
+    "firmas": {
+      "etiqueta": "Signatures, consents and medication given",
+      "nada": "Nothing left",
+      "a_la_vista": "Kept and visible",
+      "se_bloquean_con_la_purga": "blocked when the record is deleted",
+      "bloqueados_desde": "Blocked since {fecha}",
+      "se_destruyen": "destroyed from {fecha}"
+    },
+    "expediente": {
+      "etiqueta": "Whole record",
+      "borrado": "Deleted on {fecha}"
+    },
+    "fiscal": {
+      "etiqueta": "Tax and financial data (of the family)",
+      "a_la_vista": "Kept and visible until at least {fecha}",
+      "vencido": "The period ended on {fecha}; destroyed once the rest of the family’s data is gone too",
+      "desde_pago": "counted from the last paid receipt",
+      "desde_baja": "counted from the end of the school year of the last withdrawal",
+      "sin_fecha": "Kept and visible; no date: {motivos}",
+      "motivos": {
+        "otro_hijo": "the family has another child at the school",
+        "dinero_pendiente": "the family has a pending receipt, an unresolved return or money in its favour",
+        "retenido": "someone in the family is held for an open proceeding",
+        "sin_curso": "the school has not yet created the school year the period counts from"
+      }
+    },
+    "cuenta": {
+      "etiqueta": "{nombre}’s account",
+      "etiqueta_borrada": "Account of an adult of the family",
+      "borrada": "Deleted on {fecha}",
+      "por_otro_hijo": "counted from the withdrawal of their last child at the school, on {fecha}",
+      "motivos": {
+        "otro_hijo": "No date: they have another child at the school",
+        "trabaja_en_centro": "Not deleted: they work at the school",
+        "retenido": "No date: held for an open proceeding",
+        "dinero_pendiente": "No date: their family has a pending receipt or money in its favour",
+        "otro_bloqueo": "No date: something still stops their account from being deleted"
       }
     }
   }

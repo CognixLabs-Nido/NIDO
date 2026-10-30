@@ -12,6 +12,10 @@ import { leerContenido } from '../lib/leer-contenido'
 import { renderDatosBloqueadosHtml, valorHtml } from '../lib/render-datos-bloqueados'
 import { APARTADOS, MOTIVOS_TIPO, VerDatosBloqueadosSchema } from '../types'
 
+const MIGRACION_FICHA = readFileSync(
+  path.join(process.cwd(), 'supabase/migrations/20261211120000_feat_estado_retencion_nino.sql'),
+  'utf8'
+)
 const MIGRACION = readFileSync(
   path.resolve(
     __dirname,
@@ -99,7 +103,15 @@ describe('datos bloqueados: lo que pide la app es lo que acepta la BD', () => {
     expect(desde).toBeGreaterThan(0)
     const claves = [...new Set([...cuerpo.matchAll(/\n    '(\w+)', COALESCE/g)].map((m) => m[1]!))]
     expect(claves.length).toBeGreaterThan(0)
-    expect(claves.sort()).toEqual([...APARTADOS].sort())
+    // Y la ficha médica del niño de baja, que entrega `ver_datos_bloqueados` (20261211120000).
+    const ver = MIGRACION_FICHA.slice(
+      MIGRACION_FICHA.indexOf('CREATE OR REPLACE FUNCTION public.ver_datos_bloqueados(')
+    )
+    const ficha = [
+      ...ver.matchAll(/jsonb_build_object\('(\w+)', (?:jsonb_build_array|'\[\]')/g),
+    ].map((m) => m[1]!)
+    expect(new Set(ficha)).toEqual(new Set(['ficha_medica']))
+    expect([...claves, ...new Set(ficha)].sort()).toEqual([...APARTADOS].sort())
   })
 
   it('el motivo tiene de 10 a 1000 caracteres, sin contar los espacios de los lados', () => {

@@ -56,6 +56,15 @@ function docDeNino(extra: Record<string, unknown> = {}): DocumentoExport {
   }
 }
 
+describe('fichaMedicaBloqueadaEnExport', () => {
+  it('con el niño purgado dice que se borró, no que se conserva ni por qué curso', () => {
+    const nota = fichaMedicaBloqueadaEnExport('2026-06-15', true)._nota
+    expect(nota).toContain('se borró el 15/06/2026')
+    expect(nota).not.toContain('terminó el curso')
+    expect(nota).not.toContain('Se conserva')
+  })
+})
+
 describe('renderExportHtml', () => {
   it('la ficha médica bloqueada: dice que existe, que está bloqueada, desde cuándo, por qué y cómo pedirla, sin sus datos', () => {
     const html = renderExportHtml(
