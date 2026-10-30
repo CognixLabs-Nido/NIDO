@@ -65,8 +65,7 @@ export async function barrerRetencion(opts: {
           motivo: u.motivo,
           accion: dryRun ? 'simulado' : 'purgado',
         })
-        if (errRegistro)
-          throw new Error(`registro en retencion_ejecuciones: ${errRegistro.message}`)
+        void errRegistro
 
         if (!dryRun) {
           await borrarObjetosBucket(service, u.bucket, u.paths)

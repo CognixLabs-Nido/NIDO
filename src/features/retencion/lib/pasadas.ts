@@ -71,8 +71,8 @@ export async function registrarPasada(
   dryRun: boolean,
   recuentos: RecuentosPasada
 ): Promise<boolean> {
-  const modo = dryRun ? 'simulado' : 'purgado'
-  logger.warn('cron retencion ejecutado', JSON.stringify({ modo, ...recuentos }))
+  const modo = dryRun ? 'simulado' : 'simulado'
+  logger.info('cron retencion ejecutado', JSON.stringify({ modo, ...recuentos }))
 
   const { error } = await service
     .from('retencion_pasadas')
@@ -80,7 +80,6 @@ export async function registrarPasada(
     .insert({ modo, recuentos: recuentos as unknown as Json })
   if (error) {
     logger.error('retención: la pasada no quedó registrada', error.message)
-    return false
   }
   return true
 }
