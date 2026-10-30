@@ -32,6 +32,12 @@ function errorDeLaRpc(error: ErrorRpc): string {
     case 'no_pendiente':
     case 'fuera_de_plazo':
     case 'motivo_obligatorio':
+    // PR-B1: dar la deuda por perdida.
+    case 'sin_deuda':
+    case 'otros_bloqueos':
+    case 'recibo_borrador':
+    case 'recibo_en_remesa':
+    case 'importe_cambiado':
       return `olvido.errores.${error.hint}`
   }
   if (error.code === '42501') return 'olvido.errores.no_autorizado'
@@ -114,6 +120,27 @@ export async function confirmarPeticionOlvido(solicitudId: string): Promise<Acti
   const supabase = await createClient()
   const { error } = await supabase.rpc('confirmar_peticion_olvido', {
     p_solicitud_id: solicitudId,
+  })
+  if (error) return fail(errorDeLaRpc(error))
+  await avisar(solicitudId, 'confirmada')
+  revalidar()
+  return ok(undefined)
+}
+
+/**
+ * La admin renuncia a cobrar la deuda que frena el olvido de quien lo pidió y lo confirma
+ * (`dar_deuda_por_perdida`, 20261212120000), con sus 7 días de gracia. `centimos` es el importe que
+ * vio: si la deuda cambió entre medias, la BD no hace nada (`importe_cambiado`). Los recibos no
+ * cambian de estado ni de importe; la renuncia queda en `audit_log` con quien la hizo.
+ */
+export async function darDeudaPorPerdida(
+  solicitudId: string,
+  centimos: number
+): Promise<ActionResult<void>> {
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('dar_deuda_por_perdida', {
+    p_solicitud_id: solicitudId,
+    p_centimos: centimos,
   })
   if (error) return fail(errorDeLaRpc(error))
   await avisar(solicitudId, 'confirmada')

@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import {
   confirmarPeticionOlvido,
+  darDeudaPorPerdida,
   deshacerConfirmacionOlvido,
   guardarNotaPeticionOlvido,
   rechazarPeticionOlvido,
@@ -15,6 +16,7 @@ import { FaltaLista } from '@/features/olvido/components/FaltaLista'
 import {
   diasDesde,
   getPeticionesCentro,
+  leerDeuda,
   leerFalta,
   type PeticionCentro,
 } from '@/features/olvido/queries/get-peticiones'
@@ -30,17 +32,21 @@ const DIAS_AVISO = 25
 /**
  * Peticiones de borrado (docs/specs/olvido-peticiones.md), solo para la titular, como Auditoría.
  * Las abiertas primero, y entre ellas las listas para confirmar; después las cerradas de los
- * últimos 90 días. Lo que falta se calcula en el momento.
+ * últimos 90 días. Lo que falta se calcula en el momento, también de las confirmadas que esperan
+ * en la purga. Cuando lo único que falta es la deuda de la familia, la admin puede renunciar a ella
+ * (PR-B1); el superusuario no: a él la BD le contesta 42501, así que no se le enseña el botón.
  */
 export default async function OlvidoPage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('olvido.admin')
   const tEstado = await getTranslations('olvido.estado')
-  const { centroId, esResponsable } = await requireContextoCentro(locale)
+  const { centroId, esResponsable, esSuperusuario } = await requireContextoCentro(locale)
   if (!esResponsable) redirect(`/${locale}/forbidden`)
+  const esAdmin = !esSuperusuario
 
   const peticiones = await getPeticionesCentro(centroId)
   const fecha = new Intl.DateTimeFormat(localeIntl(locale), { dateStyle: 'medium' })
+  const euros = new Intl.NumberFormat(localeIntl(locale), { style: 'currency', currency: 'EUR' })
   const f = (iso: string | null) => (iso ? fecha.format(new Date(iso)) : '')
   const ahora = new Date()
 
@@ -55,6 +61,8 @@ export default async function OlvidoPage({ params }: PageProps) {
 
   function Tarjeta({ p }: { p: PeticionCentro }) {
     const falta = leerFalta(p.falta)
+    const deuda = leerDeuda(p.deuda)
+    const importe = deuda ? euros.format(deuda.centimos / 100) : ''
     const estado = p.purgado_en ? 'borrada' : p.estado
     const dias = diasDesde(p.solicitado_en, ahora)
     return (
@@ -95,6 +103,16 @@ export default async function OlvidoPage({ params }: PageProps) {
         {estado === 'pendiente' && (
           <>
             <FaltaLista falta={falta} />
+            {deuda && (
+              <div className="space-y-1">
+                <p>{t('deuda', { importe, n: deuda.n })}</p>
+                {!deuda.perdible && deuda.noPerdible && (
+                  <p className="text-muted-foreground">
+                    {t(`deuda_no_perdible.${deuda.noPerdible}`)}
+                  </p>
+                )}
+              </div>
+            )}
             {p.nota_centro && (
               <p className="text-muted-foreground">{t('nota_actual', { nota: p.nota_centro })}</p>
             )}
@@ -108,6 +126,21 @@ export default async function OlvidoPage({ params }: PageProps) {
                   destructiva
                   variante="default"
                   accion={confirmarPeticionOlvido.bind(null, p.id)}
+                />
+              )}
+              {deuda?.perdible && esAdmin && (
+                <DialogoOlvido
+                  cta={t('dar_por_perdida')}
+                  titulo={t('dar_por_perdida_titulo')}
+                  explicacion={t('dar_por_perdida_texto', {
+                    importe,
+                    n: deuda.n,
+                    nombre: p.sujeto_nombre ?? '',
+                  })}
+                  confirmar={t('dar_por_perdida_confirmar', { importe })}
+                  destructiva
+                  variante="default"
+                  accion={darDeudaPorPerdida.bind(null, p.id, deuda.centimos)}
                 />
               )}
               <DialogoOlvido
@@ -131,6 +164,12 @@ export default async function OlvidoPage({ params }: PageProps) {
           </>
         )}
 
+        {estado === 'confirmada' && falta.bloqueos.length > 0 && (
+          <div className="space-y-1">
+            <p>{t('espera_purga')}</p>
+            <FaltaLista falta={falta} />
+          </div>
+        )}
         {estado === 'confirmada' && (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p>{t('se_borra', { fecha: f(p.gracia_hasta) })}</p>

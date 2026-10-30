@@ -17,8 +17,9 @@ interface PageProps {
 export default async function DatoBloqueadoPage({ params }: PageProps) {
   const { locale, tipo, id } = await params
   const t = await getTranslations('datos_bloqueados')
-  const { centroId, esResponsable } = await requireContextoCentro(locale)
-  if (!esResponsable) redirect(`/${locale}/forbidden`)
+  const { centroId, esResponsable, esSuperusuario } = await requireContextoCentro(locale)
+  // Solo la admin del centro (`privado.es_titular`): el superusuario tampoco (PR-B1).
+  if (!esResponsable || esSuperusuario) redirect(`/${locale}/forbidden`)
   if (tipo !== 'nino' && tipo !== 'usuario') notFound()
 
   const sujetos = await getSujetosBloqueados(centroId)

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 /**
  * PR 3 del modelo de roles — el menú de Dirección. La admin del centro ve Centro, Dirección del
  * centro (PR 4) y Auditoría, que son solo suyos; una directora (Dirección sin `esResponsable`) ve el resto, igual que la admin.
+ * El superusuario es responsable de todos los centros, pero «Datos bloqueados» no es suyo (PR-B1).
  */
 
 vi.mock('next-intl/server', () => ({
@@ -19,8 +20,10 @@ const SOLO_DE_LA_ADMIN = [
   '/es/admin/audit',
 ]
 
-async function hrefs(esResponsable: boolean) {
-  return (await buildSidebarItems('admin', 'es', esResponsable)).map((i) => i.href)
+async function hrefs(esResponsable: boolean, esSuperusuario = false) {
+  return (await buildSidebarItems('admin', 'es', { esResponsable, esSuperusuario })).map(
+    (i) => i.href
+  )
 }
 
 describe('menú de Dirección', () => {
@@ -39,9 +42,22 @@ describe('menú de Dirección', () => {
     )
   })
 
+  it('el superusuario no ve Datos bloqueados, y sí el resto de lo de la admin', async () => {
+    const admin = await hrefs(true)
+    const superusuario = await hrefs(true, true)
+    // Premisa: la admin sí la ve.
+    expect(admin).toContain('/es/admin/datos-bloqueados')
+    expect(superusuario).not.toContain('/es/admin/datos-bloqueados')
+    expect(superusuario).toEqual(admin.filter((h) => h !== '/es/admin/datos-bloqueados'))
+  })
+
   it('a la profe no le afecta', async () => {
-    const conResponsable = (await buildSidebarItems('profe', 'es', true)).map((i) => i.href)
-    const sin = (await buildSidebarItems('profe', 'es', false)).map((i) => i.href)
+    const conResponsable = (
+      await buildSidebarItems('profe', 'es', { esResponsable: true, esSuperusuario: false })
+    ).map((i) => i.href)
+    const sin = (
+      await buildSidebarItems('profe', 'es', { esResponsable: false, esSuperusuario: false })
+    ).map((i) => i.href)
     expect(sin).toEqual(conResponsable)
   })
 })

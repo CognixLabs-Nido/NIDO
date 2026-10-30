@@ -31,6 +31,32 @@ export function leerFalta(falta: unknown): Falta {
   }
 }
 
+/**
+ * La deuda de la familia de quien pide el olvido (`privado.deuda_olvido`, 20261212120000): el
+ * importe, los recibos y si la admin la puede dar por perdida; si no, por qué. NULL si la petición
+ * no espera por una deuda.
+ */
+export interface Deuda {
+  centimos: number
+  n: number
+  perdible: boolean
+  noPerdible: 'otros_bloqueos' | 'recibo_borrador' | 'recibo_en_remesa' | null
+}
+
+export function leerDeuda(deuda: unknown): Deuda | null {
+  if (!deuda || typeof deuda !== 'object') return null
+  const d = deuda as Record<string, unknown>
+  if (typeof d.centimos !== 'number' || typeof d.n !== 'number') return null
+  const no = d.no_perdible
+  return {
+    centimos: d.centimos,
+    n: d.n,
+    perdible: d.perdible === true,
+    noPerdible:
+      no === 'otros_bloqueos' || no === 'recibo_borrador' || no === 'recibo_en_remesa' ? no : null,
+  }
+}
+
 /** Las peticiones del centro, para la titular. `null` si no se pudieron leer. */
 export async function getPeticionesCentro(centroId: string): Promise<PeticionCentro[] | null> {
   const supabase = await createClient()

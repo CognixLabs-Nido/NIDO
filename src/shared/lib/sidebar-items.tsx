@@ -48,11 +48,13 @@ type RoleKey = 'admin' | 'profe' | 'tutor_legal' | 'autorizado'
  * `esResponsable` (PR 3 del modelo de roles): con `rol` admin (Dirección), la admin del centro
  * ve además Centro, Dirección del centro y Auditoría, que son solo suyas; una directora no. Es obligatorio para que
  * ningún layout se lo deje: sin él, la directora vería entradas que la llevan a «prohibido».
+ * «Datos bloqueados» es solo de la admin, tampoco del superusuario (`privado.es_titular`, PR-7): a
+ * él la BD le contesta 42501, así que no se le enseña la entrada (PR-B1).
  */
 export async function buildSidebarItems(
   rol: RoleKey,
   locale: string,
-  esResponsable: boolean,
+  acceso: { esResponsable: boolean; esSuperusuario: boolean },
   badge?: ReactNode,
   recordatoriosBadge?: ReactNode,
   agendaBadge?: ReactNode,
@@ -62,7 +64,7 @@ export async function buildSidebarItems(
     const t = await getTranslations('admin.nav')
     return [
       { href: `/${locale}/admin`, label: t('dashboard'), icon: <LayoutDashboardIcon /> },
-      ...(esResponsable
+      ...(acceso.esResponsable
         ? [
             { href: `/${locale}/admin/centro`, label: t('centro'), icon: <Building2Icon /> },
             { href: `/${locale}/admin/direccion`, label: t('direccion'), icon: <UserCogIcon /> },
@@ -125,14 +127,18 @@ export async function buildSidebarItems(
         icon: <BellIcon />,
         trailing: recordatoriosBadge,
       },
-      ...(esResponsable
+      ...(acceso.esResponsable
         ? [
             { href: `/${locale}/admin/olvido`, label: t('olvido'), icon: <ShieldOffIcon /> },
-            {
-              href: `/${locale}/admin/datos-bloqueados`,
-              label: t('datos_bloqueados'),
-              icon: <LockIcon />,
-            },
+            ...(acceso.esSuperusuario
+              ? []
+              : [
+                  {
+                    href: `/${locale}/admin/datos-bloqueados`,
+                    label: t('datos_bloqueados'),
+                    icon: <LockIcon />,
+                  },
+                ]),
             { href: `/${locale}/admin/audit`, label: t('audit'), icon: <HistoryIcon /> },
           ]
         : []),

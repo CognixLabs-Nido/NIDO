@@ -124,6 +124,34 @@ vez la purga y lo que se enseña. Una fecha pasada solo se da como hecha si el d
 el plazo venció y sigue ahí, se dice que está pendiente. Lo ve Dirección (son fechas); el camino a
 lo bloqueado, solo la admin.
 
+### La deuda dada por perdida (2026-10-30)
+
+Decisión del responsable: «si hay deuda no podemos borrar los datos hasta que se cobre. es
+necesario poder justificar todo ante un posible juicio». Un impago bloquea el olvido del tutor, y
+la salida es una decisión de la admin, no un plazo: **dar la deuda por perdida y ejecutar el olvido
+de quien lo pidió** (`dar_deuda_por_perdida`).
+
+- **Pulsar es renunciar.** La admin da el dinero por perdido y acepta que ya no podrá reclamarlo. El
+  aviso lo dice con esas palabras y con el importe delante.
+- **La contabilidad no se mueve.** Los recibos llevan la marca (`deuda_perdida_en`,
+  `deuda_perdida_por`, la petición), sin cambiar su estado, su importe ni su remesa. El trigger de
+  auditoría de `recibos` guarda quién, cuándo y el importe: es la prueba de que lo decidió una
+  persona. Una deuda a la que se renunció no entra en una remesa.
+- **Los 7 días de gracia se mantienen.** Es una acción irreversible sobre dinero y sobre datos;
+  deshacer la confirmación en la gracia devuelve también la deuda.
+- **Solo borra a quien lo pidió.** El derecho es de cada persona: el otro tutor, los niños y la
+  familia siguen enteros.
+- **La etiqueta de la familia se queda, con sus apellidos, mientras exista el recibo.** Si la admin
+  da un importe por perdido, Hacienda puede pedirle que justifique esa pérdida durante los plazos
+  fiscales, y sin saber de quién era la deuda no se justifica. Lo amparan el art. 17.3.e del RGPD
+  (formulación, ejercicio o defensa de reclamaciones) y la obligación fiscal. El mandato SEPA se
+  conserva entero como prueba; quitarle el nombre sigue en la lista del abogado (F11-B).
+- **Solo la admin** (`privado.es_titular`): dar por perdido un impago es gestión del negocio. La
+  directora no ve las peticiones de olvido; el superusuario no tiene el botón.
+- **No se puede** con otro bloqueo además de la deuda, con un recibo en borrador (el motor lo
+  rehace) ni con uno en una remesa en borrador (el banco lo acabaría cobrando): la línea dice qué
+  hacer antes.
+
 ### Las piezas
 
 - **PR-1, los plazos** (#435, sin migración). La tabla y sus constantes. El registro de lecturas pasa de 24 a 60 meses.
@@ -166,7 +194,7 @@ lo bloqueado, solo la admin.
 ### Negativas
 
 - **Los plazos no están validados por un abogado.** Si cambian, se cambian la tabla y sus constantes.
-- **Un impago que no se resuelve nunca conserva a la familia para siempre.** El tope lo decide el abogado (`follow-ups.md`).
+- **Un impago que no se resuelve nunca conserva a la familia para siempre.** El tope lo decide el abogado (`follow-ups.md`). _Después (PR-B1, `20261212120000`): lo resuelve el producto, no un plazo: la admin puede dar la deuda por perdida (ver «La deuda dada por perdida» en la Decisión)._
 - **El plazo de los registros de derechos** (`export_log`, `olvido_solicitudes`, 5 años) **no está construido**. Hasta que lo esté, la cuenta que pidió ella misma un export o el olvido no se borra nunca (`follow-ups.md`). _Después (PR-A2, `20261210120000`): `export_log` se borra a los 5 años; `olvido_solicitudes` no tiene plazo, y la cuenta que pidió, retiró, confirmó o rechazó un olvido se queda anonimizada en `usuarios` mientras la petición exista. Es una decisión del responsable del 2026-10-30, no un cabo (ver «Las peticiones de olvido no caducan…» en la Decisión)._
 - `purgar_esqueleto_huerfano_nino` sigue en la base, pero el barrido ya no la llama. _Después: la retira el PR-A2 (`20261210120000`)._
 

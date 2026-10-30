@@ -135,13 +135,21 @@ art. 12.4 mientras la petición espera).
   que ya tenga uno vivo igual); la cuenta, desbloqueada si la bloqueó la confirmación.
 - **Retirar** (familia): solo `pendiente`. Quien la pidió; en la de un hijo, también cualquier
   tutor legal del niño con el vínculo vivo; en la de una cuenta, la propia persona.
+- **Dar la deuda por perdida** (solo la admin, PR-B1, `20261212120000`): en la petición de un
+  tutor que espera solo por la deuda de su familia. Marca los recibos (`deuda_perdida_*`) sin
+  cambiar su estado, su importe ni su remesa, y confirma la petición con sus 7 días; el importe es
+  el que vio la admin (40001 si cambió). Deshacer en la gracia devuelve la deuda. No con otro
+  bloqueo, con un recibo en borrador ni con uno en una remesa en borrador. Solo borra a quien lo
+  pidió. Ver ADR-0064.
 
 ### Lo que ve la titular
 
 Página «Peticiones de borrado» (`/admin/olvido`), solo para la titular (como Auditoría). Las abiertas
 primero, y entre ellas las listas para confirmar; después las cerradas de los últimos 90 días. Cada
 una: de quién es, quién la pidió y cuándo, los días que lleva abierta (marcadas a partir de 25), lo
-que falta y los botones. En su Inicio, un aviso con cuántas hay por revisar.
+que falta y los botones. En su Inicio, un aviso con cuántas hay por revisar. Desde el PR-B1, lo que
+falta sale también de las confirmadas que esperan en la purga (`privado.olvido_falta`), y la de un
+tutor con deuda dice el importe y, si es lo único que falta, ofrece a la admin darla por perdida.
 
 ### Lo que ve la familia
 

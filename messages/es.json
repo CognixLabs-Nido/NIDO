@@ -4818,7 +4818,12 @@
       "fuera_de_plazo": "La confirmación ya no se puede deshacer: han pasado los 7 días.",
       "motivo_obligatorio": "Escribe el motivo: la familia lo verá.",
       "no_autorizado": "No tienes permiso para hacer esto.",
-      "fallo": "No se ha podido completar. Vuelve a intentarlo."
+      "fallo": "No se ha podido completar. Vuelve a intentarlo.",
+      "sin_deuda": "Esta petición ya no espera por una deuda.",
+      "otros_bloqueos": "Además de la deuda falta otra cosa: no se puede dar por perdida.",
+      "recibo_borrador": "Hay un recibo en borrador: valídalo o bórralo antes.",
+      "recibo_en_remesa": "Hay un recibo en una remesa en borrador: sácalo antes.",
+      "importe_cambiado": "La deuda ha cambiado desde que abriste la pantalla. Vuelve a mirarla antes de renunciar."
     },
     "falta": {
       "titulo_bloqueos": "Falta para poder confirmar",
@@ -4855,7 +4860,8 @@
       "rechazada": "El centro la rechazó el {fecha}: {motivo}",
       "rechazada_sin_motivo": "El centro la rechazó el {fecha}.",
       "retirada": "Se retiró el {fecha}.",
-      "borrada": "Los datos se borraron el {fecha}."
+      "borrada": "Los datos se borraron el {fecha}.",
+      "espera_purga": "El borrado está confirmado, pero espera a que se resuelva esto:"
     },
     "admin": {
       "titulo": "Peticiones de borrado",
@@ -4890,7 +4896,18 @@
       "rechazada": "Rechazada el {fecha}: {motivo}",
       "retirada": "La familia la retiró el {fecha}.",
       "borrada": "Borrada el {fecha}.",
-      "aviso_inicio": "Peticiones de borrado por revisar: {n}. La más antigua lleva {dias} días."
+      "aviso_inicio": "Peticiones de borrado por revisar: {n}. La más antigua lleva {dias} días.",
+      "deuda": "La familia debe {importe} ({n, plural, one {# recibo} other {# recibos}}).",
+      "deuda_no_perdible": {
+        "otros_bloqueos": "Además de la deuda falta otra cosa: hasta resolverla, no se puede dar por perdida.",
+        "recibo_borrador": "Hay un recibo en borrador: valídalo o bórralo antes de dar la deuda por perdida.",
+        "recibo_en_remesa": "Hay un recibo en una remesa en borrador: sácalo de la remesa antes, o el banco lo cobraría."
+      },
+      "dar_por_perdida": "Dar la deuda por perdida",
+      "dar_por_perdida_titulo": "Renunciar a cobrar la deuda",
+      "dar_por_perdida_texto": "Vas a renunciar a cobrar {importe} ({n, plural, one {# recibo} other {# recibos}}) para ejecutar el borrado de los datos de {nombre}. Ya no podrás reclamar ese dinero. Los recibos se quedan en la contabilidad con su importe y su remesa, y la familia sigue con sus apellidos. El borrado se hace pasados 7 días: hasta entonces puedes deshacerlo y la deuda vuelve. Pasados los 7 días, no se puede deshacer.",
+      "dar_por_perdida_confirmar": "Renuncio a cobrar {importe}",
+      "espera_purga": "Confirmada, pero el borrado espera:"
     },
     "correo": {
       "asunto": "Tu petición de borrado de datos",

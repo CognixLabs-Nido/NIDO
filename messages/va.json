@@ -4818,7 +4818,12 @@
       "fuera_de_plazo": "La confirmació ja no es pot desfer: han passat els 7 dies.",
       "motivo_obligatorio": "Escriu el motiu: la família el veurà.",
       "no_autorizado": "No tens permís per a fer açò.",
-      "fallo": "No s'ha pogut completar. Torna-ho a intentar."
+      "fallo": "No s'ha pogut completar. Torna-ho a intentar.",
+      "sin_deuda": "Esta petició ja no espera per un deute.",
+      "otros_bloqueos": "A més del deute falta una altra cosa: no es pot donar per perdut.",
+      "recibo_borrador": "Hi ha un rebut en esborrany: valida’l o esborra’l abans.",
+      "recibo_en_remesa": "Hi ha un rebut en una remesa en esborrany: trau-lo abans.",
+      "importe_cambiado": "El deute ha canviat des que vas obrir la pantalla. Torna a mirar-lo abans de renunciar."
     },
     "falta": {
       "titulo_bloqueos": "Falta per a poder confirmar",
@@ -4855,7 +4860,8 @@
       "rechazada": "El centre la va rebutjar el {fecha}: {motivo}",
       "rechazada_sin_motivo": "El centre la va rebutjar el {fecha}.",
       "retirada": "Es va retirar el {fecha}.",
-      "borrada": "Les dades es van esborrar el {fecha}."
+      "borrada": "Les dades es van esborrar el {fecha}.",
+      "espera_purga": "L’esborrat està confirmat, però espera que es resolga açò:"
     },
     "admin": {
       "titulo": "Peticions d'esborrat",
@@ -4890,7 +4896,18 @@
       "rechazada": "Rebutjada el {fecha}: {motivo}",
       "retirada": "La família la va retirar el {fecha}.",
       "borrada": "Esborrada el {fecha}.",
-      "aviso_inicio": "Peticions d'esborrat per revisar: {n}. La més antiga porta {dias} dies."
+      "aviso_inicio": "Peticions d'esborrat per revisar: {n}. La més antiga porta {dias} dies.",
+      "deuda": "La família deu {importe} ({n, plural, one {# rebut} other {# rebuts}}).",
+      "deuda_no_perdible": {
+        "otros_bloqueos": "A més del deute falta una altra cosa: fins resoldre-la, no es pot donar per perdut.",
+        "recibo_borrador": "Hi ha un rebut en esborrany: valida’l o esborra’l abans de donar el deute per perdut.",
+        "recibo_en_remesa": "Hi ha un rebut en una remesa en esborrany: trau-lo de la remesa abans, o el banc el cobraria."
+      },
+      "dar_por_perdida": "Donar el deute per perdut",
+      "dar_por_perdida_titulo": "Renunciar a cobrar el deute",
+      "dar_por_perdida_texto": "Renunciaràs a cobrar {importe} ({n, plural, one {# rebut} other {# rebuts}}) per a executar l’esborrat de les dades de {nombre}. Ja no podràs reclamar eixos diners. Els rebuts es queden en la comptabilitat amb el seu import i la seua remesa, i la família continua amb els seus cognoms. L’esborrat es fa passats 7 dies: fins aleshores pots desfer-lo i el deute torna. Passats els 7 dies, no es pot desfer.",
+      "dar_por_perdida_confirmar": "Renuncie a cobrar {importe}",
+      "espera_purga": "Confirmada, però l’esborrat espera:"
     },
     "correo": {
       "asunto": "La teua petició d'esborrat de dades",
