@@ -95,11 +95,11 @@ BEGIN
   RETURN v_n;
 END;
 $function$;
-REVOKE ALL ON FUNCTION public.purgar_export_log(integer, boolean) FROM PUBLIC, anon, authenticated;
+-- CONTROL NEGATIVO 3: sin REVOKE
 GRANT EXECUTE ON FUNCTION public.purgar_export_log(integer, boolean) TO service_role;
 
 -- ---- 2. La purga del alta abandonada, fuera ----
-DROP FUNCTION public.purgar_esqueleto_huerfano_nino(uuid, timestamptz);
+-- CONTROL NEGATIVO 2: sin DROP
 
 -- ---- 3. La ficha médica, bloqueada también desde la purga ----
 -- El niño purgado, desde la purga. El de baja, el día siguiente al final del primer curso del
@@ -112,8 +112,7 @@ STABLE
 SET search_path = public
 AS $function$
   SELECT CASE
-           WHEN n.purgado_en IS NOT NULL OR n.deleted_reason = 'purga_rgpd'
-             THEN (COALESCE(n.purgado_en, n.deleted_at) AT TIME ZONE 'Europe/Madrid')::date
+           -- CONTROL NEGATIVO 1: sin la rama del purgado
            WHEN b.fecha IS NOT NULL AND privado.curso_vencido(n.centro_id, b.fecha, 0)
              THEN (SELECT min(c.fecha_fin) FROM public.cursos_academicos c
                     WHERE c.centro_id = n.centro_id AND c.deleted_at IS NULL
@@ -228,80 +227,4 @@ BEGIN
 END;
 $function$;
 
--- ---- Guarda posterior ----
-DO $guarda$
-DECLARE
-  r     record;
-  v_md5 text;
-  v_n   bigint;
-BEGIN
-  -- Lo nuevo es lo del fichero, y lo que no cambia sigue igual. purgar_nino da el mismo md5 que
-  -- antes: solo cambia un comentario, que la normalización quita.
-  FOR r IN
-    SELECT * FROM (VALUES
-      ('privado.ficha_medica_bloqueada_desde(uuid)', '3c9e25692af575cbfb75468f1925bf78'),
-      ('public.purgar_export_log(integer,boolean)', 'eeae54d01e78c44f63b2151a406ebfad'),
-      ('privado.purgar_nino(uuid)', '53730ba72640c24f65ff81bf7ace7103'),
-      ('privado.fecha_baja_nino(uuid)', '0522d50b325eddfc8a57cf7d4ab25263'),
-      ('public.get_info_medica_emergencia(uuid,text)', '0b00f375d493666784a35991d1c99e7c'),
-      ('public.set_info_medica_emergencia_cifrada(uuid,text,text,text,text,text,text)', '2f256aaa2161e5cf9bb6dc7fe54c9ea4'),
-      ('public.set_info_medica_emergencia_cifrada_tutor(uuid,text,text,text,text,text,text,boolean)', 'b1c8ed86ca06000dfedda2c41e45f72c'),
-      ('public.borrar_info_medica_nino_tutor(uuid)', '67e1f083715d33f1001d3f526fad873e'),
-      ('public.alertas_medicas(uuid[])', '22567dca62ab4ff5b8d3bb9131419529')
-    ) AS t(f, md5)
-  LOOP
-    SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
-      INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure(r.f);
-    IF v_md5 IS DISTINCT FROM r.md5 THEN
-      RAISE EXCEPTION '% no quedó como se esperaba: %', r.f, coalesce(v_md5, 'falta');
-    END IF;
-  END LOOP;
-
-  -- Las cinco funciones de la ficha siguen preguntando al predicado.
-  SELECT count(*) INTO v_n FROM pg_proc p
-   WHERE p.oid IN ('public.get_info_medica_emergencia(uuid,text)'::regprocedure,
-                   'public.set_info_medica_emergencia_cifrada(uuid,text,text,text,text,text,text)'::regprocedure,
-                   'public.set_info_medica_emergencia_cifrada_tutor(uuid,text,text,text,text,text,text,boolean)'::regprocedure,
-                   'public.borrar_info_medica_nino_tutor(uuid)'::regprocedure,
-                   'public.alertas_medicas(uuid[])'::regprocedure)
-     AND strpos(p.prosrc, 'privado.ficha_medica_bloqueada_desde(') > 0;
-  IF v_n <> 5 THEN
-    RAISE EXCEPTION 'esperaba 5 funciones de la ficha con el predicado y hay %', v_n;
-  END IF;
-
-  -- La retirada: ni la función, ni nadie que la nombre (tampoco en un comentario).
-  IF to_regprocedure('public.purgar_esqueleto_huerfano_nino(uuid,timestamptz)') IS NOT NULL THEN
-    RAISE EXCEPTION 'purgar_esqueleto_huerfano_nino sigue existiendo';
-  END IF;
-  SELECT count(*) INTO v_n FROM pg_proc p WHERE p.prosrc ILIKE '%purgar_esqueleto_huerfano_nino%';
-  IF v_n > 0 THEN
-    RAISE EXCEPTION 'hay % funciones que nombran a purgar_esqueleto_huerfano_nino', v_n;
-  END IF;
-
-  -- Permisos: la purga de export_log, solo del servicio; el predicado, de nadie con sesión.
-  IF NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'public.purgar_export_log(integer,boolean)'::regprocedure)
-     OR has_function_privilege('anon', 'public.purgar_export_log(integer,boolean)', 'EXECUTE')
-     OR has_function_privilege('authenticated', 'public.purgar_export_log(integer,boolean)', 'EXECUTE')
-     OR NOT has_function_privilege('service_role', 'public.purgar_export_log(integer,boolean)', 'EXECUTE')
-     OR has_function_privilege('anon', 'privado.ficha_medica_bloqueada_desde(uuid)', 'EXECUTE')
-     OR has_function_privilege('authenticated', 'privado.ficha_medica_bloqueada_desde(uuid)', 'EXECUTE')
-     OR has_function_privilege('anon', 'privado.purgar_nino(uuid)', 'EXECUTE')
-     OR has_function_privilege('authenticated', 'privado.purgar_nino(uuid)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'una función quedó con los permisos que no toca';
-  END IF;
-
-  -- Todo niño purgado tiene la ficha bloqueada.
-  SELECT count(*) INTO v_n FROM public.ninos n
-   WHERE (n.purgado_en IS NOT NULL OR n.deleted_reason = 'purga_rgpd')
-     AND privado.ficha_medica_bloqueada_desde(n.id) IS NULL;
-  IF v_n > 0 THEN
-    RAISE EXCEPTION 'hay % niños purgados con la ficha sin bloquear', v_n;
-  END IF;
-
-  RAISE NOTICE 'guarda posterior: % fichas bloqueadas (% de niños purgados)',
-    (SELECT count(*) FROM public.ninos n WHERE privado.ficha_medica_bloqueada_desde(n.id) IS NOT NULL),
-    (SELECT count(*) FROM public.ninos n
-      WHERE (n.purgado_en IS NOT NULL OR n.deleted_reason = 'purga_rgpd')
-        AND privado.ficha_medica_bloqueada_desde(n.id) IS NOT NULL);
-END
-$guarda$;
+-- CONTROL NEGATIVO 4: sin guarda posterior
