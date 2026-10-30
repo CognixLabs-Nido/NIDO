@@ -7,6 +7,7 @@ import { barrerRetencion } from '@/features/retencion/actions/barrer-retencion'
 import { purgarAuditLog } from '@/features/retencion/lib/audit-log'
 import { borrarCuentasOlvidadas, purgarCuentas } from '@/features/retencion/lib/cuentas'
 import { purgarExpedientes } from '@/features/retencion/lib/expediente'
+import { purgarExportLog } from '@/features/retencion/lib/export-log'
 import { destruirFirmas } from '@/features/retencion/lib/firmas'
 import { destruirFiscal } from '@/features/retencion/lib/fiscal'
 import { purgarLecturasFichaMedica } from '@/features/retencion/lib/lecturas-ficha-medica'
@@ -25,25 +26,28 @@ export const runtime = 'nodejs'
  *   3. `purgarLecturasFichaMedica()` — el registro de lecturas de la ficha médica, al vencer su
  *      plazo provisional (20261128120000).
  *   4. `purgarAuditLog()` — audit_log, al vencer su plazo provisional (20261129120000).
- *   5. `purgarListaEspera()` — los prospectos que no llegaron a alta, al vencer su plazo
+ *   5. `purgarExportLog()` — export_log, al vencer su plazo provisional (20261210120000). Las
+ *      peticiones de olvido no tienen plazo.
+ *   6. `purgarListaEspera()` — los prospectos que no llegaron a alta, al vencer su plazo
  *      provisional (20261130120000).
- *   6. `purgarOperativa()` — la operativa del día a día, al vencer su plazo provisional desde el
+ *   7. `purgarOperativa()` — la operativa del día a día, al vencer su plazo provisional desde el
  *      final del curso en que se escribió, con sus copias en audit_log (20261203120000).
- *   7. `purgarExpedientes()` — el expediente de los niños de baja, al vencer su plazo provisional
+ *   8. `purgarExpedientes()` — el expediente de los niños de baja, al vencer su plazo provisional
  *      desde la baja: la purga del olvido, con sus ficheros de Storage (20261204120000).
- *   8. `destruirFirmas()` — lo que se conserva por obligación de los niños ya purgados (firmas,
+ *   9. `destruirFirmas()` — lo que se conserva por obligación de los niños ya purgados (firmas,
  *      acuses, consentimientos, medicación, autorizaciones, eventos de ámbito niño), al vencer su
- *      plazo provisional desde la baja, sin copia en audit_log (20261207120000). Después del 7:
+ *      plazo provisional desde la baja, sin copia en audit_log (20261207120000). Después del 8:
  *      solo destruye con el niño purgado.
- *   9. `purgarCuentas()` — la cuenta de los tutores y autorizados a los años de la baja de su
+ *  10. `purgarCuentas()` — la cuenta de los tutores y autorizados a los años de la baja de su
  *      último hijo en el centro: la purga del olvido, por una petición «por plazo», sin correo
  *      (20261207120000).
- *  10. `destruirFiscal()` — lo fiscal de las familias a los años de su último recibo pagado (o del
+ *  11. `destruirFiscal()` — lo fiscal de las familias a los años de su último recibo pagado (o del
  *      final del curso de la baja, si no pagaron ninguno): recibos, remesas, mandatos y su
  *      documento, becas, tutores, la familia y las fichas anónimas de sus niños, sin copia en
- *      audit_log (20261208120000). Después del 9: espera a que sus tutores estén purgados.
- *  11. `borrarCuentasOlvidadas()` — la cuenta de quien ya no tiene nada en ningún centro, en la BD
- *      y en Auth (20261208120000). Después del 10: espera a que lo fiscal se lleve su perfil.
+ *      audit_log (20261208120000). Después del 10: espera a que sus tutores estén purgados.
+ *  12. `borrarCuentasOlvidadas()` — la cuenta de quien ya no tiene nada en ningún centro, en la BD
+ *      y en Auth (20261208120000). Después del 11: espera a que lo fiscal se lleve su perfil, y
+ *      del 5: un export que pidió la nombra hasta que vence.
  *
  * `RETENCION_DRY_RUN` (D4): por defecto (sin la var o != 'false') corre en
  * dry-run → registra lo que purgaría SIN borrar. Se pasa a borrado autónomo con
@@ -65,6 +69,7 @@ export async function GET(request: Request): Promise<Response> {
   const retencion = await barrerRetencion({ dryRun })
   const lecturasFichaMedica = await purgarLecturasFichaMedica({ dryRun })
   const auditLog = await purgarAuditLog({ dryRun })
+  const exportLog = await purgarExportLog({ dryRun })
   const listaEspera = await purgarListaEspera({ dryRun })
   const operativa = await purgarOperativa({ dryRun })
   const expediente = await purgarExpedientes({ dryRun })
@@ -81,6 +86,7 @@ export async function GET(request: Request): Promise<Response> {
       retencion,
       lecturasFichaMedica,
       auditLog,
+      exportLog,
       listaEspera,
       operativa,
       expediente,
@@ -98,6 +104,7 @@ export async function GET(request: Request): Promise<Response> {
     retencion,
     lecturasFichaMedica,
     auditLog,
+    exportLog,
     listaEspera,
     operativa,
     expediente,

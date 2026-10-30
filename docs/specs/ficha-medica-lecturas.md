@@ -144,7 +144,7 @@ pinta «sin alergia».
 ### Purga y plazo
 
 - La purga del niño (`purgar_sujeto_db`, que lo deja con `deleted_reason = 'purga_rgpd'`) borra sus
-  lecturas por un trigger en `ninos`; si la fila del niño se borra (esqueleto huérfano), caen en
+  lecturas por un trigger en `ninos`; si la fila del niño se borra (un alta anulada), caen en
   cascada. **Revisado el 2026-10-27** (`docs/specs/retencion-plazos.md`): con el olvido el registro
   se conserva, bloqueado, porque sin él no se puede demostrar nada si una familia reclama después un
   acceso indebido. Hasta el PR que lo construya, la purga lo sigue borrando.

@@ -223,6 +223,10 @@ expediente del niño de baja se conserva 5 años y lo ve Dirección, pero la fic
   `getInfoMedica` lo devuelve aparte, así cada página tiene que tratarlo), y el export dice que
   existe, que está bloqueada, desde cuándo, por qué y cómo pedirla, sin entregarla.
 - **Reincorporar al niño** (`desarchivar_nino`) la desbloquea: deja de estar de baja.
+- **El niño purgado** (`20261210120000`): bloqueada desde la purga (`purgado_en`, o el archivado),
+  con la misma respuesta. Antes el predicado solo miraba al niño de baja: con uno purgado,
+  Dirección pasaba la autorización, `get_info_medica_emergencia` dejaba su lectura sobre la ficha
+  vaciada y los setters podían volver a escribirla.
 - Test: `src/test/audit/retencion-expediente.test.ts`.
 
 ### El bloqueo de lo que se conserva por obligación legal (F11-B, punto 6, PR-7)
@@ -496,17 +500,18 @@ Tests Fases 1–4 en `src/test/rls/`:
 - `push.rls.test.ts` (Fase 5.5).
 - `src/test/audit/audit.test.ts` + `agenda-audit.test.ts` + `asistencia-audit.test.ts` + `dias-centro-audit.test.ts` + `menus-audit.test.ts` verifican triggers (INSERT, UPDATE, soft delete, agenda, asistencia, calendario, plantillas y menu_dia + trigger BEFORE validar_fecha).
 - `src/test/audit/grupo1-audit.test.ts`: las 8 tablas del Grupo 1, las columnas excluidas y que la purga redacta el nombre en las filas de `usuarios`.
-- `src/test/audit/grupo1b-audit.test.ts`: la purga de usuario no deja su nombre ni su parentesco en `audit_log`, `invitaciones` sin `token` y redactada por las dos purgas, y `actor_sistema`.
-- `src/test/audit/purga-rgpd-nino.test.ts`: las dos purgas del niño borran la ficha completa de la tabla y no dejan en `audit_log` ninguna columna personal (lista `_claves_pii_nino`, `20261011140000`); la retroactiva redacta a los niños que ya no existen y no toca a los vivos.
+- `src/test/audit/grupo1b-audit.test.ts`: la purga de usuario no deja su nombre ni su parentesco en `audit_log`, `invitaciones` sin `token` y redactada por la purga del usuario, y `actor_sistema`.
+- `src/test/audit/purga-rgpd-nino.test.ts`: la purga del niño borra la ficha completa de la tabla y no deja en `audit_log` ninguna columna personal (lista `_claves_pii_nino`, `20261011140000`); la retroactiva redacta a los niños que ya no existen y no toca a los vivos.
 - `src/test/audit/olvido-operativa.test.ts`: la purga del niño borra su operativa y todas sus copias en `audit_log`, también las de lo borrado antes; el otro niño y los eventos se quedan (`20261201120000`).
 - `src/test/audit/retencion-operativa.test.ts`: la operativa vence 1 año después del final de su curso, con sus copias en `audit_log` y las de lo borrado antes; lo de verano, lo dado de alta hace poco, la conversación con un mensaje reciente, otro centro y los eventos se quedan; solo `service_role` (`20261203120000`).
-- `src/test/audit/retencion-expediente.test.ts`: terminado el curso de la baja, la ficha médica no la lee ni la escribe nadie, no deja lectura ni aviso, y el export dice que está bloqueada; reincorporar la desbloquea; a los años del plazo, la purga del niño, solo `service_role` (`20261204120000`).
+- `src/test/audit/retencion-expediente.test.ts`: terminado el curso de la baja, la ficha médica no la lee ni la escribe nadie, no deja lectura ni aviso, y el export dice que está bloqueada; reincorporar la desbloquea; a los años del plazo, la purga del niño, solo `service_role` (`20261204120000`); purgado, la ficha queda bloqueada desde la purga (`20261210120000`).
+- `src/test/audit/retencion-export-log.test.ts`: `export_log` vence a los años de cada fila; en simulación solo cuenta; lo reciente se queda; solo `service_role` (`20261210120000`).
 - `src/test/audit/retencion-bloqueo.test.ts`: purgado un niño, su firma, su consentimiento y su registro de lecturas se conservan y no los ve nadie en el uso diario; solo la titular los ve, con motivo, y queda su fila (la directora, la profe y el superusuario, 42501); lo fiscal sigue a la vista y entero, con el nombre del niño; el export no entrega lo bloqueado y dice que existe y que se consultó; el segundo tutor sin vínculo con sus hijos matriculados no se olvida, ni confirmado por otro camino se purga (`20261205120000`).
 - `src/test/audit/retencion-retenciones.test.ts`: retenido, la purga del expediente espera y, quitada, vuelve a cogerlo; solo la titular pone, quita y lee, con motivo, y queda quién, cuándo y por qué (la directora, la profe y el superusuario, 42501); una lista con alguien de otro centro no retiene a nadie (`20261206120000`).
 - `src/test/audit/retencion-firmas-cuenta.test.ts`: a los años de la baja, lo conservado del niño purgado se destruye sin copia; el niño retenido no pierde nada y el tutor retenido conserva su firma; el registro de accesos espera a las lecturas; la cuenta del tutor no vence con un hijo vivo, otro rol, dinero vivo de la familia o retenida, y sí con un borrador sin deuda, y vencida se purga por una petición por plazo que el olvido no coge; solo `service_role` (`20261207120000`, `20261208120000`).
 - `src/test/audit/retencion-fiscal.test.ts`: lo fiscal de la familia espera a sus tutores purgados, al dinero vivo y a la retención, y no a un pendiente de 0 €; libre, se destruye entera sin copia en `audit_log`, con la cadena del re-giro, y la remesa compartida se queda con lo de la otra familia; sin recibo pagado cuenta el final del curso de la baja; la cuenta espera mientras algo la nombra y después se borra; solo `service_role` (`20261208120000`).
 - `src/test/audit/altas-sin-terminar.test.ts`: el barrido ya no borra altas; la lista es de Dirección; el botón es del servidor y la base vuelve a mirar quién actúa y qué vio; con la invitación abierta la cancela; la invitación nueva corrige el email y se lleva el viejo; familia nueva, desaparece todo, también la cuenta; con un hijo anterior, solo el alta (`20261209120000`).
-- `src/test/audit/purga-lista-espera.test.ts`: la purga del niño borra su prospecto de `lista_espera` y la del tutor limpia su teléfono y su email, en la tabla y en `audit_log` (también el INSERT); la purga de esqueletos conserva el prospecto, y los de otro niño o centro no se tocan (`20261012140000`).
+- `src/test/audit/purga-lista-espera.test.ts`: la purga del niño borra su prospecto de `lista_espera` y la del tutor limpia su teléfono y su email, en la tabla y en `audit_log` (también el INSERT); los de otro niño o centro no se tocan (`20261012140000`).
 - `src/test/audit/purga-cierre.test.ts`: el cierre de la purga (`20261015120000`): `idioma_principal` a `'zz'` y su CHECK, `_redactar_jsonb` con null, el perfil de `familia_tutores` y su auditoría, foto, preferencias, lecturas, cambios pendientes y comentarios de cita; el manifiesto de adjuntos (DNI por ruta exacta), `promover_a_titular` y la anonimización de Auth contra el GoTrue real.
 
 ## Calendario laboral (Fase 4.5a)
@@ -883,7 +888,7 @@ admin ya no puede atribuir el consentimiento a otro tutor: `p_tutor := auth.uid(
 ### Actor humano en `audit_log`
 
 `audit_trigger_function` graba `usuario_id = auth.uid()`. **Una escritura con service role graba
-NULL** en `usuario_id`; desde `20261011130000` deja en `actor_sistema` qué operación fue (`system:purgar_sujeto_db`, `system:purgar_esqueleto_huerfano_nino` o `system:service_role`). La etiqueta solo se lee sin humano: nunca tapa a una sesión. Por eso las escrituras en tablas auditadas van con la sesión del usuario:
+NULL** en `usuario_id`; desde `20261011130000` deja en `actor_sistema` qué operación fue (`system:purgar_sujeto_db`, `system:purgar_expediente_vencido` o `system:service_role`; `system:purgar_esqueleto_huerfano_nino` puede quedar en filas de antes de `20261210120000`, que la retira). La etiqueta solo se lee sin humano: nunca tapa a una sesión. Por eso las escrituras en tablas auditadas van con la sesión del usuario:
 
 - **Si la RLS de filas basta,** con el cliente de sesión. Ejemplos: `ninos_admin_all` y
   `familia_tutores_*` al aprobar cambios pendientes, o `media_delete`.

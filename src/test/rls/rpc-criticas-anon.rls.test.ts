@@ -27,13 +27,19 @@ import type { Database } from '@/types/database'
  * test se pone rojo. Ancla positiva: el mismo cliente anon lee una tabla (0 filas, sin
  * error), así que el 42501 es del permiso y no de un cliente roto.
  *
+ * `purgar_esqueleto_huerfano_nino`, la décima, ya no existe (20261210120000, PR-A2): el barrido
+ * dejó de llamarla en 20261209120000 y se retira. Quedan 9, y la décima se comprueba aparte: nadie
+ * la encuentra por la API (PGRST202), ni anon ni el servicio. Sus argumentos son los que tenía:
+ * con ellos anon recibía 42501 hasta esa migración, así que el PGRST202 es de que no está, no de
+ * una errata en la llamada.
+ *
  * La rama «uid NULL sin ser servicio» del cuerpo y la sesión directa no se pueden provocar desde
  * PostgREST; quedaron cubiertas por el ensayo con rollback contra el remoto (body del PR #293).
  */
 
 type Client = SupabaseClient<Database>
 
-/** Las 10 llamadas, con argumentos de relleno (la ACL se comprueba antes que el cuerpo). */
+/** Las 9 llamadas, con argumentos de relleno (la ACL se comprueba antes que el cuerpo). */
 const CRITICAS: Array<[string, (c: Client) => PromiseLike<{ error: { code?: string } | null }>]> = [
   ['_get_medical_key', (c) => c.rpc('_get_medical_key')],
   ['_get_sepa_key', (c) => c.rpc('_get_sepa_key')],
@@ -73,14 +79,6 @@ const CRITICAS: Array<[string, (c: Client) => PromiseLike<{ error: { code?: stri
         p_cutoff: new Date().toISOString(),
       }),
   ],
-  [
-    'purgar_esqueleto_huerfano_nino',
-    (c) =>
-      c.rpc('purgar_esqueleto_huerfano_nino', {
-        p_nino_id: randomUUID(),
-        p_cutoff: new Date().toISOString(),
-      }),
-  ],
 ]
 
 const CLAVES = CRITICAS.filter(([nombre]) => nombre.startsWith('_get_'))
@@ -109,6 +107,17 @@ describe('RPCs críticas — cerradas a anon', () => {
   it.each(CRITICAS)('anon NO ejecuta %s (sin EXECUTE → 42501)', async (_nombre, llamar) => {
     const { error } = await llamar(anonClient())
     expect(error?.code).toBe('42501')
+  })
+
+  it('purgar_esqueleto_huerfano_nino ya no existe: nadie la encuentra, ni el servicio (PGRST202)', async () => {
+    for (const c of [anonClient() as unknown as Client, serviceClient as unknown as Client]) {
+      const { data, error } = await c.rpc(
+        'purgar_esqueleto_huerfano_nino' as never,
+        { p_nino_id: randomUUID(), p_cutoff: new Date().toISOString() } as never
+      )
+      expect(error?.code).toBe('PGRST202')
+      expect(data).toBeNull()
+    }
   })
 
   it.each(CLAVES)('authenticated NO ejecuta %s (solo el dueño)', async (_nombre, llamar) => {

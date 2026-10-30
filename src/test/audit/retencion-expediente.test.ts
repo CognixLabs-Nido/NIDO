@@ -304,4 +304,47 @@ describe('Retención del expediente', () => {
       .single()
     expect(r).toEqual({ nombre: 'Nino Expediente Reciente', deleted_reason: 'baja_nino' })
   })
+
+  // PR-A2 (20261210120000): la purga también bloquea la ficha. Antes, con el niño purgado ya no
+  // estaba «de baja», el predicado daba NULL y Dirección leía la ficha vaciada, dejando su fila en
+  // el registro, y podía volver a escribirla. Sigue al test anterior, que purga a `vencido`.
+  it('purgado, la ficha queda bloqueada desde la purga: ni se lee, ni deja lectura, ni se escribe', async () => {
+    const { data: n, error: nErr } = await serviceClient
+      .from('ninos')
+      .select('deleted_reason, purgado_en')
+      .eq('id', vencido)
+      .single()
+    expect(nErr).toBeNull()
+    // Premisa: purgado, con su fecha; ya no es un niño «de baja».
+    expect(n!.deleted_reason).toBe('purga_rgpd')
+    expect(n!.purgado_en).not.toBeNull()
+    const desde = new Date(n!.purgado_en!).toLocaleDateString('sv-SE', {
+      timeZone: 'Europe/Madrid',
+    })
+
+    const antes = await lecturas(vencido)
+    const { data, error } = await leer(vencido)
+    expect(data).toBeNull()
+    expect(error?.code).toBe('55000')
+    expect(error?.details).toBe(desde)
+    expect(await lecturas(vencido)).toBe(antes)
+
+    const c = await clientFor(admin)
+    const dir = await c.rpc('set_info_medica_emergencia_cifrada', {
+      p_nino_id: vencido,
+      ...FICHA,
+    })
+    expect(dir.error?.code).toBe('55000')
+    const { data: m } = await serviceClient
+      .from('info_medica_emergencia')
+      .select('alergias_graves')
+      .eq('nino_id', vencido)
+      .single()
+    expect(m!.alergias_graves).toBeNull()
+
+    // El de baja hoy sigue dando su aviso: no es que la consulta no devuelva nada.
+    const avisos = await c.rpc('alertas_medicas', { p_nino_ids: [vencido, reciente] })
+    expect(avisos.error).toBeNull()
+    expect(avisos.data!.map((a) => a.nino_id)).toEqual([reciente])
+  })
 })

@@ -119,8 +119,8 @@ Son provisionales. La tabla completa está en la spec.
 
 - **Los plazos no están validados por un abogado.** Si cambian, se cambian la tabla y sus constantes.
 - **Un impago que no se resuelve nunca conserva a la familia para siempre.** El tope lo decide el abogado (`follow-ups.md`).
-- **El plazo de los registros de derechos** (`export_log`, `olvido_solicitudes`, 5 años) **no está construido**. Hasta que lo esté, la cuenta que pidió ella misma un export o el olvido no se borra nunca (`follow-ups.md`).
-- `purgar_esqueleto_huerfano_nino` sigue en la base, pero el barrido ya no la llama.
+- **El plazo de los registros de derechos** (`export_log`, `olvido_solicitudes`, 5 años) **no está construido**. Hasta que lo esté, la cuenta que pidió ella misma un export o el olvido no se borra nunca (`follow-ups.md`). _Después (PR-A2, `20261210120000`): `export_log` se borra a los 5 años; `olvido_solicitudes` no tiene plazo, por decisión del responsable, y la cuenta que pidió o retiró un olvido sigue sin borrarse (`follow-ups.md`)._
+- `purgar_esqueleto_huerfano_nino` sigue en la base, pero el barrido ya no la llama. _Después: la retira el PR-A2 (`20261210120000`)._
 
 ### Neutras
 

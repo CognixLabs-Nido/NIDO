@@ -1,6 +1,6 @@
 # El vínculo que el alta del hermano no le dio al segundo tutor (octubre de 2026)
 
-**Estado:** pendiente de aplicar en producción. Operación: `supabase/operaciones/20261210100000_vinculo_segundo_tutor.sql`.
+**Estado:** aplicada en producción el 30-10-2026 por SQL Editor («success»; el SQL Editor no enseña los `NOTICE`). Verificada después en solo lectura: el vínculo existe, vivo, `tutor_legal_secundario`, con el parentesco, la descripción y los permisos de su referencia; 6 vínculos, los 6 vivos; 0 casos del predicado; una sola fila nueva en `audit_log` (INSERT del vínculo, `usuario_id` NULL, `system:reparar_vinculo_segundo_tutor`); las otras 5 sin tocar (`updated_at` del 13-08-2026 y ningún UPDATE en `audit_log`). Operación: `supabase/operaciones/20261210100000_vinculo_segundo_tutor.sql`.
 
 ## Qué pasa
 

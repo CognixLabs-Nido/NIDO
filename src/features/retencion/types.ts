@@ -101,7 +101,10 @@ export const RETENCION_LISTA_ESPERA_ANIOS = 1 // PENDIENTE política F11-B
 /** `audit_log`: N años desde cada fila (y antes, con su tabla: nada vive más en él que en ella). */
 export const RETENCION_AUDIT_LOG_ANIOS = 5 // PENDIENTE política F11-B
 
-/** Registros de los derechos atendidos (`export_log`, `olvido_solicitudes`): N años. */
+/**
+ * `export_log`: N años desde cada fila (20261210120000). Las peticiones de olvido
+ * (`olvido_solicitudes`) no tienen plazo: no se borran por tiempo.
+ */
 export const RETENCION_REGISTROS_DERECHOS_ANIOS = 5 // PENDIENTE política F11-B
 
 /** Una unidad de purga: 1+ objetos de Storage del mismo sujeto/categoría. */
