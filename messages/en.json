@@ -4817,7 +4817,12 @@
       "fuera_de_plazo": "The confirmation can no longer be undone: the 7 days have passed.",
       "motivo_obligatorio": "Write the reason: the family will see it.",
       "no_autorizado": "You are not allowed to do this.",
-      "fallo": "It could not be completed. Please try again."
+      "fallo": "It could not be completed. Please try again.",
+      "sin_deuda": "This request is no longer waiting for a debt.",
+      "otros_bloqueos": "Something else is missing besides the debt: it cannot be written off.",
+      "recibo_borrador": "There is a draft receipt: validate or delete it first.",
+      "recibo_en_remesa": "There is a receipt in a draft remittance: take it out first.",
+      "importe_cambiado": "The debt has changed since you opened the page. Check it again before giving it up."
     },
     "falta": {
       "titulo_bloqueos": "Missing before it can be confirmed",
@@ -4854,7 +4859,8 @@
       "rechazada": "The school rejected it on {fecha}: {motivo}",
       "rechazada_sin_motivo": "The school rejected it on {fecha}.",
       "retirada": "Withdrawn on {fecha}.",
-      "borrada": "The data was deleted on {fecha}."
+      "borrada": "The data was deleted on {fecha}.",
+      "espera_purga": "The deletion is confirmed, but it is waiting for this to be solved:"
     },
     "admin": {
       "titulo": "Deletion requests",
@@ -4889,7 +4895,18 @@
       "rechazada": "Rejected on {fecha}: {motivo}",
       "retirada": "The family withdrew it on {fecha}.",
       "borrada": "Deleted on {fecha}.",
-      "aviso_inicio": "Deletion requests to review: {n}. The oldest has been open for {dias} days."
+      "aviso_inicio": "Deletion requests to review: {n}. The oldest has been open for {dias} days.",
+      "deuda": "The family owes {importe} ({n, plural, one {# receipt} other {# receipts}}).",
+      "deuda_no_perdible": {
+        "otros_bloqueos": "Something else is missing besides the debt: until it is solved, the debt cannot be written off.",
+        "recibo_borrador": "There is a draft receipt: validate or delete it before writing off the debt.",
+        "recibo_en_remesa": "There is a receipt in a draft remittance: take it out first, or the bank would collect it."
+      },
+      "dar_por_perdida": "Write off the debt",
+      "dar_por_perdida_titulo": "Give up collecting the debt",
+      "dar_por_perdida_texto": "You are giving up collecting {importe} ({n, plural, one {# receipt} other {# receipts}}) to carry out the deletion of {nombre}’s data. You will no longer be able to claim that money. The receipts stay in the accounts with their amount and remittance, and the family keeps its surnames. The deletion happens after 7 days: until then you can undo it and the debt comes back. After the 7 days, it cannot be undone.",
+      "dar_por_perdida_confirmar": "I give up collecting {importe}",
+      "espera_purga": "Confirmed, but the deletion is waiting:"
     },
     "correo": {
       "asunto": "Your data deletion request",

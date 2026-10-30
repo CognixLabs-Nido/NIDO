@@ -23,8 +23,9 @@ interface PageProps {
 export default async function RetencionPage({ params }: PageProps) {
   const { locale } = await params
   const t = await getTranslations('datos_bloqueados')
-  const { centroId, esResponsable } = await requireContextoCentro(locale)
-  if (!esResponsable) redirect(`/${locale}/forbidden`)
+  const { centroId, esResponsable, esSuperusuario } = await requireContextoCentro(locale)
+  // Solo la admin del centro (`privado.es_titular`): el superusuario tampoco (PR-B1).
+  if (!esResponsable || esSuperusuario) redirect(`/${locale}/forbidden`)
 
   const sujetos = await getSujetosRetencion(centroId)
   // El superusuario es responsable en la app, pero no titular: la BD le contesta 42501.

@@ -39,7 +39,7 @@ export default async function TeacherLayout({ children, params }: LayoutProps) {
   const items = await buildSidebarItems(
     rol === 'admin' ? 'admin' : 'profe',
     locale,
-    contexto.esResponsable,
+    contexto,
     <MessagingBadge initialTotal={unread} centroId={centroId} />,
     <RecordatoriosBadge initialTotal={recordatoriosPendientes} centroId={centroId} />,
     <AgendaBadge initialTotal={invitacionesPendientes} />

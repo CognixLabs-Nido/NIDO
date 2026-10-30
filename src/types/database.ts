@@ -3929,6 +3929,9 @@ export type Database = {
           concepto_esporadico: string | null
           created_at: string
           deleted_at: string | null
+          deuda_perdida_en: string | null
+          deuda_perdida_por: string | null
+          deuda_perdida_solicitud_id: string | null
           devolucion_gastos_centimos: number | null
           devolucion_salida: string | null
           devuelto_de_recibo_id: string | null
@@ -3955,6 +3958,9 @@ export type Database = {
           concepto_esporadico?: string | null
           created_at?: string
           deleted_at?: string | null
+          deuda_perdida_en?: string | null
+          deuda_perdida_por?: string | null
+          deuda_perdida_solicitud_id?: string | null
           devolucion_gastos_centimos?: number | null
           devolucion_salida?: string | null
           devuelto_de_recibo_id?: string | null
@@ -3981,6 +3987,9 @@ export type Database = {
           concepto_esporadico?: string | null
           created_at?: string
           deleted_at?: string | null
+          deuda_perdida_en?: string | null
+          deuda_perdida_por?: string | null
+          deuda_perdida_solicitud_id?: string | null
           devolucion_gastos_centimos?: number | null
           devolucion_salida?: string | null
           devuelto_de_recibo_id?: string | null
@@ -4775,6 +4784,10 @@ export type Database = {
         Returns: string
       }
       curso_activo_de_centro: { Args: { p_centro_id: string }; Returns: string }
+      dar_deuda_por_perdida: {
+        Args: { p_centimos: number; p_solicitud_id: string }
+        Returns: Json
+      }
       dar_de_baja_profe: {
         Args: {
           p_centro_id: string
@@ -5235,6 +5248,7 @@ export type Database = {
           sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
           solicitado_por_nombre: string | null
           por_plazo: boolean
+          deuda: Json
         }[]
       }
       rechazar_peticion_olvido: {

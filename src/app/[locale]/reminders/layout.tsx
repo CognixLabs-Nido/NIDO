@@ -55,7 +55,7 @@ export default async function RemindersLayout({ children, params }: LayoutProps)
   const items = await buildSidebarItems(
     rol,
     locale,
-    contexto.esResponsable,
+    contexto,
     <MessagingBadge initialTotal={unread} centroId={centroId} />,
     <RecordatoriosBadge initialTotal={recordatoriosPendientes} centroId={centroId} />,
     <AgendaBadge initialTotal={invitacionesPendientes} />

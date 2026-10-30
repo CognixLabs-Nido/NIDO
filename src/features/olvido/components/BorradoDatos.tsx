@@ -77,6 +77,12 @@ export async function BorradoDatos({ locale, usuarioId }: { locale: string; usua
             {estado === 'confirmada' && (
               <p>{t('confirmada', { fecha: f(p.confirmada_en), borrado: f(p.gracia_hasta) })}</p>
             )}
+            {estado === 'confirmada' && leerFalta(p.falta).bloqueos.length > 0 && (
+              <>
+                <p>{t('espera_purga')}</p>
+                <FaltaLista falta={leerFalta(p.falta)} />
+              </>
+            )}
             {estado === 'rechazada' && (
               <p>
                 {p.motivo_rechazo
