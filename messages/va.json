@@ -2381,7 +2381,8 @@
     "aviso_cifrado": "Estes dades s'emmagatzemen xifrades.",
     "bloqueada_titulo": "Fitxa mèdica bloquejada",
     "bloqueada": "Bloquejada des del {fecha}: va acabar el curs en què el xiquet va causar baixa. Es conserva sense ús fins que s'esborre el seu expedient i només es pot facilitar a jutges i tribunals, al Ministeri Fiscal o a les administracions competents (art. 32 LOPDGDD).",
-    "error": {}
+    "error": {},
+    "bloqueada_direccion": "Bloquejada des del {fecha}. Què passa amb ella i quan, en «Conservació de les dades»."
   },
   "agenda": {
     "title": "Agenda diària",
@@ -4984,6 +4985,7 @@
     "descargar": "Descarregar per a lliurar",
     "sin_filas": "Sense dades en aquest apartat.",
     "apartados": {
+      "ficha_medica": "Fitxa mèdica",
       "firmas": "Signatures d'autoritzacions",
       "autorizaciones": "Autoritzacions",
       "consentimientos": "Consentiments",
@@ -5058,6 +5060,70 @@
         "sujetos": "Algun dels seleccionats ja no és d'este centre. Torna a carregar la pàgina i torna-ho a provar.",
         "no_autorizado": "Només la titular del centre pot retindre dades.",
         "fallo": "No hem pogut guardar la retenció. Torna-ho a provar."
+      }
+    }
+  },
+  "retencion_estado": {
+    "titulo": "Conservació de les dades",
+    "activo": "El xiquet està actiu: no corre cap termini de conservació.",
+    "retenido": "Retingut per un procediment obert: no es destruïx res seu mentre dure la retenció.",
+    "provisionales": "Els terminis són provisionals fins que els valide l’advocat; si canvien, estes dates canvien soles.",
+    "ver_bloqueados": "Vore les dades bloquejades (queda registrat)",
+    "se_borrara": "s’esborrarà a partir del {fecha}",
+    "vencido": "el termini va véncer el {fecha}; pendent d’esborrar",
+    "sin_fecha": {
+      "retenido": "sense data: retingut per un procediment obert",
+      "sin_curso": "sense data: el centre encara no té donat d’alta el curs del qual compta el termini"
+    },
+    "medicos": {
+      "etiqueta": "Dades mèdiques",
+      "bloqueados": "Bloquejades des del {fecha}",
+      "a_la_vista": "A la vista de Direcció; es bloquegen el {fecha}",
+      "borrados": "Esborrades el {fecha}"
+    },
+    "operativa": {
+      "etiqueta": "Dia a dia (agenda, assistència, missatges, informes…)",
+      "borrado": "Esborrat el {fecha}",
+      "nada": "No en queda res",
+      "por_partes": "A la vista de Direcció; s’esborra per parts, l’últim a partir del {fecha}"
+    },
+    "firmas": {
+      "etiqueta": "Firmes, consentiments i medicació administrada",
+      "nada": "No en queda res",
+      "a_la_vista": "Es conserven a la vista",
+      "se_bloquean_con_la_purga": "es bloquegen en esborrar-se l’expedient",
+      "bloqueados_desde": "Bloquejades des del {fecha}",
+      "se_destruyen": "es destruïxen a partir del {fecha}"
+    },
+    "expediente": {
+      "etiqueta": "Expedient complet",
+      "borrado": "Esborrat el {fecha}"
+    },
+    "fiscal": {
+      "etiqueta": "Dades fiscals i financeres (de la família)",
+      "a_la_vista": "Es conserven, a la vista, almenys fins al {fecha}",
+      "vencido": "El termini va véncer el {fecha}; es destruïxen quan s’haja anat també la resta de la família",
+      "desde_pago": "comptat des de l’últim rebut pagat",
+      "desde_baja": "comptat des del final del curs de l’última baixa",
+      "sin_fecha": "Es conserven, a la vista; sense data: {motivos}",
+      "motivos": {
+        "otro_hijo": "la família té un altre fill al centre",
+        "dinero_pendiente": "la família té un rebut pendent, una devolució sense resoldre o diners a favor seu",
+        "retenido": "algú de la família està retingut per un procediment obert",
+        "sin_curso": "el centre encara no té donat d’alta el curs del qual compta el termini"
+      }
+    },
+    "cuenta": {
+      "etiqueta": "Compte de {nombre}",
+      "etiqueta_borrada": "Compte d’un adult de la família",
+      "borrada": "Esborrat el {fecha}",
+      "por_otro_hijo": "compta des de la baixa del seu últim fill al centre, el {fecha}",
+      "motivos": {
+        "otro_hijo": "Sense data: té un altre fill al centre",
+        "trabaja_en_centro": "No s’esborra: treballa al centre",
+        "retenido": "Sense data: retingut per un procediment obert",
+        "dinero_pendiente": "Sense data: la seua família té un rebut pendent o diners a favor seu",
+        "otro_bloqueo": "Sense data: encara hi ha alguna cosa que frena la purga del seu compte"
       }
     }
   }

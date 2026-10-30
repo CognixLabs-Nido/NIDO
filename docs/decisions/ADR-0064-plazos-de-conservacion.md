@@ -91,6 +91,39 @@ conserva es el id, y con él la petición sigue pudiendo responder quién ejerci
 quién lo resolvió. Se eligió la trazabilidad completa frente a vaciar esas referencias al
 destruir la cuenta, que dejaba la petición sin saber de quién era.
 
+### La ficha médica bloqueada se abre a la admin, con motivo (2026-10-30)
+
+Decisión del responsable. Lo bloqueado no se borra: se conserva para poder entregarlo. El art. 32
+de la LOPDGDD dice que los datos bloqueados solo se ponen a disposición de **jueces y tribunales,
+el Ministerio Fiscal y las Administraciones públicas competentes**, en particular las autoridades
+de protección de datos, para exigir las responsabilidades derivadas del tratamiento y solo
+mientras duren. Esa es la razón de que exista una puerta, y también su límite.
+
+Hasta `20261211120000` la ficha médica de un niño de baja, bloqueada desde el final del curso de
+la baja, no la podía leer nadie durante los años que se conserva: `get_info_medica_emergencia` da
+55000 a todos y `ver_datos_bloqueados` solo cubría al niño purgado. Si un juez la pedía, el centro
+no podía darla. Ahora `ver_datos_bloqueados` la entrega:
+
+- **solo a la admin** (`privado.es_titular`): ni la directora ni el superusuario;
+- **con motivo escrito obligatorio**, de 10 a 1000 caracteres, además del tipo de motivo. El texto
+  es lo que permite reconstruir a instancia de quién se abrió; el tipo es lo que ve el interesado
+  en su export;
+- **solo para leer**: los setters siguen contestando 55000, y un dato bloqueado no se modifica;
+- **registrada dos veces**, en la misma transacción que descifra: en `accesos_datos_bloqueados`
+  (quién, motivo, apartados) y en `lecturas_ficha_medica` (origen `datos_bloqueados`), que la
+  familia ve en el registro de lecturas y en su export.
+
+### El cuadro de conservación del niño (2026-10-30)
+
+Decisión del responsable: la ficha del niño dice la verdad entera, dato por dato y con fecha. La
+ficha médica, el día a día, las firmas, el expediente, lo fiscal de la familia y la cuenta de cada
+adulto, cada uno con lo que le pasa y cuándo, o con el motivo de que todavía no haya fecha (un
+hermano en el centro, dinero pendiente, una retención). Lo calcula `estado_retencion_nino` con
+los mismos plazos que el cron, que le pasa la app: cuando el abogado cambie un plazo, cambian a la
+vez la purga y lo que se enseña. Una fecha pasada solo se da como hecha si el dato ya no está; si
+el plazo venció y sigue ahí, se dice que está pendiente. Lo ve Dirección (son fechas); el camino a
+lo bloqueado, solo la admin.
+
 ### Las piezas
 
 - **PR-1, los plazos** (#435, sin migración). La tabla y sus constantes. El registro de lecturas pasa de 24 a 60 meses.

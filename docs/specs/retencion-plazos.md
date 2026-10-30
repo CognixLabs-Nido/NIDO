@@ -274,6 +274,10 @@ En este orden; cada paso nuevo del barrido respeta la simulación (`RETENCION_DR
    3. lo fiscal a los 6 años del último recibo pagado: recibos, remesas, mandatos, la familia y
       sus tutores, y la cuenta que ya no tiene nada (`20261208120000`);
    4. el alta que no se termina, que propone y confirma Dirección (`20261209120000`).
+9. **El cuadro de conservación** en la ficha del niño (`20261211120000`): cada dato con su fecha o
+   con el motivo de que no la haya, calculado por `estado_retencion_nino` con los mismos plazos
+   que el cron; y la ficha médica bloqueada del niño de baja, que la admin lee con motivo
+   (`ver_datos_bloqueados`, art. 32 LOPDGDD).
 
 ## Tests requeridos
 

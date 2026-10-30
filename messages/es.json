@@ -2381,7 +2381,8 @@
     "aviso_cifrado": "Estos datos se almacenan cifrados.",
     "bloqueada_titulo": "Ficha médica bloqueada",
     "bloqueada": "Bloqueada desde el {fecha}: terminó el curso en que el niño causó baja. Se conserva sin uso hasta que se borre su expediente y solo puede facilitarse a jueces y tribunales, al Ministerio Fiscal o a las administraciones competentes (art. 32 LOPDGDD).",
-    "error": {}
+    "error": {},
+    "bloqueada_direccion": "Bloqueada desde el {fecha}. Qué pasa con ella y cuándo, en «Conservación de los datos»."
   },
   "agenda": {
     "title": "Agenda diaria",
@@ -4984,6 +4985,7 @@
     "descargar": "Descargar para entregar",
     "sin_filas": "Sin datos en este apartado.",
     "apartados": {
+      "ficha_medica": "Ficha médica",
       "firmas": "Firmas de autorizaciones",
       "autorizaciones": "Autorizaciones",
       "consentimientos": "Consentimientos",
@@ -5058,6 +5060,70 @@
         "sujetos": "Alguno de los seleccionados ya no es de este centro. Recarga la página y vuelve a intentarlo.",
         "no_autorizado": "Solo la titular del centro puede retener datos.",
         "fallo": "No hemos podido guardar la retención. Vuelve a intentarlo."
+      }
+    }
+  },
+  "retencion_estado": {
+    "titulo": "Conservación de los datos",
+    "activo": "El niño está activo: no corre ningún plazo de conservación.",
+    "retenido": "Retenido por un procedimiento abierto: no se destruye nada suyo mientras dure la retención.",
+    "provisionales": "Los plazos son provisionales hasta que los valide el abogado; si cambian, estas fechas cambian solas.",
+    "ver_bloqueados": "Ver los datos bloqueados (queda registrado)",
+    "se_borrara": "se borrará a partir del {fecha}",
+    "vencido": "el plazo venció el {fecha}; pendiente de borrar",
+    "sin_fecha": {
+      "retenido": "sin fecha: retenido por un procedimiento abierto",
+      "sin_curso": "sin fecha: el centro aún no tiene dado de alta el curso del que cuenta el plazo"
+    },
+    "medicos": {
+      "etiqueta": "Datos médicos",
+      "bloqueados": "Bloqueados desde el {fecha}",
+      "a_la_vista": "A la vista de Dirección; se bloquean el {fecha}",
+      "borrados": "Borrados el {fecha}"
+    },
+    "operativa": {
+      "etiqueta": "Día a día (agenda, asistencia, mensajes, informes…)",
+      "borrado": "Borrado el {fecha}",
+      "nada": "No queda nada",
+      "por_partes": "A la vista de Dirección; se borra por partes, lo último a partir del {fecha}"
+    },
+    "firmas": {
+      "etiqueta": "Firmas, consentimientos y medicación administrada",
+      "nada": "No queda nada",
+      "a_la_vista": "Se conservan a la vista",
+      "se_bloquean_con_la_purga": "se bloquean al borrarse el expediente",
+      "bloqueados_desde": "Bloqueados desde el {fecha}",
+      "se_destruyen": "se destruyen a partir del {fecha}"
+    },
+    "expediente": {
+      "etiqueta": "Expediente completo",
+      "borrado": "Borrado el {fecha}"
+    },
+    "fiscal": {
+      "etiqueta": "Datos fiscales y financieros (de la familia)",
+      "a_la_vista": "Se conservan, a la vista, al menos hasta el {fecha}",
+      "vencido": "El plazo venció el {fecha}; se destruyen cuando se haya ido también lo demás de la familia",
+      "desde_pago": "contado desde el último recibo pagado",
+      "desde_baja": "contado desde el final del curso de la última baja",
+      "sin_fecha": "Se conservan, a la vista; sin fecha: {motivos}",
+      "motivos": {
+        "otro_hijo": "la familia tiene otro hijo en el centro",
+        "dinero_pendiente": "la familia tiene un recibo pendiente, una devolución sin resolver o dinero a su favor",
+        "retenido": "alguien de la familia está retenido por un procedimiento abierto",
+        "sin_curso": "el centro aún no tiene dado de alta el curso del que cuenta el plazo"
+      }
+    },
+    "cuenta": {
+      "etiqueta": "Cuenta de {nombre}",
+      "etiqueta_borrada": "Cuenta de un adulto de la familia",
+      "borrada": "Borrada el {fecha}",
+      "por_otro_hijo": "cuenta desde la baja de su último hijo en el centro, el {fecha}",
+      "motivos": {
+        "otro_hijo": "Sin fecha: tiene otro hijo en el centro",
+        "trabaja_en_centro": "No se borra: trabaja en el centro",
+        "retenido": "Sin fecha: retenido por un procedimiento abierto",
+        "dinero_pendiente": "Sin fecha: su familia tiene un recibo pendiente o dinero a su favor",
+        "otro_bloqueo": "Sin fecha: todavía hay algo que frena la purga de su cuenta"
       }
     }
   }
