@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { recolectarNino } from '@/features/export/lib/recolectar'
 
 import {
@@ -124,7 +125,7 @@ describe('Retención del expediente', () => {
     await archivar(vencido, '1996-03-01', '1996-03-01')
     await archivar(vuelve, '1996-03-01', '1996-03-01')
     await archivar(reciente, new Date().toISOString().slice(0, 10))
-    await archivar(bajaTardia, '2026-10-01', '1996-03-01')
+    await archivar(bajaTardia, hoyMadrid(), '1996-03-01')
   })
 
   afterAll(async () => {

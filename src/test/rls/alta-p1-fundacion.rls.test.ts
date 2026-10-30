@@ -12,6 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { cursoDeTest } from './curso-de-test'
 
 /**
  * F11 · Alta tutor-driven · Pieza 1 — Fundación.
@@ -104,7 +105,7 @@ describe('Alta P1 — fundación (DB)', () => {
 
       const { error: updErr } = await serviceClient
         .from('matriculas')
-        .update({ estado: 'baja', fecha_baja: '2026-10-01' })
+        .update({ estado: 'baja', fecha_baja: cursoDeTest().fin })
         .eq('id', matriculaId)
       expect(updErr).toBeNull()
 
