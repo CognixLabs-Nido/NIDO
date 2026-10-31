@@ -1551,7 +1551,11 @@ toca.
 
 - **`remesas.fichero_generado_at`:** la primera vez que sale el fichero pain.008 de una remesa en
   borrador. La pone la descarga del XML **antes** de leer los recibos que van en él (antes comprueba
-  que el fichero sale, para no cerrar una remesa con un 422), y no se quita.
+  que el fichero sale, para no cerrar una remesa con un 422), y no se quita. También la pone en una
+  remesa enviada que no la tenía. El `MsgId` (y el `PmtInfId`) del fichero sale de ella, no de la
+  hora de la descarga: dos descargas de la misma versión son el mismo fichero para el banco, que
+  rechaza el segundo (`message-id.ts`). Tras ponerla se vuelve a leer, por si otra descarga la puso
+  a la vez.
 - **`recibos_remesa_validar`** (BEFORE INSERT OR UPDATE OR DELETE, `SECURITY DEFINER`):
   - bloquea la remesa: el envío, la marca del fichero y el borrado esperan al enlace;
   - entra un recibo solo en una remesa viva, en borrador y sin fichero (`remesa_cerrada`,
