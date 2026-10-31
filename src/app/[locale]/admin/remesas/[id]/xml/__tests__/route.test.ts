@@ -14,13 +14,20 @@ const { estado, pasos } = vi.hoisted(() => ({
     remesa: null as Record<string, unknown> | null,
     sale: true,
     errorMarca: null as unknown,
+    // Lo que devuelve get_mandatos_remesa y las lecturas del concepto (forma de producción: el
+    // recibo es de la familia y el niño sale de las líneas).
+    mandatos: [] as Record<string, unknown>[],
+    tablas: {} as Record<string, { data: unknown[]; error: unknown }>,
+    conceptos: null as Map<string, string> | null,
   },
   pasos: [] as string[],
 }))
 
 vi.mock('@/features/remesas/lib/preparar-remesa', () => ({
-  prepararRemesa: () =>
-    estado.sale ? { ok: true, xml: '<xml/>' } : { ok: false, motivo: 'remesa_vacia' },
+  prepararRemesa: (_r: unknown, _a: unknown, _m: unknown, conceptos: Map<string, string>) => {
+    estado.conceptos = conceptos
+    return estado.sale ? { ok: true, xml: '<xml/>' } : { ok: false, motivo: 'remesa_vacia' }
+  },
 }))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
@@ -28,7 +35,11 @@ vi.mock('@/lib/supabase/server', () => ({
       select: () => ({
         eq: () => ({
           is: () => ({ maybeSingle: async () => ({ data: estado.remesa }) }),
-          maybeSingle: async () => ({ data: { nombre: 'Centro' } }),
+          maybeSingle: async () => ({ data: { nombre: 'CEI Ejemplo' } }),
+          in: async () => {
+            pasos.push(`lee ${tabla}`)
+            return estado.tablas[tabla] ?? { data: [], error: null }
+          },
         }),
       }),
       update: () => ({
@@ -42,7 +53,7 @@ vi.mock('@/lib/supabase/server', () => ({
     }),
     rpc: async (nombre: string) => {
       pasos.push(nombre)
-      return { data: [], error: null }
+      return { data: nombre === 'get_mandatos_remesa' ? estado.mandatos : [], error: null }
     },
   }),
 }))
@@ -63,6 +74,9 @@ describe('GET /admin/remesas/[id]/xml', () => {
     }
     estado.sale = true
     estado.errorMarca = null
+    estado.mandatos = []
+    estado.tablas = {}
+    estado.conceptos = null
     pasos.length = 0
   })
 
@@ -102,5 +116,34 @@ describe('GET /admin/remesas/[id]/xml', () => {
     estado.remesa = { ...estado.remesa, estado: 'borrador', fichero_generado_at: '2026-10-25' }
     expect((await pedir()).status).toBe(200)
     expect(pasos).not.toContain('marca remesas')
+  })
+
+  describe('el concepto de cada adeudo', () => {
+    const RECIBO = '0d06ffd1-d24e-4d6e-b1db-341d6c94bb26'
+    const NINO = 'aaaaaaaa-0000-4000-8000-000000000001'
+
+    beforeEach(() => {
+      estado.remesa = { ...estado.remesa, estado: 'enviada' }
+      estado.mandatos = [{ recibo_id: RECIBO }]
+      estado.tablas = {
+        recibos: { data: [{ id: RECIBO, anio: 2026, mes: 10 }], error: null },
+        lineas_recibo: { data: [{ recibo_id: RECIBO, nino_id: NINO }], error: null },
+        ninos: { data: [{ id: NINO, nombre: 'Niña', apellidos: 'Demo Uno' }], error: null },
+      }
+    })
+
+    it('lleva el centro, el niño de las líneas y el mes del recibo', async () => {
+      expect((await pedir()).status).toBe(200)
+      expect(pasos).toEqual(
+        expect.arrayContaining(['lee recibos', 'lee lineas_recibo', 'lee ninos'])
+      )
+      expect(estado.conceptos?.get(RECIBO)).toBe('CEI Ejemplo · Nina Demo Uno · Octubre 2026')
+    })
+
+    it('si falla una lectura del concepto, no sale el fichero (500)', async () => {
+      estado.tablas.lineas_recibo = { data: [], error: { code: '42501', message: 'x' } }
+      expect((await pedir()).status).toBe(500)
+      expect(estado.conceptos).toBeNull()
+    })
   })
 })

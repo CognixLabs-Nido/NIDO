@@ -2126,6 +2126,7 @@
       "enviar_failed": "No se pudo marcar la remesa como enviada.",
       "enviar_recibos_failed": "La remesa se marcó, pero fallaron algunos recibos.",
       "sin_mandato": "{num} recibo(s) sin mandato SEPA activo. Corrígelo antes de generar el fichero.",
+      "identificador_largo": "{num} familia(s) tienen un mandato SEPA con un identificador de más de 35 caracteres, que el banco rechaza. Tienen que volver a firmar la domiciliación antes de generar el fichero.",
       "acreedor_incompleto": "Completa los datos del acreedor (CID e IBAN) antes de generar el fichero.",
       "remesa_vacia": "La remesa no tiene recibos domiciliables (importe mayor que 0).",
       "xml_failed": "No se pudo generar el fichero SEPA.",
