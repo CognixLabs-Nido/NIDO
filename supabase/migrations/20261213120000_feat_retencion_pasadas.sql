@@ -45,7 +45,7 @@ CREATE TABLE public.retencion_pasadas (
   modo         public.retencion_accion NOT NULL,
   recuentos    jsonb NOT NULL CONSTRAINT retencion_pasadas_recuentos_check
                  CHECK (jsonb_typeof(recuentos) = 'object'
-                        AND recuentos ?| ARRAY['olvido', 'retencion', 'lecturasFichaMedica',
+                        AND recuentos ?& ARRAY['olvido', 'retencion', 'lecturasFichaMedica',
                                                'auditLog', 'exportLog', 'listaEspera', 'operativa',
                                                'expediente', 'firmas', 'cuentas', 'fiscal',
                                                'cuentasOlvidadas'])
@@ -54,9 +54,45 @@ CREATE INDEX retencion_pasadas_ejecutada_idx ON public.retencion_pasadas (ejecut
 
 -- Sin políticas: la escribe y la lee solo service_role, que no puede cambiarla ni borrarla.
 ALTER TABLE public.retencion_pasadas ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.retencion_pasadas FROM PUBLIC, anon, authenticated;
-GRANT SELECT ON public.retencion_pasadas TO authenticated;
+REVOKE ALL ON public.retencion_pasadas FROM PUBLIC, anon, authenticated, service_role;
+GRANT SELECT, INSERT ON public.retencion_pasadas TO service_role;
 
 COMMENT ON TABLE public.retencion_pasadas IS
   'Una fila por pasada del cron de retención (api/cron/retencion), encuentre algo o no: cuándo, en qué modo (simulado o purgado) y el recuento de cada uno de los doce barridos. Solo recuentos, sin datos personales: no se audita ni caduca. Solo service_role inserta y lee; nadie la cambia ni la borra (20261213120000).';
 
+-- ---- Guarda posterior ----
+DO $guarda$
+BEGIN
+  IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.retencion_pasadas'::regclass) THEN
+    RAISE EXCEPTION 'retencion_pasadas sin RLS';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_policy WHERE polrelid = 'public.retencion_pasadas'::regclass) THEN
+    RAISE EXCEPTION 'retencion_pasadas tiene políticas';
+  END IF;
+  -- service_role inserta y lee, y nada más.
+  IF NOT has_table_privilege('service_role', 'public.retencion_pasadas', 'INSERT')
+     OR NOT has_table_privilege('service_role', 'public.retencion_pasadas', 'SELECT')
+     OR has_table_privilege('service_role', 'public.retencion_pasadas', 'UPDATE')
+     OR has_table_privilege('service_role', 'public.retencion_pasadas', 'DELETE')
+     OR has_table_privilege('service_role', 'public.retencion_pasadas', 'TRUNCATE') THEN
+    RAISE EXCEPTION 'service_role no tiene solo SELECT e INSERT en retencion_pasadas';
+  END IF;
+  -- Las sesiones y PUBLIC, ninguno.
+  IF EXISTS (SELECT 1 FROM (VALUES ('anon'), ('authenticated')) r(rol)
+              CROSS JOIN (VALUES ('SELECT'), ('INSERT'), ('UPDATE'), ('DELETE'), ('TRUNCATE'),
+                                 ('REFERENCES'), ('TRIGGER')) p(priv)
+              WHERE has_table_privilege(r.rol, 'public.retencion_pasadas', p.priv))
+     OR EXISTS (SELECT 1 FROM pg_class c, aclexplode(c.relacl) a
+                 WHERE c.oid = 'public.retencion_pasadas'::regclass AND a.grantee = 0) THEN
+    RAISE EXCEPTION 'una sesión o PUBLIC tiene privilegios en retencion_pasadas';
+  END IF;
+  -- Sin trigger de auditoría: lo que no tiene datos personales no entra en audit_log.
+  IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid = 'public.retencion_pasadas'::regclass
+               AND NOT tgisinternal) THEN
+    RAISE EXCEPTION 'retencion_pasadas tiene triggers';
+  END IF;
+
+  RAISE NOTICE 'guarda posterior: retencion_pasadas creada, % filas',
+    (SELECT count(*) FROM public.retencion_pasadas);
+END
+$guarda$;
