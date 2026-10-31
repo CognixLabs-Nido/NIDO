@@ -15,27 +15,21 @@ import { fail, ok } from '../../centros/types'
  * orden de la lista es el orden en que se muestra el checklist "qué falta" en la UI.
  *
  * NOTA — `tutor2` es OPCIONAL (no aparece aquí): no bloquea.
+ * El mandato SEPA tampoco (D10 de `docs/specs/altas-serie.md`): la familia que lo omite cierra
+ *   el alta y paga en efectivo, que es el método por defecto de `familias.metodo_pago`.
  * `normas` e `imagen` son OBLIGATORIOS y se satisfacen por DOS vías (vía B): una firma real
  *   `decision='firmado'` sobre la instancia publicada (si el centro la tiene) O una fila de
  *   ACUSE por checkbox en `acuses_alta` (sin documento, sin firma). Así aceptar NO depende de
  *   que exista la instancia (normas es patrón A y la familia no puede auto-instanciarla). La
  *   obligatoriedad NO se relaja: sin firma NI acuse, el bloque sigue faltando.
  */
-export type BloqueAlta =
-  | 'identidad'
-  | 'tutor1'
-  | 'medico'
-  | 'documentos'
-  | 'sepa'
-  | 'imagen'
-  | 'normas'
+export type BloqueAlta = 'identidad' | 'tutor1' | 'medico' | 'documentos' | 'imagen' | 'normas'
 
 const ORDEN_BLOQUES: BloqueAlta[] = [
   'identidad',
   'tutor1',
   'medico',
   'documentos',
-  'sepa',
   'imagen',
   'normas',
 ]
@@ -120,23 +114,6 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   // Documentos: libro de familia (niño) + DNI del tutor 1. El DNI del tutor 2 NO se exige
   // (tutor 2 es opcional).
   if (!nino.libro_familia_path || !tutor1?.dni_documento_path) faltan.push('documentos')
-
-  // SEPA: mandato activo de la FAMILIA del niño (F-2c-1: el mandato es de la familia, no
-  // del niño). Basta con que la familia tenga uno `activo` no borrado → el 2º hijo de una
-  // familia con mandato pasa el gate SIN volver a firmar.
-  let tieneMandatoFamilia = false
-  if (nino.familia_id) {
-    const { data: mandato } = await supabase
-      .from('mandatos_sepa')
-      .select('id')
-      .eq('familia_id', nino.familia_id)
-      .eq('estado', 'activo')
-      .is('deleted_at', null)
-      .limit(1)
-      .maybeSingle()
-    tieneMandatoFamilia = Boolean(mandato)
-  }
-  if (!tieneMandatoFamilia) faltan.push('sepa')
 
   // Autorización de IMAGEN (acuse obligatorio). Fuente de verdad = el CONSENTIMIENTO de
   // imagen del niño (IU-2): lo otorgan tanto el checkbox como la firma (vía A). La señal es

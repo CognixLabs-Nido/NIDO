@@ -4530,7 +4530,7 @@
       }
     },
     "sepa": {
-      "intro": "Domicilia el pago de las cuotas. Introduce el IBAN y firma el mandato SEPA. Puedes omitir este paso y aportarlo más adelante.",
+      "intro": "Domicilia el pago de las cuotas. Introduce el IBAN y firma el mandato SEPA. Si omites este paso, las cuotas se pagarán en efectivo, y podrás domiciliarlas más adelante desde Recibos.",
       "mandato_titulo": "Mandato de adeudo directo SEPA",
       "titular_label": "Titular de la cuenta",
       "iban_label": "IBAN",
@@ -4590,7 +4590,6 @@
         "tutor1": "Datos del tutor 1",
         "medico": "Datos médicos y de emergencia",
         "documentos": "Documentos (libro de familia y DNI)",
-        "sepa": "Mandato SEPA",
         "imagen": "Autorización de imagen",
         "normas": "Normas de régimen interno"
       }

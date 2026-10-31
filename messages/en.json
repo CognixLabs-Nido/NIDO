@@ -4530,7 +4530,7 @@
       }
     },
     "sepa": {
-      "intro": "Set up direct debit for fees. Enter the IBAN and sign the SEPA mandate. You can skip this step and provide it later.",
+      "intro": "Set up direct debit for fees. Enter the IBAN and sign the SEPA mandate. If you skip this step, fees will be paid in cash, and you can set up direct debit later from Receipts.",
       "mandato_titulo": "SEPA direct debit mandate",
       "titular_label": "Account holder",
       "iban_label": "IBAN",
@@ -4590,7 +4590,6 @@
         "tutor1": "Guardian 1 details",
         "medico": "Medical and emergency details",
         "documentos": "Documents (family book and ID)",
-        "sepa": "SEPA mandate",
         "imagen": "Image consent",
         "normas": "Internal rules acknowledgement"
       }
