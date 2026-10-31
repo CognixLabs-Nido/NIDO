@@ -244,7 +244,7 @@ Restricciones:
   banco ni se haya cobrado a mano se modifica».
 - Mientras el motor de F-4-3 no estuvo listo, el cierre quedó **temporalmente inoperativo** (F-4-1).
   Se aceptó porque no había datos.
-- Se arrastran los follow-ups de ADR-0050: `FRST`/`RCUR` y que `cobrado_manual` no distingue efectivo
+- Se arrastran los follow-ups de ADR-0050: `FRST`/`RCUR` (cancelado el 2026-11-01: el Rulebook procesa FRST como RCUR) y que `cobrado_manual` no distingue efectivo
   de transferencia. _(Nota del 2026-10-22: lo segundo lo cierra el PR-1a de recibos,
   `20261105120000`: el cobro manual guarda su forma, su fecha y una nota. Nota del 2026-10-23: el
   PR-1b, `20261106120000`, añade el cheque guardería / ticket restaurant con su importe; si es menor

@@ -107,7 +107,10 @@ reales de ANAIA (curso 2026/2027). Lo medido entonces, que motiva la serie:
 
 Decisiones del 2026-10-31 sobre las cinco preguntas del PR-0:
 
-- **FRST en el primer cobro de cada mandato, RCUR en los siguientes.** La razón es **multicentro**,
+- ~~**FRST en el primer cobro de cada mandato, RCUR en los siguientes.**~~ **REVERTIDA el
+  2026-11-01: el 0d no se construye y se emite RCUR siempre, como ya hace la app.** Por qué cayó: «A Collection with the optional transaction type ‘first’ is processed as a recurrent Collection» (SDD Core Rulebook 2025, EPC016-06 v1.0, AT-M006). Si FRST se procesa como RCUR, marcarlo no cambia nada en el banco, y lo que acepta
+  cualquier banco, la misma razón multicentro de abajo, es RCUR siempre. Lo que se decidió, tal
+  cual: La razón es **multicentro**,
   no lo que conteste un banco: cada centro trabaja con su banco, no se puede preguntar a todos ni
   dar por hecho que todos acepten RCUR en el primer cobro (lo que permiten las reglas desde 2016).
   Se emite lo que acepta cualquiera. Es el PR-0d y va el último. El riesgo que trae, que el mismo
@@ -302,14 +305,18 @@ poder abrir, editar y volver a crear.»
 7. **Marcar enviada exige el fichero generado.** Hoy se puede marcar enviada una remesa cuyo fichero
    no salió nunca: así nació la de CEI Ejemplo (abajo).
 
-### Cruce con el FRST (0d)
+### Cruce con el FRST (0d): ya no hay cruce
 
-El 0d marca el primer cobro de cada mandato como FRST. Al reabrir una remesa, los mandatos cuyo
-primer cobro iba en ella **vuelven a estar sin primer cobro**: el fichero nuevo los lleva otra vez
-como FRST. Si el banco nunca tuvo el primero, es lo correcto. Si sí lo tuvo, el segundo FRST del
-mismo mandato es un error de secuencia que el banco rechaza, y ese rechazo es una red más contra el
-doble cobro. La otra opción (dejarlos consumidos y mandar RCUR) cobra sin red si el banco ya tenía el
-primero. La marca del FRST va en el 0d; este PR deja escrito qué hace con ella.
+**El 0d se canceló el 2026-11-01** (ver «Decisiones del 2026-10-31», la de FRST, revertida). Reabrir
+no toca la secuencia: el fichero nuevo va en RCUR, como el primero.
+
+Aquí se escribió que, al reabrir, los mandatos volverían a FRST y que el banco rechazaría el segundo
+FRST del mismo mandato, como una red contra el doble cobro. **Esa red no existe:** según el
+Rulebook, un FRST se procesa como un RCUR, así que nadie rechaza el segundo. Lo que protege del
+doble cobro es:
+
+- el `MsgId` estable por versión (punto 6), con el que el banco ve repetido un fichero que ya tiene;
+- el aviso de reabrir, con el número de familias y el importe (punto 4).
 
 ### La remesa de CEI Ejemplo (agujero 4)
 
@@ -343,11 +350,11 @@ Contestadas el 2026-10-31: ver «Respuestas del responsable», abajo.
   en el barrido de retención y en la pasada que lo registra: si se guardan IBAN en un sitio nuevo,
   ese sitio se borra solo como todo lo demás. Se apunta al RAT para cuando vuelva la lista del
   abogado. La razón va al ADR.
-- **R-2 · Sí: al reabrir, los mandatos vuelven a FRST.** _(En revisión, 2026-11-01: según el
-  Rulebook 2025, FRST es opcional y se procesa como RCUR, así que el esquema no rechaza un segundo
-  FRST. Ver «Lo que cambia la R-2».)_ Se escribe como DEFENSA, no como detalle:
-  el rechazo del segundo FRST es lo que protege del doble cobro. Quien lo «arregle» mandando RCUR
-  quita la red.
+- **R-2 · Revisada el 2026-11-01: al reabrir, los mandatos NO vuelven a FRST.** La respuesta
+  del 2026-10-31 («sí, como defensa: el rechazo del segundo FRST protege del doble cobro») se apoyaba
+  en una red imaginaria: el esquema procesa FRST como RCUR y no rechaza un segundo. El 0d se canceló
+  con ella. La protección real contra el doble cobro es el `MsgId` estable y el aviso con las familias
+  y el importe.
 - **R-3 · El `MsgId` estable, en un PR propio y antes que el resto.** Hecho (punto 6).
 - **R-4 · Sí: marcar enviada exige el fichero generado**, y el mensaje dice qué falta, no solo que
   no se puede.
@@ -426,10 +433,8 @@ acaba al reabrir.
 (`reabrir_remesa`, `privado.es_titular`) pone `reabierta_at` en el fichero de la versión y quita la
 marca con `app.reabrir_remesa`. La siguiente descarga crea la versión nueva.
 
-**FRST** (R-2, para el 0d; en revisión, ver «Lo que cambia la R-2»). Junto al código del 0d, este comentario: «Al reabrir, los mandatos cuyo
-primer cobro iba en la remesa vuelven a FRST. A propósito: si el banco ya tenía el primer fichero,
-rechaza el segundo FRST del mismo mandato, y ese rechazo es la red contra el doble cobro. No cambiar
-a RCUR.» Lleva un test que se pone rojo si alguien lo cambia.
+**Sin FRST.** El 0d está cancelado (R-2, revisada): el fichero de cada versión va en RCUR. No se
+construye ninguna marca de «primer cobro» por mandato.
 
 ### Respuestas del responsable (2026-11-01)
 
@@ -442,7 +447,7 @@ a RCUR.» Lleva un test que se pone rojo si alguien lo cambia.
   salga. El fichero no se recorta: dejaría de ser lo que se envió al banco. Va al ADR, con el plazo
   provisional como los demás hasta que lo valide el abogado.
 - **P-2 · La fecha de cobro, pieza aparte y antes de reabrir** (orden: fecha de cobro → reabrir →
-  0c → 0d). Ver «La fecha de cobro», abajo.
+  0c; el 0d se canceló). Ver «La fecha de cobro», abajo.
 
 ### La fecha de cobro (pieza aparte)
 
@@ -458,8 +463,8 @@ Lo que hay (medido el 2026-11-01, `main` y producción en solo lectura):
   de cobro» en el código es la del cobro a mano (`cobro_fecha`: efectivo, transferencia, cheque), que
   no admite fechas futuras.
 - **En pain.008 la fecha va por bloque**, no por adeudo. Un fichero con fechas distintas lleva un
-  bloque por fecha, todos con el mismo `MsgId`, cada uno con su `PmtInfId` y sus totales. El 0d
-  (FRST/RCUR) parte también por secuencia, porque `SeqTp` va igualmente por bloque.
+  bloque por fecha, todos con el mismo `MsgId`, cada uno con su `PmtInfId` y sus totales. La
+  secuencia es siempre RCUR (el 0d se canceló), así que no parte bloques.
 
 **Decidido (responsable y Jose, 2026-11-01):**
 
@@ -495,8 +500,8 @@ Lo que hay (medido el 2026-11-01, `main` y producción en solo lectura):
 optional transaction type ‘first’ is processed as a recurrent Collection». Desde 2016, FRST es
 opcional y se procesa como RCUR. **Un segundo FRST no lo rechaza el esquema**, así que la red de la
 R-2 («el rechazo del segundo FRST protege del doble cobro») no existe en las reglas del esquema.
-Puede existir en un banco concreto, pero eso no lo dice el Rulebook. Pendiente del responsable:
-replantea la R-2 y el propio 0d.
+Puede existir en un banco concreto, pero eso no lo dice el Rulebook. **Decidido el 2026-11-01:**
+la R-2 se revisa (al reabrir no se vuelve a FRST) y el 0d se cancela.
 
 ## Orden de la serie
 
@@ -521,7 +526,8 @@ Los documentos obligatorios (DNI de los tutores, SEPA, libro de familia) entran 
 
 ### Troceo del PR-0
 
-Orden: 0·doc y 0a → 0b → 0c → reabrir remesas → 0d.
+Orden: 0·doc y 0a → 0b → `MsgId` (R-3) → fecha de cobro (F1 → F2 → F3) → reabrir remesas → 0c. El 0d se
+canceló el 2026-11-01 (FRST se procesa como RCUR).
 
 | PR              | Alcance                                                                                                                                                                                                                                                                                                                | Migración                                                                                                        |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -530,19 +536,19 @@ Orden: 0·doc y 0a → 0b → 0c → reabrir remesas → 0d.
 | 0b              | El fichero que acepta el banco: `MndtId` y `EndToEndId` ≤ 35, concepto `centro · niño · mes` sin tildes, el generador rechaza los largos, fixtures con la forma real                                                                                                                                                   | No                                                                                                               |
 | 0c              | Mandato v2: CID en el PDF y en el texto canónico v2, columna con la versión del canónico (los existentes en v1), NIF y dirección del titular, los tres caminos que crean mandatos (alta, `/family/domiciliacion`, presencial de Dirección) y el aviso en los datos bancarios del centro                                | Sí, pequeña                                                                                                      |
 | Reabrir remesas | Ver «Reabrir una remesa» y su «Diseño»: recibos enviados a pendiente, remesa a borrador sin la marca, solo la admin, el aviso con familias e importe, su fila en `audit_log`; el fichero de cada versión guardado en privado con su registro y plazo fiscal en el barrido; marcar enviada por función y con el fichero | Sí: la función, el marcador en `remesas_proteger`, las dos tablas, el bucket, el barrido y la clave de la pasada |
-| 0d              | FRST en el primer cobro de cada mandato, RCUR en los siguientes, sin FRST repetido                                                                                                                                                                                                                                     | Sí                                                                                                               |
+| ~~0d~~          | **Cancelado el 2026-11-01.** Era FRST en el primer cobro de cada mandato y RCUR en los siguientes. El Rulebook procesa FRST como RCUR (AT-M006): marcarlo no cambia nada en el banco. Se emite RCUR siempre                                                                                                            | No                                                                                                               |
 
 ## Estado
 
 - [x] 0·doc — esta spec.
-- [ ] 0a · [ ] 0b · [ ] 0c · [ ] reabrir remesas · [ ] 0d
+- [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · [ ] fecha de cobro · [ ] reabrir remesas · [ ] 0c · ~~0d~~ (cancelado)
 - [ ] Pantalla de altas en proceso · [ ] 1 · [ ] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [ ] 6 · [ ] 7 · [ ] 8
 
 ## Referencias
 
 - ADR-0049 (F11-G, documentos del alta), ADR-0050 (cuotas, recibos y remesas; acreedor en
-  `centros`), ADR-0063 (plan de recibos; FRST fuera, línea 121), ADR-0064 (plazos de conservación).
-- `docs/follow-ups.md` — «Secuencia SEPA FRST / primera-vez (diferida en B-5)».
+  `centros`), ADR-0063 (plan de recibos; FRST fuera, línea 121, que ya decía que RCUR vale en el primer cobro), ADR-0064 (plazos de conservación).
+- `docs/follow-ups.md` — «Secuencia SEPA FRST / primera-vez», cancelada el 2026-11-01.
 - Código: `src/features/alta/actions/finalizar-alta.ts`, `src/features/alta/components/PasoSepa.tsx`,
   `src/features/alta/lib/mandato-sepa.ts`, `src/features/alta/lib/mandato-pdf.ts`,
   `src/features/remesas/lib/generar-pain008.ts`, `src/features/remesas/lib/preparar-remesa.ts`.

@@ -66,7 +66,7 @@ posterior.
   - aviso de privacidad;
   - textos legales de F8, que tiene que validar un abogado.
 - **Cobros:**
-  - la secuencia SEPA `FRST` (hoy siempre `RCUR`);
+  - la secuencia SEPA `FRST` (hoy siempre `RCUR`); _cancelada el 2026-11-01: FRST se procesa como RCUR_;
   - `cobrado_manual` no distingue efectivo de transferencia.
 - **Riesgo aceptado D4** (auditoría F11-D): hay huecos que reabrir si llega un segundo centro.
 - **Tests:** los E2E siguen fuera de la CI.

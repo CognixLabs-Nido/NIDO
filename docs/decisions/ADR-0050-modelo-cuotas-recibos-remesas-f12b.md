@@ -155,7 +155,8 @@ re-giros (`devuelto_de_recibo_id NOT NULL`) están exentos: las correcciones van
 - Deuda RGPD explícita pendiente con F11-B (retención de recibos/remesas, el XML descargado
   fuera del control de la app, RAT). Bloqueante antes del primer dato real.
 - Follow-ups diferidos: secuencia SEPA **FRST/primera-vez** (hoy siempre RCUR) y `cobrado_manual`
-  sin distinguir efectivo/transferencia.
+  sin distinguir efectivo/transferencia. _(FRST **cancelada** el 2026-11-01: el Rulebook la procesa
+  como RCUR, AT-M006; ver `docs/follow-ups.md`. RCUR fijo es lo correcto.)_
 - La devolución de saldo a favor al causar baja es manual (por diseño, no se automatiza).
 
 ### Neutras
@@ -194,7 +195,8 @@ Ejecutado en subfases (una por PR):
 ## Notas
 
 - El generador pain.008 emite `SeqTp=RCUR` fijo; `FRST` queda diferido (requiere una marca
-  por mandato de "ya girado alguna vez").
+  por mandato de "ya girado alguna vez"). _(Cancelado el 2026-11-01: FRST se procesa como RCUR,
+  así que no hace falta la marca.)_
 - Gotcha recurrente `db:types`: al aplicar una migración se regenera `database.ts` y revierte
   el hand-typing de argumentos nullable de RPC (`p_metodo`, `p_iban`) → restaurar de HEAD y
   re-aplicar solo las columnas nuevas a mano.
