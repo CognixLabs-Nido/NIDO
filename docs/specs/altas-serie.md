@@ -322,6 +322,8 @@ el centro ponga sus datos bancarios (el aviso del 0c), y lo dirá. El punto 7 im
 
 ### Preguntas al responsable
 
+Contestadas el 2026-10-31: ver «Respuestas del responsable», abajo.
+
 - **R-1 · ¿Se guarda el fichero que se envió?** Hoy no hay nada que guardar: es la prueba de lo que
   se envió y no existe. El fichero lleva los IBAN en claro, así que guardarlo entero es otra decisión
   de protección de datos (un bucket cifrado o privado, con su plazo). Propuesta: guardar de cada
@@ -331,6 +333,105 @@ el centro ponga sus datos bancarios (el aviso del 0c), y lo dirá. El punto 7 im
 - **R-3 · El `MsgId` estable (punto 6)** arregla un doble cobro que ya puede pasar hoy. ¿Va en este
   PR o antes, sola? **Decidido: en un PR propio, ya, antes que el resto.** Hecho.
 - **R-4 · ¿Marcar enviada exige el fichero** (punto 7)?
+
+### Respuestas del responsable (2026-10-31) y lo que cambian
+
+- **R-1 · Se guardan las dos cosas:** el registro de cada versión enviada (`MsgId`, sha256, número
+  de adeudos, importe total y, por adeudo, `EndToEndId`, importe y mandato, sin IBAN) **y el fichero
+  entero, en privado, como los documentos de los mandatos.** El plazo es el fiscal, con la constante
+  que ya existe (`ANIOS_FISCAL`, `retencion/lib/fiscal.ts`), nunca un número escrito a mano. Entra
+  en el barrido de retención y en la pasada que lo registra: si se guardan IBAN en un sitio nuevo,
+  ese sitio se borra solo como todo lo demás. Se apunta al RAT para cuando vuelva la lista del
+  abogado. La razón va al ADR.
+- **R-2 · Sí: al reabrir, los mandatos vuelven a FRST.** Se escribe como DEFENSA, no como detalle:
+  el rechazo del segundo FRST es lo que protege del doble cobro. Quien lo «arregle» mandando RCUR
+  quita la red.
+- **R-3 · El `MsgId` estable, en un PR propio y antes que el resto.** Hecho (punto 6).
+- **R-4 · Sí: marcar enviada exige el fichero generado**, y el mensaje dice qué falta, no solo que
+  no se puede.
+
+### Diseño (propuesta, pendiente del visto bueno)
+
+**El fichero de cada versión** (R-1). Una versión empieza con la marca (`fichero_generado_at`) y
+acaba al reabrir.
+
+- **Se guarda la primera vez que sale, y desde ahí la descarga sirve el guardado** en vez de
+  generarlo otra vez. Es el único modo de que lo guardado sea, byte a byte, lo que se pudo subir al
+  banco. Generado de nuevo, cambia aunque los recibos no cambien:
+  - `CreDtTm` y la fecha de cobro (`ReqdColltnDt`) llevan hoy la hora y el día de cada descarga;
+  - el mandato de una familia puede cambiar entre dos descargas (un IBAN nuevo).
+
+  Cambia G1 («regenerable»): dentro de una versión el fichero ya no se regenera. Al reabrir sale una
+  versión nueva, con su fichero.
+
+- **El fichero, en el bucket privado `remesas-ficheros`**, en `{centro}/{remesa}/{MsgId}.xml`. Sin
+  políticas de Storage para las sesiones: lo lee y lo escribe el servidor con `service_role`, después
+  de autorizar con la RLS de la remesa (`es_admin`), como el export con los documentos.
+- **El registro**, en tablas nuevas sin políticas ni privilegios para las sesiones, sin auditar (lo
+  fiscal se borra sin copia) y leído por funciones de Dirección:
+  - `remesa_ficheros`: centro, remesa, `msg_id`, `generado_at` (la marca), sha256, número de
+    adeudos, importe total, ruta, `enviada_at` (la pone marcar enviada) y `reabierta_at` (la pone
+    reabrir);
+  - `remesa_fichero_adeudos`: el fichero, el recibo, `end_to_end_id`, importe y `mandato_id` con su
+    `MndtId`. Sin IBAN ni nombres.
+
+  Se escribe en la misma transacción que la marca. Si no se puede guardar, no hay marca ni fichero
+  (500): sin registro no se sirve nada.
+
+- **Cada versión se conserva, también la reabierta.** Si el banco la tuvo, es la prueba.
+
+**Plazo y barrido** (R-1).
+
+- **Cada fichero vence a los `ANIOS_FISCAL` años de su `generado_at`.** Se borran el fichero de
+  Storage, sus adeudos y su fila. Es el patrón de los documentos de los mandatos: la app borra el
+  fichero antes y, si falla, no toca la base de datos.
+- **Espera a la retención:** con una familia del fichero retenida (`privado.retenido`), no se
+  destruye.
+- **Lo fiscal de la familia espera a sus ficheros.** `privado.familia_fiscal_vencida` añade «ningún
+  fichero de remesa vivo con un recibo suyo». Casi nunca frena: un recibo entra en un fichero
+  después de quedar pendiente y se paga después, así que el plazo de la familia acaba igual o más
+  tarde que el del fichero. La excepción es la familia que no pagó nunca (un devuelto dado por
+  perdido), cuyo plazo cuenta desde el final del curso de la baja y puede acabar antes. Sin esta
+  espera se borraría la familia y seguiría su IBAN en un fichero; con ella se conserva de más, como
+  el resto de lo fiscal.
+- **El barrido nuevo** (`ficheros_remesa_vencidos` y `destruir_fichero_remesa`, solo
+  `service_role`) entra en el cron y en `retencion_pasadas` con su clave. El CHECK de los recuentos
+  pasa de doce claves a trece, y su test con él.
+- **Docs:** fila en la tabla de `retencion-plazos.md`, el ADR con la razón, y el apunte en
+  `follow-ups.md`: el punto del pain.008 que decía «no se almacena» pasa a «se almacena, en privado,
+  con plazo fiscal», pendiente del RAT y de la lista del abogado.
+
+**Marcar enviada** (R-4).
+
+- **Una función** (`marcar_remesa_enviada`, de invocador, `es_admin`) en vez de dos UPDATE desde la
+  app. Hoy la app pasa la remesa a enviada y después, en otra llamada, los recibos a `enviado_banco`:
+  si la segunda falla, la remesa queda enviada con los recibos pendientes.
+- **Exige la marca y su fichero guardado.** Sin ellos, P0001 con HINT `sin_fichero`, y el mensaje
+  dice qué falta: «Falta descargar el fichero: descárgalo, súbelo al banco y vuelve a marcarla
+  enviada».
+- **Lo que el centro no tiene** (CID, BIC, IBAN de acreedor) ya lo dice la descarga, que no genera
+  el fichero (422). El aviso de los datos bancarios es del 0c.
+- **Pone `enviada_at`** en el fichero de la versión.
+
+**Reabrir.** Puntos 1 a 5 de la propuesta, con el `MsgId` y el fichero de arriba. La función
+(`reabrir_remesa`, `privado.es_titular`) pone `reabierta_at` en el fichero de la versión y quita la
+marca con `app.reabrir_remesa`. La siguiente descarga crea la versión nueva.
+
+**FRST** (R-2, para el 0d). Junto al código del 0d, este comentario: «Al reabrir, los mandatos cuyo
+primer cobro iba en la remesa vuelven a FRST. A propósito: si el banco ya tenía el primer fichero,
+rechaza el segundo FRST del mismo mandato, y ese rechazo es la red contra el doble cobro. No cambiar
+a RCUR.» Lleva un test que se pone rojo si alguien lo cambia.
+
+### Preguntas nuevas
+
+- **P-1 · Servir el fichero guardado en vez de regenerarlo** (arriba): cambia G1. ¿De acuerdo?
+- **P-2 · La fecha de cobro.** Hoy el fichero pide el cobro el mismo día de la descarga
+  (`ReqdColltnDt` = hoy). En CORE el banco tiene que recibir el fichero, como tarde, un día hábil
+  antes de esa fecha, así que pedirlo para hoy se arriesga a que lo rechace o lo cambie de fecha. Ya
+  pasa hoy; con el fichero guardado, además, la fecha queda fija en la versión. Propuesta: la
+  directora elige la fecha al generar, con un mínimo de dos días hábiles, y la fecha va en la
+  versión. ¿Va en reabrir o en una pieza aparte?
+- **P-3 · Lo fiscal de la familia espera a sus ficheros** (arriba). ¿De acuerdo?
 
 ## Orden de la serie
 
@@ -357,14 +458,14 @@ Los documentos obligatorios (DNI de los tutores, SEPA, libro de familia) entran 
 
 Orden: 0·doc y 0a → 0b → 0c → reabrir remesas → 0d.
 
-| PR              | Alcance                                                                                                                                                                                                                                                                                 | Migración                                          |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| 0·doc           | Esta spec                                                                                                                                                                                                                                                                               | No                                                 |
-| 0a              | «Omitir» de verdad: el gate de `finalizarAlta` deja de exigir `sepa`, se corrige el texto de la pantalla y se añade el primer test de `finalizarAlta`, con control negativo                                                                                                             | No (`marcar_matricula_lista` no exige mandato)     |
-| 0b              | El fichero que acepta el banco: `MndtId` y `EndToEndId` ≤ 35, concepto `centro · niño · mes` sin tildes, el generador rechaza los largos, fixtures con la forma real                                                                                                                    | No                                                 |
-| 0c              | Mandato v2: CID en el PDF y en el texto canónico v2, columna con la versión del canónico (los existentes en v1), NIF y dirección del titular, los tres caminos que crean mandatos (alta, `/family/domiciliacion`, presencial de Dirección) y el aviso en los datos bancarios del centro | Sí, pequeña                                        |
-| Reabrir remesas | Ver «Reabrir una remesa»: recibos enviados a pendiente, remesa a borrador sin la marca, solo la admin, el aviso con familias e importe, su fila en `audit_log`, `MsgId` por versión                                                                                                     | Sí: la función y el marcador en `remesas_proteger` |
-| 0d              | FRST en el primer cobro de cada mandato, RCUR en los siguientes, sin FRST repetido                                                                                                                                                                                                      | Sí                                                 |
+| PR              | Alcance                                                                                                                                                                                                                                                                                                                | Migración                                                                                                        |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 0·doc           | Esta spec                                                                                                                                                                                                                                                                                                              | No                                                                                                               |
+| 0a              | «Omitir» de verdad: el gate de `finalizarAlta` deja de exigir `sepa`, se corrige el texto de la pantalla y se añade el primer test de `finalizarAlta`, con control negativo                                                                                                                                            | No (`marcar_matricula_lista` no exige mandato)                                                                   |
+| 0b              | El fichero que acepta el banco: `MndtId` y `EndToEndId` ≤ 35, concepto `centro · niño · mes` sin tildes, el generador rechaza los largos, fixtures con la forma real                                                                                                                                                   | No                                                                                                               |
+| 0c              | Mandato v2: CID en el PDF y en el texto canónico v2, columna con la versión del canónico (los existentes en v1), NIF y dirección del titular, los tres caminos que crean mandatos (alta, `/family/domiciliacion`, presencial de Dirección) y el aviso en los datos bancarios del centro                                | Sí, pequeña                                                                                                      |
+| Reabrir remesas | Ver «Reabrir una remesa» y su «Diseño»: recibos enviados a pendiente, remesa a borrador sin la marca, solo la admin, el aviso con familias e importe, su fila en `audit_log`; el fichero de cada versión guardado en privado con su registro y plazo fiscal en el barrido; marcar enviada por función y con el fichero | Sí: la función, el marcador en `remesas_proteger`, las dos tablas, el bucket, el barrido y la clave de la pasada |
+| 0d              | FRST en el primer cobro de cada mandato, RCUR en los siguientes, sin FRST repetido                                                                                                                                                                                                                                     | Sí                                                                                                               |
 
 ## Estado
 
