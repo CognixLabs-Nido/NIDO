@@ -343,7 +343,9 @@ Contestadas el 2026-10-31: ver «Respuestas del responsable», abajo.
   en el barrido de retención y en la pasada que lo registra: si se guardan IBAN en un sitio nuevo,
   ese sitio se borra solo como todo lo demás. Se apunta al RAT para cuando vuelva la lista del
   abogado. La razón va al ADR.
-- **R-2 · Sí: al reabrir, los mandatos vuelven a FRST.** Se escribe como DEFENSA, no como detalle:
+- **R-2 · Sí: al reabrir, los mandatos vuelven a FRST.** _(En revisión, 2026-11-01: según el
+  Rulebook 2025, FRST es opcional y se procesa como RCUR, así que el esquema no rechaza un segundo
+  FRST. Ver «Lo que cambia la R-2».)_ Se escribe como DEFENSA, no como detalle:
   el rechazo del segundo FRST es lo que protege del doble cobro. Quien lo «arregle» mandando RCUR
   quita la red.
 - **R-3 · El `MsgId` estable, en un PR propio y antes que el resto.** Hecho (punto 6).
@@ -424,7 +426,7 @@ acaba al reabrir.
 (`reabrir_remesa`, `privado.es_titular`) pone `reabierta_at` en el fichero de la versión y quita la
 marca con `app.reabrir_remesa`. La siguiente descarga crea la versión nueva.
 
-**FRST** (R-2, para el 0d). Junto al código del 0d, este comentario: «Al reabrir, los mandatos cuyo
+**FRST** (R-2, para el 0d; en revisión, ver «Lo que cambia la R-2»). Junto al código del 0d, este comentario: «Al reabrir, los mandatos cuyo
 primer cobro iba en la remesa vuelven a FRST. A propósito: si el banco ya tenía el primer fichero,
 rechaza el segundo FRST del mismo mandato, y ese rechazo es la red contra el doble cobro. No cambiar
 a RCUR.» Lleva un test que se pone rojo si alguien lo cambia.
@@ -459,30 +461,42 @@ Lo que hay (medido el 2026-11-01, `main` y producción en solo lectura):
   bloque por fecha, todos con el mismo `MsgId`, cada uno con su `PmtInfId` y sus totales. El 0d
   (FRST/RCUR) parte también por secuencia, porque `SeqTp` va igualmente por bloque.
 
-Pendiente de decidir antes de escribirla (preguntas F-1 a F-3, abajo). Lo demás, propuesto:
+**Decidido (responsable y Jose, 2026-11-01):**
 
-- **Bloques:** uno por cada par (fecha, secuencia). `PmtInfId` = `{MsgId}-{n}`, 31 caracteres como
-  mucho. Con una sola fecha queda un bloque, como hoy.
-- **Sin fecha en el recibo:** el día hábil siguiente al día en que se genera la versión (la marca),
-  con días hábiles de TARGET2: sin fines de semana, 1 de enero, Viernes Santo, Lunes de Pascua,
-  1 de mayo, 25 y 26 de diciembre.
-- **Al generar una versión nueva** (reabrir) la fecha se vuelve a calcular con la del recibo. Una
-  fecha ya pasada se lleva al día hábil siguiente, y el aviso de reabrir lo dice.
+- **Cada recibo lleva su propia fecha de cobro, opcional.** Palabras de Jose: «cada recibo tiene su
+  propia fecha, si no indicas nada es el próximo día, si indicas una fecha es cuando se indica».
+- **Sin fecha en el recibo, el fichero pone la del día en que se genera la versión** (el día de la
+  marca, no el de cada descarga). Si no cumple plazos, el banco la ajusta: el cuaderno 19-14 dice
+  que la entidad «podrá rechazar su proceso o ajustar la fecha de cobro a la primera disponible», y
+  la guía de CaixaBank que la ajusta «a la primera que cumpla los plazos mínimos». No es cosa
+  nuestra.
+- **No hay aviso de «fichero caducado».** Generar el lunes y subir el jueves no rompe nada: el banco
+  cobra en cuanto puede. (Se propuso y se retira.)
+- **Un bloque de pago por fecha distinta**, todos con el mismo `MsgId` y cada uno con su `PmtInfId`
+  (`{MsgId}-{n}`, 31 caracteres como mucho) y sus totales. Con una sola fecha, un bloque, como hoy.
+- **La directora no toca los recibos uno a uno:** pone «el 5» a todos los de una remesa de golpe, o
+  a los que marque, y también en uno solo si hace falta.
+- **Días hábiles:** TARGET2, y si el banco de un centro dice otra cosa, manda el banco. Con lo
+  decidido, NIDO no calcula ningún día hábil: solo se usaría si algún día se valida.
 
-Preguntas:
+**El plazo vigente, de la fuente** (SDD Core Rulebook 2025, EPC016-06 versión 1.0, emitido el
+28-11-2024, en vigor desde el 5-10-2025; la 1.1 no cambia reglas, y rige hasta el 21-11-2027):
 
-- **F-1 · ¿Dónde se pone la fecha?** En NIDO no existe. La frase de Jose («si no indicas nada…, si
-  seleccionas una fecha futura…») puede describir la pantalla del banco al subir el fichero, o lo que
-  espera que haga NIDO. Si es NIDO: una columna nueva en el recibo (`fecha_cobro_banco`, opcional,
-  futura), ¿la pone la directora en cada recibo, en el panel del mes, o en todos los de una remesa
-  de golpe?
-- **F-2 · «El día hábil siguiente», ¿a qué día?** NIDO sabe cuándo se genera el fichero, no cuándo
-  se sube. Si se genera el lunes y se sube el jueves, el fichero pide el martes, ya pasado. Con la
-  P-1 el fichero queda fijo, así que corregirlo obliga a reabrir. Propuesta: siguiente al día de
-  generar, y la pantalla de la remesa avisa cuando la fecha del fichero ya pasó sin haberla marcado
-  enviada.
-- **F-3 · Días hábiles:** el calendario TARGET2 (el de SEPA, sin los festivos españoles), salvo que
-  el banco del centro diga otra cosa.
+- **D-1 para todos los adeudos**, primeros, recurrentes y únicos, desde la versión 9.0 (noviembre
+  de 2016). El 7 y el 4 de los cuadernos de 2013-2014 ya no rigen, y no van al código.
+- **No antes de 14 días naturales** de la fecha de cobro, «unless otherwise agreed between the
+  Creditor and the Creditor PSP».
+- En consulta pública (EPC010-26, marzo de 2026) hay una propuesta de pasar de D-1 a D. No está en
+  vigor.
+- **No se valida nada.** El banco ajusta. Si algún día se valida, el plazo sale de una constante con
+  su fuente escrita al lado.
+
+**Lo que cambia la R-2, de la misma fuente.** El Rulebook dice, en AT-M006: «A Collection with the
+optional transaction type ‘first’ is processed as a recurrent Collection». Desde 2016, FRST es
+opcional y se procesa como RCUR. **Un segundo FRST no lo rechaza el esquema**, así que la red de la
+R-2 («el rechazo del segundo FRST protege del doble cobro») no existe en las reglas del esquema.
+Puede existir en un banco concreto, pero eso no lo dice el Rulebook. Pendiente del responsable:
+replantea la R-2 y el propio 0d.
 
 ## Orden de la serie
 
