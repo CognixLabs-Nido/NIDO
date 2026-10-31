@@ -198,6 +198,54 @@ describe('Un recibo, una remesa', () => {
     expect(quitada.error?.hint).toBe('fichero_generado')
   })
 
+  it('a una remesa enviada sin marca se le pone en la descarga, y una segunda no la cambia', async () => {
+    // La descarga del XML saca el MsgId de la marca (\`message-id.ts\`): la enviada de antes de la
+    // columna la recibe en su primera descarga, y otra descarga a la vez no la sobrescribe.
+    const r = await remesa()
+    expect((await enlazar(cDirectora, r, await recibo())).error).toBeNull()
+    const enviada = await cDirectora
+      .from('remesas')
+      .update({ estado: 'enviada', fecha_envio_banco: '2026-03-05' })
+      .eq('id', r)
+      .select('fichero_generado_at')
+      .maybeSingle()
+    expect(enviada.error).toBeNull()
+    // Premisa: enviada y sin marca.
+    expect(enviada.data).toEqual({ fichero_generado_at: null })
+
+    const primera = '2026-03-06T10:00:00+00:00'
+    const marca = await cDirectora
+      .from('remesas')
+      .update({ fichero_generado_at: primera })
+      .eq('id', r)
+      .is('fichero_generado_at', null)
+      .select('fichero_generado_at')
+      .maybeSingle()
+    expect(marca.error).toBeNull()
+    expect(new Date(marca.data!.fichero_generado_at!).toISOString()).toBe(
+      new Date(primera).toISOString()
+    )
+
+    const otra = await cDirectora
+      .from('remesas')
+      .update({ fichero_generado_at: '2026-03-06T10:00:05+00:00' })
+      .eq('id', r)
+      .is('fichero_generado_at', null)
+      .select('id')
+      .maybeSingle()
+    expect(otra.error).toBeNull()
+    expect(otra.data).toBeNull()
+    const { data: leida } = await cDirectora
+      .from('remesas')
+      .select('fichero_generado_at, estado')
+      .eq('id', r)
+      .single()
+    expect(leida?.estado).toBe('enviada')
+    expect(new Date(leida!.fichero_generado_at!).toISOString()).toBe(
+      new Date(primera).toISOString()
+    )
+  })
+
   it('solo entran recibos por banco, confirmados, con importe y del centro', async () => {
     const r = await remesa()
     const noRemesables = {

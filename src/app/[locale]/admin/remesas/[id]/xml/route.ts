@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 
 import { conceptosDeRemesa } from '@/features/remesas/lib/concepto-adeudo'
+import { messageIdRemesa } from '@/features/remesas/lib/message-id'
 import { prepararRemesa } from '@/features/remesas/lib/preparar-remesa'
 
 export const dynamic = 'force-dynamic'
@@ -18,6 +19,12 @@ export const runtime = 'nodejs'
  * (`20261120120000`). La marca va ANTES de leer los recibos que van en el fichero: un recibo
  * añadido entre la lectura y la marca quedaría en la remesa sin estar en el fichero. Antes se
  * comprueba que el fichero sale, para no cerrar una remesa con un 422.
+ *
+ * El MsgId sale de esa marca, no de la hora de la descarga (`message-id.ts`): dos descargas de la
+ * misma versión son el mismo fichero para el banco, que rechaza el segundo en vez de cobrarlo dos
+ * veces. Por eso también se marca la remesa enviada que no la tiene (las de antes de la marca): su
+ * primera descarga fija el MsgId de las siguientes. La marca se vuelve a leer después de ponerla:
+ * si otra descarga la puso a la vez, el UPDATE no toca nada y vale la suya.
  */
 export async function GET(
   _request: Request,
@@ -43,7 +50,8 @@ export async function GET(
     .maybeSingle()
 
   // 2. Deudores (IBAN descifrado server-side) + config del acreedor → el fichero, o el motivo.
-  async function generar(): Promise<{ xml: string } | Response> {
+  // `marca` NULL solo en la comprobación previa, o si la columna no existe (PGRST204, abajo).
+  async function generar(marca: string | null): Promise<{ xml: string } | Response> {
     const [{ data: mandatos, error: errMand }, { data: acreedores, error: errAcr }] =
       await Promise.all([
         supabase.rpc('get_mandatos_remesa', { p_remesa_id: id }),
@@ -103,7 +111,7 @@ export async function GET(
       mandatos ?? [],
       acreedor,
       {
-        messageId: `NIDO-${id.slice(0, 8)}-${now.toISOString().slice(0, 19).replace(/[-:T]/g, '')}`,
+        messageId: messageIdRemesa(id, marca ?? now.toISOString()),
         creationDateTime: now.toISOString().slice(0, 19),
         collectionDate: now.toISOString().slice(0, 10),
         creditorName: centro?.nombre ?? '',
@@ -124,21 +132,33 @@ export async function GET(
     return { xml: resultado.xml }
   }
 
-  let fichero = await generar()
+  const marcaLeida: string | null = remesa.fichero_generado_at ?? null
+  let fichero = await generar(marcaLeida)
   if (fichero instanceof Response) return fichero
 
-  // 3. Primera vez en borrador: la marca, y el fichero se vuelve a leer ya con la remesa cerrada.
-  if (remesa.estado === 'borrador' && !remesa.fichero_generado_at) {
+  // 3. Sin marca: se pone, se vuelve a leer, y el fichero sale otra vez con su MsgId y, en
+  //    borrador, ya con la remesa cerrada.
+  if (!marcaLeida) {
     const { error: errMarca } = await supabase
       .from('remesas')
       .update({ fichero_generado_at: new Date().toISOString() })
       .eq('id', id)
       .is('fichero_generado_at', null)
     // PGRST204: la columna aún no existe (desplegado antes que la migración). Sin columna no hay
-    // trigger que cierre la remesa, así que el fichero ya leído vale, como antes.
+    // trigger que cierre la remesa ni marca de la que sacar el MsgId: el fichero ya leído vale,
+    // como antes.
     if (errMarca && errMarca.code !== 'PGRST204') return json({ error: 'xml_failed' }, 500)
     if (!errMarca) {
-      fichero = await generar()
+      // La ausencia aquí no es legítima: acabamos de marcarla o la marcó otro. Sin marca no hay
+      // MsgId estable, y servir uno con la hora sería el doble cobro que esto evita.
+      const { data: marcada, error: errLeer } = await supabase
+        .from('remesas')
+        .select('fichero_generado_at')
+        .eq('id', id)
+        .maybeSingle()
+      const marca = marcada?.fichero_generado_at ?? null
+      if (errLeer || !marca) return json({ error: 'xml_failed' }, 500)
+      fichero = await generar(marca)
       if (fichero instanceof Response) return fichero
     }
   }

@@ -238,11 +238,12 @@ poder abrir, editar y volver a crear.»
 - **Permisos:** crear, descargar y marcar enviada es `es_admin` (la admin y las directoras).
   `dar_deuda_por_perdida` es `privado.es_titular`: la admin del centro, sin la directora ni el
   superusuario.
-- **El `MsgId` cambia en cada descarga** (lleva la hora: `NIDO-{remesa}-{AAAAMMDDhhmmss}`). Dos
-  descargas de la misma remesa son dos ficheros distintos para el banco, y su control de ficheros
-  repetidos (que mira el `MsgId`) no para el segundo. **Esto ya pasa hoy, sin reabrir nada:** quien
-  descarga dos veces y sube los dos cobra dos veces. El `EndToEndId` de cada adeudo es estable
-  (el id del recibo; desde el 0b, sin guiones), pero no todos los bancos rechazan por él.
+- **El `MsgId` cambiaba en cada descarga** (llevaba la hora: `NIDO-{remesa}-{AAAAMMDDhhmmss}`). Dos
+  descargas de la misma remesa eran dos ficheros distintos para el banco, y su control de ficheros
+  repetidos (que mira el `MsgId`) no paraba el segundo. Pasaba sin reabrir nada: quien descargaba
+  dos veces y subía los dos cobraba dos veces. El `EndToEndId` de cada adeudo es estable (el id del
+  recibo; desde el 0b, sin guiones), pero no todos los bancos rechazan por él. **Arreglado aparte,
+  antes de reabrir (R-3):** el `MsgId` sale de la marca del fichero (punto 6).
 
 ### Propuesta
 
@@ -277,10 +278,10 @@ poder abrir, editar y volver a crear.»
 6. **El `MsgId`, estable por versión del fichero:** el mismo en todas las descargas de una versión
    y uno nuevo al reabrir. Así un banco que ya tenga el fichero rechaza la segunda subida de la
    misma versión. Trazado:
-   - **Hoy** la ruta del XML lo calcula con la hora de la descarga
+   - **Antes de la R-3** la ruta del XML lo calculaba con la hora de la descarga
      (`NIDO-{remesa 8}-{AAAAMMDDhhmmss de now()}`), y `PmtInfId` es el mismo valor. Cada descarga,
-     también la de una remesa ya enviada (G1: «regenerable»), da un fichero que el banco no
-     reconoce como repetido.
+     también la de una remesa ya enviada (G1: «regenerable»), daba un fichero que el banco no
+     reconocía como repetido.
    - **La versión ya existe en la BD:** `fichero_generado_at`, que pone la primera descarga y no
      se quita. El `MsgId` sale de ella (`NIDO-{remesa 8}-{AAAAMMDDhhmmss de fichero_generado_at}`,
      28 caracteres) y no de `now()`: todas las descargas de esa versión dan el mismo `MsgId`.
@@ -290,8 +291,14 @@ poder abrir, editar y volver a crear.»
    - **La primera descarga** genera, marca y vuelve a generar (`20261120120000`): el `MsgId` se
      calcula con la marca ya puesta, y el primer fichero (el que comprueba que sale) no se sirve.
    - **Una remesa enviada antes de esta pieza** puede no tener marca (la de CEI Ejemplo): sin
-     marca no hay versión, y la descarga la pone igual que con una en borrador.
-   - Si va solo y antes de reabrir es la R-3.
+     marca no hay versión, y la descarga la pone igual que con una en borrador. Su primera descarga
+     fija el `MsgId` de las siguientes; un fichero que ya se bajó antes de la R-3 llevaba otro, que
+     no se puede saber (G1: no se guardaba). La de CEI Ejemplo no tiene ese problema: su fichero no
+     salió nunca.
+   - **Tras poner la marca se vuelve a leer:** si otra descarga la puso a la vez, el UPDATE (con
+     `fichero_generado_at IS NULL`) no toca nada y vale la de la otra. Si no se puede leer, la
+     descarga da 500: un `MsgId` con la hora sería el doble cobro que esto evita.
+   - **Hecho en un PR propio, antes de reabrir (R-3):** `message-id.ts` y la ruta del XML.
 7. **Marcar enviada exige el fichero generado.** Hoy se puede marcar enviada una remesa cuyo fichero
    no salió nunca: así nació la de CEI Ejemplo (abajo).
 
@@ -322,7 +329,7 @@ el centro ponga sus datos bancarios (el aviso del 0c), y lo dirá. El punto 7 im
   `EndToEndId` con su importe y mandato, sin IBAN. Basta para probar qué se pidió al banco y cuándo.
 - **R-2 · ¿Los mandatos vuelven a FRST al reabrir** (arriba)? Propuesta: sí.
 - **R-3 · El `MsgId` estable (punto 6)** arregla un doble cobro que ya puede pasar hoy. ¿Va en este
-  PR o antes, sola?
+  PR o antes, sola? **Decidido: en un PR propio, ya, antes que el resto.** Hecho.
 - **R-4 · ¿Marcar enviada exige el fichero** (punto 7)?
 
 ## Orden de la serie
