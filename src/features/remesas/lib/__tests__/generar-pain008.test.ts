@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-import { generarPain008, type Pain008Input } from '../generar-pain008'
+import {
+  MAX_IDENTIFICADOR_SEPA,
+  generarPain008,
+  textoSepa,
+  type Pain008Input,
+} from '../generar-pain008'
+
+// Forma de producción (medida el 2026-10-31): los mandatos firmados antes del PR-0b miden 36
+// (`NIDO-{8}-{8}-{13 dígitos}`) y los nuevos, 31 (timestamp en base 36). El EndToEndId es el id
+// del recibo sin guiones (32). El fixture de antes (`NIDO-DEMO-TUT1-1`, 16) cabía siempre, y por
+// eso no se vio que los de producción no cabían.
+const MANDATO_36_PRODUCCION = 'NIDO-33C79B50-87319A17-1784546999227'
 
 const baseInput: Pain008Input = {
   messageId: 'NIDO-ABCDEF12-20260701120000',
@@ -13,20 +24,22 @@ const baseInput: Pain008Input = {
   sequenceType: 'RCUR',
   deudores: [
     {
-      endToEndId: '11111111-1111-4111-8111-111111111111',
-      mandateId: 'NIDO-DEMO-TUT1-1',
+      endToEndId: '0D06FFD1D24E4D6EB1DB341D6C94BB26',
+      mandateId: 'NIDO-33C79B50-87319A17-MH3K2Q8L',
       mandateDate: '2026-06-01',
       debtorName: 'Ana Pérez',
       debtorIban: 'ES7620770024003102575766',
       amountCents: 12000,
+      concepto: 'CEI Ejemplo · Nino Demo Uno · Octubre 2026',
     },
     {
-      endToEndId: '22222222-2222-4222-9222-222222222222',
-      mandateId: 'NIDO-DEMO-TUT2-1',
+      endToEndId: '290F1ADF67AB42739AF32B4D9F39B323',
+      mandateId: 'NIDO-33C79B50-8F54B0D9-MH3K2Q8M',
       mandateDate: '2026-06-02',
       debtorName: 'Luis Gómez',
       debtorIban: 'ES1000492352082414205416',
       amountCents: 8050,
+      concepto: 'CEI Ejemplo · Nino Demo Dos · Octubre 2026',
     },
   ],
 }
@@ -46,7 +59,7 @@ describe('generarPain008', () => {
     // Deudores.
     expect(xml).toContain('<Nm>Ana Pérez</Nm>')
     expect(xml).toContain('<IBAN>ES7620770024003102575766</IBAN>')
-    expect(xml).toContain('<MndtId>NIDO-DEMO-TUT1-1</MndtId>')
+    expect(xml).toContain('<MndtId>NIDO-33C79B50-87319A17-MH3K2Q8L</MndtId>')
     expect(xml).toContain('<DtOfSgntr>2026-06-01</DtOfSgntr>')
   })
 
@@ -92,5 +105,59 @@ describe('generarPain008', () => {
     delete sinSeq.sequenceType
     const xml = generarPain008(sinSeq)
     expect(xml).toContain('<SeqTp>RCUR</SeqTp>')
+  })
+
+  it('el concepto del extracto es centro, niño y mes en el juego SEPA, no el id del recibo', () => {
+    const xml = generarPain008(baseInput)
+    expect(xml).toContain('<Ustrd>CEI Ejemplo - Nino Demo Uno - Octubre 2026</Ustrd>')
+    expect(xml).not.toContain(`<Ustrd>${baseInput.deudores[0].endToEndId}</Ustrd>`)
+    expect(xml).toContain('<EndToEndId>0D06FFD1D24E4D6EB1DB341D6C94BB26</EndToEndId>')
+  })
+
+  it('el concepto se corta a 140 caracteres (Max140)', () => {
+    const largo = 'A'.repeat(200)
+    const xml = generarPain008({
+      ...baseInput,
+      deudores: [{ ...baseInput.deudores[0], concepto: largo }],
+    })
+    expect(xml).toContain(`<Ustrd>${'A'.repeat(140)}</Ustrd>`)
+  })
+})
+
+describe('generarPain008 · identificadores de 35 como máximo (Max35)', () => {
+  it('premisa: el mandato de producción mide 36 y el del fixture cabe', () => {
+    expect(MANDATO_36_PRODUCCION.length).toBe(36)
+    expect(baseInput.deudores[0].mandateId.length).toBeLessThanOrEqual(MAX_IDENTIFICADOR_SEPA)
+  })
+
+  it('rechaza un mandato de 36 con un mensaje que dice el límite', () => {
+    const input = {
+      ...baseInput,
+      deudores: [{ ...baseInput.deudores[0], mandateId: MANDATO_36_PRODUCCION }],
+    }
+    expect(() => generarPain008(input)).toThrow(/más de 35 caracteres/)
+  })
+
+  it('la frontera: 35 sale, 36 no; también en EndToEndId y MsgId', () => {
+    const d = baseInput.deudores[0]
+    expect(() =>
+      generarPain008({ ...baseInput, deudores: [{ ...d, mandateId: 'M'.repeat(35) }] })
+    ).not.toThrow()
+    expect(() =>
+      generarPain008({ ...baseInput, deudores: [{ ...d, endToEndId: 'E'.repeat(36) }] })
+    ).toThrow(/más de 35/)
+    expect(() => generarPain008({ ...baseInput, messageId: 'X'.repeat(36) })).toThrow(/más de 35/)
+  })
+})
+
+describe('textoSepa', () => {
+  it('quita tildes y eñes, el punto medio pasa a guion y lo demás fuera del juego, a espacio', () => {
+    expect(textoSepa('Escoleta Peña · Ñoño Güell & Cía · Octubre 2026')).toBe(
+      'Escoleta Pena - Nono Guell Cia - Octubre 2026'
+    )
+  })
+
+  it('deja intactos los caracteres que admite SEPA', () => {
+    expect(textoSepa("A-z 0/9 ?:().,'+")).toBe("A-z 0/9 ?:().,'+")
   })
 })

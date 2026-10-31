@@ -8,8 +8,17 @@
 //  - Recibo con total ≤ 0 (saldo a favor) → excluido del adeudo (no se domicilia
 //    un abono), pero no bloquea la remesa; se informa como excluido.
 //  - Si tras excluir no queda ningún deudor → remesa vacía.
+//  - Un identificador de más de 35 caracteres (Max35 del esquema) → no se genera: se listan las
+//    familias afectadas. Hoy solo puede pasar con un mandato firmado antes del PR-0b, que medía
+//    36; esa familia vuelve a firmar la domiciliación.
 
-import { generarPain008, type Pain008Input, type SecuenciaAdeudo } from './generar-pain008'
+import {
+  MAX_IDENTIFICADOR_SEPA,
+  generarPain008,
+  identificadoresLargos,
+  type Pain008Input,
+  type SecuenciaAdeudo,
+} from './generar-pain008'
 
 /** Fila devuelta por la RPC get_mandatos_remesa (F-4-5: grano familia). */
 export interface MandatoRemesaRow {
@@ -50,6 +59,12 @@ export type PrepararRemesaResultado =
   | { ok: false; motivo: 'acreedor_incompleto' }
   | { ok: false; motivo: 'sin_mandato'; familiasSinMandato: string[] }
   | { ok: false; motivo: 'remesa_vacia' }
+  | { ok: false; motivo: 'identificador_largo'; familiasIdentificadorLargo: string[] }
+
+/** `EndToEndId` del recibo: su id sin guiones (32 caracteres), el mismo en cada descarga. */
+export function endToEndIdDeRecibo(reciboId: string): string {
+  return reciboId.replace(/-/g, '').toUpperCase()
+}
 
 function tieneMandato(row: MandatoRemesaRow): boolean {
   return (
@@ -61,10 +76,15 @@ function tieneMandato(row: MandatoRemesaRow): boolean {
   )
 }
 
+/**
+ * `conceptos`: el de cada recibo, por id (`conceptosDeRemesa`). Un recibo cobrable sin concepto es
+ * un fallo del caller, y lanza: el fichero no sale con la línea del extracto vacía.
+ */
 export function prepararRemesa(
   rows: MandatoRemesaRow[],
   acreedor: AcreedorData,
-  meta: RemesaMeta
+  meta: RemesaMeta,
+  conceptos: ReadonlyMap<string, string>
 ): PrepararRemesaResultado {
   // 1. Config del acreedor: CID + IBAN son obligatorios (BIC opcional).
   if (!acreedor.identificador_acreedor?.trim() || !acreedor.iban?.trim()) {
@@ -98,14 +118,31 @@ export function prepararRemesa(
     creditorIban: acreedor.iban.trim(),
     creditorBic: acreedor.bic_acreedor,
     sequenceType: meta.sequenceType ?? 'RCUR',
-    deudores: cobrables.map((r) => ({
-      endToEndId: r.recibo_id,
-      mandateId: r.identificador_mandato!.trim(),
-      mandateDate: r.fecha_mandato!,
-      debtorName: r.titular ?? '',
-      debtorIban: r.iban!.trim(),
-      amountCents: r.total_centimos,
-    })),
+    deudores: cobrables.map((r) => {
+      const concepto = conceptos.get(r.recibo_id)
+      if (!concepto) throw new Error('prepararRemesa: recibo sin concepto')
+      return {
+        endToEndId: endToEndIdDeRecibo(r.recibo_id),
+        mandateId: r.identificador_mandato!.trim(),
+        mandateDate: r.fecha_mandato!,
+        debtorName: r.titular ?? '',
+        debtorIban: r.iban!.trim(),
+        amountCents: r.total_centimos,
+        concepto,
+      }
+    }),
+  }
+
+  // 4. Identificadores que no caben en Max35: se dice qué familias, no se recorta.
+  if (identificadoresLargos(input).length > 0) {
+    const largas = cobrables.filter(
+      (r) => r.identificador_mandato!.trim().length > MAX_IDENTIFICADOR_SEPA
+    )
+    return {
+      ok: false,
+      motivo: 'identificador_largo',
+      familiasIdentificadorLargo: [...new Set(largas.map((r) => r.familia_etiqueta))],
+    }
   }
 
   return {

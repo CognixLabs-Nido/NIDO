@@ -2126,6 +2126,7 @@
       "enviar_failed": "Could not mark the remittance as sent.",
       "enviar_recibos_failed": "The remittance was marked, but some receipts failed.",
       "sin_mandato": "{num} receipt(s) without an active SEPA mandate. Fix this before generating the file.",
+      "identificador_largo": "{num} family(ies) have a SEPA mandate whose identifier is longer than 35 characters, which the bank rejects. They need to sign the direct debit again before you generate the file.",
       "acreedor_incompleto": "Complete the creditor details (CID and IBAN) before generating the file.",
       "remesa_vacia": "The remittance has no chargeable receipts (amount greater than 0).",
       "xml_failed": "Could not generate the SEPA file.",

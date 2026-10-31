@@ -10,8 +10,18 @@
 /** Secuencia del adeudo (SeqTp). B-5 usa RCUR; el resto queda para follow-up. */
 export type SecuenciaAdeudo = 'FRST' | 'RCUR' | 'OOFF' | 'FNAL'
 
+/**
+ * Tope de `MsgId`, `PmtInfId`, `EndToEndId` y `MndtId` en pain.008.001.02 (Max35Text). Un
+ * identificador más largo no se recorta: recortado ya no es el que firmó la familia, y el banco
+ * que valida el esquema rechaza el fichero entero.
+ */
+export const MAX_IDENTIFICADOR_SEPA = 35
+
+/** Tope del concepto (`RmtInf/Ustrd`, Max140Text). */
+export const MAX_CONCEPTO_SEPA = 140
+
 export interface Pain008Deudor {
-  /** EndToEndId único de la operación (usamos el id del recibo). */
+  /** EndToEndId único de la operación (el id del recibo sin guiones). */
   endToEndId: string
   /** Identificador del mandato (MndtId). */
   mandateId: string
@@ -23,6 +33,8 @@ export interface Pain008Deudor {
   debtorIban: string
   /** Importe en céntimos (> 0; el caller ya excluyó los ≤ 0). */
   amountCents: number
+  /** Lo que la familia lee en el extracto (`Ustrd`): centro, niño y mes. */
+  concepto: string
 }
 
 export interface Pain008Input {
@@ -55,6 +67,30 @@ function esc(value: string): string {
     .replace(/'/g, '&apos;')
 }
 
+/**
+ * Texto en el juego de caracteres latino básico de SEPA (letras sin tildes, cifras, espacio y
+ * `/ - ? : ( ) . , ' +`), que es lo único que todo banco acepta. El punto medio del formato del
+ * concepto pasa a guion; cualquier otro carácter, a espacio. El concepto se compone con `·` (es el
+ * formato que decidió el responsable, y el de una pantalla si se enseña) y solo el fichero lo
+ * escribe con guion: no igualarlos (`concepto-adeudo.ts`).
+ */
+export function textoSepa(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/·/g, '-')
+    .replace(/[^A-Za-z0-9/?:().,'+\- ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** Identificadores del fichero que no caben en Max35 (vacío si todos caben). */
+export function identificadoresLargos(input: Pain008Input): string[] {
+  return [input.messageId, ...input.deudores.flatMap((d) => [d.endToEndId, d.mandateId])].filter(
+    (id) => id.length > MAX_IDENTIFICADOR_SEPA
+  )
+}
+
 /** Nombre SEPA: recorta a 70 chars y escapa. */
 function nombreSepa(value: string): string {
   return esc(value.slice(0, 70))
@@ -72,6 +108,14 @@ function euros(cents: number): string {
  * la hace el caller ANTES de invocar este generador.
  */
 export function generarPain008(input: Pain008Input): string {
+  // Red del generador: el caller ya lo rechaza con su motivo (`prepararRemesa`); aquí no sale un
+  // fichero que el banco vaya a devolver.
+  const largos = identificadoresLargos(input)
+  if (largos.length > 0) {
+    throw new Error(
+      `pain.008: ${largos.length} identificador(es) de más de ${MAX_IDENTIFICADOR_SEPA} caracteres`
+    )
+  }
   const seq = input.sequenceType ?? 'RCUR'
   const nbTx = input.deudores.length
   const ctrlSumCents = input.deudores.reduce((acc, d) => acc + d.amountCents, 0)
@@ -108,7 +152,7 @@ export function generarPain008(input: Pain008Input): string {
           </Id>
         </DbtrAcct>
         <RmtInf>
-          <Ustrd>${esc(d.endToEndId)}</Ustrd>
+          <Ustrd>${esc(textoSepa(d.concepto).slice(0, MAX_CONCEPTO_SEPA))}</Ustrd>
         </RmtInf>
       </DrctDbtTxInf>`
     )

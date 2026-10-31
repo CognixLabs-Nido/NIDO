@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 
+import { conceptosDeRemesa } from '@/features/remesas/lib/concepto-adeudo'
 import { prepararRemesa } from '@/features/remesas/lib/preparar-remesa'
 
 export const dynamic = 'force-dynamic'
@@ -60,20 +61,64 @@ export async function GET(
       iban: null,
     }
 
+    // El concepto de cada adeudo: el mes del recibo y los niños de sus líneas (el recibo es de la
+    // familia). Un fallo de lectura no saca el fichero sin nombres: 500.
+    const reciboIds = (mandatos ?? []).map((m) => m.recibo_id)
+    let conceptos = new Map<string, string>()
+    if (reciboIds.length > 0) {
+      const [{ data: recibos, error: errRec }, { data: lineas, error: errLin }] = await Promise.all(
+        [
+          supabase
+            .from('recibos')
+            .select('id, anio, mes')
+            .eq('centro_id', remesa!.centro_id)
+            .in('id', reciboIds),
+          supabase
+            .from('lineas_recibo')
+            .select('recibo_id, nino_id')
+            .eq('centro_id', remesa!.centro_id)
+            .in('recibo_id', reciboIds),
+        ]
+      )
+      if (errRec || errLin) return json({ error: 'xml_failed' }, 500)
+      const ninoIds = [
+        ...new Set((lineas ?? []).map((l) => l.nino_id).filter((n): n is string => !!n)),
+      ]
+      let ninos: { id: string; nombre: string; apellidos: string | null }[] = []
+      if (ninoIds.length > 0) {
+        // Sin filtrar `deleted_at`: el niño de baja también se cobra, y su nombre va en el concepto.
+        const { data, error: errNin } = await supabase
+          .from('ninos')
+          .select('id, nombre, apellidos')
+          .eq('centro_id', remesa!.centro_id)
+          .in('id', ninoIds)
+        if (errNin) return json({ error: 'xml_failed' }, 500)
+        ninos = data ?? []
+      }
+      conceptos = conceptosDeRemesa(centro?.nombre ?? '', recibos ?? [], lineas ?? [], ninos)
+    }
+
     const now = new Date()
-    const resultado = prepararRemesa(mandatos ?? [], acreedor, {
-      messageId: `NIDO-${id.slice(0, 8)}-${now.toISOString().slice(0, 19).replace(/[-:T]/g, '')}`,
-      creationDateTime: now.toISOString().slice(0, 19),
-      collectionDate: now.toISOString().slice(0, 10),
-      creditorName: centro?.nombre ?? '',
-      sequenceType: 'RCUR',
-    })
+    const resultado = prepararRemesa(
+      mandatos ?? [],
+      acreedor,
+      {
+        messageId: `NIDO-${id.slice(0, 8)}-${now.toISOString().slice(0, 19).replace(/[-:T]/g, '')}`,
+        creationDateTime: now.toISOString().slice(0, 19),
+        collectionDate: now.toISOString().slice(0, 10),
+        creditorName: centro?.nombre ?? '',
+        sequenceType: 'RCUR',
+      },
+      conceptos
+    )
 
     if (!resultado.ok) {
       const body =
         resultado.motivo === 'sin_mandato'
           ? { error: resultado.motivo, familias: resultado.familiasSinMandato }
-          : { error: resultado.motivo }
+          : resultado.motivo === 'identificador_largo'
+            ? { error: resultado.motivo, familias: resultado.familiasIdentificadorLargo }
+            : { error: resultado.motivo }
       return json(body, 422)
     }
     return { xml: resultado.xml }

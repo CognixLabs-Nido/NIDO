@@ -2126,6 +2126,7 @@
       "enviar_failed": "No s'ha pogut marcar la remesa com a enviada.",
       "enviar_recibos_failed": "La remesa es va marcar, però van fallar alguns rebuts.",
       "sin_mandato": "{num} rebut(s) sense mandat SEPA actiu. Corregix-ho abans de generar el fitxer.",
+      "identificador_largo": "{num} família(es) tenen un mandat SEPA amb un identificador de més de 35 caràcters, que el banc rebutja. Han de tornar a signar la domiciliació abans de generar el fitxer.",
       "acreedor_incompleto": "Completa les dades del creditor (CID i IBAN) abans de generar el fitxer.",
       "remesa_vacia": "La remesa no té rebuts domiciliables (import major que 0).",
       "xml_failed": "No s'ha pogut generar el fitxer SEPA.",

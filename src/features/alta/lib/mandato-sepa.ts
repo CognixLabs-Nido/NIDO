@@ -10,6 +10,13 @@ import { normalizarIban } from './iban'
 /** Tope de la columna `mandatos_sepa.identificador_mandato` (CHECK G-0: 1..80). */
 export const MAX_LARGO_IDENTIFICADOR = 80
 
+/**
+ * Tope del `MndtId` en el fichero pain.008.001.02 (Max35Text). Es el que manda: la columna
+ * admite 80, pero un mandato de 36 lo rechaza el banco que valide el esquema (PR-0b de
+ * `docs/specs/altas-serie.md`).
+ */
+export const MAX_LARGO_ID_SEPA = 35
+
 /** Recorta un UUID a su parte significativa para el identificador (8 hex sin guiones). */
 function corto(id: string): string {
   return id.replace(/-/g, '').slice(0, 8).toUpperCase()
@@ -20,13 +27,18 @@ function corto(id: string): string {
  * formato del comentario de la migración G-0). `timestampMs` se inyecta (no se llama a
  * `Date.now()` aquí) para que sea testeable y determinista. Lo consume la fase B (pain.008)
  * en los giros, por eso debe quedar estable una vez firmado el mandato.
+ *
+ * El timestamp va en base 36: en decimal (13 dígitos) el identificador medía 36 y no cabía en
+ * el `MndtId` (Max35). En base 36 son 8 caracteres hoy y 11 para cualquier entero seguro, así
+ * que el identificador no pasa de 34. Los mandatos ya firmados conservan el suyo: es el que
+ * firmó la familia.
  */
 export function generarIdentificadorMandato(
   centroId: string,
   tutorId: string,
   timestampMs: number
 ): string {
-  return `NIDO-${corto(centroId)}-${corto(tutorId)}-${timestampMs}`
+  return `NIDO-${corto(centroId)}-${corto(tutorId)}-${timestampMs.toString(36).toUpperCase()}`
 }
 
 export interface DatosCanonicoMandato {

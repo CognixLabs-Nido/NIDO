@@ -14,8 +14,8 @@ interface Props {
 
 /**
  * Descarga el XML pain.008 de la remesa vía el route handler (generación bajo
- * demanda). Traduce los errores 422 del servidor (sin mandato / acreedor incompleto
- * / remesa vacía) a un toast claro; no genera ficheros a medias.
+ * demanda). Traduce los errores 422 del servidor (sin mandato / identificador largo /
+ * acreedor incompleto / remesa vacía) a un toast claro; no genera ficheros a medias.
  */
 export function RemesaXmlButton({ remesaId, disabled }: Props) {
   const t = useTranslations('remesas')
@@ -34,6 +34,8 @@ export function RemesaXmlButton({ remesaId, disabled }: Props) {
         const motivo = body?.error
         if (motivo === 'sin_mandato') {
           toast.error(t('errors.sin_mandato', { num: body?.familias?.length ?? 0 }))
+        } else if (motivo === 'identificador_largo') {
+          toast.error(t('errors.identificador_largo', { num: body?.familias?.length ?? 0 }))
         } else if (motivo === 'acreedor_incompleto') {
           toast.error(t('errors.acreedor_incompleto'))
         } else if (motivo === 'remesa_vacia') {
