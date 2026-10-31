@@ -133,12 +133,34 @@ Octubre 2026`. Sin tildes porque el juego de caracteres de SEPA no las garantiza
     niño», y es falso. El recibo es **de la familia** (`recibos.nino_id` es NULL en los 4 de
     producción) y el niño sale de sus líneas; uno de los 4 lleva **dos hermanos**. El 0b pone los
     dos nombres (`ANAIA · Ana Garcia y Pablo Garcia · Octubre 2026`, en orden alfabético) y, sin
-    ninguna línea con niño, solo centro y mes. **Pendiente de confirmar por el responsable.**
+    ninguna línea con niño, solo centro y mes. **Confirmado (2026-10-31):** los nombres de todos los
+    niños del recibo, para que al ver el extracto se sepa de quién es el cobro.
+  - **Caber en 140, decidido y no por recorte (2026-10-31).** Cuatro hermanos con nombre y
+    apellidos, o un centro como «Centro de Educación Infantil Els Xiquets de Benimaclet» (54
+    caracteres), no caben: el caso medido de cuatro hermanos con apellidos compuestos y ese centro
+    mide 247. Orden de importancia: el **niño** dice de quién es el cobro; el **mes** no se toca
+    nunca; el **centro** es lo primero que cede, porque el extracto ya enseña al acreedor por su
+    nombre (`Cdtr/Nm`). Se prueba cada forma en este orden y se queda la primera que cabe:
+    - nombre y apellidos de todos los niños;
+    - si todos comparten apellidos, los nombres y los apellidos una vez
+      (`Ana, Pablo y Lucia Garcia Lopez`), que es el caso normal de unos hermanos;
+    - solo los nombres;
+    - cada una de las tres, primero con el centro entero y, si no cabe, con el centro acortado
+      **por palabras** a 30 caracteres (`Centro de Educacion Infantil`);
+    - si ninguna cabe: el centro acortado, los nombres que quepan y «y N más».
+
+    Nunca se corta a mitad de una palabra (salvo una sola palabra más larga que todo el hueco). Está
+    en `concepto-adeudo.ts`, con un test por escalón y otro que comprueba en todos los casos que
+    cabe en 140 y que ninguna palabra sale cortada.
+
   - **El punto medio `·` no está en el juego de caracteres de SEPA** (letras sin tildes, cifras,
     espacio y `/ - ? : ( ) . , ' +`). El concepto se compone con `·`, como lo decidió el
     responsable, y al escribir el fichero pasa a guion: el extracto dice
     `ANAIA - Lucia Garcia Lopez - Octubre 2026`. Cualquier otro carácter de fuera del juego, a
-    espacio. **Pendiente de confirmar por el responsable.**
+    espacio. **Confirmado (2026-10-31).** **Regla escrita para que nadie los iguale:** el concepto
+    se compone con `·` (es el formato decidido, y el que use una pantalla si algún día lo enseña) y
+    **solo el fichero** lo escribe con guion (`textoSepa` en `generar-pain008.ts`). Son dos sitios
+    con dos reglas; lo dicen los comentarios de los dos ficheros y un test.
 
 ### Ficha y tutores
 
@@ -253,8 +275,23 @@ poder abrir, editar y volver a crear.»
    (`audit-log-eventos-directos.test.ts`). Los cambios de la remesa y de los recibos los audita
    además su trigger.
 6. **El `MsgId`, estable por versión del fichero:** el mismo en todas las descargas de una versión
-   (sale de la marca del fichero, no de la hora de la descarga) y uno nuevo al reabrir. Así un banco
-   que ya tenga el fichero rechaza la segunda subida de la misma versión.
+   y uno nuevo al reabrir. Así un banco que ya tenga el fichero rechaza la segunda subida de la
+   misma versión. Trazado:
+   - **Hoy** la ruta del XML lo calcula con la hora de la descarga
+     (`NIDO-{remesa 8}-{AAAAMMDDhhmmss de now()}`), y `PmtInfId` es el mismo valor. Cada descarga,
+     también la de una remesa ya enviada (G1: «regenerable»), da un fichero que el banco no
+     reconoce como repetido.
+   - **La versión ya existe en la BD:** `fichero_generado_at`, que pone la primera descarga y no
+     se quita. El `MsgId` sale de ella (`NIDO-{remesa 8}-{AAAAMMDDhhmmss de fichero_generado_at}`,
+     28 caracteres) y no de `now()`: todas las descargas de esa versión dan el mismo `MsgId`.
+     `CreDtTm` sigue siendo la hora de la descarga (no lo mira el control de repetidos).
+   - **Al reabrir**, la función quita la marca (punto 2); la siguiente descarga pone una nueva y
+     con ella sale un `MsgId` nuevo. Es la única forma de tener otro.
+   - **La primera descarga** genera, marca y vuelve a generar (`20261120120000`): el `MsgId` se
+     calcula con la marca ya puesta, y el primer fichero (el que comprueba que sale) no se sirve.
+   - **Una remesa enviada antes de esta pieza** puede no tener marca (la de CEI Ejemplo): sin
+     marca no hay versión, y la descarga la pone igual que con una en borrador.
+   - Si va solo y antes de reabrir es la R-3.
 7. **Marcar enviada exige el fichero generado.** Hoy se puede marcar enviada una remesa cuyo fichero
    no salió nunca: así nació la de CEI Ejemplo (abajo).
 
