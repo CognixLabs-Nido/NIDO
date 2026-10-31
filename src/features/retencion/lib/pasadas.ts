@@ -24,7 +24,6 @@ type Service = SupabaseClient<Database>
 /** Un barrido que devuelve `ActionResult` y falló: el texto del error no entra en el registro. */
 export interface FalloBarrido {
   fallo: true
-  motivo?: string
 }
 
 /**
