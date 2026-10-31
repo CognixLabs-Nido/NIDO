@@ -103,6 +103,13 @@ al RAT).
   → recibos correctivos/esporádicos + devoluciones.
 - **G1** XML SEPA **no se almacena**: se genera bajo demanda (server) y se descarga,
   regenerable. Sin bucket ni `xml_path`.
+  _(**Sustituida** por decisión del responsable el 2026-11-01, `docs/specs/altas-serie.md`, «Reabrir
+  una remesa», P-1: el fichero se guarda la primera vez que sale, en privado y con plazo fiscal, y
+  todas las descargas siguientes entregan ese mismo, byte a byte. Al reabrir, versión nueva con su
+  fichero. Por qué: regenerado, el fichero toma el mandato activo **en cada descarga**, así que dos
+  descargas de la misma remesa pueden llevar distinto IBAN y distinto `MndtId` para la misma
+  familia, y además cambian `CreDtTm` y la fecha de cobro. Lo guardado no probaría lo que tiene el
+  banco. Entra con la pieza de reabrir remesas: hasta que se mergee, el código sigue regenerando.)_
 - **H** `metodo_pago_familia` a nivel niño, por niño/mes (`sepa|efectivo|transferencia`). Solo
   `sepa` entra al XML; el resto → recibo `pendiente_procesar`.
 - **I** Estados de recibo: `pendiente_procesar | enviado_banco (con fecha) | devuelto |

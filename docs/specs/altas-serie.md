@@ -228,7 +228,7 @@ poder abrir, editar y volver a crear.»
   Sus recibos: `pendiente_procesar` → `enviado_banco` al marcarla enviada. Después, un recibo puede
   pasar a `devuelto` y, resuelta la devolución, a `cobrado_manual` (efectivo o transferencia), o
   quedarse `devuelto` con un re-giro (otro recibo) o con la deuda llevada al siguiente.
-- **El XML no se guarda** (decisión G1 de ADR-0050): se genera cada vez que se descarga. No hay
+- **El XML no se guarda** (decisión G1 de ADR-0050, sustituida el 2026-11-01 por la P-1): se genera cada vez que se descarga. No hay
   fichero que borrar ni que marcar caducado. Lo único que queda es `fichero_generado_at`, la primera
   vez que salió.
 - **Los triggers de `20261120120000` cierran la remesa:** con sesión, una enviada no vuelve a
@@ -361,6 +361,13 @@ acaba al reabrir.
   - `CreDtTm` y la fecha de cobro (`ReqdColltnDt`) llevan hoy la hora y el día de cada descarga;
   - el mandato de una familia puede cambiar entre dos descargas (un IBAN nuevo).
 
+  **La razón de peso es el mandato, no la fecha:** `get_mandatos_remesa` toma el mandato activo
+  más reciente de la familia **en cada descarga** (cuerpo vivo leído en producción el 2026-11-01).
+  Si la familia firma otro mandato entre dos descargas (otro IBAN), la segunda lleva el IBAN nuevo
+  y el `MndtId` nuevo para el mismo recibo; y si se lo revocan sin otro, la remesa ya enviada deja
+  de generarse (`sin_mandato`). Hoy, dos descargas de la misma remesa pueden llevar IBAN distintos
+  para la misma familia.
+
   Cambia G1 («regenerable»): dentro de una versión el fichero ya no se regenera. Al reabrir sale una
   versión nueva, con su fichero.
 
@@ -422,16 +429,60 @@ primer cobro iba en la remesa vuelven a FRST. A propósito: si el banco ya tení
 rechaza el segundo FRST del mismo mandato, y ese rechazo es la red contra el doble cobro. No cambiar
 a RCUR.» Lleva un test que se pone rojo si alguien lo cambia.
 
-### Preguntas nuevas
+### Respuestas del responsable (2026-11-01)
 
-- **P-1 · Servir el fichero guardado en vez de regenerarlo** (arriba): cambia G1. ¿De acuerdo?
-- **P-2 · La fecha de cobro.** Hoy el fichero pide el cobro el mismo día de la descarga
-  (`ReqdColltnDt` = hoy). En CORE el banco tiene que recibir el fichero, como tarde, un día hábil
-  antes de esa fecha, así que pedirlo para hoy se arriesga a que lo rechace o lo cambie de fecha. Ya
-  pasa hoy; con el fichero guardado, además, la fecha queda fija en la versión. Propuesta: la
-  directora elige la fecha al generar, con un mínimo de dos días hábiles, y la fecha va en la
-  versión. ¿Va en reabrir o en una pieza aparte?
-- **P-3 · Lo fiscal de la familia espera a sus ficheros** (arriba). ¿De acuerdo?
+- **P-1 · Sí.** El fichero se guarda la primera vez que sale y todas las descargas siguientes
+  entregan ese mismo, byte a byte. Para cambiar algo, se reabre y sale una versión nueva con su
+  fichero. G1 queda escrita como sustituida, con la fecha y el porqué (ADR-0050 y ADR-0052). La
+  razón de peso es que hoy dos descargas pueden llevar IBAN distintos para la misma familia
+  (arriba).
+- **P-3 · Sí.** Lo fiscal de una familia no se destruye mientras exista un fichero guardado donde
+  salga. El fichero no se recorta: dejaría de ser lo que se envió al banco. Va al ADR, con el plazo
+  provisional como los demás hasta que lo valide el abogado.
+- **P-2 · La fecha de cobro, pieza aparte y antes de reabrir** (orden: fecha de cobro → reabrir →
+  0c → 0d). Ver «La fecha de cobro», abajo.
+
+### La fecha de cobro (pieza aparte)
+
+Lo dicho por Jose: «la fecha se indica en cada recibo, es decir, si no indicas nada, el banco lo
+cobra al día siguiente; si seleccionas una fecha futura se cobra el día que indiques».
+
+Lo que hay (medido el 2026-11-01, `main` y producción en solo lectura):
+
+- **El generador** escribe un solo bloque de pago (`PmtInf`) con una sola `ReqdColltnDt` para todos
+  los adeudos, y esa fecha es el día de la descarga (`route.ts`, `collectionDate`).
+- **El recibo no tiene fecha de cobro al banco.** Ni `recibos`, ni `remesas`, ni `lineas_recibo`, ni
+  `recibos_remesa` tienen una columna así, ni en el código ni en producción. Lo que se llama «fecha
+  de cobro» en el código es la del cobro a mano (`cobro_fecha`: efectivo, transferencia, cheque), que
+  no admite fechas futuras.
+- **En pain.008 la fecha va por bloque**, no por adeudo. Un fichero con fechas distintas lleva un
+  bloque por fecha, todos con el mismo `MsgId`, cada uno con su `PmtInfId` y sus totales. El 0d
+  (FRST/RCUR) parte también por secuencia, porque `SeqTp` va igualmente por bloque.
+
+Pendiente de decidir antes de escribirla (preguntas F-1 a F-3, abajo). Lo demás, propuesto:
+
+- **Bloques:** uno por cada par (fecha, secuencia). `PmtInfId` = `{MsgId}-{n}`, 31 caracteres como
+  mucho. Con una sola fecha queda un bloque, como hoy.
+- **Sin fecha en el recibo:** el día hábil siguiente al día en que se genera la versión (la marca),
+  con días hábiles de TARGET2: sin fines de semana, 1 de enero, Viernes Santo, Lunes de Pascua,
+  1 de mayo, 25 y 26 de diciembre.
+- **Al generar una versión nueva** (reabrir) la fecha se vuelve a calcular con la del recibo. Una
+  fecha ya pasada se lleva al día hábil siguiente, y el aviso de reabrir lo dice.
+
+Preguntas:
+
+- **F-1 · ¿Dónde se pone la fecha?** En NIDO no existe. La frase de Jose («si no indicas nada…, si
+  seleccionas una fecha futura…») puede describir la pantalla del banco al subir el fichero, o lo que
+  espera que haga NIDO. Si es NIDO: una columna nueva en el recibo (`fecha_cobro_banco`, opcional,
+  futura), ¿la pone la directora en cada recibo, en el panel del mes, o en todos los de una remesa
+  de golpe?
+- **F-2 · «El día hábil siguiente», ¿a qué día?** NIDO sabe cuándo se genera el fichero, no cuándo
+  se sube. Si se genera el lunes y se sube el jueves, el fichero pide el martes, ya pasado. Con la
+  P-1 el fichero queda fijo, así que corregirlo obliga a reabrir. Propuesta: siguiente al día de
+  generar, y la pantalla de la remesa avisa cuando la fecha del fichero ya pasó sin haberla marcado
+  enviada.
+- **F-3 · Días hábiles:** el calendario TARGET2 (el de SEPA, sin los festivos españoles), salvo que
+  el banco del centro diga otra cosa.
 
 ## Orden de la serie
 
