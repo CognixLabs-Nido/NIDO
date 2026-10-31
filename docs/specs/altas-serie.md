@@ -46,8 +46,8 @@ reales de ANAIA (curso 2026/2027). Lo medido entonces, que motiva la serie:
 1. **No había spec de la serie en el repo.** Las decisiones del 2026-10-29 solo existían en una
    conversación y en la memoria de la sesión. Esta spec es la primera fuente escrita.
 2. **«CORE/B2B» y la «pantalla de altas en proceso»** figuran en el orden de la serie pero **no
-   están especificadas en ningún sitio**. CORE/B2B queda como decisión pendiente (P-2, abajo). La
-   pantalla de altas en proceso necesita su propio alcance antes de empezarla.
+   están especificadas en ningún sitio**. CORE/B2B lo decidió el responsable el 2026-10-31 (abajo,
+   en SEPA). La pantalla de altas en proceso necesita su propio alcance antes de empezarla.
 3. **`MndtId` y `EndToEndId` miden 36 caracteres y pain.008.001.02 admite 35** (`Max35Text`).
    Medido en producción el 2026-10-31: los 3 mandatos (`identificador_mandato`) y los 4 recibos
    (`recibos.id`, UUID con guiones) miden 36. El identificador se genera como
@@ -105,6 +105,31 @@ reales de ANAIA (curso 2026/2027). Lo medido entonces, que motiva la serie:
   menos; el generador rechaza los largos con un mensaje claro; los 3 mandatos de prueba de CEI
   Ejemplo se quedan como están; los fixtures usan la forma real, no una inventada corta.
 
+Decisiones del 2026-10-31 sobre las cinco preguntas del PR-0:
+
+- **FRST en el primer cobro de cada mandato, RCUR en los siguientes.** La razón es **multicentro**,
+  no lo que conteste un banco: cada centro trabaja con su banco, no se puede preguntar a todos ni
+  dar por hecho que todos acepten RCUR en el primer cobro (lo que permiten las reglas desde 2016).
+  Se emite lo que acepta cualquiera. Es el PR-0d y va el último. El riesgo que trae, que el mismo
+  mandato salga dos veces como FRST (en dos remesas, o en una remesa que se vuelve a abrir), se
+  traza junto con reabrir remesas (abajo, pendiente).
+- **CORE para todos; B2B no se construye.** Hay centros donde la cuota la paga la empresa de un
+  padre desde su cuenta de empresa, y CORE admite a una empresa como deudor. Lo único que añade B2B
+  es que el deudor no puede pedir la devolución, a cambio de que cada empresa registre el mandato en
+  su banco antes del primer cobro; si no lo hace, el cobro se rechaza. Para una guardería eso es más
+  rechazos, no menos riesgo.
+- **El CID no toca el alta.** Que el centro no tenga el identificador de acreedor no cambia nada en
+  el alta de la familia: el mandato se firma igual. Lo que se añade es un **aviso en la pantalla
+  donde el centro configura sus datos bancarios**: sin ellos no se pueden pasar recibos al banco. Se
+  dice qué falta y para qué sirve, nada más. (Corrige la propuesta del 2026-10-31, que lo trataba
+  como un caso del paso SEPA.)
+- **El mandato pide el NIF y la dirección del titular**, como el papel. Hoy solo lleva nombre e
+  IBAN. Se teclean en el paso SEPA, porque el titular puede no ser un tutor. Si al trazarlo aparece
+  un caso donde no se puedan pedir, se para y se pregunta antes de construirlo.
+- **Concepto del adeudo: centro, niño y mes, sin tildes.** Ejemplo: `ANAIA · Lucia Garcia Lopez ·
+Octubre 2026`. Sin tildes porque el juego de caracteres de SEPA no las garantiza; máximo 140
+  caracteres. Cada recibo es de un solo niño. Va en el 0b.
+
 ### Ficha y tutores
 
 - **D11 · La ficha se firma.** Hoy el alta termina con «Finalizar» y no se firma nada.
@@ -140,30 +165,11 @@ reales de ANAIA (curso 2026/2027). Lo medido entonces, que motiva la serie:
 
 ## Pendiente de decisión del responsable
 
-Se actualizan aquí cuando se contesten. **0b, 0c y 0d no empiezan hasta tener P-1 a P-5.**
+P-1 a P-5 se contestaron el 2026-10-31 y están arriba, en SEPA. Quedan:
 
-- **P-1 · FRST o RCUR** (ya apuntada en `follow-ups.md` y ADR-0063: el responsable lo pregunta a su
-  banco). Ejemplo: una familia firma el 3 de noviembre y su primer cobro va en la remesa del 5 de
-  diciembre. ¿Ese adeudo va como FRST o como RCUR? Si el banco acepta RCUR también en el primero,
-  no se construye nada y se deja escrito. Si exige FRST, hay que guardar qué mandato se usó en cada
-  cobro, generar remesas con dos bloques (FRST y RCUR) y decidir qué pasa si se devuelve el primer
-  cobro: es el PR-0d. ¿Ha contestado el banco?
-- **P-2 · CORE o B2B.** El esquema B2B prohíbe que el deudor sea un consumidor, y las familias lo
-  son, así que lo normal es CORE siempre, que es lo que ya se emite. Ejemplo de cuándo haría falta
-  B2B: la empresa del padre paga la cuota directamente desde su cuenta de empresa. ¿Hay algún caso
-  así? Si no lo hay, B2B no se construye.
-- **P-3 · Centro sin CID.** Ejemplo: ANAIA se da de alta, la directora aún no ha metido su CID, y una
-  familia llega al paso del SEPA. Propuesta: el paso se salta con un aviso y el alta se cierra en
-  efectivo (coherente con D10), y Dirección ve en su inicio «falta el identificador de acreedor».
-  Alternativa: bloquear el paso hasta que el CID esté configurado.
-- **P-4 · Datos del deudor en el mandato (NIF y dirección).** El papel los lleva. Ejemplo: la cuenta
-  es de la abuela, que no es tutora. Si se piden, se teclean en el propio paso del SEPA (el titular
-  puede no ser un tutor), así que no dependen del PR-4. ¿Se piden, o el mandato sigue solo con
-  titular e IBAN, que es lo que exige la norma dentro de la zona SEPA?
-- **P-5 · Texto exacto del concepto del adeudo.** Propuesta: `ANAIA · Lucia Garcia Lopez · Octubre
-2026`. Sin tildes, porque el juego de caracteres de SEPA no las garantiza; máximo 140 caracteres.
-  Cada recibo es de un solo niño, así que con hermanos sale un nombre por adeudo. ¿Vale ese
-  formato, o prefiere otro orden o el curso en lugar del mes?
+- **Reabrir remesas · sin especificar.** Va en el orden entre el 0c y el 0d, y el riesgo del FRST
+  repetido se traza con él. Su alcance no está escrito en ningún sitio: se especifica aquí antes de
+  empezarlo.
 - **P-6 · Documento obligatorio del centro sin subir** (de D3; se pregunta al llegar al PR-2).
   Ejemplo: el centro ha subido el presupuesto pero no las normas, y una familia llega al final del
   alta. Propuesta: el alta no se puede cerrar y Dirección ve en su inicio qué documento falta.
@@ -176,7 +182,7 @@ de esas funciones, no de la que haya en esta spec.
 
 | #   | Pieza                             | Qué hace                                                                        |
 | --- | --------------------------------- | ------------------------------------------------------------------------------- |
-| 0   | SEPA                              | Se trocea en cinco PRs (abajo)                                                  |
+| 0   | SEPA                              | Se trocea en varios PRs (abajo)                                                 |
 | ·   | Pantalla de altas en proceso      | Va justo después del PR-0. **Sin especificar** (agujero 2)                      |
 | 1   | Documentos del centro versionados | Base: tabla de versiones con hash, firmas con `RESTRICT`, bucket propio         |
 | 2   | Presupuesto y normas para firmar  | El gate exige la firma de la versión vigente de cada documento obligatorio; P-6 |
@@ -191,18 +197,21 @@ Los documentos obligatorios (DNI de los tutores, SEPA, libro de familia) entran 
 
 ### Troceo del PR-0
 
-| PR    | Alcance                                                                                                                                                                                                                                                       | Migración                                      | Espera a                        |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------- |
-| 0·doc | Esta spec                                                                                                                                                                                                                                                     | No                                             | —                               |
-| 0a    | «Omitir» de verdad: el gate de `finalizarAlta` deja de exigir `sepa`, se corrige el texto de la pantalla y se añade el primer test de `finalizarAlta`, con control negativo                                                                                   | No (`marcar_matricula_lista` no exige mandato) | —                               |
-| 0b    | El fichero que acepta el banco: `MndtId` y `EndToEndId` ≤ 35, concepto con el nombre del niño, el generador rechaza los largos, fixtures con la forma real                                                                                                    | No                                             | P-5                             |
-| 0c    | Mandato v2: CID en el PDF y en el texto canónico v2, columna con la versión del canónico (los existentes en v1), centro sin CID, datos del deudor si se piden, y los tres caminos que crean mandatos (alta, `/family/domiciliacion`, presencial de Dirección) | Sí, pequeña                                    | P-3, P-4                        |
-| 0d    | FRST                                                                                                                                                                                                                                                          | Sí                                             | P-1 (solo si el banco lo exige) |
+Orden: 0·doc y 0a → 0b → 0c → reabrir remesas → 0d.
+
+| PR              | Alcance                                                                                                                                                                                                                                                                                 | Migración                                      |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 0·doc           | Esta spec                                                                                                                                                                                                                                                                               | No                                             |
+| 0a              | «Omitir» de verdad: el gate de `finalizarAlta` deja de exigir `sepa`, se corrige el texto de la pantalla y se añade el primer test de `finalizarAlta`, con control negativo                                                                                                             | No (`marcar_matricula_lista` no exige mandato) |
+| 0b              | El fichero que acepta el banco: `MndtId` y `EndToEndId` ≤ 35, concepto `centro · niño · mes` sin tildes, el generador rechaza los largos, fixtures con la forma real                                                                                                                    | No                                             |
+| 0c              | Mandato v2: CID en el PDF y en el texto canónico v2, columna con la versión del canónico (los existentes en v1), NIF y dirección del titular, los tres caminos que crean mandatos (alta, `/family/domiciliacion`, presencial de Dirección) y el aviso en los datos bancarios del centro | Sí, pequeña                                    |
+| Reabrir remesas | Sin especificar (ver «Pendiente»)                                                                                                                                                                                                                                                       | Por ver                                        |
+| 0d              | FRST en el primer cobro de cada mandato, RCUR en los siguientes, sin FRST repetido                                                                                                                                                                                                      | Sí                                             |
 
 ## Estado
 
 - [x] 0·doc — esta spec.
-- [ ] 0a · [ ] 0b · [ ] 0c · [ ] 0d
+- [ ] 0a · [ ] 0b · [ ] 0c · [ ] reabrir remesas · [ ] 0d
 - [ ] Pantalla de altas en proceso · [ ] 1 · [ ] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [ ] 6 · [ ] 7 · [ ] 8
 
 ## Referencias
