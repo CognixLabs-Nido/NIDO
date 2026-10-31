@@ -126,7 +126,7 @@ reales de ANAIA (curso 2026/2027). Lo medido entonces, que motiva la serie:
 ### Servicios (media pensión)
 
 - Media pensión es comedor más jornada extendida (matinera y tarde). En el alta, **una fila por
-  servicio** que el centro tenga en Cuotas, con *No / Todos los meses / Días sueltos*. Es una
+  servicio** que el centro tenga en Cuotas, con _No / Todos los meses / Días sueltos_. Es una
   **petición**: la directora la aplica al validar (`fijar_asignaciones_concepto`). La familia nunca
   escribe en la facturación.
 
@@ -161,7 +161,7 @@ Se actualizan aquí cuando se contesten. **0b, 0c y 0d no empiezan hasta tener P
   puede no ser un tutor), así que no dependen del PR-4. ¿Se piden, o el mandato sigue solo con
   titular e IBAN, que es lo que exige la norma dentro de la zona SEPA?
 - **P-5 · Texto exacto del concepto del adeudo.** Propuesta: `ANAIA · Lucia Garcia Lopez · Octubre
-  2026`. Sin tildes, porque el juego de caracteres de SEPA no las garantiza; máximo 140 caracteres.
+2026`. Sin tildes, porque el juego de caracteres de SEPA no las garantiza; máximo 140 caracteres.
   Cada recibo es de un solo niño, así que con hermanos sale un nombre por adeudo. ¿Vale ese
   formato, o prefiere otro orden o el curso en lugar del mes?
 - **P-6 · Documento obligatorio del centro sin subir** (de D3; se pregunta al llegar al PR-2).
@@ -174,30 +174,30 @@ Del 3 en adelante todos tocan `purgar_sujeto_db`, `privado.purgar_nino` y la exp
 art. 15 (las funciones de la serie de retención, ADR-0064). Cada PR parte de la **definición viva**
 de esas funciones, no de la que haya en esta spec.
 
-| # | Pieza | Qué hace |
-|---|---|---|
-| 0 | SEPA | Se trocea en cinco PRs (abajo) |
-| · | Pantalla de altas en proceso | Va justo después del PR-0. **Sin especificar** (agujero 2) |
-| 1 | Documentos del centro versionados | Base: tabla de versiones con hash, firmas con `RESTRICT`, bucket propio |
-| 2 | Presupuesto y normas para firmar | El gate exige la firma de la versión vigente de cada documento obligatorio; P-6 |
-| 3 | Campos del niño | Y configuración de campos por centro |
-| 4 | Campos de tutores | Con el test de la purga contra el catálogo de columnas |
-| 5 | SIP | Número en `ninos`, imagen en su bucket |
-| 6 | Servicios en el alta | La petición de media pensión |
-| 7 | Gastos de gestión | Paso del alta y confirmación de la directora al validar |
-| 8 | Firma de la ficha | Resumen de los datos, hash y firma |
+| #   | Pieza                             | Qué hace                                                                        |
+| --- | --------------------------------- | ------------------------------------------------------------------------------- |
+| 0   | SEPA                              | Se trocea en cinco PRs (abajo)                                                  |
+| ·   | Pantalla de altas en proceso      | Va justo después del PR-0. **Sin especificar** (agujero 2)                      |
+| 1   | Documentos del centro versionados | Base: tabla de versiones con hash, firmas con `RESTRICT`, bucket propio         |
+| 2   | Presupuesto y normas para firmar  | El gate exige la firma de la versión vigente de cada documento obligatorio; P-6 |
+| 3   | Campos del niño                   | Y configuración de campos por centro                                            |
+| 4   | Campos de tutores                 | Con el test de la purga contra el catálogo de columnas                          |
+| 5   | SIP                               | Número en `ninos`, imagen en su bucket                                          |
+| 6   | Servicios en el alta              | La petición de media pensión                                                    |
+| 7   | Gastos de gestión                 | Paso del alta y confirmación de la directora al validar                         |
+| 8   | Firma de la ficha                 | Resumen de los datos, hash y firma                                              |
 
 Los documentos obligatorios (DNI de los tutores, SEPA, libro de familia) entran dentro de la serie.
 
 ### Troceo del PR-0
 
-| PR | Alcance | Migración | Espera a |
-|---|---|---|---|
-| 0·doc | Esta spec | No | — |
-| 0a | «Omitir» de verdad: el gate de `finalizarAlta` deja de exigir `sepa`, se corrige el texto de la pantalla y se añade el primer test de `finalizarAlta`, con control negativo | No (`marcar_matricula_lista` no exige mandato) | — |
-| 0b | El fichero que acepta el banco: `MndtId` y `EndToEndId` ≤ 35, concepto con el nombre del niño, el generador rechaza los largos, fixtures con la forma real | No | P-5 |
-| 0c | Mandato v2: CID en el PDF y en el texto canónico v2, columna con la versión del canónico (los existentes en v1), centro sin CID, datos del deudor si se piden, y los tres caminos que crean mandatos (alta, `/family/domiciliacion`, presencial de Dirección) | Sí, pequeña | P-3, P-4 |
-| 0d | FRST | Sí | P-1 (solo si el banco lo exige) |
+| PR    | Alcance                                                                                                                                                                                                                                                       | Migración                                      | Espera a                        |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------- |
+| 0·doc | Esta spec                                                                                                                                                                                                                                                     | No                                             | —                               |
+| 0a    | «Omitir» de verdad: el gate de `finalizarAlta` deja de exigir `sepa`, se corrige el texto de la pantalla y se añade el primer test de `finalizarAlta`, con control negativo                                                                                   | No (`marcar_matricula_lista` no exige mandato) | —                               |
+| 0b    | El fichero que acepta el banco: `MndtId` y `EndToEndId` ≤ 35, concepto con el nombre del niño, el generador rechaza los largos, fixtures con la forma real                                                                                                    | No                                             | P-5                             |
+| 0c    | Mandato v2: CID en el PDF y en el texto canónico v2, columna con la versión del canónico (los existentes en v1), centro sin CID, datos del deudor si se piden, y los tres caminos que crean mandatos (alta, `/family/domiciliacion`, presencial de Dirección) | Sí, pequeña                                    | P-3, P-4                        |
+| 0d    | FRST                                                                                                                                                                                                                                                          | Sí                                             | P-1 (solo si el banco lo exige) |
 
 ## Estado
 
