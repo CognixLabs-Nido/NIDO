@@ -117,6 +117,12 @@ const DATABASE = `export type Database = {
         }
         Relationships: []
       }
+      retencion_pasadas: {
+        Row: {
+          id: string
+        }
+        Relationships: []
+      }
       roles_usuario: {
         Row: {
           centro_id: string

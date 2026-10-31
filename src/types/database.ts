@@ -4281,6 +4281,27 @@ export type Database = {
           },
         ]
       }
+      retencion_pasadas: {
+        Row: {
+          ejecutada_en: string
+          id: string
+          modo: Database["public"]["Enums"]["retencion_accion"]
+          recuentos: Json
+        }
+        Insert: {
+          ejecutada_en?: string
+          id?: string
+          modo: Database["public"]["Enums"]["retencion_accion"]
+          recuentos: Json
+        }
+        Update: {
+          ejecutada_en?: string
+          id?: string
+          modo?: Database["public"]["Enums"]["retencion_accion"]
+          recuentos?: Json
+        }
+        Relationships: []
+      }
       retenciones: {
         Row: {
           centro_id: string
