@@ -4530,7 +4530,7 @@
       }
     },
     "sepa": {
-      "intro": "Domicilia el pagament de les quotes. Introduïx l'IBAN i firma el mandat SEPA. Pots ometre este pas i aportar-lo més avant.",
+      "intro": "Domicilia el pagament de les quotes. Introduïx l'IBAN i firma el mandat SEPA. Si omets este pas, les quotes es pagaran en efectiu, i podràs domiciliar-les més avant des de Rebuts.",
       "mandato_titulo": "Mandat d'adeudament directe SEPA",
       "titular_label": "Titular del compte",
       "iban_label": "IBAN",
@@ -4590,7 +4590,6 @@
         "tutor1": "Dades del tutor 1",
         "medico": "Dades mèdiques i d'emergència",
         "documentos": "Documents (llibre de família i DNI)",
-        "sepa": "Mandat SEPA",
         "imagen": "Autorització d'imatge",
         "normas": "Normes de règim intern"
       }
