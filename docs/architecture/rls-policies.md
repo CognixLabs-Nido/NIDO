@@ -1605,6 +1605,19 @@ fecha de cobro de la F1 y la deuda dada por perdida de `20261212120000`, por eje
   olvido, y la fecha revelaría al otro tutor que alguien de su familia lo pidió (art. 15.4 RGPD: el
   acceso no puede perjudicar los derechos de terceros). Coste asumido: el interesado ve sin pagar un
   recibo que nadie le va a reclamar.
+- **Las reglas R1-R7 en la mitad de la BD** (`20261216120000`, trozo 2b; decididas por el
+  responsable el 2026-11-01, el porqué de cada una en el catálogo): 207 columnas técnicas
+  decididas por su clase, y el export añade las 64 claves de lo que sale (las fechas de registro,
+  `borrado_en`, el motivo de la familia borrada, los ids y enlaces que unen dos cosas del propio
+  export y la huella de las firmas). R1 y R2 en el recibo sustituyen a la decisión del #467, y lo
+  dice su `nota`. Las claves de notificaciones y de invitación no salen nunca (R6), y del IBAN solo
+  los 4 últimos dígitos (2026-10-14). Quedan 27 de contenido por decidir.
+  Los nombres de otras personas (salen de un JOIN a `usuarios`, no son columnas) van en
+  `NOMBRES_DE_OTROS`, y el test cuenta cada JOIN contra esa lista. La raya: personal del centro →
+  el rol; familia del propio niño → el nombre. `otorgado_por` del consentimiento sale (es siempre
+  un tutor del niño); `lector` de las lecturas de la ficha médica sale solo si quien leyó es de la
+  familia (`rol_lector` tutor_legal o autorizado), y sustituye a la decisión de `20261128120000`,
+  que daba siempre el nombre.
 - **La mitad de la app** (trozo 3): `recolectar.ts` leía 19 tablas (y `roles_usuario`, en
   `rolesDelSujetoParaExport`) con `select('*')`, así que una columna nueva salía en el export sin
   que nadie la decidiera. Ahora pide a cada tabla solo las columnas que salen

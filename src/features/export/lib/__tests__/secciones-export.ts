@@ -15,6 +15,16 @@ export interface SeccionLeida {
   tabla: string
   /** columna → clave con la que sale */
   salen: Record<string, string>
+  /**
+   * clave → condición del JOIN, de cada nombre de otra persona que sale de un JOIN a
+   * `public.usuarios` (no son columnas de la tabla de la sección: `NOMBRES_DE_OTROS`).
+   */
+  nombres: Record<string, string>
+}
+
+/** Cuántos JOIN a `public.usuarios` lleva el cuerpo: cada uno tiene que dar un nombre leído. */
+export function joinsAUsuarios(cuerpo = cuerpoDelExport()): number {
+  return (cuerpo.match(/JOIN public\.usuarios \w+ ON/g) ?? []).length
 }
 
 export function ultimaMigracionDelExport(): string {
@@ -83,6 +93,13 @@ function leerSeccion(txt: string, ruta: string, out: Record<string, SeccionLeida
   if (!from) throw new Error(`${ruta}: sin FROM tras el jsonb_agg`)
   const [, tabla, alias] = from
   const salen: Record<string, string> = {}
+  const nombres: Record<string, string> = {}
+  // Lo de detrás del jsonb_agg es el FROM de esta fila (las anidadas van dentro del objeto).
+  const joins = [
+    ...txt
+      .slice(cierraAgg + 1)
+      .matchAll(/JOIN public\.usuarios (\w+) ON ([\s\S]*?)(?=\bJOIN\b|\bWHERE\b|$)/g),
+  ].map(([, a, on]) => ({ a, on: on.replace(/\s+/g, ' ').trim() }))
   const pares = argumentos(txt.slice(abreObj + 1, cierraObj))
   for (let i = 0; i < pares.length; i += 2) {
     const clave = pares[i].replace(/^'|'$/g, '')
@@ -94,8 +111,10 @@ function leerSeccion(txt: string, ruta: string, out: Record<string, SeccionLeida
     for (const [, col] of expr.matchAll(new RegExp(`\\b${alias}\\.(\\w+)`, 'g'))) {
       salen[col] ??= clave
     }
+    for (const j of joins)
+      if (new RegExp(`\\b${j.a}\\.nombre_completo\\b`).test(expr)) nombres[clave] = j.on
   }
-  out[ruta] = { tabla, salen }
+  out[ruta] = { tabla, salen, nombres }
 }
 
 export function seccionesDelExport(cuerpo = cuerpoDelExport()): Record<string, SeccionLeida> {
