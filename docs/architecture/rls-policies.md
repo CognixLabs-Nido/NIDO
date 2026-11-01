@@ -1553,7 +1553,8 @@ toca.
   borrador. La pone la descarga del XML **antes** de leer los recibos que van en él (antes comprueba
   que el fichero sale, para no cerrar una remesa con un 422), y no se quita. También la pone en una
   remesa enviada que no la tenía. El `MsgId` (y el `PmtInfId`) del fichero sale de ella, no de la
-  hora de la descarga: dos descargas de la misma versión son el mismo fichero para el banco, que
+  hora de la descarga, y desde la F2 de la fecha de cobro también `CreDtTm` y la fecha de los
+  recibos sin la suya: dos descargas de la misma versión son el mismo fichero para el banco, que
   rechaza el segundo (`message-id.ts`). Tras ponerla se vuelve a leer, por si otra descarga la puso
   a la vez.
 - **`recibos_remesa_validar`** (BEFORE INSERT OR UPDATE OR DELETE, `SECURITY DEFINER`):
