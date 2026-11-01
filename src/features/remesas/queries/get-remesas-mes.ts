@@ -5,6 +5,15 @@ import type { Database } from '@/types/database'
 
 type EstadoRemesa = Database['public']['Enums']['estado_remesa']
 
+/** Un recibo de la remesa, con su fecha de cobro: para verla y para cambiarla. */
+export interface ReciboDeRemesa {
+  id: string
+  familiaEtiqueta: string
+  totalCentimos: number
+  /** YYYY-MM-DD, o null: «en cuanto el banco pueda». */
+  fechaCobro: string | null
+}
+
 export interface RemesaListItem {
   id: string
   estado: EstadoRemesa
@@ -14,6 +23,8 @@ export interface RemesaListItem {
   createdAt: string
   numRecibos: number
   totalCentimos: number
+  /** Sus recibos, por familia. */
+  recibos: ReciboDeRemesa[]
 }
 
 /**
@@ -49,20 +60,42 @@ export async function getRemesasMes(
 
   const reciboIds = [...new Set((enlaces ?? []).map((e) => e.recibo_id))]
   const { data: recibos } = reciboIds.length
-    ? await supabase.from('recibos').select('id, total_centimos').in('id', reciboIds)
+    ? await supabase
+        .from('recibos')
+        .select('id, total_centimos, familia_id, fecha_cobro_banco')
+        .in('id', reciboIds)
     : { data: [] }
-  const totalPorRecibo = new Map((recibos ?? []).map((r) => [r.id, r.total_centimos]))
+  const familiaIds = [
+    ...new Set((recibos ?? []).map((r) => r.familia_id).filter((f): f is string => f != null)),
+  ]
+  const { data: familias } = familiaIds.length
+    ? await supabase.from('familias').select('id, etiqueta').in('id', familiaIds)
+    : { data: [] }
+  const etiquetaPorFamilia = new Map((familias ?? []).map((f) => [f.id, f.etiqueta]))
+  const porId = new Map(
+    (recibos ?? []).map((r) => [
+      r.id,
+      {
+        id: r.id,
+        familiaEtiqueta: (r.familia_id && etiquetaPorFamilia.get(r.familia_id)) || '',
+        totalCentimos: r.total_centimos,
+        fechaCobro: r.fecha_cobro_banco,
+      },
+    ])
+  )
 
-  const agregado = new Map<string, { num: number; total: number }>()
+  const agregado = new Map<string, { num: number; total: number; recibos: ReciboDeRemesa[] }>()
   for (const e of enlaces ?? []) {
-    const acc = agregado.get(e.remesa_id) ?? { num: 0, total: 0 }
+    const acc = agregado.get(e.remesa_id) ?? { num: 0, total: 0, recibos: [] }
+    const recibo = porId.get(e.recibo_id)
     acc.num += 1
-    acc.total += totalPorRecibo.get(e.recibo_id) ?? 0
+    acc.total += recibo?.totalCentimos ?? 0
+    if (recibo) acc.recibos.push(recibo)
     agregado.set(e.remesa_id, acc)
   }
 
   return remesas.map((r) => {
-    const acc = agregado.get(r.id) ?? { num: 0, total: 0 }
+    const acc = agregado.get(r.id) ?? { num: 0, total: 0, recibos: [] }
     return {
       id: r.id,
       estado: r.estado,
@@ -71,6 +104,10 @@ export async function getRemesasMes(
       createdAt: r.created_at,
       numRecibos: acc.num,
       totalCentimos: acc.total,
+      recibos: [...acc.recibos].sort(
+        (a, b) =>
+          a.familiaEtiqueta.localeCompare(b.familiaEtiqueta, 'es-ES') || a.id.localeCompare(b.id)
+      ),
     }
   })
 }

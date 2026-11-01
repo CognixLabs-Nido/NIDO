@@ -2114,7 +2114,8 @@
       "fecha_devolucion_futura": "The return date cannot be in the future",
       "devolucion_antes_del_envio": "The return cannot be earlier than the date it was sent to the bank",
       "gastos_invalidos": "Enter the charges (0 if none)",
-      "fecha_cobro_devolucion": "The payment date cannot be in the future or earlier than the return"
+      "fecha_cobro_devolucion": "The payment date cannot be in the future or earlier than the return",
+      "demasiados_recibos": "At most 1000 receipts at once."
     },
     "errors": {
       "invalid": "Invalid data.",
@@ -2147,7 +2148,11 @@
       "devolucion_por_resolver": "A returned receipt is collected from «Resolve return».",
       "recibo_siguiente_cerrado": "The family’s receipt for the next month is already validated: it cannot be added there. Choose another option or set that receipt back to draft.",
       "mes_siguiente_cerrado": "The next month is already closed and the family has no receipt in it: it cannot be added to the next receipt.",
-      "recibo_sin_importe": "This receipt has no amount: it can’t be paid with a voucher."
+      "recibo_sin_importe": "This receipt has no amount: it can’t be paid with a voucher.",
+      "fecha_cobro_en_fichero": "A receipt is in a remittance whose file has been generated or that has been sent: its collection date can no longer be changed. None has been changed.",
+      "fecha_cobro_recibo_cerrado": "A receipt has already been sent to the bank, paid or returned: its collection date can no longer be changed. None has been changed.",
+      "fecha_cobro_no_sepa": "A receipt is not collected by direct debit: it has no collection date. None has been changed.",
+      "fecha_cobro_failed": "The collection date could not be changed. None has been changed."
     },
     "transferencias_beca": {
       "title": "Transfers to families",
@@ -2233,7 +2238,24 @@
     "sobrante_pendiente": "surplus of {importe}, pending",
     "sobrante_diferido": "surplus of {importe}, deducted from the {mes} receipt",
     "sobrante_transferencia": "surplus of {importe}, to be refunded by transfer",
-    "resolver_sobrante": "Resolve surplus"
+    "resolver_sobrante": "Resolve surplus",
+    "fecha_cobro": {
+      "label": "Collection date",
+      "sin_fecha": "As soon as the bank can",
+      "el": "On {fecha}",
+      "explicacion": "With no date, the bank collects it as soon as it can: usually the next working day. With a date, on that day.",
+      "poner": "{num, plural, one {Set this date on the selected receipt} other {Set this date on the # selected}}",
+      "quitar": "{num, plural, one {Leave the selected receipt without a date} other {Leave the # selected without a date}}",
+      "elige_recibos": "Select the receipts whose date you want to change.",
+      "cambiar": "Change collection date",
+      "dialog_title": "Collection date of the remittance",
+      "dialog_desc": "Select the receipts and choose the date. The ones you leave unselected stay as they are.",
+      "se_cobra": "Collected: {detalle}",
+      "cuantos": "{fecha} ({num})",
+      "bloqueada_fichero": "The collection date can no longer be changed: this remittance’s file has already been generated, and the bank must receive that same file.",
+      "bloqueada_enviada": "The collection date can no longer be changed: the remittance has already been sent to the bank.",
+      "guardada": "{num, plural, =0 {Nothing to change: they already had that date.} one {Collection date changed on 1 receipt.} other {Collection date changed on # receipts.}}"
+    }
   },
   "aula": {
     "validation": {

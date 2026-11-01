@@ -2114,7 +2114,8 @@
       "fecha_devolucion_futura": "La data de la devolució no pot ser futura",
       "devolucion_antes_del_envio": "La devolució no pot ser anterior a l'enviament al banc",
       "gastos_invalidos": "Indica les despeses (0 si no n'hi ha)",
-      "fecha_cobro_devolucion": "La data de cobrament no pot ser futura ni anterior a la devolució"
+      "fecha_cobro_devolucion": "La data de cobrament no pot ser futura ni anterior a la devolució",
+      "demasiados_recibos": "Com a molt, 1000 rebuts alhora."
     },
     "errors": {
       "invalid": "Dades no vàlides.",
@@ -2147,7 +2148,11 @@
       "devolucion_por_resolver": "Un rebut retornat es cobra des de «Resoldre devolució».",
       "recibo_siguiente_cerrado": "El rebut del mes següent de la família ja està validat: no es pot portar allí. Tria una altra eixida o torna eixe rebut a esborrany.",
       "mes_siguiente_cerrado": "El mes següent ja està tancat i la família no hi té rebut: no es pot portar al rebut següent.",
-      "recibo_sin_importe": "Aquest rebut no té import: no es cobra amb xec."
+      "recibo_sin_importe": "Aquest rebut no té import: no es cobra amb xec.",
+      "fecha_cobro_en_fichero": "Algun rebut està en una remesa amb el fitxer ja generat o enviada: la seua data de cobrament ja no es pot canviar. No se n’ha canviat cap.",
+      "fecha_cobro_recibo_cerrado": "Algun rebut ja està enviat al banc, cobrat o tornat: la seua data de cobrament ja no es pot canviar. No se n’ha canviat cap.",
+      "fecha_cobro_no_sepa": "Algun rebut no es cobra pel banc: no porta data de cobrament. No se n’ha canviat cap.",
+      "fecha_cobro_failed": "No s’ha pogut canviar la data de cobrament. No se n’ha canviat cap."
     },
     "transferencias_beca": {
       "title": "Transferències a famílies",
@@ -2233,7 +2238,24 @@
     "sobrante_pendiente": "sobrant de {importe}, pendent",
     "sobrante_diferido": "sobrant de {importe}, descomptat del rebut de {mes}",
     "sobrante_transferencia": "sobrant de {importe}, per tornar per transferència",
-    "resolver_sobrante": "Resoldre sobrant"
+    "resolver_sobrante": "Resoldre sobrant",
+    "fecha_cobro": {
+      "label": "Data de cobrament",
+      "sin_fecha": "Tan prompte com el banc puga",
+      "el": "El {fecha}",
+      "explicacion": "Si no poses data, el banc el cobra tan prompte com puga: normalment, el següent dia feiner. Amb data, eixe dia.",
+      "poner": "{num, plural, one {Posar esta data al rebut marcat} other {Posar esta data als # marcats}}",
+      "quitar": "{num, plural, one {Deixar sense data el rebut marcat} other {Deixar sense data els # marcats}}",
+      "elige_recibos": "Marca els rebuts als quals vols canviar la data.",
+      "cambiar": "Canviar la data de cobrament",
+      "dialog_title": "Data de cobrament de la remesa",
+      "dialog_desc": "Marca els rebuts i tria la data. Els que no marques es queden com estan.",
+      "se_cobra": "Es cobra: {detalle}",
+      "cuantos": "{fecha} ({num})",
+      "bloqueada_fichero": "La data de cobrament ja no es pot canviar: el fitxer d’esta remesa ja està generat, i el banc ha de rebre eixe mateix fitxer.",
+      "bloqueada_enviada": "La data de cobrament ja no es pot canviar: la remesa ja s’ha enviat al banc.",
+      "guardada": "{num, plural, =0 {No hi ha res a canviar: ja tenien eixa data.} one {Data de cobrament canviada en 1 rebut.} other {Data de cobrament canviada en # rebuts.}}"
+    }
   },
   "aula": {
     "validation": {

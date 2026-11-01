@@ -2114,7 +2114,8 @@
       "fecha_devolucion_futura": "La fecha de la devolución no puede ser futura",
       "devolucion_antes_del_envio": "La devolución no puede ser anterior al envío al banco",
       "gastos_invalidos": "Indica los gastos (0 si no hay)",
-      "fecha_cobro_devolucion": "La fecha de cobro no puede ser futura ni anterior a la devolución"
+      "fecha_cobro_devolucion": "La fecha de cobro no puede ser futura ni anterior a la devolución",
+      "demasiados_recibos": "Como mucho, 1000 recibos a la vez."
     },
     "errors": {
       "invalid": "Datos no válidos.",
@@ -2147,7 +2148,11 @@
       "devolucion_por_resolver": "Un recibo devuelto se cobra desde «Resolver devolución».",
       "recibo_siguiente_cerrado": "El recibo del mes siguiente de la familia ya está validado: no se puede llevar ahí. Elige otra salida o devuelve ese recibo a borrador.",
       "mes_siguiente_cerrado": "El mes siguiente ya está cerrado y la familia no tiene recibo en él: no se puede llevar al siguiente recibo.",
-      "recibo_sin_importe": "Este recibo no tiene importe: no se cobra con cheque."
+      "recibo_sin_importe": "Este recibo no tiene importe: no se cobra con cheque.",
+      "fecha_cobro_en_fichero": "Algún recibo está en una remesa con el fichero ya generado o enviada: su fecha de cobro ya no se puede cambiar. No se ha cambiado ninguno.",
+      "fecha_cobro_recibo_cerrado": "Algún recibo ya está enviado al banco, cobrado o devuelto: su fecha de cobro ya no se puede cambiar. No se ha cambiado ninguno.",
+      "fecha_cobro_no_sepa": "Algún recibo no se cobra por banco: no lleva fecha de cobro. No se ha cambiado ninguno.",
+      "fecha_cobro_failed": "No se pudo cambiar la fecha de cobro. No se ha cambiado ninguno."
     },
     "transferencias_beca": {
       "title": "Transferencias a familias",
@@ -2233,7 +2238,24 @@
     "sobrante_pendiente": "sobrante de {importe}, pendiente",
     "sobrante_diferido": "sobrante de {importe}, descontado del recibo de {mes}",
     "sobrante_transferencia": "sobrante de {importe}, a devolver por transferencia",
-    "resolver_sobrante": "Resolver sobrante"
+    "resolver_sobrante": "Resolver sobrante",
+    "fecha_cobro": {
+      "label": "Fecha de cobro",
+      "sin_fecha": "En cuanto el banco pueda",
+      "el": "El {fecha}",
+      "explicacion": "Si no pones fecha, el banco lo cobra en cuanto pueda: normalmente, el siguiente día hábil. Con fecha, ese día.",
+      "poner": "{num, plural, one {Poner esta fecha al recibo marcado} other {Poner esta fecha a los # marcados}}",
+      "quitar": "{num, plural, one {Dejar sin fecha el recibo marcado} other {Dejar sin fecha los # marcados}}",
+      "elige_recibos": "Marca los recibos a los que quieres cambiar la fecha.",
+      "cambiar": "Cambiar fecha de cobro",
+      "dialog_title": "Fecha de cobro de la remesa",
+      "dialog_desc": "Marca los recibos y elige la fecha. Los que no marques se quedan como están.",
+      "se_cobra": "Se cobra: {detalle}",
+      "cuantos": "{fecha} ({num})",
+      "bloqueada_fichero": "La fecha de cobro ya no se puede cambiar: el fichero de esta remesa ya está generado, y el banco tiene que recibir ese mismo fichero.",
+      "bloqueada_enviada": "La fecha de cobro ya no se puede cambiar: la remesa ya se envió al banco.",
+      "guardada": "{num, plural, =0 {Nada que cambiar: ya tenían esa fecha.} one {Fecha de cobro cambiada en 1 recibo.} other {Fecha de cobro cambiada en # recibos.}}"
+    }
   },
   "aula": {
     "validation": {

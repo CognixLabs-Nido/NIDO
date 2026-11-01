@@ -23,6 +23,9 @@ import type { ReciboSepaRemesable } from '../queries/get-recibos-sepa-remesables
 import type { RemesaListItem } from '../queries/get-remesas-mes'
 import { DatosAcreedorDialog } from './DatosAcreedorDialog'
 import { DevolucionesPanel } from './DevolucionesPanel'
+import { FechaCobroEtiqueta } from './FechaCobroEtiqueta'
+import { FechaCobroForm } from './FechaCobroForm'
+import { RemesaFechaCobro } from './RemesaFechaCobro'
 import { RemesaXmlButton } from './RemesaXmlButton'
 
 interface Props {
@@ -205,12 +208,16 @@ export function RemesasPanel({
                           {t('sin_mandato_badge')}
                         </Badge>
                       )}
+                      <span className="text-muted-foreground block text-xs">
+                        <FechaCobroEtiqueta fecha={r.fechaCobro} />
+                      </span>
                     </span>
                   </span>
                   <span className="tabular-nums">{formatEuros(r.totalCentimos, locale)}</span>
                 </label>
               ))}
             </div>
+            <FechaCobroForm centroId={centroId} reciboIds={[...seleccion]} />
             <div className="flex items-center justify-between gap-2">
               <span className="text-muted-foreground text-sm">
                 {t('seleccionados', { num: seleccion.size })}
@@ -257,6 +264,7 @@ export function RemesasPanel({
                   {rm.estado === 'borrador' && rm.ficheroGenerado && (
                     <p className="text-muted-foreground text-xs">{t('fichero_generado_nota')}</p>
                   )}
+                  <RemesaFechaCobro centroId={centroId} remesa={rm} />
                 </div>
                 <div className="flex items-center gap-2">
                   {rm.estado === 'borrador' && !rm.ficheroGenerado && (

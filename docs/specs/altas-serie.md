@@ -500,6 +500,18 @@ Lo que hay (medido el 2026-11-01, `main` y producción en solo lectura):
 - Lo que sigue pudiendo cambiar entre descargas es el mandato activo de la familia: eso lo cierra
   guardar el fichero (P-1, con reabrir remesas).
 
+**Hecho en la F3 (la pantalla, Cuotas → Remesas):**
+
+- Cada recibo por marcar dice cuándo se cobra: «El 5 nov 2026» o «En cuanto el banco pueda».
+- Debajo de la lista, el campo «Fecha de cobro» con «Poner esta fecha a los N marcados» y «Dejar
+  sin fecha». Junto al campo, a la vista y como su descripción, qué pasa sin fecha: «el banco lo
+  cobra en cuanto pueda: normalmente, el siguiente día hábil». No es una ayuda escondida.
+- Cada remesa dice cuándo se cobran sus recibos. En borrador y sin fichero, «Cambiar fecha de
+  cobro» abre sus recibos, todos marcados, para cambiarlos a la vez o uno a uno. Con el fichero
+  generado o enviada no hay botón: dice por qué no se deja.
+- Cada «no» de la BD llega con su motivo (`fecha_cobro_en_fichero`, `fecha_cobro_recibo_cerrado`,
+  `recibo_no_sepa`) y con «no se ha cambiado ninguno».
+
 **El plazo vigente, de la fuente** (SDD Core Rulebook 2025, EPC016-06 versión 1.0, emitido el
 28-11-2024, en vigor desde el 5-10-2025; la 1.1 no cambia reglas, y rige hasta el 21-11-2027):
 
@@ -557,7 +569,7 @@ canceló el 2026-11-01 (FRST se procesa como RCUR).
 ## Estado
 
 - [x] 0·doc — esta spec.
-- [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · fecha de cobro: [x] F1 (#464) · [x] F2 (este PR) · [ ] F3 · [ ] reabrir remesas · [ ] 0c · ~~0d~~ (cancelado)
+- [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · fecha de cobro: [x] F1 (#464) · [x] F2 (#465) · [x] F3 (este PR) · [ ] reabrir remesas · [ ] 0c · ~~0d~~ (cancelado)
 - [ ] Pantalla de altas en proceso · [ ] 1 · [ ] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [ ] 6 · [ ] 7 · [ ] 8
 
 ## Referencias
