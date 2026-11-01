@@ -115,7 +115,7 @@ describe('registro de lecturas para entregar', () => {
         locale
       )
       expect(doc).toContain(`<html lang="${locale}">`)
-      expect(doc.split('<tr>')).toHaveLength(4)
+      expect(doc.split('<tr>')).toHaveLength(5)
     })
   }
 })
