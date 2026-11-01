@@ -18,6 +18,7 @@ import { formatEuros } from '@/shared/lib/format-money'
 
 import { bloqueoFechaRemesa, formatFechaCobro, resumenFechas } from '../lib/fecha-cobro'
 import type { RemesaListItem } from '../queries/get-remesas-mes'
+import { FechaCobroEtiqueta } from './FechaCobroEtiqueta'
 import { FechaCobroForm } from './FechaCobroForm'
 
 interface Props {
@@ -92,9 +93,7 @@ export function RemesaFechaCobro({ centroId, remesa }: Props) {
                     <span>
                       <span className="font-medium">{r.familiaEtiqueta}</span>
                       <span className="text-muted-foreground ml-2 text-xs">
-                        {r.fechaCobro
-                          ? t('el', { fecha: formatFechaCobro(r.fechaCobro, locale) })
-                          : t('sin_fecha')}
+                        <FechaCobroEtiqueta fecha={r.fechaCobro} />
                       </span>
                     </span>
                   </span>

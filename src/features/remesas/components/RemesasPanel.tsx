@@ -17,13 +17,13 @@ import { formatEuros } from '@/shared/lib/format-money'
 import { anadirARemesa } from '../actions/anadir-a-remesa'
 import { crearRemesa } from '../actions/crear-remesa'
 import { marcarRemesaEnviada } from '../actions/marcar-remesa-enviada'
-import { formatFechaCobro } from '../lib/fecha-cobro'
 import type { DatosAcreedorConfig } from '../queries/get-datos-acreedor'
 import type { ReciboGestion } from '../queries/get-recibos-gestion'
 import type { ReciboSepaRemesable } from '../queries/get-recibos-sepa-remesables'
 import type { RemesaListItem } from '../queries/get-remesas-mes'
 import { DatosAcreedorDialog } from './DatosAcreedorDialog'
 import { DevolucionesPanel } from './DevolucionesPanel'
+import { FechaCobroEtiqueta } from './FechaCobroEtiqueta'
 import { FechaCobroForm } from './FechaCobroForm'
 import { RemesaFechaCobro } from './RemesaFechaCobro'
 import { RemesaXmlButton } from './RemesaXmlButton'
@@ -54,7 +54,6 @@ export function RemesasPanel({
   editarAcreedor,
 }: Props) {
   const t = useTranslations('remesas')
-  const tFecha = useTranslations('remesas.fecha_cobro')
   const tErrors = useTranslations()
   const locale = useLocale()
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set())
@@ -210,9 +209,7 @@ export function RemesasPanel({
                         </Badge>
                       )}
                       <span className="text-muted-foreground block text-xs">
-                        {r.fechaCobro
-                          ? tFecha('el', { fecha: formatFechaCobro(r.fechaCobro, locale) })
-                          : tFecha('sin_fecha')}
+                        <FechaCobroEtiqueta fecha={r.fechaCobro} />
                       </span>
                     </span>
                   </span>
