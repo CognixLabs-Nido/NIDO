@@ -23,6 +23,28 @@ export const marcarRemesaEnviadaSchema = z.object({
 })
 export type MarcarRemesaEnviadaInput = z.infer<typeof marcarRemesaEnviadaSchema>
 
+/**
+ * La fecha de cobro de varios recibos a la vez (`fijar_fecha_cobro_recibos`, `20261214120000`).
+ * `fecha` null = sin fecha: el banco lo cobra en cuanto pueda. Sin plazos: el banco ajusta.
+ */
+export const fijarFechaCobroSchema = z.object({
+  centroId: z.string().uuid(),
+  reciboIds: z
+    .array(z.string().uuid())
+    .min(1, 'remesas.validation.sin_recibos')
+    .max(1000, 'remesas.validation.demasiados_recibos'),
+  fecha: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'remesas.validation.fecha_cobro_invalida')
+    // Una fecha que existe. zod pasa por aquí aunque el regex ya haya fallado: sin lanzar.
+    .refine((f) => {
+      const d = new Date(`${f}T12:00:00Z`)
+      return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === f
+    }, 'remesas.validation.fecha_cobro_invalida')
+    .nullable(),
+})
+export type FijarFechaCobroInput = z.infer<typeof fijarFechaCobroSchema>
+
 // ─── B-6 devoluciones ────────────────────────────────────────────────────────
 
 const fechaDevolucion = z

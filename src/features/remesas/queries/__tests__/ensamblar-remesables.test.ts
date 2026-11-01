@@ -8,9 +8,15 @@ import { ensamblarRemesables, type ReciboSepaRow } from '../get-recibos-sepa-rem
  */
 
 const rows: ReciboSepaRow[] = [
-  { id: 'rec-a', familiaId: 'fam-1', totalCentimos: 10000, esEsporadico: false },
-  { id: 'rec-b', familiaId: 'fam-2', totalCentimos: 5000, esEsporadico: true },
-  { id: 'rec-c', familiaId: 'fam-3', totalCentimos: 4000, esEsporadico: false },
+  { id: 'rec-a', familiaId: 'fam-1', totalCentimos: 10000, esEsporadico: false, fechaCobro: null },
+  {
+    id: 'rec-b',
+    familiaId: 'fam-2',
+    totalCentimos: 5000,
+    esEsporadico: true,
+    fechaCobro: '2026-11-05',
+  },
+  { id: 'rec-c', familiaId: 'fam-3', totalCentimos: 4000, esEsporadico: false, fechaCobro: null },
 ]
 const etiquetas = new Map([
   ['fam-1', 'García'],
@@ -46,5 +52,11 @@ describe('ensamblarRemesables', () => {
     const b = out.find((r) => r.id === 'rec-b')!
     expect(b.totalCentimos).toBe(5000)
     expect(b.esEsporadico).toBe(true)
+  })
+
+  it('lleva la fecha de cobro de cada recibo, o null', () => {
+    const out = ensamblarRemesables(rows, new Set(), new Set(), etiquetas, tutores)
+    expect(out.find((r) => r.id === 'rec-b')!.fechaCobro).toBe('2026-11-05')
+    expect(out.find((r) => r.id === 'rec-a')!.fechaCobro).toBeNull()
   })
 })

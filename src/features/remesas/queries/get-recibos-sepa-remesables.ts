@@ -16,6 +16,8 @@ export interface ReciboSepaRemesable {
    * familia). Si no, no puede entrar a la remesa (el generador la rechazaría).
    */
   tieneMandato: boolean
+  /** La fecha de cobro que se pide al banco (YYYY-MM-DD), o null: «en cuanto el banco pueda». */
+  fechaCobro: string | null
 }
 
 /** Fila mínima de recibo SEPA remesable (para el ensamblado puro/testeable). */
@@ -24,6 +26,7 @@ export interface ReciboSepaRow {
   familiaId: string
   totalCentimos: number
   esEsporadico: boolean
+  fechaCobro: string | null
 }
 
 /**
@@ -48,6 +51,7 @@ export function ensamblarRemesables(
       totalCentimos: r.totalCentimos,
       esEsporadico: r.esEsporadico,
       tieneMandato: familiasConMandato.has(r.familiaId),
+      fechaCobro: r.fechaCobro,
     }))
     .sort(
       (a, b) =>
@@ -75,7 +79,7 @@ export async function getRecibosSepaRemesables(
 
   const { data: recibos } = await supabase
     .from('recibos')
-    .select('id, familia_id, total_centimos, es_esporadico')
+    .select('id, familia_id, total_centimos, es_esporadico, fecha_cobro_banco')
     .eq('centro_id', centroId)
     .eq('anio', anio)
     .eq('mes', mes)
@@ -132,6 +136,7 @@ export async function getRecibosSepaRemesables(
     familiaId: r.familia_id,
     totalCentimos: r.total_centimos,
     esEsporadico: r.es_esporadico,
+    fechaCobro: r.fecha_cobro_banco,
   }))
 
   return ensamblarRemesables(

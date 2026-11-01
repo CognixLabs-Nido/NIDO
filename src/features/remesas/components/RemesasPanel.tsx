@@ -17,12 +17,15 @@ import { formatEuros } from '@/shared/lib/format-money'
 import { anadirARemesa } from '../actions/anadir-a-remesa'
 import { crearRemesa } from '../actions/crear-remesa'
 import { marcarRemesaEnviada } from '../actions/marcar-remesa-enviada'
+import { formatFechaCobro } from '../lib/fecha-cobro'
 import type { DatosAcreedorConfig } from '../queries/get-datos-acreedor'
 import type { ReciboGestion } from '../queries/get-recibos-gestion'
 import type { ReciboSepaRemesable } from '../queries/get-recibos-sepa-remesables'
 import type { RemesaListItem } from '../queries/get-remesas-mes'
 import { DatosAcreedorDialog } from './DatosAcreedorDialog'
 import { DevolucionesPanel } from './DevolucionesPanel'
+import { FechaCobroForm } from './FechaCobroForm'
+import { RemesaFechaCobro } from './RemesaFechaCobro'
 import { RemesaXmlButton } from './RemesaXmlButton'
 
 interface Props {
@@ -51,6 +54,7 @@ export function RemesasPanel({
   editarAcreedor,
 }: Props) {
   const t = useTranslations('remesas')
+  const tFecha = useTranslations('remesas.fecha_cobro')
   const tErrors = useTranslations()
   const locale = useLocale()
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set())
@@ -205,12 +209,18 @@ export function RemesasPanel({
                           {t('sin_mandato_badge')}
                         </Badge>
                       )}
+                      <span className="text-muted-foreground block text-xs">
+                        {r.fechaCobro
+                          ? tFecha('el', { fecha: formatFechaCobro(r.fechaCobro, locale) })
+                          : tFecha('sin_fecha')}
+                      </span>
                     </span>
                   </span>
                   <span className="tabular-nums">{formatEuros(r.totalCentimos, locale)}</span>
                 </label>
               ))}
             </div>
+            <FechaCobroForm centroId={centroId} reciboIds={[...seleccion]} />
             <div className="flex items-center justify-between gap-2">
               <span className="text-muted-foreground text-sm">
                 {t('seleccionados', { num: seleccion.size })}
@@ -257,6 +267,7 @@ export function RemesasPanel({
                   {rm.estado === 'borrador' && rm.ficheroGenerado && (
                     <p className="text-muted-foreground text-xs">{t('fichero_generado_nota')}</p>
                   )}
+                  <RemesaFechaCobro centroId={centroId} remesa={rm} />
                 </div>
                 <div className="flex items-center gap-2">
                   {rm.estado === 'borrador' && !rm.ficheroGenerado && (
