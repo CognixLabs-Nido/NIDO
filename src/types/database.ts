@@ -3939,6 +3939,7 @@ export type Database = {
           es_esporadico: boolean
           estado: Database["public"]["Enums"]["estado_recibo"]
           familia_id: string
+          fecha_cobro_banco: string | null
           fecha_devolucion: string | null
           fecha_envio_banco: string | null
           id: string
@@ -3968,6 +3969,7 @@ export type Database = {
           es_esporadico?: boolean
           estado?: Database["public"]["Enums"]["estado_recibo"]
           familia_id: string
+          fecha_cobro_banco?: string | null
           fecha_devolucion?: string | null
           fecha_envio_banco?: string | null
           id?: string
@@ -3997,6 +3999,7 @@ export type Database = {
           es_esporadico?: boolean
           estado?: Database["public"]["Enums"]["estado_recibo"]
           familia_id?: string
+          fecha_cobro_banco?: string | null
           fecha_devolucion?: string | null
           fecha_envio_banco?: string | null
           id?: string
@@ -4947,6 +4950,13 @@ export type Database = {
         Args: { p_cambios: Json; p_concepto_id: string }
         Returns: {
           destinatario_id: string
+          resultado: string
+        }[]
+      }
+      fijar_fecha_cobro_recibos: {
+        Args: { p_centro_id: string; p_fecha: string | null; p_recibo_ids: string[] }
+        Returns: {
+          recibo_id: string
           resultado: string
         }[]
       }
