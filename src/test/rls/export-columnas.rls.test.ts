@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { SECCIONES_EXPORT } from '@/features/export/lib/columnas-export'
+import { SECCIONES_RECOLECTAR } from '@/features/export/lib/columnas-recolectar'
 
 // Carga el setup de los tests de RLS: comprueba que la BD es la local del CI, no una remota.
 import './setup'
@@ -42,6 +43,18 @@ describe('la red del export: el catálogo y las columnas vivas', () => {
     expect(vivas.recibos).toContain('total_centimos')
 
     for (const [ruta, s] of Object.entries(SECCIONES_EXPORT)) {
+      expect(vivas[s.tabla], `${ruta}: la tabla ${s.tabla} no está en la base`).toBeDefined()
+      expect(Object.keys(s.columnas).sort(), ruta).toEqual(vivas[s.tabla])
+    }
+  })
+
+  it('cada tabla que lee recolectar.ts tiene en el catálogo exactamente sus columnas vivas', async () => {
+    // La mitad de la app (`columnas-recolectar.ts`): pide las columnas una a una, así que una
+    // columna nueva que los tipos no tengan no sale, y aquí salta sin decidir.
+    const vivas = await columnasVivas()
+    expect(vivas.ninos).toContain('familia_id')
+
+    for (const [ruta, s] of Object.entries(SECCIONES_RECOLECTAR)) {
       expect(vivas[s.tabla], `${ruta}: la tabla ${s.tabla} no está en la base`).toBeDefined()
       expect(Object.keys(s.columnas).sort(), ruta).toEqual(vivas[s.tabla])
     }

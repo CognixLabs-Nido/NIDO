@@ -14,6 +14,8 @@ import {
 
 import { EXPORT_URL_TTL_SEGUNDOS, type AdjuntoExport } from '../types'
 
+import { columnasDe, type FilaDe, type RutaRecolectar } from './columnas-recolectar'
+
 type Client = SupabaseClient<Database>
 
 /** Resultado de recolectar un sujeto: el objeto a exportar + su centro (para el log). */
@@ -68,6 +70,33 @@ function filas(v: unknown): Fila[] {
   return Array.isArray(v) ? (v as Fila[]) : []
 }
 
+interface Lectura {
+  data: unknown
+  error: { message: string } | null
+}
+
+/**
+ * El resultado de una lectura del export. Un fallo rompe el export, que no puede salir incompleto
+ * sin decirlo: con las columnas pedidas una a una (`columnasDe`), una columna que ya no está en la
+ * base da error, y antes ese error salía como una sección vacía. Lo que la RLS no deja ver no es un
+ * fallo: llega como 0 filas, sin error.
+ */
+function leido<T>(que: string, r: Lectura): T[] {
+  if (r.error) throw new Error(`export: la lectura de ${que} falló: ${r.error.message}`)
+  return (r.data ?? []) as T[]
+}
+
+/** Las filas de una sección del catálogo: solo sus columnas que salen, que son las que se piden. */
+function filasDe<R extends RutaRecolectar>(ruta: R, r: Lectura): FilaDe<R>[] {
+  return leido<FilaDe<R>>(ruta, r)
+}
+
+/** La fila del sujeto (`maybeSingle`): null si no existe o la RLS no la deja ver. */
+function filaDe<R extends RutaRecolectar>(ruta: R, r: Lectura): FilaDe<R> | null {
+  if (r.error) throw new Error(`export: la lectura de ${ruta} falló: ${r.error.message}`)
+  return (r.data ?? null) as FilaDe<R> | null
+}
+
 /** Firma una ruta de un bucket privado con el TTL largo del export (#4). */
 async function firmar(
   service: Client,
@@ -89,44 +118,78 @@ export async function recolectarUsuario(
   service: Client,
   usuarioId: string
 ): Promise<Recolectado | null> {
-  const { data: usuario } = await client
-    .from('usuarios')
-    .select('*')
-    .eq('id', usuarioId)
-    .maybeSingle()
+  const usuario = filaDe(
+    'usuario.ficha',
+    await client
+      .from('usuarios')
+      .select(columnasDe('usuario.ficha'))
+      .eq('id', usuarioId)
+      .maybeSingle()
+  )
   if (!usuario) return null // no accesible para el solicitante
 
   const [roles, consentimientos, vinculos] = await Promise.all([
     rolesDelSujetoParaExport(client, usuarioId),
     // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-    client.from('consentimientos').select('*').eq('usuario_id', usuarioId),
+    client
+      .from('consentimientos')
+      .select(columnasDe('usuario.consentimientos'))
+      .eq('usuario_id', usuarioId)
+      .then((r) => filasDe('usuario.consentimientos', r)),
     // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-    client.from('vinculos_familiares').select('*').eq('usuario_id', usuarioId),
+    client
+      .from('vinculos_familiares')
+      .select(columnasDe('usuario.vinculos_familiares'))
+      .eq('usuario_id', usuarioId)
+      .then((r) => filasDe('usuario.vinculos_familiares', r)),
   ])
 
   // Mensajes: hilos donde el sujeto participa (profe↔familia de sus hijos +
   // admin↔familia suyos). Hilo COMPLETO (#2: el personal no es tercero a proteger).
-  const ninoIds = (vinculos.data ?? [])
-    .filter((v) => v.tipo_vinculo !== 'autorizado')
-    .map((v) => v.nino_id)
+  const ninoIds = vinculos.filter((v) => v.tipo_vinculo !== 'autorizado').map((v) => v.nino_id)
   const orParts = [`tutor_id.eq.${usuarioId}`]
   if (ninoIds.length > 0) orParts.push(`nino_id.in.(${ninoIds.join(',')})`)
   // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-  const { data: convs } = await client.from('conversaciones').select('id').or(orParts.join(','))
-  const convIds = (convs ?? []).map((c) => c.id)
+  const convs = leido<{ id: string }>(
+    'conversaciones',
+    await client.from('conversaciones').select('id').or(orParts.join(','))
+  )
+  const convIds = convs.map((c) => c.id)
   const mensajes = convIds.length
-    ? ((await client.from('mensajes').select('*').in('conversacion_id', convIds)).data ?? [])
+    ? filasDe(
+        'usuario.mensajes',
+        await client
+          .from('mensajes')
+          .select(columnasDe('usuario.mensajes'))
+          .in('conversacion_id', convIds)
+      )
     : []
 
   const [ausencias, citasInvitado, recordatorios, firmas] = await Promise.all([
     // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-    client.from('ausencias').select('*').eq('reportada_por', usuarioId),
+    client
+      .from('ausencias')
+      .select(columnasDe('usuario.ausencias_reportadas'))
+      .eq('reportada_por', usuarioId)
+      .then((r) => filasDe('usuario.ausencias_reportadas', r)),
     // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-    client.from('cita_invitados').select('*').eq('usuario_id', usuarioId),
+    client
+      .from('cita_invitados')
+      .select(columnasDe('usuario.invitaciones_a_citas'))
+      .eq('usuario_id', usuarioId)
+      .then((r) => filasDe('usuario.invitaciones_a_citas', r)),
     // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-    client.from('recordatorios').select('*').eq('usuario_destinatario_id', usuarioId),
+    client
+      .from('recordatorios')
+      .select(columnasDe('usuario.recordatorios_recibidos'))
+      .eq('usuario_destinatario_id', usuarioId)
+      .then((r) => filasDe('usuario.recordatorios_recibidos', r)),
     // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-    client.from('firmas_autorizacion').select('*').eq('firmante_id', usuarioId),
+    client
+      .from('firmas_autorizacion')
+      .select(columnasDe('usuario.firmas_realizadas'))
+      .eq('firmante_id', usuarioId)
+      .then((r) => filasDe('usuario.firmas_realizadas', r)),
   ])
 
   const centroId = roles.map((r) => r.centro_id)[0] ?? null
@@ -155,13 +218,13 @@ export async function recolectarUsuario(
     data: {
       ficha: usuario,
       roles,
-      consentimientos: consentimientos.data ?? [],
-      vinculos_familiares: vinculos.data ?? [],
+      consentimientos,
+      vinculos_familiares: vinculos,
       mensajes,
-      ausencias_reportadas: ausencias.data ?? [],
-      invitaciones_a_citas: citasInvitado.data ?? [],
-      recordatorios_recibidos: recordatorios.data ?? [],
-      firmas_realizadas: firmas.data ?? [],
+      ausencias_reportadas: ausencias,
+      invitaciones_a_citas: citasInvitado,
+      recordatorios_recibidos: recordatorios,
+      firmas_realizadas: firmas,
       ...(extra ?? { datos_ampliados: { _nota: NOTA_SIN_DATOS_AMPLIADOS } }),
       adjuntos,
       _aportado_por_ti: [
@@ -190,7 +253,10 @@ export async function recolectarNino(
   ninoId: string,
   opciones: OpcionesRecolectar = {}
 ): Promise<Recolectado | null> {
-  const { data: nino } = await client.from('ninos').select('*').eq('id', ninoId).maybeSingle()
+  const nino = filaDe(
+    'nino.ficha',
+    await client.from('ninos').select(columnasDe('nino.ficha')).eq('id', ninoId).maybeSingle()
+  )
   if (!nino) return null // no accesible para el solicitante
 
   // Info médica: descifrado gateado por puede_ver_info_medica (#3).
@@ -219,18 +285,57 @@ export async function recolectarNino(
     firmas,
     administraciones,
   ] = await Promise.all([
-    client.from('datos_pedagogicos_nino').select('*').eq('nino_id', ninoId),
-    client.from('vinculos_familiares').select('*').eq('nino_id', ninoId),
+    client
+      .from('datos_pedagogicos_nino')
+      .select(columnasDe('nino.datos_pedagogicos'))
+      .eq('nino_id', ninoId)
+      .then((r) => filasDe('nino.datos_pedagogicos', r)),
+    client
+      .from('vinculos_familiares')
+      .select(columnasDe('nino.vinculos_familiares'))
+      .eq('nino_id', ninoId)
+      .then((r) => filasDe('nino.vinculos_familiares', r)),
     client
       .from('agendas_diarias')
-      .select('*, comidas(*), biberones(*), suenos(*), deposiciones(*)')
-      .eq('nino_id', ninoId),
-    client.from('asistencias').select('*').eq('nino_id', ninoId),
-    client.from('ausencias').select('*').eq('nino_id', ninoId),
-    client.from('informes_evolucion').select('*').eq('nino_id', ninoId),
-    client.from('autorizaciones').select('*').eq('nino_id', ninoId),
-    client.from('firmas_autorizacion').select('*').eq('nino_id', ninoId),
-    client.from('administraciones_medicacion').select('*').eq('nino_id', ninoId),
+      .select(
+        `${columnasDe('nino.agendas_diarias')}, ` +
+          `comidas(${columnasDe('nino.agendas_diarias.comidas')}), ` +
+          `biberones(${columnasDe('nino.agendas_diarias.biberones')}), ` +
+          `suenos(${columnasDe('nino.agendas_diarias.suenos')}), ` +
+          `deposiciones(${columnasDe('nino.agendas_diarias.deposiciones')})`
+      )
+      .eq('nino_id', ninoId)
+      .then((r) => filasDe('nino.agendas_diarias', r)),
+    client
+      .from('asistencias')
+      .select(columnasDe('nino.asistencias'))
+      .eq('nino_id', ninoId)
+      .then((r) => filasDe('nino.asistencias', r)),
+    client
+      .from('ausencias')
+      .select(columnasDe('nino.ausencias'))
+      .eq('nino_id', ninoId)
+      .then((r) => filasDe('nino.ausencias', r)),
+    client
+      .from('informes_evolucion')
+      .select(columnasDe('nino.informes_evolucion'))
+      .eq('nino_id', ninoId)
+      .then((r) => filasDe('nino.informes_evolucion', r)),
+    client
+      .from('autorizaciones')
+      .select(columnasDe('nino.autorizaciones'))
+      .eq('nino_id', ninoId)
+      .then((r) => filasDe('nino.autorizaciones', r)),
+    client
+      .from('firmas_autorizacion')
+      .select(columnasDe('nino.firmas'))
+      .eq('nino_id', ninoId)
+      .then((r) => filasDe('nino.firmas', r)),
+    client
+      .from('administraciones_medicacion')
+      .select(columnasDe('nino.administraciones_medicacion'))
+      .eq('nino_id', ninoId)
+      .then((r) => filasDe('nino.administraciones_medicacion', r)),
   ])
 
   // Foto de perfil (enlace firmado, #4).
@@ -241,27 +346,43 @@ export async function recolectarNino(
 
   // Fotos del blog: exclusivas → binario (enlace firmado); compartidas → metadata (#2).
   const fotosCompartidas: Array<Record<string, unknown>> = []
-  const { data: etis } = await client
-    .from('media_etiquetas')
-    .select('media_id')
-    .eq('nino_id', ninoId)
-  const mediaIds = [...new Set((etis ?? []).map((e) => e.media_id))]
+  const etis = leido<{ media_id: string }>(
+    'media_etiquetas',
+    await client.from('media_etiquetas').select('media_id').eq('nino_id', ninoId)
+  )
+  const mediaIds = [...new Set(etis.map((e) => e.media_id))]
   if (mediaIds.length > 0) {
-    const [{ data: todas }, { data: media }] = await Promise.all([
-      client.from('media_etiquetas').select('media_id, nino_id').in('media_id', mediaIds),
+    const [todas, media] = await Promise.all([
+      client
+        .from('media_etiquetas')
+        .select('media_id, nino_id')
+        .in('media_id', mediaIds)
+        .then((r) => leido<{ media_id: string; nino_id: string }>('media_etiquetas', r)),
       client
         .from('media')
         .select('id, bucket, path, publicacion_id, created_at')
-        .in('id', mediaIds),
+        .in('id', mediaIds)
+        .then((r) =>
+          leido<{
+            id: string
+            bucket: string
+            path: string
+            publicacion_id: string
+            created_at: string
+          }>('media', r)
+        ),
     ])
-    const pubIds = [...new Set((media ?? []).map((m) => m.publicacion_id))]
-    const { data: pubs } = pubIds.length
-      ? await client.from('publicaciones').select('id, texto, created_at').in('id', pubIds)
-      : { data: [] }
-    const pubDe = (id: string) => (pubs ?? []).find((p) => p.id === id)
+    const pubIds = [...new Set(media.map((m) => m.publicacion_id))]
+    const pubs = pubIds.length
+      ? leido<{ id: string; texto: string | null; created_at: string }>(
+          'publicaciones',
+          await client.from('publicaciones').select('id, texto, created_at').in('id', pubIds)
+        )
+      : []
+    const pubDe = (id: string) => pubs.find((p) => p.id === id)
 
-    for (const m of media ?? []) {
-      const tags = (todas ?? []).filter((t) => t.media_id === m.id)
+    for (const m of media) {
+      const tags = todas.filter((t) => t.media_id === m.id)
       const exclusiva = tags.every((t) => t.nino_id === ninoId)
       const pub = pubDe(m.publicacion_id)
       if (exclusiva) {
@@ -299,15 +420,15 @@ export async function recolectarNino(
     data: {
       ficha: nino,
       info_medica_emergencia: infoMedica,
-      datos_pedagogicos: pedagogicos.data ?? [],
-      vinculos_familiares: vinculos.data ?? [],
-      agendas_diarias: agendas.data ?? [],
-      asistencias: asistencias.data ?? [],
-      ausencias: ausencias.data ?? [],
-      informes_evolucion: informes.data ?? [],
-      autorizaciones: autorizaciones.data ?? [],
-      firmas: firmas.data ?? [],
-      administraciones_medicacion: administraciones.data ?? [],
+      datos_pedagogicos: pedagogicos,
+      vinculos_familiares: vinculos,
+      agendas_diarias: agendas,
+      asistencias,
+      ausencias,
+      informes_evolucion: informes,
+      autorizaciones,
+      firmas,
+      administraciones_medicacion: administraciones,
       adjuntos,
       fotos_compartidas: fotosCompartidas,
       ...(extra ?? { datos_ampliados: { _nota: NOTA_SIN_DATOS_AMPLIADOS } }),

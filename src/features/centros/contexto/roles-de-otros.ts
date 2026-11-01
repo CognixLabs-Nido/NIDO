@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { Database } from '@/types/database'
+import { columnasDe, type FilaDe } from '@/features/export/lib/columnas-recolectar'
 
 import { rolDeLaApp, type Rol } from './resolver'
 
@@ -47,12 +48,21 @@ export async function contarRolesDelCentro(client: Client, centroId: string): Pr
 
 /**
  * Todos los roles del sujeto de un export (art. 15), vivos y borrados. Con el cliente de quien
- * exporta: la RLS decide qué filas ve. Un fallo de lectura sale como lista vacía, como antes.
+ * exporta: la RLS decide qué filas ve. Pide las columnas que decide la red del export
+ * (`columnas-recolectar.ts`, `usuario.roles`), y un fallo de lectura rompe el export: con las
+ * columnas una a una, una que ya no está en la base da error, y una lista vacía lo callaría.
  */
-export async function rolesDelSujetoParaExport(client: Client, usuarioId: string) {
+export async function rolesDelSujetoParaExport(
+  client: Client,
+  usuarioId: string
+): Promise<FilaDe<'usuario.roles'>[]> {
   // entre-centros: el export del sujeto (art. 15), con lo que la sesión de quien exporta alcanza.
-  const { data } = await client.from('roles_usuario').select('*').eq('usuario_id', usuarioId)
-  return data ?? []
+  const { data, error } = await client
+    .from('roles_usuario')
+    .select(columnasDe('usuario.roles'))
+    .eq('usuario_id', usuarioId)
+  if (error) throw new Error(`export: la lectura de usuario.roles falló: ${error.message}`)
+  return (data ?? []) as unknown as FilaDe<'usuario.roles'>[]
 }
 
 /**

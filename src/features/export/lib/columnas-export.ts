@@ -19,8 +19,8 @@ import type { Database } from '@/types/database'
  * mano y pueden quedarse atrás.
  *
  * Las tablas que el export solo consulta para un nombre (el curso, el aula, el concepto, quién
- * firmó…) no están: sus filas no son datos del sujeto. Y la parte de la app (`recolectar.ts`, que lee
- * con `select('*')`) es el trozo 3.
+ * firmó…) no están: sus filas no son datos del sujeto. Lo que lee la app (`recolectar.ts`) tiene su
+ * propio catálogo, `columnas-recolectar.ts`.
  */
 
 type Tablas = Database['public']['Tables']
