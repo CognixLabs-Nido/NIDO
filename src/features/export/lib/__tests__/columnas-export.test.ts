@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { SECCIONES_EXPORT, type DecisionColumna } from '../columnas-export'
+import { NOMBRES_DE_OTROS, SECCIONES_EXPORT, type DecisionColumna } from '../columnas-export'
 import { POR_DECIDIR_2026_11_01 } from './por-decidir-2026-11-01'
-import { cuerpoDelExport, seccionesDelExport, ultimaMigracionDelExport } from './secciones-export'
+import {
+  cuerpoDelExport,
+  joinsAUsuarios,
+  seccionesDelExport,
+  ultimaMigracionDelExport,
+} from './secciones-export'
 
 /**
  * La red del export art. 15, contra el export de verdad (la última migración que lo define): cada
@@ -112,6 +117,28 @@ describe('la red del export: el catálogo y el export de verdad', () => {
       expect('sale' in d && d.nota, c).toMatch(/#467/)
       expect('sale' in d && d.nota, c).toMatch(/2026-11-01/)
     }
+  })
+
+  it('cada nombre de otra persona que entrega el export está decidido, con la raya de R4', () => {
+    const entregados = Object.entries(leidas).flatMap(([ruta, s]) =>
+      Object.entries(s.nombres).map(([clave, on]) => ({ donde: `${ruta}.${clave}`, on }))
+    )
+    // Premisa: cada JOIN a usuarios del export da un nombre leído (si no, el parser no lo ve).
+    expect(joinsAUsuarios()).toBeGreaterThan(0)
+    expect(entregados).toHaveLength(joinsAUsuarios())
+    expect(entregados.map((n) => n.donde).sort()).toEqual(Object.keys(NOMBRES_DE_OTROS).sort())
+    for (const { donde, on } of entregados) {
+      const d = NOMBRES_DE_OTROS[donde as keyof typeof NOMBRES_DE_OTROS]
+      expect(d.porque.length, donde).toBeGreaterThanOrEqual(80)
+      // «Solo de la familia»: el JOIN no trae el nombre si el rol no es de la familia del niño.
+      // Lo que hace de verdad lo prueba `ficha-medica-lecturas.rls.test.ts`, ejecutando el export.
+      if (d.sale === 'solo de la familia') expect(on, donde).toMatch(/rol_lector IN \(/)
+      else expect(on, donde).not.toMatch(/\bAND\b/)
+    }
+    // El de las lecturas era de antes de las reglas, y lo dice con su fecha.
+    const lector = NOMBRES_DE_OTROS['nino.lecturas_ficha_medica.lector']
+    expect(lector.nota).toMatch(/20261128120000/)
+    expect(lector.nota).toMatch(/2026-11-01/)
   })
 
   it('lo que está por decidir es lo que había el 2026-11-01, y solo mengua', () => {

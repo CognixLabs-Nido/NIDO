@@ -102,6 +102,33 @@ const NS_IBAN = {
 const SUSTITUYE_467 =
   'R1/R2 (2026-11-01): sustituye a la decisión del #467, que la dejaba fuera como dato del funcionamiento de la base. La misma columna no puede tener dos decisiones según la tabla.'
 
+/**
+ * Los NOMBRES de otras personas que entrega el export. No son columnas de la tabla de la sección
+ * (salen de un JOIN a `usuarios` desde el uuid, que no sale: R4), así que el catálogo de columnas
+ * no los ve; los ve el test, que cuenta los `u.nombre_completo` del export contra esta lista.
+ *
+ * La raya (responsable, 2026-11-01): personal del centro → el rol, nunca el nombre; familia del
+ * propio niño → el nombre. La decisión de Jose protege a SU PERSONAL (el nombre de una trabajadora
+ * es un dato suyo, y el export es un fichero que la familia puede reenviar, art. 15.4); no esconde
+ * a los tutores de un niño entre sí.
+ */
+export const NOMBRES_DE_OTROS = {
+  'nino.consentimientos.otorgado_por': {
+    sale: 'siempre',
+    porque:
+      'Quien dio un consentimiento sobre el niño es siempre uno de sus tutores (`usuario_id` es el tutor también cuando la Dirección lo registra en papel). Que la familia sepa cuál de los dos lo dio es información que les pertenece a los dos, y no expone a ningún trabajador.',
+  },
+  'nino.lecturas_ficha_medica.lector': {
+    sale: 'solo de la familia',
+    porque:
+      'Sale si quien leyó la ficha médica es de la familia del niño (`rol_lector` tutor_legal o autorizado). Si es personal del centro o el soporte, sale solo `rol_lector`: es el mismo caso que quien le da la medicación.',
+    nota: 'R4 (2026-11-01): sustituye a la decisión de 20261128120000, anterior a las reglas, que daba siempre el nombre de quien leyó.',
+  },
+} as const satisfies Record<
+  string,
+  { sale: 'siempre' | 'solo de la familia'; porque: string; nota?: string }
+>
+
 /** Por ruta: `usuario.` o `nino.` y la clave de la sección (y la de dentro, si la hay). */
 export const SECCIONES_EXPORT = {
   'usuario.preferencias': seccion('preferencias_usuario', {
@@ -412,6 +439,7 @@ export const SECCIONES_EXPORT = {
   }),
   'nino.consentimientos': seccion('consentimientos', {
     id: NS_ID,
+    // Su nombre sale como `otorgado_por`: `NOMBRES_DE_OTROS`.
     usuario_id: NS_PERSONA,
     tipo: { sale: 'tipo' },
     version: { sale: 'version_texto' },
@@ -621,6 +649,7 @@ export const SECCIONES_EXPORT = {
     id: NS_ID,
     nino_id: NS_SUJETO,
     centro_id: NS_CENTRO,
+    // Su nombre, solo si es de la familia: `NOMBRES_DE_OTROS`.
     lector_id: NS_PERSONA,
     rol_lector: { sale: 'rol_lector' },
     origen: { sale: 'origen' },

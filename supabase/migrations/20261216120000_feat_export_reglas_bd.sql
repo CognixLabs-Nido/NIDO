@@ -11,9 +11,14 @@
 --   R5 · un id o un enlace sale solo si une dos cosas que el propio export entrega;
 --   R6 · las claves de notificaciones y de invitación no salen nunca;
 --   R7 · la huella de una firma sale; la IP y el navegador, solo en las firmas propias.
--- Lo que no sale ya no salía: esta migración solo AÑADE las 64 claves de lo que sale, al principio
+-- Lo que no sale ya no salía: esta migración AÑADE las 64 claves de lo que sale, al principio
 -- del objeto de cada sección. Entre ellas, R1 y R2 en el recibo, que sustituyen a la decisión del
 -- #467 (las fechas de registro y `deleted_at` no salían).
+-- Y QUITA un nombre: en las lecturas de la ficha médica, `lector` (el nombre de quien la leyó)
+-- sale solo si quien leyó es de la familia del niño (`rol_lector` tutor_legal o autorizado). Del
+-- personal del centro y del soporte queda `rol_lector`, que ya salía (R4: personal del centro →
+-- rol; familia del propio niño → nombre). Sustituye a la decisión de 20261128120000, que daba
+-- siempre el nombre.
 --
 -- El resto de la función es la de `20261215120000`, tal cual (guarda previa). La aplica el
 -- responsable por SQL Editor. Sin BEGIN ni COMMIT. Tras aplicar: registrar en
@@ -27,7 +32,7 @@ DECLARE
 BEGIN
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure('public.export_datos_sujeto(text,uuid)');
-  IF v_md5 = '879b4f3fdba1f24d86c0d0f07f57988a' THEN
+  IF v_md5 = '706359493834464fabf1c2ace099f3a5' THEN
     RAISE EXCEPTION 'ya aplicada: export_datos_sujeto ya es la de 20261216120000';
   END IF;
   -- Lo que se reescribe es lo que hay, tal como quedó.
@@ -485,7 +490,8 @@ BEGIN
           FROM public.olvido_solicitudes o
          WHERE o.sujeto_tipo = 'nino' AND o.sujeto_id = p_sujeto_id), '[]'::jsonb),
 
-      -- Quién ha leído su ficha médica (20261128120000).
+      -- Quién ha leído su ficha médica (20261128120000). El nombre, solo si es de la familia del
+      -- niño; del personal del centro y del soporte, solo el rol (R4, 2026-11-01).
       'lecturas_ficha_medica', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
                  'leida_en', l.leida_en, 'lector', u.nombre_completo, 'rol_lector', l.rol_lector,
@@ -493,6 +499,7 @@ BEGIN
                ORDER BY l.leida_en)
           FROM public.lecturas_ficha_medica l
           LEFT JOIN public.usuarios u ON u.id = l.lector_id
+                                     AND l.rol_lector IN ('tutor_legal', 'autorizado')
          WHERE l.nino_id = p_sujeto_id AND NOT v_bloq), '[]'::jsonb),
 
       -- Retención (PR-7): lo que se conserva por obligación legal y está bloqueado.
@@ -515,7 +522,7 @@ DECLARE
 BEGIN
   SELECT prosrc, md5(regexp_replace(regexp_replace(replace(prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_src, v_md5 FROM pg_proc WHERE oid = v_f::regprocedure;
-  IF v_md5 IS DISTINCT FROM '879b4f3fdba1f24d86c0d0f07f57988a' THEN
+  IF v_md5 IS DISTINCT FROM '706359493834464fabf1c2ace099f3a5' THEN
     RAISE EXCEPTION 'export_datos_sujeto no quedó como en este fichero: %', v_md5;
   END IF;
   IF NOT (SELECT prosecdef FROM pg_proc WHERE oid = v_f::regprocedure)
