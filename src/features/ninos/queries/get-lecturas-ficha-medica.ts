@@ -36,10 +36,22 @@ export const ORIGENES_LECTURA = [
   'export',
 ] as const satisfies readonly OrigenLecturaFicha[]
 
+/**
+ * Quién leyó, tal como lo puede ver quien mira (20261217120000):
+ *  - `nombre`: el nombre de la cuenta; si se purgó, como la dejó la purga;
+ *  - `oculto`: quien mira es un tutor y quien leyó es del personal del centro o del soporte. Su
+ *    nombre no se da (R4, decisión de Jose del 2026-11-01): se enseña el rol;
+ *  - `cuenta_borrada`: la cuenta ya no existe.
+ * Un nombre oculto y una cuenta borrada llegan los dos sin nombre: el tipo obliga a no confundirlos.
+ */
+export type LectorLectura =
+  | { tipo: 'nombre'; nombre: string }
+  | { tipo: 'oculto' }
+  | { tipo: 'cuenta_borrada' }
+
 export interface LecturaFichaMedica {
   leidaEn: string
-  /** El nombre de la cuenta; si se purgó, como la dejó la purga. NULL si ya no existe. */
-  lector: string | null
+  lector: LectorLectura
   rol: RolLector
   origen: OrigenLecturaFicha
   campos: CampoFicha[]
@@ -73,7 +85,11 @@ export async function getLecturasFichaMedica(ninoId: string): Promise<RegistroLe
     tipo: 'ok',
     lecturas: (data ?? []).map((l) => ({
       leidaEn: l.leida_en,
-      lector: l.lector_nombre ?? null,
+      lector: l.nombre_oculto
+        ? { tipo: 'oculto' }
+        : l.lector_nombre
+          ? { tipo: 'nombre', nombre: l.lector_nombre }
+          : { tipo: 'cuenta_borrada' },
       rol: l.rol_lector as RolLector,
       origen: l.origen as OrigenLecturaFicha,
       campos: (l.campos ?? []) as CampoFicha[],

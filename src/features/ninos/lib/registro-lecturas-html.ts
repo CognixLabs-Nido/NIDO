@@ -2,6 +2,8 @@ import { localeIntl } from '@/shared/lib/locale-intl'
 
 import type { LecturaFichaMedica } from '../queries/get-lecturas-ficha-medica'
 
+import { quienLeyo } from './quien-leyo'
+
 /** Traductor del namespace `ficha_medica_lecturas` (lo pasa la route con el locale de quien descarga). */
 export type Etiquetador = (key: string) => string
 
@@ -45,7 +47,7 @@ export function renderRegistroLecturasHtml(
         l.campos.length === 0 ? t('sin_datos') : l.campos.map((c) => t(`campo.${c}`)).join(', ')
       return `<tr>
 <td>${fecha(new Date(l.leidaEn))}</td>
-<td>${escape(l.lector ?? t('cuenta_borrada'))}</td>
+<td>${escape(quienLeyo(l, t))}</td>
 <td>${escape(t(`rol.${l.rol}`))}</td>
 <td>${escape(t(`origen.${l.origen}`))}</td>
 <td>${escape(campos)}</td>

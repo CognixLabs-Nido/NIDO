@@ -26,17 +26,25 @@ function traductor(msgs: Record<string, unknown>): Etiquetador {
 const LECTURAS: LecturaFichaMedica[] = [
   {
     leidaEn: '2026-07-15T10:30:00Z',
-    lector: 'Ana <b>Pérez</b> & Cía',
+    lector: { tipo: 'nombre', nombre: 'Ana <b>Pérez</b> & Cía' },
     rol: 'directora',
     origen: 'ficha',
     campos: ['alergias_graves', 'medicacion_habitual'],
   },
   {
     leidaEn: '2026-01-15T10:30:00Z',
-    lector: null,
+    lector: { tipo: 'cuenta_borrada' },
     rol: 'tutor_legal',
     origen: 'export',
     campos: [],
+  },
+  // Lo que le llega a un tutor de una lectura del personal (R4, 2026-11-01): sin el nombre.
+  {
+    leidaEn: '2026-03-02T09:00:00Z',
+    lector: { tipo: 'oculto' },
+    rol: 'profe',
+    origen: 'ficha',
+    campos: ['alergias_graves'],
   },
 ]
 
@@ -55,7 +63,7 @@ describe('registro de lecturas para entregar', () => {
     expect(html).toContain('<th>Fecha y hora</th>')
     expect(html).toContain('<th>Quién accedió</th>')
     expect(html).toContain('<th>Datos consultados</th>')
-    expect(filas).toHaveLength(2)
+    expect(filas).toHaveLength(3)
     expect(html).toContain('Lucía Martín')
   })
 
@@ -77,6 +85,13 @@ describe('registro de lecturas para entregar', () => {
     expect(filas[1]).toContain('<td>Cuenta borrada</td>')
     expect(filas[1]).toContain('<td>Tutor legal</td>')
     expect(filas[1]).toContain('<td>La ficha no tenía datos</td>')
+  })
+
+  it('del personal, a un tutor le sale su rol donde iría el nombre, y no «cuenta borrada»', () => {
+    // Premisa: es la fila de la profe.
+    expect(filas[2]).toContain('<td>alergias graves</td>')
+    expect(filas[2].match(/<td>Profesorado del aula<\/td>/g)).toHaveLength(2)
+    expect(filas[2]).not.toContain('Cuenta borrada')
   })
 
   it('sin lecturas lo dice, sin tabla vacía', () => {

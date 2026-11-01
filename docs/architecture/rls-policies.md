@@ -418,6 +418,13 @@ políticas de SELECT), así que un registro solo en la función se podía saltar
   (`/{locale}/export/lecturas-ficha-medica/{niño}`, con la misma función): la familia para
   guardarlo, la Dirección para entregárselo al tutor que ya no entra. `lecturas_ficha_medica` no tiene políticas ni
   privilegios para las sesiones y no se audita.
+- **Quién leyó, según quién mira** (`20261217120000`; R4, decisión de Jose del 2026-11-01, por quién
+  mira y no por qué pantalla): a Dirección (`es_admin`) el nombre, como siempre; a un tutor, el de
+  la familia del niño (`rol_lector` tutor_legal o autorizado) y, del personal del centro y del
+  soporte, solo el rol. La función devuelve `nombre_oculto`, para que la app no lo confunda con una
+  cuenta borrada (`LectorLectura`, tres casos). Es la misma raya en las tres puertas: la pantalla,
+  el imprimible (las dos, por `quienLeyo`) y el export del niño (`20261216120000`). La única otra
+  vía con el nombre, `privado.contenido_bloqueado`, es de la titular.
 - **La purga del niño** ya no borra sus lecturas (`20261205120000`): se conservan bloqueadas y
   `lecturas_ficha_medica` contesta 55000 con la fecha en DETAIL. Con la fila del niño borrada, se
   van en cascada. El plazo provisional (5 años, PENDIENTE política F11-B; `docs/specs/retencion-plazos.md`) lo aplica el

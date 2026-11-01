@@ -5217,6 +5217,7 @@ export type Database = {
           campos: string[]
           leida_en: string
           lector_nombre: string
+          nombre_oculto: boolean
           origen: string
           rol_lector: string
         }[]
