@@ -1583,6 +1583,27 @@ toca.
     no entra ninguno, así que los que pasan a `enviado_banco` son todos.
 - Test: `remesa-recibo-unico.rls.test.ts`.
 
+### La red del export art. 15: cada columna, decidida
+
+Migración `20261215120000_feat_export_recibos_red`. `export_datos_sujeto` escribe las columnas de
+cada tabla una a una, así que una columna nueva se quedaba fuera sin que nadie lo decidiera (la
+fecha de cobro de la F1 y la deuda dada por perdida de `20261212120000`, por ejemplo).
+
+- **El catálogo** (`src/features/export/lib/columnas-export.ts`): por cada sección del export, cada
+  columna de su tabla **sale** (con su clave), **no sale** a propósito (con su porqué, escrito para
+  quien revise el export) o está **por decidir**. Es un `Record` sobre las columnas de la tabla en
+  `Database`: una columna nueva en los tipos no compila hasta decidirla.
+- **Los tests**: `columnas-export.test.ts` compara el catálogo con la última migración que define el
+  export (lo que dice que sale, sale, con esa clave, y nada más; cada «no sale» con su porqué; lo
+  por decidir es lo del 2026-11-01 y solo mengua). `export-columnas.rls.test.ts` compara el catálogo
+  con las columnas vivas de la BD del CI (la descripción OpenAPI de PostgREST): los tipos se escriben
+  a veces a mano. `export-datos-sujeto.rls.test.ts` comprueba que el recibo sale con exactamente sus
+  claves.
+- **Del recibo** salen además `id`, `regiro_de`, `diferencia_de`, `fecha_cobro_banco` y
+  `deuda_dada_por_perdida_en`. Los que no salen llevan su porqué en el catálogo.
+- **Lo que queda**: 234 columnas por decidir en las demás tablas (trozo 2) y la parte de la app,
+  `recolectar.ts`, que lee con `select('*')` (trozo 3).
+
 ### La fecha de cobro del recibo, y ponerla en bloque
 
 Migración `20261214120000_feat_recibo_fecha_cobro`; spec `docs/specs/altas-serie.md`, «La fecha
@@ -1717,6 +1738,7 @@ forma de deshacerlo.
 | Rutas de Storage sin cruzar de centro         | `storage-ruta-coherente.rls.test.ts`            |
 | Funciones auxiliares fuera de la API          | `funciones-esquema-privado.rls.test.ts`         |
 | Lo exclusivo de la admin (`es_responsable`)   | `roles-es-responsable.rls.test.ts`              |
+| Cada columna del export art. 15 decidida      | `export-columnas.rls.test.ts`                   |
 | La directora: día a día, exclusivo, escalada  | `roles-directora.rls.test.ts`                   |
 | La identidad de una autorización no cambia    | `autorizaciones-identidad.rls.test.ts`          |
 | La app lee a la directora con su sesión       | `roles-directora-app.rls.test.ts`               |

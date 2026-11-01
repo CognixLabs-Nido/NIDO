@@ -197,9 +197,15 @@ export const SECCIONES_EXPORT = {
     sobrante_de_desborde_id: PD,
   }),
   'usuario.cobros_familia.recibos': seccion('recibos', {
-    id: PD,
-    centro_id: PD,
-    nino_id: PD,
+    id: { sale: 'id' },
+    centro_id: {
+      noSale:
+        'Clave interna (uuid) del centro que emite el recibo. El centro es el responsable del tratamiento, no un dato de la familia: quién es lo dice el aviso de privacidad.',
+    },
+    nino_id: {
+      noSale:
+        'Columna del modelo anterior, cuando el recibo era de un niño. Desde la serie F el recibo es de la familia y la columna es informativa (ADR-0052); medido el 2026-11-01, ningún recibo la tiene. El niño de cada cargo sale en las líneas del export de cada niño (`lineas_recibo`).',
+    },
     anio: { sale: 'anio' },
     mes: { sale: 'mes' },
     metodo: { sale: 'metodo' },
@@ -207,24 +213,42 @@ export const SECCIONES_EXPORT = {
     total_centimos: { sale: 'total_centimos' },
     es_esporadico: { sale: 'es_esporadico' },
     concepto_esporadico: { sale: 'concepto_esporadico' },
-    devuelto_de_recibo_id: PD,
+    devuelto_de_recibo_id: { sale: 'regiro_de' },
     fecha_envio_banco: { sale: 'fecha_envio_banco' },
-    created_at: PD,
-    updated_at: PD,
-    deleted_at: PD,
+    created_at: {
+      noSale:
+        'Cuándo se creó la fila en la base: dato de su funcionamiento, no del cobro. Las fechas del cobro (envío al banco, fecha de cobro pedida, cobro a mano, devolución) salen cada una con su nombre.',
+    },
+    updated_at: {
+      noSale:
+        'Cuándo cambió la fila por última vez: dato del funcionamiento de la base, no del cobro. Qué cambió lo dicen las columnas que sí salen.',
+    },
+    deleted_at: {
+      noSale:
+        'Borrado lógico. Ningún camino de la app lo pone en un recibo: el motor borra los borradores de verdad (medido en el código y en producción el 2026-11-01: 0 recibos con la marca). El export no saca la fila que la tenga.',
+    },
     fecha_devolucion: { sale: 'fecha_devolucion' },
-    familia_id: PD,
+    familia_id: {
+      noSale:
+        'Clave interna (uuid) de la familia. El recibo ya sale dentro de su familia, en `cobros_familia`, con su etiqueta.',
+    },
     cobro_forma: { sale: 'cobro_forma' },
     cobro_fecha: { sale: 'cobro_fecha' },
     cobro_nota: { sale: 'cobro_nota' },
     cobro_importe_centimos: { sale: 'cobro_importe_centimos' },
-    diferencia_de_recibo_id: PD,
+    diferencia_de_recibo_id: { sale: 'diferencia_de' },
     devolucion_gastos_centimos: { sale: 'devolucion_gastos_centimos' },
     devolucion_salida: { sale: 'devolucion_salida' },
-    deuda_perdida_en: PD,
-    deuda_perdida_por: PD,
-    deuda_perdida_solicitud_id: PD,
-    fecha_cobro_banco: PD,
+    deuda_perdida_en: { sale: 'deuda_dada_por_perdida_en' },
+    deuda_perdida_por: {
+      noSale:
+        'Quién de Dirección renunció a cobrarlo: es un dato de esa persona, no de la familia. Que el centro renunció, y cuándo, sale en `deuda_dada_por_perdida_en`.',
+    },
+    deuda_perdida_solicitud_id: {
+      noSale:
+        'Clave interna de la petición de olvido por la que el centro renunció a la deuda. Esa petición puede ser de otra persona de la familia: enlazarla diría de quién es una petición ajena. Las peticiones propias salen en `solicitudes_olvido`.',
+    },
+    fecha_cobro_banco: { sale: 'fecha_cobro_banco' },
   }),
   'usuario.cobros_familia.metodos_pago': seccion('metodo_pago_familia', {
     id: PD,

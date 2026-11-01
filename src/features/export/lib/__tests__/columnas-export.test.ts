@@ -44,6 +44,11 @@ describe('la red del export: el catálogo y el export de verdad', () => {
   })
 
   it('cada columna que no sale a propósito lleva su porqué', () => {
+    const noSalen = Object.values(catalogo).flatMap((s) =>
+      Object.values(s.columnas).filter((d) => 'noSale' in d)
+    )
+    // Premisa: hay «no sale» que mirar (los de recibos, al menos).
+    expect(noSalen.length).toBeGreaterThanOrEqual(8)
     for (const [ruta, s] of Object.entries(catalogo)) {
       for (const [col, d] of Object.entries(s.columnas)) {
         if ('noSale' in d) {
@@ -52,6 +57,14 @@ describe('la red del export: el catálogo y el export de verdad', () => {
         }
       }
     }
+  })
+
+  it('recibos está decidida entera: ninguna columna por decidir', () => {
+    const recibos = catalogo['usuario.cobros_familia.recibos']
+    // Premisa: es la sección de recibos, con sus columnas.
+    expect(recibos.tabla).toBe('recibos')
+    expect(Object.keys(recibos.columnas).length).toBeGreaterThan(20)
+    expect(Object.entries(recibos.columnas).filter(([, d]) => 'porDecidir' in d)).toEqual([])
   })
 
   it('lo que está por decidir es lo que había el 2026-11-01, y solo mengua', () => {
