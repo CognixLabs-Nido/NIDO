@@ -24,6 +24,7 @@ import {
   type TestUser,
 } from './setup'
 
+import { SECCIONES_EXPORT } from '@/features/export/lib/columnas-export'
 import { recolectarNino, recolectarUsuario } from '@/features/export/lib/recolectar'
 
 /**
@@ -340,6 +341,32 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
         descripcion: 'Cuota Art15',
         importe_centimos: 12345,
       })
+    })
+
+    it('el recibo sale con exactamente las claves que decide la red, y con su fecha de cobro', async () => {
+      // La fecha de cobro se pone en borrador (20261214120000); sale en el export (20261215120000).
+      const { error } = await serviceClient
+        .from('recibos')
+        .update({ fecha_cobro_banco: '2027-01-05' })
+        .eq('id', reciboId)
+      expect(error).toBeNull()
+      const u = await rpc(tutor, 'usuario', tutor.id)
+      const [familia] = filas((u.data as Fila).cobros_familia)
+      const recibo = filas(familia?.recibos).find((r) => r.id === reciboId)
+      // Premisa: el recibo está, por su id.
+      expect(recibo).toBeDefined()
+      expect(recibo).toMatchObject({
+        fecha_cobro_banco: '2027-01-05',
+        regiro_de: null,
+        diferencia_de: null,
+      })
+      // La renuncia a la deuda no sale: revelaría el olvido de otro tutor (art. 15.4 RGPD).
+      expect(recibo).not.toHaveProperty('deuda_dada_por_perdida_en')
+      const claves = Object.values(SECCIONES_EXPORT['usuario.cobros_familia.recibos'].columnas)
+        .flatMap((d) => ('sale' in d ? [d.sale] : []))
+        .concat('lineas')
+        .sort()
+      expect(Object.keys(recibo!).sort()).toEqual(claves)
     })
 
     it('el tutor secundario también recibe los cobros de la familia', async () => {
