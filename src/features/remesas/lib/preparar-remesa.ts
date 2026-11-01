@@ -11,6 +11,10 @@
 //  - Un identificador de más de 35 caracteres (Max35 del esquema) → no se genera: se listan las
 //    familias afectadas. Hoy solo puede pasar con un mandato firmado antes del PR-0b, que medía
 //    36; esa familia vuelve a firmar la domiciliación.
+//  - Cada adeudo lleva la fecha de cobro de su recibo o, sin ella, la del día de la versión; el
+//    generador hace un bloque por fecha.
+//  - Los adeudos salen en un orden fijo (familia y recibo): la RPC solo ordena por familia, y una
+//    familia con dos recibos en la remesa podía salir en otro orden en la siguiente descarga.
 
 import {
   MAX_IDENTIFICADOR_SEPA,
@@ -39,11 +43,12 @@ export interface AcreedorData {
   iban: string | null
 }
 
-/** Metadatos no-deterministas inyectados por el caller. */
+/** Lo que el caller saca de la versión del fichero (`versionRemesa`) y del centro. */
 export interface RemesaMeta {
   messageId: string
   creationDateTime: string
-  collectionDate: string
+  /** La fecha de cobro de los recibos sin la suya: el día de la versión, YYYY-MM-DD. */
+  fechaPorDefecto: string
   creditorName: string
   sequenceType?: SecuenciaAdeudo
 }
@@ -79,12 +84,17 @@ function tieneMandato(row: MandatoRemesaRow): boolean {
 /**
  * `conceptos`: el de cada recibo, por id (`conceptosDeRemesa`). Un recibo cobrable sin concepto es
  * un fallo del caller, y lanza: el fichero no sale con la línea del extracto vacía.
+ *
+ * `fechasCobro`: la `fecha_cobro_banco` de cada recibo, por id; `null` es «sin fecha» y toma
+ * `meta.fechaPorDefecto`. Un recibo cobrable que no está en el mapa es un fallo del caller (no se
+ * leyó), y lanza: no se distingue de «sin fecha» y saldría cobrado otro día.
  */
 export function prepararRemesa(
   rows: MandatoRemesaRow[],
   acreedor: AcreedorData,
   meta: RemesaMeta,
-  conceptos: ReadonlyMap<string, string>
+  conceptos: ReadonlyMap<string, string>,
+  fechasCobro: ReadonlyMap<string, string | null>
 ): PrepararRemesaResultado {
   // 1. Config del acreedor: CID + IBAN son obligatorios (BIC opcional).
   if (!acreedor.identificador_acreedor?.trim() || !acreedor.iban?.trim()) {
@@ -104,7 +114,11 @@ export function prepararRemesa(
 
   // 3. Excluir importes ≤ 0 (no se domicilia un abono).
   const excluidosSinImporte = rows.filter((r) => r.total_centimos <= 0).map((r) => r.recibo_id)
-  const cobrables = rows.filter((r) => r.total_centimos > 0)
+  const cobrables = rows
+    .filter((r) => r.total_centimos > 0)
+    .sort(
+      (a, b) => a.familia_id.localeCompare(b.familia_id) || a.recibo_id.localeCompare(b.recibo_id)
+    )
   if (cobrables.length === 0) {
     return { ok: false, motivo: 'remesa_vacia' }
   }
@@ -112,7 +126,6 @@ export function prepararRemesa(
   const input: Pain008Input = {
     messageId: meta.messageId,
     creationDateTime: meta.creationDateTime,
-    collectionDate: meta.collectionDate,
     creditorName: meta.creditorName,
     creditorId: acreedor.identificador_acreedor.trim(),
     creditorIban: acreedor.iban.trim(),
@@ -121,6 +134,7 @@ export function prepararRemesa(
     deudores: cobrables.map((r) => {
       const concepto = conceptos.get(r.recibo_id)
       if (!concepto) throw new Error('prepararRemesa: recibo sin concepto')
+      if (!fechasCobro.has(r.recibo_id)) throw new Error('prepararRemesa: recibo sin leer su fecha')
       return {
         endToEndId: endToEndIdDeRecibo(r.recibo_id),
         mandateId: r.identificador_mandato!.trim(),
@@ -129,6 +143,7 @@ export function prepararRemesa(
         debtorIban: r.iban!.trim(),
         amountCents: r.total_centimos,
         concepto,
+        collectionDate: fechasCobro.get(r.recibo_id) ?? meta.fechaPorDefecto,
       }
     }),
   }

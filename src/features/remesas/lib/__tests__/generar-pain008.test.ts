@@ -4,6 +4,7 @@ import {
   MAX_IDENTIFICADOR_SEPA,
   generarPain008,
   textoSepa,
+  type Pain008Deudor,
   type Pain008Input,
 } from '../generar-pain008'
 
@@ -16,7 +17,6 @@ const MANDATO_36_PRODUCCION = 'NIDO-33C79B50-87319A17-1784546999227'
 const baseInput: Pain008Input = {
   messageId: 'NIDO-ABCDEF12-20260701120000',
   creationDateTime: '2026-07-01T12:00:00',
-  collectionDate: '2026-07-05',
   creditorName: 'Escola Infantil Demo',
   creditorId: 'ES00ZZZ00000000000',
   creditorIban: 'ES9121000418450200051332',
@@ -31,6 +31,7 @@ const baseInput: Pain008Input = {
       debtorIban: 'ES7620770024003102575766',
       amountCents: 12000,
       concepto: 'CEI Ejemplo · Nino Demo Uno · Octubre 2026',
+      collectionDate: '2026-07-05',
     },
     {
       endToEndId: '290F1ADF67AB42739AF32B4D9F39B323',
@@ -40,6 +41,7 @@ const baseInput: Pain008Input = {
       debtorIban: 'ES1000492352082414205416',
       amountCents: 8050,
       concepto: 'CEI Ejemplo · Nino Demo Dos · Octubre 2026',
+      collectionDate: '2026-07-05',
     },
   ],
 }
@@ -159,5 +161,119 @@ describe('textoSepa', () => {
 
   it('deja intactos los caracteres que admite SEPA', () => {
     expect(textoSepa("A-z 0/9 ?:().,'+")).toBe("A-z 0/9 ?:().,'+")
+  })
+})
+
+/** Los bloques del XML, leídos del texto (no de `bloquesPain008`: lo que mira el banco). */
+function bloquesDelXml(xml: string) {
+  return [...xml.matchAll(/<PmtInf>([\s\S]*?)<\/PmtInf>/g)].map(([, b]) => ({
+    id: b.match(/<PmtInfId>(.*?)<\/PmtInfId>/)![1],
+    fecha: b.match(/<ReqdColltnDt>(.*?)<\/ReqdColltnDt>/)![1],
+    nbTx: Number(b.match(/<NbOfTxs>(\d+)<\/NbOfTxs>/)![1]),
+    ctrlSum: Math.round(Number(b.match(/<CtrlSum>([\d.]+)<\/CtrlSum>/)![1]) * 100),
+    importes: [...b.matchAll(/<InstdAmt Ccy="EUR">([\d.]+)<\/InstdAmt>/g)].map(([, v]) =>
+      Math.round(Number(v) * 100)
+    ),
+    e2e: [...b.matchAll(/<EndToEndId>(.*?)<\/EndToEndId>/g)].map(([, v]) => v),
+  }))
+}
+
+function cabeceraDelXml(xml: string) {
+  const g = xml.match(/<GrpHdr>([\s\S]*?)<\/GrpHdr>/)![1]
+  return {
+    nbTx: Number(g.match(/<NbOfTxs>(\d+)<\/NbOfTxs>/)![1]),
+    ctrlSum: Math.round(Number(g.match(/<CtrlSum>([\d.]+)<\/CtrlSum>/)![1]) * 100),
+  }
+}
+
+function deudor(n: number, importe: number, fecha: string): Pain008Deudor {
+  return {
+    ...baseInput.deudores[0],
+    endToEndId: `E2E${String(n).padStart(29, '0')}`,
+    amountCents: importe,
+    collectionDate: fecha,
+  }
+}
+
+describe('generarPain008 · un bloque por fecha de cobro', () => {
+  // Cinco adeudos en tres fechas, desordenados: importes que no se compensan entre sí.
+  const variasFechas: Pain008Input = {
+    ...baseInput,
+    deudores: [
+      deudor(1, 12000, '2026-07-10'),
+      deudor(2, 8050, '2026-07-05'),
+      deudor(3, 33333, '2026-07-10'),
+      deudor(4, 101, '2026-07-20'),
+      deudor(5, 7, '2026-07-05'),
+    ],
+  }
+
+  it('con una sola fecha, un bloque con el MsgId de PmtInfId, como antes', () => {
+    const bloques = bloquesDelXml(generarPain008(baseInput))
+    expect(bloques).toHaveLength(1)
+    expect(bloques[0].id).toBe(baseInput.messageId)
+    expect(bloques[0].fecha).toBe('2026-07-05')
+  })
+
+  it('tres fechas, tres bloques ordenados por fecha, con PmtInfId {MsgId}-{n}', () => {
+    const bloques = bloquesDelXml(generarPain008(variasFechas))
+    expect(bloques.map((b) => [b.id, b.fecha])).toEqual([
+      [`${baseInput.messageId}-1`, '2026-07-05'],
+      [`${baseInput.messageId}-2`, '2026-07-10'],
+      [`${baseInput.messageId}-3`, '2026-07-20'],
+    ])
+    // Cada adeudo en el bloque de su fecha, en el orden en que llegó.
+    expect(bloques.map((b) => b.e2e)).toEqual([
+      [deudor(2, 0, '').endToEndId, deudor(5, 0, '').endToEndId],
+      [deudor(1, 0, '').endToEndId, deudor(3, 0, '').endToEndId],
+      [deudor(4, 0, '').endToEndId],
+    ])
+    // Un solo MsgId en el fichero.
+    expect(generarPain008(variasFechas).match(/<MsgId>/g)).toHaveLength(1)
+  })
+
+  it('los totales de los bloques suman el total del fichero, y cada bloque, sus adeudos', () => {
+    for (const input of [baseInput, variasFechas]) {
+      const xml = generarPain008(input)
+      const cabecera = cabeceraDelXml(xml)
+      const bloques = bloquesDelXml(xml)
+      // Premisa: la cabecera cuenta lo que entró.
+      expect(cabecera.nbTx).toBe(input.deudores.length)
+      expect(cabecera.ctrlSum).toBe(input.deudores.reduce((a, d) => a + d.amountCents, 0))
+      expect(bloques.reduce((a, b) => a + b.nbTx, 0)).toBe(cabecera.nbTx)
+      expect(bloques.reduce((a, b) => a + b.ctrlSum, 0)).toBe(cabecera.ctrlSum)
+      for (const b of bloques) {
+        expect(b.importes).toHaveLength(b.nbTx)
+        expect(b.importes.reduce((a, v) => a + v, 0)).toBe(b.ctrlSum)
+      }
+    }
+    // Lo medido, en números: 80.57, 453.33 y 1.01 suman 534.91.
+    const bloques = bloquesDelXml(generarPain008(variasFechas))
+    expect(bloques.map((b) => b.ctrlSum)).toEqual([8057, 45333, 101])
+    expect(cabeceraDelXml(generarPain008(variasFechas)).ctrlSum).toBe(53491)
+  })
+
+  it('el PmtInfId con número cabe en Max35: con un MsgId de 34 el bloque mide 36 y no sale', () => {
+    const conDos = (messageId: string): Pain008Input => ({
+      ...variasFechas,
+      messageId,
+      deudores: variasFechas.deudores.slice(0, 2),
+    })
+    // 33 + «-1» = 35: sale. 34 + «-1» = 36: no, aunque el MsgId solo quepa.
+    expect(() => generarPain008(conDos('M'.repeat(33)))).not.toThrow()
+    expect(() => generarPain008(conDos('M'.repeat(34)))).toThrow(/más de 35/)
+    // Con una sola fecha, PmtInfId = MsgId: 35 cabe.
+    expect(() => generarPain008({ ...baseInput, messageId: 'M'.repeat(35) })).not.toThrow()
+  })
+
+  it('el MsgId de la casa (28) deja sitio a 999 bloques', () => {
+    expect(`${baseInput.messageId}-999`.length).toBeLessThanOrEqual(MAX_IDENTIFICADOR_SEPA)
+  })
+
+  it('un adeudo sin una fecha YYYY-MM-DD real no sale', () => {
+    for (const mala of ['', '2026-7-5', '2026-02-30', '05/07/2026']) {
+      const input = { ...baseInput, deudores: [deudor(1, 100, mala)] }
+      expect(() => generarPain008(input), mala).toThrow(/sin fecha de cobro/)
+    }
   })
 })
