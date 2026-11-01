@@ -359,8 +359,9 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
         fecha_cobro_banco: '2027-01-05',
         regiro_de: null,
         diferencia_de: null,
-        deuda_dada_por_perdida_en: null,
       })
+      // La renuncia a la deuda no sale: revelaría el olvido de otro tutor (art. 15.4 RGPD).
+      expect(recibo).not.toHaveProperty('deuda_dada_por_perdida_en')
       const claves = Object.values(SECCIONES_EXPORT['usuario.cobros_familia.recibos'].columnas)
         .flatMap((d) => ('sale' in d ? [d.sale] : []))
         .concat('lineas')

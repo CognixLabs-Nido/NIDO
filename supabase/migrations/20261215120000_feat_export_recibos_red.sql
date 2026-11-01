@@ -11,11 +11,11 @@
 --   · `regiro_de` (`devuelto_de_recibo_id`): el recibo devuelto del que este es el re-giro;
 --   · `diferencia_de` (`diferencia_de_recibo_id`): el recibo cobrado con cheque del que este cobra
 --     lo que faltó;
---   · `fecha_cobro_banco`: la fecha de cobro pedida al banco (`20261214120000`);
---   · `deuda_dada_por_perdida_en` (`deuda_perdida_en`): cuándo renunció el centro a cobrarlo
---     (`20261212120000`).
+--   · `fecha_cobro_banco`: la fecha de cobro pedida al banco (`20261214120000`).
 -- No salen, con su porqué en el catálogo: `centro_id`, `familia_id`, `nino_id`, `created_at`,
--- `updated_at`, `deleted_at`, `deuda_perdida_por` y `deuda_perdida_solicitud_id`.
+-- `updated_at`, `deleted_at` y las tres de la deuda dada por perdida (`20261212120000`):
+-- `deuda_perdida_en`, `deuda_perdida_por` y `deuda_perdida_solicitud_id`. La fecha de la renuncia
+-- revelaría a un tutor que otro de su familia pidió el olvido (art. 15.4 RGPD).
 --
 -- Solo cambia ese objeto: el resto de la función es la de `20261205120000`, tal cual (guarda
 -- previa). La aplica el responsable por SQL Editor. Sin BEGIN ni COMMIT. Tras aplicar: registrar
@@ -29,7 +29,7 @@ DECLARE
 BEGIN
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure('public.export_datos_sujeto(text,uuid)');
-  IF v_md5 = 'a7226fd934e9e51b763d970c0600799b' THEN
+  IF v_md5 = '0f835e3d65de94d40d6986155fdc749c' THEN
     RAISE EXCEPTION 'ya aplicada: export_datos_sujeto ya es la de 20261215120000';
   END IF;
   -- Lo que se reescribe es lo que hay, tal como quedó.
@@ -39,16 +39,15 @@ BEGIN
   -- Las columnas que va a leer existen.
   IF (SELECT count(*) FROM information_schema.columns
        WHERE table_schema = 'public' AND table_name = 'recibos'
-         AND column_name IN ('devuelto_de_recibo_id', 'diferencia_de_recibo_id', 'fecha_cobro_banco',
-                             'deuda_perdida_en')) <> 4 THEN
-    RAISE EXCEPTION 'recibos no tiene las cuatro columnas que el export va a sacar';
+         AND column_name IN ('devuelto_de_recibo_id', 'diferencia_de_recibo_id',
+                             'fecha_cobro_banco')) <> 3 THEN
+    RAISE EXCEPTION 'recibos no tiene las tres columnas que el export va a sacar';
   END IF;
-  RAISE NOTICE 'guarda previa: % recibos vivos, % con fecha de cobro, % re-giros, % diferencias, % deudas perdidas',
+  RAISE NOTICE 'guarda previa: % recibos vivos, % con fecha de cobro, % re-giros, % diferencias',
     (SELECT count(*) FROM public.recibos WHERE deleted_at IS NULL),
     (SELECT count(fecha_cobro_banco) FROM public.recibos WHERE deleted_at IS NULL),
     (SELECT count(devuelto_de_recibo_id) FROM public.recibos WHERE deleted_at IS NULL),
-    (SELECT count(diferencia_de_recibo_id) FROM public.recibos WHERE deleted_at IS NULL),
-    (SELECT count(deuda_perdida_en) FROM public.recibos WHERE deleted_at IS NULL);
+    (SELECT count(diferencia_de_recibo_id) FROM public.recibos WHERE deleted_at IS NULL);
 END
 $guarda$;
 
@@ -214,7 +213,6 @@ BEGIN
                             'regiro_de', r.devuelto_de_recibo_id,
                             'diferencia_de', r.diferencia_de_recibo_id,
                             'fecha_cobro_banco', r.fecha_cobro_banco,
-                            'deuda_dada_por_perdida_en', r.deuda_perdida_en,
                             'lineas', COALESCE((
                               SELECT jsonb_agg(jsonb_build_object(
                                        'descripcion', lr.descripcion, 'cantidad', lr.cantidad,
@@ -478,7 +476,7 @@ DECLARE
 BEGIN
   SELECT prosrc, md5(regexp_replace(regexp_replace(replace(prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_src, v_md5 FROM pg_proc WHERE oid = v_f::regprocedure;
-  IF v_md5 IS DISTINCT FROM 'a7226fd934e9e51b763d970c0600799b' THEN
+  IF v_md5 IS DISTINCT FROM '0f835e3d65de94d40d6986155fdc749c' THEN
     RAISE EXCEPTION 'export_datos_sujeto no quedó como en este fichero: %', v_md5;
   END IF;
   IF NOT (SELECT prosecdef FROM pg_proc WHERE oid = v_f::regprocedure)

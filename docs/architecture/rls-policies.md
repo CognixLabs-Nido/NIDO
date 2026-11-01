@@ -1599,8 +1599,12 @@ fecha de cobro de la F1 y la deuda dada por perdida de `20261212120000`, por eje
   con las columnas vivas de la BD del CI (la descripción OpenAPI de PostgREST): los tipos se escriben
   a veces a mano. `export-datos-sujeto.rls.test.ts` comprueba que el recibo sale con exactamente sus
   claves.
-- **Del recibo** salen además `id`, `regiro_de`, `diferencia_de`, `fecha_cobro_banco` y
-  `deuda_dada_por_perdida_en`. Los que no salen llevan su porqué en el catálogo.
+- **Del recibo** salen además `id`, `regiro_de`, `diferencia_de` y `fecha_cobro_banco`. Los que
+  no salen llevan su porqué en el catálogo. La deuda dada por perdida (`deuda_perdida_en`) **no
+  sale**, decisión de Jose del 2026-11-01: el centro solo renuncia a una deuda para ejecutar un
+  olvido, y la fecha revelaría al otro tutor que alguien de su familia lo pidió (art. 15.4 RGPD: el
+  acceso no puede perjudicar los derechos de terceros). Coste asumido: el interesado ve sin pagar un
+  recibo que nadie le va a reclamar.
 - **Lo que queda**: 234 columnas por decidir en las demás tablas (trozo 2) y la parte de la app,
   `recolectar.ts`, que lee con `select('*')` (trozo 3).
 

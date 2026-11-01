@@ -239,10 +239,13 @@ export const SECCIONES_EXPORT = {
     diferencia_de_recibo_id: { sale: 'diferencia_de' },
     devolucion_gastos_centimos: { sale: 'devolucion_gastos_centimos' },
     devolucion_salida: { sale: 'devolucion_salida' },
-    deuda_perdida_en: { sale: 'deuda_dada_por_perdida_en' },
+    deuda_perdida_en: {
+      noSale:
+        'Decisión de Jose del 2026-11-01. Es la fecha en que el centro renunció a cobrar el recibo, y el centro solo renuncia a una deuda para poder ejecutar el olvido de alguien (20261212120000). Si saliera, el tutor que pide sus datos podría deducir que otro tutor de su familia ejerció su derecho de olvido. El art. 15.4 del RGPD dice que el derecho a obtener copia no afectará negativamente a los derechos y libertades de otros. Contrapartida, sin maquillar: el interesado ve en su export un recibo sin pagar, en el estado que tenía (la renuncia no lo cambia), que en realidad nadie le va a reclamar. Es una decisión con coste, no una decisión limpia.',
+    },
     deuda_perdida_por: {
       noSale:
-        'Quién de Dirección renunció a cobrarlo: es un dato de esa persona, no de la familia. Que el centro renunció, y cuándo, sale en `deuda_dada_por_perdida_en`.',
+        'Quién de Dirección renunció a cobrarlo: es un dato de esa persona, no de la familia. Y que hubo renuncia no sale por el art. 15.4 del RGPD (ver `deuda_perdida_en`).',
     },
     deuda_perdida_solicitud_id: {
       noSale:
