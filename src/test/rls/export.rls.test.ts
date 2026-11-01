@@ -142,7 +142,11 @@ describe('RLS export de datos — F11-A5', () => {
     const c = await clientFor(tutor)
     const rec = await recolectarUsuario(c, serviceClient, tutor.id)
     expect(rec).not.toBeNull()
-    expect((rec!.data.ficha as { id: string }).id).toBe(tutor.id)
+    // La ficha es la suya (por su nombre): su uuid no sale (R5, 2026-11-01: apunta a la propia
+    // persona interesada, así que no une nada).
+    const ficha = rec!.data.ficha as Record<string, unknown>
+    expect(ficha.nombre_completo).toBe('Tutor Export')
+    expect(ficha).not.toHaveProperty('id')
     expect((rec!.data.consentimientos as unknown[]).length).toBeGreaterThan(0)
     expect((rec!.data.vinculos_familiares as unknown[]).length).toBeGreaterThan(0)
     expect(rec!.centroId).toBe(centro.id)
@@ -153,7 +157,10 @@ describe('RLS export de datos — F11-A5', () => {
     const c = await clientFor(tutor)
     const rec = await recolectarNino(c, serviceClient, nino.id)
     expect(rec).not.toBeNull()
-    expect((rec!.data.ficha as { id: string }).id).toBe(nino.id)
+    // La ficha es la suya (por su nombre); su uuid no sale (R5, 2026-11-01).
+    const ficha = rec!.data.ficha as Record<string, unknown>
+    expect(ficha.nombre).toBe('Nino Export')
+    expect(ficha).not.toHaveProperty('id')
     expect(rec!.centroId).toBe(centro.id)
   })
 

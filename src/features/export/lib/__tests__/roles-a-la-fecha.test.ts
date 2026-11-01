@@ -9,7 +9,11 @@ import { rolALaFecha, type Historia, type PreguntaRol } from '../roles-a-la-fech
  */
 
 const H: Historia = {
-  superusuarios: new Set(['super']),
+  // El superusuario entró a k1 el 1 de octubre (y a k2, donde además es admin).
+  entradasSoporte: [
+    { usuario_id: 'super', centro_id: 'k1', en: '2026-10-01T08:00:00.000Z' },
+    { usuario_id: 'super', centro_id: 'k2', en: '2026-01-01T08:00:00.000Z' },
+  ],
   roles: [
     {
       usuario_id: 'dir',
@@ -123,6 +127,13 @@ describe('el rol a la fecha', () => {
 
   it('el superusuario es el soporte de la plataforma, aunque sea admin de otro centro', () => {
     expect(rol('super', '2026-10-15T10:00:00Z')).toBe('soporte de la plataforma')
+    // Sale de su entrada a ESTE centro, antes de ese momento: antes de entrar, no consta.
+    expect(rol('super', '2026-10-01T07:59:59Z')).toBe('no consta')
+    expect(rol('super', '2026-10-01T08:00:00Z')).toBe('soporte de la plataforma')
+    // En k2 tiene rol de admin: ahí es Dirección, por su rol, no por su entrada.
+    expect(rol('super', '2026-10-15T10:00:00Z', { centroId: 'k2' })).toBe('Dirección')
+    // La entrada de otro no le sirve a nadie más.
+    expect(rol('desconocida', '2026-10-15T10:00:00Z')).toBe('no consta')
   })
 
   it('la propia persona interesada es «tú»', () => {

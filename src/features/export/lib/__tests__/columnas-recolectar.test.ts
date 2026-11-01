@@ -225,8 +225,8 @@ const APARTE: Record<string, string> = {
   'media|bucket, created_at, id, path, publicacion_id':
     'la foto exclusiva sale como enlace firmado; la compartida, como metadata escrita aparte',
   'publicaciones|created_at, id, texto': 'el texto y la fecha de la publicación de la foto',
-  'platform_admins|usuario_id':
-    'el rol a la fecha: si quien lo hizo es el soporte de la plataforma',
+  'audit_log|centro_id, ts, usuario_id':
+    'el rol a la fecha: si quien lo hizo había entrado al centro como soporte de la plataforma',
   'roles_usuario|centro_id, created_at, deleted_at, rol, usuario_id':
     'el rol a la fecha: su historia en el centro',
   'vinculos_familiares|created_at, deleted_at, nino_id, tipo_vinculo, usuario_id':
@@ -249,7 +249,7 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
   it('premisa: los dos recolectores recorren todos sus caminos, también el de los roles', async () => {
     const { llamadas } = await recolectarTodo()
     const tablas = new Set(llamadas.map((l) => l.tabla))
-    for (const t of ['mensajes', 'media', 'agendas_diarias', 'platform_admins', 'profes_aulas'])
+    for (const t of ['mensajes', 'media', 'agendas_diarias', 'audit_log', 'profes_aulas'])
       expect(tablas, t).toContain(t)
     expect(llamadas.length).toBeGreaterThan(25)
   })

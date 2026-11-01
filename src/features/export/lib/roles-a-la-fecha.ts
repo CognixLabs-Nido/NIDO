@@ -22,8 +22,12 @@ import { fechaMadrid } from '@/features/inicio/lib/ventana-semana'
  *       `fecha_fin`, con su tipo), cruzada con la matrícula del niño en esa aula ese día
  *       (`matriculas`, de `fecha_alta` a `fecha_baja`); sin ella, «personal docente del centro»;
  *     - tutor legal o autorizado sin vínculo con el niño: «familia del centro».
- *  4. El superusuario (`platform_admins`), que no tiene rol en el centro: «soporte de la
- *     plataforma» (decisión del responsable: que no deje dudas de que es alguien de fuera).
+ *  4. El superusuario, que no tiene rol en el centro: «soporte de la plataforma» (decisión del
+ *     responsable: que no deje dudas de que es alguien de fuera). Se reconoce por su ENTRADA a
+ *     ese centro antes de ese momento (`audit_log`, tabla `entrada_superusuario`): la app la
+ *     escribe antes de dejarle elegir el centro (`elegir-centro.ts`), así que no hay nada suyo en
+ *     un centro sin una entrada anterior. No se lee `platform_admins`: la app no la toca
+ *     (ADR-0061, `platform-admins.test.ts`), y además diría quién es superusuario HOY.
  *  5. Si nada de eso consta: «no consta». Nunca una etiqueta inventada.
  *
  * Una fila de `roles_usuario` que se reactiva no guarda el hueco entre la baja y la vuelta, pero
@@ -56,7 +60,8 @@ interface Periodo {
 }
 
 export interface Historia {
-  superusuarios: Set<string>
+  /** Las entradas del superusuario a cada centro (`audit_log`, `entrada_superusuario`). */
+  entradasSoporte: Array<{ usuario_id: string; centro_id: string; en: string }>
   roles: Array<{ usuario_id: string; centro_id: string; rol: string } & Periodo>
   vinculos: Array<{ usuario_id: string; nino_id: string; tipo_vinculo: string } & Periodo>
   matriculas: Array<{ nino_id: string; aula_id: string } & Periodo>
@@ -114,7 +119,12 @@ export function rolALaFecha(h: Historia, q: PreguntaRol): string {
   if (roles.some((r) => r.rol === 'tutor_legal' || r.rol === 'autorizado')) {
     return 'familia del centro'
   }
-  if (h.superusuarios.has(u)) return SOPORTE_PLATAFORMA
+  if (
+    h.entradasSoporte.some(
+      (e) => e.usuario_id === u && e.centro_id === q.centroId && e.en <= instante
+    )
+  )
+    return SOPORTE_PLATAFORMA
   return NO_CONSTA
 }
 
@@ -135,7 +145,7 @@ export async function cargarHistoria(
   const usuarioIds = [...new Set(p.usuarioIds)]
   const ninoIds = [...new Set(p.ninoIds)]
   const vacia: Historia = {
-    superusuarios: new Set(),
+    entradasSoporte: [],
     roles: [],
     vinculos: [],
     matriculas: [],
@@ -143,9 +153,15 @@ export async function cargarHistoria(
   }
   if (usuarioIds.length === 0) return vacia
 
-  const [superusuarios, roles, vinculos, matriculas] = await Promise.all([
-    service.from('platform_admins').select('usuario_id').in('usuario_id', usuarioIds),
-    historialDeRolesParaExport(service, [...new Set(p.centroIds)], usuarioIds),
+  const centroIds = [...new Set(p.centroIds)]
+  const [entradas, roles, vinculos, matriculas] = await Promise.all([
+    service
+      .from('audit_log')
+      .select('usuario_id, centro_id, ts')
+      .eq('tabla', 'entrada_superusuario')
+      .in('usuario_id', usuarioIds)
+      .in('centro_id', centroIds),
+    historialDeRolesParaExport(service, centroIds, usuarioIds),
     ninoIds.length
       ? service
           .from('vinculos_familiares')
@@ -161,7 +177,7 @@ export async function cargarHistoria(
           .is('deleted_at', null)
       : Promise.resolve({ data: [], error: null }),
   ])
-  falla('platform_admins', superusuarios.error)
+  falla('las entradas del superusuario', entradas.error)
   falla('vinculos_familiares', vinculos.error)
   falla('matriculas', matriculas.error)
 
@@ -177,7 +193,11 @@ export async function cargarHistoria(
   falla('profes_aulas', aulas.error)
 
   return {
-    superusuarios: new Set((superusuarios.data ?? []).map((s) => s.usuario_id)),
+    entradasSoporte: (entradas.data ?? []).flatMap((e) =>
+      e.usuario_id && e.centro_id
+        ? [{ usuario_id: e.usuario_id, centro_id: e.centro_id, en: new Date(e.ts).toISOString() }]
+        : []
+    ),
     roles: roles.map((r) => ({
       usuario_id: r.usuario_id,
       centro_id: r.centro_id,
