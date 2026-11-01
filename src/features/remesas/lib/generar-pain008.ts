@@ -5,9 +5,10 @@
 // se inyecta en el route handler que lo invoca.
 //
 // Alcance B-5: secuencia RCUR por defecto (adeudo recurrente); esquema CORE.
-// FRST/primera-vez está DIFERIDA (follow-up post-B-5: requiere marca por mandato).
+// Siempre RCUR: FRST NO se construye (cancelado el 2026-11-01). El Rulebook procesa un FRST como un
+// RCUR (SDD Core 2025, AT-M006), así que no cambia nada en el banco ni protege del doble cobro.
 
-/** Secuencia del adeudo (SeqTp). B-5 usa RCUR; el resto queda para follow-up. */
+/** Secuencia del adeudo (SeqTp). La app emite siempre RCUR (cabecera); el tipo admite el resto. */
 export type SecuenciaAdeudo = 'FRST' | 'RCUR' | 'OOFF' | 'FNAL'
 
 /**
