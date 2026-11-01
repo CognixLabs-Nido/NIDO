@@ -415,6 +415,22 @@ como enlaces firmados o empaquetados — se concreta al implementar F11-A.
 > roles y sus mensajes); del IBAN, solo los 4 últimos dígitos. Detalle en `rls-policies.md`
 > («Export art. 15»).
 
+> **Actualización (2026-11-01, la red del export, trozo 2).** Las columnas técnicas se deciden por
+> clase con siete reglas (R1-R7), decididas por el responsable como interpretación del art. 15; el
+> texto de cada una está en `columnas-recolectar.ts` y `columnas-export.ts`. Las más delicadas: las
+> claves (de notificaciones, de invitación) no salen nunca, porque un export se descarga y se
+> reenvía y abrirían el canal o la cuenta a quien tuviera el fichero (R6); y quien hizo algo sale
+> como su **rol a la fecha**, no con su nombre (R4, decisión de Jose): el nombre de la trabajadora
+> es dato suyo, y dentro de la app Dirección sigue viendo el nombre.
+>
+> **Diferencia conocida, no un fallo (2026-11-01):** el export del niño sale distinto según quién
+> lo descargue. Con la sesión del tutor, de los vínculos del niño solo sale el suyo; con la de
+> Dirección (`/export/nino/[id]`), los de todos los adultos del niño, también los retirados. El
+> art. 15 es un derecho del interesado; lo que Dirección descarga del niño no es el art. 15, es uso
+> interno del centro. Por eso, en la sección que puede traer filas de otra persona, lo que sería
+> dato de ese otro adulto no sale (el motivo de retirada de su vínculo, R2). Queda anotado; no se
+> abre nada.
+
 **11. Forma exacta del least-privilege en mensajería.**
 Opciones: (a) helper nuevo `puede_postear_en_conversacion` usado solo en `mensajes_insert`;
 (b) añadir condición inline a `mensajes_insert` excluyendo admin en `profe_familia`.

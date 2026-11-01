@@ -14,7 +14,14 @@ import {
 
 import { EXPORT_URL_TTL_SEGUNDOS, type AdjuntoExport } from '../types'
 
-import { columnasDe, type FilaDe, type RutaRecolectar } from './columnas-recolectar'
+import {
+  columnasDe,
+  entregar,
+  rolesDe,
+  type FilaDe,
+  type RutaRecolectar,
+} from './columnas-recolectar'
+import { cargarHistoria, rolALaFecha, type Historia } from './roles-a-la-fecha'
 
 type Client = SupabaseClient<Database>
 
@@ -91,6 +98,47 @@ function filasDe<R extends RutaRecolectar>(ruta: R, r: Lectura): FilaDe<R>[] {
   return leido<FilaDe<R>>(ruta, r)
 }
 
+/**
+ * Las filas de una sección tal como se entregan (R1-R7 de `columnas-recolectar.ts`): sin lo que no
+ * sale, y con el rol a la fecha en lugar del uuid de quien hizo algo (R4). `donde` da el centro y el
+ * niño de cada fila, que deciden el rol.
+ */
+function entregadas<R extends RutaRecolectar>(
+  ruta: R,
+  filasLeidas: FilaDe<R>[],
+  historia: Historia,
+  sujetoId: string | null,
+  donde: (f: Fila) => { centroId: string | null; ninoId: string | null }
+): Fila[] {
+  const roles = rolesDe(ruta)
+  return filasLeidas.map((leida) => {
+    const f = { ...(leida as unknown as Fila) }
+    if (roles.length > 0) {
+      const { centroId, ninoId } = donde(f)
+      for (const r of roles) {
+        f[r.clave] = rolALaFecha(historia, {
+          usuarioId: f[r.columna],
+          fecha: f[r.fecha],
+          centroId,
+          ninoId,
+          sujetoId,
+        })
+      }
+    }
+    return entregar(ruta, f)
+  })
+}
+
+/** Los uuid de las personas cuyo rol hay que dar en las filas de una sección. */
+function personasDe<R extends RutaRecolectar>(ruta: R, filasLeidas: FilaDe<R>[]): string[] {
+  const columnas = rolesDe(ruta).map((r) => r.columna)
+  return filasLeidas.flatMap((leida) =>
+    columnas
+      .map((c) => (leida as unknown as Fila)[c])
+      .filter((u): u is string => typeof u === 'string')
+  )
+}
+
 /** La fila del sujeto (`maybeSingle`): null si no existe o la RLS no la deja ver. */
 function filaDe<R extends RutaRecolectar>(ruta: R, r: Lectura): FilaDe<R> | null {
   if (r.error) throw new Error(`export: la lectura de ${ruta} falló: ${r.error.message}`)
@@ -150,9 +198,9 @@ export async function recolectarUsuario(
   const orParts = [`tutor_id.eq.${usuarioId}`]
   if (ninoIds.length > 0) orParts.push(`nino_id.in.(${ninoIds.join(',')})`)
   // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-  const convs = leido<{ id: string }>(
+  const convs = leido<{ id: string; centro_id: string; nino_id: string | null }>(
     'conversaciones',
-    await client.from('conversaciones').select('id').or(orParts.join(','))
+    await client.from('conversaciones').select('id, centro_id, nino_id').or(orParts.join(','))
   )
   const convIds = convs.map((c) => c.id)
   const mensajes = convIds.length
@@ -194,6 +242,29 @@ export async function recolectarUsuario(
 
   const centroId = roles.map((r) => r.centro_id)[0] ?? null
 
+  // El rol a la fecha de quien escribió cada mensaje y de quien creó cada recordatorio (R4).
+  const hilo = new Map(convs.map((c) => [c.id, c]))
+  const historia = await cargarHistoria(service, {
+    usuarioIds: [
+      ...personasDe('usuario.mensajes', mensajes),
+      ...personasDe('usuario.recordatorios_recibidos', recordatorios),
+    ],
+    centroIds: [...convs.map((c) => c.centro_id), ...recordatorios.map((r) => r.centro_id)],
+    ninoIds: [
+      ...convs.flatMap((c) => (c.nino_id ? [c.nino_id] : [])),
+      ...recordatorios.flatMap((r) => (r.nino_id ? [r.nino_id] : [])),
+    ],
+  })
+  const delHilo = (f: Fila) => {
+    const c = hilo.get(f.conversacion_id as string)
+    return { centroId: c?.centro_id ?? null, ninoId: c?.nino_id ?? null }
+  }
+  const delRecordatorio = (f: Fila) => ({
+    centroId: (f.centro_id as string | null) ?? null,
+    ninoId: (f.nino_id as string | null) ?? null,
+  })
+  const sinRol = () => ({ centroId: null, ninoId: null })
+
   // Lo que la sesión no alcanza (perfil de familia, cobros, lista de espera, dispositivos…).
   const extra = await datosSujeto(client, 'usuario', usuarioId)
   if (extra) anotarBloqueados(extra)
@@ -216,15 +287,51 @@ export async function recolectarUsuario(
   return {
     centroId,
     data: {
-      ficha: usuario,
-      roles,
-      consentimientos,
-      vinculos_familiares: vinculos,
-      mensajes,
-      ausencias_reportadas: ausencias,
-      invitaciones_a_citas: citasInvitado,
-      recordatorios_recibidos: recordatorios,
-      firmas_realizadas: firmas,
+      ficha: entregar('usuario.ficha', usuario as unknown as Fila),
+      roles: entregadas('usuario.roles', roles, historia, usuarioId, sinRol),
+      consentimientos: entregadas(
+        'usuario.consentimientos',
+        consentimientos,
+        historia,
+        usuarioId,
+        sinRol
+      ),
+      vinculos_familiares: entregadas(
+        'usuario.vinculos_familiares',
+        vinculos,
+        historia,
+        usuarioId,
+        sinRol
+      ),
+      mensajes: entregadas('usuario.mensajes', mensajes, historia, usuarioId, delHilo),
+      ausencias_reportadas: entregadas(
+        'usuario.ausencias_reportadas',
+        ausencias,
+        historia,
+        usuarioId,
+        sinRol
+      ),
+      invitaciones_a_citas: entregadas(
+        'usuario.invitaciones_a_citas',
+        citasInvitado,
+        historia,
+        usuarioId,
+        sinRol
+      ),
+      recordatorios_recibidos: entregadas(
+        'usuario.recordatorios_recibidos',
+        recordatorios,
+        historia,
+        usuarioId,
+        delRecordatorio
+      ),
+      firmas_realizadas: entregadas(
+        'usuario.firmas_realizadas',
+        firmas,
+        historia,
+        usuarioId,
+        sinRol
+      ),
       ...(extra ?? { datos_ampliados: { _nota: NOTA_SIN_DATOS_AMPLIADOS } }),
       adjuntos,
       _aportado_por_ti: [
@@ -415,20 +522,55 @@ export async function recolectarNino(
     )
   }
 
+  // El rol a la fecha de quien dio y confirmó la medicación, avisó de la ausencia o escribió el
+  // informe (R4), en el centro y el aula de este niño.
+  const historia = await cargarHistoria(service, {
+    usuarioIds: [
+      ...personasDe('nino.administraciones_medicacion', administraciones),
+      ...personasDe('nino.ausencias', ausencias),
+      ...personasDe('nino.informes_evolucion', informes),
+    ],
+    centroIds: [nino.centro_id],
+    ninoIds: [ninoId],
+  })
+  const delNino = () => ({ centroId: nino.centro_id, ninoId })
+
   return {
     centroId: nino.centro_id as string,
     data: {
-      ficha: nino,
+      ficha: entregar('nino.ficha', nino as unknown as Fila),
       info_medica_emergencia: infoMedica,
-      datos_pedagogicos: pedagogicos,
-      vinculos_familiares: vinculos,
-      agendas_diarias: agendas,
-      asistencias,
-      ausencias,
-      informes_evolucion: informes,
-      autorizaciones,
-      firmas,
-      administraciones_medicacion: administraciones,
+      datos_pedagogicos: entregadas('nino.datos_pedagogicos', pedagogicos, historia, null, delNino),
+      vinculos_familiares: entregadas(
+        'nino.vinculos_familiares',
+        vinculos,
+        historia,
+        null,
+        delNino
+      ),
+      agendas_diarias: entregadas('nino.agendas_diarias', agendas, historia, null, delNino).map(
+        (a) => ({
+          ...a,
+          comidas: filas(a.comidas).map((x) => entregar('nino.agendas_diarias.comidas', x)),
+          biberones: filas(a.biberones).map((x) => entregar('nino.agendas_diarias.biberones', x)),
+          suenos: filas(a.suenos).map((x) => entregar('nino.agendas_diarias.suenos', x)),
+          deposiciones: filas(a.deposiciones).map((x) =>
+            entregar('nino.agendas_diarias.deposiciones', x)
+          ),
+        })
+      ),
+      asistencias: entregadas('nino.asistencias', asistencias, historia, null, delNino),
+      ausencias: entregadas('nino.ausencias', ausencias, historia, null, delNino),
+      informes_evolucion: entregadas('nino.informes_evolucion', informes, historia, null, delNino),
+      autorizaciones: entregadas('nino.autorizaciones', autorizaciones, historia, null, delNino),
+      firmas: entregadas('nino.firmas', firmas, historia, null, delNino),
+      administraciones_medicacion: entregadas(
+        'nino.administraciones_medicacion',
+        administraciones,
+        historia,
+        null,
+        delNino
+      ),
       adjuntos,
       fotos_compartidas: fotosCompartidas,
       ...(extra ?? { datos_ampliados: { _nota: NOTA_SIN_DATOS_AMPLIADOS } }),

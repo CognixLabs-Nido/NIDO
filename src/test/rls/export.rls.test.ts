@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
+  asignarProfeAula,
   asignarRol,
   clientFor,
   createTestAula,
@@ -126,6 +127,8 @@ describe('RLS export de datos — F11-A5', () => {
     await serviceClient.from('publicaciones').delete().eq('centro_id', centro.id)
     await serviceClient.from('consentimientos').delete().in('usuario_id', usuarios)
     await serviceClient.from('info_medica_emergencia').delete().in('nino_id', ninos)
+    await serviceClient.from('ausencias').delete().in('nino_id', ninos)
+    await serviceClient.from('profes_aulas').delete().in('profe_id', usuarios)
     await serviceClient.from('matriculas').delete().in('nino_id', ninos)
     await serviceClient.from('vinculos_familiares').delete().in('nino_id', ninos)
     await serviceClient.from('roles_usuario').delete().in('usuario_id', usuarios)
@@ -139,7 +142,11 @@ describe('RLS export de datos — F11-A5', () => {
     const c = await clientFor(tutor)
     const rec = await recolectarUsuario(c, serviceClient, tutor.id)
     expect(rec).not.toBeNull()
-    expect((rec!.data.ficha as { id: string }).id).toBe(tutor.id)
+    // La ficha es la suya (por su nombre): su uuid no sale (R5, 2026-11-01: apunta a la propia
+    // persona interesada, así que no une nada).
+    const ficha = rec!.data.ficha as Record<string, unknown>
+    expect(ficha.nombre_completo).toBe('Tutor Export')
+    expect(ficha).not.toHaveProperty('id')
     expect((rec!.data.consentimientos as unknown[]).length).toBeGreaterThan(0)
     expect((rec!.data.vinculos_familiares as unknown[]).length).toBeGreaterThan(0)
     expect(rec!.centroId).toBe(centro.id)
@@ -150,7 +157,10 @@ describe('RLS export de datos — F11-A5', () => {
     const c = await clientFor(tutor)
     const rec = await recolectarNino(c, serviceClient, nino.id)
     expect(rec).not.toBeNull()
-    expect((rec!.data.ficha as { id: string }).id).toBe(nino.id)
+    // La ficha es la suya (por su nombre); su uuid no sale (R5, 2026-11-01).
+    const ficha = rec!.data.ficha as Record<string, unknown>
+    expect(ficha.nombre).toBe('Nino Export')
+    expect(ficha).not.toHaveProperty('id')
     expect(rec!.centroId).toBe(centro.id)
   })
 
@@ -241,5 +251,42 @@ describe('RLS export de datos — F11-A5', () => {
     const rec = await recolectarUsuario(await clientFor(tutor), serviceClient, tutor.id)
     const mensajes = rec!.data.mensajes as Array<{ contenido: string }>
     expect(mensajes.some((m) => m.contenido === 'Hola, soy la familia')).toBe(true)
+  })
+
+  it('e08 — quien avisó de la ausencia sale como su rol a la fecha, nunca su uuid (R4)', async () => {
+    const profe = await createTestUser({ nombre: 'Profe Export' })
+    usuarios.push(profe.id)
+    await asignarRol(profe.id, centro.id, 'profe')
+    const asignacion = await asignarProfeAula(profe.id, aula.id)
+    const { data: pa } = await serviceClient
+      .from('profes_aulas')
+      .select('tipo_personal_aula')
+      .eq('id', asignacion)
+      .single()
+    const hoy = new Date().toISOString().slice(0, 10)
+    const { error } = await serviceClient.from('ausencias').insert({
+      nino_id: nino.id,
+      fecha_inicio: hoy,
+      fecha_fin: hoy,
+      motivo: 'enfermedad',
+      reportada_por: profe.id,
+    })
+    expect(error).toBeNull()
+
+    // Con la sesión de Dirección, que lo descarga del niño (`/export/nino/[id]`) y ve las ausencias.
+    const rec = await recolectarNino(await clientFor(admin), serviceClient, nino.id)
+    const ausencias = rec!.data.ausencias as Array<Record<string, unknown>>
+    // Premisa: la ausencia está, y la profe tiene su tipo en el aula del niño.
+    expect(ausencias).toHaveLength(1)
+    expect(pa?.tipo_personal_aula).toBeTruthy()
+    const etiquetas: Record<string, string> = {
+      coordinadora: 'coordinadora del aula',
+      profesora: 'profesora del aula',
+      tecnico: 'técnico/a del aula',
+      apoyo: 'personal de apoyo del aula',
+    }
+    expect(ausencias[0].reportada_por_rol).toBe(etiquetas[pa!.tipo_personal_aula])
+    expect(ausencias[0]).not.toHaveProperty('reportada_por')
+    expect(JSON.stringify(rec!.data)).not.toContain(profe.id)
   })
 })

@@ -66,6 +66,27 @@ export async function rolesDelSujetoParaExport(
 }
 
 /**
+ * La historia de los roles de unas personas en unos centros, vivos y retirados, para dar en el
+ * export art. 15 el rol que tenía cada una el día que hizo algo (`roles-a-la-fecha.ts`). Con el
+ * cliente de servicio: la sesión de una familia no lee los roles del personal, y el export solo
+ * entrega el rol, nunca la fila. Un fallo de lectura rompe el export: un rol mal dado sería falso.
+ */
+export async function historialDeRolesParaExport(
+  service: Client,
+  centroIds: string[],
+  usuarioIds: string[]
+) {
+  if (centroIds.length === 0 || usuarioIds.length === 0) return []
+  const { data, error } = await service
+    .from('roles_usuario')
+    .select('usuario_id, centro_id, rol, created_at, deleted_at')
+    .in('centro_id', centroIds)
+    .in('usuario_id', usuarioIds)
+  if (error) throw new Error(`export: la lectura de los roles a la fecha falló: ${error.message}`)
+  return data ?? []
+}
+
+/**
  * Los roles vivos de los autores de una conversación en su centro (para la etiqueta de cada
  * mensaje), como roles de la app: la directora sale como `admin`, Dirección en pantalla. Del
  * centro de la conversación: quien es profe aquí y tutora en otro centro sale como profe.
