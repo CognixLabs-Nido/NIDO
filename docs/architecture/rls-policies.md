@@ -1605,8 +1605,17 @@ fecha de cobro de la F1 y la deuda dada por perdida de `20261212120000`, por eje
   olvido, y la fecha revelaría al otro tutor que alguien de su familia lo pidió (art. 15.4 RGPD: el
   acceso no puede perjudicar los derechos de terceros). Coste asumido: el interesado ve sin pagar un
   recibo que nadie le va a reclamar.
-- **Lo que queda**: 234 columnas por decidir en las demás tablas (trozo 2) y la parte de la app,
-  `recolectar.ts`, que lee con `select('*')` (trozo 3).
+- **La mitad de la app** (trozo 3): `recolectar.ts` leía 19 tablas (y `roles_usuario`, en
+  `rolesDelSujetoParaExport`) con `select('*')`, así que una columna nueva salía en el export sin
+  que nadie la decidiera. Ahora pide a cada tabla solo las columnas que salen
+  (`columnas-recolectar.ts`, `columnasDe`), con el mismo `Record` sobre los tipos. No cambia lo que
+  sale: las 279 columnas que el `select('*')` sacaba el 2026-11-01 están como `saleSinRepasar`, en
+  una lista fechada que solo mengua. Y un fallo de lectura rompe el export: con las columnas una a
+  una, una que ya no está en la base da error, y antes ese error salía como una sección vacía.
+  `columnas-recolectar.test.ts` corre los dos recolectores contra un cliente que apunta qué pide
+  cada lectura, y `export-columnas.rls.test.ts` compara también este catálogo con la base.
+- **Lo que queda** (trozo 2): repasar las 234 columnas por decidir del export de la BD y las 279
+  que salen sin repasar de la app, una a una.
 
 ### La fecha de cobro del recibo, y ponerla en bloque
 
@@ -1743,6 +1752,7 @@ forma de deshacerlo.
 | Funciones auxiliares fuera de la API          | `funciones-esquema-privado.rls.test.ts`         |
 | Lo exclusivo de la admin (`es_responsable`)   | `roles-es-responsable.rls.test.ts`              |
 | Cada columna del export art. 15 decidida      | `export-columnas.rls.test.ts`                   |
+| Lo que lee la app del export, una a una       | `columnas-recolectar.test.ts`                   |
 | La directora: día a día, exclusivo, escalada  | `roles-directora.rls.test.ts`                   |
 | La identidad de una autorización no cambia    | `autorizaciones-identidad.rls.test.ts`          |
 | La app lee a la directora con su sesión       | `roles-directora-app.rls.test.ts`               |
