@@ -108,7 +108,8 @@ al RAT).
   todas las descargas siguientes entregan ese mismo, byte a byte. Al reabrir, versión nueva con su
   fichero. Por qué: regenerado, el fichero toma el mandato activo **en cada descarga**, así que dos
   descargas de la misma remesa pueden llevar distinto IBAN y distinto `MndtId` para la misma
-  familia, y además cambian `CreDtTm` y la fecha de cobro. Lo guardado no probaría lo que tiene el
+  familia, y además cambiaban `CreDtTm` y la fecha de cobro (desde la F2 de la fecha de cobro salen
+  de la marca, así que eso ya no cambia; el mandato, sí). Lo guardado no probaría lo que tiene el
   banco. Entra con la pieza de reabrir remesas: hasta que se mergee, el código sigue regenerando.)_
 - **H** `metodo_pago_familia` a nivel niño, por niño/mes (`sepa|efectivo|transferencia`). Solo
   `sepa` entra al XML; el resto → recibo `pendiente_procesar`.

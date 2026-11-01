@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 
 import { conceptosDeRemesa } from '@/features/remesas/lib/concepto-adeudo'
-import { messageIdRemesa } from '@/features/remesas/lib/message-id'
+import { versionRemesa } from '@/features/remesas/lib/message-id'
 import { prepararRemesa } from '@/features/remesas/lib/preparar-remesa'
 
 export const dynamic = 'force-dynamic'
@@ -25,6 +25,11 @@ export const runtime = 'nodejs'
  * veces. Por eso también se marca la remesa enviada que no la tiene (las de antes de la marca): su
  * primera descarga fija el MsgId de las siguientes. La marca se vuelve a leer después de ponerla:
  * si otra descarga la puso a la vez, el UPDATE no toca nada y vale la suya.
+ *
+ * Todo lo que no sale de los recibos sale de la marca (`versionRemesa`): el MsgId, `CreDtTm` y la
+ * fecha de cobro de los recibos que no tienen la suya (el día de la marca). Con la marca puesta, la
+ * BD no deja cambiar la fecha de ningún recibo de la remesa (`recibos_fecha_cobro_proteger`), así
+ * que dos descargas en días distintos dan el mismo fichero byte a byte. Un bloque de pago por fecha.
  */
 export async function GET(
   _request: Request,
@@ -73,12 +78,13 @@ export async function GET(
     // familia). Un fallo de lectura no saca el fichero sin nombres: 500.
     const reciboIds = (mandatos ?? []).map((m) => m.recibo_id)
     let conceptos = new Map<string, string>()
+    let fechasCobro = new Map<string, string | null>()
     if (reciboIds.length > 0) {
       const [{ data: recibos, error: errRec }, { data: lineas, error: errLin }] = await Promise.all(
         [
           supabase
             .from('recibos')
-            .select('id, anio, mes')
+            .select('id, anio, mes, fecha_cobro_banco')
             .eq('centro_id', remesa!.centro_id)
             .in('id', reciboIds),
           supabase
@@ -104,20 +110,24 @@ export async function GET(
         ninos = data ?? []
       }
       conceptos = conceptosDeRemesa(centro?.nombre ?? '', recibos ?? [], lineas ?? [], ninos)
+      fechasCobro = new Map((recibos ?? []).map((r) => [r.id, r.fecha_cobro_banco]))
     }
 
-    const now = new Date()
+    // Sin marca vale la hora de ahora: en la comprobación previa, solo para saber si el fichero
+    // sale; sin la columna de la marca (PGRST204, abajo), es el fichero que se sirve, como antes.
+    const version = versionRemesa(id, marca ?? new Date().toISOString())
     const resultado = prepararRemesa(
       mandatos ?? [],
       acreedor,
       {
-        messageId: messageIdRemesa(id, marca ?? now.toISOString()),
-        creationDateTime: now.toISOString().slice(0, 19),
-        collectionDate: now.toISOString().slice(0, 10),
+        messageId: version.messageId,
+        creationDateTime: version.creationDateTime,
+        fechaPorDefecto: version.fechaPorDefecto,
         creditorName: centro?.nombre ?? '',
         sequenceType: 'RCUR',
       },
-      conceptos
+      conceptos,
+      fechasCobro
     )
 
     if (!resultado.ok) {

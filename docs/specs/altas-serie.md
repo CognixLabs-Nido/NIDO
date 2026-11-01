@@ -457,7 +457,8 @@ cobra al día siguiente; si seleccionas una fecha futura se cobra el día que in
 Lo que hay (medido el 2026-11-01, `main` y producción en solo lectura):
 
 - **El generador** escribe un solo bloque de pago (`PmtInf`) con una sola `ReqdColltnDt` para todos
-  los adeudos, y esa fecha es el día de la descarga (`route.ts`, `collectionDate`).
+  los adeudos, y esa fecha es el día de la descarga (`route.ts`, `collectionDate`). _(Hasta la F2:
+  desde entonces, un bloque por fecha, y la fecha por defecto y `CreDtTm` salen de la marca.)_
 - **El recibo no tiene fecha de cobro al banco.** Ni `recibos`, ni `remesas`, ni `lineas_recibo`, ni
   `recibos_remesa` tienen una columna así, ni en el código ni en producción. Lo que se llama «fecha
   de cobro» en el código es la del cobro a mano (`cobro_fecha`: efectivo, transferencia, cheque), que
@@ -483,6 +484,21 @@ Lo que hay (medido el 2026-11-01, `main` y producción en solo lectura):
   a los que marque, y también en uno solo si hace falta.
 - **Días hábiles:** TARGET2, y si el banco de un centro dice otra cosa, manda el banco. Con lo
   decidido, NIDO no calcula ningún día hábil: solo se usaría si algún día se valida.
+
+**Hecho en la F2 (el generador):**
+
+- Un bloque por fecha, de la más temprana a la más tardía. Con una sola fecha, `PmtInfId` = `MsgId`,
+  como antes; con varias, `{MsgId}-{n}`, que entra en la comprobación de Max35.
+- Todo lo que no sale de los recibos sale de la marca (`versionRemesa`): el `MsgId`, `CreDtTm` (antes
+  era la hora de la descarga) y la fecha de los recibos sin la suya, que es el día de la marca en
+  Europe/Madrid. Con la marca puesta, la BD no deja cambiar la fecha de ningún recibo de la remesa
+  (F1), así que dos descargas en días distintos sin cambios dan el mismo fichero byte a byte.
+- Los adeudos van en un orden fijo (familia y recibo). `get_mandatos_remesa` solo ordena por familia,
+  y una familia con dos recibos en la remesa podía salir en otro orden en la descarga siguiente.
+- La cabecera cuenta los adeudos que entraron y cada bloque los suyos. Si el reparto no cuadra con
+  el total, el fichero no sale.
+- Lo que sigue pudiendo cambiar entre descargas es el mandato activo de la familia: eso lo cierra
+  guardar el fichero (P-1, con reabrir remesas).
 
 **El plazo vigente, de la fuente** (SDD Core Rulebook 2025, EPC016-06 versión 1.0, emitido el
 28-11-2024, en vigor desde el 5-10-2025; la 1.1 no cambia reglas, y rige hasta el 21-11-2027):
@@ -541,7 +557,7 @@ canceló el 2026-11-01 (FRST se procesa como RCUR).
 ## Estado
 
 - [x] 0·doc — esta spec.
-- [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · [ ] fecha de cobro · [ ] reabrir remesas · [ ] 0c · ~~0d~~ (cancelado)
+- [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · fecha de cobro: [x] F1 (#464) · [x] F2 (este PR) · [ ] F3 · [ ] reabrir remesas · [ ] 0c · ~~0d~~ (cancelado)
 - [ ] Pantalla de altas en proceso · [ ] 1 · [ ] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [ ] 6 · [ ] 7 · [ ] 8
 
 ## Referencias

@@ -1,12 +1,15 @@
 // Generador del fichero SEPA de adeudos directos **pain.008.001.02** en TS puro,
 // determinista y sin dependencias nativas. Función pura: recibe TODOS los datos
 // (incl. identificadores y fechas) por parámetro, así el mismo input produce el
-// mismo XML byte a byte (testeable). La no-determinación (now(), id de mensaje)
-// se inyecta en el route handler que lo invoca.
+// mismo XML byte a byte (testeable). Lo que depende de la versión (MsgId, CreDtTm y
+// la fecha por defecto) lo calcula el route handler a partir de la marca del fichero.
 //
 // Alcance B-5: secuencia RCUR por defecto (adeudo recurrente); esquema CORE.
 // Siempre RCUR: FRST NO se construye (cancelado el 2026-11-01). El Rulebook procesa un FRST como un
 // RCUR (SDD Core 2025, AT-M006), así que no cambia nada en el banco ni protege del doble cobro.
+//
+// Un bloque de pago (`PmtInf`) por fecha de cobro distinta: en pain.008 `ReqdColltnDt` va por
+// bloque, no por adeudo (spec `docs/specs/altas-serie.md`, «La fecha de cobro»).
 
 /** Secuencia del adeudo (SeqTp). La app emite siempre RCUR (cabecera); el tipo admite el resto. */
 export type SecuenciaAdeudo = 'FRST' | 'RCUR' | 'OOFF' | 'FNAL'
@@ -36,6 +39,11 @@ export interface Pain008Deudor {
   amountCents: number
   /** Lo que la familia lee en el extracto (`Ustrd`): centro, niño y mes. */
   concepto: string
+  /**
+   * Fecha de cobro que se pide al banco (`ReqdColltnDt`), YYYY-MM-DD: la del recibo o, si no
+   * tiene, la del día de la versión (`prepararRemesa`). En el fichero va en su bloque.
+   */
+  collectionDate: string
 }
 
 export interface Pain008Input {
@@ -43,8 +51,6 @@ export interface Pain008Input {
   messageId: string
   /** Fecha/hora de creación (CreDtTm), ISO 8601 sin milisegundos. */
   creationDateTime: string
-  /** Fecha de cobro solicitada (ReqdColltnDt), YYYY-MM-DD. */
-  collectionDate: string
   /** Nombre del acreedor (Cdtr/Nm). */
   creditorName: string
   /** Identificador del acreedor / Creditor Identifier (CdtrSchmeId). */
@@ -55,6 +61,14 @@ export interface Pain008Input {
   creditorBic: string | null
   /** Secuencia del adeudo (por defecto RCUR). */
   sequenceType?: SecuenciaAdeudo
+  deudores: Pain008Deudor[]
+}
+
+/** Un bloque de pago (`PmtInf`): los adeudos de una misma fecha de cobro. */
+export interface BloquePain008 {
+  /** `PmtInfId`: el `MsgId` si el fichero tiene un solo bloque; si no, `{MsgId}-{n}`. */
+  paymentInfoId: string
+  collectionDate: string
   deudores: Pain008Deudor[]
 }
 
@@ -78,18 +92,47 @@ function esc(value: string): string {
 export function textoSepa(value: string): string {
   return value
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .replace(/·/g, '-')
     .replace(/[^A-Za-z0-9/?:().,'+\- ]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
 
+/**
+ * Un bloque por fecha de cobro distinta, de la más temprana a la más tardía. Dentro de cada uno,
+ * los adeudos en el orden en que llegan (lo fija el caller: `prepararRemesa`). Con una sola fecha,
+ * un bloque con el `MsgId` de `PmtInfId`, como antes de que el recibo tuviera fecha.
+ */
+export function bloquesPain008(input: Pain008Input): BloquePain008[] {
+  const porFecha = new Map<string, Pain008Deudor[]>()
+  for (const d of input.deudores) {
+    const lista = porFecha.get(d.collectionDate)
+    if (lista) lista.push(d)
+    else porFecha.set(d.collectionDate, [d])
+  }
+  const fechas = [...porFecha.keys()].sort()
+  return fechas.map((fecha, i) => ({
+    paymentInfoId: fechas.length === 1 ? input.messageId : `${input.messageId}-${i + 1}`,
+    collectionDate: fecha,
+    deudores: porFecha.get(fecha)!,
+  }))
+}
+
 /** Identificadores del fichero que no caben en Max35 (vacío si todos caben). */
 export function identificadoresLargos(input: Pain008Input): string[] {
-  return [input.messageId, ...input.deudores.flatMap((d) => [d.endToEndId, d.mandateId])].filter(
-    (id) => id.length > MAX_IDENTIFICADOR_SEPA
-  )
+  return [
+    input.messageId,
+    ...bloquesPain008(input).map((b) => b.paymentInfoId),
+    ...input.deudores.flatMap((d) => [d.endToEndId, d.mandateId]),
+  ].filter((id) => id.length > MAX_IDENTIFICADOR_SEPA)
+}
+
+/** Una fecha `YYYY-MM-DD` que existe en el calendario. */
+function esFechaIso(fecha: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return false
+  const d = new Date(`${fecha}T12:00:00Z`)
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === fecha
 }
 
 /** Nombre SEPA: recorta a 70 chars y escapa. */
@@ -100,6 +143,10 @@ function nombreSepa(value: string): string {
 /** Céntimos → importe en euros con exactamente 2 decimales ("120.00"). */
 function euros(cents: number): string {
   return (cents / 100).toFixed(2)
+}
+
+function sumaCentimos(deudores: Pain008Deudor[]): number {
+  return deudores.reduce((acc, d) => acc + d.amountCents, 0)
 }
 
 /**
@@ -117,13 +164,61 @@ export function generarPain008(input: Pain008Input): string {
       `pain.008: ${largos.length} identificador(es) de más de ${MAX_IDENTIFICADOR_SEPA} caracteres`
     )
   }
+  const sinFecha = input.deudores.filter((d) => !esFechaIso(d.collectionDate))
+  if (sinFecha.length > 0) {
+    throw new Error(`pain.008: ${sinFecha.length} adeudo(s) sin fecha de cobro YYYY-MM-DD`)
+  }
   const seq = input.sequenceType ?? 'RCUR'
-  const nbTx = input.deudores.length
-  const ctrlSumCents = input.deudores.reduce((acc, d) => acc + d.amountCents, 0)
-  const ctrlSum = euros(ctrlSumCents)
   const bic = input.creditorBic?.trim() ? esc(input.creditorBic.trim()) : 'NOTPROVIDED'
+  const bloques = bloquesPain008(input)
 
-  const txs = input.deudores
+  // La cabecera cuenta los adeudos que ENTRARON; cada bloque, los suyos. Si el reparto perdiera o
+  // repitiera alguno, el banco rechazaría el fichero por los totales: aquí no sale.
+  const nbTx = input.deudores.length
+  const ctrlSumCents = sumaCentimos(input.deudores)
+  const enBloques = bloques.flatMap((b) => b.deudores)
+  if (enBloques.length !== nbTx || sumaCentimos(enBloques) !== ctrlSumCents) {
+    throw new Error('pain.008: los bloques no suman el total del fichero')
+  }
+
+  const acreedor: DatosAcreedorXml = {
+    seq,
+    bic,
+    creditorName: input.creditorName,
+    creditorIban: input.creditorIban,
+    creditorId: input.creditorId,
+  }
+  const pmtInfs = bloques.map((b) => bloqueXml(b, acreedor)).join('\n')
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <CstmrDrctDbtInitn>
+    <GrpHdr>
+      <MsgId>${esc(input.messageId)}</MsgId>
+      <CreDtTm>${esc(input.creationDateTime)}</CreDtTm>
+      <NbOfTxs>${nbTx}</NbOfTxs>
+      <CtrlSum>${euros(ctrlSumCents)}</CtrlSum>
+      <InitgPty>
+        <Nm>${nombreSepa(input.creditorName)}</Nm>
+      </InitgPty>
+    </GrpHdr>
+${pmtInfs}
+  </CstmrDrctDbtInitn>
+</Document>
+`
+}
+
+interface DatosAcreedorXml {
+  seq: SecuenciaAdeudo
+  bic: string
+  creditorName: string
+  creditorIban: string
+  creditorId: string
+}
+
+/** Un `PmtInf`: su fecha, sus totales y sus adeudos. */
+function bloqueXml(b: BloquePain008, c: DatosAcreedorXml): string {
+  const txs = b.deudores
     .map(
       (d) => `      <DrctDbtTxInf>
         <PmtId>
@@ -159,23 +254,11 @@ export function generarPain008(input: Pain008Input): string {
     )
     .join('\n')
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <CstmrDrctDbtInitn>
-    <GrpHdr>
-      <MsgId>${esc(input.messageId)}</MsgId>
-      <CreDtTm>${esc(input.creationDateTime)}</CreDtTm>
-      <NbOfTxs>${nbTx}</NbOfTxs>
-      <CtrlSum>${ctrlSum}</CtrlSum>
-      <InitgPty>
-        <Nm>${nombreSepa(input.creditorName)}</Nm>
-      </InitgPty>
-    </GrpHdr>
-    <PmtInf>
-      <PmtInfId>${esc(input.messageId)}</PmtInfId>
+  return `    <PmtInf>
+      <PmtInfId>${esc(b.paymentInfoId)}</PmtInfId>
       <PmtMtd>DD</PmtMtd>
-      <NbOfTxs>${nbTx}</NbOfTxs>
-      <CtrlSum>${ctrlSum}</CtrlSum>
+      <NbOfTxs>${b.deudores.length}</NbOfTxs>
+      <CtrlSum>${euros(sumaCentimos(b.deudores))}</CtrlSum>
       <PmtTpInf>
         <SvcLvl>
           <Cd>SEPA</Cd>
@@ -183,21 +266,21 @@ export function generarPain008(input: Pain008Input): string {
         <LclInstrm>
           <Cd>CORE</Cd>
         </LclInstrm>
-        <SeqTp>${seq}</SeqTp>
+        <SeqTp>${c.seq}</SeqTp>
       </PmtTpInf>
-      <ReqdColltnDt>${esc(input.collectionDate)}</ReqdColltnDt>
+      <ReqdColltnDt>${esc(b.collectionDate)}</ReqdColltnDt>
       <Cdtr>
-        <Nm>${nombreSepa(input.creditorName)}</Nm>
+        <Nm>${nombreSepa(c.creditorName)}</Nm>
       </Cdtr>
       <CdtrAcct>
         <Id>
-          <IBAN>${esc(input.creditorIban.replace(/\s/g, ''))}</IBAN>
+          <IBAN>${esc(c.creditorIban.replace(/\s/g, ''))}</IBAN>
         </Id>
       </CdtrAcct>
       <CdtrAgt>
         <FinInstnId>
           <Othr>
-            <Id>${bic}</Id>
+            <Id>${c.bic}</Id>
           </Othr>
         </FinInstnId>
       </CdtrAgt>
@@ -206,7 +289,7 @@ export function generarPain008(input: Pain008Input): string {
         <Id>
           <PrvtId>
             <Othr>
-              <Id>${esc(input.creditorId)}</Id>
+              <Id>${esc(c.creditorId)}</Id>
               <SchmeNm>
                 <Prtry>SEPA</Prtry>
               </SchmeNm>
@@ -215,8 +298,5 @@ export function generarPain008(input: Pain008Input): string {
         </Id>
       </CdtrSchmeId>
 ${txs}
-    </PmtInf>
-  </CstmrDrctDbtInitn>
-</Document>
-`
+    </PmtInf>`
 }

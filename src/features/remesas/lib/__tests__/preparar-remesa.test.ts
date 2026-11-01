@@ -17,7 +17,7 @@ const acreedorOk: AcreedorData = {
 const meta: RemesaMeta = {
   messageId: 'NIDO-0D06FFD1-20261031120000',
   creationDateTime: '2026-07-01T12:00:00',
-  collectionDate: '2026-07-05',
+  fechaPorDefecto: '2026-07-05',
   creditorName: 'Escola Demo',
 }
 
@@ -46,8 +46,20 @@ function conceptosDe(rows: MandatoRemesaRow[]): Map<string, string> {
   )
 }
 
-function preparar(rows: MandatoRemesaRow[], acreedor = acreedorOk) {
-  return prepararRemesa(rows, acreedor, meta, conceptosDe(rows))
+/** Ningún recibo con fecha propia, salvo los que se digan: todos leídos. */
+function fechasDe(
+  rows: MandatoRemesaRow[],
+  propias: Record<string, string> = {}
+): Map<string, string | null> {
+  return new Map(rows.map((r) => [r.recibo_id, propias[r.recibo_id] ?? null]))
+}
+
+function preparar(
+  rows: MandatoRemesaRow[],
+  acreedor = acreedorOk,
+  propias: Record<string, string> = {}
+) {
+  return prepararRemesa(rows, acreedor, meta, conceptosDe(rows), fechasDe(rows, propias))
 }
 
 describe('prepararRemesa', () => {
@@ -139,6 +151,55 @@ describe('prepararRemesa', () => {
   })
 
   it('un recibo cobrable sin concepto lanza: el fichero no sale con el extracto vacío', () => {
-    expect(() => prepararRemesa([row({})], acreedorOk, meta, new Map())).toThrow(/sin concepto/)
+    expect(() =>
+      prepararRemesa([row({})], acreedorOk, meta, new Map(), fechasDe([row({})]))
+    ).toThrow(/sin concepto/)
+  })
+
+  describe('la fecha de cobro de cada recibo', () => {
+    const A = '11111111-1111-4111-8111-111111111111'
+    const B = '66666666-6666-4666-8666-666666666666'
+    const filas = [row({ recibo_id: A }), row({ recibo_id: B, familia_id: 'f2' })]
+
+    it('sin fecha propia, la del día de la versión; con ella, la suya, en su bloque', () => {
+      const sinFechas = preparar(filas)
+      expect(sinFechas.ok && sinFechas.xml.match(/<ReqdColltnDt>(.*?)</g)).toEqual([
+        '<ReqdColltnDt>2026-07-05<',
+      ])
+      const conUna = preparar(filas, acreedorOk, { [B]: '2026-07-15' })
+      if (!conUna.ok) throw new Error('esperado ok')
+      expect(conUna.xml.match(/<ReqdColltnDt>(.*?)</g)).toEqual([
+        '<ReqdColltnDt>2026-07-05<',
+        '<ReqdColltnDt>2026-07-15<',
+      ])
+      expect(conUna.numOperaciones).toBe(2)
+      expect(conUna.totalCentimos).toBe(24000)
+    })
+
+    it('un recibo cobrable cuya fecha no se leyó lanza: no se confunde con «sin fecha»', () => {
+      const soloA = new Map<string, string | null>([[A, null]])
+      expect(() => prepararRemesa(filas, acreedorOk, meta, conceptosDe(filas), soloA)).toThrow(
+        /sin leer su fecha/
+      )
+    })
+
+    it('el orden de los adeudos no depende del orden en que llegan las filas', () => {
+      // Dos recibos de la misma familia (la RPC solo ordena por familia) y uno de otra.
+      const C = '33333333-3333-4333-8333-333333333333'
+      const tres = [
+        row({ recibo_id: B, familia_id: 'f1' }),
+        row({ recibo_id: A, familia_id: 'f1', total_centimos: 500 }),
+        row({ recibo_id: C, familia_id: 'f0' }),
+      ]
+      const ida = preparar(tres)
+      const vuelta = preparar([...tres].reverse())
+      if (!ida.ok || !vuelta.ok) throw new Error('esperado ok')
+      // Premisa: las dos entradas de verdad llegan en otro orden.
+      expect(tres.map((r) => r.recibo_id)).not.toEqual([...tres].reverse().map((r) => r.recibo_id))
+      expect(vuelta.xml).toBe(ida.xml)
+      expect([...ida.xml.matchAll(/<EndToEndId>(.*?)</g)].map(([, e]) => e)).toEqual(
+        [C, A, B].map(endToEndIdDeRecibo)
+      )
+    })
   })
 })
