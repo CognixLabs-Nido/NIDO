@@ -1582,6 +1582,28 @@ toca.
     no entra ninguno, así que los que pasan a `enviado_banco` son todos.
 - Test: `remesa-recibo-unico.rls.test.ts`.
 
+### La fecha de cobro del recibo, y ponerla en bloque
+
+Migración `20261214120000_feat_recibo_fecha_cobro`; spec `docs/specs/altas-serie.md`, «La fecha
+de cobro». Decisión de Jose: «cada recibo tiene su propia fecha, si no indicas nada es el próximo
+día, si indicas una fecha es cuando se indica». No se valida ningún plazo: el banco ajusta la fecha
+(el plazo vigente es D-1, SDD Core Rulebook 2025).
+
+- **`recibos.fecha_cobro_banco`** (date, NULL): la `ReqdColltnDt` del fichero. Sin ella, el fichero
+  pone la del día de su versión (F2).
+- **Trigger `recibos_fecha_cobro_proteger`** (BEFORE UPDATE OF la columna, para todos, también
+  service_role). El congelado de los recibos confirmados lista las columnas una a una, y una nueva
+  quedaba libre en cualquier estado. La fecha solo cambia en `borrador` o `pendiente_procesar`
+  (`fecha_cobro_recibo_cerrado`) y fuera de una remesa viva enviada o con el fichero generado
+  (`fecha_cobro_en_fichero`): la misma versión del fichero no cambia de fecha entre dos descargas.
+  Bloquea las remesas vivas del recibo antes de mirarlas, así la marca espera al cambio.
+- **`fijar_fecha_cobro_recibos(centro, recibos, fecha)`** (`SECURITY INVOKER`, `EXECUTE` solo para
+  `authenticated`): la misma fecha, o NULL, a una lista de 1 a 1000 recibos, todos o ninguno. Puerta
+  propia `es_admin` del centro pedido (con NULL, 42501). Un recibo de otro centro, 42501; uno que no
+  es por banco, `recibo_no_sepa`; lista vacía, con huecos o repetidos, 22023. La RLS de `recibos` y su
+  auditoría siguen actuando, con quien la pone como actor.
+- Test: `recibo-fecha-cobro.rls.test.ts`.
+
 ### Cada concepto se gestiona desde el propio concepto
 
 Migración `20261121120000_feat_asignaciones_desde_el_concepto`. Asignar un concepto manual (la
@@ -1710,6 +1732,7 @@ forma de deshacerlo.
 | Un recibo, una remesa; añadir en borrador     | `remesa-recibo-unico.rls.test.ts`               |
 | Asignaciones desde el propio concepto         | `asignaciones-desde-concepto.rls.test.ts`       |
 | Los conceptos diarios son automáticos         | `diario-automatico.rls.test.ts`                 |
+| La fecha de cobro del recibo, en bloque       | `recibo-fecha-cobro.rls.test.ts`                |
 | La ficha médica, cifrada entera               | `ficha-medica-cifrada.rls.test.ts`              |
 | La ficha médica, sin escritura directa        | `info-medica.rls.test.ts`                       |
 | Peticiones de olvido desde la app             | `olvido-peticiones.rls.test.ts`                 |
