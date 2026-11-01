@@ -53,10 +53,51 @@ describe('la red del export: el catálogo y el export de verdad', () => {
       for (const [col, d] of Object.entries(s.columnas)) {
         if ('noSale' in d) {
           expect(d.noSale.trim().length, `${ruta}.${col}`).toBeGreaterThanOrEqual(40)
-          expect(d.noSale, `${ruta}.${col}`).not.toMatch(/TODO|pendiente|por decidir/i)
+          // El marcador de relleno es «TODO» en mayúsculas y como palabra: «todos» es castellano.
+          expect(d.noSale, `${ruta}.${col}`).not.toMatch(/\bTODO\b/)
+          expect(d.noSale, `${ruta}.${col}`).not.toMatch(/pendiente|por decidir/i)
         }
       }
     }
+  })
+
+  it('las reglas R1-R7 se cumplen en todo el catálogo, también en las columnas que lleguen', () => {
+    // La clase se saca aquí del nombre, sin mirar el catálogo: así una decisión cambiada a mano
+    // contra su regla se pone roja, y una columna nueva de una clase técnica hereda su regla.
+    const PERSONA =
+      /(^|_)(autor|firmante|usuario|usuario_destinatario|tutor_usuario|lector|organizador)_id$|_por$|^created_by$|^tutores_legales$/
+    const SECRETO = new Set(['token', 'endpoint', 'p256dh', 'auth'])
+    const tipo = (d: DecisionColumna) =>
+      'sale' in d ? 'sale' : 'noSale' in d ? 'noSale' : 'porDecidir'
+    let n = 0
+    for (const [ruta, s] of Object.entries(catalogo))
+      for (const [c, d] of Object.entries(s.columnas)) {
+        const t = tipo(d)
+        const donde = `${ruta}.${c}`
+        if (['created_at', 'updated_at', 'deleted_at'].includes(c)) {
+          expect(t, `R1/R2 ${donde}`).toBe('sale')
+        } else if (c === 'deleted_reason') {
+          expect(t, `R2 ${donde}`).toBe('sale')
+        } else if (c === 'centro_id') {
+          expect(t, `R3 ${donde}`).toBe('noSale')
+        } else if (SECRETO.has(c)) {
+          expect(t, `R6 ${donde}`).toBe('noSale')
+        } else if (PERSONA.test(c)) {
+          // Puede salir algo calculado con ella, nunca el uuid: entonces lo dice su nota.
+          if (t === 'sale') expect('sale' in d && d.nota, `R4 ${donde}: sale sin nota`).toBeTruthy()
+          else expect(t, `R4 ${donde}`).toBe('noSale')
+        } else if (c === 'id' || c.endsWith('_id')) {
+          expect(['sale', 'noSale'], `R5 ${donde}`).toContain(t)
+        } else if (c === 'ip_address' || c === 'user_agent') {
+          expect(t, `R7 ${donde}`).toBe(ruta === 'nino.consentimientos' ? 'noSale' : 'sale')
+        } else if (['texto_hash', 'texto_version', 'metodo_firma'].includes(c)) {
+          expect(t, `R7 ${donde}`).toBe('sale')
+        } else continue
+        n++
+      }
+    // Premisa: las reglas alcanzan las técnicas del catálogo (las 207 del 2026-11-01 y las que ya
+    // estaban decididas antes).
+    expect(n).toBeGreaterThan(207)
   })
 
   it('recibos está decidida entera: ninguna columna por decidir', () => {
@@ -65,6 +106,12 @@ describe('la red del export: el catálogo y el export de verdad', () => {
     expect(recibos.tabla).toBe('recibos')
     expect(Object.keys(recibos.columnas).length).toBeGreaterThan(20)
     expect(Object.entries(recibos.columnas).filter(([, d]) => 'porDecidir' in d)).toEqual([])
+    // R1 y R2 sustituyen a la decisión del #467 (que las dejaba fuera), y cada una lo dice, con fecha.
+    for (const c of ['created_at', 'updated_at', 'deleted_at']) {
+      const d = recibos.columnas[c]
+      expect('sale' in d && d.nota, c).toMatch(/#467/)
+      expect('sale' in d && d.nota, c).toMatch(/2026-11-01/)
+    }
   })
 
   it('lo que está por decidir es lo que había el 2026-11-01, y solo mengua', () => {
