@@ -1614,8 +1614,19 @@ fecha de cobro de la F1 y la deuda dada por perdida de `20261212120000`, por eje
   una, una que ya no está en la base da error, y antes ese error salía como una sección vacía.
   `columnas-recolectar.test.ts` corre los dos recolectores contra un cliente que apunta qué pide
   cada lectura, y `export-columnas.rls.test.ts` compara también este catálogo con la base.
-- **Lo que queda** (trozo 2): repasar las 234 columnas por decidir del export de la BD y las 279
-  que salen sin repasar de la app, una a una.
+- **Las reglas del trozo 2** (2026-11-01, decididas por el responsable; el texto de cada una en el
+  catálogo): las columnas técnicas se deciden por clase. R1, las fechas de registro salen siempre.
+  R2, `deleted_at` sale y `deleted_reason` solo en las filas de la propia persona. R3, `centro_id`
+  no sale. R4, el uuid de una persona no sale; en seis sitios sale en su lugar el **rol a la
+  fecha** (`roles-a-la-fecha.ts`: el vínculo con el niño, el rol en el centro y la asignación al
+  aula de ese día; «soporte de la plataforma» para el superusuario; «no consta» si no se puede
+  reconstruir), nunca el nombre. R5, un id o un enlace sale solo si une dos cosas que el propio
+  export entrega. R6, las claves de notificaciones y de invitación no salen nunca. R7, la huella de
+  una firma sale, y la IP y el navegador solo en las firmas propias.
+- **En la mitad de la app (2a):** 146 columnas decididas por las reglas, y 133 de contenido salen
+  sin repasar todavía (2d y 2c). Lo que el código necesita y no sale se pide igual y se quita
+  antes de entregar (`seLee`). Las lecturas de la historia del rol van con el cliente de servicio.
+- **Lo que queda**: las reglas en la mitad de la BD (2b) y el contenido, por tablas (2c, 2d).
 
 ### La fecha de cobro del recibo, y ponerla en bloque
 
