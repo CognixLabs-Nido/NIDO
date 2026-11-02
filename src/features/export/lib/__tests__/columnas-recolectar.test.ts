@@ -310,6 +310,20 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
     expect(JSON.stringify({ usuario, nino })).not.toMatch(/"p1"|"p2"/)
   })
 
+  it('la foto de perfil del usuario sale también como enlace firmado (2c)', async () => {
+    const { usuario } = await recolectarTodo()
+    // Premisa: la ficha trae la ruta de la foto.
+    expect((usuario.ficha as Fila).foto_url).toBe('v:foto_url')
+    expect(usuario.adjuntos).toContainEqual(
+      expect.objectContaining({
+        descripcion: 'Foto de perfil',
+        bucket: 'usuarios-fotos',
+        path: 'v:foto_url',
+        url_firmada: 'https://x',
+      })
+    )
+  })
+
   it('un fallo de lectura rompe el export, en cada tabla que lee', async () => {
     const tablas = new Set((await recolectarTodo()).llamadas.map((l) => l.tabla))
     // Premisa: sin fallo, los dos terminan.

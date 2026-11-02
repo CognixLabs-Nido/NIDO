@@ -10,6 +10,7 @@ import {
   BUCKET_DNI_TUTORES,
   BUCKET_MANDATO_SEPA,
   BUCKET_NINOS_FOTOS,
+  BUCKET_USUARIOS_FOTOS,
 } from '@/shared/lib/adjuntos/storage'
 
 import { EXPORT_URL_TTL_SEGUNDOS, type AdjuntoExport } from '../types'
@@ -269,8 +270,12 @@ export async function recolectarUsuario(
   const extra = await datosSujeto(client, 'usuario', usuarioId)
   if (extra) anotarBloqueados(extra)
 
-  // DNI y mandato firmado: enlace firmado, como las fotos (#4).
+  // DNI y mandato firmado: enlace firmado, como las fotos (#4). Y su foto de perfil (2c, decisión
+  // del responsable del 2026-11-01: la ruta sola no le sirve a la familia).
   const adjuntos: AdjuntoExport[] = []
+  if (typeof usuario.foto_url === 'string' && usuario.foto_url) {
+    adjuntos.push(await firmar(service, BUCKET_USUARIOS_FOTOS, usuario.foto_url, 'Foto de perfil'))
+  }
   for (const p of filas(extra?.perfiles_familia)) {
     if (typeof p.dni_documento_path === 'string' && p.dni_documento_path) {
       adjuntos.push(await firmar(service, BUCKET_DNI_TUTORES, p.dni_documento_path, 'DNI'))
