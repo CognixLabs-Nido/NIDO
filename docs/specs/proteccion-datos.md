@@ -449,6 +449,19 @@ como enlaces firmados o empaquetados — se concreta al implementar F11-A.
 >   internas: si no se entrega y la familia reclama, sale igual y con una sanción. Por eso el aviso
 >   es la otra mitad de la decisión: el campo de la nota del prospecto y las notas de la ficha del
 >   niño dicen, visible, que la familia puede leerlas si pide sus datos.
+>
+> **Actualización (2026-11-02, trozo 2d: el contenido del niño).** Decisiones del responsable del
+> 2026-11-01 y del 2026-11-02:
+>
+> - Todo lo del niño sale, también las notas de Dirección (`notas_admin`), cuya etiqueta pasa de
+>   «Notas internas» a «Notas de Dirección»: dice quién las escribe, no que nadie más las vaya a
+>   leer.
+> - De los otros adultos del niño, sale quién está vinculado (con su nombre: es su familia) y como
+>   qué; sus permisos no. De las firmas del otro tutor no salen la imagen (se copia) ni los datos
+>   de recogida (son terceros que nombró esa otra persona); las propias salen enteras.
+> - El libro de familia y las fotos del DNI de quien recoge, en las firmas propias, salen como
+>   enlace firmado, como el DNI del tutor: «que el export entregue unos documentos y otros no es un
+>   agujero, no una decisión».
 
 **11. Forma exacta del least-privilege en mensajería.**
 Opciones: (a) helper nuevo `puede_postear_en_conversacion` usado solo en `mensajes_insert`;
