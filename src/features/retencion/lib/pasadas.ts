@@ -12,6 +12,7 @@ import type { ResultadoAuditLog } from './audit-log'
 import type { ResultadoCuentas, ResultadoCuentasOlvidadas } from './cuentas'
 import type { ResultadoExpediente } from './expediente'
 import type { ResultadoExportLog } from './export-log'
+import type { ResultadoFicherosRemesa } from './ficheros-remesa'
 import type { ResultadoFirmas } from './firmas'
 import type { ResultadoFiscal } from './fiscal'
 import type { ResultadoLecturas } from './lecturas-ficha-medica'
@@ -27,8 +28,9 @@ export interface FalloBarrido {
 }
 
 /**
- * El recuento de cada uno de los doce barridos de una pasada, con las claves que exige el CHECK de
- * `retencion_pasadas` (20261213120000). Va a la base y a los logs: solo números, marcas y nulos.
+ * El recuento de cada uno de los trece barridos de una pasada, con las claves que exige el CHECK de
+ * `retencion_pasadas` (20261213120000; la decimotercera, `ficherosRemesa`, desde 20261220120000).
+ * Va a la base y a los logs: solo números, marcas y nulos.
  */
 export interface RecuentosPasada {
   olvido: ResultadoPurga | FalloBarrido
@@ -43,6 +45,7 @@ export interface RecuentosPasada {
   cuentas: ResultadoCuentas
   fiscal: ResultadoFiscal
   cuentasOlvidadas: ResultadoCuentasOlvidadas
+  ficherosRemesa: ResultadoFicherosRemesa
 }
 
 // Un recuento no lleva texto: un id, un nombre o un mensaje de error llegarían a la base y a los

@@ -2154,7 +2154,10 @@
       "fecha_cobro_en_fichero": "Algun rebut està en una remesa amb el fitxer ja generat o enviada: la seua data de cobrament ja no es pot canviar. No se n’ha canviat cap.",
       "fecha_cobro_recibo_cerrado": "Algun rebut ja està enviat al banc, cobrat o tornat: la seua data de cobrament ja no es pot canviar. No se n’ha canviat cap.",
       "fecha_cobro_no_sepa": "Algun rebut no es cobra pel banc: no porta data de cobrament. No se n’ha canviat cap.",
-      "fecha_cobro_failed": "No s’ha pogut canviar la data de cobrament. No se n’ha canviat cap."
+      "fecha_cobro_failed": "No s’ha pogut canviar la data de cobrament. No se n’ha canviat cap.",
+      "descarga_en_curso": "Hi ha una altra descàrrega d’aquesta remesa en curs. Espera uns segons i torna a descarregar-la.",
+      "remesa_cambio": "La remesa ha canviat mentre es generava el fitxer. Torna a descarregar-la.",
+      "fichero_alterado": "El fitxer guardat d’aquesta remesa no coincideix amb el que es va registrar en generar-lo, i no s’ha lliurat. Avisa el suport."
     },
     "transferencias_beca": {
       "title": "Transferències a famílies",

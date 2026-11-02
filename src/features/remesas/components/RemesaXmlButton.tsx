@@ -42,6 +42,13 @@ export function RemesaXmlButton({ remesaId, disabled }: Props) {
           toast.error(t('errors.remesa_vacia'))
         } else if (motivo === 'no_autorizado') {
           toast.error(t('errors.no_autorizado'))
+        } else if (
+          motivo === 'descarga_en_curso' ||
+          motivo === 'remesa_cambio' ||
+          motivo === 'fichero_alterado'
+        ) {
+          // R-1: el fichero de cada versión se guarda y se entrega el guardado.
+          toast.error(t(`errors.${motivo}`))
         } else {
           toast.error(t('errors.xml_failed'))
         }

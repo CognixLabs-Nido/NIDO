@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 /**
  * La ruta del cron de retención (20261213120000): cada pasada deja su fila en `retencion_pasadas`,
  * encuentre algo o no, con el modo (simulado si `RETENCION_DRY_RUN` no es exactamente 'false') y el
- * recuento de los doce barridos; el mismo resultado sale por `logger.warn`, que en producción sí se
+ * recuento de los trece barridos (doce hasta 20261220120000); el mismo resultado sale por `logger.warn`, que en producción sí se
  * escribe (`logger.info` no). Ni la fila ni el log llevan texto de error. Si la fila no entra, 500.
  */
 
@@ -12,6 +12,7 @@ const h = vi.hoisted(() => ({
   inserts: [] as Array<{ tabla: string; fila: Record<string, unknown> }>,
   insertError: null as { message: string } | null,
   dryRuns: [] as boolean[],
+  orden: [] as string[],
   warn: [] as unknown[][],
   info: [] as unknown[][],
   errores: [] as unknown[][],
@@ -87,7 +88,22 @@ vi.mock('@/features/retencion/lib/cuentas', () => ({
   }),
 }))
 vi.mock('@/features/retencion/lib/fiscal', () => ({
-  destruirFiscal: conDryRun({ vencidas: 0, destruidas: 0, fallidas: 0 }),
+  destruirFiscal: async (o: { dryRun: boolean }) => {
+    h.orden.push('fiscal')
+    return conDryRun({ vencidas: 0, destruidas: 0, fallidas: 0 })(o)
+  },
+}))
+vi.mock('@/features/retencion/lib/ficheros-remesa', () => ({
+  destruirFicherosRemesa: async (o: { dryRun: boolean }) => {
+    h.orden.push('ficherosRemesa')
+    return conDryRun({
+      vencidos: 0,
+      destruidos: 0,
+      huerfanos: 0,
+      huerfanosBorrados: 0,
+      fallidos: 0,
+    })(o)
+  },
 }))
 
 const { GET } = await import('../route')
@@ -105,6 +121,7 @@ const CLAVES = [
   'cuentas',
   'fiscal',
   'cuentasOlvidadas',
+  'ficherosRemesa',
 ]
 
 function peticion(auth = 'Bearer secreto-de-prueba') {
@@ -112,6 +129,7 @@ function peticion(auth = 'Bearer secreto-de-prueba') {
 }
 
 beforeEach(() => {
+  h.orden = []
   h.inserts = []
   h.insertError = null
   h.dryRuns = []
@@ -127,15 +145,15 @@ afterEach(() => {
 })
 
 describe('cron de retención: el registro de cada pasada', () => {
-  it('premisa: sin la variable, los once barridos con modo reciben dryRun y simulan', async () => {
+  it('premisa: sin la variable, los doce barridos con modo reciben dryRun y simulan', async () => {
     expect(process.env.RETENCION_DRY_RUN).toBeUndefined()
     const res = await GET(peticion())
     expect(res.status).toBe(200)
-    expect(h.dryRuns).toHaveLength(11)
+    expect(h.dryRuns).toHaveLength(12)
     expect(h.dryRuns.every((d) => d === true)).toBe(true)
   })
 
-  it('sin nada que borrar, deja una fila en retencion_pasadas en modo simulado con las doce claves', async () => {
+  it('sin nada que borrar, deja una fila en retencion_pasadas en modo simulado con las trece claves', async () => {
     await GET(peticion())
     expect(h.inserts).toHaveLength(1)
     const { tabla, fila } = h.inserts[0]
@@ -180,6 +198,11 @@ describe('cron de retención: el registro de cada pasada', () => {
     expect((await res.json()).ok).toBe(false)
     expect(h.errores).toHaveLength(1)
     expect(String(h.errores[0])).toContain('la pasada no quedó registrada')
+  })
+
+  it('los ficheros de remesa se barren antes que lo fiscal, que espera a ellos (20261220120000)', async () => {
+    await GET(peticion())
+    expect(h.orden).toEqual(['ficherosRemesa', 'fiscal'])
   })
 
   it('sin el secreto no corre nada ni deja fila', async () => {

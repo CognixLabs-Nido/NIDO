@@ -3,241 +3,324 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GET } from '../route'
 
 /**
- * El fichero de una remesa marca `fichero_generado_at` la primera vez (`20261120120000`).
- * La marca va ANTES de leer los recibos que van en el fichero: uno añadido entre la lectura y la
- * marca quedaría en la remesa sin estar en el fichero. Antes se comprueba que el fichero sale, para
- * no cerrar una remesa con un 422.
+ * La descarga del fichero de una remesa, con el generador de verdad y una base y un bucket de
+ * mentira que hacen lo que hacen los de verdad (`20261220120000`):
+ *  - `registrar_fichero_remesa` pone la marca si no hay, rechaza otra marca, exige el fichero en el
+ *    bucket y los recibos cobrables de la remesa, y guarda el registro;
+ *  - `fichero_remesa_vigente` devuelve el de la marca actual.
  *
- * El MsgId sale de la marca, no de la hora de la descarga (`message-id.ts`): dos descargas de la
- * misma versión llevan el mismo MsgId y el banco rechaza la segunda en vez de cobrarla otra vez.
- * Por eso se marca también la remesa enviada sin marca (las de antes de la columna). La ya marcada
- * se vuelve a bajar sin marcar.
+ * Desde R-1 (decisión P-1 del 2026-11-01, que sustituye a G1, «regenerable») el fichero se guarda
+ * la primera vez y las descargas siguientes entregan ESE, byte a byte: generado otra vez podía
+ * llevar otro IBAN, porque `get_mandatos_remesa` toma el mandato activo en cada descarga.
+ * Lo que la base de verdad hace con cada caso lo prueba `remesa-ficheros.rls.test.ts`.
  */
 
-const { estado, pasos } = vi.hoisted(() => ({
-  estado: {
-    remesa: null as Record<string, unknown> | null,
-    sale: true,
-    errorMarca: null as unknown,
-    // Lo que devuelve get_mandatos_remesa y las lecturas del concepto (forma de producción: el
-    // recibo es de la familia y el niño sale de las líneas).
-    mandatos: [] as Record<string, unknown>[],
-    tablas: {} as Record<string, { data: unknown[]; error: unknown }>,
-    conceptos: null as Map<string, string> | null,
-    errorRelectura: null as unknown,
-    // Lo que la BD tiene en la columna: el UPDATE la pone si está vacía, como `.is(..., null)`.
-    marcaEnBd: null as string | null,
-    // Lo que escribe otra descarga a la vez, entre nuestra lectura y nuestro UPDATE.
-    marcaDeOtro: null as string | null,
-    // La RLS deja el UPDATE en 0 filas sin error: no escribe.
-    updateNoEscribe: false,
-    msgIds: [] as string[],
+const ID = '11111111-1111-4111-8111-111111111111'
+const R_SIN_FECHA = '0d06ffd1-d24e-4d6e-b1db-341d6c94bb26'
+const R_CON_FECHA = '290f1adf-67ab-4273-9af3-2b4d9f39b323'
+const NINO_1 = 'aaaaaaaa-0000-4000-8000-000000000001'
+const NINO_2 = 'aaaaaaaa-0000-4000-8000-000000000002'
+
+interface Registro {
+  marca: string
+  ruta: string
+  sha256: string
+  adeudos: unknown
+}
+
+const { bd } = vi.hoisted(() => ({
+  bd: {
+    marca: null as string | null,
+    fechas: {} as Record<string, string | null>,
+    iban1: 'ES7620770024003102575766',
+    acreedorCompleto: true,
+    errorLineas: null as unknown,
+    // Lo que tiene la remesa al registrar (los recibos cobrables).
+    recibosEnRemesa: [] as string[],
+    registros: [] as Registro[],
+    bucket: new Map<string, string>(),
+    llamadas: [] as string[],
   },
-  pasos: [] as string[],
 }))
 
-vi.mock('@/features/remesas/lib/preparar-remesa', () => ({
-  prepararRemesa: (
-    _r: unknown,
-    _a: unknown,
-    meta: { messageId: string },
-    conceptos: Map<string, string>
-  ) => {
-    estado.conceptos = conceptos
-    estado.msgIds.push(meta.messageId)
-    return estado.sale ? { ok: true, xml: '<xml/>' } : { ok: false, motivo: 'remesa_vacia' }
-  },
-}))
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: async () => ({
-    from: (tabla: string) => ({
-      select: (cols: string) => ({
-        eq: () => ({
-          // La remesa (con `deleted_at`).
-          is: () => ({
-            maybeSingle: async () => ({
-              data: estado.remesa && { ...estado.remesa, fichero_generado_at: estado.marcaEnBd },
-            }),
-          }),
-          maybeSingle: async () => {
-            if (tabla === 'centros') return { data: { nombre: 'CEI Ejemplo' } }
-            // La relectura de la marca.
-            expect(cols).toBe('fichero_generado_at')
-            pasos.push('relee la marca')
-            return { data: { fichero_generado_at: estado.marcaEnBd }, error: estado.errorRelectura }
-          },
-          in: async () => {
-            pasos.push(`lee ${tabla}`)
-            return estado.tablas[tabla] ?? { data: [], error: null }
-          },
-        }),
+vi.mock('@/shared/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }))
+
+vi.mock('@/lib/supabase/admin', () => ({
+  createServiceRoleClient: () => ({
+    storage: {
+      from: () => ({
+        upload: async (ruta: string, xml: string, o: { upsert: boolean }) => {
+          bd.llamadas.push('sube')
+          if (!o.upsert && bd.bucket.has(ruta))
+            return { error: { statusCode: '409', message: 'The resource already exists' } }
+          bd.bucket.set(ruta, xml)
+          return { error: null }
+        },
+        download: async (ruta: string) => {
+          bd.llamadas.push('baja')
+          const xml = bd.bucket.get(ruta)
+          return xml === undefined
+            ? { data: null, error: { message: 'not found' } }
+            : { data: new Blob([xml]), error: null }
+        },
+        remove: async (rutas: string[]) => {
+          bd.llamadas.push('borra')
+          for (const r of rutas) bd.bucket.delete(r)
+          return { error: null }
+        },
       }),
-      update: (valores: { fichero_generado_at: string }) => ({
-        eq: () => ({
-          is: async () => {
-            pasos.push(`marca ${tabla}`)
-            if (estado.marcaDeOtro) estado.marcaEnBd = estado.marcaDeOtro
-            if (!estado.errorMarca && !estado.updateNoEscribe && !estado.marcaEnBd)
-              estado.marcaEnBd = valores.fichero_generado_at
-            return { error: estado.errorMarca }
-          },
-        }),
-      }),
-    }),
-    rpc: async (nombre: string) => {
-      pasos.push(nombre)
-      return { data: nombre === 'get_mandatos_remesa' ? estado.mandatos : [], error: null }
     },
   }),
 }))
 
-const ID = '11111111-1111-4111-8111-111111111111'
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: async () => ({
+    from: (tabla: string) => ({
+      select: () => ({
+        eq: () => ({
+          is: () => ({
+            maybeSingle: async () => ({
+              data: {
+                id: ID,
+                centro_id: 'c1',
+                anio: 2026,
+                mes: 10,
+                fichero_generado_at: bd.marca,
+              },
+            }),
+          }),
+          maybeSingle: async () => ({ data: { nombre: 'CEI Ejemplo' } }),
+          in: async () => {
+            if (tabla === 'recibos')
+              return {
+                data: [R_SIN_FECHA, R_CON_FECHA].map((id) => ({
+                  id,
+                  anio: 2026,
+                  mes: 10,
+                  fecha_cobro_banco: bd.fechas[id] ?? null,
+                })),
+                error: null,
+              }
+            if (tabla === 'lineas_recibo')
+              return bd.errorLineas
+                ? { data: null, error: bd.errorLineas }
+                : {
+                    data: [
+                      { recibo_id: R_SIN_FECHA, nino_id: NINO_1 },
+                      { recibo_id: R_CON_FECHA, nino_id: NINO_2 },
+                    ],
+                    error: null,
+                  }
+            return {
+              data: [
+                { id: NINO_1, nombre: 'Nino', apellidos: 'Demo Uno' },
+                { id: NINO_2, nombre: 'Nina', apellidos: 'Demo Dos' },
+              ],
+              error: null,
+            }
+          },
+        }),
+      }),
+    }),
+    rpc: async (nombre: string, a: Record<string, unknown>) => {
+      bd.llamadas.push(nombre)
+      if (nombre === 'get_mandatos_remesa')
+        return {
+          data: [
+            {
+              recibo_id: R_SIN_FECHA,
+              familia_id: 'f1',
+              familia_etiqueta: 'Familia Demo Uno',
+              total_centimos: 12000,
+              identificador_mandato: 'NIDO-33C79B50-87319A17-MH3K2Q8L',
+              iban: bd.iban1,
+              titular: 'Tutor Demo Uno',
+              fecha_mandato: '2026-06-01',
+            },
+            {
+              recibo_id: R_CON_FECHA,
+              familia_id: 'f2',
+              familia_etiqueta: 'Familia Demo Dos',
+              total_centimos: 8050,
+              identificador_mandato: 'NIDO-33C79B50-8F54B0D9-MH3K2Q8M',
+              iban: 'ES1000492352082414205416',
+              titular: 'Tutor Demo Dos',
+              fecha_mandato: '2026-06-02',
+            },
+          ],
+          error: null,
+        }
+      if (nombre === 'get_datos_acreedor')
+        return {
+          data: [
+            {
+              identificador_acreedor: bd.acreedorCompleto ? 'ES00ZZZ00000000000' : null,
+              bic_acreedor: 'CAIXESBBXXX',
+              iban: 'ES9121000418450200051332',
+            },
+          ],
+          error: null,
+        }
+      if (nombre === 'fichero_remesa_vigente') {
+        const r = bd.registros.find((x) => x.marca === bd.marca)
+        return { data: r ? [{ ruta: r.ruta, sha256: r.sha256 }] : [], error: null }
+      }
+      if (nombre === 'registrar_fichero_remesa') {
+        const fallo = (hint: string) => ({ data: null, error: { message: hint, hint } })
+        const marca = a.p_marca as string
+        if (bd.marca && bd.marca !== marca) return fallo('marca_distinta')
+        if (!bd.bucket.has(a.p_ruta as string)) return fallo('sin_fichero')
+        const ids = (a.p_adeudos as Array<{ recibo_id: string }>).map((x) => x.recibo_id).sort()
+        if (ids.join() !== [...bd.recibosEnRemesa].sort().join()) return fallo('recibos_cambiaron')
+        bd.marca = marca
+        bd.registros.push({
+          marca,
+          ruta: a.p_ruta as string,
+          sha256: a.p_sha256 as string,
+          adeudos: a.p_adeudos,
+        })
+        return { data: 'f1', error: null }
+      }
+      throw new Error(`rpc inesperada: ${nombre}`)
+    },
+  }),
+}))
+
 const pedir = () =>
   GET(new Request('http://x'), { params: Promise.resolve({ locale: 'es', id: ID }) })
 
-describe('GET /admin/remesas/[id]/xml', () => {
+const descargar = async () => {
+  const res = await pedir()
+  expect(res.status).toBe(200)
+  return res.text()
+}
+
+describe('GET /admin/remesas/[id]/xml: el fichero de cada versión, guardado (R-1)', () => {
   beforeEach(() => {
-    estado.remesa = { id: ID, centro_id: 'c1', anio: 2026, mes: 3, estado: 'borrador' }
-    estado.sale = true
-    estado.errorMarca = null
-    estado.mandatos = []
-    estado.tablas = {}
-    estado.conceptos = null
-    estado.errorRelectura = null
-    estado.marcaEnBd = null
-    estado.marcaDeOtro = null
-    estado.updateNoEscribe = false
-    estado.msgIds = []
-    pasos.length = 0
+    bd.marca = null
+    bd.fechas = {}
+    bd.iban1 = 'ES7620770024003102575766'
+    bd.acreedorCompleto = true
+    bd.errorLineas = null
+    bd.recibosEnRemesa = [R_SIN_FECHA, R_CON_FECHA]
+    bd.registros = []
+    bd.bucket = new Map()
+    bd.llamadas = []
+    vi.useFakeTimers()
   })
   afterEach(() => {
     vi.useRealTimers()
   })
 
-  it('primera vez en borrador: comprueba, marca, relee la marca y vuelve a leer los recibos', async () => {
-    const res = await pedir()
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('<xml/>')
-    expect(pasos).toEqual([
-      'get_mandatos_remesa',
-      'get_datos_acreedor',
-      'marca remesas',
-      'relee la marca',
-      'get_mandatos_remesa',
-      'get_datos_acreedor',
+  it('la primera descarga guarda el fichero y su registro, con la marca de esa hora', async () => {
+    vi.setSystemTime(new Date('2026-11-02T09:15:00.456Z'))
+    const xml = await descargar()
+    const ruta = `c1/${ID}/NIDO-11111111-20261102091500.xml`
+    expect(bd.marca).toBe('2026-11-02T09:15:00.000Z')
+    expect([...bd.bucket.keys()]).toEqual([ruta])
+    expect(bd.bucket.get(ruta)).toBe(xml)
+    // El registro: por adeudo, el recibo, su EndToEndId, el importe y el MndtId. Sin IBAN.
+    expect(bd.registros[0].adeudos).toEqual([
+      {
+        recibo_id: R_SIN_FECHA,
+        end_to_end_id: '0D06FFD1D24E4D6EB1DB341D6C94BB26',
+        importe_centimos: 12000,
+        mndt_id: 'NIDO-33C79B50-87319A17-MH3K2Q8L',
+      },
+      {
+        recibo_id: R_CON_FECHA,
+        end_to_end_id: '290F1ADF67AB42739AF32B4D9F39B323',
+        importe_centimos: 8050,
+        mndt_id: 'NIDO-33C79B50-8F54B0D9-MH3K2Q8M',
+      },
+    ])
+    expect(JSON.stringify(bd.registros)).not.toMatch(/ES76|ES10/)
+    expect(xml).toContain('<CreDtTm>2026-11-02T09:15:00</CreDtTm>')
+  })
+
+  it('las siguientes entregan el guardado, aunque la familia haya cambiado de IBAN (P-1)', async () => {
+    vi.setSystemTime(new Date('2026-11-02T09:15:00Z'))
+    const lunes = await descargar()
+    // Premisa: el IBAN va en el fichero.
+    expect(lunes).toContain('ES7620770024003102575766')
+
+    bd.iban1 = 'ES6000491500051234567892'
+    bd.llamadas = []
+    vi.setSystemTime(new Date('2026-11-05T18:40:00Z'))
+    const jueves = await descargar()
+    expect(jueves).toBe(lunes)
+    expect(jueves).not.toContain('ES6000491500051234567892')
+    // No se vuelve a generar: ni se leen los mandatos.
+    expect(bd.llamadas).toEqual(['fichero_remesa_vigente', 'baja'])
+  })
+
+  it('con una fecha propia, dos bloques; el resto, el día de la marca en Madrid', async () => {
+    bd.fechas = { [R_CON_FECHA]: '2026-11-10' }
+    // 23:30 UTC del día 2 son las 00:30 del día 3 en Madrid: el día de la versión es el 3.
+    vi.setSystemTime(new Date('2026-11-02T23:30:00Z'))
+    const primera = await descargar()
+    const bloques = [...primera.matchAll(/<PmtInf>([\s\S]*?)<\/PmtInf>/g)].map(([, b]) => [
+      b.match(/<PmtInfId>(.*?)</)![1],
+      b.match(/<ReqdColltnDt>(.*?)</)![1],
+      b.match(/<CtrlSum>(.*?)</)![1],
+    ])
+    expect(bloques).toEqual([
+      ['NIDO-11111111-20261102233000-1', '2026-11-03', '120.00'],
+      ['NIDO-11111111-20261102233000-2', '2026-11-10', '80.50'],
     ])
   })
 
-  it('dos descargas a horas distintas llevan el mismo MsgId: el de la marca', async () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-10-31T10:00:00Z'))
-    expect((await pedir()).status).toBe(200)
-    // Premisa: la primera descarga dejó la marca, de esa hora.
-    expect(estado.marcaEnBd).toBe('2026-10-31T10:00:00.000Z')
-    const primera = estado.msgIds.at(-1)
-
-    vi.setSystemTime(new Date('2026-10-31T17:45:30Z'))
-    estado.msgIds = []
-    pasos.length = 0
-    expect((await pedir()).status).toBe(200)
-    // Premisa: la segunda es a otra hora y ya no marca.
-    expect(pasos).not.toContain('marca remesas')
-    expect(estado.msgIds).toEqual([primera])
-    expect(primera).toBe('NIDO-11111111-20261031100000')
-  })
-
-  it('el fichero que se sirve lleva el MsgId de la marca, no el de la comprobación previa', async () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-10-31T10:00:00Z'))
-    // Otra descarga marcó a la vez, antes que la nuestra: su marca es la que vale.
-    estado.marcaDeOtro = '2026-10-31T09:59:58.000Z'
-    expect((await pedir()).status).toBe(200)
-    // La comprobación (hora de ahora) y el fichero servido (la marca de la otra descarga).
-    expect(estado.msgIds).toEqual(['NIDO-11111111-20261031100000', 'NIDO-11111111-20261031095958'])
-  })
-
-  it('una remesa enviada sin marca la recibe en la descarga, y la siguiente lleva el mismo MsgId', async () => {
-    estado.remesa = { ...estado.remesa, estado: 'enviada' }
-    // Premisa: no tiene marca (enviada antes de que existiera la columna).
-    expect(estado.marcaEnBd).toBeNull()
-    expect((await pedir()).status).toBe(200)
-    expect(pasos).toContain('marca remesas')
-    const marca = estado.marcaEnBd
-    expect(marca).not.toBeNull()
-    const servido = estado.msgIds.at(-1)
-
-    estado.msgIds = []
-    pasos.length = 0
-    expect((await pedir()).status).toBe(200)
-    expect(pasos).not.toContain('marca remesas')
-    expect(estado.msgIds).toEqual([servido])
-  })
-
-  it('ya marcada: se vuelve a bajar sin marcar, con el MsgId de su marca', async () => {
-    estado.marcaEnBd = '2026-10-25T08:30:00.000Z'
-    expect((await pedir()).status).toBe(200)
-    expect(pasos).not.toContain('marca remesas')
-    expect(estado.msgIds).toEqual(['NIDO-11111111-20261025083000'])
-  })
-
-  it('si el fichero no sale (422), no marca la remesa', async () => {
-    estado.sale = false
+  it('si el fichero no sale (422), no sube, no registra y no marca', async () => {
+    bd.acreedorCompleto = false
     const res = await pedir()
     expect(res.status).toBe(422)
-    expect(pasos).not.toContain('marca remesas')
+    expect(await res.json()).toEqual({ error: 'acreedor_incompleto' })
+    expect(bd.marca).toBeNull()
+    expect(bd.bucket.size).toBe(0)
+    expect(bd.llamadas).not.toContain('registrar_fichero_remesa')
   })
 
-  it('desplegado antes que la migración (PGRST204): el fichero sale como antes, sin marca', async () => {
-    estado.errorMarca = { code: 'PGRST204', message: 'column not found' }
+  it('si los recibos de la remesa cambiaron, 409 y no queda nada guardado', async () => {
+    bd.recibosEnRemesa = [R_SIN_FECHA]
     const res = await pedir()
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('<xml/>')
-    expect(pasos).not.toContain('relee la marca')
-    // Otro error al marcar sí corta: no se sirve un fichero de una remesa que no quedó cerrada.
-    estado.errorMarca = { code: '42501', message: 'x' }
-    expect((await pedir()).status).toBe(500)
+    expect(res.status).toBe(409)
+    expect(await res.json()).toEqual({ error: 'remesa_cambio' })
+    expect(bd.marca).toBeNull()
+    expect(bd.bucket.size).toBe(0)
   })
 
-  it('si tras marcar no se puede leer la marca, 500: sin marca no hay MsgId estable', async () => {
-    estado.errorRelectura = { code: 'XX000', message: 'x' }
-    expect((await pedir()).status).toBe(500)
-    // Y si la lectura no la devuelve (la RLS dejó el UPDATE en 0 filas, sin error), tampoco.
-    estado.errorRelectura = null
-    estado.marcaEnBd = null
-    estado.updateNoEscribe = true
-    pasos.length = 0
-    expect((await pedir()).status).toBe(500)
-    // Premisa: llegó a marcar y a releer; el 500 es por la marca ausente.
-    expect(pasos).toContain('relee la marca')
-    expect(estado.marcaEnBd).toBeNull()
+  it('una marca de antes de R-1, sin fichero guardado, guarda el de esa marca y no la cambia', async () => {
+    bd.marca = '2026-10-20T08:00:00.000Z'
+    vi.setSystemTime(new Date('2026-11-02T09:15:00Z'))
+    const xml = await descargar()
+    expect(bd.marca).toBe('2026-10-20T08:00:00.000Z')
+    expect(xml).toContain('<MsgId>NIDO-11111111-20261020080000</MsgId>')
+    expect(bd.registros).toHaveLength(1)
+  })
+
+  it('no sobrescribe: si ya hay un objeto en la ruta (otra descarga a medias), 409 y lo deja', async () => {
+    vi.setSystemTime(new Date('2026-11-02T09:15:00.700Z'))
+    const ruta = `c1/${ID}/NIDO-11111111-20261102091500.xml`
+    bd.bucket.set(ruta, '<de-la-otra/>')
+    const res = await pedir()
+    expect(res.status).toBe(409)
+    expect(await res.json()).toEqual({ error: 'descarga_en_curso' })
+    expect(bd.bucket.get(ruta)).toBe('<de-la-otra/>')
+    expect(bd.marca).toBeNull()
   })
 
   describe('el concepto de cada adeudo', () => {
-    const RECIBO = '0d06ffd1-d24e-4d6e-b1db-341d6c94bb26'
-    const NINO = 'aaaaaaaa-0000-4000-8000-000000000001'
-
-    beforeEach(() => {
-      estado.remesa = { ...estado.remesa, estado: 'enviada' }
-      estado.mandatos = [{ recibo_id: RECIBO }]
-      estado.tablas = {
-        recibos: { data: [{ id: RECIBO, anio: 2026, mes: 10 }], error: null },
-        lineas_recibo: { data: [{ recibo_id: RECIBO, nino_id: NINO }], error: null },
-        ninos: { data: [{ id: NINO, nombre: 'Niña', apellidos: 'Demo Uno' }], error: null },
-      }
-    })
-
     it('lleva el centro, el niño de las líneas y el mes del recibo', async () => {
-      expect((await pedir()).status).toBe(200)
-      expect(pasos).toEqual(
-        expect.arrayContaining(['lee recibos', 'lee lineas_recibo', 'lee ninos'])
+      expect(await descargar()).toMatch(
+        /<Ustrd>CEI Ejemplo . Nino Demo Uno . Octubre 2026<\/Ustrd>/
       )
-      expect(estado.conceptos?.get(RECIBO)).toBe('CEI Ejemplo · Nina Demo Uno · Octubre 2026')
     })
 
-    it('si falla una lectura del concepto, no sale el fichero (500)', async () => {
-      estado.tablas.lineas_recibo = { data: [], error: { code: '42501', message: 'x' } }
+    it('si falla una lectura del concepto, no sale el fichero (500) ni se guarda nada', async () => {
+      bd.errorLineas = { code: '42501', message: 'x' }
       expect((await pedir()).status).toBe(500)
-      expect(estado.conceptos).toBeNull()
+      expect(bd.bucket.size).toBe(0)
+      expect(bd.marca).toBeNull()
     })
   })
 })

@@ -1,6 +1,14 @@
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { BUCKET_REMESAS_FICHEROS } from '@/shared/lib/adjuntos/storage'
+import { logger } from '@/shared/lib/logger'
 
 import { conceptosDeRemesa } from '@/features/remesas/lib/concepto-adeudo'
+import {
+  obtenerFicheroRemesa,
+  type FalloFichero,
+  type FicheroGenerado,
+} from '@/features/remesas/lib/fichero-remesa'
 import { versionRemesa } from '@/features/remesas/lib/message-id'
 import { prepararRemesa } from '@/features/remesas/lib/preparar-remesa'
 
@@ -8,28 +16,25 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 /**
- * Genera y descarga el XML pain.008.001.02 de una remesa BAJO DEMANDA (G1: no se
- * almacena; regenerable). Autoriza vía RLS/RPCs admin-only (get_mandatos_remesa +
- * get_datos_acreedor descifran server-side; el IBAN nunca sale al cliente salvo
- * dentro del fichero). Si faltan mandatos / config del acreedor / importes válidos,
- * devuelve 422 con el motivo para que la UI lo explique (no genera a medias).
+ * El XML pain.008.001.02 de una remesa. Desde R-1 (`20261220120000`; sustituye a G1, «no se
+ * almacena; regenerable», decisión P-1 del 2026-11-01) se guarda la primera vez que sale, y cada
+ * descarga de esa versión entrega el guardado, byte a byte (`obtenerFicheroRemesa`). Generado otra
+ * vez podía llevar otro IBAN: `get_mandatos_remesa` toma el mandato activo en cada descarga.
  *
- * La primera vez que sale el fichero de una remesa en borrador se marca
- * `fichero_generado_at`, y desde entonces la BD no deja que entre ni salga ningún recibo
- * (`20261120120000`). La marca va ANTES de leer los recibos que van en el fichero: un recibo
- * añadido entre la lectura y la marca quedaría en la remesa sin estar en el fichero. Antes se
- * comprueba que el fichero sale, para no cerrar una remesa con un 422.
+ * Autoriza la sesión de Dirección: la remesa por su RLS, y las RPCs (`get_mandatos_remesa`,
+ * `get_datos_acreedor`, que descifran en el servidor; `fichero_remesa_vigente` y
+ * `registrar_fichero_remesa`) son `es_admin`. El bucket privado lo lee y lo escribe el cliente de
+ * servicio, después de esa autorización. Si faltan mandatos, datos del acreedor o importes, 422
+ * con el motivo (no genera a medias).
  *
- * El MsgId sale de esa marca, no de la hora de la descarga (`message-id.ts`): dos descargas de la
- * misma versión son el mismo fichero para el banco, que rechaza el segundo en vez de cobrarlo dos
- * veces. Por eso también se marca la remesa enviada que no la tiene (las de antes de la marca): su
- * primera descarga fija el MsgId de las siguientes. La marca se vuelve a leer después de ponerla:
- * si otra descarga la puso a la vez, el UPDATE no toca nada y vale la suya.
+ * La primera descarga pone la marca (`fichero_generado_at`) y el registro en una transacción
+ * (`registrar_fichero_remesa`), y desde entonces la BD no deja que entre ni salga ningún recibo
+ * (`20261120120000`). Esa función comprueba que los recibos de la remesa son los del fichero: si
+ * entró o salió alguno entre la lectura y la marca, no registra nada (409). Antes se comprueba que
+ * el fichero sale, para no cerrar una remesa con un 422.
  *
  * Todo lo que no sale de los recibos sale de la marca (`versionRemesa`): el MsgId, `CreDtTm` y la
- * fecha de cobro de los recibos que no tienen la suya (el día de la marca). Con la marca puesta, la
- * BD no deja cambiar la fecha de ningún recibo de la remesa (`recibos_fecha_cobro_proteger`), así
- * que dos descargas en días distintos dan el mismo fichero byte a byte. Un bloque de pago por fecha.
+ * fecha de cobro de los recibos que no tienen la suya. Un bloque de pago por fecha.
  */
 export async function GET(
   _request: Request,
@@ -41,8 +46,7 @@ export async function GET(
   // 1. Remesa (RLS admin) → centro/periodo.
   const { data: remesa } = await supabase
     .from('remesas')
-    // `*`: lee fichero_generado_at sin romper si el despliegue llega antes que su migración.
-    .select('*')
+    .select('id, centro_id, anio, mes, fichero_generado_at')
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle()
@@ -55,8 +59,8 @@ export async function GET(
     .maybeSingle()
 
   // 2. Deudores (IBAN descifrado server-side) + config del acreedor → el fichero, o el motivo.
-  // `marca` NULL solo en la comprobación previa, o si la columna no existe (PGRST204, abajo).
-  async function generar(marca: string | null): Promise<{ xml: string } | Response> {
+  // `marca` NULL solo en la comprobación previa: ahí la hora no importa.
+  async function generar(marca: string | null): Promise<FicheroGenerado | FalloFichero> {
     const [{ data: mandatos, error: errMand }, { data: acreedores, error: errAcr }] =
       await Promise.all([
         supabase.rpc('get_mandatos_remesa', { p_remesa_id: id }),
@@ -65,7 +69,7 @@ export async function GET(
 
     if (errMand || errAcr) {
       // RAISE 'No autorizado' en las RPCs (no admin) → 403.
-      return json({ error: 'no_autorizado' }, 403)
+      return { status: 403, body: { error: 'no_autorizado' } }
     }
 
     const acreedor = acreedores?.[0] ?? {
@@ -94,7 +98,7 @@ export async function GET(
             .in('recibo_id', reciboIds),
         ]
       )
-      if (errRec || errLin) return json({ error: 'xml_failed' }, 500)
+      if (errRec || errLin) return { status: 500, body: { error: 'xml_failed' } }
       const ninoIds = [
         ...new Set((lineas ?? []).map((l) => l.nino_id).filter((n): n is string => !!n)),
       ]
@@ -106,15 +110,14 @@ export async function GET(
           .select('id, nombre, apellidos')
           .eq('centro_id', remesa!.centro_id)
           .in('id', ninoIds)
-        if (errNin) return json({ error: 'xml_failed' }, 500)
+        if (errNin) return { status: 500, body: { error: 'xml_failed' } }
         ninos = data ?? []
       }
       conceptos = conceptosDeRemesa(centro?.nombre ?? '', recibos ?? [], lineas ?? [], ninos)
       fechasCobro = new Map((recibos ?? []).map((r) => [r.id, r.fecha_cobro_banco]))
     }
 
-    // Sin marca vale la hora de ahora: en la comprobación previa, solo para saber si el fichero
-    // sale; sin la columna de la marca (PGRST204, abajo), es el fichero que se sirve, como antes.
+    // Sin marca vale la hora de ahora: es la comprobación previa, solo para saber si el fichero sale.
     const version = versionRemesa(id, marca ?? new Date().toISOString())
     const resultado = prepararRemesa(
       mandatos ?? [],
@@ -137,41 +140,56 @@ export async function GET(
           : resultado.motivo === 'identificador_largo'
             ? { error: resultado.motivo, familias: resultado.familiasIdentificadorLargo }
             : { error: resultado.motivo }
-      return json(body, 422)
+      return { status: 422, body }
     }
-    return { xml: resultado.xml }
+    return { xml: resultado.xml, msgId: version.messageId, adeudos: resultado.adeudos }
   }
 
-  const marcaLeida: string | null = remesa.fichero_generado_at ?? null
-  let fichero = await generar(marcaLeida)
-  if (fichero instanceof Response) return fichero
-
-  // 3. Sin marca: se pone, se vuelve a leer, y el fichero sale otra vez con su MsgId y, en
-  //    borrador, ya con la remesa cerrada.
-  if (!marcaLeida) {
-    const { error: errMarca } = await supabase
-      .from('remesas')
-      .update({ fichero_generado_at: new Date().toISOString() })
-      .eq('id', id)
-      .is('fichero_generado_at', null)
-    // PGRST204: la columna aún no existe (desplegado antes que la migración). Sin columna no hay
-    // trigger que cierre la remesa ni marca de la que sacar el MsgId: el fichero ya leído vale,
-    // como antes.
-    if (errMarca && errMarca.code !== 'PGRST204') return json({ error: 'xml_failed' }, 500)
-    if (!errMarca) {
-      // La ausencia aquí no es legítima: acabamos de marcarla o la marcó otro. Sin marca no hay
-      // MsgId estable, y servir uno con la hora sería el doble cobro que esto evita.
-      const { data: marcada, error: errLeer } = await supabase
-        .from('remesas')
-        .select('fichero_generado_at')
-        .eq('id', id)
-        .maybeSingle()
-      const marca = marcada?.fichero_generado_at ?? null
-      if (errLeer || !marca) return json({ error: 'xml_failed' }, 500)
-      fichero = await generar(marca)
-      if (fichero instanceof Response) return fichero
-    }
-  }
+  // 3. El fichero de la versión: el guardado o, la primera vez, el que se genera, guarda y registra.
+  const servicio = createServiceRoleClient()
+  const bucket = () => servicio.storage.from(BUCKET_REMESAS_FICHEROS)
+  const fichero = await obtenerFicheroRemesa(
+    {
+      vigente: async () => {
+        const { data, error } = await supabase.rpc('fichero_remesa_vigente', { p_remesa_id: id })
+        if (error) return 'error'
+        const v = data?.[0]
+        return v ? { ruta: v.ruta, sha256: v.sha256 } : null
+      },
+      generar,
+      subir: async (ruta, xml) => {
+        const { error } = await bucket().upload(ruta, xml, {
+          contentType: 'application/xml',
+          upsert: false,
+        })
+        if (!error) return 'ok'
+        return esYaExiste(error) ? 'existe' : 'error'
+      },
+      bajar: async (ruta) => {
+        const { data, error } = await bucket().download(ruta)
+        return error || !data ? null : data.text()
+      },
+      borrar: async (ruta) => {
+        const { error } = await bucket().remove([ruta])
+        // Lo recoge el barrido de huérfanos (`ficheros_remesa_huerfanos`).
+        if (error) logger.error('remesa: no se pudo borrar un fichero sin registro', error.message)
+      },
+      registrar: async (v) => {
+        const { error } = await supabase.rpc('registrar_fichero_remesa', {
+          p_remesa_id: id,
+          p_marca: v.marca,
+          p_msg_id: v.msgId,
+          p_sha256: v.sha256,
+          p_ruta: v.ruta,
+          p_adeudos: v.adeudos,
+        })
+        return error ? { ok: false, hint: error.hint ?? null } : { ok: true }
+      },
+      ahora: () => new Date(),
+    },
+    { id, centroId: remesa.centro_id, marca: remesa.fichero_generado_at ?? null }
+  )
+  if ('status' in fichero) return json(fichero.body, fichero.status)
 
   const filename = `remesa-${remesa.anio}-${String(remesa.mes).padStart(2, '0')}-${id.slice(0, 8)}.xml`
   return new Response(fichero.xml, {
@@ -182,6 +200,15 @@ export async function GET(
       'Cache-Control': 'private, no-store',
     },
   })
+}
+
+/** El objeto ya existe en la ruta: Storage contesta 409 («Duplicate» / «already exists»). */
+function esYaExiste(error: { message?: string; statusCode?: string; status?: number }): boolean {
+  return (
+    error.status === 409 ||
+    error.statusCode === '409' ||
+    /already exists|duplicate/i.test(error.message ?? '')
+  )
 }
 
 function json(body: unknown, status: number): Response {

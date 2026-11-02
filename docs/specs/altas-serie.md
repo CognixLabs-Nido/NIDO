@@ -364,6 +364,13 @@ Contestadas el 2026-10-31: ver «Respuestas del responsable», abajo.
 **El fichero de cada versión** (R-1). Una versión empieza con la marca (`fichero_generado_at`) y
 acaba al reabrir.
 
+> **Construido el 2026-11-02** (`20261220120000`, primer PR de reabrir remesas): el fichero, el
+> registro, el plazo y el barrido. Dos cosas que el diseño no decía, decididas al construirlo:
+> la marca de una versión nueva va al segundo (como el `MsgId`, para que dos marcas del mismo
+> segundo no den el mismo `MsgId`), y los objetos del bucket sin registro (una subida cuyo registro
+> no entró) se borran al día siguiente en la misma pasada. Marcar enviada (R-4) y reabrir van en
+> sus PR.
+
 - **Se guarda la primera vez que sale, y desde ahí la descarga sirve el guardado** en vez de
   generarlo otra vez. Es el único modo de que lo guardado sea, byte a byte, lo que se pudo subir al
   banco. Generado de nuevo, cambia aunque los recibos no cambien:

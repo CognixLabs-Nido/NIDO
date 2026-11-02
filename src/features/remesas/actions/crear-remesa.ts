@@ -12,7 +12,8 @@ import { crearRemesaSchema, type CrearRemesaInput } from '../schemas/remesa'
 
 /**
  * Crea una remesa en BORRADOR con los recibos SEPA marcados por la directora y sus
- * enlaces en recibos_remesa. NO genera el XML (eso es bajo demanda, G1). Solo admin
+ * enlaces en recibos_remesa. NO genera el XML: lo genera y lo guarda la primera
+ * descarga (R-1, `20261220120000`). Solo admin
  * (RLS de remesas/recibos_remesa). Puede haber >1 remesa/mes (re-giros).
  *
  * Que cada recibo siga libre lo comprueba la BD al enlazarlo (`recibos_remesa_validar`), no la

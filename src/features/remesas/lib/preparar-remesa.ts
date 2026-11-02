@@ -57,6 +57,13 @@ export type PrepararRemesaResultado =
   | {
       ok: true
       xml: string
+      /** Lo que se registra de cada adeudo del fichero (R-1): sin IBAN ni nombres. */
+      adeudos: Array<{
+        recibo_id: string
+        end_to_end_id: string
+        importe_centimos: number
+        mndt_id: string
+      }>
       numOperaciones: number
       totalCentimos: number
       excluidosSinImporte: string[]
@@ -163,6 +170,12 @@ export function prepararRemesa(
   return {
     ok: true,
     xml: generarPain008(input),
+    adeudos: cobrables.map((r) => ({
+      recibo_id: r.recibo_id,
+      end_to_end_id: endToEndIdDeRecibo(r.recibo_id),
+      importe_centimos: r.total_centimos,
+      mndt_id: r.identificador_mandato!.trim(),
+    })),
     numOperaciones: cobrables.length,
     totalCentimos: cobrables.reduce((acc, r) => acc + r.total_centimos, 0),
     excluidosSinImporte,
