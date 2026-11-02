@@ -26,11 +26,15 @@
 --     en el fichero. SECURITY DEFINER con `es_admin` explícito (la spec decía «de invocador»: no
 --     puede serlo, porque `remesa_ficheros` no tiene privilegios para las sesiones desde
 --     20261220120000). La fecha de envío es el día de Madrid (`hoy_madrid`), no el de UTC.
+--   · Y la remesa solo pasa a enviada por esa función: con un UPDATE directo, la sesión se saltaba
+--     las dos exigencias. Mismo patrón que la marca: un trigger en INSERT y UPDATE, para todos,
+--     salvo con el marcador local `app.marcar_remesa_enviada` = el id de la remesa.
 --
 -- La aplica el responsable por SQL Editor, después de 20261220120000. Sin BEGIN ni COMMIT. Tras
--- aplicar: registrar en supabase_migrations.schema_migrations. ORDEN: aplicar ANTES de desplegar
--- la app de este PR, que marca enviada con esta función. La app de ahora sigue funcionando con la
--- migración aplicada: su descarga pasa por el registro y su marcar enviada no toca la marca.
+-- aplicar: registrar en supabase_migrations.schema_migrations. ORDEN: aplicar y mergear seguidos.
+-- Con la migración aplicada, el marcar enviada de la app de ahora (un UPDATE directo) falla, sin
+-- escribir nada, hasta que se despliega la de este PR; y la app de este PR, sin la migración, no
+-- encuentra la función. Su descarga sí sigue funcionando: pasa por el registro.
 -- =============================================================================
 
 -- ---- Guarda previa ----
@@ -39,8 +43,9 @@ DECLARE
   v_md5 text;
 BEGIN
   IF to_regprocedure('public.marcar_remesa_enviada(uuid)') IS NOT NULL
-     OR to_regprocedure('public.remesas_marca_solo_registro()') IS NOT NULL THEN
-    RAISE EXCEPTION 'ya aplicada: existe marcar_remesa_enviada o remesas_marca_solo_registro';
+     OR to_regprocedure('public.remesas_marca_solo_registro()') IS NOT NULL
+     OR to_regprocedure('public.remesas_enviada_solo_por_marcar()') IS NOT NULL THEN
+    RAISE EXCEPTION 'ya aplicada: existe marcar_remesa_enviada o uno de sus triggers';
   END IF;
   IF to_regclass('public.remesa_ficheros') IS NULL THEN
     RAISE EXCEPTION 'falta 20261220120000: no existe remesa_ficheros';
@@ -93,6 +98,33 @@ REVOKE ALL ON FUNCTION public.remesas_marca_solo_registro() FROM PUBLIC, anon, a
 CREATE TRIGGER remesas_marca_solo_registro
   BEFORE INSERT OR UPDATE OF fichero_generado_at ON public.remesas
   FOR EACH ROW EXECUTE FUNCTION public.remesas_marca_solo_registro();
+
+-- ---- 1b. La remesa solo pasa a enviada por marcar_remesa_enviada ----
+CREATE FUNCTION public.remesas_enviada_solo_por_marcar()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  -- Vale para todos, también para service_role: enviada sin esa función es enviada sin su fichero.
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.estado = 'enviada' THEN
+      RAISE EXCEPTION 'una remesa solo se marca enviada con su función' USING ERRCODE = 'P0001', HINT = 'enviada_solo_por_marcar';
+    END IF;
+    RETURN NEW;
+  END IF;
+  IF OLD.estado IS DISTINCT FROM 'enviada' AND NEW.estado = 'enviada'
+     AND COALESCE(current_setting('app.marcar_remesa_enviada', true), '') IS DISTINCT FROM OLD.id::text THEN
+    RAISE EXCEPTION 'una remesa solo se marca enviada con su función' USING ERRCODE = 'P0001', HINT = 'enviada_solo_por_marcar';
+  END IF;
+  RETURN NEW;
+END $function$;
+
+REVOKE ALL ON FUNCTION public.remesas_enviada_solo_por_marcar() FROM PUBLIC, anon, authenticated;
+
+CREATE TRIGGER remesas_enviada_solo_por_marcar
+  BEFORE INSERT OR UPDATE OF estado ON public.remesas
+  FOR EACH ROW EXECUTE FUNCTION public.remesas_enviada_solo_por_marcar();
 
 -- ---- 2. El registro pone la marca con su marcador ----
 -- Igual que en 20261220120000, salvo el marcador alrededor del UPDATE de la marca.
@@ -273,7 +305,10 @@ BEGIN
       USING ERRCODE = 'P0001', HINT = 'fichero_no_coincide';
   END IF;
 
+  -- El único sitio que la pasa a enviada (remesas_enviada_solo_por_marcar).
+  PERFORM set_config('app.marcar_remesa_enviada', p_remesa_id::text, true);
   UPDATE public.remesas SET estado = 'enviada', fecha_envio_banco = v_hoy WHERE id = p_remesa_id;
+  PERFORM set_config('app.marcar_remesa_enviada', '', true);
   -- Solo los del fichero: es lo que el banco recibió.
   UPDATE public.recibos r SET estado = 'enviado_banco', fecha_envio_banco = v_hoy
     FROM public.remesa_fichero_adeudos a
@@ -307,10 +342,24 @@ BEGIN
          AND pg_get_triggerdef(t.oid) LIKE '%BEFORE INSERT OR UPDATE OF fichero_generado_at ON public.remesas FOR EACH ROW%') <> 1 THEN
     RAISE EXCEPTION 'falta el trigger remesas_marca_solo_registro';
   END IF;
-  IF (SELECT prosecdef FROM pg_proc WHERE oid = 'public.remesas_marca_solo_registro()'::regprocedure)
-     OR (SELECT bool_or(has_function_privilege(r, 'public.remesas_marca_solo_registro()', 'EXECUTE'))
-           FROM unnest(ARRAY['public', 'anon', 'authenticated']) r) THEN
-    RAISE EXCEPTION 'el trigger de la marca es de invocador y no se ejecuta por RPC';
+  IF (SELECT count(*) FROM pg_trigger t
+       WHERE t.tgrelid = 'public.remesas'::regclass AND t.tgname = 'remesas_enviada_solo_por_marcar'
+         AND NOT t.tgisinternal AND t.tgenabled = 'O'
+         AND pg_get_triggerdef(t.oid) LIKE '%BEFORE INSERT OR UPDATE OF estado ON public.remesas FOR EACH ROW%') <> 1 THEN
+    RAISE EXCEPTION 'falta el trigger remesas_enviada_solo_por_marcar';
+  END IF;
+  IF (SELECT bool_or(prosecdef) FROM pg_proc
+       WHERE oid IN ('public.remesas_marca_solo_registro()'::regprocedure,
+                     'public.remesas_enviada_solo_por_marcar()'::regprocedure))
+     OR (SELECT bool_or(has_function_privilege(r, f, 'EXECUTE'))
+           FROM unnest(ARRAY['public', 'anon', 'authenticated']) r,
+                unnest(ARRAY['public.remesas_marca_solo_registro()',
+                             'public.remesas_enviada_solo_por_marcar()']) f) THEN
+    RAISE EXCEPTION 'los triggers de la marca y del envío son de invocador y no se ejecutan por RPC';
+  END IF;
+  IF (SELECT prosrc FROM pg_proc WHERE oid = 'public.marcar_remesa_enviada(uuid)'::regprocedure)
+     NOT LIKE '%set_config(''app.marcar_remesa_enviada'', p_remesa_id::text, true)%' THEN
+    RAISE EXCEPTION 'marcar_remesa_enviada no pone su marcador';
   END IF;
   IF NOT (SELECT prosecdef AND proconfig = ARRAY['search_path=public'] FROM pg_proc
            WHERE oid = 'public.marcar_remesa_enviada(uuid)'::regprocedure)
