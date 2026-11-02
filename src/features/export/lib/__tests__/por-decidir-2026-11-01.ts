@@ -2,14 +2,4 @@
  * Las columnas del export que el 2026-11-01 estaban sin decidir. Esta lista solo mengua: al
  * decidir una (sale, o no sale con su porqué), se quita de aquí. Una columna nueva no entra.
  */
-export const POR_DECIDIR_2026_11_01: readonly string[] = [
-  'nino.lista_espera.descartado_at',
-  'nino.matriculas.motivo_baja',
-  'nino.eventos.ambito',
-  'nino.eventos.requiere_confirmacion',
-  'nino.recordatorios.destinatario',
-  'nino.recordatorios.erroneo',
-  'nino.solicitudes_olvido.sujeto_tipo',
-  'nino.solicitudes_olvido.estado_previo',
-  'nino.solicitudes_olvido.por_plazo',
-]
+export const POR_DECIDIR_2026_11_01: readonly string[] = ['nino.matriculas.motivo_baja']

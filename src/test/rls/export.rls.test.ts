@@ -165,6 +165,10 @@ describe('RLS export de datos — F11-A5', () => {
     const ficha = rec!.data.ficha as Record<string, unknown>
     expect(ficha.nombre).toBe('Nino Export')
     expect(ficha).not.toHaveProperty('id')
+    // Quién está vinculado, con su nombre y sin sus permisos (2d, decisión del 2026-11-01).
+    const vinculos = rec!.data.vinculos_familiares as Array<Record<string, unknown>>
+    expect(vinculos.map((v) => v.adulto)).toContain('Tutor Export')
+    for (const v of vinculos) expect(v).not.toHaveProperty('permisos')
     expect(rec!.centroId).toBe(centro.id)
   })
 

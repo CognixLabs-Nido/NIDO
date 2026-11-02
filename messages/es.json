@@ -834,7 +834,7 @@
         "sexo_placeholder": "Seleccionar...",
         "idioma_principal": "Idioma principal",
         "nacionalidad": "Nacionalidad",
-        "notas_admin": "Notas internas",
+        "notas_admin": "Notas de Dirección",
         "notas_admin_aviso": "La familia puede leer estas notas si pide una copia de sus datos.",
         "alergias_graves": "Alergias graves",
         "notas_emergencia": "Notas de emergencia",
@@ -4080,7 +4080,7 @@
         "sexo": "Sexo",
         "nacionalidad": "Nacionalidad",
         "idioma_principal": "Idioma principal",
-        "notas_admin": "Notas",
+        "notas_admin": "Notas de Dirección",
         "alergias_graves": "Alergias graves",
         "notas_emergencia": "Notas de emergencia",
         "medicacion_habitual": "Medicación habitual",
@@ -4261,7 +4261,8 @@
         "campos": "Datos vistos",
         "nino": "Niño/a",
         "documento": "Documento",
-        "cita": "Cita"
+        "cita": "Cita",
+        "adulto": "Persona vinculada"
       },
       "valores": {
         "terminos": "Términos",

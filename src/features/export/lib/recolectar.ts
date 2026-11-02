@@ -8,8 +8,10 @@ import { fichaMedicaBloqueadaDesde } from '@/features/ninos/lib/ficha-medica-blo
 
 import {
   BUCKET_DNI_TUTORES,
+  BUCKET_LIBRO_FAMILIA,
   BUCKET_MANDATO_SEPA,
   BUCKET_NINOS_FOTOS,
+  BUCKET_RECOGIDA_ADJUNTOS,
   BUCKET_USUARIOS_FOTOS,
 } from '@/shared/lib/adjuntos/storage'
 
@@ -228,6 +230,26 @@ async function cargarLegibles(
   }
 }
 
+/**
+ * El nombre de los adultos vinculados a un niño (2d): son de su familia, y la familia del propio
+ * niño va con nombre. Una cuenta olvidada guarda `[borrado]`; sin fila, «no consta».
+ */
+async function cargarNombresDeAdultos(service: Client, usuarioIds: unknown[]) {
+  const u = ids(usuarioIds)
+  const filasU = u.length
+    ? leido<{ id: string; nombre_completo: string | null }>(
+        'usuarios',
+        await service.from('usuarios').select('id, nombre_completo').in('id', u)
+      )
+    : []
+  const porId = new Map(filasU.map((x) => [x.id, x.nombre_completo]))
+  return (id: unknown) => {
+    if (typeof id !== 'string' || id.length === 0) return null
+    if (!porId.has(id)) return 'no consta'
+    return porId.get(id)?.trim() || '[borrado]'
+  }
+}
+
 /** Firma una ruta de un bucket privado con el TTL largo del export (#4). */
 async function firmar(
   service: Client,
@@ -395,6 +417,23 @@ export async function recolectarUsuario(
   const adjuntos: AdjuntoExport[] = []
   if (typeof usuario.foto_url === 'string' && usuario.foto_url) {
     adjuntos.push(await firmar(service, BUCKET_USUARIOS_FOTOS, usuario.foto_url, 'Foto de perfil'))
+  }
+  // Las fotos del DNI de las personas que autorizó a recoger, en sus propias firmas (2d): el
+  // documento, no solo su ruta. Solo del bucket de recogida: la ruta viene de un JSON.
+  for (const f of firmas) {
+    const datos = f.datos as { adjuntos?: Array<{ bucket?: unknown; path?: unknown }> } | null
+    for (const a of datos?.adjuntos ?? []) {
+      if (a.bucket === BUCKET_RECOGIDA_ADJUNTOS && typeof a.path === 'string' && a.path) {
+        adjuntos.push(
+          await firmar(
+            service,
+            BUCKET_RECOGIDA_ADJUNTOS,
+            a.path,
+            'DNI de persona autorizada a recoger'
+          )
+        )
+      }
+    }
   }
   for (const p of filas(extra?.perfiles_familia)) {
     if (typeof p.dni_documento_path === 'string' && p.dni_documento_path) {
@@ -575,10 +614,16 @@ export async function recolectarNino(
       .then((r) => filasDe('nino.administraciones_medicacion', r)),
   ])
 
-  // Foto de perfil (enlace firmado, #4).
+  // Foto de perfil (enlace firmado, #4) y libro de familia (2d, decisión del responsable del
+  // 2026-11-01: «que el export entregue unos documentos y otros no es un agujero»).
   const adjuntos: AdjuntoExport[] = []
   if (nino.foto_url) {
     adjuntos.push(await firmar(service, BUCKET_NINOS_FOTOS, nino.foto_url, 'Foto de perfil'))
+  }
+  if (nino.libro_familia_path) {
+    adjuntos.push(
+      await firmar(service, BUCKET_LIBRO_FAMILIA, nino.libro_familia_path, 'Libro de familia')
+    )
   }
 
   // Fotos del blog: exclusivas → binario (enlace firmado); compartidas → metadata (#2).
@@ -665,6 +710,12 @@ export async function recolectarNino(
   })
   const delNino = () => ({ centroId: nino.centro_id, ninoId })
 
+  // Quién está vinculado al niño, con su nombre (2d): es de su familia.
+  const adulto = await cargarNombresDeAdultos(
+    service,
+    vinculos.map((v) => v.usuario_id)
+  )
+
   return {
     centroId: nino.centro_id as string,
     data: {
@@ -676,7 +727,8 @@ export async function recolectarNino(
         vinculos,
         historia,
         null,
-        delNino
+        delNino,
+        { adulto }
       ),
       agendas_diarias: entregadas('nino.agendas_diarias', agendas, historia, null, delNino).map(
         (a) => ({
