@@ -235,7 +235,7 @@ describe('Lecturas de la ficha médica', () => {
     }
   })
 
-  it('el export del niño lleva el registro', async () => {
+  it('el export del niño lleva el registro: del personal, el rol; de la familia, el nombre', async () => {
     const { data, error } = await s.tutor2!.rpc('export_datos_sujeto', {
       p_sujeto_tipo: 'nino',
       p_sujeto_id: nino.id,
@@ -243,15 +243,23 @@ describe('Lecturas de la ficha médica', () => {
     expect(error).toBeNull()
     const lecturas = (data as { lecturas_ficha_medica: Record<string, unknown>[] })
       .lecturas_ficha_medica
-    // Premisa: el registro tiene filas.
-    expect(lecturas.length).toBeGreaterThan(0)
-    expect(lecturas).toContainEqual(
-      expect.objectContaining({
-        lector: 'Directora Lecturas',
-        rol_lector: 'directora',
+    // Premisa: están las cinco lecturas del primer caso, cada una con su rol.
+    expect(lecturas.map((l) => l.rol_lector).sort()).toEqual(
+      ['admin', 'autorizado', 'directora', 'profe', 'tutor_legal'].sort()
+    )
+    // R4 (2026-11-01): el nombre de una trabajadora no sale en el fichero de la familia.
+    for (const rol of ['admin', 'directora', 'profe']) {
+      expect(lecturas.find((l) => l.rol_lector === rol)).toMatchObject({
+        lector: null,
         origen: 'ficha',
         campos: ['alergias_graves', 'medicacion_habitual'],
       })
+    }
+    // Y la familia del niño sí sabe cuál de ellos leyó.
+    expect(lecturas.find((l) => l.rol_lector === 'tutor_legal')?.lector).toBe('Tutora Lecturas Uno')
+    expect(lecturas.find((l) => l.rol_lector === 'autorizado')?.lector).toBe('Autorizado Lecturas')
+    expect(JSON.stringify(lecturas)).not.toMatch(
+      /Directora Lecturas|Titular Lecturas|Profe Lecturas/
     )
   })
 

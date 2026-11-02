@@ -311,8 +311,14 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
 
       const u = await rpc(tutor, 'usuario', tutor.id)
       const contacto = filas((u.data as Fila).lista_espera_contacto)
+      // Con sus fechas de registro (R1, 2026-11-01).
       expect(contacto).toEqual([
-        { telefono_tutor: '600000015', email_tutor: 'tutor-art15@correo.test' },
+        {
+          telefono_tutor: '600000015',
+          email_tutor: 'tutor-art15@correo.test',
+          creado_en: expect.any(String),
+          actualizado_en: expect.any(String),
+        },
       ])
     })
 
@@ -322,7 +328,17 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
       const [recibo] = filas(familia?.recibos)
       expect(recibo).toMatchObject({ anio: 2027, mes: 1, total_centimos: 12345 })
       expect(filas(recibo?.lineas)[0]).toMatchObject({ descripcion: 'Cuota Art15' })
-      expect(filas(familia?.metodos_pago)).toEqual([{ anio: 2027, mes: 1, metodo: 'sepa' }])
+      // Con sus fechas de registro y `borrado_en` (R1 y R2, 2026-11-01).
+      expect(filas(familia?.metodos_pago)).toEqual([
+        {
+          anio: 2027,
+          mes: 1,
+          metodo: 'sepa',
+          creado_en: expect.any(String),
+          actualizado_en: expect.any(String),
+          borrado_en: null,
+        },
+      ])
 
       const [mandato] = filas((u.data as Fila).mandatos_sepa)
       expect(mandato).toMatchObject({
@@ -335,7 +351,13 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
 
       const n = await rpc(tutorSec, 'nino', nino.id)
       expect(filas((n.data as Fila).servicios_diarios)).toEqual([
-        { fecha: '2027-01-15', servicio: 'comedor', presente: true },
+        {
+          fecha: '2027-01-15',
+          servicio: 'comedor',
+          presente: true,
+          creado_en: expect.any(String),
+          actualizado_en: expect.any(String),
+        },
       ])
       expect(filas((n.data as Fila).lineas_recibo)[0]).toMatchObject({
         descripcion: 'Cuota Art15',
