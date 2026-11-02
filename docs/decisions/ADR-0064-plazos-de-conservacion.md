@@ -152,6 +152,27 @@ de quien lo pidió** (`dar_deuda_por_perdida`).
   rehace) ni con uno en una remesa en borrador (el banco lo acabaría cobrando): la línea dice qué
   hacer antes.
 
+### El fichero de cada remesa, guardado con plazo fiscal (2026-10-31 y 2026-11-01)
+
+Decisión del responsable (R-1 y P-1 de «Reabrir una remesa», `docs/specs/altas-serie.md`): el
+fichero pain.008 de cada versión se guarda entero, en privado, con su registro (`MsgId`, huella,
+adeudos con su importe y su mandato, sin IBAN). Construido en `20261220120000`.
+
+- **Por qué se guarda, aunque lleve IBAN en claro.** Es la prueba de lo que se pidió al banco, y no
+  se puede rehacer: regenerado, toma el mandato activo de cada familia en ese momento, así que dos
+  descargas de la misma remesa podían llevar IBAN y `MndtId` distintos. Sin él, ante una
+  reclamación por un cobro, el centro no podría enseñar qué envió. Sustituye a G1 (ADR-0050).
+- **El plazo es el fiscal** (`ANIOS_FISCAL`, la misma constante que lo fiscal de la familia, nunca
+  un número aparte), desde la marca de la versión. Si se guardan IBAN en un sitio nuevo, ese sitio
+  se borra solo como todo lo demás: el barrido entra en el cron (`destruirFicherosRemesa`) y en su
+  pasada (`ficherosRemesa`, decimotercera clave). Espera a la retención de cualquier familia del
+  fichero, y lo fiscal de la familia espera a sus ficheros: sin eso se borraría la familia con su
+  IBAN aún en un fichero.
+- **Un fichero que no llegó a registrarse no se queda.** Los objetos del bucket sin registro de más
+  de un día se borran en la misma pasada: una subida que falló a medias no deja un IBAN sin plazo.
+- **Cada versión se conserva, también la reabierta**: si el banco la tuvo, es la prueba.
+- **Pendiente**: que conste en el RAT, con la lista del abogado (F11-B).
+
 ### Las piezas
 
 - **PR-1, los plazos** (#435, sin migración). La tabla y sus constantes. El registro de lecturas pasa de 24 a 60 meses.
@@ -177,7 +198,7 @@ de quien lo pidió** (`dar_deuda_por_perdida`).
 
 - **El cron lista, la función vuelve a mirar.** Cada destrucción tiene una función que lista lo vencido y otra que destruye. La que destruye bloquea el sujeto y vuelve a comprobar el plazo, la retención y el dinero vivo antes de borrar. Todas son solo de `service_role`, con los predicados en `privado`.
 - **La simulación** (`RETENCION_DRY_RUN`): cada paso nuevo del barrido cuenta sin borrar. **El olvido a demanda (`purgarVencidos`) no simula nunca**: lo pidió la familia, la titular lo confirmó y ya pasaron los días de gracia, así que no hay nada que verificar antes; la simulación es para los plazos que el centro aplica solo (decisión del responsable, 2026-10-30).
-- **Cada pasada deja su fila** en `retencion_pasadas` (`20261213120000`), encuentre algo o no: cuándo, si simuló o borró y el recuento de los doce barridos. Sale también en los logs de Vercel. Hasta entonces no había forma de saberlo desde la base: medido el 2026-10-30, el cron corría cada día a las 03:00 UTC en simulación (la variable no existe en Vercel) y no había borrado nada nunca. Pasar a borrado real es poner `RETENCION_DRY_RUN=false` en Vercel, y la primera pasada se mira en esa tabla.
+- **Cada pasada deja su fila** en `retencion_pasadas` (`20261213120000`), encuentre algo o no: cuándo, si simuló o borró y el recuento de los barridos (doce; trece desde `20261220120000`, los ficheros de remesa). Sale también en los logs de Vercel. Hasta entonces no había forma de saberlo desde la base: medido el 2026-10-30, el cron corría cada día a las 03:00 UTC en simulación (la variable no existe en Vercel) y no había borrado nada nunca. Pasar a borrado real es poner `RETENCION_DRY_RUN=false` en Vercel, y la primera pasada se mira en esa tabla.
 - **En `barrerRetencion`, primero el registro y luego el borrado**: si la fila de `retencion_ejecuciones` no entra, esa unidad no se borra y se reintenta.
 - **Storage antes que la BD.** Las rutas de los documentos salen de la base, la app los borra primero y, si Storage falla, la base no se toca: borrar la fila perdería la ruta.
 - **Borrar sin copia exige que no haya una persona delante.** Cuando hay una (el botón del alta), la app comprueba la sesión, llama a una función solo del servidor con el actor, y la base vuelve a mirar quién actúa (`privado.es_direccion`) y qué acción vio.

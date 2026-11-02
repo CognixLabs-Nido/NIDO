@@ -110,7 +110,8 @@ al RAT).
   descargas de la misma remesa pueden llevar distinto IBAN y distinto `MndtId` para la misma
   familia, y además cambiaban `CreDtTm` y la fecha de cobro (desde la F2 de la fecha de cobro salen
   de la marca, así que eso ya no cambia; el mandato, sí). Lo guardado no probaría lo que tiene el
-  banco. Entra con la pieza de reabrir remesas: hasta que se mergee, el código sigue regenerando.)_
+  banco. En el código desde `20261220120000` (R-1): el bucket privado `remesas-ficheros`, el
+  registro `remesa_ficheros` y la descarga que sirve el guardado.)_
 - **H** `metodo_pago_familia` a nivel niño, por niño/mes (`sepa|efectivo|transferencia`). Solo
   `sepa` entra al XML; el resto → recibo `pendiente_procesar`.
 - **I** Estados de recibo: `pendiente_procesar | enviado_banco (con fecha) | devuelto |

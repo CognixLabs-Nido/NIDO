@@ -1590,6 +1590,35 @@ toca.
     no entra ninguno, así que los que pasan a `enviado_banco` son todos.
 - Test: `remesa-recibo-unico.rls.test.ts`.
 
+### El fichero de cada versión de una remesa (R-1)
+
+Migración `20261220120000_feat_remesa_ficheros`; spec `docs/specs/altas-serie.md`, «Reabrir una
+remesa» (R-1 y P-1). Hasta aquí el XML no se guardaba (G1): no había prueba de lo que se pidió al
+banco, y dos descargas de la misma remesa podían llevar IBAN distintos para la misma familia.
+
+- **El bucket `remesas-ficheros`**, privado y sin políticas en `storage.objects`: ninguna sesión lo
+  lee ni lo escribe. La descarga (`/admin/remesas/{id}/xml`) autoriza con la sesión de Dirección y
+  sube y lee con el cliente de servicio. Ruta `{centro}/{remesa}/{MsgId}.xml`.
+- **`remesa_ficheros` y `remesa_fichero_adeudos`**: sin políticas ni privilegios para nadie,
+  tampoco `service_role`; solo sus funciones. No se auditan (lo fiscal se borra sin copia).
+- **`registrar_fichero_remesa(remesa, marca, MsgId, sha256, ruta, adeudos)`** (`SECURITY DEFINER`,
+  `EXECUTE` solo para `authenticated`, `es_admin` del centro de la remesa): con la remesa
+  bloqueada, pone la marca si no hay (una marca de ahora, ±10 min) y escribe el registro en la
+  misma transacción, así que en `audit_log` queda quien la puso. Rechaza (P0001 con HINT): otra
+  marca (`marca_distinta`), la versión ya guardada (`ya_guardado`), un `MsgId` o una ruta que no son
+  de la remesa (`ruta_no_valida`), **un fichero que no está en el bucket** (`sin_fichero`: allí
+  solo sube el servidor, así que una sesión no registra un fichero que NIDO no generó) y unos
+  adeudos que no son exactamente los recibos cobrables de la remesa, con su importe, su
+  `EndToEndId` y un mandato de su familia (`recibos_cambiaron`).
+- **`fichero_remesa_vigente(remesa)`** (`es_admin`): la ruta y la huella de la versión de la marca
+  actual; la descarga sirve el guardado si su huella es la registrada.
+- **El plazo**: `ficheros_remesa_vencidos(años)`, `destruir_fichero_remesa(fichero, años)` y
+  `ficheros_remesa_huerfanos()`, solo `service_role`. Los años los pasa el cron (`ANIOS_FISCAL`).
+  Un fichero espera a la retención de cualquier familia suya (`privado.fichero_remesa_retenido`), y
+  `privado.familia_fiscal_vencida` espera a que no quede ningún fichero con un recibo de la
+  familia. FK RESTRICT a `remesas` y `recibos`.
+- Test: `remesa-ficheros.rls.test.ts`.
+
 ### La red del export art. 15: cada columna, decidida
 
 Migración `20261215120000_feat_export_recibos_red`. `export_datos_sujeto` escribe las columnas de
