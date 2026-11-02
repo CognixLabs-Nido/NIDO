@@ -298,6 +298,17 @@ describe('GET /admin/remesas/[id]/xml: el fichero de cada versión, guardado (R-
     expect(bd.registros).toHaveLength(1)
   })
 
+  it('no sobrescribe: si ya hay un objeto en la ruta (otra descarga a medias), 409 y lo deja', async () => {
+    vi.setSystemTime(new Date('2026-11-02T09:15:00.700Z'))
+    const ruta = `c1/${ID}/NIDO-11111111-20261102091500.xml`
+    bd.bucket.set(ruta, '<de-la-otra/>')
+    const res = await pedir()
+    expect(res.status).toBe(409)
+    expect(await res.json()).toEqual({ error: 'descarga_en_curso' })
+    expect(bd.bucket.get(ruta)).toBe('<de-la-otra/>')
+    expect(bd.marca).toBeNull()
+  })
+
   describe('el concepto de cada adeudo', () => {
     it('lleva el centro, el niño de las líneas y el mes del recibo', async () => {
       expect(await descargar()).toMatch(
