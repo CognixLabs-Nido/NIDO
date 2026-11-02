@@ -26,5 +26,14 @@ describe('i18n — el aviso de que la familia puede leer las notas', () => {
       expect(campos(msgs, 'admisiones').nota_aviso?.trim().length ?? 0).toBeGreaterThan(0)
       expect(campos(msgs, 'ninos').notas_admin_aviso?.trim().length ?? 0).toBeGreaterThan(0)
     })
+
+    it(`${locale}: la etiqueta de las notas dice quién las escribe, no que sean internas`, () => {
+      const etiqueta = campos(msgs, 'ninos').notas_admin
+      // Decisión del responsable del 2026-11-02: «Notas internas» prometía lo contrario del aviso.
+      expect(etiqueta).not.toMatch(/intern|admin notes/i)
+      // La misma en la ficha y en el documento que recibe la familia.
+      const exp = (msgs.export as Record<string, Record<string, Record<string, string>>>).doc!
+      expect(exp.campos!.notas_admin).toBe(etiqueta)
+    })
   }
 })
