@@ -382,15 +382,17 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
     expect(v).not.toHaveProperty('usuario_id')
   })
 
-  it('de las firmas del niño no salen la imagen ni los datos de otro firmante (2d)', async () => {
+  it('de las firmas del niño no salen la imagen, los datos ni el comentario de otro firmante (2d)', async () => {
     const { nino, usuario } = await recolectarTodo()
     const [f] = nino.firmas as Fila[]
     expect(f).not.toHaveProperty('firma_imagen')
     expect(f).not.toHaveProperty('datos')
+    expect(f).not.toHaveProperty('comentario')
     expect(f.decision).toBe('v:decision')
     // Las propias, con las dos.
     const [propia] = usuario.firmas_realizadas as Fila[]
     expect(propia.firma_imagen).toBe('v:firma_imagen')
+    expect(propia.comentario).toBe('v:comentario')
     expect(propia.datos).toMatchObject({ personas: [{ nombre: 'Abuela Demo' }] })
   })
 

@@ -150,6 +150,11 @@ const NS_DATOS_FIRMA_OTROS = {
     '2d, decisión del responsable del 2026-11-01: en una autorización de recogida, los datos son las personas que el firmante autoriza a recoger al niño y las fotos de su DNI; aquí salen también las firmas del otro tutor, y son terceros que nombró esa otra persona. Los de la propia persona salen en `usuario.firmas_realizadas` (`datos`).',
 } as const
 
+const NS_COMENTARIO_FIRMA_OTROS = {
+  noSale:
+    '2d, decisión del responsable del 2026-11-02, con la misma regla que la imagen y los datos de recogida: aquí salen también las firmas del otro tutor, y el comentario es texto que escribió esa otra persona, sin forma de saber si habla del niño o de ella. No se retiene porque sea secreto, sino porque es contenido de otra persona, y esa persona lo recibe entero en su propio export. El de la propia persona sale en `usuario.firmas_realizadas` (`comentario`).',
+} as const
+
 /** Quién está vinculado al niño (2d): un adulto de su familia, con su nombre (la raya del 2026-11-01). */
 const ADULTO_POR_NOMBRE = {
   enSuLugar: 'adulto',
@@ -471,7 +476,7 @@ export const SECCIONES_RECOLECTAR = {
   }),
   'nino.firmas': seccion('firmas_autorizacion', {
     autorizacion_id: SALE,
-    comentario: SSR,
+    comentario: NS_COMENTARIO_FIRMA_OTROS,
     created_at: SALE,
     datos: NS_DATOS_FIRMA_OTROS,
     decision: SALE,

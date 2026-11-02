@@ -471,7 +471,10 @@ export const SECCIONES_EXPORT = {
     estado: { sale: 'estado' },
     fecha_alta: { sale: 'fecha_alta' },
     fecha_baja: { sale: 'fecha_baja' },
-    motivo_baja: PD,
+    motivo_baja: {
+      noSale:
+        'Decisión de Jose, responsable del tratamiento, del 2026-11-02, que mantiene la del 2026-10-14: el motivo de baja de una matrícula, que escribe Dirección, no sale en el export de la familia; solo en el que descarga Dirección (`get_motivos_baja_matriculas`). Va contra el criterio que él mismo fijó ese mismo día para `notas_admin` y para la nota del prospecto, que sí salen: esa incoherencia está asumida, no es un descuido. El riesgo, también asumido, es que un interesado reclame y la AEPD considere que ese texto es dato suyo. Lo decide el abogado (F11-B, `docs/follow-ups.md`): si valida que se puede retener, se queda; si no, cae.',
+    },
     created_at: { sale: 'creado_en' },
     deleted_at: { sale: 'borrado_en' },
     activada_at: { sale: 'activada_en' },

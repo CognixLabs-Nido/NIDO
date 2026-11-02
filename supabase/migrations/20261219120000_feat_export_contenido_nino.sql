@@ -12,7 +12,8 @@
 --     usuario desde 20261218120000.
 -- Lo que no sale ya no salía (el `ambito` de los eventos y el `destinatario` de los
 -- recordatorios, que valen siempre lo mismo aquí; el `sujeto_tipo` y el
--- `estado_previo` del olvido): solo cambia el catálogo. `matriculas.motivo_baja` sigue sin decidir.
+-- `estado_previo` del olvido, y `matriculas.motivo_baja`, que la familia sigue sin recibir por
+-- decisión del responsable del 2026-11-02): solo cambia el catálogo.
 --
 -- El resto de la función es la de `20261218120000`, tal cual (guarda previa). La aplica el
 -- responsable por SQL Editor. Sin BEGIN ni COMMIT. Tras aplicar: registrar en
