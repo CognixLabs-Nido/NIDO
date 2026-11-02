@@ -6,11 +6,12 @@
 -- sale:
 --   · de su prospecto de la lista de espera, cuándo se descartó (`descartado_en`), como en el
 --     export del tutor desde 20261218120000;
---   · de sus eventos, a quién iban (`ambito`) y si pedían confirmación (`requiere_confirmacion`);
+--   · de sus eventos, si pedían confirmación (`requiere_confirmacion`);
 --   · de sus recordatorios, si el centro lo marcó como enviado por error (`erroneo`);
 --   · de las peticiones de olvido sobre él, si la abrió el plazo (`por_plazo`), como en el del
 --     usuario desde 20261218120000.
--- Lo que no sale ya no salía (el `destinatario` de los recordatorios, el `sujeto_tipo` y el
+-- Lo que no sale ya no salía (el `ambito` de los eventos y el `destinatario` de los
+-- recordatorios, que valen siempre lo mismo aquí; el `sujeto_tipo` y el
 -- `estado_previo` del olvido): solo cambia el catálogo. `matriculas.motivo_baja` sigue sin decidir.
 --
 -- El resto de la función es la de `20261218120000`, tal cual (guarda previa). La aplica el
@@ -25,7 +26,7 @@ DECLARE
 BEGIN
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure('public.export_datos_sujeto(text,uuid)');
-  IF v_md5 = '6456cd20f9e937a5057cf9eeea5e78dd' THEN
+  IF v_md5 = '48dda9b29b8b64144aaf02f63f274491' THEN
     RAISE EXCEPTION 'ya aplicada: export_datos_sujeto ya es la de 20261219120000';
   END IF;
   -- Lo que se reescribe es lo que hay, tal como quedó.
@@ -408,7 +409,7 @@ BEGIN
                  'hora_inicio', e.hora_inicio, 'hora_fin', e.hora_fin, 'lugar', e.lugar,
                  'descripcion', e.descripcion, 'estado', e.estado,
                  -- 2d (2026-11-02, columnas-export.ts)
-                 'ambito', e.ambito, 'requiere_confirmacion', e.requiere_confirmacion)
+                 'requiere_confirmacion', e.requiere_confirmacion)
                ORDER BY e.fecha, e.hora_inicio)
           FROM public.eventos e
          WHERE e.nino_id = p_sujeto_id), '[]'::jsonb),
@@ -546,7 +547,7 @@ DECLARE
 BEGIN
   SELECT prosrc, md5(regexp_replace(regexp_replace(replace(prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_src, v_md5 FROM pg_proc WHERE oid = v_f::regprocedure;
-  IF v_md5 IS DISTINCT FROM '6456cd20f9e937a5057cf9eeea5e78dd' THEN
+  IF v_md5 IS DISTINCT FROM '48dda9b29b8b64144aaf02f63f274491' THEN
     RAISE EXCEPTION 'export_datos_sujeto no quedó como en este fichero: %', v_md5;
   END IF;
   IF NOT (SELECT prosecdef FROM pg_proc WHERE oid = v_f::regprocedure)

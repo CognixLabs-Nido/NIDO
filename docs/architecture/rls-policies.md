@@ -1632,7 +1632,7 @@ fecha de cobro de la F1 y la deuda dada por perdida de `20261212120000`, por eje
   solo para el export, a la decisión del 2026-10-14 (solo teléfono y email). Dentro de la app la
   familia sigue sin leer `lista_espera`.
 - **El contenido del niño** (`20261219120000`, trozo 2d): del prospecto, cuándo se descartó; de
-  los eventos, el ámbito y si pedían confirmación; de los recordatorios, si se enviaron por error;
+  los eventos, si pedían confirmación; de los recordatorios, si se enviaron por error;
   del olvido, `por_plazo`. En la app, las 96 columnas del niño que salían sin repasar quedan
   decididas salvo una (el comentario de una firma); de los otros adultos no salen sus permisos ni,
   de sus firmas, la imagen y los datos de recogida, y quien está vinculado sale con su nombre. Queda

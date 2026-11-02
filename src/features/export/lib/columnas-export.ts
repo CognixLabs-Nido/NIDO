@@ -542,7 +542,10 @@ export const SECCIONES_EXPORT = {
   'nino.eventos': seccion('eventos', {
     id: { sale: 'id' },
     centro_id: NS_CENTRO,
-    ambito: { sale: 'ambito' },
+    ambito: {
+      noSale:
+        '2d (2026-11-02): aquí vale siempre «nino»: la sección solo lista los eventos de este niño (la consulta filtra por su id), y un evento con niño es siempre de ámbito niño (CHECK `eventos_ambito_coherencia`). Los eventos del aula o del centro no son datos del niño.',
+    },
     aula_id: NS_FUERA,
     nino_id: NS_SUJETO,
     tipo: { sale: 'tipo' },
