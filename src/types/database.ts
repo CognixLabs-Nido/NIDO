@@ -5074,6 +5074,7 @@ export type Database = {
         }[]
       }
       marcar_matricula_lista: { Args: { p_nino_id: string }; Returns: string }
+      marcar_remesa_enviada: { Args: { p_remesa_id: string }; Returns: number }
       menu_del_dia: {
         Args: { p_centro_id: string; p_fecha: string }
         Returns: {

@@ -3,75 +3,52 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { marcarRemesaEnviada } from '../marcar-remesa-enviada'
 
 /**
- * La remesa pasa a enviada ANTES de leer sus recibos (`20261120120000`): desde ese momento la BD no
- * deja añadirle ninguno, así que los que se leen después son todos. Leídos antes, uno añadido entre
- * medias quedaría en una remesa enviada sin pasar a enviado_banco.
+ * Marcar enviada es una sola llamada a `marcar_remesa_enviada` (R-4, `20261221120000`): la BD solo
+ * deja pasar una remesa a enviada por esa función, que exige el fichero y pasa sus recibos en la
+ * misma transacción. La app no escribe ninguna tabla, y cada rechazo llega con su clave, que dice
+ * qué hacer.
  */
 
-const { pasos, admin } = vi.hoisted(() => ({
-  pasos: [] as string[],
-  admin: vi.fn(),
-}))
+const { rpc, from } = vi.hoisted(() => ({ rpc: vi.fn(), from: vi.fn() }))
 
 vi.mock('next/cache', () => ({ revalidatePath: () => {} }))
-vi.mock('@/features/centros/contexto/roles-del-usuario', () => ({ usuarioAdminEn: admin }))
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: async () => ({
-    from: (tabla: string) => ({
-      select: () => {
-        if (tabla === 'recibos_remesa') {
-          return {
-            eq: async () => {
-              pasos.push('leer recibos')
-              return { data: [{ recibo_id: 'r1' }, { recibo_id: 'r2' }] }
-            },
-          }
-        }
-        return {
-          eq: () => ({
-            is: () => ({
-              maybeSingle: async () => ({
-                data: { id: 'rem', centro_id: 'c1', estado: 'borrador' },
-              }),
-            }),
-          }),
-        }
-      },
-      update: () => ({
-        eq: () => {
-          if (tabla === 'remesas') {
-            return {
-              eq: () => ({
-                select: () => ({
-                  maybeSingle: async () => {
-                    pasos.push('remesa enviada')
-                    return { data: { id: 'rem' }, error: null }
-                  },
-                }),
-              }),
-            }
-          }
-          return {}
-        },
-        in: async (_col: string, ids: string[]) => {
-          pasos.push(`recibos enviados: ${ids.join(',')}`)
-          return { error: null }
-        },
-      }),
-    }),
-  }),
-}))
+vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ rpc, from }) }))
+
+const ID = '11111111-1111-4111-8111-111111111111'
 
 describe('marcarRemesaEnviada', () => {
   beforeEach(() => {
-    pasos.length = 0
-    admin.mockReset().mockResolvedValue('u1')
+    rpc.mockReset().mockResolvedValue({ data: 2, error: null })
+    from.mockReset().mockImplementation(() => {
+      throw new Error('marcar enviada no escribe tablas: va por la función')
+    })
   })
 
-  it('primero la remesa, después la lectura de sus recibos, y esos pasan a enviado_banco', async () => {
-    expect(await marcarRemesaEnviada({ remesaId: '11111111-1111-4111-8111-111111111111' })).toEqual(
-      { success: true, data: null }
-    )
-    expect(pasos).toEqual(['remesa enviada', 'leer recibos', 'recibos enviados: r1,r2'])
+  it('llama a la función con la remesa, y nada más', async () => {
+    expect(await marcarRemesaEnviada({ remesaId: ID })).toEqual({ success: true, data: null })
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(rpc).toHaveBeenCalledWith('marcar_remesa_enviada', { p_remesa_id: ID })
+    expect(from).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [{ code: 'P0001', hint: 'sin_fichero' }, 'remesas.errors.sin_fichero'],
+    [{ code: 'P0001', hint: 'fichero_no_coincide' }, 'remesas.errors.fichero_no_coincide'],
+    [{ code: 'P0001', hint: 'ya_enviada' }, 'remesas.errors.ya_enviada'],
+    [{ code: 'P0001', hint: 'no_encontrada' }, 'remesas.errors.no_encontrada'],
+    [{ code: '42501', hint: null }, 'remesas.errors.no_autorizado'],
+    [{ code: 'XX000', hint: null }, 'remesas.errors.enviar_failed'],
+    [{ code: 'P0001', hint: 'otro_hint' }, 'remesas.errors.enviar_failed'],
+  ])('el rechazo %o se dice como %s', async (error, clave) => {
+    rpc.mockResolvedValue({ data: null, error: { ...error, message: 'x' } })
+    expect(await marcarRemesaEnviada({ remesaId: ID })).toEqual({ success: false, error: clave })
+  })
+
+  it('con un id que no es un uuid, no llama a la BD', async () => {
+    expect(await marcarRemesaEnviada({ remesaId: 'x' })).toEqual({
+      success: false,
+      error: 'remesas.errors.invalid',
+    })
+    expect(rpc).not.toHaveBeenCalled()
   })
 })
