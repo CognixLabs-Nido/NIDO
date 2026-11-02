@@ -1625,6 +1625,12 @@ fecha de cobro de la F1 y la deuda dada por perdida de `20261212120000`, por eje
   un tutor del niño); `lector` de las lecturas de la ficha médica sale solo si quien leyó es de la
   familia (`rol_lector` tutor_legal o autorizado), y sustituye a la decisión de `20261128120000`,
   que daba siempre el nombre.
+- **El contenido del usuario y de los cobros** (`20261218120000`, trozo 2c; decisiones del
+  responsable del 2026-11-02): el método de pago elegido a mano, el origen de cada línea y de cada
+  concepto asignado, el tipo de personal de la invitación y `por_plazo` del olvido. Y el prospecto
+  de la lista de espera **entero**, nota incluida, en el export del tutor que lo apuntó: sustituye,
+  solo para el export, a la decisión del 2026-10-14 (solo teléfono y email). Dentro de la app la
+  familia sigue sin leer `lista_espera`. Quedan 9 de contenido por decidir, todas del niño (2d).
 - **La mitad de la app** (trozo 3): `recolectar.ts` leía 19 tablas (y `roles_usuario`, en
   `rolesDelSujetoParaExport`) con `select('*')`, así que una columna nueva salía en el export sin
   que nadie la decidiera. Ahora pide a cada tabla solo las columnas que salen
@@ -1836,7 +1842,7 @@ Migración `20261014120000_feat_export_datos_sujeto`. El export (`/export/me` y 
 - **Control de acceso** (en la función, no en la app):
   - `usuario`: el propio usuario, o el admin de un centro donde el usuario tiene un rol vivo (patrón de `consentimientos_admin_select`). El admin solo recibe las filas de **su** centro; lo del usuario sin centro (preferencias, dispositivos) sale entero.
   - `nino`: un tutor legal (`es_tutor_legal_de`, principal o secundario) o el admin del centro del niño. La profe, el autorizado, otra familia y el admin de otro centro reciben **42501**. Un niño inexistente también (`es_admin(NULL)` sería TRUE para cualquier admin).
-- **Qué devuelve:** del niño, su prospecto entero de `lista_espera`, matrículas (sin `motivo_baja`; la familia solo `activa`/`baja`, como `get_recorrido_nino_familia`), consentimientos por sujeto (también el que dio el otro tutor, sin su IP ni su navegador), acuses del alta, cambios solicitados, «no continúa», citas, eventos y confirmaciones, recordatorios dirigidos a su familia, conceptos asignados, sus líneas de recibo, parte de servicio y beca de comedor. Del usuario, su perfil en `familia_tutores` (solo su fila), sus mandatos (del IBAN solo `iban_ultimos4`), los cobros de su familia, el teléfono y el email de sus prospectos (`tutor_usuario_id`), las invitaciones a su email (sin `token`), sus exports y solicitudes de olvido, preferencias, dispositivos (sin `endpoint`, `p256dh` ni `auth`) y lecturas.
+- **Qué devuelve:** del niño, su prospecto entero de `lista_espera`, matrículas (sin `motivo_baja`; la familia solo `activa`/`baja`, como `get_recorrido_nino_familia`), consentimientos por sujeto (también el que dio el otro tutor, sin su IP ni su navegador), acuses del alta, cambios solicitados, «no continúa», citas, eventos y confirmaciones, recordatorios dirigidos a su familia, conceptos asignados, sus líneas de recibo, parte de servicio y beca de comedor. Del usuario, su perfil en `familia_tutores` (solo su fila), sus mandatos (del IBAN solo `iban_ultimos4`), los cobros de su familia, sus prospectos enteros (`tutor_usuario_id`; hasta el 2026-11-02, solo el teléfono y el email), las invitaciones a su email (sin `token`), sus exports y solicitudes de olvido, preferencias, dispositivos (sin `endpoint`, `p256dh` ni `auth`) y lecturas.
 - **Fuera, decidido por el responsable:** `auth_attempts`, `audit_log` y el contenido de trabajo del personal (lo que creó o registró: sí su ficha, sus roles y sus mensajes).
 - **`motivo_baja`** solo en el export de Dirección (`/export/[tipo]/[id]`), por `get_motivos_baja_matriculas`, que da 42501 a quien no es admin. `/export/me` no lo pide nunca.
 - **En la app** (`recolectar.ts`): un 42501 de la función es una ausencia legítima (la profe que exporta a un niño de su aula recibe lo de antes y una nota); cualquier otro error rompe el export, que no puede salir incompleto sin decirlo. El DNI y el mandato firmado salen como enlace firmado. La ruta sigue sin leer datos con `service`.
