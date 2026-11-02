@@ -129,6 +129,21 @@ export const NOMBRES_DE_OTROS = {
   { sale: 'siempre' | 'solo de la familia'; porque: string; nota?: string }
 >
 
+/*
+ * El contenido del trozo 2c (decisiones del responsable del 2026-11-02): lo del usuario y lo de
+ * los cobros. Un «no sale» dice DÓNDE sale esa misma información, nombrando la sección: si no lo
+ * dijera, no se distinguiría de ocultarla.
+ */
+const ORIGEN_COBRO = {
+  sale: 'origen',
+  nota: '2c (2026-11-02): si la puso el cálculo (`automatico`) o Dirección a mano (`manual`). Es justo lo que una familia querría saber si discute un importe.',
+} as const
+
+const NS_SUJETO_TIPO_USUARIO = {
+  noSale:
+    '2c (2026-11-02): aquí vale siempre «usuario», porque la sección solo lista lo de la propia persona (la consulta filtra por ese tipo y por su id). Que es suyo ya lo dice la sección en la que sale.',
+} as const
+
 /** Por ruta: `usuario.` o `nino.` y la clave de la sección (y la de dentro, si la hay). */
 export const SECCIONES_EXPORT = {
   'usuario.preferencias': seccion('preferencias_usuario', {
@@ -175,7 +190,7 @@ export const SECCIONES_EXPORT = {
     created_at: { sale: 'enviada_en' },
     tipo_vinculo: { sale: 'tipo_vinculo' },
     nombre_completo: { sale: 'nombre_completo' },
-    tipo_personal_aula: PD,
+    tipo_personal_aula: { sale: 'tipo_personal_aula' },
   }),
   'usuario.lista_espera_contacto': seccion('lista_espera', {
     id: NS_ID,
@@ -197,7 +212,7 @@ export const SECCIONES_EXPORT = {
   }),
   'usuario.exportaciones': seccion('export_log', {
     id: NS_ID,
-    sujeto_tipo: PD,
+    sujeto_tipo: NS_SUJETO_TIPO_USUARIO,
     sujeto_id: NS_SUJETO,
     solicitado_por: {
       sale: 'solicitado_por_ti',
@@ -208,7 +223,7 @@ export const SECCIONES_EXPORT = {
   }),
   'usuario.solicitudes_olvido': seccion('olvido_solicitudes', {
     id: NS_ID,
-    sujeto_tipo: PD,
+    sujeto_tipo: NS_SUJETO_TIPO_USUARIO,
     sujeto_id: NS_SUJETO,
     centro_id: NS_CENTRO,
     solicitado_por: NS_PERSONA,
@@ -227,9 +242,12 @@ export const SECCIONES_EXPORT = {
     retirada_en: { sale: 'retirada_en' },
     retirada_por: NS_PERSONA,
     nota_centro: { sale: 'nota_centro' },
-    estado_previo: PD,
+    estado_previo: {
+      noSale:
+        'Decisión del responsable (2026-11-01). Es la copia, para poder deshacer la confirmación durante la gracia, de cómo estaba la cuenta antes de confirmar: la fecha en que ya estaba dada de baja, si lo estaba. Esa fecha sale en `usuario.ficha` (`deleted_at`): confirmar no cambia una fecha que ya había, y si la pone es la de `confirmada_en` de esta misma petición.',
+    },
     tutores_legales: NS_PERSONA,
-    por_plazo: PD,
+    por_plazo: { sale: 'por_plazo' },
   }),
   'usuario.perfiles_familia': seccion('familia_tutores', {
     id: NS_ID,
@@ -282,7 +300,7 @@ export const SECCIONES_EXPORT = {
     importe_centimos: { sale: 'importe_centimos' },
     created_at: { sale: 'creado_en' },
     nino_id: NS_FUERA,
-    origen: PD,
+    origen: ORIGEN_COBRO,
     beca_tramo_id: NS_FUERA,
     arrastre_de_recibo_id: { sale: 'arrastre_de_recibo_id' },
     sobrante_de_desborde_id: { sale: 'sobrante_de_desborde_id' },
@@ -354,7 +372,7 @@ export const SECCIONES_EXPORT = {
     familia_id: NS_ANIDADA,
     cantidad_default: { sale: 'cantidad' },
     importe_override_centimos: { sale: 'importe_especial_centimos' },
-    origen: PD,
+    origen: ORIGEN_COBRO,
     vigencia_desde: { sale: 'vigencia_desde' },
     vigencia_hasta: { sale: 'vigencia_hasta' },
     created_at: { sale: 'creado_en' },
@@ -404,7 +422,10 @@ export const SECCIONES_EXPORT = {
     deleted_at: { sale: 'borrado_en' },
     deleted_reason: { sale: 'motivo_borrado' },
     metodo_pago: { sale: 'metodo_pago' },
-    metodo_pago_manual: PD,
+    metodo_pago_manual: {
+      sale: 'metodo_pago_manual',
+      nota: '2c (2026-11-02): si Dirección eligió a mano el método de pago y la firma de un mandato ya no lo cambia. Es cómo se decidió algo sobre el dinero de esa familia.',
+    },
   }),
   'nino.lista_espera': seccion('lista_espera', {
     id: NS_ID,
@@ -556,7 +577,7 @@ export const SECCIONES_EXPORT = {
     familia_id: NS_FUERA,
     cantidad_default: { sale: 'cantidad' },
     importe_override_centimos: { sale: 'importe_especial_centimos' },
-    origen: PD,
+    origen: ORIGEN_COBRO,
     vigencia_desde: { sale: 'vigencia_desde' },
     vigencia_hasta: { sale: 'vigencia_hasta' },
     created_at: { sale: 'creado_en' },
@@ -571,11 +592,11 @@ export const SECCIONES_EXPORT = {
     concepto_id: NS_FUERA,
     descripcion: { sale: 'descripcion' },
     cantidad: { sale: 'cantidad' },
-    precio_unitario_centimos: PD,
+    precio_unitario_centimos: { sale: 'precio_unitario_centimos' },
     importe_centimos: { sale: 'importe_centimos' },
     created_at: { sale: 'creado_en' },
     nino_id: NS_SUJETO,
-    origen: PD,
+    origen: ORIGEN_COBRO,
     beca_tramo_id: { sale: 'beca_tramo_id' },
     arrastre_de_recibo_id: NS_FUERA,
     sobrante_de_desborde_id: NS_FUERA,
