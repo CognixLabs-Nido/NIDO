@@ -10,8 +10,12 @@
 --     concepto asignado, en el export del usuario y en el del niño: es cómo se decidió algo sobre
 --     el dinero de esa familia, y lo que querría saber si discute un importe;
 --   · del niño, el precio unitario de cada línea, que ya salía en el del usuario.
--- Lo que no sale ya no salía (el contenido del prospecto de la lista de espera en el export del
--- tutor, el `sujeto_tipo` y el `estado_previo` del olvido): solo cambia el catálogo.
+--   · del tutor que apuntó a su hijo en la lista de espera, el prospecto entero, nota de Dirección
+--     incluida (decisión del responsable del 2026-11-02, que sustituye para el export a la del
+--     2026-10-14, «del tutor, solo teléfono y email»). Un prospecto que no llegó a alta no tiene
+--     export de niño: sin esto, esos datos no salían en ningún export.
+-- Lo que no sale ya no salía (el `sujeto_tipo` y el `estado_previo` del olvido): solo cambia el
+-- catálogo.
 --
 -- El resto de la función es la de `20261216120000`, tal cual (guarda previa). La aplica el
 -- responsable por SQL Editor. Sin BEGIN ni COMMIT. Tras aplicar: registrar en
@@ -25,7 +29,7 @@ DECLARE
 BEGIN
   SELECT md5(regexp_replace(regexp_replace(replace(p.prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_md5 FROM pg_proc p WHERE p.oid = to_regprocedure('public.export_datos_sujeto(text,uuid)');
-  IF v_md5 = '96c233a5cec18179d957b9fde6ef3240' THEN
+  IF v_md5 = '1554fbbdbed3594ab095e53dc29ebba1' THEN
     RAISE EXCEPTION 'ya aplicada: export_datos_sujeto ya es la de 20261218120000';
   END IF;
   -- Lo que se reescribe es lo que hay, tal como quedó.
@@ -37,6 +41,10 @@ BEGIN
     (SELECT count(*) FROM public.familias WHERE metodo_pago_manual),
     (SELECT count(*) FROM public.lineas_recibo),
     (SELECT count(*) FROM public.lineas_recibo WHERE origen = 'manual');
+  RAISE NOTICE 'guarda previa: % prospectos con tutor con cuenta, % sin alta, % con nota',
+    (SELECT count(*) FROM public.lista_espera WHERE tutor_usuario_id IS NOT NULL),
+    (SELECT count(*) FROM public.lista_espera WHERE tutor_usuario_id IS NOT NULL AND nino_id IS NULL),
+    (SELECT count(*) FROM public.lista_espera WHERE tutor_usuario_id IS NOT NULL AND nota IS NOT NULL);
 END
 $guarda$;
 
@@ -131,9 +139,15 @@ BEGIN
         SELECT jsonb_agg(jsonb_build_object(
                  -- R1-R7 (2026-11-01, columnas-export.ts)
                  'creado_en', le.created_at, 'actualizado_en', le.updated_at,
-                 'telefono_tutor', le.telefono_tutor, 'email_tutor', le.email_tutor)
+                 'telefono_tutor', le.telefono_tutor, 'email_tutor', le.email_tutor,
+                 -- 2c (2026-11-02, columnas-export.ts): el prospecto entero, nota incluida
+                 'nombre_nino', le.nombre_nino, 'apellidos_nino', le.apellidos_nino,
+                 'fecha_nacimiento', le.fecha_nacimiento, 'nota', le.nota,
+                 'posicion', le.posicion, 'estado', le.estado, 'curso', ca.nombre,
+                 'descartado_en', le.descartado_at)
                ORDER BY le.created_at)
           FROM public.lista_espera le
+          LEFT JOIN public.cursos_academicos ca ON ca.id = le.curso_academico_id
          WHERE le.tutor_usuario_id = p_sujeto_id
            AND (v_self OR privado.es_responsable(le.centro_id))), '[]'::jsonb),
 
@@ -531,7 +545,7 @@ DECLARE
 BEGIN
   SELECT prosrc, md5(regexp_replace(regexp_replace(replace(prosrc, E'\r', ''), '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
     INTO v_src, v_md5 FROM pg_proc WHERE oid = v_f::regprocedure;
-  IF v_md5 IS DISTINCT FROM '96c233a5cec18179d957b9fde6ef3240' THEN
+  IF v_md5 IS DISTINCT FROM '1554fbbdbed3594ab095e53dc29ebba1' THEN
     RAISE EXCEPTION 'export_datos_sujeto no quedó como en este fichero: %', v_md5;
   END IF;
   IF NOT (SELECT prosecdef FROM pg_proc WHERE oid = v_f::regprocedure)

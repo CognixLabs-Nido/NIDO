@@ -835,6 +835,7 @@
         "idioma_principal": "Main language",
         "nacionalidad": "Nationality",
         "notas_admin": "Admin notes",
+        "notas_admin_aviso": "The family can read these notes if they request a copy of their data.",
         "alergias_graves": "Serious allergies",
         "notas_emergencia": "Emergency notes",
         "medicacion_habitual": "Regular medication",
@@ -1106,7 +1107,8 @@
         "contacto": "Contact",
         "telefono_tutor": "Phone",
         "email_tutor": "Email",
-        "nota": "Note"
+        "nota": "Note",
+        "nota_aviso": "The family can read this note if they request a copy of their data."
       },
       "estados": {
         "en_espera": "Waiting",

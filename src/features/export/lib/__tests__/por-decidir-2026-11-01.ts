@@ -3,13 +3,6 @@
  * decidir una (sale, o no sale con su porqué), se quita de aquí. Una columna nueva no entra.
  */
 export const POR_DECIDIR_2026_11_01: readonly string[] = [
-  'usuario.lista_espera_contacto.nombre_nino',
-  'usuario.lista_espera_contacto.fecha_nacimiento',
-  'usuario.lista_espera_contacto.nota',
-  'usuario.lista_espera_contacto.posicion',
-  'usuario.lista_espera_contacto.estado',
-  'usuario.lista_espera_contacto.apellidos_nino',
-  'usuario.lista_espera_contacto.descartado_at',
   'nino.lista_espera.descartado_at',
   'nino.matriculas.motivo_baja',
   'nino.eventos.ambito',

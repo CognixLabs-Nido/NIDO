@@ -835,6 +835,7 @@
         "idioma_principal": "Idioma principal",
         "nacionalidad": "Nacionalidad",
         "notas_admin": "Notas internas",
+        "notas_admin_aviso": "La familia puede leer estas notas si pide una copia de sus datos.",
         "alergias_graves": "Alergias graves",
         "notas_emergencia": "Notas de emergencia",
         "medicacion_habitual": "Medicación habitual",
@@ -1106,7 +1107,8 @@
         "contacto": "Contacto",
         "telefono_tutor": "Teléfono",
         "email_tutor": "Email",
-        "nota": "Nota"
+        "nota": "Nota",
+        "nota_aviso": "La familia puede leer esta nota si pide una copia de sus datos."
       },
       "estados": {
         "en_espera": "En espera",

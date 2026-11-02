@@ -54,6 +54,18 @@ const PD = { porDecidir: true } as const
  * export entrega; R6, las claves no salen nunca; R7, la huella de una firma sale, y la IP y el
  * navegador solo en las firmas propias. Las mismas reglas, en `columnas-recolectar.ts`.
  */
+/**
+ * 2c: el prospecto de la lista de espera en el export del tutor que lo apuntó. Sustituye, solo para
+ * el export, a la decisión del 2026-10-14. Dentro de la app no cambia nada: la familia no lee
+ * `lista_espera` (su única política es `lista_espera_admin_all`, de Dirección).
+ */
+const PROSPECTO_ENTERO =
+  'Decisión del responsable del 2026-11-02, que sustituye para el export a la del 2026-10-14 («del tutor, solo el teléfono y el email»): sale el prospecto entero. Son datos de su hijo que dio el propio tutor, y un prospecto que no llegó a alta no tiene export de niño, así que no salían en ningún export. Dentro de la app no cambia nada: la familia no ve la lista de espera.'
+
+/** Una nota sobre una persona identificada es dato suyo aunque sea una opinión (art. 15). */
+const NOTA_DE_DIRECCION =
+  'La nota la escribe Dirección y también sale: una nota sobre una persona identificada es dato de esa persona aunque sea una opinión, y el art. 15 no exceptúa las notas internas. La pantalla donde se escribe avisa de que la familia puede leerla si pide sus datos.'
+
 const NS_CENTRO = {
   noSale:
     'R3 (2026-11-01): el centro es el responsable del tratamiento, no un dato de la persona; quién es lo dice el aviso de privacidad.',
@@ -196,19 +208,19 @@ export const SECCIONES_EXPORT = {
     id: NS_ID,
     centro_id: NS_CENTRO,
     curso_academico_id: NS_FUERA,
-    nombre_nino: PD,
-    fecha_nacimiento: PD,
+    nombre_nino: { sale: 'nombre_nino', nota: PROSPECTO_ENTERO },
+    fecha_nacimiento: { sale: 'fecha_nacimiento', nota: PROSPECTO_ENTERO },
     telefono_tutor: { sale: 'telefono_tutor' },
     email_tutor: { sale: 'email_tutor' },
-    nota: PD,
-    posicion: PD,
-    estado: PD,
+    nota: { sale: 'nota', nota: `${PROSPECTO_ENTERO} ${NOTA_DE_DIRECCION}` },
+    posicion: { sale: 'posicion', nota: PROSPECTO_ENTERO },
+    estado: { sale: 'estado', nota: PROSPECTO_ENTERO },
     created_at: { sale: 'creado_en' },
     updated_at: { sale: 'actualizado_en' },
-    apellidos_nino: PD,
+    apellidos_nino: { sale: 'apellidos_nino', nota: PROSPECTO_ENTERO },
     tutor_usuario_id: NS_SUJETO,
     nino_id: NS_FUERA,
-    descartado_at: PD,
+    descartado_at: { sale: 'descartado_en', nota: PROSPECTO_ENTERO },
   }),
   'usuario.exportaciones': seccion('export_log', {
     id: NS_ID,
