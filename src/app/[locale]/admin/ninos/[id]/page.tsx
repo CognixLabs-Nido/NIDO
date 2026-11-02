@@ -281,6 +281,9 @@ export default async function NinoDetallePage({ params }: PageProps) {
               />
               <Row k={t('fields.nacionalidad')} v={nino.nacionalidad ?? '—'} />
               <Row k={t('fields.notas_admin')} v={nino.notas_admin ?? '—'} />
+              {/* Decisión del responsable del 2026-11-02: las notas salen en el export art. 15
+                  de la familia. Hoy la app no tiene dónde escribirlas; el aviso va donde se ven. */}
+              <p className="text-muted-foreground text-xs">{t('fields.notas_admin_aviso')}</p>
             </CardContent>
           </Card>
           {/* F-3-E: la foto es de escritura → oculta en archivado. El consentimiento de

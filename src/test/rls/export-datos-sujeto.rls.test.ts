@@ -36,7 +36,8 @@ import { recolectarNino, recolectarUsuario } from '@/features/export/lib/recolec
  * reciben 42501. Además:
  *   · el consentimiento de imagen del niño sale por sujeto, también el que dio el otro tutor;
  *   · Dirección recibe las preferencias, los dispositivos y las lecturas del usuario;
- *   · el tutor con cuenta, de su prospecto en lista_espera, solo teléfono y email;
+ *   · el tutor con cuenta, su prospecto de lista_espera entero, nota incluida (2026-11-02; hasta
+ *     entonces, decisión del 2026-10-14, solo el teléfono y el email);
  *   · motivo_baja solo en el export de Dirección; del IBAN, solo los 4 últimos dígitos;
  *   · el admin solo recibe las filas de SU centro.
  */
@@ -298,7 +299,7 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
       expect(JSON.stringify(cons)).not.toMatch(/ip_address|user_agent/)
     })
 
-    it('lista_espera: el niño, su prospecto entero; el tutor, solo teléfono y email', async () => {
+    it('lista_espera: el niño y el tutor que lo apuntó, el prospecto entero, nota incluida', async () => {
       const n = await rpc(tutor, 'nino', nino.id)
       const [prospecto] = filas((n.data as Fila).lista_espera)
       expect(prospecto).toMatchObject({
@@ -311,13 +312,22 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
 
       const u = await rpc(tutor, 'usuario', tutor.id)
       const contacto = filas((u.data as Fila).lista_espera_contacto)
-      // Con sus fechas de registro (R1, 2026-11-01).
+      // Con sus fechas de registro (R1, 2026-11-01) y, desde el 2026-11-02 (sustituye a la decisión
+      // del 2026-10-14, «del tutor, solo el teléfono y el email»), el prospecto entero.
       expect(contacto).toEqual([
         {
           telefono_tutor: '600000015',
           email_tutor: 'tutor-art15@correo.test',
           creado_en: expect.any(String),
           actualizado_en: expect.any(String),
+          nombre_nino: 'Nino Art15',
+          apellidos_nino: 'Apellido Test',
+          fecha_nacimiento: '2024-03-15',
+          nota: 'Nota del prospecto',
+          posicion: 1,
+          estado: 'invitado',
+          curso: expect.any(String),
+          descartado_en: null,
         },
       ])
     })

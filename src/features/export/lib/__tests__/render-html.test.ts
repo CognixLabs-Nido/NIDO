@@ -165,6 +165,31 @@ describe('renderExportHtml', () => {
     expect(html).toContain('Lía') // el que sí tiene valor se mantiene
   })
 
+  it('el niño, el documento y la cita salen con su etiqueta, en lugar del id (2c)', () => {
+    const html = renderExportHtml(
+      {
+        _meta: docDeNino()._meta,
+        usuario: {
+          ficha: { nombre_completo: 'Madre Pérez' },
+          firmas_realizadas: [
+            { nino: 'Lía Pérez', documento: { titulo: 'Salida al parque', tipo: 'excursion' } },
+          ],
+          invitaciones_a_citas: [
+            { cita: { titulo: 'Tutoría de octubre', fecha: '2026-10-20' }, estado: 'aceptada' },
+          ],
+        },
+      } as never,
+      t,
+      'es'
+    )
+    expect(html).toContain('<dt>doc.campos.nino</dt><dd>Lía Pérez</dd>')
+    expect(html).toContain('<dt>doc.campos.documento</dt>')
+    expect(html).toContain('Salida al parque')
+    expect(html).toContain('<dt>doc.campos.cita</dt>')
+    expect(html).toContain('Tutoría de octubre')
+    expect(html).toContain('20/10/2026')
+  })
+
   it('no incluye la sección de Mensajes (solo van en datos.json)', () => {
     const html = renderExportHtml(
       {

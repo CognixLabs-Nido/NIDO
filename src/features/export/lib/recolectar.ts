@@ -10,14 +10,17 @@ import {
   BUCKET_DNI_TUTORES,
   BUCKET_MANDATO_SEPA,
   BUCKET_NINOS_FOTOS,
+  BUCKET_USUARIOS_FOTOS,
 } from '@/shared/lib/adjuntos/storage'
 
 import { EXPORT_URL_TTL_SEGUNDOS, type AdjuntoExport } from '../types'
 
 import {
   columnasDe,
+  enSuLugarDe,
   entregar,
   rolesDe,
+  type ClavesEnSuLugar,
   type FilaDe,
   type RutaRecolectar,
 } from './columnas-recolectar'
@@ -98,21 +101,34 @@ function filasDe<R extends RutaRecolectar>(ruta: R, r: Lectura): FilaDe<R>[] {
   return leido<FilaDe<R>>(ruta, r)
 }
 
+/** Cómo dar lo legible que va en lugar de cada id de la sección (`enSuLugar`), por su clave. */
+type Legible<R extends RutaRecolectar> = [ClavesEnSuLugar<R>] extends [never]
+  ? []
+  : [Record<ClavesEnSuLugar<R>, (id: unknown) => unknown>]
+
 /**
  * Las filas de una sección tal como se entregan (R1-R7 de `columnas-recolectar.ts`): sin lo que no
- * sale, y con el rol a la fecha en lugar del uuid de quien hizo algo (R4). `donde` da el centro y el
- * niño de cada fila, que deciden el rol.
+ * sale, con el rol a la fecha en lugar del uuid de quien hizo algo (R4), y con lo que la persona
+ * reconoce en lugar de los id que se cambian (`enSuLugar`, 2c). `donde` da el centro y el niño de
+ * cada fila, que deciden el rol. Una sección con `enSuLugar` no compila sin `legible`.
  */
 function entregadas<R extends RutaRecolectar>(
   ruta: R,
   filasLeidas: FilaDe<R>[],
   historia: Historia,
   sujetoId: string | null,
-  donde: (f: Fila) => { centroId: string | null; ninoId: string | null }
+  donde: (f: Fila) => { centroId: string | null; ninoId: string | null },
+  ...legible: Legible<R>
 ): Fila[] {
   const roles = rolesDe(ruta)
+  const dar = legible[0] as Record<string, (id: unknown) => unknown> | undefined
   return filasLeidas.map((leida) => {
     const f = { ...(leida as unknown as Fila) }
+    for (const { columna, clave } of enSuLugarDe(ruta)) {
+      const d = dar?.[clave]
+      if (!d) throw new Error(`export: ${ruta} no da «${clave}» en lugar de ${columna}`)
+      f[clave] = d(f[columna])
+    }
     if (roles.length > 0) {
       const { centroId, ninoId } = donde(f)
       for (const r of roles) {
@@ -143,6 +159,73 @@ function personasDe<R extends RutaRecolectar>(ruta: R, filasLeidas: FilaDe<R>[])
 function filaDe<R extends RutaRecolectar>(ruta: R, r: Lectura): FilaDe<R> | null {
   if (r.error) throw new Error(`export: la lectura de ${ruta} falló: ${r.error.message}`)
   return (r.data ?? null) as FilaDe<R> | null
+}
+
+/** Los id que llegan de una lectura, sin vacíos ni repetidos. */
+function ids(v: unknown[]): string[] {
+  return [...new Set(v.filter((x): x is string => typeof x === 'string' && x.length > 0))]
+}
+
+/**
+ * El nombre del niño tal como lo entrega el export (2c). Purgado, la base guarda `[borrado]` en el
+ * nombre y en los apellidos, y se entrega una vez. Si el id no encuentra la fila, «no consta», como
+ * el rol a la fecha.
+ */
+function nombreDeNino(n: { nombre: string; apellidos: string | null } | undefined): string {
+  if (!n) return 'no consta'
+  if (n.nombre === '[borrado]') return '[borrado]'
+  return [n.nombre, n.apellidos].filter((x) => x && x.trim()).join(' ')
+}
+
+/**
+ * Lo legible que va en lugar de un id en el export del usuario (2c): el nombre del niño, el título
+ * y el tipo del documento firmado, y el título y la fecha de la cita. Un id vacío da `null` (la
+ * fila no es de ningún niño); uno que no encuentra su fila, «no consta».
+ */
+async function cargarLegibles(
+  service: Client,
+  q: { ninoIds: unknown[]; autorizacionIds: unknown[]; citaIds: unknown[] }
+) {
+  const [n, a, c] = [ids(q.ninoIds), ids(q.autorizacionIds), ids(q.citaIds)]
+  const [ninos, autorizaciones, citas] = await Promise.all([
+    n.length
+      ? service
+          .from('ninos')
+          .select('id, nombre, apellidos')
+          .in('id', n)
+          .then((r) => leido<{ id: string; nombre: string; apellidos: string | null }>('ninos', r))
+      : [],
+    a.length
+      ? service
+          .from('autorizaciones')
+          .select('id, titulo, tipo')
+          .in('id', a)
+          .then((r) => leido<{ id: string; titulo: string; tipo: string }>('autorizaciones', r))
+      : [],
+    c.length
+      ? service
+          .from('citas')
+          .select('id, titulo, fecha')
+          .in('id', c)
+          .then((r) => leido<{ id: string; titulo: string; fecha: string }>('citas', r))
+      : [],
+  ])
+  const porId = <T extends { id: string }>(xs: T[]) => new Map(xs.map((x) => [x.id, x]))
+  const [mn, ma, mc] = [porId(ninos), porId(autorizaciones), porId(citas)]
+  const vacio = (id: unknown) => typeof id !== 'string' || id.length === 0
+  return {
+    nino: (id: unknown) => (vacio(id) ? null : nombreDeNino(mn.get(id as string))),
+    documento: (id: unknown) => {
+      if (vacio(id)) return null
+      const d = ma.get(id as string)
+      return d ? { titulo: d.titulo, tipo: d.tipo } : 'no consta'
+    },
+    cita: (id: unknown) => {
+      if (vacio(id)) return null
+      const d = mc.get(id as string)
+      return d ? { titulo: d.titulo, fecha: d.fecha } : 'no consta'
+    },
+  }
 }
 
 /** Firma una ruta de un bucket privado con el TTL largo del export (#4). */
@@ -198,9 +281,17 @@ export async function recolectarUsuario(
   const orParts = [`tutor_id.eq.${usuarioId}`]
   if (ninoIds.length > 0) orParts.push(`nino_id.in.(${ninoIds.join(',')})`)
   // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
-  const convs = leido<{ id: string; centro_id: string; nino_id: string | null }>(
+  const convs = leido<{
+    id: string
+    centro_id: string
+    nino_id: string | null
+    tipo_conversacion: Database['public']['Enums']['tipo_conversacion']
+  }>(
     'conversaciones',
-    await client.from('conversaciones').select('id, centro_id, nino_id').or(orParts.join(','))
+    await client
+      .from('conversaciones')
+      .select('id, centro_id, nino_id, tipo_conversacion')
+      .or(orParts.join(','))
   )
   const convIds = convs.map((c) => c.id)
   const mensajes = convIds.length
@@ -242,6 +333,22 @@ export async function recolectarUsuario(
 
   const centroId = roles.map((r) => r.centro_id)[0] ?? null
 
+  // Lo que la persona reconoce en lugar de los id (2c): el nombre del niño, el documento que firmó
+  // y la cita a la que respondió. Con el cliente de servicio: los id salen de filas que la sesión
+  // ya ha leído, y un vínculo retirado no puede dejar a la persona sin saber de qué niño era.
+  const legibles = await cargarLegibles(service, {
+    ninoIds: [
+      ...consentimientos.map((c) => c.nino_id),
+      ...vinculos.map((v) => v.nino_id),
+      ...ausencias.map((a) => a.nino_id),
+      ...firmas.map((f) => f.nino_id),
+      ...convs.map((c) => c.nino_id),
+    ],
+    autorizacionIds: firmas.map((f) => f.autorizacion_id),
+    citaIds: citasInvitado.map((c) => c.cita_id),
+  })
+  const nino = { nino: legibles.nino }
+
   // El rol a la fecha de quien escribió cada mensaje y de quien creó cada recordatorio (R4).
   const hilo = new Map(convs.map((c) => [c.id, c]))
   const historia = await cargarHistoria(service, {
@@ -250,18 +357,32 @@ export async function recolectarUsuario(
       ...personasDe('usuario.recordatorios_recibidos', recordatorios),
     ],
     centroIds: [...convs.map((c) => c.centro_id), ...recordatorios.map((r) => r.centro_id)],
-    ninoIds: [
-      ...convs.flatMap((c) => (c.nino_id ? [c.nino_id] : [])),
-      ...recordatorios.flatMap((r) => (r.nino_id ? [r.nino_id] : [])),
-    ],
+    ninoIds: convs.flatMap((c) => (c.nino_id ? [c.nino_id] : [])),
   })
-  const delHilo = (f: Fila) => {
+  // Los mensajes, agrupados por conversación (2c): con quién es, por su rol, y de qué niño.
+  const conversaciones = convs
+    .map((c) => ({
+      con: c.tipo_conversacion === 'admin_familia' ? 'Dirección' : 'el profesorado del aula',
+      nino: legibles.nino(c.nino_id),
+      mensajes: entregadas(
+        'usuario.mensajes',
+        mensajes
+          .filter((m) => m.conversacion_id === c.id)
+          .sort((a, b) => a.created_at.localeCompare(b.created_at)),
+        historia,
+        usuarioId,
+        delHilo
+      ),
+    }))
+    .filter((c) => c.mensajes.length > 0)
+  function delHilo(f: Fila) {
     const c = hilo.get(f.conversacion_id as string)
     return { centroId: c?.centro_id ?? null, ninoId: c?.nino_id ?? null }
   }
+  // Un recordatorio con persona destinataria no lleva niño (CHECK `recordatorios_destino_coherencia`).
   const delRecordatorio = (f: Fila) => ({
     centroId: (f.centro_id as string | null) ?? null,
-    ninoId: (f.nino_id as string | null) ?? null,
+    ninoId: null,
   })
   const sinRol = () => ({ centroId: null, ninoId: null })
 
@@ -269,8 +390,12 @@ export async function recolectarUsuario(
   const extra = await datosSujeto(client, 'usuario', usuarioId)
   if (extra) anotarBloqueados(extra)
 
-  // DNI y mandato firmado: enlace firmado, como las fotos (#4).
+  // DNI y mandato firmado: enlace firmado, como las fotos (#4). Y su foto de perfil (2c, decisión
+  // del responsable del 2026-11-01: la ruta sola no le sirve a la familia).
   const adjuntos: AdjuntoExport[] = []
+  if (typeof usuario.foto_url === 'string' && usuario.foto_url) {
+    adjuntos.push(await firmar(service, BUCKET_USUARIOS_FOTOS, usuario.foto_url, 'Foto de perfil'))
+  }
   for (const p of filas(extra?.perfiles_familia)) {
     if (typeof p.dni_documento_path === 'string' && p.dni_documento_path) {
       adjuntos.push(await firmar(service, BUCKET_DNI_TUTORES, p.dni_documento_path, 'DNI'))
@@ -294,29 +419,33 @@ export async function recolectarUsuario(
         consentimientos,
         historia,
         usuarioId,
-        sinRol
+        sinRol,
+        nino
       ),
       vinculos_familiares: entregadas(
         'usuario.vinculos_familiares',
         vinculos,
         historia,
         usuarioId,
-        sinRol
+        sinRol,
+        nino
       ),
-      mensajes: entregadas('usuario.mensajes', mensajes, historia, usuarioId, delHilo),
+      conversaciones,
       ausencias_reportadas: entregadas(
         'usuario.ausencias_reportadas',
         ausencias,
         historia,
         usuarioId,
-        sinRol
+        sinRol,
+        nino
       ),
       invitaciones_a_citas: entregadas(
         'usuario.invitaciones_a_citas',
         citasInvitado,
         historia,
         usuarioId,
-        sinRol
+        sinRol,
+        { cita: legibles.cita }
       ),
       recordatorios_recibidos: entregadas(
         'usuario.recordatorios_recibidos',
@@ -330,14 +459,15 @@ export async function recolectarUsuario(
         firmas,
         historia,
         usuarioId,
-        sinRol
+        sinRol,
+        { nino: legibles.nino, documento: legibles.documento }
       ),
       ...(extra ?? { datos_ampliados: { _nota: NOTA_SIN_DATOS_AMPLIADOS } }),
       adjuntos,
       _aportado_por_ti: [
         'ficha (idioma)',
         'consentimientos',
-        'mensajes que escribiste',
+        'mensajes que escribiste (en conversaciones)',
         'ausencias_reportadas',
         'respuestas a invitaciones_a_citas',
         'firmas_realizadas',

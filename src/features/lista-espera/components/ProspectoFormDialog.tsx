@@ -165,7 +165,12 @@ export function ProspectoFormDialog({ cursoId, prospecto, trigger }: Props) {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="nota">{t('fields.nota')}</Label>
-            <Textarea id="nota" rows={3} {...form.register('nota')} />
+            <Textarea id="nota" rows={3} aria-describedby="nota-aviso" {...form.register('nota')} />
+            {/* Decisión del responsable del 2026-11-02: la nota sale en el export art. 15 del
+                tutor, y quien la escribe tiene que saberlo al escribirla. */}
+            <p id="nota-aviso" className="text-muted-foreground text-xs">
+              {t('fields.nota_aviso')}
+            </p>
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

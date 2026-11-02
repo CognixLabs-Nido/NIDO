@@ -31,12 +31,16 @@ type Tablas = Database['public']['Tables']
  *   texto dice para qué), pero se quita antes de entregar.
  * - `rol`: el uuid de una persona no sale; se pide para dar, con la clave `rol`, su rol en la fecha
  *   de la columna `fecha` (`roles-a-la-fecha.ts`), y se quita antes de entregar.
+ * - `enSuLugar`: el id no sale (R5); se pide para dar, con la clave `enSuLugar`, lo que la persona
+ *   reconoce de esa fila (`dice`: el nombre del niño, el título del documento…), y se quita antes de
+ *   entregar. `recolectar.ts` no compila sin dar ese valor (`entregadas`).
  * - `saleSinRepasar`: lo que el `select('*')` sacaba el 2026-11-01 sin repasar (la lista fechada).
  */
 export type DecisionColumnaApp =
   | { sale: true }
   | { noSale: string; seLee?: string }
   | { rol: string; fecha: string }
+  | { enSuLugar: string; dice: string }
   | { saleSinRepasar: true }
 
 type Columnas<T extends keyof Tablas> = keyof Tablas[T]['Row'] & string
@@ -49,6 +53,23 @@ function seccion<T extends keyof Tablas, const C extends Record<Columnas<T>, Dec
 }
 
 const SSR = { saleSinRepasar: true } as const
+
+/*
+ * 2c, decisión del responsable del 2026-11-02: con R5 el export del usuario ya no decía a qué se
+ * refería cada fila (de qué niño, qué documento firmó, a qué cita respondió), y entregarlo así era
+ * peor que antes. En lugar del id va lo que la persona reconoce. El niño, con su nombre: es su hijo,
+ * y la familia del propio niño va con nombre (la raya del 2026-11-01).
+ */
+const NINO_POR_NOMBRE = {
+  enSuLugar: 'nino',
+  dice: 'el nombre y los apellidos del niño (vacío si la fila no es de ningún niño)',
+} as const
+
+/** 2c (2026-11-02): las dos versiones que `usuarios` guarda como caché. */
+const NS_VERSION_CONSENTIMIENTO = {
+  noSale:
+    '2c (2026-11-02): es una copia de la última versión aceptada de los términos o de la privacidad, que la app guarda para no consultarla cada vez. Sale completa en `usuario.consentimientos`: una fila por cada versión aceptada (`tipo`, `version`), con cuándo se aceptó y, si fue así, cuándo se revocó.',
+} as const
 
 /*
  * Las reglas del trozo 2 de la red (decididas por el responsable el 2026-11-01; son interpretación
@@ -120,14 +141,14 @@ export const POR_QUE_EL_ROL =
 /** Por ruta: `usuario.` o `nino.` y la clave del export (y la de dentro, si la hay). */
 export const SECCIONES_RECOLECTAR = {
   'usuario.ficha': seccion('usuarios', {
-    consentimiento_privacidad_version: SSR,
-    consentimiento_terminos_version: SSR,
+    consentimiento_privacidad_version: NS_VERSION_CONSENTIMIENTO,
+    consentimiento_terminos_version: NS_VERSION_CONSENTIMIENTO,
     created_at: SALE,
     deleted_at: SALE,
-    foto_url: SSR,
+    foto_url: SALE,
     id: NS_ID,
-    idioma_preferido: SSR,
-    nombre_completo: SSR,
+    idioma_preferido: SALE,
+    nombre_completo: SALE,
     updated_at: SALE,
   }),
   'usuario.roles': seccion('roles_usuario', {
@@ -136,67 +157,71 @@ export const SECCIONES_RECOLECTAR = {
     deleted_at: SALE,
     deleted_reason: SALE,
     id: NS_ID,
-    rol: SSR,
+    rol: SALE,
     usuario_id: NS_SUJETO,
   }),
   'usuario.consentimientos': seccion('consentimientos', {
-    aceptado_en: SSR,
+    aceptado_en: SALE,
     created_at: SALE,
     id: NS_ID,
     ip_address: SALE,
     metodo_firma: SALE,
-    nino_id: NS_FUERA,
-    revocado_en: SSR,
-    tipo: SSR,
+    nino_id: NINO_POR_NOMBRE,
+    revocado_en: SALE,
+    tipo: SALE,
     user_agent: SALE,
     usuario_id: NS_SUJETO,
-    version: SSR,
+    version: SALE,
   }),
   'usuario.vinculos_familiares': seccion('vinculos_familiares', {
     created_at: SALE,
     deleted_at: SALE,
     deleted_reason: SALE,
-    descripcion_parentesco: SSR,
+    descripcion_parentesco: SALE,
     id: NS_ID,
-    nino_id: { ...NS_FUERA, seLee: 'para encontrar los hilos de mensajes de sus hijos' },
-    parentesco: SSR,
-    permisos: SSR,
-    tipo_vinculo: SSR,
+    nino_id: NINO_POR_NOMBRE,
+    parentesco: SALE,
+    permisos: SALE,
+    tipo_vinculo: SALE,
     updated_at: SALE,
     usuario_id: NS_SUJETO,
   }),
   'usuario.mensajes': seccion('mensajes', {
     autor_id: { rol: 'autor_rol', fecha: 'created_at' },
-    contenido: SSR,
+    contenido: SALE,
     conversacion_id: {
-      ...NS_FUERA,
-      seLee: 'para dar el rol a la fecha del autor, en el centro y el aula del hilo',
+      noSale:
+        '2c (2026-11-02): los mensajes salen agrupados por conversación, y cada conversación dice con quién es, por su rol («Dirección» o «el profesorado del aula»), y de qué niño, con su nombre. La agrupación ya los une: la clave no añade nada.',
+      seLee: 'para agrupar los mensajes por conversación y dar el rol a la fecha del autor',
     },
     created_at: SALE,
-    erroneo: SSR,
+    erroneo: SALE,
     id: NS_ID,
     updated_at: SALE,
   }),
   'usuario.ausencias_reportadas': seccion('ausencias', {
     created_at: SALE,
-    descripcion: SSR,
-    fecha_fin: SSR,
-    fecha_inicio: SSR,
+    descripcion: SALE,
+    fecha_fin: SALE,
+    fecha_inicio: SALE,
     id: NS_ID,
-    motivo: SSR,
-    nino_id: NS_FUERA,
+    motivo: SALE,
+    nino_id: NINO_POR_NOMBRE,
     reportada_por: NS_SUJETO,
     updated_at: SALE,
   }),
   'usuario.invitaciones_a_citas': seccion('cita_invitados', {
     centro_id: NS_CENTRO,
-    cita_id: NS_FUERA,
-    comentario: SSR,
+    cita_id: { enSuLugar: 'cita', dice: 'el título y la fecha de la cita' },
+    comentario: SALE,
     created_at: SALE,
-    estado: SSR,
+    estado: SALE,
     id: NS_ID,
-    nombre_externo: SSR,
-    respondido_at: SSR,
+    nombre_externo: {
+      noSale:
+        '2c (2026-11-02): en las filas de una persona con cuenta va siempre vacío (CHECK `cita_invitados_persona_coherencia`: o la cuenta o un nombre externo, nunca los dos). El nombre de la persona sale en `usuario.ficha` (`nombre_completo`).',
+    },
+    respondido_at: SALE,
     respondido_por: NS_PERSONA,
     updated_at: SALE,
     usuario_id: NS_SUJETO,
@@ -204,38 +229,38 @@ export const SECCIONES_RECOLECTAR = {
   'usuario.recordatorios_recibidos': seccion('recordatorios', {
     aula_id: NS_FUERA,
     centro_id: { ...NS_CENTRO, seLee: 'para dar el rol a la fecha de quien lo creó, en su centro' },
-    completado_en: SSR,
+    completado_en: SALE,
     completado_por: NS_PERSONA,
     creado_por: { rol: 'creado_por_rol', fecha: 'created_at' },
     created_at: SALE,
-    descripcion: SSR,
-    destinatario: SSR,
-    erroneo: SSR,
+    descripcion: SALE,
+    destinatario: SALE,
+    erroneo: SALE,
     id: NS_ID,
     nino_id: {
-      ...NS_FUERA,
-      seLee: 'para dar el rol a la fecha de quien lo creó, en el aula de ese niño',
+      noSale:
+        '2c (2026-11-02): en estas filas va siempre vacío. Son los recordatorios dirigidos a la persona (a ella como profesora, o los que se puso ella misma), y un recordatorio con persona destinataria no lleva niño (CHECK `recordatorios_destino_coherencia`). Los recordatorios a la familia sobre un niño salen en el export del niño (`recordatorios`).',
     },
-    titulo: SSR,
+    titulo: SALE,
     updated_at: SALE,
     usuario_destinatario_id: NS_SUJETO,
-    vencimiento: SSR,
+    vencimiento: SALE,
   }),
   'usuario.firmas_realizadas': seccion('firmas_autorizacion', {
-    autorizacion_id: NS_FUERA,
-    comentario: SSR,
+    autorizacion_id: { enSuLugar: 'documento', dice: 'el título y el tipo del documento firmado' },
+    comentario: SALE,
     created_at: SALE,
-    datos: SSR,
-    decision: SSR,
-    firma_imagen: SSR,
-    firmado_at: SSR,
+    datos: SALE,
+    decision: SALE,
+    firma_imagen: SALE,
+    firmado_at: SALE,
     firmante_id: NS_SUJETO,
     id: NS_ID,
     ip_address: SALE,
     metodo_firma: SALE,
-    nino_id: NS_FUERA,
-    nombre_tecleado: SSR,
-    rol_firmante: SSR,
+    nino_id: NINO_POR_NOMBRE,
+    nombre_tecleado: SALE,
+    rol_firmante: SALE,
     texto_hash: SALE,
     texto_version: SALE,
     user_agent: SALE,
@@ -485,6 +510,22 @@ export function columnasDe(ruta: RutaRecolectar): string {
     .join(', ')
 }
 
+/** Las claves que van en lugar de un id en la sección (`enSuLugar`), como tipo. */
+export type ClavesEnSuLugar<R extends RutaRecolectar> = {
+  [K in keyof Secciones[R]['columnas']]: Secciones[R]['columnas'][K] extends {
+    enSuLugar: infer C extends string
+  }
+    ? C
+    : never
+}[keyof Secciones[R]['columnas']]
+
+/** Los id de la sección que se cambian por algo legible: columna y clave que va en su lugar. */
+export function enSuLugarDe(ruta: RutaRecolectar): Array<{ columna: string; clave: string }> {
+  return decisiones(ruta).flatMap(([c, d]) =>
+    'enSuLugar' in d ? [{ columna: c, clave: d.enSuLugar }] : []
+  )
+}
+
 /** Los uuid de la sección que se cambian por su rol: columna, clave del rol y columna de la fecha. */
 export function rolesDe(
   ruta: RutaRecolectar
@@ -495,8 +536,9 @@ export function rolesDe(
 }
 
 /**
- * La fila tal como se entrega: sin lo que no sale (también lo que se leyó para el código) ni los
- * uuid del rol. Las columnas que no son de la tabla (las embebidas, el rol ya puesto) se quedan.
+ * La fila tal como se entrega: sin lo que no sale (también lo que se leyó para el código), ni los
+ * uuid del rol, ni los id que se cambian por algo legible. Las columnas que no son de la tabla (las
+ * embebidas, el rol y lo legible ya puestos) se quedan.
  */
 export function entregar(
   ruta: RutaRecolectar,
@@ -504,7 +546,7 @@ export function entregar(
 ): Record<string, unknown> {
   const quitar = new Set(
     decisiones(ruta)
-      .filter(([, d]) => 'noSale' in d || 'rol' in d)
+      .filter(([, d]) => 'noSale' in d || 'rol' in d || 'enSuLugar' in d)
       .map(([c]) => c)
   )
   return Object.fromEntries(Object.entries(fila).filter(([k]) => !quitar.has(k)))

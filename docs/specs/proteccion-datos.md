@@ -431,6 +431,25 @@ como enlaces firmados o empaquetados — se concreta al implementar F11-A.
 > dato de ese otro adulto no sale (el motivo de retirada de su vínculo, R2). Queda anotado; no se
 > abre nada.
 
+> **Actualización (2026-11-02, trozo 2c: el contenido del usuario).** Decisiones del responsable:
+>
+> - **Lo que la persona reconoce, en lugar del id.** Con R5 el export del usuario ya no decía a qué
+>   se refería cada fila. Ahora lleva el nombre del niño (vínculos, ausencias, consentimientos y
+>   firmas: es su hijo, y la familia del propio niño va con nombre), el título y el tipo del
+>   documento firmado y el título y la fecha de la cita. Los mensajes salen agrupados por
+>   conversación, con quién es por su rol («Dirección», «el profesorado del aula») y de qué niño
+>   por su nombre, para que las de dos hermanos se distingan.
+> - **El prospecto de la lista de espera, entero, nota incluida, en el export del tutor que lo
+>   apuntó.** Sustituye, solo para el export, a la decisión del 2026-10-14 («del tutor, solo el
+>   teléfono y el email»). Un prospecto que no llegó a alta no tiene export de niño, así que esos
+>   datos no salían en ningún export. Dentro de la app no cambia nada: la familia no ve la lista de
+>   espera (su única política es la de Dirección).
+> - **Las notas de Dirección salen, y la pantalla lo avisa.** Una nota sobre una persona
+>   identificada es dato de esa persona aunque sea una opinión, y el art. 15 no exceptúa las notas
+>   internas: si no se entrega y la familia reclama, sale igual y con una sanción. Por eso el aviso
+>   es la otra mitad de la decisión: el campo de la nota del prospecto y las notas de la ficha del
+>   niño dicen, visible, que la familia puede leerlas si pide sus datos.
+
 **11. Forma exacta del least-privilege en mensajería.**
 Opciones: (a) helper nuevo `puede_postear_en_conversacion` usado solo en `mensajes_insert`;
 (b) añadir condición inline a `mensajes_insert` excluyendo admin en `profe_familia`.
