@@ -13,6 +13,7 @@ import {
   serviceClient,
   type TestUser,
 } from '../rls/setup'
+import { ponerMarcaComoElRegistro } from '../rls/remesa-como-sus-funciones'
 
 /**
  * Lo fiscal al vencer (F11-B, punto 6, PR-8, tercera pieza; 20261208120000).
@@ -33,6 +34,7 @@ import {
 const MOTIVO = 'Requerimiento 12/2027 de la Agencia Tributaria'
 const BAJA = '1990-01-01T10:00:00+00:00'
 const ANIOS = 6
+const BUCKET_FICHEROS = 'remesas-ficheros'
 
 describe('Retención: lo fiscal al vencer', () => {
   let centro: { id: string }
@@ -53,6 +55,9 @@ describe('Retención: lo fiscal al vencer', () => {
   const recibosF1: string[] = []
   let mandatoPath: string
   let dniPath: string
+  let hugoFam: string
+  let remesaHugo: string
+  const rutasFicheros: string[] = []
 
   async function vencidas(): Promise<string[]> {
     const { data, error } = await serviceClient.rpc('familias_fiscal_vencidas', { p_anios: ANIOS })
@@ -299,6 +304,7 @@ describe('Retención: lo fiscal al vencer', () => {
   })
 
   afterAll(async () => {
+    if (rutasFicheros.length) await serviceClient.storage.from(BUCKET_FICHEROS).remove(rutasFicheros)
     await serviceClient.from('retenciones').delete().eq('centro_id', centro.id)
     await serviceClient.from('olvido_solicitudes').delete().eq('centro_id', centro.id)
     await serviceClient.from('audit_log').delete().eq('tabla', 'ensayo_fiscal')
@@ -449,6 +455,155 @@ describe('Retención: lo fiscal al vencer', () => {
     await retener('usuario', madre.id)
     expect(await vencidas()).toEqual([f2])
     await soltar('usuario', madre.id)
+    expect(await vencidas()).toEqual([familia, f2].sort())
+  })
+
+  /** Sube el fichero de una versión y lo registra Dirección, como la descarga (R-1). */
+  async function guardarFichero(
+    rem: string,
+    marca: string,
+    adeudos: Array<{ recibo: string; importe: number; mndt: string }>
+  ): Promise<string> {
+    const msgId = `NIDO-${rem.slice(0, 8)}-${marca.replace(/\D/g, '').slice(0, 14)}`
+    const ruta = `${centro.id}/${rem}/${msgId}.xml`
+    const up = await serviceClient.storage
+      .from(BUCKET_FICHEROS)
+      .upload(ruta, '<Document/>', { contentType: 'application/xml', upsert: false })
+    expect(up.error).toBeNull()
+    rutasFicheros.push(ruta)
+    const c = await clientFor(admin)
+    const r = await c.rpc('registrar_fichero_remesa', {
+      p_remesa_id: rem,
+      p_marca: marca,
+      p_msg_id: msgId,
+      p_sha256: 'b'.repeat(64),
+      p_ruta: ruta,
+      p_adeudos: adeudos.map((a) => ({
+        recibo_id: a.recibo,
+        end_to_end_id: a.recibo.replace(/-/g, '').toUpperCase(),
+        importe_centimos: a.importe,
+        mndt_id: a.mndt,
+      })) as never,
+    })
+    expect(r.error).toBeNull()
+    return ruta
+  }
+
+  async function ficherosVencidos(): Promise<Array<{ fichero_id: string; ruta: string }>> {
+    const { data, error } = await serviceClient.rpc('ficheros_remesa_vencidos', { p_anios: ANIOS })
+    expect(error).toBeNull()
+    return (data ?? []).filter((f) => f.ruta.startsWith(`${centro.id}/`))
+  }
+
+  it('lo fiscal espera a sus ficheros: Hugo, vencida por sus fechas, no se destruye con un fichero vivo', async () => {
+    // Hugo: de baja en 1990 y purgado; su familia pagó por banco en 2019, sin cuentas ni deudas.
+    // Es el caso que separa la espera de la clave ajena: con un fichero de hoy, la familia vence
+    // por sus fechas y su fichero no vence en años. Sin la espera, la lista la daría por vencida y
+    // la destrucción chocaría con la FK (23503); con ella, no sale y la destrucción no hace nada.
+    const h = await createTestNino(centro.id, 'Hugo')
+    hugoFam = h.familia_id
+    const mndt = `NIDO-HUGO-${centro.id.slice(0, 8)}`
+    // Ficción: el titular del mandato no cuenta aquí; la admin, con su rol vivo, no hace esperar.
+    const m = await serviceClient.from('mandatos_sepa').insert({
+      centro_id: centro.id,
+      familia_id: hugoFam,
+      nino_id: h.id,
+      usuario_id: admin.id,
+      iban_cifrado: '\\x00',
+      titular: 'Titular Fiscal Hugo',
+      identificador_mandato: mndt,
+      estado: 'activo',
+    })
+    expect(m.error).toBeNull()
+    const rc = await recibo(hugoFam, {
+      mes: 4,
+      metodo: 'sepa',
+      estado: 'pendiente_procesar',
+      total_centimos: 6000,
+    })
+    const { data: rem, error: remErr } = await serviceClient
+      .from('remesas')
+      .insert({ centro_id: centro.id, anio: 2024, mes: 4 })
+      .select('id')
+      .single()
+    expect(remErr).toBeNull()
+    remesaHugo = rem!.id
+    const enl = await serviceClient
+      .from('recibos_remesa')
+      .insert({ remesa_id: remesaHugo, recibo_id: rc, centro_id: centro.id })
+    expect(enl.error).toBeNull()
+    const env = await serviceClient
+      .from('recibos')
+      .update({ estado: 'enviado_banco', fecha_envio_banco: '2019-10-01' })
+      .eq('id', rc)
+    expect(env.error).toBeNull()
+    await bajaYPurga(h.id, BAJA, 5)
+
+    // Premisa: sin fichero, Hugo vence por sus fechas.
+    expect(await vencidas()).toEqual([familia, f2, hugoFam].sort())
+
+    const d = new Date()
+    d.setUTCMilliseconds(0)
+    await guardarFichero(remesaHugo, d.toISOString(), [{ recibo: rc, importe: 6000, mndt }])
+
+    expect(await vencidas()).toEqual([familia, f2].sort())
+    expect(
+      await serviceClient.rpc('destruir_fiscal_familia', { p_familia_id: hugoFam, p_anios: ANIOS })
+    ).toMatchObject({ data: null, error: null })
+    expect(await cuenta('familias', 'id', hugoFam)).toBe(1)
+    expect(await cuenta('recibos', 'familia_id', hugoFam)).toBe(1)
+    expect(await cuenta('mandatos_sepa', 'familia_id', hugoFam)).toBe(1)
+    // Y su fichero, de hoy, no vence.
+    expect((await ficherosVencidos()).map((f) => f.ruta)).toEqual([])
+  })
+
+  it('el fichero vencido de la remesa compartida: la familia espera; el cron lo borra y después sale', async () => {
+    // La remesa del re-giro de Íñigo, compartida con otra familia, con su fichero de 2019.
+    const mndtOtra = `NIDO-FOTRA-${centro.id.slice(0, 8)}`
+    const mo = await serviceClient.from('mandatos_sepa').insert({
+      centro_id: centro.id,
+      familia_id: otra,
+      usuario_id: admin.id,
+      iban_cifrado: '\\x00',
+      titular: 'Titular Fiscal Otra',
+      identificador_mandato: mndtOtra,
+      estado: 'activo',
+    })
+    expect(mo.error).toBeNull()
+    const { data: rg } = await serviceClient
+      .from('recibos')
+      .select('total_centimos, metodo, estado')
+      .eq('id', regiro)
+      .single()
+    // Premisa: el re-giro va por banco y enviado, así que entra en el fichero.
+    expect(rg).toMatchObject({ metodo: 'sepa', estado: 'enviado_banco' })
+    const marca = '2019-10-01T08:00:00.000Z'
+    // Una marca de hace años: solo como la pone el registro (20261221120000).
+    ponerMarcaComoElRegistro(remesa, marca)
+    const ruta = await guardarFichero(remesa, marca, [
+      { recibo: regiro, importe: rg!.total_centimos, mndt: `NIDO-FISCAL-${centro.id.slice(0, 8)}` },
+      { recibo: reciboOtra, importe: 8000, mndt: mndtOtra },
+    ])
+
+    // Con el fichero vivo, la familia de Íñigo espera, aunque el fichero ya haya vencido.
+    expect(await vencidas()).toEqual([f2])
+    expect(
+      await serviceClient.rpc('destruir_fiscal_familia', { p_familia_id: familia, p_anios: ANIOS })
+    ).toMatchObject({ data: null, error: null })
+    expect(await cuenta('recibos', 'id', regiro)).toBe(1)
+
+    // El cron, en su orden: los ficheros antes que lo fiscal; de cada uno, Storage antes que la BD.
+    const vencidos = await ficherosVencidos()
+    expect(vencidos.map((f) => f.ruta)).toEqual([ruta])
+    const rm = await serviceClient.storage.from(BUCKET_FICHEROS).remove([ruta])
+    expect(rm.error).toBeNull()
+    const dest = await serviceClient.rpc('destruir_fichero_remesa', {
+      p_fichero_id: vencidos[0]!.fichero_id,
+      p_anios: ANIOS,
+    })
+    expect(dest).toMatchObject({ data: 2, error: null })
+
+    // Sin fichero, la familia sale; Hugo, con el suyo de hoy, sigue esperando.
     expect(await vencidas()).toEqual([familia, f2].sort())
   })
 
