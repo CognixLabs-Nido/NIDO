@@ -227,7 +227,7 @@ poder abrir, editar y volver a crear.»
 
 ### Lo que hay hoy (medido el 2026-10-31, código de `main` y producción en solo lectura)
 
-- **Estados.** La remesa: `borrador` → `enviada` (`marcarRemesaEnviada`, con `fecha_envio_banco`).
+- **Estados.** La remesa: `borrador` → `enviada` (`marcarRemesaEnviada`, con `fecha_envio_banco`; desde R-4, por `marcar_remesa_enviada`).
   Sus recibos: `pendiente_procesar` → `enviado_banco` al marcarla enviada. Después, un recibo puede
   pasar a `devuelto` y, resuelta la devolución, a `cobrado_manual` (efectivo o transferencia), o
   quedarse `devuelto` con un re-giro (otro recibo) o con la deuda llevada al siguiente.
@@ -426,7 +426,24 @@ acaba al reabrir.
 
 **Marcar enviada** (R-4).
 
-- **Una función** (`marcar_remesa_enviada`, de invocador, `es_admin`) en vez de dos UPDATE desde la
+> **Construido el 2026-11-02** (`20261221120000`, segundo PR de reabrir remesas). Decidido al
+> construirlo, con el visto bueno del responsable del 2026-11-02:
+> - la función es `SECURITY DEFINER` con `es_admin` explícito, no de invocador: tiene que poner
+>   `enviada_at` y `remesa_ficheros` no tiene privilegios para las sesiones (R-1);
+> - **la marca solo la pone el registro del fichero**, para todos (trigger y marcador
+>   `app.registrar_fichero`): Dirección podía ponerla con un UPDATE directo, sin fichero detrás.
+>   Cerrada esa puerta, una caída entre la subida y el registro deja la remesa sin marca y la
+>   siguiente descarga guarda (otra marca, otra ruta), sin el 409 hasta el día siguiente;
+> - **la remesa solo pasa a enviada por esta función** (trigger y marcador
+>   `app.marcar_remesa_enviada`): con un UPDATE directo se saltaba las exigencias;
+> - **marcar enviada exige además que los recibos cobrables sean los del fichero**, con el mismo
+>   importe (HINT `fichero_no_coincide`, que dice que hay que reabrirla), y **pasan a
+>   `enviado_banco` solo los del fichero**: marcar enviados los que el banco no recibió es decirle
+>   al centro que ha cobrado algo que nadie pidió cobrar. Hasta que exista reabrir (el PR
+>   siguiente), una remesa así se queda en borrador.
+
+- **Una función** (`marcar_remesa_enviada`, `SECURITY DEFINER`, `es_admin`; la propuesta decía de
+  invocador) en vez de dos UPDATE desde la
   app. Hoy la app pasa la remesa a enviada y después, en otra llamada, los recibos a `enviado_banco`:
   si la segunda falla, la remesa queda enviada con los recibos pendientes.
 - **Exige la marca y su fichero guardado.** Sin ellos, P0001 con HINT `sin_fichero`, y el mensaje
