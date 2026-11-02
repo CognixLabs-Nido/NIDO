@@ -2154,7 +2154,10 @@
       "fecha_cobro_en_fichero": "Algún recibo está en una remesa con el fichero ya generado o enviada: su fecha de cobro ya no se puede cambiar. No se ha cambiado ninguno.",
       "fecha_cobro_recibo_cerrado": "Algún recibo ya está enviado al banco, cobrado o devuelto: su fecha de cobro ya no se puede cambiar. No se ha cambiado ninguno.",
       "fecha_cobro_no_sepa": "Algún recibo no se cobra por banco: no lleva fecha de cobro. No se ha cambiado ninguno.",
-      "fecha_cobro_failed": "No se pudo cambiar la fecha de cobro. No se ha cambiado ninguno."
+      "fecha_cobro_failed": "No se pudo cambiar la fecha de cobro. No se ha cambiado ninguno.",
+      "descarga_en_curso": "Otra descarga de esta remesa está en curso. Espera unos segundos y vuelve a descargarla.",
+      "remesa_cambio": "La remesa ha cambiado mientras se generaba el fichero. Vuelve a descargarla.",
+      "fichero_alterado": "El fichero guardado de esta remesa no coincide con lo que se registró al generarlo, y no se ha entregado. Avisa al soporte."
     },
     "transferencias_beca": {
       "title": "Transferencias a familias",

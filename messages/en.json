@@ -2154,7 +2154,10 @@
       "fecha_cobro_en_fichero": "A receipt is in a remittance whose file has been generated or that has been sent: its collection date can no longer be changed. None has been changed.",
       "fecha_cobro_recibo_cerrado": "A receipt has already been sent to the bank, paid or returned: its collection date can no longer be changed. None has been changed.",
       "fecha_cobro_no_sepa": "A receipt is not collected by direct debit: it has no collection date. None has been changed.",
-      "fecha_cobro_failed": "The collection date could not be changed. None has been changed."
+      "fecha_cobro_failed": "The collection date could not be changed. None has been changed.",
+      "descarga_en_curso": "Another download of this batch is in progress. Wait a few seconds and download it again.",
+      "remesa_cambio": "The batch changed while the file was being generated. Download it again.",
+      "fichero_alterado": "The stored file for this batch does not match what was recorded when it was generated, so it was not delivered. Contact support."
     },
     "transferencias_beca": {
       "title": "Transfers to families",
