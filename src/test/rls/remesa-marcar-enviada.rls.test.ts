@@ -210,14 +210,12 @@ describe('Marcar enviada exige el fichero (R-4)', () => {
       .update({ fichero_generado_at: new Date().toISOString() })
       .eq('id', rem)
     expect(servicio.error?.hint).toBe('marca_solo_registro')
-    const alCrear = await cDirectora
-      .from('remesas')
-      .insert({
-        centro_id: centro.id,
-        anio: 2026,
-        mes: 4,
-        fichero_generado_at: new Date().toISOString(),
-      })
+    const alCrear = await cDirectora.from('remesas').insert({
+      centro_id: centro.id,
+      anio: 2026,
+      mes: 4,
+      fichero_generado_at: new Date().toISOString(),
+    })
     expect(alCrear.error?.hint).toBe('marca_solo_registro')
     expect((await remesaDe(rem))?.fichero_generado_at).toBeNull()
 
