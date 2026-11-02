@@ -4258,7 +4258,10 @@
         "leida_en": "Leída el",
         "lector": "Quién",
         "rol_lector": "Papel",
-        "campos": "Datos vistos"
+        "campos": "Datos vistos",
+        "nino": "Niño/a",
+        "documento": "Documento",
+        "cita": "Cita"
       },
       "valores": {
         "terminos": "Términos",

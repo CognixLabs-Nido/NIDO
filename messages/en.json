@@ -4258,7 +4258,10 @@
         "leida_en": "Viewed on",
         "lector": "Who",
         "rol_lector": "Role",
-        "campos": "Details seen"
+        "campos": "Details seen",
+        "nino": "Child",
+        "documento": "Document",
+        "cita": "Appointment"
       },
       "valores": {
         "terminos": "Terms",

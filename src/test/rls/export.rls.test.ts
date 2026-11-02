@@ -148,7 +148,11 @@ describe('RLS export de datos — F11-A5', () => {
     expect(ficha.nombre_completo).toBe('Tutor Export')
     expect(ficha).not.toHaveProperty('id')
     expect((rec!.data.consentimientos as unknown[]).length).toBeGreaterThan(0)
-    expect((rec!.data.vinculos_familiares as unknown[]).length).toBeGreaterThan(0)
+    // Cada vínculo dice de qué niño es, por su nombre, y no por su uuid (2c, 2026-11-02).
+    const vinculos = rec!.data.vinculos_familiares as Array<Record<string, unknown>>
+    expect(vinculos.length).toBeGreaterThan(0)
+    expect(vinculos.map((v) => v.nino)).toContain('Nino Export Apellido Test')
+    expect(JSON.stringify(vinculos)).not.toContain(nino.id)
     expect(rec!.centroId).toBe(centro.id)
   })
 
@@ -237,7 +241,8 @@ describe('RLS export de datos — F11-A5', () => {
     expect(compartidas[0]?.aparece_junto_a_otros).toBe(1)
   })
 
-  // e07 — mensajes: el hilo donde el tutor participa se incluye completo (#6)
+  // e07 — mensajes: el hilo donde el tutor participa se incluye completo (#6), agrupado por
+  // conversación, con quién es por su rol y de qué niño por su nombre (2c, 2026-11-02).
   it('e07 — recolectarUsuario incluye los mensajes del hilo del sujeto', async () => {
     const { data: conv } = await serviceClient
       .from('conversaciones')
@@ -249,8 +254,18 @@ describe('RLS export de datos — F11-A5', () => {
       .insert({ conversacion_id: conv!.id, autor_id: tutor.id, contenido: 'Hola, soy la familia' })
 
     const rec = await recolectarUsuario(await clientFor(tutor), serviceClient, tutor.id)
-    const mensajes = rec!.data.mensajes as Array<{ contenido: string }>
-    expect(mensajes.some((m) => m.contenido === 'Hola, soy la familia')).toBe(true)
+    const conversaciones = rec!.data.conversaciones as Array<{
+      con: string
+      nino: string | null
+      mensajes: Array<{ contenido: string }>
+    }>
+    const suya = conversaciones.find((c) =>
+      c.mensajes.some((m) => m.contenido === 'Hola, soy la familia')
+    )
+    expect(suya).toBeDefined()
+    expect(suya!.con).toBe('el profesorado del aula')
+    expect(suya!.nino).toBe('Nino Export Apellido Test')
+    expect(rec!.data).not.toHaveProperty('mensajes')
   })
 
   it('e08 — quien avisó de la ausencia sale como su rol a la fecha, nunca su uuid (R4)', async () => {

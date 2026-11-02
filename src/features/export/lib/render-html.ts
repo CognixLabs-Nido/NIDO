@@ -50,6 +50,10 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'alimentacion_observaciones',
   'idiomas_casa',
   'tiene_hermanos_en_centro',
+  // lo legible en lugar de un id, en el export del usuario (2c, 2026-11-02)
+  'nino',
+  'documento',
+  'cita',
   'tipo',
   'aceptado_en',
   'revocado_en',

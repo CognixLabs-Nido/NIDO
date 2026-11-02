@@ -4258,7 +4258,10 @@
         "leida_en": "Llegida el",
         "lector": "Qui",
         "rol_lector": "Paper",
-        "campos": "Dades vistes"
+        "campos": "Dades vistes",
+        "nino": "Xiquet/a",
+        "documento": "Document",
+        "cita": "Cita"
       },
       "valores": {
         "terminos": "Termes",

@@ -94,7 +94,11 @@ const FILAS: Record<string, Fila[]> = {
   vinculos_familiares: [
     filaCompleta('vinculos_familiares', { tipo_vinculo: 'tutor_legal_principal', nino_id: 'n1' }),
   ],
-  conversaciones: [{ id: 'c1', centro_id: 'k1', nino_id: 'n1' }],
+  conversaciones: [
+    { id: 'c1', centro_id: 'k1', nino_id: 'n1', tipo_conversacion: 'profe_familia' },
+    // Sin mensajes: no sale.
+    { id: 'c2', centro_id: 'k1', nino_id: null, tipo_conversacion: 'admin_familia' },
+  ],
   mensajes: [filaCompleta('mensajes', { conversacion_id: 'c1', autor_id: 'u1' })],
   recordatorios: [
     filaCompleta('recordatorios', { centro_id: 'k1', nino_id: null, creado_por: 'p1' }),
@@ -108,21 +112,22 @@ const FILAS: Record<string, Fila[]> = {
   administraciones_medicacion: [
     filaCompleta('administraciones_medicacion', { administrado_por: 'p1', confirmado_por: 'p2' }),
   ],
-  ausencias: [filaCompleta('ausencias', { reportada_por: 'p1' })],
+  // Un niño que ya no está (purgado y borrado): su nombre «no consta».
+  ausencias: [filaCompleta('ausencias', { reportada_por: 'p1', nino_id: 'n-que-no-esta' })],
+  // Un consentimiento que no es de ningún niño: sin nombre.
+  consentimientos: [filaCompleta('consentimientos', { nino_id: null })],
+  firmas_autorizacion: [
+    filaCompleta('firmas_autorizacion', { nino_id: 'n1', autorizacion_id: 'au1' }),
+  ],
+  autorizaciones: [filaCompleta('autorizaciones', { id: 'au1' })],
+  cita_invitados: [filaCompleta('cita_invitados', { cita_id: 'ci1' })],
+  citas: [{ id: 'ci1', titulo: 'Tutoría de octubre', fecha: '2026-10-20' }],
   informes_evolucion: [filaCompleta('informes_evolucion', { creado_por: 'p1' })],
   media_etiquetas: [{ media_id: 'm1', nino_id: 'n1' }],
   media: [{ id: 'm1', bucket: 'aula-fotos', path: 'p', publicacion_id: 'p1', created_at: 'x' }],
   publicaciones: [{ id: 'p1', texto: 't', created_at: 'x' }],
 }
-for (const t of [
-  'consentimientos',
-  'cita_invitados',
-  'firmas_autorizacion',
-  'datos_pedagogicos_nino',
-  'asistencias',
-  'autorizaciones',
-])
-  FILAS[t] = [filaCompleta(t)]
+for (const t of ['datos_pedagogicos_nino', 'asistencias']) FILAS[t] = [filaCompleta(t)]
 
 function clienteDeMentira(fallaEn?: string) {
   const llamadas: Llamada[] = []
@@ -188,10 +193,12 @@ function seDebenPedir(r: RutaRecolectar, prefijo = ''): string[] {
     .map(([c]) => prefijo + c)
 }
 
-/** Se entrega lo que sale (`sale` o `saleSinRepasar`) y la clave de cada rol. */
+/** Se entrega lo que sale (`sale` o `saleSinRepasar`), la clave de cada rol y lo legible. */
 function seDebenEntregar(r: RutaRecolectar): string[] {
   return Object.entries(catalogo[r].columnas)
-    .flatMap(([c, d]) => ('rol' in d ? [d.rol] : 'noSale' in d ? [] : [c]))
+    .flatMap(([c, d]) =>
+      'rol' in d ? [d.rol] : 'enSuLugar' in d ? [d.enSuLugar] : 'noSale' in d ? [] : [c]
+    )
     .sort()
 }
 
@@ -218,8 +225,12 @@ function esperadas(): Array<{ rutas: RutaRecolectar[]; tabla: string; columnas: 
  * lectura es un rojo.
  */
 const APARTE: Record<string, string> = {
-  'conversaciones|centro_id, id, nino_id':
-    'encuentra los hilos del sujeto, y su centro y su niño para el rol del autor',
+  'conversaciones|centro_id, id, nino_id, tipo_conversacion':
+    'encuentra los hilos del sujeto, con quién son y de qué niño, y su centro para el rol del autor',
+  'ninos|apellidos, id, nombre': 'el nombre del niño en lugar de su id (2c)',
+  'autorizaciones|id, tipo, titulo':
+    'el título y el tipo del documento firmado en lugar de su id (2c)',
+  'citas|fecha, id, titulo': 'el título y la fecha de la cita en lugar de su id (2c)',
   'media_etiquetas|media_id': 'solo encuentra las fotos del blog donde sale el niño',
   'media_etiquetas|media_id, nino_id': 'cuenta con cuántos niños más sale cada foto',
   'media|bucket, created_at, id, path, publicacion_id':
@@ -237,8 +248,13 @@ const APARTE: Record<string, string> = {
     'el rol a la fecha: la asignación de la profe al aula del niño ese día',
 }
 
-/** Las filas que el export entrega de una sección (la ficha, un objeto; lo demás, listas). */
+/**
+ * Las filas que el export entrega de una sección (la ficha, un objeto; lo demás, listas). Los
+ * mensajes del usuario van dentro de sus conversaciones (2c).
+ */
 function entregadas(datos: { usuario: Fila; nino: Fila }, r: RutaRecolectar): Fila[] {
+  if (r === 'usuario.mensajes')
+    return (datos.usuario.conversaciones as Fila[]).flatMap((c) => c.mensajes as Fila[])
   const [sujeto, clave, hija] = r.split('.')
   const v = datos[sujeto as 'usuario' | 'nino'][clave]
   const lista = (Array.isArray(v) ? v : [v]) as Fila[]
@@ -301,13 +317,43 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
   it('el rol sale en lugar del uuid, y es el de la fecha y no una etiqueta inventada', async () => {
     const { usuario, nino } = await recolectarTodo()
     // El autor del mensaje es la propia persona interesada; el resto, gente sin historia aquí.
-    expect((usuario.mensajes as Fila[])[0].autor_rol).toBe('tú')
+    expect(((usuario.conversaciones as Fila[])[0].mensajes as Fila[])[0].autor_rol).toBe('tú')
     expect((usuario.recordatorios_recibidos as Fila[])[0].creado_por_rol).toBe('no consta')
     expect((nino.administraciones_medicacion as Fila[])[0].administrado_por_rol).toBe('no consta')
     expect((nino.administraciones_medicacion as Fila[])[0].confirmado_por_rol).toBe(
       'coordinadora del aula'
     )
     expect(JSON.stringify({ usuario, nino })).not.toMatch(/"p1"|"p2"/)
+  })
+
+  it('en lugar del id sale lo que la persona reconoce, el de su propia fila (2c)', async () => {
+    const { usuario } = await recolectarTodo()
+    const primera = (k: string) => (usuario[k] as Fila[])[0]
+    const ninoN1 = 'v:nombre v:apellidos'
+    expect(primera('vinculos_familiares').nino).toBe(ninoN1)
+    expect(primera('firmas_realizadas').nino).toBe(ninoN1)
+    expect(primera('firmas_realizadas').documento).toEqual({ titulo: 'v:titulo', tipo: 'v:tipo' })
+    expect(primera('invitaciones_a_citas').cita).toEqual({
+      titulo: 'Tutoría de octubre',
+      fecha: '2026-10-20',
+    })
+    // Un id que no encuentra su fila: «no consta». Una fila que no es de ningún niño: vacío.
+    expect(primera('ausencias_reportadas').nino).toBe('no consta')
+    expect(primera('consentimientos').nino).toBeNull()
+    expect(JSON.stringify(usuario)).not.toMatch(/"n1"|"au1"|"ci1"|"c1"|"c2"|n-que-no-esta/)
+  })
+
+  it('los mensajes salen por conversación: con quién, por su rol, y de qué niño (2c)', async () => {
+    const { usuario } = await recolectarTodo()
+    const conversaciones = usuario.conversaciones as Fila[]
+    // La conversación sin mensajes no sale; la del aula, sí, con su niño.
+    expect(conversaciones).toHaveLength(1)
+    expect(conversaciones[0]).toMatchObject({
+      con: 'el profesorado del aula',
+      nino: 'v:nombre v:apellidos',
+    })
+    expect((conversaciones[0].mensajes as Fila[]).length).toBe(1)
+    expect(usuario).not.toHaveProperty('mensajes')
   })
 
   it('la foto de perfil del usuario sale también como enlace firmado (2c)', async () => {
@@ -369,7 +415,15 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
     // contra su regla se pone roja, y una columna nueva de una clase técnica hereda su regla.
     const PERSONA = /(^|_)(autor|firmante|usuario|usuario_destinatario)_id$|_por$/
     const tipo = (d: DecisionColumnaApp) =>
-      'rol' in d ? 'rol' : 'noSale' in d ? 'noSale' : 'sale' in d ? 'sale' : 'sinRepasar'
+      'rol' in d
+        ? 'rol'
+        : 'enSuLugar' in d
+          ? 'enSuLugar'
+          : 'noSale' in d
+            ? 'noSale'
+            : 'sale' in d
+              ? 'sale'
+              : 'sinRepasar'
     let n = 0
     for (const r of rutas)
       for (const [c, d] of Object.entries(catalogo[r].columnas)) {
@@ -384,7 +438,8 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
         } else if (PERSONA.test(c)) {
           expect(['noSale', 'rol'], `R4 ${donde}`).toContain(t)
         } else if (c === 'id' || c.endsWith('_id')) {
-          expect(['sale', 'noSale'], `R5 ${donde}`).toContain(t)
+          // `enSuLugar`: el id no sale, sale lo legible (2c).
+          expect(['sale', 'noSale', 'enSuLugar'], `R5 ${donde}`).toContain(t)
         } else if (c === 'ip_address' || c === 'user_agent') {
           expect(t, `R7 ${donde}`).toBe(r === 'nino.firmas' ? 'noSale' : 'sale')
         } else if (c === 'texto_hash' || c === 'texto_version' || c === 'metodo_firma') {
