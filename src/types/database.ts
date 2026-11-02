@@ -4911,6 +4911,39 @@ export type Database = {
           mandatos: string[]
         }[]
       }
+      fichero_remesa_vigente: {
+        Args: { p_remesa_id: string }
+        Returns: {
+          fichero_id: string
+          generado_at: string
+          msg_id: string
+          ruta: string
+          sha256: string
+        }[]
+      }
+      ficheros_remesa_huerfanos: {
+        Args: never
+        Returns: { ruta: string }[]
+      }
+      ficheros_remesa_vencidos: {
+        Args: { p_anios: number }
+        Returns: { fichero_id: string; ruta: string }[]
+      }
+      destruir_fichero_remesa: {
+        Args: { p_anios: number; p_fichero_id: string }
+        Returns: number | null
+      }
+      registrar_fichero_remesa: {
+        Args: {
+          p_adeudos: Json
+          p_marca: string
+          p_msg_id: string
+          p_remesa_id: string
+          p_ruta: string
+          p_sha256: string
+        }
+        Returns: string
+      }
       destruir_fiscal_familia: {
         Args: { p_anios: number; p_familia_id: string }
         Returns: Json
