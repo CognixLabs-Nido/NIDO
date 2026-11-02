@@ -6,6 +6,7 @@ import { localeIntl } from '@/shared/lib/locale-intl'
 
 import { ExportButton } from '@/features/export/components/ExportButton'
 
+import { quienLeyo } from '../lib/quien-leyo'
 import type { RegistroLecturas } from '../queries/get-lecturas-ficha-medica'
 
 /**
@@ -70,15 +71,16 @@ export async function LecturasFichaMedica({
             {registro.lecturas.map((l, i) => (
               <div key={i} className="space-y-1 py-2 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="text-foreground font-medium">
-                    {l.lector ?? t('cuenta_borrada')}
-                  </span>
+                  <span className="text-foreground font-medium">{quienLeyo(l, t)}</span>
                   <time className="text-muted-foreground text-xs" dateTime={l.leidaEn}>
                     {fmt.format(new Date(l.leidaEn))}
                   </time>
                 </div>
                 <p className="text-muted-foreground text-xs">
-                  {t(`rol.${l.rol}`)} · {t(`origen.${l.origen}`)}
+                  {/* Del personal, a la familia ya se le enseña el rol arriba: no se repite. */}
+                  {l.lector.tipo === 'oculto'
+                    ? t(`origen.${l.origen}`)
+                    : `${t(`rol.${l.rol}`)} · ${t(`origen.${l.origen}`)}`}
                 </p>
                 <p className="text-foreground text-xs">
                   {l.campos.length === 0

@@ -222,7 +222,6 @@ describe('Lecturas de la ficha médica', () => {
       const { data, error } = await s[k]!.rpc('lecturas_ficha_medica', { p_nino_id: nino.id })
       expect(error).toBeNull()
       const quien = (data ?? []).map((l) => l.lector_nombre)
-      expect(quien).toContain('Profe Lecturas')
       expect(quien).toContain('Tutora Lecturas Uno')
       expect(data?.find((l) => l.rol_lector === 'profe')?.campos).toEqual([
         'alergias_graves',
@@ -232,6 +231,36 @@ describe('Lecturas de la ficha médica', () => {
     for (const k of ['profe', 'autorizado', 'titularOtro']) {
       const { error } = await s[k]!.rpc('lecturas_ficha_medica', { p_nino_id: nino.id })
       expect(error?.code).toBe('42501')
+    }
+  })
+
+  it('a Dirección, el nombre de quien leyó; a un tutor, el del personal no: su rol (R4)', async () => {
+    const porRol = async (k: string) =>
+      Object.fromEntries(
+        ((await s[k]!.rpc('lecturas_ficha_medica', { p_nino_id: nino.id })).data ?? []).map((l) => [
+          l.rol_lector,
+          { nombre: l.lector_nombre, oculto: l.nombre_oculto },
+        ])
+      )
+    // Dirección (la titular y la directora): todos con su nombre, nada oculto.
+    for (const k of ['titular', 'directora']) {
+      const d = await porRol(k)
+      // Premisa: están las lecturas de los cinco roles del primer caso.
+      expect(Object.keys(d).sort()).toEqual(
+        ['admin', 'autorizado', 'directora', 'profe', 'tutor_legal'].sort()
+      )
+      expect(d.profe).toEqual({ nombre: 'Profe Lecturas', oculto: false })
+      expect(d.admin).toEqual({ nombre: 'Titular Lecturas', oculto: false })
+    }
+    // Los tutores: la familia del niño con su nombre; el personal, sin él y marcado como oculto
+    // (no como cuenta borrada).
+    for (const k of ['tutor1', 'tutor2']) {
+      const d = await porRol(k)
+      expect(Object.keys(d)).toHaveLength(5)
+      for (const rol of ['admin', 'directora', 'profe'])
+        expect(d[rol], `${k} ${rol}`).toEqual({ nombre: null, oculto: true })
+      expect(d.tutor_legal).toEqual({ nombre: 'Tutora Lecturas Uno', oculto: false })
+      expect(d.autorizado).toEqual({ nombre: 'Autorizado Lecturas', oculto: false })
     }
   })
 

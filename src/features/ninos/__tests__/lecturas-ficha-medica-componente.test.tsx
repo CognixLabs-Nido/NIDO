@@ -33,7 +33,7 @@ const OK: RegistroLecturas = {
   lecturas: [
     {
       leidaEn: '2026-07-15T10:30:00Z',
-      lector: 'Profe Demo',
+      lector: { tipo: 'nombre', nombre: 'Profe Demo' },
       rol: 'profe',
       origen: 'ficha',
       campos: ['alergias_graves'],
@@ -78,6 +78,26 @@ describe('LecturasFichaMedica', () => {
 
     const { container } = await pintar({ tipo: 'no_autorizado' }, { href: HREF, para: 'guardar' })
     expect(container.innerHTML).toBe('')
+  })
+
+  it('a un tutor, del personal le sale el rol, no el nombre ni «cuenta borrada» (R4)', async () => {
+    await pintar({
+      tipo: 'ok',
+      lecturas: [
+        {
+          leidaEn: '2026-07-15T10:30:00Z',
+          lector: { tipo: 'oculto' },
+          rol: 'profe',
+          origen: 'ficha',
+          campos: ['alergias_graves'],
+        },
+      ],
+    })
+    // Premisa: la lectura se ha pintado (con lo que vio).
+    expect(screen.getByText(/alergias graves/)).toBeTruthy()
+    expect(screen.getByText('Profesorado del aula')).toBeTruthy()
+    expect(screen.queryByText('Cuenta borrada')).toBeNull()
+    expect(screen.queryByText(/Profesorado del aula ·/)).toBeNull()
   })
 
   it('bloqueado (el niño está purgado): dice desde cuándo y por qué, sin lecturas ni botón', async () => {
