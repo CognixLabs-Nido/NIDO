@@ -190,6 +190,17 @@ describe('renderExportHtml', () => {
     expect(html).toContain('20/10/2026')
   })
 
+  it('quién está vinculado al niño sale con su etiqueta (2d)', () => {
+    const html = renderExportHtml(
+      docDeNino({
+        vinculos_familiares: [{ adulto: 'Madre Pérez', tipo_vinculo: 'tutor_legal_principal' }],
+      }),
+      t,
+      'es'
+    )
+    expect(html).toContain('<dt>doc.campos.adulto</dt><dd>Madre Pérez</dd>')
+  })
+
   it('no incluye la sección de Mensajes (solo van en datos.json)', () => {
     const html = renderExportHtml(
       {

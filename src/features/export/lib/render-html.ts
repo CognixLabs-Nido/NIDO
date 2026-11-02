@@ -54,6 +54,8 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'nino',
   'documento',
   'cita',
+  // quién está vinculado al niño, con su nombre (2d)
+  'adulto',
   'tipo',
   'aceptado_en',
   'revocado_en',

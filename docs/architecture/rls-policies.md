@@ -1630,7 +1630,14 @@ fecha de cobro de la F1 y la deuda dada por perdida de `20261212120000`, por eje
   concepto asignado, el tipo de personal de la invitación y `por_plazo` del olvido. Y el prospecto
   de la lista de espera **entero**, nota incluida, en el export del tutor que lo apuntó: sustituye,
   solo para el export, a la decisión del 2026-10-14 (solo teléfono y email). Dentro de la app la
-  familia sigue sin leer `lista_espera`. Quedan 9 de contenido por decidir, todas del niño (2d).
+  familia sigue sin leer `lista_espera`.
+- **El contenido del niño** (`20261219120000`, trozo 2d): del prospecto, cuándo se descartó; de
+  los eventos, si pedían confirmación; de los recordatorios, si se enviaron por error;
+  del olvido, `por_plazo`. En la app, las 96 columnas del niño que salían sin repasar quedan
+  decididas; de los otros adultos no salen sus permisos ni, de sus firmas, la imagen, los datos de
+  recogida ni el comentario, y quien está vinculado sale con su nombre. `matriculas.motivo_baja`
+  sigue sin salir a la familia (decisión de Jose del 2026-11-02, que mantiene la del 2026-10-14 en
+  contra de su criterio para `notas_admin`, asumido; lo valida el abogado en F11-B).
 - **La mitad de la app** (trozo 3): `recolectar.ts` leía 19 tablas (y `roles_usuario`, en
   `rolesDelSujetoParaExport`) con `select('*')`, así que una columna nueva salía en el export sin
   que nadie la decidiera. Ahora pide a cada tabla solo las columnas que salen

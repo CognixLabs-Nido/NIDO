@@ -834,7 +834,7 @@
         "sexo_placeholder": "Seleccionar...",
         "idioma_principal": "Idioma principal",
         "nacionalidad": "Nacionalitat",
-        "notas_admin": "Notes internes",
+        "notas_admin": "Notes de Direcció",
         "notas_admin_aviso": "La família pot llegir aquestes notes si demana una còpia de les seues dades.",
         "alergias_graves": "Al·lèrgies greus",
         "notas_emergencia": "Notes d'emergència",
@@ -4080,7 +4080,7 @@
         "sexo": "Sexe",
         "nacionalidad": "Nacionalitat",
         "idioma_principal": "Idioma principal",
-        "notas_admin": "Notes",
+        "notas_admin": "Notes de Direcció",
         "alergias_graves": "Al·lèrgies greus",
         "notas_emergencia": "Notes d'emergència",
         "medicacion_habitual": "Medicació habitual",
@@ -4261,7 +4261,8 @@
         "campos": "Dades vistes",
         "nino": "Xiquet/a",
         "documento": "Document",
-        "cita": "Cita"
+        "cita": "Cita",
+        "adulto": "Persona vinculada"
       },
       "valores": {
         "terminos": "Termes",

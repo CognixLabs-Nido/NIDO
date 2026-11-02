@@ -57,6 +57,8 @@ Para todo lo demás (`cd`, `git status`, `npm test`, ediciones según plan, etc.
 
 **Lección de origen**: F5B fatiga de aprobación durante #34-#36, donde cada `cd`, `cat` o `gh pr view` interrumpía el flujo. Formalizada tras conversación con el usuario el 2026-05-30.
 
+**12. Revocar una decisión incluye barrer todo lo que la afirma, en el mismo PR.** Cuando un PR revoca o sustituye una decisión del responsable, el barrido no es un paso aparte: código, tests (también sus nombres), comentarios, catálogos, specs y ADRs que la afirmen se cambian en ese mismo PR, o se marcan «sustituida el AAAA-MM-DD por …». Se busca la frase de la decisión y sus paráfrasis en `src`, `supabase/migrations`, `docs/specs`, `docs/decisions` y `docs/architecture`, y la descripción del PR dice dónde se buscó y qué se cambió. Un PR que revoca sin barrer no está terminado. _Norma del responsable del 2026-11-02, tras dos casos: el comentario «FRST diferida» en #461 y, en #473, un test que seguía afirmando «del tutor, solo teléfono y email» y puso roja la CI._
+
 ## Verificaciones antes de abrir un PR
 
 Tras implementar y antes de abrir el PR, deben pasar en local:

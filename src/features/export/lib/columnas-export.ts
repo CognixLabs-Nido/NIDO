@@ -156,6 +156,12 @@ const NS_SUJETO_TIPO_USUARIO = {
     '2c (2026-11-02): aquí vale siempre «usuario», porque la sección solo lista lo de la propia persona (la consulta filtra por ese tipo y por su id). Que es suyo ya lo dice la sección en la que sale.',
 } as const
 
+/** 2d (2026-11-02): el mismo caso que `NS_SUJETO_TIPO_USUARIO`, en el export del niño. */
+const NS_SUJETO_TIPO_NINO = {
+  noSale:
+    '2d (2026-11-02): aquí vale siempre «nino», porque la sección solo lista las peticiones sobre este niño (la consulta filtra por ese tipo y por su id). Que son suyas ya lo dice la sección en la que salen.',
+} as const
+
 /** Por ruta: `usuario.` o `nino.` y la clave de la sección (y la de dentro, si la hay). */
 export const SECCIONES_EXPORT = {
   'usuario.preferencias': seccion('preferencias_usuario', {
@@ -455,7 +461,7 @@ export const SECCIONES_EXPORT = {
     apellidos_nino: { sale: 'apellidos_nino' },
     tutor_usuario_id: NS_PERSONA,
     nino_id: NS_SUJETO,
-    descartado_at: PD,
+    descartado_at: { sale: 'descartado_en' },
   }),
   'nino.matriculas': seccion('matriculas', {
     id: { sale: 'id' },
@@ -465,7 +471,10 @@ export const SECCIONES_EXPORT = {
     estado: { sale: 'estado' },
     fecha_alta: { sale: 'fecha_alta' },
     fecha_baja: { sale: 'fecha_baja' },
-    motivo_baja: PD,
+    motivo_baja: {
+      noSale:
+        'Decisión de Jose, responsable del tratamiento, del 2026-11-02, que mantiene la del 2026-10-14: el motivo de baja de una matrícula, que escribe Dirección, no sale en el export de la familia; solo en el que descarga Dirección (`get_motivos_baja_matriculas`). Va contra el criterio que él mismo fijó ese mismo día para `notas_admin` y para la nota del prospecto, que sí salen: esa incoherencia está asumida, no es un descuido. El riesgo, también asumido, es que un interesado reclame y la AEPD considere que ese texto es dato suyo. Lo decide el abogado (F11-B, `docs/follow-ups.md`): si valida que se puede retener, se queda; si no, cae.',
+    },
     created_at: { sale: 'creado_en' },
     deleted_at: { sale: 'borrado_en' },
     activada_at: { sale: 'activada_en' },
@@ -536,7 +545,10 @@ export const SECCIONES_EXPORT = {
   'nino.eventos': seccion('eventos', {
     id: { sale: 'id' },
     centro_id: NS_CENTRO,
-    ambito: PD,
+    ambito: {
+      noSale:
+        '2d (2026-11-02): aquí vale siempre «nino»: la sección solo lista los eventos de este niño (la consulta filtra por su id), y un evento con niño es siempre de ámbito niño (CHECK `eventos_ambito_coherencia`). Los eventos del aula o del centro no son datos del niño.',
+    },
     aula_id: NS_FUERA,
     nino_id: NS_SUJETO,
     tipo: { sale: 'tipo' },
@@ -547,7 +559,7 @@ export const SECCIONES_EXPORT = {
     fecha_fin: { sale: 'fecha_fin' },
     hora_inicio: { sale: 'hora_inicio' },
     hora_fin: { sale: 'hora_fin' },
-    requiere_confirmacion: PD,
+    requiere_confirmacion: { sale: 'requiere_confirmacion' },
     estado: { sale: 'estado' },
     creado_por: NS_PERSONA,
     created_at: { sale: 'creado_en' },
@@ -567,7 +579,10 @@ export const SECCIONES_EXPORT = {
   'nino.recordatorios': seccion('recordatorios', {
     id: NS_ID,
     centro_id: NS_CENTRO,
-    destinatario: PD,
+    destinatario: {
+      noSale:
+        '2d (2026-11-02): aquí vale siempre «familia_individual»: la sección solo lista los recordatorios dirigidos a la familia sobre este niño (la consulta filtra por ese destinatario). Los demás son trabajo del centro.',
+    },
     nino_id: NS_SUJETO,
     aula_id: NS_FUERA,
     usuario_destinatario_id: NS_PERSONA,
@@ -577,7 +592,10 @@ export const SECCIONES_EXPORT = {
     vencimiento: { sale: 'vencimiento' },
     completado_en: { sale: 'completado_en' },
     completado_por: NS_PERSONA,
-    erroneo: PD,
+    erroneo: {
+      sale: 'erroneo',
+      nota: '2d (2026-11-02): si el centro lo marcó como enviado por error; sin esto, la familia leería como vigente un recordatorio anulado.',
+    },
     created_at: { sale: 'creado_en' },
     updated_at: { sale: 'actualizado_en' },
   }),
@@ -655,7 +673,7 @@ export const SECCIONES_EXPORT = {
   }),
   'nino.solicitudes_olvido': seccion('olvido_solicitudes', {
     id: NS_ID,
-    sujeto_tipo: PD,
+    sujeto_tipo: NS_SUJETO_TIPO_NINO,
     sujeto_id: NS_SUJETO,
     centro_id: NS_CENTRO,
     solicitado_por: NS_PERSONA,
@@ -674,9 +692,12 @@ export const SECCIONES_EXPORT = {
     retirada_en: { sale: 'retirada_en' },
     retirada_por: NS_PERSONA,
     nota_centro: { sale: 'nota_centro' },
-    estado_previo: PD,
+    estado_previo: {
+      noSale:
+        'Decisión del responsable del 2026-11-01: es un apaño técnico para deshacer, no un dato de nadie. Guarda cómo estaba el niño antes de confirmar la petición (si ya estaba dado de baja, cuándo y por qué), para restaurarlo si se retira durante la gracia. Esas dos cosas salen en `nino.ficha` (`deleted_at`, `deleted_reason`).',
+    },
     tutores_legales: NS_PERSONA,
-    por_plazo: PD,
+    por_plazo: { sale: 'por_plazo' },
   }),
   'nino.lecturas_ficha_medica': seccion('lecturas_ficha_medica', {
     id: NS_ID,

@@ -92,7 +92,11 @@ const FILAS: Record<string, Fila[]> = {
     },
   ],
   vinculos_familiares: [
-    filaCompleta('vinculos_familiares', { tipo_vinculo: 'tutor_legal_principal', nino_id: 'n1' }),
+    filaCompleta('vinculos_familiares', {
+      tipo_vinculo: 'tutor_legal_principal',
+      nino_id: 'n1',
+      usuario_id: 'u1',
+    }),
   ],
   conversaciones: [
     { id: 'c1', centro_id: 'k1', nino_id: 'n1', tipo_conversacion: 'profe_familia' },
@@ -117,7 +121,18 @@ const FILAS: Record<string, Fila[]> = {
   // Un consentimiento que no es de ningún niño: sin nombre.
   consentimientos: [filaCompleta('consentimientos', { nino_id: null })],
   firmas_autorizacion: [
-    filaCompleta('firmas_autorizacion', { nino_id: 'n1', autorizacion_id: 'au1' }),
+    filaCompleta('firmas_autorizacion', {
+      nino_id: 'n1',
+      autorizacion_id: 'au1',
+      // Una recogida con la foto del DNI de quien recoge; y una ruta de otro bucket, que no se firma.
+      datos: {
+        personas: [{ nombre: 'Abuela Demo' }],
+        adjuntos: [
+          { bucket: 'recogida-adjuntos', path: 'k1/n1/dni-abuela.jpg', hash: 'h' },
+          { bucket: 'dni-tutores', path: 'k1/otro.jpg', hash: 'h' },
+        ],
+      },
+    }),
   ],
   autorizaciones: [filaCompleta('autorizaciones', { id: 'au1' })],
   cita_invitados: [filaCompleta('cita_invitados', { cita_id: 'ci1' })],
@@ -231,6 +246,7 @@ const APARTE: Record<string, string> = {
   'autorizaciones|id, tipo, titulo':
     'el título y el tipo del documento firmado en lugar de su id (2c)',
   'citas|fecha, id, titulo': 'el título y la fecha de la cita en lugar de su id (2c)',
+  'usuarios|id, nombre_completo': 'el nombre del adulto vinculado al niño en lugar de su id (2d)',
   'media_etiquetas|media_id': 'solo encuentra las fotos del blog donde sale el niño',
   'media_etiquetas|media_id, nino_id': 'cuenta con cuántos niños más sale cada foto',
   'media|bucket, created_at, id, path, publicacion_id':
@@ -356,6 +372,51 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
     expect(usuario).not.toHaveProperty('mensajes')
   })
 
+  it('del niño, quién está vinculado sale con su nombre, y sin sus permisos (2d)', async () => {
+    const { nino } = await recolectarTodo()
+    const [v] = nino.vinculos_familiares as Fila[]
+    // La ficha del usuario u1 se llama «v:nombre_completo» en el cliente de mentira.
+    expect(v.adulto).toBe('v:nombre_completo')
+    expect(v.tipo_vinculo).toBe('tutor_legal_principal')
+    expect(v).not.toHaveProperty('permisos')
+    expect(v).not.toHaveProperty('usuario_id')
+  })
+
+  it('de las firmas del niño no salen la imagen, los datos ni el comentario de otro firmante (2d)', async () => {
+    const { nino, usuario } = await recolectarTodo()
+    const [f] = nino.firmas as Fila[]
+    expect(f).not.toHaveProperty('firma_imagen')
+    expect(f).not.toHaveProperty('datos')
+    expect(f).not.toHaveProperty('comentario')
+    expect(f.decision).toBe('v:decision')
+    // Las propias, con las dos.
+    const [propia] = usuario.firmas_realizadas as Fila[]
+    expect(propia.firma_imagen).toBe('v:firma_imagen')
+    expect(propia.comentario).toBe('v:comentario')
+    expect(propia.datos).toMatchObject({ personas: [{ nombre: 'Abuela Demo' }] })
+  })
+
+  it('el libro de familia y el DNI de quien recoge salen como enlace firmado (2d)', async () => {
+    const { nino, usuario } = await recolectarTodo()
+    // Premisa: la ficha trae la ruta del libro.
+    expect((nino.ficha as Fila).libro_familia_path).toBe('v:libro_familia_path')
+    expect(nino.adjuntos).toContainEqual(
+      expect.objectContaining({
+        descripcion: 'Libro de familia',
+        bucket: 'libro-familia',
+        path: 'v:libro_familia_path',
+        url_firmada: 'https://x',
+      })
+    )
+    const recogida = (usuario.adjuntos as Fila[]).filter(
+      (a) => a.descripcion === 'DNI de persona autorizada a recoger'
+    )
+    // Solo la del bucket de recogida: la ruta viene de un JSON.
+    expect(recogida).toEqual([
+      expect.objectContaining({ bucket: 'recogida-adjuntos', path: 'k1/n1/dni-abuela.jpg' }),
+    ])
+  })
+
   it('la foto de perfil del usuario sale también como enlace firmado (2c)', async () => {
     const { usuario } = await recolectarTodo()
     // Premisa: la ficha trae la ruta de la foto.
@@ -436,7 +497,9 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
         } else if (c === 'centro_id') {
           expect(t, `R3 ${donde}`).toBe('noSale')
         } else if (PERSONA.test(c)) {
-          expect(['noSale', 'rol'], `R4 ${donde}`).toContain(t)
+          // Quién está vinculado al niño sale con su nombre: es su familia (la raya, 2026-11-01).
+          const familia = r === 'nino.vinculos_familiares' && c === 'usuario_id'
+          expect(familia ? ['enSuLugar'] : ['noSale', 'rol'], `R4 ${donde}`).toContain(t)
         } else if (c === 'id' || c.endsWith('_id')) {
           // `enSuLugar`: el id no sale, sale lo legible (2c).
           expect(['sale', 'noSale', 'enSuLugar'], `R5 ${donde}`).toContain(t)

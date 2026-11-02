@@ -834,7 +834,7 @@
         "sexo_placeholder": "Select...",
         "idioma_principal": "Main language",
         "nacionalidad": "Nationality",
-        "notas_admin": "Admin notes",
+        "notas_admin": "Management notes",
         "notas_admin_aviso": "The family can read these notes if they request a copy of their data.",
         "alergias_graves": "Serious allergies",
         "notas_emergencia": "Emergency notes",
@@ -4080,7 +4080,7 @@
         "sexo": "Sex",
         "nacionalidad": "Nationality",
         "idioma_principal": "Main language",
-        "notas_admin": "Notes",
+        "notas_admin": "Management notes",
         "alergias_graves": "Severe allergies",
         "notas_emergencia": "Emergency notes",
         "medicacion_habitual": "Regular medication",
@@ -4261,7 +4261,8 @@
         "campos": "Details seen",
         "nino": "Child",
         "documento": "Document",
-        "cita": "Appointment"
+        "cita": "Appointment",
+        "adulto": "Linked person"
       },
       "valores": {
         "terminos": "Terms",
