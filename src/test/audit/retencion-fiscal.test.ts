@@ -304,7 +304,8 @@ describe('Retención: lo fiscal al vencer', () => {
   })
 
   afterAll(async () => {
-    if (rutasFicheros.length) await serviceClient.storage.from(BUCKET_FICHEROS).remove(rutasFicheros)
+    if (rutasFicheros.length)
+      await serviceClient.storage.from(BUCKET_FICHEROS).remove(rutasFicheros)
     await serviceClient.from('retenciones').delete().eq('centro_id', centro.id)
     await serviceClient.from('olvido_solicitudes').delete().eq('centro_id', centro.id)
     await serviceClient.from('audit_log').delete().eq('tabla', 'ensayo_fiscal')

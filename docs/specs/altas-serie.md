@@ -428,6 +428,7 @@ acaba al reabrir.
 
 > **Construido el 2026-11-02** (`20261221120000`, segundo PR de reabrir remesas). Decidido al
 > construirlo, con el visto bueno del responsable del 2026-11-02:
+>
 > - la función es `SECURITY DEFINER` con `es_admin` explícito, no de invocador: tiene que poner
 >   `enviada_at` y `remesa_ficheros` no tiene privilegios para las sesiones (R-1);
 > - **la marca solo la pone el registro del fichero**, para todos (trigger y marcador

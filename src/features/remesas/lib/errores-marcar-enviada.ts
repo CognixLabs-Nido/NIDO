@@ -15,10 +15,7 @@ const POR_HINT = {
 
 export type HintMarcarEnviada = keyof typeof POR_HINT
 
-export function claveErrorMarcarEnviada(error: {
-  code?: string
-  hint?: string | null
-}): string {
+export function claveErrorMarcarEnviada(error: { code?: string; hint?: string | null }): string {
   if (error.code === '42501') return 'remesas.errors.no_autorizado'
   const hint = error.hint ?? ''
   return hint in POR_HINT ? POR_HINT[hint as HintMarcarEnviada] : 'remesas.errors.enviar_failed'

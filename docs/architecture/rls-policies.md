@@ -1652,9 +1652,9 @@ una remesa» (R-4 y las decisiones del responsable del 2026-11-02).
     `service_role`;
   - pasa la remesa a enviada y **solo los recibos del fichero** a `enviado_banco`, con
     `hoy_madrid()`; pone `enviada_at` en el fichero. Quien marca queda en `audit_log`.
-  - Una remesa que no está en borrador, `ya_enviada`.
-  Es `SECURITY DEFINER` y no de invocador, como decía la spec: `remesa_ficheros` no tiene
-  privilegios para las sesiones.
+  - una remesa que no está en borrador, `ya_enviada`;
+  - es `SECURITY DEFINER` y no de invocador, como decía la spec: `remesa_ficheros` no tiene
+    privilegios para las sesiones.
 - **En la app:** `marcarRemesaEnviada` es una sola llamada a la función, y cada rechazo se dice con
   lo que hay que hacer (`errores-marcar-enviada.ts`).
 - Tests: `remesa-marcar-enviada.rls.test.ts`. Los tests que necesitan una remesa con marca o
