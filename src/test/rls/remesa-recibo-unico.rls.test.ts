@@ -11,6 +11,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { marcarEnviadaComoLaFuncion, ponerMarcaComoElRegistro } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -158,14 +159,8 @@ describe('Un recibo, una remesa', () => {
     const r = await remesa()
     const dentro = await recibo()
     expect((await enlazar(cDirectora, r, dentro)).error).toBeNull()
-    const enviada = await cDirectora
-      .from('remesas')
-      .update({ estado: 'enviada', fecha_envio_banco: '2026-03-05' })
-      .eq('id', r)
-      .select('id')
-      .maybeSingle()
-    expect(enviada.error).toBeNull()
-    expect(enviada.data).not.toBeNull()
+    // La remesa solo pasa a enviada por su función (20261221120000): aquí, como ella.
+    marcarEnviadaComoLaFuncion(r, '2026-03-05')
 
     const nuevo = await enlazar(cDirectora, r, await recibo())
     expect(nuevo.error?.hint).toBe('remesa_cerrada')
@@ -178,14 +173,8 @@ describe('Un recibo, una remesa', () => {
     const r = await remesa()
     const dentro = await recibo()
     expect((await enlazar(cDirectora, r, dentro)).error).toBeNull()
-    const marca = await cDirectora
-      .from('remesas')
-      .update({ fichero_generado_at: new Date().toISOString() })
-      .eq('id', r)
-      .select('id')
-      .maybeSingle()
-    expect(marca.error).toBeNull()
-    expect(marca.data).not.toBeNull()
+    // La marca solo la pone el registro del fichero (20261221120000): aquí, como él.
+    ponerMarcaComoElRegistro(r, new Date().toISOString())
 
     const nuevo = await enlazar(cDirectora, r, await recibo())
     expect(nuevo.error?.hint).toBe('remesa_con_fichero')
@@ -196,54 +185,6 @@ describe('Un recibo, una remesa', () => {
       .update({ fichero_generado_at: null })
       .eq('id', r)
     expect(quitada.error?.hint).toBe('fichero_generado')
-  })
-
-  it('a una remesa enviada sin marca se le pone en la descarga, y una segunda no la cambia', async () => {
-    // La descarga del XML saca el MsgId de la marca (\`message-id.ts\`): la enviada de antes de la
-    // columna la recibe en su primera descarga, y otra descarga a la vez no la sobrescribe.
-    const r = await remesa()
-    expect((await enlazar(cDirectora, r, await recibo())).error).toBeNull()
-    const enviada = await cDirectora
-      .from('remesas')
-      .update({ estado: 'enviada', fecha_envio_banco: '2026-03-05' })
-      .eq('id', r)
-      .select('fichero_generado_at')
-      .maybeSingle()
-    expect(enviada.error).toBeNull()
-    // Premisa: enviada y sin marca.
-    expect(enviada.data).toEqual({ fichero_generado_at: null })
-
-    const primera = '2026-03-06T10:00:00+00:00'
-    const marca = await cDirectora
-      .from('remesas')
-      .update({ fichero_generado_at: primera })
-      .eq('id', r)
-      .is('fichero_generado_at', null)
-      .select('fichero_generado_at')
-      .maybeSingle()
-    expect(marca.error).toBeNull()
-    expect(new Date(marca.data!.fichero_generado_at!).toISOString()).toBe(
-      new Date(primera).toISOString()
-    )
-
-    const otra = await cDirectora
-      .from('remesas')
-      .update({ fichero_generado_at: '2026-03-06T10:00:05+00:00' })
-      .eq('id', r)
-      .is('fichero_generado_at', null)
-      .select('id')
-      .maybeSingle()
-    expect(otra.error).toBeNull()
-    expect(otra.data).toBeNull()
-    const { data: leida } = await cDirectora
-      .from('remesas')
-      .select('fichero_generado_at, estado')
-      .eq('id', r)
-      .single()
-    expect(leida?.estado).toBe('enviada')
-    expect(new Date(leida!.fichero_generado_at!).toISOString()).toBe(
-      new Date(primera).toISOString()
-    )
   })
 
   it('solo entran recibos por banco, confirmados, con importe y del centro', async () => {
@@ -281,14 +222,7 @@ describe('Un recibo, una remesa', () => {
   it('una remesa enviada no vuelve a borrador ni se borra; con el fichero, tampoco se borra', async () => {
     const enviada = await remesa()
     expect((await enlazar(cDirectora, enviada, await recibo())).error).toBeNull()
-    expect(
-      (
-        await cDirectora
-          .from('remesas')
-          .update({ estado: 'enviada', fecha_envio_banco: '2026-03-05' })
-          .eq('id', enviada)
-      ).error
-    ).toBeNull()
+    marcarEnviadaComoLaFuncion(enviada, '2026-03-05')
     const vuelta = await cDirectora
       .from('remesas')
       .update({ estado: 'borrador', fecha_envio_banco: null })
@@ -301,14 +235,7 @@ describe('Un recibo, una remesa', () => {
     expect(borrada.error?.hint).toBe('remesa_cerrada')
 
     const conFichero = await remesa()
-    expect(
-      (
-        await cDirectora
-          .from('remesas')
-          .update({ fichero_generado_at: new Date().toISOString() })
-          .eq('id', conFichero)
-      ).error
-    ).toBeNull()
+    ponerMarcaComoElRegistro(conFichero, new Date().toISOString())
     const borradaFichero = await cDirectora
       .from('remesas')
       .update({ deleted_at: new Date().toISOString() })

@@ -181,3 +181,94 @@ describe('el fichero de cada versión de una remesa (R-1)', () => {
     expect(sha256Hex('')).toBe('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')
   })
 })
+
+/**
+ * R-4 (`20261221120000`): la marca solo la pone el registro, en la misma transacción. Si el servidor
+ * cae entre la subida y el registro, la remesa se queda SIN marca, y el MsgId (y la ruta) sale de la
+ * marca al segundo: la siguiente descarga lleva otra marca y otra ruta, no choca con lo que quedó a
+ * medias, y guarda. Lo subido sin registro lo borra la pasada de huérfanos. Un mundo en memoria: el
+ * bucket, la marca de la remesa y su versión, como los deja la BD.
+ */
+describe('la caída entre la subida y el registro (R-4)', () => {
+  function mundo() {
+    const bucket = new Map<string, string>()
+    const bd: { marca: string | null; version: { ruta: string; sha256: string } | null } = {
+      marca: null,
+      version: null,
+    }
+    let ahora = new Date('2026-11-02T10:15:42.000Z')
+    let caer = false
+    const deps: DepsFichero = {
+      vigente: async () => bd.version,
+      generar: async (marca) => ({
+        xml: `<xml marca="${marca}"/>`,
+        msgId: `NIDO-r1-${(marca ?? 'previa').replace(/\D/g, '').slice(0, 14)}`,
+        adeudos: [{ recibo_id: 'rc', end_to_end_id: 'RC', importe_centimos: 100, mndt_id: 'M' }],
+      }),
+      subir: async (ruta, xml) => {
+        if (bucket.has(ruta)) return 'existe'
+        bucket.set(ruta, xml)
+        return 'ok'
+      },
+      bajar: async (ruta) => bucket.get(ruta) ?? null,
+      borrar: async (ruta) => {
+        bucket.delete(ruta)
+      },
+      registrar: async (v) => {
+        // La caída: el proceso muere aquí, sin registrar y sin borrar lo subido.
+        if (caer) throw new Error('el servidor se cae')
+        // La marca y la versión, en una transacción, como `registrar_fichero_remesa`.
+        bd.marca = v.marca
+        bd.version = { ruta: v.ruta, sha256: v.sha256 }
+        return { ok: true }
+      },
+      ahora: () => ahora,
+    }
+    return {
+      deps,
+      bucket,
+      bd,
+      caeLaProxima: (v: boolean) => {
+        caer = v
+      },
+      pasan: (ms: number) => {
+        ahora = new Date(ahora.getTime() + ms)
+      },
+    }
+  }
+
+  it('la siguiente descarga va a otra ruta y guarda; lo de la caída se queda para la pasada', async () => {
+    const m = mundo()
+    m.caeLaProxima(true)
+    await expect(obtenerFicheroRemesa(m.deps, { ...REMESA, marca: null })).rejects.toThrow(
+      'el servidor se cae'
+    )
+    // Premisa: la caída dejó el objeto subido y la remesa sin marca ni versión.
+    const huerfano = [...m.bucket.keys()]
+    expect(huerfano).toHaveLength(1)
+    expect(m.bd).toEqual({ marca: null, version: null })
+
+    m.caeLaProxima(false)
+    m.pasan(60_000)
+    const r = await obtenerFicheroRemesa(m.deps, { ...REMESA, marca: m.bd.marca })
+    expect(r).toEqual({ xml: `<xml marca="2026-11-02T10:16:42.000Z"/>` })
+    expect(m.bd.marca).toBe('2026-11-02T10:16:42.000Z')
+    expect(m.bd.version?.ruta).not.toBe(huerfano[0])
+    expect([...m.bucket.keys()].sort()).toEqual([huerfano[0], m.bd.version!.ruta].sort())
+  })
+
+  it('en el mismo segundo de la caída, 409; un segundo después, guarda', async () => {
+    const m = mundo()
+    m.caeLaProxima(true)
+    await expect(obtenerFicheroRemesa(m.deps, { ...REMESA, marca: null })).rejects.toThrow()
+    m.caeLaProxima(false)
+    m.pasan(300)
+    expect(await obtenerFicheroRemesa(m.deps, { ...REMESA, marca: null })).toEqual({
+      status: 409,
+      body: { error: 'descarga_en_curso' },
+    })
+    m.pasan(1_000)
+    expect(await obtenerFicheroRemesa(m.deps, { ...REMESA, marca: null })).toHaveProperty('xml')
+    expect(m.bd.version).not.toBeNull()
+  })
+})

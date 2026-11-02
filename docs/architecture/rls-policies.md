@@ -1558,7 +1558,9 @@ toca.
 
 - **`remesas.fichero_generado_at`:** la primera vez que sale el fichero pain.008 de una remesa en
   borrador. La pone la descarga del XML **antes** de leer los recibos que van en él (antes comprueba
-  que el fichero sale, para no cerrar una remesa con un 422), y no se quita. También la pone en una
+  que el fichero sale, para no cerrar una remesa con un 422), y no se quita. Desde `20261220120000`
+  la pone `registrar_fichero_remesa`, con el registro del fichero, y desde `20261221120000` nadie
+  más: ni la sesión ni service_role (ver «Marcar enviada exige el fichero (R-4)»). También la pone en una
   remesa enviada que no la tenía. El `MsgId` (y el `PmtInfId`) del fichero sale de ella, no de la
   hora de la descarga, y desde la F2 de la fecha de cobro también `CreDtTm` y la fecha de los
   recibos sin la suya: dos descargas de la misma versión son el mismo fichero para el banco, que
@@ -1586,8 +1588,10 @@ toca.
   - `crearRemesa` traduce lo que diga la BD y no deja la remesa vacía;
   - `anadirARemesa` mete los recibos marcados en una remesa en borrador sin fichero, todos o ninguno;
     en la lista de remesas, «Añadir N a esta remesa»; con el fichero generado, la remesa lo dice;
-  - `marcarRemesaEnviada` pasa la remesa a enviada **antes** de leer sus recibos: desde ese momento
-    no entra ninguno, así que los que pasan a `enviado_banco` son todos.
+  - `marcarRemesaEnviada` pasaba la remesa a enviada **antes** de leer sus recibos, para que no
+    entrara ninguno entre medias. Desde `20261221120000` es una sola llamada a
+    `marcar_remesa_enviada`, que lo hace en una transacción (ver «Marcar enviada exige el fichero
+    (R-4)»).
 - Test: `remesa-recibo-unico.rls.test.ts`.
 
 ### El fichero de cada versión de una remesa (R-1)
@@ -1617,7 +1621,45 @@ banco, y dos descargas de la misma remesa podían llevar IBAN distintos para la 
   Un fichero espera a la retención de cualquier familia suya (`privado.fichero_remesa_retenido`), y
   `privado.familia_fiscal_vencida` espera a que no quede ningún fichero con un recibo de la
   familia. FK RESTRICT a `remesas` y `recibos`.
-- Test: `remesa-ficheros.rls.test.ts`.
+- Test: `remesa-ficheros.rls.test.ts`. Que lo fiscal espere a sus ficheros, de principio a fin
+  (una familia vencida por sus fechas con un fichero vivo no se destruye; el fichero vencido se
+  borra en el orden del cron y después la familia sale): `retencion-fiscal.test.ts` (R-4).
+
+### Marcar enviada exige el fichero (R-4)
+
+Migración `20261221120000_feat_remesa_marcar_enviada`; spec `docs/specs/altas-serie.md`, «Reabrir
+una remesa» (R-4 y las decisiones del responsable del 2026-11-02).
+
+- **La marca solo la pone su registro.** `authenticated` tiene UPDATE sobre
+  `fichero_generado_at` y `remesas_proteger` solo impedía quitarla: Dirección podía poner la marca
+  (de la que salen el `MsgId` y la ruta del fichero) con un UPDATE directo o al crear la remesa,
+  sin fichero detrás. Trigger `remesas_marca_solo_registro` (BEFORE INSERT OR UPDATE OF la
+  columna, de invocador): la rechaza para todos, también service_role y `postgres` (HINT
+  `marca_solo_registro`), salvo con el marcador local `app.registrar_fichero` = el id de la
+  remesa, que solo pone `registrar_fichero_remesa` (el patrón de `app.resolver_devolucion`).
+  Con eso, una caída entre la subida y el registro deja la remesa sin marca: la siguiente descarga
+  lleva otra marca y otra ruta, y guarda.
+- **La remesa solo pasa a enviada por su función.** Trigger `remesas_enviada_solo_por_marcar`
+  (BEFORE INSERT OR UPDATE OF estado), igual, con `app.marcar_remesa_enviada` (HINT
+  `enviada_solo_por_marcar`). Sin él, un UPDATE directo se saltaba las dos exigencias de abajo.
+- **`marcar_remesa_enviada(remesa)`** (`SECURITY DEFINER`, `EXECUTE` solo para `authenticated`,
+  `es_admin` del centro de la remesa; devuelve cuántos recibos pasaron). Con la remesa y sus
+  recibos bloqueados, en una transacción:
+  - exige la marca y el fichero de esa versión guardado (`sin_fichero`: falta descargarlo);
+  - exige que los recibos cobrables de la remesa (el filtro de `registrar_fichero_remesa`) sean
+    exactamente los del fichero, con el mismo importe (`fichero_no_coincide`). Lo alcanza hoy un
+    recibo que Dirección borra después de descargar el fichero, y un importe que cambia
+    `service_role`;
+  - pasa la remesa a enviada y **solo los recibos del fichero** a `enviado_banco`, con
+    `hoy_madrid()`; pone `enviada_at` en el fichero. Quien marca queda en `audit_log`.
+  - una remesa que no está en borrador, `ya_enviada`;
+  - es `SECURITY DEFINER` y no de invocador, como decía la spec: `remesa_ficheros` no tiene
+    privilegios para las sesiones.
+- **En la app:** `marcarRemesaEnviada` es una sola llamada a la función, y cada rechazo se dice con
+  lo que hay que hacer (`errores-marcar-enviada.ts`).
+- Tests: `remesa-marcar-enviada.rls.test.ts`. Los tests que necesitan una remesa con marca o
+  enviada sin pasar por la función entera la preparan como `postgres`, con el marcador, por psql
+  contra la BD efímera del CI (`src/test/rls/remesa-como-sus-funciones.ts`).
 
 ### La red del export art. 15: cada columna, decidida
 

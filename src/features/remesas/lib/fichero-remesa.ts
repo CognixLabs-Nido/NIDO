@@ -115,7 +115,10 @@ async function guardarVersion(
 
   const ruta = rutaFicheroRemesa(remesa.centroId, remesa.id, g.msgId)
   const subida = await deps.subir(ruta, g.xml)
-  // Otra descarga de la misma versión está a medias: la ruta es suya, y no se toca.
+  // Otra descarga de la misma versión está a medias: la ruta es suya, y no se toca. Desde R-4
+  // (`20261221120000`) la marca solo la pone el registro, así que una caída entre la subida y el
+  // registro deja la remesa sin marca: la siguiente descarga lleva otra marca y otra ruta, y no
+  // llega aquí (salvo en el mismo segundo). Lo que quedó subido lo borra la pasada de huérfanos.
   if (subida === 'existe') return fallo(409, 'descarga_en_curso')
   if (subida === 'error') return fallo(500, 'xml_failed')
 
@@ -148,7 +151,9 @@ export async function obtenerFicheroRemesa(
     const v = await deps.vigente()
     if (v === 'error') return fallo(500, 'xml_failed')
     if (v) return servirGuardada(deps, v)
-    // Una marca sin versión guardada (de antes de esta pieza): se guarda la de esa marca.
+    // Una marca sin versión guardada: la de una remesa marcada antes de R-1 (en producción, ninguna
+    // el 2026-11-02) o la de una cuyo fichero ya se destruyó por plazo. Se guarda la de esa marca.
+    // Desde R-4 nadie pone una marca sin su registro.
     return guardarVersion(deps, remesa, remesa.marca)
   }
   const previa = await deps.generar(null)

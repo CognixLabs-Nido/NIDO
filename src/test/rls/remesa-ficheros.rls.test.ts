@@ -12,6 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { ponerMarcaComoElRegistro } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -67,7 +68,7 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
     return data.id
   }
 
-  /** Una remesa en borrador con ese recibo; con `marca`, ya marcada (service_role). */
+  /** Una remesa en borrador con ese recibo; con `marca`, ya marcada (como la pone el registro). */
   async function remesaCon(reciboId: string, marca?: string): Promise<string> {
     const { data, error } = await cDirectora
       .from('remesas')
@@ -79,13 +80,8 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
       .from('recibos_remesa')
       .insert({ centro_id: centro.id, remesa_id: data.id, recibo_id: reciboId })
     if (e.error) throw new Error(`enlace: ${e.error.message}`)
-    if (marca) {
-      const m = await serviceClient
-        .from('remesas')
-        .update({ fichero_generado_at: marca })
-        .eq('id', data.id)
-      if (m.error) throw new Error(`marca: ${m.error.message}`)
-    }
+    // La marca solo la pone el registro (20261221120000): aquí, como él, sin el registro.
+    if (marca) ponerMarcaComoElRegistro(data.id, marca)
     return data.id
   }
 

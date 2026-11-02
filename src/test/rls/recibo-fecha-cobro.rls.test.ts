@@ -11,6 +11,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { marcarEnviadaComoLaFuncion, ponerMarcaComoElRegistro } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -171,13 +172,8 @@ describe('La fecha de cobro del recibo', () => {
     // Premisa: sin marca, la fecha cambia.
     expect((await fijar(cDirectora, [dentro], EL_5)).error).toBeNull()
 
-    const marca = await cDirectora
-      .from('remesas')
-      .update({ fichero_generado_at: new Date().toISOString() })
-      .eq('id', remesa)
-      .select('id')
-      .maybeSingle()
-    expect(marca.data).not.toBeNull()
+    // La marca solo la pone el registro del fichero (20261221120000): aquí, como él.
+    ponerMarcaComoElRegistro(remesa, new Date().toISOString())
 
     // `fuera` iría bien solo; con `dentro` en la lista, no cambia ninguno.
     const r = await fijar(cDirectora, [fuera, dentro], '2026-05-06')
@@ -196,14 +192,8 @@ describe('La fecha de cobro del recibo', () => {
   it('un recibo enviado al banco o cobrado no cambia de fecha, tampoco con service_role', async () => {
     const enviado = await recibo()
     const remesa = await remesaCon([enviado])
-    expect(
-      (
-        await cDirectora
-          .from('remesas')
-          .update({ estado: 'enviada', fecha_envio_banco: '2026-04-20' })
-          .eq('id', remesa)
-      ).error
-    ).toBeNull()
+    // La remesa solo pasa a enviada por su función (20261221120000): aquí, como ella.
+    marcarEnviadaComoLaFuncion(remesa, '2026-04-20')
     expect(
       (
         await cDirectora
