@@ -1763,8 +1763,7 @@ fecha, nota)`** (de invocador, `EXECUTE` solo para `authenticated`, `es_admin` d
 ### Reabrir una remesa
 
 Migración `20261227120000_feat_reabrir_remesa`; spec `docs/specs/altas-serie.md`, «Reabrir una
-remesa» (decisiones del responsable del 2026-10-31 y del 2026-11-03). Primero la base de datos; el
-botón y el aviso, en el PR siguiente.
+remesa» (decisiones del responsable del 2026-10-31 y del 2026-11-03).
 
 - **`reabrir_remesa(remesa, n_recibos, total_centimos)`** (`SECURITY DEFINER`, `EXECUTE` solo para
   `authenticated`): solo la admin del centro (`privado.es_titular`; la directora, el superusuario,
@@ -1801,7 +1800,14 @@ botón y el aviso, en el PR siguiente.
   migración, service_role devolvía una remesa enviada a borrador y la sesión de la admin
   desvinculaba un devuelto y un cobrado; con ella, no, y reabrir la remesa de CEI Ejemplo (enviada
   sin fichero) deja su recibo pendiente y la remesa en borrador.
-- Test: `remesa-reabrir.rls.test.ts`.
+- **En la app:** «Reabrir» en la lista de remesas, solo para la admin (la página pasa
+  `esResponsable && !esSuperusuario`) y solo en la enviada o la del fichero descargado. El diálogo
+  lee el aviso (`leerAvisoReabrir`: el resumen, y los devueltos y cobrados por su nombre, que tienen
+  que ser tantos como cuenta el resumen) y no ofrece confirmar hasta tenerlo; `reabrirRemesa` manda
+  los números que se enseñaron. Cada rechazo con su clave (`errores-reabrir.ts`).
+- Tests: `remesa-reabrir.rls.test.ts`; de la app, `reabrir-remesa.test.ts`,
+  `leer-aviso-reabrir.test.ts`, `reabrir-remesa-dialog.test.tsx`, `remesas-panel-reabrir.test.tsx` y
+  `remesa-reabrir-keys.test.ts`.
 
 ### Los mandatos SEPA: solo por sus funciones
 

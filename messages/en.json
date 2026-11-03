@@ -2059,7 +2059,7 @@
     "crear_remesa": "Create remittance",
     "anadir_a_remesa": "Add {num} to this batch",
     "recibos_anadidos": "Receipts added to the batch.",
-    "fichero_generado_nota": "File generated: no receipts can be added or removed.",
+    "fichero_generado_nota": "File generated: receipts can no longer be added or removed. To change it, the centre administrator has to reopen it.",
     "remesa_creada": "Remittance created (draft).",
     "remesas_title": "Remittances for the period",
     "sin_remesas": "No remittances in this period yet.",
@@ -2158,7 +2158,12 @@
       "fecha_cobro_failed": "The collection date could not be changed. None has been changed.",
       "descarga_en_curso": "Another download of this batch is in progress. Wait a few seconds and download it again.",
       "remesa_cambio": "The batch changed while the file was being generated. Download it again.",
-      "fichero_alterado": "The stored file for this batch does not match what was recorded when it was generated, so it was not delivered. Contact support."
+      "fichero_alterado": "The stored file for this batch does not match what was recorded when it was generated, so it was not delivered. Contact support.",
+      "nada_que_reabrir": "There is nothing to reopen: this remittance's file has never been generated, and in draft receipts can already be removed and added.",
+      "remesa_cambiada": "The remittance has changed since you opened the warning, so it has not been reopened. The current figures are shown above: check them before confirming again.",
+      "reabrir_failed": "The remittance could not be reopened.",
+      "aviso_failed": "We could not read the remittance to show you what gets reopened. Nothing has been changed: try again.",
+      "aviso_incompleto": "We could not read all the returned or hand-collected receipts of this remittance, so we cannot show you who is not touched. Nothing has been changed: try again."
     },
     "transferencias_beca": {
       "title": "Transfers to families",
@@ -2261,6 +2266,27 @@
       "bloqueada_fichero": "The collection date can no longer be changed: this remittance’s file has already been generated, and the bank must receive that same file.",
       "bloqueada_enviada": "The collection date can no longer be changed: the remittance has already been sent to the bank.",
       "guardada": "{num, plural, =0 {Nothing to change: they already had that date.} one {Collection date changed on 1 receipt.} other {Collection date changed on # receipts.}}"
+    },
+    "reabrir": {
+      "boton": "Reopen",
+      "titulo": "Reopen the remittance",
+      "que_pasa": "The remittance goes back to draft and its sent receipts go back to pending collection, so receipts can be removed or added. The previous file stays saved, and the next download will produce a new one with a different identifier.",
+      "leyendo": "Reading the remittance…",
+      "caso": {
+        "enviada": "This remittance was marked as sent to the bank on {fecha}. If the bank already has it, cancel it there before uploading the new version: otherwise families would be charged twice.",
+        "enviada_sin_constancia": "This remittance was marked as sent to the bank on {fecha}, but NIDO has no record of its file being downloaded. If it reached the bank some other way, cancel it there before uploading the new version: otherwise families would be charged twice.",
+        "fichero_descargado": "This remittance's file has already been downloaded, although the remittance was not marked as sent. If you uploaded it to the bank, cancel it there before uploading the new one: otherwise families would be charged twice."
+      },
+      "afecta": "{familias, plural, =0 {There are no receipts left to collect in it.} one {It affects # family, for {total} ({recibos, plural, one {# receipt} other {# receipts}}).} other {It affects # families, for {total} ({recibos, plural, one {# receipt} other {# receipts}}).}}",
+      "no_se_tocan": "{num, plural, one {This receipt is not touched} other {These # receipts are not touched}}: the family already paid by hand, or the receipt already went through the bank and was returned. They stay in the remittance and are not included in the new file.",
+      "estado": {
+        "devuelto": "Returned by the bank",
+        "cobrado_manual": "Collected by hand"
+      },
+      "cancelar": "Cancel",
+      "confirmar": "Reopen the remittance",
+      "reabierta": "{num, plural, =0 {Remittance reopened.} one {Remittance reopened: # receipt goes back to pending collection.} other {Remittance reopened: # receipts go back to pending collection.}}",
+      "reabierta_sin_numero": "Remittance reopened."
     }
   },
   "aula": {
