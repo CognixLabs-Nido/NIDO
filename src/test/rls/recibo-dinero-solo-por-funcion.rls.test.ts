@@ -230,15 +230,16 @@ describe('El recibo y su dinero: solo por sus funciones', () => {
     expect((await estadoDe(id))?.estado).toBe('cobrado_manual')
   })
 
-  it('lo legítimo sigue: un enviado se devuelve (lo que anota Dirección)', async () => {
+  // B no cierra la salida legítima de enviado_banco: la devolución. Desde 20261223120000 (C) se
+  // anota con marcar_recibo_devuelto; el UPDATE directo que usaba este test ya no pasa.
+  it('lo legítimo sigue: un enviado se devuelve, con su función (lo que anota Dirección)', async () => {
     const id = await enviado()
-    const { data, error } = await cDirectora
-      .from('recibos')
-      .update({ estado: 'devuelto', fecha_devolucion: '2026-05-10', devolucion_gastos_centimos: 0 })
-      .eq('id', id)
-      .select('estado')
-      .maybeSingle()
+    const { error } = await cDirectora.rpc('marcar_recibo_devuelto', {
+      p_recibo_id: id,
+      p_fecha: '2026-05-10',
+      p_gastos_centimos: 0,
+    })
     expect(error).toBeNull()
-    expect(data?.estado).toBe('devuelto')
+    expect((await estadoDe(id))?.estado).toBe('devuelto')
   })
 })

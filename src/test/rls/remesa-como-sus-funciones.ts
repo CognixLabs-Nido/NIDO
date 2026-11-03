@@ -143,3 +143,129 @@ export function sinEnviado<T extends object>(fila: T): { fila: T; envio: string 
   if (typeof envio !== 'string') throw new Error('sinEnviado: un recibo enviado lleva su fecha')
   return { fila: { ...fila, estado: 'pendiente_procesar', fecha_envio_banco: null }, envio }
 }
+
+/** Lo que el recibo lleva al llegar a su estado (las columnas que escriben sus funciones). */
+export interface DestinoRecibo {
+  estado: 'borrador' | 'pendiente_procesar' | 'enviado_banco' | 'devuelto' | 'cobrado_manual'
+  fecha_envio_banco?: string | null
+  fecha_devolucion?: string | null
+  devolucion_gastos_centimos?: number | null
+  devolucion_salida?: string | null
+  cobro_forma?: string | null
+  cobro_fecha?: string | null
+  cobro_nota?: string | null
+  cobro_importe_centimos?: number | null
+}
+
+const COLUMNAS_DESTINO = [
+  'estado',
+  'fecha_envio_banco',
+  'fecha_devolucion',
+  'devolucion_gastos_centimos',
+  'devolucion_salida',
+  'cobro_forma',
+  'cobro_fecha',
+  'cobro_nota',
+  'cobro_importe_centimos',
+] as const
+
+/**
+ * Para los fixtures que crean un recibo ya en un estado del circuito de cobro: la fila en borrador y
+ * sin esas columnas, para insertarla, y el destino al que después lo lleva `prepararRecibo`. Desde
+ * `20261223120000` un recibo nace en borrador (salvo el esporádico de `crear_recibo_esporadico` y el
+ * re-giro de `resolver_devolucion`) y cada paso del circuito lo da su función.
+ */
+export function enBorrador<T extends object>(fila: T): { fila: T; destino: DestinoRecibo | null } {
+  const f = fila as Record<string, unknown>
+  const estado = (f.estado ?? 'borrador') as DestinoRecibo['estado']
+  if (estado === 'borrador') return { fila, destino: null }
+  const destino: Record<string, unknown> = {}
+  const resto: Record<string, unknown> = { ...f, estado: 'borrador' }
+  for (const c of COLUMNAS_DESTINO) {
+    if (c in f) destino[c] = f[c]
+    if (c !== 'estado') delete resto[c]
+  }
+  return { fila: resto as T, destino: destino as unknown as DestinoRecibo }
+}
+
+function literal(v: unknown): string {
+  if (v === null || v === undefined) return 'NULL'
+  if (typeof v === 'number' && Number.isFinite(v)) return String(v)
+  if (typeof v === 'string') return `'${v.replace(/'/g, "''")}'`
+  throw new Error(`prepararRecibo: valor no admitido: ${String(v)}`)
+}
+
+/**
+ * Lleva un recibo de borrador a su estado como lo llevan sus funciones, paso a paso y con el
+ * marcador de cada una (FICCIÓN DE LOS TESTS: solo las transiciones, sin lo demás que hacen; por
+ * ejemplo, el ancla de `cierre_mensual` de `confirmar_recibo` no se pone, igual que no la ponía el
+ * UPDATE directo que sustituye):
+ *  - a pendiente, `confirmar_recibo` (`app.confirmar_recibo`);
+ *  - a enviado, `marcar_remesa_enviada` (`app.marcar_recibo_enviado`);
+ *  - a devuelto, `marcar_recibo_devuelto` (`app.marcar_recibo_devuelto`);
+ *  - a cobrado: desde devuelto, `resolver_devolucion` (`app.resolver_devolucion`); con cheque,
+ *    `cobrar_recibo_con_cheque` (`app.cobro_cheque`); si no, `marcar_cobrado_manual`;
+ *  - la salida de una devolución que se queda en devuelto, `resolver_devolucion`.
+ * Va como `postgres` con el claim de service_role, como iban los fixtures con `serviceClient`: el
+ * congelado le exime igual que antes.
+ */
+export function prepararRecibo(reciboId: string, d: DestinoRecibo): void {
+  const url = process.env.DB_URL
+  if (!url) throw new Error('DB_URL: el recibo solo se prepara así en la BD efímera del CI')
+  if (!UUID.test(reciboId)) throw new Error(`remesa-como-sus-funciones: id no válido: ${reciboId}`)
+  const pasos: Array<[string, string]> = []
+  const conDevolucion =
+    d.estado === 'devuelto' || (d.estado === 'cobrado_manual' && d.fecha_devolucion)
+  const conEnvio = d.estado === 'enviado_banco' || conDevolucion
+  if (d.estado !== 'borrador') pasos.push(['app.confirmar_recibo', "estado = 'pendiente_procesar'"])
+  if (conEnvio) {
+    pasos.push([
+      'app.marcar_recibo_enviado',
+      `estado = 'enviado_banco', fecha_envio_banco = ${literal(d.fecha_envio_banco)}`,
+    ])
+  }
+  if (conDevolucion) {
+    pasos.push([
+      'app.marcar_recibo_devuelto',
+      `estado = 'devuelto', fecha_devolucion = ${literal(d.fecha_devolucion)}, devolucion_gastos_centimos = ${literal(d.devolucion_gastos_centimos ?? 0)}`,
+    ])
+  }
+  if (d.estado === 'cobrado_manual') {
+    const marcador = conDevolucion
+      ? 'app.resolver_devolucion'
+      : d.cobro_forma === 'cheque_guarderia'
+        ? 'app.cobro_cheque'
+        : 'app.marcar_cobrado_manual'
+    pasos.push([
+      marcador,
+      [
+        "estado = 'cobrado_manual'",
+        `cobro_forma = ${literal(d.cobro_forma)}`,
+        `cobro_fecha = ${literal(d.cobro_fecha)}`,
+        `cobro_nota = ${literal(d.cobro_nota)}`,
+        `cobro_importe_centimos = ${literal(d.cobro_importe_centimos)}`,
+        ...(conDevolucion ? [`devolucion_salida = ${literal(d.devolucion_salida)}`] : []),
+      ].join(', '),
+    ])
+  } else if (d.estado === 'devuelto' && d.devolucion_salida) {
+    pasos.push(['app.resolver_devolucion', `devolucion_salida = ${literal(d.devolucion_salida)}`])
+  }
+  const sql = [
+    'BEGIN;',
+    `SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);`,
+    ...pasos.flatMap(([marcador, set]) => [
+      `SELECT set_config('${marcador}', '${reciboId}', true);`,
+      `UPDATE public.recibos SET ${set} WHERE id = '${reciboId}' RETURNING 'hecho';`,
+      `SELECT set_config('${marcador}', '', true);`,
+    ]),
+    'COMMIT;',
+  ].join('\n')
+  const salida = execFileSync('psql', [url, '-v', 'ON_ERROR_STOP=1', '-qAt', '-f', '-'], {
+    input: sql,
+    encoding: 'utf8',
+  })
+  const hechos = salida.split('\n').filter((l) => l === 'hecho').length
+  if (hechos !== pasos.length) {
+    throw new Error(`prepararRecibo: ${hechos} de ${pasos.length} pasos: ${salida}`)
+  }
+}
