@@ -255,4 +255,35 @@ describe('PR-12 — pase de servicios, listado único', () => {
     expect(error?.code).toBe('P0001')
     expect(error?.message).toContain('mes cerrado')
   })
+
+  it('un parte sin decir si estaba no entra: sin DEFAULT, presente no se da por hecho (20261226120000)', async () => {
+    const c = await clientFor(profeAula1)
+    const sinPresente = { centro_id: centroA.id, nino_id: n1, fecha: '2026-10-27' }
+
+    // Premisa: la misma profe, con el mismo niño y día, sí apunta un parte que lo dice.
+    const diciendolo = await c
+      .from('parte_servicio_diario')
+      .insert({ ...sinPresente, servicio: 'matinera', presente: false })
+      .select('presente')
+      .single()
+    expect(diciendolo.error).toBeNull()
+    expect(diciendolo.data?.presente).toBe(false)
+
+    // El tipo ya exige `presente`; por la API se puede omitir igual, y entonces la base lo rechaza.
+    const profe = await c
+      .from('parte_servicio_diario')
+      .insert({ ...sinPresente, servicio: 'comedor' } as never)
+      .select('presente')
+      .maybeSingle()
+    expect.soft(profe.error?.code).toBe('23502')
+    expect.soft(profe.data).toBeNull()
+
+    const servicio = await serviceClient
+      .from('parte_servicio_diario')
+      .insert({ ...sinPresente, servicio: 'vespertina' } as never)
+      .select('presente')
+      .maybeSingle()
+    expect.soft(servicio.error?.code).toBe('23502')
+    expect.soft(servicio.data).toBeNull()
+  })
 })

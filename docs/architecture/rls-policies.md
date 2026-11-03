@@ -1437,6 +1437,9 @@ a los de su aula. Decisión del responsable.
   `es_admin(NULL)` da TRUE a cualquier persona de Dirección.
 - **En la app:** `/teacher/servicios`, en el menú de la profe y en el de Dirección, para el centro
   activo. El enlace del aula lleva ahí con su clase preseleccionada; la página por aula se retira.
+- **`presente` sin DEFAULT** (`20261226120000`, ADR-0066): hasta entonces era `true`, y un parte
+  creado sin decirlo (una profe por la API o `service_role`, medido en producción) afirmaba que el
+  niño usó el servicio, que se cobra. Ahora quien lo apunta lo dice, o el INSERT falla (23502).
 - Test: `pase-servicios-unico.rls.test.ts`.
 
 ### Cargo puntual a varios niños (PR-13 de recibos)
