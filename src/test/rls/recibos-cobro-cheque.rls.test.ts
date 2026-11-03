@@ -12,7 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { intentarConMarcador } from './remesa-como-sus-funciones'
+import { intentarConMarcador, insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -50,9 +50,8 @@ describe('PR-1b — cobro con cheque guardería / ticket restaurant', () => {
   let cTutora: SupabaseClient<Database>
 
   async function recibo(familia: string, over: Partial<Recibo> = {}): Promise<string> {
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: familia,
         anio: 2026,
@@ -63,11 +62,9 @@ describe('PR-1b — cobro con cheque guardería / ticket restaurant', () => {
         es_esporadico: true,
         concepto_esporadico: 'Cobro con cheque PR-1b',
         ...over,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    return data.id
+      },
+    ])
+    return id
   }
 
   function cheque(

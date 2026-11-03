@@ -14,7 +14,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { pasarAEnviadoComoMarcar } from './remesa-como-sus-funciones'
+import { pasarAEnviadoComoMarcar, insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -44,9 +44,8 @@ describe('El recibo y su dinero: solo por sus funciones', () => {
   let mes = 4
 
   async function recibo(over: Partial<Insert> = {}): Promise<string> {
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: familia,
         anio: 2026,
@@ -57,11 +56,9 @@ describe('El recibo y su dinero: solo por sus funciones', () => {
         es_esporadico: true,
         concepto_esporadico: 'Dinero por función',
         ...over,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    return data.id
+      },
+    ])
+    return id
   }
 
   async function enviado(over: Partial<Insert> = {}): Promise<string> {

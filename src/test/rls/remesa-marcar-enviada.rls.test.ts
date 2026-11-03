@@ -13,7 +13,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { enviadaAtDelFichero } from './remesa-como-sus-funciones'
+import { enviadaAtDelFichero, insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -50,9 +50,8 @@ describe('Marcar enviada exige el fichero (R-4)', () => {
   async function recibo(
     over: Partial<Database['public']['Tables']['recibos']['Insert']> = {}
   ): Promise<string> {
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: familia,
         anio: 2026,
@@ -63,11 +62,9 @@ describe('Marcar enviada exige el fichero (R-4)', () => {
         es_esporadico: true,
         concepto_esporadico: 'Marcar enviada',
         ...over,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    return data.id
+      },
+    ])
+    return id
   }
 
   /** Una remesa en borrador con esos recibos: los cobrables los enlaza Dirección; el resto, el servidor. */

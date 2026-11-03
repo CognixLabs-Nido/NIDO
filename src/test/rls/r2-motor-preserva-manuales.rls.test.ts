@@ -15,6 +15,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { prepararRecibo } from './remesa-como-sus-funciones'
 
 /**
  * R-2 — el motor PRESERVA lo escrito a mano.
@@ -444,10 +445,8 @@ describe('R-2 — el motor preserva las líneas manuales', () => {
 
     expect(await generar()).toBeNull()
     const antes = await reciboRegular(familia)
-    await serviceClient
-      .from('recibos')
-      .update({ estado: 'pendiente_procesar' })
-      .eq('id', antes.recibo!.id)
+    // Confirmado como lo pasa confirmar_recibo (20261223120000); si no pasa, salta aquí.
+    prepararRecibo(antes.recibo!.id, { estado: 'pendiente_procesar' })
 
     // Se sube el precio del catálogo: si el motor tocara el confirmado, el total cambiaría.
     await serviceClient

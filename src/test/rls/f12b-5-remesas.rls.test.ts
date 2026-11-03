@@ -17,7 +17,7 @@ import {
   type TestNino,
   type TestUser,
 } from './setup'
-import { pasarAEnviadoComoMarcar } from './remesa-como-sus-funciones'
+import { insertarRecibos, pasarAEnviadoComoMarcar } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -68,22 +68,21 @@ describe('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
     cTutorA = await clientFor(tutorA)
 
     // Recibo regular SEPA (mes AÚN abierto: pasa el trigger en INSERT).
-    const { data: recibo } = await serviceClient
-      .from('recibos')
-      .insert({
+    // En borrador y validado como lo pasa confirmar_recibo (20261223120000).
+    const [idRecibo] = await insertarRecibos([
+      {
         centro_id: centroA.id,
         familia_id: ninoA.familia_id, // F-4-1: recibos a grano familia
         nino_id: ninoA.id,
         anio,
         mes,
-        metodo: 'sepa',
-        estado: 'pendiente_procesar',
+        metodo: 'sepa' as const,
+        estado: 'pendiente_procesar' as const,
         total_centimos: 10000,
         es_esporadico: false,
-      })
-      .select('id')
-      .single()
-    reciboId = recibo!.id
+      },
+    ])
+    reciboId = idRecibo
 
     // Mandato SEPA activo de la FAMILIA del niño (vía RPC del tutor: cifra el IBAN).
     await cTutorA.rpc('registrar_mandato_sepa', {

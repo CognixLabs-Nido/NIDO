@@ -12,7 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from '../rls/setup'
-import { pasarAEnviadoComoMarcar, sinEnviado } from '../rls/remesa-como-sus-funciones'
+import { insertarRecibos } from '../rls/remesa-como-sus-funciones'
 
 /**
  * La deuda dada por perdida (PR-B1; 20261212120000).
@@ -45,16 +45,11 @@ describe('Deuda dada por perdida', () => {
   const recibos: string[] = []
 
   async function recibo(fila: Record<string, unknown>): Promise<string> {
-    const sinEnv = sinEnviado(fila)
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({ centro_id: centro.id, familia_id: familia, anio: 2025, ...sinEnv.fila } as never)
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
-    if (sinEnv.envio) pasarAEnviadoComoMarcar([(data as { id: string }).id], sinEnv.envio)
-    return (data as { id: string }).id
+    // En borrador, y a su estado como lo llevan sus funciones (20261223120000).
+    const [id] = await insertarRecibos([
+      { centro_id: centro.id, familia_id: familia, anio: 2025, ...fila },
+    ])
+    return id
   }
 
   async function peticionDeLaAdmin() {
@@ -110,19 +105,12 @@ describe('Deuda dada por perdida', () => {
     const dev = await recibo({
       mes: 4,
       metodo: 'sepa',
-      estado: 'enviado_banco',
+      estado: 'devuelto',
       fecha_envio_banco: '2025-04-05',
+      fecha_devolucion: '2025-04-20',
+      devolucion_gastos_centimos: GASTOS,
       total_centimos: DEVUELTO,
     })
-    const { error: dErr } = await serviceClient
-      .from('recibos')
-      .update({
-        estado: 'devuelto',
-        fecha_devolucion: '2025-04-20',
-        devolucion_gastos_centimos: GASTOS,
-      })
-      .eq('id', dev)
-    expect(dErr).toBeNull()
     recibos.push(dev)
 
     const ct = await clientFor(tutor)

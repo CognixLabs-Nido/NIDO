@@ -13,6 +13,7 @@ import {
   serviceClient,
   type TestUser,
 } from '../rls/setup'
+import { prepararRecibo } from '../rls/remesa-como-sus-funciones'
 
 /**
  * Las firmas y la cuenta del tutor al vencer (F11-B, punto 6, PR-8, segunda pieza; 20261207120000).
@@ -391,11 +392,8 @@ describe('Retención: las firmas y la cuenta del tutor al vencer', () => {
     // Lo que va por plazo mira el dinero vivo (20261208120000): un borrador sin deuda dentro no la
     // frena; validado, con importe que cobrar, sí.
     expect(await cuentasVencidas()).toEqual([madre.id, padre.id].sort())
-    const v = await serviceClient
-      .from('recibos')
-      .update({ estado: 'pendiente_procesar' })
-      .eq('id', rc!.id)
-    expect(v.error).toBeNull()
+    // Validado como lo pasa confirmar_recibo (20261223120000).
+    prepararRecibo(rc!.id, { estado: 'pendiente_procesar' })
     expect(await cuentasVencidas()).toEqual([])
     const dr = await serviceClient.from('recibos').delete().eq('id', rc!.id)
     expect(dr.error).toBeNull()

@@ -371,10 +371,12 @@ describe('R-5 — desconfirmar un recibo', () => {
     const { reciboId } = await familiaConRecibo('R5 Cobrado')
     expect((await cAdmin.rpc('confirmar_recibo', { p_recibo_id: reciboId })).error).toBeNull()
 
-    const cobrar = await cAdmin
-      .from('recibos')
-      .update({ estado: 'cobrado_manual', cobro_forma: 'efectivo', cobro_fecha: '2026-01-15' })
-      .eq('id', reciboId)
+    const cobrar = await cAdmin.rpc('marcar_cobrado_manual', {
+      p_recibo_id: reciboId,
+      p_forma: 'efectivo',
+      p_fecha: '2026-01-15',
+      p_nota: '',
+    })
     expect(cobrar.error).toBeNull()
 
     expect((await serviceClient.rpc('recibo_en_remesa', { p_recibo_id: reciboId })).data).toBe(

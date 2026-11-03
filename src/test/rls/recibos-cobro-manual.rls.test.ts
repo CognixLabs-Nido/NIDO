@@ -12,7 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { intentarConMarcador } from './remesa-como-sus-funciones'
+import { intentarConMarcador, insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -45,9 +45,8 @@ describe('PR-1a — cobro manual de recibos', () => {
   let cTutora: SupabaseClient<Database>
 
   async function recibo(over: Partial<Recibo>): Promise<string> {
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: familia,
         anio: 2026,
@@ -57,11 +56,9 @@ describe('PR-1a — cobro manual de recibos', () => {
         es_esporadico: true,
         concepto_esporadico: 'Cobro manual PR-1a',
         ...over,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    return data.id
+      },
+    ])
+    return id
   }
 
   const cobro = {

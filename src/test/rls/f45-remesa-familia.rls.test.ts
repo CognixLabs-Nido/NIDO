@@ -15,7 +15,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { pasarAEnviadoComoMarcar, sinEnviado } from './remesa-como-sus-funciones'
+import { insertarRecibos } from './remesa-como-sus-funciones'
 
 /**
  * F-4-5 — get_mandatos_remesa a grano FAMILIA. Verifica que la RPC resuelve el mandato
@@ -58,25 +58,22 @@ describe('F-4-5 — get_mandatos_remesa a grano familia', () => {
     // que una misma familia puede llevar su regular + esporádicos en la misma remesa.
     // fecha_envio_banco: el CHECK recibos_envio_banco_fecha (B-6) exige que 'enviado_banco'
     // la lleve NOT NULL (y 'devuelto' además fecha_devolucion; aquí no usamos ese estado).
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    // En borrador, y a su estado como lo llevan sus funciones (20261222120000, 20261223120000).
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: a.familiaId,
         nino_id: null,
         anio,
         mes,
         metodo: a.metodo,
-        ...sinEnviado({ estado: a.estado, fecha_envio_banco: a.fechaEnvioBanco ?? null }).fila,
+        estado: a.estado,
+        fecha_envio_banco: a.fechaEnvioBanco ?? null,
         total_centimos: a.total,
         es_esporadico: a.esporadico ?? false,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`insertarReciboFamiliar: ${error?.message}`)
-    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
-    if (a.estado === 'enviado_banco') pasarAEnviadoComoMarcar([data.id], a.fechaEnvioBanco!)
-    return data.id
+      },
+    ])
+    return id
   }
 
   beforeAll(async () => {

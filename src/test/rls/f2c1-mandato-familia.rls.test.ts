@@ -19,6 +19,7 @@ import {
   type TestNino,
   type TestUser,
 } from './setup'
+import { insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -290,21 +291,20 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
 
   it('get_mandatos_remesa resuelve el IBAN del deudor por la FAMILIA del niño del recibo', async () => {
     // Recibo SEPA de ninoA2 (cuyo mandato es el de la familia, registrado por ninoA1/sustituir).
-    const { data: recibo } = await serviceClient
-      .from('recibos')
-      .insert({
+    // En borrador y validado como lo pasa confirmar_recibo (20261223120000).
+    const [reciboId] = await insertarRecibos([
+      {
         centro_id: centroA.id,
         familia_id: familiaA, // F-4-1: recibos a grano familia (ninoA2 pertenece a familiaA)
         nino_id: ninoA2.id,
         anio: 2026,
         mes: 2,
-        metodo: 'sepa',
-        estado: 'pendiente_procesar',
+        metodo: 'sepa' as const,
+        estado: 'pendiente_procesar' as const,
         total_centimos: 12000,
         es_esporadico: false,
-      })
-      .select('id')
-      .single()
+      },
+    ])
     const { data: remesa } = await serviceClient
       .from('remesas')
       .insert({ centro_id: centroA.id, anio: 2026, mes: 2, estado: 'borrador' })
@@ -312,7 +312,7 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
       .single()
     await serviceClient
       .from('recibos_remesa')
-      .insert({ centro_id: centroA.id, remesa_id: remesa!.id, recibo_id: recibo!.id })
+      .insert({ centro_id: centroA.id, remesa_id: remesa!.id, recibo_id: reciboId })
 
     const { data, error } = await cAdminA.rpc('get_mandatos_remesa', { p_remesa_id: remesa!.id })
     expect(error).toBeNull()
@@ -325,7 +325,7 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
 
     await serviceClient.from('recibos_remesa').delete().eq('remesa_id', remesa!.id)
     await serviceClient.from('remesas').delete().eq('id', remesa!.id)
-    await serviceClient.from('recibos').delete().eq('id', recibo!.id)
+    await serviceClient.from('recibos').delete().eq('id', reciboId)
   })
 
   it('authz: el admin ve el mandato de la familia', async () => {

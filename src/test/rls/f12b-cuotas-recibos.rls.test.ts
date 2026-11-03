@@ -17,6 +17,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -349,26 +350,24 @@ describe('F12-B — RLS cuotas/recibos/remesas (catálogo · asignación · part
 
       // En una remesa solo entra un recibo por banco y confirmado (`20261120120000`): el de arriba
       // es un borrador, así que se enlaza uno esporádico del mismo mes, ya confirmado.
-      const confirmado = await serviceClient
-        .from('recibos')
-        .insert({
+      // En borrador y validado como lo pasa confirmar_recibo (20261223120000).
+      const [confirmadoId] = await insertarRecibos([
+        {
           centro_id: centroA.id,
           familia_id: ninoA.familia_id,
           anio: 2026,
           mes: 6,
-          metodo: 'sepa',
+          metodo: 'sepa' as const,
           total_centimos: 9000,
-          estado: 'pendiente_procesar',
+          estado: 'pendiente_procesar' as const,
           es_esporadico: true,
           concepto_esporadico: 'Remesa F12B',
-        })
-        .select('id')
-        .single()
-      expect(confirmado.error).toBeNull()
+        },
+      ])
 
       const liga = await cAdminA
         .from('recibos_remesa')
-        .insert({ centro_id: centroA.id, remesa_id: remesaId, recibo_id: confirmado.data!.id })
+        .insert({ centro_id: centroA.id, remesa_id: remesaId, recibo_id: confirmadoId })
         .select('id')
         .maybeSingle()
       expect(liga.error).toBeNull()

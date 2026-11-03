@@ -12,11 +12,10 @@ import {
   type TestUser,
 } from './setup'
 import {
+  insertarRecibos,
   intentarConMarcador,
   marcarEnviadaComoLaFuncion,
-  pasarAEnviadoComoMarcar,
   ponerMarcaComoElRegistro,
-  sinEnviado,
 } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -52,28 +51,23 @@ describe('Un recibo, una remesa', () => {
   let cDirectora: SupabaseClient<Database>
 
   async function recibo(over: Partial<Recibo> = {}): Promise<string> {
-    const sinEnv = sinEnviado(over)
-    // Esporádico: el índice de un recibo regular por familia y mes no deja más de uno.
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    // Esporádico: el índice de un recibo regular por familia y mes no deja más de uno. En borrador,
+    // y a su estado como lo llevan sus funciones (20261222120000, 20261223120000).
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: familia,
         anio: ANIO,
         mes: MES,
-        estado: 'pendiente_procesar',
-        metodo: 'sepa',
+        estado: 'pendiente_procesar' as const,
+        metodo: 'sepa' as const,
         total_centimos: 10000,
         es_esporadico: true,
         concepto_esporadico: 'Remesa única',
-        ...sinEnv.fila,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
-    if (sinEnv.envio) pasarAEnviadoComoMarcar([data.id], sinEnv.envio)
-    return data.id
+        ...over,
+      },
+    ])
+    return id
   }
 
   async function remesa(): Promise<string> {
@@ -212,22 +206,20 @@ describe('Un recibo, una remesa', () => {
       expect(r1.error?.hint, caso).toBe('recibo_no_remesable')
     }
 
-    const { data: ajeno } = await serviceClient
-      .from('recibos')
-      .insert({
+    const [ajeno] = await insertarRecibos([
+      {
         centro_id: otroCentro.id,
         familia_id: familiaOtro,
         anio: ANIO,
         mes: MES,
-        estado: 'pendiente_procesar',
-        metodo: 'sepa',
+        estado: 'pendiente_procesar' as const,
+        metodo: 'sepa' as const,
         total_centimos: 10000,
         es_esporadico: true,
         concepto_esporadico: 'Remesa única',
-      })
-      .select('id')
-      .single()
-    const otro = await enlazar(serviceClient, r, ajeno!.id)
+      },
+    ])
+    const otro = await enlazar(serviceClient, r, ajeno)
     expect(otro.error?.hint).toBe('recibo_no_remesable')
   })
 

@@ -15,6 +15,7 @@ import {
   marcarEnviadaComoLaFuncion,
   pasarAEnviadoComoMarcar,
   ponerMarcaComoElRegistro,
+  insertarRecibos,
 } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -48,9 +49,8 @@ describe('La fecha de cobro del recibo', () => {
   let cProfe: SupabaseClient<Database>
 
   async function recibo(over: Partial<Recibo> = {}): Promise<string> {
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: familia,
         anio: ANIO,
@@ -61,11 +61,9 @@ describe('La fecha de cobro del recibo', () => {
         es_esporadico: true,
         concepto_esporadico: 'Fecha de cobro',
         ...over,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    return data.id
+      },
+    ])
+    return id
   }
 
   async function remesaCon(reciboIds: string[]): Promise<string> {
@@ -214,14 +212,20 @@ describe('La fecha de cobro del recibo', () => {
     // además en una remesa enviada, y lo frena también la otra defensa (medido: sin la del estado,
     // ese caso seguía en rojo por la remesa).
     const cobrado = await recibo({ metodo: 'efectivo' })
-    const cobro = await cDirectora
-      .from('recibos')
-      .update({ estado: 'cobrado_manual', cobro_forma: 'efectivo', cobro_fecha: '2026-04-21' })
-      .eq('id', cobrado)
-      .select('estado')
-      .maybeSingle()
+    const cobro = await cDirectora.rpc('marcar_cobrado_manual', {
+      p_recibo_id: cobrado,
+      p_forma: 'efectivo',
+      p_fecha: '2026-04-21',
+      p_nota: '',
+    })
+    expect(cobro.error).toBeNull()
     // Premisa: cobrado y en ninguna remesa.
-    expect(cobro.data?.estado).toBe('cobrado_manual')
+    const { data: tras } = await serviceClient
+      .from('recibos')
+      .select('estado')
+      .eq('id', cobrado)
+      .single()
+    expect(tras?.estado).toBe('cobrado_manual')
     const { data: enlaces } = await serviceClient
       .from('recibos_remesa')
       .select('id')

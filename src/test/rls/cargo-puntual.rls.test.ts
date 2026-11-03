@@ -19,6 +19,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { prepararRecibo } from './remesa-como-sus-funciones'
 
 /**
  * PR-13 — cargo puntual a varios niños de golpe (`20261116120000`), contra la BD real.
@@ -117,7 +118,7 @@ describe('PR-13 — cargo puntual a varios niños', () => {
         anio: ANIO,
         mes: MES,
         metodo: 'sepa',
-        estado,
+        estado: 'borrador',
         total_centimos: 50000,
         es_esporadico: false,
       })
@@ -133,6 +134,8 @@ describe('PR-13 — cargo puntual a varios niños', () => {
       importe_centimos: 50000,
     })
     if (linea.error) throw new Error(`linea: ${linea.error.message}`)
+    // Validado como lo pasa confirmar_recibo (20261223120000): un recibo nace en borrador.
+    if (estado !== 'borrador') prepararRecibo(data.id, { estado })
     return data.id
   }
 

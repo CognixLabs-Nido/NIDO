@@ -1,5 +1,7 @@
 import { execFileSync } from 'node:child_process'
 
+import { serviceClient } from './setup'
+
 /**
  * La marca y el envío de una remesa, y el recibo enviado al banco, puestos como los ponen sus
  * funciones (FICCIÓN DE LOS TESTS).
@@ -12,7 +14,10 @@ import { execFileSync } from 'node:child_process'
  *    `remesas_enviada_solo_por_marcar`).
  * Y desde `20261222120000`, una del recibo: el paso a `enviado_banco`, que solo da
  * `marcar_remesa_enviada`, recibo a recibo, con `app.marcar_recibo_enviado` = el id del recibo
- * (trigger `recibos_dinero_solo_por_funcion`).
+ * (trigger `recibos_dinero_solo_por_funcion`). Desde `20261223120000`, todo el circuito del recibo:
+ * nace en borrador, y validar, devolver, cobrar a mano y volver a borrador solo los da su función,
+ * cada una con su marcador (`insertarRecibos`, `prepararRecibo`). Y para el caso que separa dos
+ * defensas solapadas, `intentarConMarcador`.
  *
  * Los tests que necesitan una remesa o un recibo así sin pasar por la función entera (subir el
  * fichero, los adeudos con su mandato), con una marca de hace años o con un recibo enviado fuera de
@@ -129,21 +134,6 @@ export function pasarAEnviadoComoMarcar(reciboIds: string[], fecha: string): voi
   }
 }
 
-/**
- * Para los fixtures que crean un recibo ya enviado: la fila sin el envío (pendiente, sin fecha),
- * para insertarla, y la fecha con la que después pasa a enviado por `pasarAEnviadoComoMarcar`.
- * Un INSERT directo en `enviado_banco` lo rechaza `recibos_dinero_solo_por_funcion`.
- */
-export function sinEnviado<T extends object>(fila: T): { fila: T; envio: string | null } {
-  const { estado, fecha_envio_banco: envio } = fila as {
-    estado?: unknown
-    fecha_envio_banco?: unknown
-  }
-  if (estado !== 'enviado_banco') return { fila, envio: null }
-  if (typeof envio !== 'string') throw new Error('sinEnviado: un recibo enviado lleva su fecha')
-  return { fila: { ...fila, estado: 'pendiente_procesar', fecha_envio_banco: null }, envio }
-}
-
 /** Lo que el recibo lleva al llegar a su estado (las columnas que escriben sus funciones). */
 export interface DestinoRecibo {
   estado: 'borrador' | 'pendiente_procesar' | 'enviado_banco' | 'devuelto' | 'cobrado_manual'
@@ -177,8 +167,10 @@ const COLUMNAS_DESTINO = [
  */
 export function enBorrador<T extends object>(fila: T): { fila: T; destino: DestinoRecibo | null } {
   const f = fila as Record<string, unknown>
-  const estado = (f.estado ?? 'borrador') as DestinoRecibo['estado']
-  if (estado === 'borrador') return { fila, destino: null }
+  // Sin estado, la fila nacía con el DEFAULT de la columna, que es `pendiente_procesar` (no
+  // borrador): se conserva lo que el fixture tenía de verdad, y se pide el borrador explícito.
+  const estado = (f.estado ?? 'pendiente_procesar') as DestinoRecibo['estado']
+  if (estado === 'borrador') return { fila: { ...f, estado: 'borrador' } as T, destino: null }
   const destino: Record<string, unknown> = {}
   const resto: Record<string, unknown> = { ...f, estado: 'borrador' }
   for (const c of COLUMNAS_DESTINO) {
@@ -210,9 +202,11 @@ function literal(v: unknown): string {
  * congelado le exime igual que antes.
  */
 export function prepararRecibo(reciboId: string, d: DestinoRecibo): void {
-  const url = process.env.DB_URL
-  if (!url) throw new Error('DB_URL: el recibo solo se prepara así en la BD efímera del CI')
-  if (!UUID.test(reciboId)) throw new Error(`remesa-como-sus-funciones: id no válido: ${reciboId}`)
+  prepararRecibos([[reciboId, d]])
+}
+
+/** Los pasos de `prepararRecibo` para un recibo: [marcador, SET] en orden. */
+function pasosHasta(d: DestinoRecibo): Array<[string, string]> {
   const pasos: Array<[string, string]> = []
   const conDevolucion =
     d.estado === 'devuelto' || (d.estado === 'cobrado_manual' && d.fecha_devolucion)
@@ -250,24 +244,66 @@ export function prepararRecibo(reciboId: string, d: DestinoRecibo): void {
   } else if (d.estado === 'devuelto' && d.devolucion_salida) {
     pasos.push(['app.resolver_devolucion', `devolucion_salida = ${literal(d.devolucion_salida)}`])
   }
+  return pasos
+}
+
+/** `prepararRecibo` de varios recibos en una sola transacción (y un solo psql). */
+export function prepararRecibos(lista: Array<[string, DestinoRecibo]>): void {
+  if (lista.length === 0) return
+  const url = process.env.DB_URL
+  if (!url) throw new Error('DB_URL: el recibo solo se prepara así en la BD efímera del CI')
+  const lineas: string[] = []
+  let esperados = 0
+  for (const [reciboId, d] of lista) {
+    if (!UUID.test(reciboId))
+      throw new Error(`remesa-como-sus-funciones: id no válido: ${reciboId}`)
+    for (const [marcador, set] of pasosHasta(d)) {
+      esperados++
+      lineas.push(
+        `SELECT set_config('${marcador}', '${reciboId}', true);`,
+        `UPDATE public.recibos SET ${set} WHERE id = '${reciboId}' RETURNING 'hecho';`,
+        `SELECT set_config('${marcador}', '', true);`
+      )
+    }
+  }
+  if (esperados === 0) return
   const sql = [
     'BEGIN;',
     `SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);`,
-    ...pasos.flatMap(([marcador, set]) => [
-      `SELECT set_config('${marcador}', '${reciboId}', true);`,
-      `UPDATE public.recibos SET ${set} WHERE id = '${reciboId}' RETURNING 'hecho';`,
-      `SELECT set_config('${marcador}', '', true);`,
-    ]),
+    ...lineas,
     'COMMIT;',
   ].join('\n')
   const salida = execFileSync('psql', [url, '-v', 'ON_ERROR_STOP=1', '-qAt', '-f', '-'], {
     input: sql,
     encoding: 'utf8',
   })
+  // Cada paso tiene que haber tocado su recibo: sin fila, el test no mediría nada.
   const hechos = salida.split('\n').filter((l) => l === 'hecho').length
-  if (hechos !== pasos.length) {
-    throw new Error(`prepararRecibo: ${hechos} de ${pasos.length} pasos: ${salida}`)
+  if (hechos !== esperados) {
+    throw new Error(`prepararRecibos: ${hechos} de ${esperados} pasos: ${salida}`)
   }
+}
+
+/**
+ * Inserta recibos como lo haría un fixture con `serviceClient`, pero por el único camino que queda:
+ * en borrador (`enBorrador`), y después cada uno a su estado con `prepararRecibos`. Devuelve los ids
+ * en el orden de las filas (los de RETURNING).
+ */
+export async function insertarRecibos<T extends object>(filas: T[]): Promise<string[]> {
+  const partes = filas.map((f) => enBorrador(f))
+  const { data, error } = await serviceClient
+    .from('recibos')
+    .insert(partes.map((p) => p.fila) as never)
+    .select('id')
+  if (error || !data || data.length !== filas.length)
+    throw new Error(`insertarRecibos: ${error?.message ?? `${data?.length} de ${filas.length}`}`)
+  const ids = data.map((r) => r.id)
+  prepararRecibos(
+    partes.flatMap(
+      (p, i): Array<[string, DestinoRecibo]> => (p.destino ? [[ids[i], p.destino]] : [])
+    )
+  )
+  return ids
 }
 
 /** Lo que responde la base a un intento: pasa con N filas, o el error con su código y su HINT. */

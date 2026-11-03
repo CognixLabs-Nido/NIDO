@@ -15,6 +15,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { insertarRecibos } from './remesa-como-sus-funciones'
 
 /**
  * B2-1 — MOTOR: beca comedor v2 aplicada por MES DE APLICACIÓN + capado a ≥0 con
@@ -253,17 +254,20 @@ describe('B2-1 — motor beca comedor v2', () => {
     const e = await nuevoEntorno()
     const { nino, familia } = await nuevoNino(e.centro, e.curso, e.aula)
     // Sin escolaridad; saldo a favor del mes anterior (dic-2026 = -5000).
-    await serviceClient.from('recibos').insert({
-      centro_id: e.centro,
-      familia_id: familia,
-      anio: 2026,
-      mes: 12,
-      estado: 'cobrado_manual',
-      cobro_forma: 'efectivo',
-      cobro_fecha: '2026-12-31',
-      total_centimos: -5000,
-      es_esporadico: false,
-    })
+    // En borrador y cobrado como lo pasa marcar_cobrado_manual (20261223120000).
+    await insertarRecibos([
+      {
+        centro_id: e.centro,
+        familia_id: familia,
+        anio: 2026,
+        mes: 12,
+        estado: 'cobrado_manual',
+        cobro_forma: 'efectivo',
+        cobro_fecha: '2026-12-31',
+        total_centimos: -5000,
+        es_esporadico: false,
+      },
+    ])
     await seedTramo({
       centro_id: e.centro,
       nino_id: nino,
