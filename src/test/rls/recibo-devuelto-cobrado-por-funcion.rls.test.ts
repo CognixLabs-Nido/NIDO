@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
+
 import {
   asignarRol,
   clientFor,
@@ -46,7 +48,7 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
   let mixta: TestUser
   let cMixta: SupabaseClient<Database>
   let mesRegular = 0
-  const HOY = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
+  const HOY = hoyMadrid()
 
   /** Un recibo en borrador (esporádico, salvo que se pida otra cosa), llevado a su estado. */
   async function recibo(

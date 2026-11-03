@@ -41,6 +41,10 @@ for (const f of ficheros(join(process.cwd(), 'src'))) {
     new RegExp(String.raw`\?\?\s*'${K}'`, 'g'),
     new RegExp(String.raw`\berror(?:Key)?\s*:\s*'${K}'`, 'g'),
   ]
+  // Los mapas HINT → clave (`lib/errores-*.ts`): la clave es el valor de cada entrada.
+  if (/[/\\]lib[/\\]errores-[\w-]+\.ts$/.test(rel)) {
+    pats.push(new RegExp(String.raw`:\s*'${K}'`, 'g'))
+  }
   if (/[/\\]schemas[/\\]/.test(rel)) {
     pats.push(new RegExp(String.raw`[,(]\s*'${K}'\s*\)`, 'g'))
     pats.push(new RegExp(String.raw`message\s*:\s*'${K}'`, 'g'))
