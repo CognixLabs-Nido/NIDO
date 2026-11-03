@@ -19,6 +19,7 @@ import {
   serviceClient,
   type TestUser,
 } from '../rls/setup'
+import { pasarAEnviadoComoMarcar } from '../rls/remesa-como-sus-funciones'
 
 /**
  * El bloqueo de lo que se conserva por obligación legal (F11-B, punto 6, PR-7; 20261205120000).
@@ -256,13 +257,13 @@ describe('Retención: el bloqueo de lo que se conserva', () => {
     expect(lineas.error).toBeNull()
     lineaInigo = lineas.data!.find((l) => l.nino_id === inigo)!.id
     lineaBea = lineas.data!.find((l) => l.nino_id === bea)!.id
-    for (const cambio of [
-      { estado: 'pendiente_procesar' as const },
-      { estado: 'enviado_banco' as const, fecha_envio_banco: '2026-01-05' },
-    ]) {
-      const { error } = await serviceClient.from('recibos').update(cambio).eq('id', recibo)
-      expect(error).toBeNull()
-    }
+    const { error } = await serviceClient
+      .from('recibos')
+      .update({ estado: 'pendiente_procesar' })
+      .eq('id', recibo)
+    expect(error).toBeNull()
+    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
+    pasarAEnviadoComoMarcar([recibo], '2026-01-05')
   }, 120_000)
 
   afterAll(async () => {

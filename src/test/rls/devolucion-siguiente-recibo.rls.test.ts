@@ -12,6 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { pasarAEnviadoComoMarcar, sinEnviado } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -57,6 +58,7 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
   let agosto: string
 
   async function recibo(familiaId: string, over: Partial<Recibo>): Promise<string> {
+    const sinEnv = sinEnviado(over)
     const { data, error } = await serviceClient
       .from('recibos')
       .insert({
@@ -68,11 +70,13 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
         mes: 1,
         estado: 'borrador',
         total_centimos: 0,
-        ...over,
+        ...sinEnv.fila,
       })
       .select('id')
       .single()
     if (error || !data) throw new Error(`recibo: ${error?.message}`)
+    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
+    if (sinEnv.envio) pasarAEnviadoComoMarcar([data.id], sinEnv.envio)
     return data.id
   }
 
@@ -474,10 +478,7 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
   it('si el recibo de destino también se devuelve, se trata igual: su total ya incluye la línea', async () => {
     const totalJulio = (await estado(julio))!.total_centimos
     expect(totalJulio).toBe(50000 + 10350 + 2500)
-    await serviceClient
-      .from('recibos')
-      .update({ estado: 'enviado_banco', fecha_envio_banco: `${ANIO}-07-05` })
-      .eq('id', julio)
+    pasarAEnviadoComoMarcar([julio], `${ANIO}-07-05`)
     const { error: errDev } = await cDirectora
       .from('recibos')
       .update({

@@ -1661,6 +1661,36 @@ una remesa» (R-4 y las decisiones del responsable del 2026-11-02).
   enviada sin pasar por la función entera la preparan como `postgres`, con el marcador, por psql
   contra la BD efímera del CI (`src/test/rls/remesa-como-sus-funciones.ts`).
 
+### El recibo y su dinero: solo por sus funciones (A y B)
+
+Migración `20261222120000_feat_recibo_dinero_solo_por_funcion`; spec `docs/specs/altas-serie.md`,
+«Las puertas del recibo» (decisiones A a E del responsable del 2026-11-02). La RLS de `recibos` deja
+a Dirección INSERT y UPDATE de cualquier columna, y el congelado exime entero a `service_role`: los
+estados de dinero del recibo se ponían y se quitaban por fuera de sus funciones.
+
+- **Trigger `recibos_dinero_solo_por_funcion`** (BEFORE INSERT OR UPDATE OF estado, de invocador),
+  para todos, también `service_role` y `postgres`:
+  - **A.** Un recibo solo entra en `enviado_banco` con el marcador local
+    `app.marcar_recibo_enviado` = su id (HINT `enviado_solo_por_marcar`). Ni con un UPDATE desde
+    ningún estado ni con un INSERT.
+  - **B.** Un hecho de dinero no se deshace por fuera (HINT `hecho_de_dinero`): de `cobrado_manual`
+    no se sale, y de `enviado_banco` solo a `devuelto`, que es la devolución que anota Dirección.
+- **`marcar_remesa_enviada`** pasa los recibos del fichero uno a uno, cada uno con su marcador, y lo
+  limpia al acabar. Es el único que lo pone. El marcador es el id de la fila, como el de la remesa,
+  así que el de otro recibo no vale.
+- **Lo que no toca:** la salida de `devuelto` (`recibos_validar_devolucion`), las entradas en
+  `devuelto` y en `cobrado_manual`, y confirmar y desconfirmar. Son C y D, el PR siguiente.
+- **`service_role` y el congelado (E, decisión):** `congelar_si_mes_cerrado` sigue eximiendo a
+  `service_role`. Con esa llave se puede cambiar el contenido de un recibo confirmado y borrar un
+  recibo regular que no está en borrador, pero ya no poner ni quitar sus estados de dinero. Se deja
+  porque la usan la limpieza de los tests, el borrado de un centro y las destrucciones por plazo.
+  Hoy ningún guion la usa para corregir un recibo. El día que haga falta, se hace con una función
+  con nombre y su registro en `audit_log`, nunca con un UPDATE suelto.
+- Tests: `recibo-dinero-solo-por-funcion.rls.test.ts`. Los fixtures que necesitan un recibo enviado
+  lo pasan como la función, con su marcador, por psql (`pasarAEnviadoComoMarcar`, en
+  `src/test/rls/remesa-como-sus-funciones.ts`). Por psql y sin JWT, el congelado actúa igual que
+  dentro de la función llamada con sesión, porque mira `auth.role()`.
+
 ### La red del export art. 15: cada columna, decidida
 
 Migración `20261215120000_feat_export_recibos_red`. `export_datos_sujeto` escribe las columnas de

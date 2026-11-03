@@ -12,6 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { pasarAEnviadoComoMarcar } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -48,6 +49,7 @@ describe('PR-2 — devoluciones con una sola salida', () => {
 
   /** Un recibo ya enviado al banco (esporádico SEPA, para no chocar con el único regular). */
   async function enviado(familia: string, over: Partial<Recibo> = {}): Promise<string> {
+    // Pendiente y después enviado, como lo pasa marcar_remesa_enviada (20261222120000).
     const { data, error } = await serviceClient
       .from('recibos')
       .insert({
@@ -55,9 +57,8 @@ describe('PR-2 — devoluciones con una sola salida', () => {
         familia_id: familia,
         anio: 2026,
         mes: 1,
-        estado: 'enviado_banco',
+        estado: 'pendiente_procesar',
         metodo: 'sepa',
-        fecha_envio_banco: ENVIO,
         total_centimos: 10000,
         es_esporadico: true,
         concepto_esporadico: 'Devolución PR-2',
@@ -66,6 +67,7 @@ describe('PR-2 — devoluciones con una sola salida', () => {
       .select('id')
       .single()
     if (error || !data) throw new Error(`recibo: ${error?.message}`)
+    pasarAEnviadoComoMarcar([data.id], ENVIO)
     return data.id
   }
 

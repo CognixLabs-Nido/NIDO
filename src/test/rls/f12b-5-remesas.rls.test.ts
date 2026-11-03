@@ -17,15 +17,17 @@ import {
   type TestNino,
   type TestUser,
 } from './setup'
+import { pasarAEnviadoComoMarcar } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 
 /**
  * F12-B-5 — RLS/reglas de la remesa SEPA. Verifica:
- *  1) CONGELADO AFINADO: en un recibo REGULAR de un mes CERRADO, un UPDATE que solo
- *     cambia estado/fecha_envio_banco PASA (ciclo de cobro); un UPDATE de
- *     total_centimos FALLA con P0001 (contenido económico inmutable, decisión F/J).
+ *  1) CONGELADO AFINADO: en un recibo REGULAR de un mes CERRADO, el paso a enviado_banco
+ *     que da marcar_remesa_enviada PASA (ciclo de cobro; desde 20261222120000 la sesión ya no
+ *     lo da por fuera); un UPDATE de total_centimos FALLA con P0001 (contenido económico
+ *     inmutable, decisión F/J).
  *  2) get_mandatos_remesa: admin descifra el IBAN de los recibos de la remesa; un
  *     tutor (no admin) es rechazado.
  *  3) set/get_datos_acreedor: round-trip del IBAN cifrado del acreedor; tutor rechazado.
@@ -129,15 +131,32 @@ describe('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
     await deleteTestCentro(centroA.id)
   }, 60_000)
 
-  it('congelado afinado: UPDATE de solo estado/fecha en recibo de mes cerrado PASA', async () => {
-    const { data, error } = await cAdminA
+  // El avance a enviado_banco solo lo da marcar_remesa_enviada (20261222120000), que es SECURITY
+  // DEFINER: el congelado lo ve con la sesión de quien la llama (mira `auth.role()`, el claim, no el
+  // rol de ejecución). Por psql y sin JWT lo ve igual, y eso es lo que se prueba aquí.
+  it('en un mes cerrado, la sesión ya no pasa el recibo a enviado_banco por fuera', async () => {
+    const { data: cerrado } = await serviceClient
+      .from('cierre_mensual')
+      .select('id')
+      .eq('centro_id', centroA.id)
+      .eq('anio', anio)
+      .eq('mes', mes)
+    expect(cerrado).toHaveLength(1)
+    const { error } = await cAdminA
       .from('recibos')
       .update({ estado: 'enviado_banco', fecha_envio_banco: '2025-03-05' })
       .eq('id', reciboId)
-      .select('id, estado')
-      .maybeSingle()
-    expect(error).toBeNull()
-    expect(data?.estado).toBe('enviado_banco')
+    expect(error?.hint).toBe('enviado_solo_por_marcar')
+  })
+
+  it('congelado afinado: en un mes cerrado, el paso a enviado_banco como lo da su función PASA', async () => {
+    pasarAEnviadoComoMarcar([reciboId], '2025-03-05')
+    const { data } = await serviceClient
+      .from('recibos')
+      .select('estado, fecha_envio_banco')
+      .eq('id', reciboId)
+      .single()
+    expect(data).toEqual({ estado: 'enviado_banco', fecha_envio_banco: '2025-03-05' })
   })
 
   it('congelado: UPDATE de total_centimos en recibo de mes cerrado FALLA con P0001', async () => {

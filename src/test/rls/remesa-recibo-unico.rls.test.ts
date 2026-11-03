@@ -11,7 +11,12 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { marcarEnviadaComoLaFuncion, ponerMarcaComoElRegistro } from './remesa-como-sus-funciones'
+import {
+  marcarEnviadaComoLaFuncion,
+  pasarAEnviadoComoMarcar,
+  ponerMarcaComoElRegistro,
+  sinEnviado,
+} from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -43,6 +48,7 @@ describe('Un recibo, una remesa', () => {
   let cDirectora: SupabaseClient<Database>
 
   async function recibo(over: Partial<Recibo> = {}): Promise<string> {
+    const sinEnv = sinEnviado(over)
     // Esporádico: el índice de un recibo regular por familia y mes no deja más de uno.
     const { data, error } = await serviceClient
       .from('recibos')
@@ -56,11 +62,13 @@ describe('Un recibo, una remesa', () => {
         total_centimos: 10000,
         es_esporadico: true,
         concepto_esporadico: 'Remesa única',
-        ...over,
+        ...sinEnv.fila,
       })
       .select('id')
       .single()
     if (error || !data) throw new Error(`recibo: ${error?.message}`)
+    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
+    if (sinEnv.envio) pasarAEnviadoComoMarcar([data.id], sinEnv.envio)
     return data.id
   }
 

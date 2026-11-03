@@ -14,6 +14,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { pasarAEnviadoComoMarcar, sinEnviado } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { FiltroHistorial } from '@/features/recibos/lib/filtro-historial'
@@ -78,6 +79,7 @@ describe('F-6 — histórico general de recibos', () => {
   >
 
   async function recibo(over: Partial<Recibo>): Promise<string> {
+    const sinEnv = sinEnviado(over)
     const { data, error } = await serviceClient
       .from('recibos')
       .insert({
@@ -89,11 +91,13 @@ describe('F-6 — histórico general de recibos', () => {
         metodo: 'sepa',
         total_centimos: 11000,
         es_esporadico: false,
-        ...over,
+        ...sinEnv.fila,
       })
       .select('id')
       .single()
     if (error || !data) throw new Error(`recibo: ${error?.message}`)
+    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
+    if (sinEnv.envio) pasarAEnviadoComoMarcar([data.id], sinEnv.envio)
     return data.id
   }
 
