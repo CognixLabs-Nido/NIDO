@@ -47,7 +47,11 @@ function argsMandato(familiaId: string, iban: string, id: string, metodo = 'digi
   } as never
 }
 
-/** Un valor distinto del que tiene, por columna: cada UPDATE intentaría cambiar algo. */
+/**
+ * Un valor distinto del que tiene, por columna: cada UPDATE intentaría cambiar algo. El del tutor
+ * en `familia_id` lo rechaza también la RLS (no es tutor de la otra familia, y un adulto tiene una
+ * familia por centro): esa columna la miden la admin y `service_role`.
+ */
 function cambios(otraFamilia: string, admin: string): Record<string, unknown> {
   return {
     estado: 'revocado',
@@ -81,6 +85,7 @@ describe('mandatos_sepa — solo por sus funciones', () => {
   let cAdmin: SupabaseClient<Database>
   let cTutor: SupabaseClient<Database>
   let mandatoId: string
+  const usuariosExtra: TestUser[] = []
 
   async function leer(id: string) {
     const { data, error } = await serviceClient
@@ -107,7 +112,7 @@ describe('mandatos_sepa — solo por sus funciones', () => {
   afterAll(async () => {
     borrarMandatos('centro_id', centro.id)
     await deleteTestCentro(centro.id)
-    for (const u of [admin, tutor]) await deleteTestUser(u.id)
+    for (const u of [admin, tutor, ...usuariosExtra]) await deleteTestUser(u.id)
   })
 
   it('lo legítimo pasa: el tutor registra y la admin registra presencial', async () => {
@@ -129,23 +134,32 @@ describe('mandatos_sepa — solo por sus funciones', () => {
 
   it('nadie lo crea directamente: tutor, admin y service_role reciben 42501', async () => {
     expect(mandatoId).toBeDefined()
-    const fila = (usuario: string, ident: string) => ({
-      centro_id: centro.id,
-      familia_id: familiaB,
-      usuario_id: usuario,
-      identificador_mandato: ident,
-      titular: 'Titular Pruebas',
-      iban_cifrado: '\\x00',
-    })
-    const intentos: Array<[string, SupabaseClient<Database>, string]> = [
-      ['tutor', cTutor, tutor.id],
-      ['admin', cAdmin, admin.id],
-      ['service_role', serviceClient, admin.id],
+    // Cada intento va a una familia SIN mandato y que quien lo intenta puede tocar (el tutor, la
+    // suya): así no lo para ni el índice de un activo por familia (23505) ni la RLS de la familia.
+    const tutorC = await createTestUser({ nombre: 'Tutor C Mandatos Solo Funciones' })
+    usuariosExtra.push(tutorC)
+    const familiaC = await createTestFamilia(centro.id)
+    await crearFamiliaTutor(familiaC, tutorC.id, 'titular')
+    const cTutorC = await clientFor(tutorC)
+    const intentos: Array<[string, SupabaseClient<Database>, string, string]> = [
+      ['tutor', cTutorC, tutorC.id, familiaC],
+      ['admin', cAdmin, admin.id, await createTestFamilia(centro.id)],
+      ['service_role', serviceClient, admin.id, await createTestFamilia(centro.id)],
     ]
-    for (const [quien, c, usuario] of intentos) {
-      const { error } = await c
+    for (const [quien, c, usuario, fam] of intentos) {
+      const { count: previos } = await serviceClient
         .from('mandatos_sepa')
-        .insert(fila(usuario, `SOLO-FUNC-INS-${quien}`) as never)
+        .select('id', { count: 'exact', head: true })
+        .eq('familia_id', fam)
+      expect(previos, `${quien}: la familia empieza sin mandato`).toBe(0)
+      const { error } = await c.from('mandatos_sepa').insert({
+        centro_id: centro.id,
+        familia_id: fam,
+        usuario_id: usuario,
+        identificador_mandato: `SOLO-FUNC-INS-${quien}`,
+        titular: 'Titular Pruebas',
+        iban_cifrado: '\\x00',
+      } as never)
       expect.soft(error?.code, `${quien} INSERT`).toBe('42501')
     }
     const { count } = await serviceClient
