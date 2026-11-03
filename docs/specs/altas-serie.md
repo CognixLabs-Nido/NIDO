@@ -530,7 +530,11 @@ funciones. La regla: **un hecho de dinero no se deshace por fuera**, y lo pone s
 >   pendiente, y desde la D lo rechaza `recibo_nace_en_borrador`. Las funciones que crean recibos
 >   dicen todas su estado (medido en producción), y la app también. Un test del tutor que insertaba
 >   sin estado y solo miraba que hubiera error seguía en verde por esa razón: ahora inserta en
->   borrador y afirma el 42501 de la RLS. Cambiar el DEFAULT a borrador queda propuesto, no hecho.
+>   borrador y afirma el 42501 de la RLS.
+> - **Desde `20261224120000` el DEFAULT es `borrador`** (decisión del responsable del 2026-11-03: el
+>   estado por defecto tiene que ser el inocuo). Un INSERT sin estado nace en borrador. El mismo día
+>   se censaron los demás DEFAULT de la base y se le contaron los que afirman un hecho, sin cambiar
+>   ninguno.
 
 **Reabrir.** Puntos 1 a 5 de la propuesta, con el `MsgId` y el fichero de arriba. La función
 (`reabrir_remesa`, `privado.es_titular`) pone `reabierta_at` en el fichero de la versión y quita la

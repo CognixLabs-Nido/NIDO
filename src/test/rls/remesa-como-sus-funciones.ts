@@ -167,9 +167,9 @@ const COLUMNAS_DESTINO = [
  */
 export function enBorrador<T extends object>(fila: T): { fila: T; destino: DestinoRecibo | null } {
   const f = fila as Record<string, unknown>
-  // Sin estado, la fila nacía con el DEFAULT de la columna, que es `pendiente_procesar` (no
-  // borrador): se conserva lo que el fixture tenía de verdad, y se pide el borrador explícito.
-  const estado = (f.estado ?? 'pendiente_procesar') as DestinoRecibo['estado']
+  // Sin estado, la fila nace con el DEFAULT de la columna, `borrador` desde 20261224120000 (antes
+  // `pendiente_procesar`). Se pide explícito igualmente.
+  const estado = (f.estado ?? 'borrador') as DestinoRecibo['estado']
   if (estado === 'borrador') return { fila: { ...f, estado: 'borrador' } as T, destino: null }
   const destino: Record<string, unknown> = {}
   const resto: Record<string, unknown> = { ...f, estado: 'borrador' }

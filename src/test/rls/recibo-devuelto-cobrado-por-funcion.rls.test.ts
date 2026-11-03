@@ -432,6 +432,29 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
     expect(await cierre()).toBe(0)
   })
 
+  it('sin estado, un recibo nace en borrador (el DEFAULT inocuo, 20261224120000)', async () => {
+    // Hasta 20261224120000 el DEFAULT era pendiente_procesar y este INSERT lo rechazaba
+    // `recibo_nace_en_borrador`. Con la directora (RLS) y con service_role.
+    for (const c of [cDirectora, serviceClient]) {
+      const { data, error } = await c
+        .from('recibos')
+        .insert({
+          centro_id: centro.id,
+          familia_id: familia,
+          anio: 2026,
+          mes: 3,
+          metodo: 'efectivo',
+          total_centimos: 100,
+          es_esporadico: true,
+          concepto_esporadico: 'Sin estado',
+        })
+        .select('id, estado')
+        .single()
+      expect(error).toBeNull()
+      expect(data?.estado).toBe('borrador')
+    }
+  })
+
   it('D · un recibo nace en borrador; en pendiente, solo el esporádico de su función', async () => {
     mesRegular += 1
     for (const [c, esporadico] of [
