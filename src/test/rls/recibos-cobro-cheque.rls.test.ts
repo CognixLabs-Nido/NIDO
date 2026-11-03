@@ -201,11 +201,14 @@ describe('PR-1b — cobro con cheque guardería / ticket restaurant', () => {
         familia_id: familiaSin,
       },
     ])
-    const { error: e2 } = await cDirectora
-      .from('recibos')
-      .update({ estado: 'cobrado_manual', cobro_forma: 'efectivo', cobro_fecha: FECHA })
-      .eq('id', data!)
+    const { error: e2 } = await cDirectora.rpc('marcar_cobrado_manual', {
+      p_recibo_id: data!,
+      p_forma: 'efectivo',
+      p_fecha: FECHA,
+      p_nota: '',
+    })
     expect(e2).toBeNull()
+    expect((await fila(data!))?.estado).toBe('cobrado_manual')
   })
 
   it('cheque menor + SEPA con mandato: la diferencia es un esporádico SEPA que entra en la remesa', async () => {

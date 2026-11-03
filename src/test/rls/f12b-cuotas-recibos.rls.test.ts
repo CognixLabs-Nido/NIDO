@@ -315,7 +315,10 @@ describe('F12-B — RLS cuotas/recibos/remesas (catálogo · asignación · part
       const ajeno = await cTutorB.from('recibos').select('id').eq('nino_id', ninoA.id)
       expect(ajeno.data ?? []).toHaveLength(0)
 
-      // El tutor no emite recibos (admin-only).
+      // El tutor no emite recibos (admin-only): lo para la RLS. En borrador, para que responda
+      // ella: sin estado nacería en el DEFAULT (pendiente) y desde 20261223120000 lo pararía antes
+      // `recibos_dinero_solo_por_funcion` (`recibo_nace_en_borrador`), y el aserto, que solo
+      // miraba que hubiera error, seguiría en verde por esa razón.
       const tutorInserta = await cTutorA
         .from('recibos')
         .insert({
@@ -325,10 +328,11 @@ describe('F12-B — RLS cuotas/recibos/remesas (catálogo · asignación · part
           anio: 2026,
           mes: 7,
           metodo: 'efectivo',
+          estado: 'borrador',
         })
         .select('id')
         .maybeSingle()
-      expect(tutorInserta.error).not.toBeNull()
+      expect(tutorInserta.error?.code).toBe('42501')
     })
   })
 
