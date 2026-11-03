@@ -14,7 +14,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { prepararRecibo, type DestinoRecibo } from './remesa-como-sus-funciones'
+import { prepararRecibo, quienRechaza, type DestinoRecibo } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -268,6 +268,38 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
       p_nota: '',
     })
     expect((await fila(sinNota))?.cobro_nota).toBeNull()
+  })
+
+  it('los dos rechazos que repite el trigger de detrás los da la función ella misma', async () => {
+    // La fecha futura de la devolución y el SEPA pendiente: la función y el trigger de detrás
+    // (`recibos_validar_devolucion`, `recibos_validar_cobro_manual`) dicen lo mismo, con el mismo
+    // código, HINT y mensaje, así que por la app no se distinguen y quitar el de la función no
+    // pondría nada en rojo. Lo que los separa es quién lanza el RAISE (el contexto del error, que
+    // PostgREST no devuelve). Medido en el ensayo: sin el rechazo de la función, el origen pasa a
+    // ser el trigger, con el mismo código y HINT.
+    const enviado = await recibo(ENVIADO)
+    const sepa = await recibo(PENDIENTE)
+    const futura = quienRechaza(
+      directora.id,
+      `SELECT public.marcar_recibo_devuelto('${enviado}', public.hoy_madrid() + 3, 0)`
+    )
+    expect(futura).toMatchObject({ code: '22023', hint: 'fecha_devolucion_invalida' })
+    expect(futura?.origen).toMatch(/^PL\/pgSQL function marcar_recibo_devuelto\(.* at RAISE$/)
+    const porRemesa = quienRechaza(
+      directora.id,
+      `SELECT public.marcar_cobrado_manual('${sepa}', 'efectivo', public.hoy_madrid(), '')`
+    )
+    expect(porRemesa).toMatchObject({ code: 'P0001', hint: 'sepa_por_remesa' })
+    expect(porRemesa?.origen).toMatch(/^PL\/pgSQL function marcar_cobrado_manual\(.* at RAISE$/)
+    // Y el instrumento ve también el otro origen: por fuera, el SEPA pendiente lo rechaza el
+    // trigger nuevo, no la función.
+    const directo = quienRechaza(
+      directora.id,
+      `UPDATE public.recibos SET estado = 'cobrado_manual', cobro_forma = 'efectivo', cobro_fecha = public.hoy_madrid() WHERE id = '${sepa}'`
+    )
+    expect(directo?.origen).toMatch(/^PL\/pgSQL function recibos_dinero_solo_por_funcion\(\)/)
+    expect((await fila(enviado))?.estado).toBe('enviado_banco')
+    expect((await fila(sepa))?.estado).toBe('pendiente_procesar')
   })
 
   it('marcar_cobrado_manual: cada rechazo de la app, con su HINT, y el recibo intacto', async () => {

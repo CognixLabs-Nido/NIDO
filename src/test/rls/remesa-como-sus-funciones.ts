@@ -356,3 +356,48 @@ export function intentarConMarcador(
   if (que === 'pasa') return { pasa: true, filas: Number(a) }
   return { pasa: false, code: a, hint: b, message: resto.join('|') }
 }
+
+/** Quién lanza un rechazo: su código, su HINT y la primera línea del contexto del error. */
+export interface Rechazo {
+  code: string
+  hint: string
+  /** «PL/pgSQL function <nombre>(…) line N at RAISE»: la función o el trigger que lo lanzó. */
+  origen: string
+}
+
+/**
+ * El caso que separa dos defensas que dicen LO MISMO (mismo código, mismo HINT y mismo mensaje):
+ * lo único que las distingue es QUIÉN lanza el RAISE, y eso solo está en el contexto del error, que
+ * PostgREST no devuelve. Llama `p_sql` como la sesión de `usuarioId` (claim `authenticated` y rol
+ * `authenticated`, como por PostgREST), por psql, y SIEMPRE se deshace. Si la llamada pasa, null.
+ */
+export function quienRechaza(usuarioId: string, p_sql: string): Rechazo | null {
+  const url = process.env.DB_URL
+  if (!url) throw new Error('DB_URL: solo en la BD efímera del CI')
+  if (!UUID.test(usuarioId)) throw new Error(`quienRechaza: id no válido: ${usuarioId}`)
+  const sql = [
+    'BEGIN;',
+    `CREATE FUNCTION pg_temp.quien() RETURNS text LANGUAGE plpgsql AS $q$
+     DECLARE st text; h text; c text;
+     BEGIN
+       PERFORM set_config('request.jwt.claims', '{"sub":"${usuarioId}","role":"authenticated"}', true);
+       EXECUTE 'SET LOCAL ROLE authenticated';
+       EXECUTE $s$${p_sql}$s$;
+       RETURN 'pasa';
+     EXCEPTION WHEN OTHERS THEN
+       GET STACKED DIAGNOSTICS st = RETURNED_SQLSTATE, h = PG_EXCEPTION_HINT, c = PG_EXCEPTION_CONTEXT;
+       RETURN 'error|' || st || '|' || coalesce(h, '') || '|' || split_part(c, E'\\n', 1);
+     END $q$;`,
+    'SELECT pg_temp.quien();',
+    'ROLLBACK;',
+  ].join('\n')
+  const salida = execFileSync('psql', [url, '-v', 'ON_ERROR_STOP=1', '-qAt', '-f', '-'], {
+    input: sql,
+    encoding: 'utf8',
+  })
+  const linea = salida.split('\n').find((l) => l === 'pasa' || l.startsWith('error|'))
+  if (linea === undefined) throw new Error(`quienRechaza: sin respuesta: ${salida}`)
+  if (linea === 'pasa') return null
+  const [, code, hint, ...origen] = linea.split('|')
+  return { code, hint, origen: origen.join('|') }
+}
