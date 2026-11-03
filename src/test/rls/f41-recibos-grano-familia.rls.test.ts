@@ -97,8 +97,8 @@ describe('F-4-1 — recibos a grano familia', () => {
         anio: 2027,
         mes: 3,
         metodo: 'sepa',
-        // Nace en borrador (20261223120000; sin estado, el DEFAULT de la columna es pendiente) y
-        // lo valida su función, como estaba antes el fixture.
+        // Nace en borrador (20261223120000) y lo valida su función: el fixture era pendiente, el
+        // DEFAULT de la columna hasta 20261224120000.
         estado: 'borrador',
         total_centimos: 15000,
         es_esporadico: false,
@@ -170,8 +170,8 @@ describe('F-4-1 — recibos a grano familia', () => {
       anio: 2027,
       mes: 5,
       metodo: 'sepa' as const,
-      // Explícito: sin estado nacería en el DEFAULT (pendiente), que desde 20261223120000 solo da
-      // su función, y el rechazo sería ese y no el del índice único.
+      // Explícito, para que el rechazo sea el del índice único y no dependa del DEFAULT de la
+      // columna (pendiente hasta 20261224120000, que desde 20261223120000 solo da su función).
       estado: 'borrador' as const,
       total_centimos: 5000,
     }

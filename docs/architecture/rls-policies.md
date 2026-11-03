@@ -1751,8 +1751,9 @@ fecha, nota)`** (de invocador, `EXECUTE` solo para `authenticated`, `es_admin` d
     `recibos` ya pide `es_admin` del centro, así que el `FOR UPDATE` de la función no encuentra la
     fila de quien no lo es y responde antes `no_encontrado`. Se queda como segunda capa, sin test
     que la alcance: no es probable mientras la política siga así.
-- **El DEFAULT de `recibos.estado` es `pendiente_procesar`:** un INSERT sin estado lo rechaza
-  `recibo_nace_en_borrador`. Las funciones y la app que crean recibos dicen su estado.
+- **El DEFAULT de `recibos.estado` es `borrador`** (`20261224120000`; hasta entonces era
+  `pendiente_procesar`, y un INSERT sin estado lo rechazaba `recibo_nace_en_borrador`). Las
+  funciones y la app que crean recibos dicen su estado igualmente.
 
 ### La red del export art. 15: cada columna, decidida
 

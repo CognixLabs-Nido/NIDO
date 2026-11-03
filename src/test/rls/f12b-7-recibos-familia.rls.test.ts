@@ -77,8 +77,8 @@ describe('F12-B-7 — recibos: aislamiento entre familias del MISMO centro', () 
       [nino1.id, nino1.familia_id, 8000, 'r1'],
       [nino2.id, nino2.familia_id, 6000, 'r2'],
     ] as const) {
-      // Sin estado nacía en el DEFAULT de la columna (pendiente); desde 20261223120000 un recibo
-      // nace en borrador y lo valida su función: se dice explícito.
+      // Validado: nace en borrador y lo valida su función (20261223120000). Hasta 20261224120000 el
+      // fixture no decía estado y nacía en el DEFAULT, que era pendiente.
       const [rId] = await insertarRecibos([
         {
           centro_id: centro.id,
