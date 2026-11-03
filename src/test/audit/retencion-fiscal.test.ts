@@ -232,6 +232,7 @@ describe('Retención: lo fiscal al vencer', () => {
       nino_id: inigo,
       fecha: '1989-10-02',
       servicio: 'comedor',
+      presente: true,
     })
     expect(parte.error).toBeNull()
 
