@@ -284,13 +284,15 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
       `SELECT public.marcar_recibo_devuelto('${enviado}', public.hoy_madrid() + 3, 0)`
     )
     expect(futura).toMatchObject({ code: '22023', hint: 'fecha_devolucion_invalida' })
-    expect(futura?.origen).toMatch(/^PL\/pgSQL function marcar_recibo_devuelto\(.* at RAISE$/)
+    expect.soft(futura?.origen).toMatch(/^PL\/pgSQL function marcar_recibo_devuelto\(.* at RAISE$/)
     const porRemesa = quienRechaza(
       directora.id,
       `SELECT public.marcar_cobrado_manual('${sepa}', 'efectivo', public.hoy_madrid(), '')`
     )
     expect(porRemesa).toMatchObject({ code: 'P0001', hint: 'sepa_por_remesa' })
-    expect(porRemesa?.origen).toMatch(/^PL\/pgSQL function marcar_cobrado_manual\(.* at RAISE$/)
+    expect
+      .soft(porRemesa?.origen)
+      .toMatch(/^PL\/pgSQL function marcar_cobrado_manual\(.* at RAISE$/)
     // Y el instrumento ve también el otro origen: por fuera, el SEPA pendiente lo rechaza el
     // trigger nuevo, no la función.
     const directo = quienRechaza(
