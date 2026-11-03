@@ -194,7 +194,8 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
         p_fecha: fecha,
         p_gastos_centimos: gastos,
       })
-      expect(r.error?.hint).toBe(hint)
+      // soft: cada rechazo se mide aunque falle otro (si no, una mutación solo dice el primero).
+      expect.soft(r.error?.hint, hint).toBe(hint)
     }
     // La directora de otro centro no ve el recibo: para ella no existe.
     const fuera = await cDirectoraOtro.rpc('marcar_recibo_devuelto', {
@@ -292,7 +293,8 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
         p_fecha: fecha,
         p_nota: nota,
       })
-      expect(r.error?.hint).toBe(hint)
+      // soft: cada rechazo se mide aunque falle otro (si no, una mutación solo dice el primero).
+      expect.soft(r.error?.hint, hint).toBe(hint)
     }
     expect((await fila(efectivo))?.estado).toBe('pendiente_procesar')
     expect((await fila(devuelto))?.estado).toBe('devuelto')
