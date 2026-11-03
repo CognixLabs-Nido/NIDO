@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
+
 import {
   anonClient,
   asignarRol,
@@ -41,10 +43,6 @@ import type { Database } from '@/types/database'
 
 const BUCKET = 'remesas-ficheros'
 
-/** El día de Madrid, como `hoy_madrid()`: el envío lleva esa fecha y la devolución no puede ser anterior. */
-function hoyMadrid(): string {
-  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
-}
 const MNDT_A = 'NIDO-REAB-000A'
 const MNDT_B = 'NIDO-REAB-000B'
 
