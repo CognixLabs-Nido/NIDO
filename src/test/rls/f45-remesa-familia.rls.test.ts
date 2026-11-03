@@ -15,6 +15,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { pasarAEnviadoComoMarcar, sinEnviado } from './remesa-como-sus-funciones'
 
 /**
  * F-4-5 — get_mandatos_remesa a grano FAMILIA. Verifica que la RPC resuelve el mandato
@@ -66,14 +67,15 @@ describe('F-4-5 — get_mandatos_remesa a grano familia', () => {
         anio,
         mes,
         metodo: a.metodo,
-        estado: a.estado,
+        ...sinEnviado({ estado: a.estado, fecha_envio_banco: a.fechaEnvioBanco ?? null }).fila,
         total_centimos: a.total,
         es_esporadico: a.esporadico ?? false,
-        fecha_envio_banco: a.fechaEnvioBanco ?? null,
       })
       .select('id')
       .single()
     if (error || !data) throw new Error(`insertarReciboFamiliar: ${error?.message}`)
+    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
+    if (a.estado === 'enviado_banco') pasarAEnviadoComoMarcar([data.id], a.fechaEnvioBanco!)
     return data.id
   }
 

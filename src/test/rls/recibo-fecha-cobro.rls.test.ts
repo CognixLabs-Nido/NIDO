@@ -11,7 +11,11 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { marcarEnviadaComoLaFuncion, ponerMarcaComoElRegistro } from './remesa-como-sus-funciones'
+import {
+  marcarEnviadaComoLaFuncion,
+  pasarAEnviadoComoMarcar,
+  ponerMarcaComoElRegistro,
+} from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -194,14 +198,8 @@ describe('La fecha de cobro del recibo', () => {
     const remesa = await remesaCon([enviado])
     // La remesa solo pasa a enviada por su función (20261221120000): aquí, como ella.
     marcarEnviadaComoLaFuncion(remesa, '2026-04-20')
-    expect(
-      (
-        await cDirectora
-          .from('recibos')
-          .update({ estado: 'enviado_banco', fecha_envio_banco: '2026-04-20' })
-          .eq('id', enviado)
-      ).error
-    ).toBeNull()
+    // Y sus recibos, también solo como ella (20261222120000).
+    pasarAEnviadoComoMarcar([enviado], '2026-04-20')
 
     const r = await fijar(cDirectora, [enviado], EL_5)
     expect(r.error?.hint).toBe('fecha_cobro_recibo_cerrado')

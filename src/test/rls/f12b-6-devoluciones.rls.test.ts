@@ -14,6 +14,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { pasarAEnviadoComoMarcar } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -59,14 +60,15 @@ describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
         anio: 2025,
         mes: 4,
         metodo: 'sepa',
-        estado: 'enviado_banco',
-        fecha_envio_banco: '2025-04-05',
+        estado: 'pendiente_procesar',
         total_centimos: 10000,
         es_esporadico: false,
       })
       .select('id')
       .single()
     reciboAbierto = rAbierto!.id
+    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
+    pasarAEnviadoComoMarcar([reciboAbierto], '2025-04-05')
 
     // Recibo enviado_banco en mes CERRADO (2025-03) — para el congelado afinado.
     const { data: rCerrado } = await serviceClient
@@ -78,14 +80,14 @@ describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
         anio: 2025,
         mes: 3,
         metodo: 'sepa',
-        estado: 'enviado_banco',
-        fecha_envio_banco: '2025-03-05',
+        estado: 'pendiente_procesar',
         total_centimos: 12000,
         es_esporadico: false,
       })
       .select('id')
       .single()
     reciboCerrado = rCerrado!.id
+    pasarAEnviadoComoMarcar([reciboCerrado], '2025-03-05')
 
     await serviceClient
       .from('cierre_mensual')

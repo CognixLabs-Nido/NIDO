@@ -13,7 +13,11 @@ import {
   serviceClient,
   type TestUser,
 } from '../rls/setup'
-import { ponerMarcaComoElRegistro } from '../rls/remesa-como-sus-funciones'
+import {
+  pasarAEnviadoComoMarcar,
+  ponerMarcaComoElRegistro,
+  sinEnviado,
+} from '../rls/remesa-como-sus-funciones'
 
 /**
  * Lo fiscal al vencer (F11-B, punto 6, PR-8, tercera pieza; 20261208120000).
@@ -99,12 +103,15 @@ describe('Retención: lo fiscal al vencer', () => {
   }
 
   async function recibo(familiaId: string, fila: Record<string, unknown>): Promise<string> {
+    const sinEnv = sinEnviado(fila)
     const { data, error } = await serviceClient
       .from('recibos')
-      .insert({ centro_id: centro.id, familia_id: familiaId, anio: 2024, ...fila } as never)
+      .insert({ centro_id: centro.id, familia_id: familiaId, anio: 2024, ...sinEnv.fila } as never)
       .select('id')
       .single()
     if (error || !data) throw new Error(`recibo: ${error?.message}`)
+    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
+    if (sinEnv.envio) pasarAEnviadoComoMarcar([(data as { id: string }).id], sinEnv.envio)
     return (data as { id: string }).id
   }
 
@@ -284,11 +291,7 @@ describe('Retención: lo fiscal al vencer', () => {
       { remesa_id: remesa, recibo_id: reciboOtra, centro_id: centro.id },
     ])
     expect(enl.error).toBeNull()
-    const env = await serviceClient
-      .from('recibos')
-      .update({ estado: 'enviado_banco', fecha_envio_banco: '2019-10-01' })
-      .eq('id', regiro)
-    expect(env.error).toBeNull()
+    pasarAEnviadoComoMarcar([regiro], '2019-10-01')
 
     await bajaYPurga(inigo, BAJA, 5)
 
@@ -533,11 +536,7 @@ describe('Retención: lo fiscal al vencer', () => {
       .from('recibos_remesa')
       .insert({ remesa_id: remesaHugo, recibo_id: rc, centro_id: centro.id })
     expect(enl.error).toBeNull()
-    const env = await serviceClient
-      .from('recibos')
-      .update({ estado: 'enviado_banco', fecha_envio_banco: '2019-10-01' })
-      .eq('id', rc)
-    expect(env.error).toBeNull()
+    pasarAEnviadoComoMarcar([rc], '2019-10-01')
     await bajaYPurga(h.id, BAJA, 5)
 
     // Premisa: sin fichero, Hugo vence por sus fechas.

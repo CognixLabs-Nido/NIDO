@@ -12,6 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from '../rls/setup'
+import { pasarAEnviadoComoMarcar, sinEnviado } from '../rls/remesa-como-sus-funciones'
 
 /**
  * La deuda dada por perdida (PR-B1; 20261212120000).
@@ -44,12 +45,15 @@ describe('Deuda dada por perdida', () => {
   const recibos: string[] = []
 
   async function recibo(fila: Record<string, unknown>): Promise<string> {
+    const sinEnv = sinEnviado(fila)
     const { data, error } = await serviceClient
       .from('recibos')
-      .insert({ centro_id: centro.id, familia_id: familia, anio: 2025, ...fila } as never)
+      .insert({ centro_id: centro.id, familia_id: familia, anio: 2025, ...sinEnv.fila } as never)
       .select('id')
       .single()
     if (error || !data) throw new Error(`recibo: ${error?.message}`)
+    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
+    if (sinEnv.envio) pasarAEnviadoComoMarcar([(data as { id: string }).id], sinEnv.envio)
     return (data as { id: string }).id
   }
 

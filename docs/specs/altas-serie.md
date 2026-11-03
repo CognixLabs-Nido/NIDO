@@ -454,9 +454,50 @@ acaba al reabrir.
   el fichero (422). El aviso de los datos bancarios es del 0c.
 - **Pone `enviada_at`** en el fichero de la versión.
 
+**Las puertas del recibo** (censo del 2026-11-02, decisiones A a E del responsable de ese día). La
+RLS de `recibos` deja a Dirección INSERT y UPDATE de cualquier columna, y el congelado exime entero
+a `service_role`: los estados de dinero del recibo se podían poner y quitar por fuera de sus
+funciones. La regla: **un hecho de dinero no se deshace por fuera**, y lo pone solo su función.
+
+- **A · `enviado_banco`, solo por `marcar_remesa_enviada`, también para `service_role`.** Los tests
+  preparan sus recibos enviados con el helper de psql, como la función.
+- **B · ninguna vuelta atrás por fuera**, en el mismo PR y el mismo trigger que A: de
+  `cobrado_manual` no se sale, y de `enviado_banco` solo a `devuelto`. Reabrir traerá su vuelta
+  atrás con su marcador.
+- **C · `devuelto` y `cobrado_manual` por función**, PR propio después del de A y B.
+  `marcarReciboDevuelto` y `marcarCobradoManual` son UPDATE directos desde la app, sin función SQL
+  detrás: crear esas dos funciones es el trabajo del PR, y el trigger es la consecuencia. Cierra
+  también entrar en `devuelto` sin haber ido al banco y el INSERT directo en `cobrado_manual`.
+- **D · confirmar y desconfirmar por sus funciones**, en el PR de C: saltarse `confirmar_recibo`
+  deja un recibo en pendiente sin su ancla de `cierre_mensual`, y la vuelta sin quitarla. Y el
+  INSERT de un recibo regular directamente en `pendiente_procesar`.
+- **E · `service_role` conserva la exención del congelado. Es una decisión, no un hueco.**
+  - **Qué permite esa llave:** con `service_role`, `congelar_si_mes_cerrado` no actúa, así que se
+    puede cambiar el total, el método, la familia, el mes o el concepto de un recibo confirmado,
+    enviado o cobrado, y borrar un recibo regular que no está en borrador. Desde A y B no puede
+    poner ni quitar los estados de dinero (`enviado_banco`, `cobrado_manual`).
+  - **Por qué se deja:** es la llave del servidor, que nunca va al cliente. La usan la limpieza de
+    los tests, el borrado de un centro en cascada y las destrucciones por plazo
+    (`destruir_fiscal_familia` borra recibos de meses cerrados). Cerrarla obligaría a cada una de
+    ellas a llevar su propio marcador.
+  - **Hoy no hay ningún guion que la use para corregir un recibo:** ni en `scripts/`, ni en
+    `supabase/operaciones/`, ni en un runbook.
+  - **La condición:** el día que haga falta corregir un recibo con esa llave, se hace con una
+    función con nombre y su registro en `audit_log`, nunca con un UPDATE suelto.
+
+> **A y B construidos el 2026-11-03** (`20261222120000`, tercer PR de reabrir remesas). Trigger
+> `recibos_dinero_solo_por_funcion` (BEFORE INSERT OR UPDATE OF estado, de invocador, para todos).
+> `marcar_remesa_enviada` pasa ahora los recibos del fichero uno a uno, cada uno con el marcador
+> `app.marcar_recibo_enviado` = su id (el patrón de la casa: el marcador es el id de la fila). Con
+> un marcador por remesa, los recibos enviados fuera de toda remesa que preparan los tests no se
+> podían preparar como la función. El ensayo en producción comprobó primero que las 18 vías del
+> censo estaban abiertas, y lo estaban todas.
+
 **Reabrir.** Puntos 1 a 5 de la propuesta, con el `MsgId` y el fichero de arriba. La función
 (`reabrir_remesa`, `privado.es_titular`) pone `reabierta_at` en el fichero de la versión y quita la
-marca con `app.reabrir_remesa`. La siguiente descarga crea la versión nueva.
+marca con `app.reabrir_remesa`. La siguiente descarga crea la versión nueva. La vuelta de sus
+recibos de `enviado_banco` a pendiente pasa por `recibos_dinero_solo_por_funcion` (B): reabrir la
+abre con su propio marcador, como el resto.
 
 **Sin FRST.** El 0d está cancelado (R-2, revisada): el fichero de cada versión va en RCUR. No se
 construye ninguna marca de «primer cobro» por mandato.
