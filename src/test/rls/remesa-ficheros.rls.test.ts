@@ -16,6 +16,7 @@ import { ponerMarcaComoElRegistro, insertarRecibos } from './remesa-como-sus-fun
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { borrarMandatos, insertarMandato } from './mandatos-como-postgres'
 
 /**
  * El fichero de cada versión de una remesa, guardado con su registro (R-1, `20261220120000`),
@@ -148,7 +149,7 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
     cDirectoraOtro = await clientFor(directoraOtro)
     cProfe = await clientFor(profe)
 
-    const { error } = await serviceClient.from('mandatos_sepa').insert({
+    const { error } = insertarMandato({
       centro_id: centro.id,
       familia_id: familia,
       usuario_id: tutor.id,
@@ -179,7 +180,7 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
       await serviceClient.from('recibos_remesa').delete().eq('centro_id', c.id)
       await serviceClient.from('remesas').delete().eq('centro_id', c.id)
       await serviceClient.from('recibos').delete().eq('centro_id', c.id)
-      await serviceClient.from('mandatos_sepa').delete().eq('centro_id', c.id)
+      borrarMandatos('centro_id', c.id)
       await deleteTestCentro(c.id)
     }
     for (const u of [admin, directora, directoraOtro, profe, tutor]) await deleteTestUser(u.id)

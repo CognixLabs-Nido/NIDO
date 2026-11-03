@@ -23,6 +23,7 @@ import { insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { borrarMandatos, insertarMandato } from './mandatos-como-postgres'
 
 /**
  * F-2c-1 — el mandato SEPA es de la FAMILIA (nino_id relajado a nullable; cuelga de
@@ -129,7 +130,7 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
   }, 60_000)
 
   afterAll(async () => {
-    await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centroA.id)
+    borrarMandatos('centro_id', centroA.id)
     await deleteTestUser(adminA.id)
     await deleteTestUser(profeA.id)
     await deleteTestUser(tutorA.id)
@@ -210,7 +211,7 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
   })
 
   it('el índice único rechaza un 2º mandato ACTIVO insertado a mano en la familia', async () => {
-    const { error } = await serviceClient.from('mandatos_sepa').insert({
+    const { error } = insertarMandato({
       centro_id: centroA.id,
       familia_id: familiaA,
       nino_id: ninoA1.id,

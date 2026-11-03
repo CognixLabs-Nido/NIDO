@@ -15,6 +15,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { borrarMandatos } from './mandatos-como-postgres'
 
 /**
  * PR-7 — el método de pago va en la FICHA de la familia (`familias.metodo_pago`).
@@ -194,7 +195,7 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
     await serviceClient.from('metodo_pago_familia').delete().eq('centro_id', centro.id)
     await serviceClient.from('asignacion_concepto').delete().eq('centro_id', centro.id)
     await serviceClient.from('conceptos_cobro').delete().eq('centro_id', centro.id)
-    await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centro.id)
+    borrarMandatos('centro_id', centro.id)
     await deleteTestCentro(centro.id)
     await deleteTestUser(admin.id)
     await deleteTestUser(profe.id)

@@ -16,6 +16,7 @@ import {
   type TestNino,
   type TestUser,
 } from '../rls/setup'
+import { actualizarMandato, borrarMandatos, insertarMandato } from '../rls/mandatos-como-postgres'
 
 /**
  * Auditoría del Grupo 1 (PR A, `20261011120000_feat_auditoria_ocho_tablas`).
@@ -82,7 +83,7 @@ describe('Audit log — Grupo 1 (8 tablas)', () => {
       .delete()
       .in('sujeto_id', usuariosExtra.length ? usuariosExtra : [randomUUID()])
     await serviceClient.from('cambios_pendientes').delete().eq('centro_id', centro.id)
-    await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centro.id)
+    borrarMandatos('centro_id', centro.id)
     await serviceClient.from('acuses_alta').delete().eq('centro_id', centro.id)
     await serviceClient.from('tarifa_concepto_anio').delete().eq('centro_id', centro.id)
     await serviceClient.from('conceptos_cobro').delete().eq('centro_id', centro.id)
@@ -230,25 +231,21 @@ describe('Audit log — Grupo 1 (8 tablas)', () => {
 
   it('mandatos_sepa: audita el estado, sin IBAN cifrado, firma ni datos del firmante', async () => {
     const titular = 'Titular Secreto Auditoria'
-    const { data, error } = await serviceClient
-      .from('mandatos_sepa')
-      .insert({
-        centro_id: centro.id,
-        familia_id: nino.familia_id,
-        nino_id: nino.id,
-        usuario_id: tutor.id,
-        iban_cifrado: '\\x00',
-        iban_ultimos4: '1234',
-        titular,
-        nombre_tecleado: titular,
-        firma_imagen: 'data:image/png;base64,AAAA',
-        ip_address: '10.0.0.9',
-        user_agent: 'Agente Secreto',
-        identificador_mandato: `NIDO-AUDIT-${randomUUID().slice(0, 8)}`,
-        estado: 'activo',
-      })
-      .select('id')
-      .single()
+    const { data, error } = insertarMandato({
+      centro_id: centro.id,
+      familia_id: nino.familia_id,
+      nino_id: nino.id,
+      usuario_id: tutor.id,
+      iban_cifrado: '\\x00',
+      iban_ultimos4: '1234',
+      titular,
+      nombre_tecleado: titular,
+      firma_imagen: 'data:image/png;base64,AAAA',
+      ip_address: '10.0.0.9',
+      user_agent: 'Agente Secreto',
+      identificador_mandato: `NIDO-AUDIT-${randomUUID().slice(0, 8)}`,
+      estado: 'activo',
+    })
     expect(error).toBeNull()
     const id = data!.id
 
@@ -267,10 +264,7 @@ describe('Audit log — Grupo 1 (8 tablas)', () => {
       expect(ins.valores_despues).not.toHaveProperty(k)
     }
 
-    const { error: uErr } = await serviceClient
-      .from('mandatos_sepa')
-      .update({ estado: 'revocado' })
-      .eq('id', id)
+    const { error: uErr } = actualizarMandato(id, { estado: 'revocado' })
     expect(uErr).toBeNull()
     const upd = await auditDe('mandatos_sepa', id, 'UPDATE')
     expect(upd.valores_antes?.estado).toBe('activo')

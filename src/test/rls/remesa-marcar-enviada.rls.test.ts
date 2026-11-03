@@ -17,6 +17,7 @@ import { enviadaAtDelFichero, insertarRecibos } from './remesa-como-sus-funcione
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { borrarMandatos, insertarMandato } from './mandatos-como-postgres'
 
 /**
  * Marcar enviada exige el fichero guardado (R-4, `20261221120000`), contra la BD real.
@@ -151,7 +152,7 @@ describe('Marcar enviada exige el fichero (R-4)', () => {
     cDirectora = await clientFor(directora)
     cDirectoraOtro = await clientFor(directoraOtro)
     cProfe = await clientFor(profe)
-    const { error } = await serviceClient.from('mandatos_sepa').insert({
+    const { error } = insertarMandato({
       centro_id: centro.id,
       familia_id: familia,
       usuario_id: tutor.id,
@@ -178,7 +179,7 @@ describe('Marcar enviada exige el fichero (R-4)', () => {
       await serviceClient.from('recibos_remesa').delete().eq('centro_id', c.id)
       await serviceClient.from('remesas').delete().eq('centro_id', c.id)
       await serviceClient.from('recibos').delete().eq('centro_id', c.id)
-      await serviceClient.from('mandatos_sepa').delete().eq('centro_id', c.id)
+      borrarMandatos('centro_id', c.id)
       await deleteTestCentro(c.id)
     }
     for (const u of [directora, directoraOtro, profe, tutor]) await deleteTestUser(u.id)

@@ -16,6 +16,7 @@ import { insertarRecibos, intentarConMarcador } from './remesa-como-sus-funcione
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { borrarMandatos } from './mandatos-como-postgres'
 
 /**
  * PR-2 (`20261107120000`) — una devolución se resuelve UNA sola vez.
@@ -178,7 +179,7 @@ describe('PR-2 — devoluciones con una sola salida', () => {
       .eq('centro_id', centro.id)
       .not('devuelto_de_recibo_id', 'is', null)
     await serviceClient.from('recibos').delete().eq('centro_id', centro.id)
-    await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centro.id)
+    borrarMandatos('centro_id', centro.id)
     await deleteTestUser(directora.id)
     await deleteTestUser(tutora.id)
     await deleteTestUser(tutoraCon.id)

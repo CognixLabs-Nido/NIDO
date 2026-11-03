@@ -16,6 +16,7 @@ import {
   type TestUser,
 } from './setup'
 import { insertarRecibos } from './remesa-como-sus-funciones'
+import { borrarMandatos } from './mandatos-como-postgres'
 
 /**
  * F-4-5 — get_mandatos_remesa a grano FAMILIA. Verifica que la RPC resuelve el mandato
@@ -162,7 +163,7 @@ describe('F-4-5 — get_mandatos_remesa a grano familia', () => {
     await serviceClient.from('recibos_remesa').delete().eq('centro_id', centro.id)
     await serviceClient.from('remesas').delete().eq('centro_id', centro.id)
     await serviceClient.from('recibos').delete().eq('centro_id', centro.id)
-    await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centro.id)
+    borrarMandatos('centro_id', centro.id)
     await serviceClient.from('familia_tutores').delete().eq('familia_id', famConMandato)
     await deleteTestCentro(centro.id)
     await deleteTestUser(admin.id)

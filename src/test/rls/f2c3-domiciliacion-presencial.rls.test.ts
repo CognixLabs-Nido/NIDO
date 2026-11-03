@@ -15,6 +15,7 @@ import {
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { borrarMandatos } from './mandatos-como-postgres'
 
 /**
  * F-2c-3 — Dirección registra/sustituye la domiciliación de una familia en modo PRESENCIAL
@@ -70,7 +71,7 @@ describe('F-2c-3 — domiciliación presencial de Dirección', () => {
   }, 60_000)
 
   afterAll(async () => {
-    await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centroA.id)
+    borrarMandatos('centro_id', centroA.id)
     await deleteTestUser(adminA.id)
     await deleteTestUser(ajeno.id)
     await deleteTestCentro(centroA.id)

@@ -17,6 +17,7 @@ import {
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { borrarMandatos } from './mandatos-como-postgres'
 
 /**
  * F-2c-4 — el TUTOR gestiona la domiciliación SEPA de su familia desde `/family/recibos` con
@@ -88,7 +89,7 @@ describe('F-2c-4 — domiciliación del tutor (storage familia + RPC digital)', 
 
   afterAll(async () => {
     for (const o of creados) await serviceClient.storage.from(o.bucket).remove([o.path])
-    await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centro.id)
+    borrarMandatos('centro_id', centro.id)
     await deleteTestUser(tutorA.id)
     await deleteTestUser(tutorB.id)
     await deleteTestCentro(centro.id)

@@ -19,6 +19,7 @@ import { insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { borrarMandatos } from './mandatos-como-postgres'
 
 /**
  * F-6 — el histórico de recibos de una familia, contra la BD real y con la sesión de Dirección.
@@ -273,7 +274,7 @@ describe('F-6 — histórico de recibos de la familia', () => {
         .eq('centro_id', c.id)
         .or('devuelto_de_recibo_id.not.is.null,diferencia_de_recibo_id.not.is.null')
       await serviceClient.from('recibos').delete().eq('centro_id', c.id)
-      await serviceClient.from('mandatos_sepa').delete().eq('centro_id', c.id)
+      borrarMandatos('centro_id', c.id)
       await serviceClient.from('cierre_mensual').delete().eq('centro_id', c.id)
       await deleteTestCentro(c.id)
     }
