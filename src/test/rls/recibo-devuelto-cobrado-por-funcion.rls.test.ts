@@ -42,6 +42,9 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
   let tutor: TestUser
   let cDirectora: SupabaseClient<Database>
   let cDirectoraOtro: SupabaseClient<Database>
+  /** Admin en el otro centro y tutora de la familia en este: ve el recibo, pero no es su admin. */
+  let mixta: TestUser
+  let cMixta: SupabaseClient<Database>
   let mesRegular = 0
   const HOY = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
 
@@ -107,6 +110,11 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
     await crearFamiliaTutor(familia, tutor.id, 'titular')
     cDirectora = await clientFor(directora)
     cDirectoraOtro = await clientFor(directoraOtro)
+    mixta = await createTestUser({ nombre: 'Admin Otro y Tutora Devuelto' })
+    await asignarRol(mixta.id, otroCentro.id, 'admin')
+    await asignarRol(mixta.id, centro.id, 'tutor_legal')
+    await crearFamiliaTutor(familia, mixta.id, 'segundo_tutor')
+    cMixta = await clientFor(mixta)
   }, 60_000)
 
   afterAll(async () => {
@@ -115,9 +123,41 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
     await deleteTestUser(directora.id)
     await deleteTestUser(directoraOtro.id)
     await deleteTestUser(tutor.id)
+    await deleteTestUser(mixta.id)
     await deleteTestCentro(centro.id)
     await deleteTestCentro(otroCentro.id)
   }, 60_000)
+
+  // ---- C · el centro del registro, ahora en la base ----
+
+  it('ser admin en otro centro no basta: la tutora de la familia que es admin en otro no devuelve ni cobra', async () => {
+    // Hasta 20261223120000 lo miraba la acción (usuarioAdminEn del centro del recibo). Ahora la
+    // función: la fila se bloquea por la política de UPDATE (es_admin del centro del recibo), y sin
+    // ella no la encuentra; detrás, su es_admin.
+    const enviado = await recibo(ENVIADO)
+    const pendiente = await recibo(PENDIENTE, { metodo: 'efectivo' })
+    // Premisa: lo VE (es tutora de la familia), así que lo que se mide no es que no lo vea.
+    const visto = await cMixta.from('recibos').select('id').in('id', [enviado, pendiente])
+    expect((visto.data ?? []).map((r) => r.id).sort()).toEqual([enviado, pendiente].sort())
+
+    const dev = await cMixta.rpc('marcar_recibo_devuelto', {
+      p_recibo_id: enviado,
+      p_fecha: '2026-03-20',
+      p_gastos_centimos: 0,
+    })
+    expect(dev.error?.code).toBe('P0002')
+    expect(dev.error?.hint).toBe('no_encontrado')
+    const cob = await cMixta.rpc('marcar_cobrado_manual', {
+      p_recibo_id: pendiente,
+      p_forma: 'efectivo',
+      p_fecha: '2026-03-20',
+      p_nota: '',
+    })
+    expect(cob.error?.code).toBe('P0002')
+    expect(cob.error?.hint).toBe('no_encontrado')
+    expect((await fila(enviado))?.estado).toBe('enviado_banco')
+    expect((await fila(pendiente))?.estado).toBe('pendiente_procesar')
+  })
 
   // ---- C · la devolución ----
 
