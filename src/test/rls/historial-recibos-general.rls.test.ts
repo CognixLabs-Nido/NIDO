@@ -14,7 +14,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { pasarAEnviadoComoMarcar, sinEnviado } from './remesa-como-sus-funciones'
+import { insertarRecibos, prepararRecibo } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { FiltroHistorial } from '@/features/recibos/lib/filtro-historial'
@@ -79,26 +79,21 @@ describe('F-6 — histórico general de recibos', () => {
   >
 
   async function recibo(over: Partial<Recibo>): Promise<string> {
-    const sinEnv = sinEnviado(over)
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    // En borrador, y a su estado como lo llevan sus funciones (20261223120000).
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: familia,
         anio: ANIO,
         mes: 1,
-        estado: 'pendiente_procesar',
-        metodo: 'sepa',
+        estado: 'pendiente_procesar' as const,
+        metodo: 'sepa' as const,
         total_centimos: 11000,
         es_esporadico: false,
-        ...sinEnv.fila,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
-    if (sinEnv.envio) pasarAEnviadoComoMarcar([data.id], sinEnv.envio)
-    return data.id
+        ...over,
+      },
+    ])
+    return id
   }
 
   async function linea(reciboId: string, ninoId: string) {
@@ -178,21 +173,19 @@ describe('F-6 — histórico general de recibos', () => {
     cDirectoraOtro = await clientFor(directoraOtro)
 
     // La otra familia: 52 esporádicos de 2025, para que haya más de una página.
-    await ok(
-      serviceClient.from('recibos').insert(
-        Array.from({ length: 52 }, (_, i) => ({
-          centro_id: centro.id,
-          familia_id: otraFamilia,
-          anio: 2025,
-          mes: (i % 12) + 1,
-          estado: 'pendiente_procesar' as const,
-          metodo: 'efectivo' as const,
-          total_centimos: 1000,
-          es_esporadico: true,
-          concepto_esporadico: 'Material F6',
-        }))
-      ),
-      'esporádicos'
+    // En borrador, y validados como los pasa su función (20261223120000).
+    await insertarRecibos(
+      Array.from({ length: 52 }, (_, i) => ({
+        centro_id: centro.id,
+        familia_id: otraFamilia,
+        anio: 2025,
+        mes: (i % 12) + 1,
+        estado: 'pendiente_procesar' as const,
+        metodo: 'efectivo' as const,
+        total_centimos: 1000,
+        es_esporadico: true,
+        concepto_esporadico: 'Material F6',
+      }))
     )
 
     // Enero: un borrador con una línea del niño, y un esporádico cargado al niño sin líneas.
@@ -208,13 +201,8 @@ describe('F-6 — histórico general de recibos', () => {
     // Febrero: solo con una línea del hermano (se valida después de escribirla).
     r.febreroHermano = await recibo({ mes: 2, estado: 'borrador' })
     await linea(r.febreroHermano, hermano)
-    await ok(
-      serviceClient
-        .from('recibos')
-        .update({ estado: 'pendiente_procesar' })
-        .eq('id', r.febreroHermano),
-      'validar febrero'
-    )
+    // Validado como lo pasa confirmar_recibo (20261223120000).
+    prepararRecibo(r.febreroHermano, { estado: 'pendiente_procesar' })
 
     // Marzo: uno borrado, que no sale.
     r.borrado = await recibo({ mes: 3, estado: 'borrador', deleted_at: new Date().toISOString() })
@@ -226,16 +214,11 @@ describe('F-6 — histórico general de recibos', () => {
       fecha_envio_banco: `${ANIO}-04-05`,
     })
     await ok(
-      cDirectora
-        .from('recibos')
-        .update({
-          estado: 'devuelto',
-          fecha_devolucion: `${ANIO}-04-20`,
-          devolucion_gastos_centimos: 200,
-        })
-        .eq('id', r.abrilDevuelto)
-        .select('id')
-        .single(),
+      cDirectora.rpc('marcar_recibo_devuelto', {
+        p_recibo_id: r.abrilDevuelto,
+        p_fecha: `${ANIO}-04-20`,
+        p_gastos_centimos: 200,
+      }),
       'devolver'
     )
     await ok(
@@ -267,19 +250,18 @@ describe('F-6 — histórico general de recibos', () => {
 
     // Otro centro: un recibo que no puede salir.
     const ninoOtroCentro = await createTestNino(otroCentro.id, 'Nino Otro Centro General F6')
-    await ok(
-      serviceClient.from('recibos').insert({
+    await insertarRecibos([
+      {
         centro_id: otroCentro.id,
         familia_id: ninoOtroCentro.familia_id,
         anio: ANIO,
         mes: 1,
-        estado: 'pendiente_procesar',
-        metodo: 'sepa',
+        estado: 'pendiente_procesar' as const,
+        metodo: 'sepa' as const,
         total_centimos: 9900,
         es_esporadico: false,
-      }),
-      'recibo otro centro'
-    )
+      },
+    ])
   }, 180_000)
 
   afterAll(async () => {

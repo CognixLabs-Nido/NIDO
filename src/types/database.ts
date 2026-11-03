@@ -5074,6 +5074,19 @@ export type Database = {
         }[]
       }
       marcar_matricula_lista: { Args: { p_nino_id: string }; Returns: string }
+      marcar_cobrado_manual: {
+        Args: {
+          p_fecha: string
+          p_forma: Database["public"]["Enums"]["metodo_pago"]
+          p_nota: string
+          p_recibo_id: string
+        }
+        Returns: undefined
+      }
+      marcar_recibo_devuelto: {
+        Args: { p_fecha: string; p_gastos_centimos: number; p_recibo_id: string }
+        Returns: undefined
+      }
       marcar_remesa_enviada: { Args: { p_remesa_id: string }; Returns: number }
       menu_del_dia: {
         Args: { p_centro_id: string; p_fecha: string }

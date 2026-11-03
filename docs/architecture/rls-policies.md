@@ -1678,8 +1678,9 @@ estados de dinero del recibo se ponían y se quitaban por fuera de sus funciones
 - **`marcar_remesa_enviada`** pasa los recibos del fichero uno a uno, cada uno con su marcador, y lo
   limpia al acabar. Es el único que lo pone. El marcador es el id de la fila, como el de la remesa,
   así que el de otro recibo no vale.
-- **Lo que no toca:** la salida de `devuelto` (`recibos_validar_devolucion`), las entradas en
-  `devuelto` y en `cobrado_manual`, y confirmar y desconfirmar. Son C y D, el PR siguiente.
+- **Lo que no tocaba:** la salida de `devuelto` (`recibos_validar_devolucion`, que sigue igual), las
+  entradas en `devuelto` y en `cobrado_manual`, y confirmar y desconfirmar. Las cierra
+  `20261223120000` (C y D, la sección siguiente).
 - **`service_role` y el congelado (E, decisión):** `congelar_si_mes_cerrado` sigue eximiendo a
   `service_role`. Con esa llave se puede cambiar el contenido de un recibo confirmado y borrar un
   recibo regular que no está en borrador, pero ya no poner ni quitar sus estados de dinero. Se deja
@@ -1690,6 +1691,59 @@ estados de dinero del recibo se ponían y se quitaban por fuera de sus funciones
   lo pasan como la función, con su marcador, por psql (`pasarAEnviadoComoMarcar`, en
   `src/test/rls/remesa-como-sus-funciones.ts`). Por psql y sin JWT, el congelado actúa igual que
   dentro de la función llamada con sesión, porque mira `auth.role()`.
+
+### La devolución, el cobro a mano, confirmar y desconfirmar: por sus funciones (C y D)
+
+Migración `20261223120000_feat_recibo_devuelto_cobrado_por_funcion`; spec
+`docs/specs/altas-serie.md`, «Las puertas del recibo» (decisiones C y D, para todos, también
+`service_role`).
+
+- **`marcar_recibo_devuelto(recibo, fecha, gastos)`** y **`marcar_cobrado_manual(recibo, forma,
+fecha, nota)`** (de invocador, `EXECUTE` solo para `authenticated`, `es_admin` del centro del
+  recibo, con el recibo bloqueado). Sustituyen a los dos UPDATE directos de la app, con los mismos
+  rechazos y su HINT:
+  - **la devolución:** fecha futura (`fecha_devolucion_invalida`), anterior al envío
+    (`devolucion_antes_del_envio`), gastos negativos (`gastos_invalidos`) y un recibo que no está
+    enviado (`no_devolvible`). Conserva `fecha_envio_banco`;
+  - **el cobro a mano:** un SEPA pendiente (`sepa_por_remesa`), un devuelto
+    (`devolucion_por_resolver`), otro estado (`no_cobrable_manual`), una forma que no es efectivo ni
+    transferencia (`forma_no_valida`: el cheque va por `cobrar_recibo_con_cheque`), fecha futura
+    (`fecha_cobro_futura`) y una nota de más de 500 (`nota_cobro_larga`). La nota vacía se guarda
+    como NULL.
+
+  Un recibo que no existe, o que la sesión no ve, da `no_encontrado`.
+
+- **`recibos_dinero_solo_por_funcion`**, ampliado, para todos:
+  - entrar en `devuelto`, solo con `app.marcar_recibo_devuelto` (`devuelto_por_funcion`);
+  - entrar en `cobrado_manual`, solo con el marcador del cobro a mano, del cheque
+    (`app.cobro_cheque`) o de la devolución resuelta (`app.resolver_devolucion`)
+    (`cobrado_por_funcion`);
+  - de borrador a pendiente, solo con `app.confirmar_recibo`, y la vuelta, solo con
+    `app.desconfirmar_recibo` (`confirmar_por_funcion`, `desconfirmar_por_funcion`). Así la marca de
+    cierre (`cierre_mensual`) la ponen y la quitan siempre las suyas. Por fuera, con el mes cerrado,
+    la vuelta a borrador dejaba el mes cerrado con un borrador dentro;
+  - un recibo nace en borrador (`recibo_nace_en_borrador`). En pendiente solo nace el esporádico de
+    `crear_recibo_esporadico`, que genera el id antes para su marcador, y el re-giro de
+    `resolver_devolucion`.
+- Tests:
+  - `recibo-devuelto-cobrado-por-funcion.rls.test.ts`;
+  - el unit `recibo-devuelto-cobrado-keys.test.ts`, que compara los HINT de cada función con el
+    mapa de la app (`errores-devuelto-cobrado.ts`).
+
+  Los fixtures llegan a su estado con `insertarRecibos` y `prepararRecibo(s)` (en
+  `src/test/rls/remesa-como-sus-funciones.ts`): el recibo nace en borrador y pasa cada paso con el
+  marcador de su función, como `postgres` y con el claim de `service_role`, igual que iban con
+  `serviceClient`.
+
+- **Las defensas de antes, detrás.** Por fuera de las funciones responde primero este trigger, y
+  las defensas que ya había en el mismo camino (`recibos_validar_cobro_manual`, el trigger del
+  cheque, `recibos_validar_devolucion`, `recibos_validar_sin_desborde`,
+  `recibos_en_remesa_no_vuelven_a_borrador` y los CHECK) solo se alcanzan con el marcador puesto.
+  Sus tests lo miden con `intentarConMarcador`, que siempre se deshace y lleva su control positivo.
+  `recibos_congelar` corre ANTES que este trigger (orden alfabético): con sesión, a un recibo en
+  remesa que vuelve a borrador le responde él («recibo en remesa: no se puede modificar»).
+- **El DEFAULT de `recibos.estado` es `pendiente_procesar`:** un INSERT sin estado lo rechaza
+  `recibo_nace_en_borrador`. Las funciones y la app que crean recibos dicen su estado.
 
 ### La red del export art. 15: cada columna, decidida
 

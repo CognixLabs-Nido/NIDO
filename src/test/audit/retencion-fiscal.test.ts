@@ -14,9 +14,10 @@ import {
   type TestUser,
 } from '../rls/setup'
 import {
+  insertarRecibos,
   pasarAEnviadoComoMarcar,
   ponerMarcaComoElRegistro,
-  sinEnviado,
+  prepararRecibo,
 } from '../rls/remesa-como-sus-funciones'
 
 /**
@@ -103,16 +104,11 @@ describe('Retención: lo fiscal al vencer', () => {
   }
 
   async function recibo(familiaId: string, fila: Record<string, unknown>): Promise<string> {
-    const sinEnv = sinEnviado(fila)
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({ centro_id: centro.id, familia_id: familiaId, anio: 2024, ...sinEnv.fila } as never)
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
-    if (sinEnv.envio) pasarAEnviadoComoMarcar([(data as { id: string }).id], sinEnv.envio)
-    return (data as { id: string }).id
+    // En borrador, y a su estado como lo llevan sus funciones (20261223120000).
+    const [id] = await insertarRecibos([
+      { centro_id: centro.id, familia_id: familiaId, anio: 2024, ...fila },
+    ])
+    return id
   }
 
   async function resolver(id: string, salida: string, fecha: string | null = null) {
@@ -135,16 +131,11 @@ describe('Retención: lo fiscal al vencer', () => {
       total_centimos: 10000,
     })
     const c = await clientFor(admin)
-    const { error } = await c
-      .from('recibos')
-      .update({
-        estado: 'devuelto',
-        fecha_devolucion: '2019-09-20',
-        devolucion_gastos_centimos: 300,
-      })
-      .eq('id', id)
-      .select('id')
-      .single()
+    const { error } = await c.rpc('marcar_recibo_devuelto', {
+      p_recibo_id: id,
+      p_fecha: '2019-09-20',
+      p_gastos_centimos: 300,
+    })
     if (error) throw new Error(`devolver: ${error.message}`)
     recibosF1.push(id)
     return id
@@ -387,11 +378,12 @@ describe('Retención: lo fiscal al vencer', () => {
     })
     recibosF1.push(pend)
     expect(await vencidas()).toEqual([f2])
-    const pc = await serviceClient
-      .from('recibos')
-      .update({ estado: 'cobrado_manual', cobro_forma: 'efectivo', cobro_fecha: '2019-09-02' })
-      .eq('id', pend)
-    expect(pc.error).toBeNull()
+    // Cobrado como lo pasa marcar_cobrado_manual (20261223120000).
+    prepararRecibo(pend, {
+      estado: 'cobrado_manual',
+      cobro_forma: 'efectivo',
+      cobro_fecha: '2019-09-02',
+    })
     expect(await vencidas()).toEqual([familia, f2].sort())
 
     // Uno de 0 €: no hay nada que cobrar, y no sale nunca de pendiente.

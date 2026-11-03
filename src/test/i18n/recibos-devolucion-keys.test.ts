@@ -48,6 +48,8 @@ for (const ruta of COMPONENTES) {
 // Los errores que devuelven las actions de la devolución (se pintan con tErrors, no con t).
 const ERRORES_ACTIONS = [
   'src/features/remesas/actions/marcar-recibo-devuelto.ts',
+  // Desde 20261223120000 las claves de error de la devolución y del cobro viven en su mapa.
+  'src/features/remesas/lib/errores-devuelto-cobrado.ts',
   'src/features/remesas/actions/resolver-devolucion.ts',
   'src/features/remesas/actions/marcar-cobrado-manual.ts',
   'src/features/remesas/actions/cobrar-con-cheque.ts',

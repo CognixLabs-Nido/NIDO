@@ -12,6 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { prepararRecibo } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -96,6 +97,9 @@ describe('F-4-1 — recibos a grano familia', () => {
         anio: 2027,
         mes: 3,
         metodo: 'sepa',
+        // Nace en borrador (20261223120000; sin estado, el DEFAULT de la columna es pendiente) y
+        // lo valida su función, como estaba antes el fixture.
+        estado: 'borrador',
         total_centimos: 15000,
         es_esporadico: false,
       })
@@ -105,6 +109,7 @@ describe('F-4-1 — recibos a grano familia', () => {
     expect(recibo.data?.familia_id).toBe(familiaA)
     expect(recibo.data?.nino_id).toBeNull()
     const reciboId = recibo.data!.id
+    prepararRecibo(reciboId, { estado: 'pendiente_procesar' })
 
     // El tutor de familiaA lo ve (es_tutor_de_familia); el de familiaB no.
     const propio = await cTutorA.from('recibos').select('id').eq('id', reciboId).maybeSingle()
@@ -165,6 +170,9 @@ describe('F-4-1 — recibos a grano familia', () => {
       anio: 2027,
       mes: 5,
       metodo: 'sepa' as const,
+      // Explícito: sin estado nacería en el DEFAULT (pendiente), que desde 20261223120000 solo da
+      // su función, y el rechazo sería ese y no el del índice único.
+      estado: 'borrador' as const,
       total_centimos: 5000,
     }
     const primero = await cAdmin

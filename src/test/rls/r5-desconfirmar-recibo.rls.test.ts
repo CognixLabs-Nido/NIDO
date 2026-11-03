@@ -14,6 +14,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { intentarConMarcador } from './remesa-como-sus-funciones'
 
 /**
  * R-5 — DESCONFIRMAR un recibo (confirmado → borrador) y su salvaguarda.
@@ -26,7 +27,10 @@ import {
  * Lo que fija esta suite:
  *   1. el ciclo completo — congelado → "Modificar" → editable → reconfirmar → congelado;
  *   2. la salvaguarda por REMESA, tanto por la RPC como por UPDATE directo (es invariante
- *      de BD, no una convención de la UI), y que una remesa BORRADA no bloquea;
+ *      de BD, no una convención de la UI), y que una remesa BORRADA no bloquea. Cada rechazo
+ *      se afirma por su MENSAJE o su HINT, no por el P0001 a secas: desde `20261223120000`
+ *      hay otra defensa en el mismo camino (`recibos_dinero_solo_por_funcion`), y un P0001
+ *      no dice cuál de las dos ha respondido;
  *   3. el corte por estado: un `cobrado_manual` (cobro fuera de SEPA, sin remesa de por
  *      medio) tampoco vuelve — el dinero ya entró;
  *   4. la reapertura del mes: confirmar el último borrador ancla `cierre_mensual` (R8), así
@@ -42,6 +46,9 @@ import {
 
 const ANIO = 2026
 const ESCOLARIDAD = 50000
+/** Los rechazos sin HINT de `congelar_si_mes_cerrado` y `desconfirmar_recibo`, por su mensaje. */
+const EN_REMESA = 'recibo en remesa: no se puede modificar'
+const LINEAS_CONGELADAS = /^recibo confirmado: las líneas de \d{4}-\d{2} no son editables$/
 
 /**
  * UN MES POR TEST. No es cosmético: confirmar el ÚLTIMO borrador de un mes ancla
@@ -215,6 +222,7 @@ describe('R-5 — desconfirmar un recibo', () => {
       .update({ descripcion: 'en caliente' })
       .eq('id', linea!.id)
     expect(enCaliente.error?.code).toBe('P0001')
+    expect(enCaliente.error?.message).toMatch(LINEAS_CONGELADAS)
 
     // "Modificar".
     const desc = await cAdmin.rpc('desconfirmar_recibo', { p_recibo_id: reciboId })
@@ -242,6 +250,7 @@ describe('R-5 — desconfirmar un recibo', () => {
       .update({ descripcion: 'segundo intento' })
       .eq('id', linea!.id)
     expect(otraVez.error?.code).toBe('P0001')
+    expect(otraVez.error?.message).toMatch(LINEAS_CONGELADAS)
 
     const { data: final } = await serviceClient
       .from('lineas_recibo')
@@ -297,15 +306,44 @@ describe('R-5 — desconfirmar un recibo', () => {
 
     const porRpc = await cAdmin.rpc('desconfirmar_recibo', { p_recibo_id: reciboId })
     expect(porRpc.error?.code).toBe('P0001')
-    expect(porRpc.error?.message).toContain('remesa')
+    expect(porRpc.error?.message).toBe(EN_REMESA)
 
-    // La puerta de atrás: un UPDATE directo tampoco pasa. La salvaguarda vive en el trigger.
+    // La puerta de atrás: un UPDATE directo tampoco pasa. La salvaguarda vive en el trigger
+    // `recibos_congelar`, que corre ANTES que `recibos_dinero_solo_por_funcion` (los triggers van
+    // por orden alfabético): con sesión, quien responde es la salvaguarda, y se afirma su mensaje.
+    // Si un día dejara de estar, respondería el trigger nuevo con otro (`desconfirmar_por_funcion`)
+    // y esto se pondría rojo; con el P0001 a secas seguiría en verde.
     const aPelo = await cAdmin
       .from('recibos')
       .update({ estado: 'borrador' })
       .eq('id', reciboId)
       .select('id')
     expect(aPelo.error?.code).toBe('P0001')
+    expect(aPelo.error?.message).toBe(EN_REMESA)
+
+    // Con service_role el congelado no actúa, y por fuera responde el trigger nuevo.
+    const aPeloServicio = await serviceClient
+      .from('recibos')
+      .update({ estado: 'borrador' })
+      .eq('id', reciboId)
+    expect(aPeloServicio.error?.hint).toBe('desconfirmar_por_funcion')
+
+    // El caso que separa: con el marcador de desconfirmar_recibo (el trigger nuevo deja pasar), la
+    // salvaguarda sigue respondiendo: con sesión, la del congelado; con service_role, la de
+    // `recibos_en_remesa_no_vuelven_a_borrador`.
+    const vuelta = "estado = 'borrador'"
+    const conSesion = intentarConMarcador(
+      reciboId,
+      'app.desconfirmar_recibo',
+      vuelta,
+      'authenticated'
+    )
+    expect(conSesion).toMatchObject({ pasa: false, code: 'P0001', message: EN_REMESA })
+    expect(intentarConMarcador(reciboId, 'app.desconfirmar_recibo', vuelta)).toMatchObject({
+      pasa: false,
+      code: 'P0001',
+      hint: 'recibo_en_remesa',
+    })
 
     expect(await estadoDe(reciboId)).toBe('pendiente_procesar')
   })
@@ -333,10 +371,12 @@ describe('R-5 — desconfirmar un recibo', () => {
     const { reciboId } = await familiaConRecibo('R5 Cobrado')
     expect((await cAdmin.rpc('confirmar_recibo', { p_recibo_id: reciboId })).error).toBeNull()
 
-    const cobrar = await cAdmin
-      .from('recibos')
-      .update({ estado: 'cobrado_manual', cobro_forma: 'efectivo', cobro_fecha: '2026-01-15' })
-      .eq('id', reciboId)
+    const cobrar = await cAdmin.rpc('marcar_cobrado_manual', {
+      p_recibo_id: reciboId,
+      p_forma: 'efectivo',
+      p_fecha: '2026-01-15',
+      p_nota: '',
+    })
     expect(cobrar.error).toBeNull()
 
     expect((await serviceClient.rpc('recibo_en_remesa', { p_recibo_id: reciboId })).data).toBe(
@@ -344,6 +384,9 @@ describe('R-5 — desconfirmar un recibo', () => {
     )
     const desc = await cAdmin.rpc('desconfirmar_recibo', { p_recibo_id: reciboId })
     expect(desc.error?.code).toBe('P0001')
+    expect(desc.error?.message).toBe(
+      'recibo en el circuito de cobro (cobrado_manual): ya no vuelve a borrador'
+    )
     expect(await estadoDe(reciboId)).toBe('cobrado_manual')
   })
 

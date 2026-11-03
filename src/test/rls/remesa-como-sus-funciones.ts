@@ -1,5 +1,7 @@
 import { execFileSync } from 'node:child_process'
 
+import { serviceClient } from './setup'
+
 /**
  * La marca y el envío de una remesa, y el recibo enviado al banco, puestos como los ponen sus
  * funciones (FICCIÓN DE LOS TESTS).
@@ -12,7 +14,10 @@ import { execFileSync } from 'node:child_process'
  *    `remesas_enviada_solo_por_marcar`).
  * Y desde `20261222120000`, una del recibo: el paso a `enviado_banco`, que solo da
  * `marcar_remesa_enviada`, recibo a recibo, con `app.marcar_recibo_enviado` = el id del recibo
- * (trigger `recibos_dinero_solo_por_funcion`).
+ * (trigger `recibos_dinero_solo_por_funcion`). Desde `20261223120000`, todo el circuito del recibo:
+ * nace en borrador, y validar, devolver, cobrar a mano y volver a borrador solo los da su función,
+ * cada una con su marcador (`insertarRecibos`, `prepararRecibo`). Y para el caso que separa dos
+ * defensas solapadas, `intentarConMarcador`.
  *
  * Los tests que necesitan una remesa o un recibo así sin pasar por la función entera (subir el
  * fichero, los adeudos con su mandato), con una marca de hace años o con un recibo enviado fuera de
@@ -129,17 +134,225 @@ export function pasarAEnviadoComoMarcar(reciboIds: string[], fecha: string): voi
   }
 }
 
+/** Lo que el recibo lleva al llegar a su estado (las columnas que escriben sus funciones). */
+export interface DestinoRecibo {
+  estado: 'borrador' | 'pendiente_procesar' | 'enviado_banco' | 'devuelto' | 'cobrado_manual'
+  fecha_envio_banco?: string | null
+  fecha_devolucion?: string | null
+  devolucion_gastos_centimos?: number | null
+  devolucion_salida?: string | null
+  cobro_forma?: string | null
+  cobro_fecha?: string | null
+  cobro_nota?: string | null
+  cobro_importe_centimos?: number | null
+}
+
+const COLUMNAS_DESTINO = [
+  'estado',
+  'fecha_envio_banco',
+  'fecha_devolucion',
+  'devolucion_gastos_centimos',
+  'devolucion_salida',
+  'cobro_forma',
+  'cobro_fecha',
+  'cobro_nota',
+  'cobro_importe_centimos',
+] as const
+
 /**
- * Para los fixtures que crean un recibo ya enviado: la fila sin el envío (pendiente, sin fecha),
- * para insertarla, y la fecha con la que después pasa a enviado por `pasarAEnviadoComoMarcar`.
- * Un INSERT directo en `enviado_banco` lo rechaza `recibos_dinero_solo_por_funcion`.
+ * Para los fixtures que crean un recibo ya en un estado del circuito de cobro: la fila en borrador y
+ * sin esas columnas, para insertarla, y el destino al que después lo lleva `prepararRecibo`. Desde
+ * `20261223120000` un recibo nace en borrador (salvo el esporádico de `crear_recibo_esporadico` y el
+ * re-giro de `resolver_devolucion`) y cada paso del circuito lo da su función.
  */
-export function sinEnviado<T extends object>(fila: T): { fila: T; envio: string | null } {
-  const { estado, fecha_envio_banco: envio } = fila as {
-    estado?: unknown
-    fecha_envio_banco?: unknown
+export function enBorrador<T extends object>(fila: T): { fila: T; destino: DestinoRecibo | null } {
+  const f = fila as Record<string, unknown>
+  // Sin estado, la fila nacía con el DEFAULT de la columna, que es `pendiente_procesar` (no
+  // borrador): se conserva lo que el fixture tenía de verdad, y se pide el borrador explícito.
+  const estado = (f.estado ?? 'pendiente_procesar') as DestinoRecibo['estado']
+  if (estado === 'borrador') return { fila: { ...f, estado: 'borrador' } as T, destino: null }
+  const destino: Record<string, unknown> = {}
+  const resto: Record<string, unknown> = { ...f, estado: 'borrador' }
+  for (const c of COLUMNAS_DESTINO) {
+    if (c in f) destino[c] = f[c]
+    if (c !== 'estado') delete resto[c]
   }
-  if (estado !== 'enviado_banco') return { fila, envio: null }
-  if (typeof envio !== 'string') throw new Error('sinEnviado: un recibo enviado lleva su fecha')
-  return { fila: { ...fila, estado: 'pendiente_procesar', fecha_envio_banco: null }, envio }
+  return { fila: resto as T, destino: destino as unknown as DestinoRecibo }
+}
+
+function literal(v: unknown): string {
+  if (v === null || v === undefined) return 'NULL'
+  if (typeof v === 'number' && Number.isFinite(v)) return String(v)
+  if (typeof v === 'string') return `'${v.replace(/'/g, "''")}'`
+  throw new Error(`prepararRecibo: valor no admitido: ${String(v)}`)
+}
+
+/**
+ * Lleva un recibo de borrador a su estado como lo llevan sus funciones, paso a paso y con el
+ * marcador de cada una (FICCIÓN DE LOS TESTS: solo las transiciones, sin lo demás que hacen; por
+ * ejemplo, el ancla de `cierre_mensual` de `confirmar_recibo` no se pone, igual que no la ponía el
+ * UPDATE directo que sustituye):
+ *  - a pendiente, `confirmar_recibo` (`app.confirmar_recibo`);
+ *  - a enviado, `marcar_remesa_enviada` (`app.marcar_recibo_enviado`);
+ *  - a devuelto, `marcar_recibo_devuelto` (`app.marcar_recibo_devuelto`);
+ *  - a cobrado: desde devuelto, `resolver_devolucion` (`app.resolver_devolucion`); con cheque,
+ *    `cobrar_recibo_con_cheque` (`app.cobro_cheque`); si no, `marcar_cobrado_manual`;
+ *  - la salida de una devolución que se queda en devuelto, `resolver_devolucion`.
+ * Va como `postgres` con el claim de service_role, como iban los fixtures con `serviceClient`: el
+ * congelado le exime igual que antes.
+ */
+export function prepararRecibo(reciboId: string, d: DestinoRecibo): void {
+  prepararRecibos([[reciboId, d]])
+}
+
+/** Los pasos de `prepararRecibo` para un recibo: [marcador, SET] en orden. */
+function pasosHasta(d: DestinoRecibo): Array<[string, string]> {
+  const pasos: Array<[string, string]> = []
+  const conDevolucion =
+    d.estado === 'devuelto' || (d.estado === 'cobrado_manual' && d.fecha_devolucion)
+  const conEnvio = d.estado === 'enviado_banco' || conDevolucion
+  if (d.estado !== 'borrador') pasos.push(['app.confirmar_recibo', "estado = 'pendiente_procesar'"])
+  if (conEnvio) {
+    pasos.push([
+      'app.marcar_recibo_enviado',
+      `estado = 'enviado_banco', fecha_envio_banco = ${literal(d.fecha_envio_banco)}`,
+    ])
+  }
+  if (conDevolucion) {
+    pasos.push([
+      'app.marcar_recibo_devuelto',
+      `estado = 'devuelto', fecha_devolucion = ${literal(d.fecha_devolucion)}, devolucion_gastos_centimos = ${literal(d.devolucion_gastos_centimos ?? 0)}`,
+    ])
+  }
+  if (d.estado === 'cobrado_manual') {
+    const marcador = conDevolucion
+      ? 'app.resolver_devolucion'
+      : d.cobro_forma === 'cheque_guarderia'
+        ? 'app.cobro_cheque'
+        : 'app.marcar_cobrado_manual'
+    pasos.push([
+      marcador,
+      [
+        "estado = 'cobrado_manual'",
+        `cobro_forma = ${literal(d.cobro_forma)}`,
+        `cobro_fecha = ${literal(d.cobro_fecha)}`,
+        `cobro_nota = ${literal(d.cobro_nota)}`,
+        `cobro_importe_centimos = ${literal(d.cobro_importe_centimos)}`,
+        ...(conDevolucion ? [`devolucion_salida = ${literal(d.devolucion_salida)}`] : []),
+      ].join(', '),
+    ])
+  } else if (d.estado === 'devuelto' && d.devolucion_salida) {
+    pasos.push(['app.resolver_devolucion', `devolucion_salida = ${literal(d.devolucion_salida)}`])
+  }
+  return pasos
+}
+
+/** `prepararRecibo` de varios recibos en una sola transacción (y un solo psql). */
+export function prepararRecibos(lista: Array<[string, DestinoRecibo]>): void {
+  if (lista.length === 0) return
+  const url = process.env.DB_URL
+  if (!url) throw new Error('DB_URL: el recibo solo se prepara así en la BD efímera del CI')
+  const lineas: string[] = []
+  let esperados = 0
+  for (const [reciboId, d] of lista) {
+    if (!UUID.test(reciboId))
+      throw new Error(`remesa-como-sus-funciones: id no válido: ${reciboId}`)
+    for (const [marcador, set] of pasosHasta(d)) {
+      esperados++
+      lineas.push(
+        `SELECT set_config('${marcador}', '${reciboId}', true);`,
+        `UPDATE public.recibos SET ${set} WHERE id = '${reciboId}' RETURNING 'hecho';`,
+        `SELECT set_config('${marcador}', '', true);`
+      )
+    }
+  }
+  if (esperados === 0) return
+  const sql = [
+    'BEGIN;',
+    `SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);`,
+    ...lineas,
+    'COMMIT;',
+  ].join('\n')
+  const salida = execFileSync('psql', [url, '-v', 'ON_ERROR_STOP=1', '-qAt', '-f', '-'], {
+    input: sql,
+    encoding: 'utf8',
+  })
+  // Cada paso tiene que haber tocado su recibo: sin fila, el test no mediría nada.
+  const hechos = salida.split('\n').filter((l) => l === 'hecho').length
+  if (hechos !== esperados) {
+    throw new Error(`prepararRecibos: ${hechos} de ${esperados} pasos: ${salida}`)
+  }
+}
+
+/**
+ * Inserta recibos como lo haría un fixture con `serviceClient`, pero por el único camino que queda:
+ * en borrador (`enBorrador`), y después cada uno a su estado con `prepararRecibos`. Devuelve los ids
+ * en el orden de las filas (los de RETURNING).
+ */
+export async function insertarRecibos<T extends object>(filas: T[]): Promise<string[]> {
+  const partes = filas.map((f) => enBorrador(f))
+  const { data, error } = await serviceClient
+    .from('recibos')
+    .insert(partes.map((p) => p.fila) as never)
+    .select('id')
+  if (error || !data || data.length !== filas.length)
+    throw new Error(`insertarRecibos: ${error?.message ?? `${data?.length} de ${filas.length}`}`)
+  const ids = data.map((r) => r.id)
+  prepararRecibos(
+    partes.flatMap(
+      (p, i): Array<[string, DestinoRecibo]> => (p.destino ? [[ids[i], p.destino]] : [])
+    )
+  )
+  return ids
+}
+
+/** Lo que responde la base a un intento: pasa con N filas, o el error con su código y su HINT. */
+export type Intento =
+  | { pasa: true; filas: number }
+  | { pasa: false; code: string; hint: string; message: string }
+
+/**
+ * El caso que SEPARA dos defensas solapadas: un UPDATE del recibo con el marcador de su función
+ * puesto, para que `recibos_dinero_solo_por_funcion` lo deje pasar, y ver que la defensa de detrás
+ * sigue respondiendo (FICCIÓN DE LOS TESTS: es lo que pasaría si la función se equivocara un día).
+ * Como `postgres` por psql, con el claim que se pida (`service_role`, o `authenticated` para que el
+ * congelado actúe como con sesión), y SIEMPRE se deshace, pase o no: no deja nada escrito.
+ */
+export function intentarConMarcador(
+  reciboId: string,
+  marcador: string,
+  set: string,
+  rol: 'service_role' | 'authenticated' = 'service_role'
+): Intento {
+  const url = process.env.DB_URL
+  if (!url) throw new Error('DB_URL: el intento solo se hace así en la BD efímera del CI')
+  if (!UUID.test(reciboId)) throw new Error(`remesa-como-sus-funciones: id no válido: ${reciboId}`)
+  if (!/^app\.[a-z_]+$/.test(marcador))
+    throw new Error(`intentarConMarcador: marcador: ${marcador}`)
+  const sql = [
+    'BEGIN;',
+    `SELECT set_config('request.jwt.claims', '{"role":"${rol}"}', true);`,
+    `CREATE FUNCTION pg_temp.intento() RETURNS text LANGUAGE plpgsql AS $i$
+     DECLARE n int; st text; h text; m text;
+     BEGIN
+       PERFORM set_config('${marcador}', '${reciboId}', true);
+       UPDATE public.recibos SET ${set} WHERE id = '${reciboId}';
+       GET DIAGNOSTICS n = ROW_COUNT;
+       RETURN 'pasa|' || n;
+     EXCEPTION WHEN OTHERS THEN
+       GET STACKED DIAGNOSTICS st = RETURNED_SQLSTATE, h = PG_EXCEPTION_HINT, m = MESSAGE_TEXT;
+       RETURN 'error|' || st || '|' || coalesce(h, '') || '|' || replace(m, E'\\n', ' ');
+     END $i$;`,
+    'SELECT pg_temp.intento();',
+    'ROLLBACK;',
+  ].join('\n')
+  const salida = execFileSync('psql', [url, '-v', 'ON_ERROR_STOP=1', '-qAt', '-f', '-'], {
+    input: sql,
+    encoding: 'utf8',
+  })
+  const linea = salida.split('\n').find((l) => l.startsWith('pasa|') || l.startsWith('error|'))
+  if (linea === undefined) throw new Error(`intentarConMarcador: sin respuesta: ${salida}`)
+  const [que, a, b, ...resto] = linea.split('|')
+  if (que === 'pasa') return { pasa: true, filas: Number(a) }
+  return { pasa: false, code: a, hint: b, message: resto.join('|') }
 }

@@ -17,6 +17,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -76,25 +77,26 @@ describe('F12-B-7 — recibos: aislamiento entre familias del MISMO centro', () 
       [nino1.id, nino1.familia_id, 8000, 'r1'],
       [nino2.id, nino2.familia_id, 6000, 'r2'],
     ] as const) {
-      const { data: r } = await serviceClient
-        .from('recibos')
-        .insert({
+      // Sin estado nacía en el DEFAULT de la columna (pendiente); desde 20261223120000 un recibo
+      // nace en borrador y lo valida su función: se dice explícito.
+      const [rId] = await insertarRecibos([
+        {
           centro_id: centro.id,
           familia_id: familiaId, // F-4-1: recibos a grano familia
           nino_id: ninoId,
           anio: 2026,
           mes: 5,
-          metodo: 'sepa',
+          metodo: 'sepa' as const,
+          estado: 'pendiente_procesar' as const,
           total_centimos: total,
           es_esporadico: false,
-        })
-        .select('id')
-        .single()
-      if (ref === 'r1') recibo1 = r!.id
-      else recibo2 = r!.id
+        },
+      ])
+      if (ref === 'r1') recibo1 = rId
+      else recibo2 = rId
       await serviceClient.from('lineas_recibo').insert({
         centro_id: centro.id,
-        recibo_id: r!.id,
+        recibo_id: rId,
         descripcion: 'Comedor',
         cantidad: 1,
         precio_unitario_centimos: total,

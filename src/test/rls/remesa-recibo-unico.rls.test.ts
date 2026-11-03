@@ -12,10 +12,10 @@ import {
   type TestUser,
 } from './setup'
 import {
+  insertarRecibos,
+  intentarConMarcador,
   marcarEnviadaComoLaFuncion,
-  pasarAEnviadoComoMarcar,
   ponerMarcaComoElRegistro,
-  sinEnviado,
 } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -32,6 +32,9 @@ import type { Database } from '@/types/database'
  *  - Una remesa enviada no vuelve a borrador, y ni la enviada ni la que tiene fichero se borran: sus
  *    recibos quedarían libres para otra remesa.
  *  - Un recibo en una remesa viva no vuelve a borrador por ningún camino, y el enlace no se mueve.
+ *    Desde `20261223120000` por fuera responde antes `recibos_dinero_solo_por_funcion`
+ *    (`desconfirmar_por_funcion`); el caso que separa pone el marcador de `desconfirmar_recibo`, y
+ *    `recibos_en_remesa_no_vuelven_a_borrador` tiene que seguir respondiendo.
  */
 
 type Recibo = Database['public']['Tables']['recibos']['Insert']
@@ -48,28 +51,23 @@ describe('Un recibo, una remesa', () => {
   let cDirectora: SupabaseClient<Database>
 
   async function recibo(over: Partial<Recibo> = {}): Promise<string> {
-    const sinEnv = sinEnviado(over)
-    // Esporádico: el índice de un recibo regular por familia y mes no deja más de uno.
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    // Esporádico: el índice de un recibo regular por familia y mes no deja más de uno. En borrador,
+    // y a su estado como lo llevan sus funciones (20261222120000, 20261223120000).
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: familia,
         anio: ANIO,
         mes: MES,
-        estado: 'pendiente_procesar',
-        metodo: 'sepa',
+        estado: 'pendiente_procesar' as const,
+        metodo: 'sepa' as const,
         total_centimos: 10000,
         es_esporadico: true,
         concepto_esporadico: 'Remesa única',
-        ...sinEnv.fila,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
-    if (sinEnv.envio) pasarAEnviadoComoMarcar([data.id], sinEnv.envio)
-    return data.id
+        ...over,
+      },
+    ])
+    return id
   }
 
   async function remesa(): Promise<string> {
@@ -208,22 +206,20 @@ describe('Un recibo, una remesa', () => {
       expect(r1.error?.hint, caso).toBe('recibo_no_remesable')
     }
 
-    const { data: ajeno } = await serviceClient
-      .from('recibos')
-      .insert({
+    const [ajeno] = await insertarRecibos([
+      {
         centro_id: otroCentro.id,
         familia_id: familiaOtro,
         anio: ANIO,
         mes: MES,
-        estado: 'pendiente_procesar',
-        metodo: 'sepa',
+        estado: 'pendiente_procesar' as const,
+        metodo: 'sepa' as const,
         total_centimos: 10000,
         es_esporadico: true,
         concepto_esporadico: 'Remesa única',
-      })
-      .select('id')
-      .single()
-    const otro = await enlazar(serviceClient, r, ajeno!.id)
+      },
+    ])
+    const otro = await enlazar(serviceClient, r, ajeno)
     expect(otro.error?.hint).toBe('recibo_no_remesable')
   })
 
@@ -275,9 +271,26 @@ describe('Un recibo, una remesa', () => {
     expect((await enlazar(cDirectora, r, id)).error).toBeNull()
 
     const directo = await serviceClient.from('recibos').update({ estado: 'borrador' }).eq('id', id)
-    expect(directo.error?.hint).toBe('recibo_en_remesa')
+    expect(directo.error?.hint).toBe('desconfirmar_por_funcion')
+    // El caso que separa: con el marcador de desconfirmar_recibo, la salvaguarda de la remesa sigue
+    // respondiendo, también con service_role (al que el congelado exime).
+    expect(intentarConMarcador(id, 'app.desconfirmar_recibo', "estado = 'borrador'")).toMatchObject(
+      {
+        pasa: false,
+        code: 'P0001',
+        hint: 'recibo_en_remesa',
+      }
+    )
+    // Y su control: el mismo intento en un recibo sin remesa pasa (se deshace).
+    const libre = await recibo({ es_esporadico: false, concepto_esporadico: null, mes: 5 })
+    expect(intentarConMarcador(libre, 'app.desconfirmar_recibo', "estado = 'borrador'")).toEqual({
+      pasa: true,
+      filas: 1,
+    })
+    // La función lo rechaza ella misma, antes de escribir (no tiene HINT: se afirma su mensaje).
     const rpc = await cDirectora.rpc('desconfirmar_recibo', { p_recibo_id: id })
-    expect(rpc.error).not.toBeNull()
+    expect(rpc.error?.code).toBe('P0001')
+    expect(rpc.error?.message).toBe('recibo en remesa: no se puede modificar')
     const { data } = await serviceClient.from('recibos').select('estado').eq('id', id).single()
     expect(data?.estado).toBe('pendiente_procesar')
   })

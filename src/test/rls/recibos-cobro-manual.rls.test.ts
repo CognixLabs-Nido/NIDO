@@ -12,6 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { intentarConMarcador, insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -19,11 +20,16 @@ import type { Database } from '@/types/database'
 /**
  * PR-1a (`20261105120000`) — cobrar a mano en efectivo o por transferencia.
  *
- *  - Un pendiente que no es SEPA se cobra a mano con su forma, su fecha y una nota.
+ *  - Un pendiente que no es SEPA se cobra a mano con su forma, su fecha y una nota. Desde
+ *    `20261223120000` solo por `marcar_cobrado_manual`: el UPDATE directo lo para
+ *    `recibos_dinero_solo_por_funcion` (`cobrado_por_funcion`), también con service_role.
  *  - Un SEPA pendiente no (va por remesa), ni un borrador: lo para el trigger
- *    `recibos_validar_cobro_manual`, también con service_role.
+ *    `recibos_validar_cobro_manual`, también con service_role. Por fuera ya responde antes el
+ *    trigger nuevo; el caso que separa las dos defensas pone el marcador de la función, y la de
+ *    detrás tiene que seguir respondiendo con su HINT.
  *  - Sin forma o sin fecha no hay cobrado_manual (CHECK), y la forma nunca es SEPA (desde el
- *    PR-1b, `20261106120000`, también cheque, que va por su función: recibos-cobro-cheque).
+ *    PR-1b, `20261106120000`, también cheque, que va por su función: recibos-cobro-cheque). El
+ *    CHECK también se mide con el marcador puesto, que es el único camino por el que se llega.
  *  - La nota no entra en audit_log (la forma y la fecha sí); el export del art. 15 lleva las tres.
  *  - Lo cobra Dirección: la tutora de la familia no.
  */
@@ -39,9 +45,8 @@ describe('PR-1a — cobro manual de recibos', () => {
   let cTutora: SupabaseClient<Database>
 
   async function recibo(over: Partial<Recibo>): Promise<string> {
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: familia,
         anio: 2026,
@@ -51,11 +56,9 @@ describe('PR-1a — cobro manual de recibos', () => {
         es_esporadico: true,
         concepto_esporadico: 'Cobro manual PR-1a',
         ...over,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    return data.id
+      },
+    ])
+    return id
   }
 
   const cobro = {
@@ -63,6 +66,27 @@ describe('PR-1a — cobro manual de recibos', () => {
     cobro_forma: 'efectivo' as const,
     cobro_fecha: '2026-01-20',
   }
+
+  /** El cobro como lo da la app: `marcar_cobrado_manual`. */
+  function cobrar(
+    c: SupabaseClient<Database>,
+    id: string,
+    forma: 'efectivo' | 'transferencia' = 'efectivo',
+    nota = ''
+  ) {
+    return c.rpc('marcar_cobrado_manual', {
+      p_recibo_id: id,
+      p_forma: forma,
+      p_fecha: cobro.cobro_fecha,
+      p_nota: nota,
+    })
+  }
+
+  /** El mismo cobro con el marcador de `marcar_cobrado_manual` puesto (el caso que separa). */
+  const COBRO_SQL =
+    "estado = 'cobrado_manual', cobro_forma = 'efectivo', cobro_fecha = '2026-01-20'"
+  const conMarcador = (id: string, set = COBRO_SQL) =>
+    intentarConMarcador(id, 'app.marcar_cobrado_manual', set)
 
   beforeAll(async () => {
     centro = await createTestCentro('Centro Cobro Manual')
@@ -98,13 +122,13 @@ describe('PR-1a — cobro manual de recibos', () => {
 
   it('un pendiente en efectivo: la directora lo cobra con forma, fecha y nota', async () => {
     const id = await recibo({ metodo: 'efectivo' })
-    const { data, error } = await cDirectora
-      .from('recibos')
-      .update({ ...cobro, cobro_nota: 'Pagado en secretaría' })
-      .eq('id', id)
-      .select('estado, cobro_forma, cobro_fecha, cobro_nota, fecha_envio_banco')
-      .maybeSingle()
+    const { error } = await cobrar(cDirectora, id, 'efectivo', 'Pagado en secretaría')
     expect(error).toBeNull()
+    const { data } = await serviceClient
+      .from('recibos')
+      .select('estado, cobro_forma, cobro_fecha, cobro_nota, fecha_envio_banco')
+      .eq('id', id)
+      .single()
     expect(data).toEqual({
       estado: 'cobrado_manual',
       cobro_forma: 'efectivo',
@@ -116,48 +140,65 @@ describe('PR-1a — cobro manual de recibos', () => {
 
   it('sin método y por transferencia, también', async () => {
     const id = await recibo({ metodo: null })
-    const { error } = await cDirectora
-      .from('recibos')
-      .update({ ...cobro, cobro_forma: 'transferencia' })
-      .eq('id', id)
+    const { error } = await cobrar(cDirectora, id, 'transferencia')
     expect(error).toBeNull()
   })
 
-  it('un SEPA pendiente no: va por remesa (la directora y service_role)', async () => {
-    const id = await recibo({ metodo: 'sepa' })
+  it('por fuera de su función no se cobra a mano, ni la directora ni service_role', async () => {
+    const id = await recibo({ metodo: 'efectivo' })
     const r1 = await cDirectora.from('recibos').update(cobro).eq('id', id)
     expect(r1.error?.code).toBe('P0001')
-    expect(r1.error?.hint).toBe('sepa_por_remesa')
+    expect(r1.error?.hint).toBe('cobrado_por_funcion')
     const r2 = await serviceClient.from('recibos').update(cobro).eq('id', id)
-    expect(r2.error?.hint).toBe('sepa_por_remesa')
+    expect(r2.error?.hint).toBe('cobrado_por_funcion')
     const { data } = await serviceClient.from('recibos').select('estado').eq('id', id).single()
     expect(data?.estado).toBe('pendiente_procesar')
   })
 
-  it('un borrador no se cobra a mano', async () => {
+  it('control del caso que separa: con el marcador de la función puesto, el cobro bueno pasa', async () => {
+    // Sin esto, los rechazos de abajo podrían ser del instrumento y no de la defensa.
+    const id = await recibo({ metodo: 'efectivo' })
+    expect(conMarcador(id)).toEqual({ pasa: true, filas: 1 })
+    const { data } = await serviceClient.from('recibos').select('estado').eq('id', id).single()
+    expect(data?.estado, 'el intento se deshace siempre').toBe('pendiente_procesar')
+  })
+
+  it('un SEPA pendiente no: va por remesa (la función, y detrás el trigger aunque se salte)', async () => {
+    const id = await recibo({ metodo: 'sepa' })
+    const r1 = await cobrar(cDirectora, id)
+    expect(r1.error?.code).toBe('P0001')
+    expect(r1.error?.hint).toBe('sepa_por_remesa')
+    expect(conMarcador(id)).toMatchObject({ pasa: false, code: 'P0001', hint: 'sepa_por_remesa' })
+    const { data } = await serviceClient.from('recibos').select('estado').eq('id', id).single()
+    expect(data?.estado).toBe('pendiente_procesar')
+  })
+
+  it('un borrador no se cobra a mano (la función, y detrás el trigger aunque se salte)', async () => {
     const id = await recibo({ metodo: 'efectivo', estado: 'borrador' })
-    const { error } = await cDirectora.from('recibos').update(cobro).eq('id', id)
+    const { error } = await cobrar(cDirectora, id)
     expect(error?.code).toBe('P0001')
     expect(error?.hint).toBe('no_cobrable_manual')
+    expect(conMarcador(id)).toMatchObject({
+      pasa: false,
+      code: 'P0001',
+      hint: 'no_cobrable_manual',
+    })
   })
 
   it('CHECK: sin forma o sin fecha no hay cobrado_manual, y la forma no puede ser SEPA', async () => {
+    // Al CHECK solo se llega con el marcador puesto: por fuera responde antes el trigger nuevo.
     const id = await recibo({ metodo: 'efectivo' })
-    const sinForma = await cDirectora
-      .from('recibos')
-      .update({ estado: 'cobrado_manual', cobro_fecha: '2026-01-20' })
-      .eq('id', id)
-    expect(sinForma.error?.code).toBe('23514')
-    const sinFecha = await cDirectora
-      .from('recibos')
-      .update({ estado: 'cobrado_manual', cobro_forma: 'efectivo' })
-      .eq('id', id)
-    expect(sinFecha.error?.code).toBe('23514')
-    const formaSepa = await cDirectora
-      .from('recibos')
-      .update({ ...cobro, cobro_forma: 'sepa' })
-      .eq('id', id)
-    expect(formaSepa.error?.code).toBe('23514')
+    const sinForma = conMarcador(id, "estado = 'cobrado_manual', cobro_fecha = '2026-01-20'")
+    expect(sinForma).toMatchObject({ pasa: false, code: '23514' })
+    expect(sinForma.pasa === false && sinForma.message).toContain('recibos_cobro_manual')
+    const sinFecha = conMarcador(id, "estado = 'cobrado_manual', cobro_forma = 'efectivo'")
+    expect(sinFecha).toMatchObject({ pasa: false, code: '23514' })
+    const formaSepa = conMarcador(
+      id,
+      "estado = 'cobrado_manual', cobro_forma = 'sepa', cobro_fecha = '2026-01-20'"
+    )
+    expect(formaSepa).toMatchObject({ pasa: false, code: '23514' })
+    // La nota sin cobro no cambia el estado: el trigger nuevo no entra, y el CHECK responde solo.
     const notaSinCobro = await cDirectora.from('recibos').update({ cobro_nota: 'x' }).eq('id', id)
     expect(notaSinCobro.error?.code).toBe('23514')
   })
@@ -182,10 +223,7 @@ describe('PR-1a — cobro manual de recibos', () => {
 
   it('audit_log: el cobro deja la forma y la fecha, nunca la nota', async () => {
     const id = await recibo({ metodo: 'efectivo' })
-    await cDirectora
-      .from('recibos')
-      .update({ ...cobro, cobro_nota: 'Nota que no se audita' })
-      .eq('id', id)
+    expect((await cobrar(cDirectora, id, 'efectivo', 'Nota que no se audita')).error).toBeNull()
     const { data } = await serviceClient
       .from('audit_log')
       .select('usuario_id, valores_despues')
@@ -204,10 +242,7 @@ describe('PR-1a — cobro manual de recibos', () => {
 
   it('export del art. 15: la tutora recibe la forma, la fecha y la nota de su cobro', async () => {
     const id = await recibo({ metodo: 'efectivo', mes: 2, concepto_esporadico: 'Export PR-1a' })
-    await cDirectora
-      .from('recibos')
-      .update({ ...cobro, cobro_forma: 'transferencia', cobro_nota: 'Nota del export' })
-      .eq('id', id)
+    expect((await cobrar(cDirectora, id, 'transferencia', 'Nota del export')).error).toBeNull()
     const { data, error } = await cTutora.rpc('export_datos_sujeto', {
       p_sujeto_tipo: 'usuario',
       p_sujeto_id: tutora.id,

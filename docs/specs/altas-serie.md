@@ -493,6 +493,45 @@ funciones. La regla: **un hecho de dinero no se deshace por fuera**, y lo pone s
 > podían preparar como la función. El ensayo en producción comprobó primero que las 18 vías del
 > censo estaban abiertas, y lo estaban todas.
 
+> **C y D construidos el 2026-11-03** (`20261223120000`, cuarto PR de reabrir remesas). Decidido ese
+> día por el responsable: **C y D valen para todos, también service_role**. Para D, la razón no es
+> la simetría: una excepción que se deja «porque cuesta» es la que nadie recuerda dentro de un año,
+> y E ya es la excepción, escrita y con su condición.
+>
+> - **Los dos hechos de dinero tienen dueño en la base:** `marcar_recibo_devuelto` y
+>   `marcar_cobrado_manual`, de invocador, con el recibo bloqueado, `es_admin` y los mismos
+>   rechazos que hacía la app, cada uno con su HINT. La app hace una sola llamada a cada una. Un
+>   test compara los HINT de cada función con el mapa que los traduce, en los dos sentidos: un
+>   rechazo que se quedara sin traducir sería un rechazo perdido por el camino.
+> - **El trigger es la consecuencia:** en devuelto solo se entra con la función de la devolución; en
+>   cobrado, con la del cobro a mano, el cheque o la devolución resuelta; de borrador a pendiente
+>   solo `confirmar_recibo`, y la vuelta solo `desconfirmar_recibo`; y un recibo nace en borrador,
+>   salvo el esporádico de `crear_recibo_esporadico` y el re-giro de `resolver_devolucion`.
+> - **Lo que descuadraba un cierre ya hecho.** La vuelta de pendiente a borrador por fuera pasaba
+>   también con el mes cerrado, y dejaba la marca de cierre (`cierre_mensual`) puesta: el mes
+>   quedaba cerrado con un borrador dentro. No era solo saltarse una función. El ensayo lo comprobó
+>   aparte: sin la migración, el mes 8 seguía cerrado y con un borrador regular dentro; con ella,
+>   la vuelta no pasa y `desconfirmar_recibo` quita el cierre.
+> - El ensayo comprobó primero que las 20 vías del censo de C y D estaban abiertas, y lo estaban
+>   todas.
+> - **Las defensas de antes siguen vivas, detrás.** Siete grupos de tests medían una defensa antigua
+>   (el cobro a mano de un SEPA, el cheque, la devolución resuelta, el desborde, la remesa) por el
+>   UPDATE directo, que ahora para antes el trigger nuevo. Cada uno lleva dos casos: por fuera, el
+>   HINT del trigger nuevo; y el que separa las dos defensas, con el marcador de la función puesto,
+>   donde la de detrás tiene que seguir respondiendo con lo suyo (con su control positivo: el mismo
+>   marcador en un caso bueno pasa). Es lo que caza una función que un día se equivoque.
+> - **Un rechazo se afirma por su HINT, o por su mensaje si no tiene, no por el P0001 a secas.** En
+>   el mismo camino ya hay dos defensas, y un P0001 no dice cuál respondió. El que parecía contestar
+>   por otra razón no lo hacía: a la vuelta a borrador de un recibo en remesa, con sesión, responde
+>   la salvaguarda del congelado, que corre antes que el trigger nuevo (los triggers van por orden
+>   alfabético); con service_role, el trigger nuevo, y con el marcador puesto, la de la remesa.
+>   Medido en el ensayo, y afirmado así en el test.
+> - **El DEFAULT de `recibos.estado` es `pendiente_procesar`.** Un INSERT sin estado nace en
+>   pendiente, y desde la D lo rechaza `recibo_nace_en_borrador`. Las funciones que crean recibos
+>   dicen todas su estado (medido en producción), y la app también. Un test del tutor que insertaba
+>   sin estado y solo miraba que hubiera error seguía en verde por esa razón: ahora inserta en
+>   borrador y afirma el 42501 de la RLS. Cambiar el DEFAULT a borrador queda propuesto, no hecho.
+
 **Reabrir.** Puntos 1 a 5 de la propuesta, con el `MsgId` y el fichero de arriba. La función
 (`reabrir_remesa`, `privado.es_titular`) pone `reabierta_at` en el fichero de la versión y quita la
 marca con `app.reabrir_remesa`. La siguiente descarga crea la versión nueva. La vuelta de sus

@@ -18,6 +18,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { insertarRecibos } from './remesa-como-sus-funciones'
 
 /**
  * Multicentro · Fase 2 — un adulto con familia en DOS centros.
@@ -79,9 +80,8 @@ describe('Multicentro · Fase 2 — un adulto con familia en dos centros', () =>
   let reciboB: string
 
   async function nuevoRecibo(centroId: string, familiaId: string): Promise<string> {
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    const [id] = await insertarRecibos([
+      {
         centro_id: centroId,
         familia_id: familiaId,
         anio: 2026,
@@ -89,11 +89,9 @@ describe('Multicentro · Fase 2 — un adulto con familia en dos centros', () =>
         estado: 'pendiente_procesar',
         total_centimos: 1000,
         es_esporadico: false,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    return data.id
+      },
+    ])
+    return id
   }
 
   async function nuevaCita(centroId: string, organizador: string, titulo: string) {

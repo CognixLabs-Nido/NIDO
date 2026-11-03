@@ -17,7 +17,7 @@ import {
   type TestNino,
   type TestUser,
 } from './setup'
-import { pasarAEnviadoComoMarcar } from './remesa-como-sus-funciones'
+import { insertarRecibos, pasarAEnviadoComoMarcar } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -68,22 +68,21 @@ describe('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
     cTutorA = await clientFor(tutorA)
 
     // Recibo regular SEPA (mes AÚN abierto: pasa el trigger en INSERT).
-    const { data: recibo } = await serviceClient
-      .from('recibos')
-      .insert({
+    // En borrador y validado como lo pasa confirmar_recibo (20261223120000).
+    const [idRecibo] = await insertarRecibos([
+      {
         centro_id: centroA.id,
         familia_id: ninoA.familia_id, // F-4-1: recibos a grano familia
         nino_id: ninoA.id,
         anio,
         mes,
-        metodo: 'sepa',
-        estado: 'pendiente_procesar',
+        metodo: 'sepa' as const,
+        estado: 'pendiente_procesar' as const,
         total_centimos: 10000,
         es_esporadico: false,
-      })
-      .select('id')
-      .single()
-    reciboId = recibo!.id
+      },
+    ])
+    reciboId = idRecibo
 
     // Mandato SEPA activo de la FAMILIA del niño (vía RPC del tutor: cifra el IBAN).
     await cTutorA.rpc('registrar_mandato_sepa', {
@@ -168,6 +167,9 @@ describe('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
       .maybeSingle()
     expect(error).not.toBeNull()
     expect(error?.code).toBe('P0001')
+    // El rechazo de `congelar_si_mes_cerrado` (no tiene HINT): se afirma su mensaje, para que un
+    // P0001 de otra defensa no pase por este.
+    expect(error?.message).toBe('recibo confirmado: inmutable salvo estado/fecha de cobro')
   })
 
   it('get_mandatos_remesa: el admin descifra el IBAN del deudor de la remesa', async () => {

@@ -15,6 +15,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -52,9 +53,8 @@ describe('PR-1c — el sobrante de un cheque mayor que el recibo', () => {
   let febrero: string
 
   async function recibo(familiaId: string, over: Partial<Recibo> = {}): Promise<string> {
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: familiaId,
         anio: 2026,
@@ -64,11 +64,9 @@ describe('PR-1c — el sobrante de un cheque mayor que el recibo', () => {
         total_centimos: 11000,
         es_esporadico: false,
         ...over,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    return data.id
+      },
+    ])
+    return id
   }
 
   function cheque(cliente: SupabaseClient<Database>, id: string, importe: number) {

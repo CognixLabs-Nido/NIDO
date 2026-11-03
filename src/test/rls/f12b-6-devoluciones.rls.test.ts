@@ -14,7 +14,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { pasarAEnviadoComoMarcar } from './remesa-como-sus-funciones'
+import { intentarConMarcador, prepararRecibo } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -29,6 +29,9 @@ import type { Database } from '@/types/database'
  *     CHECK obligaba a anularlas) y lleva su forma y su fecha de cobro. Desde el PR-2 se cobra por
  *     `resolver_devolucion` (una sola salida) y la devolución lleva sus gastos; el re-giro y el resto
  *     de la salida única están en `recibos-devolucion-una-salida.rls.test.ts`.
+ *  Desde `20261223120000` la devolución se registra con `marcar_recibo_devuelto` (invoker: con la
+ *  sesión de la directora, el congelado actúa igual que con el UPDATE de antes), y por fuera la para
+ *  `recibos_dinero_solo_por_funcion`. Al CHECK solo se llega con el marcador de la función puesto.
  */
 
 describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
@@ -60,15 +63,15 @@ describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
         anio: 2025,
         mes: 4,
         metodo: 'sepa',
-        estado: 'pendiente_procesar',
+        estado: 'borrador',
         total_centimos: 10000,
         es_esporadico: false,
       })
       .select('id')
       .single()
     reciboAbierto = rAbierto!.id
-    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
-    pasarAEnviadoComoMarcar([reciboAbierto], '2025-04-05')
+    // Validado y enviado: solo como lo pasan sus funciones (20261222120000, 20261223120000).
+    prepararRecibo(reciboAbierto, { estado: 'enviado_banco', fecha_envio_banco: '2025-04-05' })
 
     // Recibo enviado_banco en mes CERRADO (2025-03) — para el congelado afinado.
     const { data: rCerrado } = await serviceClient
@@ -80,14 +83,14 @@ describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
         anio: 2025,
         mes: 3,
         metodo: 'sepa',
-        estado: 'pendiente_procesar',
+        estado: 'borrador',
         total_centimos: 12000,
         es_esporadico: false,
       })
       .select('id')
       .single()
     reciboCerrado = rCerrado!.id
-    pasarAEnviadoComoMarcar([reciboCerrado], '2025-03-05')
+    prepararRecibo(reciboCerrado, { estado: 'enviado_banco', fecha_envio_banco: '2025-03-05' })
 
     await serviceClient
       .from('cierre_mensual')
@@ -108,38 +111,68 @@ describe('F12-B-6 — devoluciones (CHECK + congelado)', () => {
     await deleteTestCentro(centroA.id)
   }, 60_000)
 
+  function devolver(id: string, fecha: string | null) {
+    return cAdminA.rpc('marcar_recibo_devuelto', {
+      p_recibo_id: id,
+      p_fecha: fecha as string,
+      p_gastos_centimos: 0,
+    })
+  }
+
   it('CHECK: marcar devuelto SIN fecha_devolucion falla (23514)', async () => {
-    const { error } = await cAdminA
+    // Por fuera, el trigger nuevo; por la función, su rechazo; y con el marcador puesto, el CHECK.
+    const directo = await cAdminA
       .from('recibos')
       .update({ estado: 'devuelto' })
       .eq('id', reciboAbierto)
       .select('id')
       .maybeSingle()
-    expect(error).not.toBeNull()
-    expect(error?.code).toBe('23514')
+    expect(directo.error?.code).toBe('P0001')
+    expect(directo.error?.hint).toBe('devuelto_por_funcion')
+    expect((await devolver(reciboAbierto, null)).error?.hint).toBe('datos_no_validos')
+    const sinFecha = intentarConMarcador(
+      reciboAbierto,
+      'app.marcar_recibo_devuelto',
+      "estado = 'devuelto'"
+    )
+    expect(sinFecha).toMatchObject({ pasa: false, code: '23514' })
+    expect(sinFecha.pasa === false && sinFecha.message).toContain('recibos_envio_banco_fecha')
+    // Control: el mismo intento con su fecha pasa (y se deshace).
+    expect(
+      intentarConMarcador(
+        reciboAbierto,
+        'app.marcar_recibo_devuelto',
+        "estado = 'devuelto', fecha_devolucion = '2025-04-20', devolucion_gastos_centimos = 0"
+      )
+    ).toEqual({ pasa: true, filas: 1 })
   })
 
   it('devuelto conserva fecha_envio_banco + exige fecha_devolucion', async () => {
-    const { data, error } = await cAdminA
+    expect((await devolver(reciboAbierto, '2025-04-20')).error).toBeNull()
+    const { data } = await cAdminA
       .from('recibos')
-      .update({ estado: 'devuelto', fecha_devolucion: '2025-04-20', devolucion_gastos_centimos: 0 })
-      .eq('id', reciboAbierto)
       .select('estado, fecha_envio_banco, fecha_devolucion')
+      .eq('id', reciboAbierto)
       .maybeSingle()
-    expect(error).toBeNull()
     expect(data?.estado).toBe('devuelto')
     expect(data?.fecha_envio_banco).toBe('2025-04-05') // conservada
     expect(data?.fecha_devolucion).toBe('2025-04-20')
   })
 
   it('congelado afinado: en mes cerrado, enviado_banco → devuelto PASA', async () => {
-    const { data, error } = await cAdminA
+    // Premisa: el mes del recibo está cerrado (si no, el congelado no estaría en juego).
+    const { data: cerrado } = await cAdminA.rpc('mes_cerrado', {
+      p_centro_id: centroA.id,
+      p_anio: 2025,
+      p_mes: 3,
+    })
+    expect(cerrado).toBe(true)
+    expect((await devolver(reciboCerrado, '2025-03-20')).error).toBeNull()
+    const { data } = await cAdminA
       .from('recibos')
-      .update({ estado: 'devuelto', fecha_devolucion: '2025-03-20', devolucion_gastos_centimos: 0 })
-      .eq('id', reciboCerrado)
       .select('estado, fecha_envio_banco')
+      .eq('id', reciboCerrado)
       .maybeSingle()
-    expect(error).toBeNull()
     expect(data?.estado).toBe('devuelto')
     expect(data?.fecha_envio_banco).toBe('2025-03-05') // conservada pese al cierre
   })

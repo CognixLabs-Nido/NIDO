@@ -15,7 +15,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { pasarAEnviadoComoMarcar, sinEnviado } from './remesa-como-sus-funciones'
+import { insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -70,26 +70,21 @@ describe('F-6 — histórico de recibos de la familia', () => {
   >
 
   async function recibo(familiaId: string, over: Partial<Recibo>): Promise<string> {
-    const sinEnv = sinEnviado(over)
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    // En borrador, y a su estado como lo llevan sus funciones (20261223120000).
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: familiaId,
         anio: ANIO,
         mes: 1,
-        estado: 'pendiente_procesar',
-        metodo: 'sepa',
+        estado: 'pendiente_procesar' as const,
+        metodo: 'sepa' as const,
         total_centimos: 11000,
         es_esporadico: false,
-        ...sinEnv.fila,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    // Enviado: solo como lo pasa marcar_remesa_enviada (20261222120000).
-    if (sinEnv.envio) pasarAEnviadoComoMarcar([data.id], sinEnv.envio)
-    return data.id
+        ...over,
+      },
+    ])
+    return id
   }
 
   /** Enviado al banco y devuelto por Dirección, como en la app. */
@@ -100,16 +95,11 @@ describe('F-6 — histórico de recibos de la familia', () => {
       estado: 'enviado_banco',
       fecha_envio_banco: `${ANIO}-${mm}-05`,
     })
-    const { error } = await cDirectora
-      .from('recibos')
-      .update({
-        estado: 'devuelto',
-        fecha_devolucion: `${ANIO}-${mm}-20`,
-        devolucion_gastos_centimos: gastos,
-      })
-      .eq('id', id)
-      .select('id')
-      .single()
+    const { error } = await cDirectora.rpc('marcar_recibo_devuelto', {
+      p_recibo_id: id,
+      p_fecha: `${ANIO}-${mm}-20`,
+      p_gastos_centimos: gastos,
+    })
     if (error) throw new Error(`devolver: ${error.message}`)
     return id
   }

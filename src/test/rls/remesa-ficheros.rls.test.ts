@@ -12,7 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { ponerMarcaComoElRegistro } from './remesa-como-sus-funciones'
+import { ponerMarcaComoElRegistro, insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -49,9 +49,8 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
   let cProfe: SupabaseClient<Database>
 
   async function recibo(total = 10000): Promise<string> {
-    const { data, error } = await serviceClient
-      .from('recibos')
-      .insert({
+    const [id] = await insertarRecibos([
+      {
         centro_id: centro.id,
         familia_id: familia,
         anio: 2026,
@@ -61,11 +60,9 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
         total_centimos: total,
         es_esporadico: true,
         concepto_esporadico: 'Fichero de remesa',
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(`recibo: ${error?.message}`)
-    return data.id
+      },
+    ])
+    return id
   }
 
   /** Una remesa en borrador con ese recibo; con `marca`, ya marcada (como la pone el registro). */

@@ -3,149 +3,69 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { marcarCobradoManual } from '../marcar-cobrado-manual'
 
 /**
- * PR-1a: «Marcar cobrado» guarda la forma, la fecha y la nota; no toca las fechas de banco; no
- * cobra un SEPA pendiente (va por remesa) ni una fecha futura; y traduce el error de la BD.
- * PR-2: un devuelto tampoco: tiene una sola salida y va por «Resolver devolución».
+ * PR-1a: «Marcar cobrado» guarda la forma, la fecha y la nota de un recibo pendiente que no es
+ * SEPA. Desde `20261223120000` es una sola llamada a `marcar_cobrado_manual`: la BD solo deja cobrar
+ * a mano por sus funciones, y esta hace los rechazos que hacía la app (un SEPA pendiente, un
+ * devuelto, otro estado, fecha futura, nota larga). La app no escribe ninguna tabla, y cada rechazo
+ * llega con su clave, la misma de antes.
  */
 
-const { estado, update, admin } = vi.hoisted(() => ({
-  estado: {
-    recibo: {
-      id: 'r1',
-      centro_id: 'c1',
-      estado: 'pendiente_procesar',
-      metodo: 'efectivo',
-    } as Record<string, unknown> | null,
-    respuesta: { data: { id: 'r1' } as unknown, error: null as unknown },
-  },
-  update: vi.fn(),
-  admin: vi.fn(),
-}))
+const { rpc, from } = vi.hoisted(() => ({ rpc: vi.fn(), from: vi.fn() }))
 
 vi.mock('next/cache', () => ({ revalidatePath: () => {} }))
-vi.mock('@/features/agenda-diaria/lib/fecha', () => ({ hoyMadrid: () => '2026-10-22' }))
-vi.mock('@/features/centros/contexto/roles-del-usuario', () => ({ usuarioAdminEn: admin }))
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: async () => ({
-    from: () => ({
-      select: () => ({
-        eq: () => ({ is: () => ({ maybeSingle: async () => ({ data: estado.recibo }) }) }),
-      }),
-      update: (valores: unknown) => {
-        update(valores)
-        return {
-          eq: () => ({
-            eq: () => ({ select: () => ({ maybeSingle: async () => estado.respuesta }) }),
-          }),
-        }
-      },
-    }),
-  }),
-}))
+vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ rpc, from }) }))
 
-const RECIBO = '22222222-2222-4222-8222-222222222222'
-const base = { reciboId: RECIBO, forma: 'efectivo' as const, fecha: '2026-10-20' }
+const RECIBO = '33333333-3333-4333-8333-333333333333'
+const base = { reciboId: RECIBO, forma: 'efectivo' as const, fecha: '2026-10-20', nota: '' }
 
 describe('marcarCobradoManual', () => {
   beforeEach(() => {
-    estado.recibo = { id: 'r1', centro_id: 'c1', estado: 'pendiente_procesar', metodo: 'efectivo' }
-    estado.respuesta = { data: { id: 'r1' }, error: null }
-    update.mockReset()
-    admin.mockReset().mockResolvedValue('u1')
+    rpc.mockReset().mockResolvedValue({ data: null, error: null })
+    from.mockReset().mockImplementation(() => {
+      throw new Error('marcar cobrado no escribe tablas: va por la función')
+    })
   })
 
-  it('premisa: un pendiente en efectivo se cobra con forma, fecha y nota, sin tocar las fechas de banco', async () => {
-    expect(await marcarCobradoManual({ ...base, nota: '  Pagó en secretaría  ' })).toEqual({
+  it('llama a la función con la forma, la fecha y la nota, y nada más', async () => {
+    expect(await marcarCobradoManual({ ...base, nota: 'Pagó en secretaría' })).toEqual({
       success: true,
       data: null,
     })
-    expect(update).toHaveBeenCalledWith({
-      estado: 'cobrado_manual',
-      cobro_forma: 'efectivo',
-      cobro_fecha: '2026-10-20',
-      cobro_nota: 'Pagó en secretaría',
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(rpc).toHaveBeenCalledWith('marcar_cobrado_manual', {
+      p_recibo_id: RECIBO,
+      p_forma: 'efectivo',
+      p_fecha: '2026-10-20',
+      p_nota: 'Pagó en secretaría',
     })
-    const valores = update.mock.calls[0]![0] as Record<string, unknown>
-    expect(valores).not.toHaveProperty('fecha_envio_banco')
-    expect(valores).not.toHaveProperty('fecha_devolucion')
+    expect(from).not.toHaveBeenCalled()
   })
 
-  it('sin nota o con la nota en blanco, guarda NULL', async () => {
-    await marcarCobradoManual({ ...base, nota: '   ' })
-    expect(update.mock.calls[0]![0]).toMatchObject({ cobro_nota: null })
+  it('sin nota pasa una vacía, que la función guarda como NULL', async () => {
+    await marcarCobradoManual(base)
+    expect(rpc.mock.calls[0]![1]).toMatchObject({ p_nota: '' })
   })
 
-  it('un devuelto no (PR-2): tiene una sola salida, y no se escribe nada', async () => {
-    estado.recibo = { id: 'r1', centro_id: 'c1', estado: 'devuelto', metodo: 'sepa' }
-    expect(await marcarCobradoManual(base)).toEqual({
-      success: false,
-      error: 'remesas.errors.devolucion_por_resolver',
-    })
-    expect(update).not.toHaveBeenCalled()
+  it.each([
+    ['22023', 'fecha_cobro_futura', 'remesas.validation.fecha_cobro_futura'],
+    ['22023', 'nota_cobro_larga', 'remesas.validation.nota_cobro_larga'],
+    ['P0001', 'sepa_por_remesa', 'remesas.errors.sepa_por_remesa'],
+    ['P0001', 'devolucion_por_resolver', 'remesas.errors.devolucion_por_resolver'],
+    ['P0001', 'no_cobrable_manual', 'remesas.errors.no_cobrable_manual'],
+    ['P0002', 'no_encontrado', 'remesas.errors.no_encontrada'],
+    ['22023', 'forma_no_valida', 'remesas.errors.invalid'],
+    ['22023', 'datos_no_validos', 'remesas.errors.invalid'],
+    ['42501', null, 'remesas.errors.no_autorizado'],
+    ['XX000', null, 'remesas.errors.cobrar_manual_failed'],
+    ['P0001', 'otro_hint', 'remesas.errors.cobrar_manual_failed'],
+  ])('el rechazo %s/%s se dice como %s', async (code, hint, clave) => {
+    rpc.mockResolvedValue({ data: null, error: { code, hint, message: 'x' } })
+    expect(await marcarCobradoManual(base)).toEqual({ success: false, error: clave })
   })
 
-  it('un SEPA pendiente no: va por remesa, y no se escribe nada', async () => {
-    estado.recibo = { id: 'r1', centro_id: 'c1', estado: 'pendiente_procesar', metodo: 'sepa' }
-    expect(await marcarCobradoManual(base)).toEqual({
-      success: false,
-      error: 'remesas.errors.sepa_por_remesa',
-    })
-    expect(update).not.toHaveBeenCalled()
-  })
-
-  it('un borrador no se cobra', async () => {
-    estado.recibo = { id: 'r1', centro_id: 'c1', estado: 'borrador', metodo: 'efectivo' }
-    expect(await marcarCobradoManual(base)).toEqual({
-      success: false,
-      error: 'remesas.errors.no_cobrable_manual',
-    })
-    expect(update).not.toHaveBeenCalled()
-  })
-
-  it('una fecha futura no, y no llega a leer el recibo', async () => {
-    expect(await marcarCobradoManual({ ...base, fecha: '2026-10-23' })).toEqual({
-      success: false,
-      error: 'remesas.validation.fecha_cobro_futura',
-    })
-    expect(admin).not.toHaveBeenCalled()
-  })
-
-  it('quien no es Dirección del centro del recibo, no', async () => {
-    admin.mockResolvedValue(null)
-    expect(await marcarCobradoManual(base)).toEqual({
-      success: false,
-      error: 'remesas.errors.no_autorizado',
-    })
-    expect(update).not.toHaveBeenCalled()
-  })
-
-  it('el trigger de la BD (otra carrera): su HINT se traduce', async () => {
-    estado.respuesta = {
-      data: null,
-      error: { code: 'P0001', hint: 'sepa_por_remesa', message: 'x' },
-    }
-    expect(await marcarCobradoManual(base)).toEqual({
-      success: false,
-      error: 'remesas.errors.sepa_por_remesa',
-    })
-  })
-
-  it('el trigger de la devolución (se devolvió entre medias): su HINT se traduce', async () => {
-    estado.respuesta = {
-      data: null,
-      error: { code: 'P0001', hint: 'devolucion_por_funcion', message: 'x' },
-    }
-    expect(await marcarCobradoManual(base)).toEqual({
-      success: false,
-      error: 'remesas.errors.devolucion_por_resolver',
-    })
-  })
-
-  it('0 filas (el estado cambió entre medias): no cobrable', async () => {
-    estado.respuesta = { data: null, error: null }
-    expect(await marcarCobradoManual(base)).toEqual({
-      success: false,
-      error: 'remesas.errors.no_cobrable_manual',
-    })
+  it('el cheque no entra aquí: el esquema lo rechaza sin llamar a la BD', async () => {
+    const r = await marcarCobradoManual({ ...base, forma: 'cheque_guarderia' as never })
+    expect(r.success).toBe(false)
+    expect(rpc).not.toHaveBeenCalled()
   })
 })

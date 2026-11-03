@@ -143,55 +143,66 @@ describe('(c) centro explícito de la página', () => {
 })
 
 describe('(a)/(b) centro del registro', () => {
-  it('marcarCobradoManual: recibo de B y admin solo en A → no_autorizado, sin escribir', async () => {
+  // Desde `20261223120000` el centro del registro lo mira la BASE: `marcar_cobrado_manual` y
+  // `marcar_recibo_devuelto` comprueban `es_admin` del centro DEL RECIBO, y la acción no lee ni el
+  // recibo ni los roles, ni escribe en ninguna tabla. Aquí se fija lo que queda en la app: una sola
+  // llamada con el recibo y nada de centro, y que el 42501 de la base llega como no_autorizado. Que
+  // ser admin en otro centro no basta se mide en la BD real
+  // (`recibo-devuelto-cobrado-por-funcion.rls.test.ts`).
+  const NO_ADMIN = { data: null, error: { code: '42501', message: 'no autorizado', hint: null } }
+
+  it('marcarCobradoManual: va a la base con el recibo y sin centro; su 42501 → no_autorizado', async () => {
     st.roles = ADMIN_EN_A
-    st.filas.recibos = {
-      id: RECIBO,
-      centro_id: B,
-      estado: 'pendiente_procesar',
-      metodo: 'efectivo',
-    }
+    st.rpc.mockResolvedValueOnce(NO_ADMIN)
     const r = await marcarCobradoManual({
       reciboId: RECIBO,
       forma: 'efectivo',
       fecha: '2024-01-10',
     })
     expect(r).toEqual({ success: false, error: 'remesas.errors.no_autorizado' })
+    expect(st.rpc).toHaveBeenCalledTimes(1)
+    expect(st.rpc).toHaveBeenCalledWith('marcar_cobrado_manual', {
+      p_recibo_id: RECIBO,
+      p_forma: 'efectivo',
+      p_fecha: '2024-01-10',
+      p_nota: '',
+    })
     expect(st.escrituras).not.toHaveBeenCalled()
   })
 
-  it('marcarCobradoManual: admin en el centro del recibo → escribe', async () => {
+  it('marcarCobradoManual: si la base lo admite, escribe ella (la acción no toca tablas)', async () => {
     st.roles = ADMIN_EN_A_Y_B
-    st.filas.recibos = {
-      id: RECIBO,
-      centro_id: B,
-      estado: 'pendiente_procesar',
-      metodo: 'efectivo',
-    }
+    st.rpc.mockResolvedValueOnce({ data: null, error: null })
     const r = await marcarCobradoManual({
       reciboId: RECIBO,
       forma: 'efectivo',
       fecha: '2024-01-10',
     })
     expect(r.success).toBe(true)
-    expect(st.escrituras).toHaveBeenCalledWith('recibos', 'update', expect.anything())
+    expect(st.rpc).toHaveBeenCalledWith('marcar_cobrado_manual', expect.anything())
+    expect(st.escrituras).not.toHaveBeenCalled()
   })
 
-  it('marcarReciboDevuelto (PR-2): recibo de B y admin solo en A → no_autorizado, sin escribir', async () => {
+  it('marcarReciboDevuelto (PR-2): va a la base con el recibo y sin centro; su 42501 → no_autorizado', async () => {
     st.roles = ADMIN_EN_A
-    st.filas.recibos = {
-      id: RECIBO,
-      centro_id: B,
-      estado: 'enviado_banco',
-      fecha_envio_banco: null,
-    }
+    st.rpc.mockResolvedValueOnce(NO_ADMIN)
     const r = await marcarReciboDevuelto({ reciboId: RECIBO, fecha: '2024-01-10', gastos_euros: 0 })
     expect(r).toEqual({ success: false, error: 'remesas.errors.no_autorizado' })
+    expect(st.rpc).toHaveBeenCalledWith('marcar_recibo_devuelto', {
+      p_recibo_id: RECIBO,
+      p_fecha: '2024-01-10',
+      p_gastos_centimos: 0,
+    })
     expect(st.escrituras).not.toHaveBeenCalled()
 
-    st.roles = ADMIN_EN_A_Y_B
-    await marcarReciboDevuelto({ reciboId: RECIBO, fecha: '2024-01-10', gastos_euros: 0 })
-    expect(st.escrituras).toHaveBeenCalledWith('recibos', 'update', expect.anything())
+    st.rpc.mockResolvedValueOnce({ data: null, error: null })
+    const ok = await marcarReciboDevuelto({
+      reciboId: RECIBO,
+      fecha: '2024-01-10',
+      gastos_euros: 0,
+    })
+    expect(ok.success).toBe(true)
+    expect(st.escrituras).not.toHaveBeenCalled()
   })
 
   it('resolverDevolucion (PR-2): centro DEL RECIBO; con admin solo en otro centro → sin RPC', async () => {
