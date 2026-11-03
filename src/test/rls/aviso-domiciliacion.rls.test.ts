@@ -18,6 +18,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { borrarMandatos } from './mandatos-como-postgres'
 
 /**
  * Aviso a Dirección cuando una familia firma o cambia su domiciliación por su cuenta.
@@ -146,7 +147,7 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
   }, 60_000)
 
   afterAll(async () => {
-    await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centro.id)
+    borrarMandatos('centro_id', centro.id)
     await deleteTestCentro(centro.id)
     for (const u of [admin, directora, profe, tutor, tutorAlta]) await deleteTestUser(u.id)
   })

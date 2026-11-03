@@ -21,6 +21,7 @@ import { insertarRecibos, pasarAEnviadoComoMarcar } from './remesa-como-sus-func
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { borrarMandatos } from './mandatos-como-postgres'
 
 /**
  * F12-B-5 — RLS/reglas de la remesa SEPA. Verifica:
@@ -124,7 +125,7 @@ describe('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
     await serviceClient.from('remesas').delete().eq('centro_id', centroA.id)
     await serviceClient.from('cierre_mensual').delete().eq('centro_id', centroA.id)
     await serviceClient.from('recibos').delete().eq('centro_id', centroA.id)
-    await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centroA.id)
+    borrarMandatos('centro_id', centroA.id)
     await deleteTestUser(adminA.id)
     await deleteTestUser(tutorA.id)
     await deleteTestCentro(centroA.id)

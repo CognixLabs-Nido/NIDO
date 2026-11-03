@@ -19,6 +19,7 @@ import {
 
 import { recolectarUsuario } from '@/features/export/lib/recolectar'
 import type { AdjuntoExport } from '@/features/export/types'
+import { borrarMandatos } from './mandatos-como-postgres'
 
 /**
  * PR 0b (Fase 4) — una ruta de documento guardada en la BD solo puede ser de su familia.
@@ -111,7 +112,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await serviceClient.storage.from('dni-tutores').remove([dniB, dniA])
   await serviceClient.storage.from('mandato-sepa').remove([mandatoB, mandatoA])
-  await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centro.id)
+  borrarMandatos('centro_id', centro.id)
   await deleteTestUser(tutorA.id)
   await deleteTestUser(tutorB.id)
   await deleteTestCentro(centro.id)

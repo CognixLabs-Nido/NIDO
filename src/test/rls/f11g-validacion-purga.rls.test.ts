@@ -21,6 +21,7 @@ import {
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { borrarMandatos } from './mandatos-como-postgres'
 
 /**
  * F11-G-4 — RLS del modelo de "Altas con documentos" (cierra el pendiente de G-1) +
@@ -92,7 +93,7 @@ describe('F11-G — RLS validación + buckets (mandatos_sepa / cambios_pendiente
   afterAll(async () => {
     // Limpieza explícita de las filas creadas en tablas con FK RESTRICT a usuarios.
     await serviceClient.from('cambios_pendientes').delete().eq('nino_id', ninoA.id)
-    await serviceClient.from('mandatos_sepa').delete().eq('nino_id', ninoA.id)
+    borrarMandatos('nino_id', ninoA.id)
     await deleteTestCentro(centroA.id)
     await deleteTestCentro(centroB.id)
     await deleteTestUser(adminA.id)

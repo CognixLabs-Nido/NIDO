@@ -18,6 +18,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { borrarMandatos } from './mandatos-como-postgres'
 
 /**
  * El superusuario (20261023120100, ADR-0061).
@@ -154,7 +155,7 @@ describe('Superusuario', () => {
       .filter(Boolean)
       .map((u) => u.id)
     await serviceClient.from('consentimientos').delete().in('usuario_id', usuarios)
-    if (centroA) await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centroA.id)
+    if (centroA) borrarMandatos('centro_id', centroA.id)
     if (instanciaImg) {
       await serviceClient.from('firmas_autorizacion').delete().eq('autorizacion_id', instanciaImg)
       await serviceClient.from('autorizaciones').delete().eq('id', instanciaImg)

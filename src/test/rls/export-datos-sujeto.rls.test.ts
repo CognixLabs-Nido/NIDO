@@ -26,6 +26,7 @@ import {
 
 import { SECCIONES_EXPORT } from '@/features/export/lib/columnas-export'
 import { recolectarNino, recolectarUsuario } from '@/features/export/lib/recolectar'
+import { borrarMandatos } from './mandatos-como-postgres'
 
 /**
  * Export RGPD (art. 15) completo — `export_datos_sujeto` (`20261014120000`).
@@ -217,7 +218,7 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
   }, 240_000)
 
   afterAll(async () => {
-    await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centro.id)
+    borrarMandatos('centro_id', centro.id)
     await serviceClient.from('lineas_recibo').delete().eq('recibo_id', reciboId)
     await serviceClient.from('recibos').delete().eq('centro_id', centro.id)
     await serviceClient.from('metodo_pago_familia').delete().eq('centro_id', centro.id)

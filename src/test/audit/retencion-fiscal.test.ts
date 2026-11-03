@@ -19,6 +19,7 @@ import {
   ponerMarcaComoElRegistro,
   prepararRecibo,
 } from '../rls/remesa-como-sus-funciones'
+import { borrarMandatos, insertarMandato } from '../rls/mandatos-como-postgres'
 
 /**
  * Lo fiscal al vencer (F11-B, punto 6, PR-8, tercera pieza; 20261208120000).
@@ -191,7 +192,7 @@ describe('Retención: lo fiscal al vencer', () => {
     })
     expect(ft.error).toBeNull()
     mandatoPath = `${centro.id}/familia/${familia}/mandato.pdf`
-    const m = await serviceClient.from('mandatos_sepa').insert({
+    const m = insertarMandato({
       centro_id: centro.id,
       familia_id: familia,
       nino_id: inigo,
@@ -307,7 +308,7 @@ describe('Retención: lo fiscal al vencer', () => {
     await serviceClient.from('remesas').delete().eq('centro_id', centro.id)
     await serviceClient.from('beca_comedor_transferencia').delete().eq('centro_id', centro.id)
     await serviceClient.from('recibos').delete().eq('centro_id', centro.id)
-    await serviceClient.from('mandatos_sepa').delete().eq('centro_id', centro.id)
+    borrarMandatos('centro_id', centro.id)
     await serviceClient.from('asignacion_concepto').delete().eq('centro_id', centro.id)
     await serviceClient.from('conceptos_cobro').delete().eq('centro_id', centro.id)
     await serviceClient.from('parte_servicio_diario').delete().eq('centro_id', centro.id)
@@ -500,7 +501,7 @@ describe('Retención: lo fiscal al vencer', () => {
     hugoFam = h.familia_id
     const mndt = `NIDO-HUGO-${centro.id.slice(0, 8)}`
     // Ficción: el titular del mandato no cuenta aquí; la admin, con su rol vivo, no hace esperar.
-    const m = await serviceClient.from('mandatos_sepa').insert({
+    const m = insertarMandato({
       centro_id: centro.id,
       familia_id: hugoFam,
       nino_id: h.id,
@@ -552,7 +553,7 @@ describe('Retención: lo fiscal al vencer', () => {
   it('el fichero vencido de la remesa compartida: la familia espera; el cron lo borra y después sale', async () => {
     // La remesa del re-giro de Íñigo, compartida con otra familia, con su fichero de 2019.
     const mndtOtra = `NIDO-FOTRA-${centro.id.slice(0, 8)}`
-    const mo = await serviceClient.from('mandatos_sepa').insert({
+    const mo = insertarMandato({
       centro_id: centro.id,
       familia_id: otra,
       usuario_id: admin.id,
