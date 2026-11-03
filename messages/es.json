@@ -2059,7 +2059,7 @@
     "crear_remesa": "Crear remesa",
     "anadir_a_remesa": "Añadir {num} a esta remesa",
     "recibos_anadidos": "Recibos añadidos a la remesa.",
-    "fichero_generado_nota": "Fichero generado: ya no se le añaden ni se le quitan recibos.",
+    "fichero_generado_nota": "Fichero generado: ya no se le añaden ni se le quitan recibos. Para cambiarla, la administradora del centro tiene que reabrirla.",
     "remesa_creada": "Remesa creada (borrador).",
     "remesas_title": "Remesas del periodo",
     "sin_remesas": "Aún no hay remesas en este periodo.",
@@ -2158,7 +2158,12 @@
       "fecha_cobro_failed": "No se pudo cambiar la fecha de cobro. No se ha cambiado ninguno.",
       "descarga_en_curso": "Otra descarga de esta remesa está en curso. Espera unos segundos y vuelve a descargarla.",
       "remesa_cambio": "La remesa ha cambiado mientras se generaba el fichero. Vuelve a descargarla.",
-      "fichero_alterado": "El fichero guardado de esta remesa no coincide con lo que se registró al generarlo, y no se ha entregado. Avisa al soporte."
+      "fichero_alterado": "El fichero guardado de esta remesa no coincide con lo que se registró al generarlo, y no se ha entregado. Avisa al soporte.",
+      "nada_que_reabrir": "No hay nada que reabrir: el fichero de esta remesa no se ha generado nunca, y en borrador ya se pueden quitar y añadir recibos.",
+      "remesa_cambiada": "La remesa ha cambiado desde que abriste el aviso, así que no se ha reabierto. Arriba están los números de ahora: revísalos antes de volver a confirmar.",
+      "reabrir_failed": "No se pudo reabrir la remesa.",
+      "aviso_failed": "No hemos podido leer la remesa para enseñarte qué se reabre. No se ha tocado nada: vuelve a intentarlo.",
+      "aviso_incompleto": "No hemos podido leer todos los recibos devueltos o cobrados a mano de esta remesa, así que no podemos enseñarte a quién no se toca. No se ha tocado nada: vuelve a intentarlo."
     },
     "transferencias_beca": {
       "title": "Transferencias a familias",
@@ -2261,6 +2266,27 @@
       "bloqueada_fichero": "La fecha de cobro ya no se puede cambiar: el fichero de esta remesa ya está generado, y el banco tiene que recibir ese mismo fichero.",
       "bloqueada_enviada": "La fecha de cobro ya no se puede cambiar: la remesa ya se envió al banco.",
       "guardada": "{num, plural, =0 {Nada que cambiar: ya tenían esa fecha.} one {Fecha de cobro cambiada en 1 recibo.} other {Fecha de cobro cambiada en # recibos.}}"
+    },
+    "reabrir": {
+      "boton": "Reabrir",
+      "titulo": "Reabrir la remesa",
+      "que_pasa": "La remesa vuelve a borrador y sus recibos enviados, a pendientes de cobro, para poder quitar o añadir recibos. El fichero anterior se queda guardado, y al descargarla saldrá uno nuevo con otro identificador.",
+      "leyendo": "Leyendo la remesa…",
+      "caso": {
+        "enviada": "Esta remesa se marcó enviada al banco el {fecha}. Si el banco ya la tiene, anúlala allí antes de subir la versión nueva: si no, se cobraría dos veces.",
+        "enviada_sin_constancia": "Esta remesa se marcó enviada al banco el {fecha}, pero NIDO no tiene constancia de que su fichero se descargara. Si llegó al banco por otro camino, anúlala allí antes de subir la versión nueva: si no, se cobraría dos veces.",
+        "fichero_descargado": "El fichero de esta remesa ya se descargó, aunque la remesa no se marcó enviada. Si lo subiste al banco, anúlalo allí antes de subir el nuevo: si no, se cobraría dos veces."
+      },
+      "afecta": "{familias, plural, =0 {No queda en ella ningún recibo por cobrar.} one {Afecta a # familia, por {total} ({recibos, plural, one {# recibo} other {# recibos}}).} other {Afecta a # familias, por {total} ({recibos, plural, one {# recibo} other {# recibos}}).}}",
+      "no_se_tocan": "{num, plural, one {Este recibo no se toca} other {Estos # recibos no se tocan}}: la familia ya pagó a mano o el recibo ya pasó por el banco y se devolvió. Se quedan en la remesa y no entran en el fichero nuevo.",
+      "estado": {
+        "devuelto": "Devuelto por el banco",
+        "cobrado_manual": "Cobrado a mano"
+      },
+      "cancelar": "Cancelar",
+      "confirmar": "Reabrir la remesa",
+      "reabierta": "{num, plural, =0 {Remesa reabierta.} one {Remesa reabierta: # recibo vuelve a pendiente de cobro.} other {Remesa reabierta: # recibos vuelven a pendientes de cobro.}}",
+      "reabierta_sin_numero": "Remesa reabierta."
     }
   },
   "aula": {

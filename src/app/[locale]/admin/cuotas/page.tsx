@@ -19,6 +19,7 @@ import { PivotePanel } from '@/features/recibos/components/PivotePanel'
 import { getPivotePeriodo } from '@/features/recibos/queries/get-pivote-periodo'
 import { getRecibosMesPanel } from '@/features/recibos/queries/get-recibos-mes-panel'
 import { RemesasPanel } from '@/features/remesas/components/RemesasPanel'
+import { puedeReabrirRemesa } from '@/features/remesas/lib/aviso-reabrir'
 import { getDatosAcreedor } from '@/features/remesas/queries/get-datos-acreedor'
 import { getRecibosGestion } from '@/features/remesas/queries/get-recibos-gestion'
 import { getRecibosSepaRemesables } from '@/features/remesas/queries/get-recibos-sepa-remesables'
@@ -39,7 +40,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
   const t = await getTranslations('admin.cuotas')
   const { locale } = await params
   const sp = await searchParams
-  const { centroId, esResponsable } = await requireContextoCentro(locale)
+  const { centroId, esResponsable, esSuperusuario } = await requireContextoCentro(locale)
 
   const ahora = new Date()
   const anio = clamp(Number(sp.anio), 2024, 2100) ?? ahora.getFullYear()
@@ -208,6 +209,7 @@ export default async function AdminCuotasPage({ params, searchParams }: PageProp
             mes={mes}
             acreedor={acreedor}
             editarAcreedor={esResponsable}
+            reabrir={puedeReabrirRemesa({ esResponsable, esSuperusuario })}
             recibos={recibosSepa}
             remesas={remesas}
             recibosGestion={recibosGestion}

@@ -266,8 +266,13 @@ poder abrir, editar y volver a crear.»
    - **Enviada y con fichero generado:** «Esta remesa consta como enviada al banco el {fecha}. Si el
      banco ya la tiene, volver a enviarla cobrará dos veces a {n} familias: {importe} €». Si tiene
      devoluciones: «{k} recibos ya se devolvieron: el banco recibió este fichero».
-   - **Enviada sin fichero generado** (el fichero no salió nunca de NIDO): se dice así, y que
-     reabrirla no puede cobrar dos veces lo que ningún banco tiene.
+   - ~~**Enviada sin fichero generado** (el fichero no salió nunca de NIDO): se dice así, y que
+     reabrirla no puede cobrar dos veces lo que ningún banco tiene.~~ **Sustituido el 2026-11-03**
+     (decisión del responsable): sin la marca, NIDO no sabe que el fichero no salió, solo que no
+     consta su descarga, y pudo llegar al banco por otro camino. El aviso dice el síntoma («NIDO no
+     tiene constancia de que su fichero se descargara») y el mismo riesgo de cobrar dos veces. Lo
+     que decide el caso es la marca, no el fichero guardado: una remesa descargada antes de R-1
+     tiene la marca y no el fichero.
    - **Borrador con fichero:** el fichero se descargó y pudo subirse; el mismo aviso, sin la fecha
      de envío.
    - La función recibe el número de recibos y el importe que vio la persona y falla si han cambiado
@@ -543,7 +548,7 @@ recibos de `enviado_banco` a pendiente pasa por `recibos_dinero_solo_por_funcion
 abre con su propio marcador, como el resto.
 
 > **Reabrir, la base de datos, construida el 2026-11-03** (`20261227120000`, quinto PR de reabrir
-> remesas; el botón y el aviso van en el siguiente). Decidido ese día por el responsable:
+> remesas, #484; el botón y el aviso, en el sexto, abajo). Decidido ese día por el responsable:
 >
 > - **Una remesa enviada no vuelve a borrador por fuera, para nadie:** `remesas_proteger` dejaba
 >   pasar a service_role antes de mirarlo. Medido abierto en producción antes de cerrarlo.
@@ -557,6 +562,16 @@ abre con su propio marcador, como el resto.
 >   la comprobación que mira otro es el fallo clásico de estos botones.
 > - **Reabrir un borrador sin fichero dice qué pasa** (`nada_que_reabrir`): no hay nada que
 >   reabrir porque nunca se generó el fichero.
+
+> **Reabrir, la app, construida el 2026-11-03** (sexto PR de reabrir remesas). «Reabrir» sale solo
+> a la admin del centro (responsable y no superusuario, como `privado.es_titular`) y solo en las
+> remesas con algo que reabrir: la enviada y la del fichero descargado. El aviso se lee al abrir el
+> diálogo y, hasta tenerlo, no hay botón de confirmar: la admin ve **antes de pulsar** el número de
+> familias y el importe, el riesgo de cobrar dos veces en sus tres casos (enviada, enviada sin
+> constancia de la descarga, borrador con el fichero descargado) y **por su nombre** a las familias
+> de los recibos devueltos o cobrados a mano, que no se tocan. Esos nombres se leen con la sesión y
+> tienen que salir tantos como cuenta el resumen; si no, no hay aviso (`aviso_incompleto`).
+> Confirmar manda los números que se enseñaron; si cambiaron, no reabre y enseña los de ahora.
 
 **Sin FRST.** El 0d está cancelado (R-2, revisada): el fichero de cada versión va en RCUR. No se
 construye ninguna marca de «primer cobro» por mandato.

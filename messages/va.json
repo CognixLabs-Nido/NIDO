@@ -2059,7 +2059,7 @@
     "crear_remesa": "Crear remesa",
     "anadir_a_remesa": "Afegir {num} a esta remesa",
     "recibos_anadidos": "Rebuts afegits a la remesa.",
-    "fichero_generado_nota": "Fitxer generat: ja no se li afegixen ni se li lleven rebuts.",
+    "fichero_generado_nota": "Fitxer generat: ja no s'hi afigen ni se'n lleven rebuts. Per a canviar-la, l'administradora del centre l'ha de reobrir.",
     "remesa_creada": "Remesa creada (esborrany).",
     "remesas_title": "Remeses del període",
     "sin_remesas": "Encara no hi ha remeses en este període.",
@@ -2158,7 +2158,12 @@
       "fecha_cobro_failed": "No s’ha pogut canviar la data de cobrament. No se n’ha canviat cap.",
       "descarga_en_curso": "Hi ha una altra descàrrega d’aquesta remesa en curs. Espera uns segons i torna a descarregar-la.",
       "remesa_cambio": "La remesa ha canviat mentre es generava el fitxer. Torna a descarregar-la.",
-      "fichero_alterado": "El fitxer guardat d’aquesta remesa no coincideix amb el que es va registrar en generar-lo, i no s’ha lliurat. Avisa el suport."
+      "fichero_alterado": "El fitxer guardat d’aquesta remesa no coincideix amb el que es va registrar en generar-lo, i no s’ha lliurat. Avisa el suport.",
+      "nada_que_reabrir": "No hi ha res a reobrir: el fitxer d'aquesta remesa no s'ha generat mai, i en esborrany ja es poden llevar i afegir rebuts.",
+      "remesa_cambiada": "La remesa ha canviat des que vas obrir l'avís, així que no s'ha reobert. Dalt tens els números d'ara: revisa'ls abans de tornar a confirmar.",
+      "reabrir_failed": "No s'ha pogut reobrir la remesa.",
+      "aviso_failed": "No hem pogut llegir la remesa per a mostrar-te què es reobri. No s'ha tocat res: torna-ho a intentar.",
+      "aviso_incompleto": "No hem pogut llegir tots els rebuts tornats o cobrats a mà d'aquesta remesa, així que no et podem mostrar a qui no es toca. No s'ha tocat res: torna-ho a intentar."
     },
     "transferencias_beca": {
       "title": "Transferències a famílies",
@@ -2261,6 +2266,27 @@
       "bloqueada_fichero": "La data de cobrament ja no es pot canviar: el fitxer d’esta remesa ja està generat, i el banc ha de rebre eixe mateix fitxer.",
       "bloqueada_enviada": "La data de cobrament ja no es pot canviar: la remesa ja s’ha enviat al banc.",
       "guardada": "{num, plural, =0 {No hi ha res a canviar: ja tenien eixa data.} one {Data de cobrament canviada en 1 rebut.} other {Data de cobrament canviada en # rebuts.}}"
+    },
+    "reabrir": {
+      "boton": "Reobrir",
+      "titulo": "Reobrir la remesa",
+      "que_pasa": "La remesa torna a esborrany i els seus rebuts enviats, a pendents de cobrament, per a poder llevar o afegir rebuts. El fitxer anterior es queda guardat, i en descarregar-la n'eixirà un de nou amb un altre identificador.",
+      "leyendo": "Llegint la remesa…",
+      "caso": {
+        "enviada": "Aquesta remesa es va marcar enviada al banc el {fecha}. Si el banc ja la té, anul·la-la allí abans de pujar la versió nova: si no, es cobraria dues vegades.",
+        "enviada_sin_constancia": "Aquesta remesa es va marcar enviada al banc el {fecha}, però NIDO no té constància que se'n descarregara el fitxer. Si va arribar al banc per un altre camí, anul·la-la allí abans de pujar la versió nova: si no, es cobraria dues vegades.",
+        "fichero_descargado": "El fitxer d'aquesta remesa ja s'ha descarregat, encara que la remesa no es va marcar enviada. Si el vas pujar al banc, anul·la'l allí abans de pujar el nou: si no, es cobraria dues vegades."
+      },
+      "afecta": "{familias, plural, =0 {No hi queda cap rebut per cobrar.} one {Afecta # família, per {total} ({recibos, plural, one {# rebut} other {# rebuts}}).} other {Afecta # famílies, per {total} ({recibos, plural, one {# rebut} other {# rebuts}}).}}",
+      "no_se_tocan": "{num, plural, one {Aquest rebut no es toca} other {Aquests # rebuts no es toquen}}: la família ja va pagar a mà o el rebut ja va passar pel banc i es va tornar. Es queden en la remesa i no entren en el fitxer nou.",
+      "estado": {
+        "devuelto": "Tornat pel banc",
+        "cobrado_manual": "Cobrat a mà"
+      },
+      "cancelar": "Cancel·lar",
+      "confirmar": "Reobrir la remesa",
+      "reabierta": "{num, plural, =0 {Remesa reoberta.} one {Remesa reoberta: # rebut torna a pendent de cobrament.} other {Remesa reoberta: # rebuts tornen a pendents de cobrament.}}",
+      "reabierta_sin_numero": "Remesa reoberta."
     }
   },
   "aula": {

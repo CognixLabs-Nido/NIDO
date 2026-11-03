@@ -23,6 +23,23 @@ export const marcarRemesaEnviadaSchema = z.object({
 })
 export type MarcarRemesaEnviadaInput = z.infer<typeof marcarRemesaEnviadaSchema>
 
+/** El aviso de reabrir una remesa: lo que se lee antes de confirmar (`resumen_reabrir_remesa`). */
+export const leerAvisoReabrirSchema = z.object({
+  remesaId: z.string().uuid(),
+})
+export type LeerAvisoReabrirInput = z.infer<typeof leerAvisoReabrirSchema>
+
+/**
+ * Reabrir una remesa (`reabrir_remesa`, `20261227120000`) con el número de recibos y el importe
+ * que enseñó el aviso: si la remesa cambió entre medias, la BD no reabre (`remesa_cambiada`).
+ */
+export const reabrirRemesaSchema = z.object({
+  remesaId: z.string().uuid(),
+  nRecibos: z.number().int().min(0),
+  totalCentimos: z.number().int().min(0),
+})
+export type ReabrirRemesaInput = z.infer<typeof reabrirRemesaSchema>
+
 /**
  * La fecha de cobro de varios recibos a la vez (`fijar_fecha_cobro_recibos`, `20261214120000`).
  * `fecha` null = sin fecha: el banco lo cobra en cuanto pueda. Sin plazos: el banco ajusta.

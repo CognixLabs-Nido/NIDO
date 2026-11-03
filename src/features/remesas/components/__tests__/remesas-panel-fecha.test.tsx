@@ -91,6 +91,7 @@ function pintar() {
         recibosGestion={[]}
         transferenciasBeca={{} as never}
         editarAcreedor={false}
+        reabrir={false}
       />
     </NextIntlClientProvider>
   )

@@ -25,6 +25,7 @@ import { DatosAcreedorDialog } from './DatosAcreedorDialog'
 import { DevolucionesPanel } from './DevolucionesPanel'
 import { FechaCobroEtiqueta } from './FechaCobroEtiqueta'
 import { FechaCobroForm } from './FechaCobroForm'
+import { ReabrirRemesaDialog } from './ReabrirRemesaDialog'
 import { RemesaFechaCobro } from './RemesaFechaCobro'
 import { RemesaXmlButton } from './RemesaXmlButton'
 
@@ -40,6 +41,11 @@ interface Props {
   transferenciasBeca: TransferenciasBecaData
   /** La admin del centro: edita los datos de acreedor. Remesar es de Dirección. */
   editarAcreedor: boolean
+  /**
+   * La admin del centro, sin el superusuario (`privado.es_titular`): reabre una remesa enviada o
+   * con el fichero descargado. A nadie más se le enseña el botón; la BD le diría 42501.
+   */
+  reabrir: boolean
 }
 
 export function RemesasPanel({
@@ -52,6 +58,7 @@ export function RemesasPanel({
   recibosGestion,
   transferenciasBeca,
   editarAcreedor,
+  reabrir,
 }: Props) {
   const t = useTranslations('remesas')
   const tErrors = useTranslations()
@@ -278,6 +285,9 @@ export function RemesasPanel({
                     </Button>
                   )}
                   <RemesaXmlButton remesaId={rm.id} disabled={!acreedorCompleto} />
+                  {reabrir && (rm.estado === 'enviada' || rm.ficheroGenerado) && (
+                    <ReabrirRemesaDialog remesaId={rm.id} />
+                  )}
                   {rm.estado === 'borrador' && (
                     <Button size="sm" disabled={pending} onClick={() => enviar(rm.id)}>
                       {t('marcar_enviada')}
