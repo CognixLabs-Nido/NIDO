@@ -83,6 +83,35 @@ export function enviadaAtDelFichero(remesaId: string): string | null {
   return v === 'null' ? null : v
 }
 
+/**
+ * Los ficheros guardados de una remesa, con su `reabierta_at` (que ninguna sesión lee): en solo
+ * lectura, como `postgres`. Uno por versión, del más antiguo al más reciente.
+ */
+export function ficherosDeLaRemesa(
+  remesaId: string
+): Array<{ msgId: string; reabierta: boolean; enviada: boolean }> {
+  const url = process.env.DB_URL
+  if (!url) throw new Error('DB_URL: solo en la BD efímera del CI')
+  if (!UUID.test(remesaId)) throw new Error(`remesa-como-sus-funciones: id no válido: ${remesaId}`)
+  const sql = [
+    'BEGIN READ ONLY;',
+    `SELECT 'f|' || msg_id || '|' || (reabierta_at IS NOT NULL) || '|' || (enviada_at IS NOT NULL)
+       FROM public.remesa_ficheros WHERE remesa_id = '${remesaId}' ORDER BY generado_at;`,
+    'COMMIT;',
+  ].join('\n')
+  const salida = execFileSync('psql', [url, '-v', 'ON_ERROR_STOP=1', '-qAt', '-f', '-'], {
+    input: sql,
+    encoding: 'utf8',
+  })
+  return salida
+    .split('\n')
+    .filter((l) => l.startsWith('f|'))
+    .map((l) => {
+      const [, msgId, reabierta, enviada] = l.split('|')
+      return { msgId, reabierta: reabierta === 'true', enviada: enviada === 'true' }
+    })
+}
+
 /** La marca del fichero, como la pone `registrar_fichero_remesa` (sin el registro). */
 export function ponerMarcaComoElRegistro(remesaId: string, marca: string): void {
   comoPostgres(

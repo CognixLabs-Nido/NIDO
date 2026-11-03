@@ -462,8 +462,8 @@ funciones. La regla: **un hecho de dinero no se deshace por fuera**, y lo pone s
 - **A · `enviado_banco`, solo por `marcar_remesa_enviada`, también para `service_role`.** Los tests
   preparan sus recibos enviados con el helper de psql, como la función.
 - **B · ninguna vuelta atrás por fuera**, en el mismo PR y el mismo trigger que A: de
-  `cobrado_manual` no se sale, y de `enviado_banco` solo a `devuelto`. Reabrir traerá su vuelta
-  atrás con su marcador.
+  `cobrado_manual` no se sale, y de `enviado_banco` solo a `devuelto`. Reabrir trae su vuelta
+  atrás con su marcador (`app.reabrir_recibo`, `20261227120000`).
 - **C · `devuelto` y `cobrado_manual` por función**, PR propio después del de A y B.
   `marcarReciboDevuelto` y `marcarCobradoManual` son UPDATE directos desde la app, sin función SQL
   detrás: crear esas dos funciones es el trabajo del PR, y el trigger es la consecuencia. Cierra
@@ -541,6 +541,22 @@ funciones. La regla: **un hecho de dinero no se deshace por fuera**, y lo pone s
 marca con `app.reabrir_remesa`. La siguiente descarga crea la versión nueva. La vuelta de sus
 recibos de `enviado_banco` a pendiente pasa por `recibos_dinero_solo_por_funcion` (B): reabrir la
 abre con su propio marcador, como el resto.
+
+> **Reabrir, la base de datos, construida el 2026-11-03** (`20261227120000`, quinto PR de reabrir
+> remesas; el botón y el aviso van en el siguiente). Decidido ese día por el responsable:
+>
+> - **Una remesa enviada no vuelve a borrador por fuera, para nadie:** `remesas_proteger` dejaba
+>   pasar a service_role antes de mirarlo. Medido abierto en producción antes de cerrarlo.
+> - **Un recibo devuelto o cobrado a mano no se desvincula de la remesa reabierta**
+>   (`recibo_con_historia`): si se pudiera quitar, se perdería la prueba de que el banco recibió ese
+>   fichero, que es justo lo que se guarda el fichero para demostrar. Para las sesiones:
+>   service_role conserva la excepción del DELETE, porque la destrucción por plazo de lo fiscal
+>   borra los enlaces de la familia en cualquier estado.
+> - **El aviso y la comprobación leen la misma consulta** (`resumen_reabrir_remesa` y
+>   `reabrir_remesa`, las dos sobre `privado.resumen_reabrir_remesa`): el aviso que dice un importe y
+>   la comprobación que mira otro es el fallo clásico de estos botones.
+> - **Reabrir un borrador sin fichero dice qué pasa** (`nada_que_reabrir`): no hay nada que
+>   reabrir porque nunca se generó el fichero.
 
 **Sin FRST.** El 0d está cancelado (R-2, revisada): el fichero de cada versión va en RCUR. No se
 construye ninguna marca de «primer cobro» por mandato.
