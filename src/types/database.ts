@@ -5448,10 +5448,15 @@ export type Database = {
         }
         Returns: string
       }
+      reabrir_remesa: {
+        Args: { p_n_recibos: number; p_remesa_id: string; p_total_centimos: number }
+        Returns: Json
+      }
       reactivar_profe: {
         Args: { p_centro_id: string; p_usuario_id: string }
         Returns: undefined
       }
+      resumen_reabrir_remesa: { Args: { p_remesa_id: string }; Returns: Json }
       recibo_en_remesa: { Args: { p_recibo_id: string }; Returns: boolean }
       reproponer_asignaciones: { Args: { p_centro_id: string }; Returns: Json }
       revocar_acceso_familia: { Args: { p_familia_id: string }; Returns: Json }

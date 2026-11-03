@@ -1582,8 +1582,10 @@ toca.
   - un enlace no cambia de remesa ni de recibo (`enlace_fijo`);
   - de una remesa enviada o con fichero no sale ningún recibo, salvo con service_role.
 - **`remesas_proteger`** (BEFORE UPDATE): la marca del fichero no se quita, para nadie
-  (`fichero_generado`). Con sesión, una remesa enviada no vuelve a borrador, y ni la enviada ni la que
-  tiene fichero se borran: sus recibos quedarían libres para otra remesa.
+  (`fichero_generado`). Una remesa enviada no vuelve a borrador: con sesión desde aquí y, desde
+  `20261227120000`, también con service_role; las dos cosas, salvo `reabrir_remesa` (ver «Reabrir
+  una remesa»). Con sesión, ni la enviada ni la que tiene fichero se borran: sus recibos quedarían
+  libres para otra remesa.
 - **`recibos_en_remesa_no_vuelven_a_borrador`** (BEFORE UPDATE OF estado, de `pendiente_procesar` a
   `borrador`, para todos): `desconfirmar_recibo` ya lo miraba, pero sin bloquear el recibo, y un
   enlace que entraba a la vez dejaba un borrador dentro de la remesa (`recibo_en_remesa`).
@@ -1757,6 +1759,49 @@ fecha, nota)`** (de invocador, `EXECUTE` solo para `authenticated`, `es_admin` d
 - **El DEFAULT de `recibos.estado` es `borrador`** (`20261224120000`; hasta entonces era
   `pendiente_procesar`, y un INSERT sin estado lo rechazaba `recibo_nace_en_borrador`). Las
   funciones y la app que crean recibos dicen su estado igualmente.
+
+### Reabrir una remesa
+
+Migración `20261227120000_feat_reabrir_remesa`; spec `docs/specs/altas-serie.md`, «Reabrir una
+remesa» (decisiones del responsable del 2026-10-31 y del 2026-11-03). Primero la base de datos; el
+botón y el aviso, en el PR siguiente.
+
+- **`reabrir_remesa(remesa, n_recibos, total_centimos)`** (`SECURITY DEFINER`, `EXECUTE` solo para
+  `authenticated`): solo la admin del centro (`privado.es_titular`; la directora, el superusuario,
+  la profe y otro centro, 42501). Se reabre cualquier remesa con algo que reabrir, también la que
+  consta como enviada: la app no sabe si el fichero llegó al banco, y lo que protege del doble
+  cobro es el `MsgId` estable y el aviso, no impedirlo. Con la remesa y sus recibos bloqueados:
+  - sus recibos en `enviado_banco` vuelven a `pendiente_procesar`, sin `fecha_envio_banco`; los
+    devueltos y los cobrados a mano no se tocan;
+  - la remesa vuelve a `borrador`, sin `fecha_envio_banco` ni marca: la descarga siguiente es una
+    versión nueva, con otro `MsgId` y su fichero;
+  - el fichero guardado de la versión **no se borra** (es la prueba de lo que se envió): queda con
+    `reabierta_at`;
+  - una fila directa `remesa_reabierta` en `audit_log` (ver `data-model.md`);
+  - con un número de recibos o un importe que no es el que vio la persona, nada (40001, HINT
+    `remesa_cambiada`), como `dar_deuda_por_perdida`;
+  - una remesa en borrador sin fichero generado, nada (HINT `nada_que_reabrir`), y el mensaje dice
+    por qué: el fichero no se ha generado nunca, y en borrador ya se edita.
+- **El aviso y la comprobación leen la misma consulta:** `resumen_reabrir_remesa(remesa)` (la misma
+  puerta) devuelve lo que la app enseña (estado, fecha de envío, marca, fichero guardado, los
+  cobrables con su número, familias e importe, y cuántos enviados, devueltos y cobrados), y sale de
+  `privado.resumen_reabrir_remesa`, la consulta que mira `reabrir_remesa`. Los cobrables son el
+  filtro de `registrar_fichero_remesa` y `marcar_remesa_enviada`.
+- **Los marcadores** (el patrón de la casa: el id de la fila): `app.reabrir_remesa` = la remesa, en
+  `remesas_proteger`, para quitar la marca y volver de enviada a borrador; `app.reabrir_recibo` = el
+  recibo, en `recibos_dinero_solo_por_funcion` (B), para la vuelta de `enviado_banco` a
+  `pendiente_procesar`. Ningún otro camino, para nadie.
+- **Un recibo devuelto o cobrado a mano no se desvincula de su remesa** (`recibos_remesa_validar`,
+  HINT `recibo_con_historia`): solo pudo llegar ahí con un fichero que el banco recibió, y quitarlo de
+  la remesa reabierta borraría la prueba que se guarda el fichero para dar (decisión del
+  responsable del 2026-11-03). Para las sesiones: service_role conserva la excepción que el trigger
+  ya tenía en el DELETE, porque la limpieza de un centro y la destrucción por plazo de lo fiscal
+  (`destruir_fiscal_familia`) borran los enlaces de la familia en cualquier estado.
+- **Medido en producción** (2026-11-03, ensayo terminado en RAISE, LF y CRLF): antes de la
+  migración, service_role devolvía una remesa enviada a borrador y la sesión de la admin
+  desvinculaba un devuelto y un cobrado; con ella, no, y reabrir la remesa de CEI Ejemplo (enviada
+  sin fichero) deja su recibo pendiente y la remesa en borrador.
+- Test: `remesa-reabrir.rls.test.ts`.
 
 ### Los mandatos SEPA: solo por sus funciones
 
