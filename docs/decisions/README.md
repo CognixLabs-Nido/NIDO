@@ -91,3 +91,4 @@ La numeración avanza cronológicamente, pero hay dos huecos explícitos:
 | 0063 | El plan de recibos: cerrar el circuito del cobro (F12-B, #399–#418)       | accepted                                  |
 | 0064 | Los plazos de conservación (F11-B, punto 6, #435–#446)                    | accepted                                  |
 | 0065 | Los mandatos SEPA solo se escriben por sus funciones (#481)               | accepted                                  |
+| 0066 | Un DEFAULT no afirma un hecho que nadie ha comprobado                     | accepted                                  |

@@ -3569,7 +3569,7 @@ export type Database = {
           fecha: string
           id?: string
           nino_id: string
-          presente?: boolean
+          presente: boolean
           servicio: Database["public"]["Enums"]["servicio_diario"]
           updated_at?: string
         }

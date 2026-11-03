@@ -221,10 +221,12 @@ describe('F12-B — RLS cuotas/recibos/remesas (catálogo · asignación · part
           nino_id: ninoB.id,
           fecha: '2026-06-15',
           servicio: 'comedor',
+          presente: true,
         })
         .select('id')
         .maybeSingle()
-      expect(ajeno.error).not.toBeNull()
+      // Lo rechaza la RLS (42501), no la falta de `presente` (23502, sin DEFAULT desde 20261226120000).
+      expect(ajeno.error?.code).toBe('42501')
     })
   })
 
