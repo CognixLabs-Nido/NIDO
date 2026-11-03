@@ -1742,6 +1742,15 @@ fecha, nota)`** (de invocador, `EXECUTE` solo para `authenticated`, `es_admin` d
   Sus tests lo miden con `intentarConMarcador`, que siempre se deshace y lleva su control positivo.
   `recibos_congelar` corre ANTES que este trigger (orden alfabético): con sesión, a un recibo en
   remesa que vuelve a borrador le responde él («recibo en remesa: no se puede modificar»).
+- **Los rechazos de las dos funciones, medidos uno a uno** (mutaciones en CI: quitado cada uno, su
+  test se pone rojo), salvo:
+  - **la fecha futura de la devolución y el SEPA pendiente**, que el trigger de detrás repite con el
+    mismo código, HINT y mensaje. Por la app no se distinguen; lo que los separa es quién lanza el
+    RAISE, y su test lo afirma con el contexto del error (`quienRechaza`, por psql);
+  - **`es_admin` (42501), que no se puede alcanzar con la RLS de hoy:** la política de UPDATE de
+    `recibos` ya pide `es_admin` del centro, así que el `FOR UPDATE` de la función no encuentra la
+    fila de quien no lo es y responde antes `no_encontrado`. Se queda como segunda capa, sin test
+    que la alcance: no es probable mientras la política siga así.
 - **El DEFAULT de `recibos.estado` es `pendiente_procesar`:** un INSERT sin estado lo rechaza
   `recibo_nace_en_borrador`. Las funciones y la app que crean recibos dicen su estado.
 
