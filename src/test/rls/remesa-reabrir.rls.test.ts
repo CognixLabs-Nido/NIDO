@@ -449,20 +449,22 @@ describe('Reabrir una remesa', () => {
   })
 
   it('una enviada no vuelve a borrador por fuera, tampoco con service_role', async () => {
-    const r1 = await recibo(familiaA)
-    const rem = await enviadaCon([r1])
-    // Premisa: enviada, y service_role escribe la remesa (un cambio que no toca su estado pasa).
-    expect(await remesaDe(rem)).toMatchObject({ estado: 'enviada' })
-    const toca = await serviceClient
-      .from('remesas')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', rem)
-      .select('id')
-    expect(toca.data).toHaveLength(1)
+    // Cada uno con su remesa: si compartieran una, el que pasara primero dejaría al
+    // segundo moviendo borrador → borrador, y su celda no mediría nada.
     for (const [quien, c] of [
       ['service_role', serviceClient],
       ['admin', cAdmin],
     ] as const) {
+      const r1 = await recibo(familiaA)
+      const rem = await enviadaCon([r1])
+      // Premisa: enviada, y quien prueba escribe la remesa (un cambio que no toca su estado pasa).
+      expect(await remesaDe(rem)).toMatchObject({ estado: 'enviada' })
+      const toca = await c
+        .from('remesas')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', rem)
+        .select('id')
+      expect.soft(toca.data, `${quien} premisa`).toHaveLength(1)
       const v = await c
         .from('remesas')
         .update({ estado: 'borrador', fecha_envio_banco: null })
@@ -473,14 +475,11 @@ describe('Reabrir una remesa', () => {
         .update({ estado: 'pendiente_procesar', fecha_envio_banco: null })
         .eq('id', r1)
       expect.soft(rc.error?.hint, `${quien} recibo`).toBe('hecho_de_dinero')
+      const marca = await c.from('remesas').update({ fichero_generado_at: null }).eq('id', rem)
+      expect.soft(marca.error?.hint, `${quien} marca`).toBe('fichero_generado')
+      expect.soft(await remesaDe(rem), `${quien} final`).toMatchObject({ estado: 'enviada' })
+      expect.soft((await estados([r1]))[r1], `${quien} recibo final`).toMatch(/^enviado_banco\//)
     }
-    const marca = await serviceClient
-      .from('remesas')
-      .update({ fichero_generado_at: null })
-      .eq('id', rem)
-    expect(marca.error?.hint).toBe('fichero_generado')
-    expect(await remesaDe(rem)).toMatchObject({ estado: 'enviada' })
-    expect((await estados([r1]))[r1]).toMatch(/^enviado_banco\//)
   })
 
   it('service_role conserva el desvincular (la limpieza y lo fiscal): un devuelto sale con él', async () => {
