@@ -284,6 +284,7 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
       [enviado, 'efectivo', HOY, '', 'no_cobrable_manual'],
       [efectivo, 'cheque_guarderia', HOY, '', 'forma_no_valida'],
       [efectivo, 'efectivo', manana, '', 'fecha_cobro_futura'],
+      [efectivo, 'efectivo', null as unknown as string, '', 'datos_no_validos'],
       [efectivo, 'efectivo', HOY, 'x'.repeat(501), 'nota_cobro_larga'],
       ['00000000-0000-4000-8000-000000000000', 'efectivo', HOY, '', 'no_encontrado'],
     ] as const) {
