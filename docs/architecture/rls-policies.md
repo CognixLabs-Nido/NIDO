@@ -1755,6 +1755,22 @@ fecha, nota)`** (de invocador, `EXECUTE` solo para `authenticated`, `es_admin` d
   `pendiente_procesar`, y un INSERT sin estado lo rechazaba `recibo_nace_en_borrador`). Las
   funciones y la app que crean recibos dicen su estado igualmente.
 
+### Los mandatos SEPA: solo por sus funciones
+
+Migración `20261225120000_fix_mandatos_solo_por_funciones`; decisión del responsable del
+2026-11-03.
+
+- **Se cierra la escritura directa en `mandatos_sepa`:** ni las sesiones ni `service_role` tienen
+  INSERT, UPDATE, DELETE, TRUNCATE ni MAINTAIN, y no hay políticas de INSERT ni de UPDATE. La
+  lectura no cambia (`mandatos_sepa_select`).
+- **Escriben solo sus funciones**, SECURITY DEFINER de `postgres`: `registrar_mandato_sepa` y
+  `sustituir_mandato_sepa` (con sesión), `anular_alta` y `destruir_fiscal_familia` (el servidor).
+  La guarda de la migración exige que no haya otra. **Una escritura nueva de un mandato va por
+  función, nunca por política ni por `service_role`.**
+- Los tests que necesitan un mandato a mano lo escriben como `postgres` por psql
+  (`src/test/rls/mandatos-como-postgres.ts`).
+- Test: `mandatos-solo-por-funciones.rls.test.ts`.
+
 ### La red del export art. 15: cada columna, decidida
 
 Migración `20261215120000_feat_export_recibos_red`. `export_datos_sujeto` escribe las columnas de
