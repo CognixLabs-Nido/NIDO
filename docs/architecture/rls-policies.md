@@ -1758,7 +1758,8 @@ fecha, nota)`** (de invocador, `EXECUTE` solo para `authenticated`, `es_admin` d
 ### Los mandatos SEPA: solo por sus funciones
 
 Migración `20261225120000_fix_mandatos_solo_por_funciones`; decisión del responsable del
-2026-11-03.
+2026-11-03. Lo que se podía hacer antes, desde qué roles, qué lo medía y qué lo cierra:
+[ADR-0065](../decisions/ADR-0065-mandatos-sepa-solo-por-sus-funciones.md).
 
 - **Se cierra la escritura directa en `mandatos_sepa`:** ni las sesiones ni `service_role` tienen
   INSERT, UPDATE, DELETE, TRUNCATE ni MAINTAIN, y no hay políticas de INSERT ni de UPDATE. La
