@@ -269,3 +269,54 @@ export function prepararRecibo(reciboId: string, d: DestinoRecibo): void {
     throw new Error(`prepararRecibo: ${hechos} de ${pasos.length} pasos: ${salida}`)
   }
 }
+
+/** Lo que responde la base a un intento: pasa con N filas, o el error con su código y su HINT. */
+export type Intento =
+  | { pasa: true; filas: number }
+  | { pasa: false; code: string; hint: string; message: string }
+
+/**
+ * El caso que SEPARA dos defensas solapadas: un UPDATE del recibo con el marcador de su función
+ * puesto, para que `recibos_dinero_solo_por_funcion` lo deje pasar, y ver que la defensa de detrás
+ * sigue respondiendo (FICCIÓN DE LOS TESTS: es lo que pasaría si la función se equivocara un día).
+ * Como `postgres` por psql, con el claim que se pida (`service_role`, o `authenticated` para que el
+ * congelado actúe como con sesión), y SIEMPRE se deshace, pase o no: no deja nada escrito.
+ */
+export function intentarConMarcador(
+  reciboId: string,
+  marcador: string,
+  set: string,
+  rol: 'service_role' | 'authenticated' = 'service_role'
+): Intento {
+  const url = process.env.DB_URL
+  if (!url) throw new Error('DB_URL: el intento solo se hace así en la BD efímera del CI')
+  if (!UUID.test(reciboId)) throw new Error(`remesa-como-sus-funciones: id no válido: ${reciboId}`)
+  if (!/^app\.[a-z_]+$/.test(marcador))
+    throw new Error(`intentarConMarcador: marcador: ${marcador}`)
+  const sql = [
+    'BEGIN;',
+    `SELECT set_config('request.jwt.claims', '{"role":"${rol}"}', true);`,
+    `CREATE FUNCTION pg_temp.intento() RETURNS text LANGUAGE plpgsql AS $i$
+     DECLARE n int; st text; h text; m text;
+     BEGIN
+       PERFORM set_config('${marcador}', '${reciboId}', true);
+       UPDATE public.recibos SET ${set} WHERE id = '${reciboId}';
+       GET DIAGNOSTICS n = ROW_COUNT;
+       RETURN 'pasa|' || n;
+     EXCEPTION WHEN OTHERS THEN
+       GET STACKED DIAGNOSTICS st = RETURNED_SQLSTATE, h = PG_EXCEPTION_HINT, m = MESSAGE_TEXT;
+       RETURN 'error|' || st || '|' || coalesce(h, '') || '|' || replace(m, E'\\n', ' ');
+     END $i$;`,
+    'SELECT pg_temp.intento();',
+    'ROLLBACK;',
+  ].join('\n')
+  const salida = execFileSync('psql', [url, '-v', 'ON_ERROR_STOP=1', '-qAt', '-f', '-'], {
+    input: sql,
+    encoding: 'utf8',
+  })
+  const linea = salida.split('\n').find((l) => l.startsWith('pasa|') || l.startsWith('error|'))
+  if (linea === undefined) throw new Error(`intentarConMarcador: sin respuesta: ${salida}`)
+  const [que, a, b, ...resto] = linea.split('|')
+  if (que === 'pasa') return { pasa: true, filas: Number(a) }
+  return { pasa: false, code: a, hint: b, message: resto.join('|') }
+}

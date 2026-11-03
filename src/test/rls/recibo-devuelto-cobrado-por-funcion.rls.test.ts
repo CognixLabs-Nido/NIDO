@@ -162,7 +162,8 @@ describe('La devolución y el cobro a mano tienen dueño; confirmar y desconfirm
       p_fecha: '2026-03-20',
       p_gastos_centimos: 0,
     })
-    expect(fuera.error).not.toBeNull()
+    expect(fuera.error?.code).toBe('P0002')
+    expect(fuera.error?.hint).toBe('no_encontrado')
     expect((await fila(enviado))?.estado).toBe('enviado_banco')
   })
 

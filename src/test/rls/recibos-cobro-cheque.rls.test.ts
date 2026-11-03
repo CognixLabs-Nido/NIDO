@@ -12,6 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { intentarConMarcador } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -26,7 +27,10 @@ import type { Database } from '@/types/database'
  *    detalla `cheque-sobrante.rls.test.ts`).
  *  - Las dos escrituras van juntas: si algo falla, no queda nada escrito.
  *  - Por otro camino que no sea la función, el cheque no entra (trigger de la transición), tampoco
- *    con service_role: no puede quedar un cheque menor sin el recibo de su diferencia.
+ *    con service_role: no puede quedar un cheque menor sin el recibo de su diferencia. Desde
+ *    `20261223120000` por fuera responde antes `recibos_dinero_solo_por_funcion`
+ *    (`cobrado_por_funcion`); el caso que separa pone el marcador de OTRA función de cobro
+ *    (`marcar_cobrado_manual`), y el trigger del cheque tiene que seguir respondiendo.
  *  - Lo cobra Dirección; el actor de audit_log es quien cobra, sin la nota; el export del art. 15
  *    lleva el importe del cheque.
  */
@@ -268,9 +272,26 @@ describe('PR-1b — cobro con cheque guardería / ticket restaurant', () => {
     }
     const r1 = await cDirectora.from('recibos').update(directo).eq('id', id)
     expect(r1.error?.code).toBe('P0001')
-    expect(r1.error?.hint).toBe('cheque_por_funcion')
+    expect(r1.error?.hint).toBe('cobrado_por_funcion')
     const r2 = await serviceClient.from('recibos').update(directo).eq('id', id)
-    expect(r2.error?.hint).toBe('cheque_por_funcion')
+    expect(r2.error?.hint).toBe('cobrado_por_funcion')
+    expect((await fila(id))?.estado).toBe('pendiente_procesar')
+
+    // El caso que separa: con el marcador del cobro a mano, el trigger nuevo deja pasar y el del
+    // cheque sigue respondiendo. Y su control: el mismo marcador con efectivo sí pasa (se deshace).
+    const set = (forma: string) =>
+      `estado = 'cobrado_manual', cobro_forma = '${forma}', cobro_fecha = '${FECHA}'`
+    expect(
+      intentarConMarcador(
+        id,
+        'app.marcar_cobrado_manual',
+        `${set('cheque_guarderia')}, cobro_importe_centimos = 10000`
+      )
+    ).toMatchObject({ pasa: false, code: 'P0001', hint: 'cheque_por_funcion' })
+    expect(intentarConMarcador(id, 'app.marcar_cobrado_manual', set('efectivo'))).toEqual({
+      pasa: true,
+      filas: 1,
+    })
     expect((await fila(id))?.estado).toBe('pendiente_procesar')
 
     // Ni cambiar después el importe de un cheque ya registrado.

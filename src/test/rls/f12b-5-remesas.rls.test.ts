@@ -168,6 +168,9 @@ describe('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
       .maybeSingle()
     expect(error).not.toBeNull()
     expect(error?.code).toBe('P0001')
+    // El rechazo de `congelar_si_mes_cerrado` (no tiene HINT): se afirma su mensaje, para que un
+    // P0001 de otra defensa no pase por este.
+    expect(error?.message).toBe('recibo confirmado: inmutable salvo estado/fecha de cobro')
   })
 
   it('get_mandatos_remesa: el admin descifra el IBAN del deudor de la remesa', async () => {

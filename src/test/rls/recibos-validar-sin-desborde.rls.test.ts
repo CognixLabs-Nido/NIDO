@@ -11,6 +11,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { intentarConMarcador } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -20,7 +21,10 @@ import type { Database } from '@/types/database'
  *
  *  - El exceso de beca es dinero de la familia: con el recibo validado no iba a ningún sitio.
  *  - `confirmar_recibo` lo rechaza (HINT `desborde_pendiente`), y el mes no se cierra.
- *  - Por otro camino tampoco (trigger `recibos_validar_sin_desborde`), ni con service_role.
+ *  - Por otro camino tampoco (trigger `recibos_validar_sin_desborde`), ni con service_role. Desde
+ *    `20261223120000` por fuera responde antes `recibos_dinero_solo_por_funcion`
+ *    (`confirmar_por_funcion`); el caso que separa pone el marcador de `confirmar_recibo`, y el
+ *    trigger del desborde tiene que seguir respondiendo.
  *  - El resto del borrador se sigue editando, y resuelto el desborde se valida como siempre.
  *
  * UN MES POR TEST: validar el último borrador de un mes lo cierra.
@@ -153,9 +157,23 @@ describe('PR-3 — validar con el desborde de beca pendiente', () => {
         .from('recibos')
         .update({ estado: 'pendiente_procesar' })
         .eq('id', id)
-      expect(error?.hint).toBe('desborde_pendiente')
+      expect(error?.hint).toBe('confirmar_por_funcion')
     }
+    // El caso que separa: con el marcador de confirmar_recibo, el trigger del desborde sigue
+    // respondiendo. Y su control: el mismo intento en un borrador sin desborde pasa (se deshace).
+    const validar = "estado = 'pendiente_procesar'"
+    expect(intentarConMarcador(id, 'app.confirmar_recibo', validar)).toMatchObject({
+      pasa: false,
+      code: 'P0001',
+      hint: 'desborde_pendiente',
+    })
+    const limpio = await borrador(6)
+    expect(intentarConMarcador(limpio, 'app.confirmar_recibo', validar)).toEqual({
+      pasa: true,
+      filas: 1,
+    })
     expect(await estado(id)).toBe('borrador')
+    expect(await estado(limpio)).toBe('borrador')
   })
 
   it('el resto del borrador se sigue editando con el desborde pendiente', async () => {

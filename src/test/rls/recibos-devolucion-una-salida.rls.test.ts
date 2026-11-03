@@ -12,7 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { pasarAEnviadoComoMarcar } from './remesa-como-sus-funciones'
+import { intentarConMarcador, pasarAEnviadoComoMarcar } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -27,6 +27,10 @@ import type { Database } from '@/types/database'
  *  - Una segunda salida se rechaza, también si llegan las dos a la vez.
  *  - Por otro camino que no sea la función no se resuelve (trigger), tampoco con service_role: ni
  *    cobrar a mano un devuelto, ni crear un re-giro, ni poner la salida.
+ *  - Desde `20261223120000` la devolución se registra con `marcar_recibo_devuelto`, y por fuera de
+ *    las funciones responde antes `recibos_dinero_solo_por_funcion`. Donde las dos defensas se
+ *    solapan, el caso que separa pasa el trigger nuevo (el marcador de su función, o un re-giro que
+ *    nace en borrador) y la defensa de detrás tiene que seguir respondiendo con lo suyo.
  *  - Lo resuelve Dirección; el actor de audit_log es quien resuelve, sin la nota; el export del
  *    art. 15 lleva los gastos y la salida.
  */
@@ -71,13 +75,22 @@ describe('PR-2 — devoluciones con una sola salida', () => {
     return data.id
   }
 
+  /** La devolución como la registra la app: `marcar_recibo_devuelto`. */
   function devolver(id: string, gastos: number | null = 350, fecha = DEVOLUCION) {
-    return cDirectora
-      .from('recibos')
-      .update({ estado: 'devuelto', fecha_devolucion: fecha, devolucion_gastos_centimos: gastos })
-      .eq('id', id)
-      .select('id')
-      .maybeSingle()
+    return cDirectora.rpc('marcar_recibo_devuelto', {
+      p_recibo_id: id,
+      p_fecha: fecha,
+      p_gastos_centimos: gastos as number,
+    })
+  }
+
+  /** La misma devolución con el marcador de su función puesto (el caso que separa, al CHECK). */
+  function devolverConMarcador(id: string, gastos: string, fecha = DEVOLUCION) {
+    return intentarConMarcador(
+      id,
+      'app.marcar_recibo_devuelto',
+      `estado = 'devuelto', fecha_devolucion = '${fecha}', devolucion_gastos_centimos = ${gastos}`
+    )
   }
 
   async function devuelto(familia: string, gastos = 350, over: Partial<Recibo> = {}) {
@@ -191,9 +204,21 @@ describe('PR-2 — devoluciones con una sola salida', () => {
 
   it('registrar: la fecha del banco y los gastos, sin tocar el total ni el envío; sin gastos no', async () => {
     const id = await enviado(familiaSin)
-    expect((await devolver(id, null)).error?.code).toBe('23514')
-    expect((await devolver(id, 0, '2026-01-04')).error?.code).toBe('23514') // antes del envío
-    expect((await devolver(id, -1)).error?.code).toBe('23514')
+    // La función rechaza antes, cada caso con su HINT.
+    expect((await devolver(id, null)).error?.hint).toBe('datos_no_validos')
+    expect((await devolver(id, 0, '2026-01-04')).error?.hint).toBe('devolucion_antes_del_envio')
+    expect((await devolver(id, -1)).error?.hint).toBe('gastos_invalidos')
+    // Y detrás, el CHECK, que solo se alcanza con el marcador puesto. Primero su control: con el
+    // marcador, la devolución buena pasa (y se deshace).
+    expect(devolverConMarcador(id, '350')).toEqual({ pasa: true, filas: 1 })
+    for (const [gastos, fecha] of [
+      ['NULL', DEVOLUCION],
+      ['0', '2026-01-04'], // antes del envío
+      ['-1', DEVOLUCION],
+    ] as const) {
+      expect(devolverConMarcador(id, gastos, fecha)).toMatchObject({ pasa: false, code: '23514' })
+    }
+    expect((await fila(id))?.estado).toBe('enviado_banco')
     expect((await devolver(id, 350)).error).toBeNull()
     expect(await fila(id)).toMatchObject({
       estado: 'devuelto',
@@ -310,19 +335,24 @@ describe('PR-2 — devoluciones con una sola salida', () => {
         .from('recibos')
         .update({ estado: 'cobrado_manual', cobro_forma: 'efectivo', cobro_fecha: COBRO })
         .eq('id', id)
-      expect(cobro.error?.hint).toBe('devolucion_por_funcion')
-      // Crear un re-giro a mano.
-      const regiro = await cliente.from('recibos').insert({
+      expect(cobro.error?.hint).toBe('cobrado_por_funcion')
+      // Crear un re-giro a mano: en pendiente lo para antes el trigger nuevo; en borrador, que el
+      // nuevo deja nacer, el de la devolución sigue respondiendo (el caso que separa).
+      const regiro = {
         centro_id: centro.id,
         familia_id: familiaCon,
         anio: 2026,
         mes: 5,
-        metodo: 'sepa',
-        estado: 'pendiente_procesar',
+        metodo: 'sepa' as const,
         total_centimos: 10000,
         devuelto_de_recibo_id: id,
-      })
-      expect(regiro.error?.hint).toBe('devolucion_por_funcion')
+      }
+      const enPendiente = await cliente
+        .from('recibos')
+        .insert({ ...regiro, estado: 'pendiente_procesar' })
+      expect(enPendiente.error?.hint).toBe('recibo_nace_en_borrador')
+      const enBorrador = await cliente.from('recibos').insert({ ...regiro, estado: 'borrador' })
+      expect(enBorrador.error?.hint).toBe('devolucion_por_funcion')
       // Poner la salida.
       const salida = await cliente
         .from('recibos')
@@ -330,6 +360,15 @@ describe('PR-2 — devoluciones con una sola salida', () => {
         .eq('id', id)
       expect(salida.error?.hint).toBe('devolucion_por_funcion')
     }
+    // El caso que separa el cobro: con el marcador del cobro a mano, el trigger de la devolución
+    // sigue respondiendo.
+    expect(
+      intentarConMarcador(
+        id,
+        'app.marcar_cobrado_manual',
+        `estado = 'cobrado_manual', cobro_forma = 'efectivo', cobro_fecha = '${COBRO}'`
+      )
+    ).toMatchObject({ pasa: false, code: 'P0001', hint: 'devolucion_por_funcion' })
     // Ni con cheque.
     const cheque = await cDirectora.rpc('cobrar_recibo_con_cheque', {
       p_recibo_id: id,

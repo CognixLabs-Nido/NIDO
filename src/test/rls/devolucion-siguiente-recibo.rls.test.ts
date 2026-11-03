@@ -472,6 +472,8 @@ describe('PR-14 — la devolución llevada al siguiente recibo', () => {
     const arrastre = (await lineas(julio)).find((l) => l.arrastre_de_recibo_id === original)!
     const quitada = await cDirectora.from('lineas_recibo').delete().eq('id', arrastre.id)
     expect(quitada.error?.code).toBe('P0001')
+    // Lo para el congelado del recibo validado (sin HINT: se afirma su mensaje).
+    expect(quitada.error?.message).toBe('recibo confirmado: las líneas de 2026-07 no son editables')
     expect(await estado(original)).toMatchObject({ devolucion_salida: 'siguiente_recibo' })
   })
 
