@@ -171,7 +171,15 @@ describe('ReabrirRemesaDialog', () => {
   })
 
   it('confirmar manda los números que se enseñaron, y avisa de cuántos vuelven', async () => {
-    leer.mockResolvedValue({ success: true, data: aviso() })
+    // Un borrador con el fichero descargado: 3 cobrables y ninguno enviado. Con números distintos,
+    // mandar los enviados en vez de los que se enseñaron se pone rojo.
+    leer.mockResolvedValue({
+      success: true,
+      data: aviso({
+        resumen: resumen({ estado: 'borrador', fecha_envio_banco: null, n_enviados: 0 }),
+        caso: 'fichero_descargado',
+      }),
+    })
     reabrir.mockResolvedValue({ success: true, data: { nAPendiente: 3 } })
     abrir()
     fireEvent.click(await confirmarListo())
