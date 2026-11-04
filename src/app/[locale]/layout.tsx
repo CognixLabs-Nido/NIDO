@@ -1,5 +1,5 @@
 import { hasLocale, NextIntlClientProvider } from 'next-intl'
-import { Plus_Jakarta_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
 import { notFound } from 'next/navigation'
 
 import { Toaster } from '@/components/ui/sonner'
@@ -10,11 +10,39 @@ import type { Metadata } from 'next'
 
 import '../globals.css'
 
-const jakarta = Plus_Jakarta_Sans({
+// Plus Jakarta Sans servida desde el repo (OFL 1.1, `src/app/fonts/plus-jakarta-sans/`): con
+// `next/font/google` el build la descargaba de Google y caía de forma intermitente
+// (`docs/dev-setup.md`). Los cinco pesos que usa la app, ficheros estáticos sin tocar.
+const jakarta = localFont({
   variable: '--font-jakarta',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
+  src: [
+    {
+      path: '../fonts/plus-jakarta-sans/PlusJakartaSans-Regular.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/plus-jakarta-sans/PlusJakartaSans-Medium.woff2',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/plus-jakarta-sans/PlusJakartaSans-SemiBold.woff2',
+      weight: '600',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/plus-jakarta-sans/PlusJakartaSans-Bold.woff2',
+      weight: '700',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/plus-jakarta-sans/PlusJakartaSans-ExtraBold.woff2',
+      weight: '800',
+      style: 'normal',
+    },
+  ],
 })
 
 export const metadata: Metadata = {
