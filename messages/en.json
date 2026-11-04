@@ -1161,6 +1161,8 @@
       "aprobar": "Approve",
       "rechazar": "Reject",
       "aprobado": "Change approved and applied.",
+      "aprobado_tutor2_invitado": "Change approved and applied. We've invited the second guardian at their new email.",
+      "aprobado_tutor2_no_salio": "Change approved and applied, but the invitation to the second guardian didn't go out. Resend it from Enrolments in progress.",
       "rechazado": "Change rejected. The data stays as it was.",
       "vacio": "No pending changes",
       "vacio_desc": "When a family edits sensitive data on an already-validated registration, it will appear here for your review.",

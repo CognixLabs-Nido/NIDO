@@ -187,7 +187,8 @@ describe('El segundo tutor: reenviar y cancelar su invitación', () => {
   it('con el email corregido por la cola, reenviar se lleva la invitación y la cuenta del viejo', async () => {
     const viejas = await cuentasAuth(emailViejo)
     expect(viejas).toHaveLength(1)
-    // Lo que hace la cola al aprobar el cambio (aplicar.ts): escribe la ficha y no invita a nadie.
+    // Lo que escribe en la ficha `aplicarCambioPendiente` al aprobar. La invitación que la cola manda
+    // después (`aprobarCambio`) va aparte, en cola-invita-tutor2.rls.test.ts: aquí se mide el botón.
     expect(
       (
         await serviceClient
