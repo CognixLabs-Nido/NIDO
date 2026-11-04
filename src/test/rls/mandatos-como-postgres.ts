@@ -67,18 +67,78 @@ function comoFuncion(cuerpo: string, arg: string): string {
   )
 }
 
-/** Un mandato con las columnas que se le pasan; las que no, con su DEFAULT. Como el INSERT de supabase-js. */
+/**
+ * Un mandato con las columnas que se le pasan; las que no, con su DEFAULT. Como el INSERT de supabase-js.
+ *
+ * Sin `version_canonico`, un v2 completo (desde `20261230120000` no se crean mandatos v1): hash,
+ * documento y dirección del titular de prueba y el CID y el nombre DEL CENTRO de la fila, leídos de
+ * `centros` (un centro sin CID no da mandato: el CHECK lo rechaza). Lo que se le pase manda.
+ */
 export function insertarMandato(fila: object): {
   data: { id: string } | null
   error: ErrorMandato | null
 } {
-  const cols = columnas(fila)
+  const v2 = !('version_canonico' in fila)
+  const completa = v2
+    ? {
+        version_canonico: 2,
+        texto_hash: 'a'.repeat(64),
+        titular_documento: 'X1234567L',
+        titular_direccion: 'Calle Prueba 1, Valencia',
+        ...fila,
+      }
+    : fila
+  const cols = columnas(completa) + (v2 ? ', acreedor_cid, acreedor_nombre' : '')
   const { valor, error } = respuesta(
     comoFuncion(
-      `INSERT INTO public.mandatos_sepa (${cols})
+      `${
+        v2
+          ? `j := j || (SELECT jsonb_build_object('acreedor_cid', c.identificador_acreedor, 'acreedor_nombre', c.nombre)
+                FROM public.centros c WHERE c.id = (j->>'centro_id')::uuid);`
+          : ''
+      }
+       INSERT INTO public.mandatos_sepa (${cols})
          SELECT ${cols} FROM jsonb_populate_record(NULL::public.mandatos_sepa, j) RETURNING id INTO r;
        RETURN 'ok|' || r;`,
-      json(fila)
+      json(completa)
+    )
+  )
+  return { data: valor === null ? null : { id: valor }, error }
+}
+
+/**
+ * Un mandato v1 de los que ya existían (FICCIÓN de los tests, 2026-11-04: los 3 que había en
+ * producción cuando se cerró el v1, `20261230120000`). El trigger `mandatos_sepa_v1_cerrado` no deja
+ * crear ninguno, así que se apaga solo para este INSERT, en su transacción, y se vuelve a encender.
+ * Sirve para probar lo que se puede hacer con uno que ya existe: revocarlo, borrarlo o volver a
+ * firmarlo como v2. Con `iban`, lo cifra como `registrar_mandato_sepa` (el reintento del alta lo
+ * descifra para comparar). La app no tiene este camino.
+ */
+export function insertarMandatoV1Existente(
+  fila: object,
+  opciones: { iban?: string } = {}
+): {
+  data: { id: string } | null
+  error: ErrorMandato | null
+} {
+  const { iban } = opciones
+  if (iban !== undefined && !/^[A-Z0-9]{15,34}$/.test(iban)) {
+    throw new Error(`mandatos-como-postgres: IBAN no válido: ${iban}`)
+  }
+  const completa = { ...fila, version_canonico: 1, ...(iban ? { iban_cifrado: '\\x00' } : {}) }
+  const cols = columnas(completa)
+  const cifra = iban
+    ? `j := j || jsonb_build_object('iban_cifrado', extensions.pgp_sym_encrypt('${iban}', public._get_sepa_key())::text);`
+    : ''
+  const { valor, error } = respuesta(
+    comoFuncion(
+      `${cifra}
+       ALTER TABLE public.mandatos_sepa DISABLE TRIGGER mandatos_sepa_v1_cerrado;
+       INSERT INTO public.mandatos_sepa (${cols})
+         SELECT ${cols} FROM jsonb_populate_record(NULL::public.mandatos_sepa, j) RETURNING id INTO r;
+       ALTER TABLE public.mandatos_sepa ENABLE TRIGGER mandatos_sepa_v1_cerrado;
+       RETURN 'ok|' || r;`,
+      json(completa)
     )
   )
   return { data: valor === null ? null : { id: valor }, error }

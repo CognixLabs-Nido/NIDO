@@ -10,6 +10,8 @@ import {
   deleteTestUser,
   serviceClient,
   type TestUser,
+  datosMandatoV2,
+  type TestCentro,
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -28,6 +30,9 @@ import { borrarMandatos } from './mandatos-como-postgres'
 const IBAN_1_CON_ESPACIOS = 'ES76 2077 0024 0031 0257 5766' // últimos 4 = 5766
 const IBAN_2 = 'ES9121000418450200051332' // últimos 4 = 1332
 
+// Los datos del v2 del centro del fichero; sin ellos, la llamada da v1_cerrado (20261230120000).
+let v2 = {} as ReturnType<typeof datosMandatoV2>
+
 function argsMandato(familiaId: string, ninoId: string | null, iban: string, id: string) {
   return {
     p_familia_id: familiaId,
@@ -39,6 +44,7 @@ function argsMandato(familiaId: string, ninoId: string | null, iban: string, id:
     p_firma_imagen: '',
     p_nombre_tecleado: 'Ana Pérez',
     p_texto_hash: 'a'.repeat(64),
+    ...v2,
     p_ip_address: null,
     p_user_agent: 'test',
     p_fecha_firma: '2026-02-01T10:00:00Z',
@@ -46,7 +52,7 @@ function argsMandato(familiaId: string, ninoId: string | null, iban: string, id:
 }
 
 describe('F-2c-2 — iban_ultimos4 (enmascarado del mandato de familia)', () => {
-  let centroA: { id: string }
+  let centroA: TestCentro
   let familiaA: string
   let tutorA: TestUser
   let familiaOtra: string
@@ -56,6 +62,7 @@ describe('F-2c-2 — iban_ultimos4 (enmascarado del mandato de familia)', () => 
 
   beforeAll(async () => {
     centroA = await createTestCentro('Centro A F2C2')
+    v2 = datosMandatoV2(centroA)
 
     familiaA = await createTestFamilia(centroA.id)
     tutorA = await createTestUser({ nombre: 'Tutor A F2C2' })

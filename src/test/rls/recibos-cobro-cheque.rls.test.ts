@@ -11,6 +11,8 @@ import {
   deleteTestUser,
   serviceClient,
   type TestUser,
+  datosMandatoV2,
+  type TestCentro,
 } from './setup'
 import { intentarConMarcador, insertarRecibos } from './remesa-como-sus-funciones'
 
@@ -41,7 +43,7 @@ type Recibo = Database['public']['Tables']['recibos']['Insert']
 const FECHA = '2026-01-20'
 
 describe('PR-1b — cobro con cheque guardería / ticket restaurant', () => {
-  let centro: { id: string }
+  let centro: TestCentro
   let familiaSin: string
   let familiaCon: string
   let directora: TestUser
@@ -132,6 +134,7 @@ describe('PR-1b — cobro con cheque guardería / ticket restaurant', () => {
       p_firma_imagen: '',
       p_nombre_tecleado: 'Tutora Cheque Con Mandato',
       p_texto_hash: 'a'.repeat(64),
+      ...datosMandatoV2(centro),
       p_ip_address: null,
       p_user_agent: 'test',
       p_fecha_firma: '2026-01-01T10:00:00Z',

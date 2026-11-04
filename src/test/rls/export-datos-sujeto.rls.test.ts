@@ -22,6 +22,7 @@ import {
   type TestCentro,
   type TestNino,
   type TestUser,
+  datosMandatoV2,
 } from './setup'
 
 import { SECCIONES_EXPORT } from '@/features/export/lib/columnas-export'
@@ -188,6 +189,7 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
       p_firma_imagen: '',
       p_nombre_tecleado: 'Titular Art15',
       p_texto_hash: 'a'.repeat(64),
+      ...datosMandatoV2(centro),
       p_ip_address: null,
       p_user_agent: 'test',
       p_fecha_firma: '2026-02-01T10:00:00Z',

@@ -14,6 +14,8 @@ import {
   deleteTestUser,
   serviceClient,
   type TestUser,
+  datosMandatoV2,
+  type TestCentro,
 } from './setup'
 import { insertarRecibos } from './remesa-como-sus-funciones'
 import { borrarMandatos } from './mandatos-como-postgres'
@@ -40,7 +42,7 @@ interface ReciboArgs {
 }
 
 describe('F-4-5 — get_mandatos_remesa a grano familia', () => {
-  let centro: { id: string }
+  let centro: TestCentro
   let admin: TestUser
   let cAdmin: SupabaseClient<Database>
   let famConMandato: string
@@ -88,7 +90,7 @@ describe('F-4-5 — get_mandatos_remesa a grano familia', () => {
     const tutor = await createTestUser({ nombre: 'Tutor F45' })
     await crearFamiliaTutor(famConMandato, tutor.id, 'titular')
     const cTutor = await clientFor(tutor)
-    await cTutor.rpc('registrar_mandato_sepa', {
+    const { error: mandatoErr } = await cTutor.rpc('registrar_mandato_sepa', {
       p_familia_id: famConMandato,
       p_nino_id: null as unknown as string,
       p_iban: IBAN,
@@ -98,10 +100,12 @@ describe('F-4-5 — get_mandatos_remesa a grano familia', () => {
       p_firma_imagen: '',
       p_nombre_tecleado: 'Ana Pérez',
       p_texto_hash: 'a'.repeat(64),
+      ...datosMandatoV2(centro),
       p_ip_address: null,
       p_user_agent: 'test',
       p_fecha_firma: '2026-08-01T10:00:00Z',
     })
+    if (mandatoErr) throw new Error(`mandato: ${mandatoErr.message}`)
 
     // Familia SIN mandato.
     famSinMandato = await createTestFamilia(centro.id)

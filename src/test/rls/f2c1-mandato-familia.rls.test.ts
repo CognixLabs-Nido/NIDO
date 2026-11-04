@@ -18,6 +18,8 @@ import {
   serviceClient,
   type TestNino,
   type TestUser,
+  datosMandatoV2,
+  type TestCentro,
 } from './setup'
 import { insertarRecibos } from './remesa-como-sus-funciones'
 
@@ -43,6 +45,9 @@ import { borrarMandatos, insertarMandato } from './mandatos-como-postgres'
 const IBAN_1 = 'ES7620770024003102575766'
 const IBAN_2 = 'ES9121000418450200051332'
 
+// Los datos del v2 del centro del fichero; sin ellos, la llamada da v1_cerrado (20261230120000).
+let v2 = {} as ReturnType<typeof datosMandatoV2>
+
 function argsMandato(familiaId: string, ninoId: string | null, iban: string, id: string) {
   return {
     p_familia_id: familiaId,
@@ -54,6 +59,7 @@ function argsMandato(familiaId: string, ninoId: string | null, iban: string, id:
     p_firma_imagen: '',
     p_nombre_tecleado: 'Ana Pérez',
     p_texto_hash: 'a'.repeat(64),
+    ...v2,
     p_ip_address: null,
     p_user_agent: 'test',
     p_fecha_firma: '2026-02-01T10:00:00Z',
@@ -61,7 +67,7 @@ function argsMandato(familiaId: string, ninoId: string | null, iban: string, id:
 }
 
 describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
-  let centroA: { id: string }
+  let centroA: TestCentro
   let familiaA: string
   let ninoA1: { id: string }
   let ninoA2: { id: string }
@@ -95,6 +101,7 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
 
   beforeAll(async () => {
     centroA = await createTestCentro('Centro A F2C1')
+    v2 = datosMandatoV2(centroA)
     const cursoA = await createTestCurso(centroA.id)
     const aulaA = await createTestAula(centroA.id, cursoA.id)
 

@@ -17,6 +17,8 @@ import {
   deleteTestUser,
   serviceClient,
   type TestUser,
+  datosMandatoV2,
+  type TestCentro,
 } from './setup'
 import { borrarMandatos } from './mandatos-como-postgres'
 
@@ -56,7 +58,7 @@ async function rpcBool(c: Cliente, fn: string, args: Record<string, unknown>): P
 }
 
 describe('Superusuario', () => {
-  let centroA: { id: string }
+  let centroA: TestCentro
   let centroB: { id: string }
   let ninoA: { id: string }
   let superU: TestUser
@@ -276,7 +278,8 @@ describe('Superusuario', () => {
         p_documento_path: null,
         p_firma_imagen: '',
         p_nombre_tecleado: 'Titular Pruebas',
-        p_texto_hash: null,
+        p_texto_hash: 'a'.repeat(64),
+        ...datosMandatoV2(centroA),
         p_ip_address: null,
         p_user_agent: null,
         p_fecha_firma: '2031-02-01T10:00:00Z',

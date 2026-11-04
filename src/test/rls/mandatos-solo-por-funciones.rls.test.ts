@@ -11,6 +11,8 @@ import {
   deleteTestUser,
   serviceClient,
   type TestUser,
+  datosMandatoV2,
+  type TestCentro,
 } from './setup'
 import { borrarMandatos } from './mandatos-como-postgres'
 
@@ -29,6 +31,9 @@ import type { Database } from '@/types/database'
 const IBAN_1 = 'ES7620770024003102575766'
 const IBAN_2 = 'ES9121000418450200051332'
 
+// Los datos del v2 del centro del fichero; sin ellos, la llamada da v1_cerrado (20261230120000).
+let v2 = {} as ReturnType<typeof datosMandatoV2>
+
 function argsMandato(familiaId: string, iban: string, id: string, metodo = 'digital') {
   return {
     p_familia_id: familiaId,
@@ -40,6 +45,7 @@ function argsMandato(familiaId: string, iban: string, id: string, metodo = 'digi
     p_firma_imagen: '',
     p_nombre_tecleado: 'Titular Pruebas',
     p_texto_hash: 'a'.repeat(64),
+    ...v2,
     p_ip_address: null,
     p_user_agent: 'test',
     p_fecha_firma: '2026-02-01T10:00:00Z',
@@ -77,7 +83,7 @@ function cambios(otraFamilia: string, admin: string): Record<string, unknown> {
 }
 
 describe('mandatos_sepa — solo por sus funciones', () => {
-  let centro: { id: string }
+  let centro: TestCentro
   let familia: string
   let familiaB: string
   let admin: TestUser
@@ -99,6 +105,7 @@ describe('mandatos_sepa — solo por sus funciones', () => {
 
   beforeAll(async () => {
     centro = await createTestCentro('Centro Mandatos Solo Funciones')
+    v2 = datosMandatoV2(centro)
     familia = await createTestFamilia(centro.id)
     familiaB = await createTestFamilia(centro.id)
     admin = await createTestUser({ nombre: 'Admin Mandatos Solo Funciones' })
