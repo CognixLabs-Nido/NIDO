@@ -236,7 +236,8 @@ Notas:
     directoras: «son altas nuevas», no el olvido), que confirma; y puede hacerlo cuando quiera.
     Cuentan desde que caduca o se cancela la invitación (o desde el alta, si nunca salió), o desde
     que la familia la aceptó. Solo la matrícula en `pendiente`: en `lista` le toca a Dirección.
-  - **Un solo botón**, en «Avance del alta» de la ficha del niño: con la invitación sin aceptar y
+  - **Un solo botón**, en «Avance del alta» de la ficha del niño y, desde el 2026-11-04, en cada
+    fila de «Altas en proceso» (`docs/specs/altas-serie.md`): con la invitación sin aceptar y
     abierta, la cancela (el alta se queda para invitar otra vez; el email mal escrito); si no, borra
     el alta: «si la familia no quiere entrar se borra».
   - **Familia nueva**: desaparece todo, sin copia en `audit_log`: la familia, sus tutores con su

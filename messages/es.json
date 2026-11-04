@@ -253,6 +253,7 @@
       "informes": "Informes",
       "personal": "Personal",
       "admisiones": "Admisiones",
+      "altas": "Altas en proceso",
       "pendientes": "Validaciones",
       "familias": "Familias",
       "fotosRevocadas": "Fotos revocadas",
@@ -881,12 +882,8 @@
           "lista": "Pendiente de validación"
         },
         "items": {
-          "identidad": "Datos del niño",
-          "pedagogicos": "Datos pedagógicos",
-          "medico": "Datos médicos",
-          "imagen": "Autorización de imagen"
+          "pedagogicos": "Datos pedagógicos"
         },
-        "opcional": "opcional",
         "sin_datos": "sin datos",
         "activar_ayuda": "El tutor ha finalizado el alta. Revisa el avance y activa la matrícula.",
         "pendiente_ayuda": "El tutor aún está completando el alta. Podrás activar cuando la finalice."
@@ -1475,6 +1472,58 @@
       "anterior": "Anteriores",
       "siguiente": "Siguientes",
       "pagina_de": "Página {pagina} de {paginas}"
+    },
+    "altas": {
+      "titulo": "Altas en proceso",
+      "subtitulo": "Todas las altas del centro hasta que quedan validadas: las invitaciones sin aceptar, las que la familia ha empezado, las terminadas que falta validar y los segundos tutores que no han entrado.",
+      "no_se_pudo_leer": "No hemos podido leer las altas en proceso. Vuelve a cargar la página; si sigue igual, avisa a soporte.",
+      "vacia": "No hay ninguna alta en proceso.",
+      "vacia_filtro": "Ninguna alta en proceso cumple este filtro.",
+      "dias": "{n, plural, one {# día} other {# días}}",
+      "validar": "Validar el alta",
+      "filtros": {
+        "titulo": "Filtrar las altas",
+        "todas": "Todas ({n})",
+        "invitacion_abierta": "Invitación sin aceptar ({n})",
+        "sin_invitacion": "Invitación caducada o cancelada ({n})",
+        "iniciada": "La familia ha empezado ({n})",
+        "por_validar": "Terminadas, falta validar ({n})",
+        "tutor2": "Segundo tutor sin entrar ({n})",
+        "mas30": "Más de 30 días ({n})",
+        "invitacion_abierta_corto": "Invitación sin aceptar",
+        "sin_invitacion_corto": "Sin invitación",
+        "iniciada_corto": "Empezada",
+        "por_validar_corto": "Falta validar",
+        "tutor2_corto": "Segundo tutor"
+      },
+      "estado": {
+        "por_validar": "La familia ha terminado el alta. Falta que Dirección la valide."
+      },
+      "tutor2": {
+        "abierta": "Invitación al segundo tutor enviada a {email} el {fecha}, sin aceptar.",
+        "caducada": "La invitación al segundo tutor ({email}) caducó el {fecha} sin que la aceptara.",
+        "rechazada": "El segundo tutor ({email}) rechazó la invitación el {fecha}.",
+        "sin_botones": "Desde aquí no se puede reenviar ni cancelar esta invitación."
+      },
+      "avance": {
+        "titulo": "Lo que lleva hecho",
+        "no_se_pudo_leer": "No hemos podido leer lo que lleva hecho esta alta.",
+        "opcional": "opcional",
+        "items": {
+          "normas": "Normas",
+          "nino": "Datos del niño (libro de familia)",
+          "imagen": "Imagen",
+          "tutor1": "Tutor 1 (DNI)",
+          "tutor2": "Tutor 2",
+          "medico": "Médico",
+          "sepa": "Mandato SEPA"
+        },
+        "estado": {
+          "hecho": "hecho",
+          "falta": "falta",
+          "sin_hacer_opcional": "sin hacer, es opcional"
+        }
+      }
     }
   },
   "teacher": {

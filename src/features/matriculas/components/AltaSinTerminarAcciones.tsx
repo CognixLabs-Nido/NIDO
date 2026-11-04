@@ -24,6 +24,11 @@ interface Props {
   email: string | null
   familiaNueva: boolean
   locale: string
+  /**
+   * Tras borrar: desde la ficha el niño ya no existe y se vuelve a Niños (`ficha`); desde la
+   * lista de altas en proceso, se queda en la lista sin esa fila (`quedarse`).
+   */
+  alBorrar?: 'ficha' | 'quedarse'
 }
 
 /**
@@ -31,7 +36,14 @@ interface Props {
  * abierta la cancela; si no, borra el alta. Y, con el alta sin empezar, «Enviar una invitación
  * nueva» con el email corregido.
  */
-export function AltaSinTerminarAcciones({ ninoId, estado, email, familiaNueva, locale }: Props) {
+export function AltaSinTerminarAcciones({
+  ninoId,
+  estado,
+  email,
+  familiaNueva,
+  locale,
+  alBorrar = 'ficha',
+}: Props) {
   const t = useTranslations('admin.ninos.sin_terminar')
   const tErrors = useTranslations()
   const router = useRouter()
@@ -53,7 +65,8 @@ export function AltaSinTerminarAcciones({ ninoId, estado, email, familiaNueva, l
       }
       if (r.data.resultado === 'borrada') {
         toast.success(t('borrada_ok'))
-        router.push(`/${locale}/admin/ninos`)
+        if (alBorrar === 'quedarse') router.refresh()
+        else router.push(`/${locale}/admin/ninos`)
       } else {
         toast.success(t('cancelada_ok'))
         router.refresh()

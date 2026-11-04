@@ -1,20 +1,25 @@
-import { CheckCircle2Icon, CircleIcon, MinusCircleIcon } from 'lucide-react'
+import { CheckCircle2Icon, MinusCircleIcon } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { localeIntl } from '@/shared/lib/locale-intl'
 
+import type { LineaAvance } from '../lib/avance-alta'
 import { ActivarMatriculaButton } from './ActivarMatriculaButton'
 import { AltaSinTerminarAcciones } from './AltaSinTerminarAcciones'
+import { ChecklistAvance } from './ChecklistAvance'
 
 interface Props {
   estado: 'pendiente' | 'lista'
   matriculaId: string
-  identidad: boolean
+  /**
+   * Lo que lleva hecho el alta (`getAvanceAltas`), lo mismo que enseña la lista de altas en
+   * proceso. NULL si no se pudo leer.
+   */
+  avance: LineaAvance[] | null
+  /** Datos pedagógicos: opcionales y no son un consentimiento. Se enseñan aparte, neutros. */
   pedagogicos: boolean
-  medico: boolean
-  imagen: boolean
   /** El alta sin terminar (`altas_sin_terminar`, 20261209120000): solo con la matrícula pendiente. */
   sinTerminar?: {
     ninoId: string
@@ -37,10 +42,8 @@ interface Props {
 export async function AvanceAltaCard({
   estado,
   matriculaId,
-  identidad,
+  avance,
   pedagogicos,
-  medico,
-  imagen,
   sinTerminar,
   locale,
 }: Props) {
@@ -54,15 +57,6 @@ export async function AvanceAltaCard({
       timeZone: 'Europe/Madrid',
     }).format(new Date(iso))
 
-  // `informativo`: dato opcional que NO es un consentimiento (datos pedagógicos). Ausente NO es
-  // "no autorizado" ni bloquea: se muestra neutro ("sin datos"), distinto del círculo de pendiente.
-  const items: { label: string; done: boolean; opcional?: boolean; informativo?: boolean }[] = [
-    { label: t('items.identidad'), done: identidad },
-    { label: t('items.pedagogicos'), done: pedagogicos, informativo: true },
-    { label: t('items.medico'), done: medico, opcional: true },
-    { label: t('items.imagen'), done: imagen, opcional: true },
-  ]
-
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
@@ -74,28 +68,18 @@ export async function AvanceAltaCard({
         )}
       </CardHeader>
       <CardContent className="space-y-3">
-        <ul className="space-y-1.5">
-          {items.map((it) => {
-            // Icono: hecho → check verde; informativo sin dato → guion neutro (n/a, no pendiente);
-            // resto sin hacer → círculo de pendiente.
-            const Icon = it.done ? CheckCircle2Icon : it.informativo ? MinusCircleIcon : CircleIcon
-            return (
-              <li key={it.label} className="flex items-center gap-2 text-sm">
-                <Icon
-                  className={`${it.done ? 'text-success-700' : 'text-muted-foreground'} size-4 shrink-0`}
-                  strokeWidth={it.done ? 2 : 1.75}
-                />
-                <span className={it.done ? '' : 'text-muted-foreground'}>
-                  {it.label}
-                  {it.informativo && !it.done && (
-                    <span className="text-muted-foreground"> · {t('sin_datos')}</span>
-                  )}
-                  {it.opcional && <span className="text-muted-foreground"> · {t('opcional')}</span>}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
+        <ChecklistAvance avance={avance} variante="lista" />
+        <p className="flex items-center gap-2 text-sm">
+          {pedagogicos ? (
+            <CheckCircle2Icon className="text-success-700 size-4 shrink-0" strokeWidth={2} />
+          ) : (
+            <MinusCircleIcon className="text-muted-foreground size-4 shrink-0" strokeWidth={1.75} />
+          )}
+          <span className={pedagogicos ? '' : 'text-muted-foreground'}>
+            {t('items.pedagogicos')}
+            {!pedagogicos && <span className="text-muted-foreground"> · {t('sin_datos')}</span>}
+          </span>
+        </p>
         {estado === 'lista' ? (
           <div className="space-y-1 border-t pt-3">
             <ActivarMatriculaButton matriculaId={matriculaId} />

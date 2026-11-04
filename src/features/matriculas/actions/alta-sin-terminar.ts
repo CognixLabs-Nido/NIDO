@@ -93,6 +93,7 @@ export async function anularAlta(ninoId: string): Promise<ActionResult<Resultado
     if (r.resultado === 'ya_no') return fail('matricula.errors.alta_ya_no')
     revalidatePath('/[locale]/admin/ninos', 'page')
     revalidatePath('/[locale]/admin', 'page')
+    revalidatePath('/[locale]/admin/altas', 'page')
     return ok(r)
   } catch (e) {
     logger.error('alta sin terminar: anular', e instanceof Error ? e.message : String(e))
@@ -140,6 +141,7 @@ export async function reinvitarAlta(input: {
     idioma: parsed.data.idioma,
   })
   revalidatePath('/[locale]/admin/ninos', 'page')
+  revalidatePath('/[locale]/admin/altas', 'page')
   // El email ya está corregido: si el correo no sale, se dice, y se puede volver a enviar.
   if (!inv.success) return fail('matricula.errors.alta_correo_no_salio')
   return ok({ email: parsed.data.email })
