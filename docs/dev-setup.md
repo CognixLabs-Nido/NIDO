@@ -328,4 +328,18 @@ El centro que existe hoy es CEI Ejemplo (antes ANAIA): `33c79b50-13b5-4962-b849-
   Son 2 de 104 despliegues de Vercel, contando cada estado de cada despliegue (un fallo que se
   relanza deja su despliegue en verde, y mirar solo el último estado no lo ve). En Actions, 0 de 50
   ejecuciones de `ci-pr.yml`: sus 6 fallos son otros (ninguno lleva el mensaje de la fuente). La
-  frecuencia en Vercel no sube: 2 de 59 antes, 2 de 104 ahora. **Si se vuelve crónico**, la salida decidida es servir la fuente desde el repo con `next/font/local`, **no** la fuente variable: la variable también se descarga de Google en cada build y no quitaría la causa. Hasta entonces no se toca la fuente ni el build.
+  frecuencia en Vercel no sube: 2 de 59 antes, 2 de 104 ahora.
+
+  Después (recuento del 2026-11-04 por la noche, de 10:00 a 22:30 UTC, cada estado de cada
+  despliegue en la API de GitHub y el log de cada fallo con `vercel inspect --logs`):
+  - 2026-11-04 17:58 UTC, Vercel, `f1165be` (rama de mutación del #491);
+  - 2026-11-04 19:20 UTC, Vercel, `fc97320` y `0aa3330` (dos ramas de mutación del #492, empujadas
+    con segundos de diferencia);
+  - 2026-11-04 22:28 UTC, **local** (`npm run build` en el portátil, Turbopack), `1f6d85f` (#493):
+    el mismo commit construyó al repetirlo 6 minutos después sin cambiar nada, y
+    `fonts.googleapis.com` contestaba 200 entre los dos. **El primero fuera de Vercel y de Actions.**
+
+  Son 3 de 27 despliegues de Vercel en esas 12 horas, los tres con el mensaje de la fuente y en ramas
+  de mutación (ninguno en producción). En total, desde el 2026-10-30: **7 en Vercel**, 1 en Actions
+  y 1 local. La causa sigue sin medir; que caiga también en local dice que no es la máquina de
+  Vercel. **Si se vuelve crónico**, la salida decidida es servir la fuente desde el repo con `next/font/local`, **no** la fuente variable: la variable también se descarga de Google en cada build y no quitaría la causa. Hasta entonces no se toca la fuente ni el build.
