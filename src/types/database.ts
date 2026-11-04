@@ -2936,6 +2936,8 @@ export type Database = {
       }
       mandatos_sepa: {
         Row: {
+          acreedor_cid: string | null
+          acreedor_nombre: string | null
           centro_id: string
           created_at: string
           deleted_at: string | null
@@ -2954,11 +2956,16 @@ export type Database = {
           nombre_tecleado: string | null
           texto_hash: string | null
           titular: string
+          titular_direccion: string | null
+          titular_documento: string | null
           updated_at: string
           user_agent: string | null
           usuario_id: string
+          version_canonico: number
         }
         Insert: {
+          acreedor_cid?: string | null
+          acreedor_nombre?: string | null
           centro_id: string
           created_at?: string
           deleted_at?: string | null
@@ -2977,11 +2984,16 @@ export type Database = {
           nombre_tecleado?: string | null
           texto_hash?: string | null
           titular: string
+          titular_direccion?: string | null
+          titular_documento?: string | null
           updated_at?: string
           user_agent?: string | null
           usuario_id: string
+          version_canonico?: number
         }
         Update: {
+          acreedor_cid?: string | null
+          acreedor_nombre?: string | null
           centro_id?: string
           created_at?: string
           deleted_at?: string | null
@@ -3000,9 +3012,12 @@ export type Database = {
           nombre_tecleado?: string | null
           texto_hash?: string | null
           titular?: string
+          titular_direccion?: string | null
+          titular_documento?: string | null
           updated_at?: string
           user_agent?: string | null
           usuario_id?: string
+          version_canonico?: number
         }
         Relationships: [
           {
@@ -5432,6 +5447,8 @@ export type Database = {
       }
       registrar_mandato_sepa: {
         Args: {
+          p_acreedor_cid?: string
+          p_acreedor_nombre?: string
           p_documento_path: string
           p_familia_id: string
           p_fecha_firma: string
@@ -5444,6 +5461,8 @@ export type Database = {
           p_nombre_tecleado: string
           p_texto_hash: string
           p_titular: string
+          p_titular_direccion?: string
+          p_titular_documento?: string
           p_user_agent: string
         }
         Returns: string
@@ -5529,6 +5548,8 @@ export type Database = {
       }
       sustituir_mandato_sepa: {
         Args: {
+          p_acreedor_cid?: string
+          p_acreedor_nombre?: string
           p_documento_path: string
           p_familia_id: string
           p_fecha_firma: string
@@ -5541,6 +5562,8 @@ export type Database = {
           p_nombre_tecleado: string
           p_texto_hash: string
           p_titular: string
+          p_titular_direccion?: string
+          p_titular_documento?: string
           p_user_agent: string
         }
         Returns: string

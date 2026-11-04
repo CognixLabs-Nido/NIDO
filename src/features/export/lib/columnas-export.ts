@@ -306,6 +306,12 @@ export const SECCIONES_EXPORT = {
     metodo_firma: { sale: 'metodo_firma' },
     familia_id: { sale: 'familia_id' },
     iban_ultimos4: { sale: 'iban_ultimos4' },
+    // 0c-1 (20261229120000): el texto canónico v2 y sus datos, como `titular`.
+    version_canonico: { sale: 'version_canonico' },
+    titular_documento: { sale: 'titular_documento' },
+    titular_direccion: { sale: 'titular_direccion' },
+    acreedor_cid: { sale: 'acreedor_cid' },
+    acreedor_nombre: { sale: 'acreedor_nombre' },
   }),
   'usuario.cobros_familia.recibos.lineas': seccion('lineas_recibo', {
     id: NS_ID,

@@ -195,7 +195,18 @@ export interface TestCentro {
  * (`email_contacto LIKE '%@nido.test'`, más un guard por id de CEI Ejemplo). Si un centro real
  * usara `@nido.test`, el wipe podría alcanzarlo → NO romper esta convención.
  */
-export async function createTestCentro(nombre?: string): Promise<TestCentro> {
+/**
+ * CID de prueba con formato válido (ES + dígitos de control mod 97-10 + ZZZ + el CIF B00000000, todo
+ * ceros), el mismo que lleva CEI Ejemplo (`supabase/operaciones/20261229100000`). No vale para
+ * cobrar nada. Desde `20261229120000` sin CID del centro no se firma ningún mandato, así que el
+ * centro de test lo lleva salvo que se pida `sinCid`.
+ */
+export const CID_PRUEBA = 'ES81ZZZB00000000'
+
+export async function createTestCentro(
+  nombre?: string,
+  opciones: { sinCid?: boolean } = {}
+): Promise<TestCentro> {
   const id = randomUUID()
   // Dos centros vivos no se llaman igual (`idx_centros_nombre_vivo_unico`, Fase 5): el nombre que
   // pasa el test lleva siempre el principio del id. Un fichero que crea el mismo nombre en cada
@@ -209,6 +220,7 @@ export async function createTestCentro(nombre?: string): Promise<TestCentro> {
     telefono: '+34 000 000 000',
     email_contacto: `${id.slice(0, 8)}@nido.test`,
     idioma_default: 'es',
+    identificador_acreedor: opciones.sinCid ? null : CID_PRUEBA,
   })
   if (error) throw new Error(`createTestCentro falló: ${error.message}`)
   return { id, nombre: finalNombre }
