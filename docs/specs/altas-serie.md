@@ -184,9 +184,11 @@ Decisiones del 2026-11-04 sobre el 0c, al trazarlo:
 >   documento se teclea siempre, porque la app no guarda el número del DNI en ningún otro sitio.
 > - **Un acreedor que cambia mientras se firma** (`cid_distinto`, `acreedor_distinto`) se dice: «los
 >   datos bancarios del centro han cambiado mientras firmabas».
-> - **En la invitación** (antes de entrar) no se lee el centro: el wizard solo pinta el paso
->   `cuenta` y cuenta los ocho pasos, como siempre. En un centro sin CID, al entrar pasa de «1 de 8»
->   a «2 de 7»; con CID no cambia nada.
+> - **El número de pasos se calcula una vez, al empezar** (corregido el 2026-11-04 por el
+>   responsable: el contador no salta). En un centro sin CID el alta tiene 7 pasos desde el
+>   principio, también en la invitación, antes de entrar: la página lee con el cliente de servicio
+>   si el centro tiene CID y le pasa al wizard solo ese sí o no. El wizard congela la lista de pasos
+>   al montarse. Es el único contador de pasos de la app (`AltaTutorWizard.tsx`).
 
 - **Concepto del adeudo: centro, niño y mes, sin tildes.** Ejemplo: `ANAIA · Lucia Garcia Lopez ·
 Octubre 2026`. Sin tildes porque el juego de caracteres de SEPA no las garantiza; máximo 140
