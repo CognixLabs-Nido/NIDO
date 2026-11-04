@@ -4988,6 +4988,10 @@ export type Database = {
         Args: { p_actor: string; p_email: string; p_nino_id: string }
         Returns: Json
       }
+      cancelar_invitacion_tutor2: {
+        Args: { p_actor: string; p_email_se_queda?: string; p_nino_id: string }
+        Returns: Json
+      }
       export_datos_sujeto: {
         Args: { p_sujeto_id: string; p_sujeto_tipo: string }
         Returns: Json

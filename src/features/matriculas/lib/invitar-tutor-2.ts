@@ -75,19 +75,7 @@ export async function invitarTutor2AlValidar(supabase: Client, ninoId: string): 
       .maybeSingle()
     if (abierta) return
 
-    // Idioma del correo: el del tutor principal de la familia (ya eligió el suyo al aceptar su
-    // invitación). Si no se puede leer, castellano.
-    const principal = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_principal')
-    let idioma: IdiomaCorreo = 'es'
-    if (principal?.usuario_id) {
-      const { data: perfil } = await supabase
-        .from('usuarios')
-        .select('idioma_preferido')
-        .eq('id', principal.usuario_id)
-        .maybeSingle()
-      const leido = idiomaCorreoEnum.safeParse(perfil?.idioma_preferido)
-      if (leido.success) idioma = leido.data
-    }
+    const idioma = await idiomaDelTitular(supabase, tutores)
 
     const r = await sendInvitation({
       email,
@@ -101,4 +89,24 @@ export async function invitarTutor2AlValidar(supabase: Client, ninoId: string): 
   } catch (e) {
     logger.warn('invitarTutor2AlValidar', e instanceof Error ? e.message : 'desconocido')
   }
+}
+
+/**
+ * Idioma del correo al segundo tutor: el del tutor principal de la familia (ya eligió el suyo al
+ * aceptar su invitación). Si no se puede leer, castellano. Lo usan la invitación al validar y el
+ * reenvío de «Altas en proceso».
+ */
+export async function idiomaDelTitular(
+  supabase: Client,
+  tutores: { tipo_vinculo: string; usuario_id: string | null }[]
+): Promise<IdiomaCorreo> {
+  const principal = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_principal')
+  if (!principal?.usuario_id) return 'es'
+  const { data: perfil } = await supabase
+    .from('usuarios')
+    .select('idioma_preferido')
+    .eq('id', principal.usuario_id)
+    .maybeSingle()
+  const leido = idiomaCorreoEnum.safeParse(perfil?.idioma_preferido)
+  return leido.success ? leido.data : 'es'
 }

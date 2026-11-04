@@ -771,8 +771,9 @@ veía en ninguna parte: la invitación al segundo tutor que sale al validar el a
 - **La lista es todo** («la lista es todo de todo»): las altas sin terminar (invitación sin
   aceptar, invitación caducada o cancelada, la familia ha empezado), las terminadas que falta
   validar (con el enlace para validarlas y sin borrar) y, porque no salía en ninguna parte, el
-  segundo tutor que no ha entrado en un alta ya validada (solo se ve: no hay botón para reenviar ni
-  cancelar su invitación).
+  segundo tutor que no ha entrado en un alta ya validada, con su invitación sin aceptar o sin
+  ninguna. ~~Solo se ve: no hay botón para reenviar ni cancelar su invitación.~~ **Sustituida el
+  2026-11-04** por «El segundo tutor: reenviar y cancelar» (abajo).
 - **No hay borrado múltiple** («que se borren de una en una»). Los filtros sirven para ver y
   acotar; ninguna acción opera sobre varias a la vez. Cada alta se cancela o se borra en su fila,
   con su confirmación, como en la ficha.
@@ -784,6 +785,33 @@ veía en ninguna parte: la invitación al segundo tutor que sale al validar el a
   CID del centro no hay línea de SEPA.
 - **Página propia** en el menú de Dirección, junto a Admisiones (`/admin/altas`). El aviso de
   Inicio lleva a ella, con el filtro de más de 30 días.
+
+### El segundo tutor: reenviar y cancelar (2026-11-04)
+
+**Por qué existe** (medido el 2026-11-04): la invitación al segundo tutor solo sale al validar el
+alta (`invitarTutor2AlValidar`, desde `activar-matricula.ts`). Hoy, si la familia corrige el email
+del tutor 2 o añade un tutor 2 después de validar, la cola escribe la fila (`aplicar.ts`) y **no se
+invita a nadie**. Esa persona se queda fuera para siempre y nadie se entera. El botón de reenviar
+es lo único que cierra los dos casos.
+
+**Decisiones del responsable:**
+
+- **Reenviar y cancelar, en la fila del segundo tutor** de «Altas en proceso». Reenviar va siempre
+  al email de su ficha; cancelar pide confirmación y deja la ficha, para poder reenviar después.
+- **El email no lo corrige Dirección.** Sería una segunda vía que se salta la cola, y un cambio
+  pendiente de ese tutor se la pisaría al aprobarse. Lo corrige el tutor 1 por la cola, como hoy, y
+  Dirección lo aprueba; después, reenvía.
+- **Sin basura.** Una invitación que se cancela se lleva la cuenta provisional que creó y nunca
+  entró, en Auth y en `usuarios`, con el mismo filtro que `reinvitar_alta`. El reenvío al mismo
+  email reutiliza la invitación y la cuenta provisional (`sendInvitation` le alarga el plazo y
+  GoTrue reenvía a la misma cuenta): una cuenta y una invitación, no dos. El reenvío a un email
+  corregido cancela antes las invitaciones a los emails viejos.
+- **La base** (`20261231120000`): `cancelar_invitacion_tutor2(niño, actor, email_que_se_queda)`,
+  solo `service_role`, que vuelve a mirar `privado.es_direccion`. Borra sin copia las invitaciones
+  sin aceptar del segundo tutor del niño (salvo la del email que se queda), no toca la del tutor
+  principal, y deja quién lo hizo como evento `invitacion_tutor2`.
+- **Pendiente de decidir:** que aprobar en la cola un cambio de email del tutor 2, o su alta después
+  de validar, mande la invitación por sí solo, sin esperar a que alguien pulse el botón.
 
 ## Orden de la serie
 

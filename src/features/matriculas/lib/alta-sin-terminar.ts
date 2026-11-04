@@ -130,7 +130,7 @@ export async function reinvitarAltaCore(
  * Si la Admin API falla, se le deja el email de la purga (`borrado+<id>@borrado.invalid`): así
  * `cuentas_auth_huerfanas` la encuentra y el cron la vuelve a intentar. Ningún fallo para el resto.
  */
-async function borrarCuentasDeAuth(service: Service, ids: string[]): Promise<void> {
+export async function borrarCuentasDeAuth(service: Service, ids: string[]): Promise<void> {
   for (const id of ids) {
     const { data: avatares } = await service.storage.from(BUCKET_USUARIOS_FOTOS).list(id)
     const paths = (avatares ?? []).filter((o) => o.id !== null).map((o) => `${id}/${o.name}`)
