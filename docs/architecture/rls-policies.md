@@ -1858,7 +1858,7 @@ Migración `20261225120000_fix_mandatos_solo_por_funciones`; decisión del respo
   (`src/test/rls/mandatos-como-postgres.ts`).
 - Test: `mandatos-solo-por-funciones.rls.test.ts`.
 
-### El mandato v2 y el CID obligatorio (0c-1)
+### El mandato v2 y el CID obligatorio (0c-1 y 0c-2)
 
 Migración `20261229120000_feat_mandato_v2_datos_y_cid_obligatorio`; spec
 `docs/specs/altas-serie.md` («SEPA» y las decisiones del 2026-11-04).
@@ -1883,8 +1883,16 @@ Migración `20261229120000_feat_mandato_v2_datos_y_cid_obligatorio`; spec
   nombre del acreedor sí entran. **En el export:** los cinco.
 - **Nada recalcula hoy el hash de un mandato.** La versión es lo que permite hacerlo con el texto
   con el que se firmó.
+- **En la app (0c-2):** los tres caminos (el alta, `/family/domiciliacion` y el presencial de
+  Dirección, que hasta aquí iba sin hash) leen el CID y el nombre del centro con la sesión, piden
+  «NIF o documento de identidad» y dirección del titular, calculan el hash del texto v2
+  (`textoCanonicoMandatoV2`) y mandan los cuatro datos (`mandato-v2-servidor.ts`). Sin CID, el alta
+  no monta el paso de domiciliación y se completa en efectivo, y Recibos y la ficha de la familia
+  no ofrecen el botón; la ruta y la acción lo rechazan antes de subir nada si llega igual.
 - Test: `mandato-v2.rls.test.ts`. Los centros de test llevan el CID de prueba (`CID_PRUEBA` en
-  `setup.ts`) salvo que se pida `sinCid`.
+  `setup.ts`) salvo que se pida `sinCid`. En la app: `mandato-sepa/__tests__/route.test.ts`,
+  `gestionar-domiciliacion-familia.test.ts`, `documento-identidad.test.ts`, `mandato-sepa.test.ts`
+  y `estado-alta.test.ts`.
 
 ### La red del export art. 15: cada columna, decidida
 

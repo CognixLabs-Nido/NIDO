@@ -317,4 +317,15 @@ El centro que existe hoy es CEI Ejemplo (antes ANAIA): `33c79b50-13b5-4962-b849-
   - 15:48 UTC, Vercel, `13c8d92` (#455);
   - ~16:20 UTC, Actions (`ci-pr.yml`, paso `npm run build`), `abd0217` (#455), verde al relanzar el job.
 
-  Son 3 de 104 builds entre el 2026-10-29 10:20 UTC y el 2026-10-30 16:30 UTC (2 de 59 despliegues de Vercel y 1 de 45 builds de Actions), todos a partir de las 12:40 del 2026-10-30 y ninguno antes. **Si se vuelve crónico**, la salida decidida es servir la fuente desde el repo con `next/font/local`, **no** la fuente variable: la variable también se descarga de Google en cada build y no quitaría la causa. Hasta entonces no se toca la fuente ni el build.
+  Son 3 de 104 builds entre el 2026-10-29 10:20 UTC y el 2026-10-30 16:30 UTC (2 de 59 despliegues de Vercel y 1 de 45 builds de Actions), todos a partir de las 12:40 del 2026-10-30 y ninguno antes.
+
+  Después (recuento del 2026-11-04, de 2026-10-30 16:30 a 2026-11-04 10:00 UTC):
+  - 2026-10-31 14:40 UTC, Vercel, `ebd690e` (#460);
+  - 2026-11-04 09:47 UTC, Vercel, `e0ebbed` (#487), Ready al redesplegar el mismo commit; el mismo
+    código de la app había construido a las 09:18 en `7dbf436` (una rama que solo cambiaba una
+    migración).
+
+  Son 2 de 104 despliegues de Vercel, contando cada estado de cada despliegue (un fallo que se
+  relanza deja su despliegue en verde, y mirar solo el último estado no lo ve). En Actions, 0 de 50
+  ejecuciones de `ci-pr.yml`: sus 6 fallos son otros (ninguno lleva el mensaje de la fuente). La
+  frecuencia en Vercel no sube: 2 de 59 antes, 2 de 104 ahora. **Si se vuelve crónico**, la salida decidida es servir la fuente desde el repo con `next/font/local`, **no** la fuente variable: la variable también se descarga de Google en cada build y no quitaría la causa. Hasta entonces no se toca la fuente ni el build.

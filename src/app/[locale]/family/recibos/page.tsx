@@ -48,17 +48,24 @@ export default async function FamilyRecibosPage({ params }: PageProps) {
   let dom: {
     centroNombre: string
     centroDireccion: string
+    /** Sin CID del centro no se firma ningún mandato (0c): no se ofrece domiciliar. */
+    centroCid: string | null
     userId: string
     mandato: Awaited<ReturnType<typeof familiaTieneMandatoActivo>>
   } | null = null
   if (familia && user) {
     const [{ data: centro }, mandato] = await Promise.all([
-      supabase.from('centros').select('nombre, direccion').eq('id', familia.centroId).maybeSingle(),
+      supabase
+        .from('centros')
+        .select('nombre, direccion, identificador_acreedor')
+        .eq('id', familia.centroId)
+        .maybeSingle(),
       familiaTieneMandatoActivo(familia.familiaId),
     ])
     dom = {
       centroNombre: centro?.nombre ?? '',
       centroDireccion: centro?.direccion ?? '',
+      centroCid: centro?.identificador_acreedor?.trim() || null,
       userId: user.id,
       mandato,
     }
@@ -106,37 +113,47 @@ export default async function FamilyRecibosPage({ params }: PageProps) {
                       </p>
                     )}
                   </div>
-                  <DomiciliacionTutorDialog
-                    locale={locale}
-                    centroId={familia!.centroId}
-                    centroNombre={dom.centroNombre}
-                    centroDireccion={dom.centroDireccion}
-                    currentUserId={dom.userId}
-                    titularInicial={dom.mandato.titular}
-                    trigger={
-                      <Button variant="outline" size="sm">
-                        <PencilIcon className="size-4" />
-                        {tDom('cambiar')}
-                      </Button>
-                    }
-                  />
+                  {dom.centroCid ? (
+                    <DomiciliacionTutorDialog
+                      locale={locale}
+                      centroId={familia!.centroId}
+                      centroNombre={dom.centroNombre}
+                      centroDireccion={dom.centroDireccion}
+                      centroCid={dom.centroCid}
+                      currentUserId={dom.userId}
+                      titularInicial={dom.mandato.titular}
+                      trigger={
+                        <Button variant="outline" size="sm">
+                          <PencilIcon className="size-4" />
+                          {tDom('cambiar')}
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <p className="text-muted-foreground text-xs">{tDom('sin_cid')}</p>
+                  )}
                 </>
               ) : (
                 <>
                   <p className="text-muted-foreground min-w-0 flex-1">{tDom('sin')}</p>
-                  <DomiciliacionTutorDialog
-                    locale={locale}
-                    centroId={familia!.centroId}
-                    centroNombre={dom.centroNombre}
-                    centroDireccion={dom.centroDireccion}
-                    currentUserId={dom.userId}
-                    trigger={
-                      <Button variant="outline" size="sm">
-                        <LandmarkIcon className="size-4" />
-                        {tDom('configurar')}
-                      </Button>
-                    }
-                  />
+                  {dom.centroCid ? (
+                    <DomiciliacionTutorDialog
+                      locale={locale}
+                      centroId={familia!.centroId}
+                      centroNombre={dom.centroNombre}
+                      centroDireccion={dom.centroDireccion}
+                      centroCid={dom.centroCid}
+                      currentUserId={dom.userId}
+                      trigger={
+                        <Button variant="outline" size="sm">
+                          <LandmarkIcon className="size-4" />
+                          {tDom('configurar')}
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <p className="text-muted-foreground text-xs">{tDom('sin_cid')}</p>
+                  )}
                 </>
               )}
             </CardContent>

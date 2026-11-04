@@ -5,7 +5,7 @@ import { formatearIban } from './iban'
 /**
  * F11-G-2 — generación CLIENTE del PDF del mandato SEPA Core (reusa jsPDF, como el pipeline
  * imagen→PDF de G-1). Compone un documento A4 con el bloque de acreedor (centro), el bloque
- * de deudor (titular + IBAN), la referencia única del mandato, el tipo (recurrente), el texto
+ * de deudor (titular, su documento, su dirección e IBAN; el CID del acreedor desde el 0c-2), la referencia única del mandato, el tipo (recurrente), el texto
  * legal y la firma dibujada (PNG data URL) embebida. Los rótulos llegan ya traducidos desde
  * el componente (`labels`/`textoLegal`) para no acoplar la i18n a esta utilidad.
  *
@@ -21,6 +21,11 @@ export interface EtiquetasMandatoPdf {
   tipoRecurrente: string
   iban: string
   titular: string
+  /** «NIF o documento de identidad» (0c-2). */
+  titularDocumento: string
+  titularDireccion: string
+  /** «Identificador de acreedor» (CID, 0c-2). */
+  acreedorCid: string
   firma: string
   fecha: string
 }
@@ -31,6 +36,10 @@ export interface DatosMandatoPdf {
   titular: string
   acreedorNombre: string
   acreedorDireccion: string
+  /** El CID del centro: va en el PDF y en el texto canónico v2 (0c-2). */
+  acreedorCid: string
+  titularDocumento: string
+  titularDireccion: string
   /**
    * Firma dibujada en PNG data URL (`FirmaPad`). `null` en modo Dirección PRESENCIAL
    * (PR-3b-2 · B2): la familia firmó en papel → el PDF muestra `firmaPresencialNota` en
@@ -70,10 +79,13 @@ export function generarMandatoPdf(d: DatosMandatoPdf): Blob {
   linea(d.labels.acreedorTitulo, 11, true, 16)
   linea(d.acreedorNombre, 10, false, 14)
   if (d.acreedorDireccion) linea(d.acreedorDireccion, 10, false, 14)
+  linea(`${d.labels.acreedorCid}: ${d.acreedorCid}`, 10, false, 14)
   y += 6
 
   linea(d.labels.deudorTitulo, 11, true, 16)
   linea(`${d.labels.titular}: ${d.titular}`, 10, false, 14)
+  linea(`${d.labels.titularDocumento}: ${d.titularDocumento}`, 10, false, 14)
+  linea(`${d.labels.titularDireccion}: ${d.titularDireccion}`, 10, false, 14)
   linea(`${d.labels.iban}: ${formatearIban(d.iban)}`, 10, false, 14)
   y += 6
 

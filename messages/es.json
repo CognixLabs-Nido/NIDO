@@ -1219,13 +1219,21 @@
           "familia": "Familia no válida",
           "iban": "IBAN no válido",
           "titular": "Indica el titular de la cuenta",
-          "invalid": "Datos no válidos"
+          "invalid": "Datos no válidos",
+          "documento": "Revisa el NIF o documento de identidad: si es un DNI, NIE o CIF, la letra o el dígito de control no cuadra.",
+          "direccion": "Escribe la dirección del titular."
         },
         "errors": {
           "no_autorizado": "No tienes permiso para gestionar la domiciliación de esta familia",
           "mandato_activo_otro_iban": "La familia ya tiene una domiciliación activa con otro IBAN; usa Cambiar cuenta",
-          "guardado": "No se pudo guardar la domiciliación"
-        }
+          "guardado": "No se pudo guardar la domiciliación",
+          "centro_sin_cid": "El centro no tiene identificador de acreedor: sin él no se puede registrar la domiciliación.",
+          "acreedor_cambio": "Los datos bancarios del centro han cambiado. Cierra el diálogo y vuelve a abrirlo."
+        },
+        "documento": "NIF o documento de identidad",
+        "documento_ayuda": "Del titular de la cuenta, como está en el papel. Si es un documento extranjero, escríbelo tal cual.",
+        "direccion": "Dirección del titular",
+        "sin_cid": "Sin el identificador de acreedor del centro no se puede registrar la domiciliación. Lo pone la admin en Cuotas → Datos del acreedor (SEPA)."
       },
       "sin_cuenta": "Sin cuenta",
       "dni_subido": "Subido",
@@ -1529,7 +1537,8 @@
         "guardado": "No se pudo guardar la domiciliación. Inténtalo de nuevo.",
         "no_autorizado": "No tienes permiso para gestionar esta domiciliación",
         "mandato_activo_otro_iban": "Tu familia ya tiene una domiciliación activa con otro IBAN"
-      }
+      },
+      "sin_cid": "El centro todavía no puede domiciliar recibos."
     },
     "nav": {
       "aria_label": "Navegación familia",
@@ -2287,7 +2296,8 @@
       "confirmar": "Reabrir la remesa",
       "reabierta": "{num, plural, =0 {Remesa reabierta.} one {Remesa reabierta: # recibo vuelve a pendiente de cobro.} other {Remesa reabierta: # recibos vuelven a pendientes de cobro.}}",
       "reabierta_sin_numero": "Remesa reabierta."
-    }
+    },
+    "acreedor_sin_cid_aviso": "Falta el identificador de acreedor (CID). Sin él no se pueden pasar recibos al banco ni domiciliar a las familias: el alta no les pide la cuenta y no pueden firmar el mandato."
   },
   "aula": {
     "validation": {
@@ -4629,8 +4639,16 @@
         "nombre": "Escribe tu nombre y apellidos para firmar",
         "firma": "Dibuja tu firma para continuar",
         "guardado": "No se pudo guardar el mandato SEPA",
-        "mandato_activo_otro_iban": "Esta familia ya tiene un mandato SEPA activo con otro IBAN. Para cambiar de cuenta, sustituye el mandato desde la gestión de la familia."
-      }
+        "mandato_activo_otro_iban": "Esta familia ya tiene un mandato SEPA activo con otro IBAN. Para cambiar de cuenta, sustituye el mandato desde la gestión de la familia.",
+        "documento": "Revisa el NIF o documento de identidad: si es un DNI, NIE o CIF, la letra o el dígito de control no cuadra.",
+        "direccion": "Escribe la dirección del titular.",
+        "centro_sin_cid": "El centro todavía no tiene su identificador de acreedor, así que no se puede domiciliar. Pregunta en el centro.",
+        "acreedor_cambio": "Los datos bancarios del centro han cambiado mientras firmabas. Vuelve a abrir la pantalla y firma otra vez."
+      },
+      "documento_label": "NIF o documento de identidad",
+      "documento_ayuda": "Del titular de la cuenta. Si es un documento extranjero, escríbelo tal cual.",
+      "direccion_label": "Dirección del titular",
+      "acreedor_cid_label": "Identificador de acreedor"
     },
     "validacion": {
       "enviado": "Cambio enviado a validación de dirección."

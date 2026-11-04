@@ -162,10 +162,17 @@ export function RemesasPanel({
             </dd>
           </div>
         </dl>
-        {!acreedorCompleto && (
-          <p className="flex items-center gap-1 text-sm text-amber-600">
-            <AlertTriangleIcon className="size-4" /> {t('acreedor_incompleto_aviso')}
+        {/* 0c (2026-11-04): sin CID no se pasan recibos al banco ni se domicilia a ninguna familia. */}
+        {!acreedor.identificadorAcreedor ? (
+          <p className="flex items-start gap-1 text-sm text-amber-600" role="note">
+            <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" /> {t('acreedor_sin_cid_aviso')}
           </p>
+        ) : (
+          !acreedorCompleto && (
+            <p className="flex items-center gap-1 text-sm text-amber-600">
+              <AlertTriangleIcon className="size-4" /> {t('acreedor_incompleto_aviso')}
+            </p>
+          )
         )}
       </Card>
 

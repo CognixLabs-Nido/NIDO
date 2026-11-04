@@ -1,12 +1,16 @@
-import { createHash } from 'node:crypto'
-
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { esAdminDeCentroDeNino } from '@/features/alta/lib/authz-tutor'
 import { esSuperusuario } from '@/features/centros/contexto/roles-del-usuario'
 import { ibanValido, normalizarIban } from '@/features/alta/lib/iban'
-import { MAX_LARGO_IDENTIFICADOR, textoCanonicoMandato } from '@/features/alta/lib/mandato-sepa'
+import { MAX_LARGO_IDENTIFICADOR } from '@/features/alta/lib/mandato-sepa'
+import {
+  acreedorDelCentro,
+  errorDatosTitular,
+  mandatoV2,
+  motivoRechazoV2,
+} from '@/features/alta/lib/mandato-v2-servidor'
 import { BUCKET_MANDATO_SEPA, firmarRuta } from '@/shared/lib/adjuntos/storage'
 
 export const dynamic = 'force-dynamic'
@@ -37,7 +41,8 @@ function err(error: string, status = 400): Response {
  *  - la fila de `mandatos_sepa` se persiste vía RPC `registrar_mandato_sepa` (SECURITY DEFINER) que
  *    **autoriza `es_tutor_legal_de` y CIFRA el IBAN** antes del upsert → el route ya NO usa
  *    service-role (#108).
- * El `texto_hash` se calcula aquí (servidor) sobre el IBAN **en claro del formulario** (ancla el
+ * El `texto_hash` (texto canónico v2, con el CID del centro y el documento y la dirección del
+ * titular; 0c-2) se calcula aquí (servidor) sobre el IBAN **en claro del formulario** (ancla el
  * contenido firmado, independiente del cifrado en reposo). El IBAN nunca se almacena en claro.
  */
 export async function POST(
@@ -86,6 +91,8 @@ export async function POST(
   const identificador = form.get('identificador_mandato')
   const nombreTecleado = form.get('nombre_tecleado')
   const firmaImagen = form.get('firma_imagen')
+  const titularDocumento = form.get('titular_documento')
+  const titularDireccion = form.get('titular_direccion')
 
   if (!(file instanceof Blob)) return err('alta.documentos.errors.subida')
   if (file.type !== 'application/pdf') return err('alta.documentos.errors.tipo_pdf')
@@ -94,6 +101,8 @@ export async function POST(
   if (typeof ibanRaw !== 'string' || !ibanValido(ibanRaw)) return err('alta.sepa.errors.iban')
   if (typeof titular !== 'string' || titular.trim().length < 2 || titular.length > 140)
     return err('alta.sepa.errors.titular')
+  const errorTitular = errorDatosTitular(titularDocumento, titularDireccion)
+  if (errorTitular) return err(`alta.sepa.errors.${errorTitular}`)
   if (
     typeof identificador !== 'string' ||
     identificador.length < 1 ||
@@ -121,26 +130,24 @@ export async function POST(
   // Ruta determinista (1 mandato por niño): re-firmar sobrescribe, sin huérfanos.
   const path = `${nino.centro_id}/${nino.id}/mandato.pdf`
 
-  // Acreedor = centro (nombre) para el canónico que se hashea. Lo lee el cliente de usuario
-  // (RLS `centros`: pertenece_a_centro → el tutor lo ve).
-  const { data: centro } = await supabase
-    .from('centros')
-    .select('nombre')
-    .eq('id', nino.centro_id)
-    .maybeSingle()
+  // Acreedor = centro, con su CID. Lo lee el cliente de usuario (RLS `centros`:
+  // pertenece_a_centro → el tutor lo ve). Sin CID no se firma ningún mandato (0c, 2026-11-04): el
+  // paso no aparece en el alta, y aquí se cierra antes de subir nada.
+  const acreedor = await acreedorDelCentro(supabase, nino.centro_id)
+  if (!acreedor) return err('alta.errors.no_autorizado', 403)
+  if (!acreedor.cid) return err('alta.sepa.errors.centro_sin_cid', 409)
 
   const fechaFirmaIso = new Date().toISOString()
-  const textoHash = createHash('sha256')
-    .update(
-      textoCanonicoMandato({
-        identificadorMandato: identificador,
-        iban,
-        titular: titular.trim(),
-        acreedorNombre: centro?.nombre ?? '',
-        fechaFirmaIso,
-      })
-    )
-    .digest('hex')
+  // El texto canónico v2: con el CID y el documento y la dirección del titular.
+  const v2 = mandatoV2({
+    identificadorMandato: identificador,
+    iban,
+    titular,
+    titularDocumento: titularDocumento as string,
+    titularDireccion: titularDireccion as string,
+    acreedor: { nombre: acreedor.nombre, cid: acreedor.cid },
+    fechaFirmaIso,
+  })
 
   // 1. Subida del PDF (cliente de usuario; RLS de storage autoriza al tutor). `upsert` para
   //    sobrescribir en re-firma sin necesitar DELETE (que es admin-only en este bucket).
@@ -169,15 +176,18 @@ export async function POST(
     p_documento_path: path,
     p_firma_imagen: firmaParaRpc,
     p_nombre_tecleado: nombreTecleado.trim(),
-    p_texto_hash: textoHash,
+    p_texto_hash: v2.textoHash,
     p_ip_address: ipAddress,
     p_user_agent: userAgent ?? '',
     p_fecha_firma: fechaFirmaIso,
     p_metodo: esPresencial ? 'presencial' : 'digital',
+    ...v2.rpc,
   })
   if (rpcErr) {
     // El PDF queda en su ruta determinista (se sobrescribe en el próximo intento).
     if (/no autorizado|42501/i.test(rpcErr.message)) return err('alta.errors.no_autorizado', 403)
+    const motivo = motivoRechazoV2(rpcErr.hint)
+    if (motivo) return err(`alta.sepa.errors.${motivo}`, 409)
     // F-2c-1: la familia ya tiene un mandato ACTIVO con OTRO IBAN → registrar no pisa el
     // histórico. El cambio de cuenta va por sustituir_mandato_sepa (2c-3/2c-4). Se propaga
     // como conflicto legible (no 500 silencioso).

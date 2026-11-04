@@ -1219,13 +1219,21 @@
           "familia": "Família no vàlida",
           "iban": "IBAN no vàlid",
           "titular": "Indica el titular del compte",
-          "invalid": "Dades no vàlides"
+          "invalid": "Dades no vàlides",
+          "documento": "Revisa el NIF o document d'identitat: si és un DNI, NIE o CIF, la lletra o el dígit de control no quadra.",
+          "direccion": "Escriu l'adreça del titular."
         },
         "errors": {
           "no_autorizado": "No tens permís per a gestionar la domiciliació d'esta família",
           "mandato_activo_otro_iban": "La família ja té una domiciliació activa amb un altre IBAN; usa Canviar compte",
-          "guardado": "No s'ha pogut guardar la domiciliació"
-        }
+          "guardado": "No s'ha pogut guardar la domiciliació",
+          "centro_sin_cid": "El centre no té identificador de creditor: sense ell no es pot registrar la domiciliació.",
+          "acreedor_cambio": "Les dades bancàries del centre han canviat. Tanca el diàleg i torna a obrir-lo."
+        },
+        "documento": "NIF o document d'identitat",
+        "documento_ayuda": "Del titular del compte, com està en el paper. Si és un document estranger, escriu-lo tal qual.",
+        "direccion": "Adreça del titular",
+        "sin_cid": "Sense l'identificador de creditor del centre no es pot registrar la domiciliació. El posa l'admin a Quotes → Dades del creditor (SEPA)."
       },
       "sin_cuenta": "Sense compte",
       "dni_subido": "Pujat",
@@ -1529,7 +1537,8 @@
         "guardado": "No s'ha pogut guardar la domiciliació. Torna-ho a intentar.",
         "no_autorizado": "No tens permís per a gestionar esta domiciliació",
         "mandato_activo_otro_iban": "La teua família ja té una domiciliació activa amb un altre IBAN"
-      }
+      },
+      "sin_cid": "El centre encara no pot domiciliar rebuts."
     },
     "nav": {
       "aria_label": "Navegació família",
@@ -2287,7 +2296,8 @@
       "confirmar": "Reobrir la remesa",
       "reabierta": "{num, plural, =0 {Remesa reoberta.} one {Remesa reoberta: # rebut torna a pendent de cobrament.} other {Remesa reoberta: # rebuts tornen a pendents de cobrament.}}",
       "reabierta_sin_numero": "Remesa reoberta."
-    }
+    },
+    "acreedor_sin_cid_aviso": "Falta l'identificador de creditor (CID). Sense ell no es poden passar rebuts al banc ni domiciliar les famílies: l'alta no els demana el compte i no poden signar el mandat."
   },
   "aula": {
     "validation": {
@@ -4629,8 +4639,16 @@
         "nombre": "Escriu el teu nom i cognoms per a firmar",
         "firma": "Dibuixa la teua firma per a continuar",
         "guardado": "No s'ha pogut guardar el mandat SEPA",
-        "mandato_activo_otro_iban": "Esta família ja té un mandat SEPA actiu amb un altre IBAN. Per a canviar de compte, substituïx el mandat des de la gestió de la família."
-      }
+        "mandato_activo_otro_iban": "Esta família ja té un mandat SEPA actiu amb un altre IBAN. Per a canviar de compte, substituïx el mandat des de la gestió de la família.",
+        "documento": "Revisa el NIF o document d'identitat: si és un DNI, NIE o CIF, la lletra o el dígit de control no quadra.",
+        "direccion": "Escriu l'adreça del titular.",
+        "centro_sin_cid": "El centre encara no té el seu identificador de creditor, així que no es pot domiciliar. Pregunta al centre.",
+        "acreedor_cambio": "Les dades bancàries del centre han canviat mentre signaves. Torna a obrir la pantalla i signa una altra vegada."
+      },
+      "documento_label": "NIF o document d'identitat",
+      "documento_ayuda": "Del titular del compte. Si és un document estranger, escriu-lo tal qual.",
+      "direccion_label": "Adreça del titular",
+      "acreedor_cid_label": "Identificador de creditor"
     },
     "validacion": {
       "enviado": "Canvi enviat a validació de direcció."

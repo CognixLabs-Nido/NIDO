@@ -67,3 +67,36 @@ export function textoCanonicoMandato(d: DatosCanonicoMandato): string {
     `fecha=${d.fechaFirmaIso.slice(0, 10)}`,
   ].join('|')
 }
+
+export interface DatosCanonicoMandatoV2 extends DatosCanonicoMandato {
+  /** El identificador de acreedor (CID) del centro con el que se firma. */
+  acreedorCid: string
+  /** «NIF o documento de identidad» del titular, tal como se guarda. */
+  titularDocumento: string
+  titularDireccion: string
+}
+
+/**
+ * Texto canónico **v2** (0c-2, `mandatos_sepa.version_canonico = 2`): el v1 más el CID del
+ * acreedor y el documento y la dirección del titular. Los mandatos firmados antes se quedan en v1
+ * (`textoCanonicoMandato`, que no cambia): su hash se recalcula con aquel texto. La base guarda la
+ * foto del CID y del nombre del acreedor del momento de firmar (`acreedor_cid`,
+ * `acreedor_nombre`), para que el hash se pueda recalcular aunque el centro cambie después.
+ *
+ * Las claves nuevas van con su nombre y en un orden fijo; una cadena vacía no es lo mismo que un
+ * campo que falta, por eso la versión va en la primera línea.
+ */
+export function textoCanonicoMandatoV2(d: DatosCanonicoMandatoV2): string {
+  return [
+    'SEPA-CORE-MANDATE-V2',
+    `id=${d.identificadorMandato}`,
+    `iban=${normalizarIban(d.iban)}`,
+    `titular=${d.titular.trim()}`,
+    `titular_documento=${d.titularDocumento.trim()}`,
+    `titular_direccion=${d.titularDireccion.trim()}`,
+    `acreedor=${d.acreedorNombre.trim()}`,
+    `acreedor_cid=${d.acreedorCid.trim()}`,
+    'tipo=recurrente',
+    `fecha=${d.fechaFirmaIso.slice(0, 10)}`,
+  ].join('|')
+}

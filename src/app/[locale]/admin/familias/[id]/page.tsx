@@ -16,6 +16,8 @@ import { getTranslations } from 'next-intl/server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { acreedorDelCentro } from '@/features/alta/lib/mandato-v2-servidor'
+import { createClient } from '@/lib/supabase/server'
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { DomiciliacionDialog } from '@/features/familias/components/DomiciliacionDialog'
@@ -51,10 +53,13 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
 
   // F-2c-3: mandato SEPA activo de la familia (o null) para la sección Domiciliación. F-6: y su
   // histórico de recibos, del centro de la página.
-  const [mandato, historial] = await Promise.all([
+  // 0c: sin CID del centro no se firma ningún mandato; la ficha no ofrece registrarlo.
+  const [mandato, historial, acreedor] = await Promise.all([
     familiaTieneMandatoActivo(id),
     getHistorialRecibosFamilia(familia.id, centroId),
+    createClient().then((supabase) => acreedorDelCentro(supabase, centroId)),
   ])
+  const centroCid = acreedor?.cid ?? null
   const fechaFirmaLegible = mandato?.fecha_firma
     ? new Intl.DateTimeFormat(localeIntl(locale), { dateStyle: 'long' }).format(
         new Date(mandato.fecha_firma)
@@ -182,33 +187,39 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
                     <span className="font-mono">{mandato.identificador_mandato}</span>
                   </p>
                 </div>
-                {!archivada && (
-                  <DomiciliacionDialog
-                    familiaId={familia.id}
-                    titularInicial={mandato.titular}
-                    trigger={
-                      <Button variant="outline" size="sm">
-                        <PencilIcon className="size-4" />
-                        {t('domiciliacion.cambiar')}
-                      </Button>
-                    }
-                  />
-                )}
+                {!archivada &&
+                  (centroCid ? (
+                    <DomiciliacionDialog
+                      familiaId={familia.id}
+                      titularInicial={mandato.titular}
+                      trigger={
+                        <Button variant="outline" size="sm">
+                          <PencilIcon className="size-4" />
+                          {t('domiciliacion.cambiar')}
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <p className="text-muted-foreground text-xs">{t('domiciliacion.sin_cid')}</p>
+                  ))}
               </>
             ) : (
               <>
                 <p className="text-muted-foreground min-w-0 flex-1">{t('domiciliacion.sin')}</p>
-                {!archivada && (
-                  <DomiciliacionDialog
-                    familiaId={familia.id}
-                    trigger={
-                      <Button variant="outline" size="sm">
-                        <LandmarkIcon className="size-4" />
-                        {t('domiciliacion.registrar')}
-                      </Button>
-                    }
-                  />
-                )}
+                {!archivada &&
+                  (centroCid ? (
+                    <DomiciliacionDialog
+                      familiaId={familia.id}
+                      trigger={
+                        <Button variant="outline" size="sm">
+                          <LandmarkIcon className="size-4" />
+                          {t('domiciliacion.registrar')}
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <p className="text-muted-foreground text-xs">{t('domiciliacion.sin_cid')}</p>
+                  ))}
               </>
             )}
           </CardContent>

@@ -41,7 +41,8 @@ interface RespuestaMandato {
 
 /**
  * F-2c-4 — diálogo del TUTOR (en `/family/recibos`) para REGISTRAR (1er mandato) o SUSTITUIR su
- * domiciliación SEPA con firma DIGITAL completa: IBAN + titular + nombre tecleado + trazo
+ * domiciliación SEPA con firma DIGITAL completa: IBAN + titular (con su documento y su dirección,
+ * 0c-2) + nombre tecleado + trazo
  * (`FirmaPad`). Reutiliza la maquinaria del paso 8 del alta: genera el PDF con `generarMandatoPdf`
  * (jsPDF) con la firma embebida y un identificador `NIDO-…`, y lo envía en FormData al route
  * `/family/domiciliacion`, que resuelve la familia server-side, sube el PDF familia-scoped, calcula
@@ -53,6 +54,7 @@ export function DomiciliacionTutorDialog({
   centroId,
   centroNombre,
   centroDireccion,
+  centroCid,
   currentUserId,
   titularInicial,
   trigger,
@@ -61,6 +63,8 @@ export function DomiciliacionTutorDialog({
   centroId: string
   centroNombre: string
   centroDireccion: string
+  /** El CID del centro (0c-2): sin él la página no ofrece este diálogo. */
+  centroCid: string
   /** Tutor logueado (firmante) — para el identificador del mandato. */
   currentUserId: string
   /** Prefill del titular (el actual, al sustituir); vacío al registrar el 1º. */
@@ -78,7 +82,12 @@ export function DomiciliacionTutorDialog({
 
   const form = useForm<SepaMandatoFormInput>({
     resolver: zodResolver(sepaMandatoFormSchema),
-    defaultValues: { iban: '', titular: titularInicial ?? '' },
+    defaultValues: {
+      iban: '',
+      titular: titularInicial ?? '',
+      titular_documento: '',
+      titular_direccion: '',
+    },
   })
 
   function onSubmit(values: SepaMandatoFormInput) {
@@ -103,8 +112,11 @@ export function DomiciliacionTutorDialog({
           identificadorMandato: identificador,
           iban: values.iban,
           titular: values.titular,
+          titularDocumento: values.titular_documento,
+          titularDireccion: values.titular_direccion,
           acreedorNombre: centroNombre,
           acreedorDireccion: centroDireccion,
+          acreedorCid: centroCid,
           firmaDataUrl: firma,
           fechaLegible,
           textoLegal: tSepa('texto_legal'),
@@ -117,6 +129,9 @@ export function DomiciliacionTutorDialog({
             tipoRecurrente: tSepa('tipo_recurrente'),
             iban: tSepa('iban_label'),
             titular: tSepa('titular_label'),
+            titularDocumento: tSepa('documento_label'),
+            titularDireccion: tSepa('direccion_label'),
+            acreedorCid: tSepa('acreedor_cid_label'),
             firma: tSepa('firma_titulo'),
             fecha: tSepa('fecha'),
           },
@@ -132,6 +147,8 @@ export function DomiciliacionTutorDialog({
       body.append('file', new File([pdf], 'mandato-sepa.pdf', { type: 'application/pdf' }))
       body.append('iban', values.iban)
       body.append('titular', values.titular)
+      body.append('titular_documento', values.titular_documento)
+      body.append('titular_direccion', values.titular_direccion)
       body.append('identificador_mandato', identificador)
       body.append('nombre_tecleado', nombreTecleado.trim())
       body.append('firma_imagen', firma)
@@ -155,7 +172,12 @@ export function DomiciliacionTutorDialog({
       setOpen(false)
       setFirma(null)
       setNombreTecleado('')
-      form.reset({ iban: '', titular: values.titular })
+      form.reset({
+        iban: '',
+        titular: values.titular,
+        titular_documento: values.titular_documento,
+        titular_direccion: values.titular_direccion,
+      })
       router.refresh()
     })
   }
@@ -185,6 +207,33 @@ export function DomiciliacionTutorDialog({
             />
             <FormField
               control={form.control}
+              name="titular_documento"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{tSepa('documento_label')}</FormLabel>
+                  <FormControl>
+                    <Input {...field} maxLength={40} autoComplete="off" />
+                  </FormControl>
+                  <FormDescription>{tSepa('documento_ayuda')}</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="titular_direccion"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{tSepa('direccion_label')}</FormLabel>
+                  <FormControl>
+                    <Input {...field} maxLength={300} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="iban"
               render={({ field }) => (
                 <FormItem>
@@ -207,6 +256,9 @@ export function DomiciliacionTutorDialog({
               <p className="text-muted-foreground">
                 <span className="font-medium">{tSepa('acreedor_titulo')}:</span> {centroNombre}
                 {centroDireccion ? ` · ${centroDireccion}` : ''}
+              </p>
+              <p className="text-muted-foreground">
+                <span className="font-medium">{tSepa('acreedor_cid_label')}:</span> {centroCid}
               </p>
               <p className="text-muted-foreground">{tSepa('texto_legal')}</p>
             </div>

@@ -28,7 +28,9 @@ export default async function InvitationPage({ params }: PageProps) {
   // entre-centros: por token; la invitación es de un solo centro y se abre antes de ser de él.
   const { data: invitation } = await service
     .from('invitaciones')
-    .select('email, rol_objetivo, nombre_completo, nino_id, expires_at, accepted_at, rejected_at')
+    .select(
+      'email, rol_objetivo, nombre_completo, nino_id, centro_id, expires_at, accepted_at, rejected_at'
+    )
     .eq('token', token)
     .maybeSingle()
 
@@ -81,8 +83,17 @@ export default async function InvitationPage({ params }: PageProps) {
   // paso `cuenta` (pre-login). Al crear la cuenta, el MISMO wizard reanuda en `/alta`. El
   // resto de invitaciones (autorizado, profe, admin) siguen el alta de cuenta clásica.
   if (invitation.rol_objetivo === 'tutor_legal' && invitation.nino_id) {
+    // El número de pasos se fija al empezar (0c, 2026-11-04): sin CID del centro el alta tiene 7
+    // desde el principio, sin el de domiciliación. Antes de entrar no hay sesión que lea el
+    // centro; se lee aquí con el servicio y al wizard solo llega si lo tiene, nunca el CID.
+    const { data: centro } = await service
+      .from('centros')
+      .select('identificador_acreedor')
+      .eq('id', invitation.centro_id)
+      .maybeSingle()
     return (
       <AltaInvitacionFlow
+        centroTieneCid={Boolean(centro?.identificador_acreedor?.trim())}
         locale={locale}
         token={token}
         email={invitation.email}
@@ -114,12 +125,14 @@ function AltaInvitacionFlow({
   email,
   ninoId,
   nombreInicial,
+  centroTieneCid,
 }: {
   locale: string
   token: string
   email: string
   ninoId: string
   nombreInicial: string
+  centroTieneCid: boolean
 }) {
   return (
     <AuthShell locale={locale}>
@@ -159,6 +172,9 @@ function AltaInvitacionFlow({
         centroId=""
         centroNombre=""
         centroDireccion=""
+        // Pre-login el CID no viaja al cliente: solo si el centro lo tiene, para contar los pasos.
+        centroCid={null}
+        centroTieneCid={centroTieneCid}
         mandatoSepaInicial={null}
         mandatoFamilia={null}
         currentUserId=""

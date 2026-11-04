@@ -9,8 +9,10 @@ type GenArgs = Database['public']['Functions']['registrar_mandato_sepa']['Args']
  * `sustituir_mandato_sepa` tienen firmas IDÉNTICAS. El type-gen de Supabase marca varios
  * params como `string`, pero en SQL son uuid/text **OPCIONALES que aceptan NULL**:
  * `p_nino_id` (informativo: qué niño originó el alta), y en el flujo PRESENCIAL también
- * `p_documento_path` (sin PDF), `p_texto_hash` (la RPC no lo exige) y `p_user_agent`. Este
- * tipo refleja esa nullabilidad real para que los call sites la expresen sin castear.
+ * `p_documento_path` (sin PDF) y `p_user_agent`. `p_texto_hash` solo lo admite NULL el mandato
+ * v1, la llamada de antes del 0c-2; desde entonces los tres caminos de la app mandan el v2, con su
+ * hash (también el presencial). Este tipo refleja esa nullabilidad real para que los call sites
+ * la expresen sin castear.
  */
 export type MandatoSepaRpcArgs = Omit<
   GenArgs,
