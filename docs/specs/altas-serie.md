@@ -3,7 +3,7 @@ feature: altas-serie
 wave: 1
 status: approved
 priority: high
-last_updated: 2026-10-31
+last_updated: 2026-11-04
 related_adrs: [ADR-0049, ADR-0050, ADR-0063, ADR-0064]
 related_specs: [alta-tutor-driven, autorizaciones-firma, retencion-plazos]
 ---
@@ -786,7 +786,7 @@ canceló el 2026-11-01 (FRST se procesa como RCUR).
 ## Estado
 
 - [x] 0·doc — esta spec.
-- [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · fecha de cobro: [x] F1 (#464) · [x] F2 (#465) · [x] F3 (este PR) · [x] reabrir remesas · 0c: [x] 0c-1 (#487) · [x] 0c-2 (#488) · [ ] 0c-3 (este PR) · ~~0d~~ (cancelado)
+- [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · fecha de cobro: [x] F1 (#464) · [x] F2 (#465) · [x] F3 (#466) · [x] reabrir remesas · 0c: [x] 0c-1 (#487) · [x] 0c-2 (#488) · [x] 0c-3 (#489) · ~~0d~~ (cancelado)
 - [ ] Pantalla de altas en proceso · [ ] 1 · [ ] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [ ] 6 · [ ] 7 · [ ] 8
 
 ## Referencias
