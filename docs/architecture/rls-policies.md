@@ -1871,13 +1871,13 @@ Migración `20261229120000_feat_mandato_v2_datos_y_cid_obligatorio`; spec
 - **El texto canónico v2:** `mandatos_sepa.version_canonico` (1 o 2; los de antes, 1), el
   documento de identidad y la dirección del titular (`titular_documento`, `titular_direccion`) y
   la foto del acreedor con la que se firmó (`acreedor_cid`, `acreedor_nombre`). Las dos funciones
-  reciben esos cuatro datos como parámetros opcionales: sin ninguno, el mandato es v1 (la app de
-  antes del 0c-2); con ellos, v2, y tienen que estar todos (`mandato_incompleto`), el CID y el
+  reciben esos cuatro datos como parámetros opcionales: sin ninguno, P0001 `v1_cerrado` desde
+  `20261230120000` (hasta entonces, un v1: la app de antes del 0c-2); con ellos, v2, y tienen que estar todos (`mandato_incompleto`), el CID y el
   nombre ser los del centro (`cid_distinto`, `acreedor_distinto`) y el hash un sha256 en
   hexadecimal (`hash_invalido`). La comprobación común es `privado.version_datos_mandato`, que no
   ejecuta nadie más que ellas.
 - **El CHECK `mandatos_sepa_datos_por_version`** exige lo mismo a quien escriba la tabla como
-  `postgres`: un v2 con todo y su hash, un v1 sin ninguno de los cuatro. Va envuelto en
+  `postgres`: un v2 con todo y su hash, un v1 (de los que ya existían) sin ninguno de los cuatro. Va envuelto en
   `COALESCE(…, false)`: en un CHECK, NULL pasa, y sin él un v2 sin hash cumplía la regla (medido).
 - **Fuera de `audit_log`:** `titular_documento` y `titular_direccion`, como `titular`. El CID y el
   nombre del acreedor sí entran. **En el export:** los cinco.
@@ -1889,7 +1889,21 @@ Migración `20261229120000_feat_mandato_v2_datos_y_cid_obligatorio`; spec
   (`textoCanonicoMandatoV2`) y mandan los cuatro datos (`mandato-v2-servidor.ts`). Sin CID, el alta
   no monta el paso de domiciliación y se completa en efectivo, y Recibos y la ficha de la familia
   no ofrecen el botón; la ruta y la acción lo rechazan antes de subir nada si llega igual.
-- Test: `mandato-v2.rls.test.ts`. Los centros de test llevan el CID de prueba (`CID_PRUEBA` en
+- **No se firman mandatos v1 nuevos** (`20261230120000`, 0c-3, después del despliegue del 0c-2).
+  Los que ya existían (3 en producción el 2026-11-04) se quedan como están: firmados, con su hash
+  recalculable con el texto v1. Dos defensas con HINT distinto, para que un test vea cuál rechaza:
+  - `privado.version_datos_mandato` da `v1_cerrado` a la llamada sin los datos del v2, antes de
+    escribir (en `sustituir`, antes de revocar el activo). Cubre a las sesiones y a service_role.
+  - El trigger `mandatos_sepa_v1_cerrado` (`privado.mandato_v1_cerrado`, BEFORE INSERT OR UPDATE),
+    para todos, también `postgres` por el SQL Editor: un INSERT v1 no entra, y un UPDATE que deja
+    la fila en v1 solo vale si ya era v1 y no cambia lo firmado (familia, IBAN, titular,
+    identificador, firma, nombre tecleado, hash, fecha, método y los datos del v2;
+    `v1_solo_existentes`). Revocar uno existente, sí; volver a firmarlo en su sitio como v2 (el
+    reintento del alta), también.
+  - `version_canonico` pasa a DEFAULT 2.
+- Test: `mandato-v2.rls.test.ts` y `mandato-v1-cerrado.rls.test.ts` (los v1 existentes los crea
+  `insertarMandatoV1Existente`, con el trigger apagado solo para ese INSERT; `insertarMandato` da un
+  v2 completo si no se le pasa la versión). Los centros de test llevan el CID de prueba (`CID_PRUEBA` en
   `setup.ts`) salvo que se pida `sinCid`. En la app: `mandato-sepa/__tests__/route.test.ts`,
   `gestionar-domiciliacion-familia.test.ts`, `documento-identidad.test.ts`, `mandato-sepa.test.ts`
   y `estado-alta.test.ts`.

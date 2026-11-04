@@ -17,6 +17,8 @@ import {
   matricular,
   serviceClient,
   type TestUser,
+  datosMandatoV2,
+  type TestCentro,
 } from './setup'
 import { borrarMandatos } from './mandatos-como-postgres'
 
@@ -44,6 +46,9 @@ const { marcarDomiciliacionVista } =
 const IBAN = 'ES9121000418450200051332'
 const IBAN_OTRO = 'ES7921000813610123456789'
 
+// Los datos del v2 del centro del fichero; sin ellos, la llamada da v1_cerrado (20261230120000).
+let v2 = {} as ReturnType<typeof datosMandatoV2>
+
 function mandato(familiaId: string, iban: string, id: string, metodo: 'digital' | 'presencial') {
   return {
     p_familia_id: familiaId,
@@ -54,7 +59,8 @@ function mandato(familiaId: string, iban: string, id: string, metodo: 'digital' 
     p_documento_path: null,
     p_firma_imagen: '',
     p_nombre_tecleado: 'Titular Aviso',
-    p_texto_hash: null,
+    p_texto_hash: 'a'.repeat(64),
+    ...v2,
     p_ip_address: null,
     p_user_agent: null,
     p_fecha_firma: '2026-10-01T10:00:00Z',
@@ -63,7 +69,7 @@ function mandato(familiaId: string, iban: string, id: string, metodo: 'digital' 
 }
 
 describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia', () => {
-  let centro: { id: string }
+  let centro: TestCentro
   let admin: TestUser
   let directora: TestUser
   let profe: TestUser
@@ -110,6 +116,7 @@ describe('Aviso a Dirección: domiciliación firmada o cambiada por la familia',
 
   beforeAll(async () => {
     centro = await createTestCentro('Centro Aviso Domiciliacion')
+    v2 = datosMandatoV2(centro)
     const curso = await createTestCurso(centro.id)
     const aula = await createTestAula(centro.id, curso.id)
     admin = await createTestUser({ nombre: 'Admin Aviso Domiciliacion' })

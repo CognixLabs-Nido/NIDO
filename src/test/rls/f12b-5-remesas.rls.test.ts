@@ -16,6 +16,8 @@ import {
   serviceClient,
   type TestNino,
   type TestUser,
+  datosMandatoV2,
+  type TestCentro,
 } from './setup'
 import { insertarRecibos, pasarAEnviadoComoMarcar } from './remesa-como-sus-funciones'
 
@@ -40,7 +42,7 @@ const CID = 'ES00ZZZ00000000000'
 const BIC = 'CAIXESBBXXX'
 
 describe('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
-  let centroA: { id: string }
+  let centroA: TestCentro
   let ninoA: TestNino
   let adminA: TestUser
   let tutorA: TestUser
@@ -86,7 +88,7 @@ describe('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
     reciboId = idRecibo
 
     // Mandato SEPA activo de la FAMILIA del niño (vía RPC del tutor: cifra el IBAN).
-    await cTutorA.rpc('registrar_mandato_sepa', {
+    const { error: mandatoErr } = await cTutorA.rpc('registrar_mandato_sepa', {
       p_familia_id: ninoA.familia_id,
       p_nino_id: ninoA.id,
       p_iban: IBAN_DEUDOR,
@@ -96,10 +98,12 @@ describe('F12-B-5 — remesa SEPA (congelado afinado · RPCs)', () => {
       p_firma_imagen: '',
       p_nombre_tecleado: 'Ana Pérez',
       p_texto_hash: 'a'.repeat(64),
+      ...datosMandatoV2(centroA),
       p_ip_address: null,
       p_user_agent: 'test',
       p_fecha_firma: '2025-02-01T10:00:00Z',
     })
+    if (mandatoErr) throw new Error(`mandato: ${mandatoErr.message}`)
 
     // Remesa borrador + enlace del recibo.
     const { data: remesa } = await serviceClient

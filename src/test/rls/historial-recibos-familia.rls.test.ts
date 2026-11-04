@@ -14,6 +14,8 @@ import {
   matricular,
   serviceClient,
   type TestUser,
+  datosMandatoV2,
+  type TestCentro,
 } from './setup'
 import { insertarRecibos } from './remesa-como-sus-funciones'
 
@@ -48,7 +50,7 @@ type Recibo = Database['public']['Tables']['recibos']['Insert']
 const ANIO = 2026
 
 describe('F-6 — histórico de recibos de la familia', () => {
-  let centro: { id: string }
+  let centro: TestCentro
   let otroCentro: { id: string }
   let familia: string
   let otraFamilia: string
@@ -155,6 +157,7 @@ describe('F-6 — histórico de recibos de la familia', () => {
         p_firma_imagen: '',
         p_nombre_tecleado: 'Tutora Historial F6',
         p_texto_hash: 'c'.repeat(64),
+        ...datosMandatoV2(centro),
         p_ip_address: null,
         p_user_agent: 'test',
         p_fecha_firma: '2026-01-01T10:00:00Z',

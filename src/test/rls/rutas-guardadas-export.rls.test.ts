@@ -15,6 +15,7 @@ import {
   serviceClient,
   type TestCentro,
   type TestUser,
+  datosMandatoV2,
 } from './setup'
 
 import { recolectarUsuario } from '@/features/export/lib/recolectar'
@@ -129,6 +130,7 @@ function mandato(path: string) {
     p_firma_imagen: 'data:image/png;base64,iVBORw0KGgo=',
     p_nombre_tecleado: 'Tutor A Rutas',
     p_texto_hash: 'a'.repeat(64),
+    ...datosMandatoV2(centro),
     p_ip_address: null,
     p_user_agent: 'test',
     p_fecha_firma: '2026-03-01T10:00:00Z',

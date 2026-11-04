@@ -203,6 +203,21 @@ export interface TestCentro {
  */
 export const CID_PRUEBA = 'ES81ZZZB00000000'
 
+/**
+ * Los cuatro datos del mandato v2 de un centro de test, para `registrar_mandato_sepa` y
+ * `sustituir_mandato_sepa`. Desde `20261230120000` no se firman mandatos v1: la llamada sin ellos da
+ * `v1_cerrado`. El acreedor tiene que ser el del centro (`cid_distinto`, `acreedor_distinto`), y el v2
+ * lleva su hash en hexadecimal (`hash_invalido`).
+ */
+export function datosMandatoV2(centro: TestCentro) {
+  return {
+    p_titular_documento: 'X1234567L',
+    p_titular_direccion: 'Calle Prueba 1, Valencia',
+    p_acreedor_cid: CID_PRUEBA,
+    p_acreedor_nombre: centro.nombre,
+  }
+}
+
 export async function createTestCentro(
   nombre?: string,
   opciones: { sinCid?: boolean } = {}

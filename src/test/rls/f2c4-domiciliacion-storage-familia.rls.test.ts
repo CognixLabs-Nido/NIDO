@@ -13,6 +13,8 @@ import {
   deleteTestUser,
   serviceClient,
   type TestUser,
+  datosMandatoV2,
+  type TestCentro,
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -39,6 +41,9 @@ const PDF = Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34])
 const IBAN_1 = 'ES7620770024003102575766'
 const IBAN_2 = 'ES9121000418450200051332'
 
+// Los datos del v2 del centro del fichero; sin ellos, la llamada da v1_cerrado (20261230120000).
+let v2 = {} as ReturnType<typeof datosMandatoV2>
+
 function argsDigital(familiaId: string, iban: string, id: string, documentoPath: string) {
   return {
     p_familia_id: familiaId,
@@ -50,6 +55,7 @@ function argsDigital(familiaId: string, iban: string, id: string, documentoPath:
     p_firma_imagen: 'data:image/png;base64,iVBORw0KGgo=',
     p_nombre_tecleado: 'Ana Pérez',
     p_texto_hash: 'a'.repeat(64),
+    ...v2,
     p_ip_address: null,
     p_user_agent: 'test',
     p_fecha_firma: '2026-03-01T10:00:00Z',
@@ -58,7 +64,7 @@ function argsDigital(familiaId: string, iban: string, id: string, documentoPath:
 }
 
 describe('F-2c-4 — domiciliación del tutor (storage familia + RPC digital)', () => {
-  let centro: { id: string }
+  let centro: TestCentro
   let familiaA: string
   let familiaB: string
   let tutorA: TestUser
@@ -70,6 +76,7 @@ describe('F-2c-4 — domiciliación del tutor (storage familia + RPC digital)', 
 
   beforeAll(async () => {
     centro = await createTestCentro('Centro F2C4')
+    v2 = datosMandatoV2(centro)
     familiaA = await createTestFamilia(centro.id)
     familiaB = await createTestFamilia(centro.id)
 

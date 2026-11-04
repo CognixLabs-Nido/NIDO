@@ -13,7 +13,12 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
-import { actualizarMandato, borrarMandatos, insertarMandato } from './mandatos-como-postgres'
+import {
+  actualizarMandato,
+  borrarMandatos,
+  insertarMandato,
+  insertarMandatoV1Existente,
+} from './mandatos-como-postgres'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -24,8 +29,9 @@ import type { Database } from '@/types/database'
  *  - Sin CID del centro no se firma ningún mandato: registrar y sustituir lo rechazan
  *    (`centro_sin_cid`), para la directora y para el tutor. Quien no está autorizado sigue
  *    recibiendo «No autorizado»: no sabe si el centro tiene CID.
- *  - Con CID, la llamada de hoy (sin los datos nuevos) da un v1; con ellos, un v2 que guarda el
- *    documento y la dirección del titular y la foto del acreedor con la que se firmó.
+ *  - Con CID, la llamada con los datos nuevos da un v2 que guarda el documento y la dirección del
+ *    titular y la foto del acreedor con la que se firmó. Sin ellos daba un v1 hasta
+ *    `20261230120000`, que lo cierra (`mandato-v1-cerrado.rls.test.ts`).
  *  - Un v2 lleva todo, el CID y el nombre del centro de verdad y el hash en hexadecimal; el CHECK
  *    lo exige también a quien escribe la tabla directamente.
  *  - El documento y la dirección del titular no entran en audit_log y sí en el export.
@@ -141,27 +147,14 @@ describe('El mandato v2 y el CID obligatorio', () => {
     expect(r.error?.message).toMatch(/No autorizado/)
     expect(r.error?.hint ?? null).toBeNull()
 
-    // Control positivo: la misma llamada, en el centro con CID, firma.
+    // Control positivo: la misma llamada con los datos del v2, en el centro con CID, firma.
     const famCon = await familia(conCid.id)
-    const ok = await cAdmin.rpc('registrar_mandato_sepa', args(famCon, IBAN_1))
+    const ok = await cAdmin.rpc('registrar_mandato_sepa', args(famCon, IBAN_1, v2(conCid.nombre)))
     expect(ok.error).toBeNull()
     expect(await mandatosDe(famCon)).toHaveLength(1)
   })
 
-  it('con CID, la llamada de hoy da un v1 y la del 0c-2 un v2 con sus datos', async () => {
-    const famV1 = await familia(conCid.id)
-    const r1 = await cAdmin.rpc('registrar_mandato_sepa', args(famV1, IBAN_1))
-    expect(r1.error).toBeNull()
-    expect(await mandatosDe(famV1)).toEqual([
-      expect.objectContaining({
-        version_canonico: 1,
-        titular_documento: null,
-        titular_direccion: null,
-        acreedor_cid: null,
-        acreedor_nombre: null,
-      }),
-    ])
-
+  it('con CID, la llamada del 0c-2 da un v2 con sus datos', async () => {
     const famV2 = await familia(conCid.id)
     const r2 = await cAdmin.rpc('registrar_mandato_sepa', args(famV2, IBAN_1, v2(conCid.nombre)))
     expect(r2.error).toBeNull()
@@ -256,15 +249,20 @@ describe('El mandato v2 y el CID obligatorio', () => {
         'v2 sin dirección',
         { version_canonico: 2, texto_hash: HASH, ...datos, titular_direccion: null },
       ],
-      [
-        'v1 con documento',
-        { version_canonico: 1, texto_hash: HASH, titular_documento: 'X1234567L' },
-      ],
       ['versión 3', { version_canonico: 3, texto_hash: HASH, ...datos }],
     ] as const) {
       const r = insertarMandato({ ...base, identificador_mandato: `NIDO-V2TEST-${caso}`, ...fila })
       expect.soft(r.error?.code, caso).toBe('23514')
     }
+    // Un v1 de los que ya existían tampoco lleva los datos del v2 (con el trigger del 0c-3 apagado
+    // para crearlo: el CHECK sigue).
+    const v1 = insertarMandatoV1Existente({
+      ...base,
+      identificador_mandato: 'NIDO-V2TEST-v1 con documento',
+      texto_hash: HASH,
+      titular_documento: 'X1234567L',
+    })
+    expect(v1.error?.code).toBe('23514')
     // Y al cambiarlo: el v2 bueno no pierde su hash.
     const u = actualizarMandato(ok.data!.id, { texto_hash: null })
     expect(u.error?.code).toBe('23514')

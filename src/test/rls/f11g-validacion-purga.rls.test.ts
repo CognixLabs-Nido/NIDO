@@ -17,6 +17,8 @@ import {
   serviceClient,
   type TestNino,
   type TestUser,
+  datosMandatoV2,
+  type TestCentro,
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -45,7 +47,7 @@ const PDF = Buffer.from('%PDF-1.4\n%%EOF\n')
 const IBAN_TEST = 'ES9121000418450200051332' // 24 chars, válido por longitud
 
 describe('F11-G — RLS validación + buckets (mandatos_sepa / cambios_pendientes)', () => {
-  let centroA: { id: string }
+  let centroA: TestCentro
   let centroB: { id: string }
   let ninoA: TestNino // centroA, tutela de tutorA, en aula de profeA
   let ninoA2: TestNino // centroA, SIN tutela de tutorA (aislamiento intra-centro)
@@ -114,7 +116,8 @@ describe('F11-G — RLS validación + buckets (mandatos_sepa / cambios_pendiente
         p_documento_path: `${centroA.id}/${ninoA.id}/mandato.pdf`,
         p_firma_imagen: null,
         p_nombre_tecleado: 'Madre Test',
-        p_texto_hash: null,
+        p_texto_hash: 'a'.repeat(64),
+        ...datosMandatoV2(centroA),
         p_ip_address: null,
         p_user_agent: null,
         p_fecha_firma: null,

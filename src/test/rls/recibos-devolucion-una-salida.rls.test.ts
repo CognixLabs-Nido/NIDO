@@ -11,6 +11,8 @@ import {
   deleteTestUser,
   serviceClient,
   type TestUser,
+  datosMandatoV2,
+  type TestCentro,
 } from './setup'
 import { insertarRecibos, intentarConMarcador } from './remesa-como-sus-funciones'
 
@@ -43,7 +45,7 @@ const DEVOLUCION = '2026-01-20'
 const COBRO = '2026-01-25'
 
 describe('PR-2 — devoluciones con una sola salida', () => {
-  let centro: { id: string }
+  let centro: TestCentro
   let familiaSin: string
   let familiaCon: string
   let directora: TestUser
@@ -163,6 +165,7 @@ describe('PR-2 — devoluciones con una sola salida', () => {
       p_firma_imagen: '',
       p_nombre_tecleado: 'Tutora Devolucion Con Mandato',
       p_texto_hash: 'b'.repeat(64),
+      ...datosMandatoV2(centro),
       p_ip_address: null,
       p_user_agent: 'test',
       p_fecha_firma: '2026-01-01T10:00:00Z',
