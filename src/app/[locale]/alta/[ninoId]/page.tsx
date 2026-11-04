@@ -290,10 +290,11 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   })
   const imagenAceptado = imagenConsentida ?? false
 
-  // SEPA (G-2): datos del centro (acreedor) y mandato activo previo del tutor 1 (titular).
+  // SEPA (G-2): datos del centro (acreedor, con su CID desde el 0c-2) y mandato activo previo del
+  // tutor 1 (titular).
   const { data: centro } = await supabase
     .from('centros')
-    .select('nombre, direccion')
+    .select('nombre, direccion, identificador_acreedor')
     .eq('id', nino.centro_id)
     .maybeSingle()
 
@@ -384,6 +385,9 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         centroId={nino.centro_id}
         centroNombre={centro?.nombre ?? ''}
         centroDireccion={centro?.direccion ?? ''}
+        // Sin CID no se firma ningún mandato: el wizard no monta el paso SEPA (0c, 2026-11-04).
+        centroCid={centro?.identificador_acreedor?.trim() || null}
+        centroTieneCid={Boolean(centro?.identificador_acreedor?.trim())}
         mandatoSepaInicial={mandatoSepaInicial}
         mandatoFamilia={mandatoFamilia}
         currentUserId={user.id}

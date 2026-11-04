@@ -169,6 +169,25 @@ Decisiones del 2026-11-04 sobre el 0c, al trazarlo:
 - **Los dos mandatos vivos de CEI Ejemplo** miden 36 caracteres (el `MndtId` admite 35) y no
   tienen CID: no sirven para el banco. Se quedan como están (v1); esas familias tendrían que
   volver a firmar.
+
+> **0c-2 construido el 2026-11-04** (la app; sin migración). Los tres caminos firman el v2: el alta
+> (`/alta/[ninoId]/mandato-sepa`), la familia desde Recibos (`/family/domiciliacion`) y el presencial
+> de Dirección (`gestionarDomiciliacionFamilia`), con el texto canónico v2 (`textoCanonicoMandatoV2`)
+> y los datos que la base guarda (`mandato-v2-servidor.ts`). El v1 (`textoCanonicoMandato`) no
+> cambia. Decidido al construirlo, sin decisión del responsable que lo cubra (se puede cambiar):
+>
+> - **Sin CID del centro, los otros dos caminos tampoco se ofrecen.** La decisión decía el alta (el
+>   paso no aparece); en `/family/recibos` y en la ficha de la familia, en lugar del botón sale una
+>   línea que lo explica. Si llega igual, la ruta y la acción lo rechazan antes de subir nada, y la
+>   base después.
+> - **La dirección del titular parte de la del tutor 1** en el alta, que es quien suele firmar; el
+>   documento se teclea siempre, porque la app no guarda el número del DNI en ningún otro sitio.
+> - **Un acreedor que cambia mientras se firma** (`cid_distinto`, `acreedor_distinto`) se dice: «los
+>   datos bancarios del centro han cambiado mientras firmabas».
+> - **En la invitación** (antes de entrar) no se lee el centro: el wizard solo pinta el paso
+>   `cuenta` y cuenta los ocho pasos, como siempre. En un centro sin CID, al entrar pasa de «1 de 8»
+>   a «2 de 7»; con CID no cambia nada.
+
 - **Concepto del adeudo: centro, niño y mes, sin tildes.** Ejemplo: `ANAIA · Lucia Garcia Lopez ·
 Octubre 2026`. Sin tildes porque el juego de caracteres de SEPA no las garantiza; máximo 140
   caracteres. Va en el 0b.
@@ -757,7 +776,7 @@ canceló el 2026-11-01 (FRST se procesa como RCUR).
 ## Estado
 
 - [x] 0·doc — esta spec.
-- [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · fecha de cobro: [x] F1 (#464) · [x] F2 (#465) · [x] F3 (este PR) · [x] reabrir remesas · 0c: [ ] 0c-1 (este PR) · [ ] 0c-2 · ~~0d~~ (cancelado)
+- [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · fecha de cobro: [x] F1 (#464) · [x] F2 (#465) · [x] F3 (este PR) · [x] reabrir remesas · 0c: [x] 0c-1 (#487) · [ ] 0c-2 (este PR) · ~~0d~~ (cancelado)
 - [ ] Pantalla de altas en proceso · [ ] 1 · [ ] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [ ] 6 · [ ] 7 · [ ] 8
 
 ## Referencias

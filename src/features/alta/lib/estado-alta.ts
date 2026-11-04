@@ -32,3 +32,12 @@ export type PasoAlta = (typeof PASOS_ALTA)[number]
  * PRIMERA entrada y el tutor se saltaba acuses/menor/tutor (normas, imagen, documentos).
  */
 export const PASO_MIN_AUTENTICADO = PASOS_ALTA.indexOf('acuses')
+
+/**
+ * Los pasos del alta de un centro. Sin CID del centro no se firma ningún mandato (0c,
+ * 2026-11-04): el paso `sepa` no aparece, el último es `emergencia` y finaliza, y el alta se
+ * completa en efectivo, como cuando la familia omite.
+ */
+export function pasosAlta(centroTieneCid: boolean): readonly PasoAlta[] {
+  return centroTieneCid ? PASOS_ALTA : PASOS_ALTA.filter((p) => p !== 'sepa')
+}

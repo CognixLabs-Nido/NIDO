@@ -1219,13 +1219,21 @@
           "familia": "Invalid family",
           "iban": "Invalid IBAN",
           "titular": "Enter the account holder",
-          "invalid": "Invalid data"
+          "invalid": "Invalid data",
+          "documento": "Check the NIF or identity document: if it is a DNI, NIE or CIF, its check letter or digit doesn't match.",
+          "direccion": "Enter the account holder's address."
         },
         "errors": {
           "no_autorizado": "You don't have permission to manage this family's direct debit",
           "mandato_activo_otro_iban": "The family already has an active direct debit with a different IBAN; use Change account",
-          "guardado": "Could not save the direct debit"
-        }
+          "guardado": "Could not save the direct debit",
+          "centro_sin_cid": "The centre has no creditor identifier: without it the direct debit can't be registered.",
+          "acreedor_cambio": "The centre's bank details have changed. Close the dialog and open it again."
+        },
+        "documento": "NIF or identity document",
+        "documento_ayuda": "Of the account holder, as it is on the paper form. If it is a foreign document, type it exactly as it is.",
+        "direccion": "Account holder's address",
+        "sin_cid": "Without the centre's creditor identifier the direct debit can't be registered. The admin adds it in Fees → Creditor details (SEPA)."
       },
       "sin_cuenta": "No account",
       "dni_subido": "Uploaded",
@@ -1529,7 +1537,8 @@
         "guardado": "The direct debit could not be saved. Please try again.",
         "no_autorizado": "You do not have permission to manage this direct debit",
         "mandato_activo_otro_iban": "Your family already has an active direct debit with a different IBAN"
-      }
+      },
+      "sin_cid": "The centre can't set up direct debits yet."
     },
     "nav": {
       "aria_label": "Family navigation",
@@ -2287,7 +2296,8 @@
       "confirmar": "Reopen the remittance",
       "reabierta": "{num, plural, =0 {Remittance reopened.} one {Remittance reopened: # receipt goes back to pending collection.} other {Remittance reopened: # receipts go back to pending collection.}}",
       "reabierta_sin_numero": "Remittance reopened."
-    }
+    },
+    "acreedor_sin_cid_aviso": "The creditor identifier (CID) is missing. Without it, receipts can't be sent to the bank and families can't set up direct debit: enrolment doesn't ask for their account and they can't sign the mandate."
   },
   "aula": {
     "validation": {
@@ -4629,8 +4639,16 @@
         "nombre": "Type your full name to sign",
         "firma": "Draw your signature to continue",
         "guardado": "Could not save the SEPA mandate",
-        "mandato_activo_otro_iban": "This family already has an active SEPA mandate with a different IBAN. To change the account, replace the mandate from the family management screen."
-      }
+        "mandato_activo_otro_iban": "This family already has an active SEPA mandate with a different IBAN. To change the account, replace the mandate from the family management screen.",
+        "documento": "Check the NIF or identity document: if it is a DNI, NIE or CIF, its check letter or digit doesn't match.",
+        "direccion": "Enter the account holder's address.",
+        "centro_sin_cid": "The centre doesn't have its creditor identifier yet, so direct debit isn't possible. Ask the centre.",
+        "acreedor_cambio": "The centre's bank details changed while you were signing. Open the screen again and sign again."
+      },
+      "documento_label": "NIF or identity document",
+      "documento_ayuda": "Of the account holder. If it is a foreign document, type it exactly as it is.",
+      "direccion_label": "Account holder's address",
+      "acreedor_cid_label": "Creditor identifier"
     },
     "validacion": {
       "enviado": "Change sent to management for validation."

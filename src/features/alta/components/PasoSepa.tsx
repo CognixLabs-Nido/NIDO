@@ -48,6 +48,11 @@ interface Props {
   centroId: string
   centroNombre: string
   centroDireccion: string
+  /**
+   * El CID del centro (0c-2): va en el PDF y en el texto canónico v2. Sin él el paso no aparece
+   * (el wizard no lo monta), así que aquí siempre lo hay.
+   */
+  centroCid: string
   /** Id del tutor 1 (firmante/titular) para el identificador del mandato. */
   currentUserId: string
   inicial: MandatoSepaInicial | null
@@ -69,6 +74,11 @@ interface Props {
   onIbanChange: (v: string) => void
   titular: string
   onTitularChange: (v: string) => void
+  /** «NIF o documento de identidad» y dirección del titular (0c-2), elevados como el titular. */
+  titularDocumento: string
+  onTitularDocumentoChange: (v: string) => void
+  titularDireccion: string
+  onTitularDireccionChange: (v: string) => void
   nombreTecleado: string
   onNombreTecleadoChange: (v: string) => void
   /** PR-3b-2 · B2: modo Dirección → mandato PRESENCIAL (sin trazo; PDF con nota "en papel"). */
@@ -92,6 +102,7 @@ export function PasoSepa({
   centroId,
   centroNombre,
   centroDireccion,
+  centroCid,
   currentUserId,
   inicial,
   mandatoFamilia,
@@ -101,6 +112,10 @@ export function PasoSepa({
   onIbanChange,
   titular,
   onTitularChange,
+  titularDocumento,
+  onTitularDocumentoChange,
+  titularDireccion,
+  onTitularDireccionChange,
   nombreTecleado,
   onNombreTecleadoChange,
   modoDireccion = false,
@@ -122,6 +137,8 @@ export function PasoSepa({
     defaultValues: {
       iban,
       titular,
+      titular_documento: titularDocumento,
+      titular_direccion: titularDireccion,
     },
   })
 
@@ -148,8 +165,11 @@ export function PasoSepa({
           identificadorMandato: identificador,
           iban: values.iban,
           titular: values.titular,
+          titularDocumento: values.titular_documento,
+          titularDireccion: values.titular_direccion,
           acreedorNombre: centroNombre,
           acreedorDireccion: centroDireccion,
+          acreedorCid: centroCid,
           firmaDataUrl: modoDireccion ? null : firma,
           firmaPresencialNota: modoDireccion ? tSepa('firma_presencial_nota') : undefined,
           fechaLegible,
@@ -163,6 +183,9 @@ export function PasoSepa({
             tipoRecurrente: tSepa('tipo_recurrente'),
             iban: tSepa('iban_label'),
             titular: tSepa('titular_label'),
+            titularDocumento: tSepa('documento_label'),
+            titularDireccion: tSepa('direccion_label'),
+            acreedorCid: tSepa('acreedor_cid_label'),
             firma: tSepa('firma_titulo'),
             fecha: tSepa('fecha'),
           },
@@ -176,6 +199,8 @@ export function PasoSepa({
       body.append('file', new File([pdf], 'mandato-sepa.pdf', { type: 'application/pdf' }))
       body.append('iban', values.iban)
       body.append('titular', values.titular)
+      body.append('titular_documento', values.titular_documento)
+      body.append('titular_direccion', values.titular_direccion)
       body.append('identificador_mandato', identificador)
       body.append('nombre_tecleado', nombreTecleado.trim())
       // Presencial: sin trazo (el route lo acepta al re-derivar admin del centro).
@@ -285,6 +310,46 @@ export function PasoSepa({
         />
         <FormField
           control={form.control}
+          name="titular_documento"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{tSepa('documento_label')}</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e)
+                    onTitularDocumentoChange(e.target.value)
+                  }}
+                  autoComplete="off"
+                />
+              </FormControl>
+              <FormDescription>{tSepa('documento_ayuda')}</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="titular_direccion"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{tSepa('direccion_label')}</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e)
+                    onTitularDireccionChange(e.target.value)
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="iban"
           render={({ field }) => (
             <FormItem>
@@ -312,6 +377,9 @@ export function PasoSepa({
           <p className="text-muted-foreground">
             <span className="font-medium">{tSepa('acreedor_titulo')}:</span> {centroNombre}
             {centroDireccion ? ` · ${centroDireccion}` : ''}
+          </p>
+          <p className="text-muted-foreground">
+            <span className="font-medium">{tSepa('acreedor_cid_label')}:</span> {centroCid}
           </p>
           <p className="text-muted-foreground">
             <span className="font-medium">{tSepa('tipo')}:</span> {tSepa('tipo_recurrente')}

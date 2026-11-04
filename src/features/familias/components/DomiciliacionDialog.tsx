@@ -34,7 +34,8 @@ import {
 
 /**
  * F-2c-3 — diálogo de Dirección para REGISTRAR (1º) o SUSTITUIR la domiciliación SEPA de una
- * familia en modo PRESENCIAL (la familia firmó en papel; sin PDF ni trazo). Mismo formulario
+ * familia en modo PRESENCIAL (la familia firmó en papel; sin PDF ni trazo). Desde el 0c-2 pide
+ * también el documento y la dirección del titular, del papel, y la acción guarda su hash v2. Mismo formulario
  * para ambos; la action decide registrar vs sustituir según la familia tenga o no mandato.
  */
 export function DomiciliacionDialog({
@@ -55,7 +56,13 @@ export function DomiciliacionDialog({
 
   const form = useForm<DomiciliacionFamiliaInput>({
     resolver: zodResolver(domiciliacionFamiliaSchema),
-    defaultValues: { familia_id: familiaId, iban: '', titular: titularInicial ?? '' },
+    defaultValues: {
+      familia_id: familiaId,
+      iban: '',
+      titular: titularInicial ?? '',
+      titular_documento: '',
+      titular_direccion: '',
+    },
   })
 
   function onSubmit(values: DomiciliacionFamiliaInput) {
@@ -64,7 +71,13 @@ export function DomiciliacionDialog({
       if (r.success) {
         toast.success(t('guardado'))
         setOpen(false)
-        form.reset({ familia_id: familiaId, iban: '', titular: values.titular })
+        form.reset({
+          familia_id: familiaId,
+          iban: '',
+          titular: values.titular,
+          titular_documento: values.titular_documento,
+          titular_direccion: values.titular_direccion,
+        })
         router.refresh()
       } else {
         toast.error(tErrors(r.error))
@@ -92,6 +105,33 @@ export function DomiciliacionDialog({
                   <FormLabel>{t('titular')}</FormLabel>
                   <FormControl>
                     <Input {...field} maxLength={140} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="titular_documento"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('documento')}</FormLabel>
+                  <FormControl>
+                    <Input {...field} maxLength={40} autoComplete="off" />
+                  </FormControl>
+                  <FormDescription>{t('documento_ayuda')}</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="titular_direccion"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('direccion')}</FormLabel>
+                  <FormControl>
+                    <Input {...field} maxLength={300} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

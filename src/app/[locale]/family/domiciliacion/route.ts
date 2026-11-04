@@ -1,11 +1,15 @@
-import { createHash } from 'node:crypto'
-
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-familia'
 import { ibanValido, normalizarIban } from '@/features/alta/lib/iban'
-import { MAX_LARGO_IDENTIFICADOR, textoCanonicoMandato } from '@/features/alta/lib/mandato-sepa'
+import { MAX_LARGO_IDENTIFICADOR } from '@/features/alta/lib/mandato-sepa'
+import {
+  acreedorDelCentro,
+  errorDatosTitular,
+  mandatoV2,
+  motivoRechazoV2,
+} from '@/features/alta/lib/mandato-v2-servidor'
 import { registrarOSustituirMandatoSepa } from '@/features/alta/lib/registrar-mandato-sepa'
 import { familiaDelUsuarioEn } from '@/features/centros/contexto/ambito-familiar'
 import { BUCKET_MANDATO_SEPA, firmarRuta } from '@/shared/lib/adjuntos/storage'
@@ -43,7 +47,8 @@ function err(error: string, status = 400): Response {
  *  - la fila se persiste vía RPC (SECURITY DEFINER) que autoriza `es_tutor_de_familia` y CIFRA
  *    el IBAN. Se decide `registrar` (1er mandato) vs `sustituir` (revoca+inserta) según la
  *    familia tenga ya un mandato activo — espejo de la action presencial de Dirección (F-2c-3).
- * El `texto_hash` se calcula aquí sobre el IBAN **en claro del formulario** (ancla el contenido
+ * El `texto_hash` (texto canónico v2, con el CID del centro y el documento y la dirección del
+ * titular; 0c-2) se calcula aquí sobre el IBAN **en claro del formulario** (ancla el contenido
  * firmado, independiente del cifrado en reposo). El IBAN nunca se almacena en claro.
  */
 export async function POST(request: Request): Promise<Response> {
@@ -75,6 +80,8 @@ export async function POST(request: Request): Promise<Response> {
   const identificador = form.get('identificador_mandato')
   const nombreTecleado = form.get('nombre_tecleado')
   const firmaImagen = form.get('firma_imagen')
+  const titularDocumento = form.get('titular_documento')
+  const titularDireccion = form.get('titular_direccion')
 
   if (!(file instanceof Blob)) return err('alta.documentos.errors.subida')
   if (file.type !== 'application/pdf') return err('alta.documentos.errors.tipo_pdf')
@@ -83,6 +90,8 @@ export async function POST(request: Request): Promise<Response> {
   if (typeof ibanRaw !== 'string' || !ibanValido(ibanRaw)) return err('alta.sepa.errors.iban')
   if (typeof titular !== 'string' || titular.trim().length < 2 || titular.length > 140)
     return err('alta.sepa.errors.titular')
+  const errorTitular = errorDatosTitular(titularDocumento, titularDireccion)
+  if (errorTitular) return err(`alta.sepa.errors.${errorTitular}`)
   if (
     typeof identificador !== 'string' ||
     identificador.length < 1 ||
@@ -107,26 +116,23 @@ export async function POST(request: Request): Promise<Response> {
   // Ruta FAMILIA-scoped con timestamp (conserva histórico; no pisa el PDF nino-scoped del alta).
   const path = `${familia.centroId}/familia/${familia.familiaId}/mandato-${Date.now()}.pdf`
 
-  // Acreedor = centro (nombre) para el canónico que se hashea. RLS `centros`: pertenece_a_centro
-  // → el tutor lo lee con su cliente.
-  const { data: centro } = await supabase
-    .from('centros')
-    .select('nombre')
-    .eq('id', familia.centroId)
-    .maybeSingle()
+  // Acreedor = centro, con su CID (RLS `centros`: pertenece_a_centro → el tutor lo lee con su
+  // cliente). Sin CID no se firma ningún mandato (0c, 2026-11-04): antes de subir nada.
+  const acreedor = await acreedorDelCentro(supabase, familia.centroId)
+  if (!acreedor) return err('alta.errors.no_autorizado', 403)
+  if (!acreedor.cid) return err('alta.sepa.errors.centro_sin_cid', 409)
 
   const fechaFirmaIso = new Date().toISOString()
-  const textoHash = createHash('sha256')
-    .update(
-      textoCanonicoMandato({
-        identificadorMandato: identificador,
-        iban,
-        titular: titular.trim(),
-        acreedorNombre: centro?.nombre ?? '',
-        fechaFirmaIso,
-      })
-    )
-    .digest('hex')
+  // El texto canónico v2: con el CID y el documento y la dirección del titular.
+  const v2 = mandatoV2({
+    identificadorMandato: identificador,
+    iban,
+    titular,
+    titularDocumento: titularDocumento as string,
+    titularDireccion: titularDireccion as string,
+    acreedor: { nombre: acreedor.nombre, cid: acreedor.cid },
+    fechaFirmaIso,
+  })
 
   // 1. Subida del PDF (cliente de usuario; RLS de storage F-2c-4 autoriza al tutor de la familia).
   const subida = await supabase.storage
@@ -156,14 +162,17 @@ export async function POST(request: Request): Promise<Response> {
     p_documento_path: path,
     p_firma_imagen: firmaImagen,
     p_nombre_tecleado: nombreTecleado.trim(),
-    p_texto_hash: textoHash,
+    p_texto_hash: v2.textoHash,
     p_ip_address: ipAddress,
     p_user_agent: userAgent ?? '',
     p_fecha_firma: fechaFirmaIso,
     p_metodo: 'digital',
+    ...v2.rpc,
   })
   if (rpcErr) {
     if (/no autorizado|42501/i.test(rpcErr.message)) return err('alta.errors.no_autorizado', 403)
+    const motivo = motivoRechazoV2(rpcErr.hint)
+    if (motivo) return err(`alta.sepa.errors.${motivo}`, 409)
     // No debería darse (solo llamamos registrar cuando NO hay activo), pero se propaga legible.
     if (/mandato_activo_otro_iban/i.test(rpcErr.message))
       return err('alta.sepa.errors.mandato_activo_otro_iban', 409)

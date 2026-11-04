@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 import { finalizarAlta, type BloqueAlta } from '../actions/finalizar-alta'
-import { PASOS_ALTA, PASO_MIN_AUTENTICADO, type PasoAlta } from '../lib/estado-alta'
+import { PASO_MIN_AUTENTICADO, pasosAlta, type PasoAlta } from '../lib/estado-alta'
 import { PasoAcuses } from './PasoAcuses'
 import { PasoCuenta } from './PasoCuenta'
 import { PasoMedico } from './PasoMedico'
@@ -62,6 +62,16 @@ interface Props {
   centroId: string
   centroNombre: string
   centroDireccion: string
+  /**
+   * El CID del centro, o null. Sin él no se firma ningún mandato (0c, 2026-11-04): el paso de
+   * domiciliación no aparece y el alta se completa en efectivo, como cuando la familia omite.
+   */
+  centroCid: string | null
+  /**
+   * Si el centro tiene CID, para contar los pasos. En `/alta` es `Boolean(centroCid)`; en la
+   * invitación (antes de entrar) el CID no llega al cliente y llega solo esto.
+   */
+  centroTieneCid: boolean
   mandatoSepaInicial: MandatoSepaInicial | null
   /** F-2c-2: mandato SEPA activo de la FAMILIA (o null). Si existe → paso 8 informativo. */
   mandatoFamilia: MandatoFamiliaActivo | null
@@ -123,6 +133,8 @@ export function AltaTutorWizard({
   centroId,
   centroNombre,
   centroDireccion,
+  centroCid,
+  centroTieneCid,
   mandatoSepaInicial,
   mandatoFamilia,
   currentUserId,
@@ -135,7 +147,17 @@ export function AltaTutorWizard({
   const tErrors = useTranslations()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const total = PASOS_ALTA.length
+  // Sin CID del centro el paso `sepa` no se monta: el último es `emergencia`, que finaliza.
+  // Los pasos se fijan UNA vez, al empezar (decisión del 2026-11-04): sin CID el alta tiene 7 desde
+  // el principio («1 de 7»), también en la invitación, y no cambian aunque la página se vuelva a
+  // pintar con otro dato del centro a mitad del alta. Sin CID el último es `emergencia`; los
+  // índices de los demás no cambian (`sepa` es el último).
+  const [pasos] = useState(() => pasosAlta(centroTieneCid))
+  const conSepa = pasos.includes('sepa')
+  // El CID también, con los pasos: si el centro lo quita a mitad del alta, el paso no se queda en
+  // blanco; la ruta rechaza la firma (`centro_sin_cid`, con su mensaje) y «Omitir» finaliza.
+  const [cidDelAlta] = useState(centroCid)
+  const total = pasos.length
   const pasoMin = modoInvitacion ? 0 : PASO_MIN_AUTENTICADO
   const [step, setStep] = useState<number>(
     Math.min(Math.max(modoInvitacion ? 0 : pasoInicial, pasoMin), total - 1)
@@ -160,6 +182,10 @@ export function AltaTutorWizard({
   const [sepaIban, setSepaIban] = useState('')
   const [sepaTitular, setSepaTitular] = useState(sepaTitularInicial)
   const [sepaNombreTecleado, setSepaNombreTecleado] = useState(sepaTitularInicial)
+  // 0c-2: el documento y la dirección del titular. La dirección parte de la del tutor 1, que es
+  // quien suele ser el titular; el documento no se guarda en ningún otro sitio y se teclea.
+  const [sepaDocumento, setSepaDocumento] = useState('')
+  const [sepaDireccion, setSepaDireccion] = useState(() => direccionDe(datosTutor1))
 
   // MÉDICO (pasos `medico` + `emergencia`): su estado tecleado vive ELEVADO aquí, igual que
   // SEPA (BUG 2 / PR-4a-2) y la dirección del niño (PR-4d). Los dos pasos médicos se desmontan
@@ -182,7 +208,7 @@ export function AltaTutorWizard({
     setMedicaValores((prev) => ({ ...prev, ...subset }))
   }, [])
 
-  const paso: PasoAlta = PASOS_ALTA[step]
+  const paso: PasoAlta = pasos[step]!
   const goNext = () => setStep((s) => Math.min(s + 1, total - 1))
   const goBack = () => setStep((s) => Math.max(s - 1, pasoMin))
 
@@ -245,7 +271,7 @@ export function AltaTutorWizard({
           aria-valuenow={step + 1}
           aria-label={t('wizard.progress')}
         >
-          {PASOS_ALTA.map((p, i) => (
+          {pasos.map((p, i) => (
             <span
               key={p}
               className={
@@ -377,18 +403,20 @@ export function AltaTutorWizard({
             inicial={medicaValores}
             onCambio={mergeMedica}
             variante="emergencia"
-            onNext={goNext}
+            esUltimo={!conSepa}
+            onNext={conSepa ? goNext : finalizar}
             onBack={goBack}
           />
         )}
 
-        {paso === 'sepa' && (
+        {paso === 'sepa' && cidDelAlta && (
           <PasoSepa
             locale={locale}
             ninoId={ninoId}
             centroId={centroId}
             centroNombre={centroNombre}
             centroDireccion={centroDireccion}
+            centroCid={cidDelAlta}
             currentUserId={currentUserId}
             inicial={mandatoSepaInicial}
             mandatoFamilia={mandatoFamilia}
@@ -398,6 +426,10 @@ export function AltaTutorWizard({
             onIbanChange={setSepaIban}
             titular={sepaTitular}
             onTitularChange={setSepaTitular}
+            titularDocumento={sepaDocumento}
+            onTitularDocumentoChange={setSepaDocumento}
+            titularDireccion={sepaDireccion}
+            onTitularDireccionChange={setSepaDireccion}
             nombreTecleado={sepaNombreTecleado}
             onNombreTecleadoChange={setSepaNombreTecleado}
             modoDireccion={modoDireccion}
@@ -408,4 +440,12 @@ export function AltaTutorWizard({
       </CardContent>
     </Card>
   )
+}
+
+/** «Calle número, CP ciudad» del tutor, con lo que tenga; vacía si no tiene nada. */
+function direccionDe(t: DatosTutorInicial | null): string {
+  if (!t) return ''
+  const calle = [t.direccion_calle, t.direccion_numero].filter(Boolean).join(' ')
+  const ciudad = [t.direccion_cp, t.direccion_ciudad].filter(Boolean).join(' ')
+  return [calle, ciudad].filter(Boolean).join(', ')
 }
