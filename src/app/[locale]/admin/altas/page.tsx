@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { AltaSinTerminarAcciones } from '@/features/matriculas/components/AltaSinTerminarAcciones'
+import { InvitacionTutor2Acciones } from '@/features/matriculas/components/InvitacionTutor2Acciones'
 import { ChecklistAvance } from '@/features/matriculas/components/ChecklistAvance'
 import {
   getAltasEnProceso,
@@ -206,9 +207,22 @@ function ListaAltas({
                     </div>
                   )}
                   {a.clase === 'tutor2' && (
-                    <p className="text-muted-foreground border-t pt-3 text-xs">
-                      {t('tutor2.sin_botones')}
-                    </p>
+                    <div className="space-y-2 border-t pt-3">
+                      {a.emailInvitacion &&
+                        a.emailInvitacion.toLowerCase() !== a.email.toLowerCase() && (
+                          <p className="text-sm">
+                            {t('tutor2.email_corregido', {
+                              viejo: a.emailInvitacion,
+                              email: a.email,
+                            })}
+                          </p>
+                        )}
+                      <InvitacionTutor2Acciones
+                        ninoId={a.ninoId}
+                        email={a.email}
+                        conInvitacion={a.estado !== 'sin_invitar'}
+                      />
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -223,7 +237,10 @@ function ListaAltas({
 function frase(a: AltaEnProceso, fecha: (iso: string) => string, t: T, tS: T): string {
   if (a.clase === 'por_validar') return t('estado.por_validar')
   if (a.clase === 'tutor2')
-    return t(`tutor2.${a.estado}`, { email: a.email, fecha: fecha(a.desde) })
+    return t(`tutor2.${a.estado}`, {
+      email: a.emailInvitacion ?? a.email,
+      fecha: a.desde ? fecha(a.desde) : '—',
+    })
   const s = a.alta
   if (s.estado === 'invitacion_abierta')
     return tS('estado.invitacion_abierta', { email: s.email ?? '—' })

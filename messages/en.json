@@ -1503,7 +1503,16 @@
         "abierta": "Invitation to the second guardian sent to {email} on {fecha}, not accepted.",
         "caducada": "The invitation to the second guardian ({email}) expired on {fecha} without being accepted.",
         "rechazada": "The second guardian ({email}) declined the invitation on {fecha}.",
-        "sin_botones": "This invitation can't be resent or cancelled from here."
+        "sin_invitar": "The second guardian ({email}) has no invitation. This happens when the family adds them or corrects their email after the enrolment is validated: nobody invites them.",
+        "email_corregido": "The invitation went to {viejo}, and the second guardian's email is now {email}. Resend it.",
+        "reenviar": "Resend the invitation",
+        "reenviar_a": "It will be sent to {email}.",
+        "reenviada_ok": "Invitation sent to {email}.",
+        "cancelar": "Cancel the invitation",
+        "confirmar_titulo": "Cancel the second guardian's invitation?",
+        "confirmar_texto": "The link will stop working. The second guardian stays in the family record and you can resend the invitation whenever you like.",
+        "volver": "Back",
+        "cancelada_ok": "Invitation cancelled."
       },
       "avance": {
         "titulo": "What has been done",
@@ -2434,7 +2443,11 @@
       "alta_con_cobros": "The enrolment has confirmed receipts: it cannot be deleted from here.",
       "alta_con_actividad": "The child has activity at the centre (attendance, diary…): this is not an unfinished enrolment.",
       "alta_iniciada": "The family has already started the enrolment: the invitation email can no longer be changed.",
-      "alta_correo_no_salio": "The email has been corrected, but the invitation email was not sent. Send it again."
+      "alta_correo_no_salio": "The email has been corrected, but the invitation email was not sent. Send it again.",
+      "tutor2_ya_no": "We couldn't find the child of this invitation. Reload the page.",
+      "tutor2_ya_entro": "The second guardian has already signed in: there is nothing to resend.",
+      "tutor2_sin_email": "The family has no second guardian with an email: there is nobody to send the invitation to.",
+      "tutor2_correo_no_salio": "The invitation is ready, but the email didn't go out. Try again."
     }
   },
   "vinculo": {

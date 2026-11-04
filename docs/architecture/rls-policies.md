@@ -401,7 +401,15 @@ Migración `20261209120000_feat_altas_sin_terminar`; spec `docs/specs/retencion-
   `familia_tutores`, `mandatos_sepa`, `firmas_autorizacion`, `consentimientos` y
   `existe_consentimiento_imagen`, todas abiertas a Dirección del centro por su RLS. Si una lectura
   falla, la lista no sale (NULL), nunca vacía.
-- Test: `src/test/audit/altas-sin-terminar.test.ts` y `src/test/rls/altas-en-proceso.rls.test.ts`.
+- **El segundo tutor** (`20261231120000`): `cancelar_invitacion_tutor2(niño, actor,
+email_que_se_queda)`, solo `service_role`. La app comprueba la sesión (`usuarioAdminEn`) y pasa
+  quién actúa; la base lo vuelve a mirar (`privado.es_direccion`, 42501). Borra sin copia las
+  invitaciones sin aceptar del segundo tutor del niño, salvo la del email que se queda, y las
+  cuentas provisionales que crearon y nunca entraron (el filtro de `reinvitar_alta`); la app las
+  borra de Auth. La pantalla lista al segundo tutor sin cuenta de una familia con un niño ya
+  validado, con invitación o sin ella, y lee `vinculos_familiares` (`es_admin` del centro del niño).
+- Test: `src/test/audit/altas-sin-terminar.test.ts`, `src/test/rls/altas-en-proceso.rls.test.ts` y
+  `src/test/rls/invitacion-tutor2.rls.test.ts`.
 
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 

@@ -1503,7 +1503,16 @@
         "abierta": "Invitación al segundo tutor enviada a {email} el {fecha}, sin aceptar.",
         "caducada": "La invitación al segundo tutor ({email}) caducó el {fecha} sin que la aceptara.",
         "rechazada": "El segundo tutor ({email}) rechazó la invitación el {fecha}.",
-        "sin_botones": "Desde aquí no se puede reenviar ni cancelar esta invitación."
+        "sin_invitar": "El segundo tutor ({email}) no tiene ninguna invitación. Pasa cuando la familia lo añade o corrige su email después de validar el alta: nadie le invita.",
+        "email_corregido": "La invitación fue a {viejo}, y el email del segundo tutor es ahora {email}. Reenvíala.",
+        "reenviar": "Reenviar la invitación",
+        "reenviar_a": "Se enviará a {email}.",
+        "reenviada_ok": "Invitación enviada a {email}.",
+        "cancelar": "Cancelar la invitación",
+        "confirmar_titulo": "¿Cancelar la invitación del segundo tutor?",
+        "confirmar_texto": "El enlace dejará de funcionar. El segundo tutor sigue en la ficha de la familia y puedes reenviarle la invitación cuando quieras.",
+        "volver": "Volver",
+        "cancelada_ok": "Invitación cancelada."
       },
       "avance": {
         "titulo": "Lo que lleva hecho",
@@ -2434,7 +2443,11 @@
       "alta_con_cobros": "El alta tiene recibos ya validados: no se puede borrar desde aquí.",
       "alta_con_actividad": "El niño tiene actividad en el centro (asistencia, agenda…): no es un alta sin terminar.",
       "alta_iniciada": "La familia ya ha empezado el alta: ya no se puede cambiar el email de la invitación.",
-      "alta_correo_no_salio": "El email está corregido, pero el correo de la invitación no ha salido. Vuelve a enviarla."
+      "alta_correo_no_salio": "El email está corregido, pero el correo de la invitación no ha salido. Vuelve a enviarla.",
+      "tutor2_ya_no": "No hemos encontrado al niño de esta invitación. Recarga la página.",
+      "tutor2_ya_entro": "El segundo tutor ya ha entrado: no hay nada que reenviar.",
+      "tutor2_sin_email": "La familia no tiene un segundo tutor con email: no hay a quién enviar la invitación.",
+      "tutor2_correo_no_salio": "La invitación está lista, pero el correo no ha salido. Vuelve a intentarlo."
     }
   },
   "vinculo": {

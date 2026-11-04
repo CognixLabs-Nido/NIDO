@@ -1503,7 +1503,16 @@
         "abierta": "Invitació al segon tutor enviada a {email} el {fecha}, sense acceptar.",
         "caducada": "La invitació al segon tutor ({email}) va caducar el {fecha} sense que l'acceptara.",
         "rechazada": "El segon tutor ({email}) va rebutjar la invitació el {fecha}.",
-        "sin_botones": "Des d'ací no es pot reenviar ni cancel·lar aquesta invitació."
+        "sin_invitar": "El segon tutor ({email}) no té cap invitació. Passa quan la família l'afig o en corregix l'email després de validar l'alta: ningú el convida.",
+        "email_corregido": "La invitació va anar a {viejo}, i l'email del segon tutor ara és {email}. Reenvia-la.",
+        "reenviar": "Reenviar la invitació",
+        "reenviar_a": "S'enviarà a {email}.",
+        "reenviada_ok": "Invitació enviada a {email}.",
+        "cancelar": "Cancel·lar la invitació",
+        "confirmar_titulo": "Cancel·lar la invitació del segon tutor?",
+        "confirmar_texto": "L'enllaç deixarà de funcionar. El segon tutor continua en la fitxa de la família i pots reenviar-li la invitació quan vulgues.",
+        "volver": "Tornar",
+        "cancelada_ok": "Invitació cancel·lada."
       },
       "avance": {
         "titulo": "El que porta fet",
@@ -2434,7 +2443,11 @@
       "alta_con_cobros": "L'alta té rebuts ja validats: no es pot esborrar des d'ací.",
       "alta_con_actividad": "El xiquet té activitat al centre (assistència, agenda…): no és una alta sense acabar.",
       "alta_iniciada": "La família ja ha començat l'alta: ja no es pot canviar el correu de la invitació.",
-      "alta_correo_no_salio": "El correu està corregit, però el missatge de la invitació no ha eixit. Torna a enviar-la."
+      "alta_correo_no_salio": "El correu està corregit, però el missatge de la invitació no ha eixit. Torna a enviar-la.",
+      "tutor2_ya_no": "No hem trobat el xiquet d'aquesta invitació. Torna a carregar la pàgina.",
+      "tutor2_ya_entro": "El segon tutor ja ha entrat: no hi ha res a reenviar.",
+      "tutor2_sin_email": "La família no té un segon tutor amb email: no hi ha a qui enviar la invitació.",
+      "tutor2_correo_no_salio": "La invitació està preparada, però el correu no ha eixit. Torna-ho a intentar."
     }
   },
   "vinculo": {
