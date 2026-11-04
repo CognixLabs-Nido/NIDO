@@ -25,6 +25,7 @@ import {
   ReceiptIcon,
   LockIcon,
   ShieldOffIcon,
+  ListChecksIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { getTranslations } from 'next-intl/server'
@@ -77,6 +78,8 @@ export async function buildSidebarItems(
         icon: <GraduationCapIcon />,
       },
       { href: `/${locale}/admin/admisiones`, label: t('admisiones'), icon: <ClipboardListIcon /> },
+      // Altas en proceso (2026-11-04): el embudo entero de la directora, junto a Admisiones.
+      { href: `/${locale}/admin/altas`, label: t('altas'), icon: <ListChecksIcon /> },
       {
         href: `/${locale}/admin/pendientes`,
         label: t('pendientes'),

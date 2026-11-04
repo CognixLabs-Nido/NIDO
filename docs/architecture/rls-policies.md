@@ -395,7 +395,13 @@ Migración `20261209120000_feat_altas_sin_terminar`; spec `docs/specs/retencion-
   `usuarios` en su subtransacción (antes, las copias de su propio perfil, que la nombran como
   autora); si algo más la nombra, espera. La app la borra después de Auth, y si falla, le deja el
   email de la purga para que `cuentas_auth_huerfanas` la vuelva a encontrar.
-- Test: `src/test/audit/altas-sin-terminar.test.ts`.
+- **La pantalla «Altas en proceso»** (`/admin/altas`, 2026-11-04, sin migración): lee con la
+  sesión de Dirección `altas_sin_terminar`, las matrículas en `lista` y las invitaciones del
+  segundo tutor sin aceptar, y lo que lleva hecho cada alta de `ninos`, `acuses_alta`,
+  `familia_tutores`, `mandatos_sepa`, `firmas_autorizacion`, `consentimientos` y
+  `existe_consentimiento_imagen`, todas abiertas a Dirección del centro por su RLS. Si una lectura
+  falla, la lista no sale (NULL), nunca vacía.
+- Test: `src/test/audit/altas-sin-terminar.test.ts` y `src/test/rls/altas-en-proceso.rls.test.ts`.
 
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 

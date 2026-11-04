@@ -253,6 +253,7 @@
       "informes": "Reports",
       "personal": "Staff",
       "admisiones": "Admissions",
+      "altas": "Enrolments in progress",
       "pendientes": "Validations",
       "familias": "Families",
       "fotosRevocadas": "Revoked photos",
@@ -881,12 +882,8 @@
           "lista": "Pending validation"
         },
         "items": {
-          "identidad": "Child's details",
-          "pedagogicos": "Pedagogical details",
-          "medico": "Medical details",
-          "imagen": "Image authorisation"
+          "pedagogicos": "Pedagogical details"
         },
-        "opcional": "optional",
         "sin_datos": "no data",
         "activar_ayuda": "The guardian finished the enrolment. Review the progress and activate it.",
         "pendiente_ayuda": "The guardian is still completing the enrolment. You'll be able to activate it once finished."
@@ -1475,6 +1472,58 @@
       "anterior": "Previous",
       "siguiente": "Next",
       "pagina_de": "Page {pagina} of {paginas}"
+    },
+    "altas": {
+      "titulo": "Enrolments in progress",
+      "subtitulo": "Every enrolment at the centre until it is validated: invitations not yet accepted, enrolments the family has started, finished ones waiting to be validated and second guardians who haven't signed in.",
+      "no_se_pudo_leer": "We couldn't read the enrolments in progress. Reload the page; if it keeps happening, let support know.",
+      "vacia": "There are no enrolments in progress.",
+      "vacia_filtro": "No enrolment in progress matches this filter.",
+      "dias": "{n, plural, one {# day} other {# days}}",
+      "validar": "Validate the enrolment",
+      "filtros": {
+        "titulo": "Filter the enrolments",
+        "todas": "All ({n})",
+        "invitacion_abierta": "Invitation not accepted ({n})",
+        "sin_invitacion": "Invitation expired or cancelled ({n})",
+        "iniciada": "Family has started ({n})",
+        "por_validar": "Finished, to validate ({n})",
+        "tutor2": "Second guardian not signed in ({n})",
+        "mas30": "More than 30 days ({n})",
+        "invitacion_abierta_corto": "Invitation not accepted",
+        "sin_invitacion_corto": "No invitation",
+        "iniciada_corto": "Started",
+        "por_validar_corto": "To validate",
+        "tutor2_corto": "Second guardian"
+      },
+      "estado": {
+        "por_validar": "The family has finished the enrolment. It still has to be validated by the management."
+      },
+      "tutor2": {
+        "abierta": "Invitation to the second guardian sent to {email} on {fecha}, not accepted.",
+        "caducada": "The invitation to the second guardian ({email}) expired on {fecha} without being accepted.",
+        "rechazada": "The second guardian ({email}) declined the invitation on {fecha}.",
+        "sin_botones": "This invitation can't be resent or cancelled from here."
+      },
+      "avance": {
+        "titulo": "What has been done",
+        "no_se_pudo_leer": "We couldn't read what has been done in this enrolment.",
+        "opcional": "optional",
+        "items": {
+          "normas": "Rules",
+          "nino": "Child's details (family book)",
+          "imagen": "Image",
+          "tutor1": "Guardian 1 (ID)",
+          "tutor2": "Guardian 2",
+          "medico": "Medical",
+          "sepa": "SEPA mandate"
+        },
+        "estado": {
+          "hecho": "done",
+          "falta": "missing",
+          "sin_hacer_opcional": "not done, optional"
+        }
+      }
     }
   },
   "teacher": {

@@ -87,7 +87,8 @@ export async function AvisosInicio({
   const recibosHref = `/${locale}/family/recibos`
   const campanaInformesHref = `/${locale}/teacher/informes`
   const altasPendientesHref = `/${locale}/admin/ninos?estado=lista`
-  const altasSinTerminarHref = `/${locale}/admin/ninos?estado=pendiente`
+  // Las que llevan más de 30 días sin terminar, en «Altas en proceso» (2026-11-04).
+  const altasSinTerminarHref = `/${locale}/admin/altas?mas30=1`
   // Una sola familia: a su ficha (abrirla apaga el aviso). Varias: a la lista de familias.
   const domiciliacionesHref =
     domiciliaciones.length === 1

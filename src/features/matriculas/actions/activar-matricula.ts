@@ -50,5 +50,6 @@ export async function activarMatricula(matriculaId: string): Promise<ActionResul
   await invitarTutor2AlValidar(supabase, data.nino_id)
 
   revalidatePath('/[locale]/admin/ninos', 'page')
+  revalidatePath('/[locale]/admin/altas', 'page')
   return ok({ id: data.id })
 }

@@ -253,6 +253,7 @@
       "informes": "Informes",
       "personal": "Personal",
       "admisiones": "Admissions",
+      "altas": "Altes en curs",
       "pendientes": "Validacions",
       "familias": "Famílies",
       "fotosRevocadas": "Fotos revocades",
@@ -881,12 +882,8 @@
           "lista": "Pendent de validació"
         },
         "items": {
-          "identidad": "Dades del xiquet",
-          "pedagogicos": "Dades pedagògiques",
-          "medico": "Dades mèdiques",
-          "imagen": "Autorització d'imatge"
+          "pedagogicos": "Dades pedagògiques"
         },
-        "opcional": "opcional",
         "sin_datos": "sense dades",
         "activar_ayuda": "El tutor ha finalitzat l'alta. Revisa l'avanç i activa la matrícula.",
         "pendiente_ayuda": "El tutor encara està completant l'alta. Podràs activar quan la finalitze."
@@ -1475,6 +1472,58 @@
       "anterior": "Anteriors",
       "siguiente": "Següents",
       "pagina_de": "Pàgina {pagina} de {paginas}"
+    },
+    "altas": {
+      "titulo": "Altes en curs",
+      "subtitulo": "Totes les altes del centre fins que queden validades: les invitacions sense acceptar, les que la família ha començat, les acabades que falta validar i els segons tutors que no han entrat.",
+      "no_se_pudo_leer": "No hem pogut llegir les altes en curs. Torna a carregar la pàgina; si continua igual, avisa suport.",
+      "vacia": "No hi ha cap alta en curs.",
+      "vacia_filtro": "Cap alta en curs compleix aquest filtre.",
+      "dias": "{n, plural, one {# dia} other {# dies}}",
+      "validar": "Validar l'alta",
+      "filtros": {
+        "titulo": "Filtrar les altes",
+        "todas": "Totes ({n})",
+        "invitacion_abierta": "Invitació sense acceptar ({n})",
+        "sin_invitacion": "Invitació caducada o cancel·lada ({n})",
+        "iniciada": "La família ha començat ({n})",
+        "por_validar": "Acabades, falta validar ({n})",
+        "tutor2": "Segon tutor sense entrar ({n})",
+        "mas30": "Més de 30 dies ({n})",
+        "invitacion_abierta_corto": "Invitació sense acceptar",
+        "sin_invitacion_corto": "Sense invitació",
+        "iniciada_corto": "Començada",
+        "por_validar_corto": "Falta validar",
+        "tutor2_corto": "Segon tutor"
+      },
+      "estado": {
+        "por_validar": "La família ha acabat l'alta. Falta que Direcció la valide."
+      },
+      "tutor2": {
+        "abierta": "Invitació al segon tutor enviada a {email} el {fecha}, sense acceptar.",
+        "caducada": "La invitació al segon tutor ({email}) va caducar el {fecha} sense que l'acceptara.",
+        "rechazada": "El segon tutor ({email}) va rebutjar la invitació el {fecha}.",
+        "sin_botones": "Des d'ací no es pot reenviar ni cancel·lar aquesta invitació."
+      },
+      "avance": {
+        "titulo": "El que porta fet",
+        "no_se_pudo_leer": "No hem pogut llegir el que porta fet aquesta alta.",
+        "opcional": "opcional",
+        "items": {
+          "normas": "Normes",
+          "nino": "Dades del xiquet (llibre de família)",
+          "imagen": "Imatge",
+          "tutor1": "Tutor 1 (DNI)",
+          "tutor2": "Tutor 2",
+          "medico": "Mèdic",
+          "sepa": "Mandat SEPA"
+        },
+        "estado": {
+          "hecho": "fet",
+          "falta": "falta",
+          "sin_hacer_opcional": "sense fer, és opcional"
+        }
+      }
     }
   },
   "teacher": {

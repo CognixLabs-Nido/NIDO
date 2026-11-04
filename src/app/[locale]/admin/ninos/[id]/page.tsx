@@ -45,6 +45,7 @@ import { AltaDocumentacionTab } from '@/features/ninos/components/AltaDocumentac
 import { getAltaDocumentacion } from '@/features/ninos/queries/get-alta-documentacion'
 import { AvanceAltaCard } from '@/features/matriculas/components/AvanceAltaCard'
 import { getAltasSinTerminar } from '@/features/matriculas/queries/get-altas-sin-terminar'
+import { getAvanceAltas } from '@/features/matriculas/queries/get-avance-alta'
 import { AbrirConversacionDireccionButton } from '@/features/messaging/components/AbrirConversacionDireccionButton'
 import { DarDeBajaNinoButton } from '@/features/ninos/components/DarDeBajaNinoButton'
 import { ReincorporarNinoButton } from '@/features/ninos/components/ReincorporarNinoButton'
@@ -111,23 +112,16 @@ export default async function NinoDetallePage({ params }: PageProps) {
 
   // Avance del alta (P3c) — solo relevante mientras la matrícula no está 'activa'.
   const enAlta = matriculaActiva?.estado === 'pendiente' || matriculaActiva?.estado === 'lista'
-  // Imagen aceptada = existe CONSENTIMIENTO de imagen del niño vigente (IU-2, fuente de
-  // verdad). Engloba ambas vías: checkbox y firma otorgan el mismo consent por-niño. Mismo
-  // criterio (señal) que el gate de finalización (finalizar-alta.ts).
-  let imagenAceptada = false
-  if (enAlta) {
-    const { data: imagenConsentida } = await supabase.rpc('existe_consentimiento_imagen', {
-      p_nino_id: id,
-    })
-    imagenAceptada = imagenConsentida ?? false
-  }
+  // Lo que lleva hecho el alta: lo mismo que la lista de altas en proceso (`getAvanceAltas`), sacado
+  // de lo que hizo la familia. La identidad no cuenta: la pone la invitación.
+  const avance = enAlta
+    ? ((await getAvanceAltas(supabase, nino.centro_id, [id]))?.get(id) ?? null)
+    : null
   // El alta sin terminar (20261209120000): su estado y el botón, solo con la matrícula pendiente.
   const sinTerminar =
     matriculaActiva?.estado === 'pendiente'
       ? (await getAltasSinTerminar(supabase, nino.centro_id))?.find((a) => a.ninoId === id)
       : undefined
-  const medicoCompleto =
-    !!info && !('bloqueadaDesde' in info) && Object.values(info).some((v) => v !== null && v !== '')
 
   // F-3-F: para reincorporar (desarchivar) se elige aula del curso activo. Solo se
   // consulta en la ficha de un archivado (donde aparece el botón). Vacío ⇒ sin curso activo.
@@ -231,10 +225,8 @@ export default async function NinoDetallePage({ params }: PageProps) {
         <AvanceAltaCard
           estado={matriculaActiva.estado as 'pendiente' | 'lista'}
           matriculaId={matriculaActiva.id}
-          identidad={Boolean(nino.apellidos && nino.fecha_nacimiento)}
+          avance={avance}
           pedagogicos={datosPed !== null}
-          medico={medicoCompleto}
-          imagen={imagenAceptada}
           sinTerminar={sinTerminar}
           locale={locale}
         />

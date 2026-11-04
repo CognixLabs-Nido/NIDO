@@ -47,7 +47,8 @@ reales de ANAIA (curso 2026/2027). Lo medido entonces, que motiva la serie:
    conversación y en la memoria de la sesión. Esta spec es la primera fuente escrita.
 2. **«CORE/B2B» y la «pantalla de altas en proceso»** figuran en el orden de la serie pero **no
    están especificadas en ningún sitio**. CORE/B2B lo decidió el responsable el 2026-10-31 (abajo,
-   en SEPA). La pantalla de altas en proceso necesita su propio alcance antes de empezarla.
+   en SEPA). La pantalla de altas en proceso la decidió el 2026-11-04 (abajo, «La pantalla de
+   altas en proceso»).
 3. **`MndtId` y `EndToEndId` miden 36 caracteres y pain.008.001.02 admite 35** (`Max35Text`).
    Medido en producción el 2026-10-31: los 3 mandatos (`identificador_mandato`) y los 4 recibos
    (`recibos.id`, UUID con guiones) miden 36. El identificador se genera como
@@ -748,6 +749,42 @@ R-2 («el rechazo del segundo FRST protege del doble cobro») no existe en las r
 Puede existir en un banco concreto, pero eso no lo dice el Rulebook. **Decidido el 2026-11-01:**
 la R-2 se revisa (al reabrir no se vuelve a FRST) y el 0d se cancela.
 
+## La pantalla de altas en proceso
+
+Decidida por el responsable el 2026-11-04. Lo que dijo el 2026-10-29, que es el punto de partida:
+«la directora deberia ver un listado con todas las altas en proceso»; «un listado con todo donde
+puedes filtrar y seleccionar»; «a los 30 dias, pero la directora puede verlo y cancelar cuando
+quiera»; «si el email es incorrecto se debera poder cancelar y enviar otra nueva. Si la familia no
+quiere entrar se borra»; «Si no ha aceptado la invitacion el boton la cancela. Si ha iniciado el
+proceso, se anula el proceso.»
+
+**Lo que ya había, medido el 2026-11-04** (código de `main` `572c263` y producción en solo
+lectura): casi todo por debajo, del PR-8 pieza 4 (#446, `20261209120000`): la lista
+`altas_sin_terminar` con su estado y sus 30 días, el botón que cancela o borra (con el borrado de
+la familia nueva o solo del alta, que decide la base) y «Enviar una invitación nueva». Se veía en
+tres sitios sueltos: un aviso en Inicio (solo las de más de 30 días), el filtro de Niños (solo el
+nombre y una etiqueta) y la ficha del niño (el estado y los botones, de una en una). Lo que no se
+veía en ninguna parte: la invitación al segundo tutor que sale al validar el alta y no se acepta.
+
+**Decisiones:**
+
+- **La lista es todo** («la lista es todo de todo»): las altas sin terminar (invitación sin
+  aceptar, invitación caducada o cancelada, la familia ha empezado), las terminadas que falta
+  validar (con el enlace para validarlas y sin borrar) y, porque no salía en ninguna parte, el
+  segundo tutor que no ha entrado en un alta ya validada (solo se ve: no hay botón para reenviar ni
+  cancelar su invitación).
+- **No hay borrado múltiple** («que se borren de una en una»). Los filtros sirven para ver y
+  acotar; ninguna acción opera sobre varias a la vez. Cada alta se cancela o se borra en su fila,
+  con su confirmación, como en la ficha.
+- **Se enseña lo que llevan hecho, no dónde se pararon** (opción A), sacado de lo que ya está
+  guardado, sin migración. Cada línea dice «hecho» solo por algo que hizo la familia: la identidad
+  del niño y el nombre del tutor 1 los ponen la invitación y aceptarla, así que «Datos del niño» es
+  el libro de familia y «Tutor 1» es su DNI. Lo mismo en la ficha, que marcaba «Datos del niño»
+  hecho desde el principio. El tutor 2 y el SEPA son opcionales y, sin hacer, salen neutros; sin
+  CID del centro no hay línea de SEPA.
+- **Página propia** en el menú de Dirección, junto a Admisiones (`/admin/altas`). El aviso de
+  Inicio lleva a ella, con el filtro de más de 30 días.
+
 ## Orden de la serie
 
 Del 3 en adelante todos tocan `purgar_sujeto_db`, `privado.purgar_nino` y la exportación del
@@ -757,7 +794,7 @@ de esas funciones, no de la que haya en esta spec.
 | #   | Pieza                             | Qué hace                                                                        |
 | --- | --------------------------------- | ------------------------------------------------------------------------------- |
 | 0   | SEPA                              | Se trocea en varios PRs (abajo)                                                 |
-| ·   | Pantalla de altas en proceso      | Va justo después del PR-0. **Sin especificar** (agujero 2)                      |
+| ·   | Pantalla de altas en proceso      | Va justo después del PR-0, antes del 1 (2026-11-04). Ver su sección             |
 | 1   | Documentos del centro versionados | Base: tabla de versiones con hash, firmas con `RESTRICT`, bucket propio         |
 | 2   | Presupuesto y normas para firmar  | El gate exige la firma de la versión vigente de cada documento obligatorio; P-6 |
 | 3   | Campos del niño                   | Y configuración de campos por centro                                            |
@@ -787,7 +824,7 @@ canceló el 2026-11-01 (FRST se procesa como RCUR).
 
 - [x] 0·doc — esta spec.
 - [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · fecha de cobro: [x] F1 (#464) · [x] F2 (#465) · [x] F3 (#466) · [x] reabrir remesas · 0c: [x] 0c-1 (#487) · [x] 0c-2 (#488) · [x] 0c-3 (#489) · ~~0d~~ (cancelado)
-- [ ] Pantalla de altas en proceso · [ ] 1 · [ ] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [ ] 6 · [ ] 7 · [ ] 8
+- [ ] Pantalla de altas en proceso (este PR) · [ ] 1 · [ ] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [ ] 6 · [ ] 7 · [ ] 8
 
 ## Referencias
 
