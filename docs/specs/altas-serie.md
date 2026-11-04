@@ -792,7 +792,8 @@ veía en ninguna parte: la invitación al segundo tutor que sale al validar el a
 alta (`invitarTutor2AlValidar`, desde `activar-matricula.ts`). Hoy, si la familia corrige el email
 del tutor 2 o añade un tutor 2 después de validar, la cola escribe la fila (`aplicar.ts`) y **no se
 invita a nadie**. Esa persona se queda fuera para siempre y nadie se entera. El botón de reenviar
-es lo único que cierra los dos casos.
+es lo único que cierra los dos casos. _(Desde el 2026-11-04 la cola también invita al aprobar:
+«La cola invita al segundo tutor», abajo.)_
 
 **Decisiones del responsable:**
 
@@ -810,8 +811,31 @@ es lo único que cierra los dos casos.
   solo `service_role`, que vuelve a mirar `privado.es_direccion`. Borra sin copia las invitaciones
   sin aceptar del segundo tutor del niño (salvo la del email que se queda), no toca la del tutor
   principal, y deja quién lo hizo como evento `invitacion_tutor2`.
-- **Pendiente de decidir:** que aprobar en la cola un cambio de email del tutor 2, o su alta después
-  de validar, mande la invitación por sí solo, sin esperar a que alguien pulse el botón.
+- ~~**Pendiente de decidir:** que aprobar en la cola un cambio de email del tutor 2, o su alta
+  después de validar, mande la invitación por sí solo.~~ **Decidido el 2026-11-04** (abajo).
+
+### La cola invita al segundo tutor (2026-11-04)
+
+**Por qué:** el botón está bien para recuperar, pero que alguien tenga que acordarse de pulsarlo es
+lo que deja a una persona fuera durante meses. Si la cola ya sabe que el email cambió, que invite
+ella (decisión del responsable).
+
+- **Al aprobar** (`aprobarCambio`) un cambio de datos del segundo tutor con el alta validada, si su
+  email es nuevo —cambió, o el segundo tutor se añade ahora— se le invita con el mismo núcleo que
+  el botón (`invitarTutor2`). Un cambio que deja el mismo email (la dirección, el nombre) no manda
+  nada: no se mandan correos por cambiar un piso.
+- **El email de antes se lee ANTES de aplicar**, del perfil compartido (`familia_tutores`). Si esa
+  lectura falla, no se aplica nada y el cambio vuelve a pendiente.
+- **Un fallo al invitar no deshace la aprobación.** Queda como aviso: el dato está aprobado y la
+  invitación no ha salido; se reenvía a mano desde «Altas en proceso».
+- **La invitación es de la familia** aunque cuelgue de un niño: al aceptarla, el segundo tutor queda
+  vinculado a todos los hijos. Por eso el reenvío y la cancelación —del botón y de la cola— limpian
+  las invitaciones a otros emails y sus cuentas provisionales en **todos los hermanos**, no solo en
+  el niño por el que se entra, y si un hermano ya tiene la invitación al email actual se reenvía esa
+  en vez de abrir otra. Medido en producción el 2026-11-04: ninguna familia tenía invitaciones del
+  segundo tutor en dos hijos, y la cola estaba vacía; hasta este PR, el botón limpiaba solo el niño
+  de su fila.
+- Sin migración: usa `cancelar_invitacion_tutor2` (`20261231120000`) una vez por hermano.
 
 ## Orden de la serie
 

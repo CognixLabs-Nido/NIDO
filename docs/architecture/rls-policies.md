@@ -408,8 +408,13 @@ email_que_se_queda)`, solo `service_role`. La app comprueba la sesión (`usuario
   cuentas provisionales que crearon y nunca entraron (el filtro de `reinvitar_alta`); la app las
   borra de Auth. La pantalla lista al segundo tutor sin cuenta de una familia con un niño ya
   validado, con invitación o sin ella, y lee `vinculos_familiares` (`es_admin` del centro del niño).
-- Test: `src/test/audit/altas-sin-terminar.test.ts`, `src/test/rls/altas-en-proceso.rls.test.ts` y
-  `src/test/rls/invitacion-tutor2.rls.test.ts`.
+- **La cola invita al segundo tutor** (sin migración, 2026-11-04): `aprobarCambio` lee su email
+  antes de aplicar y, si es nuevo y el alta está validada, le invita con el núcleo del botón
+  (`invitarTutor2`), con la sesión de la directora que aprueba. La limpieza recorre todos los
+  hermanos: `cancelar_invitacion_tutor2` una vez por niño, y la base vuelve a mirar quién actúa en
+  cada llamada.
+- Test: `src/test/audit/altas-sin-terminar.test.ts`, `src/test/rls/altas-en-proceso.rls.test.ts`,
+  `src/test/rls/invitacion-tutor2.rls.test.ts` y `src/test/rls/cola-invita-tutor2.rls.test.ts`.
 
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 

@@ -1161,6 +1161,8 @@
       "aprobar": "Aprobar",
       "rechazar": "Rechazar",
       "aprobado": "Cambio aprobado y aplicado.",
+      "aprobado_tutor2_invitado": "Cambio aprobado y aplicado. Hemos invitado al segundo tutor a su email nuevo.",
+      "aprobado_tutor2_no_salio": "Cambio aprobado y aplicado, pero la invitación al segundo tutor no ha salido. Reenvíala desde Altas en proceso.",
       "rechazado": "Cambio rechazado. El dato queda como estaba.",
       "vacio": "No hay cambios pendientes",
       "vacio_desc": "Cuando una familia edite un dato sensible de un alta ya validada, aparecerá aquí para tu revisión.",

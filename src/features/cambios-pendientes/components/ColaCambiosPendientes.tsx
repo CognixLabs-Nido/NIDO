@@ -42,7 +42,12 @@ export function ColaCambiosPendientes({ items }: Props) {
         return
       }
       setFilas((prev) => prev.filter((f) => f.id !== id))
-      toast.success(accion === 'aprobar' ? t('aprobado') : t('rechazado'))
+      if (accion === 'rechazar') toast.success(t('rechazado'))
+      else if ('tutor2' in r.data && r.data.tutor2 === 'no_salio')
+        toast.warning(t('aprobado_tutor2_no_salio'))
+      else if ('tutor2' in r.data && r.data.tutor2 === 'invitado')
+        toast.success(t('aprobado_tutor2_invitado'))
+      else toast.success(t('aprobado'))
     })
   }
 

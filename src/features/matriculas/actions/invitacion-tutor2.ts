@@ -3,15 +3,13 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { sendInvitation } from '@/features/auth/actions/send-invitation'
 import { usuarioAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
-import { cancelarInvitacionTutor2Core, destinoReenvioTutor2 } from '../lib/invitacion-tutor2'
-import { idiomaDelTitular } from '../lib/invitar-tutor-2'
+import { cancelarInvitacionTutor2Familia, invitarTutor2 } from '../lib/invitacion-tutor2'
 
 const ninoIdSchema = z.string().uuid()
 
@@ -48,7 +46,7 @@ function revalidar() {
 
 /**
  * «Cancelar la invitación» del segundo tutor: se van sus invitaciones sin aceptar y las cuentas
- * provisionales que crearon (20261231120000). Su ficha en la familia se queda: se puede reenviar.
+ * provisionales que crearon (20261231120000), en toda la familia. Su ficha en la familia se queda: se puede reenviar.
  */
 export async function cancelarInvitacionTutor2(
   ninoId: string
@@ -58,11 +56,10 @@ export async function cancelarInvitacionTutor2(
   const p = await puerta(parsed.data)
   if (!p.ok) return fail(p.error)
   try {
-    const r = await cancelarInvitacionTutor2Core(
+    const r = await cancelarInvitacionTutor2Familia(
       createServiceRoleClient(),
       parsed.data,
-      p.actorId,
-      null
+      p.actorId
     )
     if (!r) return fail('matricula.errors.tutor2_ya_no')
     revalidar()
@@ -74,11 +71,13 @@ export async function cancelarInvitacionTutor2(
 }
 
 /**
- * «Reenviar la invitación» al email del segundo tutor en su ficha. Hoy, si la familia corrige ese
- * email o añade un segundo tutor después de validar, la cola escribe la fila y no se invita a nadie
- * (medido el 2026-11-04): este botón es lo que lo cierra. Primero se cancelan las invitaciones a
- * otros emails y sus cuentas provisionales; la del email actual se queda, y `sendInvitation` la
- * reutiliza (le alarga el plazo y GoTrue reenvía a la misma cuenta provisional): no se duplica nada.
+ * «Reenviar la invitación» al email del segundo tutor en su ficha. Medido el 2026-11-04: si la
+ * familia corregía ese email o añadía un segundo tutor después de validar, la cola escribía la fila
+ * y no se invitaba a nadie. Desde el 2026-11-04 la cola invita sola al aprobar (`aprobarCambio`), con
+ * este mismo núcleo; el botón queda para recuperar (un correo que no salió, una invitación caducada).
+ * Primero se cancelan, en toda la familia, las invitaciones a otros emails y sus cuentas
+ * provisionales; la del email actual se queda y `sendInvitation` la reutiliza (le alarga el plazo y
+ * GoTrue reenvía a la misma cuenta provisional): no se duplica nada (`invitarTutor2`).
  */
 export async function reenviarInvitacionTutor2(
   ninoId: string
@@ -88,41 +87,19 @@ export async function reenviarInvitacionTutor2(
   const p = await puerta(parsed.data)
   if (!p.ok) return fail(p.error)
 
-  const service = createServiceRoleClient()
-  let destino: Awaited<ReturnType<typeof destinoReenvioTutor2>>
+  let r: Awaited<ReturnType<typeof invitarTutor2>>
   try {
-    destino = await destinoReenvioTutor2(service, parsed.data)
+    r = await invitarTutor2(createServiceRoleClient(), parsed.data, p.actorId, p.centroId)
   } catch (e) {
     logger.error('segundo tutor: reenviar', e instanceof Error ? e.message : String(e))
-    return fail('matricula.errors.alta_fallo')
-  }
-  if (!destino.ok)
-    return fail(
-      destino.motivo === 'ya_entro'
-        ? 'matricula.errors.tutor2_ya_entro'
-        : 'matricula.errors.tutor2_sin_email'
-    )
-
-  try {
-    const r = await cancelarInvitacionTutor2Core(service, parsed.data, p.actorId, destino.email)
-    if (!r) return fail('matricula.errors.tutor2_ya_no')
-  } catch (e) {
-    logger.error(
-      'segundo tutor: limpiar antes de reenviar',
-      e instanceof Error ? e.message : String(e)
-    )
     return fail(claveError(e))
   }
-
-  const inv = await sendInvitation({
-    email: destino.email,
-    rolObjetivo: 'tutor_legal',
-    centroId: p.centroId,
-    ninoId: parsed.data,
-    tipoVinculo: 'tutor_legal_secundario',
-    idioma: await idiomaDelTitular(service, destino.tutores),
-  })
   revalidar()
-  if (!inv.success) return fail('matricula.errors.tutor2_correo_no_salio')
-  return ok({ email: destino.email })
+  if (!r) return fail('matricula.errors.tutor2_ya_no')
+  if (!r.ok) {
+    if (r.motivo === 'ya_entro') return fail('matricula.errors.tutor2_ya_entro')
+    if (r.motivo === 'sin_tutor2') return fail('matricula.errors.tutor2_sin_email')
+    return fail('matricula.errors.tutor2_correo_no_salio')
+  }
+  return ok({ email: r.email })
 }

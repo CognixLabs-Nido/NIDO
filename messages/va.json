@@ -1161,6 +1161,8 @@
       "aprobar": "Aprovar",
       "rechazar": "Rebutjar",
       "aprobado": "Canvi aprovat i aplicat.",
+      "aprobado_tutor2_invitado": "Canvi aprovat i aplicat. Hem convidat el segon tutor al seu correu nou.",
+      "aprobado_tutor2_no_salio": "Canvi aprovat i aplicat, però la invitació al segon tutor no ha eixit. Reenvia-la des d'Altes en curs.",
       "rechazado": "Canvi rebutjat. La dada queda com estava.",
       "vacio": "No hi ha canvis pendents",
       "vacio_desc": "Quan una família edite una dada sensible d'una alta ja validada, apareixerà ací per a la teua revisió.",
