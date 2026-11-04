@@ -67,14 +67,21 @@ function args(familia: string, iban: string, extra: Record<string, unknown> = {}
 describe('Los mandatos v1: los que existen se quedan, no se crean nuevos', () => {
   let centro: TestCentro
   let admin: TestUser
-  let tutor: TestUser
   let cAdmin: Cliente
-  let cTutor: Cliente
+  // Un adulto es de una sola familia por centro (ux_familia_tutores_usuario_centro): cada familia
+  // que firma como tutor lleva el suyo.
+  const tutores: TestUser[] = []
 
-  async function familia(conTutor = false): Promise<string> {
-    const f = await createTestFamilia(centro.id)
-    if (conTutor) await crearFamiliaTutor(f, tutor.id, 'titular')
-    return f
+  async function familia(): Promise<string> {
+    return createTestFamilia(centro.id)
+  }
+  async function familiaConTutor(): Promise<{ fam: string; cTutor: Cliente }> {
+    const fam = await createTestFamilia(centro.id)
+    const tutor = await createTestUser({ nombre: `Tutor Mandato V1 ${tutores.length + 1}` })
+    tutores.push(tutor)
+    await asignarRol(tutor.id, centro.id, 'tutor_legal')
+    await crearFamiliaTutor(fam, tutor.id, 'titular')
+    return { fam, cTutor: await clientFor(tutor) }
   }
   /** Un v1 de los que ya existían, activo, de la familia dada. */
   function v1Existente(fam: string, iban?: string): string {
@@ -112,17 +119,14 @@ describe('Los mandatos v1: los que existen se quedan, no se crean nuevos', () =>
   beforeAll(async () => {
     centro = await createTestCentro('Centro V1 Cerrado')
     admin = await createTestUser({ nombre: 'Admin Mandato V1' })
-    tutor = await createTestUser({ nombre: 'Tutor Mandato V1' })
     await asignarRol(admin.id, centro.id, 'admin')
-    await asignarRol(tutor.id, centro.id, 'tutor_legal')
     cAdmin = await clientFor(admin)
-    cTutor = await clientFor(tutor)
   }, 120_000)
 
   afterAll(async () => {
     borrarMandatos('centro_id', centro.id)
     await deleteTestCentro(centro.id)
-    for (const u of [admin, tutor]) await deleteTestUser(u.id)
+    for (const u of [admin, ...tutores]) await deleteTestUser(u.id)
   }, 120_000)
 
   it('registrar y sustituir sin los datos del v2 dan v1_cerrado y no escriben nada', async () => {
@@ -134,22 +138,29 @@ describe('Los mandatos v1: los que existen se quedan, no se crean nuevos', () =>
       .single()
     expect(c?.identificador_acreedor).toBe(CID_PRUEBA)
 
-    const famNueva = await familia(true)
-    const famConV1 = await familia(true)
+    const nueva = await familiaConTutor()
+    const conV1 = await familiaConTutor()
+    const famNueva = nueva.fam
+    const famConV1 = conV1.fam
     const v1 = v1Existente(famConV1)
     expect(await mandatosDe(famConV1)).toEqual([
       expect.objectContaining({ id: v1, estado: 'activo', version_canonico: 1 }),
     ])
 
-    for (const [quien, cli] of [
-      ['directora', cAdmin],
-      ['tutor', cTutor],
+    for (const [caso, fam, cTutor] of [
+      ['familia sin mandato', famNueva, nueva.cTutor],
+      ['familia con un v1 activo', famConV1, conV1.cTutor],
     ] as const) {
-      for (const fn of ['registrar_mandato_sepa', 'sustituir_mandato_sepa'] as const) {
-        for (const fam of [famNueva, famConV1]) {
+      for (const [quien, cli] of [
+        ['directora', cAdmin],
+        ['tutor', cTutor],
+      ] as const) {
+        for (const fn of ['registrar_mandato_sepa', 'sustituir_mandato_sepa'] as const) {
           const r = await cli.rpc(fn, args(fam, IBAN_2))
-          expect.soft(r.error?.hint, `${quien} ${fn}`).toBe('v1_cerrado')
-          expect.soft(r.error?.message, `${quien} ${fn}`).toMatch(/los que existen se quedan/)
+          expect.soft(r.error?.hint, `${caso}: ${quien} ${fn}`).toBe('v1_cerrado')
+          expect
+            .soft(r.error?.message, `${caso}: ${quien} ${fn}`)
+            .toMatch(/los que existen se quedan/)
         }
       }
     }
@@ -185,8 +196,12 @@ describe('Los mandatos v1: los que existen se quedan, no se crean nuevos', () =>
     const v2 = insertarMandato({ ...base, identificador_mandato: 'NIDO-V1C-TABLA-V2' })
     expect(v2.error).toBeNull()
 
+    // En otra familia, sin ningún mandato: lo único que puede pararlo es el trigger (en la del v2,
+    // lo pararía también el índice de un activo por familia).
+    const famLibre = await familia()
     const nuevo = insertarMandato({
       ...base,
+      familia_id: famLibre,
       identificador_mandato: 'NIDO-V1C-TABLA-V1',
       version_canonico: 1,
     })
@@ -250,7 +265,7 @@ describe('Los mandatos v1: los que existen se quedan, no se crean nuevos', () =>
   })
 
   it('el reintento del alta sobre un v1 existente lo vuelve a firmar en su sitio como v2, no como v1', async () => {
-    const fam = await familia(true)
+    const { fam, cTutor } = await familiaConTutor()
     const v1 = v1Existente(fam, IBAN_1)
     // Como v1, no.
     const comoV1 = await cTutor.rpc('registrar_mandato_sepa', args(fam, IBAN_1))
