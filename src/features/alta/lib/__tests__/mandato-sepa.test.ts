@@ -5,6 +5,7 @@ import {
   MAX_LARGO_ID_SEPA,
   generarIdentificadorMandato,
   textoCanonicoMandato,
+  textoCanonicoMandatoV2,
 } from '../mandato-sepa'
 
 const CENTRO = '11111111-2222-4333-8444-555555555555'
@@ -54,5 +55,43 @@ describe('textoCanonicoMandato', () => {
     const a = textoCanonicoMandato(base)
     const b = textoCanonicoMandato({ ...base, fechaFirmaIso: '2026-06-26T23:59:59.000Z' })
     expect(a).toBe(b)
+  })
+})
+
+describe('textoCanonicoMandatoV2 (0c-2)', () => {
+  const v2 = {
+    identificadorMandato: 'NIDO-A-B-1',
+    iban: 'es91 2100 0418 4502 0005 1332',
+    titular: '  Tutor Demo  ',
+    acreedorNombre: 'Escuela Demo',
+    fechaFirmaIso: '2026-06-26T10:11:12.000Z',
+    acreedorCid: 'ES81ZZZB00000000',
+    titularDocumento: ' 12345678Z ',
+    titularDireccion: ' Calle Demo 1, Valencia ',
+  }
+
+  it('lleva la versión, el CID y el documento y la dirección del titular, en un orden fijo', () => {
+    expect(textoCanonicoMandatoV2(v2)).toBe(
+      'SEPA-CORE-MANDATE-V2|id=NIDO-A-B-1|iban=ES9121000418450200051332|titular=Tutor Demo|titular_documento=12345678Z|titular_direccion=Calle Demo 1, Valencia|acreedor=Escuela Demo|acreedor_cid=ES81ZZZB00000000|tipo=recurrente|fecha=2026-06-26'
+    )
+  })
+
+  it('cambia con cada dato del v2: el CID, el documento y la dirección del titular', () => {
+    const t = textoCanonicoMandatoV2(v2)
+    for (const cambio of [
+      { acreedorCid: 'ES80ZZZB00000000' },
+      { titularDocumento: '12345678A' },
+      { titularDireccion: 'Otra Calle 2' },
+    ]) {
+      expect.soft(textoCanonicoMandatoV2({ ...v2, ...cambio }), JSON.stringify(cambio)).not.toBe(t)
+    }
+  })
+
+  it('no es el v1, y el v1 no cambia con los datos nuevos', () => {
+    expect(textoCanonicoMandatoV2(v2).startsWith('SEPA-CORE-MANDATE-V2|')).toBe(true)
+    // El v1 de los mismos datos es el de siempre: los mandatos firmados recalculan con él.
+    expect(textoCanonicoMandato(v2)).toBe(
+      'SEPA-CORE-MANDATE|id=NIDO-A-B-1|iban=ES9121000418450200051332|titular=Tutor Demo|acreedor=Escuela Demo|tipo=recurrente|fecha=2026-06-26'
+    )
   })
 })
