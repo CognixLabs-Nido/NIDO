@@ -1858,6 +1858,34 @@ Migración `20261225120000_fix_mandatos_solo_por_funciones`; decisión del respo
   (`src/test/rls/mandatos-como-postgres.ts`).
 - Test: `mandatos-solo-por-funciones.rls.test.ts`.
 
+### El mandato v2 y el CID obligatorio (0c-1)
+
+Migración `20261229120000_feat_mandato_v2_datos_y_cid_obligatorio`; spec
+`docs/specs/altas-serie.md` («SEPA» y las decisiones del 2026-11-04).
+
+- **Sin CID del centro no se firma ningún mandato** (revoca «El CID no toca el alta», del
+  2026-10-31): `registrar_mandato_sepa` y `sustituir_mandato_sepa` dan P0001 `centro_sin_cid`
+  cuando el centro de la familia no tiene `identificador_acreedor`, para la directora y para el
+  tutor. Lo miran después de autorizar: a quien no está autorizado le siguen diciendo «No
+  autorizado», sin revelar si el centro tiene CID.
+- **El texto canónico v2:** `mandatos_sepa.version_canonico` (1 o 2; los de antes, 1), el
+  documento de identidad y la dirección del titular (`titular_documento`, `titular_direccion`) y
+  la foto del acreedor con la que se firmó (`acreedor_cid`, `acreedor_nombre`). Las dos funciones
+  reciben esos cuatro datos como parámetros opcionales: sin ninguno, el mandato es v1 (la app de
+  antes del 0c-2); con ellos, v2, y tienen que estar todos (`mandato_incompleto`), el CID y el
+  nombre ser los del centro (`cid_distinto`, `acreedor_distinto`) y el hash un sha256 en
+  hexadecimal (`hash_invalido`). La comprobación común es `privado.version_datos_mandato`, que no
+  ejecuta nadie más que ellas.
+- **El CHECK `mandatos_sepa_datos_por_version`** exige lo mismo a quien escriba la tabla como
+  `postgres`: un v2 con todo y su hash, un v1 sin ninguno de los cuatro. Va envuelto en
+  `COALESCE(…, false)`: en un CHECK, NULL pasa, y sin él un v2 sin hash cumplía la regla (medido).
+- **Fuera de `audit_log`:** `titular_documento` y `titular_direccion`, como `titular`. El CID y el
+  nombre del acreedor sí entran. **En el export:** los cinco.
+- **Nada recalcula hoy el hash de un mandato.** La versión es lo que permite hacerlo con el texto
+  con el que se firmó.
+- Test: `mandato-v2.rls.test.ts`. Los centros de test llevan el CID de prueba (`CID_PRUEBA` en
+  `setup.ts`) salvo que se pida `sinCid`.
+
 ### La red del export art. 15: cada columna, decidida
 
 Migración `20261215120000_feat_export_recibos_red`. `export_datos_sujeto` escribe las columnas de

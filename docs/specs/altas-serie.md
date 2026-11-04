@@ -121,7 +121,15 @@ Decisiones del 2026-10-31 sobre las cinco preguntas del PR-0:
   es que el deudor no puede pedir la devolución, a cambio de que cada empresa registre el mandato en
   su banco antes del primer cobro; si no lo hace, el cobro se rechaza. Para una guardería eso es más
   rechazos, no menos riesgo.
-- **El CID no toca el alta.** Que el centro no tenga el identificador de acreedor no cambia nada en
+- ~~**El CID no toca el alta.**~~ **REVOCADA el 2026-11-04** (decidida el 2026-10-31). Ahora: **sin
+  CID del centro no se firma ningún mandato.** El paso de domiciliación no aparece y el alta se
+  completa en efectivo, como cuando la familia omite. Por qué cayó: se creía que el mandato
+  firmado sin CID se completaría después, y no es así. El CID forma parte del mandato que firma la
+  familia, así que un mandato sin él no vale para el banco y habría que volver a firmarlo. El
+  aviso de la pantalla de datos bancarios se queda y dice además que sin el CID no se pueden
+  domiciliar las familias. La base lo cierra en `registrar_mandato_sepa` y
+  `sustituir_mandato_sepa` (HINT `centro_sin_cid`, `20261229120000`). Lo que se decidió, tal cual:
+  **El CID no toca el alta.** Que el centro no tenga el identificador de acreedor no cambia nada en
   el alta de la familia: el mandato se firma igual. Lo que se añade es un **aviso en la pantalla
   donde el centro configura sus datos bancarios**: sin ellos no se pueden pasar recibos al banco. Se
   dice qué falta y para qué sirve, nada más. (Corrige la propuesta del 2026-10-31, que lo trataba
@@ -129,6 +137,38 @@ Decisiones del 2026-10-31 sobre las cinco preguntas del PR-0:
 - **El mandato pide el NIF y la dirección del titular**, como el papel. Hoy solo lleva nombre e
   IBAN. Se teclean en el paso SEPA, porque el titular puede no ser un tutor. Si al trazarlo aparece
   un caso donde no se puedan pedir, se para y se pregunta antes de construirlo.
+  - **El caso apareció y se decidió (2026-11-04):** la app acepta IBAN de 15 países, así que un
+    titular con cuenta extranjera puede no tener NIF español (un abuelo francés). El campo es
+    **«NIF o documento de identidad»** (no «NIF», en los tres idiomas): admite cualquier documento
+    del titular, y solo se comprueba el dígito de control cuando tiene forma española (DNI, NIE o
+    CIF). Un titular con documento extranjero puede domiciliar. La columna es
+    `mandatos_sepa.titular_documento`, sin formato en la base (1 a 40 caracteres); la
+    comprobación de la forma española es de la app (0c-2).
+
+Decisiones del 2026-11-04 sobre el 0c, al trazarlo:
+
+- **El hash v2 también en el mandato presencial de Dirección**, sobre lo que teclea la directora y
+  sin PDF (el respaldo es el papel). Hasta aquí `gestionar-domiciliacion-familia.ts` registraba el
+  mandato con `texto_hash` NULL: un mandato sin hash no tiene prueba de integridad, y que la
+  presencial fuera la única sin ella no tiene defensa.
+- **El documento y la dirección del titular se tratan como `titular`:** en claro en la tabla,
+  fuera de `audit_log`, dentro del export, y se destruyen con el mandato.
+- **Nada recalcula hoy el hash de un mandato.** Se calcula al firmar y se guarda. Que los
+  mandatos ya firmados «sigan en v1» significa que su hash se puede recalcular con el texto v1;
+  la columna de la versión es lo que lo permite. No hay ningún verificador que buscar.
+- **El mandato v2 guarda la foto del acreedor con la que se firmó** (`acreedor_cid`,
+  `acreedor_nombre`): sin ella, el hash v2 no se podría recalcular si el centro cambia de nombre o
+  de CID. La base comprueba al firmar que son los del centro. Es un añadido del 0c-1 al trazarlo,
+  no una decisión del responsable: el v1 tiene el mismo hueco con el nombre del centro, y se queda.
+- **CEI Ejemplo es un centro de pruebas** y no tiene CID. Se le pone uno ficticio con formato
+  válido, `ES81ZZZB00000000` (dígitos de control mod 97-10 correctos; el NIF B00000000, un CIF
+  todo ceros con su dígito de control, es la marca de que es de prueba), por una operación de
+  datos (`supabase/operaciones/20261229100000_cid_prueba_cei_ejemplo.sql`), no por una migración.
+  **Ese CID no vale para cobrar nada.** Lo pidió Jose: «el CID es obligatorio, pero lo que tenemos
+  ahora es un centro falso y no tiene CID, invéntate algo para que funcione».
+- **Los dos mandatos vivos de CEI Ejemplo** miden 36 caracteres (el `MndtId` admite 35) y no
+  tienen CID: no sirven para el banco. Se quedan como están (v1); esas familias tendrían que
+  volver a firmar.
 - **Concepto del adeudo: centro, niño y mes, sin tildes.** Ejemplo: `ANAIA · Lucia Garcia Lopez ·
 Octubre 2026`. Sin tildes porque el juego de caracteres de SEPA no las garantiza; máximo 140
   caracteres. Va en el 0b.
@@ -705,19 +745,19 @@ Los documentos obligatorios (DNI de los tutores, SEPA, libro de familia) entran 
 Orden: 0·doc y 0a → 0b → `MsgId` (R-3) → fecha de cobro (F1 → F2 → F3) → reabrir remesas → 0c. El 0d se
 canceló el 2026-11-01 (FRST se procesa como RCUR).
 
-| PR              | Alcance                                                                                                                                                                                                                                                                                                                | Migración                                                                                                        |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| 0·doc           | Esta spec                                                                                                                                                                                                                                                                                                              | No                                                                                                               |
-| 0a              | «Omitir» de verdad: el gate de `finalizarAlta` deja de exigir `sepa`, se corrige el texto de la pantalla y se añade el primer test de `finalizarAlta`, con control negativo                                                                                                                                            | No (`marcar_matricula_lista` no exige mandato)                                                                   |
-| 0b              | El fichero que acepta el banco: `MndtId` y `EndToEndId` ≤ 35, concepto `centro · niño · mes` sin tildes, el generador rechaza los largos, fixtures con la forma real                                                                                                                                                   | No                                                                                                               |
-| 0c              | Mandato v2: CID en el PDF y en el texto canónico v2, columna con la versión del canónico (los existentes en v1), NIF y dirección del titular, los tres caminos que crean mandatos (alta, `/family/domiciliacion`, presencial de Dirección) y el aviso en los datos bancarios del centro                                | Sí, pequeña                                                                                                      |
-| Reabrir remesas | Ver «Reabrir una remesa» y su «Diseño»: recibos enviados a pendiente, remesa a borrador sin la marca, solo la admin, el aviso con familias e importe, su fila en `audit_log`; el fichero de cada versión guardado en privado con su registro y plazo fiscal en el barrido; marcar enviada por función y con el fichero | Sí: la función, el marcador en `remesas_proteger`, las dos tablas, el bucket, el barrido y la clave de la pasada |
-| ~~0d~~          | **Cancelado el 2026-11-01.** Era FRST en el primer cobro de cada mandato y RCUR en los siguientes. El Rulebook procesa FRST como RCUR (AT-M006): marcarlo no cambia nada en el banco. Se emite RCUR siempre                                                                                                            | No                                                                                                               |
+| PR              | Alcance                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Migración                                                                                                        |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 0·doc           | Esta spec                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | No                                                                                                               |
+| 0a              | «Omitir» de verdad: el gate de `finalizarAlta` deja de exigir `sepa`, se corrige el texto de la pantalla y se añade el primer test de `finalizarAlta`, con control negativo                                                                                                                                                                                                                                                                                                                                                                          | No (`marcar_matricula_lista` no exige mandato)                                                                   |
+| 0b              | El fichero que acepta el banco: `MndtId` y `EndToEndId` ≤ 35, concepto `centro · niño · mes` sin tildes, el generador rechaza los largos, fixtures con la forma real                                                                                                                                                                                                                                                                                                                                                                                 | No                                                                                                               |
+| 0c              | Mandato v2: CID en el PDF y en el texto canónico v2, columna con la versión del canónico (los existentes en v1), NIF y dirección del titular, los tres caminos que crean mandatos (alta, `/family/domiciliacion`, presencial de Dirección) y el aviso en los datos bancarios del centro. Sin CID del centro no se firma ningún mandato (2026-11-04). En dos: **0c-1**, la base (las columnas, registrar y sustituir con los datos del v2 y sin CID cerradas, fuera de `audit_log`, en el export) y el CID de prueba de CEI Ejemplo; **0c-2**, la app | Sí, en el 0c-1 (`20261229120000`), y la operación del CID de prueba                                              |
+| Reabrir remesas | Ver «Reabrir una remesa» y su «Diseño»: recibos enviados a pendiente, remesa a borrador sin la marca, solo la admin, el aviso con familias e importe, su fila en `audit_log`; el fichero de cada versión guardado en privado con su registro y plazo fiscal en el barrido; marcar enviada por función y con el fichero                                                                                                                                                                                                                               | Sí: la función, el marcador en `remesas_proteger`, las dos tablas, el bucket, el barrido y la clave de la pasada |
+| ~~0d~~          | **Cancelado el 2026-11-01.** Era FRST en el primer cobro de cada mandato y RCUR en los siguientes. El Rulebook procesa FRST como RCUR (AT-M006): marcarlo no cambia nada en el banco. Se emite RCUR siempre                                                                                                                                                                                                                                                                                                                                          | No                                                                                                               |
 
 ## Estado
 
 - [x] 0·doc — esta spec.
-- [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · fecha de cobro: [x] F1 (#464) · [x] F2 (#465) · [x] F3 (este PR) · [ ] reabrir remesas · [ ] 0c · ~~0d~~ (cancelado)
+- [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · fecha de cobro: [x] F1 (#464) · [x] F2 (#465) · [x] F3 (este PR) · [x] reabrir remesas · 0c: [ ] 0c-1 (este PR) · [ ] 0c-2 · ~~0d~~ (cancelado)
 - [ ] Pantalla de altas en proceso · [ ] 1 · [ ] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [ ] 6 · [ ] 7 · [ ] 8
 
 ## Referencias
