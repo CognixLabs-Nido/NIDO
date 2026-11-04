@@ -573,6 +573,14 @@ abre con su propio marcador, como el resto.
 > tienen que salir tantos como cuenta el resumen; si no, no hay aviso (`aviso_incompleto`).
 > Confirmar manda los números que se enseñaron; si cambiaron, no reabre y enseña los de ahora.
 
+> **Borrar una remesa, cerrado el 2026-11-04** (`20261228120000`, séptimo PR de reabrir remesas).
+> Medido antes de construir: borrar una remesa no deja huérfano su fichero (el barrido de retención
+> lo busca por su fecha, no por su remesa) y la FK impide el DELETE de una con fichero; hoy no hay
+> ningún fichero huérfano. Lo que se cerró es que una remesa con historia desaparezca de la app: solo
+> se borra (soft delete) un borrador que nunca tuvo fichero, para todos, también service_role. El
+> DELETE no cambia: el rollback de `crearRemesa`, la destrucción fiscal y el borrado de un centro
+> siguen pasando, medidos uno a uno.
+
 **Sin FRST.** El 0d está cancelado (R-2, revisada): el fichero de cada versión va en RCUR. No se
 construye ninguna marca de «primer cobro» por mandato.
 

@@ -1585,7 +1585,8 @@ toca.
   (`fichero_generado`). Una remesa enviada no vuelve a borrador: con sesión desde aquí y, desde
   `20261227120000`, también con service_role; las dos cosas, salvo `reabrir_remesa` (ver «Reabrir
   una remesa»). Con sesión, ni la enviada ni la que tiene fichero se borran: sus recibos quedarían
-  libres para otra remesa.
+  libres para otra remesa. Desde `20261228120000`, el borrado (soft delete), para todos, también
+  service_role, y tampoco la reabierta (ver «Borrar una remesa»).
 - **`recibos_en_remesa_no_vuelven_a_borrador`** (BEFORE UPDATE OF estado, de `pendiente_procesar` a
   `borrador`, para todos): `desconfirmar_recibo` ya lo miraba, pero sin bloquear el recibo, y un
   enlace que entraba a la vez dejaba un borrador dentro de la remesa (`recibo_en_remesa`).
@@ -1805,9 +1806,40 @@ remesa» (decisiones del responsable del 2026-10-31 y del 2026-11-03).
   lee el aviso (`leerAvisoReabrir`: el resumen, y los devueltos y cobrados por su nombre, que tienen
   que ser tantos como cuenta el resumen) y no ofrece confirmar hasta tenerlo; `reabrirRemesa` manda
   los números que se enseñaron. Cada rechazo con su clave (`errores-reabrir.ts`).
+- **Borrarla:** una remesa reabierta no se borra (`remesa_con_historia`, `20261228120000`, la
+  sección siguiente).
 - Tests: `remesa-reabrir.rls.test.ts`; de la app, `reabrir-remesa.test.ts`,
   `leer-aviso-reabrir.test.ts`, `reabrir-remesa-dialog.test.tsx`, `remesas-panel-reabrir.test.tsx` y
   `remesa-reabrir-keys.test.ts`.
+
+### Borrar una remesa
+
+Migración `20261228120000_fix_remesa_borrado_solo_borrador_sin_fichero`. Decisión del responsable
+del 2026-11-04, con el criterio de A y B: qué caminos legítimos borran remesas hoy.
+
+- **Lo medido antes** (producción, 2026-11-04; solo lectura y ensayo terminado en RAISE): no hay
+  ficheros de remesa huérfanos, ni puede haberlos por borrar una remesa. El barrido de retención
+  (`ficheros_remesa_vencidos`, `destruir_fichero_remesa`) encuentra cada fichero por su fecha en
+  `remesa_ficheros`, no por su remesa: con la remesa borrada lo sigue listando y destruyendo a su
+  plazo. Y la FK RESTRICT de `remesa_ficheros` impide el DELETE de una remesa con fichero. Ese día:
+  0 ficheros, 0 objetos en el bucket y ninguna remesa borrada nunca.
+- **Lo que se cierra** es más pequeño: que una remesa con historia desaparezca de la app. Lo
+  permitían service_role con cualquier remesa, también la enviada (`remesas_proteger` le dejaba
+  pasar antes de mirar el borrado), y una sesión con la reabierta, que vuelve a borrador sin la marca
+  pero conserva el fichero de su versión anterior.
+- **La regla:** el soft delete solo de un borrador que nunca tuvo fichero registrado, para todos,
+  también service_role. Rechazos: la enviada (`remesa_cerrada`), la que tiene la marca
+  (`remesa_con_fichero`) y la que tuvo un fichero (`remesa_con_historia`).
+  `remesas_proteger` se queda sin ninguna excepción de service_role.
+- **La pregunta del fichero** va en `privado.remesa_tuvo_fichero(remesa)` (`SECURITY DEFINER`, solo
+  sí o no): `remesa_ficheros` no tiene privilegios para nadie y el trigger es de invocador.
+  `EXECUTE` para `authenticated` y `service_role`, porque el trigger corre con su rol; fuera de la
+  API.
+- **El DELETE no cambia.** Los caminos legítimos de hoy, medidos uno a uno antes y después en el
+  ensayo: el rollback de `crearRemesa` (soft delete de la remesa recién creada), el DELETE de la
+  remesa vacía de `destruir_fiscal_familia` (también una enviada) y el borrado de un centro, en
+  cascada.
+- Test: `remesa-borrado.rls.test.ts`.
 
 ### Los mandatos SEPA: solo por sus funciones
 
