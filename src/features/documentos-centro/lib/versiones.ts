@@ -43,9 +43,11 @@ function esYaExiste(error: { message?: string; statusCode?: string; status?: num
 }
 
 /** La clave del error de la base, por su HINT (las funciones de 20270101120000). */
-function errorDeLaBase(e: { code?: string; hint?: string | null }): string {
+export function errorDeLaBase(e: { code?: string; hint?: string | null }): string {
   if (e.code === '42501') return `${E}.no_autorizado`
   switch (e.hint) {
+    case 'de_curso_fijo':
+      return `${E}.de_curso_fijo`
     case 'ya_subida':
     case 'retirado':
     case 'falta_curso':
@@ -57,7 +59,11 @@ function errorDeLaBase(e: { code?: string; hint?: string | null }): string {
     case 'sin_fichero':
     case 'fichero_distinto':
       return `${E}.subida`
+    case 'de_curso':
+      return `${E}.invalido`
     default:
+      // El CHECK del título (1 a 200) o del orden (0 a 1000): lo que se mandó no vale.
+      if (e.code === '23514') return `${E}.invalido`
       return `${E}.guardar`
   }
 }
@@ -156,4 +162,39 @@ async function quitarFichero(service: Client, ruta: string): Promise<boolean> {
     return false
   }
   return true
+}
+
+/** Lo que dura el enlace para ver el PDF de una versión. */
+export const SEGUNDOS_ENLACE_VERSION = 60
+
+/**
+ * El enlace firmado para que la admin vea el PDF de una versión (1c). La versión tiene que estar en
+ * la lista de la admin (`documentos_centro_admin`, que pasa por la puerta del 1a): una versión de
+ * otro centro, o la de un centro del que no es la admin, no da enlace. La ruta sale de la lista, no
+ * de lo que manda el navegador.
+ */
+export async function enlaceVersionDocumento(
+  sesion: Client,
+  service: Client,
+  centroId: string,
+  versionId: string
+): Promise<Resultado<{ url: string }>> {
+  const { data, error } = await sesion.rpc('documentos_centro_admin', { p_centro_id: centroId })
+  if (error) return { ok: false, error: errorDeLaBase(error) }
+  const documentos = ((data as { documentos?: unknown } | null)?.documentos ?? []) as {
+    id: string
+    versiones: { id: string; sha256: string }[]
+  }[]
+  const doc = documentos.find((d) => d.versiones.some((v) => v.id === versionId))
+  const version = doc?.versiones.find((v) => v.id === versionId)
+  if (!doc || !version) return { ok: false, error: `${E}.no_autorizado` }
+
+  const { data: firmada, error: e } = await service.storage
+    .from(BUCKET_DOCUMENTOS_CENTRO)
+    .createSignedUrl(rutaVersion(centroId, doc.id, version.sha256), SEGUNDOS_ENLACE_VERSION)
+  if (e || !firmada?.signedUrl) {
+    logger.warn('documentos del centro: enlace', e?.message ?? 'sin enlace')
+    return { ok: false, error: `${E}.ver` }
+  }
+  return { ok: true, data: { url: firmada.signedUrl } }
 }

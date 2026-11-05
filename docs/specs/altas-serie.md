@@ -1031,6 +1031,33 @@ que sale de lo que teclea la directora; aquí, el PDF de la versión (`sha256`),
 las dos formas. Quién puede registrar una en persona (Dirección del centro, no el superusuario,
 como en las autorizaciones) lo decide la función de firmar del paso 2.
 
+### 1c · La pantalla de la admin
+
+`/admin/documentos-centro`, en el menú de la admin junto a «Centro». Sin migración: usa las
+funciones del 1a y la tabla de firmas del 1b. La familia sigue sin ver nada hasta el paso 2.
+
+- **Solo la admin del centro (J1)**, con el mismo criterio que la base (`es_responsable`): ni la
+  entrada del menú ni la página existen para una directora, y la base contesta 42501 si llega.
+- **La lista** sale de `documentos_centro_admin`: cada documento con su orden, título, si es de
+  curso, si es obligatorio y si está retirado, y debajo sus versiones **agrupadas por curso**, con el
+  nombre del curso, el número, la fecha, el tamaño y la vigente de cada curso marcada. Varias vivas
+  a la vez se ven como lo que son: una por curso, no «la vigente» del documento.
+- **Cuántas firmas tiene cada versión** se lee de `firmas_documentos_centro` con la sesión de la
+  admin (la Dirección lee las firmas, 1b), solo `version_id`. No es la regla de borrar, es lo que se
+  enseña: el botón de borrar sale solo con cero firmas visibles, y si la base encuentra alguna que la
+  admin no ve (una firma bloqueada por retención), contesta `version_firmada` y la pantalla lo dice.
+- **Crear y editar un documento:** título (J7), de curso o no, obligatorio y orden. «De curso» solo
+  se puede cambiar mientras no tenga versiones (J6): con versiones, la casilla no se ofrece, y la
+  base lo vuelve a mirar (`de_curso_fijo`). **Retirar** y **volver a poner**, sin borrar nada.
+- **Subir una versión:** un PDF de hasta 10 MB, por la ruta del 1a. En un documento de curso se
+  elige el curso entre los `planificado` y `activo` del centro; en uno que no es de curso no se
+  pregunta. La pantalla avisa de lo que hace: **una versión nueva no pide que vuelvan a firmar**
+  (J4); la refirma no está construida.
+- **Ver el PDF de una versión:** un enlace firmado de 60 segundos, después de comprobar que la
+  versión está en la lista de la admin.
+- **Borrar una versión sin firmas (J5):** con confirmación. Si el fichero no se va, la pantalla lo
+  dice, y los **ficheros pendientes de borrar** salen arriba con «reintentar».
+
 ## Orden de la serie
 
 Del 3 en adelante todos tocan `purgar_sujeto_db`, `privado.purgar_nino` y la exportación del
