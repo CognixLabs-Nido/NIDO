@@ -50,6 +50,10 @@ Estado real auditado al cerrar F10 (2026-06-13). Anclajes verificados en código
   `CONSENT_VERSION = 'v1.0'` en
   [accept-invitation.ts:11,76-77](../../src/features/auth/actions/accept-invitation.ts#L11).
   Los tipos `imagen` y `datos_medicos` no tienen ninguna ruta de escritura → **tabla inerte**.
+  > _Situación de esta auditoría, ya no vigente. Desde `20270104120000` (2026-11-06) la sesión no
+  > escribe la tabla: escriben sus funciones, que miran de quién es el niño
+  > (`privado.puede_consentir`); `consentimientos_insert` era `usuario_id = auth.uid()` y dejaba a
+  > cualquiera dar el consentimiento de imagen de cualquier niño._
 - **Consentimiento de imagen**: el gate efectivo es `ninos.puede_aparecer_en_fotos`
   (boolean DEFAULT false, [phase10_0](../../supabase/migrations/20260611120000_phase10_0_storage_publicaciones.sql#L57)),
   **hoy lo pone dirección a mano**. El formato `autorizacion_imagenes` existe como **valor

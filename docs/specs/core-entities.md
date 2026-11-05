@@ -808,6 +808,11 @@ CREATE POLICY consentimientos_insert ON public.consentimientos FOR INSERT WITH C
 -- UPDATE/DELETE no tienen policy = denegado.
 ```
 
+> **Sustituida el 2026-11-06 por `20270104120000_fix_consentimientos_solo_por_funcion`.** La sesión
+> ya no escribe la tabla (sin INSERT, UPDATE, DELETE ni TRUNCATE para `authenticated`), y
+> `consentimientos_insert` mira además de quién es el niño (`privado.puede_consentir`). Con esta
+> policy, cualquiera con cuenta daba el consentimiento de imagen de cualquier niño.
+
 ## Pantallas y rutas
 
 ### Admin

@@ -32,7 +32,9 @@ export type RegistrarConsentimientoTutorInput = z.infer<typeof registrarConsenti
  * acepta un `usuario_id` del cliente → nada de consentir por terceros). La RPC
  * `registrar_consentimiento` además blinda esto a nivel BD (`RAISE` si
  * `auth.uid() <> p_usuario_id`), así que la action es defensa en profundidad sobre
- * una frontera que la base de datos ya garantiza.
+ * una frontera que la base de datos ya garantiza. Desde 20270104120000 la base mira también de
+ * quién es el niño: el acuse médico solo lo registran su tutor legal, miembro de su centro, o la
+ * Dirección de su centro (`privado.puede_consentir`).
  *
  * PR-3b-2 · B2: el acuse médico se atribuye a `auth.uid()` — que en modo Dirección ES
  * la Directora (el backstop de `marcar_matricula_lista` exige el acuse de quien finaliza,

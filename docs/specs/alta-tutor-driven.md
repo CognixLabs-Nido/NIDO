@@ -85,7 +85,7 @@ Esta spec recoge el mapa del estado actual, el flujo objetivo y las decisiones y
 
 ### Piezas ya construidas que encajan
 
-- **Consentimientos (#88 / F11-A):** enum `consentimiento_tipo` ya incluye `datos_medicos`; `registrar_consentimiento(p_usuario_id, p_tipo, p_version, p_ip, p_user_agent)` y `revocar_consentimiento(p_tipo)` listos; `CONSENT_VERSIONS.datos_medicos = 'v1.0'`. Modelo **per-usuario** (sin `nino_id`), append-only, revocación por `revocado_en`.
+- **Consentimientos (#88 / F11-A):** enum `consentimiento_tipo` ya incluye `datos_medicos`; `registrar_consentimiento(p_usuario_id, p_tipo, p_version, p_ip, p_user_agent)` y `revocar_consentimiento(p_tipo)` listos; `CONSENT_VERSIONS.datos_medicos = 'v1.0'`. Modelo **per-usuario** (sin `nino_id`), append-only, revocación por `revocado_en`. _Sustituido: el acuse médico es **por niño** desde U-3 en la app, desde `20270103120000` en el cierre del alta y desde `20270104120000` en la propia escritura (sin niño, la base lo rechaza)._
 - **Imagen (A3):** el consentimiento de imagen va por **firma** (`autorizacion tipo='autorizacion_imagenes'`) → trigger `firma_imagen_sync_trg` → `consentimientos(tipo='imagen')` + flag `ninos.puede_aparecer_en_fotos`. No es un checkbox directo.
 - **F10-3 Storage:** patrón replicable para la cartilla (bucket privado, `es_tutor_de`, ruta `{centroId}/{ninoId}/…`, `procesarDocumento` con EXIF fuera, firmados ~1 h, tope 4 MB).
 - **F11-A4 (olvido) / F11-A6 (retención):** primitivas reutilizables para el borrado al revocar (`borrarObjetosBucket`, manifiesto `FUENTES_ADJUNTOS`/`FUENTES_RETENCION`).
@@ -106,7 +106,7 @@ Esta spec recoge el mapa del estado actual, el flujo objetivo y las decisiones y
 - **D4 — Encaje de #88/A3/médico/cartilla + write-paths nuevos.**
   - terminos/privacidad: en `accept-invitation` (sin cambios de mecanismo).
   - imagen: se firma como autorización A3 dentro del wizard → la instancia de la autorización de imagen se crea **lazy en el paso de imagen del wizard** (NO en la invitación: instanciarla antes crearía una autorización firmable sin pantalla de firma). Corregido en Pieza 2b.
-  - datos_medicos: `registrar_consentimiento` per-usuario.
+  - datos*medicos: `registrar_consentimiento` per-usuario. \_Sustituido: por niño (U-3; en la base, `20270103120000` y `20270104120000`).*
   - **Nuevos:** (a) helper `tiene_consentimiento(p_usuario_id, p_tipo)`; (b) **RPC de escritura médica del tutor** (la pieza más sensible — ver más abajo); (c) bucket `cartilla-vacunas` + policy `es_tutor_de` + columna `info_medica_emergencia.cartilla_vacunas_path`; (d) `accept-invitation` crea `vinculos_familiares`; (e) **estado de matrícula** (pendiente/activa), hoy inexistente.
 - **D5 — Coexistencia.** Los dos caminos coexisten: admin path como override/fallback; tutor-driven por defecto en altas nuevas. **No se migran** niños existentes.
 - **D6 — Infra compartida con F11-C.** La infra de invitación/accept (incluido el auto-vínculo) es base reusable: para tutor crea `vinculos_familiares`; para profe (F11-C) creará `profes_aulas`. El wizard del niño es rama **exclusiva del tutor**.

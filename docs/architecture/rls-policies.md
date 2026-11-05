@@ -598,6 +598,35 @@ Migración `20270103120000_feat_firmar_documentos_centro`; spec `docs/specs/alta
   1.º (medido en producción el 2026-11-05, en un ensayo terminado en RAISE).
 - Test: `src/test/rls/firmar-documentos-centro.rls.test.ts`.
 
+### Los consentimientos, solo por sus funciones (2026-11-06)
+
+Migración `20270104120000_fix_consentimientos_solo_por_funcion`. El consentimiento de imagen decide
+si se publican fotos de un menor (`ninos.puede_aparecer_en_fotos`, derivado), y lo podía dar
+cualquiera con cuenta para cualquier niño, por la tabla (`consentimientos_insert` era
+`usuario_id = auth.uid()`) y por `registrar_consentimiento`, que aceptaba cualquier tipo y niño. Los
+arreglos de #284 y #286 tocaron las funciones y no la tabla. Medido en producción el 2026-11-06, en un
+ensayo terminado en RAISE: el tutor de otro niño y una profe ponían el flag de un niño ajeno a true.
+
+- **La regla, en un sitio:** `privado.puede_consentir(tipo, niño)`, para quien tiene sesión.
+  `terminos` y `privacidad`, de la cuenta y sin niño. `datos_medicos`, de un niño: su tutor legal
+  miembro de su centro (`es_tutor_legal_de` y `pertenece_a_centro`) o la Dirección de su centro (la
+  puerta de `marcar_matricula_lista`). `imagen`, lo mismo, con la Dirección en persona y sin el
+  superusuario (ADR-0061). Un niño que no existe no tiene centro, y nadie consiente por él
+  (`es_admin(NULL)` sería TRUE para cualquier persona de Dirección). Sin `ELSE`: un tipo nuevo falla.
+- **Tres cerrojos, y cada uno basta solo** (el ensayo los quitó uno a uno):
+  1. la sesión no escribe la tabla: sin INSERT, UPDATE, DELETE ni TRUNCATE para `authenticated`.
+     Escriben solo funciones `SECURITY DEFINER` (otorgar, registrar, revocar, el trigger de la firma
+     de imagen y las purgas) y `service_role`;
+  2. `consentimientos_insert` mira la regla, por si volviera el privilegio;
+  3. `registrar_consentimiento` ya no registra la imagen (22023, HINT `imagen`: va por
+     `otorgar_consentimiento_imagen`), con sesión exige la regla (42501) y sin sesión, la forma (de
+     la cuenta sin niño, de un niño con él; 22023, HINT `nino_id`). `otorgar_consentimiento_imagen`
+     exige la regla.
+- **Lo que no cambia:** quién lee; las filas que ya hay; que la Dirección en persona atribuya la
+  imagen a un tutor (`p_tutor`, #284).
+- **Una escritura nueva de un consentimiento va por función, nunca por policy**, como la ficha médica.
+- Test: `consentimientos-solo-por-funcion.rls.test.ts` (también con dos centros).
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.
