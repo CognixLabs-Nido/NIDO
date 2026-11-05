@@ -77,6 +77,38 @@ reales de ANAIA (curso 2026/2027). Lo medido entonces, que motiva la serie:
 - **Las normas se firman aparte de la ficha** («una cosa es que firme NIDO APP y otra las reglas de
   funcionamiento y régimen interno»).
 
+**Decisiones del 2026-11-04 y del 2026-11-05 (el paso 1, entero):**
+
+- **Se firma una vez por niño.** La familia García, con Lucía y Pablo, firma el presupuesto dos veces,
+  una por cada hijo. Si Pablo entra un año después con la misma versión vigente, firma la suya igualmente.
+- **La lista de documentos la define cada centro**, con su marca de obligatorio (D3: N documentos).
+- **Las firmas van en una tabla nueva** que apunta a la versión con `ON DELETE RESTRICT`. No se
+  reutiliza `firmas_autorizacion`: va en `CASCADE` y su hash es de un texto, no de un fichero.
+- **J1 · Solo la admin** sube y gestiona los documentos del centro, no la directora. Es el criterio
+  que ya rige las plantillas legales (`privado.es_responsable`).
+- **J2 · Cada documento dice si es de curso o no.**
+  - El **presupuesto es de curso**: cada versión lleva su curso, y la familia firma la de **su
+    matrícula**. Lucía, que entra tarde al 2026/27, firma el presupuesto de 2026/27, no el de 2027/28
+    que ya está subido.
+  - Las **normas no son de curso**: vale la última.
+  - En palabras de Jose: **«tienen que firmar uno cada año con los nuevos precios»**. Cada curso trae
+    su presupuesto, y se firma otra vez.
+- **J3 · Basta con uno de los tutores**, y se guarda quién firmó. La clave única es **(versión,
+  niño)**, no por firmante. En la familia García basta con que firme Ana por Lucía; si firma Ana, Luis
+  no tiene que firmar.
+- **J4 · Una versión corregida a mitad de curso no obliga a volver a firmar.** La firma de septiembre
+  sigue valiendo, y la versión nueva la firman solo las altas que entren después. Si las normas pasan
+  a la v2 en octubre, Pablo, validado en julio con la v1, no firma otra vez.
+
+> **No confundir «curso nuevo» con «versión corregida».** Se parecen y no son lo mismo:
+>
+> |                                                                 | ¿Se vuelve a firmar?                   | Ejemplo                                                                                                     |
+> | --------------------------------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+> | **Curso nuevo** de un documento de curso (J2)                   | **Sí**: cada niño firma el de su curso | El presupuesto de 2027/28: Pablo, que sigue, firma el de 2027/28 aunque ya firmara el de 2026/27            |
+> | **Versión corregida** del mismo documento y el mismo curso (J4) | **No**: vale la firma que ya hay       | Una errata corregida en el presupuesto de 2026/27 en noviembre: quien firmó en septiembre no firma otra vez |
+>
+> Lo que decide es si cambia **el curso**, no si cambia **el fichero**.
+
 ### Gastos de gestión
 
 - Un paso del alta donde el tutor **adjunta el justificante de la transferencia o indica que pagará
@@ -862,6 +894,79 @@ ella (decisión del responsable).
   la invitación al email actual se reenvía esa. Hasta #493 el botón limpiaba solo el niño de su
   fila.
 - Sin migración: usa `cancelar_invitacion_tutor2` (`20261231120000`) una vez por hermano.
+
+## Paso 1: documentos del centro versionados
+
+### Lo que dice Jose del presupuesto (2026-11-05)
+
+> «Si se ha equivocado al subir el presupuesto, lo puede modificar y que lo vuelvan a firmar todos.
+> Es una cosa de cajón. Lo que hay que tener en cuenta es que se sube uno por curso. Es decir, yo
+> este año puedo subir uno para el curso 26-27 con unos precios y a la vez para el curso 27-28 tener
+> otro presupuesto para otros niños que se estén dando de alta ya. Entonces tengo los dos y cada uno
+> firma el suyo, el que se dé de alta. Y al finalizar el curso, los que vayan a continuar, pues
+> firmarán el nuevo.»
+
+**Hay varios vivos a la vez.** No hay «la versión vigente» de un documento de curso: hay **la
+vigente de cada curso**. En mayo de 2027 pueden estar vivos a la vez el presupuesto de 2026/27 (lo
+firma Lucía, que entra tarde a 2026/27) y el de 2027/28 (lo firman los que se dan de alta para
+septiembre, y en junio los que continúan). Cada familia firma el de **su matrícula**. El modelo y la
+pantalla cuentan con eso desde el principio: la vigente es la última versión **de ese documento y
+ese curso**. En un documento que no es de curso, como las normas, es la última del documento.
+
+### Decisiones (2026-11-05)
+
+- **J5 · Una versión se puede borrar mientras no tenga ninguna firma**, y queda registro de quién la
+  borró. Un PDF subido por error puede llevar datos de otra familia, y guardarlo para siempre es un
+  problema de protección de datos sin ninguna contrapartida. En cuanto tenga una firma, el `RESTRICT`
+  de la tabla de firmas (1b) lo impide y ya no se borra nunca. Borrar no es cambiar: lo que se borra
+  se va entero, la fila y el fichero.
+- **J6 · «De curso» se puede cambiar mientras el documento no tenga versiones.** Después queda fijo:
+  si estaba mal, se crea otro documento. Así ninguna versión se queda sin curso en un documento de
+  curso, ni con curso en uno que no lo es.
+- **J7 · El título va en un solo idioma**, como lo escribe el centro: el PDF también está en uno.
+- **Cursos:** una versión solo se sube para un curso del centro `planificado` o `activo`, nunca
+  `cerrado`, y el curso tiene que existir antes. Para subir el presupuesto de 2027/28, antes se crea
+  el curso 2027/28.
+
+### Pendiente: pedir que lo vuelvan a firmar (la refirma)
+
+Jose: «si se ha equivocado al subir el presupuesto, lo puede modificar y que lo vuelvan a firmar
+todos». Es funcionalidad nueva, y **no es el J4**: una versión nueva **no** obliga a refirmar por sí
+sola. Lo que se pide es que la admin **pueda pedirlo** cuando se ha equivocado. Es una acción suya,
+no un automatismo. **No se construye todavía**: dónde encaja se decide aparte.
+
+**Lo que el 1a deja preparado para no impedirlo:** cada versión lleva `pide_refirma` (`false` hasta
+que se construya). Con `true`, las firmas de las versiones anteriores del mismo documento y curso
+dejan de valer. La fila de una versión no cambia nunca, así que se decide **al subir la corregida**:
+«sube la buena y pide que la firmen otra vez». Si algún día hiciera falta pedirlo después de subirla,
+iría en una tabla aparte, sin tocar la de versiones.
+
+### 1a · Documentos y versiones (base de datos)
+
+- **`documentos_centro`**: centro, título (J7), `de_curso` (J2; J6), `obligatorio`, orden,
+  `retirado_at`, quién lo creó.
+- **`documentos_centro_versiones`**: documento, curso (obligatorio si el documento es de curso,
+  prohibido si no), número (correlativo por documento y curso), `sha256`, ruta, bytes,
+  `pide_refirma`, quién y cuándo la subió.
+- **Sin políticas ni privilegios para nadie** en las dos tablas, como `remesa_ficheros`: solo las
+  funciones. Todas exigen la admin del centro (`privado.es_responsable`, J1): crear y editar un
+  documento, registrar una versión, borrarla y la lista para la pantalla.
+- **El bucket `documentos-centro`**: privado, PDF, 10 MB, sin políticas en `storage.objects`. Ruta
+  `{centro}/{documento}/{sha256}.pdf`. El hash lo calcula **el servidor** a partir de los bytes que
+  sube. La función que registra comprueba que la ruta es esa y que el objeto está en el bucket, con
+  su tamaño y su tipo, y la base vuelve a mirar el curso y el documento.
+- **Una versión no cambia nunca, para nadie**, tampoco la admin, `service_role` ni `postgres`:
+  - un trigger impide todo `UPDATE` de la fila;
+  - otro impide su `DELETE` salvo por la función de borrar, que deja el registro (J5);
+  - en `storage.objects`, solo para este bucket y solo sobre un objeto al que apunta una versión,
+    otro impide cambiar su contenido (sustituirlo, moverlo) y borrarlo. No impide leerlo: Storage
+    toca `last_accessed_at` y `updated_at` al servirlo.
+- **Registro (J5):** crear y editar un documento, subir una versión y borrarla dejan un evento
+  directo en `audit_log` (`documento_centro`), con la acción y los identificadores, sin datos de
+  ninguna familia.
+- **En la app**, sin pantalla (la pantalla es el 1c): la acción que sube (comprueba la sesión, que es
+  un PDF, calcula el hash, sube y registra) y la que borra (borra la versión y después su fichero; si
+  el fichero no se va, lo dice, y se reintenta).
 
 ## Orden de la serie
 

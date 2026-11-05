@@ -416,6 +416,35 @@ email_que_se_queda)`, solo `service_role`. La app comprueba la sesión (`usuario
 - Test: `src/test/audit/altas-sin-terminar.test.ts`, `src/test/rls/altas-en-proceso.rls.test.ts`,
   `src/test/rls/invitacion-tutor2.rls.test.ts` y `src/test/rls/cola-invita-tutor2.rls.test.ts`.
 
+### Los documentos del centro (serie de altas, paso 1, 1a)
+
+Migración `20270101120000_feat_documentos_centro`; spec `docs/specs/altas-serie.md`, «Paso 1».
+
+- **Las tablas** `documentos_centro` y `documentos_centro_versiones`: RLS sin políticas y sin
+  privilegios para nadie, tampoco `service_role`. Solo las funciones.
+- **Las funciones son de la admin del centro (J1):** `crear_documento_centro`,
+  `editar_documento_centro`, `registrar_version_documento`, `borrar_version_documento` y
+  `documentos_centro_admin` (`SECURITY DEFINER`, `EXECUTE` solo para `authenticated`). Todas pasan
+  por `privado.documentos_centro_puerta`, que exige sesión y `privado.es_responsable` del centro; la
+  directora, la profe y cualquiera de fuera reciben 42501. La guarda posterior comprueba que cada una
+  pasa por la puerta.
+- **El bucket `documentos-centro`**: privado, PDF, 10 MB, sin políticas en `storage.objects`. Sube
+  el servidor con el servicio, tras comprobar la sesión (`usuarioResponsableEn`); el fichero se llama
+  por el sha256 de los bytes subidos. Registrar comprueba la ruta y que el objeto está, con su tamaño
+  y su tipo.
+- **Una versión no cambia nunca, para nadie:** `documentos_centro_versiones_defensa` impide todo
+  `UPDATE` de la fila y el `DELETE` salvo con el marcador local `app.borrar_version_documento` = su
+  id, que solo pone `borrar_version_documento` (J5: sin firmas, con su evento). En `storage.objects`,
+  `documentos_centro_objeto_defensa` (solo `bucket_id = 'documentos-centro'` y solo sobre un objeto al
+  que apunta una versión) impide sustituirlo, moverlo o borrarlo, también a `service_role`. Deja
+  pasar la lectura: ignora `updated_at`, `last_accessed_at` y las columnas generadas
+  (`path_tokens`), leídas del catálogo. `postgres` puede quitar ese trigger (medido el 2026-11-05),
+  aunque la tabla es de `supabase_storage_admin`.
+- **J2 y J6, en la base:** el curso de una versión es obligatorio en un documento de curso y
+  prohibido en otro, del centro y no cerrado (23514); «de curso» no cambia en un documento con
+  versiones (23514, `de_curso_fijo`).
+- Test: `src/test/rls/documentos-centro.rls.test.ts`.
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.

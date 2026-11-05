@@ -20,6 +20,8 @@ export const BUCKET_DNI_TUTORES = 'dni-tutores'
 export const BUCKET_MANDATO_SEPA = 'mandato-sepa'
 /** El fichero pain.008 de cada versión de una remesa (R-1, `20261220120000`): privado, sin políticas para las sesiones. */
 export const BUCKET_REMESAS_FICHEROS = 'remesas-ficheros'
+/** Documentos del centro (20270101120000): privado y sin políticas; el fichero, por su sha256. */
+export const BUCKET_DOCUMENTOS_CENTRO = 'documentos-centro'
 
 /** TTL de las URLs firmadas de los buckets privados (~1 h, P4). */
 export const SIGNED_URL_TTL_SEGUNDOS = 60 * 60
