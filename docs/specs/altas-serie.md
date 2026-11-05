@@ -895,6 +895,79 @@ ella (decisión del responsable).
   fila.
 - Sin migración: usa `cancelar_invitacion_tutor2` (`20261231120000`) una vez por hermano.
 
+## Paso 1: documentos del centro versionados
+
+### Lo que dice Jose del presupuesto (2026-11-05)
+
+> «Si se ha equivocado al subir el presupuesto, lo puede modificar y que lo vuelvan a firmar todos.
+> Es una cosa de cajón. Lo que hay que tener en cuenta es que se sube uno por curso. Es decir, yo
+> este año puedo subir uno para el curso 26-27 con unos precios y a la vez para el curso 27-28 tener
+> otro presupuesto para otros niños que se estén dando de alta ya. Entonces tengo los dos y cada uno
+> firma el suyo, el que se dé de alta. Y al finalizar el curso, los que vayan a continuar, pues
+> firmarán el nuevo.»
+
+**Hay varios vivos a la vez.** No hay «la versión vigente» de un documento de curso: hay **la
+vigente de cada curso**. En mayo de 2027 pueden estar vivos a la vez el presupuesto de 2026/27 (lo
+firma Lucía, que entra tarde a 2026/27) y el de 2027/28 (lo firman los que se dan de alta para
+septiembre, y en junio los que continúan). Cada familia firma el de **su matrícula**. El modelo y la
+pantalla cuentan con eso desde el principio: la vigente es la última versión **de ese documento y
+ese curso**. En un documento que no es de curso, como las normas, es la última del documento.
+
+### Decisiones (2026-11-05)
+
+- **J5 · Una versión se puede borrar mientras no tenga ninguna firma**, y queda registro de quién la
+  borró. Un PDF subido por error puede llevar datos de otra familia, y guardarlo para siempre es un
+  problema de protección de datos sin ninguna contrapartida. En cuanto tenga una firma, el `RESTRICT`
+  de la tabla de firmas (1b) lo impide y ya no se borra nunca. Borrar no es cambiar: lo que se borra
+  se va entero, la fila y el fichero.
+- **J6 · «De curso» se puede cambiar mientras el documento no tenga versiones.** Después queda fijo:
+  si estaba mal, se crea otro documento. Así ninguna versión se queda sin curso en un documento de
+  curso, ni con curso en uno que no lo es.
+- **J7 · El título va en un solo idioma**, como lo escribe el centro: el PDF también está en uno.
+- **Cursos:** una versión solo se sube para un curso del centro `planificado` o `activo`, nunca
+  `cerrado`, y el curso tiene que existir antes. Para subir el presupuesto de 2027/28, antes se crea
+  el curso 2027/28.
+
+### Pendiente: pedir que lo vuelvan a firmar (la refirma)
+
+Jose: «si se ha equivocado al subir el presupuesto, lo puede modificar y que lo vuelvan a firmar
+todos». Es funcionalidad nueva, y **no es el J4**: una versión nueva **no** obliga a refirmar por sí
+sola. Lo que se pide es que la admin **pueda pedirlo** cuando se ha equivocado. Es una acción suya,
+no un automatismo. **No se construye todavía**: dónde encaja se decide aparte.
+
+**Lo que el 1a deja preparado para no impedirlo:** cada versión lleva `pide_refirma` (`false` hasta
+que se construya). Con `true`, las firmas de las versiones anteriores del mismo documento y curso
+dejan de valer. La fila de una versión no cambia nunca, así que se decide **al subir la corregida**:
+«sube la buena y pide que la firmen otra vez». Si algún día hiciera falta pedirlo después de subirla,
+iría en una tabla aparte, sin tocar la de versiones.
+
+### 1a · Documentos y versiones (base de datos)
+
+- **`documentos_centro`**: centro, título (J7), `de_curso` (J2; J6), `obligatorio`, orden,
+  `retirado_at`, quién lo creó.
+- **`documentos_centro_versiones`**: documento, curso (obligatorio si el documento es de curso,
+  prohibido si no), número (correlativo por documento y curso), `sha256`, ruta, bytes,
+  `pide_refirma`, quién y cuándo la subió.
+- **Sin políticas ni privilegios para nadie** en las dos tablas, como `remesa_ficheros`: solo las
+  funciones. Todas exigen la admin del centro (`privado.es_responsable`, J1): crear y editar un
+  documento, registrar una versión, borrarla y la lista para la pantalla.
+- **El bucket `documentos-centro`**: privado, PDF, 10 MB, sin políticas en `storage.objects`. Ruta
+  `{centro}/{documento}/{sha256}.pdf`. El hash lo calcula **el servidor** a partir de los bytes que
+  sube. La función que registra comprueba que la ruta es esa y que el objeto está en el bucket, con
+  su tamaño y su tipo, y la base vuelve a mirar el curso y el documento.
+- **Una versión no cambia nunca, para nadie**, tampoco la admin, `service_role` ni `postgres`:
+  - un trigger impide todo `UPDATE` de la fila;
+  - otro impide su `DELETE` salvo por la función de borrar, que deja el registro (J5);
+  - en `storage.objects`, solo para este bucket y solo sobre un objeto al que apunta una versión,
+    otro impide cambiar su contenido (sustituirlo, moverlo) y borrarlo. No impide leerlo: Storage
+    toca `last_accessed_at` y `updated_at` al servirlo.
+- **Registro (J5):** crear y editar un documento, subir una versión y borrarla dejan un evento
+  directo en `audit_log` (`documento_centro`), con la acción y los identificadores, sin datos de
+  ninguna familia.
+- **En la app**, sin pantalla (la pantalla es el 1c): la acción que sube (comprueba la sesión, que es
+  un PDF, calcula el hash, sube y registra) y la que borra (borra la versión y después su fichero; si
+  el fichero no se va, lo dice, y se reintenta).
+
 ## Orden de la serie
 
 Del 3 en adelante todos tocan `purgar_sujeto_db`, `privado.purgar_nino` y la exportación del
