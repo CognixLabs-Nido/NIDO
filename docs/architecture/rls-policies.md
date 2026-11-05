@@ -571,6 +571,33 @@ Sin migración; spec `docs/specs/altas-serie.md`, «1c». `/admin/documentos-cen
   funciones no se traduce así.
 - Test: `src/test/rls/documentos-centro-pantalla.rls.test.ts`.
 
+### Firmar los documentos del centro (serie de altas, paso 2, 2a)
+
+Migración `20270103120000_feat_firmar_documentos_centro`; spec `docs/specs/altas-serie.md`, «Paso 2».
+
+- **`privado.documentos_del_nino(niño)`**: lo que le toca firmar, con su estado (`falta_documento`,
+  `por_firmar` con `disponible_desde`, o `firmado`, de cualquier versión del mismo documento y curso:
+  J4). Sin puerta propia: cerrada a todas las sesiones y a `service_role`, la llaman las funciones de
+  abajo después de la suya.
+- **Leer:** `documentos_firma_nino(niño)` (`es_tutor_legal_de` o `es_admin` del centro del niño) y
+  `documentos_firma_centro(centro)` (`es_admin`, y con el centro NULL, 42501). El autorizado y la
+  profe, 42501.
+- **Firmar:** `firmar_documento_centro` (el tutor legal, con el dedo) y
+  `registrar_firma_documento_presencial` (`es_admin AND NOT is_superadmin()`, sin trazo, rol
+  `admin`). Las dos solo sobre la versión vigente que le toca al niño y está por firmar
+  (`privado.version_por_firmar`: `version_no_vigente`, `ya_firmado`), y con un cerrojo por niño, para
+  que dos tutores a la vez no firmen dos veces. La fila la escribe la función: la tabla sigue sin
+  `INSERT` para nadie (1b).
+- **El PDF:** `ruta_version_documento_nino` da la ruta de una versión que le toca o que ya firmó, a
+  quien puede leer sus documentos. A cualquier otra cosa, 42501, sin decir por qué.
+- **Las cinco** son `SECURITY DEFINER` con `EXECUTE` solo para `authenticated`; la guarda posterior
+  comprueba eso y que cada una tiene su puerta.
+- **U-3 en la base:** `marcar_matricula_lista` exige el acuse médico de quien cierra **para ese
+  niño** (`consentimientos.nino_id`), como `finalizarAlta` desde U-3. Antes bastaba el de cualquier
+  niño (`tiene_consentimiento`): una llamada directa cerraba el alta del 2.º hijo con el acuse del
+  1.º (medido en producción el 2026-11-05, en un ensayo terminado en RAISE).
+- Test: `src/test/rls/firmar-documentos-centro.rls.test.ts`.
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.

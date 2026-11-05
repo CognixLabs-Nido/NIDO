@@ -1058,6 +1058,67 @@ funciones del 1a y la tabla de firmas del 1b. La familia sigue sin ver nada hast
 - **Borrar una versión sin firmas (J5):** con confirmación. Si el fichero no se va, la pantalla lo
   dice, y los **ficheros pendientes de borrar** salen arriba con «reintentar».
 
+## Paso 2: firmar los documentos del centro
+
+### Decisiones (2026-11-05)
+
+- **P-6 · Un documento que no existe no bloquea el alta.** Jose: «B — lo firmará cuando se genere el
+  documento». Si el centro no tiene definido un documento, o no hay versión para el curso del niño,
+  el alta se cierra igual, y esa familia queda con la firma **pendiente**: la firma cuando se suba.
+  Lo que sí bloquea es una versión que existe y está por firmar.
+- **Los acuses de normas por casilla no valen como firma.** Los niños validados con la casilla
+  firmarán cuando el documento exista, igual que los demás, y con el J2 pasan por ahí de todas formas
+  al curso siguiente. Las filas de `acuses_alta` se quedan como histórico. Medido en producción el
+  2026-11-05: los 3 acuses de normas son los 3 niños activos, y los tres firmantes son del buzón del
+  responsable (dos alias `+nino1` y `+nino3`, y su cuenta de entonces como admin). No hay ninguna
+  familia de otro buzón. El gate deja de aceptarlos en el 2c, que es quien lo cambia (y barre lo que
+  lo afirma, regla 12).
+- **El 2d es lo importante del paso**, no un extra: sin él, una familia que se matricula hoy no firma
+  nunca y nadie se entera. La familia ve «documentos por firmar» en cuanto existe la versión que le
+  toca, y Dirección lo ve **en su inicio y por niño**, sin buscarlo.
+- **«No existía» no es «no ha firmado».** Pendiente porque el documento no existe no es de la
+  familia; pendiente porque no lo ha firmado, sí. Por eso hay dos estados distintos, y el segundo
+  lleva desde cuándo pudo firmarlo.
+- **U-3, corregido en la base.** El acuse médico del cierre del alta se exigía de quien cierra para
+  cualquier niño; U-3 lo pasó a «de ese niño» solo en la app. El 2a lo corrige en
+  `marcar_matricula_lista`.
+
+**Orden:** 2a (base) → 2c (la familia firma en el alta) → 2d (firmar fuera del alta y lo pendiente en
+el inicio de Dirección) → 2b (la refirma, que necesita dónde firmar otra vez).
+
+### 2a · La base
+
+Migración `20270103120000_feat_firmar_documentos_centro`. Sin pantalla.
+
+- **Lo que le toca a cada niño** (`privado.documentos_del_nino`): por cada documento no retirado de
+  su centro, en uno de curso una fila por cada curso no cerrado de sus matrículas vivas (Lucía, en el
+  curso activo y en el planificado, tiene dos presupuestos), y en uno que no es de curso, una. Cada
+  fila con su estado:
+
+  | Estado            | Qué es                                                            | De quién es      |
+  | ----------------- | ----------------------------------------------------------------- | ---------------- |
+  | `falta_documento` | No hay versión para ese curso: no hay nada que firmar             | Del centro (P-6) |
+  | `por_firmar`      | La versión existe y no hay firma de ese documento y curso         | De la familia    |
+  | `firmado`         | Hay una firma de ese documento y curso, de cualquier versión (J4) | —                |
+
+  `por_firmar` lleva `disponible_desde`: la primera versión subida de ese documento y curso, o la
+  entrada del niño si fue después. Un documento subido hoy dice «desde hoy». Un niño sin matrícula
+  viva no tiene nada que firmar.
+
+- **Quién lo lee:** por niño, sus tutores legales y la Dirección de su centro
+  (`documentos_firma_nino`); el centro entero, solo lo pendiente, la Dirección
+  (`documentos_firma_centro`, para el inicio del 2d). El autorizado y la profe, no.
+- **Firmar con el dedo** (`firmar_documento_centro`): el tutor legal, solo la versión vigente que le
+  toca y está por firmar. Basta uno (J3): el segundo recibe `ya_firmado`. La IP y el navegador los
+  pone la app de la petición, como en las firmas de autorizaciones.
+- **En persona** (`registrar_firma_documento_presencial`): la Dirección del centro, sin trazo y con
+  rol `admin`; el superusuario no, como el mandato presencial.
+- **El PDF** (`ruta_version_documento_nino`): la ruta de la versión que le toca o que ya firmó, para
+  que la app la sirva con un enlace firmado.
+- **Lo que no va aquí:** la puerta de los documentos en el cierre del alta va en el 2c, con la
+  pantalla de firmar. Con ella aquí, un documento subido desde la pantalla del 1c (ya desplegada)
+  dejaría todas las altas sin poder cerrarse y sin sitio donde firmar.
+
 ## Orden de la serie
 
 Del 3 en adelante todos tocan `purgar_sujeto_db`, `privado.purgar_nino` y la exportación del

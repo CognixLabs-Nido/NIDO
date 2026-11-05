@@ -5136,6 +5136,64 @@ export type Database = {
         }
         Returns: string
       }
+      documentos_firma_nino: {
+        Args: { p_nino_id: string }
+        Returns: {
+          documento_id: string
+          titulo: string
+          de_curso: boolean
+          obligatorio: boolean
+          orden: number
+          curso_academico_id: string | null
+          curso_nombre: string | null
+          estado: string
+          version_id: string | null
+          numero: number | null
+          disponible_desde: string | null
+          firma_id: string | null
+          firmado_at: string | null
+          metodo_firma: Database["public"]["Enums"]["firma_metodo"] | null
+        }[]
+      }
+      documentos_firma_centro: {
+        Args: { p_centro_id: string }
+        Returns: {
+          nino_id: string
+          documento_id: string
+          titulo: string
+          obligatorio: boolean
+          curso_academico_id: string | null
+          curso_nombre: string | null
+          estado: string
+          version_id: string | null
+          disponible_desde: string | null
+        }[]
+      }
+      firmar_documento_centro: {
+        Args: {
+          p_firma_imagen: string
+          p_ip_address: unknown
+          p_nino_id: string
+          p_nombre_tecleado: string
+          p_user_agent: string
+          p_version_id: string
+        }
+        Returns: string
+      }
+      registrar_firma_documento_presencial: {
+        Args: {
+          p_ip_address: unknown
+          p_nino_id: string
+          p_nombre_tecleado: string
+          p_user_agent: string
+          p_version_id: string
+        }
+        Returns: string
+      }
+      ruta_version_documento_nino: {
+        Args: { p_nino_id: string; p_version_id: string }
+        Returns: string
+      }
       export_datos_sujeto: {
         Args: { p_sujeto_id: string; p_sujeto_tipo: string }
         Returns: Json
