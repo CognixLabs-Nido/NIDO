@@ -61,6 +61,8 @@ describe('Alta P3c — activación de matrícula (RPC + guard)', () => {
   let matOk: string
   let matSinId: string
   let matSinAcuse: string
+  let ninoSinAcuseSuyo: { id: string }
+  let matSinAcuseSuyo: string
   let tutorLegal: TestUser
   let tutorSinAcuse: TestUser
   let autorizado: TestUser
@@ -75,6 +77,7 @@ describe('Alta P3c — activación de matrícula (RPC + guard)', () => {
     ninoOk = await createTestNino(centro.id, 'Nino OK P3c') // identidad completa (helper)
     ninoSinId = await createTestNino(centro.id, 'Nino SinId P3c')
     ninoSinAcuse = await createTestNino(centro.id, 'Nino SinAcuse P3c') // identidad completa
+    ninoSinAcuseSuyo = await createTestNino(centro.id, 'Nino SinAcuseSuyo P3c') // identidad completa
     // ninoSinId: identidad incompleta → backstop debe impedir 'lista'.
     await serviceClient
       .from('ninos')
@@ -86,6 +89,7 @@ describe('Alta P3c — activación de matrícula (RPC + guard)', () => {
     matOk = await crearMatriculaPendiente(ninoOk.id, aula.id, curso.id)
     matSinId = await crearMatriculaPendiente(ninoSinId.id, aula.id, curso.id)
     matSinAcuse = await crearMatriculaPendiente(ninoSinAcuse.id, aula.id, curso.id)
+    matSinAcuseSuyo = await crearMatriculaPendiente(ninoSinAcuseSuyo.id, aula.id, curso.id)
 
     tutorLegal = await createTestUser({ nombre: 'Tutor Legal 3c' })
     tutorSinAcuse = await createTestUser({ nombre: 'Tutor SinAcuse 3c' })
@@ -98,6 +102,7 @@ describe('Alta P3c — activación de matrícula (RPC + guard)', () => {
     await crearVinculo(ninoOk.id, tutorLegal.id, 'tutor_legal_principal', {})
     await crearVinculo(ninoSinId.id, tutorLegal.id, 'tutor_legal_principal', {})
     await crearVinculo(ninoSinAcuse.id, tutorSinAcuse.id, 'tutor_legal_principal', {})
+    await crearVinculo(ninoSinAcuseSuyo.id, tutorLegal.id, 'tutor_legal_principal', {})
     await crearVinculo(ninoOk.id, autorizado.id, 'autorizado', {})
 
     clientTutor = await clientFor(tutorLegal)
@@ -106,12 +111,18 @@ describe('Alta P3c — activación de matrícula (RPC + guard)', () => {
     clientAdmin = await clientFor(admin)
 
     // F11-F: el tutor que SÍ finaliza necesita el acuse datos_medicos registrado
-    // (backstop de marcar_matricula_lista). tutorSinAcuse NO lo registra a propósito.
-    await clientTutor.rpc('registrar_consentimiento', {
-      p_usuario_id: tutorLegal.id,
-      p_tipo: 'datos_medicos',
-      p_version: 'v2.0',
-    })
+    // (backstop de marcar_matricula_lista), y desde 20270103120000 (U-3 en la base) el de ESE niño:
+    // uno por niño, como lo registra la app. tutorSinAcuse NO lo registra a propósito, y
+    // ninoSinAcuseSuyo, hijo de tutorLegal, tampoco tiene el suyo.
+    for (const nino of [ninoOk.id, ninoSinId.id]) {
+      const { error } = await clientTutor.rpc('registrar_consentimiento', {
+        p_usuario_id: tutorLegal.id,
+        p_tipo: 'datos_medicos',
+        p_version: 'v2.0',
+        p_nino_id: nino,
+      })
+      if (error) throw new Error(`acuse médico: ${error.message}`)
+    }
   }, 90_000)
 
   afterAll(async () => {
@@ -173,6 +184,23 @@ describe('Alta P3c — activación de matrícula (RPC + guard)', () => {
     expect(error).not.toBeNull() // backstop del acuse → RAISE insufficient_privilege (42501)
     expect(error?.code).toBe('42501')
     expect(await estadoDe(matSinAcuse)).toBe('pendiente')
+  })
+
+  it('U-3 en la base: el acuse médico de OTRO hijo no cierra el alta de este', async () => {
+    // Premisa: tutorLegal tiene acuses médicos vigentes (los de ninoOk y ninoSinId), y ninguno de
+    // ninoSinAcuseSuyo, que es hijo suyo.
+    const { data: acuses } = await serviceClient
+      .from('consentimientos')
+      .select('nino_id')
+      .eq('usuario_id', tutorLegal.id)
+      .eq('tipo', 'datos_medicos')
+      .is('revocado_en', null)
+    expect((acuses ?? []).map((a) => a.nino_id).sort()).toEqual([ninoOk.id, ninoSinId.id].sort())
+    const { error } = await clientTutor.rpc('marcar_matricula_lista', {
+      p_nino_id: ninoSinAcuseSuyo.id,
+    })
+    expect(error?.code).toBe('42501')
+    expect(await estadoDe(matSinAcuseSuyo)).toBe('pendiente')
   })
 
   it('guard activarMatricula: admin NO activa una pendiente (0 filas)', async () => {
