@@ -3,15 +3,18 @@ import { execFileSync } from 'node:child_process'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import {
+  asignarProfeAula,
   asignarRol,
   clientFor,
   createTestCentro,
+  createTestAula,
   createTestCurso,
   createTestNino,
   createTestUser,
   crearVinculo,
   deleteTestCentro,
   deleteTestUser,
+  matricular,
   serviceClient,
   type TestCentro,
   type TestUser,
@@ -112,6 +115,11 @@ describe('Las firmas de los documentos del centro', () => {
     lucia = (await createTestNino(centro.id, 'Lucía')).id
     inigo = (await createTestNino(centro.id, 'Íñigo')).id
     await crearVinculo(lucia, madre.id, 'tutor_legal_principal')
+    // La profe es de la clase de Lucía: así su «0» dice que la política no la deja, no que no la
+    // conoce (sin esto, la mutación «la profe lee» salía verde).
+    const aula = await createTestAula(centro.id, curso)
+    await matricular(lucia, aula.id, curso)
+    await asignarProfeAula(profe.id, aula.id, curso)
     await crearVinculo(inigo, madre.id, 'tutor_legal_principal')
 
     const sesion = await clientFor(admin)
@@ -238,8 +246,13 @@ describe('Las firmas de los documentos del centro', () => {
       expect(error).toBeNull()
       return (data ?? []).length
     }
-    // Premisa: hay dos firmas de Lucía.
+    // Premisa: hay dos firmas de Lucía, y la profe es profe de Lucía.
     expect(cuenta(`nino_id = '${lucia}'`)).toBe(2)
+    const { data: esProfe, error: errProfe } = await (
+      await clientFor(profe)
+    ).rpc('es_profe_de_nino', { p_nino_id: lucia })
+    expect(errProfe).toBeNull()
+    expect(esProfe).toBe(true)
     expect.soft(await lee(madre)).toBe(2)
     expect.soft(await lee(admin)).toBe(2)
     expect.soft(await lee(directora)).toBe(2)
