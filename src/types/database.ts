@@ -2400,11 +2400,12 @@ export type Database = {
           curso_academico_id: string | null
           curso_nombre: string | null
           documento_id: string
-          firma_imagen: string
+          firma_imagen: string | null
           firmado_at: string
           firmante_id: string
           id: string
           ip_address: unknown | null
+          metodo_firma: Database["public"]["Enums"]["firma_metodo"]
           nino_id: string
           nombre_tecleado: string
           numero: number
@@ -2419,11 +2420,12 @@ export type Database = {
           curso_academico_id?: string | null
           curso_nombre?: string | null
           documento_id: string
-          firma_imagen: string
+          firma_imagen?: string | null
           firmado_at?: string
           firmante_id: string
           id?: string
           ip_address?: unknown | null
+          metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
           nino_id: string
           nombre_tecleado: string
           numero: number
@@ -2438,11 +2440,12 @@ export type Database = {
           curso_academico_id?: string | null
           curso_nombre?: string | null
           documento_id?: string
-          firma_imagen?: string
+          firma_imagen?: string | null
           firmado_at?: string
           firmante_id?: string
           id?: string
           ip_address?: unknown | null
+          metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
           nino_id?: string
           nombre_tecleado?: string
           numero?: number

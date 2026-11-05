@@ -514,10 +514,11 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
         } else continue
         n++
       }
-    // Premisa: las reglas alcanzan las 146 columnas técnicas que decidieron (2026-11-01), más las 18
+    // Premisa: las reglas alcanzan las 146 columnas técnicas que decidieron (2026-11-01), más las 20
     // de las dos secciones de firmas de documentos del 1b (2026-11-05): por sección, centro_id,
-    // firmante_id, id, curso_academico_id, documento_id, nino_id, version_id, ip_address y user_agent.
-    expect(n).toBe(164)
+    // firmante_id, id, curso_academico_id, documento_id, nino_id, version_id, ip_address, user_agent
+    // y metodo_firma.
+    expect(n).toBe(166)
   })
 
   it('lo que sale sin repasar es lo del 2026-11-01, y solo mengua', () => {
