@@ -5287,5 +5287,22 @@
         "otro_bloqueo": "No date: something still stops their account from being deleted"
       }
     }
+  },
+  "documentos_centro": {
+    "errors": {
+      "no_autorizado": "Only the centre's admin manages its documents.",
+      "invalido": "Invalid request.",
+      "subida": "The file couldn't be uploaded. Please try again.",
+      "tamano": "The file is larger than 10 MB.",
+      "tipo_pdf": "The file must be a PDF.",
+      "ya_subida": "That file is already a version of this document.",
+      "retirado": "The document has been withdrawn.",
+      "falta_curso": "This document is per school year: choose the version's school year.",
+      "sobra_curso": "This document isn't per school year: the version has no school year.",
+      "curso_cerrado": "A version can't be uploaded for a closed school year.",
+      "curso_ajeno": "That school year doesn't belong to this centre.",
+      "guardar": "It couldn't be saved. Please try again.",
+      "no_suelto": "That file is no longer waiting to be deleted."
+    }
   }
 }

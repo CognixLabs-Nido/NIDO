@@ -5287,5 +5287,22 @@
         "otro_bloqueo": "Sense data: encara hi ha alguna cosa que frena la purga del seu compte"
       }
     }
+  },
+  "documentos_centro": {
+    "errors": {
+      "no_autorizado": "Només l'admin del centre gestiona els seus documents.",
+      "invalido": "Sol·licitud no vàlida.",
+      "subida": "No s'ha pogut pujar el fitxer. Torna-ho a provar.",
+      "tamano": "El fitxer passa de 10 MB.",
+      "tipo_pdf": "El fitxer ha de ser un PDF.",
+      "ya_subida": "Eixe fitxer ja és una versió d'aquest document.",
+      "retirado": "El document està retirat.",
+      "falta_curso": "Aquest document és de curs: tria el curs de la versió.",
+      "sobra_curso": "Aquest document no és de curs: la versió no porta curs.",
+      "curso_cerrado": "No es puja una versió per a un curs tancat.",
+      "curso_ajeno": "Eixe curs no és d'aquest centre.",
+      "guardar": "No s'ha pogut guardar. Torna-ho a provar.",
+      "no_suelto": "Eixe fitxer ja no està pendent d'esborrar."
+    }
   }
 }

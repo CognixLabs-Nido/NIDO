@@ -5287,5 +5287,22 @@
         "otro_bloqueo": "Sin fecha: todavía hay algo que frena la purga de su cuenta"
       }
     }
+  },
+  "documentos_centro": {
+    "errors": {
+      "no_autorizado": "Solo la admin del centro gestiona sus documentos.",
+      "invalido": "Solicitud no válida.",
+      "subida": "No se pudo subir el fichero. Inténtalo de nuevo.",
+      "tamano": "El fichero pasa de 10 MB.",
+      "tipo_pdf": "El fichero tiene que ser un PDF.",
+      "ya_subida": "Ese fichero ya es una versión de este documento.",
+      "retirado": "El documento está retirado.",
+      "falta_curso": "Este documento es de curso: elige el curso de la versión.",
+      "sobra_curso": "Este documento no es de curso: la versión no lleva curso.",
+      "curso_cerrado": "No se sube una versión para un curso cerrado.",
+      "curso_ajeno": "Ese curso no es de este centro.",
+      "guardar": "No se pudo guardar. Inténtalo de nuevo.",
+      "no_suelto": "Ese fichero ya no está pendiente de borrar."
+    }
   }
 }

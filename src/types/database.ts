@@ -4992,6 +4992,44 @@ export type Database = {
         Args: { p_actor: string; p_email_se_queda?: string; p_nino_id: string }
         Returns: Json
       }
+      borrar_version_documento: {
+        Args: { p_version_id: string }
+        Returns: string
+      }
+      crear_documento_centro: {
+        Args: {
+          p_centro_id: string
+          p_de_curso: boolean
+          p_obligatorio: boolean
+          p_orden: number
+          p_titulo: string
+        }
+        Returns: string
+      }
+      documentos_centro_admin: {
+        Args: { p_centro_id: string }
+        Returns: Json
+      }
+      editar_documento_centro: {
+        Args: {
+          p_de_curso: boolean | null
+          p_documento_id: string
+          p_obligatorio: boolean | null
+          p_orden: number | null
+          p_retirado: boolean | null
+          p_titulo: string | null
+        }
+        Returns: undefined
+      }
+      registrar_version_documento: {
+        Args: {
+          p_bytes: number
+          p_curso_academico_id: string | null
+          p_documento_id: string
+          p_sha256: string
+        }
+        Returns: string
+      }
       export_datos_sujeto: {
         Args: { p_sujeto_id: string; p_sujeto_tipo: string }
         Returns: Json
