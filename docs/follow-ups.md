@@ -31,6 +31,13 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 ## Hardening (Ola 1)
 
+- [ ] **Arreglos que se hicieron en la app y no en la base** (pieza propia, con su barrido; decisión del responsable del 2026-11-06). El patrón ha salido cuatro veces: U-3 (el acuse médico por niño solo en la app; cerrado en `20270103120000`), el consentimiento de imagen (las funciones sí, la tabla no; cerrado en `20270104120000`), el MsgId de la remesa (#462: la app lo saca de la marca, `registrar_fichero_remesa` solo mira el prefijo) y las rutas que firma el export (#380 solo cubrió el DNI y el mandato; su PR va aparte). Quedan, sin test que afirme lo viejo:
+  - el identificador del mandato SEPA: la app lo limita a 35 caracteres (Max35 del pain.008, #461), la base admite 80 (`mandatos_sepa_longitudes`, `registrar_mandato_sepa`, `sustituir_mandato_sepa`); un mandato de 36 lo rechaza el banco;
+  - el acuse por casilla de tipo `imagen` en `acuses_alta`: la app solo escribe `normas` desde IU-2, pero el CHECK y `acuses_alta_insert` siguen aceptando `imagen`;
+  - los borrados de Storage con `service_role` que no comprueban de quién es la ruta: la foto del niño (`ninos/[id]/foto/route.ts`), el libro de familia anterior (`alta/[ninoId]/libro-familia/route.ts`), `revocar-imagen-nino.ts` y la purga del olvido (`fuentes-adjuntos.ts`). Con las rutas escribibles de arriba, borran un objeto de otro.
+    El barrido empieza por censar cada regla que vive solo en la app y preguntar, por cada una, qué capa de debajo la deja pasar. _(Ola 1)_
+- [ ] **60 objetos de Storage bajo centros que no existen** (`dni-tutores`, `libro-familia`, `mandato-sepa`, 20 por bucket; medido el 2026-11-06). Se crearon del 1 al 11 de octubre de 2026 (seis el día 1) y paran el día que la nocturna dejó de correr contra producción (#340): son restos de los tests. Nada los nombra en la base. Borrarlos es una operación del responsable (Storage, no SQL); mientras estén, son un destino real para una ruta cruzada. _(Ola 1)_
+
 - [ ] **Claves foráneas que aguanten `replica`.** Medido el 2026-11-05 (`rls-policies.md`, «La llave
       de `postgres`»): con `session_replication_role = replica`, que solo puede poner `postgres`, un
       `RESTRICT` deja borrar el padre; lo único que lo para es un trigger propio `ENABLE ALWAYS` al

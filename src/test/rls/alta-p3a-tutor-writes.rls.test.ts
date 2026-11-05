@@ -89,6 +89,9 @@ describe('Alta P3a — escritura del tutor (RLS/RPC)', () => {
     await crearVinculo(ninoA.id, tutorCon.id, 'tutor_legal_principal', {
       puede_ver_info_medica: true,
     })
+    // Como en la app, el tutor legal es miembro del centro (rol vivo): el acuse médico lo exige
+    // (20270104120000, `privado.puede_consentir`).
+    await asignarRol(tutorCon.id, centro.id, 'tutor_legal')
     await crearVinculo(ninoB.id, tutorSin.id, 'tutor_legal_principal', {})
     autorizadoA = await createTestUser({ nombre: 'Autorizado A' })
     await crearVinculo(ninoA.id, autorizadoA.id, 'autorizado', {})
@@ -113,12 +116,16 @@ describe('Alta P3a — escritura del tutor (RLS/RPC)', () => {
       p_tutor: tutorCon.id,
     })
 
-    // tutorCon otorga el consentimiento de datos médicos (auth.uid() = su id).
-    await clientCon.rpc('registrar_consentimiento', {
+    // tutorCon otorga el acuse de datos médicos de su hijo (auth.uid() = su id). Es de un niño
+    // (U-3): sin `p_nino_id` la base lo rechaza desde 20270104120000. Hasta entonces este fixture
+    // lo registraba sin niño, la forma vieja, y no miraba si había entrado.
+    const acuse = await clientCon.rpc('registrar_consentimiento', {
       p_usuario_id: tutorCon.id,
       p_tipo: 'datos_medicos',
       p_version: 'v1.0',
+      p_nino_id: ninoA.id,
     })
+    if (acuse.error) throw new Error(`acuse médico de tutorCon: ${acuse.error.message}`)
   })
 
   afterAll(async () => {
@@ -130,7 +137,8 @@ describe('Alta P3a — escritura del tutor (RLS/RPC)', () => {
   })
 
   it('tiene_consentimiento refleja alta y revocación', async () => {
-    // Desde 20261026120000 solo la ejecuta el servicio (la usa `marcar_matricula_lista`).
+    // Desde 20261026120000 solo la ejecuta el servicio. `marcar_matricula_lista` ya no la usa: desde
+    // 20270103120000 mira el acuse de ESE niño (U-3).
     const { data: con } = await serviceClient.rpc('tiene_consentimiento', {
       p_usuario_id: tutorCon.id,
       p_tipo: 'datos_medicos',
