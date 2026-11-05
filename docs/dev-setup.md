@@ -343,4 +343,12 @@ El centro que existe hoy es CEI Ejemplo (antes ANAIA): `33c79b50-13b5-4962-b849-
   Son 3 de 27 despliegues de Vercel en esas 12 horas, los tres con el mensaje de la fuente y en ramas
   de mutación (ninguno en producción). En total, desde el 2026-10-30: **7 en Vercel**, 1 en Actions
   y 1 local. La causa sigue sin medir; que caiga también en local dice que no es la máquina de
-  Vercel. La salida decidida era servir la fuente desde el repo con `next/font/local`, **no** la fuente variable: la variable también se descarga de Google en cada build y no quitaría la causa. Se hizo el 2026-11-05, al pasar de 7 en Vercel (decisión del responsable).
+  Vercel. La salida decidida era servir la fuente desde el repo con `next/font/local`. Se hizo el 2026-11-05, al pasar de 7 en Vercel (decisión del responsable), **con la fuente variable**.
+
+  **Ojo con lo que se decidió el 2026-10-30**, porque leído solo lleva a error: decía «**no** la fuente variable: la variable también se descarga de Google en cada build». Eso vale para la variable **con `next/font/google`**. **No vale para un fichero variable en el repo con `next/font/local`**, que no descarga nada, igual que los estáticos. Esa distinción es la que cambió la respuesta. Medido el 2026-11-05:
+  - Producción precargaba **27.272 bytes**: un solo fichero, la variable que Google recortaba a `latin`. No eran unos 60 KB, como se había estimado: Google no sirve un fichero por peso, sirve uno variable para los cinco.
+  - Los cinco estáticos completos eran **210.860 bytes**. La variable completa del repositorio de origen, sin modificar, son **60.612**.
+  - Es la misma fuente que servía Google: en los 229 caracteres del recorte, el contorno, la variación por peso y el avance son idénticos.
+  - Se eligió la variable completa y **sin recortar**, aunque un recorte a `latin` + `latin-ext` dejaba 37.040 bytes. Así es la misma fuente que había, la licencia se cumple sola y no hay un fichero generado que mantener.
+
+  Si se actualiza la fuente: `src/app/fonts/plus-jakarta-sans/README.md`.

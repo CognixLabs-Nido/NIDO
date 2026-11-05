@@ -12,34 +12,15 @@ import '../globals.css'
 
 // Plus Jakarta Sans servida desde el repo (OFL 1.1, `src/app/fonts/plus-jakarta-sans/`): con
 // `next/font/google` el build la descargaba de Google y caía de forma intermitente
-// (`docs/dev-setup.md`). Los cinco pesos que usa la app, ficheros estáticos sin tocar.
+// (`docs/dev-setup.md`). Es la fuente VARIABLE completa del repositorio de origen, sin modificar:
+// la misma que servía Google, con los cinco pesos que usa la app (400 a 800) en un solo fichero.
 const jakarta = localFont({
   variable: '--font-jakarta',
   display: 'swap',
   src: [
     {
-      path: '../fonts/plus-jakarta-sans/PlusJakartaSans-Regular.woff2',
-      weight: '400',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/plus-jakarta-sans/PlusJakartaSans-Medium.woff2',
-      weight: '500',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/plus-jakarta-sans/PlusJakartaSans-SemiBold.woff2',
-      weight: '600',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/plus-jakarta-sans/PlusJakartaSans-Bold.woff2',
-      weight: '700',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/plus-jakarta-sans/PlusJakartaSans-ExtraBold.woff2',
-      weight: '800',
+      path: '../fonts/plus-jakarta-sans/PlusJakartaSans[wght].woff2',
+      weight: '200 800',
       style: 'normal',
     },
   ],

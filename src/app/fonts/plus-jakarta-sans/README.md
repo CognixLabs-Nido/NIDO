@@ -4,24 +4,21 @@ Fuente de la app (`--font-jakarta`), servida desde el repo con `next/font/local`
 (`src/app/[locale]/layout.tsx`). Antes se descargaba de Google en cada build con
 `next/font/google`, y el build caía de forma intermitente (`docs/dev-setup.md`).
 
+- **Fichero:** `PlusJakartaSans[wght].woff2`, la fuente **variable** (eje `wght`, de 200 a 800), una
+  sola para los cinco pesos que usa la app (400, 500, 600, 700 y 800).
 - **Origen:** <https://github.com/tokotype/PlusJakartaSans>, commit
-  `18d1cd2f7ea10481919d2f05c1f7064b7307fc26` (2024-01-18), carpeta `fonts/webfonts/`. Los ficheros
-  se copian **sin modificar**.
+  `18d1cd2f7ea10481919d2f05c1f7064b7307fc26` (2024-01-18), `fonts/webfonts/PlusJakartaSans[wght].woff2`.
+  Copiado **sin modificar** y con su nombre original.
+- **sha256:** `49c62cf1fb70f225ea113361f0134a48858c3a7d0175173aa3e38a0c6c8539d2` (60.612 bytes).
 - **Versión:** 2.071, la misma que servía Google Fonts el 2026-11-05.
-- **Licencia:** SIL Open Font License 1.1, en `OFL.txt` (copia exacta de la del repositorio de
-  origen). Sin «Reserved Font Name»: el copyright no declara ninguno. La OFL permite usarla,
-  incluirla y redistribuirla con software, también comercial, siempre que la licencia viaje con los
-  ficheros y la fuente no se venda sola.
-- **Pesos:** los cinco que usa la app, estáticos, sin cursiva: 400 (Regular), 500 (Medium), 600
-  (SemiBold), 700 (Bold) y 800 (ExtraBold). La fuente variable no se usa.
-- **Cobertura:** 721 glifos por peso: latín, latín extendido (Ş, Ł, ő, Č…), los signos de los textos
-  (`… ’ € — – “ ”`) y las flechas `→ ← ↔`. El subconjunto `latin` que servía Google tenía 229 y no
-  traía las flechas, que salían en la fuente del sistema.
+- **Licencia:** SIL Open Font License 1.1, en `OFL.txt` (copia exacta de la del origen), y también
+  dentro del propio fichero (campos de nombre 0, 13 y 14). Sin «Reserved Font Name». Como el fichero no
+  se modifica, no hay nada más que cumplir: viaja con su licencia y no se vende sola.
 
-| Fichero                           | sha256                                                             |
-| --------------------------------- | ------------------------------------------------------------------ |
-| `PlusJakartaSans-Regular.woff2`   | `f282de8041ff1231d64336ab69ecea03f2a31c127fe509ec7b99814ff2fb9b41` |
-| `PlusJakartaSans-Medium.woff2`    | `82230f155c78b9de1a3773bab92f6a90b23c702410133fe7fd656fb2750c5f03` |
-| `PlusJakartaSans-SemiBold.woff2`  | `16387125b045457b8d49123d31bcc143e696cf9e867831f8ae41eb244b11106e` |
-| `PlusJakartaSans-Bold.woff2`      | `8d76ee4c4f645bc12ebdeae87f8ec2468bade2d4f04458416848229bcc804342` |
-| `PlusJakartaSans-ExtraBold.woff2` | `c4c1c8447c65415eaca5caccd25a9699bfa03f8c0176b63e42ac5631006c88b7` |
+**Es la misma fuente que servía Google** (medido el 2026-11-05 contra el fichero que precargaba
+producción): Google servía un recorte de esta misma fuente variable a 229 caracteres, y en esos 229 el
+contorno, la variación por peso y el avance son idénticos. Lo que trae de más este fichero son los
+caracteres que el recorte no tenía: el latín extendido (Ş, Ł, ő, Č…) y las flechas `→ ← ↔`.
+
+**Si se actualiza la fuente**, se sustituye el fichero por el nuevo del mismo repositorio, sin
+recortarlo, y se actualizan aquí el commit, el sha256 y la versión.
