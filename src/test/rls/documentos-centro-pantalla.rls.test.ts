@@ -33,7 +33,8 @@ vi.mock('@/lib/supabase/server', () => ({
 
 const { enlaceVersionDocumento, subirVersionDocumento } =
   await import('@/features/documentos-centro/lib/versiones')
-const { getDocumentosAdmin } = await import('@/features/documentos-centro/queries/get-documentos-admin')
+const { getDocumentosAdmin } =
+  await import('@/features/documentos-centro/queries/get-documentos-admin')
 const { crearDocumentoAccion, editarDocumentoAccion } =
   await import('@/features/documentos-centro/actions/documentos')
 
@@ -178,7 +179,12 @@ describe('La pantalla de los documentos del centro', () => {
   })
 
   it('el PDF de una versión: la admin recibe el enlace, y es ese fichero', async () => {
-    const r = await enlaceVersionDocumento(await clientFor(admin), serviceClient, centro.id, firmada)
+    const r = await enlaceVersionDocumento(
+      await clientFor(admin),
+      serviceClient,
+      centro.id,
+      firmada
+    )
     expect(r.ok).toBe(true)
     if (!r.ok) return
     const res = await fetch(r.data.url)
@@ -190,7 +196,9 @@ describe('La pantalla de los documentos del centro', () => {
     // Premisa: con la admin, las dos versiones dan enlace (si no, los «no» de abajo no dicen nada).
     for (const v of [firmada, sinFirmas])
       expect
-        .soft((await enlaceVersionDocumento(await clientFor(admin), serviceClient, centro.id, v)).ok)
+        .soft(
+          (await enlaceVersionDocumento(await clientFor(admin), serviceClient, centro.id, v)).ok
+        )
         .toBe(true)
     const casos: [string, TestUser, string][] = [
       ['la directora, con su centro', directora, centro.id],

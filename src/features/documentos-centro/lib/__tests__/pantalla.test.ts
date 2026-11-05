@@ -55,7 +55,10 @@ describe('agruparPorCurso: varias vivas a la vez, una por curso', () => {
   })
 
   it('un curso que ya no está en la lista sale al final, sin nombre, no se pierde', () => {
-    const grupos = agruparPorCurso([v('x', 'c-borrado', 1, true), v('y', 'c-2026', 1, true)], CURSOS)
+    const grupos = agruparPorCurso(
+      [v('x', 'c-borrado', 1, true), v('y', 'c-2026', 1, true)],
+      CURSOS
+    )
     expect(grupos.map((g) => [g.cursoId, g.cursoNombre])).toEqual([
       ['c-2026', '2026/27'],
       ['c-borrado', null],
