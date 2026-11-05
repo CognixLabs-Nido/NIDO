@@ -312,7 +312,8 @@ El centro que existe hoy es CEI Ejemplo (antes ANAIA): `33c79b50-13b5-4962-b849-
 - **`infinite recursion detected in policy`**: ver [ADR-0007](./decisions/ADR-0007-rls-policy-recursion-avoidance.md).
 - **`function pgp_sym_encrypt(text, text) does not exist`**: añadir `extensions` al `search_path` de la función. Ver sección "Búsqueda de schema" arriba.
 - **`permission denied for schema auth`** al crear funciones: las helpers RLS van en `public.*`, no `auth.*`. Ver [ADR-0002](./decisions/ADR-0002-rls-helpers-in-public-schema.md).
-- **Un build cae con `next/font/google queries have exactly one entry`** (`Module not found: Can't resolve '@vercel/turbopack-next/internal/font/google/font'`, desde la Plus Jakarta Sans de `src/app/[locale]/layout.tsx`, con Turbopack): cae de forma intermitente, también sin caché (medido el 2026-10-30 en Vercel y en Actions); se relanza el build; la causa no está medida. No es el código: el mismo commit construye al relanzarlo. Tampoco es la caché de build: el de Actions arrancó con «No build cache found» y cayó igual (el 2026-10-30 se dejó escrito aquí que era la caché, porque un Redeploy sin caché salió verde; era falso). Los fallos medidos, para comparar si vuelve:
+- ~~**Un build cae con `next/font/google queries have exactly one entry`**~~ **Resuelto el 2026-11-05: la fuente se sirve desde el repo con `next/font/local`** (`src/app/fonts/plus-jakarta-sans/`, con su licencia y su procedencia), y el build ya no descarga nada de Google: construye sin red. Lo que sigue es la historia del fallo, por si vuelve algo parecido con otra dependencia del build.
+  Era así: (`Module not found: Can't resolve '@vercel/turbopack-next/internal/font/google/font'`, desde la Plus Jakarta Sans de `src/app/[locale]/layout.tsx`, con Turbopack): cae de forma intermitente, también sin caché (medido el 2026-10-30 en Vercel y en Actions); se relanza el build; la causa no está medida. No es el código: el mismo commit construye al relanzarlo. Tampoco es la caché de build: el de Actions arrancó con «No build cache found» y cayó igual (el 2026-10-30 se dejó escrito aquí que era la caché, porque un Redeploy sin caché salió verde; era falso). Los fallos medidos, para comparar si vuelve:
   - 12:41 UTC, Vercel, `c7f813e` (preview del merge del #452);
   - 15:48 UTC, Vercel, `13c8d92` (#455);
   - ~16:20 UTC, Actions (`ci-pr.yml`, paso `npm run build`), `abd0217` (#455), verde al relanzar el job.
@@ -342,4 +343,12 @@ El centro que existe hoy es CEI Ejemplo (antes ANAIA): `33c79b50-13b5-4962-b849-
   Son 3 de 27 despliegues de Vercel en esas 12 horas, los tres con el mensaje de la fuente y en ramas
   de mutación (ninguno en producción). En total, desde el 2026-10-30: **7 en Vercel**, 1 en Actions
   y 1 local. La causa sigue sin medir; que caiga también en local dice que no es la máquina de
-  Vercel. **Si se vuelve crónico**, la salida decidida es servir la fuente desde el repo con `next/font/local`, **no** la fuente variable: la variable también se descarga de Google en cada build y no quitaría la causa. Hasta entonces no se toca la fuente ni el build.
+  Vercel. La salida decidida era servir la fuente desde el repo con `next/font/local`. Se hizo el 2026-11-05, al pasar de 7 en Vercel (decisión del responsable), **con la fuente variable**.
+
+  **Ojo con lo que se decidió el 2026-10-30**, porque leído solo lleva a error: decía «**no** la fuente variable: la variable también se descarga de Google en cada build». Eso vale para la variable **con `next/font/google`**. **No vale para un fichero variable en el repo con `next/font/local`**, que no descarga nada, igual que los estáticos. Esa distinción es la que cambió la respuesta. Medido el 2026-11-05:
+  - Producción precargaba **27.272 bytes**: un solo fichero, la variable que Google recortaba a `latin`. No eran unos 60 KB, como se había estimado: Google no sirve un fichero por peso, sirve uno variable para los cinco.
+  - Los cinco estáticos completos eran **210.860 bytes**. La variable completa del repositorio de origen, sin modificar, son **60.612**.
+  - Es la misma fuente que servía Google: en los 229 caracteres del recorte, el contorno, la variación por peso y el avance son idénticos.
+  - Se eligió la variable completa y **sin recortar**, aunque un recorte a `latin` + `latin-ext` dejaba 37.040 bytes. Así es la misma fuente que había, la licencia se cumple sola y no hay un fichero generado que mantener.
+
+  Si se actualiza la fuente: `src/app/fonts/plus-jakarta-sans/README.md`.

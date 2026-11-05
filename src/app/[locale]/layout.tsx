@@ -1,5 +1,5 @@
 import { hasLocale, NextIntlClientProvider } from 'next-intl'
-import { Plus_Jakarta_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
 import { notFound } from 'next/navigation'
 
 import { Toaster } from '@/components/ui/sonner'
@@ -10,11 +10,20 @@ import type { Metadata } from 'next'
 
 import '../globals.css'
 
-const jakarta = Plus_Jakarta_Sans({
+// Plus Jakarta Sans servida desde el repo (OFL 1.1, `src/app/fonts/plus-jakarta-sans/`): con
+// `next/font/google` el build la descargaba de Google y caía de forma intermitente
+// (`docs/dev-setup.md`). Es la fuente VARIABLE completa del repositorio de origen, sin modificar:
+// la misma que servía Google, con los cinco pesos que usa la app (400 a 800) en un solo fichero.
+const jakarta = localFont({
   variable: '--font-jakarta',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
+  src: [
+    {
+      path: '../fonts/plus-jakarta-sans/PlusJakartaSans[wght].woff2',
+      weight: '200 800',
+      style: 'normal',
+    },
+  ],
 })
 
 export const metadata: Metadata = {
