@@ -29,8 +29,9 @@ const FUNCION = (() => {
 
 describe('export: los datos bloqueados', () => {
   it('la app pone etiqueta exactamente a los códigos de la migración', () => {
-    // Premisa: la función entera, no un trozo.
-    expect(FUNCION).toMatch(/^CREATE FUNCTION privado\.datos_bloqueados\(/)
+    // Premisa: la función entera, no un trozo, y de la última migración que la define (desde el 1b,
+    // `20270102120000`, la reescribe con CREATE OR REPLACE).
+    expect(FUNCION).toMatch(/^CREATE (?:OR REPLACE )?FUNCTION privado\.datos_bloqueados\(/)
     expect(FUNCION).toContain('GROUP BY codigo')
     const codigos = [...new Set([...FUNCION.matchAll(/SELECT '(\w+)',/g)].map((m) => m[1]!))]
     expect(codigos.length).toBeGreaterThan(0)
