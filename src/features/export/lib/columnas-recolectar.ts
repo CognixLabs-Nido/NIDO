@@ -155,6 +155,27 @@ const NS_COMENTARIO_FIRMA_OTROS = {
     '2d, decisión del responsable del 2026-11-02, con la misma regla que la imagen y los datos de recogida: aquí salen también las firmas del otro tutor, y el comentario es texto que escribió esa otra persona, sin forma de saber si habla del niño o de ella. No se retiene porque sea secreto, sino porque es contenido de otra persona, y esa persona lo recibe entero en su propio export. El de la propia persona sale en `usuario.firmas_realizadas` (`comentario`).',
 } as const
 
+/*
+ * Las firmas de los documentos del centro (serie de altas, 1b, 2026-11-05) siguen las mismas reglas
+ * que las de autorizaciones (R7 y 2d): del otro tutor no salen su IP, su navegador ni la imagen de su
+ * firma. Lo firmado sale por su copia en la fila (título, número, curso y huella), porque la versión
+ * y el documento no se exportan.
+ */
+const NS_IP_DOC_OTROS = {
+  noSale:
+    'R7 (2026-11-01), en las firmas de los documentos del centro (1b): la IP y el navegador desde los que se firmó son datos de quien firmó, y aquí salen también las firmas del otro tutor del niño. Las de la propia persona salen en `usuario.firmas_documentos_realizadas`.',
+} as const
+
+const NS_IMAGEN_DOC_OTROS = {
+  noSale:
+    '2d (2026-11-01), en las firmas de los documentos del centro (1b): aquí salen también las firmas del otro tutor del niño, y la imagen de una firma se copia. Qué firmó, cuándo y con qué nombre tecleado sí sale. Las firmas de la propia persona salen con su imagen en `usuario.firmas_documentos_realizadas` (`firma_imagen`).',
+} as const
+
+const NS_DOCUMENTO_COPIADO = {
+  noSale:
+    'R5 (2026-11-01): apunta a la versión o al documento del centro, que este export no entrega. Lo firmado sale por la copia que guarda la propia firma: `titulo`, `numero`, `curso_nombre` y `sha256`.',
+} as const
+
 /** Quién está vinculado al niño (2d): un adulto de su familia, con su nombre (la raya del 2026-11-01). */
 const ADULTO_POR_NOMBRE = {
   enSuLugar: 'adulto',
@@ -296,6 +317,25 @@ export const SECCIONES_RECOLECTAR = {
     texto_hash: SALE,
     texto_version: SALE,
     user_agent: SALE,
+  }),
+  'usuario.firmas_documentos_realizadas': seccion('firmas_documentos_centro', {
+    centro_id: NS_CENTRO,
+    curso_academico_id: NS_DOCUMENTO_COPIADO,
+    curso_nombre: SALE,
+    documento_id: NS_DOCUMENTO_COPIADO,
+    firma_imagen: SALE,
+    firmado_at: SALE,
+    firmante_id: NS_SUJETO,
+    id: NS_ID,
+    ip_address: SALE,
+    nino_id: NINO_POR_NOMBRE,
+    nombre_tecleado: SALE,
+    numero: SALE,
+    rol_firmante: SALE,
+    sha256: SALE,
+    titulo: SALE,
+    user_agent: SALE,
+    version_id: NS_DOCUMENTO_COPIADO,
   }),
   'nino.ficha': seccion('ninos', {
     apellidos: SALE,
@@ -492,6 +532,25 @@ export const SECCIONES_RECOLECTAR = {
     texto_hash: SALE,
     texto_version: SALE,
     user_agent: NS_IP_OTROS,
+  }),
+  'nino.firmas_documentos': seccion('firmas_documentos_centro', {
+    centro_id: NS_CENTRO,
+    curso_academico_id: NS_DOCUMENTO_COPIADO,
+    curso_nombre: SALE,
+    documento_id: NS_DOCUMENTO_COPIADO,
+    firma_imagen: NS_IMAGEN_DOC_OTROS,
+    firmado_at: SALE,
+    firmante_id: NS_PERSONA,
+    id: NS_ID,
+    ip_address: NS_IP_DOC_OTROS,
+    nino_id: NS_SUJETO,
+    nombre_tecleado: SALE,
+    numero: SALE,
+    rol_firmante: SALE,
+    sha256: SALE,
+    titulo: SALE,
+    user_agent: NS_IP_DOC_OTROS,
+    version_id: NS_DOCUMENTO_COPIADO,
   }),
   'nino.administraciones_medicacion': seccion('administraciones_medicacion', {
     administrado_en: SALE,

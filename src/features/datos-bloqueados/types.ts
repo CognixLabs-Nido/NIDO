@@ -31,6 +31,7 @@ export const APARTADOS = [
   'autorizaciones',
   'consentimientos',
   'acuses_alta',
+  'firmas_documentos',
   'medicacion_administrada',
   'lecturas_ficha_medica',
 ] as const

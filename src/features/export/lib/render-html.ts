@@ -587,6 +587,7 @@ function renderUsuario(u: Record<string, unknown>, c: Ctx): string {
   ${seccion('invitaciones_citas', u.invitaciones_a_citas, c)}
   ${seccion('recordatorios', u.recordatorios_recibidos, c)}
   ${seccion('firmas_realizadas', u.firmas_realizadas, c)}
+  ${seccion('firmas_documentos_realizadas', u.firmas_documentos_realizadas, c)}
   ${seccion('mandatos_sepa', u.mandatos_sepa, c)}
   ${seccion('cobros_familia', u.cobros_familia, c)}
   ${seccion('lista_espera_contacto', u.lista_espera_contacto, c)}
@@ -707,6 +708,7 @@ function renderNino(n: Record<string, unknown>, c: Ctx): string {
   ${seccion('fin_de_curso', n.fin_de_curso, c)}
   ${seccion('consentimientos_nino', n.consentimientos, c)}
   ${seccion('acuses_alta', n.acuses_alta, c)}
+  ${seccion('firmas_documentos', n.firmas_documentos, c)}
   ${seccion('cambios_solicitados', n.cambios_solicitados, c)}
   ${seccion('citas', n.citas, c)}
   ${seccion('eventos', n.eventos, c)}

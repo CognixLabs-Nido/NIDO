@@ -4133,6 +4133,7 @@
         "invitaciones_citas": "Invitacions a cites",
         "recordatorios": "Recordatoris",
         "firmas_realizadas": "Firmes que vas fer",
+        "firmas_documentos_realizadas": "Documents del centre que vas signar",
         "datos_nino": "Dades del xiquet",
         "salud": "Salut",
         "pedagogico": "Pedagògic",
@@ -4162,6 +4163,7 @@
         "matriculas": "Matrícules",
         "consentimientos_nino": "Consentiments",
         "acuses_alta": "Justificants de l'alta",
+        "firmas_documentos": "Documents del centre signats",
         "cambios_solicitados": "Canvis sol·licitats",
         "fin_de_curso": "No continua el curs següent",
         "citas": "Cites",
@@ -5151,6 +5153,7 @@
       "autorizaciones": "Autoritzacions",
       "consentimientos": "Consentiments",
       "acuses_alta": "Acusos de l'alta",
+      "firmas_documentos": "Signatures dels documents del centre",
       "medicacion_administrada": "Medicació administrada",
       "lecturas_ficha_medica": "Consultes de la fitxa mèdica"
     },
@@ -5302,7 +5305,8 @@
       "curso_cerrado": "No es puja una versió per a un curs tancat.",
       "curso_ajeno": "Eixe curs no és d'aquest centre.",
       "guardar": "No s'ha pogut guardar. Torna-ho a provar.",
-      "no_suelto": "Eixe fitxer ja no està pendent d'esborrar."
+      "no_suelto": "Eixe fitxer ja no està pendent d'esborrar.",
+      "version_firmada": "Esta versió ja està signada: no es pot esborrar."
     }
   }
 }

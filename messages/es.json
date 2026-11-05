@@ -4133,6 +4133,7 @@
         "invitaciones_citas": "Invitaciones a citas",
         "recordatorios": "Recordatorios",
         "firmas_realizadas": "Firmas que realizaste",
+        "firmas_documentos_realizadas": "Documentos del centro que firmaste",
         "datos_nino": "Datos del niño",
         "salud": "Salud",
         "pedagogico": "Pedagógico",
@@ -4162,6 +4163,7 @@
         "matriculas": "Matrículas",
         "consentimientos_nino": "Consentimientos",
         "acuses_alta": "Acuses del alta",
+        "firmas_documentos": "Documentos del centro firmados",
         "cambios_solicitados": "Cambios solicitados",
         "fin_de_curso": "No continúa el curso siguiente",
         "citas": "Citas",
@@ -5151,6 +5153,7 @@
       "autorizaciones": "Autorizaciones",
       "consentimientos": "Consentimientos",
       "acuses_alta": "Acuses del alta",
+      "firmas_documentos": "Firmas de los documentos del centro",
       "medicacion_administrada": "Medicación administrada",
       "lecturas_ficha_medica": "Consultas de la ficha médica"
     },
@@ -5302,7 +5305,8 @@
       "curso_cerrado": "No se sube una versión para un curso cerrado.",
       "curso_ajeno": "Ese curso no es de este centro.",
       "guardar": "No se pudo guardar. Inténtalo de nuevo.",
-      "no_suelto": "Ese fichero ya no está pendiente de borrar."
+      "no_suelto": "Ese fichero ya no está pendiente de borrar.",
+      "version_firmada": "Esta versión ya está firmada: no se puede borrar."
     }
   }
 }
