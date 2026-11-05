@@ -1,8 +1,9 @@
 -- =============================================================================
 -- FEAT — Las firmas de los documentos del centro (serie de altas, paso 1, pieza 1b; 2026-11-05)
 -- -----------------------------------------------------------------------------
--- Spec: docs/specs/altas-serie.md, «Paso 1». La familia firma, con trazo (D2), la versión exacta de
--- un documento del centro (1a, 20270101120000). Esta pieza es la tabla y todo lo que la retención
+-- Spec: docs/specs/altas-serie.md, «Paso 1». La familia firma la versión exacta de un documento del
+-- centro (1a, 20270101120000): con el dedo y su trazo (D2), o en papel delante de Dirección, que la
+-- registra sin trazo (decisión de Jose del 2026-11-05, como el mandato presencial). Esta pieza es la tabla y todo lo que la retención
 -- ya hace con las firmas de autorizaciones; la pantalla de firmar es el paso 2, que es quien escribe.
 --
 -- - `firmas_documentos_centro`: una firma por versión y niño (J3: basta un tutor, y se guarda quién
@@ -87,18 +88,45 @@ CREATE TABLE public.firmas_documentos_centro (
   nino_id            uuid NOT NULL REFERENCES public.ninos(id) ON DELETE CASCADE,
   firmante_id        uuid NOT NULL REFERENCES public.usuarios(id) ON DELETE RESTRICT,
   rol_firmante       public.tipo_vinculo NOT NULL,
-  -- La firma (D2: con trazo), como en firmas_autorizacion.
+  -- La firma, como en firmas_autorizacion: con el dedo (`digital`, D2: con trazo) o en persona
+  -- (`presencial`: la familia firma el papel delante de Dirección, que la registra; sin trazo).
+  metodo_firma       public.firma_metodo NOT NULL DEFAULT 'digital'
+                       CHECK (metodo_firma IN ('digital', 'presencial')),
   nombre_tecleado    text NOT NULL CHECK (char_length(nombre_tecleado) BETWEEN 1 AND 200),
-  firma_imagen       text NOT NULL CHECK (char_length(firma_imagen) BETWEEN 1 AND 500000),
+  firma_imagen       text NULL CHECK (firma_imagen IS NULL OR char_length(firma_imagen) BETWEEN 1 AND 500000),
   ip_address         inet NULL,
   user_agent         text NULL,
   firmado_at         timestamptz NOT NULL DEFAULT now(),
   -- J3: una por versión y niño, no por firmante.
-  CONSTRAINT firmas_documentos_centro_una_por_nino UNIQUE (version_id, nino_id)
+  CONSTRAINT firmas_documentos_centro_una_por_nino UNIQUE (version_id, nino_id),
+  -- Con el dedo, la firma el tutor con su trazo; en persona, la registra Dirección (rol `admin`,
+  -- como la presencial de firmas_autorizacion) y no hay trazo: el respaldo es el papel.
+  CONSTRAINT firmas_documentos_centro_forma_por_metodo CHECK (
+    (metodo_firma = 'digital' AND firma_imagen IS NOT NULL AND rol_firmante <> 'admin')
+    OR (metodo_firma = 'presencial' AND firma_imagen IS NULL AND rol_firmante = 'admin'))
 );
 CREATE INDEX idx_firmas_documentos_centro_nino ON public.firmas_documentos_centro (nino_id);
 CREATE INDEX idx_firmas_documentos_centro_firmante ON public.firmas_documentos_centro (firmante_id);
 CREATE INDEX idx_firmas_documentos_centro_centro ON public.firmas_documentos_centro (centro_id);
+
+COMMENT ON TABLE public.firmas_documentos_centro IS
+  'La firma de una versión de un documento del centro, una por versión y niño (J3). Con el dedo '
+  '(digital): firma el tutor con su trazo, desde su sesión; la prueba es el trazo, el nombre '
+  'tecleado, la IP y el navegador, y el sha256 del PDF exacto. En persona (presencial): la familia '
+  'firma el papel delante de Dirección, que la registra; firmante_id es quien la registró (rol '
+  'admin), nombre_tecleado es el nombre de quien firmó el papel, no hay trazo, y la prueba es el '
+  'papel que guarda el centro: la fila dice qué PDF (sha256), de qué niño, quién lo registró y '
+  'cuándo. Una versión firmada no se borra nunca: lo sostienen dos triggers ENABLE ALWAYS en '
+  'documentos_centro_versiones (20270102120000).';
+COMMENT ON COLUMN public.firmas_documentos_centro.metodo_firma IS
+  'digital: con el dedo, por el tutor (trazo obligatorio). presencial: en papel, registrada por '
+  'Dirección (sin trazo; el respaldo es el papel). Spec: docs/specs/altas-serie.md, «1b».';
+COMMENT ON TABLE public.documentos_centro_versiones IS
+  'Cada fichero subido de un documento del centro (1a, 20270101120000). VARIAS VIVAS A LA VEZ: no '
+  'hay «la vigente» del documento, sino la de cada curso (la de número mayor de ese documento y '
+  'ese curso). No cambia nunca para las sesiones ni para service_role; postgres conserva la llave '
+  'de quitar o apagar sus triggers, por decisión (rls-policies.md, «La llave de postgres»), salvo '
+  'los dos ENABLE ALWAYS que impiden borrar una versión firmada (1b, 20270102120000).';
 
 -- ---- 2. Quién la lee, y el bloqueo de la retención ----
 ALTER TABLE public.firmas_documentos_centro ENABLE ROW LEVEL SECURITY;
