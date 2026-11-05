@@ -529,6 +529,9 @@ Migración `20270102120000_feat_firmas_documentos_centro`; spec `docs/specs/alta
 - **El bloqueo de la retención**: la misma `bloqueo_retencion` `RESTRICTIVE` que
   `firmas_autorizacion` (`NOT privado.firma_bloqueada(nino_id, firmante_id)`). La guarda posterior
   comprueba que son esas dos políticas y nada más.
+- **Con el dedo o en persona** (`metodo_firma`): con el dedo, el tutor y su trazo; en persona,
+  Dirección la registra con rol `admin` y sin trazo, y la prueba es el papel
+  (`firmas_documentos_centro_forma_por_metodo`). La tabla lo dice en su `COMMENT`.
 - **La firma no cambia nunca** (`privado.firma_documento_defensa`, `firma_inmutable`), y la copia
   de lo firmado (título, número, curso, `sha256`) la pone el trigger desde la versión. El niño
   tiene que ser del centro del documento (`centro_ajeno`, 23514).
