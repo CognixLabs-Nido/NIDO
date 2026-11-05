@@ -174,19 +174,23 @@ describe('RLS consentimientos — F11-A (activación)', () => {
     expect(error).toBeTruthy()
   })
 
-  it('c07 — UPDATE directo de consentimientos está bloqueado (sin policy UPDATE)', async () => {
-    // userA intenta "des-revocar" su fila por UPDATE directo → 0 filas (default DENY).
+  // Desde 20270104120000 la sesión no tiene UPDATE ni INSERT en la tabla (lo para el privilegio,
+  // 42501, antes que la RLS), y la policy de INSERT mira además de quién es el niño. El detalle, con
+  // cada cerrojo por separado, en consentimientos-solo-por-funcion.rls.test.ts.
+  it('c07 — UPDATE directo de consentimientos está bloqueado (sin UPDATE para la sesión)', async () => {
+    // userA intenta "des-revocar" su fila por UPDATE directo → 42501, sin tocar nada.
     const clientA = await clientFor(userA)
-    const { data } = await clientA
+    const { data, error } = await clientA
       .from('consentimientos')
       .update({ revocado_en: null })
       .eq('usuario_id', userA.id)
       .eq('tipo', 'privacidad')
       .select('id')
+    expect(error?.code).toBe('42501')
     expect(data ?? []).toHaveLength(0)
   })
 
-  it('c08 — INSERT directo suplantando a otro usuario está bloqueado por WITH CHECK', async () => {
+  it('c08 — INSERT directo suplantando a otro usuario está bloqueado (sin INSERT para la sesión)', async () => {
     const clientB = await clientFor(userB)
     const { error } = await clientB.from('consentimientos').insert({
       usuario_id: userA.id, // ← no es auth.uid()

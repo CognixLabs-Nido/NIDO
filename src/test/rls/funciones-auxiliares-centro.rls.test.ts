@@ -133,11 +133,14 @@ beforeAll(async () => {
   })
   await serviceClient.rpc('otorgar_consentimiento_imagen', { p_nino_id: ninoA, p_tutor: tutorA.id })
   cliTutorA = (await clientFor(tutorA)) as unknown as Client
-  await cliTutorA.rpc('registrar_consentimiento', {
+  // El acuse médico es de un niño (U-3; sin niño la base lo rechaza desde 20270104120000).
+  const acuse = await cliTutorA.rpc('registrar_consentimiento', {
     p_usuario_id: tutorA.id,
     p_tipo: 'datos_medicos',
     p_version: 'v1.0',
+    p_nino_id: ninoA,
   })
+  if (acuse.error) throw new Error(`acuse médico de tutorA: ${acuse.error.message}`)
   const { data: plantilla } = await serviceClient
     .from('plantillas_menu_mensual')
     .insert({ centro_id: centroA.id, mes: 7, anio: 2026, estado: 'publicada' })

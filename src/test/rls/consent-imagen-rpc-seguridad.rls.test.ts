@@ -61,6 +61,10 @@ describe('RPCs consentimiento de imagen — autorización', () => {
     await asignarRol(admin.id, centro.id, 'admin')
     nino = await createTestNino(centro.id, 'Nino Consent Seg')
     ninoAjeno = await createTestNino(centro.id, 'Nino Ajeno Consent Seg')
+    // Como en la app, los tutores son miembros del centro (rol vivo): desde 20270104120000 otorgar
+    // lo exige. Así el 42501 del tutor de otro niño sale del niño, no de que le falte el rol.
+    await asignarRol(tutor.id, centro.id, 'tutor_legal')
+    await asignarRol(tutorAjeno.id, centro.id, 'tutor_legal')
     await crearVinculo(nino.id, tutor.id, 'tutor_legal_principal')
     await crearVinculo(ninoAjeno.id, tutorAjeno.id, 'tutor_legal_principal')
   })
@@ -100,6 +104,10 @@ describe('RPCs consentimiento de imagen — autorización', () => {
 
   it('el tutor de otro niño no puede otorgar ni revocar (42501)', async () => {
     const client = await clientFor(tutorAjeno)
+    // Premisa: es tutor legal de su hijo y miembro del centro; solo le falta ser del niño.
+    expect((await client.rpc('es_tutor_legal_de', { p_nino_id: ninoAjeno.id })).data).toBe(true)
+    expect((await client.rpc('pertenece_a_centro', { p_centro_id: centro.id })).data).toBe(true)
+    expect((await client.rpc('es_tutor_legal_de', { p_nino_id: nino.id })).data).toBe(false)
     const otorgar = await client.rpc('otorgar_consentimiento_imagen', {
       p_nino_id: nino.id,
       p_tutor: tutorAjeno.id,
