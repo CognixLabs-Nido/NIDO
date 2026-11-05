@@ -52,8 +52,9 @@ function comoPostgres(sql: string): { ok: boolean; salida: string } {
 
 /**
  * Documentos del centro (1a, `20270101120000`), contra la BD y el Storage del CI. Una versión no
- * cambia nunca, para nadie, ni su fichero; varios presupuestos vivos a la vez, uno por curso; solo
- * la admin. Fixtures ficticios, fechados el 2026-11-05.
+ * cambia nunca, ni su fichero: tampoco para service_role, ni para postgres con los triggers puestos
+ * (postgres conserva la llave de quitarlos o apagarlos, por decisión: spec, 1a). Varios presupuestos
+ * vivos a la vez, uno por curso; solo la admin. Fixtures ficticios, fechados el 2026-11-05.
  */
 describe('Los documentos del centro y sus versiones', () => {
   let centro: TestCentro
