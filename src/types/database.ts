@@ -2394,6 +2394,112 @@ export type Database = {
           },
         ]
       }
+      firmas_documentos_centro: {
+        Row: {
+          centro_id: string
+          curso_academico_id: string | null
+          curso_nombre: string | null
+          documento_id: string
+          firma_imagen: string | null
+          firmado_at: string
+          firmante_id: string
+          id: string
+          ip_address: unknown | null
+          metodo_firma: Database["public"]["Enums"]["firma_metodo"]
+          nino_id: string
+          nombre_tecleado: string
+          numero: number
+          rol_firmante: Database["public"]["Enums"]["tipo_vinculo"]
+          sha256: string
+          titulo: string
+          user_agent: string | null
+          version_id: string
+        }
+        Insert: {
+          centro_id: string
+          curso_academico_id?: string | null
+          curso_nombre?: string | null
+          documento_id: string
+          firma_imagen?: string | null
+          firmado_at?: string
+          firmante_id: string
+          id?: string
+          ip_address?: unknown | null
+          metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
+          nino_id: string
+          nombre_tecleado: string
+          numero: number
+          rol_firmante: Database["public"]["Enums"]["tipo_vinculo"]
+          sha256: string
+          titulo: string
+          user_agent?: string | null
+          version_id: string
+        }
+        Update: {
+          centro_id?: string
+          curso_academico_id?: string | null
+          curso_nombre?: string | null
+          documento_id?: string
+          firma_imagen?: string | null
+          firmado_at?: string
+          firmante_id?: string
+          id?: string
+          ip_address?: unknown | null
+          metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
+          nino_id?: string
+          nombre_tecleado?: string
+          numero?: number
+          rol_firmante?: Database["public"]["Enums"]["tipo_vinculo"]
+          sha256?: string
+          titulo?: string
+          user_agent?: string | null
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "firmas_documentos_centro_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firmas_documentos_centro_curso_academico_id_fkey"
+            columns: ["curso_academico_id"]
+            isOneToOne: false
+            referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firmas_documentos_centro_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos_centro"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firmas_documentos_centro_firmante_id_fkey"
+            columns: ["firmante_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firmas_documentos_centro_nino_id_fkey"
+            columns: ["nino_id"]
+            isOneToOne: false
+            referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firmas_documentos_centro_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "documentos_centro_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       info_medica_emergencia: {
         Row: {
           alergias_graves: string | null

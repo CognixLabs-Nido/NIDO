@@ -52,6 +52,7 @@ function errorDeLaBase(e: { code?: string; hint?: string | null }): string {
     case 'sobra_curso':
     case 'curso_cerrado':
     case 'curso_ajeno':
+    case 'version_firmada':
       return `${E}.${e.hint}`
     case 'sin_fichero':
     case 'fichero_distinto':

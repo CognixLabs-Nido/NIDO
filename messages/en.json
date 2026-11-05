@@ -4133,6 +4133,7 @@
         "invitaciones_citas": "Appointment invitations",
         "recordatorios": "Reminders",
         "firmas_realizadas": "Signatures you made",
+        "firmas_documentos_realizadas": "Centre documents you signed",
         "datos_nino": "Child details",
         "salud": "Health",
         "pedagogico": "Pedagogical",
@@ -4162,6 +4163,7 @@
         "matriculas": "Enrolments",
         "consentimientos_nino": "Consents",
         "acuses_alta": "Enrolment acknowledgements",
+        "firmas_documentos": "Signed centre documents",
         "cambios_solicitados": "Requested changes",
         "fin_de_curso": "Not continuing next year",
         "citas": "Appointments",
@@ -5151,6 +5153,7 @@
       "autorizaciones": "Authorisations",
       "consentimientos": "Consents",
       "acuses_alta": "Enrolment acknowledgements",
+      "firmas_documentos": "Signed centre documents",
       "medicacion_administrada": "Medication given",
       "lecturas_ficha_medica": "Medical record consultations"
     },
@@ -5302,7 +5305,8 @@
       "curso_cerrado": "A version can't be uploaded for a closed school year.",
       "curso_ajeno": "That school year doesn't belong to this centre.",
       "guardar": "It couldn't be saved. Please try again.",
-      "no_suelto": "That file is no longer waiting to be deleted."
+      "no_suelto": "That file is no longer waiting to be deleted.",
+      "version_firmada": "This version has already been signed: it cannot be deleted."
     }
   }
 }

@@ -135,6 +135,7 @@ const FILAS: Record<string, Fila[]> = {
     }),
   ],
   autorizaciones: [filaCompleta('autorizaciones', { id: 'au1' })],
+  firmas_documentos_centro: [filaCompleta('firmas_documentos_centro', { nino_id: 'n1' })],
   cita_invitados: [filaCompleta('cita_invitados', { cita_id: 'ci1' })],
   citas: [{ id: 'ci1', titulo: 'Tutoría de octubre', fecha: '2026-10-20' }],
   informes_evolucion: [filaCompleta('informes_evolucion', { creado_por: 'p1' })],
@@ -504,14 +505,20 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
           // `enSuLugar`: el id no sale, sale lo legible (2c).
           expect(['sale', 'noSale', 'enSuLugar'], `R5 ${donde}`).toContain(t)
         } else if (c === 'ip_address' || c === 'user_agent') {
-          expect(t, `R7 ${donde}`).toBe(r === 'nino.firmas' ? 'noSale' : 'sale')
+          // Del niño salen también las firmas del otro tutor: de autorizaciones y, desde el 1b, de
+          // los documentos del centro.
+          const delNino = r === 'nino.firmas' || r === 'nino.firmas_documentos'
+          expect(t, `R7 ${donde}`).toBe(delNino ? 'noSale' : 'sale')
         } else if (c === 'texto_hash' || c === 'texto_version' || c === 'metodo_firma') {
           expect(t, `R7 ${donde}`).toBe('sale')
         } else continue
         n++
       }
-    // Premisa: las reglas alcanzan las 146 columnas técnicas que decidieron (2026-11-01).
-    expect(n).toBe(146)
+    // Premisa: las reglas alcanzan las 146 columnas técnicas que decidieron (2026-11-01), más las 20
+    // de las dos secciones de firmas de documentos del 1b (2026-11-05): por sección, centro_id,
+    // firmante_id, id, curso_academico_id, documento_id, nino_id, version_id, ip_address, user_agent
+    // y metodo_firma.
+    expect(n).toBe(166)
   })
 
   it('lo que sale sin repasar es lo del 2026-11-01, y solo mengua', () => {

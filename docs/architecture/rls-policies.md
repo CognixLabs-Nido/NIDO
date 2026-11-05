@@ -518,6 +518,37 @@ Migración `20270101120000_feat_documentos_centro`; spec `docs/specs/altas-serie
   versiones (23514, `de_curso_fijo`).
 - Test: `src/test/rls/documentos-centro.rls.test.ts`.
 
+### Las firmas de los documentos del centro (serie de altas, paso 1, 1b)
+
+Migración `20270102120000_feat_firmas_documentos_centro`; spec `docs/specs/altas-serie.md`, «1b».
+
+- **`firmas_documentos_centro`**: `SELECT` para `authenticated` y nada más (ni `INSERT`, `UPDATE`
+  ni `DELETE`; `service_role`, nada). La política `firmas_documentos_centro_select`: quien firmó, los
+  tutores del niño (`es_tutor_de`) y la Dirección del centro (`es_admin`). La profe no. Nadie
+  escribe con sesión: la función de firmar es del paso 2.
+- **El bloqueo de la retención**: la misma `bloqueo_retencion` `RESTRICTIVE` que
+  `firmas_autorizacion` (`NOT privado.firma_bloqueada(nino_id, firmante_id)`). La guarda posterior
+  comprueba que son esas dos políticas y nada más.
+- **Con el dedo o en persona** (`metodo_firma`): con el dedo, el tutor y su trazo; en persona,
+  Dirección la registra con rol `admin` y sin trazo, y la prueba es el papel
+  (`firmas_documentos_centro_forma_por_metodo`). La tabla lo dice en su `COMMENT`.
+- **La firma no cambia nunca** (`privado.firma_documento_defensa`, `firma_inmutable`), y la copia
+  de lo firmado (título, número, curso, `sha256`) la pone el trigger desde la versión. El niño
+  tiene que ser del centro del documento (`centro_ajeno`, 23514).
+- **Una versión firmada no se borra nunca, tampoco con la llave de `postgres`**: los dos primeros
+  triggers `ENABLE ALWAYS` del esquema, `documentos_centro_versiones_firmada` (fila) y
+  `documentos_centro_versiones_firmada_truncate` (sentencia), con `privado.version_documento_firmada`
+  (`version_firmada`, 23503). Disparan también en `session_replication_role = replica`, donde el
+  `RESTRICT` de la clave no. **No se quitan ni se pasan a `ENABLE` al refactorizar**: son lo único
+  que sostiene el J5. La guarda previa exige que sean los primeros ALWAYS de `public`, y la posterior
+  que sigan en `A`. `borrar_version_documento` (1a) contesta lo mismo, y la app lo dice
+  (`documentos_centro.errors.version_firmada`).
+- **La retención** pasa por las mismas funciones que la de `firmas_autorizacion`, reescritas desde
+  su definición viva (guarda de md5 normalizado): `datos_bloqueados`, `contenido_bloqueado`,
+  `queda_conservado_nino`, `quedan_firmas_usuario`, `destruir_firmas_nino`, `_claves_pii_nino` y
+  `audit_trigger_function`.
+- Test: `src/test/rls/firmas-documentos-centro.rls.test.ts`.
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.
@@ -561,7 +592,7 @@ políticas de SELECT), así que un registro solo en la función se podía saltar
 
 - `centros`, `ninos`, `info_medica_emergencia`, `vinculos_familiares`, `roles_usuario`, `matriculas`, `datos_pedagogicos_nino`, `agendas_diarias`, `comidas`, `biberones`, `suenos`, `deposiciones`, `asistencias`, `ausencias`, `dias_centro`, `plantillas_menu_mensual`, `menu_dia`, `conversaciones`, `mensajes`, `anuncios`, `recordatorios`.
 
-Esa lista es la de Fase 2. Hoy son **60 tablas**; la lista completa, las columnas excluidas y las que no se auditan a propósito están en `data-model.md` («Reglas obligatorias»). Desde `20261011120000` (Grupo 1, PR A) la función quita columnas del JSON antes de grabar: nada entra en `audit_log` que la redacción de la purga RGPD no sepa limpiar.
+Esa lista es la de Fase 2. Hoy son **61 tablas**; la lista completa, las columnas excluidas y las que no se auditan a propósito están en `data-model.md` («Reglas obligatorias»). Desde `20261011120000` (Grupo 1, PR A) la función quita columnas del JSON antes de grabar: nada entra en `audit_log` que la redacción de la purga RGPD no sepa limpiar.
 
 Deriva `centro_id` con un IF/ELSIF por tabla. RLS en `audit_log`:
 

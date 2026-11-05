@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
@@ -16,10 +16,22 @@ const MIGRACION_FICHA = readFileSync(
   path.join(process.cwd(), 'supabase/migrations/20261211120000_feat_estado_retencion_nino.sql'),
   'utf8'
 )
+// La última migración que define `privado.contenido_bloqueado` (la 20261205120000 la creó; el 1b,
+// 20270102120000, la reescribe): los apartados son los de la definición viva, no los de la primera.
+const ANCLA_CONTENIDO = /CREATE (?:OR REPLACE )?FUNCTION privado\.contenido_bloqueado\(/
+const DIR_MIGRACIONES = path.resolve(__dirname, '../../../../supabase/migrations')
 const MIGRACION = readFileSync(
-  path.resolve(
-    __dirname,
-    '../../../../supabase/migrations/20261205120000_feat_retencion_bloqueo.sql'
+  path.join(DIR_MIGRACIONES, '20261205120000_feat_retencion_bloqueo.sql'),
+  'utf8'
+)
+const MIGRACION_CONTENIDO = readFileSync(
+  path.join(
+    DIR_MIGRACIONES,
+    readdirSync(DIR_MIGRACIONES)
+      .filter((f) => f.endsWith('.sql'))
+      .sort()
+      .filter((f) => ANCLA_CONTENIDO.test(readFileSync(path.join(DIR_MIGRACIONES, f), 'utf8')))
+      .at(-1)!
   ),
   'utf8'
 )
@@ -98,8 +110,11 @@ describe('datos bloqueados: lo que pide la app es lo que acepta la BD', () => {
   })
 
   it('los apartados son los de contenido_bloqueado', () => {
-    const desde = MIGRACION.indexOf('CREATE FUNCTION privado.contenido_bloqueado(')
-    const cuerpo = MIGRACION.slice(desde, MIGRACION.indexOf('$function$;', desde))
+    const desde = MIGRACION_CONTENIDO.search(ANCLA_CONTENIDO)
+    const cuerpo = MIGRACION_CONTENIDO.slice(
+      desde,
+      MIGRACION_CONTENIDO.indexOf('$function$;', desde)
+    )
     expect(desde).toBeGreaterThan(0)
     const claves = [...new Set([...cuerpo.matchAll(/\n    '(\w+)', COALESCE/g)].map((m) => m[1]!))]
     expect(claves.length).toBeGreaterThan(0)

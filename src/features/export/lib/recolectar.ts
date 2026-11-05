@@ -326,7 +326,7 @@ export async function recolectarUsuario(
       )
     : []
 
-  const [ausencias, citasInvitado, recordatorios, firmas] = await Promise.all([
+  const [ausencias, citasInvitado, recordatorios, firmas, firmasDocumentos] = await Promise.all([
     // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
     client
       .from('ausencias')
@@ -351,6 +351,12 @@ export async function recolectarUsuario(
       .select(columnasDe('usuario.firmas_realizadas'))
       .eq('firmante_id', usuarioId)
       .then((r) => filasDe('usuario.firmas_realizadas', r)),
+    // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
+    client
+      .from('firmas_documentos_centro')
+      .select(columnasDe('usuario.firmas_documentos_realizadas'))
+      .eq('firmante_id', usuarioId)
+      .then((r) => filasDe('usuario.firmas_documentos_realizadas', r)),
   ])
 
   const centroId = roles.map((r) => r.centro_id)[0] ?? null
@@ -364,6 +370,7 @@ export async function recolectarUsuario(
       ...vinculos.map((v) => v.nino_id),
       ...ausencias.map((a) => a.nino_id),
       ...firmas.map((f) => f.nino_id),
+      ...firmasDocumentos.map((f) => f.nino_id),
       ...convs.map((c) => c.nino_id),
     ],
     autorizacionIds: firmas.map((f) => f.autorizacion_id),
@@ -501,6 +508,14 @@ export async function recolectarUsuario(
         sinRol,
         { nino: legibles.nino, documento: legibles.documento }
       ),
+      firmas_documentos_realizadas: entregadas(
+        'usuario.firmas_documentos_realizadas',
+        firmasDocumentos,
+        historia,
+        usuarioId,
+        sinRol,
+        { nino: legibles.nino }
+      ),
       ...(extra ?? { datos_ampliados: { _nota: NOTA_SIN_DATOS_AMPLIADOS } }),
       adjuntos,
       _aportado_por_ti: [
@@ -510,6 +525,7 @@ export async function recolectarUsuario(
         'ausencias_reportadas',
         'respuestas a invitaciones_a_citas',
         'firmas_realizadas',
+        'firmas_documentos_realizadas',
         'preferencias',
         'perfiles_familia',
         'mandatos_sepa',
@@ -559,6 +575,7 @@ export async function recolectarNino(
     informes,
     autorizaciones,
     firmas,
+    firmasDocumentos,
     administraciones,
   ] = await Promise.all([
     client
@@ -607,6 +624,11 @@ export async function recolectarNino(
       .select(columnasDe('nino.firmas'))
       .eq('nino_id', ninoId)
       .then((r) => filasDe('nino.firmas', r)),
+    client
+      .from('firmas_documentos_centro')
+      .select(columnasDe('nino.firmas_documentos'))
+      .eq('nino_id', ninoId)
+      .then((r) => filasDe('nino.firmas_documentos', r)),
     client
       .from('administraciones_medicacion')
       .select(columnasDe('nino.administraciones_medicacion'))
@@ -746,6 +768,13 @@ export async function recolectarNino(
       informes_evolucion: entregadas('nino.informes_evolucion', informes, historia, null, delNino),
       autorizaciones: entregadas('nino.autorizaciones', autorizaciones, historia, null, delNino),
       firmas: entregadas('nino.firmas', firmas, historia, null, delNino),
+      firmas_documentos: entregadas(
+        'nino.firmas_documentos',
+        firmasDocumentos,
+        historia,
+        null,
+        delNino
+      ),
       administraciones_medicacion: entregadas(
         'nino.administraciones_medicacion',
         administraciones,
@@ -806,6 +835,7 @@ export const DATOS_BLOQUEADOS: Record<string, string> = {
   autorizaciones: 'autorizaciones',
   consentimientos: 'consentimientos',
   acuses_alta: 'acuses del alta',
+  firmas_documentos: 'firmas de los documentos del centro (presupuesto, normas…)',
   medicacion_administrada: 'medicación administrada',
   lecturas_ficha_medica: 'registro de consultas de la ficha médica',
 }
