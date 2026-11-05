@@ -549,6 +549,28 @@ Migración `20270102120000_feat_firmas_documentos_centro`; spec `docs/specs/alta
   `audit_trigger_function`.
 - Test: `src/test/rls/firmas-documentos-centro.rls.test.ts`.
 
+### La pantalla de la admin (serie de altas, paso 1, 1c)
+
+Sin migración; spec `docs/specs/altas-serie.md`, «1c». `/admin/documentos-centro`.
+
+- **Solo la admin del centro (J1)**: la página y la entrada del menú exigen `esResponsable`, el mismo
+  criterio que `privado.es_responsable`. Una directora no las tiene, y si llega, la base le contesta
+  42501 en cada función del 1a.
+- **Lo que lee, con la sesión de la admin**: la lista de `documentos_centro_admin`, los cursos del
+  centro y, para enseñar cuántas firmas tiene cada versión, `version_id` de
+  `firmas_documentos_centro` (la Dirección la lee, 1b). Si una de las tres lecturas falla no hay
+  pantalla: una lista vacía diría «no hay documentos», y unas firmas vacías ofrecerían borrar una
+  versión firmada. El botón de borrar sale solo con cero firmas visibles, pero no es la regla: la base
+  vuelve a mirarlo (`version_firmada`), también con una firma que la admin no ve porque está
+  bloqueada.
+- **Ver el PDF** (`/{locale}/admin/documentos-centro/version/{id}?centro=…`): un enlace firmado de
+  60 segundos con el servicio, solo si la versión está en la lista de la admin para ese centro
+  (`enlaceVersionDocumento`). La ruta sale de la lista, no de lo que manda el navegador.
+- **Crear y editar** van por `crear_documento_centro` y `editar_documento_centro` con la sesión. Un
+  23505 ahí solo puede ser el título repetido (`documentos_centro_titulo_vivo`); fuera de esas dos
+  funciones no se traduce así.
+- Test: `src/test/rls/documentos-centro-pantalla.rls.test.ts`.
+
 ### Quién ha leído la ficha médica (F11-B, punto 4)
 
 Migración `20261128120000_feat_ficha_medica_lecturas`; spec `docs/specs/ficha-medica-lecturas.md`.
