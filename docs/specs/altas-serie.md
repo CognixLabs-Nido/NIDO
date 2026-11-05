@@ -77,6 +77,38 @@ reales de ANAIA (curso 2026/2027). Lo medido entonces, que motiva la serie:
 - **Las normas se firman aparte de la ficha** («una cosa es que firme NIDO APP y otra las reglas de
   funcionamiento y régimen interno»).
 
+**Decisiones del 2026-11-04 y del 2026-11-05 (el paso 1, entero):**
+
+- **Se firma una vez por niño.** La familia García, con Lucía y Pablo, firma el presupuesto dos veces,
+  una por cada hijo. Si Pablo entra un año después con la misma versión vigente, firma la suya igualmente.
+- **La lista de documentos la define cada centro**, con su marca de obligatorio (D3: N documentos).
+- **Las firmas van en una tabla nueva** que apunta a la versión con `ON DELETE RESTRICT`. No se
+  reutiliza `firmas_autorizacion`: va en `CASCADE` y su hash es de un texto, no de un fichero.
+- **J1 · Solo la admin** sube y gestiona los documentos del centro, no la directora. Es el criterio
+  que ya rige las plantillas legales (`privado.es_responsable`).
+- **J2 · Cada documento dice si es de curso o no.**
+  - El **presupuesto es de curso**: cada versión lleva su curso, y la familia firma la de **su
+    matrícula**. Lucía, que entra tarde al 2026/27, firma el presupuesto de 2026/27, no el de 2027/28
+    que ya está subido.
+  - Las **normas no son de curso**: vale la última.
+  - En palabras de Jose: **«tienen que firmar uno cada año con los nuevos precios»**. Cada curso trae
+    su presupuesto, y se firma otra vez.
+- **J3 · Basta con uno de los tutores**, y se guarda quién firmó. La clave única es **(versión,
+  niño)**, no por firmante. En la familia García basta con que firme Ana por Lucía; si firma Ana, Luis
+  no tiene que firmar.
+- **J4 · Una versión corregida a mitad de curso no obliga a volver a firmar.** La firma de septiembre
+  sigue valiendo, y la versión nueva la firman solo las altas que entren después. Si las normas pasan
+  a la v2 en octubre, Pablo, validado en julio con la v1, no firma otra vez.
+
+> **No confundir «curso nuevo» con «versión corregida».** Se parecen y no son lo mismo:
+>
+> |                                                                 | ¿Se vuelve a firmar?                   | Ejemplo                                                                                                     |
+> | --------------------------------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+> | **Curso nuevo** de un documento de curso (J2)                   | **Sí**: cada niño firma el de su curso | El presupuesto de 2027/28: Pablo, que sigue, firma el de 2027/28 aunque ya firmara el de 2026/27            |
+> | **Versión corregida** del mismo documento y el mismo curso (J4) | **No**: vale la firma que ya hay       | Una errata corregida en el presupuesto de 2026/27 en noviembre: quien firmó en septiembre no firma otra vez |
+>
+> Lo que decide es si cambia **el curso**, no si cambia **el fichero**.
+
 ### Gastos de gestión
 
 - Un paso del alta donde el tutor **adjunta el justificante de la transferencia o indica que pagará
