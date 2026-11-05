@@ -10,6 +10,7 @@ import {
   ClipboardListIcon,
   CoinsIcon,
   FileSignatureIcon,
+  FileTextIcon,
   GraduationCapIcon,
   HistoryIcon,
   HomeIcon,
@@ -68,6 +69,11 @@ export async function buildSidebarItems(
       ...(acceso.esResponsable
         ? [
             { href: `/${locale}/admin/centro`, label: t('centro'), icon: <Building2Icon /> },
+            {
+              href: `/${locale}/admin/documentos-centro`,
+              label: t('documentos_centro'),
+              icon: <FileTextIcon />,
+            },
             { href: `/${locale}/admin/direccion`, label: t('direccion'), icon: <UserCogIcon /> },
           ]
         : []),
