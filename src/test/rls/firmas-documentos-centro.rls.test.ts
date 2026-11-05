@@ -68,13 +68,26 @@ describe('Las firmas de los documentos del centro', () => {
   let sinFirmas: string
 
   /** Firma como postgres (el paso 2 traerá la función de firmar). Devuelve el id o el error. */
-  function firmar(version: string, nino: string, firmante: string, extra = ''): string {
+  /** Por defecto, con el dedo: el tutor y su trazo. */
+  function firmar(
+    version: string,
+    nino: string,
+    firmante: string,
+    forma: { metodo?: 'digital' | 'presencial'; rol?: string; trazo?: string | null } = {}
+  ): string {
+    const metodo = forma.metodo ?? 'digital'
+    const rol = forma.rol ?? 'tutor_legal_principal'
+    const trazo =
+      forma.trazo === undefined
+        ? `'data:image/png;base64,AAAA'`
+        : forma.trazo === null
+          ? 'NULL'
+          : `'${forma.trazo}'`
     const r = comoPostgres(`INSERT INTO public.firmas_documentos_centro
         (version_id, documento_id, centro_id, titulo, numero, sha256, nino_id, firmante_id,
-         rol_firmante, nombre_tecleado, firma_imagen${extra ? ', ' + extra.split('=')[0] : ''})
+         rol_firmante, metodo_firma, nombre_tecleado, firma_imagen)
       VALUES ('${version}', gen_random_uuid(), gen_random_uuid(), 'MENTIRA', 99, repeat('0', 64),
-              '${nino}', '${firmante}', 'tutor_legal_principal', 'Madre Ensayo',
-              'data:image/png;base64,AAAA'${extra ? ', ' + extra.split('=')[1] : ''})
+              '${nino}', '${firmante}', '${rol}', '${metodo}', 'Madre Ensayo', ${trazo})
       RETURNING id;`)
     return r.ok ? r.salida : `ERROR ${r.salida}`
   }
@@ -155,7 +168,7 @@ describe('Las firmas de los documentos del centro', () => {
 
   it('premisa: sin firmas, y los dos triggers de la versión firmada en ENABLE ALWAYS', () => {
     expect(cuenta(`centro_id = '${centro.id}'`)).toBe(0)
-    const r = comoPostgres(`SELECT string_agg(tgname || '=' || tgenabled, ',' ORDER BY tgname)
+    const r = comoPostgres(`SELECT string_agg(tgname || '=' || tgenabled::text, ',' ORDER BY tgname)
       FROM pg_trigger WHERE tgrelid = 'public.documentos_centro_versiones'::regclass
        AND tgname LIKE 'documentos_centro_versiones_firmada%';`)
     expect(r.salida).toBe(
@@ -180,6 +193,30 @@ describe('Las firmas de los documentos del centro', () => {
     // J4: otra versión del mismo curso es otra firma.
     expect(firmar(v2, lucia, madre.id)).toMatch(/^[0-9a-f-]{36}$/)
     expect(cuenta(`nino_id = '${lucia}'`)).toBe(2)
+  })
+
+  it('en persona la registra Dirección sin trazo; con el dedo, el tutor con trazo; nada mezclado', async () => {
+    const pablo = (await createTestNino(centro.id, 'Pablo')).id
+    const FORMA = 'firmas_documentos_centro_forma_por_metodo'
+    // Las dos mezcladas no entran: en persona con trazo, en persona a nombre del tutor, con el dedo
+    // sin trazo y con el dedo a nombre de Dirección.
+    expect
+      .soft(firmar(v1, pablo, directora.id, { metodo: 'presencial', rol: 'admin', trazo: 'x' }))
+      .toContain(FORMA)
+    expect
+      .soft(firmar(v1, pablo, directora.id, { metodo: 'presencial', trazo: null }))
+      .toContain(FORMA)
+    expect.soft(firmar(v1, pablo, madre.id, { trazo: null })).toContain(FORMA)
+    expect.soft(firmar(v1, pablo, directora.id, { rol: 'admin' })).toContain(FORMA)
+    expect(cuenta(`nino_id = '${pablo}'`)).toBe(0)
+    // En persona: la registra la directora, sin trazo, y la copia de lo firmado es la misma.
+    const id = firmar(v1, pablo, directora.id, { metodo: 'presencial', rol: 'admin', trazo: null })
+    expect(id).toMatch(/^[0-9a-f-]{36}$/)
+    const r =
+      comoPostgres(`SELECT metodo_firma || '|' || rol_firmante || '|' || (firma_imagen IS NULL)
+        || '|' || (sha256 = (SELECT sha256 FROM public.documentos_centro_versiones WHERE id = '${v1}'))
+      FROM public.firmas_documentos_centro WHERE id = '${id}';`)
+    expect(r.salida).toBe('presencial|admin|true|true')
   })
 
   it('el niño tiene que ser del centro del documento', async () => {
