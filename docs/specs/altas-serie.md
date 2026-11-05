@@ -979,6 +979,39 @@ iría en una tabla aparte, sin tocar la de versiones.
   un PDF, calcula el hash, sube y registra) y la que borra (borra la versión y después su fichero; si
   el fichero no se va, lo dice, y se reintenta).
 
+### 1b · Las firmas (base de datos)
+
+Migración `20270102120000_feat_firmas_documentos_centro`. La pantalla de firmar es el paso 2: el 1b
+deja la tabla, sus defensas y toda la retención, y nadie escribe todavía con sesión.
+
+- **`firmas_documentos_centro`**: una firma por versión y niño (J3), con quién firmó, su rol, el
+  nombre tecleado, el trazo (D2: obligatorio), la IP y el navegador. Apunta a la versión con
+  `RESTRICT`; al niño, con `CASCADE` (anular un alta sin terminar se la lleva, como las de
+  autorizaciones); al firmante, con `RESTRICT`.
+- **La copia de lo firmado**: título, número, curso con su nombre y `sha256`, que pone el trigger
+  desde la versión aunque quien firma diga otra cosa. La familia no lee la tabla de versiones, y la
+  firma tiene que decir sola qué se firmó (lo usa el export).
+- **No cambia nunca** (`firma_inmutable`). Se borra por la destrucción a los 5 años o con el niño.
+- **Leen** quien firmó, los tutores del niño y la Dirección del centro. La profe no: la firma es del
+  alta, no del aula.
+- **J5, con el primer `ENABLE ALWAYS` del esquema.** Una versión con firmas no se borra nunca. El
+  `RESTRICT` no basta: con `session_replication_role = replica` no dispara (rls-policies.md, «La
+  llave de `postgres`»). Dos triggers en `ENABLE ALWAYS` lo sostienen, uno por fila y otro por
+  sentencia, porque `TRUNCATE … CASCADE` no pasa por los de fila. Medido en producción el
+  2026-11-05, en ensayos terminados en RAISE: en `replica`, borrar la versión firmada y vaciar la
+  tabla dan `version_firmada` (23503); con el trigger vuelto a `ENABLE` normal, los dos pasan.
+- **La retención, la misma que `firmas_autorizacion`**, en la misma migración, partiendo de las
+  definiciones vivas de producción (la guarda previa compara su md5 normalizado): la política
+  `RESTRICTIVE` `bloqueo_retencion`, `datos_bloqueados` y `contenido_bloqueado` (código
+  `firmas_documentos`), `queda_conservado_nino`, `quedan_firmas_usuario`, `destruir_firmas_nino`
+  (salvo la del tutor retenido), `_claves_pii_nino` (`firma_imagen`) y `audit_trigger_function`
+  (centro directo). El export, en las dos capas: la base, por `datos_bloqueados`; la app, con dos
+  secciones (`nino.firmas_documentos` y `usuario.firmas_documentos_realizadas`) con las reglas de
+  las firmas de autorizaciones: del otro tutor no salen su IP, su navegador ni su trazo.
+
+**Para el paso 2:** si un documento del centro se puede firmar en presencia, como el mandato. El 1b
+no lo prevé (el trazo es obligatorio, D2), y añadirlo después es una columna con su `DEFAULT`.
+
 ## Orden de la serie
 
 Del 3 en adelante todos tocan `purgar_sujeto_db`, `privado.purgar_nino` y la exportación del
