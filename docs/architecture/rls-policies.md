@@ -32,8 +32,26 @@ Decisión del 2026-11-05 (#497), el mismo caso que la E de los recibos («Las pu
     mismo ensayo, un `ON DELETE RESTRICT` que con `origin` para el borrado del padre (23503) lo deja
     pasar con `replica`, y entra un hijo huérfano. Un `CHECK` sí aguanta (23514), pero `postgres`
     puede quitarlo;
+  - **la llave atraviesa las claves foráneas, no solo los triggers, y lo único que la para en
+    `replica` es un trigger propio con `ENABLE ALWAYS`** (ensayos en producción terminados en RAISE,
+    2026-11-05, con tablas temporales):
+
+    | Defensa                                       | Con `replica`                              |
+    | --------------------------------------------- | ------------------------------------------ |
+    | `CHECK`, `UNIQUE`, `NOT NULL`                 | aguanta (23514, 23505, 23502)              |
+    | Clave foránea (`RESTRICT`, `NO ACTION`)       | **no aguanta**                             |
+    | Poner `ALWAYS` el trigger interno de la clave | no se puede (42501, «is a system trigger») |
+    | Trigger propio con `ENABLE ALWAYS` al lado    | **aguanta** (23503)                        |
+
+    Ninguna regla de otra tabla cabe en un `CHECK`, que solo ve su fila: lo que hace dura una clave
+    foránea es el trigger `ENABLE ALWAYS` a su lado. `postgres` lo puede seguir quitando, pero eso es
+    un cambio de esquema que hay que deshacer; `replica` es una línea, dura una transacción y no
+    deja nada en el esquema. **El primero del esquema es el del 1b**, firmas → versiones (J5). Los
+    demás son una pieza propia (`docs/follow-ups.md`, «Claves foráneas que aguanten `replica`»);
+
   - **saltarse la RLS y los privilegios:** es el dueño y tiene `BYPASSRLS`, y ninguna tabla tiene
     `FORCE ROW LEVEL SECURITY`.
+
 - **Nadie más la tiene** (medido en producción el 2026-11-05; control positivo, `postgres`, en la
   misma tanda):
   - `service_role`, `authenticated`, `anon` y `authenticator` reciben **42501** al poner

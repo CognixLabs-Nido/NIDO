@@ -31,6 +31,19 @@ Backlog vivo de deudas técnicas, hardening y decisiones diferidas que **no** bl
 
 ## Hardening (Ola 1)
 
+- [ ] **Claves foráneas que aguanten `replica`.** Medido el 2026-11-05 (`rls-policies.md`, «La llave
+      de `postgres`»): con `session_replication_role = replica`, que solo puede poner `postgres`, un
+      `RESTRICT` deja borrar el padre; lo único que lo para es un trigger propio `ENABLE ALWAYS` al
+      lado. En producción hay **57 claves `RESTRICT`** (y 27 `NO ACTION`, que se portan igual). Hay que
+      decidir **una a una** cuáles merecen el trigger. Las que protegen dinero y expedientes: - **dinero y fiscal:** `remesa_fichero_adeudos.recibo_id` → `recibos` y
+      `remesa_ficheros.remesa_id` → `remesas` (lo fiscal de la familia espera a sus ficheros),
+      `recibos_remesa.recibo_id`, `recibos.familia_id`, `recibos.devuelto_de_recibo_id` y
+      `recibos.diferencia_de_recibo_id`, `mandatos_sepa.familia_id` y `mandatos_sepa.usuario_id`; - **firmas y expedientes:** `firmas_autorizacion.firmante_id`, `acuses_alta.firmante_id`,
+      `autorizaciones.plantilla_id`, `administraciones_medicacion.autorizacion_id` (una toma
+      administrada a un niño conserva su autorización).
+      La primera, firmas → versiones, va en el 1b de la serie de altas (J5). **Disparo:** después de la
+      serie de altas, o antes si una de ellas aparece en una corrección por SQL Editor. Origen: #498.
+
 - [ ] **Asertos de rechazo que solo miran que haya error.** Contados el 2026-11-03: **97 asertos en
       47 ficheros** (`expect(error).not.toBeNull()`, `toBeTruthy()`, `toBeDefined()` o `toThrow()` sin
       código, HINT ni mensaje en las dos líneas siguientes). Un aserto así sigue en verde si la defensa que
