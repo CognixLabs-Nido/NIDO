@@ -135,6 +135,7 @@ const FILAS: Record<string, Fila[]> = {
     }),
   ],
   autorizaciones: [filaCompleta('autorizaciones', { id: 'au1' })],
+  firmas_documentos_centro: [filaCompleta('firmas_documentos_centro', { nino_id: 'n1' })],
   cita_invitados: [filaCompleta('cita_invitados', { cita_id: 'ci1' })],
   citas: [{ id: 'ci1', titulo: 'Tutoría de octubre', fecha: '2026-10-20' }],
   informes_evolucion: [filaCompleta('informes_evolucion', { creado_por: 'p1' })],

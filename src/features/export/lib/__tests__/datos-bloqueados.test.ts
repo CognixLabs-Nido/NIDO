@@ -91,8 +91,16 @@ describe('export: los datos bloqueados', () => {
   })
 
   it('cada tipo de motivo de la migración tiene su texto', () => {
-    const sql = readFileSync(path.join(MIGRACIONES, FICHERO!), 'utf8')
-    const check = sql.match(/motivo_tipo text NOT NULL CHECK \(motivo_tipo IN \(([^)]*)\)/)
+    // El CHECK es de la tabla `accesos_datos_bloqueados`, no de la función: se busca en la última
+    // migración que lo escribe (hasta el 1b coincidía con la de la función, y no por eso).
+    const CHECK = /motivo_tipo text NOT NULL CHECK \(motivo_tipo IN \(([^)]*)\)/
+    const conCheck = readdirSync(MIGRACIONES)
+      .filter((f) => f.endsWith('.sql'))
+      .sort()
+      .filter((f) => CHECK.test(readFileSync(path.join(MIGRACIONES, f), 'utf8')))
+      .at(-1)
+    const sql = readFileSync(path.join(MIGRACIONES, conCheck!), 'utf8')
+    const check = sql.match(CHECK)
     expect(check).not.toBeNull()
     const tipos = [...check![1]!.matchAll(/'(\w+)'/g)].map((m) => m[1]!)
     expect(tipos.length).toBeGreaterThan(0)

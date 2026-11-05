@@ -25,8 +25,9 @@ describe('el árbol real cumple', () => {
     expect(recuento.ficherosRevisados).toBeGreaterThan(500)
     expect(recuento.cadenas).toBeGreaterThan(700)
     expect(recuento.acotadas).toBeGreaterThan(600)
-    // Las lecturas entre centros con su motivo: una nueva sube este número a propósito.
-    expect(recuento.marcadas).toBe(23)
+    // Las lecturas entre centros con su motivo: una nueva sube este número a propósito. 24 desde el
+    // 1b (2026-11-05): las firmas de documentos de quien firmó, en su export (art. 15).
+    expect(recuento.marcadas).toBe(24)
     expect(marcas.every((m) => m.motivo.length >= 10)).toBe(true)
   })
 

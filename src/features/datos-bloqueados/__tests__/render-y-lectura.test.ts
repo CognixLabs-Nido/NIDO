@@ -21,6 +21,10 @@ const MIGRACION_FICHA = readFileSync(
 const ANCLA_CONTENIDO = /CREATE (?:OR REPLACE )?FUNCTION privado\.contenido_bloqueado\(/
 const DIR_MIGRACIONES = path.resolve(__dirname, '../../../../supabase/migrations')
 const MIGRACION = readFileSync(
+  path.join(DIR_MIGRACIONES, '20261205120000_feat_retencion_bloqueo.sql'),
+  'utf8'
+)
+const MIGRACION_CONTENIDO = readFileSync(
   path.join(
     DIR_MIGRACIONES,
     readdirSync(DIR_MIGRACIONES)
@@ -106,8 +110,11 @@ describe('datos bloqueados: lo que pide la app es lo que acepta la BD', () => {
   })
 
   it('los apartados son los de contenido_bloqueado', () => {
-    const desde = MIGRACION.search(ANCLA_CONTENIDO)
-    const cuerpo = MIGRACION.slice(desde, MIGRACION.indexOf('$function$;', desde))
+    const desde = MIGRACION_CONTENIDO.search(ANCLA_CONTENIDO)
+    const cuerpo = MIGRACION_CONTENIDO.slice(
+      desde,
+      MIGRACION_CONTENIDO.indexOf('$function$;', desde)
+    )
     expect(desde).toBeGreaterThan(0)
     const claves = [...new Set([...cuerpo.matchAll(/\n    '(\w+)', COALESCE/g)].map((m) => m[1]!))]
     expect(claves.length).toBeGreaterThan(0)
