@@ -59,6 +59,8 @@ Para todo lo demás (`cd`, `git status`, `npm test`, ediciones según plan, etc.
 
 **12. Revocar una decisión incluye barrer todo lo que la afirma, en el mismo PR.** Cuando un PR revoca o sustituye una decisión del responsable, el barrido no es un paso aparte: código, tests (también sus nombres), comentarios, catálogos, specs y ADRs que la afirmen se cambian en ese mismo PR, o se marcan «sustituida el AAAA-MM-DD por …». Se busca la frase de la decisión y sus paráfrasis en `src`, `supabase/migrations`, `docs/specs`, `docs/decisions` y `docs/architecture`, y la descripción del PR dice dónde se buscó y qué se cambió. Un PR que revoca sin barrer no está terminado. _Norma del responsable del 2026-11-02, tras dos casos: el comentario «FRST diferida» en #461 y, en #473, un test que seguía afirmando «del tutor, solo teléfono y email» y puso roja la CI._
 
+**13. Un test afirma su propia premisa antes de medir.** Todo test que se monta su precondición (quién es quién, en qué aula está, qué rol tiene, qué fixture existe, qué flag o huso rige) la afirma en su **primer aserto**, antes de lo que mide, y ese aserto tiene que poder fallar. Vale sobre todo para los tests de «X **no** puede»: un 0 o un rechazo dicen algo solo si X es de verdad quien la regla excluye; si no, el test mide la nada y lo parece todo. Se comprueba con la mutación de la regla: si al quitarla el test sigue verde, la premisa era falsa. _Norma del responsable del 2026-11-05, tras el quinto caso: en #499 la mutación que dejaba leer a la profe salió verde porque la profe no era del aula de Lucía; el test ahora afirma primero `es_profe_de_nino = true`, y con la mutación se pone rojo._
+
 ## Verificaciones antes de abrir un PR
 
 Tras implementar y antes de abrir el PR, deben pasar en local:
