@@ -432,14 +432,22 @@ Migración `20270101120000_feat_documentos_centro`; spec `docs/specs/altas-serie
   el servidor con el servicio, tras comprobar la sesión (`usuarioResponsableEn`); el fichero se llama
   por el sha256 de los bytes subidos. Registrar comprueba la ruta y que el objeto está, con su tamaño
   y su tipo.
-- **Una versión no cambia nunca, para nadie:** `documentos_centro_versiones_defensa` impide todo
+- **Varias versiones vivas a la vez:** no hay «la vigente» de un documento, hay la vigente **de cada
+  curso** (la de número mayor de ese documento y ese curso); `documentos_centro_admin` la marca así.
+- **Una versión no cambia nunca**, tampoco para `service_role`, ni para `postgres` mientras los
+  triggers estén puestos y encendidos: `documentos_centro_versiones_defensa` impide todo
   `UPDATE` de la fila y el `DELETE` salvo con el marcador local `app.borrar_version_documento` = su
   id, que solo pone `borrar_version_documento` (J5: sin firmas, con su evento). En `storage.objects`,
   `documentos_centro_objeto_defensa` (solo `bucket_id = 'documentos-centro'` y solo sobre un objeto al
   que apunta una versión) impide sustituirlo, moverlo o borrarlo, también a `service_role`. Deja
   pasar la lectura: ignora `updated_at`, `last_accessed_at` y las columnas generadas
-  (`path_tokens`), leídas del catálogo. `postgres` puede quitar ese trigger (medido el 2026-11-05),
-  aunque la tabla es de `supabase_storage_admin`.
+  (`path_tokens`), leídas del catálogo.
+- **`postgres` conserva la llave, por decisión** (spec, 1a; el mismo caso que la E de los recibos):
+  puede quitar los dos triggers, también el de `storage.objects` aunque la tabla es de
+  `supabase_storage_admin`, y puede apagarlos sin quitarlos con
+  `SET LOCAL session_replication_role = replica` (medido en producción el 2026-11-05). La condición:
+  una corrección por fuera de las funciones va por una función con nombre y su registro, nunca
+  quitando o apagando el trigger.
 - **J2 y J6, en la base:** el curso de una versión es obligatorio en un documento de curso y
   prohibido en otro, del centro y no cerrado (23514); «de curso» no cambia en un documento con
   versiones (23514, `de_curso_fijo`).

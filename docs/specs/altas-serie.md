@@ -955,12 +955,34 @@ iría en una tabla aparte, sin tocar la de versiones.
   `{centro}/{documento}/{sha256}.pdf`. El hash lo calcula **el servidor** a partir de los bytes que
   sube. La función que registra comprueba que la ruta es esa y que el objeto está en el bucket, con
   su tamaño y su tipo, y la base vuelve a mirar el curso y el documento.
-- **Una versión no cambia nunca, para nadie**, tampoco la admin, `service_role` ni `postgres`:
+- **Una versión no cambia nunca**: ni la admin, ni `service_role`, ni `postgres` mientras los
+  triggers estén puestos y encendidos (la llave de `postgres`, abajo):
   - un trigger impide todo `UPDATE` de la fila;
   - otro impide su `DELETE` salvo por la función de borrar, que deja el registro (J5);
   - en `storage.objects`, solo para este bucket y solo sobre un objeto al que apunta una versión,
     otro impide cambiar su contenido (sustituirlo, moverlo) y borrarlo. No impide leerlo: Storage
     toca `last_accessed_at` y `updated_at` al servirlo.
+- **«La vigente» no existe a secas.** La tabla de versiones guarda varias vivas a la vez del mismo
+  documento, una por curso: la de 2026/27 y la de 2027/28 del presupuesto son las dos vigentes, cada
+  una de su curso. La vigente es la de número mayor **de ese documento y ese curso**; leer «la de
+  número mayor del documento» daría a Lucía, que entra tarde a 2026/27, el presupuesto de 2027/28.
+- **`postgres` conserva su llave sobre las dos defensas. Es una decisión, no un hueco** (el mismo
+  caso que la E de los recibos, con la llave de `postgres` en vez de la de `service_role`).
+  - **Qué permite esa llave:** `postgres` es el dueño de las tablas de `public` y tiene el privilegio
+    `TRIGGER` en `storage.objects`, así que puede quitar cualquiera de los dos triggers, el de la fila
+    y el del fichero (medido el 2026-11-05). Y, sin quitar nada, puede apagarlos en su transacción con
+    `SET LOCAL session_replication_role = replica`: no es superusuario, pero Supabase le deja ponerlo
+    (medido en producción el 2026-11-05, en un ensayo terminado en RAISE sobre una tabla temporal: el
+    mismo INSERT que el trigger para con `origin` entra con `replica`). Sin los triggers, la fila de
+    una versión se puede cambiar y su fichero sustituir o borrar.
+  - **Por qué se deja:** es la llave maestra. La usan las migraciones, y la aplica el responsable por
+    el SQL Editor. Ninguna defensa de la base puede cerrarse contra quien puede quitarla.
+  - **Hoy no hay ningún guion que la use** sobre estas tablas ni sobre este bucket: ni en `scripts/`,
+    ni en `supabase/operaciones/`, ni en un runbook. La limpieza de los tests borra versiones como
+    `postgres`, pero por el marcador de la función, sin quitar ni apagar el trigger.
+  - **La condición:** el día que haga falta corregir o quitar una versión o su fichero por fuera de
+    las funciones, se hace con una función con nombre y su registro en `audit_log`, nunca quitando o
+    apagando el trigger a mano.
 - **Registro (J5):** crear y editar un documento, subir una versión y borrarla dejan un evento
   directo en `audit_log` (`documento_centro`), con la acción y los identificadores, sin datos de
   ninguna familia.
