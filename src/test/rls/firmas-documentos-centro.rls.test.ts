@@ -276,6 +276,9 @@ describe('Las firmas de los documentos del centro', () => {
   })
 
   it('J5 aguanta la llave de postgres: en modo replica no se borra ni se vacía', () => {
+    // Premisa: la v1 está firmada. Lo que se mide después es que no cambie nada, no un número.
+    const firmasAntes = cuenta(`version_id = '${v1}'`)
+    expect(firmasAntes).toBeGreaterThan(0)
     // En una transacción: el control (un trigger normal NO dispara en replica) y los dos intentos.
     const r = comoPostgres(`
       CREATE TEMP TABLE t_ctl (x int);
@@ -294,7 +297,11 @@ describe('Las firmas de los documentos del centro', () => {
     expect(r.ok).toBe(false)
     expect(r.salida).toContain('replica|version_firmada')
     expect(r.salida).toContain('hay versiones firmadas')
-    expect(cuenta(`version_id = '${v1}'`)).toBe(1)
+    expect(cuenta(`version_id = '${v1}'`)).toBe(firmasAntes)
+    expect(
+      comoPostgres(`SELECT count(*) FROM public.documentos_centro_versiones WHERE id = '${v1}';`)
+        .salida
+    ).toBe('1')
   })
 
   it('la retención: bloqueada con el niño purgado, y se destruye a los 5 años', async () => {
