@@ -6,9 +6,59 @@
 - Service role bypass para Edge Functions (nunca expuesto al cliente).
 - Funciones helper `SECURITY DEFINER` con `STABLE` y `search_path` explícito.
 - **Antipatrón prohibido**: subqueries inline `(SELECT col FROM otra_tabla WHERE ...)` dentro de `USING (...)` — causa recursión RLS (SQLSTATE 42P17). Ver [ADR-0007](../decisions/ADR-0007-rls-policy-recursion-avoidance.md).
+- **«Para todos» no incluye a `postgres`**: es la llave maestra, por decisión. Ver «La llave de `postgres`».
 - **Nada para `anon` ni para `PUBLIC`.** Toda policy de la app es `TO authenticated` y toda función nueva lleva `REVOKE ALL … FROM PUBLIC, anon`. Una RPC solo se da a `authenticated` si la app la llama con sesión. Ver la sección «Postura de seguridad (octubre de 2026)» y [ADR-0053](../decisions/ADR-0053-postura-seguridad-bd.md).
 - **«Sin uid» nunca es el servicio.** En una función `SECURITY DEFINER`, `auth.uid()` NULL solo deja pasar a `service_role` o a una sesión directa sin JWT, como el SQL Editor.
 - **El superusuario es admin, no profe ni tutor** ([ADR-0061](../decisions/ADR-0061-superusuario.md)). `es_admin(centro)` le da TRUE en todo centro que exista (`is_superadmin()`, tabla `platform_admins` sin policies). Un permiso de admin nuevo pasa por `es_admin`, o por `privado.es_responsable` si es de lo que solo hace la admin del centro (ver «Lo exclusivo de la admin»); si lee el rol de quien llama en `roles_usuario`, deja fuera al superusuario. Nunca en los helpers de profe ni de tutor. Los registros presenciales en nombre de una familia (firma presencial, consentimiento de imagen presencial, mandato SEPA presencial) son solo de la directora: su rama de admin lleva `AND NOT is_superadmin()`.
+
+## La llave de `postgres`
+
+Decisión del 2026-11-05 (#497), el mismo caso que la E de los recibos («Las puertas del recibo» en
+`docs/specs/altas-serie.md`) con la llave de `postgres` en vez de la de `service_role`. Vale para
+**todas** las defensas de la base, no solo para las del 1a. **Es una decisión, no un hueco.**
+
+- **Qué quiere decir «para todos» en este repo.** Cuando un documento o un comentario de migración
+  dice que una defensa vale «para todos», «para nadie» o «también `service_role`», son las sesiones
+  (`anon`, `authenticated`), el servidor (`service_role`) y `authenticator`. **No `postgres`.**
+- **Qué permite esa llave** (medido el 2026-11-05):
+  - **quitar o desactivar cualquier trigger:** es el dueño de las tablas de `public` (ninguna es de
+    otro), y en `storage.objects`, que es de `supabase_storage_admin`, Supabase se lo da
+    (`supautils.drop_trigger_grants`);
+  - **apagarlos sin quitar nada**, en su transacción: `SET LOCAL session_replication_role = replica`.
+    No es superusuario, pero Supabase le deja ponerlo. Ensayo en producción terminado en RAISE, con
+    una tabla temporal: el INSERT que el trigger para con `origin` entra con `replica`. Ningún
+    trigger de `public` está en `ENABLE ALWAYS`, que es lo único que dispara en `replica`;
+  - **con eso, también las claves foráneas:** en `replica` no disparan sus triggers internos. En el
+    mismo ensayo, un `ON DELETE RESTRICT` que con `origin` para el borrado del padre (23503) lo deja
+    pasar con `replica`, y entra un hijo huérfano. Un `CHECK` sí aguanta (23514), pero `postgres`
+    puede quitarlo;
+  - **saltarse la RLS y los privilegios:** es el dueño y tiene `BYPASSRLS`, y ninguna tabla tiene
+    `FORCE ROW LEVEL SECURITY`.
+- **Nadie más la tiene** (medido en producción el 2026-11-05; control positivo, `postgres`, en la
+  misma tanda):
+  - `service_role`, `authenticated`, `anon` y `authenticator` reciben **42501** al poner
+    `session_replication_role = replica`, con `SET` y con `set_config`;
+  - `service_role` y `authenticated` reciben **42501** al desactivar o quitar
+    `recibos_dinero_solo_por_funcion` (ensayo terminado en RAISE; `postgres` sí lo desactiva, y el
+    trigger sigue encendido después);
+  - **ningún camino indirecto:** las 33 funciones que llaman a `set_config` ponen parámetros con
+    nombre fijo (31 marcadores `app.*`; las 2 de `realtime`, `role` y `request.*`), así que ninguna
+    `SECURITY DEFINER` de `postgres` le pone `replica` a quien la llama;
+  - `has_parameter_privilege` da `false` también para `postgres`, que sí lo pone: esto se mide
+    intentándolo, no preguntándolo.
+- **Por qué se deja:** es la llave maestra, la de las migraciones y del SQL Editor, y la usa el
+  responsable. Ninguna defensa de la base puede cerrarse contra quien puede quitarla.
+- **Quién la usa hoy:** solo los tests, en la base efímera del CI. `src/test/rls/mandatos-como-postgres.ts`
+  desactiva `mandatos_sepa_v1_cerrado` para preparar mandatos v1 y lo vuelve a encender en la misma
+  función. Ningún guion contra producción: ni `scripts/`, ni `supabase/operaciones/`, ni un runbook
+  (`session_replication_role`, `DISABLE TRIGGER` y `DROP TRIGGER`: 0 fuera de las migraciones).
+- **La condición:** el día que haga falta corregir algo por fuera de las funciones, se hace con una
+  función con nombre y su registro en `audit_log`, nunca quitando o apagando un trigger a mano.
+- **Lo que no se reescribe:** los comentarios de las migraciones ya escritas no se editan
+  ([ADR-0055](../decisions/ADR-0055-suite-rls-en-bd-efimera.md)). Los que nombran a `postgres` dicen
+  de más, y se leen con esta sección: `20261004120000` (líneas 22 y 249, «BYPASSRLS»),
+  `20261222120000` (68), `20261223120000` (369), `20261227120000` (137), `20261230120000` (19 y 276)
+  y `20270101120000` (17 y 102). Los «para todos» de los demás comentarios, igual.
 
 ## Funciones helper
 
@@ -435,19 +485,16 @@ Migración `20270101120000_feat_documentos_centro`; spec `docs/specs/altas-serie
 - **Varias versiones vivas a la vez:** no hay «la vigente» de un documento, hay la vigente **de cada
   curso** (la de número mayor de ese documento y ese curso); `documentos_centro_admin` la marca así.
 - **Una versión no cambia nunca**, tampoco para `service_role`, ni para `postgres` mientras los
-  triggers estén puestos y encendidos: `documentos_centro_versiones_defensa` impide todo
+  triggers estén puestos y encendidos ([su llave](#la-llave-de-postgres)): `documentos_centro_versiones_defensa` impide todo
   `UPDATE` de la fila y el `DELETE` salvo con el marcador local `app.borrar_version_documento` = su
   id, que solo pone `borrar_version_documento` (J5: sin firmas, con su evento). En `storage.objects`,
   `documentos_centro_objeto_defensa` (solo `bucket_id = 'documentos-centro'` y solo sobre un objeto al
   que apunta una versión) impide sustituirlo, moverlo o borrarlo, también a `service_role`. Deja
   pasar la lectura: ignora `updated_at`, `last_accessed_at` y las columnas generadas
   (`path_tokens`), leídas del catálogo.
-- **`postgres` conserva la llave, por decisión** (spec, 1a; el mismo caso que la E de los recibos):
-  puede quitar los dos triggers, también el de `storage.objects` aunque la tabla es de
-  `supabase_storage_admin`, y puede apagarlos sin quitarlos con
-  `SET LOCAL session_replication_role = replica` (medido en producción el 2026-11-05). La condición:
-  una corrección por fuera de las funciones va por una función con nombre y su registro, nunca
-  quitando o apagando el trigger.
+- **`postgres` conserva la llave sobre los dos triggers**, también el de `storage.objects`
+  ([su llave](#la-llave-de-postgres)). Ningún guion la usa sobre estas tablas: la limpieza de los tests borra versiones como
+  `postgres`, pero por el marcador de la función.
 - **J2 y J6, en la base:** el curso de una versión es obligatorio en un documento de curso y
   prohibido en otro, del centro y no cerrado (23514); «de curso» no cambia en un documento con
   versiones (23514, `de_curso_fijo`).
@@ -804,7 +851,7 @@ ENUM `recordatorio_destinatario` con **6 valores**: `familia_individual` · `fam
 
 - **SELECT** `autorizaciones_select`: `usuario_es_audiencia_autorizacion_row(centro_id, tipo, es_plantilla, ambito, evento_id, nino_id, aula_id)` (row-aware).
 - **INSERT** `autorizaciones_insert`: `creado_por = auth.uid()` AND ( `es_admin(centro_id)` | profe de salida `tipo='salida' AND es_profe_de_evento(evento_id) AND centro_de_evento(evento_id)=centro_id` | **tutor B2**: `es_plantilla=false AND tipo ∈ {recogida,medicacion} AND ambito='nino' AND nino_id NOT NULL AND plantilla_id NOT NULL AND es_tutor_de(nino_id) AND autorizacion_plantilla_valida(plantilla_id, centro_id, tipo)` ).
-- **UPDATE** `autorizaciones_update`: `USING + WITH CHECK` simétricos `creado_por = auth.uid() OR es_admin(centro_id)`; las plantillas de las normas internas y del consentimiento de imagen, solo `privado.es_responsable` (`20261030130000`). El server action acota columnas; el trigger `bloquea_texto_tras_firma` congela el alcance consentido una vez hay firmas, y desde `20261030130000` `autorizaciones_identidad_inmutable_trg` congela la identidad del documento para todos y siempre: tipo, plantilla o instancia, ámbito, centro, niño, evento, aula, plantilla de la que sale y autor (23514). Archivar medicación NO pasa por aquí (RPC `SECURITY DEFINER`).
+- **UPDATE** `autorizaciones_update`: `USING + WITH CHECK` simétricos `creado_por = auth.uid() OR es_admin(centro_id)`; las plantillas de las normas internas y del consentimiento de imagen, solo `privado.es_responsable` (`20261030130000`). El server action acota columnas; el trigger `bloquea_texto_tras_firma` congela el alcance consentido una vez hay firmas, y desde `20261030130000` `autorizaciones_identidad_inmutable_trg` congela la identidad del documento para todos y siempre, salvo `postgres` ([su llave](#la-llave-de-postgres)): tipo, plantilla o instancia, ámbito, centro, niño, evento, aula, plantilla de la que sale y autor (23514). Archivar medicación NO pasa por aquí (RPC `SECURITY DEFINER`).
 - **DELETE**: sin policy → **default DENY**. Retirar = `estado='anulada'` (conserva firmas). Archivar (`archivada_at`) ≠ anular.
 
 ### RLS `firmas_autorizacion` (append-only, inmutable)
@@ -1012,8 +1059,8 @@ escribirla en otra tabla), la BD la valida contra la fila, no contra el valor de
 
 ### Multicentro: coherencia de centro en la BD
 
-Un trigger BEFORE INSERT OR UPDATE se aplica a todos, también a service role y al dueño con
-BYPASSRLS. Así no pueden existir filas que crucen de centro y las lecturas nunca filtran
+Un trigger BEFORE INSERT OR UPDATE se aplica a todos, también a service role y a la RLS que se
+salta con BYPASSRLS, salvo `postgres` ([su llave](#la-llave-de-postgres)). Así no pueden existir filas que crucen de centro y las lecturas nunca filtran
 (`20261004120000`, #304):
 
 - **`invitaciones_validar_centro_trg`:** el niño y el aula de la invitación son de su centro.
@@ -1055,7 +1102,7 @@ que ya es de ese centro sigue entrando directamente.
   **42501**. La guarda previa exige el cuerpo de `20261002130000` (md5 normalizado).
 - **`lista_espera.tutor_usuario_id`**: trigger `lista_espera_validar_tutor_trg` (BEFORE INSERT o
   UPDATE de la columna o del centro), con la misma exigencia, para cualquiera, también service
-  role: **23514**. Solo mira la columna cuando cambia.
+  role, salvo `postgres` ([su llave](#la-llave-de-postgres)): **23514**. Solo mira la columna cuando cambia.
 - **La app:** la detección por email (`resolverTutorPorEmail`) solo mira este centro. Una cuenta
   de otro centro se ve como «familia nueva» y, al promover (`tutorDeEsteCentro`), se invita: la
   RPC crea su perfil sin cuenta. A una cuenta que ya existe no le llega el correo de GoTrue
@@ -1637,14 +1684,14 @@ toca.
     `get_mandatos_remesa` tiene su test;
   - un enlace no cambia de remesa ni de recibo (`enlace_fijo`);
   - de una remesa enviada o con fichero no sale ningún recibo, salvo con service_role.
-- **`remesas_proteger`** (BEFORE UPDATE): la marca del fichero no se quita, para nadie
-  (`fichero_generado`). Una remesa enviada no vuelve a borrador: con sesión desde aquí y, desde
+- **`remesas_proteger`** (BEFORE UPDATE): la marca del fichero no se quita, para nadie salvo
+  `postgres` ([su llave](#la-llave-de-postgres)) (`fichero_generado`). Una remesa enviada no vuelve a borrador: con sesión desde aquí y, desde
   `20261227120000`, también con service_role; las dos cosas, salvo `reabrir_remesa` (ver «Reabrir
   una remesa»). Con sesión, ni la enviada ni la que tiene fichero se borran: sus recibos quedarían
   libres para otra remesa. Desde `20261228120000`, el borrado (soft delete), para todos, también
-  service_role, y tampoco la reabierta (ver «Borrar una remesa»).
+  service_role, salvo `postgres` ([su llave](#la-llave-de-postgres)), y tampoco la reabierta (ver «Borrar una remesa»).
 - **`recibos_en_remesa_no_vuelven_a_borrador`** (BEFORE UPDATE OF estado, de `pendiente_procesar` a
-  `borrador`, para todos): `desconfirmar_recibo` ya lo miraba, pero sin bloquear el recibo, y un
+  `borrador`, para todos salvo `postgres`, [su llave](#la-llave-de-postgres)): `desconfirmar_recibo` ya lo miraba, pero sin bloquear el recibo, y un
   enlace que entraba a la vez dejaba un borrador dentro de la remesa (`recibo_en_remesa`).
 - **En la app:**
   - `crearRemesa` traduce lo que diga la BD y no deja la remesa vacía;
@@ -1696,7 +1743,7 @@ una remesa» (R-4 y las decisiones del responsable del 2026-11-02).
   `fichero_generado_at` y `remesas_proteger` solo impedía quitarla: Dirección podía poner la marca
   (de la que salen el `MsgId` y la ruta del fichero) con un UPDATE directo o al crear la remesa,
   sin fichero detrás. Trigger `remesas_marca_solo_registro` (BEFORE INSERT OR UPDATE OF la
-  columna, de invocador): la rechaza para todos, también service_role y `postgres` (HINT
+  columna, de invocador): la rechaza para todos, también service_role; no a `postgres` ([su llave](#la-llave-de-postgres)) (HINT
   `marca_solo_registro`), salvo con el marcador local `app.registrar_fichero` = el id de la
   remesa, que solo pone `registrar_fichero_remesa` (el patrón de `app.resolver_devolucion`).
   Con eso, una caída entre la subida y el registro deja la remesa sin marca: la siguiente descarga
@@ -1731,7 +1778,7 @@ a Dirección INSERT y UPDATE de cualquier columna, y el congelado exime entero a
 estados de dinero del recibo se ponían y se quitaban por fuera de sus funciones.
 
 - **Trigger `recibos_dinero_solo_por_funcion`** (BEFORE INSERT OR UPDATE OF estado, de invocador),
-  para todos, también `service_role` y `postgres`:
+  para todos, también `service_role`; no a `postgres` ([su llave](#la-llave-de-postgres)):
   - **A.** Un recibo solo entra en `enviado_banco` con el marcador local
     `app.marcar_recibo_enviado` = su id (HINT `enviado_solo_por_marcar`). Ni con un UPDATE desde
     ningún estado ni con un INSERT.
@@ -1758,7 +1805,7 @@ estados de dinero del recibo se ponían y se quitaban por fuera de sus funciones
 
 Migración `20261223120000_feat_recibo_devuelto_cobrado_por_funcion`; spec
 `docs/specs/altas-serie.md`, «Las puertas del recibo» (decisiones C y D, para todos, también
-`service_role`).
+`service_role`; no a `postgres`, [su llave](#la-llave-de-postgres)).
 
 - **`marcar_recibo_devuelto(recibo, fecha, gastos)`** y **`marcar_cobrado_manual(recibo, forma,
 fecha, nota)`** (de invocador, `EXECUTE` solo para `authenticated`, `es_admin` del centro del
@@ -1775,7 +1822,7 @@ fecha, nota)`** (de invocador, `EXECUTE` solo para `authenticated`, `es_admin` d
 
   Un recibo que no existe, o que la sesión no ve, da `no_encontrado`.
 
-- **`recibos_dinero_solo_por_funcion`**, ampliado, para todos:
+- **`recibos_dinero_solo_por_funcion`**, ampliado, para todos salvo `postgres` ([su llave](#la-llave-de-postgres)):
   - entrar en `devuelto`, solo con `app.marcar_recibo_devuelto` (`devuelto_por_funcion`);
   - entrar en `cobrado_manual`, solo con el marcador del cobro a mano, del cheque
     (`app.cobro_cheque`) o de la devolución resuelta (`app.resolver_devolucion`)
@@ -1846,7 +1893,7 @@ remesa» (decisiones del responsable del 2026-10-31 y del 2026-11-03).
 - **Los marcadores** (el patrón de la casa: el id de la fila): `app.reabrir_remesa` = la remesa, en
   `remesas_proteger`, para quitar la marca y volver de enviada a borrador; `app.reabrir_recibo` = el
   recibo, en `recibos_dinero_solo_por_funcion` (B), para la vuelta de `enviado_banco` a
-  `pendiente_procesar`. Ningún otro camino, para nadie.
+  `pendiente_procesar`. Ningún otro camino, para nadie salvo `postgres` ([su llave](#la-llave-de-postgres)).
 - **Un recibo devuelto o cobrado a mano no se desvincula de su remesa** (`recibos_remesa_validar`,
   HINT `recibo_con_historia`): solo pudo llegar ahí con un fichero que el banco recibió, y quitarlo de
   la remesa reabierta borraría la prueba que se guarda el fichero para dar (decisión del
@@ -1884,7 +1931,7 @@ del 2026-11-04, con el criterio de A y B: qué caminos legítimos borran remesas
   pasar antes de mirar el borrado), y una sesión con la reabierta, que vuelve a borrador sin la marca
   pero conserva el fichero de su versión anterior.
 - **La regla:** el soft delete solo de un borrador que nunca tuvo fichero registrado, para todos,
-  también service_role. Rechazos: la enviada (`remesa_cerrada`), la que tiene la marca
+  también service_role, salvo `postgres` ([su llave](#la-llave-de-postgres)). Rechazos: la enviada (`remesa_cerrada`), la que tiene la marca
   (`remesa_con_fichero`) y la que tuvo un fichero (`remesa_con_historia`).
   `remesas_proteger` se queda sin ninguna excepción de service_role.
 - **La pregunta del fichero** va en `privado.remesa_tuvo_fichero(remesa)` (`SECURITY DEFINER`, solo
@@ -1951,7 +1998,8 @@ Migración `20261229120000_feat_mandato_v2_datos_y_cid_obligatorio`; spec
   - `privado.version_datos_mandato` da `v1_cerrado` a la llamada sin los datos del v2, antes de
     escribir (en `sustituir`, antes de revocar el activo). Cubre a las sesiones y a service_role.
   - El trigger `mandatos_sepa_v1_cerrado` (`privado.mandato_v1_cerrado`, BEFORE INSERT OR UPDATE),
-    para todos, también `postgres` por el SQL Editor: un INSERT v1 no entra, y un UPDATE que deja
+    para todos, también el SQL Editor mientras el trigger esté puesto y encendido (`postgres`
+    conserva [su llave](#la-llave-de-postgres); los tests lo desactivan para preparar un v1): un INSERT v1 no entra, y un UPDATE que deja
     la fila en v1 solo vale si ya era v1 y no cambia lo firmado (familia, IBAN, titular,
     identificador, firma, nombre tecleado, hash, fecha, método y los datos del v2;
     `v1_solo_existentes`). Revocar uno existente, sí; volver a firmarlo en su sitio como v2 (el
@@ -2045,7 +2093,7 @@ día, si indicas una fecha es cuando se indica». No se valida ningún plazo: el
 - **`recibos.fecha_cobro_banco`** (date, NULL): la `ReqdColltnDt` del fichero. Sin ella, el fichero
   pone la del día de su versión (F2).
 - **Trigger `recibos_fecha_cobro_proteger`** (BEFORE UPDATE OF la columna, para todos, también
-  service_role). El congelado de los recibos confirmados lista las columnas una a una, y una nueva
+  service_role, salvo `postgres`: [su llave](#la-llave-de-postgres)). El congelado de los recibos confirmados lista las columnas una a una, y una nueva
   quedaba libre en cualquier estado. La fecha solo cambia en `borrador` o `pendiente_procesar`
   (`fecha_cobro_recibo_cerrado`) y fuera de una remesa viva enviada o con el fichero generado
   (`fecha_cobro_en_fichero`): la misma versión del fichero no cambia de fecha entre dos descargas.
@@ -2088,7 +2136,8 @@ parte con el diario asignado; un diario manual no lo tenía nadie y los días ap
 cobraban.
 
 - **CHECK `conceptos_cobro_diario_automatico`** (`tipo_concepto <> 'diario' OR aplicacion =
-'automatico'`): para todos, también con service role. Al crear o editar, `buildConceptoRow` ya
+'automatico'`): para todos, también con service role. Un CHECK no se apaga con `replica`, pero
+  `postgres` puede quitarlo ([su llave](#la-llave-de-postgres)). Al crear o editar, `buildConceptoRow` ya
   guarda el diario como automático, y el formulario no ofrece elegir.
 - **La migración** pasa a automáticos los diarios que había y se los siembra a los niños con la
   misma consulta que `proponer_asignaciones` (solo los diarios; quien ya tuvo fila de ese concepto,

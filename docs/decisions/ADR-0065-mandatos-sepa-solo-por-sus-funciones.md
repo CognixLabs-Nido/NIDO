@@ -104,7 +104,7 @@ de otra forma.
 ## Decisión
 
 **Se elige la Opción C** (decisión del responsable del 2026-11-03), con el criterio de siempre
-para `service_role`: si ningún camino legítimo lo necesita, se cierra para todos.
+para `service_role`: si ningún camino legítimo lo necesita, se cierra para todos (salvo `postgres`: [la llave de `postgres`](../architecture/rls-policies.md#la-llave-de-postgres)).
 
 `20261225120000_fix_mandatos_solo_por_funciones`:
 
