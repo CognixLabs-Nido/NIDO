@@ -786,6 +786,35 @@ veía en ninguna parte: la invitación al segundo tutor que sale al validar el a
 - **Página propia** en el menú de Dirección, junto a Admisiones (`/admin/altas`). El aviso de
   Inicio lleva a ella, con el filtro de más de 30 días.
 
+### La invitación del segundo tutor es de la familia
+
+**Esta invitación es de la familia, no de un niño.** La fila de `invitaciones` lleva un `nino_id`,
+pero al aceptarla el segundo tutor queda vinculado a **todos** los hijos de la familia
+(`ninosAVincular` en `accept-invitation.ts`: el niño de la invitación y sus hermanos, con
+`dar_vinculos_de_invitacion`, todos o ninguno), y su ficha es una sola (`familia_tutores`, rol `segundo_tutor`). Que cuelgue
+de un niño es un detalle de cómo se guarda; lo que se invita es a una persona a una familia.
+
+**La trampa:** tratarla como si fuera de un niño deja basura en los hermanos. Pasó en #492 (el botón
+limpiaba solo el niño de su fila) y lo cerró #493; no fue un descuido de un caso, fue este desajuste
+de concepto. La base no lo protege: `cancelar_invitacion_tutor2` trabaja **por niño**, y quien la
+llama tiene que recorrer la familia.
+
+**Lo siguiente que la toque**, antes de escribir:
+
+- **Buscar en toda la familia**, nunca solo en el niño por el que se entra: las invitaciones del
+  segundo tutor, sus cuentas provisionales y si ya tiene una abierta.
+- **No abrir una segunda** si un hermano ya tiene la invitación al mismo email: se reenvía esa.
+- **Cancelar o corregir el email es para toda la familia**: lo de los emails viejos se va en cada
+  hermano.
+- **Leer con la misma idea**: una familia es una fila del segundo tutor, no una por hijo.
+
+**Dónde se cumple hoy:** `invitarTutor2AlValidar` (no invita si un hermano ya tiene una abierta),
+`invitarTutor2` y `cancelarInvitacionTutor2Familia` (`src/features/matriculas/lib/invitacion-tutor2.ts`;
+los usan el botón de «Altas en proceso» y la cola), y la pantalla, que saca una fila por familia.
+Lo afirma el test del cambio que entra por el hermano sin la invitación
+(`cola-invita-tutor2.rls.test.ts`). Medido el 2026-11-04 en producción: 0 familias con invitaciones
+del segundo tutor en dos hijos.
+
 ### El segundo tutor: reenviar y cancelar (2026-11-04)
 
 **Por qué existe** (medido el 2026-11-04): la invitación al segundo tutor solo sale al validar el
@@ -828,13 +857,10 @@ ella (decisión del responsable).
   lectura falla, no se aplica nada y el cambio vuelve a pendiente.
 - **Un fallo al invitar no deshace la aprobación.** Queda como aviso: el dato está aprobado y la
   invitación no ha salido; se reenvía a mano desde «Altas en proceso».
-- **La invitación es de la familia** aunque cuelgue de un niño: al aceptarla, el segundo tutor queda
-  vinculado a todos los hijos. Por eso el reenvío y la cancelación —del botón y de la cola— limpian
-  las invitaciones a otros emails y sus cuentas provisionales en **todos los hermanos**, no solo en
-  el niño por el que se entra, y si un hermano ya tiene la invitación al email actual se reenvía esa
-  en vez de abrir otra. Medido en producción el 2026-11-04: ninguna familia tenía invitaciones del
-  segundo tutor en dos hijos, y la cola estaba vacía; hasta este PR, el botón limpiaba solo el niño
-  de su fila.
+- **En toda la familia** («La invitación del segundo tutor es de la familia», arriba): el
+  reenvío y la cancelación, del botón y de la cola, limpian en todos los hermanos, y si uno ya tiene
+  la invitación al email actual se reenvía esa. Hasta #493 el botón limpiaba solo el niño de su
+  fila.
 - Sin migración: usa `cancelar_invitacion_tutor2` (`20261231120000`) una vez por hermano.
 
 ## Orden de la serie
