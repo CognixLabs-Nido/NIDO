@@ -228,7 +228,7 @@ Decisiones del 2026-11-04 sobre el 0c, al trazarlo:
 > crearlos por otra vía. Los 3 que había se quedan como están, firmados y con su hash recalculable
 > con el texto v1: se revocan al sustituirlos por un v2 y se pueden volver a firmar en su sitio como
 > v2; como v1, no. Registrar y sustituir sin los datos del v2 dan `v1_cerrado`, y por la tabla,
-> también como `postgres`, el trigger `mandatos_sepa_v1_cerrado` da `v1_solo_existentes`. Detalle
+> también como `postgres` mientras el trigger esté encendido ([la llave de `postgres`](../architecture/rls-policies.md#la-llave-de-postgres)), el trigger `mandatos_sepa_v1_cerrado` da `v1_solo_existentes`. Detalle
 > en `rls-policies.md`.
 
 - **Concepto del adeudo: centro, niño y mes, sin tildes.** Ejemplo: `ANAIA · Lucia Garcia Lopez ·
@@ -337,7 +337,7 @@ poder abrir, editar y volver a crear.»
   fichero que borrar ni que marcar caducado. Lo único que queda es `fichero_generado_at`, la primera
   vez que salió.
 - **Los triggers de `20261120120000` cierran la remesa:** con sesión, una enviada no vuelve a
-  borrador; la marca del fichero no se quita **para nadie**, tampoco con `service_role`; de una
+  borrador; la marca del fichero no se quita **para nadie**, tampoco con `service_role` (salvo `postgres`: [la llave de `postgres`](../architecture/rls-policies.md#la-llave-de-postgres)); de una
   remesa enviada o con fichero no entra ni sale ningún recibo. El congelado de los recibos sí deja
   `enviado_banco → pendiente_procesar` (solo prohíbe volver a `borrador`).
 - **Permisos:** crear, descargar y marcar enviada es `es_admin` (la admin y las directoras).
@@ -538,7 +538,7 @@ acaba al reabrir.
 >
 > - la función es `SECURITY DEFINER` con `es_admin` explícito, no de invocador: tiene que poner
 >   `enviada_at` y `remesa_ficheros` no tiene privilegios para las sesiones (R-1);
-> - **la marca solo la pone el registro del fichero**, para todos (trigger y marcador
+> - **la marca solo la pone el registro del fichero**, para todos salvo `postgres` (trigger y marcador
 >   `app.registrar_fichero`): Dirección podía ponerla con un UPDATE directo, sin fichero detrás.
 >   Cerrada esa puerta, una caída entre la subida y el registro deja la remesa sin marca y la
 >   siguiente descarga guarda (otra marca, otra ruta), sin el 409 hasta el día siguiente;
@@ -593,7 +593,8 @@ funciones. La regla: **un hecho de dinero no se deshace por fuera**, y lo pone s
     función con nombre y su registro en `audit_log`, nunca con un UPDATE suelto.
 
 > **A y B construidos el 2026-11-03** (`20261222120000`, tercer PR de reabrir remesas). Trigger
-> `recibos_dinero_solo_por_funcion` (BEFORE INSERT OR UPDATE OF estado, de invocador, para todos).
+> `recibos_dinero_solo_por_funcion` (BEFORE INSERT OR UPDATE OF estado, de invocador, para todos
+> salvo `postgres`: [la llave de `postgres`](../architecture/rls-policies.md#la-llave-de-postgres)).
 > `marcar_remesa_enviada` pasa ahora los recibos del fichero uno a uno, cada uno con el marcador
 > `app.marcar_recibo_enviado` = su id (el patrón de la casa: el marcador es el id de la fila). Con
 > un marcador por remesa, los recibos enviados fuera de toda remesa que preparan los tests no se
@@ -601,7 +602,7 @@ funciones. La regla: **un hecho de dinero no se deshace por fuera**, y lo pone s
 > censo estaban abiertas, y lo estaban todas.
 
 > **C y D construidos el 2026-11-03** (`20261223120000`, cuarto PR de reabrir remesas). Decidido ese
-> día por el responsable: **C y D valen para todos, también service_role**. Para D, la razón no es
+> día por el responsable: **C y D valen para todos, también service_role** (no `postgres`: [la llave de `postgres`](../architecture/rls-policies.md#la-llave-de-postgres)). Para D, la razón no es
 > la simetría: una excepción que se deja «porque cuesta» es la que nadie recuerda dentro de un año,
 > y E ya es la excepción, escrita y con su condición.
 >
@@ -652,7 +653,7 @@ abre con su propio marcador, como el resto.
 > **Reabrir, la base de datos, construida el 2026-11-03** (`20261227120000`, quinto PR de reabrir
 > remesas, #484; el botón y el aviso, en el sexto, abajo). Decidido ese día por el responsable:
 >
-> - **Una remesa enviada no vuelve a borrador por fuera, para nadie:** `remesas_proteger` dejaba
+> - **Una remesa enviada no vuelve a borrador por fuera, para nadie salvo `postgres`:** `remesas_proteger` dejaba
 >   pasar a service_role antes de mirarlo. Medido abierto en producción antes de cerrarlo.
 > - **Un recibo devuelto o cobrado a mano no se desvincula de la remesa reabierta**
 >   (`recibo_con_historia`): si se pudiera quitar, se perdería la prueba de que el banco recibió ese
@@ -679,7 +680,7 @@ abre con su propio marcador, como el resto.
 > Medido antes de construir: borrar una remesa no deja huérfano su fichero (el barrido de retención
 > lo busca por su fecha, no por su remesa) y la FK impide el DELETE de una con fichero; hoy no hay
 > ningún fichero huérfano. Lo que se cerró es que una remesa con historia desaparezca de la app: solo
-> se borra (soft delete) un borrador que nunca tuvo fichero, para todos, también service_role. El
+> se borra (soft delete) un borrador que nunca tuvo fichero, para todos, también service_role (no `postgres`: [la llave de `postgres`](../architecture/rls-policies.md#la-llave-de-postgres)). El
 > DELETE no cambia: el rollback de `crearRemesa`, la destrucción fiscal y el borrado de un centro
 > siguen pasando, medidos uno a uno.
 
@@ -918,7 +919,7 @@ ese curso**. En un documento que no es de curso, como las normas, es la última 
 - **J5 · Una versión se puede borrar mientras no tenga ninguna firma**, y queda registro de quién la
   borró. Un PDF subido por error puede llevar datos de otra familia, y guardarlo para siempre es un
   problema de protección de datos sin ninguna contrapartida. En cuanto tenga una firma, el `RESTRICT`
-  de la tabla de firmas (1b) lo impide y ya no se borra nunca. Borrar no es cambiar: lo que se borra
+  de la tabla de firmas (1b) lo impide y ya no se borra nunca, salvo con [la llave de `postgres`](../architecture/rls-policies.md#la-llave-de-postgres), que con `replica` también se salta un `RESTRICT`. Borrar no es cambiar: lo que se borra
   se va entero, la fila y el fichero.
 - **J6 · «De curso» se puede cambiar mientras el documento no tenga versiones.** Después queda fijo:
   si estaba mal, se crea otro documento. Así ninguna versión se queda sin curso en un documento de
@@ -956,7 +957,7 @@ iría en una tabla aparte, sin tocar la de versiones.
   sube. La función que registra comprueba que la ruta es esa y que el objeto está en el bucket, con
   su tamaño y su tipo, y la base vuelve a mirar el curso y el documento.
 - **Una versión no cambia nunca**: ni la admin, ni `service_role`, ni `postgres` mientras los
-  triggers estén puestos y encendidos (la llave de `postgres`, abajo):
+  triggers estén puestos y encendidos ([la llave de `postgres`](../architecture/rls-policies.md#la-llave-de-postgres)):
   - un trigger impide todo `UPDATE` de la fila;
   - otro impide su `DELETE` salvo por la función de borrar, que deja el registro (J5);
   - en `storage.objects`, solo para este bucket y solo sobre un objeto al que apunta una versión,
@@ -966,23 +967,11 @@ iría en una tabla aparte, sin tocar la de versiones.
   documento, una por curso: la de 2026/27 y la de 2027/28 del presupuesto son las dos vigentes, cada
   una de su curso. La vigente es la de número mayor **de ese documento y ese curso**; leer «la de
   número mayor del documento» daría a Lucía, que entra tarde a 2026/27, el presupuesto de 2027/28.
-- **`postgres` conserva su llave sobre las dos defensas. Es una decisión, no un hueco** (el mismo
-  caso que la E de los recibos, con la llave de `postgres` en vez de la de `service_role`).
-  - **Qué permite esa llave:** `postgres` es el dueño de las tablas de `public` y tiene el privilegio
-    `TRIGGER` en `storage.objects`, así que puede quitar cualquiera de los dos triggers, el de la fila
-    y el del fichero (medido el 2026-11-05). Y, sin quitar nada, puede apagarlos en su transacción con
-    `SET LOCAL session_replication_role = replica`: no es superusuario, pero Supabase le deja ponerlo
-    (medido en producción el 2026-11-05, en un ensayo terminado en RAISE sobre una tabla temporal: el
-    mismo INSERT que el trigger para con `origin` entra con `replica`). Sin los triggers, la fila de
-    una versión se puede cambiar y su fichero sustituir o borrar.
-  - **Por qué se deja:** es la llave maestra. La usan las migraciones, y la aplica el responsable por
-    el SQL Editor. Ninguna defensa de la base puede cerrarse contra quien puede quitarla.
-  - **Hoy no hay ningún guion que la use** sobre estas tablas ni sobre este bucket: ni en `scripts/`,
-    ni en `supabase/operaciones/`, ni en un runbook. La limpieza de los tests borra versiones como
-    `postgres`, pero por el marcador de la función, sin quitar ni apagar el trigger.
-  - **La condición:** el día que haga falta corregir o quitar una versión o su fichero por fuera de
-    las funciones, se hace con una función con nombre y su registro en `audit_log`, nunca quitando o
-    apagando el trigger a mano.
+- **`postgres` conserva su llave sobre las dos defensas.** Puede quitar los dos triggers, el de la
+  fila y el del fichero, o apagarlos con `session_replication_role = replica`. Es una decisión, no un
+  hueco, y vale para todas las defensas de la base: [la llave de `postgres`](../architecture/rls-policies.md#la-llave-de-postgres). Ningún guion la
+  usa sobre estas tablas: la limpieza de los tests borra versiones como `postgres`, pero por el
+  marcador de la función, sin quitar ni apagar el trigger.
 - **Registro (J5):** crear y editar un documento, subir una versión y borrarla dejan un evento
   directo en `audit_log` (`documento_centro`), con la acción y los identificadores, sin datos de
   ninguna familia.
