@@ -85,3 +85,23 @@ node supabase/operaciones/20270106120000_borrar_huerfanos_storage.mjs --aplicar
 
 El final de `--aplicar` es «HECHO | 60 borrados y comprobados». Un `--ensayo` después tiene que
 fallar con «faltan 60 de la lista».
+
+## Aplicada (2026-11-06)
+
+La aplicó el responsable después del merge de #505: `--ensayo` dio «ENSAYO OK, nada borrado» y
+`--aplicar` terminó en:
+
+> HECHO | 60 borrados y comprobados: ni en storage.objects ni en la API; el resto idéntico
+
+Por bucket, antes 23 y después 3 en `dni-tutores`, `libro-familia` y `mandato-sepa`; `ninos-fotos`,
+6 antes y después.
+
+Comprobado después por separado, solo lectura (2026-11-06, 08:25 UTC):
+
+| Comprobación                                    | Resultado                                            |
+| ----------------------------------------------- | ---------------------------------------------------- |
+| objetos por bucket                              | 3 · 3 · 3 · 6 (`ninos-fotos`); los otros seis vacíos |
+| de quién son los 15 que quedan                  | los 15, bajo CEI Ejemplo                             |
+| sin dueño en todo Storage                       | 0                                                    |
+| `--ensayo` con el fichero de `main` (mismo md5) | GUARDA: no se borra nada \| faltan 60 de la lista    |
+| la API, uno a uno, por los 60 nombres           | no ve ninguno                                        |

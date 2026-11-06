@@ -27,7 +27,7 @@ Los ficheros de Storage no se borran con SQL. `storage.protect_delete` rechaza e
 - **las guardas antes de borrar**, en SQL de solo lectura (Management API con `read_only: true`): recuento exacto, la forma de cada fichero, que ninguna fila de la base lo nombra (con un control positivo en la misma pasada) y que la API lo ve;
 - **después, que ya no están**: ni en `storage.objects` ni en la API, cada bucket con lo que tenía menos lo borrado y el resto idéntico. El 200 de la API no basta, como no basta el «success» del SQL Editor;
 - **ensayo:** `--ensayo` comprueba todo, imprime lo que borraría y termina con error («ENSAYO OK, nada borrado»); `--aplicar` borra. Sin ninguno de los dos no hace nada;
-- **el test:** el mismo `operar` corre en la CI contra la BD efímera, con un control negativo por guarda.
+- **el test:** el mismo `operar` corre en la CI contra la BD efímera, con un control negativo por guarda. **Un control negativo que ejecuta la acción destructiva deja el estado como estaba**, o el test siguiente miente: sin la guarda, el control borra de verdad, y los rojos de después no miden nada (medido en #505: cuatro mutaciones ponían rojos los tests siguientes hasta que cada caso volvió a subir sus ficheros).
 
 No es una transacción: si se corta a medias, la guarda de la lista falla al repetirla. Se mira qué quedó.
 
