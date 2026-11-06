@@ -16,6 +16,7 @@ import {
 import { enviadaAtDelFichero, insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { messageIdRemesa } from '@/features/remesas/lib/message-id'
 import type { Database } from '@/types/database'
 import { borrarMandatos, insertarMandato } from './mandatos-como-postgres'
 
@@ -93,11 +94,13 @@ describe('Marcar enviada exige el fichero (R-4)', () => {
 
   /** La descarga: sube el fichero y lo registra con la sesión de Dirección y la marca de ahora. */
   async function descargar(remesa: string, cobrables: string[]): Promise<void> {
+    // Una marca por descarga (un segundo más cada vez): el MsgId sale de ella y es único.
+    segundo += 1
     const d = new Date()
     d.setUTCMilliseconds(0)
+    d.setUTCSeconds(d.getUTCSeconds() + segundo)
     const marca = d.toISOString()
-    segundo += 1
-    const msgId = `NIDO-${remesa.slice(0, 8)}-2026040100${String(segundo).padStart(4, '0')}`
+    const msgId = messageIdRemesa(remesa, marca)
     const ruta = `${centro.id}/${remesa}/${msgId}.xml`
     const up = await serviceClient.storage
       .from(BUCKET)

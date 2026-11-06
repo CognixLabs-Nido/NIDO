@@ -23,6 +23,7 @@ import {
 } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { messageIdRemesa } from '@/features/remesas/lib/message-id'
 import type { Database } from '@/types/database'
 
 /**
@@ -106,7 +107,7 @@ describe('Reabrir una remesa', () => {
     const d = new Date()
     d.setUTCMilliseconds(0)
     d.setUTCSeconds(d.getUTCSeconds() + segundo)
-    const msgId = `NIDO-${remesa.slice(0, 8)}-2026050100${String(segundo).padStart(4, '0')}`
+    const msgId = messageIdRemesa(remesa, d.toISOString())
     const ruta = `${centro.id}/${remesa}/${msgId}.xml`
     const up = await serviceClient.storage
       .from(BUCKET)

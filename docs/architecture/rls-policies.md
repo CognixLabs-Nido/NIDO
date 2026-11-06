@@ -1161,6 +1161,23 @@ NULL** en `usuario_id`; desde `20261011130000` deja en `actor_sistema` qué oper
 
 ### Rutas e identificadores del cliente: se validan en la BD contra la fila
 
+**El principio (2026-11-06): si la base puede derivar un valor, no lo acepta del cliente.** Lo
+compara con el que deriva, o lo pone ella. Comprobar la **forma** (un prefijo, una longitud, una
+regex) no basta: deja pasar un valor bien formado que no es el de esa fila. Los tres casos en que la
+base miraba la forma y no lo que ya sabía:
+
+- **El MsgId de un fichero de remesa contra su propia marca.** Sale de la marca de la versión (#462);
+  la base solo miraba el prefijo y la longitud, y con la marca de hoy aceptaba la fecha de otro día.
+  Ahora lo compara con el que deriva de la marca (`20270107120000`).
+- **La ruta guardada contra el dueño de la fila.** El export firma las rutas que hay guardadas; la
+  base validaba su forma y no de quién era la carpeta. Ahora, triggers contra el dueño
+  (`20261024130000`, `20270105120000`, abajo).
+- **El bucket de una foto del blog contra el único que usa el blog.** `media` es solo del blog y su
+  bucket es `aula-fotos`, pero la columna no tenía CHECK y el export firma el bucket de la fila. Que
+  una fila con otro bucket no llevara a ningún fichero **era una casualidad de la forma de las rutas**
+  (ningún otro bucket tiene ficheros de cuatro niveles), **no una defensa**. Ahora, CHECK
+  `media_bucket_blog` (`20270107120000`).
+
 Si la app va a usar después una ruta o un identificador con service role (borrar en Storage,
 escribirla en otra tabla), la BD la valida contra la fila, no contra el valor de entrada:
 
@@ -1195,6 +1212,11 @@ escribirla en otra tabla), la BD la valida contra la fila, no contra el valor de
     NULL pasa (las purgas la anulan) y solo se mira la ruta cuando cambia, o el centro del niño.
   - Test: `rutas-firmadas-dueno.rls.test.ts` (cada «no» con el fichero ajeno existente delante, y el
     control: la ruta propia entra y el export la firma).
+- **`remesa_ficheros.msg_id`** (`20270107120000`): `registrar_fichero_remesa` exige
+  `NIDO-{8 del id}-{AAAAMMDDhhmmss UTC de la marca}`, el mismo que `messageIdRemesa`; otro, P0001 con
+  HINT `msg_id_no_es_de_la_marca`. Test: `remesa-ficheros.rls.test.ts`.
+- **`media.bucket`** (`20270107120000`): CHECK `media_bucket_blog` (`bucket = 'aula-fotos'`), para
+  todos. Test: `media-bucket-blog.rls.test.ts`.
 - **La app comprueba lo mismo antes de borrar**, como segunda capa: `rutaDocumentoDelNino` y
   `rutaDeLaPublicacion`.
 
