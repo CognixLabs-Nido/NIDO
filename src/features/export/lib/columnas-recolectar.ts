@@ -156,19 +156,19 @@ const NS_COMENTARIO_FIRMA_OTROS = {
 } as const
 
 /*
- * Las firmas de los documentos del centro (serie de altas, 1b, 2026-11-05) siguen las mismas reglas
+ * Las firmas de los documentos del centro (serie de altas, 3b, 2026-11-05) siguen las mismas reglas
  * que las de autorizaciones (R7 y 2d): del otro tutor no salen su IP, su navegador ni la imagen de su
  * firma. Lo firmado sale por su copia en la fila (título, número, curso y huella), porque la versión
  * y el documento no se exportan.
  */
 const NS_IP_DOC_OTROS = {
   noSale:
-    'R7 (2026-11-01), en las firmas de los documentos del centro (1b): la IP y el navegador desde los que se firmó son datos de quien firmó, y aquí salen también las firmas del otro tutor del niño. Las de la propia persona salen en `usuario.firmas_documentos_realizadas`.',
+    'R7 (2026-11-01), en las firmas de los documentos del centro (3b): la IP y el navegador desde los que se firmó son datos de quien firmó, y aquí salen también las firmas del otro tutor del niño. Las de la propia persona salen en `usuario.firmas_documentos_realizadas`.',
 } as const
 
 const NS_IMAGEN_DOC_OTROS = {
   noSale:
-    '2d (2026-11-01), en las firmas de los documentos del centro (1b): aquí salen también las firmas del otro tutor del niño, y la imagen de una firma se copia. Qué firmó, cuándo y con qué nombre tecleado sí sale. Las firmas de la propia persona salen con su imagen en `usuario.firmas_documentos_realizadas` (`firma_imagen`).',
+    '2d (2026-11-01), en las firmas de los documentos del centro (3b): aquí salen también las firmas del otro tutor del niño, y la imagen de una firma se copia. Qué firmó, cuándo y con qué nombre tecleado sí sale. Las firmas de la propia persona salen con su imagen en `usuario.firmas_documentos_realizadas` (`firma_imagen`).',
 } as const
 
 const NS_DOCUMENTO_COPIADO = {

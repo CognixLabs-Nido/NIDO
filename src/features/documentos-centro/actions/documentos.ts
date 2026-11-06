@@ -16,7 +16,7 @@ const E = 'documentos_centro.errors'
 
 /**
  * El error de crear o editar un documento. Aquí un 23505 solo puede ser el título: dos documentos
- * vivos del centro no se llaman igual (`documentos_centro_titulo_vivo`, 1a). Fuera de estas dos
+ * vivos del centro no se llaman igual (`documentos_centro_titulo_vivo`, 3a). Fuera de estas dos
  * funciones no se traduce así, porque las versiones tienen otros UNIQUE.
  */
 function errorDelDocumento(e: { code?: string; hint?: string | null; message?: string }): string {

@@ -39,7 +39,7 @@ async function columnasVivas(): Promise<Record<string, string[]>> {
 
 /**
  * Una tabla sin privilegios para `service_role` no sale en la descripción de la API con la clave de
- * servicio (desde el 1b, `firmas_documentos_centro`: la sesión la lee y el servidor no). Sus columnas
+ * servicio (desde el 3b, `firmas_documentos_centro`: la sesión la lee y el servidor no). Sus columnas
  * vivas salen del catálogo de la base, por psql contra la BD del CI, y solo si ese es el motivo.
  */
 function columnasDeLaBase(tabla: string): { servicioLee: boolean; columnas: string[] } {
@@ -92,7 +92,7 @@ describe('la red del export: el catálogo y las columnas vivas', () => {
       }
       expect(Object.keys(s.columnas).sort(), ruta).toEqual(cols)
     }
-    // Premisa: hoy, las dos secciones de las firmas de documentos (1b) salen del catálogo de la base.
+    // Premisa: hoy, las dos secciones de las firmas de documentos (3b) salen del catálogo de la base.
     expect(deLaBase).toBe(2)
   })
 })

@@ -51,9 +51,9 @@ function comoPostgres(sql: string): { ok: boolean; salida: string } {
 }
 
 /**
- * Documentos del centro (1a, `20270101120000`), contra la BD y el Storage del CI. Una versión no
+ * Documentos del centro (3a, `20270101120000`), contra la BD y el Storage del CI. Una versión no
  * cambia nunca, ni su fichero: tampoco para service_role, ni para postgres con los triggers puestos
- * (postgres conserva la llave de quitarlos o apagarlos, por decisión: spec, 1a). Varios presupuestos
+ * (postgres conserva la llave de quitarlos o apagarlos, por decisión: spec, 3a). Varios presupuestos
  * vivos a la vez, uno por curso; solo la admin. Fixtures ficticios, fechados el 2026-11-05.
  */
 describe('Los documentos del centro y sus versiones', () => {

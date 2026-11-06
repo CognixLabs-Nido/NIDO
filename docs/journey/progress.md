@@ -1715,3 +1715,20 @@ Por decisión del responsable, esta serie no lleva ADR, solo esta entrada.
   cambiarlo**. Añadir un selector (`es`/`en`/`va`) que **persista** la preferencia del usuario y
   **aplique** el locale elegido (hoy el cambio de locale solo va por URL). Al implementarlo,
   **verificar si es feature ausente o selector roto**.
+
+## Serie de altas: las fases, numeradas del 1 al 10 (2026-11-06)
+
+Decisión del responsable: la spec (`docs/specs/altas-serie.md`) habla de fases 1 a 10 y nada más;
+el «PR-0» y el «paso 1» confundían. Los comentarios de las migraciones ya escritas no se reescriben
+(ADR-0055), ni los commits ni los PR: llevan la numeración vieja. Para leerlos:
+
+| Antes                                                       | Ahora                                                                                        |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| PR-0 (0·doc, 0a, 0b, `MsgId`, F1–F3, reabrir, 0c-1/2/3, 0d) | Fase 1, SEPA (#459, #461, #462, #464–#466, #475–#478 y #484–#486, #487–#489; FRST cancelado) |
+| Pantalla de altas en proceso                                | Fase 2 (#491–#494)                                                                           |
+| Paso 1 (1a, 1b, 1c)                                         | Fase 3 (3a #496 #497, 3b #499, 3c #501)                                                      |
+| Paso 2 (2a, 2c, 2d, 2b)                                     | Fase 4 (4a #502; 4b, 4c, 4d), por orden de construcción: la refirma, que era el 2b, es el 4d |
+| 3 a 8 (campos del niño … firma de la ficha)                 | 5 a 10, en el mismo orden                                                                    |
+
+Las piezas de la fase 1 no llevan letra nueva: «1a» era ya el de los documentos, y un comentario
+viejo que diga «el 1b» señalaría la pieza equivocada.

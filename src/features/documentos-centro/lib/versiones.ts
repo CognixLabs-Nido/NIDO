@@ -69,7 +69,7 @@ export function errorDeLaBase(e: { code?: string; hint?: string | null }): strin
 }
 
 /**
- * Sube una versión de un documento del centro (1a, `20270101120000`). Solo la admin del centro (J1):
+ * Sube una versión de un documento del centro (3a, `20270101120000`). Solo la admin del centro (J1):
  * se comprueba con su sesión antes de tocar Storage, y la base lo vuelve a mirar al registrar.
  *
  * El hash lo calcula el servidor con los bytes que sube, y el fichero se llama por él: lo que se
@@ -168,8 +168,8 @@ async function quitarFichero(service: Client, ruta: string): Promise<boolean> {
 export const SEGUNDOS_ENLACE_VERSION = 60
 
 /**
- * El enlace firmado para que la admin vea el PDF de una versión (1c). La versión tiene que estar en
- * la lista de la admin (`documentos_centro_admin`, que pasa por la puerta del 1a): una versión de
+ * El enlace firmado para que la admin vea el PDF de una versión (3c). La versión tiene que estar en
+ * la lista de la admin (`documentos_centro_admin`, que pasa por la puerta del 3a): una versión de
  * otro centro, o la de un centro del que no es la admin, no da enlace. La ruta sale de la lista, no
  * de lo que manda el navegador.
  */

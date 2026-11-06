@@ -13,14 +13,14 @@ import {
 export interface PantallaDocumentos {
   lista: ListaAdmin
   cursos: CursoDeLaPantalla[]
-  /** Cuántas firmas tiene cada versión, de las que la admin puede leer (1b). */
+  /** Cuántas firmas tiene cada versión, de las que la admin puede leer (3b). */
   firmas: Record<string, number>
 }
 
 /**
- * Lo que enseña la pantalla de la admin (1c), con su sesión. La lista sale de
- * `documentos_centro_admin` (1a), que pasa por la puerta de la admin del centro; los cursos, de
- * `cursos_academicos`; las firmas, de `firmas_documentos_centro`, que la Dirección lee (1b), solo
+ * Lo que enseña la pantalla de la admin (3c), con su sesión. La lista sale de
+ * `documentos_centro_admin` (3a), que pasa por la puerta de la admin del centro; los cursos, de
+ * `cursos_academicos`; las firmas, de `firmas_documentos_centro`, que la Dirección lee (3b), solo
  * `version_id`. Si una lectura falla, no hay pantalla (`null`): una lista vacía diría «no hay
  * documentos» y unas firmas vacías ofrecerían borrar versiones firmadas.
  */

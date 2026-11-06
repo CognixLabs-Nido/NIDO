@@ -46,7 +46,7 @@ function pdf(texto: string): Uint8Array {
 }
 const sha = (b: Uint8Array) => createHash('sha256').update(b).digest('hex')
 
-/** Como `postgres`, por psql contra la BD efímera del CI, como en los tests del 1a y del 1b. */
+/** Como `postgres`, por psql contra la BD efímera del CI, como en los tests del 3a y del 3b. */
 function comoPostgres(sql: string): { ok: boolean; salida: string } {
   const url = process.env.DB_URL
   if (!url) throw new Error('DB_URL: este test solo corre contra la BD efímera del CI')
@@ -63,7 +63,7 @@ function comoPostgres(sql: string): { ok: boolean; salida: string } {
 }
 
 /**
- * La pantalla de la admin (1c), contra la BD y el Storage del CI: lo que la pantalla lee y lo que
+ * La pantalla de la admin (3c), contra la BD y el Storage del CI: lo que la pantalla lee y lo que
  * hacen sus acciones nuevas, con la sesión de cada persona. Fixtures ficticios, del 2026-11-05.
  */
 describe('La pantalla de los documentos del centro', () => {
@@ -117,7 +117,7 @@ describe('La pantalla de los documentos del centro', () => {
     if (!a.ok || !b.ok) throw new Error('no se pudieron subir las dos versiones del ensayo')
     firmada = a.data.versionId
     sinFirmas = b.data.versionId
-    // Una firma en la primera, como postgres: nadie firma con sesión hasta el paso 2.
+    // Una firma en la primera, como postgres: nadie firma con sesión hasta la fase 4.
     const lucia = (await createTestNino(centro.id, 'Lucía')).id
     const f = comoPostgres(`INSERT INTO public.firmas_documentos_centro
         (version_id, documento_id, centro_id, titulo, numero, sha256, nino_id, firmante_id,

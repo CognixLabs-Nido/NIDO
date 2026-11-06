@@ -10,7 +10,7 @@ import { getDocumentosAdmin } from '@/features/documentos-centro/queries/get-doc
 import { EmptyState } from '@/shared/components/EmptyState'
 
 /**
- * Los documentos del centro (serie de altas, paso 1, 1c): el presupuesto, las normas y los que
+ * Los documentos del centro (serie de altas, fase 3, 3c): el presupuesto, las normas y los que
  * defina el centro, con sus versiones. Solo la admin del centro (J1), como la base
  * (`privado.es_responsable`): una directora no tiene esta página.
  */

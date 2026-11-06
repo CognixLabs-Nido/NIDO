@@ -19,7 +19,7 @@ function err(error: string, status = 400): Response {
 }
 
 /**
- * Sube una versión de un documento del centro (1a, `20270101120000`): la admin del centro (J1). El
+ * Sube una versión de un documento del centro (3a, `20270101120000`): la admin del centro (J1). El
  * hash lo calcula el servidor con los bytes que llegan (`subirVersionDocumento`), y la base vuelve a
  * mirar quién sube, el documento y el curso al registrar.
  */

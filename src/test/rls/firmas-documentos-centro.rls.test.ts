@@ -32,7 +32,7 @@ function pdf(texto: string): Uint8Array {
   return new TextEncoder().encode(`%PDF-1.4\n% Ensayo NIDO 1b: ${texto}\n%%EOF\n`)
 }
 
-/** Como `postgres`, sin JWT, por psql contra la BD efímera del CI (`DB_URL`), como en el 1a. */
+/** Como `postgres`, sin JWT, por psql contra la BD efímera del CI (`DB_URL`), como en el 3a. */
 function comoPostgres(sql: string): { ok: boolean; salida: string } {
   const url = process.env.DB_URL
   if (!url) throw new Error('DB_URL: este test solo corre contra la BD efímera del CI')
@@ -49,7 +49,7 @@ function comoPostgres(sql: string): { ok: boolean; salida: string } {
 }
 
 /**
- * Las firmas de los documentos del centro (1b, `20270102120000`), contra la BD del CI. Una por
+ * Las firmas de los documentos del centro (3b, `20270102120000`), contra la BD del CI. Una por
  * versión y niño (J3) con la copia de lo firmado; una versión firmada no se borra nunca (J5), tampoco
  * con la llave de postgres en modo replica, por el primer `ENABLE ALWAYS` del esquema; y la retención
  * de las firmas de autorizaciones. Fixtures ficticios, fechados el 2026-11-05.
@@ -70,7 +70,7 @@ describe('Las firmas de los documentos del centro', () => {
   let v2: string
   let sinFirmas: string
 
-  /** Firma como postgres (el paso 2 traerá la función de firmar). Devuelve el id o el error. */
+  /** Firma como postgres (la función de firmar es de la fase 4). Devuelve el id o el error. */
   /** Por defecto, con el dedo: el tutor y su trazo. */
   function firmar(
     version: string,
@@ -155,7 +155,7 @@ describe('Las firmas de los documentos del centro', () => {
     if (!centro) return
     const id = centro.id
     // Las firmas primero (si no, la versión firmada no se borra: es lo que se prueba), después las
-    // versiones con su marcador, como en el 1a.
+    // versiones con su marcador, como en el 3a.
     comoPostgres(`DO $$ DECLARE r record; BEGIN
       DELETE FROM public.firmas_documentos_centro WHERE centro_id = '${id}';
       FOR r IN SELECT id FROM public.documentos_centro_versiones WHERE centro_id = '${id}' LOOP

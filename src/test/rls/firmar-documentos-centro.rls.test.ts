@@ -36,7 +36,7 @@ function pdf(texto: string): Uint8Array {
 }
 const sha = (b: Uint8Array) => createHash('sha256').update(b).digest('hex')
 
-/** Como `postgres`, por psql contra la BD efímera del CI, como en los tests del 1a y el 1b. */
+/** Como `postgres`, por psql contra la BD efímera del CI, como en los tests del 3a y el 3b. */
 function comoPostgres(sql: string): { ok: boolean; salida: string } {
   const url = process.env.DB_URL
   if (!url) throw new Error('DB_URL: este test solo corre contra la BD efímera del CI')
@@ -59,7 +59,7 @@ function resultado(error: { code?: string; hint?: string | null } | null): strin
 }
 
 /**
- * Firmar los documentos del centro (paso 2, 2a, `20270103120000`), contra la BD y el Storage del CI:
+ * Firmar los documentos del centro (fase 4, 4a, `20270103120000`), contra la BD y el Storage del CI:
  * qué le toca a cada niño (con sus tres estados y J4), quién lo lee, quién firma con el dedo y quién
  * en persona (no el superusuario), el PDF de lo que firma, la lista del centro, y el acuse médico del
  * cierre del alta, por niño (U-3 en la base). Fixtures ficticios, del 2026-11-05.

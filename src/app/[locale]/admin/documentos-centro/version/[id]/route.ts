@@ -11,7 +11,7 @@ export const runtime = 'nodejs'
 const uuid = z.string().uuid()
 
 /**
- * Abre el PDF de una versión (1c): la admin del centro, con un enlace firmado de un minuto. Quién
+ * Abre el PDF de una versión (3c): la admin del centro, con un enlace firmado de un minuto. Quién
  * puede y qué ruta es lo decide `enlaceVersionDocumento`, desde la lista de la admin.
  */
 export async function GET(
