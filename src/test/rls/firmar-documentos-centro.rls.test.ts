@@ -386,8 +386,11 @@ describe('Firmar los documentos del centro', () => {
       return error ? resultado(error) : data ? 'lista' : 'null'
     }
     expect(await cierra()).toBe('42501')
-    // Control: con el acuse de Pablo, cierra.
+    // Control: con el acuse de Pablo, cierra. Desde el 4b-2 (`20270109120000`) el cierre pide también
+    // los documentos obligatorios firmados: la madre firma los dos de Pablo, para que el control mida
+    // solo el acuse. (Lo de la puerta de los documentos: `alta-cierra-documentos.rls.test.ts`.)
     await acuse(pablo)
+    for (const v of [pActivo1, normas1]) expect(await firma(madre, v, pablo)).toBe('ok')
     expect(await cierra()).toBe('lista')
   })
 })

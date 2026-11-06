@@ -297,8 +297,10 @@ Octubre 2026`. Sin tildes porque el juego de caracteres de SEPA no las garantiza
 - El test que compara la purga con el **catálogo de columnas** entra en el **mismo PR** que añada
   los campos de tutor, no después.
 
-> D4 del diagnóstico (las 3 aceptaciones de normas por casilla en CEI Ejemplo) no tuvo respuesta. La
-> propuesta era ignorarlas: es un centro de prueba.
+> D4 del diagnóstico (las 3 aceptaciones de normas por casilla en CEI Ejemplo) se contestó el
+> 2026-11-05: «Los acuses de normas por casilla no valen como firma» (Fase 4, «Decisiones
+> (2026-11-05)»). Lo aplica el 4b-2 (`20270109120000`): el cierre ya no los acepta y las filas se
+> quedan como histórico.
 
 ## Pendiente de decisión del responsable
 
@@ -1070,7 +1072,7 @@ funciones del 3a y la tabla de firmas del 3b. La familia sigue sin ver nada hast
   2026-11-05: los 3 acuses de normas son los 3 niños activos, y los tres firmantes son del buzón del
   responsable (dos alias `+nino1` y `+nino3`, y su cuenta de entonces como admin). No hay ninguna
   familia de otro buzón. El gate deja de aceptarlos en el 4b, que es quien lo cambia (y barre lo que
-  lo afirma, regla 12).
+  lo afirma, regla 12). **Hecho en el 4b-2** (`20270109120000`).
 - **El 4c es lo importante de la fase**, no un extra: sin él, una familia que se matricula hoy no firma
   nunca y nadie se entera. La familia ve «documentos por firmar» en cuanto existe la versión que le
   toca, y Dirección lo ve **en su inicio y por niño**, sin buscarlo.
@@ -1130,10 +1132,21 @@ desplegado: la admin puede subir un documento en cualquier momento):
 
   La casilla, la autorización de normas y la puerta de `finalizarAlta` no cambian en este PR.
 
-- **4b-2, la puerta y el barrido** (con migración). `finalizarAlta` y `marcar_matricula_lista`
-  exigen firmada cada versión obligatoria que está por firmar; lo que falta no frena (P-6). Fuera del
-  alta la casilla y la autorización de normas, con todo lo que las afirma (regla 12). Las filas de
-  `acuses_alta` se quedan como histórico.
+- **4b-2, la puerta y el barrido** (con migración, `20270109120000`). `finalizarAlta` y
+  `marcar_matricula_lista` exigen firmada cada versión obligatoria que está por firmar; lo que falta no
+  frena (P-6), ni lo opcional. La regla vive en tres sitios que dicen lo mismo: `frenaElAlta`
+  (`regla-documentos-alta.ts`) para el gate y el avance, y `d.obligatorio AND d.estado =
+  'por_firmar'` sobre `privado.documentos_del_nino` en la base. Si la base frena
+  (`documentos_por_firmar`), la app dice lo que falta. Fuera del alta la casilla y la autorización de
+  normas, con todo lo que las afirma (regla 12), y la casilla cerrada también en la base: sin la
+  política de INSERT de `acuses_alta` y sin el privilegio para `authenticated` (cada cerrojo basta
+  solo; `service_role` lo conserva, sin código que lo use). Las filas de `acuses_alta` se quedan como
+  histórico. En «Altas en proceso», la línea «Normas» pasa a «Documentos del centro», con la regla del
+  gate, y no sale mientras el niño no tenga nada obligatorio subido (como el SEPA sin CID): «hecho»
+  por un documento que no existe diría que la familia hizo algo.
+
+  **Orden: mergear, esperar el despliegue, aplicar.** La migración cierra la casilla que la app de
+  antes todavía enseña.
 - **4b-3, el tipo fuera del catálogo** (con migración). Ver «Decisiones (2026-11-06)».
 
 ### 4a · La base
@@ -1220,7 +1233,7 @@ inicio de Dirección · 4d, la refirma.
 ## Estado
 
 - [x] Fase 1 · [x] Fase 2 · [x] Fase 3
-- Fase 4: [x] 4a (#502) · 4b: [ ] 4b-1 · [ ] 4b-2 · [ ] 4b-3 · [ ] 4c · [ ] 4d
+- Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [ ] 4b-2 · [ ] 4b-3 · [ ] 4c · [ ] 4d
 - [ ] Fase 5 · [ ] Fase 6 · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias

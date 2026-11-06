@@ -22,7 +22,7 @@ import type { MandatoFamiliaActivo } from '../queries/get-mandato-familia'
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
 import type { ReutilizacionFamilia } from '../lib/reutilizacion-familia'
 import type { EstadoCivil } from '../schemas/alta-documentos'
-import type { FirmaPanelData, ImagenPanelData, MedicaInicial } from '../lib/tipos'
+import type { ImagenPanelData, MedicaInicial } from '../lib/tipos'
 import type { DocumentoAltaFila } from './DocumentosCentroAlta'
 
 /** Datos de la invitación para el paso `cuenta` (solo en `/invitation/[token]`). */
@@ -50,13 +50,10 @@ interface Props {
   fotoInicialUrl: string | null
   imagenPanel: ImagenPanelData | null
   imagenSinPlantilla: boolean
-  normasPanel: FirmaPanelData | null
-  normasSinPlantilla: boolean
-  /** normasAceptado: fila en `acuses_alta` (vía B). imagenAceptado: consent de imagen del
-   *  niño vigente (IU-2) — el checkbox de imagen otorga el consent, no un acuse. */
-  normasAceptado: boolean
-  /** Los documentos del centro que le tocan al niño (fase 4, 4b-1); en la invitación no hay. */
+  /** Los documentos del centro que le tocan al niño (fase 4; las normas, entre ellos); en la
+   *  invitación no hay. */
   documentosCentro?: DocumentoAltaFila[]
+  /** Consent de imagen del niño vigente (IU-2): la casilla de imagen otorga el consent. */
   imagenAceptado: boolean
   familiaEstadoCivil: EstadoCivil | null
   datosTutor1: DatosTutorInicial | null
@@ -126,9 +123,6 @@ export function AltaTutorWizard({
   fotoInicialUrl,
   imagenPanel,
   imagenSinPlantilla,
-  normasPanel,
-  normasSinPlantilla,
-  normasAceptado,
   documentosCentro = [],
   imagenAceptado,
   familiaEstadoCivil,
@@ -317,12 +311,7 @@ export function AltaTutorWizard({
           <PasoAcuses
             locale={locale}
             ninoId={ninoId}
-            normasPanel={normasPanel}
-            normasSinPlantilla={normasSinPlantilla}
-            normasAceptado={normasAceptado}
             documentosCentro={documentosCentro}
-            currentUserId={currentUserId}
-            currentUserNombre={currentUserNombre}
             modoDireccion={modoDireccion}
             onNext={goNext}
             onBack={goBack}

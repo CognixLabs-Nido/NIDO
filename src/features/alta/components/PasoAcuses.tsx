@@ -5,48 +5,32 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
-import { FirmarAutorizacionPanel } from '@/features/autorizaciones/components/FirmarAutorizacionPanel'
 
-import { AcuseAltaCheckbox } from './AcuseAltaCheckbox'
 import { DocumentosCentroAlta, type DocumentoAltaFila } from './DocumentosCentroAlta'
-import type { FirmaPanelData } from '../lib/tipos'
 
 interface Props {
   locale: string
   ninoId: string
-  /** Panel de firma de las normas (reglas_regimen_interno), pre-computado por la ruta. */
-  normasPanel: FirmaPanelData | null
-  /** No hay instancia de normas publicada aplicable al niño → solo va el acuse por checkbox. */
-  normasSinPlantilla: boolean
-  /** ¿Ya hay fila en `acuses_alta` (tipo 'normas') para este niño? */
-  normasAceptado: boolean
-  /** Los documentos del centro que le tocan al niño (fase 4, 4b-1). */
+  /** Los documentos del centro que le tocan al niño (fase 4): las normas, entre ellos. */
   documentosCentro: DocumentoAltaFila[]
-  currentUserId: string
-  currentUserNombre: string
-  /** PR-3b-2 · B2: firma PRESENCIAL de las normas cuando lo rellena la Dirección (papel). */
+  /** Modo Dirección del alta: la firma se registra en persona (papel), sin trazo. */
   modoDireccion?: boolean
   onNext: () => void
   onBack: () => void
 }
 
 /**
- * Paso 2 del alta (G-1) — acuses. (1) **Normas del centro**: firma de la autorización
- * `reglas_regimen_interno` reusando `FirmarAutorizacionPanel` (patrón F8: trazo + hash +
- * versión). La instancia la publica la dirección; aquí la familia la firma. Si el centro
- * no la tiene publicada, el acuse se omite (no bloquea). (2) **Privacidad**: ya se aceptó
- * al crear la cuenta (consent obligatorio en `acceptInvitationCore`); aquí solo se deja
- * constancia con enlace al aviso.
+ * Paso 2 del alta (G-1) — acuses. (1) **Los documentos del centro** (fase 4): las normas, el
+ * presupuesto y los que la admin defina, cada uno con su estado; se firman aquí, y uno que el
+ * centro todavía no ha subido no frena el alta (P-6). Desde el 4b-2 (decisiones del 2026-11-06)
+ * es el único camino de las normas: ni la autorización de normas ni la casilla. (2) **Privacidad**:
+ * ya se aceptó al crear la cuenta (consent obligatorio en `acceptInvitationCore`); aquí solo se
+ * deja constancia con enlace al aviso.
  */
 export function PasoAcuses({
   locale,
   ninoId,
-  normasPanel,
-  normasSinPlantilla,
-  normasAceptado,
   documentosCentro,
-  currentUserId,
-  currentUserNombre,
   modoDireccion = false,
   onNext,
   onBack,
@@ -61,24 +45,6 @@ export function PasoAcuses({
         documentos={documentosCentro}
         modoDireccion={modoDireccion}
       />
-
-      {/* Normas de régimen interno — acuse por checkbox SIEMPRE disponible (vía B). Si el
-          centro publica el documento, se muestra además para abrir/leer/firmar. */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold">{t('acuses.normas_titulo')}</h3>
-        {!normasSinPlantilla && normasPanel && (
-          <FirmarAutorizacionPanel
-            autorizacionId={normasPanel.autorizacionId}
-            tipo="reglas_regimen_interno"
-            firmable={normasPanel.firmable}
-            roster={normasPanel.roster}
-            currentUserId={currentUserId}
-            currentUserNombre={currentUserNombre}
-            presencial={modoDireccion}
-          />
-        )}
-        <AcuseAltaCheckbox ninoId={ninoId} tipo="normas" aceptadoInicial={normasAceptado} />
-      </section>
 
       {/* Privacidad (aceptada al crear la cuenta) */}
       <section className="space-y-2 border-t pt-4">

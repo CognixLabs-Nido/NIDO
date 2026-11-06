@@ -6,6 +6,8 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
+import { leerDocumentosAlta } from '../lib/documentos-alta'
+import { frenaElAlta } from '../lib/regla-documentos-alta'
 import { leerTutoresDeNino } from '../lib/tutores-familia'
 
 import { fail, ok } from '../../centros/types'
@@ -17,13 +19,21 @@ import { fail, ok } from '../../centros/types'
  * NOTA — `tutor2` es OPCIONAL (no aparece aquí): no bloquea.
  * El mandato SEPA tampoco (D10 de `docs/specs/altas-serie.md`): la familia que lo omite cierra
  *   el alta y paga en efectivo, que es el método por defecto de `familias.metodo_pago`.
- * `normas` e `imagen` son OBLIGATORIOS y se satisfacen por DOS vías (vía B): una firma real
- *   `decision='firmado'` sobre la instancia publicada (si el centro la tiene) O una fila de
- *   ACUSE por checkbox en `acuses_alta` (sin documento, sin firma). Así aceptar NO depende de
- *   que exista la instancia (normas es patrón A y la familia no puede auto-instanciarla). La
- *   obligatoriedad NO se relaja: sin firma NI acuse, el bloque sigue faltando.
+ * `imagen` es OBLIGATORIO y lo cumple el consentimiento de imagen del niño (lo dan la casilla y
+ *   la firma, IU-2).
+ * `documentos_centro` (fase 4, 4b-2): ningún documento del centro OBLIGATORIO por firmar
+ *   (`regla-documentos-alta.ts`). Las normas son uno de ellos: desde el 2026-11-06 ya no se
+ *   cumplen con la autorización de normas ni con la casilla de `acuses_alta`. Uno que el centro
+ *   todavía no ha subido no frena (P-6), así que hasta que suba las normas el alta se cierra sin
+ *   ellas: el único momento de la historia del producto en que pasa.
  */
-export type BloqueAlta = 'identidad' | 'tutor1' | 'medico' | 'documentos' | 'imagen' | 'normas'
+export type BloqueAlta =
+  | 'identidad'
+  | 'tutor1'
+  | 'medico'
+  | 'documentos'
+  | 'imagen'
+  | 'documentos_centro'
 
 const ORDEN_BLOQUES: BloqueAlta[] = [
   'identidad',
@@ -31,7 +41,7 @@ const ORDEN_BLOQUES: BloqueAlta[] = [
   'medico',
   'documentos',
   'imagen',
-  'normas',
+  'documentos_centro',
 ]
 
 /** Resultado de `finalizarAlta`: en fallo por completitud viaja `faltan` (bloques). */
@@ -50,8 +60,9 @@ const ninoIdSchema = z.string().uuid()
  * obligatorios están completos leyendo las señales que ya derivan de BD (solo lectura, sin
  * columnas nuevas). Si falta alguno, NO finaliza y devuelve la lista `faltan` para que la UI
  * muestre un checklist claro. La identidad y el acuse médico ya se validaban; se suman
- * tutor 1, documentos, SEPA, imagen y normas (régimen interno, D-3). La RPC sigue siendo el
- * backstop (llamadas directas).
+ * tutor 1, documentos, imagen y los documentos del centro (fase 4, 4b-2). La RPC sigue siendo el
+ * backstop (llamadas directas): exige el acuse médico y los documentos del centro, con la misma
+ * regla.
  *
  * Idempotente: re-finalizar estando ya `'lista'` es no-op en la RPC (devuelve null) y se
  * trata como éxito — el gate vuelve a pasar porque los datos ya están completos.
@@ -78,13 +89,6 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
     .maybeSingle()
   if (!nino) return fail('alta.errors.finalizar_fallo')
   if (!nino.apellidos || !nino.fecha_nacimiento) faltan.push('identidad')
-
-  // Vía B — acuse por checkbox de NORMAS SIN documento (tabla `acuses_alta`). Es una vía
-  // VÁLIDA del gate ADEMÁS de la firma real: normas se da por hecha si hay firma
-  // `decision='firmado'` O una fila de acuse. (IMAGEN ya no va por acuse: se comprueba por
-  // el consent — ver abajo.) No se relaja la obligatoriedad (siguen exigidos).
-  const { data: acusesRows } = await supabase.from('acuses_alta').select('tipo').eq('nino_id', id)
-  const acusados = new Set((acusesRows ?? []).map((a) => a.tipo))
 
   // Tutor 1 (identidad) + su DNI (documento) desde el perfil COMPARTIDO `familia_tutores`
   // (F-2b-3): el titular. La señal de "tutor 1 hecho" es tener `nombre_completo`.
@@ -125,36 +129,12 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   })
   if (!imagenConsentida) faltan.push('imagen')
 
-  // Acuse de NORMAS de régimen interno firmado (D-3, acuse obligatorio). A diferencia de
-  // imagen (B2, por niño), las normas son patrón A: la dirección publica UNA instancia de
-  // `reglas_regimen_interno` para la audiencia (aula/centro) y la familia la firma (la firma
-  // se ancla a `nino_id`). Se busca la instancia publicada del centro del niño visible por RLS
-  // —igual que `panelFirma(..., patronA=true)` de la ruta del alta; la RLS sola deja ver las de
-  // todos los centros de la familia— y su última firma para este niño;
-  // `firmado` = acuse hecho. En modo Dirección la firma es PRESENCIAL pero también
-  // `decision='firmado'` (el gate no mira `metodo_firma`), así que se cumple por ese camino.
-  const { data: normasInst } = await supabase
-    .from('autorizaciones')
-    .select('id')
-    .eq('centro_id', nino.centro_id)
-    .eq('tipo', 'reglas_regimen_interno')
-    .eq('es_plantilla', false)
-    .eq('estado', 'publicada')
-    .limit(1)
-    .maybeSingle()
-  let normasFirmada = false
-  if (normasInst) {
-    const { data: firma } = await supabase
-      .from('firmas_autorizacion')
-      .select('decision')
-      .eq('autorizacion_id', normasInst.id)
-      .eq('nino_id', id)
-      .order('firmado_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    normasFirmada = firma?.decision === 'firmado'
-  }
-  if (!normasFirmada && !acusados.has('normas')) faltan.push('normas')
+  // Los documentos del centro (fase 4, 4b-2): ninguno obligatorio por firmar. La lista es la de la
+  // pantalla (`documentos_firma_nino`, con la sesión) y la regla, la de la base. Si la lectura falla
+  // no se cierra: una lista vacía diría «no hay nada que firmar».
+  const documentosCentro = await leerDocumentosAlta(supabase, id)
+  if (!documentosCentro.ok) return fail('alta.errors.finalizar_fallo')
+  if (documentosCentro.data.some(frenaElAlta)) faltan.push('documentos_centro')
 
   if (faltan.length > 0) {
     faltan.sort((a, b) => ORDEN_BLOQUES.indexOf(a) - ORDEN_BLOQUES.indexOf(b))
@@ -165,6 +145,11 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   // 'lista'/'activa' → éxito.
   const { error } = await supabase.rpc('marcar_matricula_lista', { p_nino_id: id })
   if (error) {
+    // La base frena con la misma regla (`documentos_por_firmar`): un documento subido entre el gate
+    // y aquí, o una versión nueva. Se dice lo que falta, no «no se pudo».
+    if (error.hint === 'documentos_por_firmar') {
+      return { success: false, error: 'alta.errors.incompleto', faltan: ['documentos_centro'] }
+    }
     logger.warn('finalizarAlta', error.message)
     if (error.code === '42501') return fail('alta.errors.no_autorizado')
     return fail('alta.errors.finalizar_fallo')

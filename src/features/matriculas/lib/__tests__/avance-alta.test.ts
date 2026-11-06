@@ -14,9 +14,13 @@ import {
  * llama, así que lo que importa es que ninguna línea diga «hecho» por algo que no hizo la familia.
  */
 
+/** Las normas del centro, subidas, por firmar: la familia tiene algo que hacer. */
+const NORMAS_POR_FIRMAR = { obligatorio: true, estado: 'por_firmar' } as const
+const NORMAS_FIRMADAS = { obligatorio: true, estado: 'firmado' } as const
+
 /** Un alta recién invitada y aceptada: solo lo que ponen la invitación y aceptarla. */
 const RECIEN_ACEPTADA: SenalesAvance = {
-  normas: false,
+  documentosCentro: [NORMAS_POR_FIRMAR],
   libroFamilia: false,
   imagen: false,
   dniTutor1: false,
@@ -27,7 +31,7 @@ const RECIEN_ACEPTADA: SenalesAvance = {
 }
 
 const TODO_HECHO: SenalesAvance = {
-  normas: true,
+  documentosCentro: [NORMAS_FIRMADAS],
   libroFamilia: true,
   imagen: true,
   dniTutor1: true,
@@ -50,17 +54,17 @@ describe('Lo que lleva hecho un alta', () => {
   })
 
   it('cada línea pasa a hecha por su señal, y solo por la suya', () => {
-    const senalDe: Record<ItemAvance, keyof SenalesAvance> = {
-      normas: 'normas',
-      nino: 'libroFamilia',
-      imagen: 'imagen',
-      tutor1: 'dniTutor1',
-      tutor2: 'tutor2',
-      medico: 'medico',
-      sepa: 'mandato',
+    const senalDe: Record<ItemAvance, Partial<SenalesAvance>> = {
+      documentos_centro: { documentosCentro: [NORMAS_FIRMADAS] },
+      nino: { libroFamilia: true },
+      imagen: { imagen: true },
+      tutor1: { dniTutor1: true },
+      tutor2: { tutor2: true },
+      medico: { medico: true },
+      sepa: { mandato: true },
     }
     for (const item of ITEMS_AVANCE) {
-      const lineas = avanceAlta({ ...RECIEN_ACEPTADA, [senalDe[item]]: true })
+      const lineas = avanceAlta({ ...RECIEN_ACEPTADA, ...senalDe[item] })
       for (const l of lineas) {
         const esperado =
           l.item === item ? 'hecho' : ITEMS_OPCIONALES.has(l.item) ? 'sin_hacer_opcional' : 'falta'
@@ -79,6 +83,35 @@ describe('Lo que lleva hecho un alta', () => {
     expect(con).toContain('sepa')
     expect(sin).not.toContain('sepa')
     expect(sin).toEqual(con.filter((i) => i !== 'sepa'))
+  })
+
+  it('los documentos del centro, con la regla del gate: hecho si no queda ninguno obligatorio por firmar', () => {
+    const linea = (documentosCentro: SenalesAvance['documentosCentro']) =>
+      avanceAlta({ ...RECIEN_ACEPTADA, documentosCentro }).find(
+        (l) => l.item === 'documentos_centro'
+      )?.estado
+    // Premisa: con un obligatorio por firmar, la línea sale y falta.
+    expect(linea([NORMAS_POR_FIRMAR])).toBe('falta')
+    expect(linea([NORMAS_FIRMADAS])).toBe('hecho')
+    // Uno que el centro no ha subido no frena (P-6), ni uno opcional por firmar.
+    expect(linea([NORMAS_FIRMADAS, { obligatorio: true, estado: 'falta_documento' }])).toBe('hecho')
+    expect(linea([NORMAS_FIRMADAS, { obligatorio: false, estado: 'por_firmar' }])).toBe('hecho')
+    expect(linea([NORMAS_POR_FIRMAR, NORMAS_FIRMADAS])).toBe('falta')
+  })
+
+  it('sin nada obligatorio subido no hay línea de documentos: «hecho» diría que la familia hizo algo', () => {
+    for (const documentosCentro of [
+      [],
+      [{ obligatorio: true, estado: 'falta_documento' }],
+      [{ obligatorio: false, estado: 'por_firmar' }],
+    ]) {
+      const items = avanceAlta({ ...TODO_HECHO, documentosCentro }).map((l) => l.item)
+      expect.soft(items, JSON.stringify(documentosCentro)).not.toContain('documentos_centro')
+      // Y solo esa: el resto sigue.
+      expect
+        .soft(items, JSON.stringify(documentosCentro))
+        .toEqual(ITEMS_AVANCE.filter((i) => i !== 'documentos_centro'))
+    }
   })
 
   it('cada bloque que exige el gate de finalizar tiene su línea, o lo pone la invitación', () => {

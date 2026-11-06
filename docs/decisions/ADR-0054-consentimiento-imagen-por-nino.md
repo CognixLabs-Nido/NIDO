@@ -118,7 +118,7 @@ Decisiones internas:
 
 ### Neutras
 
-- `acuses_alta` sigue existiendo para `normas`.
+- `acuses_alta` sigue existiendo para `normas`. _Sustituida el 2026-11-06 por el 4b-2 (`20270109120000`, `docs/specs/altas-serie.md`): las normas son un documento del centro, la casilla de normas ya no cuenta para el cierre y nadie con sesión escribe `acuses_alta`; la tabla queda como histórico._
 - La firma del documento de imagen (F11-A3) sigue viva como vía, pero ahora alimenta el mismo
   consentimiento por niño.
 
