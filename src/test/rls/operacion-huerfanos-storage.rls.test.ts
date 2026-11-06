@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 // La operación es un .mjs que Jose ejecuta a mano; aquí se prueba el MISMO `operar`, con el SQL
 // por psql (en solo lectura, como la Management API con `read_only`) y el Storage de la BD efímera.
@@ -140,6 +140,12 @@ describe('operación 20270106120000 — borrar por la API los ficheros sin dueñ
   })
 
   describe('cada guarda aborta sin borrar nada', () => {
+    // Corren en modo aplicar: sin la guarda, la operación borra de verdad. Cada caso vuelve a subir
+    // los tres, para que una guarda que falta ponga rojo su caso y no los siguientes.
+    beforeEach(async () => {
+      for (const f of huerfanos) await subir(f.bucket, f.nombre)
+    })
+
     const intacto = async () => {
       for (const f of huerfanos) expect(await existe(f.bucket, f.nombre)).toBe(true)
     }
@@ -256,6 +262,8 @@ describe('operación 20270106120000 — borrar por la API los ficheros sin dueñ
   })
 
   it('aplicar: los tres ya no están (ni en storage.objects ni en la API) y el fichero con dueño sigue', async () => {
+    for (const f of huerfanos) await subir(f.bucket, f.nombre)
+    for (const f of huerfanos) expect(await existe(f.bucket, f.nombre)).toBe(true) // premisa
     const resumen = await operar({
       ...base(),
       storage: serviceClient.storage,
