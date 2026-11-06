@@ -85,13 +85,13 @@ SELECT json_build_object(
    WHERE NOT EXISTS (SELECT 1 FROM privado.centro_coherente_excepciones e WHERE e.tabla = p.tabla AND e.columna = p.columna)
      AND NOT EXISTS (SELECT 1 FROM zz WHERE zz.tgrelid = p.tabla::regclass
                        AND zz.def ~ ('UPDATE OF centro_id, .*\\m' || p.columna || '\\M')
-                       AND zz.prosrc LIKE '%NEW.' || p.columna || ' IS NOT NULL AND NEW.centro_id IS DISTINCT FROM%')),
+                       AND zz.prosrc LIKE '%NEW.' || p.columna || ' IS NOT NULL AND EXISTS%')),
   'cruces', (SELECT count(*) FROM cr),
   'cruces_sin', (SELECT coalesce(json_agg(cr.tabla || ' ' || cr.c1 || '+' || cr.c2 ORDER BY 1), '[]') FROM cr
    WHERE NOT EXISTS (SELECT 1 FROM privado.centro_coherente_excepciones e WHERE e.tabla = cr.tabla AND e.columna IN (cr.c1, cr.c2))
      AND NOT EXISTS (SELECT 1 FROM zz WHERE zz.tgrelid = cr.tabla::regclass
                        AND zz.def ~ ('UPDATE OF .*\\m' || cr.c1 || '\\M') AND zz.def ~ ('UPDATE OF .*\\m' || cr.c2 || '\\M')
-                       AND zz.prosrc LIKE '%NEW.' || cr.c1 || ' IS NOT NULL AND NEW.' || cr.c2 || ' IS NOT NULL%')),
+                       AND zz.prosrc LIKE '%NEW.' || cr.c1 || ' IS NOT NULL AND NEW.' || cr.c2 || ' IS NOT NULL AND EXISTS%')),
   'compuestas', (SELECT coalesce(json_agg(c.conname::text ORDER BY 1), '[]') FROM pg_constraint c
    WHERE c.contype = 'f' AND cardinality(c.conkey) > 1 AND c.connamespace = 'public'::regnamespace
      AND EXISTS (SELECT 1 FROM pg_attribute x WHERE x.attrelid = c.confrelid AND x.attname = 'centro_id' AND NOT x.attisdropped)),
@@ -245,6 +245,12 @@ describe('zz_centro_coherente: el comportamiento, con dos centros', () => {
     const r = await serviceClient.from('citas').insert(cita(null)).select('id').single()
     expect(r.error).toBeNull()
     citas.push(r.data!.id)
+  })
+
+  it('lo que no existe lo dice la FK (23503), no el trigger: una cita con un niño que no existe', async () => {
+    const r = await serviceClient.from('citas').insert(cita('00000000-0000-4000-8000-000000000000'))
+    expect(r.error?.code).toBe('23503')
+    expect(r.error?.hint ?? null).not.toBe('centro_ajeno')
   })
 
   it('el orden: con el centro NULL, `*_set_centro_id` lo pone antes y zz_ encuentra la fila coherente', () => {

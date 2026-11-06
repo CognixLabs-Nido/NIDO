@@ -15,6 +15,10 @@
 -- (BEFORE INSERT OR UPDATE de `centro_id` o de sus columnas FK) que exige que la fila nombrada por
 -- cada FK sea del centro de la fila: si no, 23514 con HINT `centro_ajeno`. `zz_` para que corra
 -- después de los triggers que ponen el centro (los BEFORE se disparan por orden de nombre).
+-- Solo salta si lo nombrado EXISTE y es de otro centro: si no existe, lo dice la FK (23503). Una
+-- primera versión comparaba con `IS DISTINCT FROM` contra la subconsulta, que da NULL cuando no hay
+-- fila, y contestaba «no es del centro» a algo que no existía (lo cazó la CI: multicurso, la FK
+-- compuesta de matriculas sin aulas_curso).
 --
 -- La lista de pares sale del catálogo (`privado.centro_coherente_pares()`), no de una lista escrita
 -- a mano: una FK nueva entre tablas con centro entra sola en la guarda posterior y en el test, que
@@ -167,8 +171,8 @@ BEGIN
     v_cuerpo := '';
     FOR i IN 1 .. cardinality(t.columnas) LOOP
       v_cuerpo := v_cuerpo || format(
-        E'  IF NEW.%1$I IS NOT NULL AND NEW.centro_id IS DISTINCT FROM\n' ||
-        E'     (SELECT r.centro_id FROM %2$s r WHERE r.%3$I = NEW.%1$I) THEN\n' ||
+        E'  IF NEW.%1$I IS NOT NULL AND EXISTS (SELECT 1 FROM %2$s r\n' ||
+        E'     WHERE r.%3$I = NEW.%1$I AND r.centro_id IS DISTINCT FROM NEW.centro_id) THEN\n' ||
         E'    RAISE EXCEPTION %4$L USING ERRCODE = %5$L, HINT = %6$L;\n' ||
         E'  END IF;\n',
         t.columnas[i], t.refs[i], t.ref_cols[i],
@@ -206,9 +210,8 @@ BEGIN
     FOR i IN 1 .. cardinality(t.columnas) - 1 LOOP
       FOR j IN i + 1 .. cardinality(t.columnas) LOOP
         v_cuerpo := v_cuerpo || format(
-          E'  IF NEW.%1$I IS NOT NULL AND NEW.%4$I IS NOT NULL AND\n' ||
-          E'     (SELECT r.centro_id FROM %2$s r WHERE r.%3$I = NEW.%1$I) IS DISTINCT FROM\n' ||
-          E'     (SELECT r.centro_id FROM %5$s r WHERE r.%6$I = NEW.%4$I) THEN\n' ||
+          E'  IF NEW.%1$I IS NOT NULL AND NEW.%4$I IS NOT NULL AND EXISTS (SELECT 1 FROM %2$s a, %5$s b\n' ||
+          E'     WHERE a.%3$I = NEW.%1$I AND b.%6$I = NEW.%4$I AND a.centro_id IS DISTINCT FROM b.centro_id) THEN\n' ||
           E'    RAISE EXCEPTION %7$L USING ERRCODE = %8$L, HINT = %9$L;\n' ||
           E'  END IF;\n',
           t.columnas[i], t.refs[i], t.ref_cols[i], t.columnas[j], t.refs[j], t.ref_cols[j],
@@ -236,9 +239,10 @@ CREATE FUNCTION privado.matriculas_centro_coherente()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $f$
 BEGIN
   IF NEW.nino_id IS NOT NULL AND NEW.aula_id IS NOT NULL AND NEW.curso_academico_id IS NOT NULL AND
-     (SELECT n.centro_id FROM public.ninos n WHERE n.id = NEW.nino_id) IS DISTINCT FROM
-     (SELECT ac.centro_id FROM public.aulas_curso ac
-       WHERE ac.aula_id = NEW.aula_id AND ac.curso_academico_id = NEW.curso_academico_id) THEN
+     EXISTS (SELECT 1 FROM public.ninos n, public.aulas_curso ac
+              WHERE n.id = NEW.nino_id AND ac.aula_id = NEW.aula_id
+                AND ac.curso_academico_id = NEW.curso_academico_id
+                AND n.centro_id IS DISTINCT FROM ac.centro_id) THEN
     RAISE EXCEPTION 'public.matriculas: nino_id y (aula_id, curso_academico_id) no son del mismo centro'
       USING ERRCODE = '23514', HINT = 'centro_ajeno';
   END IF;
@@ -267,7 +271,7 @@ BEGIN
         WHERE tg.tgrelid = p.tabla::regclass AND tg.tgname = 'zz_centro_coherente'
           AND tg.tgenabled = 'O' AND f.prosecdef
           AND pg_get_triggerdef(tg.oid) ~ ('UPDATE OF centro_id, .*\m' || p.columna || '\M')
-          AND f.prosrc LIKE '%NEW.' || p.columna || ' IS NOT NULL%');
+          AND f.prosrc LIKE '%NEW.' || p.columna || ' IS NOT NULL AND EXISTS%');
   SELECT count(DISTINCT tabla) INTO v_tablas FROM privado.centro_coherente_pares();
   RAISE NOTICE 'centro coherente: % tablas, % pares sin comprobación ni excepción', v_tablas, v_sin;
   IF v_sin > 0 THEN
@@ -285,7 +289,7 @@ BEGIN
           AND tg.tgenabled = 'O' AND f.prosecdef
           AND pg_get_triggerdef(tg.oid) ~ ('UPDATE OF .*\m' || a.columna || '\M')
           AND pg_get_triggerdef(tg.oid) ~ ('UPDATE OF .*\m' || b.columna || '\M')
-          AND f.prosrc LIKE '%NEW.' || a.columna || ' IS NOT NULL AND NEW.' || b.columna || ' IS NOT NULL%');
+          AND f.prosrc LIKE '%NEW.' || a.columna || ' IS NOT NULL AND NEW.' || b.columna || ' IS NOT NULL AND EXISTS%');
   SELECT count(DISTINCT tabla) INTO v_cruces FROM privado.centro_coherente_cruces();
   RAISE NOTICE 'centro coherente: % tablas de cruce, % parejas sin comprobación ni excepción', v_cruces, v_sin;
   IF v_sin > 0 THEN
