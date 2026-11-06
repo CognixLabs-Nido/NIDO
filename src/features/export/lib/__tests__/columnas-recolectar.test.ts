@@ -69,7 +69,9 @@ function filaCompleta(tabla: string, encima: Fila = {}): Fila {
 
 /** Filas que hacen recorrer todos los caminos: un hijo, su hilo, una foto suya y gente que actúa. */
 const FILAS: Record<string, Fila[]> = {
-  usuarios: [filaCompleta('usuarios', { id: 'u1' })],
+  // Las rutas que firma el export, con la forma de su dueño: la base no guarda otra
+  // (20270105120000, `rutas-firmadas-dueno.rls.test.ts`). El export firma la que hay guardada.
+  usuarios: [filaCompleta('usuarios', { id: 'u1', foto_url: 'u1/foto.jpg' })],
   roles_usuario: [
     filaCompleta('roles_usuario', { centro_id: 'k1', usuario_id: 'u1' }),
     // Una profe con rol vivo desde septiembre, coordinadora del aula del niño.
@@ -108,7 +110,13 @@ const FILAS: Record<string, Fila[]> = {
     filaCompleta('recordatorios', { centro_id: 'k1', nino_id: null, creado_por: 'p1' }),
   ],
   ninos: [
-    filaCompleta('ninos', { id: 'n1', foto_url: null, deleted_reason: null, centro_id: 'k1' }),
+    filaCompleta('ninos', {
+      id: 'n1',
+      foto_url: null,
+      libro_familia_path: 'k1/n1/libro-familia.pdf',
+      deleted_reason: null,
+      centro_id: 'k1',
+    }),
   ],
   agendas_diarias: [
     filaCompleta('agendas_diarias', Object.fromEntries(HIJAS.map((h) => [h, [filaCompleta(h)]]))),
@@ -400,12 +408,12 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
   it('el libro de familia y el DNI de quien recoge salen como enlace firmado (2d)', async () => {
     const { nino, usuario } = await recolectarTodo()
     // Premisa: la ficha trae la ruta del libro.
-    expect((nino.ficha as Fila).libro_familia_path).toBe('v:libro_familia_path')
+    expect((nino.ficha as Fila).libro_familia_path).toBe('k1/n1/libro-familia.pdf')
     expect(nino.adjuntos).toContainEqual(
       expect.objectContaining({
         descripcion: 'Libro de familia',
         bucket: 'libro-familia',
-        path: 'v:libro_familia_path',
+        path: 'k1/n1/libro-familia.pdf',
         url_firmada: 'https://x',
       })
     )
@@ -421,12 +429,12 @@ describe('la red del export: lo que recolectar.ts pide a cada tabla y lo que ent
   it('la foto de perfil del usuario sale también como enlace firmado (2c)', async () => {
     const { usuario } = await recolectarTodo()
     // Premisa: la ficha trae la ruta de la foto.
-    expect((usuario.ficha as Fila).foto_url).toBe('v:foto_url')
+    expect((usuario.ficha as Fila).foto_url).toBe('u1/foto.jpg')
     expect(usuario.adjuntos).toContainEqual(
       expect.objectContaining({
         descripcion: 'Foto de perfil',
         bucket: 'usuarios-fotos',
-        path: 'v:foto_url',
+        path: 'u1/foto.jpg',
         url_firmada: 'https://x',
       })
     )

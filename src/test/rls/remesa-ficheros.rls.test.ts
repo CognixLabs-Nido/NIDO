@@ -15,6 +15,7 @@ import {
 import { ponerMarcaComoElRegistro, insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { messageIdRemesa } from '@/features/remesas/lib/message-id'
 import type { Database } from '@/types/database'
 import { borrarMandatos, insertarMandato } from './mandatos-como-postgres'
 
@@ -83,7 +84,8 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
     return data.id
   }
 
-  const msgIdDe = (remesaId: string, sufijo: string) => `NIDO-${remesaId.slice(0, 8)}-${sufijo}`
+  // El MsgId sale de la marca (#462), y la base lo exige (20270107120000): el de la app, no otro.
+  const msgIdDe = (remesaId: string, marca: string) => messageIdRemesa(remesaId, marca)
   const rutaDe = (remesaId: string, msgId: string) => `${centro.id}/${remesaId}/${msgId}.xml`
   const adeudo = (reciboId: string, importe = 10000, mndt = MNDT) => ({
     recibo_id: reciboId,
@@ -190,7 +192,7 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
     const rc = await recibo()
     const rem = await remesaCon(rc)
     const marca = ahora()
-    const msgId = msgIdDe(rem, '20260301000001')
+    const msgId = msgIdDe(rem, marca)
     await subir(rutaDe(rem, msgId))
     // Premisa: la remesa no tiene marca.
     expect(await marcaDe(rem)).toBeNull()
@@ -218,7 +220,7 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
     const rc = await recibo()
     const rem = await remesaCon(rc)
     const marca = ahora()
-    const msgId = msgIdDe(rem, '20260301000002')
+    const msgId = msgIdDe(rem, marca)
     await subir(rutaDe(rem, msgId))
     expect(
       (await registrar(cDirectora, { remesa: rem, marca, msgId, adeudos: [adeudo(rc)] })).error
@@ -238,10 +240,11 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
   it('sin el fichero en el bucket no registra nada, ni pone la marca', async () => {
     const rc = await recibo()
     const rem = await remesaCon(rc)
+    const marca = ahora()
     const r = await registrar(cDirectora, {
       remesa: rem,
-      marca: ahora(),
-      msgId: msgIdDe(rem, '20260301000003'),
+      marca,
+      msgId: msgIdDe(rem, marca),
       adeudos: [adeudo(rc)],
     })
     expect(r.error?.hint).toBe('sin_fichero')
@@ -255,11 +258,12 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
   ])('si los adeudos no son los recibos de la remesa (%s), nada', async (_, adeudos) => {
     const rc = await recibo()
     const rem = await remesaCon(rc)
-    const msgId = msgIdDe(rem, '20260301000004')
+    const marca = ahora()
+    const msgId = msgIdDe(rem, marca)
     await subir(rutaDe(rem, msgId))
     const r = await registrar(cDirectora, {
       remesa: rem,
-      marca: ahora(),
+      marca,
       msgId,
       adeudos: adeudos(rc),
     })
@@ -271,11 +275,12 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
     const rc = await recibo()
     const rem = await remesaCon(rc)
     const otraRem = await remesaCon(await recibo())
-    const msgId = msgIdDe(rem, '20260301000005')
+    const marca = ahora()
+    const msgId = msgIdDe(rem, marca)
     await subir(rutaDe(otraRem, msgId))
     const r = await registrar(cDirectora, {
       remesa: rem,
-      marca: ahora(),
+      marca,
       msgId,
       adeudos: [adeudo(rc)],
       ruta: rutaDe(otraRem, msgId),
@@ -283,13 +288,45 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
     expect(r.error?.hint).toBe('ruta_no_valida')
   })
 
+  it('el MsgId tiene que ser el de la marca: con la fecha de otro día, nada (20270107120000)', async () => {
+    const rc = await recibo()
+    const rem = await remesaCon(rc)
+    const marca = ahora()
+    const bueno = msgIdDe(rem, marca)
+    const deOtroDia = `NIDO-${rem.slice(0, 8)}-20260301000001`
+    // Premisa: el mismo prefijo y la misma longitud, otra fecha (lo único que miraba la base).
+    expect(deOtroDia.slice(0, 14)).toBe(bueno.slice(0, 14))
+    expect(deOtroDia).toHaveLength(bueno.length)
+    expect(deOtroDia).not.toBe(bueno)
+    // Con su fichero subido en su sitio: lo que falla es el MsgId, no el fichero.
+    await subir(rutaDe(rem, deOtroDia))
+    const r = await registrar(cDirectora, {
+      remesa: rem,
+      marca,
+      msgId: deOtroDia,
+      adeudos: [adeudo(rc)],
+    })
+    expect(r.error?.hint).toBe('msg_id_no_es_de_la_marca')
+    expect(await marcaDe(rem)).toBeNull()
+    // Control: con el de la marca, la misma remesa se registra.
+    await subir(rutaDe(rem, bueno))
+    const ok = await registrar(cDirectora, {
+      remesa: rem,
+      marca,
+      msgId: bueno,
+      adeudos: [adeudo(rc)],
+    })
+    expect(ok.error).toBeNull()
+  })
+
   it('la profe, la directora de otro centro y anon no registran ni leen la versión', async () => {
     const rc = await recibo()
     const rem = await remesaCon(rc)
-    const msgId = msgIdDe(rem, '20260301000006')
+    const marca = ahora()
+    const msgId = msgIdDe(rem, marca)
     await subir(rutaDe(rem, msgId))
     for (const c of [cProfe, cDirectoraOtro]) {
-      const r = await registrar(c, { remesa: rem, marca: ahora(), msgId, adeudos: [adeudo(rc)] })
+      const r = await registrar(c, { remesa: rem, marca, msgId, adeudos: [adeudo(rc)] })
       expect(r.error?.code).toBe('42501')
       expect((await c.rpc('fichero_remesa_vigente', { p_remesa_id: rem })).error?.code).toBe(
         '42501'
@@ -318,7 +355,7 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
     // Una marca de hace años (la de antes de R-1 de una remesa vieja): la versión es de esa marca.
     const marca = '2015-03-02T09:00:00.000Z'
     const rem = await remesaCon(rc, marca)
-    const msgId = msgIdDe(rem, '20150302090000')
+    const msgId = msgIdDe(rem, marca)
     await subir(rutaDe(rem, msgId))
     const r = await registrar(cDirectora, { remesa: rem, marca, msgId, adeudos: [adeudo(rc)] })
     expect(r.error).toBeNull()
@@ -372,7 +409,7 @@ describe('El fichero de cada versión de una remesa (R-1)', () => {
     const rc = await recibo()
     const rem = await remesaCon(rc)
     const marca = ahora()
-    const msgId = msgIdDe(rem, '20260301000007')
+    const msgId = msgIdDe(rem, marca)
     await subir(rutaDe(rem, msgId))
     expect(
       (await registrar(cDirectora, { remesa: rem, marca, msgId, adeudos: [adeudo(rc)] })).error

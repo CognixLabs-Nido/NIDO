@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { messageIdRemesa } from '@/features/remesas/lib/message-id'
+
 import {
   asignarRol,
   clientFor,
@@ -462,7 +464,7 @@ describe('Retención: lo fiscal al vencer', () => {
     marca: string,
     adeudos: Array<{ recibo: string; importe: number; mndt: string }>
   ): Promise<string> {
-    const msgId = `NIDO-${rem.slice(0, 8)}-${marca.replace(/\D/g, '').slice(0, 14)}`
+    const msgId = messageIdRemesa(rem, marca)
     const ruta = `${centro.id}/${rem}/${msgId}.xml`
     const up = await serviceClient.storage
       .from(BUCKET_FICHEROS)
