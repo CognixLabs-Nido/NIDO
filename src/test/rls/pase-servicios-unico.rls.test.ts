@@ -19,6 +19,7 @@ import {
   type TestUser,
 } from './setup'
 import { cursoDeTest } from './curso-de-test'
+import { comoSesionSinCentroCoherente, hayCentroCoherente } from './defensa-sin-centro-coherente'
 
 /**
  * PR-12 — el listado único del pase de servicios (`20261115120000`), contra la BD real.
@@ -227,12 +228,26 @@ describe('PR-12 — pase de servicios, listado único', () => {
       .select('id')
       .single()
     expect(error).toBeNull()
+    // Dos capas (defensa-sin-centro-coherente.ts): zz_centro_coherente (23514, centro_ajeno), que
+    // corre antes, y la RLS de antes (42501), medida sola con el trigger deshabilitado.
+    const trigger = hayCentroCoherente('parte_servicio_diario')
     const movida = await c
       .from('parte_servicio_diario')
       .update({ nino_id: nB })
       .eq('id', creada!.id)
       .select('id')
-    expect(movida.error?.code).toBe('42501')
+    expect(movida.error?.code).toBe(trigger ? '23514' : '42501')
+    if (trigger) expect(movida.error?.hint).toBe('centro_ajeno')
+    // La defensa de antes, sola. Control positivo por el mismo camino: la misma fila, a su niño.
+    const sql = (nino: string) =>
+      `UPDATE public.parte_servicio_diario SET nino_id = '${nino}' WHERE id = '${creada!.id}'`
+    expect(comoSesionSinCentroCoherente(profeAyB.id, 'parte_servicio_diario', sql(n1))).toEqual({
+      filas: 1,
+      error: null,
+    })
+    expect(
+      comoSesionSinCentroCoherente(profeAyB.id, 'parte_servicio_diario', sql(nB)).error?.code
+    ).toBe('42501')
     const { data: sigue } = await serviceClient
       .from('parte_servicio_diario')
       .select('nino_id, centro_id')
