@@ -53,9 +53,9 @@ describe('registros presenciales: la directora sí, el superusuario no', () => {
 
   it('cada fichero que escribe un método presencial pregunta esSuperusuario o está en la lista', () => {
     // Premisa: el censo encuentra los seis de hoy (el patrón caza); el sexto, la firma presencial
-    // de los documentos del centro en el alta (fase 4, 4b-1).
+    // de los documentos del centro (fase 4, 4b-1; fuera del alta desde el 4c).
     expect(escriben).toHaveLength(6)
-    expect(escriben).toContain('src/features/alta/lib/documentos-alta.ts')
+    expect(escriben).toContain('src/features/documentos-centro/lib/firmar-documentos.ts')
     const sinPregunta = escriben.filter((rel) => !RE_PREGUNTA.test(codigo(rel))).sort()
     expect(sinPregunta).toEqual(Object.keys(SIN_PREGUNTA).sort())
   })

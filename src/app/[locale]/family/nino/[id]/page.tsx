@@ -43,6 +43,8 @@ import { AusenciasFamiliaSection } from '@/features/ausencias/components/Ausenci
 import { getAusenciasNino } from '@/features/ausencias/queries/get-ausencias-nino'
 import { MenuDelDiaWidget } from '@/features/menus/components/MenuDelDiaWidget'
 import { etiquetaIdiomaPrincipal } from '@/shared/lib/idioma-centinela'
+import { DocumentosCentroNino } from '@/features/documentos-centro/components/DocumentosCentroNino'
+import { leerDocumentosNino } from '@/features/documentos-centro/lib/firmar-documentos'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
@@ -146,6 +148,10 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
 
   const foto = await firmarFotoNino(nino.foto_url)
 
+  // Los documentos del centro, para firmarlos fuera del alta (fase 4, 4c): los firma el tutor legal
+  // (la base vuelve a mirarlo). El autorizado ni los lee.
+  const documentosCentro = esTutorLegal ? await leerDocumentosNino(supabase, id) : null
+
   return (
     <div className="space-y-6">
       <Link
@@ -214,6 +220,15 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           </CardContent>
         </Card>
       </section>
+
+      {documentosCentro && (
+        <DocumentosCentroNino
+          locale={locale}
+          ninoId={id}
+          lectura={documentosCentro}
+          modoDireccion={false}
+        />
+      )}
 
       {estadoImagen && (
         <section className="space-y-4">

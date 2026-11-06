@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 /**
- * Los documentos del centro en el alta (fase 4, 4b-1). Lo que se pinta por estado y, sobre todo, que
+ * Los documentos del centro para firmar (fase 4: el alta, 4b-1, y la ficha, 4c). Lo que se pinta por estado y, sobre todo, que
  * el botón de firmar sale DESPUÉS de abrir el PDF (decisión del 2026-11-06): antes de abrirlo no hay
  * botón, y al abrirlo aparece. El texto no dice «he leído».
  */
@@ -14,8 +14,8 @@ vi.mock('next-intl', () => ({
 }))
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
-vi.mock('../../actions/firmar-documento-alta', () => ({
-  firmarDocumentoAltaAction: (i: unknown) => firmar(i),
+vi.mock('../../actions/firmar', () => ({
+  firmarDocumentoCentroAction: (i: unknown) => firmar(i),
 }))
 vi.mock('@/features/autorizaciones/components/FirmaPad', () => ({
   FirmaPad: ({ onChange }: { onChange: (v: string) => void }) => (
@@ -29,12 +29,12 @@ import en from '@/../messages/en.json'
 import es from '@/../messages/es.json'
 import va from '@/../messages/va.json'
 
-import { DocumentosCentroAlta, type DocumentoAltaFila } from '../DocumentosCentroAlta'
+import { DocumentosParaFirmar, type DocumentoParaFirmarFila } from '../DocumentosParaFirmar'
 
 const NINO = '22222222-2222-4222-8222-222222222222'
 const VERSION = '33333333-3333-4333-8333-333333333333'
 
-const fila = (o: Partial<DocumentoAltaFila>): DocumentoAltaFila => ({
+const fila = (o: Partial<DocumentoParaFirmarFila>): DocumentoParaFirmarFila => ({
   documento_id: '44444444-4444-4444-8444-444444444444',
   titulo: 'Normas',
   obligatorio: true,
@@ -47,9 +47,9 @@ const fila = (o: Partial<DocumentoAltaFila>): DocumentoAltaFila => ({
   ...o,
 })
 
-const pinta = (documentos: DocumentoAltaFila[], modoDireccion = false) =>
+const pinta = (documentos: DocumentoParaFirmarFila[], modoDireccion = false) =>
   render(
-    <DocumentosCentroAlta
+    <DocumentosParaFirmar
       locale="es"
       ninoId={NINO}
       documentos={documentos}
@@ -57,7 +57,7 @@ const pinta = (documentos: DocumentoAltaFila[], modoDireccion = false) =>
     />
   )
 
-describe('DocumentosCentroAlta', () => {
+describe('DocumentosParaFirmar', () => {
   beforeEach(() => {
     firmar.mockReset()
     firmar.mockResolvedValue({ success: true, data: { firmaId: 'x' } })
@@ -66,7 +66,7 @@ describe('DocumentosCentroAlta', () => {
   it('premisa: con un documento por firmar se pinta su enlace al PDF de esa versión y de ese niño', () => {
     pinta([fila({})])
     const enlace = screen.getByRole('link', { name: /abrir/ })
-    expect(enlace.getAttribute('href')).toBe(`/es/alta/${NINO}/documento/${VERSION}`)
+    expect(enlace.getAttribute('href')).toBe(`/es/documento-centro/${NINO}/${VERSION}`)
     expect(enlace.getAttribute('target')).toBe('_blank')
   })
 
@@ -83,7 +83,7 @@ describe('DocumentosCentroAlta', () => {
     // Abrir no prueba haber leído (decisión del 2026-11-06). Se miran los textos de verdad: con las
     // traducciones simuladas la pantalla pinta claves, y este aserto pasaría por eso.
     for (const m of [es, en, va]) {
-      const textos = JSON.stringify(m.alta.documentos_centro)
+      const textos = JSON.stringify(m.firmar_documentos)
       expect(textos.length).toBeGreaterThan(200)
       expect(textos).not.toMatch(/le[ií]d[oa]|\bread\b|llegit|llegida/i)
     }

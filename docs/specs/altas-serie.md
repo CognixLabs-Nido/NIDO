@@ -1151,6 +1151,32 @@ desplegado: la admin puede subir un documento en cualquier momento):
 
 - **4b-3, el tipo fuera del catálogo** (con migración). Ver «Decisiones (2026-11-06)».
 
+### 4c · Firmar fuera del alta y lo pendiente en el inicio
+
+Sin migración: la base del 4a ya lo tiene todo, y nada de firmar depende del alta
+(`firmar_documento_centro` y `registrar_firma_documento_presencial` piden una matrícula viva, no una
+pendiente). Lo que faltaba era dónde.
+
+- **Dónde se firma:** en la ficha del niño, con la misma pieza que en el alta
+  (`DocumentosParaFirmar`, que sale de `alta/` a `documentos-centro/` con nombres que no dicen «alta»,
+  y su PDF en `/{locale}/documento-centro/{niño}/{versión}`). La familia, en `/family/nino/{id}`,
+  solo el tutor legal (el autorizado ni los lee, 4a). La Dirección, en la pestaña Documentación de
+  su ficha del niño, con el modo que decide el servidor con la regla de siempre
+  (`modoFirmaDocumento`: con vínculo, con el dedo; sin él, en papel).
+- **Qué se reclama:** lo obligatorio por firmar, con la misma regla que no deja cerrar el alta
+  (`laFamiliaLoDebe` llama a `frenaElAlta`). Un opcional sale en la lista del niño, pero no en un
+  aviso: una familia que decide no firmarlo lo vería para siempre.
+- **El inicio de la familia:** una línea por hijo con algo debido, que lleva a su ficha. Los hijos
+  con el alta en curso no: el alta ya se lo pide.
+- **El inicio de Dirección**, sin buscarlo (`documentos_firma_centro`):
+  - **por firmar**, de la familia: por documento y curso, cuántos niños y desde cuándo el que más
+    lleva, y desplegada la lista de niños, cada uno a la pestaña Documentación de su ficha;
+  - **sin subir**, del centro, aparte y dicho como lo que es: «el centro no lo ha subido; lo
+    necesitan N niños». El enlace para subirlo, solo a la admin (la pantalla de documentos es suya,
+    J1); la directora ve la línea sin el enlace.
+- **Una lectura que falla se dice** («no hemos podido comprobar…»), en los dos inicios y en la ficha.
+  Callar diría «no hay nada que firmar».
+
 ### 4a · La base
 
 Migración `20270103120000_feat_firmar_documentos_centro`. Sin pantalla.
@@ -1235,7 +1261,7 @@ inicio de Dirección · 4d, la refirma.
 ## Estado
 
 - [x] Fase 1 · [x] Fase 2 · [x] Fase 3
-- Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [ ] 4b-3 · [ ] 4c · [ ] 4d
+- Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [ ] 4c · [ ] 4d
 - [ ] Fase 5 · [ ] Fase 6 · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias

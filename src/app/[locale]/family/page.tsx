@@ -6,10 +6,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { estadoAltaFamilia } from '@/features/alta/lib/gate-familia'
 import { ambitoFamiliar } from '@/features/centros/contexto/ambito-familiar'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
+import { AvisoDocumentosFamilia } from '@/features/documentos-centro/components/AvisoDocumentosFamilia'
+import { getPorFirmarFamilia } from '@/features/documentos-centro/queries/get-pendientes-firma'
 import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
 import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
 import { getAvisosInicio } from '@/features/notificaciones/queries/get-avisos-inicio'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { createClient } from '@/lib/supabase/server'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -28,6 +31,8 @@ export default async function FamilyDashboard({ params }: PageProps) {
   const { hijos: ninos } = await ambitoFamiliar(centroId)
 
   const avisos = await getAvisosInicio('tutor_legal', centroId)
+  // Los documentos del centro por firmar, fuera del alta (fase 4, 4c).
+  const documentosPorFirmar = await getPorFirmarFamilia(await createClient(), ninos, ninosEnAlta)
 
   return (
     <div className="space-y-6">
@@ -35,6 +40,7 @@ export default async function FamilyDashboard({ params }: PageProps) {
         <h1 className="text-h1 text-foreground">{t('title')}</h1>
         <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
       </header>
+      <AvisoDocumentosFamilia hijos={documentosPorFirmar} locale={locale} />
       <AvisosInicio avisos={avisos} rol="tutor_legal" locale={locale} />
       {centroId && (
         <ResumenSemanaWidget

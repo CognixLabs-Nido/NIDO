@@ -32,6 +32,7 @@ const CLAVES: ReadonlyArray<readonly string[]> = [
   ['centros', 'elegir', 'errors', 'entrada_no_registrada'],
   ['autorizaciones', 'errors', 'presencial_solo_direccion'],
   ['alta', 'errors', 'presencial_solo_direccion'],
+  ['firmar_documentos', 'errors', 'presencial_solo_direccion'],
   ['admin', 'familias', 'errors', 'presencial_solo_direccion'],
   ['listaEspera', 'errors', 'presencial_solo_direccion'],
   ['centros', 'conmutador', 'etiqueta'],

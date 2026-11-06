@@ -621,6 +621,21 @@ Migración `20270109120000_feat_alta_cierra_con_documentos_firmados`; spec `docs
   pendientes), y la casilla da 42501.
 - Test: `src/test/rls/alta-cierra-documentos.rls.test.ts` y `acuses-alta-cerrada.rls.test.ts`.
 
+### Firmar fuera del alta y lo pendiente en el inicio (serie de altas, fase 4, 4c)
+
+Sin migración; spec `docs/specs/altas-serie.md`, «4c». Usa las funciones del 4a con la sesión de
+quien mira, y la base decide:
+
+- **La ficha del niño:** `documentos_firma_nino` (el tutor legal y la Dirección del niño) y firmar
+  con `firmar_documento_centro` o `registrar_firma_documento_presencial`, como en el alta. La app solo
+  lo pide para el tutor legal: al autorizado la base le daría 42501, y no se le pregunta.
+- **El inicio de la familia:** `documentos_firma_nino` por cada hijo del que es tutor legal y que no
+  está en el alta.
+- **El inicio de Dirección:** `documentos_firma_centro` (`es_admin`: la admin, la directora y el
+  superusuario) y los nombres de esos niños de `ninos`, acotados al centro.
+- **Una lectura fallida no es «nada pendiente»:** la pantalla lo dice.
+- Test: `src/test/rls/firmar-fuera-del-alta.rls.test.ts`.
+
 ### Los consentimientos, solo por sus funciones (2026-11-06)
 
 Migración `20270104120000_fix_consentimientos_solo_por_funcion`. El consentimiento de imagen decide

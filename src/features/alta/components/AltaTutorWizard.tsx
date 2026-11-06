@@ -23,7 +23,7 @@ import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas
 import type { ReutilizacionFamilia } from '../lib/reutilizacion-familia'
 import type { EstadoCivil } from '../schemas/alta-documentos'
 import type { ImagenPanelData, MedicaInicial } from '../lib/tipos'
-import type { DocumentoAltaFila } from './DocumentosCentroAlta'
+import type { DocumentoParaFirmarFila } from '@/features/documentos-centro/components/DocumentosParaFirmar'
 
 /** Datos de la invitación para el paso `cuenta` (solo en `/invitation/[token]`). */
 export interface ModoInvitacion {
@@ -52,7 +52,7 @@ interface Props {
   imagenSinPlantilla: boolean
   /** Los documentos del centro que le tocan al niño (fase 4; las normas, entre ellos); en la
    *  invitación no hay. */
-  documentosCentro?: DocumentoAltaFila[]
+  documentosCentro?: DocumentoParaFirmarFila[]
   /** Consent de imagen del niño vigente (IU-2): la casilla de imagen otorga el consent. */
   imagenAceptado: boolean
   familiaEstadoCivil: EstadoCivil | null
