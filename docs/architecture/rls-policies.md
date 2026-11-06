@@ -1260,7 +1260,7 @@ informe publicado de su hijo escrito en A.
   - y **`matriculas`, a mano**: el niño y el aula-curso, que se nombra por una FK compuesta. Las
     dos funciones solo leen FK de una columna.
 - **La comprobación de cada tabla se genera en la migración**, con sus columnas escritas. Leer el
-  catálogo en cada escritura costaba ×21 a ×26; la generada, +17 % a +20 % (unos 10 µs por fila).
+  catálogo en cada escritura costaba ×20 a ×26; la generada, +17 % a +21 % (de 10 a 13 µs por fila).
   Medido en la CI con 20 000 filas en `recordatorios`, con el trigger afirmado antes de medir. No se
   regenera sola: una FK nueva entre tablas con centro necesita su comprobación, y
   `centro-coherente.rls.test.ts` (que lee el catálogo) se pone rojo hasta que la tenga.
