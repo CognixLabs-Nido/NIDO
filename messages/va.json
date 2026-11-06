@@ -3472,7 +3472,7 @@
   },
   "autorizaciones": {
     "title": "Autoritzacions",
-    "admin_intro": "Crea, publica i signa autoritzacions (eixida, règim intern…). El text legal el definix el centre.",
+    "admin_intro": "Crea, publica i signa autoritzacions (eixida, imatges…). El text legal el definix el centre.",
     "family_intro": "Llig i signa les autoritzacions d'eixida dels teus fills.",
     "aviso_legal": "Signatura electrònica simple amb registre probatori (nom, traç, hash del text, data, IP). La seua validesa jurídica està pendent de validació legal.",
     "volver": "Tornar",
@@ -3512,7 +3512,6 @@
       "rechazada_toast": "Autorització rebutjada",
       "revocar": "Revocar signatura",
       "revocada_toast": "Signatura revocada",
-      "nueva_reglas": "Noves regles",
       "plantilla_creada_toast": "Format creat",
       "enviar": "Enviar autorització",
       "enviando": "Enviant…",
@@ -3530,10 +3529,9 @@
       "texto_definitivo": "Marcar el text com a definitiu (necessari per a publicar i signar)",
       "nino": "Xiquet",
       "nino_placeholder": "Tria un xiquet",
-      "titulo_reglas_placeholder": "Regles de règim intern",
       "tipo": "Tipus de document",
       "tipo_placeholder": "Tria un tipus",
-      "titulo_plantilla_placeholder": "Normes de règim intern",
+      "titulo_plantilla_placeholder": "Consentiment d'imatge",
       "plantilla": "Format a enviar",
       "plantilla_placeholder": "Tria un format publicat",
       "ambito": "Destinataris",
@@ -3651,7 +3649,6 @@
       "salida": "Eixida",
       "medicacion": "Medicació",
       "recogida": "Arreplegada",
-      "reglas_regimen_interno": "Règim intern",
       "autorizacion_imagenes": "Imatges",
       "excursion": "Excursió"
     },
@@ -3769,7 +3766,6 @@
     "tipos_area": {
       "titulo": "Tipus d'autorització",
       "descripcion": "El centre gestiona estos 5 tipus. Quatre són formats de catàleg; l'excursió penja d'un esdeveniment.",
-      "reglas_regimen_interno": "Format de catàleg. S’envia a les famílies per a firmar.",
       "autorizacion_imagenes": "Format de catàleg. Consentiment d'imatge (firma en F11).",
       "recogida": "La família indica qui recull el xiquet i firma.",
       "medicacion": "La família autoritza una medicació amb les seues pautes i firma.",
@@ -3796,7 +3792,7 @@
     "nueva": {
       "accion": "Nova autorització",
       "modo_label": "Què vols crear?",
-      "modo_formato": "Enviar un format (règim intern, imatges)",
+      "modo_formato": "Enviar un format (imatges)",
       "modo_excursion": "Excursió"
     },
     "medicacion_lista": {

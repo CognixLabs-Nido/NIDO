@@ -24,12 +24,12 @@ export type PoliticaFirmantes = Database['public']['Enums']['politica_firmantes'
 export type TipoVinculo = Database['public']['Enums']['tipo_vinculo']
 
 /**
- * Las plantillas legales (normas internas, consentimiento de imagen): las crea y las edita la
- * admin del centro (`es_responsable` en la BD, PR 1 del modelo de roles); enviarlas a un aula o
- * al centro es de Dirección. Las de recogida y medicación son de Dirección.
+ * Las plantillas legales (el consentimiento de imagen): las crea y las edita la admin del centro
+ * (`es_responsable` en la BD, PR 1 del modelo de roles); enviarlas a un aula o al centro es de
+ * Dirección. Las de recogida y medicación son de Dirección. Las normas de régimen interno lo fueron
+ * hasta el 4b-3 (2026-11-06): ahora son un documento del centro, y el tipo ya no existe.
  */
 export const TIPOS_PLANTILLA_DE_LA_ADMIN: ReadonlyArray<TipoAutorizacion> = [
-  'reglas_regimen_interno',
   'autorizacion_imagenes',
 ]
 

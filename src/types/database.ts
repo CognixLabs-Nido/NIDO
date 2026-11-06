@@ -5994,7 +5994,6 @@ export type Database = {
         | "salida"
         | "medicacion"
         | "recogida"
-        | "reglas_regimen_interno"
         | "autorizacion_imagenes"
       tipo_biberon: "materna" | "formula" | "agua" | "infusion" | "zumo"
       tipo_cita:
@@ -6299,7 +6298,6 @@ export const Constants = {
         "salida",
         "medicacion",
         "recogida",
-        "reglas_regimen_interno",
         "autorizacion_imagenes",
       ],
       tipo_biberon: ["materna", "formula", "agua", "infusion", "zumo"],

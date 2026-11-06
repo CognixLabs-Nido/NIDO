@@ -219,10 +219,12 @@ describe('la familia, sobre su recogida sin firmar', () => {
     expect(r.error?.code).toBe('23514')
   })
 
-  it('no la convierte en las normas del centro para todo el centro', async () => {
+  // Hasta el 4b-3 el caso era «en las normas del centro»; el tipo ya no existe y la plantilla legal que
+  // queda es la de imagen.
+  it('no la convierte en la autorización de imagen para todo el centro', async () => {
     const id = await recogidaDeLaFamilia()
     const r = await cambiarIdentidad(cliTutor, id, {
-      tipo: 'reglas_regimen_interno',
+      tipo: 'autorizacion_imagenes',
       ambito: 'centro',
       nino_id: null,
     })
@@ -246,10 +248,10 @@ describe('la profe, sobre su salida sin firmar', () => {
     expect(r.error?.code).toBe('23514')
   })
 
-  it('no la convierte en la plantilla de las normas del centro', async () => {
+  it('no la convierte en la plantilla de imagen del centro', async () => {
     const id = await salidaDeLaProfe()
     const r = await cambiarIdentidad(cliProfe, id, {
-      tipo: 'reglas_regimen_interno',
+      tipo: 'autorizacion_imagenes',
       es_plantilla: true,
       evento_id: null,
     })

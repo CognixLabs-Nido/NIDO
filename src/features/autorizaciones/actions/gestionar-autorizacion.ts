@@ -27,8 +27,9 @@ import {
 import { fail, ok, TIPOS_PLANTILLA_DE_LA_ADMIN, type ActionResult } from '../types'
 
 // Tipos A (la directora ENVÍA a una audiencia). recogida/medicación = tipos B
-// (los inicia la familia) → no son enviables desde aquí.
-const TIPOS_ENVIABLES = ['reglas_regimen_interno', 'autorizacion_imagenes'] as const
+// (los inicia la familia) → no son enviables desde aquí. Las normas de régimen interno lo eran hasta
+// el 4b-3 (2026-11-06): son un documento del centro.
+const TIPOS_ENVIABLES = ['autorizacion_imagenes'] as const
 
 /**
  * Crea una autorización de **salida** colgando de un evento (`tipo='excursion'`).
@@ -179,7 +180,7 @@ export async function crearAutorizacionExcursion(
 
 /**
  * Crea una **plantilla durable** del catálogo (`es_plantilla=true`) para un tipo
- * por-niño (reglas/imágenes/recogida/medicación). Es el FORMATO estándar del
+ * por-niño (imágenes/recogida/medicación). Es el FORMATO estándar del
  * centro: no se firma directamente (guard en BD: `autorizacion_firmable=false`
  * para plantillas). Solo **admin** (RLS `autorizaciones_insert` → `es_admin`).
  * Nace borrador con texto `PENDIENTE`; el admin lo teclea, lo marca definitivo y
@@ -203,7 +204,7 @@ export async function crearPlantilla(
   }
   const { tipo, titulo } = parsed.data
 
-  // Centro de la página, con Dirección en él; las plantillas legales (normas, imagen), solo la
+  // Centro de la página, con Dirección en él; las plantillas legales (la de imagen), solo la
   // admin de ese centro (la RLS lo vuelve a comprobar).
   const puede = TIPOS_PLANTILLA_DE_LA_ADMIN.includes(tipo) ? usuarioResponsableEn : usuarioAdminEn
   if (!(await puede(supabase, centroId))) return fail('autorizaciones.errors.no_autorizado')
@@ -238,7 +239,7 @@ export async function crearPlantilla(
 }
 
 /**
- * **Envía** una plantilla publicada (tipo A: reglas/imágenes) a una AUDIENCIA
+ * **Envía** una plantilla publicada (tipo A: imágenes) a una AUDIENCIA
  * (niño/aula/centro) creando una **instancia firmable** (`es_plantilla=false`,
  * `plantilla_id`, `ambito`). El texto se **congela como snapshot** de la plantilla
  * en el momento del envío (editar la plantilla después = nueva versión; esta

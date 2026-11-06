@@ -56,7 +56,7 @@ Checkbox de acto afirmativo + **nombre tecleado** (debe coincidir con el perfil)
 
 - **Plantilla** (`es_plantilla=true`): el **formato estándar** del centro, una activa por (centro, tipo), no firmable.
 - **Instancia** (`es_plantilla=false`): lo que se firma. Dos patrones:
-  - **Patrón A** — la **directora ENVÍA** a una audiencia (régimen interno / imágenes / salida) por ámbito niño/aula/centro, reusando la audiencia de `eventos` (F7). Snapshot del texto.
+  - **Patrón A** — la **directora ENVÍA** a una audiencia (régimen interno / imágenes / salida) por ámbito niño/aula/centro, reusando la audiencia de `eventos` (F7). Snapshot del texto. _Régimen interno, sustituido el 2026-11-06 por el 4b-3 (`20270110120000`, `docs/specs/altas-serie.md`): las normas son un documento del centro y el tipo `reglas_regimen_interno` ya no existe. «Dos caminos para firmar lo mismo significa que dentro de un año nadie sabrá cuál vale.»_
   - **Patrón B2** — la **familia INICIA** su propia instancia por-niño desde la plantilla publicada (recogida / medicación) y firma esa.
 
 **Pros:** vigencia y estado por-niño de primera clase (episodios de medicación con su caducidad, recogida habitual/puntual); el freeze congela la instancia firmada sin afectar a otras familias; el texto legal vive una vez en la plantilla.
@@ -117,7 +117,7 @@ El modelo soporta endurecer cualquiera de estos puntos (añadir DNI, exigir dobl
 - Suficiencia jurídica **no certificada** (⚖️ pendiente de abogado) — explícito y acotado.
 - Complejidad del modelo plantilla/instancia (auto-referencia + CHECK de 5 formas + freeze).
 - El texto legal arranca `PENDIENTE`: una plantilla no es publicable/firmable hasta que alguien teclea el texto real y lo marca definitivo.
-- 1 regla legacy (#56) queda sin enganchar hasta que exista la plantilla publicada de Régimen interno (la migración de datos la salta sin inventar texto).
+- 1 regla legacy (#56) queda sin enganchar hasta que exista la plantilla publicada de Régimen interno (la migración de datos la salta sin inventar texto). _Ya no se engancha: el 4b-3 quitó el tipo (2026-11-06)._
 
 ### Neutras
 
@@ -131,7 +131,7 @@ El modelo soporta endurecer cualquiera de estos puntos (añadir DNI, exigir dobl
 - **Adjuntos** (informe médico / foto DNI / prescripción) → **F10** (`media`); `firmas.datos` ya reserva el hueco.
 - ~~**F8-4 — DNI del tutor** en los datos de la firma: **condicional** a que el abogado lo exija (D7).~~ ✅ **RESUELTO (2026-06-21):** la firma electrónica **simple basta**; **no** se embebe el DNI en la firma. El DNI/identificación del tutor, cuando se requiera, se recoge en la **fase de documentación del alta** (post-F11-B), no acoplado a `firmas_autorizacion`. F8 no añade `usuarios.dni`/`tutor_datos`.
 - ~~**Recogida puntual con fecha futura** (hoy la recogida es habitual; la puntual con vigencia propia queda pendiente).~~ ❌ **DESCARTADO (2026-10-15), decisión del responsable:** el caso ya está cubierto. Para un día concreto, la familia añade a la persona a la recogida habitual y, pasado ese día, vuelve a firmar la habitual sin ella; la profe ve la última lista firmada. Para el mismo día ya existe la puntual «solo hoy». Detalle en `docs/follow-ups.md`.
-- **Migración de la regla legacy #56**: se engancha al publicar el formato real de Régimen interno y re-ejecutar `20260608130000` (idempotente).
+- ~~**Migración de la regla legacy #56**: se engancha al publicar el formato real de Régimen interno y re-ejecutar `20260608130000` (idempotente).~~ _Sustituida el 2026-11-06 por el 4b-3 (`20270110120000`): el tipo `reglas_regimen_interno` ya no existe y no hay nada que enganchar (0 autorizaciones en producción)._
 - **Aviso en el botón "Enviar" cuando está deshabilitado** (no hay plantillas publicadas) — mejora menor de UI.
 
 ## Verificación

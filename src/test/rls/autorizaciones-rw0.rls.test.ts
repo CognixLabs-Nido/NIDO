@@ -293,20 +293,20 @@ describe('RLS autorizaciones — F8-RW-0 (catálogo + A/B2)', () => {
 
   // === Patrón A: admin ENVÍA a una audiencia (ambito=aula) ===================
 
-  it('A: admin envía reglas a un aula; el tutor de un niño de esa aula puede firmar', async () => {
-    const plantilla = await crearPlantilla('reglas_regimen_interno')
+  it('A: admin envía la de imagen a un aula; el tutor de un niño de esa aula puede firmar', async () => {
+    const plantilla = await crearPlantilla('autorizacion_imagenes')
     const cAdmin = await clientFor(admin)
 
     const inst = await cAdmin
       .from('autorizaciones')
       .insert({
         centro_id: centro.id,
-        tipo: 'reglas_regimen_interno',
+        tipo: 'autorizacion_imagenes',
         es_plantilla: false,
         plantilla_id: plantilla,
         ambito: 'aula' as Ambito,
         aula_id: aula.id,
-        titulo: 'Normas del aula',
+        titulo: 'Imagen del aula',
         texto: TEXTO_REAL,
         texto_version: 'v1',
         texto_definitivo: true,
@@ -411,12 +411,7 @@ describe('RLS autorizaciones — F8-RW-0 (catálogo + A/B2)', () => {
     expect(b2.error).toBeNull()
     if (b2.data) autorizacionesCreadas.push(b2.data.id)
 
-    const tipos: TipoAutorizacion[] = [
-      'recogida',
-      'medicacion',
-      'reglas_regimen_interno',
-      'autorizacion_imagenes',
-    ]
+    const tipos: TipoAutorizacion[] = ['recogida', 'medicacion', 'autorizacion_imagenes']
     for (const tipo of tipos) {
       const legacy = await serviceClient
         .from('autorizaciones')
