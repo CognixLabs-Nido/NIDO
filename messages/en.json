@@ -4613,6 +4613,33 @@
       "imagen_acepto": "I authorise the use of the child's image according to the centre's policy.",
       "imagen_aceptado": "You accepted the image authorisation."
     },
+    "documentos_centro": {
+      "titulo": "Centre documents",
+      "curso": "school year {curso}",
+      "opcional": "optional",
+      "falta": "The centre has not uploaded “{titulo}” yet. It will be signed once it is available.",
+      "abrir": "Open the document",
+      "antes_de_abrir": "Open it to be able to sign it.",
+      "abierto": "You have opened the document.",
+      "nombre": "Name of the person signing",
+      "trazo": "Signature",
+      "presencial_aviso": "Management mode: the signature is recorded with a paper copy, without a drawn signature. Confirm that you have “{titulo}” signed on paper by the family.",
+      "firmar": "Sign “{titulo}”",
+      "firmar_presencial": "Record the paper signature of “{titulo}”",
+      "firmado": "Signed on {fecha}.",
+      "firmado_papel": "Signed on paper on {fecha}.",
+      "firmado_ok": "Document signed.",
+      "errors": {
+        "leer": "We could not load the centre documents. Please try again.",
+        "invalido": "Some details are missing to sign.",
+        "no_autorizado": "You cannot sign this document.",
+        "ya_firmado": "This document is already signed for this child.",
+        "version_no_vigente": "The centre has uploaded a new version of this document. Open it to sign the one that applies now.",
+        "sin_trazo": "The signature is missing.",
+        "firmar": "We could not record the signature. Please try again.",
+        "abrir": "We could not open the document. Please try again."
+      }
+    },
     "menor": {
       "direccion_titulo": "Child's address",
       "direccion_calle": "Street",

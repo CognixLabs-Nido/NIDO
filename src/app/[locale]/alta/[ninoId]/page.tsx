@@ -26,6 +26,7 @@ import { PASO_MIN_AUTENTICADO } from '@/features/alta/lib/estado-alta'
 import { estadoMatriculaVigente } from '@/features/alta/lib/matricula-vigente'
 import { resolverReutilizacionFamilia } from '@/features/alta/lib/reutilizacion-familia'
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
+import { leerDocumentosAlta } from '@/features/alta/lib/documentos-alta'
 
 import type { MandatoSepaInicial } from '@/features/alta/components/PasoSepa'
 import type { DatosTutorInicial } from '@/features/alta/components/PasoTutor'
@@ -285,6 +286,10 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .eq('nino_id', ninoId)
   const acusados = new Set((acusesRows ?? []).map((a) => a.tipo))
   const normasAceptado = acusados.has('normas')
+  // Los documentos del centro (fase 4, 4b-1): lo que le toca firmar al niño, con la sesión. Si la
+  // lectura falla no hay alta: una lista vacía diría «no hay nada que firmar».
+  const documentosCentro = await leerDocumentosAlta(supabase, ninoId)
+  if (!documentosCentro.ok) throw new Error(documentosCentro.error)
   const { data: imagenConsentida } = await supabase.rpc('existe_consentimiento_imagen', {
     p_nino_id: ninoId,
   })
@@ -378,6 +383,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         normasPanel={normasPanel}
         normasSinPlantilla={normasSinPlantilla}
         normasAceptado={normasAceptado}
+        documentosCentro={documentosCentro.data}
         imagenAceptado={imagenAceptado}
         familiaEstadoCivil={familiaEstadoCivil}
         datosTutor1={datosTutor1}

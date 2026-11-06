@@ -23,6 +23,7 @@ import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas
 import type { ReutilizacionFamilia } from '../lib/reutilizacion-familia'
 import type { EstadoCivil } from '../schemas/alta-documentos'
 import type { FirmaPanelData, ImagenPanelData, MedicaInicial } from '../lib/tipos'
+import type { DocumentoAltaFila } from './DocumentosCentroAlta'
 
 /** Datos de la invitación para el paso `cuenta` (solo en `/invitation/[token]`). */
 export interface ModoInvitacion {
@@ -54,6 +55,8 @@ interface Props {
   /** normasAceptado: fila en `acuses_alta` (vía B). imagenAceptado: consent de imagen del
    *  niño vigente (IU-2) — el checkbox de imagen otorga el consent, no un acuse. */
   normasAceptado: boolean
+  /** Los documentos del centro que le tocan al niño (fase 4, 4b-1); en la invitación no hay. */
+  documentosCentro?: DocumentoAltaFila[]
   imagenAceptado: boolean
   familiaEstadoCivil: EstadoCivil | null
   datosTutor1: DatosTutorInicial | null
@@ -126,6 +129,7 @@ export function AltaTutorWizard({
   normasPanel,
   normasSinPlantilla,
   normasAceptado,
+  documentosCentro = [],
   imagenAceptado,
   familiaEstadoCivil,
   datosTutor1,
@@ -316,6 +320,7 @@ export function AltaTutorWizard({
             normasPanel={normasPanel}
             normasSinPlantilla={normasSinPlantilla}
             normasAceptado={normasAceptado}
+            documentosCentro={documentosCentro}
             currentUserId={currentUserId}
             currentUserNombre={currentUserNombre}
             modoDireccion={modoDireccion}

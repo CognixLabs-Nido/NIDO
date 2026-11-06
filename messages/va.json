@@ -4613,6 +4613,33 @@
       "imagen_acepto": "Autoritze l'ús de la imatge del menor segons la política del centre.",
       "imagen_aceptado": "Vas acceptar l'autorització d'imatge."
     },
+    "documentos_centro": {
+      "titulo": "Documents del centre",
+      "curso": "curs {curso}",
+      "opcional": "opcional",
+      "falta": "El centre encara no ha pujat «{titulo}». Se signarà quan estiga.",
+      "abrir": "Obrir el document",
+      "antes_de_abrir": "Obri'l per a poder signar-lo.",
+      "abierto": "Has obert el document.",
+      "nombre": "Nom de qui signa",
+      "trazo": "Signatura",
+      "presencial_aviso": "Mode Direcció: es registra la signatura amb suport en paper, sense traç. Confirma que tens «{titulo}» signat físicament per la família.",
+      "firmar": "Signar «{titulo}»",
+      "firmar_presencial": "Registrar la signatura en paper de «{titulo}»",
+      "firmado": "Signat el {fecha}.",
+      "firmado_papel": "Signat en paper el {fecha}.",
+      "firmado_ok": "Document signat.",
+      "errors": {
+        "leer": "No hem pogut carregar els documents del centre. Torna-ho a provar.",
+        "invalido": "Falten dades per a signar.",
+        "no_autorizado": "No pots signar este document.",
+        "ya_firmado": "Este document ja està signat per a este xiquet.",
+        "version_no_vigente": "El centre ha pujat una versió nova d'este document. Obri-la per a signar la que val ara.",
+        "sin_trazo": "Falta la signatura.",
+        "firmar": "No hem pogut registrar la signatura. Torna-ho a provar.",
+        "abrir": "No hem pogut obrir el document. Torna-ho a provar."
+      }
+    },
     "menor": {
       "direccion_titulo": "Adreça del menor",
       "direccion_calle": "Carrer",

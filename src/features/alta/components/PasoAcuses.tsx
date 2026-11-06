@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { FirmarAutorizacionPanel } from '@/features/autorizaciones/components/FirmarAutorizacionPanel'
 
 import { AcuseAltaCheckbox } from './AcuseAltaCheckbox'
+import { DocumentosCentroAlta, type DocumentoAltaFila } from './DocumentosCentroAlta'
 import type { FirmaPanelData } from '../lib/tipos'
 
 interface Props {
@@ -19,6 +20,8 @@ interface Props {
   normasSinPlantilla: boolean
   /** ¿Ya hay fila en `acuses_alta` (tipo 'normas') para este niño? */
   normasAceptado: boolean
+  /** Los documentos del centro que le tocan al niño (fase 4, 4b-1). */
+  documentosCentro: DocumentoAltaFila[]
   currentUserId: string
   currentUserNombre: string
   /** PR-3b-2 · B2: firma PRESENCIAL de las normas cuando lo rellena la Dirección (papel). */
@@ -41,6 +44,7 @@ export function PasoAcuses({
   normasPanel,
   normasSinPlantilla,
   normasAceptado,
+  documentosCentro,
   currentUserId,
   currentUserNombre,
   modoDireccion = false,
@@ -51,6 +55,13 @@ export function PasoAcuses({
 
   return (
     <div className="space-y-6">
+      <DocumentosCentroAlta
+        locale={locale}
+        ninoId={ninoId}
+        documentos={documentosCentro}
+        modoDireccion={modoDireccion}
+      />
+
       {/* Normas de régimen interno — acuse por checkbox SIEMPRE disponible (vía B). Si el
           centro publica el documento, se muestra además para abrir/leer/firmar. */}
       <section className="space-y-3">
