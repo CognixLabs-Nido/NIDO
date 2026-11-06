@@ -1522,7 +1522,7 @@
         "no_se_pudo_leer": "No hemos podido leer lo que lleva hecho esta alta.",
         "opcional": "opcional",
         "items": {
-          "normas": "Normas",
+          "documentos_centro": "Documentos del centro",
           "nino": "Datos del niño (libro de familia)",
           "imagen": "Imagen",
           "tutor1": "Tutor 1 (DNI)",
@@ -4602,14 +4602,10 @@
       "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo."
     },
     "acuses": {
-      "normas_titulo": "Normas de régimen interno",
-      "normas_sin_plantilla": "El centro aún no tiene publicadas las normas para firmar. Este acuse se completará más adelante.",
       "privacidad_titulo": "Privacidad",
       "privacidad_aceptada": "Aceptaste el aviso de privacidad al crear tu cuenta.",
       "privacidad_ver": "Ver aviso de privacidad",
       "aceptado": "Aceptado.",
-      "normas_acepto": "He leído y acepto las normas de régimen interno del centro.",
-      "normas_aceptado": "Aceptaste las normas de régimen interno.",
       "imagen_acepto": "Autorizo el uso de la imagen del menor según la política del centro.",
       "imagen_aceptado": "Aceptaste la autorización de imagen."
     },
@@ -4752,7 +4748,7 @@
     "familia_existente": {
       "titulo": "Ya conocemos a tu familia",
       "reutilizado": "Reutilizamos tus datos de tutor, tu DNI y la domiciliación bancaria que ya nos diste: no hace falta que los vuelvas a rellenar.",
-      "por_nino": "Solo necesitamos lo propio de {nombre}: sus datos, la información de salud, la autorización de imagen y el acuse de las normas.",
+      "por_nino": "Solo necesitamos lo propio de {nombre}: sus datos, la información de salud, la autorización de imagen y la firma de los documentos del centro.",
       "tutor_titulo": "Datos que ya tenemos de ti",
       "tutor_nota": "Son los datos de tu familia. Si algo ha cambiado, puedes editarlos: el cambio vale para todos tus hijos.",
       "editar": "Editar datos"
@@ -4766,7 +4762,7 @@
         "medico": "Datos médicos y de emergencia",
         "documentos": "Documentos (libro de familia y DNI)",
         "imagen": "Autorización de imagen",
-        "normas": "Normas de régimen interno"
+        "documentos_centro": "Documentos del centro por firmar"
       }
     }
   },

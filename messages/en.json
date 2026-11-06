@@ -1522,7 +1522,7 @@
         "no_se_pudo_leer": "We couldn't read what has been done in this enrolment.",
         "opcional": "optional",
         "items": {
-          "normas": "Rules",
+          "documentos_centro": "Centre's documents",
           "nino": "Child's details (family book)",
           "imagen": "Image",
           "tutor1": "Guardian 1 (ID)",
@@ -4602,14 +4602,10 @@
       "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it."
     },
     "acuses": {
-      "normas_titulo": "Internal rules",
-      "normas_sin_plantilla": "The centre hasn't published the rules to sign yet. This acknowledgement will be completed later.",
       "privacidad_titulo": "Privacy",
       "privacidad_aceptada": "You accepted the privacy notice when creating your account.",
       "privacidad_ver": "View privacy notice",
       "aceptado": "Accepted.",
-      "normas_acepto": "I have read and accept the centre's internal rules.",
-      "normas_aceptado": "You accepted the internal rules.",
       "imagen_acepto": "I authorise the use of the child's image according to the centre's policy.",
       "imagen_aceptado": "You accepted the image authorisation."
     },
@@ -4752,7 +4748,7 @@
     "familia_existente": {
       "titulo": "We already know your family",
       "reutilizado": "We reuse your guardian details, your ID document and the direct debit you already gave us: no need to fill them in again.",
-      "por_nino": "We only need what belongs to {nombre}: their details, health information, image authorisation and acknowledgement of the rules.",
+      "por_nino": "We only need what belongs to {nombre}: their details, health information, image authorisation and signing the centre's documents.",
       "tutor_titulo": "Details we already have about you",
       "tutor_nota": "These are your family details. If something has changed you can edit them: the change applies to all your children.",
       "editar": "Edit details"
@@ -4766,7 +4762,7 @@
         "medico": "Medical and emergency details",
         "documentos": "Documents (family book and ID)",
         "imagen": "Image consent",
-        "normas": "Internal rules acknowledgement"
+        "documentos_centro": "Centre's documents to sign"
       }
     }
   },

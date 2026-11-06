@@ -35,7 +35,7 @@ vi.mock('@/features/ninos/components/SubirFotoNino', () => ({
 }))
 vi.mock('../SubirDocumentoPdf', () => ({ SubirDocumentoPdf: () => <div /> }))
 vi.mock('../AcuseAltaCheckbox', () => ({
-  AcuseAltaCheckbox: ({ tipo }: { tipo: string }) => <div data-testid={`stub-casilla-${tipo}`} />,
+  AcuseAltaCheckbox: () => <div data-testid="stub-casilla-imagen" />,
 }))
 
 import { PasoMenor } from '../PasoMenor'

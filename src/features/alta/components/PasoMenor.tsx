@@ -496,7 +496,6 @@ export function PasoMenor({
         {puedeConsentirImagen && (
           <AcuseAltaCheckbox
             ninoId={ninoId}
-            tipo="imagen"
             aceptadoInicial={imagenAceptado}
             onAceptado={() => setAceptadoEnSesion(true)}
           />

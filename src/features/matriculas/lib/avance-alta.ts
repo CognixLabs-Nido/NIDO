@@ -1,4 +1,9 @@
 import type { BloqueAlta } from '@/features/alta/actions/finalizar-alta'
+import {
+  frenaElAlta,
+  hayObligatorioSubido,
+  type DocumentoEnElCierre,
+} from '@/features/alta/lib/regla-documentos-alta'
 
 /**
  * Lo que lleva hecho un alta, sacado de lo que ya está guardado (decisión de Jose, 2026-11-04:
@@ -13,11 +18,16 @@ import type { BloqueAlta } from '@/features/alta/actions/finalizar-alta'
  *  - Lo obligatorio que la familia hace en cada paso es otra cosa: en el del niño, subir el libro de
  *    familia; en el del tutor 1, su DNI. Es lo que exige el gate de `finalizarAlta` (`documentos`).
  *
+ *  - Los documentos del centro (fase 4, 4b-2) con la regla del gate (`regla-documentos-alta.ts`):
+ *    hecho si no queda ninguno obligatorio por firmar. Si no hay ninguno obligatorio subido, la línea
+ *    no sale: el centro aún no ha subido nada y la familia no tiene nada que hacer (como el SEPA sin
+ *    CID), y «hecho» diría lo contrario.
+ *
  * Una línea por paso del wizard, en su orden. `opcional`: no impide terminar el alta; sin hacer se
  * pinta neutra, no como lo que falta.
  */
 export const ITEMS_AVANCE = [
-  'normas',
+  'documentos_centro',
   'nino',
   'imagen',
   'tutor1',
@@ -32,8 +42,8 @@ export const ITEMS_OPCIONALES: ReadonlySet<ItemAvance> = new Set(['tutor2', 'sep
 
 /** Las señales guardadas de un alta (las lee `get-avance-alta.ts`). */
 export interface SenalesAvance {
-  /** Firma de las normas publicadas del centro, o su acuse por casilla (`acuses_alta`). */
-  normas: boolean
+  /** Los documentos del centro del niño (`documentos_firma_nino`): obligatorio y estado. */
+  documentosCentro: readonly DocumentoEnElCierre[]
   /** `ninos.libro_familia_path`: lo sube la familia en el paso del niño. */
   libroFamilia: boolean
   /** Consentimiento de imagen vigente del niño (`existe_consentimiento_imagen`). */
@@ -69,11 +79,11 @@ export const LINEAS_DEL_GATE: Record<BloqueAlta, readonly ItemAvance[] | 'invita
   documentos: ['nino', 'tutor1'],
   medico: ['medico'],
   imagen: ['imagen'],
-  normas: ['normas'],
+  documentos_centro: ['documentos_centro'],
 }
 
 const HECHO: Record<ItemAvance, (s: SenalesAvance) => boolean> = {
-  normas: (s) => s.normas,
+  documentos_centro: (s) => !s.documentosCentro.some(frenaElAlta),
   nino: (s) => s.libroFamilia,
   imagen: (s) => s.imagen,
   tutor1: (s) => s.dniTutor1,
@@ -83,7 +93,11 @@ const HECHO: Record<ItemAvance, (s: SenalesAvance) => boolean> = {
 }
 
 export function avanceAlta(s: SenalesAvance): LineaAvance[] {
-  return ITEMS_AVANCE.filter((item) => item !== 'sepa' || s.centroConCid).map((item) => ({
+  return ITEMS_AVANCE.filter(
+    (item) =>
+      (item !== 'sepa' || s.centroConCid) &&
+      (item !== 'documentos_centro' || hayObligatorioSubido(s.documentosCentro))
+  ).map((item) => ({
     item,
     estado: HECHO[item](s) ? 'hecho' : ITEMS_OPCIONALES.has(item) ? 'sin_hacer_opcional' : 'falta',
   }))

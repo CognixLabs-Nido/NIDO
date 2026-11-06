@@ -32,7 +32,7 @@ import type { MandatoSepaInicial } from '@/features/alta/components/PasoSepa'
 import type { DatosTutorInicial } from '@/features/alta/components/PasoTutor'
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
 import type { EstadoCivil } from '@/features/alta/schemas/alta-documentos'
-import type { FirmaPanelData, MedicaInicial } from '@/features/alta/lib/tipos'
+import type { ImagenPanelData, MedicaInicial } from '@/features/alta/lib/tipos'
 
 interface PageProps {
   params: Promise<{ locale: string; ninoId: string }>
@@ -45,7 +45,7 @@ export const dynamic = 'force-dynamic'
  * Wizard de alta del tutor (F11-G, 8 pasos). Esta ruta es la **entrada de reanudación**
  * (post-login): el paso `cuenta` se hizo en `/invitation/[token]`. Verifica tutela, gatea
  * por estado de matrícula y pre-carga lo persistido de cada paso (identidad + dirección,
- * pedagógicos, libro de familia, foto, paneles de firma de normas e imagen, datos de los
+ * pedagógicos, libro de familia, foto, panel de firma de imagen, documentos del centro, datos de los
  * tutores con sus DNIs, y los valores de familia que se propagan entre hermanos).
  */
 export default async function AltaTutorPage({ params, searchParams }: PageProps) {
@@ -255,41 +255,17 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const foto = await firmarFotoNino(nino.foto_url)
 
   // Panel de firma de imagen (instancia por niño, igual que el flujo previo).
-  const imagenPanel = await panelFirma(
-    supabase,
-    nino.centro_id,
-    ninoId,
-    'autorizacion_imagenes',
-    false
-  )
+  const imagenPanel = await panelFirma(supabase, nino.centro_id, ninoId, 'autorizacion_imagenes')
   const imagenSinPlantilla =
     imagenPanel === null && (await sinPlantilla(supabase, nino.centro_id, 'autorizacion_imagenes'))
 
-  // Panel de firma de NORMAS (reglas_regimen_interno, patrón A: la dirección la publica;
-  // la familia la firma). Del centro del niño: la RLS deja ver las de todos los centros de
-  // la familia.
-  const normasPanel = await panelFirma(
-    supabase,
-    nino.centro_id,
-    ninoId,
-    'reglas_regimen_interno',
-    true
-  )
-  const normasSinPlantilla = normasPanel === null
-
-  // Vía B — normas por acuse (checkbox → `acuses_alta`); imagen por CONSENT (checkbox →
-  // `otorgar_consentimiento_imagen`, IU-2). imagenAceptado = ¿el niño ya tiene consent de
-  // imagen vigente? (lo alimentan tanto el checkbox como la firma).
-  const { data: acusesRows } = await supabase
-    .from('acuses_alta')
-    .select('tipo')
-    .eq('nino_id', ninoId)
-  const acusados = new Set((acusesRows ?? []).map((a) => a.tipo))
-  const normasAceptado = acusados.has('normas')
-  // Los documentos del centro (fase 4, 4b-1): lo que le toca firmar al niño, con la sesión. Si la
-  // lectura falla no hay alta: una lista vacía diría «no hay nada que firmar».
+  // Los documentos del centro (fase 4): lo que le toca firmar al niño, con la sesión. Las normas son
+  // uno de ellos desde el 4b-2 (decisiones del 2026-11-06): ni la autorización de normas ni la casilla.
+  // Si la lectura falla no hay alta: una lista vacía diría «no hay nada que firmar».
   const documentosCentro = await leerDocumentosAlta(supabase, ninoId)
   if (!documentosCentro.ok) throw new Error(documentosCentro.error)
+  // Imagen por CONSENT (casilla → `otorgar_consentimiento_imagen`, IU-2): ¿el niño ya tiene consent
+  // de imagen vigente? (lo alimentan tanto la casilla como la firma).
   const { data: imagenConsentida } = await supabase.rpc('existe_consentimiento_imagen', {
     p_nino_id: ninoId,
   })
@@ -330,7 +306,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // U-3 — "tutor ya existente": si este niño es el 2.º (o 3.º…) de la familia y el perfil
   // compartido del titular ya está completo, los pasos de FAMILIA (tutor 1, tutor 2, SEPA) se
   // presentan RESUELTOS —solo lectura, confirmables— en vez de en blanco. Lo por-niño (menor,
-  // salud, imagen, normas) se sigue pidiendo entero. La decisión vive en la pieza pura.
+  // salud, imagen, documentos del centro) se sigue pidiendo entero. La decisión vive en la pieza pura.
   const tutor1Row = tutoresRows.find((r) => r.tipo_vinculo === 'tutor_legal_principal')
   const reutilizacion = resolverReutilizacionFamilia({
     tieneHermanos: hermanosIds.length > 0,
@@ -380,9 +356,6 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         fotoInicialUrl={foto.url ?? foto.urlMiniatura}
         imagenPanel={imagenPanel}
         imagenSinPlantilla={imagenSinPlantilla}
-        normasPanel={normasPanel}
-        normasSinPlantilla={normasSinPlantilla}
-        normasAceptado={normasAceptado}
         documentosCentro={documentosCentro.data}
         imagenAceptado={imagenAceptado}
         familiaEstadoCivil={familiaEstadoCivil}
@@ -408,26 +381,24 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>
 
-/** Busca una instancia publicada del tipo dado en el centro del niño, visible para el tutor
- * (RLS), y devuelve su panel de firma (firmable + roster). `porNino=false` → patrón A (reglas,
- * ámbito aula/centro, sin nino_id). Null si no hay ninguna. */
+/** Busca la instancia publicada del tipo dado para el niño, en su centro, visible para el tutor
+ * (RLS), y devuelve su panel de firma (firmable + roster). Null si no hay ninguna. */
 async function panelFirma(
   supabase: ServerClient,
   centroId: string,
   ninoId: string,
-  tipo: 'autorizacion_imagenes' | 'reglas_regimen_interno',
-  patronA: boolean
-): Promise<FirmaPanelData | null> {
-  let query = supabase
+  tipo: 'autorizacion_imagenes'
+): Promise<ImagenPanelData | null> {
+  const { data: instancia } = await supabase
     .from('autorizaciones')
     .select('id')
     .eq('centro_id', centroId)
     .eq('tipo', tipo)
     .eq('es_plantilla', false)
     .eq('estado', 'publicada')
+    .eq('nino_id', ninoId)
     .limit(1)
-  if (!patronA) query = query.eq('nino_id', ninoId)
-  const { data: instancia } = await query.maybeSingle()
+    .maybeSingle()
   if (!instancia) return null
   const detalle = await getAutorizacionDetalle(instancia.id)
   if (!detalle) return null
@@ -438,7 +409,7 @@ async function panelFirma(
 async function sinPlantilla(
   supabase: ServerClient,
   centroId: string,
-  tipo: 'autorizacion_imagenes' | 'reglas_regimen_interno'
+  tipo: 'autorizacion_imagenes'
 ): Promise<boolean> {
   const { data: plantilla } = await supabase
     .from('autorizaciones')

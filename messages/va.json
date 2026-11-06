@@ -1522,7 +1522,7 @@
         "no_se_pudo_leer": "No hem pogut llegir el que porta fet aquesta alta.",
         "opcional": "opcional",
         "items": {
-          "normas": "Normes",
+          "documentos_centro": "Documents del centre",
           "nino": "Dades del xiquet (llibre de família)",
           "imagen": "Imatge",
           "tutor1": "Tutor 1 (DNI)",
@@ -4602,14 +4602,10 @@
       "presencial_solo_direccion": "Açò ho registra la directora del centre, que té la família davant. Com a superusuari no ho pots fer."
     },
     "acuses": {
-      "normas_titulo": "Normes de règim intern",
-      "normas_sin_plantilla": "El centre encara no té publicades les normes per signar. Aquest acusament es completarà més endavant.",
       "privacidad_titulo": "Privacitat",
       "privacidad_aceptada": "Vas acceptar l'avís de privacitat en crear el teu compte.",
       "privacidad_ver": "Veure avís de privacitat",
       "aceptado": "Acceptat.",
-      "normas_acepto": "He llegit i accepte les normes de règim intern del centre.",
-      "normas_aceptado": "Vas acceptar les normes de règim intern.",
       "imagen_acepto": "Autoritze l'ús de la imatge del menor segons la política del centre.",
       "imagen_aceptado": "Vas acceptar l'autorització d'imatge."
     },
@@ -4752,7 +4748,7 @@
     "familia_existente": {
       "titulo": "Ja coneixem la teua família",
       "reutilizado": "Reutilitzem les teues dades de tutor, el teu DNI i la domiciliació bancària que ja ens vas donar: no cal que els tornes a omplir.",
-      "por_nino": "Només necessitem el que és propi de {nombre}: les seues dades, la informació de salut, l'autorització d'imatge i l'acusament de les normes.",
+      "por_nino": "Només necessitem el que és propi de {nombre}: les seues dades, la informació de salut, l'autorització d'imatge i la signatura dels documents del centre.",
       "tutor_titulo": "Dades que ja tenim de tu",
       "tutor_nota": "Són les dades de la teua família. Si alguna cosa ha canviat, pots editar-les: el canvi val per a tots els teus fills.",
       "editar": "Editar dades"
@@ -4766,7 +4762,7 @@
         "medico": "Dades mèdiques i d'emergència",
         "documentos": "Documents (llibre de família i DNI)",
         "imagen": "Autorització d'imatge",
-        "normas": "Normes de règim intern"
+        "documentos_centro": "Documents del centre per signar"
       }
     }
   },

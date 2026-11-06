@@ -12,14 +12,6 @@ export interface ImagenPanelData {
   roster: RosterFirmaNino[]
 }
 
-/**
- * Datos de un panel de firma genérico (misma forma que `ImagenPanelData`). En G-1 lo usa
- * el paso de acuses para firmar las **normas de régimen interno** (`reglas_regimen_interno`,
- * patrón A: la dirección publica la instancia, la familia la firma). La ruta lo pre-computa
- * buscando la instancia publicada aplicable al niño; si no hay, pasa `null` (el paso lo omite).
- */
-export type FirmaPanelData = ImagenPanelData
-
 /** Valores médicos descifrados para prerrellenar el paso médico (o null). */
 export interface MedicaInicial {
   alergias_graves: string | null

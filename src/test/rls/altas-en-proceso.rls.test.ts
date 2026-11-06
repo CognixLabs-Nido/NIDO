@@ -6,6 +6,7 @@ import {
   type AltaEnProceso,
 } from '@/features/matriculas/queries/get-altas-en-proceso'
 
+import { borrarDocumentosDe, creaDocumento, subeVersion } from './documentos-centro-fixture'
 import { borrarMandatos, insertarMandato } from './mandatos-como-postgres'
 import {
   asignarRol,
@@ -31,7 +32,9 @@ import {
  *    ha entrado en un alta ya validada (Nil, que hasta ahora no salía en ninguna parte);
  *  - lo que lleva hecho Ona sale de lo que hizo la familia: recién aceptada, con el nombre del niño
  *    y el del tutor ya puestos por la invitación, no tiene nada hecho; y cada cosa que hace la
- *    familia se ve hecha con la sesión de la directora (el control positivo de cada lectura);
+ *    familia se ve hecha con la sesión de la directora (el control positivo de cada lectura). Los
+ *    documentos del centro (4b-2): el centro tiene las normas subidas, y se ven hechas cuando la
+ *    tutora las firma, no por la casilla de antes;
  *  - la lista es de Dirección: la profe y la directora de otro centro no la leen (NULL, nunca una
  *    lista vacía que diga «no hay»).
  * Fixtures ficticios, fechados el 2026-11-04.
@@ -50,6 +53,7 @@ describe('Altas en proceso: el embudo de la directora', () => {
   let tutora: TestUser
   let aula: string
   let curso: string
+  let normasV1: string
   const ninos: Record<'leo' | 'mar' | 'ona' | 'pau' | 'nil', { nino: string; familia: string }> =
     {} as never
   const sufijo = Date.now()
@@ -118,6 +122,10 @@ describe('Altas en proceso: el embudo de la directora', () => {
     await asignarRol(directora.id, centro.id, 'directora')
     await asignarRol(directoraOtro.id, otro.id, 'directora')
     await asignarRol(profe.id, centro.id, 'profe')
+    // Las normas del centro, subidas por la admin: a cada alta le tocan.
+    const sesionAdmin = await clientFor(admin)
+    const normas = await creaDocumento(sesionAdmin, centro.id, 'Normas Embudo')
+    normasV1 = await subeVersion(sesionAdmin, centro.id, normas, null, 'normas embudo v1')
 
     // Leo: invitado, sin aceptar, la invitación abierta.
     ninos.leo = await alta('Leo', `embudo-leo-${sufijo}@nido.test`)
@@ -203,6 +211,7 @@ describe('Altas en proceso: el embudo de la directora', () => {
 
   afterAll(async () => {
     if (centro) borrarMandatos('centro_id', centro.id)
+    if (centro) await borrarDocumentosDe(centro.id)
     await deleteTestCentro(centro.id)
     await deleteTestCentro(otro.id)
     for (const u of [admin, directora, directoraOtro, profe, tutora]) {
@@ -279,7 +288,7 @@ describe('Altas en proceso: el embudo de la directora', () => {
     expect(t?.nombre_completo).toBe('Tutora Embudo')
 
     expect(await avanceDe(ninos.ona.nino)).toEqual({
-      normas: 'falta',
+      documentos_centro: 'falta',
       nino: 'falta',
       imagen: 'falta',
       tutor1: 'falta',
@@ -291,18 +300,23 @@ describe('Altas en proceso: el embudo de la directora', () => {
 
   it('cada cosa que hace la familia se ve hecha con la sesión de la directora', async () => {
     const ona = ninos.ona
-    // Normas, por casilla (`acuses_alta`).
+    // Los documentos del centro: la tutora firma las normas con el dedo (4b-2; la casilla de antes
+    // ya no cuenta).
     expect(
       (
-        await serviceClient.from('acuses_alta').insert({
-          nino_id: ona.nino,
-          centro_id: centro.id,
-          tipo: 'normas',
-          firmante_id: tutora.id,
+        await (
+          await clientFor(tutora)
+        ).rpc('firmar_documento_centro', {
+          p_version_id: normasV1,
+          p_nino_id: ona.nino,
+          p_nombre_tecleado: 'Tutora Embudo',
+          p_firma_imagen: 'data:image/png;base64,AAAA',
+          p_ip_address: null,
+          p_user_agent: null as unknown as string,
         })
       ).error
     ).toBeNull()
-    expect.soft((await avanceDe(ona.nino)).normas).toBe('hecho')
+    expect.soft((await avanceDe(ona.nino)).documentos_centro).toBe('hecho')
 
     // El libro de familia, en el paso del niño.
     expect(
@@ -369,7 +383,7 @@ describe('Altas en proceso: el embudo de la directora', () => {
     })
     expect(m.error).toBeNull()
     expect(await avanceDe(ona.nino)).toEqual({
-      normas: 'hecho',
+      documentos_centro: 'hecho',
       nino: 'hecho',
       imagen: 'hecho',
       tutor1: 'hecho',

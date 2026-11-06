@@ -465,10 +465,10 @@ Migración `20261209120000_feat_altas_sin_terminar`; spec `docs/specs/retencion-
   email de la purga para que `cuentas_auth_huerfanas` la vuelva a encontrar.
 - **La pantalla «Altas en proceso»** (`/admin/altas`, 2026-11-04, sin migración): lee con la
   sesión de Dirección `altas_sin_terminar`, las matrículas en `lista` y las invitaciones del
-  segundo tutor sin aceptar, y lo que lleva hecho cada alta de `ninos`, `acuses_alta`,
-  `familia_tutores`, `mandatos_sepa`, `firmas_autorizacion`, `consentimientos` y
-  `existe_consentimiento_imagen`, todas abiertas a Dirección del centro por su RLS. Si una lectura
-  falla, la lista no sale (NULL), nunca vacía.
+  segundo tutor sin aceptar, y lo que lleva hecho cada alta de `ninos`, `familia_tutores`,
+  `mandatos_sepa`, `consentimientos`, `existe_consentimiento_imagen` y, desde el 4b-2,
+  `documentos_firma_nino` (antes, las normas por `acuses_alta` y `firmas_autorizacion`), todas
+  abiertas a Dirección del centro. Si una lectura falla, la lista no sale (NULL), nunca vacía.
 - **El segundo tutor** (`20261231120000`): `cancelar_invitacion_tutor2(niño, actor,
 email_que_se_queda)`, solo `service_role`. La app comprueba la sesión (`usuarioAdminEn`) y pasa
   quién actúa; la base lo vuelve a mirar (`privado.es_direccion`, 42501). Borra sin copia las
@@ -597,6 +597,29 @@ Migración `20270103120000_feat_firmar_documentos_centro`; spec `docs/specs/alta
   niño (`tiene_consentimiento`): una llamada directa cerraba el alta del 2.º hijo con el acuse del
   1.º (medido en producción el 2026-11-05, en un ensayo terminado en RAISE).
 - Test: `src/test/rls/firmar-documentos-centro.rls.test.ts`.
+
+### El alta se cierra con los documentos firmados (serie de altas, fase 4, 4b-2)
+
+Migración `20270109120000_feat_alta_cierra_con_documentos_firmados`; spec `docs/specs/altas-serie.md`,
+«4b» y «Decisiones (2026-11-06)».
+
+- **La puerta en la base:** `marcar_matricula_lista`, con la matrícula pendiente, rechaza (P0001,
+  HINT `documentos_por_firmar`) si `privado.documentos_del_nino` da algún documento obligatorio
+  `por_firmar`, también a la Dirección. Uno que el centro no ha subido (`falta_documento`) no frena
+  (P-6), ni uno opcional: hasta que el centro suba sus normas, el alta se cierra sin ellas, el único
+  momento de la historia del producto en que pasa. La app (`finalizarAlta`, `frenaElAlta`) aplica la
+  misma regla antes de llamar, y ante el HINT dice lo que falta.
+- **La casilla de las normas, cerrada:** `acuses_alta` ya no tiene política de INSERT y
+  `authenticated` no tiene el privilegio; cada cerrojo basta solo (ensayo en producción, terminado en
+  RAISE, quitándolos de uno en uno). `service_role` conserva el INSERT: ningún código de la app
+  escribe ahí y los tests montan con él el histórico. Las filas se quedan y se siguen leyendo
+  (`acuses_alta_select`).
+- Medido en producción el 2026-11-06 (ensayo terminado en RAISE, LF y CRLF, sobre el alta pendiente
+  de CEI Ejemplo con tres documentos creados dentro): antes, la tutora y la admin cerraban con un
+  obligatorio por firmar y la tutora marcaba la casilla; después, las dos reciben
+  `documentos_por_firmar`, firmado el obligatorio cierra (con uno sin subir y uno opcional
+  pendientes), y la casilla da 42501.
+- Test: `src/test/rls/alta-cierra-documentos.rls.test.ts` y `acuses-alta-cerrada.rls.test.ts`.
 
 ### Los consentimientos, solo por sus funciones (2026-11-06)
 
