@@ -1135,8 +1135,8 @@ desplegado: la admin puede subir un documento en cualquier momento):
 - **4b-2, la puerta y el barrido** (con migración, `20270109120000`). `finalizarAlta` y
   `marcar_matricula_lista` exigen firmada cada versión obligatoria que está por firmar; lo que falta no
   frena (P-6), ni lo opcional. La regla vive en tres sitios que dicen lo mismo: `frenaElAlta`
-  (`regla-documentos-alta.ts`) para el gate y el avance, y `d.obligatorio AND d.estado =
-  'por_firmar'` sobre `privado.documentos_del_nino` en la base. Si la base frena
+  (`regla-documentos-alta.ts`) para el gate y el avance, y en la base
+  `d.obligatorio AND d.estado = 'por_firmar'` sobre `privado.documentos_del_nino`. Si la base frena
   (`documentos_por_firmar`), la app dice lo que falta. Fuera del alta la casilla y la autorización de
   normas, con todo lo que las afirma (regla 12), y la casilla cerrada también en la base: sin la
   política de INSERT de `acuses_alta` y sin el privilegio para `authenticated` (cada cerrojo basta
@@ -1147,6 +1147,7 @@ desplegado: la admin puede subir un documento en cualquier momento):
 
   **Orden: mergear, esperar el despliegue, aplicar.** La migración cierra la casilla que la app de
   antes todavía enseña.
+
 - **4b-3, el tipo fuera del catálogo** (con migración). Ver «Decisiones (2026-11-06)».
 
 ### 4a · La base

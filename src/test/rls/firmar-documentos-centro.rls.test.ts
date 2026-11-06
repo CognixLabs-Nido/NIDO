@@ -389,8 +389,16 @@ describe('Firmar los documentos del centro', () => {
     // Control: con el acuse de Pablo, cierra. Desde el 4b-2 (`20270109120000`) el cierre pide también
     // los documentos obligatorios firmados: la madre firma los dos de Pablo, para que el control mida
     // solo el acuse. (Lo de la puerta de los documentos: `alta-cierra-documentos.rls.test.ts`.)
+    // Lo que tiene por firmar en este momento, leído y no supuesto: los tests de antes suben
+    // versiones nuevas, y la vigente ya no es la del fixture.
     await acuse(pablo)
-    for (const v of [pActivo1, normas1]) expect(await firma(madre, v, pablo)).toBe('ok')
+    const { data: suyos, error: el } = await (
+      await como(madre)
+    ).rpc('documentos_firma_nino', { p_nino_id: pablo })
+    if (el) throw new Error(`lo de Pablo: ${el.message}`)
+    const porFirmar = (suyos ?? []).filter((d) => d.obligatorio && d.estado === 'por_firmar')
+    expect(porFirmar.length).toBeGreaterThan(0)
+    for (const d of porFirmar) expect(await firma(madre, d.version_id!, pablo)).toBe('ok')
     expect(await cierra()).toBe('lista')
   })
 })
