@@ -61,6 +61,8 @@ Para todo lo demás (`cd`, `git status`, `npm test`, ediciones según plan, etc.
 
 **13. Un test afirma su propia premisa antes de medir.** Todo test que se monta su precondición (quién es quién, en qué aula está, qué rol tiene, qué fixture existe, qué flag o huso rige) la afirma en su **primer aserto**, antes de lo que mide, y ese aserto tiene que poder fallar. Vale sobre todo para los tests de «X **no** puede»: un 0 o un rechazo dicen algo solo si X es de verdad quien la regla excluye; si no, el test mide la nada y lo parece todo. Se comprueba con la mutación de la regla: si al quitarla el test sigue verde, la premisa era falsa. _Norma del responsable del 2026-11-05, tras el quinto caso: en #499 la mutación que dejaba leer a la profe salió verde porque la profe no era del aula de Lucía; el test ahora afirma primero `es_profe_de_nino = true`, y con la mutación se pone rojo._
 
+**14. De un test en rojo solo se afirma lo que llegó a correr.** Un test se para en el primer aserto que falla, y lo que viene detrás no se ejecuta: no dice nada, ni bueno ni malo. Al citar un rojo (en un PR, en un control negativo, en un informe) se nombra el aserto que falló y lo que recibió, **leído del log**, y nada de lo que el test comprueba después. Lo que se deduzca de ese rojo se escribe como deducción, y lo que no se ha medido, «sin medir», con esas palabras. Los `expect.soft` no paran el test: de esos sí corre lo de después, y el log lo dice. _Norma del responsable del 2026-11-06, tras #510: en la mutación M2 escribí «no se firma nada», y el aserto que contaba las firmas iba detrás del que falló y no llegó a correr._
+
 ## Verificaciones antes de abrir un PR
 
 Tras implementar y antes de abrir el PR, deben pasar en local:
