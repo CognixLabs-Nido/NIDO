@@ -18,8 +18,10 @@ import { sinComentarios } from '../../../scripts/check-centro-activo.mjs'
  */
 
 const RAIZ = path.resolve(__dirname, '../../..')
+// O llama a una función de la base que registra en persona sin pasarle el método: la firma
+// presencial de los documentos del centro (4a, `registrar_firma_documento_presencial`).
 const RE_ESCRIBE_PRESENCIAL =
-  /\b(p_metodo|metodo_firma|metodoFirma)\s*(:|=(?!=))[^,;|\n]*['"`]presencial['"`]/
+  /\b(p_metodo|metodo_firma|metodoFirma)\s*(:|=(?!=))[^,;|\n]*['"`]presencial['"`]|['"`]registrar_firma_documento_presencial['"`]/
 const RE_PREGUNTA = /\besSuperusuario\s*\(/
 
 const SIN_PREGUNTA: Record<string, string> = {
@@ -50,8 +52,10 @@ describe('registros presenciales: la directora sí, el superusuario no', () => {
   const escriben = todos.filter((rel) => RE_ESCRIBE_PRESENCIAL.test(codigo(rel)))
 
   it('cada fichero que escribe un método presencial pregunta esSuperusuario o está en la lista', () => {
-    // Premisa: el censo encuentra los cinco de hoy (el patrón caza).
-    expect(escriben).toHaveLength(5)
+    // Premisa: el censo encuentra los seis de hoy (el patrón caza); el sexto, la firma presencial
+    // de los documentos del centro en el alta (fase 4, 4b-1).
+    expect(escriben).toHaveLength(6)
+    expect(escriben).toContain('src/features/alta/lib/documentos-alta.ts')
     const sinPregunta = escriben.filter((rel) => !RE_PREGUNTA.test(codigo(rel))).sort()
     expect(sinPregunta).toEqual(Object.keys(SIN_PREGUNTA).sort())
   })
