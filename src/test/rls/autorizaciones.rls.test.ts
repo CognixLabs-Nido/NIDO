@@ -129,14 +129,20 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
   // Las instancias por niño son de forma B2 (plantilla + ambito='nino'), la que crea la app: la
   // forma legacy sin plantilla ya no cabe en el CHECK (20261016120000). Una plantilla activa por
   // centro y tipo, creada al primer uso.
-  const plantillas = new Map<TipoAutorizacion, string>()
-  async function plantillaDe(tipo: TipoAutorizacion): Promise<string> {
-    const ya = plantillas.get(tipo)
+  const plantillas = new Map<string, string>()
+  // La plantilla es del centro de la autorización que la usa (`plantilla_id` es de su centro:
+  // zz_centro_coherente, 20270108120000).
+  async function plantillaDe(
+    tipo: TipoAutorizacion,
+    centroId: string = centro.id
+  ): Promise<string> {
+    const clave = `${centroId}:${tipo}`
+    const ya = plantillas.get(clave)
     if (ya) return ya
     const { data, error } = await serviceClient
       .from('autorizaciones')
       .insert({
-        centro_id: centro.id,
+        centro_id: centroId,
         tipo,
         es_plantilla: true,
         titulo: `Formato ${tipo}`,
@@ -149,12 +155,14 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
       .select('id')
       .single()
     if (error || !data) throw new Error(`plantilla ${tipo}: ${error?.message}`)
-    plantillas.set(tipo, data.id)
+    plantillas.set(clave, data.id)
     return data.id
   }
 
   async function crearAutorizacion(opts: {
     tipo: TipoAutorizacion
+    /** El centro de la autorización; por defecto el de la suite. Con `nino_id` de otro centro, el suyo. */
+    centro_id?: string
     nino_id?: string
     evento_id?: string
     estado?: 'borrador' | 'publicada' | 'anulada'
@@ -164,8 +172,9 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
     firmantes_requeridos?: Database['public']['Enums']['politica_firmantes']
   }): Promise<string> {
     const esPublicada = opts.estado === 'publicada' || opts.estado === undefined
+    const centroId = opts.centro_id ?? centro.id
     const payload: AutorizacionInsert = {
-      centro_id: centro.id,
+      centro_id: centroId,
       tipo: opts.tipo,
       titulo: 'Autorización Test',
       texto: esPublicada ? TEXTO_REAL : 'PENDIENTE',
@@ -180,7 +189,7 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
         ? { evento_id: opts.evento_id }
         : {
             nino_id: opts.nino_id,
-            plantilla_id: await plantillaDe(opts.tipo),
+            plantilla_id: await plantillaDe(opts.tipo, centroId),
             ambito: 'nino' as const,
           }),
     }
@@ -380,14 +389,22 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
     expect(ok.id).toBeTruthy()
 
     // tutor de centro intenta firmar por el niño de otro centro → es_tutor_de=false.
-    const autB = await crearAutorizacion({ tipo: 'recogida', nino_id: ninoB.id })
+    const autB = await crearAutorizacion({
+      tipo: 'recogida',
+      centro_id: centroB.id,
+      nino_id: ninoB.id,
+    })
     const ajeno = await firmarComo(tutor, { autorizacion_id: autB, nino_id: ninoB.id })
     expect(ajeno.id).toBeFalsy()
   })
 
   it('un tutor no firma una autorización que no aplica a su niño', async () => {
     // autorización de ninoB; tutor pasa nino_id de su propio niño → no aplica.
-    const autB = await crearAutorizacion({ tipo: 'medicacion', nino_id: ninoB.id })
+    const autB = await crearAutorizacion({
+      tipo: 'medicacion',
+      centro_id: centroB.id,
+      nino_id: ninoB.id,
+    })
     const r = await firmarComo(tutor, { autorizacion_id: autB, nino_id: nino.id })
     expect(r.id).toBeFalsy()
   })

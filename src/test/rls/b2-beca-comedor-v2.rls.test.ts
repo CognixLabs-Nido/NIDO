@@ -12,6 +12,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { comoSesionSinCentroCoherente, hayCentroCoherente } from './defensa-sin-centro-coherente'
 
 /**
  * B2-0 — RLS + constraints del modelo Beca comedor v2: `beca_comedor_elegibilidad`,
@@ -134,12 +135,35 @@ describe('B2 — beca comedor v2 RLS + constraints', () => {
     expect(error?.code).toBe('42501')
   })
 
-  it('cruce de centro: admin de A con un niño de B → 42501', async () => {
+  // Dos capas (defensa-sin-centro-coherente.ts): zz_centro_coherente (23514, centro_ajeno), que
+  // corre antes, y la RLS de antes (42501), medida sola con el trigger deshabilitado.
+  it('cruce de centro: admin de A con un niño de B, por las dos capas', async () => {
+    const trigger = hayCentroCoherente('beca_comedor_elegibilidad')
     const { nino: ninoB } = await nuevoNino(centroB.id)
+    const { nino: ninoA } = await nuevoNino(centroA.id)
     const { error } = await cAdmin
       .from('beca_comedor_elegibilidad')
       .insert({ centro_id: centroA.id, nino_id: ninoB, curso_academico_id: cursoA.id })
-    expect(error?.code).toBe('42501')
+    expect(error?.code).toBe(trigger ? '23514' : '42501')
+    if (trigger) expect(error?.hint).toBe('centro_ajeno')
+    const { data: entro } = await serviceClient
+      .from('beca_comedor_elegibilidad')
+      .select('id')
+      .eq('nino_id', ninoB)
+    expect(entro).toEqual([])
+
+    // La defensa de antes, sola. Control positivo por el mismo camino: su niño de A entra.
+    const sql = (nino: string) =>
+      `INSERT INTO public.beca_comedor_elegibilidad (centro_id, nino_id, curso_academico_id) VALUES ('${centroA.id}', '${nino}', '${cursoA.id}')`
+    expect(comoSesionSinCentroCoherente(admin.id, 'beca_comedor_elegibilidad', sql(ninoA))).toEqual(
+      {
+        filas: 1,
+        error: null,
+      }
+    )
+    expect(
+      comoSesionSinCentroCoherente(admin.id, 'beca_comedor_elegibilidad', sql(ninoB)).error?.code
+    ).toBe('42501')
   })
 
   it('UNIQUE elegibilidad (nino, curso) rechaza duplicado → 23505', async () => {
@@ -239,10 +263,12 @@ describe('B2 — beca comedor v2 RLS + constraints', () => {
     expect(v).toHaveLength(0)
   })
 
-  it('cruce de recibo: admin de A con un recibo de B → 42501', async () => {
+  it('cruce de recibo: admin de A con un recibo de B, por las dos capas', async () => {
+    const trigger = hayCentroCoherente('beca_comedor_desborde')
     const { familia: famA } = await nuevoNino(centroA.id)
     const { familia: famB } = await nuevoNino(centroB.id)
     const reciboB = await nuevoRecibo(centroB.id, famB)
+    const reciboA = await nuevoRecibo(centroA.id, famA)
     const { error } = await cAdmin.from('beca_comedor_desborde').insert({
       centro_id: centroA.id,
       recibo_id: reciboB,
@@ -253,7 +279,24 @@ describe('B2 — beca comedor v2 RLS + constraints', () => {
       beca_total_centimos: 1,
       exceso_centimos: 1,
     })
-    expect(error?.code).toBe('42501')
+    expect(error?.code).toBe(trigger ? '23514' : '42501')
+    if (trigger) expect(error?.hint).toBe('centro_ajeno')
+    const { data: entro } = await serviceClient
+      .from('beca_comedor_desborde')
+      .select('id')
+      .eq('recibo_id', reciboB)
+    expect(entro).toEqual([])
+
+    // La defensa de antes, sola. Control positivo por el mismo camino: su recibo de A entra.
+    const sql = (recibo: string) =>
+      `INSERT INTO public.beca_comedor_desborde (centro_id, recibo_id, familia_id, anio, mes, cuota_total_centimos, beca_total_centimos, exceso_centimos) VALUES ('${centroA.id}', '${recibo}', '${famA}', 2027, 1, 0, 1, 1)`
+    expect(comoSesionSinCentroCoherente(admin.id, 'beca_comedor_desborde', sql(reciboA))).toEqual({
+      filas: 1,
+      error: null,
+    })
+    expect(
+      comoSesionSinCentroCoherente(admin.id, 'beca_comedor_desborde', sql(reciboB)).error?.code
+    ).toBe('42501')
   })
 
   it('CHECK coherencia desborde: resuelto sin via → 23514', async () => {

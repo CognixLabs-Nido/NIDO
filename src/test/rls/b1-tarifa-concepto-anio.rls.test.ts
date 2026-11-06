@@ -10,6 +10,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { comoSesionSinCentroCoherente, hayCentroCoherente } from './defensa-sin-centro-coherente'
 
 /**
  * B1-0 — RLS + constraints de `tarifa_concepto_anio` (importe de concepto por año de
@@ -163,14 +164,35 @@ describe('B1 — tarifa_concepto_anio RLS + constraints', () => {
     expect(error?.code).toBe('42501')
   })
 
-  it('cruce de centro: admin de A no cuelga una tarifa de un concepto de B (centro_id=A) → 42501', async () => {
+  // Dos capas (defensa-sin-centro-coherente.ts): zz_centro_coherente (23514, centro_ajeno), que
+  // corre antes, y la RLS de antes (42501), medida sola con el trigger deshabilitado.
+  it('cruce de centro: admin de A no cuelga una tarifa de un concepto de B (centro_id=A), por las dos capas', async () => {
+    const trigger = hayCentroCoherente('tarifa_concepto_anio')
     const { error } = await cAdmin.from('tarifa_concepto_anio').insert({
       centro_id: centroA.id,
       concepto_id: conceptoB, // concepto de OTRO centro
       anio_nacimiento: 2024,
       importe_centimos: 10000,
     })
-    expect(error?.code).toBe('42501')
+    expect(error?.code).toBe(trigger ? '23514' : '42501')
+    if (trigger) expect(error?.hint).toBe('centro_ajeno')
+    const { data: entro } = await serviceClient
+      .from('tarifa_concepto_anio')
+      .select('id')
+      .eq('centro_id', centroA.id)
+      .eq('concepto_id', conceptoB)
+    expect(entro).toEqual([])
+
+    // La defensa de antes, sola. Control positivo por el mismo camino: su concepto de A entra.
+    const sql = (concepto: string) =>
+      `INSERT INTO public.tarifa_concepto_anio (centro_id, concepto_id, anio_nacimiento, importe_centimos) VALUES ('${centroA.id}', '${concepto}', 2021, 10000)`
+    expect(comoSesionSinCentroCoherente(admin.id, 'tarifa_concepto_anio', sql(conceptoA))).toEqual({
+      filas: 1,
+      error: null,
+    })
+    expect(
+      comoSesionSinCentroCoherente(admin.id, 'tarifa_concepto_anio', sql(conceptoB)).error?.code
+    ).toBe('42501')
   })
 
   it('cruce de centro: admin de A tampoco con centro_id=B (no es admin de B) → 42501', async () => {

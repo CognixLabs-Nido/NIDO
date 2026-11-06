@@ -16,6 +16,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { comoSesionSinCentroCoherente, hayCentroCoherente } from './defensa-sin-centro-coherente'
 
 /**
  * RLS de mensajería (Fase 5).
@@ -712,7 +713,7 @@ describe('RLS mensajería — aislamiento, ámbitos y flag global', () => {
   //   porque ese UUID no existe en `centros`.
   // -------------------------------------------------------------------
 
-  it('t25 — INSERT en conversaciones con centro_id placeholder UUID falla con FK violation', async () => {
+  it('t25 — INSERT en conversaciones con centro_id placeholder UUID no entra: el trigger de centro, y la FK medida sola', async () => {
     // Reproducimos el bug original. Importante: usamos un tutor que SÍ es
     // participante del niño (`tutorOtroNinoA2` vinculado a `ninoA2`). Con un
     // tutor sin permiso, la RLS de INSERT rechazaría primero con `42501`
@@ -727,10 +728,26 @@ describe('RLS mensajería — aislamiento, ámbitos y flag global', () => {
       .select('id')
       .maybeSingle()
     expect(error).not.toBeNull()
-    // FK violation: PostgreSQL devuelve SQLSTATE 23503 (foreign_key_violation).
-    // El mensaje incluye el nombre del constraint o la referencia a `centros`.
-    expect(error?.code === '23503' || /foreign key|centros/i.test(error?.message ?? '')).toBe(true)
+    // Dos capas (defensa-sin-centro-coherente.ts): zz_centro_coherente (23514, centro_ajeno: el
+    // niño no es de ese centro), que corre antes, y la FK de antes (23503, foreign_key_violation),
+    // medida sola con el trigger deshabilitado.
+    const trigger = hayCentroCoherente('conversaciones')
+    expect(error?.code).toBe(trigger ? '23514' : '23503')
+    if (trigger) expect(error?.hint).toBe('centro_ajeno')
     expect(data).toBeNull()
+    const sql = (centro: string) =>
+      `INSERT INTO public.conversaciones (nino_id, centro_id) VALUES ('${ninoA2.id}', '${centro}')`
+    // Control positivo por el mismo camino: con el centro real del niño entra.
+    expect(
+      comoSesionSinCentroCoherente(tutorOtroNinoA2.id, 'conversaciones', sql(centroA.id))
+    ).toEqual({ filas: 1, error: null })
+    const fk = comoSesionSinCentroCoherente(
+      tutorOtroNinoA2.id,
+      'conversaciones',
+      sql('00000000-0000-0000-0000-000000000000')
+    ).error
+    expect(fk?.code).toBe('23503')
+    expect(fk?.message).toMatch(/foreign key|centros/i)
 
     // Limpieza por si acaso quedara fila huérfana (no debería).
     await serviceClient

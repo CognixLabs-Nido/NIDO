@@ -1236,6 +1236,52 @@ salta con BYPASSRLS, salvo `postgres` ([su llave](#la-llave-de-postgres)). Así 
 Las guardas de equivalencia de esa migración comparan la lógica normalizada (#305; regla en
 `CLAUDE.md`).
 
+#### Una fila y lo que nombra, del mismo centro, en todas las tablas (`20270108120000`)
+
+Los dos triggers de arriba eran de dos tablas, y las policies miraban el centro a trozos: en
+informes, citas y eventos, la rama de la profe comparaba el centro del niño o del aula y la de
+Dirección (`es_admin(centro_id)`) no. Medido en producción el 2026-11-06, en un ensayo terminado
+en RAISE con un segundo centro creado dentro: la admin de A creaba en A un informe, una cita, un
+evento y unas normas del niño o del aula de B; matriculaba a un niño suyo en el aula-curso de B, y
+la profe de B, que no es nada en A, lo veía; y la tutora de B, que tampoco es nada en A, leía el
+informe publicado de su hijo escrito en A.
+
+- **La defensa, en la base y para todos** (sesión, `service_role`, funciones; no `postgres`, [su
+  llave](#la-llave-de-postgres)): un trigger `zz_centro_coherente` por tabla, BEFORE INSERT OR
+  UPDATE de `centro_id` o de sus columnas. Si no, **23514 con HINT `centro_ajeno`** y el mensaje
+  `<tabla>.<columna> no es del centro de la fila`. `zz_` para correr después de los
+  `*_set_centro_id`, que ponen el centro solo si llega NULL (los BEFORE van por orden de nombre).
+- **Dos clases**, las dos del catálogo, no de una lista a mano:
+  - **tablas con `centro_id`** que apuntan (FK) a otra con `centro_id`
+    (`privado.centro_coherente_pares()`): lo nombrado es del centro de la fila;
+  - **tablas sin `centro_id`** con dos o más FK a tablas con centro
+    (`privado.centro_coherente_cruces()`: `confirmaciones_evento`, `firmas_autorizacion`,
+    `profes_aulas`, `remesa_fichero_adeudos`): todo lo nombrado, del mismo centro;
+  - y **`matriculas`, a mano**: el niño y el aula-curso, que se nombra por una FK compuesta. Las
+    dos funciones solo leen FK de una columna.
+- **La comprobación de cada tabla se genera en la migración**, con sus columnas escritas. Leer el
+  catálogo en cada escritura costaba ×21 a ×26; la generada, +17 % a +20 % (unos 10 µs por fila).
+  Medido en la CI con 20 000 filas en `recordatorios`, con el trigger afirmado antes de medir. No se
+  regenera sola: una FK nueva entre tablas con centro necesita su comprobación, y
+  `centro-coherente.rls.test.ts` (que lee el catálogo) se pone rojo hasta que la tenga.
+- **«Esta no, y por esto»**: una columna que no deba mirarse va en
+  `privado.centro_coherente_excepciones` con su motivo (CHECK de al menos 30 caracteres). Hoy está
+  vacía. Nunca un olvido.
+- **Los números son un suelo, no la cuenta cerrada.** En el ensayo: 75 pares en 38 tablas (32 de
+  ellas, con 63 pares, escribibles por una sesión), 4 tablas de cruce y `matriculas`, 43 triggers.
+  El método no ve las FK compuestas (hoy solo la de `matriculas`; otra rompe la guarda y el test),
+  las columnas que nombran algo sin FK (hoy 8 uuid en tablas con centro, todas polimórficas:
+  `registro_id`, `sujeto_id`, `ref_id`, `token`), los ids dentro de json o arrays, lo que llega a un
+  centro a más de un salto ni otros esquemas. La primera versión del censo se saltó `matriculas`
+  por mirar solo FK de una columna: por eso.
+- **Dos capas en los tests que ya afirmaban el rechazo.** Cinco tests esperaban el código de la
+  defensa de antes (42501 de la RLS, 23503 de la FK) y ahora llega primero el del trigger. Afirman
+  los dos: el del trigger si está, y la defensa de antes medida sola, con el trigger deshabilitado
+  en una transacción que se deshace (`src/test/rls/defensa-sin-centro-coherente.ts`). Quitar el
+  trigger los deja en verde por la defensa vieja; lo que se pone rojo es la cobertura.
+- Tests: `centro-coherente.rls.test.ts`, y los cinco: `b1-tarifa-concepto-anio`,
+  `b2-beca-comedor-v2` (dos), `pase-servicios-unico` y `messaging` (t25).
+
 ### Invitaciones: la sesión no ve ni escribe el token (PR 0a, Fase 4)
 
 Migración `20261024120000_fix_invitaciones_token_y_cuenta_operativa`. El enlace de una
