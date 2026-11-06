@@ -252,5 +252,23 @@ describe('F11-G — RLS validación + buckets (mandatos_sepa / cambios_pendiente
         expect(ajeno.error).toBeTruthy() // tutorA no es tutor legal de ninoA2
       })
     }
+
+    // Recoge lo que ha subido. Su limpieza borra el centro y no los ficheros: así quedaron en
+    // producción 60 PDF bajo 20 centros que ya no existen (operación 20270106120000). Comprueba
+    // que ya no están; un `remove` sin error no lo demuestra.
+    it('recoge lo que ha subido: los tres ficheros ya no están en Storage', async () => {
+      const rutas = (['libro-familia', 'dni-tutores', 'mandato-sepa'] as const).map(
+        (b) => [b, `${centroA.id}/${ninoA.id}/${b}.pdf`] as const
+      )
+      for (const [b, r] of rutas) {
+        expect((await serviceClient.storage.from(b).exists(r)).data).toBe(true) // premisa
+      }
+      for (const [b, r] of rutas) {
+        expect((await serviceClient.storage.from(b).remove([r])).error).toBeNull()
+      }
+      for (const [b, r] of rutas) {
+        expect((await serviceClient.storage.from(b).exists(r)).data).toBe(false)
+      }
+    })
   })
 })
