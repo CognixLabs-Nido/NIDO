@@ -35,7 +35,7 @@ export function EstadoDocBadge({ estado }: { estado: AutorizacionEstado }) {
   return <Badge variant={DOC_VARIANT[estado]}>{t(`estado_doc.${estado}`)}</Badge>
 }
 
-/** Etiqueta del tipo de autorización (salida, reglas de régimen interno, …). */
+/** Etiqueta del tipo de autorización (salida, imágenes, …). */
 export function TipoAutorizacionBadge({ tipo }: { tipo: TipoAutorizacion }) {
   const t = useTranslations('autorizaciones')
   return <Badge variant="secondary">{t(`tipo.${tipo}`)}</Badge>

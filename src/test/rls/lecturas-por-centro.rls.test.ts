@@ -71,7 +71,7 @@ interface Centro {
   aula: TestAula
   nino: string
   medicacion: string
-  plantillaReglas: string
+  plantillaImagen: string
   plantillaInforme: string
   cambio: string
 }
@@ -95,7 +95,7 @@ describe('Lecturas por centro: Dirección y profe en dos centros', () => {
     await asignarRol(profe.id, centro.id, 'profe')
     await asignarProfeAula(profe.id, aula.id, curso.id)
 
-    const plantilla = async (tipo: 'medicacion' | 'reglas_regimen_interno') => {
+    const plantilla = async (tipo: 'medicacion' | 'autorizacion_imagenes') => {
       const { data, error } = await serviceClient
         .from('autorizaciones')
         .insert({
@@ -115,7 +115,7 @@ describe('Lecturas por centro: Dirección y profe en dos centros', () => {
       return data.id
     }
     const plantillaMed = await plantilla('medicacion')
-    const plantillaReglas = await plantilla('reglas_regimen_interno')
+    const plantillaImagen = await plantilla('autorizacion_imagenes')
 
     // Una medicación terminada ayer y sin archivar: es una instancia (listado de Dirección) y
     // cuenta en «medicaciones por archivar» del inicio.
@@ -173,7 +173,7 @@ describe('Lecturas por centro: Dirección y profe en dos centros', () => {
       aula,
       nino: nino.id,
       medicacion: med.id,
-      plantillaReglas,
+      plantillaImagen,
       plantillaInforme: pi.id,
       cambio: cambio.id,
     }
@@ -232,12 +232,12 @@ describe('Lecturas por centro: Dirección y profe en dos centros', () => {
       expect(instancias).not.toContain(otro.medicacion)
 
       const catalogo = await getPlantillasCatalogo(mio.id)
-      expect(catalogo.map((p) => p.id)).toContain(mio.plantillaReglas)
-      expect(catalogo.map((p) => p.id)).not.toContain(otro.plantillaReglas)
-      expect(catalogo).toHaveLength(2) // su medicación y sus normas
+      expect(catalogo.map((p) => p.id)).toContain(mio.plantillaImagen)
+      expect(catalogo.map((p) => p.id)).not.toContain(otro.plantillaImagen)
+      expect(catalogo).toHaveLength(2) // su medicación y su imagen
 
       const enviables = (await getPlantillasParaEnviar(mio.id)).map((p) => p.id)
-      expect(enviables).toEqual([mio.plantillaReglas])
+      expect(enviables).toEqual([mio.plantillaImagen])
     }
   })
 

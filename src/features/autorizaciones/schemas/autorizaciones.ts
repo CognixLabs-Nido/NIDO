@@ -69,16 +69,12 @@ export const crearAutorizacionExcursionSchema = z
 
 export type CrearAutorizacionExcursionInput = z.input<typeof crearAutorizacionExcursionSchema>
 
-// --- Catálogo: crear PLANTILLA durable (reglas/imágenes/recogida/medicación) --
+// --- Catálogo: crear PLANTILLA durable (imágenes/recogida/medicación) ---------
 // Una plantilla es el FORMATO estándar del centro (no se firma; se envía a una
 // audiencia —tipos A— o la rellena la familia —tipos B—). `salida` queda fuera
 // (esa es bespoke por evento). Una activa por (centro, tipo) → idx único en BD.
-export const tipoPlantillaEnum = z.enum([
-  'reglas_regimen_interno',
-  'autorizacion_imagenes',
-  'recogida',
-  'medicacion',
-])
+// Las normas de régimen interno ya no (4b-3, 2026-11-06): son un documento del centro.
+export const tipoPlantillaEnum = z.enum(['autorizacion_imagenes', 'recogida', 'medicacion'])
 export type TipoPlantilla = z.infer<typeof tipoPlantillaEnum>
 
 export const crearPlantillaSchema = z.object({
@@ -88,7 +84,7 @@ export const crearPlantillaSchema = z.object({
 export type CrearPlantillaInput = z.input<typeof crearPlantillaSchema>
 
 // --- Enviar: asignar una plantilla A a una AUDIENCIA (niño/aula/centro) -------
-// Solo tipos A (reglas/imágenes): recogida/medicación las inicia la familia y NO
+// Solo tipos A (imágenes): recogida/medicación las inicia la familia y NO
 // aparecen aquí. Crea una INSTANCIA firmable (snapshot del texto de la plantilla).
 export const ambitoEnvioEnum = z.enum(['nino', 'aula', 'centro'])
 

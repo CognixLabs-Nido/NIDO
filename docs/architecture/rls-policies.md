@@ -1001,7 +1001,7 @@ ENUM `recordatorio_destinatario` con **6 valores**: `familia_individual` · `fam
 
 - **SELECT** `autorizaciones_select`: `usuario_es_audiencia_autorizacion_row(centro_id, tipo, es_plantilla, ambito, evento_id, nino_id, aula_id)` (row-aware).
 - **INSERT** `autorizaciones_insert`: `creado_por = auth.uid()` AND ( `es_admin(centro_id)` | profe de salida `tipo='salida' AND es_profe_de_evento(evento_id) AND centro_de_evento(evento_id)=centro_id` | **tutor B2**: `es_plantilla=false AND tipo ∈ {recogida,medicacion} AND ambito='nino' AND nino_id NOT NULL AND plantilla_id NOT NULL AND es_tutor_de(nino_id) AND autorizacion_plantilla_valida(plantilla_id, centro_id, tipo)` ).
-- **UPDATE** `autorizaciones_update`: `USING + WITH CHECK` simétricos `creado_por = auth.uid() OR es_admin(centro_id)`; las plantillas de las normas internas y del consentimiento de imagen, solo `privado.es_responsable` (`20261030130000`). El server action acota columnas; el trigger `bloquea_texto_tras_firma` congela el alcance consentido una vez hay firmas, y desde `20261030130000` `autorizaciones_identidad_inmutable_trg` congela la identidad del documento para todos y siempre, salvo `postgres` ([su llave](#la-llave-de-postgres)): tipo, plantilla o instancia, ámbito, centro, niño, evento, aula, plantilla de la que sale y autor (23514). Archivar medicación NO pasa por aquí (RPC `SECURITY DEFINER`).
+- **UPDATE** `autorizaciones_update`: `USING + WITH CHECK` simétricos `creado_por = auth.uid() OR es_admin(centro_id)`; la plantilla del consentimiento de imagen, solo `privado.es_responsable` (`20261030130000`; también la de las normas internas, hasta que el 4b-3 quitó el tipo, `20270110120000`). El server action acota columnas; el trigger `bloquea_texto_tras_firma` congela el alcance consentido una vez hay firmas, y desde `20261030130000` `autorizaciones_identidad_inmutable_trg` congela la identidad del documento para todos y siempre, salvo `postgres` ([su llave](#la-llave-de-postgres)): tipo, plantilla o instancia, ámbito, centro, niño, evento, aula, plantilla de la que sale y autor (23514). Archivar medicación NO pasa por aquí (RPC `SECURITY DEFINER`).
 - **DELETE**: sin policy → **default DENY**. Retirar = `estado='anulada'` (conserva firmas). Archivar (`archivada_at`) ≠ anular.
 
 ### RLS `firmas_autorizacion` (append-only, inmutable)
@@ -1449,8 +1449,9 @@ la admin.
     `centro-assets` y `set_datos_acreedor`;
   - las cuotas: escribir `conceptos_cobro` y `tarifa_concepto_anio` (y `tipos_beca`, eliminada en el PR-9);
   - el curso: ponerlo en `cerrado`, o tocar uno cerrado, en `cursos_academicos`, y `cerrar_curso`;
-  - las plantillas de las normas internas y del consentimiento de imagen (`autorizaciones` con
-    `es_plantilla`). Enviarlas a un aula o al centro sigue siendo de Dirección;
+  - la plantilla del consentimiento de imagen (`autorizaciones` con `es_plantilla`; y la de las
+    normas internas hasta el 4b-3, `20270110120000`). Enviarla a un aula o al centro sigue siendo de
+    Dirección;
   - los derechos RGPD: la rama de Dirección de `export_datos_sujeto`, `solicitar_olvido_nino`,
     `solicitar_olvido_usuario`, `olvido_pendientes` y `purgar_sujeto_db`, y leer `export_log`,
     `olvido_solicitudes` y `retencion_ejecuciones`;
@@ -1494,8 +1495,8 @@ porque un valor nuevo de un enum no se puede usar en la transacción que lo aña
 - **Los roles se comparan como texto** (`rol::text IN ('admin', 'directora')`), para no usar el
   valor nuevo como literal en la migración que lo necesita.
 - **Autorizaciones:** la identidad del documento no cambia (trigger
-  `autorizaciones_identidad_inmutable_trg`, 23514), y las plantillas de las normas internas y del
-  consentimiento de imagen las edita solo la admin. Quien creaba una autorización (la directora, la
+  `autorizaciones_identidad_inmutable_trg`, 23514), y la plantilla del consentimiento de imagen la
+  edita solo la admin (y la de las normas internas, hasta que el 4b-3 quitó el tipo). Quien creaba una autorización (la directora, la
   profe de su salida o la familia de su recogida) podía cambiarle el tipo, el alcance o el centro
   mientras nadie la firmara: una familia convertía su recogida en las normas del centro para todo
   el centro o se la llevaba a otro centro, y una profe convertía su salida en la plantilla de las

@@ -235,6 +235,7 @@ export const VALORES_CONOCIDOS = new Set<string>([
   'salida',
   'medicacion',
   'recogida',
+  // Ya no es un tipo (4b-3, 2026-11-06), pero puede salir en el histórico de `audit_log`.
   'reglas_regimen_interno',
   'autorizacion_imagenes',
   // firma_decision

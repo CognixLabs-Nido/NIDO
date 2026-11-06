@@ -274,15 +274,6 @@ const TUPLAS: ReadonlyArray<
     llama('cerrar_curso'),
   ],
   [
-    'crearPlantilla de las normas internas',
-    () => crearPlantilla({ tipo: 'reglas_regimen_interno', titulo: 'Normas' }, A),
-    'autorizaciones.errors.no_autorizado',
-    escribe('autorizaciones', 'insert'),
-    () => {
-      st.filas.autorizaciones = { id: 'nueva' }
-    },
-  ],
-  [
     'crearPlantilla del consentimiento de imagen',
     () => crearPlantilla({ tipo: 'autorizacion_imagenes', titulo: 'Imagen' }, A),
     'autorizaciones.errors.no_autorizado',

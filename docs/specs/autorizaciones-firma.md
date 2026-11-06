@@ -10,6 +10,11 @@ related_specs: [scope-ola-1, agenda-citas, f7-calendario, core-entities]
 
 # Spec — Fase 8: Autorizaciones + firma digital
 
+> **Sustituida en parte el 2026-11-06 por el 4b-3** (`20270110120000`, `docs/specs/altas-serie.md`,
+> «Decisiones (2026-11-06)»): el tipo `reglas_regimen_interno` ya no existe. Las normas de régimen
+> interno son un documento del centro (fase 3) y se firman en el alta (fase 4). Donde esta spec habla
+> de «reglas» o «régimen interno» (los 5 tipos, F8-2b, «Nuevas reglas», el patrón A), es historia.
+
 > **Estado final (cierre F8, 2026-06-09):** esta es la spec de **arranque** (Checkpoint A). El modelo se **reworkeó** durante la fase (catálogo de plantillas durables + instancia firmable por-niño; patrón A "la directora envía" / **B2** "la familia inicia"); la spec recomendaba B1. El **estado final implementado** y las decisiones de cierre están en **ADR-0041** y en `docs/architecture/{data-model,rls-policies}.md` (sección Fase 8). Los flags ⚖️ siguen abiertos (abogado).
 
 > **Checkpoint A cerrado** (responsable, 2026-06-03): decisiones **🔒 D1–D9 cerradas** (ver §

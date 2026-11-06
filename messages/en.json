@@ -3472,7 +3472,7 @@
   },
   "autorizaciones": {
     "title": "Authorisations",
-    "admin_intro": "Create, publish and sign authorisations (outing, house rules…). The legal text is set by the centre.",
+    "admin_intro": "Create, publish and sign authorisations (outing, images…). The legal text is set by the centre.",
     "family_intro": "Read and sign your children's outing authorisations.",
     "aviso_legal": "Simple electronic signature with an evidentiary record (name, stroke, text hash, date, IP). Its legal validity is pending legal review.",
     "volver": "Back",
@@ -3512,7 +3512,6 @@
       "rechazada_toast": "Authorisation rejected",
       "revocar": "Revoke signature",
       "revocada_toast": "Signature revoked",
-      "nueva_reglas": "New house rules",
       "plantilla_creada_toast": "Format created",
       "enviar": "Send authorization",
       "enviando": "Sending…",
@@ -3530,10 +3529,9 @@
       "texto_definitivo": "Mark text as final (required to publish and sign)",
       "nino": "Child",
       "nino_placeholder": "Choose a child",
-      "titulo_reglas_placeholder": "House rules",
       "tipo": "Document type",
       "tipo_placeholder": "Choose a type",
-      "titulo_plantilla_placeholder": "Internal rules",
+      "titulo_plantilla_placeholder": "Image consent",
       "plantilla": "Format to send",
       "plantilla_placeholder": "Choose a published format",
       "ambito": "Recipients",
@@ -3651,7 +3649,6 @@
       "salida": "Outing",
       "medicacion": "Medication",
       "recogida": "Pickup",
-      "reglas_regimen_interno": "House rules",
       "autorizacion_imagenes": "Images",
       "excursion": "Excursion"
     },
@@ -3769,7 +3766,6 @@
     "tipos_area": {
       "titulo": "Authorisation types",
       "descripcion": "The centre manages these 5 types. Four are catalogue formats; the field trip hangs off an event.",
-      "reglas_regimen_interno": "Catalogue format. Sent to families to sign.",
       "autorizacion_imagenes": "Catalogue format. Image consent (signing in F11).",
       "recogida": "The family states who picks up the child and signs.",
       "medicacion": "The family authorises a medication with its schedule and signs.",
@@ -3796,7 +3792,7 @@
     "nueva": {
       "accion": "New authorization",
       "modo_label": "What do you want to create?",
-      "modo_formato": "Send a format (rules, images)",
+      "modo_formato": "Send a format (images)",
       "modo_excursion": "Field trip"
     },
     "medicacion_lista": {

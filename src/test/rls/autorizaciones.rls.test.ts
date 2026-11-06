@@ -322,9 +322,9 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
   })
 
   // Desde RW-0 el tutor SÍ crea recogida/medicación de su hijo desde la plantilla publicada
-  // (B2, en autorizaciones-rw0.rls.test.ts). Lo que sigue sin poder crear: reglas (las envía la
-  // directora) e instancias sin plantilla.
-  it('tutor no crea reglas por niño (aunque haya plantilla) ni instancias sin plantilla', async () => {
+  // (B2, en autorizaciones-rw0.rls.test.ts). Lo que sigue sin poder crear: instancias sin plantilla.
+  // (Hasta el 4b-3 también las normas por niño; el tipo ya no existe: `normas-fuera-del-catalogo`.)
+  it('tutor no crea instancias sin plantilla', async () => {
     const c = await clientFor(tutor)
     const base = {
       centro_id: centro.id,
@@ -336,19 +336,6 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
       estado: 'publicada' as const,
       creado_por: tutor.id,
     }
-    const reglas = await c
-      .from('autorizaciones')
-      .insert({
-        ...base,
-        tipo: 'reglas_regimen_interno',
-        plantilla_id: await plantillaDe('reglas_regimen_interno'),
-        ambito: 'nino',
-      })
-      .select('id')
-      .maybeSingle()
-    expect(reglas.error?.code).toBe('42501')
-    expect(reglas.data?.id).toBeFalsy()
-
     const sinPlantilla = await c
       .from('autorizaciones')
       .insert({ ...base, tipo: 'medicacion' })
@@ -412,12 +399,7 @@ describe('RLS autorizaciones + firmas — F8-0', () => {
   // --- firmas: placeholder no firmable (guard del hash) ---------------------
 
   it('una autorización en borrador / con texto PENDIENTE no es firmable (todos los tipos por niño)', async () => {
-    const tiposPorNino: TipoAutorizacion[] = [
-      'medicacion',
-      'recogida',
-      'reglas_regimen_interno',
-      'autorizacion_imagenes',
-    ]
+    const tiposPorNino: TipoAutorizacion[] = ['medicacion', 'recogida', 'autorizacion_imagenes']
     for (const tipo of tiposPorNino) {
       const borrador = await crearAutorizacion({
         tipo,

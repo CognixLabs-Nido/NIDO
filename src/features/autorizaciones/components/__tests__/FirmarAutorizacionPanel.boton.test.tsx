@@ -42,7 +42,7 @@ function pintar(props: Partial<Parameters<typeof FirmarAutorizacionPanel>[0]> = 
   render(
     <FirmarAutorizacionPanel
       autorizacionId="a-1"
-      tipo="reglas_regimen_interno"
+      tipo="autorizacion_imagenes"
       firmable
       roster={ROSTER}
       currentUserId="u-1"

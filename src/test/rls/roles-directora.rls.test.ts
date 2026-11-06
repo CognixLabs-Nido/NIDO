@@ -61,7 +61,6 @@ let cursoActivo: string
 let cursoB: string
 let plantillaImg: string
 let instanciaImg: string
-let plantillaNormas: string
 const autorizaciones: string[] = []
 
 beforeAll(async () => {
@@ -131,25 +130,6 @@ beforeAll(async () => {
     .single()
   if (inst.error || !inst.data) throw new Error(`instancia imagen: ${inst.error?.message}`)
   instanciaImg = inst.data.id
-
-  // Las normas internas: la plantilla es de la admin.
-  const normas = await serviceClient
-    .from('autorizaciones')
-    .insert({
-      centro_id: centroA.id,
-      tipo: 'reglas_regimen_interno',
-      es_plantilla: true,
-      titulo: 'Normas del centro',
-      texto: TEXTO,
-      texto_version: 'v1',
-      texto_definitivo: true,
-      estado: 'publicada',
-      creado_por: admin.id,
-    })
-    .select('id')
-    .single()
-  if (normas.error || !normas.data) throw new Error(`plantilla normas: ${normas.error?.message}`)
-  plantillaNormas = normas.data.id
 }, 240_000)
 
 afterAll(async () => {
@@ -159,7 +139,7 @@ afterAll(async () => {
   await serviceClient.from('consentimientos').delete().in('usuario_id', usuarios)
   if (instanciaImg)
     await serviceClient.from('firmas_autorizacion').delete().eq('autorizacion_id', instanciaImg)
-  for (const id of [...autorizaciones.reverse(), instanciaImg, plantillaImg, plantillaNormas])
+  for (const id of [...autorizaciones.reverse(), instanciaImg, plantillaImg])
     if (id) await serviceClient.from('autorizaciones').delete().eq('id', id)
   for (const c of [centroA, centroB, centroC].filter(Boolean)) {
     await serviceClient.from('plantillas_menu_mensual').delete().eq('centro_id', c.id)
@@ -268,17 +248,17 @@ describe('hace el día a día', () => {
     expect(data?.map((c) => c.nombre)).toContain('Cuota Directora')
   })
 
-  it('envía las normas al aula desde la plantilla de la admin', async () => {
+  it('envía la de imagen al aula desde la plantilla de la admin', async () => {
     const { data, error } = await cDirectora
       .from('autorizaciones')
       .insert({
         centro_id: centroA.id,
-        tipo: 'reglas_regimen_interno',
+        tipo: 'autorizacion_imagenes',
         es_plantilla: false,
         ambito: 'aula',
         aula_id: aula,
-        plantilla_id: plantillaNormas,
-        titulo: 'Normas para el aula',
+        plantilla_id: plantillaImg,
+        titulo: 'Imagen para el aula',
         texto: TEXTO,
         texto_version: 'v1',
         texto_definitivo: true,
@@ -391,8 +371,8 @@ describe('no hace lo exclusivo de la admin', () => {
     expect(data?.estado).toBe('activo')
   })
 
-  it('no crea la plantilla de las normas ni del consentimiento de imagen', async () => {
-    for (const tipo of ['reglas_regimen_interno', 'autorizacion_imagenes'] as const) {
+  it('no crea la plantilla del consentimiento de imagen', async () => {
+    for (const tipo of ['autorizacion_imagenes'] as const) {
       const { error } = await cDirectora.from('autorizaciones').insert({
         centro_id: centroB.id,
         tipo,
@@ -408,18 +388,18 @@ describe('no hace lo exclusivo de la admin', () => {
     }
   })
 
-  it('no edita la plantilla de las normas (la admin sí)', async () => {
+  it('no edita la plantilla de imagen (la admin sí)', async () => {
     const dir = await cDirectora
       .from('autorizaciones')
-      .update({ titulo: 'Normas cambiadas por la directora' })
-      .eq('id', plantillaNormas)
+      .update({ titulo: 'Imagen cambiada por la directora' })
+      .eq('id', plantillaImg)
       .select('id')
     expect(dir.error).toBeNull()
     expect(dir.data).toHaveLength(0)
     const adm = await cAdmin
       .from('autorizaciones')
-      .update({ titulo: 'Normas del centro (revisadas)' })
-      .eq('id', plantillaNormas)
+      .update({ titulo: 'Consentimiento de imagen (revisado)' })
+      .eq('id', plantillaImg)
       .select('id')
     expect(adm.data).toHaveLength(1)
   })

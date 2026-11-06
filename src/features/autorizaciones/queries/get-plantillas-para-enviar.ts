@@ -6,7 +6,7 @@ import { logger } from '@/shared/lib/logger'
 import type { PlantillaEnviableItem } from '../types'
 
 /**
- * Plantillas **publicadas y definitivas de tipo A** (reglas/imágenes) listas
+ * Plantillas **publicadas y definitivas de tipo A** (imágenes) listas
  * para «Enviar» a una audiencia. recogida/medicación (tipos B) quedan fuera: las
  * inicia la familia, no se envían. Una borrador/anulada tampoco aparece (solo el
  * formato vigente del catálogo es enviable). Las del centro de la página (`centroId`): la RLS
@@ -21,7 +21,7 @@ export async function getPlantillasParaEnviar(centroId: string): Promise<Plantil
     .eq('es_plantilla', true)
     .eq('estado', 'publicada')
     .eq('texto_definitivo', true)
-    .in('tipo', ['reglas_regimen_interno', 'autorizacion_imagenes'])
+    .in('tipo', ['autorizacion_imagenes'])
     .order('tipo', { ascending: true })
 
   if (error) {

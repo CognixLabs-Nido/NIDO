@@ -37,10 +37,10 @@ export interface SeguimientoEnvios {
  * instancias publicadas más recientes para no disparar un N+1 sin límite (un centro
  * tiene pocas instancias activas a la vez). La RLS filtra el alcance del rol y `centroId` el centro.
  */
-// El SEGUIMIENTO es solo de lo que ENVÍA el centro (patrón A + salida): reglas,
-// imágenes y excursión/salida. recogida y medicación las INICIAN las familias
+// El SEGUIMIENTO es solo de lo que ENVÍA el centro (patrón A + salida): imágenes y
+// excursión/salida (las normas de régimen interno, hasta el 4b-3: hoy son un documento del centro). recogida y medicación las INICIAN las familias
 // (entrantes) → salen en el panel y en la sección de medicación, no aquí.
-const TIPOS_ENVIADOS = new Set(['reglas_regimen_interno', 'autorizacion_imagenes', 'salida'])
+const TIPOS_ENVIADOS = new Set(['autorizacion_imagenes', 'salida'])
 
 export async function getSeguimientoEnvios(
   centroId: string,

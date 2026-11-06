@@ -1090,7 +1090,8 @@ funciones del 3a y la tabla de firmas del 3b. La familia sigue sin ver nada hast
   mismo significa que dentro de un año nadie sabrá cuál vale.** En producción hay 0 autorizaciones de
   ese tipo (medido el 2026-11-06): nada que migrar, solo cerrar. Va en el 4b-3, detrás del 4b-2,
   porque cerrar el tipo es recrearlo: lo usan su columna, su índice único, dos funciones, las dos
-  políticas de escritura y el CHECK de la tabla.
+  políticas de escritura y el CHECK de la tabla (y la de lectura, que llama a una de las funciones con
+  el tipo en su firma: tres políticas en total). **Hecho en el 4b-3** (`20270110120000`).
 - **El único momento de la historia del producto en que un alta se cierra sin normas.** Con la P-6 y
   la casilla fuera, mientras el centro no suba sus normas un alta se cierra **sin normas de ninguna
   clase**, ni casilla ni firma, y la familia las firma en el 4c cuando la admin las suba. Es lo que
@@ -1234,7 +1235,7 @@ inicio de Dirección · 4d, la refirma.
 ## Estado
 
 - [x] Fase 1 · [x] Fase 2 · [x] Fase 3
-- Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [ ] 4b-2 · [ ] 4b-3 · [ ] 4c · [ ] 4d
+- Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [ ] 4b-3 · [ ] 4c · [ ] 4d
 - [ ] Fase 5 · [ ] Fase 6 · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias
