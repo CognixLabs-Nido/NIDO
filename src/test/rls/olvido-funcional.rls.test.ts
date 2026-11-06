@@ -164,10 +164,18 @@ describe('RLS olvido funcional — F11-A4', () => {
   // o04 — purga del niño: PII directa + info médica + datos pedagógicos
   it('o04 — purgar anonimiza in-place al niño (PII, los seis campos de la ficha médica, pedagógicos)', async () => {
     const nino = await nuevoNino('Secreto RealNombre')
-    await serviceClient
+    // La foto en su ruta de verdad, `{centro}/{niño}/<nombre>.jpg` (20270105120000 rechaza otra), y
+    // mirando que entra: sin eso, la purga de abajo se mediría sobre una ficha sin datos.
+    const { error: fichaErr } = await serviceClient
       .from('ninos')
-      .update({ sexo: 'F', nacionalidad: 'ES', notas_admin: 'nota sensible', foto_url: 'x/y.jpg' })
+      .update({
+        sexo: 'F',
+        nacionalidad: 'ES',
+        notas_admin: 'nota sensible',
+        foto_url: `${centro.id}/${nino}/foto.jpg`,
+      })
       .eq('id', nino)
+    expect(fichaErr).toBeNull()
     // La ficha, como en la app: Dirección por el setter, que cifra los seis (20261123120000).
     const { error: medErr } = await (
       await clientFor(admin)

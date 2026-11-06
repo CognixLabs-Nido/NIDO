@@ -1181,6 +1181,20 @@ escribirla en otra tabla), la BD la valida contra la fila, no contra el valor de
     `{centro}/familia/{esa familia}/<nombre>.pdf`. `{centro}` es el de la familia. Si no, 23514.
   - NULL (y `''` en el mandato presencial) siguen valiendo, y solo se mira la ruta cuando cambia.
   - Test: `rutas-guardadas-export.rls.test.ts`.
+- **Las otras tres que firma el export** (`20270105120000`, 2026-11-06), con el mismo mecanismo:
+  `usuarios_validar_ruta_foto_trg`, `ninos_validar_rutas_trg` y `firmas_validar_adjuntos_trg`
+  (funciones en `privado`). Medidas abiertas en producción en un ensayo terminado en RAISE: cada
+  usuario apuntaba su foto a la carpeta de otro; la Dirección, que escribe la ficha del niño
+  directamente (`ninos_admin_all`), la foto y el libro de familia a los de otro niño o a un objeto
+  fuera de todo centro; y el tutor, con una plantilla de recogida publicada, firmaba con el DNI de
+  la recogida de otro niño (`firmas_insert` no mira `datos`; hoy en producción no hay plantillas).
+  - Foto del usuario: `{ese usuario}/<nombre>.jpg`. Foto del niño: `{su centro}/{ese niño}/<nombre>.jpg`.
+    Libro de familia: `{su centro}/{ese niño}/<nombre>.pdf`. Adjuntos de la firma: bucket
+    `recogida-adjuntos` y `{centro del niño}/{el niño de la firma}/<nombre>.jpg`. Si no, 23514.
+  - Para todos (sesión, `service_role` y las funciones; no `postgres`, [su llave](#la-llave-de-postgres)).
+    NULL pasa (las purgas la anulan) y solo se mira la ruta cuando cambia, o el centro del niño.
+  - Test: `rutas-firmadas-dueno.rls.test.ts` (cada «no» con el fichero ajeno existente delante, y el
+    control: la ruta propia entra y el export la firma).
 - **La app comprueba lo mismo antes de borrar**, como segunda capa: `rutaDocumentoDelNino` y
   `rutaDeLaPublicacion`.
 
