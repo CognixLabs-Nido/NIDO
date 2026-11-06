@@ -26,7 +26,7 @@ interface Props {
 }
 
 /**
- * La lista de la admin (1c): cada documento con sus versiones agrupadas por curso. Hay varias vivas
+ * La lista de la admin (3c): cada documento con sus versiones agrupadas por curso. Hay varias vivas
  * a la vez, una por curso, y se enseñan así: la vigente de cada curso, no «la vigente» del documento.
  */
 export async function DocumentosCentroLista({ locale, centroId, pantalla }: Props) {

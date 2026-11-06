@@ -42,7 +42,7 @@ type Respuesta = { success: true } | { success: false; error: string }
 const MAX_BYTES = 10 * 1024 * 1024
 
 /**
- * Sube una versión de un documento (1c), por la ruta del 1a, que calcula el hash y registra. En un
+ * Sube una versión de un documento (3c), por la ruta del 3a, que calcula el hash y registra. En un
  * documento de curso se elige el curso; en otro no se pregunta. Avisa de que una versión nueva no
  * pide que vuelvan a firmar (J4).
  */

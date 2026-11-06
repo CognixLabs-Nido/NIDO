@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 /**
  * PR 3 del modelo de roles — el menú de Dirección. La admin del centro ve Centro, los documentos
- * del centro (1c), Dirección del centro (PR 4) y Auditoría, que son solo suyos; una directora (Dirección sin `esResponsable`) ve el resto, igual que la admin.
+ * del centro (3c), Dirección del centro (PR 4) y Auditoría, que son solo suyos; una directora (Dirección sin `esResponsable`) ve el resto, igual que la admin.
  * El superusuario es responsable de todos los centros, pero «Datos bloqueados» no es suyo (PR-B1).
  */
 
@@ -14,7 +14,7 @@ const { buildSidebarItems } = await import('../sidebar-items')
 
 const SOLO_DE_LA_ADMIN = [
   '/es/admin/centro',
-  // Los documentos del centro (serie de altas, 1c): solo la admin los gestiona (J1).
+  // Los documentos del centro (serie de altas, 3c): solo la admin los gestiona (J1).
   '/es/admin/documentos-centro',
   '/es/admin/direccion',
   '/es/admin/olvido',

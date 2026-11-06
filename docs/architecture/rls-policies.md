@@ -15,7 +15,7 @@
 
 Decisión del 2026-11-05 (#497), el mismo caso que la E de los recibos («Las puertas del recibo» en
 `docs/specs/altas-serie.md`) con la llave de `postgres` en vez de la de `service_role`. Vale para
-**todas** las defensas de la base, no solo para las del 1a. **Es una decisión, no un hueco.**
+**todas** las defensas de la base, no solo para las de la fase 3. **Es una decisión, no un hueco.**
 
 - **Qué quiere decir «para todos» en este repo.** Cuando un documento o un comentario de migración
   dice que una defensa vale «para todos», «para nadie» o «también `service_role`», son las sesiones
@@ -46,7 +46,7 @@ Decisión del 2026-11-05 (#497), el mismo caso que la E de los recibos («Las pu
     Ninguna regla de otra tabla cabe en un `CHECK`, que solo ve su fila: lo que hace dura una clave
     foránea es el trigger `ENABLE ALWAYS` a su lado. `postgres` lo puede seguir quitando, pero eso es
     un cambio de esquema que hay que deshacer; `replica` es una línea, dura una transacción y no
-    deja nada en el esquema. **El primero del esquema es el del 1b**, firmas → versiones (J5). Los
+    deja nada en el esquema. **El primero del esquema es el del 3b**, firmas → versiones (J5). Los
     demás son una pieza propia (`docs/follow-ups.md`, «Claves foráneas que aguanten `replica`»);
 
   - **saltarse la RLS y los privilegios:** es el dueño y tiene `BYPASSRLS`, y ninguna tabla tiene
@@ -484,9 +484,9 @@ email_que_se_queda)`, solo `service_role`. La app comprueba la sesión (`usuario
 - Test: `src/test/audit/altas-sin-terminar.test.ts`, `src/test/rls/altas-en-proceso.rls.test.ts`,
   `src/test/rls/invitacion-tutor2.rls.test.ts` y `src/test/rls/cola-invita-tutor2.rls.test.ts`.
 
-### Los documentos del centro (serie de altas, paso 1, 1a)
+### Los documentos del centro (serie de altas, fase 3, 3a)
 
-Migración `20270101120000_feat_documentos_centro`; spec `docs/specs/altas-serie.md`, «Paso 1».
+Migración `20270101120000_feat_documentos_centro`; spec `docs/specs/altas-serie.md`, «Fase 3».
 
 - **Las tablas** `documentos_centro` y `documentos_centro_versiones`: RLS sin políticas y sin
   privilegios para nadie, tampoco `service_role`. Solo las funciones.
@@ -518,9 +518,9 @@ Migración `20270101120000_feat_documentos_centro`; spec `docs/specs/altas-serie
   versiones (23514, `de_curso_fijo`).
 - Test: `src/test/rls/documentos-centro.rls.test.ts`.
 
-### Las firmas de los documentos del centro (serie de altas, paso 1, 1b)
+### Las firmas de los documentos del centro (serie de altas, fase 3, 3b)
 
-Migración `20270102120000_feat_firmas_documentos_centro`; spec `docs/specs/altas-serie.md`, «1b».
+Migración `20270102120000_feat_firmas_documentos_centro`; spec `docs/specs/altas-serie.md`, «3b».
 
 - **`firmas_documentos_centro`**: `SELECT` para `authenticated` y nada más (ni `INSERT`, `UPDATE`
   ni `DELETE`; `service_role`, nada). La política `firmas_documentos_centro_select`: quien firmó, los
@@ -541,7 +541,7 @@ Migración `20270102120000_feat_firmas_documentos_centro`; spec `docs/specs/alta
   (`version_firmada`, 23503). Disparan también en `session_replication_role = replica`, donde el
   `RESTRICT` de la clave no. **No se quitan ni se pasan a `ENABLE` al refactorizar**: son lo único
   que sostiene el J5. La guarda previa exige que sean los primeros ALWAYS de `public`, y la posterior
-  que sigan en `A`. `borrar_version_documento` (1a) contesta lo mismo, y la app lo dice
+  que sigan en `A`. `borrar_version_documento` (3a) contesta lo mismo, y la app lo dice
   (`documentos_centro.errors.version_firmada`).
 - **La retención** pasa por las mismas funciones que la de `firmas_autorizacion`, reescritas desde
   su definición viva (guarda de md5 normalizado): `datos_bloqueados`, `contenido_bloqueado`,
@@ -549,16 +549,16 @@ Migración `20270102120000_feat_firmas_documentos_centro`; spec `docs/specs/alta
   `audit_trigger_function`.
 - Test: `src/test/rls/firmas-documentos-centro.rls.test.ts`.
 
-### La pantalla de la admin (serie de altas, paso 1, 1c)
+### La pantalla de la admin (serie de altas, fase 3, 3c)
 
-Sin migración; spec `docs/specs/altas-serie.md`, «1c». `/admin/documentos-centro`.
+Sin migración; spec `docs/specs/altas-serie.md`, «3c». `/admin/documentos-centro`.
 
 - **Solo la admin del centro (J1)**: la página y la entrada del menú exigen `esResponsable`, el mismo
   criterio que `privado.es_responsable`. Una directora no las tiene, y si llega, la base le contesta
-  42501 en cada función del 1a.
+  42501 en cada función del 3a.
 - **Lo que lee, con la sesión de la admin**: la lista de `documentos_centro_admin`, los cursos del
   centro y, para enseñar cuántas firmas tiene cada versión, `version_id` de
-  `firmas_documentos_centro` (la Dirección la lee, 1b). Si una de las tres lecturas falla no hay
+  `firmas_documentos_centro` (la Dirección la lee, 3b). Si una de las tres lecturas falla no hay
   pantalla: una lista vacía diría «no hay documentos», y unas firmas vacías ofrecerían borrar una
   versión firmada. El botón de borrar sale solo con cero firmas visibles, pero no es la regla: la base
   vuelve a mirarlo (`version_firmada`), también con una firma que la admin no ve porque está
@@ -571,9 +571,9 @@ Sin migración; spec `docs/specs/altas-serie.md`, «1c». `/admin/documentos-cen
   funciones no se traduce así.
 - Test: `src/test/rls/documentos-centro-pantalla.rls.test.ts`.
 
-### Firmar los documentos del centro (serie de altas, paso 2, 2a)
+### Firmar los documentos del centro (serie de altas, fase 4, 4a)
 
-Migración `20270103120000_feat_firmar_documentos_centro`; spec `docs/specs/altas-serie.md`, «Paso 2».
+Migración `20270103120000_feat_firmar_documentos_centro`; spec `docs/specs/altas-serie.md`, «Fase 4».
 
 - **`privado.documentos_del_nino(niño)`**: lo que le toca firmar, con su estado (`falta_documento`,
   `por_firmar` con `disponible_desde`, o `firmado`, de cualquier versión del mismo documento y curso:
@@ -587,7 +587,7 @@ Migración `20270103120000_feat_firmar_documentos_centro`; spec `docs/specs/alta
   `admin`). Las dos solo sobre la versión vigente que le toca al niño y está por firmar
   (`privado.version_por_firmar`: `version_no_vigente`, `ya_firmado`), y con un cerrojo por niño, para
   que dos tutores a la vez no firmen dos veces. La fila la escribe la función: la tabla sigue sin
-  `INSERT` para nadie (1b).
+  `INSERT` para nadie (3b).
 - **El PDF:** `ruta_version_documento_nino` da la ruta de una versión que le toca o que ya firmó, a
   quien puede leer sus documentos. A cualquier otra cosa, 42501, sin decir por qué.
 - **Las cinco** son `SECURITY DEFINER` con `EXECUTE` solo para `authenticated`; la guarda posterior
@@ -2138,7 +2138,7 @@ Migración `20261229120000_feat_mandato_v2_datos_y_cid_obligatorio`; spec
   documento de identidad y la dirección del titular (`titular_documento`, `titular_direccion`) y
   la foto del acreedor con la que se firmó (`acreedor_cid`, `acreedor_nombre`). Las dos funciones
   reciben esos cuatro datos como parámetros opcionales: sin ninguno, P0001 `v1_cerrado` desde
-  `20261230120000` (hasta entonces, un v1: la app de antes del 0c-2); con ellos, v2, y tienen que estar todos (`mandato_incompleto`), el CID y el
+  `20261230120000` (hasta entonces, un v1: la app de antes de #488); con ellos, v2, y tienen que estar todos (`mandato_incompleto`), el CID y el
   nombre ser los del centro (`cid_distinto`, `acreedor_distinto`) y el hash un sha256 en
   hexadecimal (`hash_invalido`). La comprobación común es `privado.version_datos_mandato`, que no
   ejecuta nadie más que ellas.
@@ -2149,13 +2149,13 @@ Migración `20261229120000_feat_mandato_v2_datos_y_cid_obligatorio`; spec
   nombre del acreedor sí entran. **En el export:** los cinco.
 - **Nada recalcula hoy el hash de un mandato.** La versión es lo que permite hacerlo con el texto
   con el que se firmó.
-- **En la app (0c-2):** los tres caminos (el alta, `/family/domiciliacion` y el presencial de
+- **En la app (#488):** los tres caminos (el alta, `/family/domiciliacion` y el presencial de
   Dirección, que hasta aquí iba sin hash) leen el CID y el nombre del centro con la sesión, piden
   «NIF o documento de identidad» y dirección del titular, calculan el hash del texto v2
   (`textoCanonicoMandatoV2`) y mandan los cuatro datos (`mandato-v2-servidor.ts`). Sin CID, el alta
   no monta el paso de domiciliación y se completa en efectivo, y Recibos y la ficha de la familia
   no ofrecen el botón; la ruta y la acción lo rechazan antes de subir nada si llega igual.
-- **No se firman mandatos v1 nuevos** (`20261230120000`, 0c-3, después del despliegue del 0c-2).
+- **No se firman mandatos v1 nuevos** (`20261230120000`, #489, después del despliegue de #488).
   Los que ya existían (3 en producción el 2026-11-04) se quedan como están: firmados, con su hash
   recalculable con el texto v1. Dos defensas con HINT distinto, para que un test vea cuál rechaza:
   - `privado.version_datos_mandato` da `v1_cerrado` a la llamada sin los datos del v2, antes de

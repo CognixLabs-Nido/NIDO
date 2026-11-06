@@ -3,7 +3,7 @@ feature: altas-serie
 wave: 1
 status: approved
 priority: high
-last_updated: 2026-11-04
+last_updated: 2026-11-06
 related_adrs: [ADR-0049, ADR-0050, ADR-0063, ADR-0064]
 related_specs: [alta-tutor-driven, autorizaciones-firma, retencion-plazos]
 ---
@@ -77,7 +77,7 @@ reales de ANAIA (curso 2026/2027). Lo medido entonces, que motiva la serie:
 - **Las normas se firman aparte de la ficha** («una cosa es que firme NIDO APP y otra las reglas de
   funcionamiento y régimen interno»).
 
-**Decisiones del 2026-11-04 y del 2026-11-05 (el paso 1, entero):**
+**Decisiones del 2026-11-04 y del 2026-11-05 (la fase 3, entera):**
 
 - **Se firma una vez por niño.** La familia García, con Lucía y Pablo, firma el presupuesto dos veces,
   una por cada hijo. Si Pablo entra un año después con la misma versión vigente, firma la suya igualmente.
@@ -138,15 +138,15 @@ reales de ANAIA (curso 2026/2027). Lo medido entonces, que motiva la serie:
   menos; el generador rechaza los largos con un mensaje claro; los 3 mandatos de prueba de CEI
   Ejemplo se quedan como están; los fixtures usan la forma real, no una inventada corta.
 
-Decisiones del 2026-10-31 sobre las cinco preguntas del PR-0:
+Decisiones del 2026-10-31 sobre las cinco preguntas de la fase 1:
 
 - ~~**FRST en el primer cobro de cada mandato, RCUR en los siguientes.**~~ **REVERTIDA el
-  2026-11-01: el 0d no se construye y se emite RCUR siempre, como ya hace la app.** Por qué cayó: «A Collection with the optional transaction type ‘first’ is processed as a recurrent Collection» (SDD Core Rulebook 2025, EPC016-06 v1.0, AT-M006). Si FRST se procesa como RCUR, marcarlo no cambia nada en el banco, y lo que acepta
+  2026-11-01: el FRST no se construye y se emite RCUR siempre, como ya hace la app.** Por qué cayó: «A Collection with the optional transaction type ‘first’ is processed as a recurrent Collection» (SDD Core Rulebook 2025, EPC016-06 v1.0, AT-M006). Si FRST se procesa como RCUR, marcarlo no cambia nada en el banco, y lo que acepta
   cualquier banco, la misma razón multicentro de abajo, es RCUR siempre. Lo que se decidió, tal
   cual: La razón es **multicentro**,
   no lo que conteste un banco: cada centro trabaja con su banco, no se puede preguntar a todos ni
   dar por hecho que todos acepten RCUR en el primer cobro (lo que permiten las reglas desde 2016).
-  Se emite lo que acepta cualquiera. Es el PR-0d y va el último. El riesgo que trae, que el mismo
+  Se emite lo que acepta cualquiera. Era la última pieza de la fase 1. El riesgo que trae, que el mismo
   mandato salga dos veces como FRST (en dos remesas, o en una remesa que se vuelve a abrir), se
   traza junto con reabrir remesas (abajo, pendiente).
 - **CORE para todos; B2B no se construye.** Hay centros donde la cuota la paga la empresa de un
@@ -176,9 +176,9 @@ Decisiones del 2026-10-31 sobre las cinco preguntas del PR-0:
     del titular, y solo se comprueba el dígito de control cuando tiene forma española (DNI, NIE o
     CIF). Un titular con documento extranjero puede domiciliar. La columna es
     `mandatos_sepa.titular_documento`, sin formato en la base (1 a 40 caracteres); la
-    comprobación de la forma española es de la app (0c-2).
+    comprobación de la forma española es de la app (#488).
 
-Decisiones del 2026-11-04 sobre el 0c, al trazarlo:
+Decisiones del 2026-11-04 sobre el mandato v2, al trazarlo:
 
 - **El hash v2 también en el mandato presencial de Dirección**, sobre lo que teclea la directora y
   sin PDF (el respaldo es el papel). Hasta aquí `gestionar-domiciliacion-familia.ts` registraba el
@@ -191,7 +191,7 @@ Decisiones del 2026-11-04 sobre el 0c, al trazarlo:
   la columna de la versión es lo que lo permite. No hay ningún verificador que buscar.
 - **El mandato v2 guarda la foto del acreedor con la que se firmó** (`acreedor_cid`,
   `acreedor_nombre`): sin ella, el hash v2 no se podría recalcular si el centro cambia de nombre o
-  de CID. La base comprueba al firmar que son los del centro. Es un añadido del 0c-1 al trazarlo,
+  de CID. La base comprueba al firmar que son los del centro. Es un añadido de la base del mandato v2 (#487) al trazarlo,
   no una decisión del responsable: el v1 tiene el mismo hueco con el nombre del centro, y se queda.
 - **CEI Ejemplo es un centro de pruebas** y no tiene CID. Se le pone uno ficticio con formato
   válido, `ES81ZZZB00000000` (dígitos de control mod 97-10 correctos; el NIF B00000000, un CIF
@@ -203,7 +203,7 @@ Decisiones del 2026-11-04 sobre el 0c, al trazarlo:
   tienen CID: no sirven para el banco. Se quedan como están (v1); esas familias tendrían que
   volver a firmar.
 
-> **0c-2 construido el 2026-11-04** (la app; sin migración). Los tres caminos firman el v2: el alta
+> **La app del mandato v2, construida el 2026-11-04** (#488; sin migración). Los tres caminos firman el v2: el alta
 > (`/alta/[ninoId]/mandato-sepa`), la familia desde Recibos (`/family/domiciliacion`) y el presencial
 > de Dirección (`gestionarDomiciliacionFamilia`), con el texto canónico v2 (`textoCanonicoMandatoV2`)
 > y los datos que la base guarda (`mandato-v2-servidor.ts`). El v1 (`textoCanonicoMandato`) no
@@ -223,7 +223,7 @@ Decisiones del 2026-11-04 sobre el 0c, al trazarlo:
 >   si el centro tiene CID y le pasa al wizard solo ese sí o no. El wizard congela la lista de pasos
 >   al montarse. Es el único contador de pasos de la app (`AltaTutorWizard.tsx`).
 
-> **0c-3, el 2026-11-04** (decisión del responsable, después del despliegue del 0c-2): la base deja
+> **Sin v1 nuevos, el 2026-11-04** (#489; decisión del responsable, después del despliegue de #488): la base deja
 > de aceptar mandatos v1 nuevos (`20261230120000`). Si la app ya no los crea, nadie tiene por qué
 > crearlos por otra vía. Los 3 que había se quedan como están, firmados y con su hash recalculable
 > con el texto v1: se revocan al sustituirlos por un v2 y se pueden volver a firmar en su sitio como
@@ -233,10 +233,10 @@ Decisiones del 2026-11-04 sobre el 0c, al trazarlo:
 
 - **Concepto del adeudo: centro, niño y mes, sin tildes.** Ejemplo: `ANAIA · Lucia Garcia Lopez ·
 Octubre 2026`. Sin tildes porque el juego de caracteres de SEPA no las garantiza; máximo 140
-  caracteres. Va en el 0b.
-  - **Corrección del 2026-10-31 (al construir el 0b):** esta spec decía «cada recibo es de un solo
+  caracteres. Va en el fichero del banco (#461).
+  - **Corrección del 2026-10-31 (al construir el fichero del banco, #461):** esta spec decía «cada recibo es de un solo
     niño», y es falso. El recibo es **de la familia** (`recibos.nino_id` es NULL en los 4 de
-    producción) y el niño sale de sus líneas; uno de los 4 lleva **dos hermanos**. El 0b pone los
+    producción) y el niño sale de sus líneas; uno de los 4 lleva **dos hermanos**. #461 pone los
     dos nombres (`ANAIA · Ana Garcia y Pablo Garcia · Octubre 2026`, en orden alfabético) y, sin
     ninguna línea con niño, solo centro y mes. **Confirmado (2026-10-31):** los nombres de todos los
     niños del recibo, para que al ver el extracto se sepa de quién es el cobro.
@@ -347,7 +347,7 @@ poder abrir, editar y volver a crear.»
   descargas de la misma remesa eran dos ficheros distintos para el banco, y su control de ficheros
   repetidos (que mira el `MsgId`) no paraba el segundo. Pasaba sin reabrir nada: quien descargaba
   dos veces y subía los dos cobraba dos veces. El `EndToEndId` de cada adeudo es estable (el id del
-  recibo; desde el 0b, sin guiones), pero no todos los bancos rechazan por él. **Arreglado aparte,
+  recibo; desde #461, sin guiones), pero no todos los bancos rechazan por él. **Arreglado aparte,
   antes de reabrir (R-3):** el `MsgId` sale de la marca del fichero (punto 6).
 
 ### Propuesta
@@ -412,9 +412,9 @@ poder abrir, editar y volver a crear.»
 7. **Marcar enviada exige el fichero generado.** Hoy se puede marcar enviada una remesa cuyo fichero
    no salió nunca: así nació la de CEI Ejemplo (abajo).
 
-### Cruce con el FRST (0d): ya no hay cruce
+### Cruce con el FRST: ya no hay cruce
 
-**El 0d se canceló el 2026-11-01** (ver «Decisiones del 2026-10-31», la de FRST, revertida). Reabrir
+**El FRST se canceló el 2026-11-01** (ver «Decisiones del 2026-10-31», la de FRST, revertida). Reabrir
 no toca la secuencia: el fichero nuevo va en RCUR, como el primero.
 
 Aquí se escribió que, al reabrir, los mandatos volverían a FRST y que el banco rechazaría el segundo
@@ -432,7 +432,7 @@ Medido en producción el 2026-10-31: remesa `146d28b6`, octubre de 2026, **cread
 12,00 € en `enviado_banco` de una familia con mandato activo. El centro no tiene CID, BIC ni IBAN de
 acreedor. Con la propuesta **se recupera**: se reabre con el aviso de «el fichero no salió nunca de
 NIDO», el recibo vuelve a pendiente y la remesa a borrador. El fichero seguirá sin salir hasta que
-el centro ponga sus datos bancarios (el aviso del 0c), y lo dirá. El punto 7 impide que se repita.
+el centro ponga sus datos bancarios (el aviso del mandato v2), y lo dirá. El punto 7 impide que se repita.
 
 ### Preguntas al responsable
 
@@ -459,7 +459,7 @@ Contestadas el 2026-10-31: ver «Respuestas del responsable», abajo.
   abogado. La razón va al ADR.
 - **R-2 · Revisada el 2026-11-01: al reabrir, los mandatos NO vuelven a FRST.** La respuesta
   del 2026-10-31 («sí, como defensa: el rechazo del segundo FRST protege del doble cobro») se apoyaba
-  en una red imaginaria: el esquema procesa FRST como RCUR y no rechaza un segundo. El 0d se canceló
+  en una red imaginaria: el esquema procesa FRST como RCUR y no rechaza un segundo. El FRST se canceló
   con ella. La protección real contra el doble cobro es el `MsgId` estable y el aviso con las familias
   y el importe.
 - **R-3 · El `MsgId` estable, en un PR propio y antes que el resto.** Hecho (punto 6).
@@ -558,7 +558,7 @@ acaba al reabrir.
   dice qué falta: «Falta descargar el fichero: descárgalo, súbelo al banco y vuelve a marcarla
   enviada».
 - **Lo que el centro no tiene** (CID, BIC, IBAN de acreedor) ya lo dice la descarga, que no genera
-  el fichero (422). El aviso de los datos bancarios es del 0c.
+  el fichero (422). El aviso de los datos bancarios es del mandato v2.
 - **Pone `enviada_at`** en el fichero de la versión.
 
 **Las puertas del recibo** (censo del 2026-11-02, decisiones A a E del responsable de ese día). La
@@ -684,7 +684,7 @@ abre con su propio marcador, como el resto.
 > DELETE no cambia: el rollback de `crearRemesa`, la destrucción fiscal y el borrado de un centro
 > siguen pasando, medidos uno a uno.
 
-**Sin FRST.** El 0d está cancelado (R-2, revisada): el fichero de cada versión va en RCUR. No se
+**Sin FRST.** El FRST está cancelado (R-2, revisada): el fichero de cada versión va en RCUR. No se
 construye ninguna marca de «primer cobro» por mandato.
 
 ### Respuestas del responsable (2026-11-01)
@@ -698,7 +698,7 @@ construye ninguna marca de «primer cobro» por mandato.
   salga. El fichero no se recorta: dejaría de ser lo que se envió al banco. Va al ADR, con el plazo
   provisional como los demás hasta que lo valide el abogado.
 - **P-2 · La fecha de cobro, pieza aparte y antes de reabrir** (orden: fecha de cobro → reabrir →
-  0c; el 0d se canceló). Ver «La fecha de cobro», abajo.
+  el mandato v2; el FRST se canceló). Ver «La fecha de cobro», abajo.
 
 ### La fecha de cobro (pieza aparte)
 
@@ -716,7 +716,7 @@ Lo que hay (medido el 2026-11-01, `main` y producción en solo lectura):
   no admite fechas futuras.
 - **En pain.008 la fecha va por bloque**, no por adeudo. Un fichero con fechas distintas lleva un
   bloque por fecha, todos con el mismo `MsgId`, cada uno con su `PmtInfId` y sus totales. La
-  secuencia es siempre RCUR (el 0d se canceló), así que no parte bloques.
+  secuencia es siempre RCUR (el FRST se canceló), así que no parte bloques.
 
 **Decidido (responsable y Jose, 2026-11-01):**
 
@@ -780,9 +780,9 @@ optional transaction type ‘first’ is processed as a recurrent Collection». 
 opcional y se procesa como RCUR. **Un segundo FRST no lo rechaza el esquema**, así que la red de la
 R-2 («el rechazo del segundo FRST protege del doble cobro») no existe en las reglas del esquema.
 Puede existir en un banco concreto, pero eso no lo dice el Rulebook. **Decidido el 2026-11-01:**
-la R-2 se revisa (al reabrir no se vuelve a FRST) y el 0d se cancela.
+la R-2 se revisa (al reabrir no se vuelve a FRST) y el FRST se cancela.
 
-## La pantalla de altas en proceso
+## Fase 2: la pantalla de altas en proceso
 
 Decidida por el responsable el 2026-11-04. Lo que dijo el 2026-10-29, que es el punto de partida:
 «la directora deberia ver un listado con todas las altas en proceso»; «un listado con todo donde
@@ -896,7 +896,7 @@ ella (decisión del responsable).
   fila.
 - Sin migración: usa `cancelar_invitacion_tutor2` (`20261231120000`) una vez por hermano.
 
-## Paso 1: documentos del centro versionados
+## Fase 3: documentos del centro versionados
 
 ### Lo que dice Jose del presupuesto (2026-11-05)
 
@@ -919,7 +919,7 @@ ese curso**. En un documento que no es de curso, como las normas, es la última 
 - **J5 · Una versión se puede borrar mientras no tenga ninguna firma**, y queda registro de quién la
   borró. Un PDF subido por error puede llevar datos de otra familia, y guardarlo para siempre es un
   problema de protección de datos sin ninguna contrapartida. En cuanto tenga una firma, el `RESTRICT`
-  de la tabla de firmas (1b) lo impide y ya no se borra nunca, salvo con [la llave de `postgres`](../architecture/rls-policies.md#la-llave-de-postgres), que con `replica` también se salta un `RESTRICT`. Borrar no es cambiar: lo que se borra
+  de la tabla de firmas (3b) lo impide y ya no se borra nunca, salvo con [la llave de `postgres`](../architecture/rls-policies.md#la-llave-de-postgres), que con `replica` también se salta un `RESTRICT`. Borrar no es cambiar: lo que se borra
   se va entero, la fila y el fichero.
 - **J6 · «De curso» se puede cambiar mientras el documento no tenga versiones.** Después queda fijo:
   si estaba mal, se crea otro documento. Así ninguna versión se queda sin curso en un documento de
@@ -936,13 +936,13 @@ todos». Es funcionalidad nueva, y **no es el J4**: una versión nueva **no** ob
 sola. Lo que se pide es que la admin **pueda pedirlo** cuando se ha equivocado. Es una acción suya,
 no un automatismo. **No se construye todavía**: dónde encaja se decide aparte.
 
-**Lo que el 1a deja preparado para no impedirlo:** cada versión lleva `pide_refirma` (`false` hasta
+**Lo que el 3a deja preparado para no impedirlo:** cada versión lleva `pide_refirma` (`false` hasta
 que se construya). Con `true`, las firmas de las versiones anteriores del mismo documento y curso
 dejan de valer. La fila de una versión no cambia nunca, así que se decide **al subir la corregida**:
 «sube la buena y pide que la firmen otra vez». Si algún día hiciera falta pedirlo después de subirla,
 iría en una tabla aparte, sin tocar la de versiones.
 
-### 1a · Documentos y versiones (base de datos)
+### 3a · Documentos y versiones (base de datos)
 
 - **`documentos_centro`**: centro, título (J7), `de_curso` (J2; J6), `obligatorio`, orden,
   `retirado_at`, quién lo creó.
@@ -975,13 +975,13 @@ iría en una tabla aparte, sin tocar la de versiones.
 - **Registro (J5):** crear y editar un documento, subir una versión y borrarla dejan un evento
   directo en `audit_log` (`documento_centro`), con la acción y los identificadores, sin datos de
   ninguna familia.
-- **En la app**, sin pantalla (la pantalla es el 1c): la acción que sube (comprueba la sesión, que es
+- **En la app**, sin pantalla (la pantalla es el 3c): la acción que sube (comprueba la sesión, que es
   un PDF, calcula el hash, sube y registra) y la que borra (borra la versión y después su fichero; si
   el fichero no se va, lo dice, y se reintenta).
 
-### 1b · Las firmas (base de datos)
+### 3b · Las firmas (base de datos)
 
-Migración `20270102120000_feat_firmas_documentos_centro`. La pantalla de firmar es el paso 2: el 1b
+Migración `20270102120000_feat_firmas_documentos_centro`. La pantalla de firmar es la fase 4: el 3b
 deja la tabla, sus defensas y toda la retención, y nadie escribe todavía con sesión.
 
 - **`firmas_documentos_centro`**: una firma por versión y niño (J3), con quién firmó, su rol, cómo
@@ -1012,7 +1012,7 @@ deja la tabla, sus defensas y toda la retención, y nadie escribe todavía con s
 **La firma en persona (decisión de Jose del 2026-11-05):** «ya está previsto, como cuando la
 directora sube toda la información, porque se lo entregan en físico». El presupuesto y las normas se
 firman también en papel, delante de Dirección, como el mandato presencial y la firma presencial de
-las autorizaciones. Va en el 1b, como una columna más. Las dos formas acaban en la misma tabla, y
+las autorizaciones. Va en el 3b, como una columna más. Las dos formas acaban en la misma tabla, y
 esto es lo que las distingue como prueba (la base lo exige con
 `firmas_documentos_centro_forma_por_metodo`):
 
@@ -1026,15 +1026,15 @@ esto es lo que las distingue como prueba (la base lo exige con
 | Lo que prueba la fila  | Que el tutor firmó en la app ese PDF exacto (`sha256`), con su trazo | Que Dirección registró que la familia firmó ese PDF exacto (`sha256`), y cuándo |
 | La prueba de la firma  | La fila                                                              | **El papel firmado, que guarda el centro**; la fila es su registro              |
 
-El hash, como en el mandato presencial desde el 0c, es de lo que se firma: allí, el texto canónico
+El hash, como en el mandato presencial desde el mandato v2, es de lo que se firma: allí, el texto canónico
 que sale de lo que teclea la directora; aquí, el PDF de la versión (`sha256`), que es el mismo en
 las dos formas. Quién puede registrar una en persona (Dirección del centro, no el superusuario,
-como en las autorizaciones) lo decide la función de firmar del paso 2.
+como en las autorizaciones) lo decide la función de firmar de la fase 4.
 
-### 1c · La pantalla de la admin
+### 3c · La pantalla de la admin
 
 `/admin/documentos-centro`, en el menú de la admin junto a «Centro». Sin migración: usa las
-funciones del 1a y la tabla de firmas del 1b. La familia sigue sin ver nada hasta el paso 2.
+funciones del 3a y la tabla de firmas del 3b. La familia sigue sin ver nada hasta la fase 4.
 
 - **Solo la admin del centro (J1)**, con el mismo criterio que la base (`es_responsable`): ni la
   entrada del menú ni la página existen para una directora, y la base contesta 42501 si llega.
@@ -1043,13 +1043,13 @@ funciones del 1a y la tabla de firmas del 1b. La familia sigue sin ver nada hast
   nombre del curso, el número, la fecha, el tamaño y la vigente de cada curso marcada. Varias vivas
   a la vez se ven como lo que son: una por curso, no «la vigente» del documento.
 - **Cuántas firmas tiene cada versión** se lee de `firmas_documentos_centro` con la sesión de la
-  admin (la Dirección lee las firmas, 1b), solo `version_id`. No es la regla de borrar, es lo que se
+  admin (la Dirección lee las firmas, 3b), solo `version_id`. No es la regla de borrar, es lo que se
   enseña: el botón de borrar sale solo con cero firmas visibles, y si la base encuentra alguna que la
   admin no ve (una firma bloqueada por retención), contesta `version_firmada` y la pantalla lo dice.
 - **Crear y editar un documento:** título (J7), de curso o no, obligatorio y orden. «De curso» solo
   se puede cambiar mientras no tenga versiones (J6): con versiones, la casilla no se ofrece, y la
   base lo vuelve a mirar (`de_curso_fijo`). **Retirar** y **volver a poner**, sin borrar nada.
-- **Subir una versión:** un PDF de hasta 10 MB, por la ruta del 1a. En un documento de curso se
+- **Subir una versión:** un PDF de hasta 10 MB, por la ruta del 3a. En un documento de curso se
   elige el curso entre los `planificado` y `activo` del centro; en uno que no es de curso no se
   pregunta. La pantalla avisa de lo que hace: **una versión nueva no pide que vuelvan a firmar**
   (J4); la refirma no está construida.
@@ -1058,7 +1058,7 @@ funciones del 1a y la tabla de firmas del 1b. La familia sigue sin ver nada hast
 - **Borrar una versión sin firmas (J5):** con confirmación. Si el fichero no se va, la pantalla lo
   dice, y los **ficheros pendientes de borrar** salen arriba con «reintentar».
 
-## Paso 2: firmar los documentos del centro
+## Fase 4: presupuesto y normas, para firmar
 
 ### Decisiones (2026-11-05)
 
@@ -1071,22 +1071,22 @@ funciones del 1a y la tabla de firmas del 1b. La familia sigue sin ver nada hast
   al curso siguiente. Las filas de `acuses_alta` se quedan como histórico. Medido en producción el
   2026-11-05: los 3 acuses de normas son los 3 niños activos, y los tres firmantes son del buzón del
   responsable (dos alias `+nino1` y `+nino3`, y su cuenta de entonces como admin). No hay ninguna
-  familia de otro buzón. El gate deja de aceptarlos en el 2c, que es quien lo cambia (y barre lo que
+  familia de otro buzón. El gate deja de aceptarlos en el 4b, que es quien lo cambia (y barre lo que
   lo afirma, regla 12).
-- **El 2d es lo importante del paso**, no un extra: sin él, una familia que se matricula hoy no firma
+- **El 4c es lo importante de la fase**, no un extra: sin él, una familia que se matricula hoy no firma
   nunca y nadie se entera. La familia ve «documentos por firmar» en cuanto existe la versión que le
   toca, y Dirección lo ve **en su inicio y por niño**, sin buscarlo.
 - **«No existía» no es «no ha firmado».** Pendiente porque el documento no existe no es de la
   familia; pendiente porque no lo ha firmado, sí. Por eso hay dos estados distintos, y el segundo
   lleva desde cuándo pudo firmarlo.
 - **U-3, corregido en la base.** El acuse médico del cierre del alta se exigía de quien cierra para
-  cualquier niño; U-3 lo pasó a «de ese niño» solo en la app. El 2a lo corrige en
+  cualquier niño; U-3 lo pasó a «de ese niño» solo en la app. El 4a lo corrige en
   `marcar_matricula_lista`.
 
-**Orden:** 2a (base) → 2c (la familia firma en el alta) → 2d (firmar fuera del alta y lo pendiente en
-el inicio de Dirección) → 2b (la refirma, que necesita dónde firmar otra vez).
+**Orden:** 4a (base) → 4b (la familia firma en el alta) → 4c (firmar fuera del alta y lo pendiente en
+el inicio de Dirección) → 4d (la refirma, que necesita dónde firmar otra vez).
 
-### 2a · La base
+### 4a · La base
 
 Migración `20270103120000_feat_firmar_documentos_centro`. Sin pantalla.
 
@@ -1107,7 +1107,7 @@ Migración `20270103120000_feat_firmar_documentos_centro`. Sin pantalla.
 
 - **Quién lo lee:** por niño, sus tutores legales y la Dirección de su centro
   (`documentos_firma_nino`); el centro entero, solo lo pendiente, la Dirección
-  (`documentos_firma_centro`, para el inicio del 2d). El autorizado y la profe, no.
+  (`documentos_firma_centro`, para el inicio del 4c). El autorizado y la profe, no.
 - **Firmar con el dedo** (`firmar_documento_centro`): el tutor legal, solo la versión vigente que le
   toca y está por firmar. Basta uno (J3): el segundo recibe `ya_firmado`. La IP y el navegador los
   pone la app de la petición, como en las firmas de autorizaciones.
@@ -1115,50 +1115,63 @@ Migración `20270103120000_feat_firmar_documentos_centro`. Sin pantalla.
   rol `admin`; el superusuario no, como el mandato presencial.
 - **El PDF** (`ruta_version_documento_nino`): la ruta de la versión que le toca o que ya firmó, para
   que la app la sirva con un enlace firmado.
-- **Lo que no va aquí:** la puerta de los documentos en el cierre del alta va en el 2c, con la
-  pantalla de firmar. Con ella aquí, un documento subido desde la pantalla del 1c (ya desplegada)
+- **Lo que no va aquí:** la puerta de los documentos en el cierre del alta va en el 4b, con la
+  pantalla de firmar. Con ella aquí, un documento subido desde la pantalla del 3c (ya desplegada)
   dejaría todas las altas sin poder cerrarse y sin sitio donde firmar.
 
 ## Orden de la serie
 
-Del 3 en adelante todos tocan `purgar_sujeto_db`, `privado.purgar_nino` y la exportación del
-art. 15 (las funciones de la serie de retención, ADR-0064). Cada PR parte de la **definición viva**
-de esas funciones, no de la que haya en esta spec.
+Diez fases, en este orden. De la 5 en adelante todas tocan `purgar_sujeto_db`, `privado.purgar_nino`
+y la exportación del art. 15 (las funciones de la serie de retención, ADR-0064). Cada PR parte de la
+**definición viva** de esas funciones, no de la que haya en esta spec.
 
-| #   | Pieza                             | Qué hace                                                                        |
-| --- | --------------------------------- | ------------------------------------------------------------------------------- |
-| 0   | SEPA                              | Se trocea en varios PRs (abajo)                                                 |
-| ·   | Pantalla de altas en proceso      | Va justo después del PR-0, antes del 1 (2026-11-04). Ver su sección             |
-| 1   | Documentos del centro versionados | Base: tabla de versiones con hash, firmas con `RESTRICT`, bucket propio         |
-| 2   | Presupuesto y normas para firmar  | El gate exige la firma de la versión vigente de cada documento obligatorio; P-6 |
-| 3   | Campos del niño                   | Y configuración de campos por centro                                            |
-| 4   | Campos de tutores                 | Con el test de la purga contra el catálogo de columnas                          |
-| 5   | SIP                               | Número en `ninos`, imagen en su bucket                                          |
-| 6   | Servicios en el alta              | La petición de media pensión                                                    |
-| 7   | Gastos de gestión                 | Paso del alta y confirmación de la directora al validar                         |
-| 8   | Firma de la ficha                 | Resumen de los datos, hash y firma                                              |
+| Fase | Pieza                             | Qué hace                                                                        | Estado       |
+| ---- | --------------------------------- | ------------------------------------------------------------------------------- | ------------ |
+| 1    | SEPA                              | En varios PRs (abajo)                                                           | ✅           |
+| 2    | Pantalla de altas en proceso      | Ver «Fase 2: la pantalla de altas en proceso»                                   | ✅           |
+| 3    | Documentos del centro versionados | Base: tabla de versiones con hash, firmas con `RESTRICT`, bucket propio         | ✅           |
+| 4    | Presupuesto y normas, para firmar | El gate exige la firma de la versión vigente de cada documento obligatorio; P-6 | 🔸 en marcha |
+| 5    | Campos del niño                   | Y configuración de campos por centro                                            |              |
+| 6    | Campos de tutores                 | Con el test de la purga contra el catálogo de columnas                          |              |
+| 7    | SIP                               | Número en `ninos`, imagen en su bucket                                          |              |
+| 8    | Servicios en el alta              | La petición de media pensión                                                    |              |
+| 9    | Gastos de gestión                 | Paso del alta y confirmación de la directora al validar                         |              |
+| 10   | Firma de la ficha                 | Resumen de los datos, hash y firma                                              |              |
 
 Los documentos obligatorios (DNI de los tutores, SEPA, libro de familia) entran dentro de la serie.
 
-### Troceo del PR-0
+### Fase 1, por PRs
 
-Orden: 0·doc y 0a → 0b → `MsgId` (R-3) → fecha de cobro (F1 → F2 → F3) → reabrir remesas → 0c. El 0d se
-canceló el 2026-11-01 (FRST se procesa como RCUR).
+| Pieza                                  | Alcance                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Migración                                                                                                        |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Esta spec                              | La primera fuente escrita de la serie                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | No                                                                                                               |
+| «Omitir» de verdad (#459)              | El gate de `finalizarAlta` deja de exigir `sepa`, se corrige el texto de la pantalla y se añade el primer test de `finalizarAlta`, con control negativo                                                                                                                                                                                                                                                                                                                                                                                                        | No (`marcar_matricula_lista` no exige mandato)                                                                   |
+| El fichero del banco (#461)            | `MndtId` y `EndToEndId` ≤ 35, concepto `centro · niño · mes` sin tildes, el generador rechaza los largos, fixtures con la forma real                                                                                                                                                                                                                                                                                                                                                                                                                           | No                                                                                                               |
+| El `MsgId` (#462)                      | Sale de la marca del fichero, no de la hora de la descarga                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | No                                                                                                               |
+| La fecha de cobro (#464, #465, #466)   | Ver «La fecha de cobro»                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Sí                                                                                                               |
+| Reabrir remesas (#475–#478, #484–#486) | Ver «Reabrir una remesa» y su «Diseño»: recibos enviados a pendiente, remesa a borrador sin la marca, solo la admin, el aviso con familias e importe, su fila en `audit_log`; el fichero de cada versión guardado en privado con su registro y plazo fiscal en el barrido; marcar enviada por función y con el fichero                                                                                                                                                                                                                                         | Sí: la función, el marcador en `remesas_proteger`, las dos tablas, el bucket, el barrido y la clave de la pasada |
+| El mandato v2 (#487, #488, #489)       | CID en el PDF y en el texto canónico v2, columna con la versión del canónico (los existentes en v1), NIF y dirección del titular, los tres caminos que crean mandatos (alta, `/family/domiciliacion`, presencial de Dirección) y el aviso en los datos bancarios del centro. Sin CID del centro no se firma ningún mandato (2026-11-04). En tres PRs: la base (#487: las columnas, registrar y sustituir con los datos del v2 y sin CID cerradas, fuera de `audit_log`, en el export, y el CID de prueba de CEI Ejemplo), la app (#488) y sin v1 nuevos (#489) | Sí: `20261229120000` (con la operación del CID de prueba) y `20261230120000`                                     |
+| ~~FRST~~                               | **Cancelado el 2026-11-01.** Era FRST en el primer cobro de cada mandato y RCUR en los siguientes. El Rulebook procesa FRST como RCUR (AT-M006): marcarlo no cambia nada en el banco. Se emite RCUR siempre                                                                                                                                                                                                                                                                                                                                                    | No                                                                                                               |
 
-| PR              | Alcance                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Migración                                                                                                        |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| 0·doc           | Esta spec                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | No                                                                                                               |
-| 0a              | «Omitir» de verdad: el gate de `finalizarAlta` deja de exigir `sepa`, se corrige el texto de la pantalla y se añade el primer test de `finalizarAlta`, con control negativo                                                                                                                                                                                                                                                                                                                                                                                                     | No (`marcar_matricula_lista` no exige mandato)                                                                   |
-| 0b              | El fichero que acepta el banco: `MndtId` y `EndToEndId` ≤ 35, concepto `centro · niño · mes` sin tildes, el generador rechaza los largos, fixtures con la forma real                                                                                                                                                                                                                                                                                                                                                                                                            | No                                                                                                               |
-| 0c              | Mandato v2: CID en el PDF y en el texto canónico v2, columna con la versión del canónico (los existentes en v1), NIF y dirección del titular, los tres caminos que crean mandatos (alta, `/family/domiciliacion`, presencial de Dirección) y el aviso en los datos bancarios del centro. Sin CID del centro no se firma ningún mandato (2026-11-04). En dos: **0c-1**, la base (las columnas, registrar y sustituir con los datos del v2 y sin CID cerradas, fuera de `audit_log`, en el export) y el CID de prueba de CEI Ejemplo; **0c-2**, la app; y **0c-3**, sin v1 nuevos | Sí, en el 0c-1 (`20261229120000`), y la operación del CID de prueba; y en el 0c-3 (`20261230120000`)             |
-| Reabrir remesas | Ver «Reabrir una remesa» y su «Diseño»: recibos enviados a pendiente, remesa a borrador sin la marca, solo la admin, el aviso con familias e importe, su fila en `audit_log`; el fichero de cada versión guardado en privado con su registro y plazo fiscal en el barrido; marcar enviada por función y con el fichero                                                                                                                                                                                                                                                          | Sí: la función, el marcador en `remesas_proteger`, las dos tablas, el bucket, el barrido y la clave de la pasada |
-| ~~0d~~          | **Cancelado el 2026-11-01.** Era FRST en el primer cobro de cada mandato y RCUR en los siguientes. El Rulebook procesa FRST como RCUR (AT-M006): marcarlo no cambia nada en el banco. Se emite RCUR siempre                                                                                                                                                                                                                                                                                                                                                                     | No                                                                                                               |
+### Fase 2, por PRs
+
+La pantalla (#491), reenviar y cancelar la invitación del segundo tutor (#492), la cola que lo invita
+(#493) y la invitación del segundo tutor es de la familia (#494).
+
+### Fase 3, por PRs
+
+3a, documentos y versiones (#496, #497) · 3b, las firmas (#499) · 3c, la pantalla de la admin (#501).
+
+### Fase 4, por PRs
+
+4a, la base (#502) · 4b, la familia firma en el alta · 4c, firmar fuera del alta y lo pendiente en el
+inicio de Dirección · 4d, la refirma.
 
 ## Estado
 
-- [x] 0·doc — esta spec.
-- [x] 0a (#459) · [x] 0b (#461) · [x] `MsgId` (#462) · fecha de cobro: [x] F1 (#464) · [x] F2 (#465) · [x] F3 (#466) · [x] reabrir remesas · 0c: [x] 0c-1 (#487) · [x] 0c-2 (#488) · [x] 0c-3 (#489) · ~~0d~~ (cancelado)
-- [ ] Pantalla de altas en proceso (este PR) · [ ] 1 · [ ] 2 · [ ] 3 · [ ] 4 · [ ] 5 · [ ] 6 · [ ] 7 · [ ] 8
+- [x] Fase 1 · [x] Fase 2 · [x] Fase 3
+- Fase 4: [x] 4a (#502) · [ ] 4b · [ ] 4c · [ ] 4d
+- [ ] Fase 5 · [ ] Fase 6 · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias
 

@@ -1,5 +1,5 @@
 /**
- * La pantalla de la admin (1c): la forma de `documentos_centro_admin` (1a, `20270101120000`) y lo que
+ * La pantalla de la admin (3c): la forma de `documentos_centro_admin` (3a, `20270101120000`) y lo que
  * la pantalla hace con ella. Sin servidor ni React: se prueba sola.
  */
 
@@ -53,7 +53,7 @@ export function leerListaAdmin(data: unknown): ListaAdmin {
 }
 
 /**
- * Las versiones de un documento por curso: hay varias vivas a la vez, una por curso (1a), y la
+ * Las versiones de un documento por curso: hay varias vivas a la vez, una por curso (3a), y la
  * pantalla las enseña así. Los cursos van del más reciente al más antiguo (el orden de `cursos`, que
  * llega por fecha de inicio descendente); dentro, de número mayor a menor.
  */

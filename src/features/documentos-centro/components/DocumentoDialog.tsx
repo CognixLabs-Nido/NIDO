@@ -33,7 +33,7 @@ interface Props {
 const VACIO: FormularioDocumento = { titulo: '', deCurso: false, obligatorio: true, orden: 0 }
 
 /**
- * Crear o editar un documento del centro (1c): título (J7), de curso (J2), obligatorio y orden.
+ * Crear o editar un documento del centro (3c): título (J7), de curso (J2), obligatorio y orden.
  * Con versiones, «de curso» se enseña pero no se puede cambiar (J6); la base lo vuelve a mirar.
  */
 export function DocumentoDialog({ centroId, documento, puedeCambiarDeCurso }: Props) {

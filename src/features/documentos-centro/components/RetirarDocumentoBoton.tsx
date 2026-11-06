@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 
 import { editarDocumentoAccion } from '../actions/documentos'
 
-/** Retirar un documento, o volver a ponerlo, sin borrar nada (1a: `retirado_at`). */
+/** Retirar un documento, o volver a ponerlo, sin borrar nada (3a: `retirado_at`). */
 export function RetirarDocumentoBoton({
   documentoId,
   retirado,
