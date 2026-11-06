@@ -306,9 +306,7 @@ P-1 a P-5 se contestaron el 2026-10-31 y están arriba, en SEPA. Quedan:
 
 - **Reabrir remesas:** el alcance está decidido (abajo, «Reabrir una remesa»). Quedan R-1 a R-4,
   las preguntas de su traza.
-- **P-6 · Documento obligatorio del centro sin subir** (de D3; se pregunta al llegar al PR-2).
-  Ejemplo: el centro ha subido el presupuesto pero no las normas, y una familia llega al final del
-  alta. Propuesta: el alta no se puede cerrar y Dirección ve en su inicio qué documento falta.
+- **P-6** se contestó el 2026-11-05: ver «Fase 4: presupuesto y normas, para firmar».
 
 ## Reabrir una remesa
 
@@ -1083,8 +1081,60 @@ funciones del 3a y la tabla de firmas del 3b. La familia sigue sin ver nada hast
   cualquier niño; U-3 lo pasó a «de ese niño» solo en la app. El 4a lo corrige en
   `marcar_matricula_lista`.
 
+### Decisiones (2026-11-06)
+
+- **Las normas son un documento del centro, y se firman solo por ahí.** Jose: se quita el tipo
+  «normas de régimen interno» del catálogo de Autorizaciones. Su razón: **dos caminos para firmar lo
+  mismo significa que dentro de un año nadie sabrá cuál vale.** En producción hay 0 autorizaciones de
+  ese tipo (medido el 2026-11-06): nada que migrar, solo cerrar. Va en el 4b-3, detrás del 4b-2,
+  porque cerrar el tipo es recrearlo: lo usan su columna, su índice único, dos funciones, las dos
+  políticas de escritura y el CHECK de la tabla.
+- **El único momento de la historia del producto en que un alta se cierra sin normas.** Con la P-6 y
+  la casilla fuera, mientras el centro no suba sus normas un alta se cierra **sin normas de ninguna
+  clase**, ni casilla ni firma, y la familia las firma en el 4c cuando la admin las suba. Es lo que
+  eligió Jose con la P-6 («lo firmará cuando se genere el documento»). La casilla no se queda con una
+  condición: un camino viejo que sobrevive «solo mientras» no se quita nunca. Ejemplo, medido el
+  2026-11-06: CEI Ejemplo no tiene ningún documento subido y tiene un alta pendiente; con el 4b-2 esa
+  alta se cierra sin normas.
+- **La puerta, también en la base.** Hoy un tutor que llama directamente a `marcar_matricula_lista`
+  cierra el alta sin haber firmado nada: la puerta de las normas vive solo en `finalizarAlta`. La de
+  los documentos va en las dos (4b-2, con su migración y sus controles).
+- **El botón de firmar sale después de abrir el PDF** (decisión del responsable). No prueba que lo
+  hayan leído, y no se presenta así: una familia que firma sin haber abierto el documento es una
+  reclamación esperando, y abrirlo cuesta un toque. Ningún texto dice «he leído»: la pantalla dice
+  «Has abierto el documento» y el botón, «Firmar «Normas»».
+
 **Orden:** 4a (base) → 4b (la familia firma en el alta) → 4c (firmar fuera del alta y lo pendiente en
 el inicio de Dirección) → 4d (la refirma, que necesita dónde firmar otra vez).
+
+### 4b · La familia firma en el alta
+
+En tres PRs, porque la puerta no puede llegar antes que el sitio donde firmar (el 3c ya está
+desplegado: la admin puede subir un documento en cualquier momento):
+
+- **4b-1, dónde firmar** (sin migración). En el paso de los acuses del alta, antes que las normas de
+  siempre, los documentos que le tocan al niño (`documentos_firma_nino`), cada uno con su estado:
+  - el que el centro no ha subido: «El centro todavía no ha subido «Normas». Se firmará cuando
+    esté.» No frena nada (P-6);
+  - el que está por firmar: «Abrir el documento» (un enlace firmado de un minuto, a la versión que
+    al niño le toca, `ruta_version_documento_nino`), y al abrirlo, el nombre, el trazo y «Firmar»;
+  - el firmado: cuándo, y si fue en papel.
+
+  **Cómo se firma lo decide el servidor**, con la regla de la entrada del alta: con vínculo vivo con
+  el niño, como familia, con el dedo (`firmar_documento_centro`); sin vínculo y de Dirección del
+  centro del niño, en persona, sin trazo (`registrar_firma_documento_presencial`), aunque el
+  navegador mande uno; el superusuario no (ADR-0061). Es el patrón del mandato con una diferencia:
+  el mandato decide «en persona» por ser de Dirección, sin mirar el vínculo, y aquí se mira primero
+  el vínculo, para que la pantalla (que entra en modo Dirección solo sin vínculo) y el servidor
+  digan lo mismo. Una directora que es madre del niño firma como madre.
+
+  La casilla, la autorización de normas y la puerta de `finalizarAlta` no cambian en este PR.
+
+- **4b-2, la puerta y el barrido** (con migración). `finalizarAlta` y `marcar_matricula_lista`
+  exigen firmada cada versión obligatoria que está por firmar; lo que falta no frena (P-6). Fuera del
+  alta la casilla y la autorización de normas, con todo lo que las afirma (regla 12). Las filas de
+  `acuses_alta` se quedan como histórico.
+- **4b-3, el tipo fuera del catálogo** (con migración). Ver «Decisiones (2026-11-06)».
 
 ### 4a · La base
 
@@ -1164,13 +1214,13 @@ La pantalla (#491), reenviar y cancelar la invitación del segundo tutor (#492),
 
 ### Fase 4, por PRs
 
-4a, la base (#502) · 4b, la familia firma en el alta · 4c, firmar fuera del alta y lo pendiente en el
+4a, la base (#502) · 4b, la familia firma en el alta (4b-1, 4b-2, 4b-3) · 4c, firmar fuera del alta y lo pendiente en el
 inicio de Dirección · 4d, la refirma.
 
 ## Estado
 
 - [x] Fase 1 · [x] Fase 2 · [x] Fase 3
-- Fase 4: [x] 4a (#502) · [ ] 4b · [ ] 4c · [ ] 4d
+- Fase 4: [x] 4a (#502) · 4b: [ ] 4b-1 · [ ] 4b-2 · [ ] 4b-3 · [ ] 4c · [ ] 4d
 - [ ] Fase 5 · [ ] Fase 6 · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias
