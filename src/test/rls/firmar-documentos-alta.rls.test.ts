@@ -78,6 +78,7 @@ describe('Firmar los documentos del centro en el alta', () => {
   let adminFuera: TestUser
   let inigo: string
   let marta: string
+  let sinTrazo: string
   let directoraMadre: TestUser
   const sesiones = new Map<string, Cliente>()
   const como = async (u: TestUser): Promise<Cliente> => {
@@ -140,6 +141,11 @@ describe('Firmar los documentos del centro en el alta', () => {
     marta = (await createTestNino(centro.id, 'Marta')).id
     await matricular(marta, aula.id, curso)
     await crearVinculo(marta, directoraMadre.id, 'tutor_legal_principal')
+    // Un niño solo para el control del trazo: si la comprobación faltara, ese control firmaría de
+    // verdad, y los tests de Lucía que vienen después medirían otra cosa.
+    sinTrazo = (await createTestNino(centro.id, 'Sin Trazo')).id
+    await matricular(sinTrazo, aula.id, curso)
+    await crearVinculo(sinTrazo, madre.id, 'tutor_legal_principal')
     await matricular(ajeno, (await createTestAula(fuera.id, cursoFuera)).id, cursoFuera)
     await crearVinculo(lucia, madre.id, 'tutor_legal_principal')
     await crearVinculo(lucia, padre.id, 'tutor_legal_secundario')
@@ -249,11 +255,11 @@ describe('Firmar los documentos del centro en el alta', () => {
   })
 
   it('con el dedo sin trazo: no se firma nada', async () => {
-    expect(await firma(madre, lucia, normas1, null)).toEqual({
+    expect(await firma(madre, sinTrazo, normas1, null)).toEqual({
       ok: false,
       error: 'alta.documentos_centro.errors.sin_trazo',
     })
-    expect(firmasDe(lucia)).toBe(0)
+    expect(firmasDe(sinTrazo)).toBe(0)
   })
 
   it('la madre firma con el dedo: su firma, digital, con su trazo, su IP y su navegador', async () => {
