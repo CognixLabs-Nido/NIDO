@@ -26,8 +26,8 @@ import {
 vi.mock('server-only', () => ({}))
 
 const { subirVersionDocumento } = await import('@/features/documentos-centro/lib/versiones')
-const { enlaceDocumentoAlta, firmarDocumentoAlta, leerDocumentosAlta, modoFirmaAlta } =
-  await import('@/features/alta/lib/documentos-alta')
+const { enlaceDocumentoNino, firmarDocumentoNino, leerDocumentosNino, modoFirmaDocumento } =
+  await import('@/features/documentos-centro/lib/firmar-documentos')
 
 const BUCKET = 'documentos-centro'
 type Cliente = SupabaseClient<Database>
@@ -92,7 +92,7 @@ describe('Firmar los documentos del centro en el alta', () => {
     firmaImagen: string | null = TRAZO,
     ctx = CTX
   ) =>
-    firmarDocumentoAlta(
+    firmarDocumentoNino(
       await como(u),
       u.id,
       { ninoId: nino, versionId: version, nombreTecleado: ' Firma Demo ', firmaImagen },
@@ -217,7 +217,7 @@ describe('Firmar los documentos del centro en el alta', () => {
   })
 
   it('premisa: lo que le toca a Lucía, con sus tres estados, y quién es quién', async () => {
-    const r = await leerDocumentosAlta(await como(madre), lucia)
+    const r = await leerDocumentosNino(await como(madre), lucia)
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.data.map((d) => `${d.titulo}=${d.estado}`).sort()).toEqual([
@@ -232,10 +232,10 @@ describe('Firmar los documentos del centro en el alta', () => {
   })
 
   it('el modo lo decide el servidor: con vínculo, con el dedo; Dirección sin vínculo, en persona; la profe, nada', async () => {
-    expect(await modoFirmaAlta(await como(madre), lucia, madre.id)).toBe('digital')
-    expect(await modoFirmaAlta(await como(admin), lucia, admin.id)).toBe('presencial')
-    expect(await modoFirmaAlta(await como(profe), lucia, profe.id)).toBeNull()
-    expect(await modoFirmaAlta(await como(otraMadre), lucia, otraMadre.id)).toBeNull()
+    expect(await modoFirmaDocumento(await como(madre), lucia, madre.id)).toBe('digital')
+    expect(await modoFirmaDocumento(await como(admin), lucia, admin.id)).toBe('presencial')
+    expect(await modoFirmaDocumento(await como(profe), lucia, profe.id)).toBeNull()
+    expect(await modoFirmaDocumento(await como(otraMadre), lucia, otraMadre.id)).toBeNull()
   })
 
   it('la directora que es madre de Marta firma como madre: con el dedo, no en persona (el vínculo va primero)', async () => {
@@ -243,7 +243,7 @@ describe('Firmar los documentos del centro en el alta', () => {
       await como(directoraMadre)
     ).rpc('es_admin', { p_centro_id: centro.id })
     expect(esDireccion).toBe(true)
-    expect(await modoFirmaAlta(await como(directoraMadre), marta, directoraMadre.id)).toBe(
+    expect(await modoFirmaDocumento(await como(directoraMadre), marta, directoraMadre.id)).toBe(
       'digital'
     )
     const r = await firma(directoraMadre, marta, normas1)
@@ -257,7 +257,7 @@ describe('Firmar los documentos del centro en el alta', () => {
   it('con el dedo sin trazo: no se firma nada', async () => {
     expect(await firma(madre, sinTrazo, normas1, null)).toEqual({
       ok: false,
-      error: 'alta.documentos_centro.errors.sin_trazo',
+      error: 'firmar_documentos.errors.sin_trazo',
     })
     expect(firmasDe(sinTrazo)).toBe(0)
   })
@@ -275,7 +275,7 @@ describe('Firmar los documentos del centro en el alta', () => {
   it('J3: el padre llega después y ya está firmado; no hay una segunda firma', async () => {
     expect(await firma(padre, lucia, normas1)).toEqual({
       ok: false,
-      error: 'alta.documentos_centro.errors.ya_firmado',
+      error: 'firmar_documentos.errors.ya_firmado',
     })
     expect(firmasDe(lucia)).toBe(1)
   })
@@ -289,11 +289,11 @@ describe('Firmar los documentos del centro en el alta', () => {
   })
 
   it('el superusuario no registra en persona: ni la app ni la base, y no queda nada', async () => {
-    expect(await modoFirmaAlta(await como(superU), pablo, superU.id)).toBe('presencial')
+    expect(await modoFirmaDocumento(await como(superU), pablo, superU.id)).toBe('presencial')
     const antes = firmasDe(pablo)
     expect(await firma(superU, pablo, presupuesto1)).toEqual({
       ok: false,
-      error: 'alta.errors.presencial_solo_direccion',
+      error: 'firmar_documentos.errors.presencial_solo_direccion',
     })
     expect(firmasDe(pablo)).toBe(antes)
   })
@@ -302,7 +302,7 @@ describe('Firmar los documentos del centro en el alta', () => {
     for (const u of [profe, otraMadre]) {
       expect(await firma(u, lucia, presupuesto1)).toEqual({
         ok: false,
-        error: 'alta.documentos_centro.errors.no_autorizado',
+        error: 'firmar_documentos.errors.no_autorizado',
       })
     }
     expect(firmasDe(lucia)).toBe(1)
@@ -320,16 +320,16 @@ describe('Firmar los documentos del centro en el alta', () => {
     if (!r.ok) return
     expect(await firma(admin, inigo, normas1)).toEqual({
       ok: false,
-      error: 'alta.documentos_centro.errors.version_no_vigente',
+      error: 'firmar_documentos.errors.version_no_vigente',
     })
     expect(firmasDe(inigo)).toBe(0)
     expect((await firma(admin, inigo, r.data.versionId)).ok).toBe(true)
-    const pab = await leerDocumentosAlta(await como(admin), pablo)
+    const pab = await leerDocumentosNino(await como(admin), pablo)
     expect(pab.ok && pab.data.find((d) => d.titulo === 'Normas')?.estado).toBe('firmado')
   })
 
   it('el PDF: la madre abre el de Lucía (control positivo: es ese PDF); el de otro centro, no', async () => {
-    const ok = await enlaceDocumentoAlta(await como(madre), serviceClient, lucia, presupuesto1)
+    const ok = await enlaceDocumentoNino(await como(madre), serviceClient, lucia, presupuesto1)
     expect(ok.ok).toBe(true)
     if (!ok.ok) return
     const bytes = new Uint8Array(await (await fetch(ok.data.url)).arrayBuffer())
@@ -343,9 +343,9 @@ describe('Firmar los documentos del centro en el alta', () => {
       [otraMadre, lucia, presupuesto1],
       [profe, lucia, presupuesto1],
     ] as const) {
-      expect(await enlaceDocumentoAlta(await como(u), serviceClient, nino, version)).toEqual({
+      expect(await enlaceDocumentoNino(await como(u), serviceClient, nino, version)).toEqual({
         ok: false,
-        error: 'alta.documentos_centro.errors.no_autorizado',
+        error: 'firmar_documentos.errors.no_autorizado',
       })
     }
   })

@@ -26,7 +26,7 @@ import { PASO_MIN_AUTENTICADO } from '@/features/alta/lib/estado-alta'
 import { estadoMatriculaVigente } from '@/features/alta/lib/matricula-vigente'
 import { resolverReutilizacionFamilia } from '@/features/alta/lib/reutilizacion-familia'
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
-import { leerDocumentosAlta } from '@/features/alta/lib/documentos-alta'
+import { leerDocumentosNino } from '@/features/documentos-centro/lib/firmar-documentos'
 
 import type { MandatoSepaInicial } from '@/features/alta/components/PasoSepa'
 import type { DatosTutorInicial } from '@/features/alta/components/PasoTutor'
@@ -262,7 +262,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // Los documentos del centro (fase 4): lo que le toca firmar al niño, con la sesión. Las normas son
   // uno de ellos desde el 4b-2 (decisiones del 2026-11-06): ni la autorización de normas ni la casilla.
   // Si la lectura falla no hay alta: una lista vacía diría «no hay nada que firmar».
-  const documentosCentro = await leerDocumentosAlta(supabase, ninoId)
+  const documentosCentro = await leerDocumentosNino(supabase, ninoId)
   if (!documentosCentro.ok) throw new Error(documentosCentro.error)
   // Imagen por CONSENT (casilla → `otorgar_consentimiento_imagen`, IU-2): ¿el niño ya tiene consent
   // de imagen vigente? (lo alimentan tanto la casilla como la firma).

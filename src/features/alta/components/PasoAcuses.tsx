@@ -6,13 +6,16 @@ import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 
-import { DocumentosCentroAlta, type DocumentoAltaFila } from './DocumentosCentroAlta'
+import {
+  DocumentosParaFirmar,
+  type DocumentoParaFirmarFila,
+} from '@/features/documentos-centro/components/DocumentosParaFirmar'
 
 interface Props {
   locale: string
   ninoId: string
   /** Los documentos del centro que le tocan al niño (fase 4): las normas, entre ellos. */
-  documentosCentro: DocumentoAltaFila[]
+  documentosCentro: DocumentoParaFirmarFila[]
   /** Modo Dirección del alta: la firma se registra en persona (papel), sin trazo. */
   modoDireccion?: boolean
   onNext: () => void
@@ -39,7 +42,7 @@ export function PasoAcuses({
 
   return (
     <div className="space-y-6">
-      <DocumentosCentroAlta
+      <DocumentosParaFirmar
         locale={locale}
         ninoId={ninoId}
         documentos={documentosCentro}

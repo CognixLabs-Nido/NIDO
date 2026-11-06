@@ -11,7 +11,7 @@ import { serviceClient } from './setup'
  * Documentos del centro de verdad para los tests de la BD efímera (fase 4): se crean y se suben con
  * las funciones de la app (`crear_documento_centro`, `subirVersionDocumento`), con la sesión de la
  * admin del centro, y se borran con el marcador de `borrar_version_documento` (J5). Lo usan los tests
- * del 4b-2; el del 4b-1 (`firmar-documentos-alta.rls.test.ts`) tiene su copia, de antes.
+ * del 4b-2; el del 4b-1 (`firmar-documentos-nino.rls.test.ts`) tiene su copia, de antes.
  */
 
 type Cliente = SupabaseClient<Database>

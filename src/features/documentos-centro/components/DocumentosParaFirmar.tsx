@@ -13,10 +13,10 @@ import { Label } from '@/components/ui/label'
 import { FirmaPad } from '@/features/autorizaciones/components/FirmaPad'
 import type { Database } from '@/types/database'
 
-import { firmarDocumentoAltaAction } from '../actions/firmar-documento-alta'
+import { firmarDocumentoCentroAction } from '../actions/firmar'
 
 /** Una fila de `documentos_firma_nino` (4a), lo que la pantalla necesita. */
-export interface DocumentoAltaFila {
+export interface DocumentoParaFirmarFila {
   documento_id: string
   titulo: string
   obligatorio: boolean
@@ -31,19 +31,19 @@ export interface DocumentoAltaFila {
 interface Props {
   locale: string
   ninoId: string
-  documentos: DocumentoAltaFila[]
-  /** Modo Dirección del alta: la firma se registra en persona, sin trazo. Lo vuelve a decidir el servidor. */
+  documentos: DocumentoParaFirmarFila[]
+  /** Modo Dirección: la firma se registra en persona, sin trazo. Lo vuelve a decidir el servidor. */
   modoDireccion: boolean
 }
 
 /**
- * Los documentos del centro en el alta (fase 4, 4b-1). Cada uno con su estado: el que el centro no
+ * Los documentos del centro para firmar (fase 4): en el alta (4b-1) y en la ficha del niño (4c). Cada uno con su estado: el que el centro no
  * ha subido todavía no se firma aquí ni frena nada (P-6: la familia lo firma cuando exista); el que
  * está por firmar se abre, y el botón de firmar sale después de abrirlo (decisión del 2026-11-06).
  * Abrirlo no prueba que se haya leído, y el texto no lo dice.
  */
-export function DocumentosCentroAlta({ locale, ninoId, documentos, modoDireccion }: Props) {
-  const t = useTranslations('alta.documentos_centro')
+export function DocumentosParaFirmar({ locale, ninoId, documentos, modoDireccion }: Props) {
+  const t = useTranslations('firmar_documentos')
   if (documentos.length === 0) return null
   return (
     <section className="space-y-3">
@@ -70,10 +70,10 @@ function Documento({
 }: {
   locale: string
   ninoId: string
-  doc: DocumentoAltaFila
+  doc: DocumentoParaFirmarFila
   modoDireccion: boolean
 }) {
-  const t = useTranslations('alta.documentos_centro')
+  const t = useTranslations('firmar_documentos')
   const tErrors = useTranslations()
   const format = useFormatter()
   const router = useRouter()
@@ -130,7 +130,7 @@ function Documento({
   const versionId = doc.version_id
   const firmar = () =>
     start(async () => {
-      const r = await firmarDocumentoAltaAction({
+      const r = await firmarDocumentoCentroAction({
         ninoId,
         versionId,
         nombreTecleado: nombre,
@@ -149,7 +149,7 @@ function Documento({
     <>
       {cabecera}
       <a
-        href={`/${locale}/alta/${ninoId}/documento/${versionId}`}
+        href={`/${locale}/documento-centro/${ninoId}/${versionId}`}
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => setAbierto(true)}

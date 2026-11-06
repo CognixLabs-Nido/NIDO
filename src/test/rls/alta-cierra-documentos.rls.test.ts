@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { leerDocumentosAlta } from '@/features/alta/lib/documentos-alta'
+import { leerDocumentosNino } from '@/features/documentos-centro/lib/firmar-documentos'
 import { frenaElAlta } from '@/features/alta/lib/regla-documentos-alta'
 import type { Database } from '@/types/database'
 
@@ -34,7 +34,7 @@ import {
  *  - un documento OBLIGATORIO por firmar frena el cierre, también a la Dirección;
  *  - uno que el centro no ha subido no frena (P-6), ni uno opcional: hasta que el centro suba las
  *    normas, el alta se cierra sin normas;
- *  - la app (`leerDocumentosAlta` + `frenaElAlta`, lo que hace `finalizarAlta`) y la base
+ *  - la app (`leerDocumentosNino` + `frenaElAlta`, lo que hace `finalizarAlta`) y la base
  *    (`marcar_matricula_lista`) dicen lo mismo de cada niño;
  *  - la casilla de las normas (`acuses_alta`) ya no cuenta.
  *
@@ -71,7 +71,7 @@ describe('El cierre del alta y los documentos del centro (4b-2)', () => {
     return data ? 'lista' : 'null'
   }
   const estados = async (nino: string): Promise<string> => {
-    const r = await leerDocumentosAlta(await como(tutora), nino)
+    const r = await leerDocumentosNino(await como(tutora), nino)
     if (!r.ok) throw new Error(r.error)
     return r.data.map((d) => `${d.titulo}=${d.estado}`).join(', ')
   }
@@ -180,7 +180,7 @@ describe('El cierre del alta y los documentos del centro (4b-2)', () => {
   it('la app y la base dicen lo mismo de cada niño: frena el obligatorio por firmar, y solo él', async () => {
     const app: Record<string, boolean> = {}
     for (const k of ['ana', 'bea', 'carla'] as const) {
-      const r = await leerDocumentosAlta(await como(tutora), n[k])
+      const r = await leerDocumentosNino(await como(tutora), n[k])
       if (!r.ok) throw new Error(r.error)
       app[k] = r.data.some(frenaElAlta)
     }

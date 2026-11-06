@@ -20,6 +20,8 @@ import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { getResumenAsistenciaCentro } from '@/features/asistencia/queries/get-resumen-asistencia-centro'
 import { ResumenSemanaWidget } from '@/features/inicio/components/ResumenSemanaWidget'
 import { getAltasSinTerminar } from '@/features/matriculas/queries/get-altas-sin-terminar'
+import { PendientesDocumentosDireccion } from '@/features/documentos-centro/components/PendientesDocumentosDireccion'
+import { getPendientesCentro } from '@/features/documentos-centro/queries/get-pendientes-firma'
 import { AvisosInicio } from '@/features/notificaciones/components/AvisosInicio'
 import { AvisoPeticionesOlvido } from '@/features/olvido/components/AvisoPeticionesOlvido'
 import { getAvisosInicio } from '@/features/notificaciones/queries/get-avisos-inicio'
@@ -86,6 +88,8 @@ export default async function AdminDashboard({ params }: PageProps) {
   const ninosCount = ninosResp.count ?? 0
   const firstName = (user?.nombreCompleto ?? '').split(' ')[0]
   const altasSinTerminar = await getAltasSinTerminar(supabase, centroId)
+  // Lo pendiente de los documentos del centro (fase 4, 4c), sin buscarlo.
+  const documentosPendientes = await getPendientesCentro(supabase, centroId)
   const avisos = {
     ...avisosBase,
     altasPendientesValidar: altasListaResp.count ?? 0,
@@ -101,6 +105,11 @@ export default async function AdminDashboard({ params }: PageProps) {
         <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
       </header>
       <AvisosInicio avisos={avisos} rol="admin" locale={locale} />
+      <PendientesDocumentosDireccion
+        pendientes={documentosPendientes}
+        esResponsable={esResponsable}
+        locale={locale}
+      />
       {esResponsable && <AvisoPeticionesOlvido centroId={centroId} locale={locale} />}
       <ResumenSemanaWidget
         centroId={centroId}

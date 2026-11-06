@@ -4605,33 +4605,6 @@
       "imagen_acepto": "I authorise the use of the child's image according to the centre's policy.",
       "imagen_aceptado": "You accepted the image authorisation."
     },
-    "documentos_centro": {
-      "titulo": "Centre documents",
-      "curso": "school year {curso}",
-      "opcional": "optional",
-      "falta": "The centre has not uploaded “{titulo}” yet. It will be signed once it is available.",
-      "abrir": "Open the document",
-      "antes_de_abrir": "Open it to be able to sign it.",
-      "abierto": "You have opened the document.",
-      "nombre": "Name of the person signing",
-      "trazo": "Signature",
-      "presencial_aviso": "Management mode: the signature is recorded with a paper copy, without a drawn signature. Confirm that you have “{titulo}” signed on paper by the family.",
-      "firmar": "Sign “{titulo}”",
-      "firmar_presencial": "Record the paper signature of “{titulo}”",
-      "firmado": "Signed on {fecha}.",
-      "firmado_papel": "Signed on paper on {fecha}.",
-      "firmado_ok": "Document signed.",
-      "errors": {
-        "leer": "We could not load the centre documents. Please try again.",
-        "invalido": "Some details are missing to sign.",
-        "no_autorizado": "You cannot sign this document.",
-        "ya_firmado": "This document is already signed for this child.",
-        "version_no_vigente": "The centre has uploaded a new version of this document. Open it to sign the one that applies now.",
-        "sin_trazo": "The signature is missing.",
-        "firmar": "We could not record the signature. Please try again.",
-        "abrir": "We could not open the document. Please try again."
-      }
-    },
     "menor": {
       "direccion_titulo": "Child's address",
       "direccion_calle": "Street",
@@ -5388,6 +5361,46 @@
       "volver_a_poner": "Restore",
       "retirado_ok": "Document withdrawn.",
       "repuesto": "Document restored."
+    }
+  },
+  "firmar_documentos": {
+    "titulo": "Centre documents",
+    "curso": "school year {curso}",
+    "opcional": "optional",
+    "falta": "The centre has not uploaded “{titulo}” yet. It will be signed once it is available.",
+    "abrir": "Open the document",
+    "antes_de_abrir": "Open it to be able to sign it.",
+    "abierto": "You have opened the document.",
+    "nombre": "Name of the person signing",
+    "trazo": "Signature",
+    "presencial_aviso": "Management mode: the signature is recorded with a paper copy, without a drawn signature. Confirm that you have “{titulo}” signed on paper by the family.",
+    "firmar": "Sign “{titulo}”",
+    "firmar_presencial": "Record the paper signature of “{titulo}”",
+    "firmado": "Signed on {fecha}.",
+    "firmado_papel": "Signed on paper on {fecha}.",
+    "firmado_ok": "Document signed.",
+    "errors": {
+      "leer": "We could not load the centre documents. Please try again.",
+      "invalido": "Some details are missing to sign.",
+      "no_autorizado": "You cannot sign this document.",
+      "ya_firmado": "This document is already signed for this child.",
+      "version_no_vigente": "The centre has uploaded a new version of this document. Open it to sign the one that applies now.",
+      "sin_trazo": "The signature is missing.",
+      "firmar": "We could not record the signature. Please try again.",
+      "abrir": "We could not open the document. Please try again.",
+      "presencial_solo_direccion": "This is recorded by the centre's director, who meets the family in person. As a superuser you can't do it."
+    },
+    "inicio_familia": {
+      "por_firmar": "{nombre}: {n, plural, one {one centre document} other {# centre documents}} to sign.",
+      "no_comprobado": "We could not check the centre documents for {nombre}."
+    },
+    "inicio_direccion": {
+      "titulo": "Pending centre documents",
+      "por_firmar": "{documento}: {n, plural, one {# child has not signed} other {# children have not signed}}, since {fecha}.",
+      "desde": "since {fecha}",
+      "sin_subir": "{documento}: the centre has not uploaded it. {n, plural, one {# child needs it.} other {# children need it.}}",
+      "subir": "Upload it",
+      "no_comprobado": "We could not check the pending centre documents."
     }
   }
 }

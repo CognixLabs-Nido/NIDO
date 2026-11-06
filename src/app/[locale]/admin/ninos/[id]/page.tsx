@@ -54,14 +54,25 @@ import { NuevoRecordatorioContextual } from '@/features/recordatorios/components
 import { EstadoRetencionNino } from '@/features/retencion/components/EstadoRetencionNino'
 import { getEstadoRetencionNino } from '@/features/retencion/queries/get-estado-retencion-nino'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { DocumentosCentroNino } from '@/features/documentos-centro/components/DocumentosCentroNino'
+import {
+  leerDocumentosNino,
+  modoFirmaDocumento,
+} from '@/features/documentos-centro/lib/firmar-documentos'
 import { etiquetaIdiomaPrincipal, idiomasVisibles } from '@/shared/lib/idioma-centinela'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
+  searchParams: Promise<{ tab?: string }>
 }
 
-export default async function NinoDetallePage({ params }: PageProps) {
+/** Las pestañas a las que se puede llegar con `?tab=` (el inicio lleva a «documentacion», 4c). */
+const PESTANAS = ['personales', 'medica', 'pedagogico', 'vinculos', 'matriculas', 'documentacion']
+
+export default async function NinoDetallePage({ params, searchParams }: PageProps) {
   const { id, locale } = await params
+  const { tab } = await searchParams
+  const pestana = tab && PESTANAS.includes(tab) ? tab : 'personales'
   const t = await getTranslations('admin.ninos')
   const tMed = await getTranslations('medico')
   const tFicha = await getTranslations('messages.ficha_nino')
@@ -101,6 +112,15 @@ export default async function NinoDetallePage({ params }: PageProps) {
   // en la suya). Decide la BD: a quien no, `no_autorizado` y la sección no sale. Después de leerla,
   // para que salga también esta lectura.
   const lecturas = await getLecturasFichaMedica(id)
+
+  // Los documentos del centro (fase 4, 4c): lo que le toca firmar al niño y, sin vínculo, la firma
+  // en papel. El modo lo decide el servidor con la regla de firmar (`modoFirmaDocumento`), y lo
+  // vuelve a decidir al firmar.
+  const { data: sesionUser } = await supabase.auth.getUser()
+  const [documentosCentro, modoFirma] = await Promise.all([
+    leerDocumentosNino(supabase, id),
+    sesionUser.user ? modoFirmaDocumento(supabase, id, sesionUser.user.id) : null,
+  ])
 
   const matriculaActiva = matriculas.find((m) => m.fecha_baja === null)
   // Datos de baja para el banner de archivado: la última matrícula cerrada.
@@ -232,7 +252,7 @@ export default async function NinoDetallePage({ params }: PageProps) {
         />
       )}
 
-      <Tabs defaultValue="personales">
+      <Tabs defaultValue={pestana}>
         <TabsList>
           <TabsTrigger value="personales">
             <InfoIcon className="size-4" />
@@ -499,7 +519,17 @@ export default async function NinoDetallePage({ params }: PageProps) {
         </TabsContent>
 
         <TabsContent value="documentacion" className="pt-3">
-          <AltaDocumentacionTab data={altaDoc} locale={locale} />
+          <div className="space-y-4">
+            {!archivado && (
+              <DocumentosCentroNino
+                locale={locale}
+                ninoId={id}
+                lectura={documentosCentro}
+                modoDireccion={modoFirma !== 'digital'}
+              />
+            )}
+            <AltaDocumentacionTab data={altaDoc} locale={locale} />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

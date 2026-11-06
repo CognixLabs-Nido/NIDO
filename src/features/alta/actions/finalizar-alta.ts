@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import { leerDocumentosAlta } from '../lib/documentos-alta'
+import { leerDocumentosNino } from '@/features/documentos-centro/lib/firmar-documentos'
 import { frenaElAlta } from '../lib/regla-documentos-alta'
 import { leerTutoresDeNino } from '../lib/tutores-familia'
 
@@ -132,7 +132,7 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   // Los documentos del centro (fase 4, 4b-2): ninguno obligatorio por firmar. La lista es la de la
   // pantalla (`documentos_firma_nino`, con la sesión) y la regla, la de la base. Si la lectura falla
   // no se cierra: una lista vacía diría «no hay nada que firmar».
-  const documentosCentro = await leerDocumentosAlta(supabase, id)
+  const documentosCentro = await leerDocumentosNino(supabase, id)
   if (!documentosCentro.ok) return fail('alta.errors.finalizar_fallo')
   if (documentosCentro.data.some(frenaElAlta)) faltan.push('documentos_centro')
 

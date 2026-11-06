@@ -4605,33 +4605,6 @@
       "imagen_acepto": "Autorizo el uso de la imagen del menor según la política del centro.",
       "imagen_aceptado": "Aceptaste la autorización de imagen."
     },
-    "documentos_centro": {
-      "titulo": "Documentos del centro",
-      "curso": "curso {curso}",
-      "opcional": "opcional",
-      "falta": "El centro todavía no ha subido «{titulo}». Se firmará cuando esté.",
-      "abrir": "Abrir el documento",
-      "antes_de_abrir": "Ábrelo para poder firmarlo.",
-      "abierto": "Has abierto el documento.",
-      "nombre": "Nombre de quien firma",
-      "trazo": "Firma",
-      "presencial_aviso": "Modo Dirección: se registra la firma con respaldo en papel, sin trazo. Confirma que tienes «{titulo}» firmado físicamente por la familia.",
-      "firmar": "Firmar «{titulo}»",
-      "firmar_presencial": "Registrar la firma en papel de «{titulo}»",
-      "firmado": "Firmado el {fecha}.",
-      "firmado_papel": "Firmado en papel el {fecha}.",
-      "firmado_ok": "Documento firmado.",
-      "errors": {
-        "leer": "No hemos podido cargar los documentos del centro. Vuelve a intentarlo.",
-        "invalido": "Faltan datos para firmar.",
-        "no_autorizado": "No puedes firmar este documento.",
-        "ya_firmado": "Este documento ya está firmado para este niño.",
-        "version_no_vigente": "El centro ha subido una versión nueva de este documento. Ábrela para firmar la que vale ahora.",
-        "sin_trazo": "Falta la firma.",
-        "firmar": "No hemos podido registrar la firma. Vuelve a intentarlo.",
-        "abrir": "No hemos podido abrir el documento. Vuelve a intentarlo."
-      }
-    },
     "menor": {
       "direccion_titulo": "Dirección del menor",
       "direccion_calle": "Calle",
@@ -5388,6 +5361,46 @@
       "volver_a_poner": "Volver a poner",
       "retirado_ok": "Documento retirado.",
       "repuesto": "Documento puesto otra vez."
+    }
+  },
+  "firmar_documentos": {
+    "titulo": "Documentos del centro",
+    "curso": "curso {curso}",
+    "opcional": "opcional",
+    "falta": "El centro todavía no ha subido «{titulo}». Se firmará cuando esté.",
+    "abrir": "Abrir el documento",
+    "antes_de_abrir": "Ábrelo para poder firmarlo.",
+    "abierto": "Has abierto el documento.",
+    "nombre": "Nombre de quien firma",
+    "trazo": "Firma",
+    "presencial_aviso": "Modo Dirección: se registra la firma con respaldo en papel, sin trazo. Confirma que tienes «{titulo}» firmado físicamente por la familia.",
+    "firmar": "Firmar «{titulo}»",
+    "firmar_presencial": "Registrar la firma en papel de «{titulo}»",
+    "firmado": "Firmado el {fecha}.",
+    "firmado_papel": "Firmado en papel el {fecha}.",
+    "firmado_ok": "Documento firmado.",
+    "errors": {
+      "leer": "No hemos podido cargar los documentos del centro. Vuelve a intentarlo.",
+      "invalido": "Faltan datos para firmar.",
+      "no_autorizado": "No puedes firmar este documento.",
+      "ya_firmado": "Este documento ya está firmado para este niño.",
+      "version_no_vigente": "El centro ha subido una versión nueva de este documento. Ábrela para firmar la que vale ahora.",
+      "sin_trazo": "Falta la firma.",
+      "firmar": "No hemos podido registrar la firma. Vuelve a intentarlo.",
+      "abrir": "No hemos podido abrir el documento. Vuelve a intentarlo.",
+      "presencial_solo_direccion": "Esto lo registra la directora del centro, que tiene a la familia delante. Como superusuario no puedes hacerlo."
+    },
+    "inicio_familia": {
+      "por_firmar": "{nombre}: {n, plural, one {un documento del centro} other {# documentos del centro}} por firmar.",
+      "no_comprobado": "No hemos podido comprobar los documentos del centro de {nombre}."
+    },
+    "inicio_direccion": {
+      "titulo": "Documentos del centro pendientes",
+      "por_firmar": "{documento}: {n, plural, one {# niño sin firmar} other {# niños sin firmar}}, desde el {fecha}.",
+      "desde": "desde el {fecha}",
+      "sin_subir": "{documento}: el centro no lo ha subido. {n, plural, one {Lo necesita # niño.} other {Lo necesitan # niños.}}",
+      "subir": "Subirlo",
+      "no_comprobado": "No hemos podido comprobar los documentos del centro pendientes."
     }
   }
 }

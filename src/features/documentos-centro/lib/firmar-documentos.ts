@@ -8,11 +8,12 @@ import { BUCKET_DOCUMENTOS_CENTRO } from '@/shared/lib/adjuntos/storage'
 import { logger } from '@/shared/lib/logger'
 import type { Database } from '@/types/database'
 
-import { esAdminDeCentroDeNino } from './authz-tutor'
+import { esAdminDeCentroDeNino } from '@/features/alta/lib/authz-tutor'
 
 /**
- * Los documentos del centro en el alta (fase 4, 4b-1; spec `altas-serie.md`, «Fase 4»). La familia
- * los firma con el dedo y la Dirección, en el modo Dirección del alta, registra la firma en papel.
+ * Firmar los documentos del centro (fase 4; spec `altas-serie.md`, «Fase 4»): en el alta (4b-1) y
+ * fuera de ella, en la ficha del niño (4c). La familia los firma con el dedo y la Dirección registra
+ * la firma en papel.
  * Las reglas viven en la base (4a, `20270103120000`): qué le toca a cada niño
  * (`documentos_firma_nino`), quién firma con el dedo (`firmar_documento_centro`, el tutor legal),
  * quién en persona (`registrar_firma_documento_presencial`, Dirección sin el superusuario) y de qué
@@ -23,30 +24,30 @@ type Client = SupabaseClient<Database>
 
 export type Resultado<T> = { ok: true; data: T } | { ok: false; error: string }
 
-export type DocumentoAlta =
+export type DocumentoNino =
   Database['public']['Functions']['documentos_firma_nino']['Returns'][number]
 
-export type MetodoFirmaAlta = 'digital' | 'presencial'
+export type MetodoFirmaDocumento = 'digital' | 'presencial'
 
-const E = 'alta.documentos_centro.errors'
+const E = 'firmar_documentos.errors'
 
-/** Lo que dura el enlace para abrir el PDF desde el alta, como en la pantalla de la admin. */
-export const SEGUNDOS_ENLACE_DOCUMENTO_ALTA = 60
+/** Lo que dura el enlace para abrir el PDF, como en la pantalla de la admin. */
+export const SEGUNDOS_ENLACE_DOCUMENTO = 60
 
 /** Tope del trazo, el mismo que el del mandato y el de las autorizaciones. */
 const MAX_FIRMA_CHARS = 500000
 
 /**
- * Lo que le toca firmar al niño, con la sesión de quien abre el alta. Si la lectura falla, no hay
+ * Lo que le toca firmar al niño, con la sesión de quien la abre. Si la lectura falla, no hay
  * lista: una lista vacía diría «no hay nada que firmar».
  */
-export async function leerDocumentosAlta(
+export async function leerDocumentosNino(
   sesion: Client,
   ninoId: string
-): Promise<Resultado<DocumentoAlta[]>> {
+): Promise<Resultado<DocumentoNino[]>> {
   const { data, error } = await sesion.rpc('documentos_firma_nino', { p_nino_id: ninoId })
   if (error) {
-    logger.warn('alta: documentos del centro', { code: error.code })
+    logger.warn('documentos del centro: leer', { code: error.code })
     return { ok: false, error: `${E}.leer` }
   }
   return { ok: true, data: data ?? [] }
@@ -61,11 +62,11 @@ export async function leerDocumentosAlta(
  * se mira primero el vínculo para que la pantalla (que entra en modo Dirección solo sin vínculo) y
  * el servidor digan lo mismo.
  */
-export async function modoFirmaAlta(
+export async function modoFirmaDocumento(
   sesion: Client,
   ninoId: string,
   usuarioId: string
-): Promise<MetodoFirmaAlta | null> {
+): Promise<MetodoFirmaDocumento | null> {
   const { data: vinculo, error } = await sesion
     .from('vinculos_familiares')
     .select('id')
@@ -74,14 +75,14 @@ export async function modoFirmaAlta(
     .is('deleted_at', null)
     .maybeSingle()
   if (error) {
-    logger.warn('alta: vínculo para firmar', { code: error.code })
+    logger.warn('documentos del centro: vínculo para firmar', { code: error.code })
     return null
   }
   if (vinculo) return 'digital'
   return (await esAdminDeCentroDeNino(sesion, ninoId, usuarioId)) ? 'presencial' : null
 }
 
-export const firmarDocumentoAltaSchema = z.object({
+export const firmarDocumentoSchema = z.object({
   ninoId: z.string().uuid(),
   versionId: z.string().uuid(),
   nombreTecleado: z.string().trim().min(1).max(200),
@@ -89,7 +90,7 @@ export const firmarDocumentoAltaSchema = z.object({
   firmaImagen: z.string().max(MAX_FIRMA_CHARS).nullable(),
 })
 
-export type FirmarDocumentoAltaInput = z.infer<typeof firmarDocumentoAltaSchema>
+export type FirmarDocumentoInput = z.infer<typeof firmarDocumentoSchema>
 
 export interface ContextoPeticion {
   ip: string | null
@@ -110,30 +111,30 @@ function errorDeLaBase(error: { code?: string; hint?: string | null }): string {
   if (error.hint === 'ya_firmado') return `${E}.ya_firmado`
   if (error.hint === 'version_no_vigente') return `${E}.version_no_vigente`
   if (error.code === '42501') return `${E}.no_autorizado`
-  logger.warn('alta: firmar documento del centro', { code: error.code, hint: error.hint })
+  logger.warn('documentos del centro: firmar', { code: error.code, hint: error.hint })
   return `${E}.firmar`
 }
 
 /**
- * Firma un documento del centro desde el alta. El modo lo decide `modoFirmaAlta`; el superusuario
+ * Firma un documento del centro, en el alta o fuera de ella. El modo lo decide `modoFirmaDocumento`; el superusuario
  * no registra en persona (ADR-0061; la base también se lo cierra). Con el dedo hace falta el trazo.
  */
-export async function firmarDocumentoAlta(
+export async function firmarDocumentoNino(
   sesion: Client,
   usuarioId: string,
   input: unknown,
   contexto: ContextoPeticion
-): Promise<Resultado<{ firmaId: string; metodo: MetodoFirmaAlta }>> {
-  const parsed = firmarDocumentoAltaSchema.safeParse(input)
+): Promise<Resultado<{ firmaId: string; metodo: MetodoFirmaDocumento }>> {
+  const parsed = firmarDocumentoSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: `${E}.invalido` }
   const { ninoId, versionId, nombreTecleado, firmaImagen } = parsed.data
 
-  const metodo = await modoFirmaAlta(sesion, ninoId, usuarioId)
+  const metodo = await modoFirmaDocumento(sesion, ninoId, usuarioId)
   if (!metodo) return { ok: false, error: `${E}.no_autorizado` }
 
   if (metodo === 'presencial') {
     if (await esSuperusuario(sesion))
-      return { ok: false, error: 'alta.errors.presencial_solo_direccion' }
+      return { ok: false, error: 'firmar_documentos.errors.presencial_solo_direccion' }
     const { data, error } = await sesion.rpc('registrar_firma_documento_presencial', {
       p_version_id: versionId,
       p_nino_id: ninoId,
@@ -161,12 +162,12 @@ export async function firmarDocumentoAlta(
 }
 
 /**
- * El enlace firmado al PDF de una versión, para abrirlo desde el alta. Qué ruta es lo dice la base
+ * El enlace firmado al PDF de una versión, para abrirlo. Qué ruta es lo dice la base
  * (`ruta_version_documento_nino`, con la sesión: solo una versión que al niño le toca firmar o que
  * ya firmó, a quien puede leer sus documentos); el enlace lo firma el servicio, porque el bucket no
  * tiene políticas para nadie.
  */
-export async function enlaceDocumentoAlta(
+export async function enlaceDocumentoNino(
   sesion: Client,
   service: Client,
   ninoId: string,
@@ -178,14 +179,14 @@ export async function enlaceDocumentoAlta(
   })
   if (error || !ruta) {
     if (error && error.code !== '42501')
-      logger.warn('alta: ruta del documento', { code: error.code })
+      logger.warn('documentos del centro: ruta', { code: error.code })
     return { ok: false, error: `${E}.no_autorizado` }
   }
   const { data: firmada, error: e } = await service.storage
     .from(BUCKET_DOCUMENTOS_CENTRO)
-    .createSignedUrl(ruta, SEGUNDOS_ENLACE_DOCUMENTO_ALTA)
+    .createSignedUrl(ruta, SEGUNDOS_ENLACE_DOCUMENTO)
   if (e || !firmada?.signedUrl) {
-    logger.warn('alta: enlace del documento', e?.message ?? 'sin enlace')
+    logger.warn('documentos del centro: enlace', e?.message ?? 'sin enlace')
     return { ok: false, error: `${E}.abrir` }
   }
   return { ok: true, data: { url: firmada.signedUrl } }
