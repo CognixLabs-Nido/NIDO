@@ -176,6 +176,7 @@ describe('Firmar los documentos del centro en el alta', () => {
         documentoId: doc,
         cursoId,
         bytes: pdf(t),
+        pideRefirma: false,
       })
       if (!r.ok) throw new Error(`subir: ${r.error}`)
       return r.data.versionId
@@ -315,6 +316,7 @@ describe('Firmar los documentos del centro en el alta', () => {
       documentoId: normas,
       cursoId: null,
       bytes: pdf('normas v2'),
+      pideRefirma: false,
     })
     expect(r.ok).toBe(true)
     if (!r.ok) return

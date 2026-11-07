@@ -34,6 +34,11 @@ interface Props {
   deCurso: boolean
   /** Los cursos `planificado` o `activo` del centro (nunca `cerrado`). */
   cursos: CursoDeLaPantalla[]
+  /**
+   * Por curso (`''` sin curso), cuántos niños firmaron una versión anterior (4d). Un curso sin
+   * versión no está: no hay nada que volver a firmar, y no se ofrece pedirlo.
+   */
+  anteriores: Record<string, number>
 }
 
 type Respuesta = { success: true } | { success: false; error: string }
@@ -43,10 +48,18 @@ const MAX_BYTES = 10 * 1024 * 1024
 
 /**
  * Sube una versión de un documento (3c), por la ruta del 3a, que calcula el hash y registra. En un
- * documento de curso se elige el curso; en otro no se pregunta. Avisa de que una versión nueva no
- * pide que vuelvan a firmar (J4).
+ * documento de curso se elige el curso; en otro no se pregunta. Una versión nueva no pide que vuelvan
+ * a firmar (J4) salvo que la admin lo pida (4d), y solo se le ofrece si ese documento y ese curso ya
+ * tienen una versión.
  */
-export function SubirVersionDialog({ locale, centroId, documentoId, deCurso, cursos }: Props) {
+export function SubirVersionDialog({
+  locale,
+  centroId,
+  documentoId,
+  deCurso,
+  cursos,
+  anteriores,
+}: Props) {
   const t = useTranslations('documentos_centro.pantalla')
   const tRoot = useTranslations()
   const router = useRouter()
@@ -54,12 +67,15 @@ export function SubirVersionDialog({ locale, centroId, documentoId, deCurso, cur
   const [fichero, setFichero] = useState<File | null>(null)
   const [cursoId, setCursoId] = useState<string>('')
   const [subiendo, setSubiendo] = useState(false)
+  const [pideRefirma, setPideRefirma] = useState(false)
   const items = cursos.map((c) => ({ value: c.id, label: c.nombre }))
   const sinCurso = deCurso && cursos.length === 0
+  const anterior: number | undefined = anteriores[deCurso ? cursoId : '']
 
   function abrir(o: boolean) {
     if (o) {
       setFichero(null)
+      setPideRefirma(false)
       setCursoId(cursos.find((c) => c.estado === 'activo')?.id ?? cursos[0]?.id ?? '')
     }
     setOpen(o)
@@ -83,6 +99,7 @@ export function SubirVersionDialog({ locale, centroId, documentoId, deCurso, cur
       form.append('centro_id', centroId)
       form.append('documento_id', documentoId)
       form.append('curso_academico_id', deCurso ? cursoId : '')
+      form.append('pide_refirma', anterior !== undefined && pideRefirma ? 'true' : 'false')
       const res = await fetch(`/${locale}/admin/documentos-centro/version`, {
         method: 'POST',
         body: form,
@@ -127,7 +144,10 @@ export function SubirVersionDialog({ locale, centroId, documentoId, deCurso, cur
                 <Select
                   items={items}
                   value={cursoId || undefined}
-                  onValueChange={(v) => setCursoId(v as string)}
+                  onValueChange={(v) => {
+                    setCursoId(v as string)
+                    setPideRefirma(false)
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -155,6 +175,22 @@ export function SubirVersionDialog({ locale, centroId, documentoId, deCurso, cur
             />
             <p className="text-muted-foreground text-xs">{t('fichero_ayuda')}</p>
           </div>
+          {anterior !== undefined && (
+            <div className="space-y-1.5 rounded-lg border p-3">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={pideRefirma}
+                  disabled={subiendo}
+                  onChange={(e) => setPideRefirma(e.target.checked)}
+                />
+                {t('pedir_refirma')}
+              </label>
+              <p className="text-muted-foreground text-xs" data-testid="pedir-refirma-ayuda">
+                {t('pedir_refirma_ayuda', { n: anterior })}
+              </p>
+            </div>
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               {t('cancelar')}

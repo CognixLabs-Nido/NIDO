@@ -5302,7 +5302,8 @@
       "version_firmada": "Esta versió ja està signada: no es pot esborrar.",
       "titulo_repetido": "Ja hi ha un altre document amb eixe títol.",
       "de_curso_fijo": "El document ja té versions: «de curs» no es pot canviar. Si estava malament, crea un altre document.",
-      "ver": "No s'ha pogut obrir el PDF. Torna-ho a provar."
+      "ver": "No s'ha pogut obrir el PDF. Torna-ho a provar.",
+      "sin_version_anterior": "No es pot demanar que tornen a signar la primera versió: encara no l'ha signada ningú."
     },
     "pantalla": {
       "titulo": "Documents del centre",
@@ -5330,7 +5331,7 @@
       "guardado": "Canvis guardats.",
       "subir": "Pujar versió",
       "subir_titulo": "Pujar una versió",
-      "subir_no_pide_refirma": "Una versió nova no demana a ningú que torne a signar: les signatures que ja hi ha continuen valent, i la nova la signen les altes que arriben després.",
+      "subir_no_pide_refirma": "Per defecte, una versió nova no demana a ningú que torne a signar: les signatures que ja hi ha continuen valent, i la nova la signen les altes que arriben després.",
       "sin_cursos": "No hi ha cap curs planificat ni actiu. Crea abans el curs en Cursos.",
       "fichero_ayuda": "Un PDF de fins a 10 MB.",
       "subida_ok": "Versió pujada.",
@@ -5360,7 +5361,10 @@
       "retirar": "Retirar",
       "volver_a_poner": "Tornar a posar",
       "retirado_ok": "Document retirat.",
-      "repuesto": "Document posat una altra vegada."
+      "repuesto": "Document posat una altra vegada.",
+      "pedir_refirma": "Demanar que tornen a signar",
+      "pedir_refirma_ayuda": "{n, plural, =0 {Ningú ha signat encara una versió anterior.} one {# xiquet té signada una versió anterior: la seua família la veurà pendent fins que signe esta.} other {# xiquets tenen signada una versió anterior: les seues famílies la veuran pendent fins que signen esta.}}",
+      "pidio_refirma": "Va demanar tornar a signar"
     }
   },
   "firmar_documentos": {
@@ -5401,6 +5405,7 @@
       "sin_subir": "{documento}: el centre no l'ha pujat. {n, plural, one {El necessita # xiquet.} other {El necessiten # xiquets.}}",
       "subir": "Pujar-lo",
       "no_comprobado": "No hem pogut comprovar els documents del centre pendents."
-    }
+    },
+    "refirma": "El centre ha corregit «{titulo}» i demana tornar a signar-lo. La signatura anterior és del {fecha}."
   }
 }

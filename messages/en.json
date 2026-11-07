@@ -5302,7 +5302,8 @@
       "version_firmada": "This version has already been signed: it cannot be deleted.",
       "titulo_repetido": "There is already another document with that title.",
       "de_curso_fijo": "The document already has versions, so \"per school year\" cannot be changed. If it was wrong, create another document.",
-      "ver": "The PDF could not be opened. Please try again."
+      "ver": "The PDF could not be opened. Please try again.",
+      "sin_version_anterior": "You cannot ask to sign the first version again: nobody has signed it yet."
     },
     "pantalla": {
       "titulo": "Centre documents",
@@ -5330,7 +5331,7 @@
       "guardado": "Changes saved.",
       "subir": "Upload version",
       "subir_titulo": "Upload a version",
-      "subir_no_pide_refirma": "A new version does not ask anyone to sign again: existing signatures remain valid, and the new one is signed by enrolments that come later.",
+      "subir_no_pide_refirma": "By default, a new version does not ask anyone to sign again: existing signatures remain valid, and the new one is signed by registrations that come afterwards.",
       "sin_cursos": "There is no planned or active school year. Create it first in School years.",
       "fichero_ayuda": "A PDF of up to 10 MB.",
       "subida_ok": "Version uploaded.",
@@ -5360,7 +5361,10 @@
       "retirar": "Withdraw",
       "volver_a_poner": "Restore",
       "retirado_ok": "Document withdrawn.",
-      "repuesto": "Document restored."
+      "repuesto": "Document restored.",
+      "pedir_refirma": "Ask to sign again",
+      "pedir_refirma_ayuda": "{n, plural, =0 {Nobody has signed an earlier version yet.} one {# child has an earlier version signed: their family will see it as pending until they sign this one.} other {# children have an earlier version signed: their families will see it as pending until they sign this one.}}",
+      "pidio_refirma": "Asked to sign again"
     }
   },
   "firmar_documentos": {
@@ -5401,6 +5405,7 @@
       "sin_subir": "{documento}: the centre has not uploaded it. {n, plural, one {# child needs it.} other {# children need it.}}",
       "subir": "Upload it",
       "no_comprobado": "We could not check the pending centre documents."
-    }
+    },
+    "refirma": "The centre has corrected “{titulo}” and asks for it to be signed again. The previous signature is from {fecha}."
   }
 }

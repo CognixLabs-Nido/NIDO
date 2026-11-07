@@ -8,6 +8,7 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import {
   agruparPorCurso,
   cursosParaSubir,
+  ninosConFirmaAnterior,
   sePuedeCambiarDeCurso,
   sePuedeOfrecerBorrar,
   type CursoDeLaPantalla,
@@ -53,6 +54,7 @@ export async function DocumentosCentroLista({ locale, centroId, pantalla }: Prop
           cursos={pantalla.cursos}
           paraSubir={paraSubir}
           firmas={pantalla.firmas}
+          firmantes={pantalla.firmantes}
         />
       ))}
     </div>
@@ -66,6 +68,7 @@ async function DocumentoCard({
   cursos,
   paraSubir,
   firmas,
+  firmantes,
 }: {
   locale: string
   centroId: string
@@ -73,11 +76,19 @@ async function DocumentoCard({
   cursos: CursoDeLaPantalla[]
   paraSubir: CursoDeLaPantalla[]
   firmas: Record<string, number>
+  firmantes: Record<string, string[]>
 }) {
   const t = await getTranslations('documentos_centro.pantalla')
   const format = await getFormatter()
   const retirado = doc.retirado_at !== null
   const grupos = agruparPorCurso(doc.versiones, cursos)
+  // 4d: por curso (o sin curso), cuántos niños firmaron una versión anterior. Sin versión, no sale:
+  // no hay nada que volver a firmar.
+  const anteriores: Record<string, number> = {}
+  for (const cursoId of doc.de_curso ? paraSubir.map((c) => c.id) : [null]) {
+    const n = ninosConFirmaAnterior(doc, cursoId, firmantes)
+    if (n !== null) anteriores[cursoId ?? ''] = n
+  }
 
   return (
     <Card className={retirado ? 'opacity-70' : undefined}>
@@ -102,6 +113,7 @@ async function DocumentoCard({
               documentoId={doc.id}
               deCurso={doc.de_curso}
               cursos={paraSubir}
+              anteriores={anteriores}
             />
           )}
           <DocumentoDialog
@@ -140,6 +152,7 @@ async function DocumentoCard({
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="font-medium">{t('version', { numero: v.numero })}</span>
                         {v.vigente && <Badge variant="success">{t('vigente')}</Badge>}
+                        {v.pide_refirma && <Badge variant="warm">{t('pidio_refirma')}</Badge>}
                         <span className="text-muted-foreground">
                           {format.dateTime(new Date(v.subida_at), { dateStyle: 'medium' })} ·{' '}
                           {t('tamano_kb', { kb: Math.max(1, Math.round(v.bytes / 1024)) })} ·{' '}

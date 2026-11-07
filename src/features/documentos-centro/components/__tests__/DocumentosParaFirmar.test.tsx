@@ -42,6 +42,7 @@ const fila = (o: Partial<DocumentoParaFirmarFila>): DocumentoParaFirmarFila => (
   curso_nombre: null,
   estado: 'por_firmar',
   version_id: VERSION,
+  firma_id: null,
   firmado_at: null,
   metodo_firma: null,
   ...o,
@@ -117,6 +118,26 @@ describe('DocumentosParaFirmar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'firmar_presencial:Normas' }))
     await waitFor(() => expect(firmar).toHaveBeenCalledTimes(1))
     expect(firmar.mock.calls[0][0]).toMatchObject({ firmaImagen: null })
+  })
+
+  it('volver a firmar (4d): por firmar con la firma de antes lo dice, y se firma igual', () => {
+    pinta([
+      fila({
+        firma_id: '66666666-6666-4666-8666-666666666666',
+        firmado_at: '2026-10-01T10:00:00Z',
+      }),
+    ])
+    expect(screen.getByTestId('refirma').textContent).toBe('refirma:Normas|5 de noviembre de 2026')
+    // Premisa del «se firma igual»: el enlace para abrirlo sale, como en cualquier por firmar.
+    expect(screen.getByRole('link').getAttribute('href')).toBe(
+      `/es/documento-centro/${NINO}/${VERSION}`
+    )
+  })
+
+  it('la primera firma no dice «volver a firmar»', () => {
+    pinta([fila({})])
+    expect(screen.getByRole('link')).toBeTruthy()
+    expect(screen.queryByTestId('refirma')).toBeNull()
   })
 
   it('el que el centro no ha subido: se dice, y no hay enlace ni botón', () => {

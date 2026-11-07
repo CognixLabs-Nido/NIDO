@@ -12,6 +12,8 @@ export interface VersionAdmin {
   subida_at: string
   /** La de número mayor de ESE documento y ESE curso (la base lo calcula). */
   vigente: boolean
+  /** Al subirla, la admin pidió que volvieran a firmar quienes firmaron una anterior (4d). */
+  pide_refirma: boolean
 }
 
 export interface DocumentoAdmin {
@@ -105,4 +107,28 @@ export function sePuedeCambiarDeCurso(doc: Pick<DocumentoAdmin, 'versiones'>): b
 /** Los cursos para los que se puede subir una versión: `planificado` o `activo`, nunca `cerrado`. */
 export function cursosParaSubir(cursos: CursoDeLaPantalla[]): CursoDeLaPantalla[] {
   return cursos.filter((c) => c.estado !== 'cerrado')
+}
+
+/**
+ * Los niños con alguna versión firmada de este documento en este curso, sin repetir (4d): los que
+ * tendrán que firmar la nueva si la admin lo pide. `null` si ese documento y curso no tiene ninguna
+ * versión: entonces no hay nada que volver a firmar, y la pantalla no ofrece pedirlo.
+ */
+export function ninosConFirmaAnterior(
+  doc: Pick<DocumentoAdmin, 'versiones'>,
+  cursoId: string | null,
+  firmantes: Record<string, string[]>
+): number | null {
+  const versiones = doc.versiones.filter((v) => v.curso_academico_id === cursoId)
+  if (versiones.length === 0) return null
+  return new Set(versiones.flatMap((v) => firmantes[v.id] ?? [])).size
+}
+
+/** Los niños que firmaron cada versión, de las filas `{ version_id, nino_id }` que la admin lee. */
+export function firmantesPorVersion(
+  filas: { version_id: string; nino_id: string }[]
+): Record<string, string[]> {
+  const r: Record<string, string[]> = {}
+  for (const f of filas) (r[f.version_id] ??= []).push(f.nino_id)
+  return r
 }
