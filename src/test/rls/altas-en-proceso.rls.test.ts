@@ -62,7 +62,8 @@ describe('Altas en proceso: el embudo de la directora', () => {
     const c = await clientFor(admin)
     const { data, error } = await c.rpc('crear_o_anadir_a_familia', {
       p_nombre_nino: nombre,
-      p_apellidos_nino: 'Embudo Ensayo',
+      p_primer_apellido_nino: 'Embudo Ensayo',
+      p_segundo_apellido_nino: '',
       p_fecha_nacimiento: '2025-03-01',
       p_centro_id: centro.id,
       p_aula_id: aula,

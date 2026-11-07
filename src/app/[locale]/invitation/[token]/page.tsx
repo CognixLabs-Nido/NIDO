@@ -143,7 +143,8 @@ function AltaInvitacionFlow({
         pasoInicial={0}
         modoInvitacion={{ token, email, nombreInicial, requiereParentesco: true }}
         identidadInicial={{
-          apellidos: null,
+          primer_apellido: null,
+          segundo_apellido: null,
           fecha_nacimiento: null,
           sexo: null,
           nacionalidad: null,

@@ -46,7 +46,8 @@ type MedicaArgs = {
 }
 type IdentidadArgs = {
   p_nino_id: string
-  p_apellidos: string
+  p_primer_apellido: string
+  p_segundo_apellido: string
   p_fecha_nacimiento: string
   p_sexo: 'F' | 'M' | 'X'
   p_nacionalidad: string
@@ -192,7 +193,8 @@ describe('Alta P3a — escritura del tutor (RLS/RPC)', () => {
   it('RPC identidad: el tutor escribe la whitelist; no toca centro; no el de otro', async () => {
     const { error } = await clientCon.rpc('actualizar_identidad_nino_tutor', {
       p_nino_id: ninoA.id,
-      p_apellidos: 'Apellido Tutor',
+      p_primer_apellido: 'Apellido Tutor',
+      p_segundo_apellido: '',
       p_fecha_nacimiento: '2024-03-01',
       p_sexo: 'F',
       p_nacionalidad: 'ES',
@@ -213,7 +215,8 @@ describe('Alta P3a — escritura del tutor (RLS/RPC)', () => {
     // Otro niño → denegado.
     const { error: ajeno } = await clientCon.rpc('actualizar_identidad_nino_tutor', {
       p_nino_id: ninoB.id,
-      p_apellidos: 'Hack',
+      p_primer_apellido: 'Hack',
+      p_segundo_apellido: '',
       p_fecha_nacimiento: '2024-01-01',
       p_sexo: 'M',
       p_nacionalidad: 'ES',
@@ -282,7 +285,8 @@ describe('Alta P3a — escritura del tutor (RLS/RPC)', () => {
     it('RPC identidad: un autorizado NO puede escribir la identidad (42501)', async () => {
       const { error } = await clientAut.rpc('actualizar_identidad_nino_tutor', {
         p_nino_id: ninoA.id,
-        p_apellidos: 'Hack',
+        p_primer_apellido: 'Hack',
+        p_segundo_apellido: '',
         p_fecha_nacimiento: '2024-01-01',
         p_sexo: 'M',
         p_nacionalidad: 'ES',

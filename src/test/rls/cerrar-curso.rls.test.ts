@@ -97,7 +97,7 @@ describe('F-3-C-2 — cerrar_curso (RPC)', () => {
         centro_id: e.centroId,
         familia_id: familiaId,
         nombre: 'Niño F3C2',
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')
@@ -243,7 +243,7 @@ describe('F-3-C-2 — cerrar_curso (RPC)', () => {
           centro_id: e.centroId,
           familia_id: familiaId,
           nombre,
-          apellidos: 'Test',
+          primer_apellido: 'Test',
           fecha_nacimiento: '2024-03-15',
         })
         .select('id')

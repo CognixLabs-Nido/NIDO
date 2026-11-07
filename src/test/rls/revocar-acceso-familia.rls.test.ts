@@ -107,7 +107,7 @@ describe('F-3-C-3 — revocar_acceso_familia (RPC)', () => {
         centro_id: centroA.id,
         familia_id: familiaId,
         nombre: 'Niño F3C3',
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

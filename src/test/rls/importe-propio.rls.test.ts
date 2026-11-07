@@ -52,7 +52,7 @@ describe('PR-6 — el importe propio se fija en la asignación y se arrastra cad
           centro_id: centro.id,
           familia_id: familia,
           nombre: `Nino PR6 ${i}`,
-          apellidos: 'Test',
+          primer_apellido: 'Test',
           fecha_nacimiento: '2024-03-15',
         })
         .select('id')

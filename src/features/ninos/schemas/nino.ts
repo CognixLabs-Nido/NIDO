@@ -4,7 +4,10 @@ const fechaRegex = /^\d{4}-\d{2}-\d{2}$/
 
 export const ninoSchema = z.object({
   nombre: z.string().min(1, 'nino.validation.nombre_requerido').max(80),
-  apellidos: z.string().min(1, 'nino.validation.apellidos_requeridos').max(120),
+  // Dos apellidos (5a, `20270112120000`): el primero obligatorio, el segundo si lo tiene. Nadie
+  // los parte: `apellidos` la deriva la base de los dos.
+  primer_apellido: z.string().trim().min(1, 'nino.validation.apellidos_requeridos').max(80),
+  segundo_apellido: z.string().trim().max(80).optional().nullable(),
   fecha_nacimiento: z
     .string()
     .regex(fechaRegex, 'nino.validation.fecha_formato')
@@ -30,7 +33,10 @@ export const infoMedicaSchema = z.object({
 export const actualizarNinoTutorSchema = z.object({
   nino_id: z.string().uuid(),
   nombre: z.string().min(1, 'nino.validation.nombre_requerido').max(80),
-  apellidos: z.string().min(1, 'nino.validation.apellidos_requeridos').max(120),
+  // Dos apellidos (5a, `20270112120000`): el primero obligatorio, el segundo si lo tiene. Nadie
+  // los parte: `apellidos` la deriva la base de los dos.
+  primer_apellido: z.string().trim().min(1, 'nino.validation.apellidos_requeridos').max(80),
+  segundo_apellido: z.string().trim().max(80).optional().nullable(),
   fecha_nacimiento: z
     .string()
     .regex(fechaRegex, 'nino.validation.fecha_formato')

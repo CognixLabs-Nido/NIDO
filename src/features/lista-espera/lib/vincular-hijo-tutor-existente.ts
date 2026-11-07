@@ -31,7 +31,9 @@ export interface VincularHijoTutorExistenteParams {
   centroId: string
   aulaId: string
   nombreNino: string
-  apellidosNino: string
+  /** Los dos apellidos del prospecto, tal como los escribió la Dirección (5a): no se parten. */
+  primerApellidoNino: string
+  segundoApellidoNino: string
   fechaNacimiento: string
   /** Parentesco tecleado en el formulario (Completar siempre; Invitar solo si no hay herencia) — fallback si no hay herencia. */
   parentescoForm?: Parentesco
@@ -101,7 +103,8 @@ export async function vincularHijoATutorExistente(
     'crear_o_anadir_a_familia',
     {
       p_nombre_nino: params.nombreNino,
-      p_apellidos_nino: params.apellidosNino,
+      p_primer_apellido_nino: params.primerApellidoNino,
+      p_segundo_apellido_nino: params.segundoApellidoNino,
       p_fecha_nacimiento: params.fechaNacimiento,
       p_centro_id: params.centroId,
       p_aula_id: params.aulaId,

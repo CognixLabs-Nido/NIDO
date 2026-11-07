@@ -81,7 +81,7 @@ describe('Alta P3c — activación de matrícula (RPC + guard)', () => {
     // ninoSinId: identidad incompleta → backstop debe impedir 'lista'.
     await serviceClient
       .from('ninos')
-      .update({ apellidos: null, fecha_nacimiento: null })
+      .update({ primer_apellido: null, fecha_nacimiento: null })
       .eq('id', ninoSinId.id)
 
     const curso = await createTestCurso(centro.id)

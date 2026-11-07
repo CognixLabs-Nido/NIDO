@@ -393,7 +393,7 @@ export async function createTestNino(centro_id: string, nombre?: string): Promis
       centro_id,
       familia_id,
       nombre: finalNombre,
-      apellidos: 'Apellido Test',
+      primer_apellido: 'Apellido Test',
       fecha_nacimiento: '2024-03-15',
     })
     .select('id')

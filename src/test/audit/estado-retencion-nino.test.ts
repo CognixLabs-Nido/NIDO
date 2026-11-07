@@ -160,7 +160,7 @@ describe('Estado de conservación del niño', () => {
         centro_id: centro.id,
         familia_id: v.familia_id,
         nombre: 'Nino Estado Hermano',
-        apellidos: 'Apellido Test',
+        primer_apellido: 'Apellido Test',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

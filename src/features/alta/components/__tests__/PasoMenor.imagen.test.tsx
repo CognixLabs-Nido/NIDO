@@ -52,7 +52,8 @@ function renderPaso(props: {
       ninoId={NINO}
       ninoNombre="Niño Demo 1"
       identidadInicial={{
-        apellidos: 'Demo',
+        primer_apellido: 'Demo',
+        segundo_apellido: null,
         fecha_nacimiento: '2024-03-15',
         sexo: null,
         nacionalidad: null,

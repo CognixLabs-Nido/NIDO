@@ -81,7 +81,7 @@ export async function completarEnDireccion(
   const { data: prospecto } = await supabase
     .from('lista_espera')
     .select(
-      'id, centro_id, nombre_nino, apellidos_nino, fecha_nacimiento, tutor_usuario_id, estado'
+      'id, centro_id, nombre_nino, primer_apellido_nino, segundo_apellido_nino, fecha_nacimiento, tutor_usuario_id, estado'
     )
     .eq('id', parsed.data.id)
     .maybeSingle()
@@ -138,7 +138,8 @@ export async function completarEnDireccion(
       centroId,
       aulaId: parsed.data.aulaId,
       nombreNino: prospecto.nombre_nino,
-      apellidosNino: prospecto.apellidos_nino ?? '',
+      primerApellidoNino: prospecto.primer_apellido_nino ?? '',
+      segundoApellidoNino: prospecto.segundo_apellido_nino ?? '',
       fechaNacimiento,
       parentescoForm: parsed.data.parentesco,
       descripcionParentescoForm: parsed.data.descripcionParentesco ?? null,
@@ -168,7 +169,8 @@ export async function completarEnDireccion(
     return altaInvitandoCuentaExistente(supabase, {
       prospectoId: prospecto.id,
       nombreNino: prospecto.nombre_nino,
-      apellidosNino: prospecto.apellidos_nino ?? '',
+      primerApellidoNino: prospecto.primer_apellido_nino ?? '',
+      segundoApellidoNino: prospecto.segundo_apellido_nino ?? '',
       fechaNacimiento,
       centroId,
       aulaId: parsed.data.aulaId,
@@ -202,7 +204,8 @@ export async function completarEnDireccion(
   //    + rol. Todo-o-nada: aquí NO queda ninguna escritura suelta que duplique lo suyo.
   const { data: rpcData, error: rpcError } = await supabase.rpc('crear_o_anadir_a_familia', {
     p_nombre_nino: prospecto.nombre_nino,
-    p_apellidos_nino: prospecto.apellidos_nino ?? '',
+    p_primer_apellido_nino: prospecto.primer_apellido_nino ?? '',
+    p_segundo_apellido_nino: prospecto.segundo_apellido_nino ?? '',
     p_fecha_nacimiento: fechaNacimiento,
     p_centro_id: centroId,
     p_aula_id: parsed.data.aulaId,
@@ -257,7 +260,8 @@ async function altaInvitandoCuentaExistente(
   p: {
     prospectoId: string
     nombreNino: string
-    apellidosNino: string
+    primerApellidoNino: string
+    segundoApellidoNino: string
     fechaNacimiento: string
     centroId: string
     aulaId: string
@@ -268,7 +272,8 @@ async function altaInvitandoCuentaExistente(
 ): Promise<ActionResult<CompletarEnDireccionOk>> {
   const { data: rpcData, error: rpcError } = await supabase.rpc('crear_o_anadir_a_familia', {
     p_nombre_nino: p.nombreNino,
-    p_apellidos_nino: p.apellidosNino,
+    p_primer_apellido_nino: p.primerApellidoNino,
+    p_segundo_apellido_nino: p.segundoApellidoNino,
     p_fecha_nacimiento: p.fechaNacimiento,
     p_centro_id: p.centroId,
     p_aula_id: p.aulaId,

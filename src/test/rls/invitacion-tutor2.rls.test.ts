@@ -110,7 +110,12 @@ describe('El segundo tutor: reenviar y cancelar su invitación', () => {
     await crearFamiliaTutor(familia, tutor1.id, 'titular')
     const { data: n, error } = await serviceClient
       .from('ninos')
-      .insert({ centro_id: centro.id, nombre: 'Nora', apellidos: 'Tutor Dos', familia_id: familia })
+      .insert({
+        centro_id: centro.id,
+        nombre: 'Nora',
+        primer_apellido: 'Tutor Dos',
+        familia_id: familia,
+      })
       .select('id')
       .single()
     expect(error).toBeNull()

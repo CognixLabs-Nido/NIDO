@@ -192,7 +192,7 @@ describe('centro del registro', () => {
   const prospecto = {
     curso_academico_id: CURSO,
     nombre_nino: 'Niño Demo',
-    apellidos_nino: 'Apellido Demo',
+    primer_apellido_nino: 'Apellido Demo',
     fecha_nacimiento: '',
     telefono_tutor: '',
     email_tutor: 'tutor@demo.test',

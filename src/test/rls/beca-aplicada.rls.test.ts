@@ -45,7 +45,7 @@ describe('PR-5 — beca aplicada al validar', () => {
         centro_id: centro.id,
         familia_id: familia,
         nombre: 'Nino PR5',
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

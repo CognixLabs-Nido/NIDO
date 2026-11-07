@@ -8,7 +8,7 @@ import { actualizarNinoTutorSchema, type ActualizarNinoTutorInput } from '../sch
 import { fail, ok, type ActionResult } from '../../centros/types'
 
 /**
- * Pieza 3a — el TUTOR escribe la identidad de su hijo (apellidos, fecha_nacimiento,
+ * Pieza 3a — el TUTOR escribe la identidad de su hijo (los dos apellidos, fecha_nacimiento,
  * sexo, nacionalidad, idioma_principal) vía la RPC `actualizar_identidad_nino_tutor`
  * (SECURITY DEFINER, gate `es_tutor_de`, whitelist de columnas). Nunca `UPDATE`
  * directo a `ninos`: la RPC impide tocar aula/centro/flags/notas_admin. NULL=preservar.
@@ -28,7 +28,10 @@ export async function actualizarNinoTutor(
   const rpcArgs = {
     p_nino_id: d.nino_id,
     p_nombre: d.nombre,
-    p_apellidos: d.apellidos,
+    // Los dos apellidos van en pareja: el segundo llega siempre con el primero, y vacío es «no
+    // tiene» (así se puede quitar). La RPC rechaza el segundo sin el primero.
+    p_primer_apellido: d.primer_apellido,
+    p_segundo_apellido: d.segundo_apellido ?? '',
     p_fecha_nacimiento: d.fecha_nacimiento,
     p_sexo: d.sexo ?? null,
     p_nacionalidad: d.nacionalidad ?? null,
@@ -36,7 +39,8 @@ export async function actualizarNinoTutor(
   } as unknown as {
     p_nino_id: string
     p_nombre: string
-    p_apellidos: string
+    p_primer_apellido: string
+    p_segundo_apellido: string
     p_fecha_nacimiento: string
     p_sexo: 'F' | 'M' | 'X'
     p_nacionalidad: string

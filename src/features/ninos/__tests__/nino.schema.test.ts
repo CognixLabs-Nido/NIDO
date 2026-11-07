@@ -5,7 +5,7 @@ import { infoMedicaSchema, ninoSchema } from '../schemas/nino'
 describe('ninoSchema — campos personales', () => {
   const base = {
     nombre: 'Ana',
-    apellidos: 'Pérez',
+    primer_apellido: 'Pérez',
     fecha_nacimiento: '2024-03-15',
     idioma_principal: 'es' as const,
   }

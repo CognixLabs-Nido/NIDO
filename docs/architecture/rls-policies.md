@@ -642,6 +642,30 @@ Migración `20270111120000_feat_refirma_documentos_centro`; spec `docs/specs/alt
   no pide nada.
 - Test: `src/test/rls/refirma-documentos.rls.test.ts`.
 
+### Campos del niño (serie de altas, fase 5, 5a)
+
+Migración `20270112120000_feat_campos_nino_base`; spec `docs/specs/altas-serie.md`, «Fase 5».
+
+- **`apellidos` y `apellidos_nino`, derivadas por la base** (columnas generadas de los dos apellidos):
+  nadie las escribe, tampoco la Dirección ni `service_role` (428C9). Es el principio de «Rutas e
+  identificadores del cliente: se validan en la BD contra la fila» (#507): lo que la base puede
+  derivar, no lo acepta del cliente. Los dos apellidos los escribe quien los sabe, en dos casillas, y
+  nadie los parte.
+- **Quién escribe los campos nuevos:** la tutora legal por `actualizar_identidad_nino_tutor`
+  (`es_tutor_legal_de`; firma nueva, `EXECUTE` solo para `authenticated` y `service_role`), la
+  provincia por `actualizar_familia_nino` (con su regla de siempre: con el alta validada, la tutora va
+  a la cola) y la Dirección directamente (`ninos_admin_all`). Las reglas de cada campo son CHECK, así
+  que valen por los tres caminos: el DNI o NIE con su letra (`privado.dni_nie_valido`), los hermanos
+  juntos y en rango, «otro» con su texto y el texto solo con «otro», el segundo apellido solo con el
+  primero.
+- **Un CHECK que da NULL deja pasar la fila.** Las dos reglas en pareja (hermanos y «otro») escriben
+  el `IS NOT NULL` a la vista; sin él, el ensayo midió que «otro» sin texto entraba.
+- **La purga** (`privado.purgar_nino`) los borra, y `_claves_pii_nino` los redacta de `audit_log`
+  (también los dos apellidos del prospecto).
+- **Sin cerrar (2026-11-07):** `actualizar_identidad_nino_tutor` no mira si el alta está validada; la
+  tutora legal cambia la identidad de su hijo sin pasar por la cola (medido en el ensayo).
+- Test: `src/test/rls/campos-nino-base.rls.test.ts`.
+
 ### Firmar fuera del alta y lo pendiente en el inicio (serie de altas, fase 4, 4c)
 
 Sin migración; spec `docs/specs/altas-serie.md`, «4c». Usa las funciones del 4a con la sesión de

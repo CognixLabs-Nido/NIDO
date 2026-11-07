@@ -38,7 +38,8 @@ export async function editarProspecto(
 
   const cambios: Database['public']['Tables']['lista_espera']['Update'] = {
     nombre_nino: data.nombre_nino,
-    apellidos_nino: data.apellidos_nino,
+    primer_apellido_nino: data.primer_apellido_nino,
+    segundo_apellido_nino: data.segundo_apellido_nino,
     fecha_nacimiento: data.fecha_nacimiento,
     telefono_tutor: data.telefono_tutor,
     email_tutor: data.email_tutor,

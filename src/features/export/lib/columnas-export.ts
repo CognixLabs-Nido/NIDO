@@ -86,6 +86,11 @@ const NS_ID = {
     'R5 (2026-11-01): clave interna de la fila. Ninguna otra fila del export la nombra, así que no une nada de lo que la persona recibe.',
 } as const
 
+const NS_APELLIDOS_PROSPECTO = {
+  noSale:
+    '5a (2026-11-07): salen unidos en `apellidos_nino`, que la base compone de estos dos con un espacio. La persona recibe el texto que escribió la Dirección; partido, no añade nada que no esté ahí.',
+} as const
+
 const NS_FUERA = {
   noSale:
     'R5 (2026-11-01): apunta a una fila que este export no entrega, así que no une nada de lo que la persona recibe.',
@@ -224,6 +229,8 @@ export const SECCIONES_EXPORT = {
     created_at: { sale: 'creado_en' },
     updated_at: { sale: 'actualizado_en' },
     apellidos_nino: { sale: 'apellidos_nino', nota: PROSPECTO_ENTERO },
+    primer_apellido_nino: NS_APELLIDOS_PROSPECTO,
+    segundo_apellido_nino: NS_APELLIDOS_PROSPECTO,
     tutor_usuario_id: NS_SUJETO,
     nino_id: NS_FUERA,
     descartado_at: { sale: 'descartado_en', nota: PROSPECTO_ENTERO },
@@ -465,6 +472,8 @@ export const SECCIONES_EXPORT = {
     created_at: { sale: 'apuntado_en' },
     updated_at: { sale: 'actualizado_en' },
     apellidos_nino: { sale: 'apellidos_nino' },
+    primer_apellido_nino: NS_APELLIDOS_PROSPECTO,
+    segundo_apellido_nino: NS_APELLIDOS_PROSPECTO,
     tutor_usuario_id: NS_PERSONA,
     nino_id: NS_SUJETO,
     descartado_at: { sale: 'descartado_en' },

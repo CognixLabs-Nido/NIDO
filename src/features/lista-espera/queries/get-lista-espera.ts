@@ -13,7 +13,10 @@ import { tutoresConVinculoPrevio } from '../lib/vinculo-previo-tutor'
 export interface ProspectoListItem {
   id: string
   nombre_nino: string
+  /** La deriva la base de los dos de abajo (5a): es la que se enseña. */
   apellidos_nino: string | null
+  primer_apellido_nino: string | null
+  segundo_apellido_nino: string | null
   fecha_nacimiento: string | null
   telefono_tutor: string | null
   email_tutor: string | null
@@ -61,7 +64,7 @@ export async function getListaEsperaCore(
   const { data } = await supabase
     .from('lista_espera')
     .select(
-      'id, nombre_nino, apellidos_nino, fecha_nacimiento, telefono_tutor, email_tutor, nota, posicion, estado, tutor_usuario_id, nino_id'
+      'id, nombre_nino, apellidos_nino, primer_apellido_nino, segundo_apellido_nino, fecha_nacimiento, telefono_tutor, email_tutor, nota, posicion, estado, tutor_usuario_id, nino_id'
     )
     .eq('curso_academico_id', cursoAcademicoId)
     .neq('estado', 'descartado')

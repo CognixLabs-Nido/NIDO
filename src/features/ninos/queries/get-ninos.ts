@@ -213,7 +213,10 @@ export interface NinoDetalle {
   centro_id: string
   nombre: string
   // Nullable en el esqueleto (alta tutor-driven): el tutor completa identidad en el wizard.
+  // `apellidos` la deriva la base de los dos (5a): se lee, no se escribe.
   apellidos: string | null
+  primer_apellido: string | null
+  segundo_apellido: string | null
   fecha_nacimiento: string | null
   sexo: 'F' | 'M' | 'X' | null
   nacionalidad: string | null
@@ -245,7 +248,7 @@ export async function getNinoById(
   let query = supabase
     .from('ninos')
     .select(
-      'id, centro_id, nombre, apellidos, fecha_nacimiento, sexo, nacionalidad, idioma_principal, notas_admin, puede_aparecer_en_fotos, foto_url, deleted_at'
+      'id, centro_id, nombre, apellidos, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, idioma_principal, notas_admin, puede_aparecer_en_fotos, foto_url, deleted_at'
     )
     .eq('id', ninoId)
   if (!opts?.incluirArchivado) query = query.is('deleted_at', null)

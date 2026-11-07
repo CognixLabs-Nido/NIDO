@@ -37,7 +37,7 @@ async function insertarNino(centroId: string, familiaId: string, nombre: string)
       centro_id: centroId,
       familia_id: familiaId,
       nombre,
-      apellidos: 'Apellido Test',
+      primer_apellido: 'Apellido Test',
       fecha_nacimiento: '2024-03-15',
     })
     .select('id')

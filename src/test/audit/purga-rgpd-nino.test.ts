@@ -48,6 +48,17 @@ const CLAVES: Record<string, readonly string[]> = {
     'direccion_ciudad',
     'libro_familia_path',
     'estado_civil_familia',
+    // Fase 5a (2026-11-07): los dos apellidos, y los campos nuevos de la ficha.
+    'primer_apellido',
+    'segundo_apellido',
+    'lugar_nacimiento',
+    'dni',
+    'hermanos_total',
+    'hermanos_lugar',
+    'direccion_provincia',
+    'observaciones_familia',
+    'como_nos_conocio',
+    'como_nos_conocio_otro',
   ],
   info_medica_emergencia: [
     'alergias_graves',
@@ -162,8 +173,17 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
     const { error: nErr } = await serviceClient
       .from('ninos')
       .update({
-        apellidos: marca('apellidos'),
+        primer_apellido: marca('apellidos'),
+        segundo_apellido: marca('segundo'),
         nacionalidad: marca('nacionalidad'),
+        lugar_nacimiento: marca('lugar'),
+        dni: '12345678Z', // el CHECK exige la letra buena: no cabe una marca, lo cubre CLAVES
+        hermanos_total: 3,
+        hermanos_lugar: 2,
+        direccion_provincia: marca('prov'),
+        observaciones_familia: marca('obs'),
+        como_nos_conocio: 'otro',
+        como_nos_conocio_otro: marca('como'),
         notas_admin: marca('notas'),
         idioma_principal: 'va',
         direccion_calle: marca('calle'),
@@ -369,7 +389,9 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
     const { data: n } = await serviceClient
       .from('ninos')
       .select(
-        'idioma_principal, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, libro_familia_path, estado_civil_familia'
+        'idioma_principal, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, libro_familia_path, estado_civil_familia, ' +
+          // 5a: los campos nuevos, también en la tabla (no solo en audit_log).
+          'primer_apellido, segundo_apellido, apellidos, lugar_nacimiento, dni, hermanos_total, hermanos_lugar, direccion_provincia, observaciones_familia, como_nos_conocio, como_nos_conocio_otro'
       )
       .eq('id', sem.ninoId)
       .single()
@@ -382,6 +404,17 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
       direccion_ciudad: null,
       libro_familia_path: null,
       estado_civil_familia: null,
+      primer_apellido: BORRADO,
+      segundo_apellido: null,
+      apellidos: BORRADO,
+      lugar_nacimiento: null,
+      dni: null,
+      hermanos_total: null,
+      hermanos_lugar: null,
+      direccion_provincia: null,
+      observaciones_familia: null,
+      como_nos_conocio: null,
+      como_nos_conocio_otro: null,
     })
     const { data: dp } = await serviceClient
       .from('datos_pedagogicos_nino')

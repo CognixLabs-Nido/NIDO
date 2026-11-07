@@ -29,6 +29,8 @@ describe('ProspectoFormDialog — el aviso de la nota', () => {
         id: 'p-1',
         nombre_nino: 'Lucía',
         apellidos_nino: 'Demo',
+        primer_apellido_nino: 'Demo',
+        segundo_apellido_nino: null,
         fecha_nacimiento: '2024-01-01',
         telefono_tutor: null,
         email_tutor: 'tutor@nido.test',

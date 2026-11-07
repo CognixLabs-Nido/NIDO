@@ -124,7 +124,7 @@ describe('B2-3 — un desborde resuelto queda cerrado', () => {
         centro_id: centro.id,
         familia_id: familiaId,
         nombre,
-        apellidos: 'B23',
+        primer_apellido: 'B23',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

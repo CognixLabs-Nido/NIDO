@@ -35,6 +35,8 @@ const BORRADO = '[borrado]'
 const CLAVES_NINO = [
   'nombre_nino',
   'apellidos_nino',
+  'primer_apellido_nino', // fase 5a (2026-11-07)
+  'segundo_apellido_nino',
   'fecha_nacimiento',
   'telefono_tutor',
   'email_tutor',
@@ -102,11 +104,13 @@ describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
         centro_id: centro.id, // lo reescribe el trigger desde el curso
         curso_academico_id: opts.cursoId,
         nombre_nino: marca('nombre'),
-        apellidos_nino: marca('apellidos'),
+        primer_apellido_nino: marca('apellidos'),
         fecha_nacimiento: '2024-03-15',
         telefono_tutor: marca('tel'),
         email_tutor: `${marca('email')}@correo.test`,
         nota: marca('nota'),
+        // Al final: los tests leen marcas[0], [2] y [3] por posición (nombre, tel, email).
+        segundo_apellido_nino: marca('segundo'),
         posicion: 1,
         tutor_usuario_id: opts.tutorUsuarioId ?? null,
       })

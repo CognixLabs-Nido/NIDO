@@ -424,7 +424,7 @@ describe('invitaciones: los sitios de la BD que pasan por la tabla', () => {
         centro_id: centroId,
         familia_id: familiaId,
         nombre: 'Primer Hijo',
-        apellidos: 'Sitios',
+        primer_apellido: 'Sitios',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')
@@ -442,7 +442,8 @@ describe('invitaciones: los sitios de la BD que pasan por la tabla', () => {
     const c = await clientFor(admin)
     return c.rpc('crear_o_anadir_a_familia', {
       p_nombre_nino: 'Otro Hijo',
-      p_apellidos_nino: 'Sitios',
+      p_primer_apellido_nino: 'Sitios',
+      p_segundo_apellido_nino: '',
       p_fecha_nacimiento: '2024-03-15',
       p_centro_id: centroId,
       p_aula_id: aulaId,

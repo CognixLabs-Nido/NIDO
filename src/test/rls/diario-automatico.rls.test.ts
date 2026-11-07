@@ -51,7 +51,7 @@ describe('Los conceptos diarios son automáticos', () => {
         centro_id: centro.id,
         familia_id: familia,
         nombre,
-        apellidos: 'Demo',
+        primer_apellido: 'Demo',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')
