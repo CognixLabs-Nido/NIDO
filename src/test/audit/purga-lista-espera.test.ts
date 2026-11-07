@@ -105,11 +105,12 @@ describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
         curso_academico_id: opts.cursoId,
         nombre_nino: marca('nombre'),
         primer_apellido_nino: marca('apellidos'),
-        segundo_apellido_nino: marca('segundo'),
         fecha_nacimiento: '2024-03-15',
         telefono_tutor: marca('tel'),
         email_tutor: `${marca('email')}@correo.test`,
         nota: marca('nota'),
+        // Al final: los tests leen marcas[0], [2] y [3] por posición (nombre, tel, email).
+        segundo_apellido_nino: marca('segundo'),
         posicion: 1,
         tutor_usuario_id: opts.tutorUsuarioId ?? null,
       })
