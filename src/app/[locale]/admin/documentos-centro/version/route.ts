@@ -12,6 +12,8 @@ const camposSchema = z.object({
   centro_id: z.string().uuid(),
   documento_id: z.string().uuid(),
   curso_academico_id: z.string().uuid().nullable(),
+  // 4d: dicho siempre, «true» o «false». Lo que no sea eso no se lee como «no pedir».
+  pide_refirma: z.enum(['true', 'false']),
 })
 
 function err(error: string, status = 400): Response {
@@ -35,6 +37,7 @@ export async function POST(request: Request): Promise<Response> {
     centro_id: form.get('centro_id'),
     documento_id: form.get('documento_id'),
     curso_academico_id: typeof curso === 'string' && curso !== '' ? curso : null,
+    pide_refirma: form.get('pide_refirma'),
   })
   if (!campos.success) return err('documentos_centro.errors.invalido')
   const file = form.get('file')
@@ -46,6 +49,7 @@ export async function POST(request: Request): Promise<Response> {
     documentoId: campos.data.documento_id,
     cursoId: campos.data.curso_academico_id,
     bytes: new Uint8Array(await file.arrayBuffer()),
+    pideRefirma: campos.data.pide_refirma === 'true',
   })
   if (!r.ok) return err(r.error, r.error.endsWith('.no_autorizado') ? 403 : 400)
   return Response.json({ success: true, data: r.data })

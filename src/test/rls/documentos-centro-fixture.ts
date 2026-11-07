@@ -49,19 +49,21 @@ export async function creaDocumento(
   return data
 }
 
-/** Sube una versión (un PDF con ese texto) con la sesión de la admin. Devuelve su id. */
+/** Sube una versión (un PDF con ese texto) con la sesión de la admin; si se pide, pidiendo volver a firmar (4d). Devuelve su id. */
 export async function subeVersion(
   admin: Cliente,
   centroId: string,
   documentoId: string,
   cursoId: string | null,
-  texto: string
+  texto: string,
+  pideRefirma = false
 ): Promise<string> {
   const r = await subirVersionDocumento(admin, serviceClient, {
     centroId,
     documentoId,
     cursoId,
     bytes: pdf(texto),
+    pideRefirma,
   })
   if (!r.ok) throw new Error(`subir: ${r.error}`)
   return r.data.versionId

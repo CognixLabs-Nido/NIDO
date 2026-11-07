@@ -576,7 +576,8 @@ Sin migración; spec `docs/specs/altas-serie.md`, «3c». `/admin/documentos-cen
 Migración `20270103120000_feat_firmar_documentos_centro`; spec `docs/specs/altas-serie.md`, «Fase 4».
 
 - **`privado.documentos_del_nino(niño)`**: lo que le toca firmar, con su estado (`falta_documento`,
-  `por_firmar` con `disponible_desde`, o `firmado`, de cualquier versión del mismo documento y curso:
+  `por_firmar` con `disponible_desde`, o `firmado`, de cualquier versión del mismo documento y curso
+  salvo que una posterior pidiera volver a firmar (4d):
   J4). Sin puerta propia: cerrada a todas las sesiones y a `service_role`, la llaman las funciones de
   abajo después de la suya.
 - **Leer:** `documentos_firma_nino(niño)` (`es_tutor_legal_de` o `es_admin` del centro del niño) y
@@ -620,6 +621,26 @@ Migración `20270109120000_feat_alta_cierra_con_documentos_firmados`; spec `docs
   `documentos_por_firmar`, firmado el obligatorio cierra (con uno sin subir y uno opcional
   pendientes), y la casilla da 42501.
 - Test: `src/test/rls/alta-cierra-documentos.rls.test.ts` y `acuses-alta-cerrada.rls.test.ts`.
+
+### La refirma (serie de altas, fase 4, 4d)
+
+Migración `20270111120000_feat_refirma_documentos_centro`; spec `docs/specs/altas-serie.md`, «4d».
+
+- **Pedirlo es de la admin del centro, al subir:** `registrar_version_documento` gana
+  `p_pide_refirma` (DEFAULT `false`, para la app de antes) y sigue pasando por
+  `privado.documentos_centro_puerta`. En la primera versión de ese documento y curso, P0001
+  `sin_version_anterior`; NULL, 22023. `EXECUTE` solo para `authenticated`, como antes: la tutora
+  recibe 42501 de la puerta, y `service_role`, sin privilegio.
+- **Qué firma vale:** `privado.documentos_del_nino` da `firmado` solo si la versión firmada es la
+  misma o posterior a la última con `pide_refirma`. Si no, `por_firmar` con la firma de antes en
+  `firma_id`. Firmar (`privado.version_por_firmar`), la puerta del cierre (`marcar_matricula_lista`),
+  el PDF y las lecturas de los inicios leen de ahí: ninguna cambia.
+- Medido en producción el 2026-11-07 (ensayo terminado en RAISE, LF y CRLF, sobre el alta pendiente
+  de CEI Ejemplo con tres documentos creados dentro): antes, una versión corregida no podía pedir nada
+  y la firma seguía valiendo; después, pedirlo devuelve a la tutora a «por firmar» la vigente, el
+  cierre se frena (`documentos_por_firmar`) hasta que firma la vigente, y subir con cuatro argumentos
+  no pide nada.
+- Test: `src/test/rls/refirma-documentos.rls.test.ts`.
 
 ### Firmar fuera del alta y lo pendiente en el inicio (serie de altas, fase 4, 4c)
 

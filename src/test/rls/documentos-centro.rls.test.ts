@@ -169,6 +169,7 @@ describe('Los documentos del centro y sus versiones', () => {
       documentoId: presupuesto,
       cursoId: cursoActivo,
       bytes: v1,
+      pideRefirma: false,
     })
     expect(r).toEqual({ ok: true, data: { versionId: expect.any(String), sha256: sha(v1) } })
     expect(await objetosDelCentro()).toEqual([ruta(presupuesto, v1)])
@@ -183,6 +184,7 @@ describe('Los documentos del centro y sus versiones', () => {
       documentoId: presupuesto,
       cursoId: cursoPlan,
       bytes: p27,
+      pideRefirma: false,
     })
     expect(plan.ok).toBe(true)
     const corregida = await subirVersionDocumento(sesion, serviceClient, {
@@ -190,6 +192,7 @@ describe('Los documentos del centro y sus versiones', () => {
       documentoId: presupuesto,
       cursoId: cursoActivo,
       bytes: v2,
+      pideRefirma: false,
     })
     expect(corregida.ok).toBe(true)
     expect(await vigentes(presupuesto)).toEqual({ [cursoActivo]: 2, [cursoPlan]: 1 })
@@ -200,6 +203,7 @@ describe('Los documentos del centro y sus versiones', () => {
         documentoId: presupuesto,
         cursoId: cursoActivo,
         bytes: v1,
+        pideRefirma: false,
       })
     ).toEqual({ ok: false, error: 'documentos_centro.errors.ya_subida' })
     expect((await lista()).ficheros_sueltos).toEqual([])
@@ -215,6 +219,7 @@ describe('Los documentos del centro y sus versiones', () => {
             documentoId: presupuesto,
             cursoId: cursoActivo,
             bytes: pdf(u.id),
+            pideRefirma: false,
           }),
           u.email
         )
@@ -226,6 +231,7 @@ describe('Los documentos del centro y sus versiones', () => {
         documentoId: presupuesto,
         cursoId: cursoActivo,
         bytes: new TextEncoder().encode('no soy un pdf'),
+        pideRefirma: false,
       })
     ).toEqual({ ok: false, error: 'documentos_centro.errors.tipo_pdf' })
     expect(await objetosDelCentro()).toEqual(antes)

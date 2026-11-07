@@ -5302,7 +5302,8 @@
       "version_firmada": "Esta versión ya está firmada: no se puede borrar.",
       "titulo_repetido": "Ya hay otro documento con ese título.",
       "de_curso_fijo": "El documento ya tiene versiones: «de curso» no se puede cambiar. Si estaba mal, crea otro documento.",
-      "ver": "No se pudo abrir el PDF. Inténtalo de nuevo."
+      "ver": "No se pudo abrir el PDF. Inténtalo de nuevo.",
+      "sin_version_anterior": "No se puede pedir que vuelvan a firmar la primera versión: todavía no la ha firmado nadie."
     },
     "pantalla": {
       "titulo": "Documentos del centro",
@@ -5330,7 +5331,7 @@
       "guardado": "Cambios guardados.",
       "subir": "Subir versión",
       "subir_titulo": "Subir una versión",
-      "subir_no_pide_refirma": "Una versión nueva no pide a nadie que vuelva a firmar: las firmas que ya hay siguen valiendo, y la nueva la firman las altas que lleguen después.",
+      "subir_no_pide_refirma": "Por defecto, una versión nueva no pide a nadie que vuelva a firmar: las firmas que ya hay siguen valiendo, y la nueva la firman las altas que lleguen después.",
       "sin_cursos": "No hay ningún curso planificado ni activo. Crea antes el curso en Cursos.",
       "fichero_ayuda": "Un PDF de hasta 10 MB.",
       "subida_ok": "Versión subida.",
@@ -5360,7 +5361,10 @@
       "retirar": "Retirar",
       "volver_a_poner": "Volver a poner",
       "retirado_ok": "Documento retirado.",
-      "repuesto": "Documento puesto otra vez."
+      "repuesto": "Documento puesto otra vez.",
+      "pedir_refirma": "Pedir que vuelvan a firmar",
+      "pedir_refirma_ayuda": "{n, plural, =0 {Nadie ha firmado todavía una versión anterior.} one {# niño tiene firmada una versión anterior: su familia la verá pendiente hasta que firme esta.} other {# niños tienen firmada una versión anterior: sus familias la verán pendiente hasta que firmen esta.}}",
+      "pidio_refirma": "Pidió volver a firmar"
     }
   },
   "firmar_documentos": {
@@ -5401,6 +5405,7 @@
       "sin_subir": "{documento}: el centro no lo ha subido. {n, plural, one {Lo necesita # niño.} other {Lo necesitan # niños.}}",
       "subir": "Subirlo",
       "no_comprobado": "No hemos podido comprobar los documentos del centro pendientes."
-    }
+    },
+    "refirma": "El centro ha corregido «{titulo}» y pide volver a firmarlo. La firma anterior es del {fecha}."
   }
 }

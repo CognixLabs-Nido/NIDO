@@ -55,11 +55,13 @@ export function errorDeLaBase(e: { code?: string; hint?: string | null }): strin
     case 'curso_cerrado':
     case 'curso_ajeno':
     case 'version_firmada':
+    case 'sin_version_anterior':
       return `${E}.${e.hint}`
     case 'sin_fichero':
     case 'fichero_distinto':
       return `${E}.subida`
     case 'de_curso':
+    case 'pide_refirma':
       return `${E}.invalido`
     default:
       // El CHECK del título (1 a 200) o del orden (0 a 1000): lo que se mandó no vale.
@@ -77,11 +79,21 @@ export function errorDeLaBase(e: { code?: string; hint?: string | null }): strin
  * sobrescribir; si el fichero ya estaba (una subida anterior que no llegó a registrarse), es el mismo
  * contenido, porque la ruta es su hash, y se registra igual. Si el registro falla, se borra lo que
  * se acaba de subir.
+ *
+ * `pideRefirma` (4d, `20270111120000`): la admin pide que vuelvan a firmar esta versión quienes
+ * firmaron una anterior de ese documento y ese curso. Va siempre dicho: no pedirlo es `false`, no
+ * olvidarlo. En la primera versión no se puede (`sin_version_anterior`).
  */
 export async function subirVersionDocumento(
   sesion: Client,
   service: Client,
-  input: { centroId: string; documentoId: string; cursoId: string | null; bytes: Uint8Array }
+  input: {
+    centroId: string
+    documentoId: string
+    cursoId: string | null
+    bytes: Uint8Array
+    pideRefirma: boolean
+  }
 ): Promise<Resultado<{ versionId: string; sha256: string }>> {
   if (!(await usuarioResponsableEn(sesion, input.centroId)))
     return { ok: false, error: `${E}.no_autorizado` }
@@ -105,6 +117,7 @@ export async function subirVersionDocumento(
     p_curso_academico_id: input.cursoId,
     p_sha256: sha256,
     p_bytes: input.bytes.length,
+    p_pide_refirma: input.pideRefirma,
   })
   if (error || !data) {
     // Lo que se acaba de subir y no quedó registrado no se deja suelto. Si ya estaba, no es nuestro.

@@ -142,6 +142,7 @@ describe('Las firmas de los documentos del centro', () => {
         documentoId: doc,
         cursoId,
         bytes: pdf(texto),
+        pideRefirma: false,
       })
       if (!r.ok) throw new Error(`subir: ${r.error}`)
       return r.data.versionId

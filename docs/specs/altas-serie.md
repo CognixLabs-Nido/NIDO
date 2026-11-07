@@ -929,15 +929,15 @@ ese curso**. En un documento que no es de curso, como las normas, es la última 
   `cerrado`, y el curso tiene que existir antes. Para subir el presupuesto de 2027/28, antes se crea
   el curso 2027/28.
 
-### Pendiente: pedir que lo vuelvan a firmar (la refirma)
+### Pedir que lo vuelvan a firmar (la refirma)
 
 Jose: «si se ha equivocado al subir el presupuesto, lo puede modificar y que lo vuelvan a firmar
 todos». Es funcionalidad nueva, y **no es el J4**: una versión nueva **no** obliga a refirmar por sí
 sola. Lo que se pide es que la admin **pueda pedirlo** cuando se ha equivocado. Es una acción suya,
-no un automatismo. **No se construye todavía**: dónde encaja se decide aparte.
+no un automatismo. **Construida en el 4d** (`20270111120000`; ver «4d · La refirma»).
 
-**Lo que el 3a deja preparado para no impedirlo:** cada versión lleva `pide_refirma` (`false` hasta
-que se construya). Con `true`, las firmas de las versiones anteriores del mismo documento y curso
+**Lo que el 3a dejó preparado para no impedirlo:** cada versión lleva `pide_refirma` (`false` hasta
+el 4d). Con `true`, las firmas de las versiones anteriores del mismo documento y curso
 dejan de valer. La fila de una versión no cambia nunca, así que se decide **al subir la corregida**:
 «sube la buena y pide que la firmen otra vez». Si algún día hiciera falta pedirlo después de subirla,
 iría en una tabla aparte, sin tocar la de versiones.
@@ -1052,7 +1052,7 @@ funciones del 3a y la tabla de firmas del 3b. La familia sigue sin ver nada hast
 - **Subir una versión:** un PDF de hasta 10 MB, por la ruta del 3a. En un documento de curso se
   elige el curso entre los `planificado` y `activo` del centro; en uno que no es de curso no se
   pregunta. La pantalla avisa de lo que hace: **una versión nueva no pide que vuelvan a firmar**
-  (J4); la refirma no está construida.
+  (J4), salvo que la admin lo pida al subirla (4d).
 - **Ver el PDF de una versión:** un enlace firmado de 60 segundos, después de comprobar que la
   versión está en la lista de la admin.
 - **Borrar una versión sin firmas (J5):** con confirmación. Si el fichero no se va, la pantalla lo
@@ -1151,6 +1151,30 @@ desplegado: la admin puede subir un documento en cualquier momento):
 
 - **4b-3, el tipo fuera del catálogo** (con migración). Ver «Decisiones (2026-11-06)».
 
+### 4d · La refirma
+
+Migración `20270111120000`. Decidido (J4): una versión nueva no pide volver a firmar sola; **la admin
+lo pide al subir una versión corregida**. Una versión no cambia nunca, así que se decide al subirla.
+
+- **Pedirlo:** al subir, «Pedir que vuelvan a firmar». Solo se ofrece si ese documento y ese curso ya
+  tienen una versión: en la primera no hay nada que volver a firmar, y la base tampoco lo deja
+  (`sin_version_anterior`). La pantalla dice cuántos niños firmaron una versión anterior. Se manda
+  siempre dicho: no pedirlo es `false`, no olvidarlo. La versión que lo pidió lleva su etiqueta en la
+  lista de la admin, y el evento `version_subida` lo dice.
+- **Qué firma vale** (`privado.documentos_del_nino`): una firma de ese documento y ese curso vale si
+  su versión es la misma o posterior a la última que pidió volver a firmar. Si no, el niño vuelve a
+  «por firmar» la vigente:
+  - con la firma de antes a la vista (`firma_id`): la pantalla dice «el centro ha corregido… y pide
+    volver a firmarlo», con la fecha de la firma anterior;
+  - desde la subida de la versión que lo pidió. Quien nunca firmó cuenta desde la primera versión.
+- **Dónde sale:** donde ya sale lo pendiente, porque todo lee esa función: el alta (y su puerta, que
+  frena el cierre hasta volver a firmar), la ficha del niño y los dos inicios (4c).
+- **Se firma la vigente:** ni la que se firmó antes ni una intermedia (`version_no_vigente`).
+- **Una versión posterior que no lo pide** no deshace nada: la firma de la que lo pidió sigue
+  valiendo.
+- **Orden: aplicar antes de mergear.** La migración no rompe la app de antes (subir con cuatro
+  argumentos es no pedirlo), y la app nueva manda el quinto.
+
 ### 4c · Firmar fuera del alta y lo pendiente en el inicio
 
 Sin migración: la base del 4a ya lo tiene todo, y nada de firmar depende del alta
@@ -1191,6 +1215,8 @@ Migración `20270103120000_feat_firmar_documentos_centro`. Sin pantalla.
   | `falta_documento` | No hay versión para ese curso: no hay nada que firmar             | Del centro (P-6) |
   | `por_firmar`      | La versión existe y no hay firma de ese documento y curso         | De la familia    |
   | `firmado`         | Hay una firma de ese documento y curso, de cualquier versión (J4) | —                |
+
+  Desde el 4d, una firma vale salvo que una versión posterior a la firmada pidiera volver a firmar.
 
   `por_firmar` lleva `disponible_desde`: la primera versión subida de ese documento y curso, o la
   entrada del niño si fue después. Un documento subido hoy dice «desde hoy». Un niño sin matrícula
@@ -1261,7 +1287,7 @@ inicio de Dirección · 4d, la refirma.
 ## Estado
 
 - [x] Fase 1 · [x] Fase 2 · [x] Fase 3
-- Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [ ] 4c · [ ] 4d
+- Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [x] 4c (#514) · [ ] 4d
 - [ ] Fase 5 · [ ] Fase 6 · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias

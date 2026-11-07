@@ -5132,6 +5132,7 @@ export type Database = {
           p_bytes: number
           p_curso_academico_id: string | null
           p_documento_id: string
+          p_pide_refirma?: boolean
           p_sha256: string
         }
         Returns: string

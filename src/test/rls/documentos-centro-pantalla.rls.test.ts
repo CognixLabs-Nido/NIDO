@@ -107,12 +107,14 @@ describe('La pantalla de los documentos del centro', () => {
       documentoId: presupuesto,
       cursoId: curso,
       bytes: vFirmada,
+      pideRefirma: false,
     })
     const b = await subirVersionDocumento(sesion, serviceClient, {
       centroId: centro.id,
       documentoId: presupuesto,
       cursoId: curso,
       bytes: vSinFirmas,
+      pideRefirma: false,
     })
     if (!a.ok || !b.ok) throw new Error('no se pudieron subir las dos versiones del ensayo')
     firmada = a.data.versionId

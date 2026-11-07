@@ -4,7 +4,9 @@ import {
   agruparPorCurso,
   contarFirmas,
   cursosParaSubir,
+  firmantesPorVersion,
   leerListaAdmin,
+  ninosConFirmaAnterior,
   sePuedeCambiarDeCurso,
   sePuedeOfrecerBorrar,
   type CursoDeLaPantalla,
@@ -27,6 +29,7 @@ function v(id: string, curso: string | null, numero: number, vigente: boolean): 
     bytes: 1000,
     subida_at: '2026-11-05T10:00:00Z',
     vigente,
+    pide_refirma: false,
   }
 }
 
@@ -98,5 +101,33 @@ describe('leerListaAdmin', () => {
       documentos: [],
       ficheros_sueltos: ['a/b/c.pdf'],
     })
+  })
+})
+
+describe('a quién se pediría volver a firmar (4d)', () => {
+  const doc = {
+    versiones: [
+      v('a1', C2627.id, 1, false),
+      v('a2', C2627.id, 2, true),
+      v('b1', C2728.id, 1, true),
+    ],
+  }
+  const firmantes = firmantesPorVersion([
+    { version_id: 'a1', nino_id: 'lucia' },
+    { version_id: 'a2', nino_id: 'lucia' },
+    { version_id: 'a2', nino_id: 'pablo' },
+    { version_id: 'b1', nino_id: 'marta' },
+  ])
+
+  it('los niños con alguna versión firmada de ese curso, sin repetir', () => {
+    // Lucía firmó v1 y v2: cuenta una vez. Marta es de otro curso: no cuenta.
+    expect(ninosConFirmaAnterior(doc, C2627.id, firmantes)).toBe(2)
+    expect(ninosConFirmaAnterior(doc, C2728.id, firmantes)).toBe(1)
+  })
+
+  it('con versiones y sin firmas, cero; sin versiones en ese curso, null (no se ofrece pedirlo)', () => {
+    expect(ninosConFirmaAnterior(doc, C2627.id, {})).toBe(0)
+    expect(ninosConFirmaAnterior(doc, 'otro-curso', firmantes)).toBeNull()
+    expect(ninosConFirmaAnterior({ versiones: [] }, null, firmantes)).toBeNull()
   })
 })

@@ -24,6 +24,11 @@ export interface DocumentoParaFirmarFila {
   curso_nombre: string | null
   estado: string
   version_id: string | null
+  /**
+   * La última firma de ese documento y curso, también si ya no vale: `por_firmar` con firma es que
+   * el centro pidió volver a firmarlo (4d).
+   */
+  firma_id: string | null
   firmado_at: string | null
   metodo_firma: Database['public']['Enums']['firma_metodo'] | null
 }
@@ -148,6 +153,17 @@ function Documento({
   return (
     <>
       {cabecera}
+      {doc.firma_id && doc.firmado_at && (
+        <p className="text-accent-warm-800 text-sm" data-testid="refirma">
+          {t('refirma', {
+            titulo: doc.titulo,
+            fecha: format.dateTime(new Date(doc.firmado_at), {
+              dateStyle: 'long',
+              timeZone: 'Europe/Madrid',
+            }),
+          })}
+        </p>
+      )}
       <a
         href={`/${locale}/documento-centro/${ninoId}/${versionId}`}
         target="_blank"
