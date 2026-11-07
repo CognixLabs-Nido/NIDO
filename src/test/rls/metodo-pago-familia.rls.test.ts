@@ -141,7 +141,7 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
         centro_id: centro.id,
         familia_id: familiaA,
         nombre: 'Nino A PR7',
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: '2024-05-15',
       })
       .select('id')
@@ -164,7 +164,7 @@ describe('PR-7 — el método de pago va en la ficha de la familia', () => {
         centro_id: centro.id,
         familia_id: familia,
         nombre: 'Nino PR7',
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

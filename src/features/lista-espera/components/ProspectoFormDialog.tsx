@@ -25,7 +25,8 @@ import type { ProspectoListItem } from '../queries/get-lista-espera'
 
 interface FormValues {
   nombre_nino: string
-  apellidos_nino: string
+  primer_apellido_nino: string
+  segundo_apellido_nino: string
   fecha_nacimiento: string
   telefono_tutor: string
   email_tutor: string
@@ -82,7 +83,8 @@ export function ProspectoFormDialog({ cursoId, prospecto, trigger }: Props) {
   const form = useForm<FormValues>({
     defaultValues: {
       nombre_nino: prospecto?.nombre_nino ?? '',
-      apellidos_nino: prospecto?.apellidos_nino ?? '',
+      primer_apellido_nino: prospecto?.primer_apellido_nino ?? '',
+      segundo_apellido_nino: prospecto?.segundo_apellido_nino ?? '',
       fecha_nacimiento: prospecto?.fecha_nacimiento ?? '',
       telefono_tutor: prospecto?.telefono_tutor ?? '',
       email_tutor: prospecto?.email_tutor ?? '',
@@ -126,10 +128,18 @@ export function ProspectoFormDialog({ cursoId, prospecto, trigger }: Props) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="apellidos_nino">{t('fields.apellidos_nino')}</Label>
+            <Label htmlFor="primer_apellido_nino">{t('fields.primer_apellido_nino')}</Label>
             <Input
-              id="apellidos_nino"
-              {...form.register('apellidos_nino', { required: true })}
+              id="primer_apellido_nino"
+              {...form.register('primer_apellido_nino', { required: true })}
+              autoComplete="off"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="segundo_apellido_nino">{t('fields.segundo_apellido_nino')}</Label>
+            <Input
+              id="segundo_apellido_nino"
+              {...form.register('segundo_apellido_nino')}
               autoComplete="off"
             />
           </div>

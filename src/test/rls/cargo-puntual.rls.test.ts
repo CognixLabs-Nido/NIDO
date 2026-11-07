@@ -80,7 +80,7 @@ describe('PR-13 — cargo puntual a varios niños', () => {
         centro_id: centroA.id,
         familia_id: familiaId,
         nombre,
-        apellidos: 'Demo',
+        primer_apellido: 'Demo',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

@@ -72,7 +72,8 @@ const GRUPO_B: Array<[string, Llamada]> = [
     (c) =>
       c.rpc('crear_o_anadir_a_familia', {
         p_nombre_nino: 'x',
-        p_apellidos_nino: 'x',
+        p_primer_apellido_nino: 'x',
+        p_segundo_apellido_nino: '',
         p_fecha_nacimiento: hoy(),
         p_centro_id: id(),
         p_aula_id: id(),
@@ -154,7 +155,8 @@ const GRUPO_B: Array<[string, Llamada]> = [
       c.rpc('actualizar_identidad_nino_tutor', {
         p_nino_id: id(),
         p_nombre: 'x',
-        p_apellidos: 'x',
+        p_primer_apellido: 'x',
+        p_segundo_apellido: '',
         p_fecha_nacimiento: hoy(),
         p_sexo: 'X',
         p_nacionalidad: 'x',

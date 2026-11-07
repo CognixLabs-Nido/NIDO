@@ -90,7 +90,7 @@ describe('PR-8 — el descuento por hermano, fijo o porcentaje por familia', () 
           centro_id: centro.id,
           familia_id: familia,
           nombre: `Nino PR8 ${i}`,
-          apellidos: 'Test',
+          primer_apellido: 'Test',
           fecha_nacimiento: '2024-03-15',
         })
         .select('id')

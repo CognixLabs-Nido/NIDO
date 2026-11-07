@@ -12,13 +12,20 @@ const camposProspecto = {
     .trim()
     .min(1, 'listaEspera.validation.nombre_requerido')
     .max(120, 'listaEspera.validation.nombre_largo'),
-  // Apellidos separados del nombre (PR-4c-1). Obligatorio en el formulario para datos
-  // limpios; la columna en BD es nullable solo por los prospectos previos a esta columna.
-  apellidos_nino: z
+  // Dos apellidos (5a, `20270112120000`): los escribe la Dirección en dos casillas, y nadie los
+  // parte después. El primero es obligatorio en el formulario; el segundo no (hay niños con uno).
+  // `apellidos_nino` la deriva la base de los dos: no se escribe.
+  primer_apellido_nino: z
     .string()
     .trim()
     .min(1, 'listaEspera.validation.apellidos_requerido')
-    .max(120, 'listaEspera.validation.apellidos_largo'),
+    .max(80, 'listaEspera.validation.apellidos_largo'),
+  segundo_apellido_nino: z
+    .string()
+    .trim()
+    .max(80, 'listaEspera.validation.apellidos_largo')
+    .optional()
+    .transform((v) => (v ? v : null)),
   // Inputs de tipo date/text envían ''; lo normalizamos a null (columnas nullables).
   fecha_nacimiento: z
     .string()

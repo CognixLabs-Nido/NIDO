@@ -30,7 +30,8 @@ import {
 } from '@/features/ninos/schemas/nino'
 
 export interface IdentidadInicial {
-  apellidos: string | null
+  primer_apellido: string | null
+  segundo_apellido: string | null
   fecha_nacimiento: string | null
   sexo: 'F' | 'M' | 'X' | null
   nacionalidad: string | null
@@ -51,7 +52,7 @@ function idiomaValido(v: string): 'es' | 'en' | 'va' {
 /**
  * Paso 1 (OBLIGATORIO) — el tutor escribe la identidad de su hijo vía
  * `actualizarNinoTutor` (RPC `actualizar_identidad_nino_tutor`, gate `es_tutor_de`).
- * Whitelist: apellidos, fecha_nacimiento, sexo, nacionalidad, idioma_principal
+ * Whitelist: los dos apellidos, fecha_nacimiento, sexo, nacionalidad, idioma_principal
  * (aula/centro/flags los fija la dirección). Al guardar correctamente, avanza.
  */
 export function PasoIdentidad({ ninoId, ninoNombre, inicial, onNext }: Props) {
@@ -65,7 +66,8 @@ export function PasoIdentidad({ ninoId, ninoNombre, inicial, onNext }: Props) {
     defaultValues: {
       nino_id: ninoId,
       nombre: ninoNombre,
-      apellidos: inicial.apellidos ?? '',
+      primer_apellido: inicial.primer_apellido ?? '',
+      segundo_apellido: inicial.segundo_apellido ?? '',
       fecha_nacimiento: inicial.fecha_nacimiento ?? '',
       sexo: inicial.sexo,
       nacionalidad: inicial.nacionalidad,
@@ -112,12 +114,25 @@ export function PasoIdentidad({ ninoId, ninoNombre, inicial, onNext }: Props) {
         />
         <FormField
           control={form.control}
-          name="apellidos"
+          name="primer_apellido"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{tNino('fields.apellidos')}</FormLabel>
+              <FormLabel>{tNino('fields.primer_apellido')}</FormLabel>
               <FormControl>
                 <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="segundo_apellido"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{tNino('fields.segundo_apellido')}</FormLabel>
+              <FormControl>
+                <Input {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -67,7 +67,7 @@ async function ninoEn(familiaId: string): Promise<string> {
       centro_id: centro.id,
       familia_id: familiaId,
       nombre: `NinoDueno-${randomUUID().slice(0, 8)}`,
-      apellidos: 'Apellido Test',
+      primer_apellido: 'Apellido Test',
       fecha_nacimiento: '2024-03-15',
     })
     .select('id')

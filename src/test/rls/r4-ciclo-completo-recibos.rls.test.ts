@@ -107,7 +107,7 @@ describe('R-4 — ciclo completo de recibos (integración)', () => {
         centro_id: centro.id,
         familia_id: familiaId,
         nombre,
-        apellidos: 'R4',
+        primer_apellido: 'R4',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

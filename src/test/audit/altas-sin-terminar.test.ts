@@ -69,7 +69,8 @@ describe('El alta sin terminar: la confirma Dirección', () => {
     const c = await clientFor(admin)
     const { data, error } = await c.rpc('crear_o_anadir_a_familia', {
       p_nombre_nino: nombre,
-      p_apellidos_nino: 'Alta Ensayo',
+      p_primer_apellido_nino: 'Alta Ensayo',
+      p_segundo_apellido_nino: '',
       p_fecha_nacimiento: '2025-03-01',
       p_centro_id: centro.id,
       p_aula_id: aula,
@@ -207,9 +208,9 @@ describe('El alta sin terminar: la confirma Dirección', () => {
     const ninos = await serviceClient
       .from('ninos')
       .insert([
-        { centro_id: centro.id, nombre: 'Nil', apellidos: 'Tres Altas', familia_id: famOna },
-        { centro_id: centro.id, nombre: 'Ona', apellidos: 'Tres Altas', familia_id: famOna },
-        { centro_id: centro.id, nombre: 'Pau', apellidos: 'Tres Altas', familia_id: famOna },
+        { centro_id: centro.id, nombre: 'Nil', primer_apellido: 'Tres Altas', familia_id: famOna },
+        { centro_id: centro.id, nombre: 'Ona', primer_apellido: 'Tres Altas', familia_id: famOna },
+        { centro_id: centro.id, nombre: 'Pau', primer_apellido: 'Tres Altas', familia_id: famOna },
       ])
       .select('id, nombre')
     expect(ninos.error).toBeNull()

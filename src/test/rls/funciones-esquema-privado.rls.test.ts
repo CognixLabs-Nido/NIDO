@@ -113,7 +113,7 @@ beforeAll(async () => {
       centro_id: centroB.id,
       familia_id: familiaB,
       nombre: `Hijo-${randomUUID().slice(0, 8)}`,
-      apellidos: 'Apellido Test',
+      primer_apellido: 'Apellido Test',
       fecha_nacimiento: '2024-03-15',
     })
     .select('id')

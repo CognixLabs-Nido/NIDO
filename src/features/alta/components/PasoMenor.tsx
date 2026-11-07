@@ -169,7 +169,8 @@ export function PasoMenor({
     defaultValues: {
       nino_id: ninoId,
       nombre: ninoNombre,
-      apellidos: identidadInicial.apellidos ?? '',
+      primer_apellido: identidadInicial.primer_apellido ?? '',
+      segundo_apellido: identidadInicial.segundo_apellido ?? '',
       fecha_nacimiento: identidadInicial.fecha_nacimiento ?? '',
       sexo: identidadInicial.sexo,
       nacionalidad: identidadInicial.nacionalidad,
@@ -202,7 +203,8 @@ export function PasoMenor({
       const ident = await actualizarNinoTutor({
         nino_id: values.nino_id,
         nombre: values.nombre,
-        apellidos: values.apellidos,
+        primer_apellido: values.primer_apellido,
+        segundo_apellido: values.segundo_apellido,
         fecha_nacimiento: values.fecha_nacimiento,
         sexo: values.sexo,
         nacionalidad: values.nacionalidad,
@@ -275,12 +277,25 @@ export function PasoMenor({
           />
           <FormField
             control={form.control}
-            name="apellidos"
+            name="primer_apellido"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{tNino('fields.apellidos')}</FormLabel>
+                <FormLabel>{tNino('fields.primer_apellido')}</FormLabel>
                 <FormControl>
                   <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="segundo_apellido"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{tNino('fields.segundo_apellido')}</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

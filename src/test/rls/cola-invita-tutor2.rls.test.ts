@@ -158,7 +158,7 @@ describe('La cola invita al segundo tutor al aprobar un email nuevo', () => {
     for (const nombre of ['Nora', 'Leo']) {
       const { data: n, error } = await serviceClient
         .from('ninos')
-        .insert({ centro_id: centro.id, nombre, apellidos: 'Cola Demo', familia_id: familia })
+        .insert({ centro_id: centro.id, nombre, primer_apellido: 'Cola Demo', familia_id: familia })
         .select('id')
         .single()
       expect(error).toBeNull()

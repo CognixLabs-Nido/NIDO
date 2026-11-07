@@ -72,7 +72,7 @@ describe('D-5 punto 2 — blindar desarchivar (motivo_borrado)', () => {
         centro_id: e.centroId,
         familia_id: familiaId,
         nombre: 'Niño D5-2',
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')
@@ -249,7 +249,8 @@ describe('D-5 punto 2 — blindar desarchivar (motivo_borrado)', () => {
     // El tutor añade un 2º hijo → crea_o_anadir entra en la rama de reactivación.
     const add = await cAdmin.rpc('crear_o_anadir_a_familia', {
       p_nombre_nino: 'Segundo',
-      p_apellidos_nino: 'Test',
+      p_primer_apellido_nino: 'Test',
+      p_segundo_apellido_nino: '',
       p_fecha_nacimiento: '2024-03-15',
       p_centro_id: e.centroId,
       p_aula_id: e.aulaId,

@@ -1236,6 +1236,94 @@ Migración `20270103120000_feat_firmar_documentos_centro`. Sin pantalla.
   pantalla de firmar. Con ella aquí, un documento subido desde la pantalla del 3c (ya desplegada)
   dejaría todas las altas sin poder cerrarse y sin sitio donde firmar.
 
+## Fase 5: campos del niño
+
+Lo que pide la ficha de solicitud de plaza de ANAIA (curso 2026/2027) y la app no tenía. Medido el
+2026-11-07 contra el texto de la ficha (llegó pegado el 2026-10-29, con la comparación de ese día) y
+contra `main` 5bda873: las columnas de `ninos` eran las mismas que el 29-10. Faltaban el lugar de
+nacimiento, el DNI, los hermanos, la provincia, las observaciones de la familia y «¿cómo nos has
+conocido?», y los dos apellidos por separado. Nacionalidad y fecha de nacimiento ya estaban. El SIP
+es la Fase 7; la media pensión, la 8; el número de matrícula no se construye (D13); los tutores, la 6.
+
+### Decisiones (2026-11-07)
+
+- **P5-1 · Dos apellidos**, primero y segundo, también en el prospecto de la lista de espera: la
+  Dirección escribe dos casillas. Nadie parte unos apellidos, ni por el primer espacio ni de ninguna
+  forma: «de la Fuente Martín» no tiene una partición que se pueda adivinar, y una mal hecha no se
+  distingue luego de un apellido simple.
+- **P5-2 · La provincia** se añade, opcional, junto a la ciudad.
+- **P5-3 · No hay teléfono del niño.** Los teléfonos son de los tutores (Fase 6), y el de emergencia
+  está en la ficha médica.
+- **P5-4 · Observaciones de la familia**, con el aviso de que los datos de salud van en la ficha
+  médica. Se borran con el niño.
+- **P5-5 · «¿Cómo nos has conocido?»**: lista cerrada (internet, redes sociales, recomendación de otra
+  familia, pasé por delante) con «otro» y su texto. Solo a las familias nuevas en el centro: al
+  segundo hijo no se le pregunta.
+- **P5-6 · Hermanos**: el total cuenta al niño, y el lugar que ocupa va de 1 (el mayor) al total.
+  Lucía, con Pablo mayor y Ana menor: 3 hermanos, lugar 2. `tiene_hermanos_en_centro` (datos
+  pedagógicos) se queda: es otra pregunta.
+- **P5-7 · Campos fijos.** La configuración por centro (oculto, opcional u obligatorio) se hace cuando
+  exista el segundo centro. Coste aceptado: entonces se vuelven a tocar el alta y las fichas.
+- **P5-8 · Lo obligatorio para cerrar el alta:** lugar de nacimiento, nacionalidad (antes opcional) y
+  hermanos. Opcionales: DNI del alumno, «¿cómo nos has conocido?», provincia y observaciones.
+- **Lo que se tomó por defecto:** nada es retroactivo (los niños con el alta ya validada no se
+  bloquean); el DNI del niño va en claro, como el SIP (D7), y se borra con el niño; se aceptan DNI y
+  NIE, con la letra comprobada.
+- **Para la Fase 6, por preguntar:** la fecha de nacimiento de los tutores. La spec dice «D15 ·
+  obligatoria» (Jose, 2026-10-29: «se piden»), y el 2026-11-07 se escribió «sale del DNI y no se pide
+  aparte». Se pregunta al llegar a la Fase 6.
+
+### 5a · La base
+
+Migración `20270112120000`, sin pantalla (la pone la 5b).
+
+- **Los apellidos, derivados por la base.** `ninos.apellidos` y `lista_espera.apellidos_nino` pasan a
+  ser columnas generadas de `primer_apellido`/`segundo_apellido` y
+  `primer_apellido_nino`/`segundo_apellido_nino`: lo que la base puede derivar, no lo acepta del
+  cliente (#507, ver `rls-policies.md`, «Rutas e identificadores del cliente: se validan en la BD
+  contra la fila»). Tres consecuencias:
+  - los que solo **leen** el nombre (102 ficheros de la app, el concepto del adeudo SEPA, las listas,
+    los avisos, el export y cinco funciones) no se tocan: siguen recibiendo «García López»;
+  - escribir `apellidos` pasa a ser un **error** para todos, también para la Dirección y el servicio
+    (428C9). Un escritor que se escape lo caza el CI, y el compilador: en los tipos es `never`;
+  - el concepto del adeudo, el PDF del mandato y las listas no tuvieron que partir nada: ninguno lo
+    hacía.
+- **La conversión**, niño a niño y prospecto a prospecto, con su valor escrito en la migración y una
+  guarda que comprueba que cada uno sigue teniendo exactamente ese valor. Los 4 niños y los 5
+  prospectos de producción son de una sola palabra: van enteros al primer apellido. Una fila que no
+  esté en la lista, o que haya cambiado, **para** la migración, y se pregunta.
+- **Los campos nuevos de `ninos`:** `lugar_nacimiento`, `dni` (normalizado; CHECK con la letra,
+  `privado.dni_nie_valido`), `hermanos_total` y `hermanos_lugar` (juntos, 1 ≤ lugar ≤ total ≤ 20),
+  `direccion_provincia`, `observaciones_familia` y `como_nos_conocio` con `como_nos_conocio_otro`.
+  Todos opcionales en la base: lo obligatorio para cerrar el alta va en la 5b, que es la que los
+  pregunta. Los CHECK escriben el `IS NOT NULL` a la vista: un CHECK que da NULL deja pasar la fila,
+  y el ensayo lo midió («otro» sin texto entraba).
+- **Quién los escribe:** la tutora legal por `actualizar_identidad_nino_tutor` (firma nueva: los dos
+  apellidos en pareja y los campos nuevos; NULL deja lo que hay y vacío lo borra, como el setter
+  médico); la provincia, con la dirección, por `actualizar_familia_nino`; los dos apellidos del
+  prospecto, por `crear_o_anadir_a_familia` (firma nueva). La Dirección sigue escribiendo la ficha
+  directamente (`ninos_admin_all`), con los mismos CHECK.
+- **La purga** los borra (`privado.purgar_nino`) y la redacción de `audit_log` los conoce
+  (`_claves_pii_nino`, también los dos del prospecto). `purgar_sujeto_db` no escribe `apellidos` y no
+  se toca (su `k_nino` no se usa en el cuerpo); va en la guarda.
+- **El export** entrega los campos nuevos de la ficha del niño. Del prospecto entrega `apellidos_nino`,
+  que es los dos unidos.
+- **ORDEN: aplicar y mergear seguidos.** Con la migración aplicada, la app de antes no puede escribir
+  los apellidos, y la nueva no funciona sin la migración. No hay orden sin ventana que no adivine.
+- Medido en producción el 2026-11-07 (ensayo terminado en RAISE, LF y CRLF idénticos, sobre el alta
+  pendiente de CEI Ejemplo y el niño validado).
+- Test: `src/test/rls/campos-nino-base.rls.test.ts`.
+
+**Lo que queda para la 5b:** las pantallas (el alta, las dos fichas, el prospecto ya lleva sus dos
+casillas desde la 5a), lo obligatorio al cerrar el alta (la app y `marcar_matricula_lista`), la
+pregunta de «cómo nos has conocido» solo a familias nuevas, sus valores traducidos en el export y la
+provincia en la cola de cambios.
+
+**Pendiente de decisión (2026-11-07):** con el alta validada, `actualizar_identidad_nino_tutor` sigue
+dejando a la tutora legal cambiar la identidad de su hijo sin pasar por la cola, cuando la dirección
+sí va a la cola (`actualizar_familia_nino`). Medido en el ensayo, antes y después de la 5a. Los campos
+nuevos entran por esa función.
+
 ## Orden de la serie
 
 Diez fases, en este orden. De la 5 en adelante todas tocan `purgar_sujeto_db`, `privado.purgar_nino`
@@ -1247,8 +1335,8 @@ y la exportación del art. 15 (las funciones de la serie de retención, ADR-0064
 | 1    | SEPA                              | En varios PRs (abajo)                                                           | ✅           |
 | 2    | Pantalla de altas en proceso      | Ver «Fase 2: la pantalla de altas en proceso»                                   | ✅           |
 | 3    | Documentos del centro versionados | Base: tabla de versiones con hash, firmas con `RESTRICT`, bucket propio         | ✅           |
-| 4    | Presupuesto y normas, para firmar | El gate exige la firma de la versión vigente de cada documento obligatorio; P-6 | 🔸 en marcha |
-| 5    | Campos del niño                   | Y configuración de campos por centro                                            |              |
+| 4    | Presupuesto y normas, para firmar | El gate exige la firma de la versión vigente de cada documento obligatorio; P-6 | ✅           |
+| 5    | Campos del niño                   | Campos fijos; la configuración por centro, con el segundo centro (P5-7)         | 🔸 en marcha |
 | 6    | Campos de tutores                 | Con el test de la purga contra el catálogo de columnas                          |              |
 | 7    | SIP                               | Número en `ninos`, imagen en su bucket                                          |              |
 | 8    | Servicios en el alta              | La petición de media pensión                                                    |              |
@@ -1282,13 +1370,18 @@ La pantalla (#491), reenviar y cancelar la invitación del segundo tutor (#492),
 ### Fase 4, por PRs
 
 4a, la base (#502) · 4b, la familia firma en el alta (4b-1, 4b-2, 4b-3) · 4c, firmar fuera del alta y lo pendiente en el
-inicio de Dirección · 4d, la refirma.
+inicio de Dirección · 4d, la refirma (#515).
+
+### Fase 5, por PRs
+
+5a, la base (`20270112120000`) · 5b, las pantallas y lo obligatorio al cerrar el alta.
 
 ## Estado
 
 - [x] Fase 1 · [x] Fase 2 · [x] Fase 3
-- Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [x] 4c (#514) · [ ] 4d
-- [ ] Fase 5 · [ ] Fase 6 · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
+- [x] Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [x] 4c (#514) · [x] 4d (#515)
+- Fase 5: [ ] 5a · [ ] 5b
+- [ ] Fase 6 · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias
 

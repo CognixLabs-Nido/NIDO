@@ -106,7 +106,7 @@ describe('Alta del 2.º hijo — la RPC vincula a todos los tutores', () => {
         centro_id: centroId,
         familia_id: familiaId,
         nombre: 'Primer Hijo',
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: NACIMIENTO,
       })
       .select('id')
@@ -135,7 +135,8 @@ describe('Alta del 2.º hijo — la RPC vincula a todos los tutores', () => {
   ) {
     return cAdmin.rpc('crear_o_anadir_a_familia', {
       p_nombre_nino: 'Hermano',
-      p_apellidos_nino: 'Test',
+      p_primer_apellido_nino: 'Test',
+      p_segundo_apellido_nino: '',
       p_fecha_nacimiento: NACIMIENTO,
       p_centro_id: centroId,
       p_aula_id: aulaId,
@@ -243,7 +244,7 @@ describe('Alta del 2.º hijo — la RPC vincula a todos los tutores', () => {
         centro_id: centroId,
         familia_id: familiaId,
         nombre: 'Primer Hijo',
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: NACIMIENTO,
       })
       .select('id')

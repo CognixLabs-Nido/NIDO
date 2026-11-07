@@ -47,7 +47,7 @@ describe('PR-10 — carga de beca comedor por alumno', () => {
         centro_id: centro.id,
         familia_id: familia,
         nombre: 'Nino PR10',
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

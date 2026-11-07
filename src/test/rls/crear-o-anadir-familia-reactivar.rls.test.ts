@@ -86,7 +86,7 @@ describe('F-2b-4-1 — crear_o_anadir_a_familia reactiva familia archivada', () 
         centro_id: e.centroId,
         familia_id: familiaId,
         nombre: 'Primer Hijo',
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: HOY_PASADO,
       })
       .select('id')
@@ -105,7 +105,8 @@ describe('F-2b-4-1 — crear_o_anadir_a_familia reactiva familia archivada', () 
   function anadirHijo(e: Escenario, tutor: TestUser, opts: { fechaNacimiento?: string } = {}) {
     return cAdmin.rpc('crear_o_anadir_a_familia', {
       p_nombre_nino: 'Segundo Hijo',
-      p_apellidos_nino: 'Test',
+      p_primer_apellido_nino: 'Test',
+      p_segundo_apellido_nino: '',
       p_fecha_nacimiento: opts.fechaNacimiento ?? HOY_PASADO,
       p_centro_id: e.centroId,
       p_aula_id: e.aulaId,

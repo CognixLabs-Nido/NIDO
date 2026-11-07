@@ -49,7 +49,7 @@ describe('B2 — beca comedor v2 RLS + constraints', () => {
         centro_id: centroId,
         familia_id: familia,
         nombre: 'N',
-        apellidos: 'T',
+        primer_apellido: 'T',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

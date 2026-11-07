@@ -48,7 +48,7 @@ describe('PR-4 — el mensual de un servicio excluye los días', () => {
         centro_id: centro.id,
         familia_id: familia,
         nombre: 'Nino PR4',
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

@@ -65,7 +65,7 @@ describe('Asignaciones desde el propio concepto', () => {
         centro_id: centroId,
         familia_id: familiaId,
         nombre,
-        apellidos: 'Demo',
+        primer_apellido: 'Demo',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

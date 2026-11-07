@@ -342,7 +342,8 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         ninoNombre={nino.nombre}
         pasoInicial={pasoInicial}
         identidadInicial={{
-          apellidos: nino.apellidos,
+          primer_apellido: nino.primer_apellido,
+          segundo_apellido: nino.segundo_apellido,
           fecha_nacimiento: nino.fecha_nacimiento,
           sexo: nino.sexo,
           nacionalidad: nino.nacionalidad,

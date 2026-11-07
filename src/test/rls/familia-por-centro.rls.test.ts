@@ -179,7 +179,7 @@ describe('Multicentro · Fase 2 — un adulto con familia en dos centros', () =>
         centro_id: centroA.id,
         familia_id: familiaA,
         nombre: 'Hijo En A',
-        apellidos: 'Dos Centros',
+        primer_apellido: 'Dos Centros',
         fecha_nacimiento: HOY_PASADO,
       })
       .select('id')
@@ -201,7 +201,8 @@ describe('Multicentro · Fase 2 — un adulto con familia en dos centros', () =>
     const cAdminB = await clientFor(adminB)
     const { data: alta, error: altaErr } = await cAdminB.rpc('crear_o_anadir_a_familia', {
       p_nombre_nino: 'Hermano En B',
-      p_apellidos_nino: 'Dos Centros',
+      p_primer_apellido_nino: 'Dos Centros',
+      p_segundo_apellido_nino: '',
       p_fecha_nacimiento: HOY_PASADO,
       p_centro_id: centroB.id,
       p_aula_id: aulaB.id,

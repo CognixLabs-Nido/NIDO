@@ -49,7 +49,7 @@ describe('familia_tutores — escrituras del wizard (F-2b-3)', () => {
         centro_id: centro.id,
         familia_id: familiaId,
         nombre: 'Nino Wizard F2b3',
-        apellidos: 'Apellido Test',
+        primer_apellido: 'Apellido Test',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

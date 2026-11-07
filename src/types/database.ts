@@ -2969,12 +2969,14 @@ export type Database = {
           nombre_nino: string
           nota: string | null
           posicion: number
+          primer_apellido_nino: string | null
+          segundo_apellido_nino: string | null
           telefono_tutor: string | null
           tutor_usuario_id: string | null
           updated_at: string
         }
         Insert: {
-          apellidos_nino?: string | null
+          apellidos_nino?: never
           centro_id: string
           created_at?: string
           curso_academico_id: string
@@ -2987,12 +2989,14 @@ export type Database = {
           nombre_nino: string
           nota?: string | null
           posicion: number
+          primer_apellido_nino?: string | null
+          segundo_apellido_nino?: string | null
           telefono_tutor?: string | null
           tutor_usuario_id?: string | null
           updated_at?: string
         }
         Update: {
-          apellidos_nino?: string | null
+          apellidos_nino?: never
           centro_id?: string
           created_at?: string
           curso_academico_id?: string
@@ -3005,6 +3009,8 @@ export type Database = {
           nombre_nino?: string
           nota?: string | null
           posicion?: number
+          primer_apellido_nino?: string | null
+          segundo_apellido_nino?: string | null
           telefono_tutor?: string | null
           tutor_usuario_id?: string | null
           updated_at?: string
@@ -3482,6 +3488,8 @@ export type Database = {
         Row: {
           apellidos: string | null
           centro_id: string
+          como_nos_conocio: string | null
+          como_nos_conocio_otro: string | null
           created_at: string
           deleted_at: string | null
           deleted_reason: Database["public"]["Enums"]["motivo_borrado"] | null
@@ -3489,27 +3497,37 @@ export type Database = {
           direccion_ciudad: string | null
           direccion_cp: string | null
           direccion_numero: string | null
+          direccion_provincia: string | null
+          dni: string | null
           estado_civil_familia:
             | Database["public"]["Enums"]["estado_civil"]
             | null
           familia_id: string
           fecha_nacimiento: string | null
           foto_url: string | null
+          hermanos_lugar: number | null
+          hermanos_total: number | null
           id: string
           idioma_principal: string
           libro_familia_path: string | null
+          lugar_nacimiento: string | null
           nacionalidad: string | null
           nombre: string
           notas_admin: string | null
+          observaciones_familia: string | null
+          primer_apellido: string | null
           puede_aparecer_en_fotos: boolean
           purgado_en: string | null
           requiere_ambos_firmantes: boolean
+          segundo_apellido: string | null
           sexo: Database["public"]["Enums"]["nino_sexo"] | null
           updated_at: string
         }
         Insert: {
-          apellidos?: string | null
+          apellidos?: never
           centro_id: string
+          como_nos_conocio?: string | null
+          como_nos_conocio_otro?: string | null
           created_at?: string
           deleted_at?: string | null
           deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
@@ -3517,27 +3535,37 @@ export type Database = {
           direccion_ciudad?: string | null
           direccion_cp?: string | null
           direccion_numero?: string | null
+          direccion_provincia?: string | null
+          dni?: string | null
           estado_civil_familia?:
             | Database["public"]["Enums"]["estado_civil"]
             | null
           familia_id: string
           fecha_nacimiento?: string | null
           foto_url?: string | null
+          hermanos_lugar?: number | null
+          hermanos_total?: number | null
           id?: string
           idioma_principal?: string
           libro_familia_path?: string | null
+          lugar_nacimiento?: string | null
           nacionalidad?: string | null
           nombre: string
           notas_admin?: string | null
+          observaciones_familia?: string | null
+          primer_apellido?: string | null
           puede_aparecer_en_fotos?: boolean
           purgado_en?: string | null
           requiere_ambos_firmantes?: boolean
+          segundo_apellido?: string | null
           sexo?: Database["public"]["Enums"]["nino_sexo"] | null
           updated_at?: string
         }
         Update: {
-          apellidos?: string | null
+          apellidos?: never
           centro_id?: string
+          como_nos_conocio?: string | null
+          como_nos_conocio_otro?: string | null
           created_at?: string
           deleted_at?: string | null
           deleted_reason?: Database["public"]["Enums"]["motivo_borrado"] | null
@@ -3545,21 +3573,29 @@ export type Database = {
           direccion_ciudad?: string | null
           direccion_cp?: string | null
           direccion_numero?: string | null
+          direccion_provincia?: string | null
+          dni?: string | null
           estado_civil_familia?:
             | Database["public"]["Enums"]["estado_civil"]
             | null
           familia_id?: string
           fecha_nacimiento?: string | null
           foto_url?: string | null
+          hermanos_lugar?: number | null
+          hermanos_total?: number | null
           id?: string
           idioma_principal?: string
           libro_familia_path?: string | null
+          lugar_nacimiento?: string | null
           nacionalidad?: string | null
           nombre?: string
           notas_admin?: string | null
+          observaciones_familia?: string | null
+          primer_apellido?: string | null
           puede_aparecer_en_fotos?: boolean
           purgado_en?: string | null
           requiere_ambos_firmantes?: boolean
+          segundo_apellido?: string | null
           sexo?: Database["public"]["Enums"]["nino_sexo"] | null
           updated_at?: string
         }
@@ -4826,12 +4862,20 @@ export type Database = {
       }
       actualizar_identidad_nino_tutor: {
         Args: {
-          p_apellidos: string
+          p_como_nos_conocio?: string
+          p_como_nos_conocio_otro?: string
+          p_dni?: string
           p_fecha_nacimiento: string
+          p_hermanos_lugar?: number
+          p_hermanos_total?: number
           p_idioma_principal: string
+          p_lugar_nacimiento?: string
           p_nacionalidad: string
           p_nino_id: string
           p_nombre?: string
+          p_observaciones_familia?: string
+          p_primer_apellido: string
+          p_segundo_apellido: string
           p_sexo: Database["public"]["Enums"]["nino_sexo"]
         }
         Returns: string
@@ -4890,7 +4934,6 @@ export type Database = {
       }
       crear_o_anadir_a_familia: {
         Args: {
-          p_apellidos_nino: string
           p_aula_id: string
           p_centro_id: string
           p_descripcion_parentesco: string
@@ -4898,6 +4941,8 @@ export type Database = {
           p_nombre_nino: string
           p_parentesco: string
           p_permisos: Json
+          p_primer_apellido_nino: string
+          p_segundo_apellido_nino: string
           p_tutor_email: string
           p_tutor_nombre_completo: string
           p_usuario_id: string

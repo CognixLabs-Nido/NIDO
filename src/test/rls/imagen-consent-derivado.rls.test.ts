@@ -51,7 +51,7 @@ describe('IU-0 imagen consent por-niño + flag derivado', () => {
         centro_id: centro.id,
         familia_id: ninoA.familia_id,
         nombre: 'Hermano B IU0',
-        apellidos: 'Apellido Test',
+        primer_apellido: 'Apellido Test',
         fecha_nacimiento: '2025-05-10',
       })
       .select('id')

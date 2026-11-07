@@ -82,7 +82,7 @@ describe('B2-1 — motor beca comedor v2', () => {
         centro_id: centro,
         familia_id: familia,
         nombre: 'N',
-        apellidos: 'T',
+        primer_apellido: 'T',
         fecha_nacimiento: '2024-05-10',
       })
       .select('id')

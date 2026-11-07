@@ -131,7 +131,7 @@ describe('Imagen — el flag solo se deriva (IU-1b) y la resolución de etiqueta
           centro_id: centro.id,
           familia_id: familiaId,
           nombre: 'Nino Insert Flag',
-          apellidos: 'Apellido Test',
+          primer_apellido: 'Apellido Test',
           fecha_nacimiento: '2024-03-15',
           puede_aparecer_en_fotos: true,
         })
@@ -161,7 +161,7 @@ describe('Imagen — el flag solo se deriva (IU-1b) y la resolución de etiqueta
 
     it('cambiar otra columna no toca el flag, y revocar el consentimiento lo apaga', async () => {
       const c = await clientFor(admin)
-      await c.from('ninos').update({ apellidos: 'Apellido Cambiado' }).eq('id', nino.id)
+      await c.from('ninos').update({ primer_apellido: 'Apellido Cambiado' }).eq('id', nino.id)
       expect(await flag(nino.id)).toBe(true)
 
       await revocar(nino.id)

@@ -76,7 +76,7 @@ export async function invitarAlAlta(
   const { data: prospecto } = await supabase
     .from('lista_espera')
     .select(
-      'id, centro_id, nombre_nino, apellidos_nino, fecha_nacimiento, email_tutor, tutor_usuario_id, estado'
+      'id, centro_id, nombre_nino, primer_apellido_nino, segundo_apellido_nino, fecha_nacimiento, email_tutor, tutor_usuario_id, estado'
     )
     .eq('id', parsed.data.id)
     .maybeSingle()
@@ -141,7 +141,8 @@ export async function invitarAlAlta(
       centroId,
       aulaId: parsed.data.aulaId,
       nombreNino: prospecto.nombre_nino,
-      apellidosNino: prospecto.apellidos_nino ?? '',
+      primerApellidoNino: prospecto.primer_apellido_nino ?? '',
+      segundoApellidoNino: prospecto.segundo_apellido_nino ?? '',
       fechaNacimiento,
       parentescoForm: parsed.data.parentesco,
       descripcionParentescoForm: parsed.data.descripcionParentesco ?? null,
@@ -172,7 +173,8 @@ export async function invitarAlAlta(
   //    existe en `lista_espera` — se captura y persiste (backfill) al aceptar.
   const { data: rpcData, error: rpcError } = await supabase.rpc('crear_o_anadir_a_familia', {
     p_nombre_nino: prospecto.nombre_nino,
-    p_apellidos_nino: prospecto.apellidos_nino ?? '',
+    p_primer_apellido_nino: prospecto.primer_apellido_nino ?? '',
+    p_segundo_apellido_nino: prospecto.segundo_apellido_nino ?? '',
     p_fecha_nacimiento: fechaNacimiento,
     p_centro_id: centroId,
     p_aula_id: parsed.data.aulaId,

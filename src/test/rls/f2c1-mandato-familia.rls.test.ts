@@ -90,7 +90,7 @@ describe('F-2c-1 — mandato SEPA de FAMILIA', () => {
         centro_id: centroA.id,
         familia_id: familiaId,
         nombre,
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

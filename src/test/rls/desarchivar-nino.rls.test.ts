@@ -80,7 +80,7 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
         centro_id: e.centroId,
         familia_id: familiaId,
         nombre: opts.nombre ?? 'Niño F3F',
-        apellidos: 'Test',
+        primer_apellido: 'Test',
         fecha_nacimiento: '2024-03-15',
       })
       .select('id')

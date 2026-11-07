@@ -93,7 +93,7 @@ async function prospectoEnA(email: string | null): Promise<string> {
       centro_id: centroA.id,
       curso_academico_id: aulaA.curso_academico_id,
       nombre_nino: `Prospecto-${randomUUID().slice(0, 8)}`,
-      apellidos_nino: 'Apellido Test',
+      primer_apellido_nino: 'Apellido Test',
       fecha_nacimiento: '2024-03-15',
       email_tutor: email,
       posicion: Math.floor(Math.random() * 1_000_000),
@@ -125,7 +125,7 @@ async function tutorConFamiliaEn(u: TestUser, centroId: string): Promise<void> {
       centro_id: centroId,
       familia_id: familia,
       nombre: `Hijo-${randomUUID().slice(0, 8)}`,
-      apellidos: 'Apellido Test',
+      primer_apellido: 'Apellido Test',
       fecha_nacimiento: '2024-03-15',
     })
     .select('id')
@@ -136,7 +136,8 @@ async function tutorConFamiliaEn(u: TestUser, centroId: string): Promise<void> {
 function rpcAlta(usuarioId: string | null, email: string) {
   return {
     p_nombre_nino: `Alta-${randomUUID().slice(0, 8)}`,
-    p_apellidos_nino: 'Apellido Test',
+    p_primer_apellido_nino: 'Apellido Test',
+    p_segundo_apellido_nino: '',
     p_fecha_nacimiento: '2024-03-15',
     p_centro_id: centroA.id,
     p_aula_id: aulaA.id,

@@ -66,7 +66,8 @@ export async function crearProspecto(
       centro_id: centroId, // lo sobrescribe el trigger; se pasa para satisfacer el tipo
       curso_academico_id: data.curso_academico_id,
       nombre_nino: data.nombre_nino,
-      apellidos_nino: data.apellidos_nino,
+      primer_apellido_nino: data.primer_apellido_nino,
+      segundo_apellido_nino: data.segundo_apellido_nino,
       fecha_nacimiento: data.fecha_nacimiento,
       telefono_tutor: data.telefono_tutor,
       email_tutor: data.email_tutor,

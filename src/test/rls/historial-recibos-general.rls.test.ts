@@ -154,7 +154,7 @@ describe('F-6 — histórico general de recibos', () => {
         centro_id: centro.id,
         familia_id: familia,
         nombre: 'Hermano Historial General F6',
-        apellidos: 'Apellido Test',
+        primer_apellido: 'Apellido Test',
         fecha_nacimiento: '2024-03-01',
       })
       .select('id')

@@ -71,7 +71,8 @@ const params = {
   centroId: 'centro-1',
   aulaId: 'aula-1',
   nombreNino: 'Hermano Nuevo',
-  apellidosNino: 'Demo',
+  primerApellidoNino: 'Demo',
+  segundoApellidoNino: 'Prueba',
   fechaNacimiento: '2025-03-01',
   // La página de quien da el alta, en castellano: NO es el idioma del aviso.
   locale: 'es',
@@ -112,6 +113,8 @@ describe('alta de un hermano: el push va en el idioma del tutor', () => {
     expect(h.enviar).toHaveBeenCalledTimes(1)
     const payload = (h.enviar.mock.calls[0] as unknown[])[1]
     expect(JSON.stringify(payload)).not.toContain(params.nombreNino)
-    expect(JSON.stringify(payload)).not.toContain(params.apellidosNino)
+    // Ninguno de los dos apellidos (5a): partidos, cada uno es un dato del niño.
+    expect(JSON.stringify(payload)).not.toContain(params.primerApellidoNino)
+    expect(JSON.stringify(payload)).not.toContain(params.segundoApellidoNino)
   })
 })

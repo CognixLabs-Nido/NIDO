@@ -117,7 +117,7 @@ describe('export_datos_sujeto — export art. 15 completo', () => {
         centro_id: centro.id,
         curso_academico_id: curso.id,
         nombre_nino: 'Nino Art15',
-        apellidos_nino: 'Apellido Test',
+        primer_apellido_nino: 'Apellido Test',
         fecha_nacimiento: '2024-03-15',
         telefono_tutor: '600000015',
         email_tutor: 'tutor-art15@correo.test',
