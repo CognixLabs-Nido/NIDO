@@ -174,7 +174,7 @@ const NO_PERSONALES: Record<string, Readonly<Record<string, string>>> = {
     tipo: 'categórico (enum)',
     ambito: 'categórico (enum)',
     estado: 'categórico (enum)',
-    es_plantilla: 'flag',
+    es_plantilla: 'flag (boolean): documento de catálogo o instancia firmable',
     texto_definitivo: 'flag (boolean): el texto está cerrado',
     texto_version: 'etiqueta de la versión del texto',
     firmantes_requeridos: 'categórico (política de firmantes)',
