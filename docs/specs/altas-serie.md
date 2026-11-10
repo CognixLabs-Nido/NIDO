@@ -1319,10 +1319,52 @@ casillas desde la 5a), lo obligatorio al cerrar el alta (la app y `marcar_matric
 pregunta de «cómo nos has conocido» solo a familias nuevas, sus valores traducidos en el export y la
 provincia en la cola de cambios.
 
-**Pendiente de decisión (2026-11-07):** con el alta validada, `actualizar_identidad_nino_tutor` sigue
-dejando a la tutora legal cambiar la identidad de su hijo sin pasar por la cola, cuando la dirección
-sí va a la cola (`actualizar_familia_nino`). Medido en el ensayo, antes y después de la 5a. Los campos
-nuevos entran por esa función.
+**Cerrado el 2026-11-08** («La puerta de identidad», abajo): con el alta validada,
+`actualizar_identidad_nino_tutor` dejaba a la tutora legal cambiar la identidad de su hijo sin pasar
+por la cola.
+
+### La puerta de identidad (entre la 5a y la 5b)
+
+**Decisiones (2026-11-07 y 2026-11-08).** PR propio, detrás de la 5a y antes de la 5b: la 5b no se
+construye encima de una puerta que se va a cerrar.
+
+- **Los ocho campos que identifican al niño van a la cola**: nombre, los dos apellidos, fecha y lugar
+  de nacimiento, sexo, nacionalidad y DNI. Los otros seis siguen directos: idioma, hermanos (total y
+  lugar), observaciones y cómo nos conoció. Corregir el número de hermanos no necesita a Dirección;
+  cambiar el nombre o el DNI, sí. Meter los catorce haría de la cola un trámite que se aprueba sin
+  mirar, y una cola que se aprueba sin mirar no protege nada.
+- **Solo se encola lo que cambia** respecto a lo guardado, también en el domicilio y en los datos del
+  tutor. Hasta ahora, con el alta validada, guardar el paso del menor encolaba un cambio de domicilio
+  cada vez, aunque no se hubiera tocado nada (en producción, el 2026-11-08, la cola tenía 0 entradas:
+  no había nada que limpiar).
+- **La cola enseña antes → después de cada campo, en todas las entradas**: si unas enseñaran los
+  valores y otras solo el nombre del campo, se aprendería a aprobar las segundas sin mirar. Sustituye
+  a «el valor propuesto no se muestra; la dirección revisa el dato real en la ficha».
+- **El aviso de la pantalla dice qué va a la cola y qué se guarda al momento**, y el mensaje de
+  después de guardar, qué pasó con cada parte. El de antes decía que los datos sensibles iban a
+  Dirección mientras la identidad se guardaba directa.
+
+**En la base** (`20270113120000`): con el alta validada, `actualizar_identidad_nino_tutor` rechaza
+(42501, HINT `cola_validacion`) un CAMBIO en cualquiera de los ocho; mandar el mismo valor no es un
+cambio, con las mismas expresiones que el UPDATE (el DNI sin espacios, puntos ni guiones). Es el
+respaldo: la app encola antes de llamar. La entrada de identidad lleva el DNI en el payload: la
+auditoría no lo copia y la purga del niño la borra (lo comprueba la guarda posterior).
+
+**Antes:** la tutora legal cambiaba la identidad de su hijo con el alta validada sin pasar por la
+cola, cuando el domicilio sí iba a la cola (`actualizar_familia_nino`). Medido en el ensayo de la 5a,
+antes y después, y en el de esta pieza.
+
+- Medido en producción el 2026-11-08 (ensayo terminado en RAISE, LF y CRLF idénticos): antes, la
+  puerta abierta; después, cada uno de los ocho da `cola_validacion`, los mismos ocho valores y el
+  mismo DNI escrito de otra forma pasan, el idioma y los hermanos siguen directos, el niño sin validar
+  y la Dirección no cambian, y la entrada con el DNI no deja copia del payload y la purga la borra.
+- **ORDEN: da igual.** Con la migración y la app de antes, un cambio de identidad con el alta
+  validada falla con «no autorizado» sin escribir nada; la app nueva funciona con o sin la migración.
+- Tests: `src/test/rls/campos-nino-puerta.rls.test.ts`, y los unit
+  `src/features/cambios-pendientes/lib/__tests__/diff.test.ts`,
+  `src/features/ninos/actions/__tests__/actualizar-nino-tutor.test.ts`,
+  `src/features/cambios-pendientes/queries/__tests__/get-cola.test.ts` y
+  `src/test/i18n/cola-antes-despues-keys.test.ts`.
 
 ## Orden de la serie
 
@@ -1374,13 +1416,14 @@ inicio de Dirección · 4d, la refirma (#515).
 
 ### Fase 5, por PRs
 
-5a, la base (`20270112120000`) · 5b, las pantallas y lo obligatorio al cerrar el alta.
+5a, la base (`20270112120000`) · la puerta de identidad (`20270113120000`) · 5b, las pantallas y lo
+obligatorio al cerrar el alta.
 
 ## Estado
 
 - [x] Fase 1 · [x] Fase 2 · [x] Fase 3
 - [x] Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [x] 4c (#514) · [x] 4d (#515)
-- Fase 5: [ ] 5a · [ ] 5b
+- Fase 5: [x] 5a (#516) · [ ] la puerta de identidad · [ ] 5b
 - [ ] Fase 6 · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias
