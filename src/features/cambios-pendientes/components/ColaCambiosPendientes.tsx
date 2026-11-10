@@ -12,7 +12,7 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { safeTranslateError } from '@/shared/lib/safe-translate'
 
 import { aprobarCambio, rechazarCambio } from '../actions/decidir'
-import type { CambioPendienteItem } from '../queries/get-cola'
+import type { CambioPendienteItem, LineaCambio } from '../queries/get-cola'
 
 interface Props {
   items: CambioPendienteItem[]
@@ -22,12 +22,31 @@ interface Props {
  * F11-G-3 (decisión J) — cola de cambios pendientes de validación por la dirección.
  * Lista cada edición encolada (niño, solicitante, qué cambia) con botones aprobar/rechazar.
  * Al decidir, la fila desaparece optimistamente; un error la restaura. SIN push ni email
- * (solo el badge in-app del sidebar). El detalle del valor propuesto no se muestra aquí: la
- * dirección revisa el dato real en la ficha; la cola es la lista de "qué falta aprobar".
+ * (solo el badge in-app del sidebar).
+ *
+ * Cada entrada enseña lo guardado y lo propuesto de cada campo que cambia (2026-11-08, sustituye a
+ * «el valor propuesto no se muestra aquí; la dirección revisa el dato real en la ficha»): una cola
+ * que solo dice el nombre del campo se aprueba sin mirar. Todas las entradas igual, para que
+ * ninguna se apruebe a ciegas. Si no se pudo leer lo guardado, lo dice: no enseña un «antes» falso.
  */
 export function ColaCambiosPendientes({ items }: Props) {
   const t = useTranslations('admin.pendientes')
+  const tNino = useTranslations('admin.ninos')
+  const tAlta = useTranslations('alta')
   const tErrors = useTranslations()
+
+  function valor(l: LineaCambio, v: string | null, lado: 'antes' | 'despues') {
+    if (l.campo === 'documento')
+      return lado === 'despues'
+        ? t('documento_nuevo')
+        : v
+          ? t('documento_hay')
+          : t('documento_no_hay')
+    if (v === null) return t('sin_valor')
+    if (l.campo === 'sexo') return tNino(`sexo_opciones.${v}`)
+    if (l.campo === 'estado_civil_familia') return tAlta(`tutor.estado_civil_opciones.${v}`)
+    return v
+  }
   const [filas, setFilas] = useState(items)
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [, startTransition] = useTransition()
@@ -73,10 +92,25 @@ export function ColaCambiosPendientes({ items }: Props) {
                 <p className="text-foreground text-sm font-semibold">
                   {f.ninoNombre || t('nino_desconocido')}
                 </p>
-                <p className="text-muted-foreground text-xs">
-                  {t(`entidad.${f.entidad}`)}
-                  {f.resumen ? ` · ${f.resumen}` : ''}
-                </p>
+                <p className="text-muted-foreground text-xs">{t(`entidad.${f.entidad}`)}</p>
+                {f.lineas === null ? (
+                  <p className="text-accent-warm-800 text-xs" data-testid={`sin-lectura-${f.id}`}>
+                    {t('sin_lectura')}
+                  </p>
+                ) : f.lineas.length === 0 ? (
+                  <p className="text-muted-foreground text-xs">{t('sin_cambios')}</p>
+                ) : (
+                  <dl className="space-y-0.5 text-xs" data-testid={`cambios-${f.id}`}>
+                    {f.lineas.map((l) => (
+                      <div key={l.campo} className="flex flex-wrap gap-x-1">
+                        <dt className="text-muted-foreground">{t(`campos.${l.campo}`)}:</dt>
+                        <dd className="text-foreground">
+                          {valor(l, l.antes, 'antes')} → {valor(l, l.despues, 'despues')}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
                 <p className="text-muted-foreground text-xs">
                   {t('solicitado_por', { nombre: f.solicitante || t('solicitante_desconocido') })}
                 </p>
