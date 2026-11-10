@@ -1179,7 +1179,8 @@
         "ninos_familia": "Child data (address / family situation)",
         "ninos_libro_familia": "Family book",
         "datos_tutor": "Guardian data",
-        "datos_tutor_dni": "Guardian ID document"
+        "datos_tutor_dni": "Guardian ID document",
+        "ninos_identidad": "Child's identity"
       },
       "errors": {
         "registro": "The change could not be registered. Please try again.",
@@ -4724,9 +4725,12 @@
       "acreedor_cid_label": "Creditor identifier"
     },
     "validacion": {
-      "enviado": "Change sent to management for validation."
+      "enviado": "Change sent to management for validation.",
+      "enviado_identidad": "The changes to the child's identity have been sent to management for approval; they do not take effect until then. Everything else has been saved.",
+      "enviado_domicilio": "The change of home address has been sent to management for approval; it does not take effect until then. Everything else has been saved.",
+      "enviado_identidad_domicilio": "The changes to the child's identity and home address have been sent to management for approval; they do not take effect until then. Everything else has been saved."
     },
-    "edicion_validada_aviso": "This registration is already validated. Changes to sensitive data or documents will be sent to management for approval before they take effect.",
+    "edicion_validada_aviso": "This registration is already validated. Changes to the child's identity (name, surnames, date and place of birth, sex, nationality and ID number), to their home address and family situation, to the family book and to the guardians' details and ID documents are sent to management and do not take effect until approved. Everything else is saved straight away.",
     "modo_direccion_aviso": "Management mode — uploading documentation with paper backing. Signatures are recorded in your name as evidence that you hold the physically signed documents.",
     "familia_existente": {
       "titulo": "We already know your family",

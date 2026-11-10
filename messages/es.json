@@ -1179,7 +1179,8 @@
         "ninos_familia": "Datos del menor (dirección / situación familiar)",
         "ninos_libro_familia": "Libro de familia",
         "datos_tutor": "Datos de un tutor",
-        "datos_tutor_dni": "DNI de un tutor"
+        "datos_tutor_dni": "DNI de un tutor",
+        "ninos_identidad": "Identidad del niño"
       },
       "errors": {
         "registro": "No se pudo registrar el cambio. Inténtalo de nuevo.",
@@ -4724,9 +4725,12 @@
       "acreedor_cid_label": "Identificador de acreedor"
     },
     "validacion": {
-      "enviado": "Cambio enviado a validación de dirección."
+      "enviado": "Cambio enviado a validación de dirección.",
+      "enviado_identidad": "Los cambios en la identidad del niño se han enviado a Dirección para que los apruebe; hasta entonces no se aplican. El resto ya está guardado.",
+      "enviado_domicilio": "El cambio de domicilio se ha enviado a Dirección para que lo apruebe; hasta entonces no se aplica. El resto ya está guardado.",
+      "enviado_identidad_domicilio": "Los cambios en la identidad y el domicilio del niño se han enviado a Dirección para que los apruebe; hasta entonces no se aplican. El resto ya está guardado."
     },
-    "edicion_validada_aviso": "El alta ya está validada. Los cambios en datos o documentos sensibles se enviarán a la dirección para su aprobación antes de aplicarse.",
+    "edicion_validada_aviso": "El alta ya está validada. Los cambios en la identidad del niño (nombre, apellidos, fecha y lugar de nacimiento, sexo, nacionalidad y DNI), en su domicilio y situación familiar, en el libro de familia y en los datos y el DNI de los tutores se envían a Dirección, y no se aplican hasta que los apruebe. Todo lo demás se guarda al momento.",
     "modo_direccion_aviso": "Modo Dirección — carga de documentación con respaldo en papel. Las firmas se registran a tu nombre como constancia de que tienes la documentación firmada físicamente.",
     "familia_existente": {
       "titulo": "Ya conocemos a tu familia",

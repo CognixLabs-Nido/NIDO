@@ -79,7 +79,10 @@ export function PasoIdentidad({ ninoId, ninoNombre, inicial, onNext }: Props) {
     startTransition(async () => {
       const r = await actualizarNinoTutor(values)
       if (r.success) {
-        toast.success(t('identidad.guardado'))
+        // Con el alta validada, lo que cambió de la identidad va a la cola de Dirección.
+        toast.success(
+          r.data.pendienteValidacion ? t('validacion.enviado_identidad') : t('identidad.guardado')
+        )
         onNext()
       } else {
         toast.error(tErrors(r.error))

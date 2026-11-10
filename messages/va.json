@@ -1179,7 +1179,8 @@
         "ninos_familia": "Dades del menor (adreça / situació familiar)",
         "ninos_libro_familia": "Llibre de família",
         "datos_tutor": "Dades d'un tutor",
-        "datos_tutor_dni": "DNI d'un tutor"
+        "datos_tutor_dni": "DNI d'un tutor",
+        "ninos_identidad": "Identitat de l'infant"
       },
       "errors": {
         "registro": "No s'ha pogut registrar el canvi. Torna a provar-ho.",
@@ -4724,9 +4725,12 @@
       "acreedor_cid_label": "Identificador de creditor"
     },
     "validacion": {
-      "enviado": "Canvi enviat a validació de direcció."
+      "enviado": "Canvi enviat a validació de direcció.",
+      "enviado_identidad": "Els canvis en la identitat de l'infant s'han enviat a Direcció perquè els aprove; fins aleshores no s'apliquen. La resta ja està guardada.",
+      "enviado_domicilio": "El canvi de domicili s'ha enviat a Direcció perquè l'aprove; fins aleshores no s'aplica. La resta ja està guardada.",
+      "enviado_identidad_domicilio": "Els canvis en la identitat i el domicili de l'infant s'han enviat a Direcció perquè els aprove; fins aleshores no s'apliquen. La resta ja està guardada."
     },
-    "edicion_validada_aviso": "L'alta ja està validada. Els canvis en dades o documents sensibles s'enviaran a la direcció per a la seua aprovació abans d'aplicar-se.",
+    "edicion_validada_aviso": "L'alta ja està validada. Els canvis en la identitat de l'infant (nom, cognoms, data i lloc de naixement, sexe, nacionalitat i DNI), en el seu domicili i situació familiar, en el llibre de família i en les dades i el DNI dels tutors s'envien a Direcció, i no s'apliquen fins que els aprove. Tota la resta es guarda al moment.",
     "modo_direccion_aviso": "Mode Direcció — càrrega de documentació amb suport en paper. Les firmes es registren al teu nom com a constància que tens la documentació firmada físicament.",
     "familia_existente": {
       "titulo": "Ja coneixem la teua família",

@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { clavesQueCambian } from '@/features/cambios-pendientes/lib/diff'
 import { altaValidada, registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
 import { logger } from '@/shared/lib/logger'
 
@@ -39,12 +40,37 @@ export async function guardarDatosTutor(
 
   // Decisión J: con el alta YA validada, la edición no se aplica directa → cola de validación.
   // El payload conserva `tipo_vinculo` (la cola lo mapea a rol_familia al aplicar, 3d).
+  // Solo si algo CAMBIA respecto a lo guardado (2026-11-08): sin comparar, cada vez que se
+  // guardaba el paso se encolaba una entrada, aunque no se hubiera tocado nada. El payload va
+  // ENTERO, no solo lo que cambia: al aprobar se escriben los seis campos (`aplicar.ts`).
   if (await altaValidada(supabase, nino_id)) {
+    const propuesto = { email, nombre_completo, ...direccion }
+    const { data: ninoFamilia } = await supabase
+      .from('ninos')
+      .select('familia_id')
+      .eq('id', nino_id)
+      .maybeSingle()
+    if (!ninoFamilia?.familia_id) return fail('alta.errors.no_autorizado')
+    const { data: guardado, error: gErr } = await supabase
+      .from('familia_tutores')
+      .select(
+        'email, nombre_completo, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad'
+      )
+      .eq('familia_id', ninoFamilia.familia_id)
+      .eq('rol_familia', rolFamiliaDeVinculo(tipo_vinculo))
+      .is('deleted_at', null)
+      .maybeSingle()
+    if (gErr) {
+      logger.warn('guardarDatosTutor: leer lo guardado', gErr.code ?? 'sin_codigo')
+      return fail('alta.documentos.errors.guardado')
+    }
+    // Sin perfil guardado, cada campo con valor es un cambio (aprobar crea la fila).
+    if (Object.keys(clavesQueCambian(propuesto, guardado)).length === 0) return ok({})
     const r = await registrarCambioPendiente(supabase, {
       ninoId: nino_id,
       usuarioId: user.id,
       entidad: 'datos_tutor',
-      payload: { tipo_vinculo, email, nombre_completo, ...direccion },
+      payload: { tipo_vinculo, ...propuesto },
     })
     if (!r.ok) return fail(r.error)
     return ok({ pendienteValidacion: true })

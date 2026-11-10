@@ -225,9 +225,19 @@ export function PasoMenor({
         toast.error(tErrors(dir.error))
         return
       }
-      // Alta ya validada (decisión J): la dirección se encoló a validación de dirección.
+      // Alta ya validada: lo que cambió de la identidad y del domicilio va a la cola de Dirección y
+      // no se aplica hasta que lo apruebe; el resto se guardó. El mensaje dice qué pasó con cada
+      // parte (puerta de identidad, 2026-11-08), nunca «guardado» de algo que espera.
+      const identidadEnCola = ident.data.pendienteValidacion
+      const domicilioEnCola = dir.data.pendienteValidacion === true
       toast.success(
-        dir.data.pendienteValidacion ? t('validacion.enviado') : t('identidad.guardado')
+        identidadEnCola && domicilioEnCola
+          ? t('validacion.enviado_identidad_domicilio')
+          : identidadEnCola
+            ? t('validacion.enviado_identidad')
+            : domicilioEnCola
+              ? t('validacion.enviado_domicilio')
+              : t('identidad.guardado')
       )
     })
   }

@@ -43,10 +43,27 @@ vi.mock('@/features/cambios-pendientes/lib/gate', () => ({
 
 import { actualizarNinoFamilia } from '../actualizar-nino-familia'
 
+// Lo guardado en la ficha del niño: con el alta validada, la acción compara con esto (2026-11-08).
+const GUARDADO = {
+  direccion_calle: 'Calle Mayor',
+  direccion_numero: '1',
+  direccion_cp: '46001',
+  direccion_ciudad: 'Valencia',
+  estado_civil_familia: 'casados',
+}
+
 function makeFake(rpcError: { code?: string; message: string } | null = null) {
   const rpcSpy = vi.fn()
   const fake = {
     auth: { getUser: () => Promise.resolve({ data: { user: { id: USER } } }) },
+    from: (tabla: string) => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: () =>
+            Promise.resolve({ data: tabla === 'ninos' ? GUARDADO : null, error: null }),
+        }),
+      }),
+    }),
     rpc: (fn: string, args: Record<string, unknown>) => {
       rpcSpy(fn, args)
       return Promise.resolve({ data: NINO, error: rpcError })
@@ -126,6 +143,52 @@ describe('actualizarNinoFamilia — escribe por RPC de sesión (D2)', () => {
 
     expect(r).toEqual({ success: true, data: { id: NINO, pendienteValidacion: true } })
     expect(registrarSpy).toHaveBeenCalledTimes(1)
+    expect(rpcSpy).not.toHaveBeenCalled()
+  })
+
+  it('alta validada: a la cola va solo lo que CAMBIA respecto a lo guardado (2026-11-08)', async () => {
+    authz.tutor = true
+    gate.validada = true
+    const { fake, rpcSpy } = makeFake()
+    createClientMock.mockReturnValue(fake)
+
+    // Como lo manda el paso del menor: los cuatro campos siempre, con la ciudad cambiada.
+    const r = await actualizarNinoFamilia({
+      nino_id: NINO,
+      direccion_calle: GUARDADO.direccion_calle,
+      direccion_numero: GUARDADO.direccion_numero,
+      direccion_cp: GUARDADO.direccion_cp,
+      direccion_ciudad: 'Alzira',
+    })
+
+    expect(r).toEqual({ success: true, data: { id: NINO, pendienteValidacion: true } })
+    expect(registrarSpy).toHaveBeenCalledTimes(1)
+    expect(registrarSpy.mock.calls[0]![1]).toMatchObject({
+      entidad: 'ninos_familia',
+      payload: { direccion_ciudad: 'Alzira' },
+    })
+    expect(Object.keys((registrarSpy.mock.calls[0]![1] as { payload: object }).payload)).toEqual([
+      'direccion_ciudad',
+    ])
+    expect(rpcSpy).not.toHaveBeenCalled()
+  })
+
+  it('alta validada y nada cambia → ni cola ni RPC: no hay entrada vacía (2026-11-08)', async () => {
+    authz.tutor = true
+    gate.validada = true
+    const { fake, rpcSpy } = makeFake()
+    createClientMock.mockReturnValue(fake)
+
+    const r = await actualizarNinoFamilia({
+      nino_id: NINO,
+      direccion_calle: GUARDADO.direccion_calle,
+      direccion_numero: GUARDADO.direccion_numero,
+      direccion_cp: GUARDADO.direccion_cp,
+      direccion_ciudad: GUARDADO.direccion_ciudad,
+    })
+
+    expect(r).toEqual({ success: true, data: { id: NINO } })
+    expect(registrarSpy).not.toHaveBeenCalled()
     expect(rpcSpy).not.toHaveBeenCalled()
   })
 
