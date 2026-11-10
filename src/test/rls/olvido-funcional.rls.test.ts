@@ -19,6 +19,8 @@ import {
   type TestUser,
 } from './setup'
 
+import { PERSONALES_INFO_MEDICA, columnas } from '../audit/columnas-personales'
+
 /**
  * RLS Fase 11-A4 (RGPD) — Derecho al olvido funcional (anonimización in-place).
  *
@@ -199,9 +201,8 @@ describe('RLS olvido funcional — F11-A4', () => {
       idiomas_casa: ['es'],
     })
 
-    // Premisa: antes de purgar, los seis campos tienen valor (cifrado).
-    const CAMPOS_MEDICOS =
-      'alergias_graves, notas_emergencia, medicacion_habitual, alergias_leves, medico_familia, telefono_emergencia'
+    // Premisa: antes de purgar, cada campo de la ficha tiene valor (cifrado).
+    const CAMPOS_MEDICOS = columnas(PERSONALES_INFO_MEDICA)
     const { data: medAntes } = await serviceClient
       .from('info_medica_emergencia')
       .select(CAMPOS_MEDICOS)
@@ -212,7 +213,7 @@ describe('RLS olvido funcional — F11-A4', () => {
     const enClaro = ['Ibuprofeno', 'polen', 'Médico Demo', '600000000'].map((t) =>
       Buffer.from(t, 'utf8').toString('hex')
     )
-    expect(Object.values(medAntes ?? {})).toHaveLength(6)
+    expect(Object.values(medAntes ?? {})).toHaveLength(PERSONALES_INFO_MEDICA.length)
     for (const v of Object.values(medAntes ?? {})) {
       expect(String(v).startsWith('\\x')).toBe(true)
       for (const h of enClaro) expect(String(v)).not.toContain(h)

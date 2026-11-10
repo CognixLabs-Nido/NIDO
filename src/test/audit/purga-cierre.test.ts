@@ -19,6 +19,14 @@ import {
   type TestNino,
   type TestUser,
 } from '../rls/setup'
+import { expectColumnasDecididas } from '../rls/columnas-vivas'
+
+import {
+  NO_PERSONALES_FAMILIA_TUTORES,
+  PERSONALES_FAMILIA_TUTORES,
+  columnas,
+  todasA,
+} from './columnas-personales'
 
 import { anonimizarCuentaAuth } from '@/features/olvido/actions/purgar-vencidos'
 import { recolectarAdjuntosDe } from '@/features/olvido/lib/fuentes-adjuntos'
@@ -330,27 +338,48 @@ describe('Purga RGPD — cierre del frente', () => {
       )
     })
 
+    it('las columnas de familia_tutores están decididas: personales (se purgan) o no, con su porqué', async () => {
+      await expectColumnasDecididas(
+        'familia_tutores',
+        PERSONALES_FAMILIA_TUTORES,
+        NO_PERSONALES_FAMILIA_TUTORES,
+        'email'
+      )
+    })
+
     it('purga: perfil anonimizado y de baja, ids conservados; el del otro tutor intacto', async () => {
+      // Premisa: cada columna personal del perfil tiene valor antes de purgar.
+      const { data: antes } = await serviceClient
+        .from('familia_tutores')
+        .select(columnas(PERSONALES_FAMILIA_TUTORES))
+        .eq('id', filaTutor)
+        .single()
+      for (const c of PERSONALES_FAMILIA_TUTORES) {
+        expect((antes as Record<string, unknown> | null)?.[c], `${c} antes`).not.toBeNull()
+      }
+
       await purgar('usuario', tutor.id)
 
-      const { data: fila } = await serviceClient
+      // La lista se arma en tiempo de ejecución: el parser de tipos de supabase-js no la lee.
+      const { data: leida } = await serviceClient
         .from('familia_tutores')
         .select(
-          'usuario_id, familia_id, rol_familia, nombre_completo, email, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, dni_documento_path, deleted_at'
+          [
+            'usuario_id',
+            'familia_id',
+            'rol_familia',
+            'deleted_at',
+            ...PERSONALES_FAMILIA_TUTORES,
+          ].join(', ')
         )
         .eq('id', filaTutor)
         .single()
+      const fila = leida as Record<string, unknown> | null
       expect(fila).toMatchObject({
         usuario_id: tutor.id,
         familia_id: nino.familia_id,
         rol_familia: 'titular',
-        nombre_completo: null,
-        email: null,
-        direccion_calle: null,
-        direccion_numero: null,
-        direccion_cp: null,
-        direccion_ciudad: null,
-        dni_documento_path: null,
+        ...todasA(PERSONALES_FAMILIA_TUTORES, null),
       })
       expect(fila?.deleted_at).not.toBeNull()
 

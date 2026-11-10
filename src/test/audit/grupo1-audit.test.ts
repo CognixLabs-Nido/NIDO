@@ -16,6 +16,7 @@ import {
   type TestNino,
   type TestUser,
 } from '../rls/setup'
+import { expectColumnasDecididas } from '../rls/columnas-vivas'
 import { actualizarMandato, borrarMandatos, insertarMandato } from '../rls/mandatos-como-postgres'
 
 /**
@@ -32,6 +33,42 @@ import { actualizarMandato, borrarMandatos, insertarMandato } from '../rls/manda
  *
  * Principio: nada entra en audit_log que la redacción de la purga no sepa limpiar.
  */
+
+// Lo que `audit_trigger_function` deja fuera de las filas de mandatos_sepa: los datos del firmante
+// que la purga no redacta en esta tabla (se conserva como prueba legal). Comparada con las columnas
+// vivas junto con MANDATOS_AUDITADAS: una columna nueva del mandato no pasa sin decidir.
+const MANDATOS_FUERA_DE_AUDITORIA = [
+  'iban_cifrado',
+  'firma_imagen',
+  'titular',
+  'nombre_tecleado',
+  'ip_address',
+  'user_agent',
+  'titular_documento',
+  'titular_direccion',
+] as const
+
+const SEUDONIMO = 'id de otra fila, sin dato de nadie'
+const MANDATOS_AUDITADAS: Readonly<Record<string, string>> = {
+  id: 'identificador de la fila',
+  centro_id: SEUDONIMO,
+  familia_id: SEUDONIMO,
+  nino_id: SEUDONIMO,
+  usuario_id: SEUDONIMO,
+  estado: 'categórico (activo, revocado…)',
+  metodo_firma: 'categórico (digital o presencial)',
+  version_canonico: 'número de versión del texto que se hashea',
+  texto_hash: 'huella del texto firmado, no lo contiene',
+  iban_ultimos4: 'cuatro dígitos en claro, no identifican la cuenta (la app los enseña)',
+  identificador_mandato: 'referencia del mandato que genera la app (NIDO-…), sin dato del titular',
+  documento_path: 'ruta del PDF: ids de centro y niño o familia, sin dato del titular',
+  fecha_firma: 'fecha del mandato; prueba legal que se conserva',
+  acreedor_cid: 'el CID del centro: dato de la empresa, no de una persona',
+  acreedor_nombre: 'el nombre del centro: dato de la empresa, no de una persona',
+  created_at: 'fecha técnica de la fila',
+  updated_at: 'fecha técnica de la fila',
+  deleted_at: 'la baja de la fila',
+}
 
 type Fila = {
   accion: string
@@ -229,6 +266,15 @@ describe('Audit log — Grupo 1 (8 tablas)', () => {
     expect(JSON.stringify(todas)).not.toContain(secreto)
   })
 
+  it('mandatos_sepa: cada columna está decidida, auditada o fuera de audit_log con su porqué', async () => {
+    await expectColumnasDecididas(
+      'mandatos_sepa',
+      MANDATOS_FUERA_DE_AUDITORIA,
+      MANDATOS_AUDITADAS,
+      'iban_cifrado'
+    )
+  })
+
   it('mandatos_sepa: audita el estado, sin IBAN cifrado, firma ni datos del firmante', async () => {
     const titular = 'Titular Secreto Auditoria'
     const { data, error } = insertarMandato({
@@ -253,16 +299,18 @@ describe('Audit log — Grupo 1 (8 tablas)', () => {
     expect(ins.centro_id).toBe(centro.id)
     expect(ins.valores_despues?.estado).toBe('activo')
     expect(ins.valores_despues?.iban_ultimos4).toBe('1234')
-    for (const k of [
-      'iban_cifrado',
-      'firma_imagen',
-      'titular',
-      'nombre_tecleado',
-      'ip_address',
-      'user_agent',
-    ]) {
+    for (const k of MANDATOS_FUERA_DE_AUDITORIA) {
       expect(ins.valores_despues).not.toHaveProperty(k)
     }
+    // Premisa: la fila real sí los lleva (el fixture v2 escribe los dos del titular).
+    const real = await serviceClient
+      .from('mandatos_sepa')
+      .select('titular_documento, titular_direccion')
+      .eq('id', id)
+      .single()
+    expect(real.error).toBeNull()
+    expect(real.data?.titular_documento).toBe('X1234567L')
+    expect(real.data?.titular_direccion).toBe('Calle Prueba 1, Valencia')
 
     const { error: uErr } = actualizarMandato(id, { estado: 'revocado' })
     expect(uErr).toBeNull()
