@@ -11,6 +11,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { consultaBase } from './columnas-vivas'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -194,6 +195,31 @@ const TABLAS: Tabla[] = [
   'vinculos_familiares',
 ]
 
+/**
+ * El catálogo de funciones de `public` y `privado`, por psql contra la BD del CI: cuántas hay que no
+ * son de trigger, cuántas de trigger ejecuta anon (el control: la pregunta a `has_function_privilege`
+ * contesta TRUE cuando toca), si authenticated ejecuta `es_admin` (el otro control), cuáles que no son
+ * de trigger ejecuta anon, y los nombres de todas.
+ */
+function catalogoFunciones() {
+  const [total, triggersAnon, controlAuth, abiertas, nombres] = consultaBase(`SELECT
+  count(*) FILTER (WHERE p.prorettype <> 'trigger'::regtype) || '|' ||
+  count(*) FILTER (WHERE p.prorettype = 'trigger'::regtype AND has_function_privilege('anon', p.oid, 'EXECUTE')) || '|' ||
+  has_function_privilege('authenticated', 'public.es_admin(uuid)', 'EXECUTE')::text || '|' ||
+  coalesce(string_agg(n.nspname || '.' || p.proname, ',' ORDER BY n.nspname, p.proname)
+    FILTER (WHERE p.prorettype <> 'trigger'::regtype AND has_function_privilege('anon', p.oid, 'EXECUTE')), '') || '|' ||
+  string_agg(DISTINCT p.proname, ',')
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname IN ('public', 'privado');`).split('|')
+  return {
+    noTrigger: Number(total),
+    triggersQueAnonEjecuta: Number(triggersAnon),
+    authenticatedEjecutaEsAdmin: controlAuth === 'true',
+    abiertasAAnon: abiertas ? abiertas.split(',') : [],
+    nombres: new Set(nombres!.split(',')),
+  }
+}
+
 describe('Helpers de RLS — cerrados a anon, policies TO authenticated', () => {
   let usuario: TestUser
   let autenticado: Client
@@ -208,6 +234,12 @@ describe('Helpers de RLS — cerrados a anon, policies TO authenticated', () => 
   afterAll(async () => {
     await deleteTestUser(usuario.id)
   }, 60_000)
+
+  it('cada nombre de la lista existe en el catálogo (una lista con un nombre viejo prueba la nada)', () => {
+    const c = catalogoFunciones()
+    expect(c.nombres.size).toBeGreaterThan(100) // premisa: el catálogo se leyó
+    expect(HELPERS.map(([n]) => n).filter((n) => !c.nombres.has(n))).toEqual([])
+  })
 
   it('son 20 helpers distintos y 54 tablas distintas', () => {
     expect(new Set(HELPERS.map(([nombre]) => nombre)).size).toBe(20)
