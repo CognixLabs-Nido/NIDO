@@ -128,23 +128,20 @@ describe('el alta no guarda lo que no pudo leer', () => {
   let nino: { id: string; familia_id: string }
   let legal: TestUser
   let libro: string
+  let matricula: string
+  let editar: '1' | undefined
 
   beforeAll(async () => {
     const centro = await createTestCentro('Centro Alta No Pisa')
     const curso = await createTestCurso(centro.id)
     const aula = await createTestAula(centro.id, curso.id)
     nino = await createTestNino(centro.id, 'Nino Alta No Pisa')
-    await matricular(nino.id, aula.id, curso.id)
+    matricula = await matricular(nino.id, aula.id, curso.id)
     legal = await createTestUser({ nombre: 'Legal Alta No Pisa' })
     await crearFamiliaTutor(nino.familia_id, legal.id)
     await crearVinculo(nino.id, legal.id, 'tutor_legal_principal')
     // La ruta del libro, la de este niño (`ninos_validar_rutas_trg`); no hace falta el fichero.
     libro = `${centro.id}/${nino.id}/libro-marca.pdf`
-    const { error } = await serviceClient
-      .from('ninos')
-      .update({ ...LLENA, libro_familia_path: libro })
-      .eq('id', nino.id)
-    if (error) throw new Error(`llenar la ficha: ${error.message}`)
     sesion.actual = await clientFor(legal)
   })
 
@@ -153,10 +150,30 @@ describe('el alta no guarda lo que no pudo leer', () => {
     if (legal) await deleteTestUser(legal.id)
   })
 
+  /** La matrícula en `estado` (la de `matricular` nace `activa`) y la ficha llena otra vez. */
+  async function montar(estado: 'pendiente' | 'activa') {
+    const m = await serviceClient.from('matriculas').update({ estado }).eq('id', matricula)
+    if (m.error) throw new Error(`matrícula: ${m.error.message}`)
+    const { error } = await serviceClient
+      .from('ninos')
+      .update({ ...LLENA, libro_familia_path: libro })
+      .eq('id', nino.id)
+    if (error) throw new Error(`llenar la ficha: ${error.message}`)
+    const { data: e } = await serviceClient
+      .from('matriculas')
+      .select('estado')
+      .eq('id', matricula)
+      .single()
+    expect(e?.estado).toBe(estado) // premisa: el alta está en el estado que se mide
+    editar = estado === 'activa' ? '1' : undefined
+    toast.success.mockClear()
+    toast.error.mockClear()
+  }
+
   async function propsDeLaPagina(): Promise<PropsAsistente> {
     const el = await AltaTutorPage({
       params: Promise.resolve({ locale: 'es', ninoId: nino.id }),
-      searchParams: Promise.resolve({}),
+      searchParams: Promise.resolve(editar ? { editar } : {}),
     })
     const p = buscarProps(el)
     if (!p) throw new Error('la página no montó el asistente')
@@ -164,13 +181,15 @@ describe('el alta no guarda lo que no pudo leer', () => {
   }
 
   it('control: sin fallo, la página le da al formulario lo guardado', async () => {
+    await montar('pendiente')
     sesion.falla = false
     const p = await propsDeLaPagina()
     expect(p.identidadInicial.dni).toBe(LLENA.dni)
     expect(p.direccionInicial.direccion_calle).toBe(LLENA.direccion_calle)
   })
 
-  it('con la lectura de gestión fallida, guardar el paso del menor no borra nada de la ficha', async () => {
+  async function medir(estado: 'pendiente' | 'activa') {
+    await montar(estado)
     sesion.falla = true
     sesion.llamadasFallidas = 0
     const p = await propsDeLaPagina()
@@ -210,9 +229,11 @@ describe('el alta no guarda lo que no pudo leer', () => {
     }
     const boton = screen.queryByText('menor.guardar_datos')
     if (boton) fireEvent.click(boton)
-    await waitFor(() => expect(toast.success.mock.calls.length + toast.error.mock.calls.length).toBeGreaterThan(0), {
-      timeout: 30_000,
-    }).catch(() => undefined)
+    await waitFor(
+      () =>
+        expect(toast.success.mock.calls.length + toast.error.mock.calls.length).toBeGreaterThan(0),
+      { timeout: 30_000 }
+    ).catch(() => undefined)
 
     const { data: fila, error } = await serviceClient
       .from('ninos')
@@ -221,8 +242,23 @@ describe('el alta no guarda lo que no pudo leer', () => {
       .single()
     if (error || !fila) throw new Error(`leer la fila: ${error?.message}`)
     // eslint-disable-next-line no-console
-    console.log('SONDA-PISA', JSON.stringify({ toastOk: toast.success.mock.calls, toastError: toast.error.mock.calls, fila }))
+    console.log(
+      'SONDA-PISA',
+      estado,
+      JSON.stringify({
+        boton: Boolean(boton),
+        toastOk: toast.success.mock.calls,
+        toastError: toast.error.mock.calls,
+        fila,
+      })
+    )
     for (const [col, valor] of Object.entries({ ...LLENA, libro_familia_path: libro }))
-      expect.soft((fila as unknown as Record<string, unknown>)[col], col).toBe(valor)
-  })
+      expect.soft((fila as unknown as Record<string, unknown>)[col], `${estado} ${col}`).toBe(valor)
+  }
+
+  it('alta pendiente: con la lectura de gestión fallida, guardar no borra nada de la ficha', () =>
+    medir('pendiente'))
+
+  it('alta validada (editar): con la lectura de gestión fallida, guardar no borra nada', () =>
+    medir('activa'))
 })
