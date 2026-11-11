@@ -241,12 +241,15 @@ describe('RLS autorizaciones — F8-RW-0 (catálogo + A/B2)', () => {
           personas: [{ nombre: 'Ana Pérez', dni: '12345678Z', parentesco: 'abuela' }],
         })
       )
-      .select('id, datos')
+      .select('id')
       .maybeSingle()
     expect(firma.error).toBeNull()
     expect(firma.data?.id).toBeTruthy()
-    // la lista viaja con la firma (MVCC `.insert().select()`).
-    expect((firma.data?.datos as { personas?: unknown[] })?.personas?.length).toBe(1)
+    // la lista viaja con la firma (MVCC `.insert().select()`). Desde `20270115120000` `datos` no
+    // se lee de la tabla: sale por `contenido_firmas`, que al tutor legal que firmó se lo da.
+    const contenido = await c.rpc('contenido_firmas', { p_firma_ids: [firma.data!.id] })
+    expect(contenido.error).toBeNull()
+    expect((contenido.data?.[0]?.datos as { personas?: unknown[] })?.personas?.length).toBe(1)
     if (firma.data?.id) firmasCreadas.push(firma.data.id)
   })
 
