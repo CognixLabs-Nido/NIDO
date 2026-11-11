@@ -24,8 +24,9 @@ import {
 /**
  * Las lecturas por función del autorizado, primera de dos (`20270115120000`, 2026-11-11). Solo
  * AÑADE tres funciones que la app nueva llama; la segunda (`20270115130000`) es la que cierra la
- * tabla. Aquí: quién recibe qué de cada función, y que esta migración, sola, no cierra nada (la app
- * de antes, que lee de la tabla, sigue funcionando con ella aplicada).
+ * tabla. Aquí: quién recibe qué de cada función. (Lo que la primera, sola, no cerraba lo afirmaba
+ * un test que la segunda vuelve falso: se quitó con ella; lo que cierra la segunda lo mide
+ * `autorizado-lee-solo-lo-suyo.rls.test.ts`.)
  */
 const MARCAS = { notas_admin: 'MARCA-NA', dni: '12345678Z', observaciones_familia: 'MARCA-OB' }
 
@@ -228,22 +229,5 @@ describe('las lecturas por función (primera de dos)', () => {
       expect.soft(error?.code).toBe('42501')
       expect.soft(data).toBeNull()
     }
-  })
-
-  it('esta migración sola no cierra nada: la sesión sigue leyendo la tabla como antes', async () => {
-    // La app de antes lee de la tabla las columnas de gestión y el contenido de las firmas. Con esta
-    // aplicada y sin la segunda, tiene que seguir haciéndolo (la segunda lo quita).
-    const n = await (await como(autorizado))
-      .from('ninos')
-      .select('id, notas_admin')
-      .eq('id', nino.id)
-    expect(n.error).toBeNull()
-    expect(n.data).toEqual([{ id: nino.id, notas_admin: 'MARCA-NA' }])
-    const f = await (await como(autorizado))
-      .from('firmas_autorizacion')
-      .select('id, firma_imagen')
-      .eq('id', firmaLegal)
-    expect(f.error).toBeNull()
-    expect(f.data).toEqual([{ id: firmaLegal, firma_imagen: 'MARCA-TRAZO' }])
   })
 })
