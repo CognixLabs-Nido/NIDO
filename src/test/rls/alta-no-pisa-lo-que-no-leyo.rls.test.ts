@@ -117,7 +117,6 @@ const LLENA = {
   direccion_provincia: 'Valencia',
   como_nos_conocio: 'recomendacion',
   estado_civil_familia: 'casados',
-  libro_familia_path: 'marca/libro.pdf',
   notas_admin: 'MARCA-NA',
   hermanos_total: 2,
   hermanos_lugar: 1,
@@ -128,6 +127,7 @@ const LLENA = {
 describe('el alta no guarda lo que no pudo leer', () => {
   let nino: { id: string; familia_id: string }
   let legal: TestUser
+  let libro: string
 
   beforeAll(async () => {
     const centro = await createTestCentro('Centro Alta No Pisa')
@@ -138,7 +138,12 @@ describe('el alta no guarda lo que no pudo leer', () => {
     legal = await createTestUser({ nombre: 'Legal Alta No Pisa' })
     await crearFamiliaTutor(nino.familia_id, legal.id)
     await crearVinculo(nino.id, legal.id, 'tutor_legal_principal')
-    const { error } = await serviceClient.from('ninos').update(LLENA).eq('id', nino.id)
+    // La ruta del libro, la de este niño (`ninos_validar_rutas_trg`); no hace falta el fichero.
+    libro = `${centro.id}/${nino.id}/libro-marca.pdf`
+    const { error } = await serviceClient
+      .from('ninos')
+      .update({ ...LLENA, libro_familia_path: libro })
+      .eq('id', nino.id)
     if (error) throw new Error(`llenar la ficha: ${error.message}`)
     sesion.actual = await clientFor(legal)
   })
@@ -211,13 +216,13 @@ describe('el alta no guarda lo que no pudo leer', () => {
 
     const { data: fila, error } = await serviceClient
       .from('ninos')
-      .select(Object.keys(LLENA).join(', '))
+      .select([...Object.keys(LLENA), 'libro_familia_path'].join(', '))
       .eq('id', nino.id)
       .single()
     if (error || !fila) throw new Error(`leer la fila: ${error?.message}`)
     // eslint-disable-next-line no-console
     console.log('SONDA-PISA', JSON.stringify({ toastOk: toast.success.mock.calls, toastError: toast.error.mock.calls, fila }))
-    for (const [col, valor] of Object.entries(LLENA))
+    for (const [col, valor] of Object.entries({ ...LLENA, libro_familia_path: libro }))
       expect.soft((fila as unknown as Record<string, unknown>)[col], col).toBe(valor)
   })
 })
