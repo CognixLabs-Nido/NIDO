@@ -699,8 +699,9 @@ Migración `20270114120000_feat_alta_exige_datos_nino`; spec `docs/specs/altas-s
   autorizado ese camino no existe: sin política de UPDATE, 0 filas.
 - **Qué lee el autorizado de `ninos`** (medido el 2026-11-11, ensayo terminado en RAISE): la fila
   entera, porque `ninos_tutor_select` es `es_tutor_de` (cualquier vínculo vivo) y `authenticated` no
-  tiene permisos por columna. Incluye `notas_admin` y los campos de la 5a. Pendiente del responsable;
-  la ficha de la familia no enseña los campos nuevos hasta entonces.
+  tiene permisos por columna. Incluye `notas_admin` y los campos de la 5a. Es un agujero: se cierra en
+  su propia pieza, detrás de la 5b. La pantalla ya no lo pide: al autorizado solo se le lee el lugar
+  de nacimiento (`leerCamposAltaFicha`).
 - Medido en producción el 2026-11-11 (sonda sin migración y ensayo LF y CRLF, terminados en RAISE).
 - Test: `src/test/rls/alta-exige-datos-nino.rls.test.ts`.
 
