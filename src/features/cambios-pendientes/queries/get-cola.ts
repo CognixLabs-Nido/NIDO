@@ -29,7 +29,7 @@ export interface CambioPendienteItem {
 }
 
 const CAMPOS_NINO =
-  'id, familia_id, nombre, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, lugar_nacimiento, dni, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, estado_civil_familia, libro_familia_path'
+  'id, familia_id, nombre, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, lugar_nacimiento, dni, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, direccion_provincia, estado_civil_familia, libro_familia_path'
 const CAMPOS_TUTOR =
   'familia_id, rol_familia, email, nombre_completo, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, dni_documento_path'
 const DATOS_TUTOR = [

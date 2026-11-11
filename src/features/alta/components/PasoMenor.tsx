@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -30,16 +31,19 @@ import { FirmarAutorizacionPanel } from '@/features/autorizaciones/components/Fi
 import { DatosPedagogicosForm } from '@/features/datos-pedagogicos/components/DatosPedagogicosForm'
 import { upsertDatosPedagogicos } from '@/features/datos-pedagogicos/actions/upsert-datos-pedagogicos'
 import { actualizarNinoTutor } from '@/features/ninos/actions/actualizar-nino-tutor'
-import { actualizarNinoTutorSchema } from '@/features/ninos/schemas/nino'
+import {
+  actualizarNinoTutorObject,
+  COMO_NOS_CONOCIO,
+  reglasNinoTutor,
+} from '@/features/ninos/schemas/nino'
 import { SubirFotoNino } from '@/features/ninos/components/SubirFotoNino'
 
 import { actualizarNinoFamilia } from '../actions/actualizar-nino-familia'
 import { AcuseAltaCheckbox } from './AcuseAltaCheckbox'
 import { SubirDocumentoPdf } from './SubirDocumentoPdf'
-import type { IdentidadInicial } from './PasoIdentidad'
 
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
-import type { ImagenPanelData } from '../lib/tipos'
+import type { IdentidadInicial, ImagenPanelData } from '../lib/tipos'
 
 export interface DireccionInicial {
   direccion_calle: string | null
@@ -48,12 +52,15 @@ export interface DireccionInicial {
   direccion_ciudad: string | null
 }
 
-const menorFormSchema = actualizarNinoTutorSchema.extend({
-  direccion_calle: z.string().max(200).optional().nullable(),
-  direccion_numero: z.string().max(20).optional().nullable(),
-  direccion_cp: z.string().max(12).optional().nullable(),
-  direccion_ciudad: z.string().max(120).optional().nullable(),
-})
+const menorFormSchema = actualizarNinoTutorObject
+  .extend({
+    direccion_calle: z.string().max(200).optional().nullable(),
+    direccion_numero: z.string().max(20).optional().nullable(),
+    direccion_cp: z.string().max(12).optional().nullable(),
+    direccion_ciudad: z.string().max(120).optional().nullable(),
+    direccion_provincia: z.string().max(60).optional().nullable(),
+  })
+  .superRefine(reglasNinoTutor)
 type MenorFormInput = z.infer<typeof menorFormSchema>
 
 interface Props {
@@ -61,6 +68,8 @@ interface Props {
   ninoId: string
   ninoNombre: string
   identidadInicial: IdentidadInicial
+  /** Fase 5b: «cómo nos has conocido», solo a familias nuevas en el centro (lo decide la página). */
+  mostrarComoNosConocio?: boolean
   direccionInicial: DireccionInicial
   datosPedagogicosInicial: DatosPedagogicosInput | null
   libroFamiliaUrl: string | null
@@ -88,6 +97,17 @@ function idiomaValido(v: string): 'es' | 'en' | 'va' {
   return v === 'en' || v === 'va' ? v : 'es'
 }
 
+function comoInicial(v: string | null): (typeof COMO_NOS_CONOCIO)[number] | '' {
+  return (COMO_NOS_CONOCIO as readonly string[]).includes(v ?? '')
+    ? (v as (typeof COMO_NOS_CONOCIO)[number])
+    : ''
+}
+
+/** Un `<input type="number">` da texto: vacío → sin valor (el esquema lo pide), si no, número. */
+function aNumero(v: string): number | undefined {
+  return v === '' ? undefined : Number(v)
+}
+
 /**
  * Paso 3 del alta (G-1) — **Datos del menor**. Agrupa: filiación + dirección (un submit:
  * `actualizarNinoTutor` para la identidad whitelisteada + `actualizarNinoFamilia` para la
@@ -101,6 +121,7 @@ export function PasoMenor({
   ninoId,
   ninoNombre,
   identidadInicial,
+  mostrarComoNosConocio = false,
   direccionInicial,
   datosPedagogicosInicial,
   libroFamiliaUrl,
@@ -173,8 +194,16 @@ export function PasoMenor({
       segundo_apellido: identidadInicial.segundo_apellido ?? '',
       fecha_nacimiento: identidadInicial.fecha_nacimiento ?? '',
       sexo: identidadInicial.sexo,
-      nacionalidad: identidadInicial.nacionalidad,
+      nacionalidad: identidadInicial.nacionalidad ?? '',
       idioma_principal: idiomaValido(identidadInicial.idioma_principal),
+      lugar_nacimiento: identidadInicial.lugar_nacimiento ?? '',
+      dni: identidadInicial.dni ?? '',
+      hermanos_total: identidadInicial.hermanos_total ?? undefined,
+      hermanos_lugar: identidadInicial.hermanos_lugar ?? undefined,
+      observaciones_familia: identidadInicial.observaciones_familia ?? '',
+      como_nos_conocio: comoInicial(identidadInicial.como_nos_conocio),
+      como_nos_conocio_otro: identidadInicial.como_nos_conocio_otro ?? '',
+      direccion_provincia: identidadInicial.direccion_provincia,
       direccion_calle: direccionInicial.direccion_calle,
       direccion_numero: direccionInicial.direccion_numero,
       direccion_cp: direccionInicial.direccion_cp,
@@ -209,6 +238,14 @@ export function PasoMenor({
         sexo: values.sexo,
         nacionalidad: values.nacionalidad,
         idioma_principal: values.idioma_principal,
+        lugar_nacimiento: values.lugar_nacimiento,
+        dni: values.dni ?? '',
+        hermanos_total: values.hermanos_total,
+        hermanos_lugar: values.hermanos_lugar,
+        observaciones_familia: values.observaciones_familia ?? '',
+        // Sin la pregunta en pantalla, NULL: lo guardado se queda como está.
+        como_nos_conocio: mostrarComoNosConocio ? (values.como_nos_conocio ?? '') : null,
+        como_nos_conocio_otro: mostrarComoNosConocio ? (values.como_nos_conocio_otro ?? '') : null,
       })
       if (!ident.success) {
         toast.error(tErrors(ident.error))
@@ -220,6 +257,7 @@ export function PasoMenor({
         direccion_numero: values.direccion_numero ?? null,
         direccion_cp: values.direccion_cp ?? null,
         direccion_ciudad: values.direccion_ciudad ?? null,
+        direccion_provincia: values.direccion_provincia ?? null,
       })
       if (!dir.success) {
         toast.error(tErrors(dir.error))
@@ -264,6 +302,11 @@ export function PasoMenor({
     { value: null, label: tNino('sexo_opciones.no_contesta') },
   ]
   const omitirImagen = imagenSinPlantilla || imagenOmitida
+  const comoItems = COMO_NOS_CONOCIO.map((c) => ({
+    value: c,
+    label: t(`menor.como_nos_conocio_opciones.${c}`),
+  }))
+  const comoElegido = form.watch('como_nos_conocio')
 
   return (
     <div className="space-y-6">
@@ -353,7 +396,7 @@ export function PasoMenor({
             name="nacionalidad"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{tNino('fields.nacionalidad')}</FormLabel>
+                <FormLabel>{t('menor.nacionalidad')}</FormLabel>
                 <FormControl>
                   <Input {...field} value={field.value ?? ''} />
                 </FormControl>
@@ -361,6 +404,74 @@ export function PasoMenor({
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="lugar_nacimiento"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('menor.lugar_nacimiento')}</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="dni"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('menor.dni')}</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ''} />
+                </FormControl>
+                <p className="text-muted-foreground text-xs">{t('menor.dni_ayuda')}</p>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="hermanos_total"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('menor.hermanos_total')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(aNumero(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="hermanos_lugar"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('menor.hermanos_lugar')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(aNumero(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <p className="text-muted-foreground text-xs">{t('menor.hermanos_ayuda')}</p>
           <FormField
             control={form.control}
             name="idioma_principal"
@@ -439,6 +550,88 @@ export function PasoMenor({
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="direccion_provincia"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('menor.direccion_provincia')}</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="observaciones_familia"
+            render={({ field }) => (
+              <FormItem className="border-t pt-4">
+                <FormLabel>{t('menor.observaciones')}</FormLabel>
+                {/* Decidido el 2026-11-10: lo médico no va aquí, va en la ficha médica. */}
+                <p
+                  className="text-muted-foreground text-xs"
+                  data-testid="aviso-observaciones-medico"
+                >
+                  {t('menor.observaciones_aviso')}
+                </p>
+                <FormControl>
+                  <Textarea {...field} value={field.value ?? ''} rows={3} maxLength={1000} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {mostrarComoNosConocio && (
+            <>
+              <FormField
+                control={form.control}
+                name="como_nos_conocio"
+                render={({ field }) => (
+                  <FormItem data-testid="pregunta-como-nos-conocio">
+                    <FormLabel>{t('menor.como_nos_conocio')}</FormLabel>
+                    <Select
+                      items={comoItems}
+                      value={field.value || null}
+                      onValueChange={(v) => field.onChange(v ?? '')}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('menor.como_nos_conocio_placeholder')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {comoItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {comoElegido === 'otro' && (
+                <FormField
+                  control={form.control}
+                  name="como_nos_conocio_otro"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('menor.como_nos_conocio_otro')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value ?? ''} maxLength={200} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </>
+          )}
           <div className="flex justify-end">
             <Button type="submit" disabled={pendingDatos}>
               {pendingDatos ? t('wizard.guardando') : t('menor.guardar_datos')}

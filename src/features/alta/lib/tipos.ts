@@ -21,3 +21,22 @@ export interface MedicaInicial {
   medico_familia: string | null
   telefono_emergencia: string | null
 }
+
+/** Lo guardado del niño con lo que arranca el paso del menor (y su formulario). */
+export interface IdentidadInicial {
+  primer_apellido: string | null
+  segundo_apellido: string | null
+  fecha_nacimiento: string | null
+  sexo: 'F' | 'M' | 'X' | null
+  nacionalidad: string | null
+  idioma_principal: string
+  // Fase 5b
+  lugar_nacimiento: string | null
+  dni: string | null
+  hermanos_total: number | null
+  hermanos_lugar: number | null
+  direccion_provincia: string | null
+  observaciones_familia: string | null
+  como_nos_conocio: string | null
+  como_nos_conocio_otro: string | null
+}

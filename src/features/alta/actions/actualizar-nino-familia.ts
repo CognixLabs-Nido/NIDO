@@ -52,12 +52,14 @@ export async function actualizarNinoFamilia(
     direccion_numero?: string | null
     direccion_cp?: string | null
     direccion_ciudad?: string | null
+    direccion_provincia?: string | null
     estado_civil_familia?: EstadoCivil | null
   } = {}
   if (resto.direccion_calle !== undefined) patch.direccion_calle = resto.direccion_calle
   if (resto.direccion_numero !== undefined) patch.direccion_numero = resto.direccion_numero
   if (resto.direccion_cp !== undefined) patch.direccion_cp = resto.direccion_cp
   if (resto.direccion_ciudad !== undefined) patch.direccion_ciudad = resto.direccion_ciudad
+  if (resto.direccion_provincia !== undefined) patch.direccion_provincia = resto.direccion_provincia
   if (resto.estado_civil_familia !== undefined)
     patch.estado_civil_familia = resto.estado_civil_familia
   if (Object.keys(patch).length === 0) return ok({ id: nino_id })
@@ -70,7 +72,7 @@ export async function actualizarNinoFamilia(
     const { data: guardado } = await supabase
       .from('ninos')
       .select(
-        'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, estado_civil_familia'
+        'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, direccion_provincia, estado_civil_familia'
       )
       .eq('id', nino_id)
       .maybeSingle()

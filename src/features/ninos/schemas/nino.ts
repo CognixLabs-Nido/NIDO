@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { dniNieValido } from '@/features/alta/lib/documento-identidad'
+
 const fechaRegex = /^\d{4}-\d{2}-\d{2}$/
 
 export const ninoSchema = z.object({
@@ -30,7 +32,26 @@ export const infoMedicaSchema = z.object({
 // Pieza 3a — escritura del TUTOR. Identidad del niño (whitelist: SIN aula/centro/
 // flags/notas_admin → esas las fija la dirección). La RPC SECURITY DEFINER enforce
 // el gate `es_tutor_de`; el schema valida forma server-side.
-export const actualizarNinoTutorSchema = z.object({
+/** Los códigos de «cómo nos has conocido» (lista cerrada; los mismos que el CHECK `ninos_como_nos_conocio`). */
+export const COMO_NOS_CONOCIO = [
+  'internet',
+  'redes_sociales',
+  'recomendacion',
+  'paso_por_delante',
+  'otro',
+] as const
+
+const textoOpcional = (max: number) => z.string().trim().max(max).optional().nullable()
+
+/**
+ * El objeto sin reglas cruzadas: `PasoMenor` lo extiende con la dirección (en Zod 4 un esquema
+ * con refinamientos no se extiende). Las reglas cruzadas van en `reglasNinoTutor`, y las dos
+ * formas (`actualizarNinoTutorSchema` y el formulario) las aplican.
+ *
+ * Fase 5b (decidido por el responsable el 2026-11-10): obligatorios el lugar de nacimiento, la
+ * nacionalidad y los hermanos; el resto, opcional. Los límites son los de los CHECK de la 5a.
+ */
+export const actualizarNinoTutorObject = z.object({
   nino_id: z.string().uuid(),
   nombre: z.string().min(1, 'nino.validation.nombre_requerido').max(80),
   // Dos apellidos (5a, `20270112120000`): el primero obligatorio, el segundo si lo tiene. Nadie
@@ -42,9 +63,51 @@ export const actualizarNinoTutorSchema = z.object({
     .regex(fechaRegex, 'nino.validation.fecha_formato')
     .refine((d) => new Date(d) <= new Date(), { message: 'nino.validation.fecha_futura' }),
   sexo: z.enum(['F', 'M', 'X']).optional().nullable(),
-  nacionalidad: z.string().max(60).optional().nullable(),
+  nacionalidad: z.string().trim().min(1, 'nino.validation.nacionalidad_requerida').max(60),
   idioma_principal: z.enum(['es', 'en', 'va']),
+  lugar_nacimiento: z.string().trim().min(1, 'nino.validation.lugar_requerido').max(120),
+  // Opcional; si llega, DNI o NIE con su letra (la base lo vuelve a mirar: `ninos_dni_valido`).
+  dni: z
+    .string()
+    .trim()
+    .max(20)
+    .refine((v) => v === '' || dniNieValido(v), 'nino.validation.dni_invalido')
+    .optional()
+    .nullable(),
+  // El total cuenta al niño; el lugar 1 es el mayor.
+  hermanos_total: z.number('nino.validation.hermanos_requeridos').int().min(1).max(20),
+  hermanos_lugar: z.number('nino.validation.hermanos_requeridos').int().min(1).max(20),
+  observaciones_familia: textoOpcional(1000),
+  // NULL (o ausente) = no se preguntó y se deja lo que hay; '' = se quitó la respuesta.
+  como_nos_conocio: z.enum(COMO_NOS_CONOCIO).or(z.literal('')).optional().nullable(),
+  como_nos_conocio_otro: textoOpcional(200),
 })
+
+/** Las reglas que cruzan campos, iguales a los CHECK `ninos_hermanos` y `ninos_como_nos_conocio`. */
+export function reglasNinoTutor(
+  v: {
+    hermanos_total: number
+    hermanos_lugar: number
+    como_nos_conocio?: string | null
+    como_nos_conocio_otro?: string | null
+  },
+  ctx: z.RefinementCtx
+) {
+  if (v.hermanos_lugar > v.hermanos_total)
+    ctx.addIssue({
+      code: 'custom',
+      path: ['hermanos_lugar'],
+      message: 'nino.validation.hermanos_lugar_mayor',
+    })
+  if (v.como_nos_conocio === 'otro' && !v.como_nos_conocio_otro?.trim())
+    ctx.addIssue({
+      code: 'custom',
+      path: ['como_nos_conocio_otro'],
+      message: 'nino.validation.como_nos_conocio_otro_requerido',
+    })
+}
+
+export const actualizarNinoTutorSchema = actualizarNinoTutorObject.superRefine(reglasNinoTutor)
 
 // Info médica del tutor: misma forma que la admin. Gateada por la RPC
 // `set_info_medica_emergencia_cifrada_tutor` (solo `es_tutor_legal_de`; la info

@@ -91,6 +91,21 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
   const exportaComoDireccion = (await contextoEnCentro(nino.centro_id))?.esResponsable ?? false
 
   const supabase = await createClient()
+  // Fase 5b: los campos del alta, solo en la ficha de Dirección (la de la familia espera a la
+  // decisión de quién ve qué). Con la sesión (`ninos_admin_all`); si la lectura falla, se dice.
+  const { data: campos5b, error: errCampos5b } = await supabase
+    .from('ninos')
+    .select(
+      'lugar_nacimiento, dni, hermanos_total, hermanos_lugar, direccion_provincia, observaciones_familia, como_nos_conocio, como_nos_conocio_otro'
+    )
+    .eq('id', id)
+    .maybeSingle()
+  const tMenor = await getTranslations('alta.menor')
+  const comoNosConocio = campos5b?.como_nos_conocio
+    ? campos5b.como_nos_conocio === 'otro'
+      ? `${tMenor('como_nos_conocio_opciones.otro')}: ${campos5b.como_nos_conocio_otro ?? ''}`
+      : tMenor(`como_nos_conocio_opciones.${campos5b.como_nos_conocio}`)
+    : '—'
   const [{ data: vinculos }, info, matriculas, historico, datosPed, altaDoc, retencion] =
     await Promise.all([
       supabase
@@ -292,6 +307,33 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
                 v={etiquetaIdiomaPrincipal(nino.idioma_principal)}
               />
               <Row k={t('fields.nacionalidad')} v={nino.nacionalidad ?? '—'} />
+              {errCampos5b || !campos5b ? (
+                <p className="text-muted-foreground text-xs" data-testid="campos-5b-sin-lectura">
+                  {t('fields.campos_alta_sin_lectura')}
+                </p>
+              ) : (
+                <>
+                  <Row k={t('fields.lugar_nacimiento')} v={campos5b.lugar_nacimiento ?? '—'} />
+                  <Row k={t('fields.dni')} v={campos5b.dni ?? '—'} />
+                  <Row
+                    k={t('fields.hermanos')}
+                    v={
+                      campos5b.hermanos_total != null && campos5b.hermanos_lugar != null
+                        ? t('fields.hermanos_valor', {
+                            lugar: campos5b.hermanos_lugar,
+                            total: campos5b.hermanos_total,
+                          })
+                        : '—'
+                    }
+                  />
+                  <Row k={t('fields.provincia')} v={campos5b.direccion_provincia ?? '—'} />
+                  <Row
+                    k={t('fields.observaciones_familia')}
+                    v={campos5b.observaciones_familia ?? '—'}
+                  />
+                  <Row k={t('fields.como_nos_conocio')} v={comoNosConocio} />
+                </>
+              )}
               <Row k={t('fields.notas_admin')} v={nino.notas_admin ?? '—'} />
               {/* Decisión del responsable del 2026-11-02: las notas salen en el export art. 15
                   de la familia. Hoy la app no tiene dónde escribirlas; el aviso va donde se ven. */}

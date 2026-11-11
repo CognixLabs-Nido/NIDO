@@ -16,13 +16,12 @@ import { PasoMedico } from './PasoMedico'
 import { PasoMenor, type DireccionInicial } from './PasoMenor'
 import { PasoSepa, type MandatoSepaInicial } from './PasoSepa'
 import { PasoTutor, type DatosTutorInicial } from './PasoTutor'
-import type { IdentidadInicial } from './PasoIdentidad'
 import type { MandatoFamiliaActivo } from '../queries/get-mandato-familia'
 
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
 import type { ReutilizacionFamilia } from '../lib/reutilizacion-familia'
 import type { EstadoCivil } from '../schemas/alta-documentos'
-import type { ImagenPanelData, MedicaInicial } from '../lib/tipos'
+import type { IdentidadInicial, ImagenPanelData, MedicaInicial } from '../lib/tipos'
 import type { DocumentoParaFirmarFila } from '@/features/documentos-centro/components/DocumentosParaFirmar'
 
 /** Datos de la invitación para el paso `cuenta` (solo en `/invitation/[token]`). */
@@ -42,6 +41,8 @@ interface Props {
   /** Presente solo en `/invitation/[token]`: el wizard muestra el paso `cuenta`. */
   modoInvitacion?: ModoInvitacion
   identidadInicial: IdentidadInicial
+  /** Fase 5b: «cómo nos has conocido», solo a familias nuevas en el centro (lo decide la página). */
+  mostrarComoNosConocio: boolean
   direccionInicial: DireccionInicial
   datosPedagogicosInicial: DatosPedagogicosInput | null
   libroFamiliaUrl: string | null
@@ -115,6 +116,7 @@ export function AltaTutorWizard({
   pasoInicial,
   modoInvitacion,
   identidadInicial,
+  mostrarComoNosConocio,
   direccionInicial,
   datosPedagogicosInicial,
   libroFamiliaUrl,
@@ -324,6 +326,7 @@ export function AltaTutorWizard({
             ninoId={ninoId}
             ninoNombre={ninoNombre}
             identidadInicial={identidadInicial}
+            mostrarComoNosConocio={mostrarComoNosConocio}
             direccionInicial={direccionInicial}
             datosPedagogicosInicial={datosPedagogicosInicial}
             libroFamiliaUrl={libroFamiliaUrl}

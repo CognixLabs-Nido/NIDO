@@ -854,7 +854,15 @@
         "fecha_baja": "Baixa",
         "aula_actual": "Aula actual",
         "confirmar_fuera_cohorte": "Confirme matricular encara que l'edat no coincidisca amb la cohort",
-        "acciones": "Accions"
+        "acciones": "Accions",
+        "lugar_nacimiento": "Lloc de naixement",
+        "dni": "DNI o NIE",
+        "hermanos": "Germans",
+        "hermanos_valor": "{lugar} de {total}",
+        "provincia": "Província",
+        "observaciones_familia": "Observacions de la família",
+        "como_nos_conocio": "Com ens va conéixer",
+        "campos_alta_sin_lectura": "No s’han pogut llegir les dades de l’alta (lloc de naixement, DNI, germans…). Torna a carregar la pàgina."
       },
       "fotos": {
         "titulo": "Foto del xiquet",
@@ -1197,7 +1205,8 @@
         "estado_civil_familia": "Estat civil de la família",
         "email": "Email",
         "nombre_completo": "Nom complet",
-        "documento": "Document"
+        "documento": "Document",
+        "direccion_provincia": "Província"
       },
       "entidad": {
         "ninos_familia": "Dades del menor (adreça / situació familiar)",
@@ -2411,7 +2420,13 @@
       "fecha_formato": "Format de data invàlid (YYYY-MM-DD)",
       "fecha_futura": "La data de naixement no pot ser futura",
       "aula_invalida": "Selecciona una aula",
-      "invalid": "Dades no vàlides."
+      "invalid": "Dades no vàlides.",
+      "nacionalidad_requerida": "Indica la nacionalitat",
+      "lugar_requerido": "Indica el lloc de naixement",
+      "dni_invalido": "El DNI o NIE no és vàlid: revisa els números i la lletra",
+      "hermanos_requeridos": "Indica quants germans són i quin lloc ocupa",
+      "hermanos_lugar_mayor": "El lloc no pot ser més gran que el nombre de germans",
+      "como_nos_conocio_otro_requerido": "Conta’ns com ens has conegut"
     },
     "errors": {
       "create_failed": "No s'ha pogut registrar el xiquet.",
@@ -4558,7 +4573,11 @@
         "medicacion_habitual": "Medicació habitual",
         "alergias_leves": "Al·lèrgies lleus",
         "medico_familia": "Metge de família",
-        "telefono_emergencia": "Telèfon d'emergència"
+        "telefono_emergencia": "Telèfon d'emergència",
+        "internet": "Internet",
+        "redes_sociales": "Xarxes socials",
+        "recomendacion": "Recomanació",
+        "paso_por_delante": "Passa per davant del centre"
       }
     },
     "descargar_mis_datos": "Descarregar les meues dades",
@@ -4651,7 +4670,27 @@
       "direccion_cp": "Codi postal",
       "direccion_ciudad": "Ciutat",
       "guardar_datos": "Desar dades",
-      "pedagogicos_titulo": "Dades pedagògiques"
+      "pedagogicos_titulo": "Dades pedagògiques",
+      "nacionalidad": "Nacionalitat *",
+      "lugar_nacimiento": "Lloc de naixement *",
+      "dni": "DNI o NIE del menor",
+      "dni_ayuda": "Opcional. Si en té, amb la lletra.",
+      "hermanos_total": "Nombre de germans *",
+      "hermanos_lugar": "Lloc que ocupa *",
+      "hermanos_ayuda": "Compta també aquest xiquet o xiqueta. El lloc 1 és el major: si és fill únic, 1 i 1.",
+      "direccion_provincia": "Província",
+      "observaciones": "Observacions",
+      "observaciones_aviso": "El que vulgues que sàpia el centre. El que és mèdic (al·lèrgies, medicació, malalties) no va ací: va en la fitxa mèdica.",
+      "como_nos_conocio": "Com ens has conegut?",
+      "como_nos_conocio_placeholder": "Tria una opció",
+      "como_nos_conocio_otro": "Conta’ns com",
+      "como_nos_conocio_opciones": {
+        "internet": "Per internet",
+        "redes_sociales": "Per xarxes socials",
+        "recomendacion": "Per recomanació",
+        "paso_por_delante": "Passe per davant",
+        "otro": "Altres"
+      }
     },
     "tutor": {
       "guardado": "Dades del tutor desades",

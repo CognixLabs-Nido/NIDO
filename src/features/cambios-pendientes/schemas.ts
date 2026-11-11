@@ -29,14 +29,21 @@ export const entidadCambioEnum = z.enum([
 ])
 export type EntidadCambio = z.infer<typeof entidadCambioEnum>
 
-/** Parche de dirección + estado civil del menor (columnas de `ninos`). */
-export const payloadNinosFamiliaSchema = z.object({
-  direccion_calle: z.string().max(200).nullable().optional(),
-  direccion_numero: z.string().max(20).nullable().optional(),
-  direccion_cp: z.string().max(12).nullable().optional(),
-  direccion_ciudad: z.string().max(120).nullable().optional(),
-  estado_civil_familia: estadoCivilEnum.nullable().optional(),
-})
+/**
+ * Parche de dirección + estado civil del menor (columnas de `ninos`). `strict` desde la 5b: sin él,
+ * una clave que no estuviera aquí (la provincia lo estuvo hasta la 5b) se descartaba en silencio al
+ * aprobar, y la directora aprobaba un cambio que no se aplicaba.
+ */
+export const payloadNinosFamiliaSchema = z
+  .object({
+    direccion_calle: z.string().max(200).nullable().optional(),
+    direccion_numero: z.string().max(20).nullable().optional(),
+    direccion_cp: z.string().max(12).nullable().optional(),
+    direccion_ciudad: z.string().max(120).nullable().optional(),
+    direccion_provincia: z.string().max(60).nullable().optional(),
+    estado_civil_familia: estadoCivilEnum.nullable().optional(),
+  })
+  .strict()
 
 /**
  * Los campos de identidad del niño que cambian (puerta de identidad, 2026-11-08), ya normalizados

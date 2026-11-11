@@ -11,8 +11,10 @@ import 'server-only'
  * un niño de SU centro para CARGAR la documentación en papel (las matrículas se
  * hicieron y firmaron físicamente). NO es impersonación: la firma va a nombre de la
  * Directora con marca `metodo_firma='presencial'` (eso lo cablea B2). B1 solo abre la
- * ENTRADA y muestra el shell; los write-paths de dirección-menor/libro/firma siguen
- * fallando con admin hasta B2 (esperado).
+ * ENTRADA y muestra el shell; los write-paths de dirección-menor/libro/firma fallaban con
+ * admin hasta B2. La identidad del niño siguió fallando después de B2 (la función de la tutora
+ * es `es_tutor_legal_de`) hasta la 5b (2026-11-11): `actualizarNinoTutor` escribe la ficha con
+ * la sesión de la Dirección, decidido en el servidor.
  *
  * Reglas (en orden):
  * - Con vínculo activo usuario↔niño → entrada normal de tutor (sin modo Dirección).
