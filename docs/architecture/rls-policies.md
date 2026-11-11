@@ -697,13 +697,45 @@ Migración `20270114120000_feat_alta_exige_datos_nino`; spec `docs/specs/altas-s
   `es_tutor_legal_de`. Lo decide el servidor (`esAdminDeCentroDeNino`), no el cliente, y no pasa por
   la cola: Dirección no se valida a sí misma. Los CHECK de la 5a le valen igual. Para la tutora y el
   autorizado ese camino no existe: sin política de UPDATE, 0 filas.
-- **Qué lee el autorizado de `ninos`** (medido el 2026-11-11, ensayo terminado en RAISE): la fila
+- **Qué leía el autorizado de `ninos`** (medido el 2026-11-11, ensayo terminado en RAISE): la fila
   entera, porque `ninos_tutor_select` es `es_tutor_de` (cualquier vínculo vivo) y `authenticated` no
-  tiene permisos por columna. Incluye `notas_admin` y los campos de la 5a. Es un agujero: se cierra en
-  su propia pieza, detrás de la 5b. La pantalla ya no lo pide: al autorizado solo se le lee el lugar
-  de nacimiento (`leerCamposAltaFicha`).
+  tenía permisos por columna. Cerrado en `20270115120000` (la sección siguiente).
 - Medido en producción el 2026-11-11 (sonda sin migración y ensayo LF y CRLF, terminados en RAISE).
 - Test: `src/test/rls/alta-exige-datos-nino.rls.test.ts`.
+
+### El autorizado lee solo lo suyo (serie de altas, entre la 5b y la fase 6)
+
+Migración `20270115120000_fix_autorizado_lee_solo_lo_suyo`; spec `docs/specs/altas-serie.md`, «El
+autorizado: lo que ve y lo que no». Medido abierto antes (en producción, ensayo terminado en RAISE con
+un autorizado simulado; la exportación, en la base efímera con el `GET` real de la ruta).
+
+- **`ninos`, por columnas** (el mecanismo de `matriculas.motivo_baja`, ADR-0053): `authenticated` no
+  tiene el SELECT de tabla, solo el de las 20 columnas de identidad, con la RLS de siempre. Las 14 de
+  gestión (notas de Dirección, DNI, observaciones, dirección con la provincia, estado civil, libro de
+  familia, hermanos y «cómo nos conoció») salen por **`ficha_gestion_ninos(niños)`**: la Dirección del
+  centro y el tutor legal. Ni la profe ni el autorizado. Las filas que no le tocan a quien llama no
+  vienen, sin error. **Cada columna nueva de `ninos` necesita su `GRANT SELECT (columna)` o su sitio
+  en la función.** Las escrituras no cambian: el UPDATE no es por columnas.
+- **`firmas_autorizacion`, por columnas**: la fila (quién, qué decidió, cuándo) la siguen viendo los
+  de `firmas_select`; el trazo, la IP, el navegador, el nombre tecleado, el comentario y `datos`, solo
+  por **`contenido_firmas(firmas)`**: quien firmó, el tutor legal, la profe del niño y la Dirección,
+  respetando el bloqueo de la retención (`privado.firma_bloqueada`).
+- **`autorizaciones_select`**: además de la audiencia de siempre, una de ámbito niño la ven la
+  Dirección, la profe del niño, el tutor legal, quien la creó, quien la firmó
+  (`privado.firmo_autorizacion`, que lee otra tabla: sin el problema de MVCC) y, si es de medicación,
+  quien tiene `puede_ver_info_medica`.
+- **`adm_med_select`**: la Dirección, la profe del niño y quien tiene `puede_ver_info_medica`, como la
+  ficha médica. Antes, cualquier vínculo.
+- **`recogida_adjuntos_select_tutor`** (Storage): el tutor legal, o quien subió el fichero
+  (`owner_id`) si tiene vínculo con el niño. Antes, cualquier vínculo.
+- **`puede_exportar_nino(niño)`**: la puerta de la exportación del niño (`recolectarNino`): la
+  Dirección, la profe del niño y el tutor legal. La ruta no mira el rol y el servicio firma después
+  el libro de familia; por eso la puerta va antes, y lo de gestión llega por su función.
+- Medido cerrado en producción (ensayo terminado en RAISE, LF y CRLF). La guarda posterior comprueba
+  que ninguna columna cerrada es legible, que las abiertas son 20 y 11, la forma de las funciones y
+  las políticas; sus controles (un `GRANT` de más, `es_tutor_de` en la medicación, `EXECUTE` para
+  `anon`) la hacen saltar.
+- Test: `src/test/rls/autorizado-lee-solo-lo-suyo.rls.test.ts`.
 
 ### Firmar fuera del alta y lo pendiente en el inicio (serie de altas, fase 4, 4c)
 
@@ -1089,7 +1121,7 @@ ENUM `recordatorio_destinatario` con **6 valores**: `familia_individual` · `fam
 ### Helpers nuevos (`STABLE SECURITY DEFINER SET search_path = public`, GRANT `authenticated`)
 
 - `centro_de_evento(p_evento_id)` → uuid; `es_profe_de_evento(p_evento_id)` → boolean (profe del aula del evento de ámbito `aula`).
-- **`usuario_es_audiencia_autorizacion_row(p_centro_id, p_tipo, p_es_plantilla, p_ambito, p_evento_id, p_nino_id, p_aula_id)`** → boolean. **Row-aware** (recibe los campos por parámetro, **NO re-lee `autorizaciones`** → evita el gotcha MVCC en `INSERT…RETURNING`). admin ⇒ TRUE; plantilla del catálogo ⇒ `pertenece_a_centro`; `salida` ⇒ audiencia del evento; ámbito `nino` ⇒ `es_profe_de_nino OR es_tutor_de`; ámbito `aula` ⇒ `es_profe_de_aula OR es_tutor_en_aula`; ámbito `centro` ⇒ `pertenece_a_centro`; legacy (nino_id seteado) ⇒ `es_profe_de_nino OR es_tutor_de` (rama inalcanzable desde `20261016120000`: el CHECK ya no admite esa forma). (Sustituye a la versión de 5 args de F8-0.)
+- **`usuario_es_audiencia_autorizacion_row(p_centro_id, p_tipo, p_es_plantilla, p_ambito, p_evento_id, p_nino_id, p_aula_id)`** → boolean. **Row-aware** (recibe los campos por parámetro, **NO re-lee `autorizaciones`** → evita el gotcha MVCC en `INSERT…RETURNING`). admin ⇒ TRUE; plantilla del catálogo ⇒ `pertenece_a_centro`; `salida` ⇒ audiencia del evento; ámbito `nino` ⇒ `es_profe_de_nino OR es_tutor_de` (desde `20270115120000` la política añade que el autorizado solo ve las suyas: ver «El autorizado lee solo lo suyo»); ámbito `aula` ⇒ `es_profe_de_aula OR es_tutor_en_aula`; ámbito `centro` ⇒ `pertenece_a_centro`; legacy (nino_id seteado) ⇒ `es_profe_de_nino OR es_tutor_de` (rama inalcanzable desde `20261016120000`: el CHECK ya no admite esa forma). (Sustituye a la versión de 5 args de F8-0.)
 - `autorizacion_aplica_a_nino(p_autorizacion_id, p_nino_id)` → boolean. Lee `autorizaciones` (tabla distinta de la que se inserta —`firmas`—, sin MVCC): plantilla ⇒ FALSE; `salida` ⇒ `evento_aplica_a_nino`; ámbito `aula` ⇒ matrícula activa; ámbito `centro` ⇒ niño del centro; resto ⇒ `nino_id = p_nino_id`.
 - `autorizacion_firmable(p_autorizacion_id)` → boolean: `es_plantilla=false AND estado='publicada' AND texto_definitivo AND` dentro de vigencia (`hoy_madrid()`). Enforza el guard de texto PENDIENTE (no se firma un borrador).
 - `autorizacion_plantilla_valida(p_plantilla_id, p_centro_id, p_tipo)` → boolean: existe plantilla `es_plantilla=true`, mismo centro+tipo, `publicada` + `texto_definitivo`. Gate del INSERT del tutor (B2).
@@ -1105,13 +1137,13 @@ ENUM `recordatorio_destinatario` con **6 valores**: `familia_individual` · `fam
 
 ### RLS `firmas_autorizacion` (append-only, inmutable)
 
-- **SELECT** `firmas_select`: `firmante_id = auth.uid() OR es_tutor_de(nino_id) OR es_profe_de_nino(nino_id) OR es_admin(centro_de_nino(nino_id))`.
+- **SELECT** `firmas_select`: `firmante_id = auth.uid() OR es_tutor_de(nino_id) OR es_profe_de_nino(nino_id) OR es_admin(centro_de_nino(nino_id))`. Desde `20270115120000`, por columnas: el trazo, la IP, el navegador, el nombre tecleado, el comentario y `datos` salen por `contenido_firmas` (ver «El autorizado lee solo lo suyo»).
 - **INSERT** `firmas_insert`: `es_tutor_de(nino_id) AND firmante_id = auth.uid() AND autorizacion_aplica_a_nino(autorizacion_id, nino_id) AND autorizacion_firmable(autorizacion_id)`. Solo el tutor del niño; un borrador/PENDIENTE no es firmable; el trazo (`firma_imagen`) es obligatorio al firmar (CHECK).
 - **UPDATE / DELETE**: sin policy → **default DENY**. La firma es inmutable: **revocar o re-firmar = fila nueva** (`decision='revocado'`/`'firmado'`); el estado vigente es la última fila por (autorización, niño, firmante) ordenada por `firmado_at`. El **hash compuesto** (`texto_hash` = SHA-256 del texto exacto versionado + `datos` firmados) detecta cualquier alteración del documento.
 
 ### RLS `administraciones_medicacion` (doble confirmación)
 
-- **SELECT** `adm_med_select`: `es_admin(centro_id) OR es_profe_de_nino(nino_id) OR es_tutor_de(nino_id)` (staff + familia, transparencia).
+- **SELECT** `adm_med_select`: `es_admin(centro_id) OR es_profe_de_nino(nino_id) OR tiene_permiso_sobre(nino_id, 'puede_ver_info_medica')` desde `20270115120000` (staff + la familia con el permiso de la ficha médica; hasta entonces, `es_tutor_de`: cualquier vínculo).
 - **INSERT** `adm_med_insert`: `administrado_por = auth.uid() AND confirmado_por IS NULL AND (es_admin OR es_profe_de_nino) AND centro_de_nino(nino_id)=centro_id AND autorizacion_aplica_a_nino(...) AND medicacion_administrable_hoy(autorizacion_id)`. La familia NO registra; quien registra no se autoconfirma.
 - **UPDATE** `adm_med_update_confirmar`: `USING (confirmado_por IS NULL AND administrado_por <> auth.uid() AND (es_admin OR es_profe_de_nino))` + `WITH CHECK (confirmado_por = auth.uid() AND administrado_por <> auth.uid() AND (es_admin OR es_profe_de_nino))`. El **segundo** staff (distinto del que administró) confirma nombrándose a sí mismo. La USING filtra solo pendientes → idempotencia por el patrón **"USING falso → 0 filas"** (`.select().maybeSingle()` en el action). El trigger `solo_confirmar` impide cualquier otra mutación y sella `confirmado_at` server-side.
 - **DELETE**: sin policy → **default DENY**.
@@ -1195,13 +1227,13 @@ Las rutas codifican el ámbito (`(storage.foldername(name))[n]`): `[1]=centroId`
 
 - **`aula-fotos`** (blog): SELECT = `usuario_ve_publicacion_row(centroId, aulaId, publicacionId)`; INSERT = `es_admin(centroId) OR es_redactor_de_aula(aulaId)` (P5); DELETE = `es_admin(centroId) OR autor_de_publicacion(publicacionId)=auth.uid()`.
 - **`ninos-fotos`** (foto de la ficha, `ninos.foto_url`). Ruta `{centroId}/{ninoId}/…`. SELECT = `es_admin(centroId) OR es_profe_de_nino(ninoId) OR es_tutor_de(ninoId)`. Escribir/borrar = `es_admin(centroId)` (F10-0) **OR `es_tutor_de(ninoId)`** (F10-3, `[2]=ninoId`): el tutor sube/sustituye la foto de **su** hijo, dirección la de cualquiera. El `UPDATE` de `ninos.foto_url` (que el tutor no puede por la RLS de `ninos`) lo hace el server con **service role tras autorizar**.
-- **`recogida-adjuntos`** (foto DNI de F8, `firmas.datos.adjuntos`). Ruta `{centroId}/{ninoId}/…` (el `{firmaId}` no existe al subir-antes-de-firmar). SELECT/INSERT **baseline** staff del centro (`es_admin OR es_profe_en_centro`, `[1]=centroId`) **+ F10-3** `es_tutor_de(ninoId)` (`[2]=ninoId`): el tutor sube/relee el DNI de **su** recogida; DELETE = `es_admin`. La referencia se ata a la firma por el hash (`datos.adjuntos`). Sensible (DNIs de terceros) → RAT/retención en F11.
+- **`recogida-adjuntos`** (foto DNI de F8, `firmas.datos.adjuntos`). Ruta `{centroId}/{ninoId}/…` (el `{firmaId}` no existe al subir-antes-de-firmar). SELECT/INSERT **baseline** staff del centro (`es_admin OR es_profe_en_centro`, `[1]=centroId`) **+ F10-3** `es_tutor_de(ninoId)` (`[2]=ninoId`): el tutor sube/relee el DNI de **su** recogida (la lectura, desde `20270115120000`, el tutor legal o quien subió el fichero); DELETE = `es_admin`. La referencia se ata a la firma por el hash (`datos.adjuntos`). Sensible (DNIs de terceros) → RAT/retención en F11.
 - **`centro-assets`** (logo, **público** — ADR-0010): SELECT público; escribir/actualizar/borrar = `es_admin(centroId)` (F10-0; el tutor NO escribe — verificado por test). En F10-3 dirección sube el logo aquí y repunta `centros.logo_url`.
 - **Desde `20261027120000`** (PR 3 de la Fase 4), las policies de los buckets con niño, familia o aula en la ruta exigen además `ruta_coherente(bucket_id, name)`, y las de escritura de `centro-assets`, que la ruta tenga carpeta. Ver «Storage: las rutas no cruzan de centro».
 
 ### Políticas de Storage del tutor (F10-3)
 
-Migración `20260613100000_phase10_3_adjuntos_storage_policies` (aditiva, solo `CREATE POLICY`; **no** toca las de F10-0). Suma al **tutor** (RLS de `storage.objects` es permisiva → OR entre políticas): `ninos_fotos_insert_tutor`/`ninos_fotos_delete_tutor` y `recogida_adjuntos_insert_tutor`/`recogida_adjuntos_select_tutor`, todas con `es_tutor_de(((storage.foldername(name))[2])::uuid)`. **Aislamiento entre familias** verificado por `adjuntos-storage.rls.test.ts`: un tutor no escribe bajo el `{ninoId}` de otra familia; el logo solo lo escribe dirección.
+Migración `20260613100000_phase10_3_adjuntos_storage_policies` (aditiva, solo `CREATE POLICY`; **no** toca las de F10-0). Suma al **tutor** (RLS de `storage.objects` es permisiva → OR entre políticas): `ninos_fotos_insert_tutor`/`ninos_fotos_delete_tutor` y `recogida_adjuntos_insert_tutor`/`recogida_adjuntos_select_tutor`, todas con `es_tutor_de(((storage.foldername(name))[2])::uuid)` (la de lectura, desde `20270115120000`, `es_tutor_legal_de` o el dueño del fichero: ver «El autorizado lee solo lo suyo»). **Aislamiento entre familias** verificado por `adjuntos-storage.rls.test.ts`: un tutor no escribe bajo el `{ninoId}` de otra familia; el logo solo lo escribe dirección.
 
 ## Postura de seguridad (octubre de 2026)
 
