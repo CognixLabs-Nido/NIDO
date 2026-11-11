@@ -1,9 +1,9 @@
-import { execFileSync } from 'node:child_process'
-
 import { describe, expect, it } from 'vitest'
 
 import { SECCIONES_EXPORT } from '@/features/export/lib/columnas-export'
 import { SECCIONES_RECOLECTAR } from '@/features/export/lib/columnas-recolectar'
+
+import { columnasDeLaBase, columnasVivas } from './columnas-vivas'
 
 // Carga el setup de los tests de RLS: comprueba que la BD es la local del CI, no una remota.
 import './setup'
@@ -15,45 +15,9 @@ import './setup'
  * salta la columna que nadie decidió.
  *
  * Las columnas vivas, de la descripción OpenAPI de PostgREST con la clave de servicio: es el
- * esquema que sirve la API, sin leer ninguna fila.
+ * esquema que sirve la API, sin leer ninguna fila (`columnas-vivas.ts`, que comparten las listas
+ * cerradas de los tests de purga).
  */
-
-async function columnasVivas(): Promise<Record<string, string[]>> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const clave = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  const res = await fetch(`${url}/rest/v1/`, {
-    headers: {
-      apikey: clave,
-      Authorization: `Bearer ${clave}`,
-      Accept: 'application/openapi+json',
-    },
-  })
-  expect(res.status).toBe(200)
-  const spec = (await res.json()) as {
-    definitions: Record<string, { properties: Record<string, unknown> }>
-  }
-  return Object.fromEntries(
-    Object.entries(spec.definitions).map(([t, d]) => [t, Object.keys(d.properties).sort()])
-  )
-}
-
-/**
- * Una tabla sin privilegios para `service_role` no sale en la descripción de la API con la clave de
- * servicio (desde el 3b, `firmas_documentos_centro`: la sesión la lee y el servidor no). Sus columnas
- * vivas salen del catálogo de la base, por psql contra la BD del CI, y solo si ese es el motivo.
- */
-function columnasDeLaBase(tabla: string): { servicioLee: boolean; columnas: string[] } {
-  const url = process.env.DB_URL
-  if (!url) throw new Error('DB_URL: este test solo corre contra la BD efímera del CI')
-  const salida = execFileSync('psql', [url, '-v', 'ON_ERROR_STOP=1', '-qAt', '-f', '-'], {
-    input: `SELECT has_table_privilege('service_role', 'public.${tabla}', 'SELECT')::text || '|' ||
-      coalesce((SELECT string_agg(column_name, ',' ORDER BY column_name) FROM information_schema.columns
-                 WHERE table_schema = 'public' AND table_name = '${tabla}'), '');`,
-    encoding: 'utf8',
-  }).trim()
-  const [lee, cols] = salida.split('|')
-  return { servicioLee: lee === 'true', columnas: cols ? cols.split(',') : [] }
-}
 
 describe('la red del export: el catálogo y las columnas vivas', () => {
   it('cada tabla del export tiene en el catálogo exactamente sus columnas vivas', async () => {

@@ -15,6 +15,7 @@ import {
   serviceClient,
   type TestUser,
 } from '../rls/setup'
+import { expectColumnasDecididas } from '../rls/columnas-vivas'
 
 /**
  * Purga RGPD y `lista_espera`: la tabla real Y su copia en audit_log.
@@ -31,7 +32,8 @@ import {
 
 const BORRADO = '[borrado]'
 
-// Columnas personales de lista_espera (information_schema, 2026-10-12).
+// Columnas personales de lista_espera. No es una foto de un día: el test «cada columna está
+// decidida» las compara con las columnas vivas, junto con NO_PERSONALES_LISTA_ESPERA.
 const CLAVES_NINO = [
   'nombre_nino',
   'apellidos_nino',
@@ -44,6 +46,21 @@ const CLAVES_NINO = [
 ] as const
 const CLAVES_TUTOR = ['telefono_tutor', 'email_tutor'] as const
 
+// Las demás columnas de lista_espera, con su porqué (la purga del niño borra la fila entera; la del
+// tutor limpia solo CLAVES_TUTOR).
+const NO_PERSONALES_LISTA_ESPERA: Readonly<Record<string, string>> = {
+  id: 'identificador de la fila, sin dato de nadie',
+  centro_id: 'el centro, derivado del curso',
+  curso_academico_id: 'el curso al que se apunta',
+  nino_id: 'el niño que salió del prospecto, por su id',
+  tutor_usuario_id: 'la cuenta del tutor, por su id; la purga del tutor limpia su contacto',
+  posicion: 'número de orden en la lista',
+  estado: 'categórico (enum)',
+  descartado_at: 'fecha técnica del descarte (la pone un trigger)',
+  created_at: 'fecha técnica de la fila',
+  updated_at: 'fecha técnica de la fila',
+}
+
 type FilaAudit = {
   accion: string
   registro_id: string | null
@@ -55,7 +72,10 @@ type Fuga = { accion: string; lado: string; campo: string; valor: string }
 
 interface Prospecto {
   id: string
+  /** Todas las marcas, para buscar fugas en audit_log. */
   marcas: string[]
+  /** Cada marca por su campo: los asertos leen por nombre, no por posición. */
+  marca: Record<string, string>
 }
 
 describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
@@ -93,9 +113,11 @@ describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
   }): Promise<Prospecto> {
     const s = randomUUID().slice(0, 8)
     const marcas: string[] = []
+    const porCampo: Record<string, string> = {}
     const marca = (campo: string) => {
       const v = `LE-${campo}-${s}`
       marcas.push(v)
+      porCampo[campo] = v
       return v
     }
     const { data, error } = await serviceClient
@@ -105,12 +127,11 @@ describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
         curso_academico_id: opts.cursoId,
         nombre_nino: marca('nombre'),
         primer_apellido_nino: marca('apellidos'),
+        segundo_apellido_nino: marca('segundo'),
         fecha_nacimiento: '2024-03-15',
         telefono_tutor: marca('tel'),
         email_tutor: `${marca('email')}@correo.test`,
         nota: marca('nota'),
-        // Al final: los tests leen marcas[0], [2] y [3] por posición (nombre, tel, email).
-        segundo_apellido_nino: marca('segundo'),
         posicion: 1,
         tutor_usuario_id: opts.tutorUsuarioId ?? null,
       })
@@ -124,7 +145,7 @@ describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
         .eq('id', data!.id)
       expect(uErr).toBeNull()
     }
-    return { id: data!.id, marcas }
+    return { id: data!.id, marcas, marca: porCampo }
   }
 
   async function filaDe(p: Prospecto) {
@@ -191,6 +212,15 @@ describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
     return u
   }
 
+  it('cada columna de lista_espera está decidida: personal (CLAVES_NINO) o no, con su porqué', async () => {
+    await expectColumnasDecididas(
+      'lista_espera',
+      CLAVES_NINO,
+      NO_PERSONALES_LISTA_ESPERA,
+      'nombre_nino'
+    )
+  })
+
   it('purgar_sujeto_db (niño): borra su prospecto y redacta su copia en audit_log, también el INSERT', async () => {
     const nino = await createTestNino(centro.id)
     const suyo = await prospecto({ cursoId: curso.id, ninoId: nino.id })
@@ -225,8 +255,8 @@ describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
     // Los controles, intactos en la tabla y en audit_log.
     for (const p of [deOtro, ajeno]) {
       const f = await filaDe(p)
-      expect(f?.nombre_nino).toBe(p.marcas[0])
-      expect(f?.telefono_tutor).toBe(p.marcas[2])
+      expect(f?.nombre_nino).toBe(p.marca.nombre)
+      expect(f?.telefono_tutor).toBe(p.marca.tel)
       expect(fugasEn(await auditDe(p), p.marcas, CLAVES_NINO).length).toBeGreaterThan(0)
     }
   })
@@ -259,15 +289,15 @@ describe('Purga RGPD — lista_espera, tabla y audit_log', () => {
     expect(fila).not.toBeNull()
     expect(fila?.telefono_tutor).toBeNull()
     expect(fila?.email_tutor).toBeNull()
-    expect(fila?.nombre_nino).toBe(delTutor.marcas[0])
+    expect(fila?.nombre_nino).toBe(delTutor.marca.nombre)
     // Su copia en audit_log, sin el teléfono ni el email del tutor.
     expect(filas.length).toBeGreaterThan(0)
     expect(fugas).toEqual([])
 
     // El prospecto de otro tutor, intacto.
     const otra = await filaDe(deOtroTutor)
-    expect(otra?.telefono_tutor).toBe(deOtroTutor.marcas[2])
-    expect(otra?.email_tutor).toBe(`${deOtroTutor.marcas[3]}@correo.test`)
+    expect(otra?.telefono_tutor).toBe(deOtroTutor.marca.tel)
+    expect(otra?.email_tutor).toBe(`${deOtroTutor.marca.email}@correo.test`)
   })
 
   it('retroactiva: redacta la auditoría de los prospectos de niños que ya no existen o ya purgados', async () => {

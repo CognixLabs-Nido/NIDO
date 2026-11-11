@@ -16,6 +16,14 @@ import {
   serviceClient,
   type TestUser,
 } from '../rls/setup'
+import { expectColumnasDecididas } from '../rls/columnas-vivas'
+
+import {
+  NO_PERSONALES_INFO_MEDICA,
+  PERSONALES_INFO_MEDICA,
+  columnas,
+  todasA,
+} from './columnas-personales'
 
 /**
  * Purga RGPD del niño: la tabla real Y su copia en audit_log.
@@ -31,7 +39,8 @@ import {
 const BORRADO = '[borrado]'
 
 // Columnas personales por tabla: tras la purga, en audit_log solo pueden valer NULL o
-// '[borrado]'. Salen de las columnas reales de cada tabla (information_schema, 2026-10-11).
+// '[borrado]'. No es una foto de un día: el test «cada columna está decidida» las compara con las
+// columnas vivas, junto con NO_PERSONALES, y una columna nueva lo pone rojo hasta decidirla.
 const CLAVES: Record<string, readonly string[]> = {
   ninos: [
     'nombre',
@@ -60,14 +69,7 @@ const CLAVES: Record<string, readonly string[]> = {
     'como_nos_conocio',
     'como_nos_conocio_otro',
   ],
-  info_medica_emergencia: [
-    'alergias_graves',
-    'notas_emergencia',
-    'medicacion_habitual',
-    'alergias_leves',
-    'medico_familia',
-    'telefono_emergencia',
-  ],
+  info_medica_emergencia: PERSONALES_INFO_MEDICA,
   datos_pedagogicos_nino: [
     'lactancia_observaciones',
     'control_esfinteres_observaciones',
@@ -89,6 +91,135 @@ const CLAVES: Record<string, readonly string[]> = {
   autorizaciones: ['titulo', 'texto', 'datos'],
   cita_invitados: ['nombre_externo', 'comentario'],
   invitaciones: ['email', 'nombre_completo'],
+}
+
+// Las demás columnas de cada tabla de CLAVES, con su porqué: lo que la purga conserva porque no
+// identifica a nadie (ids, fechas técnicas, categóricos sin texto libre). Descrito como lo hace la
+// purga hoy (`privado.purgar_nino`, `_claves_pii_nino`); cambiarlo es cambiar la purga, no esto.
+const ID = 'identificador de la fila, sin dato de nadie'
+const FECHA = 'fecha técnica de la fila'
+const SEUDONIMO = 'id de otra fila: la purga lo conserva, seudónimo'
+const NO_PERSONALES: Record<string, Readonly<Record<string, string>>> = {
+  ninos: {
+    id: ID,
+    centro_id: SEUDONIMO,
+    familia_id: SEUDONIMO,
+    created_at: FECHA,
+    updated_at: FECHA,
+    deleted_at: 'la baja de la fila; la purga la pone',
+    deleted_reason: 'motivo del borrado (enum); la purga pone purga_rgpd',
+    purgado_en: 'el sello de la purga',
+    puede_aparecer_en_fotos: 'flag derivado del consentimiento de imagen, sin texto',
+    requiere_ambos_firmantes: 'flag de configuración de las firmas, sin texto',
+  },
+  info_medica_emergencia: NO_PERSONALES_INFO_MEDICA,
+  datos_pedagogicos_nino: {
+    id: ID,
+    nino_id: SEUDONIMO,
+    created_at: FECHA,
+    updated_at: FECHA,
+    deleted_at: 'la baja de la fila; la purga la pone',
+    lactancia_estado: 'categórico (enum), sin texto libre; la purga lo conserva',
+    control_esfinteres: 'categórico (enum), sin texto libre; la purga lo conserva',
+    siesta_numero_diario: 'número de 0 a 5, sin texto libre; la purga lo conserva',
+    tipo_alimentacion: 'categórico sin valores religiosos (20261125120000); lo que come va en otra',
+    tiene_hermanos_en_centro: 'flag, sin texto; la purga lo conserva',
+  },
+  matriculas: {
+    id: ID,
+    nino_id: SEUDONIMO,
+    aula_id: SEUDONIMO,
+    curso_academico_id: SEUDONIMO,
+    estado: 'estado de la matrícula (enum)',
+    fecha_alta: 'fecha administrativa de la matrícula, no del niño',
+    fecha_baja: 'fecha administrativa de la matrícula, no del niño',
+    activada_at: 'sello técnico de la activación',
+    created_at: FECHA,
+    deleted_at: 'la baja de la fila',
+  },
+  vinculos_familiares: {
+    id: ID,
+    nino_id: SEUDONIMO,
+    usuario_id: SEUDONIMO,
+    tipo_vinculo: 'categórico (enum)',
+    parentesco: 'categórico (enum); el texto libre va en descripcion_parentesco',
+    permisos: 'flags de permisos (jsonb de booleanos)',
+    created_at: FECHA,
+    updated_at: FECHA,
+    deleted_at: 'la baja de la fila',
+    deleted_reason: 'motivo del borrado (enum)',
+  },
+  firmas_autorizacion: {
+    id: ID,
+    autorizacion_id: SEUDONIMO,
+    nino_id: SEUDONIMO,
+    firmante_id: SEUDONIMO,
+    rol_firmante: 'categórico (snapshot del tipo de vínculo)',
+    decision: 'categórico (firmado, rechazado, revocado)',
+    metodo_firma: 'categórico (digital o presencial)',
+    texto_hash: 'huella SHA-256 del texto firmado, no lo contiene',
+    texto_version: 'etiqueta de la versión del texto',
+    firmado_at: 'cuándo se firmó; prueba legal que se conserva',
+    created_at: FECHA,
+  },
+  autorizaciones: {
+    id: ID,
+    centro_id: SEUDONIMO,
+    nino_id: SEUDONIMO,
+    aula_id: SEUDONIMO,
+    evento_id: SEUDONIMO,
+    plantilla_id: SEUDONIMO,
+    creado_por: SEUDONIMO,
+    archivada_por: SEUDONIMO,
+    tipo: 'categórico (enum)',
+    ambito: 'categórico (enum)',
+    estado: 'categórico (enum)',
+    es_plantilla: 'flag (boolean): documento de catálogo o instancia firmable',
+    texto_definitivo: 'flag (boolean): el texto está cerrado',
+    texto_version: 'etiqueta de la versión del texto',
+    firmantes_requeridos: 'categórico (política de firmantes)',
+    vigencia_desde: 'fecha de vigencia del documento, no de la persona',
+    vigencia_hasta: 'fecha de vigencia del documento, no de la persona',
+    archivada_at: FECHA,
+    created_at: FECHA,
+    updated_at: FECHA,
+  },
+  cita_invitados: {
+    id: ID,
+    cita_id: SEUDONIMO,
+    centro_id: SEUDONIMO,
+    usuario_id: SEUDONIMO,
+    respondido_por: SEUDONIMO,
+    estado: 'categórico (RSVP)',
+    respondido_at: FECHA,
+    created_at: FECHA,
+    updated_at: FECHA,
+  },
+  invitaciones: {
+    id: ID,
+    centro_id: SEUDONIMO,
+    nino_id: SEUDONIMO,
+    aula_id: SEUDONIMO,
+    invitado_por: SEUDONIMO,
+    rol_objetivo: 'categórico (enum)',
+    tipo_vinculo: 'categórico (enum)',
+    tipo_personal_aula: 'categórico (enum)',
+    token: 'secreto de un solo uso, no entra en audit_log (20261011130000)',
+    expires_at: FECHA,
+    accepted_at: FECHA,
+    rejected_at: FECHA,
+    created_at: FECHA,
+  },
+}
+
+// Lo que deja la purga en cada columna personal de la ficha que no queda a NULL.
+const NINO_TRAS_LA_PURGA: Record<string, unknown> = {
+  nombre: BORRADO,
+  primer_apellido: BORRADO,
+  apellidos: BORRADO,
+  fecha_nacimiento: '1900-01-01',
+  // Ítem 9 (20261015120000): el centinela 'zz', no el 'es' inventado.
+  idioma_principal: 'zz',
 }
 
 type FilaAudit = {
@@ -175,6 +306,8 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
       .update({
         primer_apellido: marca('apellidos'),
         segundo_apellido: marca('segundo'),
+        sexo: 'F',
+        foto_url: `${centro.id}/${nino.id}/${marca('foto')}.jpg`,
         nacionalidad: marca('nacionalidad'),
         lugar_nacimiento: marca('lugar'),
         dni: '12345678Z', // el CHECK exige la letra buena: no cabe una marca, lo cubre CLAVES
@@ -367,6 +500,14 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
     else console.warn(`CIERRE ${nombre}: ninguna clave personal sin redactar`)
   }
 
+  it('cada columna de las tablas de la purga está decidida: personal (CLAVES) o no, con su porqué', async () => {
+    // Premisa: las dos listas cubren las mismas tablas.
+    expect(Object.keys(NO_PERSONALES).sort()).toEqual(Object.keys(CLAVES).sort())
+    for (const [tabla, personales] of Object.entries(CLAVES)) {
+      await expectColumnasDecididas(tabla, personales, NO_PERSONALES[tabla]!, personales[0]!)
+    }
+  })
+
   it('purgar_sujeto_db (niño): borra la dirección y el resto de la tabla, y redacta audit_log', async () => {
     const sem = await sembrar()
 
@@ -376,6 +517,28 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
     })
     expect(sErr).toBeNull()
     solicitudes.push(solicitud as string)
+    // Premisa: cada columna personal tiene valor antes de purgar. Si no, «NULL después» saldría
+    // verde sin haber borrado nada.
+    const { data: imAntes } = await serviceClient
+      .from('info_medica_emergencia')
+      .select(columnas(PERSONALES_INFO_MEDICA))
+      .eq('nino_id', sem.ninoId)
+      .single()
+    expect(imAntes).not.toBeNull()
+    for (const c of PERSONALES_INFO_MEDICA) {
+      expect(
+        (imAntes as Record<string, unknown> | null)?.[c],
+        `info_medica.${c} antes`
+      ).not.toBeNull()
+    }
+    const { data: ninoAntes } = await serviceClient
+      .from('ninos')
+      .select(columnas(CLAVES.ninos))
+      .eq('id', sem.ninoId)
+      .single()
+    for (const c of CLAVES.ninos) {
+      expect((ninoAntes as Record<string, unknown> | null)?.[c], `ninos.${c} antes`).not.toBeNull()
+    }
     const { error: pErr } = await serviceClient.rpc('purgar_sujeto_db', {
       p_solicitud_id: solicitud as string,
     })
@@ -385,37 +548,13 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
     const fugas = fugasEn(filas, sem.marcas)
     volcar('purgar_sujeto_db', filas, fugas)
 
-    // La tabla real.
+    // La tabla real: cada columna personal de la ficha, desde CLAVES (no una lista aparte).
     const { data: n } = await serviceClient
       .from('ninos')
-      .select(
-        'idioma_principal, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, libro_familia_path, estado_civil_familia, ' +
-          // 5a: los campos nuevos, también en la tabla (no solo en audit_log).
-          'primer_apellido, segundo_apellido, apellidos, lugar_nacimiento, dni, hermanos_total, hermanos_lugar, direccion_provincia, observaciones_familia, como_nos_conocio, como_nos_conocio_otro'
-      )
+      .select(columnas(CLAVES.ninos))
       .eq('id', sem.ninoId)
       .single()
-    expect(n).toEqual({
-      // Ítem 9 (20261015120000): el centinela 'zz', no el 'es' inventado.
-      idioma_principal: 'zz',
-      direccion_calle: null,
-      direccion_numero: null,
-      direccion_cp: null,
-      direccion_ciudad: null,
-      libro_familia_path: null,
-      estado_civil_familia: null,
-      primer_apellido: BORRADO,
-      segundo_apellido: null,
-      apellidos: BORRADO,
-      lugar_nacimiento: null,
-      dni: null,
-      hermanos_total: null,
-      hermanos_lugar: null,
-      direccion_provincia: null,
-      observaciones_familia: null,
-      como_nos_conocio: null,
-      como_nos_conocio_otro: null,
-    })
+    expect(n).toEqual({ ...todasA(CLAVES.ninos, null), ...NINO_TRAS_LA_PURGA })
     const { data: dp } = await serviceClient
       .from('datos_pedagogicos_nino')
       .select('idiomas_casa')
@@ -430,15 +569,10 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
     expect(mat?.motivo_baja).toBeNull()
     const { data: im } = await serviceClient
       .from('info_medica_emergencia')
-      .select('alergias_graves, notas_emergencia, medicacion_habitual, telefono_emergencia')
+      .select(columnas(PERSONALES_INFO_MEDICA))
       .eq('nino_id', sem.ninoId)
       .single()
-    expect(im).toEqual({
-      alergias_graves: null,
-      notas_emergencia: null,
-      medicacion_habitual: null,
-      telefono_emergencia: null,
-    })
+    expect(im).toEqual(todasA(PERSONALES_INFO_MEDICA, null))
 
     // Y su copia en audit_log.
     expect(filas.length).toBeGreaterThan(0)

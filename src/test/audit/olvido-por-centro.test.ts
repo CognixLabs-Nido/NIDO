@@ -18,6 +18,8 @@ import {
   type TestUser,
 } from '../rls/setup'
 
+import { PERSONALES_FAMILIA_TUTORES, columnas, todasA } from './columnas-personales'
+
 import { purgarUno } from '@/features/olvido/actions/purgar-vencidos'
 import { recolectarAdjuntosDe } from '@/features/olvido/lib/fuentes-adjuntos'
 import { BUCKET_DNI_TUTORES, BUCKET_USUARIOS_FOTOS } from '@/shared/lib/adjuntos/storage'
@@ -71,7 +73,16 @@ describe('Olvido por centro — solicitud y purga partidas', () => {
       const dni = `${centro.id}/${nino.id}/dni-${clave}.pdf`
       const upd = await serviceClient
         .from('familia_tutores')
-        .update({ nombre_completo: nombre, email: u.email, dni_documento_path: dni })
+        .update({
+          nombre_completo: nombre,
+          email: u.email,
+          dni_documento_path: dni,
+          // Cada columna personal con valor: si no, «NULL después» saldría verde sin borrar nada.
+          direccion_calle: `Calle ${clave}`,
+          direccion_numero: '1',
+          direccion_cp: '46001',
+          direccion_ciudad: `Ciudad ${clave}`,
+        })
         .eq('id', ft)
       if (upd.error) throw new Error(`familia_tutores ${clave}: ${upd.error.message}`)
       const c = await serviceClient
@@ -251,16 +262,34 @@ describe('Olvido por centro — solicitud y purga partidas', () => {
     expect([...(todo.get(BUCKET_DNI_TUTORES) ?? [])].sort()).toEqual([t.A.dni, t.B.dni].sort())
     expect(todo.get(BUCKET_USUARIOS_FOTOS)).toContain(`${t.u.id}/avatar.jpg`)
 
+    // Las columnas personales del perfil, de la lista compartida (que `purga-cierre` compara con
+    // las vivas): una columna nueva entra aquí sin tocar este test.
+    const PERFIL = columnas(PERSONALES_FAMILIA_TUTORES)
+    const perfil = async (ft: string) =>
+      (await serviceClient.from('familia_tutores').select(PERFIL).eq('id', ft).single())
+        .data as Record<string, unknown> | null
+    // Premisa: los dos perfiles tienen valor en cada columna personal.
+    const antesB = await perfil(t.B.ft)
+    for (const [clave, fila] of [
+      ['A', await perfil(t.A.ft)],
+      ['B', antesB],
+    ] as const) {
+      for (const c of PERSONALES_FAMILIA_TUTORES) {
+        expect(fila?.[c], `${clave}.${c} antes`).not.toBeNull()
+      }
+    }
     await purgar(solA)
+    // La rama por centro: el perfil de A, entero a NULL; el de B, como estaba.
+    expect(await perfil(t.A.ft)).toEqual(todasA(PERSONALES_FAMILIA_TUTORES, null))
+    expect(await perfil(t.B.ft)).toEqual(antesB)
 
     // A: borrado.
     expect(await contenido(t.A.msg)).toBe(`Recoge ${BORRADO}`)
     const ftA = await serviceClient
       .from('familia_tutores')
-      .select('nombre_completo, email, dni_documento_path, deleted_at')
+      .select('deleted_at')
       .eq('id', t.A.ft)
       .single()
-    expect(ftA.data).toMatchObject({ nombre_completo: null, email: null, dni_documento_path: null })
     expect(ftA.data?.deleted_at).not.toBeNull()
     const vinA = await serviceClient
       .from('vinculos_familiares')
@@ -330,12 +359,13 @@ describe('Olvido por centro — solicitud y purga partidas', () => {
       .eq('id', t.u.id)
       .single()
     expect(fin.data?.nombre_completo).toBe(BORRADO)
+    // La rama del último centro: el perfil de B, entero a NULL.
     const ftFin = await serviceClient
       .from('familia_tutores')
-      .select('nombre_completo')
+      .select(columnas(PERSONALES_FAMILIA_TUTORES))
       .eq('id', t.B.ft)
       .single()
-    expect(ftFin.data?.nombre_completo).toBeNull()
+    expect(ftFin.data).toEqual(todasA(PERSONALES_FAMILIA_TUTORES, null))
   })
 
   it('con dos solicitudes pendientes, ninguna es la última hasta que se purga la otra', async () => {

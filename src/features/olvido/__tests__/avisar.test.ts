@@ -87,13 +87,18 @@ describe('avisarFamilia', () => {
   it('un correo a cada destinatario, en su idioma, que nombra el centro y lleva al perfil', async () => {
     const n = await avisarFamilia(service(), 'sol-1', 'rechazada')
     expect(n).toBe(2)
-    expect(h.correos.map((c) => c.para)).toEqual(['u-es@example.test', 'u-va@example.test'])
-    expect(h.correos[0]!.texto).toContain(
+    // El código no promete el orden de los correos (sale del de las filas de la consulta de
+    // destinatarios): cada correo se busca por su destinatario.
+    expect(h.correos.map((c) => c.para).sort()).toEqual(['u-es@example.test', 'u-va@example.test'])
+    const para = (email: string) => h.correos.find((c) => c.para === email)!
+    expect(para('u-es@example.test').texto).toContain(
       'CEI Ejemplo ha rechazado la petición de borrado de datos'
     )
-    expect(h.correos[0]!.texto).toContain('https://nido.test/es/profile')
-    expect(h.correos[1]!.texto).toContain("CEI Ejemplo ha rebutjat la petició d'esborrat de dades")
-    expect(h.correos[1]!.texto).toContain('https://nido.test/va/profile')
+    expect(para('u-es@example.test').texto).toContain('https://nido.test/es/profile')
+    expect(para('u-va@example.test').texto).toContain(
+      "CEI Ejemplo ha rebutjat la petició d'esborrat de dades"
+    )
+    expect(para('u-va@example.test').texto).toContain('https://nido.test/va/profile')
   })
 })
 

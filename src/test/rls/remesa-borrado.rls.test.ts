@@ -259,7 +259,7 @@ describe('Borrar una remesa', () => {
 
   it('borrar un centro se lleva sus remesas, también la enviada', async () => {
     const otro = await createTestCentro('Centro Borrar Remesa Desechable')
-    const ids: string[] = []
+    const porMes = new Map<number, string>()
     for (const mes of [5, 6]) {
       const { data, error } = await serviceClient
         .from('remesas')
@@ -267,9 +267,9 @@ describe('Borrar una remesa', () => {
         .select('id')
         .single()
       if (error || !data) throw new Error(`remesa: ${error?.message}`)
-      ids.push(data.id)
+      porMes.set(mes, data.id)
     }
-    marcarEnviadaComoLaFuncion(ids[1]!, '2026-06-02')
+    marcarEnviadaComoLaFuncion(porMes.get(6)!, '2026-06-02') // la de junio, la enviada
     // Premisa: el centro tiene un borrador y una enviada.
     const { data: antes } = await serviceClient
       .from('remesas')
@@ -278,7 +278,10 @@ describe('Borrar una remesa', () => {
     expect((antes ?? []).map((r) => r.estado).sort()).toEqual(['borrador', 'enviada'])
     const d = await serviceClient.from('centros').delete().eq('id', otro.id)
     expect(d.error).toBeNull()
-    const { data: despues } = await serviceClient.from('remesas').select('id').in('id', ids)
+    const { data: despues } = await serviceClient
+      .from('remesas')
+      .select('id')
+      .in('id', [...porMes.values()])
     expect(despues).toEqual([])
   })
 })

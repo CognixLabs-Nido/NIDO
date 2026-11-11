@@ -137,13 +137,16 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
       await deleteTestUser(admin.id)
     })
 
-    async function nuevaFamilia(nombres: string[]): Promise<{ familia: string; ninos: string[] }> {
+    // Cada niño por su nombre: los asertos dicen «el Menor», no «el segundo que se creó».
+    async function nuevaFamilia<N extends string>(
+      nombres: readonly N[]
+    ): Promise<{ familia: string; ninos: Record<N, string> }> {
       const familia = await createTestFamilia(centro.id)
-      const ninos: string[] = []
+      const ninos = {} as Record<N, string>
       for (const nombre of nombres) {
         const id = await insertarNino(centro.id, familia, nombre)
         await matricular(id, aula.id, curso.id)
-        ninos.push(id)
+        ninos[nombre] = id
       }
       return { familia, ninos }
     }
@@ -157,8 +160,8 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         nombre: 'Cuota ' + familia,
         importe_centimos: 20000,
       })
-      await asignar({ concepto_id: cuota, nino_id: ninos[0] })
-      await asignar({ concepto_id: cuota, nino_id: ninos[1] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['Lucía'] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['Mateo'] })
 
       const r = await gen()
       expect(r.error).toBeNull()
@@ -167,7 +170,7 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
       expect(recibo?.estado).toBe('borrador')
       expect(recibo?.nino_id).toBeNull() // recibo familiar
       const porNino = lineas.filter((l) => l.concepto_id === cuota)
-      expect(porNino.map((l) => l.nino_id).sort()).toEqual([...ninos].sort())
+      expect(porNino.map((l) => l.nino_id).sort()).toEqual(Object.values(ninos).sort())
       expect(recibo?.total_centimos).toBe(40000)
     })
 
@@ -181,11 +184,11 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         servicio: 'comedor',
       })
       // cantidad_default=5 debe IGNORARSE en diario (mandan los días del parte).
-      await asignar({ concepto_id: comedor, nino_id: ninos[0], cantidad_default: 5 })
+      await asignar({ concepto_id: comedor, nino_id: ninos['Comedorito'], cantidad_default: 5 })
       for (const fecha of ['2026-06-02', '2026-06-03', '2026-06-04']) {
         await serviceClient.from('parte_servicio_diario').insert({
           centro_id: centro.id,
-          nino_id: ninos[0],
+          nino_id: ninos['Comedorito'],
           fecha,
           servicio: 'comedor',
           presente: true,
@@ -207,7 +210,7 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
       })
       await asignar({
         concepto_id: cuota,
-        nino_id: ninos[0],
+        nino_id: ninos['Override'],
         importe_override_centimos: 15000,
         cantidad_default: 2,
       })
@@ -225,7 +228,11 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         importe_centimos: 20000,
       })
       // vigencia hasta mayo → NO aplica en junio.
-      await asignar({ concepto_id: cuota, nino_id: ninos[0], vigencia_hasta: '2026-05-31' })
+      await asignar({
+        concepto_id: cuota,
+        nino_id: ninos['Caducado'],
+        vigencia_hasta: '2026-05-31',
+      })
       await gen()
       const { recibo } = await reciboRegular(familia, ANIO, MES)
       expect(recibo).toBeNull() // sin líneas → descartado
@@ -239,18 +246,22 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         nombre: 'CuotaB ' + familia,
         importe_centimos: 20000,
       })
-      await asignar({ concepto_id: cuota, nino_id: ninos[0] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['Becado'] })
       const beca = await mkConcepto(centro.id, {
         nombre: 'Beca ' + familia,
         signo: -1,
         importe_centimos: 1000,
       })
-      await asignar({ concepto_id: beca, nino_id: ninos[0], importe_override_centimos: 5000 })
+      await asignar({
+        concepto_id: beca,
+        nino_id: ninos['Becado'],
+        importe_override_centimos: 5000,
+      })
       await gen()
       const { recibo, lineas } = await reciboRegular(familia, ANIO, MES)
       const linea = lineas.find((l) => l.concepto_id === beca)
       expect(linea?.importe_centimos).toBe(-5000)
-      expect(linea?.nino_id).toBe(ninos[0])
+      expect(linea?.nino_id).toBe(ninos['Becado'])
       expect(recibo?.total_centimos).toBe(15000) // 20000 − 5000
     })
 
@@ -261,8 +272,16 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         importe_centimos: 10000,
       })
       // Mayor paga 30000 (override), Menor 20000.
-      await asignar({ concepto_id: cuota, nino_id: ninos[0], importe_override_centimos: 30000 })
-      await asignar({ concepto_id: cuota, nino_id: ninos[1], importe_override_centimos: 20000 })
+      await asignar({
+        concepto_id: cuota,
+        nino_id: ninos['Mayor'],
+        importe_override_centimos: 30000,
+      })
+      await asignar({
+        concepto_id: cuota,
+        nino_id: ninos['Menor'],
+        importe_override_centimos: 20000,
+      })
       const desc = await mkConcepto(centro.id, {
         nombre: 'Descuento hermanos ' + familia,
         signo: -1,
@@ -276,7 +295,7 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
       const { lineas } = await reciboRegular(familia, ANIO, MES)
       const descuentos = lineas.filter((l) => l.concepto_id === desc)
       expect(descuentos).toHaveLength(1)
-      expect(descuentos[0]!.nino_id).toBe(ninos[1]) // el Menor (paga menos)
+      expect(descuentos[0]!.nino_id).toBe(ninos['Menor']) // el Menor (paga menos)
       expect(descuentos[0]!.importe_centimos).toBe(-2000) // 10% de 20000
     })
 
@@ -286,8 +305,8 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         nombre: 'CuotaE ' + familia,
         importe_centimos: 20000,
       })
-      await asignar({ concepto_id: cuota, nino_id: ninos[0] })
-      await asignar({ concepto_id: cuota, nino_id: ninos[1] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['EmpA'] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['EmpB'] })
       const desc = await mkConcepto(centro.id, {
         nombre: 'DescEmp ' + familia,
         signo: -1,
@@ -318,7 +337,8 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         nombre: 'CuotaF ' + familia,
         importe_centimos: 20000,
       })
-      for (const n of ninos) await asignar({ concepto_id: cuota, nino_id: n })
+      for (const n of Object.values<string>(ninos))
+        await asignar({ concepto_id: cuota, nino_id: n })
       const desc = await mkConcepto(centro.id, {
         nombre: 'DescFijo ' + familia,
         signo: -1,
@@ -341,7 +361,7 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         nombre: 'CuotaI ' + familia,
         importe_centimos: 30000,
       })
-      await asignar({ concepto_id: cuota, nino_id: ninos[0] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['Indiv'] })
       const desc = await mkConcepto(centro.id, {
         nombre: 'DescIndiv ' + familia,
         signo: -1,
@@ -350,10 +370,10 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         porcentaje_bp: 1000,
         concepto_base_id: cuota,
       })
-      await asignar({ concepto_id: desc, nino_id: ninos[0] })
+      await asignar({ concepto_id: desc, nino_id: ninos['Indiv'] })
       await gen()
       const l = (await reciboRegular(familia, ANIO, MES)).lineas.find((x) => x.concepto_id === desc)
-      expect(l?.nino_id).toBe(ninos[0])
+      expect(l?.nino_id).toBe(ninos['Indiv'])
       expect(l?.importe_centimos).toBe(-3000) // 10% de 30000
     })
 
@@ -364,8 +384,8 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         nombre: 'CuotaFam ' + familia,
         importe_centimos: 20000,
       })
-      await asignar({ concepto_id: cuota, nino_id: ninos[0] })
-      await asignar({ concepto_id: cuota, nino_id: ninos[1] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['Fam1a'] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['Fam1b'] })
       // Concepto de ámbito FAMILIA, positivo, fijo, mensual (p.ej. servicio común de la familia).
       const comun = await mkConcepto(centro.id, {
         nombre: 'Servicio común ' + familia,
@@ -389,7 +409,7 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         nombre: 'CuotaFamOv ' + familia,
         importe_centimos: 20000,
       })
-      await asignar({ concepto_id: cuota, nino_id: ninos[0] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['FamOv'] })
       const comun = await mkConcepto(centro.id, {
         nombre: 'ComunOv ' + familia,
         ambito: 'familia',
@@ -416,7 +436,7 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         nombre: 'CuotaFamVig ' + familia,
         importe_centimos: 20000,
       })
-      await asignar({ concepto_id: cuota, nino_id: ninos[0] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['FamVig'] })
       const comun = await mkConcepto(centro.id, {
         nombre: 'ComunVig ' + familia,
         ambito: 'familia',
@@ -437,8 +457,8 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         nombre: 'CuotaBase ' + familia,
         importe_centimos: 20000,
       })
-      await asignar({ concepto_id: cuota, nino_id: ninos[0] })
-      await asignar({ concepto_id: cuota, nino_id: ninos[1] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['BaseA'] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['BaseB'] })
       // Cargo familiar positivo grande (50000): no debe contaminar la base de ningún hijo.
       const comun = await mkConcepto(centro.id, {
         nombre: 'ComunBase ' + familia,
@@ -470,7 +490,7 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         nombre: 'CuotaS ' + familia,
         importe_centimos: 20000,
       })
-      await asignar({ concepto_id: cuota, nino_id: ninos[0] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['Solo'] })
       const desc = await mkConcepto(centro.id, {
         nombre: 'DescSolo ' + familia,
         signo: -1,
@@ -500,7 +520,7 @@ describe('F-4-3 — motor de recibos a grano FAMILIA', () => {
         nombre: 'CuotaId ' + familia,
         importe_centimos: 12345,
       })
-      await asignar({ concepto_id: cuota, nino_id: ninos[0] })
+      await asignar({ concepto_id: cuota, nino_id: ninos['Idem'] })
       await gen()
       const a = await reciboRegular(familia, ANIO, MES)
       await gen()

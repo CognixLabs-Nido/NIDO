@@ -80,10 +80,13 @@ describe('PR-8 — el descuento por hermano, fijo o porcentaje por familia', () 
     return data.id
   }
 
-  async function familiaConDosHermanos(): Promise<{ familia: string; ninos: string[] }> {
+  async function familiaConDosHermanos(): Promise<{
+    familia: string
+    ninos: Record<1 | 2, string>
+  }> {
     const familia = await createTestFamilia(centro.id)
-    const ninos: string[] = []
-    for (const i of [1, 2]) {
+    const ninos = {} as Record<1 | 2, string>
+    for (const i of [1, 2] as const) {
       const { data, error } = await serviceClient
         .from('ninos')
         .insert({
@@ -104,7 +107,7 @@ describe('PR-8 — el descuento por hermano, fijo o porcentaje por familia', () 
         origen: 'manual',
       })
       if (asig.error) throw new Error(`escolaridad: ${asig.error.message}`)
-      ninos.push(data.id)
+      ninos[i] = data.id
     }
     return { familia, ninos }
   }
@@ -176,7 +179,7 @@ describe('PR-8 — el descuento por hermano, fijo o porcentaje por familia', () 
     familias.garcia = (await familiaConDosHermanos()).familia
     const perez = await familiaConDosHermanos()
     familias.perez = perez.familia
-    ninoPerez2 = perez.ninos[1]!
+    ninoPerez2 = perez.ninos[2] // «Nino PR8 2», por su nombre
     familias.catalogo = (await familiaConDosHermanos()).familia
     familias.equis = (await familiaConDosHermanos()).familia
     await crearFamiliaTutor(familias.perez, tutorPerez.id, 'titular')

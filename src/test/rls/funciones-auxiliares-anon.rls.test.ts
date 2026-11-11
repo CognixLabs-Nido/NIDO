@@ -11,6 +11,7 @@ import {
   serviceClient,
   type TestUser,
 } from './setup'
+import { consultaBase } from './columnas-vivas'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -183,6 +184,31 @@ const EN_PRIVADO = new Set([
 /** Las que siguen en `public`, a las que se les prueban los permisos. */
 const EN_PUBLIC = FUNCIONES.filter(([n]) => !EN_PRIVADO.has(n))
 
+/**
+ * El catálogo de funciones de `public` y `privado`, por psql contra la BD del CI: cuántas hay que no
+ * son de trigger, cuántas de trigger ejecuta anon (el control: la pregunta a `has_function_privilege`
+ * contesta TRUE cuando toca), si authenticated ejecuta `es_admin` (el otro control), cuáles que no son
+ * de trigger ejecuta anon, y los nombres de todas.
+ */
+function catalogoFunciones() {
+  const [total, triggersAnon, controlAuth, abiertas, nombres] = consultaBase(`SELECT
+  count(*) FILTER (WHERE p.prorettype <> 'trigger'::regtype) || '|' ||
+  count(*) FILTER (WHERE p.prorettype = 'trigger'::regtype AND has_function_privilege('anon', p.oid, 'EXECUTE')) || '|' ||
+  has_function_privilege('authenticated', 'public.es_admin(uuid)', 'EXECUTE')::text || '|' ||
+  coalesce(string_agg(n.nspname || '.' || p.proname, ',' ORDER BY n.nspname, p.proname)
+    FILTER (WHERE p.prorettype <> 'trigger'::regtype AND has_function_privilege('anon', p.oid, 'EXECUTE')), '') || '|' ||
+  string_agg(DISTINCT p.proname, ',')
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname IN ('public', 'privado');`).split('|')
+  return {
+    noTrigger: Number(total),
+    triggersQueAnonEjecuta: Number(triggersAnon),
+    authenticatedEjecutaEsAdmin: controlAuth === 'true',
+    abiertasAAnon: abiertas ? abiertas.split(',') : [],
+    nombres: new Set(nombres!.split(',')),
+  }
+}
+
 describe('Funciones auxiliares — las 46 cerradas a anon', () => {
   let usuario: TestUser
   let autenticado: Client
@@ -197,6 +223,24 @@ describe('Funciones auxiliares — las 46 cerradas a anon', () => {
   afterAll(async () => {
     await deleteTestUser(usuario.id)
   }, 60_000)
+
+  it('anon no ejecuta NINGUNA función de public ni de privado que no sea de trigger (el catálogo entero, no la lista)', () => {
+    const c = catalogoFunciones()
+    // Premisas: el catálogo se leyó entero, y la pregunta de privilegios contesta TRUE cuando toca
+    // (anon sí ejecuta funciones de trigger, que la API no puede llamar; authenticated, es_admin).
+    expect(c.noTrigger).toBeGreaterThan(200)
+    expect(c.triggersQueAnonEjecuta).toBeGreaterThan(0)
+    expect(c.authenticatedEjecutaEsAdmin).toBe(true)
+    // Ninguna de public ni de privado es para anon. Si alguna lo fuera, iría aquí con su porqué.
+    const PARA_ANON: Readonly<Record<string, string>> = {}
+    expect(c.abiertasAAnon.filter((f) => !(f in PARA_ANON))).toEqual([])
+  })
+
+  it('cada nombre de la lista existe en el catálogo (una lista con un nombre viejo prueba la nada)', () => {
+    const c = catalogoFunciones()
+    expect(c.nombres.size).toBeGreaterThan(100) // premisa: el catálogo se leyó
+    expect(FUNCIONES.map(([n]) => n).filter((n) => !c.nombres.has(n))).toEqual([])
+  })
 
   it('son 46 funciones distintas', () => {
     expect(new Set(FUNCIONES.map(([nombre]) => nombre)).size).toBe(46)
