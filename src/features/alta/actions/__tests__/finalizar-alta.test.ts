@@ -62,6 +62,10 @@ function altaCompleta(): Estado {
       {
         apellidos: 'Demo Pruebas',
         fecha_nacimiento: '2025-03-01',
+        // Fase 5b: los tres obligatorios.
+        lugar_nacimiento: 'Valencia',
+        nacionalidad: 'española',
+        hermanos_total: 1,
         libro_familia_path: `${CENTRO}/${NINO}/libro-familia.pdf`,
         familia_id: FAMILIA,
         centro_id: CENTRO,
@@ -204,14 +208,14 @@ describe('finalizarAlta · el mandato SEPA no es obligatorio (D10)', () => {
   })
 })
 
-describe('finalizarAlta · los documentos del centro (fase 4, 4b-2)', () => {
-  const cierra = async (estado: Estado) => {
-    const { fake, rpcSpy } = makeFake(estado)
-    createClientMock.mockReturnValue(fake)
-    const r = await finalizarAlta(NINO)
-    return { r, cerro: rpcSpy.mock.calls.some(([fn]) => fn === 'marcar_matricula_lista') }
-  }
+async function cierra(estado: Estado) {
+  const { fake, rpcSpy } = makeFake(estado)
+  createClientMock.mockReturnValue(fake)
+  const r = await finalizarAlta(NINO)
+  return { r, cerro: rpcSpy.mock.calls.some(([fn]) => fn === 'marcar_matricula_lista') }
+}
 
+describe('finalizarAlta · los documentos del centro (fase 4, 4b-2)', () => {
   it('premisa: con las normas firmadas, finaliza', async () => {
     expect(await cierra(altaCompleta())).toEqual({
       r: { success: true, data: { id: NINO } },
@@ -266,6 +270,45 @@ describe('finalizarAlta · los documentos del centro (fase 4, 4b-2)', () => {
       success: false,
       error: 'alta.errors.incompleto',
       faltan: ['documentos_centro'],
+    })
+  })
+})
+
+describe('finalizarAlta · los datos del niño que el alta exige (fase 5b)', () => {
+  it('premisa: con los cinco puestos, finaliza', async () => {
+    expect((await cierra(altaCompleta())).cerro).toBe(true)
+  })
+
+  for (const [campo, vacio] of [
+    ['lugar_nacimiento', null],
+    ['lugar_nacimiento', '   '],
+    ['nacionalidad', null],
+    ['nacionalidad', ''],
+    ['hermanos_total', null],
+    ['apellidos', null],
+    ['fecha_nacimiento', null],
+  ] as const) {
+    it(`sin ${campo} (${JSON.stringify(vacio)}) falta «identidad» y no se llama a la base`, async () => {
+      const estado = altaCompleta()
+      ;(estado.ninos![0] as Record<string, unknown>)[campo] = vacio
+      expect(await cierra(estado)).toEqual({
+        r: { success: false, error: 'alta.errors.incompleto', faltan: ['identidad'] },
+        cerro: false,
+      })
+    })
+  }
+
+  it('si la base frena (datos_nino_por_completar), se dice lo que falta, no «no se pudo»', async () => {
+    const estado = altaCompleta()
+    estado.errorMarcar = {
+      code: 'P0001',
+      message: 'faltan datos del nino por completar',
+      hint: 'datos_nino_por_completar',
+    }
+    expect((await cierra(estado)).r).toEqual({
+      success: false,
+      error: 'alta.errors.incompleto',
+      faltan: ['identidad'],
     })
   })
 })

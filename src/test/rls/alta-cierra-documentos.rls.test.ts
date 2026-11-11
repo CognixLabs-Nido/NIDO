@@ -17,6 +17,7 @@ import {
   createTestAula,
   createTestCentro,
   createTestCurso,
+  completarDatosAlta,
   createTestNino,
   createTestUser,
   crearVinculo,
@@ -111,6 +112,7 @@ describe('El cierre del alta y los documentos del centro (4b-2)', () => {
     ] as const) {
       const { curso, aula } = aulas.get(c.id)!
       n[k] = (await createTestNino(c.id, `${k} Cierre`)).id
+      await completarDatosAlta(n[k]) // 5b: aquí se mide la puerta de los documentos, no esta
       const m = await matricular(n[k], aula, curso)
       const { error } = await serviceClient
         .from('matriculas')

@@ -41,6 +41,8 @@ vi.mock('@/features/cambios-pendientes/lib/gate', () => ({
   },
 }))
 
+import { payloadNinosFamiliaSchema } from '@/features/cambios-pendientes/schemas'
+
 import { actualizarNinoFamilia } from '../actualizar-nino-familia'
 
 // Lo guardado en la ficha del niño: con el alta validada, la acción compara con esto (2026-11-08).
@@ -211,5 +213,39 @@ describe('actualizarNinoFamilia — escribe por RPC de sesión (D2)', () => {
 
     expect(r).toEqual({ success: true, data: { id: NINO } })
     expect(rpcSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('actualizarNinoFamilia — la provincia (fase 5b)', () => {
+  it('sin validar: la provincia va a la RPC con el resto del domicilio', async () => {
+    authz.tutor = true
+    const { fake, rpcSpy } = makeFake()
+    createClientMock.mockReturnValue(fake)
+
+    await actualizarNinoFamilia({ nino_id: NINO, direccion_provincia: 'València' })
+
+    expect(rpcSpy).toHaveBeenCalledWith('actualizar_familia_nino', {
+      p_nino_id: NINO,
+      p_patch: { direccion_provincia: 'València' },
+    })
+  })
+
+  it('validada: la provincia encolada sobrevive al esquema estricto con el que se aprueba', async () => {
+    authz.tutor = true
+    gate.validada = true
+    const { fake } = makeFake()
+    createClientMock.mockReturnValue(fake)
+
+    await actualizarNinoFamilia({ nino_id: NINO, direccion_provincia: 'València' })
+
+    expect(registrarSpy).toHaveBeenCalledTimes(1) // premisa: fue a la cola
+    const payload = (registrarSpy.mock.calls[0]![1] as { payload: object }).payload
+    expect(payload).toEqual({ direccion_provincia: 'València' })
+    // Lo que se aprueba es lo que `aplicar.ts` parsea: sin la provincia en el esquema, esto lanza.
+    expect(payloadNinosFamiliaSchema.parse(payload)).toEqual({ direccion_provincia: 'València' })
+  })
+
+  it('el esquema de la cola es estricto: una clave que no conoce no se descarta, falla', () => {
+    expect(() => payloadNinosFamiliaSchema.parse({ direccion_planeta: 'Marte' })).toThrow()
   })
 })

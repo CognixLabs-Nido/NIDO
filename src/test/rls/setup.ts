@@ -403,6 +403,25 @@ export async function createTestNino(centro_id: string, nombre?: string): Promis
 }
 
 /**
+ * Fase 5b (`20270114120000`): el alta no se cierra sin lugar de nacimiento, nacionalidad y hermanos
+ * (`marcar_matricula_lista`, HINT `datos_nino_por_completar`). `createTestNino` no los pone: el niño
+ * recién creado es el de antes de rellenar el paso del menor. Los tests que cierran un alta los
+ * ponen con esto, a la vista. Valores ficticios.
+ */
+export async function completarDatosAlta(nino_id: string): Promise<void> {
+  const { error } = await serviceClient
+    .from('ninos')
+    .update({
+      lugar_nacimiento: 'Lugar Demo',
+      nacionalidad: 'Nacionalidad Demo',
+      hermanos_total: 1,
+      hermanos_lugar: 1,
+    })
+    .eq('id', nino_id)
+  if (error) throw new Error(`completarDatosAlta falló: ${error.message}`)
+}
+
+/**
  * F-2c-1 — enlaza un usuario a una familia como tutor en `familia_tutores` (el gate por
  * familia `es_tutor_de_familia` mira ESTA tabla, no `vinculos_familiares`). Vía serviceClient
  * (bypassa el trigger `familia_tutores_proteger_usuario_id`). Limpieza por cascada de familia.

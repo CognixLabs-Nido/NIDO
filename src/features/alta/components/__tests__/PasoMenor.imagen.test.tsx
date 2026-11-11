@@ -56,8 +56,16 @@ function renderPaso(props: {
         segundo_apellido: null,
         fecha_nacimiento: '2024-03-15',
         sexo: null,
-        nacionalidad: null,
+        nacionalidad: 'española',
         idioma_principal: 'es',
+        lugar_nacimiento: 'Valencia',
+        dni: null,
+        hermanos_total: 1,
+        hermanos_lugar: 1,
+        direccion_provincia: null,
+        observaciones_familia: null,
+        como_nos_conocio: null,
+        como_nos_conocio_otro: null,
       }}
       direccionInicial={{
         direccion_calle: null,
