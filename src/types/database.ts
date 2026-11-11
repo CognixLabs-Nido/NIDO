@@ -4932,6 +4932,18 @@ export type Database = {
         Args: { p_centro_id: string }
         Returns: number
       }
+      contenido_firmas: {
+        Args: { p_firma_ids: string[] }
+        Returns: {
+          comentario: string | null
+          datos: Json
+          firma_id: string
+          firma_imagen: string | null
+          ip_address: unknown
+          nombre_tecleado: string
+          user_agent: string | null
+        }[]
+      }
       crear_o_anadir_a_familia: {
         Args: {
           p_aula_id: string
@@ -5213,6 +5225,26 @@ export type Database = {
           estado: string
           version_id: string | null
           disponible_desde: string | null
+        }[]
+      }
+      ficha_gestion_ninos: {
+        Args: { p_nino_ids: string[] }
+        Returns: {
+          como_nos_conocio: string | null
+          como_nos_conocio_otro: string | null
+          direccion_calle: string | null
+          direccion_ciudad: string | null
+          direccion_cp: string | null
+          direccion_numero: string | null
+          direccion_provincia: string | null
+          dni: string | null
+          estado_civil_familia: Database['public']['Enums']['estado_civil'] | null
+          hermanos_lugar: number | null
+          hermanos_total: number | null
+          libro_familia_path: string | null
+          nino_id: string
+          notas_admin: string | null
+          observaciones_familia: string | null
         }[]
       }
       firmar_documento_centro: {
@@ -5642,6 +5674,7 @@ export type Database = {
         Args: { p_publicacion_id: string }
         Returns: boolean
       }
+      puede_exportar_nino: { Args: { p_nino_id: string }; Returns: boolean }
       puede_participar_conversacion: {
         Args: { p_conversacion_id: string }
         Returns: boolean
