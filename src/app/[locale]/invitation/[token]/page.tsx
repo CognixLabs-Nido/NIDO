@@ -149,7 +149,16 @@ function AltaInvitacionFlow({
           sexo: null,
           nacionalidad: null,
           idioma_principal: locale,
+          lugar_nacimiento: null,
+          dni: null,
+          hermanos_total: null,
+          hermanos_lugar: null,
+          direccion_provincia: null,
+          observaciones_familia: null,
+          como_nos_conocio: null,
+          como_nos_conocio_otro: null,
         }}
+        mostrarComoNosConocio={false}
         direccionInicial={{
           direccion_calle: null,
           direccion_numero: null,

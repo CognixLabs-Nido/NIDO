@@ -854,7 +854,15 @@
         "fecha_baja": "End",
         "aula_actual": "Current classroom",
         "confirmar_fuera_cohorte": "I confirm enrolling even if the age doesn't match the classroom cohort",
-        "acciones": "Actions"
+        "acciones": "Actions",
+        "lugar_nacimiento": "Place of birth",
+        "dni": "DNI or NIE",
+        "hermanos": "Siblings",
+        "hermanos_valor": "{lugar} of {total}",
+        "provincia": "Province",
+        "observaciones_familia": "Family notes",
+        "como_nos_conocio": "How they heard about us",
+        "campos_alta_sin_lectura": "The enrolment details (place of birth, DNI, siblings…) could not be loaded. Reload the page."
       },
       "fotos": {
         "titulo": "Child photo",
@@ -1197,7 +1205,8 @@
         "estado_civil_familia": "Family marital status",
         "email": "Email",
         "nombre_completo": "Full name",
-        "documento": "Document"
+        "documento": "Document",
+        "direccion_provincia": "Province"
       },
       "entidad": {
         "ninos_familia": "Child data (address / family situation)",
@@ -2411,7 +2420,13 @@
       "fecha_formato": "Invalid date format (YYYY-MM-DD)",
       "fecha_futura": "Date of birth cannot be in the future",
       "aula_invalida": "Select a classroom",
-      "invalid": "Invalid data."
+      "invalid": "Invalid data.",
+      "nacionalidad_requerida": "Enter the nationality",
+      "lugar_requerido": "Enter the place of birth",
+      "dni_invalido": "The DNI or NIE is not valid: check the numbers and the letter",
+      "hermanos_requeridos": "Enter how many siblings there are and the child’s place among them",
+      "hermanos_lugar_mayor": "The place cannot be higher than the number of siblings",
+      "como_nos_conocio_otro_requerido": "Tell us how you heard about us"
     },
     "errors": {
       "create_failed": "Could not register the child.",
@@ -4558,7 +4573,11 @@
         "medicacion_habitual": "Regular medication",
         "alergias_leves": "Mild allergies",
         "medico_familia": "Family doctor",
-        "telefono_emergencia": "Emergency phone"
+        "telefono_emergencia": "Emergency phone",
+        "internet": "Internet",
+        "redes_sociales": "Social media",
+        "recomendacion": "Recommendation",
+        "paso_por_delante": "Walks past the school"
       }
     },
     "descargar_mis_datos": "Download my data",
@@ -4651,7 +4670,27 @@
       "direccion_cp": "Postcode",
       "direccion_ciudad": "City",
       "guardar_datos": "Save details",
-      "pedagogicos_titulo": "Pedagogical details"
+      "pedagogicos_titulo": "Pedagogical details",
+      "nacionalidad": "Nationality *",
+      "lugar_nacimiento": "Place of birth *",
+      "dni": "Child’s DNI or NIE",
+      "dni_ayuda": "Optional. If they have one, with its letter.",
+      "hermanos_total": "Number of siblings *",
+      "hermanos_lugar": "Place among them *",
+      "hermanos_ayuda": "Count this child too. Place 1 is the eldest: an only child is 1 and 1.",
+      "direccion_provincia": "Province",
+      "observaciones": "Notes",
+      "observaciones_aviso": "Anything you would like the school to know. Medical information (allergies, medication, illnesses) does not go here: it goes in the medical record.",
+      "como_nos_conocio": "How did you hear about us?",
+      "como_nos_conocio_placeholder": "Choose an option",
+      "como_nos_conocio_otro": "Tell us how",
+      "como_nos_conocio_opciones": {
+        "internet": "Online",
+        "redes_sociales": "Social media",
+        "recomendacion": "Recommendation",
+        "paso_por_delante": "I walk past the school",
+        "otro": "Other"
+      }
     },
     "tutor": {
       "guardado": "Guardian details saved",

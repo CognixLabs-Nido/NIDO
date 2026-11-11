@@ -83,12 +83,23 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   // Identidad del menor + libro de familia (documento del niño) en una sola lectura.
   const { data: nino } = await supabase
     .from('ninos')
-    .select('apellidos, fecha_nacimiento, libro_familia_path, familia_id, centro_id')
+    .select(
+      'apellidos, fecha_nacimiento, lugar_nacimiento, nacionalidad, hermanos_total, libro_familia_path, familia_id, centro_id'
+    )
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle()
   if (!nino) return fail('alta.errors.finalizar_fallo')
-  if (!nino.apellidos || !nino.fecha_nacimiento) faltan.push('identidad')
+  // Fase 5b: además de apellidos y fecha, los tres obligatorios (lugar de nacimiento, nacionalidad y
+  // hermanos), con la misma regla que la base (`marcar_matricula_lista`, `datos_nino_por_completar`).
+  if (
+    !nino.apellidos ||
+    !nino.fecha_nacimiento ||
+    !nino.lugar_nacimiento?.trim() ||
+    !nino.nacionalidad?.trim() ||
+    nino.hermanos_total == null
+  )
+    faltan.push('identidad')
 
   // Tutor 1 (identidad) + su DNI (documento) desde el perfil COMPARTIDO `familia_tutores`
   // (F-2b-3): el titular. La señal de "tutor 1 hecho" es tener `nombre_completo`.
@@ -141,12 +152,17 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
     return { success: false, error: 'alta.errors.incompleto', faltan }
   }
 
-  // Gate OK → finalizar. `null` (no había 'pendiente') = idempotente: ya estaba
+  // Gate OK → finalizar. `null` (no había 'pendiente') = idempotente: ya estaba. Desde la 5b es
+  // lo único que da `null`: la falta de datos del niño ya no es silenciosa (`datos_nino_por_completar`).
   // 'lista'/'activa' → éxito.
   const { error } = await supabase.rpc('marcar_matricula_lista', { p_nino_id: id })
   if (error) {
     // La base frena con la misma regla (`documentos_por_firmar`): un documento subido entre el gate
     // y aquí, o una versión nueva. Se dice lo que falta, no «no se pudo».
+    // Lo mismo con los datos del niño (5b): alguien los vació entre el gate y la llamada.
+    if (error.hint === 'datos_nino_por_completar') {
+      return { success: false, error: 'alta.errors.incompleto', faltan: ['identidad'] }
+    }
     if (error.hint === 'documentos_por_firmar') {
       return { success: false, error: 'alta.errors.incompleto', faltan: ['documentos_centro'] }
     }

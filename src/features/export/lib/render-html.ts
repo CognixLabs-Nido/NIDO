@@ -236,6 +236,13 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
 // (export.doc.valores.*). Diccionario plano por VALOR crudo (los valores son
 // únicos entre sí). Lo no listado se humaniza (snake_case → "Texto legible").
 export const VALORES_CONOCIDOS = new Set<string>([
+  // ninos.como_nos_conocio (5b): sin ellos salían «humanizados» en castellano también en en y va.
+  // «otro» ya estaba (lo comparten varios enums). `como-nos-conocio-codigos.test.ts` los lee del
+  // enum de la app y del CHECK de la base.
+  'internet',
+  'redes_sociales',
+  'recomendacion',
+  'paso_por_delante',
   // consentimiento_tipo
   'terminos',
   'privacidad',

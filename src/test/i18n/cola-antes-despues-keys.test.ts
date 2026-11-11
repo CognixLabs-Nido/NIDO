@@ -24,7 +24,6 @@ import {
 const FUENTES: ReadonlyArray<[string, string]> = [
   ['src/features/cambios-pendientes/components/ColaCambiosPendientes.tsx', 'admin.pendientes'],
   ['src/features/alta/components/PasoMenor.tsx', 'alta'],
-  ['src/features/alta/components/PasoIdentidad.tsx', 'alta'],
 ]
 
 const CLAVES = new Set<string>(['alta.edicion_validada_aviso'])

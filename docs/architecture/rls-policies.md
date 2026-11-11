@@ -683,6 +683,27 @@ identidad».
 - Medido en producción el 2026-11-08 (ensayo terminado en RAISE, LF y CRLF).
 - Test: `src/test/rls/campos-nino-puerta.rls.test.ts`.
 
+### El alta exige los datos del niño, y la Dirección los escribe (serie de altas, fase 5b)
+
+Migración `20270114120000_feat_alta_exige_datos_nino`; spec `docs/specs/altas-serie.md`, «5b».
+
+- **`marcar_matricula_lista`**, con la matrícula pendiente, frena (P0001, HINT
+  `datos_nino_por_completar`) si falta el lugar de nacimiento, la nacionalidad o los hermanos, o los
+  apellidos o la fecha. Esos dos frenaban **en silencio** hasta aquí (0 filas, NULL). No es
+  retroactivo; la puerta, el acuse médico y los documentos no cambian, y el acuse sigue frenando
+  antes. La app (`finalizarAlta`) aplica la misma regla antes de llamar y traduce el HINT.
+- **La Dirección escribe la ficha con su sesión** (`ninos_admin_all`), también en el alta en papel:
+  la función de la tutora (`actualizar_identidad_nino_tutor`) le da 42501, porque su puerta es
+  `es_tutor_legal_de`. Lo decide el servidor (`esAdminDeCentroDeNino`), no el cliente, y no pasa por
+  la cola: Dirección no se valida a sí misma. Los CHECK de la 5a le valen igual. Para la tutora y el
+  autorizado ese camino no existe: sin política de UPDATE, 0 filas.
+- **Qué lee el autorizado de `ninos`** (medido el 2026-11-11, ensayo terminado en RAISE): la fila
+  entera, porque `ninos_tutor_select` es `es_tutor_de` (cualquier vínculo vivo) y `authenticated` no
+  tiene permisos por columna. Incluye `notas_admin` y los campos de la 5a. Pendiente del responsable;
+  la ficha de la familia no enseña los campos nuevos hasta entonces.
+- Medido en producción el 2026-11-11 (sonda sin migración y ensayo LF y CRLF, terminados en RAISE).
+- Test: `src/test/rls/alta-exige-datos-nino.rls.test.ts`.
+
 ### Firmar fuera del alta y lo pendiente en el inicio (serie de altas, fase 4, 4c)
 
 Sin migración; spec `docs/specs/altas-serie.md`, «4c». Usa las funciones del 4a con la sesión de

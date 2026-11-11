@@ -13,6 +13,7 @@ import {
   createTestAula,
   createTestCentro,
   createTestCurso,
+  completarDatosAlta,
   createTestNino,
   createTestUser,
   crearVinculo,
@@ -170,6 +171,7 @@ describe('Firmar los documentos del centro', () => {
     lucia = (await createTestNino(centro.id, 'Lucía')).id
     inigo = (await createTestNino(centro.id, 'Íñigo')).id
     pablo = (await createTestNino(centro.id, 'Pablo')).id
+    await completarDatosAlta(pablo) // 5b: el cierre de Pablo mide el acuse, no los datos del niño
     ajeno = (await createTestNino(fuera.id, 'Ajeno')).id
     const aula = await createTestAula(centro.id, cursoActivo)
     const aulaPlan = await createTestAula(centro.id, cursoPlan)

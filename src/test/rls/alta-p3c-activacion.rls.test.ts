@@ -6,6 +6,7 @@ import {
   createTestAula,
   createTestCentro,
   createTestCurso,
+  completarDatosAlta,
   createTestNino,
   createTestUser,
   crearVinculo,
@@ -26,7 +27,8 @@ import type { Database } from '@/types/database'
  *   1. RPC `marcar_matricula_lista` (el tutor LEGAL finaliza: pendiente → lista):
  *      - tutor legal + identidad completa + acuse datos_medicos → 'lista';
  *      - idempotente (2.ª llamada → null, sigue 'lista');
- *      - sin identidad (apellidos null) → null, sigue 'pendiente' (backstop);
+ *      - sin identidad (apellidos null) → frena con HINT `datos_nino_por_completar`, sigue
+ *        'pendiente' (hasta la 5b, `20270114120000`, devolvía null en silencio);
  *      - sin acuse datos_medicos (F11-F) → rechazada, sigue 'pendiente';
  *      - 'autorizado' (no es tutor legal) → rechazada (es_tutor_legal_de).
  *   2. Guard de activarMatricula (a nivel RLS/DB): admin solo activa una 'lista'
@@ -78,6 +80,9 @@ describe('Alta P3c — activación de matrícula (RPC + guard)', () => {
     ninoSinId = await createTestNino(centro.id, 'Nino SinId P3c')
     ninoSinAcuse = await createTestNino(centro.id, 'Nino SinAcuse P3c') // identidad completa
     ninoSinAcuseSuyo = await createTestNino(centro.id, 'Nino SinAcuseSuyo P3c') // identidad completa
+    // Fase 5b: los tres obligatorios, puestos a la vista en los que tienen que poder cerrar (o
+    // frenar por OTRA razón: el acuse). ninoSinId se queda sin ellos y sin apellidos ni fecha.
+    for (const n of [ninoOk, ninoSinAcuse, ninoSinAcuseSuyo]) await completarDatosAlta(n.id)
     // ninoSinId: identidad incompleta → backstop debe impedir 'lista'.
     await serviceClient
       .from('ninos')
@@ -163,11 +168,12 @@ describe('Alta P3c — activación de matrícula (RPC + guard)', () => {
     expect(await estadoDe(matOk)).toBe('lista')
   })
 
-  it('sin identidad (apellidos/fecha null) → backstop: null, sigue pendiente', async () => {
+  it('sin identidad (apellidos/fecha null) → frena con su motivo, sigue pendiente', async () => {
+    // Hasta la 5b (`20270114120000`) devolvía null EN SILENCIO y la app lo tomaba por cerrado.
     const { data, error } = await clientTutor.rpc('marcar_matricula_lista', {
       p_nino_id: ninoSinId.id,
     })
-    expect(error).toBeNull()
+    expect(error?.hint).toBe('datos_nino_por_completar')
     expect(data).toBeNull()
     expect(await estadoDe(matSinId)).toBe('pendiente')
   })

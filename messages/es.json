@@ -854,7 +854,15 @@
         "fecha_baja": "Baja",
         "aula_actual": "Aula actual",
         "confirmar_fuera_cohorte": "Confirmo matricular aunque la edad no coincida con la cohorte del aula",
-        "acciones": "Acciones"
+        "acciones": "Acciones",
+        "lugar_nacimiento": "Lugar de nacimiento",
+        "dni": "DNI o NIE",
+        "hermanos": "Hermanos",
+        "hermanos_valor": "{lugar}.º de {total}",
+        "provincia": "Provincia",
+        "observaciones_familia": "Observaciones de la familia",
+        "como_nos_conocio": "Cómo nos conoció",
+        "campos_alta_sin_lectura": "No se han podido leer los datos del alta (lugar de nacimiento, DNI, hermanos…). Vuelve a cargar la página."
       },
       "fotos": {
         "titulo": "Foto del niño",
@@ -1197,7 +1205,8 @@
         "estado_civil_familia": "Estado civil de la familia",
         "email": "Email",
         "nombre_completo": "Nombre completo",
-        "documento": "Documento"
+        "documento": "Documento",
+        "direccion_provincia": "Provincia"
       },
       "entidad": {
         "ninos_familia": "Datos del menor (dirección / situación familiar)",
@@ -2411,7 +2420,13 @@
       "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)",
       "fecha_futura": "La fecha de nacimiento no puede ser futura",
       "aula_invalida": "Selecciona un aula",
-      "invalid": "Datos no válidos."
+      "invalid": "Datos no válidos.",
+      "nacionalidad_requerida": "Indica la nacionalidad",
+      "lugar_requerido": "Indica el lugar de nacimiento",
+      "dni_invalido": "El DNI o NIE no es válido: revisa los números y la letra",
+      "hermanos_requeridos": "Indica cuántos hermanos son y qué lugar ocupa",
+      "hermanos_lugar_mayor": "El lugar no puede ser mayor que el número de hermanos",
+      "como_nos_conocio_otro_requerido": "Cuéntanos cómo nos has conocido"
     },
     "errors": {
       "create_failed": "No se pudo registrar al niño.",
@@ -4558,7 +4573,11 @@
         "medicacion_habitual": "Medicación habitual",
         "alergias_leves": "Alergias leves",
         "medico_familia": "Médico de familia",
-        "telefono_emergencia": "Teléfono de emergencia"
+        "telefono_emergencia": "Teléfono de emergencia",
+        "internet": "Internet",
+        "redes_sociales": "Redes sociales",
+        "recomendacion": "Recomendación",
+        "paso_por_delante": "Pasa por delante del centro"
       }
     },
     "descargar_mis_datos": "Descargar mis datos",
@@ -4651,7 +4670,27 @@
       "direccion_cp": "Código postal",
       "direccion_ciudad": "Ciudad",
       "guardar_datos": "Guardar datos",
-      "pedagogicos_titulo": "Datos pedagógicos"
+      "pedagogicos_titulo": "Datos pedagógicos",
+      "nacionalidad": "Nacionalidad *",
+      "lugar_nacimiento": "Lugar de nacimiento *",
+      "dni": "DNI o NIE del menor",
+      "dni_ayuda": "Opcional. Si lo tiene, con su letra.",
+      "hermanos_total": "Número de hermanos *",
+      "hermanos_lugar": "Lugar que ocupa *",
+      "hermanos_ayuda": "Cuenta también a este niño o niña. El lugar 1 es el mayor: si es hijo único, 1 y 1.",
+      "direccion_provincia": "Provincia",
+      "observaciones": "Observaciones",
+      "observaciones_aviso": "Lo que quieras que sepa el centro. Lo médico (alergias, medicación, enfermedades) no va aquí: va en la ficha médica.",
+      "como_nos_conocio": "¿Cómo nos has conocido?",
+      "como_nos_conocio_placeholder": "Elige una opción",
+      "como_nos_conocio_otro": "Cuéntanos cómo",
+      "como_nos_conocio_opciones": {
+        "internet": "Por internet",
+        "redes_sociales": "Por redes sociales",
+        "recomendacion": "Por recomendación",
+        "paso_por_delante": "Paso por delante",
+        "otro": "Otro"
+      }
     },
     "tutor": {
       "guardado": "Datos del tutor guardados",

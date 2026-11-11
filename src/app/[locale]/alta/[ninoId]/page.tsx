@@ -33,6 +33,7 @@ import type { DatosTutorInicial } from '@/features/alta/components/PasoTutor'
 import type { DatosPedagogicosInput } from '@/features/datos-pedagogicos/schemas/datos-pedagogicos'
 import type { EstadoCivil } from '@/features/alta/schemas/alta-documentos'
 import type { ImagenPanelData, MedicaInicial } from '@/features/alta/lib/tipos'
+import { esFamiliaNuevaEnCentro } from '@/features/alta/queries/familia-nueva-en-centro'
 
 interface PageProps {
   params: Promise<{ locale: string; ninoId: string }>
@@ -119,7 +120,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const { data: ninoExtra } = await supabase
     .from('ninos')
     .select(
-      'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, libro_familia_path, estado_civil_familia, familia_id'
+      'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, direccion_provincia, libro_familia_path, estado_civil_familia, familia_id, lugar_nacimiento, dni, hermanos_total, hermanos_lugar, observaciones_familia, como_nos_conocio, como_nos_conocio_otro'
     )
     .eq('id', ninoId)
     .maybeSingle()
@@ -321,6 +322,13 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // cargada, se saltaba acuses/menor/tutor en la primera entrada — bug de navegación.)
   const pasoInicial = PASO_MIN_AUTENTICADO
 
+  // Fase 5b: «cómo nos has conocido» solo a familias nuevas en el centro (decidido el 2026-11-10),
+  // o si ya está contestado (que se pueda corregir). Se cuenta después de autorizar (arriba).
+  const familiaNueva = ninoExtra?.familia_id
+    ? await esFamiliaNuevaEnCentro(ninoId, ninoExtra.familia_id)
+    : null
+  const mostrarComoNosConocio = familiaNueva === true || Boolean(ninoExtra?.como_nos_conocio)
+
   const t = await getTranslations('alta')
   const enEdicionValidada = estadoMatricula === 'activa' && editar === '1'
 
@@ -348,7 +356,16 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
           sexo: nino.sexo,
           nacionalidad: nino.nacionalidad,
           idioma_principal: nino.idioma_principal,
+          lugar_nacimiento: ninoExtra?.lugar_nacimiento ?? null,
+          dni: ninoExtra?.dni ?? null,
+          hermanos_total: ninoExtra?.hermanos_total ?? null,
+          hermanos_lugar: ninoExtra?.hermanos_lugar ?? null,
+          direccion_provincia: ninoExtra?.direccion_provincia ?? null,
+          observaciones_familia: ninoExtra?.observaciones_familia ?? null,
+          como_nos_conocio: ninoExtra?.como_nos_conocio ?? null,
+          como_nos_conocio_otro: ninoExtra?.como_nos_conocio_otro ?? null,
         }}
+        mostrarComoNosConocio={mostrarComoNosConocio}
         direccionInicial={direccionInicial}
         datosPedagogicosInicial={datosPedagogicosInicial}
         libroFamiliaUrl={libroFamiliaUrl}

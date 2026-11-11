@@ -73,3 +73,12 @@ export function documentoValido(raw: string): boolean {
       return /[A-Z0-9]/.test(n)
   }
 }
+
+/**
+ * El documento del NIÑO (fase 5): solo DNI o NIE, con su letra. Es la regla de la base
+ * (`privado.dni_nie_valido`, CHECK `ninos_dni_valido`): un pasaporte o un CIF no valen aquí.
+ */
+export function dniNieValido(raw: string): boolean {
+  const forma = formaDocumento(raw)
+  return (forma === 'dni' || forma === 'nie') && documentoValido(raw)
+}

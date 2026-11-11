@@ -45,6 +45,8 @@ const direccionFields = {
 export const actualizarNinoFamiliaSchema = z.object({
   nino_id: z.string().uuid(),
   ...direccionFields,
+  // 5b: la provincia del niño (CHECK de la 5a: hasta 60). Solo del niño: los tutores no la tienen.
+  direccion_provincia: z.string().max(60).optional().nullable(),
   estado_civil_familia: estadoCivilEnum.optional().nullable(),
 })
 
