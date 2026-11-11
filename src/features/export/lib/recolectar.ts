@@ -595,7 +595,7 @@ export async function recolectarNino(
   // legal. Lo decide la base (`puede_exportar_nino`), no esta función.
   const puede = await client.rpc('puede_exportar_nino', { p_nino_id: ninoId })
   if (puede.error) throw new Error(`export: puede_exportar_nino falló: ${puede.error.message}`)
-  if (puede.data !== true) return null
+  // MUTACIÓN M7: sin la puerta
 
   const identidad = filaDe(
     'nino.ficha',
