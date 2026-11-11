@@ -23,6 +23,7 @@ export async function esFamiliaNuevaEnCentro(
     .select('id', { count: 'exact', head: true })
     .eq('familia_id', familiaId)
     .neq('id', ninoId)
+    .is('deleted_at', null)
   if (error || count === null) {
     logger.warn('esFamiliaNuevaEnCentro', error?.code ?? 'sin_recuento')
     return null
