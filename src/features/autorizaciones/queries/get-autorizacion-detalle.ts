@@ -32,6 +32,7 @@ import type {
   RosterFirmaNino,
   TipoAutorizacion,
 } from '../types'
+import { conDatosDeFirmas } from '../lib/contenido-firmas'
 
 /**
  * Detalle de una autorización + su **roster por niño** (estado de firma calculado
@@ -89,11 +90,14 @@ export async function getAutorizacionDetalle(
   let estado_firma_nino: EstadoFirmaNino | undefined
   if (!aut.es_plantilla && (aut.tipo === 'recogida' || aut.tipo === 'medicacion')) {
     estado_firma_nino = roster.find((r) => r.nino_id === aut.nino_id)?.estado
-    const { data: firmas } = await supabase
+    // `datos` sale por `contenido_firmas` (`20270115120000`): a quien firmó, al tutor legal, a la profe
+    // y a la Dirección. Al autorizado, de las firmas de otros no le llega, y no ve lo que firmó otro.
+    const { data: firmasTabla } = await supabase
       .from('firmas_autorizacion')
-      .select('firmante_id, decision, firmado_at, datos, texto_hash')
+      .select('id, firmante_id, decision, firmado_at, texto_hash')
       .eq('autorizacion_id', aut.id)
-    const vigente = firmaConDatosVigente(firmas ?? [], estado_firma_nino)
+    const firmas = (await conDatosDeFirmas(supabase, firmasTabla ?? [])) ?? []
+    const vigente = firmaConDatosVigente(firmas, estado_firma_nino)
     if (vigente) {
       const datos = vigente.datos as {
         personas?: PersonaAutorizada[]

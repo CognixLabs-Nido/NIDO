@@ -6,6 +6,7 @@ import { esAdminDeCentroDeNino } from '@/features/alta/lib/authz-tutor'
 import { cambiosIdentidad } from '@/features/cambios-pendientes/lib/diff'
 import { logger } from '@/shared/lib/logger'
 
+import { leerFichaGestionDe } from '../lib/ficha-gestion'
 import { parcheNinoDireccion } from '../lib/parche-nino'
 import { actualizarNinoTutorSchema, type ActualizarNinoTutorInput } from '../schemas/nino'
 
@@ -83,14 +84,19 @@ export async function actualizarNinoTutor(
   let pendienteValidacion = false
   let identidadDirecta: typeof propuesta | null = propuesta
   if (await altaValidada(supabase, d.nino_id)) {
-    const { data: guardada } = await supabase
-      .from('ninos')
-      .select(
-        'nombre, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, lugar_nacimiento, dni'
-      )
-      .eq('id', d.nino_id)
-      .maybeSingle()
-    if (!guardada) return fail('nino.errors.no_autorizado')
+    // El DNI es de gestión: sale por `ficha_gestion_ninos` (`20270115120000`), no de la tabla.
+    const [{ data: identidad }, gestion] = await Promise.all([
+      supabase
+        .from('ninos')
+        .select(
+          'nombre, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, lugar_nacimiento'
+        )
+        .eq('id', d.nino_id)
+        .maybeSingle(),
+      leerFichaGestionDe(supabase, d.nino_id),
+    ])
+    if (!identidad || !gestion) return fail('nino.errors.no_autorizado')
+    const guardada = { ...identidad, dni: gestion.dni }
     const cambios = cambiosIdentidad(propuesta, guardada)
     if (Object.keys(cambios).length > 0) {
       const r = await registrarCambioPendiente(supabase, {

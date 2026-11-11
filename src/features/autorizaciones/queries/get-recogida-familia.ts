@@ -6,6 +6,7 @@ import { logger } from '@/shared/lib/logger'
 
 import { firmaConDatosVigente } from '../lib/estado-firma'
 import type { PersonaAutorizada } from '../types'
+import { conDatosDeFirmas } from '../lib/contenido-firmas'
 
 export interface RecogidaContextoFamilia {
   /** ¿Existe una plantilla de recogida publicada en el centro? (gatea el botón). */
@@ -79,15 +80,18 @@ export async function getRecogidaContextoFamilia(
   const prefillPorNino: Record<string, PersonaAutorizada[]> = {}
   if (habituales && habituales.length > 0) {
     const instIds = habituales.map((h) => h.id)
-    const { data: firmas } = await supabase
+    // `datos` sale por `contenido_firmas` (`20270115120000`). Sin él no se rellena nada: el
+    // formulario sale vacío, nunca con una lista que no es la vigente.
+    const { data: firmasTabla } = await supabase
       .from('firmas_autorizacion')
-      .select('autorizacion_id, firmante_id, decision, datos, firmado_at')
+      .select('id, autorizacion_id, firmante_id, decision, firmado_at')
       .in('autorizacion_id', instIds)
+    const firmas = (await conDatosDeFirmas(supabase, firmasTabla ?? [])) ?? []
 
     // La lista VIGENTE de cada habitual, no la última `firmado` del histórico: una
     // lista revocada no se vuelve a ofrecer rellena, o la familia firmaría otra vez,
     // sin darse cuenta, a una persona que había quitado.
-    const firmasPorInst = new Map<string, NonNullable<typeof firmas>>()
+    const firmasPorInst = new Map<string, typeof firmas>()
     for (const f of firmas ?? []) {
       const arr = firmasPorInst.get(f.autorizacion_id) ?? []
       arr.push(f)

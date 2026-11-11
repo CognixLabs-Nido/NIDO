@@ -2,6 +2,7 @@ import 'server-only'
 
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
 import { createClient } from '@/lib/supabase/server'
+import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
 import {
   BUCKET_DNI_TUTORES,
   BUCKET_LIBRO_FAMILIA,
@@ -62,10 +63,15 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
   // niño; el helper mapea rol_familia→tipo_vinculo y ordena titular primero.
   // F-2c-1: el mandato es de la FAMILIA → se resuelve por `ninos.familia_id`, no por
   // `nino_id`. Se lee primero la familia del niño y luego su mandato activo.
-  const [{ tutores: tutoresRows }, { data: ninoRow }] = await Promise.all([
+  const [{ tutores: tutoresRows }, { data: ninoBase }, gestion] = await Promise.all([
     leerTutoresDeNino(supabase, ninoId),
-    supabase.from('ninos').select('libro_familia_path, familia_id').eq('id', ninoId).maybeSingle(),
+    supabase.from('ninos').select('familia_id').eq('id', ninoId).maybeSingle(),
+    // El libro de familia es de gestión (`20270115120000`): de la función.
+    leerFichaGestionDe(supabase, ninoId),
   ])
+  const ninoRow = ninoBase
+    ? { familia_id: ninoBase.familia_id, libro_familia_path: gestion?.libro_familia_path ?? null }
+    : null
 
   let mandatoRow: {
     estado: 'activo' | 'revocado'

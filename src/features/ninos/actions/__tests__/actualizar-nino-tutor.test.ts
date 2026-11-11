@@ -65,6 +65,10 @@ function makeFake(
       },
     }),
     rpc: (fn: string, args: Record<string, unknown>) => {
+      // Lo de gestión (el DNI guardado) sale por su función desde `20270115120000`; no es una
+      // escritura, así que no cuenta como «RPC» en los asertos de este fichero.
+      if (fn === 'ficha_gestion_ninos')
+        return Promise.resolve({ data: [{ nino_id: NINO, dni: GUARDADA.dni }], error: null })
       rpcSpy(fn, args)
       return Promise.resolve({ data: NINO, error: null })
     },

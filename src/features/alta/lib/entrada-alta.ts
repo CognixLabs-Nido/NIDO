@@ -1,5 +1,7 @@
 import 'server-only'
 
+import type { Database } from '@/types/database'
+
 /**
  * PR-3b-2 · B1 — decisión del gate de entrada al wizard de alta (`/alta/[ninoId]`).
  *
@@ -17,9 +19,10 @@ import 'server-only'
  * la sesión de la Dirección, decidido en el servidor.
  *
  * Reglas (en orden):
- * - Con vínculo activo usuario↔niño → entrada normal de tutor (sin modo Dirección).
- *   Cubre tutor legal y `autorizado` (mismo comportamiento que ya existía; B1 no toca
- *   esa rama).
+ * - Con vínculo de `autorizado` → a su inicio (`/family`). El alta es del tutor legal: el
+ *   autorizado no la rellena ni la ve (decisión del responsable del 2026-11-11; hasta entonces
+ *   entraba como un tutor y la base le negaba las escrituras, pero la página le leía la ficha).
+ * - Con vínculo de tutor legal → entrada normal de tutor (sin modo Dirección).
  * - Sin vínculo, admin DEL CENTRO DEL NIÑO → entrada en MODO DIRECCIÓN.
  * - Sin vínculo, profe del centro del niño → fuera (a su panel).
  * - Cualquier otro (admin de OTRO centro → sin rol en este centro, autorizado sin
@@ -32,14 +35,16 @@ import 'server-only'
 export type EntradaAlta =
   | { tipo: 'tutor' }
   | { tipo: 'direccion' }
-  | { tipo: 'redirect'; destino: 'admin' | 'teacher' }
+  | { tipo: 'redirect'; destino: 'admin' | 'teacher' | 'family' }
   | { tipo: 'notfound' }
 
 export function resolverEntradaAlta(params: {
-  tieneVinculo: boolean
+  /** El tipo del vínculo vivo de quien entra con este niño, o null si no tiene. */
+  tipoVinculo: Database['public']['Enums']['tipo_vinculo'] | null
   rolEnCentroNino: string | null
 }): EntradaAlta {
-  if (params.tieneVinculo) return { tipo: 'tutor' }
+  if (params.tipoVinculo === 'autorizado') return { tipo: 'redirect', destino: 'family' }
+  if (params.tipoVinculo) return { tipo: 'tutor' }
   if (params.rolEnCentroNino === 'admin') return { tipo: 'direccion' }
   if (params.rolEnCentroNino === 'profe') return { tipo: 'redirect', destino: 'teacher' }
   return { tipo: 'notfound' }

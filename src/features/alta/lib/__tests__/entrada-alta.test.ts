@@ -11,46 +11,59 @@ import { resolverEntradaAlta } from '../entrada-alta'
  */
 describe('resolverEntradaAlta (gate B1 modo Dirección)', () => {
   it('tutor legal con vínculo → entrada normal de tutor (sin modo Dirección)', () => {
-    expect(resolverEntradaAlta({ tieneVinculo: true, rolEnCentroNino: 'tutor_legal' })).toEqual({
+    expect(
+      resolverEntradaAlta({ tipoVinculo: 'tutor_legal_principal', rolEnCentroNino: 'tutor_legal' })
+    ).toEqual({
       tipo: 'tutor',
     })
   })
 
-  it('autorizado con vínculo → entrada normal (sin modo Dirección; comportamiento previo intacto)', () => {
-    // Con vínculo se entra como tutor SEA CUAL SEA el rol → el vínculo manda; B1 no
-    // regresa esta rama. (Los write-paths siguen gateando por tutela como antes.)
-    expect(resolverEntradaAlta({ tieneVinculo: true, rolEnCentroNino: 'autorizado' })).toEqual({
-      tipo: 'tutor',
+  it('autorizado con vínculo → a su inicio: el alta es del tutor legal (2026-11-11)', () => {
+    expect(
+      resolverEntradaAlta({ tipoVinculo: 'autorizado', rolEnCentroNino: 'autorizado' })
+    ).toEqual({ tipo: 'redirect', destino: 'family' })
+  })
+
+  it('autorizado que además es admin del centro → también a su inicio: manda el vínculo', () => {
+    expect(resolverEntradaAlta({ tipoVinculo: 'autorizado', rolEnCentroNino: 'admin' })).toEqual({
+      tipo: 'redirect',
+      destino: 'family',
     })
+  })
+
+  it('tutor legal secundario con vínculo → entrada normal de tutor', () => {
+    expect(
+      resolverEntradaAlta({ tipoVinculo: 'tutor_legal_secundario', rolEnCentroNino: 'tutor_legal' })
+    ).toEqual({ tipo: 'tutor' })
   })
 
   it('admin DEL CENTRO DEL NIÑO sin vínculo → MODO DIRECCIÓN', () => {
-    expect(resolverEntradaAlta({ tieneVinculo: false, rolEnCentroNino: 'admin' })).toEqual({
+    expect(resolverEntradaAlta({ tipoVinculo: null, rolEnCentroNino: 'admin' })).toEqual({
       tipo: 'direccion',
     })
   })
 
   it('admin de OTRO centro (sin rol en el centro del niño → null) → notFound (rebotado)', () => {
-    expect(resolverEntradaAlta({ tieneVinculo: false, rolEnCentroNino: null })).toEqual({
+    expect(resolverEntradaAlta({ tipoVinculo: null, rolEnCentroNino: null })).toEqual({
       tipo: 'notfound',
     })
   })
 
   it('profe del centro del niño sin vínculo → redirect a su panel (rebotado del wizard)', () => {
-    expect(resolverEntradaAlta({ tieneVinculo: false, rolEnCentroNino: 'profe' })).toEqual({
+    expect(resolverEntradaAlta({ tipoVinculo: null, rolEnCentroNino: 'profe' })).toEqual({
       tipo: 'redirect',
       destino: 'teacher',
     })
   })
 
   it('autorizado sin vínculo (rol autorizado, sin vínculo activo) → notFound', () => {
-    expect(resolverEntradaAlta({ tieneVinculo: false, rolEnCentroNino: 'autorizado' })).toEqual({
+    expect(resolverEntradaAlta({ tipoVinculo: null, rolEnCentroNino: 'autorizado' })).toEqual({
       tipo: 'notfound',
     })
   })
 
   it('usuario sin rol en el centro del niño → notFound', () => {
-    expect(resolverEntradaAlta({ tieneVinculo: false, rolEnCentroNino: null })).toEqual({
+    expect(resolverEntradaAlta({ tipoVinculo: null, rolEnCentroNino: null })).toEqual({
       tipo: 'notfound',
     })
   })
@@ -58,7 +71,9 @@ describe('resolverEntradaAlta (gate B1 modo Dirección)', () => {
   it('admin CON vínculo (caso raro: admin que además es tutor) → entra como tutor, no como Dirección', () => {
     // El vínculo tiene prioridad: si el admin es a la vez tutor del niño, recorre el
     // flujo de tutor normal (firma digital a su nombre de tutor), no el de Dirección.
-    expect(resolverEntradaAlta({ tieneVinculo: true, rolEnCentroNino: 'admin' })).toEqual({
+    expect(
+      resolverEntradaAlta({ tipoVinculo: 'tutor_legal_principal', rolEnCentroNino: 'admin' })
+    ).toEqual({
       tipo: 'tutor',
     })
   })

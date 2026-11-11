@@ -10,6 +10,7 @@ import {
   type RegistrarAdministracionInput,
 } from '../schemas/autorizaciones'
 import { fail, ok, type ActionResult, type MedicacionDatos } from '../types'
+import { conDatosDeFirmas } from '../lib/contenido-firmas'
 
 /**
  * **F8-3b — Registrar una administración de medicación (1.er staff).** Una
@@ -53,11 +54,14 @@ export async function registrarAdministracion(
   // Snapshot medicamento/dosis de la firma VIGENTE (no de la última `firmado` del
   // histórico: una ficha revocada no vale). Si no hay, no se registra; la RLS
   // (`medicacion_administrable_hoy`) lo rechazaría igualmente.
-  const { data: firmas } = await supabase
+  // `datos` sale por `contenido_firmas` (`20270115120000`), que a la profe y a la Dirección les da.
+  const { data: firmasTabla, error: errFirmas } = await supabase
     .from('firmas_autorizacion')
-    .select('firmante_id, decision, firmado_at, datos')
+    .select('id, firmante_id, decision, firmado_at')
     .eq('autorizacion_id', aut.id)
-  const vigente = firmaConDatosVigente(firmas ?? [])
+  const firmas = errFirmas ? null : await conDatosDeFirmas(supabase, firmasTabla ?? [])
+  if (!firmas) return fail('autorizaciones.errors.adm_registro_fallo')
+  const vigente = firmaConDatosVigente(firmas)
   const medicacion = (vigente?.datos as { medicacion?: MedicacionDatos } | null)?.medicacion ?? null
   if (!medicacion) return fail('autorizaciones.errors.adm_sin_firma')
 

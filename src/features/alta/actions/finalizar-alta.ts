@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { createClient } from '@/lib/supabase/server'
+import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
 import { logger } from '@/shared/lib/logger'
 
 import { leerDocumentosNino } from '@/features/documentos-centro/lib/firmar-documentos'
@@ -80,16 +81,23 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
 
   const faltan: BloqueAlta[] = []
 
-  // Identidad del menor + libro de familia (documento del niño) en una sola lectura.
-  const { data: nino } = await supabase
-    .from('ninos')
-    .select(
-      'apellidos, fecha_nacimiento, lugar_nacimiento, nacionalidad, hermanos_total, libro_familia_path, familia_id, centro_id'
-    )
-    .eq('id', id)
-    .is('deleted_at', null)
-    .maybeSingle()
-  if (!nino) return fail('alta.errors.finalizar_fallo')
+  // Identidad del menor de la tabla; los hermanos y el libro de familia son de gestión y salen por
+  // `ficha_gestion_ninos` (`20270115120000`), que al tutor legal y a la Dirección les contesta.
+  const [{ data: identidad }, gestion] = await Promise.all([
+    supabase
+      .from('ninos')
+      .select('apellidos, fecha_nacimiento, lugar_nacimiento, nacionalidad, familia_id, centro_id')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle(),
+    leerFichaGestionDe(supabase, id),
+  ])
+  if (!identidad || !gestion) return fail('alta.errors.finalizar_fallo')
+  const nino = {
+    ...identidad,
+    hermanos_total: gestion.hermanos_total,
+    libro_familia_path: gestion.libro_familia_path,
+  }
   // Fase 5b: además de apellidos y fecha, los tres obligatorios (lugar de nacimiento, nacionalidad y
   // hermanos), con la misma regla que la base (`marcar_matricula_lista`, `datos_nino_por_completar`).
   if (

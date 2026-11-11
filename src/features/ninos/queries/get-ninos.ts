@@ -221,7 +221,7 @@ export interface NinoDetalle {
   sexo: 'F' | 'M' | 'X' | null
   nacionalidad: string | null
   idioma_principal: string
-  notas_admin: string | null
+  lugar_nacimiento: string | null
   puede_aparecer_en_fotos: boolean
   /** Ruta en Storage (bucket privado `ninos-fotos`); se firma para mostrar. F10-3. */
   foto_url: string | null
@@ -239,6 +239,9 @@ export interface NinoDetalle {
  * niño dado de baja se puede abrir en solo-lectura. Esta puerta la usa SOLO la
  * ficha de Dirección (`/admin/ninos/[id]`, ya gateada a admin por ruta + RLS);
  * no se relaja el filtro por defecto de los demás llamadores.
+ *
+ * Solo la identidad (`20270115120000`): las notas de Dirección y el resto de la gestión no se leen
+ * de la tabla; salen por `leerFichaGestion` (Dirección y tutor legal).
  */
 export async function getNinoById(
   ninoId: string,
@@ -248,7 +251,7 @@ export async function getNinoById(
   let query = supabase
     .from('ninos')
     .select(
-      'id, centro_id, nombre, apellidos, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, idioma_principal, notas_admin, puede_aparecer_en_fotos, foto_url, deleted_at'
+      'id, centro_id, nombre, apellidos, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, idioma_principal, lugar_nacimiento, puede_aparecer_en_fotos, foto_url, deleted_at'
     )
     .eq('id', ninoId)
   if (!opts?.incluirArchivado) query = query.is('deleted_at', null)

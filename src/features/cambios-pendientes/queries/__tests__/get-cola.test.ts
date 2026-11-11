@@ -84,6 +84,15 @@ function fake() {
         }),
       }
     },
+    // Lo de gestión de la ficha sale por su función (`20270115120000`); el falso lo saca de FICHA.
+    rpc: (fn: string) => {
+      if (fn !== 'ficha_gestion_ninos') throw new Error(`rpc no prevista: ${fn}`)
+      return Promise.resolve(
+        estado.ninosError
+          ? { data: null, error: { code: 'XX000', message: 'x' } }
+          : { data: [{ nino_id: FICHA.id, ...FICHA }], error: null }
+      )
+    },
   }
 }
 vi.mock('@/lib/supabase/server', () => ({ createClient: () => Promise.resolve(fake()) }))

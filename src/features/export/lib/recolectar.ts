@@ -4,6 +4,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { Database } from '@/types/database'
 import { rolesDelSujetoParaExport } from '@/features/centros/contexto/roles-de-otros'
+import {
+  COLUMNAS_CONTENIDO_FIRMA,
+  leerContenidoFirmas,
+} from '@/features/autorizaciones/lib/contenido-firmas'
+import { COLUMNAS_GESTION_NINO, leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
 import { fichaMedicaBloqueadaDesde } from '@/features/ninos/lib/ficha-medica-bloqueada'
 
 import {
@@ -161,6 +166,44 @@ function personasDe<R extends RutaRecolectar>(ruta: R, filasLeidas: FilaDe<R>[])
 function filaDe<R extends RutaRecolectar>(ruta: R, r: Lectura): FilaDe<R> | null {
   if (r.error) throw new Error(`export: la lectura de ${ruta} falló: ${r.error.message}`)
   return (r.data ?? null) as FilaDe<R> | null
+}
+
+/**
+ * Las columnas de una sección que la sesión lee de la tabla. Desde `20270115120000` las de gestión
+ * de `ninos` y el contenido de las firmas no se leen de la tabla: salen por su función, y aquí se
+ * piden aparte (`conGestion`, `conContenido`). `extra` añade lo que hace falta para unirlas (el id,
+ * que `entregar` quita).
+ */
+function deLaTabla(ruta: RutaRecolectar, porFuncion: readonly string[], extra: string[] = []) {
+  const cols = columnasDe(ruta)
+    .split(', ')
+    .filter((c) => !porFuncion.includes(c))
+  return [...new Set([...extra, ...cols])].join(', ')
+}
+
+/**
+ * A cada firma, su contenido (`contenido_firmas`: quien firmó, el tutor legal, la profe del niño y
+ * la Dirección). Solo las columnas que la sección entrega; lo que la función no le da a quien
+ * exporta, no sale. Si la función falla, el export falla: nunca una firma sin su contenido como si
+ * no lo tuviera.
+ */
+async function conContenido<R extends RutaRecolectar>(
+  client: Client,
+  ruta: R,
+  filasLeidas: FilaDe<R>[]
+): Promise<FilaDe<R>[]> {
+  const pedidas = COLUMNAS_CONTENIDO_FIRMA.filter((c) => columnasDe(ruta).split(', ').includes(c))
+  if (pedidas.length === 0 || filasLeidas.length === 0) return filasLeidas
+  const filasConId = filasLeidas as unknown as Array<Record<string, unknown>>
+  const contenido = await leerContenidoFirmas(
+    client,
+    filasConId.map((f) => f.id).filter((x): x is string => typeof x === 'string')
+  )
+  if (!contenido) throw new Error(`export: el contenido de las firmas de ${ruta} no se lee`)
+  return filasConId.map((f) => {
+    const c = contenido.get(f.id as string) as Record<string, unknown> | undefined
+    return c ? { ...f, ...Object.fromEntries(pedidas.map((k) => [k, c[k]])) } : f
+  }) as unknown as FilaDe<R>[]
 }
 
 /** Los id que llegan de una lectura, sin vacíos ni repetidos. */
@@ -348,9 +391,11 @@ export async function recolectarUsuario(
     // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
     client
       .from('firmas_autorizacion')
-      .select(columnasDe('usuario.firmas_realizadas'))
+      .select(deLaTabla('usuario.firmas_realizadas', COLUMNAS_CONTENIDO_FIRMA, ['id']))
       .eq('firmante_id', usuarioId)
-      .then((r) => filasDe('usuario.firmas_realizadas', r)),
+      .then((r) =>
+        conContenido(client, 'usuario.firmas_realizadas', filasDe('usuario.firmas_realizadas', r))
+      ),
     // entre-centros: el export del sujeto (art. 15), con lo que alcanza la sesión de quien exporta.
     client
       .from('firmas_documentos_centro')
@@ -545,11 +590,29 @@ export async function recolectarNino(
   ninoId: string,
   opciones: OpcionesRecolectar = {}
 ): Promise<Recolectado | null> {
-  const nino = filaDe(
+  // El autorizado no exporta al niño (decisión del responsable del 2026-11-11): la exportación del
+  // art. 15 es de la Dirección, de la profe del niño (por sesión, sin lo de gestión) y del tutor
+  // legal. Lo decide la base (`puede_exportar_nino`), no esta función.
+  const puede = await client.rpc('puede_exportar_nino', { p_nino_id: ninoId })
+  if (puede.error) throw new Error(`export: puede_exportar_nino falló: ${puede.error.message}`)
+  if (puede.data !== true) return null
+
+  const identidad = filaDe(
     'nino.ficha',
-    await client.from('ninos').select(columnasDe('nino.ficha')).eq('id', ninoId).maybeSingle()
+    await client
+      .from('ninos')
+      .select(deLaTabla('nino.ficha', COLUMNAS_GESTION_NINO))
+      .eq('id', ninoId)
+      .maybeSingle()
   )
-  if (!nino) return null // no accesible para el solicitante
+  if (!identidad) return null // no accesible para el solicitante
+  // Lo de gestión (`ficha_gestion_ninos`): a la Dirección y al tutor legal; a la profe, no viene.
+  const gestion = await leerFichaGestionDe(client, ninoId)
+  if (gestion === null) throw new Error('export: ficha_gestion_ninos no se lee')
+  const nino = {
+    ...identidad,
+    ...(gestion ? Object.fromEntries(COLUMNAS_GESTION_NINO.map((c) => [c, gestion[c]])) : {}),
+  } as typeof identidad
 
   // Info médica: descifrado gateado por puede_ver_info_medica (#3).
   let infoMedica: unknown
@@ -621,9 +684,9 @@ export async function recolectarNino(
       .then((r) => filasDe('nino.autorizaciones', r)),
     client
       .from('firmas_autorizacion')
-      .select(columnasDe('nino.firmas'))
+      .select(deLaTabla('nino.firmas', COLUMNAS_CONTENIDO_FIRMA, ['id']))
       .eq('nino_id', ninoId)
-      .then((r) => filasDe('nino.firmas', r)),
+      .then((r) => conContenido(client, 'nino.firmas', filasDe('nino.firmas', r))),
     client
       .from('firmas_documentos_centro')
       .select(columnasDe('nino.firmas_documentos'))

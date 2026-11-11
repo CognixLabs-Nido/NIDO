@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { Database } from '@/types/database'
 
+import { leerFichaGestionDe } from './ficha-gestion'
+
 /**
  * Qué campos de la fase 5 enseña la ficha del niño en la familia (decidido por el responsable el
  * 2026-11-11). La línea es la que ya había en esa pantalla: la IDENTIDAD básica la ve cualquier
@@ -12,8 +14,9 @@ import type { Database } from '@/types/database'
  *   legal. El DNI no entra aunque identifique: quien recoge a un niño no necesita su número de
  *   documento, y es el dato que más daño hace suelto.
  *
- * Lo que no se enseña tampoco se LEE: al autorizado solo se le pide el lugar. Esto es la pantalla;
- * que la base no le dé la fila entera va en su propia pieza.
+ * Lo que no se enseña tampoco se LEE: al autorizado solo se le pide el lugar. Y desde
+ * `20270115120000` la base tampoco se lo daría: los cinco de gestión salen por `ficha_gestion_ninos`
+ * (Dirección y tutor legal), no de la tabla.
  */
 export interface CamposAltaFicha {
   lugar_nacimiento: string | null
@@ -32,20 +35,24 @@ export async function leerCamposAltaFicha(
   ninoId: string,
   esTutorLegal: boolean
 ): Promise<CamposAltaFicha | null> {
-  if (esTutorLegal) {
-    const { data, error } = await supabase
-      .from('ninos')
-      .select(
-        'lugar_nacimiento, dni, hermanos_total, hermanos_lugar, direccion_provincia, observaciones_familia, como_nos_conocio, como_nos_conocio_otro'
-      )
-      .eq('id', ninoId)
-      .maybeSingle()
-    return error || !data ? null : data
-  }
   const { data, error } = await supabase
     .from('ninos')
     .select('lugar_nacimiento')
     .eq('id', ninoId)
     .maybeSingle()
-  return error || !data ? null : data
+  if (error || !data) return null
+  if (!esTutorLegal) return data
+  // Al tutor legal la función siempre le contesta su fila: si no viene, no se ha podido leer.
+  const g = await leerFichaGestionDe(supabase, ninoId)
+  if (!g) return null
+  return {
+    lugar_nacimiento: data.lugar_nacimiento,
+    dni: g.dni,
+    hermanos_total: g.hermanos_total,
+    hermanos_lugar: g.hermanos_lugar,
+    direccion_provincia: g.direccion_provincia,
+    observaciones_familia: g.observaciones_familia,
+    como_nos_conocio: g.como_nos_conocio,
+    como_nos_conocio_otro: g.como_nos_conocio_otro,
+  }
 }

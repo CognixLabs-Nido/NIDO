@@ -10,6 +10,7 @@ import {
   BUCKET_LIBRO_FAMILIA,
   borrarObjetosBucket,
 } from '@/shared/lib/adjuntos/storage'
+import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
 import { logger } from '@/shared/lib/logger'
 
 import {
@@ -107,11 +108,10 @@ export async function aplicarCambioPendiente(
   if (entidad === 'ninos_libro_familia') {
     const { path } = payloadDocumentoSchema.parse(row.payload)
     exigirRutaDelNino(path, row)
-    const { data: nino } = await db
-      .from('ninos')
-      .select('libro_familia_path')
-      .eq('id', row.nino_id)
-      .maybeSingle()
+    // El libro anterior es de gestión: sale por `ficha_gestion_ninos` (`20270115120000`), que a la
+    // Dirección que aprueba le contesta siempre. Sin leerlo no se sabe qué borrar: no se sigue.
+    const nino = await leerFichaGestionDe(db, row.nino_id)
+    if (!nino) throw new Error('libro_anterior_no_leido')
     const { error } = await db
       .from('ninos')
       .update({ libro_familia_path: path })
