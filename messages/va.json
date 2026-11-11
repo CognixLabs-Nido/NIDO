@@ -908,6 +908,7 @@
         "direccion": "Adreça",
         "dni": "DNI",
         "ver_documento": "Veure document",
+        "libro_sin_lectura": "No s'ha pogut llegir si hi ha llibre de família. Torna a carregar la pàgina.",
         "sepa_titulo": "Domiciliació SEPA",
         "sepa_sin_mandato": "Sense mandat actiu",
         "sepa_estado": "Estat",

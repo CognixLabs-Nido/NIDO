@@ -908,6 +908,7 @@
         "direccion": "Dirección",
         "dni": "DNI",
         "ver_documento": "Ver documento",
+        "libro_sin_lectura": "No se ha podido leer si hay libro de familia. Vuelve a cargar la página.",
         "sepa_titulo": "Domiciliación SEPA",
         "sepa_sin_mandato": "Sin mandato activo",
         "sepa_estado": "Estado",

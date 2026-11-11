@@ -92,11 +92,16 @@ export async function getAutorizacionDetalle(
     estado_firma_nino = roster.find((r) => r.nino_id === aut.nino_id)?.estado
     // `datos` sale por `contenido_firmas` (`20270115120000`): a quien firmó, al tutor legal, a la profe
     // y a la Dirección. Al autorizado, de las firmas de otros no le llega, y no ve lo que firmó otro.
-    const { data: firmasTabla } = await supabase
+    // Si una de las dos lecturas falla, no hay detalle: una lista vacía diría «nadie puede recogerlo»
+    // y una medicación vacía, «no hay tratamiento». Lo que no le toca a quien lee sí es ausencia: la
+    // firma viene con `datos: null`.
+    const { data: firmasTabla, error: errFirmas } = await supabase
       .from('firmas_autorizacion')
       .select('id, firmante_id, decision, firmado_at, texto_hash')
       .eq('autorizacion_id', aut.id)
-    const firmas = (await conDatosDeFirmas(supabase, firmasTabla ?? [])) ?? []
+    if (errFirmas) throw new Error(`getAutorizacionDetalle: firmas (${errFirmas.code ?? 'sin_codigo'})`)
+    const firmas = await conDatosDeFirmas(supabase, firmasTabla ?? [])
+    if (!firmas) throw new Error('getAutorizacionDetalle: contenido_firmas no se lee')
     const vigente = firmaConDatosVigente(firmas, estado_firma_nino)
     if (vigente) {
       const datos = vigente.datos as {

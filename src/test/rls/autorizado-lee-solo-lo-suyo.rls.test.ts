@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import JSZip from 'jszip'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/types/database'
 
@@ -24,7 +24,7 @@ import {
 } from './setup'
 
 /**
- * El autorizado lee solo lo suyo (`20270115120000`; decisiones del responsable del 2026-11-11).
+ * El autorizado lee solo lo suyo (`20270115120000` añade las funciones, `20270115130000` cierra; decisiones del responsable del 2026-11-11).
  * Medido ABIERTO antes (en producción, ensayo terminado en RAISE; y la exportación en la base
  * efímera): el autorizado leía la fila entera del niño, las firmas del tutor legal con su trazo, su
  * IP y el DNI de las personas autorizadas, las recogidas de otros, la medicación sin permiso y las
@@ -33,11 +33,28 @@ import {
  * Cada «no» lleva al lado su control positivo (el tutor legal, la Dirección o la profe siguen
  * leyendo lo suyo) y, antes, la premisa de quién es quién.
  */
-const sesion = vi.hoisted(() => ({ actual: null as SupabaseClient<Database> | null }))
+const sesion = vi.hoisted(() => ({
+  actual: null as SupabaseClient<Database> | null,
+  // La RPC que se hace fallar (una lectura que falla un día cualquiera), o ninguna.
+  falla: null as string | null,
+}))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => {
     if (!sesion.actual) throw new Error('test: falta la sesión de quien actúa')
-    return sesion.actual
+    const real = sesion.actual
+    if (!sesion.falla) return real
+    return new Proxy(real, {
+      get(t, p, r) {
+        if (p !== 'rpc') return Reflect.get(t, p, r)
+        return (fn: string, ...resto: unknown[]) =>
+          fn === sesion.falla
+            ? Promise.resolve({
+                data: null,
+                error: { message: 'fallo simulado', code: 'XX000', details: '', hint: '' },
+              })
+            : (t.rpc as (...a: unknown[]) => unknown)(fn, ...resto)
+      },
+    })
   },
 }))
 vi.mock('next-intl/server', () => ({
@@ -50,6 +67,9 @@ vi.mock('next-intl/server', () => ({
 }))
 
 const { GET } = await import('@/app/[locale]/export/[tipo]/[id]/route')
+const { getAutorizacionDetalle } =
+  await import('@/features/autorizaciones/queries/get-autorizacion-detalle')
+const { getAltaDocumentacion } = await import('@/features/ninos/queries/get-alta-documentacion')
 
 const PDF = Buffer.from('%PDF-1.4 test')
 const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46, 0, 1, 0xff, 0xd9])
@@ -407,6 +427,43 @@ describe('el autorizado lee solo lo suyo', () => {
       expect.soft(r.json).not.toContain('MARCA-NA')
       expect.soft(r.json).not.toContain('12345678Z')
       expect.soft(r.libro).toBe(0)
+    })
+  })
+
+  describe('una lectura que falla no se lee como «no hay»', () => {
+    afterEach(() => {
+      sesion.falla = null
+    })
+
+    it('control: el detalle de la recogida trae a las personas autorizadas', async () => {
+      sesion.actual = await clientFor(legal)
+      const d = await getAutorizacionDetalle(recogidaLegal)
+      expect(d?.personas_vigentes).toEqual([
+        expect.objectContaining({ nombre: 'Persona Demo', dni: '87654321X' }),
+      ])
+    })
+
+    it('si contenido_firmas falla, el detalle no sale (nunca una recogida sin nadie)', async () => {
+      sesion.actual = await clientFor(legal)
+      sesion.falla = 'contenido_firmas'
+      await expect(getAutorizacionDetalle(recogidaLegal)).rejects.toThrow(
+        'contenido_firmas no se lee'
+      )
+    })
+
+    it('control: la documentación del alta lee el libro de familia', async () => {
+      sesion.actual = await clientFor(admin)
+      const d = await getAltaDocumentacion(nino.id)
+      expect(d.libroLeido).toBe(true)
+      expect(d.libroFamiliaUrl).not.toBeNull()
+    })
+
+    it('si ficha_gestion_ninos falla, la documentación dice que no lo sabe (no «sin libro»)', async () => {
+      sesion.actual = await clientFor(admin)
+      sesion.falla = 'ficha_gestion_ninos'
+      const d = await getAltaDocumentacion(nino.id)
+      expect(d.libroLeido).toBe(false)
+      expect(d.libroFamiliaUrl).toBeNull()
     })
   })
 })

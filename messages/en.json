@@ -908,6 +908,7 @@
         "direccion": "Address",
         "dni": "ID document",
         "ver_documento": "View document",
+        "libro_sin_lectura": "We could not check whether there is a family book. Reload the page.",
         "sepa_titulo": "SEPA direct debit",
         "sepa_sin_mandato": "No active mandate",
         "sepa_estado": "Status",

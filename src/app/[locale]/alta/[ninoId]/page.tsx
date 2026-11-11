@@ -118,14 +118,24 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   }
 
   // Columnas nuevas de `ninos` (G-0): dirección del menor, libro de familia, estado civil. Las de
-  // gestión no se leen de la tabla desde `20270115120000`: salen por `ficha_gestion_ninos`, que
+  // gestión no se leen de la tabla desde `20270115130000`: salen por `ficha_gestion_ninos`, que
   // aquí contesta siempre (al tutor legal y a la Dirección; el autorizado ya no llega aquí).
-  const [{ data: ninoBase }, gestionesFamilia] = await Promise.all([
+  const [{ data: ninoBase, error: errNinoBase }, gestionesFamilia] = await Promise.all([
     supabase.from('ninos').select('familia_id, lugar_nacimiento').eq('id', ninoId).maybeSingle(),
     leerFichaGestion(supabase, [ninoId]),
   ])
   const gestion = gestionesFamilia?.get(ninoId)
-  const ninoExtra = ninoBase ? { ...ninoBase, ...gestion } : null
+  // El formulario no guarda lo que no pudo leer (2026-11-11, medido): con esta lectura fallida el
+  // asistente se pintaba con la ficha en blanco, y «Guardar» del paso del menor dejaba a null el
+  // DNI, las observaciones, la dirección y «cómo nos conoció» —con el aviso de guardado—. Aquí solo
+  // llegan el tutor legal y la Dirección del centro, a quienes las dos lecturas contestan siempre:
+  // sin la fila no se sabe qué hay guardado, y no se pinta un formulario que lo pisaría.
+  if (errNinoBase || !ninoBase || !gestion) {
+    throw new Error(
+      `alta: la ficha del niño no se pudo leer (${errNinoBase?.message ?? (ninoBase ? 'gestión' : 'fila')})`
+    )
+  }
+  const ninoExtra = { ...ninoBase, ...gestion }
 
   // Propagación entre hermanos: si el niño no tiene dirección/estado civil, se rellena por
   // defecto con el de otro hijo del tutor (riesgo de divergencia aceptado, decisión G-1). Solo

@@ -45,6 +45,8 @@ export interface AltaDocumentacion {
   mandato: MandatoAltaItem | null
   consentimientoMedico: ConsentimientoAltaItem | null
   libroFamiliaUrl: string | null
+  /** `false` si lo guardado del niño no se pudo leer: no se sabe si hay libro (no es «no hay»). */
+  libroLeido: boolean
 }
 
 /**
@@ -66,9 +68,11 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
   const [{ tutores: tutoresRows }, { data: ninoBase }, gestion] = await Promise.all([
     leerTutoresDeNino(supabase, ninoId),
     supabase.from('ninos').select('familia_id').eq('id', ninoId).maybeSingle(),
-    // El libro de familia es de gestión (`20270115120000`): de la función.
+    // El libro de familia es de gestión (`20270115120000`): de la función. `null` = la lectura
+    // falló, y entonces no se sabe si hay libro: la ficha lo dice en vez de pintar «—».
     leerFichaGestionDe(supabase, ninoId),
   ])
+  const libroLeido = gestion !== null
   const ninoRow = ninoBase
     ? { familia_id: ninoBase.familia_id, libro_familia_path: gestion?.libro_familia_path ?? null }
     : null
@@ -149,5 +153,5 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
       }
     : null
 
-  return { tutores, mandato, consentimientoMedico, libroFamiliaUrl }
+  return { tutores, mandato, consentimientoMedico, libroFamiliaUrl, libroLeido }
 }
