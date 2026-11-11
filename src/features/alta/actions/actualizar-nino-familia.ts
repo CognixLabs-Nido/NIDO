@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { clavesQueCambian } from '@/features/cambios-pendientes/lib/diff'
 import { altaValidada, registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
 import { logger } from '@/shared/lib/logger'
 
@@ -62,12 +63,25 @@ export async function actualizarNinoFamilia(
   if (Object.keys(patch).length === 0) return ok({ id: nino_id })
 
   // Decisión J: con el alta YA validada, la edición no se aplica directa → cola de validación.
+  // Solo lo que CAMBIA respecto a lo guardado (2026-11-08): el paso del menor manda siempre los
+  // cuatro campos de la dirección, y sin comparar, cada vez que se guardaba encolaba un cambio
+  // aunque no se hubiera tocado nada. Si no cambia nada, no hay entrada.
   if (await altaValidada(supabase, nino_id)) {
+    const { data: guardado } = await supabase
+      .from('ninos')
+      .select(
+        'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, estado_civil_familia'
+      )
+      .eq('id', nino_id)
+      .maybeSingle()
+    if (!guardado) return fail('alta.errors.no_autorizado')
+    const cambios = clavesQueCambian(patch, guardado)
+    if (Object.keys(cambios).length === 0) return ok({ id: nino_id })
     const r = await registrarCambioPendiente(supabase, {
       ninoId: nino_id,
       usuarioId: user.id,
       entidad: 'ninos_familia',
-      payload: patch,
+      payload: cambios,
     })
     if (!r.ok) return fail(r.error)
     return ok({ id: nino_id, pendienteValidacion: true })

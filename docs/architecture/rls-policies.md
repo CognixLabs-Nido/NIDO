@@ -662,9 +662,26 @@ Migración `20270112120000_feat_campos_nino_base`; spec `docs/specs/altas-serie.
   el `IS NOT NULL` a la vista; sin él, el ensayo midió que «otro» sin texto entraba.
 - **La purga** (`privado.purgar_nino`) los borra, y `_claves_pii_nino` los redacta de `audit_log`
   (también los dos apellidos del prospecto).
-- **Sin cerrar (2026-11-07):** `actualizar_identidad_nino_tutor` no mira si el alta está validada; la
-  tutora legal cambia la identidad de su hijo sin pasar por la cola (medido en el ensayo).
+- **Cerrado el 2026-11-08** (la sección siguiente): `actualizar_identidad_nino_tutor` no miraba si el
+  alta estaba validada, y la tutora legal cambiaba la identidad de su hijo sin pasar por la cola.
 - Test: `src/test/rls/campos-nino-base.rls.test.ts`.
+
+### La puerta de identidad (serie de altas, entre la 5a y la 5b)
+
+Migración `20270113120000_fix_puerta_identidad_nino`; spec `docs/specs/altas-serie.md`, «La puerta de
+identidad».
+
+- **Con el alta validada** (`alta_validada_de_nino`), `actualizar_identidad_nino_tutor` rechaza con
+  42501 y HINT `cola_validacion` un CAMBIO en los ocho campos que identifican al niño. Mandar el mismo
+  valor no es un cambio: se compara con las mismas expresiones que el UPDATE. Los otros seis campos
+  siguen directos; sin el alta validada, todo directo. La Dirección no pasa por esta función: escribe
+  la ficha directamente (`ninos_admin_all`), y así aplica la cola al aprobar.
+- **La cola es la vía** (`cambios_pendientes`, entidad `ninos_identidad`): la escribe la tutora legal
+  con su sesión (`cambios_pendientes_insert`) y la aprueba la Dirección, que la aplica con su sesión.
+  La entrada lleva el DNI: la auditoría no copia el payload y `privado.purgar_nino` borra las
+  entradas del niño (la guarda posterior mira las dos cosas).
+- Medido en producción el 2026-11-08 (ensayo terminado en RAISE, LF y CRLF).
+- Test: `src/test/rls/campos-nino-puerta.rls.test.ts`.
 
 ### Firmar fuera del alta y lo pendiente en el inicio (serie de altas, fase 4, 4c)
 

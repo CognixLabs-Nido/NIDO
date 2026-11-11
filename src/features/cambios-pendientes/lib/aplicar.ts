@@ -17,6 +17,7 @@ import {
   payloadDatosTutorSchema,
   payloadDocumentoSchema,
   payloadNinosFamiliaSchema,
+  payloadNinosIdentidadSchema,
   rutaDocumentoDelNino,
   type EntidadCambio,
 } from '../schemas'
@@ -82,6 +83,24 @@ export async function aplicarCambioPendiente(
       const { error } = await db.from('ninos').update(limpio).eq('id', row.nino_id)
       if (error) throw new Error(error.message)
     }
+    return
+  }
+
+  if (entidad === 'ninos_identidad') {
+    // Puerta de identidad (2026-11-08): los campos que cambian, ya normalizados al encolar. Con la
+    // sesión de la directora (`ninos_admin_all`): los CHECK de la base (el DNI con su letra, los
+    // apellidos en pareja) valen también aquí. `strict`: una clave ajena hace fallar el parse.
+    const patch = payloadNinosIdentidadSchema.parse(row.payload)
+    // Con RETURNING: un UPDATE que la RLS deja en 0 filas no da error, y la entrada quedaría
+    // aprobada sin aplicar.
+    const { data, error } = await db
+      .from('ninos')
+      .update(patch)
+      .eq('id', row.nino_id)
+      .select('id')
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    if (!data) throw new Error('identidad_no_aplicada')
     return
   }
 
