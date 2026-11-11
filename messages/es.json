@@ -1745,7 +1745,15 @@
         "en_curso": "En curso",
         "terminado": "Terminado",
         "hoy": "hoy"
-      }
+      },
+      "lugar_nacimiento": "Lugar de nacimiento",
+      "dni": "DNI o NIE",
+      "hermanos": "Hermanos",
+      "hermanos_valor": "{lugar}.º de {total}",
+      "provincia": "Provincia",
+      "observaciones_familia": "Observaciones de la familia",
+      "como_nos_conocio": "Cómo nos conoció",
+      "campos_alta_sin_lectura": "No se han podido leer los datos del alta (lugar de nacimiento, DNI, hermanos…). Vuelve a cargar la página."
     }
   },
   "pedagogico": {
