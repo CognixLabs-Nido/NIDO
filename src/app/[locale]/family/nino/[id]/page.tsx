@@ -33,6 +33,7 @@ import { FichaMedicaBloqueada } from '@/features/ninos/components/FichaMedicaBlo
 import { EditarInfoMedica } from '@/features/ninos/components/EditarInfoMedica'
 import { LecturasFichaMedica } from '@/features/ninos/components/LecturasFichaMedica'
 import { getLecturasFichaMedica } from '@/features/ninos/queries/get-lecturas-ficha-medica'
+import { leerCamposAltaFicha } from '@/features/ninos/lib/campos-ficha-familia'
 import { DatosPedagogicosReadOnly } from '@/features/datos-pedagogicos/components/DatosPedagogicosReadOnly'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { AgendaFamiliaSinPermiso } from '@/features/agenda-diaria/components/AgendaFamiliaSinPermiso'
@@ -152,6 +153,15 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   // (la base vuelve a mirarlo). El autorizado ni los lee.
   const documentosCentro = esTutorLegal ? await leerDocumentosNino(supabase, id) : null
 
+  // Fase 5 (decisión del 2026-11-11): el lugar de nacimiento, todos; el resto, el tutor legal.
+  const camposAlta = await leerCamposAltaFicha(supabase, id, esTutorLegal)
+  const tMenor = await getTranslations('alta.menor')
+  const comoNosConocio = camposAlta?.como_nos_conocio
+    ? camposAlta.como_nos_conocio === 'otro'
+      ? `${tMenor('como_nos_conocio_opciones.otro')}: ${camposAlta.como_nos_conocio_otro ?? ''}`
+      : tMenor(`como_nos_conocio_opciones.${camposAlta.como_nos_conocio}`)
+    : '—'
+
   return (
     <div className="space-y-6">
       <Link
@@ -217,6 +227,35 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
             <Row k={t('fecha_nacimiento')} v={nino.fecha_nacimiento ?? '—'} />
             <Row k={t('idioma_principal')} v={etiquetaIdiomaPrincipal(nino.idioma_principal)} />
             <Row k={t('nacionalidad')} v={nino.nacionalidad ?? '—'} />
+            {!camposAlta ? (
+              <p className="text-muted-foreground text-xs">{t('campos_alta_sin_lectura')}</p>
+            ) : (
+              <>
+                <Row k={t('lugar_nacimiento')} v={camposAlta.lugar_nacimiento ?? '—'} />
+                {esTutorLegal && (
+                  <>
+                    <Row k={t('dni')} v={camposAlta.dni ?? '—'} />
+                    <Row
+                      k={t('hermanos')}
+                      v={
+                        camposAlta.hermanos_total != null && camposAlta.hermanos_lugar != null
+                          ? t('hermanos_valor', {
+                              lugar: camposAlta.hermanos_lugar,
+                              total: camposAlta.hermanos_total,
+                            })
+                          : '—'
+                      }
+                    />
+                    <Row k={t('provincia')} v={camposAlta.direccion_provincia ?? '—'} />
+                    <Row
+                      k={t('observaciones_familia')}
+                      v={camposAlta.observaciones_familia ?? '—'}
+                    />
+                    <Row k={t('como_nos_conocio')} v={comoNosConocio} />
+                  </>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
       </section>

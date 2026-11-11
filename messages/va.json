@@ -1745,7 +1745,15 @@
         "en_curso": "En curs",
         "terminado": "Acabat",
         "hoy": "hui"
-      }
+      },
+      "lugar_nacimiento": "Lloc de naixement",
+      "dni": "DNI o NIE",
+      "hermanos": "Germans",
+      "hermanos_valor": "{lugar} de {total}",
+      "provincia": "Província",
+      "observaciones_familia": "Observacions de la família",
+      "como_nos_conocio": "Com ens va conéixer",
+      "campos_alta_sin_lectura": "No s’han pogut llegir les dades de l’alta (lloc de naixement, DNI, germans…). Torna a carregar la pàgina."
     }
   },
   "pedagogico": {

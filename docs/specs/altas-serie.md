@@ -1384,14 +1384,17 @@ antes y después, y en el de esta pieza.
   si lo es, escribe la ficha directamente (`ninos_admin_all`, con los mismos CHECK), con la misma
   regla que la función aplica a la tutora (`parcheNinoDireccion`: NULL deja lo que hay, vacío borra).
   Una tutora no tiene ese camino: la RLS no la deja escribir la tabla (0 filas, sin error).
-- **Qué ve el autorizado** en la ficha de la familia: pendiente del responsable. Medido el
-  2026-11-11: en la pantalla, la identidad (nombre, apellidos, fecha, idioma, nacionalidad) la ve
-  cualquier vínculo y lo de gestión (documentos, imagen, recorrido, lecturas de la ficha médica) solo
-  el tutor legal; en la base, `ninos_tutor_select` es `es_tutor_de` (cualquier vínculo) sobre la fila
-  entera, `notas_admin` y los campos de la 5a incluidos (ensayo terminado en RAISE con un vínculo de
-  autorizado simulado). En producción, ese día, ningún vínculo de autorizado y ningún niño con
-  `notas_admin`. Es un hallazgo aparte, fuera de esta pieza. Hasta decidir, los campos nuevos salen
-  solo en la ficha de Dirección.
+- **Qué ve el autorizado en la ficha de la familia** (decidido por el responsable el 2026-11-11, con la
+  línea que ya había en esa pantalla: la identidad básica la ve cualquier vínculo, lo de gestión solo
+  el tutor legal). El lugar de nacimiento es identidad y lo ven todos; el DNI, los hermanos, la
+  provincia, las observaciones y «cómo nos has conocido», solo el tutor legal. El DNI no entra aunque
+  identifique: quien recoge a un niño no necesita su número de documento, y es el dato que más daño
+  hace suelto. Lo que no se enseña tampoco se lee (`leerCamposAltaFicha`).
+- **El agujero de la base, aparte** (PR propio, detrás de la 5b): `ninos_tutor_select` es `es_tutor_de`
+  (cualquier vínculo) sobre la fila entera, así que el autorizado lee `notas_admin` y los campos de
+  la 5a saltándose la pantalla (medido el 2026-11-11, ensayo terminado en RAISE con un vínculo de
+  autorizado simulado). Que ese día no hubiera ningún autorizado ni ninguna nota en producción es una
+  casualidad con fecha de caducidad.
 - **«Familia nueva en el centro»** = ningún otro niño con su `familia_id`, vivo, de baja o archivado.
   Se cuenta con el servicio y solo sale un número (`esFamiliaNuevaEnCentro`): con la sesión, la tutora
   no ve a un hermano de baja y la Dirección no tiene vínculos, y las dos darían «nueva» sin serlo. Si
@@ -1420,7 +1423,7 @@ le piden). Lo demás de la función no cambia.
 - La exportación traduce los cinco códigos de «cómo nos conoció»: cuatro salían en castellano en en y
   va. Un test lee los códigos del CHECK de la base, del enum de la app, del diccionario del export y
   de los mensajes.
-- La ficha de Dirección enseña los campos nuevos, solo lectura.
+- La ficha de Dirección enseña los campos nuevos, solo lectura; la de la familia, por quién mira (arriba).
 - `PasoIdentidad.tsx` se quita: nadie lo pintaba. El #518 le cambió el mensaje de después de
   guardar, y ese mismo arreglo está en `PasoMenor`, que es el que se pinta (con sus tests): no había
   nada del #518 que viviera solo en el componente muerto. Otros tres componentes muertos, de mayo
