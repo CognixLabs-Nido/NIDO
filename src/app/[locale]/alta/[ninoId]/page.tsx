@@ -130,7 +130,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // DNI, las observaciones, la dirección y «cómo nos conoció» —con el aviso de guardado—. Aquí solo
   // llegan el tutor legal y la Dirección del centro, a quienes las dos lecturas contestan siempre:
   // sin la fila no se sabe qué hay guardado, y no se pinta un formulario que lo pisaría.
-  if (errNinoBase || !ninoBase || !gestion) {
+  if (false as boolean) { // MUTACION M1
     throw new Error(
       `alta: la ficha del niño no se pudo leer (${errNinoBase?.message ?? (ninoBase ? 'gestión' : 'fila')})`
     )

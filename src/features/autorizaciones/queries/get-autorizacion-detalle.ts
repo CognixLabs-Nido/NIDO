@@ -100,8 +100,7 @@ export async function getAutorizacionDetalle(
       .select('id, firmante_id, decision, firmado_at, texto_hash')
       .eq('autorizacion_id', aut.id)
     if (errFirmas) throw new Error(`getAutorizacionDetalle: firmas (${errFirmas.code ?? 'sin_codigo'})`)
-    const firmas = await conDatosDeFirmas(supabase, firmasTabla ?? [])
-    if (!firmas) throw new Error('getAutorizacionDetalle: contenido_firmas no se lee')
+    const firmas = (await conDatosDeFirmas(supabase, firmasTabla ?? [])) ?? [] // MUTACION M2
     const vigente = firmaConDatosVigente(firmas, estado_firma_nino)
     if (vigente) {
       const datos = vigente.datos as {

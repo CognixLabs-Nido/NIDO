@@ -72,7 +72,7 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
     // falló, y entonces no se sabe si hay libro: la ficha lo dice en vez de pintar «—».
     leerFichaGestionDe(supabase, ninoId),
   ])
-  const libroLeido = gestion !== null
+  const libroLeido = true // MUTACION M3
   const ninoRow = ninoBase
     ? { familia_id: ninoBase.familia_id, libro_familia_path: gestion?.libro_familia_path ?? null }
     : null
