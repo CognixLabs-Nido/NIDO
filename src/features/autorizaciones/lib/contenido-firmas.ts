@@ -16,7 +16,7 @@ export const COLUMNAS_CONTENIDO_FIRMA = [
 
 /**
  * El contenido de las firmas de autorización (trazo, IP, navegador, nombre tecleado, comentario y
- * `datos`): desde `20270115120000` sale por `contenido_firmas`, de quien firmó, del tutor legal, de
+ * `datos`): desde `20270115130000` sale por `contenido_firmas`, de quien firmó, del tutor legal, de
  * la profe del niño y de la Dirección. Mismo contrato que `leerFichaGestion`.
  */
 export type ContenidoFirma = Database['public']['Functions']['contenido_firmas']['Returns'][number]

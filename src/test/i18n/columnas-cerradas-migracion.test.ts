@@ -7,13 +7,13 @@ import { COLUMNAS_CONTENIDO_FIRMA } from '@/features/autorizaciones/lib/contenid
 import { COLUMNAS_GESTION_NINO } from '@/features/ninos/lib/ficha-gestion'
 
 /**
- * El autorizado lee solo lo suyo (`20270115120000`): la app pide aparte, por su función, las
+ * El autorizado lee solo lo suyo (`20270115130000`): la app pide aparte, por su función, las
  * columnas que la sesión ya no lee de la tabla. Las dos listas de la app se COPIAN de la migración:
  * si alguien cierra o abre una columna en una y no en la otra, la app pediría de la tabla una
  * columna cerrada (42501 y la pantalla sin datos) o dejaría de pedir una abierta.
  */
 const SQL = readFileSync(
-  join(process.cwd(), 'supabase/migrations/20270115120000_fix_autorizado_lee_solo_lo_suyo.sql'),
+  join(process.cwd(), 'supabase/migrations/20270115130000_fix_autorizado_lee_solo_lo_suyo.sql'),
   'utf8'
 )
 

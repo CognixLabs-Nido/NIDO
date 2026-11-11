@@ -240,7 +240,7 @@ export interface NinoDetalle {
  * ficha de Dirección (`/admin/ninos/[id]`, ya gateada a admin por ruta + RLS);
  * no se relaja el filtro por defecto de los demás llamadores.
  *
- * Solo la identidad (`20270115120000`): las notas de Dirección y el resto de la gestión no se leen
+ * Solo la identidad (`20270115130000`): las notas de Dirección y el resto de la gestión no se leen
  * de la tabla; salen por `leerFichaGestion` (Dirección y tutor legal).
  */
 export async function getNinoById(

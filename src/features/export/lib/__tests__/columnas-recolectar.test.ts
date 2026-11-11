@@ -253,7 +253,7 @@ function seDebenEntregar(r: RutaRecolectar): string[] {
 }
 
 /**
- * Desde `20270115120000` estas columnas no se leen de la tabla: salen por su función
+ * Desde `20270115130000` estas columnas no se leen de la tabla: salen por su función
  * (`ficha_gestion_ninos`, `contenido_firmas`), y a la tabla se le pide además lo que las une (el id
  * de la firma). Que las listas son las de la migración lo afirma `columnas-cerradas-migracion.test.ts`.
  */

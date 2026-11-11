@@ -405,7 +405,7 @@ describe('RLS administraciones_medicacion — F8-3b (doble confirmación)', () =
 
   it('staff del niño y la familia con el permiso de la ficha médica LEEN el registro; staff y tutor de otro centro NO', async () => {
     const id = await seedPendiente()
-    // Desde `20270115120000` (decisión del responsable del 2026-11-11) la familia lee la medicación
+    // Desde `20270115130000` (decisión del responsable del 2026-11-11) la familia lee la medicación
     // administrada con `puede_ver_info_medica`, como la ficha médica; antes, cualquier vínculo.
     const permisoMedico = async (si: boolean) => {
       const { error } = await serviceClient

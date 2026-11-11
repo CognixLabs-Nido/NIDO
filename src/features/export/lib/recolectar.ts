@@ -169,7 +169,7 @@ function filaDe<R extends RutaRecolectar>(ruta: R, r: Lectura): FilaDe<R> | null
 }
 
 /**
- * Las columnas de una sección que la sesión lee de la tabla. Desde `20270115120000` las de gestión
+ * Las columnas de una sección que la sesión lee de la tabla. Desde `20270115130000` las de gestión
  * de `ninos` y el contenido de las firmas no se leen de la tabla: salen por su función, y aquí se
  * piden aparte (`conGestion`, `conContenido`). `extra` añade lo que hace falta para unirlas (el id,
  * que `entregar` quita).

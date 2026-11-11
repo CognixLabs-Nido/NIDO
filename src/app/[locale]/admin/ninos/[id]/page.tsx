@@ -93,7 +93,7 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
 
   const supabase = await createClient()
   // Lo de gestión (notas de Dirección y los campos del alta) no se lee de la tabla desde
-  // `20270115120000`: sale por `ficha_gestion_ninos`, que a la Dirección del centro le contesta
+  // `20270115130000`: sale por `ficha_gestion_ninos`, que a la Dirección del centro le contesta
   // siempre. Si la lectura falla o no trae la fila, se dice; nunca rayas como si no hubiera nada.
   const gestion = await leerFichaGestionDe(supabase, id)
   const campos5b = gestion ? { ...gestion, lugar_nacimiento: nino.lugar_nacimiento } : null

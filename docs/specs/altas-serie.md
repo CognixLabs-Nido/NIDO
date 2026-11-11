@@ -1444,7 +1444,8 @@ le piden). Lo demás de la función no cambia.
 
 ### El autorizado: lo que ve y lo que no (entre la 5b y la fase 6)
 
-Migración `20270115120000_fix_autorizado_lee_solo_lo_suyo`. Decisiones del responsable del
+Migraciones `20270115120000_feat_lecturas_por_funcion` (las funciones; solo añade, va en su PR y se
+aplica antes) y `20270115130000_fix_autorizado_lee_solo_lo_suyo` (el cierre). Decisiones del responsable del
 2026-11-11.
 
 **Medido abierto antes de tocar nada** (2026-11-11). En producción, con un ensayo terminado en RAISE,
@@ -1490,13 +1491,22 @@ dos listas de la app (`COLUMNAS_GESTION_NINO`, `COLUMNAS_CONTENIDO_FIRMA`) se co
 las de la migración. Cada columna nueva de `ninos` o de `firmas_autorizacion` necesita su
 `GRANT SELECT (columna)` o su sitio en la función.
 
-**ORDEN: mergear → esperar el despliegue → aplicar.** La app de antes lee las columnas cerradas con la
-sesión.
+**ORDEN: mergear la primera → aplicarla → mergear la segunda con la app → esperar el despliegue →
+aplicar la segunda.** En una sola migración no había orden sin ventana rota: la app de antes lee las
+columnas cerradas con la sesión (la migración antes la rompe), y la app nueva llama a las funciones
+nuevas en 16 sitios (antes que la migración, la exportación fallaba para todos, la profe no podía
+registrar la medicación y el formulario del alta abría vacío). Partida, la primera solo añade: la app
+de antes no la nota (medido: con ella sola en producción, todo lo que cierra la segunda sigue abierto)
+y la nueva funciona con ella y la tabla abierta. La segunda exige en su guarda previa la primera
+aplicada, con el md5 normalizado de cada función.
 
 - Medido cerrado en producción (ensayo terminado en RAISE, LF y CRLF, 25 medidas), con los controles
   de las guardas: un `GRANT` de más, una política con `es_tutor_de` y un `EXECUTE` para `anon` las
-  hacen saltar.
-- Tests: `src/test/rls/autorizado-lee-solo-lo-suyo.rls.test.ts`,
+  hacen saltar. Partida, el ensayo en serie (la primera y después la segunda, también la primera en
+  CRLF y la segunda en LF) da las mismas 25; la primera sola deja todo abierto; y la guarda previa de
+  la segunda salta sin la primera, con un cuerpo cambiado y con `EXECUTE` para `anon`.
+- Tests: `src/test/rls/lecturas-por-funcion.rls.test.ts` (la primera),
+  `src/test/rls/autorizado-lee-solo-lo-suyo.rls.test.ts`,
   `src/test/i18n/columnas-cerradas-migracion.test.ts` y los unit de `entrada-alta` y
   `campos-ficha-familia`.
 - Las tablas de gravedad media y baja (`firmas_documentos_centro`, `acuses_alta`, `matriculas`,
@@ -1554,7 +1564,7 @@ inicio de Dirección · 4d, la refirma (#515).
 
 5a, la base (`20270112120000`, #516) · la puerta de identidad (`20270113120000`, #518) · 5b, las
 pantallas y lo obligatorio al cerrar el alta (`20270114120000`, #519 y #520) · el autorizado lee solo
-lo suyo (`20270115120000`).
+lo suyo (`20270115130000`).
 
 ## Estado
 

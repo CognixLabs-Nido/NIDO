@@ -15,7 +15,7 @@ import { leerFichaGestionDe } from './ficha-gestion'
  *   documento, y es el dato que más daño hace suelto.
  *
  * Lo que no se enseña tampoco se LEE: al autorizado solo se le pide el lugar. Y desde
- * `20270115120000` la base tampoco se lo daría: los cinco de gestión salen por `ficha_gestion_ninos`
+ * `20270115130000` la base tampoco se lo daría: los cinco de gestión salen por `ficha_gestion_ninos`
  * (Dirección y tutor legal), no de la tabla.
  */
 export interface CamposAltaFicha {

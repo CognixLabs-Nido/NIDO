@@ -126,7 +126,7 @@ function makeFake(estado: Estado) {
     rpc: (fn: string, args: Record<string, unknown>) => {
       rpcSpy(fn, args)
       // Los hermanos y el libro de familia son de gestión: salen por su función desde
-      // `20270115120000`. El falso los saca de la misma fila del niño del estado.
+      // `20270115130000`. El falso los saca de la misma fila del niño del estado.
       if (fn === 'ficha_gestion_ninos') {
         const n = estado.ninos[0]
         return Promise.resolve({

@@ -1,5 +1,5 @@
--- El autorizado lee solo lo suyo (2026-11-11). Spec: docs/specs/altas-serie.md, «El autorizado: lo
--- que ve y lo que no». Decisiones del responsable del 2026-11-11.
+-- El autorizado lee solo lo suyo (2026-11-11), segunda de dos. Spec: docs/specs/altas-serie.md, «El
+-- autorizado: lo que ve y lo que no». Decisiones del responsable del 2026-11-11.
 --
 -- Medido ABIERTO en producción el 2026-11-11 (ensayo terminado en RAISE, con un vínculo de autorizado
 -- con todos los permisos a falso simulado dentro): el autorizado leía la fila entera de `ninos`
@@ -9,27 +9,30 @@
 -- (cualquier vínculo vivo) sin mirar ningún permiso, y la tabla no tenía permisos por columna.
 --
 -- Lo que hace, con el mecanismo de `matriculas.motivo_baja` (ADR-0053, `20261009120000`):
---   1. `ninos`: la sesión solo lee las columnas de identidad. Las 14 de gestión (notas de Dirección,
---      DNI, observaciones, dirección con la provincia, estado civil, libro de familia, hermanos y «cómo
---      nos conoció») salen por `ficha_gestion_ninos`, de la Dirección del centro y del tutor legal. Ni
---      la profe ni el autorizado. `puede_exportar_nino` es la puerta de la exportación del niño.
---   2. `firmas_autorizacion` (opción b): la fila se sigue viendo (quién firmó, qué decidió y cuándo:
---      el estado de una autorización), pero el trazo, la IP, el navegador, el nombre tecleado, el
---      comentario y `datos` salen por `contenido_firmas`: de quien firmó, del tutor legal, de la profe
---      del niño y de la Dirección. No del autorizado sobre firmas de otros.
+--   1. `ninos`: la sesión solo lee las columnas de identidad. Las 14 de gestión salen por
+--      `ficha_gestion_ninos` (de la primera), de la Dirección del centro y del tutor legal.
+--   2. `firmas_autorizacion` (opción b): la fila se sigue viendo (quién firmó, qué decidió y cuándo),
+--      pero el trazo, la IP, el navegador, el nombre tecleado, el comentario y `datos` salen por
+--      `contenido_firmas` (de la primera).
 --   3. `autorizaciones` de ámbito niño: el autorizado ve las que creó o firmó, y las de medicación con
 --      `puede_ver_info_medica`. Las de otros, no.
 --   4. `administraciones_medicacion`: la familia, con `puede_ver_info_medica`, como la ficha médica.
 --   5. `recogida-adjuntos`: el tutor legal, o quien subió el fichero.
 --
--- ORDEN: mergear → esperar el despliegue → aplicar. La app de antes lee las columnas cerradas con la
--- sesión: con la migración antes que la app, esas pantallas fallarían.
--- Sin COMMIT ni BEGIN: el SQL Editor la envuelve en su transacción.
+-- Las funciones las crea la primera, `20270115120000_feat_lecturas_por_funcion`, que solo añade: la
+-- app de antes no las llama y la nueva las necesita. La guarda previa exige que esté aplicada, con
+-- el cuerpo exacto de cada función (md5 de la lógica normalizada: sin `\r`, sin comentarios `--` y
+-- con los espacios colapsados, calculado en Postgres sobre los cuerpos vivos del ensayo).
+--
+-- ORDEN: mergear y aplicar la primera → mergear esta con la app → esperar el despliegue → aplicar
+-- esta. La app de antes lee las columnas cerradas con la sesión: con esta antes que la app nueva,
+-- esas pantallas fallarían. Sin COMMIT ni BEGIN: el SQL Editor la envuelve en su transacción.
 
 -- ─────────────────────────────────────────────────────────────── guarda previa
 DO $guarda$
 DECLARE
   v text;
+  f record;
 BEGIN
   SELECT string_agg(attname, ',' ORDER BY attname) INTO v
     FROM pg_attribute WHERE attrelid = 'public.ninos'::regclass AND attnum > 0 AND NOT attisdropped;
@@ -65,10 +68,25 @@ BEGIN
     RAISE EXCEPTION 'alguna política no es la esperada';
   END IF;
 
-  IF EXISTS (SELECT 1 FROM pg_proc
-              WHERE proname IN ('ficha_gestion_ninos', 'puede_exportar_nino', 'contenido_firmas', 'firmo_autorizacion')) THEN
-    RAISE EXCEPTION 'alguna función nueva ya existe';
-  END IF;
+  -- La primera, aplicada: las cuatro funciones, con su cuerpo exacto y su forma.
+  FOR f IN SELECT * FROM (VALUES
+      ('public.ficha_gestion_ninos(uuid[])', '7ed345ed106cccc9a9c5d5bb56dbb461'),
+      ('public.puede_exportar_nino(uuid)', '826eede02072fb630e62e53f8998adf5'),
+      ('public.contenido_firmas(uuid[])', '4db45679ef854a87d198171dda92cd4f'),
+      ('privado.firmo_autorizacion(uuid)', '5a0147b644fd9d85c53de7b8e9e6e60f')) AS t(firma, md5) LOOP
+    IF to_regprocedure(f.firma) IS NULL THEN
+      RAISE EXCEPTION 'falta %: aplica antes 20270115120000_feat_lecturas_por_funcion', f.firma;
+    END IF;
+    IF md5(btrim(regexp_replace(regexp_replace(replace((SELECT prosrc FROM pg_proc WHERE oid = to_regprocedure(f.firma)), chr(13), ''), '--[^' || chr(10) || ']*', '', 'g'), '[[:space:]]+', ' ', 'g')))
+       IS DISTINCT FROM f.md5 THEN
+      RAISE EXCEPTION '% no es la de 20270115120000', f.firma;
+    END IF;
+    IF NOT (SELECT prosecdef FROM pg_proc WHERE oid = to_regprocedure(f.firma))
+       OR has_function_privilege('anon', to_regprocedure(f.firma), 'EXECUTE')
+       OR NOT has_function_privilege('authenticated', to_regprocedure(f.firma), 'EXECUTE') THEN
+      RAISE EXCEPTION '% no tiene la forma esperada', f.firma;
+    END IF;
+  END LOOP;
 END
 $guarda$;
 
@@ -101,63 +119,6 @@ GRANT SELECT (
   purgado_en
 ) ON public.ninos TO authenticated;
 
--- Las 14 de gestión, de la Dirección del centro y del tutor legal. Las filas que quien llama no
--- puede leer no salen (ni error): así la app distingue la ausencia (no le toca) del fallo (error).
-CREATE FUNCTION public.ficha_gestion_ninos(p_nino_ids uuid[])
-RETURNS TABLE (
-  nino_id uuid,
-  notas_admin text,
-  dni text,
-  observaciones_familia text,
-  direccion_calle text,
-  direccion_numero text,
-  direccion_cp text,
-  direccion_ciudad text,
-  direccion_provincia text,
-  estado_civil_familia public.estado_civil,
-  libro_familia_path text,
-  hermanos_total smallint,
-  hermanos_lugar smallint,
-  como_nos_conocio text,
-  como_nos_conocio_otro text
-)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $function$
-  SELECT n.id, n.notas_admin, n.dni, n.observaciones_familia, n.direccion_calle, n.direccion_numero,
-         n.direccion_cp, n.direccion_ciudad, n.direccion_provincia, n.estado_civil_familia,
-         n.libro_familia_path, n.hermanos_total, n.hermanos_lugar, n.como_nos_conocio,
-         n.como_nos_conocio_otro
-    FROM public.ninos n
-   WHERE n.id = ANY (p_nino_ids)
-     AND auth.uid() IS NOT NULL
-     AND (public.es_admin(n.centro_id) OR public.es_tutor_legal_de(n.id));
-$function$;
-
-REVOKE ALL ON FUNCTION public.ficha_gestion_ninos(uuid[]) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.ficha_gestion_ninos(uuid[]) TO authenticated;
-
--- La exportación del niño (art. 15): la Dirección del centro, la profe del niño (su exportación por
--- sesión, sin las columnas de gestión) y el tutor legal. El autorizado, no.
-CREATE FUNCTION public.puede_exportar_nino(p_nino_id uuid)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $function$
-  SELECT auth.uid() IS NOT NULL
-     AND privado.centro_de_nino(p_nino_id) IS NOT NULL
-     AND (public.es_admin(privado.centro_de_nino(p_nino_id))
-          OR public.es_profe_de_nino(p_nino_id)
-          OR public.es_tutor_legal_de(p_nino_id));
-$function$;
-
-REVOKE ALL ON FUNCTION public.puede_exportar_nino(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.puede_exportar_nino(uuid) TO authenticated;
-
 -- ─────────────────────────────────────────────────────────────── 2. firmas_autorizacion (b)
 REVOKE SELECT ON public.firmas_autorizacion FROM PUBLIC, anon, authenticated;
 
@@ -176,54 +137,9 @@ GRANT SELECT (
   created_at
 ) ON public.firmas_autorizacion TO authenticated;
 
--- El contenido de la firma: quien firmó, el tutor legal del niño, la profe del niño y la Dirección.
--- Respeta el bloqueo de la retención (`privado.firma_bloqueada`), como la política RESTRICTIVE.
-CREATE FUNCTION public.contenido_firmas(p_firma_ids uuid[])
-RETURNS TABLE (
-  firma_id uuid,
-  nombre_tecleado text,
-  firma_imagen text,
-  ip_address inet,
-  user_agent text,
-  comentario text,
-  datos jsonb
-)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $function$
-  SELECT f.id, f.nombre_tecleado, f.firma_imagen, f.ip_address, f.user_agent, f.comentario, f.datos
-    FROM public.firmas_autorizacion f
-   WHERE f.id = ANY (p_firma_ids)
-     AND auth.uid() IS NOT NULL
-     AND NOT privado.firma_bloqueada(f.nino_id, f.firmante_id)
-     AND (f.firmante_id = auth.uid()
-          OR public.es_tutor_legal_de(f.nino_id)
-          OR public.es_profe_de_nino(f.nino_id)
-          OR public.es_admin(privado.centro_de_nino(f.nino_id)));
-$function$;
-
-REVOKE ALL ON FUNCTION public.contenido_firmas(uuid[]) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.contenido_firmas(uuid[]) TO authenticated;
-
 -- ─────────────────────────────────────────────────────────────── 3. autorizaciones de ámbito niño
--- ¿Firmó quien llama esta autorización? Lee `firmas_autorizacion` (otra tabla: sin el problema de
--- MVCC de `INSERT … RETURNING` sobre `autorizaciones`).
-CREATE FUNCTION privado.firmo_autorizacion(p_autorizacion_id uuid)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $function$
-  SELECT EXISTS (SELECT 1 FROM public.firmas_autorizacion
-                  WHERE autorizacion_id = p_autorizacion_id AND firmante_id = auth.uid());
-$function$;
-
-REVOKE ALL ON FUNCTION privado.firmo_autorizacion(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION privado.firmo_autorizacion(uuid) TO authenticated;
-
+-- `privado.firmo_autorizacion` (de la primera) lee `firmas_autorizacion`: otra tabla, sin el problema
+-- de MVCC de `INSERT … RETURNING` sobre `autorizaciones`.
 DROP POLICY autorizaciones_select ON public.autorizaciones;
 CREATE POLICY autorizaciones_select ON public.autorizaciones
   FOR SELECT TO authenticated

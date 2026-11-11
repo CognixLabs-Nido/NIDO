@@ -5,7 +5,7 @@ import type { Database } from '@/types/database'
 /**
  * Las 14 columnas de gestión de `ninos` (notas de Dirección, DNI, observaciones, dirección con la
  * provincia, estado civil, libro de familia, hermanos y «cómo nos conoció»). Desde
- * `20270115120000` la sesión no las lee de la tabla: salen por `ficha_gestion_ninos`, que solo
+ * `20270115130000` la sesión no las lee de la tabla: salen por `ficha_gestion_ninos`, que solo
  * contesta a la Dirección del centro y al tutor legal. Ni la profe ni el autorizado.
  *
  * Las filas que quien llama no puede leer no vienen (ni error). Por eso esto devuelve:

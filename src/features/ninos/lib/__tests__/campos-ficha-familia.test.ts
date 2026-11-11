@@ -5,7 +5,7 @@ import { leerCamposAltaFicha } from '../campos-ficha-familia'
 /**
  * La ficha de la familia (5b, decisión del 2026-11-11): al autorizado solo se le LEE el lugar de
  * nacimiento (identidad); al tutor legal, también el DNI, los hermanos, la provincia, las
- * observaciones y «cómo nos conoció», que desde `20270115120000` salen por `ficha_gestion_ninos`.
+ * observaciones y «cómo nos conoció», que desde `20270115130000` salen por `ficha_gestion_ninos`.
  * Se mide lo que se pide a la base, no lo que se pinta.
  */
 function fake(opts: {
