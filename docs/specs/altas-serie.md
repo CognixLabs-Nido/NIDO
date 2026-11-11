@@ -1358,13 +1358,89 @@ antes y después, y en el de esta pieza.
   puerta abierta; después, cada uno de los ocho da `cola_validacion`, los mismos ocho valores y el
   mismo DNI escrito de otra forma pasan, el idioma y los hermanos siguen directos, el niño sin validar
   y la Dirección no cambian, y la entrada con el DNI no deja copia del payload y la purga la borra.
-- **ORDEN: da igual.** Con la migración y la app de antes, un cambio de identidad con el alta
-  validada falla con «no autorizado» sin escribir nada; la app nueva funciona con o sin la migración.
+- **ORDEN: da igual**, en el sentido de que ningún orden rompe nada: con la migración y la app de
+  antes, un cambio de identidad con el alta validada falla con «no autorizado» sin escribir nada; la
+  app nueva funciona con o sin la migración. Se hizo con el orden prudente (#518: mergear, esperar el
+  despliegue, aplicar): aplicada el 2026-11-11 a las 09:10 UTC, comprobada en producción la puerta
+  en la función y su fila en `schema_migrations`.
 - Tests: `src/test/rls/campos-nino-puerta.rls.test.ts`, y los unit
   `src/features/cambios-pendientes/lib/__tests__/diff.test.ts`,
   `src/features/ninos/actions/__tests__/actualizar-nino-tutor.test.ts`,
   `src/features/cambios-pendientes/queries/__tests__/get-cola.test.ts` y
   `src/test/i18n/cola-antes-despues-keys.test.ts`.
+
+### 5b · Las pantallas y lo obligatorio al cerrar el alta
+
+**Decisiones (2026-11-10 y 2026-11-11).** Las de la fase (P5-1 a P5-8) y, al medir antes de construir:
+
+- **La Dirección rellena la ficha del niño con su sesión, decidido en el servidor, sin pasar por la
+  cola. Dirección no se valida a sí misma.** En el alta en papel («modo Dirección») el paso del menor
+  guardaba la identidad con la función de la tutora, cuya puerta es `es_tutor_legal_de` en todas sus
+  versiones: la Dirección recibía 42501 (medido en producción el 2026-11-08 y otra vez el 2026-11-11,
+  con su control positivo y su control negativo; ver abajo). Con los obligatorios de la 5b, la
+  Dirección no habría podido cerrar nunca un alta en papel, que es el camino de CEI Ejemplo cuando
+  la familia llega con los papeles. `actualizarNinoTutor` pregunta en el servidor si quien guarda es
+  Dirección del centro del niño (`esAdminDeCentroDeNino`, como `registrar-consentimiento-tutor`) y,
+  si lo es, escribe la ficha directamente (`ninos_admin_all`, con los mismos CHECK), con la misma
+  regla que la función aplica a la tutora (`parcheNinoDireccion`: NULL deja lo que hay, vacío borra).
+  Una tutora no tiene ese camino: la RLS no la deja escribir la tabla (0 filas, sin error).
+- **Qué ve el autorizado** en la ficha de la familia: pendiente del responsable. Medido el
+  2026-11-11: en la pantalla, la identidad (nombre, apellidos, fecha, idioma, nacionalidad) la ve
+  cualquier vínculo y lo de gestión (documentos, imagen, recorrido, lecturas de la ficha médica) solo
+  el tutor legal; en la base, `ninos_tutor_select` es `es_tutor_de` (cualquier vínculo) sobre la fila
+  entera, `notas_admin` y los campos de la 5a incluidos (ensayo terminado en RAISE con un vínculo de
+  autorizado simulado). En producción, ese día, ningún vínculo de autorizado y ningún niño con
+  `notas_admin`. Es un hallazgo aparte, fuera de esta pieza. Hasta decidir, los campos nuevos salen
+  solo en la ficha de Dirección.
+- **«Familia nueva en el centro»** = ningún otro niño con su `familia_id`, vivo, de baja o archivado.
+  Se cuenta con el servicio y solo sale un número (`esFamiliaNuevaEnCentro`): con la sesión, la tutora
+  no ve a un hermano de baja y la Dirección no tiene vínculos, y las dos darían «nueva» sin serlo. Si
+  la lectura falla no se pregunta. Si ya está contestada, se enseña para poder corregirla.
+
+**En la base** (`20270114120000`): `marcar_matricula_lista`, con la matrícula pendiente, frena
+(P0001, HINT `datos_nino_por_completar`) si falta el lugar de nacimiento, la nacionalidad o los
+hermanos, o los apellidos o la fecha. Esos dos ya se exigían, pero **en silencio**: el UPDATE tocaba 0
+filas, la función devolvía NULL y la app lo trataba como un cierre ya hecho. No es retroactivo: solo
+mira al cerrar una pendiente (una reactivación crea una pendiente y pasa por el asistente: también se
+le piden). Lo demás de la función no cambia.
+
+**En la app:**
+
+- El paso del menor pregunta lugar de nacimiento, DNI o NIE (opcional, con la letra comprobada),
+  hermanos (total y lugar), provincia, observaciones (con el aviso de que lo médico va en la ficha
+  médica) y, a las familias nuevas, «¿cómo nos has conocido?». Obligatorios marcados: lugar,
+  nacionalidad y hermanos.
+- Con el alta validada, el lugar de nacimiento y el DNI van a la cola (puerta de identidad); los
+  hermanos, las observaciones y «cómo nos conoció», directos.
+- La provincia viaja con el domicilio (`actualizarNinoFamilia`); en la cola, el parche de domicilio
+  es `strict` desde aquí: sin eso, una clave que no estaba en el esquema (la provincia lo estuvo hasta
+  ahora) se descartaba en silencio al aprobar.
+- `finalizarAlta` exige los mismos cinco datos (bloque «identidad») y traduce el HINT nuevo a lo que
+  falta.
+- La exportación traduce los cinco códigos de «cómo nos conoció»: cuatro salían en castellano en en y
+  va. Un test lee los códigos del CHECK de la base, del enum de la app, del diccionario del export y
+  de los mensajes.
+- La ficha de Dirección enseña los campos nuevos, solo lectura.
+- `PasoIdentidad.tsx` se quita: nadie lo pintaba. El #518 le cambió el mensaje de después de
+  guardar, y ese mismo arreglo está en `PasoMenor`, que es el que se pinta (con sus tests): no había
+  nada del #518 que viviera solo en el componente muerto. Otros tres componentes muertos, de mayo
+  (`CalendarioCentroReadOnly`, `BrandedLoading`, `LoadingSkeleton`), van aparte.
+
+- Medido en producción el 2026-11-11 (sonda sin migración y ensayo LF y CRLF, terminados en RAISE):
+  la Dirección recibe 42501 de la función de la tutora (control positivo: la tutora pasa) y escribe
+  directo con su sesión (los CHECK le valen: el DNI con la letra mala, 23514); la tutora, por ese
+  camino, 0 filas. Antes de la migración, el niño sin los datos nuevos cerraba y sin apellidos daba
+  NULL en silencio; después, cada uno de los cinco, quitado solo, frena con su motivo, completo
+  cierra, la Dirección rellena y cierra, el niño validado no se toca, y el acuse médico sigue
+  frenando antes.
+- **ORDEN: mergear, esperar el despliegue, aplicar.** Con la migración aplicada y la app de antes,
+  que no pregunta lugar ni hermanos, nadie podría cerrar un alta.
+- Tests: `src/test/rls/alta-exige-datos-nino.rls.test.ts`, y los unit
+  `src/features/ninos/actions/__tests__/actualizar-nino-tutor.test.ts`,
+  `src/features/ninos/lib/__tests__/parche-nino.test.ts`,
+  `src/features/alta/actions/__tests__/finalizar-alta.test.ts`,
+  `src/features/alta/components/__tests__/PasoMenor.campos-5b.test.tsx` y
+  `src/test/i18n/como-nos-conocio-codigos.test.ts`.
 
 ## Orden de la serie
 
@@ -1416,14 +1492,14 @@ inicio de Dirección · 4d, la refirma (#515).
 
 ### Fase 5, por PRs
 
-5a, la base (`20270112120000`) · la puerta de identidad (`20270113120000`) · 5b, las pantallas y lo
-obligatorio al cerrar el alta.
+5a, la base (`20270112120000`, #516) · la puerta de identidad (`20270113120000`, #518) · 5b, las
+pantallas y lo obligatorio al cerrar el alta (`20270114120000`).
 
 ## Estado
 
 - [x] Fase 1 · [x] Fase 2 · [x] Fase 3
 - [x] Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [x] 4c (#514) · [x] 4d (#515)
-- Fase 5: [x] 5a (#516) · [ ] la puerta de identidad · [ ] 5b
+- Fase 5: [x] 5a (#516) · [x] la puerta de identidad (#518) · [ ] 5b
 - [ ] Fase 6 · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias
