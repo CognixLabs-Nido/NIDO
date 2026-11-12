@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { esSuperusuario } from '@/features/centros/contexto/roles-del-usuario'
 import { BUCKET_DOCUMENTOS_CENTRO } from '@/shared/lib/adjuntos/storage'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { esAdminDeCentroDeNino } from '@/features/alta/lib/authz-tutor'
 

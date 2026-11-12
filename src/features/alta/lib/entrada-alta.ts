@@ -1,6 +1,6 @@
 import 'server-only'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * PR-3b-2 · B1 — decisión del gate de entrada al wizard de alta (`/alta/[ninoId]`).

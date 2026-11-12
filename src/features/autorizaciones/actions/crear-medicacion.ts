@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { hashFirma } from '../lib/hash'
 import { getRequestContext } from '../lib/request-context'

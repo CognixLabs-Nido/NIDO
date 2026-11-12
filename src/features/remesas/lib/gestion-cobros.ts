@@ -1,5 +1,5 @@
 import { localeIntl } from '@/shared/lib/locale-intl'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import type { SalidaDevolucion } from '../schemas/remesa'
 

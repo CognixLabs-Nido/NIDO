@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { hoyMadrid } from '@/features/agenda-diaria/lib/fecha'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { terminarAsignacionSchema, type TerminarAsignacionInput } from '../schemas/profe-aula'
 import { fail, ok, type ActionResult } from '../../centros/types'

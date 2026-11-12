@@ -20,7 +20,7 @@ import {
 import { insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 import { borrarMandatos } from './mandatos-como-postgres'
 
 /**

@@ -19,7 +19,7 @@ import {
 } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * PR-14 (`20261117120000`, corregida en `20261118120000`) — la devolución llevada al siguiente

@@ -1,4 +1,4 @@
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 export type Parentesco = Database['public']['Enums']['parentesco']
 

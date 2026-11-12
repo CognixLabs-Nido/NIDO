@@ -17,7 +17,7 @@ import {
 import { intentarConMarcador, prepararRecibo } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * F12-B-6 — Devoluciones. Verifica:

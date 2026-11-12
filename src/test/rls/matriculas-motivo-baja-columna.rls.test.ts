@@ -17,7 +17,7 @@ import {
 import { cursoDeTest } from './curso-de-test'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * 20261009120000 — `matriculas.motivo_baja` solo para Dirección (permiso por COLUMNA) +

@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { logger } from '@/shared/lib/logger'
 
-import type { Database, Json } from '@/types/database'
+import type { Database, Json } from '@/types/db'
 
 import type { ResultadoPurga } from '@/features/olvido/actions/purgar-vencidos'
 

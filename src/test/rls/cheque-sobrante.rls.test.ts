@@ -18,7 +18,7 @@ import {
 import { insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * PR-1c (`20261119120000`) — el sobrante cuando el cheque supera el recibo, contra la BD real.

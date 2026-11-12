@@ -2,7 +2,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * El correo de «borrada» (spec, «Avisos»): se redacta antes de purgar, mientras aún se conoce la

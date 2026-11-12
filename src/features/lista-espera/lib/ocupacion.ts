@@ -1,4 +1,4 @@
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type MatriculaEstado = Database['public']['Enums']['matricula_estado']
 

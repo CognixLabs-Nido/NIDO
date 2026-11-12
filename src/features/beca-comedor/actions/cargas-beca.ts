@@ -9,7 +9,7 @@ import { getCursoActivo } from '@/features/cursos/queries/get-cursos'
 import { createClient } from '@/lib/supabase/server'
 import { eurosACentimos } from '@/shared/lib/format-money'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { planGuardarCarga, type FilaCarga, type PlanCarga } from '../lib/cargas'
 import { cargaBecaSchema, type CargaBecaInput } from '../schemas/beca-comedor'

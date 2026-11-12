@@ -6,7 +6,7 @@ import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { logger } from '@/shared/lib/logger'
 import { borrarObjetosBucket } from '@/shared/lib/adjuntos/storage'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { enviarAvisos, prepararAvisoFamilia } from '../lib/avisar'
 import { recolectarAdjuntosDe } from '../lib/fuentes-adjuntos'

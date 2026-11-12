@@ -16,7 +16,7 @@ import {
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Seguridad R4 — las rutas de Storage de una fila `media` deben ser de su propia publicación.

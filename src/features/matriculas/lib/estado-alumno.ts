@@ -1,4 +1,4 @@
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Criterio ÚNICO de "quién es alumno" y "qué alta sigue en proceso".

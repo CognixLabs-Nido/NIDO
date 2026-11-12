@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { Constants, type Database } from '@/types/database'
+import { Constants, type Database } from '@/types/db'
 
 import {
   anonClient,

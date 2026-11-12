@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { esAdminDelCentro } from '../lib/authz-admisiones'
 import { resolverTutorPorEmail } from '../lib/resolver-tutor-email'

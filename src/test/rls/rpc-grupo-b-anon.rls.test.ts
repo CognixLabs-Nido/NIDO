@@ -13,7 +13,7 @@ import {
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Limpieza de seguridad PR-2 — las 35 RPCs del grupo B cerradas a anon.

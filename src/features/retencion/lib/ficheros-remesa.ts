@@ -6,7 +6,7 @@ import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { BUCKET_REMESAS_FICHEROS } from '@/shared/lib/adjuntos/storage'
 import { logger } from '@/shared/lib/logger'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { ANIOS_FISCAL } from './fiscal'
 
@@ -74,7 +74,8 @@ export async function destruirFicherosRemesa(opts: {
     }
   }
 
-  const rutas = (listaH ?? []).map((h) => h.ruta)
+  // `storage.objects.name` admite NULL: lo que no tiene ruta no se puede borrar por ella.
+  const rutas = (listaH ?? []).map((h) => h.ruta).filter((ruta): ruta is string => ruta !== null)
   for (let i = 0; i < rutas.length; i += 100) {
     const lote = rutas.slice(i, i + 100)
     const { error } = await service.storage.from(BUCKET_REMESAS_FICHEROS).remove(lote)

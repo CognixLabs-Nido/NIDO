@@ -13,7 +13,8 @@ export const SERVICIOS_DEL_DIA: readonly ServicioDiario[] = ['matinera', 'comedo
 export interface AlumnoListado {
   nino_id: string
   nombre: string
-  apellidos: string
+  /** `ninos.apellidos` es generada de los dos apellidos: sin el primero, NULL. */
+  apellidos: string | null
   aula_id: string
   aula_nombre: string
 }
@@ -44,7 +45,8 @@ export function combinarPase(listado: AlumnoListado[], partes: ParteDia[]): Fila
   return listado.map((a) => ({
     ninoId: a.nino_id,
     nombre: a.nombre,
-    apellidos: a.apellidos,
+    // Sin apellidos, vacío: «Ana null» en la lista y una búsqueda de «null» que la encuentra.
+    apellidos: a.apellidos ?? '',
     aulaId: a.aula_id,
     aulaNombre: a.aula_nombre,
     servicios: {

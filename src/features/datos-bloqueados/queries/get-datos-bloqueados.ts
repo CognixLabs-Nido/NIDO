@@ -3,7 +3,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type Funciones = Database['public']['Functions']
 export type SujetoBloqueado = Funciones['sujetos_bloqueados']['Returns'][number]

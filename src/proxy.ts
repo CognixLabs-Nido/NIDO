@@ -10,7 +10,7 @@ import {
   rolesEnCualquierCentro,
 } from '@/features/centros/contexto/roles-del-usuario'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 const intlMiddleware = createIntlMiddleware(routing)
 

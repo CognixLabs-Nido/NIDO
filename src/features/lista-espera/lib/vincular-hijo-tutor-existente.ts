@@ -8,7 +8,7 @@ import { resolverParentesco, type Parentesco } from '@/features/familias/lib/res
 import { enviarPushANotificarUsuarios } from '@/features/push/lib/enviar-push'
 import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { logger } from '@/shared/lib/logger'
-import type { Database, Json } from '@/types/database'
+import type { Database, Json } from '@/types/db'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
 

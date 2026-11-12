@@ -13,7 +13,7 @@ import { logger } from '@/shared/lib/logger'
 
 import { GRACIA_ESQUELETO_DIAS } from '@/features/retencion/types'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type Service = SupabaseClient<Database>
 

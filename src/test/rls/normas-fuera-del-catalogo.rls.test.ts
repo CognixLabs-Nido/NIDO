@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { Constants } from '@/types/database'
+import { Constants } from '@/types/db'
 
 import { comoPostgres } from './documentos-centro-fixture'
 import {

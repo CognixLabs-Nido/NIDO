@@ -6,7 +6,7 @@
 // las familias activas SIN recibo (el motor descartó 0 líneas o aún no se generó) para
 // que la directora detecte olvidos.
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 type MetodoPago = Database['public']['Enums']['metodo_pago']

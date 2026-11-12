@@ -14,7 +14,7 @@ import {
 import { intentarConMarcador } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * PR-3 (`20261108120000`) — no se valida un recibo con el desborde de beca pendiente.

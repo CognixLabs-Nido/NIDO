@@ -7,7 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { usuarioResponsableEn } from '@/features/centros/contexto/roles-del-usuario'
 import { BUCKET_DOCUMENTOS_CENTRO, borrarObjetosBucket } from '@/shared/lib/adjuntos/storage'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type Client = SupabaseClient<Database>
 

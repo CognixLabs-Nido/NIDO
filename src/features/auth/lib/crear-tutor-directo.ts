@@ -4,7 +4,7 @@ import { clasificarCuenta } from '@/features/auth/lib/clasificar-cuenta'
 import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
 import { logger } from '@/shared/lib/logger'
 import { CONSENT_OBLIGATORIOS, CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { fail, ok, type ActionResult } from '../actions/types'
 import { cuentaHaOperado } from './cuenta-ha-operado'

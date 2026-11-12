@@ -2,7 +2,7 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 import { rolesDelSujetoParaExport } from '@/features/centros/contexto/roles-de-otros'
 import {
   COLUMNAS_CONTENIDO_FIRMA,

@@ -9,7 +9,7 @@ import { getAutorPushInfo } from '@/features/push/lib/audiencia'
 import { enviarPushPorIdioma } from '@/features/push/lib/enviar-por-idioma'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { expandirDestinatariosRecordatorio } from '../lib/audiencia'
 import {

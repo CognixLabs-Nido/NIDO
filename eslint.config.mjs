@@ -39,6 +39,27 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // `src/types/database.ts` es la salida del generador, sin tocar. Lo que el generador no sabe (la
+  // nulabilidad de las funciones RETURNS TABLE, los argumentos que aceptan NULL, las columnas
+  // generadas) está en `src/types/db.ts`, encima. Importar el generado directamente se salta esa capa.
+  {
+    files: ['**/*.{ts,tsx,mts}'],
+    ignores: ['src/types/db.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '(^@/types/database$)|(/types/database$)|(^\\./database$)',
+              message:
+                'Importa los tipos de la base de @/types/db: database.ts es el generado puro y db.ts le añade lo que el generador no sabe.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ])
 
 export default eslintConfig

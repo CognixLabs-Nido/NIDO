@@ -1,4 +1,4 @@
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 import { localeIntl } from '@/shared/lib/locale-intl'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']

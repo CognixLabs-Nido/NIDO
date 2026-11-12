@@ -1,4 +1,4 @@
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type TipoVinculo = Database['public']['Enums']['tipo_vinculo']
 

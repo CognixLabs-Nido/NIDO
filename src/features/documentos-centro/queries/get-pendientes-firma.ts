@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type { HijoEnCentro } from '@/features/centros/contexto/ambito-familiar'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { leerDocumentosNino, type Resultado } from '../lib/firmar-documentos'
 import { agruparPendientesCentro, laFamiliaLoDebe, type PendientesCentro } from '../lib/pendientes'

@@ -3,7 +3,7 @@
 // (tutor + niño + estado + método); columnas = por concepto con su importe; más el total
 // por fila y los totales por columna y general.
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 type MetodoPago = Database['public']['Enums']['metodo_pago']

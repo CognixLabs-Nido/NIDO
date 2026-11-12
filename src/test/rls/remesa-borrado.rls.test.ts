@@ -21,7 +21,7 @@ import {
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { messageIdRemesa } from '@/features/remesas/lib/message-id'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Borrar una remesa (`20261228120000`), contra la BD real.

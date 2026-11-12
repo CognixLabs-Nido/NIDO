@@ -15,7 +15,7 @@ import {
 import { intentarConMarcador, insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * PR-1a (`20261105120000`) — cobrar a mano en efectivo o por transferencia.

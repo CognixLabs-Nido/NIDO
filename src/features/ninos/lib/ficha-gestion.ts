@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Las 14 columnas de gestión de `ninos` (notas de Dirección, DNI, observaciones, dirección con la

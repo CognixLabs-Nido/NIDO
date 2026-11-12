@@ -9,7 +9,7 @@
 //    un sobrante que se difiere al recibo siguiente o se devuelve por transferencia (PR-1c).
 // Por eso cada fila lleva sus enlaces a los recibos de los que viene o a los que fue su dinero.
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 type MetodoPago = Database['public']['Enums']['metodo_pago']

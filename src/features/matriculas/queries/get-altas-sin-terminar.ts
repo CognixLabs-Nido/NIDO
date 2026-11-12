@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { logger } from '@/shared/lib/logger'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { DIAS_ALTA_SIN_TERMINAR } from '../lib/alta-sin-terminar'
 
@@ -38,7 +38,8 @@ export async function getAltasSinTerminar(
     ninoId: a.nino_id,
     estado: a.estado as AltaSinTerminar['estado'],
     desde: a.desde,
-    propuesta: a.propuesta,
+    // `@/types/db`, NO_DEMOSTRABLES: la base no demuestra que no sea NULL; NULL no es «propuesta».
+    propuesta: a.propuesta === true,
     email: a.email,
     familiaNueva: a.familia_nueva,
   }))

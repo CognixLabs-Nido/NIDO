@@ -3,7 +3,7 @@ import 'server-only'
 import { cache } from 'react'
 
 import { createClient } from '@/lib/supabase/server'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Lo que la parte familia de la app ve EN UN CENTRO (multicentro · Fase 2).

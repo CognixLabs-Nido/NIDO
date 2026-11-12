@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { subirVersionDocumento } from '@/features/documentos-centro/lib/versiones'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { serviceClient } from './setup'
 

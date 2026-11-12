@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import { hoyMadrid, offsetDias } from '@/features/agenda-diaria/lib/fecha'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import {
   asignarProfeAula,

@@ -19,7 +19,7 @@ import {
 } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * La fecha de cobro del recibo (`20261214120000`, F1 de «La fecha de cobro» en

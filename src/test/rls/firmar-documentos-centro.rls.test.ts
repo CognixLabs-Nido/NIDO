@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import {
   asignarProfeAula,

@@ -17,7 +17,7 @@ import { enviadaAtDelFichero, insertarRecibos } from './remesa-como-sus-funcione
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { messageIdRemesa } from '@/features/remesas/lib/message-id'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 import { borrarMandatos, insertarMandato } from './mandatos-como-postgres'
 
 /**

@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { esAdminEn } from '@/features/centros/contexto/roles-del-usuario'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { fail, ok, type ActionResult } from '../../centros/types'
 

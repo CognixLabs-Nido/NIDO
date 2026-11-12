@@ -6,7 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { PREFIX_ANULADO, VENTANA_ANULACION_MS } from '../lib/constants'
 import { anularRecordatorioSchema } from '../schemas/recordatorios'

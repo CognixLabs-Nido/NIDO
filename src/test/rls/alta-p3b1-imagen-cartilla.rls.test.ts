@@ -13,7 +13,7 @@ import {
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * F11 · Alta tutor-driven · Pieza 3b-1 — glue backend (imagen lazy).

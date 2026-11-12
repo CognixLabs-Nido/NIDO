@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { resolverInvitadosSnapshot } from '../lib/invitados'
 import { puedeOrganizarCita, resolverCentroIdCita, revalidarAgenda } from '../lib/server-helpers'
