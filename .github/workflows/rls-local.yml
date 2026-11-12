@@ -99,9 +99,7 @@ jobs:
         run: |
           DB=$(supabase status -o env | grep -E '^DB_URL=' | cut -d= -f2- | tr -d '"')
           npm run -s db:types:gen -- --db-url "$DB" > tipos-generados.ts
-          echo "Líneas generadas: $(wc -l < tipos-generados.ts) · commiteadas: $(wc -l < src/types/database.ts)"
-          test "$(wc -l < tipos-generados.ts)" -gt 100 || { echo 'el generador no ha sacado tipos'; cat tipos-generados.ts; exit 1; }
-          diff -u src/types/database.ts tipos-generados.ts
+          node scripts/ci/comparar-tipos.mjs src/types/database.ts tipos-generados.ts
 
       # El DELETE que se lleva las copias de audit_log desde el trigger tiene que ir por el índice
       # (tabla, registro_id) con las dos columnas: se mira su plan con auto_explain. Una sola vez
