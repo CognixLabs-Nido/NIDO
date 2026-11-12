@@ -384,7 +384,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         libroFamiliaUrl={libroFamiliaUrl}
         consintioDatosMedicos={consintioDatosMedicos}
         medicaInicial={medicaInicial}
-        medicaLeida={medica.leida}
+        medicaLeida={true} // MUTACION M12
         fotoInicialUrl={foto.url ?? foto.urlMiniatura}
         imagenPanel={imagenPanel}
         imagenSinPlantilla={imagenSinPlantilla}
