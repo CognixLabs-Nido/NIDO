@@ -154,7 +154,7 @@ export function PaseDeListaCliente({ aulaId, locale, fecha, filas }: Props) {
         estado: 'presente',
         hora_llegada: current.hora_llegada ?? '09:00',
       }),
-      onlyClean: true,
+      onlyPending: true,
     },
   ]
 
