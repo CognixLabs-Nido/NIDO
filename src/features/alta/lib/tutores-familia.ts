@@ -33,22 +33,28 @@ export interface TutorFamiliaRow {
 export async function leerTutoresDeNino(
   client: SupabaseClient<Database>,
   ninoId: string
-): Promise<{ familiaId: string | null; tutores: TutorFamiliaRow[] }> {
-  const { data: nino } = await client
+): Promise<{ familiaId: string | null; tutores: TutorFamiliaRow[]; leidos: boolean }> {
+  const { data: nino, error: errorNino } = await client
     .from('ninos')
     .select('familia_id')
     .eq('id', ninoId)
     .maybeSingle()
+  // `leidos: false` = una de las dos lecturas falló: los tutores vacíos NO son «no hay perfil». Quien
+  // va a escribir o a decidir con ellos lo mira (el paso del tutor del alta guarda los seis campos:
+  // sobre un perfil que no se leyó pisaba el nombre y vaciaba la dirección, 2026-11-12, medido).
+  if (errorNino) return { familiaId: null, tutores: [], leidos: false }
   const familiaId = nino?.familia_id ?? null
-  if (!familiaId) return { familiaId: null, tutores: [] }
+  if (!familiaId) return { familiaId: null, tutores: [], leidos: true }
 
-  const { data: rows } = await client
+  const { data: rows, error: errorTutores } = await client
     .from('familia_tutores')
     .select(
       'id, rol_familia, usuario_id, email, nombre_completo, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, dni_documento_path'
     )
     .eq('familia_id', familiaId)
     .is('deleted_at', null)
+
+  if (errorTutores) return { familiaId, tutores: [], leidos: false }
 
   const tutores: TutorFamiliaRow[] = (rows ?? [])
     .map((r) => ({
@@ -68,7 +74,7 @@ export async function leerTutoresDeNino(
       a.tipo_vinculo === b.tipo_vinculo ? 0 : a.tipo_vinculo === 'tutor_legal_principal' ? -1 : 1
     )
 
-  return { familiaId, tutores }
+  return { familiaId, tutores, leidos: true }
 }
 
 /** Reexport del mapeador para quien solo necesita el sentido vínculo→rol. */

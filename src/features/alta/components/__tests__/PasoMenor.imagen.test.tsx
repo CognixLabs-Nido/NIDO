@@ -74,6 +74,7 @@ function renderPaso(props: {
         direccion_ciudad: null,
       }}
       datosPedagogicosInicial={null}
+      datosPedagogicosLeidos
       libroFamiliaUrl={null}
       fotoInicialUrl={null}
       imagenPanel={props.imagenPanel ?? null}

@@ -304,13 +304,17 @@ export async function getInfoMedica(
 }
 
 /**
- * Para un formulario que va a ESCRIBIR la ficha médica (el alta, 2026-11-12). `getInfoMedica` da `null`
+ * Para un formulario que va a ESCRIBIR la ficha médica (el alta y la ficha del niño de la familia,
+ * 2026-11-12). `getInfoMedica` da `null`
  * tanto si no hay ficha como si la lectura falla, se le niega (sin `puede_ver_info_medica`) o está
  * bloqueada; para enseñar basta, para escribir no: el guardado sustituye lo que se teclea y vacía lo
  * que se borra, así que sobre una ficha que no se leyó se pisa lo que nadie vio (medido). Aquí la
  * ausencia legítima llega como 0 filas sin error, y cualquier error es «no se leyó».
  */
-export type FichaMedicaParaEditar = { leida: true; ficha: InfoMedica | null } | { leida: false }
+export type FichaMedicaParaEditar =
+  | { leida: true; ficha: InfoMedica | null }
+  // Bloqueada (20261204120000): tampoco se leyó, pero se dice desde cuándo, no «no se pudo leer».
+  | { leida: false; bloqueadaDesde: string | null }
 
 export async function leerInfoMedicaParaEditar(
   ninoId: string,
@@ -321,7 +325,7 @@ export async function leerInfoMedicaParaEditar(
     p_nino_id: ninoId,
     p_origen: origen,
   })
-  if (error || !data) return { leida: false }
+  if (error || !data) return { leida: false, bloqueadaDesde: fichaMedicaBloqueadaDesde(error) }
   const row = data[0]
   if (!row) return { leida: true, ficha: null }
   return {

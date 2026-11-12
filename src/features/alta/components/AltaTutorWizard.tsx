@@ -45,6 +45,8 @@ interface Props {
   mostrarComoNosConocio: boolean
   direccionInicial: DireccionInicial
   datosPedagogicosInicial: DatosPedagogicosInput | null
+  /** `false`: no se pudieron leer; el paso del menor no ofrece el formulario. */
+  datosPedagogicosLeidos: boolean
   libroFamiliaUrl: string | null
   consintioDatosMedicos: boolean
   medicaInicial: MedicaInicial | null
@@ -121,6 +123,7 @@ export function AltaTutorWizard({
   mostrarComoNosConocio,
   direccionInicial,
   datosPedagogicosInicial,
+  datosPedagogicosLeidos,
   libroFamiliaUrl,
   consintioDatosMedicos,
   medicaInicial,
@@ -332,6 +335,7 @@ export function AltaTutorWizard({
             mostrarComoNosConocio={mostrarComoNosConocio}
             direccionInicial={direccionInicial}
             datosPedagogicosInicial={datosPedagogicosInicial}
+            datosPedagogicosLeidos={datosPedagogicosLeidos}
             libroFamiliaUrl={libroFamiliaUrl}
             fotoInicialUrl={fotoInicialUrl}
             imagenPanel={imagenPanel}

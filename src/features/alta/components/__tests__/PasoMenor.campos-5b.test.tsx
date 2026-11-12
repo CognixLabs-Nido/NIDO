@@ -80,6 +80,7 @@ function renderPaso(over: Partial<IdentidadInicial> = {}, mostrarComo = false) {
         direccion_ciudad: 'Valencia',
       }}
       datosPedagogicosInicial={null}
+      datosPedagogicosLeidos
       libroFamiliaUrl={null}
       fotoInicialUrl={null}
       imagenPanel={null}

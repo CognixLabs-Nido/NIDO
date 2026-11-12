@@ -202,6 +202,7 @@ describe('el alta no guarda lo que no pudo leer', () => {
         mostrarComoNosConocio: p.mostrarComoNosConocio,
         direccionInicial: p.direccionInicial,
         datosPedagogicosInicial: p.datosPedagogicosInicial,
+        datosPedagogicosLeidos: p.datosPedagogicosLeidos,
         libroFamiliaUrl: p.libroFamiliaUrl,
         fotoInicialUrl: p.fotoInicialUrl,
         imagenPanel: p.imagenPanel,

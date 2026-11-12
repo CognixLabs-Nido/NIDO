@@ -191,7 +191,12 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
   // Datos de los tutores (principal/secundario) con su DNI firmado, desde el perfil
   // COMPARTIDO `familia_tutores` (F-2b-3), resuelto por la familia del niño.
-  const { tutores: tutoresRows } = await leerTutoresDeNino(supabase, ninoId)
+  // Sin leer el perfil de los tutores no hay alta (como los documentos): el paso del tutor guarda los
+  // seis campos, y sobre un perfil que no se leyó pisaba el nombre y vaciaba la dirección
+  // (2026-11-12, medido); además, de él salen la reutilización del hermano y el gate.
+  const lecturaTutores = await leerTutoresDeNino(supabase, ninoId)
+  if (!lecturaTutores.leidos) throw new Error('alta: no se pudo leer familia_tutores')
+  const tutoresRows = lecturaTutores.tutores
 
   async function aDatosTutor(
     tipo: 'tutor_legal_principal' | 'tutor_legal_secundario'
@@ -228,7 +233,10 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     }
   }
 
-  const datosPed = await getDatosPedagogicos(ninoId)
+  // Sin leerlos, el paso no ofrece el formulario (guarda el estado entero: pisaría lo guardado con los
+  // valores por defecto, 2026-11-12, medido) y lo dice; el paso pedagógico no es obligatorio.
+  const lecturaPed = await getDatosPedagogicos(ninoId)
+  const datosPed = lecturaPed.leidos ? lecturaPed.datos : null
   const datosPedagogicosInicial: DatosPedagogicosInput | null = datosPed
     ? {
         nino_id: datosPed.nino_id,
@@ -381,6 +389,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         mostrarComoNosConocio={mostrarComoNosConocio}
         direccionInicial={direccionInicial}
         datosPedagogicosInicial={datosPedagogicosInicial}
+        datosPedagogicosLeidos={lecturaPed.leidos}
         libroFamiliaUrl={libroFamiliaUrl}
         consintioDatosMedicos={consintioDatosMedicos}
         medicaInicial={medicaInicial}

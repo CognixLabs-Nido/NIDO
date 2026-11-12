@@ -25,6 +25,10 @@ interface MatriculaJoinNino {
  * - matriculas/ninos: profe del aula o admin.
  * - asistencias: admin o profe del aula.
  * - ausencias: admin o profe del aula o tutor con permiso.
+ *
+ * Si alguna de las cuatro lecturas falla, LANZA: sin ellas no hay pase de lista que ofrecer (la
+ * página lo dice). Una lista vacía, una fila en blanco o una fila sin el aviso de ausencia no son
+ * lo mismo que «no se pudo leer».
  */
 export async function getPaseDeListaAula(
   aulaId: string,
@@ -33,12 +37,14 @@ export async function getPaseDeListaAula(
   const supabase = await createClient()
 
   // 1. Niños matriculados activos en el aula.
-  const { data: matriculas } = await aplicarMatriculaActiva(
+  const { data: matriculas, error: errorMatriculas } = await aplicarMatriculaActiva(
     supabase
       .from('matriculas')
       .select('ninos(id, nombre, apellidos, fecha_nacimiento, foto_url)')
       .eq('aula_id', aulaId)
   )
+
+  if (errorMatriculas) throw new Error(`matrículas del aula: ${errorMatriculas.message}`)
 
   const ninos = ((matriculas ?? []) as MatriculaJoinNino[])
     .map((m) => m.ninos)
@@ -49,7 +55,7 @@ export async function getPaseDeListaAula(
   const ninoIds = ninos.map((n) => n.id)
 
   // 2. Asistencias de hoy (LEFT JOIN lógico — pueden no existir).
-  const { data: asistencias } = await supabase
+  const { data: asistencias, error: errorAsistencias } = await supabase
     .from('asistencias')
     .select(
       'id, nino_id, fecha, estado, hora_llegada, hora_salida, observaciones, registrada_por, updated_at'
@@ -57,18 +63,26 @@ export async function getPaseDeListaAula(
     .in('nino_id', ninoIds)
     .eq('fecha', fecha)
 
+  // Sin las asistencias de hoy, cada fila saldría en blanco y guardarla pisaría lo apuntado
+  // (2026-11-12, medido): un fallo no es «nadie ha pasado lista todavía».
+  if (errorAsistencias) throw new Error(`asistencias: ${errorAsistencias.message}`)
+
   const asistenciaByNino = new Map<string, AsistenciaRow>(
     ((asistencias ?? []) as AsistenciaRow[]).map((a) => [a.nino_id, a])
   )
 
   // 3. Ausencias que cubren la fecha (rango inclusivo). Excluimos descripciones
   //    canceladas (prefijo `[cancelada] `) para que no contaminen el badge.
-  const { data: ausencias } = await supabase
+  const { data: ausencias, error: errorAusencias } = await supabase
     .from('ausencias')
     .select('id, nino_id, motivo, descripcion, fecha_inicio, fecha_fin')
     .in('nino_id', ninoIds)
     .lte('fecha_inicio', fecha)
     .gte('fecha_fin', fecha)
+
+  // Sin las ausencias, el niño cuya familia avisó de que no viene saldría sin el aviso y se
+  // podría marcar presente: el registro de quién está dentro del centro. Media lista no se pasa.
+  if (errorAusencias) throw new Error(`ausencias: ${errorAusencias.message}`)
 
   const ausenciaByNino = new Map<
     string,
