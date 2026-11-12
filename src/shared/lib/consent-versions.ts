@@ -1,4 +1,4 @@
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Versiones VIGENTES del consentimiento, POR TIPO (Decisión #13 de

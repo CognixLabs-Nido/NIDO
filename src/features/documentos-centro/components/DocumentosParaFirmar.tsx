@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FirmaPad } from '@/features/autorizaciones/components/FirmaPad'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { firmarDocumentoCentroAction } from '../actions/firmar'
 

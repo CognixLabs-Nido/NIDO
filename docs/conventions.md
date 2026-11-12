@@ -16,6 +16,14 @@
 - `strict: true` siempre. Sin `any`, sin excepciones.
 - Zod schemas como fuente de verdad de tipos: `type X = z.infer<typeof XSchema>`.
 - Imports ordenados: external → `@/...` → relative.
+- **Tipos de la base: se importan de `@/types/db`.** `src/types/database.ts` es la salida de
+  `npm run db:types` (desde producción) y **no se toca a mano**: la CI lo regenera contra la base
+  efímera y, si difiere de lo commiteado, da rojo (`scripts/ci/comparar-tipos.mjs`). Lo que el
+  generador no sabe va en `src/types/db.ts`, encima: la nulabilidad de las columnas de las funciones
+  `RETURNS TABLE` (todas `| null` salvo las que su cuerpo garantiza, con su motivo), los argumentos
+  que aceptan NULL a propósito y las columnas generadas (`?: never`). Una función `RETURNS TABLE`
+  nueva entra en `FUNCIONES_RETURNS_TABLE` o la CI se pone roja (`tipos-overlay.rls.test.ts`).
+  Importar `@/types/database` fuera de `db.ts` lo para el lint.
 
 ## Componentes
 

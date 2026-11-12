@@ -5,7 +5,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { getAppUrl } from '@/shared/lib/app-url'
 import { enviarCorreo } from '@/shared/lib/correo/enviar-correo'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type ServiceClient = SupabaseClient<Database>
 

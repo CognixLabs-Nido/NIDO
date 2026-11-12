@@ -29,6 +29,20 @@ describe('SERVICIOS_DEL_DIA', () => {
 })
 
 describe('combinarPase', () => {
+  it('un niño sin apellidos (`ninos.apellidos` NULL) sale sin «null», y buscar «null» no lo encuentra', () => {
+    const D = 'd0000000-0000-4000-8000-000000000004'
+    const listado: AlumnoListado[] = [
+      ...LISTADO,
+      { nino_id: D, nombre: 'Dani', apellidos: null, aula_id: 'aula-1', aula_nombre: 'Patitos' },
+    ]
+    const filas = combinarPase(listado, [])
+    const dani = filas.find((f) => f.ninoId === D)
+    expect(dani?.nombre).toBe('Dani') // premisa: el niño está en la lista
+    expect(dani?.apellidos).toBe('')
+    expect(filtrarFilas(filas, null, 'null')).toEqual([])
+    expect(filtrarFilas(filas, null, 'Dani').map((f) => f.ninoId)).toEqual([D])
+  })
+
   it('cada niño con lo apuntado; lo no apuntado es null; conserva el orden del listado', () => {
     const filas = combinarPase(LISTADO, [
       { nino_id: A, servicio: 'comedor', presente: true },

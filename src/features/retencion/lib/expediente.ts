@@ -7,7 +7,7 @@ import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { borrarObjetosBucket } from '@/shared/lib/adjuntos/storage'
 import { logger } from '@/shared/lib/logger'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { RETENCION_EXPEDIENTE_ANIOS } from '../types'
 

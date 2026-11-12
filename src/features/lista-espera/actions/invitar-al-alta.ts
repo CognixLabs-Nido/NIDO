@@ -9,7 +9,7 @@ import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Json } from '@/types/database'
+import type { Json } from '@/types/db'
 
 import { tutorDeEsteCentro } from '../lib/resolver-tutor-email'
 import { vincularHijoATutorExistente } from '../lib/vincular-hijo-tutor-existente'
@@ -182,9 +182,9 @@ export async function invitarAlAlta(
     p_tutor_nombre_completo: '',
     p_parentesco: '',
     p_descripcion_parentesco: '',
-    // NULL = modo Invitar (ver cabecera). Los tipos generados tipan los args de RPC como
-    // no-nullables aunque el SQL acepte NULL → cast localizado.
-    p_usuario_id: null as unknown as string,
+    // NULL = modo Invitar (ver cabecera). El generador tipa los argumentos como no nulos; que este
+    // acepta NULL lo dice `ARGS_ANULABLES` en `@/types/db`.
+    p_usuario_id: null,
     p_permisos: permisosDefault('tutor_legal_principal') as Json,
   })
   if (rpcError) {

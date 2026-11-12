@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { centrosDondeEsAdmin } from '@/features/centros/contexto/roles-del-usuario'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import {
   invitarProfeSchema,

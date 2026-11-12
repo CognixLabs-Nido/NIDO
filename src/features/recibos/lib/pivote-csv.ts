@@ -4,7 +4,7 @@
 // entrecomilla al detectar la coma, así que no colisiona con el separador de campos.
 
 import type { PivoteRecibos } from './pivote'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 type MetodoPago = Database['public']['Enums']['metodo_pago']

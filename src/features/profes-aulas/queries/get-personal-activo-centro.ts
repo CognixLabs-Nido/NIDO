@@ -8,7 +8,7 @@ import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { TIPO_PERSONAL_AULA_ORDER, type TipoPersonalAula } from '@/features/profes-aulas/types'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Personal ACTIVO del centro para `/admin/personal` (Fallo 1 — el listado de

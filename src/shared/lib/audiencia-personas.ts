@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { profesDelCentro } from '@/features/centros/contexto/roles-de-otros'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type Client = SupabaseClient<Database>
 

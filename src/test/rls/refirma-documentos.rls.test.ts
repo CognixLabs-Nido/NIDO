@@ -10,7 +10,7 @@ import {
   getPendientesCentro,
   getPorFirmarFamilia,
 } from '@/features/documentos-centro/queries/get-pendientes-firma'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import {
   borrarDocumentosDe,

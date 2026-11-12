@@ -2,7 +2,7 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * F11-H: resuelve el nombre del aula (físico) por id. Necesario porque

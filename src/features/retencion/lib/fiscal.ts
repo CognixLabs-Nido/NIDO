@@ -6,7 +6,7 @@ import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { BUCKET_DNI_TUTORES, BUCKET_MANDATO_SEPA } from '@/shared/lib/adjuntos/storage'
 import { logger } from '@/shared/lib/logger'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { RETENCION_FISCAL_ANIOS, RETENCION_MANDATOS_SEPA_ANIOS } from '../types'
 

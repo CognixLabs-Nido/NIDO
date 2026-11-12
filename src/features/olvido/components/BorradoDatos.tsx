@@ -108,7 +108,7 @@ export async function BorradoDatos({ locale, usuarioId }: { locale: string; usua
             cta={t('pedir')}
             titulo={
               o.sujeto_tipo === 'nino'
-                ? t('pedir_nino', { nombre: o.nombre })
+                ? t('pedir_nino', { nombre: o.nombre ?? '' })
                 : t('pedir_cuenta', { centro: o.centro_nombre })
             }
             explicacion={t('dialogo_texto')}

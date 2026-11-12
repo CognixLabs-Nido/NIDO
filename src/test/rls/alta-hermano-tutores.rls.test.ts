@@ -16,7 +16,7 @@ import {
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Alta del 2.º hijo — `crear_o_anadir_a_familia` (20261002130000, marcas [ALTA-HERMANO Cn]).

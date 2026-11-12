@@ -10,7 +10,7 @@ import {
 } from '@/features/profes-aulas/lib/personal-principal'
 import type { TipoPersonalAula } from '@/features/profes-aulas/types'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { getAulasPorCursoCore, type AulaListItem } from './get-aulas'
 

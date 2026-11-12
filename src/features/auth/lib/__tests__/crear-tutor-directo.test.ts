@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { crearTutorDirecto } from '../crear-tutor-directo'
 

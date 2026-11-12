@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { leerFichaGestion } from '@/features/ninos/lib/ficha-gestion'
 import { logger } from '@/shared/lib/logger'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { avanceAlta, type LineaAvance, type SenalesAvance } from '../lib/avance-alta'
 

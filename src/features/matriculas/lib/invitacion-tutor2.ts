@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
 import { sendInvitation } from '@/features/auth/actions/send-invitation'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { borrarCuentasDeAuth } from './alta-sin-terminar'
 import { idiomaDelTitular } from './invitar-tutor-2'

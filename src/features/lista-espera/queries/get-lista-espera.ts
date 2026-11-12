@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 import { altaEnProceso, type SenalMatricula } from '@/features/matriculas/lib/estado-alumno'
 
 import type { EstadoMatricula } from '../lib/acciones-prospecto'

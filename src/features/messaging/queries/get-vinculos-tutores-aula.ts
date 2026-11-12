@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { aplicarMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * F5B-#33 — Vínculos activos (tutor/autorizado) por niño matriculado en

@@ -1,4 +1,4 @@
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 export type TipoDiaCentro = Database['public']['Enums']['tipo_dia_centro']
 

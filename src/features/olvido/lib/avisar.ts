@@ -11,7 +11,7 @@ import { IDIOMA_POR_DEFECTO } from '@/features/push/lib/idioma'
 import { getAppUrl } from '@/shared/lib/app-url'
 import { enviarCorreo } from '@/shared/lib/correo/enviar-correo'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type Service = SupabaseClient<Database>
 

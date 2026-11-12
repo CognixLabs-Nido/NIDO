@@ -9,7 +9,7 @@ import {
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 type MetodoPago = Database['public']['Enums']['metodo_pago']

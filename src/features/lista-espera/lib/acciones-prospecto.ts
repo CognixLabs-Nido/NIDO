@@ -1,4 +1,4 @@
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Alta unificada · U-4 (D4) — mapeo ESTADO → BADGE + ACCIONES de la lista de admisiones.

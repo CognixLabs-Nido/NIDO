@@ -1,4 +1,4 @@
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * La red del export art. 15 (`export_datos_sujeto`): cada columna de cada tabla cuyas filas salen en

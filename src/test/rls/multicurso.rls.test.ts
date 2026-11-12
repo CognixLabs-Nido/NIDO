@@ -18,7 +18,7 @@ import {
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * F11-H-4 — consolidación del modelo multi-curso (cierre de F11-H).

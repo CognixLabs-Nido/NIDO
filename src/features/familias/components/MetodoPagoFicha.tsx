@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { fijarMetodoPagoFamilia } from '../actions/fijar-metodo-pago-familia'
 

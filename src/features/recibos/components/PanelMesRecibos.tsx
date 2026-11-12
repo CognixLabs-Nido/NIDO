@@ -30,7 +30,7 @@ import { ReciboEsporadicoDialog } from '@/features/cierre-cobros/components/Reci
 import { MesSelector } from '@/features/cuotas-config/components/MesSelector'
 import { CentroLogo } from '@/shared/components/brand/CentroLogo'
 import { formatEuros } from '@/shared/lib/format-money'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { confirmarRecibo, confirmarRecibos } from '../actions/confirmar-recibo'
 import { desconfirmarRecibo } from '../actions/desconfirmar-recibo'

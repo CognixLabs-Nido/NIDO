@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 const h = vi.hoisted(() => ({
   enviados: [] as Array<{ para: string; asunto: string; texto: string; html: string }>,

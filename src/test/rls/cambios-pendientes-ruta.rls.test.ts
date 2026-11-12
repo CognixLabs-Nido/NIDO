@@ -17,7 +17,7 @@ import {
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database, Json } from '@/types/database'
+import type { Database, Json } from '@/types/db'
 
 /**
  * Seguridad R1/R1b — la ruta del documento staged de `cambios_pendientes` debe ser del propio

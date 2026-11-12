@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { invitarTutor2AlValidar } from '../invitar-tutor-2'
 

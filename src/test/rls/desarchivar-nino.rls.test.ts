@@ -18,7 +18,7 @@ import {
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * F-3-F — RPC orquestadora `desarchivar_nino` (reincorporar, INVERSO de baja_nino).

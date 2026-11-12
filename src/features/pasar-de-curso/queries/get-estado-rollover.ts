@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { getAulaNombresPorIds } from '@/features/aulas/queries/get-aula-nombres'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import type { AulaDestinoRollover, NinoActivoRollover } from '../lib/proponer'
 import type { EstadoRollover, PendienteDestino } from '../types'

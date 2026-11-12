@@ -14,7 +14,7 @@ import {
 import { consultaBase } from './columnas-vivas'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Limpieza de seguridad PR-3 (grupo C) — policies de la app a TO authenticated y los 20 helpers

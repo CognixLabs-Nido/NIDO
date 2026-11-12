@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import {
   createTestAula,

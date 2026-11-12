@@ -4,7 +4,7 @@
 // Si cada una razonara por su cuenta acabaríamos con un botón que invita a algo que el
 // servidor luego niega — que es la peor forma de comunicar una regla.
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 

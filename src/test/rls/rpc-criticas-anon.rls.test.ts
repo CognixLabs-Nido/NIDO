@@ -13,7 +13,7 @@ import {
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Limpieza de seguridad PR-1 — las 10 RPCs críticas cerradas a anon.

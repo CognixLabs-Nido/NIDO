@@ -17,7 +17,7 @@ import {
 import { pasarAEnviadoComoMarcar, insertarRecibos } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * El recibo y su dinero (`20261222120000`, decisiones A y B del responsable del 2026-11-02), contra

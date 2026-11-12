@@ -17,7 +17,7 @@ import {
 import { prepararRecibo, quienRechaza, type DestinoRecibo } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * La devolución, el cobro a mano, confirmar y desconfirmar (`20261223120000`, decisiones C y D del

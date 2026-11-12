@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { getAppUrl } from '@/shared/lib/app-url'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { enviarAvisoInvitacion } from './aviso-invitacion'
 import { prepararIdiomaInvitacion } from './idioma-invitacion'

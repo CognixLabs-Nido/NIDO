@@ -3,7 +3,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { rolFamiliaDeVinculo } from '@/features/alta/schemas/alta-documentos'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import {
   BUCKET_DNI_TUTORES,

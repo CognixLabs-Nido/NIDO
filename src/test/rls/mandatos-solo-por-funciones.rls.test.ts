@@ -17,7 +17,7 @@ import {
 import { borrarMandatos } from './mandatos-como-postgres'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * `mandatos_sepa` solo se escribe por sus funciones (`20261225120000`).

@@ -8,7 +8,7 @@ import es from '@/../messages/es.json'
 import va from '@/../messages/va.json'
 
 import type { MotivoBloqueo } from '@/features/recibos/lib/acceso-modificar'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Recibos · PR-3 — no se valida con el desborde de beca pendiente.

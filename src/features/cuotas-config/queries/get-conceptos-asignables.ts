@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 export interface ConceptoAsignable {
   id: string

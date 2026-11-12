@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { logger } from '@/shared/lib/logger'
 import { tieneRolesVivos } from '@/features/centros/contexto/roles-de-otros'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { cuentaHaOperado } from './cuenta-ha-operado'
 

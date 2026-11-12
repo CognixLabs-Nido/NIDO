@@ -2,13 +2,19 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type Fn = Database['public']['Functions']
 
 export type PeticionCentro = Fn['peticiones_olvido_centro']['Returns'][number]
 export type PeticionMia = Fn['mis_peticiones_olvido']['Returns'][number]
-export type OpcionOlvido = Fn['opciones_olvido']['Returns'][number]
+/**
+ * `sujeto_id` sin NULL: en la rama de la cuenta es una variable de plpgsql y la base no lo demuestra
+ * (`NO_DEMOSTRABLES` en `@/types/db`). La opción que llegara sin él no se ofrece.
+ */
+export type OpcionOlvido = Omit<Fn['opciones_olvido']['Returns'][number], 'sujeto_id'> & {
+  sujeto_id: string
+}
 
 /** Un bloqueo o un aviso de lo que falta (`privado.olvido_bloqueos`). */
 export interface ItemFalta {
@@ -87,7 +93,11 @@ export async function getOpcionesOlvido(): Promise<OpcionOlvido[]> {
     logger.warn('olvido: opciones_olvido', error.code)
     return []
   }
-  return data ?? []
+  return (data ?? []).flatMap((o) => {
+    if (o.sujeto_id !== null) return [{ ...o, sujeto_id: o.sujeto_id }]
+    logger.warn('olvido: opciones_olvido devolvió una opción sin sujeto', o.sujeto_tipo)
+    return []
+  })
 }
 
 /** Días enteros desde una fecha hasta ahora. */

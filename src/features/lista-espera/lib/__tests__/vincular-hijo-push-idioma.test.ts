@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * El séptimo envío de push (alta de un hermano por un tutor que ya tiene cuenta) ya iba en el

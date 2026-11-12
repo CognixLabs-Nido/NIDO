@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 import { COLUMNAS_CONTENIDO_FIRMA } from '@/features/autorizaciones/lib/contenido-firmas'
 import { COLUMNAS_GESTION_NINO } from '@/features/ninos/lib/ficha-gestion'
 

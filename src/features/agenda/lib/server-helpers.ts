@@ -6,7 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { rolesEnCentro } from '@/features/centros/contexto/roles-del-usuario'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { fail, ok, type ActionResult, type TipoCita } from '../types'
 

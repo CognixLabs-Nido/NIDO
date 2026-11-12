@@ -1,4 +1,4 @@
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * La red del export art. 15, la mitad de la app: lo que `recolectar.ts` lee con la sesión de quien

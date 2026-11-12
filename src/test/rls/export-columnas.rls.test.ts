@@ -11,8 +11,9 @@ import './setup'
 /**
  * La red del export art. 15, contra la base de verdad: las columnas vivas de cada tabla del export
  * son exactamente las del catálogo (`columnas-export.ts`). El tipo del catálogo sale de
- * `src/types/database.ts`, que a veces se escribe a mano: si se queda atrás de una migración, aquí
- * salta la columna que nadie decidió.
+ * `src/types/database.ts`, generado desde producción (`npm run db:types`; la CI lo compara con lo
+ * que generan las migraciones). Si se queda atrás de una migración, aquí salta la columna que nadie
+ * decidió.
  *
  * Las columnas vivas, de la descripción OpenAPI de PostgREST con la clave de servicio: es el
  * esquema que sirve la API, sin leer ninguna fila (`columnas-vivas.ts`, que comparten las listas

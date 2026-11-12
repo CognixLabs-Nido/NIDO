@@ -1,4 +1,4 @@
-import type { Json } from '@/types/database'
+import type { Json } from '@/types/db'
 
 import type { EstructuraInforme, RespuestasInforme, ValoracionItem } from '../types'
 

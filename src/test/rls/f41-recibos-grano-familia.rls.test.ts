@@ -15,7 +15,7 @@ import {
 import { prepararRecibo } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * F-4-1 — Esquema de recibos a grano FAMILIA (migración `20260728120000_phase_f41`).

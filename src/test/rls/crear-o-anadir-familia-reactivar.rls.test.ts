@@ -16,7 +16,7 @@ import {
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * F-2b-4-1 — `crear_o_anadir_a_familia` detecta familias ARCHIVADAS y las REACTIVA al

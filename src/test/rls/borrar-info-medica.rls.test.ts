@@ -14,7 +14,7 @@ import {
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * F11 · Flag-2 (F11-F2) — borrado de info médica voluntaria por el tutor legal.

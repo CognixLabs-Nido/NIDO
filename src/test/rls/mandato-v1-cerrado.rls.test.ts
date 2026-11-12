@@ -23,7 +23,7 @@ import {
 } from './mandatos-como-postgres'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * No se firman mandatos v1 nuevos (`20261230120000`, 0c-3), contra la BD real.

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Las escrituras de `roles_usuario` (multicentro · Fase 1, PR6). Las hace solo la aceptación de

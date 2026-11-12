@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 // El snapshot de invitados se prueba aparte (lib/invitados.test.ts); aquí lo
 // controlamos para aislar la orquestación de crearCita.

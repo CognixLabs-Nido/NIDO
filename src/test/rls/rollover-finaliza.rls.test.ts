@@ -25,7 +25,7 @@ import {
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * F-3-A — RLS de `rollover_finaliza` + exclusión mutua pendiente↔finaliza.

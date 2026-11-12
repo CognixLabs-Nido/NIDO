@@ -17,7 +17,7 @@ import { parentescoEnum, permisosDefault } from '@/features/vinculos/schemas/vin
 import { createClient } from '@/lib/supabase/server'
 import { CONSENT_OBLIGATORIOS, CONSENT_VERSIONS } from '@/shared/lib/consent-versions'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { clasificarCuenta } from '../lib/clasificar-cuenta'
 import { cuentaHaOperado } from '../lib/cuenta-ha-operado'

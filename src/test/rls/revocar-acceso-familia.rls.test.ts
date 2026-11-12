@@ -14,7 +14,7 @@ import {
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * F-3-C-3 — RPC `revocar_acceso_familia` (primitivo de pérdida de acceso familiar).

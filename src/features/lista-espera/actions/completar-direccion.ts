@@ -14,7 +14,7 @@ import { permisosDefault } from '@/features/vinculos/schemas/vinculo'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Json } from '@/types/database'
+import type { Json } from '@/types/db'
 
 import { tutorDeEsteCentro } from '../lib/resolver-tutor-email'
 import { vincularHijoATutorExistente } from '../lib/vincular-hijo-tutor-existente'
@@ -282,7 +282,7 @@ async function altaInvitandoCuentaExistente(
     p_parentesco: '',
     p_descripcion_parentesco: '',
     // NULL = sin vincular: el rol y el vínculo los crea la aceptación.
-    p_usuario_id: null as unknown as string,
+    p_usuario_id: null,
     p_permisos: permisosDefault('tutor_legal_principal') as Json,
   })
   if (rpcError) {

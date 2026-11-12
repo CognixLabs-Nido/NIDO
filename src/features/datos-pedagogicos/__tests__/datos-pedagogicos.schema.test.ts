@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { Constants } from '@/types/database'
+import { Constants } from '@/types/db'
 
 import en from '../../../../messages/en.json'
 import es from '../../../../messages/es.json'

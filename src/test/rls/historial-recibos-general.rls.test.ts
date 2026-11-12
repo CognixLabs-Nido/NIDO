@@ -18,7 +18,7 @@ import { insertarRecibos, prepararRecibo } from './remesa-como-sus-funciones'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { FiltroHistorial } from '@/features/recibos/lib/filtro-historial'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * F-6 — el histórico general de recibos del centro, contra la BD real y con la sesión de Dirección.

@@ -2,7 +2,7 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 import { historialDeRolesParaExport } from '@/features/centros/contexto/roles-de-otros'
 import { fechaMadrid } from '@/features/inicio/lib/ventana-semana'
 

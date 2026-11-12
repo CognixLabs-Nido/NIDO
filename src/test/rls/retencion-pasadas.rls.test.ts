@@ -17,7 +17,7 @@ import { registrarPasada, type RecuentosPasada } from '@/features/retencion/lib/
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import type { Database, Json } from '@/types/database'
+import type { Database, Json } from '@/types/db'
 
 /**
  * El registro de cada pasada del cron de retención (20261213120000), contra la BD:

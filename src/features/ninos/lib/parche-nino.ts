@@ -1,5 +1,5 @@
 import { normalizarDni, textoONull } from '@/features/cambios-pendientes/lib/diff'
-import type { TablesUpdate } from '@/types/database'
+import type { TablesUpdate } from '@/types/db'
 
 import type { ActualizarNinoTutorInput } from '../schemas/nino'
 

@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { leerDocumentosNino } from '@/features/documentos-centro/lib/firmar-documentos'
 import { frenaElAlta } from '@/features/alta/lib/regla-documentos-alta'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import {
   borrarDocumentosDe,

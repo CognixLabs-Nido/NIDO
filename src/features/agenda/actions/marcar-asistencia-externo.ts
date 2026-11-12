@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 import { revalidarAgenda } from '../lib/server-helpers'
 import { marcarAsistenciaExternoSchema, type MarcarAsistenciaExternoInput } from '../schemas/citas'

@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PushPayload } from '@/features/push/types'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Los avisos de las peticiones de olvido (spec, «Avisos»): la push a la titular es genérica, sin

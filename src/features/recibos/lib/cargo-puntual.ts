@@ -9,7 +9,7 @@ import { z } from 'zod'
 
 import { eurosACentimos } from '@/shared/lib/format-money'
 
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 type EstadoRecibo = Database['public']['Enums']['estado_recibo']
 

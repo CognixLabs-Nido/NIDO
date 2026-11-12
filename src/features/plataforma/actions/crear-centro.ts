@@ -44,16 +44,26 @@ export async function crearCentro(
     if (error) logger.warn('crearCentro: platform_crear_centro falló', { code: error.code })
     return fail(error ? errorDePlataforma(error) : 'plataforma.errores.fallo')
   }
+  // `@/types/db`, NO_DEMOSTRABLES: los dos son variables de plpgsql y la base no demuestra que no sean
+  // NULL. Sin ellos no hay invitación que mandar.
+  const { centro_id: centroId, invitacion_id: invitacionId } = data
+  if (!centroId || !invitacionId) {
+    logger.error('crearCentro: platform_crear_centro sin centro o sin invitación', {
+      centro: !!centroId,
+      invitacion: !!invitacionId,
+    })
+    return fail('plataforma.errores.fallo')
+  }
 
   const errorCorreo = await enviarCorreoInvitacion(createServiceRoleClient(), {
-    invitationId: data.invitacion_id,
+    invitationId: invitacionId,
     // El que guarda la invitación (la RPC lo pasa a minúsculas): el enlace es para ese email.
     email: d.email_admin.toLowerCase(),
     rolObjetivo: 'admin',
-    centroId: data.centro_id,
+    centroId,
     idioma: d.idioma_default,
   })
 
   revalidatePath('/[locale]/plataforma', 'page')
-  return ok({ centroId: data.centro_id, errorCorreo })
+  return ok({ centroId, errorCorreo })
 }

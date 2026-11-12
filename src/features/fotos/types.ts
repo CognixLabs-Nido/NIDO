@@ -1,4 +1,4 @@
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 // --- Result pattern (idéntico al resto de features) -------------------------
 export type ActionResult<T = void> = { success: true; data: T } | { success: false; error: string }

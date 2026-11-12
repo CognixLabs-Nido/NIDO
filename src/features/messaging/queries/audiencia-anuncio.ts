@@ -3,7 +3,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { esMatriculaActiva } from '@/features/matriculas/lib/matricula-activa'
-import type { Database } from '@/types/database'
+import type { Database } from '@/types/db'
 
 /**
  * Audiencia teórica de un anuncio: lista de usuario_id que deberían recibir

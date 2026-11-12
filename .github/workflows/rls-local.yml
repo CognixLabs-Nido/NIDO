@@ -88,6 +88,19 @@ jobs:
 
       - run: npm ci
 
+      # `src/types/database.ts` es el fichero GENERADO, sin una línea a mano: lo que el generador no sabe
+      # (la nullability de lo que devuelven las funciones, las columnas que calcula la base) va en
+      # `src/types/db.ts`, encima. Aquí se regenera contra esta BD, la de todas las migraciones del
+      # repo, con el mismo script que `npm run db:types` (`db:types:gen`: misma versión y opciones), y
+      # tiene que salir igual que el commiteado. Si no: falta regenerar tras una migración, o alguien
+      # tocó el fichero a mano. Así se desvió (42 bloques, 2026-11-12) sin que nada avisara.
+      - name: Tipos generados = src/types/database.ts
+        if: matrix.shard == 1
+        run: |
+          DB=$(supabase status -o env | grep -E '^DB_URL=' | cut -d= -f2- | tr -d '"')
+          npm run -s db:types:gen -- --db-url "$DB" > tipos-generados.ts
+          node scripts/ci/comparar-tipos.mjs src/types/database.ts tipos-generados.ts
+
       # El DELETE que se lleva las copias de audit_log desde el trigger tiene que ir por el índice
       # (tabla, registro_id) con las dos columnas: se mira su plan con auto_explain. Una sola vez
       # (shard 1) y antes de la suite; la transacción acaba en ROLLBACK. Ver la cabecera del .sql.
@@ -106,6 +119,30 @@ jobs:
           export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
           npx vitest run --project rls --shard=${{ matrix.shard }}/3 \
             --reporter=default --reporter=json --outputFile.json=rls-shard-${{ matrix.shard }}.json
+
+      # El control negativo del paso «Tipos generados»: una diferencia DE ESQUEMA no puede quedar
+      # escondida en lo que normaliza `comparar-tipos.mjs`. Se añade de verdad una columna a una tabla,
+      # se regenera y el check tiene que dar rojo nombrando esa columna. Va al final, después de la
+      # suite, para no cambiar el esquema que miden los tests; la columna se quita al acabar.
+      - name: Control negativo de los tipos (una columna nueva se ve)
+        if: matrix.shard == 1 && !cancelled()
+        run: |
+          DB=$(supabase status -o env | grep -E '^DB_URL=' | cut -d= -f2- | tr -d '"')
+          psql "$DB" -v ON_ERROR_STOP=1 -qc 'ALTER TABLE public.centros ADD COLUMN zz_control_tipos text'
+          npm run -s db:types:gen -- --db-url "$DB" > tipos-mutados.ts
+          psql "$DB" -v ON_ERROR_STOP=1 -qc 'ALTER TABLE public.centros DROP COLUMN zz_control_tipos'
+          # Premisa: el generador ve la columna (si no, el rojo de abajo no mediría nada).
+          n=$(grep -c 'zz_control_tipos' tipos-mutados.ts || true)
+          echo "zz_control_tipos en los tipos regenerados: $n veces"
+          test "$n" -ge 3 || { echo 'PREMISA: el generador no ha sacado la columna nueva'; exit 1; }
+          set +e
+          node scripts/ci/comparar-tipos.mjs src/types/database.ts tipos-mutados.ts > control.txt 2>&1
+          codigo=$?
+          set -e
+          cat control.txt
+          test "$codigo" -eq 1 || { echo "CONTROL: el check salió $codigo con una columna de más"; exit 1; }
+          grep -q '^+.*zz_control_tipos' control.txt || { echo 'CONTROL: rojo, pero el diff no nombra la columna'; exit 1; }
+          echo 'CONTROL OK: la columna nueva pone el check en rojo y sale en el diff'
 
       - uses: actions/upload-artifact@v4
         if: always()
