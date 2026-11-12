@@ -20,13 +20,19 @@ export interface DatosPedagogicosRow {
 }
 
 /**
- * Lee la fila de `datos_pedagogicos_nino` para un niño. RLS decide si el
- * usuario actual puede verla; si no, devuelve null (Supabase devuelve la
- * lista vacía y maybeSingle convierte a null).
+ * Lee la fila de `datos_pedagogicos_nino` de un niño. Distingue «no hay fila» (`leidos: true`,
+ * `datos: null`: la RLS no la deja ver o no existe) de «no se leyó» (`leidos: false`, cualquier
+ * error). El formulario guarda el estado ENTERO: sobre una fila que no se leyó, abría con los valores
+ * por defecto y guardar una hora de siesta devolvía la lactancia y el control de esfínteres a su
+ * defecto y vaciaba las observaciones (2026-11-12, medido). Sin leerla no se ofrece guardar.
  */
-export async function getDatosPedagogicos(ninoId: string): Promise<DatosPedagogicosRow | null> {
+export type LecturaDatosPedagogicos =
+  | { leidos: true; datos: DatosPedagogicosRow | null }
+  | { leidos: false }
+
+export async function getDatosPedagogicos(ninoId: string): Promise<LecturaDatosPedagogicos> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('datos_pedagogicos_nino')
     .select(
       'id, nino_id, lactancia_estado, lactancia_observaciones, control_esfinteres, control_esfinteres_observaciones, siesta_horario_habitual, siesta_numero_diario, siesta_observaciones, tipo_alimentacion, alimentacion_observaciones, idiomas_casa, tiene_hermanos_en_centro, updated_at'
@@ -35,5 +41,6 @@ export async function getDatosPedagogicos(ninoId: string): Promise<DatosPedagogi
     .is('deleted_at', null)
     .maybeSingle()
 
-  return (data as DatosPedagogicosRow | null) ?? null
+  if (error) return { leidos: false }
+  return { leidos: true, datos: (data as DatosPedagogicosRow | null) ?? null }
 }

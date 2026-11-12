@@ -21,7 +21,7 @@ import { AltaEnCursoCard } from '@/features/alta/components/AltaEnCursoCard'
 import { estadoAltaFamilia } from '@/features/alta/lib/gate-familia'
 import { ambitoFamiliar, esDelAmbito } from '@/features/centros/contexto/ambito-familiar'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
-import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
+import { getNinoById, leerInfoMedicaParaEditar } from '@/features/ninos/queries/get-ninos'
 import { getRecorridoNinoFamilia } from '@/features/ninos/queries/get-recorrido-familia'
 import { RecorridoFamilia } from '@/features/ninos/components/RecorridoFamilia'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
@@ -65,6 +65,7 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   const tAusencia = await getTranslations('ausencia')
   const tFicha = await getTranslations('messages.ficha_nino')
   const tFotos = await getTranslations('fotos.nino')
+  const tPed = await getTranslations('pedagogico')
   const nino = await getNinoById(id)
   if (!nino) notFound()
   // Multicentro · Fase 2: un hijo de otro centro no se abre aquí, aunque sea suyo.
@@ -90,18 +91,18 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
   // Default: hoy hora Madrid. Si llega ?fecha=YYYY-MM-DD válida, la usamos.
   const fecha = fechaQuery && /^\d{4}-\d{2}-\d{2}$/.test(fechaQuery) ? fechaQuery : hoyMadrid()
 
-  let lecturaMedica: Awaited<ReturnType<typeof getInfoMedica>> = null
-  try {
-    lecturaMedica = await getInfoMedica(id, 'ficha')
-  } catch {
-    lecturaMedica = null
-  }
-  // Bloqueada (20261204120000): ni se lee ni se edita, y se dice desde cuándo.
-  const medicaBloqueadaDesde =
-    lecturaMedica && 'bloqueadaDesde' in lecturaMedica ? lecturaMedica.bloqueadaDesde : null
-  const infoMedica = lecturaMedica && !('bloqueadaDesde' in lecturaMedica) ? lecturaMedica : null
+  // Una sola lectura (cada una queda registrada), que distingue «no hay ficha» de «no se leyó». El
+  // editor guarda en modo reemplazar: sobre una ficha que no se leyó (fallo, o el tutor legal sin
+  // `puede_ver_info_medica`), una alergia tecleada vaciaba el resto (2026-11-12, medido). Sin leerla
+  // no se ofrece editar, y se dice. Bloqueada (20261204120000): ni se lee ni se edita, y se dice
+  // desde cuándo.
+  const medica = await leerInfoMedicaParaEditar(id, 'ficha')
+  const medicaBloqueadaDesde = medica.leida ? null : medica.bloqueadaDesde
+  const medicaNoLeida = !medica.leida && !medicaBloqueadaDesde
+  const infoMedica = medica.leida ? medica.ficha : null
 
-  const datosPed = await getDatosPedagogicos(id)
+  const lecturaPed = await getDatosPedagogicos(id)
+  const datosPed = lecturaPed.leidos ? lecturaPed.datos : null
 
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
@@ -297,13 +298,20 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
         </section>
       )}
 
-      {permisos.puede_ver_datos_pedagogicos && datosPed && (
+      {permisos.puede_ver_datos_pedagogicos && (datosPed || !lecturaPed.leidos) && (
         <section className="space-y-4">
           <h2 className="text-h3 text-foreground flex items-center gap-2">
             <BookOpenIcon className="text-accent-warm-600 size-5" />
             {t('pedagogico')}
           </h2>
-          <DatosPedagogicosReadOnly data={datosPed} />
+          {datosPed ? (
+            <DatosPedagogicosReadOnly data={datosPed} />
+          ) : (
+            // Solo lectura, pero un fallo no es «sin datos»: se dice.
+            <p className="text-muted-foreground text-sm" data-testid="pedagogicos-no-leidos">
+              {tPed('no_leidos_lectura')}
+            </p>
+          )}
         </section>
       )}
 
@@ -344,6 +352,14 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           </h2>
           {medicaBloqueadaDesde ? (
             <FichaMedicaBloqueada desde={medicaBloqueadaDesde} />
+          ) : medicaNoLeida ? (
+            <p
+              className="text-destructive text-sm"
+              role="alert"
+              data-testid="ficha-medica-no-leida"
+            >
+              {t('info_medica_no_leida')}
+            </p>
           ) : permisos.puede_ver_info_medica && infoMedica ? (
             <Card>
               <CardContent className="space-y-2 text-sm">
@@ -358,12 +374,9 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           ) : (
             <p className="text-muted-foreground text-sm">{t('sin_info_medica')}</p>
           )}
-          {esTutorLegal && !medicaBloqueadaDesde && (
+          {esTutorLegal && medica.leida && (
             <div className="flex justify-end gap-2">
-              <EditarInfoMedica
-                ninoId={id}
-                inicial={permisos.puede_ver_info_medica ? infoMedica : null}
-              />
+              <EditarInfoMedica ninoId={id} inicial={infoMedica} />
               {infoMedica && <BorrarInfoMedica ninoId={id} />}
             </div>
           )}

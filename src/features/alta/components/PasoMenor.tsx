@@ -72,6 +72,8 @@ interface Props {
   mostrarComoNosConocio?: boolean
   direccionInicial: DireccionInicial
   datosPedagogicosInicial: DatosPedagogicosInput | null
+  /** `false`: no se pudieron leer; no se ofrece el formulario, que pisaría lo guardado. */
+  datosPedagogicosLeidos: boolean
   libroFamiliaUrl: string | null
   fotoInicialUrl: string | null
   imagenPanel: ImagenPanelData | null
@@ -124,6 +126,7 @@ export function PasoMenor({
   mostrarComoNosConocio = false,
   direccionInicial,
   datosPedagogicosInicial,
+  datosPedagogicosLeidos,
   libroFamiliaUrl,
   fotoInicialUrl,
   imagenPanel,
@@ -141,6 +144,7 @@ export function PasoMenor({
   const tNino = useTranslations('admin.ninos')
   const tDoc = useTranslations('alta.documentos')
   const tErrors = useTranslations()
+  const tPed = useTranslations('pedagogico')
   const router = useRouter()
   const [pendingDatos, startDatos] = useTransition()
   const [pendingImagen, startImagen] = useTransition()
@@ -643,13 +647,19 @@ export function PasoMenor({
       {/* Datos pedagógicos */}
       <section className="space-y-3 border-t pt-4">
         <h3 className="text-sm font-semibold">{t('menor.pedagogicos_titulo')}</h3>
-        <DatosPedagogicosForm
-          ninoId={ninoId}
-          locale={locale}
-          initial={datosPedagogicosInicial}
-          onCambio={onPedagogicoCambio}
-          ocultarGuardar
-        />
+        {datosPedagogicosLeidos ? (
+          <DatosPedagogicosForm
+            ninoId={ninoId}
+            locale={locale}
+            initial={datosPedagogicosInicial}
+            onCambio={onPedagogicoCambio}
+            ocultarGuardar
+          />
+        ) : (
+          <p className="text-destructive text-sm" role="alert" data-testid="pedagogicos-no-leidos">
+            {tPed('no_leidos_alta')}
+          </p>
+        )}
       </section>
 
       {/* Libro de familia */}

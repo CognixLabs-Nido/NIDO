@@ -166,6 +166,7 @@ function AltaInvitacionFlow({
           direccion_ciudad: null,
         }}
         datosPedagogicosInicial={null}
+        datosPedagogicosLeidos
         libroFamiliaUrl={null}
         consintioDatosMedicos={false}
         medicaInicial={null}

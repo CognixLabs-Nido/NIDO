@@ -1754,7 +1754,8 @@
       "provincia": "Province",
       "observaciones_familia": "Family notes",
       "como_nos_conocio": "How they heard about us",
-      "campos_alta_sin_lectura": "The enrolment details (place of birth, DNI, siblings…) could not be loaded. Reload the page."
+      "campos_alta_sin_lectura": "The enrolment details (place of birth, DNI, siblings…) could not be loaded. Reload the page.",
+      "info_medica_no_leida": "We couldn't read the medical record, so it can't be viewed or changed right now: anything you typed would replace what's already there without you having seen it. Reload the page; if it keeps happening, tell the school."
     }
   },
   "pedagogico": {
@@ -1817,7 +1818,10 @@
     },
     "errors": {
       "guardar_fallo": "We could not save pedagogical data. Please try again."
-    }
+    },
+    "no_leidos": "We couldn't read the saved educational details, so they can't be changed right now: saving would replace what's already there without you having seen it. Reload the page.",
+    "no_leidos_alta": "We couldn't read the saved educational details, so they can't be changed here: anything you typed would replace what's already there without you having seen it. You can carry on with the enrolment and fill them in later.",
+    "no_leidos_lectura": "We couldn't read the educational details. Reload the page."
   },
   "centro": {
     "validation": {
@@ -2763,7 +2767,8 @@
       "ausentes": "Absent",
       "total": "Total",
       "ver_aula": "Open classroom"
-    }
+    },
+    "no_leido": "We couldn't read today's list (attendance or reported absences), so you can't take the register right now: with half the list, a child whose family said they aren't coming could be marked present, or what was already recorded could be erased. Reload the page; if it keeps happening, tell the management."
   },
   "parte_servicio": {
     "title": "Service log",

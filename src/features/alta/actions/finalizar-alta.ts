@@ -111,7 +111,9 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
 
   // Tutor 1 (identidad) + su DNI (documento) desde el perfil COMPARTIDO `familia_tutores`
   // (F-2b-3): el titular. La señal de "tutor 1 hecho" es tener `nombre_completo`.
-  const { tutores } = await leerTutoresDeNino(supabase, id)
+  const { tutores, leidos } = await leerTutoresDeNino(supabase, id)
+  // Un fallo no es «falta el tutor 1»: no se cierra, y no se le pide a la familia lo que ya hizo.
+  if (!leidos) return fail('alta.errors.finalizar_fallo')
   const tutor1 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_principal')
   if (!tutor1?.nombre_completo) faltan.push('tutor1')
 

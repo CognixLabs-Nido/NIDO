@@ -1754,7 +1754,8 @@
       "provincia": "Província",
       "observaciones_familia": "Observacions de la família",
       "como_nos_conocio": "Com ens va conéixer",
-      "campos_alta_sin_lectura": "No s’han pogut llegir les dades de l’alta (lloc de naixement, DNI, germans…). Torna a carregar la pàgina."
+      "campos_alta_sin_lectura": "No s’han pogut llegir les dades de l’alta (lloc de naixement, DNI, germans…). Torna a carregar la pàgina.",
+      "info_medica_no_leida": "No hem pogut llegir la fitxa mèdica, així que ara no es pot veure ni canviar: el que escrigueres substituiria el que ja hi ha sense que ho hages vist. Torna a carregar la pàgina; si continua igual, avisa el centre."
     }
   },
   "pedagogico": {
@@ -1817,7 +1818,10 @@
     },
     "errors": {
       "guardar_fallo": "No s'han pogut guardar les dades pedagògiques. Torna a intentar-ho."
-    }
+    },
+    "no_leidos": "No hem pogut llegir les dades pedagògiques guardades, així que ara no es poden canviar: guardar substituiria el que ja hi ha sense que ho hages vist. Torna a carregar la pàgina.",
+    "no_leidos_alta": "No hem pogut llegir les dades pedagògiques guardades, així que ací no es poden canviar: el que escrigueres substituiria el que ja hi ha sense que ho hages vist. Pots continuar amb l'alta i completar-les després.",
+    "no_leidos_lectura": "No hem pogut llegir les dades pedagògiques. Torna a carregar la pàgina."
   },
   "centro": {
     "validation": {
@@ -2763,7 +2767,8 @@
       "ausentes": "Absents",
       "total": "Total",
       "ver_aula": "Obrir aula"
-    }
+    },
+    "no_leido": "No hem pogut llegir la llista de hui (les assistències o les absències avisades), així que ara no es pot passar llista: amb la llista a mitges s'apuntaria com a present un xiquet la família del qual ha avisat que no ve, o s'esborraria el que ja s'ha apuntat. Torna a carregar la pàgina; si continua igual, avisa la Direcció."
   },
   "parte_servicio": {
     "title": "Part de servei",

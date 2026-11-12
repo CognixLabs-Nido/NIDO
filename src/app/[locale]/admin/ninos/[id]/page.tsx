@@ -103,7 +103,7 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
       ? `${tMenor('como_nos_conocio_opciones.otro')}: ${campos5b.como_nos_conocio_otro ?? ''}`
       : tMenor(`como_nos_conocio_opciones.${campos5b.como_nos_conocio}`)
     : '—'
-  const [{ data: vinculos }, info, matriculas, historico, datosPed, altaDoc, retencion] =
+  const [{ data: vinculos }, info, matriculas, historico, lecturaPed, altaDoc, retencion] =
     await Promise.all([
       supabase
         .from('vinculos_familiares')
@@ -120,6 +120,10 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
       // Qué pasa con cada dato y cuándo (20261211120000): lo decide la BD; sin respuesta, no sale.
       getEstadoRetencionNino(id),
     ])
+  // Sin leerlos no se ofrece el formulario, que guarda el estado entero: abriría con los valores por
+  // defecto y pisaría lo guardado (2026-11-12, medido). Se dice.
+  const pedNoLeidos = !lecturaPed.leidos
+  const datosPed = lecturaPed.leidos ? lecturaPed.datos : null
   // Quién ha leído la ficha médica: la Dirección siempre, también con el niño de baja (y la familia,
   // en la suya). Decide la BD: a quien no, `no_autorizado` y la sección no sale. Después de leerla,
   // para que salga también esta lectura.
@@ -404,7 +408,15 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
         </TabsContent>
 
         <TabsContent value="pedagogico" className="space-y-3 pt-3">
-          {archivado ? (
+          {pedNoLeidos ? (
+            <p
+              className="text-destructive text-sm"
+              role="alert"
+              data-testid="pedagogicos-no-leidos"
+            >
+              {tPed('no_leidos')}
+            </p>
+          ) : archivado ? (
             // F-3-E: en archivado, el form editable se sustituye por lectura.
             datosPed ? (
               <Card>
