@@ -133,7 +133,7 @@ describe('SONDA alergias', () => {
     matricula = await matricular(nino.id, aula.id, curso.id)
     legal = await createTestUser({ nombre: 'Legal Sonda Alergias' })
     await crearFamiliaTutor(nino.familia_id, legal.id)
-    await crearVinculo(nino.id, legal.id, 'tutor_legal_principal')
+    await crearVinculo(nino.id, legal.id, 'tutor_legal_principal', { puede_ver_info_medica: true })
     sesion.actual = await clientFor(legal)
     const m = await serviceClient.from('matriculas').update({ estado: 'pendiente' }).eq('id', matricula)
     if (m.error) throw new Error(`matrícula: ${m.error.message}`)
@@ -188,13 +188,32 @@ describe('SONDA alergias', () => {
     expect(p.medicaInicial).toMatchObject(MARCAS)
   })
 
-  async function medir(nombre: string, teclear: (s: typeof screen) => void) {
+  async function permiso(v: boolean) {
+    const { data: vin } = await serviceClient
+      .from('vinculos_familiares')
+      .select('id, permisos')
+      .eq('nino_id', nino.id)
+      .eq('usuario_id', legal.id)
+      .is('deleted_at', null)
+      .single()
+    const permisos = { ...((vin?.permisos as Record<string, unknown>) ?? {}), puede_ver_info_medica: v }
+    const { error } = await serviceClient.from('vinculos_familiares').update({ permisos }).eq('id', vin!.id)
+    if (error) throw new Error(`permiso: ${error.message}`)
+  }
+
+  async function medir(
+    nombre: string,
+    teclear: (s: typeof screen) => void,
+    modo: 'fallo' | 'sin_permiso' = 'fallo'
+  ) {
     await llenar()
-    sesion.falla = true
     sesion.llamadasFallidas = 0
+    if (modo === 'fallo') sesion.falla = true
+    else await permiso(false)
     const p = await props()
     sesion.falla = false
-    expect(sesion.llamadasFallidas).toBeGreaterThan(0) // premisa: el fallo se metió
+    if (modo === 'fallo') expect(sesion.llamadasFallidas).toBeGreaterThan(0) // premisa: el fallo se metió
+    else expect(sesion.llamadasFallidas).toBe(0) // premisa: nada metido, es la RPC la que niega
     expect(p.medicaInicial).toBeNull() // premisa: el formulario abre sin la ficha
     render(
       createElement(PasoMedico, {
@@ -212,6 +231,7 @@ describe('SONDA alergias', () => {
         expect(toast.success.mock.calls.length + toast.error.mock.calls.length).toBeGreaterThan(0),
       { timeout: 30_000 }
     )
+    if (modo === 'sin_permiso') await permiso(true) // para leer la ficha después
     const f = await ficha()
     // eslint-disable-next-line no-console
     console.log(
@@ -238,4 +258,18 @@ describe('SONDA alergias', () => {
       fireEvent.change(c, { target: { value: 'x' } })
       fireEvent.change(c, { target: { value: '' } })
     }))
+
+  it('P4 tutor legal sin permiso médico, sin fallo: teclear en alergias graves', () =>
+    medir(
+      'P4',
+      (s) => {
+        fireEvent.change(s.getByLabelText('fields.alergias_graves'), {
+          target: { value: 'NUEVA-GRAVE' },
+        })
+      },
+      'sin_permiso'
+    ))
+
+  it('P4b tutor legal sin permiso médico, sin fallo: guardar sin tocar', () =>
+    medir('P4b', () => undefined, 'sin_permiso'))
 })
