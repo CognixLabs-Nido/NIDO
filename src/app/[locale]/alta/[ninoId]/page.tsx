@@ -8,7 +8,8 @@ import { contextoEnCentro } from '@/features/centros/contexto/get-contexto-centr
 import { createClient } from '@/lib/supabase/server'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
-import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
+import { getNinoById, leerInfoMedicaParaEditar } from '@/features/ninos/queries/get-ninos'
+import { leerFichaGestion } from '@/features/ninos/lib/ficha-gestion'
 import {
   BUCKET_DNI_TUTORES,
   BUCKET_LIBRO_FAMILIA,
@@ -62,8 +63,8 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   const nino = await getNinoById(ninoId)
   if (!nino) notFound()
 
-  // Gate de entrada (PR-3b-2 · B1). Con vínculo activo usuario↔niño → entrada normal de
-  // tutor. Sin vínculo, admin DEL CENTRO DEL NIÑO → MODO DIRECCIÓN (carga de
+  // Gate de entrada (PR-3b-2 · B1). Con vínculo de tutor legal → entrada normal de tutor; con
+  // vínculo de autorizado → a su inicio (el alta es del tutor legal, 2026-11-11). Sin vínculo, admin DEL CENTRO DEL NIÑO → MODO DIRECCIÓN (carga de
   // documentación en papel; la firma va a nombre de la Directora, presencial — eso lo
   // cablea B2). Profe → su panel; resto (admin de OTRO centro, sin rol) → notFound. El
   // rol se ata a `nino.centro_id`, NO al centro genérico, para que un admin de otro
@@ -78,7 +79,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
 
   const tieneVinculo = vinculo !== null
   const entrada = resolverEntradaAlta({
-    tieneVinculo,
+    tipoVinculo: vinculo?.tipo_vinculo ?? null,
     // Solo consultamos el rol si NO hay vínculo (el tutor no necesita el lookup).
     // Rol en el CENTRO DEL NIÑO, no en el activo (la cabecera avisa si son distintos).
     rolEnCentroNino: tieneVinculo ? null : ((await contextoEnCentro(nino.centro_id))?.rol ?? null),
@@ -116,14 +117,25 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     )
   }
 
-  // Columnas nuevas de `ninos` (G-0): dirección del menor, libro de familia, estado civil.
-  const { data: ninoExtra } = await supabase
-    .from('ninos')
-    .select(
-      'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, direccion_provincia, libro_familia_path, estado_civil_familia, familia_id, lugar_nacimiento, dni, hermanos_total, hermanos_lugar, observaciones_familia, como_nos_conocio, como_nos_conocio_otro'
+  // Columnas nuevas de `ninos` (G-0): dirección del menor, libro de familia, estado civil. Las de
+  // gestión no se leen de la tabla desde `20270115130000`: salen por `ficha_gestion_ninos`, que
+  // aquí contesta siempre (al tutor legal y a la Dirección; el autorizado ya no llega aquí).
+  const [{ data: ninoBase, error: errNinoBase }, gestionesFamilia] = await Promise.all([
+    supabase.from('ninos').select('familia_id, lugar_nacimiento').eq('id', ninoId).maybeSingle(),
+    leerFichaGestion(supabase, [ninoId]),
+  ])
+  const gestion = gestionesFamilia?.get(ninoId)
+  // El formulario no guarda lo que no pudo leer (2026-11-11, medido): con esta lectura fallida el
+  // asistente se pintaba con la ficha en blanco, y «Guardar» del paso del menor dejaba a null el
+  // DNI, las observaciones, la dirección y «cómo nos conoció» —con el aviso de guardado—. Aquí solo
+  // llegan el tutor legal y la Dirección del centro, a quienes las dos lecturas contestan siempre:
+  // sin la fila no se sabe qué hay guardado, y no se pinta un formulario que lo pisaría.
+  if (errNinoBase || !ninoBase || !gestion) {
+    throw new Error(
+      `alta: la ficha del niño no se pudo leer (${errNinoBase?.message ?? (ninoBase ? 'gestión' : 'fila')})`
     )
-    .eq('id', ninoId)
-    .maybeSingle()
+  }
+  const ninoExtra = { ...ninoBase, ...gestion }
 
   // Propagación entre hermanos: si el niño no tiene dirección/estado civil, se rellena por
   // defecto con el de otro hijo del tutor (riesgo de divergencia aceptado, decisión G-1). Solo
@@ -146,15 +158,19 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     direccion_ciudad: string | null
   } | null = null
   if (hermanosIds.length > 0) {
-    const { data: hermanos } = await supabase
+    // Solo los hermanos vivos de este centro (la tabla filtra) y de ellos, lo de gestión (la
+    // función): la dirección y el estado civil de un hermano del que no se es tutor legal no vienen.
+    const { data: hermanosVivos } = await supabase
       .from('ninos')
-      .select(
-        'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, estado_civil_familia'
-      )
+      .select('id')
       .in('id', hermanosIds)
       .eq('centro_id', nino.centro_id)
       .is('deleted_at', null)
-    for (const h of hermanos ?? []) {
+    const gestionHermanos = await leerFichaGestion(
+      supabase,
+      (hermanosVivos ?? []).map((h) => h.id)
+    )
+    for (const h of gestionHermanos?.values() ?? []) {
       if (!hermanoEstadoCivil && h.estado_civil_familia) hermanoEstadoCivil = h.estado_civil_familia
       if (!hermanoDireccion && h.direccion_calle) hermanoDireccion = h
     }
@@ -243,15 +259,12 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .maybeSingle()
   const consintioDatosMedicos = consentMedico !== null
 
-  let medicaInicial: MedicaInicial | null = null
-  try {
-    const leida = await getInfoMedica(ninoId, 'alta')
-    // Bloqueada solo está la de un niño de baja, que no tiene alta en curso; si llegara, guardar
-    // la rechazaría la BD (20261204120000).
-    medicaInicial = leida && 'bloqueadaDesde' in leida ? null : leida
-  } catch {
-    medicaInicial = null
-  }
+  // El formulario no guarda la ficha médica que no pudo leer (2026-11-12, medido): con la lectura
+  // fallida —o negada, sin `puede_ver_info_medica`— los pasos médicos abrían en blanco, y lo tecleado
+  // sustituía lo guardado (y lo borrado lo vaciaba) sin que nadie lo hubiera visto. Sin leerla, los
+  // pasos médicos lo dicen y no guardan; se pueden omitir.
+  const medica = await leerInfoMedicaParaEditar(ninoId, 'alta')
+  const medicaInicial: MedicaInicial | null = medica.leida ? medica.ficha : null
 
   const foto = await firmarFotoNino(nino.foto_url)
 
@@ -371,6 +384,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         libroFamiliaUrl={libroFamiliaUrl}
         consintioDatosMedicos={consintioDatosMedicos}
         medicaInicial={medicaInicial}
+        medicaLeida={medica.leida}
         fotoInicialUrl={foto.url ?? foto.urlMiniatura}
         imagenPanel={imagenPanel}
         imagenSinPlantilla={imagenSinPlantilla}

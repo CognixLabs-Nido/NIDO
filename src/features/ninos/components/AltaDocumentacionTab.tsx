@@ -34,7 +34,7 @@ export async function AltaDocumentacionTab({
   locale: string
 }) {
   const t = await getTranslations('admin.ninos')
-  const { tutores, mandato, consentimientoMedico, libroFamiliaUrl } = data
+  const { tutores, mandato, consentimientoMedico, libroFamiliaUrl, libroLeido } = data
 
   return (
     <div className="space-y-4">
@@ -144,8 +144,10 @@ export async function AltaDocumentacionTab({
               v={
                 libroFamiliaUrl ? (
                   <DocLink href={libroFamiliaUrl} label={t('alta_doc.ver_documento')} />
-                ) : (
+                ) : libroLeido ? (
                   '—'
+                ) : (
+                  t('alta_doc.libro_sin_lectura')
                 )
               }
             />

@@ -39,6 +39,11 @@ interface Props {
    * niño en `PasoMenor`). El contenedor fusiona general + emergencia sin pisarse.
    */
   onCambio?: (valores: Partial<InfoMedicaInput>) => void
+  /**
+   * La ficha médica no se pudo leer (fallo, o sin `puede_ver_info_medica`): el paso no guarda. Lo
+   * tecleado sustituiría lo guardado y lo borrado lo vaciaría, sobre algo que nadie ha visto.
+   */
+  fichaNoLeida?: boolean
   /** El acuse de confidencialidad de datos médicos (obligatorio para cerrar) va en `general`. */
   mostrarConsentimiento?: boolean
   consintioInicial?: boolean
@@ -60,6 +65,7 @@ export function PasoMedico({
   ninoId,
   inicial,
   variante,
+  fichaNoLeida = false,
   onCambio,
   mostrarConsentimiento = false,
   consintioInicial = false,
@@ -103,6 +109,7 @@ export function PasoMedico({
   }, [form, onCambio, campos])
 
   function onSubmit(values: InfoMedicaInput) {
+    if (fichaNoLeida) return
     // Solo envía los campos de la variante (los demás van como null → la RPC los preserva).
     const subset: Partial<InfoMedicaInput> = {}
     for (const c of campos) subset[c] = values[c]
@@ -152,8 +159,19 @@ export function PasoMedico({
           </div>
         )}
 
-        <p className="text-muted-foreground text-xs">{tMed('aviso_cifrado')}</p>
-        <InfoMedicaFields control={form.control} campos={campos} />
+        {fichaNoLeida ? (
+          <p
+            role="alert"
+            className="border-accent-warm-300 bg-accent-warm-50 text-accent-warm-800 rounded-xl border p-3 text-sm"
+          >
+            {t('medico.no_leida')}
+          </p>
+        ) : (
+          <>
+            <p className="text-muted-foreground text-xs">{tMed('aviso_cifrado')}</p>
+            <InfoMedicaFields control={form.control} campos={campos} />
+          </>
+        )}
 
         <div className="flex justify-between border-t pt-4">
           <Button type="button" variant="outline" onClick={onBack} disabled={pending}>
@@ -163,13 +181,15 @@ export function PasoMedico({
             <Button type="button" variant="ghost" onClick={onNext} disabled={pending}>
               {t('medico.omitir')}
             </Button>
-            <Button type="submit" disabled={pending}>
-              {pending
-                ? t('wizard.guardando')
-                : esUltimo
-                  ? t('wizard.finalizar')
-                  : t('wizard.guardar_siguiente')}
-            </Button>
+            {!fichaNoLeida && (
+              <Button type="submit" disabled={pending}>
+                {pending
+                  ? t('wizard.guardando')
+                  : esUltimo
+                    ? t('wizard.finalizar')
+                    : t('wizard.guardar_siguiente')}
+              </Button>
+            )}
           </div>
         </div>
       </form>

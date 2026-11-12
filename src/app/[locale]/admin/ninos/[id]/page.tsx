@@ -31,6 +31,7 @@ import {
   getMatriculasPorNino,
   getNinoById,
 } from '@/features/ninos/queries/get-ninos'
+import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
 import { FichaMedicaBloqueada } from '@/features/ninos/components/FichaMedicaBloqueada'
 import { HistorialMatriculas } from '@/features/ninos/components/HistorialMatriculas'
 import { LecturasFichaMedica } from '@/features/ninos/components/LecturasFichaMedica'
@@ -91,15 +92,11 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
   const exportaComoDireccion = (await contextoEnCentro(nino.centro_id))?.esResponsable ?? false
 
   const supabase = await createClient()
-  // Fase 5b: los campos del alta, solo en la ficha de Dirección (la de la familia espera a la
-  // decisión de quién ve qué). Con la sesión (`ninos_admin_all`); si la lectura falla, se dice.
-  const { data: campos5b, error: errCampos5b } = await supabase
-    .from('ninos')
-    .select(
-      'lugar_nacimiento, dni, hermanos_total, hermanos_lugar, direccion_provincia, observaciones_familia, como_nos_conocio, como_nos_conocio_otro'
-    )
-    .eq('id', id)
-    .maybeSingle()
+  // Lo de gestión (notas de Dirección y los campos del alta) no se lee de la tabla desde
+  // `20270115130000`: sale por `ficha_gestion_ninos`, que a la Dirección del centro le contesta
+  // siempre. Si la lectura falla o no trae la fila, se dice; nunca rayas como si no hubiera nada.
+  const gestion = await leerFichaGestionDe(supabase, id)
+  const campos5b = gestion ? { ...gestion, lugar_nacimiento: nino.lugar_nacimiento } : null
   const tMenor = await getTranslations('alta.menor')
   const comoNosConocio = campos5b?.como_nos_conocio
     ? campos5b.como_nos_conocio === 'otro'
@@ -307,7 +304,7 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
                 v={etiquetaIdiomaPrincipal(nino.idioma_principal)}
               />
               <Row k={t('fields.nacionalidad')} v={nino.nacionalidad ?? '—'} />
-              {errCampos5b || !campos5b ? (
+              {!campos5b ? (
                 <p className="text-muted-foreground text-xs" data-testid="campos-5b-sin-lectura">
                   {t('fields.campos_alta_sin_lectura')}
                 </p>
@@ -334,7 +331,10 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
                   <Row k={t('fields.como_nos_conocio')} v={comoNosConocio} />
                 </>
               )}
-              <Row k={t('fields.notas_admin')} v={nino.notas_admin ?? '—'} />
+              <Row
+                k={t('fields.notas_admin')}
+                v={campos5b ? (campos5b.notas_admin ?? '—') : t('fields.campos_alta_sin_lectura')}
+              />
               {/* Decisión del responsable del 2026-11-02: las notas salen en el export art. 15
                   de la familia. Hoy la app no tiene dónde escribirlas; el aviso va donde se ven. */}
               <p className="text-muted-foreground text-xs">{t('fields.notas_admin_aviso')}</p>

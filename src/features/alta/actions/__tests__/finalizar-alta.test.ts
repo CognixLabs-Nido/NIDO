@@ -125,6 +125,23 @@ function makeFake(estado: Estado) {
     },
     rpc: (fn: string, args: Record<string, unknown>) => {
       rpcSpy(fn, args)
+      // Los hermanos y el libro de familia son de gestión: salen por su función desde
+      // `20270115130000`. El falso los saca de la misma fila del niño del estado.
+      if (fn === 'ficha_gestion_ninos') {
+        const n = estado.ninos[0]
+        return Promise.resolve({
+          data: n
+            ? [
+                {
+                  nino_id: NINO,
+                  hermanos_total: n.hermanos_total ?? null,
+                  libro_familia_path: n.libro_familia_path ?? null,
+                },
+              ]
+            : [],
+          error: null,
+        })
+      }
       if (fn === 'existe_consentimiento_imagen')
         return Promise.resolve({ data: estado.imagenConsentida, error: null })
       if (fn === 'documentos_firma_nino')

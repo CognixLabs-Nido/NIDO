@@ -221,7 +221,7 @@ export interface NinoDetalle {
   sexo: 'F' | 'M' | 'X' | null
   nacionalidad: string | null
   idioma_principal: string
-  notas_admin: string | null
+  lugar_nacimiento: string | null
   puede_aparecer_en_fotos: boolean
   /** Ruta en Storage (bucket privado `ninos-fotos`); se firma para mostrar. F10-3. */
   foto_url: string | null
@@ -239,6 +239,9 @@ export interface NinoDetalle {
  * niño dado de baja se puede abrir en solo-lectura. Esta puerta la usa SOLO la
  * ficha de Dirección (`/admin/ninos/[id]`, ya gateada a admin por ruta + RLS);
  * no se relaja el filtro por defecto de los demás llamadores.
+ *
+ * Solo la identidad (`20270115130000`): las notas de Dirección y el resto de la gestión no se leen
+ * de la tabla; salen por `leerFichaGestion` (Dirección y tutor legal).
  */
 export async function getNinoById(
   ninoId: string,
@@ -248,7 +251,7 @@ export async function getNinoById(
   let query = supabase
     .from('ninos')
     .select(
-      'id, centro_id, nombre, apellidos, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, idioma_principal, notas_admin, puede_aparecer_en_fotos, foto_url, deleted_at'
+      'id, centro_id, nombre, apellidos, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, idioma_principal, lugar_nacimiento, puede_aparecer_en_fotos, foto_url, deleted_at'
     )
     .eq('id', ninoId)
   if (!opts?.incluirArchivado) query = query.is('deleted_at', null)
@@ -297,6 +300,40 @@ export async function getInfoMedica(
     alergias_leves: row.alergias_leves ?? null,
     medico_familia: row.medico_familia ?? null,
     telefono_emergencia: row.telefono_emergencia ?? null,
+  }
+}
+
+/**
+ * Para un formulario que va a ESCRIBIR la ficha médica (el alta, 2026-11-12). `getInfoMedica` da `null`
+ * tanto si no hay ficha como si la lectura falla, se le niega (sin `puede_ver_info_medica`) o está
+ * bloqueada; para enseñar basta, para escribir no: el guardado sustituye lo que se teclea y vacía lo
+ * que se borra, así que sobre una ficha que no se leyó se pisa lo que nadie vio (medido). Aquí la
+ * ausencia legítima llega como 0 filas sin error, y cualquier error es «no se leyó».
+ */
+export type FichaMedicaParaEditar = { leida: true; ficha: InfoMedica | null } | { leida: false }
+
+export async function leerInfoMedicaParaEditar(
+  ninoId: string,
+  origen: OrigenLecturaFicha
+): Promise<FichaMedicaParaEditar> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('get_info_medica_emergencia', {
+    p_nino_id: ninoId,
+    p_origen: origen,
+  })
+  if (error || !data) return { leida: false }
+  const row = data[0]
+  if (!row) return { leida: true, ficha: null }
+  return {
+    leida: true,
+    ficha: {
+      alergias_graves: row.alergias_graves ?? null,
+      notas_emergencia: row.notas_emergencia ?? null,
+      medicacion_habitual: row.medicacion_habitual ?? null,
+      alergias_leves: row.alergias_leves ?? null,
+      medico_familia: row.medico_familia ?? null,
+      telefono_emergencia: row.telefono_emergencia ?? null,
+    },
   }
 }
 

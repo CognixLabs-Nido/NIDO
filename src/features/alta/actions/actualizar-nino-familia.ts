@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { clavesQueCambian } from '@/features/cambios-pendientes/lib/diff'
 import { altaValidada, registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
+import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
 import { logger } from '@/shared/lib/logger'
 
 import { esAdminDeCentroDeNino, esTutorLegalDe } from '../lib/authz-tutor'
@@ -69,13 +70,9 @@ export async function actualizarNinoFamilia(
   // cuatro campos de la dirección, y sin comparar, cada vez que se guardaba encolaba un cambio
   // aunque no se hubiera tocado nada. Si no cambia nada, no hay entrada.
   if (await altaValidada(supabase, nino_id)) {
-    const { data: guardado } = await supabase
-      .from('ninos')
-      .select(
-        'direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, direccion_provincia, estado_civil_familia'
-      )
-      .eq('id', nino_id)
-      .maybeSingle()
+    // La dirección y el estado civil guardados son de gestión: salen por `ficha_gestion_ninos`
+    // (`20270115120000`), que al tutor legal le contesta siempre.
+    const guardado = await leerFichaGestionDe(supabase, nino_id)
     if (!guardado) return fail('alta.errors.no_autorizado')
     const cambios = clavesQueCambian(patch, guardado)
     if (Object.keys(cambios).length === 0) return ok({ id: nino_id })

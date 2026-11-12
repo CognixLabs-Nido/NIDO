@@ -2,6 +2,7 @@ import 'server-only'
 
 import { leerTutoresDeNino } from '@/features/alta/lib/tutores-familia'
 import { createClient } from '@/lib/supabase/server'
+import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
 import {
   BUCKET_DNI_TUTORES,
   BUCKET_LIBRO_FAMILIA,
@@ -44,6 +45,8 @@ export interface AltaDocumentacion {
   mandato: MandatoAltaItem | null
   consentimientoMedico: ConsentimientoAltaItem | null
   libroFamiliaUrl: string | null
+  /** `false` si lo guardado del niño no se pudo leer: no se sabe si hay libro (no es «no hay»). */
+  libroLeido: boolean
 }
 
 /**
@@ -62,10 +65,17 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
   // niño; el helper mapea rol_familia→tipo_vinculo y ordena titular primero.
   // F-2c-1: el mandato es de la FAMILIA → se resuelve por `ninos.familia_id`, no por
   // `nino_id`. Se lee primero la familia del niño y luego su mandato activo.
-  const [{ tutores: tutoresRows }, { data: ninoRow }] = await Promise.all([
+  const [{ tutores: tutoresRows }, { data: ninoBase }, gestion] = await Promise.all([
     leerTutoresDeNino(supabase, ninoId),
-    supabase.from('ninos').select('libro_familia_path, familia_id').eq('id', ninoId).maybeSingle(),
+    supabase.from('ninos').select('familia_id').eq('id', ninoId).maybeSingle(),
+    // El libro de familia es de gestión (`20270115120000`): de la función. `null` = la lectura
+    // falló, y entonces no se sabe si hay libro: la ficha lo dice en vez de pintar «—».
+    leerFichaGestionDe(supabase, ninoId),
   ])
+  const libroLeido = gestion !== null
+  const ninoRow = ninoBase
+    ? { familia_id: ninoBase.familia_id, libro_familia_path: gestion?.libro_familia_path ?? null }
+    : null
 
   let mandatoRow: {
     estado: 'activo' | 'revocado'
@@ -143,5 +153,5 @@ export async function getAltaDocumentacion(ninoId: string): Promise<AltaDocument
       }
     : null
 
-  return { tutores, mandato, consentimientoMedico, libroFamiliaUrl }
+  return { tutores, mandato, consentimientoMedico, libroFamiliaUrl, libroLeido }
 }

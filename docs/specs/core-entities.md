@@ -734,6 +734,11 @@ CREATE POLICY ninos_profe_select  ON public.ninos FOR SELECT USING (
 CREATE POLICY ninos_tutor_select  ON public.ninos FOR SELECT USING (public.es_tutor_de(id));
 ```
 
+> Desde `20270115130000` (2026-11-11) `ninos` es por columnas: estas políticas siguen decidiendo las
+> filas, pero la sesión solo lee la identidad; lo de gestión (notas, DNI, dirección, libro de
+> familia…) sale por `ficha_gestion_ninos`, de la Dirección y el tutor legal
+> (`docs/specs/altas-serie.md`, «El autorizado: lo que ve y lo que no»).
+
 **`info_medica_emergencia`** — UPDATE/INSERT solo vía funciones SECURITY DEFINER; SELECT directo permitido a admin + profe del aula actual + tutor con permiso:
 
 ```sql

@@ -1390,11 +1390,8 @@ antes y después, y en el de esta pieza.
   provincia, las observaciones y «cómo nos has conocido», solo el tutor legal. El DNI no entra aunque
   identifique: quien recoge a un niño no necesita su número de documento, y es el dato que más daño
   hace suelto. Lo que no se enseña tampoco se lee (`leerCamposAltaFicha`).
-- **El agujero de la base, aparte** (PR propio, detrás de la 5b): `ninos_tutor_select` es `es_tutor_de`
-  (cualquier vínculo) sobre la fila entera, así que el autorizado lee `notas_admin` y los campos de
-  la 5a saltándose la pantalla (medido el 2026-11-11, ensayo terminado en RAISE con un vínculo de
-  autorizado simulado). Que ese día no hubiera ningún autorizado ni ninguna nota en producción es una
-  casualidad con fecha de caducidad.
+- **El agujero de la base** (el autorizado leía la fila entera de `ninos` saltándose la pantalla):
+  cerrado en su propia pieza, «El autorizado: lo que ve y lo que no», justo debajo.
 - **«Familia nueva en el centro»** = ningún otro niño con su `familia_id`, vivo, de baja o archivado.
   Se cuenta con el servicio y solo sale un número (`esFamiliaNuevaEnCentro`): con la sesión, la tutora
   no ve a un hermano de baja y la Dirección no tiene vínculos, y las dos darían «nueva» sin serlo. Si
@@ -1444,6 +1441,101 @@ le piden). Lo demás de la función no cambia.
   `src/features/alta/actions/__tests__/finalizar-alta.test.ts`,
   `src/features/alta/components/__tests__/PasoMenor.campos-5b.test.tsx` y
   `src/test/i18n/como-nos-conocio-codigos.test.ts`.
+
+### El autorizado: lo que ve y lo que no (entre la 5b y la fase 6)
+
+Migraciones `20270115120000_feat_lecturas_por_funcion` (las funciones; solo añade, va en su PR y se
+aplica antes) y `20270115130000_fix_autorizado_lee_solo_lo_suyo` (el cierre). Decisiones del responsable del
+2026-11-11.
+
+**Medido abierto antes de tocar nada** (2026-11-11). En producción, con un ensayo terminado en RAISE,
+un vínculo de autorizado con todos los permisos a falso simulado dentro y una fila marcada de cada
+cosa (en producción ese día no había ningún autorizado, ni firmas, ni recogidas, ni medicación
+administrada, ni fotos de DNI): el autorizado leía la fila entera del niño (`notas_admin`, DNI,
+observaciones), la firma del tutor legal con su trazo, su IP, su navegador y el DNI de la persona
+autorizada, la recogida que creó el tutor legal, la medicación administrada sin permiso médico y la
+foto del DNI de recogida (por `storage.objects`; no por la API de Storage, que pasa por la misma
+política). En la base efímera del CI, con el `GET` real de `/export/nino/[id]`: el autorizado
+exportaba al niño con la nota y el DNI, y descargaba el libro de familia con el enlace que firma el
+servicio, aunque su sesión no puede abrir ese bucket. Con el mismo montaje, `/export/usuario/[id]` le
+daba 404 (no lee la fila del tutor en `usuarios`), y los DNI de los tutores y de la recogida no
+entran en la exportación del niño: van en la del usuario. La causa: las políticas eran `es_tutor_de`
+(cualquier vínculo vivo) sin mirar ningún permiso, y `ninos` no tenía permisos por columna.
+
+**Lo que ve cada uno:**
+
+- **`ninos`**: la identidad (nombre, apellidos, fecha, sexo, nacionalidad, lugar de nacimiento,
+  idioma, foto…) la sigue leyendo la sesión de cualquiera con acceso al niño. Las 14 de gestión —las
+  notas de Dirección, el DNI, las observaciones, la dirección con la provincia, el estado civil, el
+  libro de familia, los hermanos y «cómo nos conoció»— solo la Dirección y el tutor legal, por
+  `ficha_gestion_ninos`. **La profe tampoco**: que la fila le llegara entera no fue una decisión, era
+  la forma de la puerta (las notas, además, «no se comparten con nadie nunca, es como si escribe notas
+  en una agenda personal»). Ninguna pantalla de la profe las pedía; su exportación adelgaza.
+- **Firmas de autorización (opción b)**: la fila se sigue viendo —quién firmó, qué decidió y cuándo,
+  el estado de una autorización—, pero el trazo, la IP, el navegador, el nombre tecleado, el
+  comentario y `datos` salen por `contenido_firmas`: quien firmó, el tutor legal, la profe del niño y
+  la Dirección. El autorizado, de las firmas de otros, no. El trazo de una firma se copia.
+- **Autorizaciones de ámbito niño**: el autorizado ve las suyas (las que creó o firmó: necesita saber
+  a qué se ha comprometido) y no las de otros; las de medicación, con `puede_ver_info_medica`.
+- **Medicación administrada**: con `puede_ver_info_medica`, como la ficha médica (y la Dirección y la
+  profe, como antes). Un dato de salud con permiso y otro sin ninguno era incoherente.
+- **Fotos del DNI de recogida**: el tutor legal, o quien subió el fichero (`owner_id`).
+- **La exportación del niño** (art. 15): la Dirección, la profe del niño (sin lo de gestión) y el
+  tutor legal (`puede_exportar_nino`). El autorizado recibe 404.
+- **El alta** (`/alta/[ninoId]`): el autorizado va a su inicio. El alta es del tutor legal.
+
+**El radio**, medido antes de construir: 12 ficheros de la app leían columnas de gestión de `ninos`
+(un escáner que se autocomprueba con 9 casos, y a mano los que las nombran por variable) y 5 leían
+`datos` de las firmas. En la base, ninguna función de invocador ni política lee esas columnas. Las
+dos listas de la app (`COLUMNAS_GESTION_NINO`, `COLUMNAS_CONTENIDO_FIRMA`) se comparan en un test con
+las de la migración. Cada columna nueva de `ninos` o de `firmas_autorizacion` necesita su
+`GRANT SELECT (columna)` o su sitio en la función.
+
+**ORDEN: mergear la primera → aplicarla → mergear la segunda con la app → esperar el despliegue →
+aplicar la segunda.** En una sola migración no había orden sin ventana rota: la app de antes lee las
+columnas cerradas con la sesión (la migración antes la rompe), y la app nueva llama a las funciones
+nuevas en 16 sitios (antes que la migración, la exportación fallaba para todos, la profe no podía
+registrar la medicación y el formulario del alta abría vacío). Partida, la primera solo añade: la app
+de antes no la nota (medido: con ella sola en producción, todo lo que cierra la segunda sigue abierto)
+y la nueva funciona con ella y la tabla abierta. La segunda exige en su guarda previa la primera
+aplicada, con el md5 normalizado de cada función.
+
+- Medido cerrado en producción (ensayo terminado en RAISE, LF y CRLF, 25 medidas), con los controles
+  de las guardas: un `GRANT` de más, una política con `es_tutor_de` y un `EXECUTE` para `anon` las
+  hacen saltar. Partida, el ensayo en serie (la primera y después la segunda, también la primera en
+  CRLF y la segunda en LF) da las mismas 25; la primera sola deja todo abierto; y la guarda previa de
+  la segunda salta sin la primera, con un cuerpo cambiado y con `EXECUTE` para `anon`.
+- Tests: `src/test/rls/lecturas-por-funcion.rls.test.ts` (la primera),
+  `src/test/rls/autorizado-lee-solo-lo-suyo.rls.test.ts`,
+  `src/test/i18n/columnas-cerradas-migracion.test.ts` y los unit de `entrada-alta` y
+  `campos-ficha-familia`.
+- Las tablas de gravedad media y baja (`firmas_documentos_centro`, `acuses_alta`, `matriculas`,
+  `confirmaciones_evento`) van en el PR siguiente, medidas abiertas antes igual.
+
+#### Una lectura que falla no se lee como «no hay» (2026-11-11 y 2026-11-12)
+
+Pasar lecturas a funciones abre una pregunta en cada sitio: ¿qué hace la pantalla si la lectura
+falla? Donde la respuesta era «como si no hubiera nada», se cambia. **El formulario no guarda lo que
+no pudo leer.**
+
+- **El detalle de una autorización** (`getAutorizacionDetalle`): si fallan las firmas o su contenido,
+  error. Antes salía sin firmas: una recogida «sin nadie autorizado».
+- **La documentación del alta** (`getAltaDocumentacion`): `libroLeido`; la pestaña dice que no se
+  pudo leer en vez de «—».
+- **La ficha del niño en el alta**: sin la fila o sin la ficha de gestión, la página no pinta el
+  asistente. Medido antes: «Guardar» del paso del menor dejaba a null el DNI, las observaciones, la
+  dirección y «cómo nos conoció», con el aviso de guardado.
+- **La ficha médica en el alta** (`leerInfoMedicaParaEditar`): si no se lee —falla, o se le niega al
+  tutor sin `puede_ver_info_medica`—, los dos pasos médicos lo dicen y no guardan; se pueden omitir,
+  y el acuse sigue. Medido antes: guardar sin tocar no pisaba (`null` no toca), pero lo tecleado
+  sustituía lo guardado y lo borrado lo vaciaba, sobre algo que nadie había visto, con el aviso de
+  guardado. El camino sin fallo simulado es el tutor legal sin el permiso: la escritura del tutor solo
+  mira `es_tutor_legal_de`. En producción, el 2026-11-12, los 6 vínculos de tutor legal tienen el
+  permiso. La ausencia legítima (sin ficha) llega como 0 filas sin error, y entonces se escribe.
+- El resto del patrón en la app (el censo: 454 sitios) va aparte.
+- Tests: `alta-no-pisa-lo-que-no-leyo.rls.test.ts`, `alta-no-pisa-ficha-medica.rls.test.ts` y el
+  bloque «una lectura que falla no se lee como «no hay»» de `autorizado-lee-solo-lo-suyo.rls.test.ts`;
+  cada uno afirma la fila guardada, no cómo se evita, con su control sin fallo.
 
 ## Orden de la serie
 
@@ -1496,13 +1588,14 @@ inicio de Dirección · 4d, la refirma (#515).
 ### Fase 5, por PRs
 
 5a, la base (`20270112120000`, #516) · la puerta de identidad (`20270113120000`, #518) · 5b, las
-pantallas y lo obligatorio al cerrar el alta (`20270114120000`).
+pantallas y lo obligatorio al cerrar el alta (`20270114120000`, #519 y #520) · el autorizado lee solo
+lo suyo (`20270115130000`).
 
 ## Estado
 
 - [x] Fase 1 · [x] Fase 2 · [x] Fase 3
 - [x] Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [x] 4c (#514) · [x] 4d (#515)
-- Fase 5: [x] 5a (#516) · [x] la puerta de identidad (#518) · [ ] 5b
+- Fase 5: [x] 5a (#516) · [x] la puerta de identidad (#518) · [x] 5b (#519, #520) · [ ] el autorizado lee solo lo suyo
 - [ ] Fase 6 · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias

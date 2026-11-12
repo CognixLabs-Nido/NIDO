@@ -67,6 +67,9 @@ function makeFake(rpcError: { code?: string; message: string } | null = null) {
       }),
     }),
     rpc: (fn: string, args: Record<string, unknown>) => {
+      // Lo guardado (dirección, estado civil) es de gestión: sale por su función (`20270115120000`).
+      if (fn === 'ficha_gestion_ninos')
+        return Promise.resolve({ data: [{ nino_id: NINO, ...GUARDADO }], error: null })
       rpcSpy(fn, args)
       return Promise.resolve({ data: NINO, error: rpcError })
     },

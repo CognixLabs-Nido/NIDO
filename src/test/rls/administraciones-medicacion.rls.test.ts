@@ -403,8 +403,26 @@ describe('RLS administraciones_medicacion — F8-3b (doble confirmación)', () =
 
   // === Lectura / aislamiento =================================================
 
-  it('staff del niño y familia LEEN el registro; staff y tutor de otro centro NO', async () => {
+  it('staff del niño y la familia con el permiso de la ficha médica LEEN el registro; staff y tutor de otro centro NO', async () => {
     const id = await seedPendiente()
+    // Desde `20270115130000` (decisión del responsable del 2026-11-11) la familia lee la medicación
+    // administrada con `puede_ver_info_medica`, como la ficha médica; antes, cualquier vínculo.
+    const permisoMedico = async (si: boolean) => {
+      const { error } = await serviceClient
+        .from('vinculos_familiares')
+        .update({ permisos: { puede_recibir_mensajes: true, puede_ver_info_medica: si } })
+        .eq('nino_id', nino.id)
+        .eq('usuario_id', tutor.id)
+      if (error) throw new Error(error.message)
+    }
+    await permisoMedico(false)
+    const sinPermiso = await (await clientFor(tutor))
+      .from('administraciones_medicacion')
+      .select('id')
+      .eq('id', id)
+      .maybeSingle()
+    expect(sinPermiso.data?.id, 'el tutor sin el permiso médico no lo lee').toBeFalsy()
+    await permisoMedico(true)
 
     for (const u of [profe1, profe2, admin, tutor]) {
       const c = await clientFor(u)

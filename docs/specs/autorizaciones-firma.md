@@ -461,6 +461,10 @@ OR creado_por = auth.uid()` (defensa simétrica); la **inmutabilidad tras firmas
 es_profe_de_nino(nino_id) OR es_admin(centro_de_nino(nino_id))`. INSERT: `es_tutor_de(nino_id) AND
 firmante_id = auth.uid() AND autorizacion_aplica_a_nino(autorizacion_id, nino_id) AND
 autorizacion_firmable(autorizacion_id)`. UPDATE/DELETE: **DENY** (revocar = fila nueva).
+  _Desde `20270115130000` (2026-11-11), por columnas: la fila sigue con este SELECT, pero el trazo,
+  la IP, el navegador, el nombre tecleado, el comentario y `datos` salen por `contenido_firmas`, y el
+  autorizado no los lee de las firmas de otros (`docs/specs/altas-serie.md`, «El autorizado: lo que
+  ve y lo que no»)._
 - Audit: triggers en ambas tablas (`centro_id` directo / vía `centro_de_nino`).
 
 **Tests RLS (bloqueantes):** tutor de A no firma por niño de B; firma **inmutable** (UPDATE/DELETE

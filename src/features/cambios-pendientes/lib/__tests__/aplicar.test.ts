@@ -43,6 +43,13 @@ function mockService(opts: {
   }
   return {
     from: vi.fn((table: string) => makeBuilder(table)),
+    // El libro anterior es de gestión: sale por `ficha_gestion_ninos` (`20270115120000`). El falso
+    // contesta con lo que el test pone para `ninos`.
+    rpc: vi.fn(async (fn: string, args: { p_nino_ids: string[] }) => {
+      if (fn !== 'ficha_gestion_ninos') throw new Error(`rpc no prevista: ${fn}`)
+      const fila = opts.maybeSingleByTable?.ninos as Record<string, unknown> | undefined
+      return { data: fila ? [{ nino_id: args.p_nino_ids[0], ...fila }] : [], error: null }
+    }),
     storage: {
       from: vi.fn((bucket: string) => ({
         remove: vi.fn(async (paths: string[]) => {

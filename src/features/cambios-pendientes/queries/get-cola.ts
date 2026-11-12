@@ -2,6 +2,7 @@ import 'server-only'
 
 import { rolFamiliaDeVinculo, tipoVinculoLegalEnum } from '@/features/alta/schemas/alta-documentos'
 import { createClient } from '@/lib/supabase/server'
+import { leerFichaGestion } from '@/features/ninos/lib/ficha-gestion'
 import { logger } from '@/shared/lib/logger'
 
 import type { EntidadCambio } from '../schemas'
@@ -28,8 +29,10 @@ export interface CambioPendienteItem {
   lineas: LineaCambio[] | null
 }
 
+// La identidad sale de la tabla; el DNI, la dirección, el estado civil y el libro de familia son de
+// gestión y salen por `ficha_gestion_ninos` (`20270115120000`), que a la Dirección le contesta.
 const CAMPOS_NINO =
-  'id, familia_id, nombre, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, lugar_nacimiento, dni, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, direccion_provincia, estado_civil_familia, libro_familia_path'
+  'id, familia_id, nombre, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, lugar_nacimiento'
 const CAMPOS_TUTOR =
   'familia_id, rol_familia, email, nombre_completo, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, dni_documento_path'
 const DATOS_TUTOR = [
@@ -91,11 +94,28 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
   const ninos = new Map<string, Fila>()
   let ninosOk = true
   if (ninoIds.length > 0) {
-    const r = await supabase.from('ninos').select(CAMPOS_NINO).in('id', ninoIds)
-    if (r.error) {
+    const [r, gestion] = await Promise.all([
+      supabase.from('ninos').select(CAMPOS_NINO).in('id', ninoIds),
+      leerFichaGestion(supabase, ninoIds),
+    ])
+    if (r.error || !gestion) {
       ninosOk = false
-      logger.warn('listarCambiosPendientes: lo guardado del niño', r.error.code ?? 'sin_codigo')
-    } else for (const n of r.data ?? []) ninos.set(n.id, n as Fila)
+      logger.warn('listarCambiosPendientes: lo guardado del niño', r.error?.code ?? 'gestion')
+    } else
+      for (const n of r.data ?? []) {
+        const g = gestion.get(n.id)
+        ninos.set(n.id, {
+          ...n,
+          dni: g?.dni ?? null,
+          direccion_calle: g?.direccion_calle ?? null,
+          direccion_numero: g?.direccion_numero ?? null,
+          direccion_cp: g?.direccion_cp ?? null,
+          direccion_ciudad: g?.direccion_ciudad ?? null,
+          direccion_provincia: g?.direccion_provincia ?? null,
+          estado_civil_familia: g?.estado_civil_familia ?? null,
+          libro_familia_path: g?.libro_familia_path ?? null,
+        } as Fila)
+      }
   }
   const familiaIds = [...new Set([...ninos.values()].map((n) => n.familia_id as string))]
   const tutores = new Map<string, Fila>()

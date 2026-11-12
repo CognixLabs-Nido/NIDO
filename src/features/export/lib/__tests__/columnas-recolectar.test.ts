@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 
 import type { Database } from '@/types/database'
+import { COLUMNAS_CONTENIDO_FIRMA } from '@/features/autorizaciones/lib/contenido-firmas'
+import { COLUMNAS_GESTION_NINO } from '@/features/ninos/lib/ficha-gestion'
 
 import {
   SECCIONES_RECOLECTAR,
@@ -180,7 +182,31 @@ function clienteDeMentira(fallaEn?: string) {
       }
       return b
     },
-    rpc: async () => ({ data: null, error: null }),
+    rpc: async (fn: string, args: Record<string, unknown>) => {
+      if (fn === 'puede_exportar_nino') return { data: true, error: null }
+      // Lo de gestión del niño y el contenido de las firmas (`20270115120000`): de las mismas filas.
+      if (fn === 'ficha_gestion_ninos')
+        return {
+          data: (FILAS.ninos ?? []).map((n) => ({
+            nino_id: n.id,
+            ...Object.fromEntries(COLUMNAS_GESTION_NINO.map((c) => [c, n[c]])),
+          })),
+          error: null,
+        }
+      if (fn === 'contenido_firmas') {
+        const ids = args.p_firma_ids as string[]
+        return {
+          data: (FILAS.firmas_autorizacion ?? [])
+            .filter((f) => ids.includes(f.id as string))
+            .map((f) => ({
+              firma_id: f.id,
+              ...Object.fromEntries(COLUMNAS_CONTENIDO_FIRMA.map((c) => [c, f[c]])),
+            })),
+          error: null,
+        }
+      }
+      return { data: null, error: null }
+    },
     storage: {
       from: () => ({ createSignedUrl: async () => ({ data: { signedUrl: 'https://x' } }) }),
     },
@@ -226,12 +252,30 @@ function seDebenEntregar(r: RutaRecolectar): string[] {
     .sort()
 }
 
+/**
+ * Desde `20270115130000` estas columnas no se leen de la tabla: salen por su función
+ * (`ficha_gestion_ninos`, `contenido_firmas`), y a la tabla se le pide además lo que las une (el id
+ * de la firma). Que las listas son las de la migración lo afirma `columnas-cerradas-migracion.test.ts`.
+ */
+const POR_FUNCION: Record<string, { cerradas: readonly string[]; une: string[] }> = {
+  ninos: { cerradas: COLUMNAS_GESTION_NINO, une: [] },
+  firmas_autorizacion: { cerradas: COLUMNAS_CONTENIDO_FIRMA, une: ['id'] },
+}
+
+/** Lo que se pide a la TABLA: lo del catálogo, sin lo que llega por función, más lo que lo une. */
+function seDebenPedirALaTabla(r: RutaRecolectar): string[] {
+  const f = POR_FUNCION[catalogo[r].tabla]
+  if (!f) return seDebenPedir(r).sort()
+  const deTabla = seDebenPedir(r).filter((c) => !f.cerradas.includes(c))
+  return [...new Set([...f.une, ...deTabla])].sort()
+}
+
 function esperadas(): Array<{ rutas: RutaRecolectar[]; tabla: string; columnas: string[] }> {
   const agenda = rutas.filter((r) => r.startsWith('nino.agendas_diarias.'))
   return [
     ...rutas
       .filter((r) => !agenda.includes(r) && r !== 'nino.agendas_diarias')
-      .map((r) => ({ rutas: [r], tabla: catalogo[r].tabla, columnas: seDebenPedir(r).sort() })),
+      .map((r) => ({ rutas: [r], tabla: catalogo[r].tabla, columnas: seDebenPedirALaTabla(r) })),
     {
       rutas: ['nino.agendas_diarias', ...agenda],
       tabla: 'agendas_diarias',
