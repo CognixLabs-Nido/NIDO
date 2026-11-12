@@ -80,12 +80,15 @@ const { PaseDeListaCliente } = await import('@/features/asistencia/components/Pa
 type PropsPase = Parameters<typeof PaseDeListaCliente>[0]
 
 const HOY = hoyMadrid()
+// Sin horas: una fila con una hora guardada hoy no se puede volver a guardar (la base la devuelve
+// 'HH:MM:SS' y la acción pide 'HH:MM'; aparte). Lo que se mira es lo que «todos presentes» no toca.
 const APUNTADA_A = {
   estado: 'presente',
-  hora_llegada: '08:30:00',
-  hora_salida: '16:00:00',
+  hora_llegada: null,
+  hora_salida: null,
   observaciones: 'Fiebre a media mañana',
 } as const
+const CONSERVA_A = { estado: APUNTADA_A.estado, observaciones: APUNTADA_A.observaciones }
 
 describe('el pase de lista no se pasa sobre lo que no se leyó', () => {
   let aula: { id: string }
@@ -163,17 +166,17 @@ describe('el pase de lista no se pasa sobre lo que no se leyó', () => {
     fireEvent.click(screen.getByTestId('pase-quick-todos-presentes'))
     fireEvent.click(screen.getByTestId('pase-submit'))
     await waitFor(() => expect(accion.llamadas.length).toBeGreaterThan(0), { timeout: 30_000 })
-    const r = (await accion.llamadas[0]) as { success: boolean }
-    expect(r.success).toBe(true) // premisa: el guardado corrió
+    const r = await accion.llamadas[0]
+    expect(r, JSON.stringify(r)).toMatchObject({ success: true }) // premisa: el guardado corrió
   }
 
   async function aIntacta() {
     const f = await asistenciaDe(a.id)
-    for (const [k, v] of Object.entries(APUNTADA_A))
+    for (const [k, v] of Object.entries(CONSERVA_A))
       expect.soft((f as Record<string, unknown> | null)?.[k], `A.${k}`).toBe(v)
   }
 
-  it('control: con las dos lecturas bien, A abre con lo apuntado y «todos presentes» lo conserva', async () => {
+  it('control: con las dos lecturas bien, A abre con lo apuntado y «todos presentes» conserva su observación', async () => {
     expect(await asistenciaDe(a.id)).toMatchObject(APUNTADA_A) // premisa
     const p = propsDe<PropsPase>(await pagina(null), PaseDeListaCliente)
     expect(p).not.toBeNull()
@@ -204,9 +207,11 @@ describe('el pase de lista no se pasa sobre lo que no se leyó', () => {
     await aIntacta()
   })
 
-  it('P2 · falla solo la lectura de las ausencias: B no queda presente, y A sigue entero', async () => {
+  it('P2 · por la mañana, falla solo la lectura de las ausencias: B no queda presente', async () => {
+    const d = await serviceClient.from('asistencias').delete().eq('nino_id', a.id)
+    if (d.error) throw new Error(`asistencia de A: ${d.error.message}`)
+    expect(await asistenciaDe(a.id)).toBeNull() // premisa: nadie ha pasado lista todavía
     await medir('ausencias')
     expect.soft((await asistenciaDe(b.id))?.estado ?? null, 'B.estado').toBeNull()
-    await aIntacta()
   })
 })
