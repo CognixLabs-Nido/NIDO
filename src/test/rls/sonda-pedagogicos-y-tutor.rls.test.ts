@@ -206,7 +206,7 @@ describe('SONDA · M2–M4: pedagógicos y perfil del titular, con la lectura fa
   async function guardarTitular() {
     const { error } = await serviceClient
       .from('familia_tutores')
-      .update({ ...TITULAR, direccion_numero: null })
+      .update({ ...TITULAR, email: legal.email, direccion_numero: null })
       .eq('familia_id', nino.familia_id)
       .eq('rol_familia', 'titular')
     if (error) throw new Error(`titular: ${error.message}`)
