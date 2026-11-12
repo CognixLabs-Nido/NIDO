@@ -203,12 +203,18 @@ const PALABRAS = new Set([
   'using',
 ])
 
-function ctesDe(q: string, heredados: Map<string, string>): { ctes: Map<string, string>; resto: string } {
+function ctesDe(
+  q: string,
+  heredados: Map<string, string>
+): { ctes: Map<string, string>; resto: string } {
   const ctes = new Map(heredados)
   if (!/^with\s/.test(q)) return { ctes, resto: q }
   let i = 5
   for (;;) {
-    const m = /^\s*([a-z_]\w*)\s*(\([^)]*\))?\s+as\s+(not\s+materialized\s+|materialized\s+)?\(/.exec(q.slice(i))
+    const m =
+      /^\s*([a-z_]\w*)\s*(\([^)]*\))?\s+as\s+(not\s+materialized\s+|materialized\s+)?\(/.exec(
+        q.slice(i)
+      )
     if (!m) throw new Error(`WITH sin entender: ${q.slice(i, i + 60)}`)
     const abre = i + m[0].length - 1
     const fin = cierra(q, abre)
@@ -261,7 +267,11 @@ function ataduras(from: string, ctes: Map<string, string>): Map<string, Atadura>
       } else if (!nombre.includes('.') && ctes.has(nombre)) {
         fuente = { tipo: 'cte', nombre, anulable }
       } else {
-        fuente = { tipo: 'tabla', nombre: nombre.includes('.') ? nombre : `public.${nombre}`, anulable }
+        fuente = {
+          tipo: 'tabla',
+          nombre: nombre.includes('.') ? nombre : `public.${nombre}`,
+          anulable,
+        }
       }
       resto = t.slice(fin).trim()
     }
@@ -372,7 +382,12 @@ export class Analizador {
     return si(porques.join(' | '))
   }
 
-  private porNombre(consulta: string, ctes: Map<string, string>, col: string, prof: number): Veredicto {
+  private porNombre(
+    consulta: string,
+    ctes: Map<string, string>,
+    col: string,
+    prof: number
+  ): Veredicto {
     let rs: Rama[]
     try {
       rs = ramas(consulta, ctes)
@@ -409,7 +424,12 @@ export class Analizador {
         return no('subconsulta sin entender')
       }
       const sola = rs.length === 1 ? rs[0]! : null
-      if (sola && sola.items.length === 1 && !sola.agrupa && llamada(pelar(sola.items[0]!), /^count\s*\(/) !== null) {
+      if (
+        sola &&
+        sola.items.length === 1 &&
+        !sola.agrupa &&
+        llamada(pelar(sola.items[0]!), /^count\s*\(/) !== null
+      ) {
         return si('subconsulta de count')
       }
       return no(`subconsulta escalar (puede no dar fila): ${e.slice(0, 50)}`)
@@ -429,7 +449,9 @@ export class Analizador {
   private caso(e: string, r: Rama, prof: number): Veredicto {
     const cuerpo = e.slice(5, -4)
     const n = niveles(cuerpo)
-    const toks = [...cuerpo.matchAll(/\b(case|when|then|else|end)\b/g)].filter((m) => n[m.index!] === 0)
+    const toks = [...cuerpo.matchAll(/\b(case|when|then|else|end)\b/g)].filter(
+      (m) => n[m.index!] === 0
+    )
     let anid = 0
     const marcas: { pal: string; i: number; fin: number }[] = []
     for (const t of toks) {
@@ -458,7 +480,9 @@ export class Analizador {
           : no(`${a.nombre}.${col} admite NULL`)
       case 'cte': {
         const v = this.porNombre(r.ctes.get(a.nombre)!, r.ctes, col, prof + 1)
-        return v.ok ? si(`${a.nombre}.${col} → ${v.porque}`) : no(`${a.nombre}.${col} → ${v.porque}`)
+        return v.ok
+          ? si(`${a.nombre}.${col} → ${v.porque}`)
+          : no(`${a.nombre}.${col} → ${v.porque}`)
       }
       case 'sub': {
         const v = this.porNombre(a.consulta, r.ctes, col, prof + 1)
@@ -466,7 +490,9 @@ export class Analizador {
       }
       case 'funcion': {
         const v = this.columna(a.nombre, col, prof + 1)
-        return v.ok ? si(`${a.nombre}().${col} → ${v.porque}`) : no(`${a.nombre}().${col} → ${v.porque}`)
+        return v.ok
+          ? si(`${a.nombre}().${col} → ${v.porque}`)
+          : no(`${a.nombre}().${col} → ${v.porque}`)
       }
     }
   }

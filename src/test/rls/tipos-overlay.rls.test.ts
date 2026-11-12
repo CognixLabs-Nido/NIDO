@@ -88,7 +88,9 @@ describe('la capa de tipos sobre el generado cubre el catálogo entero', () => {
 
   describe('NO_NULAS se demuestra contra la base', () => {
     const cat = (): Catalogo => {
-      const linea = psql(CATALOGO).split('\n').find((l) => l.startsWith('{'))
+      const linea = psql(CATALOGO)
+        .split('\n')
+        .find((l) => l.startsWith('{'))
       if (!linea) throw new Error('tipos-overlay: el catálogo no ha salido')
       return JSON.parse(linea) as Catalogo
     }

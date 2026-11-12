@@ -12,7 +12,8 @@ import type { Database as Generada } from '@/types/database'
  * Que las listas de la capa cubren el catálogo entero lo prueba `tipos-overlay.rls.test.ts`.
  */
 
-type Igual<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false
+type Igual<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false
 type TodasAnulables<R> = { [K in keyof R]-?: null extends R[K] ? true : false }[keyof R]
 
 type Fn = Database['public']['Functions']
@@ -28,7 +29,8 @@ const fichaTodas: TodasAnulables<Ficha> = true
 
 // 2. Argumentos que aceptan NULL.
 const premisaArg: Igual<FnG['crear_o_anadir_a_familia']['Args']['p_usuario_id'], string> = true
-const argUsuario: Igual<Fn['crear_o_anadir_a_familia']['Args']['p_usuario_id'], string | null> = true
+const argUsuario: Igual<Fn['crear_o_anadir_a_familia']['Args']['p_usuario_id'], string | null> =
+  true
 const argTitulo: Igual<Fn['editar_documento_centro']['Args']['p_titulo'], string | null> = true
 // Un argumento que NO está en la lista sigue sin aceptar NULL.
 const argDocumento: Igual<Fn['editar_documento_centro']['Args']['p_documento_id'], string> = true
@@ -40,11 +42,16 @@ const premisaApellidos: Pick<InsertNinoG, 'apellidos'> = { apellidos: 'Demo' }
 const insertApellidos: Pick<TablesInsert<'ninos'>, 'apellidos'> = { apellidos: 'Demo' }
 // @ts-expect-error `ninos.apellidos` es generada
 const updateApellidos: Pick<TablesUpdate<'ninos'>, 'apellidos'> = { apellidos: 'Demo' }
+// Alias para que la declaración quepa en una línea: `@ts-expect-error` solo cubre la siguiente.
+type InsertEspera = Pick<TablesInsert<'lista_espera'>, 'apellidos_nino'>
 // @ts-expect-error `lista_espera.apellidos_nino` es generada
-const insertApellidosNino: Pick<TablesInsert<'lista_espera'>, 'apellidos_nino'> = { apellidos_nino: 'Demo' }
+const insertApellidosNino: InsertEspera = { apellidos_nino: 'Demo' }
 // Las de al lado se siguen escribiendo, y la fila se sigue leyendo.
 const insertPrimer: Pick<TablesInsert<'ninos'>, 'primer_apellido'> = { primer_apellido: 'Demo' }
-const filaApellidos: Igual<Database['public']['Tables']['ninos']['Row']['apellidos'], string | null> = true
+const filaApellidos: Igual<
+  Database['public']['Tables']['ninos']['Row']['apellidos'],
+  string | null
+> = true
 
 describe('la capa de tipos sobre el generado (los asertos son de tsc)', () => {
   it('cada caso compila con su premisa', () => {
@@ -58,6 +65,12 @@ describe('la capa de tipos sobre el generado (los asertos son de tsc)', () => {
       argDocumento,
       filaApellidos,
     ]).toEqual(Array(8).fill(true))
-    expect([premisaApellidos, insertApellidos, updateApellidos, insertApellidosNino, insertPrimer]).toHaveLength(5)
+    expect([
+      premisaApellidos,
+      insertApellidos,
+      updateApellidos,
+      insertApellidosNino,
+      insertPrimer,
+    ]).toHaveLength(5)
   })
 })

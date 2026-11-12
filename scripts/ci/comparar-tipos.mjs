@@ -34,9 +34,12 @@ async function normaliza(fichero) {
   const fuente = readFileSync(fichero, 'utf8')
   const lineas = fuente.split('\n').length
   const quitados = fuente.match(BLOQUE_INTERNO)?.length ?? 0
-  process.stdout.write(`${fichero}: ${lineas} líneas · bloque __InternalSupabase quitado ${quitados} de 1 posible\n`)
+  process.stdout.write(
+    `${fichero}: ${lineas} líneas · bloque __InternalSupabase quitado ${quitados} de 1 posible\n`
+  )
   if (lineas < 100) throw new Error(`${fichero}: ${lineas} líneas, el generador no ha sacado tipos`)
-  if (quitados > 1) throw new Error(`${fichero}: el bloque __InternalSupabase sale ${quitados} veces`)
+  if (quitados > 1)
+    throw new Error(`${fichero}: el bloque __InternalSupabase sale ${quitados} veces`)
   // Opciones fijas, sin el .prettierrc del repo: la normalización no depende de él.
   return prettier.format(fuente.replace(BLOQUE_INTERNO, ''), {
     parser: 'typescript',
