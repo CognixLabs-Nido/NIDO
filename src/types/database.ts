@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       accesos_datos_bloqueados: {
@@ -877,7 +852,7 @@ export type Database = {
           {
             foreignKeyName: "beca_comedor_desborde_recibo_id_fkey"
             columns: ["recibo_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "recibos"
             referencedColumns: ["id"]
           },
@@ -1101,7 +1076,7 @@ export type Database = {
           {
             foreignKeyName: "beca_comedor_transferencia_recibo_id_fkey"
             columns: ["recibo_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "recibos"
             referencedColumns: ["id"]
           },
@@ -2058,6 +2033,131 @@ export type Database = {
           },
         ]
       }
+      documentos_centro: {
+        Row: {
+          centro_id: string
+          creado_por: string
+          created_at: string
+          de_curso: boolean
+          id: string
+          obligatorio: boolean
+          orden: number
+          retirado_at: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          centro_id: string
+          creado_por: string
+          created_at?: string
+          de_curso: boolean
+          id?: string
+          obligatorio?: boolean
+          orden?: number
+          retirado_at?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          centro_id?: string
+          creado_por?: string
+          created_at?: string
+          de_curso?: boolean
+          id?: string
+          obligatorio?: boolean
+          orden?: number
+          retirado_at?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_centro_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_centro_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documentos_centro_versiones: {
+        Row: {
+          bytes: number
+          centro_id: string
+          curso_academico_id: string | null
+          documento_id: string
+          id: string
+          numero: number
+          pide_refirma: boolean
+          ruta: string
+          sha256: string
+          subida_at: string
+          subida_por: string
+        }
+        Insert: {
+          bytes: number
+          centro_id: string
+          curso_academico_id?: string | null
+          documento_id: string
+          id?: string
+          numero: number
+          pide_refirma?: boolean
+          ruta: string
+          sha256: string
+          subida_at?: string
+          subida_por: string
+        }
+        Update: {
+          bytes?: number
+          centro_id?: string
+          curso_academico_id?: string | null
+          documento_id?: string
+          id?: string
+          numero?: number
+          pide_refirma?: boolean
+          ruta?: string
+          sha256?: string
+          subida_at?: string
+          subida_por?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_centro_versiones_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_centro_versiones_curso_academico_id_fkey"
+            columns: ["curso_academico_id"]
+            isOneToOne: false
+            referencedRelation: "cursos_academicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_centro_versiones_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos_centro"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_centro_versiones_subida_por_fkey"
+            columns: ["subida_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eventos: {
         Row: {
           ambito: Database["public"]["Enums"]["ambito_evento"]
@@ -2404,7 +2504,7 @@ export type Database = {
           firmado_at: string
           firmante_id: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metodo_firma: Database["public"]["Enums"]["firma_metodo"]
           nino_id: string
           nombre_tecleado: string
@@ -2424,7 +2524,7 @@ export type Database = {
           firmado_at?: string
           firmante_id: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
           nino_id: string
           nombre_tecleado: string
@@ -2444,7 +2544,7 @@ export type Database = {
           firmado_at?: string
           firmante_id?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metodo_firma?: Database["public"]["Enums"]["firma_metodo"]
           nino_id?: string
           nombre_tecleado?: string
@@ -2976,7 +3076,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          apellidos_nino?: never
+          apellidos_nino?: string | null
           centro_id: string
           created_at?: string
           curso_academico_id: string
@@ -2996,7 +3096,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          apellidos_nino?: never
+          apellidos_nino?: string | null
           centro_id?: string
           created_at?: string
           curso_academico_id?: string
@@ -3316,13 +3416,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "media_etiquetas_resuelta_por_fkey"
-            columns: ["resuelta_por"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "media_etiquetas_media_id_fkey"
             columns: ["media_id"]
             isOneToOne: false
@@ -3334,6 +3427,13 @@ export type Database = {
             columns: ["nino_id"]
             isOneToOne: false
             referencedRelation: "ninos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_etiquetas_resuelta_por_fkey"
+            columns: ["resuelta_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]
@@ -3524,7 +3624,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          apellidos?: never
+          apellidos?: string | null
           centro_id: string
           como_nos_conocio?: string | null
           como_nos_conocio_otro?: string | null
@@ -3562,7 +3662,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          apellidos?: never
+          apellidos?: string | null
           centro_id?: string
           como_nos_conocio?: string | null
           como_nos_conocio_otro?: string | null
@@ -3621,21 +3721,21 @@ export type Database = {
           centro_id: string
           confirmada_en: string | null
           confirmada_por: string | null
+          created_at: string
           estado: Database["public"]["Enums"]["olvido_estado"]
           estado_previo: Json | null
+          gracia_hasta: string | null
+          id: string
+          inmediato: boolean
           motivo_rechazo: string | null
           nota_centro: string | null
           pedida_por_centro: boolean
           por_plazo: boolean
+          purgado_en: string | null
           rechazada_en: string | null
           rechazada_por: string | null
           retirada_en: string | null
           retirada_por: string | null
-          created_at: string
-          gracia_hasta: string | null
-          id: string
-          inmediato: boolean
-          purgado_en: string | null
           solicitado_en: string
           solicitado_por: string | null
           sujeto_id: string
@@ -3646,21 +3746,21 @@ export type Database = {
           centro_id: string
           confirmada_en?: string | null
           confirmada_por?: string | null
+          created_at?: string
           estado?: Database["public"]["Enums"]["olvido_estado"]
           estado_previo?: Json | null
+          gracia_hasta?: string | null
+          id?: string
+          inmediato?: boolean
           motivo_rechazo?: string | null
           nota_centro?: string | null
           pedida_por_centro?: boolean
           por_plazo?: boolean
+          purgado_en?: string | null
           rechazada_en?: string | null
           rechazada_por?: string | null
           retirada_en?: string | null
           retirada_por?: string | null
-          created_at?: string
-          gracia_hasta?: string | null
-          id?: string
-          inmediato?: boolean
-          purgado_en?: string | null
           solicitado_en?: string
           solicitado_por?: string | null
           sujeto_id: string
@@ -3671,21 +3771,21 @@ export type Database = {
           centro_id?: string
           confirmada_en?: string | null
           confirmada_por?: string | null
+          created_at?: string
           estado?: Database["public"]["Enums"]["olvido_estado"]
           estado_previo?: Json | null
+          gracia_hasta?: string | null
+          id?: string
+          inmediato?: boolean
           motivo_rechazo?: string | null
           nota_centro?: string | null
           pedida_por_centro?: boolean
           por_plazo?: boolean
+          purgado_en?: string | null
           rechazada_en?: string | null
           rechazada_por?: string | null
           retirada_en?: string | null
           retirada_por?: string | null
-          created_at?: string
-          gracia_hasta?: string | null
-          id?: string
-          inmediato?: boolean
-          purgado_en?: string | null
           solicitado_en?: string
           solicitado_por?: string | null
           sujeto_id?: string
@@ -3698,6 +3798,27 @@ export type Database = {
             columns: ["centro_id"]
             isOneToOne: false
             referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "olvido_solicitudes_confirmada_por_fkey"
+            columns: ["confirmada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "olvido_solicitudes_rechazada_por_fkey"
+            columns: ["rechazada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "olvido_solicitudes_retirada_por_fkey"
+            columns: ["retirada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -4175,6 +4296,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "recibos_deuda_perdida_por_fkey"
+            columns: ["deuda_perdida_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recibos_deuda_perdida_solicitud_id_fkey"
+            columns: ["deuda_perdida_solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "olvido_solicitudes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "recibos_devuelto_de_recibo_id_fkey"
             columns: ["devuelto_de_recibo_id"]
             isOneToOne: false
@@ -4343,6 +4478,108 @@ export type Database = {
             columns: ["usuario_destinatario_id"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      remesa_fichero_adeudos: {
+        Row: {
+          end_to_end_id: string
+          fichero_id: string
+          importe_centimos: number
+          mandato_id: string | null
+          mndt_id: string
+          recibo_id: string
+        }
+        Insert: {
+          end_to_end_id: string
+          fichero_id: string
+          importe_centimos: number
+          mandato_id?: string | null
+          mndt_id: string
+          recibo_id: string
+        }
+        Update: {
+          end_to_end_id?: string
+          fichero_id?: string
+          importe_centimos?: number
+          mandato_id?: string | null
+          mndt_id?: string
+          recibo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remesa_fichero_adeudos_fichero_id_fkey"
+            columns: ["fichero_id"]
+            isOneToOne: false
+            referencedRelation: "remesa_ficheros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remesa_fichero_adeudos_recibo_id_fkey"
+            columns: ["recibo_id"]
+            isOneToOne: false
+            referencedRelation: "recibos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      remesa_ficheros: {
+        Row: {
+          centro_id: string
+          created_at: string
+          enviada_at: string | null
+          generado_at: string
+          id: string
+          msg_id: string
+          n_adeudos: number
+          reabierta_at: string | null
+          remesa_id: string
+          ruta: string
+          sha256: string
+          total_centimos: number
+        }
+        Insert: {
+          centro_id: string
+          created_at?: string
+          enviada_at?: string | null
+          generado_at: string
+          id?: string
+          msg_id: string
+          n_adeudos: number
+          reabierta_at?: string | null
+          remesa_id: string
+          ruta: string
+          sha256: string
+          total_centimos: number
+        }
+        Update: {
+          centro_id?: string
+          created_at?: string
+          enviada_at?: string | null
+          generado_at?: string
+          id?: string
+          msg_id?: string
+          n_adeudos?: number
+          reabierta_at?: string | null
+          remesa_id?: string
+          ruta?: string
+          sha256?: string
+          total_centimos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remesa_ficheros_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remesa_ficheros_remesa_id_fkey"
+            columns: ["remesa_id"]
+            isOneToOne: false
+            referencedRelation: "remesas"
             referencedColumns: ["id"]
           },
         ]
@@ -4814,24 +5051,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _claves_pii_nino: { Args: { p_tabla: string }; Returns: string[] }
       _get_medical_key: { Args: never; Returns: string }
       _get_sepa_key: { Args: never; Returns: string }
-      _claves_pii_nino: { Args: { p_tabla: string }; Returns: string[] }
       _redactar_auditoria_lista_espera_retro: { Args: never; Returns: number }
-      _redactar_auditoria_nino: { Args: { p_nino_id: string }; Returns: undefined }
+      _redactar_auditoria_nino: {
+        Args: { p_nino_id: string }
+        Returns: undefined
+      }
       _redactar_auditoria_ninos_borrados: { Args: never; Returns: number }
       _redactar_jsonb: { Args: { claves: string[]; j: Json }; Returns: Json }
-      alertas_medicas: {
-        Args: { p_nino_ids: string[] }
-        Returns: {
-          alergia_grave: boolean
-          medicacion: boolean
-          nino_id: string
-        }[]
+      abrir_purga_cuenta: {
+        Args: { p_anios: number; p_centro_id: string; p_usuario_id: string }
+        Returns: string
       }
-      buscar_auth_user_por_email: {
-        Args: { p_email: string }
-        Returns: { id: string; email: string }[]
+      accesos_datos_bloqueados_centro: {
+        Args: { p_centro_id: string }
+        Returns: {
+          accion: string
+          apartados: string[]
+          lector_nombre: string
+          leido_en: string
+          motivo: string
+          motivo_tipo: string
+          sujeto_id: string
+          sujeto_tipo: string
+        }[]
       }
       actualizar_familia_nino: {
         Args: { p_nino_id: string; p_patch: Json }
@@ -4840,25 +5085,6 @@ export type Database = {
       actualizar_foto_nino_tutor: {
         Args: { p_foto_path: string; p_nino_id: string }
         Returns: string
-      }
-      anadir_cargo_puntual: {
-        Args: {
-          p_anio: number
-          p_centro_id: string
-          p_concepto_id?: string
-          p_descripcion: string
-          p_importe_centimos: number
-          p_mes: number
-          p_nino_ids: string[]
-        }
-        Returns: {
-          estado: string
-          familia_etiqueta: string
-          familia_id: string
-          nino_id: string
-          recibo_id: string
-          resultado: string
-        }[]
       }
       actualizar_identidad_nino_tutor: {
         Args: {
@@ -4880,7 +5106,49 @@ export type Database = {
         }
         Returns: string
       }
+      alertas_medicas: {
+        Args: { p_nino_ids: string[] }
+        Returns: {
+          alergia_grave: boolean
+          medicacion: boolean
+          nino_id: string
+        }[]
+      }
       alta_validada_de_nino: { Args: { p_nino_id: string }; Returns: boolean }
+      altas_sin_terminar: {
+        Args: { p_centro_id: string; p_dias: number }
+        Returns: {
+          desde: string
+          email: string
+          estado: string
+          familia_nueva: boolean
+          nino_id: string
+          propuesta: boolean
+        }[]
+      }
+      anadir_cargo_puntual: {
+        Args: {
+          p_anio: number
+          p_centro_id: string
+          p_concepto_id?: string
+          p_descripcion: string
+          p_importe_centimos: number
+          p_mes: number
+          p_nino_ids: string[]
+        }
+        Returns: {
+          estado: string
+          familia_etiqueta: string
+          familia_id: string
+          nino_id: string
+          recibo_id: string
+          resultado: string
+        }[]
+      }
+      anular_alta: {
+        Args: { p_accion: string; p_actor: string; p_nino_id: string }
+        Returns: Json
+      }
       archivar_autorizacion: {
         Args: { p_autorizacion_id: string }
         Returns: boolean
@@ -4900,6 +5168,21 @@ export type Database = {
       borrar_info_medica_nino_tutor: {
         Args: { p_nino_id: string }
         Returns: undefined
+      }
+      borrar_version_documento: {
+        Args: { p_version_id: string }
+        Returns: string
+      }
+      buscar_auth_user_por_email: {
+        Args: { p_email: string }
+        Returns: {
+          email: string
+          id: string
+        }[]
+      }
+      cancelar_invitacion_tutor2: {
+        Args: { p_actor: string; p_email_se_queda?: string; p_nino_id: string }
+        Returns: Json
       }
       centro_abierto: {
         Args: { p_centro_id: string; p_fecha: string }
@@ -4922,8 +5205,11 @@ export type Database = {
         }
         Returns: string
       }
+      confirmar_peticion_olvido: {
+        Args: { p_solicitud_id: string }
+        Returns: string
+      }
       confirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
-      desconfirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
       contar_invitaciones_pendientes: {
         Args: { p_centro_id: string }
         Returns: number
@@ -4935,14 +5221,24 @@ export type Database = {
       contenido_firmas: {
         Args: { p_firma_ids: string[] }
         Returns: {
-          comentario: string | null
+          comentario: string
           datos: Json
           firma_id: string
-          firma_imagen: string | null
+          firma_imagen: string
           ip_address: unknown
           nombre_tecleado: string
-          user_agent: string | null
+          user_agent: string
         }[]
+      }
+      crear_documento_centro: {
+        Args: {
+          p_centro_id: string
+          p_de_curso: boolean
+          p_obligatorio: boolean
+          p_orden: number
+          p_titulo: string
+        }
+        Returns: string
       }
       crear_o_anadir_a_familia: {
         Args: {
@@ -4961,17 +5257,6 @@ export type Database = {
         }
         Returns: Json
       }
-      crear_vinculo: {
-        Args: {
-          p_descripcion_parentesco: string
-          p_nino_id: string
-          p_parentesco: Database["public"]["Enums"]["parentesco"]
-          p_permisos: Json
-          p_tipo: Database["public"]["Enums"]["tipo_vinculo"]
-          p_usuario_id: string
-        }
-        Returns: string
-      }
       crear_recibo_esporadico: {
         Args: {
           p_anio: number
@@ -4985,11 +5270,28 @@ export type Database = {
         }
         Returns: string
       }
-      curso_activo_de_centro: { Args: { p_centro_id: string }; Returns: string }
-      dar_deuda_por_perdida: {
-        Args: { p_centimos: number; p_solicitud_id: string }
-        Returns: Json
+      crear_vinculo: {
+        Args: {
+          p_descripcion_parentesco: string
+          p_nino_id: string
+          p_parentesco: Database["public"]["Enums"]["parentesco"]
+          p_permisos: Json
+          p_tipo: Database["public"]["Enums"]["tipo_vinculo"]
+          p_usuario_id: string
+        }
+        Returns: string
       }
+      cuenta_ha_operado: { Args: { p_usuario_id: string }; Returns: boolean }
+      cuentas_auth_huerfanas: { Args: never; Returns: string[] }
+      cuentas_vencidas: {
+        Args: { p_anios: number }
+        Returns: {
+          centro_id: string
+          solicitud_id: string
+          usuario_id: string
+        }[]
+      }
+      curso_activo_de_centro: { Args: { p_centro_id: string }; Returns: string }
       dar_de_baja_profe: {
         Args: {
           p_centro_id: string
@@ -4997,6 +5299,10 @@ export type Database = {
           p_usuario_id: string
         }
         Returns: number
+      }
+      dar_deuda_por_perdida: {
+        Args: { p_centimos: number; p_solicitud_id: string }
+        Returns: Json
       }
       dar_rol_de_invitacion: {
         Args: {
@@ -5019,10 +5325,81 @@ export type Database = {
         }
         Returns: undefined
       }
+      datos_anular_alta: { Args: { p_nino_id: string }; Returns: Json }
       dentro_de_ventana_edicion: { Args: { p_fecha: string }; Returns: boolean }
       desarchivar_nino: {
         Args: { p_aula_id: string; p_nino_id: string }
         Returns: Json
+      }
+      desconfirmar_recibo: { Args: { p_recibo_id: string }; Returns: boolean }
+      deshacer_confirmacion_olvido: {
+        Args: { p_solicitud_id: string }
+        Returns: undefined
+      }
+      destruir_consentimientos_cuenta: {
+        Args: { p_anios: number; p_simular: boolean }
+        Returns: number
+      }
+      destruir_cuentas_olvidadas: {
+        Args: { p_simular: boolean }
+        Returns: Json
+      }
+      destruir_fichero_remesa: {
+        Args: { p_anios: number; p_fichero_id: string }
+        Returns: number
+      }
+      destruir_firmas_nino: {
+        Args: { p_anios: number; p_nino_id: string }
+        Returns: Json
+      }
+      destruir_fiscal_familia: {
+        Args: { p_anios: number; p_familia_id: string }
+        Returns: Json
+      }
+      documentos_centro_admin: { Args: { p_centro_id: string }; Returns: Json }
+      documentos_firma_centro: {
+        Args: { p_centro_id: string }
+        Returns: {
+          curso_academico_id: string
+          curso_nombre: string
+          disponible_desde: string
+          documento_id: string
+          estado: string
+          nino_id: string
+          obligatorio: boolean
+          titulo: string
+          version_id: string
+        }[]
+      }
+      documentos_firma_nino: {
+        Args: { p_nino_id: string }
+        Returns: {
+          curso_academico_id: string
+          curso_nombre: string
+          de_curso: boolean
+          disponible_desde: string
+          documento_id: string
+          estado: string
+          firma_id: string
+          firmado_at: string
+          metodo_firma: Database["public"]["Enums"]["firma_metodo"]
+          numero: number
+          obligatorio: boolean
+          orden: number
+          titulo: string
+          version_id: string
+        }[]
+      }
+      editar_documento_centro: {
+        Args: {
+          p_de_curso: boolean
+          p_documento_id: string
+          p_obligatorio: boolean
+          p_orden: number
+          p_retirado: boolean
+          p_titulo: string
+        }
+        Returns: undefined
       }
       es_admin: { Args: { p_centro_id?: string }; Returns: boolean }
       es_admin_de_usuario: { Args: { p_usuario_id: string }; Returns: boolean }
@@ -5056,30 +5433,23 @@ export type Database = {
         }
         Returns: Json
       }
+      existe_consentimiento_imagen: {
+        Args: { p_nino_id: string }
+        Returns: boolean
+      }
       expedientes_vencidos: {
         Args: { p_anios: number }
-        Returns: { centro_id: string; nino_id: string }[]
+        Returns: {
+          centro_id: string
+          nino_id: string
+        }[]
       }
-      firmas_vencidas: {
-        Args: { p_anios: number }
-        Returns: { centro_id: string; nino_id: string }[]
-      }
-      destruir_firmas_nino: {
-        Args: { p_anios: number; p_nino_id: string }
+      export_datos_sujeto: {
+        Args: { p_sujeto_id: string; p_sujeto_tipo: string }
         Returns: Json
       }
-      cuentas_vencidas: {
-        Args: { p_anios: number }
-        Returns: { centro_id: string; solicitud_id: string | null; usuario_id: string }[]
-      }
-      abrir_purga_cuenta: {
-        Args: { p_anios: number; p_centro_id: string; p_usuario_id: string }
-        Returns: string | null
-      }
-      destruir_consentimientos_cuenta: {
-        Args: { p_anios: number; p_simular: boolean }
-        Returns: number
-      }
+      familia_de_nino: { Args: { p_nino_id: string }; Returns: string }
+      familia_ve_aula: { Args: { p_aula_id: string }; Returns: boolean }
       familias_fiscal_vencidas: {
         Args: { p_anios: number }
         Returns: {
@@ -5087,6 +5457,26 @@ export type Database = {
           dnis: string[]
           familia_id: string
           mandatos: string[]
+        }[]
+      }
+      ficha_gestion_ninos: {
+        Args: { p_nino_ids: string[] }
+        Returns: {
+          como_nos_conocio: string
+          como_nos_conocio_otro: string
+          direccion_calle: string
+          direccion_ciudad: string
+          direccion_cp: string
+          direccion_numero: string
+          direccion_provincia: string
+          dni: string
+          estado_civil_familia: Database["public"]["Enums"]["estado_civil"]
+          hermanos_lugar: number
+          hermanos_total: number
+          libro_familia_path: string
+          nino_id: string
+          notas_admin: string
+          observaciones_familia: string
         }[]
       }
       fichero_remesa_vigente: {
@@ -5101,151 +5491,34 @@ export type Database = {
       }
       ficheros_remesa_huerfanos: {
         Args: never
-        Returns: { ruta: string }[]
+        Returns: {
+          ruta: string
+        }[]
       }
       ficheros_remesa_vencidos: {
         Args: { p_anios: number }
-        Returns: { fichero_id: string; ruta: string }[]
-      }
-      destruir_fichero_remesa: {
-        Args: { p_anios: number; p_fichero_id: string }
-        Returns: number | null
-      }
-      registrar_fichero_remesa: {
-        Args: {
-          p_adeudos: Json
-          p_marca: string
-          p_msg_id: string
-          p_remesa_id: string
-          p_ruta: string
-          p_sha256: string
-        }
-        Returns: string
-      }
-      destruir_fiscal_familia: {
-        Args: { p_anios: number; p_familia_id: string }
-        Returns: Json
-      }
-      destruir_cuentas_olvidadas: {
-        Args: { p_simular: boolean }
-        Returns: Json
-      }
-      cuentas_auth_huerfanas: { Args: never; Returns: string[] }
-      altas_sin_terminar: {
-        Args: { p_centro_id: string; p_dias: number }
         Returns: {
-          desde: string | null
-          email: string | null
-          estado: string
-          familia_nueva: boolean
-          nino_id: string
-          propuesta: boolean
+          fichero_id: string
+          ruta: string
         }[]
       }
-      datos_anular_alta: { Args: { p_nino_id: string }; Returns: Json }
-      anular_alta: {
-        Args: { p_accion: string; p_actor: string; p_nino_id: string }
-        Returns: Json
-      }
-      reinvitar_alta: {
-        Args: { p_actor: string; p_email: string; p_nino_id: string }
-        Returns: Json
-      }
-      cancelar_invitacion_tutor2: {
-        Args: { p_actor: string; p_email_se_queda?: string; p_nino_id: string }
-        Returns: Json
-      }
-      borrar_version_documento: {
-        Args: { p_version_id: string }
-        Returns: string
-      }
-      crear_documento_centro: {
-        Args: {
-          p_centro_id: string
-          p_de_curso: boolean
-          p_obligatorio: boolean
-          p_orden: number
-          p_titulo: string
-        }
-        Returns: string
-      }
-      documentos_centro_admin: {
-        Args: { p_centro_id: string }
-        Returns: Json
-      }
-      editar_documento_centro: {
-        Args: {
-          p_de_curso: boolean | null
-          p_documento_id: string
-          p_obligatorio: boolean | null
-          p_orden: number | null
-          p_retirado: boolean | null
-          p_titulo: string | null
-        }
-        Returns: undefined
-      }
-      registrar_version_documento: {
-        Args: {
-          p_bytes: number
-          p_curso_academico_id: string | null
-          p_documento_id: string
-          p_pide_refirma?: boolean
-          p_sha256: string
-        }
-        Returns: string
-      }
-      documentos_firma_nino: {
-        Args: { p_nino_id: string }
+      fijar_asignaciones_concepto: {
+        Args: { p_cambios: Json; p_concepto_id: string }
         Returns: {
-          documento_id: string
-          titulo: string
-          de_curso: boolean
-          obligatorio: boolean
-          orden: number
-          curso_academico_id: string | null
-          curso_nombre: string | null
-          estado: string
-          version_id: string | null
-          numero: number | null
-          disponible_desde: string | null
-          firma_id: string | null
-          firmado_at: string | null
-          metodo_firma: Database["public"]["Enums"]["firma_metodo"] | null
+          destinatario_id: string
+          resultado: string
         }[]
       }
-      documentos_firma_centro: {
-        Args: { p_centro_id: string }
+      fijar_fecha_cobro_recibos: {
+        Args: { p_centro_id: string; p_fecha: string; p_recibo_ids: string[] }
         Returns: {
-          nino_id: string
-          documento_id: string
-          titulo: string
-          obligatorio: boolean
-          curso_academico_id: string | null
-          curso_nombre: string | null
-          estado: string
-          version_id: string | null
-          disponible_desde: string | null
+          recibo_id: string
+          resultado: string
         }[]
       }
-      ficha_gestion_ninos: {
-        Args: { p_nino_ids: string[] }
-        Returns: {
-          como_nos_conocio: string | null
-          como_nos_conocio_otro: string | null
-          direccion_calle: string | null
-          direccion_ciudad: string | null
-          direccion_cp: string | null
-          direccion_numero: string | null
-          direccion_provincia: string | null
-          dni: string | null
-          estado_civil_familia: Database['public']['Enums']['estado_civil'] | null
-          hermanos_lugar: number | null
-          hermanos_total: number | null
-          libro_familia_path: string | null
-          nino_id: string
-          notas_admin: string | null
-          observaciones_familia: string | null
-        }[]
+      fijar_libro_familia_nino: {
+        Args: { p_nino_id: string; p_path: string }
+        Returns: string
       }
       firmar_documento_centro: {
         Args: {
@@ -5258,43 +5531,12 @@ export type Database = {
         }
         Returns: string
       }
-      registrar_firma_documento_presencial: {
-        Args: {
-          p_ip_address: unknown
-          p_nino_id: string
-          p_nombre_tecleado: string
-          p_user_agent: string
-          p_version_id: string
-        }
-        Returns: string
-      }
-      ruta_version_documento_nino: {
-        Args: { p_nino_id: string; p_version_id: string }
-        Returns: string
-      }
-      export_datos_sujeto: {
-        Args: { p_sujeto_id: string; p_sujeto_tipo: string }
-        Returns: Json
-      }
-      familia_de_nino: { Args: { p_nino_id: string }; Returns: string }
-      familia_ve_aula: { Args: { p_aula_id: string }; Returns: boolean }
-      fijar_asignaciones_concepto: {
-        Args: { p_cambios: Json; p_concepto_id: string }
+      firmas_vencidas: {
+        Args: { p_anios: number }
         Returns: {
-          destinatario_id: string
-          resultado: string
+          centro_id: string
+          nino_id: string
         }[]
-      }
-      fijar_fecha_cobro_recibos: {
-        Args: { p_centro_id: string; p_fecha: string | null; p_recibo_ids: string[] }
-        Returns: {
-          recibo_id: string
-          resultado: string
-        }[]
-      }
-      fijar_libro_familia_nino: {
-        Args: { p_nino_id: string; p_path: string }
-        Returns: string
       }
       generar_recibos_mes: {
         Args: { p_anio: number; p_centro_id: string; p_mes: number }
@@ -5355,6 +5597,17 @@ export type Database = {
       hoy_madrid: { Args: never; Returns: string }
       idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
+      lecturas_ficha_medica: {
+        Args: { p_nino_id: string }
+        Returns: {
+          campos: string[]
+          lector_nombre: string
+          leida_en: string
+          nombre_oculto: boolean
+          origen: string
+          rol_lector: string
+        }[]
+      }
       listado_pase_servicios: {
         Args: { p_centro_id: string }
         Returns: {
@@ -5372,7 +5625,6 @@ export type Database = {
           usuario_id: string
         }[]
       }
-      marcar_matricula_lista: { Args: { p_nino_id: string }; Returns: string }
       marcar_cobrado_manual: {
         Args: {
           p_fecha: string
@@ -5382,8 +5634,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      marcar_matricula_lista: { Args: { p_nino_id: string }; Returns: string }
       marcar_recibo_devuelto: {
-        Args: { p_fecha: string; p_gastos_centimos: number; p_recibo_id: string }
+        Args: {
+          p_fecha: string
+          p_gastos_centimos: number
+          p_recibo_id: string
+        }
         Returns: undefined
       }
       marcar_remesa_enviada: { Args: { p_remesa_id: string }; Returns: number }
@@ -5413,16 +5670,47 @@ export type Database = {
         Args: { p_anio: number; p_centro_id: string; p_mes: number }
         Returns: boolean
       }
+      mis_peticiones_olvido: {
+        Args: never
+        Returns: {
+          centro_id: string
+          centro_nombre: string
+          confirmada_en: string
+          estado: Database["public"]["Enums"]["olvido_estado"]
+          falta: Json
+          gracia_hasta: string
+          id: string
+          inmediato: boolean
+          motivo_rechazo: string
+          nota_centro: string
+          pedida_por_centro: boolean
+          pedida_por_mi: boolean
+          por_plazo: boolean
+          puede_retirar: boolean
+          purgado_en: string
+          rechazada_en: string
+          retirada_en: string
+          solicitado_en: string
+          sujeto_id: string
+          sujeto_nombre: string
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+        }[]
+      }
       nino_de_conversacion: {
         Args: { p_conversacion_id: string }
         Returns: string
       }
       nino_de_recibo: { Args: { p_recibo_id: string }; Returns: string }
       nino_toma_comida_solida: { Args: { p_nino_id: string }; Returns: boolean }
-      cuenta_ha_operado: { Args: { p_usuario_id: string }; Returns: boolean }
+      nota_peticion_olvido: {
+        Args: { p_nota: string; p_solicitud_id: string }
+        Returns: undefined
+      }
       olvido_destinatarios: {
         Args: { p_solicitud_id: string }
-        Returns: { usuario_id: string }[]
+        Returns: {
+          usuario_id: string
+        }[]
       }
       olvido_es_ultimo_centro: {
         Args: { p_solicitud_id: string }
@@ -5438,86 +5726,15 @@ export type Database = {
           sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
         }[]
       }
-      ver_datos_bloqueados: {
-        Args: {
-          p_accion?: string
-          p_centro_id: string
-          p_motivo: string
-          p_motivo_tipo: string
-          p_sujeto_id: string
-          p_sujeto_tipo: string
-        }
-        Returns: Json
-      }
-      sujetos_retencion: {
-        Args: { p_centro_id: string }
+      opciones_olvido: {
+        Args: never
         Returns: {
-          aula: string | null
-          desde: string | null
-          estado: string
-          familia: string | null
-          motivo_tipo: string | null
-          nombre: string | null
-          retenido_desde: string | null
+          centro_id: string
+          centro_nombre: string
+          nombre: string
           sujeto_id: string
-          sujeto_tipo: string
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
         }[]
-      }
-      poner_retencion: {
-        Args: {
-          p_centro_id: string
-          p_motivo: string
-          p_motivo_tipo: string
-          p_sujetos: Json
-        }
-        Returns: Json
-      }
-      quitar_retencion: {
-        Args: { p_centro_id: string; p_motivo: string; p_sujetos: Json }
-        Returns: number
-      }
-      retenciones_centro: {
-        Args: { p_centro_id: string }
-        Returns: {
-          motivo: string
-          motivo_tipo: string
-          puesta_en: string
-          puesta_por_nombre: string | null
-          quitada_en: string | null
-          quitada_motivo: string | null
-          quitada_por_nombre: string | null
-          sujeto_id: string
-          sujeto_nombre: string | null
-          sujeto_tipo: string
-        }[]
-      }
-      sujetos_bloqueados: {
-        Args: { p_centro_id: string }
-        Returns: {
-          aula: string | null
-          bloqueado_desde: string | null
-          curso: string | null
-          familia: string | null
-          sujeto_id: string
-          sujeto_tipo: string
-        }[]
-      }
-      accesos_datos_bloqueados_centro: {
-        Args: { p_centro_id: string }
-        Returns: {
-          accion: string
-          apartados: string[]
-          leido_en: string
-          lector_nombre: string | null
-          motivo: string
-          motivo_tipo: string
-          sujeto_id: string
-          sujeto_tipo: string
-        }[]
-      }
-      existe_consentimiento_imagen: {
-        Args: { p_nino_id: string }
-        Returns: boolean
       }
       otorgar_consentimiento_imagen: {
         Args: {
@@ -5530,7 +5747,43 @@ export type Database = {
         }
         Returns: string
       }
+      pedir_olvido_nino: {
+        Args: { p_inmediato?: boolean; p_nino_id: string }
+        Returns: string
+      }
+      pedir_olvido_usuario: {
+        Args: {
+          p_centro_id: string
+          p_inmediato?: boolean
+          p_usuario_id: string
+        }
+        Returns: string
+      }
       pertenece_a_centro: { Args: { p_centro_id: string }; Returns: boolean }
+      peticiones_olvido_centro: {
+        Args: { p_centro_id: string }
+        Returns: {
+          confirmada_en: string
+          deuda: Json
+          estado: Database["public"]["Enums"]["olvido_estado"]
+          falta: Json
+          gracia_hasta: string
+          id: string
+          inmediato: boolean
+          motivo_rechazo: string
+          nota_centro: string
+          pedida_por_centro: boolean
+          por_plazo: boolean
+          purgado_en: string
+          rechazada_en: string
+          retirada_en: string
+          solicitado_en: string
+          solicitado_por_nombre: string
+          sujeto_id: string
+          sujeto_nombre: string
+          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
+        }[]
+      }
       platform_crear_centro: {
         Args: {
           p_curso_fin: string
@@ -5552,99 +5805,6 @@ export type Database = {
         Args: { p_centro_id: string; p_email?: string }
         Returns: string
       }
-      confirmar_peticion_olvido: { Args: { p_solicitud_id: string }; Returns: string }
-      deshacer_confirmacion_olvido: {
-        Args: { p_solicitud_id: string }
-        Returns: undefined
-      }
-      lecturas_ficha_medica: {
-        Args: { p_nino_id: string }
-        Returns: {
-          campos: string[]
-          leida_en: string
-          lector_nombre: string
-          nombre_oculto: boolean
-          origen: string
-          rol_lector: string
-        }[]
-      }
-      mis_peticiones_olvido: {
-        Args: never
-        Returns: {
-          centro_id: string
-          centro_nombre: string | null
-          confirmada_en: string | null
-          estado: Database["public"]["Enums"]["olvido_estado"]
-          falta: Json | null
-          gracia_hasta: string | null
-          id: string
-          inmediato: boolean
-          motivo_rechazo: string | null
-          nota_centro: string | null
-          pedida_por_centro: boolean
-          pedida_por_mi: boolean
-          purgado_en: string | null
-          rechazada_en: string | null
-          retirada_en: string | null
-          solicitado_en: string
-          sujeto_id: string
-          sujeto_nombre: string | null
-          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
-          puede_retirar: boolean
-          por_plazo: boolean
-        }[]
-      }
-      nota_peticion_olvido: {
-        Args: { p_nota: string; p_solicitud_id: string }
-        Returns: undefined
-      }
-      opciones_olvido: {
-        Args: never
-        Returns: {
-          centro_id: string
-          centro_nombre: string
-          nombre: string
-          sujeto_id: string
-          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
-        }[]
-      }
-      pedir_olvido_nino: {
-        Args: { p_inmediato?: boolean; p_nino_id: string }
-        Returns: string
-      }
-      pedir_olvido_usuario: {
-        Args: { p_centro_id: string; p_inmediato?: boolean; p_usuario_id: string }
-        Returns: string
-      }
-      peticiones_olvido_centro: {
-        Args: { p_centro_id: string }
-        Returns: {
-          confirmada_en: string | null
-          estado: Database["public"]["Enums"]["olvido_estado"]
-          falta: Json | null
-          gracia_hasta: string | null
-          id: string
-          inmediato: boolean
-          motivo_rechazo: string | null
-          nota_centro: string | null
-          pedida_por_centro: boolean
-          purgado_en: string | null
-          rechazada_en: string | null
-          retirada_en: string | null
-          solicitado_en: string
-          sujeto_id: string
-          sujeto_nombre: string | null
-          sujeto_tipo: Database["public"]["Enums"]["olvido_sujeto_tipo"]
-          solicitado_por_nombre: string | null
-          por_plazo: boolean
-          deuda: Json
-        }[]
-      }
-      rechazar_peticion_olvido: {
-        Args: { p_motivo: string; p_solicitud_id: string }
-        Returns: undefined
-      }
-      retirar_peticion_olvido: { Args: { p_solicitud_id: string }; Returns: undefined }
       platform_metricas: {
         Args: never
         Returns: {
@@ -5664,7 +5824,19 @@ export type Database = {
           sin_curso_activo: boolean
         }[]
       }
-      promover_a_titular: { Args: { p_familia_tutor_id: string }; Returns: undefined }
+      poner_retencion: {
+        Args: {
+          p_centro_id: string
+          p_motivo: string
+          p_motivo_tipo: string
+          p_sujetos: Json
+        }
+        Returns: Json
+      }
+      promover_a_titular: {
+        Args: { p_familia_tutor_id: string }
+        Returns: undefined
+      }
       proponer_asignaciones: { Args: { p_centro_id: string }; Returns: number }
       publicacion_etiqueta_hijo_de: {
         Args: { p_publicacion_id: string }
@@ -5699,7 +5871,10 @@ export type Database = {
         Args: { p_anios: number; p_simular: boolean }
         Returns: number
       }
-      purgar_fotos_blog_nino: { Args: { p_nino_id: string }; Returns: undefined }
+      purgar_fotos_blog_nino: {
+        Args: { p_nino_id: string }
+        Returns: undefined
+      }
       purgar_lecturas_ficha_medica: {
         Args: { p_meses: number; p_simular: boolean }
         Returns: number
@@ -5714,6 +5889,27 @@ export type Database = {
       }
       purgar_sujeto_db: { Args: { p_solicitud_id: string }; Returns: undefined }
       quitar_foto_perfil_nino: { Args: { p_nino_id: string }; Returns: string }
+      quitar_retencion: {
+        Args: { p_centro_id: string; p_motivo: string; p_sujetos: Json }
+        Returns: number
+      }
+      reabrir_remesa: {
+        Args: {
+          p_n_recibos: number
+          p_remesa_id: string
+          p_total_centimos: number
+        }
+        Returns: Json
+      }
+      reactivar_profe: {
+        Args: { p_centro_id: string; p_usuario_id: string }
+        Returns: undefined
+      }
+      rechazar_peticion_olvido: {
+        Args: { p_motivo: string; p_solicitud_id: string }
+        Returns: undefined
+      }
+      recibo_en_remesa: { Args: { p_recibo_id: string }; Returns: boolean }
       registrar_consentimiento: {
         Args: {
           p_ip?: unknown
@@ -5729,6 +5925,27 @@ export type Database = {
       registrar_entrada_superusuario: {
         Args: { p_centro_id: string }
         Returns: undefined
+      }
+      registrar_fichero_remesa: {
+        Args: {
+          p_adeudos: Json
+          p_marca: string
+          p_msg_id: string
+          p_remesa_id: string
+          p_ruta: string
+          p_sha256: string
+        }
+        Returns: string
+      }
+      registrar_firma_documento_presencial: {
+        Args: {
+          p_ip_address: unknown
+          p_nino_id: string
+          p_nombre_tecleado: string
+          p_user_agent: string
+          p_version_id: string
+        }
+        Returns: string
       }
       registrar_mandato_sepa: {
         Args: {
@@ -5752,26 +5969,21 @@ export type Database = {
         }
         Returns: string
       }
-      reabrir_remesa: {
-        Args: { p_n_recibos: number; p_remesa_id: string; p_total_centimos: number }
-        Returns: Json
-      }
-      reactivar_profe: {
-        Args: { p_centro_id: string; p_usuario_id: string }
-        Returns: undefined
-      }
-      resumen_reabrir_remesa: { Args: { p_remesa_id: string }; Returns: Json }
-      recibo_en_remesa: { Args: { p_recibo_id: string }; Returns: boolean }
-      reproponer_asignaciones: { Args: { p_centro_id: string }; Returns: Json }
-      revocar_acceso_familia: { Args: { p_familia_id: string }; Returns: Json }
-      revocar_consentimiento: {
-        Args: { p_tipo: Database["public"]["Enums"]["consentimiento_tipo"] }
+      registrar_version_documento: {
+        Args: {
+          p_bytes: number
+          p_curso_academico_id: string
+          p_documento_id: string
+          p_pide_refirma?: boolean
+          p_sha256: string
+        }
         Returns: string
       }
-      revocar_consentimiento_imagen: {
-        Args: { p_nino_id: string }
-        Returns: number
+      reinvitar_alta: {
+        Args: { p_actor: string; p_email: string; p_nino_id: string }
+        Returns: Json
       }
+      reproponer_asignaciones: { Args: { p_centro_id: string }; Returns: Json }
       resolver_devolucion: {
         Args: {
           p_fecha: string
@@ -5787,6 +5999,39 @@ export type Database = {
       }
       resolver_sobrante_cheque: {
         Args: { p_recibo_id: string; p_via: string }
+        Returns: string
+      }
+      resumen_reabrir_remesa: { Args: { p_remesa_id: string }; Returns: Json }
+      retenciones_centro: {
+        Args: { p_centro_id: string }
+        Returns: {
+          motivo: string
+          motivo_tipo: string
+          puesta_en: string
+          puesta_por_nombre: string
+          quitada_en: string
+          quitada_motivo: string
+          quitada_por_nombre: string
+          sujeto_id: string
+          sujeto_nombre: string
+          sujeto_tipo: string
+        }[]
+      }
+      retirar_peticion_olvido: {
+        Args: { p_solicitud_id: string }
+        Returns: undefined
+      }
+      revocar_acceso_familia: { Args: { p_familia_id: string }; Returns: Json }
+      revocar_consentimiento: {
+        Args: { p_tipo: Database["public"]["Enums"]["consentimiento_tipo"] }
+        Returns: string
+      }
+      revocar_consentimiento_imagen: {
+        Args: { p_nino_id: string }
+        Returns: number
+      }
+      ruta_version_documento_nino: {
+        Args: { p_nino_id: string; p_version_id: string }
         Returns: string
       }
       set_datos_acreedor: {
@@ -5828,8 +6073,37 @@ export type Database = {
         Returns: string
       }
       solicitar_olvido_usuario: {
-        Args: { p_centro_id: string; p_inmediato?: boolean; p_usuario_id: string }
+        Args: {
+          p_centro_id: string
+          p_inmediato?: boolean
+          p_usuario_id: string
+        }
         Returns: string
+      }
+      sujetos_bloqueados: {
+        Args: { p_centro_id: string }
+        Returns: {
+          aula: string
+          bloqueado_desde: string
+          curso: string
+          familia: string
+          sujeto_id: string
+          sujeto_tipo: string
+        }[]
+      }
+      sujetos_retencion: {
+        Args: { p_centro_id: string }
+        Returns: {
+          aula: string
+          desde: string
+          estado: string
+          familia: string
+          motivo_tipo: string
+          nombre: string
+          retenido_desde: string
+          sujeto_id: string
+          sujeto_tipo: string
+        }[]
       }
       sustituir_mandato_sepa: {
         Args: {
@@ -5939,6 +6213,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      ver_datos_bloqueados: {
+        Args: {
+          p_accion?: string
+          p_centro_id: string
+          p_motivo: string
+          p_motivo_tipo: string
+          p_sujeto_id: string
+          p_sujeto_tipo: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       ambito_anuncio: "aula" | "centro"
@@ -5997,7 +6282,7 @@ export type Database = {
       estado_remesa: "borrador" | "enviada"
       evento_estado: "programado" | "cancelado"
       firma_decision: "firmado" | "rechazado" | "revocado"
-      firma_metodo: "checkbox" | "digital" | "presencial"
+      firma_metodo: "digital" | "presencial" | "checkbox"
       humor_agenda: "feliz" | "tranquilo" | "inquieto" | "triste" | "cansado"
       lactancia_estado:
         | "materna"
@@ -6116,12 +6401,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6145,11 +6430,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6170,11 +6455,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6195,11 +6480,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6212,11 +6497,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -6226,9 +6511,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       ambito_anuncio: ["aula", "centro"],
@@ -6292,7 +6574,7 @@ export const Constants = {
       estado_remesa: ["borrador", "enviada"],
       evento_estado: ["programado", "cancelado"],
       firma_decision: ["firmado", "rechazado", "revocado"],
-      firma_metodo: ["checkbox", "digital", "presencial"],
+      firma_metodo: ["digital", "presencial", "checkbox"],
       humor_agenda: ["feliz", "tranquilo", "inquieto", "triste", "cansado"],
       lactancia_estado: [
         "materna",

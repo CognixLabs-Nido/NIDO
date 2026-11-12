@@ -88,6 +88,21 @@ jobs:
 
       - run: npm ci
 
+      # `src/types/database.ts` es el fichero GENERADO, sin una línea a mano: lo que el generador no sabe
+      # (la nullability de lo que devuelven las funciones, las columnas que calcula la base) va en
+      # `src/types/db.ts`, encima. Aquí se regenera contra esta BD, la de todas las migraciones del
+      # repo, con el mismo script que `npm run db:types` (`db:types:gen`: misma versión y opciones), y
+      # tiene que salir igual que el commiteado. Si no: falta regenerar tras una migración, o alguien
+      # tocó el fichero a mano. Así se desvió (42 bloques, 2026-11-12) sin que nada avisara.
+      - name: Tipos generados = src/types/database.ts
+        if: matrix.shard == 1
+        run: |
+          DB=$(supabase status -o env | grep -E '^DB_URL=' | cut -d= -f2- | tr -d '"')
+          npm run -s db:types:gen -- --db-url "$DB" > tipos-generados.ts
+          echo "Líneas generadas: $(wc -l < tipos-generados.ts) · commiteadas: $(wc -l < src/types/database.ts)"
+          test "$(wc -l < tipos-generados.ts)" -gt 100 || { echo 'el generador no ha sacado tipos'; cat tipos-generados.ts; exit 1; }
+          diff -u src/types/database.ts tipos-generados.ts
+
       # El DELETE que se lleva las copias de audit_log desde el trigger tiene que ir por el índice
       # (tabla, registro_id) con las dos columnas: se mira su plan con auto_explain. Una sola vez
       # (shard 1) y antes de la suite; la transacción acaba en ROLLBACK. Ver la cabecera del .sql.
