@@ -4636,7 +4636,8 @@
     },
     "medico": {
       "guardado": "Medical details saved",
-      "omitir": "Skip for now"
+      "omitir": "Skip for now",
+      "no_leida": "We couldn't read the saved medical record, so it can't be changed here: anything you typed would replace what is already there without you having seen it. You can continue with «Skip for now» and complete it later from the child's record."
     },
     "imagen": {
       "autorizacion_titulo": "Image authorisation",

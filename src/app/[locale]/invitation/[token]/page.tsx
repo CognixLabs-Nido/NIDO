@@ -169,6 +169,9 @@ function AltaInvitacionFlow({
         libroFamiliaUrl={null}
         consintioDatosMedicos={false}
         medicaInicial={null}
+        // Aquí no se ha leído la ficha médica (no hay sesión todavía): si el paso médico llegara a
+        // pintarse en este modo, no guardaría sobre lo que no vio.
+        medicaLeida={false}
         fotoInicialUrl={null}
         imagenPanel={null}
         imagenSinPlantilla={false}

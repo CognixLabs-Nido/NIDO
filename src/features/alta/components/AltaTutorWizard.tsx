@@ -48,6 +48,8 @@ interface Props {
   libroFamiliaUrl: string | null
   consintioDatosMedicos: boolean
   medicaInicial: MedicaInicial | null
+  /** `false` si la ficha médica no se pudo leer: los pasos médicos no guardan (no pisan lo que no se vio). */
+  medicaLeida: boolean
   fotoInicialUrl: string | null
   imagenPanel: ImagenPanelData | null
   imagenSinPlantilla: boolean
@@ -122,6 +124,7 @@ export function AltaTutorWizard({
   libroFamiliaUrl,
   consintioDatosMedicos,
   medicaInicial,
+  medicaLeida,
   fotoInicialUrl,
   imagenPanel,
   imagenSinPlantilla,
@@ -386,6 +389,7 @@ export function AltaTutorWizard({
             inicial={medicaValores}
             onCambio={mergeMedica}
             variante="general"
+            fichaNoLeida={!medicaLeida}
             mostrarConsentimiento
             consintioInicial={consintio}
             onConsentir={() => setConsintio(true)}
@@ -400,6 +404,7 @@ export function AltaTutorWizard({
             inicial={medicaValores}
             onCambio={mergeMedica}
             variante="emergencia"
+            fichaNoLeida={!medicaLeida}
             esUltimo={!conSepa}
             onNext={conSepa ? goNext : finalizar}
             onBack={goBack}

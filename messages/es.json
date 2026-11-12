@@ -4636,7 +4636,8 @@
     },
     "medico": {
       "guardado": "Datos médicos guardados",
-      "omitir": "Omitir por ahora"
+      "omitir": "Omitir por ahora",
+      "no_leida": "No hemos podido leer la ficha médica guardada, así que aquí no se puede cambiar: lo que escribieras sustituiría lo que ya hay sin que lo hayas visto. Puedes seguir con «Omitir por ahora» y completarla después desde la ficha del niño."
     },
     "imagen": {
       "autorizacion_titulo": "Autorización de imagen",

@@ -1512,6 +1512,31 @@ aplicada, con el md5 normalizado de cada función.
 - Las tablas de gravedad media y baja (`firmas_documentos_centro`, `acuses_alta`, `matriculas`,
   `confirmaciones_evento`) van en el PR siguiente, medidas abiertas antes igual.
 
+#### Una lectura que falla no se lee como «no hay» (2026-11-11 y 2026-11-12)
+
+Pasar lecturas a funciones abre una pregunta en cada sitio: ¿qué hace la pantalla si la lectura
+falla? Donde la respuesta era «como si no hubiera nada», se cambia. **El formulario no guarda lo que
+no pudo leer.**
+
+- **El detalle de una autorización** (`getAutorizacionDetalle`): si fallan las firmas o su contenido,
+  error. Antes salía sin firmas: una recogida «sin nadie autorizado».
+- **La documentación del alta** (`getAltaDocumentacion`): `libroLeido`; la pestaña dice que no se
+  pudo leer en vez de «—».
+- **La ficha del niño en el alta**: sin la fila o sin la ficha de gestión, la página no pinta el
+  asistente. Medido antes: «Guardar» del paso del menor dejaba a null el DNI, las observaciones, la
+  dirección y «cómo nos conoció», con el aviso de guardado.
+- **La ficha médica en el alta** (`leerInfoMedicaParaEditar`): si no se lee —falla, o se le niega al
+  tutor sin `puede_ver_info_medica`—, los dos pasos médicos lo dicen y no guardan; se pueden omitir,
+  y el acuse sigue. Medido antes: guardar sin tocar no pisaba (`null` no toca), pero lo tecleado
+  sustituía lo guardado y lo borrado lo vaciaba, sobre algo que nadie había visto, con el aviso de
+  guardado. El camino sin fallo simulado es el tutor legal sin el permiso: la escritura del tutor solo
+  mira `es_tutor_legal_de`. En producción, el 2026-11-12, los 6 vínculos de tutor legal tienen el
+  permiso. La ausencia legítima (sin ficha) llega como 0 filas sin error, y entonces se escribe.
+- El resto del patrón en la app (el censo: 454 sitios) va aparte.
+- Tests: `alta-no-pisa-lo-que-no-leyo.rls.test.ts`, `alta-no-pisa-ficha-medica.rls.test.ts` y el
+  bloque «una lectura que falla no se lee como «no hay»» de `autorizado-lee-solo-lo-suyo.rls.test.ts`;
+  cada uno afirma la fila guardada, no cómo se evita, con su control sin fallo.
+
 ## Orden de la serie
 
 Diez fases, en este orden. De la 5 en adelante todas tocan `purgar_sujeto_db`, `privado.purgar_nino`

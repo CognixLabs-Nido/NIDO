@@ -4636,7 +4636,8 @@
     },
     "medico": {
       "guardado": "Dades mèdiques guardades",
-      "omitir": "Ometre per ara"
+      "omitir": "Ometre per ara",
+      "no_leida": "No hem pogut llegir la fitxa mèdica guardada, així que ací no es pot canviar: el que escrigueres substituiria el que ja hi ha sense que ho hages vist. Pots continuar amb «Ometre per ara» i completar-la després des de la fitxa de l'infant."
     },
     "imagen": {
       "autorizacion_titulo": "Autorització d'imatge",

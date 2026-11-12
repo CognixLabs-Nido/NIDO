@@ -254,6 +254,12 @@ Las funciones `public.set_info_medica_emergencia_cifrada(...)` y `public.get_inf
 - Leen la clave de Supabase Vault con `name='medical_encryption_key'` vía la función interna `public._get_medical_key()`.
 - Incorporan autorización (admin del centro / profe del aula actual / tutor con `puede_ver_info_medica=true`) antes de descifrar.
 - Contrato del setter: NULL = preservar campo (no sobrescribe con NULL). Ver ADR-0004.
+- **Una pantalla que escribe la ficha la tiene que haber leído.** NULL preserva, pero lo tecleado
+  sustituye y `''` vacía: sobre una ficha que no se leyó, se pisa lo que nadie vio (medido en el
+  alta, 2026-11-12). Se lee con `leerInfoMedicaParaEditar`, que distingue «no hay ficha» (0 filas,
+  sin error) de «no se leyó» (cualquier error, también «No autorizado» al tutor sin
+  `puede_ver_info_medica`), y sin leerla no se ofrece guardar. Test:
+  `alta-no-pisa-ficha-medica.rls.test.ts`.
 - **Los seis campos van cifrados** (`20261123120000`; hasta entonces solo `alergias_graves` y
   `notas_emergencia`). Los dos setters (`set_info_medica_emergencia_cifrada` y `..._tutor`) cifran
   los seis y `get_info_medica_emergencia` descifra los seis. **Vacío = NULL:** un texto vacío o

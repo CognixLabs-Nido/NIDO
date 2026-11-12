@@ -303,6 +303,40 @@ export async function getInfoMedica(
   }
 }
 
+/**
+ * Para un formulario que va a ESCRIBIR la ficha médica (el alta, 2026-11-12). `getInfoMedica` da `null`
+ * tanto si no hay ficha como si la lectura falla, se le niega (sin `puede_ver_info_medica`) o está
+ * bloqueada; para enseñar basta, para escribir no: el guardado sustituye lo que se teclea y vacía lo
+ * que se borra, así que sobre una ficha que no se leyó se pisa lo que nadie vio (medido). Aquí la
+ * ausencia legítima llega como 0 filas sin error, y cualquier error es «no se leyó».
+ */
+export type FichaMedicaParaEditar = { leida: true; ficha: InfoMedica | null } | { leida: false }
+
+export async function leerInfoMedicaParaEditar(
+  ninoId: string,
+  origen: OrigenLecturaFicha
+): Promise<FichaMedicaParaEditar> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('get_info_medica_emergencia', {
+    p_nino_id: ninoId,
+    p_origen: origen,
+  })
+  if (error || !data) return { leida: false }
+  const row = data[0]
+  if (!row) return { leida: true, ficha: null }
+  return {
+    leida: true,
+    ficha: {
+      alergias_graves: row.alergias_graves ?? null,
+      notas_emergencia: row.notas_emergencia ?? null,
+      medicacion_habitual: row.medicacion_habitual ?? null,
+      alergias_leves: row.alergias_leves ?? null,
+      medico_familia: row.medico_familia ?? null,
+      telefono_emergencia: row.telefono_emergencia ?? null,
+    },
+  }
+}
+
 export interface MatriculaItem {
   id: string
   aula_id: string

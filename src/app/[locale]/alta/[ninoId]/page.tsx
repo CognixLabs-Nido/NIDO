@@ -8,7 +8,7 @@ import { contextoEnCentro } from '@/features/centros/contexto/get-contexto-centr
 import { createClient } from '@/lib/supabase/server'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
-import { getInfoMedica, getNinoById } from '@/features/ninos/queries/get-ninos'
+import { getNinoById, leerInfoMedicaParaEditar } from '@/features/ninos/queries/get-ninos'
 import { leerFichaGestion } from '@/features/ninos/lib/ficha-gestion'
 import {
   BUCKET_DNI_TUTORES,
@@ -259,15 +259,12 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
     .maybeSingle()
   const consintioDatosMedicos = consentMedico !== null
 
-  let medicaInicial: MedicaInicial | null = null
-  try {
-    const leida = await getInfoMedica(ninoId, 'alta')
-    // Bloqueada solo está la de un niño de baja, que no tiene alta en curso; si llegara, guardar
-    // la rechazaría la BD (20261204120000).
-    medicaInicial = leida && 'bloqueadaDesde' in leida ? null : leida
-  } catch {
-    medicaInicial = null
-  }
+  // El formulario no guarda la ficha médica que no pudo leer (2026-11-12, medido): con la lectura
+  // fallida —o negada, sin `puede_ver_info_medica`— los pasos médicos abrían en blanco, y lo tecleado
+  // sustituía lo guardado (y lo borrado lo vaciaba) sin que nadie lo hubiera visto. Sin leerla, los
+  // pasos médicos lo dicen y no guardan; se pueden omitir.
+  const medica = await leerInfoMedicaParaEditar(ninoId, 'alta')
+  const medicaInicial: MedicaInicial | null = medica.leida ? medica.ficha : null
 
   const foto = await firmarFotoNino(nino.foto_url)
 
@@ -387,6 +384,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
         libroFamiliaUrl={libroFamiliaUrl}
         consintioDatosMedicos={consintioDatosMedicos}
         medicaInicial={medicaInicial}
+        medicaLeida={medica.leida}
         fotoInicialUrl={foto.url ?? foto.urlMiniatura}
         imagenPanel={imagenPanel}
         imagenSinPlantilla={imagenSinPlantilla}
