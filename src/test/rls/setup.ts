@@ -408,7 +408,10 @@ export async function createTestNino(centro_id: string, nombre?: string): Promis
  * recién creado es el de antes de rellenar el paso del menor. Los tests que cierran un alta los
  * ponen con esto, a la vista. Valores ficticios.
  */
-export async function completarDatosAlta(nino_id: string): Promise<void> {
+export async function completarDatosAlta(
+  nino_id: string,
+  { tutores = true }: { tutores?: boolean } = {}
+): Promise<void> {
   const { error } = await serviceClient
     .from('ninos')
     .update({
@@ -419,7 +422,8 @@ export async function completarDatosAlta(nino_id: string): Promise<void> {
     })
     .eq('id', nino_id)
   if (error) throw new Error(`completarDatosAlta falló: ${error.message}`)
-  await completarTutoresAlta(nino_id)
+  // `tutores: false` para el test que mide el cierre con los tutores a medias.
+  if (tutores) await completarTutoresAlta(nino_id)
 }
 
 /**

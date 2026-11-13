@@ -391,7 +391,8 @@ describe('Los datos del tutor y su puerta (fase 6, paso 2)', () => {
         ?.estado
 
     beforeAll(async () => {
-      await completarDatosAlta(mia)
+      // Solo los datos del niño: los tutores, a medias, son lo que se mide aquí.
+      await completarDatosAlta(mia, { tutores: false })
       const { error } = await serviceClient.from('consentimientos').insert({
         usuario_id: u.admin.id,
         tipo: 'datos_medicos',
@@ -412,6 +413,16 @@ describe('Los datos del tutor y su puerta (fase 6, paso 2)', () => {
     }
 
     it('con los tutores a medias, frena con datos_tutor_por_completar', async () => {
+      // Premisa: el titular está a medias de verdad (sin nombre: lo crea el fixture sin él; los
+      // tests de arriba le han puesto teléfono) y el alta, pendiente.
+      const { data: t } = await serviceClient
+        .from('familia_tutores')
+        .select('nombre_completo')
+        .eq('familia_id', familia)
+        .eq('rol_familia', 'titular')
+        .single()
+      expect(t?.nombre_completo ?? null).toBeNull()
+      expect(await estado()).toBe('pendiente')
       const { error } = await cierra()
       expect(error?.hint).toBe('datos_tutor_por_completar')
       expect(await estado()).toBe('pendiente')
