@@ -2,7 +2,9 @@
 
 ## Estado
 
-`accepted`
+`accepted`, revocado en parte (abajo)
+
+**Revocado en parte el 2026-11-13** ([#525](https://github.com/CognixLabs-Nido/NIDO/pull/525), migración `20270116120000`): el estado `salida_temprana` y la hora de salida. Motivo: el responsable no los pidió nunca y no se usan (en producción, 0 filas de asistencia). Se quitaron enteros: de la base, de la app, de las traducciones y de la exportación. El resto del ADR sigue vigente. Lo revocado se deja escrito, marcado, para que se sepa que se decidió y se deshizo.
 
 **Fecha:** 2026-05-15
 **Autores:** jovimib + claude-code
@@ -82,7 +84,7 @@ La query del pase de lista, si detecta que no hay fila para `(niño, fecha)`, ha
 **Se elige la Opción C** porque encaja con el resto del modelo y elimina superficie operativa innecesaria:
 
 - F3 ya usa lazy en `agendas_diarias` (la fila padre se crea al primer evento) — coherencia con ADR-0012.
-- ENUM `estado_asistencia` puede ser cerrado y exhaustivo (`presente`/`ausente`/`llegada_tarde`/`salida_temprana`) sin un placeholder.
+- ENUM `estado_asistencia` puede ser cerrado y exhaustivo (`presente`/`ausente`/`llegada_tarde`/`salida_temprana`) sin un placeholder. _`salida_temprana`, revocado el 2026-11-13 (#525): el enum queda en tres valores._
 - El componente F4 ya está preparado para fila sin registro previo.
 - Auto-link familia→profe no necesita pre-creación: el cliente sintetiza `initial='ausente'` desde la ausencia activa.
 

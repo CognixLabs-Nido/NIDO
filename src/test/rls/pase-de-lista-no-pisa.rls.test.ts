@@ -80,15 +80,12 @@ const { PaseDeListaCliente } = await import('@/features/asistencia/components/Pa
 type PropsPase = Parameters<typeof PaseDeListaCliente>[0]
 
 const HOY = hoyMadrid()
-// Sin horas: una fila con una hora guardada hoy no se puede volver a guardar (la base la devuelve
-// 'HH:MM:SS' y la acción pide 'HH:MM'; aparte). Lo que se mira es lo que «todos presentes» no toca.
 const APUNTADA_A = {
   estado: 'presente',
-  hora_llegada: null,
-  hora_salida: null,
+  hora_llegada: '08:30:00',
   observaciones: 'Fiebre a media mañana',
 } as const
-const CONSERVA_A = { estado: APUNTADA_A.estado, observaciones: APUNTADA_A.observaciones }
+const CONSERVA_A = APUNTADA_A
 
 describe('el pase de lista no se pasa sobre lo que no se leyó', () => {
   let aula: { id: string }
@@ -139,7 +136,7 @@ describe('el pase de lista no se pasa sobre lo que no se leyó', () => {
   async function asistenciaDe(ninoId: string) {
     const { data, error } = await serviceClient
       .from('asistencias')
-      .select('estado, hora_llegada, hora_salida, observaciones')
+      .select('estado, hora_llegada, observaciones')
       .eq('nino_id', ninoId)
       .eq('fecha', HOY)
       .maybeSingle()
@@ -176,14 +173,24 @@ describe('el pase de lista no se pasa sobre lo que no se leyó', () => {
       expect.soft((f as Record<string, unknown> | null)?.[k], `A.${k}`).toBe(v)
   }
 
-  it('control: con las dos lecturas bien, A abre con lo apuntado y «todos presentes» conserva su observación', async () => {
+  it('control: con las dos lecturas bien, A abre con lo apuntado y guardar un cambio conserva lo demás', async () => {
     expect(await asistenciaDe(a.id)).toMatchObject(APUNTADA_A) // premisa
     const p = propsDe<PropsPase>(await pagina(null), PaseDeListaCliente)
     expect(p).not.toBeNull()
     expect(p!.filas.find((f) => f.nino.id === a.id)?.asistencia).toMatchObject(APUNTADA_A)
     expect(p!.filas.find((f) => f.nino.id === b.id)?.ausencia).not.toBeNull()
-    await todosPresentesYGuardar(p!)
-    await aIntacta()
+    render(createElement(PaseDeListaCliente, p!))
+    fireEvent.change(screen.getByTestId(`pase-cell-${a.id}-observaciones`), {
+      target: { value: 'Fiebre a media mañana; ya bien' },
+    })
+    fireEvent.click(screen.getByTestId('pase-submit'))
+    await waitFor(() => expect(accion.llamadas.length).toBeGreaterThan(0), { timeout: 30_000 })
+    const r = await accion.llamadas[0]
+    expect(r, JSON.stringify(r)).toMatchObject({ success: true })
+    expect(await asistenciaDe(a.id)).toMatchObject({
+      ...APUNTADA_A,
+      observaciones: 'Fiebre a media mañana; ya bien',
+    })
   })
 
   it('control: con las dos lecturas bien, B sale con el aviso de la familia y se ofrece guardar', async () => {

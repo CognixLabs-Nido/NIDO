@@ -82,7 +82,7 @@ export async function getResumenAsistenciaCentro(
       let ausentes = 0
       for (const id of ninos) {
         const e = estadoByNino.get(id)
-        if (e === 'presente' || e === 'llegada_tarde' || e === 'salida_temprana') presentes++
+        if (e === 'presente' || e === 'llegada_tarde') presentes++
         else if (e === 'ausente') ausentes++
       }
       return {

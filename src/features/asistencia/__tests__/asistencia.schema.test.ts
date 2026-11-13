@@ -7,7 +7,6 @@ describe('asistencia — schema Zod', () => {
     const r = asistenciaInputSchema.safeParse({
       estado: 'presente',
       hora_llegada: null,
-      hora_salida: null,
       observaciones: null,
     })
     expect(r.success).toBe(false)
@@ -20,7 +19,6 @@ describe('asistencia — schema Zod', () => {
     const r = asistenciaInputSchema.safeParse({
       estado: 'presente',
       hora_llegada: '09:15',
-      hora_salida: null,
       observaciones: null,
     })
     expect(r.success).toBe(true)
@@ -30,40 +28,43 @@ describe('asistencia — schema Zod', () => {
     const r = asistenciaInputSchema.safeParse({
       estado: 'llegada_tarde',
       hora_llegada: null,
-      hora_salida: null,
       observaciones: null,
     })
     expect(r.success).toBe(false)
   })
 
-  it('salida_temprana sin hora_salida falla', () => {
+  it('salida_temprana ya no es un estado (retirada el 2026-11-13: no se pidió nunca)', () => {
     const r = asistenciaInputSchema.safeParse({
       estado: 'salida_temprana',
       hora_llegada: '09:00',
-      hora_salida: null,
       observaciones: null,
     })
     expect(r.success).toBe(false)
   })
 
-  it('hora_salida anterior a hora_llegada falla', () => {
+  it('la llegada como la devuelve la base (HH:MM:SS) vale y queda en HH:MM', () => {
     const r = asistenciaInputSchema.safeParse({
-      estado: 'salida_temprana',
-      hora_llegada: '09:00',
-      hora_salida: '08:30',
+      estado: 'presente',
+      hora_llegada: '08:30:00',
+      observaciones: 'Fiebre a media mañana',
+    })
+    expect(r.success).toBe(true)
+    if (r.success) expect(r.data.hora_llegada).toBe('08:30')
+  })
+
+  it('una hora mal formada sigue fallando', () => {
+    const r = asistenciaInputSchema.safeParse({
+      estado: 'presente',
+      hora_llegada: '8:30',
       observaciones: null,
     })
     expect(r.success).toBe(false)
-    if (!r.success) {
-      expect(r.error.issues[0]?.message).toBe('asistencia.validation.salida_anterior_llegada')
-    }
   })
 
   it('ausente sin horas es válido', () => {
     const r = asistenciaInputSchema.safeParse({
       estado: 'ausente',
       hora_llegada: null,
-      hora_salida: null,
       observaciones: null,
     })
     expect(r.success).toBe(true)
@@ -73,7 +74,6 @@ describe('asistencia — schema Zod', () => {
     const r = asistenciaInputSchema.safeParse({
       estado: 'presente',
       hora_llegada: '09:00',
-      hora_salida: null,
       observaciones: 'x'.repeat(501),
     })
     expect(r.success).toBe(false)

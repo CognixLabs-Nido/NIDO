@@ -4,12 +4,14 @@ wave: 1
 phase: 4
 status: draft
 priority: critical
-last_updated: 2026-05-15
+last_updated: 2026-11-13
 related_adrs: [ADR-0014, ADR-0015, ADR-0016]
 related_specs: [daily-agenda, core-entities]
 ---
 
 # Spec — Asistencia + ausencias (Fase 4)
+
+> **2026-11-13 (#525, `20270116120000`):** sin hora de salida ni estado «salida temprana». No se pidieron nunca y no se usaban; se quitaron de la base, la app, las traducciones y la exportación, y esta spec describe lo que queda. ADR-0014 y ADR-0015 los marcan como revocados. La hora de llegada se acepta como `HH:MM` o como la devuelve la base (`HH:MM:SS`) y se guarda en `HH:MM`: si no, una fila con la llegada apuntada no se podía volver a guardar.
 
 > Doble objetivo: cubrir asistencia/ausencias funcionalmente Y construir el patrón reutilizable **"Pase de Lista"** que Fase 4.5 (menús), Fase 7 (confirmaciones de eventos) y futuras fases reusarán sin diseñarlo de cero.
 
@@ -76,7 +78,7 @@ La forma de pasar lista (tabla con todos los niños, click rápido por niño) se
 1. Ruta `/teacher/aula/[id]/asistencia?fecha=YYYY-MM-DD`. Default fecha = hoy hora Madrid.
 2. Server query `getPaseDeListaAula(aulaId, fecha)`:
    - Listar niños matriculados activos en el aula y curso activo.
-   - `LEFT JOIN` a `asistencias` filtrada por `(nino_id, fecha)` → si existe, recuperar `estado`, `hora_llegada`, `hora_salida`, `observaciones`.
+   - `LEFT JOIN` a `asistencias` filtrada por `(nino_id, fecha)` → si existe, recuperar `estado`, `hora_llegada`, `observaciones`.
    - `LEFT JOIN` a `ausencias` activas en la fecha (`fecha_inicio <= fecha AND fecha_fin >= fecha`) → si existe, recuperar `motivo` para el badge.
 3. Por cada niño, derivar `estado_inicial`:
    - Si hay fila en `asistencias` → usarla tal cual.
@@ -221,16 +223,14 @@ Dos schemas en `src/features/asistencia/schemas/asistencia.ts` y `src/features/a
 // asistencia.ts
 import { z } from 'zod'
 
-const horaSchema = z.string().regex(/^\d{2}:\d{2}$/, 'asistencia.validation.hora_invalida')
+const horaSchema = z
+  .string()
+  .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'asistencia.validation.hora_invalida')
+  .transform((h) => h.slice(0, 5))
 const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'asistencia.validation.fecha_invalida')
 const observacionesSchema = z.string().max(500, 'asistencia.validation.observaciones_largas')
 
-export const estadoAsistenciaEnum = z.enum([
-  'presente',
-  'ausente',
-  'llegada_tarde',
-  'salida_temprana',
-])
+export const estadoAsistenciaEnum = z.enum(['presente', 'ausente', 'llegada_tarde'])
 export type EstadoAsistencia = z.infer<typeof estadoAsistenciaEnum>
 
 export const asistenciaInputSchema = z
@@ -239,7 +239,6 @@ export const asistenciaInputSchema = z
     fecha: fechaSchema,
     estado: estadoAsistenciaEnum,
     hora_llegada: horaSchema.nullable(),
-    hora_salida: horaSchema.nullable(),
     observaciones: observacionesSchema.nullable(),
   })
   .superRefine((v, ctx) => {
@@ -255,20 +254,6 @@ export const asistenciaInputSchema = z
         code: 'custom',
         path: ['hora_llegada'],
         message: 'asistencia.validation.requiere_hora_llegada',
-      })
-    }
-    if (v.estado === 'salida_temprana' && !v.hora_salida) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['hora_salida'],
-        message: 'asistencia.validation.requiere_hora_salida',
-      })
-    }
-    if (v.hora_llegada && v.hora_salida && v.hora_salida <= v.hora_llegada) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['hora_salida'],
-        message: 'asistencia.validation.salida_anterior_llegada',
       })
     }
   })
@@ -329,14 +314,12 @@ export function esCancelada(descripcion: string | null | undefined): boolean {
    - `fecha date NOT NULL`
    - `estado estado_asistencia NOT NULL`
    - `hora_llegada time NULL`
-   - `hora_salida time NULL`
    - `observaciones text NULL` (CHECK ≤500)
    - `registrada_por uuid NULL REFERENCES usuarios(id) ON DELETE SET NULL`
    - `created_at timestamptz DEFAULT now()`
    - `updated_at timestamptz DEFAULT now()`
    - `UNIQUE (nino_id, fecha)`
    - CHECK `(estado IN ('presente','llegada_tarde') OR hora_llegada IS NULL) OR estado IS NULL` — sin contradicciones.
-   - CHECK `hora_salida IS NULL OR hora_llegada IS NULL OR hora_salida > hora_llegada`
 
 2. **`ausencias`**
    - `id uuid PK DEFAULT gen_random_uuid()`
@@ -355,7 +338,7 @@ export function esCancelada(descripcion: string | null | undefined): boolean {
 - `asistencias`: `UNIQUE(nino_id, fecha)`, índice secundario `(fecha DESC)` para dashboard admin, índice `(nino_id, fecha DESC)` para histórico familia.
 - `ausencias`: índice `(nino_id, fecha_inicio DESC)`, índice `(fecha_inicio, fecha_fin)` para el JOIN del pase de lista (cobertura `fecha BETWEEN fecha_inicio AND fecha_fin`).
 
-**ENUMs:** `estado_asistencia` (`presente`, `ausente`, `llegada_tarde`, `salida_temprana`), `motivo_ausencia` (`enfermedad`, `cita_medica`, `vacaciones`, `familiar`, `otro`).
+**ENUMs:** `estado_asistencia` (`presente`, `ausente`, `llegada_tarde`), `motivo_ausencia` (`enfermedad`, `cita_medica`, `vacaciones`, `familiar`, `otro`).
 
 **Triggers:**
 
@@ -629,7 +612,6 @@ function usePaseDeListaForm<TItem, TValue>(opts: {
         { value: 'presente', label: t('presente') },
         { value: 'ausente', label: t('ausente') },
         { value: 'llegada_tarde', label: t('llegada_tarde') },
-        { value: 'salida_temprana', label: t('salida_temprana') },
       ],
     },
     {
@@ -637,12 +619,6 @@ function usePaseDeListaForm<TItem, TValue>(opts: {
       label: t('hora_llegada'),
       type: 'time',
       visibleWhen: (r) => r?.estado === 'presente' || r?.estado === 'llegada_tarde',
-    },
-    {
-      id: 'hora_salida',
-      label: t('hora_salida'),
-      type: 'time',
-      visibleWhen: (r) => r?.estado === 'salida_temprana',
     },
     { id: 'observaciones', label: t('observaciones'), type: 'text-short' },
   ]}
@@ -722,13 +698,11 @@ Namespaces nuevos: `asistencia.*`, `ausencia.*`. Estructura (extracto):
     "estado_opciones": {
       "presente": "Presente",
       "ausente": "Ausente",
-      "llegada_tarde": "Llegada tarde",
-      "salida_temprana": "Salida temprana"
+      "llegada_tarde": "Llegada tarde"
     },
     "campos": {
       "estado": "Estado",
       "hora_llegada": "Hora llegada",
-      "hora_salida": "Hora salida",
       "observaciones": "Observaciones"
     },
     "badges": {
@@ -739,9 +713,7 @@ Namespaces nuevos: `asistencia.*`, `ausencia.*`. Estructura (extracto):
       "hora_invalida": "Hora inválida. Formato HH:MM.",
       "fecha_invalida": "Fecha inválida.",
       "observaciones_largas": "Máximo 500 caracteres.",
-      "requiere_hora_llegada": "Indica la hora de llegada.",
-      "requiere_hora_salida": "Indica la hora de salida.",
-      "salida_anterior_llegada": "La hora de salida debe ser posterior a la llegada."
+      "requiere_hora_llegada": "Indica la hora de llegada."
     },
     "errors": {
       "fuera_de_ventana": "Ya no puedes editar este día.",

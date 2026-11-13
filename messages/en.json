@@ -2711,14 +2711,12 @@
     "columna": {
       "estado": "Status",
       "hora_llegada": "Arrival",
-      "hora_salida": "Departure",
       "observaciones": "Notes"
     },
     "estado_opciones": {
       "presente": "Present",
       "ausente": "Absent",
-      "llegada_tarde": "Late",
-      "salida_temprana": "Early leave"
+      "llegada_tarde": "Late"
     },
     "quick_actions": {
       "todos_presentes": "All present",
@@ -2752,9 +2750,7 @@
       "hora_invalida": "Format HH:MM.",
       "fecha_invalida": "Invalid date.",
       "observaciones_largas": "Maximum 500 characters.",
-      "requiere_hora_llegada": "Provide arrival time.",
-      "requiere_hora_salida": "Provide departure time.",
-      "salida_anterior_llegada": "Departure must be after arrival."
+      "requiere_hora_llegada": "Provide arrival time."
     },
     "errors": {
       "fuera_de_ventana": "You can no longer edit this day.",
@@ -4284,7 +4280,6 @@
         "observaciones": "Notes",
         "estado": "Status",
         "hora_llegada": "Arrival time",
-        "hora_salida": "Departure time",
         "fecha_inicio": "From",
         "fecha_fin": "To",
         "motivo": "Reason",
@@ -4490,7 +4485,6 @@
         "presente": "Present",
         "ausente": "Absent",
         "llegada_tarde": "Late arrival",
-        "salida_temprana": "Early departure",
         "pipi": "Wee",
         "caca": "Poo",
         "mixto": "Mixed",

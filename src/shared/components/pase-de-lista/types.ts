@@ -37,8 +37,9 @@ export interface PaseDeListaQuickAction<TValue> {
   /** Patch a aplicar a cada fila visible. Recibe el valor actual para
    *  poder hacer merges (ej. mantener `hora_llegada` si ya estaba). */
   apply: (currentRow: Partial<TValue>) => Partial<TValue>
-  /** Si true, no toca filas que ya estén dirty. */
-  onlyClean?: boolean
+  /** Si true, solo toca las filas SIN DECIDIR (`pending`): ni las ya guardadas o prellenadas
+   *  (`saved`: lo apuntado, o la ausencia que avisó la familia) ni las que se están tocando. */
+  onlyPending?: boolean
 }
 
 export interface PaseDeListaItem<TItem, TValue> {

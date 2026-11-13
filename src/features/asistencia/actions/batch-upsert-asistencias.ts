@@ -33,7 +33,6 @@ export async function batchUpsertAsistencias(
     fecha: parsed.data.fecha,
     estado: it.asistencia.estado,
     hora_llegada: it.asistencia.hora_llegada,
-    hora_salida: it.asistencia.hora_salida,
     observaciones: it.asistencia.observaciones,
     registrada_por: userId,
   }))

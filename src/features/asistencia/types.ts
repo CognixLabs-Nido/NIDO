@@ -19,7 +19,6 @@ export interface AsistenciaRow {
   fecha: string
   estado: EstadoAsistencia
   hora_llegada: string | null
-  hora_salida: string | null
   observaciones: string | null
   registrada_por: string | null
   updated_at: string

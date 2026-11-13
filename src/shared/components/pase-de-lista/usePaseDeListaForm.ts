@@ -81,7 +81,9 @@ export function usePaseDeListaForm<TItem, TValue extends Record<string, unknown>
     setRows((prev) => {
       const next = new Map(prev)
       for (const [rowId, row] of prev.entries()) {
-        if (action.onlyClean && row.status !== 'pending' && row.status !== 'saved') continue
+        // «Todos presentes» no decide por la profe lo ya decidido: el niño cuya familia avisó de que
+        // no viene sale prellenado («ausente», `saved`) y lo marcaba presente (medido 2026-11-13).
+        if (action.onlyPending && row.status !== 'pending') continue
         const patch = action.apply(row.value)
         const nextValue = { ...row.value, ...patch }
         next.set(rowId, {

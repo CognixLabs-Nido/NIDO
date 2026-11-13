@@ -27,7 +27,6 @@ import { useAsistenciaRealtime } from './use-asistencia-realtime'
 type PaseDeListaValue = {
   estado: EstadoAsistencia | ''
   hora_llegada: string | null
-  hora_salida: string | null
   observaciones: string | null
 } & Record<string, unknown>
 
@@ -72,14 +71,12 @@ export function PaseDeListaCliente({ aulaId, locale, fecha, filas }: Props) {
         ? {
             estado: f.asistencia.estado,
             hora_llegada: f.asistencia.hora_llegada,
-            hora_salida: f.asistencia.hora_salida,
             observaciones: f.asistencia.observaciones,
           }
         : f.ausencia
           ? {
               estado: 'ausente',
               hora_llegada: null,
-              hora_salida: null,
               observaciones: null,
             }
           : null
@@ -120,7 +117,6 @@ export function PaseDeListaCliente({ aulaId, locale, fecha, filas }: Props) {
         { value: 'presente', label: t('estado_opciones.presente') },
         { value: 'ausente', label: t('estado_opciones.ausente') },
         { value: 'llegada_tarde', label: t('estado_opciones.llegada_tarde') },
-        { value: 'salida_temprana', label: t('estado_opciones.salida_temprana') },
       ],
     },
     {
@@ -129,13 +125,6 @@ export function PaseDeListaCliente({ aulaId, locale, fecha, filas }: Props) {
       type: 'time',
       width: '110px',
       visibleWhen: (v) => v.estado !== 'ausente' && v.estado !== '',
-    },
-    {
-      id: 'hora_salida',
-      label: t('columna.hora_salida'),
-      type: 'time',
-      width: '110px',
-      visibleWhen: (v) => v.estado === 'salida_temprana',
     },
     {
       id: 'observaciones',
@@ -154,7 +143,7 @@ export function PaseDeListaCliente({ aulaId, locale, fecha, filas }: Props) {
         estado: 'presente',
         hora_llegada: current.hora_llegada ?? '09:00',
       }),
-      onlyClean: true,
+      onlyPending: true,
     },
   ]
 
@@ -168,7 +157,6 @@ export function PaseDeListaCliente({ aulaId, locale, fecha, filas }: Props) {
         asistencia: {
           estado: r.value.estado as EstadoAsistencia,
           hora_llegada: r.value.hora_llegada ?? null,
-          hora_salida: r.value.hora_salida ?? null,
           observaciones: r.value.observaciones ?? null,
         },
       })),

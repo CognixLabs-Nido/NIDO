@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckCircle2Icon, ClockIcon, LogOutIcon, MinusCircleIcon, XCircleIcon } from 'lucide-react'
+import { CheckCircle2Icon, ClockIcon, MinusCircleIcon, XCircleIcon } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
@@ -16,7 +16,7 @@ import type { NinoAsistenciaResumen } from '../types'
 /**
  * Vista read-only del pase de lista con badges visuales prominentes. Cada
  * fila lleva un badge con color + icono + hora (si aplica) según el estado
- * registrado. En modo `futuro`, los presentes/llegada_tarde/salida_temprana
+ * registrado. En modo `futuro`, los presentes/llegada_tarde
  * no tienen sentido todavía — solo se renderizan las ausencias ya
  * reportadas; el resto muestra "Sin registrar".
  *
@@ -24,7 +24,6 @@ import type { NinoAsistenciaResumen } from '../types'
  *  - success (verde): presente
  *  - destructive (coral): ausente
  *  - warm (ámbar):    llegada_tarde
- *  - info (azul):     salida_temprana
  *  - outline (gris):  sin_registrar
  */
 interface Props {
@@ -43,7 +42,6 @@ const BADGES: Record<EstadoAsistencia, BadgeDef> = {
   presente: { variant: 'success', icon: CheckCircle2Icon },
   ausente: { variant: 'destructive', icon: XCircleIcon },
   llegada_tarde: { variant: 'warm', icon: ClockIcon },
-  salida_temprana: { variant: 'info', icon: LogOutIcon },
 }
 
 export function AsistenciaReadOnlyList({ filas, modo }: Props) {
@@ -112,13 +110,7 @@ function FilaReadOnly({ fila, modo }: { fila: NinoAsistenciaResumen; modo: ModoF
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {mostrarAsistencia && a && (
-            <EstadoBadge
-              estado={a.estado}
-              horaLlegada={a.hora_llegada}
-              horaSalida={a.hora_salida}
-            />
-          )}
+          {mostrarAsistencia && a && <EstadoBadge estado={a.estado} horaLlegada={a.hora_llegada} />}
           {mostrarAusenciaSola && au && (
             <Badge
               variant="destructive"
@@ -147,16 +139,14 @@ function FilaReadOnly({ fila, modo }: { fila: NinoAsistenciaResumen; modo: ModoF
 function EstadoBadge({
   estado,
   horaLlegada,
-  horaSalida,
 }: {
   estado: EstadoAsistencia
   horaLlegada: string | null
-  horaSalida: string | null
 }) {
   const t = useTranslations('asistencia')
   const def = BADGES[estado]
   const Icon = def.icon
-  const hora = estado === 'salida_temprana' ? horaSalida : horaLlegada
+  const hora = horaLlegada
   const label = labelDeEstado(t, estado)
   return (
     <Badge variant={def.variant} data-testid={`badge-estado-${estado}`}>
@@ -180,8 +170,6 @@ function labelDeEstado(
       return t('estado_opciones.ausente')
     case 'llegada_tarde':
       return t('estado_opciones.llegada_tarde')
-    case 'salida_temprana':
-      return t('estado_opciones.salida_temprana')
   }
 }
 
