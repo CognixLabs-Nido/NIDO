@@ -22,6 +22,7 @@ import { familiaTieneMandatoActivo } from '@/features/alta/queries/get-mandato-f
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { DomiciliacionDialog } from '@/features/familias/components/DomiciliacionDialog'
 import { EditarEtiquetaDialog } from '@/features/familias/components/EditarEtiquetaDialog'
+import { ExportButton } from '@/features/export/components/ExportButton'
 import { EditarTutorDialog } from '@/features/familias/components/EditarTutorDialog'
 import { MetodoPagoFicha } from '@/features/familias/components/MetodoPagoFicha'
 import { PromoverTitularDialog } from '@/features/familias/components/PromoverTitularDialog'
@@ -43,7 +44,8 @@ interface PageProps {
 export default async function FichaFamiliaPage({ params }: PageProps) {
   const { id, locale } = await params
   const t = await getTranslations('admin.familias')
-  const { centroId } = await requireContextoCentro(locale)
+  const tExport = await getTranslations('export')
+  const { centroId, esResponsable } = await requireContextoCentro(locale)
   const familia = await getFamiliaDetalle(id, centroId)
   if (!familia) notFound()
   const archivada = familia.estado === 'inactiva'
@@ -132,6 +134,11 @@ export default async function FichaFamiliaPage({ params }: PageProps) {
               tutor={tutor}
               archivada={archivada}
               puedePromover={!archivada && sinTitular && tutor.rol_familia === 'segundo_tutor'}
+              // Fase 6: un tutor sin cuenta solo puede pedir sus datos (art. 15) a la Dirección.
+              exportarHref={
+                esResponsable && !tutor.tiene_cuenta ? `/${locale}/export/tutor/${tutor.id}` : null
+              }
+              etiquetaExportar={tExport('exportar_tutor_sin_cuenta')}
               t={t}
             />
           ))
@@ -302,11 +309,15 @@ function TutorCard({
   tutor,
   archivada,
   puedePromover,
+  exportarHref,
+  etiquetaExportar,
   t,
 }: {
   tutor: TutorDetalle
   archivada: boolean
   puedePromover: boolean
+  exportarHref: string | null
+  etiquetaExportar: string
   t: Awaited<ReturnType<typeof getTranslations>>
 }) {
   const direccion = [
@@ -352,6 +363,29 @@ function TutorCard({
         <Row k={t('fields.email')} v={tutor.email ?? '—'} />
         <Row k={t('fields.direccion')} v={direccion || '—'} />
         {tutor.dni_documento_path && <Row k={t('fields.dni')} v={t('dni_subido')} />}
+        {/* Fase 6: la Dirección ve los cinco datos nuevos (por `tutores_de_familia`). */}
+        {tutor.legibles ? (
+          <>
+            <Row k={t('fields.telefono')} v={tutor.telefono ?? '—'} />
+            <Row k={t('fields.fecha_nacimiento')} v={tutor.fecha_nacimiento ?? '—'} />
+            <Row k={t('fields.dni_numero')} v={tutor.dni_numero ?? '—'} />
+            <Row k={t('fields.estudios')} v={tutor.estudios ?? '—'} />
+            <Row k={t('fields.empresa')} v={tutor.empresa ?? '—'} />
+          </>
+        ) : (
+          <p role="status" className="text-muted-foreground">
+            {t('editar_tutor.no_legible')}
+          </p>
+        )}
+        {exportarHref && (
+          <ExportButton
+            href={exportarHref}
+            label={etiquetaExportar}
+            filename="nido-export-tutor.zip"
+            variant="ghost"
+            size="sm"
+          />
+        )}
       </CardContent>
     </Card>
   )

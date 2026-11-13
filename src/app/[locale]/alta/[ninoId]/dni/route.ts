@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
 
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { altaValidada, registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
+import { registrarCambioPendiente } from '@/features/cambios-pendientes/lib/gate'
 import { rolFamiliaDeVinculo } from '@/features/alta/schemas/alta-documentos'
 import { logger } from '@/shared/lib/logger'
 
@@ -30,11 +31,9 @@ function err(error: string, status = 400): Response {
 /**
  * F11-G — subida del **DNI de un tutor** (1 PDF, 2 caras → `imagenesAPdf`; bucket privado
  * `dni-tutores`). `tipo_vinculo` distingue tutor 1 (`tutor_legal_principal`) de tutor 2
- * (`tutor_legal_secundario`, sin cuenta). La subida y el set de
- * `familia_tutores.dni_documento_path` (perfil COMPARTIDO por familia, F-2b-3) van con el
- * cliente del USUARIO: la RLS de storage y la de tutor sobre `familia_tutores`
- * (`es_tutor_de_familia`) autorizan al tutor del niño. Solo toca `dni_documento_path` (la
- * identidad la fija `guardarDatosTutor`), así que el orden de pasos es indiferente.
+ * (`tutor_legal_secundario`). La subida va con el cliente del USUARIO (la RLS de storage) y la ruta
+ * se fija por `fijar_dni_tutor` (fase 6), en el perfil COMPARTIDO por familia. Solo toca
+ * `dni_documento_path` (la identidad la fija `guardarDatosTutor`): el orden de pasos es indiferente.
  */
 export async function POST(
   request: Request,
@@ -88,9 +87,21 @@ export async function POST(
     return err('alta.documentos.errors.subida', 500)
   }
 
-  // Decisión J: con el alta YA validada, el documento NO se aplica directo → cola de
-  // validación. El PDF queda staged; al aprobar se fija `dni_documento_path`.
-  if (await altaValidada(supabase, nino.id)) {
+  // Fase 6 (`20270118120000`): la ruta se fija por `fijar_dni_tutor`, que aplica la regla única (el
+  // DNI del otro tutor, solo mientras no tiene cuenta) y la cola POR FAMILIA: con el alta de la familia
+  // validada devuelve HINT `cola_validacion`, y el PDF queda staged en la cola. Lo decide la base: por
+  // niño, el alta de un hermano sin validar se saltaba la cola (medido el 2026-11-13).
+  // Lo que no llega a engancharse se borra con el cliente de servicio: la sesión no borra en el bucket.
+  const service = createServiceRoleClient()
+  const descartar = () =>
+    borrarObjetosBucket(service, BUCKET_DNI_TUTORES, [path]).catch(() => undefined)
+  const { data: dniPrevio, error: fijarError } = await supabase.rpc('fijar_dni_tutor', {
+    p_familia_id: nino.familia_id,
+    p_rol_familia: rolFamiliaDeVinculo(tv),
+    p_path: path,
+  })
+
+  if (fijarError?.hint === 'cola_validacion') {
     const r = await registrarCambioPendiente(supabase, {
       ninoId: nino.id,
       usuarioId: user.id,
@@ -98,7 +109,7 @@ export async function POST(
       payload: { tipo_vinculo: tv, path },
     })
     if (!r.ok) {
-      await borrarObjetosBucket(supabase, BUCKET_DNI_TUTORES, [path]).catch(() => undefined)
+      await descartar()
       return err(r.error, 403)
     }
     const urlStaged = await firmarRuta(supabase, BUCKET_DNI_TUTORES, path)
@@ -109,52 +120,18 @@ export async function POST(
     } satisfies RespuestaOk)
   }
 
-  // Fija dni_documento_path en la fila (familia, rol_familia) del perfil COMPARTIDO
-  // `familia_tutores`; crea la del segundo_tutor si aún no existía. El titular ya tiene fila
-  // (RPC de alta) → siempre UPDATE. Solo se toca `dni_documento_path` → el congelado (BEFORE
-  // UPDATE de usuario_id/familia_id/rol_familia) no salta.
-  const rolFamilia = rolFamiliaDeVinculo(tv)
-  const { data: existente } = await supabase
-    .from('familia_tutores')
-    .select('id, dni_documento_path')
-    .eq('familia_id', nino.familia_id)
-    .eq('rol_familia', rolFamilia)
-    .is('deleted_at', null)
-    .maybeSingle()
-
-  let filaError: string | null = null
-  let dniPrevio: string | null = null
-  if (existente) {
-    dniPrevio = existente.dni_documento_path
-    const { error } = await supabase
-      .from('familia_tutores')
-      .update({ dni_documento_path: path })
-      .eq('id', existente.id)
-    filaError = error?.message ?? null
-  } else if (rolFamilia === 'segundo_tutor') {
-    // segundo_tutor sin identidad aún (DNI antes que datos): INSERT con usuario_id NULL.
-    const { error } = await supabase.from('familia_tutores').insert({
-      familia_id: nino.familia_id,
-      rol_familia: 'segundo_tutor',
-      usuario_id: null,
-      dni_documento_path: path,
-    })
-    filaError = error?.message ?? null
-  } else {
-    // Titular sin fila = estado anómalo (la RPC de alta la crea). No se inserta un titular.
-    filaError = 'titular_sin_fila'
-  }
-
-  if (filaError) {
-    await borrarObjetosBucket(supabase, BUCKET_DNI_TUTORES, [path]).catch(() => undefined)
-    if (/row-level security|42501/i.test(filaError)) return err('alta.errors.no_autorizado', 403)
-    logger.warn('dni: set path', filaError)
+  if (fijarError) {
+    await descartar()
+    if (fijarError.code === '42501') return err('alta.errors.no_autorizado', 403)
+    logger.warn('dni: fijar_dni_tutor', fijarError.code ?? 'sin_codigo')
+    if (fijarError.hint === 'titular_sin_fila')
+      return err('alta.documentos.errors.tutor_duplicado', 409)
     return err('alta.documentos.errors.subida', 500)
   }
 
   // Limpia el DNI anterior (sustitución; best-effort).
   if (dniPrevio && dniPrevio !== path) {
-    await borrarObjetosBucket(supabase, BUCKET_DNI_TUTORES, [dniPrevio]).catch(() => undefined)
+    await borrarObjetosBucket(service, BUCKET_DNI_TUTORES, [dniPrevio]).catch(() => undefined)
   }
 
   const url = await firmarRuta(supabase, BUCKET_DNI_TUTORES, path)

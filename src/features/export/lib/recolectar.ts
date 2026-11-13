@@ -66,7 +66,7 @@ type Fila = Record<string, unknown>
  */
 async function datosSujeto(
   client: Client,
-  tipo: 'usuario' | 'nino',
+  tipo: 'usuario' | 'nino' | 'tutor',
   id: string
 ): Promise<Fila | null> {
   const { data, error } = await client.rpc('export_datos_sujeto', {
@@ -309,6 +309,33 @@ async function firmar(
  * (RLS del `client`). Cubre acceso (art. 15); la sección "aportado por ti" marca
  * el subconjunto de portabilidad (art. 20).
  */
+/**
+ * Fase 6 (2026-11-13): el export art. 15 de un tutor SIN cuenta (el segundo, antes de aceptar la
+ * invitación). No es un usuario y no podía exportarse por ningún camino (medido): si lo pide, solo
+ * puede dárselo la Dirección. Por el id de su fila en `familia_tutores`; `export_datos_sujeto` solo se
+ * lo da a la Dirección del centro de la familia (42501 a cualquier otro → `null`). Su fila entera y
+ * el PDF de su DNI; nada del otro tutor ni del niño, que tienen su propio export.
+ */
+export async function recolectarTutor(
+  client: Client,
+  service: Client,
+  filaId: string
+): Promise<Recolectado | null> {
+  const d = await datosSujeto(client, 'tutor', filaId)
+  const perfiles = filas(d?.perfiles_familia)
+  const perfil = perfiles[0]
+  if (!perfil) return null
+  const { data: familia } = await client
+    .from('familias')
+    .select('centro_id')
+    .eq('id', String(perfil.familia_id))
+    .maybeSingle()
+  const adjuntos: AdjuntoExport[] = []
+  if (typeof perfil.dni_documento_path === 'string')
+    adjuntos.push(await firmar(service, BUCKET_DNI_TUTORES, perfil.dni_documento_path, 'DNI'))
+  return { data: { perfiles_familia: perfiles, adjuntos }, centroId: familia?.centro_id ?? null }
+}
+
 export async function recolectarUsuario(
   client: Client,
   service: Client,

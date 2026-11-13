@@ -12,11 +12,12 @@ import {
  * venía puesto:
  *
  *  - El nombre, los apellidos y la fecha de nacimiento del niño los pone la invitación
- *    (`crear_o_anadir_a_familia`), y el nombre del tutor 1 lo pone aceptarla
- *    (`accept-invitation.ts`). Por eso «Datos del niño» no mira la identidad (la tarjeta de la
- *    ficha la marcaba hecha desde el principio) ni «Tutor 1» mira el nombre.
+ *    (`crear_o_anadir_a_familia`). Por eso «Datos del niño» no mira la identidad (la tarjeta de la
+ *    ficha la marcaba hecha desde el principio).
  *  - Lo obligatorio que la familia hace en cada paso es otra cosa: en el del niño, subir el libro de
- *    familia; en el del tutor 1, su DNI. Es lo que exige el gate de `finalizarAlta` (`documentos`).
+ *    familia; en el del tutor 1, desde la fase 6 (2026-11-13), sus datos enteros y su DNI
+ *    (`tutorCompleto`), que es lo que exige el cierre. El nombre solo, que pone aceptar la invitación,
+ *    no lo hace «hecho».
  *
  *  - Los documentos del centro (fase 4, 4b-2) con la regla del gate (`regla-documentos-alta.ts`):
  *    hecho si no queda ninguno obligatorio por firmar. Si no hay ninguno obligatorio subido, la línea
@@ -48,10 +49,14 @@ export interface SenalesAvance {
   libroFamilia: boolean
   /** Consentimiento de imagen vigente del niño (`existe_consentimiento_imagen`). */
   imagen: boolean
-  /** `familia_tutores.dni_documento_path` del titular: lo sube en su paso. */
-  dniTutor1: boolean
-  /** Hay un segundo tutor con nombre en la familia. */
-  tutor2: boolean
+  /**
+   * El titular, completo como lo exige el cierre (`tutorCompleto`, espejo de `privado.tutor_completo`):
+   * desde la fase 6 lo rellena la familia en su paso (teléfono, fecha de nacimiento, número y PDF del
+   * DNI, dirección). Antes bastaba el PDF del DNI, porque el nombre lo ponía la invitación.
+   */
+  tutor1: boolean
+  /** El segundo tutor: no hay (opcional), completo, o empezado y a medias (frena el cierre). */
+  tutor2: 'no_hay' | 'completo' | 'incompleto'
   /** Acuse de confidencialidad de los datos médicos (`consentimientos`, `datos_medicos`). */
   medico: boolean
   /** La familia tiene un mandato SEPA activo. */
@@ -75,7 +80,8 @@ export interface LineaAvance {
  */
 export const LINEAS_DEL_GATE: Record<BloqueAlta, readonly ItemAvance[] | 'invitacion'> = {
   identidad: 'invitacion',
-  tutor1: 'invitacion',
+  tutor1: ['tutor1'],
+  tutor2: ['tutor2'],
   documentos: ['nino', 'tutor1'],
   medico: ['medico'],
   imagen: ['imagen'],
@@ -86,8 +92,8 @@ const HECHO: Record<ItemAvance, (s: SenalesAvance) => boolean> = {
   documentos_centro: (s) => !s.documentosCentro.some(frenaElAlta),
   nino: (s) => s.libroFamilia,
   imagen: (s) => s.imagen,
-  tutor1: (s) => s.dniTutor1,
-  tutor2: (s) => s.tutor2,
+  tutor1: (s) => s.tutor1,
+  tutor2: (s) => s.tutor2 === 'completo',
   medico: (s) => s.medico,
   sepa: (s) => s.mandato,
 }
@@ -99,6 +105,11 @@ export function avanceAlta(s: SenalesAvance): LineaAvance[] {
       (item !== 'documentos_centro' || hayObligatorioSubido(s.documentosCentro))
   ).map((item) => ({
     item,
-    estado: HECHO[item](s) ? 'hecho' : ITEMS_OPCIONALES.has(item) ? 'sin_hacer_opcional' : 'falta',
+    estado: HECHO[item](s)
+      ? 'hecho'
+      : // Un segundo tutor empezado y a medias frena el cierre: no es «opcional sin hacer».
+        ITEMS_OPCIONALES.has(item) && !(item === 'tutor2' && s.tutor2 === 'incompleto')
+        ? 'sin_hacer_opcional'
+        : 'falta',
   }))
 }

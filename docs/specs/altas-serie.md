@@ -1269,9 +1269,6 @@ es la Fase 7; la media pensión, la 8; el número de matrícula no se construye 
 - **Lo que se tomó por defecto:** nada es retroactivo (los niños con el alta ya validada no se
   bloquean); el DNI del niño va en claro, como el SIP (D7), y se borra con el niño; se aceptan DNI y
   NIE, con la letra comprobada.
-- **Para la Fase 6, por preguntar:** la fecha de nacimiento de los tutores. La spec dice «D15 ·
-  obligatoria» (Jose, 2026-10-29: «se piden»), y el 2026-11-07 se escribió «sale del DNI y no se pide
-  aparte». Se pregunta al llegar a la Fase 6.
 
 ### 5a · La base
 
@@ -1536,6 +1533,71 @@ no pudo leer.**
 - Tests: `alta-no-pisa-lo-que-no-leyo.rls.test.ts`, `alta-no-pisa-ficha-medica.rls.test.ts` y el
   bloque «una lectura que falla no se lee como «no hay»» de `autorizado-lee-solo-lo-suyo.rls.test.ts`;
   cada uno afirma la fila guardada, no cómo se evita, con su control sin fallo.
+
+## Fase 6: campos de tutores
+
+### Decisiones (2026-11-12 y 2026-11-13)
+
+- **Lo que se pide de cada tutor.** Teléfono (D14), fecha de nacimiento (D15), número del DNI y,
+  si hay segundo tutor, el PDF de su DNI (D12): obligatorios para cerrar el alta, para los dos
+  tutores, también si solo hay uno. Dirección de los dos: calle, código postal y ciudad sí; el
+  número no («s/n»). Estudios y empresa, voluntarios y marcados así en pantalla. El email y el
+  nombre del segundo tutor, obligatorios. «No hay segundo tutor» sigue siendo un clic, sin motivo.
+  El teléfono que dejó en la lista de espera rellena el del tutor 1, editable.
+- **Validaciones que no dejan fuera a una familia real.** Teléfono internacional (de 6 a 15 cifras,
+  con o sin +; uno español sin prefijo también). Número del DNI: cualquier documento de 1 a 40
+  caracteres, y la letra solo se comprueba cuando tiene forma de DNI o NIE (como el titular del
+  mandato SEPA). Fecha de nacimiento en el pasado y de hace menos de 120 años, **sin mayoría de
+  edad**: un padre o una madre menor existe.
+- **UNA REGLA.** Mientras el tutor 2 no tiene cuenta, sus datos los gestiona el tutor 1: los escribe
+  y los lee (teléfono, fecha de nacimiento, número y foto del DNI). En cuanto acepta la invitación
+  y tiene cuenta, el tutor 1 deja de ver todo eso salvo el teléfono, y cada tutor ve los suyos. El
+  bucket `dni-tutores` se cierra con la misma regla.
+- **Quién ve qué.** El teléfono: la Dirección, los dos tutores y la profe del aula del niño. La
+  fecha de nacimiento, el número del DNI, los estudios y la empresa: la Dirección y el propio tutor
+  (y el tutor 1 mientras el 2 no tiene cuenta). El autorizado, nada. Una pantalla que no puede leer
+  un dato lo dice y no ofrece guardar: nunca un formulario en blanco.
+- **La cola de cambios, en la base y por familia** (2026-11-13). Con el alta validada, cualquier
+  cambio de un tutor en sus datos va a la cola que aprueba la Dirección: los cinco nuevos igual que
+  el nombre, el email, la dirección y el DNI. La Dirección escribe siempre.
+- **La profe ve el teléfono** con el botón «Llamar a la familia», junto a «Escribir a la familia» en
+  la tarjeta de cada niño de su aula. Los teléfonos se leen al pulsar, no con la lista.
+- **El export art. 15** lleva los cinco datos a la fila de su tutor. Los del tutor 2 sin cuenta no van
+  en el export del tutor 1: son del tutor 2, y si los pide se los da la Dirección (sujeto `tutor`).
+- **Nada es retroactivo.** La Dirección puede rellenar los campos, y el alta en papel cumple lo mismo.
+  La base exige los datos de los tutores al cerrar el alta (`marcar_matricula_lista`); los documentos
+  y la imagen, en el punto 3.
+- **D3 sustituida en la parte del DNI** (ver `alta-tutor-driven.md`). El abogado revisa en F11-B la
+  base legal para exigir el DNI: D3 la apoyaba en el consentimiento (art. 7.4).
+
+### Lo que se midió antes (producción, ensayos terminados en RAISE)
+
+- **La tabla estaba abierta por columnas** (paso 1, `20270117120000`): una columna nueva la leían la
+  Dirección y los dos tutores, cada uno la del otro. Ahora cada columna nueva nace cerrada.
+- **La cola del tutor solo existía en la app.** Con el alta validada, un tutor escribía directo su
+  dirección, el nombre del otro tutor aunque tuviera cuenta, el email del titular, y su ruta del DNI.
+  La identidad del niño sí la paraba la base desde el 2026-11-08.
+- **Por el alta de un hermano sin validar**, la app no encolaba: decidía por niño y los datos son de
+  la familia.
+- **El tutor 2 abría el PDF del DNI del tutor 1.**
+- **La Dirección no podía exportar a un tutor sin cuenta** por ningún camino: no es un usuario, y el
+  export del niño no lleva los tutores.
+
+### 6 · La base (`20270118120000`)
+
+- Las cinco columnas, sin `GRANT` a la sesión. CHECK del teléfono, del documento
+  (`privado.documento_tutor_valido`), de la fecha (tope fijo; el de 120 años y el «pasado» los aplica
+  la función) y del largo de estudios y empresa.
+- La escritura del tutor, solo por `guardar_tutor` y `fijar_dni_tutor`: la regla
+  (`privado.gestiona_tutor`) y la cola por familia (`privado.familia_alta_validada`, 42501 HINT
+  `cola_validacion`). Las políticas de escritura del tutor se van; las de la Dirección se quedan.
+- La lectura, por `tutores_de_familia` (con `ve_telefono` y `ve_personales`) y
+  `telefonos_familia_de_nino`.
+- `dni-tutores`: el tutor abre el PDF de una fila que gestiona, el que dejó en la cola mientras siga
+  gestionando la fila, o el que acaba de subir mientras nadie lo apunta (la subida lo relee).
+- `marcar_matricula_lista` frena con HINT `datos_tutor_por_completar` (`privado.tutor_completo`).
+- La purga (`purgar_sujeto_db`, las dos ramas y su redacción en `audit_log`) y el export
+  (`export_datos_sujeto`, más el sujeto `tutor`), regenerados desde su cuerpo vivo con guarda de md5.
 
 ## Orden de la serie
 

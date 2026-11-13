@@ -28,6 +28,17 @@ export interface TutorFamiliaRow {
   direccion_cp: string | null
   direccion_ciudad: string | null
   dni_documento_path: string | null
+  // Fase 6 (`20270118120000`): los cinco datos nuevos, por `tutores_de_familia`, que aplica la regla.
+  // `ve_personales` / `ve_telefono` dicen si se PUDIERON leer: falso es «no se puede leer», no «vacío».
+  // Con el cliente de servicio la función no devuelve nada (no hay sesión): quedan sin leer.
+  tiene_cuenta: boolean
+  ve_personales: boolean
+  ve_telefono: boolean
+  telefono: string | null
+  fecha_nacimiento: string | null
+  dni_numero: string | null
+  estudios: string | null
+  empresa: string | null
 }
 
 export async function leerTutoresDeNino(
@@ -56,19 +67,34 @@ export async function leerTutoresDeNino(
 
   if (errorTutores) return { familiaId, tutores: [], leidos: false }
 
+  // Los cinco nuevos: si la función falla, ningún tutor los tiene leídos (y la pantalla lo dice).
+  const { data: nuevos } = await client.rpc('tutores_de_familia', { p_familia_id: familiaId })
+  const nuevoDe = new Map((nuevos ?? []).map((n) => [n.id, n]))
+
   const tutores: TutorFamiliaRow[] = (rows ?? [])
-    .map((r) => ({
-      id: r.id,
-      tipo_vinculo: vinculoDeRolFamilia(r.rol_familia as RolFamilia),
-      usuario_id: r.usuario_id,
-      email: r.email,
-      nombre_completo: r.nombre_completo,
-      direccion_calle: r.direccion_calle,
-      direccion_numero: r.direccion_numero,
-      direccion_cp: r.direccion_cp,
-      direccion_ciudad: r.direccion_ciudad,
-      dni_documento_path: r.dni_documento_path,
-    }))
+    .map((r) => {
+      const n = nuevoDe.get(r.id)
+      return {
+        id: r.id,
+        tipo_vinculo: vinculoDeRolFamilia(r.rol_familia as RolFamilia),
+        usuario_id: r.usuario_id,
+        email: r.email,
+        nombre_completo: r.nombre_completo,
+        direccion_calle: r.direccion_calle,
+        direccion_numero: r.direccion_numero,
+        direccion_cp: r.direccion_cp,
+        direccion_ciudad: r.direccion_ciudad,
+        dni_documento_path: r.dni_documento_path,
+        tiene_cuenta: r.usuario_id !== null,
+        ve_personales: n?.ve_personales === true,
+        ve_telefono: n?.ve_telefono === true,
+        telefono: n?.telefono ?? null,
+        fecha_nacimiento: n?.fecha_nacimiento ?? null,
+        dni_numero: n?.dni_numero ?? null,
+        estudios: n?.estudios ?? null,
+        empresa: n?.empresa ?? null,
+      }
+    })
     // Titular primero (orden estable para la UI, independiente del orden de inserción).
     .sort((a, b) =>
       a.tipo_vinculo === b.tipo_vinculo ? 0 : a.tipo_vinculo === 'tutor_legal_principal' ? -1 : 1

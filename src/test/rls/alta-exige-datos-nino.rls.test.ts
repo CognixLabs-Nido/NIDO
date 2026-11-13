@@ -8,6 +8,7 @@ import {
   asignarRol,
   clientFor,
   completarDatosAlta,
+  completarTutoresAlta,
   createTestAula,
   createTestCentro,
   createTestCurso,
@@ -232,6 +233,8 @@ describe('El alta exige los datos del niño (5b)', () => {
       .select('id')
     expect(error).toBeNull()
     expect(data).toHaveLength(1)
+    // Fase 6: el alta en papel cumple lo mismo que la del tutor, también los datos de los tutores.
+    await completarTutoresAlta(pablo)
     const cierre = await cierra('admin', pablo)
     expect(cierre.error).toBeNull()
     expect(await estado(pablo)).toBe('lista')

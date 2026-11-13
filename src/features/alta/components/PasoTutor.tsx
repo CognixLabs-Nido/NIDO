@@ -29,6 +29,7 @@ import {
 import { actualizarNinoFamilia } from '../actions/actualizar-nino-familia'
 import { guardarDatosTutor } from '../actions/guardar-datos-tutor'
 import {
+  datosTutorFields,
   estadoCivilEnum,
   type EstadoCivil,
   type TipoVinculoLegal,
@@ -53,6 +54,16 @@ export interface DatosTutorInicial {
   direccion_cp: string | null
   direccion_ciudad: string | null
   dni_url: string | null
+  // Fase 6 (`20270118120000`).
+  telefono: string | null
+  fecha_nacimiento: string | null
+  dni_numero: string | null
+  estudios: string | null
+  empresa: string | null
+  /** Se pudieron leer sus datos personales. Si no, el paso lo dice y no ofrece guardar. */
+  legibles: boolean
+  /** Es el otro tutor y ya tiene su cuenta: sus datos los gestiona él. */
+  gestionaElOtro: boolean
 }
 
 const tutorFormSchema = z.object({
@@ -67,6 +78,7 @@ const tutorFormSchema = z.object({
   direccion_numero: z.string().max(20).optional().nullable(),
   direccion_cp: z.string().max(12).optional().nullable(),
   direccion_ciudad: z.string().max(120).optional().nullable(),
+  ...datosTutorFields,
   estado_civil_familia: estadoCivilEnum.optional().nullable(),
 })
 type TutorFormInput = z.infer<typeof tutorFormSchema>
@@ -141,6 +153,11 @@ export function PasoTutor({
       direccion_numero: inicial?.direccion_numero ?? '',
       direccion_cp: inicial?.direccion_cp ?? '',
       direccion_ciudad: inicial?.direccion_ciudad ?? '',
+      telefono: inicial?.telefono ?? '',
+      fecha_nacimiento: inicial?.fecha_nacimiento ?? '',
+      dni_numero: inicial?.dni_numero ?? '',
+      estudios: inicial?.estudios ?? '',
+      empresa: inicial?.empresa ?? '',
       estado_civil_familia: estadoCivilInicial,
     },
   })
@@ -166,6 +183,11 @@ export function PasoTutor({
         direccion_numero: values.direccion_numero || null,
         direccion_cp: values.direccion_cp || null,
         direccion_ciudad: values.direccion_ciudad || null,
+        telefono: values.telefono || null,
+        fecha_nacimiento: values.fecha_nacimiento || null,
+        dni_numero: values.dni_numero || null,
+        estudios: values.estudios || null,
+        empresa: values.empresa || null,
       })
       if (!r.success) {
         toast.error(tErrors(r.error))
@@ -185,6 +207,31 @@ export function PasoTutor({
       toast.success(r.data.pendienteValidacion ? t('validacion.enviado') : t('tutor.guardado'))
       onNext()
     })
+  }
+
+  // Fase 6: sin poder leer sus datos personales no hay formulario. Un formulario en blanco diría «no
+  // hay nada guardado» y, al guardar, pisaría lo que hay. Si es el otro tutor con su cuenta, los
+  // gestiona él; si no, la lectura falló y se puede volver a intentar.
+  if (inicial && !inicial.legibles) {
+    return (
+      <div className="space-y-4">
+        <div
+          role="status"
+          data-testid="tutor-no-legible"
+          className="border-border bg-muted/40 rounded-lg border p-4 text-sm"
+        >
+          {inicial.gestionaElOtro ? t('tutor.gestiona_el_otro') : t('tutor.no_legible')}
+        </div>
+        <div className="flex justify-between border-t pt-4">
+          <Button type="button" variant="outline" onClick={onBack}>
+            {t('wizard.atras')}
+          </Button>
+          <Button type="button" onClick={onNext}>
+            {t('wizard.siguiente')}
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   // U-3 — datos heredados de la familia: resumen de solo lectura, sin re-pedir nada. Se avanza
@@ -273,6 +320,46 @@ export function PasoTutor({
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="telefono"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('tutor.telefono')}</FormLabel>
+              <FormControl>
+                <Input type="tel" {...field} value={field.value ?? ''} autoComplete="tel" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="fecha_nacimiento"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('tutor.fecha_nacimiento')}</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="dni_numero"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('tutor.dni_numero')}</FormLabel>
+              <FormControl>
+                <Input type="text" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
           <h3 className="text-sm font-semibold">{t('menor.direccion_titulo')}</h3>
           {/* PR-4d: copia la dirección del niño (editable tras copiar). Deshabilitado si el
@@ -341,6 +428,36 @@ export function PasoTutor({
             </FormItem>
           )}
         />
+
+        <div className="space-y-3 border-t pt-4">
+          <p className="text-muted-foreground text-xs">{t('tutor.voluntarios_nota')}</p>
+          <FormField
+            control={form.control}
+            name="estudios"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('tutor.estudios')}</FormLabel>
+                <FormControl>
+                  <Input type="text" {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="empresa"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('tutor.empresa')}</FormLabel>
+                <FormControl>
+                  <Input type="text" {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         {mostrarEstadoCivil && (
           <FormField

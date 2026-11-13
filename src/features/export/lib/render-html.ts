@@ -595,6 +595,15 @@ function seccionDocumentos(items: unknown, c: Ctx): string {
   return `<h3>${escape(c.t('doc.secciones.documentos'))}</h3><ul>${enlaces}</ul>`
 }
 
+/** Fase 6: un tutor sin cuenta (sujeto `tutor`): su perfil en la familia y el PDF de su DNI. */
+function renderTutor(u: Record<string, unknown>, c: Ctx): string {
+  return `<section>
+  <h2>${escape(c.t('doc.secciones.tus_datos'))}</h2>
+  ${seccion('perfil_familia', u.perfiles_familia, c)}
+  ${seccionDocumentos(u.adjuntos, c)}
+</section>`
+}
+
 function renderUsuario(u: Record<string, unknown>, c: Ctx): string {
   return `<section>
   <h2>${escape(c.t('doc.secciones.tus_datos'))}</h2>
@@ -757,6 +766,7 @@ export function renderExportHtml(doc: DocumentoExport, t: Etiquetador, locale: s
   if (doc.usuario) cuerpo.push(renderUsuario(doc.usuario, c))
   if (Array.isArray(doc.hijos)) for (const h of doc.hijos) cuerpo.push(renderNino(h, c))
   if (doc.nino) cuerpo.push(renderNino(doc.nino, c))
+  if (doc.tutor) cuerpo.push(renderTutor(doc.tutor, c))
 
   return `<!doctype html>
 <html lang="es">

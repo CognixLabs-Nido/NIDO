@@ -1,3 +1,4 @@
+import { tutorCompleto } from '@/features/alta/lib/datos-tutor'
 import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -58,11 +59,13 @@ export async function getAvanceAltas(
 
   const familias = [...new Set(ninosR.data.map((n) => n.familia_id))]
   const [tutoresR, mandatosR, imagenes, documentos] = await Promise.all([
-    supabase
-      .from('familia_tutores')
-      .select('familia_id, rol_familia, nombre_completo, dni_documento_path')
-      .in('familia_id', familias)
-      .is('deleted_at', null),
+    // Por `tutores_de_familia` (fase 6): los datos que exige el cierre no se leen con la sesión.
+    Promise.all(
+      familias.map(async (f) => ({
+        f,
+        r: await supabase.rpc('tutores_de_familia', { p_familia_id: f }),
+      }))
+    ),
     supabase
       .from('mandatos_sepa')
       .select('familia_id')
@@ -75,7 +78,12 @@ export async function getAvanceAltas(
     ),
     Promise.all(ninoIds.map((id) => supabase.rpc('documentos_firma_nino', { p_nino_id: id }))),
   ])
-  if (tutoresR.error || !tutoresR.data) return falla('familia_tutores', tutoresR.error?.message)
+  const tutoresFallo = tutoresR.find(
+    ({ r }) => r.error || (r.data ?? []).some((t) => !t.ve_personales)
+  )
+  if (tutoresFallo)
+    return falla('tutores_de_familia', tutoresFallo.r.error?.message ?? 'sin permiso')
+  const tutoresDe = new Map(tutoresR.map(({ f, r }) => [f, r.data ?? []]))
   if (mandatosR.error || !mandatosR.data) return falla('mandatos_sepa', mandatosR.error?.message)
   const imagenFallo = imagenes.find((r) => r.error)
   if (imagenFallo) return falla('existe_consentimiento_imagen', imagenFallo.error?.message)
@@ -89,15 +97,15 @@ export async function getAvanceAltas(
   for (const [i, ninoId] of ninoIds.entries()) {
     const nino = ninosR.data.find((n) => n.id === ninoId)
     if (!nino) return falla('ninos', 'un niño de la lista no se lee')
-    const deFamilia = tutoresR.data.filter((t) => t.familia_id === nino.familia_id)
+    const deFamilia = tutoresDe.get(nino.familia_id) ?? []
     const titular = deFamilia.find((t) => t.rol_familia === 'titular')
     const segundo = deFamilia.find((t) => t.rol_familia !== 'titular')
     const senales: SenalesAvance = {
       documentosCentro: documentos[i]?.data ?? [],
       libroFamilia: Boolean(gestion.get(nino.id)?.libro_familia_path),
       imagen: imagenes[i]?.data === true,
-      dniTutor1: Boolean(titular?.dni_documento_path),
-      tutor2: Boolean(segundo?.nombre_completo?.trim()),
+      tutor1: Boolean(titular && tutorCompleto(titular)),
+      tutor2: !segundo ? 'no_hay' : tutorCompleto(segundo) ? 'completo' : 'incompleto',
       medico: medico.has(ninoId),
       mandato: conMandato.has(nino.familia_id),
       centroConCid,

@@ -41,6 +41,13 @@ const TITULAR = {
   direccion_cp: '46001',
   direccion_ciudad: 'Valencia',
   dni_documento_path: 'c/n/dni.pdf',
+  // Fase 6: por `tutores_de_familia`, con los cinco nuevos y si se pudieron leer.
+  telefono: '+34600000001',
+  fecha_nacimiento: '1985-01-01',
+  dni_numero: '12345678Z',
+  estudios: null,
+  empresa: null,
+  ve_personales: true,
 }
 
 const fila = (id: string, entidad: string, payload: unknown) => ({
@@ -86,6 +93,8 @@ function fake() {
     },
     // Lo de gestión de la ficha sale por su función (`20270115120000`); el falso lo saca de FICHA.
     rpc: (fn: string) => {
+      // Lo guardado del tutor sale por `tutores_de_familia` desde la fase 6 (la sesión no lee los cinco).
+      if (fn === 'tutores_de_familia') return Promise.resolve({ data: [TITULAR], error: null })
       if (fn !== 'ficha_gestion_ninos') throw new Error(`rpc no prevista: ${fn}`)
       return Promise.resolve(
         estado.ninosError

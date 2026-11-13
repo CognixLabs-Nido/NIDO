@@ -78,11 +78,17 @@ function altaCompleta(): Estado {
         usuario_id: USER,
         email: 'tutor.demo@example.test',
         nombre_completo: 'Tutor Demo',
-        direccion_calle: null,
+        // Fase 6: el titular completo (lo que exige el cierre); el número de la calle no hace falta.
+        direccion_calle: 'Calle Demo',
         direccion_numero: null,
-        direccion_cp: null,
-        direccion_ciudad: null,
+        direccion_cp: '46001',
+        direccion_ciudad: 'Ciudad Demo',
         dni_documento_path: `${CENTRO}/${NINO}/dni-titular.pdf`,
+        telefono: '+34600000000',
+        fecha_nacimiento: '1985-01-01',
+        dni_numero: '12345678Z',
+        estudios: null,
+        empresa: null,
       },
     ],
     consentimientos: [{ id: '66666666-6666-4666-8666-666666666666' }],
@@ -127,6 +133,16 @@ function makeFake(estado: Estado) {
       rpcSpy(fn, args)
       // Los hermanos y el libro de familia son de gestión: salen por su función desde
       // `20270115130000`. El falso los saca de la misma fila del niño del estado.
+      // Fase 6: los cinco datos nuevos, por su función, con la regla (aquí el propio tutor: los lee).
+      if (fn === 'tutores_de_familia')
+        return Promise.resolve({
+          data: estado.familia_tutores.map((t) => ({
+            ...t,
+            ve_personales: true,
+            ve_telefono: true,
+          })),
+          error: null,
+        })
       if (fn === 'ficha_gestion_ninos') {
         const n = estado.ninos[0]
         return Promise.resolve({

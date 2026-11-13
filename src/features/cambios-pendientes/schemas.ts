@@ -72,7 +72,7 @@ export const payloadDocumentoSchema = z.object({
   path: z.string().min(1).max(400),
 })
 
-/** Identidad + dirección de un tutor (columnas de `datos_tutor`), con su vínculo. */
+/** El perfil de un tutor (identidad, dirección y los cinco de la fase 6), con su vínculo. */
 export const payloadDatosTutorSchema = z.object({
   tipo_vinculo: tipoVinculoLegalEnum,
   email: z.string().email().max(255).nullable().optional(),
@@ -81,6 +81,12 @@ export const payloadDatosTutorSchema = z.object({
   direccion_numero: z.string().max(20).nullable().optional(),
   direccion_cp: z.string().max(12).nullable().optional(),
   direccion_ciudad: z.string().max(120).nullable().optional(),
+  // Fase 6 (`20270118120000`): los cinco datos nuevos. Su forma la vuelve a comprobar la base al aplicar.
+  telefono: z.string().max(30).nullable().optional(),
+  fecha_nacimiento: z.string().max(10).nullable().optional(),
+  dni_numero: z.string().max(40).nullable().optional(),
+  estudios: z.string().max(200).nullable().optional(),
+  empresa: z.string().max(200).nullable().optional(),
 })
 
 /** DNI de un tutor (PDF ya subido a `dni-tutores`), con su vínculo. */

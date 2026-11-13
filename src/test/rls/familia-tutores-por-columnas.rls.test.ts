@@ -17,6 +17,7 @@ import {
   crearVinculo,
   deleteTestUser,
   matricular,
+  serviceClient,
   type TestUser,
 } from './setup'
 
@@ -66,7 +67,7 @@ describe('familia_tutores por columnas', () => {
     for (const u of [titular, segundo, admin, autorizado, profe]) if (u) await deleteTestUser(u.id)
   })
 
-  it('premisa y forma: sin SELECT de tabla para la sesión, y las 15 columnas abiertas', () => {
+  it('premisa y forma: sin SELECT de tabla para la sesión; las 15 de antes abiertas y las 5 de la fase 6, no', () => {
     expect(
       comoPostgres(
         "SELECT has_table_privilege('authenticated', 'public.familia_tutores', 'SELECT');"
@@ -77,7 +78,13 @@ describe('familia_tutores por columnas', () => {
         'public.familia_tutores', attname, 'SELECT')) || '/' || count(*)
         FROM pg_attribute WHERE attrelid = 'public.familia_tutores'::regclass AND attnum > 0
         AND NOT attisdropped;`)
-    ).toBe('15/15')
+    ).toBe('15/20')
+    // Las cinco de `20270118120000` nacieron cerradas: se leen por `tutores_de_familia`.
+    expect(
+      comoPostgres(`SELECT string_agg(c, ',' ORDER BY c) FROM unnest(ARRAY['telefono',
+        'fecha_nacimiento', 'dni_numero', 'estudios', 'empresa']) c
+        WHERE NOT has_column_privilege('authenticated', 'public.familia_tutores', c, 'SELECT');`)
+    ).toBe('dni_numero,empresa,estudios,fecha_nacimiento,telefono')
   })
 
   it('una columna nueva nace cerrada a la sesión (y el servidor la lee)', () => {
@@ -114,13 +121,23 @@ describe('familia_tutores por columnas', () => {
     expect(await lee('profe')).toBe(0)
   })
 
-  it('el titular sigue actualizando su fila (UPDATE … WHERE id, como guardar-datos-tutor)', async () => {
-    const { data, error } = await sesion.titular!.from('familia_tutores')
-      .update({ direccion_numero: '3' })
-      .eq('familia_id', nino.familia_id)
-      .eq('rol_familia', 'titular')
-      .select('id')
-    expect(error).toBeNull()
-    expect(data).toHaveLength(1)
+  it('el titular sigue guardando su fila, ahora por guardar_tutor (desde 20270118120000)', async () => {
+    // Con el alta en curso: con el alta validada, el cambio iría a la cola (lo mide la puerta).
+    const pend = await serviceClient
+      .from('matriculas')
+      .update({ estado: 'pendiente' })
+      .eq('nino_id', nino.id)
+    expect(pend.error).toBeNull()
+    try {
+      const { data, error } = await sesion.titular!.rpc('guardar_tutor', {
+        p_familia_id: nino.familia_id,
+        p_rol_familia: 'titular',
+        p_datos: { direccion_numero: '3' },
+      })
+      expect(error).toBeNull()
+      expect(data).not.toBeNull()
+    } finally {
+      await serviceClient.from('matriculas').update({ estado: 'activa' }).eq('nino_id', nino.id)
+    }
   })
 })

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { datosTutorFields } from '@/features/alta/schemas/alta-documentos'
+
 // F-6a — edición desde la ficha de familia (Dirección).
 
 /** Etiqueta de la familia (1–200, coincide con el CHECK `familias.etiqueta`). */
@@ -31,5 +33,7 @@ export const editarPerfilTutorSchema = z.object({
   direccion_numero: z.string().trim().max(20).optional().nullable(),
   direccion_cp: z.string().trim().max(12).optional().nullable(),
   direccion_ciudad: z.string().trim().max(120).optional().nullable(),
+  // Fase 6: la Dirección rellena también los cinco nuevos (el alta en papel cumple lo mismo).
+  ...datosTutorFields,
 })
 export type EditarPerfilTutorInput = z.infer<typeof editarPerfilTutorSchema>

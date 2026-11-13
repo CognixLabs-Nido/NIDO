@@ -1207,7 +1207,11 @@
         "email": "Email",
         "nombre_completo": "Nom complet",
         "documento": "Document",
-        "direccion_provincia": "Província"
+        "direccion_provincia": "Província",
+        "telefono": "Telèfon",
+        "dni_numero": "Número del DNI",
+        "estudios": "Estudis",
+        "empresa": "Empresa"
       },
       "entidad": {
         "ninos_familia": "Dades del menor (adreça / situació familiar)",
@@ -1302,7 +1306,12 @@
         "direccion_numero": "Número",
         "direccion_cp": "C.P.",
         "direccion_ciudad": "Ciutat",
-        "dni": "DNI"
+        "dni": "DNI",
+        "telefono": "Telèfon",
+        "fecha_nacimiento": "Data de naixement",
+        "dni_numero": "Número del DNI",
+        "estudios": "Estudis",
+        "empresa": "Empresa"
       },
       "tutores": {
         "titulo": "Tutors",
@@ -1328,7 +1337,8 @@
         "guardar": "Guardar",
         "guardando": "Guardant…",
         "cancelar": "Cancel·lar",
-        "guardado": "Perfil actualitzat"
+        "guardado": "Perfil actualitzat",
+        "no_legible": "No s'han pogut llegir el telèfon, la data de naixement, el número del DNI, els estudis ni l'empresa. Torna-ho a provar més tard."
       },
       "validation": {
         "invalid": "Dades no vàlides",
@@ -4437,7 +4447,11 @@
         "nino": "Xiquet/a",
         "documento": "Document",
         "cita": "Cita",
-        "adulto": "Persona vinculada"
+        "adulto": "Persona vinculada",
+        "telefono": "Telèfon",
+        "dni_numero": "Número del DNI",
+        "estudios": "Estudis",
+        "empresa": "Empresa"
       },
       "valores": {
         "terminos": "Termes",
@@ -4600,7 +4614,8 @@
     "generando": "Generant…",
     "exito": "Descàrrega preparada",
     "error": "No s'ha pogut generar l'exportació. Torna-ho a provar.",
-    "perfil_descripcion": "Descarrega una còpia de les teues dades personals i les dels teus fills (accés i portabilitat, RGPD)."
+    "perfil_descripcion": "Descarrega una còpia de les teues dades personals i les dels teus fills (accés i portabilitat, RGPD).",
+    "exportar_tutor_sin_cuenta": "Exportar les seues dades"
   },
   "alta": {
     "titulo": "Completar la matrícula",
@@ -4722,7 +4737,20 @@
         "soltero": "Solter/a",
         "viudo": "Vidu/a"
       },
-      "misma_direccion": "Mateixa adreça que el xiquet"
+      "misma_direccion": "Mateixa adreça que el xiquet",
+      "telefono": "Telèfon",
+      "fecha_nacimiento": "Data de naixement",
+      "dni_numero": "Número del DNI, NIE o passaport",
+      "estudios": "Estudis (voluntari)",
+      "empresa": "Empresa on treballa (voluntari)",
+      "voluntarios_nota": "Aquestes dues dades són voluntàries: les pots deixar en blanc.",
+      "no_legible": "No hem pogut llegir les dades personals d'aquest tutor. Torna-ho a provar més tard: mentrestant no es poden guardar, per no esborrar el que ja hi ha.",
+      "gestiona_el_otro": "Aquest tutor ja té el seu propi compte a NIDO: les seues dades personals les gestiona des d’allí.",
+      "errors": {
+        "telefono": "Escriu un telèfon vàlid: de 6 a 15 xifres, amb el prefix del país si no és espanyol.",
+        "fecha_nacimiento": "La data de naixement ha de ser anterior a hui i de fa menys de 120 anys.",
+        "dni_numero": "Revisa el número del DNI o NIE: la lletra no correspon."
+      }
     },
     "documentos": {
       "subido": "Document pujat",
@@ -4827,7 +4855,8 @@
         "medico": "Dades mèdiques i d'emergència",
         "documentos": "Documents (llibre de família i DNI)",
         "imagen": "Autorització d'imatge",
-        "documentos_centro": "Documents del centre per signar"
+        "documentos_centro": "Documents del centre per signar",
+        "tutor2": "Dades del tutor 2"
       }
     }
   },
@@ -5503,5 +5532,22 @@
       "no_comprobado": "No hem pogut comprovar els documents del centre pendents."
     },
     "refirma": "El centre ha corregit «{titulo}» i demana tornar a signar-lo. La signatura anterior és del {fecha}."
+  },
+  "familias": {
+    "llamar": {
+      "boton": "Telefonar a la família",
+      "titulo": "Telefonar a la família",
+      "descripcion": "Toca un número per a telefonar.",
+      "cargando": "Buscant els telèfons…",
+      "sin_tutores": "Aquesta família no té tutors amb dades.",
+      "sin_telefono": "Sense telèfon",
+      "rol": {
+        "titular": "Tutor 1",
+        "segundo_tutor": "Tutor 2"
+      },
+      "errors": {
+        "no_leido": "No s'han pogut llegir els telèfons. Torna-ho a provar."
+      }
+    }
   }
 }

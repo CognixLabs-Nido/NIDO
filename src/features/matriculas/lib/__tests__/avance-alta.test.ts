@@ -23,8 +23,8 @@ const RECIEN_ACEPTADA: SenalesAvance = {
   documentosCentro: [NORMAS_POR_FIRMAR],
   libroFamilia: false,
   imagen: false,
-  dniTutor1: false,
-  tutor2: false,
+  tutor1: false,
+  tutor2: 'no_hay',
   medico: false,
   mandato: false,
   centroConCid: true,
@@ -34,14 +34,21 @@ const TODO_HECHO: SenalesAvance = {
   documentosCentro: [NORMAS_FIRMADAS],
   libroFamilia: true,
   imagen: true,
-  dniTutor1: true,
-  tutor2: true,
+  tutor1: true,
+  tutor2: 'completo',
   medico: true,
   mandato: true,
   centroConCid: true,
 }
 
 describe('Lo que lleva hecho un alta', () => {
+  it('un segundo tutor empezado y a medias es «falta», no «opcional sin hacer»: frena el cierre (fase 6)', () => {
+    const l = avanceAlta({ ...RECIEN_ACEPTADA, tutor2: 'incompleto' }).find(
+      (x) => x.item === 'tutor2'
+    )
+    expect(l?.estado).toBe('falta')
+  })
+
   it('recién aceptada no tiene nada hecho: lo obligatorio falta y lo opcional queda neutro', () => {
     const lineas = avanceAlta(RECIEN_ACEPTADA)
     // Premisa: están todas las líneas, en el orden del wizard.
@@ -58,8 +65,8 @@ describe('Lo que lleva hecho un alta', () => {
       documentos_centro: { documentosCentro: [NORMAS_FIRMADAS] },
       nino: { libroFamilia: true },
       imagen: { imagen: true },
-      tutor1: { dniTutor1: true },
-      tutor2: { tutor2: true },
+      tutor1: { tutor1: true },
+      tutor2: { tutor2: 'completo' },
       medico: { medico: true },
       sepa: { mandato: true },
     }
@@ -119,14 +126,15 @@ describe('Lo que lleva hecho un alta', () => {
     const delGate = new Set(
       Object.values(LINEAS_DEL_GATE).flatMap((v) => (v === 'invitacion' ? [] : v))
     )
-    // Lo que la lista marca como obligatorio es exactamente lo que el gate exige a la familia.
-    expect([...delGate].sort()).toEqual([...obligatorias].sort())
-    // Y lo que el gate ya da por hecho con la invitación es la identidad del niño y el nombre del
-    // tutor 1: por eso no tienen línea (decían «hecho» desde el principio).
+    // Lo que la lista marca como obligatorio es lo que el gate exige a la familia, más el segundo
+    // tutor, que es opcional pero, si lo hay, el gate lo exige entero (fase 6).
+    expect([...delGate].sort()).toEqual([...obligatorias, 'tutor2'].sort())
+    // Y lo que el gate ya da por hecho con la invitación es la identidad del niño: por eso no tiene
+    // línea. El tutor 1 la tiene desde la fase 6 (sus datos los rellena la familia).
     const porInvitacion = Object.entries(LINEAS_DEL_GATE)
       .filter(([, v]) => v === 'invitacion')
       .map(([k]) => k)
       .sort()
-    expect(porInvitacion).toEqual(['identidad', 'tutor1'])
+    expect(porInvitacion).toEqual(['identidad'])
   })
 })

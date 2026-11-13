@@ -264,7 +264,7 @@ BEGIN
   -- Qué: cada clave presente se escribe, normalizada; vacío es NULL. Las ausentes no se tocan.
   v_nueva := v_fila;
   IF p_datos ? 'nombre_completo'  THEN v_nueva.nombre_completo  := NULLIF(btrim(p_datos->>'nombre_completo'), ''); END IF;
-  IF p_datos ? 'email'            THEN v_nueva.email            := NULLIF(lower(btrim(p_datos->>'email')), ''); END IF;
+  IF p_datos ? 'email'            THEN v_nueva.email            := NULLIF(btrim(p_datos->>'email'), ''); END IF;
   IF p_datos ? 'direccion_calle'  THEN v_nueva.direccion_calle  := NULLIF(btrim(p_datos->>'direccion_calle'), ''); END IF;
   IF p_datos ? 'direccion_numero' THEN v_nueva.direccion_numero := NULLIF(btrim(p_datos->>'direccion_numero'), ''); END IF;
   IF p_datos ? 'direccion_cp'     THEN v_nueva.direccion_cp     := NULLIF(btrim(p_datos->>'direccion_cp'), ''); END IF;
@@ -457,10 +457,10 @@ REVOKE ALL ON FUNCTION public.telefonos_familia_de_nino(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.telefonos_familia_de_nino(uuid) TO authenticated, service_role;
 
 -- ---- 5. El bucket dni-tutores, con la misma regla ----
--- Un tutor abre el PDF de una fila que gestiona, o el que él mismo dejó en la cola mientras la fila
--- de destino siga siendo suya de gestionar. Antes bastaba con ser tutor legal del niño de la ruta:
+-- Un tutor abre el PDF de una fila que gestiona, el que él mismo dejó en la cola mientras la fila de
+-- destino siga siendo suya de gestionar, o el que acaba de subir mientras nadie lo apunta. Antes bastaba con ser tutor legal del niño de la ruta:
 -- el tutor 2 abría el DNI del tutor 1 (medido el 2026-11-13).
-CREATE FUNCTION privado.puede_ver_dni_tutor(p_name text)
+CREATE FUNCTION privado.puede_ver_dni_tutor(p_name text, p_owner_id text)
  RETURNS boolean
  LANGUAGE sql
  STABLE
@@ -468,6 +468,13 @@ CREATE FUNCTION privado.puede_ver_dni_tutor(p_name text)
  SET search_path TO 'public'
 AS $function$
   SELECT auth.uid() IS NOT NULL AND (
+    -- Lo que acaba de subir y nadie apunta todavía: la subida lo relee al insertarlo (sin esto el
+    -- tutor no podía subir su DNI: medido en la CI), y la ruta lo engancha justo después.
+    (p_owner_id = auth.uid()::text
+     AND NOT EXISTS (SELECT 1 FROM public.familia_tutores ft WHERE ft.dni_documento_path = p_name)
+     AND NOT EXISTS (SELECT 1 FROM public.cambios_pendientes cp
+                      WHERE cp.entidad = 'datos_tutor_dni' AND cp.payload->>'path' = p_name))
+    OR
     EXISTS (
       SELECT 1 FROM public.familia_tutores ft
        WHERE ft.dni_documento_path = p_name AND ft.deleted_at IS NULL
@@ -487,25 +494,25 @@ AS $function$
                                      ELSE 'segundo_tutor' END
               AND ft.usuario_id IS NOT NULL AND ft.usuario_id <> auth.uid())));
 $function$;
-REVOKE ALL ON FUNCTION privado.puede_ver_dni_tutor(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION privado.puede_ver_dni_tutor(text) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION privado.puede_ver_dni_tutor(text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION privado.puede_ver_dni_tutor(text, text) TO authenticated, service_role;
 
 DROP POLICY dni_tutores_select ON storage.objects;
 CREATE POLICY dni_tutores_select ON storage.objects FOR SELECT TO authenticated
   USING (bucket_id = 'dni-tutores'
          AND (public.es_admin(((storage.foldername(name))[1])::uuid)
-              OR privado.puede_ver_dni_tutor(name))
+              OR privado.puede_ver_dni_tutor(name, owner_id))
          AND privado.ruta_coherente(bucket_id, name));
 
 DROP POLICY dni_tutores_update ON storage.objects;
 CREATE POLICY dni_tutores_update ON storage.objects FOR UPDATE TO authenticated
   USING (bucket_id = 'dni-tutores'
          AND (public.es_admin(((storage.foldername(name))[1])::uuid)
-              OR privado.puede_ver_dni_tutor(name))
+              OR privado.puede_ver_dni_tutor(name, owner_id))
          AND privado.ruta_coherente(bucket_id, name))
   WITH CHECK (bucket_id = 'dni-tutores'
               AND (public.es_admin(((storage.foldername(name))[1])::uuid)
-                   OR privado.puede_ver_dni_tutor(name))
+                   OR privado.puede_ver_dni_tutor(name, owner_id))
               AND privado.ruta_coherente(bucket_id, name));
 
 -- ---- 6. El registro del export admite el sujeto 'tutor' ----
@@ -1506,7 +1513,7 @@ BEGIN
                 'public.guardar_tutor(uuid,text,jsonb)', 'public.fijar_dni_tutor(uuid,text,text)',
                 'public.tutores_de_familia(uuid)', 'public.telefonos_familia_de_nino(uuid)',
                 'privado.gestiona_tutor(uuid,uuid)', 'privado.familia_alta_validada(uuid)',
-                'privado.puede_ver_dni_tutor(text)', 'privado.tutor_completo(public.familia_tutores)',
+                'privado.puede_ver_dni_tutor(text,text)', 'privado.tutor_completo(public.familia_tutores)',
                 'privado.documento_tutor_valido(text)', 'privado.normalizar_telefono(text)']) f
               WHERE has_function_privilege('anon', f::regprocedure, 'EXECUTE')) THEN
     RAISE EXCEPTION 'alguna función nueva se puede ejecutar como anon';
