@@ -31,6 +31,18 @@ export const BUCKETS_FUERA_DEL_OLVIDO: Readonly<Record<string, string>> = {
     'Los ficheros del banco (remesas): retención fiscal. Los borra `retencion/lib/ficheros-remesa.ts`.',
 }
 
+/**
+ * Buckets que la base efímera tiene y producción NO: se borraron por la API de Storage (que no deja
+ * borrarlos por SQL), y la migración que los creó sigue ahí, así que la efímera los recrea. No son
+ * «fuera del olvido»: en producción no hay nada que borrar. El test afirma que siguen en la efímera
+ * (si no, esta lista se pudre) y vacíos.
+ */
+export const BUCKETS_BORRADOS_EN_PRODUCCION: Readonly<Record<string, string>> = {
+  'cartilla-vacunas':
+    'Fase 11-F (`20260620120000_phase11_f_teardown_cartilla_acuse.sql`): la cartilla se quitó y el ' +
+    'bucket se borró por la API. Ausente en producción, medido el 2026-11-13 (10 buckets).',
+}
+
 export interface ResultadoCatalogo {
   /** Existen y nadie dice qué pasa con ellos al olvidar a alguien: lo que tiene que poner rojo. */
   sinDueno: string[]

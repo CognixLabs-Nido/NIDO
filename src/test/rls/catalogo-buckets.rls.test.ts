@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest'
 
 import { FUENTES_ADJUNTOS } from '@/features/olvido/lib/fuentes-adjuntos'
 import {
+  BUCKETS_BORRADOS_EN_PRODUCCION,
   BUCKETS_FUERA_DEL_OLVIDO,
   compararCatalogoBuckets,
 } from '@/features/olvido/lib/catalogo-buckets'
@@ -28,8 +29,17 @@ describe('catálogo de buckets frente al olvido', () => {
     expect(reales.length).toBeGreaterThanOrEqual(10)
     expect(reales).toEqual(expect.arrayContaining(['dni-tutores', 'sip-ninos']))
 
+    // Los que producción ya no tiene: siguen aquí (si no, la lista se pudre) y vacíos.
+    const borrados = Object.keys(BUCKETS_BORRADOS_EN_PRODUCCION)
+    expect(reales).toEqual(expect.arrayContaining(borrados))
+    for (const b of borrados) {
+      const { data: objs, error: e } = await serviceClient.storage.from(b).list()
+      expect.soft(e, b).toBeNull()
+      expect.soft(objs ?? [], b).toHaveLength(0)
+    }
+
     const r = compararCatalogoBuckets(
-      reales,
+      reales.filter((b) => !borrados.includes(b)),
       FUENTES_ADJUNTOS.map((f) => f.bucket),
       Object.keys(BUCKETS_FUERA_DEL_OLVIDO)
     )
