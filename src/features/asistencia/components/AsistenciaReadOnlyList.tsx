@@ -110,9 +110,7 @@ function FilaReadOnly({ fila, modo }: { fila: NinoAsistenciaResumen; modo: ModoF
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {mostrarAsistencia && a && (
-            <EstadoBadge estado={a.estado} horaLlegada={a.hora_llegada} />
-          )}
+          {mostrarAsistencia && a && <EstadoBadge estado={a.estado} horaLlegada={a.hora_llegada} />}
           {mostrarAusenciaSola && au && (
             <Badge
               variant="destructive"

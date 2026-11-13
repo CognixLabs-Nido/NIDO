@@ -57,9 +57,7 @@ export async function getPaseDeListaAula(
   // 2. Asistencias de hoy (LEFT JOIN lógico — pueden no existir).
   const { data: asistencias, error: errorAsistencias } = await supabase
     .from('asistencias')
-    .select(
-      'id, nino_id, fecha, estado, hora_llegada, observaciones, registrada_por, updated_at'
-    )
+    .select('id, nino_id, fecha, estado, hora_llegada, observaciones, registrada_por, updated_at')
     .in('nino_id', ninoIds)
     .eq('fecha', fecha)
 

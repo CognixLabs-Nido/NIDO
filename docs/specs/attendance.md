@@ -230,11 +230,7 @@ const horaSchema = z
 const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'asistencia.validation.fecha_invalida')
 const observacionesSchema = z.string().max(500, 'asistencia.validation.observaciones_largas')
 
-export const estadoAsistenciaEnum = z.enum([
-  'presente',
-  'ausente',
-  'llegada_tarde',
-])
+export const estadoAsistenciaEnum = z.enum(['presente', 'ausente', 'llegada_tarde'])
 export type EstadoAsistencia = z.infer<typeof estadoAsistenciaEnum>
 
 export const asistenciaInputSchema = z
