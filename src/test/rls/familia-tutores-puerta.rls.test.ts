@@ -339,9 +339,9 @@ describe('Los datos del tutor y su puerta (fase 6, paso 2)', () => {
       for (const p of [dniTitular, dniSegundo]) {
         const { error } = await serviceClient.storage
           .from('dni-tutores')
-          .upload(p, new Blob(['%PDF-1.4 demo'], { type: 'application/pdf' }), {
-            upsert: true,
+          .upload(p, Buffer.from('%PDF-1.4\n%prueba\n'), {
             contentType: 'application/pdf',
+            upsert: true,
           })
         if (error) throw new Error(error.message)
       }
@@ -404,9 +404,10 @@ describe('Los datos del tutor y su puerta (fase 6, paso 2)', () => {
     })
 
     const completar = async (rol: 'titular' | 'segundo_tutor') => {
+      // Con su propia ruta del DNI: no depende de lo que haya montado el bloque del bucket.
       const { error } = await serviceClient
         .from('familia_tutores')
-        .update(COMPLETO)
+        .update({ ...COMPLETO, dni_documento_path: `${centro.id}/${lucas}/dni-${rol}-cierre.pdf` })
         .eq('familia_id', familia)
         .eq('rol_familia', rol)
       if (error) throw new Error(error.message)
