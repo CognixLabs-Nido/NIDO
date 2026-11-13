@@ -35,7 +35,6 @@ export async function upsertAsistencia(
     fecha,
     estado: parsed.data.estado,
     hora_llegada: parsed.data.hora_llegada,
-    hora_salida: parsed.data.hora_salida,
     observaciones: parsed.data.observaciones,
     registrada_por: userId,
   }

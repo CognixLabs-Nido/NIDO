@@ -79,7 +79,6 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'observaciones',
   'estado',
   'hora_llegada',
-  'hora_salida',
   'fecha_inicio',
   'fecha_fin',
   'motivo',
@@ -305,7 +304,6 @@ export const VALORES_CONOCIDOS = new Set<string>([
   'presente',
   'ausente',
   'llegada_tarde',
-  'salida_temprana',
   // tipo_deposicion / consistencia
   'pipi',
   'caca',

@@ -58,7 +58,7 @@ export async function getPaseDeListaAula(
   const { data: asistencias, error: errorAsistencias } = await supabase
     .from('asistencias')
     .select(
-      'id, nino_id, fecha, estado, hora_llegada, hora_salida, observaciones, registrada_por, updated_at'
+      'id, nino_id, fecha, estado, hora_llegada, observaciones, registrada_por, updated_at'
     )
     .in('nino_id', ninoIds)
     .eq('fecha', fecha)

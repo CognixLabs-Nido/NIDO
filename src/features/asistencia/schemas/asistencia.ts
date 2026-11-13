@@ -1,9 +1,9 @@
 import { z } from 'zod'
 
-// La base devuelve las horas como 'HH:MM:SS', y una fila que ya tiene hora vuelve a la acción tal
-// cual la leyó el pase. Pedir 'HH:MM' dejaba sin guardar cualquier fila con una hora apuntada (la
-// salida en la fila de la llegada; medido 2026-11-13, `hora_invalida`). Se aceptan las dos y se deja
-// en 'HH:MM', así la comparación salida > llegada compara lo mismo.
+// La base devuelve las horas como 'HH:MM:SS', y una fila que ya tiene hora de llegada vuelve a la
+// acción tal cual la leyó el pase. Pedir 'HH:MM' dejaba sin guardar cualquier fila con la llegada
+// apuntada, aunque solo se cambiara la nota (medido 2026-11-13, `hora_invalida`). Se aceptan las dos
+// y se deja en 'HH:MM'.
 const horaSchema = z
   .string()
   .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'asistencia.validation.hora_invalida')
@@ -15,7 +15,6 @@ export const estadoAsistenciaEnum = z.enum([
   'presente',
   'ausente',
   'llegada_tarde',
-  'salida_temprana',
 ])
 export type EstadoAsistencia = z.infer<typeof estadoAsistenciaEnum>
 
@@ -28,7 +27,6 @@ export const asistenciaInputSchema = z
   .object({
     estado: estadoAsistenciaEnum,
     hora_llegada: horaSchema.nullable(),
-    hora_salida: horaSchema.nullable(),
     observaciones: observacionesSchema.nullable(),
   })
   .superRefine((v, ctx) => {
@@ -44,20 +42,6 @@ export const asistenciaInputSchema = z
         code: 'custom',
         path: ['hora_llegada'],
         message: 'asistencia.validation.requiere_hora_llegada',
-      })
-    }
-    if (v.estado === 'salida_temprana' && !v.hora_salida) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['hora_salida'],
-        message: 'asistencia.validation.requiere_hora_salida',
-      })
-    }
-    if (v.hora_llegada && v.hora_salida && v.hora_salida <= v.hora_llegada) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['hora_salida'],
-        message: 'asistencia.validation.salida_anterior_llegada',
       })
     }
   })

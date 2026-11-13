@@ -388,7 +388,6 @@ export type Database = {
           estado: Database["public"]["Enums"]["estado_asistencia"]
           fecha: string
           hora_llegada: string | null
-          hora_salida: string | null
           id: string
           nino_id: string
           observaciones: string | null
@@ -400,7 +399,6 @@ export type Database = {
           estado: Database["public"]["Enums"]["estado_asistencia"]
           fecha: string
           hora_llegada?: string | null
-          hora_salida?: string | null
           id?: string
           nino_id: string
           observaciones?: string | null
@@ -412,7 +410,6 @@ export type Database = {
           estado?: Database["public"]["Enums"]["estado_asistencia"]
           fecha?: string
           hora_llegada?: string | null
-          hora_salida?: string | null
           id?: string
           nino_id?: string
           observaciones?: string | null
@@ -6253,11 +6250,7 @@ export type Database = {
         | "sin_panal_diurno"
         | "sin_panal_total"
       curso_estado: "planificado" | "activo" | "cerrado"
-      estado_asistencia:
-        | "presente"
-        | "ausente"
-        | "llegada_tarde"
-        | "salida_temprana"
+      estado_asistencia: "presente" | "ausente" | "llegada_tarde"
       estado_cambio_pendiente: "pendiente" | "aprobado" | "rechazado"
       estado_campana_informe: "abierta" | "cerrada"
       estado_civil:
@@ -6542,12 +6535,7 @@ export const Constants = {
         "sin_panal_total",
       ],
       curso_estado: ["planificado", "activo", "cerrado"],
-      estado_asistencia: [
-        "presente",
-        "ausente",
-        "llegada_tarde",
-        "salida_temprana",
-      ],
+      estado_asistencia: ["presente", "ausente", "llegada_tarde"],
       estado_cambio_pendiente: ["pendiente", "aprobado", "rechazado"],
       estado_campana_informe: ["abierta", "cerrada"],
       estado_civil: [

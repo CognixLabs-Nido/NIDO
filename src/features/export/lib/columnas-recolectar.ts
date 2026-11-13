@@ -465,7 +465,6 @@ export const SECCIONES_RECOLECTAR = {
     estado: SALE,
     fecha: SALE,
     hora_llegada: SALE,
-    hora_salida: SALE,
     id: NS_ID,
     nino_id: NS_SUJETO,
     observaciones: SALE,

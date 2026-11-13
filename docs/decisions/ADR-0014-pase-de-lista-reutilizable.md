@@ -2,7 +2,9 @@
 
 ## Estado
 
-`accepted`
+`accepted`, revocado en parte (abajo)
+
+**Revocado en parte el 2026-11-13** ([#525](https://github.com/CognixLabs-Nido/NIDO/pull/525), migración `20270116120000`): el estado `salida_temprana` y la hora de salida. Motivo: el responsable no los pidió nunca y no se usan (en producción, 0 filas de asistencia). Se quitaron enteros: de la base, de la app, de las traducciones y de la exportación. El resto del ADR sigue vigente. Lo revocado se deja escrito, marcado, para que se sepa que se decidió y se deshizo.
 
 **Fecha:** 2026-05-15
 **Autores:** jovimib + claude-code
@@ -10,11 +12,11 @@
 
 ## Contexto
 
-Fase 4 implementa el "pase de lista" diario: la profe ve a todos los niños matriculados activos en su aula y marca su estado (`presente`/`ausente`/`llegada_tarde`/`salida_temprana`) en una tabla. La interacción tiene un patrón muy concreto:
+Fase 4 implementa el "pase de lista" diario: la profe ve a todos los niños matriculados activos en su aula y marca su estado (`presente`/`ausente`/`llegada_tarde`/`salida_temprana`) en una tabla. _`salida_temprana`, revocado el 2026-11-13 (#525)._ La interacción tiene un patrón muy concreto:
 
 - Una fila por entidad (niño matriculado activo).
 - Varias columnas con inputs heterogéneos: radio para el estado, time para llegada/salida, text para observaciones.
-- Visibilidad condicional por columna (la hora de salida solo aparece si el estado es `salida_temprana`).
+- Visibilidad condicional por columna (la hora de salida solo aparece si el estado es `salida_temprana`). _Revocado el 2026-11-13 (#525): ya no hay hora de salida; el mecanismo `visibleWhen` sigue, y lo usa la hora de llegada._
 - Quick actions a nivel tabla ("Todos presentes" pre-marca a todos los pendientes).
 - Submit batch: solo se envían las filas tocadas, no todo el aula.
 - Tracking visual por fila (pendiente / sin guardar / guardando / guardado / error).
