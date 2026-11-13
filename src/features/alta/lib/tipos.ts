@@ -33,6 +33,8 @@ export interface IdentidadInicial {
   // Fase 5b
   lugar_nacimiento: string | null
   dni: string | null
+  /** Fase 7: la tarjeta sanitaria (de `sip_de_ninos`). */
+  sip: string | null
   hermanos_total: number | null
   hermanos_lugar: number | null
   direccion_provincia: string | null

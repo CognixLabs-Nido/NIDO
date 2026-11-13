@@ -66,6 +66,8 @@ function altaCompleta(): Estado {
         lugar_nacimiento: 'Valencia',
         nacionalidad: 'española',
         hermanos_total: 1,
+        // Fase 7: la tarjeta sanitaria (por `sip_de_ninos`).
+        sip: '12345678',
         libro_familia_path: `${CENTRO}/${NINO}/libro-familia.pdf`,
         familia_id: FAMILIA,
         centro_id: CENTRO,
@@ -154,6 +156,15 @@ function makeFake(estado: Estado) {
                   libro_familia_path: n.libro_familia_path ?? null,
                 },
               ]
+            : [],
+          error: null,
+        })
+      }
+      if (fn === 'sip_de_ninos') {
+        const n = estado.ninos[0] as { sip?: string | null } | undefined
+        return Promise.resolve({
+          data: n
+            ? [{ nino_id: NINO, sip: n.sip ?? null, sip_documento_path: null, ve_documento: true }]
             : [],
           error: null,
         })
@@ -308,7 +319,7 @@ describe('finalizarAlta · los documentos del centro (fase 4, 4b-2)', () => {
 })
 
 describe('finalizarAlta · los datos del niño que el alta exige (fase 5b)', () => {
-  it('premisa: con los cinco puestos, finaliza', async () => {
+  it('premisa: con los cinco puestos y la tarjeta sanitaria, finaliza', async () => {
     expect((await cierra(altaCompleta())).cerro).toBe(true)
   })
 
@@ -320,6 +331,7 @@ describe('finalizarAlta · los datos del niño que el alta exige (fase 5b)', () 
     ['hermanos_total', null],
     ['apellidos', null],
     ['fecha_nacimiento', null],
+    ['sip', null],
   ] as const) {
     it(`sin ${campo} (${JSON.stringify(vacio)}) falta «identidad» y no se llama a la base`, async () => {
       const estado = altaCompleta()

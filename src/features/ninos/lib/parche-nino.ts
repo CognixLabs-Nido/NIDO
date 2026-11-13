@@ -1,4 +1,4 @@
-import { normalizarDni, textoONull } from '@/features/cambios-pendientes/lib/diff'
+import { normalizarDni, normalizarSip, textoONull } from '@/features/cambios-pendientes/lib/diff'
 import type { TablesUpdate } from '@/types/db'
 
 import type { ActualizarNinoTutorInput } from '../schemas/nino'
@@ -26,6 +26,8 @@ export function parcheNinoDireccion(d: ActualizarNinoTutorInput): TablesUpdate<'
   // Como en la función: el sexo NULL es «preservar», no «borrar».
   if (d.sexo != null) p.sexo = d.sexo
   if (d.dni != null) p.dni = normalizarDni(d.dni)
+  // Fase 7: obligatoria en el formulario; se guarda normalizada, como la deja la función.
+  p.sip = normalizarSip(d.sip)
   if (d.observaciones_familia != null) p.observaciones_familia = textoONull(d.observaciones_familia)
   if (d.como_nos_conocio != null) {
     const como = textoONull(d.como_nos_conocio)

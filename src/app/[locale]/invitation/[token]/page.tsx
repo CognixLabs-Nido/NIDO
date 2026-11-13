@@ -151,6 +151,7 @@ function AltaInvitacionFlow({
           idioma_principal: locale,
           lugar_nacimiento: null,
           dni: null,
+          sip: null,
           hermanos_total: null,
           hermanos_lugar: null,
           direccion_provincia: null,

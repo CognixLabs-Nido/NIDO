@@ -31,6 +31,7 @@ export const CAMPOS_CONOCIDOS = new Set<string>([
   'segundo_apellido',
   'lugar_nacimiento',
   'dni',
+  'sip',
   'hermanos_total',
   'hermanos_lugar',
   'direccion_provincia',

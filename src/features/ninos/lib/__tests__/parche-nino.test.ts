@@ -18,6 +18,7 @@ const BASE = {
   idioma_principal: 'es' as const,
   lugar_nacimiento: ' Valencia ',
   dni: null,
+  sip: ' 1234.5678 ',
   hermanos_total: 2,
   hermanos_lugar: 1,
   observaciones_familia: null,
@@ -57,6 +58,8 @@ describe('parcheNinoDireccion — la regla de la función de la tutora', () => {
     })
     expect(p).toMatchObject({
       dni: '12345678Z',
+      // Fase 7: la tarjeta, obligatoria, siempre en el parche y normalizada como la deja la función.
+      sip: '12345678',
       observaciones_familia: null,
       como_nos_conocio: null,
       como_nos_conocio_otro: null,

@@ -65,6 +65,7 @@ function renderPaso(over: Partial<IdentidadInicial> = {}, mostrarComo = false) {
         idioma_principal: 'es',
         lugar_nacimiento: 'Valencia',
         dni: null,
+        sip: '12345678',
         hermanos_total: 1,
         hermanos_lugar: 1,
         direccion_provincia: null,
@@ -121,6 +122,7 @@ describe('PasoMenor — los campos de la fase 5', () => {
       lugar_nacimiento: 'Valencia',
       hermanos_total: 1,
       hermanos_lugar: 1,
+      sip: '12345678',
     })
   })
 
@@ -141,11 +143,14 @@ describe('PasoMenor — los campos de la fase 5', () => {
     )
   })
 
-  it('sin lugar de nacimiento, sin nacionalidad o sin hermanos, no se guarda nada', async () => {
+  it('sin lugar de nacimiento, nacionalidad, hermanos o tarjeta sanitaria, no se guarda nada', async () => {
     const casos: [Partial<IdentidadInicial>, string][] = [
       [{ lugar_nacimiento: null }, 'nino.validation.lugar_requerido'],
       [{ nacionalidad: null }, 'nino.validation.nacionalidad_requerida'],
       [{ hermanos_total: null, hermanos_lugar: null }, 'nino.validation.hermanos_requeridos'],
+      // Fase 7: la tarjeta sanitaria, obligatoria; y con una forma que no es de ninguna tarjeta.
+      [{ sip: null }, 'nino.validation.sip_requerido'],
+      [{ sip: 'M-12' }, 'nino.validation.sip_invalido'],
     ]
     for (const [falta, mensaje] of casos) {
       cleanup()

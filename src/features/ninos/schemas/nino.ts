@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { dniNieValido } from '@/features/alta/lib/documento-identidad'
+import { sipValido } from '@/features/cambios-pendientes/lib/diff'
 
 const fechaRegex = /^\d{4}-\d{2}-\d{2}$/
 
@@ -74,6 +75,14 @@ export const actualizarNinoTutorObject = z.object({
     .refine((v) => v === '' || dniNieValido(v), 'nino.validation.dni_invalido')
     .optional()
     .nullable(),
+  // Fase 7 (decidido el 2026-11-13): la tarjeta sanitaria, obligatoria y de cualquier comunidad o
+  // aseguradora: solo la forma que comparten todas (la base: `ninos_sip_forma`).
+  sip: z
+    .string('nino.validation.sip_requerido')
+    .trim()
+    .min(1, 'nino.validation.sip_requerido')
+    .max(40)
+    .refine((v) => sipValido(v), 'nino.validation.sip_invalido'),
   // El total cuenta al niño; el lugar 1 es el mayor.
   hermanos_total: z.number('nino.validation.hermanos_requeridos').int().min(1).max(20),
   hermanos_lugar: z.number('nino.validation.hermanos_requeridos').int().min(1).max(20),

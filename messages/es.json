@@ -1211,14 +1211,16 @@
         "telefono": "Teléfono",
         "dni_numero": "Número del DNI",
         "estudios": "Estudios",
-        "empresa": "Empresa"
+        "empresa": "Empresa",
+        "sip": "Tarjeta sanitaria"
       },
       "entidad": {
         "ninos_familia": "Datos del menor (dirección / situación familiar)",
         "ninos_libro_familia": "Libro de familia",
         "datos_tutor": "Datos de un tutor",
         "datos_tutor_dni": "DNI de un tutor",
-        "ninos_identidad": "Identidad del niño"
+        "ninos_identidad": "Identidad del niño",
+        "ninos_sip_documento": "Imagen de la tarjeta sanitaria"
       },
       "errors": {
         "registro": "No se pudo registrar el cambio. Inténtalo de nuevo.",
@@ -1584,6 +1586,12 @@
           "falta": "falta",
           "sin_hacer_opcional": "sin hacer, es opcional"
         }
+      },
+      "sin_tarjeta": {
+        "titulo": "Matriculados sin tarjeta sanitaria",
+        "subtitulo": "El alta la pide desde ahora, pero no a los que ya estaban matriculados. A estas familias hay que reclamársela.",
+        "no_se_pudo_leer": "No se ha podido leer qué niños tienen la tarjeta. Vuelve a cargar la página.",
+        "vacio": "Todos los niños matriculados tienen la tarjeta sanitaria."
       }
     }
   },
@@ -2449,7 +2457,9 @@
       "dni_invalido": "El DNI o NIE no es válido: revisa los números y la letra",
       "hermanos_requeridos": "Indica cuántos hermanos son y qué lugar ocupa",
       "hermanos_lugar_mayor": "El lugar no puede ser mayor que el número de hermanos",
-      "como_nos_conocio_otro_requerido": "Cuéntanos cómo nos has conocido"
+      "como_nos_conocio_otro_requerido": "Cuéntanos cómo nos has conocido",
+      "sip_requerido": "Falta el número de la tarjeta sanitaria",
+      "sip_invalido": "El número de la tarjeta lleva solo letras y cifras (de 5 a 30)"
     },
     "errors": {
       "create_failed": "No se pudo registrar al niño.",
@@ -2487,6 +2497,20 @@
         "fallo": "No se pudo revocar la autorización de imagen",
         "no_autorizado_otorgar": "No tienes permiso para autorizar la imagen de este niño",
         "fallo_otorgar": "No se pudo autorizar la imagen"
+      }
+    },
+    "tarjeta_sanitaria": {
+      "titulo": "Tarjeta sanitaria",
+      "numero": "Número",
+      "sin_numero": "Sin número",
+      "no_se_pudo_leer": "No se ha podido leer la tarjeta sanitaria.",
+      "imagen_titulo": "Imagen de la tarjeta (opcional)",
+      "imagen_ayuda": "Haz una foto del anverso y otra del reverso: se juntan en un PDF.",
+      "boton": "Tarjeta sanitaria",
+      "descripcion": "El número para el centro de salud.",
+      "cargando": "Buscando la tarjeta…",
+      "errors": {
+        "no_leido": "No se ha podido leer la tarjeta sanitaria. Vuelve a intentarlo."
       }
     }
   },
@@ -4250,6 +4274,7 @@
         "segundo_apellido": "Segundo apellido",
         "lugar_nacimiento": "Lugar de nacimiento",
         "dni": "DNI o NIE",
+        "sip": "Tarjeta sanitaria",
         "hermanos_total": "Hermanos (contando al niño)",
         "hermanos_lugar": "Lugar que ocupa entre los hermanos",
         "direccion_provincia": "Provincia",
@@ -4714,7 +4739,9 @@
         "recomendacion": "Por recomendación",
         "paso_por_delante": "Paso por delante",
         "otro": "Otro"
-      }
+      },
+      "sip": "Tarjeta sanitaria (SIP)",
+      "sip_ayuda": "El número de su tarjeta sanitaria. Vale la de cualquier comunidad o la de una aseguradora."
     },
     "tutor": {
       "guardado": "Datos del tutor guardados",

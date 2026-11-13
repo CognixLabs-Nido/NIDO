@@ -19,6 +19,7 @@ const GUARDADA = {
   nacionalidad: 'española',
   lugar_nacimiento: 'Valencia',
   dni: null,
+  sip: 'ABC12345',
 }
 
 const createClientMock = vi.fn()
@@ -69,6 +70,14 @@ function makeFake(
       // escritura, así que no cuenta como «RPC» en los asertos de este fichero.
       if (fn === 'ficha_gestion_ninos')
         return Promise.resolve({ data: [{ nino_id: NINO, dni: GUARDADA.dni }], error: null })
+      // La tarjeta sanitaria guardada, por `sip_de_ninos` (fase 7): tampoco es una escritura.
+      if (fn === 'sip_de_ninos')
+        return Promise.resolve({
+          data: [
+            { nino_id: NINO, sip: GUARDADA.sip, sip_documento_path: null, ve_documento: true },
+          ],
+          error: null,
+        })
       rpcSpy(fn, args)
       return Promise.resolve({ data: NINO, error: null })
     },
@@ -87,6 +96,8 @@ const ENVIADO = {
   idioma_principal: 'es' as const,
   lugar_nacimiento: GUARDADA.lugar_nacimiento,
   dni: '',
+  // La misma tarjeta, escrita de otra forma: no es un cambio.
+  sip: ' abc-123.45 ',
   hermanos_total: 2,
   hermanos_lugar: 1,
 }
@@ -143,6 +154,7 @@ describe('actualizarNinoTutor — la puerta de identidad', () => {
       p_nacionalidad: null,
       p_lugar_nacimiento: null,
       p_dni: null,
+      p_sip: null,
       p_idioma_principal: 'va',
       p_hermanos_total: 2,
       p_hermanos_lugar: 1,
@@ -306,5 +318,66 @@ describe('actualizarNinoTutor — modo Dirección (alta en papel)', () => {
     expect(direccion.es).toBe(false) // premisa
     expect(updateSpy).not.toHaveBeenCalled()
     expect(rpcSpy).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('actualizarNinoTutor — fase 7, la tarjeta sanitaria', () => {
+  it('con el alta validada, la tarjeta que cambia va a la cola normalizada; a la función, NULL', async () => {
+    gate.validada = true
+    const { fake, rpcSpy } = makeFake()
+    createClientMock.mockReturnValue(fake)
+
+    const r = await actualizarNinoTutor({ ...ENVIADO, sip: ' bbbb-bbbb/qr648597 ' })
+
+    expect(direccion.es).toBe(false) // premisa: es la tutora
+    expect(r).toEqual({ success: true, data: { id: NINO, pendienteValidacion: true } })
+    expect(registrarSpy.mock.calls[0]![1]).toMatchObject({
+      entidad: 'ninos_identidad',
+      payload: { sip: 'BBBBBBBBQR648597' },
+    })
+    expect(rpcSpy).toHaveBeenCalledWith(
+      'actualizar_identidad_nino_tutor',
+      expect.objectContaining({ p_sip: null })
+    )
+  })
+
+  it('sin el alta validada, va directa a la función', async () => {
+    const { fake, rpcSpy } = makeFake()
+    createClientMock.mockReturnValue(fake)
+
+    await actualizarNinoTutor({ ...ENVIADO, sip: '12345678' })
+
+    expect(gate.validada).toBe(false) // premisa
+    expect(registrarSpy).not.toHaveBeenCalled()
+    expect(rpcSpy).toHaveBeenCalledWith(
+      'actualizar_identidad_nino_tutor',
+      expect.objectContaining({ p_sip: '12345678' })
+    )
+  })
+
+  it('el esquema la exige y rechaza una forma que no es de ninguna tarjeta', async () => {
+    const { fake, rpcSpy } = makeFake()
+    createClientMock.mockReturnValue(fake)
+
+    expect(await actualizarNinoTutor({ ...ENVIADO, sip: '' })).toEqual({
+      success: false,
+      error: 'nino.validation.sip_requerido',
+    })
+    expect(await actualizarNinoTutor({ ...ENVIADO, sip: 'M-12' })).toEqual({
+      success: false,
+      error: 'nino.validation.sip_invalido',
+    })
+    expect(rpcSpy).not.toHaveBeenCalled()
+  })
+
+  it('Dirección la escribe con su sesión, normalizada', async () => {
+    direccion.es = true
+    const { fake, updateSpy } = makeFake()
+    createClientMock.mockReturnValue(fake)
+
+    await actualizarNinoTutor({ ...ENVIADO, sip: '1234 5678' })
+
+    expect(direccion.es).toBe(true) // premisa
+    expect(updateSpy).toHaveBeenCalledWith(expect.objectContaining({ sip: '12345678' }))
   })
 })

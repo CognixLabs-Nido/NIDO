@@ -372,6 +372,9 @@ export const SECCIONES_RECOLECTAR = {
     requiere_ambos_firmantes: SALE,
     segundo_apellido: SALE,
     sexo: SALE,
+    // Fase 7: la tarjeta sanitaria (por `sip_de_ninos`); la imagen sale además como adjunto firmado.
+    sip: SALE,
+    sip_documento_path: SALE,
     updated_at: SALE,
   }),
   'nino.datos_pedagogicos': seccion('datos_pedagogicos_nino', {

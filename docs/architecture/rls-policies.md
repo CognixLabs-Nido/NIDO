@@ -749,6 +749,28 @@ un autorizado simulado; la exportación, en la base efímera con el `GET` real d
 - Tests: `src/test/rls/lecturas-por-funcion.rls.test.ts` (la primera) y
   `src/test/rls/autorizado-lee-solo-lo-suyo.rls.test.ts`.
 
+### La tarjeta sanitaria del niño (serie de altas, fase 7)
+
+Migraciones `20270119120000_feat_sip_nino` (antes del despliegue) y `20270119130000_feat_alta_exige_sip`
+(después); spec `docs/specs/altas-serie.md`, «Fase 7».
+
+- **`ninos.sip` y `ninos.sip_documento_path`**, sin `GRANT SELECT`: nacen cerradas, como `dni`. La
+  Dirección las escribe con su sesión (`ninos_admin_all`); el tutor legal, por
+  `actualizar_identidad_nino_tutor` (`p_sip`) y `fijar_sip_documento_nino`, que con el alta validada
+  contestan 42501 `cola_validacion` a un cambio (la misma ruta o el mismo número, no).
+- **`sip_de_ninos(niños)`**: el número a la Dirección del centro, al tutor legal y a la profe del niño;
+  la ruta de la imagen, solo a los dos primeros (`ve_documento`). El autorizado y la profe de otra aula
+  no reciben filas.
+- **El bucket `sip-ninos`**: las políticas de `libro-familia` (Dirección o tutor legal, con
+  `ruta_coherente`; borrar, solo la Dirección). La profe no abre la imagen.
+- **El cierre**: `marcar_matricula_lista` exige el número (`datos_nino_por_completar`). No retroactivo.
+- **El olvido y los buckets**: `catalogo-buckets.rls.test.ts` compara los buckets que existen con
+  `FUENTES_ADJUNTOS` y `BUCKETS_FUERA_DEL_OLVIDO` (cada uno con quién lo borra). Un bucket nuevo sin
+  sitio pone la CI en rojo.
+- Medido abierto y cerrado en producción (ensayos terminados en RAISE, LF y CRLF).
+- Tests: `tarjeta-sanitaria.rls.test.ts`, `alta-exige-datos-nino.rls.test.ts`, `purga-rgpd-nino.test.ts`
+  y `catalogo-buckets.rls.test.ts`.
+
 ### Firmar fuera del alta y lo pendiente en el inicio (serie de altas, fase 4, 4c)
 
 Sin migración; spec `docs/specs/altas-serie.md`, «4c». Usa las funciones del 4a con la sesión de

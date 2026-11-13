@@ -131,6 +131,8 @@ const LLENA = {
   hermanos_lugar: 1,
   lugar_nacimiento: 'Lugar Marca',
   nacionalidad: 'española',
+  // Fase 7: la tarjeta es obligatoria en el paso del menor; sin ella el formulario no guarda.
+  sip: 'NOPISA0001',
 } as const
 
 describe('el alta no guarda lo que no pudo leer', () => {

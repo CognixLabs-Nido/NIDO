@@ -15,7 +15,7 @@ import {
  *    (`crear_o_anadir_a_familia`). Por eso «Datos del niño» no mira la identidad (la tarjeta de la
  *    ficha la marcaba hecha desde el principio).
  *  - Lo obligatorio que la familia hace en cada paso es otra cosa: en el del niño, subir el libro de
- *    familia; en el del tutor 1, desde la fase 6 (2026-11-13), sus datos enteros y su DNI
+ *    familia y, desde la fase 7 (2026-11-13), el número de la tarjeta sanitaria; en el del tutor 1, desde la fase 6 (2026-11-13), sus datos enteros y su DNI
  *    (`tutorCompleto`), que es lo que exige el cierre. El nombre solo, que pone aceptar la invitación,
  *    no lo hace «hecho».
  *
@@ -47,6 +47,8 @@ export interface SenalesAvance {
   documentosCentro: readonly DocumentoEnElCierre[]
   /** `ninos.libro_familia_path`: lo sube la familia en el paso del niño. */
   libroFamilia: boolean
+  /** Fase 7: el número de la tarjeta sanitaria (`sip_de_ninos`). Lo teclea la familia en el paso del niño. */
+  sip: boolean
   /** Consentimiento de imagen vigente del niño (`existe_consentimiento_imagen`). */
   imagen: boolean
   /**
@@ -90,7 +92,7 @@ export const LINEAS_DEL_GATE: Record<BloqueAlta, readonly ItemAvance[] | 'invita
 
 const HECHO: Record<ItemAvance, (s: SenalesAvance) => boolean> = {
   documentos_centro: (s) => !s.documentosCentro.some(frenaElAlta),
-  nino: (s) => s.libroFamilia,
+  nino: (s) => s.libroFamilia && s.sip,
   imagen: (s) => s.imagen,
   tutor1: (s) => s.tutor1,
   tutor2: (s) => s.tutor2 === 'completo',

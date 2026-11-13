@@ -9,11 +9,16 @@ import {
   leerContenidoFirmas,
 } from '@/features/autorizaciones/lib/contenido-firmas'
 import { COLUMNAS_GESTION_NINO, leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
+import {
+  COLUMNAS_TARJETA_NINO,
+  leerTarjetaSanitariaDe,
+} from '@/features/ninos/lib/tarjeta-sanitaria'
 import { fichaMedicaBloqueadaDesde } from '@/features/ninos/lib/ficha-medica-bloqueada'
 
 import {
   BUCKET_DNI_TUTORES,
   BUCKET_LIBRO_FAMILIA,
+  BUCKET_SIP_NINOS,
   BUCKET_MANDATO_SEPA,
   BUCKET_NINOS_FOTOS,
   BUCKET_RECOGIDA_ADJUNTOS,
@@ -628,7 +633,7 @@ export async function recolectarNino(
     'nino.ficha',
     await client
       .from('ninos')
-      .select(deLaTabla('nino.ficha', COLUMNAS_GESTION_NINO))
+      .select(deLaTabla('nino.ficha', [...COLUMNAS_GESTION_NINO, ...COLUMNAS_TARJETA_NINO]))
       .eq('id', ninoId)
       .maybeSingle()
   )
@@ -636,10 +641,15 @@ export async function recolectarNino(
   // Lo de gestión (`ficha_gestion_ninos`): a la Dirección y al tutor legal; a la profe, no viene.
   const gestion = await leerFichaGestionDe(client, ninoId)
   if (gestion === null) throw new Error('export: ficha_gestion_ninos no se lee')
+  // Fase 7: la tarjeta sanitaria (`sip_de_ninos`): el número a la Dirección, al tutor legal y a la
+  // profe; la ruta de la imagen, solo a los dos primeros (a la profe le llega NULL).
+  const tarjeta = await leerTarjetaSanitariaDe(client, ninoId)
+  if (tarjeta === null) throw new Error('export: sip_de_ninos no se lee')
   const nino = {
     ...identidad,
     ...(gestion ? Object.fromEntries(COLUMNAS_GESTION_NINO.map((c) => [c, gestion[c]])) : {}),
-  } as typeof identidad
+    ...(tarjeta ? { sip: tarjeta.sip, sip_documento_path: tarjeta.sip_documento_path } : {}),
+  } as typeof identidad & { sip?: string | null; sip_documento_path?: string | null }
 
   // Info médica: descifrado gateado por puede_ver_info_medica (#3).
   let infoMedica: unknown
@@ -735,6 +745,11 @@ export async function recolectarNino(
   if (nino.libro_familia_path) {
     adjuntos.push(
       await firmar(service, BUCKET_LIBRO_FAMILIA, nino.libro_familia_path, 'Libro de familia')
+    )
+  }
+  if (nino.sip_documento_path) {
+    adjuntos.push(
+      await firmar(service, BUCKET_SIP_NINOS, nino.sip_documento_path, 'Tarjeta sanitaria')
     )
   }
 

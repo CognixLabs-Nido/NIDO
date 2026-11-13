@@ -95,6 +95,12 @@ function fake() {
     rpc: (fn: string) => {
       // Lo guardado del tutor sale por `tutores_de_familia` desde la fase 6 (la sesión no lee los cinco).
       if (fn === 'tutores_de_familia') return Promise.resolve({ data: [TITULAR], error: null })
+      // Fase 7: la tarjeta sanitaria guardada, por `sip_de_ninos`.
+      if (fn === 'sip_de_ninos')
+        return Promise.resolve({
+          data: [{ nino_id: FICHA.id, sip: null, sip_documento_path: null, ve_documento: true }],
+          error: null,
+        })
       if (fn !== 'ficha_gestion_ninos') throw new Error(`rpc no prevista: ${fn}`)
       return Promise.resolve(
         estado.ninosError

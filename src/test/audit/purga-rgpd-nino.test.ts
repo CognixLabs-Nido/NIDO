@@ -68,6 +68,9 @@ const CLAVES: Record<string, readonly string[]> = {
     'observaciones_familia',
     'como_nos_conocio',
     'como_nos_conocio_otro',
+    // Fase 7 (2026-11-13): la tarjeta sanitaria, el número y la ruta de la imagen.
+    'sip',
+    'sip_documento_path',
   ],
   info_medica_emergencia: PERSONALES_INFO_MEDICA,
   datos_pedagogicos_nino: [
@@ -301,6 +304,8 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
     }
 
     const nino = await createTestNino(centro.id, marca('nombre'))
+    const marcaSip = `MKSIP${s}`.toUpperCase()
+    marcas.push(marcaSip)
     const { error: nErr } = await serviceClient
       .from('ninos')
       .update({
@@ -325,6 +330,9 @@ describe('Purga RGPD del niño — tabla y audit_log', () => {
         direccion_ciudad: marca('ciudad'),
         libro_familia_path: `${centro.id}/${nino.id}/${marca('libro')}.pdf`,
         estado_civil_familia: 'casados',
+        // Fase 7: el CHECK solo admite letras y cifras en mayúscula; la marca, sin guiones.
+        sip: marcaSip,
+        sip_documento_path: `${centro.id}/${nino.id}/${marca('sip')}.pdf`,
       })
       .eq('id', nino.id)
     expect(nErr).toBeNull()

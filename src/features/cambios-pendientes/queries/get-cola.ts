@@ -3,6 +3,7 @@ import 'server-only'
 import { rolFamiliaDeVinculo, tipoVinculoLegalEnum } from '@/features/alta/schemas/alta-documentos'
 import { createClient } from '@/lib/supabase/server'
 import { leerFichaGestion } from '@/features/ninos/lib/ficha-gestion'
+import { leerTarjetasSanitarias } from '@/features/ninos/lib/tarjeta-sanitaria'
 import { logger } from '@/shared/lib/logger'
 
 import type { EntidadCambio } from '../schemas'
@@ -98,11 +99,13 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
   const ninos = new Map<string, Fila>()
   let ninosOk = true
   if (ninoIds.length > 0) {
-    const [r, gestion] = await Promise.all([
+    const [r, gestion, tarjetas] = await Promise.all([
       supabase.from('ninos').select(CAMPOS_NINO).in('id', ninoIds),
       leerFichaGestion(supabase, ninoIds),
+      // Fase 7: la tarjeta sanitaria, por `sip_de_ninos`.
+      leerTarjetasSanitarias(supabase, ninoIds),
     ])
-    if (r.error || !gestion) {
+    if (r.error || !gestion || !tarjetas) {
       ninosOk = false
       logger.warn('listarCambiosPendientes: lo guardado del niño', r.error?.code ?? 'gestion')
     } else
@@ -118,6 +121,8 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
           direccion_provincia: g?.direccion_provincia ?? null,
           estado_civil_familia: g?.estado_civil_familia ?? null,
           libro_familia_path: g?.libro_familia_path ?? null,
+          sip: tarjetas.get(n.id)?.sip ?? null,
+          sip_documento_path: tarjetas.get(n.id)?.sip_documento_path ?? null,
         } as Fila)
       }
   }
@@ -155,6 +160,8 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
       lineas = lineasDeParche(payload, nino)
     } else if (entidad === 'ninos_libro_familia') {
       lineas = [{ campo: 'documento', antes: texto(nino.libro_familia_path), despues: 'nuevo' }]
+    } else if (entidad === 'ninos_sip_documento') {
+      lineas = [{ campo: 'documento', antes: texto(nino.sip_documento_path), despues: 'nuevo' }]
     } else {
       const vinculo = tipoVinculoLegalEnum.safeParse(payload.tipo_vinculo)
       if (!tutoresOk || !vinculo.success) {

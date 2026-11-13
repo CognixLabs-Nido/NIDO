@@ -32,6 +32,9 @@ import {
   getNinoById,
 } from '@/features/ninos/queries/get-ninos'
 import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
+import { leerTarjetaSanitariaDe } from '@/features/ninos/lib/tarjeta-sanitaria'
+import { TarjetaSanitariaCard } from '@/features/ninos/components/TarjetaSanitariaCard'
+import { BUCKET_SIP_NINOS, firmarRuta } from '@/shared/lib/adjuntos/storage'
 import { FichaMedicaBloqueada } from '@/features/ninos/components/FichaMedicaBloqueada'
 import { HistorialMatriculas } from '@/features/ninos/components/HistorialMatriculas'
 import { LecturasFichaMedica } from '@/features/ninos/components/LecturasFichaMedica'
@@ -97,6 +100,12 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
   // siempre. Si la lectura falla o no trae la fila, se dice; nunca rayas como si no hubiera nada.
   const gestion = await leerFichaGestionDe(supabase, id)
   const campos5b = gestion ? { ...gestion, lugar_nacimiento: nino.lugar_nacimiento } : null
+  // Fase 7: la tarjeta sanitaria (`sip_de_ninos`). `undefined` (no le toca) no pasa aquí: la
+  // Dirección del centro la lee siempre; se trata como fallo de lectura.
+  const tarjeta = (await leerTarjetaSanitariaDe(supabase, id)) ?? null
+  const urlTarjeta = tarjeta?.sip_documento_path
+    ? await firmarRuta(supabase, BUCKET_SIP_NINOS, tarjeta.sip_documento_path)
+    : null
   const tMenor = await getTranslations('alta.menor')
   const comoNosConocio = campos5b?.como_nos_conocio
     ? campos5b.como_nos_conocio === 'otro'
@@ -583,6 +592,14 @@ export default async function NinoDetallePage({ params, searchParams }: PageProp
               />
             )}
             <AltaDocumentacionTab data={altaDoc} locale={locale} />
+            {!archivado && (
+              <TarjetaSanitariaCard
+                locale={locale}
+                ninoId={id}
+                tarjeta={tarjeta}
+                urlImagen={urlTarjeta}
+              />
+            )}
           </div>
         </TabsContent>
       </Tabs>

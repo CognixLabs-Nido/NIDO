@@ -17,6 +17,8 @@ export const BUCKET_USUARIOS_FOTOS = 'usuarios-fotos'
 /** Buckets de documentos del alta (PRIVADOS, application/pdf, creados en F11-G-0). */
 export const BUCKET_LIBRO_FAMILIA = 'libro-familia'
 export const BUCKET_DNI_TUTORES = 'dni-tutores'
+/** Fase 7 (D8): la imagen de la tarjeta sanitaria del niño, un PDF en `{centro}/{niño}/`. */
+export const BUCKET_SIP_NINOS = 'sip-ninos'
 export const BUCKET_MANDATO_SEPA = 'mandato-sepa'
 /** El fichero pain.008 de cada versión de una remesa (R-1, `20261220120000`): privado, sin políticas para las sesiones. */
 export const BUCKET_REMESAS_FICHEROS = 'remesas-ficheros'

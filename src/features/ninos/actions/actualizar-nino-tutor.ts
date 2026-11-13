@@ -7,6 +7,7 @@ import { cambiosIdentidad } from '@/features/cambios-pendientes/lib/diff'
 import { logger } from '@/shared/lib/logger'
 
 import { leerFichaGestionDe } from '../lib/ficha-gestion'
+import { leerTarjetaSanitariaDe } from '../lib/tarjeta-sanitaria'
 import { parcheNinoDireccion } from '../lib/parche-nino'
 import { actualizarNinoTutorSchema, type ActualizarNinoTutorInput } from '../schemas/nino'
 
@@ -79,13 +80,16 @@ export async function actualizarNinoTutor(
     lugar_nacimiento: d.lugar_nacimiento,
     // Vacío = «no tiene» (así se puede quitar); NULL lo dejaría como está.
     dni: d.dni ?? '',
+    // Fase 7: la tarjeta sanitaria, identidad como el DNI (con el alta validada, a la cola).
+    sip: d.sip,
   }
 
   let pendienteValidacion = false
   let identidadDirecta: typeof propuesta | null = propuesta
   if (await altaValidada(supabase, d.nino_id)) {
-    // El DNI es de gestión: sale por `ficha_gestion_ninos` (`20270115120000`), no de la tabla.
-    const [{ data: identidad }, gestion] = await Promise.all([
+    // El DNI es de gestión: sale por `ficha_gestion_ninos` (`20270115120000`), no de la tabla; la
+    // tarjeta, por `sip_de_ninos` (fase 7).
+    const [{ data: identidad }, gestion, tarjeta] = await Promise.all([
       supabase
         .from('ninos')
         .select(
@@ -94,9 +98,10 @@ export async function actualizarNinoTutor(
         .eq('id', d.nino_id)
         .maybeSingle(),
       leerFichaGestionDe(supabase, d.nino_id),
+      leerTarjetaSanitariaDe(supabase, d.nino_id),
     ])
-    if (!identidad || !gestion) return fail('nino.errors.no_autorizado')
-    const guardada = { ...identidad, dni: gestion.dni }
+    if (!identidad || !gestion || !tarjeta) return fail('nino.errors.no_autorizado')
+    const guardada = { ...identidad, dni: gestion.dni, sip: tarjeta.sip }
     const cambios = cambiosIdentidad(propuesta, guardada)
     if (Object.keys(cambios).length > 0) {
       const r = await registrarCambioPendiente(supabase, {
@@ -123,6 +128,7 @@ export async function actualizarNinoTutor(
     p_nacionalidad: identidadDirecta?.nacionalidad ?? null,
     p_lugar_nacimiento: identidadDirecta?.lugar_nacimiento ?? null,
     p_dni: identidadDirecta?.dni ?? null,
+    p_sip: identidadDirecta?.sip ?? null,
     // Los directos: nunca a la cola (decidido el 2026-11-07).
     p_idioma_principal: d.idioma_principal,
     p_hermanos_total: d.hermanos_total,
@@ -141,6 +147,7 @@ export async function actualizarNinoTutor(
     p_idioma_principal: string
     p_lugar_nacimiento: string
     p_dni: string
+    p_sip: string
     p_hermanos_total: number
     p_hermanos_lugar: number
     p_observaciones_familia: string

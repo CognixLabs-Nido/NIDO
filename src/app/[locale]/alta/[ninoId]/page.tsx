@@ -11,6 +11,7 @@ import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-da
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
 import { getNinoById, leerInfoMedicaParaEditar } from '@/features/ninos/queries/get-ninos'
 import { leerFichaGestion } from '@/features/ninos/lib/ficha-gestion'
+import { leerTarjetaSanitariaDe } from '@/features/ninos/lib/tarjeta-sanitaria'
 import {
   BUCKET_DNI_TUTORES,
   BUCKET_LIBRO_FAMILIA,
@@ -121,9 +122,11 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // Columnas nuevas de `ninos` (G-0): dirección del menor, libro de familia, estado civil. Las de
   // gestión no se leen de la tabla desde `20270115130000`: salen por `ficha_gestion_ninos`, que
   // aquí contesta siempre (al tutor legal y a la Dirección; el autorizado ya no llega aquí).
-  const [{ data: ninoBase, error: errNinoBase }, gestionesFamilia] = await Promise.all([
+  const [{ data: ninoBase, error: errNinoBase }, gestionesFamilia, tarjeta] = await Promise.all([
     supabase.from('ninos').select('familia_id, lugar_nacimiento').eq('id', ninoId).maybeSingle(),
     leerFichaGestion(supabase, [ninoId]),
+    // Fase 7: la tarjeta sanitaria, por `sip_de_ninos` (contesta al tutor legal y a la Dirección).
+    leerTarjetaSanitariaDe(supabase, ninoId),
   ])
   const gestion = gestionesFamilia?.get(ninoId)
   // El formulario no guarda lo que no pudo leer (2026-11-11, medido): con esta lectura fallida el
@@ -131,9 +134,9 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
   // DNI, las observaciones, la dirección y «cómo nos conoció» —con el aviso de guardado—. Aquí solo
   // llegan el tutor legal y la Dirección del centro, a quienes las dos lecturas contestan siempre:
   // sin la fila no se sabe qué hay guardado, y no se pinta un formulario que lo pisaría.
-  if (errNinoBase || !ninoBase || !gestion) {
+  if (errNinoBase || !ninoBase || !gestion || !tarjeta) {
     throw new Error(
-      `alta: la ficha del niño no se pudo leer (${errNinoBase?.message ?? (ninoBase ? 'gestión' : 'fila')})`
+      `alta: la ficha del niño no se pudo leer (${errNinoBase?.message ?? (!ninoBase ? 'fila' : !gestion ? 'gestión' : 'tarjeta')})`
     )
   }
   const ninoExtra = { ...ninoBase, ...gestion }
@@ -408,6 +411,7 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
           idioma_principal: nino.idioma_principal,
           lugar_nacimiento: ninoExtra?.lugar_nacimiento ?? null,
           dni: ninoExtra?.dni ?? null,
+          sip: tarjeta.sip,
           hermanos_total: ninoExtra?.hermanos_total ?? null,
           hermanos_lugar: ninoExtra?.hermanos_lugar ?? null,
           direccion_provincia: ninoExtra?.direccion_provincia ?? null,

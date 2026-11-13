@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { LlamarFamiliaButton } from '@/features/familias/components/LlamarFamiliaButton'
+import { TarjetaSanitariaButton } from '@/features/ninos/components/TarjetaSanitariaButton'
 import { EscribirAFamiliaAdminPicker } from '@/features/messaging/components/EscribirAFamiliaAdminPicker'
 import type { VinculoTutorMin } from '@/features/messaging/queries/get-vinculos-tutores-aula'
 
@@ -145,6 +146,10 @@ export function NinoAgendaCard({
         )}
         {/* Fase 6: el teléfono de la familia, para la profe del aula y la Dirección (se lee al pulsar). */}
         {(rol === 'profe' || rol === 'admin') && <LlamarFamiliaButton ninoId={resumen.nino.id} />}
+        {/* Fase 7: el número de la tarjeta sanitaria (la imagen no), también al pulsar. */}
+        {(rol === 'profe' || rol === 'admin') && (
+          <TarjetaSanitariaButton ninoId={resumen.nino.id} />
+        )}
       </div>
       {expanded && (
         <CardContent id={`panel-${resumen.nino.id}`} className="pt-0">

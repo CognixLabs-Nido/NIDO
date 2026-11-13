@@ -319,7 +319,7 @@ describe('Altas en proceso: el embudo de la directora', () => {
     ).toBeNull()
     expect.soft((await avanceDe(ona.nino)).documentos_centro).toBe('hecho')
 
-    // El libro de familia, en el paso del niño.
+    // El libro de familia, en el paso del niño: solo, aún falta la tarjeta sanitaria (fase 7).
     expect(
       (
         await serviceClient
@@ -327,6 +327,10 @@ describe('Altas en proceso: el embudo de la directora', () => {
           .update({ libro_familia_path: `${centro.id}/${ona.nino}/libro.pdf` })
           .eq('id', ona.nino)
       ).error
+    ).toBeNull()
+    expect.soft((await avanceDe(ona.nino)).nino).toBe('falta')
+    expect(
+      (await serviceClient.from('ninos').update({ sip: 'EMBUDO0001' }).eq('id', ona.nino)).error
     ).toBeNull()
     expect.soft((await avanceDe(ona.nino)).nino).toBe('hecho')
 

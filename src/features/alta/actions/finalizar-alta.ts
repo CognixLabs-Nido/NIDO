@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { createClient } from '@/lib/supabase/server'
 import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
+import { leerTarjetaSanitariaDe } from '@/features/ninos/lib/tarjeta-sanitaria'
 import { logger } from '@/shared/lib/logger'
 
 import { leerDocumentosNino } from '@/features/documentos-centro/lib/firmar-documentos'
@@ -86,7 +87,7 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
 
   // Identidad del menor de la tabla; los hermanos y el libro de familia son de gestión y salen por
   // `ficha_gestion_ninos` (`20270115120000`), que al tutor legal y a la Dirección les contesta.
-  const [{ data: identidad }, gestion] = await Promise.all([
+  const [{ data: identidad }, gestion, tarjeta] = await Promise.all([
     supabase
       .from('ninos')
       .select('apellidos, fecha_nacimiento, lugar_nacimiento, nacionalidad, familia_id, centro_id')
@@ -94,12 +95,14 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
       .is('deleted_at', null)
       .maybeSingle(),
     leerFichaGestionDe(supabase, id),
+    leerTarjetaSanitariaDe(supabase, id),
   ])
-  if (!identidad || !gestion) return fail('alta.errors.finalizar_fallo')
+  if (!identidad || !gestion || !tarjeta) return fail('alta.errors.finalizar_fallo')
   const nino = {
     ...identidad,
     hermanos_total: gestion.hermanos_total,
     libro_familia_path: gestion.libro_familia_path,
+    sip: tarjeta.sip,
   }
   // Fase 5b: además de apellidos y fecha, los tres obligatorios (lugar de nacimiento, nacionalidad y
   // hermanos), con la misma regla que la base (`marcar_matricula_lista`, `datos_nino_por_completar`).
@@ -108,7 +111,9 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
     !nino.fecha_nacimiento ||
     !nino.lugar_nacimiento?.trim() ||
     !nino.nacionalidad?.trim() ||
-    nino.hermanos_total == null
+    nino.hermanos_total == null ||
+    // Fase 7 (decidido el 2026-11-13): el número de la tarjeta sanitaria, como la base.
+    !nino.sip
   )
     faltan.push('identidad')
 

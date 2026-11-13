@@ -8,6 +8,7 @@ import type { Database } from '@/types/db'
 import {
   BUCKET_DNI_TUTORES,
   BUCKET_LIBRO_FAMILIA,
+  BUCKET_SIP_NINOS,
   borrarObjetosBucket,
 } from '@/shared/lib/adjuntos/storage'
 import { leerFichaGestionDe } from '@/features/ninos/lib/ficha-gestion'
@@ -125,6 +126,22 @@ export async function aplicarCambioPendiente(
     return
   }
 
+  if (entidad === 'ninos_sip_documento') {
+    // Fase 7: por `fijar_sip_documento_nino` con la sesión de la directora (la Dirección fija con el
+    // alta validada: es quien aprueba). Devuelve la ruta anterior: esa imagen ya no la usa nadie.
+    const { path } = payloadDocumentoSchema.parse(row.payload)
+    exigirRutaDelNino(path, row)
+    const { data: anterior, error } = await db.rpc('fijar_sip_documento_nino', {
+      p_nino_id: row.nino_id,
+      p_path: path,
+    })
+    if (error) throw new Error(error.message)
+    if (anterior && anterior !== path) {
+      await borrarObjetosBucket(storage, BUCKET_SIP_NINOS, [anterior]).catch(() => undefined)
+    }
+    return
+  }
+
   if (entidad === 'datos_tutor') {
     // Fase 6 (`20270118120000`): por `guardar_tutor`, con la sesión de la directora (la Dirección
     // escribe con el alta validada: es quien aprueba). Solo las claves que trae el payload; una entrada
@@ -176,6 +193,9 @@ export async function descartarCambioPendiente(service: Client, row: CambioRow):
   let path: string
   if (entidad === 'ninos_libro_familia') {
     bucket = BUCKET_LIBRO_FAMILIA
+    path = payloadDocumentoSchema.parse(row.payload).path
+  } else if (entidad === 'ninos_sip_documento') {
+    bucket = BUCKET_SIP_NINOS
     path = payloadDocumentoSchema.parse(row.payload).path
   } else if (entidad === 'datos_tutor_dni') {
     bucket = BUCKET_DNI_TUTORES

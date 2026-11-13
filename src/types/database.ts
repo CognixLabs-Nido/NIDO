@@ -3633,6 +3633,8 @@ export type Database = {
           requiere_ambos_firmantes: boolean
           segundo_apellido: string | null
           sexo: Database["public"]["Enums"]["nino_sexo"] | null
+          sip: string | null
+          sip_documento_path: string | null
           updated_at: string
         }
         Insert: {
@@ -3671,6 +3673,8 @@ export type Database = {
           requiere_ambos_firmantes?: boolean
           segundo_apellido?: string | null
           sexo?: Database["public"]["Enums"]["nino_sexo"] | null
+          sip?: string | null
+          sip_documento_path?: string | null
           updated_at?: string
         }
         Update: {
@@ -3709,6 +3713,8 @@ export type Database = {
           requiere_ambos_firmantes?: boolean
           segundo_apellido?: string | null
           sexo?: Database["public"]["Enums"]["nino_sexo"] | null
+          sip?: string | null
+          sip_documento_path?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -5115,6 +5121,7 @@ export type Database = {
           p_primer_apellido: string
           p_segundo_apellido: string
           p_sexo: Database["public"]["Enums"]["nino_sexo"]
+          p_sip?: string
         }
         Returns: string
       }
@@ -5533,6 +5540,10 @@ export type Database = {
         }[]
       }
       fijar_libro_familia_nino: {
+        Args: { p_nino_id: string; p_path: string }
+        Returns: string
+      }
+      fijar_sip_documento_nino: {
         Args: { p_nino_id: string; p_path: string }
         Returns: string
       }
@@ -6087,6 +6098,15 @@ export type Database = {
           p_telefono_emergencia: string
         }
         Returns: string
+      }
+      sip_de_ninos: {
+        Args: { p_nino_ids: string[] }
+        Returns: {
+          nino_id: string
+          sip: string
+          sip_documento_path: string
+          ve_documento: boolean
+        }[]
       }
       solicitar_olvido_nino: {
         Args: { p_inmediato?: boolean; p_nino_id: string }

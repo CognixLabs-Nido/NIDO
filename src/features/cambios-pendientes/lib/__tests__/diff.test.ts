@@ -23,10 +23,11 @@ const GUARDADA: IdentidadGuardada = {
   nacionalidad: 'española',
   lugar_nacimiento: 'Valencia',
   dni: '12345678Z',
+  sip: 'ABC12345',
 }
 
 describe('cambiosIdentidad', () => {
-  it('los ocho campos de la cola son los decididos el 2026-11-07', () => {
+  it('los campos de la cola: los ocho del 2026-11-07 y la tarjeta sanitaria (fase 7)', () => {
     expect([...CAMPOS_IDENTIDAD_COLA].sort()).toEqual(
       [
         'dni',
@@ -37,6 +38,7 @@ describe('cambiosIdentidad', () => {
         'primer_apellido',
         'segundo_apellido',
         'sexo',
+        'sip',
       ].sort()
     )
   })
@@ -52,13 +54,14 @@ describe('cambiosIdentidad', () => {
         segundo_apellido: ' López',
         lugar_nacimiento: ' Valencia ',
         dni: '12.345.678-z',
+        sip: ' abc-123.45 ',
       },
       GUARDADA
     )
     expect(c).toEqual({})
   })
 
-  it('cada uno de los ocho, cambiado solo, es un cambio y solo él', () => {
+  it('cada uno, cambiado solo, es un cambio y solo él', () => {
     const otro: Record<string, string> = {
       nombre: 'Lucia',
       primer_apellido: 'Garcia',
@@ -68,6 +71,7 @@ describe('cambiosIdentidad', () => {
       nacionalidad: 'italiana',
       lugar_nacimiento: 'Alzira',
       dni: 'X1234567L',
+      sip: 'BBBBBBBBQR648597',
     }
     for (const campo of CAMPOS_IDENTIDAD_COLA) {
       // Los apellidos van en pareja, como los manda la app: con el primero llega el segundo (si no,
