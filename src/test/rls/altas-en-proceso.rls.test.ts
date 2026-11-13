@@ -357,9 +357,29 @@ describe('Altas en proceso: el embudo de la directora', () => {
           .eq('rol_familia', 'titular')
       ).error
     ).toBeNull()
+    // Fase 6: con el DNI solo, el tutor 1 no está hecho (el cierre exige sus datos enteros).
+    expect.soft((await avanceDe(ona.nino)).tutor1).toBe('falta')
+    // Sus datos, en su paso: con ellos, hecho.
+    const DATOS_TUTOR = {
+      telefono: '+34600000000',
+      fecha_nacimiento: '1985-01-01',
+      dni_numero: '12345678Z',
+      direccion_calle: 'Calle Demo',
+      direccion_cp: '46001',
+      direccion_ciudad: 'Ciudad Demo',
+    }
+    expect(
+      (
+        await serviceClient
+          .from('familia_tutores')
+          .update(DATOS_TUTOR)
+          .eq('familia_id', ona.familia)
+          .eq('rol_familia', 'titular')
+      ).error
+    ).toBeNull()
     expect.soft((await avanceDe(ona.nino)).tutor1).toBe('hecho')
 
-    // El segundo tutor, con su nombre.
+    // El segundo tutor, con su nombre solo: empezado y a medias, frena el cierre → «falta».
     expect(
       (
         await serviceClient.from('familia_tutores').insert({
@@ -368,6 +388,17 @@ describe('Altas en proceso: el embudo de la directora', () => {
           email: `embudo-ona-dos-${sufijo}@nido.test`,
           nombre_completo: 'Segunda Tutora Embudo',
         })
+      ).error
+    ).toBeNull()
+    expect.soft((await avanceDe(ona.nino)).tutor2).toBe('falta')
+    // Completo y con su DNI (D12): hecho.
+    expect(
+      (
+        await serviceClient
+          .from('familia_tutores')
+          .update({ ...DATOS_TUTOR, dni_documento_path: `${centro.id}/${ona.nino}/dni-dos.pdf` })
+          .eq('familia_id', ona.familia)
+          .eq('rol_familia', 'segundo_tutor')
       ).error
     ).toBeNull()
     expect.soft((await avanceDe(ona.nino)).tutor2).toBe('hecho')

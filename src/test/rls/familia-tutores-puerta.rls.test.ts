@@ -296,8 +296,16 @@ describe('Los datos del tutor y su puerta (fase 6, paso 2)', () => {
     })
 
     it('la profe del aula ve el teléfono de los dos tutores; la fila entera, no', async () => {
+      // Premisas: la profe es del aula de Lucas, y los dos tutores tienen teléfono (puesto aquí, sin
+      // depender de lo que hayan guardado otros tests).
       const { data: premisa } = await sesion.profe.rpc('es_profe_de_nino', { p_nino_id: lucas })
       expect(premisa).toBe(true)
+      const tel = await serviceClient
+        .from('familia_tutores')
+        .update({ telefono: '+34600000009' })
+        .eq('familia_id', familia)
+        .select('id')
+      expect(tel.data).toHaveLength(2)
       const { data } = await sesion.profe.rpc('telefonos_familia_de_nino', { p_nino_id: lucas })
       expect(data?.map((r) => r.rol_familia)).toEqual(['titular', 'segundo_tutor'])
       expect(data?.every((r) => r.telefono !== null)).toBe(true)
@@ -331,7 +339,10 @@ describe('Los datos del tutor y su puerta (fase 6, paso 2)', () => {
       for (const p of [dniTitular, dniSegundo]) {
         const { error } = await serviceClient.storage
           .from('dni-tutores')
-          .upload(p, new Blob(['%PDF-1.4 demo'], { type: 'application/pdf' }), { upsert: true })
+          .upload(p, new Blob(['%PDF-1.4 demo'], { type: 'application/pdf' }), {
+            upsert: true,
+            contentType: 'application/pdf',
+          })
         if (error) throw new Error(error.message)
       }
       await serviceClient
@@ -436,7 +447,9 @@ describe('Los datos del tutor y su puerta (fase 6, paso 2)', () => {
         expect.soft(error?.hint, c).toBe('datos_tutor_por_completar')
         await serviceClient
           .from('familia_tutores')
-          .update(antes.data as unknown as Database['public']['Tables']['familia_tutores']['Update'])
+          .update(
+            antes.data as unknown as Database['public']['Tables']['familia_tutores']['Update']
+          )
           .eq('familia_id', familia)
           .eq('rol_familia', 'titular')
       }
