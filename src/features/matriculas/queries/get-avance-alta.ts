@@ -4,6 +4,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { leerFichaGestion } from '@/features/ninos/lib/ficha-gestion'
+import { leerTarjetasSanitarias } from '@/features/ninos/lib/tarjeta-sanitaria'
 import { logger } from '@/shared/lib/logger'
 
 import type { Database } from '@/types/db'
@@ -39,11 +40,13 @@ export async function getAvanceAltas(
     return null
   }
 
-  const [ninosR, gestion, medicoR, centroR] = await Promise.all([
+  const [ninosR, gestion, tarjetas, medicoR, centroR] = await Promise.all([
     supabase.from('ninos').select('id, familia_id').eq('centro_id', centroId).in('id', ninoIds),
     // El libro de familia es de gestión (`20270115120000`): de la función, que a la Dirección le
     // contesta todos los de su centro.
     leerFichaGestion(supabase, ninoIds),
+    // Fase 7: la tarjeta sanitaria, por `sip_de_ninos` (a la Dirección le contesta los de su centro).
+    leerTarjetasSanitarias(supabase, ninoIds),
     supabase
       .from('consentimientos')
       .select('nino_id')
@@ -54,6 +57,7 @@ export async function getAvanceAltas(
   ])
   if (ninosR.error || !ninosR.data) return falla('ninos', ninosR.error?.message)
   if (!gestion) return falla('ninos', 'ficha_gestion_ninos no se lee')
+  if (!tarjetas) return falla('ninos', 'sip_de_ninos no se lee')
   if (medicoR.error) return falla('consentimientos', medicoR.error.message)
   if (centroR.error || !centroR.data) return falla('centros', centroR.error?.message)
 
@@ -103,6 +107,7 @@ export async function getAvanceAltas(
     const senales: SenalesAvance = {
       documentosCentro: documentos[i]?.data ?? [],
       libroFamilia: Boolean(gestion.get(nino.id)?.libro_familia_path),
+      sip: Boolean(tarjetas.get(nino.id)?.sip),
       imagen: imagenes[i]?.data === true,
       tutor1: Boolean(titular && tutorCompleto(titular)),
       tutor2: !segundo ? 'no_hay' : tutorCompleto(segundo) ? 'completo' : 'incompleto',

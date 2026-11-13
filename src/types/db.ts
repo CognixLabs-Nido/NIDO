@@ -66,6 +66,7 @@ export const FUNCIONES_RETURNS_TABLE = [
   'platform_crear_centro',
   'platform_metricas',
   'retenciones_centro',
+  'sip_de_ninos',
   'sujetos_bloqueados',
   'sujetos_retencion',
   'telefonos_familia_de_nino',
@@ -192,6 +193,8 @@ export const NO_NULAS = {
   /** Las dos ramas: literal, `ninos.id` (por el CTE) / `usuarios.id` por JOIN; `estado`, CASE con ELSE. */
   sujetos_retencion: ['sujeto_tipo', 'sujeto_id', 'estado'],
   /** `familia_tutores.rol_familia` NOT NULL, por JOIN interior. El nombre y el teléfono pueden faltar. */
+  /** `ninos.id` por FROM. `ve_documento` es un OR de dos funciones: no demostrable, va `| null`. */
+  sip_de_ninos: ['nino_id'],
   telefonos_familia_de_nino: ['rol_familia'],
   /** `id` y `rol_familia` NOT NULL por FROM; `tiene_cuenta`, `IS NOT NULL`. */
   tutores_de_familia: ['id', 'rol_familia', 'tiene_cuenta'],

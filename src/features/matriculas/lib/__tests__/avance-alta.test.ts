@@ -22,6 +22,7 @@ const NORMAS_FIRMADAS = { obligatorio: true, estado: 'firmado' } as const
 const RECIEN_ACEPTADA: SenalesAvance = {
   documentosCentro: [NORMAS_POR_FIRMAR],
   libroFamilia: false,
+  sip: false,
   imagen: false,
   tutor1: false,
   tutor2: 'no_hay',
@@ -33,6 +34,7 @@ const RECIEN_ACEPTADA: SenalesAvance = {
 const TODO_HECHO: SenalesAvance = {
   documentosCentro: [NORMAS_FIRMADAS],
   libroFamilia: true,
+  sip: true,
   imagen: true,
   tutor1: true,
   tutor2: 'completo',
@@ -63,7 +65,8 @@ describe('Lo que lleva hecho un alta', () => {
   it('cada línea pasa a hecha por su señal, y solo por la suya', () => {
     const senalDe: Record<ItemAvance, Partial<SenalesAvance>> = {
       documentos_centro: { documentosCentro: [NORMAS_FIRMADAS] },
-      nino: { libroFamilia: true },
+      // Fase 7: «Datos del niño» necesita el libro y el número de la tarjeta sanitaria.
+      nino: { libroFamilia: true, sip: true },
       imagen: { imagen: true },
       tutor1: { tutor1: true },
       tutor2: { tutor2: 'completo' },
@@ -136,5 +139,14 @@ describe('Lo que lleva hecho un alta', () => {
       .map(([k]) => k)
       .sort()
     expect(porInvitacion).toEqual(['identidad'])
+  })
+})
+
+describe('Fase 7: la tarjeta sanitaria en «Datos del niño»', () => {
+  it('con el libro y sin la tarjeta, la línea del niño falta; con las dos, hecha', () => {
+    const sinTarjeta = avanceAlta({ ...TODO_HECHO, sip: false }).find((l) => l.item === 'nino')
+    const con = avanceAlta(TODO_HECHO).find((l) => l.item === 'nino')
+    expect(con?.estado).toBe('hecho') // premisa: con todo, hecha
+    expect(sinTarjeta?.estado).toBe('falta')
   })
 })

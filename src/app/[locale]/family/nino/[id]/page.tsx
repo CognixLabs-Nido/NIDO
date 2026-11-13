@@ -22,6 +22,9 @@ import { estadoAltaFamilia } from '@/features/alta/lib/gate-familia'
 import { ambitoFamiliar, esDelAmbito } from '@/features/centros/contexto/ambito-familiar'
 import { requireContextoCentro } from '@/features/centros/contexto/get-contexto-centro'
 import { getNinoById, leerInfoMedicaParaEditar } from '@/features/ninos/queries/get-ninos'
+import { leerTarjetaSanitariaDe } from '@/features/ninos/lib/tarjeta-sanitaria'
+import { TarjetaSanitariaCard } from '@/features/ninos/components/TarjetaSanitariaCard'
+import { BUCKET_SIP_NINOS, firmarRuta } from '@/shared/lib/adjuntos/storage'
 import { getRecorridoNinoFamilia } from '@/features/ninos/queries/get-recorrido-familia'
 import { RecorridoFamilia } from '@/features/ninos/components/RecorridoFamilia'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
@@ -156,6 +159,11 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
 
   // Fase 5 (decisión del 2026-11-11): el lugar de nacimiento, todos; el resto, el tutor legal.
   const camposAlta = await leerCamposAltaFicha(supabase, id, esTutorLegal)
+  // Fase 7: la tarjeta sanitaria, al tutor legal (`sip_de_ninos`; el autorizado no recibe filas).
+  const tarjeta = esTutorLegal ? ((await leerTarjetaSanitariaDe(supabase, id)) ?? null) : undefined
+  const urlTarjeta = tarjeta?.sip_documento_path
+    ? await firmarRuta(supabase, BUCKET_SIP_NINOS, tarjeta.sip_documento_path)
+    : null
   const tMenor = await getTranslations('alta.menor')
   const comoNosConocio = camposAlta?.como_nos_conocio
     ? camposAlta.como_nos_conocio === 'otro'
@@ -260,6 +268,15 @@ export default async function FamilyNinoPage({ params, searchParams }: PageProps
           </CardContent>
         </Card>
       </section>
+
+      {tarjeta !== undefined && (
+        <TarjetaSanitariaCard
+          locale={locale}
+          ninoId={id}
+          tarjeta={tarjeta}
+          urlImagen={urlTarjeta}
+        />
+      )}
 
       {documentosCentro && (
         <DocumentosCentroNino

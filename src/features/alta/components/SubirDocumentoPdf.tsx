@@ -16,8 +16,8 @@ import { ImagenesAPdfError, MAX_PAGINAS_PDF, imagenesAPdf } from '../lib/imagene
 interface Props {
   locale: string
   ninoId: string
-  /** Segmento de ruta del handler: `libro-familia` | `dni`. */
-  endpoint: 'libro-familia' | 'dni'
+  /** Segmento de ruta del handler: `libro-familia` | `dni` | `tarjeta-sanitaria` (fase 7). */
+  endpoint: 'libro-familia' | 'dni' | 'tarjeta-sanitaria'
   /** Campos extra del FormData (p. ej. `{ tipo_vinculo }` para el DNI). */
   extraFields?: Record<string, string>
   /** URL firmada del documento ya subido (preview), o null. */

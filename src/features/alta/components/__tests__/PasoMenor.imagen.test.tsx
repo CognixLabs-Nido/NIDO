@@ -60,6 +60,7 @@ function renderPaso(props: {
         idioma_principal: 'es',
         lugar_nacimiento: 'Valencia',
         dni: null,
+        sip: '12345678',
         hermanos_total: 1,
         hermanos_lugar: 1,
         direccion_provincia: null,

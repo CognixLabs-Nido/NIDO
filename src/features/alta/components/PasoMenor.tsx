@@ -202,6 +202,7 @@ export function PasoMenor({
       idioma_principal: idiomaValido(identidadInicial.idioma_principal),
       lugar_nacimiento: identidadInicial.lugar_nacimiento ?? '',
       dni: identidadInicial.dni ?? '',
+      sip: identidadInicial.sip ?? '',
       hermanos_total: identidadInicial.hermanos_total ?? undefined,
       hermanos_lugar: identidadInicial.hermanos_lugar ?? undefined,
       observaciones_familia: identidadInicial.observaciones_familia ?? '',
@@ -244,6 +245,7 @@ export function PasoMenor({
         idioma_principal: values.idioma_principal,
         lugar_nacimiento: values.lugar_nacimiento,
         dni: values.dni ?? '',
+        sip: values.sip,
         hermanos_total: values.hermanos_total,
         hermanos_lugar: values.hermanos_lugar,
         observaciones_familia: values.observaciones_familia ?? '',
@@ -431,6 +433,21 @@ export function PasoMenor({
                   <Input {...field} value={field.value ?? ''} />
                 </FormControl>
                 <p className="text-muted-foreground text-xs">{t('menor.dni_ayuda')}</p>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {/* Fase 7: la tarjeta sanitaria, obligatoria; vale la de cualquier comunidad o aseguradora. */}
+          <FormField
+            control={form.control}
+            name="sip"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('menor.sip')}</FormLabel>
+                <FormControl>
+                  <Input {...field} value={field.value ?? ''} data-testid="menor-sip" />
+                </FormControl>
+                <p className="text-muted-foreground text-xs">{t('menor.sip_ayuda')}</p>
                 <FormMessage />
               </FormItem>
             )}

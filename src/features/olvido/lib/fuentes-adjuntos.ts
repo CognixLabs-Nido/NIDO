@@ -8,6 +8,7 @@ import {
   BUCKET_DNI_TUTORES,
   BUCKET_LIBRO_FAMILIA,
   BUCKET_NINOS_FOTOS,
+  BUCKET_SIP_NINOS,
   BUCKET_USUARIOS_FOTOS,
   rutaThumbDe,
 } from '@/shared/lib/adjuntos/storage'
@@ -120,6 +121,30 @@ export const FUENTES_ADJUNTOS: readonly FuenteAdjunto[] = [
       return (objetos ?? [])
         .filter((o) => o.id !== null) // descarta pseudo-carpetas (id null), solo ficheros
         .map((o) => `${prefijo}/${o.name}`)
+    },
+  },
+  {
+    // Fase 7 (D8): la imagen de la tarjeta sanitaria. `privado.purgar_nino` anula
+    // `sip_documento_path`; el PDF se borra antes. Por PREFIJO, como el libro: la carpeta
+    // `{centro}/{niño}/` de este bucket es solo de su tarjeta, y así caen también las anteriores y
+    // las que quedaron en la cola. Un fallo al listar no es «no hay nada»: para la purga.
+    nombre: 'tarjeta-sanitaria-nino',
+    bucket: BUCKET_SIP_NINOS,
+    sujetos: ['nino'],
+    async recolectar(service, ninoId) {
+      const { data, error } = await service
+        .from('ninos')
+        .select('centro_id')
+        .eq('id', ninoId)
+        .maybeSingle()
+      if (error) throw new Error(`ninos (tarjeta sanitaria): ${error.message}`)
+      if (!data?.centro_id) return []
+      const prefijo = `${data.centro_id}/${ninoId}`
+      const { data: objetos, error: lErr } = await service.storage
+        .from(BUCKET_SIP_NINOS)
+        .list(prefijo)
+      if (lErr) throw new Error(`sip-ninos: ${lErr.message}`)
+      return (objetos ?? []).filter((o) => o.id !== null).map((o) => `${prefijo}/${o.name}`)
     },
   },
   {

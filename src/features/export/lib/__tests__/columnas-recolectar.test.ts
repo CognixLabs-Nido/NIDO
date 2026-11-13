@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { Database } from '@/types/db'
 import { COLUMNAS_CONTENIDO_FIRMA } from '@/features/autorizaciones/lib/contenido-firmas'
 import { COLUMNAS_GESTION_NINO } from '@/features/ninos/lib/ficha-gestion'
+import { COLUMNAS_TARJETA_NINO } from '@/features/ninos/lib/tarjeta-sanitaria'
 
 import {
   SECCIONES_RECOLECTAR,
@@ -193,6 +194,16 @@ function clienteDeMentira(fallaEn?: string) {
           })),
           error: null,
         }
+      if (fn === 'sip_de_ninos')
+        return {
+          data: (FILAS.ninos ?? []).map((n) => ({
+            nino_id: n.id,
+            sip: n.sip,
+            sip_documento_path: n.sip_documento_path,
+            ve_documento: true,
+          })),
+          error: null,
+        }
       if (fn === 'contenido_firmas') {
         const ids = args.p_firma_ids as string[]
         return {
@@ -258,7 +269,8 @@ function seDebenEntregar(r: RutaRecolectar): string[] {
  * de la firma). Que las listas son las de la migración lo afirma `columnas-cerradas-migracion.test.ts`.
  */
 const POR_FUNCION: Record<string, { cerradas: readonly string[]; une: string[] }> = {
-  ninos: { cerradas: COLUMNAS_GESTION_NINO, une: [] },
+  // Fase 7: la tarjeta sanitaria sale por `sip_de_ninos`.
+  ninos: { cerradas: [...COLUMNAS_GESTION_NINO, ...COLUMNAS_TARJETA_NINO], une: [] },
   firmas_autorizacion: { cerradas: COLUMNAS_CONTENIDO_FIRMA, une: ['id'] },
 }
 

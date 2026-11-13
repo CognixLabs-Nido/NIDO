@@ -149,6 +149,8 @@ describe('El alta exige los datos del niño (5b)', () => {
       ['hermanos', { hermanos_total: null, hermanos_lugar: null }],
       ['apellidos', { primer_apellido: null, segundo_apellido: null }],
       ['fecha', { fecha_nacimiento: null }],
+      // Fase 7 (`20270119130000`): el número de la tarjeta sanitaria.
+      ['tarjeta sanitaria', { sip: null }],
     ]
     for (const [que, parche] of quitar) {
       await completarDatosAlta(carla)
@@ -228,6 +230,8 @@ describe('El alta exige los datos del niño (5b)', () => {
         nacionalidad: 'Nacionalidad Papel',
         hermanos_total: 2,
         hermanos_lugar: 1,
+        // Fase 7: la tarjeta sanitaria, también en papel (de otra comunidad: sin forma de SIP).
+        sip: 'BBBBBBBBQR648597',
       })
       .eq('id', pablo)
       .select('id')

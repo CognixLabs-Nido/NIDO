@@ -1211,14 +1211,16 @@
         "telefono": "Phone",
         "dni_numero": "ID number",
         "estudios": "Education",
-        "empresa": "Employer"
+        "empresa": "Employer",
+        "sip": "Health card"
       },
       "entidad": {
         "ninos_familia": "Child data (address / family situation)",
         "ninos_libro_familia": "Family book",
         "datos_tutor": "Guardian data",
         "datos_tutor_dni": "Guardian ID document",
-        "ninos_identidad": "Child's identity"
+        "ninos_identidad": "Child's identity",
+        "ninos_sip_documento": "Health card image"
       },
       "errors": {
         "registro": "The change could not be registered. Please try again.",
@@ -1584,6 +1586,12 @@
           "falta": "missing",
           "sin_hacer_opcional": "not done, optional"
         }
+      },
+      "sin_tarjeta": {
+        "titulo": "Enrolled children without a health card",
+        "subtitulo": "Enrolment asks for it from now on, but not for children already enrolled. Ask these families for it.",
+        "no_se_pudo_leer": "We couldn’t read which children have the card. Reload the page.",
+        "vacio": "Every enrolled child has a health card."
       }
     }
   },
@@ -2449,7 +2457,9 @@
       "dni_invalido": "The DNI or NIE is not valid: check the numbers and the letter",
       "hermanos_requeridos": "Enter how many siblings there are and the child’s place among them",
       "hermanos_lugar_mayor": "The place cannot be higher than the number of siblings",
-      "como_nos_conocio_otro_requerido": "Tell us how you heard about us"
+      "como_nos_conocio_otro_requerido": "Tell us how you heard about us",
+      "sip_requerido": "The health card number is missing",
+      "sip_invalido": "The card number has only letters and digits (5 to 30)"
     },
     "errors": {
       "create_failed": "Could not register the child.",
@@ -2487,6 +2497,20 @@
         "fallo": "Could not revoke image consent",
         "no_autorizado_otorgar": "You don't have permission to authorise this child's image",
         "fallo_otorgar": "The image could not be authorised"
+      }
+    },
+    "tarjeta_sanitaria": {
+      "titulo": "Health card",
+      "numero": "Number",
+      "sin_numero": "No number",
+      "no_se_pudo_leer": "We couldn’t read the health card.",
+      "imagen_titulo": "Card image (optional)",
+      "imagen_ayuda": "Take a photo of the front and one of the back: they are combined into a PDF.",
+      "boton": "Health card",
+      "descripcion": "The number for the health centre.",
+      "cargando": "Looking up the card…",
+      "errors": {
+        "no_leido": "We couldn’t read the health card. Try again."
       }
     }
   },
@@ -4250,6 +4274,7 @@
         "segundo_apellido": "Second surname",
         "lugar_nacimiento": "Place of birth",
         "dni": "ID number (DNI or NIE)",
+        "sip": "Health card",
         "hermanos_total": "Siblings (including the child)",
         "hermanos_lugar": "Position among the siblings",
         "direccion_provincia": "Province",
@@ -4714,7 +4739,9 @@
         "recomendacion": "Recommendation",
         "paso_por_delante": "I walk past the school",
         "otro": "Other"
-      }
+      },
+      "sip": "Health card number",
+      "sip_ayuda": "The number on the child’s health card. Any region’s card or a private insurer’s card is fine."
     },
     "tutor": {
       "guardado": "Guardian details saved",

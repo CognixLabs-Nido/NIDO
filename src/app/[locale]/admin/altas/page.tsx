@@ -12,6 +12,10 @@ import {
   getAltasEnProceso,
   type AltaEnProceso,
 } from '@/features/matriculas/queries/get-altas-en-proceso'
+import {
+  getNinosSinTarjeta,
+  type NinoSinTarjeta,
+} from '@/features/ninos/queries/get-ninos-sin-tarjeta'
 import { createClient } from '@/lib/supabase/server'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { localeIntl } from '@/shared/lib/locale-intl'
@@ -48,7 +52,11 @@ export default async function AdminAltasPage({ params, searchParams }: PageProps
   const tS = await getTranslations('admin.ninos.sin_terminar')
   const { centroId } = await requireContextoCentro(locale)
 
-  const altas = await getAltasEnProceso(await createClient(), centroId)
+  const supabase = await createClient()
+  const [altas, sinTarjeta] = await Promise.all([
+    getAltasEnProceso(supabase, centroId),
+    getNinosSinTarjeta(supabase, centroId),
+  ])
 
   const fecha = (iso: string) =>
     new Intl.DateTimeFormat(localeIntl(locale), {
@@ -92,7 +100,51 @@ export default async function AdminAltasPage({ params, searchParams }: PageProps
           tS={tS}
         />
       )}
+
+      <SinTarjeta ninos={sinTarjeta} locale={locale} t={t} />
     </div>
+  )
+}
+
+/**
+ * Fase 7: los niños ya matriculados sin tarjeta sanitaria. El cierre del alta la exige desde la fase
+ * 7, pero no es retroactivo: a estas familias alguien se la tiene que reclamar.
+ */
+function SinTarjeta({
+  ninos,
+  locale,
+  t,
+}: {
+  ninos: NinoSinTarjeta[] | null
+  locale: string
+  t: T
+}) {
+  return (
+    <section className="space-y-2" data-testid="ninos-sin-tarjeta">
+      <h2 className="text-h3 text-foreground">{t('sin_tarjeta.titulo')}</h2>
+      <p className="text-muted-foreground text-sm">{t('sin_tarjeta.subtitulo')}</p>
+      {ninos === null ? (
+        <p className="text-sm">{t('sin_tarjeta.no_se_pudo_leer')}</p>
+      ) : ninos.length === 0 ? (
+        <p className="text-muted-foreground text-sm">{t('sin_tarjeta.vacio')}</p>
+      ) : (
+        <ul className="divide-border divide-y rounded-xl border">
+          {ninos.map((n) => (
+            <li key={n.id}>
+              <Link
+                href={`/${locale}/admin/ninos/${n.id}`}
+                className="hover:bg-muted flex items-center justify-between gap-3 px-4 py-3 text-sm"
+              >
+                <span>
+                  {n.nombre} {n.apellidos ?? ''}
+                </span>
+                <ChevronRightIcon className="text-muted-foreground size-4" aria-hidden />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 

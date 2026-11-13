@@ -1211,14 +1211,16 @@
         "telefono": "Telèfon",
         "dni_numero": "Número del DNI",
         "estudios": "Estudis",
-        "empresa": "Empresa"
+        "empresa": "Empresa",
+        "sip": "Targeta sanitària"
       },
       "entidad": {
         "ninos_familia": "Dades del menor (adreça / situació familiar)",
         "ninos_libro_familia": "Llibre de família",
         "datos_tutor": "Dades d'un tutor",
         "datos_tutor_dni": "DNI d'un tutor",
-        "ninos_identidad": "Identitat de l'infant"
+        "ninos_identidad": "Identitat de l'infant",
+        "ninos_sip_documento": "Imatge de la targeta sanitària"
       },
       "errors": {
         "registro": "No s'ha pogut registrar el canvi. Torna a provar-ho.",
@@ -1584,6 +1586,12 @@
           "falta": "falta",
           "sin_hacer_opcional": "sense fer, és opcional"
         }
+      },
+      "sin_tarjeta": {
+        "titulo": "Matriculats sense targeta sanitària",
+        "subtitulo": "L’alta la demana des d’ara, però no als que ja estaven matriculats. A estes famílies cal reclamar-la.",
+        "no_se_pudo_leer": "No s’ha pogut llegir quins xiquets tenen la targeta. Torna a carregar la pàgina.",
+        "vacio": "Tots els xiquets matriculats tenen la targeta sanitària."
       }
     }
   },
@@ -2449,7 +2457,9 @@
       "dni_invalido": "El DNI o NIE no és vàlid: revisa els números i la lletra",
       "hermanos_requeridos": "Indica quants germans són i quin lloc ocupa",
       "hermanos_lugar_mayor": "El lloc no pot ser més gran que el nombre de germans",
-      "como_nos_conocio_otro_requerido": "Conta’ns com ens has conegut"
+      "como_nos_conocio_otro_requerido": "Conta’ns com ens has conegut",
+      "sip_requerido": "Falta el número de la targeta sanitària",
+      "sip_invalido": "El número de la targeta porta només lletres i xifres (de 5 a 30)"
     },
     "errors": {
       "create_failed": "No s'ha pogut registrar el xiquet.",
@@ -2487,6 +2497,20 @@
         "fallo": "No s'ha pogut revocar l'autorització d'imatge",
         "no_autorizado_otorgar": "No tens permís per a autoritzar la imatge d'aquest xiquet",
         "fallo_otorgar": "No s'ha pogut autoritzar la imatge"
+      }
+    },
+    "tarjeta_sanitaria": {
+      "titulo": "Targeta sanitària",
+      "numero": "Número",
+      "sin_numero": "Sense número",
+      "no_se_pudo_leer": "No s’ha pogut llegir la targeta sanitària.",
+      "imagen_titulo": "Imatge de la targeta (opcional)",
+      "imagen_ayuda": "Fes una foto de l’anvers i una altra del revers: s’ajunten en un PDF.",
+      "boton": "Targeta sanitària",
+      "descripcion": "El número per al centre de salut.",
+      "cargando": "Buscant la targeta…",
+      "errors": {
+        "no_leido": "No s’ha pogut llegir la targeta sanitària. Torna-ho a provar."
       }
     }
   },
@@ -4250,6 +4274,7 @@
         "segundo_apellido": "Segon cognom",
         "lugar_nacimiento": "Lloc de naixement",
         "dni": "DNI o NIE",
+        "sip": "Targeta sanitària",
         "hermanos_total": "Germans (comptant el xiquet)",
         "hermanos_lugar": "Lloc que ocupa entre els germans",
         "direccion_provincia": "Província",
@@ -4714,7 +4739,9 @@
         "recomendacion": "Per recomanació",
         "paso_por_delante": "Passe per davant",
         "otro": "Altres"
-      }
+      },
+      "sip": "Targeta sanitària (SIP)",
+      "sip_ayuda": "El número de la seua targeta sanitària. Val la de qualsevol comunitat o la d’una asseguradora."
     },
     "tutor": {
       "guardado": "Dades del tutor desades",

@@ -26,6 +26,8 @@ export const entidadCambioEnum = z.enum([
   'datos_tutor',
   'datos_tutor_dni',
   'ninos_identidad',
+  // Fase 7: la imagen de la tarjeta sanitaria, ya subida a `sip-ninos`; se fija al aprobar.
+  'ninos_sip_documento',
 ])
 export type EntidadCambio = z.infer<typeof entidadCambioEnum>
 
@@ -63,6 +65,11 @@ export const payloadNinosIdentidadSchema = z
     nacionalidad: z.string().min(1).max(60).optional(),
     lugar_nacimiento: z.string().min(1).max(120).nullable().optional(),
     dni: z.string().min(1).max(20).nullable().optional(),
+    // Fase 7: la tarjeta sanitaria, ya normalizada. Sin `nullable`: es obligatoria, no se borra.
+    sip: z
+      .string()
+      .regex(/^[A-Z0-9]{5,30}$/)
+      .optional(),
   })
   .strict()
   .refine((p) => Object.keys(p).length > 0, { message: 'sin_cambios' })
@@ -120,4 +127,5 @@ export const ETIQUETA_ENTIDAD: Record<EntidadCambio, string> = {
   datos_tutor: 'admin.pendientes.entidad.datos_tutor',
   datos_tutor_dni: 'admin.pendientes.entidad.datos_tutor_dni',
   ninos_identidad: 'admin.pendientes.entidad.ninos_identidad',
+  ninos_sip_documento: 'admin.pendientes.entidad.ninos_sip_documento',
 }

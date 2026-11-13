@@ -419,6 +419,8 @@ export async function completarDatosAlta(
       nacionalidad: 'Nacionalidad Demo',
       hermanos_total: 1,
       hermanos_lugar: 1,
+      // Fase 7 (`20270119130000`): el número de la tarjeta sanitaria también lo exige el cierre.
+      sip: 'SIPDEMO0001',
     })
     .eq('id', nino_id)
   if (error) throw new Error(`completarDatosAlta falló: ${error.message}`)

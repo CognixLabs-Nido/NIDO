@@ -7,7 +7,10 @@
  * igual, o al revés. Funciones puras: sin red ni sesión, para poder probarlas solas.
  */
 
-/** Los ocho campos que identifican al niño: con el alta validada van a la cola (decidido 2026-11-07). */
+/**
+ * Los campos que identifican al niño: con el alta validada van a la cola (decidido 2026-11-07). La
+ * tarjeta sanitaria entra en la fase 7 (2026-11-13): «lo demás como el DNI».
+ */
 export const CAMPOS_IDENTIDAD_COLA = [
   'nombre',
   'primer_apellido',
@@ -17,6 +20,7 @@ export const CAMPOS_IDENTIDAD_COLA = [
   'nacionalidad',
   'lugar_nacimiento',
   'dni',
+  'sip',
 ] as const
 
 export type CampoIdentidadCola = (typeof CAMPOS_IDENTIDAD_COLA)[number]
@@ -33,6 +37,21 @@ export function normalizarDni(v: string): string | null {
   return s === '' ? null : s
 }
 
+/**
+ * La tarjeta sanitaria como la guarda la base (`privado.sip_normalizado`, fase 7): sin espacios,
+ * puntos, guiones ni barras, en mayúsculas; vacío → NULL.
+ */
+export function normalizarSip(v: string): string | null {
+  const s = v.replace(/[\s./-]/g, '').toUpperCase()
+  return s === '' ? null : s
+}
+
+/** La forma que comparten todas las tarjetas (CHECK `ninos_sip_forma`): 5 a 30 letras o cifras. */
+export function sipValido(v: string): boolean {
+  const s = normalizarSip(v)
+  return s !== null && /^[A-Z0-9]{5,30}$/.test(s)
+}
+
 export interface IdentidadPropuesta {
   nombre?: string | null
   primer_apellido?: string | null
@@ -42,6 +61,7 @@ export interface IdentidadPropuesta {
   nacionalidad?: string | null
   lugar_nacimiento?: string | null
   dni?: string | null
+  sip?: string | null
 }
 
 export interface IdentidadGuardada {
@@ -53,6 +73,7 @@ export interface IdentidadGuardada {
   nacionalidad: string | null
   lugar_nacimiento: string | null
   dni: string | null
+  sip: string | null
 }
 
 export type CambiosIdentidad = Partial<Record<CampoIdentidadCola, string | null>>
@@ -89,6 +110,10 @@ export function cambiosIdentidad(
   if (propuesta.dni != null) {
     const dni = normalizarDni(propuesta.dni)
     if (dni !== guardada.dni) c.dni = dni
+  }
+  if (propuesta.sip != null) {
+    const sip = normalizarSip(propuesta.sip)
+    if (sip !== guardada.sip) c.sip = sip
   }
   return c
 }

@@ -3,7 +3,7 @@ feature: altas-serie
 wave: 1
 status: approved
 priority: high
-last_updated: 2026-11-06
+last_updated: 2026-11-13
 related_adrs: [ADR-0049, ADR-0050, ADR-0063, ADR-0064]
 related_specs: [alta-tutor-driven, autorizaciones-firma, retencion-plazos]
 ---
@@ -1599,6 +1599,93 @@ no pudo leer.**
 - La purga (`purgar_sujeto_db`, las dos ramas y su redacción en `audit_log`) y el export
   (`export_datos_sujeto`, más el sujeto `tutor`), regenerados desde su cuerpo vivo con guarda de md5.
 
+## Fase 7: la tarjeta sanitaria
+
+### Decisiones
+
+- **D7 y D8 (2026-10-29), se construyen tal cual:** el número en claro en `ninos`, con los datos del
+  niño y **no** en la ficha médica cifrada; la imagen en su propio bucket (`sip-ninos`), con el
+  criterio de `dni-tutores`.
+- **2026-11-13, del responsable (copiando el criterio del DNI y del teléfono de la fase 6):**
+  - **El número es obligatorio para cerrar el alta**, y la base también lo exige. En España la
+    tarjeta sanitaria es obligatoria: todo niño la tiene. Obligatorio es **tenerla**, no que sea
+    valenciana.
+    - _Sustituida el 2026-11-13 por la línea de arriba:_ «no es obligatorio para cerrar el alta: un
+      bebé de cuatro meses puede no tener SIP todavía». Se dijo y se corrigió el mismo día, antes de
+      construir nada.
+  - **Cualquier tarjeta**: de otra comunidad, de una aseguradora privada o de una familia extranjera.
+    La forma propia solo se valida cuando parece un SIP valenciano, como la letra del DNI en la fase
+    6 (ver «Lo que no se construyó», abajo).
+  - **La imagen** la suben la familia o Dirección, después del alta, y **no es obligatoria nunca**.
+    Anverso y reverso en un PDF, como el DNI de los tutores.
+  - **Quién la ve:** el número, la Dirección, el tutor legal y **la profe del aula** (puede ser ella
+    quien lleve al niño al centro de salud); la imagen, no: con el número le basta. El autorizado,
+    ni número ni imagen.
+  - **Lo demás, como el DNI del niño:** un cambio con el alta validada pasa por la cola, sale en el
+    export del art. 15, se purga con el niño, el autorizado no lo ve y no es retroactivo.
+  - **Dirección ve quién está sin tarjeta.** Como no es retroactivo, las familias ya matriculadas no
+    la tienen y alguien se la tiene que reclamar.
+  - **El test de los buckets es más que D8.** D8 pedía comprobar que la purga alcanza los buckets
+    nuevos; eso cubre el del SIP y deja el agujero abierto para el siguiente. El test compara la
+    lista de la purga con los buckets **que existen**, y se pone rojo con uno que no esté.
+- **Para el abogado, sin resolver:** si la Conselleria exige conservar el expediente más allá de la
+  baja, eso afecta al expediente entero, no solo al SIP, y es la política de retención pendiente en
+  F11-B. Mientras tanto, el SIP se purga con el niño.
+
+### Lo que se midió antes (producción, 2026-11-13, solo lectura y ensayo terminado en RAISE)
+
+- **No había SIP en ningún sitio:** ni columna (tampoco con otro nombre: `sanitari`, `tarjeta`,
+  `cip`, `nuss`, `mutua`), ni bucket, ni función. Control: el mismo patrón con `dni` encuentra 3
+  columnas y 5 funciones.
+- **Un alta se cerraba sin tarjeta:** con los datos del niño, el titular completo y el acuse, la
+  tutora y la Dirección cerraban el alta pendiente (id y matrícula en `lista`). Controles: sin acuse,
+  42501; sin lugar de nacimiento, `datos_nino_por_completar`.
+- **La purga borra los ficheros según una lista escrita a mano** (`FUENTES_ADJUNTOS`) y nada la
+  comparaba con los buckets reales: un bucket nuevo sin añadir sobreviviría al olvido sin rojo.
+- `ninos` va por columnas: una columna nueva nace cerrada para leer; el UPDATE de la sesión es de
+  tabla y solo lo deja pasar `ninos_admin_all` (la Dirección).
+
+### Lo que no se construyó: la forma del SIP valenciano
+
+La tarjeta valenciana trae el «Nº de SIP» y un «DC: dígito de control» aparte
+([Conselleria de Sanidad](https://www.san.gva.es/es/web/tarjeta-sanitaria/tarjeta-sanitaria-individual)),
+y una fuente secundaria da 7 u 8 cifras para el código autonómico. **El cálculo del dígito de
+control no está publicado** (buscado el 2026-11-13). Sin él no hay equivalente a la letra del DNI que
+comprobar: validar la longitud dejaría fuera una tarjeta buena y no cazaría una mala. Se acepta la
+forma que comparten todas (5 a 30 letras o cifras, sin espacios, puntos, guiones ni barras) y la
+comprobación valenciana espera a tener la regla de una fuente oficial.
+
+### 7 · La base, en dos migraciones
+
+**`20270119120000` (aditiva; antes del despliegue):**
+
+- `ninos.sip` (normalizado por `privado.sip_normalizado`; CHECK `ninos_sip_forma`) y
+  `ninos.sip_documento_path` (el trigger de rutas la valida como la del libro), sin `GRANT` a la
+  sesión.
+- `actualizar_identidad_nino_tutor` recibe `p_sip` (último, con DEFAULT) y lo trata como el DNI: con
+  el alta validada, un cambio → 42501 `cola_validacion`.
+- `fijar_sip_documento_nino`: la imagen, del tutor legal o de la Dirección; con el alta validada, el
+  tutor a la cola; la misma ruta no es un cambio.
+- `sip_de_ninos`: el número a la Dirección, al tutor legal y a la profe del niño; la ruta, solo a los
+  dos primeros (`ve_documento`). El autorizado no recibe filas.
+- El bucket `sip-ninos` (privado, PDF, 10 MB) con las políticas de `libro-familia`.
+- La cola: el CHECK de la ruta admite `ninos_sip_documento`.
+- La purga: `privado.purgar_nino` borra las dos columnas y `_claves_pii_nino` las conoce.
+
+**`20270119130000` (después del despliegue):** `marcar_matricula_lista` añade `sip IS NULL` al bloque
+`datos_nino_por_completar`. No es retroactivo.
+
+### Pantallas
+
+- El paso del menor pide el número (obligatorio; «vale la de cualquier comunidad o la de una
+  aseguradora»), y el cierre del alta y la vista de avance lo exigen («Datos del niño»).
+- La ficha del niño (Dirección y familia): el número y la imagen, que se sube cuando se quiera.
+- La profe: «Tarjeta sanitaria» en la tarjeta del niño del aula, junto a «Llamar a la familia» (se
+  lee al pulsar).
+- «Altas en proceso»: los matriculados sin tarjeta, para reclamarla.
+- El catálogo de buckets (`catalogo-buckets.ts`): cada bucket que existe lo borra el olvido o está
+  fuera con su motivo y quién lo borra.
+
 ## Orden de la serie
 
 Diez fases, en este orden. De la 5 en adelante todas tocan `purgar_sujeto_db`, `privado.purgar_nino`
@@ -1611,9 +1698,9 @@ y la exportación del art. 15 (las funciones de la serie de retención, ADR-0064
 | 2    | Pantalla de altas en proceso      | Ver «Fase 2: la pantalla de altas en proceso»                                   | ✅           |
 | 3    | Documentos del centro versionados | Base: tabla de versiones con hash, firmas con `RESTRICT`, bucket propio         | ✅           |
 | 4    | Presupuesto y normas, para firmar | El gate exige la firma de la versión vigente de cada documento obligatorio; P-6 | ✅           |
-| 5    | Campos del niño                   | Campos fijos; la configuración por centro, con el segundo centro (P5-7)         | 🔸 en marcha |
-| 6    | Campos de tutores                 | Con el test de la purga contra el catálogo de columnas                          |              |
-| 7    | SIP                               | Número en `ninos`, imagen en su bucket                                          |              |
+| 5    | Campos del niño                   | Campos fijos; la configuración por centro, con el segundo centro (P5-7)         | ✅           |
+| 6    | Campos de tutores                 | Con el test de la purga contra el catálogo de columnas                          | ✅           |
+| 7    | SIP                               | Número en `ninos`, imagen en su bucket                                          | 🔸 en marcha |
 | 8    | Servicios en el alta              | La petición de media pensión                                                    |              |
 | 9    | Gastos de gestión                 | Paso del alta y confirmación de la directora al validar                         |              |
 | 10   | Firma de la ficha                 | Resumen de los datos, hash y firma                                              |              |
@@ -1657,8 +1744,8 @@ lo suyo (`20270115130000`).
 
 - [x] Fase 1 · [x] Fase 2 · [x] Fase 3
 - [x] Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [x] 4c (#514) · [x] 4d (#515)
-- Fase 5: [x] 5a (#516) · [x] la puerta de identidad (#518) · [x] 5b (#519, #520) · [ ] el autorizado lee solo lo suyo
-- [ ] Fase 6 · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
+- [x] Fase 5: [x] 5a (#516) · [x] la puerta de identidad (#518) · [x] 5b (#519, #520) · [x] el autorizado lee solo lo suyo (#522, #521)
+- [x] Fase 6 (#526) · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias
 
