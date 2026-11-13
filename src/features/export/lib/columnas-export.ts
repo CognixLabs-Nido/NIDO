@@ -286,6 +286,40 @@ export const SECCIONES_EXPORT = {
     direccion_numero: { sale: 'direccion_numero' },
     direccion_cp: { sale: 'direccion_cp' },
     direccion_ciudad: { sale: 'direccion_ciudad' },
+    // Fase 6 (2026-11-13): los cinco datos nuevos, de su fila.
+    telefono: { sale: 'telefono' },
+    fecha_nacimiento: { sale: 'fecha_nacimiento' },
+    dni_numero: { sale: 'dni_numero' },
+    estudios: { sale: 'estudios' },
+    empresa: { sale: 'empresa' },
+    created_at: { sale: 'creado_en' },
+    updated_at: { sale: 'actualizado_en' },
+    deleted_at: { sale: 'borrado_en' },
+    centro_id: NS_CENTRO,
+  }),
+  /**
+   * Fase 6 (2026-11-13): el tutor SIN cuenta (el segundo, antes de aceptar la invitación) no es un
+   * usuario y no podía exportarse; lo exporta la Dirección por el id de su fila. Las mismas columnas
+   * que su perfil en el export de un usuario.
+   */
+  'tutor.perfiles_familia': seccion('familia_tutores', {
+    id: NS_ID,
+    familia_id: { sale: 'familia_id' },
+    usuario_id: NS_SUJETO,
+    rol_familia: { sale: 'rol_familia' },
+    email: { sale: 'email' },
+    nombre_completo: { sale: 'nombre_completo' },
+    dni_documento_path: { sale: 'dni_documento_path' },
+    direccion_calle: { sale: 'direccion_calle' },
+    direccion_numero: { sale: 'direccion_numero' },
+    direccion_cp: { sale: 'direccion_cp' },
+    direccion_ciudad: { sale: 'direccion_ciudad' },
+    // Fase 6 (2026-11-13): los cinco datos nuevos, de su fila.
+    telefono: { sale: 'telefono' },
+    fecha_nacimiento: { sale: 'fecha_nacimiento' },
+    dni_numero: { sale: 'dni_numero' },
+    estudios: { sale: 'estudios' },
+    empresa: { sale: 'empresa' },
     created_at: { sale: 'creado_en' },
     updated_at: { sale: 'actualizado_en' },
     deleted_at: { sale: 'borrado_en' },

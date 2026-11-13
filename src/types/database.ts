@@ -2302,11 +2302,16 @@ export type Database = {
           direccion_cp: string | null
           direccion_numero: string | null
           dni_documento_path: string | null
+          dni_numero: string | null
           email: string | null
+          empresa: string | null
+          estudios: string | null
           familia_id: string
+          fecha_nacimiento: string | null
           id: string
           nombre_completo: string | null
           rol_familia: string
+          telefono: string | null
           updated_at: string
           usuario_id: string | null
         }
@@ -2319,11 +2324,16 @@ export type Database = {
           direccion_cp?: string | null
           direccion_numero?: string | null
           dni_documento_path?: string | null
+          dni_numero?: string | null
           email?: string | null
+          empresa?: string | null
+          estudios?: string | null
           familia_id: string
+          fecha_nacimiento?: string | null
           id?: string
           nombre_completo?: string | null
           rol_familia: string
+          telefono?: string | null
           updated_at?: string
           usuario_id?: string | null
         }
@@ -2336,11 +2346,16 @@ export type Database = {
           direccion_cp?: string | null
           direccion_numero?: string | null
           dni_documento_path?: string | null
+          dni_numero?: string | null
           email?: string | null
+          empresa?: string | null
+          estudios?: string | null
           familia_id?: string
+          fecha_nacimiento?: string | null
           id?: string
           nombre_completo?: string | null
           rol_familia?: string
+          telefono?: string | null
           updated_at?: string
           usuario_id?: string | null
         }
@@ -5509,6 +5524,10 @@ export type Database = {
           resultado: string
         }[]
       }
+      fijar_dni_tutor: {
+        Args: { p_familia_id: string; p_path: string; p_rol_familia: string }
+        Returns: string
+      }
       fijar_fecha_cobro_recibos: {
         Args: { p_centro_id: string; p_fecha: string; p_recibo_ids: string[] }
         Returns: {
@@ -5593,6 +5612,10 @@ export type Database = {
           fecha_baja: string
           matricula_id: string
         }[]
+      }
+      guardar_tutor: {
+        Args: { p_datos: Json; p_familia_id: string; p_rol_familia: string }
+        Returns: string
       }
       hoy_madrid: { Args: never; Returns: string }
       idiomas_iso_2letras: { Args: { p_codigos: string[] }; Returns: boolean }
@@ -6127,6 +6150,14 @@ export type Database = {
         }
         Returns: string
       }
+      telefonos_familia_de_nino: {
+        Args: { p_nino_id: string }
+        Returns: {
+          nombre_completo: string
+          rol_familia: string
+          telefono: string
+        }[]
+      }
       tiene_consentimiento: {
         Args: {
           p_tipo: Database["public"]["Enums"]["consentimiento_tipo"]
@@ -6149,6 +6180,29 @@ export type Database = {
       traspasar_admin: {
         Args: { p_centro_id: string; p_nueva_admin: string }
         Returns: undefined
+      }
+      tutores_de_familia: {
+        Args: { p_familia_id: string }
+        Returns: {
+          direccion_calle: string
+          direccion_ciudad: string
+          direccion_cp: string
+          direccion_numero: string
+          dni_documento_path: string
+          dni_numero: string
+          email: string
+          empresa: string
+          es_yo: boolean
+          estudios: string
+          fecha_nacimiento: string
+          id: string
+          nombre_completo: string
+          rol_familia: string
+          telefono: string
+          tiene_cuenta: boolean
+          ve_personales: boolean
+          ve_telefono: boolean
+        }[]
       }
       usuario_actual: { Args: never; Returns: string }
       usuario_es_audiencia_anuncio: {

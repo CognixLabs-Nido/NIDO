@@ -36,6 +36,12 @@ export const PERSONALES_FAMILIA_TUTORES = [
   'direccion_cp',
   'direccion_ciudad',
   'dni_documento_path',
+  // Fase 6 (20270118120000, 2026-11-13).
+  'telefono',
+  'fecha_nacimiento',
+  'dni_numero',
+  'estudios',
+  'empresa',
 ] as const
 
 export const NO_PERSONALES_FAMILIA_TUTORES: Readonly<Record<string, string>> = {

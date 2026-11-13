@@ -82,6 +82,11 @@ describe('Olvido por centro — solicitud y purga partidas', () => {
           direccion_numero: '1',
           direccion_cp: '46001',
           direccion_ciudad: `Ciudad ${clave}`,
+          telefono: '+34600000000',
+          fecha_nacimiento: '1980-01-01',
+          dni_numero: `Doc ${clave}`,
+          estudios: `Estudios ${clave}`,
+          empresa: `Empresa ${clave}`,
         })
         .eq('id', ft)
       if (upd.error) throw new Error(`familia_tutores ${clave}: ${upd.error.message}`)
