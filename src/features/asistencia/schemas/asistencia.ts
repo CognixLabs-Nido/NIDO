@@ -4,10 +4,7 @@ import { z } from 'zod'
 // acción tal cual la leyó el pase. Pedir 'HH:MM' dejaba sin guardar cualquier fila con la llegada
 // apuntada, aunque solo se cambiara la nota (medido 2026-11-13, `hora_invalida`). Se aceptan las dos
 // y se deja en 'HH:MM'.
-const horaSchema = z
-  .string()
-  .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'asistencia.validation.hora_invalida')
-  .transform((h) => h.slice(0, 5))
+const horaSchema = z.string().regex(/^\d{2}:\d{2}$/, 'asistencia.validation.hora_invalida')
 const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'asistencia.validation.fecha_invalida')
 const observacionesSchema = z.string().max(500, 'asistencia.validation.observaciones_largas')
 
