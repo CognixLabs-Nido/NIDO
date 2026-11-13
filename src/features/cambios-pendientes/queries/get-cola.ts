@@ -33,8 +33,6 @@ export interface CambioPendienteItem {
 // gestión y salen por `ficha_gestion_ninos` (`20270115120000`), que a la Dirección le contesta.
 const CAMPOS_NINO =
   'id, familia_id, nombre, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, nacionalidad, lugar_nacimiento'
-const CAMPOS_TUTOR =
-  'familia_id, rol_familia, email, nombre_completo, direccion_calle, direccion_numero, direccion_cp, direccion_ciudad, dni_documento_path'
 const DATOS_TUTOR = [
   'nombre_completo',
   'email',
@@ -42,6 +40,12 @@ const DATOS_TUTOR = [
   'direccion_numero',
   'direccion_cp',
   'direccion_ciudad',
+  // Fase 6 (`20270118120000`): los cinco nuevos, leídos por `tutores_de_familia` (la sesión no los lee).
+  'telefono',
+  'fecha_nacimiento',
+  'dni_numero',
+  'estudios',
+  'empresa',
 ] as const
 
 type Fila = Record<string, unknown>
@@ -121,15 +125,23 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
   const tutores = new Map<string, Fila>()
   let tutoresOk = ninosOk
   if (ninosOk && familiaIds.length > 0) {
-    const r = await supabase
-      .from('familia_tutores')
-      .select(CAMPOS_TUTOR)
-      .in('familia_id', familiaIds)
-      .is('deleted_at', null)
-    if (r.error) {
-      tutoresOk = false
-      logger.warn('listarCambiosPendientes: lo guardado del tutor', r.error.code ?? 'sin_codigo')
-    } else for (const t of r.data ?? []) tutores.set(`${t.familia_id}:${t.rol_familia}`, t as Fila)
+    // Por `tutores_de_familia`: las cinco columnas de la fase 6 no se leen con la sesión. Sin poder
+    // leer lo guardado (`ve_personales`), la cola no enseña un «antes» vacío: dice que no lo sabe.
+    const leidas = await Promise.all(
+      familiaIds.map(async (f) => ({
+        f,
+        r: await supabase.rpc('tutores_de_familia', { p_familia_id: f }),
+      }))
+    )
+    for (const { f, r } of leidas) {
+      if (r.error || (r.data ?? []).some((t) => !t.ve_personales)) {
+        tutoresOk = false
+        logger.warn(
+          'listarCambiosPendientes: lo guardado del tutor',
+          r.error?.code ?? 'sin_permiso'
+        )
+      } else for (const t of r.data ?? []) tutores.set(`${f}:${t.rol_familia}`, t as Fila)
+    }
   }
 
   return filas.map((r) => {
@@ -151,7 +163,7 @@ export async function listarCambiosPendientes(centroId: string): Promise<CambioP
         const tutor = tutores.get(`${nino.familia_id}:${rolFamiliaDeVinculo(vinculo.data)}`) ?? null
         lineas =
           entidad === 'datos_tutor'
-            ? // Al aprobar se escriben los seis campos (`aplicar.ts`): se enseñan los que cambian.
+            ? // Al aprobar se escriben todos los campos (`aplicar.ts`): se enseñan los que cambian.
               lineasDeParche(payload, tutor, DATOS_TUTOR)
             : [{ campo: 'documento', antes: texto(tutor?.dni_documento_path), despues: 'nuevo' }]
       }

@@ -9,6 +9,7 @@ import { logger } from '@/shared/lib/logger'
 
 import { leerDocumentosNino } from '@/features/documentos-centro/lib/firmar-documentos'
 import { frenaElAlta } from '../lib/regla-documentos-alta'
+import { tutorCompleto } from '../lib/datos-tutor'
 import { leerTutoresDeNino } from '../lib/tutores-familia'
 
 import { fail, ok } from '../../centros/types'
@@ -31,6 +32,7 @@ import { fail, ok } from '../../centros/types'
 export type BloqueAlta =
   | 'identidad'
   | 'tutor1'
+  | 'tutor2'
   | 'medico'
   | 'documentos'
   | 'imagen'
@@ -39,6 +41,7 @@ export type BloqueAlta =
 const ORDEN_BLOQUES: BloqueAlta[] = [
   'identidad',
   'tutor1',
+  'tutor2',
   'medico',
   'documentos',
   'imagen',
@@ -115,7 +118,15 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
   // Un fallo no es «falta el tutor 1»: no se cierra, y no se le pide a la familia lo que ya hizo.
   if (!leidos) return fail('alta.errors.finalizar_fallo')
   const tutor1 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_principal')
-  if (!tutor1?.nombre_completo) faltan.push('tutor1')
+  const tutor2 = tutores.find((t) => t.tipo_vinculo === 'tutor_legal_secundario')
+  // Fase 6: la misma regla que la base (`privado.tutor_completo`, `datos_tutor_por_completar`). Lo que
+  // no se pudo leer no es «falta»: no se cierra y no se le pide a la familia lo que quizá ya hizo.
+  if ([tutor1, tutor2].some((t) => t && !t.ve_personales))
+    return fail('alta.errors.finalizar_fallo')
+  // El PDF del DNI del tutor 1 lo cuenta el bloque de documentos, como hasta ahora.
+  if (!tutor1 || !tutorCompleto(tutor1, { conPdf: false })) faltan.push('tutor1')
+  // El segundo tutor, si lo hay (sin fila = «no hay segundo tutor»), entero y con su DNI (D12).
+  if (tutor2 && !tutorCompleto(tutor2)) faltan.push('tutor2')
 
   // Médico + emergencia: solo se exige el acuse de confidencialidad `datos_medicos` vigente
   // (consentimiento RGPD, con backstop en `marcar_matricula_lista`). El teléfono de emergencia
@@ -172,6 +183,9 @@ export async function finalizarAlta(ninoId: string): Promise<FinalizarAltaResult
     // Lo mismo con los datos del niño (5b): alguien los vació entre el gate y la llamada.
     if (error.hint === 'datos_nino_por_completar') {
       return { success: false, error: 'alta.errors.incompleto', faltan: ['identidad'] }
+    }
+    if (error.hint === 'datos_tutor_por_completar') {
+      return { success: false, error: 'alta.errors.incompleto', faltan: ['tutor1', 'tutor2'] }
     }
     if (error.hint === 'documentos_por_firmar') {
       return { success: false, error: 'alta.errors.incompleto', faltan: ['documentos_centro'] }

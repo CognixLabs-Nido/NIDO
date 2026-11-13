@@ -1207,7 +1207,11 @@
         "email": "Email",
         "nombre_completo": "Full name",
         "documento": "Document",
-        "direccion_provincia": "Province"
+        "direccion_provincia": "Province",
+        "telefono": "Phone",
+        "dni_numero": "ID number",
+        "estudios": "Education",
+        "empresa": "Employer"
       },
       "entidad": {
         "ninos_familia": "Child data (address / family situation)",
@@ -1302,7 +1306,12 @@
         "direccion_numero": "Number",
         "direccion_cp": "Postcode",
         "direccion_ciudad": "City",
-        "dni": "ID document"
+        "dni": "ID document",
+        "telefono": "Phone",
+        "fecha_nacimiento": "Date of birth",
+        "dni_numero": "ID number",
+        "estudios": "Education",
+        "empresa": "Employer"
       },
       "tutores": {
         "titulo": "Guardians",
@@ -1328,7 +1337,8 @@
         "guardar": "Save",
         "guardando": "Saving…",
         "cancelar": "Cancel",
-        "guardado": "Profile updated"
+        "guardado": "Profile updated",
+        "no_legible": "The phone, date of birth, ID number, education and employer couldn't be read. Try again later."
       },
       "validation": {
         "invalid": "Invalid data",
@@ -4432,7 +4442,11 @@
         "nino": "Child",
         "documento": "Document",
         "cita": "Appointment",
-        "adulto": "Linked person"
+        "adulto": "Linked person",
+        "telefono": "Phone",
+        "dni_numero": "ID number",
+        "estudios": "Education",
+        "empresa": "Employer"
       },
       "valores": {
         "terminos": "Terms",
@@ -4594,7 +4608,8 @@
     "generando": "Generating…",
     "exito": "Download ready",
     "error": "Could not generate the export. Please try again.",
-    "perfil_descripcion": "Download a copy of your personal data and your children's (access and portability, GDPR)."
+    "perfil_descripcion": "Download a copy of your personal data and your children's (access and portability, GDPR).",
+    "exportar_tutor_sin_cuenta": "Export their data"
   },
   "alta": {
     "titulo": "Complete enrolment",
@@ -4716,7 +4731,20 @@
         "soltero": "Single",
         "viudo": "Widowed"
       },
-      "misma_direccion": "Same address as the child"
+      "misma_direccion": "Same address as the child",
+      "telefono": "Phone",
+      "fecha_nacimiento": "Date of birth",
+      "dni_numero": "ID card, NIE or passport number",
+      "estudios": "Education (optional)",
+      "empresa": "Employer (optional)",
+      "voluntarios_nota": "These two are optional: you can leave them blank.",
+      "no_legible": "We couldn't read this guardian's personal details. Try again later: until then they can't be saved, so nothing already stored is erased.",
+      "gestiona_el_otro": "This guardian already has their own NIDO account: they manage their personal details from it.",
+      "errors": {
+        "telefono": "Enter a valid phone number: 6 to 15 digits, with the country code if it is not Spanish.",
+        "fecha_nacimiento": "The date of birth must be before today and less than 120 years ago.",
+        "dni_numero": "Check the ID card or NIE number: the letter doesn't match."
+      }
     },
     "documentos": {
       "subido": "Document uploaded",
@@ -4821,7 +4849,8 @@
         "medico": "Medical and emergency details",
         "documentos": "Documents (family book and ID)",
         "imagen": "Image consent",
-        "documentos_centro": "Centre's documents to sign"
+        "documentos_centro": "Centre's documents to sign",
+        "tutor2": "Guardian 2 details"
       }
     }
   },
@@ -5497,5 +5526,22 @@
       "no_comprobado": "We could not check the pending centre documents."
     },
     "refirma": "The centre has corrected “{titulo}” and asks for it to be signed again. The previous signature is from {fecha}."
+  },
+  "familias": {
+    "llamar": {
+      "boton": "Call the family",
+      "titulo": "Call the family",
+      "descripcion": "Tap a number to call.",
+      "cargando": "Looking up the phone numbers…",
+      "sin_tutores": "This family has no guardians with details.",
+      "sin_telefono": "No phone",
+      "rol": {
+        "titular": "Guardian 1",
+        "segundo_tutor": "Guardian 2"
+      },
+      "errors": {
+        "no_leido": "The phone numbers couldn't be read. Try again."
+      }
+    }
   }
 }

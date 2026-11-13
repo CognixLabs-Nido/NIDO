@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+import { fechaNacimientoTutorValida, telefonoValido } from '../lib/datos-tutor'
+import { documentoTutorValido } from '../lib/documento-identidad'
+
 /** Estados civiles (espejo del ENUM `estado_civil` de la migración G-0). */
 export const estadoCivilEnum = z.enum([
   'casados',
@@ -51,6 +54,37 @@ export const actualizarNinoFamiliaSchema = z.object({
 })
 
 /**
+ * Fase 6 (`20270118120000`, decidido el 2026-11-12/13): teléfono, fecha de nacimiento y número del DNI
+ * (obligatorios para cerrar el alta: lo exige `marcar_matricula_lista`), y estudios y empresa
+ * (voluntarios). Aquí solo la forma; lo obligatorio lo decide el cierre, no cada guardado. La base lo
+ * vuelve a comprobar con sus CHECK.
+ */
+export const datosTutorFields = {
+  telefono: z
+    .string()
+    .max(30)
+    .refine((v) => v.trim() === '' || telefonoValido(v), 'alta.tutor.errors.telefono')
+    .optional()
+    .nullable(),
+  fecha_nacimiento: z
+    .string()
+    .refine(
+      (v) => v === '' || fechaNacimientoTutorValida(v, new Date().toISOString().slice(0, 10)),
+      'alta.tutor.errors.fecha_nacimiento'
+    )
+    .optional()
+    .nullable(),
+  dni_numero: z
+    .string()
+    .max(40)
+    .refine((v) => v.trim() === '' || documentoTutorValido(v), 'alta.tutor.errors.dni_numero')
+    .optional()
+    .nullable(),
+  estudios: z.string().max(200).optional().nullable(),
+  empresa: z.string().max(200).optional().nullable(),
+}
+
+/**
  * Datos del tutor (identidad + dirección) en el alta. tutor 1 = principal (usuario_id
  * = auth.uid()); tutor 2 = secundario sin cuenta (usuario_id NULL, la invitación llega
  * en G-3). El DNI (PDF) NO viaja aquí: lo sube su ruta y fija `dni_documento_path`.
@@ -66,6 +100,7 @@ export const guardarDatosTutorSchema = z.object({
     .optional()
     .nullable(),
   ...direccionFields,
+  ...datosTutorFields,
 })
 
 export type ActualizarNinoFamiliaInput = z.infer<typeof actualizarNinoFamiliaSchema>

@@ -5,6 +5,7 @@ import { getAutorizacionDetalle } from '@/features/autorizaciones/queries/get-au
 import { getCurrentUser } from '@/features/auth/queries/get-current-user'
 import { AvisoCentroDistinto } from '@/features/centros/components/AvisoCentroDistinto'
 import { contextoEnCentro } from '@/features/centros/contexto/get-contexto-centro'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getDatosPedagogicos } from '@/features/datos-pedagogicos/queries/get-datos-pedagogicos'
 import { firmarFotoNino } from '@/features/ninos/queries/get-foto-nino'
@@ -214,6 +215,15 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
       direccion_cp: row.direccion_cp,
       direccion_ciudad: row.direccion_ciudad,
       dni_url: dniUrl,
+      telefono: row.telefono,
+      fecha_nacimiento: row.fecha_nacimiento,
+      dni_numero: row.dni_numero,
+      estudios: row.estudios,
+      empresa: row.empresa,
+      // Fase 6: lo que no se pudo leer no se ofrece a guardar (la pantalla lo dice). Un tutor con su
+      // propia cuenta, visto por el otro, gestiona él sus datos.
+      legibles: row.ve_personales,
+      gestionaElOtro: row.tiene_cuenta && row.usuario_id !== user?.id && !row.ve_personales,
     }
   }
   let datosTutor1 = await aDatosTutor('tutor_legal_principal')
@@ -230,7 +240,26 @@ export default async function AltaTutorPage({ params, searchParams }: PageProps)
       direccion_cp: hermanoDireccion?.direccion_cp ?? null,
       direccion_ciudad: hermanoDireccion?.direccion_ciudad ?? null,
       dni_url: null,
+      telefono: null,
+      fecha_nacimiento: null,
+      dni_numero: null,
+      estudios: null,
+      empresa: null,
+      legibles: true,
+      gestionaElOtro: false,
     }
+  }
+  // Fase 6: el teléfono que dejó en la lista de espera pre-rellena el suyo, editable. La sesión del
+  // tutor no lee `lista_espera` (solo la Dirección): se lee con el servidor SOLO ese teléfono, del
+  // prospecto de ESTE niño, y solo si aún no tiene uno guardado; aquí ya se ha autorizado la entrada.
+  if (datosTutor1.legibles && !datosTutor1.telefono) {
+    const { data: prospecto } = await createServiceRoleClient()
+      .from('lista_espera')
+      .select('telefono_tutor')
+      .eq('nino_id', ninoId)
+      .maybeSingle()
+    if (prospecto?.telefono_tutor)
+      datosTutor1 = { ...datosTutor1, telefono: prospecto.telefono_tutor }
   }
 
   // Sin leerlos, el paso no ofrece el formulario (guarda el estado entero: pisaría lo guardado con los

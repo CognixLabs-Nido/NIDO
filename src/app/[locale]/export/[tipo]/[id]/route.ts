@@ -5,7 +5,11 @@ import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/shared/lib/logger'
 
 import { empaquetarExport } from '@/features/export/lib/empaquetar'
-import { recolectarNino, recolectarUsuario } from '@/features/export/lib/recolectar'
+import {
+  recolectarNino,
+  recolectarTutor,
+  recolectarUsuario,
+} from '@/features/export/lib/recolectar'
 import { registrarExport } from '@/features/export/lib/registrar'
 import type { DocumentoExport, SujetoExport } from '@/features/export/types'
 
@@ -32,7 +36,7 @@ export async function GET(
   { params }: { params: Promise<{ locale: string; tipo: string; id: string }> }
 ): Promise<Response> {
   const { locale, tipo, id } = await params
-  if (tipo !== 'usuario' && tipo !== 'nino') {
+  if (tipo !== 'usuario' && tipo !== 'nino' && tipo !== 'tutor') {
     return new Response('Tipo inválido', { status: 400 })
   }
   const sujetoTipo = tipo as SujetoExport
@@ -48,7 +52,9 @@ export async function GET(
   const rec =
     sujetoTipo === 'nino'
       ? await recolectarNino(supabase, service, id, { incluirMotivoBaja: true })
-      : await recolectarUsuario(supabase, service, id)
+      : sujetoTipo === 'tutor'
+        ? await recolectarTutor(supabase, service, id)
+        : await recolectarUsuario(supabase, service, id)
   if (!rec) return new Response('Sin datos o no autorizado', { status: 404 })
 
   const doc: DocumentoExport = {
@@ -59,7 +65,11 @@ export async function GET(
       nota: 'Snapshot del momento. No incluye el registro interno de auditoría; las fotos donde aparecen otros menores se listan sin el archivo (PII de terceros). Los enlaces a archivos caducan a las ~24 h.',
       solicitado_por: user.id,
     },
-    ...(sujetoTipo === 'nino' ? { nino: rec.data } : { usuario: rec.data }),
+    ...(sujetoTipo === 'nino'
+      ? { nino: rec.data }
+      : sujetoTipo === 'tutor'
+        ? { tutor: rec.data }
+        : { usuario: rec.data }),
   }
 
   try {

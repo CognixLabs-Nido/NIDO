@@ -82,3 +82,16 @@ export function dniNieValido(raw: string): boolean {
   const forma = formaDocumento(raw)
   return (forma === 'dni' || forma === 'nie') && documentoValido(raw)
 }
+
+/**
+ * El documento del TUTOR (fase 6, `privado.documento_tutor_valido`): cualquier documento de 1 a 40
+ * caracteres; la letra solo se comprueba cuando tiene forma de DNI o NIE. Un pasaporte o un documento
+ * extranjero se acepta tal cual: un campo obligatorio que no admite el documento de una familia real
+ * es un alta que no se puede cerrar.
+ */
+export function documentoTutorValido(raw: string): boolean {
+  const t = raw.trim()
+  if (t.length < 1 || t.length > MAX_LARGO_DOCUMENTO) return false
+  const forma = formaDocumento(t)
+  return forma === 'dni' || forma === 'nie' ? documentoValido(t) : true
+}

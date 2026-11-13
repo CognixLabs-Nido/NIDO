@@ -56,6 +56,11 @@ export function EditarTutorDialog({
       direccion_numero: tutor.direccion_numero,
       direccion_cp: tutor.direccion_cp,
       direccion_ciudad: tutor.direccion_ciudad,
+      telefono: tutor.legibles ? tutor.telefono : undefined,
+      fecha_nacimiento: tutor.legibles ? tutor.fecha_nacimiento : undefined,
+      dni_numero: tutor.legibles ? tutor.dni_numero : undefined,
+      estudios: tutor.legibles ? tutor.estudios : undefined,
+      empresa: tutor.legibles ? tutor.empresa : undefined,
     },
   })
 
@@ -145,6 +150,20 @@ export function EditarTutorDialog({
               {nullableField('direccion_cp', t('fields.direccion_cp'), 12)}
               {nullableField('direccion_ciudad', t('fields.direccion_ciudad'), 120)}
             </div>
+            {/* Fase 6. Sin poder leerlos no se ofrecen: guardarlos vacíos borraría lo que hay. */}
+            {tutor.legibles ? (
+              <div className="grid grid-cols-2 gap-3">
+                {nullableField('telefono', t('fields.telefono'), 30)}
+                {nullableField('fecha_nacimiento', t('fields.fecha_nacimiento'), 10)}
+                {nullableField('dni_numero', t('fields.dni_numero'), 40)}
+                {nullableField('estudios', t('fields.estudios'), 200)}
+                {nullableField('empresa', t('fields.empresa'), 200)}
+              </div>
+            ) : (
+              <p role="status" className="text-muted-foreground text-sm">
+                {t('editar_tutor.no_legible')}
+              </p>
+            )}
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 {t('editar_tutor.cancelar')}

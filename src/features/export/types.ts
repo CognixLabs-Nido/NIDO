@@ -2,7 +2,7 @@
 export const EXPORT_URL_TTL_SEGUNDOS = 24 * 60 * 60
 
 /** Tipo de sujeto exportable (coincide con el CHECK de export_log). */
-export type SujetoExport = 'usuario' | 'nino'
+export type SujetoExport = 'usuario' | 'nino' | 'tutor'
 
 /** Referencia a un binario incluido en el export como enlace firmado (#4). */
 export interface AdjuntoExport {
@@ -25,4 +25,6 @@ export interface DocumentoExport {
   usuario?: Record<string, unknown> | null
   hijos?: Array<Record<string, unknown>>
   nino?: Record<string, unknown> | null
+  /** Fase 6: un tutor sin cuenta, exportado por la Dirección (sujeto `tutor`). */
+  tutor?: Record<string, unknown> | null
 }

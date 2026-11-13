@@ -408,7 +408,10 @@ export async function createTestNino(centro_id: string, nombre?: string): Promis
  * recién creado es el de antes de rellenar el paso del menor. Los tests que cierran un alta los
  * ponen con esto, a la vista. Valores ficticios.
  */
-export async function completarDatosAlta(nino_id: string): Promise<void> {
+export async function completarDatosAlta(
+  nino_id: string,
+  { tutores = true }: { tutores?: boolean } = {}
+): Promise<void> {
   const { error } = await serviceClient
     .from('ninos')
     .update({
@@ -419,6 +422,63 @@ export async function completarDatosAlta(nino_id: string): Promise<void> {
     })
     .eq('id', nino_id)
   if (error) throw new Error(`completarDatosAlta falló: ${error.message}`)
+  // `tutores: false` para el test que mide el cierre con los tutores a medias.
+  if (tutores) await completarTutoresAlta(nino_id)
+}
+
+/**
+ * Fase 6 (`20270118120000`): el alta tampoco se cierra sin los datos de los tutores (HINT
+ * `datos_tutor_por_completar`): nombre, email, teléfono, fecha de nacimiento, número y PDF del DNI, y
+ * calle, código postal y ciudad. Rellena lo que falte en las filas vivas de la familia del niño, sin
+ * pisar el nombre ni el email que ya tengan, y si la familia no tiene titular crea uno sin cuenta (en
+ * la app lo crea siempre el alta). Valores ficticios.
+ */
+export async function completarTutoresAlta(nino_id: string): Promise<void> {
+  const { data: n, error: eN } = await serviceClient
+    .from('ninos')
+    .select('familia_id, centro_id')
+    .eq('id', nino_id)
+    .single()
+  if (eN || !n) throw new Error(`completarTutoresAlta: ${eN?.message}`)
+  const comunes = {
+    telefono: '+34600000000',
+    fecha_nacimiento: '1985-01-01',
+    dni_numero: '12345678Z',
+    direccion_calle: 'Calle Demo',
+    direccion_cp: '46001',
+    direccion_ciudad: 'Ciudad Demo',
+  }
+  const dni = (rol: string) => `${n.centro_id}/${nino_id}/dni-${rol}-demo.pdf`
+  const { data: filas, error: eF } = await serviceClient
+    .from('familia_tutores')
+    .select('id, rol_familia, nombre_completo, email, dni_documento_path')
+    .eq('familia_id', n.familia_id)
+    .is('deleted_at', null)
+  if (eF) throw new Error(`completarTutoresAlta: ${eF.message}`)
+  if (!(filas ?? []).some((f) => f.rol_familia === 'titular')) {
+    const { error } = await serviceClient.from('familia_tutores').insert({
+      familia_id: n.familia_id,
+      rol_familia: 'titular',
+      usuario_id: null,
+      nombre_completo: 'Tutor Demo',
+      email: 'tutor.demo@correo.test',
+      dni_documento_path: dni('titular'),
+      ...comunes,
+    })
+    if (error) throw new Error(`completarTutoresAlta (titular): ${error.message}`)
+  }
+  for (const f of filas ?? []) {
+    const { error } = await serviceClient
+      .from('familia_tutores')
+      .update({
+        ...comunes,
+        nombre_completo: f.nombre_completo ?? 'Tutor Demo',
+        email: f.email ?? 'tutor.demo@correo.test',
+        dni_documento_path: f.dni_documento_path ?? dni(f.rol_familia),
+      })
+      .eq('id', f.id)
+    if (error) throw new Error(`completarTutoresAlta (${f.rol_familia}): ${error.message}`)
+  }
 }
 
 /**

@@ -58,6 +58,8 @@ describe('Purga RGPD — cierre del frente', () => {
 
   const s = randomUUID().slice(0, 8)
   const marca = (campo: string) => `PC-${campo}-${s}`
+  const TELEFONO_TUTOR = '+34611222333'
+  const NACIMIENTO_TUTOR = '1984-02-29'
 
   async function nuevoUsuario(nombre: string, rol: 'tutor_legal' | 'admin' | 'profe') {
     const u = await createTestUser({ nombre })
@@ -239,6 +241,12 @@ describe('Purga RGPD — cierre del frente', () => {
           direccion_numero: '7',
           direccion_cp: '46001',
           direccion_ciudad: marca('ciudad'),
+          // Fase 6: los cinco nuevos, cada uno reconocible en audit_log.
+          telefono: TELEFONO_TUTOR,
+          fecha_nacimiento: NACIMIENTO_TUTOR,
+          dni_numero: marca('dni'),
+          estudios: marca('estudios'),
+          empresa: marca('empresa'),
         })
         .eq('id', filaTutor)
       expect(pErr).toBeNull()
@@ -395,7 +403,7 @@ describe('Purga RGPD — cierre del frente', () => {
       })
     })
 
-    it('su copia en audit_log no conserva el nombre, el email, la dirección ni la ruta del DNI', async () => {
+    it('su copia en audit_log no conserva el nombre, el email, la dirección, la ruta del DNI ni los cinco datos de la fase 6', async () => {
       const { data } = await serviceClient
         .from('audit_log')
         .select('accion, valores_antes, valores_despues')
@@ -406,6 +414,8 @@ describe('Purga RGPD — cierre del frente', () => {
       const texto = JSON.stringify(data)
       expect(texto).not.toContain(s)
       expect(texto).not.toContain(dniTutor)
+      expect(texto).not.toContain(TELEFONO_TUTOR)
+      expect(texto).not.toContain(NACIMIENTO_TUTOR)
     })
 
     it('su copia en audit_log (usuarios) no conserva la ruta del avatar', async () => {

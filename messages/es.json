@@ -1207,7 +1207,11 @@
         "email": "Email",
         "nombre_completo": "Nombre completo",
         "documento": "Documento",
-        "direccion_provincia": "Provincia"
+        "direccion_provincia": "Provincia",
+        "telefono": "Teléfono",
+        "dni_numero": "Número del DNI",
+        "estudios": "Estudios",
+        "empresa": "Empresa"
       },
       "entidad": {
         "ninos_familia": "Datos del menor (dirección / situación familiar)",
@@ -1302,7 +1306,12 @@
         "direccion_numero": "Número",
         "direccion_cp": "C.P.",
         "direccion_ciudad": "Ciudad",
-        "dni": "DNI"
+        "dni": "DNI",
+        "telefono": "Teléfono",
+        "fecha_nacimiento": "Fecha de nacimiento",
+        "dni_numero": "Número del DNI",
+        "estudios": "Estudios",
+        "empresa": "Empresa"
       },
       "tutores": {
         "titulo": "Tutores",
@@ -1328,7 +1337,8 @@
         "guardar": "Guardar",
         "guardando": "Guardando…",
         "cancelar": "Cancelar",
-        "guardado": "Perfil actualizado"
+        "guardado": "Perfil actualizado",
+        "no_legible": "No se han podido leer el teléfono, la fecha de nacimiento, el número del DNI, los estudios ni la empresa. Vuelve a intentarlo más tarde."
       },
       "validation": {
         "invalid": "Datos no válidos",
@@ -4432,7 +4442,11 @@
         "nino": "Niño/a",
         "documento": "Documento",
         "cita": "Cita",
-        "adulto": "Persona vinculada"
+        "adulto": "Persona vinculada",
+        "telefono": "Teléfono",
+        "dni_numero": "Número del DNI",
+        "estudios": "Estudios",
+        "empresa": "Empresa"
       },
       "valores": {
         "terminos": "Términos",
@@ -4594,7 +4608,8 @@
     "generando": "Generando…",
     "exito": "Descarga lista",
     "error": "No se pudo generar el export. Inténtalo de nuevo.",
-    "perfil_descripcion": "Descarga una copia de tus datos personales y los de tus hijos (acceso y portabilidad, RGPD)."
+    "perfil_descripcion": "Descarga una copia de tus datos personales y los de tus hijos (acceso y portabilidad, RGPD).",
+    "exportar_tutor_sin_cuenta": "Exportar sus datos"
   },
   "alta": {
     "titulo": "Completar el alta",
@@ -4716,7 +4731,20 @@
         "soltero": "Soltero/a",
         "viudo": "Viudo/a"
       },
-      "misma_direccion": "Misma dirección que el niño"
+      "misma_direccion": "Misma dirección que el niño",
+      "telefono": "Teléfono",
+      "fecha_nacimiento": "Fecha de nacimiento",
+      "dni_numero": "Número del DNI, NIE o pasaporte",
+      "estudios": "Estudios (voluntario)",
+      "empresa": "Empresa donde trabaja (voluntario)",
+      "voluntarios_nota": "Estos dos datos son voluntarios: puedes dejarlos en blanco.",
+      "no_legible": "No hemos podido leer los datos personales de este tutor. Vuelve a intentarlo más tarde: mientras tanto no se pueden guardar, para no borrar lo que ya hay.",
+      "gestiona_el_otro": "Este tutor ya tiene su propia cuenta en NIDO: sus datos personales los gestiona desde ella.",
+      "errors": {
+        "telefono": "Escribe un teléfono válido: de 6 a 15 cifras, con el prefijo del país si no es español.",
+        "fecha_nacimiento": "La fecha de nacimiento tiene que ser anterior a hoy y de hace menos de 120 años.",
+        "dni_numero": "Revisa el número del DNI o NIE: la letra no corresponde."
+      }
     },
     "documentos": {
       "subido": "Documento subido",
@@ -4821,7 +4849,8 @@
         "medico": "Datos médicos y de emergencia",
         "documentos": "Documentos (libro de familia y DNI)",
         "imagen": "Autorización de imagen",
-        "documentos_centro": "Documentos del centro por firmar"
+        "documentos_centro": "Documentos del centro por firmar",
+        "tutor2": "Datos del tutor 2"
       }
     }
   },
@@ -5497,5 +5526,22 @@
       "no_comprobado": "No hemos podido comprobar los documentos del centro pendientes."
     },
     "refirma": "El centro ha corregido «{titulo}» y pide volver a firmarlo. La firma anterior es del {fecha}."
+  },
+  "familias": {
+    "llamar": {
+      "boton": "Llamar a la familia",
+      "titulo": "Llamar a la familia",
+      "descripcion": "Toca un número para llamar.",
+      "cargando": "Buscando los teléfonos…",
+      "sin_tutores": "Esta familia no tiene tutores con datos.",
+      "sin_telefono": "Sin teléfono",
+      "rol": {
+        "titular": "Tutor 1",
+        "segundo_tutor": "Tutor 2"
+      },
+      "errors": {
+        "no_leido": "No se han podido leer los teléfonos. Vuelve a intentarlo."
+      }
+    }
   }
 }

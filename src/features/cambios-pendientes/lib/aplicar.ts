@@ -126,36 +126,18 @@ export async function aplicarCambioPendiente(
   }
 
   if (entidad === 'datos_tutor') {
-    const p = payloadDatosTutorSchema.parse(row.payload)
-    const identidad = {
-      email: p.email ?? null,
-      nombre_completo: p.nombre_completo ?? null,
-      direccion_calle: p.direccion_calle ?? null,
-      direccion_numero: p.direccion_numero ?? null,
-      direccion_cp: p.direccion_cp ?? null,
-      direccion_ciudad: p.direccion_ciudad ?? null,
-    }
-    // F-2b-3: escribe el perfil COMPARTIDO `familia_tutores` (no `datos_tutor`) → cierra el
-    // split-brain (3b escribe familia_tutores antes de validar; la cola tras validar también).
-    // Solo toca identidad/dirección: el trigger `familia_tutores_proteger_usuario_id` no salta.
+    // Fase 6 (`20270118120000`): por `guardar_tutor`, con la sesión de la directora (la Dirección
+    // escribe con el alta validada: es quien aprueba). Solo las claves que trae el payload; una entrada
+    // de antes de la fase 6 no lleva los cinco nuevos y no los toca.
+    const { tipo_vinculo, ...campos } = payloadDatosTutorSchema.parse(row.payload)
+    const datos = Object.fromEntries(Object.entries(campos).filter(([, v]) => v !== undefined))
     const familiaId = await familiaDeNino(db, row.nino_id)
-    const rolFamilia = rolFamiliaDeVinculo(p.tipo_vinculo)
-    const { data: existente } = await db
-      .from('familia_tutores')
-      .select('id')
-      .eq('familia_id', familiaId)
-      .eq('rol_familia', rolFamilia)
-      .is('deleted_at', null)
-      .maybeSingle()
-    if (existente) {
-      const { error } = await db.from('familia_tutores').update(identidad).eq('id', existente.id)
-      if (error) throw new Error(error.message)
-    } else {
-      const { error } = await db
-        .from('familia_tutores')
-        .insert({ familia_id: familiaId, rol_familia: rolFamilia, usuario_id: null, ...identidad })
-      if (error) throw new Error(error.message)
-    }
+    const { error } = await db.rpc('guardar_tutor', {
+      p_familia_id: familiaId,
+      p_rol_familia: rolFamiliaDeVinculo(tipo_vinculo),
+      p_datos: datos,
+    })
+    if (error) throw new Error(error.message)
     return
   }
 
@@ -163,33 +145,15 @@ export async function aplicarCambioPendiente(
     const p = payloadDatosTutorDniSchema.parse(row.payload)
     exigirRutaDelNino(p.path, row)
     const familiaId = await familiaDeNino(db, row.nino_id)
-    const rolFamilia = rolFamiliaDeVinculo(p.tipo_vinculo)
-    const { data: existente } = await db
-      .from('familia_tutores')
-      .select('id, dni_documento_path')
-      .eq('familia_id', familiaId)
-      .eq('rol_familia', rolFamilia)
-      .is('deleted_at', null)
-      .maybeSingle()
-    if (existente) {
-      const { error } = await db
-        .from('familia_tutores')
-        .update({ dni_documento_path: p.path })
-        .eq('id', existente.id)
-      if (error) throw new Error(error.message)
-      if (existente.dni_documento_path && existente.dni_documento_path !== p.path) {
-        await borrarObjetosBucket(storage, BUCKET_DNI_TUTORES, [
-          existente.dni_documento_path,
-        ]).catch(() => undefined)
-      }
-    } else {
-      const { error } = await db.from('familia_tutores').insert({
-        familia_id: familiaId,
-        rol_familia: rolFamilia,
-        usuario_id: null,
-        dni_documento_path: p.path,
-      })
-      if (error) throw new Error(error.message)
+    // Por `fijar_dni_tutor`, que devuelve la ruta de antes: ese objeto se borra si cambió.
+    const { data: anterior, error } = await db.rpc('fijar_dni_tutor', {
+      p_familia_id: familiaId,
+      p_rol_familia: rolFamiliaDeVinculo(p.tipo_vinculo),
+      p_path: p.path,
+    })
+    if (error) throw new Error(error.message)
+    if (anterior && anterior !== p.path) {
+      await borrarObjetosBucket(storage, BUCKET_DNI_TUTORES, [anterior]).catch(() => undefined)
     }
     return
   }

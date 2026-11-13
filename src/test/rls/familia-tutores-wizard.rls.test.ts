@@ -19,8 +19,8 @@ import {
 /**
  * F-2b-3 — invariantes RLS de las escrituras del wizard sobre `familia_tutores` (perfil
  * COMPARTIDO por familia). Verifica lo que el wizard/cola necesitan y lo que NO deben poder:
- *  - titular (fila con su usuario_id) UPDATE de identidad de su fila.
- *  - titular INSERT del segundo_tutor (usuario_id NULL, rol='segundo_tutor').
+ *  - titular (fila con su usuario_id) guarda su identidad, y da de alta al segundo_tutor sin cuenta,
+ *    por `guardar_tutor` (desde la fase 6 el tutor no escribe la tabla: `20270118120000`).
  *  - cap declarativo: 2.º segundo_tutor → 23505.
  *  - anti-secuestro: NO insertar titular, NO insertar con usuario_id, NO cross-familia.
  *  - congelado (BEFORE UPDATE): tutor NO cambia usuario_id/familia_id/rol_familia.
@@ -82,51 +82,77 @@ describe('familia_tutores — escrituras del wizard (F-2b-3)', () => {
     for (const u of [titular, ajeno]) if (u) await deleteTestUser(u.id)
   })
 
-  it('titular: UPDATE de identidad de su fila', async () => {
-    const { data, error } = await cTitular
+  // Fase 6 (`20270118120000`): el tutor ya no escribe la tabla; el wizard pasa por `guardar_tutor`,
+  // que aplica la regla única y la cola. Estos cuatro escribían la tabla directamente.
+  const guardar = (rol: 'titular' | 'segundo_tutor', datos: Record<string, unknown>) =>
+    cTitular.rpc('guardar_tutor', {
+      p_familia_id: familiaId,
+      p_rol_familia: rol,
+      p_datos: datos as Database['public']['Functions']['guardar_tutor']['Args']['p_datos'],
+    })
+
+  it('titular: guarda la identidad de su fila por guardar_tutor; el UPDATE directo ya no escribe', async () => {
+    const directo = await cTitular
       .from('familia_tutores')
-      .update({ nombre_completo: 'Titular Editado' })
+      .update({ nombre_completo: 'Directo' })
       .eq('familia_id', familiaId)
       .eq('rol_familia', 'titular')
       .select('id')
-      .maybeSingle()
+    expect(directo.error).toBeNull()
+    expect(directo.data).toEqual([])
+    const { data, error } = await guardar('titular', { nombre_completo: 'Titular Editado' })
     expect(error).toBeNull()
     expect(data).not.toBeNull()
+    const { data: fila } = await serviceClient
+      .from('familia_tutores')
+      .select('nombre_completo')
+      .eq('familia_id', familiaId)
+      .eq('rol_familia', 'titular')
+      .single()
+    expect(fila?.nombre_completo).toBe('Titular Editado')
   })
 
-  it('titular: NO puede cambiar usuario_id (congelado BEFORE UPDATE)', async () => {
-    const { error } = await cTitular
+  it('titular: NO puede cambiar usuario_id: guardar_tutor no lo acepta y la tabla no la escribe', async () => {
+    const { error } = await guardar('titular', { usuario_id: ajeno.id })
+    expect(error?.code).toBe('22023')
+    const directo = await cTitular
       .from('familia_tutores')
       .update({ usuario_id: ajeno.id })
       .eq('familia_id', familiaId)
       .eq('rol_familia', 'titular')
-    expect(error).not.toBeNull()
-    expect(error?.code).toBe('42501')
+      .select('id')
+    expect(directo.data ?? []).toEqual([])
   })
 
-  it('titular: INSERT del segundo_tutor (usuario_id NULL)', async () => {
-    const { data, error } = await cTitular
-      .from('familia_tutores')
-      .insert({
-        familia_id: familiaId,
-        rol_familia: 'segundo_tutor',
-        usuario_id: null,
-        nombre_completo: 'Segundo Tutor',
-      })
-      .select('id')
-      .maybeSingle()
+  it('titular: da de alta al segundo_tutor (sin cuenta) por guardar_tutor', async () => {
+    const { data, error } = await guardar('segundo_tutor', { nombre_completo: 'Segundo Tutor' })
     expect(error).toBeNull()
     expect(data).not.toBeNull()
+    const { data: fila } = await serviceClient
+      .from('familia_tutores')
+      .select('usuario_id, nombre_completo')
+      .eq('id', data as string)
+      .single()
+    expect(fila).toEqual({ usuario_id: null, nombre_completo: 'Segundo Tutor' })
   })
 
-  it('titular: 2.º segundo_tutor activo → 23505 (cap declarativo)', async () => {
-    const { error } = await cTitular.from('familia_tutores').insert({
+  it('un segundo segundo_tutor no existe: guardar otra vez escribe la misma fila, y el índice lo para (23505)', async () => {
+    const { error } = await guardar('segundo_tutor', { nombre_completo: 'Segundo Duplicado' })
+    expect(error).toBeNull()
+    const { data: filas } = await serviceClient
+      .from('familia_tutores')
+      .select('nombre_completo')
+      .eq('familia_id', familiaId)
+      .eq('rol_familia', 'segundo_tutor')
+      .is('deleted_at', null)
+    expect(filas).toEqual([{ nombre_completo: 'Segundo Duplicado' }])
+    const cap = await serviceClient.from('familia_tutores').insert({
       familia_id: familiaId,
       rol_familia: 'segundo_tutor',
       usuario_id: null,
-      nombre_completo: 'Segundo Duplicado',
+      nombre_completo: 'Tercero',
     })
-    expect(error?.code).toBe('23505')
+    expect(cap.error?.code).toBe('23505')
   })
 
   it('titular: NO puede insertar otra fila titular', async () => {

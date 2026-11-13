@@ -68,6 +68,8 @@ export const FUNCIONES_RETURNS_TABLE = [
   'retenciones_centro',
   'sujetos_bloqueados',
   'sujetos_retencion',
+  'telefonos_familia_de_nino',
+  'tutores_de_familia',
 ] as const satisfies readonly (keyof FG)[]
 
 type FuncionTabla = (typeof FUNCIONES_RETURNS_TABLE)[number]
@@ -189,6 +191,10 @@ export const NO_NULAS = {
   retenciones_centro: ['sujeto_tipo', 'sujeto_id', 'motivo_tipo', 'motivo', 'puesta_en'],
   /** Las dos ramas: literal, `ninos.id` (por el CTE) / `usuarios.id` por JOIN; `estado`, CASE con ELSE. */
   sujetos_retencion: ['sujeto_tipo', 'sujeto_id', 'estado'],
+  /** `familia_tutores.rol_familia` NOT NULL, por JOIN interior. El nombre y el teléfono pueden faltar. */
+  telefonos_familia_de_nino: ['rol_familia'],
+  /** `id` y `rol_familia` NOT NULL por FROM; `tiene_cuenta`, `IS NOT NULL`. */
+  tutores_de_familia: ['id', 'rol_familia', 'tiene_cuenta'],
 } as const satisfies { readonly [F in FuncionTabla]?: readonly (keyof Fila<F>)[] }
 
 /**

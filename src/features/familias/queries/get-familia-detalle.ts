@@ -18,6 +18,13 @@ export interface TutorDetalle {
   usuario_id: string | null
   /** true = el tutor ya tiene cuenta (usuario_id set). */
   tiene_cuenta: boolean
+  // Fase 6, por `tutores_de_familia`. `legibles` falso: no se pudieron leer, y no se ofrece editarlos.
+  telefono: string | null
+  fecha_nacimiento: string | null
+  dni_numero: string | null
+  estudios: string | null
+  empresa: string | null
+  legibles: boolean
 }
 
 export interface FamiliaDetalle {
@@ -49,7 +56,7 @@ export async function getFamiliaDetalle(
     .maybeSingle()
   if (!familia || familia.centro_id !== centroId) return null
 
-  const [{ data: rows }, hijos] = await Promise.all([
+  const [{ data: rows }, { data: nuevos }, hijos] = await Promise.all([
     supabase
       .from('familia_tutores')
       .select(
@@ -57,9 +64,11 @@ export async function getFamiliaDetalle(
       )
       .eq('familia_id', familiaId)
       .is('deleted_at', null),
+    supabase.rpc('tutores_de_familia', { p_familia_id: familiaId }),
     getNinosDeFamilia(familiaId),
   ])
 
+  const nuevoDe = new Map((nuevos ?? []).map((n) => [n.id, n]))
   const tutores: TutorDetalle[] = (rows ?? [])
     .map((r) => ({
       id: r.id,
@@ -73,6 +82,12 @@ export async function getFamiliaDetalle(
       direccion_ciudad: r.direccion_ciudad,
       usuario_id: r.usuario_id,
       tiene_cuenta: r.usuario_id !== null,
+      telefono: nuevoDe.get(r.id)?.telefono ?? null,
+      fecha_nacimiento: nuevoDe.get(r.id)?.fecha_nacimiento ?? null,
+      dni_numero: nuevoDe.get(r.id)?.dni_numero ?? null,
+      estudios: nuevoDe.get(r.id)?.estudios ?? null,
+      empresa: nuevoDe.get(r.id)?.empresa ?? null,
+      legibles: nuevoDe.get(r.id)?.ve_personales === true,
     }))
     // Titular primero (orden estable en la UI).
     .sort((a, b) => (a.rol_familia === b.rol_familia ? 0 : a.rol_familia === 'titular' ? -1 : 1))

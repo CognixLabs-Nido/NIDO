@@ -119,7 +119,7 @@ function leerSeccion(txt: string, ruta: string, out: Record<string, SeccionLeida
 
 export function seccionesDelExport(cuerpo = cuerpoDelExport()): Record<string, SeccionLeida> {
   const out: Record<string, SeccionLeida> = {}
-  for (const sujeto of ['usuario', 'nino']) {
+  for (const sujeto of ['usuario', 'nino', 'tutor']) {
     const si = cuerpo.indexOf(`IF p_sujeto_tipo = '${sujeto}' THEN`)
     const ret = cuerpo.indexOf('RETURN jsonb_build_object(', si)
     const abre = cuerpo.indexOf('(', ret)

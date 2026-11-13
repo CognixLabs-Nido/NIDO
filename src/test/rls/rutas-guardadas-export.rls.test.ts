@@ -148,12 +148,13 @@ describe('PR 0b — una ruta guardada solo puede ser de su familia', () => {
   })
 
   it('no puede apuntar su dni_documento_path al DNI de B, y su export no lo trae', async () => {
+    // Desde la fase 6 (`20270118120000`) el tutor fija su DNI por `fijar_dni_tutor`, no con un UPDATE.
     const c = await clientFor(tutorA)
-    const { error } = await c
-      .from('familia_tutores')
-      .update({ dni_documento_path: dniB })
-      .eq('familia_id', familiaA)
-      .eq('usuario_id', tutorA.id)
+    const { error } = await c.rpc('fijar_dni_tutor', {
+      p_familia_id: familiaA,
+      p_rol_familia: 'titular',
+      p_path: dniB,
+    })
     expect(error?.code).toBe('23514')
     expect((await exportDe(tutorA)).some((a) => a.path === dniB)).toBe(false)
   })
@@ -176,11 +177,11 @@ describe('PR 0b — una ruta guardada solo puede ser de su familia', () => {
 
   it('control: su propio DNI y su propio mandato se guardan y su export los firma', async () => {
     const c = await clientFor(tutorA)
-    const dni = await c
-      .from('familia_tutores')
-      .update({ dni_documento_path: dniA })
-      .eq('familia_id', familiaA)
-      .eq('usuario_id', tutorA.id)
+    const dni = await c.rpc('fijar_dni_tutor', {
+      p_familia_id: familiaA,
+      p_rol_familia: 'titular',
+      p_path: dniA,
+    })
     expect(dni.error).toBeNull()
     const man = await c.rpc('registrar_mandato_sepa', mandato(mandatoA))
     expect(man.error).toBeNull()

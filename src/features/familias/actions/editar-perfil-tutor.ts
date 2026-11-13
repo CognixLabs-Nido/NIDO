@@ -10,10 +10,9 @@ import { editarPerfilTutorSchema, type EditarPerfilTutorInput } from '../schemas
 import { fail, ok, type ActionResult } from '../../centros/types'
 
 /**
- * F-6a — Dirección edita el perfil (identidad + dirección) de un tutor de `familia_tutores`.
- * UPDATE directo (la RLS `familia_tutores_update` por `es_admin(centro_de_familia)` autoriza).
- * El UPDATE lista SOLO los campos editables: NO toca `usuario_id`/`rol_familia`/`familia_id`
- * (los congela el trigger `familia_tutores_proteger_usuario_id`) ni `dni_documento_path`.
+ * F-6a — Dirección edita el perfil de un tutor de `familia_tutores`: identidad, dirección y, desde la
+ * fase 6, teléfono, fecha de nacimiento, número del DNI, estudios y empresa. Por `guardar_tutor`, que
+ * deja escribir a la Dirección del centro (también con el alta validada: es quien aprueba la cola).
  */
 export async function editarPerfilTutor(
   input: EditarPerfilTutorInput
@@ -30,7 +29,7 @@ export async function editarPerfilTutor(
   // leer a Dirección los tutores y las familias de sus centros.
   const { data: tutor } = await supabase
     .from('familia_tutores')
-    .select('familia_id')
+    .select('familia_id, rol_familia')
     .eq('id', parsed.data.tutor_id)
     .is('deleted_at', null)
     .maybeSingle()
@@ -41,31 +40,42 @@ export async function editarPerfilTutor(
   if (!(await esAdminEn(supabase, userData.user.id, familia.centro_id)))
     return fail('auth.invitation.errors.forbidden')
 
-  // SOLO identidad + dirección. Sin usuario_id/rol_familia/familia_id (congelados por trigger).
-  const { data, error } = await supabase
-    .from('familia_tutores')
-    .update({
-      nombre_completo: parsed.data.nombre_completo,
-      email: parsed.data.email,
-      direccion_calle: parsed.data.direccion_calle ?? null,
-      direccion_numero: parsed.data.direccion_numero ?? null,
-      direccion_cp: parsed.data.direccion_cp ?? null,
-      direccion_ciudad: parsed.data.direccion_ciudad ?? null,
-    })
-    .eq('id', parsed.data.tutor_id)
-    .is('deleted_at', null)
-    .select('id')
-    .maybeSingle()
-
+  // Por `guardar_tutor` (fase 6): la misma forma y los mismos CHECK que el alta, también los cinco
+  // nuevos. No toca `usuario_id` / `rol_familia` / `familia_id` ni la ruta del DNI (no los acepta).
+  const p = parsed.data
+  const v = (x: string | null | undefined) => (x && x.trim() !== '' ? x.trim() : null)
+  const { data: id, error } = await supabase.rpc('guardar_tutor', {
+    p_familia_id: tutor!.familia_id,
+    p_rol_familia: tutor!.rol_familia,
+    p_datos: {
+      nombre_completo: p.nombre_completo,
+      email: p.email,
+      direccion_calle: v(p.direccion_calle),
+      direccion_numero: v(p.direccion_numero),
+      direccion_cp: v(p.direccion_cp),
+      direccion_ciudad: v(p.direccion_ciudad),
+      // Los cinco nuevos solo si vienen: sin leerlos, el diálogo no los manda y no se pisan.
+      ...Object.fromEntries(
+        (['telefono', 'fecha_nacimiento', 'dni_numero', 'estudios', 'empresa'] as const)
+          .filter((c) => p[c] !== undefined)
+          .map((c) => [c, v(p[c])])
+      ),
+    },
+  })
   if (error) {
-    logger.warn('editarPerfilTutor', error.message)
+    logger.warn('editarPerfilTutor', error.code ?? 'sin_codigo')
+    if (error.hint === 'fecha_nacimiento_fuera_de_rango')
+      return fail('alta.tutor.errors.fecha_nacimiento')
+    if (error.message.includes('familia_tutores_telefono_formato'))
+      return fail('alta.tutor.errors.telefono')
+    if (error.message.includes('familia_tutores_dni_numero_valido'))
+      return fail('alta.tutor.errors.dni_numero')
     if (error.code === '42501') return fail('admin.familias.errors.no_autorizado')
     return fail('admin.familias.errors.guardado')
   }
-  // RLS USING falso (tutor de otro centro) o fila inexistente → 0 filas, sin error.
-  if (!data) return fail('admin.familias.errors.tutor_no_encontrado')
+  if (!id) return fail('admin.familias.errors.tutor_no_encontrado')
 
   revalidatePath('/[locale]/admin/familias', 'page')
   revalidatePath('/[locale]/admin/familias/[id]', 'page')
-  return ok({ id: data.id })
+  return ok({ id })
 }

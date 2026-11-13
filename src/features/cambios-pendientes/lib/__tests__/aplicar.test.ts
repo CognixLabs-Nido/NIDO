@@ -23,6 +23,9 @@ function mockService(opts: {
   onUpdate?: (table: string, patch: Record<string, unknown>) => void
   onInsert?: (table: string, row: Record<string, unknown>) => void
   storageRemove?: (bucket: string, paths: string[]) => void
+  /** Fase 6: las llamadas a `guardar_tutor` / `fijar_dni_tutor`, y la ruta de antes que devuelve esta. */
+  onRpc?: (fn: string, args: Record<string, unknown>) => void
+  dniPrevio?: string | null
 }) {
   const makeBuilder = (table: string) => {
     const builder: Record<string, unknown> = {}
@@ -46,6 +49,10 @@ function mockService(opts: {
     // El libro anterior es de gestión: sale por `ficha_gestion_ninos` (`20270115120000`). El falso
     // contesta con lo que el test pone para `ninos`.
     rpc: vi.fn(async (fn: string, args: { p_nino_ids: string[] }) => {
+      if (fn === 'guardar_tutor' || fn === 'fijar_dni_tutor') {
+        opts.onRpc?.(fn, args as unknown as Record<string, unknown>)
+        return { data: fn === 'fijar_dni_tutor' ? (opts.dniPrevio ?? null) : 'ft1', error: null }
+      }
       if (fn !== 'ficha_gestion_ninos') throw new Error(`rpc no prevista: ${fn}`)
       const fila = opts.maybeSingleByTable?.ninos as Record<string, unknown> | undefined
       return { data: fila ? [{ nino_id: args.p_nino_ids[0], ...fila }] : [], error: null }
@@ -90,14 +97,18 @@ describe('aplicarCambioPendiente', () => {
     expect(updates).toHaveLength(0)
   })
 
-  it('datos_tutor_dni: fija dni_documento_path en familia_tutores (perfil compartido)', async () => {
-    const updates: Array<{ table: string; patch: Record<string, unknown> }> = []
+  // Fase 6 (`20270118120000`): la cola aplica por `fijar_dni_tutor` / `guardar_tutor` con la sesión de
+  // la directora, no con UPDATE/INSERT sobre la tabla.
+  it('datos_tutor_dni: fija la ruta por fijar_dni_tutor y borra el DNI anterior', async () => {
+    const rpcs: Array<[string, Record<string, unknown>]> = []
+    const updates: unknown[] = []
+    const removes: Array<{ bucket: string; paths: string[] }> = []
     const service = mockService({
-      maybeSingleByTable: {
-        ninos: { familia_id: 'f1' },
-        familia_tutores: { id: 'ft1', dni_documento_path: null },
-      },
-      onUpdate: (table, patch) => updates.push({ table, patch }),
+      maybeSingleByTable: { ninos: { familia_id: 'f1' } },
+      onUpdate: (t, patch) => updates.push({ t, patch }),
+      onRpc: (fn, args) => rpcs.push([fn, args]),
+      dniPrevio: 'c1/n1/dni-viejo.pdf',
+      storageRemove: (bucket, paths) => removes.push({ bucket, paths }),
     })
     await aplicarCambioPendiente(service, service, {
       entidad: 'datos_tutor_dni',
@@ -105,36 +116,54 @@ describe('aplicarCambioPendiente', () => {
       nino_id: 'n1',
       payload: { tipo_vinculo: 'tutor_legal_principal', path: 'c1/n1/dni.pdf' },
     })
-    expect(updates).toEqual([
-      { table: 'familia_tutores', patch: { dni_documento_path: 'c1/n1/dni.pdf' } },
+    expect(rpcs).toEqual([
+      [
+        'fijar_dni_tutor',
+        { p_familia_id: 'f1', p_rol_familia: 'titular', p_path: 'c1/n1/dni.pdf' },
+      ],
     ])
+    expect(updates).toEqual([])
+    expect(removes).toEqual([{ bucket: 'dni-tutores', paths: ['c1/n1/dni-viejo.pdf'] }])
   })
 
-  it('datos_tutor: actualiza identidad del titular en familia_tutores', async () => {
-    const updates: Array<{ table: string; patch: Record<string, unknown> }> = []
+  it('datos_tutor: por guardar_tutor, solo con las claves que trae el payload', async () => {
+    const rpcs: Array<[string, Record<string, unknown>]> = []
+    const updates: unknown[] = []
     const service = mockService({
-      maybeSingleByTable: {
-        ninos: { familia_id: 'f1' },
-        familia_tutores: { id: 'ft-titular' },
-      },
-      onUpdate: (table, patch) => updates.push({ table, patch }),
+      maybeSingleByTable: { ninos: { familia_id: 'f1' } },
+      onUpdate: (t, patch) => updates.push({ t, patch }),
+      onRpc: (fn, args) => rpcs.push([fn, args]),
     })
     await aplicarCambioPendiente(service, service, {
       entidad: 'datos_tutor',
       centro_id: 'c1',
       nino_id: 'n1',
-      payload: { tipo_vinculo: 'tutor_legal_principal', nombre_completo: 'Ana Pérez' },
+      payload: {
+        tipo_vinculo: 'tutor_legal_principal',
+        nombre_completo: 'Ana Pérez',
+        telefono: '+34600000001',
+      },
     })
-    expect(updates).toHaveLength(1)
-    expect(updates[0]!.table).toBe('familia_tutores')
-    expect(updates[0]!.patch).toMatchObject({ nombre_completo: 'Ana Pérez' })
+    expect(rpcs).toEqual([
+      [
+        'guardar_tutor',
+        {
+          p_familia_id: 'f1',
+          p_rol_familia: 'titular',
+          p_datos: { nombre_completo: 'Ana Pérez', telefono: '+34600000001' },
+        },
+      ],
+    ])
+    expect(updates).toEqual([])
   })
 
-  it('datos_tutor: INSERTA el segundo_tutor si no hay fila viva (usuario_id NULL)', async () => {
-    const inserts: Array<{ table: string; row: Record<string, unknown> }> = []
+  it('datos_tutor del segundo tutor: guardar_tutor con su rol (la función crea la fila si no está)', async () => {
+    const rpcs: Array<[string, Record<string, unknown>]> = []
+    const inserts: unknown[] = []
     const service = mockService({
-      maybeSingleByTable: { ninos: { familia_id: 'f1' }, familia_tutores: null },
-      onInsert: (table, row) => inserts.push({ table, row }),
+      maybeSingleByTable: { ninos: { familia_id: 'f1' } },
+      onInsert: (t, row) => inserts.push({ t, row }),
+      onRpc: (fn, args) => rpcs.push([fn, args]),
     })
     await aplicarCambioPendiente(service, service, {
       entidad: 'datos_tutor',
@@ -142,14 +171,11 @@ describe('aplicarCambioPendiente', () => {
       nino_id: 'n1',
       payload: { tipo_vinculo: 'tutor_legal_secundario', email: 'tutor2@correo.es' },
     })
-    expect(inserts).toHaveLength(1)
-    expect(inserts[0]!.table).toBe('familia_tutores')
-    expect(inserts[0]!.row).toMatchObject({
-      familia_id: 'f1',
-      rol_familia: 'segundo_tutor',
-      usuario_id: null,
-      email: 'tutor2@correo.es',
+    expect(rpcs[0]![1]).toMatchObject({
+      p_rol_familia: 'segundo_tutor',
+      p_datos: { email: 'tutor2@correo.es' },
     })
+    expect(inserts).toEqual([])
   })
 
   it('datos_tutor: lanza si el niño no tiene familia (NOT NULL de F-2b-3)', async () => {
