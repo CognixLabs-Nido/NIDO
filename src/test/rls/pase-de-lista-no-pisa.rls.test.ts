@@ -83,7 +83,6 @@ const HOY = hoyMadrid()
 const APUNTADA_A = {
   estado: 'presente',
   hora_llegada: '08:30:00',
-  hora_salida: null,
   observaciones: 'Fiebre a media mañana',
 } as const
 const CONSERVA_A = APUNTADA_A
@@ -137,7 +136,7 @@ describe('el pase de lista no se pasa sobre lo que no se leyó', () => {
   async function asistenciaDe(ninoId: string) {
     const { data, error } = await serviceClient
       .from('asistencias')
-      .select('estado, hora_llegada, hora_salida, observaciones')
+      .select('estado, hora_llegada, observaciones')
       .eq('nino_id', ninoId)
       .eq('fecha', HOY)
       .maybeSingle()
