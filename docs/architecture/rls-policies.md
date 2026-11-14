@@ -788,7 +788,8 @@ Migraciones `20270120120000_feat_fecha_incorporacion` (antes del despliegue) y
   de un niño sin fecha, 23514) y `privado.ninos_incorporacion_no_se_quita` (quitarla a un niño con
   matrícula activa, 23514). Las dos, `SECURITY DEFINER` y cerradas a las sesiones.
 - **El motor:** `generar_recibos_mes` solo cuenta un hijo activo si está incorporado ese mes o
-  antes, en sus seis consultas. Nada de un mes anterior; el de la incorporación, entero.
+  antes, en sus seis consultas. Nada de un mes anterior; el de la incorporación, por días desde
+  `20270121120000` (el prorrateo: `altas-serie.md`, «El prorrateo del mes de incorporación»).
 - Medido abierto y cerrado en producción (ensayos terminados en RAISE, LF y CRLF).
 - Test: `fecha-incorporacion.rls.test.ts` y `desarchivar-nino.rls.test.ts`.
 

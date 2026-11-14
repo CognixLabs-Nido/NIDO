@@ -1988,7 +1988,7 @@
     "esporadicos_titulo": "Esporádicos del mes",
     "regiro": "Re-giro",
     "generar_confirm_title": "¿Regenerar los recibos?",
-    "generar_confirm_desc": "Se regenerarán {borradores} borradores (se descartan las ediciones manuales no confirmadas). Los {confirmados} confirmados no se tocan.",
+    "generar_confirm_desc": "Se regenerarán {borradores} borradores. Las líneas añadidas o corregidas a mano se respetan, y una corregida sustituye a la del catálogo. Los {confirmados} confirmados no se tocan.",
     "cancelar": "Cancelar",
     "regenerar": "Regenerar",
     "recalcular": "Recalcular el mes",

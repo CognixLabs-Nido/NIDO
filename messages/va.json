@@ -1988,7 +1988,7 @@
     "esporadicos_titulo": "Esporàdics del mes",
     "regiro": "Re-gir",
     "generar_confirm_title": "Regenerar els rebuts?",
-    "generar_confirm_desc": "Es regeneraran {borradores} esborranys (es descarten les edicions manuals no confirmades). Els {confirmados} confirmats no es toquen.",
+    "generar_confirm_desc": "Es regeneraran {borradores} esborranys. Les línies afegides o corregides a mà es respecten, i una corregida substitueix la del catàleg. Els {confirmados} confirmats no es toquen.",
     "cancelar": "Cancel·lar",
     "regenerar": "Regenerar",
     "recalcular": "Recalcular el mes",

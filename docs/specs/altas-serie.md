@@ -1774,13 +1774,54 @@ día 1`). Con la mensual desde el 1 de abril, marzo cobra los días del parte y 
 - `generar_recibos_mes`: «hijo activo» es además «incorporado ese mes o antes» en los seis sitios que
   lo miran (las familias, los cargos de cada niño, los descuentos por niño, los dos rankings de
   hermanos y las becas). De un mes anterior, nada; una familia sin ningún hijo incorporado ese mes,
-  sin recibo. El mes de la incorporación se cobra entero, como hasta ahora.
+  sin recibo. El mes de la incorporación se cobraba entero; desde el prorrateo (abajo), por días.
 - Se borra `desarchivar_nino` de dos argumentos.
 - Va después del despliegue porque la app de antes valida sin fecha. Su guarda previa para si queda
   algún niño activo sin fecha.
 
 **Pantallas:** «Activar matrícula» pide la fecha de incorporación (sin ella no se pulsa), y
 «Reincorporar» también.
+
+### El prorrateo del mes de incorporación (entre la 8a y la 8b)
+
+**Decisiones (2026-11-14).** Jose: el mes de la incorporación se cobra por **días naturales** desde
+el día de entrada, que cuenta («escolaridad de 400 €, incorporación el 15 de septiembre → 16 días de
+30 → 213,33 €»), propuesto por el motor y modificable por Dirección. Los recibos se cobran **por
+adelantado**: el recibo del mes de entrada se genera antes de que el niño haya entrado, así que el
+cálculo sale de la fecha y del mes, nunca de hoy. **No hay prorrateo de baja**: cuando un niño se va,
+su mes ya está cobrado. El responsable, el mismo día:
+
+- Solo el mes de la incorporación y solo si no entra el día 1. Solo las mensuales **sin servicio**
+  (la escolaridad y cualquier otra sin día suelto). Las mensuales de servicio no: empiezan el mes
+  siguiente y el de entrada va por el parte. Los diarios y la beca comedor, tampoco.
+- **Los descuentos fijos del niño, con la misma fracción** (la Beca Conselleria de −400 € pasa a
+  −213,33 €; si no, el recibo saldría a favor). Los de porcentaje, solos: su base ya va prorrateada.
+  El de hermanos fijo, con la fracción del hermano que lo recibe.
+- **Al céntimo, y los empates hacia arriba en valor absoluto**, para que el cargo y su beca redondeen
+  simétricos. Un test lo fija con un caso no exacto y con un empate de cada signo.
+- **La corrección a mano manda.** La propuesta se corrige con lo que ya existía: editar la línea del
+  borrador (`editarLineaRecibo`, que la marca manual; `lineas_recibo` se audita con la sesión de quien
+  la cambia). Hasta aquí, al regenerar, el motor volvía a poner la automática al lado de la corregida
+  y la familia pagaba el concepto dos veces. Desde ahora, una línea manual con concepto sustituye a la
+  automática del mismo niño (o de la familia) y concepto. Se buscó si detrás de «la automática
+  vuelve» había una decisión escrita: no. Lo escrito (#273, 2026-08-14, B1) es que tocar una línea a
+  mano la convierte en manual, «lo tocado a mano se respeta»; que la automática volviera solo estaba
+  en dos asertos (`r2-motor-preserva-manuales`, «ciclo B1», y `r4-ciclo-completo-recibos`, paso 5),
+  que se cambian. Los descuentos se siguen derivando del catálogo (decisión A).
+- **Fuera de esta pieza, anotado:** la Beca Conselleria fija (−400 €) es mayor que la tarifa de
+  escolaridad de los nacidos en 2026 (300 €), así que su recibo ya sale a favor sin prorrateo
+  (`docs/follow-ups.md`).
+
+**Medido abierto antes** (producción, ensayo terminado en RAISE con el motor de la B, generado el
+2026-11-14 para septiembre de 2027): el niño de 400 € que entra el día 15 pagaba 400 €; y si Dirección
+corregía la línea a 250 € y se regeneraba, el recibo llevaba la corregida y la automática (3 líneas,
+250 € en vez de 36,67 €).
+
+**`20270121120000`:** `privado.prorrateo_incorporacion` y `privado.prorrateo_texto` (cerradas a las
+sesiones), el motor con el prorrateo en sus cinco sitios y la corrección que manda, después del PASE 3.
+Su guarda previa exige la A y la B registradas y el motor de la B (md5 normalizado); la posterior, el
+redondeo con sus casos, los cinco sitios, la corrección y las funciones cerradas. El diálogo de
+«Regenerar» decía que se descartaban las ediciones manuales, falso desde R-2: ahora dice lo que pasa.
 
 ## Orden de la serie
 
@@ -1842,7 +1883,7 @@ lo suyo (`20270115130000`).
 - [x] Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [x] 4c (#514) · [x] 4d (#515)
 - [x] Fase 5: [x] 5a (#516) · [x] la puerta de identidad (#518) · [x] 5b (#519, #520) · [x] el autorizado lee solo lo suyo (#522, #521)
 - [x] Fase 6 (#526) · [x] Fase 7 (#527)
-- [ ] Fase 8: [ ] 8a, la fecha de incorporación · [ ] 8b, la petición de servicios
+- [ ] Fase 8: [x] 8a, la fecha de incorporación (#528) · [ ] el prorrateo del mes de incorporación · [ ] 8b, la petición de servicios
 - [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias
