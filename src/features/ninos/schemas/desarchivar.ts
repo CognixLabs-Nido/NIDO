@@ -9,6 +9,10 @@ import { z } from 'zod'
 export const desarchivarNinoSchema = z.object({
   nino_id: z.string().uuid(),
   aula_id: z.string().uuid('nino.desarchivar.validation.aula_requerida'),
+  // Fase 8a: reincorporar es incorporar. El día en que vuelve decide desde qué mes se le cobra.
+  fecha_incorporacion: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'nino.desarchivar.validation.fecha_requerida'),
 })
 
 export type DesarchivarNinoInput = z.infer<typeof desarchivarNinoSchema>

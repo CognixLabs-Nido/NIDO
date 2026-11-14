@@ -91,7 +91,15 @@ const GRUPO_B: Array<[string, Llamada]> = [
     'archivar_nino',
     (c) => c.rpc('archivar_nino', { p_nino_id: id(), p_motivo: 'x', p_fecha_baja: hoy() }),
   ],
-  ['desarchivar_nino', (c) => c.rpc('desarchivar_nino', { p_nino_id: id(), p_aula_id: id() })],
+  [
+    'desarchivar_nino',
+    (c) =>
+      c.rpc('desarchivar_nino', {
+        p_nino_id: id(),
+        p_aula_id: id(),
+        p_fecha_incorporacion: '2026-09-01',
+      }),
+  ],
   ['revocar_acceso_familia', (c) => c.rpc('revocar_acceso_familia', { p_familia_id: id() })],
   ['cerrar_curso', (c) => c.rpc('cerrar_curso', { p_curso_destino_id: id() })],
   ['proponer_asignaciones', (c) => c.rpc('proponer_asignaciones', { p_centro_id: id() })],

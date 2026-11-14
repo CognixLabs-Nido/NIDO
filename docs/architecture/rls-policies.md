@@ -771,6 +771,27 @@ Migraciones `20270119120000_feat_sip_nino` (antes del despliegue) y `20270119130
 - Tests: `tarjeta-sanitaria.rls.test.ts`, `alta-exige-datos-nino.rls.test.ts`, `purga-rgpd-nino.test.ts`
   y `catalogo-buckets.rls.test.ts`.
 
+### La fecha de incorporación (serie de altas, fase 8a)
+
+Migraciones `20270120120000_feat_fecha_incorporacion` (antes del despliegue) y
+`20270120130000_feat_facturacion_desde_incorporacion` (después); spec `docs/specs/altas-serie.md`,
+«Fase 8».
+
+- **`ninos.fecha_incorporacion`**, con `GRANT SELECT` a la sesión (la fila la filtra la RLS de
+  siempre). La escribe la Dirección: con su sesión (`ninos_admin_all`), al validar (`validar_alta`) o
+  al reincorporar (`desarchivar_nino` de tres argumentos).
+- **`validar_alta(matrícula, fecha)`** (`SECURITY DEFINER`, `EXECUTE` para `authenticated` y
+  `service_role`): Dirección del centro del niño (42501), con fecha (22004,
+  `falta_fecha_incorporacion`), y solo una matrícula `lista`; si no lo estaba, NULL.
+- **La base lo exige para todos** (sesión, `service_role` y funciones; no `postgres`, [su
+  llave](#la-llave-de-postgres)): `privado.matriculas_exige_incorporacion` (una matrícula `activa`
+  de un niño sin fecha, 23514) y `privado.ninos_incorporacion_no_se_quita` (quitarla a un niño con
+  matrícula activa, 23514). Las dos, `SECURITY DEFINER` y cerradas a las sesiones.
+- **El motor:** `generar_recibos_mes` solo cuenta un hijo activo si está incorporado ese mes o
+  antes, en sus seis consultas. Nada de un mes anterior; el de la incorporación, entero.
+- Medido abierto y cerrado en producción (ensayos terminados en RAISE, LF y CRLF).
+- Test: `fecha-incorporacion.rls.test.ts` y `desarchivar-nino.rls.test.ts`.
+
 ### Firmar fuera del alta y lo pendiente en el inicio (serie de altas, fase 4, 4c)
 
 Sin migración; spec `docs/specs/altas-serie.md`, «4c». Usa las funciones del 4a con la sesión de

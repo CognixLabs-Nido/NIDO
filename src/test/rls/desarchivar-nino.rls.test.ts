@@ -15,6 +15,7 @@ import {
   deleteTestUser,
   serviceClient,
   type TestUser,
+  FECHA_INCORPORACION_DE_TEST,
 } from './setup'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -82,6 +83,7 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
         nombre: opts.nombre ?? 'Niño F3F',
         primer_apellido: 'Test',
         fecha_nacimiento: '2024-03-15',
+        fecha_incorporacion: FECHA_INCORPORACION_DE_TEST, // fase 8a: activo, incorporado desde siempre
       })
       .select('id')
       .single()
@@ -171,6 +173,7 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
     const { data, error } = await cAdmin.rpc('desarchivar_nino', {
       p_nino_id: baja.ninoId,
       p_aula_id: e.aulaId,
+      p_fecha_incorporacion: '2027-02-15',
     })
     expect(error).toBeNull()
     expect(data).toMatchObject({
@@ -178,6 +181,13 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
       familia_reactivada: false,
       roles_reactivados: 0,
     })
+    // Fase 8a: reincorporar es incorporar; la fecha del día en que vuelve queda en el niño.
+    const { data: inc } = await serviceClient
+      .from('ninos')
+      .select('fecha_incorporacion')
+      .eq('id', baja.ninoId)
+      .single()
+    expect(inc?.fecha_incorporacion).toBe('2027-02-15')
 
     expect(await ninoArchivado(baja.ninoId)).toBe(false)
     expect(await vinculosVivos(baja.ninoId)).toBe(true) // vínculo revivido
@@ -198,6 +208,7 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
     const { data, error } = await cAdmin.rpc('desarchivar_nino', {
       p_nino_id: ninoId,
       p_aula_id: e.aulaId,
+      p_fecha_incorporacion: '2026-09-01',
     })
     expect(error).toBeNull()
     expect(data).toMatchObject({
@@ -220,6 +231,7 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
     const { data: rpc } = await cAdmin.rpc('desarchivar_nino', {
       p_nino_id: ninoId,
       p_aula_id: e.aulaId,
+      p_fecha_incorporacion: '2026-09-01',
     })
     const { data: hoy } = await serviceClient.rpc('hoy_madrid')
 
@@ -244,7 +256,11 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
     const e = await nuevoEscenario()
     const { ninoId } = await crearNino(e) // nunca archivado
 
-    const r = await cAdmin.rpc('desarchivar_nino', { p_nino_id: ninoId, p_aula_id: e.aulaId })
+    const r = await cAdmin.rpc('desarchivar_nino', {
+      p_nino_id: ninoId,
+      p_aula_id: e.aulaId,
+      p_fecha_incorporacion: '2026-09-01',
+    })
     expect(r.error).toBeNull()
     expect(r.data).toMatchObject({ ya_activo: true })
 
@@ -267,11 +283,13 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
     const rProfe = await cProfe.rpc('desarchivar_nino', {
       p_nino_id: n1.ninoId,
       p_aula_id: e.aulaId,
+      p_fecha_incorporacion: '2026-09-01',
     })
     expect(rProfe.error).not.toBeNull()
     const rTutor = await cTutor.rpc('desarchivar_nino', {
       p_nino_id: n1.ninoId,
       p_aula_id: e.aulaId,
+      p_fecha_incorporacion: '2026-09-01',
     })
     expect(rTutor.error).not.toBeNull()
     expect(await ninoArchivado(n1.ninoId)).toBe(true) // sigue archivado
@@ -279,6 +297,7 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
     const rAdmin = await cAdmin.rpc('desarchivar_nino', {
       p_nino_id: n1.ninoId,
       p_aula_id: e.aulaId,
+      p_fecha_incorporacion: '2026-09-01',
     })
     expect(rAdmin.error).toBeNull()
     expect(await ninoArchivado(n1.ninoId)).toBe(false)
@@ -289,6 +308,7 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
     const rSvc = await serviceClient.rpc('desarchivar_nino', {
       p_nino_id: n2.ninoId,
       p_aula_id: e.aulaId,
+      p_fecha_incorporacion: '2026-09-01',
     })
     expect(rSvc.error).toBeNull()
     expect(await ninoArchivado(n2.ninoId)).toBe(false)
@@ -302,7 +322,11 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
     // Cerrar el curso activo → el centro se queda sin curso activo.
     await serviceClient.from('cursos_academicos').update({ estado: 'cerrado' }).eq('id', e.cursoId)
 
-    const r = await cAdmin.rpc('desarchivar_nino', { p_nino_id: ninoId, p_aula_id: e.aulaId })
+    const r = await cAdmin.rpc('desarchivar_nino', {
+      p_nino_id: ninoId,
+      p_aula_id: e.aulaId,
+      p_fecha_incorporacion: '2026-09-01',
+    })
     expect(r.error).not.toBeNull()
     expect(await ninoArchivado(ninoId)).toBe(true) // sigue archivado
   })
@@ -312,7 +336,11 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
     const { ninoId } = await crearNino(e)
     await cAdmin.rpc('baja_nino', { p_nino_id: ninoId, p_motivo: 'x' })
 
-    const r = await cAdmin.rpc('desarchivar_nino', { p_nino_id: ninoId, p_aula_id: randomUUID() })
+    const r = await cAdmin.rpc('desarchivar_nino', {
+      p_nino_id: ninoId,
+      p_aula_id: randomUUID(),
+      p_fecha_incorporacion: '2026-09-01',
+    })
     expect(r.error).not.toBeNull()
     expect(await ninoArchivado(ninoId)).toBe(true)
   })
@@ -322,7 +350,11 @@ describe('F-3-F — desarchivar_nino (RPC)', () => {
     const { ninoId, familiaId, tutor } = await crearNino(e, { conTutor: true })
     await cAdmin.rpc('baja_nino', { p_nino_id: ninoId, p_motivo: 'x' }) // familia archivada + rol revocado
 
-    const r = await cAdmin.rpc('desarchivar_nino', { p_nino_id: ninoId, p_aula_id: randomUUID() })
+    const r = await cAdmin.rpc('desarchivar_nino', {
+      p_nino_id: ninoId,
+      p_aula_id: randomUUID(),
+      p_fecha_incorporacion: '2026-09-01',
+    })
     expect(r.error).not.toBeNull()
 
     // Todo intacto: niño archivado, familia archivada, rol revocado, sin matrícula nueva.

@@ -17,6 +17,7 @@ import {
   deleteTestUser,
   serviceClient,
   type TestUser,
+  FECHA_INCORPORACION_DE_TEST,
 } from './setup'
 import { insertarRecibos } from './remesa-como-sus-funciones'
 
@@ -181,6 +182,7 @@ describe('Multicentro · Fase 2 — un adulto con familia en dos centros', () =>
         nombre: 'Hijo En A',
         primer_apellido: 'Dos Centros',
         fecha_nacimiento: HOY_PASADO,
+        fecha_incorporacion: FECHA_INCORPORACION_DE_TEST, // fase 8a: activo en A
       })
       .select('id')
       .single()
@@ -434,7 +436,17 @@ describe('Multicentro · Fase 2 — un adulto con familia en dos centros', () =>
 
   it('fotos: con un hijo activo en cada centro, el blog de cada uno en su centro', async () => {
     // El hermano de B termina el alta (para que la RLS le deje ver el blog de su aula).
-    await serviceClient.from('matriculas').update({ estado: 'activa' }).eq('nino_id', ninoB)
+    // Fase 8a: activo es incorporado; sin la fecha la base no lo deja activar.
+    const inc = await serviceClient
+      .from('ninos')
+      .update({ fecha_incorporacion: FECHA_INCORPORACION_DE_TEST })
+      .eq('id', ninoB)
+    expect(inc.error).toBeNull()
+    const act = await serviceClient
+      .from('matriculas')
+      .update({ estado: 'activa' })
+      .eq('nino_id', ninoB)
+    expect(act.error).toBeNull()
     await serviceClient
       .from('vinculos_familiares')
       .update({ permisos: { puede_ver_fotos: true } })

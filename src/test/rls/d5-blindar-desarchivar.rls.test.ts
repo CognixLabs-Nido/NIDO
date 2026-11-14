@@ -149,6 +149,7 @@ describe('D-5 punto 2 — blindar desarchivar (motivo_borrado)', () => {
     const des = await serviceClient.rpc('desarchivar_nino', {
       p_nino_id: ninoId,
       p_aula_id: e.aulaId,
+      p_fecha_incorporacion: '2026-09-01',
     })
     expect(des.error).toBeNull()
 
@@ -185,6 +186,7 @@ describe('D-5 punto 2 — blindar desarchivar (motivo_borrado)', () => {
     const des = await serviceClient.rpc('desarchivar_nino', {
       p_nino_id: ninoId,
       p_aula_id: e.aulaId,
+      p_fecha_incorporacion: '2026-09-01',
     })
     expect(des.error).not.toBeNull()
     expect(des.error?.message).toMatch(/purgad/i)
@@ -223,6 +225,7 @@ describe('D-5 punto 2 — blindar desarchivar (motivo_borrado)', () => {
     const des = await serviceClient.rpc('desarchivar_nino', {
       p_nino_id: ninoId,
       p_aula_id: e.aulaId,
+      p_fecha_incorporacion: '2026-09-01',
     })
     expect(des.error).toBeNull()
 

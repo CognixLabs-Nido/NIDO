@@ -3,7 +3,7 @@ feature: altas-serie
 wave: 1
 status: approved
 priority: high
-last_updated: 2026-11-13
+last_updated: 2026-11-14
 related_adrs: [ADR-0049, ADR-0050, ADR-0063, ADR-0064]
 related_specs: [alta-tutor-driven, autorizaciones-firma, retencion-plazos]
 ---
@@ -1686,6 +1686,102 @@ comprobación valenciana espera a tener la regla de una fuente oficial.
 - El catálogo de buckets (`catalogo-buckets.ts`): cada bucket que existe lo borra el olvido o está
   fuera con su motivo y quién lo borra.
 
+## Fase 8: servicios en el alta
+
+### Decisiones
+
+- **La de partida (2026-10-29, arriba en «Servicios (media pensión)»):** una fila por servicio que el
+  centro tenga en Cuotas, con _No / Todos los meses / Días sueltos_, como **petición** que la
+  directora aplica al validar; la familia nunca escribe en la facturación.
+- **2026-11-14, de Jose:**
+  - **«Si el niño se queda a la hora de comer, come y se cobra. Punto.»** Sin avisos ni
+    confirmaciones: el parte es la verdad. _No_ y _Días sueltos_ no cambian nada del cobro del día
+    suelto; la respuesta de la familia es información para Dirección y la profe, no una puerta.
+  - **La mensual empieza el mes siguiente, completo.** El mes en que el niño entra se cobra por días.
+    Encaja con lo que hay sin prorrateo: el diario es automático para todos (#425) y quien tiene la
+    mensual no paga esos días (#404).
+  - **La fecha de incorporación** (opción B, con su caso: «yo puedo validar un alta en enero para el
+    curso siguiente que empieza en septiembre»). Es un campo nuevo, lo pone Dirección al validar el
+    alta y es **obligatorio para validar**: no se da por buena un alta sin saber qué día empieza a
+    venir el niño.
+  - **Gobierna la generación de recibos entera**, no solo los servicios: `generar_recibos_mes` no
+    cobra **nada** (ni mensual, ni diario, ni escolaridad) de un mes anterior al de la incorporación.
+    Añadir el campo y que solo lo respetara el comedor dejaría vivo, a propósito, el cobro de la
+    escolaridad de un niño que no ha pisado el centro.
+  - **Las matrículas ya activas** reciben como fecha la de su activación. Una sola regla, sin «si es
+    NULL, cobra como antes».
+  - La mensual empieza el día 1 del mes siguiente al de la incorporación; la fecha, en hora de Madrid.
+- **2026-11-14, del responsable:**
+  - Contestar cada fila es **obligatorio para cerrar el alta**, y lo exige también la base.
+  - El alta **enseña el precio** de cada servicio, el del concepto.
+  - Dirección ve la petición al validar y **puede corregirla antes de aplicarla**. No le bloquea la
+    validación: queda avisada, como los documentos en P-6.
+  - **Solo las opciones que el centro tiene creadas**: un servicio solo con mensual no ofrece el día
+    suelto, y al revés. Un centro sin ningún concepto de servicio no ve el paso, como el SEPA sin CID.
+  - Los **cambios después del alta**, por la cola. Una mensual nueva empieza el día 1 del mes
+    siguiente a aplicarla; una que se quita termina el último día del mes en curso.
+  - **La petición guarda el concepto**, no solo el servicio (un centro puede tener dos mensuales del
+    mismo servicio).
+  - La profe ve en su pase **quién tiene la mensual**.
+  - La petición sale en el export del art. 15, se purga con el niño y no es retroactiva.
+  - La familia nunca escribe en la facturación: **la petición es una tabla aparte**, no una
+    asignación.
+  - **Partida en dos PRs pegados**, los dos antes de la fase 9: 8a, la fecha y que la facturación la
+    respete; 8b, la petición de servicios del alta.
+- **Anotado, fuera de la fase 8:** el presupuesto firmado (fase 4) y los importes de los conceptos
+  son dos datos sin relación que nada compara (ver `docs/follow-ups.md`).
+
+### Lo que se midió antes (producción, 2026-11-14, solo lectura y ensayos terminados en RAISE)
+
+- **La vigencia permite la regla de la mensual:** el motor y la regla de #404 miran la vigencia de
+  cada asignación con solapamiento sobre el mes (`vigencia_desde <= último día`, `vigencia_hasta >=
+día 1`). Con la mensual desde el 1 de abril, marzo cobra los días del parte y abril la mensual sin
+  los días; sin vigencia, marzo cobra la mensual (el control). Una vigencia a mitad de mes cobra la
+  mensual entera de ese mes: por eso siempre el día 1.
+- **El día 1 del mes siguiente, en hora de Madrid:** en UTC, las 00:30 del día 1 (Madrid) caen en el
+  mes anterior y las 00:30 del 1 de abril en marzo; las dos dan un mes equivocado.
+- **No había ninguna fecha de comienzo:** `matriculas.fecha_alta` es `DEFAULT CURRENT_DATE` (el día
+  en que se creó la matrícula) y `activada_at` es la validación.
+- **Medido abierto, el cobro indebido:** con «Recalcular el mes» (proponer y generar), un niño
+  validado hoy para septiembre de 2027 recibía en febrero y en agosto «Escolaridad 300 €» (y la beca
+  automática del centro); con el parte, también el día de comedor. Con la matrícula pendiente (el
+  control), nada. `generar_recibos_mes` solo, sin proponer, no cobraba nada porque el niño aún no
+  tenía asignaciones: la siembra es de la acción de la app, no del motor.
+- **Quién activa una matrícula:** validar el alta (`activarMatricula`), reincorporar
+  (`desarchivar_nino`, inserta `activa`), pasar de curso (`cerrar_curso`, las propuestas
+  `pendiente` del curso planificado, que son de niños que continúan) y cambiar de aula. Las altas
+  nuevas se crean siempre en el curso activo.
+
+### 8a · La fecha de incorporación, en dos migraciones
+
+**`20270120120000` (aditiva; antes del despliegue):**
+
+- `ninos.fecha_incorporacion` (date), legible por la sesión como las demás columnas no sensibles.
+  Va en el niño y no en la matrícula: cambiar de aula o pasar de curso no lo vuelven a incorporar.
+- Relleno: los niños con alguna matrícula activada, con su primera activación en hora de Madrid;
+  los purgados, no. Las cuatro de producción quedan con su fecha y no cambia lo que se les cobra.
+- `validar_alta(matrícula, fecha)`: Dirección del centro, con fecha (22004
+  `falta_fecha_incorporacion`), solo una matrícula `lista`; pone la fecha y activa, las dos o
+  ninguna.
+- `desarchivar_nino(niño, aula, fecha)`: reincorporar es incorporar. La de dos argumentos se queda
+  hasta la B, para la app de antes.
+- La purga y `_claves_pii_nino` la conocen; sale en el export del art. 15.
+
+**`20270120130000` (después del despliegue):**
+
+- La base lo exige: una matrícula `activa` de un niño sin fecha, 23514 `falta_fecha_incorporacion`
+  (por cualquier camino); a un niño con matrícula activa no se le quita la fecha.
+- `generar_recibos_mes`: «hijo activo» es además «incorporado ese mes o antes» en los seis sitios que
+  lo miran (las familias, los cargos de cada niño, los descuentos por niño, los dos rankings de
+  hermanos y las becas). De un mes anterior, nada; una familia sin ningún hijo incorporado ese mes,
+  sin recibo. El mes de la incorporación se cobra entero, como hasta ahora.
+- Se borra `desarchivar_nino` de dos argumentos.
+- Va después del despliegue porque la app de antes valida sin fecha. Su guarda previa para si queda
+  algún niño activo sin fecha.
+
+**Pantallas:** «Activar matrícula» pide la fecha de incorporación (sin ella no se pulsa), y
+«Reincorporar» también.
+
 ## Orden de la serie
 
 Diez fases, en este orden. De la 5 en adelante todas tocan `purgar_sujeto_db`, `privado.purgar_nino`
@@ -1700,8 +1796,8 @@ y la exportación del art. 15 (las funciones de la serie de retención, ADR-0064
 | 4    | Presupuesto y normas, para firmar | El gate exige la firma de la versión vigente de cada documento obligatorio; P-6 | ✅           |
 | 5    | Campos del niño                   | Campos fijos; la configuración por centro, con el segundo centro (P5-7)         | ✅           |
 | 6    | Campos de tutores                 | Con el test de la purga contra el catálogo de columnas                          | ✅           |
-| 7    | SIP                               | Número en `ninos`, imagen en su bucket                                          | 🔸 en marcha |
-| 8    | Servicios en el alta              | La petición de media pensión                                                    |              |
+| 7    | SIP                               | Número en `ninos`, imagen en su bucket                                          | ✅           |
+| 8    | Servicios en el alta              | La fecha de incorporación (8a) y la petición de media pensión (8b)              | 🔸 en marcha |
 | 9    | Gastos de gestión                 | Paso del alta y confirmación de la directora al validar                         |              |
 | 10   | Firma de la ficha                 | Resumen de los datos, hash y firma                                              |              |
 
@@ -1745,7 +1841,9 @@ lo suyo (`20270115130000`).
 - [x] Fase 1 · [x] Fase 2 · [x] Fase 3
 - [x] Fase 4: [x] 4a (#502) · 4b: [x] 4b-1 (#510) · [x] 4b-2 (#511) · [x] 4b-3 (#513) · [x] 4c (#514) · [x] 4d (#515)
 - [x] Fase 5: [x] 5a (#516) · [x] la puerta de identidad (#518) · [x] 5b (#519, #520) · [x] el autorizado lee solo lo suyo (#522, #521)
-- [x] Fase 6 (#526) · [ ] Fase 7 · [ ] Fase 8 · [ ] Fase 9 · [ ] Fase 10
+- [x] Fase 6 (#526) · [x] Fase 7 (#527)
+- [ ] Fase 8: [ ] 8a, la fecha de incorporación · [ ] 8b, la petición de servicios
+- [ ] Fase 9 · [ ] Fase 10
 
 ## Referencias
 

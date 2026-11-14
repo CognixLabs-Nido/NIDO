@@ -534,7 +534,11 @@ describe('invitaciones: los sitios de la BD que pasan por la tabla', () => {
       .update({ deleted_at: AYER, deleted_reason: 'baja_nino' })
       .eq('id', primerHijo)
     const c = await clientFor(admin)
-    const { error } = await c.rpc('desarchivar_nino', { p_nino_id: primerHijo, p_aula_id: aulaId })
+    const { error } = await c.rpc('desarchivar_nino', {
+      p_nino_id: primerHijo,
+      p_aula_id: aulaId,
+      p_fecha_incorporacion: '2026-09-01',
+    })
     expect(error).toBeNull()
     const { data } = await serviceClient
       .from('vinculos_familiares')

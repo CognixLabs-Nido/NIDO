@@ -17,6 +17,7 @@ import {
   matricular,
   serviceClient,
   type TestUser,
+  FECHA_INCORPORACION_DE_TEST,
 } from './setup'
 import { cursoDeTest } from './curso-de-test'
 
@@ -99,6 +100,7 @@ describe('F-3-C-2 — cerrar_curso (RPC)', () => {
         nombre: 'Niño F3C2',
         primer_apellido: 'Test',
         fecha_nacimiento: '2024-03-15',
+        fecha_incorporacion: FECHA_INCORPORACION_DE_TEST, // fase 8a: un niño que continúa ya vino
       })
       .select('id')
       .single()
@@ -245,6 +247,7 @@ describe('F-3-C-2 — cerrar_curso (RPC)', () => {
           nombre,
           primer_apellido: 'Test',
           fecha_nacimiento: '2024-03-15',
+          fecha_incorporacion: FECHA_INCORPORACION_DE_TEST, // fase 8a
         })
         .select('id')
         .single()

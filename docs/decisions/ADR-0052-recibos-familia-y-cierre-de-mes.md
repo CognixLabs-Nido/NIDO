@@ -146,6 +146,10 @@ Restricciones:
     vuelve como tramo `resto`, que cuenta por sí mismo, y lo devuelto por transferencia cuenta
     como aplicado. Así, beca del curso = aplicado + queda.
   - Spec: `docs/specs/beca-comedor-v2.md`.
+- **Desde la incorporación (fase 8a, `20270120130000`, decisión del responsable del 2026-11-14):** un
+  hijo activo cuenta solo si está incorporado ese mes o antes (`ninos.fecha_incorporacion`). De un
+  mes anterior no se cobra nada (ni cargos, ni descuentos, ni becas) y una familia sin hijos
+  incorporados ese mes no tiene recibo. Ver `docs/specs/altas-serie.md`, «Fase 8».
 - **Origen de cada línea (R-2):** `automatico` | `manual`. El motor nunca toca una manual.
   - El tope de la beca se mide sobre el recibo entero, manuales incluidas.
   - Los descuentos que se derivan de otras líneas solo miran las automáticas.

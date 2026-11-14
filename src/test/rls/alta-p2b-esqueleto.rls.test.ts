@@ -7,6 +7,7 @@ import {
   createTestFamilia,
   deleteTestCentro,
   serviceClient,
+  FECHA_INCORPORACION_DE_TEST,
 } from './setup'
 
 /**
@@ -83,6 +84,12 @@ describe('Alta P2b — esqueleto (DB)', () => {
     expect(mat?.estado).toBe('pendiente')
     expect(mat?.fecha_baja).toBeNull()
 
+    // Fase 8a: activar exige la fecha de incorporación del niño (la pone Dirección al validar).
+    const inc = await serviceClient
+      .from('ninos')
+      .update({ fecha_incorporacion: FECHA_INCORPORACION_DE_TEST })
+      .eq('id', ninoId)
+    expect(inc.error).toBeNull()
     // "Activar matrícula": pendiente → activa (idempotencia por .eq('estado','pendiente')).
     const { data: activada } = await serviceClient
       .from('matriculas')

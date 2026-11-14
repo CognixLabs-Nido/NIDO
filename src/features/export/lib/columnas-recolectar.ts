@@ -354,6 +354,8 @@ export const SECCIONES_RECOLECTAR = {
     dni: SALE,
     estado_civil_familia: SALE,
     familia_id: NS_FUERA,
+    // Fase 8a: el día en que empezó a venir (desde cuándo se le cobra).
+    fecha_incorporacion: SALE,
     fecha_nacimiento: SALE,
     foto_url: SALE,
     hermanos_lugar: SALE,

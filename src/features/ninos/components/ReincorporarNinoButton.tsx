@@ -56,22 +56,28 @@ export function ReincorporarNinoButton({ ninoId, nombreCompleto, aulas }: Props)
   const [open, setOpen] = useState(false)
   const [aulaId, setAulaId] = useState('')
   const [confirmNombre, setConfirmNombre] = useState('')
+  const [fecha, setFecha] = useState('')
   const [pending, startTransition] = useTransition()
 
   const sinCursoActivo = aulas.length === 0
   const aulaOk = aulaId.length > 0
   const nombreOk = confirmNombre === nombreCompleto
-  const puedeConfirmar = !sinCursoActivo && aulaOk && nombreOk && !pending
+  const puedeConfirmar = !sinCursoActivo && aulaOk && fecha.length > 0 && nombreOk && !pending
 
   function reset() {
     setAulaId('')
     setConfirmNombre('')
+    setFecha('')
   }
 
   function confirmar() {
     if (!puedeConfirmar) return
     startTransition(async () => {
-      const r = await desarchivarNino({ nino_id: ninoId, aula_id: aulaId })
+      const r = await desarchivarNino({
+        nino_id: ninoId,
+        aula_id: aulaId,
+        fecha_incorporacion: fecha,
+      })
       if (r.success) {
         toast.success(t('exito'))
         setOpen(false)
@@ -127,6 +133,18 @@ export function ReincorporarNinoButton({ ninoId, nombreCompleto, aulas }: Props)
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="reinc-fecha">{t('fecha_label')}</Label>
+                <Input
+                  id="reinc-fecha"
+                  type="date"
+                  required
+                  value={fecha}
+                  onChange={(e) => setFecha(e.target.value)}
+                  data-testid="reincorporar-fecha"
+                />
+                <p className="text-muted-foreground text-xs">{t('fecha_ayuda')}</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="reinc-nombre">{t('confirm_nombre_label')}</Label>

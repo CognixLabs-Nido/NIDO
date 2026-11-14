@@ -884,7 +884,8 @@
       "activar_matricula": {
         "ok": "Enrolment activated",
         "activando": "Activating…",
-        "activar": "Activate enrolment"
+        "activar": "Activate enrolment",
+        "fecha_incorporacion": "Start date"
       },
       "avance_alta": {
         "titulo": "Enrolment progress",
@@ -950,7 +951,9 @@
         "cancelar": "Cancel",
         "confirmar": "Reinstate",
         "procesando": "Processing…",
-        "exito": "Child reinstated"
+        "exito": "Child reinstated",
+        "fecha_label": "Start date",
+        "fecha_ayuda": "The day the child comes back. Billing starts that month."
       },
       "archivo": {
         "link": "View leavers / archive",
@@ -2484,7 +2487,8 @@
     "desarchivar": {
       "validation": {
         "aula_requerida": "Choose a classroom of the active year",
-        "invalid": "Invalid reinstatement data"
+        "invalid": "Invalid reinstatement data",
+        "fecha_requerida": "Enter the start date: the day the child starts attending"
       },
       "errors": {
         "no_autorizado": "You don't have permission to reinstate this child",
@@ -2519,7 +2523,8 @@
       "aula_invalida": "Select a classroom",
       "fecha_formato": "Invalid date format (YYYY-MM-DD)",
       "invalid": "Invalid enrolment data.",
-      "email_invalido": "Enter a valid email."
+      "email_invalido": "Enter a valid email.",
+      "fecha_incorporacion_requerida": "Enter the start date: the day the child starts attending"
     },
     "errors": {
       "create_failed": "Could not create the enrolment.",
@@ -4471,7 +4476,8 @@
         "telefono": "Phone",
         "dni_numero": "ID number",
         "estudios": "Education",
-        "empresa": "Employer"
+        "empresa": "Employer",
+        "fecha_incorporacion": "Start date"
       },
       "valores": {
         "terminos": "Terms",

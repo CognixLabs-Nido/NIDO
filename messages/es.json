@@ -884,7 +884,8 @@
       "activar_matricula": {
         "ok": "Matrícula activada",
         "activando": "Activando…",
-        "activar": "Activar matrícula"
+        "activar": "Activar matrícula",
+        "fecha_incorporacion": "Fecha de incorporación"
       },
       "avance_alta": {
         "titulo": "Avance del alta",
@@ -950,7 +951,9 @@
         "cancelar": "Cancelar",
         "confirmar": "Reincorporar",
         "procesando": "Procesando…",
-        "exito": "Niño reincorporado"
+        "exito": "Niño reincorporado",
+        "fecha_label": "Fecha de incorporación",
+        "fecha_ayuda": "El día en que vuelve a venir. Desde ese mes se le cobra."
       },
       "archivo": {
         "link": "Ver bajas / archivo",
@@ -2484,7 +2487,8 @@
     "desarchivar": {
       "validation": {
         "aula_requerida": "Elige un aula del curso activo",
-        "invalid": "Datos de reincorporación no válidos"
+        "invalid": "Datos de reincorporación no válidos",
+        "fecha_requerida": "Pon la fecha de incorporación: el día en que el niño empieza a venir"
       },
       "errors": {
         "no_autorizado": "No tienes permiso para reincorporar a este niño",
@@ -2519,7 +2523,8 @@
       "aula_invalida": "Selecciona un aula",
       "fecha_formato": "Formato de fecha inválido (YYYY-MM-DD)",
       "invalid": "Datos de matrícula inválidos.",
-      "email_invalido": "Escribe un email válido."
+      "email_invalido": "Escribe un email válido.",
+      "fecha_incorporacion_requerida": "Pon la fecha de incorporación: el día en que el niño empieza a venir"
     },
     "errors": {
       "create_failed": "No se pudo crear la matrícula.",
@@ -4471,7 +4476,8 @@
         "telefono": "Teléfono",
         "dni_numero": "Número del DNI",
         "estudios": "Estudios",
-        "empresa": "Empresa"
+        "empresa": "Empresa",
+        "fecha_incorporacion": "Fecha de incorporación"
       },
       "valores": {
         "terminos": "Términos",

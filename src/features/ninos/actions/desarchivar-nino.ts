@@ -24,10 +24,13 @@ export async function desarchivarNino(input: DesarchivarNinoInput): Promise<Acti
   const { error } = await supabase.rpc('desarchivar_nino', {
     p_nino_id: parsed.data.nino_id,
     p_aula_id: parsed.data.aula_id,
+    p_fecha_incorporacion: parsed.data.fecha_incorporacion,
   })
   if (error) {
     logger.warn('desarchivarNino', error.message)
     if (error.code === '42501') return fail('nino.desarchivar.errors.no_autorizado')
+    if (error.hint === 'falta_fecha_incorporacion')
+      return fail('nino.desarchivar.validation.fecha_requerida')
     return fail('nino.desarchivar.errors.fallo')
   }
 
