@@ -120,6 +120,33 @@ REVOKE ALL ON FUNCTION privado.peticion_servicio_coherente() FROM PUBLIC, anon, 
 CREATE TRIGGER peticion_servicio_coherente
   BEFORE INSERT OR UPDATE ON public.peticion_servicio
   FOR EACH ROW EXECUTE FUNCTION privado.peticion_servicio_coherente();
+-- La coherencia de centro de la casa (`20270108120000`, «Una fila y lo que nombra, del mismo centro»):
+-- la misma comprobación que genera aquella migración para cada par, escrita aquí con sus dos
+-- columnas. `zz_` para correr después de `peticion_servicio_coherente`, que pone el centro.
+CREATE FUNCTION privado.peticion_servicio_centro_coherente()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+BEGIN
+  IF NEW.concepto_id IS NOT NULL AND EXISTS (SELECT 1 FROM public.conceptos_cobro r
+     WHERE r.id = NEW.concepto_id AND r.centro_id IS DISTINCT FROM NEW.centro_id) THEN
+    RAISE EXCEPTION 'public.peticion_servicio.concepto_id no es del centro de la fila'
+      USING ERRCODE = '23514', HINT = 'centro_ajeno';
+  END IF;
+  IF NEW.nino_id IS NOT NULL AND EXISTS (SELECT 1 FROM public.ninos r
+     WHERE r.id = NEW.nino_id AND r.centro_id IS DISTINCT FROM NEW.centro_id) THEN
+    RAISE EXCEPTION 'public.peticion_servicio.nino_id no es del centro de la fila'
+      USING ERRCODE = '23514', HINT = 'centro_ajeno';
+  END IF;
+  RETURN NEW;
+END
+$function$;
+REVOKE ALL ON FUNCTION privado.peticion_servicio_centro_coherente() FROM PUBLIC, anon, authenticated, service_role;
+CREATE TRIGGER zz_centro_coherente
+  BEFORE INSERT OR UPDATE OF centro_id, concepto_id, nino_id ON public.peticion_servicio
+  FOR EACH ROW EXECUTE FUNCTION privado.peticion_servicio_centro_coherente();
 CREATE TRIGGER set_updated_at_peticion_servicio
   BEFORE UPDATE ON public.peticion_servicio
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
@@ -519,7 +546,9 @@ BEGIN
   END IF;
   RETURN QUERY
   SELECT n.id, n.nombre::text, n.apellidos::text, a.id, a.nombre::text,
-         ARRAY(SELECT DISTINCT c.servicio
+         -- COALESCE: un ARRAY(…) nunca es NULL, pero así lo demuestra la regla de la casa
+         -- (`src/test/tipos/nulabilidad.ts`), sin enseñarle a leer una forma nueva.
+         COALESCE(ARRAY(SELECT DISTINCT c.servicio
                  FROM public.asignacion_concepto ac
                  JOIN public.conceptos_cobro c ON c.id = ac.concepto_id
                 WHERE ac.nino_id = n.id AND ac.deleted_at IS NULL
@@ -527,7 +556,7 @@ BEGIN
                   AND c.tipo_concepto = 'mensual' AND c.servicio IS NOT NULL
                   AND (ac.vigencia_desde IS NULL OR ac.vigencia_desde <= v_fecha)
                   AND (ac.vigencia_hasta IS NULL OR ac.vigencia_hasta >= v_fecha)
-                ORDER BY 1),
+                ORDER BY 1), '{}'),
          COALESCE((SELECT jsonb_object_agg(p.servicio, p.respuesta)
                      FROM public.peticion_servicio p WHERE p.nino_id = n.id), '{}'::jsonb)
     FROM public.ninos n
@@ -1448,12 +1477,18 @@ BEGIN
      OR to_regprocedure('public.listado_pase_servicios(uuid,date)') IS NULL THEN
     RAISE EXCEPTION 'falta alguna pieza en su cuerpo vivo';
   END IF;
+  -- La coherencia de centro de la casa (20270108120000): su trigger, sobre las dos columnas.
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'zz_centro_coherente'
+                  AND tgrelid = 'public.peticion_servicio'::regclass) THEN
+    RAISE EXCEPTION 'peticion_servicio sin zz_centro_coherente';
+  END IF;
   -- Las funciones de privado, cerradas; las de public, sin anon.
   IF EXISTS (
     SELECT 1 FROM unnest(ARRAY['privado.servicios_ofrecidos(uuid)', 'privado.servicios_sin_contestar(uuid)',
                                'privado.respuestas_servicio(uuid,jsonb)', 'privado.escribir_respuestas_servicio(uuid,jsonb)',
                                'privado.mes_siguiente(date)', 'privado.poner_mensual(uuid,uuid,date,boolean)',
-                               'privado.quitar_mensual(uuid,date)', 'privado.peticion_servicio_coherente()']) f
+                               'privado.quitar_mensual(uuid,date)', 'privado.peticion_servicio_coherente()',
+                               'privado.peticion_servicio_centro_coherente()']) f
      WHERE has_function_privilege('authenticated', f, 'EXECUTE') OR has_function_privilege('anon', f, 'EXECUTE'))
   OR EXISTS (
     SELECT 1 FROM unnest(ARRAY['public.servicios_alta(uuid)', 'public.guardar_peticion_servicios(uuid,jsonb)',

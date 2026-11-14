@@ -202,7 +202,7 @@ export function PaseServiciosCliente({ centroId, locale, fecha, filas, aulaInici
                           </span>
                         ) : f.pedidos[s] && f.pedidos[s] !== 'mensual' ? (
                           <span className="text-muted-foreground block text-[11px]">
-                            {t(`pedido_${f.pedidos[s]}`)}
+                            {f.pedidos[s] === 'no' ? t('pedido_no') : t('pedido_dias_sueltos')}
                           </span>
                         ) : null}
                       </TableCell>

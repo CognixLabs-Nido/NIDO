@@ -193,8 +193,12 @@ describe('La petición de servicios del alta (8b)', () => {
       aplicacion: 'automatico',
     })
     await concepto('escolaridad', centro.id, { nombre: 'Escolaridad 8b', importe_centimos: 40_000 })
+    // Un descuento con servicio solo puede ser diario (CHECK `conceptos_cobro_modelo_valor`: una
+    // mensual con servicio es de cobro, fija y por niño), y un diario es automático.
     await concepto('dtoComedor', centro.id, {
       nombre: 'Descuento comedor',
+      tipo_concepto: 'diario',
+      aplicacion: 'automatico',
       servicio: 'comedor',
       signo: -1,
       importe_centimos: 1_000,
@@ -323,7 +327,7 @@ describe('La petición de servicios del alta (8b)', () => {
     for (const [que, r] of [
       ['diario como mensual', resp('comedor', 'mensual', c.comedorDia!)],
       ['de otro centro', resp('comedor', 'mensual', c.otroComedor!)],
-      ['descuento', resp('comedor', 'mensual', c.dtoComedor!)],
+      ['descuento', resp('comedor', 'dias_sueltos', c.dtoComedor!)],
       ['automática', resp('comedor', 'mensual', c.comedorAuto!)],
       ['apagada', resp('comedor', 'mensual', c.comedorApagado!)],
       ['sin conceptos', resp('vespertina', 'no', null)],
