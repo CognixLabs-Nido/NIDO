@@ -7,6 +7,7 @@ import type { Database } from '@/types/db'
 import { comprobarBdLocal } from '../guarda-bd-local'
 
 import { cursoDeTest } from './curso-de-test'
+import { FECHA_INCORPORACION_DE_TEST } from './fecha-incorporacion-de-test'
 import { isRetryableAuthError, withRetry } from './retry'
 
 // Re-export de los helpers de reintento (viven en `./retry` sin efectos de import
@@ -383,8 +384,7 @@ export async function createTestFamilia(centro_id: string): Promise<string> {
  * este factory) DEBE setear `familia_id` (NOT NULL desde F-2b-3) creando la familia con
  * `createTestFamilia`. No insertes en `ninos` sin familia_id: la RLS suite falla.
  */
-/** La fecha de incorporación de los niños de test: anterior a cualquier mes que genere un test. */
-export const FECHA_INCORPORACION_DE_TEST = '2000-01-01'
+export { FECHA_INCORPORACION_DE_TEST }
 
 export async function createTestNino(centro_id: string, nombre?: string): Promise<TestNino> {
   const finalNombre = nombre ?? `NinoTest-${randomUUID().slice(0, 8)}`
