@@ -150,9 +150,18 @@ Restricciones:
   hijo activo cuenta solo si está incorporado ese mes o antes (`ninos.fecha_incorporacion`). De un
   mes anterior no se cobra nada (ni cargos, ni descuentos, ni becas) y una familia sin hijos
   incorporados ese mes no tiene recibo. Ver `docs/specs/altas-serie.md`, «Fase 8».
+- **El mes de la incorporación, por días (`20270121120000`, decisión de Jose del 2026-11-14):** si
+  no entra el día 1, las mensuales sin servicio y los descuentos fijos del niño se cobran por días
+  naturales desde la entrada (que cuenta), al céntimo y con los empates hacia arriba en valor
+  absoluto (`privado.prorrateo_incorporacion`). Los de porcentaje salen de la base prorrateada.
+  Ver `docs/specs/altas-serie.md`, «El prorrateo del mes de incorporación».
 - **Origen de cada línea (R-2):** `automatico` | `manual`. El motor nunca toca una manual.
   - El tope de la beca se mide sobre el recibo entero, manuales incluidas.
   - Los descuentos que se derivan de otras líneas solo miran las automáticas.
+  - **La corrección a mano manda** (`20270121120000`, decisión del responsable del 2026-11-14): una
+    manual con concepto sustituye a la automática del mismo niño (o de la familia) y concepto; el
+    motor la quita después de derivar los descuentos. Hasta entonces volvía al lado y se cobraba dos
+    veces.
 
 ### Ciclo y congelado (F-4-3, R-5)
 

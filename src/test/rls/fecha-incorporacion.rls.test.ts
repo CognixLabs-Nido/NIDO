@@ -258,13 +258,15 @@ describe('La fecha de incorporación (fase 8a)', () => {
       expect(await cobrado(n.id, 2027, 9)).toEqual([ESCOLARIDAD])
     })
 
-    it('los bordes: el último día del mes lo cobra entero; el día 1 del siguiente, no', async () => {
+    it('los bordes: el último día del mes cobra ese día; el día 1 del siguiente, nada', async () => {
       const n = await createTestNino(centro.id, 'Bordes 8a')
       await matricular(n.id, aula.id, curso.id)
 
+      // Desde el prorrateo (`20270121120000`), el mes de la incorporación se cobra por días: el 31 de
+      // octubre es 1 de 31 (300 € × 1/31 = 9,677… → 9,68 €).
       await ponerFecha(n.id, '2027-10-31')
       await recalcular(2027, 10)
-      expect(await cobrado(n.id, 2027, 10)).toEqual([ESCOLARIDAD])
+      expect(await cobrado(n.id, 2027, 10)).toEqual([968])
 
       await ponerFecha(n.id, '2027-11-01')
       await recalcular(2027, 10)

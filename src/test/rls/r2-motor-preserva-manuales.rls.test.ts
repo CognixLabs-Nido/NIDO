@@ -412,11 +412,12 @@ describe('R-2 — el motor preserva las líneas manuales', () => {
     expect(editada!.importe_centimos).toBe(15000)
     expect(editada!.descripcion).toBe('Cuota pactada con la familia')
 
-    // Y el motor vuelve a poner SU línea, porque la asignación sigue viva: la edición
-    // manual no desasigna el concepto, solo deja de ser la misma fila.
-    const automatica = despues.lineas.find((l) => l.origen === 'automatico')
-    expect(automatica!.importe_centimos).toBe(40000)
-    expect(despues.recibo!.total_centimos).toBe(15000 + 40000)
+    // Y el motor NO vuelve a poner la suya: la corrección a mano sustituye a la del catálogo
+    // (decisión del responsable del 2026-11-14, `20270121120000`). Hasta entonces la automática
+    // volvía al lado de la corregida y la familia pagaba el concepto dos veces.
+    expect(despues.lineas.filter((l) => l.concepto_id === concepto)).toHaveLength(1)
+    expect(despues.lineas.some((l) => l.origen === 'automatico')).toBe(false)
+    expect(despues.recibo!.total_centimos).toBe(15000)
   })
 
   it('equivalencia: sin líneas manuales, regenerar deja el mismo resultado que antes', async () => {

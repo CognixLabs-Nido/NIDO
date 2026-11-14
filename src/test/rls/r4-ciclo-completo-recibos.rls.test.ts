@@ -47,6 +47,8 @@ const MES = 5
 
 const ESCOLARIDAD = 50000
 const BECA = 40000
+/** La escolaridad corregida a mano en el paso 4: más que la beca, para que el tope del paso 7 mida algo. */
+const PACTADA = 60000
 
 interface LineaFila {
   id: string
@@ -285,8 +287,8 @@ describe('R-4 — ciclo completo de recibos (integración)', () => {
       .from('lineas_recibo')
       .update({
         descripcion: 'Escolaridad pactada',
-        precio_unitario_centimos: 30000,
-        importe_centimos: 30000,
+        precio_unitario_centimos: PACTADA,
+        importe_centimos: PACTADA,
         origen: 'manual',
       })
       .eq('id', automatica.id)
@@ -306,14 +308,14 @@ describe('R-4 — ciclo completo de recibos (integración)', () => {
     expect(manuales).toHaveLength(2)
     expect(manuales.find((l) => l.id === lineaManualId)!.importe_centimos).toBe(7500)
     expect(manuales.find((l) => l.descripcion === 'Escolaridad pactada')!.importe_centimos).toBe(
-      30000
+      PACTADA
     )
 
-    // La escolaridad automática VUELVE: convertir la línea a manual no desasigna el
-    // concepto, solo deja de ser esa fila. El total lo refleja.
+    // La escolaridad automática NO vuelve: la corregida a mano la sustituye (decisión del
+    // responsable del 2026-11-14, `20270121120000`). Antes volvía, y se cobraba dos veces.
     const automaticas = tras.lineas.filter((l) => l.origen === 'automatico')
-    expect(automaticas.some((l) => l.concepto_id === escolaridadId)).toBe(true)
-    expect(tras.recibo!.total_centimos).toBe(7500 + 30000 + ESCOLARIDAD - BECA)
+    expect(automaticas.some((l) => l.concepto_id === escolaridadId)).toBe(false)
+    expect(tras.recibo!.total_centimos).toBe(7500 + PACTADA - BECA)
   })
 
   it('6 · en contexto: el descuento de hermanos NO se mueve por un cargo manual (decisión A)', async () => {
@@ -371,9 +373,10 @@ describe('R-4 — ciclo completo de recibos (integración)', () => {
       .eq('familia_id', famGonzalez)
     expect(desbordes ?? [], 'el desborde se duplicó o no se creó').toHaveLength(1)
 
-    // C1: la base del tope suma el recibo entero, manuales incluidas. Sin C1 sería solo
-    // lo automático (100 €); con las dos manuales (75 + 300 €) la cuota disponible sube.
-    expect(desbordes![0]!.cuota_total_centimos).toBe(7500 + 30000 + ESCOLARIDAD - BECA)
+    // C1: la base del tope suma el recibo entero, manuales incluidas: las dos manuales (75 + 600 €)
+    // y la beca. La escolaridad automática ya no está: la sustituye la corregida a mano
+    // (`20270121120000`), y el tope se mide sin la duplicada.
+    expect(desbordes![0]!.cuota_total_centimos).toBe(7500 + PACTADA - BECA)
   })
 
   it('8 · confirmar: el recibo queda congelado y editarlo devuelve error limpio, no un crash', async () => {

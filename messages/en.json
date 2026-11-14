@@ -1988,7 +1988,7 @@
     "esporadicos_titulo": "One-off receipts this month",
     "regiro": "Re-charge",
     "generar_confirm_title": "Regenerate the receipts?",
-    "generar_confirm_desc": "{borradores} drafts will be regenerated (unconfirmed manual edits are discarded). The {confirmados} confirmed ones are left untouched.",
+    "generar_confirm_desc": "{borradores} drafts will be regenerated. Lines added or corrected by hand are kept, and a corrected line replaces the catalogue one. The {confirmados} confirmed ones are left untouched.",
     "cancelar": "Cancel",
     "regenerar": "Regenerate",
     "recalcular": "Recalculate month",
